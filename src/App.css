@@ -608,6 +608,29 @@ input,
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.music-wave-button--with-cover {
+  width: auto;
+  flex: 0 0 auto;
+  gap: 5px;
+  padding: 0 5px 0 3px;
+}
+
+.music-wave-button__cover {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 5px;
+  object-fit: cover;
+  display: block;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.island--appearance-liquidGlass .music-wave-button__cover {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 0 8px rgba(116, 214, 255, 0.16);
+}
+
 .music-wave-button:hover {
   color: #c7ffdf;
 }
@@ -869,9 +892,9 @@ input,
 .music-player {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   overflow: hidden;
   padding: 20px 24px 22px;
   color: rgba(244, 247, 248, 0.94);
@@ -899,6 +922,67 @@ input,
   align-items: center;
   justify-content: center;
   gap: 16px;
+}
+
+.music-player__track {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.music-player__cover {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(238, 243, 244, 0.5);
+}
+
+.music-player__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.music-player__meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 220px;
+}
+
+.music-player__title {
+  color: rgba(250, 252, 252, 0.94);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-player__artist {
+  color: rgba(232, 237, 239, 0.5);
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-player--empty .music-player__title {
+  color: rgba(244, 247, 248, 0.68);
 }
 
 .music-player__status {

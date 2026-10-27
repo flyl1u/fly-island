@@ -3,11 +3,17 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use base64::Engine;
 use windows::{
     Media::Control::{
         GlobalSystemMediaTransportControlsSession as MediaSession,
         GlobalSystemMediaTransportControlsSessionManager as MediaSessionManager,
+        GlobalSystemMediaTransportControlsSessionMediaProperties as MediaProperties,
         GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus,
+    },
+    Storage::Streams::{
+        DataReader, InputStreamOptions, IRandomAccessStreamReference,
+        IRandomAccessStreamWithContentType,
     },
     Win32::{
         Media::Audio::Endpoints::IAudioMeterInformation,
@@ -35,6 +41,10 @@ pub(crate) struct MediaState {
     audio_peak: f32,
     playback_status: &'static str,
     updated_at: i64,
+    title: Option<String>,
+    artist: Option<String>,
+    album_title: Option<String>,
+    thumbnail_data_url: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -222,12 +232,19 @@ fn read_media_state_from_manager(manager: &MediaSessionManager) -> Result<MediaS
         .map_err(|error| media_error("Failed to read Windows media playback status", error))?;
     let is_playing = playback_status == PlaybackStatus::Playing;
 
+    let (title, artist, album_title, thumbnail_data_url) =
+        read_media_properties(&session).unwrap_or((None, None, None, None));
+
     Ok(MediaState {
         available: true,
         audio_active,
         audio_peak,
         playback_status: if is_playing { "playing" } else { "paused" },
         updated_at: current_unix_millis(),
+        title,
+        artist,
+        album_title,
+        thumbnail_data_url,
     })
 }
 
@@ -245,7 +262,71 @@ fn read_media_state_without_session() -> Result<MediaState, String> {
             "unavailable"
         },
         updated_at: current_unix_millis(),
+        title: None,
+        artist: None,
+        album_title: None,
+        thumbnail_data_url: None,
     })
+}
+
+fn read_media_properties(
+    session: &MediaSession,
+) -> Result<(Option<String>, Option<String>, Option<String>, Option<String>), String> {
+    let operation = session
+        .TryGetMediaPropertiesAsync()
+        .map_err(|error| media_error("Failed to request Windows media properties", error))?;
+    let properties: MediaProperties = pollster::block_on(operation)
+        .map_err(|error| media_error("Failed to read Windows media properties", error))?;
+
+    let title = non_empty_hstring(properties.Title());
+    let artist = non_empty_hstring(properties.Artist());
+    let album_title = non_empty_hstring(properties.AlbumTitle());
+    let thumbnail_data_url = properties
+        .Thumbnail()
+        .ok()
+        .and_then(read_thumbnail_data_url);
+
+    Ok((title, artist, album_title, thumbnail_data_url))
+}
+
+fn non_empty_hstring(value: windows::core::Result<windows::core::HSTRING>) -> Option<String> {
+    value
+        .ok()
+        .map(|s| s.to_string())
+        .filter(|s| !s.trim().is_empty())
+}
+
+fn read_thumbnail_data_url(thumbnail: IRandomAccessStreamReference) -> Option<String> {
+    let open_operation = thumbnail.OpenReadAsync().ok()?;
+    let stream: IRandomAccessStreamWithContentType = pollster::block_on(open_operation).ok()?;
+    let size = stream.Size().ok()? as u32;
+    if size == 0 {
+        return None;
+    }
+
+    let reader = DataReader::CreateDataReader(&stream).ok()?;
+    reader
+        .SetInputStreamOptions(InputStreamOptions::ReadAhead)
+        .ok()?;
+
+    let load_operation = reader.LoadAsync(size).ok()?;
+    let loaded = pollster::block_on(load_operation).ok()?;
+    if loaded == 0 {
+        return None;
+    }
+
+    let mut buffer = vec![0u8; loaded as usize];
+    reader.ReadBytes(&mut buffer).ok()?;
+
+    let content_type = stream
+        .ContentType()
+        .ok()
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "image/jpeg".to_string());
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&buffer);
+    Some(format!("data:{content_type};base64,{encoded}"))
 }
 
 fn read_system_audio_peak() -> Result<f32, String> {

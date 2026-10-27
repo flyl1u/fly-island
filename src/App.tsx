@@ -110,6 +110,10 @@ type MediaState = {
   audioPeak: number;
   playbackStatus: MediaPlaybackStatus;
   updatedAt: number;
+  title: string | null;
+  artist: string | null;
+  albumTitle: string | null;
+  thumbnailDataUrl: string | null;
 };
 
 type ClipboardHistorySettings = {
@@ -259,7 +263,7 @@ const MIN_COLLAPSED_TEXT_UNITS = 2;
 const MAX_COLLAPSED_TEXT_UNITS = 12;
 const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
-const MUSIC_EXPANDED_ISLAND_HEIGHT = 286;
+const MUSIC_EXPANDED_ISLAND_HEIGHT = 340;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const EDITOR_EXPANDED_ISLAND_HEIGHT = 430;
 const TODO_ROW_HEIGHT = 46;
@@ -275,6 +279,10 @@ const DEFAULT_MEDIA_STATE: MediaState = {
   audioPeak: 0,
   playbackStatus: "unavailable",
   updatedAt: 0,
+  title: null,
+  artist: null,
+  albumTitle: null,
+  thumbnailDataUrl: null,
 };
 const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
   phase: "idle",
@@ -1250,6 +1258,14 @@ export function IslandShell({
             isPlaying={isMusicPlaying}
             audioPeak={mediaState.audioPeak}
             label={t.island.openMusic}
+            trackLabel={
+              mediaState.title
+                ? mediaState.artist
+                  ? `${mediaState.title} - ${mediaState.artist}`
+                  : mediaState.title
+                : null
+            }
+            thumbnailDataUrl={mediaState.thumbnailDataUrl}
             onClick={() => onOpenPage("music")}
           />
           <button
@@ -1400,19 +1416,25 @@ function MusicWaveButton({
   isPlaying,
   audioPeak,
   label,
+  trackLabel,
+  thumbnailDataUrl,
   onClick,
 }: {
   isAvailable: boolean;
   isPlaying: boolean;
   audioPeak: number;
   label: string;
+  trackLabel: string | null;
+  thumbnailDataUrl: string | null;
   onClick: () => void;
 }) {
   const [phase, setPhase] = useState(0);
+  const hasCover = isAvailable && Boolean(thumbnailDataUrl);
   const className = [
     "music-wave-button",
     isAvailable ? "music-wave-button--available" : "music-wave-button--idle",
     isPlaying ? "music-wave-button--playing" : "music-wave-button--paused",
+    hasCover ? "music-wave-button--with-cover" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1458,13 +1480,20 @@ function MusicWaveButton({
     <button
       className={className}
       type="button"
-      title={label}
-      aria-label={label}
+      title={trackLabel ?? label}
+      aria-label={trackLabel ?? label}
       onClick={(event) => {
         event.stopPropagation();
         onClick();
       }}
     >
+      {hasCover && (
+        <img
+          className="music-wave-button__cover"
+          src={thumbnailDataUrl as string}
+          alt={trackLabel ?? "album cover"}
+        />
+      )}
       {barScales.map((scale, index) => (
         <span
           key={index}
@@ -3007,6 +3036,27 @@ function MusicPlayerPanel({
         />
       </div>
 
+      <div className="music-player__track">
+        <div className="music-player__cover">
+          {mediaState.thumbnailDataUrl ? (
+            <img
+              src={mediaState.thumbnailDataUrl}
+              alt={mediaState.albumTitle ?? mediaState.title ?? "album cover"}
+            />
+          ) : (
+            <ImageIcon size={22} strokeWidth={1.8} />
+          )}
+        </div>
+        <div className="music-player__meta">
+          <div className="music-player__title" title={mediaState.title ?? undefined}>
+            {mediaState.title ?? t.music.noMedia}
+          </div>
+          <div className="music-player__artist" title={mediaState.artist ?? undefined}>
+            {mediaState.artist ?? (mediaState.albumTitle ?? "")}
+          </div>
+        </div>
+      </div>
+
       <div className="music-player__controls">
         <button
           className="music-control-button"
@@ -4250,7 +4300,11 @@ function IslandApp({
           currentState.available === nextMediaState.available &&
           currentState.playbackStatus === playbackStatus &&
           currentState.audioActive === audioActive &&
-          currentState.audioPeak === audioPeak
+          currentState.audioPeak === audioPeak &&
+          currentState.title === nextMediaState.title &&
+          currentState.artist === nextMediaState.artist &&
+          currentState.albumTitle === nextMediaState.albumTitle &&
+          currentState.thumbnailDataUrl === nextMediaState.thumbnailDataUrl
         ) {
           return currentState;
         }
