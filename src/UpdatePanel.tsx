@@ -1,140 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getVersion } from "@tauri-apps/api/app";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import { useSyncExternalStore } from "react";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { useTranslation } from "./i18n";
+import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
 import "./UpdatePanel.css";
-
-type UpdateStage = "idle" | "checking" | "latest" | "available" | "downloading" | "installing" | "done" | "error";
-
-function errorReason(error: unknown) {
-  const reason = error instanceof Error ? error.message : String(error);
-  return reason.length > 240 ? `${reason.slice(0, 240)}…` : reason;
-}
 
 export function UpdatePanel() {
   const t = useTranslation();
-  const [version, setVersion] = useState("");
-  const [stage, setStage] = useState<UpdateStage>("idle");
-  const [nextVersion, setNextVersion] = useState("");
-  const [downloaded, setDownloaded] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [detail, setDetail] = useState("");
-  const [proxy, setProxy] = useState<string | null>(null);
-  const pending = useRef<Update | null>(null);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    getVersion().then(setVersion).catch(() => {});
-    invoke<string | null>("get_updater_proxy").then(setProxy).catch(() => {});
-  }, []);
-
-  const releasePending = useCallback(async () => {
-    const update = pending.current;
-    pending.current = null;
-    if (!update) return;
-    try {
-      await update.close();
-    } catch {
-      // The installer takes over the update resource, so closing it can fail.
-    }
-  }, []);
-
-  useEffect(() => () => {
-    void releasePending();
-  }, [releasePending]);
-
-  const runCheck = useCallback(async () => {
-    if (!isTauri()) {
-      setDetail("");
-      setStage("error");
-      return;
-    }
-
-    await releasePending();
-    setNextVersion("");
-    setDownloaded(0);
-    setTotal(0);
-    setDetail("");
-    setStage("checking");
-
-    const proxyOption = proxy ? { proxy } : {};
-
-    try {
-      const found = await check({ timeout: 20000, ...proxyOption });
-      pending.current = found;
-
-      if (!found) {
-        setStage("latest");
-        return;
-      }
-
-      setNextVersion(found.version);
-      setStage("available");
-    } catch (error) {
-      console.error("Failed to check for updates", error);
-      setDetail(errorReason(error));
-      setStage("error");
-    }
-  }, [proxy, releasePending]);
-
-  const install = useCallback(async () => {
-    const update = pending.current;
-    if (!update) return;
-
-    setDownloaded(0);
-    setTotal(0);
-    setDetail("");
-    setStage("downloading");
-
-    const proxyOption = proxy ? { proxy } : {};
-
-    try {
-      await update.downloadAndInstall((event) => {
-        if (event.event === "Started") {
-          setTotal(event.data.contentLength ?? 0);
-          return;
-        }
-
-        if (event.event === "Progress") {
-          setDownloaded((value) => value + event.data.chunkLength);
-          return;
-        }
-
-        setStage("installing");
-      }, { timeout: 600000, ...proxyOption });
-      setStage("done");
-    } catch (error) {
-      console.error("Failed to install the update", error);
-      setDetail(errorReason(error));
-      setStage("error");
-    } finally {
-      await releasePending();
-    }
-  }, [proxy, releasePending]);
+  const { stage, version, nextVersion, downloaded, total, detail } = useSyncExternalStore(
+    subscribeToUpdate,
+    getUpdateState,
+  );
 
   const percent = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : null;
   const busy = stage === "checking" || stage === "downloading" || stage === "installing";
 
   let status = version ? t.settings.project.update.versionLabel(version) : t.settings.project.update.hint;
   let action = t.settings.project.update.check;
-  let onAction = runCheck;
+  let onAction = checkForUpdate;
 
-  if (stage === "checking") {
+  if (stage === "disabled") {
+    status = t.settings.project.update.unavailable;
+  } else if (stage === "checking") {
     status = t.settings.project.update.checking;
   } else if (stage === "latest") {
     status = t.settings.project.update.upToDate(version);
   } else if (stage === "available") {
     status = t.settings.project.update.available(nextVersion);
     action = t.settings.project.update.download;
-    onAction = install;
+    onAction = installUpdate;
   } else if (stage === "downloading") {
     status = percent === null
       ? t.settings.project.update.downloadingUnknown
       : t.settings.project.update.downloading(percent);
     action = t.settings.project.update.download;
-    onAction = install;
+    onAction = installUpdate;
   } else if (stage === "installing") {
     status = t.settings.project.update.installing;
   } else if (stage === "done") {
@@ -142,6 +41,8 @@ export function UpdatePanel() {
   } else if (stage === "error") {
     status = t.settings.project.update.error;
   }
+
+  const showAction = stage !== "done" && stage !== "disabled";
 
   return (
     <div className={`update-panel update-panel--${stage}`}>
@@ -160,7 +61,7 @@ export function UpdatePanel() {
             <span className="update-panel__detail">{t.settings.project.update.errorDetail(detail)}</span>
           )}
         </span>
-        {stage !== "done" && (
+        {showAction && (
           <button
             className="update-panel__action"
             type="button"

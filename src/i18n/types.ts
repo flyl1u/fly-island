@@ -322,6 +322,7 @@ export type Translations = {
         done: string;
         error: string;
         errorDetail: (reason: string) => string;
+        unavailable: string;
       };
     };
 

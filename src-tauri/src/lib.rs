@@ -518,6 +518,20 @@ fn get_updater_proxy() -> Option<String> {
     Some(normalize_proxy(&server))
 }
 
+/// Whether this build carries an updater public key. Only release builds do:
+/// the key is injected at build time, so a plain `tauri build` (and dev runs)
+/// cannot check for updates and the settings panel hides the action.
+#[tauri::command]
+fn updater_configured(app: AppHandle) -> bool {
+    app.config()
+        .plugins
+        .0
+        .get("updater")
+        .and_then(|config| config.get("pubkey"))
+        .and_then(|value| value.as_str())
+        .is_some_and(|key| !key.trim().is_empty())
+}
+
 #[tauri::command]
 fn save_todo_markdown(
     directory: String,
@@ -1840,6 +1854,7 @@ pub fn run() {
             get_launch_at_startup,
             set_launch_at_startup,
             get_updater_proxy,
+            updater_configured,
             get_agent_status,
             clear_agent_status,
             install_agent_status_hooks,

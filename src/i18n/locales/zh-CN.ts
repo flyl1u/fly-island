@@ -322,6 +322,7 @@ const zhCN: Translations = {
         done: "更新完成，小岛正在重启…",
         error: "检查更新失败，请稍后再试。",
         errorDetail: (reason) => `原因：${reason}`,
+        unavailable: "这个构建没带更新公钥，应用内更新不可用，请到 Release 页手动下载。",
       },
     },
 

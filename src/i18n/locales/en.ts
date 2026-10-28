@@ -319,6 +319,7 @@ const en: Translations = {
         done: "Update installed, restarting…",
         error: "Couldn't check for updates. Please try again later.",
         errorDetail: (reason) => `Reason: ${reason}`,
+        unavailable: "This build ships without an updater key, so in-app updates are off. Grab new versions from the release page.",
       },
     },
 
