@@ -791,7 +791,8 @@ fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
                 let mut nested = path.clone();
                 nested.push(index as u32 + 1);
                 if let Some(part) = text_part(body, nested) {
-                    if part.mime == "text/plain" {
+                    // 优先渲染 HTML 版本：纯文本副本里没有排版和图片，图片只有在 HTML 里才存在。
+                    if part.mime == "text/html" {
                         return Some(part);
                     }
                     if fallback.is_none() {
