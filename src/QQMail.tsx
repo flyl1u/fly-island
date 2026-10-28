@@ -26,6 +26,8 @@ export type MailContent = { id: string; content: string; contentType: "text/plai
 // 统一关闭 referrer 并延迟加载，避免把当前页地址带给发件人。
 DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   if (node.nodeName !== "IMG") return;
+  // 没有可用地址的图片（cid 未内联、http 混合内容）直接去掉，避免留下裂图占位
+  if (!node.getAttribute("src")) { node.remove(); return; }
   node.setAttribute("loading", "lazy");
   node.setAttribute("decoding", "async");
   node.setAttribute("referrerpolicy", "no-referrer");
@@ -262,8 +264,19 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
   const { selectedMail, content, reading, readError, readMail, closeReader, openLink } = controller;
   const html = useMemo(() => content?.contentType === "text/html" ? sanitizeMailHtml(content.content) : "", [content]);
   const readerRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (snapshot.email) setEmail(snapshot.email); }, [snapshot.email]);
+  // 远程图可能失效或被 CDN 拒绝，出错时就地隐藏，避免正文里出现裂图占位
+  useEffect(() => {
+    const node = bodyRef.current;
+    if (!node) return;
+    const hideBrokenImage = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) event.target.style.display = "none";
+    };
+    node.addEventListener("error", hideBrokenImage, true);
+    return () => node.removeEventListener("error", hideBrokenImage, true);
+  }, [html]);
   useLayoutEffect(() => {
     if (!selectedMail && listRef.current) {
       listRef.current.scrollTop = listScroll.current;
@@ -287,7 +300,7 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
         <div className="qq-mail-reader__meta"><span>{selectedMail.sender}</span>{selectedMail.receivedAt !== null && <time dateTime={new Date(selectedMail.receivedAt).toISOString()}>{formatMailTime(selectedMail.receivedAt, t.localeTag)}</time>}</div>
         {reading ? <div className="qq-mail-reader__state" role="status"><LoaderCircle size={19} className="qq-mail-spinning" />{t.mail.loading}</div>
           : readError ? <div className="qq-mail-reader__state"><p className="qq-panel__error" role="alert">{readError}</p><button className="message-action" type="button" onClick={() => void readMail(selectedMail)}><RefreshCw size={14} />{t.common.retry}</button></div>
-          : content?.contentType === "text/html" ? <div className="qq-mail-body" onClick={(event) => {
+          : content?.contentType === "text/html" ? <div className="qq-mail-body" ref={bodyRef} onClick={(event) => {
               const link = event.target instanceof Element ? event.target.closest("a") : null;
               if (!link) return;
               event.preventDefault();
