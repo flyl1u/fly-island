@@ -98,6 +98,11 @@ export type Translations = {
     emptyHtml: string;
     emptyText: string;
     notice: string;
+    remoteImages: string;
+    remoteImagesOn: string;
+    remoteImagesOff: string;
+    loadRemoteImages: string;
+    remoteImagesBlocked: (count: number) => string;
     receive: string;
     pause: string;
     resume: string;

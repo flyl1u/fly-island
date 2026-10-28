@@ -816,6 +816,16 @@ struct InlineImage {
     quoted_printable: bool,
 }
 
+// cid 引用的结束位置：遇到分隔符才算 token 结束，否则 cid:image1 会把 cid:image10 一起吞掉。
+fn cid_token_end(html: &str, start: usize) -> usize {
+    html[start..]
+        .find(|character: char| {
+            character.is_whitespace()
+                || matches!(character, '"' | '\'' | ')' | '(' | '<' | '>' | '?')
+        })
+        .map_or(html.len(), |offset| start + offset)
+}
+
 // 只内联正文里真正用 cid: 引用的图片，避免为未被引用的附件白拉数据。
 fn cid_references(html: &str) -> Vec<String> {
     let lower = html.to_ascii_lowercase();
@@ -823,12 +833,7 @@ fn cid_references(html: &str) -> Vec<String> {
     let mut cursor = 0;
     while let Some(found) = lower[cursor..].find("cid:") {
         let start = cursor + found + 4;
-        let end = lower[start..]
-            .find(|character: char| {
-                character.is_whitespace()
-                    || matches!(character, '"' | '\'' | ')' | '(' | '<' | '>' | '?')
-            })
-            .map_or(lower.len(), |offset| start + offset);
+        let end = cid_token_end(&lower, start);
         let id = html[start..end].trim().trim_matches(|character| character == '<' || character == '>');
         if !id.is_empty() && !ids.iter().any(|known| known.eq_ignore_ascii_case(id)) {
             ids.push(id.to_string());
@@ -878,35 +883,43 @@ fn collect_inline_images(
     }
 }
 
-fn replace_ascii_ignore_case(haystack: &str, needle: &str, replacement: &str) -> String {
-    let lower_haystack = haystack.to_ascii_lowercase();
-    let lower_needle = needle.to_ascii_lowercase();
-    let mut out = String::with_capacity(haystack.len());
+// 按完整 cid token 替换，避免 cid:image1 命中 cid:image10 的前缀。
+fn replace_cid_references(html: &str, replacements: &[(String, String)]) -> String {
+    let lower = html.to_ascii_lowercase();
+    let mut out = String::with_capacity(html.len());
     let mut cursor = 0;
-    while let Some(found) = lower_haystack[cursor..].find(&lower_needle) {
-        let start = cursor + found;
-        out.push_str(&haystack[cursor..start]);
-        out.push_str(replacement);
-        cursor = start + needle.len();
+    while let Some(found) = lower[cursor..].find("cid:") {
+        let start = cursor + found + 4;
+        let end = cid_token_end(&lower, start);
+        out.push_str(&html[cursor..start]);
+        match replacements
+            .iter()
+            .find(|(content_id, _)| content_id.eq_ignore_ascii_case(&html[start..end]))
+        {
+            Some((_, data_uri)) => out.push_str(data_uri),
+            None => out.push_str(&html[start..end]),
+        }
+        cursor = end;
     }
-    out.push_str(&haystack[cursor..]);
+    out.push_str(&html[cursor..]);
     out
 }
 
+// 内嵌图只是锦上添花：任何一步失败都退回原正文，不能把已经拿到的文字一起弄丢。
 fn inline_cid_images<T: Read + Write>(
     session: &mut Session<T>,
     uid: u32,
     structure: &BodyStructure<'_>,
     html: String,
-) -> Result<String, String> {
+) -> String {
     let ids = cid_references(&html);
     if ids.is_empty() {
-        return Ok(html);
+        return html;
     }
     let mut images = Vec::new();
     collect_inline_images(structure, Vec::new(), &ids, &mut images);
     if images.is_empty() {
-        return Ok(html);
+        return html;
     }
     let query = format!(
         "(UID {})",
@@ -919,11 +932,11 @@ fn inline_cid_images<T: Read + Write>(
             .collect::<Vec<_>>()
             .join(" ")
     );
-    let messages = session
-        .uid_fetch(uid.to_string(), &query)
-        .map_err(|_| "无法加载邮件图片，请检查网络并重试。")?;
+    let Ok(messages) = session.uid_fetch(uid.to_string(), &query) else {
+        return html;
+    };
     let Some(message) = messages.iter().find(|item| item.uid == Some(uid)) else {
-        return Ok(html);
+        return html;
     };
     let mut replacements: Vec<(String, String)> = Vec::new();
     let mut budget = MAX_INLINE_TOTAL_BYTES;
@@ -959,11 +972,7 @@ fn inline_cid_images<T: Read + Write>(
             format!("data:{};base64,{payload}", image.mime),
         ));
     }
-    let mut html = html;
-    for (content_id, data_uri) in replacements {
-        html = replace_ascii_ignore_case(&html, &format!("cid:{content_id}"), &data_uri);
-    }
-    Ok(html)
+    replace_cid_references(&html, &replacements)
 }
 
 fn fetch_content<T: Read + Write>(
@@ -1041,7 +1050,7 @@ fn fetch_content<T: Read + Write>(
         .get_body()
         .map_err(|_| "无法解码邮件正文，请在网页中查看。")?;
     let content = if part.mime == "text/html" {
-        inline_cid_images(session, uid, structure, content)?
+        inline_cid_images(session, uid, structure, content)
     } else {
         content
     };
@@ -1199,11 +1208,23 @@ mod tests {
         let html = r#"<img src="cid:img001@qq"><img src='cid:IMG002@QQ'>正文提到 cid: 但没有编号。"#;
         assert_eq!(cid_references(html), vec!["img001@qq", "IMG002@QQ"]);
         assert!(cid_references("<p>no images here</p>").is_empty());
+        let png = "data:image/png;base64,AA".to_string();
         assert_eq!(
-            replace_ascii_ignore_case("a CID:x b cid:X c", "cid:x", "data:image/png;base64,AA"),
-            "a data:image/png;base64,AA b data:image/png;base64,AA c"
+            replace_cid_references("a CID:x b cid:X c", &[("x".into(), png.clone())]),
+            format!("a {png} b {png} c")
         );
-        assert_eq!(replace_ascii_ignore_case("中文 cid:x", "cid:x", "图"), "中文 图");
+        assert_eq!(
+            replace_cid_references("中文 cid:x", &[("x".into(), "图".into())]),
+            "中文 图"
+        );
+        // cid:image1 不能吃掉 cid:image10 的前缀
+        assert_eq!(
+            replace_cid_references(
+                r#"<img src="cid:image10"><img src="cid:image1">"#,
+                &[("image1".into(), png.clone())]
+            ),
+            format!(r#"<img src="cid:image10"><img src="{png}">"#)
+        );
     }
 
     #[test]
@@ -1392,20 +1413,38 @@ mod tests {
     }
 
     #[test]
-    fn multipart_prefers_plain_text_and_skips_attachments_and_html_alternative() {
-        let body = "meeting at 3";
-        let structure = format!("(((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" 20 1)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1) \"ALTERNATIVE\")(\"APPLICATION\" \"PDF\" (\"NAME\" \"large.pdf\") NIL NIL \"BASE64\" 9999999) \"MIXED\")", body.len());
+    fn multipart_prefers_html_and_skips_attachments_and_plain_alternative() {
+        let body = "<p>meeting at 3</p>";
+        let structure = format!("(((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" 12 1) \"ALTERNATIVE\")(\"APPLICATION\" \"PDF\" (\"NAME\" \"large.pdf\") NIL NIL \"BASE64\" 9999999) \"MIXED\")", body.len());
         let (mut session, output) = body_client(
             &structure,
-            "1.2",
-            "Content-Type: text/plain; charset=utf-8\r\n\r\n",
+            "1.1",
+            "Content-Type: text/html; charset=utf-8\r\n\r\n",
             body,
         );
         assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, body);
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
-        assert!(commands.contains("BODY.PEEK[1.2]"));
+        assert!(commands.contains("BODY.PEEK[1.1]"));
+        assert!(!commands.contains("BODY.PEEK[1.2]"));
         assert!(!commands.contains("BODY.PEEK[2]"));
-        assert!(!commands.contains("BODY.PEEK[1.1]"));
+    }
+
+    #[test]
+    fn inline_image_failures_keep_the_text_body() {
+        let body = r#"<p>保留正文</p><img src="cid:image1@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"image1.png\") NIL \"<image1@qq>\" \"BASE64\" 40) \"RELATED\")",
+            body.len()
+        );
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME]<0> {{{}}}\r\n{mime} BODY[1]<0> {{{}}}\r\n{body})\r\na4 OK body\r\na5 NO image fetch failed\r\n", mime.len(), body.len());
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").expect("图片失败不应该连正文一起失败");
+        assert_eq!(content.content, body);
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert!(commands.contains("BODY.PEEK[1]"));
+        assert!(commands.contains("BODY.PEEK[2]"));
     }
 
     #[test]
