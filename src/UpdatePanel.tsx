@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { useTranslation } from "./i18n";
 import "./UpdatePanel.css";
 
 type UpdateStage = "idle" | "checking" | "latest" | "available" | "downloading" | "installing" | "done" | "error";
+
+function errorReason(error: unknown) {
+  const reason = error instanceof Error ? error.message : String(error);
+  return reason.length > 240 ? `${reason.slice(0, 240)}…` : reason;
+}
 
 export function UpdatePanel() {
   const t = useTranslation();
@@ -15,11 +20,14 @@ export function UpdatePanel() {
   const [nextVersion, setNextVersion] = useState("");
   const [downloaded, setDownloaded] = useState(0);
   const [total, setTotal] = useState(0);
+  const [detail, setDetail] = useState("");
+  const [proxy, setProxy] = useState<string | null>(null);
   const pending = useRef<Update | null>(null);
 
   useEffect(() => {
     if (!isTauri()) return;
     getVersion().then(setVersion).catch(() => {});
+    invoke<string | null>("get_updater_proxy").then(setProxy).catch(() => {});
   }, []);
 
   const releasePending = useCallback(async () => {
@@ -39,6 +47,7 @@ export function UpdatePanel() {
 
   const runCheck = useCallback(async () => {
     if (!isTauri()) {
+      setDetail("");
       setStage("error");
       return;
     }
@@ -47,10 +56,13 @@ export function UpdatePanel() {
     setNextVersion("");
     setDownloaded(0);
     setTotal(0);
+    setDetail("");
     setStage("checking");
 
+    const proxyOption = proxy ? { proxy } : {};
+
     try {
-      const found = await check({ timeout: 20000 });
+      const found = await check({ timeout: 20000, ...proxyOption });
       pending.current = found;
 
       if (!found) {
@@ -62,9 +74,10 @@ export function UpdatePanel() {
       setStage("available");
     } catch (error) {
       console.error("Failed to check for updates", error);
+      setDetail(errorReason(error));
       setStage("error");
     }
-  }, [releasePending]);
+  }, [proxy, releasePending]);
 
   const install = useCallback(async () => {
     const update = pending.current;
@@ -72,7 +85,10 @@ export function UpdatePanel() {
 
     setDownloaded(0);
     setTotal(0);
+    setDetail("");
     setStage("downloading");
+
+    const proxyOption = proxy ? { proxy } : {};
 
     try {
       await update.downloadAndInstall((event) => {
@@ -87,15 +103,16 @@ export function UpdatePanel() {
         }
 
         setStage("installing");
-      }, { timeout: 600000 });
+      }, { timeout: 600000, ...proxyOption });
       setStage("done");
     } catch (error) {
       console.error("Failed to install the update", error);
+      setDetail(errorReason(error));
       setStage("error");
     } finally {
       await releasePending();
     }
-  }, [releasePending]);
+  }, [proxy, releasePending]);
 
   const percent = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : null;
   const busy = stage === "checking" || stage === "downloading" || stage === "installing";
@@ -139,6 +156,9 @@ export function UpdatePanel() {
         <span className="update-panel__copy">
           <strong>{t.settings.project.update.title}</strong>
           <span role={stage === "error" ? "alert" : undefined}>{status}</span>
+          {stage === "error" && detail && (
+            <span className="update-panel__detail">{t.settings.project.update.errorDetail(detail)}</span>
+          )}
         </span>
         {stage !== "done" && (
           <button

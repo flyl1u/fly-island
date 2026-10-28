@@ -458,6 +458,66 @@ fn set_launch_at_startup(enabled: bool) -> Result<(), String> {
     }
 }
 
+
+const INTERNET_SETTINGS_KEY: &str =
+    r"HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings";
+
+fn registry_value(key: &str, value: &str) -> Option<String> {
+    let output = Command::new("reg")
+        .creation_flags(CREATE_NO_WINDOW)
+        .args(["query", key, "/v", value])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find(|line| line.contains(value))
+        .and_then(|line| line.split_whitespace().last())
+        .map(str::to_string)
+}
+
+fn normalize_proxy(raw: &str) -> String {
+    let entries: Vec<&str> = raw.split(';').map(str::trim).filter(|entry| !entry.is_empty()).collect();
+    let server = ["https=", "http="]
+        .iter()
+        .find_map(|prefix| entries.iter().find_map(|entry| entry.strip_prefix(prefix)))
+        .unwrap_or_else(|| entries.first().copied().unwrap_or(""));
+
+    if server.contains("://") {
+        server.to_string()
+    } else {
+        format!("http://{server}")
+    }
+}
+
+/// Proxy for the updater: explicit env vars win, else the Windows system proxy.
+#[tauri::command]
+fn get_updater_proxy() -> Option<String> {
+    for key in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"] {
+        if let Ok(value) = std::env::var(key) {
+            let value = value.trim();
+            if !value.is_empty() {
+                return Some(normalize_proxy(value));
+            }
+        }
+    }
+
+    if registry_value(INTERNET_SETTINGS_KEY, "ProxyEnable")?.trim() != "0x1" {
+        return None;
+    }
+
+    let server = registry_value(INTERNET_SETTINGS_KEY, "ProxyServer")?;
+    if server.trim().is_empty() {
+        return None;
+    }
+
+    Some(normalize_proxy(&server))
+}
+
 #[tauri::command]
 fn save_todo_markdown(
     directory: String,
@@ -1779,6 +1839,7 @@ pub fn run() {
             minimize_island,
             get_launch_at_startup,
             set_launch_at_startup,
+            get_updater_proxy,
             get_agent_status,
             clear_agent_status,
             install_agent_status_hooks,

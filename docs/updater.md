@@ -5,7 +5,7 @@
 
 ## 检查与安装流程
 
-1. 前端调用 `check()`，读取 `https://github.com/flyl1u/fly-island/releases/latest/download/latest.json`。
+1. 前端调用 `check()`，依次尝试 `plugins.updater.endpoints` 里的地址：GitHub 直连、`ghfast.top`、`gh-proxy.com`，第一个能取到清单的胜出。
 2. 清单里的 `version` 高于当前版本时，界面显示「发现新版本 vX.Y.Z」。
 3. 点「下载并安装」后，安装包下载到本地临时目录，边下边用清单里的 `signature` 校验。
 4. Windows 走 NSIS 安装模式 `passive`：显示安装进度条，装完由安装器拉起新版本，旧进程自动退出。
@@ -16,6 +16,25 @@
 - `src-tauri/capabilities/default.json`：`updater:default` 权限
 - `src/UpdatePanel.tsx`：设置页里的检查更新面板
 - `scripts/make-latest-json.mjs`：发布时生成 `latest.json`
+
+## 网络、代理与镜像
+
+GitHub 的 `github.com` 在国内经常连不上（`api.github.com` 往往还能通），所以检查更新做了两层兜底：
+
+- **多端点**：`tauri.conf.json` 里配了 GitHub 直连和两个公共加速前缀，插件会按顺序尝试，任一成功即返回。面板失败时会显示「原因：…」方便判断是网络问题还是清单缺失。
+- **系统代理**：前端启动时调用 `get_updater_proxy`（`src-tauri/src/lib.rs`），依次读 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量和 Windows 系统代理（`Internet Settings\ProxyServer`），把结果传给 `check()` / `downloadAndInstall()`。开了 Clash 之类的系统代理时，更新自动走代理。
+
+清单里的下载地址由 `scripts/make-latest-json.mjs --base-url` 决定：
+
+```powershell
+# 默认：直连 GitHub，海外用户最稳
+node scripts/make-latest-json.mjs
+
+# 国内分发：安装包也走加速前缀（清单里额外的那两个端点会返回同一份清单）
+node scripts/make-latest-json.mjs --base-url "https://ghfast.top/https://github.com/flyl1u/fly-island/releases/download/v0.2.12"
+```
+
+公共加速前缀是第三方服务，可用性不由本项目保证；有条件时换成自己的对象存储或 CDN，把地址填进 `--base-url` 即可，代码无需改动。
 
 ## 签名密钥
 
@@ -73,6 +92,7 @@ pnpm tauri signer generate -w C:\Users\<user>\.tauri\fly-island.key
 
 ## 常见问题
 
+- **点了检查提示失败**：面板会显示「原因：…」。`Could not fetch a valid release JSON from the remote` 表示三个端点都没拿到清单——最常见是这次 Release 没上传 `latest.json`，其次是本机到 GitHub 和镜像都不通；带 `error sending request` 字样的是网络或代理问题。
 - **一直显示已是最新版本**：确认 release 里的 `latest.json` 的 `version` 高于客户端版本；同一版本号重发不会触发更新。
 - **提示签名校验失败**：`latest.json` 里的 `signature` 必须来自本次安装包的 `.sig` 文件，且签名私钥与 `tauri.conf.json` 里的公钥配对。
 - **发布后短时间内检查不到**：`releases/latest/download/` 走 CDN，通常几分钟内生效。

@@ -321,6 +321,7 @@ const zhCN: Translations = {
         installing: "正在安装，小岛会自动重启",
         done: "更新完成，小岛正在重启…",
         error: "检查更新失败，请稍后再试。",
+        errorDetail: (reason) => `原因：${reason}`,
       },
     },
 

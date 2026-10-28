@@ -318,6 +318,7 @@ const en: Translations = {
         installing: "Installing — the island will restart itself",
         done: "Update installed, restarting…",
         error: "Couldn't check for updates. Please try again later.",
+        errorDetail: (reason) => `Reason: ${reason}`,
       },
     },
 

@@ -321,6 +321,7 @@ export type Translations = {
         installing: string;
         done: string;
         error: string;
+        errorDetail: (reason: string) => string;
       };
     };
 

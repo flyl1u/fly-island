@@ -49,7 +49,9 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4NEVGMTBDQTA2MDlCNDcKUldSSG0yQ2dEUEZPcUh5T2ozcG5XOStrTzd2NTRvUmlBcU9kL2plKzN5QS9hQnlXaHEvMzdBakIK",
       "endpoints": [
-        "https://github.com/flyl1u/fly-island/releases/latest/download/latest.json"
+        "https://github.com/flyl1u/fly-island/releases/latest/download/latest.json",
+        "https://ghfast.top/https://github.com/flyl1u/fly-island/releases/latest/download/latest.json",
+        "https://gh-proxy.com/https://github.com/flyl1u/fly-island/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

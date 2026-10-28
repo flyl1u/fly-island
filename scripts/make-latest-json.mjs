@@ -11,6 +11,8 @@ const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 
 const args = process.argv.slice(2);
 const notesFlag = args.indexOf("--notes-file");
+const baseFlag = args.indexOf("--base-url");
+const baseUrl = baseFlag >= 0 ? args[baseFlag + 1].replace(/\/$/, "") : `https://github.com/${REPO}/releases/download/v${readVersion()}`;
 const notesFile = notesFlag >= 0 ? args[notesFlag + 1] : `docs/releases/v${readVersion()}.md`;
 
 function readVersion() {
@@ -47,7 +49,7 @@ const manifest = {
   platforms: {
     "windows-x86_64": {
       signature: readFileSync(signaturePath, "utf8").trim(),
-      url: `https://github.com/${REPO}/releases/download/v${version}/${installer}`,
+      url: `${baseUrl}/${installer}`,
     },
   },
 };
