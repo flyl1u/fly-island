@@ -1576,6 +1576,15 @@ fn point_in_notch(
 mod tests {
     use super::*;
 
+    #[test]
+    fn preview_updater_config_is_valid_without_a_release_key() {
+        let config: serde_json::Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let updater: tauri_plugin_updater::Config =
+            serde_json::from_value(config["plugins"]["updater"].clone()).unwrap();
+        assert!(updater.pubkey.is_empty());
+    }
+
     fn state(mode: IslandMode, scale: f64, expanded_height: f64) -> IslandWindowState {
         IslandWindowState {
             mode,

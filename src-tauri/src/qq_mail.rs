@@ -1499,7 +1499,7 @@ mod tests {
         let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
         let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
         let structure = format!(
-            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") NIL \"<img1@qq>\" \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") NIL \"<img2@qq>\" \"BASE64\" {}) \"RELATED\")",
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") \"<img1@qq>\" NIL \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") \"<img2@qq>\" NIL \"BASE64\" {}) \"RELATED\")",
             body.len(),
             first.len(),
             second.len()
@@ -1532,7 +1532,7 @@ mod tests {
         let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
         let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
         let structure = format!(
-            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") NIL \"<img1@qq>\" \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") NIL \"<img2@qq>\" \"BASE64\" {}) \"RELATED\")",
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") \"<img1@qq>\" NIL \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") \"<img2@qq>\" NIL \"BASE64\" {}) \"RELATED\")",
             body.len(),
             first.len(),
             second.len()
@@ -1564,7 +1564,7 @@ mod tests {
         let body = r#"<p>保留正文</p><img src="cid:image1@qq">"#;
         let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
         let structure = format!(
-            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"image1.png\") NIL \"<image1@qq>\" \"BASE64\" 40) \"RELATED\")",
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"image1.png\") \"<image1@qq>\" NIL \"BASE64\" 40) \"RELATED\")",
             body.len()
         );
         let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME]<0> {{{}}}\r\n{mime} BODY[1]<0> {{{}}}\r\n{body})\r\na4 OK body\r\na5 NO image fetch failed\r\n", mime.len(), body.len());
