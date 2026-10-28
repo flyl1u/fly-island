@@ -361,6 +361,7 @@ const zhCN: Translations = {
       captureImages: "记录图片",
       maxItems: "最大历史条数",
       shortcut: "展开快捷键",
+      shortcutEnabled: "启用展开快捷键",
       pressKeys: "按下组合键",
     },
 

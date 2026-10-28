@@ -77,6 +77,8 @@ pub struct ClipboardHistorySettings {
     max_items: usize,
     #[serde(default = "default_clipboard_shortcut")]
     shortcut: String,
+    #[serde(default = "default_true")]
+    shortcut_enabled: bool,
 }
 
 impl Default for ClipboardHistorySettings {
@@ -86,6 +88,7 @@ impl Default for ClipboardHistorySettings {
             capture_images: true,
             max_items: DEFAULT_MAX_ITEMS,
             shortcut: default_clipboard_shortcut(),
+            shortcut_enabled: true,
         }
     }
 }
@@ -105,6 +108,10 @@ pub(crate) struct ShortcutBinding {
     pub(crate) label: String,
     pub(crate) modifiers: u32,
     pub(crate) key_code: u32,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 fn default_clipboard_shortcut() -> String {
@@ -888,9 +895,16 @@ fn refresh_registered_hotkey(hwnd: HWND) {
     unsafe {
         unregister_current_hotkey(hwnd);
 
-        let binding = service()
-            .ok()
-            .and_then(|service| service.snapshot().ok())
+        let snapshot = service().ok().and_then(|service| service.snapshot().ok());
+
+        if snapshot
+            .as_ref()
+            .is_some_and(|snapshot| !snapshot.settings.shortcut_enabled)
+        {
+            return;
+        }
+
+        let binding = snapshot
             .and_then(|snapshot| parse_shortcut_binding(&snapshot.settings.shortcut))
             .unwrap_or_else(default_shortcut_binding);
 

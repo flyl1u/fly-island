@@ -117,6 +117,7 @@ type ClipboardHistorySettings = {
   captureImages: boolean;
   maxItems: number;
   shortcut: string;
+  shortcutEnabled: boolean;
 };
 
 type ClipboardHistoryImage = {
@@ -297,6 +298,7 @@ const DEFAULT_CLIPBOARD_HISTORY: ClipboardHistorySnapshot = {
     captureImages: true,
     maxItems: 30,
     shortcut: DEFAULT_CLIPBOARD_SHORTCUT,
+    shortcutEnabled: true,
   },
   items: [],
 };
@@ -535,6 +537,7 @@ function normalizeClipboardSettings(
     ...settings,
     maxItems: clamp(Math.round(settings.maxItems), 5, 200),
     shortcut: normalizeClipboardShortcut(settings.shortcut),
+    shortcutEnabled: settings.shortcutEnabled !== false,
   };
 }
 
@@ -2130,7 +2133,21 @@ function LayoutEditor({
             onClipboardSettingsChange({ ...clipboardSettings, maxItems })
           }
         />
-        <div className="shortcut-control">
+        <ToggleControl
+          label={t.settings.clipboard.shortcutEnabled}
+          checked={clipboardSettings.shortcutEnabled}
+          onChange={(shortcutEnabled) =>
+            onClipboardSettingsChange({ ...clipboardSettings, shortcutEnabled })
+          }
+        />
+        <div
+          className={[
+            "shortcut-control",
+            clipboardSettings.shortcutEnabled ? "" : "shortcut-control--disabled",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
           <div className="shortcut-control__meta">
             <span>{t.settings.clipboard.shortcut}</span>
             <strong>{normalizeClipboardShortcut(clipboardSettings.shortcut)}</strong>
@@ -2144,6 +2161,7 @@ function LayoutEditor({
               .filter(Boolean)
               .join(" ")}
             type="button"
+            disabled={!clipboardSettings.shortcutEnabled}
             onClick={() => setIsRecordingShortcut(true)}
             onKeyDown={handleShortcutKeyDown}
             onBlur={() => setIsRecordingShortcut(false)}
@@ -3438,13 +3456,15 @@ function ClipboardHistoryPanel({
           )}
         </div>
         <div className="clipboard-panel__tools">
-          <span
-            className="clipboard-shortcut-display"
-            aria-label={t.clipboard.expandShortcut}
-          >
-            <Keyboard size={14} strokeWidth={2.3} />
-            <span>{normalizeClipboardShortcut(snapshot.settings.shortcut)}</span>
-          </span>
+          {snapshot.settings.shortcutEnabled ? (
+            <span
+              className="clipboard-shortcut-display"
+              aria-label={t.clipboard.expandShortcut}
+            >
+              <Keyboard size={14} strokeWidth={2.3} />
+              <span>{normalizeClipboardShortcut(snapshot.settings.shortcut)}</span>
+            </span>
+          ) : null}
           <button
             className={[
               "clipboard-clear-button",
@@ -4825,7 +4845,9 @@ function IslandApp({
       });
 
     void listen("clipboard-history-shortcut", () => {
-      toggleClipboardHistory();
+      if (clipboardHistory.settings.shortcutEnabled) {
+        toggleClipboardHistory();
+      }
     })
       .then((nextUnlisten) => {
         if (didCancel) {
@@ -4843,7 +4865,11 @@ function IslandApp({
       unlistenChanges?.();
       unlistenShortcut?.();
     };
-  }, [refreshClipboardHistory, toggleClipboardHistory]);
+  }, [
+    clipboardHistory.settings.shortcutEnabled,
+    refreshClipboardHistory,
+    toggleClipboardHistory,
+  ]);
 
   useEffect(() => {
     void refreshMediaState();
@@ -5129,7 +5155,10 @@ function IslandApp({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (matchesClipboardShortcut(event, clipboardHistory.settings.shortcut)) {
+      if (
+        clipboardHistory.settings.shortcutEnabled &&
+        matchesClipboardShortcut(event, clipboardHistory.settings.shortcut)
+      ) {
         event.preventDefault();
         toggleClipboardHistory();
         return;
@@ -5142,7 +5171,12 @@ function IslandApp({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [clipboardHistory.settings.shortcut, collapseIsland, toggleClipboardHistory]);
+  }, [
+    clipboardHistory.settings.shortcut,
+    clipboardHistory.settings.shortcutEnabled,
+    collapseIsland,
+    toggleClipboardHistory,
+  ]);
 
   useEffect(() => {
     let didCancel = false;

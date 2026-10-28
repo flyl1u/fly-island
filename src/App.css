@@ -3186,6 +3186,10 @@ input,
   gap: 12px;
 }
 
+.shortcut-control--disabled {
+  opacity: 0.45;
+}
+
 .shortcut-control__meta {
   min-width: 0;
   display: grid;
@@ -3242,6 +3246,12 @@ input,
 .shortcut-record-button:focus-visible {
   outline: 2px solid rgba(143, 216, 255, 0.88);
   outline-offset: 2px;
+}
+
+.shortcut-record-button:disabled {
+  color: rgba(248, 246, 240, 0.42);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: default;
 }
 
 .shortcut-record-button--recording {

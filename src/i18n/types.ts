@@ -361,6 +361,7 @@ export type Translations = {
       captureImages: string;
       maxItems: string;
       shortcut: string;
+      shortcutEnabled: string;
       pressKeys: string;
     };
 

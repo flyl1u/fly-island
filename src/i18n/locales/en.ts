@@ -358,6 +358,7 @@ const en: Translations = {
       captureImages: "Record images",
       maxItems: "Max entries",
       shortcut: "Expand shortcut",
+      shortcutEnabled: "Enable expand shortcut",
       pressKeys: "Press keys",
     },
 
