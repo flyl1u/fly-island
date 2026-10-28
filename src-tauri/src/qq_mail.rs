@@ -1,5 +1,8 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use imap::{types::Flag, Session};
+use imap::{
+    types::{Fetch, Flag},
+    Session,
+};
 use imap_proto::types::{
     BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
 };
@@ -938,16 +941,25 @@ fn inline_cid_images<T: Read + Write>(
     let Ok(messages) = session.uid_fetch(uid.to_string(), &query) else {
         return html;
     };
-    let Some(message) = messages.iter().find(|item| item.uid == Some(uid)) else {
+    // 图片多时服务器会把分段拆成多条 FETCH 响应发回来，得按 UID 收齐全部响应再逐张取；
+    // 只认第一条响应会漏掉后面批次里的图片。
+    let responses: Vec<&Fetch> = messages
+        .iter()
+        .filter(|item| item.uid == Some(uid))
+        .collect();
+    if responses.is_empty() {
         return html;
-    };
+    }
     let mut replacements: Vec<(String, String)> = Vec::new();
     let mut budget = MAX_INLINE_TOTAL_BYTES;
     for image in &images {
         if image.quoted_printable {
             continue;
         }
-        let Some(bytes) = message.section(&SectionPath::Part(image.path.clone(), None)) else {
+        let Some(bytes) = responses
+            .iter()
+            .find_map(|item| item.section(&SectionPath::Part(image.path.clone(), None)))
+        else {
             continue;
         };
         if bytes.len() < image.octets as usize {
@@ -1453,6 +1465,38 @@ mod tests {
         assert!(commands.contains("BODY.PEEK[1.1]"));
         assert!(!commands.contains("BODY.PEEK[1.2]"));
         assert!(!commands.contains("BODY.PEEK[2]"));
+    }
+
+    #[test]
+    fn images_split_across_fetch_responses_are_all_inlined() {
+        let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
+        let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") NIL \"<img1@qq>\" \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") NIL \"<img2@qq>\" \"BASE64\" {}) \"RELATED\")",
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        // 图片多时服务器会把分段拆成多条 FETCH 响应，两条响应里的图片都得内联。
+        let script = format!(
+            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\n* 1 FETCH (UID 9 BODY[3] {{{}}}\r\n{second})\r\na5 OK images\r\n",
+            mime.len(),
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        let (client, _) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").unwrap();
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{first}")));
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{second}")));
+        assert!(!content.content.contains("cid:"));
     }
 
     #[test]
