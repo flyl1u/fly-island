@@ -1283,9 +1283,10 @@ fn apply_stage_geometry(
         -((COLLAPSED_ISLAND_HEIGHT * state.collapsed_scale - TUCKED_VISIBLE_EDGE_HEIGHT).max(0.0)
             * scale)
             .round() as i32;
+    let top_inset = work_area_top_inset(monitor_position.y, monitor.work_area().position.y);
     let centered_x = monitor_position.x + ((monitor_size.width as i32 - physical_width) / 2);
-    let normal_y = monitor_position.y + physical_top_offset;
-    let tucked_y = monitor_position.y + tucked_top_offset;
+    let normal_y = monitor_position.y + top_inset + physical_top_offset;
+    let tucked_y = monitor_position.y + top_inset + tucked_top_offset;
     let mut positioned_state = state;
     if !has_custom_monitor {
         positioned_state.custom_position = None;
@@ -1359,6 +1360,12 @@ fn monitor_for_island_position(
             && island_center_y >= monitor_position.y as f64
             && island_center_y < (monitor_position.y + monitor_size.height as i32) as f64
     }))
+}
+
+// A top-docked taskbar shrinks the monitor work area instead of the monitor itself,
+// so the island has to be anchored below it or the taskbar covers the island.
+fn work_area_top_inset(monitor_top: i32, work_area_top: i32) -> i32 {
+    (work_area_top - monitor_top).max(0)
 }
 
 fn resolve_stage_position(
@@ -1503,6 +1510,14 @@ mod tests {
             expanded_height,
             ..IslandWindowState::default()
         }
+    }
+
+    #[test]
+    fn top_docked_taskbar_pushes_island_below_the_work_area() {
+        assert_eq!(work_area_top_inset(0, 48), 48);
+        assert_eq!(work_area_top_inset(0, 0), 0);
+        assert_eq!(work_area_top_inset(-1080, -1080), 0);
+        assert_eq!(work_area_top_inset(0, -10), 0);
     }
 
     #[test]
