@@ -910,6 +910,16 @@ fn replace_cid_references(html: &str, replacements: &[(String, String)]) -> Stri
     out
 }
 
+// UID FETCH 只查这一封邮件，但服务器可以把分段拆成多条 FETCH 响应发回来，而且续包不一定
+// 重复 UID（QQ 实测就只给第一条带 UID）。按 uid 相等过滤会把续包整批丢掉，只剩下第一批分段，
+// 所以这里只把带 UID 的响应排在前面，其余响应照样参与合并。
+fn responses_for_message<'a>(messages: &'a [Fetch], uid: u32) -> Vec<&'a Fetch> {
+    let (mut mine, others): (Vec<&Fetch>, Vec<&Fetch>) =
+        messages.iter().partition(|item| item.uid == Some(uid));
+    mine.extend(others);
+    mine
+}
+
 // 内嵌图只是锦上添花：任何一步失败都退回原正文，不能把已经拿到的文字一起弄丢。
 fn inline_cid_images<T: Read + Write>(
     session: &mut Session<T>,
@@ -941,12 +951,7 @@ fn inline_cid_images<T: Read + Write>(
     let Ok(messages) = session.uid_fetch(uid.to_string(), &query) else {
         return html;
     };
-    // 图片多时服务器会把分段拆成多条 FETCH 响应发回来，得按 UID 收齐全部响应再逐张取；
-    // 只认第一条响应会漏掉后面批次里的图片。
-    let responses: Vec<&Fetch> = messages
-        .iter()
-        .filter(|item| item.uid == Some(uid))
-        .collect();
+    let responses = responses_for_message(&messages, uid);
     if responses.is_empty() {
         return html;
     }
@@ -956,10 +961,28 @@ fn inline_cid_images<T: Read + Write>(
         if image.quoted_printable {
             continue;
         }
-        let Some(bytes) = responses
-            .iter()
-            .find_map(|item| item.section(&SectionPath::Part(image.path.clone(), None)))
-        else {
+        let path = SectionPath::Part(image.path.clone(), None);
+        // 批量响应里缺这一段时（服务器把后面的批次丢了）再单独要一次：一条命令只请求一个分段，
+        // 就谈不上「分批」，保证后面的图片不会漏。
+        let retry;
+        let bytes = match responses.iter().find_map(|item| item.section(&path)) {
+            Some(bytes) => Some(bytes),
+            None => {
+                let section = image
+                    .path
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(".");
+                retry = session
+                    .uid_fetch(uid.to_string(), format!("(UID BODY.PEEK[{section}])"))
+                    .ok();
+                retry
+                    .as_ref()
+                    .and_then(|items| items.iter().find_map(|item| item.section(&path)))
+            }
+        };
+        let Some(bytes) = bytes else {
             continue;
         };
         if bytes.len() < image.octets as usize {
@@ -1035,10 +1058,11 @@ fn fetch_content<T: Read + Write>(
     let messages = session
         .uid_fetch(uid.to_string(), query)
         .map_err(|_| "无法加载邮件正文，请检查网络并重试。")?;
-    // 服务器可能把两个分段拆到不同的 FETCH 响应里，按 UID 合并，别要求同一条响应都带齐。
+    // 服务器可能把两个分段拆到不同的 FETCH 响应里（续包甚至不重复 UID），合并全部响应，
+    // 别要求同一条响应都带齐，也别要求每条响应都带 UID。
     let mut header = None;
     let mut body = None;
-    for item in messages.iter().filter(|item| item.uid == Some(uid)) {
+    for item in responses_for_message(&messages, uid) {
         if header.is_none() {
             header = if multipart { item.section(&mime_path) } else { item.header() };
         }
@@ -1443,7 +1467,8 @@ mod tests {
         let body = "5Lit5paH";
         let mime = "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
         let structure = format!("(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)", body.len());
-        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[HEADER] {{{}}}\r\n{mime})\r\n* 1 FETCH (UID 9 BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        // 续包只带了分段、没重复 UID（QQ 的拆包形态），正文和报文头都要能拼出来。
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[HEADER] {{{}}}\r\n{mime})\r\n* 1 FETCH (BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
         let (client, _) = client(script);
         let mut session = client.login("user@qq.com", "test-secret").unwrap();
         assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, "中文");
@@ -1468,7 +1493,7 @@ mod tests {
     }
 
     #[test]
-    fn images_split_across_fetch_responses_are_all_inlined() {
+    fn images_split_across_fetch_responses_without_repeated_uid_are_all_inlined() {
         let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
         let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
         let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
@@ -1479,9 +1504,10 @@ mod tests {
             first.len(),
             second.len()
         );
-        // 图片多时服务器会把分段拆成多条 FETCH 响应，两条响应里的图片都得内联。
+        // 图片多时服务器会把分段拆成多条 FETCH 响应，而且只有第一条带 UID，后面的响应
+        // 只给分段——按 uid 过滤的话就只能拿到第一批，两张图都得内联才算过。
         let script = format!(
-            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\n* 1 FETCH (UID 9 BODY[3] {{{}}}\r\n{second})\r\na5 OK images\r\n",
+            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\n* 1 FETCH (BODY[3] {{{}}}\r\n{second})\r\na5 OK images\r\n",
             mime.len(),
             body.len(),
             first.len(),
@@ -1497,6 +1523,40 @@ mod tests {
             .content
             .contains(&format!("data:image/png;base64,{second}")));
         assert!(!content.content.contains("cid:"));
+    }
+
+    #[test]
+    fn an_image_missing_from_the_batches_is_fetched_again_on_its_own() {
+        let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
+        let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") NIL \"<img1@qq>\" \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") NIL \"<img2@qq>\" \"BASE64\" {}) \"RELATED\")",
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        // 服务器只把第一批发回来（第二张图缺失），得单独再取一次这个分段补上。
+        let script = format!(
+            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\na5 OK images\r\n* 1 FETCH (UID 9 BODY[3] {{{}}}\r\n{second})\r\na6 OK retry\r\n",
+            mime.len(),
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").unwrap();
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{first}")));
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{second}")));
+        assert!(!content.content.contains("cid:"));
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert_eq!(commands.matches("BODY.PEEK[3]").count(), 2, "{commands}");
     }
 
     #[test]
