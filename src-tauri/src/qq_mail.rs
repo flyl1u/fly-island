@@ -889,17 +889,19 @@ fn replace_cid_references(html: &str, replacements: &[(String, String)]) -> Stri
     let mut out = String::with_capacity(html.len());
     let mut cursor = 0;
     while let Some(found) = lower[cursor..].find("cid:") {
-        let start = cursor + found + 4;
-        let end = cid_token_end(&lower, start);
-        out.push_str(&html[cursor..start]);
+        // 整个 cid:token 都要换掉，只换 token 会留下 "cid:data:image/..." 这种废地址。
+        let reference_start = cursor + found;
+        let token_start = reference_start + 4;
+        let token_end = cid_token_end(&lower, token_start);
+        out.push_str(&html[cursor..reference_start]);
         match replacements
             .iter()
-            .find(|(content_id, _)| content_id.eq_ignore_ascii_case(&html[start..end]))
+            .find(|(content_id, _)| content_id.eq_ignore_ascii_case(&html[token_start..token_end]))
         {
             Some((_, data_uri)) => out.push_str(data_uri),
-            None => out.push_str(&html[start..end]),
+            None => out.push_str(&html[reference_start..token_end]),
         }
-        cursor = end;
+        cursor = token_end;
     }
     out.push_str(&html[cursor..]);
     out
@@ -1229,6 +1231,11 @@ mod tests {
                 &[("image1".into(), png.clone())]
             ),
             format!(r#"<img src="cid:image10"><img src="{png}">"#)
+        );
+        // 整个 cid:token 都要换掉，不能留下 "cid:data:image/..." 这种无效地址
+        assert_eq!(
+            replace_cid_references(r#"<img src="cid:x">"#, &[("x".into(), png.clone())]),
+            format!(r#"<img src="{png}">"#)
         );
     }
 
