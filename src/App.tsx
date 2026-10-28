@@ -59,6 +59,7 @@ import { MessagesPanel, messagePanelHeight, type MessageView } from "./Messages"
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
+import { UpdatePanel } from "./UpdatePanel";
 import {
   LOCALE_CODES,
   TRANSLATIONS,
@@ -2372,6 +2373,7 @@ function LayoutEditor({
         <div className="settings-section__header">
           <span>{t.settings.project.title}</span>
         </div>
+        <UpdatePanel />
         <a
           className="project-link project-link--star"
           href="https://github.com/flyl1u/fly-island"

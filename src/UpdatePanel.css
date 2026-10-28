@@ -1,0 +1,120 @@
+.update-panel {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  color: rgba(248, 246, 240, 0.88);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.update-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.update-panel__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: rgba(248, 246, 240, 0.52);
+}
+
+.update-panel--checking .update-panel__icon,
+.update-panel--downloading .update-panel__icon,
+.update-panel--installing .update-panel__icon {
+  color: #a8d8ea;
+}
+
+.update-panel--checking .update-panel__icon svg,
+.update-panel--downloading .update-panel__icon svg,
+.update-panel--installing .update-panel__icon svg {
+  animation: update-panel-spin 900ms linear infinite;
+}
+
+.update-panel__copy {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.update-panel__copy strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.update-panel__copy > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 11px;
+}
+
+.update-panel--error .update-panel__copy > span {
+  color: #ffd8df;
+}
+
+.update-panel__action {
+  flex: 0 0 auto;
+  min-width: 60px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  color: #111112;
+  background: #98d4bb;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition: background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+.update-panel__action:hover:not(:disabled) {
+  background: #a9dfc9;
+}
+
+.update-panel__action:focus-visible {
+  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline-offset: 2px;
+}
+
+.update-panel__action:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.update-panel__track {
+  height: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.update-panel__fill {
+  display: block;
+  height: 100%;
+  background: #98d4bb;
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+@keyframes update-panel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-panel__icon svg,
+  .update-panel__fill,
+  .update-panel__action {
+    animation: none;
+    transition: none;
+  }
+}

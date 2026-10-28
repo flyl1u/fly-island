@@ -1706,6 +1706,7 @@ pub fn run() {
             let _ = show_island(app);
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|window, event| {
             if window.label() == "translation" {
                 if let WindowEvent::CloseRequested { api, .. } = event {

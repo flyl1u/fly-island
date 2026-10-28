@@ -307,6 +307,21 @@ const zhCN: Translations = {
       latestRelease: "查看最新版本",
       latestReleaseHint: "看看小岛又长了什么新本领",
       openFailed: "暂时没能打开浏览器，请再试一次。",
+      update: {
+        title: "检查更新",
+        hint: "点一下看看有没有新版本",
+        versionLabel: (version) => `当前版本 v${version}`,
+        check: "检查",
+        checking: "正在检查更新…",
+        upToDate: (version) => `已是最新版本 v${version}`,
+        available: (version) => `发现新版本 v${version}`,
+        download: "下载并安装",
+        downloading: (percent) => `正在下载 ${percent}%`,
+        downloadingUnknown: "正在下载…",
+        installing: "正在安装，小岛会自动重启",
+        done: "更新完成，小岛正在重启…",
+        error: "检查更新失败，请稍后再试。",
+      },
     },
 
     language: {

@@ -307,6 +307,21 @@ export type Translations = {
       latestRelease: string;
       latestReleaseHint: string;
       openFailed: string;
+      update: {
+        title: string;
+        hint: string;
+        versionLabel: (version: string) => string;
+        check: string;
+        checking: string;
+        upToDate: (version: string) => string;
+        available: (version: string) => string;
+        download: string;
+        downloading: (percent: number) => string;
+        downloadingUnknown: string;
+        installing: string;
+        done: string;
+        error: string;
+      };
     };
 
     language: {
