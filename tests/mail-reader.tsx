@@ -98,7 +98,9 @@ try {
     check(document.activeElement?.getAttribute("aria-label") === "邮件正文", "阅读页接收键盘焦点");
     await act(async () => { pending.resolve({ id: "7:20", contentType: "text/html", content: '<h2>下周安排</h2><p>保留正文</p><script>window.readerPwned=true</script><img src="https://tracking.example.com/pixel" onerror="alert(1)"><iframe src="https://tracking.example.com/"></iframe><form><input></form><style>body{display:none}</style><a href="javascript:alert(1)">危险链接</a><a href="https://example.com/report">查看周报</a><table><tr><td>会议</td><td>周二</td></tr></table>' }); await pending.promise; });
     const body = document.querySelector(".qq-mail-body")!;
-    check(body.textContent?.includes("保留正文") && !body.querySelector("script,img,iframe,form,input,style,svg"), "HTML 正文保留排版并去除脚本、远程图片和嵌入内容");
+    check(body.textContent?.includes("保留正文") && !body.querySelector("script,iframe,form,input,style,svg"), "HTML 正文保留排版并去除脚本和嵌入内容");
+    const remoteImage = body.querySelector("img");
+    check(remoteImage?.getAttribute("src") === "https://tracking.example.com/pixel" && remoteImage.getAttribute("referrerpolicy") === "no-referrer" && !remoteImage.hasAttribute("onerror"), "远程图片保留但禁止外发 referrer 并剔除事件属性");
     check(!body.querySelector('a[href^="javascript"]'), "邮件不能执行危险链接");
     check(!Reflect.get(window, "readerPwned"), "邮件脚本没有执行");
     await act(async () => { body.querySelector<HTMLAnchorElement>('a[href="https://example.com/report"]')!.click(); });
@@ -139,7 +141,11 @@ try {
     await act(async () => { snapshot = { ...snapshot, revision: ++revision, email: null, configured: false, status: "disconnected", enabled: false, items: [], unreadCount: null }; await emit("qq-mail-changed", { snapshot, newestId: null, windowVisible: true }); });
     await act(async () => { late.resolve({ id: "7:20", contentType: "text/plain", content: "断开后的敏感正文" }); await late.promise; });
     check(!mail!.selectedMail && !mail!.content && !document.body.textContent?.includes("断开后的敏感正文"), "断开连接后清空正文并忽略在途结果");
-    check(!/src=|style=|javascript:|<svg/i.test(sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p>')), "清理器不会保留可联网属性或 SVG 内容");
+    const sanitized = sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p><img src="https://cdn.example.com/a.png" onerror="alert(1)" width="40"><img src="cid:inline@example"><img src="data:image/png;base64,iVBORw0KGgo=">');
+    check(!/style=|javascript:|<svg/i.test(sanitized), "清理器剔除脚本、SVG 与内联样式");
+    check(/src="https:\/\/cdn\.example\.com\/a\.png"/.test(sanitized) && /referrerpolicy="no-referrer"/.test(sanitized), "远程图片保留并禁止外发 referrer");
+    check(!/cid:|onerror/i.test(sanitized), "cid 引用和事件属性不会被保留");
+    check(/src="data:image\/png;base64,iVBORw0KGgo="/.test(sanitized), "内嵌图片的 data URI 保留");
     document.documentElement.dataset.testResult = "passed";
   } else if (["reader", "html", "loading", "error"].includes(state)) {
     if (state === "loading") readBehavior = () => new Promise(() => {});

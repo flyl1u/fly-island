@@ -1,5 +1,8 @@
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use imap::{types::Flag, Session};
-use imap_proto::types::{BodyContentCommon, BodyStructure, MessageSection, SectionPath};
+use imap_proto::types::{
+    BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
+};
 use keyring::{Entry, Error as KeyringError};
 use mailparse::MailHeaderMap;
 use serde::Serialize;
@@ -21,6 +24,9 @@ const IO_TIMEOUT: Duration = Duration::from_secs(15);
 const HEADER_QUERY: &str = "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER]<0.65536>)";
 const MAX_BODY_BYTES: u32 = 512 * 1024;
 const MAX_MIME_BYTES: usize = 65_536;
+const MAX_INLINE_IMAGES: usize = 8;
+const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
+const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
 static SERVICE: OnceLock<Arc<MailService>> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -800,6 +806,165 @@ fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
     }
 }
 
+struct InlineImage {
+    path: Vec<u32>,
+    content_id: String,
+    mime: String,
+    octets: u32,
+    base64: bool,
+    quoted_printable: bool,
+}
+
+// 只内联正文里真正用 cid: 引用的图片，避免为未被引用的附件白拉数据。
+fn cid_references(html: &str) -> Vec<String> {
+    let lower = html.to_ascii_lowercase();
+    let mut ids: Vec<String> = Vec::new();
+    let mut cursor = 0;
+    while let Some(found) = lower[cursor..].find("cid:") {
+        let start = cursor + found + 4;
+        let end = lower[start..]
+            .find(|character: char| {
+                character.is_whitespace()
+                    || matches!(character, '"' | '\'' | ')' | '(' | '<' | '>' | '?')
+            })
+            .map_or(lower.len(), |offset| start + offset);
+        let id = html[start..end].trim().trim_matches(|character| character == '<' || character == '>');
+        if !id.is_empty() && !ids.iter().any(|known| known.eq_ignore_ascii_case(id)) {
+            ids.push(id.to_string());
+        }
+        cursor = end.max(start);
+    }
+    ids
+}
+
+fn collect_inline_images(
+    body: &BodyStructure<'_>,
+    path: Vec<u32>,
+    ids: &[String],
+    out: &mut Vec<InlineImage>,
+) {
+    if out.len() >= MAX_INLINE_IMAGES || path.len() > 16 {
+        return;
+    }
+    match body {
+        BodyStructure::Basic { common, other, .. } if common.ty.ty.eq_ignore_ascii_case("image") => {
+            let Some(id) = other.id.map(|id| id.trim_matches(|character| character == '<' || character == '>')) else {
+                return;
+            };
+            if id.is_empty() || other.octets == 0 || other.octets > MAX_INLINE_IMAGE_BYTES {
+                return;
+            }
+            let Some(matched) = ids.iter().find(|wanted| wanted.eq_ignore_ascii_case(id)) else {
+                return;
+            };
+            out.push(InlineImage {
+                path: if path.is_empty() { vec![1] } else { path },
+                content_id: matched.clone(),
+                mime: format!("image/{}", common.ty.subtype.to_ascii_lowercase()),
+                octets: other.octets,
+                base64: matches!(other.transfer_encoding, ContentEncoding::Base64),
+                quoted_printable: matches!(other.transfer_encoding, ContentEncoding::QuotedPrintable),
+            });
+        }
+        BodyStructure::Multipart { bodies, .. } => {
+            for (index, nested) in bodies.iter().take(128).enumerate() {
+                let mut nested_path = path.clone();
+                nested_path.push(index as u32 + 1);
+                collect_inline_images(nested, nested_path, ids, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn replace_ascii_ignore_case(haystack: &str, needle: &str, replacement: &str) -> String {
+    let lower_haystack = haystack.to_ascii_lowercase();
+    let lower_needle = needle.to_ascii_lowercase();
+    let mut out = String::with_capacity(haystack.len());
+    let mut cursor = 0;
+    while let Some(found) = lower_haystack[cursor..].find(&lower_needle) {
+        let start = cursor + found;
+        out.push_str(&haystack[cursor..start]);
+        out.push_str(replacement);
+        cursor = start + needle.len();
+    }
+    out.push_str(&haystack[cursor..]);
+    out
+}
+
+fn inline_cid_images<T: Read + Write>(
+    session: &mut Session<T>,
+    uid: u32,
+    structure: &BodyStructure<'_>,
+    html: String,
+) -> Result<String, String> {
+    let ids = cid_references(&html);
+    if ids.is_empty() {
+        return Ok(html);
+    }
+    let mut images = Vec::new();
+    collect_inline_images(structure, Vec::new(), &ids, &mut images);
+    if images.is_empty() {
+        return Ok(html);
+    }
+    let query = format!(
+        "(UID {})",
+        images
+            .iter()
+            .map(|image| {
+                let section = image.path.iter().map(u32::to_string).collect::<Vec<_>>().join(".");
+                format!("BODY.PEEK[{section}]<0.{}>", image.octets as u64 + 1)
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+    let messages = session
+        .uid_fetch(uid.to_string(), &query)
+        .map_err(|_| "无法加载邮件图片，请检查网络并重试。")?;
+    let Some(message) = messages.iter().find(|item| item.uid == Some(uid)) else {
+        return Ok(html);
+    };
+    let mut replacements: Vec<(String, String)> = Vec::new();
+    let mut budget = MAX_INLINE_TOTAL_BYTES;
+    for image in &images {
+        if image.quoted_printable {
+            continue;
+        }
+        let Some(bytes) = message.section(&SectionPath::Part(image.path.clone(), None)) else {
+            continue;
+        };
+        if bytes.len() < image.octets as usize {
+            continue;
+        }
+        let payload = if image.base64 {
+            let encoded = bytes
+                .iter()
+                .copied()
+                .filter(|byte| !byte.is_ascii_whitespace())
+                .collect::<Vec<u8>>();
+            String::from_utf8(encoded).ok()
+        } else {
+            Some(BASE64.encode(bytes))
+        };
+        let Some(payload) = payload else {
+            continue;
+        };
+        if payload.len() as u32 > budget {
+            continue;
+        }
+        budget -= payload.len() as u32;
+        replacements.push((
+            image.content_id.clone(),
+            format!("data:{};base64,{payload}", image.mime),
+        ));
+    }
+    let mut html = html;
+    for (content_id, data_uri) in replacements {
+        html = replace_ascii_ignore_case(&html, &format!("cid:{content_id}"), &data_uri);
+    }
+    Ok(html)
+}
+
 fn fetch_content<T: Read + Write>(
     session: &mut Session<T>,
     message_id: &str,
@@ -874,6 +1039,11 @@ fn fetch_content<T: Read + Write>(
     let content = parsed
         .get_body()
         .map_err(|_| "无法解码邮件正文，请在网页中查看。")?;
+    let content = if part.mime == "text/html" {
+        inline_cid_images(session, uid, structure, content)?
+    } else {
+        content
+    };
     Ok(MailContent {
         id: message_id.into(),
         content,
@@ -1021,6 +1191,18 @@ mod tests {
         );
         assert_eq!(parse_header(b"\r\n").1, "（无主题）");
         assert_eq!(display_header("line\r\n two", ""), "line two");
+    }
+
+    #[test]
+    fn inlines_only_images_referenced_by_cid() {
+        let html = r#"<img src="cid:img001@qq"><img src='cid:IMG002@QQ'>正文提到 cid: 但没有编号。"#;
+        assert_eq!(cid_references(html), vec!["img001@qq", "IMG002@QQ"]);
+        assert!(cid_references("<p>no images here</p>").is_empty());
+        assert_eq!(
+            replace_ascii_ignore_case("a CID:x b cid:X c", "cid:x", "data:image/png;base64,AA"),
+            "a data:image/png;base64,AA b data:image/png;base64,AA c"
+        );
+        assert_eq!(replace_ascii_ignore_case("中文 cid:x", "cid:x", "图"), "中文 图");
     }
 
     #[test]

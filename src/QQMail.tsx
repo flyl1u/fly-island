@@ -22,11 +22,20 @@ export type MailMessage = {
 
 export type MailContent = { id: string; content: string; contentType: "text/plain" | "text/html" };
 
+// 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；
+// 统一关闭 referrer 并延迟加载，避免把当前页地址带给发件人。
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.nodeName !== "IMG") return;
+  node.setAttribute("loading", "lazy");
+  node.setAttribute("decoding", "async");
+  node.setAttribute("referrerpolicy", "no-referrer");
+});
+
 export function sanitizeMailHtml(content: string) {
   return DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: ["p", "br", "div", "span", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "blockquote", "pre", "code", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "hr"],
-    ALLOWED_ATTR: ["href", "title", "colspan", "rowspan"],
-    ALLOWED_URI_REGEXP: /^https?:\/\//i,
+    ALLOWED_TAGS: ["p", "br", "div", "span", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "blockquote", "pre", "code", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "hr", "img"],
+    ALLOWED_ATTR: ["href", "title", "colspan", "rowspan", "src", "alt", "width", "height"],
+    ALLOWED_URI_REGEXP: /^(?:https?:|data:image\/)/i,
     ALLOW_DATA_ATTR: false,
     ALLOW_ARIA_ATTR: false,
   });
