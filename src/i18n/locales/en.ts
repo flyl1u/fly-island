@@ -309,6 +309,23 @@ const en: Translations = {
       latestRelease: "View latest release",
       latestReleaseHint: "See what washed ashore in the latest update",
       openFailed: "Couldn't open your browser. Please try again.",
+      update: {
+        title: "Check for updates",
+        hint: "See whether a newer island washed ashore",
+        versionLabel: (version) => `Version v${version}`,
+        check: "Check",
+        checking: "Checking for updates…",
+        upToDate: (version) => `Already on the latest version v${version}`,
+        available: (version) => `Version v${version} is available`,
+        download: "Download & install",
+        downloading: (percent) => `Downloading ${percent}%`,
+        downloadingUnknown: "Downloading…",
+        installing: "Installing — the island will restart itself",
+        done: "Update installed, restarting…",
+        error: "Couldn't check for updates. Please try again later.",
+        errorDetail: (reason) => `Reason: ${reason}`,
+        unavailable: "This build ships without an updater key, so in-app updates are off. Grab new versions from the release page.",
+      },
     },
 
     language: {

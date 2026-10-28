@@ -12,6 +12,7 @@ dist
 dist-ssr
 src-tauri/target
 src-tauri/gen
+src-tauri/tauri.release.conf.json
 *.local
 
 # Editor directories and files

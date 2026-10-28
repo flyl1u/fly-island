@@ -102,6 +102,8 @@ pnpm tauri build
 
 也可以直接从 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载 Windows x64 安装包。
 
+应用内更新（检查更新、签名与 `latest.json` 发布流程）见 [docs/updater.md](docs/updater.md)。
+
 ## 开源协议
 
 本项目采用 [MIT 协议](LICENSE)。
