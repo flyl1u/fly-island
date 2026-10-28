@@ -1006,11 +1006,18 @@ fn fetch_content<T: Read + Write>(
         .map(u32::to_string)
         .collect::<Vec<_>>()
         .join(".");
+    let multipart = matches!(structure, BodyStructure::Multipart { .. });
     let mime_path = SectionPath::Part(part.path.clone(), Some(MessageSection::Mime));
     let body_path = SectionPath::Part(part.path, None);
+    // 单段邮件的正文就是整封信，没有 [1.MIME] 这个分段（QQ 会直接不返回），只能取报文头。
+    let header_query = if multipart {
+        format!("BODY.PEEK[{section}.MIME]")
+    } else {
+        "BODY.PEEK[HEADER]".to_string()
+    };
     // QQ 的 IMAP 对分段的部分取回（BODY[1]<0.n>）不应答，会一直挂到超时；整段取回秒回。
     // 大小仍由 BODYSTRUCTURE 的 octets 和下面的长度校验兜底。
-    let query = format!("(UID BODY.PEEK[{section}.MIME] BODY.PEEK[{section}])");
+    let query = format!("(UID {header_query} BODY.PEEK[{section}])");
     let messages = session
         .uid_fetch(uid.to_string(), query)
         .map_err(|_| "无法加载邮件正文，请检查网络并重试。")?;
@@ -1019,7 +1026,7 @@ fn fetch_content<T: Read + Write>(
     let mut body = None;
     for item in messages.iter().filter(|item| item.uid == Some(uid)) {
         if header.is_none() {
-            header = item.section(&mime_path);
+            header = if multipart { item.section(&mime_path) } else { item.header() };
         }
         if body.is_none() {
             body = item.section(&body_path);
@@ -1358,11 +1365,12 @@ mod tests {
 
     fn body_client(
         structure: &str,
+        header: &str,
         path: &str,
         mime: &str,
         body: &str,
     ) -> (Session<ScriptedStream>, Arc<Mutex<Vec<u8>>>) {
-        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODY[{path}.MIME]<0> {{{}}}\r\n{mime} BODY[{path}]<0> {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODY[{header}] {{{}}}\r\n{mime} BODY[{path}] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
         let (client, output) = client(script);
         (client.login("user@qq.com", "test-secret").unwrap(), output)
     }
@@ -1394,6 +1402,7 @@ mod tests {
         );
         let (mut session, output) = body_client(
             &structure,
+            "HEADER",
             "1",
             "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n",
             body,
@@ -1404,7 +1413,7 @@ mod tests {
         assert_eq!(content.content_type, "text/plain");
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
         assert!(commands.contains("UID FETCH 9 (UID BODYSTRUCTURE)"));
-        assert!(commands.contains("BODY.PEEK[1.MIME] BODY.PEEK[1]"));
+        assert!(commands.contains("BODY.PEEK[HEADER] BODY.PEEK[1]"));
         for forbidden in [" SELECT ", " STORE ", " EXPUNGE", "BODY[]", "RFC822 "] {
             assert!(!commands.contains(forbidden), "{commands}");
         }
@@ -1415,7 +1424,7 @@ mod tests {
         let body = "5Lit5paH";
         let mime = "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
         let structure = format!("(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)", body.len());
-        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime})\r\n* 1 FETCH (UID 9 BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[HEADER] {{{}}}\r\n{mime})\r\n* 1 FETCH (UID 9 BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
         let (client, _) = client(script);
         let mut session = client.login("user@qq.com", "test-secret").unwrap();
         assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, "中文");
@@ -1427,6 +1436,7 @@ mod tests {
         let structure = format!("(((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" 12 1) \"ALTERNATIVE\")(\"APPLICATION\" \"PDF\" (\"NAME\" \"large.pdf\") NIL NIL \"BASE64\" 9999999) \"MIXED\")", body.len());
         let (mut session, output) = body_client(
             &structure,
+            "1.1.MIME",
             "1.1",
             "Content-Type: text/html; charset=utf-8\r\n\r\n",
             body,
@@ -1463,7 +1473,7 @@ mod tests {
             "(\"TEXT\" \"HTML\" (\"CHARSET\" \"GB2312\") NIL NIL \"QUOTED-PRINTABLE\" {} 1)",
             body.len()
         );
-        let (mut session, _) = body_client(&structure, "1", "Content-Type: text/html; charset=GB2312\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", body);
+        let (mut session, _) = body_client(&structure, "HEADER", "1", "Content-Type: text/html; charset=GB2312\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", body);
         let content = fetch_content(&mut session, "7:9").unwrap();
         assert_eq!(content.content, "<p>中文</p>");
         assert_eq!(content.content_type, "text/html");
@@ -1487,7 +1497,7 @@ mod tests {
             format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {} 1)", MAX_BODY_BYTES + 1),
             "(\"TEXT\" \"PLAIN\" (\"NAME\" \"secret.txt\") NIL NIL \"8BIT\" 8 1 NIL (\"ATTACHMENT\" (\"FILENAME\" \"secret.txt\")) NIL NIL)".into(),
         ] {
-            let (mut session, output) = body_client(&structure, "1", "", "");
+            let (mut session, output) = body_client(&structure, "HEADER", "1", "", "");
             assert!(fetch_content(&mut session, "7:9").is_err());
             assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("BODY.PEEK"));
         }
@@ -1500,7 +1510,7 @@ mod tests {
             (5, "Content-Type: text/html\r\n\r\n"),
         ] {
             let structure = format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {size} 1)");
-            let (mut session, _) = body_client(&structure, "1", mime, "hello");
+            let (mut session, _) = body_client(&structure, "HEADER", "1", mime, "hello");
             assert!(fetch_content(&mut session, "7:9").is_err());
         }
     }
