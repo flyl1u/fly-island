@@ -927,7 +927,8 @@ fn inline_cid_images<T: Read + Write>(
             .iter()
             .map(|image| {
                 let section = image.path.iter().map(u32::to_string).collect::<Vec<_>>().join(".");
-                format!("BODY.PEEK[{section}]<0.{}>", image.octets as u64 + 1)
+                // 和正文一样避开 QQ 不应答的部分取回，图片大小由 octets 限额兜底。
+                format!("BODY.PEEK[{section}]")
             })
             .collect::<Vec<_>>()
             .join(" ")
@@ -1007,28 +1008,25 @@ fn fetch_content<T: Read + Write>(
         .join(".");
     let mime_path = SectionPath::Part(part.path.clone(), Some(MessageSection::Mime));
     let body_path = SectionPath::Part(part.path, None);
-    let query = format!(
-        "(UID BODY.PEEK[{section}.MIME]<0.{}> BODY.PEEK[{section}]<0.{}>)",
-        MAX_MIME_BYTES + 1,
-        MAX_BODY_BYTES + 1
-    );
+    // QQ 的 IMAP 对分段的部分取回（BODY[1]<0.n>）不应答，会一直挂到超时；整段取回秒回。
+    // 大小仍由 BODYSTRUCTURE 的 octets 和下面的长度校验兜底。
+    let query = format!("(UID BODY.PEEK[{section}.MIME] BODY.PEEK[{section}])");
     let messages = session
         .uid_fetch(uid.to_string(), query)
         .map_err(|_| "无法加载邮件正文，请检查网络并重试。")?;
-    let message = messages
-        .iter()
-        .find(|item| {
-            item.uid == Some(uid)
-                && item.section(&mime_path).is_some()
-                && item.section(&body_path).is_some()
-        })
-        .ok_or("邮件已移除，请刷新收件箱。")?;
-    let header = message
-        .section(&mime_path)
-        .ok_or("无法解析邮件格式，请在网页中查看。")?;
-    let body = message
-        .section(&body_path)
-        .ok_or("无法读取邮件正文，请重试。")?;
+    // 服务器可能把两个分段拆到不同的 FETCH 响应里，按 UID 合并，别要求同一条响应都带齐。
+    let mut header = None;
+    let mut body = None;
+    for item in messages.iter().filter(|item| item.uid == Some(uid)) {
+        if header.is_none() {
+            header = item.section(&mime_path);
+        }
+        if body.is_none() {
+            body = item.section(&body_path);
+        }
+    }
+    let header = header.ok_or("邮件已移除，请刷新收件箱。")?;
+    let body = body.ok_or("邮件已移除，请刷新收件箱。")?;
     if header.len() > MAX_MIME_BYTES || body.len() > MAX_BODY_BYTES as usize {
         return Err("邮件正文过大，请在网页中查看。".into());
     }
@@ -1406,10 +1404,21 @@ mod tests {
         assert_eq!(content.content_type, "text/plain");
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
         assert!(commands.contains("UID FETCH 9 (UID BODYSTRUCTURE)"));
-        assert!(commands.contains("BODY.PEEK[1.MIME]<0.65537> BODY.PEEK[1]<0.524289>"));
+        assert!(commands.contains("BODY.PEEK[1.MIME] BODY.PEEK[1]"));
         for forbidden in [" SELECT ", " STORE ", " EXPUNGE", "BODY[]", "RFC822 "] {
             assert!(!commands.contains(forbidden), "{commands}");
         }
+    }
+
+    #[test]
+    fn split_fetch_responses_still_build_the_body() {
+        let body = "5Lit5paH";
+        let mime = "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+        let structure = format!("(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)", body.len());
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime})\r\n* 1 FETCH (UID 9 BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        let (client, _) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, "中文");
     }
 
     #[test]
