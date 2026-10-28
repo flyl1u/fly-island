@@ -58,26 +58,28 @@ const tag = `v${version}`;
 const notesFile = `docs/releases/${tag}.md`;
 if (!existsSync(notesFile)) fail(`Missing release notes: ${notesFile}`);
 
+if (!process.env.TAURI_UPDATER_PUBKEY?.trim()) {
+  fail("TAURI_UPDATER_PUBKEY is not set; the built app would reject every update.");
+}
+if (!process.env.TAURI_SIGNING_PRIVATE_KEY?.trim()) {
+  fail("TAURI_SIGNING_PRIVATE_KEY is not set; cannot sign the updater artifacts.");
+}
+if (process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD === undefined) {
+  fail(
+    "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is not set. Use an empty string for keys without a password,\n" +
+      'otherwise the build waits for interactive input: $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""',
+  );
+}
+
 if (upload) {
-  if (!process.env.TAURI_UPDATER_PUBKEY?.trim()) {
-    fail("TAURI_UPDATER_PUBKEY is not set; the built app would reject every update.");
-  }
-  if (!process.env.TAURI_SIGNING_PRIVATE_KEY?.trim()) {
-    fail("TAURI_SIGNING_PRIVATE_KEY is not set; cannot sign the updater artifacts.");
-  }
-  if (process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD === undefined) {
-    fail(
-      "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is not set. Use an empty string for keys without a password,\n" +
-        'otherwise the build waits for interactive input: $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""',
-    );
-  }
   const dirty = run("git", ["status", "--porcelain", "--untracked-files=no"], { capture: true }).stdout;
   if (dirty.trim()) fail(`Working tree has uncommitted changes:\n${dirty}`);
-  run("gh", ["auth", "status"], { capture: true });
+  const auth = run("gh", ["auth", "status"], { capture: true, allowFailure: true });
+  if (auth.status !== 0) fail("gh is not authenticated. Run `gh auth login` first.");
 }
 
 run("node", ["scripts/prepare-release-config.mjs"]);
-run("pnpm", ["tauri", "build", "--config", OVERLAY]);
+run("pnpm", ["tauri", "build", "--config", OVERLAY, "--bundles", "nsis"]);
 
 const latestArgs = ["scripts/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);

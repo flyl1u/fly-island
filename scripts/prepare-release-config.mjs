@@ -43,6 +43,13 @@ const endpoints = (process.env.TAURI_UPDATER_ENDPOINTS ?? "")
   .filter(Boolean);
 
 if (endpoints.length > 0) {
+  // tauri-plugin-updater refuses to start on a non-https endpoint, so catch it
+  // here instead of shipping a build that panics on launch.
+  const insecure = endpoints.filter((entry) => !entry.startsWith("https://"));
+  if (insecure.length > 0) {
+    console.error(`Updater endpoints must use https:\n  ${insecure.join("\n  ")}`);
+    process.exit(1);
+  }
   overlay.plugins.updater.endpoints = endpoints;
 }
 
