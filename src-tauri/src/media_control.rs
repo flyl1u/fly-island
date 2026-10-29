@@ -607,21 +607,37 @@ fn read_thumbnail(reference: &IRandomAccessStreamReference) -> Option<String> {
         return None;
     }
 
-    let content_type = stream
-        .ContentType()
-        .ok()
-        .map(|value| value.to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "image/png".to_string());
-
     let input: IInputStream = stream.cast().ok()?;
     let reader = DataReader::CreateDataReader(&input).ok()?;
     let loaded = pollster::block_on(reader.LoadAsync(size as u32).ok()?).ok()?;
     let mut buffer = vec![0u8; loaded as usize];
     reader.ReadBytes(&mut buffer).ok()?;
+    if buffer.is_empty() {
+        return None;
+    }
 
+    // Detect the image type from the bytes rather than the stream's reported
+    // content type: some apps (e.g. NetEase Cloud Music) report a comma-joined
+    // list like "image/jpeg,image/jpe,image/jpg", which breaks the data URL.
+    let mime = detect_image_mime(&buffer);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&buffer);
-    Some(format!("data:{content_type};base64,{encoded}"))
+    Some(format!("data:{mime};base64,{encoded}"))
+}
+
+fn detect_image_mime(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        "image/jpeg"
+    } else if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "image/png"
+    } else if bytes.starts_with(b"GIF8") {
+        "image/gif"
+    } else if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        "image/webp"
+    } else if bytes.starts_with(&[0x42, 0x4D]) {
+        "image/bmp"
+    } else {
+        "image/jpeg"
+    }
 }
 
 fn read_master_volume() -> Option<f32> {
