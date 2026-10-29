@@ -1724,6 +1724,41 @@ mod tests {
         }
     }
 
+    // tauri-plugin-updater declares `pubkey` as a mandatory config field with no
+    // serde default, so dropping the key aborts startup with "missing field
+    // `pubkey`". The shipped config keeps an empty placeholder; release builds
+    // replace it through `src-tauri/tauri.release.conf.json`.
+    fn shipped_updater_config() -> Value {
+        let config: Value = serde_json::from_str(include_str!("../tauri.conf.json"))
+            .expect("tauri.conf.json must be valid JSON");
+        config
+            .pointer("/plugins/updater")
+            .cloned()
+            .expect("tauri.conf.json must define plugins.updater")
+    }
+
+    #[test]
+    fn shipped_updater_config_parses_with_the_empty_pubkey_placeholder() {
+        let parsed: tauri_plugin_updater::Config =
+            serde_json::from_value(shipped_updater_config())
+                .expect("plugins.updater must deserialize or the app aborts at startup");
+
+        assert_eq!(parsed.pubkey, "");
+        assert!(!parsed.endpoints.is_empty());
+    }
+
+    #[test]
+    fn release_overlay_replaces_the_pubkey_placeholder() {
+        let mut update_config = shipped_updater_config();
+        update_config["pubkey"] = json!("RWQtest-only-release-public-key");
+
+        let parsed: tauri_plugin_updater::Config = serde_json::from_value(update_config)
+            .expect("a release config carrying a real pubkey must deserialize");
+
+        assert_eq!(parsed.pubkey, "RWQtest-only-release-public-key");
+        assert!(!parsed.endpoints.is_empty());
+    }
+
     #[test]
     fn hex_tint_parser_rejects_invalid_values() {
         assert_eq!(parse_hex_color("#101013"), Some((16, 16, 19)));

@@ -44,7 +44,9 @@ node scripts/make-latest-json.mjs --base-url "https://ghfast.top/https://github.
 
 ## 签名密钥
 
-更新包必须用私钥签名，App 用构建时注入的公钥验证。**仓库里不保存任何公钥或私钥**，密钥归仓库维护者所有：
+更新包必须用私钥签名，App 用构建时注入的公钥验证。**仓库里不保存任何公钥或私钥**，密钥归仓库维护者所有。
+
+`tauri.conf.json` 里的 `plugins.updater.pubkey` 保留为空字符串占位。这个字段在插件配置里是必填项（没有默认值），删掉整个键会让应用在启动阶段报 `missing field \`pubkey\`` 并直接退出；空串不会影响启动，面板会识别为「没带更新公钥」并隐藏检查按钮。发布构建用上面的 `TAURI_UPDATER_PUBKEY` 覆盖它。
 
 ```powershell
 # 只需在第一次启用应用内更新前生成一次
