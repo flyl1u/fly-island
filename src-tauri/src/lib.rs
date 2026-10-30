@@ -696,8 +696,10 @@ fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult,
 }
 
 #[tauri::command]
-async fn get_media_state() -> Result<media_control::MediaState, String> {
-    tauri::async_runtime::spawn_blocking(media_control::get_state)
+async fn get_media_state(
+    target: Option<String>,
+) -> Result<media_control::MediaState, String> {
+    tauri::async_runtime::spawn_blocking(move || media_control::get_state(target))
         .await
         .map_err(|error| format!("Failed to join the media state task: {error}"))?
 }
@@ -710,24 +712,54 @@ async fn get_audio_level() -> Result<media_control::AudioLevel, String> {
 }
 
 #[tauri::command]
-async fn media_play_pause() -> Result<media_control::MediaState, String> {
-    run_media_command(media_control::MediaCommand::PlayPause).await
+async fn media_play_pause(target: Option<String>) -> Result<media_control::MediaState, String> {
+    run_media_command(media_control::MediaCommand::PlayPause, target).await
 }
 
 #[tauri::command]
-async fn media_next() -> Result<media_control::MediaState, String> {
-    run_media_command(media_control::MediaCommand::Next).await
+async fn media_next(target: Option<String>) -> Result<media_control::MediaState, String> {
+    run_media_command(media_control::MediaCommand::Next, target).await
 }
 
 #[tauri::command]
-async fn media_previous() -> Result<media_control::MediaState, String> {
-    run_media_command(media_control::MediaCommand::Previous).await
+async fn media_previous(target: Option<String>) -> Result<media_control::MediaState, String> {
+    run_media_command(media_control::MediaCommand::Previous, target).await
+}
+
+#[tauri::command]
+async fn media_toggle_shuffle(
+    target: Option<String>,
+) -> Result<media_control::MediaState, String> {
+    run_media_command(media_control::MediaCommand::ToggleShuffle, target).await
+}
+
+#[tauri::command]
+async fn media_cycle_repeat(target: Option<String>) -> Result<media_control::MediaState, String> {
+    run_media_command(media_control::MediaCommand::CycleRepeat, target).await
+}
+
+#[tauri::command]
+async fn media_seek(
+    position_ms: i64,
+    target: Option<String>,
+) -> Result<media_control::MediaState, String> {
+    tauri::async_runtime::spawn_blocking(move || media_control::seek(position_ms, target))
+        .await
+        .map_err(|error| format!("Failed to join the media seek task: {error}"))?
+}
+
+#[tauri::command]
+async fn media_set_volume(level: f32) -> Result<media_control::MediaState, String> {
+    tauri::async_runtime::spawn_blocking(move || media_control::set_volume(level))
+        .await
+        .map_err(|error| format!("Failed to join the media volume task: {error}"))?
 }
 
 async fn run_media_command(
     command: media_control::MediaCommand,
+    target: Option<String>,
 ) -> Result<media_control::MediaState, String> {
-    tauri::async_runtime::spawn_blocking(move || media_control::run_command(command))
+    tauri::async_runtime::spawn_blocking(move || media_control::run_command(command, target))
         .await
         .map_err(|error| format!("Failed to join the media command task: {error}"))?
 }
@@ -1898,6 +1930,10 @@ pub fn run() {
             media_play_pause,
             media_next,
             media_previous,
+            media_toggle_shuffle,
+            media_cycle_repeat,
+            media_seek,
+            media_set_volume,
             clipboard_history::get_clipboard_history,
             clipboard_history::set_clipboard_history_settings,
             clipboard_history::copy_clipboard_history_item,

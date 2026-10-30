@@ -25,15 +25,20 @@ import {
   Keyboard,
   Languages,
   Minus,
+  Music2,
   NotebookPen,
   Pencil,
   Pause,
   Play,
   Plus,
   RefreshCcw,
+  Repeat,
+  Repeat1,
   RotateCcw,
   Save,
   Search,
+  Settings,
+  Shuffle,
   SkipBack,
   SkipForward,
   Star,
@@ -105,11 +110,41 @@ type SaveTodoResult = {
   filePath: string;
 };
 
+type MediaRepeatMode = "none" | "track" | "list" | "unknown";
+
+type MediaSessionInfo = {
+  id: string;
+  label: string;
+  playing: boolean;
+};
+
+type KnownMediaSource = {
+  id: string;
+  label: string;
+};
+
 type MediaState = {
   available: boolean;
   audioActive: boolean;
   audioPeak: number;
   playbackStatus: MediaPlaybackStatus;
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  thumbnail: string | null;
+  positionMs: number;
+  durationMs: number;
+  canSeek: boolean;
+  canNext: boolean;
+  canPrevious: boolean;
+  shuffleActive: boolean | null;
+  canShuffle: boolean;
+  repeatMode: MediaRepeatMode;
+  canRepeat: boolean;
+  volume: number;
+  sourceApp: string | null;
+  activeSessionId: string | null;
+  sessions: MediaSessionInfo[];
   updatedAt: number;
 };
 
@@ -255,13 +290,15 @@ const TODO_SAVE_DIRECTORY_STORAGE_KEY = "focusd-island-save-directory";
 const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
   "focusd-island-last-saved-signature";
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
+const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
 const MIN_COLLAPSED_ISLAND_WIDTH = 280;
 const MAX_COLLAPSED_ISLAND_WIDTH = 340;
 const MIN_COLLAPSED_TEXT_UNITS = 2;
 const MAX_COLLAPSED_TEXT_UNITS = 12;
 const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
-const MUSIC_EXPANDED_ISLAND_HEIGHT = 286;
+const MUSIC_EXPANDED_ISLAND_HEIGHT = 240;
+const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const EDITOR_EXPANDED_ISLAND_HEIGHT = 430;
 const TODO_ROW_HEIGHT = 46;
@@ -276,8 +313,63 @@ const DEFAULT_MEDIA_STATE: MediaState = {
   audioActive: false,
   audioPeak: 0,
   playbackStatus: "unavailable",
+  title: null,
+  artist: null,
+  album: null,
+  thumbnail: null,
+  positionMs: 0,
+  durationMs: 0,
+  canSeek: false,
+  canNext: false,
+  canPrevious: false,
+  shuffleActive: null,
+  canShuffle: false,
+  repeatMode: "unknown",
+  canRepeat: false,
+  volume: -1,
+  sourceApp: null,
+  activeSessionId: null,
+  sessions: [],
   updatedAt: 0,
 };
+
+function isSameMediaState(a: MediaState, b: MediaState): boolean {
+  if (
+    a.available !== b.available ||
+    a.audioActive !== b.audioActive ||
+    a.audioPeak !== b.audioPeak ||
+    a.playbackStatus !== b.playbackStatus ||
+    a.title !== b.title ||
+    a.artist !== b.artist ||
+    a.album !== b.album ||
+    a.thumbnail !== b.thumbnail ||
+    a.positionMs !== b.positionMs ||
+    a.durationMs !== b.durationMs ||
+    a.canSeek !== b.canSeek ||
+    a.canNext !== b.canNext ||
+    a.canPrevious !== b.canPrevious ||
+    a.shuffleActive !== b.shuffleActive ||
+    a.canShuffle !== b.canShuffle ||
+    a.repeatMode !== b.repeatMode ||
+    a.canRepeat !== b.canRepeat ||
+    a.volume !== b.volume ||
+    a.sourceApp !== b.sourceApp ||
+    a.activeSessionId !== b.activeSessionId ||
+    a.sessions.length !== b.sessions.length
+  ) {
+    return false;
+  }
+
+  return a.sessions.every((session, index) => {
+    const other = b.sessions[index];
+    return (
+      session.id === other.id &&
+      session.label === other.label &&
+      session.playing === other.playing
+    );
+  });
+}
+
 const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
   phase: "idle",
   updatedAt: 0,
@@ -827,6 +919,43 @@ function loadTodos(): TodoItem[] {
 
 function loadActiveTodoId() {
   return window.localStorage.getItem(ACTIVE_TODO_STORAGE_KEY);
+}
+
+function loadMusicSourcePriority(): KnownMediaSource[] {
+  try {
+    const stored = window.localStorage.getItem(
+      MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
+    );
+
+    if (!stored) {
+      return [];
+    }
+
+    const parsed = JSON.parse(stored) as Partial<KnownMediaSource>[];
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    return parsed
+      .filter(
+        (source): source is KnownMediaSource =>
+          typeof source?.id === "string" &&
+          source.id.length > 0 &&
+          typeof source.label === "string",
+      )
+      .filter((source) => {
+        if (seen.has(source.id)) {
+          return false;
+        }
+        seen.add(source.id);
+        return true;
+      })
+      .map((source) => ({ id: source.id, label: source.label }));
+  } catch {
+    return [];
+  }
 }
 
 function getLocalDateString(date = new Date()) {
@@ -2972,171 +3101,566 @@ function ArchiveBrowser({
   );
 }
 
+function formatMediaTime(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return "0:00";
+  }
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60) % 60;
+  const hours = Math.floor(totalSeconds / 3600);
+  const secondsLabel = String(seconds).padStart(2, "0");
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${secondsLabel}`;
+  }
+  return `${minutes}:${secondsLabel}`;
+}
+
 function MusicPlayerPanel({
   mediaState,
   isTrackChanging,
   commandError,
+  sourcePriority,
+  effectiveSourceId,
+  settingsOpen,
+  onToggleSettings,
   onPlayPause,
   onNext,
   onPrevious,
+  onToggleShuffle,
+  onCycleRepeat,
+  onSeek,
+  onReorderSource,
+  onRemoveSource,
 }: {
   mediaState: MediaState;
   isTrackChanging: boolean;
   commandError: string | null;
+  sourcePriority: KnownMediaSource[];
+  effectiveSourceId: string | null;
+  settingsOpen: boolean;
+  onToggleSettings: () => void;
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  onToggleShuffle: () => void;
+  onCycleRepeat: () => void;
+  onSeek: (positionMs: number) => void;
+  onReorderSource: (sourceId: string, targetId: string) => void;
+  onRemoveSource: (sourceId: string) => void;
 }) {
   const t = useTranslation();
+  const [draggedSourceId, setDraggedSourceId] = useState<string | null>(null);
+  const [dragOverSourceId, setDragOverSourceId] = useState<string | null>(null);
+
   const isPlaying = mediaState.playbackStatus === "playing";
-  const isPaused = mediaState.playbackStatus === "paused";
-  const hasAudioSignal = mediaState.available || mediaState.audioActive;
-  const statusLabel = commandError
-    ? t.music.controlFailed
-    : isPaused
-      ? t.music.paused
-      : isPlaying
-        ? t.music.playing
-        : t.music.noMedia;
-  const peakPercent = Math.round(
-    clamp(Math.log1p(mediaState.audioPeak * 160) / Math.log1p(160), 0, 1) *
-      100,
+  const hasTrack = Boolean(mediaState.title);
+  const sourceLabel =
+    mediaState.sessions.find((session) => session.id === effectiveSourceId)
+      ?.label ??
+    sourcePriority.find((source) => source.id === effectiveSourceId)?.label ??
+    null;
+
+  const prevDisabled = mediaState.available && !mediaState.canPrevious;
+  const nextDisabled = mediaState.available && !mediaState.canNext;
+  const shuffleDisabled = !mediaState.available || !mediaState.canShuffle;
+  const repeatDisabled = !mediaState.available || !mediaState.canRepeat;
+  const shuffleActive = mediaState.shuffleActive === true;
+  const repeatActive =
+    mediaState.repeatMode === "track" || mediaState.repeatMode === "list";
+  const repeatLabel =
+    mediaState.repeatMode === "track"
+      ? t.music.repeatOne
+      : mediaState.repeatMode === "list"
+        ? t.music.repeatAll
+        : t.music.repeatOff;
+
+  const liveSessions = mediaState.sessions;
+
+  const getSourceIdAtPoint = useCallback((clientX: number, clientY: number) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    const sourceElement = element?.closest("[data-source-id]");
+    return sourceElement instanceof HTMLElement
+      ? sourceElement.dataset.sourceId ?? null
+      : null;
+  }, []);
+
+  const startSourceDrag = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>, sourceId: string) => {
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setDraggedSourceId(sourceId);
+      setDragOverSourceId(null);
+    },
+    [],
+  );
+
+  const moveSourceDrag = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!draggedSourceId) {
+        return;
+      }
+      event.preventDefault();
+      const targetId = getSourceIdAtPoint(event.clientX, event.clientY);
+      setDragOverSourceId(
+        targetId && targetId !== draggedSourceId ? targetId : null,
+      );
+    },
+    [draggedSourceId, getSourceIdAtPoint],
+  );
+
+  const finishSourceDrag = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!draggedSourceId) {
+        return;
+      }
+      event.preventDefault();
+      const targetId =
+        dragOverSourceId || getSourceIdAtPoint(event.clientX, event.clientY);
+
+      if (targetId && targetId !== draggedSourceId) {
+        onReorderSource(draggedSourceId, targetId);
+      }
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      setDraggedSourceId(null);
+      setDragOverSourceId(null);
+    },
+    [dragOverSourceId, draggedSourceId, getSourceIdAtPoint, onReorderSource],
+  );
+
+  const cancelSourceDrag = useCallback(() => {
+    setDraggedSourceId(null);
+    setDragOverSourceId(null);
+  }, []);
+
+  const settingsButton = (
+    <button
+      className={[
+        "music-icon-button",
+        settingsOpen ? "music-icon-button--on" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      type="button"
+      title={settingsOpen ? t.music.closeSettings : t.music.openSettings}
+      aria-label={settingsOpen ? t.music.closeSettings : t.music.openSettings}
+      aria-pressed={settingsOpen}
+      onClick={onToggleSettings}
+    >
+      {settingsOpen ? (
+        <X size={16} strokeWidth={2.4} />
+      ) : (
+        <Settings size={16} strokeWidth={2.2} />
+      )}
+    </button>
   );
 
   return (
     <section
       className={[
         "music-player",
-        hasAudioSignal ? "" : "music-player--empty",
-        isPaused ? "music-player--paused" : "",
+        !settingsOpen && !mediaState.available ? "music-player--empty" : "",
+        settingsOpen ? "music-player--settings" : "",
       ]
         .filter(Boolean)
         .join(" ")}
       aria-label={t.music.playerLabel}
-      title={commandError ?? undefined}
+      title={!settingsOpen && commandError ? commandError : undefined}
     >
-      <div className="music-player__signal">
-        <div className="music-player__status">
-          <span aria-live="polite">{statusLabel}</span>
-          <strong>{peakPercent}%</strong>
-        </div>
-        <MusicLevelWave
-          isAvailable={hasAudioSignal}
-          isPlaying={isPlaying}
-          audioPeak={mediaState.audioPeak}
-        />
-      </div>
-
-      <div className="music-player__controls">
-        <button
-          className="music-control-button"
-          type="button"
-          title={t.music.previous}
-          aria-label={t.music.previousTrack}
-          onClick={onPrevious}
-        >
-          <SkipBack size={18} strokeWidth={2.4} />
-        </button>
-        <button
-          className="music-control-button music-control-button--primary"
-          type="button"
-          title={isPlaying ? t.music.pause : t.music.play}
-          aria-label={isPlaying ? t.music.pause : t.music.play}
-          aria-busy={isTrackChanging}
-          onClick={onPlayPause}
-        >
-          {isTrackChanging ? (
-            <RefreshCcw
-              className="music-control-button__track-change"
-              size={19}
-              strokeWidth={2.4}
-            />
-          ) : isPlaying ? (
-            <Pause size={20} strokeWidth={2.5} />
+      {settingsOpen ? (
+        <>
+          <div className="music-player__settings-head">
+            <span className="music-player__settings-title">
+              {t.music.settingsTitle}
+            </span>
+            {settingsButton}
+          </div>
+          <p className="music-player__settings-hint">{t.music.settingsHint}</p>
+          {sourcePriority.length === 0 ? (
+            <div className="music-source-empty">{t.music.noSources}</div>
           ) : (
-            <Play size={20} strokeWidth={2.5} />
+            <div className="music-source-list" role="list">
+              {sourcePriority.map((source) => {
+                const live = liveSessions.find(
+                  (session) => session.id === source.id,
+                );
+                return (
+                  <div
+                    key={source.id}
+                    className={[
+                      "music-source-item",
+                      draggedSourceId === source.id
+                        ? "music-source-item--dragging"
+                        : "",
+                      dragOverSourceId === source.id
+                        ? "music-source-item--drag-over"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    role="listitem"
+                    data-source-id={source.id}
+                  >
+                    <button
+                      className="music-source-drag"
+                      type="button"
+                      title={t.music.reorderSource}
+                      aria-label={t.music.reorderSource}
+                      onPointerDown={(event) =>
+                        startSourceDrag(event, source.id)
+                      }
+                      onPointerMove={moveSourceDrag}
+                      onPointerUp={finishSourceDrag}
+                      onPointerCancel={cancelSourceDrag}
+                    >
+                      <GripVertical size={15} strokeWidth={2.4} />
+                    </button>
+                    <span
+                      className={[
+                        "music-source-dot",
+                        live?.playing ? "music-source-dot--playing" : "",
+                        live ? "music-source-dot--live" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      aria-hidden="true"
+                    />
+                    <span className="music-source-label" title={source.id}>
+                      {source.label}
+                    </span>
+                    {!live && (
+                      <button
+                        className="music-source-remove"
+                        type="button"
+                        title={t.music.removeSource}
+                        aria-label={t.music.removeSource}
+                        onClick={() => onRemoveSource(source.id)}
+                      >
+                        <Trash2 size={14} strokeWidth={2.2} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </button>
-        <button
-          className="music-control-button"
-          type="button"
-          title={t.music.next}
-          aria-label={t.music.nextTrack}
-          onClick={onNext}
-        >
-          <SkipForward size={18} strokeWidth={2.4} />
-        </button>
-      </div>
+        </>
+      ) : (
+        <div className="music-player__body">
+          <div className="music-player__artwork" aria-hidden="true">
+            {mediaState.thumbnail ? (
+              <img src={mediaState.thumbnail} alt="" draggable={false} />
+            ) : (
+              <Music2 size={30} strokeWidth={1.7} />
+            )}
+          </div>
+          <div className="music-player__stack">
+            <div className="music-player__head">
+              <div className="music-player__meta">
+                <span
+                  className="music-player__track"
+                  title={mediaState.title ?? undefined}
+                >
+                  {mediaState.title ?? t.music.noMedia}
+                </span>
+                {hasTrack && (
+                  <span
+                    className="music-player__artist"
+                    title={mediaState.artist ?? undefined}
+                  >
+                    {mediaState.artist ?? t.music.unknownArtist}
+                  </span>
+                )}
+              </div>
+              <div className="music-player__head-aside">
+                {sourceLabel && (
+                  <span className="music-player__source" title={sourceLabel}>
+                    {sourceLabel}
+                  </span>
+                )}
+                {settingsButton}
+              </div>
+            </div>
+
+            {commandError && (
+              <p className="music-player__error" role="alert">
+                {t.music.controlFailed}
+              </p>
+            )}
+
+            <div className="music-player__controls">
+              <button
+                className={[
+                  "music-control-button",
+                  "music-control-button--toggle",
+                  shuffleActive ? "music-control-button--on" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                type="button"
+                title={t.music.shuffle}
+                aria-label={t.music.shuffle}
+                aria-pressed={shuffleActive}
+                disabled={shuffleDisabled}
+                onClick={onToggleShuffle}
+              >
+                <Shuffle size={16} strokeWidth={2.4} />
+              </button>
+              <button
+                className="music-control-button"
+                type="button"
+                title={t.music.previous}
+                aria-label={t.music.previousTrack}
+                disabled={prevDisabled}
+                onClick={onPrevious}
+              >
+                <SkipBack size={18} strokeWidth={2.4} />
+              </button>
+              <button
+                className="music-control-button music-control-button--primary"
+                type="button"
+                title={isPlaying ? t.music.pause : t.music.play}
+                aria-label={isPlaying ? t.music.pause : t.music.play}
+                aria-busy={isTrackChanging}
+                onClick={onPlayPause}
+              >
+                {isTrackChanging ? (
+                  <RefreshCcw
+                    className="music-control-button__track-change"
+                    size={19}
+                    strokeWidth={2.4}
+                  />
+                ) : isPlaying ? (
+                  <Pause size={20} strokeWidth={2.5} />
+                ) : (
+                  <Play size={20} strokeWidth={2.5} />
+                )}
+              </button>
+              <button
+                className="music-control-button"
+                type="button"
+                title={t.music.next}
+                aria-label={t.music.nextTrack}
+                disabled={nextDisabled}
+                onClick={onNext}
+              >
+                <SkipForward size={18} strokeWidth={2.4} />
+              </button>
+              <button
+                className={[
+                  "music-control-button",
+                  "music-control-button--toggle",
+                  repeatActive ? "music-control-button--on" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                type="button"
+                title={repeatLabel}
+                aria-label={repeatLabel}
+                aria-pressed={repeatActive}
+                disabled={repeatDisabled}
+                onClick={onCycleRepeat}
+              >
+                {mediaState.repeatMode === "track" ? (
+                  <Repeat1 size={16} strokeWidth={2.4} />
+                ) : (
+                  <Repeat size={16} strokeWidth={2.4} />
+                )}
+              </button>
+            </div>
+
+            <MusicSeekBar
+              positionMs={mediaState.positionMs}
+              durationMs={mediaState.durationMs}
+              disabled={!mediaState.available || !mediaState.canSeek}
+              label={t.music.seek}
+              onSeek={onSeek}
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
-function MusicLevelWave({
-  isAvailable,
-  isPlaying,
-  audioPeak,
+function MusicSeekBar({
+  positionMs,
+  durationMs,
+  disabled,
+  label,
+  onSeek,
 }: {
-  isAvailable: boolean;
-  isPlaying: boolean;
-  audioPeak: number;
+  positionMs: number;
+  durationMs: number;
+  disabled: boolean;
+  label: string;
+  onSeek: (positionMs: number) => void;
 }) {
-  const [phase, setPhase] = useState(0);
-  const prefersReducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const [hoverRatio, setHoverRatio] = useState<number | null>(null);
+  const [dragRatio, setDragRatio] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!isPlaying) {
-      setPhase(0);
-      return;
+  const max = Math.max(durationMs, 0);
+  const interactive = !disabled && max > 0;
+  const currentRatio = max > 0 ? clamp(positionMs / max, 0, 1) : 0;
+  const fillRatio = dragRatio ?? currentRatio;
+  const displayMs = fillRatio * max;
+  const previewMs = (hoverRatio ?? 0) * max;
+
+  const ratioFromClientX = useCallback((clientX: number) => {
+    const track = trackRef.current;
+    if (!track) {
+      return 0;
     }
+    const rect = track.getBoundingClientRect();
+    if (rect.width <= 0) {
+      return 0;
+    }
+    return clamp((clientX - rect.left) / rect.width, 0, 1);
+  }, []);
 
-    const interval = window.setInterval(
-      () => {
-        setPhase(performance.now() / (isPlaying ? 210 : 760));
-      },
-      prefersReducedMotion ? 460 : isPlaying ? 58 : 150,
-    );
-
-    return () => window.clearInterval(interval);
-  }, [isAvailable, isPlaying, prefersReducedMotion]);
-
-  const liftedPeak = isPlaying
-    ? clamp(Math.log1p(clamp(audioPeak, 0, 1) * 185) / Math.log1p(185), 0, 1)
-    : 0;
-  const bars = [0.22, 0.48, 0.78, 0.54, 0.92, 0.68, 0.4, 0.72, 0.34].map(
-    (bar, index) => {
-      if (!isPlaying) {
-        return 0.2;
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!interactive) {
+        return;
       }
-
-      const floor = isAvailable ? 0.2 : 0.14 + bar * 0.2;
-      const breath =
-        isAvailable && !prefersReducedMotion
-          ? 0.06 + Math.sin(phase + index * 0.72) * 0.045
-          : 0;
-      const movement =
-        liftedPeak *
-        (0.34 + bar * 1.06) *
-        (0.78 + Math.sin(phase * (1.05 + index * 0.05) + index * 1.35) * 0.28);
-
-      return clamp(floor + breath + movement, 0.14, 1.08);
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      draggingRef.current = true;
+      const ratio = ratioFromClientX(event.clientX);
+      setDragRatio(ratio);
+      setHoverRatio(ratio);
     },
+    [interactive, ratioFromClientX],
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!interactive) {
+        return;
+      }
+      const ratio = ratioFromClientX(event.clientX);
+      setHoverRatio(ratio);
+      if (draggingRef.current) {
+        setDragRatio(ratio);
+      }
+    },
+    [interactive, ratioFromClientX],
+  );
+
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) {
+        return;
+      }
+      event.preventDefault();
+      const ratio = ratioFromClientX(event.clientX);
+      draggingRef.current = false;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      setDragRatio(null);
+      onSeek(Math.round(ratio * max));
+    },
+    [max, onSeek, ratioFromClientX],
+  );
+
+  const handlePointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      draggingRef.current = false;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      setDragRatio(null);
+      setHoverRatio(null);
+    },
+    [],
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    if (!draggingRef.current) {
+      setHoverRatio(null);
+    }
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (!interactive) {
+        return;
+      }
+      if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+        event.preventDefault();
+        onSeek(clamp(positionMs + 5000, 0, max));
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+        event.preventDefault();
+        onSeek(clamp(positionMs - 5000, 0, max));
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        onSeek(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        onSeek(max);
+      }
+    },
+    [interactive, max, onSeek, positionMs],
   );
 
   return (
-    <div className="music-player__wave" aria-hidden="true">
-      {bars.map((scale, index) => (
-        <span
-          key={index}
-          style={
-            {
-              "--wave-scale": scale.toFixed(3),
-              "--wave-opacity": (0.46 + scale * 0.46).toFixed(3),
-            } as CSSProperties
-          }
-        />
-      ))}
+    <div
+      className={[
+        "music-seek",
+        interactive ? "" : "music-seek--disabled",
+        hoverRatio !== null ? "music-seek--hover" : "",
+        dragRatio !== null ? "music-seek--scrubbing" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span className="music-seek__time">{formatMediaTime(displayMs)}</span>
+      <div
+        ref={trackRef}
+        className="music-seek__track"
+        role="slider"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={Math.round(max)}
+        aria-valuenow={Math.round(displayMs)}
+        aria-valuetext={formatMediaTime(displayMs)}
+        aria-disabled={!interactive}
+        tabIndex={interactive ? 0 : -1}
+        style={
+          {
+            "--fill": `${fillRatio * 100}%`,
+            "--preview": `${(hoverRatio ?? 0) * 100}%`,
+          } as CSSProperties
+        }
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="music-seek__rail" />
+        <div className="music-seek__fill" />
+        <div className="music-seek__thumb" />
+        {hoverRatio !== null && (
+          <>
+            <div className="music-seek__preview" />
+            <div className="music-seek__tooltip">
+              {formatMediaTime(previewMs)}
+            </div>
+          </>
+        )}
+      </div>
+      <span className="music-seek__time">{formatMediaTime(max)}</span>
     </div>
   );
 }
@@ -3733,6 +4257,11 @@ function IslandApp({
   const [mediaCommandError, setMediaCommandError] = useState<string | null>(
     null,
   );
+  const [musicSourcePriority, setMusicSourcePriority] = useState<
+    KnownMediaSource[]
+  >(loadMusicSourcePriority);
+  const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
+  const mediaTargetRef = useRef<string | null>(null);
   const [agentStatus, setAgentStatus] =
     useState<AgentStatusSnapshot>(DEFAULT_AGENT_STATUS);
   const isRefreshingAgentStatus = useRef(false);
@@ -3832,7 +4361,9 @@ function IslandApp({
         : BASE_EXPANDED_ISLAND_HEIGHT +
           Math.max(0, visibleTodoRows - TODO_GROW_START_ROWS) * TODO_ROW_HEIGHT
       : page === "music"
-        ? MUSIC_EXPANDED_ISLAND_HEIGHT
+        ? musicSettingsOpen
+          ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
+          : MUSIC_EXPANDED_ISLAND_HEIGHT
         : page === "clipboard"
           ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
           : page === "qq"
@@ -4247,7 +4778,9 @@ function IslandApp({
     isRefreshingMediaState.current = true;
 
     try {
-      const nextMediaState = await invoke<MediaState>("get_media_state");
+      const nextMediaState = await invoke<MediaState>("get_media_state", {
+        target: mediaTargetRef.current ?? undefined,
+      });
 
       setMediaState((currentState) => {
         const intent = mediaPlaybackIntent.current;
@@ -4268,21 +4801,18 @@ function IslandApp({
           (nextMediaState.audioActive || nextPeak > AUDIO_ACTIVE_THRESHOLD);
         const audioPeak = audioActive ? nextPeak : 0;
 
-        if (
-          currentState.available === nextMediaState.available &&
-          currentState.playbackStatus === playbackStatus &&
-          currentState.audioActive === audioActive &&
-          currentState.audioPeak === audioPeak
-        ) {
-          return currentState;
-        }
-
-        return {
+        const merged: MediaState = {
           ...nextMediaState,
           audioActive,
           audioPeak,
           playbackStatus,
         };
+
+        if (isSameMediaState(currentState, merged)) {
+          return currentState;
+        }
+
+        return merged;
       });
     } catch (error) {
       console.error("Failed to read media state", error);
@@ -4293,41 +4823,65 @@ function IslandApp({
   }, []);
 
   const runMediaCommand = useCallback(
-    async (command: "media_play_pause" | "media_next" | "media_previous") => {
+    async (
+      command:
+        | "media_play_pause"
+        | "media_next"
+        | "media_previous"
+        | "media_toggle_shuffle"
+        | "media_cycle_repeat",
+    ) => {
       if (isRunningMediaCommand.current) {
         return;
       }
 
+      const target = mediaTargetRef.current ?? undefined;
       const isPlayPause = command === "media_play_pause";
-      const isCurrentlyPlaying = mediaState.playbackStatus === "playing";
+      const isTrackChange =
+        command === "media_next" || command === "media_previous";
+      const isTransport = isPlayPause || isTrackChange;
+
       const intendedStatus: MediaPlaybackStatus = isPlayPause
-        ? isCurrentlyPlaying
+        ? mediaState.playbackStatus === "playing"
           ? "paused"
           : "playing"
         : mediaState.playbackStatus;
 
-      mediaPlaybackIntent.current = {
-        status: intendedStatus,
-        expiresAt: Date.now() + (isPlayPause ? 1200 : 1800),
-      };
+      if (isTransport) {
+        mediaPlaybackIntent.current = {
+          status: intendedStatus,
+          expiresAt: Date.now() + (isPlayPause ? 1200 : 1800),
+        };
 
-      if (isPlayPause) {
-        setMediaState((currentState) => ({
-          ...currentState,
-          available: intendedStatus === "playing" || currentState.available,
-          audioActive:
-            intendedStatus === "playing" && currentState.audioActive,
-          audioPeak: intendedStatus === "paused" ? 0 : currentState.audioPeak,
-          playbackStatus: intendedStatus,
-          updatedAt: Date.now(),
-        }));
+        if (isPlayPause) {
+          setMediaState((currentState) => ({
+            ...currentState,
+            available: intendedStatus === "playing" || currentState.available,
+            audioActive:
+              intendedStatus === "playing" && currentState.audioActive,
+            audioPeak:
+              intendedStatus === "paused" ? 0 : currentState.audioPeak,
+            playbackStatus: intendedStatus,
+            updatedAt: Date.now(),
+          }));
+        }
       }
 
       isRunningMediaCommand.current = true;
-      setIsMediaTrackChanging(!isPlayPause);
+      setIsMediaTrackChanging(isTrackChange);
       setMediaCommandError(null);
       try {
-        const nextMediaState = await invoke<MediaState>(command);
+        const nextMediaState = await invoke<MediaState>(command, { target });
+
+        if (!isTransport) {
+          setMediaState((currentState) =>
+            isSameMediaState(currentState, nextMediaState)
+              ? currentState
+              : nextMediaState,
+          );
+          return;
+        }
+
         setMediaState((currentState) => {
           if (intendedStatus === "paused") {
             return {
@@ -4359,8 +4913,78 @@ function IslandApp({
         setIsMediaTrackChanging(false);
       }
     },
-    [mediaState.audioActive, mediaState.playbackStatus, refreshMediaState],
+    [mediaState.playbackStatus, refreshMediaState],
   );
+
+  const seekMedia = useCallback(
+    async (positionMs: number) => {
+      const target = mediaTargetRef.current ?? undefined;
+      const clamped = Math.max(0, Math.round(positionMs));
+
+      setMediaState((currentState) => ({
+        ...currentState,
+        positionMs:
+          currentState.durationMs > 0
+            ? Math.min(clamped, currentState.durationMs)
+            : clamped,
+      }));
+      setMediaCommandError(null);
+
+      try {
+        const nextMediaState = await invoke<MediaState>("media_seek", {
+          positionMs: clamped,
+          target,
+        });
+        setMediaState((currentState) =>
+          isSameMediaState(currentState, nextMediaState)
+            ? currentState
+            : nextMediaState,
+        );
+      } catch (error) {
+        console.error("Failed to seek media", error);
+        setMediaCommandError(String(error));
+        await refreshMediaState();
+      }
+    },
+    [refreshMediaState],
+  );
+
+  const reorderMusicSource = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) {
+        return;
+      }
+
+      setMusicSourcePriority((current) => {
+        const sourceIndex = current.findIndex(
+          (source) => source.id === sourceId,
+        );
+        const targetIndex = current.findIndex(
+          (source) => source.id === targetId,
+        );
+
+        if (
+          sourceIndex < 0 ||
+          targetIndex < 0 ||
+          sourceIndex === targetIndex
+        ) {
+          return current;
+        }
+
+        const next = [...current];
+        const [moved] = next.splice(sourceIndex, 1);
+        next.splice(targetIndex, 0, moved);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const removeMusicSource = useCallback((sourceId: string) => {
+    setMusicSourcePriority((current) =>
+      current.filter((source) => source.id !== sourceId),
+    );
+  }, []);
 
   useEffect(() => {
     let didCancel = false;
@@ -4883,6 +5507,69 @@ function IslandApp({
     return () => window.clearInterval(interval);
   }, [refreshMediaState]);
 
+  const effectiveMediaTarget = useMemo(() => {
+    if (mediaState.sessions.length === 0) {
+      return null;
+    }
+
+    const present = new Map(
+      mediaState.sessions.map((session) => [session.id, session]),
+    );
+
+    for (const source of musicSourcePriority) {
+      if (present.get(source.id)?.playing) {
+        return source.id;
+      }
+    }
+    for (const source of musicSourcePriority) {
+      if (present.has(source.id)) {
+        return source.id;
+      }
+    }
+    return null;
+  }, [musicSourcePriority, mediaState.sessions]);
+
+  useEffect(() => {
+    if (mediaTargetRef.current === effectiveMediaTarget) {
+      return;
+    }
+    mediaTargetRef.current = effectiveMediaTarget;
+    mediaPlaybackIntent.current = null;
+    void refreshMediaState();
+  }, [effectiveMediaTarget, refreshMediaState]);
+
+  useEffect(() => {
+    if (mediaState.sessions.length === 0) {
+      return;
+    }
+
+    setMusicSourcePriority((current) => {
+      const known = new Set(current.map((source) => source.id));
+      const additions = mediaState.sessions
+        .filter((session) => !known.has(session.id))
+        .map((session) => ({ id: session.id, label: session.label }));
+
+      return additions.length > 0 ? [...current, ...additions] : current;
+    });
+  }, [mediaState.sessions]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
+        JSON.stringify(musicSourcePriority),
+      );
+    } catch {
+      // Ignore storage write failures (private mode, quota, etc.).
+    }
+  }, [musicSourcePriority]);
+
+  useEffect(() => {
+    if (page !== "music") {
+      setMusicSettingsOpen(false);
+    }
+  }, [page]);
+
   useEffect(() => {
     void refreshAgentStatus();
 
@@ -5296,9 +5983,18 @@ function IslandApp({
             mediaState={mediaState}
             isTrackChanging={isMediaTrackChanging}
             commandError={mediaCommandError}
+            sourcePriority={musicSourcePriority}
+            effectiveSourceId={effectiveMediaTarget ?? mediaState.activeSessionId}
+            settingsOpen={musicSettingsOpen}
+            onToggleSettings={() => setMusicSettingsOpen((open) => !open)}
             onPlayPause={() => void runMediaCommand("media_play_pause")}
             onNext={() => void runMediaCommand("media_next")}
             onPrevious={() => void runMediaCommand("media_previous")}
+            onToggleShuffle={() => void runMediaCommand("media_toggle_shuffle")}
+            onCycleRepeat={() => void runMediaCommand("media_cycle_repeat")}
+            onSeek={(positionMs) => void seekMedia(positionMs)}
+            onReorderSource={reorderMusicSource}
+            onRemoveSource={removeMusicSource}
           />
         )}
         {page === "clipboard" && (

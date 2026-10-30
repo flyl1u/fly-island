@@ -235,15 +235,26 @@ export type Translations = {
   music: {
     playerLabel: string;
     controlFailed: string;
-    paused: string;
-    playing: string;
     noMedia: string;
+    unknownArtist: string;
     previous: string;
     previousTrack: string;
     play: string;
     pause: string;
     next: string;
     nextTrack: string;
+    shuffle: string;
+    repeatOne: string;
+    repeatAll: string;
+    repeatOff: string;
+    seek: string;
+    settingsTitle: string;
+    settingsHint: string;
+    openSettings: string;
+    closeSettings: string;
+    reorderSource: string;
+    removeSource: string;
+    noSources: string;
   };
 
   todo: {
