@@ -1,5 +1,11 @@
-use imap::{types::Flag, Session};
-use imap_proto::types::{BodyContentCommon, BodyStructure, MessageSection, SectionPath};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use imap::{
+    types::{Fetch, Flag},
+    Session,
+};
+use imap_proto::types::{
+    BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
+};
 use keyring::{Entry, Error as KeyringError};
 use mailparse::MailHeaderMap;
 use serde::Serialize;
@@ -21,6 +27,9 @@ const IO_TIMEOUT: Duration = Duration::from_secs(15);
 const HEADER_QUERY: &str = "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER]<0.65536>)";
 const MAX_BODY_BYTES: u32 = 512 * 1024;
 const MAX_MIME_BYTES: usize = 65_536;
+const MAX_INLINE_IMAGES: usize = 8;
+const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
+const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
 static SERVICE: OnceLock<Arc<MailService>> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -785,7 +794,8 @@ fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
                 let mut nested = path.clone();
                 nested.push(index as u32 + 1);
                 if let Some(part) = text_part(body, nested) {
-                    if part.mime == "text/plain" {
+                    // 优先渲染 HTML 版本：纯文本副本里没有排版和图片，图片只有在 HTML 里才存在。
+                    if part.mime == "text/html" {
                         return Some(part);
                     }
                     if fallback.is_none() {
@@ -798,6 +808,209 @@ fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
         // Forwarded messages and text attachments are separate from the mail's own body.
         _ => None,
     }
+}
+
+struct InlineImage {
+    path: Vec<u32>,
+    content_id: String,
+    mime: String,
+    octets: u32,
+    base64: bool,
+    quoted_printable: bool,
+}
+
+// cid 引用的结束位置：遇到分隔符才算 token 结束，否则 cid:image1 会把 cid:image10 一起吞掉。
+fn cid_token_end(html: &str, start: usize) -> usize {
+    html[start..]
+        .find(|character: char| {
+            character.is_whitespace()
+                || matches!(character, '"' | '\'' | ')' | '(' | '<' | '>' | '?')
+        })
+        .map_or(html.len(), |offset| start + offset)
+}
+
+// 只内联正文里真正用 cid: 引用的图片，避免为未被引用的附件白拉数据。
+fn cid_references(html: &str) -> Vec<String> {
+    let lower = html.to_ascii_lowercase();
+    let mut ids: Vec<String> = Vec::new();
+    let mut cursor = 0;
+    while let Some(found) = lower[cursor..].find("cid:") {
+        let start = cursor + found + 4;
+        let end = cid_token_end(&lower, start);
+        let id = html[start..end].trim().trim_matches(|character| character == '<' || character == '>');
+        if !id.is_empty() && !ids.iter().any(|known| known.eq_ignore_ascii_case(id)) {
+            ids.push(id.to_string());
+        }
+        cursor = end.max(start);
+    }
+    ids
+}
+
+fn collect_inline_images(
+    body: &BodyStructure<'_>,
+    path: Vec<u32>,
+    ids: &[String],
+    out: &mut Vec<InlineImage>,
+) {
+    if out.len() >= MAX_INLINE_IMAGES || path.len() > 16 {
+        return;
+    }
+    match body {
+        BodyStructure::Basic { common, other, .. } if common.ty.ty.eq_ignore_ascii_case("image") => {
+            let Some(id) = other.id.map(|id| id.trim_matches(|character| character == '<' || character == '>')) else {
+                return;
+            };
+            if id.is_empty() || other.octets == 0 || other.octets > MAX_INLINE_IMAGE_BYTES {
+                return;
+            }
+            let Some(matched) = ids.iter().find(|wanted| wanted.eq_ignore_ascii_case(id)) else {
+                return;
+            };
+            out.push(InlineImage {
+                path: if path.is_empty() { vec![1] } else { path },
+                content_id: matched.clone(),
+                mime: format!("image/{}", common.ty.subtype.to_ascii_lowercase()),
+                octets: other.octets,
+                base64: matches!(other.transfer_encoding, ContentEncoding::Base64),
+                quoted_printable: matches!(other.transfer_encoding, ContentEncoding::QuotedPrintable),
+            });
+        }
+        BodyStructure::Multipart { bodies, .. } => {
+            for (index, nested) in bodies.iter().take(128).enumerate() {
+                let mut nested_path = path.clone();
+                nested_path.push(index as u32 + 1);
+                collect_inline_images(nested, nested_path, ids, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+// 按完整 cid token 替换，避免 cid:image1 命中 cid:image10 的前缀。
+fn replace_cid_references(html: &str, replacements: &[(String, String)]) -> String {
+    let lower = html.to_ascii_lowercase();
+    let mut out = String::with_capacity(html.len());
+    let mut cursor = 0;
+    while let Some(found) = lower[cursor..].find("cid:") {
+        // 整个 cid:token 都要换掉，只换 token 会留下 "cid:data:image/..." 这种废地址。
+        let reference_start = cursor + found;
+        let token_start = reference_start + 4;
+        let token_end = cid_token_end(&lower, token_start);
+        out.push_str(&html[cursor..reference_start]);
+        match replacements
+            .iter()
+            .find(|(content_id, _)| content_id.eq_ignore_ascii_case(&html[token_start..token_end]))
+        {
+            Some((_, data_uri)) => out.push_str(data_uri),
+            None => out.push_str(&html[reference_start..token_end]),
+        }
+        cursor = token_end;
+    }
+    out.push_str(&html[cursor..]);
+    out
+}
+
+// UID FETCH 只查这一封邮件，但服务器可以把分段拆成多条 FETCH 响应发回来，而且续包不一定
+// 重复 UID（QQ 实测就只给第一条带 UID）。按 uid 相等过滤会把续包整批丢掉，只剩下第一批分段，
+// 所以这里只把带 UID 的响应排在前面，其余响应照样参与合并。
+fn responses_for_message<'a>(messages: &'a [Fetch], uid: u32) -> Vec<&'a Fetch> {
+    let (mut mine, others): (Vec<&Fetch>, Vec<&Fetch>) =
+        messages.iter().partition(|item| item.uid == Some(uid));
+    mine.extend(others);
+    mine
+}
+
+// 内嵌图只是锦上添花：任何一步失败都退回原正文，不能把已经拿到的文字一起弄丢。
+fn inline_cid_images<T: Read + Write>(
+    session: &mut Session<T>,
+    uid: u32,
+    structure: &BodyStructure<'_>,
+    html: String,
+) -> String {
+    let ids = cid_references(&html);
+    if ids.is_empty() {
+        return html;
+    }
+    let mut images = Vec::new();
+    collect_inline_images(structure, Vec::new(), &ids, &mut images);
+    if images.is_empty() {
+        return html;
+    }
+    let query = format!(
+        "(UID {})",
+        images
+            .iter()
+            .map(|image| {
+                let section = image.path.iter().map(u32::to_string).collect::<Vec<_>>().join(".");
+                // 和正文一样避开 QQ 不应答的部分取回，图片大小由 octets 限额兜底。
+                format!("BODY.PEEK[{section}]")
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+    let Ok(messages) = session.uid_fetch(uid.to_string(), &query) else {
+        return html;
+    };
+    let responses = responses_for_message(&messages, uid);
+    if responses.is_empty() {
+        return html;
+    }
+    let mut replacements: Vec<(String, String)> = Vec::new();
+    let mut budget = MAX_INLINE_TOTAL_BYTES;
+    for image in &images {
+        if image.quoted_printable {
+            continue;
+        }
+        let path = SectionPath::Part(image.path.clone(), None);
+        // 批量响应里缺这一段时（服务器把后面的批次丢了）再单独要一次：一条命令只请求一个分段，
+        // 就谈不上「分批」，保证后面的图片不会漏。
+        let retry;
+        let bytes = match responses.iter().find_map(|item| item.section(&path)) {
+            Some(bytes) => Some(bytes),
+            None => {
+                let section = image
+                    .path
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(".");
+                retry = session
+                    .uid_fetch(uid.to_string(), format!("(UID BODY.PEEK[{section}])"))
+                    .ok();
+                retry
+                    .as_ref()
+                    .and_then(|items| items.iter().find_map(|item| item.section(&path)))
+            }
+        };
+        let Some(bytes) = bytes else {
+            continue;
+        };
+        if bytes.len() < image.octets as usize {
+            continue;
+        }
+        let payload = if image.base64 {
+            let encoded = bytes
+                .iter()
+                .copied()
+                .filter(|byte| !byte.is_ascii_whitespace())
+                .collect::<Vec<u8>>();
+            String::from_utf8(encoded).ok()
+        } else {
+            Some(BASE64.encode(bytes))
+        };
+        let Some(payload) = payload else {
+            continue;
+        };
+        if payload.len() as u32 > budget {
+            continue;
+        }
+        budget -= payload.len() as u32;
+        replacements.push((
+            image.content_id.clone(),
+            format!("data:{};base64,{payload}", image.mime),
+        ));
+    }
+    replace_cid_references(&html, &replacements)
 }
 
 fn fetch_content<T: Read + Write>(
@@ -830,30 +1043,35 @@ fn fetch_content<T: Read + Write>(
         .map(u32::to_string)
         .collect::<Vec<_>>()
         .join(".");
+    let multipart = matches!(structure, BodyStructure::Multipart { .. });
     let mime_path = SectionPath::Part(part.path.clone(), Some(MessageSection::Mime));
     let body_path = SectionPath::Part(part.path, None);
-    let query = format!(
-        "(UID BODY.PEEK[{section}.MIME]<0.{}> BODY.PEEK[{section}]<0.{}>)",
-        MAX_MIME_BYTES + 1,
-        MAX_BODY_BYTES + 1
-    );
+    // 单段邮件的正文就是整封信，没有 [1.MIME] 这个分段（QQ 会直接不返回），只能取报文头。
+    let header_query = if multipart {
+        format!("BODY.PEEK[{section}.MIME]")
+    } else {
+        "BODY.PEEK[HEADER]".to_string()
+    };
+    // QQ 的 IMAP 对分段的部分取回（BODY[1]<0.n>）不应答，会一直挂到超时；整段取回秒回。
+    // 大小仍由 BODYSTRUCTURE 的 octets 和下面的长度校验兜底。
+    let query = format!("(UID {header_query} BODY.PEEK[{section}])");
     let messages = session
         .uid_fetch(uid.to_string(), query)
         .map_err(|_| "无法加载邮件正文，请检查网络并重试。")?;
-    let message = messages
-        .iter()
-        .find(|item| {
-            item.uid == Some(uid)
-                && item.section(&mime_path).is_some()
-                && item.section(&body_path).is_some()
-        })
-        .ok_or("邮件已移除，请刷新收件箱。")?;
-    let header = message
-        .section(&mime_path)
-        .ok_or("无法解析邮件格式，请在网页中查看。")?;
-    let body = message
-        .section(&body_path)
-        .ok_or("无法读取邮件正文，请重试。")?;
+    // 服务器可能把两个分段拆到不同的 FETCH 响应里（续包甚至不重复 UID），合并全部响应，
+    // 别要求同一条响应都带齐，也别要求每条响应都带 UID。
+    let mut header = None;
+    let mut body = None;
+    for item in responses_for_message(&messages, uid) {
+        if header.is_none() {
+            header = if multipart { item.section(&mime_path) } else { item.header() };
+        }
+        if body.is_none() {
+            body = item.section(&body_path);
+        }
+    }
+    let header = header.ok_or("邮件已移除，请刷新收件箱。")?;
+    let body = body.ok_or("邮件已移除，请刷新收件箱。")?;
     if header.len() > MAX_MIME_BYTES || body.len() > MAX_BODY_BYTES as usize {
         return Err("邮件正文过大，请在网页中查看。".into());
     }
@@ -874,6 +1092,11 @@ fn fetch_content<T: Read + Write>(
     let content = parsed
         .get_body()
         .map_err(|_| "无法解码邮件正文，请在网页中查看。")?;
+    let content = if part.mime == "text/html" {
+        inline_cid_images(session, uid, structure, content)
+    } else {
+        content
+    };
     Ok(MailContent {
         id: message_id.into(),
         content,
@@ -1024,6 +1247,35 @@ mod tests {
     }
 
     #[test]
+    fn inlines_only_images_referenced_by_cid() {
+        let html = r#"<img src="cid:img001@qq"><img src='cid:IMG002@QQ'>正文提到 cid: 但没有编号。"#;
+        assert_eq!(cid_references(html), vec!["img001@qq", "IMG002@QQ"]);
+        assert!(cid_references("<p>no images here</p>").is_empty());
+        let png = "data:image/png;base64,AA".to_string();
+        assert_eq!(
+            replace_cid_references("a CID:x b cid:X c", &[("x".into(), png.clone())]),
+            format!("a {png} b {png} c")
+        );
+        assert_eq!(
+            replace_cid_references("中文 cid:x", &[("x".into(), "图".into())]),
+            "中文 图"
+        );
+        // cid:image1 不能吃掉 cid:image10 的前缀
+        assert_eq!(
+            replace_cid_references(
+                r#"<img src="cid:image10"><img src="cid:image1">"#,
+                &[("image1".into(), png.clone())]
+            ),
+            format!(r#"<img src="cid:image10"><img src="{png}">"#)
+        );
+        // 整个 cid:token 都要换掉，不能留下 "cid:data:image/..." 这种无效地址
+        assert_eq!(
+            replace_cid_references(r#"<img src="cid:x">"#, &[("x".into(), png.clone())]),
+            format!(r#"<img src="{png}">"#)
+        );
+    }
+
+    #[test]
     fn first_sync_and_uid_validity_reset_do_not_replay_history() {
         let mut state = active_state();
         assert!(state.accept(0, inbox(1, &[1, 2])).unwrap().1.is_none());
@@ -1156,11 +1408,12 @@ mod tests {
 
     fn body_client(
         structure: &str,
+        header: &str,
         path: &str,
         mime: &str,
         body: &str,
     ) -> (Session<ScriptedStream>, Arc<Mutex<Vec<u8>>>) {
-        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODY[{path}.MIME]<0> {{{}}}\r\n{mime} BODY[{path}]<0> {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 FLAGS ())\r\n* 1 FETCH (UID 9 BODY[{header}] {{{}}}\r\n{mime} BODY[{path}] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
         let (client, output) = client(script);
         (client.login("user@qq.com", "test-secret").unwrap(), output)
     }
@@ -1192,6 +1445,7 @@ mod tests {
         );
         let (mut session, output) = body_client(
             &structure,
+            "HEADER",
             "1",
             "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n",
             body,
@@ -1202,27 +1456,125 @@ mod tests {
         assert_eq!(content.content_type, "text/plain");
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
         assert!(commands.contains("UID FETCH 9 (UID BODYSTRUCTURE)"));
-        assert!(commands.contains("BODY.PEEK[1.MIME]<0.65537> BODY.PEEK[1]<0.524289>"));
+        assert!(commands.contains("BODY.PEEK[HEADER] BODY.PEEK[1]"));
         for forbidden in [" SELECT ", " STORE ", " EXPUNGE", "BODY[]", "RFC822 "] {
             assert!(!commands.contains(forbidden), "{commands}");
         }
     }
 
     #[test]
-    fn multipart_prefers_plain_text_and_skips_attachments_and_html_alternative() {
-        let body = "meeting at 3";
-        let structure = format!("(((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" 20 1)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1) \"ALTERNATIVE\")(\"APPLICATION\" \"PDF\" (\"NAME\" \"large.pdf\") NIL NIL \"BASE64\" 9999999) \"MIXED\")", body.len());
+    fn split_fetch_responses_still_build_the_body() {
+        let body = "5Lit5paH";
+        let mime = "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+        let structure = format!("(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)", body.len());
+        // 续包只带了分段、没重复 UID（QQ 的拆包形态），正文和报文头都要能拼出来。
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[HEADER] {{{}}}\r\n{mime})\r\n* 1 FETCH (BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
+        let (client, _) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, "中文");
+    }
+
+    #[test]
+    fn multipart_prefers_html_and_skips_attachments_and_plain_alternative() {
+        let body = "<p>meeting at 3</p>";
+        let structure = format!("(((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" 12 1) \"ALTERNATIVE\")(\"APPLICATION\" \"PDF\" (\"NAME\" \"large.pdf\") NIL NIL \"BASE64\" 9999999) \"MIXED\")", body.len());
         let (mut session, output) = body_client(
             &structure,
-            "1.2",
-            "Content-Type: text/plain; charset=utf-8\r\n\r\n",
+            "1.1.MIME",
+            "1.1",
+            "Content-Type: text/html; charset=utf-8\r\n\r\n",
             body,
         );
         assert_eq!(fetch_content(&mut session, "7:9").unwrap().content, body);
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
-        assert!(commands.contains("BODY.PEEK[1.2]"));
+        assert!(commands.contains("BODY.PEEK[1.1]"));
+        assert!(!commands.contains("BODY.PEEK[1.2]"));
         assert!(!commands.contains("BODY.PEEK[2]"));
-        assert!(!commands.contains("BODY.PEEK[1.1]"));
+    }
+
+    #[test]
+    fn images_split_across_fetch_responses_without_repeated_uid_are_all_inlined() {
+        let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
+        let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") \"<img1@qq>\" NIL \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") \"<img2@qq>\" NIL \"BASE64\" {}) \"RELATED\")",
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        // 图片多时服务器会把分段拆成多条 FETCH 响应，而且只有第一条带 UID，后面的响应
+        // 只给分段——按 uid 过滤的话就只能拿到第一批，两张图都得内联才算过。
+        let script = format!(
+            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\n* 1 FETCH (BODY[3] {{{}}}\r\n{second})\r\na5 OK images\r\n",
+            mime.len(),
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        let (client, _) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").unwrap();
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{first}")));
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{second}")));
+        assert!(!content.content.contains("cid:"));
+    }
+
+    #[test]
+    fn an_image_missing_from_the_batches_is_fetched_again_on_its_own() {
+        let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
+        let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") \"<img1@qq>\" NIL \"BASE64\" {})(\"IMAGE\" \"PNG\" (\"NAME\" \"img2.png\") \"<img2@qq>\" NIL \"BASE64\" {}) \"RELATED\")",
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        // 服务器只把第一批发回来（第二张图缺失），得单独再取一次这个分段补上。
+        let script = format!(
+            "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first})\r\na5 OK images\r\n* 1 FETCH (UID 9 BODY[3] {{{}}}\r\n{second})\r\na6 OK retry\r\n",
+            mime.len(),
+            body.len(),
+            first.len(),
+            second.len()
+        );
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").unwrap();
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{first}")));
+        assert!(content
+            .content
+            .contains(&format!("data:image/png;base64,{second}")));
+        assert!(!content.content.contains("cid:"));
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert_eq!(commands.matches("BODY.PEEK[3]").count(), 2, "{commands}");
+    }
+
+    #[test]
+    fn inline_image_failures_keep_the_text_body() {
+        let body = r#"<p>保留正文</p><img src="cid:image1@qq">"#;
+        let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+        let structure = format!(
+            "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"image1.png\") \"<image1@qq>\" NIL \"BASE64\" 40) \"RELATED\")",
+            body.len()
+        );
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME]<0> {{{}}}\r\n{mime} BODY[1]<0> {{{}}}\r\n{body})\r\na4 OK body\r\na5 NO image fetch failed\r\n", mime.len(), body.len());
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let content = fetch_content(&mut session, "7:9").expect("图片失败不应该连正文一起失败");
+        assert_eq!(content.content, body);
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert!(commands.contains("BODY.PEEK[1]"));
+        assert!(commands.contains("BODY.PEEK[2]"));
     }
 
     #[test]
@@ -1232,7 +1584,7 @@ mod tests {
             "(\"TEXT\" \"HTML\" (\"CHARSET\" \"GB2312\") NIL NIL \"QUOTED-PRINTABLE\" {} 1)",
             body.len()
         );
-        let (mut session, _) = body_client(&structure, "1", "Content-Type: text/html; charset=GB2312\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", body);
+        let (mut session, _) = body_client(&structure, "HEADER", "1", "Content-Type: text/html; charset=GB2312\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", body);
         let content = fetch_content(&mut session, "7:9").unwrap();
         assert_eq!(content.content, "<p>中文</p>");
         assert_eq!(content.content_type, "text/html");
@@ -1256,7 +1608,7 @@ mod tests {
             format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {} 1)", MAX_BODY_BYTES + 1),
             "(\"TEXT\" \"PLAIN\" (\"NAME\" \"secret.txt\") NIL NIL \"8BIT\" 8 1 NIL (\"ATTACHMENT\" (\"FILENAME\" \"secret.txt\")) NIL NIL)".into(),
         ] {
-            let (mut session, output) = body_client(&structure, "1", "", "");
+            let (mut session, output) = body_client(&structure, "HEADER", "1", "", "");
             assert!(fetch_content(&mut session, "7:9").is_err());
             assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("BODY.PEEK"));
         }
@@ -1269,7 +1621,7 @@ mod tests {
             (5, "Content-Type: text/html\r\n\r\n"),
         ] {
             let structure = format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {size} 1)");
-            let (mut session, _) = body_client(&structure, "1", mime, "hello");
+            let (mut session, _) = body_client(&structure, "HEADER", "1", mime, "hello");
             assert!(fetch_content(&mut session, "7:9").is_err());
         }
     }
