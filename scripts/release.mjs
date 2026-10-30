@@ -119,7 +119,9 @@ if (!upload) {
 const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath];
 const revision = run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim();
 run("gh", ["release", "create", tag, "--repo", REPO, "--target", revision, "--draft", "--title", tag, "--notes-file", notesFile, ...assets]);
-const remote = JSON.parse(run("gh", ["api", `repos/${REPO}/releases/tags/${tag}`], { capture: true }).stdout);
+// An unpublished draft's tag may not exist yet, so fetch its assets by release ID.
+const releaseId = run("gh", ["release", "view", tag, "--repo", REPO, "--json", "databaseId", "--jq", ".databaseId"], { capture: true }).stdout.trim();
+const remote = JSON.parse(run("gh", ["api", `repos/${REPO}/releases/${releaseId}`], { capture: true }).stdout);
 for (const path of assets) {
   const name = path.split("/").pop();
   const asset = remote.assets.find((entry) => entry.name === name);
