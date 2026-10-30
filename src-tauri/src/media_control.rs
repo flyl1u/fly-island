@@ -35,6 +35,8 @@ use windows::{
 
 const AUDIO_ACTIVE_THRESHOLD: f32 = 0.000015;
 const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
+/// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
+const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
@@ -113,11 +115,27 @@ pub(crate) fn run_command(
     target: Option<String>,
 ) -> Result<MediaState, String> {
     on_media_thread(move || {
+        // When a source is explicitly selected, operate only on it: never fall
+        // back to another session or to global media keys, which could control
+        // an unexpected player.
+        if let Some(id) = target.as_deref() {
+            let manager = request_manager()?;
+            let session = session_by_id(&manager, id)?
+                .ok_or_else(|| "The selected media source is no longer available.".to_string())?;
+            if run_session_command(&session, command)? {
+                thread::sleep(Duration::from_millis(40));
+                return read_media_state_from_manager(&manager, Some(id));
+            }
+            return Err("The selected media source did not accept the command.".to_string());
+        }
+
+        // No source specified: control the active session, then fall back to
+        // global media keys.
         if let Ok(manager) = request_manager() {
-            if let Ok(Some(session)) = resolve_session(&manager, target.as_deref()) {
+            if let Ok(Some(session)) = target_session(&manager) {
                 if run_session_command(&session, command).unwrap_or(false) {
                     thread::sleep(Duration::from_millis(40));
-                    return read_media_state_from_manager(&manager, target.as_deref());
+                    return read_media_state_from_manager(&manager, None);
                 }
             }
         }
@@ -126,29 +144,36 @@ pub(crate) fn run_command(
             send_media_key(key_command);
             thread::sleep(Duration::from_millis(80));
         }
-        read_media_state(target.as_deref())
+        read_media_state(None)
     })
 }
 
 pub(crate) fn seek(position_ms: i64, target: Option<String>) -> Result<MediaState, String> {
     on_media_thread(move || {
-        if let Ok(manager) = request_manager() {
-            if let Ok(Some(session)) = resolve_session(&manager, target.as_deref()) {
-                let start_ms = session
-                    .GetTimelineProperties()
-                    .ok()
-                    .and_then(|timeline| timeline.StartTime().ok())
-                    .map(ticks_to_ms)
-                    .unwrap_or(0);
-                let ticks = (start_ms + position_ms.max(0)).saturating_mul(10_000);
-                if let Ok(operation) = session.TryChangePlaybackPositionAsync(ticks) {
-                    let _ = pollster::block_on(operation);
-                    thread::sleep(Duration::from_millis(40));
-                    return read_media_state_from_manager(&manager, target.as_deref());
-                }
-            }
+        let manager = request_manager()?;
+        let session = match target.as_deref() {
+            Some(id) => session_by_id(&manager, id)?
+                .ok_or_else(|| "The selected media source is no longer available.".to_string())?,
+            None => target_session(&manager)?
+                .ok_or_else(|| "No media is currently playing.".to_string())?,
+        };
+
+        let start_ms = session
+            .GetTimelineProperties()
+            .ok()
+            .and_then(|timeline| timeline.StartTime().ok())
+            .map(ticks_to_ms)
+            .unwrap_or(0);
+        let ticks = (start_ms + position_ms.max(0)).saturating_mul(10_000);
+        let operation = session
+            .TryChangePlaybackPositionAsync(ticks)
+            .map_err(|error| media_error("Failed to request the seek", error))?;
+        if pollster::block_on(operation).unwrap_or(false) {
+            thread::sleep(Duration::from_millis(40));
+            read_media_state_from_manager(&manager, target.as_deref())
+        } else {
+            Err("The media source did not accept the seek.".to_string())
         }
-        read_media_state(target.as_deref())
     })
 }
 
@@ -457,7 +482,13 @@ fn read_media_state_from_manager(
         .map(repeat_mode_label)
         .unwrap_or("unknown");
 
-    let (position_ms, duration_ms) = read_timeline(&session);
+    let playback_rate = playback_info
+        .PlaybackRate()
+        .ok()
+        .and_then(|value| value.Value().ok())
+        .unwrap_or(1.0);
+
+    let (position_ms, duration_ms) = read_timeline(&session, is_playing, playback_rate);
     let (title, artist, album, thumbnail) = read_metadata(&session, source_app.as_deref());
 
     Ok(MediaState {
@@ -529,7 +560,7 @@ impl MediaState {
     }
 }
 
-fn read_timeline(session: &MediaSession) -> (i64, i64) {
+fn read_timeline(session: &MediaSession, is_playing: bool, playback_rate: f64) -> (i64, i64) {
     let Ok(timeline) = session.GetTimelineProperties() else {
         return (0, 0);
     };
@@ -539,7 +570,24 @@ fn read_timeline(session: &MediaSession) -> (i64, i64) {
     let position = timeline.Position().map(ticks_to_ms).unwrap_or(0);
 
     let duration = (end - start).max(0);
-    let elapsed = (position - start).clamp(0, duration.max(0));
+    let mut elapsed = (position - start).clamp(0, duration);
+
+    // `Position` is the position sampled at `LastUpdatedTime`. While playing,
+    // extrapolate forward so the progress bar keeps advancing for players that
+    // only report the timeline once per track; never extrapolate while paused.
+    if is_playing && duration > 0 {
+        if let Ok(last_updated) = timeline.LastUpdatedTime() {
+            let now_ticks =
+                current_unix_millis().saturating_mul(10_000) + WINDOWS_EPOCH_OFFSET_TICKS;
+            let since_update_ms = (now_ticks - last_updated.UniversalTime) / 10_000;
+            if since_update_ms > 0 {
+                let rate = if playback_rate > 0.0 { playback_rate } else { 1.0 };
+                let projected = elapsed + (since_update_ms as f64 * rate).round() as i64;
+                elapsed = projected.clamp(0, duration);
+            }
+        }
+    }
+
     (elapsed, duration)
 }
 
