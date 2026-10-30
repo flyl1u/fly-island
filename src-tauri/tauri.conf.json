@@ -45,6 +45,19 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/flyl1u/fly-island/releases/latest/download/latest.json",
+        "https://ghfast.top/https://github.com/flyl1u/fly-island/releases/latest/download/latest.json",
+        "https://gh-proxy.com/https://github.com/flyl1u/fly-island/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
