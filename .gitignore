@@ -13,6 +13,9 @@ dist-ssr
 src-tauri/target
 src-tauri/gen
 src-tauri/tauri.release.conf.json
+*.key
+*.key.pub
+*.dpapi
 *.local
 
 # Editor directories and files

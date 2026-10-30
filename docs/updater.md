@@ -21,6 +21,7 @@
 - `scripts/prepare-release-config.mjs`：构建发布包时写入公钥与签名开关
 - `scripts/make-latest-json.mjs`：根据构建产物生成 `latest.json`
 - `scripts/release.mjs`：一键构建 + 签名 + 生成清单 + 上传 Release
+- `scripts/release-signing.mjs`：优先使用显式环境变量，否则读取本机签名配置并通过 Windows DPAPI 解锁密码
 
 ## 网络、代理与镜像
 
@@ -28,6 +29,8 @@ GitHub 的 `github.com` 在国内经常连不上（`api.github.com` 往往还能
 
 - **多端点**：`tauri.conf.json` 里配了 GitHub 直连和两个公共加速前缀，插件会按顺序尝试，任一成功即返回。面板失败时会显示「原因：…」方便判断是网络问题还是清单缺失。
 - **系统代理**：前端启动时调用 `get_updater_proxy`（`src-tauri/src/lib.rs`），依次读 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量和 Windows 系统代理（`Internet Settings\ProxyServer`），把结果传给 `check()` / `downloadAndInstall()`。开了 Clash 之类的系统代理时，更新自动走代理。
+
+清单同时提供 `windows-x86_64-nsis` 与 `windows-x86_64-msi`，客户端按当前安装格式选择对应包；通用 `windows-x86_64` 入口保留为 NSIS 回退。
 
 清单里的下载地址由 `scripts/make-latest-json.mjs --base-url` 决定：
 
@@ -62,11 +65,30 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
 普通 `pnpm tauri build` 不带公钥、也不产出签名包，任何机器都能直接编出来自测；只有发布构建（`pnpm release`）才要求密钥。
 
+### Windows 本机自动读取
+
+已配置的发布机器运行 `pnpm release` 即可，无需每次复制密钥内容或设置环境变量。本机配置路径为 `%USERPROFILE%\.tauri\fly-island\release.json`，格式如下（路径应为实际绝对路径）：
+
+```json
+{
+  "schemaVersion": 1,
+  "privateKeyPath": "C:\\Users\\<user>\\.tauri\\fly-island\\updater.key",
+  "publicKeyPath": "C:\\Users\\<user>\\.tauri\\fly-island\\updater.key.pub",
+  "passwordFile": "C:\\Users\\<user>\\.tauri\\fly-island\\password.dpapi"
+}
+```
+
+私钥本身带密码；`password.dpapi` 是通过 `ConvertFrom-SecureString` 生成的 Windows 当前用户加密密码。密钥目录应只授予维护者账号访问。文件均位于仓库外，不能提交到 Git。可用 `FOCUSD_SIGNING_CONFIG` 指定其他本机配置路径。
+
+更换 Windows 用户或重装系统后，原 DPAPI 密码文件无法解密。恢复时使用受保护备份中的私钥及恢复密码重新创建 DPAPI 密码文件；同一条发布线继续使用原密钥，不重新生成。恢复密码与私钥都属于敏感文件。
+
+显式提供公钥或私钥时，脚本不会混入本机的另一套密钥，CI 仍需完整提供下面三项环境变量。
+
 ## 发布一个可自动更新的版本
 
 1. 三处版本号一起改，保持一致：`package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json`。
 2. 写发布说明 `docs/releases/vX.Y.Z.md`，它会成为 `latest.json` 里的 `notes`，同时作为 Release 正文。
-3. 设置发布环境变量：
+3. Windows 发布机器配置一次上述本机凭据即可；其他机器或 CI 设置发布环境变量：
 
    ```powershell
    $env:TAURI_UPDATER_PUBKEY = Get-Content -Raw $env:USERPROFILE\.tauri\fly-island.key.pub
@@ -86,9 +108,11 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
    - 校验三处版本号一致、`docs/releases/vX.Y.Z.md` 存在、工作区没有未提交改动、`gh` 已登录；
    - 生成 `src-tauri/tauri.release.conf.json`（公钥 + `createUpdaterArtifacts`，该文件已被 git 忽略）；
-   - `tauri build --config` 出带签名的 NSIS 安装包与 `.sig`；
+   - `tauri build --config` 出带签名的 NSIS、MSI 安装包与各自 `.sig`；
    - 生成 `latest.json`；
-   - `gh release create vX.Y.Z`（已存在则 `gh release upload --clobber`）上传安装包、`.sig`、`latest.json`。
+   - 生成两种安装包的 `SHA256SUMS.txt`；
+   - 创建指向当前提交的 Release 草稿，上传安装包、`.sig`、`latest.json` 与校验文件；
+   - 比较 GitHub 上每个文件的 SHA-256 与本地产物，一致后才公开并设为最新版本；已存在的版本会被拒绝，避免覆盖用户正在下载的更新包。
 
    只出包不上传用 `pnpm release --no-upload`；安装包走镜像分发用 `pnpm release --base-url "https://..."`。
 
