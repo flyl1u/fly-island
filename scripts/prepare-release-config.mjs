@@ -1,8 +1,11 @@
 // Writes the release-only Tauri config overlay that turns on updater signing.
 //
-// The base src-tauri/tauri.conf.json ships without a public key and without
-// updater artifacts, so a normal `pnpm tauri build` works on any machine.
-// Release builds pass this overlay with `tauri build --config <file>`.
+// The base src-tauri/tauri.conf.json keeps an empty `pubkey` placeholder and
+// leaves updater artifacts off, so a normal `pnpm tauri build` works on any
+// machine. The placeholder cannot be omitted: tauri-plugin-updater declares
+// `pubkey` as a mandatory field, and a build without it aborts at startup with
+// "missing field `pubkey`". Release builds pass this overlay with
+// `tauri build --config <file>` to replace it with the real key.
 //
 // Usage:
 //   TAURI_UPDATER_PUBKEY="$(cat ~/.tauri/fly-island.key.pub)" \

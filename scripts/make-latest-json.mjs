@@ -8,11 +8,16 @@ import { join } from "node:path";
 const REPO = "flyl1u/fly-island";
 const CONFIG = "src-tauri/tauri.conf.json";
 const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
+const MSI_DIR = "src-tauri/target/release/bundle/msi";
 
 const args = process.argv.slice(2);
 const notesFlag = args.indexOf("--notes-file");
 const baseFlag = args.indexOf("--base-url");
-const baseUrl = baseFlag >= 0 ? args[baseFlag + 1].replace(/\/$/, "") : `https://github.com/${REPO}/releases/download/v${readVersion()}`;
+const baseUrl = baseFlag >= 0 ? args[baseFlag + 1]?.replace(/\/$/, "") : `https://github.com/${REPO}/releases/download/v${readVersion()}`;
+if (!baseUrl || !URL.canParse(baseUrl) || new URL(baseUrl).protocol !== "https:") {
+  console.error("--base-url requires a valid HTTPS URL.");
+  process.exit(1);
+}
 const notesFile = notesFlag >= 0 ? args[notesFlag + 1] : `docs/releases/v${readVersion()}.md`;
 
 function readVersion() {
@@ -41,15 +46,27 @@ if (!existsSync(signaturePath)) {
 }
 
 const notes = notesFile && existsSync(notesFile) ? readFileSync(notesFile, "utf8").trim() : "";
+const msi = existsSync(MSI_DIR) && readdirSync(MSI_DIR).find((name) => name.endsWith(`_${version}_x64_en-US.msi`));
+const msiSignaturePath = msi && join(MSI_DIR, `${msi}.sig`);
+if (!msiSignaturePath || !existsSync(msiSignaturePath)) {
+  console.error(`Missing signed MSI installer in ${MSI_DIR}. Build both nsis and msi release bundles first.`);
+  process.exit(1);
+}
+const nsisTarget = {
+  signature: readFileSync(signaturePath, "utf8").trim(),
+  url: `${baseUrl}/${installer}`,
+};
 
 const manifest = {
   version,
   notes,
   pub_date: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
   platforms: {
-    "windows-x86_64": {
-      signature: readFileSync(signaturePath, "utf8").trim(),
-      url: `${baseUrl}/${installer}`,
+    "windows-x86_64": nsisTarget,
+    "windows-x86_64-nsis": nsisTarget,
+    "windows-x86_64-msi": {
+      signature: readFileSync(msiSignaturePath, "utf8").trim(),
+      url: `${baseUrl}/${msi}`,
     },
   },
 };
