@@ -32,13 +32,10 @@ import {
   Play,
   Plus,
   RefreshCcw,
-  Repeat,
-  Repeat1,
   RotateCcw,
   Save,
   Search,
   Settings,
-  Shuffle,
   SkipBack,
   SkipForward,
   Star,
@@ -66,6 +63,7 @@ import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
+import { MediaWaveform } from "./MediaWaveform";
 import {
   LOCALE_CODES,
   TRANSLATIONS,
@@ -302,7 +300,7 @@ const MIN_COLLAPSED_TEXT_UNITS = 2;
 const MAX_COLLAPSED_TEXT_UNITS = 12;
 const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
-const MUSIC_EXPANDED_ISLAND_HEIGHT = 240;
+const MUSIC_EXPANDED_ISLAND_HEIGHT = 260;
 const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const EDITOR_EXPANDED_ISLAND_HEIGHT = 430;
@@ -3132,23 +3130,6 @@ function ArchiveBrowser({
   );
 }
 
-function formatMediaTime(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) {
-    return "0:00";
-  }
-
-  const totalSeconds = Math.floor(ms / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60) % 60;
-  const hours = Math.floor(totalSeconds / 3600);
-  const secondsLabel = String(seconds).padStart(2, "0");
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${secondsLabel}`;
-  }
-  return `${minutes}:${secondsLabel}`;
-}
-
 function MusicPlayerPanel({
   mediaState,
   isTrackChanging,
@@ -3160,9 +3141,6 @@ function MusicPlayerPanel({
   onPlayPause,
   onNext,
   onPrevious,
-  onToggleShuffle,
-  onCycleRepeat,
-  onSeek,
   onReorderSource,
   onRemoveSource,
 }: {
@@ -3176,9 +3154,6 @@ function MusicPlayerPanel({
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
-  onToggleShuffle: () => void;
-  onCycleRepeat: () => void;
-  onSeek: (positionMs: number) => void;
   onReorderSource: (sourceId: string, targetId: string) => void;
   onRemoveSource: (sourceId: string) => void;
 }) {
@@ -3196,17 +3171,6 @@ function MusicPlayerPanel({
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
   const nextDisabled = mediaState.available && !mediaState.canNext;
-  const shuffleDisabled = !mediaState.available || !mediaState.canShuffle;
-  const repeatDisabled = !mediaState.available || !mediaState.canRepeat;
-  const shuffleActive = mediaState.shuffleActive === true;
-  const repeatActive =
-    mediaState.repeatMode === "track" || mediaState.repeatMode === "list";
-  const repeatLabel =
-    mediaState.repeatMode === "track"
-      ? t.music.repeatOne
-      : mediaState.repeatMode === "list"
-        ? t.music.repeatAll
-        : t.music.repeatOff;
 
   const liveSessions = mediaState.sessions;
 
@@ -3425,24 +3389,12 @@ function MusicPlayerPanel({
               </p>
             )}
 
+            <MediaWaveform
+              playing={isPlaying || mediaState.audioActive}
+              audioPeak={mediaState.audioPeak}
+            />
+
             <div className="music-player__controls">
-              <button
-                className={[
-                  "music-control-button",
-                  "music-control-button--toggle",
-                  shuffleActive ? "music-control-button--on" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                type="button"
-                title={t.music.shuffle}
-                aria-label={t.music.shuffle}
-                aria-pressed={shuffleActive}
-                disabled={shuffleDisabled}
-                onClick={onToggleShuffle}
-              >
-                <Shuffle size={16} strokeWidth={2.4} />
-              </button>
               <button
                 className="music-control-button"
                 type="button"
@@ -3483,216 +3435,11 @@ function MusicPlayerPanel({
               >
                 <SkipForward size={18} strokeWidth={2.4} />
               </button>
-              <button
-                className={[
-                  "music-control-button",
-                  "music-control-button--toggle",
-                  repeatActive ? "music-control-button--on" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                type="button"
-                title={repeatLabel}
-                aria-label={repeatLabel}
-                aria-pressed={repeatActive}
-                disabled={repeatDisabled}
-                onClick={onCycleRepeat}
-              >
-                {mediaState.repeatMode === "track" ? (
-                  <Repeat1 size={16} strokeWidth={2.4} />
-                ) : (
-                  <Repeat size={16} strokeWidth={2.4} />
-                )}
-              </button>
             </div>
-
-            <MusicSeekBar
-              positionMs={mediaState.positionMs}
-              durationMs={mediaState.durationMs}
-              disabled={!mediaState.available || !mediaState.canSeek}
-              label={t.music.seek}
-              onSeek={onSeek}
-            />
           </div>
         </div>
       )}
     </section>
-  );
-}
-
-function MusicSeekBar({
-  positionMs,
-  durationMs,
-  disabled,
-  label,
-  onSeek,
-}: {
-  positionMs: number;
-  durationMs: number;
-  disabled: boolean;
-  label: string;
-  onSeek: (positionMs: number) => void;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef(false);
-  const [hoverRatio, setHoverRatio] = useState<number | null>(null);
-  const [dragRatio, setDragRatio] = useState<number | null>(null);
-
-  const max = Math.max(durationMs, 0);
-  const interactive = !disabled && max > 0;
-  const currentRatio = max > 0 ? clamp(positionMs / max, 0, 1) : 0;
-  const fillRatio = dragRatio ?? currentRatio;
-  const displayMs = fillRatio * max;
-  const previewMs = (hoverRatio ?? 0) * max;
-
-  const ratioFromClientX = useCallback((clientX: number) => {
-    const track = trackRef.current;
-    if (!track) {
-      return 0;
-    }
-    const rect = track.getBoundingClientRect();
-    if (rect.width <= 0) {
-      return 0;
-    }
-    return clamp((clientX - rect.left) / rect.width, 0, 1);
-  }, []);
-
-  const handlePointerDown = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!interactive) {
-        return;
-      }
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      draggingRef.current = true;
-      const ratio = ratioFromClientX(event.clientX);
-      setDragRatio(ratio);
-      setHoverRatio(ratio);
-    },
-    [interactive, ratioFromClientX],
-  );
-
-  const handlePointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!interactive) {
-        return;
-      }
-      const ratio = ratioFromClientX(event.clientX);
-      setHoverRatio(ratio);
-      if (draggingRef.current) {
-        setDragRatio(ratio);
-      }
-    },
-    [interactive, ratioFromClientX],
-  );
-
-  const handlePointerUp = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!draggingRef.current) {
-        return;
-      }
-      event.preventDefault();
-      const ratio = ratioFromClientX(event.clientX);
-      draggingRef.current = false;
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-      setDragRatio(null);
-      onSeek(Math.round(ratio * max));
-    },
-    [max, onSeek, ratioFromClientX],
-  );
-
-  const handlePointerCancel = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      draggingRef.current = false;
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-      setDragRatio(null);
-      setHoverRatio(null);
-    },
-    [],
-  );
-
-  const handlePointerLeave = useCallback(() => {
-    if (!draggingRef.current) {
-      setHoverRatio(null);
-    }
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!interactive) {
-        return;
-      }
-      if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-        event.preventDefault();
-        onSeek(clamp(positionMs + 5000, 0, max));
-      } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-        event.preventDefault();
-        onSeek(clamp(positionMs - 5000, 0, max));
-      } else if (event.key === "Home") {
-        event.preventDefault();
-        onSeek(0);
-      } else if (event.key === "End") {
-        event.preventDefault();
-        onSeek(max);
-      }
-    },
-    [interactive, max, onSeek, positionMs],
-  );
-
-  return (
-    <div
-      className={[
-        "music-seek",
-        interactive ? "" : "music-seek--disabled",
-        hoverRatio !== null ? "music-seek--hover" : "",
-        dragRatio !== null ? "music-seek--scrubbing" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <span className="music-seek__time">{formatMediaTime(displayMs)}</span>
-      <div
-        ref={trackRef}
-        className="music-seek__track"
-        role="slider"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={Math.round(max)}
-        aria-valuenow={Math.round(displayMs)}
-        aria-valuetext={formatMediaTime(displayMs)}
-        aria-disabled={!interactive}
-        tabIndex={interactive ? 0 : -1}
-        style={
-          {
-            "--fill": `${fillRatio * 100}%`,
-            "--preview": `${(hoverRatio ?? 0) * 100}%`,
-          } as CSSProperties
-        }
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onPointerLeave={handlePointerLeave}
-        onKeyDown={handleKeyDown}
-      >
-        <div className="music-seek__rail" />
-        <div className="music-seek__fill" />
-        <div className="music-seek__thumb" />
-        {hoverRatio !== null && (
-          <>
-            <div className="music-seek__preview" />
-            <div className="music-seek__tooltip">
-              {formatMediaTime(previewMs)}
-            </div>
-          </>
-        )}
-      </div>
-      <span className="music-seek__time">{formatMediaTime(max)}</span>
-    </div>
   );
 }
 
@@ -4406,7 +4153,7 @@ function IslandApp({
       : page === "music"
         ? musicSettingsOpen
           ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
-          : MUSIC_EXPANDED_ISLAND_HEIGHT
+          : MUSIC_EXPANDED_ISLAND_HEIGHT + (mediaCommandError ? 24 : 0)
         : page === "clipboard"
           ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
           : page === "qq"
@@ -4872,9 +4619,7 @@ function IslandApp({
       command:
         | "media_play_pause"
         | "media_next"
-        | "media_previous"
-        | "media_toggle_shuffle"
-        | "media_cycle_repeat",
+        | "media_previous",
     ) => {
       if (isRunningMediaCommand.current) {
         return;
@@ -4959,39 +4704,6 @@ function IslandApp({
       }
     },
     [mediaState.playbackStatus, refreshMediaState],
-  );
-
-  const seekMedia = useCallback(
-    async (positionMs: number) => {
-      const target = mediaTargetRef.current ?? undefined;
-      const clamped = Math.max(0, Math.round(positionMs));
-
-      setMediaState((currentState) => ({
-        ...currentState,
-        positionMs:
-          currentState.durationMs > 0
-            ? Math.min(clamped, currentState.durationMs)
-            : clamped,
-      }));
-      setMediaCommandError(null);
-
-      try {
-        const nextMediaState = await invoke<MediaState>("media_seek", {
-          positionMs: clamped,
-          target,
-        });
-        setMediaState((currentState) =>
-          isSameMediaState(currentState, nextMediaState)
-            ? currentState
-            : nextMediaState,
-        );
-      } catch (error) {
-        console.error("Failed to seek media", error);
-        setMediaCommandError(String(error));
-        await refreshMediaState();
-      }
-    },
-    [refreshMediaState],
   );
 
   const reorderMusicSource = useCallback(
@@ -6035,9 +5747,6 @@ function IslandApp({
             onPlayPause={() => void runMediaCommand("media_play_pause")}
             onNext={() => void runMediaCommand("media_next")}
             onPrevious={() => void runMediaCommand("media_previous")}
-            onToggleShuffle={() => void runMediaCommand("media_toggle_shuffle")}
-            onCycleRepeat={() => void runMediaCommand("media_cycle_repeat")}
-            onSeek={(positionMs) => void seekMedia(positionMs)}
             onReorderSource={reorderMusicSource}
             onRemoveSource={removeMusicSource}
           />
