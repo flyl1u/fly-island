@@ -300,7 +300,7 @@ const MIN_COLLAPSED_TEXT_UNITS = 2;
 const MAX_COLLAPSED_TEXT_UNITS = 12;
 const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
-const MUSIC_EXPANDED_ISLAND_HEIGHT = 260;
+const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const EDITOR_EXPANDED_ISLAND_HEIGHT = 430;
@@ -3135,7 +3135,6 @@ function MusicPlayerPanel({
   isTrackChanging,
   commandError,
   sourcePriority,
-  effectiveSourceId,
   settingsOpen,
   onToggleSettings,
   onPlayPause,
@@ -3148,7 +3147,6 @@ function MusicPlayerPanel({
   isTrackChanging: boolean;
   commandError: string | null;
   sourcePriority: KnownMediaSource[];
-  effectiveSourceId: string | null;
   settingsOpen: boolean;
   onToggleSettings: () => void;
   onPlayPause: () => void;
@@ -3163,11 +3161,6 @@ function MusicPlayerPanel({
 
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
-  const sourceLabel =
-    mediaState.sessions.find((session) => session.id === effectiveSourceId)
-      ?.label ??
-    sourcePriority.find((source) => source.id === effectiveSourceId)?.label ??
-    null;
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
   const nextDisabled = mediaState.available && !mediaState.canNext;
@@ -3348,40 +3341,33 @@ function MusicPlayerPanel({
         </>
       ) : (
         <div className="music-player__body">
-          <div className="music-player__artwork" aria-hidden="true">
-            {mediaState.thumbnail ? (
-              <img src={mediaState.thumbnail} alt="" draggable={false} />
-            ) : (
-              <Music2 size={30} strokeWidth={1.7} />
-            )}
+          <div className="music-player__details">
+            <div className="music-player__artwork" aria-hidden="true">
+              {mediaState.thumbnail ? (
+                <img src={mediaState.thumbnail} alt="" draggable={false} />
+              ) : (
+                <Music2 size={42} strokeWidth={1.7} />
+              )}
+            </div>
+            <div className="music-player__meta">
+              <span
+                className="music-player__track"
+                title={mediaState.title ?? undefined}
+              >
+                {mediaState.title ?? t.music.noMedia}
+              </span>
+              {hasTrack && (
+                <span
+                  className="music-player__artist"
+                  title={mediaState.artist ?? undefined}
+                >
+                  {mediaState.artist ?? t.music.unknownArtist}
+                </span>
+              )}
+            </div>
           </div>
           <div className="music-player__stack">
-            <div className="music-player__head">
-              <div className="music-player__meta">
-                <span
-                  className="music-player__track"
-                  title={mediaState.title ?? undefined}
-                >
-                  {mediaState.title ?? t.music.noMedia}
-                </span>
-                {hasTrack && (
-                  <span
-                    className="music-player__artist"
-                    title={mediaState.artist ?? undefined}
-                  >
-                    {mediaState.artist ?? t.music.unknownArtist}
-                  </span>
-                )}
-              </div>
-              <div className="music-player__head-aside">
-                {sourceLabel && (
-                  <span className="music-player__source" title={sourceLabel}>
-                    {sourceLabel}
-                  </span>
-                )}
-                {settingsButton}
-              </div>
-            </div>
+            <div className="music-player__head-aside">{settingsButton}</div>
 
             {commandError && (
               <p className="music-player__error" role="alert">
@@ -5741,7 +5727,6 @@ function IslandApp({
             isTrackChanging={isMediaTrackChanging}
             commandError={mediaCommandError}
             sourcePriority={musicSourcePriority}
-            effectiveSourceId={effectiveMediaTarget ?? mediaState.activeSessionId}
             settingsOpen={musicSettingsOpen}
             onToggleSettings={() => setMusicSettingsOpen((open) => !open)}
             onPlayPause={() => void runMediaCommand("media_play_pause")}
