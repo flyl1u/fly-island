@@ -368,12 +368,16 @@ export type Translations = {
       marginY: string;
       launchAtStartup: string;
       showTitle: string;
+      autoTuck: string;
+      autoTuckSeconds: string;
     };
 
     todo: {
       title: string;
       carryOverIncomplete: string;
       enableReorder: string;
+      rotateTodos: string;
+      rotationSeconds: string;
     };
 
     agent: {

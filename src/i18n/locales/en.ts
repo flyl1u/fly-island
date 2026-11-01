@@ -365,12 +365,16 @@ const en: Translations = {
       marginY: "Top margin",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
+      autoTuck: "Auto-tuck to screen edge when idle",
+      autoTuckSeconds: "Idle time before tucking (seconds)",
     },
 
     todo: {
       title: "Tasks",
       carryOverIncomplete: "Carry unfinished tasks to next day",
       enableReorder: "Drag to reorder tasks",
+      rotateTodos: "Rotate through pending tasks",
+      rotationSeconds: "Time per task (seconds)",
     },
 
     agent: {

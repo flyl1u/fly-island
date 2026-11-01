@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { Loader2, RefreshCcw } from "lucide-react";
+import { ArrowRight, RefreshCcw } from "lucide-react";
 import { useTranslation } from "./i18n";
 import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
 import "./UpdatePanel.css";
@@ -15,7 +15,7 @@ export function UpdatePanel() {
   const busy = stage === "checking" || stage === "downloading" || stage === "installing";
 
   let status = version ? t.settings.project.update.versionLabel(version) : t.settings.project.update.hint;
-  let action = t.settings.project.update.check;
+  let action = t.settings.project.latestRelease;
   let onAction = checkForUpdate;
 
   if (stage === "disabled") {
@@ -42,36 +42,24 @@ export function UpdatePanel() {
     status = t.settings.project.update.error;
   }
 
-  const showAction = stage !== "done" && stage !== "disabled";
-
   return (
     <div className={`update-panel update-panel--${stage}`}>
-      <div className="update-panel__row">
-        <span className="update-panel__icon" aria-hidden="true">
-          {busy ? (
-            <Loader2 size={18} strokeWidth={1.8} />
-          ) : (
-            <RefreshCcw size={18} strokeWidth={1.8} />
-          )}
-        </span>
-        <span className="update-panel__copy">
-          <strong>{t.settings.project.update.title}</strong>
+      <button
+        className="project-link project-link--release update-panel__button"
+        type="button"
+        disabled={busy || stage === "done" || stage === "disabled"}
+        onClick={() => void onAction()}
+      >
+        <RefreshCcw className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />
+        <span className="project-link__copy">
+          <strong>{action}</strong>
           <span role={stage === "error" ? "alert" : undefined}>{status}</span>
           {stage === "error" && detail && (
             <span className="update-panel__detail">{t.settings.project.update.errorDetail(detail)}</span>
           )}
         </span>
-        {showAction && (
-          <button
-            className="update-panel__action"
-            type="button"
-            disabled={busy}
-            onClick={() => void onAction()}
-          >
-            {action}
-          </button>
-        )}
-      </div>
+        <ArrowRight className="project-link__arrow" size={14} aria-hidden="true" />
+      </button>
       {percent !== null && (stage === "downloading" || stage === "installing") && (
         <div
           className="update-panel__track"

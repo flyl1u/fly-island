@@ -504,6 +504,12 @@ input,
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+  animation: taskFlowIn 260ms ease-out both;
+}
+
+@keyframes taskFlowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .island__quiet-button {
@@ -3971,6 +3977,10 @@ input,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .island__active-task {
+    animation: none;
+  }
+
   .island,
   .island__collapsed,
   .island__expanded,

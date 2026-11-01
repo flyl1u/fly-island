@@ -368,12 +368,16 @@ const zhCN: Translations = {
       marginY: "顶部距离",
       launchAtStartup: "开机自启动",
       showTitle: "显示岛屿名称",
+      autoTuck: "无操作时自动收起到屏幕边缘",
+      autoTuckSeconds: "闲置多久后收起（秒）",
     },
 
     todo: {
       title: "待办设置",
       carryOverIncomplete: "自动将未完成任务写入下一天",
       enableReorder: "允许拖动调整任务顺序",
+      rotateTodos: "多任务流动",
+      rotationSeconds: "每个任务停留时间（秒）",
     },
 
     agent: {

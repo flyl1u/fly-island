@@ -22,7 +22,7 @@ const HOST: &str = "imap.qq.com";
 const EVENT: &str = "qq-mail-changed";
 const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
 const MAX_ITEMS: u32 = 20;
-const SYNC_INTERVAL: Duration = Duration::from_secs(60);
+const SYNC_INTERVAL: Duration = Duration::from_secs(5);
 const IO_TIMEOUT: Duration = Duration::from_secs(15);
 const HEADER_QUERY: &str = "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER]<0.65536>)";
 const MAX_BODY_BYTES: u32 = 512 * 1024;
@@ -231,13 +231,51 @@ enum Work {
         generation: u64,
         reply: Reply,
     },
-    Read {
-        generation: u64,
-        email: String,
-        message_id: String,
-        reply: mpsc::Sender<Result<MailContent, String>>,
-    },
     Wake,
+}
+
+type MailSession = Session<native_tls::TlsStream<TcpStream>>;
+
+#[derive(Default)]
+struct SyncConnection {
+    generation: u64,
+    session: Option<MailSession>,
+}
+
+impl SyncConnection {
+    fn reset(&mut self, generation: u64) {
+        if self.generation != generation {
+            self.session = None;
+            self.generation = generation;
+        }
+    }
+
+    fn fetch(&mut self, email: &str, secret: Option<&str>) -> Result<Inbox, MailFailure> {
+        // Only a failed connection needs another TLS handshake, login and credential lookup.
+        if let Some(session) = &mut self.session {
+            if let Ok(inbox) = fetch_inbox(session) {
+                return Ok(inbox);
+            }
+            self.session = None;
+        }
+        let stored_secret;
+        let secret = match secret {
+            Some(secret) => secret,
+            None => {
+                stored_secret = read_secret(email).map_err(|_| MailFailure {
+                    authentication: true,
+                    message: "无法读取 Windows 邮箱凭据，请重新连接。",
+                })?;
+                stored_secret
+                    .as_deref()
+                    .ok_or_else(MailFailure::authentication)?
+            }
+        };
+        let mut session = open_session(email, secret)?;
+        let inbox = fetch_inbox(&mut session)?;
+        self.session = Some(session);
+        Ok(inbox)
+    }
 }
 
 struct MailService {
@@ -293,6 +331,7 @@ impl MailService {
         generation: u64,
         email: &str,
         secret: Option<&str>,
+        connection: &mut SyncConnection,
     ) -> Result<MailSnapshot, String> {
         {
             let state = self.lock()?;
@@ -300,17 +339,8 @@ impl MailService {
                 return Err("邮箱连接已取消。".into());
             }
         }
-        let result = match secret {
-            Some(secret) => fetch_remote(email, secret),
-            None => match read_secret(email) {
-                Ok(Some(secret)) => fetch_remote(email, &secret),
-                Ok(None) => Err(MailFailure::authentication()),
-                Err(_) => Err(MailFailure {
-                    authentication: true,
-                    message: "无法读取 Windows 邮箱凭据，请重新连接。",
-                }),
-            },
-        };
+        connection.reset(generation);
+        let result = connection.fetch(email, secret);
         let mut state = self.lock()?;
         if generation != state.generation || !state.snapshot.enabled {
             return Err("邮箱连接已取消。".into());
@@ -397,12 +427,16 @@ fn service() -> Result<&'static Arc<MailService>, String> {
 }
 
 fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
+    let mut connection = SyncConnection::default();
     loop {
         let wait = match service.lock() {
-            Ok(state) => state
-                .next_check
-                .map(|deadline| deadline.saturating_duration_since(Instant::now()))
-                .unwrap_or(Duration::from_secs(3_600)),
+            Ok(state) => {
+                connection.reset(state.generation);
+                state
+                    .next_check
+                    .map(|deadline| deadline.saturating_duration_since(Instant::now()))
+                    .unwrap_or(Duration::from_secs(3_600))
+            }
             Err(_) => return,
         };
         match receiver.recv_timeout(wait) {
@@ -412,7 +446,8 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
                 secret,
                 reply,
             }) => {
-                let _ = reply.send(service.sync(generation, &email, Some(&secret)));
+                let _ =
+                    reply.send(service.sync(generation, &email, Some(&secret), &mut connection));
             }
             Ok(Work::Refresh { generation, reply }) => {
                 let email = service
@@ -421,21 +456,13 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
                     .and_then(|state| state.snapshot.email.clone());
                 let result = email
                     .ok_or_else(|| "请先连接 QQ 邮箱。".to_string())
-                    .and_then(|email| service.sync(generation, &email, None));
+                    .and_then(|email| service.sync(generation, &email, None, &mut connection));
                 let _ = reply.send(result);
-            }
-            Ok(Work::Read {
-                generation,
-                email,
-                message_id,
-                reply,
-            }) => {
-                let _ = reply.send(service.read(generation, &email, &message_id));
             }
             Ok(Work::Wake) => {}
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 if let Some((generation, email)) = service.begin_sync() {
-                    let _ = service.sync(generation, &email, None);
+                    let _ = service.sync(generation, &email, None, &mut connection);
                 }
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => return,
@@ -583,17 +610,10 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
             state.snapshot.email.clone().ok_or("请先连接 QQ 邮箱。")?,
         )
     };
-    let (reply, receiver) = mpsc::channel();
-    service
-        .sender
-        .send(Work::Read {
-            generation,
-            email,
-            message_id,
-            reply,
-        })
-        .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
-    await_reply(receiver).await
+    let service = service.clone();
+    tauri::async_runtime::spawn_blocking(move || service.read(generation, &email, &message_id))
+        .await
+        .map_err(|_| "无法读取 QQ 邮件。".to_string())?
 }
 
 #[tauri::command]
@@ -622,6 +642,7 @@ pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
         let snapshot = state.changed();
         drop(state);
         service.publish(snapshot.clone(), None);
+        let _ = service.sender.send(Work::Wake);
         Ok(snapshot)
     })
     .await
@@ -675,8 +696,11 @@ fn normalize_email(email: &str) -> Result<String, String> {
 
 fn retry_delay(failures: u32) -> Duration {
     Duration::from_secs(match failures {
-        0 | 1 => 60,
-        2 => 120,
+        0 | 1 => 5,
+        2 => 15,
+        3 => 30,
+        4 => 60,
+        5 => 120,
         _ => 300,
     })
 }
@@ -693,13 +717,6 @@ fn login_failure(error: imap::Error) -> MailFailure {
         imap::Error::No(_) | imap::Error::Bad(_) => MailFailure::authentication(),
         _ => MailFailure::network(),
     }
-}
-
-fn fetch_remote(email: &str, secret: &str) -> Result<Inbox, MailFailure> {
-    let mut session = open_session(email, secret)?;
-    let result = fetch_inbox(&mut session);
-    let _ = session.logout();
-    result
 }
 
 fn open_session(
@@ -1326,8 +1343,8 @@ mod tests {
         state.fail(0, &MailFailure::authentication());
         assert_eq!(state.snapshot.status, MailStatus::AuthRequired);
         assert!(state.next_check.is_none());
-        assert_eq!(retry_delay(1).as_secs(), 60);
-        assert_eq!(retry_delay(2).as_secs(), 120);
+        assert_eq!(retry_delay(1).as_secs(), 5);
+        assert_eq!(retry_delay(2).as_secs(), 15);
         assert_eq!(retry_delay(10).as_secs(), 300);
     }
 
@@ -1404,6 +1421,33 @@ mod tests {
         let inbox = fetch_inbox(&mut session).unwrap();
         assert_eq!(inbox.unread_count, 0);
         assert!(inbox.items.is_empty());
+    }
+
+    #[test]
+    fn a_reused_session_detects_new_mail_without_another_login() {
+        let header = "From: sender@example.com\r\nSubject: New arrival\r\n\r\n";
+        let script = format!(
+            "* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* SEARCH\r\na3 OK search\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 2] next\r\na4 OK [READ-ONLY] examined\r\n* SEARCH 1\r\na5 OK search\r\n* 1 FETCH (UID 1 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na6 OK fetch\r\n",
+            header.len()
+        );
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let mut state = active_state();
+        let initial = fetch_inbox(&mut session).unwrap();
+        assert!(state.accept(0, initial).unwrap().1.is_none());
+        assert!(
+            state
+                .next_check
+                .unwrap()
+                .saturating_duration_since(Instant::now())
+                <= Duration::from_secs(5)
+        );
+        let arrival = fetch_inbox(&mut session).unwrap();
+        assert_eq!(arrival.items[0].subject, "New arrival");
+        assert_eq!(state.accept(0, arrival).unwrap().1.as_deref(), Some("7:1"));
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert_eq!(commands.matches("LOGIN").count(), 1);
+        assert_eq!(commands.matches("EXAMINE").count(), 2);
     }
 
     fn body_client(

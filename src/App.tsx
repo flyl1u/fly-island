@@ -65,6 +65,7 @@ import { MessageSourceIcon } from "./MessageSourceIcon";
 import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
+import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   LOCALE_CODES,
   TRANSLATIONS,
@@ -237,6 +238,10 @@ type IslandSettings = {
   showIdleTodoCount: boolean;
   carryOverIncompleteTodos: boolean;
   enableTodoReorder: boolean;
+  rotateTodos: boolean;
+  todoRotationSeconds: number;
+  autoTuck: boolean;
+  autoTuckSeconds: number;
 };
 
 type IslandPreset = {
@@ -414,6 +419,10 @@ const DEFAULT_SETTINGS: IslandSettings = {
   showIdleTodoCount: true,
   carryOverIncompleteTodos: false,
   enableTodoReorder: false,
+  rotateTodos: false,
+  todoRotationSeconds: 5,
+  autoTuck: false,
+  autoTuckSeconds: 30,
 };
 const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
 const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
@@ -746,6 +755,14 @@ function normalizeSettings(
       typeof settings?.enableTodoReorder === "boolean"
         ? settings.enableTodoReorder
         : DEFAULT_SETTINGS.enableTodoReorder,
+    rotateTodos: settings?.rotateTodos === true,
+    todoRotationSeconds: typeof settings?.todoRotationSeconds === "number" && Number.isFinite(settings.todoRotationSeconds)
+      ? clamp(Math.round(settings.todoRotationSeconds), 1, 3_600)
+      : DEFAULT_SETTINGS.todoRotationSeconds,
+    autoTuck: settings?.autoTuck === true,
+    autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
+      ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
+      : DEFAULT_SETTINGS.autoTuckSeconds,
   };
 }
 
@@ -1359,7 +1376,7 @@ export function IslandShell({
                 <span className="island__brand">fly-island</span>
               )}
               {showCollapsedText && collapsedTaskTitle && (
-                <span className="island__active-task">
+                <span className="island__active-task" key={collapsedTaskTitle}>
                   {showTitle ? "· " : ""}
                   {collapsedTaskTitle}
                 </span>
@@ -2110,6 +2127,20 @@ function LayoutEditor({
           checked={settings.showTitle}
           onChange={(showTitle) => onSettingsChange({ ...settings, showTitle })}
         />
+        <ToggleControl
+          label={t.settings.layout.autoTuck}
+          checked={settings.autoTuck}
+          onChange={(autoTuck) => onSettingsChange({ ...settings, autoTuck })}
+        />
+        {settings.autoTuck && (
+          <NumberControl
+            label={t.settings.layout.autoTuckSeconds}
+            value={settings.autoTuckSeconds}
+            min={1}
+            max={3_600}
+            onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
+          />
+        )}
       </section>
 
       <section className="settings-section settings-section--messages">
@@ -2136,6 +2167,20 @@ function LayoutEditor({
             onSettingsChange({ ...settings, enableTodoReorder })
           }
         />
+        <ToggleControl
+          label={t.settings.todo.rotateTodos}
+          checked={settings.rotateTodos}
+          onChange={(rotateTodos) => onSettingsChange({ ...settings, rotateTodos })}
+        />
+        {settings.rotateTodos && (
+          <NumberControl
+            label={t.settings.todo.rotationSeconds}
+            value={settings.todoRotationSeconds}
+            min={1}
+            max={3_600}
+            onChange={(todoRotationSeconds) => onSettingsChange({ ...settings, todoRotationSeconds })}
+          />
+        )}
       </section>
 
       <section className="settings-section settings-section--agent-hooks">
@@ -2514,20 +2559,6 @@ function LayoutEditor({
           <span className="project-link__copy">
             <strong>{t.settings.project.star}</strong>
             <span>{t.settings.project.starHint}</span>
-          </span>
-          <ExternalLink className="project-link__arrow" size={14} aria-hidden="true" />
-        </a>
-        <a
-          className="project-link project-link--release"
-          href="https://github.com/flyl1u/fly-island/releases/latest"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={openProjectLink}
-        >
-          <RefreshCcw className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />
-          <span className="project-link__copy">
-            <strong>{t.settings.project.latestRelease}</strong>
-            <span>{t.settings.project.latestReleaseHint}</span>
           </span>
           <ExternalLink className="project-link__arrow" size={14} aria-hidden="true" />
         </a>
@@ -4323,12 +4354,24 @@ function IslandApp({
   const islandPositionRef = useRef<IslandPosition | null>(loadIslandPosition());
   const selectedArchive =
     archives.find((archive) => archive.date === selectedArchiveDate) ?? null;
+  const pendingTodoIds = useMemo(
+    () => todos.filter((todo) => !todo.completed).map((todo) => todo.id),
+    [todos],
+  );
+  const displayedTodoId = useTodoRotation(
+    pendingTodoIds,
+    activeTodoId,
+    settings.rotateTodos,
+    settings.todoRotationSeconds,
+    mode !== "collapsed" || isTucked || !settings.showCollapsedText ||
+      Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview),
+  );
   const collapsedTaskTitle = useMemo(() => {
     const activeTodo = todos.find(
-      (todo) => todo.id === activeTodoId && !todo.completed,
+      (todo) => todo.id === displayedTodoId && !todo.completed,
     );
     return activeTodo?.title ?? null;
-  }, [activeTodoId, todos]);
+  }, [displayedTodoId, todos]);
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle
     ? todos.filter((todo) => !todo.completed).length
     : null;
@@ -4728,6 +4771,8 @@ function IslandApp({
   const revealIsland = useCallback(() => {
     setIsTucked(false);
   }, []);
+
+  useIdleTuck(settings.autoTuck, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
 
   const openIslandPage = useCallback((nextPage: IslandPage) => {
     setPage(nextPage);
