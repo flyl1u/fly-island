@@ -1,17 +1,18 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use imap::{
-    types::{Fetch, Flag},
+    extensions::idle::{SetReadTimeout, WaitOutcome},
+    types::{Fetch, Flag, UnsolicitedResponse},
     Session,
 };
 use imap_proto::types::{
-    BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
+    BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath, StatusAttribute,
 };
 use keyring::{Entry, Error as KeyringError};
 use mailparse::MailHeaderMap;
 use serde::Serialize;
 use std::{
     io::{Read, Write},
-    net::{TcpStream, ToSocketAddrs},
+    net::{Shutdown, TcpStream, ToSocketAddrs},
     sync::{mpsc, Arc, Mutex, MutexGuard, OnceLock},
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
@@ -23,8 +24,10 @@ const EVENT: &str = "qq-mail-changed";
 const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
 const MAX_ITEMS: u32 = 20;
 const SYNC_INTERVAL: Duration = Duration::from_secs(5);
+const PUSH_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
 const IO_TIMEOUT: Duration = Duration::from_secs(15);
 const HEADER_QUERY: &str = "(UID FLAGS INTERNALDATE BODY.PEEK[HEADER]<0.65536>)";
+const FLAGS_QUERY: &str = "(UID FLAGS INTERNALDATE)";
 const MAX_BODY_BYTES: u32 = 512 * 1024;
 const MAX_MIME_BYTES: usize = 65_536;
 const MAX_INLINE_IMAGES: usize = 8;
@@ -108,10 +111,12 @@ struct Cursor {
     high_water: u32,
 }
 
+#[derive(Clone)]
 struct Inbox {
     cursor: Cursor,
     unread_count: usize,
     items: Vec<MailMessage>,
+    needs_refresh: bool,
 }
 
 #[derive(Debug)]
@@ -234,18 +239,114 @@ enum Work {
     Wake,
 }
 
-type MailSession = Session<native_tls::TlsStream<TcpStream>>;
+#[derive(Debug)]
+struct BoundedStream<T>(T);
+
+impl<T: Read> Read for BoundedStream<T> {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buffer)
+    }
+}
+
+impl<T: Write> Write for BoundedStream<T> {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        self.0.write(buffer)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl<T: SetReadTimeout> SetReadTimeout for BoundedStream<T> {
+    fn set_read_timeout(&mut self, timeout: Option<Duration>) -> imap::Result<()> {
+        // imap 2.4 clears the timeout before IDLE's DONE response is read.
+        // Keep that response bounded too, including after a dropped connection.
+        self.0.set_read_timeout(Some(timeout.unwrap_or(IO_TIMEOUT)))
+    }
+}
+
+type MailSession = Session<BoundedStream<native_tls::TlsStream<TcpStream>>>;
+
+enum MailWake {
+    Work(Work),
+    Changed,
+    TimedOut,
+    Failed(imap::Error),
+    Closed,
+}
+
+fn queued_work(receiver: &mpsc::Receiver<Work>) -> Option<MailWake> {
+    match receiver.try_recv() {
+        Ok(work) => Some(MailWake::Work(work)),
+        Err(mpsc::TryRecvError::Disconnected) => Some(MailWake::Closed),
+        Err(mpsc::TryRecvError::Empty) => None,
+    }
+}
+
+fn interrupt_idle(socket: &Mutex<Option<TcpStream>>) {
+    if let Ok(socket) = socket.lock() {
+        if let Some(socket) = socket.as_ref() {
+            let _ = socket.shutdown(Shutdown::Both);
+        }
+    }
+}
+
+fn wait_for_mail<T: Read + Write + SetReadTimeout>(
+    session: &mut Session<T>,
+    socket: &TcpStream,
+    interrupt: &Mutex<Option<TcpStream>>,
+    receiver: &mpsc::Receiver<Work>,
+    timeout: Duration,
+) -> MailWake {
+    let cloned = match socket.try_clone() {
+        Ok(socket) => socket,
+        Err(error) => return MailWake::Failed(imap::Error::Io(error)),
+    };
+    let Ok(mut registered) = interrupt.lock() else {
+        return MailWake::Closed;
+    };
+    *registered = Some(cloned);
+    drop(registered);
+    // Register before checking the queue: a command arriving at either side of
+    // this check must interrupt IDLE rather than wait for its keepalive deadline.
+    let result = if let Some(work) = queued_work(receiver) {
+        work
+    } else {
+        match session
+            .idle()
+            .and_then(|idle| idle.wait_with_timeout(timeout))
+        {
+            Ok(WaitOutcome::MailboxChanged) => MailWake::Changed,
+            Ok(WaitOutcome::TimedOut) => MailWake::TimedOut,
+            Err(error) => MailWake::Failed(error),
+        }
+    };
+    if let Ok(mut registered) = interrupt.lock() {
+        *registered = None;
+    }
+    // A deliberate socket interruption is a queued user action, not a network
+    // error. Process it before considering any server response.
+    match result {
+        MailWake::Work(_) | MailWake::Closed => result,
+        _ => queued_work(receiver).unwrap_or(result),
+    }
+}
 
 #[derive(Default)]
 struct SyncConnection {
     generation: u64,
     session: Option<MailSession>,
+    socket: Option<TcpStream>,
+    cached: Option<Inbox>,
+    idle_supported: bool,
+    idle_rejected: bool,
 }
 
 impl SyncConnection {
     fn reset(&mut self, generation: u64) {
         if self.generation != generation {
-            self.session = None;
+            *self = Self::default();
             self.generation = generation;
         }
     }
@@ -253,10 +354,12 @@ impl SyncConnection {
     fn fetch(&mut self, email: &str, secret: Option<&str>) -> Result<Inbox, MailFailure> {
         // Only a failed connection needs another TLS handshake, login and credential lookup.
         if let Some(session) = &mut self.session {
-            if let Ok(inbox) = fetch_inbox(session) {
+            if let Ok(inbox) = fetch_inbox_cached(session, self.cached.as_ref()) {
+                self.cached = Some(inbox.clone());
                 return Ok(inbox);
             }
             self.session = None;
+            self.socket = None;
         }
         let stored_secret;
         let secret = match secret {
@@ -271,9 +374,16 @@ impl SyncConnection {
                     .ok_or_else(MailFailure::authentication)?
             }
         };
-        let mut session = open_session(email, secret)?;
-        let inbox = fetch_inbox(&mut session)?;
+        let (mut session, socket) = open_connection(email, secret)?;
+        self.idle_supported = session
+            .capabilities()
+            .map_err(|_| MailFailure::network())?
+            .has_str("IDLE")
+            && !self.idle_rejected;
+        let inbox = fetch_inbox_cached(&mut session, self.cached.as_ref())?;
+        self.cached = Some(inbox.clone());
         self.session = Some(session);
+        self.socket = Some(socket);
         Ok(inbox)
     }
 }
@@ -282,9 +392,18 @@ struct MailService {
     app: AppHandle,
     state: Mutex<MailState>,
     sender: mpsc::Sender<Work>,
+    idle_socket: Mutex<Option<TcpStream>>,
 }
 
 impl MailService {
+    fn send(&self, work: Work) -> Result<(), String> {
+        self.sender
+            .send(work)
+            .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+        interrupt_idle(&self.idle_socket);
+        Ok(())
+    }
+
     fn lock(&self) -> Result<MutexGuard<'_, MailState>, String> {
         self.state.lock().map_err(|_| "QQ 邮箱状态不可用。".into())
     }
@@ -362,9 +481,15 @@ impl MailService {
         });
         match result {
             Ok(inbox) => {
+                let needs_refresh = inbox.needs_refresh;
                 let (snapshot, newest_id) = state
                     .accept(generation, inbox)
                     .ok_or_else(|| "邮箱连接已取消。".to_string())?;
+                if needs_refresh {
+                    state.next_check = Some(Instant::now());
+                } else if connection.idle_supported {
+                    state.next_check = Some(Instant::now() + PUSH_REFRESH_INTERVAL);
+                }
                 drop(state);
                 self.publish(snapshot.clone(), newest_id);
                 Ok(snapshot)
@@ -411,6 +536,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         app: app.clone(),
         state: Mutex::new(MailState::default()),
         sender,
+        idle_socket: Mutex::new(None),
     });
     SERVICE
         .set(service.clone())
@@ -429,18 +555,37 @@ fn service() -> Result<&'static Arc<MailService>, String> {
 fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
     let mut connection = SyncConnection::default();
     loop {
-        let wait = match service.lock() {
+        let (wait, can_idle) = match service.lock() {
             Ok(state) => {
                 connection.reset(state.generation);
-                state
-                    .next_check
-                    .map(|deadline| deadline.saturating_duration_since(Instant::now()))
-                    .unwrap_or(Duration::from_secs(3_600))
+                (
+                    state
+                        .next_check
+                        .map(|deadline| deadline.saturating_duration_since(Instant::now()))
+                        .unwrap_or(Duration::from_secs(3_600)),
+                    state.snapshot.enabled
+                        && !state.snapshot.syncing
+                        && state.snapshot.status == MailStatus::Connected,
+                )
             }
             Err(_) => return,
         };
-        match receiver.recv_timeout(wait) {
-            Ok(Work::Connect {
+        let wake = if can_idle && connection.idle_supported && !wait.is_zero() {
+            match (&mut connection.session, &connection.socket) {
+                (Some(session), Some(socket)) => {
+                    wait_for_mail(session, socket, &service.idle_socket, &receiver, wait)
+                }
+                _ => MailWake::TimedOut,
+            }
+        } else {
+            match receiver.recv_timeout(wait) {
+                Ok(work) => MailWake::Work(work),
+                Err(mpsc::RecvTimeoutError::Timeout) => MailWake::TimedOut,
+                Err(mpsc::RecvTimeoutError::Disconnected) => MailWake::Closed,
+            }
+        };
+        match wake {
+            MailWake::Work(Work::Connect {
                 generation,
                 email,
                 secret,
@@ -449,7 +594,7 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
                 let _ =
                     reply.send(service.sync(generation, &email, Some(&secret), &mut connection));
             }
-            Ok(Work::Refresh { generation, reply }) => {
+            MailWake::Work(Work::Refresh { generation, reply }) => {
                 let email = service
                     .lock()
                     .ok()
@@ -459,13 +604,20 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
                     .and_then(|email| service.sync(generation, &email, None, &mut connection));
                 let _ = reply.send(result);
             }
-            Ok(Work::Wake) => {}
-            Err(mpsc::RecvTimeoutError::Timeout) => {
+            MailWake::Work(Work::Wake) => {}
+            MailWake::Closed => return,
+            change => {
+                if let MailWake::Failed(error) = change {
+                    if matches!(error, imap::Error::No(_) | imap::Error::Bad(_)) {
+                        connection.idle_rejected = true;
+                    }
+                    connection.session = None;
+                    connection.socket = None;
+                }
                 if let Some((generation, email)) = service.begin_sync() {
                     let _ = service.sync(generation, &email, None, &mut connection);
                 }
             }
-            Err(mpsc::RecvTimeoutError::Disconnected) => return,
         }
     }
 }
@@ -508,7 +660,6 @@ pub async fn connect_qq_mail(
     service.publish(snapshot, None);
     let (reply, receiver) = mpsc::channel();
     service
-        .sender
         .send(Work::Connect {
             generation,
             email,
@@ -562,7 +713,7 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
         let snapshot = state.changed();
         drop(state);
         service.publish(snapshot.clone(), None);
-        let _ = service.sender.send(Work::Wake);
+        let _ = service.send(Work::Wake);
         Ok(snapshot)
     })
     .await
@@ -582,7 +733,6 @@ pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
     };
     let (reply, receiver) = mpsc::channel();
     service
-        .sender
         .send(Work::Refresh { generation, reply })
         .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
     await_reply(receiver).await
@@ -631,6 +781,7 @@ pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
                 let snapshot = state.changed();
                 drop(state);
                 service.publish(snapshot, None);
+                let _ = service.send(Work::Wake);
                 return Err("删除邮箱凭据失败，请重试断开。".into());
             }
         }
@@ -642,7 +793,7 @@ pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
         let snapshot = state.changed();
         drop(state);
         service.publish(snapshot.clone(), None);
-        let _ = service.sender.send(Work::Wake);
+        let _ = service.send(Work::Wake);
         Ok(snapshot)
     })
     .await
@@ -719,10 +870,11 @@ fn login_failure(error: imap::Error) -> MailFailure {
     }
 }
 
-fn open_session(
-    email: &str,
-    secret: &str,
-) -> Result<Session<native_tls::TlsStream<TcpStream>>, MailFailure> {
+fn open_session(email: &str, secret: &str) -> Result<MailSession, MailFailure> {
+    open_connection(email, secret).map(|(session, _)| session)
+}
+
+fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
     let mut stream = None;
     let addresses = (HOST, 993)
         .to_socket_addrs()
@@ -740,14 +892,16 @@ fn open_session(
     stream
         .set_write_timeout(Some(IO_TIMEOUT))
         .map_err(|_| MailFailure::network())?;
+    let interrupt = stream.try_clone().map_err(|_| MailFailure::network())?;
     let tls = native_tls::TlsConnector::new().map_err(|_| MailFailure::network())?;
     let stream = tls
         .connect(HOST, stream)
         .map_err(|_| MailFailure::network())?;
-    let mut client = imap::Client::new(stream);
+    let mut client = imap::Client::new(BoundedStream(stream));
     client.read_greeting().map_err(|_| MailFailure::network())?;
     client
         .login(email, secret)
+        .map(|session| (session, interrupt))
         .map_err(|(error, _)| login_failure(error))
 }
 
@@ -1121,7 +1275,57 @@ fn fetch_content<T: Read + Write>(
     })
 }
 
+#[cfg(test)]
 fn fetch_inbox<T: Read + Write>(session: &mut Session<T>) -> Result<Inbox, MailFailure> {
+    fetch_inbox_cached(session, None)
+}
+
+fn header_message(message: &Fetch, validity: u32) -> Option<MailMessage> {
+    let uid = message.uid?;
+    let (sender, subject) = parse_header(message.header()?);
+    Some(MailMessage {
+        id: format!("{validity}:{uid}"),
+        uid,
+        sender,
+        subject,
+        received_at: message.internal_date().map(|date| date.timestamp_millis()),
+        unread: !message.flags().contains(&Flag::Seen),
+    })
+}
+
+fn drain_mail_updates<T: Read + Write>(
+    session: &Session<T>,
+    exists: u32,
+    unread: &mut Option<usize>,
+    needs_refresh: &mut bool,
+) {
+    for response in session.unsolicited_responses.try_iter() {
+        match response {
+            UnsolicitedResponse::Status {
+                mailbox,
+                attributes,
+            } if mailbox.eq_ignore_ascii_case("INBOX") => {
+                if let Some(count) = attributes
+                    .into_iter()
+                    .find_map(|attribute| match attribute {
+                        StatusAttribute::Unseen(count) => Some(count as usize),
+                        _ => None,
+                    })
+                {
+                    *unread = Some(count);
+                }
+            }
+            UnsolicitedResponse::Exists(count) if count != exists => *needs_refresh = true,
+            UnsolicitedResponse::Expunge(_) => *needs_refresh = true,
+            _ => {}
+        }
+    }
+}
+
+fn fetch_inbox_cached<T: Read + Write>(
+    session: &mut Session<T>,
+    cached: Option<&Inbox>,
+) -> Result<Inbox, MailFailure> {
     let mailbox = session
         .examine("INBOX")
         .map_err(|_| MailFailure::network())?;
@@ -1129,52 +1333,112 @@ fn fetch_inbox<T: Read + Write>(session: &mut Session<T>) -> Result<Inbox, MailF
         .uid_validity
         .filter(|value| *value > 0)
         .ok_or_else(MailFailure::network)?;
-    let unseen = session
-        .uid_search("UNSEEN")
+    // STATUS returns the total without enumerating every unread UID in a large inbox.
+    for _ in session.unsolicited_responses.try_iter() {}
+    session
+        .status("INBOX", "(UNSEEN)")
         .map_err(|_| MailFailure::network())?;
+    // imap 2.4 forwards STATUS attributes to this channel rather than returning
+    // them in Mailbox.unseen (which has different semantics for EXAMINE).
+    let mut unread_count = None;
+    let mut needs_refresh = false;
+    drain_mail_updates(
+        session,
+        mailbox.exists,
+        &mut unread_count,
+        &mut needs_refresh,
+    );
     let mut items = Vec::new();
     if mailbox.exists > 0 {
         let first = mailbox.exists.saturating_sub(MAX_ITEMS - 1).max(1);
-        let messages = session
-            .fetch(format!("{first}:{}", mailbox.exists), HEADER_QUERY)
-            .map_err(|_| MailFailure::network())?;
-        for message in messages
-            .iter()
-            .filter(|message| (first..=mailbox.exists).contains(&message.message))
-        {
-            let Some(uid) = message.uid else {
-                return Err(MailFailure::network());
-            };
-            // Unsolicited flag-only FETCH responses must not become blank list entries.
-            let Some(header) = message.header() else {
-                continue;
-            };
-            let (sender, subject) = parse_header(header);
-            items.push(MailMessage {
-                id: format!("{validity}:{uid}"),
-                uid,
-                sender,
-                subject,
-                received_at: message.internal_date().map(|date| date.timestamp_millis()),
-                unread: !message.flags().contains(&Flag::Seen),
-            });
+        let cached = cached.filter(|previous| previous.cursor.validity == validity);
+        if let Some(cached) = cached {
+            let mut missing = Vec::new();
+            let messages = session
+                .fetch(format!("{first}:{}", mailbox.exists), FLAGS_QUERY)
+                .map_err(|_| MailFailure::network())?;
+            for message in messages
+                .iter()
+                .filter(|message| (first..=mailbox.exists).contains(&message.message))
+            {
+                let Some(uid) = message.uid else {
+                    continue;
+                };
+                if let Some(previous) = cached.items.iter().find(|item| item.uid == uid) {
+                    let mut item = previous.clone();
+                    item.unread = !message.flags().contains(&Flag::Seen);
+                    item.received_at = message
+                        .internal_date()
+                        .map(|date| date.timestamp_millis())
+                        .or(item.received_at);
+                    items.push(item);
+                } else if !missing.contains(&uid) {
+                    missing.push(uid);
+                }
+            }
+            if !missing.is_empty() {
+                let sequence = missing
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",");
+                let messages = session
+                    .uid_fetch(sequence, HEADER_QUERY)
+                    .map_err(|_| MailFailure::network())?;
+                for message in messages.iter() {
+                    if let Some(item) = header_message(message, validity) {
+                        if missing.contains(&item.uid)
+                            && !items.iter().any(|old| old.uid == item.uid)
+                        {
+                            items.push(item);
+                        }
+                    }
+                }
+                if missing
+                    .iter()
+                    .any(|uid| !items.iter().any(|item| item.uid == *uid))
+                {
+                    return Err(MailFailure::network());
+                }
+            }
+        } else {
+            let messages = session
+                .fetch(format!("{first}:{}", mailbox.exists), HEADER_QUERY)
+                .map_err(|_| MailFailure::network())?;
+            for message in messages
+                .iter()
+                .filter(|message| (first..=mailbox.exists).contains(&message.message))
+            {
+                if let Some(item) = header_message(message, validity) {
+                    items.push(item);
+                }
+            }
         }
     }
     items.sort_by_key(|item| std::cmp::Reverse(item.uid));
     items.dedup_by_key(|item| item.uid);
     items.truncate(MAX_ITEMS as usize);
-    let high_water = mailbox
-        .uid_next
-        .unwrap_or(1)
-        .saturating_sub(1)
-        .max(items.iter().map(|item| item.uid).max().unwrap_or(0));
+    let expected = mailbox.exists.min(MAX_ITEMS) as usize;
+    if items.len() != expected {
+        return Err(MailFailure::network());
+    }
+    // UIDNEXT can advance while this snapshot is being fetched. Acknowledge
+    // only headers actually received, or the next arrival's preview can be lost.
+    let high_water = items.iter().map(|item| item.uid).max().unwrap_or(0);
+    drain_mail_updates(
+        session,
+        mailbox.exists,
+        &mut unread_count,
+        &mut needs_refresh,
+    );
     Ok(Inbox {
         cursor: Cursor {
             validity,
             high_water,
         },
-        unread_count: unseen.len(),
+        unread_count: unread_count.ok_or_else(MailFailure::network)?,
         items,
+        needs_refresh,
     })
 }
 
@@ -1206,6 +1470,7 @@ mod tests {
 
     fn inbox(validity: u32, uids: &[u32]) -> Inbox {
         Inbox {
+            needs_refresh: false,
             cursor: Cursor {
                 validity,
                 high_water: uids.iter().copied().max().unwrap_or(0),
@@ -1367,6 +1632,11 @@ mod tests {
             Ok(())
         }
     }
+    impl SetReadTimeout for ScriptedStream {
+        fn set_read_timeout(&mut self, _: Option<Duration>) -> imap::Result<()> {
+            Ok(())
+        }
+    }
 
     fn client(script: String) -> (imap::Client<ScriptedStream>, Arc<Mutex<Vec<u8>>>) {
         let output = Arc::new(Mutex::new(Vec::new()));
@@ -1389,11 +1659,7 @@ mod tests {
 
     #[test]
     fn reads_only_headers_and_counts_all_unread_not_just_recent_twenty() {
-        let mut script = "* OK ready\r\na1 OK login\r\n* 25 EXISTS\r\n* 0 RECENT\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 26] next\r\na2 OK [READ-ONLY] examined\r\n* SEARCH".to_string();
-        for uid in 1..=25 {
-            script.push_str(&format!(" {uid}"));
-        }
-        script.push_str("\r\na3 OK search\r\n");
+        let mut script = "* OK ready\r\na1 OK login\r\n* 25 EXISTS\r\n* 0 RECENT\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 26] next\r\na2 OK [READ-ONLY] examined\r\n* STATUS \"INBOX\" (UNSEEN 25)\r\na3 OK status\r\n".to_string();
         let header = "From: sender@example.com\r\nSubject: Update\r\n\r\n";
         for uid in 6..=25 {
             script.push_str(&format!("* {uid} FETCH (UID {uid} FLAGS () INTERNALDATE \"19-Oct-2026 08:00:00 +0800\" BODY[HEADER]<0> {{{}}}\r\n{header})\r\n", header.len()));
@@ -1407,7 +1673,7 @@ mod tests {
         assert_eq!(inbox.items[0].id, "7:25");
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
         assert!(commands.contains("EXAMINE \"INBOX\""));
-        assert!(commands.contains("UID SEARCH UNSEEN"));
+        assert!(commands.contains("STATUS \"INBOX\" (UNSEEN)"));
         assert!(commands.contains(HEADER_QUERY));
         for forbidden in [" SELECT ", " STORE ", " EXPUNGE", "BODY[]", "BODY[TEXT]"] {
             assert!(!commands.contains(forbidden));
@@ -1416,7 +1682,7 @@ mod tests {
 
     #[test]
     fn empty_mailbox_is_a_successful_zero_unread_snapshot() {
-        let (client, _) = client("* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* 0 RECENT\r\n* OK [UIDVALIDITY 1] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* SEARCH\r\na3 OK search\r\n".into());
+        let (client, _) = client("* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* 0 RECENT\r\n* OK [UIDVALIDITY 1] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* STATUS \"INBOX\" (UNSEEN 0)\r\na3 OK status\r\n".into());
         let mut session = client.login("user@qq.com", "test-secret").unwrap();
         let inbox = fetch_inbox(&mut session).unwrap();
         assert_eq!(inbox.unread_count, 0);
@@ -1427,7 +1693,7 @@ mod tests {
     fn a_reused_session_detects_new_mail_without_another_login() {
         let header = "From: sender@example.com\r\nSubject: New arrival\r\n\r\n";
         let script = format!(
-            "* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* SEARCH\r\na3 OK search\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 2] next\r\na4 OK [READ-ONLY] examined\r\n* SEARCH 1\r\na5 OK search\r\n* 1 FETCH (UID 1 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na6 OK fetch\r\n",
+            "* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* STATUS \"INBOX\" (UNSEEN 0)\r\na3 OK status\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 2] next\r\na4 OK [READ-ONLY] examined\r\n* STATUS \"INBOX\" (UNSEEN 1)\r\na5 OK status\r\n* 1 FETCH (UID 1 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na6 OK fetch\r\n",
             header.len()
         );
         let (client, output) = client(script);
@@ -1448,6 +1714,230 @@ mod tests {
         let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
         assert_eq!(commands.matches("LOGIN").count(), 1);
         assert_eq!(commands.matches("EXAMINE").count(), 2);
+    }
+
+    #[test]
+    fn cached_sync_updates_flags_without_downloading_headers_again() {
+        let (client, output) = client("* OK ready\r\na1 OK login\r\n* 2 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 3] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 1)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS (\\Seen))\r\n* 2 FETCH (UID 2 FLAGS ())\r\na4 OK flags\r\n".into());
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let cached = inbox(7, &[1, 2]);
+        let next = fetch_inbox_cached(&mut session, Some(&cached)).unwrap();
+        assert_eq!(next.unread_count, 1);
+        assert!(!next.items.iter().find(|item| item.uid == 1).unwrap().unread);
+        assert_eq!(next.items[0].subject, "主题");
+        assert!(!next.needs_refresh);
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert!(commands.contains(FLAGS_QUERY));
+        assert!(!commands.contains("BODY"));
+        assert!(!commands.contains("SEARCH"));
+    }
+
+    #[test]
+    fn a_new_arrival_downloads_only_its_header_and_preserves_cached_titles() {
+        let header = "From: new@example.com\r\nSubject: New arrival\r\n\r\n";
+        let script = format!("* OK ready\r\na1 OK login\r\n* 3 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 4] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 2)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS (\\Seen))\r\n* 2 FETCH (UID 2 FLAGS ())\r\n* 3 FETCH (UID 3 FLAGS ())\r\na4 OK flags\r\n* 3 FETCH (UID 3 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na5 OK header\r\n", header.len());
+        let (client, output) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let cached = inbox(7, &[1, 2]);
+        let next = fetch_inbox_cached(&mut session, Some(&cached)).unwrap();
+        assert_eq!(next.items[0].subject, "New arrival");
+        assert_eq!(next.items[1].subject, "主题");
+        assert_eq!(next.unread_count, 2);
+        let mut state = active_state();
+        state.accept(0, cached);
+        assert_eq!(state.accept(0, next).unwrap().1.as_deref(), Some("7:3"));
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert!(commands.contains("UID FETCH 3 (UID FLAGS INTERNALDATE BODY.PEEK[HEADER]"));
+        assert_eq!(commands.matches("BODY.PEEK").count(), 1);
+    }
+
+    #[test]
+    fn rebuilt_mailboxes_do_not_reuse_headers_from_the_old_uid_validity() {
+        let header = "Subject: Replacement\r\n\r\n";
+        let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 8] valid\r\n* OK [UIDNEXT 2] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 1)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na4 OK header\r\n", header.len());
+        let (client, _) = client(script);
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let cached = inbox(7, &[1]);
+        let next = fetch_inbox_cached(&mut session, Some(&cached)).unwrap();
+        assert_eq!(next.items[0].id, "8:1");
+        assert_eq!(next.items[0].subject, "Replacement");
+        let mut state = active_state();
+        state.accept(0, cached);
+        assert!(state.accept(0, next).unwrap().1.is_none());
+    }
+
+    #[test]
+    fn arrivals_during_sync_request_an_immediate_followup_before_idling() {
+        let (client, _) = client("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 3] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 2)\r\na3 OK status\r\n* 2 EXISTS\r\n* 1 FETCH (UID 1 FLAGS ())\r\na4 OK flags\r\n".into());
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let cached = inbox(7, &[1]);
+        let next = fetch_inbox_cached(&mut session, Some(&cached)).unwrap();
+        assert!(next.needs_refresh);
+        assert_eq!(next.cursor.high_water, 1);
+        let mut state = active_state();
+        state.accept(0, cached);
+        state.accept(0, next);
+        assert_eq!(state.accept(0, inbox(7, &[1, 2])).unwrap().1.as_deref(), Some("7:2"));
+    }
+
+    #[test]
+    fn missing_new_headers_cannot_silently_advance_the_notification_cursor() {
+        let (client, _) = client("* OK ready\r\na1 OK login\r\n* 2 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 3] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 2)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS ())\r\n* 2 FETCH (UID 2 FLAGS ())\r\na4 OK flags\r\na5 OK header\r\n".into());
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let cached = inbox(7, &[1]);
+        assert!(fetch_inbox_cached(&mut session, Some(&cached)).is_err());
+        assert_eq!(cached.cursor.high_water, 1);
+    }
+
+    fn socket_pair() -> (TcpStream, TcpStream) {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        (client, listener.accept().unwrap().0)
+    }
+
+    #[test]
+    fn queued_refreshes_are_not_dropped_or_blocked_by_idle() {
+        let (client, output) = client("* OK ready\r\na1 OK login\r\n".into());
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let (socket, _peer) = socket_pair();
+        let gate = Mutex::new(None);
+        let (sender, receiver) = mpsc::channel();
+        let (reply, _) = mpsc::channel();
+        for generation in [1, 2] {
+            sender
+                .send(Work::Refresh {
+                    generation,
+                    reply: reply.clone(),
+                })
+                .unwrap();
+        }
+        let wake = wait_for_mail(
+            &mut session,
+            &socket,
+            &gate,
+            &receiver,
+            PUSH_REFRESH_INTERVAL,
+        );
+        assert!(matches!(
+            wake,
+            MailWake::Work(Work::Refresh { generation: 1, .. })
+        ));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(Work::Refresh { generation: 2, .. })
+        ));
+        assert!(gate.lock().unwrap().is_none());
+        assert!(!String::from_utf8(output.lock().unwrap().clone())
+            .unwrap()
+            .contains("IDLE"));
+    }
+
+    #[test]
+    fn server_push_wakes_the_worker_without_waiting_for_a_poll_deadline() {
+        let (client, output) = client(
+            "* OK ready\r\na1 OK login\r\n+ idling\r\n* 2 EXISTS\r\na2 OK idle done\r\n".into(),
+        );
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let (socket, _peer) = socket_pair();
+        let gate = Mutex::new(None);
+        let (_sender, receiver) = mpsc::channel();
+        let wake = wait_for_mail(
+            &mut session,
+            &socket,
+            &gate,
+            &receiver,
+            PUSH_REFRESH_INTERVAL,
+        );
+        assert!(matches!(wake, MailWake::Changed));
+        let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
+        assert!(commands.contains("a2 IDLE\r\nDONE\r\n"));
+        assert!(gate.lock().unwrap().is_none());
+    }
+
+    #[test]
+    fn idle_rejection_returns_to_the_worker_for_polling_fallback() {
+        let (client, _) = client(
+            "* OK ready\r\na1 OK login\r\na2 BAD IDLE unsupported\r\na2 BAD not idling\r\n".into(),
+        );
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let (socket, _peer) = socket_pair();
+        let gate = Mutex::new(None);
+        let (_sender, receiver) = mpsc::channel();
+        assert!(matches!(
+            wait_for_mail(
+                &mut session,
+                &socket,
+                &gate,
+                &receiver,
+                PUSH_REFRESH_INTERVAL
+            ),
+            MailWake::Failed(imap::Error::Bad(_))
+        ));
+        assert!(gate.lock().unwrap().is_none());
+    }
+
+    #[test]
+    fn clearing_an_idle_timeout_restores_a_bounded_read_timeout() {
+        let (socket, _peer) = socket_pair();
+        let mut stream = BoundedStream(socket);
+        stream.set_read_timeout(None).unwrap();
+        assert_eq!(stream.0.read_timeout().unwrap(), Some(IO_TIMEOUT));
+    }
+
+    #[test]
+    fn pause_or_disconnect_interrupts_a_real_blocked_idle_socket() {
+        use std::io::{BufRead, BufReader};
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let (entered, started) = mpsc::channel();
+        let peer = thread::spawn(move || {
+            let (mut socket, _) = listener.accept().unwrap();
+            socket
+                .set_read_timeout(Some(Duration::from_secs(3)))
+                .unwrap();
+            let mut reader = BufReader::new(socket.try_clone().unwrap());
+            socket.write_all(b"* OK ready\r\n").unwrap();
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            assert!(line.starts_with("a1 LOGIN"));
+            socket.write_all(b"a1 OK login\r\n").unwrap();
+            line.clear();
+            reader.read_line(&mut line).unwrap();
+            assert_eq!(line, "a2 IDLE\r\n");
+            socket.write_all(b"+ idling\r\n").unwrap();
+            entered.send(()).unwrap();
+            line.clear();
+            let _ = reader.read_line(&mut line);
+        });
+        let socket = TcpStream::connect(address).unwrap();
+        socket.set_read_timeout(Some(IO_TIMEOUT)).unwrap();
+        let control = socket.try_clone().unwrap();
+        let mut client = imap::Client::new(BoundedStream(socket));
+        client.read_greeting().unwrap();
+        let mut session = client.login("user@qq.com", "test-secret").unwrap();
+        let gate = Arc::new(Mutex::new(None));
+        let interrupt = gate.clone();
+        let (sender, receiver) = mpsc::channel();
+        let cancel = thread::spawn(move || {
+            started.recv_timeout(Duration::from_secs(3)).unwrap();
+            sender.send(Work::Wake).unwrap();
+            interrupt_idle(&interrupt);
+        });
+        let before = Instant::now();
+        assert!(matches!(
+            wait_for_mail(
+                &mut session,
+                &control,
+                &gate,
+                &receiver,
+                PUSH_REFRESH_INTERVAL
+            ),
+            MailWake::Work(Work::Wake)
+        ));
+        assert!(before.elapsed() < Duration::from_secs(3));
+        assert!(gate.lock().unwrap().is_none());
+        cancel.join().unwrap();
+        peer.join().unwrap();
     }
 
     fn body_client(
