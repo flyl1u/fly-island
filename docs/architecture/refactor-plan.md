@@ -157,7 +157,7 @@
 | 2026-11-03 | 1.1 | `c699c48` | 新增 `src/lib/storage.ts`（57 行：`readString` / `writeString` / `removeItem` / `readJson` / `writeJson`）与 `tests/storage.test.mjs`（5 个用例）；现有代码暂不改用，在 Phase 2 各目录的 `storage.ts` 中接入 | `pnpm check`（45/45）、`pnpm build` |
 | 2026-11-03 | 1.2 | `bd16b6c` | `App.tsx` 5644 → 5602（-42）；新增 `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` 和 `tests/utils.test.mjs`（6 个用例）；`SettingsWindow.tsx` 改为从 `utils/error` 导入 `getErrorMessage`；`getDisplayDateParts` 的参数类型改为结构类型 `{ localeTag: string }`（运行时不变）；`hexToRgba` 推迟到 2.4 | `pnpm check`（51/51）、`pnpm build` |
 | 2026-11-03 | 1.3 | `5d17988` | `App.tsx` 5602 → 5488（-114）、`App.css` 3865 → 3677（-188）；新增 `components/controls/` 下 4 组 `.tsx` + `.css`。已核对 CSS 迁移不改变层叠结果：没有其他规则以相同特异性命中这些控件 | `pnpm check`（51/51）、`pnpm build`；截图对比待人工验收 |
-| 2026-11-03 | 1.4 | 见提交说明 | `App.css` 3677 → 3622（-55）；新增 `styles/fonts.css`（`@font-face`，url 改为 `../assets/…`）、`styles/base.css`，由 `main.tsx` 在 `App` 之前引入。打包产物 CSS 与 1.3 完全一致，只是这 785 字节的全局规则移到了开头；之前加载的组件 CSS 中没有同特异性的冲突规则 | `pnpm check`（51/51）、`pnpm build` |
+| 2026-11-03 | 1.4 | `bc7cccd` | `App.css` 3677 → 3622（-55）；新增 `styles/fonts.css`（`@font-face`，url 改为 `../assets/…`）、`styles/base.css`，由 `main.tsx` 在 `App` 之前引入。打包产物 CSS 与 1.3 完全一致，只是这 785 字节的全局规则移到了开头；之前加载的组件 CSS 中没有同特异性的冲突规则 | `pnpm check`（51/51）、`pnpm build` |
 
 ## 待人工验收
 
@@ -167,7 +167,7 @@
 |---|---|---|
 | `2e71e5c` | 0.7 | 推送后在 GitHub Actions 中确认 `CI` 工作流在 `windows-latest` 上全部通过（本地无法运行；按规则不执行 `git push`）。 |
 | `5d17988` | 1.3 | 在设置窗口（中英文）对比滑块、颜色、开关、数字输入四种控件的外观与交互（拖动、选色、切换、焦点框），应与迁移前一致。 |
-| 1.4 的提交 | 1.4 | 三个窗口（主窗口、设置、翻译）在中英文下检查像素字体（`Fusion Pixel`）仍能加载、键盘 Tab 与鼠标点击下的按钮焦点框表现与迁移前一致。 |
+| `bc7cccd` | 1.4 | 三个窗口（主窗口、设置、翻译）在中英文下检查像素字体（`Fusion Pixel`）仍能加载、键盘 Tab 与鼠标点击下的按钮焦点框表现与迁移前一致。 |
 
 ## 待处理问题
 
