@@ -56,13 +56,15 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 前端开发服务器 | `pnpm dev` |
 | 桌面开发模式 | `pnpm tauri dev` |
 | 类型检查并构建前端 | `pnpm build` |
-| 前端单元测试 | `node --test tests/*.test.mjs` |
+| 前端单元测试 | `pnpm test`（即 `node --test tests/*.test.mjs`） |
+| 文件行数检查 | `pnpm check:size` |
+| 提交前总检查 | `pnpm check`（类型检查 + 行数检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
 | 完整打包 | `pnpm tauri build` |
 | 发布 | `pnpm release`（流程见 `docs/updater.md`） |
 
-如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。
+如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。如果 `vite build` 报错无法删除系统临时目录中的 esbuild 文件（Access is denied），可以把 `TEMP` / `TMP` 指向 `node_modules/.cache/` 下的目录后重试。
 
 ## 代码规模规则（全局）
 
@@ -72,11 +74,12 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 |---|---|
 | `.ts` / `.tsx` / `.mjs` | 400 行 |
 | `.css` | 500 行 |
-| `.rs` | 800 行；测试模块超过 150 行时移到独立的 `tests.rs`，因此实际约束的是生产代码 |
+| `.rs` | 800 行，只计生产代码（不含内联测试模块）；内联测试模块上限 150 行，超过时移到同目录的 `tests.rs`，`tests.rs` 不设上限 |
 | `.ps1` / `.cmd` | 400 行 |
 
 - **豁免**：`src/i18n/locales/*.ts`、`src/i18n/types.ts`（文案字典），锁文件、二进制资源和生成产物。
-- **存量白名单（只减不增）**：重构前已经超限的文件登记在白名单中，并记录当前行数作为上限。白名单内的文件**不得变得更长**，降到上限以下后从白名单移除。白名单与检查脚本在重构计划 Phase 0 中建立；建立之前，由提交者自行确认改动没有让这些文件变长。
+- **存量白名单（只减不增）**：重构前已经超限的文件登记在 `scripts/file-size-allowlist.json` 中，并记录当前行数作为上限。白名单内的文件**不得变得更长**；变短后把记录值同步改小；降到上限以下或文件被移走后，必须删除对应条目。只允许调小或删除白名单记录，不得调大或新增。
+- `pnpm check:size`（`scripts/check-file-size.mjs`）负责检查以上规则，扫描 `src/`、`src-tauri/src/`、`src-tauri/examples/`、`scripts/`、`tests/`。
 - **不往超限文件里加新功能**。新功能写在目标结构的对应位置，再从旧文件中引用。
 - 一个文件只承担一个职责。不新建 `helpers.ts`、`common.rs`、`misc.css` 这类没有明确领域的"杂物"文件。
 
@@ -118,7 +121,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 改动范围 | 必须运行 |
 |---|---|
 | 仅文档 | 无需构建，确认 Markdown 可读 |
-| 前端逻辑、样式或依赖 | `pnpm build` + `node --test tests/*.test.mjs` |
+| 前端逻辑、样式、依赖或脚本 | `pnpm check` + `pnpm build` |
 | Rust、Tauri 命令、窗口、托盘、注册表、Windows API、桌面配置 | `cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle` |
 | 发布相关 | 完整的 `pnpm tauri build` |
 

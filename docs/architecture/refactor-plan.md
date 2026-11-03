@@ -12,16 +12,18 @@
 
 ## 基线（2026-11-03，提交 `f8e847d`）
 
-| 文件 | 物理行数 | 上限 | 状态 |
-|---|---|---|---|
-| `src/App.tsx` | 5644 | 400 | 超限 |
-| `src/App.css` | 3865 | 500 | 超限 |
-| `src/QQMail.tsx` | 404 | 400 | 超限 |
-| `src-tauri/src/qq_mail.rs` | 2162 | 800 | 超限 |
-| `src-tauri/src/lib.rs` | 1973 | 800 | 超限 |
-| `src-tauri/src/qq_notifications.rs` | 1081 | 800 | 超限 |
-| `src-tauri/src/clipboard_history.rs` | 1068 | 800 | 超限 |
-| `src-tauri/src/media_control.rs` | 829 | 800 | 超限 |
+按 `pnpm check:size` 的口径统计。`.rs` 文件分别统计生产代码和内联测试模块，权威数据以 `scripts/file-size-allowlist.json` 为准。
+
+| 文件 | 物理行数 | 计入上限的行数 | 内联测试 | 超限项 |
+|---|---|---|---|---|
+| `src/App.tsx` | 5644 | 5644 / 400 | — | 行数 |
+| `src/App.css` | 3865 | 3865 / 500 | — | 行数 |
+| `src/QQMail.tsx` | 404 | 404 / 400 | — | 行数 |
+| `src-tauri/src/qq_mail.rs` | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
+| `src-tauri/src/lib.rs` | 1973 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
+| `src-tauri/src/clipboard_history.rs` | 1068 | 1068 / 800 | 0 | 生产代码 |
+| `src-tauri/src/media_control.rs` | 829 | 829 / 800 | 0 | 生产代码 |
+| `src-tauri/src/qq_notifications.rs` | 1081 | 789 / 800 | 292 / 150 | 测试 |
 
 其他基线指标：
 
@@ -35,15 +37,14 @@
 
 先建立自动检查，后续每一步都由工具把关。
 
-- [ ] **0.1 统一脚本入口。** 在 `package.json` 中新增：
+- [x] **0.1 统一脚本入口。** 在 `package.json` 中新增：
   - `test`：`node --test tests/*.test.mjs`
   - `check:size`：运行行数检查脚本
-  - `lint`：运行 ESLint
-  - `check`：依次运行 `tsc --noEmit`、`lint`、`check:size`、`test`
-- [ ] **0.2 行数检查脚本。** 新增 `scripts/check-file-size.mjs` 和 `scripts/file-size-allowlist.json`：
-  - 扫描 `src/`、`src-tauri/src/`、`src-tauri/examples/`、`scripts/`、`tests/`，按根目录规则的上限和豁免清单检查；
-  - 白名单记录上面基线表中的文件及其当前行数。白名单内的文件超过记录值时报错；低于全局上限时，提示从白名单中移除；
-  - 为脚本补一个 `node:test` 用例。
+  - `check`：依次运行 `tsc`、`check:size`、`test`。`lint` 在 0.3 中加入 `check`。
+- [x] **0.2 行数检查脚本。** 新增 `scripts/check-file-size.mjs` 和 `scripts/file-size-allowlist.json`：
+  - 扫描 `src/`、`src-tauri/src/`、`src-tauri/examples/`、`scripts/`、`tests/`，按根目录规则的上限和豁免清单检查；`.rs` 另外检查内联测试模块不超过 150 行；
+  - 白名单分为 `lines` 和 `inlineTests` 两部分，记录上面基线表中的超限项。超过记录值时报错；变短时提示更新记录值；降到上限以下或文件已不存在时，报错要求删除条目；
+  - 测试见 `tests/check-file-size.test.mjs`。
 - [ ] **0.3 ESLint。** 引入 `eslint`、`typescript-eslint`、`eslint-plugin-react-hooks`，使用 flat config（`eslint.config.js`）：
   - 启用 `react-hooks/rules-of-hooks`（error）和 `react-hooks/exhaustive-deps`（warn）；
   - 用 `no-restricted-imports` / `no-restricted-syntax` 落实分层规则：只有 `api.ts` 可以导入 `invoke` / `listen`，`utils/` 不得导入 React 和 Tauri。对存量文件暂时设为 warn，完成迁移后改为 error。
@@ -138,3 +139,4 @@
 | 日期 | 步骤 | 提交 | 行数变化 | 验证 |
 |---|---|---|---|---|
 | 2026-11-03 | 规则与计划 | `a885920` | 新增规则文档 | 仅文档 |
+| 2026-11-03 | 0.1、0.2 | 见提交说明 | 新增检查脚本（约 150 行）及其测试 | `pnpm check`（40/40）、`pnpm build` |
