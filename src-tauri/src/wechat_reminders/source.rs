@@ -1,3 +1,4 @@
+use crate::win32::registry;
 use std::{cell::RefCell, path::PathBuf};
 use windows::{
     core::{w, Error, PWSTR},
@@ -5,7 +6,7 @@ use windows::{
         Foundation::{CloseHandle, HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
         System::{
             LibraryLoader::GetModuleHandleW,
-            Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_SZ},
+            Registry::HKEY_CURRENT_USER,
             Threading::{
                 OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
                 PROCESS_QUERY_LIMITED_INFORMATION,
@@ -51,29 +52,11 @@ thread_local! {
 
 pub fn installed_executable() -> Result<PathBuf, String> {
     for (key, name) in [
-        (w!("Software\\Tencent\\Weixin"), "Weixin.exe"),
-        (w!("Software\\Tencent\\WeChat"), "WeChat.exe"),
+        ("Software\\Tencent\\Weixin", "Weixin.exe"),
+        ("Software\\Tencent\\WeChat", "WeChat.exe"),
     ] {
-        let mut data = [0u16; 2048];
-        let mut bytes = (data.len() * 2) as u32;
-        if unsafe {
-            RegGetValueW(
-                HKEY_CURRENT_USER,
-                key,
-                w!("InstallPath"),
-                RRF_RT_REG_SZ,
-                None,
-                Some(data.as_mut_ptr().cast()),
-                Some(&mut bytes),
-            )
-        }
-        .is_ok()
-        {
-            let length = data
-                .iter()
-                .position(|value| *value == 0)
-                .unwrap_or(data.len());
-            let path = PathBuf::from(String::from_utf16_lossy(&data[..length])).join(name);
+        if let Some(install_path) = registry::read_string(HKEY_CURRENT_USER, key, "InstallPath") {
+            let path = PathBuf::from(install_path).join(name);
             if path.is_absolute() && path.is_file() {
                 return Ok(path);
             }
