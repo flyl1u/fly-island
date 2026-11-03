@@ -93,7 +93,8 @@
 - [x] **2.4a 已完成领域的设置区块归位**：把 `LayoutEditor` 中的保存路径、剪贴板设置区块分别迁入 `features/todos/`、`features/clipboard/`，`LocaleControl` 迁入 `i18n/`。
   - 待办设置区块（跨天保留未完成、拖拽排序、轮播）编辑的是 `IslandSettings`，数据归外观存储所有，为避免 `features/todos` 依赖外观类型，放入 `features/appearance/TodoSettingsSection.tsx`。语言区块只有一个 `LocaleControl`，作为组合代码留在 `LayoutEditor` 外壳中。
 - [x] **2.5 agent-status**：状态标签和视觉状态函数、代理状态命令的封装，以及 `LayoutEditor` 中的 AI 代理钩子区块。
-- [ ] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`，并迁入 `LayoutEditor` 中的消息区块。`QQMail.tsx` 拆分后应低于 400 行。
+- [x] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`。`QQMail.tsx` 拆分后应低于 400 行。
+  - `LayoutEditor` 中的消息区块只有标题和 `QQNotificationControls`、`WeChatReminderControls` 两个现成控件，与语言区块一样属于组合代码，留在 `LayoutEditor` 外壳中，不单独拆出。
 - [ ] **2.7 updater**：`UpdatePanel`、`updaterController.ts`，以及 `LayoutEditor` 中的项目链接区块。同步更新 `tests/updater-controller.test.mjs` 中的 import mock 表。
 - [ ] **2.8 窗口目录**：`SettingsWindow`、`LayoutEditor` 外壳（只做组合）、`TranslationWindow` 迁入 `windows/settings/`、`windows/translation/`，并抽出各自的 `api.ts` 和 `storage.ts`。
 
@@ -204,7 +205,7 @@
 | 2026-11-03 | 2.6（1/n，搬迁） | `c39a2da` | 邮件类型原样搬到 `features/messages/qq-mail/api.ts`，两个存储 key、`MailSettings` 与读写函数搬到 `qq-mail/storage.ts`；`QQMail.tsx` 暂留原位，404 → 360，**从白名单中删除**；`tests/mail-reader.tsx`、`tests/collapsed-message-animation.tsx` 的类型导入同步更新。先做这一步是因为 `QQMail.tsx` 在超限状态下无法改路径（白名单不允许新增条目） | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.6（2/n，搬迁） | `404f6fe` | `Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts` 用 `git mv` 迁入 `features/messages/`，`QQMail`、`QQNotifications`、`WeChatReminders`（含 CSS）分别迁入 `qq-mail/`、`qq-notifications/`、`wechat/`；只改相对导入路径（含 `tests/` 中 5 个文件和 `eslint.config.js` 的存量 IPC 文件列表），组件导入顺序不变，CSS 打包顺序不变 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.6（3/n，搬迁） | `3374ece` | `QQNotifications`、`WeChatReminders` 的类型原样搬到各自目录的 `api.ts`，存储 key 常量原样搬到各自的 `storage.ts`；组件文件 -24 / -13 行 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.6（4/n，改写） | 见提交说明 | 三个消息来源的 `invoke` / `listen` 收口到各自的 `api.ts`（含事件名常量），`localStorage` 读写收口到各自的 `storage.ts`（读写语义不变，未增减异常处理）；命令名、参数名、事件名、key 不变。打开 QQ / 微信的封装命名为 `launchQQ`、`launchWeChat`，避免与 hook 中同名回调冲突。`eslint.config.js` 的存量 IPC 文件列表移除这三个文件，ESLint warn 17 → 11 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.6（4/n，改写） | `63f8b1a` | 三个消息来源的 `invoke` / `listen` 收口到各自的 `api.ts`（含事件名常量），`localStorage` 读写收口到各自的 `storage.ts`（读写语义不变，未增减异常处理）；命令名、参数名、事件名、key 不变。打开 QQ / 微信的封装命名为 `launchQQ`、`launchWeChat`，避免与 hook 中同名回调冲突。`eslint.config.js` 的存量 IPC 文件列表移除这三个文件，ESLint warn 17 → 11 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 
@@ -221,6 +222,7 @@
 | `b035d02` | 2.4 | 设置窗口（中英文）：外观模式与字体切换、毛玻璃强度、透明度、缩放、边距等滑块，开机自启与各开关，颜色选择与脉冲亮度；预设的保存、应用、改名（Enter / Esc / 失焦）、删除；修改后主窗口外观同步，重启后设置与预设保留。 |
 | `afdac27` | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
 | `1a29029` | 2.5 | 设置窗口（中英文）：AI 代理区块的安装钩子按钮（安装中、已安装、出错三种状态与脚本目录显示）、当前状态汇总、各提供方的阶段显示、失败或过期时的"清除状态"按钮；主窗口的代理状态脉冲点与图标随状态变化。 |
+| `63f8b1a` 等 | 2.6 | 消息功能（中英文）：QQ 邮箱连接 / 断开 / 刷新 / 开关、重启后按保存的设置自动恢复、阅读邮件（远程图片开关及其偏好保留）、新邮件预览；QQ 通知开关、通知权限请求（只请求一次）、打开系统通知设置、清空、打开 QQ；微信提醒开关与打开微信；主窗口折叠态消息预览动画。可在 `pnpm dev` 中打开 `/tests/mail-reader.html`、`/tests/notification-startup.html`、`/tests/collapsed-message-animation.html` 辅助检查。 |
 
 ## 待处理问题
 
