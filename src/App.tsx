@@ -70,6 +70,9 @@ import { NumberControl } from "./components/controls/NumberControl";
 import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
+import type { ClipboardHistoryItem, ClipboardHistorySettings, ClipboardHistorySnapshot } from "./features/clipboard/api";
+import { DEFAULT_CLIPBOARD_HISTORY } from "./features/clipboard/settings";
+import { buildShortcutFromEvent, matchesClipboardShortcut, normalizeClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
 import { MusicWaveButton } from "./features/media/MusicWaveButton";
 import { DEFAULT_MEDIA_STATE, isSameMediaState } from "./features/media/mediaState";
@@ -110,41 +113,6 @@ type IslandPage = "todo" | "music" | "clipboard" | "qq";
 type AgentProvider = "codex" | "claudeCode";
 type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
 type AgentVisualState = "idle" | "running" | "attention";
-
-type ClipboardHistorySettings = {
-  enabled: boolean;
-  captureImages: boolean;
-  maxItems: number;
-  shortcut: string;
-  shortcutEnabled: boolean;
-};
-
-type ClipboardHistoryImage = {
-  width: number;
-  height: number;
-  byteSize: number;
-  originalPath: string;
-  thumbnailPath: string;
-  thumbnailDataUrl?: string;
-};
-
-type ClipboardHistoryItem = {
-  id: string;
-  kind: "text" | "image";
-  hash: string;
-  createdAt: number;
-  copiedAt: number;
-  favorite?: boolean;
-  note?: string;
-  preview: string;
-  text?: string;
-  image?: ClipboardHistoryImage;
-};
-
-type ClipboardHistorySnapshot = {
-  settings: ClipboardHistorySettings;
-  items: ClipboardHistoryItem[];
-};
 
 type AgentTaskStatus = {
   phase: AgentTaskPhase;
@@ -259,7 +227,6 @@ const TODO_ROW_HEIGHT = 46;
 const TODO_GROW_START_ROWS = 2;
 const MAX_CUSTOM_SETTING_PRESETS = 6;
 const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
-const DEFAULT_CLIPBOARD_SHORTCUT = "Ctrl+X";
 const AUDIO_ACTIVE_THRESHOLD = 0.000015;
 const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
   phase: "idle",
@@ -275,16 +242,6 @@ const AGENT_PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
 const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   codex: "Codex",
   claudeCode: "Claude Code",
-};
-const DEFAULT_CLIPBOARD_HISTORY: ClipboardHistorySnapshot = {
-  settings: {
-    enabled: true,
-    captureImages: true,
-    maxItems: 30,
-    shortcut: DEFAULT_CLIPBOARD_SHORTCUT,
-    shortcutEnabled: true,
-  },
-  items: [],
 };
 const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -387,157 +344,6 @@ function hexToRgba(hex: string, alpha: number) {
   const blue = Number.parseInt(normalized.slice(4, 6), 16);
 
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-}
-
-type ShortcutKeyboardEvent = Pick<
-  KeyboardEvent,
-  "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey"
->;
-
-const MODIFIER_KEY_NAMES = new Set([
-  "Alt",
-  "AltGraph",
-  "Control",
-  "Meta",
-  "Shift",
-]);
-
-function normalizeShortcutKeyLabel(key: string) {
-  if (key.length === 1) {
-    return key.toUpperCase();
-  }
-
-  switch (key) {
-    case " ":
-    case "Spacebar":
-      return "Space";
-    case "Escape":
-      return "Esc";
-    case "ArrowUp":
-      return "Up";
-    case "ArrowDown":
-      return "Down";
-    case "ArrowLeft":
-      return "Left";
-    case "ArrowRight":
-      return "Right";
-    default:
-      return key;
-  }
-}
-
-function buildShortcutFromEvent(event: ShortcutKeyboardEvent) {
-  if (MODIFIER_KEY_NAMES.has(event.key)) {
-    return null;
-  }
-
-  const parts: string[] = [];
-
-  if (event.ctrlKey) {
-    parts.push("Ctrl");
-  }
-
-  if (event.altKey) {
-    parts.push("Alt");
-  }
-
-  if (event.shiftKey) {
-    parts.push("Shift");
-  }
-
-  if (event.metaKey) {
-    parts.push("Win");
-  }
-
-  if (parts.length === 0) {
-    return null;
-  }
-
-  parts.push(normalizeShortcutKeyLabel(event.key));
-  return parts.join("+");
-}
-
-function normalizeClipboardShortcut(shortcut: string | undefined) {
-  const text = shortcut?.trim();
-
-  if (!text) {
-    return DEFAULT_CLIPBOARD_SHORTCUT;
-  }
-
-  const parts = text
-    .split("+")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const modifiers = new Set<string>();
-  let keyLabel = "";
-
-  for (const part of parts) {
-    const normalized = part.toLowerCase();
-
-    if (normalized === "ctrl" || normalized === "control") {
-      modifiers.add("Ctrl");
-    } else if (normalized === "alt" || normalized === "option") {
-      modifiers.add("Alt");
-    } else if (normalized === "shift") {
-      modifiers.add("Shift");
-    } else if (
-      normalized === "win" ||
-      normalized === "windows" ||
-      normalized === "meta" ||
-      normalized === "cmd" ||
-      normalized === "super"
-    ) {
-      modifiers.add("Win");
-    } else if (!keyLabel) {
-      keyLabel = normalizeShortcutKeyLabel(part);
-    }
-  }
-
-  if (!keyLabel || modifiers.size === 0) {
-    return DEFAULT_CLIPBOARD_SHORTCUT;
-  }
-
-  return ["Ctrl", "Alt", "Shift", "Win"]
-    .filter((modifier) => modifiers.has(modifier))
-    .concat(keyLabel)
-    .join("+");
-}
-
-function normalizeClipboardSettings(
-  settings: ClipboardHistorySettings,
-): ClipboardHistorySettings {
-  return {
-    ...settings,
-    maxItems: clamp(Math.round(settings.maxItems), 5, 200),
-    shortcut: normalizeClipboardShortcut(settings.shortcut),
-    shortcutEnabled: settings.shortcutEnabled !== false,
-  };
-}
-
-function matchesClipboardShortcut(
-  event: KeyboardEvent,
-  shortcut: string | undefined,
-) {
-  if (isEditableTarget(event.target)) {
-    return false;
-  }
-
-  return (
-    buildShortcutFromEvent(event) === normalizeClipboardShortcut(shortcut)
-  );
-}
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  return (
-    target.isContentEditable ||
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  );
 }
 
 function normalizeSettings(
@@ -4227,7 +4033,6 @@ export default App;
 export {
   AGENT_PROVIDERS,
   DEFAULT_AGENT_STATUS,
-  DEFAULT_CLIPBOARD_HISTORY,
   DEFAULT_SETTINGS,
   LEGACY_DEFAULT_PRESET_NAMES,
   SETTINGS_FOCUS_STORAGE_KEY,
@@ -4239,7 +4044,6 @@ export {
   loadSettingPresets,
   loadSettings,
   mergeWithDefaultSettingPresets,
-  normalizeClipboardSettings,
   normalizeSettings,
 };
 export type {
@@ -4247,8 +4051,6 @@ export type {
   AgentHooksInstallState,
   AgentProvider,
   AgentStatusSnapshot,
-  ClipboardHistorySettings,
-  ClipboardHistorySnapshot,
   IslandPreset,
   IslandSettings,
   SettingsFocusSection,
