@@ -221,7 +221,8 @@ export function SettingsWindow() {
   const saveDirectory = useCallback(() => {
     const nextDirectory = saveDirectoryDraft.trim();
 
-    saveSaveDirectory(nextDirectory);
+    // Storage unavailable: keep the draft and do not report "saved".
+    if (!saveSaveDirectory(nextDirectory)) return;
     setSaveDirectoryDraft(nextDirectory);
     setHighlightSavePath(false);
     setSavePathState("saved");

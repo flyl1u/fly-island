@@ -9,8 +9,14 @@ import {
   createTodoId,
   loadCurrentTodoDate,
   loadDailyNote,
+  loadActiveTodoId,
+  loadLastSavedSignature,
+  loadSaveDirectory,
   loadTodoArchives,
   loadTodos,
+  saveActiveTodoId,
+  saveSaveDirectory,
+  saveTodos,
 } from "../src/features/todos/storage.ts";
 
 function withStorage(entries, run) {
@@ -92,4 +98,26 @@ test("todo ids are unique strings", () => {
     const ids = new Set(Array.from({ length: 20 }, () => createTodoId()));
     assert.equal(ids.size, 20);
   });
+});
+
+test("blocked storage falls back to defaults instead of throwing", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const blocked = {};
+  Object.defineProperty(blocked, "localStorage", { get() { throw new Error("Storage blocked"); } });
+  Object.defineProperty(globalThis, "window", { configurable: true, value: blocked });
+  try {
+    assert.deepEqual(loadTodos(), []);
+    assert.deepEqual(loadTodoArchives(), []);
+    assert.equal(loadActiveTodoId(), null);
+    assert.equal(loadDailyNote(), "");
+    assert.equal(loadSaveDirectory(), "");
+    assert.equal(loadLastSavedSignature(), null);
+    assert.match(loadCurrentTodoDate(), /^\d{4}-\d{2}-\d{2}$/);
+    assert.doesNotThrow(() => saveTodos([todo("kept in memory")]));
+    assert.doesNotThrow(() => saveActiveTodoId(null));
+    assert.equal(saveSaveDirectory("D:/Notes"), false);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    else delete globalThis.window;
+  }
 });
