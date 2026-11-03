@@ -6,7 +6,8 @@ import { emit } from "@tauri-apps/api/event";
 import { IslandShell, type IslandMode } from "../src/App";
 import { useQQNotifications } from "../src/QQNotifications";
 import { useWeChatReminders } from "../src/WeChatReminders";
-import { useQQMail, type MailSnapshot } from "../src/QQMail";
+import { useQQMail } from "../src/QQMail";
+import type { MailSnapshot } from "../src/features/messages/qq-mail/api";
 import type { MessageSource } from "../src/messagePreview";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });

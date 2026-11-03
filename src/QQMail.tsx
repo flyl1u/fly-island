@@ -7,21 +7,9 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOf
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { nextQQPreview, type QQPreviewTiming } from "./qqNotificationTiming";
+import type { MailContent, MailEvent, MailMessage, MailSnapshot } from "./features/messages/qq-mail/api";
+import { SETTINGS_KEY, loadRemoteImagePreference, loadSettings, saveRemoteImagePreference } from "./features/messages/qq-mail/storage";
 import "./QQMail.css";
-
-const SETTINGS_KEY = "focusd-island-qq-mail-settings";
-const REMOTE_IMAGES_KEY = "focusd-island-qq-mail-remote-images";
-
-export type MailMessage = {
-  id: string;
-  uid: number;
-  sender: string;
-  subject: string;
-  receivedAt: number | null;
-  unread: boolean;
-};
-
-export type MailContent = { id: string; content: string; contentType: "text/plain" | "text/html" };
 
 // 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；
 // 统一关闭 referrer 并延迟加载，避免把当前页地址带给发件人。
@@ -74,34 +62,10 @@ export function countRemoteImages(content: string) {
     .filter((image) => /^https?:/i.test(image.getAttribute("src") ?? "")).length;
 }
 
-export type MailSnapshot = {
-  revision: number;
-  email: string | null;
-  configured: boolean;
-  enabled: boolean;
-  syncing: boolean;
-  status: "disconnected" | "connecting" | "connected" | "paused" | "authRequired" | "error";
-  unreadCount: number | null;
-  items: MailMessage[];
-  lastSyncedAt: number | null;
-  error: string | null;
-};
-
-type MailEvent = { snapshot: MailSnapshot; newestId: string | null; windowVisible: boolean };
-type MailSettings = { email: string; enabled: boolean };
-
 const EMPTY_SNAPSHOT: MailSnapshot = {
   revision: 0, email: null, configured: false, enabled: false, syncing: false,
   status: "disconnected", unreadCount: null, items: [], lastSyncedAt: null, error: null,
 };
-
-function loadSettings(): MailSettings | null {
-  try {
-    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null") as Partial<MailSettings> | null;
-    return typeof stored?.email === "string" && typeof stored.enabled === "boolean"
-      ? { email: stored.email, enabled: stored.enabled } : null;
-  } catch { return null; }
-}
 
 export function useQQMail(canPreview: boolean) {
   const t = useTranslation();
@@ -275,14 +239,6 @@ export type QQMailController = ReturnType<typeof useQQMail>;
 
 function formatMailTime(time: number, locale: string) {
   return new Date(time).toLocaleString(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function loadRemoteImagePreference() {
-  try { return localStorage.getItem(REMOTE_IMAGES_KEY) === "true"; } catch { return false; }
-}
-
-function saveRemoteImagePreference(allow: boolean) {
-  try { localStorage.setItem(REMOTE_IMAGES_KEY, String(allow)); } catch { /* 偏好保存失败不影响本次阅读 */ }
 }
 
 export function QQMailPanel({ controller, navigation, onRead, onBack }: {

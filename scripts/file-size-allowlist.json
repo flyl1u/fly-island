@@ -3,7 +3,6 @@
   "lines": {
     "src/App.css": 1120,
     "src/App.tsx": 2440,
-    "src/QQMail.tsx": 404,
     "src-tauri/src/clipboard_history.rs": 1068,
     "src-tauri/src/lib.rs": 1769,
     "src-tauri/src/media_control.rs": 829,

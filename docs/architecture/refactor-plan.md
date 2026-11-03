@@ -18,7 +18,7 @@
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 2440 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 1120 | 3865 / 500 | — | 行数 |
-| `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
+| `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
 | `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
@@ -200,7 +200,8 @@
 | 2026-11-03 | 2.5（2/5，改写） | `a85d047` | 在 `App.tsx` 中拆出 `AgentHooksSettingsSection`（113，无状态），只被该区块使用的 `agentStatusRows`、`agentStatusLabel` 计算一并移入。`LayoutEditor` 276 → 185；`App.tsx` 2532 → 2555（低于白名单记录 2633） | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.5（3/5，搬迁） | `cc43c85` | `AgentHooksSettingsSection`（118）原样搬到 `features/agent-status/`；`App.tsx` 2555 → 2440，白名单 2633 → 2440 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.5（4/5，改写） | `ce5f912` | `features/agent-status/api.ts` 新增 `getAgentStatus`、`clearAgentProviderStatus`（避免与 `SettingsWindow` 中的同名回调冲突）、`installAgentStatusHooks`；`App.tsx`、`SettingsWindow.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 行数不变 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.5（5/5，CSS 搬迁） | 见提交说明 | `App.css` 1311 → 1120（-191），白名单同步下调；新增 `AgentHooksSettingsSection.css`（190）。主窗口上的 `.island__pulse--agent-*`、`.island__agent-status-icon*` 属于岛屿外壳，留在 `App.css`。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
+| 2026-11-03 | 2.5（5/5，CSS 搬迁） | `1a29029` | `App.css` 1311 → 1120（-191），白名单同步下调；新增 `AgentHooksSettingsSection.css`（190）。主窗口上的 `.island__pulse--agent-*`、`.island__agent-status-icon*` 属于岛屿外壳，留在 `App.css`。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
+| 2026-11-03 | 2.6（1/n，搬迁） | 见提交说明 | 邮件类型原样搬到 `features/messages/qq-mail/api.ts`，两个存储 key、`MailSettings` 与读写函数搬到 `qq-mail/storage.ts`；`QQMail.tsx` 暂留原位，404 → 360，**从白名单中删除**；`tests/mail-reader.tsx`、`tests/collapsed-message-animation.tsx` 的类型导入同步更新。先做这一步是因为 `QQMail.tsx` 在超限状态下无法改路径（白名单不允许新增条目） | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 
@@ -216,7 +217,7 @@
 | `5592ae5` | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
 | `b035d02` | 2.4 | 设置窗口（中英文）：外观模式与字体切换、毛玻璃强度、透明度、缩放、边距等滑块，开机自启与各开关，颜色选择与脉冲亮度；预设的保存、应用、改名（Enter / Esc / 失焦）、删除；修改后主窗口外观同步，重启后设置与预设保留。 |
 | `afdac27` | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
-| 2.5 的提交 | 2.5 | 设置窗口（中英文）：AI 代理区块的安装钩子按钮（安装中、已安装、出错三种状态与脚本目录显示）、当前状态汇总、各提供方的阶段显示、失败或过期时的"清除状态"按钮；主窗口的代理状态脉冲点与图标随状态变化。 |
+| `1a29029` | 2.5 | 设置窗口（中英文）：AI 代理区块的安装钩子按钮（安装中、已安装、出错三种状态与脚本目录显示）、当前状态汇总、各提供方的阶段显示、失败或过期时的"清除状态"按钮；主窗口的代理状态脉冲点与图标随状态变化。 |
 
 ## 待处理问题
 
@@ -229,3 +230,4 @@
 | 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
 | 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
 | 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header`，以及 `App.css` 中的 `.clipboard-settings-panel`、`.color-panel`（及各自的 `__header`）没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
+| 2.6 | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。 |
