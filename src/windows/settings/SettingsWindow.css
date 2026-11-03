@@ -10,6 +10,7 @@
 
 .settings-stage .editor-panel {
   height: 100%;
+  min-height: 0;
   padding: 16px 24px 24px;
   border-radius: 0;
   background: transparent;

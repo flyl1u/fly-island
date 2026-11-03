@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LayoutEditor } from "./LayoutEditor";
 import { readLaunchAtStartup, saveLaunchAtStartup } from "./api";
+import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "../../features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "../../features/agent-status/status";
@@ -47,6 +48,13 @@ export function SettingsWindow() {
     useState(loadSaveDirectory);
   const [savePathState, setSavePathState] = useState<SavePathState>("idle");
   const [highlightSavePath, setHighlightSavePath] = useState(false);
+  const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
+
+  // The island asks for the save path when an export has nowhere to go; it lives on the general page.
+  const focusSavePath = useCallback(() => {
+    setCategory("general");
+    setHighlightSavePath(true);
+  }, []);
 
   useEffect(() => {
     void getCurrentWindow()
@@ -66,7 +74,7 @@ export function SettingsWindow() {
 
   useEffect(() => {
     if (takeFocusRequest() === "savePath") {
-      setHighlightSavePath(true);
+      focusSavePath();
     }
 
     const syncFromIsland = (event: StorageEvent) => {
@@ -86,13 +94,13 @@ export function SettingsWindow() {
         event.newValue !== null &&
         takeFocusRequest() === "savePath"
       ) {
-        setHighlightSavePath(true);
+        focusSavePath();
       }
     };
 
     window.addEventListener("storage", syncFromIsland);
     return () => window.removeEventListener("storage", syncFromIsland);
-  }, []);
+  }, [focusSavePath]);
 
   useEffect(() => {
     void readLaunchAtStartup()
@@ -292,6 +300,7 @@ export function SettingsWindow() {
   return (
     <main className={`settings-stage stage--font-${settings.fontFamily}`}>
       <LayoutEditor
+        category={category}
         locale={locale}
         settings={settings}
         qqNotifications={qqNotifications}
@@ -308,6 +317,7 @@ export function SettingsWindow() {
         agentHooksInstallState={agentHooksInstallState}
         agentHooksInstallResult={agentHooksInstallResult}
         agentHooksInstallError={agentHooksInstallError}
+        onCategoryChange={setCategory}
         onLocaleChange={setLocale}
         onSettingsChange={setSettings}
         onClipboardSettingsChange={updateClipboardSettings}

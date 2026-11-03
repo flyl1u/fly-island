@@ -95,7 +95,10 @@ else {
     const subscriptionsBefore = commands.filter(command => command.startsWith("set_qq_") || command === "set_wechat_reminders_enabled").length;
     await switchTo("en");
     check(document.documentElement.lang === "en" && localStorage.getItem(LOCALE_STORAGE_KEY) === "en", "Language changes immediately and persists");
+    check(document.querySelector(".settings-sidebar")?.textContent?.includes("Appearance"), "Settings categories are translated");
+    await click(".settings-sidebar__item[data-category='appearance']");
     check(document.querySelector(".editor-panel")?.textContent?.includes("Collapsed island scale"), "Current scale and font settings are translated");
+    await click(".settings-sidebar__item[data-category='general']");
     check(dataKeys.every((key, index) => localStorage.getItem(key) === dataBefore[index]), "Switching keeps tasks, notes, settings, and custom presets unchanged");
     check(commands.filter(command => command.startsWith("set_qq_") || command === "set_wechat_reminders_enabled").length === subscriptionsBefore, "Switching does not reconnect notification receivers");
     await act(async () => { changeLocale!("constructor" as "en"); });
