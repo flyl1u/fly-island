@@ -299,9 +299,11 @@ fn publish(
         newest_id,
         window_visible,
     };
-    let _ = service
-        .app
-        .emit_to(crate::settings_window::WINDOW_LABEL, EVENT_NAME, event.clone());
+    let _ = service.app.emit_to(
+        crate::settings_window::WINDOW_LABEL,
+        EVENT_NAME,
+        event.clone(),
+    );
     let _ = service.app.emit_to("main", EVENT_NAME, event);
 }
 

@@ -58,7 +58,8 @@
   记录 `cargo clippy --all-targets` 的告警基线，后续只减不增。
 
   **clippy 基线（2026-11-03，去重后）**：共 84 条。`undocumented_unsafe_blocks` 69、`expect_used` 5（全部在生产代码：`lib.rs` 4、`clipboard_history.rs` 1）、`unwrap_used` 0，其余默认 lint 10（`too_many_arguments` 2、`type_complexity` 2、`collapsible_if` 2、`items_after_test_module`、`derivable_impls`、`needless_lifetimes`、`needless_return` 各 1）。按位置：`qq_notifications.rs` 18、`lib.rs` 13、`media_control.rs` 8、`translation.rs` 8、`clipboard_history.rs` 7、`wechat_reminders.rs` 7、`wechat_reminder_source.rs` 4、`messenger_activation.rs` 3、`qq_mail.rs` 1、`examples/` 15。
-- [ ] **0.6 一次性格式化。** 在单独的提交中运行 `cargo fmt`。前端在本阶段不引入 Prettier，避免大面积改动干扰后续迁移的 diff。
+- [x] **0.6 一次性格式化。** 在单独的提交中运行 `cargo fmt`。前端在本阶段不引入 Prettier，避免大面积改动干扰后续迁移的 diff。
+  - 实际执行时发现，格式化会让白名单中的三个文件变长（`lib.rs` 生产代码 +1、内联测试 +37；`media_control.rs` +14；`qq_mail.rs` 生产代码 +19、内联测试 +8），违反"只减不增"规则。因此本步只格式化不受影响的文件（实际有改动的是 `qq_notifications.rs`、`wechat_reminders.rs`），这三个文件推迟到 Phase 5 拆分后再格式化，见 Phase 5 说明。
 - [ ] **0.7 CI。** 新增 `.github/workflows/ci.yml`（`windows-latest`），运行 `pnpm install --frozen-lockfile`、`pnpm check`、`pnpm build`、`cargo test`、`cargo clippy`。
 
 **验收**：`pnpm check` 在本地和 CI 中都能通过；故意让白名单文件多出一行时，检查会失败。
@@ -110,6 +111,8 @@
 
 每一步都要：按 [overview.md](overview.md#迁移映射rust) 拆成目录模块；测试移到 `tests.rs`；命令名保持不变；更新 `generate_handler!` 中的路径。
 
+`lib.rs`、`qq_mail.rs`、`media_control.rs` 在 0.6 中没有格式化。搬迁提交保持原格式；搬迁完成、相关文件已不在白名单中之后，紧接着单独提交一次 `cargo fmt`（`refactor(<范围>): apply cargo fmt`），格式化后仍须满足行数上限。`lib.rs` 在 5.3 完成后格式化，5.1、5.2 拆出的新文件在各自步骤后格式化。
+
 - [ ] **5.1** 从 `lib.rs` 中拆出 `island/`，包括状态、几何计算、毛玻璃、鼠标穿透以及对应测试。
 - [ ] **5.2** 从 `lib.rs` 中拆出 `agent_status/`。
 - [ ] **5.3** 从 `lib.rs` 中拆出 `system/`（`startup.rs`、`updater.rs`、`todo_export.rs`）和 `tray.rs`。完成后 `lib.rs` 只剩组装代码。
@@ -147,3 +150,4 @@
 | 2026-11-03 | 0.3 | 见提交说明 | 新增 `eslint.config.js`；`check` 加入 `lint`。存量基线：0 error / 18 warn（13 条 IPC 收口、5 条 exhaustive-deps），7 个存量 IPC 文件登记在配置的 `legacyIpcFiles` 中 | `pnpm check`（40/40）、`pnpm build`（TEMP 指向 `node_modules/.cache/tmp`） |
 | 2026-11-03 | 0.4 | 见提交说明 | `tsconfig.json` 开启 `erasableSyntaxOnly`，现有代码无需改动 | `pnpm check`（40/40）、`pnpm build` |
 | 2026-11-03 | 0.5 | 见提交说明 | 新增 `rustfmt.toml`、`clippy.toml`，`Cargo.toml` 增加 `[lints.clippy]`；源文件行数不变。clippy 基线 84 条（见 0.5） | `cargo test`（60 通过 / 5 忽略）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 0.6 | 见提交说明 | `cargo fmt` 仅作用于 `qq_notifications.rs`（+8/-3）和 `wechat_reminders.rs`（+3/-1），均未超出上限/白名单；`lib.rs`、`media_control.rs`、`qq_mail.rs` 推迟到 Phase 5 | `cargo test`（60 通过 / 5 忽略）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
