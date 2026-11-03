@@ -4,17 +4,16 @@ mod island;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
-mod qq_notifications;
 mod qq_mail;
+mod qq_notifications;
 mod settings_window;
 mod system;
-mod wechat_reminder_source;
-mod wechat_reminders;
 mod translation;
 mod tray;
+mod wechat_reminder_source;
+mod wechat_reminders;
 
 use tauri::WindowEvent;
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -67,7 +66,11 @@ pub fn run() {
                 eprintln!("failed to initialize notification diagnostics: {error}");
             }
             if let Ok(window) = island::main_window(app.handle()) {
-                if let Err(error) = island::apply_stage_geometry(&window, island::IslandWindowState::default(), false) {
+                if let Err(error) = island::apply_stage_geometry(
+                    &window,
+                    island::IslandWindowState::default(),
+                    false,
+                ) {
                     eprintln!("failed to size and position island window: {error}");
                 }
                 island::start_cursor_passthrough_loop(window);
