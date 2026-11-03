@@ -40,7 +40,7 @@ features/<领域>/
 └── <Name>.css                     # 与组件同名的样式文件
 ```
 
-现有的 `src/QQMail.tsx`、`src/QQNotifications.tsx`、`src/WeChatReminders.tsx`（迁移后位于 `features/messages/`）采用的就是"领域 hook + 面板 + 控件"的组织方式，可作为样板。迁移时再把其中的 invoke 调用和存储 key 拆到 `api.ts` 与 `storage.ts`。
+`features/messages/` 下的 `qq-mail/QQMail.tsx`、`qq-notifications/QQNotifications.tsx`、`wechat/WeChatReminders.tsx`采用的就是"领域 hook + 面板 + 控件"的组织方式，可作为样板。迁移时再把其中的 invoke 调用和存储 key 拆到 `api.ts` 与 `storage.ts`。
 
 ## 分层与依赖方向
 

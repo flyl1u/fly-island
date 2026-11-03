@@ -1,10 +1,10 @@
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ArrowUpRight, KeyRound, Power, RefreshCw, Settings2, Trash2 } from "lucide-react";
-import { MessageSourceIcon } from "./MessageSourceIcon";
-import { nextQQPreview, type QQPreviewTiming } from "./qqNotificationTiming";
+import { MessageSourceIcon } from "../MessageSourceIcon";
+import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
 import "./QQNotifications.css";
 
 const ENABLED_KEY = "focusd-island-qq-notifications-enabled";
