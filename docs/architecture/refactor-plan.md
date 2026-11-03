@@ -12,18 +12,18 @@
 
 ## 基线（2026-11-03，提交 `f8e847d`）
 
-按 `pnpm check:size` 的口径统计。`.rs` 文件分别统计生产代码和内联测试模块，权威数据以 `scripts/file-size-allowlist.json` 为准。
+按 `pnpm check:size` 的口径统计。"原始行数"是基线提交时的物理行数，"当前行数"是最近一次更新时的物理行数，每完成一步同步更新；后三列是基线数据。`.rs` 文件分别统计生产代码和内联测试模块，权威数据以 `scripts/file-size-allowlist.json` 为准。
 
-| 文件 | 物理行数 | 计入上限的行数 | 内联测试 | 超限项 |
-|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 3865 / 500 | — | 行数 |
-| `src/QQMail.tsx` | 404 | 404 / 400 | — | 行数 |
-| `src-tauri/src/qq_mail.rs` | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
-| `src-tauri/src/lib.rs` | 1973 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
-| `src-tauri/src/clipboard_history.rs` | 1068 | 1068 / 800 | 0 | 生产代码 |
-| `src-tauri/src/media_control.rs` | 829 | 829 / 800 | 0 | 生产代码 |
-| `src-tauri/src/qq_notifications.rs` | 1081 | 789 / 800 | 292 / 150 | 测试 |
+| 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
+|---|---|---|---|---|---|
+| `src/App.tsx` | 5644 | 4791 | 5644 / 400 | — | 行数 |
+| `src/App.css` | 3865 | 3622 | 3865 / 500 | — | 行数 |
+| `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
+| `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
+| `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
+| `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
+| `src-tauri/src/media_control.rs` | 829 | 829 | 829 / 800 | 0 | 生产代码 |
+| `src-tauri/src/qq_notifications.rs` | 1081 | 1083 | 789 / 800 | 292 / 150 | 测试 |
 
 其他基线指标：
 
@@ -172,7 +172,7 @@
 | 2026-11-03 | 2.1（1/4，搬迁） | `4aba0c4` | `App.tsx` 5488 → 5268（-220，白名单按约定暂不下调）；新增 `features/todos/types.ts`、`storage.ts`、`markdown.ts`、`ArchiveBrowser.tsx` 和 `tests/todos.test.mjs`（6 个用例）；`SettingsWindow.tsx` 改为直接从 `features/todos` 导入 | `pnpm check`（57/57）、`pnpm build` |
 | 2026-11-03 | 2.1（2/4，改写） | `7b044ca` | 新增 `features/todos/api.ts`（`saveTodoMarkdown`、`SaveTodoResult`）；`App.tsx` 改为调用封装函数，命令名和参数名不变；`App.tsx` 5268 → 5265 | `pnpm check`（57/57）、`pnpm build` |
 | 2026-11-03 | 2.1（3/4，改写） | `3705001` | 在 `App.tsx` 中把 `TodoNotebook`（470 行）的书脊按钮组拆为 `TodoNotebookSpine`（71 行）、单条待办拆为 `TodoListItem`（156 行），二者无状态，编辑与拖拽状态仍在 `TodoNotebook`（334 行）中；DOM 结构与 class 不变。`App.tsx` 5265 → 5358（+93，低于白名单记录 5488） | `pnpm check`（57/57）、`pnpm build`；交互待人工验收 |
-| 2026-11-03 | 2.1（4/4，搬迁） | 见提交说明 | `TodoNotebook`、`TodoNotebookSpine`、`TodoListItem` 原样搬到 `features/todos/`（343 / 75 / 162 行），`TODO_SCROLL_START_ROWS` 移到 `features/todos/layout.ts`；`App.tsx` 5358 → 4791，白名单 5488 → 4791 | `pnpm check`（57/57）、`pnpm build` |
+| 2026-11-03 | 2.1（4/4，搬迁） | `2b7b6f3` | `TodoNotebook`、`TodoNotebookSpine`、`TodoListItem` 原样搬到 `features/todos/`（343 / 75 / 162 行），`TODO_SCROLL_START_ROWS` 移到 `features/todos/layout.ts`；`App.tsx` 5358 → 4791，白名单 5488 → 4791 | `pnpm check`（57/57）、`pnpm build` |
 
 ## 待人工验收
 
