@@ -27,7 +27,11 @@ pub(super) fn registry_value(key: &str, value: &str) -> Option<String> {
 }
 
 pub(super) fn normalize_proxy(raw: &str) -> String {
-    let entries: Vec<&str> = raw.split(';').map(str::trim).filter(|entry| !entry.is_empty()).collect();
+    let entries: Vec<&str> = raw
+        .split(';')
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+        .collect();
     let server = ["https=", "http="]
         .iter()
         .find_map(|prefix| entries.iter().find_map(|entry| entry.strip_prefix(prefix)))
@@ -106,9 +110,8 @@ mod tests {
 
     #[test]
     fn shipped_updater_config_parses_with_the_empty_pubkey_placeholder() {
-        let parsed: tauri_plugin_updater::Config =
-            serde_json::from_value(shipped_updater_config())
-                .expect("plugins.updater must deserialize or the app aborts at startup");
+        let parsed: tauri_plugin_updater::Config = serde_json::from_value(shipped_updater_config())
+            .expect("plugins.updater must deserialize or the app aborts at startup");
 
         assert_eq!(parsed.pubkey, "");
         assert!(!parsed.endpoints.is_empty());
