@@ -1,4 +1,4 @@
-#[path = "../src/wechat_reminder_source.rs"]
+#[path = "../src/wechat_reminders/source.rs"]
 mod wechat_reminder_source;
 
 use serde_json::json;

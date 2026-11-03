@@ -10,7 +10,6 @@ mod settings_window;
 mod system;
 mod translation;
 mod tray;
-mod wechat_reminder_source;
 mod wechat_reminders;
 
 use tauri::WindowEvent;
