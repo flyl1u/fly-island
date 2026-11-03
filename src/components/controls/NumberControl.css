@@ -1,0 +1,30 @@
+.number-control {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  align-items: center;
+  gap: 12px;
+  color: rgba(248, 246, 240, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.number-control input {
+  width: 86px;
+  height: 32px;
+  min-width: 0;
+  padding: 0 9px;
+  color: #f8f6f0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  outline: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.number-control input:focus {
+  border-color: rgba(255, 209, 102, 0.68);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
+}

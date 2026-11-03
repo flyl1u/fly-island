@@ -3117,58 +3117,6 @@ input,
   outline-offset: 2px;
 }
 
-.slider-control {
-  display: grid;
-  gap: 6px;
-}
-
-.slider-control__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  color: rgba(248, 246, 240, 0.66);
-  font-size: 12px;
-  line-height: 1;
-}
-
-.slider-control__meta strong {
-  color: rgba(248, 246, 240, 0.94);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.slider-control input[type="range"] {
-  width: 100%;
-  height: 4px;
-  padding: 0;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  outline: none;
-}
-
-.slider-control input[type="range"]::-webkit-slider-thumb {
-  width: 16px;
-  height: 16px;
-  appearance: none;
-  border-radius: 999px;
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.toggle-control {
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: rgba(248, 246, 240, 0.72);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
 .appearance-mode-control {
   min-height: 32px;
   display: flex;
@@ -3228,84 +3176,6 @@ input,
 .appearance-mode-control__segments button:focus-visible {
   outline: 2px solid rgba(143, 216, 255, 0.84);
   outline-offset: 2px;
-}
-
-.toggle-control input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toggle-control__switch {
-  position: relative;
-  width: 42px;
-  height: 24px;
-  flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  cursor: pointer;
-  transition:
-    background 140ms ease,
-    border-color 140ms ease;
-}
-
-.toggle-control__switch::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
-  background: #ffffff;
-  border-radius: 999px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
-  transition: transform 140ms ease;
-}
-
-.toggle-control input:checked + .toggle-control__switch {
-  background: rgba(102, 255, 184, 0.42);
-  border-color: rgba(102, 255, 184, 0.38);
-}
-
-.toggle-control input:checked + .toggle-control__switch::after {
-  transform: translateX(18px);
-}
-
-.toggle-control input:focus-visible + .toggle-control__switch {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
-  outline-offset: 3px;
-}
-
-.number-control {
-  min-height: 34px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 86px;
-  align-items: center;
-  gap: 12px;
-  color: rgba(248, 246, 240, 0.72);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.number-control input {
-  width: 86px;
-  height: 32px;
-  min-width: 0;
-  padding: 0 9px;
-  color: #f8f6f0;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  outline: none;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.number-control input:focus {
-  border-color: rgba(255, 209, 102, 0.68);
-  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
 }
 
 .locale-control {
@@ -3461,64 +3331,6 @@ input,
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-}
-
-.color-control {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-}
-
-.color-control__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-  color: rgba(248, 246, 240, 0.62);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.color-control__meta span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.color-control__meta strong {
-  color: rgba(248, 246, 240, 0.9);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.color-control input[type="color"] {
-  width: 100%;
-  height: 34px;
-  padding: 3px;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  outline: none;
-  cursor: pointer;
-}
-
-.color-control input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.color-control input[type="color"]::-webkit-color-swatch {
-  border: 0;
-  border-radius: 5px;
-}
-
-.color-control input[type="color"]:focus-visible {
-  border-color: rgba(116, 214, 255, 0.58);
-  box-shadow: 0 0 0 3px rgba(116, 214, 255, 0.16);
 }
 
 .preset-panel {
