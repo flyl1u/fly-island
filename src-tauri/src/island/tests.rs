@@ -72,14 +72,28 @@ fn default_notch_stays_at_top_when_expanding() {
 fn compact_messages_and_mail_reader_keep_the_correct_cursor_boundary() {
     for height in [MIN_EXPANDED_ISLAND_HEIGHT, 244.0, 438.0, 450.0] {
         for scale in [0.75, 1.0, 1.4] {
-            let (width, panel_height) = IslandMode::Expanded.base_size(COLLAPSED_ISLAND_WIDTH, height);
-            let contains = |y| point_in_notch(
-                width * scale / 2.0, y, 0.0, 0.0, width * scale, panel_height * scale,
-                EXPANDED_RADIUS * scale, 0.0,
-            );
+            let (width, panel_height) =
+                IslandMode::Expanded.base_size(COLLAPSED_ISLAND_WIDTH, height);
+            let contains = |y| {
+                point_in_notch(
+                    width * scale / 2.0,
+                    y,
+                    0.0,
+                    0.0,
+                    width * scale,
+                    panel_height * scale,
+                    EXPANDED_RADIUS * scale,
+                    0.0,
+                )
+            };
             assert!(contains(panel_height * scale));
             assert!(!contains(panel_height * scale + 1.0));
-            assert_eq!(IslandMode::Collapsed.base_size(COLLAPSED_ISLAND_WIDTH, height).1, COLLAPSED_ISLAND_HEIGHT);
+            assert_eq!(
+                IslandMode::Collapsed
+                    .base_size(COLLAPSED_ISLAND_WIDTH, height)
+                    .1,
+                COLLAPSED_ISLAND_HEIGHT
+            );
         }
         let mut positioned = state(IslandMode::Expanded, 1.0, height);
         positioned.custom_position = Some(IslandPosition { x: 420, y: 180 });
@@ -96,10 +110,20 @@ fn detached_island_rounds_top_corners() {
         assert_eq!(detached.top_corner_radius(), 0.0);
         detached.top_attached = false;
         assert!(detached.top_corner_radius() > 0.0);
-        let (width, height) = mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
-        let contains = |x, y| point_in_notch(
-            x, y, 80.0, 0.0, width, height, mode.corner_radius(), detached.top_corner_radius(),
-        );
+        let (width, height) =
+            mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+        let contains = |x, y| {
+            point_in_notch(
+                x,
+                y,
+                80.0,
+                0.0,
+                width,
+                height,
+                mode.corner_radius(),
+                detached.top_corner_radius(),
+            )
+        };
         assert!(!contains(80.0, 0.0));
         assert!(!contains(80.0 + width, 0.0));
         assert!(contains(80.0 + width / 2.0, 0.0));
@@ -113,10 +137,18 @@ fn detached_island_rounds_top_corners() {
 fn docked_island_does_not_capture_cursor_outside_its_sides() {
     for scale in [0.75, DEFAULT_COLLAPSED_SCALE, 1.0, 1.4, 2.1] {
         let width = COLLAPSED_ISLAND_WIDTH * scale;
-        let contains = |x, y| point_in_notch(
-            x, y, 80.0, 0.0, width, COLLAPSED_ISLAND_HEIGHT * scale,
-            COLLAPSED_RADIUS * scale, 0.0,
-        );
+        let contains = |x, y| {
+            point_in_notch(
+                x,
+                y,
+                80.0,
+                0.0,
+                width,
+                COLLAPSED_ISLAND_HEIGHT * scale,
+                COLLAPSED_RADIUS * scale,
+                0.0,
+            )
+        };
         assert!(contains(80.0, 0.0));
         assert!(contains(80.0 + width, 0.0));
         for y in [0.0, 3.0 * scale, 6.0 * scale] {
@@ -129,8 +161,14 @@ fn docked_island_does_not_capture_cursor_outside_its_sides() {
 #[test]
 fn tuck_and_reveal_move_monotonically_between_physical_positions() {
     for (start, target) in [
-        (PhysicalPosition::new(665, 0), PhysicalPosition::new(665, -32)),
-        (PhysicalPosition::new(-900, -32), PhysicalPosition::new(-900, 270)),
+        (
+            PhysicalPosition::new(665, 0),
+            PhysicalPosition::new(665, -32),
+        ),
+        (
+            PhysicalPosition::new(-900, -32),
+            PhysicalPosition::new(-900, 270),
+        ),
     ] {
         assert_eq!(interpolate_stage_position(start, target, 0.0), start);
         assert_eq!(interpolate_stage_position(start, target, 1.0), target);

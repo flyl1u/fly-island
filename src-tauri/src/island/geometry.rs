@@ -103,7 +103,7 @@ pub(crate) fn apply_stage_geometry(
             }
             let progress = (started_at.elapsed().as_secs_f64()
                 / POSITION_ANIMATION_DURATION.as_secs_f64())
-                .min(1.0);
+            .min(1.0);
             let position = interpolate_stage_position(start, target, progress);
             if let Err(error) = window.set_position(Position::Physical(position)) {
                 eprintln!("Failed to animate island position: {error}");
