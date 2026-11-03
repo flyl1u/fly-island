@@ -36,7 +36,6 @@ import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   useTranslation,
 } from "./i18n";
-import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
 import { clamp } from "./utils/number";
 import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
@@ -81,18 +80,10 @@ import type {
   TodoItem,
   TodoPageMode,
 } from "./features/todos/types";
+import type { IslandMode, IslandPage, NativeGlassState } from "./windows/island/types";
+import { ISLAND_POSITION_STORAGE_KEY, loadIslandPosition, type IslandPosition } from "./windows/island/storage";
+import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getCollapsedIslandWidth, getTodoVisualRows } from "./windows/island/layout";
 import "./App.css";
-
-export type IslandMode = "collapsed" | "expanded";
-
-type IslandPage = "todo" | "music" | "clipboard" | "qq";
-
-type NativeGlassState = "active" | "css-fallback" | "disabled";
-
-type IslandPosition = {
-  x: number;
-  y: number;
-};
 
 type IslandShellProps = {
   qqMail: QQMailController;
@@ -125,68 +116,7 @@ type IslandShellProps = {
   children: ReactNode;
 };
 
-const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
-const MIN_COLLAPSED_ISLAND_WIDTH = 280;
-const MAX_COLLAPSED_ISLAND_WIDTH = 340;
-const MIN_COLLAPSED_TEXT_UNITS = 2;
-const MAX_COLLAPSED_TEXT_UNITS = 12;
-const BASE_EXPANDED_ISLAND_HEIGHT = 306;
-const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
-const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
-const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
-const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
-const TODO_ROW_HEIGHT = 46;
-const TODO_GROW_START_ROWS = 2;
 const AUDIO_ACTIVE_THRESHOLD = 0.000015;
-function getCollapsedIslandWidth(text: string) {
-  const visualUnits = getCollapsedTextUnits(text);
-  const widthProgress =
-    (clamp(
-      visualUnits,
-      MIN_COLLAPSED_TEXT_UNITS,
-      MAX_COLLAPSED_TEXT_UNITS,
-    ) -
-      MIN_COLLAPSED_TEXT_UNITS) /
-    (MAX_COLLAPSED_TEXT_UNITS - MIN_COLLAPSED_TEXT_UNITS);
-
-  return Math.round(
-    MIN_COLLAPSED_ISLAND_WIDTH +
-      widthProgress *
-        (MAX_COLLAPSED_ISLAND_WIDTH - MIN_COLLAPSED_ISLAND_WIDTH),
-  );
-}
-
-function getTodoVisualRows(todoList: TodoItem[]) {
-  return todoList.reduce(
-    (total, todo) => total + getTodoTitleLineCount(todo.title),
-    0,
-  );
-}
-
-function loadIslandPosition(): IslandPosition | null {
-  const stored = window.localStorage.getItem(ISLAND_POSITION_STORAGE_KEY);
-
-  if (!stored) {
-    return null;
-  }
-
-  try {
-    const position = JSON.parse(stored) as Partial<IslandPosition>;
-    if (
-      typeof position.x !== "number" ||
-      typeof position.y !== "number" ||
-      !Number.isFinite(position.x) ||
-      !Number.isFinite(position.y)
-    ) {
-      return null;
-    }
-
-    return { x: Math.round(position.x), y: Math.round(position.y) };
-  } catch {
-    return null;
-  }
-}
-
 export function IslandShell({
   qqMail,
   qqNotifications,

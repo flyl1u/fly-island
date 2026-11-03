@@ -112,7 +112,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-daily-note` | `features/todos/storage.ts` |
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
-| `focusd-island-position` | `App.tsx` |
+| `focusd-island-position` | `windows/island/storage.ts` |
 | `focusd-island-music-sources` | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
 | `focusd-island-qq-mail-settings` | `features/messages/qq-mail/storage.ts` |
