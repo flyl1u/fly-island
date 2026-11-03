@@ -3,8 +3,8 @@ import ReactDOM from "react-dom/client";
 import "./styles/fonts.css";
 import "./styles/base.css";
 import App from "./App";
-import TranslationWindow from "./TranslationWindow";
-import SettingsWindow from "./SettingsWindow";
+import TranslationWindow from "./windows/translation/TranslationWindow";
+import SettingsWindow from "./windows/settings/SettingsWindow";
 import { I18nProvider } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
 

@@ -1,4 +1,4 @@
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../i18n";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Settings2, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
