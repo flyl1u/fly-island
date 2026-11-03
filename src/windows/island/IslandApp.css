@@ -1,0 +1,258 @@
+.stage--font-pixel {
+  font-family: "Fusion Pixel", "Microsoft YaHei", sans-serif;
+  font-synthesis: weight;
+  -webkit-font-smoothing: none;
+}
+
+.stage--font-pixel .todo-form input,
+.stage--font-pixel textarea,
+.stage--font-pixel .todo-title,
+.stage--font-pixel .todo-title-input,
+.stage--font-pixel .archive-card__date {
+  font-family: inherit;
+}
+
+.stage--font-pixel .island__brand,
+.stage--font-pixel .island__active-task,
+.stage--font-pixel .island__todo-count {
+  font-size: 14px;
+  font-weight: 400;
+  -webkit-text-stroke: 0.3px currentColor;
+}
+
+.stage {
+  --island-opacity: 0.92;
+  --island-scale: 1;
+  --collapsed-island-width: 340px;
+  --task-text-color: #ffffff;
+  --island-pulse-color: #3ae489;
+  --island-pulse-glow-color: rgba(58, 228, 137, 0.72);
+  --island-pulse-brightness: 100%;
+  --island-background-color: #2F2F37;
+  --todo-background-color: #f8f4e9;
+  --glass-intensity: 0.72;
+  --glass-mask-opacity: 0.53;
+  --glass-tint-color: rgba(47, 47, 55, 0.53);
+  --glass-collapsed-tint-color: rgba(47, 47, 55, 0.8);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+}
+
+.island--todo .icon-button {
+  color: rgba(248, 246, 240, 0.78);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.island--todo .icon-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  color: rgba(248, 246, 240, 0.78);
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.icon-button.island-reset-button--available {
+  color: #c8efff;
+  background: rgba(116, 214, 255, 0.14);
+}
+
+.icon-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.icon-button:active {
+  transform: translateY(1px);
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline-offset: 3px;
+}
+
+.todo-notebook,
+.music-player,
+.editor-panel {
+  height: 100%;
+  border-radius: 22px;
+  border: 0;
+}
+
+.island--appearance-liquidGlass .music-player,
+.island--appearance-liquidGlass .clipboard-panel,
+.island--appearance-liquidGlass .editor-panel {
+  background:
+    radial-gradient(
+      circle at var(--glass-pointer-x) var(--glass-pointer-y),
+      rgba(var(--glass-page-accent), var(--glass-panel-accent-alpha)),
+      transparent 36%
+    ),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.025)),
+    rgba(7, 9, 12, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.105);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
+  -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
+}
+
+.island--appearance-liquidGlass .music-player {
+  background:
+    radial-gradient(ellipse at 24% 72%, rgba(116, 214, 255, 0.1), transparent 42%),
+    radial-gradient(ellipse at 76% 24%, rgba(182, 156, 255, 0.09), transparent 44%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(222, 243, 255, 0.025)),
+    rgba(12, 21, 29, 0.16);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.island--appearance-liquidGlass .music-player::before,
+.island--appearance-liquidGlass .music-player::after {
+  content: "";
+  position: absolute;
+  right: -8%;
+  left: -8%;
+  height: 68px;
+  pointer-events: none;
+}
+
+.island--appearance-liquidGlass .music-player::before {
+  top: 38%;
+  background: linear-gradient(90deg, transparent, rgba(116, 214, 255, 0.08) 26%, rgba(255, 255, 255, 0.1) 52%, rgba(182, 156, 255, 0.08) 74%, transparent);
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  filter: blur(6px);
+  transform: rotate(-5deg) skewX(-18deg);
+}
+
+.island--appearance-liquidGlass .music-player::after {
+  top: 54%;
+  background: linear-gradient(90deg, transparent, rgba(190, 239, 255, 0.08) 30%, rgba(116, 214, 255, 0.08) 62%, transparent);
+  border-bottom: 1px solid rgba(190, 239, 255, 0.1);
+  border-radius: 50%;
+  filter: blur(10px);
+  transform: rotate(4deg) skewX(14deg);
+}
+
+.island--appearance-liquidGlass.island--glass-css-fallback .music-player,
+.island--appearance-liquidGlass.island--glass-css-fallback .clipboard-panel,
+.island--appearance-liquidGlass.island--glass-css-fallback .editor-panel {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(var(--glass-page-accent), 0.13), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.03)),
+    rgba(9, 11, 15, 0.78);
+}
+
+.save-check-icon {
+  flex: 0 0 auto;
+  animation: saveCheckPop 420ms ease both;
+}
+
+.save-check-icon path,
+.save-check-icon polyline,
+.save-check-icon line {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: saveCheckDraw 420ms ease forwards;
+}
+
+@keyframes saveButtonPop {
+  0% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes saveCheckPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes saveCheckDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island__active-task {
+    animation: none;
+  }
+
+  .island,
+  .island__collapsed,
+  .island__expanded,
+  .island--expanded .island__expanded,
+  .dot-button,
+  .icon-button,
+  .island__quiet-button,
+  .music-wave-button,
+  .music-control-button,
+  .island__collapse-target,
+  .todo-item,
+  .todo-start,
+  .todo-delete,
+  .todo-drag-handle,
+  .project-link,
+  .project-link--star .project-link__icon,
+  .project-link--release .project-link__icon,
+  .save-path-button {
+    transition: none;
+  }
+
+  .project-link--star:is(:hover, :focus-visible) .project-link__icon,
+  .project-link--release:is(:hover, :focus-visible) .project-link__icon {
+    transform: none;
+  }
+
+  .save-check-icon,
+  .save-check-icon path,
+  .save-check-icon polyline,
+  .save-check-icon line {
+    animation: none;
+  }
+
+  .music-control-button__track-change {
+    animation: none;
+  }
+
+  .island__glass::before,
+  .island__glass::after,
+  .island__glass-highlight {
+    animation: none;
+    transition: none;
+  }
+}

@@ -25,8 +25,8 @@ import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useIslandNavigation } from "./useIslandNavigation";
-// Must stay the last import: App.css overrides the feature styles above.
-import "../../App.css";
+// Must stay the last import: IslandApp.css overrides the feature styles above.
+import "./IslandApp.css";
 
 export function IslandApp() {
   const t = useTranslation();

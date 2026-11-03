@@ -8,7 +8,7 @@ import type { MailContent, MailSnapshot } from "../src/features/messages/qq-mail
 import { useQQNotifications } from "../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../src/features/messages/wechat/WeChatReminders";
 import { MessagesPanel, messagePanelHeight, type MessageView } from "../src/features/messages/Messages";
-import "../src/App.css";
+import "../src/windows/island/IslandApp.css";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);

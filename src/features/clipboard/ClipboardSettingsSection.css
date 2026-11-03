@@ -80,3 +80,18 @@
   box-shadow: 0 0 0 4px rgba(199, 80, 101, 0.16);
   animation: saveButtonPop 760ms ease both;
 }
+
+.clipboard-settings-panel {
+  display: grid;
+  gap: 9px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clipboard-settings-panel__header {
+  color: rgba(248, 246, 240, 0.88);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}

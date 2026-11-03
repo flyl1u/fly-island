@@ -2,6 +2,7 @@ import qqIcon from "../../assets/brands/qq.png";
 import wechatIcon from "../../assets/brands/wechat.png";
 import qqMailIcon from "../../assets/brands/qq-mail.png";
 import type { MessageSource } from "./messagePreview";
+import "./MessageSourceIcon.css";
 
 const SOURCE_ICONS: Record<MessageSource, string> = {
   qq: qqIcon,
