@@ -23,9 +23,10 @@ use windows::{
             LibraryLoader::GetModuleHandleW,
         },
         UI::WindowsAndMessaging::{
-                CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW,
-                RegisterClassW, TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLIPBOARDUPDATE, WM_HOTKEY, WNDCLASSW,
-            },
+            CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, RegisterClassW,
+            TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLIPBOARDUPDATE,
+            WM_HOTKEY, WNDCLASSW,
+        },
     },
 };
 
@@ -141,7 +142,11 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    pub(super) fn set_note(&self, id: &str, note: &str) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn set_note(
+        &self,
+        id: &str,
+        note: &str,
+    ) -> Result<ClipboardHistorySnapshot, String> {
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
         let item = state
             .items
@@ -390,7 +395,9 @@ impl ClipboardCapture {
     }
 }
 
-pub(super) fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
+pub(super) fn read_clipboard_capture(
+    capture_images: bool,
+) -> Result<Option<ClipboardCapture>, String> {
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
 
     if let Ok(text) = clipboard.get_text() {
@@ -433,7 +440,11 @@ pub(super) fn write_clipboard_text(text: &str) -> Result<(), String> {
     })
 }
 
-pub(super) fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Result<(), String> {
+pub(super) fn write_clipboard_image(
+    width: usize,
+    height: usize,
+    image: &RgbaImage,
+) -> Result<(), String> {
     retry_clipboard_write("set clipboard image", || {
         Clipboard::new()
             .map_err(|error| format!("Failed to open clipboard: {error}"))?
