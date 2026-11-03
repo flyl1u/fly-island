@@ -6,7 +6,7 @@ import {
   SETTINGS_FOCUS_STORAGE_KEY,
   type SettingsFocusSection,
 } from "./App";
-import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./features/agent-status/api";
+import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "./features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "./features/agent-status/status";
 import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "./features/appearance/settings";
 import { SETTINGS_PRESETS_STORAGE_KEY, STORAGE_KEY, loadSettingPresets, loadSettings } from "./features/appearance/storage";
@@ -171,7 +171,7 @@ export default function SettingsWindow() {
 
   const refreshAgentStatus = useCallback(async () => {
     try {
-      const snapshot = await invoke<AgentStatusSnapshot>("get_agent_status");
+      const snapshot = await getAgentStatus();
       setAgentStatus((current) =>
         current.statusPath === snapshot.statusPath &&
         AGENT_PROVIDERS.every(
@@ -225,9 +225,7 @@ export default function SettingsWindow() {
   const clearAgentStatus = useCallback(async (provider: AgentProvider) => {
     setClearingAgentProvider(provider);
     try {
-      const snapshot = await invoke<AgentStatusSnapshot>("clear_agent_status", {
-        provider,
-      });
+      const snapshot = await clearAgentProviderStatus(provider);
       setAgentStatus(snapshot);
     } catch (error) {
       console.error("Failed to clear agent status", error);
@@ -241,9 +239,7 @@ export default function SettingsWindow() {
     setAgentHooksInstallError("");
 
     try {
-      const result = await invoke<AgentHooksInstallResult>(
-        "install_agent_status_hooks",
-      );
+      const result = await installAgentStatusHooks();
       setAgentHooksInstallResult(result);
       setAgentHooksInstallState("installed");
       void refreshAgentStatus();
