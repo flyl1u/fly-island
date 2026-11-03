@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LayoutEditor } from "./LayoutEditor";
-import { SETTINGS_FOCUS_STORAGE_KEY, type SettingsFocusSection } from "./storage";
+import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "../../features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "../../features/agent-status/status";
 import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "../../features/appearance/settings";
@@ -18,33 +18,7 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import "./SettingsWindow.css";
 
-const FOCUS_REQUEST_MAX_AGE_MS = 10_000;
 const AGENT_STATUS_POLL_MS = 1_000;
-
-function takeFocusRequest(): SettingsFocusSection | null {
-  const stored = window.localStorage.getItem(SETTINGS_FOCUS_STORAGE_KEY);
-
-  if (stored === null) {
-    return null;
-  }
-
-  window.localStorage.removeItem(SETTINGS_FOCUS_STORAGE_KEY);
-
-  try {
-    const request = JSON.parse(stored) as {
-      section?: unknown;
-      requestedAt?: unknown;
-    };
-
-    return request.section === "savePath" &&
-      typeof request.requestedAt === "number" &&
-      Date.now() - request.requestedAt < FOCUS_REQUEST_MAX_AGE_MS
-      ? request.section
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 function noop() {}
 
