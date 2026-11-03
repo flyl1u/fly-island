@@ -4,6 +4,7 @@ import type { ClipboardHistoryItem, ClipboardHistorySnapshot } from "./api";
 import { ClipboardFilters } from "./ClipboardFilters";
 import { ClipboardHistoryItemRow } from "./ClipboardHistoryItemRow";
 import { ClipboardPanelHeader } from "./ClipboardPanelHeader";
+import "./ClipboardHistoryPanel.css";
 
 export function ClipboardHistoryPanel({
   snapshot,
