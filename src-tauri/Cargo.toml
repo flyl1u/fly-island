@@ -39,5 +39,11 @@ window-vibrancy = "0.6"
 windows = { version = "0.61", features = ["ApplicationModel", "Foundation", "Foundation_Collections", "Media", "Media_Control", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_DataExchange", "Win32_System_LibraryLoader", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 windows-future = { version = "0.2", features = ["std"] }
 
+[lints.clippy]
+# 告警基线见 docs/architecture/refactor-plan.md 0.5，只减不增；Phase 6.3 后升级为 deny。
+undocumented_unsafe_blocks = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
+
 [dev-dependencies]
 windows = { version = "0.61", features = ["ApplicationModel", "UI_Notifications_Management", "Win32_System_WinRT", "Win32_UI_Accessibility"] }

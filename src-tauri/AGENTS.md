@@ -83,5 +83,6 @@ src-tauri/src/
 
 - 修改 `tauri.conf.json` 中的窗口配置时，同步检查 `capabilities/default.json`、前端 `main.tsx` 的窗口分发，以及 Rust 中的 label 常量。
 - `scripts/focusd-agent-*.{cmd,ps1}` 通过 `include_str!` 编入二进制，修改后需要完整的 Rust 验证。
+- clippy lint 在 `Cargo.toml` 的 `[lints.clippy]` 中声明，测试代码的放行写在 `clippy.toml`；不要在源文件中用 `#![warn]` / `#[allow]` 重复声明。告警数量只减不增，基线见 `docs/architecture/refactor-plan.md`。
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。
