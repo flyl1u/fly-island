@@ -13,7 +13,6 @@ import {
   CircleDot,
   Languages,
   Minus,
-  RefreshCcw,
   RotateCcw,
   Settings,
 } from "lucide-react";
@@ -21,12 +20,10 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  QQNotificationControls,
   useQQNotifications,
   type QQNotificationsController,
 } from "./features/messages/qq-notifications/QQNotifications";
 import {
-  WeChatReminderControls,
   useWeChatReminders,
   type WeChatRemindersController,
 } from "./features/messages/wechat/WeChatReminders";
@@ -35,31 +32,22 @@ import { MessagesPanel, messagePanelHeight, type MessageView } from "./features/
 import { MessageSourceIcon } from "./features/messages/MessageSourceIcon";
 import { CollapsedMessageContent } from "./features/messages/CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./features/messages/messagePreview";
-import { ProjectSettingsSection } from "./features/updater/ProjectSettingsSection";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   useTranslation,
-  type LocaleCode,
 } from "./i18n";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
 import { clamp } from "./utils/number";
 import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
-import { AgentHooksSettingsSection } from "./features/agent-status/AgentHooksSettingsSection";
-import { getAgentStatus, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "./features/agent-status/api";
-import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, getAgentStatusLabel, getAgentVisualState, type AgentHooksInstallState, type AgentVisualState } from "./features/agent-status/status";
-import { LocaleControl } from "./i18n/LocaleControl";
-import { ColorSettingsSection } from "./features/appearance/ColorSettingsSection";
-import { LayoutSettingsSection } from "./features/appearance/LayoutSettingsSection";
-import { PresetSettingsSection } from "./features/appearance/PresetSettingsSection";
-import { TodoSettingsSection } from "./features/appearance/TodoSettingsSection";
-import { SavePathSettingsSection } from "./features/todos/SavePathSettingsSection";
+import { openSettingsWindow } from "./windows/settings/api";
+import { getAgentStatus, type AgentStatusSnapshot } from "./features/agent-status/api";
+import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, getAgentStatusLabel, getAgentVisualState, type AgentVisualState } from "./features/agent-status/status";
 import { DEFAULT_SETTINGS, hexToRgba, isSameSettings } from "./features/appearance/settings";
 import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
-import type { AppearanceMode, IslandPreset, IslandSettings } from "./features/appearance/types";
+import type { AppearanceMode, IslandSettings } from "./features/appearance/types";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
-import { ClipboardSettingsSection } from "./features/clipboard/ClipboardSettingsSection";
-import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySettings, type ClipboardHistorySnapshot } from "./features/clipboard/api";
+import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySnapshot } from "./features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY } from "./features/clipboard/settings";
 import { matchesClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
@@ -88,7 +76,6 @@ import {
 } from "./features/todos/storage";
 import type {
   ArchiveLayout,
-  SavePathState,
   SaveState,
   TodoArchive,
   TodoItem,
@@ -139,8 +126,6 @@ type IslandShellProps = {
 };
 
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
-// Main island -> settings window request to reveal a section; survives the window being created.
-const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 const MIN_COLLAPSED_ISLAND_WIDTH = 280;
 const MAX_COLLAPSED_ISLAND_WIDTH = 340;
 const MIN_COLLAPSED_TEXT_UNITS = 2;
@@ -200,21 +185,6 @@ function loadIslandPosition(): IslandPosition | null {
   } catch {
     return null;
   }
-}
-
-type SettingsFocusSection = "savePath";
-
-function openSettingsWindow(section?: SettingsFocusSection) {
-  if (section) {
-    window.localStorage.setItem(
-      SETTINGS_FOCUS_STORAGE_KEY,
-      JSON.stringify({ section, requestedAt: Date.now() }),
-    );
-  }
-
-  void invoke("open_settings_window").catch((error) => {
-    console.error("Failed to open settings window", error);
-  });
 }
 
 export function IslandShell({
@@ -670,151 +640,6 @@ export function IslandShell({
         </div>
       </div>
     </section>
-  );
-}
-
-function LayoutEditor({
-  locale,
-  settings,
-  qqNotifications,
-  wechatReminders,
-  clipboardSettings,
-  saveDirectoryDraft,
-  savePathState,
-  highlightSavePath,
-  focusClipboardShortcutToken,
-  presets,
-  launchAtStartup,
-  agentStatus,
-  clearingAgentProvider,
-  agentHooksInstallState,
-  agentHooksInstallResult,
-  agentHooksInstallError,
-  onLocaleChange,
-  onSettingsChange,
-  onClipboardSettingsChange,
-  onReset,
-  onSaveDirectoryDraftChange,
-  onSaveDirectory,
-  onSavePreset,
-  onApplyPreset,
-  onRenamePreset,
-  onDeletePreset,
-  onLaunchAtStartupChange,
-  onClearAgentStatus,
-  onInstallAgentHooks,
-  onClipboardShortcutFocusHandled,
-}: {
-  locale: LocaleCode;
-  settings: IslandSettings;
-  qqNotifications: QQNotificationsController;
-  wechatReminders: WeChatRemindersController;
-  clipboardSettings: ClipboardHistorySettings;
-  saveDirectoryDraft: string;
-  savePathState: SavePathState;
-  highlightSavePath: boolean;
-  focusClipboardShortcutToken: number;
-  presets: IslandPreset[];
-  launchAtStartup: boolean;
-  agentStatus: AgentStatusSnapshot;
-  clearingAgentProvider: AgentProvider | null;
-  agentHooksInstallState: AgentHooksInstallState;
-  agentHooksInstallResult: AgentHooksInstallResult | null;
-  agentHooksInstallError: string;
-  onLocaleChange: (locale: LocaleCode) => void;
-  onSettingsChange: (settings: IslandSettings) => void;
-  onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
-  onReset: () => void;
-  onSaveDirectoryDraftChange: (value: string) => void;
-  onSaveDirectory: () => void;
-  onSavePreset: () => void;
-  onApplyPreset: (presetId: string) => void;
-  onRenamePreset: (presetId: string, name: string) => void;
-  onDeletePreset: (presetId: string) => void;
-  onLaunchAtStartupChange: (enabled: boolean) => void;
-  onClearAgentStatus: (provider: AgentProvider) => void;
-  onInstallAgentHooks: () => void;
-  onClipboardShortcutFocusHandled: () => void;
-}) {
-  const t = useTranslation();
-  return (
-    <div className="editor-panel">
-      <div className="editor-panel__header">
-        <span>{t.settings.title}</span>
-        <button
-          className="reset-button"
-          type="button"
-          title={t.settings.reset}
-          aria-label={t.settings.reset}
-          onClick={onReset}
-        >
-          <RefreshCcw size={15} strokeWidth={2.2} />
-        </button>
-      </div>
-
-      <section className="settings-section settings-section--language">
-        <div className="settings-section__header">
-          <span>{t.settings.language.title}</span>
-        </div>
-        <LocaleControl
-          label={t.settings.language.label}
-          value={locale}
-          onChange={onLocaleChange}
-        />
-      </section>
-
-      <LayoutSettingsSection
-        settings={settings}
-        launchAtStartup={launchAtStartup}
-        onSettingsChange={onSettingsChange}
-        onLaunchAtStartupChange={onLaunchAtStartupChange}
-      />
-
-      <section className="settings-section settings-section--messages">
-        <div className="settings-section__header"><span>{t.settings.messageReception}</span></div>
-        <QQNotificationControls controller={qqNotifications} />
-        <WeChatReminderControls controller={wechatReminders} />
-      </section>
-
-      <TodoSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
-
-      <AgentHooksSettingsSection
-        agentStatus={agentStatus}
-        clearingAgentProvider={clearingAgentProvider}
-        agentHooksInstallState={agentHooksInstallState}
-        agentHooksInstallResult={agentHooksInstallResult}
-        agentHooksInstallError={agentHooksInstallError}
-        onClearAgentStatus={onClearAgentStatus}
-        onInstallAgentHooks={onInstallAgentHooks}
-      />
-
-      <ClipboardSettingsSection
-        clipboardSettings={clipboardSettings}
-        focusClipboardShortcutToken={focusClipboardShortcutToken}
-        onClipboardSettingsChange={onClipboardSettingsChange}
-        onClipboardShortcutFocusHandled={onClipboardShortcutFocusHandled}
-      />
-
-      <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
-
-      <PresetSettingsSection
-        presets={presets}
-        onSavePreset={onSavePreset}
-        onApplyPreset={onApplyPreset}
-        onRenamePreset={onRenamePreset}
-        onDeletePreset={onDeletePreset}
-      />
-
-      <SavePathSettingsSection
-        saveDirectoryDraft={saveDirectoryDraft}
-        savePathState={savePathState}
-        highlightSavePath={highlightSavePath}
-        onSaveDirectoryDraftChange={onSaveDirectoryDraftChange}
-        onSaveDirectory={onSaveDirectory}
-      />
-
-      <ProjectSettingsSection />
-    </div>
   );
 }
 
@@ -2385,11 +2210,3 @@ function App() {
 
 export default App;
 
-// Shared with SettingsWindow, which edits the same stored settings in its own webview.
-export {
-  SETTINGS_FOCUS_STORAGE_KEY,
-  LayoutEditor,
-};
-export type {
-  SettingsFocusSection,
-};
