@@ -18,3 +18,11 @@ export function loadRemoteImagePreference() {
 export function saveRemoteImagePreference(allow: boolean) {
   try { localStorage.setItem(REMOTE_IMAGES_KEY, String(allow)); } catch { /* 偏好保存失败不影响本次阅读 */ }
 }
+
+export function saveMailSettings(settings: MailSettings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ email: settings.email, enabled: settings.enabled }));
+}
+
+export function clearMailSettings() {
+  localStorage.removeItem(SETTINGS_KEY);
+}

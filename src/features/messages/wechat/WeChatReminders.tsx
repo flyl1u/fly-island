@@ -1,11 +1,10 @@
 import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { isTauri } from "@tauri-apps/api/core";
 import { ArrowUpRight, Power } from "lucide-react";
 import { MessageSourceIcon } from "../MessageSourceIcon";
-import type { ReminderEvent, ReminderSnapshot } from "./api";
-import { ENABLED_KEY } from "./storage";
+import { launchWeChat, listenWeChatReminderChanged, setWeChatRemindersEnabled, type ReminderSnapshot } from "./api";
+import { isWeChatRemindersEnabled, saveWeChatRemindersEnabled } from "./storage";
 import "./WeChatReminders.css";
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
@@ -42,7 +41,7 @@ export function useWeChatReminders(canPreview: boolean) {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     void (async () => {
-      unlisten = await listen<ReminderEvent>("wechat-reminder-changed", ({ payload }) => {
+      unlisten = await listenWeChatReminderChanged(({ payload }) => {
         const newlyPending = payload.snapshot.pending
           && payload.snapshot.lastAttentionAt !== attentionRef.current;
         if (cancelled || !acceptSnapshot(payload.snapshot)) return;
@@ -54,9 +53,9 @@ export function useWeChatReminders(canPreview: boolean) {
         }
       });
       if (cancelled) { unlisten(); return; }
-      const next = await invoke<ReminderSnapshot>("set_wechat_reminders_enabled", {
-        enabled: window.localStorage.getItem(ENABLED_KEY) !== "false",
-      });
+      const next = await setWeChatRemindersEnabled(
+        isWeChatRemindersEnabled(),
+      );
       if (!cancelled) acceptSnapshot(next);
     })().catch((error: unknown) => {
       if (!cancelled) setActionError(String(error));
@@ -95,13 +94,13 @@ export function useWeChatReminders(canPreview: boolean) {
   }, [t]);
 
   const setEnabled = useCallback((enabled: boolean) => run(async () => {
-    acceptSnapshot(await invoke<ReminderSnapshot>("set_wechat_reminders_enabled", { enabled }));
-    window.localStorage.setItem(ENABLED_KEY, String(enabled));
+    acceptSnapshot(await setWeChatRemindersEnabled(enabled));
+    saveWeChatRemindersEnabled(enabled);
     if (!enabled) setPreviewReceivedAt(null);
   }), [acceptSnapshot, run]);
 
   const openWeChat = useCallback(() => run(async () => {
-    await invoke("open_wechat");
+    await launchWeChat();
     setPreviewReceivedAt(null);
   }), [run]);
 
