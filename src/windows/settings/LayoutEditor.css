@@ -1,4 +1,12 @@
+.settings-layout {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  min-height: 0;
+}
+
 .editor-panel {
+  position: relative;
   display: grid;
   gap: var(--space-lg);
   align-content: start;
@@ -29,16 +37,15 @@
   display: none;
 }
 
-.editor-panel__header {
+.settings-page__title {
   min-height: 28px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2xl);
-  color: var(--color-text-strong);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1;
+  margin: 0;
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .settings-section {
@@ -75,13 +82,8 @@
   border-radius: 0;
 }
 
-.settings-section--clipboard,
-.settings-section--colors,
-.settings-section--presets,
-.settings-section--agent-hooks,
-.settings-section--todo,
-.settings-section--storage,
-.settings-section--project {
+/* Each page starts right under its title; later sections are divided by a rule. */
+.settings-section + .settings-section {
   margin-top: 6px;
   padding-top: 12px;
   border-top: 1px solid var(--color-white-a10);

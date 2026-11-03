@@ -1,5 +1,4 @@
 import { useTranslation } from "../../i18n";
-import { NumberControl } from "../../components/controls/NumberControl";
 import { SliderControl } from "../../components/controls/SliderControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { AppearanceModeControl } from "./AppearanceModeControl";
@@ -7,14 +6,10 @@ import type { IslandSettings } from "./types";
 
 export function LayoutSettingsSection({
   settings,
-  launchAtStartup,
   onSettingsChange,
-  onLaunchAtStartupChange,
 }: {
   settings: IslandSettings;
-  launchAtStartup: boolean;
   onSettingsChange: (settings: IslandSettings) => void;
-  onLaunchAtStartupChange: (enabled: boolean) => void;
 }) {
   const t = useTranslation();
 
@@ -95,11 +90,6 @@ export function LayoutSettingsSection({
         onChange={(marginY) => onSettingsChange({ ...settings, marginY })}
       />
       <ToggleControl
-        label={t.settings.layout.launchAtStartup}
-        checked={launchAtStartup}
-        onChange={onLaunchAtStartupChange}
-      />
-      <ToggleControl
         label={t.settings.layout.showCollapsedText}
         checked={settings.showCollapsedText}
         onChange={(showCollapsedText) =>
@@ -118,20 +108,6 @@ export function LayoutSettingsSection({
         checked={settings.showTitle}
         onChange={(showTitle) => onSettingsChange({ ...settings, showTitle })}
       />
-      <ToggleControl
-        label={t.settings.layout.autoTuck}
-        checked={settings.autoTuck}
-        onChange={(autoTuck) => onSettingsChange({ ...settings, autoTuck })}
-      />
-      {settings.autoTuck && (
-        <NumberControl
-          label={t.settings.layout.autoTuckSeconds}
-          value={settings.autoTuckSeconds}
-          min={1}
-          max={3_600}
-          onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
-        />
-      )}
     </section>
   );
 }
