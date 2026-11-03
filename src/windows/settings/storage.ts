@@ -29,3 +29,10 @@ export function takeFocusRequest(): SettingsFocusSection | null {
     return null;
   }
 }
+
+export function requestSettingsFocus(section: SettingsFocusSection) {
+  window.localStorage.setItem(
+    SETTINGS_FOCUS_STORAGE_KEY,
+    JSON.stringify({ section, requestedAt: Date.now() }),
+  );
+}

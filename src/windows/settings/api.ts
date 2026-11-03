@@ -1,15 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
-import { SETTINGS_FOCUS_STORAGE_KEY, type SettingsFocusSection } from "./storage";
+import { requestSettingsFocus, type SettingsFocusSection } from "./storage";
 
 export function openSettingsWindow(section?: SettingsFocusSection) {
   if (section) {
-    window.localStorage.setItem(
-      SETTINGS_FOCUS_STORAGE_KEY,
-      JSON.stringify({ section, requestedAt: Date.now() }),
-    );
+    requestSettingsFocus(section);
   }
 
   void invoke("open_settings_window").catch((error) => {
     console.error("Failed to open settings window", error);
   });
+}
+
+export function readLaunchAtStartup() {
+  return invoke<boolean>("get_launch_at_startup");
+}
+
+export function saveLaunchAtStartup(enabled: boolean) {
+  return invoke("set_launch_at_startup", { enabled });
 }

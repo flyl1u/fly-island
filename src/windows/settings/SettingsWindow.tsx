@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LayoutEditor } from "./LayoutEditor";
+import { readLaunchAtStartup, saveLaunchAtStartup } from "./api";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "../../features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "../../features/agent-status/status";
 import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "../../features/appearance/settings";
-import { SETTINGS_PRESETS_STORAGE_KEY, STORAGE_KEY, loadSettingPresets, loadSettings } from "../../features/appearance/storage";
+import { STORAGE_KEY, loadSettingPresets, loadSettings, saveSettingPresets, saveSettings } from "../../features/appearance/storage";
 import type { IslandPreset, IslandSettings } from "../../features/appearance/types";
 import { useLocale, useTranslation } from "../../i18n";
 import { getErrorMessage } from "../../utils/error";
-import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory } from "../../features/todos/storage";
+import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory, saveSaveDirectory } from "../../features/todos/storage";
 import type { SavePathState } from "../../features/todos/types";
 import { getClipboardHistory, listenClipboardHistoryChanged, setClipboardHistorySettings, type ClipboardHistorySettings } from "../../features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY, normalizeClipboardSettings } from "../../features/clipboard/settings";
@@ -57,14 +57,11 @@ export default function SettingsWindow() {
   }, [t]);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    saveSettings(settings);
   }, [settings]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      SETTINGS_PRESETS_STORAGE_KEY,
-      JSON.stringify(presets),
-    );
+    saveSettingPresets(presets);
   }, [presets]);
 
   useEffect(() => {
@@ -98,7 +95,7 @@ export default function SettingsWindow() {
   }, []);
 
   useEffect(() => {
-    void invoke<boolean>("get_launch_at_startup")
+    void readLaunchAtStartup()
       .then(setLaunchAtStartup)
       .catch((error) => {
         console.error("Failed to read launch at startup", error);
@@ -186,7 +183,7 @@ export default function SettingsWindow() {
     setLaunchAtStartup(enabled);
 
     try {
-      await invoke("set_launch_at_startup", { enabled });
+      await saveLaunchAtStartup(enabled);
     } catch (error) {
       console.error("Failed to update launch at startup", error);
       setLaunchAtStartup(!enabled);
@@ -224,7 +221,7 @@ export default function SettingsWindow() {
   const saveDirectory = useCallback(() => {
     const nextDirectory = saveDirectoryDraft.trim();
 
-    window.localStorage.setItem(TODO_SAVE_DIRECTORY_STORAGE_KEY, nextDirectory);
+    saveSaveDirectory(nextDirectory);
     setSaveDirectoryDraft(nextDirectory);
     setHighlightSavePath(false);
     setSavePathState("saved");
