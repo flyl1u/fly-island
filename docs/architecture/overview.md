@@ -56,7 +56,9 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `App.tsx`：`MusicPlayerPanel`、`MusicWaveButton`，`MediaState` 比较 | `features/media/` |
 | `MediaWaveform.tsx/.css` | `features/media/` |
 | `App.tsx`：`ClipboardHistoryPanel`，快捷键解析与匹配 | `features/clipboard/`（快捷键逻辑放 `shortcut.ts`） |
-| `App.tsx`：`LayoutEditor`、`AppearanceModeControl`，设置与预设的 load / normalize / merge | `features/appearance/` |
+| `App.tsx`：`AppearanceModeControl`，设置与预设的 load / normalize / merge | `features/appearance/` |
+| `App.tsx`：`LayoutEditor` 外壳（设置窗口页面，只做组合） | `windows/settings/` |
+| `App.tsx`：`LayoutEditor` 的各区块 | 所属领域：布局 / 颜色 / 预设 → `features/appearance/`，保存路径 → `features/todos/`，剪贴板 → `features/clipboard/`，AI 代理钩子 → `features/agent-status/`，消息 → `features/messages/`，项目链接 → `features/updater/`，语言 → `i18n/` |
 | `App.tsx`：`hexToRgba` | `features/appearance/`（它以外观默认值 `DEFAULT_SETTINGS.pulseColor` 作回退色，不是纯通用函数，随 2.4 迁移） |
 | `App.tsx`：`SliderControl`、`ColorControl`、`ToggleControl`、`NumberControl` | `components/controls/` |
 | `App.tsx`：`LocaleControl` | `i18n/LocaleControl.tsx` |

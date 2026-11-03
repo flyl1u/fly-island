@@ -88,11 +88,13 @@
 - [x] **2.1 todos**：`TodoNotebook`、`ArchiveBrowser`、待办/归档/笔记的存储与 normalize、Markdown 格式化、`createTodoId`，以及 `save_todo_markdown` 的封装。
 - [x] **2.2 media**：`MusicPlayerPanel`、`MusicWaveButton`、`MediaWaveform`、媒体状态比较、音乐来源优先级的存储，以及 `media_*` 命令的封装。
 - [x] **2.3 clipboard**：`ClipboardHistoryPanel`、快捷键解析与匹配（`shortcut.ts`，补测试），以及剪贴板命令与事件的封装。
-- [ ] **2.4 appearance**：`LayoutEditor`、`AppearanceModeControl`、设置与预设的 load / normalize / merge（包括 `collapsed-text-default-v1` 迁移逻辑），以及 `hexToRgba`（见 1.2）。
-- [ ] **2.5 agent-status**：状态标签和视觉状态函数，以及代理状态命令的封装。
-- [ ] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`。`QQMail.tsx` 拆分后应低于 400 行。
-- [ ] **2.7 updater**：`UpdatePanel`、`updaterController.ts`。同步更新 `tests/updater-controller.test.mjs` 中的 import mock 表。
-- [ ] **2.8 窗口目录**：`SettingsWindow`、`TranslationWindow` 迁入 `windows/settings/`、`windows/translation/`，并抽出各自的 `api.ts` 和 `storage.ts`。
+- [ ] **2.4 appearance**：`AppearanceModeControl`、设置与预设的 load / normalize / merge（包括 `collapsed-text-default-v1` 迁移逻辑）、`hexToRgba`（见 1.2），以及 `LayoutEditor` 中属于外观的区块（布局、颜色、预设）。
+  - `LayoutEditor` 实际是设置窗口的整个页面（10 个区块，横跨约 7 个领域），不整体迁入 `features/appearance/`（2026-11-03 经确认调整）：各区块拆成子组件、放到所属领域，`LayoutEditor` 外壳只负责组合，在 2.8 随设置窗口迁到 `windows/settings/`。区块归属：布局、颜色、预设 → `features/appearance/`（2.4）；保存路径 → `features/todos/`、剪贴板设置 → `features/clipboard/`、语言 → `i18n/LocaleControl.tsx`（2.4 之后补做，见 2.4a）；AI 代理钩子 → `features/agent-status/`（2.5）；消息 → `features/messages/`（2.6）；项目链接与更新 → `features/updater/`（2.7）。
+- [ ] **2.4a 已完成领域的设置区块归位**：把 `LayoutEditor` 中的保存路径、剪贴板设置区块分别迁入 `features/todos/`、`features/clipboard/`，`LocaleControl` 与语言区块迁入 `i18n/`。
+- [ ] **2.5 agent-status**：状态标签和视觉状态函数、代理状态命令的封装，以及 `LayoutEditor` 中的 AI 代理钩子区块。
+- [ ] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`，并迁入 `LayoutEditor` 中的消息区块。`QQMail.tsx` 拆分后应低于 400 行。
+- [ ] **2.7 updater**：`UpdatePanel`、`updaterController.ts`，以及 `LayoutEditor` 中的项目链接区块。同步更新 `tests/updater-controller.test.mjs` 中的 import mock 表。
+- [ ] **2.8 窗口目录**：`SettingsWindow`、`LayoutEditor` 外壳（只做组合）、`TranslationWindow` 迁入 `windows/settings/`、`windows/translation/`，并抽出各自的 `api.ts` 和 `storage.ts`。
 
 超过 400 行的组件（`TodoNotebook` 470 行、`ClipboardHistoryPanel` 566 行、`LayoutEditor` 755 行，2026-11-03 统计）无法原样搬到一个文件里。经确认按以下顺序处理，搬迁和改写仍然分开提交：
 
@@ -182,7 +184,7 @@
 | 2026-11-03 | 2.3（2/5，改写） | `101a714` | 在 `App.tsx` 中把 `ClipboardHistoryPanel`（566 行）的头部拆为 `ClipboardPanelHeader`（66）、筛选与搜索拆为 `ClipboardFilters`（56，返回 Fragment 以保持 DOM 层级）、单条记录拆为 `ClipboardHistoryItemRow`（184，`ref` 回调改由 `elementRef` 传入）；状态和副作用仍在 `ClipboardHistoryPanel`（360）中。`App.tsx` 4057 → 4160（+103，低于白名单记录 4255） | `pnpm check`（66/66）、`pnpm build`；交互待人工验收 |
 | 2026-11-03 | 2.3（3/5，搬迁） | `e218865` | `ClipboardHistoryPanel`（367）、`ClipboardPanelHeader`（70）、`ClipboardFilters`（59）、`ClipboardHistoryItemRow`（188）原样搬到 `features/clipboard/`；`App.tsx` 4160 → 3485，白名单 4255 → 3485 | `pnpm check`（66/66）、`pnpm build` |
 | 2026-11-03 | 2.3（4/5，改写） | `912749a` | `features/clipboard/api.ts` 新增 7 个命令封装、2 个事件名常量（与 Rust 常量一致）和 2 个 `listen` 封装；`App.tsx`、`SettingsWindow.tsx` 改为调用封装，命令名、参数名和事件名不变。`App.tsx` 3485 → 3469，白名单同步下调；ESLint warn 18 → 17（`SettingsWindow.tsx` 不再直接导入 `listen`） | `pnpm check`（66/66）、`pnpm build` |
-| 2026-11-03 | 2.3（5/5，CSS 搬迁） | 见提交说明 | `App.css` 2255 → 1748（-507），白名单同步下调；样式按组件拆到 `ClipboardHistoryPanel.css`（66，含跨子组件的焦点样式）、`ClipboardPanelHeader.css`（128）、`ClipboardFilters.css`（98）、`ClipboardHistoryItemRow.css`（211）。打包产物级检查改为更严格的口径（不同伪类视为可能同时生效），用新口径重新检查了 2.1 起的全部 CSS 搬迁，均无冲突 | `pnpm check`（66/66）、`pnpm build`；面板检查待人工验收 |
+| 2026-11-03 | 2.3（5/5，CSS 搬迁） | `5592ae5` | `App.css` 2255 → 1748（-507），白名单同步下调；样式按组件拆到 `ClipboardHistoryPanel.css`（66，含跨子组件的焦点样式）、`ClipboardPanelHeader.css`（128）、`ClipboardFilters.css`（98）、`ClipboardHistoryItemRow.css`（211）。打包产物级检查改为更严格的口径（不同伪类视为可能同时生效），用新口径重新检查了 2.1 起的全部 CSS 搬迁，均无冲突 | `pnpm check`（66/66）、`pnpm build`；面板检查待人工验收 |
 
 ## 待人工验收
 
@@ -195,7 +197,7 @@
 | `bc7cccd` | 1.4 | 三个窗口（主窗口、设置、翻译）在中英文下检查像素字体（`Fusion Pixel`）仍能加载、键盘 Tab 与鼠标点击下的按钮焦点框表现与迁移前一致。 |
 | `1597286` | 2.1 | 主窗口待办面板（中英文、经典/液态玻璃两种外观）：新增、勾选、编辑标题（Enter / Esc / 失焦）、开始/停止、删除、拖拽排序、每日笔记、保存到 Markdown（含未设置路径时跳转设置）、归档卡片与时间线两种布局及回看；样式与迁移前一致，刷新后数据保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
 | `4dbdaa6` | 2.2 | 音乐页（中英文、两种外观）：折叠态音乐波形按钮的动画和点击、播放/暂停/上一首/下一首、切歌动画、封面与曲目信息、错误提示、音乐来源设置中的拖拽排序和删除、刷新后来源顺序保留；有音频时波形随音量跳动。 |
-| 2.3 的提交 | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
+| `5592ae5` | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
 
 ## 待处理问题
 
