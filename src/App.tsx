@@ -20,7 +20,6 @@ import {
   Minus,
   RefreshCcw,
   RotateCcw,
-  Save,
   Settings,
   Star,
   X,
@@ -61,6 +60,8 @@ import { LocaleControl } from "./i18n/LocaleControl";
 import { ColorSettingsSection } from "./features/appearance/ColorSettingsSection";
 import { LayoutSettingsSection } from "./features/appearance/LayoutSettingsSection";
 import { PresetSettingsSection } from "./features/appearance/PresetSettingsSection";
+import { TodoSettingsSection } from "./features/appearance/TodoSettingsSection";
+import { SavePathSettingsSection } from "./features/todos/SavePathSettingsSection";
 import { DEFAULT_SETTINGS, hexToRgba, isSameSettings } from "./features/appearance/settings";
 import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
 import type { AppearanceMode, IslandPreset, IslandSettings } from "./features/appearance/types";
@@ -1174,136 +1175,6 @@ function LayoutEditor({
         )}
       </section>
     </div>
-  );
-}
-
-function TodoSettingsSection({ settings, onSettingsChange }: {
-  settings: IslandSettings;
-  onSettingsChange: (settings: IslandSettings) => void;
-}) {
-  const t = useTranslation();
-
-  return (
-    <section className="settings-section settings-section--todo">
-      <div className="settings-section__header">
-        <span>{t.settings.todo.title}</span>
-      </div>
-      <ToggleControl
-        label={t.settings.todo.carryOverIncomplete}
-        checked={settings.carryOverIncompleteTodos}
-        onChange={(carryOverIncompleteTodos) =>
-          onSettingsChange({ ...settings, carryOverIncompleteTodos })
-        }
-      />
-      <ToggleControl
-        label={t.settings.todo.enableReorder}
-        checked={settings.enableTodoReorder}
-        onChange={(enableTodoReorder) =>
-          onSettingsChange({ ...settings, enableTodoReorder })
-        }
-      />
-      <ToggleControl
-        label={t.settings.todo.rotateTodos}
-        checked={settings.rotateTodos}
-        onChange={(rotateTodos) => onSettingsChange({ ...settings, rotateTodos })}
-      />
-      {settings.rotateTodos && (
-        <NumberControl
-          label={t.settings.todo.rotationSeconds}
-          value={settings.todoRotationSeconds}
-          min={1}
-          max={3_600}
-          onChange={(todoRotationSeconds) => onSettingsChange({ ...settings, todoRotationSeconds })}
-        />
-      )}
-    </section>
-  );
-}
-
-function SavePathSettingsSection({ saveDirectoryDraft, savePathState, highlightSavePath, onSaveDirectoryDraftChange, onSaveDirectory }: {
-  saveDirectoryDraft: string;
-  savePathState: SavePathState;
-  highlightSavePath: boolean;
-  onSaveDirectoryDraftChange: (value: string) => void;
-  onSaveDirectory: () => void;
-}) {
-  const t = useTranslation();
-  const savePathPanelRef = useRef<HTMLElement | null>(null);
-  const savePathInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (!highlightSavePath) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const editorPanel = savePathPanelRef.current?.closest(".editor-panel");
-
-      if (editorPanel instanceof HTMLElement && savePathPanelRef.current) {
-        editorPanel.scrollTo({
-          top: savePathPanelRef.current.offsetTop - 12,
-          behavior: "smooth",
-        });
-      }
-
-      savePathInputRef.current?.focus({ preventScroll: true });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [highlightSavePath]);
-
-  return (
-    <section
-      className={[
-        "settings-section",
-        "settings-section--storage",
-        "save-path-panel",
-        highlightSavePath ? "save-path-panel--attention" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      ref={savePathPanelRef}
-    >
-      <div className="settings-section__header save-path-panel__header">
-        <span>{t.settings.save.title}</span>
-      </div>
-      <div className="save-path-row">
-        <label className="save-path-field">
-          <span>{t.settings.save.folder}</span>
-          <input
-            ref={savePathInputRef}
-            value={saveDirectoryDraft}
-            placeholder={t.settings.save.folderPlaceholder}
-            aria-label={t.settings.save.folderLabel}
-            onChange={(event) =>
-              onSaveDirectoryDraftChange(event.currentTarget.value)
-            }
-          />
-        </label>
-        <button
-          className={[
-            "save-path-button",
-            savePathState === "saved" ? "save-path-button--saved" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          type="button"
-          onClick={onSaveDirectory}
-        >
-          {savePathState === "saved" ? (
-            <>
-              <Check className="save-check-icon" size={15} strokeWidth={2.6} />
-              <span>{t.settings.save.saved}</span>
-            </>
-          ) : (
-            <>
-              <Save size={14} strokeWidth={2.2} />
-              <span>{t.settings.save.save}</span>
-            </>
-          )}
-        </button>
-      </div>
-    </section>
   );
 }
 
