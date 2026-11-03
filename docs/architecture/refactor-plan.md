@@ -190,7 +190,8 @@
 | 2026-11-03 | 2.4（2/4，改写） | `7a095b3` | 在 `App.tsx` 中把 `LayoutEditor` 的布局、颜色、预设区块拆为 `LayoutSettingsSection`（130）、`ColorSettingsSection`（58）、`PresetSettingsSection`（127）。预设改名的状态只被该区块使用、区块始终挂载，因此随区块一起移入，状态生命周期不变；其余两个无状态。`LayoutEditor` 755 → 500；`App.tsx` 3148 → 3211（+63，低于白名单记录 3469） | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
 | 2026-11-03 | 2.4（3/4，搬迁） | `f061c7f` | `LayoutSettingsSection`（137）、`ColorSettingsSection`（63）、`PresetSettingsSection`（132）原样搬到 `features/appearance/`；`App.tsx` 3211 → 2892，白名单 3469 → 2892 | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4（4/4，CSS 搬迁） | `b035d02` | `App.css` 1748 → 1526（-222），白名单同步下调；新增 `AppearanceModeControl.css`（60，字体切换也复用这些 class）、`ColorSettingsSection.css`（5）、`PresetSettingsSection.css`（154）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
-| 2026-11-03 | 2.4a（1/n，搬迁） | 见提交说明 | `LocaleControl` 原样搬到 `i18n/LocaleControl.tsx`；`App.tsx` 2892 → 2859（白名单暂不下调，为后续原地拆分留出余量） | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（1/n，搬迁） | `15e2b50` | `LocaleControl` 原样搬到 `i18n/LocaleControl.tsx`；`App.tsx` 2892 → 2859（白名单暂不下调，为后续原地拆分留出余量） | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（2/n，改写） | 见提交说明 | 在 `App.tsx` 中拆出 `TodoSettingsSection`（无状态）和 `SavePathSettingsSection`（保存路径面板与输入框的 ref、"高亮保存路径"的滚动聚焦 effect 一并移入；区块始终挂载，行为不变）。`LayoutEditor` 500 → 401；`App.tsx` 2859 → 2890（低于白名单记录 2892） | `pnpm check`（74/74）、`pnpm build` |
 
 ## 待人工验收
 
