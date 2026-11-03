@@ -1,5 +1,6 @@
+//! Media session lookup, playback commands, metadata and album art.
+
 use base64::Engine;
-use serde::Serialize;
 use std::{
     sync::{Mutex, OnceLock},
     thread,
@@ -18,184 +19,28 @@ use windows::{
     },
     Storage::Streams::{DataReader, IInputStream, IRandomAccessStreamReference},
     Win32::{
-        Media::Audio::Endpoints::{IAudioEndpointVolume, IAudioMeterInformation},
-        Media::Audio::{
-            eCommunications, eConsole, eMultimedia, eRender, IMMDeviceEnumerator,
-            MMDeviceEnumerator,
-        },
         System::Com::{
-            CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_MULTITHREADED,
+            CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED,
         },
         UI::Input::KeyboardAndMouse::{
-            keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_MEDIA_NEXT_TRACK,
-            VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK,
+            keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
         },
     },
 };
 
-const AUDIO_ACTIVE_THRESHOLD: f32 = 0.000015;
-const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
+use super::audio::{read_master_volume, read_system_audio_peak, AUDIO_ACTIVE_THRESHOLD};
+use super::service::*;
+
+pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
-const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
+pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
 /// source app, title and artist, which is stable while a track is playing.
-static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> = OnceLock::new();
+pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> = OnceLock::new();
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct MediaSessionInfo {
-    id: String,
-    label: String,
-    playing: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct MediaState {
-    available: bool,
-    audio_active: bool,
-    audio_peak: f32,
-    playback_status: &'static str,
-    title: Option<String>,
-    artist: Option<String>,
-    album: Option<String>,
-    thumbnail: Option<String>,
-    position_ms: i64,
-    duration_ms: i64,
-    can_seek: bool,
-    can_next: bool,
-    can_previous: bool,
-    shuffle_active: Option<bool>,
-    can_shuffle: bool,
-    repeat_mode: &'static str,
-    can_repeat: bool,
-    volume: f32,
-    source_app: Option<String>,
-    active_session_id: Option<String>,
-    sessions: Vec<MediaSessionInfo>,
-    updated_at: i64,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct AudioLevel {
-    active: bool,
-    peak: f32,
-    updated_at: i64,
-}
-
-#[derive(Clone, Copy)]
-pub(crate) enum MediaCommand {
-    PlayPause,
-    Next,
-    Previous,
-    ToggleShuffle,
-    CycleRepeat,
-}
-
-pub(crate) fn get_state(target: Option<String>) -> Result<MediaState, String> {
-    on_media_thread(move || read_media_state(target.as_deref()))
-}
-
-pub(crate) fn get_audio_level() -> Result<AudioLevel, String> {
-    on_media_thread(|| {
-        let peak = read_system_audio_peak()?;
-        Ok(AudioLevel {
-            active: peak > AUDIO_ACTIVE_THRESHOLD,
-            peak,
-            updated_at: current_unix_millis(),
-        })
-    })
-}
-
-pub(crate) fn run_command(
-    command: MediaCommand,
-    target: Option<String>,
-) -> Result<MediaState, String> {
-    on_media_thread(move || {
-        // When a source is explicitly selected, operate only on it: never fall
-        // back to another session or to global media keys, which could control
-        // an unexpected player.
-        if let Some(id) = target.as_deref() {
-            let manager = request_manager()?;
-            let session = session_by_id(&manager, id)?
-                .ok_or_else(|| "The selected media source is no longer available.".to_string())?;
-            if run_session_command(&session, command)? {
-                thread::sleep(Duration::from_millis(40));
-                return read_media_state_from_manager(&manager, Some(id));
-            }
-            return Err("The selected media source did not accept the command.".to_string());
-        }
-
-        // No source specified: control the active session, then fall back to
-        // global media keys.
-        if let Ok(manager) = request_manager() {
-            if let Ok(Some(session)) = target_session(&manager) {
-                if run_session_command(&session, command).unwrap_or(false) {
-                    thread::sleep(Duration::from_millis(40));
-                    return read_media_state_from_manager(&manager, None);
-                }
-            }
-        }
-
-        if let Some(key_command) = command.as_media_key() {
-            send_media_key(key_command);
-            thread::sleep(Duration::from_millis(80));
-        }
-        read_media_state(None)
-    })
-}
-
-pub(crate) fn seek(position_ms: i64, target: Option<String>) -> Result<MediaState, String> {
-    on_media_thread(move || {
-        let manager = request_manager()?;
-        let session = match target.as_deref() {
-            Some(id) => session_by_id(&manager, id)?
-                .ok_or_else(|| "The selected media source is no longer available.".to_string())?,
-            None => target_session(&manager)?
-                .ok_or_else(|| "No media is currently playing.".to_string())?,
-        };
-
-        let start_ms = session
-            .GetTimelineProperties()
-            .ok()
-            .and_then(|timeline| timeline.StartTime().ok())
-            .map(ticks_to_ms)
-            .unwrap_or(0);
-        let ticks = (start_ms + position_ms.max(0)).saturating_mul(10_000);
-        let operation = session
-            .TryChangePlaybackPositionAsync(ticks)
-            .map_err(|error| media_error("Failed to request the seek", error))?;
-        if pollster::block_on(operation).unwrap_or(false) {
-            thread::sleep(Duration::from_millis(40));
-            read_media_state_from_manager(&manager, target.as_deref())
-        } else {
-            Err("The media source did not accept the seek.".to_string())
-        }
-    })
-}
-
-pub(crate) fn set_volume(level: f32) -> Result<MediaState, String> {
-    on_media_thread(move || {
-        set_master_volume(level)?;
-        read_media_state(None)
-    })
-}
-
-impl MediaCommand {
-    fn as_media_key(self) -> Option<VIRTUAL_KEY> {
-        match self {
-            MediaCommand::PlayPause => Some(VK_MEDIA_PLAY_PAUSE),
-            MediaCommand::Next => Some(VK_MEDIA_NEXT_TRACK),
-            MediaCommand::Previous => Some(VK_MEDIA_PREV_TRACK),
-            MediaCommand::ToggleShuffle | MediaCommand::CycleRepeat => None,
-        }
-    }
-}
-
-fn on_media_thread<T, F>(operation: F) -> Result<T, String>
+pub(super) fn on_media_thread<T, F>(operation: F) -> Result<T, String>
 where
     T: Send + 'static,
     F: FnOnce() -> Result<T, String> + Send + 'static,
@@ -214,7 +59,7 @@ where
     .map_err(|_| "The Windows media control thread panicked.".to_string())?
 }
 
-fn request_manager() -> Result<MediaSessionManager, String> {
+pub(super) fn request_manager() -> Result<MediaSessionManager, String> {
     let operation = MediaSessionManager::RequestAsync().map_err(|error| {
         media_error("Failed to request the Windows media session manager", error)
     })?;
@@ -222,7 +67,7 @@ fn request_manager() -> Result<MediaSessionManager, String> {
         .map_err(|error| media_error("Failed to open the Windows media session manager", error))
 }
 
-fn resolve_session(
+pub(super) fn resolve_session(
     manager: &MediaSessionManager,
     target: Option<&str>,
 ) -> Result<Option<MediaSession>, String> {
@@ -234,7 +79,7 @@ fn resolve_session(
     target_session(manager)
 }
 
-fn session_by_id(
+pub(super) fn session_by_id(
     manager: &MediaSessionManager,
     id: &str,
 ) -> Result<Option<MediaSession>, String> {
@@ -257,7 +102,7 @@ fn session_by_id(
     Ok(None)
 }
 
-fn target_session(manager: &MediaSessionManager) -> Result<Option<MediaSession>, String> {
+pub(super) fn target_session(manager: &MediaSessionManager) -> Result<Option<MediaSession>, String> {
     let current_session = manager.GetCurrentSession().ok();
 
     if current_session.as_ref().is_some_and(is_playing) {
@@ -289,7 +134,7 @@ fn target_session(manager: &MediaSessionManager) -> Result<Option<MediaSession>,
     Ok(current_session.or(first_session))
 }
 
-fn list_sessions(manager: &MediaSessionManager) -> Vec<MediaSessionInfo> {
+pub(super) fn list_sessions(manager: &MediaSessionManager) -> Vec<MediaSessionInfo> {
     let mut entries = Vec::new();
     let Ok(sessions) = manager.GetSessions() else {
         return entries;
@@ -318,7 +163,7 @@ fn list_sessions(manager: &MediaSessionManager) -> Vec<MediaSessionInfo> {
     entries
 }
 
-fn session_id(session: &MediaSession) -> Option<String> {
+pub(super) fn session_id(session: &MediaSession) -> Option<String> {
     session
         .SourceAppUserModelId()
         .ok()
@@ -326,14 +171,14 @@ fn session_id(session: &MediaSession) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-fn is_playing(session: &MediaSession) -> bool {
+pub(super) fn is_playing(session: &MediaSession) -> bool {
     session
         .GetPlaybackInfo()
         .and_then(|info| info.PlaybackStatus())
         .is_ok_and(|status| status == PlaybackStatus::Playing)
 }
 
-fn run_play_pause(session: &MediaSession) -> Result<bool, String> {
+pub(super) fn run_play_pause(session: &MediaSession) -> Result<bool, String> {
     let status = session
         .GetPlaybackInfo()
         .and_then(|info| info.PlaybackStatus())
@@ -352,7 +197,7 @@ fn run_play_pause(session: &MediaSession) -> Result<bool, String> {
     }
 }
 
-fn run_toggle_shuffle(session: &MediaSession) -> Result<bool, String> {
+pub(super) fn run_toggle_shuffle(session: &MediaSession) -> Result<bool, String> {
     let current = session
         .GetPlaybackInfo()
         .ok()
@@ -365,7 +210,7 @@ fn run_toggle_shuffle(session: &MediaSession) -> Result<bool, String> {
     pollster::block_on(operation).map_err(|error| media_error("Failed to change shuffle", error))
 }
 
-fn run_cycle_repeat(session: &MediaSession) -> Result<bool, String> {
+pub(super) fn run_cycle_repeat(session: &MediaSession) -> Result<bool, String> {
     let current = session
         .GetPlaybackInfo()
         .ok()
@@ -384,7 +229,7 @@ fn run_cycle_repeat(session: &MediaSession) -> Result<bool, String> {
         .map_err(|error| media_error("Failed to change repeat mode", error))
 }
 
-fn run_session_command(session: &MediaSession, command: MediaCommand) -> Result<bool, String> {
+pub(super) fn run_session_command(session: &MediaSession, command: MediaCommand) -> Result<bool, String> {
     match command {
         MediaCommand::PlayPause => run_play_pause(session),
         MediaCommand::Next => pollster::block_on(
@@ -404,7 +249,7 @@ fn run_session_command(session: &MediaSession, command: MediaCommand) -> Result<
     }
 }
 
-fn send_media_key(key: VIRTUAL_KEY) {
+pub(super) fn send_media_key(key: VIRTUAL_KEY) {
     let key_code = key.0 as u8;
 
     unsafe { keybd_event(key_code, 0, KEYBD_EVENT_FLAGS(0), 0) };
@@ -412,14 +257,14 @@ fn send_media_key(key: VIRTUAL_KEY) {
     unsafe { keybd_event(key_code, 0, KEYEVENTF_KEYUP, 0) };
 }
 
-fn read_media_state(target: Option<&str>) -> Result<MediaState, String> {
+pub(super) fn read_media_state(target: Option<&str>) -> Result<MediaState, String> {
     match request_manager() {
         Ok(manager) => read_media_state_from_manager(&manager, target),
         Err(_) => read_media_state_without_session(),
     }
 }
 
-fn read_media_state_from_manager(
+pub(super) fn read_media_state_from_manager(
     manager: &MediaSessionManager,
     target: Option<&str>,
 ) -> Result<MediaState, String> {
@@ -517,7 +362,7 @@ fn read_media_state_from_manager(
     })
 }
 
-fn read_media_state_without_session() -> Result<MediaState, String> {
+pub(super) fn read_media_state_without_session() -> Result<MediaState, String> {
     let audio_peak = read_system_audio_peak().unwrap_or(0.0);
     let audio_active = audio_peak > AUDIO_ACTIVE_THRESHOLD;
 
@@ -532,7 +377,7 @@ fn read_media_state_without_session() -> Result<MediaState, String> {
 }
 
 impl MediaState {
-    fn empty() -> Self {
+    pub(super) fn empty() -> Self {
         MediaState {
             available: false,
             audio_active: false,
@@ -560,7 +405,7 @@ impl MediaState {
     }
 }
 
-fn read_timeline(session: &MediaSession, is_playing: bool, playback_rate: f64) -> (i64, i64) {
+pub(super) fn read_timeline(session: &MediaSession, is_playing: bool, playback_rate: f64) -> (i64, i64) {
     let Ok(timeline) = session.GetTimelineProperties() else {
         return (0, 0);
     };
@@ -591,7 +436,7 @@ fn read_timeline(session: &MediaSession, is_playing: bool, playback_rate: f64) -
     (elapsed, duration)
 }
 
-fn read_metadata(
+pub(super) fn read_metadata(
     session: &MediaSession,
     source_app: Option<&str>,
 ) -> (Option<String>, Option<String>, Option<String>, Option<String>) {
@@ -617,7 +462,7 @@ fn read_metadata(
     (title, artist, album, thumbnail)
 }
 
-fn cached_thumbnail(
+pub(super) fn cached_thumbnail(
     source_app: Option<&str>,
     title: Option<&str>,
     artist: Option<&str>,
@@ -648,7 +493,7 @@ fn cached_thumbnail(
     value
 }
 
-fn read_thumbnail(reference: &IRandomAccessStreamReference) -> Option<String> {
+pub(super) fn read_thumbnail(reference: &IRandomAccessStreamReference) -> Option<String> {
     let stream = pollster::block_on(reference.OpenReadAsync().ok()?).ok()?;
     let size = stream.Size().ok()?;
     if size == 0 || size > MAX_THUMBNAIL_BYTES {
@@ -672,7 +517,7 @@ fn read_thumbnail(reference: &IRandomAccessStreamReference) -> Option<String> {
     Some(format!("data:{mime};base64,{encoded}"))
 }
 
-fn detect_image_mime(bytes: &[u8]) -> &'static str {
+pub(super) fn detect_image_mime(bytes: &[u8]) -> &'static str {
     if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
         "image/jpeg"
     } else if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
@@ -688,65 +533,8 @@ fn detect_image_mime(bytes: &[u8]) -> &'static str {
     }
 }
 
-fn read_master_volume() -> Option<f32> {
-    unsafe {
-        let enumerator: IMMDeviceEnumerator =
-            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
-        let device = enumerator
-            .GetDefaultAudioEndpoint(eRender, eMultimedia)
-            .ok()?;
-        let endpoint: IAudioEndpointVolume = device.Activate(CLSCTX_ALL, None).ok()?;
-        let level = endpoint.GetMasterVolumeLevelScalar().ok()?;
-        Some(level.clamp(0.0, 1.0))
-    }
-}
 
-fn set_master_volume(level: f32) -> Result<(), String> {
-    unsafe {
-        let enumerator: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
-            .map_err(|error| media_error("Failed to open the Windows audio device manager", error))?;
-        let device = enumerator
-            .GetDefaultAudioEndpoint(eRender, eMultimedia)
-            .map_err(|error| media_error("Failed to open the default audio output", error))?;
-        let endpoint: IAudioEndpointVolume = device
-            .Activate(CLSCTX_ALL, None)
-            .map_err(|error| media_error("Failed to open the audio volume control", error))?;
-        endpoint
-            .SetMasterVolumeLevelScalar(level.clamp(0.0, 1.0), std::ptr::null())
-            .map_err(|error| media_error("Failed to change the system volume", error))?;
-        Ok(())
-    }
-}
-
-fn read_system_audio_peak() -> Result<f32, String> {
-    unsafe {
-        let enumerator: IMMDeviceEnumerator =
-            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).map_err(|error| {
-                media_error("Failed to open the Windows audio device manager", error)
-            })?;
-        let mut peak = 0.0_f32;
-        let mut found_meter = false;
-
-        for role in [eMultimedia, eConsole, eCommunications] {
-            if let Ok(device) = enumerator.GetDefaultAudioEndpoint(eRender, role) {
-                if let Ok(meter) = device.Activate::<IAudioMeterInformation>(CLSCTX_ALL, None) {
-                    found_meter = true;
-                    if let Ok(value) = meter.GetPeakValue() {
-                        peak = peak.max(value);
-                    }
-                }
-            }
-        }
-
-        if found_meter {
-            Ok(peak.clamp(0.0, 1.0))
-        } else {
-            Err("No default Windows audio output was available.".to_string())
-        }
-    }
-}
-
-fn repeat_mode_label(mode: RepeatMode) -> &'static str {
+pub(super) fn repeat_mode_label(mode: RepeatMode) -> &'static str {
     match mode {
         RepeatMode::None => "none",
         RepeatMode::Track => "track",
@@ -757,7 +545,7 @@ fn repeat_mode_label(mode: RepeatMode) -> &'static str {
 
 /// Turns a raw AppUserModelId (e.g. `Spotify.exe`, `chrome.exe`, a packaged app
 /// family name) into a short, human-friendly source label for the island.
-fn friendly_app_label(id: &str) -> String {
+pub(super) fn friendly_app_label(id: &str) -> String {
     let lowered = id.to_ascii_lowercase();
     let known = [
         ("spotify", "Spotify"),
@@ -807,21 +595,21 @@ fn friendly_app_label(id: &str) -> String {
     id.to_string()
 }
 
-fn non_empty(value: Option<String>) -> Option<String> {
+pub(super) fn non_empty(value: Option<String>) -> Option<String> {
     value
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
 }
 
-fn ticks_to_ms(span: TimeSpan) -> i64 {
+pub(super) fn ticks_to_ms(span: TimeSpan) -> i64 {
     span.Duration / 10_000
 }
 
-fn media_error(context: &str, error: windows::core::Error) -> String {
+pub(super) fn media_error(context: &str, error: windows::core::Error) -> String {
     format!("{context}: {error}")
 }
 
-fn current_unix_millis() -> i64 {
+pub(super) fn current_unix_millis() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis() as i64)
