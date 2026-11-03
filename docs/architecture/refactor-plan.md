@@ -21,7 +21,7 @@
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 0（已拆为 `qq_mail/`） | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 141（只剩组装代码，已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
-| `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
+| `src-tauri/src/clipboard_history.rs` | 1068 | 0（已拆为 `clipboard_history/`） | 1068 / 800 | 0 | 生产代码 |
 | `src-tauri/src/media_control.rs` | 829 | 0（已拆为 `media_control/`） | 829 / 800 | 0 | 生产代码 |
 | `src-tauri/src/qq_notifications.rs` | 1081 | 0（已拆为 `qq_notifications/`） | 789 / 800 | 292 / 150 | 测试 |
 
@@ -144,7 +144,7 @@
 - [x] **5.4** 拆分 `qq_mail/`。
 - [x] **5.5** 拆分 `qq_notifications/`。
   - 实际职责比映射多一块：查找并激活 QQ 窗口放在 `launcher.rs`；通知缓冲区即映射中的 `history.rs`。
-- [ ] **5.6** 拆分 `clipboard_history/`。
+- [x] **5.6** 拆分 `clipboard_history/`。完成后白名单的 `lines` 与 `inlineTests` 都已清空（7.1 只剩删除白名单机制中的存量条目说明）。
 - [x] **5.7** 拆分 `media_control/`。（在 5.3 之前完成，见 5.2 的说明）
   - `lib.rs` 中的 10 个媒体命令一并迁入 `media_control/mod.rs`。命令 `get_audio_level` 与内部函数同名，因此内部 API（状态类型、`get_state` / `get_audio_level` / `run_command` / `seek` / `set_volume`、`MediaCommand`）放在 `service.rs`，命令里的 `media_control::` 路径改为 `service::`。
 - [ ] **5.8** 合并 `wechat_reminders.rs` 与 `wechat_reminder_source.rs`，形成 `wechat_reminders/`。
@@ -253,6 +253,8 @@
 | 2026-11-03 | 5.4（2/2，格式化） | `a6e71dc` | 对 `qq_mail/` 运行 rustfmt（5 个文件 +61/-22，最大生产文件 `session.rs` 449 行） | 同上，桌面快捷方式已核对 |
 | 2026-11-03 | 5.5（1/2，搬迁） | `2c12ab1` | `qq_notifications.rs`（1083）按顶层块原样拆为 `qq_notifications/`：`mod.rs`（259，类型、服务状态、`init`、7 个命令、诊断、`publish`）、`listener.rs`（287，WinRT 监听与注册修复）、`history.rs`（37，通知缓冲）、`launcher.rs`（252，QQ 窗口查找与激活）、`tests.rs`（304）。测试白名单条目删除。函数体不变；修复脚本的 `include_str!` 多一层 `../`；`tests.rs` 补上原模块根的导入。逐行比较只有该路径差异 | `cargo test`（63 / 5）、clippy 83 条；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.5（2/2，格式化） | `ef6b311` | 对 `qq_notifications/` 运行 rustfmt（4 个文件 +21/-21） | 同上，桌面快捷方式已核对 |
+| 2026-11-03 | 5.6（1/2，搬迁） | `a729752` | `clipboard_history.rs`（1068）按顶层块原样拆为 `clipboard_history/`：`mod.rs`（235，类型、服务状态、7 个命令、`init`）、`service.rs`（589，服务实现、剪贴板读写、监听窗口）、`store.rs`（99，历史文件、PNG 与缩略图）、`hotkey.rs`（211，快捷键解析与注册）。最后一条生产代码白名单条目删除，白名单清空。`mod.rs` 重新导出 `parse_shortcut_binding`，`translation.rs` 的导入路径不变。逐行比较无差异 | `cargo test`（63 / 5）、clippy 83 条；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.6（2/2，格式化） | `9b7393f` | 对 `clipboard_history/` 运行 rustfmt（4 个文件 +28/-28） | 同上，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -284,6 +286,7 @@
 | `7ac01ed`、`bb66b4d` | 5.3 | 设置窗口：开机自启的读取与切换（注册表 `HKCU\…\Run` 的 `FocuSD Island` 值）、检查更新（含系统代理）；主窗口保存待办到 Markdown 与默认保存目录；托盘菜单的显示 / 隐藏 / 设置 / 退出与左键单击唤出。 |
 | `8008d5a`、`a6e71dc` | 5.4 | QQ 邮箱（中英文）：连接（授权码写入凭据管理器）、开关、刷新、新邮件推送（IDLE）与 60 秒兜底刷新、阅读邮件（HTML / 纯文本、内嵌 cid 图片）、断开后凭据删除、重启后自动恢复。可在 `pnpm dev` 中打开 `/tests/mail-reader.html` 辅助检查前端部分。 |
 | `2c12ab1`、`ef6b311` | 5.5 | QQ 通知（中英文）：开关、首次请求通知权限、打开系统通知设置、收到 QQ 消息后列表与折叠态预览更新、清空、打开 QQ（已运行时激活窗口，未运行时启动）、通知注册损坏时的自动修复、设置窗口的通知诊断。 |
+| `a729752`、`9b7393f` | 5.6 | 剪贴板（同 2.3 检查项），重点看原生侧：复制文字与图片后列表实时更新、图片缩略图、复制回剪贴板、重启后历史与收藏保留、全局快捷键打开剪贴板页、在设置中修改快捷键后重新注册、快捷翻译快捷键仍可录制与注册（复用快捷键解析）。 |
 
 ## 待处理问题
 
