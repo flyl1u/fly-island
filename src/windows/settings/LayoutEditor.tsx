@@ -16,6 +16,7 @@ import { WeChatReminderControls, type WeChatRemindersController } from "../../fe
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { SavePathState } from "../../features/todos/types";
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
+import "./LayoutEditor.css";
 
 export function LayoutEditor({
   locale,
