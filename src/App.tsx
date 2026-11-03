@@ -74,7 +74,7 @@ import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
 import { MusicWaveButton } from "./features/media/MusicWaveButton";
 import { DEFAULT_MEDIA_STATE, isSameMediaState } from "./features/media/mediaState";
 import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, type KnownMediaSource } from "./features/media/storage";
-import type { AudioLevel, MediaPlaybackStatus, MediaState } from "./features/media/api";
+import { getAudioLevel, getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./features/media/api";
 import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
 import { saveTodoMarkdown } from "./features/todos/api";
 import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
@@ -3135,9 +3135,9 @@ function IslandApp() {
     isRefreshingMediaState.current = true;
 
     try {
-      const nextMediaState = await invoke<MediaState>("get_media_state", {
-        target: mediaTargetRef.current ?? undefined,
-      });
+      const nextMediaState = await getMediaState(
+        mediaTargetRef.current ?? undefined,
+      );
 
       setMediaState((currentState) => {
         const intent = mediaPlaybackIntent.current;
@@ -3180,12 +3180,7 @@ function IslandApp() {
   }, []);
 
   const runMediaCommand = useCallback(
-    async (
-      command:
-        | "media_play_pause"
-        | "media_next"
-        | "media_previous",
-    ) => {
+    async (command: MediaCommand) => {
       if (isRunningMediaCommand.current) {
         return;
       }
@@ -3226,7 +3221,7 @@ function IslandApp() {
       setIsMediaTrackChanging(isTrackChange);
       setMediaCommandError(null);
       try {
-        const nextMediaState = await invoke<MediaState>(command, { target });
+        const nextMediaState = await sendMediaCommand(command, target);
 
         if (!isTransport) {
           setMediaState((currentState) =>
@@ -3319,7 +3314,7 @@ function IslandApp() {
       isRefreshingAudioLevel.current = true;
 
       try {
-        const audioLevel = await invoke<AudioLevel>("get_audio_level");
+        const audioLevel = await getAudioLevel();
 
         if (didCancel) {
           return;
