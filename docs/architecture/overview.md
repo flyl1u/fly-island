@@ -57,10 +57,11 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `MediaWaveform.tsx/.css` | `features/media/` |
 | `App.tsx`：`ClipboardHistoryPanel`，快捷键解析与匹配 | `features/clipboard/`（快捷键逻辑放 `shortcut.ts`） |
 | `App.tsx`：`LayoutEditor`、`AppearanceModeControl`，设置与预设的 load / normalize / merge | `features/appearance/` |
+| `App.tsx`：`hexToRgba` | `features/appearance/`（它以外观默认值 `DEFAULT_SETTINGS.pulseColor` 作回退色，不是纯通用函数，随 2.4 迁移） |
 | `App.tsx`：`SliderControl`、`ColorControl`、`ToggleControl`、`NumberControl` | `components/controls/` |
 | `App.tsx`：`LocaleControl` | `i18n/LocaleControl.tsx` |
 | `App.tsx`：代理状态的 label / 视觉状态函数 | `features/agent-status/` |
-| `App.tsx`：`clamp`、`hexToRgba`、颜色校验、日期格式化、`getErrorMessage` | `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` |
+| `App.tsx`：`clamp`、颜色校验（`HEX_COLOR_PATTERN`、`getColorSetting`）、日期格式化（`getLocalDateString`、`getDisplayDateParts`）、`getErrorMessage` | `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` |
 | `App.css` | 拆分到各组件的同名 `.css`，全局部分放到 `styles/tokens.css`、`base.css`、`fonts.css` |
 | `Messages.tsx/.css`、`MessageSourceIcon.tsx`、`CollapsedMessageContent.tsx/.css`、`messagePreview.ts`、`qqNotificationTiming.ts` | `features/messages/` |
 | `QQMail.tsx/.css` | `features/messages/qq-mail/` |

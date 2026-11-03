@@ -14,7 +14,6 @@ import {
   STORAGE_KEY,
   TODO_SAVE_DIRECTORY_STORAGE_KEY,
   createTodoId,
-  getErrorMessage,
   isDefaultSettingPreset,
   isSameSettings,
   loadSaveDirectory,
@@ -35,6 +34,7 @@ import {
   type SettingsFocusSection,
 } from "./App";
 import { useLocale, useTranslation } from "./i18n";
+import { getErrorMessage } from "./utils/error";
 import { useQQNotifications } from "./QQNotifications";
 import { useWeChatReminders } from "./WeChatReminders";
 import "./SettingsWindow.css";

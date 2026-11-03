@@ -73,6 +73,9 @@ import {
   type Translations,
 } from "./i18n";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
+import { clamp } from "./utils/number";
+import { HEX_COLOR_PATTERN, getColorSetting } from "./utils/color";
+import { getDisplayDateParts, getLocalDateString } from "./utils/date";
 import "./App.css";
 
 export type IslandMode = "collapsed" | "expanded";
@@ -432,21 +435,6 @@ type LegacyIslandSettings = Partial<IslandSettings> & {
   taskTitleColor?: string;
   pendingTodoColor?: string;
 };
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
-
-const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
-
-function getColorSetting(value: unknown, fallback: string) {
-  return typeof value === "string" && HEX_COLOR_PATTERN.test(value)
-    ? value
-    : fallback;
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function isAgentAttentionPhase(phase: AgentTaskPhase) {
   return phase === "failed" || phase === "stale";
@@ -972,35 +960,6 @@ function loadMusicSourcePriority(): KnownMediaSource[] {
   } catch {
     return [];
   }
-}
-
-function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function getDisplayDateParts(date: string, t: Translations) {
-  const [fallbackYear = date, fallbackMonth = "", fallbackDay = ""] =
-    date.split("-");
-  const parsedDate = new Date(`${date}T00:00:00`);
-  const hasValidDate = !Number.isNaN(parsedDate.getTime());
-  const weekdayFormatter = new Intl.DateTimeFormat(t.localeTag, {
-    weekday: "long",
-  });
-
-  return {
-    year: hasValidDate ? String(parsedDate.getFullYear()) : fallbackYear,
-    month: hasValidDate
-      ? String(parsedDate.getMonth() + 1).padStart(2, "0")
-      : fallbackMonth,
-    day: hasValidDate
-      ? String(parsedDate.getDate()).padStart(2, "0")
-      : fallbackDay,
-    weekday: hasValidDate ? weekdayFormatter.format(parsedDate) : "",
-  };
 }
 
 function loadCurrentTodoDate() {
@@ -5620,7 +5579,6 @@ export {
   TODO_SAVE_DIRECTORY_STORAGE_KEY,
   LayoutEditor,
   createTodoId,
-  getErrorMessage,
   isDefaultSettingPreset,
   isSameSettings,
   loadSaveDirectory,
