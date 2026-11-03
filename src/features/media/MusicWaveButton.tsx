@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { clamp } from "../../utils/number";
+import "./MusicWaveButton.css";
 
 export function MusicWaveButton({
   isAvailable,
