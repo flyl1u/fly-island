@@ -4,6 +4,7 @@ import { useTranslation } from "../../i18n";
 import type { MediaState } from "./api";
 import { MediaWaveform } from "./MediaWaveform";
 import type { KnownMediaSource } from "./storage";
+import "./MusicPlayerPanel.css";
 
 export function MusicPlayerPanel({
   mediaState,
