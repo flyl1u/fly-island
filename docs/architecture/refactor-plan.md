@@ -20,9 +20,9 @@
 | `src/App.css` | 3865 | 0（已删除） | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
-| `src-tauri/src/lib.rs` | 1973 | 499（生产代码 451，已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
+| `src-tauri/src/lib.rs` | 1973 | 430（已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
 | `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
-| `src-tauri/src/media_control.rs` | 829 | 829 | 829 / 800 | 0 | 生产代码 |
+| `src-tauri/src/media_control.rs` | 829 | 0（已拆为 `media_control/`） | 829 / 800 | 0 | 生产代码 |
 | `src-tauri/src/qq_notifications.rs` | 1081 | 1083 | 789 / 800 | 292 / 150 | 测试 |
 
 其他基线指标：
@@ -142,7 +142,8 @@
 - [ ] **5.4** 拆分 `qq_mail/`。
 - [ ] **5.5** 拆分 `qq_notifications/`。
 - [ ] **5.6** 拆分 `clipboard_history/`。
-- [ ] **5.7** 拆分 `media_control/`。
+- [x] **5.7** 拆分 `media_control/`。（在 5.3 之前完成，见 5.2 的说明）
+  - `lib.rs` 中的 10 个媒体命令一并迁入 `media_control/mod.rs`。命令 `get_audio_level` 与内部函数同名，因此内部 API（状态类型、`get_state` / `get_audio_level` / `run_command` / `seek` / `set_volume`、`MediaCommand`）放在 `service.rs`，命令里的 `media_control::` 路径改为 `service::`。
 - [ ] **5.8** 合并 `wechat_reminders.rs` 与 `wechat_reminder_source.rs`，形成 `wechat_reminders/`。
 
 **验收**（每一步都要满足）：`cargo test` 的通过数量不少于基线；`pnpm tauri build --no-bundle` 成功，并按根目录规则同步桌面快捷方式；涉及窗口的步骤需要在 `pnpm tauri dev` 中手动检查。
@@ -241,6 +242,8 @@
 | 2026-11-03 | 5.1（2/2，格式化） | `3eca09a` | 只对 `island/` 运行 rustfmt（4 个文件 +66/-19，`tests.rs` 197 行），`lib.rs` 不动，5.3 后再格式化 | `cargo test`（63 / 5）、clippy 84 条、`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.2（1/2，搬迁） | `179b8ef` | `lib.rs` 生产代码 1133 → 451（低于 800，白名单条目删除）。拆到 `agent_status/`：`mod.rs`（3 个命令、`AgentHooksInstallResult`、钩子脚本常量与安装、`write_text_file`）、`snapshot.rs`（状态类型、快照归一化、毫秒时间戳）、`markers.rs`（运行标记与保持文件）、`codex_hooks.rs`、`claude_hooks.rs`。函数体不变；`include_str!` 路径因目录加深一层多一个 `../`，嵌入的仍是同一份脚本。`lib.rs` 测试模块去掉不再需要的 `use super::*`，自行导入 `json` / `Value`。去缩进、可见性与路径前缀后逐行比较，差异只有 `include_str!` 路径 | `cargo test`（63 / 5）、clippy 84 条且各类数量不变、无 rustc 告警；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.2（2/2，格式化） | `4dc4908` | 只对 `agent_status/` 运行 rustfmt（4 个文件 +31/-8，合计 746 行） | 同上，桌面快捷方式已核对 |
+| 2026-11-03 | 5.7（1/2，搬迁） | `c1a4730` | `media_control.rs`（829）拆为 `media_control/`：`mod.rs`（10 个命令，来自 `lib.rs`）、`service.rs`（状态类型与 5 个入口函数）、`session.rs`（会话查找、播放命令、元数据、封面缓存、COM 线程）、`audio.rs`（音量与电平），白名单条目删除；`lib.rs` 499 → 430。函数体不变，多余的 `use` 由 `cargo fix` 清理（当时没有其他 rustc 告警）；逐行比较的差异只有 `service::` 路径前缀 | `cargo test`（63 / 5）、clippy 84 条且各类数量不变；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.7（2/2，格式化） | `829dd2c` | 对 `media_control/` 运行 rustfmt（4 个文件 +56/-43，最大 `session.rs` 639 行） | 同上，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -268,6 +271,7 @@
 | `39afbc3` | 4.2 | 与 4.1 同一轮检查即可：主窗口、设置窗口、翻译窗口（中英文、经典 / 液态玻璃）与 `47b9fe2` 截图对比无差异，重点看焦点框颜色、圆角药丸按钮、待办纸张文字颜色、设置区块间距。这是 Phase 4 验收要求的截图对比。 |
 | `4846273`、`3eca09a` | 5.1 | `pnpm tauri dev` 或桌面快捷方式启动：首次启动位置与显示、折叠 / 展开时原生窗口尺寸、贴边收起与唤出动画、拖动后松手的顶边吸附与位置保存、重置位置、窗口外点击穿透（折叠态与展开态、贴边与分离的圆角处）、液态玻璃开关、托盘显示 / 隐藏与单实例唤起。 |
 | `179b8ef`、`4dc4908` | 5.2 | 设置窗口（中英文）：AI 代理区块安装钩子（脚本写入应用数据目录，`~/.codex/config.toml` 与 `~/.claude/settings.json` 中的托管块与原有内容保留），状态读取、运行中 / 过期显示、清除状态；主窗口代理状态随 Codex / Claude Code 实际运行变化。 |
+| `c1a4730`、`829dd2c` | 5.7 | 音乐页（中英文）：多个播放器同时存在时的会话列表与控制目标、播放 / 暂停 / 上一首 / 下一首、随机与循环、拖动进度、音量调节、封面与曲目信息、有声音时波形跳动。 |
 
 ## 待处理问题
 
