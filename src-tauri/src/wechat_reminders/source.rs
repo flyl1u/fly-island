@@ -1,23 +1,16 @@
-use crate::win32::registry;
+use crate::win32::{process, registry};
 use std::{cell::RefCell, path::PathBuf};
 use windows::{
-    core::{w, Error, PWSTR},
+    core::{w, Error},
     Win32::{
-        Foundation::{CloseHandle, HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
-        System::{
-            LibraryLoader::GetModuleHandleW,
-            Registry::HKEY_CURRENT_USER,
-            Threading::{
-                OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
-                PROCESS_QUERY_LIMITED_INFORMATION,
-            },
-        },
+        Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
+        System::{LibraryLoader::GetModuleHandleW, Registry::HKEY_CURRENT_USER},
         UI::WindowsAndMessaging::{
             CreateWindowExW, DefWindowProcW, DeregisterShellHookWindow, DestroyWindow,
-            DispatchMessageW, GetForegroundWindow, GetWindowThreadProcessId, PeekMessageW,
-            RegisterClassW, RegisterShellHookWindow, RegisterWindowMessageW, TranslateMessage,
-            UnregisterClassW, HSHELL_REDRAW, HSHELL_WINDOWACTIVATED, HSHELL_WINDOWCREATED, MSG,
-            PM_REMOVE, WNDCLASSW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
+            DispatchMessageW, GetForegroundWindow, PeekMessageW, RegisterClassW,
+            RegisterShellHookWindow, RegisterWindowMessageW, TranslateMessage, UnregisterClassW,
+            HSHELL_REDRAW, HSHELL_WINDOWACTIVATED, HSHELL_WINDOWCREATED, MSG, PM_REMOVE, WNDCLASSW,
+            WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -75,21 +68,8 @@ unsafe fn matches_window(window: HWND, executable: &str) -> Result<bool, ()> {
     if window.is_invalid() {
         return Ok(false);
     }
-    let mut process_id = 0;
-    GetWindowThreadProcessId(window, Some(&mut process_id));
-    let process =
-        OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).map_err(|_| ())?;
-    let mut path = [0u16; 32768];
-    let mut length = path.len() as u32;
-    let result = QueryFullProcessImageNameW(
-        process,
-        PROCESS_NAME_WIN32,
-        PWSTR(path.as_mut_ptr()),
-        &mut length,
-    );
-    let _ = CloseHandle(process);
-    result.map_err(|_| ())?;
-    Ok(normalized_path(&String::from_utf16_lossy(&path[..length as usize])) == executable)
+    let path = process::image_path(process::window_process_id(window)).ok_or(())?;
+    Ok(normalized_path(&path) == executable)
 }
 
 unsafe extern "system" fn window_proc(
