@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 1870 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 1767 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -220,7 +220,8 @@
 | 2026-11-03 | Phase 2 验收 | — | `App.tsx` 5644 → 2212（-3432，阶段目标 -600 已达成），`App.css` 3865 → 912，`QQMail.tsx` 移出白名单；存量 IPC 文件只剩 `App.tsx`；ESLint 0 error / 7 warn | `pnpm check`（78/78）、`pnpm build`；各面板与回归页检查见"待人工验收" |
 | 2026-11-03 | 3.1（1/2，搬迁） | `151157c` | `IslandMode`、`IslandPage`、`NativeGlassState` 搬到 `windows/island/types.ts`，位置存储 key、`IslandPosition`、`loadIslandPosition` 搬到 `storage.ts`，尺寸常量与 `getCollapsedIslandWidth`、`getTodoVisualRows` 搬到 `layout.ts`；新增 `tests/island-window.test.mjs`（3 个用例）。`App.tsx` 2212 → 2142，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
 | 2026-11-03 | 3.1（2/2，改写） | `d2b7ab0` | 原生窗口同步抽到 `useIslandWindow`（组合）、`useNativeLayout`（缩放与边距，每帧至多一次）、`useIslandPosition`（拖拽位置）。命令收口到 `windows/island/api.ts`，位置写入收口到 `storage.ts` 的 `saveIslandPosition` / `clearIslandPosition`（仍直接读写 `localStorage`，内容与时机不变），翻译窗口开关收口到 `windows/translation/api.ts`。展开高度仍由 `IslandApp` 计算后传入；贴边收起的 mode 状态留在 `IslandApp`。`App.tsx` 2142 → 1907，白名单同步下调。存量 IPC 豁免清空，ESLint warn 7 → 5：少掉的是 `App.tsx` 的 `invoke` / `listen`，5 条 exhaustive-deps 原样保留（2 条随代码移到新 hook）。外部 ref 与 setter 补进依赖数组，引用稳定，回调重建时机不变 | `pnpm check`（81/81）、`pnpm build`；拖拽、重置位置与失焦折叠待人工验收 |
-| 2026-11-03 | 3.2（1/n，改写） | 见提交说明 | 代理状态的 state、刷新锁、200ms 轮询原样抽到 `features/agent-status/useAgentStatus.ts`（47），比较逻辑与轮询间隔不变；`App.tsx` 1907 → 1870，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
+| 2026-11-03 | 3.2（1/n，改写） | `0a04afc` | 代理状态的 state、刷新锁、200ms 轮询原样抽到 `features/agent-status/useAgentStatus.ts`（47），比较逻辑与轮询间隔不变；`App.tsx` 1907 → 1870，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
+| 2026-11-03 | 3.2（2/n，改写） | 见提交说明 | 剪贴板历史的 state、6 个操作回调、变更与快捷键两个监听原样抽到 `features/clipboard/useClipboardHistory.ts`（127）。快捷键触发时要开关页面，属于窗口行为，`toggleClipboardHistory` 留在 `IslandApp`，作为 `onShortcut` 传入，监听的依赖与重订阅时机不变；窗口内 keydown 匹配快捷键的 effect 也留在 `IslandApp`。`App.tsx` 1870 → 1767，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；剪贴板页与快捷键待人工验收（同 2.3 的检查项） |
 
 ## 待人工验收
 
