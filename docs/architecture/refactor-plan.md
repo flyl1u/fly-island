@@ -17,7 +17,7 @@
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 0（已删除） | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
+| `src/App.css` | 3865 | 0（已删除） | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
@@ -119,9 +119,10 @@
 
 ## Phase 4：CSS 收尾
 
-- [ ] **4.1** 把 `App.css` 中剩余的样式按组件分配到同名 `.css`。无法归属的样式放到 `windows/island/IslandApp.css`。
+- [x] **4.1** 把 `App.css` 中剩余的样式按组件分配到同名 `.css`。无法归属的样式放到 `windows/island/IslandApp.css`。
+  - 拆完后 `App.css` 已为空，删除文件与白名单条目（原 4.3）在同一个搬迁提交中完成，4.3 随之勾选；4.2 是改写步骤，单独提交。
 - [ ] **4.2** 把散落的颜色、圆角、间距硬编码替换为 `tokens.css` 中的变量（只替换数值完全相同的，不改变视觉效果）。
-- [ ] **4.3** 删除 `src/App.css`，从白名单中移除。
+- [x] **4.3** 删除 `src/App.css`，从白名单中移除。（随 4.1 完成）
 
 **验收**：所有 `.css` 文件不超过 500 行；主窗口、设置窗口、翻译窗口在中英文下截图对比都没有差异。
 
@@ -229,6 +230,7 @@
 | 2026-11-03 | 3.3（1/n，改写） | 19b2329 | 迁移前先把 `IslandApp` 压到组件上限内：外观设置的 state、持久化与跨窗口同步抽到 `features/appearance/useIslandSettings.ts`（30，改用已有的 `saveSettings`）；mode / 贴边 / 当前页与剪贴板开关抽到 `windows/island/useIslandNavigation.ts`（67）；窗口内快捷键抽到 `useIslandKeyboard.ts`（35）；折叠态待办标题、计数与宽度抽到 `useCollapsedTodo.ts`（52）；展开高度与舞台 CSS 变量改为纯函数 `expandedHeight.ts`（51）、`stageStyle.ts`（51）。舞台样式的 memo 依赖由逐个设置字段改为整个 `settings`，其他设置变化时会重新计算出相同的值，渲染结果不变。`IslandApp` 194 行，直接 `useState` 2 个；`App.tsx` 913 → 747，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；折叠 / 展开 / 贴边、页面切换、Esc 与剪贴板快捷键、外观设置同步待人工验收 |
 | 2026-11-03 | 3.3（2/n，搬迁）、3.4 | 9fb51f2 | `IslandApp` 原样搬到 `windows/island/IslandApp.tsx`（具名导出），`App` 包装去掉，`main.tsx` 与 `tests/i18n.tsx` 直接渲染 `IslandApp`。`IslandShell`（约 490 行）拆分搬到 `IslandShell.tsx`，折叠条与展开态页头拆成 `IslandCollapsedBar.tsx`、`IslandHeader.tsx`，毛玻璃指针、首帧预热、窗口拖拽手势拆成 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`；JSX 与逻辑逐行一致（去空白比对），DOM 结构与 class 名不变。`useIslandAutomation.ts` 移到 `windows/island/`，同步测试路径。CSS 顺序：`App.css` 仍是最后一个导入；`IslandShell` 在页面面板之后导入，只有 `CollapsedMessageContent.css` 的位置后移，它与之后的样式没有共用选择器。回归页 `collapsed-message-animation.tsx` 先以副作用方式导入 `IslandApp`，保持原来的样式集合与顺序。删除 `src/App.tsx` 及其白名单条目 | `pnpm check`（81/81）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同，仅 `CollapsedMessageContent.css` 的 21 条规则位置后移。回归页 `collapsed-message-animation.html?test=1` 24/24 通过；`i18n.html?test=1` 存量失败（见“待处理问题”3.3），临时补齐 mock 后确认 `IslandApp` 正常渲染（折叠条、页头 9 个按钮、舞台 CSS 变量），mock 改动未提交。折叠条点击 / 拖动、毛玻璃指针高光、首次展开待人工验收 |
 | 2026-11-03 | Phase 3 验收 | 见提交说明 | 自动检查部分达标（数据见 Phase 3 验收说明）；ESLint 仍为 5 条存量 warning，位置随搬迁变为 `IslandApp.tsx`、`QQMail.tsx`、`useIslandWindow.ts`、`useNativeLayout.ts`、`TranslationWindow.tsx` | `pnpm check`（81/81）、`pnpm build`；`pnpm tauri dev` 手动检查待人工验收 |
+| 2026-11-03 | 4.1、4.3（搬迁） | `2d82e1f` | `App.css` 912 → 0（删除），白名单条目删除。按行号原样切分：`windows/island/IslandShell.css`（329，外壳、毛玻璃、折叠 / 展开容器）、`IslandCollapsedBar.css`（128）、`IslandHeader.css`（154，页头、页面圆点、窗口按钮）由各组件自己导入；`features/messages/MessageSourceIcon.css`（9）；跨领域规则（`.stage` 与像素字体覆盖、`.icon-button` 一族、液态玻璃面板背景、`save-check-icon`、减少动效大列表）放到 `IslandApp.css`（258），仍是 `IslandApp` 的最后一个导入；未使用的 `.clipboard-settings-panel`、`.color-panel` 追加到 `ClipboardSettingsSection.css`、`ColorSettingsSection.css`。`tests/mail-reader.tsx` 改为导入 `IslandApp.css`。class 名不变 | `pnpm check`（81/81，ESLint 0 error / 5 warn 不变，行数检查 0 错误）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同（694 条），615 条位置变化；顺序翻转且同名属性值不同的规则对中，特异性不同的由特异性决定，特异性相同的 444 对（466 组选择器）按 JSX className 共现分析均不会命中同一元素（过滤器先用 14 组已知共现 class 校验）。回归页 `collapsed-message-animation.html?test=1` 24/24、`mail-reader.html?run=1` 33 项全部通过 |
 
 ## 待人工验收
 
@@ -252,6 +254,7 @@
 | `4a32ef7`、`9a95e2b` | 3.2 | 剪贴板页与快捷键（同 2.3 检查项）；音乐页（同 2.2 检查项），尤其是暂停后波形立即静止、切换音源后控制目标随优先级变化、刷新后音源顺序保留。 |
 | `27af68c` | 3.2 | 待办（同 2.1 检查项），另查：开始待办后岛屿折叠并显示该待办；未设置保存路径时点保存会打开设置并定位到保存路径，设置窗口填好后主窗口的“需要路径”提示消失；编辑后约 0.7 秒自动保存；跨日（可改系统日期）时未保存内容进入归档、未完成待办按设置结转。 |
 | `19b2329`、`9fb51f2` | 3.3 | `pnpm tauri dev` 主窗口（中英文、两种外观）：折叠 / 展开 / 贴边收起与悬停唤出、自动贴边、Esc 折叠、剪贴板快捷键开关剪贴板页、页面圆点切换、折叠条点击打开当前页与消息预览点击、从折叠条拖动窗口（拖动后不误触发点击）、页头设置 / 消息 / 翻译 / 重置位置 / 最小化到托盘、液态玻璃指针高光、首次展开无闪烁；设置窗口修改外观后主窗口同步。 |
+| `2d82e1f` | 4.1 | `pnpm tauri dev` 主窗口（中英文、经典 / 液态玻璃、系统 / 像素字体）：折叠条（脉冲点、代理状态、品牌、当前待办、待办计数、静音按钮）、展开态页头（标题图标、页面圆点三种颜色与选中态、窗口按钮与重置位置高亮）、液态玻璃展开 / 收起光晕动画与 CSS 回退、贴边 / 分离圆角、各页面面板的玻璃背景、保存成功勾选动画、系统“减少动态效果”下无过渡；与 `47b9fe2` 截图对比无差异。 |
 
 ## 待处理问题
 
@@ -263,7 +266,7 @@
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
 | 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
 | 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
-| 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header`，以及 `App.css` 中的 `.clipboard-settings-panel`、`.color-panel`（及各自的 `__header`）没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
+| 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header`，以及原 `App.css` 中的 `.clipboard-settings-panel`、`.color-panel`（及各自的 `__header`，4.1 后分别位于 `ClipboardSettingsSection.css`、`ColorSettingsSection.css` 末尾）没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
 | 2.6 | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。 |
 | 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
 | 3.3 | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。 |
