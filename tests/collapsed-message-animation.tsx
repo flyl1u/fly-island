@@ -3,7 +3,9 @@ import { act, StrictMode, useState, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
-import { IslandShell } from "../src/App";
+// Loads the island stylesheets in the same order as the app.
+import "../src/windows/island/IslandApp";
+import { IslandShell } from "../src/windows/island/IslandShell";
 import type { IslandMode } from "../src/windows/island/types";
 import { useQQNotifications } from "../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../src/features/messages/wechat/WeChatReminders";
