@@ -204,3 +204,17 @@ pub(super) fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn space_shortcuts_parse_but_a_bare_space_key_does_not() {
+        let binding = parse_shortcut_binding("Ctrl+Space").expect("Ctrl+Space is valid");
+        assert_eq!(binding.label, "Ctrl+Space");
+        assert_eq!(binding.key_code, 0x20);
+        // What the settings recorder produced before the space key fix.
+        assert!(parse_shortcut_binding("Ctrl+ ").is_none());
+    }
+}
