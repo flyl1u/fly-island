@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   AGENT_PROVIDERS,
@@ -29,7 +28,7 @@ import { useLocale, useTranslation } from "./i18n";
 import { getErrorMessage } from "./utils/error";
 import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory } from "./features/todos/storage";
 import type { SavePathState } from "./features/todos/types";
-import type { ClipboardHistorySettings, ClipboardHistorySnapshot } from "./features/clipboard/api";
+import { getClipboardHistory, listenClipboardHistoryChanged, setClipboardHistorySettings, type ClipboardHistorySettings } from "./features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY, normalizeClipboardSettings } from "./features/clipboard/settings";
 import { useQQNotifications } from "./QQNotifications";
 import { useWeChatReminders } from "./WeChatReminders";
@@ -150,9 +149,7 @@ export default function SettingsWindow() {
 
   const refreshClipboardSettings = useCallback(async () => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "get_clipboard_history",
-      );
+      const snapshot = await getClipboardHistory();
       setClipboardSettings(snapshot.settings);
     } catch (error) {
       console.error("Failed to read clipboard history settings", error);
@@ -165,7 +162,7 @@ export default function SettingsWindow() {
     let didCancel = false;
     let unlisten: (() => void) | null = null;
 
-    void listen("clipboard-history-changed", () => {
+    void listenClipboardHistoryChanged(() => {
       void refreshClipboardSettings();
     })
       .then((nextUnlisten) => {
@@ -217,10 +214,7 @@ export default function SettingsWindow() {
       setClipboardSettings(normalizedSettings);
 
       try {
-        const snapshot = await invoke<ClipboardHistorySnapshot>(
-          "set_clipboard_history_settings",
-          { settings: normalizedSettings },
-        );
+        const snapshot = await setClipboardHistorySettings(normalizedSettings);
         setClipboardSettings(snapshot.settings);
       } catch (error) {
         console.error("Failed to update clipboard history settings", error);

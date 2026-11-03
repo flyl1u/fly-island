@@ -2,7 +2,7 @@
   "description": "存量超限文件及其当前行数（.rs 为不含内联测试模块的生产代码行数）。只减不增：文件变长会报错，降到上限以下必须删除条目。规则见 AGENTS.md。",
   "lines": {
     "src/App.css": 2255,
-    "src/App.tsx": 3485,
+    "src/App.tsx": 3469,
     "src/QQMail.tsx": 404,
     "src-tauri/src/clipboard_history.rs": 1068,
     "src-tauri/src/lib.rs": 1769,
