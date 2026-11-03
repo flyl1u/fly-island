@@ -4,20 +4,9 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ArrowUpRight, Power } from "lucide-react";
 import { MessageSourceIcon } from "../MessageSourceIcon";
+import type { ReminderEvent, ReminderSnapshot } from "./api";
+import { ENABLED_KEY } from "./storage";
 import "./WeChatReminders.css";
-
-const ENABLED_KEY = "focusd-island-wechat-reminders-enabled";
-
-type ReminderSnapshot = {
-  revision: number;
-  enabled: boolean;
-  status: "disabled" | "waiting" | "listening" | "error";
-  pending: boolean;
-  lastAttentionAt: number | null;
-  error: string | null;
-};
-
-type ReminderEvent = { snapshot: ReminderSnapshot; windowVisible: boolean };
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
   revision: 0, enabled: false, status: "disabled", pending: false,

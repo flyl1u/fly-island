@@ -5,31 +5,9 @@ import { listen } from "@tauri-apps/api/event";
 import { ArrowUpRight, KeyRound, Power, RefreshCw, Settings2, Trash2 } from "lucide-react";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
+import type { QQNotificationEvent, QQNotificationSnapshot } from "./api";
+import { ACCESS_REQUESTED_KEY, ENABLED_KEY } from "./storage";
 import "./QQNotifications.css";
-
-const ENABLED_KEY = "focusd-island-qq-notifications-enabled";
-const ACCESS_REQUESTED_KEY = "focusd-island-qq-notification-access-requested";
-
-export type QQNotification = {
-  id: string;
-  title: string;
-  body: string;
-  createdAt: number;
-};
-
-type QQNotificationSnapshot = {
-  revision: number;
-  enabled: boolean;
-  status: "disabled" | "waiting" | "listening" | "permissionDenied" | "permissionRequired" | "error";
-  items: QQNotification[];
-  error: string | null;
-};
-
-type QQNotificationEvent = {
-  snapshot: QQNotificationSnapshot;
-  newestId: string | null;
-  windowVisible: boolean;
-};
 
 const EMPTY_SNAPSHOT: QQNotificationSnapshot = {
   revision: 0,
