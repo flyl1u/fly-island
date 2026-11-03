@@ -28,6 +28,10 @@ export function UpdatePanel() {
     status = t.settings.project.update.available(nextVersion);
     action = t.settings.project.update.download;
     onAction = installUpdate;
+  } else if (stage === "ready") {
+    status = t.settings.project.update.ready(nextVersion);
+    action = t.settings.project.update.restart;
+    onAction = installUpdate;
   } else if (stage === "downloading") {
     status = percent === null
       ? t.settings.project.update.downloadingUnknown

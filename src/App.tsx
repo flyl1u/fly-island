@@ -62,6 +62,7 @@ import { MessageSourceIcon } from "./MessageSourceIcon";
 import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
+import { UpdateReadyPrompt } from "./UpdateReadyPrompt";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import { MediaWaveform } from "./MediaWaveform";
 import {
@@ -1539,6 +1540,7 @@ export function IslandShell({
           <div className="island__content">{children}</div>
         </div>
       </div>
+      <UpdateReadyPrompt hidden={isTucked || page === "layout"} onReveal={onReveal} />
     </section>
   );
 }

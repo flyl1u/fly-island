@@ -52,9 +52,108 @@
   to { transform: rotate(360deg); }
 }
 
+.island-update-prompt {
+  position: absolute;
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 12px;
+  color: #f8f6f0;
+  background: rgba(24, 26, 31, 0.95);
+  border-radius: 14px;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform: translateX(-50%);
+  animation: island-update-prompt-in 220ms ease-out;
+}
+
+.island--collapsed .island-update-prompt {
+  top: calc(100% + 8px);
+}
+
+.island--expanded .island-update-prompt {
+  bottom: 12px;
+}
+
+.island-update-prompt__icon {
+  flex: 0 0 auto;
+  color: #98d4bb;
+}
+
+.island-update-prompt__copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.island-update-prompt__copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.island-update-prompt__copy span {
+  font-size: 10.5px;
+  color: rgba(248, 246, 240, 0.66);
+}
+
+.island-update-prompt__restart {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #14231c;
+  white-space: nowrap;
+  background: #98d4bb;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.island-update-prompt__restart:hover {
+  background: #aee3cc;
+}
+
+.island-update-prompt__dismiss {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: rgba(248, 246, 240, 0.55);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.island-update-prompt__dismiss:hover {
+  color: #f8f6f0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes island-update-prompt-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .update-panel .project-link__icon,
-  .update-panel__fill {
+  .update-panel__fill,
+  .island-update-prompt {
     animation: none;
     transition: none;
   }

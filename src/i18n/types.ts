@@ -336,6 +336,10 @@ export type Translations = {
         downloadingUnknown: string;
         installing: string;
         done: string;
+        ready: (version: string) => string;
+        readyHint: string;
+        restart: string;
+        later: string;
         error: string;
         errorDetail: (reason: string) => string;
         unavailable: string;

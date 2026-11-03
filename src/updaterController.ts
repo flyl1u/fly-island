@@ -8,6 +8,7 @@ export type UpdateStage =
   | "latest"
   | "available"
   | "downloading"
+  | "ready"
   | "installing"
   | "done"
   | "error"
@@ -34,12 +35,12 @@ const initialState: UpdateState = {
   detail: "",
 };
 
-let state: UpdateState = initialState;
-const listeners = new Set<() => void>();
+let state: UpdateState = initialState;const listeners = new Set<() => void>();
 
 let proxy: string | null = null;
 let pending: Update | null = null;
 let initialized = false;
+let startupCheckStarted = false;
 
 function setState(patch: Partial<UpdateState>) {
   state = { ...state, ...patch };
@@ -66,6 +67,12 @@ function busy(stage: UpdateStage) {
   return stage === "checking" || stage === "downloading" || stage === "installing";
 }
 
+// The translation window shares this bundle but must stay out of the update
+// flow, otherwise every startup would check and download twice.
+function isMainWindow() {
+  return new URLSearchParams(window.location.search).get("window") !== "translation";
+}
+
 async function initialize() {
   if (initialized) return;
   initialized = true;
@@ -85,6 +92,10 @@ async function initialize() {
     version,
     stage: configured ? state.stage : "disabled",
   });
+
+  if (configured && isMainWindow()) {
+    void runStartupUpdate();
+  }
 }
 
 async function closePending() {
@@ -98,9 +109,7 @@ async function closePending() {
   }
 }
 
-export async function checkForUpdate() {
-  if (busy(state.stage) || state.stage === "disabled") return;
-
+async function findUpdate() {
   await closePending();
   setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
 
@@ -110,19 +119,78 @@ export async function checkForUpdate() {
 
     if (!found) {
       setState({ stage: "latest" });
-      return;
+      return null;
     }
 
     setState({ stage: "available", nextVersion: found.version });
+    return found;
   } catch (error) {
     console.error("Failed to check for updates", error);
     setState({ stage: "error", detail: errorReason(error) });
+    return null;
   }
+}
+
+async function downloadPending() {
+  const update = pending;
+  if (!update) return;
+
+  setState({ downloaded: 0, total: 0, detail: "", stage: "downloading" });
+
+  try {
+    await update.download(
+      (event) => {
+        if (event.event === "Started") {
+          setState({ total: event.data.contentLength ?? 0 });
+          return;
+        }
+
+        if (event.event === "Progress") {
+          setState({ downloaded: state.downloaded + event.data.chunkLength });
+        }
+      },
+      { timeout: 600000, ...(proxy ? { proxy } : {}) },
+    );
+    // Keep the update handle open: installing is deferred until the user agrees
+    // to restart, and closing it would throw the downloaded package away.
+    setState({ stage: "ready" });
+  } catch (error) {
+    console.error("Failed to download the update", error);
+    setState({ stage: "error", detail: errorReason(error) });
+  }
+}
+
+async function runStartupUpdate() {
+  if (startupCheckStarted || state.stage !== "idle") return;
+  startupCheckStarted = true;
+
+  const found = await findUpdate();
+  if (!found) return;
+
+  await downloadPending();
+}
+
+export async function checkForUpdate() {
+  if (busy(state.stage) || state.stage === "disabled") return;
+  await findUpdate();
 }
 
 export async function installUpdate() {
   const update = pending;
   if (!update || busy(state.stage)) return;
+
+  // A downloaded package only needs the installer to run; on Windows that
+  // exits the app and the NSIS installer relaunches the new version itself.
+  if (state.stage === "ready") {
+    setState({ stage: "installing" });
+    try {
+      await update.install();
+    } catch (error) {
+      console.error("Failed to install the update", error);
+      setState({ stage: "error", detail: errorReason(error) });
+    }
+    return;
+  }
 
   setState({ downloaded: 0, total: 0, detail: "", stage: "downloading" });
 
