@@ -20,7 +20,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | `translation` | `?window=translation` | 快捷翻译窗口，常驻、隐藏显示 |
 | `settings` | `?window=settings` | 设置窗口，`create: false`，按需创建 |
 
-**当前阶段：结构重构进行中。** 现有大文件（`src/App.css`、`src-tauri/src/lib.rs`、`src-tauri/src/qq_mail.rs` 等）是重构对象，**不是**新代码的风格样板。新代码按目标结构编写，旧代码按重构计划逐步迁移。
+**当前阶段：结构重构进行中。** 现有大文件（`src-tauri/src/lib.rs`、`src-tauri/src/qq_mail.rs` 等）是重构对象，**不是**新代码的风格样板。新代码按目标结构编写，旧代码按重构计划逐步迁移。
 
 ## 技术栈
 

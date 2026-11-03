@@ -64,7 +64,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `App.tsx`：`LocaleControl` | `i18n/LocaleControl.tsx` |
 | `App.tsx`：代理状态的 label / 视觉状态函数 | `features/agent-status/` |
 | `App.tsx`：`clamp`、颜色校验（`HEX_COLOR_PATTERN`、`getColorSetting`）、日期格式化（`getLocalDateString`、`getDisplayDateParts`）、`getErrorMessage` | `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` |
-| `App.css` | 拆分到各组件的同名 `.css`，全局部分放到 `styles/tokens.css`、`base.css`、`fonts.css` |
+| `App.css` | 拆分到各组件的同名 `.css`（已删除）：岛屿外壳、折叠条、页头 → `windows/island/IslandShell.css`、`IslandCollapsedBar.css`、`IslandHeader.css`；品牌图标 → `features/messages/MessageSourceIcon.css`；跨领域规则（`.stage`、`.icon-button`、面板玻璃背景、保存勾选动画、减少动效列表）→ `windows/island/IslandApp.css`；全局部分放到 `styles/tokens.css`、`base.css`、`fonts.css` |
 | `Messages.tsx/.css`、`MessageSourceIcon.tsx`、`CollapsedMessageContent.tsx/.css`、`messagePreview.ts`、`qqNotificationTiming.ts` | `features/messages/` |
 | `QQMail.tsx/.css` | `features/messages/qq-mail/` |
 | `QQNotifications.tsx/.css` | `features/messages/qq-notifications/` |
