@@ -126,7 +126,9 @@ fn publish(service: &ReminderService, snapshot: ReminderSnapshot) {
         "wechat-reminder-changed",
         payload.clone(),
     );
-    let _ = service.app.emit_to("main", "wechat-reminder-changed", payload);
+    let _ = service
+        .app
+        .emit_to("main", "wechat-reminder-changed", payload);
 }
 
 #[tauri::command]
