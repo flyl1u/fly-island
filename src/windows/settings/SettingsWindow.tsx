@@ -22,7 +22,7 @@ const AGENT_STATUS_POLL_MS = 1_000;
 
 function noop() {}
 
-export default function SettingsWindow() {
+export function SettingsWindow() {
   const t = useTranslation();
   const { locale, setLocale } = useLocale();
   const qqNotifications = useQQNotifications(false);

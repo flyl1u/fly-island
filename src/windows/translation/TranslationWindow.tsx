@@ -14,7 +14,7 @@ function normalizeShortcut(event: KeyboardEvent<HTMLInputElement>) {
   return [...modifiers, key].join("+");
 }
 
-export default function TranslationWindow() {
+export function TranslationWindow() {
   const t = useTranslation();
   const [settings, setSettings] = useState<TranslationSettings>(loadSettings);
   const [input, setInput] = useState("");
