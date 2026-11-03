@@ -65,7 +65,7 @@ import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
-import type { ClipboardHistorySettings, ClipboardHistorySnapshot } from "./features/clipboard/api";
+import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySettings, type ClipboardHistorySnapshot } from "./features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY } from "./features/clipboard/settings";
 import { buildShortcutFromEvent, matchesClipboardShortcut, normalizeClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
@@ -2178,9 +2178,7 @@ function IslandApp() {
 
   const refreshClipboardHistory = useCallback(async () => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "get_clipboard_history",
-      );
+      const snapshot = await getClipboardHistory();
       setClipboardHistory(snapshot);
     } catch (error) {
       console.error("Failed to read clipboard history", error);
@@ -2214,10 +2212,7 @@ function IslandApp() {
 
   const copyClipboardHistoryItem = useCallback(async (id: string) => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "copy_clipboard_history_item",
-        { id },
-      );
+      const snapshot = await copyClipboardItem(id);
       setClipboardHistory(snapshot);
       return true;
     } catch (error) {
@@ -2228,10 +2223,7 @@ function IslandApp() {
 
   const toggleClipboardHistoryFavorite = useCallback(async (id: string) => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "toggle_clipboard_history_favorite",
-        { id },
-      );
+      const snapshot = await toggleClipboardFavorite(id);
       setClipboardHistory(snapshot);
     } catch (error) {
       console.error("Failed to toggle clipboard history favorite", error);
@@ -2241,10 +2233,7 @@ function IslandApp() {
   const updateClipboardHistoryItemNote = useCallback(
     async (id: string, note: string) => {
       try {
-        const snapshot = await invoke<ClipboardHistorySnapshot>(
-          "set_clipboard_history_item_note",
-          { id, note },
-        );
+        const snapshot = await setClipboardItemNote(id, note);
         setClipboardHistory(snapshot);
         return true;
       } catch (error) {
@@ -2257,10 +2246,7 @@ function IslandApp() {
 
   const deleteClipboardHistoryItem = useCallback(async (id: string) => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "delete_clipboard_history_item",
-        { id },
-      );
+      const snapshot = await deleteClipboardItem(id);
       setClipboardHistory(snapshot);
     } catch (error) {
       console.error("Failed to delete clipboard history item", error);
@@ -2269,9 +2255,7 @@ function IslandApp() {
 
   const clearClipboardHistoryItems = useCallback(async () => {
     try {
-      const snapshot = await invoke<ClipboardHistorySnapshot>(
-        "clear_clipboard_history",
-      );
+      const snapshot = await clearClipboardHistory();
       setClipboardHistory(snapshot);
     } catch (error) {
       console.error("Failed to clear clipboard history", error);
@@ -2893,7 +2877,7 @@ function IslandApp() {
     let unlistenChanges: (() => void) | null = null;
     let unlistenShortcut: (() => void) | null = null;
 
-    void listen("clipboard-history-changed", () => {
+    void listenClipboardHistoryChanged(() => {
       void refreshClipboardHistory();
     })
       .then((nextUnlisten) => {
@@ -2907,7 +2891,7 @@ function IslandApp() {
         console.error("Failed to listen for clipboard history changes", error);
       });
 
-    void listen("clipboard-history-shortcut", () => {
+    void listenClipboardHistoryShortcut(() => {
       if (clipboardHistory.settings.shortcutEnabled) {
         toggleClipboardHistory();
       }

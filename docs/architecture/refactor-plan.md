@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 3485 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 3469 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 2255 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -180,7 +180,8 @@
 | 2026-11-03 | 2.1 补充（改写） | `45058c0` | 2.1 漏掉了 `get_default_todo_save_directory`，补进 `features/todos/api.ts`（`getDefaultTodoSaveDirectory`），命令名不变；`App.tsx` 行数不变 | `pnpm check`（61/61）、`pnpm build` |
 | 2026-11-03 | 2.3（1/5，搬迁） | `c50cfaa` | `App.tsx` 4255 → 4057（-198，白名单按约定暂不下调）；新增 `features/clipboard/api.ts`（与 Rust 对应的类型）、`shortcut.ts`、`settings.ts` 和 `tests/clipboard-shortcut.test.mjs`（5 个用例）；`SettingsWindow.tsx` 改为直接从 `features/clipboard` 导入 | `pnpm check`（66/66）、`pnpm build` |
 | 2026-11-03 | 2.3（2/5，改写） | `101a714` | 在 `App.tsx` 中把 `ClipboardHistoryPanel`（566 行）的头部拆为 `ClipboardPanelHeader`（66）、筛选与搜索拆为 `ClipboardFilters`（56，返回 Fragment 以保持 DOM 层级）、单条记录拆为 `ClipboardHistoryItemRow`（184，`ref` 回调改由 `elementRef` 传入）；状态和副作用仍在 `ClipboardHistoryPanel`（360）中。`App.tsx` 4057 → 4160（+103，低于白名单记录 4255） | `pnpm check`（66/66）、`pnpm build`；交互待人工验收 |
-| 2026-11-03 | 2.3（3/5，搬迁） | 见提交说明 | `ClipboardHistoryPanel`（367）、`ClipboardPanelHeader`（70）、`ClipboardFilters`（59）、`ClipboardHistoryItemRow`（188）原样搬到 `features/clipboard/`；`App.tsx` 4160 → 3485，白名单 4255 → 3485 | `pnpm check`（66/66）、`pnpm build` |
+| 2026-11-03 | 2.3（3/5，搬迁） | `e218865` | `ClipboardHistoryPanel`（367）、`ClipboardPanelHeader`（70）、`ClipboardFilters`（59）、`ClipboardHistoryItemRow`（188）原样搬到 `features/clipboard/`；`App.tsx` 4160 → 3485，白名单 4255 → 3485 | `pnpm check`（66/66）、`pnpm build` |
+| 2026-11-03 | 2.3（4/5，改写） | 见提交说明 | `features/clipboard/api.ts` 新增 7 个命令封装、2 个事件名常量（与 Rust 常量一致）和 2 个 `listen` 封装；`App.tsx`、`SettingsWindow.tsx` 改为调用封装，命令名、参数名和事件名不变。`App.tsx` 3485 → 3469，白名单同步下调；ESLint warn 18 → 17（`SettingsWindow.tsx` 不再直接导入 `listen`） | `pnpm check`（66/66）、`pnpm build` |
 
 ## 待人工验收
 
