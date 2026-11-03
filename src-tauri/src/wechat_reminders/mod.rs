@@ -5,8 +5,8 @@ mod source;
 #[cfg(test)]
 mod tests;
 
-use source::{installed_executable, ReminderListener, ReminderSignal};
 use serde::Serialize;
+use source::{installed_executable, ReminderListener, ReminderSignal};
 use std::{
     sync::{mpsc, Arc, Mutex, OnceLock},
     thread,

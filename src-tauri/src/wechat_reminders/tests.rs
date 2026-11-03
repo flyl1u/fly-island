@@ -131,8 +131,7 @@ fn opening_wechat_reuses_the_older_main_window_instead_of_a_new_instance() {
 #[ignore = "Requires a running WeChat desktop session; reads window metadata only"]
 fn finds_existing_wechat_main_window_without_launching() {
     let search = existing_wechat_windows(&installed_executable().unwrap()).unwrap();
-    let selected =
-        preferred_window(&search.found).expect("An existing WeChat window is required");
+    let selected = preferred_window(&search.found).expect("An existing WeChat window is required");
     assert!(
         selected.main_sized,
         "The existing main window must be preferred over a login window"
