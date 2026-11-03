@@ -211,7 +211,8 @@
 | 2026-11-03 | 2.7（3/3，拆分） | `497943a` | 项目链接区块（含打开链接失败的状态与处理函数）直接拆到 `features/updater/ProjectSettingsSection.tsx`（54），作为一个零行为变化的拆分提交（根目录规则允许"只移动或拆分代码"）；超过 400 行组件的三步流程不适用于这个小区块，且原地拆分会让 `App.tsx` 超出白名单 5 行。`App.tsx` 2440 → 2395，白名单同步下调 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.7（CSS 搬迁） | `5cb8545` | `App.css` 1120 → 1045（-75），白名单同步下调；`.project-link` 卡片样式移到 `ProjectSettingsSection.css`（`UpdatePanel` 只在该区块内渲染并复用这些 class，CSS 仍在 `UpdatePanel.css` 之后加载）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
 | 2026-11-03 | 2.8（1/4，搬迁） | `05d0c6d` | `LayoutEditor` 外壳（144）原样搬到 `windows/settings/LayoutEditor.tsx`，设置区块跳转 key 与 `SettingsFocusSection` 搬到 `windows/settings/storage.ts`，`openSettingsWindow` 搬到 `windows/settings/api.ts`；`App.tsx` 不再导出任何东西给设置窗口（只剩默认导出 `App`），`SettingsWindow.tsx` 改为从 `windows/settings` 导入。`App.tsx` 2395 → 2212，白名单同步下调 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.8（2/4，搬迁） | 见提交说明 | `SettingsWindow.tsx/.css` 用 `git mv` 迁入 `windows/settings/`，`TranslationWindow.tsx/.css` 迁入 `windows/translation/`；只改导入路径（`main.tsx`、`tests/i18n.tsx`、`eslint.config.js` 的存量 IPC 文件列表），`main.tsx` 的导入顺序不变 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（2/4，搬迁） | `f6bdc1c` | `SettingsWindow.tsx/.css` 用 `git mv` 迁入 `windows/settings/`，`TranslationWindow.tsx/.css` 迁入 `windows/translation/`；只改导入路径（`main.tsx`、`tests/i18n.tsx`、`eslint.config.js` 的存量 IPC 文件列表），`main.tsx` 的导入顺序不变 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（3/4，搬迁） | 见提交说明 | 翻译窗口的设置类型、存储 key、默认值和 `loadSettings` 原样搬到 `windows/translation/storage.ts`；`TranslationWindow.tsx` 286 → 269 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 
