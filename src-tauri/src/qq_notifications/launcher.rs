@@ -1,17 +1,18 @@
 //! Finds and activates the running QQ window, or starts QQ.
 
 use crate::messenger_activation::{activate_existing_window, is_interactive_window};
+use crate::win32::registry;
 use std::{
     path::{Path, PathBuf},
     thread,
     time::{Duration, Instant},
 };
 use windows::{
-    core::{w, BOOL, PWSTR},
+    core::{BOOL, PWSTR},
     Win32::{
         Foundation::{CloseHandle, HWND, LPARAM, WPARAM},
         System::{
-            Registry::{RegGetValueW, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, RRF_RT_REG_SZ},
+            Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
             Threading::{
                 OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
                 PROCESS_QUERY_LIMITED_INFORMATION,
@@ -33,25 +34,10 @@ use windows::{
 pub(super) fn qq_executable() -> Result<PathBuf, String> {
     for root in [HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE] {
         for key in [
-            w!("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ"),
-            w!("Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ"),
+            "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ",
+            "Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ",
         ] {
-            let mut data = [0u16; 2048];
-            let mut bytes = (data.len() * 2) as u32;
-            let result = unsafe {
-                RegGetValueW(
-                    root,
-                    key,
-                    w!("DisplayIcon"),
-                    RRF_RT_REG_SZ,
-                    None,
-                    Some(data.as_mut_ptr().cast()),
-                    Some(&mut bytes),
-                )
-            };
-            if result.is_ok() {
-                let length = data.iter().position(|ch| *ch == 0).unwrap_or(data.len());
-                let icon = String::from_utf16_lossy(&data[..length]);
+            if let Some(icon) = registry::read_string(root, key, "DisplayIcon") {
                 let executable = icon
                     .rsplit_once(',')
                     .filter(|(_, index)| index.trim().parse::<i32>().is_ok())
