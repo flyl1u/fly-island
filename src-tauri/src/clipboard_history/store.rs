@@ -3,11 +3,7 @@
 use image::{imageops::FilterType, DynamicImage, ImageFormat, RgbaImage};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{
-    fs,
-    io::Cursor,
-    path::Path,
-};
+use std::{fs, io::Cursor, path::Path};
 
 use super::*;
 

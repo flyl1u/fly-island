@@ -8,9 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::PathBuf,
-    sync::{
-        Mutex, OnceLock,
-    },
+    sync::{Mutex, OnceLock},
 };
 use tauri::{AppHandle, Manager};
 

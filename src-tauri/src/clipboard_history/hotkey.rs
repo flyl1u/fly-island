@@ -1,21 +1,16 @@
 //! Global shortcut that opens the clipboard page: parsing and registration.
 
-use std::sync::{
-        Mutex, OnceLock,
-    };
+use std::sync::{Mutex, OnceLock};
 use windows::Win32::{
-        Foundation::{HWND, LPARAM, WPARAM},
-        UI::{
-            Input::KeyboardAndMouse::{
-                RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
-                MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
-            },
-            WindowsAndMessaging::{
-                PostMessageW,
-                WM_APP,
-            },
+    Foundation::{HWND, LPARAM, WPARAM},
+    UI::{
+        Input::KeyboardAndMouse::{
+            RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
+            MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
         },
-    };
+        WindowsAndMessaging::{PostMessageW, WM_APP},
+    },
+};
 
 use super::*;
 
