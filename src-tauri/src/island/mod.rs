@@ -154,7 +154,13 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
         thread::sleep(Duration::from_millis(8));
 
         let final_position = window.outer_position().ok().map(|position| {
-            top_edge::snap_to_top(&window, IslandPosition { x: position.x, y: position.y })
+            top_edge::snap_to_top(
+                &window,
+                IslandPosition {
+                    x: position.x,
+                    y: position.y,
+                },
+            )
         });
         let did_finish_drag = {
             let mut state = window_state().lock().expect("window state poisoned");

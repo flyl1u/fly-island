@@ -18,7 +18,10 @@ pub(crate) fn is_attached() -> bool {
 /// Recomputes the attachment once the stage geometry has resolved the window position.
 /// `top` is the physical y of the monitor top, below a top-docked taskbar.
 pub(crate) fn sync_from_stage(window: &WebviewWindow, state: IslandWindowState, top: i32) {
-    set_attached(window, is_top_attached(state.custom_position, state.margin_y, top));
+    set_attached(
+        window,
+        is_top_attached(state.custom_position, state.margin_y, top),
+    );
 }
 
 /// Pulls a dropped island flush with the top edge when it lands close to it.
