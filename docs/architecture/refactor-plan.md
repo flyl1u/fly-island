@@ -115,6 +115,8 @@
 
 **验收**：`IslandApp.tsx` 不超过 400 行，组件函数不超过 200 行；`useState` 数量不超过 8；`pnpm tauri dev` 中手动检查折叠、展开、贴边收起、拖拽和托盘隐藏。
 
+> 2026-11-03 结果：`IslandApp.tsx` 224 行，`IslandApp` 函数 194 行，直接 `useState` 2 个；`IslandShell` 函数 140 行，`IslandHeader` 144 行，`IslandCollapsedBar` 114 行（均含参数解构）。`pnpm tauri dev` 手动检查列入“待人工验收”。
+
 ## Phase 4：CSS 收尾
 
 - [ ] **4.1** 把 `App.css` 中剩余的样式按组件分配到同名 `.css`。无法归属的样式放到 `windows/island/IslandApp.css`。
@@ -225,7 +227,8 @@
 | 2026-11-03 | 3.2（3/n，改写） | 9a95e2b | 媒体会话 state、命令执行、1500ms 轮询、控制目标选择抽到 `features/media/useMediaState.ts`（216，超过 150 行软上限，后续评估是否把命令执行再拆出）；500ms 音量电平轮询抽到 `useAudioLevel.ts`（93），音源优先级与持久化抽到 `useMusicSourcePriority.ts`（68）；`AUDIO_ACTIVE_THRESHOLD` 移到 `mediaState.ts`，localStorage 写入移到 `storage.ts` 的 `saveMusicSourcePriority`（key 与格式不变）。音量 effect 依赖补上稳定的 ref 与 setter，行为不变。音量"叶子组件"暂缓：电平与 `refreshMediaState` 的峰值衰减、播放意图耦合。`musicSettingsOpen` 留在 `IslandApp`。`App.tsx` 1767 → 1434，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；音乐面板、波形、音源排序待人工验收 |
 | 2026-11-03 | 3.2（4/n，改写） | 27af68c | 待办相关的 11 个 state、全部回调与 effect 抽到 `features/todos`：`useTodos.ts`（139，编排，并返回 `TodoNotebook` 的 props）、`useTodoList.ts`（132）、`useTodoArchives.ts`（40）、`useTodoSaving.ts`（120）、`useTodoSaveDirectory.ts`（80）、`useTodoAutoSave.ts`（93）、`useTodoRollover.ts`（112）。直接的 localStorage 读写改为 `storage.ts` 中的同名 key 包装函数，key 与格式不变。为保持 feature 不依赖 windows，"缺少保存路径时打开设置"与"开始待办后折叠"改为由 `IslandApp` 注入的回调；`setIslandMode`、`collapseIsland` 上移到 `useTodos` 调用之前。设置窗口的 storage 监听拆成两个（外观设置留在 `IslandApp`，保存路径进 `useTodoSaveDirectory`），卸载时的计时器清理也随之拆分；各 effect 彼此独立，顺序变化不影响结果。`App.tsx` 1434 → 913，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；待办增删改、拖动排序、开始待办后折叠、手动保存与无路径提示、自动保存、跨日归档与结转待人工验收 |
 | 2026-11-03 | 3.3（1/n，改写） | 19b2329 | 迁移前先把 `IslandApp` 压到组件上限内：外观设置的 state、持久化与跨窗口同步抽到 `features/appearance/useIslandSettings.ts`（30，改用已有的 `saveSettings`）；mode / 贴边 / 当前页与剪贴板开关抽到 `windows/island/useIslandNavigation.ts`（67）；窗口内快捷键抽到 `useIslandKeyboard.ts`（35）；折叠态待办标题、计数与宽度抽到 `useCollapsedTodo.ts`（52）；展开高度与舞台 CSS 变量改为纯函数 `expandedHeight.ts`（51）、`stageStyle.ts`（51）。舞台样式的 memo 依赖由逐个设置字段改为整个 `settings`，其他设置变化时会重新计算出相同的值，渲染结果不变。`IslandApp` 194 行，直接 `useState` 2 个；`App.tsx` 913 → 747，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；折叠 / 展开 / 贴边、页面切换、Esc 与剪贴板快捷键、外观设置同步待人工验收 |
-| 2026-11-03 | 3.3（2/n，搬迁）、3.4 | 见提交说明 | `IslandApp` 原样搬到 `windows/island/IslandApp.tsx`（具名导出），`App` 包装去掉，`main.tsx` 与 `tests/i18n.tsx` 直接渲染 `IslandApp`。`IslandShell`（约 490 行）拆分搬到 `IslandShell.tsx`，折叠条与展开态页头拆成 `IslandCollapsedBar.tsx`、`IslandHeader.tsx`，毛玻璃指针、首帧预热、窗口拖拽手势拆成 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`；JSX 与逻辑逐行一致（去空白比对），DOM 结构与 class 名不变。`useIslandAutomation.ts` 移到 `windows/island/`，同步测试路径。CSS 顺序：`App.css` 仍是最后一个导入；`IslandShell` 在页面面板之后导入，只有 `CollapsedMessageContent.css` 的位置后移，它与之后的样式没有共用选择器。回归页 `collapsed-message-animation.tsx` 先以副作用方式导入 `IslandApp`，保持原来的样式集合与顺序。删除 `src/App.tsx` 及其白名单条目 | `pnpm check`（81/81）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同，仅 `CollapsedMessageContent.css` 的 21 条规则位置后移。回归页 `collapsed-message-animation.html?test=1` 24/24 通过；`i18n.html?test=1` 存量失败（见“待处理问题”3.3），临时补齐 mock 后确认 `IslandApp` 正常渲染（折叠条、页头 9 个按钮、舞台 CSS 变量），mock 改动未提交。折叠条点击 / 拖动、毛玻璃指针高光、首次展开待人工验收 |
+| 2026-11-03 | 3.3（2/n，搬迁）、3.4 | 9fb51f2 | `IslandApp` 原样搬到 `windows/island/IslandApp.tsx`（具名导出），`App` 包装去掉，`main.tsx` 与 `tests/i18n.tsx` 直接渲染 `IslandApp`。`IslandShell`（约 490 行）拆分搬到 `IslandShell.tsx`，折叠条与展开态页头拆成 `IslandCollapsedBar.tsx`、`IslandHeader.tsx`，毛玻璃指针、首帧预热、窗口拖拽手势拆成 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`；JSX 与逻辑逐行一致（去空白比对），DOM 结构与 class 名不变。`useIslandAutomation.ts` 移到 `windows/island/`，同步测试路径。CSS 顺序：`App.css` 仍是最后一个导入；`IslandShell` 在页面面板之后导入，只有 `CollapsedMessageContent.css` 的位置后移，它与之后的样式没有共用选择器。回归页 `collapsed-message-animation.tsx` 先以副作用方式导入 `IslandApp`，保持原来的样式集合与顺序。删除 `src/App.tsx` 及其白名单条目 | `pnpm check`（81/81）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同，仅 `CollapsedMessageContent.css` 的 21 条规则位置后移。回归页 `collapsed-message-animation.html?test=1` 24/24 通过；`i18n.html?test=1` 存量失败（见“待处理问题”3.3），临时补齐 mock 后确认 `IslandApp` 正常渲染（折叠条、页头 9 个按钮、舞台 CSS 变量），mock 改动未提交。折叠条点击 / 拖动、毛玻璃指针高光、首次展开待人工验收 |
+| 2026-11-03 | Phase 3 验收 | 见提交说明 | 自动检查部分达标（数据见 Phase 3 验收说明）；ESLint 仍为 5 条存量 warning，位置随搬迁变为 `IslandApp.tsx`、`QQMail.tsx`、`useIslandWindow.ts`、`useNativeLayout.ts`、`TranslationWindow.tsx` | `pnpm check`（81/81）、`pnpm build`；`pnpm tauri dev` 手动检查待人工验收 |
 
 ## 待人工验收
 
@@ -246,6 +249,9 @@
 | `5cb8545` | 2.7 | 设置窗口（中英文）：检查更新的各状态（检查中、已是最新、有新版本、下载进度、安装中、出错与重试），离开再回到设置窗口后下载进度仍在；GitHub 项目链接在桌面端用系统浏览器打开，失败时显示提示。 |
 | `ebe8c1e`、`64ca203` 等 | 2.8 | 设置窗口与翻译窗口（中英文）：设置窗口打开、各区块显示与滚动，重置按钮，开机自启的读取与切换（失败时回滚）；从主窗口"未设置保存路径"跳转后高亮保存路径；翻译窗口的打开（显示时清空并读取剪贴板）、翻译、方向切换、快捷键录制与注册、API 密钥保存与删除、复制结果、拖动与缩放、关闭，重启后翻译设置保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
 | `d2b7ab0` | 3.1 | 主窗口：拖拽后位置在重启后仍在、重置位置回到默认边距、展开后点击窗外自动折叠、首次启动会显示窗口、调节边距和缩放后原生窗口跟着变。 |
+| `4a32ef7`、`9a95e2b` | 3.2 | 剪贴板页与快捷键（同 2.3 检查项）；音乐页（同 2.2 检查项），尤其是暂停后波形立即静止、切换音源后控制目标随优先级变化、刷新后音源顺序保留。 |
+| `27af68c` | 3.2 | 待办（同 2.1 检查项），另查：开始待办后岛屿折叠并显示该待办；未设置保存路径时点保存会打开设置并定位到保存路径，设置窗口填好后主窗口的“需要路径”提示消失；编辑后约 0.7 秒自动保存；跨日（可改系统日期）时未保存内容进入归档、未完成待办按设置结转。 |
+| `19b2329`、`9fb51f2` | 3.3 | `pnpm tauri dev` 主窗口（中英文、两种外观）：折叠 / 展开 / 贴边收起与悬停唤出、自动贴边、Esc 折叠、剪贴板快捷键开关剪贴板页、页面圆点切换、折叠条点击打开当前页与消息预览点击、从折叠条拖动窗口（拖动后不误触发点击）、页头设置 / 消息 / 翻译 / 重置位置 / 最小化到托盘、液态玻璃指针高光、首次展开无闪烁；设置窗口修改外观后主窗口同步。 |
 
 ## 待处理问题
 
