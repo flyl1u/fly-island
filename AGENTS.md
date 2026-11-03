@@ -1,117 +1,129 @@
 # AGENTS.md
 
-本文件面向在本仓库中工作的 AI 编程代理和协作者，说明项目背景、常用命令、代码边界与变更约定。请在动手修改前先阅读本文件，并优先遵循仓库现有实现风格。
+本文件是仓库的总规则，面向在本仓库工作的 AI 编程代理和协作者。规则按目录就近生效：
+
+- 修改 `src/` 时还须遵守 [src/AGENTS.md](src/AGENTS.md)（前端规则）。
+- 修改 `src-tauri/` 时还须遵守 [src-tauri/AGENTS.md](src-tauri/AGENTS.md)（Rust / Tauri 规则）。
+- 目标架构见 [docs/architecture/overview.md](docs/architecture/overview.md)，结构重构的分步计划与进度见 [docs/architecture/refactor-plan.md](docs/architecture/refactor-plan.md)。
+
+子目录规则比本文件更具体，两者冲突时以子目录规则为准。
 
 ## 项目概览
 
-FocuSD Island 是一个 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。前端负责悬浮岛 UI、待办、每日笔记、归档、外观设置和媒体控制面板；Tauri/Rust 侧负责窗口定位、托盘、注册表开机自启、Markdown 写入以及 Windows 媒体/音频能力。
+FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。主要功能：待办、每日笔记与归档，外观设置与预设，媒体控制，剪贴板历史，快捷翻译，QQ 通知、QQ 邮箱和微信提醒，AI 代理状态，以及自动更新。
 
-当前项目处于早期 MVP 阶段，改动应保持小步、可验证、低风险。
+应用有三个窗口，前端通过同一入口的 `?window=` 参数分发：
+
+| 窗口 label | 前端入口 | 说明 |
+|---|---|---|
+| `main` | 默认 | 悬浮岛本体，折叠态 / 展开态 / 贴边收起 |
+| `translation` | `?window=translation` | 快捷翻译窗口，常驻、隐藏显示 |
+| `settings` | `?window=settings` | 设置窗口，`create: false`，按需创建 |
+
+**当前阶段：结构重构进行中。** 现有大文件（`src/App.tsx`、`src/App.css`、`src-tauri/src/lib.rs`、`src-tauri/src/qq_mail.rs` 等）是重构对象，**不是**新代码的风格样板。新代码按目标结构编写，旧代码按重构计划逐步迁移。
 
 ## 技术栈
 
-- 前端：React 19、TypeScript、Vite 7
-- 桌面壳：Tauri 2
-- 原生能力：Rust、Windows API
-- 图标：lucide-react
-- 包管理器：pnpm
+- 前端：React 19、TypeScript（strict）、Vite 7，图标使用 lucide-react，HTML 清理使用 dompurify
+- 桌面壳：Tauri 2（opener、updater、single-instance 插件）
+- 原生能力：Rust 2021，`windows` crate（Win32 / WinRT）
+- 包管理器：pnpm；前端单元测试使用 Node 内置 `node:test`
 
-## 目录结构
+## 目录总览
 
 ```text
 .
-├── src/                    # React 前端
-│   ├── App.tsx             # 核心 UI、状态、交互与 Tauri invoke 调用
-│   ├── App.css             # 主要样式
-│   ├── main.tsx            # React 入口
-│   └── vite-env.d.ts
-├── src-tauri/              # Tauri / Rust 桌面端
-│   ├── src/lib.rs          # 原生命令、窗口定位、托盘、文件保存、媒体控制
-│   ├── src/main.rs         # Tauri 应用入口
-│   ├── Cargo.toml          # Rust 依赖与构建配置
-│   ├── tauri.conf.json     # Tauri 配置
-│   ├── capabilities/       # Tauri 权限能力配置
-│   └── icons/              # 应用图标
-├── package.json            # 前端依赖和脚本
-├── vite.config.ts
-└── README.md
+├── src/                 # React 前端（规则见 src/AGENTS.md）
+├── src-tauri/           # Tauri / Rust 桌面端（规则见 src-tauri/AGENTS.md）
+│   ├── src/             # 原生命令、后台服务、窗口管理
+│   ├── examples/        # 手动运行的 QQ / 微信探测程序，不进入发布产物
+│   ├── capabilities/    # Tauri 权限能力配置
+│   └── tauri.conf.json  # 窗口、更新、打包配置
+├── tests/               # node:test 单元测试（*.test.mjs）与浏览器回归页（*.html + *.tsx）
+├── scripts/             # 发布、签名、latest.json 生成、代理状态 hook 脚本
+├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
+├── DESIGN.md            # 已确认的界面设计约定
+└── README*.md           # 中英文项目说明
 ```
+
+注意：`scripts/focusd-agent-running.cmd` 和 `scripts/focusd-agent-status.ps1` 通过 `include_str!` 编译进 Rust 二进制，修改它们等同于修改 Rust 侧代码。
 
 ## 常用命令
 
-安装依赖：
+| 用途 | 命令 |
+|---|---|
+| 安装依赖 | `pnpm install` |
+| 前端开发服务器 | `pnpm dev` |
+| 桌面开发模式 | `pnpm tauri dev` |
+| 类型检查并构建前端 | `pnpm build` |
+| 前端单元测试 | `node --test tests/*.test.mjs` |
+| Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
+| 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
+| 完整打包 | `pnpm tauri build` |
+| 发布 | `pnpm release`（流程见 `docs/updater.md`） |
 
-```powershell
-pnpm install
-```
+如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。
 
-启动前端开发服务器：
+## 代码规模规则（全局）
 
-```powershell
-pnpm dev
-```
+单个文件的行数上限（按物理行计）：
 
-启动 Tauri 桌面开发模式：
+| 文件类型 | 上限 |
+|---|---|
+| `.ts` / `.tsx` / `.mjs` | 400 行 |
+| `.css` | 500 行 |
+| `.rs` | 800 行；测试模块超过 150 行时移到独立的 `tests.rs`，因此实际约束的是生产代码 |
+| `.ps1` / `.cmd` | 400 行 |
 
-```powershell
-pnpm tauri dev
-```
+- **豁免**：`src/i18n/locales/*.ts`、`src/i18n/types.ts`（文案字典），锁文件、二进制资源和生成产物。
+- **存量白名单（只减不增）**：重构前已经超限的文件登记在白名单中，并记录当前行数作为上限。白名单内的文件**不得变得更长**，降到上限以下后从白名单移除。白名单与检查脚本在重构计划 Phase 0 中建立；建立之前，由提交者自行确认改动没有让这些文件变长。
+- **不往超限文件里加新功能**。新功能写在目标结构的对应位置，再从旧文件中引用。
+- 一个文件只承担一个职责。不新建 `helpers.ts`、`common.rs`、`misc.css` 这类没有明确领域的"杂物"文件。
 
-类型检查并构建前端：
+## 对外契约（不得随意变更）
 
-```powershell
-pnpm build
-```
+下列标识会被已安装用户的数据、配置或外部程序引用。纯重构提交中**一律不得改变**：
 
-构建 Tauri 应用：
+- `localStorage` key（`focusd-island-*`，完整清单见架构文档）及其存储的数据格式
+- Tauri 命令名（即 Rust 函数名）、参数名，以及事件名
+- 窗口 label（`main` / `translation` / `settings`）和 `?window=` 参数值
+- 应用标识 `com.focusd.island`、开机自启注册表值 `FocuSD Island`、凭据管理器条目、应用数据目录下的文件名（如 `agent-status.json`）
+- 更新端点和 `latest.json` 格式
 
-```powershell
-pnpm tauri build
-```
+确实需要变更时，必须在同一个提交里同步修改前后端，提供旧数据的迁移或兼容读取，并在提交说明中写明。
 
-仅生成 release 可执行文件、不生成安装包：
+## 重构约定
 
-```powershell
-pnpm tauri build --no-bundle
-```
+- **搬迁和改写分开提交。** 一个提交要么只移动或拆分代码（零行为变化），要么只修改行为，不能混在一起。
+- 搬迁时不顺手改名、改格式、改逻辑；CSS class 名保持不变，避免视觉回归。
+- 每个提交都是一个可独立验证的小步骤，提交信息使用 `refactor(<范围>): ...` 前缀。
+- 严格按 [refactor-plan.md](docs/architecture/refactor-plan.md) 的顺序推进，完成一步后在计划中勾选并更新基线数据。
+- 重构过程中不升级依赖、不整仓格式化。引入格式化工具的那个专门提交除外。
+- 目录或模块结构变化后，同步更新对应 `AGENTS.md` 中的目录地图和 `docs/architecture/overview.md`。
 
-## 开发约定
+## 通用开发约定
 
-- 默认使用 TypeScript 和 React 函数组件，延续当前 `src/App.tsx` 中的状态组织与命名风格。
-- 优先复用现有组件、类型、工具函数和 CSS class，不为小改动引入新的抽象层。
-- 继续使用 `localStorage` 存储前端状态，除非需求明确要求迁移到文件、数据库或云同步。
-- Tauri 命令通过 `@tauri-apps/api/core` 的 `invoke` 调用；新增命令时需同步更新 Rust 侧 handler、前端类型和必要的权限配置。
-- UI 图标优先使用 `lucide-react`，不要手写可由图标库提供的 SVG。
-- 面向 Windows 的原生能力需要谨慎处理错误路径，Rust 命令应返回清晰的 `Result<_, String>`。
-- 修改窗口大小、定位、透明度、置顶、托盘或注册表逻辑时，要同时考虑折叠态、展开态、边缘收起和托盘隐藏。
-- 避免无关重构、格式化整仓或改动生成产物。
-- 验证应与改动范围匹配，不要无条件运行 `pnpm tauri build`，但改动范围要求的构建不得省略：仅文档改动不需要构建；前端逻辑、样式或依赖改动必须运行 `pnpm build`；涉及 Tauri/Rust、Windows 原生能力、桌面配置或发布产物的改动必须运行对应的 Tauri 构建。
-- 不得因为构建耗时而跳过必要验证。若必要构建失败或受环境阻塞，应明确报告原因，不得将未完成的构建描述为已验证。
+- 优先复用现有组件、类型、工具函数和 CSS class；不为小改动引入新的抽象层。
+- 前端状态继续用 `localStorage` 持久化，除非需求明确要求迁移到文件、数据库或云同步。
+- 新增 Tauri 命令时，同步更新 Rust handler、前端类型化封装和必要的权限配置（细则见子目录规则）。
+- 修改窗口大小、定位、透明度、置顶、托盘或注册表逻辑时，要同时考虑折叠态、展开态、贴边收起和托盘隐藏。
+- 注释只写在能降低理解成本的地方，用于解释"为什么"，不复述代码。
+- 用户可见文案必须支持中英文，并注意窄窗口下按钮、标签和标题不溢出。
+- 避免与任务无关的改动和对生成产物的改动。
 
-## 前端注意事项
+## 验证
 
-- `src/App.tsx` 目前承载了大部分业务逻辑，新增功能前先查找是否已有相关类型、状态和工具函数。
-- 样式主要在 `src/App.css`，请保持现有视觉语言：悬浮岛、紧凑面板、透明背景、可读的控件状态。
-- 文本应注意中英文混排和窄窗口显示，避免按钮、标签和任务标题溢出。
-- 对任务、每日笔记、归档、设置预设等状态的改动，需要维护对应的 `localStorage` key 兼容性。
+验证范围必须覆盖改动范围。纯搬迁的重构提交同样需要完整验证。
 
-## Tauri / Rust 注意事项
+| 改动范围 | 必须运行 |
+|---|---|
+| 仅文档 | 无需构建，确认 Markdown 可读 |
+| 前端逻辑、样式或依赖 | `pnpm build` + `node --test tests/*.test.mjs` |
+| Rust、Tauri 命令、窗口、托盘、注册表、Windows API、桌面配置 | `cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle` |
+| 发布相关 | 完整的 `pnpm tauri build` |
 
-- 主要逻辑位于 `src-tauri/src/lib.rs`。
-- 与 Windows API 相关的代码需保持最小权限和明确错误处理。
-- 开机自启使用当前用户注册表路径：
-  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
-- Markdown 保存命令应继续校验目录和文件名，避免不受控路径写入。
-- 新增 Tauri 插件或权限时，需要检查 `src-tauri/capabilities/default.json` 和 `src-tauri/tauri.conf.json`。
-
-## 验证建议
-
-根据改动范围选择最小且充分的验证方式，避免无关、耗时的构建：
-
-- 仅文档改动：确认 Markdown 内容可读即可。
-- 前端逻辑、样式或依赖改动：必须运行 `pnpm build`，必要时运行 `pnpm dev` 进行浏览器检查。
-- Tauri 命令、窗口、托盘、注册表、Windows API 或桌面配置改动：必须运行 `pnpm tauri build --no-bundle`，并在行为风险需要时运行 `pnpm tauri dev` 手动验证。
-- 发布相关改动：必须运行完整的 `pnpm tauri build`。
+- 涉及界面或窗口行为的改动，在风险需要时用 `pnpm dev`（浏览器回归页）或 `pnpm tauri dev` 手动检查。
+- 不得因为构建耗时而跳过必要验证。必要构建失败或受环境阻塞时，必须明确报告原因，不得把未完成的验证描述为已验证。
 
 ## 本机更新与桌面快捷方式
 
@@ -124,12 +136,12 @@ pnpm tauri build --no-bundle
 
 - 修改前先查看 `git status --short`，不要覆盖用户已有改动。
 - 不要使用 `git reset --hard`、`git checkout --` 等破坏性命令，除非用户明确要求。
-- 如果工作区已有与当前任务无关的修改，保留它们并只处理本次任务相关文件。
-- 每次完成仓库改动后，按改动范围执行必要验证，并主动创建 Git 提交，无需再次确认；仅提交当前任务相关文件，在最终说明中给出提交号和验证结果。
+- 如果工作区已有与当前任务无关的修改，保留它们，只处理本次任务相关的文件。
+- 每次完成仓库改动后，按改动范围执行必要验证，并主动创建 Git 提交，无需再次确认。只提交当前任务相关的文件，在最终说明中给出提交号和验证结果。
 - 提交前尽量让改动范围保持聚焦，并在最终说明中列出已验证的命令。
 
-## 编码与文档
+## 文档
 
-- 源码保持项目当前编码风格。中文文档建议使用 UTF-8。
-- 注释只写在能降低理解成本的位置，不解释显而易见的代码。
-- README 当前包含中英文项目说明；更新文档时注意不要破坏现有双语结构。
+- 源码保持项目当前编码风格；中文文档使用 UTF-8。
+- README 包含中英文说明，更新时不要破坏现有的双语结构。
+- 界面方向的决定记录在 `DESIGN.md`；功能专题文档放在 `docs/`；架构变化更新 `docs/architecture/overview.md`。
