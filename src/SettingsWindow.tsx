@@ -2,16 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  AGENT_PROVIDERS,
-  DEFAULT_AGENT_STATUS,
   LayoutEditor,
   SETTINGS_FOCUS_STORAGE_KEY,
-  type AgentHooksInstallResult,
-  type AgentHooksInstallState,
-  type AgentProvider,
-  type AgentStatusSnapshot,
   type SettingsFocusSection,
 } from "./App";
+import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./features/agent-status/api";
+import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "./features/agent-status/status";
 import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "./features/appearance/settings";
 import { SETTINGS_PRESETS_STORAGE_KEY, STORAGE_KEY, loadSettingPresets, loadSettings } from "./features/appearance/storage";
 import type { IslandPreset, IslandSettings } from "./features/appearance/types";
