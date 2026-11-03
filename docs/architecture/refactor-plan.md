@@ -213,7 +213,8 @@
 | 2026-11-03 | 2.8（1/4，搬迁） | `05d0c6d` | `LayoutEditor` 外壳（144）原样搬到 `windows/settings/LayoutEditor.tsx`，设置区块跳转 key 与 `SettingsFocusSection` 搬到 `windows/settings/storage.ts`，`openSettingsWindow` 搬到 `windows/settings/api.ts`；`App.tsx` 不再导出任何东西给设置窗口（只剩默认导出 `App`），`SettingsWindow.tsx` 改为从 `windows/settings` 导入。`App.tsx` 2395 → 2212，白名单同步下调 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.8（2/4，搬迁） | `f6bdc1c` | `SettingsWindow.tsx/.css` 用 `git mv` 迁入 `windows/settings/`，`TranslationWindow.tsx/.css` 迁入 `windows/translation/`；只改导入路径（`main.tsx`、`tests/i18n.tsx`、`eslint.config.js` 的存量 IPC 文件列表），`main.tsx` 的导入顺序不变 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.8（3/4，搬迁） | `0a5f8c3` | 翻译窗口的设置类型、存储 key、默认值和 `loadSettings` 原样搬到 `windows/translation/storage.ts`；`TranslationWindow.tsx` 286 → 269 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.8（3b，搬迁） | 见提交说明 | `takeFocusRequest` 与 `FOCUS_REQUEST_MAX_AGE_MS` 从 `SettingsWindow.tsx` 原样搬到 `windows/settings/storage.ts` | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（3b，搬迁） | `38c6c1a` | `takeFocusRequest` 与 `FOCUS_REQUEST_MAX_AGE_MS` 从 `SettingsWindow.tsx` 原样搬到 `windows/settings/storage.ts` | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（3c，改写） | 见提交说明 | 新增 `windows/translation/api.ts`（8 个命令封装、事件名常量和 `listen` 封装）、`windows/settings/api.ts` 的 `readLaunchAtStartup` / `saveLaunchAtStartup`（避免与 `useState` 的 `setLaunchAtStartup` 同名）；`localStorage` 写入改用 `saveTranslationSettings`、`requestSettingsFocus`、`features/appearance/storage.ts` 的 `saveSettings` / `saveSettingPresets`、`features/todos/storage.ts` 的 `saveSaveDirectory`（写入内容与时机不变）。存量 IPC 文件列表只剩 `App.tsx`，ESLint warn 10 → 7 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 

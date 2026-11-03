@@ -72,3 +72,14 @@ export function loadSettingPresets(t: Translations): IslandPreset[] {
     return getDefaultSettingPresets();
   }
 }
+
+export function saveSettings(settings: IslandSettings) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+export function saveSettingPresets(presets: IslandPreset[]) {
+  window.localStorage.setItem(
+    SETTINGS_PRESETS_STORAGE_KEY,
+    JSON.stringify(presets),
+  );
+}

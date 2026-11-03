@@ -1,10 +1,9 @@
 import { useTranslation } from "../../i18n";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Settings2, X } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { STORAGE_KEY, loadSettings, type Direction, type TranslationSettings } from "./storage";
+import { copyTranslationResult, deleteTranslationSecret, hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, saveTranslationSecret, setTranslationShortcut, translateText } from "./api";
+import { loadSettings, saveTranslationSettings, type Direction, type TranslationSettings } from "./storage";
 import "./TranslationWindow.css";
 
 function normalizeShortcut(event: KeyboardEvent<HTMLInputElement>) {
@@ -40,12 +39,12 @@ export default function TranslationWindow() {
       ? t.translator.chinese
       : t.translator.bilingual;
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); }, [settings]);
+  useEffect(() => { saveTranslationSettings(settings); }, [settings]);
   useEffect(() => {
-    void invoke<boolean>("has_translation_secret").then(setHasSecret).catch((failure) => setError(String(failure)));
+    void hasTranslationSecret().then(setHasSecret).catch((failure) => setError(String(failure)));
   }, []);
   useEffect(() => {
-    void invoke<string>("set_translation_shortcut", { shortcut: settings.shortcut })
+    void setTranslationShortcut(settings.shortcut)
       .then(() => setShortcutError(""))
       .catch((failure) => setShortcutError(String(failure)));
     // Shortcut edits register immediately in the recording handler.
@@ -53,7 +52,7 @@ export default function TranslationWindow() {
 
   const refreshClipboard = useCallback(() => {
     const currentId = ++clipboardRequestId.current;
-    void invoke<string | null>("read_translation_clipboard")
+    void readTranslationClipboard()
       .then((text) => { if (currentId === clipboardRequestId.current) setClipboardPreview(text ?? ""); })
       .catch(() => { if (currentId === clipboardRequestId.current) setClipboardPreview(""); });
   }, []);
@@ -61,7 +60,7 @@ export default function TranslationWindow() {
   const pasteLatestClipboard = useCallback(async () => {
     const currentId = ++clipboardRequestId.current;
     try {
-      const text = await invoke<string | null>("read_translation_clipboard");
+      const text = await readTranslationClipboard();
       if (currentId !== clipboardRequestId.current) return;
       if (!text) { setError(t.translator.emptyClipboard); return; }
       setClipboardPreview(text);
@@ -90,7 +89,7 @@ export default function TranslationWindow() {
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     let didCancel = false;
-    void listen("translation-window-opened", handleOpened).then((nextUnlisten) => {
+    void listenTranslationWindowOpened(handleOpened).then((nextUnlisten) => {
       if (didCancel) nextUnlisten();
       else unlisten = nextUnlisten;
     });
@@ -121,7 +120,7 @@ export default function TranslationWindow() {
     setOutput("");
     setIsLoading(true);
     try {
-      const translated = await invoke<string>("translate_text", { text, direction: settings.direction });
+      const translated = await translateText(text, settings.direction);
       if (currentId === requestId.current) setOutput(translated);
     } catch (failure) {
       if (currentId === requestId.current) setError(String(failure));
@@ -141,7 +140,7 @@ export default function TranslationWindow() {
     if (!secretDraft.trim()) return;
     setSavingSecret(true);
     try {
-      await invoke("save_translation_secret", { secret: secretDraft });
+      await saveTranslationSecret(secretDraft);
       setSecretDraft("");
       setHasSecret(true);
       setError("");
@@ -151,7 +150,7 @@ export default function TranslationWindow() {
 
   const removeSecret = async () => {
     try {
-      await invoke("delete_translation_secret");
+      await deleteTranslationSecret();
       setHasSecret(false);
       setSecretDraft("");
     } catch (failure) { setError(String(failure)); }
@@ -160,7 +159,7 @@ export default function TranslationWindow() {
   const copyResult = async () => {
     if (!output) return;
     try {
-      await invoke("copy_translation_result", { text: output });
+      await copyTranslationResult(output);
       setDidCopy(true);
     } catch (failure) { setError(String(failure)); }
   };
@@ -175,7 +174,7 @@ export default function TranslationWindow() {
     inputRef.current?.focus();
   };
 
-  const close = () => { requestId.current += 1; clipboardRequestId.current += 1; void invoke("hide_translation_window"); };
+  const close = () => { requestId.current += 1; clipboardRequestId.current += 1; void hideTranslationWindow(); };
   const startWindowDrag = (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
     void getCurrentWindow().startDragging().catch((failure) => console.error("Cannot drag translation window", failure));
@@ -217,7 +216,7 @@ export default function TranslationWindow() {
                 const shortcut = normalizeShortcut(event);
                 if (!shortcut) return;
                 const field = event.currentTarget;
-                void invoke<string>("set_translation_shortcut", { shortcut })
+                void setTranslationShortcut(shortcut)
                   .then((registered) => { setSettings((current) => ({ ...current, shortcut: registered })); setShortcutError(""); setRecordingShortcut(false); field.blur(); })
                   .catch((failure) => setShortcutError(String(failure)));
               }} />

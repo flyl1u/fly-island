@@ -102,3 +102,7 @@ export function createTodoId() {
 
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
+
+export function saveSaveDirectory(directory: string) {
+  window.localStorage.setItem(TODO_SAVE_DIRECTORY_STORAGE_KEY, directory);
+}

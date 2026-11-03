@@ -15,3 +15,7 @@ export function loadSettings(): TranslationSettings {
     return DEFAULT_SETTINGS;
   }
 }
+
+export function saveTranslationSettings(settings: TranslationSettings) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}

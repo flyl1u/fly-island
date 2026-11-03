@@ -20,8 +20,6 @@ const ipcImportRestriction = {
 // 重构前就直接调用 invoke / listen 的文件。迁移到 api.ts 后从这里删除；清空后见 refactor-plan.md 7.2。
 const legacyIpcFiles = [
   "src/App.tsx",
-  "src/windows/settings/SettingsWindow.tsx",
-  "src/windows/translation/TranslationWindow.tsx",
 ];
 
 export default tseslint.config(
