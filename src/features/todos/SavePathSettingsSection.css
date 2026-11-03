@@ -1,6 +1,6 @@
 .save-path-panel {
   display: grid;
-  gap: 10px;
+  gap: var(--space-lg);
 }
 
 .save-path-panel--attention {
@@ -8,11 +8,11 @@
   border-color: rgba(116, 214, 255, 0.6);
   box-shadow:
     0 0 0 4px rgba(116, 214, 255, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 var(--color-white-a10);
 }
 
 .save-path-panel__header {
-  color: rgba(248, 246, 240, 0.88);
+  color: var(--color-text-strong);
   font-size: 13px;
   font-weight: 800;
   line-height: 1;
@@ -22,7 +22,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: 10px;
+  gap: var(--space-lg);
 }
 
 .save-path-field {
@@ -43,10 +43,10 @@
   min-width: 0;
   height: 34px;
   padding: 0 10px;
-  color: #f8f6f0;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
   outline: none;
   font-size: 12px;
   font-weight: 700;
@@ -64,10 +64,10 @@
   align-items: center;
   gap: 7px;
   padding: 0 11px;
-  color: #111112;
+  color: var(--color-surface-dark);
   background: #98d4bb;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 12px;
@@ -84,8 +84,8 @@
 }
 
 .save-path-button--saved {
-  color: #ffffff;
-  background: #2f8c61;
+  color: var(--color-white);
+  background: var(--color-success);
   animation: saveButtonPop 760ms ease both;
   box-shadow: 0 0 0 4px rgba(152, 212, 187, 0.22);
 }

@@ -9,7 +9,7 @@
 .message-sources {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-xs);
   min-width: 0;
 }
 
@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-sm);
   min-width: 0;
   min-height: 30px;
   padding: 6px 9px;
@@ -41,7 +41,7 @@
 }
 
 .message-sources button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, .88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -56,7 +56,7 @@
   width: 5px;
   height: 5px;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: #a9e6ca;
 }
 

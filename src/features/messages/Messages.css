@@ -1,9 +1,9 @@
 .message-overview__empty { padding: 9px 8px; color: rgba(241, 246, 250, .5); font-size: 12px; }
-.message-overview__item > button { display: flex; align-items: center; gap: 12px; padding: 12px 8px; }
+.message-overview__item > button { display: flex; align-items: center; gap: var(--space-xl); padding: 12px 8px; }
 .message-overview__text { flex: 1; min-width: 0; }
-.message-overview__text strong { display: flex; flex: 1; align-items: center; gap: 6px; }
+.message-overview__text strong { display: flex; flex: 1; align-items: center; gap: var(--space-sm); }
 .message-overview__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .message-overview__text p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .message-overview__chevron { flex: 0 0 auto; color: rgba(241, 246, 250, .35); }
-.message-overview__connections { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 8px; }
+.message-overview__connections { display: flex; flex-wrap: wrap; gap: var(--space-md); padding: 10px 8px; }
 .message-overview__connections .message-action { color: rgba(241, 246, 250, .65); }

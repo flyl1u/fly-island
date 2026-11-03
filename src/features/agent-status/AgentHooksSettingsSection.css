@@ -3,12 +3,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-sm);
   padding: 0 10px;
-  color: #111112;
-  background: #a8d8ea;
+  color: var(--color-surface-dark);
+  background: var(--color-sky);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 12px;
@@ -30,8 +30,8 @@
 }
 
 .agent-hooks-button--installed {
-  color: #ffffff;
-  background: #2f8c61;
+  color: var(--color-white);
+  background: var(--color-success);
 }
 
 .agent-hooks-button--installed:hover:not(:disabled) {
@@ -39,7 +39,7 @@
 }
 
 .agent-hooks-button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -50,8 +50,8 @@
   padding: 8px 10px;
   color: rgba(248, 246, 240, 0.68);
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.25;
@@ -64,7 +64,7 @@
 .agent-hooks-status strong {
   min-width: 0;
   overflow: hidden;
-  color: rgba(248, 246, 240, 0.88);
+  color: var(--color-text-strong);
   font-size: 11px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -85,10 +85,10 @@
   display: grid;
   gap: 7px;
   padding: 8px 10px;
-  color: rgba(248, 246, 240, 0.72);
+  color: var(--color-text-muted);
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
 }
 
 .agent-status-panel--idle {
@@ -109,7 +109,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
 }
 
 .agent-status-panel__summary span,
@@ -131,7 +131,7 @@
 
 .agent-status-panel__rows {
   display: grid;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .agent-status-row {
@@ -150,7 +150,7 @@
 }
 
 .agent-status-row--attention strong {
-  color: #ffd166;
+  color: var(--color-warning);
 }
 
 .agent-status-clear-button {
@@ -158,13 +158,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-xs);
   flex: 0 0 auto;
   padding: 0 8px;
-  color: #111112;
-  background: #ffd166;
+  color: var(--color-surface-dark);
+  background: var(--color-warning);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 11px;

@@ -3,7 +3,7 @@
   height: 100%;
   display: flex;
   align-items: stretch;
-  gap: 14px;
+  gap: var(--space-2xl);
   overflow-x: auto;
   overflow-y: hidden;
   padding: 7px 46px 12px 4px;
@@ -24,7 +24,7 @@
 .archive-cards::-webkit-scrollbar-thumb,
 .archive-timeline::-webkit-scrollbar-thumb {
   background: rgba(31, 27, 22, 0.16);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .archive-card {
@@ -35,9 +35,9 @@
   min-height: 146px;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 6px;
+  gap: var(--space-sm);
   padding: 18px 14px 14px 30px;
-  color: #1f1b16;
+  color: var(--color-ink);
   text-align: left;
   background: #fffdf9;
   border: 1px solid rgba(146, 138, 127, 0.42);
@@ -82,7 +82,7 @@
   width: 22px;
   height: 40px;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px 21px, rgba(0, 0, 0, 0.12) 22px),
+    linear-gradient(90deg, var(--color-white-a16) 1px, transparent 1px 21px, rgba(0, 0, 0, 0.12) 22px),
     #74a9df;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
   border-radius: 3px 3px 0 0;
@@ -119,7 +119,7 @@
 .archive-card__date span:last-child {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .archive-card__date em {
@@ -148,7 +148,7 @@
   display: grid;
   grid-template-columns: 9px minmax(0, 1fr);
   align-items: start;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .archive-card__todo span:last-child {
@@ -165,7 +165,7 @@
   margin-top: 3px;
   border: 1px solid rgba(91, 96, 104, 0.34);
   border-radius: 3px;
-  background: #ffffff;
+  background: var(--color-white);
 }
 
 .archive-card__todo-mark--done {
@@ -206,7 +206,7 @@
   align-items: center;
   gap: 9px;
   padding: 8px 10px 8px 9px;
-  color: #1f1b16;
+  color: var(--color-ink);
   text-align: left;
   background:
     linear-gradient(rgba(42, 35, 28, 0.07) 1px, transparent 1px),
@@ -215,7 +215,7 @@
     100% 22px,
     100% 100%;
   border: 1px solid rgba(84, 62, 43, 0.16);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   outline: none;
   cursor: pointer;
   box-shadow:
@@ -251,8 +251,8 @@
 .archive-timeline__dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
-  background: #74d6ff;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(116, 214, 255, 0.22);
 }
 

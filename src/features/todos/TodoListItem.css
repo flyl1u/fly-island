@@ -3,11 +3,11 @@
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto 28px;
   align-items: start;
-  gap: 8px;
+  gap: var(--space-md);
   padding: 7px 8px;
   background: rgba(255, 255, 255, 0.48);
   border: 1px solid rgba(31, 27, 22, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition:
     background 140ms ease,
     border-color 140ms ease,
@@ -44,17 +44,17 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.78);
   border: 2px solid rgba(31, 27, 22, 0.3);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   outline: none;
   cursor: pointer;
 }
 
 .todo-check[aria-pressed="true"] {
-  background: #2f8c61;
-  border-color: #2f8c61;
+  background: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .todo-check:disabled {
@@ -77,7 +77,7 @@
   width: 100%;
   padding: 0;
   overflow: visible;
-  color: #1f1b16;
+  color: var(--color-ink);
   text-align: left;
   background: transparent;
   border: 0;
@@ -105,10 +105,10 @@
   min-width: 0;
   min-height: 27px;
   padding: 2px 7px;
-  color: #1f1b16;
+  color: var(--color-ink);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(64, 125, 147, 0.32);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   outline: none;
   font-family:
     "Aptos",
@@ -130,10 +130,10 @@
   justify-content: center;
   gap: 5px;
   padding: 0 10px;
-  color: #ffffff;
-  background: #1f1b16;
+  color: var(--color-white);
+  background: var(--color-ink);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 12px;
@@ -176,7 +176,7 @@
   color: rgba(31, 27, 22, 0.54);
   background: rgba(31, 27, 22, 0.06);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   transition:

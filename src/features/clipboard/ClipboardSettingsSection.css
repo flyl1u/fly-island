@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-xl);
 }
 
 .shortcut-control--disabled {
@@ -14,7 +14,7 @@
   min-width: 0;
   display: grid;
   gap: 5px;
-  color: rgba(248, 246, 240, 0.72);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -39,9 +39,9 @@
   gap: 7px;
   padding: 0 10px;
   color: rgba(248, 246, 240, 0.82);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-a08);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 12px;
@@ -58,13 +58,13 @@
 
 .shortcut-record-button:hover,
 .shortcut-record-button:focus-visible {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: none;
 }
 
 .shortcut-record-button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -75,8 +75,8 @@
 }
 
 .shortcut-record-button--recording {
-  color: #ffffff;
-  background: #c75065;
+  color: var(--color-white);
+  background: var(--color-danger);
   box-shadow: 0 0 0 4px rgba(199, 80, 101, 0.16);
   animation: saveButtonPop 760ms ease both;
 }
@@ -86,11 +86,11 @@
   gap: 9px;
   margin-top: 6px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--color-white-a10);
 }
 
 .clipboard-settings-panel__header {
-  color: rgba(248, 246, 240, 0.88);
+  color: var(--color-text-strong);
   font-size: 13px;
   font-weight: 800;
   line-height: 1;

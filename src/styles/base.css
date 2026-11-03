@@ -6,7 +6,7 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  color: #f7f5ef;
+  color: var(--color-page-text);
   background: transparent;
   font-synthesis: none;
   text-rendering: optimizeLegibility;

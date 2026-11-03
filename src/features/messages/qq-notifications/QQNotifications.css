@@ -4,9 +4,9 @@
   place-items: center;
   flex: 0 0 auto;
   color: rgba(248, 246, 240, .78);
-  background: rgba(255, 255, 255, .08);
+  background: var(--color-white-a08);
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   cursor: pointer;
   transition: color 140ms ease, background 140ms ease, transform 140ms ease;
 }
@@ -21,7 +21,7 @@
 .island-message-button:hover,
 .icon-button.island-message-button--active {
   color: #fff;
-  background: rgba(255, 255, 255, .16);
+  background: var(--color-white-a16);
 }
 
 .island-message-button__dot {
@@ -30,7 +30,7 @@
   right: 4px;
   width: 5px;
   height: 5px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: #a9e6ca;
   box-shadow: 0 0 0 2px var(--island-background-color);
   pointer-events: none;
@@ -39,7 +39,7 @@
 .island-message-button:focus-visible,
 .qq-panel button:focus-visible,
 .qq-panel input:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, .88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
 }
 
@@ -58,14 +58,14 @@
 .qq-panel__toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
 }
 
 .qq-panel__header {
   flex: 0 0 auto;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-xl);
   min-height: 46px;
   margin-bottom: 4px;
   padding-bottom: 12px;
@@ -81,7 +81,7 @@
 .qq-panel__actions .icon-button {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: rgba(241, 246, 250, .5);
   background: transparent;
 }
@@ -128,9 +128,9 @@
   height: 16px;
   flex: 0 0 auto;
   margin: 0;
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .08);
+  border: 1px solid var(--color-white-a16);
+  border-radius: var(--radius-pill);
+  background: var(--color-white-a08);
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -142,7 +142,7 @@
   left: 2px;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: rgba(255, 255, 255, .7);
   transition: transform 160ms ease;
 }
@@ -162,7 +162,7 @@
   width: 5px;
   height: 5px;
   flex: 0 0 auto;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: rgba(255, 255, 255, .25);
 }
 
@@ -195,14 +195,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-sm);
   min-height: 30px;
   flex: 0 0 auto;
   padding: 5px 12px;
   color: rgba(248, 246, 240, .9);
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 999px;
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-pill);
   font-size: 12px;
   cursor: pointer;
   transition: color 140ms ease, background 140ms ease;
@@ -219,7 +219,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, .16) transparent;
+  scrollbar-color: var(--color-white-a16) transparent;
 }
 
 .qq-panel__empty {
@@ -228,7 +228,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-md);
   min-height: 0;
   height: 100%;
   padding: 16px;
@@ -263,7 +263,7 @@
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: background 140ms ease;
 }
@@ -276,7 +276,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-xl);
 }
 
 .qq-panel__item-heading strong {

@@ -1,11 +1,11 @@
 .editor-panel {
   display: grid;
-  gap: 10px;
+  gap: var(--space-lg);
   align-content: start;
   overflow-y: auto;
   padding: 14px 20px;
   background: rgba(255, 255, 255, 0.075);
-  scrollbar-color: rgba(116, 214, 255, 0.38) rgba(255, 255, 255, 0.08);
+  scrollbar-color: rgba(116, 214, 255, 0.38) var(--color-white-a08);
   scrollbar-width: thin;
 }
 
@@ -15,12 +15,12 @@
 
 .editor-panel::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.07);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .editor-panel::-webkit-scrollbar-thumb {
   background: rgba(116, 214, 255, 0.42);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .editor-panel::-webkit-scrollbar-button {
@@ -34,8 +34,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  color: rgba(248, 246, 240, 0.88);
+  gap: var(--space-2xl);
+  color: var(--color-text-strong);
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
@@ -44,7 +44,7 @@
 .settings-section {
   position: relative;
   display: grid;
-  gap: 10px;
+  gap: var(--space-lg);
   padding: 0;
   background: transparent;
   border: 0;
@@ -57,9 +57,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-lg);
   padding-bottom: 0;
-  color: rgba(248, 246, 240, 0.88);
+  color: var(--color-text-strong);
   border-bottom: 0;
   font-size: 13px;
   font-weight: 800;
@@ -84,7 +84,7 @@
 .settings-section--project {
   margin-top: 6px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--color-white-a10);
 }
 
 .settings-section--attention {
@@ -93,10 +93,10 @@
   padding: 12px 10px 10px;
   background: rgba(255, 209, 102, 0.08);
   border: 1px solid rgba(255, 209, 102, 0.42);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 0 0 4px rgba(255, 209, 102, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 var(--color-white-a08);
 }
 
 .reset-button {
@@ -106,9 +106,9 @@
   place-items: center;
   padding: 0;
   color: rgba(248, 246, 240, 0.76);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-a08);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   transition:
@@ -118,7 +118,7 @@
 }
 
 .reset-button:hover {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -127,6 +127,6 @@
 }
 
 .reset-button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
 }
