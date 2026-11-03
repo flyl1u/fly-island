@@ -1,0 +1,98 @@
+.clipboard-segments {
+  min-height: 28px;
+  display: flex;
+  gap: 18px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 0;
+}
+
+.clipboard-segments button {
+  position: relative;
+  min-width: 0;
+  width: auto;
+  height: 28px;
+  padding: 0 1px;
+  color: rgba(228, 226, 236, 0.48);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.clipboard-segments button:hover,
+.clipboard-segments .clipboard-segment--active {
+  color: rgba(248, 247, 251, 0.94);
+  background: transparent;
+}
+
+.clipboard-segments .clipboard-segment--active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: rgba(204, 195, 228, 0.82);
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(182, 169, 211, 0.2);
+}
+
+.clipboard-search {
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  color: rgba(225, 223, 233, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.clipboard-search:focus-within {
+  border-color: rgba(204, 195, 228, 0.38);
+  box-shadow: 0 0 0 3px rgba(182, 169, 211, 0.08);
+}
+
+.clipboard-search input {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  color: rgba(247, 246, 250, 0.9);
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.clipboard-search input::placeholder {
+  color: rgba(225, 223, 233, 0.32);
+}
+
+.clipboard-search button {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(248, 244, 233, 0.7);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.clipboard-search button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}

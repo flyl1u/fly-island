@@ -1,0 +1,128 @@
+.clipboard-panel__header {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clipboard-panel__title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(243, 242, 247, 0.9);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.clipboard-panel__title svg {
+  color: rgba(226, 222, 241, 0.78);
+}
+
+.clipboard-panel__title strong {
+  min-width: 0;
+  height: auto;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(211, 205, 229, 0.68);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.clipboard-panel__title em {
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: rgba(211, 205, 229, 0.68);
+  background: transparent;
+  border-radius: 0;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.clipboard-panel__tools {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.clipboard-shortcut-display,
+.clipboard-clear-button {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  outline: none;
+  font-size: 12px;
+  font-weight: 900;
+  transition:
+    background 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.clipboard-shortcut-display {
+  min-width: 86px;
+  gap: 6px;
+  padding: 0 9px;
+  color: rgba(225, 223, 233, 0.5);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: default;
+  user-select: none;
+}
+
+.clipboard-shortcut-display span {
+  white-space: nowrap;
+}
+
+.clipboard-clear-button {
+  min-width: 28px;
+  width: 28px;
+  padding: 0;
+  color: rgba(229, 226, 238, 0.62);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.clipboard-clear-button--confirming {
+  color: #ffffff;
+  background: #c75065;
+}
+
+.clipboard-clear-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.clipboard-clear-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.clipboard-clear-button--confirming:hover:not(:disabled) {
+  color: #ffffff;
+  background: #c75065;
+}
+
+.clipboard-clear-button:disabled {
+  cursor: default;
+  opacity: 0.38;
+  transform: none;
+}

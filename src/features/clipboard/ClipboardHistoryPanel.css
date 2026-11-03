@@ -1,0 +1,66 @@
+.clipboard-panel {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
+  padding: 16px 18px 18px;
+  color: rgba(241, 240, 246, 0.92);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(182, 169, 211, 0.12), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.018)),
+    rgba(20, 20, 25, 0.88);
+  background-size: auto;
+  border-radius: 22px;
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.clipboard-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.clipboard-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.clipboard-list::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.clipboard-list::-webkit-scrollbar-thumb {
+  background: rgba(204, 195, 228, 0.28);
+  border-radius: 999px;
+}
+
+.clipboard-empty {
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  color: rgba(225, 223, 233, 0.42);
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.clipboard-item__main:focus-visible,
+.clipboard-item__note button:focus-visible,
+.clipboard-note-editor input:focus-visible,
+.clipboard-item__actions button:focus-visible,
+.clipboard-clear-button:focus-visible,
+.clipboard-segments button:focus-visible,
+.clipboard-search button:focus-visible {
+  outline: 2px solid rgba(210, 202, 232, 0.76);
+  outline-offset: 2px;
+}

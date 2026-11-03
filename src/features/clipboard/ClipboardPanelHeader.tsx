@@ -1,6 +1,7 @@
 import { Check, ClipboardList, Keyboard, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { normalizeClipboardShortcut } from "./shortcut";
+import "./ClipboardPanelHeader.css";
 
 export function ClipboardPanelHeader({
   itemCount,

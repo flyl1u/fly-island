@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import "./ClipboardFilters.css";
 
 export function ClipboardFilters({
   view,
