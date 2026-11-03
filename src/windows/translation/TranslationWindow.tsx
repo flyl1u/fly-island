@@ -4,25 +4,8 @@ import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Sett
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { STORAGE_KEY, loadSettings, type Direction, type TranslationSettings } from "./storage";
 import "./TranslationWindow.css";
-
-type Direction = "auto" | "zh-en" | "en-zh";
-type TranslationSettings = { shortcut: string; direction: Direction };
-const STORAGE_KEY = "focusd-island-translation-settings";
-const DEFAULT_SETTINGS: TranslationSettings = { shortcut: "Alt+C", direction: "auto" };
-
-function loadSettings(): TranslationSettings {
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as Partial<TranslationSettings> | null;
-    const shortcut = typeof stored?.shortcut === "string" ? stored.shortcut : DEFAULT_SETTINGS.shortcut;
-    return {
-      shortcut: shortcut === "Alt+Space" ? DEFAULT_SETTINGS.shortcut : shortcut,
-      direction: stored?.direction === "zh-en" || stored?.direction === "en-zh" ? stored.direction : "auto",
-    };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
 
 function normalizeShortcut(event: KeyboardEvent<HTMLInputElement>) {
   if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return null;

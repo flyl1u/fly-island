@@ -120,7 +120,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
-| `focusd-island-translation-settings` | `TranslationWindow.tsx` |
+| `focusd-island-translation-settings` | `windows/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 
 ### 事件
