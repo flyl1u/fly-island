@@ -4,6 +4,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "../../i18n";
 import { UpdatePanel } from "./UpdatePanel";
+import "./ProjectSettingsSection.css";
 
 export function ProjectSettingsSection() {
   const t = useTranslation();
