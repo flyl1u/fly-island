@@ -121,7 +121,8 @@
 
 - [x] **4.1** 把 `App.css` 中剩余的样式按组件分配到同名 `.css`。无法归属的样式放到 `windows/island/IslandApp.css`。
   - 拆完后 `App.css` 已为空，删除文件与白名单条目（原 4.3）在同一个搬迁提交中完成，4.3 随之勾选；4.2 是改写步骤，单独提交。
-- [ ] **4.2** 把散落的颜色、圆角、间距硬编码替换为 `tokens.css` 中的变量（只替换数值完全相同的，不改变视觉效果）。
+- [x] **4.2** 把散落的颜色、圆角、间距硬编码替换为 `tokens.css` 中的变量（只替换数值完全相同的，不改变视觉效果）。
+  - 范围：出现多次的颜色（hex 按原文小写匹配，rgba 按数值匹配）、单值 `border-radius`、单值 `gap`；不改自定义属性的定义（如 `.stage` 上的 `--task-text-color`，运行时由内联样式覆盖）、只出现一两次的颜色、padding / margin、字号，以及 TSX 中的内联颜色。回归页不经过 `main.tsx`，各自导入 `tokens.css`。
 - [x] **4.3** 删除 `src/App.css`，从白名单中移除。（随 4.1 完成）
 
 **验收**：所有 `.css` 文件不超过 500 行；主窗口、设置窗口、翻译窗口在中英文下截图对比都没有差异。
@@ -231,6 +232,8 @@
 | 2026-11-03 | 3.3（2/n，搬迁）、3.4 | 9fb51f2 | `IslandApp` 原样搬到 `windows/island/IslandApp.tsx`（具名导出），`App` 包装去掉，`main.tsx` 与 `tests/i18n.tsx` 直接渲染 `IslandApp`。`IslandShell`（约 490 行）拆分搬到 `IslandShell.tsx`，折叠条与展开态页头拆成 `IslandCollapsedBar.tsx`、`IslandHeader.tsx`，毛玻璃指针、首帧预热、窗口拖拽手势拆成 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`；JSX 与逻辑逐行一致（去空白比对），DOM 结构与 class 名不变。`useIslandAutomation.ts` 移到 `windows/island/`，同步测试路径。CSS 顺序：`App.css` 仍是最后一个导入；`IslandShell` 在页面面板之后导入，只有 `CollapsedMessageContent.css` 的位置后移，它与之后的样式没有共用选择器。回归页 `collapsed-message-animation.tsx` 先以副作用方式导入 `IslandApp`，保持原来的样式集合与顺序。删除 `src/App.tsx` 及其白名单条目 | `pnpm check`（81/81）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同，仅 `CollapsedMessageContent.css` 的 21 条规则位置后移。回归页 `collapsed-message-animation.html?test=1` 24/24 通过；`i18n.html?test=1` 存量失败（见“待处理问题”3.3），临时补齐 mock 后确认 `IslandApp` 正常渲染（折叠条、页头 9 个按钮、舞台 CSS 变量），mock 改动未提交。折叠条点击 / 拖动、毛玻璃指针高光、首次展开待人工验收 |
 | 2026-11-03 | Phase 3 验收 | 见提交说明 | 自动检查部分达标（数据见 Phase 3 验收说明）；ESLint 仍为 5 条存量 warning，位置随搬迁变为 `IslandApp.tsx`、`QQMail.tsx`、`useIslandWindow.ts`、`useNativeLayout.ts`、`TranslationWindow.tsx` | `pnpm check`（81/81）、`pnpm build`；`pnpm tauri dev` 手动检查待人工验收 |
 | 2026-11-03 | 4.1、4.3（搬迁） | `2d82e1f` | `App.css` 912 → 0（删除），白名单条目删除。按行号原样切分：`windows/island/IslandShell.css`（329，外壳、毛玻璃、折叠 / 展开容器）、`IslandCollapsedBar.css`（128）、`IslandHeader.css`（154，页头、页面圆点、窗口按钮）由各组件自己导入；`features/messages/MessageSourceIcon.css`（9）；跨领域规则（`.stage` 与像素字体覆盖、`.icon-button` 一族、液态玻璃面板背景、`save-check-icon`、减少动效大列表）放到 `IslandApp.css`（258），仍是 `IslandApp` 的最后一个导入；未使用的 `.clipboard-settings-panel`、`.color-panel` 追加到 `ClipboardSettingsSection.css`、`ColorSettingsSection.css`。`tests/mail-reader.tsx` 改为导入 `IslandApp.css`。class 名不变 | `pnpm check`（81/81，ESLint 0 error / 5 warn 不变，行数检查 0 错误）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同（694 条），615 条位置变化；顺序翻转且同名属性值不同的规则对中，特异性不同的由特异性决定，特异性相同的 444 对（466 组选择器）按 JSX className 共现分析均不会命中同一元素（过滤器先用 14 组已知共现 class 校验）。回归页 `collapsed-message-animation.html?test=1` 24/24、`mail-reader.html?run=1` 33 项全部通过 |
+| 2026-11-03 | 4.2（改写） | `39afbc3` | 新增 `styles/tokens.css`（49 行，35 个变量：颜色 24、圆角 5、间距 6），由 `main.tsx` 最先导入，4 个回归页同步导入；37 个 CSS 文件中 371 处数值完全相同的字面量改为 `var(--…)`，各文件行数不变 | `pnpm check`（81/81，ESLint 0 error / 5 warn 不变，行数检查 0 错误）、`pnpm build`；构建产物与上一提交（worktree 构建）比对：把 `var()` 代回 token 值、两边颜色统一成 r,g,b,a（透明度按 1/255 量化）后，694 条规则集合与顺序完全一致；唯一的文本差异是 esbuild 对 `inset 0 1px 0 var(...)` 保留了值为 0 的模糊半径（字面量颜色时会省略），渲染等价。回归页 `collapsed-message-animation.html?test=1` 24/24、`mail-reader.html?run=1` 33 项通过，页面上 token 能解析出值 |
+| 2026-11-03 | Phase 4 验收 | 见提交说明 | `App.css` 已删除；最大的 CSS 文件为 `MusicPlayerPanel.css`（392），全部不超过 500 行；白名单只剩 Rust 文件 | 三个窗口中英文截图对比待人工验收 |
 
 ## 待人工验收
 
@@ -255,6 +258,7 @@
 | `27af68c` | 3.2 | 待办（同 2.1 检查项），另查：开始待办后岛屿折叠并显示该待办；未设置保存路径时点保存会打开设置并定位到保存路径，设置窗口填好后主窗口的“需要路径”提示消失；编辑后约 0.7 秒自动保存；跨日（可改系统日期）时未保存内容进入归档、未完成待办按设置结转。 |
 | `19b2329`、`9fb51f2` | 3.3 | `pnpm tauri dev` 主窗口（中英文、两种外观）：折叠 / 展开 / 贴边收起与悬停唤出、自动贴边、Esc 折叠、剪贴板快捷键开关剪贴板页、页面圆点切换、折叠条点击打开当前页与消息预览点击、从折叠条拖动窗口（拖动后不误触发点击）、页头设置 / 消息 / 翻译 / 重置位置 / 最小化到托盘、液态玻璃指针高光、首次展开无闪烁；设置窗口修改外观后主窗口同步。 |
 | `2d82e1f` | 4.1 | `pnpm tauri dev` 主窗口（中英文、经典 / 液态玻璃、系统 / 像素字体）：折叠条（脉冲点、代理状态、品牌、当前待办、待办计数、静音按钮）、展开态页头（标题图标、页面圆点三种颜色与选中态、窗口按钮与重置位置高亮）、液态玻璃展开 / 收起光晕动画与 CSS 回退、贴边 / 分离圆角、各页面面板的玻璃背景、保存成功勾选动画、系统“减少动态效果”下无过渡；与 `47b9fe2` 截图对比无差异。 |
+| `39afbc3` | 4.2 | 与 4.1 同一轮检查即可：主窗口、设置窗口、翻译窗口（中英文、经典 / 液态玻璃）与 `47b9fe2` 截图对比无差异，重点看焦点框颜色、圆角药丸按钮、待办纸张文字颜色、设置区块间距。这是 Phase 4 验收要求的截图对比。 |
 
 ## 待处理问题
 
