@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 2633 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 2440 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 1311 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -197,7 +197,8 @@
 | 2026-11-03 | 2.4a（5/n，搬迁） | `0099449` | `ClipboardSettingsSection`（150）原样搬到 `features/clipboard/`；`App.tsx` 2779 → 2633，白名单 2892 → 2633 | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（6/6，CSS 搬迁） | `afdac27` | `App.css` 1526 → 1311（-215），白名单同步下调；新增 `i18n/LocaleControl.css`、`features/clipboard/ClipboardSettingsSection.css`、`features/todos/SavePathSettingsSection.css`。多个组件共用的 `.save-check-icon` 和保存动画关键帧留在 `App.css`（4.1 处理）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
 | 2026-11-03 | 2.5（1/5，搬迁） | `786329c` | `App.tsx` 2633 → 2532（-101，白名单暂不下调）；新增 `features/agent-status/api.ts`（与 Rust 对应的类型）、`status.ts`（默认值、提供方列表与标签、视觉状态与标签函数）和 `tests/agent-status.test.mjs`（4 个用例）；`SettingsWindow.tsx` 改为直接从 `features/agent-status` 导入 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.5（2/5，改写） | 见提交说明 | 在 `App.tsx` 中拆出 `AgentHooksSettingsSection`（113，无状态），只被该区块使用的 `agentStatusRows`、`agentStatusLabel` 计算一并移入。`LayoutEditor` 276 → 185；`App.tsx` 2532 → 2555（低于白名单记录 2633） | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.5（2/5，改写） | `a85d047` | 在 `App.tsx` 中拆出 `AgentHooksSettingsSection`（113，无状态），只被该区块使用的 `agentStatusRows`、`agentStatusLabel` 计算一并移入。`LayoutEditor` 276 → 185；`App.tsx` 2532 → 2555（低于白名单记录 2633） | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.5（3/5，搬迁） | 见提交说明 | `AgentHooksSettingsSection`（118）原样搬到 `features/agent-status/`；`App.tsx` 2555 → 2440，白名单 2633 → 2440 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 
