@@ -20,7 +20,7 @@
 | `src/App.css` | 3865 | 0（已删除） | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
-| `src-tauri/src/lib.rs` | 1973 | 1181（生产代码 1133，内联测试 48，测试已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
+| `src-tauri/src/lib.rs` | 1973 | 499（生产代码 451，已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
 | `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
 | `src-tauri/src/media_control.rs` | 829 | 829 | 829 / 800 | 0 | 生产代码 |
 | `src-tauri/src/qq_notifications.rs` | 1081 | 1083 | 789 / 800 | 292 / 150 | 测试 |
@@ -135,7 +135,9 @@
 
 - [x] **5.1** 从 `lib.rs` 中拆出 `island/`，包括状态、几何计算、毛玻璃、鼠标穿透以及对应测试。
   - `run()` 中的岛屿初始化（首次定位、鼠标穿透循环、拖动位置记录）和托盘中的显示 / 隐藏仍在 `lib.rs`，改为通过 `island::` 路径调用；托盘在 5.3 移到 `tray.rs`。更新配置的 3 个测试留在 `lib.rs` 的测试模块，5.3 随 `system/updater.rs` 迁移。
-- [ ] **5.2** 从 `lib.rs` 中拆出 `agent_status/`。
+- [x] **5.2** 从 `lib.rs` 中拆出 `agent_status/`。
+  - `windows_home_dir` 同时被待办导出和钩子安装使用，暂留 `lib.rs`，5.3 再归位；`write_text_file` 实际只有钩子安装使用，放在 `agent_status/mod.rs`（overview 映射已更正）。
+  - 执行顺序调整为 5.2 → 5.7 → 5.3 → 5.4 → 5.5 → 5.6 → 5.8：`lib.rs` 里还有 10 个媒体命令，计划没写归属，在 5.7 随 `media_control/` 迁移；5.3 放在其后，完成时 `lib.rs` 才能只剩组装代码。
 - [ ] **5.3** 从 `lib.rs` 中拆出 `system/`（`startup.rs`、`updater.rs`、`todo_export.rs`）和 `tray.rs`。完成后 `lib.rs` 只剩组装代码。
 - [ ] **5.4** 拆分 `qq_mail/`。
 - [ ] **5.5** 拆分 `qq_notifications/`。
@@ -237,6 +239,8 @@
 | 2026-11-03 | Phase 4 验收 | 见提交说明 | `App.css` 已删除；最大的 CSS 文件为 `MusicPlayerPanel.css`（392），全部不超过 500 行；白名单只剩 Rust 文件 | 三个窗口中英文截图对比待人工验收 |
 | 2026-11-03 | 5.1（1/2，搬迁） | `4846273` | `lib.rs` 物理行 1970 → 1181，生产代码 1769 → 1133（白名单下调），内联测试 201 → 48（白名单条目删除）。拆到 `island/`：`state.rs`（130，状态类型、全局状态与访问函数、拖动位置记录）、`geometry.rs`（173，尺寸常量、定位与贴边动画）、`glass.rs`（54）、`passthrough.rs`（114）、`mod.rs`（6 个命令、`IslandLayout`、`WINDOW_LABEL`、`main_window` / `show_island` / `hide_island`）、`tests.rs`（9 个几何测试）。函数体不变，只调整可见性、`use` 和模块路径（`top_edge.rs` 改经 `super::` 访问）；命令名与参数不变，`generate_handler!` 改为 `island::` 路径。新旧代码去掉缩进、可见性和路径前缀后逐行比较，差异只有 `use` / `mod` 声明和模块文档注释 | `cargo test`（63 通过 / 5 忽略，与改动前相同）、clippy 84 条且各类数量不变（`lib.rs` 的 13 条中 10 条随代码移到 `island/`）、无新增 rustc 告警；`pnpm check`（81/81）、`pnpm build`；`pnpm tauri build --no-bundle` 成功，桌面快捷方式 `fly-island.lnk` 已核对指向本次产物 |
 | 2026-11-03 | 5.1（2/2，格式化） | `3eca09a` | 只对 `island/` 运行 rustfmt（4 个文件 +66/-19，`tests.rs` 197 行），`lib.rs` 不动，5.3 后再格式化 | `cargo test`（63 / 5）、clippy 84 条、`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.2（1/2，搬迁） | `179b8ef` | `lib.rs` 生产代码 1133 → 451（低于 800，白名单条目删除）。拆到 `agent_status/`：`mod.rs`（3 个命令、`AgentHooksInstallResult`、钩子脚本常量与安装、`write_text_file`）、`snapshot.rs`（状态类型、快照归一化、毫秒时间戳）、`markers.rs`（运行标记与保持文件）、`codex_hooks.rs`、`claude_hooks.rs`。函数体不变；`include_str!` 路径因目录加深一层多一个 `../`，嵌入的仍是同一份脚本。`lib.rs` 测试模块去掉不再需要的 `use super::*`，自行导入 `json` / `Value`。去缩进、可见性与路径前缀后逐行比较，差异只有 `include_str!` 路径 | `cargo test`（63 / 5）、clippy 84 条且各类数量不变、无 rustc 告警；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.2（2/2，格式化） | `4dc4908` | 只对 `agent_status/` 运行 rustfmt（4 个文件 +31/-8，合计 746 行） | 同上，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -263,6 +267,7 @@
 | `2d82e1f` | 4.1 | `pnpm tauri dev` 主窗口（中英文、经典 / 液态玻璃、系统 / 像素字体）：折叠条（脉冲点、代理状态、品牌、当前待办、待办计数、静音按钮）、展开态页头（标题图标、页面圆点三种颜色与选中态、窗口按钮与重置位置高亮）、液态玻璃展开 / 收起光晕动画与 CSS 回退、贴边 / 分离圆角、各页面面板的玻璃背景、保存成功勾选动画、系统“减少动态效果”下无过渡；与 `47b9fe2` 截图对比无差异。 |
 | `39afbc3` | 4.2 | 与 4.1 同一轮检查即可：主窗口、设置窗口、翻译窗口（中英文、经典 / 液态玻璃）与 `47b9fe2` 截图对比无差异，重点看焦点框颜色、圆角药丸按钮、待办纸张文字颜色、设置区块间距。这是 Phase 4 验收要求的截图对比。 |
 | `4846273`、`3eca09a` | 5.1 | `pnpm tauri dev` 或桌面快捷方式启动：首次启动位置与显示、折叠 / 展开时原生窗口尺寸、贴边收起与唤出动画、拖动后松手的顶边吸附与位置保存、重置位置、窗口外点击穿透（折叠态与展开态、贴边与分离的圆角处）、液态玻璃开关、托盘显示 / 隐藏与单实例唤起。 |
+| `179b8ef`、`4dc4908` | 5.2 | 设置窗口（中英文）：AI 代理区块安装钩子（脚本写入应用数据目录，`~/.codex/config.toml` 与 `~/.claude/settings.json` 中的托管块与原有内容保留），状态读取、运行中 / 过期显示、清除状态；主窗口代理状态随 Codex / Claude Code 实际运行变化。 |
 
 ## 待处理问题
 
