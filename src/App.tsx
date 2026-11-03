@@ -2491,57 +2491,13 @@ function TodoNotebook({
 
   return (
     <section className={notebookClassName} aria-label={t.notebook.sectionLabel}>
-      <div className="todo-notebook__spine">
-        <button
-          className={[
-            "todo-spine-button",
-            "todo-spine-button--today",
-            isTodayMode || isDailyMode ? "todo-spine-button--active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          type="button"
-          title={t.notebook.backToToday}
-          aria-label={t.notebook.backToToday}
-          onClick={onShowToday}
-        />
-        <button
-          className={[
-            "todo-spine-button",
-            "todo-spine-button--save",
-            saveState === "saved" ? "todo-spine-button--saved" : "",
-            saveState === "saving" ? "todo-spine-button--saving" : "",
-            saveState === "needs-path" || saveState === "error"
-              ? "todo-spine-button--attention"
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          type="button"
-          title={t.notebook.saveToday}
-          aria-label={t.notebook.saveTodayMarkdown}
-          onClick={onSaveToday}
-        >
-          {saveState === "saved" && (
-            <Check className="save-check-icon" size={12} strokeWidth={3} />
-          )}
-        </button>
-        <button
-          className={[
-            "todo-spine-button",
-            "todo-spine-button--archive",
-            pageMode === "archive" || pageMode === "review"
-              ? "todo-spine-button--active"
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          type="button"
-          title={t.notebook.reviewSaved}
-          aria-label={t.notebook.reviewSaved}
-          onClick={onShowArchive}
-        />
-      </div>
+      <TodoNotebookSpine
+        pageMode={pageMode}
+        saveState={saveState}
+        onShowToday={onShowToday}
+        onSaveToday={onSaveToday}
+        onShowArchive={onShowArchive}
+      />
 
       <div className="todo-notebook__topline">
         <div className="todo-notebook__title-group">
@@ -2651,131 +2607,268 @@ function TodoNotebook({
               {isReviewMode ? t.todo.emptyReview : t.todo.empty}
             </div>
           ) : (
-            displayedTodos.map((todo) => {
-              const isActive =
-                isTodayMode && todo.id === activeTodoId && !todo.completed;
-              const titleLineCount = getTodoTitleLineCount(todo.title);
-
-              return (
-                <div
-                  className={[
-                    "todo-item",
-                    todo.completed ? "todo-item--done" : "",
-                    isActive ? "todo-item--active" : "",
-                    canReorderTodos ? "todo-item--reorderable" : "",
-                    draggedTodoId === todo.id ? "todo-item--dragging" : "",
-                    dragOverTodoId === todo.id ? "todo-item--drag-over" : "",
-                    !isTodayMode ? "todo-item--readonly" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  key={todo.id}
-                  role="listitem"
-                  data-todo-id={todo.id}
-                  style={
-                    {
-                      "--todo-title-min-height": `${titleLineCount * 19}px`,
-                    } as CSSProperties
-                  }
-                >
-                  <button
-                    className="todo-check"
-                    type="button"
-                    aria-pressed={todo.completed}
-                    disabled={!isTodayMode}
-                    title={todo.completed ? t.todo.markIncomplete : t.todo.complete}
-                    aria-label={t.todo.actionOnTask(
-                      todo.completed ? t.todo.markIncomplete : t.todo.complete,
-                      todo.title,
-                    )}
-                    onClick={() => onToggleTodo(todo.id)}
-                  >
-                    {todo.completed && <Check size={14} strokeWidth={2.5} />}
-                  </button>
-                  {isTodayMode && editingTodoId === todo.id ? (
-                    <input
-                      className="todo-title-input"
-                      value={todoTitleDraft}
-                      aria-label={t.todo.editTitle}
-                      autoFocus
-                      onChange={(event) =>
-                        setTodoTitleDraft(event.currentTarget.value)
-                      }
-                      onBlur={commitTodoTitleEdit}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          commitTodoTitleEdit();
-                        }
-
-                        if (event.key === "Escape") {
-                          setEditingTodoId(null);
-                          setTodoTitleDraft("");
-                        }
-                      }}
-                    />
-                  ) : isTodayMode ? (
-                    <button
-                      className="todo-title todo-title--editable"
-                      type="button"
-                      title={t.todo.editTitle}
-                      onClick={() => startTodoTitleEdit(todo)}
-                    >
-                      {todo.title}
-                    </button>
-                  ) : (
-                    <span className="todo-title">{todo.title}</span>
-                  )}
-                  {isTodayMode && (
-                    <>
-                      <button
-                        className={["todo-start", isActive ? "todo-start--active" : ""]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        title={isActive ? t.todo.stop : t.todo.start}
-                        aria-label={t.todo.actionOnTask(
-                          isActive ? t.todo.stop : t.todo.start,
-                          todo.title,
-                        )}
-                        disabled={todo.completed}
-                        onClick={() => onStartTodo(todo.id)}
-                      >
-                        <Play size={13} strokeWidth={2.4} />
-                        <span>{isActive ? t.todo.stop : t.todo.start}</span>
-                      </button>
-                      <button
-                        className="todo-delete"
-                        type="button"
-                        title={t.todo.delete}
-                        aria-label={t.todo.deleteTask(todo.title)}
-                        onClick={() => onDeleteTodo(todo.id)}
-                      >
-                        <Trash2 size={14} strokeWidth={2.2} />
-                      </button>
-                      {canReorderTodos && (
-                        <button
-                          className="todo-drag-handle"
-                          type="button"
-                          title={t.todo.reorder}
-                          aria-label={t.todo.reorderTask(todo.title)}
-                          disabled={editingTodoId === todo.id}
-                          onPointerDown={(event) => startTodoDrag(event, todo.id)}
-                          onPointerMove={moveTodoDrag}
-                          onPointerUp={finishTodoDrag}
-                          onPointerCancel={cancelTodoDrag}
-                        >
-                          <GripVertical size={15} strokeWidth={2.4} />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
-            })
+            displayedTodos.map((todo) => (
+              <TodoListItem
+                key={todo.id}
+                todo={todo}
+                isTodayMode={isTodayMode}
+                isActive={
+                  isTodayMode && todo.id === activeTodoId && !todo.completed
+                }
+                canReorder={canReorderTodos}
+                isDragging={draggedTodoId === todo.id}
+                isDragOver={dragOverTodoId === todo.id}
+                isEditing={editingTodoId === todo.id}
+                titleDraft={todoTitleDraft}
+                onTitleDraftChange={setTodoTitleDraft}
+                onCommitEdit={commitTodoTitleEdit}
+                onCancelEdit={() => {
+                  setEditingTodoId(null);
+                  setTodoTitleDraft("");
+                }}
+                onStartEdit={startTodoTitleEdit}
+                onToggle={onToggleTodo}
+                onStart={onStartTodo}
+                onDelete={onDeleteTodo}
+                onDragStart={startTodoDrag}
+                onDragMove={moveTodoDrag}
+                onDragEnd={finishTodoDrag}
+                onDragCancel={cancelTodoDrag}
+              />
+            ))
           )}
         </div>
       )}
     </section>
+  );
+}
+
+function TodoNotebookSpine({
+  pageMode,
+  saveState,
+  onShowToday,
+  onSaveToday,
+  onShowArchive,
+}: {
+  pageMode: TodoPageMode;
+  saveState: SaveState;
+  onShowToday: () => void;
+  onSaveToday: () => void;
+  onShowArchive: () => void;
+}) {
+  const t = useTranslation();
+  const isTodayMode = pageMode === "today";
+  const isDailyMode = pageMode === "daily";
+
+  return (
+    <div className="todo-notebook__spine">
+      <button
+        className={[
+          "todo-spine-button",
+          "todo-spine-button--today",
+          isTodayMode || isDailyMode ? "todo-spine-button--active" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        type="button"
+        title={t.notebook.backToToday}
+        aria-label={t.notebook.backToToday}
+        onClick={onShowToday}
+      />
+      <button
+        className={[
+          "todo-spine-button",
+          "todo-spine-button--save",
+          saveState === "saved" ? "todo-spine-button--saved" : "",
+          saveState === "saving" ? "todo-spine-button--saving" : "",
+          saveState === "needs-path" || saveState === "error"
+            ? "todo-spine-button--attention"
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        type="button"
+        title={t.notebook.saveToday}
+        aria-label={t.notebook.saveTodayMarkdown}
+        onClick={onSaveToday}
+      >
+        {saveState === "saved" && (
+          <Check className="save-check-icon" size={12} strokeWidth={3} />
+        )}
+      </button>
+      <button
+        className={[
+          "todo-spine-button",
+          "todo-spine-button--archive",
+          pageMode === "archive" || pageMode === "review"
+            ? "todo-spine-button--active"
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        type="button"
+        title={t.notebook.reviewSaved}
+        aria-label={t.notebook.reviewSaved}
+        onClick={onShowArchive}
+      />
+    </div>
+  );
+}
+
+function TodoListItem({
+  todo,
+  isTodayMode,
+  isActive,
+  canReorder,
+  isDragging,
+  isDragOver,
+  isEditing,
+  titleDraft,
+  onTitleDraftChange,
+  onCommitEdit,
+  onCancelEdit,
+  onStartEdit,
+  onToggle,
+  onStart,
+  onDelete,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+  onDragCancel,
+}: {
+  todo: TodoItem;
+  isTodayMode: boolean;
+  isActive: boolean;
+  canReorder: boolean;
+  isDragging: boolean;
+  isDragOver: boolean;
+  isEditing: boolean;
+  titleDraft: string;
+  onTitleDraftChange: (value: string) => void;
+  onCommitEdit: () => void;
+  onCancelEdit: () => void;
+  onStartEdit: (todo: TodoItem) => void;
+  onToggle: (id: string) => void;
+  onStart: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDragStart: (event: ReactPointerEvent<HTMLButtonElement>, todoId: string) => void;
+  onDragMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onDragEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onDragCancel: () => void;
+}) {
+  const t = useTranslation();
+  const titleLineCount = getTodoTitleLineCount(todo.title);
+
+  return (
+    <div
+      className={[
+        "todo-item",
+        todo.completed ? "todo-item--done" : "",
+        isActive ? "todo-item--active" : "",
+        canReorder ? "todo-item--reorderable" : "",
+        isDragging ? "todo-item--dragging" : "",
+        isDragOver ? "todo-item--drag-over" : "",
+        !isTodayMode ? "todo-item--readonly" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role="listitem"
+      data-todo-id={todo.id}
+      style={
+        {
+          "--todo-title-min-height": `${titleLineCount * 19}px`,
+        } as CSSProperties
+      }
+    >
+      <button
+        className="todo-check"
+        type="button"
+        aria-pressed={todo.completed}
+        disabled={!isTodayMode}
+        title={todo.completed ? t.todo.markIncomplete : t.todo.complete}
+        aria-label={t.todo.actionOnTask(
+          todo.completed ? t.todo.markIncomplete : t.todo.complete,
+          todo.title,
+        )}
+        onClick={() => onToggle(todo.id)}
+      >
+        {todo.completed && <Check size={14} strokeWidth={2.5} />}
+      </button>
+      {isTodayMode && isEditing ? (
+        <input
+          className="todo-title-input"
+          value={titleDraft}
+          aria-label={t.todo.editTitle}
+          autoFocus
+          onChange={(event) => onTitleDraftChange(event.currentTarget.value)}
+          onBlur={onCommitEdit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              onCommitEdit();
+            }
+
+            if (event.key === "Escape") {
+              onCancelEdit();
+            }
+          }}
+        />
+      ) : isTodayMode ? (
+        <button
+          className="todo-title todo-title--editable"
+          type="button"
+          title={t.todo.editTitle}
+          onClick={() => onStartEdit(todo)}
+        >
+          {todo.title}
+        </button>
+      ) : (
+        <span className="todo-title">{todo.title}</span>
+      )}
+      {isTodayMode && (
+        <>
+          <button
+            className={["todo-start", isActive ? "todo-start--active" : ""]
+              .filter(Boolean)
+              .join(" ")}
+            type="button"
+            title={isActive ? t.todo.stop : t.todo.start}
+            aria-label={t.todo.actionOnTask(
+              isActive ? t.todo.stop : t.todo.start,
+              todo.title,
+            )}
+            disabled={todo.completed}
+            onClick={() => onStart(todo.id)}
+          >
+            <Play size={13} strokeWidth={2.4} />
+            <span>{isActive ? t.todo.stop : t.todo.start}</span>
+          </button>
+          <button
+            className="todo-delete"
+            type="button"
+            title={t.todo.delete}
+            aria-label={t.todo.deleteTask(todo.title)}
+            onClick={() => onDelete(todo.id)}
+          >
+            <Trash2 size={14} strokeWidth={2.2} />
+          </button>
+          {canReorder && (
+            <button
+              className="todo-drag-handle"
+              type="button"
+              title={t.todo.reorder}
+              aria-label={t.todo.reorderTask(todo.title)}
+              disabled={isEditing}
+              onPointerDown={(event) => onDragStart(event, todo.id)}
+              onPointerMove={onDragMove}
+              onPointerUp={onDragEnd}
+              onPointerCancel={onDragCancel}
+            >
+              <GripVertical size={15} strokeWidth={2.4} />
+            </button>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
