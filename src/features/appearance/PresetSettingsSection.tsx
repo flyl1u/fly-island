@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Save, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { IslandPreset } from "./types";
+import "./PresetSettingsSection.css";
 
 export function PresetSettingsSection({
   presets,
