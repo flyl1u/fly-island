@@ -80,6 +80,7 @@ import { NumberControl } from "./components/controls/NumberControl";
 import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { ArchiveBrowser } from "./features/todos/ArchiveBrowser";
+import { saveTodoMarkdown } from "./features/todos/api";
 import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
 import {
   ACTIVE_TODO_STORAGE_KEY,
@@ -114,10 +115,6 @@ type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 type AgentProvider = "codex" | "claudeCode";
 type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
 type AgentVisualState = "idle" | "running" | "attention";
-
-type SaveTodoResult = {
-  filePath: string;
-};
 
 type MediaRepeatMode = "none" | "track" | "list" | "unknown";
 
@@ -4518,11 +4515,11 @@ function IslandApp() {
         throw new Error("Missing todo save path.");
       }
 
-      const result = await invoke<SaveTodoResult>("save_todo_markdown", {
+      const result = await saveTodoMarkdown(
         directory,
         date,
-        content: formatTodoDocumentAsMarkdown(todoList, nextDailyNote),
-      });
+        formatTodoDocumentAsMarkdown(todoList, nextDailyNote),
+      );
 
       upsertArchive(date, todoList, nextDailyNote, true, result.filePath);
       window.localStorage.setItem(
