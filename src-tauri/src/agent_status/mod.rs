@@ -9,7 +9,7 @@ use serde::Serialize;
 use std::{fs, path::Path};
 use tauri::{AppHandle, Manager};
 
-use crate::windows_home_dir;
+use crate::system::windows_home_dir;
 
 use claude_hooks::install_claude_code_status_hooks;
 use codex_hooks::install_codex_status_hooks;
