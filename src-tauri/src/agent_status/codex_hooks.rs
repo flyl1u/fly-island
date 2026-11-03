@@ -24,7 +24,10 @@ pub(super) fn install_codex_status_hooks(
     write_text_file(config_path, &next_content)
 }
 
-pub(super) fn build_codex_hook_block(running_script_path: &Path, status_script_path: &Path) -> String {
+pub(super) fn build_codex_hook_block(
+    running_script_path: &Path,
+    status_script_path: &Path,
+) -> String {
     let submit_command = agent_running_command(running_script_path, "codex");
     let stop_command = agent_status_command(status_script_path, "codex", "completed");
 
