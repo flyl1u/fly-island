@@ -45,8 +45,7 @@ import { hexToRgba, isSameSettings } from "./features/appearance/settings";
 import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
 import type { AppearanceMode, IslandSettings } from "./features/appearance/types";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
-import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySnapshot } from "./features/clipboard/api";
-import { DEFAULT_CLIPBOARD_HISTORY } from "./features/clipboard/settings";
+import { useClipboardHistory } from "./features/clipboard/useClipboardHistory";
 import { matchesClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
 import { MusicWaveButton } from "./features/media/MusicWaveButton";
@@ -617,8 +616,6 @@ function IslandApp() {
   );
   const [saveDirectory, setSaveDirectory] = useState(loadSaveDirectory);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [clipboardHistory, setClipboardHistory] =
-    useState<ClipboardHistorySnapshot>(DEFAULT_CLIPBOARD_HISTORY);
   const clipboardShortcutToggleAt = useRef(0);
   const shouldInitializeDefaultSaveDirectory = useRef(
     window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) === null,
@@ -744,67 +741,6 @@ function IslandApp() {
     ],
   );
 
-  const refreshClipboardHistory = useCallback(async () => {
-    try {
-      const snapshot = await getClipboardHistory();
-      setClipboardHistory(snapshot);
-    } catch (error) {
-      console.error("Failed to read clipboard history", error);
-    }
-  }, []);
-
-  const copyClipboardHistoryItem = useCallback(async (id: string) => {
-    try {
-      const snapshot = await copyClipboardItem(id);
-      setClipboardHistory(snapshot);
-      return true;
-    } catch (error) {
-      console.error("Failed to copy clipboard history item", error);
-      return false;
-    }
-  }, []);
-
-  const toggleClipboardHistoryFavorite = useCallback(async (id: string) => {
-    try {
-      const snapshot = await toggleClipboardFavorite(id);
-      setClipboardHistory(snapshot);
-    } catch (error) {
-      console.error("Failed to toggle clipboard history favorite", error);
-    }
-  }, []);
-
-  const updateClipboardHistoryItemNote = useCallback(
-    async (id: string, note: string) => {
-      try {
-        const snapshot = await setClipboardItemNote(id, note);
-        setClipboardHistory(snapshot);
-        return true;
-      } catch (error) {
-        console.error("Failed to update clipboard history item note", error);
-        return false;
-      }
-    },
-    [],
-  );
-
-  const deleteClipboardHistoryItem = useCallback(async (id: string) => {
-    try {
-      const snapshot = await deleteClipboardItem(id);
-      setClipboardHistory(snapshot);
-    } catch (error) {
-      console.error("Failed to delete clipboard history item", error);
-    }
-  }, []);
-
-  const clearClipboardHistoryItems = useCallback(async () => {
-    try {
-      const snapshot = await clearClipboardHistory();
-      setClipboardHistory(snapshot);
-    } catch (error) {
-      console.error("Failed to clear clipboard history", error);
-    }
-  }, []);
-
   const setIslandMode = useCallback((nextMode: IslandMode) => {
     setMode(nextMode);
     setIsTucked(false);
@@ -853,6 +789,15 @@ function IslandApp() {
 
     openClipboardHistory();
   }, [mode, openClipboardHistory, page, setIslandMode]);
+
+  const {
+    clipboardHistory,
+    copyClipboardHistoryItem,
+    toggleClipboardHistoryFavorite,
+    updateClipboardHistoryItemNote,
+    deleteClipboardHistoryItem,
+    clearClipboardHistoryItems,
+  } = useClipboardHistory(toggleClipboardHistory);
 
   const collapseIsland = useCallback(() => {
     setIslandMode("collapsed");
@@ -1382,54 +1327,6 @@ function IslandApp() {
       upsertArchive,
     ],
   );
-
-  useEffect(() => {
-    void refreshClipboardHistory();
-
-    let didCancel = false;
-    let unlistenChanges: (() => void) | null = null;
-    let unlistenShortcut: (() => void) | null = null;
-
-    void listenClipboardHistoryChanged(() => {
-      void refreshClipboardHistory();
-    })
-      .then((nextUnlisten) => {
-        if (didCancel) {
-          nextUnlisten();
-        } else {
-          unlistenChanges = nextUnlisten;
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to listen for clipboard history changes", error);
-      });
-
-    void listenClipboardHistoryShortcut(() => {
-      if (clipboardHistory.settings.shortcutEnabled) {
-        toggleClipboardHistory();
-      }
-    })
-      .then((nextUnlisten) => {
-        if (didCancel) {
-          nextUnlisten();
-        } else {
-          unlistenShortcut = nextUnlisten;
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to listen for clipboard history shortcut", error);
-      });
-
-    return () => {
-      didCancel = true;
-      unlistenChanges?.();
-      unlistenShortcut?.();
-    };
-  }, [
-    clipboardHistory.settings.shortcutEnabled,
-    refreshClipboardHistory,
-    toggleClipboardHistory,
-  ]);
 
   useEffect(() => {
     void refreshMediaState();
