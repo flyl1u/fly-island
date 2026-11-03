@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 1434 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 913 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -222,7 +222,8 @@
 | 2026-11-03 | 3.1（2/2，改写） | `d2b7ab0` | 原生窗口同步抽到 `useIslandWindow`（组合）、`useNativeLayout`（缩放与边距，每帧至多一次）、`useIslandPosition`（拖拽位置）。命令收口到 `windows/island/api.ts`，位置写入收口到 `storage.ts` 的 `saveIslandPosition` / `clearIslandPosition`（仍直接读写 `localStorage`，内容与时机不变），翻译窗口开关收口到 `windows/translation/api.ts`。展开高度仍由 `IslandApp` 计算后传入；贴边收起的 mode 状态留在 `IslandApp`。`App.tsx` 2142 → 1907，白名单同步下调。存量 IPC 豁免清空，ESLint warn 7 → 5：少掉的是 `App.tsx` 的 `invoke` / `listen`，5 条 exhaustive-deps 原样保留（2 条随代码移到新 hook）。外部 ref 与 setter 补进依赖数组，引用稳定，回调重建时机不变 | `pnpm check`（81/81）、`pnpm build`；拖拽、重置位置与失焦折叠待人工验收 |
 | 2026-11-03 | 3.2（1/n，改写） | `0a04afc` | 代理状态的 state、刷新锁、200ms 轮询原样抽到 `features/agent-status/useAgentStatus.ts`（47），比较逻辑与轮询间隔不变；`App.tsx` 1907 → 1870，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
 | 2026-11-03 | 3.2（2/n，改写） | 4a32ef7 | 剪贴板历史的 state、6 个操作回调、变更与快捷键两个监听原样抽到 `features/clipboard/useClipboardHistory.ts`（127）。快捷键触发时要开关页面，属于窗口行为，`toggleClipboardHistory` 留在 `IslandApp`，作为 `onShortcut` 传入，监听的依赖与重订阅时机不变；窗口内 keydown 匹配快捷键的 effect 也留在 `IslandApp`。`App.tsx` 1870 → 1767，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；剪贴板页与快捷键待人工验收（同 2.3 的检查项） |
-| 2026-11-03 | 3.2（3/n，改写） | 见提交说明 | 媒体会话 state、命令执行、1500ms 轮询、控制目标选择抽到 `features/media/useMediaState.ts`（216，超过 150 行软上限，后续评估是否把命令执行再拆出）；500ms 音量电平轮询抽到 `useAudioLevel.ts`（93），音源优先级与持久化抽到 `useMusicSourcePriority.ts`（68）；`AUDIO_ACTIVE_THRESHOLD` 移到 `mediaState.ts`，localStorage 写入移到 `storage.ts` 的 `saveMusicSourcePriority`（key 与格式不变）。音量 effect 依赖补上稳定的 ref 与 setter，行为不变。音量"叶子组件"暂缓：电平与 `refreshMediaState` 的峰值衰减、播放意图耦合。`musicSettingsOpen` 留在 `IslandApp`。`App.tsx` 1767 → 1434，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；音乐面板、波形、音源排序待人工验收 |
+| 2026-11-03 | 3.2（3/n，改写） | 9a95e2b | 媒体会话 state、命令执行、1500ms 轮询、控制目标选择抽到 `features/media/useMediaState.ts`（216，超过 150 行软上限，后续评估是否把命令执行再拆出）；500ms 音量电平轮询抽到 `useAudioLevel.ts`（93），音源优先级与持久化抽到 `useMusicSourcePriority.ts`（68）；`AUDIO_ACTIVE_THRESHOLD` 移到 `mediaState.ts`，localStorage 写入移到 `storage.ts` 的 `saveMusicSourcePriority`（key 与格式不变）。音量 effect 依赖补上稳定的 ref 与 setter，行为不变。音量"叶子组件"暂缓：电平与 `refreshMediaState` 的峰值衰减、播放意图耦合。`musicSettingsOpen` 留在 `IslandApp`。`App.tsx` 1767 → 1434，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；音乐面板、波形、音源排序待人工验收 |
+| 2026-11-03 | 3.2（4/n，改写） | 见提交说明 | 待办相关的 11 个 state、全部回调与 effect 抽到 `features/todos`：`useTodos.ts`（139，编排，并返回 `TodoNotebook` 的 props）、`useTodoList.ts`（132）、`useTodoArchives.ts`（40）、`useTodoSaving.ts`（120）、`useTodoSaveDirectory.ts`（80）、`useTodoAutoSave.ts`（93）、`useTodoRollover.ts`（112）。直接的 localStorage 读写改为 `storage.ts` 中的同名 key 包装函数，key 与格式不变。为保持 feature 不依赖 windows，"缺少保存路径时打开设置"与"开始待办后折叠"改为由 `IslandApp` 注入的回调；`setIslandMode`、`collapseIsland` 上移到 `useTodos` 调用之前。设置窗口的 storage 监听拆成两个（外观设置留在 `IslandApp`，保存路径进 `useTodoSaveDirectory`），卸载时的计时器清理也随之拆分；各 effect 彼此独立，顺序变化不影响结果。`App.tsx` 1434 → 913，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；待办增删改、拖动排序、开始待办后折叠、手动保存与无路径提示、自动保存、跨日归档与结转待人工验收 |
 
 ## 待人工验收
 
