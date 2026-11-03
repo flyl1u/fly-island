@@ -57,8 +57,9 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 桌面开发模式 | `pnpm tauri dev` |
 | 类型检查并构建前端 | `pnpm build` |
 | 前端单元测试 | `pnpm test`（即 `node --test tests/*.test.mjs`） |
+| 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
 | 文件行数检查 | `pnpm check:size` |
-| 提交前总检查 | `pnpm check`（类型检查 + 行数检查 + 单元测试） |
+| 提交前总检查 | `pnpm check`（类型检查 + lint + 行数检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
 | 完整打包 | `pnpm tauri build` |
