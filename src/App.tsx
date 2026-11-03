@@ -76,7 +76,7 @@ import { DEFAULT_MEDIA_STATE, isSameMediaState } from "./features/media/mediaSta
 import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, type KnownMediaSource } from "./features/media/storage";
 import { getAudioLevel, getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./features/media/api";
 import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
-import { saveTodoMarkdown } from "./features/todos/api";
+import { getDefaultTodoSaveDirectory, saveTodoMarkdown } from "./features/todos/api";
 import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
 import {
   ACTIVE_TODO_STORAGE_KEY,
@@ -3795,7 +3795,7 @@ function IslandApp() {
     let didCancel = false;
     defaultSaveDirectoryRequestInFlight.current = true;
 
-    void invoke<string>("get_default_todo_save_directory")
+    void getDefaultTodoSaveDirectory()
       .then((defaultDirectory) => {
         if (didCancel) {
           return;

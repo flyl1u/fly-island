@@ -8,3 +8,7 @@ export type SaveTodoResult = {
 export function saveTodoMarkdown(directory: string, date: string, content: string) {
   return invoke<SaveTodoResult>("save_todo_markdown", { directory, date, content });
 }
+
+export function getDefaultTodoSaveDirectory() {
+  return invoke<string>("get_default_todo_save_directory");
+}

@@ -176,7 +176,8 @@
 | 2026-11-03 | 2.1（CSS 搬迁） | `1597286` | `App.css` 3622 → 2727（-895），白名单同步下调；待办样式按组件拆到 `TodoNotebook.css`（301）、`TodoNotebookSpine.css`（91，含 `saveSpin` / `savePop` 关键帧）、`TodoListItem.css`（230）、`ArchiveBrowser.css`（269）。打包产物的规则集合与长度不变（681 条），只有顺序变化；脚本检查顺序发生变化的规则对中，没有同特异性、同目标 class、同属性的冲突 | `pnpm check`（57/57）、`pnpm build`；面板检查待人工验收 |
 | 2026-11-03 | 2.2（1/3，搬迁） | `49d34be` | `App.tsx` 4791 → 4260（-531），白名单同步下调；新增 `features/media/api.ts`（与 Rust 对应的类型）、`mediaState.ts`、`storage.ts`、`MusicWaveButton.tsx`、`MusicPlayerPanel.tsx`，`MediaWaveform.tsx/.css` 用 `git mv` 迁入；新增 `tests/media.test.mjs`（4 个用例）。`AUDIO_ACTIVE_THRESHOLD` 和音乐面板高度属于主窗口，留到 3.x | `pnpm check`（61/61）、`pnpm build` |
 | 2026-11-03 | 2.2（2/3，改写） | `150ac83` | `features/media/api.ts` 新增 `getMediaState`、`sendMediaCommand`、`getAudioLevel` 和 `MediaCommand`；`App.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 4260 → 4255，白名单同步下调 | `pnpm check`（61/61）、`pnpm build` |
-| 2026-11-03 | 2.2（3/3，CSS 搬迁） | 见提交说明 | `App.css` 2727 → 2255（-472），白名单同步下调；新增 `MusicPlayerPanel.css`（392，含 `music-control-track-change` 关键帧）、`MusicWaveButton.css`（78）。多组件共用的选择器和液态玻璃外观规则留在 `App.css`，在 4.1 处理。改用打包产物级检查：对比构建产物，顺序变化的规则对中无冲突，也覆盖了 2.1 的 CSS 搬迁和 2.2 中 `MediaWaveform.css` 的加载位置变化 | `pnpm check`（61/61）、`pnpm build`；面板检查待人工验收 |
+| 2026-11-03 | 2.2（3/3，CSS 搬迁） | `4dbdaa6` | `App.css` 2727 → 2255（-472），白名单同步下调；新增 `MusicPlayerPanel.css`（392，含 `music-control-track-change` 关键帧）、`MusicWaveButton.css`（78）。多组件共用的选择器和液态玻璃外观规则留在 `App.css`，在 4.1 处理。改用打包产物级检查：对比构建产物，顺序变化的规则对中无冲突，也覆盖了 2.1 的 CSS 搬迁和 2.2 中 `MediaWaveform.css` 的加载位置变化 | `pnpm check`（61/61）、`pnpm build`；面板检查待人工验收 |
+| 2026-11-03 | 2.1 补充（改写） | 见提交说明 | 2.1 漏掉了 `get_default_todo_save_directory`，补进 `features/todos/api.ts`（`getDefaultTodoSaveDirectory`），命令名不变；`App.tsx` 行数不变 | `pnpm check`（61/61）、`pnpm build` |
 
 ## 待人工验收
 
@@ -188,7 +189,7 @@
 | `5d17988` | 1.3 | 在设置窗口（中英文）对比滑块、颜色、开关、数字输入四种控件的外观与交互（拖动、选色、切换、焦点框），应与迁移前一致。 |
 | `bc7cccd` | 1.4 | 三个窗口（主窗口、设置、翻译）在中英文下检查像素字体（`Fusion Pixel`）仍能加载、键盘 Tab 与鼠标点击下的按钮焦点框表现与迁移前一致。 |
 | `1597286` | 2.1 | 主窗口待办面板（中英文、经典/液态玻璃两种外观）：新增、勾选、编辑标题（Enter / Esc / 失焦）、开始/停止、删除、拖拽排序、每日笔记、保存到 Markdown（含未设置路径时跳转设置）、归档卡片与时间线两种布局及回看；样式与迁移前一致，刷新后数据保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
-| 2.2 的提交 | 2.2 | 音乐页（中英文、两种外观）：折叠态音乐波形按钮的动画和点击、播放/暂停/上一首/下一首、切歌动画、封面与曲目信息、错误提示、音乐来源设置中的拖拽排序和删除、刷新后来源顺序保留；有音频时波形随音量跳动。 |
+| `4dbdaa6` | 2.2 | 音乐页（中英文、两种外观）：折叠态音乐波形按钮的动画和点击、播放/暂停/上一首/下一首、切歌动画、封面与曲目信息、错误提示、音乐来源设置中的拖拽排序和删除、刷新后来源顺序保留；有音频时波形随音量跳动。 |
 
 ## 待处理问题
 
