@@ -57,13 +57,16 @@ import {
 } from "./i18n";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
 import { clamp } from "./utils/number";
-import { HEX_COLOR_PATTERN, getColorSetting } from "./utils/color";
 import { getLocalDateString } from "./utils/date";
 import { ColorControl } from "./components/controls/ColorControl";
 import { NumberControl } from "./components/controls/NumberControl";
 import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
+import { AppearanceModeControl } from "./features/appearance/AppearanceModeControl";
+import { DEFAULT_SETTINGS, hexToRgba, isSameSettings } from "./features/appearance/settings";
+import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
+import type { AppearanceMode, IslandPreset, IslandSettings } from "./features/appearance/types";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
 import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySettings, type ClipboardHistorySnapshot } from "./features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY } from "./features/clipboard/settings";
@@ -129,46 +132,11 @@ type AgentHooksInstallResult = {
 };
 
 type AgentHooksInstallState = "idle" | "installing" | "installed" | "error";
-type AppearanceMode = "classic" | "liquidGlass";
-type IslandFont = "system" | "pixel";
 type NativeGlassState = "active" | "css-fallback" | "disabled";
 
 type IslandPosition = {
   x: number;
   y: number;
-};
-
-type IslandSettings = {
-  topEdgeLayoutVersion: 1;
-  appearanceMode: AppearanceMode;
-  fontFamily: IslandFont;
-  glassIntensity: number;
-  opacity: number;
-  collapsedScale: number;
-  expandedScale: number;
-  marginY: number;
-  taskTextColor: string;
-  pulseColor: string;
-  pulseBrightness: number;
-  islandBackgroundColor: string;
-  todoBackgroundColor: string;
-  showTitle: boolean;
-  showCollapsedText: boolean;
-  showIdleTodoCount: boolean;
-  carryOverIncompleteTodos: boolean;
-  enableTodoReorder: boolean;
-  rotateTodos: boolean;
-  todoRotationSeconds: number;
-  autoTuck: boolean;
-  autoTuckSeconds: number;
-};
-
-type IslandPreset = {
-  id: string;
-  name: string;
-  settings: IslandSettings;
-  createdAt: number;
-  isDefault?: boolean;
 };
 
 type IslandShellProps = {
@@ -202,10 +170,6 @@ type IslandShellProps = {
   children: ReactNode;
 };
 
-const STORAGE_KEY = "focusd-island-settings";
-const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
-  "focusd-island-collapsed-text-default-v1";
-const SETTINGS_PRESETS_STORAGE_KEY = "focusd-island-setting-presets";
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
 // Main island -> settings window request to reveal a section; survives the window being created.
 const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
@@ -220,8 +184,6 @@ const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const TODO_ROW_HEIGHT = 46;
 const TODO_GROW_START_ROWS = 2;
-const MAX_CUSTOM_SETTING_PRESETS = 6;
-const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 const AUDIO_ACTIVE_THRESHOLD = 0.000015;
 const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
   phase: "idle",
@@ -238,40 +200,6 @@ const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   codex: "Codex",
   claudeCode: "Claude Code",
 };
-const DEFAULT_SETTINGS: IslandSettings = {
-  topEdgeLayoutVersion: 1,
-  appearanceMode: "liquidGlass",
-  fontFamily: "system",
-  glassIntensity: 72,
-  opacity: 95,
-  collapsedScale: 0.89,
-  expandedScale: 0.91,
-  marginY: 0,
-  taskTextColor: DEFAULT_TASK_TEXT_COLOR,
-  pulseColor: "#3ae489",
-  pulseBrightness: 100,
-  islandBackgroundColor: "#2F2F37",
-  todoBackgroundColor: "#ffffff",
-  showTitle: false,
-  showCollapsedText: true,
-  showIdleTodoCount: true,
-  carryOverIncompleteTodos: false,
-  enableTodoReorder: false,
-  rotateTodos: false,
-  todoRotationSeconds: 5,
-  autoTuck: false,
-  autoTuckSeconds: 30,
-};
-const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
-const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
-
-type LegacyIslandSettings = Partial<IslandSettings> & {
-  margin?: number;
-  sizeScale?: number;
-  taskTitleColor?: string;
-  pendingTodoColor?: string;
-};
-
 function isAgentAttentionPhase(phase: AgentTaskPhase) {
   return phase === "failed" || phase === "stale";
 }
@@ -330,137 +258,6 @@ function getAgentPhaseLabel(phase: AgentTaskPhase, t: Translations) {
   }
 }
 
-function hexToRgba(hex: string, alpha: number) {
-  const normalized = HEX_COLOR_PATTERN.test(hex)
-    ? hex.slice(1)
-    : DEFAULT_SETTINGS.pulseColor.slice(1);
-  const red = Number.parseInt(normalized.slice(0, 2), 16);
-  const green = Number.parseInt(normalized.slice(2, 4), 16);
-  const blue = Number.parseInt(normalized.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-}
-
-function normalizeSettings(
-  settings: LegacyIslandSettings | null | undefined,
-): IslandSettings {
-  const taskTextColor = getColorSetting(
-    settings?.taskTextColor ?? settings?.pendingTodoColor,
-    getColorSetting(settings?.taskTitleColor, DEFAULT_SETTINGS.taskTextColor),
-  );
-  const hasPreviousDefaultScales =
-    settings?.collapsedScale === 0.81 && settings.expandedScale === 0.88;
-  const collapsedScale = hasPreviousDefaultScales
-    ? 0.82
-    : settings?.collapsedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.collapsedScale;
-  const expandedScale = hasPreviousDefaultScales
-    ? DEFAULT_SETTINGS.expandedScale
-    : settings?.expandedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.expandedScale;
-  const marginY = settings?.marginY ?? settings?.margin ?? DEFAULT_SETTINGS.marginY;
-  const hasPreviousDefaultMargin =
-    settings?.topEdgeLayoutVersion !== 1 && (marginY === 31 || marginY === 12);
-
-  return {
-    topEdgeLayoutVersion: 1,
-    fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
-    appearanceMode:
-      settings?.appearanceMode === "classic" ||
-      settings?.appearanceMode === "liquidGlass"
-        ? settings.appearanceMode
-        : "classic",
-    glassIntensity: clamp(
-      Number(settings?.glassIntensity ?? DEFAULT_SETTINGS.glassIntensity),
-      25,
-      100,
-    ),
-    opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
-    collapsedScale: clamp(
-      Number(collapsedScale),
-      0.75,
-      1.4,
-    ),
-    expandedScale: clamp(
-      Number(expandedScale),
-      0.75,
-      1.4,
-    ),
-    marginY: clamp(
-      Number(hasPreviousDefaultMargin ? DEFAULT_SETTINGS.marginY : marginY),
-      0,
-      160,
-    ),
-    taskTextColor,
-    pulseColor: getColorSetting(
-      settings?.pulseColor,
-      DEFAULT_SETTINGS.pulseColor,
-    ),
-    pulseBrightness: clamp(
-      Number(settings?.pulseBrightness ?? DEFAULT_SETTINGS.pulseBrightness),
-      50,
-      160,
-    ),
-    islandBackgroundColor: getColorSetting(
-      settings?.islandBackgroundColor,
-      DEFAULT_SETTINGS.islandBackgroundColor,
-    ),
-    todoBackgroundColor: getColorSetting(
-      settings?.todoBackgroundColor,
-      DEFAULT_SETTINGS.todoBackgroundColor,
-    ),
-    showTitle:
-      typeof settings?.showTitle === "boolean"
-        ? settings.showTitle
-        : DEFAULT_SETTINGS.showTitle,
-    showCollapsedText:
-      typeof settings?.showCollapsedText === "boolean"
-        ? settings.showCollapsedText
-        : DEFAULT_SETTINGS.showCollapsedText,
-    showIdleTodoCount:
-      typeof settings?.showIdleTodoCount === "boolean"
-        ? settings.showIdleTodoCount
-        : DEFAULT_SETTINGS.showIdleTodoCount,
-    carryOverIncompleteTodos:
-      typeof settings?.carryOverIncompleteTodos === "boolean"
-        ? settings.carryOverIncompleteTodos
-        : DEFAULT_SETTINGS.carryOverIncompleteTodos,
-    enableTodoReorder:
-      typeof settings?.enableTodoReorder === "boolean"
-        ? settings.enableTodoReorder
-        : DEFAULT_SETTINGS.enableTodoReorder,
-    rotateTodos: settings?.rotateTodos === true,
-    todoRotationSeconds: typeof settings?.todoRotationSeconds === "number" && Number.isFinite(settings.todoRotationSeconds)
-      ? clamp(Math.round(settings.todoRotationSeconds), 1, 3_600)
-      : DEFAULT_SETTINGS.todoRotationSeconds,
-    autoTuck: settings?.autoTuck === true,
-    autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
-      ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
-      : DEFAULT_SETTINGS.autoTuckSeconds,
-  };
-}
-
-function getDefaultSettingPresets(): IslandPreset[] {
-  return [];
-}
-
-function mergeWithDefaultSettingPresets(presets: IslandPreset[]) {
-  const defaultPresets = getDefaultSettingPresets();
-  const customPresets = presets
-    .filter(
-      (preset) =>
-        !preset.isDefault &&
-        !LEGACY_DEFAULT_PRESET_IDS.has(preset.id) &&
-        !LEGACY_DEFAULT_PRESET_NAMES.has(preset.name.trim()),
-    )
-    .map((preset) => ({ ...preset, isDefault: false }))
-    .slice(0, MAX_CUSTOM_SETTING_PRESETS);
-
-  return [...defaultPresets, ...customPresets];
-}
-
-function isDefaultSettingPreset(presetId: string) {
-  return LEGACY_DEFAULT_PRESET_IDS.has(presetId);
-}
-
 function getCollapsedIslandWidth(text: string) {
   const visualUnits = getCollapsedTextUnits(text);
   const widthProgress =
@@ -486,35 +283,6 @@ function getTodoVisualRows(todoList: TodoItem[]) {
   );
 }
 
-function loadSettings(): IslandSettings {
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-
-  if (!stored) {
-    window.localStorage.setItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
-    return DEFAULT_SETTINGS;
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<IslandSettings> & {
-      margin?: number;
-    };
-    const normalized = normalizeSettings(parsed);
-
-    if (
-      window.localStorage.getItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY) !== "1"
-    ) {
-      const migrated = { ...normalized, showCollapsedText: true };
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-      window.localStorage.setItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
-      return migrated;
-    }
-
-    return normalized;
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
 function loadIslandPosition(): IslandPosition | null {
   const stored = window.localStorage.getItem(ISLAND_POSITION_STORAGE_KEY);
 
@@ -537,48 +305,6 @@ function loadIslandPosition(): IslandPosition | null {
   } catch {
     return null;
   }
-}
-
-function loadSettingPresets(t: Translations): IslandPreset[] {
-  const stored = window.localStorage.getItem(SETTINGS_PRESETS_STORAGE_KEY);
-
-  if (!stored) {
-    return getDefaultSettingPresets();
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<IslandPreset>[];
-
-    if (!Array.isArray(parsed)) {
-      return getDefaultSettingPresets();
-    }
-
-    const presets = parsed
-      .map((preset, index) => ({
-        id:
-          typeof preset.id === "string" && preset.id
-            ? preset.id
-            : createTodoId(),
-        name:
-          typeof preset.name === "string" && preset.name.trim()
-            ? preset.name.trim()
-            : t.settings.presets.defaultName(index + 1),
-        settings: normalizeSettings(preset.settings),
-        createdAt:
-          typeof preset.createdAt === "number" ? preset.createdAt : Date.now(),
-        isDefault: false,
-      }));
-
-    return mergeWithDefaultSettingPresets(presets);
-  } catch {
-    return getDefaultSettingPresets();
-  }
-}
-
-function isSameSettings(a: IslandSettings, b: IslandSettings) {
-  return (Object.keys(a) as (keyof IslandSettings)[]).every(
-    (key) => a[key] === b[key],
-  );
 }
 
 type SettingsFocusSection = "savePath";
@@ -1049,41 +775,6 @@ export function IslandShell({
         </div>
       </div>
     </section>
-  );
-}
-
-function AppearanceModeControl({
-  value,
-  onChange,
-}: {
-  value: AppearanceMode;
-  onChange: (value: AppearanceMode) => void;
-}) {
-  const t = useTranslation();
-  return (
-    <div className="appearance-mode-control">
-      <span>{t.settings.appearance.title}</span>
-      <div className="appearance-mode-control__segments" role="group">
-        <button
-          className={value === "classic" ? "appearance-mode-control--active" : ""}
-          type="button"
-          aria-pressed={value === "classic"}
-          onClick={() => onChange("classic")}
-        >
-          {t.settings.appearance.classic}
-        </button>
-        <button
-          className={
-            value === "liquidGlass" ? "appearance-mode-control--active" : ""
-          }
-          type="button"
-          aria-pressed={value === "liquidGlass"}
-          onClick={() => onChange("liquidGlass")}
-        >
-          {t.settings.appearance.liquidGlass}
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -3445,25 +3136,13 @@ export default App;
 export {
   AGENT_PROVIDERS,
   DEFAULT_AGENT_STATUS,
-  DEFAULT_SETTINGS,
-  LEGACY_DEFAULT_PRESET_NAMES,
   SETTINGS_FOCUS_STORAGE_KEY,
-  SETTINGS_PRESETS_STORAGE_KEY,
-  STORAGE_KEY,
   LayoutEditor,
-  isDefaultSettingPreset,
-  isSameSettings,
-  loadSettingPresets,
-  loadSettings,
-  mergeWithDefaultSettingPresets,
-  normalizeSettings,
 };
 export type {
   AgentHooksInstallResult,
   AgentHooksInstallState,
   AgentProvider,
   AgentStatusSnapshot,
-  IslandPreset,
-  IslandSettings,
   SettingsFocusSection,
 };

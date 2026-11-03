@@ -102,9 +102,9 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 | key | 当前定义位置 |
 |---|---|
-| `focusd-island-settings` | `App.tsx` |
-| `focusd-island-collapsed-text-default-v1`（迁移标记） | `App.tsx` |
-| `focusd-island-setting-presets` | `App.tsx` |
+| `focusd-island-settings` | `features/appearance/storage.ts` |
+| `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
+| `focusd-island-setting-presets` | `features/appearance/storage.ts` |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
