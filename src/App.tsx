@@ -47,9 +47,6 @@ import { latestMessagePreview, messagePreviewText, type MessageSource } from "./
 import { UpdatePanel } from "./UpdatePanel";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
-  LOCALE_CODES,
-  TRANSLATIONS,
-  isLocaleCode,
   useTranslation,
   type LocaleCode,
   type Translations,
@@ -60,6 +57,7 @@ import { getLocalDateString } from "./utils/date";
 import { NumberControl } from "./components/controls/NumberControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
+import { LocaleControl } from "./i18n/LocaleControl";
 import { ColorSettingsSection } from "./features/appearance/ColorSettingsSection";
 import { LayoutSettingsSection } from "./features/appearance/LayoutSettingsSection";
 import { PresetSettingsSection } from "./features/appearance/PresetSettingsSection";
@@ -774,37 +772,6 @@ export function IslandShell({
         </div>
       </div>
     </section>
-  );
-}
-
-function LocaleControl({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: LocaleCode;
-  onChange: (locale: LocaleCode) => void;
-}) {
-  return (
-    <label className="locale-control">
-      <span>{label}</span>
-      <select
-        value={value}
-        onChange={(event) => {
-          const next = event.currentTarget.value;
-          if (isLocaleCode(next)) {
-            onChange(next);
-          }
-        }}
-      >
-        {LOCALE_CODES.map((code) => (
-          <option key={code} value={code}>
-            {TRANSLATIONS[code].localeLabel}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
