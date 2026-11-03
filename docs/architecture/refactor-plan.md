@@ -178,7 +178,8 @@
 | 2026-11-03 | 2.2（2/3，改写） | `150ac83` | `features/media/api.ts` 新增 `getMediaState`、`sendMediaCommand`、`getAudioLevel` 和 `MediaCommand`；`App.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 4260 → 4255，白名单同步下调 | `pnpm check`（61/61）、`pnpm build` |
 | 2026-11-03 | 2.2（3/3，CSS 搬迁） | `4dbdaa6` | `App.css` 2727 → 2255（-472），白名单同步下调；新增 `MusicPlayerPanel.css`（392，含 `music-control-track-change` 关键帧）、`MusicWaveButton.css`（78）。多组件共用的选择器和液态玻璃外观规则留在 `App.css`，在 4.1 处理。改用打包产物级检查：对比构建产物，顺序变化的规则对中无冲突，也覆盖了 2.1 的 CSS 搬迁和 2.2 中 `MediaWaveform.css` 的加载位置变化 | `pnpm check`（61/61）、`pnpm build`；面板检查待人工验收 |
 | 2026-11-03 | 2.1 补充（改写） | `45058c0` | 2.1 漏掉了 `get_default_todo_save_directory`，补进 `features/todos/api.ts`（`getDefaultTodoSaveDirectory`），命令名不变；`App.tsx` 行数不变 | `pnpm check`（61/61）、`pnpm build` |
-| 2026-11-03 | 2.3（1/5，搬迁） | 见提交说明 | `App.tsx` 4255 → 4057（-198，白名单按约定暂不下调）；新增 `features/clipboard/api.ts`（与 Rust 对应的类型）、`shortcut.ts`、`settings.ts` 和 `tests/clipboard-shortcut.test.mjs`（5 个用例）；`SettingsWindow.tsx` 改为直接从 `features/clipboard` 导入 | `pnpm check`（66/66）、`pnpm build` |
+| 2026-11-03 | 2.3（1/5，搬迁） | `c50cfaa` | `App.tsx` 4255 → 4057（-198，白名单按约定暂不下调）；新增 `features/clipboard/api.ts`（与 Rust 对应的类型）、`shortcut.ts`、`settings.ts` 和 `tests/clipboard-shortcut.test.mjs`（5 个用例）；`SettingsWindow.tsx` 改为直接从 `features/clipboard` 导入 | `pnpm check`（66/66）、`pnpm build` |
+| 2026-11-03 | 2.3（2/5，改写） | 见提交说明 | 在 `App.tsx` 中把 `ClipboardHistoryPanel`（566 行）的头部拆为 `ClipboardPanelHeader`（66）、筛选与搜索拆为 `ClipboardFilters`（56，返回 Fragment 以保持 DOM 层级）、单条记录拆为 `ClipboardHistoryItemRow`（184，`ref` 回调改由 `elementRef` 传入）；状态和副作用仍在 `ClipboardHistoryPanel`（360）中。`App.tsx` 4057 → 4160（+103，低于白名单记录 4255） | `pnpm check`（66/66）、`pnpm build`；交互待人工验收 |
 
 ## 待人工验收
 
