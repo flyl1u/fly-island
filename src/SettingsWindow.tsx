@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import {
-  LayoutEditor,
-  SETTINGS_FOCUS_STORAGE_KEY,
-  type SettingsFocusSection,
-} from "./App";
+import { LayoutEditor } from "./windows/settings/LayoutEditor";
+import { SETTINGS_FOCUS_STORAGE_KEY, type SettingsFocusSection } from "./windows/settings/storage";
 import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "./features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "./features/agent-status/status";
 import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "./features/appearance/settings";
