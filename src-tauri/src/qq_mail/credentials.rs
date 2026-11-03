@@ -2,7 +2,6 @@
 
 use keyring::{Entry, Error as KeyringError};
 
-
 pub(super) const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
 
 pub(super) fn credential(email: &str) -> Result<Entry, String> {

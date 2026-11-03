@@ -174,7 +174,11 @@ impl SyncConnection {
         }
     }
 
-    pub(super) fn fetch(&mut self, email: &str, secret: Option<&str>) -> Result<Inbox, MailFailure> {
+    pub(super) fn fetch(
+        &mut self,
+        email: &str,
+        secret: Option<&str>,
+    ) -> Result<Inbox, MailFailure> {
         // Only a failed connection needs another TLS handshake, login and credential lookup.
         if let Some(session) = &mut self.session {
             if let Ok(inbox) = fetch_inbox_cached(session, self.cached.as_ref()) {
@@ -222,7 +226,10 @@ pub(super) fn open_session(email: &str, secret: &str) -> Result<MailSession, Mai
     open_connection(email, secret).map(|(session, _)| session)
 }
 
-pub(super) fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
+pub(super) fn open_connection(
+    email: &str,
+    secret: &str,
+) -> Result<(MailSession, TcpStream), MailFailure> {
     let mut stream = None;
     let addresses = (HOST, 993)
         .to_socket_addrs()

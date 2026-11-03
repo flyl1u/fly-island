@@ -47,7 +47,11 @@ impl MailState {
         self.snapshot.clone()
     }
 
-    pub(super) fn accept(&mut self, generation: u64, inbox: Inbox) -> Option<(MailSnapshot, Option<String>)> {
+    pub(super) fn accept(
+        &mut self,
+        generation: u64,
+        inbox: Inbox,
+    ) -> Option<(MailSnapshot, Option<String>)> {
         if generation != self.generation || !self.snapshot.enabled {
             return None;
         }
@@ -239,7 +243,12 @@ impl MailService {
         }
     }
 
-    pub(super) fn read(&self, generation: u64, email: &str, message_id: &str) -> Result<MailContent, String> {
+    pub(super) fn read(
+        &self,
+        generation: u64,
+        email: &str,
+        message_id: &str,
+    ) -> Result<MailContent, String> {
         let current = || -> Result<(), String> {
             let state = self.lock()?;
             if state.generation != generation
