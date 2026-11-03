@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { ArrowRight, RefreshCcw } from "lucide-react";
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../i18n";
 import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
 import "./UpdatePanel.css";
 

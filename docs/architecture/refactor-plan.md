@@ -206,6 +206,7 @@
 | 2026-11-03 | 2.6（2/n，搬迁） | `404f6fe` | `Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts` 用 `git mv` 迁入 `features/messages/`，`QQMail`、`QQNotifications`、`WeChatReminders`（含 CSS）分别迁入 `qq-mail/`、`qq-notifications/`、`wechat/`；只改相对导入路径（含 `tests/` 中 5 个文件和 `eslint.config.js` 的存量 IPC 文件列表），组件导入顺序不变，CSS 打包顺序不变 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.6（3/n，搬迁） | `3374ece` | `QQNotifications`、`WeChatReminders` 的类型原样搬到各自目录的 `api.ts`，存储 key 常量原样搬到各自的 `storage.ts`；组件文件 -24 / -13 行 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.6（4/n，改写） | `63f8b1a` | 三个消息来源的 `invoke` / `listen` 收口到各自的 `api.ts`（含事件名常量），`localStorage` 读写收口到各自的 `storage.ts`（读写语义不变，未增减异常处理）；命令名、参数名、事件名、key 不变。打开 QQ / 微信的封装命名为 `launchQQ`、`launchWeChat`，避免与 hook 中同名回调冲突。`eslint.config.js` 的存量 IPC 文件列表移除这三个文件，ESLint warn 17 → 11 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.7（1/3，搬迁） | 见提交说明 | `UpdatePanel.tsx/.css`、`updaterController.ts` 用 `git mv` 迁入 `features/updater/`，只改导入路径（含 `tests/updater-controller.test.mjs` 的源码路径和 `eslint.config.js` 的存量 IPC 文件列表） | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 

@@ -39,7 +39,7 @@ import { MessagesPanel, messagePanelHeight, type MessageView } from "./features/
 import { MessageSourceIcon } from "./features/messages/MessageSourceIcon";
 import { CollapsedMessageContent } from "./features/messages/CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./features/messages/messagePreview";
-import { UpdatePanel } from "./UpdatePanel";
+import { UpdatePanel } from "./features/updater/UpdatePanel";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   useTranslation,
