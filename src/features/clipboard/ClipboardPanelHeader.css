@@ -3,14 +3,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-xl);
 }
 
 .clipboard-panel__title {
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   color: rgba(243, 242, 247, 0.9);
   font-size: 13px;
   font-weight: 900;
@@ -30,7 +30,7 @@
   color: rgba(211, 205, 229, 0.68);
   background: transparent;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 900;
 }
@@ -39,7 +39,7 @@
   height: auto;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-xs);
   padding: 0;
   color: rgba(211, 205, 229, 0.68);
   background: transparent;
@@ -54,7 +54,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .clipboard-shortcut-display,
@@ -76,7 +76,7 @@
 
 .clipboard-shortcut-display {
   min-width: 86px;
-  gap: 6px;
+  gap: var(--space-sm);
   padding: 0 9px;
   color: rgba(225, 223, 233, 0.5);
   background: transparent;
@@ -96,15 +96,15 @@
   padding: 0;
   color: rgba(229, 226, 238, 0.62);
   background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-white-a08);
   border-radius: 7px;
   box-shadow: none;
   cursor: pointer;
 }
 
 .clipboard-clear-button--confirming {
-  color: #ffffff;
-  background: #c75065;
+  color: var(--color-white);
+  background: var(--color-danger);
 }
 
 .clipboard-clear-button:hover:not(:disabled) {
@@ -112,13 +112,13 @@
 }
 
 .clipboard-clear-button:hover:not(:disabled) {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.11);
 }
 
 .clipboard-clear-button--confirming:hover:not(:disabled) {
-  color: #ffffff;
-  background: #c75065;
+  color: var(--color-white);
+  background: var(--color-danger);
 }
 
 .clipboard-clear-button:disabled {

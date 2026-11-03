@@ -7,34 +7,34 @@
 }
 
 .island__agent-status-icon--idle {
-  color: #35e985;
+  color: var(--color-agent-idle);
 }
 
 .island__agent-status-icon--running {
-  color: #ff4d5e;
+  color: var(--color-agent-running);
 }
 
 .island__agent-status-icon--attention {
-  color: #ffd166;
+  color: var(--color-warning);
 }
 
 .island__title .island__agent-status-icon--idle {
-  color: #35e985;
+  color: var(--color-agent-idle);
 }
 
 .island__title .island__agent-status-icon--running {
-  color: #ff4d5e;
+  color: var(--color-agent-running);
 }
 
 .island__title .island__agent-status-icon--attention {
-  color: #ffd166;
+  color: var(--color-warning);
 }
 
 .island__header {
   display: grid;
   grid-template-columns: auto 96px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   min-height: 34px;
 }
 
@@ -51,7 +51,7 @@
 
 .island__title svg {
   flex: 0 0 auto;
-  color: #74d6ff;
+  color: var(--color-accent);
 }
 
 .island--todo .island__title {
@@ -59,7 +59,7 @@
 }
 
 .island--todo .island__title svg {
-  color: #74d6ff;
+  color: var(--color-accent);
 }
 
 .editor-dots {
@@ -84,7 +84,7 @@
 }
 
 .island__collapse-target:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.72);
+  outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: -5px;
 }
 
@@ -93,7 +93,7 @@
   height: 12px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   transition:
@@ -114,7 +114,7 @@
 }
 
 .dot-button--todo {
-  background: #74d6ff;
+  background: var(--color-accent);
   box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
 }
 
@@ -124,25 +124,25 @@
 }
 
 .dot-button--clipboard {
-  background: #ffd166;
+  background: var(--color-warning);
   box-shadow: 0 0 12px rgba(255, 209, 102, 0.48);
 }
 
 .dot-button--active {
   box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.18),
+    0 0 0 3px var(--color-white-a18),
     0 0 14px rgba(116, 214, 255, 0.42);
 }
 
 .dot-button--music.dot-button--active {
   box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.18),
+    0 0 0 3px var(--color-white-a18),
     0 0 14px rgba(182, 156, 255, 0.54);
 }
 
 .dot-button--clipboard.dot-button--active {
   box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.18),
+    0 0 0 3px var(--color-white-a18),
     0 0 14px rgba(255, 209, 102, 0.56);
 }
 
@@ -150,5 +150,5 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-md);
 }

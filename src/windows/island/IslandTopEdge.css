@@ -86,13 +86,13 @@
     radial-gradient(
         circle var(--island-top-fillet) at 0 100%,
         transparent var(--island-top-fillet-edge),
-        #000 var(--island-top-fillet)
+        var(--color-black) var(--island-top-fillet)
       )
       left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     radial-gradient(
         circle var(--island-top-fillet) at 100% 100%,
         transparent var(--island-top-fillet-edge),
-        #000 var(--island-top-fillet)
+        var(--color-black) var(--island-top-fillet)
       )
       right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
@@ -105,13 +105,13 @@
     radial-gradient(
         circle var(--island-top-fillet) at 0 100%,
         transparent var(--island-top-fillet-edge),
-        #000 var(--island-top-fillet)
+        var(--color-black) var(--island-top-fillet)
       )
       left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     radial-gradient(
         circle var(--island-top-fillet) at 100% 100%,
         transparent var(--island-top-fillet-edge),
-        #000 var(--island-top-fillet)
+        var(--color-black) var(--island-top-fillet)
       )
       right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
@@ -137,19 +137,19 @@
   height: var(--island-top-fillet);
   z-index: 1;
   -webkit-mask:
-    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), #000 var(--island-top-fillet))
+    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       left top / var(--island-top-fillet) 100% no-repeat,
-    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), #000 var(--island-top-fillet))
+    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       right top / var(--island-top-fillet) 100% no-repeat,
-    linear-gradient(#000 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
-    linear-gradient(#000 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
   mask:
-    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), #000 var(--island-top-fillet))
+    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       left top / var(--island-top-fillet) 100% no-repeat,
-    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), #000 var(--island-top-fillet))
+    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       right top / var(--island-top-fillet) 100% no-repeat,
-    linear-gradient(#000 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
-    linear-gradient(#000 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
   background:
     radial-gradient(
         circle at 0 100%,

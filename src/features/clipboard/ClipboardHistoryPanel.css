@@ -2,26 +2,26 @@
   height: 100%;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-lg);
   overflow: hidden;
   padding: 16px 18px 18px;
   color: rgba(241, 240, 246, 0.92);
   background:
     radial-gradient(circle at 88% 12%, rgba(182, 169, 211, 0.12), transparent 32%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.018)),
+    linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
     rgba(20, 20, 25, 0.88);
   background-size: auto;
   border-radius: 22px;
   box-shadow:
     0 16px 32px rgba(0, 0, 0, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+    inset 0 0 0 1px var(--color-white-a09);
 }
 
 .clipboard-list {
   min-height: 0;
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: var(--space-md);
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
@@ -34,12 +34,12 @@
 
 .clipboard-list::-webkit-scrollbar-track {
   background: transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .clipboard-list::-webkit-scrollbar-thumb {
   background: rgba(204, 195, 228, 0.28);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .clipboard-empty {
@@ -49,7 +49,7 @@
   color: rgba(225, 223, 233, 0.42);
   background: transparent;
   border: 1px dashed rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   font-size: 13px;
   font-weight: 800;
 }

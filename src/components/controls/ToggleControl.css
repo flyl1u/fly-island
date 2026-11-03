@@ -3,8 +3,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  color: rgba(248, 246, 240, 0.72);
+  gap: var(--space-xl);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -22,8 +22,8 @@
   height: 24px;
   flex: 0 0 auto;
   background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
+  border: 1px solid var(--color-white-a12);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition:
     background 140ms ease,
@@ -37,8 +37,8 @@
   left: 3px;
   width: 16px;
   height: 16px;
-  background: #ffffff;
-  border-radius: 999px;
+  background: var(--color-white);
+  border-radius: var(--radius-pill);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
   transition: transform 140ms ease;
 }
@@ -53,6 +53,6 @@
 }
 
 .toggle-control input:focus-visible + .toggle-control__switch {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
 }

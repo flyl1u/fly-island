@@ -2,6 +2,7 @@
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { IslandApp } from "../src/windows/island/IslandApp";
 import { TranslationWindow } from "../src/windows/translation/TranslationWindow";
 import { I18nProvider, LOCALE_STORAGE_KEY, useLocale } from "../src/i18n";

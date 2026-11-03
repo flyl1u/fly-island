@@ -26,7 +26,7 @@
   --summary-travel: -3px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   min-width: 0;
   transform-origin: left center;
 }

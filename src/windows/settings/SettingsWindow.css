@@ -1,6 +1,6 @@
 .settings-stage {
   height: 100%;
-  color: #f7f5ef;
+  color: var(--color-page-text);
   background: #17191d;
 }
 

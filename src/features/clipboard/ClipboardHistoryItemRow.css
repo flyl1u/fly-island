@@ -3,11 +3,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(88px, 132px) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   padding: 7px 8px;
   background: linear-gradient(110deg, rgba(255, 255, 255, 0.052), rgba(210, 205, 228, 0.018));
   border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
   transition:
     background 150ms ease,
@@ -24,7 +24,7 @@
   display: grid;
   grid-template-columns: 46px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: var(--space-lg);
   padding: 0;
   color: inherit;
   text-align: left;
@@ -42,7 +42,7 @@
   place-items: center;
   overflow: hidden;
   color: rgba(233, 231, 242, 0.76);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(182, 169, 211, 0.035));
+  background: linear-gradient(145deg, var(--color-white-a10), rgba(182, 169, 211, 0.035));
   border: 1px solid rgba(255, 255, 255, 0.095);
   border-radius: 7px;
 }
@@ -60,7 +60,7 @@
 .clipboard-item__body {
   min-width: 0;
   display: grid;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .clipboard-item__preview {
@@ -92,7 +92,7 @@
   padding: 0 8px;
   color: rgba(225, 223, 233, 0.42);
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1px dashed var(--color-white-a16);
   border-radius: 7px;
   outline: none;
   cursor: pointer;
@@ -115,8 +115,8 @@
 }
 
 .clipboard-note:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  background: var(--color-white-a10);
 }
 
 .clipboard-note-editor {
@@ -125,7 +125,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 24px 24px;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .clipboard-note-editor input {
@@ -149,9 +149,9 @@
   place-items: center;
   padding: 0;
   color: rgba(248, 244, 233, 0.72);
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--color-white-a09);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   outline: none;
   cursor: pointer;
 }
@@ -171,7 +171,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .clipboard-item__actions button {
@@ -181,16 +181,16 @@
   place-items: center;
   padding: 0;
   color: rgba(248, 244, 233, 0.68);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-a08);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
 }
 
 .clipboard-item__actions button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.16);
+  color: var(--color-white);
+  background: var(--color-white-a16);
 }
 
 .clipboard-favorite-button--active {
@@ -199,13 +199,13 @@
 }
 
 .clipboard-copy-button--copied {
-  color: #ffffff !important;
+  color: var(--color-white) !important;
   background: rgba(182, 169, 211, 0.26) !important;
   animation: saveButtonPop 760ms ease both;
   box-shadow: 0 0 0 3px rgba(182, 169, 211, 0.11);
 }
 
 .clipboard-delete-button--confirming {
-  color: #ffffff !important;
-  background: #c75065 !important;
+  color: var(--color-white) !important;
+  background: var(--color-danger) !important;
 }

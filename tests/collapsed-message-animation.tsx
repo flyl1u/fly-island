@@ -2,6 +2,7 @@
 import { act, StrictMode, useState, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { emit } from "@tauri-apps/api/event";
 // Loads the island stylesheets in the same order as the app.
 import "../src/windows/island/IslandApp";

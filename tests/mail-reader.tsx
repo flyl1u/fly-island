@@ -2,6 +2,7 @@
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { emit } from "@tauri-apps/api/event";
 import { useQQMail, type QQMailController, sanitizeMailHtml } from "../src/features/messages/qq-mail/QQMail";
 import type { MailContent, MailSnapshot } from "../src/features/messages/qq-mail/api";

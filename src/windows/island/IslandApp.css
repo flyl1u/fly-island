@@ -45,12 +45,12 @@
 
 .island--todo .icon-button {
   color: rgba(248, 246, 240, 0.78);
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--color-white-a09);
 }
 
 .island--todo .icon-button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.16);
+  color: var(--color-white);
+  background: var(--color-white-a16);
 }
 
 .icon-button {
@@ -61,9 +61,9 @@
   flex: 0 0 auto;
   padding: 0;
   color: rgba(248, 246, 240, 0.78);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-a08);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   transition:
@@ -78,7 +78,7 @@
 }
 
 .icon-button:hover {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .icon-button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
 }
 
@@ -125,7 +125,7 @@
     radial-gradient(ellipse at 76% 24%, rgba(182, 156, 255, 0.09), transparent 44%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(222, 243, 255, 0.025)),
     rgba(12, 21, 29, 0.16);
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--color-white-a16);
 }
 
 .island--appearance-liquidGlass .music-player::before,
@@ -140,9 +140,9 @@
 
 .island--appearance-liquidGlass .music-player::before {
   top: 38%;
-  background: linear-gradient(90deg, transparent, rgba(116, 214, 255, 0.08) 26%, rgba(255, 255, 255, 0.1) 52%, rgba(182, 156, 255, 0.08) 74%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(116, 214, 255, 0.08) 26%, var(--color-white-a10) 52%, rgba(182, 156, 255, 0.08) 74%, transparent);
   border-top: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   filter: blur(6px);
   transform: rotate(-5deg) skewX(-18deg);
 }
@@ -151,7 +151,7 @@
   top: 54%;
   background: linear-gradient(90deg, transparent, rgba(190, 239, 255, 0.08) 30%, rgba(116, 214, 255, 0.08) 62%, transparent);
   border-bottom: 1px solid rgba(190, 239, 255, 0.1);
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   filter: blur(10px);
   transform: rotate(4deg) skewX(14deg);
 }

@@ -16,8 +16,8 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: #ffffff;
-  border-radius: 999px;
+  color: var(--color-white);
+  border-radius: var(--radius-pill);
   border: 0;
   outline: none;
   cursor: pointer;
@@ -60,7 +60,7 @@
 
 .todo-spine-button--saved {
   animation: savePop 800ms ease both;
-  background: #2f8c61;
+  background: var(--color-success);
   box-shadow:
     0 0 0 5px rgba(152, 212, 187, 0.24),
     0 10px 18px rgba(72, 56, 43, 0.2);

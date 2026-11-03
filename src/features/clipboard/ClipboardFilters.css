@@ -39,7 +39,7 @@
   left: 0;
   height: 2px;
   background: rgba(204, 195, 228, 0.82);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   box-shadow: 0 0 8px rgba(182, 169, 211, 0.2);
 }
 
@@ -48,7 +48,7 @@
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) 24px;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   padding: 0 9px;
   color: rgba(225, 223, 233, 0.5);
   background: rgba(255, 255, 255, 0.04);
@@ -87,12 +87,12 @@
   color: rgba(248, 244, 233, 0.7);
   background: transparent;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
 }
 
 .clipboard-search button:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  background: var(--color-white-a10);
 }

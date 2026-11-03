@@ -23,7 +23,7 @@
   width: 3px;
   height: 13px;
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: currentColor;
   opacity: var(--wave-opacity, 0.72);
   transform: scaleY(var(--wave-scale, 0.35));

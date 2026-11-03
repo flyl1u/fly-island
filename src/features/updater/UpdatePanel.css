@@ -1,6 +1,6 @@
 .update-panel {
   display: grid;
-  gap: 8px;
+  gap: var(--space-md);
 }
 
 .update-panel__button {
@@ -17,7 +17,7 @@
 .update-panel--checking .project-link__icon,
 .update-panel--downloading .project-link__icon,
 .update-panel--installing .project-link__icon {
-  color: #a8d8ea;
+  color: var(--color-sky);
   animation: update-panel-spin 900ms linear infinite;
 }
 
@@ -35,8 +35,8 @@
   height: 4px;
   margin: 0 12px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
+  background: var(--color-white-a12);
+  border-radius: var(--radius-pill);
 }
 
 .update-panel__fill {

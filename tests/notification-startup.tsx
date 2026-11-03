@@ -2,6 +2,7 @@
 import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { QQNotificationControls, useQQNotifications, type QQNotificationsController } from "../src/features/messages/qq-notifications/QQNotifications";
 import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../src/features/messages/wechat/WeChatReminders";
 

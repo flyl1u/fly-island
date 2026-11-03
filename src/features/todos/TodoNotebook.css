@@ -2,10 +2,10 @@
   position: relative;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 10px;
+  gap: var(--space-lg);
   overflow: hidden;
   padding: 18px 18px 16px 56px;
-  color: #1f1b16;
+  color: var(--color-ink);
   background:
     linear-gradient(90deg, transparent 0 38px, rgba(244, 113, 130, 0.52) 39px, transparent 40px),
     linear-gradient(rgba(42, 35, 28, 0.1) 1px, transparent 1px),
@@ -55,8 +55,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  color: rgba(31, 27, 22, 0.58);
+  gap: var(--space-xl);
+  color: var(--color-ink-muted);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -67,7 +67,7 @@
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
 }
 
 .todo-notebook__tab {
@@ -79,7 +79,7 @@
   padding: 6px 10px;
   overflow: hidden;
   color: #231f1a;
-  background: #a8d8ea;
+  background: var(--color-sky);
   border-radius: 7px 7px 4px 4px;
   box-shadow: 0 2px 0 rgba(31, 27, 22, 0.1);
   text-overflow: ellipsis;
@@ -110,7 +110,7 @@
 
 .todo-notebook__open-count {
   flex: 0 0 auto;
-  color: rgba(31, 27, 22, 0.58);
+  color: var(--color-ink-muted);
   white-space: nowrap;
 }
 
@@ -121,10 +121,10 @@
   place-items: center;
   flex: 0 0 auto;
   padding: 0;
-  color: rgba(31, 27, 22, 0.58);
+  color: var(--color-ink-muted);
   background: rgba(31, 27, 22, 0.08);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   transition:
@@ -135,7 +135,7 @@
 
 .todo-page-toggle:hover,
 .todo-page-toggle--active {
-  color: #1f1b16;
+  color: var(--color-ink);
   background: rgba(255, 255, 255, 0.74);
 }
 
@@ -154,7 +154,7 @@
   gap: 5px;
   padding: 3px;
   background: rgba(31, 27, 22, 0.08);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .archive-layout-toggle button {
@@ -163,17 +163,17 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(31, 27, 22, 0.58);
+  color: var(--color-ink-muted);
   background: transparent;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
 }
 
 .archive-layout-toggle button:hover,
 .archive-layout-toggle .archive-layout-toggle--active {
-  color: #1f1b16;
+  color: var(--color-ink);
   background: rgba(255, 255, 255, 0.74);
 }
 
@@ -182,19 +182,19 @@
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   padding: 0 10px;
   color: #c05065;
   background: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(35, 31, 26, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .todo-form input {
   width: 100%;
   min-width: 0;
   padding: 0;
-  color: #1f1b16;
+  color: var(--color-ink);
   background: transparent;
   border: 0;
   outline: none;
@@ -215,7 +215,7 @@
 
 .todo-form input:disabled {
   cursor: default;
-  color: rgba(31, 27, 22, 0.58);
+  color: var(--color-ink-muted);
 }
 
 .todo-form:focus-within {
@@ -228,7 +228,7 @@
   display: grid;
   align-content: start;
   grid-auto-rows: max-content;
-  gap: 8px;
+  gap: var(--space-md);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -243,7 +243,7 @@
 
 .todo-list::-webkit-scrollbar-thumb {
   background: rgba(31, 27, 22, 0.16);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .daily-note {
@@ -255,10 +255,10 @@
   height: 100%;
   padding: 8px 10px 12px;
   resize: none;
-  color: #1f1b16;
-  background: #ffffff;
+  color: var(--color-ink);
+  background: var(--color-white);
   border: 1px solid rgba(35, 31, 26, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   outline: none;
   font-family:
     "Microsoft YaHei",
@@ -286,7 +286,7 @@
 
 .daily-note::-webkit-scrollbar-thumb {
   background: rgba(31, 27, 22, 0.16);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .todo-empty {
@@ -295,7 +295,7 @@
   place-items: center;
   color: rgba(31, 27, 22, 0.46);
   border: 1px dashed rgba(31, 27, 22, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 700;
 }

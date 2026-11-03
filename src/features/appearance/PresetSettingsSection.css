@@ -3,7 +3,7 @@
   gap: 9px;
   margin-top: 6px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--color-white-a10);
 }
 
 .preset-panel__header {
@@ -11,8 +11,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  color: rgba(248, 246, 240, 0.88);
+  gap: var(--space-lg);
+  color: var(--color-text-strong);
   font-size: 13px;
   font-weight: 800;
   line-height: 1;
@@ -23,12 +23,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-sm);
   padding: 0 10px;
-  color: #111112;
-  background: #a8d8ea;
+  color: var(--color-surface-dark);
+  background: var(--color-sky);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
   font-size: 12px;
@@ -43,7 +43,7 @@
 .preset-empty,
 .preset-item {
   min-height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .preset-empty {
@@ -51,7 +51,7 @@
   place-items: center;
   color: rgba(248, 246, 240, 0.42);
   background: rgba(255, 255, 255, 0.055);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed var(--color-white-a12);
   font-size: 12px;
   font-weight: 700;
 }
@@ -60,10 +60,10 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto 28px;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-md);
   padding: 4px 5px 4px 10px;
   background: rgba(255, 255, 255, 0.075);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-a10);
 }
 
 .preset-name-button,
@@ -96,9 +96,9 @@
 
 .preset-name-input {
   padding: 0 7px;
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--color-white-a09);
   border: 1px solid rgba(116, 214, 255, 0.36);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .preset-apply-button,
@@ -116,17 +116,17 @@
 .preset-apply-button {
   min-width: 44px;
   padding: 0 9px;
-  color: #111112;
+  color: var(--color-surface-dark);
   background: #98d4bb;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .preset-delete-button {
   width: 24px;
   padding: 0;
   color: rgba(248, 246, 240, 0.56);
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
+  background: var(--color-white-a08);
+  border-radius: var(--radius-pill);
 }
 
 .preset-delete-spacer {
@@ -140,7 +140,7 @@
 }
 
 .preset-delete-button:hover {
-  color: #ffffff;
+  color: var(--color-white);
   background: rgba(192, 80, 101, 0.28);
 }
 
@@ -149,6 +149,6 @@
 .preset-name-input:focus-visible,
 .preset-apply-button:focus-visible,
 .preset-delete-button:focus-visible {
-  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }

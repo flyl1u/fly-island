@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "./styles/tokens.css";
 import "./styles/fonts.css";
 import "./styles/base.css";
 import { IslandApp } from "./windows/island/IslandApp";
