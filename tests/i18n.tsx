@@ -1,10 +1,12 @@
 // pnpm dev, then open /tests/i18n.html?test=1. Omit ?test=1 for interactive QA.
+// The island and the settings window share one page and one I18nProvider here.
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import "../src/styles/tokens.css";
 import { IslandApp } from "../src/windows/island/IslandApp";
 import { TranslationWindow } from "../src/windows/translation/TranslationWindow";
+import { SettingsWindow } from "../src/windows/settings/SettingsWindow";
 import { I18nProvider, LOCALE_STORAGE_KEY, useLocale } from "../src/i18n";
 
 const query = new URLSearchParams(location.search);
@@ -40,9 +42,10 @@ mockIPC((command, payload) => {
   switch (command) {
     case "get_launch_at_startup": return false;
     case "get_default_todo_save_directory": return "";
-    case "get_clipboard_history": return { settings: { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+X" }, items: [] };
+    case "get_clipboard_history": return { settings: { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+X", shortcutEnabled: true }, items: [] };
     case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "" };
-    case "get_media_state": return { available: false, audioActive: false, audioPeak: 0, playbackStatus: "unavailable", updatedAt: 0 };
+    // Same values as MediaState::empty() in src-tauri/src/media_control/session.rs.
+    case "get_media_state": return { available: false, audioActive: false, audioPeak: 0, playbackStatus: "unavailable", title: null, artist: null, album: null, thumbnail: null, positionMs: 0, durationMs: 0, canSeek: false, canNext: false, canPrevious: false, shuffleActive: null, canShuffle: false, repeatMode: "unknown", canRepeat: false, volume: -1, sourceApp: null, activeSessionId: null, sessions: [], updatedAt: 0 };
     case "get_audio_level": return { active: false, peak: 0, updatedAt: 0 };
     case "set_island_interaction": return "disabled";
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
@@ -62,7 +65,7 @@ let changeLocale: ReturnType<typeof useLocale>["setLocale"];
 function Fixture() {
   const { setLocale } = useLocale();
   changeLocale = setLocale;
-  return translation ? <TranslationWindow /> : <IslandApp />;
+  return translation ? <TranslationWindow /> : <><IslandApp /><SettingsWindow /></>;
 }
 const root = createRoot(document.getElementById("root")!);
 const mount = () => root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>);
@@ -86,7 +89,6 @@ else {
   try {
     await act(async () => { mount(); });
     await click(".island__open-button");
-    await click(".dot-button--layout");
     check(document.querySelector(".locale-control")?.textContent?.includes("界面语言"), "Chinese language control is reachable");
     const dataKeys = ["focusd-island-todos", "focusd-island-daily-note", "focusd-island-archives", "focusd-island-settings", "focusd-island-setting-presets"];
     const dataBefore = dataKeys.map(key => localStorage.getItem(key));
@@ -110,7 +112,6 @@ else {
     check(document.querySelector(".qq-mail-list")?.textContent?.includes("保留邮件主题"), "Mail subjects stay as written");
     await click("button[data-mail-id='mail:1']");
     check(document.querySelector(".qq-mail-body")?.textContent?.includes("No text to display"), "Sanitized empty HTML mail has a translated fallback");
-    await click(".dot-button--layout");
     await switchTo("zh-CN");
     check(document.documentElement.lang === "zh-CN" && reads === 1, "Switching back keeps mail requests stable");
     await act(async () => { localStorage.setItem(LOCALE_STORAGE_KEY, "en"); window.dispatchEvent(new StorageEvent("storage", { key: LOCALE_STORAGE_KEY, newValue: "en", storageArea: localStorage })); });
