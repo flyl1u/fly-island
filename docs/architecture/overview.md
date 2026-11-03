@@ -127,13 +127,13 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 | 事件名 | 发送方 | 目标 |
 |---|---|---|
-| `island-position-changed` | `lib.rs` | 广播（通过主窗口对象调用 `emit`） |
+| `island-position-changed` | `island/mod.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
-| `clipboard-history-changed` | `clipboard_history.rs` | 广播 |
-| `clipboard-history-shortcut` | `clipboard_history.rs` | 广播 |
-| `qq-mail-changed` | `qq_mail.rs` | 广播 |
-| `qq-notifications-changed` | `qq_notifications.rs` | `main`、`settings` |
-| `wechat-reminder-changed` | `wechat_reminders.rs` | `main`、`settings` |
+| `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
+| `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
+| `qq-mail-changed` | `qq_mail/service.rs`（常量在 `mod.rs`） | 广播 |
+| `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
+| `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation.rs` | 广播 |
 
 ### 其他

@@ -17,13 +17,13 @@ export function listenIslandTopAttachment(
   return listen<boolean>(TOP_ATTACHMENT_CHANGED_EVENT, ({ payload }) => handler(payload));
 }
 
-// 与 lib.rs 中 start_island_drag 推送的事件名一致。
+// 与 src-tauri/src/island/mod.rs 中 start_island_drag 推送的事件名一致。
 export const ISLAND_POSITION_CHANGED_EVENT = "island-position-changed";
 
-/** 对应 lib.rs 的 IslandLayout。 */
+/** 对应 src-tauri/src/island/mod.rs 的 IslandLayout。 */
 export type IslandLayout = { collapsedScale: number; expandedScale: number; marginY: number };
 
-/** set_island_interaction 的参数，字段名与 lib.rs 中的命令参数一致。 */
+/** set_island_interaction 的参数，字段名与 src-tauri/src/island/mod.rs 中的命令参数一致。 */
 export type IslandInteraction = {
   mode: IslandMode;
   collapsedScale: number;
