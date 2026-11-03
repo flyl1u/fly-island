@@ -1,23 +1,3 @@
-.preset-panel {
-  display: grid;
-  gap: 9px;
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-white-a10);
-}
-
-.preset-panel__header {
-  min-height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-lg);
-  color: var(--color-text-strong);
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1;
-}
-
 .preset-save-button {
   height: 28px;
   display: inline-flex;
