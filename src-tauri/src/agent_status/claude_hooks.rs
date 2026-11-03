@@ -115,13 +115,16 @@ pub(super) fn claude_code_match_all_hook_entry(mut entry: Value) -> Value {
 }
 
 pub(super) fn claude_code_running_hook_entry(script_path: &Path) -> Value {
+    // Claude Code spawns `args` with MSVC-style escaping, which turns embedded
+    // quotes into `\"` that cmd.exe cannot parse. Pass the path as its own
+    // argument and let the spawner add plain quotes only when it needs them.
     claude_code_hook_entry(
         "cmd.exe",
         vec![
             "/d".to_string(),
-            "/s".to_string(),
             "/c".to_string(),
-            format!("\"{}\" claudeCode", script_path.to_string_lossy()),
+            script_path.to_string_lossy().to_string(),
+            "claudeCode".to_string(),
         ],
         1,
     )
@@ -154,4 +157,27 @@ pub(super) fn claude_code_hook_entry(command: &str, args: Vec<String>, timeout: 
             }
         ]
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn running_hook_passes_script_path_as_unquoted_argument() {
+        let path = Path::new(r"C:\Users\a b\focusd-agent-running.cmd");
+        let entry = claude_code_running_hook_entry(path);
+        let args = entry["hooks"][0]["args"].as_array().unwrap();
+
+        assert_eq!(
+            args,
+            &vec![
+                json!("/d"),
+                json!("/c"),
+                json!(r"C:\Users\a b\focusd-agent-running.cmd"),
+                json!("claudeCode"),
+            ]
+        );
+        assert!(args.iter().all(|arg| !arg.as_str().unwrap().contains('"')));
+    }
 }
