@@ -1,10 +1,7 @@
 //! Message body fetching: text part selection and inline cid images.
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use imap::{
-    types::Fetch,
-    Session,
-};
+use imap::{types::Fetch, Session};
 use imap_proto::types::{
     BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
 };
@@ -125,7 +122,9 @@ pub(super) fn cid_references(html: &str) -> Vec<String> {
     while let Some(found) = lower[cursor..].find("cid:") {
         let start = cursor + found + 4;
         let end = cid_token_end(&lower, start);
-        let id = html[start..end].trim().trim_matches(|character| character == '<' || character == '>');
+        let id = html[start..end]
+            .trim()
+            .trim_matches(|character| character == '<' || character == '>');
         if !id.is_empty() && !ids.iter().any(|known| known.eq_ignore_ascii_case(id)) {
             ids.push(id.to_string());
         }
@@ -144,8 +143,13 @@ pub(super) fn collect_inline_images(
         return;
     }
     match body {
-        BodyStructure::Basic { common, other, .. } if common.ty.ty.eq_ignore_ascii_case("image") => {
-            let Some(id) = other.id.map(|id| id.trim_matches(|character| character == '<' || character == '>')) else {
+        BodyStructure::Basic { common, other, .. }
+            if common.ty.ty.eq_ignore_ascii_case("image") =>
+        {
+            let Some(id) = other
+                .id
+                .map(|id| id.trim_matches(|character| character == '<' || character == '>'))
+            else {
                 return;
             };
             if id.is_empty() || other.octets == 0 || other.octets > MAX_INLINE_IMAGE_BYTES {
@@ -160,7 +164,10 @@ pub(super) fn collect_inline_images(
                 mime: format!("image/{}", common.ty.subtype.to_ascii_lowercase()),
                 octets: other.octets,
                 base64: matches!(other.transfer_encoding, ContentEncoding::Base64),
-                quoted_printable: matches!(other.transfer_encoding, ContentEncoding::QuotedPrintable),
+                quoted_printable: matches!(
+                    other.transfer_encoding,
+                    ContentEncoding::QuotedPrintable
+                ),
             });
         }
         BodyStructure::Multipart { bodies, .. } => {
@@ -229,7 +236,12 @@ pub(super) fn inline_cid_images<T: Read + Write>(
         images
             .iter()
             .map(|image| {
-                let section = image.path.iter().map(u32::to_string).collect::<Vec<_>>().join(".");
+                let section = image
+                    .path
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(".");
                 // 和正文一样避开 QQ 不应答的部分取回，图片大小由 octets 限额兜底。
                 format!("BODY.PEEK[{section}]")
             })
@@ -352,7 +364,11 @@ pub(super) fn fetch_content<T: Read + Write>(
     let mut body = None;
     for item in responses_for_message(&messages, uid) {
         if header.is_none() {
-            header = if multipart { item.section(&mime_path) } else { item.header() };
+            header = if multipart {
+                item.section(&mime_path)
+            } else {
+                item.header()
+            };
         }
         if body.is_none() {
             body = item.section(&body_path);

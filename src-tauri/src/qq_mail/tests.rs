@@ -56,7 +56,9 @@ fn validates_qq_addresses_and_rejects_other_hosts_or_commands() {
 
 #[test]
 fn decodes_chinese_mime_headers_and_handles_empty_subjects() {
-    let (sender, subject) = parse_header(b"From: =?UTF-8?B?5byg5LiJ?= <sender@example.com>\r\nSubject: =?UTF-8?B?5Lya6K6u?=\r\n\r\n");
+    let (sender, subject) = parse_header(
+        b"From: =?UTF-8?B?5byg5LiJ?= <sender@example.com>\r\nSubject: =?UTF-8?B?5Lya6K6u?=\r\n\r\n",
+    );
     assert!(sender.contains("张三"));
     assert_eq!(subject, "会议");
     assert_eq!(
@@ -316,7 +318,10 @@ fn arrivals_during_sync_request_an_immediate_followup_before_idling() {
     let mut state = active_state();
     state.accept(0, cached);
     state.accept(0, next);
-    assert_eq!(state.accept(0, inbox(7, &[1, 2])).unwrap().1.as_deref(), Some("7:2"));
+    assert_eq!(
+        state.accept(0, inbox(7, &[1, 2])).unwrap().1.as_deref(),
+        Some("7:2")
+    );
 }
 
 #[test]
@@ -373,9 +378,8 @@ fn queued_refreshes_are_not_dropped_or_blocked_by_idle() {
 
 #[test]
 fn server_push_wakes_the_worker_without_waiting_for_a_poll_deadline() {
-    let (client, output) = client(
-        "* OK ready\r\na1 OK login\r\n+ idling\r\n* 2 EXISTS\r\na2 OK idle done\r\n".into(),
-    );
+    let (client, output) =
+        client("* OK ready\r\na1 OK login\r\n+ idling\r\n* 2 EXISTS\r\na2 OK idle done\r\n".into());
     let mut session = client.login("user@qq.com", "test-secret").unwrap();
     let (socket, _peer) = socket_pair();
     let gate = Mutex::new(None);
@@ -538,8 +542,12 @@ fn reads_only_the_plain_body_and_never_marks_mail_read() {
 #[test]
 fn split_fetch_responses_still_build_the_body() {
     let body = "5Lit5paH";
-    let mime = "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
-    let structure = format!("(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)", body.len());
+    let mime =
+        "Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+    let structure = format!(
+        "(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"BASE64\" {} 1)",
+        body.len()
+    );
     // 续包只带了分段、没重复 UID（QQ 的拆包形态），正文和报文头都要能拼出来。
     let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[HEADER] {{{}}}\r\n{mime})\r\n* 1 FETCH (BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n", mime.len(), body.len());
     let (client, _) = client(script);
