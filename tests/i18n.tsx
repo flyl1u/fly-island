@@ -2,7 +2,7 @@
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
-import App from "../src/App";
+import { IslandApp } from "../src/windows/island/IslandApp";
 import { TranslationWindow } from "../src/windows/translation/TranslationWindow";
 import { I18nProvider, LOCALE_STORAGE_KEY, useLocale } from "../src/i18n";
 
@@ -61,7 +61,7 @@ let changeLocale: ReturnType<typeof useLocale>["setLocale"];
 function Fixture() {
   const { setLocale } = useLocale();
   changeLocale = setLocale;
-  return translation ? <TranslationWindow /> : <App />;
+  return translation ? <TranslationWindow /> : <IslandApp />;
 }
 const root = createRoot(document.getElementById("root")!);
 const mount = () => root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>);

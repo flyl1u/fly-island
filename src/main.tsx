@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/fonts.css";
 import "./styles/base.css";
-import App from "./App";
+import { IslandApp } from "./windows/island/IslandApp";
 import { TranslationWindow } from "./windows/translation/TranslationWindow";
 import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { I18nProvider } from "./i18n";
@@ -35,7 +35,7 @@ window.addEventListener(
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <I18nProvider>
-      {windowKind === "translation" ? <TranslationWindow /> : windowKind === "settings" ? <SettingsWindow /> : <App />}
+      {windowKind === "translation" ? <TranslationWindow /> : windowKind === "settings" ? <SettingsWindow /> : <IslandApp />}
     </I18nProvider>
   </React.StrictMode>,
 );
