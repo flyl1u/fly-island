@@ -151,7 +151,7 @@
 | 2026-11-03 | 0.4 | `fc8d13b` | `tsconfig.json` 开启 `erasableSyntaxOnly`，现有代码无需改动 | `pnpm check`（40/40）、`pnpm build` |
 | 2026-11-03 | 0.5 | `306430c` | 新增 `rustfmt.toml`、`clippy.toml`，`Cargo.toml` 增加 `[lints.clippy]`；源文件行数不变。clippy 基线 84 条（见 0.5） | `cargo test`（60 通过 / 5 忽略）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 0.6 | `15cb0d0` | `cargo fmt` 仅作用于 `qq_notifications.rs`（+5/-3）和 `wechat_reminders.rs`（+3/-1），均未超出上限/白名单；`lib.rs`、`media_control.rs`、`qq_mail.rs` 推迟到 Phase 5 | `cargo test`（60 通过 / 5 忽略）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
-| 2026-11-03 | 0.7 | 见提交说明 | 新增 `.github/workflows/ci.yml`（windows-latest，Node 26、pnpm 11、stable Rust + clippy）；clippy 存量告警暂不阻断 | `pnpm check`（40/40）、`pnpm build`；CI 实际运行待人工验收。Phase 0 验收中"白名单文件变长时检查失败"已在 0.6 实测（格式化后 `pnpm check:size` 报 5 个错误） |
+| 2026-11-03 | 0.7 | `2e71e5c` | 新增 `.github/workflows/ci.yml`（windows-latest，Node 26、pnpm 11、stable Rust + clippy）；clippy 存量告警暂不阻断 | `pnpm check`（40/40）、`pnpm build`；CI 实际运行待人工验收。Phase 0 验收中"白名单文件变长时检查失败"已在 0.6 实测（格式化后 `pnpm check:size` 报 5 个错误） |
 
 ## 待人工验收
 
@@ -159,7 +159,7 @@
 
 | 提交 | 步骤 | 检查项 |
 |---|---|---|
-| 0.7 的提交 | 0.7 | 推送后在 GitHub Actions 中确认 `CI` 工作流在 `windows-latest` 上全部通过（本地无法运行；按规则不执行 `git push`）。 |
+| `2e71e5c` | 0.7 | 推送后在 GitHub Actions 中确认 `CI` 工作流在 `windows-latest` 上全部通过（本地无法运行；按规则不执行 `git push`）。 |
 
 ## 待处理问题
 
