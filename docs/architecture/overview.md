@@ -88,7 +88,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `lib.rs`：`save_todo_markdown`、默认保存目录 | `system/todo_export.rs` |
 | `lib.rs`：`tests` 模块（窗口几何、更新配置等） | 窗口几何测试 → `island/tests.rs`（5.1），更新配置测试 → `system/updater.rs` 内联测试（5.3） |
 | `qq_mail.rs` | `qq_mail/{mod, service, session, content, credentials, tests}.rs`（5.4 已完成） |
-| `qq_notifications.rs` | `qq_notifications/{mod, listener, history, tests}.rs`（以实际职责为准） |
+| `qq_notifications.rs` | `qq_notifications/{mod, listener, history, launcher, tests}.rs`（5.5 已完成；`launcher.rs` 负责查找并激活 QQ 窗口） |
 | `clipboard_history.rs` | `clipboard_history/{mod, service, store, hotkey}.rs`（以实际职责为准） |
 | `media_control.rs`、`lib.rs` 中的媒体命令 | `media_control/{mod, service, session, audio}.rs`（5.7 已完成：命令在 `mod.rs`，内部入口与状态类型在 `service.rs`） |
 | `wechat_reminders.rs` + `wechat_reminder_source.rs` | `wechat_reminders/{mod, source, tests}.rs` |
