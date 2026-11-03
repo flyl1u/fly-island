@@ -117,13 +117,17 @@ pub(super) fn qq_notification_setting() -> windows::core::Result<NotificationSet
     ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(QQ_APP_ID))?.Setting()
 }
 
-pub(super) fn should_repair_registration(setting: &windows::core::Result<NotificationSetting>) -> bool {
+pub(super) fn should_repair_registration(
+    setting: &windows::core::Result<NotificationSetting>,
+) -> bool {
     setting
         .as_ref()
         .is_err_and(|error| error.code() == HRESULT(0x80070490u32 as i32))
 }
 
-pub(super) fn registration_error(setting: windows::core::Result<NotificationSetting>) -> Option<String> {
+pub(super) fn registration_error(
+    setting: windows::core::Result<NotificationSetting>,
+) -> Option<String> {
     match setting {
         Ok(NotificationSetting::Enabled) => None,
         Ok(NotificationSetting::DisabledForApplication) => {
@@ -142,7 +146,10 @@ pub(super) fn registration_error(setting: windows::core::Result<NotificationSett
     }
 }
 
-pub(super) fn repair_registration(service: &NotificationService, generation: u64) -> Result<(), String> {
+pub(super) fn repair_registration(
+    service: &NotificationService,
+    generation: u64,
+) -> Result<(), String> {
     // Embed the existing guarded repair so installed builds do not depend on the repository.
     let script = format!("& {{\n{REGISTRATION_REPAIR}\n}} -Repair");
     let bytes: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();

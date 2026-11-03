@@ -30,7 +30,6 @@ use windows::{
     },
 };
 
-
 pub(super) fn qq_executable() -> Result<PathBuf, String> {
     for root in [HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE] {
         for key in [
