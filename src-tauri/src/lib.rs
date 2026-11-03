@@ -1,4 +1,5 @@
 mod clipboard_history;
+mod island;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
@@ -116,23 +117,18 @@ struct IslandWindowState {
     expanded_height: f64,
     custom_position: Option<IslandPosition>,
     is_dragging: bool,
+    top_attached: bool,
     glass_enabled: bool,
     glass_intensity: f64,
     glass_tint: (u8, u8, u8),
 }
 
 impl IslandWindowState {
-    fn is_detached(self) -> bool {
-        self.custom_position.is_some() || self.margin_y > 0.0
-    }
-
     fn top_corner_radius(self) -> f64 {
-        if !self.is_detached() {
-            return 0.0;
-        }
-        match self.mode {
-            IslandMode::Collapsed => 14.0,
-            IslandMode::Expanded => 22.0,
+        match (self.top_attached, self.mode) {
+            (true, _) => 0.0,
+            (false, IslandMode::Collapsed) => 14.0,
+            (false, IslandMode::Expanded) => 22.0,
         }
     }
 
@@ -162,6 +158,7 @@ impl Default for IslandWindowState {
             expanded_height: DEFAULT_EXPANDED_ISLAND_HEIGHT,
             custom_position: None,
             is_dragging: false,
+            top_attached: true,
             glass_enabled: false,
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
@@ -337,6 +334,7 @@ fn start_island_drag(app: AppHandle) -> Result<(), String> {
         state.is_dragging = true;
         *state
     });
+    island::top_edge::set_attached(&window, false);
 
     if let Err(error) = window.start_dragging() {
         mutate_window_state(|state| {
@@ -353,9 +351,8 @@ fn start_island_drag(app: AppHandle) -> Result<(), String> {
         }
         thread::sleep(Duration::from_millis(8));
 
-        let final_position = window.outer_position().ok().map(|position| IslandPosition {
-            x: position.x,
-            y: position.y,
+        let final_position = window.outer_position().ok().map(|position| {
+            island::top_edge::snap_to_top(&window, IslandPosition { x: position.x, y: position.y })
         });
         let did_finish_drag = {
             let mut state = window_state().lock().expect("window state poisoned");
@@ -1399,6 +1396,7 @@ fn apply_stage_geometry(
         positioned_state.custom_position = None;
     }
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
+    island::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
 
     let target = PhysicalPosition::new(x, y);
     let start = window.outer_position().map_err(|error| error.to_string())?;
@@ -1707,7 +1705,7 @@ mod tests {
         for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
             let mut detached = state(mode, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
             assert_eq!(detached.top_corner_radius(), 0.0);
-            detached.custom_position = Some(IslandPosition { x: 420, y: 180 });
+            detached.top_attached = false;
             assert!(detached.top_corner_radius() > 0.0);
             let (width, height) = mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
             let contains = |x, y| point_in_notch(
@@ -1717,10 +1715,8 @@ mod tests {
             assert!(!contains(80.0 + width, 0.0));
             assert!(contains(80.0 + width / 2.0, 0.0));
             assert!(!contains(79.0, 0.0));
-            detached.custom_position = None;
+            detached.top_attached = true;
             assert_eq!(detached.top_corner_radius(), 0.0);
-            detached.margin_y = 20.0;
-            assert!(detached.top_corner_radius() > 0.0);
         }
     }
 
@@ -1930,6 +1926,7 @@ pub fn run() {
             set_island_interaction,
             start_island_drag,
             reset_island_position,
+            island::get_island_top_attachment,
             save_todo_markdown,
             get_default_todo_save_directory,
             show_ready_island,

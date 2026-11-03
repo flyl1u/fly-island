@@ -49,7 +49,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | 现有位置 | 目标位置 |
 |---|---|
 | `App.tsx`：`App`、`IslandApp`、`IslandShell` | `windows/island/IslandApp.tsx`、`IslandShell.tsx` |
-| `App.tsx`：窗口尺寸、展开高度、拖拽、位置、贴边相关的 state 与 effect | `windows/island/useIslandWindow.ts`、`windows/island/api.ts` |
+| `App.tsx`：窗口尺寸、展开高度、拖拽、位置、贴边相关的 state 与 effect | `windows/island/useIslandWindow.ts`、`windows/island/api.ts`（`windows/island/` 已建立：`topEdge.ts` 把原生顶边贴合状态写到根元素 `data-island-top-edge`，`IslandTopEdge.css` 据此绘制平顶与反向圆角；迁入 `useIslandWindow` 时可改为 prop） |
 | `App.tsx`：`openSettingsWindow` 与设置区块跳转 | `windows/settings/api.ts` |
 | `App.tsx`：`TodoNotebook`、`ArchiveBrowser` | `features/todos/` |
 | `App.tsx`：待办、归档、笔记的 load / normalize、Markdown 格式化、`createTodoId` | `features/todos/storage.ts`、`markdown.ts` |
@@ -79,7 +79,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 |---|---|
 | `lib.rs`：`run()`、插件、setup、`generate_handler!` | 保留在 `lib.rs` |
 | `lib.rs`：托盘创建与事件 | `tray.rs` |
-| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough}.rs` |
+| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough}.rs`（`island/` 已建立：`top_edge.rs` 负责顶边贴合判断与拖放吸附，`mod.rs` 放 `get_island_top_attachment` 命令） |
 | `lib.rs`：代理状态快照、运行标记、Codex / Claude Code hook 安装 | `agent_status/{mod, snapshot, markers, codex_hooks, claude_hooks}.rs` |
 | `lib.rs`：开机自启、注册表读取 | `system/startup.rs`（底层注册表调用放 `win32/registry.rs`） |
 | `lib.rs`：`get_updater_proxy`、`updater_configured` | `system/updater.rs` |
@@ -126,6 +126,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | 事件名 | 发送方 | 目标 |
 |---|---|---|
 | `island-position-changed` | `lib.rs` | 广播（通过主窗口对象调用 `emit`） |
+| `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `clipboard-history-changed` | `clipboard_history.rs` | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history.rs` | 广播 |
 | `qq-mail-changed` | `qq_mail.rs` | 广播 |

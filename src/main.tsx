@@ -6,8 +6,13 @@ import App from "./App";
 import TranslationWindow from "./TranslationWindow";
 import SettingsWindow from "./SettingsWindow";
 import { I18nProvider } from "./i18n";
+import { trackIslandTopEdge } from "./windows/island/topEdge";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+
+if (windowKind === null) {
+  trackIslandTopEdge();
+}
 
 window.addEventListener(
   "pointerdown",
