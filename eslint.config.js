@@ -17,7 +17,7 @@ const ipcImportRestriction = {
   ],
 };
 
-// 重构前直接调用 invoke / listen 的文件曾在这里降为 warn。列表已清空，7.2 再处理其余存量 warn。
+// 重构前直接调用 invoke / listen 的文件曾在这里降为 warn。存量问题已全部处理（7.2），所有规则均为 error。
 
 export default tseslint.config(
   { ignores: ["dist/**", "node_modules/**", "src-tauri/**"] },
@@ -27,7 +27,7 @@ export default tseslint.config(
     plugins: { "react-hooks": reactHooks },
     rules: {
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "error",
       "no-restricted-imports": ["error", ipcImportRestriction],
       "no-restricted-syntax": [
         "error",
