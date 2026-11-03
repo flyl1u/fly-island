@@ -39,8 +39,8 @@ import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
 import { openSettingsWindow } from "./windows/settings/api";
 import { toggleTranslationWindow } from "./windows/translation/api";
-import { getAgentStatus, type AgentStatusSnapshot } from "./features/agent-status/api";
-import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, getAgentStatusLabel, getAgentVisualState, type AgentVisualState } from "./features/agent-status/status";
+import { getAgentStatusLabel, getAgentVisualState, type AgentVisualState } from "./features/agent-status/status";
+import { useAgentStatus } from "./features/agent-status/useAgentStatus";
 import { hexToRgba, isSameSettings } from "./features/appearance/settings";
 import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
 import type { AppearanceMode, IslandSettings } from "./features/appearance/types";
@@ -592,9 +592,7 @@ function IslandApp() {
   >(loadMusicSourcePriority);
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const mediaTargetRef = useRef<string | null>(null);
-  const [agentStatus, setAgentStatus] =
-    useState<AgentStatusSnapshot>(DEFAULT_AGENT_STATUS);
-  const isRefreshingAgentStatus = useRef(false);
+  const agentStatus = useAgentStatus();
   const isRefreshingMediaState = useRef(false);
   const isRefreshingAudioLevel = useRef(false);
   const isRunningMediaCommand = useRef(false);
@@ -752,31 +750,6 @@ function IslandApp() {
       setClipboardHistory(snapshot);
     } catch (error) {
       console.error("Failed to read clipboard history", error);
-    }
-  }, []);
-
-  const refreshAgentStatus = useCallback(async () => {
-    if (isRefreshingAgentStatus.current) {
-      return;
-    }
-
-    isRefreshingAgentStatus.current = true;
-    try {
-      const snapshot = await getAgentStatus();
-      setAgentStatus((currentState) =>
-        currentState.statusPath === snapshot.statusPath &&
-        AGENT_PROVIDERS.every((provider) =>
-          currentState[provider].phase === snapshot[provider].phase &&
-          currentState[provider].taskId === snapshot[provider].taskId,
-        )
-          ? currentState
-          : snapshot,
-      );
-    } catch (error) {
-      console.error("Failed to read agent status", error);
-      setAgentStatus(DEFAULT_AGENT_STATUS);
-    } finally {
-      isRefreshingAgentStatus.current = false;
     }
   }, []);
 
@@ -1530,16 +1503,6 @@ function IslandApp() {
       setMusicSettingsOpen(false);
     }
   }, [page]);
-
-  useEffect(() => {
-    void refreshAgentStatus();
-
-    const interval = window.setInterval(() => {
-      void refreshAgentStatus();
-    }, 200);
-
-    return () => window.clearInterval(interval);
-  }, [refreshAgentStatus]);
 
   useEffect(() => {
     if (
