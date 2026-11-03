@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 913 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 747 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -224,6 +224,7 @@
 | 2026-11-03 | 3.2（2/n，改写） | 4a32ef7 | 剪贴板历史的 state、6 个操作回调、变更与快捷键两个监听原样抽到 `features/clipboard/useClipboardHistory.ts`（127）。快捷键触发时要开关页面，属于窗口行为，`toggleClipboardHistory` 留在 `IslandApp`，作为 `onShortcut` 传入，监听的依赖与重订阅时机不变；窗口内 keydown 匹配快捷键的 effect 也留在 `IslandApp`。`App.tsx` 1870 → 1767，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；剪贴板页与快捷键待人工验收（同 2.3 的检查项） |
 | 2026-11-03 | 3.2（3/n，改写） | 9a95e2b | 媒体会话 state、命令执行、1500ms 轮询、控制目标选择抽到 `features/media/useMediaState.ts`（216，超过 150 行软上限，后续评估是否把命令执行再拆出）；500ms 音量电平轮询抽到 `useAudioLevel.ts`（93），音源优先级与持久化抽到 `useMusicSourcePriority.ts`（68）；`AUDIO_ACTIVE_THRESHOLD` 移到 `mediaState.ts`，localStorage 写入移到 `storage.ts` 的 `saveMusicSourcePriority`（key 与格式不变）。音量 effect 依赖补上稳定的 ref 与 setter，行为不变。音量"叶子组件"暂缓：电平与 `refreshMediaState` 的峰值衰减、播放意图耦合。`musicSettingsOpen` 留在 `IslandApp`。`App.tsx` 1767 → 1434，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；音乐面板、波形、音源排序待人工验收 |
 | 2026-11-03 | 3.2（4/n，改写） | 27af68c | 待办相关的 11 个 state、全部回调与 effect 抽到 `features/todos`：`useTodos.ts`（139，编排，并返回 `TodoNotebook` 的 props）、`useTodoList.ts`（132）、`useTodoArchives.ts`（40）、`useTodoSaving.ts`（120）、`useTodoSaveDirectory.ts`（80）、`useTodoAutoSave.ts`（93）、`useTodoRollover.ts`（112）。直接的 localStorage 读写改为 `storage.ts` 中的同名 key 包装函数，key 与格式不变。为保持 feature 不依赖 windows，"缺少保存路径时打开设置"与"开始待办后折叠"改为由 `IslandApp` 注入的回调；`setIslandMode`、`collapseIsland` 上移到 `useTodos` 调用之前。设置窗口的 storage 监听拆成两个（外观设置留在 `IslandApp`，保存路径进 `useTodoSaveDirectory`），卸载时的计时器清理也随之拆分；各 effect 彼此独立，顺序变化不影响结果。`App.tsx` 1434 → 913，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；待办增删改、拖动排序、开始待办后折叠、手动保存与无路径提示、自动保存、跨日归档与结转待人工验收 |
+| 2026-11-03 | 3.3（1/n，改写） | 见提交说明 | 迁移前先把 `IslandApp` 压到组件上限内：外观设置的 state、持久化与跨窗口同步抽到 `features/appearance/useIslandSettings.ts`（30，改用已有的 `saveSettings`）；mode / 贴边 / 当前页与剪贴板开关抽到 `windows/island/useIslandNavigation.ts`（67）；窗口内快捷键抽到 `useIslandKeyboard.ts`（35）；折叠态待办标题、计数与宽度抽到 `useCollapsedTodo.ts`（52）；展开高度与舞台 CSS 变量改为纯函数 `expandedHeight.ts`（51）、`stageStyle.ts`（51）。舞台样式的 memo 依赖由逐个设置字段改为整个 `settings`，其他设置变化时会重新计算出相同的值，渲染结果不变。`IslandApp` 194 行，直接 `useState` 2 个；`App.tsx` 913 → 747，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；折叠 / 展开 / 贴边、页面切换、Esc 与剪贴板快捷键、外观设置同步待人工验收 |
 
 ## 待人工验收
 
