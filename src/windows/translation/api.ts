@@ -40,3 +40,7 @@ export function hideTranslationWindow() {
 export function listenTranslationWindowOpened(handler: EventCallback<unknown>) {
   return listen(TRANSLATION_WINDOW_OPENED_EVENT, handler);
 }
+
+export function toggleTranslationWindow() {
+  return invoke("toggle_translation_window");
+}

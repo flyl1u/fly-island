@@ -16,9 +16,7 @@ import {
   RotateCcw,
   Settings,
 } from "lucide-react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isTauri } from "@tauri-apps/api/core";
 import {
   useQQNotifications,
   type QQNotificationsController,
@@ -40,9 +38,10 @@ import { clamp } from "./utils/number";
 import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
 import { openSettingsWindow } from "./windows/settings/api";
+import { toggleTranslationWindow } from "./windows/translation/api";
 import { getAgentStatus, type AgentStatusSnapshot } from "./features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, getAgentStatusLabel, getAgentVisualState, type AgentVisualState } from "./features/agent-status/status";
-import { DEFAULT_SETTINGS, hexToRgba, isSameSettings } from "./features/appearance/settings";
+import { hexToRgba, isSameSettings } from "./features/appearance/settings";
 import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
 import type { AppearanceMode, IslandSettings } from "./features/appearance/types";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
@@ -81,7 +80,7 @@ import type {
   TodoPageMode,
 } from "./features/todos/types";
 import type { IslandMode, IslandPage, NativeGlassState } from "./windows/island/types";
-import { ISLAND_POSITION_STORAGE_KEY, loadIslandPosition, type IslandPosition } from "./windows/island/storage";
+import { useIslandWindow } from "./windows/island/useIslandWindow";
 import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getCollapsedIslandWidth, getTodoVisualRows } from "./windows/island/layout";
 import "./App.css";
 
@@ -581,10 +580,6 @@ function IslandApp() {
   const wechatReminders = useWeChatReminders(mode === "collapsed" && !isTucked);
   const qqMail = useQQMail(mode === "collapsed" && !isTucked);
   const [messageSource, setMessageSource] = useState<MessageView>("qq");
-  const [isPositionDetached, setIsPositionDetached] = useState(() => loadIslandPosition() !== null);
-  const [reducedMotion, setReducedMotion] = useState(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
   const [page, setPage] = useState<IslandPage>("todo");
   const [mediaState, setMediaState] =
     useState<MediaState>(DEFAULT_MEDIA_STATE);
@@ -608,8 +603,6 @@ function IslandApp() {
     expiresAt: number;
   } | null>(null);
   const [settings, setSettings] = useState<IslandSettings>(loadSettings);
-  const [nativeGlassState, setNativeGlassState] =
-    useState<NativeGlassState>("disabled");
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
   const [draftTodo, setDraftTodo] = useState("");
@@ -638,8 +631,6 @@ function IslandApp() {
   const saveStateResetTimer = useRef<number | null>(null);
   const didHydrateAutoSave = useRef(false);
   const didCheckDate = useRef(false);
-  const didShowInitialWindow = useRef(false);
-  const islandPositionRef = useRef<IslandPosition | null>(loadIslandPosition());
   const selectedArchive =
     archives.find((archive) => archive.date === selectedArchiveDate) ?? null;
   const pendingTodoIds = useMemo(
@@ -698,18 +689,6 @@ function IslandApp() {
         : page === "clipboard"
           ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
           : messagePanelHeight(messageSource, Boolean(qqMail.selectedMail));
-  const layoutSync = useRef<{
-    frame: number | null;
-    inFlight: boolean;
-    pending: IslandSettings;
-    active: IslandSettings;
-  }>({
-    frame: null,
-    inFlight: false,
-    pending: settings,
-    active: settings,
-  });
-
   const stageStyle = useMemo(
     () => {
       const glassStrength = settings.glassIntensity / 100;
@@ -766,114 +745,6 @@ function IslandApp() {
       settings.todoBackgroundColor,
     ],
   );
-
-  const syncNativeLayout = useCallback(async (nextSettings: IslandSettings) => {
-    try {
-      await invoke("set_island_layout", {
-        layout: {
-          collapsedScale: nextSettings.collapsedScale,
-          expandedScale: nextSettings.expandedScale,
-          marginY: nextSettings.marginY,
-        },
-      });
-    } catch (error) {
-      console.error("Failed to sync island layout", error);
-    }
-  }, []);
-
-  const flushNativeLayout = useCallback(() => {
-    const syncState = layoutSync.current;
-
-    if (syncState.inFlight) {
-      return;
-    }
-
-    const nextSettings = syncState.pending;
-    syncState.active = nextSettings;
-    syncState.inFlight = true;
-
-    void syncNativeLayout(nextSettings).finally(() => {
-      const latestState = layoutSync.current;
-      latestState.inFlight = false;
-
-      if (latestState.pending !== latestState.active) {
-        latestState.frame = window.requestAnimationFrame(() => {
-          latestState.frame = null;
-          flushNativeLayout();
-        });
-      }
-    });
-  }, [syncNativeLayout]);
-
-  const scheduleNativeLayout = useCallback(
-    (nextSettings: IslandSettings) => {
-      const syncState = layoutSync.current;
-      syncState.pending = nextSettings;
-
-      if (syncState.frame !== null || syncState.inFlight) {
-        return;
-      }
-
-      syncState.frame = window.requestAnimationFrame(() => {
-        syncState.frame = null;
-        flushNativeLayout();
-      });
-    },
-    [flushNativeLayout],
-  );
-
-  const syncNativeInteraction = useCallback(
-    async (
-      nextMode: IslandMode,
-      nextSettings: IslandSettings,
-      nextExpandedHeight: number,
-      nextCollapsedWidth: number,
-      nextIsTucked: boolean,
-    ) => {
-      try {
-        const glassState = await invoke<NativeGlassState>(
-          "set_island_interaction",
-          {
-          mode: nextMode,
-          collapsedScale: nextSettings.collapsedScale,
-          expandedScale: nextSettings.expandedScale,
-          marginY: nextSettings.marginY,
-          expandedHeight: nextExpandedHeight,
-          collapsedWidth: nextCollapsedWidth,
-          customPosition: islandPositionRef.current,
-          isTucked: nextIsTucked,
-          animatePosition: !reducedMotion,
-            glassEnabled: nextSettings.appearanceMode === "liquidGlass",
-            glassIntensity: nextSettings.glassIntensity,
-            glassTint: nextSettings.islandBackgroundColor,
-          },
-        );
-        setNativeGlassState(glassState);
-      } catch (error) {
-        console.error("Failed to sync island interaction", error);
-        setNativeGlassState(
-          nextSettings.appearanceMode === "liquidGlass"
-            ? "css-fallback"
-            : "disabled",
-        );
-      }
-    },
-    [reducedMotion],
-  );
-
-  const showReadyIsland = useCallback(async () => {
-    if (didShowInitialWindow.current) {
-      return;
-    }
-
-    didShowInitialWindow.current = true;
-
-    try {
-      await invoke("show_ready_island");
-    } catch (error) {
-      console.error("Failed to show island", error);
-    }
-  }, []);
 
   const refreshClipboardHistory = useCallback(async () => {
     try {
@@ -960,36 +831,6 @@ function IslandApp() {
       console.error("Failed to clear clipboard history", error);
     }
   }, []);
-
-  const minimizeIsland = useCallback(async () => {
-    try {
-      await invoke("minimize_island");
-    } catch (error) {
-      console.error("Failed to minimize island", error);
-    }
-  }, []);
-
-  const startIslandDrag = useCallback(() => {
-    setIsPositionDetached(true);
-    void invoke("start_island_drag").catch((error) => {
-      setIsPositionDetached(isPositionDetached);
-      console.error("Failed to start island drag", error);
-    });
-  }, [isPositionDetached]);
-
-  const resetIslandPosition = useCallback(async () => {
-    try {
-      const nextSettings = { ...settings, marginY: DEFAULT_SETTINGS.marginY };
-      await syncNativeLayout(nextSettings);
-      await invoke("reset_island_position");
-      islandPositionRef.current = null;
-      setIsPositionDetached(false);
-      window.localStorage.removeItem(ISLAND_POSITION_STORAGE_KEY);
-      setSettings(nextSettings);
-    } catch (error) {
-      console.error("Failed to reset island position", error);
-    }
-  }, [settings, syncNativeLayout]);
 
   const setIslandMode = useCallback((nextMode: IslandMode) => {
     setMode(nextMode);
@@ -1907,70 +1748,21 @@ function IslandApp() {
     return () => window.clearInterval(interval);
   }, [currentTodoDate, rolloverToToday]);
 
-  useEffect(() => {
-    scheduleNativeLayout(settings);
-  }, [settings.marginY, scheduleNativeLayout]);
-
-  useEffect(() => {
-    let didCancel = false;
-    let unlisten: (() => void) | null = null;
-
-    void listen<IslandPosition>("island-position-changed", ({ payload }) => {
-      islandPositionRef.current = payload;
-      setIsPositionDetached(true);
-      window.localStorage.setItem(
-        ISLAND_POSITION_STORAGE_KEY,
-        JSON.stringify(payload),
-      );
-    })
-      .then((nextUnlisten) => {
-        if (didCancel) {
-          nextUnlisten();
-        } else {
-          unlisten = nextUnlisten;
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to listen for island position changes", error);
-      });
-
-    return () => {
-      didCancel = true;
-      unlisten?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateReducedMotion = () => setReducedMotion(query.matches);
-    query.addEventListener("change", updateReducedMotion);
-    return () => query.removeEventListener("change", updateReducedMotion);
-  }, []);
-
-  useEffect(() => {
-    void syncNativeInteraction(
-      mode,
-      settings,
-      expandedIslandHeight,
-      collapsedIslandWidth,
-      isTucked,
-    ).finally(() => {
-      void showReadyIsland();
-    });
-  }, [
+  const {
+    isPositionDetached,
+    nativeGlassState,
+    minimizeIsland,
+    startIslandDrag,
+    resetIslandPosition,
+  } = useIslandWindow({
+    mode,
+    isTucked,
+    settings,
+    setSettings,
     expandedIslandHeight,
     collapsedIslandWidth,
-    isTucked,
-    mode,
-    settings.marginY,
-    settings.appearanceMode,
-    settings.glassIntensity,
-    settings.islandBackgroundColor,
-    settings.collapsedScale,
-    settings.expandedScale,
-    showReadyIsland,
-    syncNativeInteraction,
-  ]);
+    onCollapse: collapseIsland,
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1997,33 +1789,6 @@ function IslandApp() {
     toggleClipboardHistory,
   ]);
 
-  useEffect(() => {
-    let didCancel = false;
-    let unlisten: (() => void) | null = null;
-
-    void getCurrentWindow()
-      .onFocusChanged(({ payload: focused }) => {
-        if (!focused && mode === "expanded") {
-          collapseIsland();
-        }
-      })
-      .then((nextUnlisten) => {
-        if (didCancel) {
-          nextUnlisten();
-        } else {
-          unlisten = nextUnlisten;
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to listen for island focus changes", error);
-      });
-
-    return () => {
-      didCancel = true;
-      unlisten?.();
-    };
-  }, [collapseIsland, mode]);
-
   const agentVisualState = useMemo(
     () => getAgentVisualState(agentStatus),
     [agentStatus],
@@ -2034,7 +1799,7 @@ function IslandApp() {
   );
 
   const openTranslator = useCallback(() => {
-    void invoke("toggle_translation_window").catch((error) => {
+    void toggleTranslationWindow().catch((error) => {
       console.error("Failed to open translation", error);
     });
   }, []);

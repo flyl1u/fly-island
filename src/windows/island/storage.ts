@@ -28,3 +28,14 @@ export function loadIslandPosition(): IslandPosition | null {
     return null;
   }
 }
+
+export function saveIslandPosition(position: IslandPosition) {
+  window.localStorage.setItem(
+    ISLAND_POSITION_STORAGE_KEY,
+    JSON.stringify(position),
+  );
+}
+
+export function clearIslandPosition() {
+  window.localStorage.removeItem(ISLAND_POSITION_STORAGE_KEY);
+}

@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 2142 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 1907 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -108,7 +108,7 @@
 
 ## Phase 3：拆分 IslandApp
 
-- [ ] **3.1** 把窗口尺寸、展开高度、拖拽、位置、贴边逻辑抽到 `windows/island/useIslandWindow.ts`，窗口命令封装到 `windows/island/api.ts`。
+- [x] **3.1** 把窗口尺寸、展开高度、拖拽、位置、贴边逻辑抽到 `windows/island/useIslandWindow.ts`，窗口命令封装到 `windows/island/api.ts`。展开高度仍由 `IslandApp` 计算后传入（依赖各页面内容）；贴边收起的 mode 状态留在 `IslandApp`，随 3.3 迁移。
 - [ ] **3.2** 各 feature 的状态与副作用抽成领域 hook：`useTodos`、`useMediaState`、`useClipboardHistory`、`useAgentStatus`。高频状态（音频电平）放进叶子组件。
 - [ ] **3.3** `App` / `IslandApp` / `IslandShell` 迁到 `windows/island/`，改为具名导出，更新 `main.tsx`。`useIslandAutomation.ts` 同时迁移，并更新 `tests/island-automation.test.mjs`。
 - [ ] **3.4** 删除 `src/App.tsx`，从白名单中移除。
@@ -218,7 +218,8 @@
 | 2026-11-03 | 2.8（4/4，CSS 搬迁） | `ebe8c1e` | `App.css` 1045 → 912（-133），白名单同步下调；设置页外壳样式（`.editor-panel`、`.settings-section*`、`.reset-button`）移到 `windows/settings/LayoutEditor.css`，在各区块样式之后加载。事后补查：`05d0c6d` 把 `LayoutEditor` 移出 `App.tsx` 后，各设置区块的 CSS 改由设置窗口引入、排到 `App.css` 之后；打包产物级检查改为比较属性值后，对比 2.1 之前的产物，顺序变化的 61351 对规则中没有值不同的冲突（检查到的 2 对都是减少动效模式下的 `transition: none`） | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
 | 2026-11-03 | 2.8（具名导出） | `64ca203` | `SettingsWindow`、`TranslationWindow` 改为具名导出（src/AGENTS.md 要求迁移时一并改），同步 `main.tsx`、`tests/i18n.tsx`；`App` 的默认导出在 3.3 处理 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | Phase 2 验收 | — | `App.tsx` 5644 → 2212（-3432，阶段目标 -600 已达成），`App.css` 3865 → 912，`QQMail.tsx` 移出白名单；存量 IPC 文件只剩 `App.tsx`；ESLint 0 error / 7 warn | `pnpm check`（78/78）、`pnpm build`；各面板与回归页检查见"待人工验收" |
-| 2026-11-03 | 3.1（1/2，搬迁） | 见提交说明 | `IslandMode`、`IslandPage`、`NativeGlassState` 搬到 `windows/island/types.ts`，位置存储 key、`IslandPosition`、`loadIslandPosition` 搬到 `storage.ts`，尺寸常量与 `getCollapsedIslandWidth`、`getTodoVisualRows` 搬到 `layout.ts`；新增 `tests/island-window.test.mjs`（3 个用例）。`App.tsx` 2212 → 2142，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
+| 2026-11-03 | 3.1（1/2，搬迁） | `151157c` | `IslandMode`、`IslandPage`、`NativeGlassState` 搬到 `windows/island/types.ts`，位置存储 key、`IslandPosition`、`loadIslandPosition` 搬到 `storage.ts`，尺寸常量与 `getCollapsedIslandWidth`、`getTodoVisualRows` 搬到 `layout.ts`；新增 `tests/island-window.test.mjs`（3 个用例）。`App.tsx` 2212 → 2142，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
+| 2026-11-03 | 3.1（2/2，改写） | 见提交说明 | 原生窗口同步抽到 `useIslandWindow`（组合）、`useNativeLayout`（缩放与边距，每帧至多一次）、`useIslandPosition`（拖拽位置）。命令收口到 `windows/island/api.ts`，位置写入收口到 `storage.ts` 的 `saveIslandPosition` / `clearIslandPosition`（仍直接读写 `localStorage`，内容与时机不变），翻译窗口开关收口到 `windows/translation/api.ts`。展开高度仍由 `IslandApp` 计算后传入；贴边收起的 mode 状态留在 `IslandApp`。`App.tsx` 2142 → 1907，白名单同步下调。存量 IPC 豁免清空，ESLint warn 7 → 5：少掉的是 `App.tsx` 的 `invoke` / `listen`，5 条 exhaustive-deps 原样保留（2 条随代码移到新 hook）。外部 ref 与 setter 补进依赖数组，引用稳定，回调重建时机不变 | `pnpm check`（81/81）、`pnpm build`；拖拽、重置位置与失焦折叠待人工验收 |
 
 ## 待人工验收
 
@@ -238,6 +239,7 @@
 | `63f8b1a` 等 | 2.6 | 消息功能（中英文）：QQ 邮箱连接 / 断开 / 刷新 / 开关、重启后按保存的设置自动恢复、阅读邮件（远程图片开关及其偏好保留）、新邮件预览；QQ 通知开关、通知权限请求（只请求一次）、打开系统通知设置、清空、打开 QQ；微信提醒开关与打开微信；主窗口折叠态消息预览动画。可在 `pnpm dev` 中打开 `/tests/mail-reader.html`、`/tests/notification-startup.html`、`/tests/collapsed-message-animation.html` 辅助检查。 |
 | `5cb8545` | 2.7 | 设置窗口（中英文）：检查更新的各状态（检查中、已是最新、有新版本、下载进度、安装中、出错与重试），离开再回到设置窗口后下载进度仍在；GitHub 项目链接在桌面端用系统浏览器打开，失败时显示提示。 |
 | `ebe8c1e`、`64ca203` 等 | 2.8 | 设置窗口与翻译窗口（中英文）：设置窗口打开、各区块显示与滚动，重置按钮，开机自启的读取与切换（失败时回滚）；从主窗口"未设置保存路径"跳转后高亮保存路径；翻译窗口的打开（显示时清空并读取剪贴板）、翻译、方向切换、快捷键录制与注册、API 密钥保存与删除、复制结果、拖动与缩放、关闭，重启后翻译设置保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
+| 见提交说明 | 3.1 | 主窗口：拖拽后位置在重启后仍在、重置位置回到默认边距、展开后点击窗外自动折叠、首次启动会显示窗口、调节边距和缩放后原生窗口跟着变。 |
 
 ## 待处理问题
 
@@ -245,7 +247,7 @@
 
 | 发现于 | 问题 | 说明 |
 |---|---|---|
-| 0.3 | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖（`App.tsx` 3、`QQMail.tsx` 1、`TranslationWindow.tsx` 1） | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。 |
+| 0.3 | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖。3.1 改写后位置为 `App.tsx` 1（`qqMail`）、`useIslandWindow.ts` 1（交互同步未把整个 `settings` 列入依赖）、`useNativeLayout.ts` 1（布局同步只依赖 `marginY`）、`QQMail.tsx` 1、`TranslationWindow.tsx` 1。`App.tsx` 直接 import `invoke` / `listen` 的 2 条 warn 已随收口消失 | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。 |
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
 | 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
 | 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
