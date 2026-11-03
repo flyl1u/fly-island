@@ -2,6 +2,7 @@ import { Check, RefreshCcw, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./api";
 import { AGENT_PROVIDERS, AGENT_PROVIDER_LABELS, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, type AgentHooksInstallState } from "./status";
+import "./AgentHooksSettingsSection.css";
 
 export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, agentHooksInstallState, agentHooksInstallResult, agentHooksInstallError, onClearAgentStatus, onInstallAgentHooks }: {
   agentStatus: AgentStatusSnapshot;
