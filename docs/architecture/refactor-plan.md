@@ -20,7 +20,7 @@
 | `src/App.css` | 3865 | 0（已删除） | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
-| `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
+| `src-tauri/src/lib.rs` | 1973 | 1181（生产代码 1133，内联测试 48，测试已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
 | `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
 | `src-tauri/src/media_control.rs` | 829 | 829 | 829 / 800 | 0 | 生产代码 |
 | `src-tauri/src/qq_notifications.rs` | 1081 | 1083 | 789 / 800 | 292 / 150 | 测试 |
@@ -133,7 +133,8 @@
 
 `lib.rs`、`qq_mail.rs`、`media_control.rs` 在 0.6 中没有格式化。搬迁提交保持原格式；搬迁完成、相关文件已不在白名单中之后，紧接着单独提交一次 `cargo fmt`（`refactor(<范围>): apply cargo fmt`），格式化后仍须满足行数上限。`lib.rs` 在 5.3 完成后格式化，5.1、5.2 拆出的新文件在各自步骤后格式化。
 
-- [ ] **5.1** 从 `lib.rs` 中拆出 `island/`，包括状态、几何计算、毛玻璃、鼠标穿透以及对应测试。
+- [x] **5.1** 从 `lib.rs` 中拆出 `island/`，包括状态、几何计算、毛玻璃、鼠标穿透以及对应测试。
+  - `run()` 中的岛屿初始化（首次定位、鼠标穿透循环、拖动位置记录）和托盘中的显示 / 隐藏仍在 `lib.rs`，改为通过 `island::` 路径调用；托盘在 5.3 移到 `tray.rs`。更新配置的 3 个测试留在 `lib.rs` 的测试模块，5.3 随 `system/updater.rs` 迁移。
 - [ ] **5.2** 从 `lib.rs` 中拆出 `agent_status/`。
 - [ ] **5.3** 从 `lib.rs` 中拆出 `system/`（`startup.rs`、`updater.rs`、`todo_export.rs`）和 `tray.rs`。完成后 `lib.rs` 只剩组装代码。
 - [ ] **5.4** 拆分 `qq_mail/`。
@@ -234,6 +235,8 @@
 | 2026-11-03 | 4.1、4.3（搬迁） | `2d82e1f` | `App.css` 912 → 0（删除），白名单条目删除。按行号原样切分：`windows/island/IslandShell.css`（329，外壳、毛玻璃、折叠 / 展开容器）、`IslandCollapsedBar.css`（128）、`IslandHeader.css`（154，页头、页面圆点、窗口按钮）由各组件自己导入；`features/messages/MessageSourceIcon.css`（9）；跨领域规则（`.stage` 与像素字体覆盖、`.icon-button` 一族、液态玻璃面板背景、`save-check-icon`、减少动效大列表）放到 `IslandApp.css`（258），仍是 `IslandApp` 的最后一个导入；未使用的 `.clipboard-settings-panel`、`.color-panel` 追加到 `ClipboardSettingsSection.css`、`ColorSettingsSection.css`。`tests/mail-reader.tsx` 改为导入 `IslandApp.css`。class 名不变 | `pnpm check`（81/81，ESLint 0 error / 5 warn 不变，行数检查 0 错误）、`pnpm build`；构建产物 CSS 与上一提交逐条规则比对：规则集合相同（694 条），615 条位置变化；顺序翻转且同名属性值不同的规则对中，特异性不同的由特异性决定，特异性相同的 444 对（466 组选择器）按 JSX className 共现分析均不会命中同一元素（过滤器先用 14 组已知共现 class 校验）。回归页 `collapsed-message-animation.html?test=1` 24/24、`mail-reader.html?run=1` 33 项全部通过 |
 | 2026-11-03 | 4.2（改写） | `39afbc3` | 新增 `styles/tokens.css`（49 行，35 个变量：颜色 24、圆角 5、间距 6），由 `main.tsx` 最先导入，4 个回归页同步导入；37 个 CSS 文件中 371 处数值完全相同的字面量改为 `var(--…)`，各文件行数不变 | `pnpm check`（81/81，ESLint 0 error / 5 warn 不变，行数检查 0 错误）、`pnpm build`；构建产物与上一提交（worktree 构建）比对：把 `var()` 代回 token 值、两边颜色统一成 r,g,b,a（透明度按 1/255 量化）后，694 条规则集合与顺序完全一致；唯一的文本差异是 esbuild 对 `inset 0 1px 0 var(...)` 保留了值为 0 的模糊半径（字面量颜色时会省略），渲染等价。回归页 `collapsed-message-animation.html?test=1` 24/24、`mail-reader.html?run=1` 33 项通过，页面上 token 能解析出值 |
 | 2026-11-03 | Phase 4 验收 | 见提交说明 | `App.css` 已删除；最大的 CSS 文件为 `MusicPlayerPanel.css`（392），全部不超过 500 行；白名单只剩 Rust 文件 | 三个窗口中英文截图对比待人工验收 |
+| 2026-11-03 | 5.1（1/2，搬迁） | `4846273` | `lib.rs` 物理行 1970 → 1181，生产代码 1769 → 1133（白名单下调），内联测试 201 → 48（白名单条目删除）。拆到 `island/`：`state.rs`（130，状态类型、全局状态与访问函数、拖动位置记录）、`geometry.rs`（173，尺寸常量、定位与贴边动画）、`glass.rs`（54）、`passthrough.rs`（114）、`mod.rs`（6 个命令、`IslandLayout`、`WINDOW_LABEL`、`main_window` / `show_island` / `hide_island`）、`tests.rs`（9 个几何测试）。函数体不变，只调整可见性、`use` 和模块路径（`top_edge.rs` 改经 `super::` 访问）；命令名与参数不变，`generate_handler!` 改为 `island::` 路径。新旧代码去掉缩进、可见性和路径前缀后逐行比较，差异只有 `use` / `mod` 声明和模块文档注释 | `cargo test`（63 通过 / 5 忽略，与改动前相同）、clippy 84 条且各类数量不变（`lib.rs` 的 13 条中 10 条随代码移到 `island/`）、无新增 rustc 告警；`pnpm check`（81/81）、`pnpm build`；`pnpm tauri build --no-bundle` 成功，桌面快捷方式 `fly-island.lnk` 已核对指向本次产物 |
+| 2026-11-03 | 5.1（2/2，格式化） | `3eca09a` | 只对 `island/` 运行 rustfmt（4 个文件 +66/-19，`tests.rs` 197 行），`lib.rs` 不动，5.3 后再格式化 | `cargo test`（63 / 5）、clippy 84 条、`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -259,6 +262,7 @@
 | `19b2329`、`9fb51f2` | 3.3 | `pnpm tauri dev` 主窗口（中英文、两种外观）：折叠 / 展开 / 贴边收起与悬停唤出、自动贴边、Esc 折叠、剪贴板快捷键开关剪贴板页、页面圆点切换、折叠条点击打开当前页与消息预览点击、从折叠条拖动窗口（拖动后不误触发点击）、页头设置 / 消息 / 翻译 / 重置位置 / 最小化到托盘、液态玻璃指针高光、首次展开无闪烁；设置窗口修改外观后主窗口同步。 |
 | `2d82e1f` | 4.1 | `pnpm tauri dev` 主窗口（中英文、经典 / 液态玻璃、系统 / 像素字体）：折叠条（脉冲点、代理状态、品牌、当前待办、待办计数、静音按钮）、展开态页头（标题图标、页面圆点三种颜色与选中态、窗口按钮与重置位置高亮）、液态玻璃展开 / 收起光晕动画与 CSS 回退、贴边 / 分离圆角、各页面面板的玻璃背景、保存成功勾选动画、系统“减少动态效果”下无过渡；与 `47b9fe2` 截图对比无差异。 |
 | `39afbc3` | 4.2 | 与 4.1 同一轮检查即可：主窗口、设置窗口、翻译窗口（中英文、经典 / 液态玻璃）与 `47b9fe2` 截图对比无差异，重点看焦点框颜色、圆角药丸按钮、待办纸张文字颜色、设置区块间距。这是 Phase 4 验收要求的截图对比。 |
+| `4846273`、`3eca09a` | 5.1 | `pnpm tauri dev` 或桌面快捷方式启动：首次启动位置与显示、折叠 / 展开时原生窗口尺寸、贴边收起与唤出动画、拖动后松手的顶边吸附与位置保存、重置位置、窗口外点击穿透（折叠态与展开态、贴边与分离的圆角处）、液态玻璃开关、托盘显示 / 隐藏与单实例唤起。 |
 
 ## 待处理问题
 

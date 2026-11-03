@@ -81,7 +81,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 |---|---|
 | `lib.rs`：`run()`、插件、setup、`generate_handler!` | 保留在 `lib.rs` |
 | `lib.rs`：托盘创建与事件 | `tray.rs` |
-| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough}.rs`（`island/` 已建立：`top_edge.rs` 负责顶边贴合判断与拖放吸附，`mod.rs` 放 `get_island_top_attachment` 命令） |
+| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough, top_edge, tests}.rs`（5.1 已完成：`mod.rs` 放命令与窗口访问，`state.rs` 放状态类型与全局状态，`geometry.rs` 放尺寸常量、定位与贴边动画，`top_edge.rs` 负责顶边贴合判断与拖放吸附） |
 | `lib.rs`：代理状态快照、运行标记、Codex / Claude Code hook 安装 | `agent_status/{mod, snapshot, markers, codex_hooks, claude_hooks}.rs` |
 | `lib.rs`：开机自启、注册表读取 | `system/startup.rs`（底层注册表调用放 `win32/registry.rs`） |
 | `lib.rs`：`get_updater_proxy`、`updater_configured` | `system/updater.rs` |
