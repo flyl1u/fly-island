@@ -194,7 +194,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 ## Phase 7：收尾
 
 - [x] **7.1** 白名单清空，删除白名单机制中的存量条目。（5.6 完成后 `lines`、`inlineTests` 均为空；检查脚本保留，用于阻止新的超限文件）
-- [ ] **7.2** 把 ESLint 中的存量 warn 全部升级为 error。
+- [x] **7.2** 把 ESLint 中的存量 warn 全部升级为 error。（`exhaustive-deps` 是唯一的 warn 规则；5 处存量警告在 `14eff59` 处理后升级，ESLint 0 error / 0 warning）
 - [ ] **7.3** 更新根目录 `AGENTS.md`，删除"结构重构进行中"的说明；更新两份子目录 `AGENTS.md` 中的目录地图。如果 README 中的项目结构说明也受影响，同步更新中英文两个版本。
 - [ ] **7.4** 运行完整的 `pnpm tauri build`，在本机做一轮回归。
 
@@ -292,6 +292,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-03 | Phase 5 验收 | 见提交说明 | `lib.rs` 141 行，只剩 `mod` 声明与 `run()`；Rust 文件全部满足 800 / 150 上限，白名单 `lines` 与 `inlineTests` 已清空；`cargo test` 63 通过 / 5 忽略（与 Phase 5 前相同）；clippy 84 → 83（`items_after_test_module` 消失），按位置：`qq_notifications/` 18、`examples/` 15、`wechat_reminders/` 11、`island/` 10、`translation.rs` 8、`media_control/` 8、`clipboard_history/` 7、`messenger_activation.rs` 3、`lib.rs` 2、`qq_mail/` 1。每一步都执行了 `pnpm tauri build --no-bundle` 并同步桌面快捷方式 | 涉及窗口与系统集成的手动检查见"待人工验收" 5.1–5.8 |
 | 2026-11-03 | 6.1（1/n，改写） | `1fcfa89` | 新增 `win32/mod.rs`、`win32/registry.rs`（`read_string`：仅 `REG_SZ`、2048 单元缓冲、任何错误视为不存在，与原实现一致；参数为 `&str`，内部构造宽字符串）。QQ `DisplayIcon` 与微信 `InstallPath` 两处查询改用它；示例程序同步引入 `registry.rs`。新增 2 个测试 | `cargo test` 63 → 65、clippy 83 → 80（少 3 条未注释的 `unsafe` 块）、`cargo build --all-targets`；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 6.1（2/n，改写） | `a918a97` | 新增 `win32/process.rs`（`window_process_id`、`image_path`，`ProcessHandle` 在 `Drop` 中关闭句柄）。QQ 窗口枚举与微信窗口匹配改用它，失败路径与原来一致（打不开进程或读不到路径都跳过 / 返回 `Err(())`）；示例程序同步引入。新增 2 个测试 | `cargo test` 65 → 67、clippy 80（原调用在 `unsafe fn` 内，不计为 `unsafe` 块）；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 0.3、7.2 | `14eff59` 等 | 5 处 `exhaustive-deps` 警告逐个分析，均为有意省略或误报（结论见"待处理问题" 0.3）；2 处改为等价写法，3 处注释并就地禁用；`exhaustive-deps` 由 warn 升级为 error | `pnpm check`（82/82，ESLint 0 / 0）、`pnpm build`；回归页 collapsed 24/24、i18n 16/16、mail-reader 33/33 |
 
 ## 待人工验收
 
@@ -333,7 +334,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 
 | 发现于 | 问题 | 说明 |
 |---|---|---|
-| 0.3 | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖。3.1 改写后位置为 `App.tsx` 1（`qqMail`）、`useIslandWindow.ts` 1（交互同步未把整个 `settings` 列入依赖）、`useNativeLayout.ts` 1（布局同步只依赖 `marginY`）、`QQMail.tsx` 1、`TranslationWindow.tsx` 1。`App.tsx` 直接 import `invoke` / `listen` 的 2 条 warn 已随收口消失 | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。 |
+| 0.3（已处理） | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖。3.1 改写后位置为 `App.tsx` 1（`qqMail`）、`useIslandWindow.ts` 1（交互同步未把整个 `settings` 列入依赖）、`useNativeLayout.ts` 1（布局同步只依赖 `marginY`）、`QQMail.tsx` 1、`TranslationWindow.tsx` 1。`App.tsx` 直接 import `invoke` / `listen` 的 2 条 warn 已随收口消失 | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。逐个确认后均不是闭包读取旧值的 bug（提交 `14eff59`）：`QQMail` 的 `readerRequestRef` 是请求计数器，卸载时有意递增；`IslandApp` 依赖的就是 `qqMail.closeReader`；`useIslandWindow` 只列出 `syncNativeInteraction` 实际发送的 6 个设置字段，避免无关设置触发原生调用；`useNativeLayout` 只需响应 `marginY`，缩放由 `set_island_interaction` 同步；`TranslationWindow` 只在挂载时注册已保存的快捷键。前两处改为 linter 能识别的等价写法，后三处加注释说明原因并就地禁用该条规则。随后 7.2 把该规则升级为 error。 |
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
 | 2.1（已处理） | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。已修复：`storage.ts` 全部改用 `lib/storage.ts` 的 `readString` / `writeString` / `removeItem`，key 与数据格式不变；存储不可用时读取回退默认值、写入不抛异常。`saveSaveDirectory` 返回是否写入成功，设置窗口在失败时保留草稿、不显示"已保存"（与原来抛异常时的界面一致）。新增"存储被禁用"单元测试。 |
 | 2.3（已处理） | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。已修复：先判断空格键再走单字符分支。Rust 侧确认 `"Ctrl+ "` 解析失败（拆分后没有主键，快捷键注册不上）、`"Ctrl+Space"` 解析为虚拟键 0x20；前端与 Rust 各补了测试。翻译窗口的录制逻辑本来就先判断空格，不受影响。 |
