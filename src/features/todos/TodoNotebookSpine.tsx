@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { SaveState, TodoPageMode } from "./types";
+import "./TodoNotebookSpine.css";
 
 export function TodoNotebookSpine({
   pageMode,

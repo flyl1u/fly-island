@@ -2,6 +2,7 @@ import type { WheelEvent } from "react";
 import { useTranslation } from "../../i18n";
 import { getDisplayDateParts } from "../../utils/date";
 import type { ArchiveLayout, TodoArchive } from "./types";
+import "./ArchiveBrowser.css";
 
 export function ArchiveBrowser({
   archives,

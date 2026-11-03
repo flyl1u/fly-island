@@ -3,6 +3,7 @@ import { Check, GripVertical, Play, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { getTodoTitleLineCount } from "../../utils/text";
 import type { TodoItem } from "./types";
+import "./TodoListItem.css";
 
 export function TodoListItem({
   todo,
