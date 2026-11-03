@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 2212 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 2142 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -218,6 +218,7 @@
 | 2026-11-03 | 2.8（4/4，CSS 搬迁） | `ebe8c1e` | `App.css` 1045 → 912（-133），白名单同步下调；设置页外壳样式（`.editor-panel`、`.settings-section*`、`.reset-button`）移到 `windows/settings/LayoutEditor.css`，在各区块样式之后加载。事后补查：`05d0c6d` 把 `LayoutEditor` 移出 `App.tsx` 后，各设置区块的 CSS 改由设置窗口引入、排到 `App.css` 之后；打包产物级检查改为比较属性值后，对比 2.1 之前的产物，顺序变化的 61351 对规则中没有值不同的冲突（检查到的 2 对都是减少动效模式下的 `transition: none`） | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
 | 2026-11-03 | 2.8（具名导出） | `64ca203` | `SettingsWindow`、`TranslationWindow` 改为具名导出（src/AGENTS.md 要求迁移时一并改），同步 `main.tsx`、`tests/i18n.tsx`；`App` 的默认导出在 3.3 处理 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | Phase 2 验收 | — | `App.tsx` 5644 → 2212（-3432，阶段目标 -600 已达成），`App.css` 3865 → 912，`QQMail.tsx` 移出白名单；存量 IPC 文件只剩 `App.tsx`；ESLint 0 error / 7 warn | `pnpm check`（78/78）、`pnpm build`；各面板与回归页检查见"待人工验收" |
+| 2026-11-03 | 3.1（1/2，搬迁） | 见提交说明 | `IslandMode`、`IslandPage`、`NativeGlassState` 搬到 `windows/island/types.ts`，位置存储 key、`IslandPosition`、`loadIslandPosition` 搬到 `storage.ts`，尺寸常量与 `getCollapsedIslandWidth`、`getTodoVisualRows` 搬到 `layout.ts`；新增 `tests/island-window.test.mjs`（3 个用例）。`App.tsx` 2212 → 2142，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
 
 ## 待人工验收
 
