@@ -91,7 +91,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `qq_notifications.rs` | `qq_notifications/{mod, listener, history, launcher, tests}.rs`（5.5 已完成；`launcher.rs` 负责查找并激活 QQ 窗口） |
 | `clipboard_history.rs` | `clipboard_history/{mod, service, store, hotkey}.rs`（5.6 已完成） |
 | `media_control.rs`、`lib.rs` 中的媒体命令 | `media_control/{mod, service, session, audio}.rs`（5.7 已完成：命令在 `mod.rs`，内部入口与状态类型在 `service.rs`） |
-| `wechat_reminders.rs` + `wechat_reminder_source.rs` | `wechat_reminders/{mod, source, tests}.rs` |
+| `wechat_reminders.rs` + `wechat_reminder_source.rs` | `wechat_reminders/{mod, source, tests}.rs`（5.8 已完成） |
 | 各模块中的 `unsafe` Win32 / COM 调用 | `win32/` 安全封装 |
 
 ## 对外契约清单
