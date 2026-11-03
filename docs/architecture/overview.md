@@ -103,13 +103,13 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-settings` | `App.tsx` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `App.tsx` |
 | `focusd-island-setting-presets` | `App.tsx` |
-| `focusd-island-todos` | `App.tsx` |
-| `focusd-island-active-todo` | `App.tsx` |
-| `focusd-island-current-date` | `App.tsx` |
-| `focusd-island-archives` | `App.tsx` |
-| `focusd-island-daily-note` | `App.tsx` |
-| `focusd-island-save-directory` | `App.tsx` |
-| `focusd-island-last-saved-signature` | `App.tsx` |
+| `focusd-island-todos` | `features/todos/storage.ts` |
+| `focusd-island-active-todo` | `features/todos/storage.ts` |
+| `focusd-island-current-date` | `features/todos/storage.ts` |
+| `focusd-island-archives` | `features/todos/storage.ts` |
+| `focusd-island-daily-note` | `features/todos/storage.ts` |
+| `focusd-island-save-directory` | `features/todos/storage.ts` |
+| `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `App.tsx` |
 | `focusd-island-music-sources` | `App.tsx` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `App.tsx` |

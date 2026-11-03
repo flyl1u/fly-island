@@ -12,11 +12,8 @@ import {
   SETTINGS_FOCUS_STORAGE_KEY,
   SETTINGS_PRESETS_STORAGE_KEY,
   STORAGE_KEY,
-  TODO_SAVE_DIRECTORY_STORAGE_KEY,
-  createTodoId,
   isDefaultSettingPreset,
   isSameSettings,
-  loadSaveDirectory,
   loadSettingPresets,
   loadSettings,
   mergeWithDefaultSettingPresets,
@@ -30,11 +27,12 @@ import {
   type ClipboardHistorySnapshot,
   type IslandPreset,
   type IslandSettings,
-  type SavePathState,
   type SettingsFocusSection,
 } from "./App";
 import { useLocale, useTranslation } from "./i18n";
 import { getErrorMessage } from "./utils/error";
+import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory } from "./features/todos/storage";
+import type { SavePathState } from "./features/todos/types";
 import { useQQNotifications } from "./QQNotifications";
 import { useWeChatReminders } from "./WeChatReminders";
 import "./SettingsWindow.css";

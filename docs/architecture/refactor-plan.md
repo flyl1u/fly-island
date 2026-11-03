@@ -94,6 +94,12 @@
 - [ ] **2.7 updater**：`UpdatePanel`、`updaterController.ts`。同步更新 `tests/updater-controller.test.mjs` 中的 import mock 表。
 - [ ] **2.8 窗口目录**：`SettingsWindow`、`TranslationWindow` 迁入 `windows/settings/`、`windows/translation/`，并抽出各自的 `api.ts` 和 `storage.ts`。
 
+超过 400 行的组件（`TodoNotebook` 470 行、`ClipboardHistoryPanel` 566 行、`LayoutEditor` 755 行，2026-11-03 统计）无法原样搬到一个文件里。经确认按以下顺序处理，搬迁和改写仍然分开提交：
+
+1. 搬迁提交：先原样搬出该步的其余代码（类型、存储、纯函数、小组件）。`App.tsx` 变短，但**暂不下调**白名单记录值（`check:size` 只会给出提示）。
+2. 改写提交：在 `App.tsx` 中原地把大组件拆成无状态的子组件，状态仍留在原组件中，不改变挂载结构。`App.tsx` 会增加几十行，但仍低于白名单记录值。
+3. 搬迁提交：把拆分后的组件原样搬到 `features/<领域>/`，并把白名单下调到实际行数。
+
 **验收**（每一步都要满足）：`pnpm check`、`pnpm build` 通过；`tests/` 中的导入路径已更新；手动检查对应面板的展开、折叠和数据保留情况，并在 `pnpm dev` 中打开相关的 `tests/*.html` 回归页确认。
 
 ## Phase 3：拆分 IslandApp
@@ -163,6 +169,7 @@
 | 2026-11-03 | 1.3 | `5d17988` | `App.tsx` 5602 → 5488（-114）、`App.css` 3865 → 3677（-188）；新增 `components/controls/` 下 4 组 `.tsx` + `.css`。已核对 CSS 迁移不改变层叠结果：没有其他规则以相同特异性命中这些控件 | `pnpm check`（51/51）、`pnpm build`；截图对比待人工验收 |
 | 2026-11-03 | 1.4 | `bc7cccd` | `App.css` 3677 → 3622（-55）；新增 `styles/fonts.css`（`@font-face`，url 改为 `../assets/…`）、`styles/base.css`，由 `main.tsx` 在 `App` 之前引入。打包产物 CSS 与 1.3 完全一致，只是这 785 字节的全局规则移到了开头；之前加载的组件 CSS 中没有同特异性的冲突规则 | `pnpm check`（51/51）、`pnpm build` |
 | 2026-11-03 | Phase 1 验收 | 见提交说明 | `App.tsx` 5644 → 5488（-156），`App.css` 3865 → 3622（-243）；验收指标改为"减少约 150 行"，600 行预期移到 Phase 2 | `pnpm check`、`pnpm build`；截图对比待人工验收 |
+| 2026-11-03 | 2.1（1/4，搬迁） | 见提交说明 | `App.tsx` 5488 → 5268（-220，白名单按约定暂不下调）；新增 `features/todos/types.ts`、`storage.ts`、`markdown.ts`、`ArchiveBrowser.tsx` 和 `tests/todos.test.mjs`（6 个用例）；`SettingsWindow.tsx` 改为直接从 `features/todos` 导入 | `pnpm check`（57/57）、`pnpm build` |
 
 ## 待人工验收
 
@@ -182,3 +189,4 @@
 |---|---|---|
 | 0.3 | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖（`App.tsx` 3、`QQMail.tsx` 1、`TranslationWindow.tsx` 1） | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。 |
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
+| 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
