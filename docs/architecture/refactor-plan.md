@@ -109,7 +109,7 @@
 ## Phase 3：拆分 IslandApp
 
 - [x] **3.1** 把窗口尺寸、展开高度、拖拽、位置、贴边逻辑抽到 `windows/island/useIslandWindow.ts`，窗口命令封装到 `windows/island/api.ts`。展开高度仍由 `IslandApp` 计算后传入（依赖各页面内容）；贴边收起的 mode 状态留在 `IslandApp`，随 3.3 迁移。
-- [ ] **3.2** 各 feature 的状态与副作用抽成领域 hook：`useTodos`、`useMediaState`、`useClipboardHistory`、`useAgentStatus`。高频状态（音频电平）放进叶子组件。
+- [x] **3.2** 各 feature 的状态与副作用抽成领域 hook：`useTodos`、`useMediaState`、`useClipboardHistory`、`useAgentStatus`。高频状态（音频电平）放进叶子组件——**暂缓**，原因见“待处理问题”3.2 一行；`IslandApp` 的 `useState` 已降到 6 个。
 - [ ] **3.3** `App` / `IslandApp` / `IslandShell` 迁到 `windows/island/`，改为具名导出，更新 `main.tsx`。`useIslandAutomation.ts` 同时迁移，并更新 `tests/island-automation.test.mjs`。
 - [ ] **3.4** 删除 `src/App.tsx`，从白名单中移除。
 
@@ -223,7 +223,7 @@
 | 2026-11-03 | 3.2（1/n，改写） | `0a04afc` | 代理状态的 state、刷新锁、200ms 轮询原样抽到 `features/agent-status/useAgentStatus.ts`（47），比较逻辑与轮询间隔不变；`App.tsx` 1907 → 1870，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
 | 2026-11-03 | 3.2（2/n，改写） | 4a32ef7 | 剪贴板历史的 state、6 个操作回调、变更与快捷键两个监听原样抽到 `features/clipboard/useClipboardHistory.ts`（127）。快捷键触发时要开关页面，属于窗口行为，`toggleClipboardHistory` 留在 `IslandApp`，作为 `onShortcut` 传入，监听的依赖与重订阅时机不变；窗口内 keydown 匹配快捷键的 effect 也留在 `IslandApp`。`App.tsx` 1870 → 1767，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；剪贴板页与快捷键待人工验收（同 2.3 的检查项） |
 | 2026-11-03 | 3.2（3/n，改写） | 9a95e2b | 媒体会话 state、命令执行、1500ms 轮询、控制目标选择抽到 `features/media/useMediaState.ts`（216，超过 150 行软上限，后续评估是否把命令执行再拆出）；500ms 音量电平轮询抽到 `useAudioLevel.ts`（93），音源优先级与持久化抽到 `useMusicSourcePriority.ts`（68）；`AUDIO_ACTIVE_THRESHOLD` 移到 `mediaState.ts`，localStorage 写入移到 `storage.ts` 的 `saveMusicSourcePriority`（key 与格式不变）。音量 effect 依赖补上稳定的 ref 与 setter，行为不变。音量"叶子组件"暂缓：电平与 `refreshMediaState` 的峰值衰减、播放意图耦合。`musicSettingsOpen` 留在 `IslandApp`。`App.tsx` 1767 → 1434，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；音乐面板、波形、音源排序待人工验收 |
-| 2026-11-03 | 3.2（4/n，改写） | 见提交说明 | 待办相关的 11 个 state、全部回调与 effect 抽到 `features/todos`：`useTodos.ts`（139，编排，并返回 `TodoNotebook` 的 props）、`useTodoList.ts`（132）、`useTodoArchives.ts`（40）、`useTodoSaving.ts`（120）、`useTodoSaveDirectory.ts`（80）、`useTodoAutoSave.ts`（93）、`useTodoRollover.ts`（112）。直接的 localStorage 读写改为 `storage.ts` 中的同名 key 包装函数，key 与格式不变。为保持 feature 不依赖 windows，"缺少保存路径时打开设置"与"开始待办后折叠"改为由 `IslandApp` 注入的回调；`setIslandMode`、`collapseIsland` 上移到 `useTodos` 调用之前。设置窗口的 storage 监听拆成两个（外观设置留在 `IslandApp`，保存路径进 `useTodoSaveDirectory`），卸载时的计时器清理也随之拆分；各 effect 彼此独立，顺序变化不影响结果。`App.tsx` 1434 → 913，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；待办增删改、拖动排序、开始待办后折叠、手动保存与无路径提示、自动保存、跨日归档与结转待人工验收 |
+| 2026-11-03 | 3.2（4/n，改写） | 27af68c | 待办相关的 11 个 state、全部回调与 effect 抽到 `features/todos`：`useTodos.ts`（139，编排，并返回 `TodoNotebook` 的 props）、`useTodoList.ts`（132）、`useTodoArchives.ts`（40）、`useTodoSaving.ts`（120）、`useTodoSaveDirectory.ts`（80）、`useTodoAutoSave.ts`（93）、`useTodoRollover.ts`（112）。直接的 localStorage 读写改为 `storage.ts` 中的同名 key 包装函数，key 与格式不变。为保持 feature 不依赖 windows，"缺少保存路径时打开设置"与"开始待办后折叠"改为由 `IslandApp` 注入的回调；`setIslandMode`、`collapseIsland` 上移到 `useTodos` 调用之前。设置窗口的 storage 监听拆成两个（外观设置留在 `IslandApp`，保存路径进 `useTodoSaveDirectory`），卸载时的计时器清理也随之拆分；各 effect 彼此独立，顺序变化不影响结果。`App.tsx` 1434 → 913，白名单同步下调 | `pnpm check`（81/81）、`pnpm build`；待办增删改、拖动排序、开始待办后折叠、手动保存与无路径提示、自动保存、跨日归档与结转待人工验收 |
 
 ## 待人工验收
 
@@ -257,3 +257,4 @@
 | 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
 | 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header`，以及 `App.css` 中的 `.clipboard-settings-panel`、`.color-panel`（及各自的 `__header`）没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
 | 2.6 | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。 |
+| 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
