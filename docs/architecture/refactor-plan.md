@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 2892 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 2633 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 1526 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -193,7 +193,8 @@
 | 2026-11-03 | 2.4a（1/n，搬迁） | `15e2b50` | `LocaleControl` 原样搬到 `i18n/LocaleControl.tsx`；`App.tsx` 2892 → 2859（白名单暂不下调，为后续原地拆分留出余量） | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（2/n，改写） | `cffa604` | 在 `App.tsx` 中拆出 `TodoSettingsSection`（无状态）和 `SavePathSettingsSection`（保存路径面板与输入框的 ref、"高亮保存路径"的滚动聚焦 effect 一并移入；区块始终挂载，行为不变）。`LayoutEditor` 500 → 401；`App.tsx` 2859 → 2890（低于白名单记录 2892） | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（3/n，搬迁） | `93250ce` | `TodoSettingsSection`（47）原样搬到 `features/appearance/`，`SavePathSettingsSection`（91）原样搬到 `features/todos/`；`App.tsx` 2890 → 2761（白名单暂不下调） | `pnpm check`（74/74）、`pnpm build` |
-| 2026-11-03 | 2.4a（4/n，改写） | 见提交说明 | 在 `App.tsx` 中拆出 `ClipboardSettingsSection`（142），快捷键录制状态、两个 ref、"聚焦快捷键"的 effect 和按键处理一并移入；区块始终挂载，行为不变。`LayoutEditor` 401 → 276；`App.tsx` 2761 → 2779 | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（4/n，改写） | `548e7d1` | 在 `App.tsx` 中拆出 `ClipboardSettingsSection`（142），快捷键录制状态、两个 ref、"聚焦快捷键"的 effect 和按键处理一并移入；区块始终挂载，行为不变。`LayoutEditor` 401 → 276；`App.tsx` 2761 → 2779 | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（5/n，搬迁） | 见提交说明 | `ClipboardSettingsSection`（150）原样搬到 `features/clipboard/`；`App.tsx` 2779 → 2633，白名单 2892 → 2633 | `pnpm check`（74/74）、`pnpm build` |
 
 ## 待人工验收
 
