@@ -1,13 +1,11 @@
+//! History service, clipboard reads and writes, and the clipboard listener window.
+
 use arboard::{Clipboard, ImageData};
 use base64::{engine::general_purpose, Engine as _};
-use image::{imageops::FilterType, DynamicImage, ImageFormat, RgbaImage};
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use image::RgbaImage;
 use std::{
     borrow::Cow,
     fs,
-    io::Cursor,
-    path::{Path, PathBuf},
     sync::{
         mpsc::{self, SyncSender},
         Mutex, OnceLock,
@@ -15,7 +13,7 @@ use std::{
     thread,
     time::Duration,
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{Emitter, Manager};
 use windows::{
     core::w,
     Win32::{
@@ -24,169 +22,24 @@ use windows::{
             DataExchange::{AddClipboardFormatListener, RemoveClipboardFormatListener},
             LibraryLoader::GetModuleHandleW,
         },
-        UI::{
-            Input::KeyboardAndMouse::{
-                RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
-                MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
+        UI::WindowsAndMessaging::{
+                CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW,
+                RegisterClassW, TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLIPBOARDUPDATE, WM_HOTKEY, WNDCLASSW,
             },
-            WindowsAndMessaging::{
-                CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, PostMessageW,
-                RegisterClassW, TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE,
-                WM_APP, WM_CLIPBOARDUPDATE, WM_HOTKEY, WNDCLASSW,
-            },
-        },
     },
 };
 
-const HISTORY_FILE_NAME: &str = "clipboard-history.json";
-const IMAGE_DIRECTORY_NAME: &str = "clipboard-images";
-const HISTORY_CHANGED_EVENT: &str = "clipboard-history-changed";
-const HOTKEY_EVENT: &str = "clipboard-history-shortcut";
-const MAIN_WINDOW_LABEL: &str = "main";
-const DEFAULT_MAX_ITEMS: usize = 30;
-const DEFAULT_SHORTCUT: &str = "Ctrl+X";
-const MIN_MAX_ITEMS: usize = 5;
-const MAX_MAX_ITEMS: usize = 200;
-const SHORT_DUPLICATE_WINDOW_MS: i64 = 2_000;
-const MAX_IMAGE_PNG_BYTES: usize = 10 * 1024 * 1024;
-const THUMBNAIL_MAX_SIDE: u32 = 128;
-const MAX_NOTE_CHARACTERS: usize = 80;
-const POLL_INTERVAL: Duration = Duration::from_secs(2);
-const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 8;
-const CLIPBOARD_WRITE_RETRY_DELAY: Duration = Duration::from_millis(35);
-const HOTKEY_ID: i32 = 0x4643;
-const HOTKEY_REFRESH_MESSAGE: u32 = WM_APP + 0x51;
+use super::*;
 
-static CLIPBOARD_HISTORY: OnceLock<ClipboardHistoryService> = OnceLock::new();
-static CLIPBOARD_NOTIFY_TX: OnceLock<Mutex<Option<SyncSender<()>>>> = OnceLock::new();
-static CLIPBOARD_HOTKEY_WINDOW: OnceLock<Mutex<Option<isize>>> = OnceLock::new();
-static CLIPBOARD_HOTKEY_REGISTERED: OnceLock<Mutex<bool>> = OnceLock::new();
+pub(super) const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClipboardHistorySnapshot {
-    settings: ClipboardHistorySettings,
-    items: Vec<ClipboardHistoryItem>,
-}
+pub(super) const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 8;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClipboardHistorySettings {
-    enabled: bool,
-    capture_images: bool,
-    max_items: usize,
-    #[serde(default = "default_clipboard_shortcut")]
-    shortcut: String,
-    #[serde(default = "default_true")]
-    shortcut_enabled: bool,
-}
+pub(super) const CLIPBOARD_WRITE_RETRY_DELAY: Duration = Duration::from_millis(35);
 
-impl Default for ClipboardHistorySettings {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            capture_images: true,
-            max_items: DEFAULT_MAX_ITEMS,
-            shortcut: default_clipboard_shortcut(),
-            shortcut_enabled: true,
-        }
-    }
-}
+pub(super) static CLIPBOARD_NOTIFY_TX: OnceLock<Mutex<Option<SyncSender<()>>>> = OnceLock::new();
 
-impl ClipboardHistorySettings {
-    fn normalized(mut self) -> Self {
-        self.max_items = self.max_items.clamp(MIN_MAX_ITEMS, MAX_MAX_ITEMS);
-        self.shortcut = parse_shortcut_binding(&self.shortcut)
-            .unwrap_or_else(default_shortcut_binding)
-            .label;
-        self
-    }
-}
-
-#[derive(Clone)]
-pub(crate) struct ShortcutBinding {
-    pub(crate) label: String,
-    pub(crate) modifiers: u32,
-    pub(crate) key_code: u32,
-}
-
-fn default_true() -> bool {
-    true
-}
-
-fn default_clipboard_shortcut() -> String {
-    DEFAULT_SHORTCUT.to_string()
-}
-
-fn default_shortcut_binding() -> ShortcutBinding {
-    parse_shortcut_binding(DEFAULT_SHORTCUT).expect("default clipboard shortcut should be valid")
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum ClipboardHistoryItemKind {
-    Text,
-    Image,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClipboardHistoryItem {
-    id: String,
-    kind: ClipboardHistoryItemKind,
-    hash: String,
-    created_at: i64,
-    copied_at: i64,
-    #[serde(default)]
-    favorite: bool,
-    #[serde(default)]
-    note: String,
-    preview: String,
-    text: Option<String>,
-    image: Option<ClipboardHistoryImage>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClipboardHistoryImage {
-    width: usize,
-    height: usize,
-    byte_size: u64,
-    original_path: String,
-    thumbnail_path: String,
-    thumbnail_data_url: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PersistedClipboardHistory {
-    settings: ClipboardHistorySettings,
-    items: Vec<ClipboardHistoryItem>,
-}
-
-impl Default for PersistedClipboardHistory {
-    fn default() -> Self {
-        Self {
-            settings: ClipboardHistorySettings::default(),
-            items: Vec::new(),
-        }
-    }
-}
-
-struct ClipboardHistoryState {
-    settings: ClipboardHistorySettings,
-    items: Vec<ClipboardHistoryItem>,
-    last_capture_hash: Option<String>,
-}
-
-struct ClipboardHistoryService {
-    app: AppHandle,
-    history_path: PathBuf,
-    image_dir: PathBuf,
-    state: Mutex<ClipboardHistoryState>,
-}
-
-enum ClipboardCapture {
+pub(super) enum ClipboardCapture {
     Text {
         hash: String,
         text: String,
@@ -200,109 +53,13 @@ enum ClipboardCapture {
     },
 }
 
-#[tauri::command]
-pub fn get_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
-    service()?.snapshot()
-}
-
-#[tauri::command]
-pub fn set_clipboard_history_settings(
-    settings: ClipboardHistorySettings,
-) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.set_settings(settings)
-}
-
-#[tauri::command]
-pub fn copy_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.copy_item(&id)
-}
-
-#[tauri::command]
-pub fn toggle_clipboard_history_favorite(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.toggle_favorite(&id)
-}
-
-#[tauri::command]
-pub fn set_clipboard_history_item_note(
-    id: String,
-    note: String,
-) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.set_note(&id, &note)
-}
-
-#[tauri::command]
-pub fn delete_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.delete_item(&id)
-}
-
-#[tauri::command]
-pub fn clear_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
-    service()?.clear()
-}
-
-pub fn init(app: &AppHandle) -> Result<(), String> {
-    if CLIPBOARD_HISTORY.get().is_some() {
-        return Ok(());
-    }
-
-    let app_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
-    let history_path = app_dir.join(HISTORY_FILE_NAME);
-    let image_dir = app_dir.join(IMAGE_DIRECTORY_NAME);
-
-    fs::create_dir_all(&image_dir)
-        .map_err(|error| format!("Failed to create clipboard history directory: {error}"))?;
-
-    let persisted = load_history(&history_path);
-    let service = ClipboardHistoryService {
-        app: app.clone(),
-        history_path,
-        image_dir,
-        state: Mutex::new(ClipboardHistoryState {
-            settings: persisted.settings.normalized(),
-            items: persisted.items,
-            last_capture_hash: None,
-        }),
-    };
-
-    let _ = CLIPBOARD_HISTORY.set(service);
-    start_workers();
-    notify_clipboard_changed();
-    Ok(())
-}
-
-fn service() -> Result<&'static ClipboardHistoryService, String> {
-    CLIPBOARD_HISTORY
-        .get()
-        .ok_or_else(|| "Clipboard history service is not initialized.".to_string())
-}
-
-fn load_history(history_path: &Path) -> PersistedClipboardHistory {
-    fs::read_to_string(history_path)
-        .ok()
-        .and_then(|content| serde_json::from_str::<PersistedClipboardHistory>(&content).ok())
-        .map(|mut history| {
-            history.settings = history.settings.normalized();
-            history.items.retain(|item| match item.kind {
-                ClipboardHistoryItemKind::Text => {
-                    item.text.as_ref().is_some_and(|text| !text.is_empty())
-                }
-                ClipboardHistoryItemKind::Image => item.image.is_some(),
-            });
-            history
-        })
-        .unwrap_or_default()
-}
-
 impl ClipboardHistoryService {
-    fn snapshot(&self) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn snapshot(&self) -> Result<ClipboardHistorySnapshot, String> {
         let state = self.state.lock().map_err(|error| error.to_string())?;
         Ok(Self::snapshot_locked(&state))
     }
 
-    fn set_settings(
+    pub(super) fn set_settings(
         &self,
         settings: ClipboardHistorySettings,
     ) -> Result<ClipboardHistorySnapshot, String> {
@@ -318,7 +75,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn copy_item(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn copy_item(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
         let item = {
             let state = self.state.lock().map_err(|error| error.to_string())?;
             state
@@ -368,7 +125,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn toggle_favorite(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn toggle_favorite(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
         let item = state
             .items
@@ -384,7 +141,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn set_note(&self, id: &str, note: &str) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn set_note(&self, id: &str, note: &str) -> Result<ClipboardHistorySnapshot, String> {
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
         let item = state
             .items
@@ -400,7 +157,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn delete_item(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn delete_item(&self, id: &str) -> Result<ClipboardHistorySnapshot, String> {
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
         if let Some(index) = state.items.iter().position(|item| item.id == id) {
             let item = state.items.remove(index);
@@ -414,7 +171,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn clear(&self) -> Result<ClipboardHistorySnapshot, String> {
+    pub(super) fn clear(&self) -> Result<ClipboardHistorySnapshot, String> {
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
         for item in state.items.iter().filter(|item| !item.favorite) {
             self.remove_item_files(item);
@@ -428,7 +185,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    fn capture_current_clipboard(&self) {
+    pub(super) fn capture_current_clipboard(&self) {
         let settings = match self.state.lock() {
             Ok(state) => state.settings.clone(),
             Err(error) => {
@@ -455,7 +212,7 @@ impl ClipboardHistoryService {
         }
     }
 
-    fn insert_capture(&self, capture: ClipboardCapture) -> Result<(), String> {
+    pub(super) fn insert_capture(&self, capture: ClipboardCapture) -> Result<(), String> {
         let now = current_unix_millis();
         let hash = capture.hash().to_string();
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
@@ -531,7 +288,7 @@ impl ClipboardHistoryService {
         Ok(())
     }
 
-    fn persist_image(
+    pub(super) fn persist_image(
         &self,
         hash: &str,
         width: usize,
@@ -570,7 +327,7 @@ impl ClipboardHistoryService {
         })
     }
 
-    fn enforce_limit_locked(&self, state: &mut ClipboardHistoryState) {
+    pub(super) fn enforce_limit_locked(&self, state: &mut ClipboardHistoryState) {
         while state.items.len() > state.settings.max_items {
             let removal_index = state
                 .items
@@ -586,7 +343,7 @@ impl ClipboardHistoryService {
         }
     }
 
-    fn persist_locked(&self, state: &ClipboardHistoryState) -> Result<(), String> {
+    pub(super) fn persist_locked(&self, state: &ClipboardHistoryState) -> Result<(), String> {
         let history = PersistedClipboardHistory {
             settings: state.settings.clone(),
             items: state.items.clone(),
@@ -597,25 +354,25 @@ impl ClipboardHistoryService {
             .map_err(|error| format!("Failed to write clipboard history: {error}"))
     }
 
-    fn remove_item_files(&self, item: &ClipboardHistoryItem) {
+    pub(super) fn remove_item_files(&self, item: &ClipboardHistoryItem) {
         if let Some(image) = &item.image {
             let _ = fs::remove_file(&image.original_path);
             let _ = fs::remove_file(&image.thumbnail_path);
         }
     }
 
-    fn snapshot_locked(state: &ClipboardHistoryState) -> ClipboardHistorySnapshot {
+    pub(super) fn snapshot_locked(state: &ClipboardHistoryState) -> ClipboardHistorySnapshot {
         ClipboardHistorySnapshot {
             settings: state.settings.clone(),
             items: state.items.clone(),
         }
     }
 
-    fn emit_changed(&self) {
+    pub(super) fn emit_changed(&self) {
         let _ = self.app.emit(HISTORY_CHANGED_EVENT, ());
     }
 
-    fn emit_shortcut(&self) {
+    pub(super) fn emit_shortcut(&self) {
         if let Some(window) = self.app.get_webview_window(MAIN_WINDOW_LABEL) {
             let _ = window.show();
             let _ = window.set_focus();
@@ -626,14 +383,14 @@ impl ClipboardHistoryService {
 }
 
 impl ClipboardCapture {
-    fn hash(&self) -> &str {
+    pub(super) fn hash(&self) -> &str {
         match self {
             Self::Text { hash, .. } | Self::Image { hash, .. } => hash,
         }
     }
 }
 
-fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
+pub(super) fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
 
     if let Ok(text) = clipboard.get_text() {
@@ -667,7 +424,7 @@ fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCaptur
     Ok(None)
 }
 
-fn write_clipboard_text(text: &str) -> Result<(), String> {
+pub(super) fn write_clipboard_text(text: &str) -> Result<(), String> {
     retry_clipboard_write("set clipboard text", || {
         Clipboard::new()
             .map_err(|error| format!("Failed to open clipboard: {error}"))?
@@ -676,7 +433,7 @@ fn write_clipboard_text(text: &str) -> Result<(), String> {
     })
 }
 
-fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Result<(), String> {
+pub(super) fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Result<(), String> {
     retry_clipboard_write("set clipboard image", || {
         Clipboard::new()
             .map_err(|error| format!("Failed to open clipboard: {error}"))?
@@ -689,7 +446,7 @@ fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Resu
     })
 }
 
-fn retry_clipboard_write(
+pub(super) fn retry_clipboard_write(
     action: &str,
     mut write: impl FnMut() -> Result<(), String>,
 ) -> Result<(), String> {
@@ -714,53 +471,7 @@ fn retry_clipboard_write(
     ))
 }
 
-fn encode_png(image: &RgbaImage) -> Result<Vec<u8>, String> {
-    let mut bytes = Cursor::new(Vec::new());
-    DynamicImage::ImageRgba8(image.clone())
-        .write_to(&mut bytes, ImageFormat::Png)
-        .map_err(|error| format!("Failed to encode clipboard image: {error}"))?;
-    Ok(bytes.into_inner())
-}
-
-fn make_thumbnail(image: &RgbaImage) -> RgbaImage {
-    let width = image.width().max(1);
-    let height = image.height().max(1);
-    let scale = (THUMBNAIL_MAX_SIDE as f32 / width.max(height) as f32).min(1.0);
-    let thumbnail_width = ((width as f32 * scale).round() as u32).max(1);
-    let thumbnail_height = ((height as f32 * scale).round() as u32).max(1);
-
-    image::imageops::resize(
-        image,
-        thumbnail_width,
-        thumbnail_height,
-        FilterType::Lanczos3,
-    )
-}
-
-fn hash_bytes(bytes: &[u8]) -> String {
-    let digest = Sha256::digest(bytes);
-    digest.iter().map(|byte| format!("{byte:02x}")).collect()
-}
-
-fn preview_text(text: &str) -> String {
-    const PREVIEW_LIMIT: usize = 140;
-    let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
-
-    if collapsed.chars().count() <= PREVIEW_LIMIT {
-        return collapsed;
-    }
-
-    let mut preview = collapsed.chars().take(PREVIEW_LIMIT).collect::<String>();
-    preview.push_str("...");
-    preview
-}
-
-fn create_item_id(timestamp: i64, hash: &str) -> String {
-    let short_hash = hash.chars().take(12).collect::<String>();
-    format!("{timestamp}-{short_hash}")
-}
-
-fn start_workers() {
+pub(super) fn start_workers() {
     // Clipboard reads can block while another process owns the clipboard. Keep at most one
     // pending read so a busy clipboard cannot build an unbounded backlog of work.
     let (tx, rx) = mpsc::sync_channel::<()>(1);
@@ -786,21 +497,7 @@ fn start_workers() {
     });
 }
 
-fn request_hotkey_refresh() {
-    let hwnd = CLIPBOARD_HOTKEY_WINDOW
-        .get()
-        .and_then(|window| window.lock().ok())
-        .and_then(|window| *window)
-        .map(|window| HWND(window as *mut core::ffi::c_void));
-
-    if let Some(hwnd) = hwnd {
-        unsafe {
-            let _ = PostMessageW(Some(hwnd), HOTKEY_REFRESH_MESSAGE, WPARAM(0), LPARAM(0));
-        }
-    }
-}
-
-fn notify_clipboard_changed() {
+pub(super) fn notify_clipboard_changed() {
     if let Some(sender) = CLIPBOARD_NOTIFY_TX
         .get()
         .and_then(|sender| sender.lock().ok())
@@ -810,7 +507,7 @@ fn notify_clipboard_changed() {
     }
 }
 
-fn run_windows_clipboard_listener() -> Result<(), String> {
+pub(super) fn run_windows_clipboard_listener() -> Result<(), String> {
     unsafe {
         let class_name = w!("FocuSDClipboardHistoryListener");
         let module = GetModuleHandleW(None).map_err(|error| error.to_string())?;
@@ -865,7 +562,7 @@ fn run_windows_clipboard_listener() -> Result<(), String> {
     Ok(())
 }
 
-unsafe extern "system" fn clipboard_window_proc(
+pub(super) unsafe extern "system" fn clipboard_window_proc(
     hwnd: HWND,
     message: u32,
     wparam: WPARAM,
@@ -889,180 +586,4 @@ unsafe extern "system" fn clipboard_window_proc(
     }
 
     unsafe { DefWindowProcW(hwnd, message, wparam, lparam) }
-}
-
-fn refresh_registered_hotkey(hwnd: HWND) {
-    unsafe {
-        unregister_current_hotkey(hwnd);
-
-        let snapshot = service().ok().and_then(|service| service.snapshot().ok());
-
-        if snapshot
-            .as_ref()
-            .is_some_and(|snapshot| !snapshot.settings.shortcut_enabled)
-        {
-            return;
-        }
-
-        let binding = snapshot
-            .and_then(|snapshot| parse_shortcut_binding(&snapshot.settings.shortcut))
-            .unwrap_or_else(default_shortcut_binding);
-
-        match RegisterHotKey(
-            Some(hwnd),
-            HOTKEY_ID,
-            HOT_KEY_MODIFIERS(binding.modifiers | MOD_NOREPEAT.0),
-            binding.key_code,
-        ) {
-            Ok(()) => set_hotkey_registered(true),
-            Err(error) => {
-                set_hotkey_registered(false);
-                eprintln!(
-                    "failed to register clipboard history shortcut {}: {error}",
-                    binding.label
-                );
-            }
-        }
-    }
-}
-
-unsafe fn unregister_current_hotkey(hwnd: HWND) {
-    if hotkey_registered() {
-        let _ = unsafe { UnregisterHotKey(Some(hwnd), HOTKEY_ID) };
-        set_hotkey_registered(false);
-    }
-}
-
-fn hotkey_registered() -> bool {
-    CLIPBOARD_HOTKEY_REGISTERED
-        .get_or_init(|| Mutex::new(false))
-        .lock()
-        .map(|registered| *registered)
-        .unwrap_or(false)
-}
-
-fn set_hotkey_registered(value: bool) {
-    if let Ok(mut registered) = CLIPBOARD_HOTKEY_REGISTERED
-        .get_or_init(|| Mutex::new(false))
-        .lock()
-    {
-        *registered = value;
-    }
-}
-
-pub(crate) fn parse_shortcut_binding(shortcut: &str) -> Option<ShortcutBinding> {
-    let mut has_ctrl = false;
-    let mut has_alt = false;
-    let mut has_shift = false;
-    let mut has_win = false;
-    let mut key_label: Option<String> = None;
-    let mut key_code: Option<u32> = None;
-
-    for part in shortcut
-        .split('+')
-        .map(|part| part.trim())
-        .filter(|part| !part.is_empty())
-    {
-        let normalized = part.to_ascii_lowercase();
-
-        match normalized.as_str() {
-            "ctrl" | "control" => has_ctrl = true,
-            "alt" | "option" => has_alt = true,
-            "shift" => has_shift = true,
-            "win" | "windows" | "meta" | "cmd" | "super" => has_win = true,
-            _ => {
-                if key_code.is_some() {
-                    return None;
-                }
-
-                let (label, code) = shortcut_key_code(part)?;
-                key_label = Some(label);
-                key_code = Some(code);
-            }
-        }
-    }
-
-    if !(has_ctrl || has_alt || has_shift || has_win) {
-        return None;
-    }
-
-    let mut label_parts = Vec::new();
-    let mut modifiers = 0;
-
-    if has_ctrl {
-        label_parts.push("Ctrl".to_string());
-        modifiers |= MOD_CONTROL.0;
-    }
-
-    if has_alt {
-        label_parts.push("Alt".to_string());
-        modifiers |= MOD_ALT.0;
-    }
-
-    if has_shift {
-        label_parts.push("Shift".to_string());
-        modifiers |= MOD_SHIFT.0;
-    }
-
-    if has_win {
-        label_parts.push("Win".to_string());
-        modifiers |= MOD_WIN.0;
-    }
-
-    label_parts.push(key_label?);
-
-    Some(ShortcutBinding {
-        label: label_parts.join("+"),
-        modifiers,
-        key_code: key_code?,
-    })
-}
-
-fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
-    let upper = key.trim().to_ascii_uppercase();
-
-    if upper.len() == 1 {
-        let byte = upper.as_bytes()[0];
-
-        if byte.is_ascii_alphanumeric() {
-            return Some((upper, byte as u32));
-        }
-    }
-
-    if let Some(number) = upper
-        .strip_prefix('F')
-        .and_then(|value| value.parse::<u32>().ok())
-    {
-        if (1..=24).contains(&number) {
-            return Some((format!("F{number}"), 0x70 + number - 1));
-        }
-    }
-
-    match upper.as_str() {
-        "ESC" | "ESCAPE" => Some(("Esc".to_string(), 0x1B)),
-        "TAB" => Some(("Tab".to_string(), 0x09)),
-        "ENTER" | "RETURN" => Some(("Enter".to_string(), 0x0D)),
-        "SPACE" => Some(("Space".to_string(), 0x20)),
-        "BACKSPACE" => Some(("Backspace".to_string(), 0x08)),
-        "DELETE" | "DEL" => Some(("Delete".to_string(), 0x2E)),
-        "INSERT" | "INS" => Some(("Insert".to_string(), 0x2D)),
-        "HOME" => Some(("Home".to_string(), 0x24)),
-        "END" => Some(("End".to_string(), 0x23)),
-        "PAGEUP" | "PAGE UP" => Some(("PageUp".to_string(), 0x21)),
-        "PAGEDOWN" | "PAGE DOWN" => Some(("PageDown".to_string(), 0x22)),
-        "ARROWUP" | "UP" => Some(("Up".to_string(), 0x26)),
-        "ARROWDOWN" | "DOWN" => Some(("Down".to_string(), 0x28)),
-        "ARROWLEFT" | "LEFT" => Some(("Left".to_string(), 0x25)),
-        "ARROWRIGHT" | "RIGHT" => Some(("Right".to_string(), 0x27)),
-        _ => None,
-    }
-}
-
-fn current_unix_millis() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis() as i64)
-        .unwrap_or_default()
 }
