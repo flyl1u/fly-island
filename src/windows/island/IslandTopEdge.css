@@ -7,7 +7,7 @@
 
 .island {
   /* Radius of the concave fillets that flare the flat top into the screen edge. */
-  --island-top-fillet: 12px;
+  --island-top-fillet: 8px;
   /* The rim layer reaches this far into the island so it can take over its side rim. */
   --island-top-fillet-box: calc(var(--island-top-fillet) + 4px);
   /* Rim that continues the island outline along the fillet curve. */
