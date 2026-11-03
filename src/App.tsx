@@ -49,9 +49,8 @@ import { useClipboardHistory } from "./features/clipboard/useClipboardHistory";
 import { matchesClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
 import { MusicWaveButton } from "./features/media/MusicWaveButton";
-import { DEFAULT_MEDIA_STATE, isSameMediaState } from "./features/media/mediaState";
-import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, type KnownMediaSource } from "./features/media/storage";
-import { getAudioLevel, getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./features/media/api";
+import { useMediaState } from "./features/media/useMediaState";
+import type { MediaState } from "./features/media/api";
 import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
 import { getDefaultTodoSaveDirectory, saveTodoMarkdown } from "./features/todos/api";
 import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
@@ -114,7 +113,6 @@ type IslandShellProps = {
   children: ReactNode;
 };
 
-const AUDIO_ACTIVE_THRESHOLD = 0.000015;
 export function IslandShell({
   qqMail,
   qqNotifications,
@@ -580,25 +578,17 @@ function IslandApp() {
   const qqMail = useQQMail(mode === "collapsed" && !isTucked);
   const [messageSource, setMessageSource] = useState<MessageView>("qq");
   const [page, setPage] = useState<IslandPage>("todo");
-  const [mediaState, setMediaState] =
-    useState<MediaState>(DEFAULT_MEDIA_STATE);
-  const [isMediaTrackChanging, setIsMediaTrackChanging] = useState(false);
-  const [mediaCommandError, setMediaCommandError] = useState<string | null>(
-    null,
-  );
-  const [musicSourcePriority, setMusicSourcePriority] = useState<
-    KnownMediaSource[]
-  >(loadMusicSourcePriority);
+  const {
+    mediaState,
+    isMediaTrackChanging,
+    mediaCommandError,
+    musicSourcePriority,
+    runMediaCommand,
+    reorderMusicSource,
+    removeMusicSource,
+  } = useMediaState();
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
-  const mediaTargetRef = useRef<string | null>(null);
   const agentStatus = useAgentStatus();
-  const isRefreshingMediaState = useRef(false);
-  const isRefreshingAudioLevel = useRef(false);
-  const isRunningMediaCommand = useRef(false);
-  const mediaPlaybackIntent = useRef<{
-    status: MediaPlaybackStatus;
-    expiresAt: number;
-  } | null>(null);
   const [settings, setSettings] = useState<IslandSettings>(loadSettings);
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
@@ -802,262 +792,6 @@ function IslandApp() {
   const collapseIsland = useCallback(() => {
     setIslandMode("collapsed");
   }, [setIslandMode]);
-
-  const refreshMediaState = useCallback(async () => {
-    if (isRefreshingMediaState.current) {
-      return;
-    }
-
-    isRefreshingMediaState.current = true;
-
-    try {
-      const nextMediaState = await getMediaState(
-        mediaTargetRef.current ?? undefined,
-      );
-
-      setMediaState((currentState) => {
-        const intent = mediaPlaybackIntent.current;
-        const playbackStatus =
-          intent && Date.now() < intent.expiresAt
-            ? intent.status
-            : nextMediaState.playbackStatus;
-
-        if (intent && Date.now() >= intent.expiresAt) {
-          mediaPlaybackIntent.current = null;
-        }
-
-        const nextPeak = Math.max(
-          currentState.audioPeak * 0.82,
-          nextMediaState.audioPeak,
-        );
-        const audioActive = playbackStatus !== "paused" &&
-          (nextMediaState.audioActive || nextPeak > AUDIO_ACTIVE_THRESHOLD);
-        const audioPeak = audioActive ? nextPeak : 0;
-
-        const merged: MediaState = {
-          ...nextMediaState,
-          audioActive,
-          audioPeak,
-          playbackStatus,
-        };
-
-        if (isSameMediaState(currentState, merged)) {
-          return currentState;
-        }
-
-        return merged;
-      });
-    } catch (error) {
-      console.error("Failed to read media state", error);
-      setMediaState(DEFAULT_MEDIA_STATE);
-    } finally {
-      isRefreshingMediaState.current = false;
-    }
-  }, []);
-
-  const runMediaCommand = useCallback(
-    async (command: MediaCommand) => {
-      if (isRunningMediaCommand.current) {
-        return;
-      }
-
-      const target = mediaTargetRef.current ?? undefined;
-      const isPlayPause = command === "media_play_pause";
-      const isTrackChange =
-        command === "media_next" || command === "media_previous";
-      const isTransport = isPlayPause || isTrackChange;
-
-      const intendedStatus: MediaPlaybackStatus = isPlayPause
-        ? mediaState.playbackStatus === "playing"
-          ? "paused"
-          : "playing"
-        : mediaState.playbackStatus;
-
-      if (isTransport) {
-        mediaPlaybackIntent.current = {
-          status: intendedStatus,
-          expiresAt: Date.now() + (isPlayPause ? 1200 : 1800),
-        };
-
-        if (isPlayPause) {
-          setMediaState((currentState) => ({
-            ...currentState,
-            available: intendedStatus === "playing" || currentState.available,
-            audioActive:
-              intendedStatus === "playing" && currentState.audioActive,
-            audioPeak:
-              intendedStatus === "paused" ? 0 : currentState.audioPeak,
-            playbackStatus: intendedStatus,
-            updatedAt: Date.now(),
-          }));
-        }
-      }
-
-      isRunningMediaCommand.current = true;
-      setIsMediaTrackChanging(isTrackChange);
-      setMediaCommandError(null);
-      try {
-        const nextMediaState = await sendMediaCommand(command, target);
-
-        if (!isTransport) {
-          setMediaState((currentState) =>
-            isSameMediaState(currentState, nextMediaState)
-              ? currentState
-              : nextMediaState,
-          );
-          return;
-        }
-
-        setMediaState((currentState) => {
-          if (intendedStatus === "paused") {
-            return {
-              ...nextMediaState,
-              audioActive: false,
-              audioPeak: 0,
-              playbackStatus: intendedStatus,
-            };
-          }
-
-          return {
-            ...nextMediaState,
-            audioActive:
-              nextMediaState.audioActive || currentState.audioActive,
-            audioPeak: Math.max(
-              nextMediaState.audioPeak,
-              currentState.audioPeak * 0.82,
-            ),
-            playbackStatus: intendedStatus,
-          };
-        });
-      } catch (error) {
-        console.error(`Failed to run media command: ${command}`, error);
-        setMediaCommandError(String(error));
-        mediaPlaybackIntent.current = null;
-        await refreshMediaState();
-      } finally {
-        isRunningMediaCommand.current = false;
-        setIsMediaTrackChanging(false);
-      }
-    },
-    [mediaState.playbackStatus, refreshMediaState],
-  );
-
-  const reorderMusicSource = useCallback(
-    (sourceId: string, targetId: string) => {
-      if (sourceId === targetId) {
-        return;
-      }
-
-      setMusicSourcePriority((current) => {
-        const sourceIndex = current.findIndex(
-          (source) => source.id === sourceId,
-        );
-        const targetIndex = current.findIndex(
-          (source) => source.id === targetId,
-        );
-
-        if (
-          sourceIndex < 0 ||
-          targetIndex < 0 ||
-          sourceIndex === targetIndex
-        ) {
-          return current;
-        }
-
-        const next = [...current];
-        const [moved] = next.splice(sourceIndex, 1);
-        next.splice(targetIndex, 0, moved);
-        return next;
-      });
-    },
-    [],
-  );
-
-  const removeMusicSource = useCallback((sourceId: string) => {
-    setMusicSourcePriority((current) =>
-      current.filter((source) => source.id !== sourceId),
-    );
-  }, []);
-
-  useEffect(() => {
-    let didCancel = false;
-
-    const refreshAudioLevel = async () => {
-      if (didCancel || isRefreshingAudioLevel.current) {
-        return;
-      }
-
-      isRefreshingAudioLevel.current = true;
-
-      try {
-        const audioLevel = await getAudioLevel();
-
-        if (didCancel) {
-          return;
-        }
-
-        setMediaState((currentState) => {
-          const intent = mediaPlaybackIntent.current;
-          const isPauseIntent =
-            intent &&
-            Date.now() < intent.expiresAt &&
-            intent.status === "paused";
-
-          if (currentState.playbackStatus === "paused" || isPauseIntent) {
-            if (
-              currentState.playbackStatus === "paused" &&
-              !currentState.audioActive &&
-              currentState.audioPeak === 0
-            ) {
-              return currentState;
-            }
-            return {
-              ...currentState,
-              audioActive: false,
-              audioPeak: 0,
-              playbackStatus: "paused",
-            };
-          }
-
-          const decayedPeak = currentState.audioPeak * 0.82;
-          const nextPeak = audioLevel.active
-            ? Math.max(decayedPeak, audioLevel.peak)
-            : decayedPeak;
-          const audioActive =
-            (audioLevel.active || nextPeak > AUDIO_ACTIVE_THRESHOLD * 1.5);
-          const audioPeak = audioActive ? nextPeak : 0;
-
-          if (
-            currentState.audioActive === audioActive &&
-            currentState.audioPeak === audioPeak
-          ) {
-            return currentState;
-          }
-
-          return {
-            ...currentState,
-            audioActive,
-            audioPeak,
-          };
-        });
-      } catch (error) {
-        console.error("Failed to read audio level", error);
-      } finally {
-        isRefreshingAudioLevel.current = false;
-      }
-    };
-
-    void refreshAudioLevel();
-
-    const interval = window.setInterval(() => {
-      void refreshAudioLevel();
-    }, 500);
-
-    return () => {
-      didCancel = true;
-      window.clearInterval(interval);
-    };
-  }, []);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -1327,73 +1061,6 @@ function IslandApp() {
       upsertArchive,
     ],
   );
-
-  useEffect(() => {
-    void refreshMediaState();
-
-    const interval = window.setInterval(() => {
-      void refreshMediaState();
-    }, 1500);
-
-    return () => window.clearInterval(interval);
-  }, [refreshMediaState]);
-
-  const effectiveMediaTarget = useMemo(() => {
-    if (mediaState.sessions.length === 0) {
-      return null;
-    }
-
-    const present = new Map(
-      mediaState.sessions.map((session) => [session.id, session]),
-    );
-
-    for (const source of musicSourcePriority) {
-      if (present.get(source.id)?.playing) {
-        return source.id;
-      }
-    }
-    for (const source of musicSourcePriority) {
-      if (present.has(source.id)) {
-        return source.id;
-      }
-    }
-    return null;
-  }, [musicSourcePriority, mediaState.sessions]);
-
-  useEffect(() => {
-    if (mediaTargetRef.current === effectiveMediaTarget) {
-      return;
-    }
-    mediaTargetRef.current = effectiveMediaTarget;
-    mediaPlaybackIntent.current = null;
-    void refreshMediaState();
-  }, [effectiveMediaTarget, refreshMediaState]);
-
-  useEffect(() => {
-    if (mediaState.sessions.length === 0) {
-      return;
-    }
-
-    setMusicSourcePriority((current) => {
-      const known = new Set(current.map((source) => source.id));
-      const additions = mediaState.sessions
-        .filter((session) => !known.has(session.id))
-        .map((session) => ({ id: session.id, label: session.label }));
-
-      return additions.length > 0 ? [...current, ...additions] : current;
-    });
-  }, [mediaState.sessions]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
-        JSON.stringify(musicSourcePriority),
-      );
-    } catch {
-      // Ignore storage write failures (private mode, quota, etc.).
-    }
-  }, [musicSourcePriority]);
 
   useEffect(() => {
     if (page !== "music") {

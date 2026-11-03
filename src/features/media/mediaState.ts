@@ -61,3 +61,6 @@ export function isSameMediaState(a: MediaState, b: MediaState): boolean {
     );
   });
 }
+
+// Peaks below this are treated as silence.
+export const AUDIO_ACTIVE_THRESHOLD = 0.000015;

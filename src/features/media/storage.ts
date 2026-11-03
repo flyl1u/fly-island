@@ -41,3 +41,14 @@ export function loadMusicSourcePriority(): KnownMediaSource[] {
     return [];
   }
 }
+
+export function saveMusicSourcePriority(priority: KnownMediaSource[]) {
+  try {
+    window.localStorage.setItem(
+      MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
+      JSON.stringify(priority),
+    );
+  } catch {
+    // Ignore storage write failures (private mode, quota, etc.).
+  }
+}
