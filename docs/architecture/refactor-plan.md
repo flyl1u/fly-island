@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 1907 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 1870 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -219,7 +219,8 @@
 | 2026-11-03 | 2.8（具名导出） | `64ca203` | `SettingsWindow`、`TranslationWindow` 改为具名导出（src/AGENTS.md 要求迁移时一并改），同步 `main.tsx`、`tests/i18n.tsx`；`App` 的默认导出在 3.3 处理 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | Phase 2 验收 | — | `App.tsx` 5644 → 2212（-3432，阶段目标 -600 已达成），`App.css` 3865 → 912，`QQMail.tsx` 移出白名单；存量 IPC 文件只剩 `App.tsx`；ESLint 0 error / 7 warn | `pnpm check`（78/78）、`pnpm build`；各面板与回归页检查见"待人工验收" |
 | 2026-11-03 | 3.1（1/2，搬迁） | `151157c` | `IslandMode`、`IslandPage`、`NativeGlassState` 搬到 `windows/island/types.ts`，位置存储 key、`IslandPosition`、`loadIslandPosition` 搬到 `storage.ts`，尺寸常量与 `getCollapsedIslandWidth`、`getTodoVisualRows` 搬到 `layout.ts`；新增 `tests/island-window.test.mjs`（3 个用例）。`App.tsx` 2212 → 2142，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
-| 2026-11-03 | 3.1（2/2，改写） | 见提交说明 | 原生窗口同步抽到 `useIslandWindow`（组合）、`useNativeLayout`（缩放与边距，每帧至多一次）、`useIslandPosition`（拖拽位置）。命令收口到 `windows/island/api.ts`，位置写入收口到 `storage.ts` 的 `saveIslandPosition` / `clearIslandPosition`（仍直接读写 `localStorage`，内容与时机不变），翻译窗口开关收口到 `windows/translation/api.ts`。展开高度仍由 `IslandApp` 计算后传入；贴边收起的 mode 状态留在 `IslandApp`。`App.tsx` 2142 → 1907，白名单同步下调。存量 IPC 豁免清空，ESLint warn 7 → 5：少掉的是 `App.tsx` 的 `invoke` / `listen`，5 条 exhaustive-deps 原样保留（2 条随代码移到新 hook）。外部 ref 与 setter 补进依赖数组，引用稳定，回调重建时机不变 | `pnpm check`（81/81）、`pnpm build`；拖拽、重置位置与失焦折叠待人工验收 |
+| 2026-11-03 | 3.1（2/2，改写） | `d2b7ab0` | 原生窗口同步抽到 `useIslandWindow`（组合）、`useNativeLayout`（缩放与边距，每帧至多一次）、`useIslandPosition`（拖拽位置）。命令收口到 `windows/island/api.ts`，位置写入收口到 `storage.ts` 的 `saveIslandPosition` / `clearIslandPosition`（仍直接读写 `localStorage`，内容与时机不变），翻译窗口开关收口到 `windows/translation/api.ts`。展开高度仍由 `IslandApp` 计算后传入；贴边收起的 mode 状态留在 `IslandApp`。`App.tsx` 2142 → 1907，白名单同步下调。存量 IPC 豁免清空，ESLint warn 7 → 5：少掉的是 `App.tsx` 的 `invoke` / `listen`，5 条 exhaustive-deps 原样保留（2 条随代码移到新 hook）。外部 ref 与 setter 补进依赖数组，引用稳定，回调重建时机不变 | `pnpm check`（81/81）、`pnpm build`；拖拽、重置位置与失焦折叠待人工验收 |
+| 2026-11-03 | 3.2（1/n，改写） | 见提交说明 | 代理状态的 state、刷新锁、200ms 轮询原样抽到 `features/agent-status/useAgentStatus.ts`（47），比较逻辑与轮询间隔不变；`App.tsx` 1907 → 1870，白名单同步下调 | `pnpm check`（81/81）、`pnpm build` |
 
 ## 待人工验收
 
@@ -239,7 +240,7 @@
 | `63f8b1a` 等 | 2.6 | 消息功能（中英文）：QQ 邮箱连接 / 断开 / 刷新 / 开关、重启后按保存的设置自动恢复、阅读邮件（远程图片开关及其偏好保留）、新邮件预览；QQ 通知开关、通知权限请求（只请求一次）、打开系统通知设置、清空、打开 QQ；微信提醒开关与打开微信；主窗口折叠态消息预览动画。可在 `pnpm dev` 中打开 `/tests/mail-reader.html`、`/tests/notification-startup.html`、`/tests/collapsed-message-animation.html` 辅助检查。 |
 | `5cb8545` | 2.7 | 设置窗口（中英文）：检查更新的各状态（检查中、已是最新、有新版本、下载进度、安装中、出错与重试），离开再回到设置窗口后下载进度仍在；GitHub 项目链接在桌面端用系统浏览器打开，失败时显示提示。 |
 | `ebe8c1e`、`64ca203` 等 | 2.8 | 设置窗口与翻译窗口（中英文）：设置窗口打开、各区块显示与滚动，重置按钮，开机自启的读取与切换（失败时回滚）；从主窗口"未设置保存路径"跳转后高亮保存路径；翻译窗口的打开（显示时清空并读取剪贴板）、翻译、方向切换、快捷键录制与注册、API 密钥保存与删除、复制结果、拖动与缩放、关闭，重启后翻译设置保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
-| 见提交说明 | 3.1 | 主窗口：拖拽后位置在重启后仍在、重置位置回到默认边距、展开后点击窗外自动折叠、首次启动会显示窗口、调节边距和缩放后原生窗口跟着变。 |
+| `d2b7ab0` | 3.1 | 主窗口：拖拽后位置在重启后仍在、重置位置回到默认边距、展开后点击窗外自动折叠、首次启动会显示窗口、调节边距和缩放后原生窗口跟着变。 |
 
 ## 待处理问题
 
