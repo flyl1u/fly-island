@@ -1,14 +1,10 @@
 //! Media state and commands, each run on a COM-initialized media thread.
 
 use serde::Serialize;
-use std::{
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-            VIRTUAL_KEY, VK_MEDIA_NEXT_TRACK,
-            VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK,
-        };
+    VIRTUAL_KEY, VK_MEDIA_NEXT_TRACK, VK_MEDIA_PLAY_PAUSE, VK_MEDIA_PREV_TRACK,
+};
 
 use super::audio::{read_system_audio_peak, set_master_volume, AUDIO_ACTIVE_THRESHOLD};
 use super::session::*;

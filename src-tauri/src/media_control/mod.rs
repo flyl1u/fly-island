@@ -5,9 +5,7 @@ mod service;
 mod session;
 
 #[tauri::command]
-pub async fn get_media_state(
-    target: Option<String>,
-) -> Result<service::MediaState, String> {
+pub async fn get_media_state(target: Option<String>) -> Result<service::MediaState, String> {
     tauri::async_runtime::spawn_blocking(move || service::get_state(target))
         .await
         .map_err(|error| format!("Failed to join the media state task: {error}"))?
@@ -36,9 +34,7 @@ pub async fn media_previous(target: Option<String>) -> Result<service::MediaStat
 }
 
 #[tauri::command]
-pub async fn media_toggle_shuffle(
-    target: Option<String>,
-) -> Result<service::MediaState, String> {
+pub async fn media_toggle_shuffle(target: Option<String>) -> Result<service::MediaState, String> {
     run_media_command(service::MediaCommand::ToggleShuffle, target).await
 }
 
