@@ -6,8 +6,11 @@
  */
 
 .island {
-  /* Radius of the concave fillets that flare the flat top into the screen edge. */
-  --island-top-fillet: 8px;
+  /*
+   * Radius of the concave fillets that flare the flat top into the screen edge.
+   * The unitless size comes from the appearance settings (stageStyle.ts).
+   */
+  --island-top-fillet: calc(var(--island-top-fillet-size, 8) * 1px);
   /* The rim layer reaches this far into the island so it can take over its side rim. */
   --island-top-fillet-box: calc(var(--island-top-fillet) + 4px);
   /* Rim that continues the island outline along the fillet curve. */
@@ -181,7 +184,11 @@
 :root[data-island-top-edge="attached"] .island::after,
 :root:not([data-island-top-edge]) .island--docked::before,
 :root:not([data-island-top-edge]) .island--docked::after {
-  opacity: 1;
+  /*
+   * Hidden at size 0 rather than drawn with zero-sized masks, which Chromium
+   * drops entirely. Any size of 1px or more clamps to fully visible.
+   */
+  opacity: min(1, var(--island-top-fillet-size, 8));
 }
 
 /*
