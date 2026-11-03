@@ -1,6 +1,7 @@
 import { getVersion } from "@tauri-apps/api/app";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { isTauri } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import { getUpdaterProxy, isUpdaterConfigured } from "./api";
 
 export type UpdateStage =
   | "idle"
@@ -77,9 +78,9 @@ async function initialize() {
 
   const [version, configured] = await Promise.all([
     getVersion().catch(() => ""),
-    invoke<boolean>("updater_configured").catch(() => false),
+    isUpdaterConfigured().catch(() => false),
   ]);
-  proxy = await invoke<string | null>("get_updater_proxy").catch(() => null);
+  proxy = await getUpdaterProxy().catch(() => null);
 
   setState({
     version,

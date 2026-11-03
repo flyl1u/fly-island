@@ -4,10 +4,12 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
-const source = ts.transpileModule(
-  readFileSync(new URL("../src/features/updater/updaterController.ts", import.meta.url), "utf8"),
+const transpile = (path) => ts.transpileModule(
+  readFileSync(new URL(path, import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
 ).outputText;
+const source = transpile("../src/features/updater/updaterController.ts");
+const apiSource = transpile("../src/features/updater/api.ts");
 
 async function controller({ configured = true, check = async () => null, proxy = null } = {}) {
   const exports = {};
@@ -23,6 +25,10 @@ async function controller({ configured = true, check = async () => null, proxy =
     },
     "@tauri-apps/plugin-updater": { check },
   };
+  // api.ts runs against the same core mock, so the command names stay covered.
+  const api = {};
+  runInNewContext(apiSource, { exports: api, require: (name) => mocks[name] });
+  mocks["./api"] = api;
   runInNewContext(source, {
     exports,
     require: (name) => {
