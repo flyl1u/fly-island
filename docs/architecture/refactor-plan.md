@@ -177,7 +177,8 @@
 | 2026-11-03 | 2.2（1/3，搬迁） | `49d34be` | `App.tsx` 4791 → 4260（-531），白名单同步下调；新增 `features/media/api.ts`（与 Rust 对应的类型）、`mediaState.ts`、`storage.ts`、`MusicWaveButton.tsx`、`MusicPlayerPanel.tsx`，`MediaWaveform.tsx/.css` 用 `git mv` 迁入；新增 `tests/media.test.mjs`（4 个用例）。`AUDIO_ACTIVE_THRESHOLD` 和音乐面板高度属于主窗口，留到 3.x | `pnpm check`（61/61）、`pnpm build` |
 | 2026-11-03 | 2.2（2/3，改写） | `150ac83` | `features/media/api.ts` 新增 `getMediaState`、`sendMediaCommand`、`getAudioLevel` 和 `MediaCommand`；`App.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 4260 → 4255，白名单同步下调 | `pnpm check`（61/61）、`pnpm build` |
 | 2026-11-03 | 2.2（3/3，CSS 搬迁） | `4dbdaa6` | `App.css` 2727 → 2255（-472），白名单同步下调；新增 `MusicPlayerPanel.css`（392，含 `music-control-track-change` 关键帧）、`MusicWaveButton.css`（78）。多组件共用的选择器和液态玻璃外观规则留在 `App.css`，在 4.1 处理。改用打包产物级检查：对比构建产物，顺序变化的规则对中无冲突，也覆盖了 2.1 的 CSS 搬迁和 2.2 中 `MediaWaveform.css` 的加载位置变化 | `pnpm check`（61/61）、`pnpm build`；面板检查待人工验收 |
-| 2026-11-03 | 2.1 补充（改写） | 见提交说明 | 2.1 漏掉了 `get_default_todo_save_directory`，补进 `features/todos/api.ts`（`getDefaultTodoSaveDirectory`），命令名不变；`App.tsx` 行数不变 | `pnpm check`（61/61）、`pnpm build` |
+| 2026-11-03 | 2.1 补充（改写） | `45058c0` | 2.1 漏掉了 `get_default_todo_save_directory`，补进 `features/todos/api.ts`（`getDefaultTodoSaveDirectory`），命令名不变；`App.tsx` 行数不变 | `pnpm check`（61/61）、`pnpm build` |
+| 2026-11-03 | 2.3（1/5，搬迁） | 见提交说明 | `App.tsx` 4255 → 4057（-198，白名单按约定暂不下调）；新增 `features/clipboard/api.ts`（与 Rust 对应的类型）、`shortcut.ts`、`settings.ts` 和 `tests/clipboard-shortcut.test.mjs`（5 个用例）；`SettingsWindow.tsx` 改为直接从 `features/clipboard` 导入 | `pnpm check`（66/66）、`pnpm build` |
 
 ## 待人工验收
 
@@ -200,3 +201,4 @@
 | 0.3 | ESLint `react-hooks/exhaustive-deps` 报告 5 处存量缺失依赖（`App.tsx` 3、`QQMail.tsx` 1、`TranslationWindow.tsx` 1） | 可能是有意省略，也可能是闭包读取旧值的 bug；需逐个确认，不在搬迁提交中修改。 |
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
 | 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
+| 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
