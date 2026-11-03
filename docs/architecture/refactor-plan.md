@@ -45,7 +45,7 @@
   - 扫描 `src/`、`src-tauri/src/`、`src-tauri/examples/`、`scripts/`、`tests/`，按根目录规则的上限和豁免清单检查；`.rs` 另外检查内联测试模块不超过 150 行；
   - 白名单分为 `lines` 和 `inlineTests` 两部分，记录上面基线表中的超限项。超过记录值时报错；变短时提示更新记录值；降到上限以下或文件已不存在时，报错要求删除条目；
   - 测试见 `tests/check-file-size.test.mjs`。
-- [ ] **0.3 ESLint。** 引入 `eslint`、`typescript-eslint`、`eslint-plugin-react-hooks`，使用 flat config（`eslint.config.js`）：
+- [x] **0.3 ESLint。** 引入 `eslint`、`typescript-eslint`、`eslint-plugin-react-hooks`，使用 flat config（`eslint.config.js`）：
   - 启用 `react-hooks/rules-of-hooks`（error）和 `react-hooks/exhaustive-deps`（warn）；
   - 用 `no-restricted-imports` / `no-restricted-syntax` 落实分层规则：只有 `api.ts` 可以导入 `invoke` / `listen`，`utils/` 不得导入 React 和 Tauri。对存量文件暂时设为 warn，完成迁移后改为 error。
 - [ ] **0.4 TypeScript。** 在 `tsconfig.json` 中开启 `erasableSyntaxOnly`，保证 Node 能直接加载被测的 `.ts` 文件。
@@ -140,3 +140,4 @@
 |---|---|---|---|---|
 | 2026-11-03 | 规则与计划 | `a885920` | 新增规则文档 | 仅文档 |
 | 2026-11-03 | 0.1、0.2 | 见提交说明 | 新增检查脚本（约 150 行）及其测试 | `pnpm check`（40/40）、`pnpm build` |
+| 2026-11-03 | 0.3 | 见提交说明 | 新增 `eslint.config.js`；`check` 加入 `lint`。存量基线：0 error / 18 warn（13 条 IPC 收口、5 条 exhaustive-deps），7 个存量 IPC 文件登记在配置的 `legacyIpcFiles` 中 | `pnpm check`（40/40）、`pnpm build`（TEMP 指向 `node_modules/.cache/tmp`） |
