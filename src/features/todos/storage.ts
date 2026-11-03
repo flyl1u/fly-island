@@ -1,5 +1,6 @@
 import type { TodoArchive, TodoItem } from "./types";
 import { getLocalDateString } from "../../utils/date.ts";
+import { readString, removeItem, writeString } from "../../lib/storage.ts";
 
 export const TODOS_STORAGE_KEY = "focusd-island-todos";
 export const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";
@@ -20,7 +21,7 @@ export function normalizeTodo(todo: Partial<TodoItem>): TodoItem {
 }
 
 export function loadTodos(): TodoItem[] {
-  const stored = window.localStorage.getItem(TODOS_STORAGE_KEY);
+  const stored = readString(TODOS_STORAGE_KEY);
 
   if (!stored) {
     return [];
@@ -42,15 +43,15 @@ export function loadTodos(): TodoItem[] {
 }
 
 export function loadActiveTodoId() {
-  return window.localStorage.getItem(ACTIVE_TODO_STORAGE_KEY);
+  return readString(ACTIVE_TODO_STORAGE_KEY);
 }
 
 export function loadCurrentTodoDate() {
-  return window.localStorage.getItem(TODO_DATE_STORAGE_KEY) ?? getLocalDateString();
+  return readString(TODO_DATE_STORAGE_KEY) ?? getLocalDateString();
 }
 
 export function loadTodoArchives(): TodoArchive[] {
-  const stored = window.localStorage.getItem(TODO_ARCHIVE_STORAGE_KEY);
+  const stored = readString(TODO_ARCHIVE_STORAGE_KEY);
 
   if (!stored) {
     return [];
@@ -88,11 +89,11 @@ export function loadTodoArchives(): TodoArchive[] {
 }
 
 export function loadSaveDirectory() {
-  return window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) ?? "";
+  return readString(TODO_SAVE_DIRECTORY_STORAGE_KEY) ?? "";
 }
 
 export function loadDailyNote() {
-  return window.localStorage.getItem(DAILY_NOTE_STORAGE_KEY) ?? "";
+  return readString(DAILY_NOTE_STORAGE_KEY) ?? "";
 }
 
 export function createTodoId() {
@@ -103,47 +104,48 @@ export function createTodoId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+/** Returns false when the value could not be stored. */
 export function saveSaveDirectory(directory: string) {
-  window.localStorage.setItem(TODO_SAVE_DIRECTORY_STORAGE_KEY, directory);
+  return writeString(TODO_SAVE_DIRECTORY_STORAGE_KEY, directory);
 }
 
 export function hasStoredSaveDirectory() {
-  return window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) !== null;
+  return readString(TODO_SAVE_DIRECTORY_STORAGE_KEY) !== null;
 }
 
 export function saveTodos(todos: TodoItem[]) {
-  window.localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos));
+  writeString(TODOS_STORAGE_KEY, JSON.stringify(todos));
 }
 
 export function saveActiveTodoId(activeTodoId: string | null) {
   if (activeTodoId) {
-    window.localStorage.setItem(ACTIVE_TODO_STORAGE_KEY, activeTodoId);
+    writeString(ACTIVE_TODO_STORAGE_KEY, activeTodoId);
     return;
   }
 
-  window.localStorage.removeItem(ACTIVE_TODO_STORAGE_KEY);
+  removeItem(ACTIVE_TODO_STORAGE_KEY);
 }
 
 export function saveDailyNote(dailyNote: string) {
-  window.localStorage.setItem(DAILY_NOTE_STORAGE_KEY, dailyNote);
+  writeString(DAILY_NOTE_STORAGE_KEY, dailyNote);
 }
 
 export function saveCurrentTodoDate(date: string) {
-  window.localStorage.setItem(TODO_DATE_STORAGE_KEY, date);
+  writeString(TODO_DATE_STORAGE_KEY, date);
 }
 
 export function saveTodoArchives(archives: TodoArchive[]) {
-  window.localStorage.setItem(TODO_ARCHIVE_STORAGE_KEY, JSON.stringify(archives));
+  writeString(TODO_ARCHIVE_STORAGE_KEY, JSON.stringify(archives));
 }
 
 export function loadLastSavedSignature() {
-  return window.localStorage.getItem(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY);
+  return readString(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY);
 }
 
 export function saveLastSavedSignature(signature: string) {
-  window.localStorage.setItem(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY, signature);
+  writeString(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY, signature);
 }
 
 export function clearLastSavedSignature() {
-  window.localStorage.removeItem(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY);
+  removeItem(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY);
 }
