@@ -10,7 +10,6 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type WheelEvent,
 } from "react";
 import {
   Bell,
@@ -75,41 +74,46 @@ import {
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
 import { clamp } from "./utils/number";
 import { HEX_COLOR_PATTERN, getColorSetting } from "./utils/color";
-import { getDisplayDateParts, getLocalDateString } from "./utils/date";
+import { getLocalDateString } from "./utils/date";
 import { ColorControl } from "./components/controls/ColorControl";
 import { NumberControl } from "./components/controls/NumberControl";
 import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
+import { ArchiveBrowser } from "./features/todos/ArchiveBrowser";
+import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
+import {
+  ACTIVE_TODO_STORAGE_KEY,
+  DAILY_NOTE_STORAGE_KEY,
+  TODOS_STORAGE_KEY,
+  TODO_ARCHIVE_STORAGE_KEY,
+  TODO_DATE_STORAGE_KEY,
+  TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
+  TODO_SAVE_DIRECTORY_STORAGE_KEY,
+  createTodoId,
+  loadActiveTodoId,
+  loadCurrentTodoDate,
+  loadDailyNote,
+  loadSaveDirectory,
+  loadTodoArchives,
+  loadTodos,
+} from "./features/todos/storage";
+import type {
+  ArchiveLayout,
+  SavePathState,
+  SaveState,
+  TodoArchive,
+  TodoItem,
+  TodoPageMode,
+} from "./features/todos/types";
 import "./App.css";
 
 export type IslandMode = "collapsed" | "expanded";
 
 type IslandPage = "todo" | "music" | "clipboard" | "qq";
-type TodoPageMode = "today" | "daily" | "archive" | "review";
-type ArchiveLayout = "cards" | "timeline";
 type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 type AgentProvider = "codex" | "claudeCode";
 type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
 type AgentVisualState = "idle" | "running" | "attention";
-
-type TodoItem = {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: number;
-};
-
-type TodoArchive = {
-  date: string;
-  todos: TodoItem[];
-  dailyNote: string;
-  savedAt: number;
-  savedToDisk: boolean;
-  filePath?: string;
-};
-
-type SaveState = "idle" | "saving" | "saved" | "needs-path" | "error";
-type SavePathState = "idle" | "saved";
 
 type SaveTodoResult = {
   filePath: string;
@@ -291,14 +295,6 @@ const STORAGE_KEY = "focusd-island-settings";
 const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
   "focusd-island-collapsed-text-default-v1";
 const SETTINGS_PRESETS_STORAGE_KEY = "focusd-island-setting-presets";
-const TODOS_STORAGE_KEY = "focusd-island-todos";
-const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";
-const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
-const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";
-const DAILY_NOTE_STORAGE_KEY = "focusd-island-daily-note";
-const TODO_SAVE_DIRECTORY_STORAGE_KEY = "focusd-island-save-directory";
-const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
-  "focusd-island-last-saved-signature";
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
 const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
 // Main island -> settings window request to reveal a section; survives the window being created.
@@ -894,41 +890,6 @@ function loadSettingPresets(t: Translations): IslandPreset[] {
   }
 }
 
-function normalizeTodo(todo: Partial<TodoItem>): TodoItem {
-  return {
-    id: typeof todo.id === "string" && todo.id ? todo.id : createTodoId(),
-    title: todo.title?.trim() ?? "",
-    completed: Boolean(todo.completed),
-    createdAt: typeof todo.createdAt === "number" ? todo.createdAt : Date.now(),
-  };
-}
-
-function loadTodos(): TodoItem[] {
-  const stored = window.localStorage.getItem(TODOS_STORAGE_KEY);
-
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<TodoItem>[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((todo) => typeof todo.title === "string" && todo.title.trim())
-      .map(normalizeTodo);
-  } catch {
-    return [];
-  }
-}
-
-function loadActiveTodoId() {
-  return window.localStorage.getItem(ACTIVE_TODO_STORAGE_KEY);
-}
-
 function loadMusicSourcePriority(): KnownMediaSource[] {
   try {
     const stored = window.localStorage.getItem(
@@ -964,92 +925,6 @@ function loadMusicSourcePriority(): KnownMediaSource[] {
   } catch {
     return [];
   }
-}
-
-function loadCurrentTodoDate() {
-  return window.localStorage.getItem(TODO_DATE_STORAGE_KEY) ?? getLocalDateString();
-}
-
-function loadTodoArchives(): TodoArchive[] {
-  const stored = window.localStorage.getItem(TODO_ARCHIVE_STORAGE_KEY);
-
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<TodoArchive>[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((archive) => typeof archive.date === "string" && archive.date)
-      .map((archive) => ({
-        date: archive.date ?? getLocalDateString(),
-        todos: Array.isArray(archive.todos)
-          ? archive.todos
-              .filter(
-                (todo) => typeof todo.title === "string" && todo.title.trim(),
-              )
-              .map(normalizeTodo)
-          : [],
-        dailyNote:
-          typeof archive.dailyNote === "string" ? archive.dailyNote : "",
-        savedAt: typeof archive.savedAt === "number" ? archive.savedAt : 0,
-        savedToDisk: Boolean(archive.savedToDisk),
-        filePath:
-          typeof archive.filePath === "string" ? archive.filePath : undefined,
-      }))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  } catch {
-    return [];
-  }
-}
-
-function loadSaveDirectory() {
-  return window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) ?? "";
-}
-
-function loadDailyNote() {
-  return window.localStorage.getItem(DAILY_NOTE_STORAGE_KEY) ?? "";
-}
-
-function getTodoSignature(date: string, todos: TodoItem[], dailyNote: string) {
-  return JSON.stringify({
-    date,
-    todos: todos.map((todo) => ({
-      title: todo.title,
-      completed: todo.completed,
-    })),
-    dailyNote,
-  });
-}
-
-function formatTodosAsMarkdown(todos: TodoItem[]) {
-  return todos
-    .map((todo) => `- [${todo.completed ? "x" : " "}] ${todo.title}`)
-    .join("\n");
-}
-
-function formatTodoDocumentAsMarkdown(todos: TodoItem[], dailyNote: string) {
-  const todoMarkdown = formatTodosAsMarkdown(todos);
-  const dailyMarkdown = dailyNote.trimEnd();
-
-  if (todoMarkdown && dailyMarkdown) {
-    return `${todoMarkdown}\n\n${dailyMarkdown}`;
-  }
-
-  return todoMarkdown || dailyMarkdown;
-}
-
-function createTodoId() {
-  if ("crypto" in window && typeof window.crypto.randomUUID === "function") {
-    return window.crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function isSameSettings(a: IslandSettings, b: IslandSettings) {
@@ -2904,97 +2779,6 @@ function TodoNotebook({
         </div>
       )}
     </section>
-  );
-}
-
-function ArchiveBrowser({
-  archives,
-  layout,
-  onSelectArchive,
-}: {
-  archives: TodoArchive[];
-  layout: ArchiveLayout;
-  onSelectArchive: (date: string) => void;
-}) {
-  const t = useTranslation();
-  const handleHorizontalWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (layout !== "cards") {
-      return;
-    }
-
-    event.preventDefault();
-    event.currentTarget.scrollLeft += event.deltaY + event.deltaX;
-  };
-
-  if (archives.length === 0) {
-    return <div className="todo-empty">{t.archive.noSavedLists}</div>;
-  }
-
-  if (layout === "timeline") {
-    return (
-      <div className="archive-timeline" role="list">
-        {archives.map((archive) => (
-          <button
-            className="archive-timeline__item"
-            key={archive.date}
-            type="button"
-            role="listitem"
-            onClick={() => onSelectArchive(archive.date)}
-          >
-            <span className="archive-timeline__dot" />
-            <span>{archive.date}</span>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="archive-cards" role="list" onWheel={handleHorizontalWheel}>
-      {archives.map((archive) => {
-        const previewTodos = archive.todos.slice(0, 3);
-        const dateParts = getDisplayDateParts(archive.date, t);
-
-        return (
-          <button
-            className="archive-card"
-            key={archive.date}
-            type="button"
-            role="listitem"
-            onClick={() => onSelectArchive(archive.date)}
-          >
-            <span className="archive-card__eyebrow">{t.archive.eyebrow}</span>
-            <strong className="archive-card__date">
-              <span>{dateParts.year}</span>
-              <span>
-                {dateParts.month}
-                <em>/</em>
-                {dateParts.day}
-              </span>
-            </strong>
-            <span className="archive-card__preview">
-              {previewTodos.length > 0 ? (
-                previewTodos.map((todo) => (
-                  <span className="archive-card__todo" key={todo.id}>
-                    <span
-                      className={[
-                        "archive-card__todo-mark",
-                        todo.completed ? "archive-card__todo-mark--done" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    />
-                    <span>{todo.title}</span>
-                  </span>
-                ))
-              ) : (
-                <span className="archive-card__empty">{t.archive.noTasks}</span>
-              )}
-            </span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -5462,12 +5246,9 @@ export {
   SETTINGS_FOCUS_STORAGE_KEY,
   SETTINGS_PRESETS_STORAGE_KEY,
   STORAGE_KEY,
-  TODO_SAVE_DIRECTORY_STORAGE_KEY,
   LayoutEditor,
-  createTodoId,
   isDefaultSettingPreset,
   isSameSettings,
-  loadSaveDirectory,
   loadSettingPresets,
   loadSettings,
   mergeWithDefaultSettingPresets,
@@ -5483,6 +5264,5 @@ export type {
   ClipboardHistorySnapshot,
   IslandPreset,
   IslandSettings,
-  SavePathState,
   SettingsFocusSection,
 };
