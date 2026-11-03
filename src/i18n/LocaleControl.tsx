@@ -1,4 +1,5 @@
 import { LOCALE_CODES, TRANSLATIONS, isLocaleCode, type LocaleCode } from "./index";
+import "./LocaleControl.css";
 
 export function LocaleControl({
   label,

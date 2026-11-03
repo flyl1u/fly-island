@@ -1,0 +1,95 @@
+.save-path-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.save-path-panel--attention {
+  background: rgba(116, 214, 255, 0.08);
+  border-color: rgba(116, 214, 255, 0.6);
+  box-shadow:
+    0 0 0 4px rgba(116, 214, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.save-path-panel__header {
+  color: rgba(248, 246, 240, 0.88);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.save-path-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.save-path-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.save-path-field span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.save-path-field input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  color: #f8f6f0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  outline: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.save-path-field input:focus {
+  border-color: rgba(116, 214, 255, 0.58);
+  box-shadow: 0 0 0 3px rgba(116, 214, 255, 0.16);
+}
+
+.save-path-button {
+  min-width: 68px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  color: #111112;
+  background: #98d4bb;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.save-path-button:hover {
+  background: #b4e3ce;
+}
+
+.save-path-button--saved {
+  color: #ffffff;
+  background: #2f8c61;
+  animation: saveButtonPop 760ms ease both;
+  box-shadow: 0 0 0 4px rgba(152, 212, 187, 0.22);
+}
+
+.save-path-button--saved:hover {
+  background: #37a06f;
+}

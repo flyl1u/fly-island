@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Check, Save } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { SavePathState } from "./types";
+import "./SavePathSettingsSection.css";
 
 export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, highlightSavePath, onSaveDirectoryDraftChange, onSaveDirectory }: {
   saveDirectoryDraft: string;

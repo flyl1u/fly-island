@@ -17,7 +17,7 @@
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 2633 | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 1526 | 3865 / 500 | — | 行数 |
+| `src/App.css` | 3865 | 1311 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
@@ -90,7 +90,7 @@
 - [x] **2.3 clipboard**：`ClipboardHistoryPanel`、快捷键解析与匹配（`shortcut.ts`，补测试），以及剪贴板命令与事件的封装。
 - [x] **2.4 appearance**：`AppearanceModeControl`、设置与预设的 load / normalize / merge（包括 `collapsed-text-default-v1` 迁移逻辑）、`hexToRgba`（见 1.2），以及 `LayoutEditor` 中属于外观的区块（布局、颜色、预设）。
   - `LayoutEditor` 实际是设置窗口的整个页面（10 个区块，横跨约 7 个领域），不整体迁入 `features/appearance/`（2026-11-03 经确认调整）：各区块拆成子组件、放到所属领域，`LayoutEditor` 外壳只负责组合，在 2.8 随设置窗口迁到 `windows/settings/`。区块归属：布局、颜色、预设 → `features/appearance/`（2.4）；保存路径 → `features/todos/`、剪贴板设置 → `features/clipboard/`、语言 → `i18n/LocaleControl.tsx`（2.4 之后补做，见 2.4a）；AI 代理钩子 → `features/agent-status/`（2.5）；消息 → `features/messages/`（2.6）；项目链接与更新 → `features/updater/`（2.7）。
-- [ ] **2.4a 已完成领域的设置区块归位**：把 `LayoutEditor` 中的保存路径、剪贴板设置区块分别迁入 `features/todos/`、`features/clipboard/`，`LocaleControl` 迁入 `i18n/`。
+- [x] **2.4a 已完成领域的设置区块归位**：把 `LayoutEditor` 中的保存路径、剪贴板设置区块分别迁入 `features/todos/`、`features/clipboard/`，`LocaleControl` 迁入 `i18n/`。
   - 待办设置区块（跨天保留未完成、拖拽排序、轮播）编辑的是 `IslandSettings`，数据归外观存储所有，为避免 `features/todos` 依赖外观类型，放入 `features/appearance/TodoSettingsSection.tsx`。语言区块只有一个 `LocaleControl`，作为组合代码留在 `LayoutEditor` 外壳中。
 - [ ] **2.5 agent-status**：状态标签和视觉状态函数、代理状态命令的封装，以及 `LayoutEditor` 中的 AI 代理钩子区块。
 - [ ] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`，并迁入 `LayoutEditor` 中的消息区块。`QQMail.tsx` 拆分后应低于 400 行。
@@ -194,7 +194,8 @@
 | 2026-11-03 | 2.4a（2/n，改写） | `cffa604` | 在 `App.tsx` 中拆出 `TodoSettingsSection`（无状态）和 `SavePathSettingsSection`（保存路径面板与输入框的 ref、"高亮保存路径"的滚动聚焦 effect 一并移入；区块始终挂载，行为不变）。`LayoutEditor` 500 → 401；`App.tsx` 2859 → 2890（低于白名单记录 2892） | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（3/n，搬迁） | `93250ce` | `TodoSettingsSection`（47）原样搬到 `features/appearance/`，`SavePathSettingsSection`（91）原样搬到 `features/todos/`；`App.tsx` 2890 → 2761（白名单暂不下调） | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（4/n，改写） | `548e7d1` | 在 `App.tsx` 中拆出 `ClipboardSettingsSection`（142），快捷键录制状态、两个 ref、"聚焦快捷键"的 effect 和按键处理一并移入；区块始终挂载，行为不变。`LayoutEditor` 401 → 276；`App.tsx` 2761 → 2779 | `pnpm check`（74/74）、`pnpm build` |
-| 2026-11-03 | 2.4a（5/n，搬迁） | 见提交说明 | `ClipboardSettingsSection`（150）原样搬到 `features/clipboard/`；`App.tsx` 2779 → 2633，白名单 2892 → 2633 | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（5/n，搬迁） | `0099449` | `ClipboardSettingsSection`（150）原样搬到 `features/clipboard/`；`App.tsx` 2779 → 2633，白名单 2892 → 2633 | `pnpm check`（74/74）、`pnpm build` |
+| 2026-11-03 | 2.4a（6/6，CSS 搬迁） | 见提交说明 | `App.css` 1526 → 1311（-215），白名单同步下调；新增 `i18n/LocaleControl.css`、`features/clipboard/ClipboardSettingsSection.css`、`features/todos/SavePathSettingsSection.css`。多个组件共用的 `.save-check-icon` 和保存动画关键帧留在 `App.css`（4.1 处理）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
 
 ## 待人工验收
 
@@ -209,6 +210,7 @@
 | `4dbdaa6` | 2.2 | 音乐页（中英文、两种外观）：折叠态音乐波形按钮的动画和点击、播放/暂停/上一首/下一首、切歌动画、封面与曲目信息、错误提示、音乐来源设置中的拖拽排序和删除、刷新后来源顺序保留；有音频时波形随音量跳动。 |
 | `5592ae5` | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
 | `b035d02` | 2.4 | 设置窗口（中英文）：外观模式与字体切换、毛玻璃强度、透明度、缩放、边距等滑块，开机自启与各开关，颜色选择与脉冲亮度；预设的保存、应用、改名（Enter / Esc / 失焦）、删除；修改后主窗口外观同步，重启后设置与预设保留。 |
+| 2.4a 的提交 | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
 
 ## 待处理问题
 
@@ -220,4 +222,4 @@
 | 0.5 | `cargo` 提示依赖 `imap-proto v0.10.2` 含将被未来 Rust 版本拒绝的代码 | 见 `cargo report future-incompatibilities`；需要升级依赖，按约定不在重构期间处理。 |
 | 2.1 | `features/todos/storage.ts` 的 `loadTodos`、`loadTodoArchives` 等把 `localStorage.getItem` 写在 `try` 外，`loadActiveTodoId`、`loadSaveDirectory` 等没有 `try`；存储被禁用时会抛异常，导致主窗口无法打开 | 改用 `lib/storage.ts` 即可修复，但会改变行为（由抛异常变为回退默认值），属于 bug 修复，需单独提交。在此之前 `storage.ts` 暂时直接读写 `localStorage`，不符合 src/AGENTS.md 的"统一通过 `lib/` 读写"。 |
 | 2.3 | `features/clipboard/shortcut.ts` 的 `normalizeShortcutKeyLabel` 先判断 `key.length === 1` 并转大写，空格键 `" "` 因此走不到后面的 `case " "`，录制 Ctrl+Space 会得到 `"Ctrl+ "` 而不是 `"Ctrl+Space"` | 需确认 Rust 侧能否解析；修复属于行为变更，单独提交。测试中暂不覆盖该分支。 |
-| 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header` 没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
+| 2.4 | `PresetSettingsSection.css` 中的 `.preset-panel`、`.preset-panel__header`，以及 `App.css` 中的 `.clipboard-settings-panel`、`.color-panel`（及各自的 `__header`）没有任何组件使用 | 疑似废弃样式，按约定原样搬迁；删除属于清理改动，单独提交。 |
