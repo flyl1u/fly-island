@@ -1,5 +1,6 @@
 import { useTranslation } from "../../i18n";
 import type { AppearanceMode } from "./types";
+import "./AppearanceModeControl.css";
 
 export function AppearanceModeControl({
   value,

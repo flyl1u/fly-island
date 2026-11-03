@@ -2,6 +2,7 @@ import { useTranslation } from "../../i18n";
 import { ColorControl } from "../../components/controls/ColorControl";
 import { SliderControl } from "../../components/controls/SliderControl";
 import type { IslandSettings } from "./types";
+import "./ColorSettingsSection.css";
 
 export function ColorSettingsSection({
   settings,
