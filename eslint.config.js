@@ -22,7 +22,6 @@ const legacyIpcFiles = [
   "src/App.tsx",
   "src/SettingsWindow.tsx",
   "src/TranslationWindow.tsx",
-  "src/features/updater/updaterController.ts",
 ];
 
 export default tseslint.config(
