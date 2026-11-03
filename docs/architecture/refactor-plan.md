@@ -17,7 +17,7 @@
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 2212 | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 1045 | 3865 / 500 | — | 行数 |
+| `src/App.css` | 3865 | 912 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
@@ -214,7 +214,8 @@
 | 2026-11-03 | 2.8（2/4，搬迁） | `f6bdc1c` | `SettingsWindow.tsx/.css` 用 `git mv` 迁入 `windows/settings/`，`TranslationWindow.tsx/.css` 迁入 `windows/translation/`；只改导入路径（`main.tsx`、`tests/i18n.tsx`、`eslint.config.js` 的存量 IPC 文件列表），`main.tsx` 的导入顺序不变 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.8（3/4，搬迁） | `0a5f8c3` | 翻译窗口的设置类型、存储 key、默认值和 `loadSettings` 原样搬到 `windows/translation/storage.ts`；`TranslationWindow.tsx` 286 → 269 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.8（3b，搬迁） | `38c6c1a` | `takeFocusRequest` 与 `FOCUS_REQUEST_MAX_AGE_MS` 从 `SettingsWindow.tsx` 原样搬到 `windows/settings/storage.ts` | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.8（3c，改写） | 见提交说明 | 新增 `windows/translation/api.ts`（8 个命令封装、事件名常量和 `listen` 封装）、`windows/settings/api.ts` 的 `readLaunchAtStartup` / `saveLaunchAtStartup`（避免与 `useState` 的 `setLaunchAtStartup` 同名）；`localStorage` 写入改用 `saveTranslationSettings`、`requestSettingsFocus`、`features/appearance/storage.ts` 的 `saveSettings` / `saveSettingPresets`、`features/todos/storage.ts` 的 `saveSaveDirectory`（写入内容与时机不变）。存量 IPC 文件列表只剩 `App.tsx`，ESLint warn 10 → 7 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（3c，改写） | `911dc62` | 新增 `windows/translation/api.ts`（8 个命令封装、事件名常量和 `listen` 封装）、`windows/settings/api.ts` 的 `readLaunchAtStartup` / `saveLaunchAtStartup`（避免与 `useState` 的 `setLaunchAtStartup` 同名）；`localStorage` 写入改用 `saveTranslationSettings`、`requestSettingsFocus`、`features/appearance/storage.ts` 的 `saveSettings` / `saveSettingPresets`、`features/todos/storage.ts` 的 `saveSaveDirectory`（写入内容与时机不变）。存量 IPC 文件列表只剩 `App.tsx`，ESLint warn 10 → 7 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.8（4/4，CSS 搬迁） | 见提交说明 | `App.css` 1045 → 912（-133），白名单同步下调；设置页外壳样式（`.editor-panel`、`.settings-section*`、`.reset-button`）移到 `windows/settings/LayoutEditor.css`，在各区块样式之后加载。事后补查：`05d0c6d` 把 `LayoutEditor` 移出 `App.tsx` 后，各设置区块的 CSS 改由设置窗口引入、排到 `App.css` 之后；打包产物级检查改为比较属性值后，对比 2.1 之前的产物，顺序变化的 61351 对规则中没有值不同的冲突（检查到的 2 对都是减少动效模式下的 `transition: none`） | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
 
 ## 待人工验收
 
