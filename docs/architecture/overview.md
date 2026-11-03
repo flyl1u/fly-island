@@ -49,7 +49,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | 现有位置 | 目标位置 |
 |---|---|
 | `App.tsx`：`App`、`IslandApp`、`IslandShell` | `windows/island/IslandApp.tsx`、`IslandShell.tsx` |
-| `App.tsx`：窗口尺寸、展开高度、拖拽、位置、贴边相关的 state 与 effect | `windows/island/useIslandWindow.ts`、`windows/island/api.ts`（`windows/island/` 已建立：`topEdge.ts` 把原生顶边贴合状态写到根元素 `data-island-top-edge`，`IslandTopEdge.css` 据此绘制平顶与反向圆角；迁入 `useIslandWindow` 时可改为 prop） |
+| `App.tsx`：窗口尺寸、展开高度、拖拽、位置、贴边相关的 state 与 effect | `windows/island/useIslandWindow.ts`（组合原生同步）、`useNativeLayout.ts`（缩放与边距，每帧至多一次调用）、`useIslandPosition.ts`（拖拽位置）、`api.ts`。展开高度仍由 `IslandApp` 按页面内容算好后传入；贴边收起的 mode 状态留在 `IslandApp`，3.3 随组件迁移。`topEdge.ts` 把原生顶边贴合写到根元素 `data-island-top-edge`，`IslandTopEdge.css` 据此绘制平顶与反向圆角 |
 | `App.tsx`：`openSettingsWindow` 与设置区块跳转 | `windows/settings/api.ts` |
 | `App.tsx`：`TodoNotebook`、`ArchiveBrowser` | `features/todos/` |
 | `App.tsx`：待办、归档、笔记的 load / normalize、Markdown 格式化、`createTodoId` | `features/todos/storage.ts`、`markdown.ts` |

@@ -17,10 +17,7 @@ const ipcImportRestriction = {
   ],
 };
 
-// 重构前就直接调用 invoke / listen 的文件。迁移到 api.ts 后从这里删除；清空后见 refactor-plan.md 7.2。
-const legacyIpcFiles = [
-  "src/App.tsx",
-];
+// 重构前直接调用 invoke / listen 的文件曾在这里降为 warn。列表已清空，7.2 再处理其余存量 warn。
 
 export default tseslint.config(
   { ignores: ["dist/**", "node_modules/**", "src-tauri/**"] },
@@ -46,12 +43,6 @@ export default tseslint.config(
     rules: {
       "no-restricted-imports": "off",
       "no-restricted-syntax": "off",
-    },
-  },
-  {
-    files: legacyIpcFiles,
-    rules: {
-      "no-restricted-imports": ["warn", ipcImportRestriction],
     },
   },
   {
