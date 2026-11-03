@@ -164,9 +164,36 @@
 
 **验收**：除 `win32/` 外，生产代码中不再出现 `unsafe`；clippy 没有告警；`cargo test` 和 `pnpm tauri build --no-bundle` 通过。
 
+### Phase 6 交接说明（2026-11-03）
+
+Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者在上游 PR 中完成。下面是接手需要的信息。
+
+**现状**
+
+- `win32/` 已建立：`registry.rs`（`read_string`）、`process.rs`（`window_process_id`、`image_path`，`ProcessHandle` 在 `Drop` 中关闭句柄），各带单元测试。
+- 生产代码中 `win32/` 以外还有 52 处 `unsafe`：`translation.rs` 8、`qq_notifications/launcher.rs` 7、`wechat_reminders/source.rs` 5、`wechat_reminders/mod.rs` 5、`media_control/session.rs` 4、`clipboard_history/hotkey.rs` 4、`qq_notifications/listener.rs` 3、`messenger_activation.rs` 3、`media_control/audio.rs` 3、`clipboard_history/service.rs` 3、`island/passthrough.rs` 2、`island/mod.rs` 1、`island/glass.rs` 1（按 `grep unsafe` 统计，含 `unsafe fn` / `unsafe extern "system" fn` 声明）。
+- 生产代码中的 `expect` 共 5 处：`island/state.rs` 2、`island/mod.rs` 1（窗口状态锁）、`clipboard_history/mod.rs` 1（解析默认快捷键常量）、`lib.rs` 1（`run()` 启动失败）。
+- clippy 基线 80 条，按位置：`qq_notifications/` 17、`examples/` 14、`wechat_reminders/` 10、`island/` 10、`translation.rs` 8、`media_control/` 8、`clipboard_history/` 7、`messenger_activation.rs` 3、`lib.rs` 2、`qq_mail/` 1；其中 66 条是 `undocumented_unsafe_blocks`。
+
+**约定**
+
+- 每类调用一个提交，提交信息用 `refactor(win32): ...`；封装函数尽量接收 Rust 类型（`&str`、`u32`），不让调用方传裸指针；每个 `unsafe` 块写 `// SAFETY:`；句柄用 RAII 类型。
+- 迁移只改实现方式，不改行为：缓冲区大小、失败分支（跳过 / 返回错误 / 回退默认值）与原代码逐一对齐，提交说明里写明对照结果。
+- `wechat_reminders/source.rs` 也被 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 编译。它用到的 `win32` 文件要在示例的 `mod win32 { ... }` 中逐个引入，并且这些文件不能依赖 crate 内其他模块；只把示例用得到的函数放在这些文件里，避免示例产生 dead_code 告警。
+- 每步验证：`cargo test`（当前 68 通过 / 5 忽略）、`cargo clippy --all-targets`（告警只减不增）、`cargo build --all-targets`、`pnpm check`、`pnpm build`、`pnpm tauri build --no-bundle`，并按根目录规则同步桌面快捷方式。
+
+**建议的剩余步骤**
+
+1. `window.rs`：`island/glass.rs`（`SetWindowRgn`）、`island/passthrough.rs`（`GetWindowRect`、`GetCursorPos`）、`island/mod.rs`（`GetAsyncKeyState`）、`messenger_activation.rs`（可交互判断、前台切换）。这些多为无指针参数或只写入局部变量的调用，适合先做。
+2. `com.rs`：`media_control/service.rs` 的媒体线程 `CoInitializeEx` / `CoUninitialize` 配对改为 RAII 守卫；`qq_notifications/listener.rs` 的 `WinRT` 守卫一并评估。
+3. 6.2：带窗口过程和消息循环的模块（`clipboard_history/service.rs`、`hotkey.rs`，`wechat_reminders/source.rs`，`translation.rs`），以及 `EnumWindows` 回调（`qq_notifications/launcher.rs`）。回调中把 `LPARAM` 转回引用的写法需要单独论证安全性。
+4. 6.3：窗口状态锁改为 `unwrap_or_else(PoisonError::into_inner)`，默认快捷键解析改为不 panic 的写法；随后把 `Cargo.toml` 中的 clippy lint 从 warn 升级为 deny。
+
+**需要人工验证**：上述调用全部依赖真实桌面环境（窗口、托盘、热键、COM、通知），单元测试覆盖不到，每步都要在 `pnpm tauri dev` 中检查相关功能，检查项可参考"待人工验收"中 5.1、5.5–5.8、6.1 各行。
+
 ## Phase 7：收尾
 
-- [ ] **7.1** 白名单清空，删除白名单机制中的存量条目。
+- [x] **7.1** 白名单清空，删除白名单机制中的存量条目。（5.6 完成后 `lines`、`inlineTests` 均为空；检查脚本保留，用于阻止新的超限文件）
 - [ ] **7.2** 把 ESLint 中的存量 warn 全部升级为 error。
 - [ ] **7.3** 更新根目录 `AGENTS.md`，删除"结构重构进行中"的说明；更新两份子目录 `AGENTS.md` 中的目录地图。如果 README 中的项目结构说明也受影响，同步更新中英文两个版本。
 - [ ] **7.4** 运行完整的 `pnpm tauri build`，在本机做一轮回归。
@@ -316,3 +343,4 @@
 | 3.3（已处理） | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。已修复：`get_media_state` 的 mock 补成与 `MediaState::empty()` 相同的完整空状态；页面在同一个 `I18nProvider` 下同时挂载 `IslandApp` 与 `SettingsWindow`，去掉两处点击 `.dot-button--layout`；`get_clipboard_history` 的 mock 补上 `shortcutEnabled`（真实后端总会返回该字段，缺失时设置窗口会报受控输入警告）。`i18n.html?test=1` 16/16 通过。 |
 | 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。 |
 | 6.1 | `system/startup.rs`、`system/updater.rs` 通过 `reg.exe` 子进程读写注册表（开机自启、系统代理），每次调用都要启动一个进程 | 不含 `unsafe`，不在 Phase 6 的收口范围内；改为 `win32/registry.rs` 中的 API 调用会改变实现方式与错误信息，需单独评估、单独提交。 |
+| 2.6 | `tests/*.tsx` 回归页不在 `pnpm check` 的类型检查范围内，IslandShell 等组件的属性变化不会被发现（2.6 的缺失属性就是这样遗留下来的） | 可新增一个包含 `tests/*.tsx` 的 tsconfig 并加入 `pnpm check`；属于工具链改动，单独提交。当前 4 个回归页用临时 tsconfig 检查均无错误。 |
