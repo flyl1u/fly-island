@@ -4,7 +4,7 @@
   "version": "0.2.14",
   "identifier": "com.focusd.island",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "node scripts/stop-running-island.mjs && pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
