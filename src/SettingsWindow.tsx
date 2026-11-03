@@ -4,26 +4,17 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   AGENT_PROVIDERS,
   DEFAULT_AGENT_STATUS,
-  DEFAULT_SETTINGS,
-  LEGACY_DEFAULT_PRESET_NAMES,
   LayoutEditor,
   SETTINGS_FOCUS_STORAGE_KEY,
-  SETTINGS_PRESETS_STORAGE_KEY,
-  STORAGE_KEY,
-  isDefaultSettingPreset,
-  isSameSettings,
-  loadSettingPresets,
-  loadSettings,
-  mergeWithDefaultSettingPresets,
-  normalizeSettings,
   type AgentHooksInstallResult,
   type AgentHooksInstallState,
   type AgentProvider,
   type AgentStatusSnapshot,
-  type IslandPreset,
-  type IslandSettings,
   type SettingsFocusSection,
 } from "./App";
+import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "./features/appearance/settings";
+import { SETTINGS_PRESETS_STORAGE_KEY, STORAGE_KEY, loadSettingPresets, loadSettings } from "./features/appearance/storage";
+import type { IslandPreset, IslandSettings } from "./features/appearance/types";
 import { useLocale, useTranslation } from "./i18n";
 import { getErrorMessage } from "./utils/error";
 import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory } from "./features/todos/storage";
