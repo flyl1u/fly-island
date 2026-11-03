@@ -16,7 +16,7 @@ src-tauri/src/
 ├── media_control/
 ├── qq_mail/                 # 命令、后台服务、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/
-├── wechat_reminders/        # 合并现有 wechat_reminders.rs 与 wechat_reminder_source.rs
+├── wechat_reminders/        # 提醒服务与命令；source.rs 为托盘闪烁监听（examples 通过 #[path] 复用）
 ├── translation.rs
 ├── settings_window.rs
 ├── messenger_activation.rs

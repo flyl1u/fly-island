@@ -147,7 +147,8 @@
 - [x] **5.6** 拆分 `clipboard_history/`。完成后白名单的 `lines` 与 `inlineTests` 都已清空（7.1 只剩删除白名单机制中的存量条目说明）。
 - [x] **5.7** 拆分 `media_control/`。（在 5.3 之前完成，见 5.2 的说明）
   - `lib.rs` 中的 10 个媒体命令一并迁入 `media_control/mod.rs`。命令 `get_audio_level` 与内部函数同名，因此内部 API（状态类型、`get_state` / `get_audio_level` / `run_command` / `seek` / `set_volume`、`MediaCommand`）放在 `service.rs`，命令里的 `media_control::` 路径改为 `service::`。
-- [ ] **5.8** 合并 `wechat_reminders.rs` 与 `wechat_reminder_source.rs`，形成 `wechat_reminders/`。
+- [x] **5.8** 合并 `wechat_reminders.rs` 与 `wechat_reminder_source.rs`，形成 `wechat_reminders/`。
+  - `examples/wechat_reminder_probe.rs` 通过 `#[path]` 引用监听源文件，路径同步改为 `../src/wechat_reminders/source.rs`；`source.rs` 不依赖父模块，仍可在示例中单独编译。
 
 **验收**（每一步都要满足）：`cargo test` 的通过数量不少于基线；`pnpm tauri build --no-bundle` 成功，并按根目录规则同步桌面快捷方式；涉及窗口的步骤需要在 `pnpm tauri dev` 中手动检查。
 
@@ -255,6 +256,9 @@
 | 2026-11-03 | 5.5（2/2，格式化） | `ef6b311` | 对 `qq_notifications/` 运行 rustfmt（4 个文件 +21/-21） | 同上，桌面快捷方式已核对 |
 | 2026-11-03 | 5.6（1/2，搬迁） | `a729752` | `clipboard_history.rs`（1068）按顶层块原样拆为 `clipboard_history/`：`mod.rs`（235，类型、服务状态、7 个命令、`init`）、`service.rs`（589，服务实现、剪贴板读写、监听窗口）、`store.rs`（99，历史文件、PNG 与缩略图）、`hotkey.rs`（211，快捷键解析与注册）。最后一条生产代码白名单条目删除，白名单清空。`mod.rs` 重新导出 `parse_shortcut_binding`，`translation.rs` 的导入路径不变。逐行比较无差异 | `cargo test`（63 / 5）、clippy 83 条；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.6（2/2，格式化） | `9b7393f` | 对 `clipboard_history/` 运行 rustfmt（4 个文件 +28/-28） | 同上，桌面快捷方式已核对 |
+| 2026-11-03 | 5.8（1/2，搬迁） | `f290a34` | `wechat_reminders.rs` → `wechat_reminders/mod.rs`（409），`wechat_reminder_source.rs` → `source.rs`（248，原样 `git mv`），内联测试 → `tests.rs`（140）。`mod.rs` 改从子模块 `source` 导入，`lib.rs` 去掉 `mod wechat_reminder_source`，示例程序的 `#[path]` 同步更新 | `cargo test`（63 / 5）、clippy 83 条（含示例）、`cargo build --all-targets`；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.8（2/2，格式化） | `53e9de3` | rustfmt 只改 2 行（导入顺序、测试中一处换行） | 同上，桌面快捷方式已核对 |
+| 2026-11-03 | Phase 5 验收 | 见提交说明 | `lib.rs` 141 行，只剩 `mod` 声明与 `run()`；Rust 文件全部满足 800 / 150 上限，白名单 `lines` 与 `inlineTests` 已清空；`cargo test` 63 通过 / 5 忽略（与 Phase 5 前相同）；clippy 84 → 83（`items_after_test_module` 消失），按位置：`qq_notifications/` 18、`examples/` 15、`wechat_reminders/` 11、`island/` 10、`translation.rs` 8、`media_control/` 8、`clipboard_history/` 7、`messenger_activation.rs` 3、`lib.rs` 2、`qq_mail/` 1。每一步都执行了 `pnpm tauri build --no-bundle` 并同步桌面快捷方式 | 涉及窗口与系统集成的手动检查见"待人工验收" 5.1–5.8 |
 
 ## 待人工验收
 
@@ -287,6 +291,7 @@
 | `8008d5a`、`a6e71dc` | 5.4 | QQ 邮箱（中英文）：连接（授权码写入凭据管理器）、开关、刷新、新邮件推送（IDLE）与 60 秒兜底刷新、阅读邮件（HTML / 纯文本、内嵌 cid 图片）、断开后凭据删除、重启后自动恢复。可在 `pnpm dev` 中打开 `/tests/mail-reader.html` 辅助检查前端部分。 |
 | `2c12ab1`、`ef6b311` | 5.5 | QQ 通知（中英文）：开关、首次请求通知权限、打开系统通知设置、收到 QQ 消息后列表与折叠态预览更新、清空、打开 QQ（已运行时激活窗口，未运行时启动）、通知注册损坏时的自动修复、设置窗口的通知诊断。 |
 | `a729752`、`9b7393f` | 5.6 | 剪贴板（同 2.3 检查项），重点看原生侧：复制文字与图片后列表实时更新、图片缩略图、复制回剪贴板、重启后历史与收藏保留、全局快捷键打开剪贴板页、在设置中修改快捷键后重新注册、快捷翻译快捷键仍可录制与注册（复用快捷键解析）。 |
+| `f290a34`、`53e9de3` | 5.8 | 微信提醒（中英文）：开关、微信托盘图标闪烁时主窗口出现提醒、打开微信（恢复原主窗口，失败时显示提示）；可选：`cargo run --example wechat_reminder_probe` 仍能运行。 |
 
 ## 待处理问题
 
