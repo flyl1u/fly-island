@@ -125,6 +125,8 @@ export function useQQMail(canPreview: boolean) {
 
   useEffect(() => {
     if (!isTauri()) return;
+    // A request counter, not a DOM ref: bumping it on unmount drops in-flight reads.
+    const readerRequests = readerRequestRef;
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     const saved = loadSettings();
@@ -154,7 +156,7 @@ export function useQQMail(canPreview: boolean) {
     })().catch((error: unknown) => {
       if (!cancelled) setActionError(String(error));
     }).finally(() => { if (!cancelled) setBusy(false); });
-    return () => { cancelled = true; ++readerRequestRef.current; unlisten?.(); };
+    return () => { cancelled = true; ++readerRequests.current; unlisten?.(); };
   }, [acceptSnapshot, clearPreview]);
 
   useEffect(() => {

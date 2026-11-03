@@ -92,11 +92,12 @@ export function IslandApp() {
 
   useIdleTuck(settings.autoTuck, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
 
+  const closeMailReader = qqMail.closeReader;
   const openMessages = useCallback((source: MessageSource) => {
-    qqMail.closeReader();
+    closeMailReader();
     setMessageSource(source);
     openIslandPage("qq");
-  }, [openIslandPage, qqMail.closeReader]);
+  }, [closeMailReader, openIslandPage]);
 
   const {
     clipboardHistory,

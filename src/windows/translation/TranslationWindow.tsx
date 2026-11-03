@@ -47,7 +47,9 @@ export function TranslationWindow() {
     void setTranslationShortcut(settings.shortcut)
       .then(() => setShortcutError(""))
       .catch((failure) => setShortcutError(String(failure)));
-    // Shortcut edits register immediately in the recording handler.
+    // Registers the saved shortcut once on mount; edits register immediately in the
+    // recording handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refreshClipboard = useCallback(() => {
