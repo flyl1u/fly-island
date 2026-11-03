@@ -19,9 +19,7 @@ use windows::{
     },
     Storage::Streams::{DataReader, IInputStream, IRandomAccessStreamReference},
     Win32::{
-        System::Com::{
-            CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED,
-        },
+        System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED},
         UI::Input::KeyboardAndMouse::{
             keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
         },
@@ -38,7 +36,8 @@ pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
 /// source app, title and artist, which is stable while a track is playing.
-pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> = OnceLock::new();
+pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> =
+    OnceLock::new();
 
 pub(super) fn on_media_thread<T, F>(operation: F) -> Result<T, String>
 where
@@ -102,7 +101,9 @@ pub(super) fn session_by_id(
     Ok(None)
 }
 
-pub(super) fn target_session(manager: &MediaSessionManager) -> Result<Option<MediaSession>, String> {
+pub(super) fn target_session(
+    manager: &MediaSessionManager,
+) -> Result<Option<MediaSession>, String> {
     let current_session = manager.GetCurrentSession().ok();
 
     if current_session.as_ref().is_some_and(is_playing) {
@@ -150,7 +151,10 @@ pub(super) fn list_sessions(manager: &MediaSessionManager) -> Vec<MediaSessionIn
         let Some(id) = session_id(&session) else {
             continue;
         };
-        if entries.iter().any(|entry: &MediaSessionInfo| entry.id == id) {
+        if entries
+            .iter()
+            .any(|entry: &MediaSessionInfo| entry.id == id)
+        {
             continue;
         }
         entries.push(MediaSessionInfo {
@@ -229,7 +233,10 @@ pub(super) fn run_cycle_repeat(session: &MediaSession) -> Result<bool, String> {
         .map_err(|error| media_error("Failed to change repeat mode", error))
 }
 
-pub(super) fn run_session_command(session: &MediaSession, command: MediaCommand) -> Result<bool, String> {
+pub(super) fn run_session_command(
+    session: &MediaSession,
+    command: MediaCommand,
+) -> Result<bool, String> {
     match command {
         MediaCommand::PlayPause => run_play_pause(session),
         MediaCommand::Next => pollster::block_on(
@@ -278,7 +285,11 @@ pub(super) fn read_media_state_from_manager(
             available: false,
             audio_active,
             audio_peak,
-            playback_status: if audio_active { "playing" } else { "unavailable" },
+            playback_status: if audio_active {
+                "playing"
+            } else {
+                "unavailable"
+            },
             volume,
             sessions,
             ..MediaState::empty()
@@ -370,7 +381,11 @@ pub(super) fn read_media_state_without_session() -> Result<MediaState, String> {
         available: false,
         audio_active,
         audio_peak,
-        playback_status: if audio_active { "playing" } else { "unavailable" },
+        playback_status: if audio_active {
+            "playing"
+        } else {
+            "unavailable"
+        },
         volume: read_master_volume().unwrap_or(-1.0),
         ..MediaState::empty()
     })
@@ -405,7 +420,11 @@ impl MediaState {
     }
 }
 
-pub(super) fn read_timeline(session: &MediaSession, is_playing: bool, playback_rate: f64) -> (i64, i64) {
+pub(super) fn read_timeline(
+    session: &MediaSession,
+    is_playing: bool,
+    playback_rate: f64,
+) -> (i64, i64) {
     let Ok(timeline) = session.GetTimelineProperties() else {
         return (0, 0);
     };
@@ -426,7 +445,11 @@ pub(super) fn read_timeline(session: &MediaSession, is_playing: bool, playback_r
                 current_unix_millis().saturating_mul(10_000) + WINDOWS_EPOCH_OFFSET_TICKS;
             let since_update_ms = (now_ticks - last_updated.UniversalTime) / 10_000;
             if since_update_ms > 0 {
-                let rate = if playback_rate > 0.0 { playback_rate } else { 1.0 };
+                let rate = if playback_rate > 0.0 {
+                    playback_rate
+                } else {
+                    1.0
+                };
                 let projected = elapsed + (since_update_ms as f64 * rate).round() as i64;
                 elapsed = projected.clamp(0, duration);
             }
@@ -439,7 +462,12 @@ pub(super) fn read_timeline(session: &MediaSession, is_playing: bool, playback_r
 pub(super) fn read_metadata(
     session: &MediaSession,
     source_app: Option<&str>,
-) -> (Option<String>, Option<String>, Option<String>, Option<String>) {
+) -> (
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+) {
     let Ok(operation) = session.TryGetMediaPropertiesAsync() else {
         return (None, None, None, None);
     };
@@ -449,12 +477,7 @@ pub(super) fn read_metadata(
 
     let title = non_empty(properties.Title().ok().map(|value| value.to_string()));
     let artist = non_empty(properties.Artist().ok().map(|value| value.to_string()));
-    let album = non_empty(
-        properties
-            .AlbumTitle()
-            .ok()
-            .map(|value| value.to_string()),
-    );
+    let album = non_empty(properties.AlbumTitle().ok().map(|value| value.to_string()));
     let thumbnail = cached_thumbnail(source_app, title.as_deref(), artist.as_deref(), || {
         properties.Thumbnail().ok()
     });
@@ -532,7 +555,6 @@ pub(super) fn detect_image_mime(bytes: &[u8]) -> &'static str {
         "image/jpeg"
     }
 }
-
 
 pub(super) fn repeat_mode_label(mode: RepeatMode) -> &'static str {
     match mode {
