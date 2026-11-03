@@ -2,6 +2,7 @@ import { useTranslation } from "../../i18n";
 import { SliderControl } from "../../components/controls/SliderControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { AppearanceModeControl } from "./AppearanceModeControl";
+import { MAX_TOP_FILLET_RADIUS, MIN_TOP_FILLET_RADIUS } from "./settings";
 import type { IslandSettings } from "./types";
 
 export function LayoutSettingsSection({
@@ -88,6 +89,15 @@ export function LayoutSettingsSection({
         step={1}
         suffix="px"
         onChange={(marginY) => onSettingsChange({ ...settings, marginY })}
+      />
+      <SliderControl
+        label={t.settings.layout.topFilletRadius}
+        value={settings.topFilletRadius}
+        min={MIN_TOP_FILLET_RADIUS}
+        max={MAX_TOP_FILLET_RADIUS}
+        step={1}
+        suffix="px"
+        onChange={(topFilletRadius) => onSettingsChange({ ...settings, topFilletRadius })}
       />
       <ToggleControl
         label={t.settings.layout.showCollapsedText}
