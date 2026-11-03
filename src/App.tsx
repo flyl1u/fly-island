@@ -46,12 +46,13 @@ import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   useTranslation,
   type LocaleCode,
-  type Translations,
 } from "./i18n";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "./utils/text";
 import { clamp } from "./utils/number";
 import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
+import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./features/agent-status/api";
+import { AGENT_PROVIDERS, AGENT_PROVIDER_LABELS, DEFAULT_AGENT_STATUS, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, type AgentHooksInstallState, type AgentVisualState } from "./features/agent-status/status";
 import { LocaleControl } from "./i18n/LocaleControl";
 import { ColorSettingsSection } from "./features/appearance/ColorSettingsSection";
 import { LayoutSettingsSection } from "./features/appearance/LayoutSettingsSection";
@@ -103,30 +104,7 @@ import "./App.css";
 export type IslandMode = "collapsed" | "expanded";
 
 type IslandPage = "todo" | "music" | "clipboard" | "qq";
-type AgentProvider = "codex" | "claudeCode";
-type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
-type AgentVisualState = "idle" | "running" | "attention";
 
-type AgentTaskStatus = {
-  phase: AgentTaskPhase;
-  taskId?: string;
-  updatedAt: number;
-};
-
-type AgentStatusSnapshot = Record<AgentProvider, AgentTaskStatus> & {
-  updatedAt: number;
-  statusPath: string;
-};
-
-type AgentHooksInstallResult = {
-  scriptsDir: string;
-  statusPath: string;
-  codexConfigPath: string;
-  claudeConfigPath: string;
-  installedAt: number;
-};
-
-type AgentHooksInstallState = "idle" | "installing" | "installed" | "error";
 type NativeGlassState = "active" | "css-fallback" | "disabled";
 
 type IslandPosition = {
@@ -180,79 +158,6 @@ const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
 const TODO_ROW_HEIGHT = 46;
 const TODO_GROW_START_ROWS = 2;
 const AUDIO_ACTIVE_THRESHOLD = 0.000015;
-const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
-  phase: "idle",
-  updatedAt: 0,
-};
-const DEFAULT_AGENT_STATUS: AgentStatusSnapshot = {
-  codex: DEFAULT_AGENT_TASK_STATUS,
-  claudeCode: DEFAULT_AGENT_TASK_STATUS,
-  updatedAt: 0,
-  statusPath: "",
-};
-const AGENT_PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
-const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
-  codex: "Codex",
-  claudeCode: "Claude Code",
-};
-function isAgentAttentionPhase(phase: AgentTaskPhase) {
-  return phase === "failed" || phase === "stale";
-}
-
-function getAgentVisualState(snapshot: AgentStatusSnapshot): AgentVisualState {
-  const statuses = AGENT_PROVIDERS.map((provider) => snapshot[provider]);
-
-  if (statuses.some((status) => isAgentAttentionPhase(status.phase))) {
-    return "attention";
-  }
-
-  if (statuses.some((status) => status.phase === "running")) {
-    return "running";
-  }
-
-  return "idle";
-}
-
-function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translations) {
-  const attentionProvider = AGENT_PROVIDERS.find((provider) =>
-    isAgentAttentionPhase(snapshot[provider].phase),
-  );
-
-  if (attentionProvider) {
-    const phase = snapshot[attentionProvider].phase;
-    const providerLabel = AGENT_PROVIDER_LABELS[attentionProvider];
-    return phase === "stale"
-      ? t.agent.stale(providerLabel)
-      : t.agent.failed(providerLabel);
-  }
-
-  const runningProvider = AGENT_PROVIDERS.find(
-    (provider) => snapshot[provider].phase === "running",
-  );
-
-  if (runningProvider) {
-    return t.agent.running(AGENT_PROVIDER_LABELS[runningProvider]);
-  }
-
-  return t.agent.idleOrDone;
-}
-
-function getAgentPhaseLabel(phase: AgentTaskPhase, t: Translations) {
-  switch (phase) {
-    case "running":
-      return t.agent.phase.running;
-    case "completed":
-      return t.agent.phase.completed;
-    case "failed":
-      return t.agent.phase.failed;
-    case "stale":
-      return t.agent.phase.stale;
-    case "idle":
-    default:
-      return t.agent.phase.idle;
-  }
-}
-
 function getCollapsedIslandWidth(text: string) {
   const visualUnits = getCollapsedTextUnits(text);
   const widthProgress =
@@ -2619,15 +2524,9 @@ export default App;
 
 // Shared with SettingsWindow, which edits the same stored settings in its own webview.
 export {
-  AGENT_PROVIDERS,
-  DEFAULT_AGENT_STATUS,
   SETTINGS_FOCUS_STORAGE_KEY,
   LayoutEditor,
 };
 export type {
-  AgentHooksInstallResult,
-  AgentHooksInstallState,
-  AgentProvider,
-  AgentStatusSnapshot,
   SettingsFocusSection,
 };

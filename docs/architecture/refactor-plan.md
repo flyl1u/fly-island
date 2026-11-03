@@ -195,7 +195,8 @@
 | 2026-11-03 | 2.4a（3/n，搬迁） | `93250ce` | `TodoSettingsSection`（47）原样搬到 `features/appearance/`，`SavePathSettingsSection`（91）原样搬到 `features/todos/`；`App.tsx` 2890 → 2761（白名单暂不下调） | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（4/n，改写） | `548e7d1` | 在 `App.tsx` 中拆出 `ClipboardSettingsSection`（142），快捷键录制状态、两个 ref、"聚焦快捷键"的 effect 和按键处理一并移入；区块始终挂载，行为不变。`LayoutEditor` 401 → 276；`App.tsx` 2761 → 2779 | `pnpm check`（74/74）、`pnpm build` |
 | 2026-11-03 | 2.4a（5/n，搬迁） | `0099449` | `ClipboardSettingsSection`（150）原样搬到 `features/clipboard/`；`App.tsx` 2779 → 2633，白名单 2892 → 2633 | `pnpm check`（74/74）、`pnpm build` |
-| 2026-11-03 | 2.4a（6/6，CSS 搬迁） | 见提交说明 | `App.css` 1526 → 1311（-215），白名单同步下调；新增 `i18n/LocaleControl.css`、`features/clipboard/ClipboardSettingsSection.css`、`features/todos/SavePathSettingsSection.css`。多个组件共用的 `.save-check-icon` 和保存动画关键帧留在 `App.css`（4.1 处理）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
+| 2026-11-03 | 2.4a（6/6，CSS 搬迁） | `afdac27` | `App.css` 1526 → 1311（-215），白名单同步下调；新增 `i18n/LocaleControl.css`、`features/clipboard/ClipboardSettingsSection.css`、`features/todos/SavePathSettingsSection.css`。多个组件共用的 `.save-check-icon` 和保存动画关键帧留在 `App.css`（4.1 处理）。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（74/74）、`pnpm build`；设置窗口检查待人工验收 |
+| 2026-11-03 | 2.5（1/5，搬迁） | 见提交说明 | `App.tsx` 2633 → 2532（-101，白名单暂不下调）；新增 `features/agent-status/api.ts`（与 Rust 对应的类型）、`status.ts`（默认值、提供方列表与标签、视觉状态与标签函数）和 `tests/agent-status.test.mjs`（4 个用例）；`SettingsWindow.tsx` 改为直接从 `features/agent-status` 导入 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 
@@ -210,7 +211,7 @@
 | `4dbdaa6` | 2.2 | 音乐页（中英文、两种外观）：折叠态音乐波形按钮的动画和点击、播放/暂停/上一首/下一首、切歌动画、封面与曲目信息、错误提示、音乐来源设置中的拖拽排序和删除、刷新后来源顺序保留；有音频时波形随音量跳动。 |
 | `5592ae5` | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
 | `b035d02` | 2.4 | 设置窗口（中英文）：外观模式与字体切换、毛玻璃强度、透明度、缩放、边距等滑块，开机自启与各开关，颜色选择与脉冲亮度；预设的保存、应用、改名（Enter / Esc / 失焦）、删除；修改后主窗口外观同步，重启后设置与预设保留。 |
-| 2.4a 的提交 | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
+| `afdac27` | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
 
 ## 待处理问题
 
