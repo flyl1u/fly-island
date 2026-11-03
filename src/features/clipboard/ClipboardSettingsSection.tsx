@@ -5,6 +5,7 @@ import { NumberControl } from "../../components/controls/NumberControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import type { ClipboardHistorySettings } from "./api";
 import { buildShortcutFromEvent, normalizeClipboardShortcut } from "./shortcut";
+import "./ClipboardSettingsSection.css";
 
 export function ClipboardSettingsSection({ clipboardSettings, focusClipboardShortcutToken, onClipboardSettingsChange, onClipboardShortcutFocusHandled }: {
   clipboardSettings: ClipboardHistorySettings;

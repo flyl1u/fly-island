@@ -1,0 +1,82 @@
+.shortcut-control {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.shortcut-control--disabled {
+  opacity: 0.45;
+}
+
+.shortcut-control__meta {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  color: rgba(248, 246, 240, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.shortcut-control__meta strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(248, 246, 240, 0.94);
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortcut-record-button {
+  min-width: 112px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: rgba(248, 246, 240, 0.82);
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.shortcut-record-button span {
+  white-space: nowrap;
+}
+
+.shortcut-record-button:hover,
+.shortcut-record-button:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+.shortcut-record-button:focus-visible {
+  outline: 2px solid rgba(143, 216, 255, 0.88);
+  outline-offset: 2px;
+}
+
+.shortcut-record-button:disabled {
+  color: rgba(248, 246, 240, 0.42);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: default;
+}
+
+.shortcut-record-button--recording {
+  color: #ffffff;
+  background: #c75065;
+  box-shadow: 0 0 0 4px rgba(199, 80, 101, 0.16);
+  animation: saveButtonPop 760ms ease both;
+}
