@@ -11,8 +11,9 @@
     "tauri": "tauri",
     "test": "node --test tests/*.test.mjs",
     "check:size": "node scripts/check-file-size.mjs",
+    "check:tests-types": "tsc -p tsconfig.tests.json",
     "lint": "eslint src",
-    "check": "tsc && pnpm run lint && pnpm run check:size && pnpm run test"
+    "check": "tsc && pnpm run check:tests-types && pnpm run lint && pnpm run check:size && pnpm run test"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
