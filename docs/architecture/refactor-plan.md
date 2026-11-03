@@ -155,6 +155,10 @@
 ## Phase 6：unsafe 收口与错误处理
 
 - [ ] **6.1** 建立 `win32/`，先迁移注册表操作（`registry.rs`），再迁移窗口和句柄（`window.rs`）、COM 初始化（`com.rs`）。每次迁移一类调用，为每个 `unsafe` 块补上 `// SAFETY:` 注释。
+  - [x] 注册表：`win32/registry.rs` 的 `read_string` 替换两处 `RegGetValueW`（`1fcfa89`）。`system/startup.rs`、`updater.rs` 通过 `reg.exe` 子进程读写注册表，不含 `unsafe`，本步不改（见"待处理问题" 6.1）。
+  - [x] 进程句柄：`win32/process.rs`（`window_process_id`、`image_path`，句柄由 RAII 关闭）替换 QQ 与微信两处"窗口属于哪个可执行文件"的查询（`a918a97`）。进程相关调用单独成文件，是因为 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 只引入它和 `registry.rs`，避免示例编译到用不上的窗口函数。
+  - [ ] 窗口：`window.rs`（窗口矩形、光标位置、前台窗口切换、可交互判断、窗口枚举回调等）。
+  - [ ] COM：`com.rs`（媒体线程的 `CoInitializeEx` / `CoUninitialize`、通知监听的 WinRT 初始化）。
 - [ ] **6.2** 逐模块迁移剩余的 `unsafe` 调用：媒体与音频、通知、剪贴板、翻译、微信。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
 
@@ -259,6 +263,8 @@
 | 2026-11-03 | 5.8（1/2，搬迁） | `f290a34` | `wechat_reminders.rs` → `wechat_reminders/mod.rs`（409），`wechat_reminder_source.rs` → `source.rs`（248，原样 `git mv`），内联测试 → `tests.rs`（140）。`mod.rs` 改从子模块 `source` 导入，`lib.rs` 去掉 `mod wechat_reminder_source`，示例程序的 `#[path]` 同步更新 | `cargo test`（63 / 5）、clippy 83 条（含示例）、`cargo build --all-targets`；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.8（2/2，格式化） | `53e9de3` | rustfmt 只改 2 行（导入顺序、测试中一处换行） | 同上，桌面快捷方式已核对 |
 | 2026-11-03 | Phase 5 验收 | 见提交说明 | `lib.rs` 141 行，只剩 `mod` 声明与 `run()`；Rust 文件全部满足 800 / 150 上限，白名单 `lines` 与 `inlineTests` 已清空；`cargo test` 63 通过 / 5 忽略（与 Phase 5 前相同）；clippy 84 → 83（`items_after_test_module` 消失），按位置：`qq_notifications/` 18、`examples/` 15、`wechat_reminders/` 11、`island/` 10、`translation.rs` 8、`media_control/` 8、`clipboard_history/` 7、`messenger_activation.rs` 3、`lib.rs` 2、`qq_mail/` 1。每一步都执行了 `pnpm tauri build --no-bundle` 并同步桌面快捷方式 | 涉及窗口与系统集成的手动检查见"待人工验收" 5.1–5.8 |
+| 2026-11-03 | 6.1（1/n，改写） | `1fcfa89` | 新增 `win32/mod.rs`、`win32/registry.rs`（`read_string`：仅 `REG_SZ`、2048 单元缓冲、任何错误视为不存在，与原实现一致；参数为 `&str`，内部构造宽字符串）。QQ `DisplayIcon` 与微信 `InstallPath` 两处查询改用它；示例程序同步引入 `registry.rs`。新增 2 个测试 | `cargo test` 63 → 65、clippy 83 → 80（少 3 条未注释的 `unsafe` 块）、`cargo build --all-targets`；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 6.1（2/n，改写） | `a918a97` | 新增 `win32/process.rs`（`window_process_id`、`image_path`，`ProcessHandle` 在 `Drop` 中关闭句柄）。QQ 窗口枚举与微信窗口匹配改用它，失败路径与原来一致（打不开进程或读不到路径都跳过 / 返回 `Err(())`）；示例程序同步引入。新增 2 个测试 | `cargo test` 65 → 67、clippy 80（原调用在 `unsafe fn` 内，不计为 `unsafe` 块）；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -292,6 +298,7 @@
 | `2c12ab1`、`ef6b311` | 5.5 | QQ 通知（中英文）：开关、首次请求通知权限、打开系统通知设置、收到 QQ 消息后列表与折叠态预览更新、清空、打开 QQ（已运行时激活窗口，未运行时启动）、通知注册损坏时的自动修复、设置窗口的通知诊断。 |
 | `a729752`、`9b7393f` | 5.6 | 剪贴板（同 2.3 检查项），重点看原生侧：复制文字与图片后列表实时更新、图片缩略图、复制回剪贴板、重启后历史与收藏保留、全局快捷键打开剪贴板页、在设置中修改快捷键后重新注册、快捷翻译快捷键仍可录制与注册（复用快捷键解析）。 |
 | `f290a34`、`53e9de3` | 5.8 | 微信提醒（中英文）：开关、微信托盘图标闪烁时主窗口出现提醒、打开微信（恢复原主窗口，失败时显示提示）；可选：`cargo run --example wechat_reminder_probe` 仍能运行。 |
+| `1fcfa89`、`a918a97` | 6.1 | 打开 QQ：已运行时激活现有窗口、未运行时按注册表中的安装路径启动；未安装 QQ 时显示"未找到 QQ 安装路径"。微信提醒：开启后能识别微信窗口与托盘闪烁，打开微信可恢复主窗口；未安装微信时显示"未找到微信安装路径"。 |
 
 ## 待处理问题
 
@@ -308,3 +315,4 @@
 | 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
 | 3.3 | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。 |
 | 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。 |
+| 6.1 | `system/startup.rs`、`system/updater.rs` 通过 `reg.exe` 子进程读写注册表（开机自启、系统代理），每次调用都要启动一个进程 | 不含 `unsafe`，不在 Phase 6 的收口范围内；改为 `win32/registry.rs` 中的 API 调用会改变实现方式与错误信息，需单独评估、单独提交。 |
