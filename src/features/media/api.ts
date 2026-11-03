@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-// 与 src-tauri/src/media_control.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
+// 与 src-tauri/src/media_control/service.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
 export type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 
 export type MediaRepeatMode = "none" | "track" | "list" | "unknown";

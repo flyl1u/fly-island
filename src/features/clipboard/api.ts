@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
-// 与 src-tauri/src/clipboard_history.rs 中的同名结构对应。
+// 与 src-tauri/src/clipboard_history/mod.rs 中的同名结构对应。
 export type ClipboardHistorySettings = {
   enabled: boolean;
   captureImages: boolean;
@@ -37,7 +37,7 @@ export type ClipboardHistorySnapshot = {
   items: ClipboardHistoryItem[];
 };
 
-// 与 clipboard_history.rs 中的 HISTORY_CHANGED_EVENT、HOTKEY_EVENT 一致。
+// 与 clipboard_history/mod.rs 中的 HISTORY_CHANGED_EVENT、clipboard_history/hotkey.rs 中的 HOTKEY_EVENT 一致。
 export const CLIPBOARD_HISTORY_CHANGED_EVENT = "clipboard-history-changed";
 export const CLIPBOARD_HISTORY_SHORTCUT_EVENT = "clipboard-history-shortcut";
 

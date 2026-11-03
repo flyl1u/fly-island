@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback } from "@tauri-apps/api/event";
 
-// 与 src-tauri/src/qq_notifications.rs 中返回给前端的结构对应。
+// 与 src-tauri/src/qq_notifications/mod.rs 中返回给前端的结构对应。
 export type QQNotification = {
   id: string;
   title: string;
@@ -23,7 +23,7 @@ export type QQNotificationEvent = {
   windowVisible: boolean;
 };
 
-// 与 qq_notifications.rs 中的 EVENT_NAME 一致。
+// 与 qq_notifications/mod.rs 中的 EVENT_NAME 一致。
 export const QQ_NOTIFICATIONS_CHANGED_EVENT = "qq-notifications-changed";
 
 export function getQQNotificationState() {
