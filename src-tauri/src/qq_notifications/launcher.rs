@@ -1,31 +1,24 @@
 //! Finds and activates the running QQ window, or starts QQ.
 
 use crate::messenger_activation::{activate_existing_window, is_interactive_window};
-use crate::win32::registry;
+use crate::win32::{process, registry};
 use std::{
     path::{Path, PathBuf},
     thread,
     time::{Duration, Instant},
 };
 use windows::{
-    core::{BOOL, PWSTR},
+    core::BOOL,
     Win32::{
-        Foundation::{CloseHandle, HWND, LPARAM, WPARAM},
-        System::{
-            Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
-            Threading::{
-                OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
-                PROCESS_QUERY_LIMITED_INFORMATION,
-            },
-        },
+        Foundation::{HWND, LPARAM, WPARAM},
+        System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
         UI::{
             Shell::{Shell_NotifyIconGetRect, NOTIFYICONIDENTIFIER},
             WindowsAndMessaging::{
                 AllowSetForegroundWindow, EnumWindows, GetClassNameW, GetForegroundWindow,
-                GetWindow, GetWindowPlacement, GetWindowTextW, GetWindowThreadProcessId,
-                IsWindowVisible, SendMessageTimeoutW, GW_OWNER, SMTO_ABORTIFHUNG, SMTO_BLOCK,
-                SMTO_ERRORONEXIT, WINDOWPLACEMENT, WM_APP, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN,
-                WM_LBUTTONUP,
+                GetWindow, GetWindowPlacement, GetWindowTextW, IsWindowVisible,
+                SendMessageTimeoutW, GW_OWNER, SMTO_ABORTIFHUNG, SMTO_BLOCK, SMTO_ERRORONEXIT,
+                WINDOWPLACEMENT, WM_APP, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WM_LBUTTONUP,
             },
         },
     },
@@ -85,22 +78,9 @@ pub(super) fn preferred_qq_window(windows: &[QQWindow], foreground: HWND) -> Opt
 
 unsafe extern "system" fn find_qq_window(window: HWND, context: LPARAM) -> BOOL {
     let search = &mut *(context.0 as *mut QQWindowSearch<'_>);
-    let mut process_id = 0;
-    GetWindowThreadProcessId(window, Some(&mut process_id));
-    if let Ok(process) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) {
-        let mut path = [0u16; 32768];
-        let mut length = path.len() as u32;
-        let result = QueryFullProcessImageNameW(
-            process,
-            PROCESS_NAME_WIN32,
-            PWSTR(path.as_mut_ptr()),
-            &mut length,
-        );
-        let matches = result.is_ok()
-            && String::from_utf16_lossy(&path[..length as usize])
-                .eq_ignore_ascii_case(&search.executable.to_string_lossy());
-        let _ = CloseHandle(process);
-        if !matches {
+    let process_id = process::window_process_id(window);
+    if let Some(path) = process::image_path(process_id) {
+        if !path.eq_ignore_ascii_case(&search.executable.to_string_lossy()) {
             return true.into();
         }
         search.running = true;

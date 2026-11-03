@@ -1,8 +1,10 @@
 #[path = "../src/wechat_reminders/source.rs"]
 mod wechat_reminder_source;
 
-// source.rs reads the install path through crate::win32::registry.
+// source.rs uses crate::win32::{process, registry}.
 mod win32 {
+    #[path = "../../src/win32/process.rs"]
+    pub(crate) mod process;
     #[path = "../../src/win32/registry.rs"]
     pub(crate) mod registry;
 }
