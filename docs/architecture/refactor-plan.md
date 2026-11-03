@@ -191,6 +191,38 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 
 **需要人工验证**：上述调用全部依赖真实桌面环境（窗口、托盘、热键、COM、通知），单元测试覆盖不到，每步都要在 `pnpm tauri dev` 中检查相关功能，检查项可参考"待人工验收"中 5.1、5.5–5.8、6.1 各行。
 
+### 5.4 可见性收窄交接说明（2026-11-03）
+
+待处理问题 5.4 的代码改动留给上游贡献者。拆分 `qq_mail/`、`qq_notifications/`、`clipboard_history/` 时为了零行为变化，子文件之间统一用 `use super::*` 互相引用，搬过去的顶层项、结构体字段和固有方法一律加了 `pub(super)`。目标是改成显式导入和最小可见性，不改任何逻辑。
+
+**现状（按单词搜索统计，`tests.rs` 中的引用也计入；以编译器结果为准）**
+
+| 模块 | 文件（行数） | `use ...::*` | 只在本文件使用、可去掉 `pub(super)` 的项 |
+|---|---|---|---|
+| `qq_mail/` | `mod.rs` 301、`service.rs` 359、`session.rs` 449、`content.rs` 409、`credentials.rs` 38、`tests.rs` 708 | `mod.rs` glob 导入 4 个子模块；`service.rs`、`session.rs`、`content.rs`、`tests.rs` 各有 `use super::*` | 22 / 69：`content.rs` 12（`MAX_MIME_BYTES`、`MAX_INLINE_IMAGES`、`MAX_INLINE_IMAGE_BYTES`、`MAX_INLINE_TOTAL_BYTES`、`TextPart`、`is_attachment`、`text_part`、`InlineImage`、`cid_token_end`、`collect_inline_images`、`responses_for_message`、`inline_cid_images`），`session.rs` 6（`HOST`、`MAX_ITEMS`、`queued_work`、`open_connection`、`header_message`、`drain_mail_updates`），`service.rs` 3（`SYNC_INTERVAL`、`MailEvent`、`now_ms`），`credentials.rs` 1（`CREDENTIAL_SERVICE`） |
+| `qq_notifications/` | `mod.rs` 261、`listener.rs` 294、`launcher.rs` 217、`history.rs` 37、`tests.rs` 296 | `mod.rs` glob 导入 3 个子模块；`listener.rs`、`history.rs`、`tests.rs` 有 `use super::*` | 9 / 21：`listener.rs` 8（`QQ_APP_ID`、`REGISTRATION_REPAIR`、`DIAGNOSTIC_TITLE`、`DIAGNOSTIC_BODY`、`qq_notification_setting`、`repair_registration`、`WinRT`、`read_qq_notification`），`launcher.rs` 1（`QQWindowSearch`） |
+| `clipboard_history/` | `mod.rs` 233、`service.rs` 600、`hotkey.rs` 220、`store.rs` 95 | `mod.rs` glob 导入 3 个子模块；`service.rs`、`hotkey.rs`、`store.rs` 有 `use super::*` | 24 / 51：`service.rs` 19（含 `ClipboardHistoryService` 的大部分内部方法、剪贴板读写与重试、监听窗口），`hotkey.rs` 4（`CLIPBOARD_HOTKEY_REGISTERED`、`hotkey_registered`、`set_hotkey_registered`、`shortcut_key_code`），`store.rs` 1（`THUMBNAIL_MAX_SIDE`） |
+
+另外，搬过去的结构体字段都加了 `pub(super)`：`qq_mail` 35 个、`qq_notifications` 10 个、`clipboard_history` 2 个。其中只被本文件读写的字段可以恢复为私有。
+
+**建议做法**
+
+1. 每个模块单独一个提交：`refactor(<模块>): narrow visibility and replace glob imports`。
+2. 先去掉上表中只在本文件使用的项的 `pub(super)`，编译一次。
+3. 把 `mod.rs` 的 `use <子模块>::*` 和子文件的 `use super::*` 换成显式导入。`mod.rs` 中定义的类型对子模块天然可见，不需要加可见性。
+4. 字段：只在定义文件内读写的字段恢复为私有；跨文件构造或读取的保留 `pub(super)`。
+5. 每一步都用编译器确认：`cargo build --all-targets` 不应出现 `unused import`、`dead_code` 或 `private_interfaces` 警告。
+
+**注意事项**
+
+- `tests.rs` 通过 `use super::*` 使用 `mod.rs` 中的项和子模块导出的项，并且自带拆分时补上的 std / imap / windows 导入。收窄后可能需要在 `tests.rs` 中补上 `use super::<子模块>::...`。测试函数本身不要改。
+- `qq_mail/session.rs` 中 `BoundedStream` 的元组字段是 `pub(super)`，因为 `tests.rs` 要直接构造它，需要保留。
+- `clipboard_history/mod.rs` 的 `pub(crate) use hotkey::parse_shortcut_binding;` 供 `translation.rs` 使用，必须保留。
+- `cargo fix` 会留下一些 trait 导入（例如 `use base64::Engine as _`、`use sha2::Digest`、`use std::io::Read`）不处理，需要手动确认后删除。
+- 收窄只改可见性和导入，不改函数体。提交前用"去掉缩进、可见性修饰和路径前缀后逐行比较"的方法核对，差异应只有 `use` 行。
+
+**验证**：`cargo test`（Phase 6 交接时为 68 通过 / 5 忽略）、`cargo clippy --all-targets`（告警只减不增，基线 80）、`cargo build --all-targets`、`pnpm check`、`pnpm build`、`pnpm tauri build --no-bundle`，并同步桌面快捷方式。这一步不改行为，回归页与手动检查可以参考"待人工验收"中 5.4–5.6 各行，抽查即可。
+
 ## Phase 7：收尾
 
 - [x] **7.1** 白名单清空，删除白名单机制中的存量条目。（5.6 完成后 `lines`、`inlineTests` 均为空；检查脚本保留，用于阻止新的超限文件）
@@ -342,7 +374,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2.6（已处理） | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。已补全为与 Rust `MediaState::empty()` 相同的值；补全后类型检查又发现缺 `collapsedTodoCount`、`onOpenSettings` 两个必填属性，分别补为 `null` 和空函数（回归页始终传入 `collapsedTaskTitle`，前者不会被读取）。用临时 tsconfig 检查 4 个回归页均无错误，`collapsed-message-animation.html?test=1` 仍为 24/24。`tests/*.tsx` 仍不在 `pnpm check` 的类型检查范围内。 |
 | 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
 | 3.3（已处理） | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。已修复：`get_media_state` 的 mock 补成与 `MediaState::empty()` 相同的完整空状态；页面在同一个 `I18nProvider` 下同时挂载 `IslandApp` 与 `SettingsWindow`，去掉两处点击 `.dot-button--layout`；`get_clipboard_history` 的 mock 补上 `shortcutEnabled`（真实后端总会返回该字段，缺失时设置窗口会报受控输入警告）。`i18n.html?test=1` 16/16 通过。 |
-| 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。 |
+| 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。详细交接说明见 Phase 6 之后的"5.4 可见性收窄交接说明"。 |
 | 6.1 | `system/startup.rs`、`system/updater.rs` 通过 `reg.exe` 子进程读写注册表（开机自启、系统代理），每次调用都要启动一个进程 | 不含 `unsafe`，不在 Phase 6 的收口范围内；改为 `win32/registry.rs` 中的 API 调用会改变实现方式与错误信息，需单独评估、单独提交。 |
 | 2.6（已处理） | `tests/*.tsx` 回归页不在 `pnpm check` 的类型检查范围内，IslandShell 等组件的属性变化不会被发现（2.6 的缺失属性就是这样遗留下来的） | 可新增一个包含 `tests/*.tsx` 的 tsconfig 并加入 `pnpm check`；属于工具链改动，单独提交。当前 4 个回归页用临时 tsconfig 检查均无错误。已新增 `tsconfig.tests.json`（继承主配置，包含 `tests/*.tsx`）与脚本 `check:tests-types`，并加入 `pnpm check`；用故意写错类型的探针文件确认检查生效。 |
 | 7 | `src/AGENTS.md` 的软性上限（组件函数 ≤ 200 行、hook ≤ 150 行、单组件 `useState` ≤ 8）在 2026-11-03 统计时超限：组件 `ClipboardHistoryPanel` 360、`TodoNotebook` 334、`SettingsWindow` 304、`MusicPlayerPanel` 298、`TranslationWindow` 254；hook `useMediaState` 209、`useQQMail` 169、`useIslandWindow` 153；`useState` 超过 8 个的有 `SettingsWindow` 12、`TranslationWindow` 13。接近上限：`IslandApp` 195、`ClipboardHistoryItemRow` 184、`useQQNotifications` 133。另外 `useQQMail`、`useQQNotifications`、`useWeChatReminders` 这些 hook 写在 `.tsx` 文件里，不符合"不含 JSX 的逻辑不放进 `.tsx`" | 软性上限只在代码评审时检查，拆分属于整理改动，逐个单独提交。`SettingsWindow` 正在另一个会话中改为侧栏布局，等那边完成后再评估；`useMediaState` 的拆分与 3.2（音频电平叶子组件）一起考虑。统计口径：从函数声明行数到顶格的 `}`。 |
