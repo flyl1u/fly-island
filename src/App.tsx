@@ -35,7 +35,6 @@ import {
   useTranslation,
 } from "./i18n";
 import { clamp } from "./utils/number";
-import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
 import { openSettingsWindow } from "./windows/settings/api";
 import { toggleTranslationWindow } from "./windows/translation/api";
@@ -52,31 +51,7 @@ import { MusicWaveButton } from "./features/media/MusicWaveButton";
 import { useMediaState } from "./features/media/useMediaState";
 import type { MediaState } from "./features/media/api";
 import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
-import { getDefaultTodoSaveDirectory, saveTodoMarkdown } from "./features/todos/api";
-import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
-import {
-  ACTIVE_TODO_STORAGE_KEY,
-  DAILY_NOTE_STORAGE_KEY,
-  TODOS_STORAGE_KEY,
-  TODO_ARCHIVE_STORAGE_KEY,
-  TODO_DATE_STORAGE_KEY,
-  TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
-  TODO_SAVE_DIRECTORY_STORAGE_KEY,
-  createTodoId,
-  loadActiveTodoId,
-  loadCurrentTodoDate,
-  loadDailyNote,
-  loadSaveDirectory,
-  loadTodoArchives,
-  loadTodos,
-} from "./features/todos/storage";
-import type {
-  ArchiveLayout,
-  SaveState,
-  TodoArchive,
-  TodoItem,
-  TodoPageMode,
-} from "./features/todos/types";
+import { useTodos } from "./features/todos/useTodos";
 import type { IslandMode, IslandPage, NativeGlassState } from "./windows/island/types";
 import { useIslandWindow } from "./windows/island/useIslandWindow";
 import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getCollapsedIslandWidth, getTodoVisualRows } from "./windows/island/layout";
@@ -590,34 +565,27 @@ function IslandApp() {
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus();
   const [settings, setSettings] = useState<IslandSettings>(loadSettings);
-  const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
-  const [dailyNote, setDailyNote] = useState(loadDailyNote);
-  const [draftTodo, setDraftTodo] = useState("");
-  const [activeTodoId, setActiveTodoId] = useState<string | null>(
-    loadActiveTodoId,
-  );
-  const [currentTodoDate, setCurrentTodoDate] =
-    useState<string>(loadCurrentTodoDate);
-  const [archives, setArchives] = useState<TodoArchive[]>(loadTodoArchives);
-  const [todoPageMode, setTodoPageMode] = useState<TodoPageMode>("today");
-  const [archiveLayout, setArchiveLayout] = useState<ArchiveLayout>("cards");
-  const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(
-    null,
-  );
-  const [saveDirectory, setSaveDirectory] = useState(loadSaveDirectory);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  const setIslandMode = useCallback((nextMode: IslandMode) => {
+    setMode(nextMode);
+    setIsTucked(false);
+  }, []);
+
+  const collapseIsland = useCallback(() => {
+    setIslandMode("collapsed");
+  }, [setIslandMode]);
+
+  const openSavePathSettings = useCallback(() => {
+    openSettingsWindow("savePath");
+  }, []);
+
+  const { todos, activeTodoId, todoPageMode, notebookProps } = useTodos({
+    carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
+    onStartTodo: collapseIsland,
+    onMissingSaveDirectory: openSavePathSettings,
+  });
+
   const clipboardShortcutToggleAt = useRef(0);
-  const shouldInitializeDefaultSaveDirectory = useRef(
-    window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) === null,
-  );
-  const defaultSaveDirectoryRequestInFlight = useRef(false);
-  const autoSaveTimer = useRef<number | null>(null);
-  const autoSaveRequestId = useRef(0);
-  const saveStateResetTimer = useRef<number | null>(null);
-  const didHydrateAutoSave = useRef(false);
-  const didCheckDate = useRef(false);
-  const selectedArchive =
-    archives.find((archive) => archive.date === selectedArchiveDate) ?? null;
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed).map((todo) => todo.id),
     [todos],
@@ -731,11 +699,6 @@ function IslandApp() {
     ],
   );
 
-  const setIslandMode = useCallback((nextMode: IslandMode) => {
-    setMode(nextMode);
-    setIsTucked(false);
-  }, []);
-
   const tuckIsland = useCallback(() => {
     setIslandMode("collapsed");
     setIsTucked(true);
@@ -789,279 +752,6 @@ function IslandApp() {
     clearClipboardHistoryItems,
   } = useClipboardHistory(toggleClipboardHistory);
 
-  const collapseIsland = useCallback(() => {
-    setIslandMode("collapsed");
-  }, [setIslandMode]);
-
-  const addTodo = useCallback(() => {
-    const title = draftTodo.trim();
-
-    if (!title) {
-      return;
-    }
-
-    setTodos((currentTodos) => [
-      {
-        id: createTodoId(),
-        title,
-        completed: false,
-        createdAt: Date.now(),
-      },
-      ...currentTodos,
-    ]);
-    setDraftTodo("");
-  }, [draftTodo]);
-
-  const toggleTodo = useCallback((id: string) => {
-    setTodos((currentTodos) =>
-      currentTodos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-      ),
-    );
-    setActiveTodoId((currentId) => (currentId === id ? null : currentId));
-  }, []);
-
-  const updateTodoTitle = useCallback((id: string, title: string) => {
-    const nextTitle = title.trim();
-
-    if (!nextTitle) {
-      return;
-    }
-
-    setTodos((currentTodos) =>
-      currentTodos.map((todo) =>
-        todo.id === id ? { ...todo, title: nextTitle } : todo,
-      ),
-    );
-  }, []);
-
-  const startTodo = useCallback(
-    (id: string) => {
-      const todo = todos.find((item) => item.id === id);
-
-      if (!todo || todo.completed) {
-        return;
-      }
-
-      if (activeTodoId === id) {
-        setActiveTodoId(null);
-        return;
-      }
-
-      setActiveTodoId(id);
-      setIslandMode("collapsed");
-    },
-    [activeTodoId, setIslandMode, todos],
-  );
-
-  const deleteTodo = useCallback((id: string) => {
-    setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id));
-    setActiveTodoId((currentId) => (currentId === id ? null : currentId));
-  }, []);
-
-  const reorderTodo = useCallback((sourceId: string, targetId: string) => {
-    if (sourceId === targetId) {
-      return;
-    }
-
-    setTodos((currentTodos) => {
-      const sourceIndex = currentTodos.findIndex((todo) => todo.id === sourceId);
-      const targetIndex = currentTodos.findIndex((todo) => todo.id === targetId);
-
-      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
-        return currentTodos;
-      }
-
-      const nextTodos = [...currentTodos];
-      const [movedTodo] = nextTodos.splice(sourceIndex, 1);
-      const insertIndex = targetIndex;
-      nextTodos.splice(insertIndex, 0, movedTodo);
-
-      return nextTodos;
-    });
-  }, []);
-
-  const upsertArchive = useCallback(
-    (
-      date: string,
-      todoList: TodoItem[],
-      nextDailyNote: string,
-      savedToDisk: boolean,
-      filePath?: string,
-    ) => {
-      const archive: TodoArchive = {
-        date,
-        todos: todoList,
-        dailyNote: nextDailyNote,
-        savedAt: Date.now(),
-        savedToDisk,
-        filePath,
-      };
-
-      setArchives((currentArchives) =>
-        [archive, ...currentArchives.filter((item) => item.date !== date)].sort(
-          (a, b) => b.date.localeCompare(a.date),
-        ),
-      );
-    },
-    [],
-  );
-
-  const saveTodosToDisk = useCallback(
-    async (date: string, todoList: TodoItem[], nextDailyNote: string) => {
-      const directory = saveDirectory.trim();
-
-      if (!directory) {
-        throw new Error("Missing todo save path.");
-      }
-
-      const result = await saveTodoMarkdown(
-        directory,
-        date,
-        formatTodoDocumentAsMarkdown(todoList, nextDailyNote),
-      );
-
-      upsertArchive(date, todoList, nextDailyNote, true, result.filePath);
-      window.localStorage.setItem(
-        TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
-        getTodoSignature(date, todoList, nextDailyNote),
-      );
-
-      return result;
-    },
-    [saveDirectory, upsertArchive],
-  );
-
-  const showTodoSavedState = useCallback(() => {
-    if (saveStateResetTimer.current !== null) {
-      window.clearTimeout(saveStateResetTimer.current);
-    }
-
-    setSaveState("saved");
-    saveStateResetTimer.current = window.setTimeout(() => {
-      setSaveState("idle");
-      saveStateResetTimer.current = null;
-    }, 1200);
-  }, []);
-
-  const saveTodayTodos = useCallback(async () => {
-    if (!saveDirectory.trim()) {
-      setSaveState("needs-path");
-      openSettingsWindow("savePath");
-      return;
-    }
-
-    setSaveState("saving");
-
-    try {
-      await saveTodosToDisk(currentTodoDate, todos, dailyNote);
-      showTodoSavedState();
-    } catch (error) {
-      console.error("Failed to save todo markdown", error);
-      setSaveState("error");
-    }
-  }, [
-    currentTodoDate,
-    dailyNote,
-    saveDirectory,
-    saveTodosToDisk,
-    showTodoSavedState,
-    todos,
-  ]);
-
-  const showArchive = useCallback(() => {
-    setTodoPageMode("archive");
-    setSelectedArchiveDate(null);
-    setDraftTodo("");
-  }, []);
-
-  const showToday = useCallback(() => {
-    setTodoPageMode("today");
-    setSelectedArchiveDate(null);
-    setDraftTodo("");
-  }, []);
-
-  const showDaily = useCallback(() => {
-    setTodoPageMode("daily");
-    setSelectedArchiveDate(null);
-    setDraftTodo("");
-  }, []);
-
-  const selectArchive = useCallback(
-    (date: string) => {
-      if (date === currentTodoDate) {
-        showToday();
-        return;
-      }
-
-      setSelectedArchiveDate(date);
-      setTodoPageMode("review");
-      setDraftTodo("");
-    },
-    [currentTodoDate, showToday],
-  );
-
-  const rolloverToToday = useCallback(
-    async (nextDate: string) => {
-      const signature = getTodoSignature(currentTodoDate, todos, dailyNote);
-      const lastSavedSignature = window.localStorage.getItem(
-        TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
-      );
-      const carryOverCreatedAt = Date.now();
-      const carriedTodos = settings.carryOverIncompleteTodos
-        ? todos
-            .filter((todo) => !todo.completed)
-            .map((todo, index) => ({
-              ...todo,
-              id: createTodoId(),
-              completed: false,
-              createdAt: carryOverCreatedAt + index,
-            }))
-        : [];
-
-      if (
-        (todos.length > 0 || dailyNote.trim()) &&
-        signature !== lastSavedSignature
-      ) {
-        if (saveDirectory.trim()) {
-          try {
-            await saveTodosToDisk(currentTodoDate, todos, dailyNote);
-          } catch (error) {
-            console.error("Failed to auto-save todo markdown", error);
-            upsertArchive(currentTodoDate, todos, dailyNote, false);
-          }
-        } else {
-          upsertArchive(currentTodoDate, todos, dailyNote, false);
-        }
-      }
-
-      setTodos(carriedTodos);
-      setDailyNote("");
-      setActiveTodoId(null);
-      setCurrentTodoDate(nextDate);
-      setTodoPageMode("today");
-      setSelectedArchiveDate(null);
-
-      if (carriedTodos.length > 0) {
-        window.localStorage.removeItem(TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY);
-      } else {
-        window.localStorage.setItem(
-          TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
-          getTodoSignature(nextDate, [], ""),
-        );
-      }
-    },
-    [
-      currentTodoDate,
-      dailyNote,
-      saveDirectory,
-      saveTodosToDisk,
-      settings.carryOverIncompleteTodos,
-      todos,
-      upsertArchive,
-    ],
-  );
-
   useEffect(() => {
     if (page !== "music") {
       setMusicSettingsOpen(false);
@@ -1069,54 +759,10 @@ function IslandApp() {
   }, [page]);
 
   useEffect(() => {
-    if (
-      !shouldInitializeDefaultSaveDirectory.current ||
-      saveDirectory.trim() ||
-      defaultSaveDirectoryRequestInFlight.current
-    ) {
-      return;
-    }
-
-    let didCancel = false;
-    defaultSaveDirectoryRequestInFlight.current = true;
-
-    void getDefaultTodoSaveDirectory()
-      .then((defaultDirectory) => {
-        if (didCancel) {
-          return;
-        }
-
-        const nextDirectory = defaultDirectory.trim();
-
-        if (!nextDirectory) {
-          return;
-        }
-
-        shouldInitializeDefaultSaveDirectory.current = false;
-        setSaveDirectory((currentDirectory) =>
-          currentDirectory.trim() ? currentDirectory : nextDirectory,
-        );
-      })
-      .catch((error) => {
-        console.error("Failed to resolve default todo save path", error);
-      })
-      .finally(() => {
-        if (!didCancel) {
-          defaultSaveDirectoryRequestInFlight.current = false;
-        }
-      });
-
-    return () => {
-      didCancel = true;
-      defaultSaveDirectoryRequestInFlight.current = false;
-    };
-  }, [saveDirectory]);
-
-  useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  // The settings window edits these keys; storage events deliver its changes here.
+  // The settings window edits this key; storage events deliver its changes here.
   useEffect(() => {
     const syncFromSettingsWindow = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) {
@@ -1125,155 +771,11 @@ function IslandApp() {
           isSameSettings(current, nextSettings) ? current : nextSettings,
         );
       }
-
-      if (event.key === TODO_SAVE_DIRECTORY_STORAGE_KEY) {
-        setSaveDirectory(loadSaveDirectory());
-        setSaveState((current) => (current === "needs-path" ? "idle" : current));
-      }
     };
 
     window.addEventListener("storage", syncFromSettingsWindow);
     return () => window.removeEventListener("storage", syncFromSettingsWindow);
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos));
-  }, [todos]);
-
-  useEffect(() => {
-    window.localStorage.setItem(DAILY_NOTE_STORAGE_KEY, dailyNote);
-  }, [dailyNote]);
-
-  useEffect(() => {
-    window.localStorage.setItem(TODO_DATE_STORAGE_KEY, currentTodoDate);
-  }, [currentTodoDate]);
-
-  useEffect(() => {
-    window.localStorage.setItem(TODO_ARCHIVE_STORAGE_KEY, JSON.stringify(archives));
-  }, [archives]);
-
-  useEffect(() => {
-    if (!saveDirectory && shouldInitializeDefaultSaveDirectory.current) {
-      return;
-    }
-
-    window.localStorage.setItem(TODO_SAVE_DIRECTORY_STORAGE_KEY, saveDirectory);
-  }, [saveDirectory]);
-
-  useEffect(() => {
-    if (!didHydrateAutoSave.current) {
-      didHydrateAutoSave.current = true;
-      return;
-    }
-
-    if (autoSaveTimer.current !== null) {
-      window.clearTimeout(autoSaveTimer.current);
-      autoSaveTimer.current = null;
-    }
-
-    if (!saveDirectory.trim()) {
-      return;
-    }
-
-    const signature = getTodoSignature(currentTodoDate, todos, dailyNote);
-    const lastSavedSignature = window.localStorage.getItem(
-      TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
-    );
-
-    if (!todos.length && !dailyNote.trim() && !lastSavedSignature) {
-      return;
-    }
-
-    if (signature === lastSavedSignature) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      autoSaveTimer.current = null;
-      autoSaveRequestId.current += 1;
-      const requestId = autoSaveRequestId.current;
-
-      void saveTodosToDisk(currentTodoDate, todos, dailyNote)
-        .catch((error) => {
-          if (requestId === autoSaveRequestId.current) {
-            console.error("Failed to auto-save todo markdown", error);
-            setSaveState("error");
-          }
-        });
-    }, 700);
-
-    autoSaveTimer.current = timer;
-
-    return () => {
-      if (autoSaveTimer.current === timer) {
-        window.clearTimeout(timer);
-        autoSaveTimer.current = null;
-      }
-    };
-  }, [
-    currentTodoDate,
-    dailyNote,
-    saveDirectory,
-    saveTodosToDisk,
-    todos,
-  ]);
-
-  useEffect(
-    () => () => {
-      if (autoSaveTimer.current !== null) {
-        window.clearTimeout(autoSaveTimer.current);
-      }
-
-      if (saveStateResetTimer.current !== null) {
-        window.clearTimeout(saveStateResetTimer.current);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (activeTodoId) {
-      window.localStorage.setItem(ACTIVE_TODO_STORAGE_KEY, activeTodoId);
-      return;
-    }
-
-    window.localStorage.removeItem(ACTIVE_TODO_STORAGE_KEY);
-  }, [activeTodoId]);
-
-  useEffect(() => {
-    if (
-      activeTodoId &&
-      !todos.some((todo) => todo.id === activeTodoId && !todo.completed)
-    ) {
-      setActiveTodoId(null);
-    }
-  }, [activeTodoId, todos]);
-
-  useEffect(() => {
-    if (didCheckDate.current) {
-      return;
-    }
-
-    didCheckDate.current = true;
-    const today = getLocalDateString();
-
-    if (currentTodoDate !== today) {
-      void rolloverToToday(today);
-    }
-  }, [currentTodoDate, rolloverToToday]);
-
-  useEffect(() => {
-    const checkForNewDay = () => {
-      const today = getLocalDateString();
-
-      if (currentTodoDate !== today) {
-        void rolloverToToday(today);
-      }
-    };
-
-    const interval = window.setInterval(checkForNewDay, 30_000);
-    return () => window.clearInterval(interval);
-  }, [currentTodoDate, rolloverToToday]);
 
   const {
     isPositionDetached,
@@ -1394,31 +896,8 @@ function IslandApp() {
         )}
         {page === "todo" && (
           <TodoNotebook
-            todos={todos}
-            dailyNote={dailyNote}
-            draft={draftTodo}
-            activeTodoId={activeTodoId}
-            currentDate={currentTodoDate}
-            pageMode={todoPageMode}
-            archives={archives}
-            archiveLayout={archiveLayout}
-            selectedArchive={selectedArchive}
-            saveState={saveState}
+            {...notebookProps}
             enableTodoReorder={settings.enableTodoReorder}
-            onDraftChange={setDraftTodo}
-            onAddTodo={addTodo}
-            onToggleTodo={toggleTodo}
-            onUpdateTodo={updateTodoTitle}
-            onStartTodo={startTodo}
-            onDeleteTodo={deleteTodo}
-            onReorderTodo={reorderTodo}
-            onSaveToday={saveTodayTodos}
-            onShowArchive={showArchive}
-            onShowDaily={showDaily}
-            onShowToday={showToday}
-            onDailyNoteChange={setDailyNote}
-            onArchiveLayoutChange={setArchiveLayout}
-            onSelectArchive={selectArchive}
           />
         )}
       </IslandShell>
