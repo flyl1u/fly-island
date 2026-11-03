@@ -6,6 +6,7 @@ import { TODO_SCROLL_START_ROWS } from "./layout";
 import { TodoListItem } from "./TodoListItem";
 import { TodoNotebookSpine } from "./TodoNotebookSpine";
 import type { ArchiveLayout, SaveState, TodoArchive, TodoItem, TodoPageMode } from "./types";
+import "./TodoNotebook.css";
 
 export function TodoNotebook({
   todos,

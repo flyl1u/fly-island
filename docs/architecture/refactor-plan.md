@@ -17,7 +17,7 @@
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 4791 | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 3622 | 3865 / 500 | — | 行数 |
+| `src/App.css` | 3865 | 2727 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
@@ -85,7 +85,7 @@
 
 每一步都要：把组件、领域函数、存储 key 和对应的 CSS 一起迁到 `features/<领域>/`；把该领域的 `invoke` / `listen` 收口到 `api.ts`；在 `App.tsx` 中改为导入新模块。
 
-- [ ] **2.1 todos**：`TodoNotebook`、`ArchiveBrowser`、待办/归档/笔记的存储与 normalize、Markdown 格式化、`createTodoId`，以及 `save_todo_markdown` 的封装。
+- [x] **2.1 todos**：`TodoNotebook`、`ArchiveBrowser`、待办/归档/笔记的存储与 normalize、Markdown 格式化、`createTodoId`，以及 `save_todo_markdown` 的封装。
 - [ ] **2.2 media**：`MusicPlayerPanel`、`MusicWaveButton`、`MediaWaveform`、媒体状态比较、音乐来源优先级的存储，以及 `media_*` 命令的封装。
 - [ ] **2.3 clipboard**：`ClipboardHistoryPanel`、快捷键解析与匹配（`shortcut.ts`，补测试），以及剪贴板命令与事件的封装。
 - [ ] **2.4 appearance**：`LayoutEditor`、`AppearanceModeControl`、设置与预设的 load / normalize / merge（包括 `collapsed-text-default-v1` 迁移逻辑），以及 `hexToRgba`（见 1.2）。
@@ -173,6 +173,7 @@
 | 2026-11-03 | 2.1（2/4，改写） | `7b044ca` | 新增 `features/todos/api.ts`（`saveTodoMarkdown`、`SaveTodoResult`）；`App.tsx` 改为调用封装函数，命令名和参数名不变；`App.tsx` 5268 → 5265 | `pnpm check`（57/57）、`pnpm build` |
 | 2026-11-03 | 2.1（3/4，改写） | `3705001` | 在 `App.tsx` 中把 `TodoNotebook`（470 行）的书脊按钮组拆为 `TodoNotebookSpine`（71 行）、单条待办拆为 `TodoListItem`（156 行），二者无状态，编辑与拖拽状态仍在 `TodoNotebook`（334 行）中；DOM 结构与 class 不变。`App.tsx` 5265 → 5358（+93，低于白名单记录 5488） | `pnpm check`（57/57）、`pnpm build`；交互待人工验收 |
 | 2026-11-03 | 2.1（4/4，搬迁） | `2b7b6f3` | `TodoNotebook`、`TodoNotebookSpine`、`TodoListItem` 原样搬到 `features/todos/`（343 / 75 / 162 行），`TODO_SCROLL_START_ROWS` 移到 `features/todos/layout.ts`；`App.tsx` 5358 → 4791，白名单 5488 → 4791 | `pnpm check`（57/57）、`pnpm build` |
+| 2026-11-03 | 2.1（CSS 搬迁） | 见提交说明 | `App.css` 3622 → 2727（-895），白名单同步下调；待办样式按组件拆到 `TodoNotebook.css`（301）、`TodoNotebookSpine.css`（91，含 `saveSpin` / `savePop` 关键帧）、`TodoListItem.css`（230）、`ArchiveBrowser.css`（269）。打包产物的规则集合与长度不变（681 条），只有顺序变化；脚本检查顺序发生变化的规则对中，没有同特异性、同目标 class、同属性的冲突 | `pnpm check`（57/57）、`pnpm build`；面板检查待人工验收 |
 
 ## 待人工验收
 
@@ -183,6 +184,7 @@
 | `2e71e5c` | 0.7 | 推送后在 GitHub Actions 中确认 `CI` 工作流在 `windows-latest` 上全部通过（本地无法运行；按规则不执行 `git push`）。 |
 | `5d17988` | 1.3 | 在设置窗口（中英文）对比滑块、颜色、开关、数字输入四种控件的外观与交互（拖动、选色、切换、焦点框），应与迁移前一致。 |
 | `bc7cccd` | 1.4 | 三个窗口（主窗口、设置、翻译）在中英文下检查像素字体（`Fusion Pixel`）仍能加载、键盘 Tab 与鼠标点击下的按钮焦点框表现与迁移前一致。 |
+| 2.1 的提交 | 2.1 | 主窗口待办面板（中英文、经典/液态玻璃两种外观）：新增、勾选、编辑标题（Enter / Esc / 失焦）、开始/停止、删除、拖拽排序、每日笔记、保存到 Markdown（含未设置路径时跳转设置）、归档卡片与时间线两种布局及回看；样式与迁移前一致，刷新后数据保留。可在 `pnpm dev` 中打开 `/tests/i18n.html` 辅助检查。 |
 
 ## 待处理问题
 
