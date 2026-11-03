@@ -53,7 +53,7 @@ Tasks, clipboard history, and app preferences stay on the device. WeChat reminde
 
 ## Getting started
 
-Expand the island to switch between tasks, music, clipboard, settings, and messages. The first-run appearance uses liquid glass, hides the island title, and displays task text in white.
+Expand the island to switch between tasks, music, clipboard, and messages. Open the separate settings window from the gear button at the top right or from **Settings** in the tray menu; changes apply to the island immediately. The first-run appearance uses liquid glass, hides the island title, and displays task text in white.
 
 ### Feature setup
 

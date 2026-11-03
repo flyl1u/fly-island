@@ -68,7 +68,6 @@ import {
   LOCALE_CODES,
   TRANSLATIONS,
   isLocaleCode,
-  useLocale,
   useTranslation,
   type LocaleCode,
   type Translations,
@@ -78,7 +77,7 @@ import "./App.css";
 
 export type IslandMode = "collapsed" | "expanded";
 
-type IslandPage = "todo" | "music" | "clipboard" | "layout" | "qq";
+type IslandPage = "todo" | "music" | "clipboard" | "qq";
 type TodoPageMode = "today" | "daily" | "archive" | "review";
 type ArchiveLayout = "cards" | "timeline";
 type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
@@ -274,6 +273,7 @@ type IslandShellProps = {
   onResetPosition: () => void;
   onMinimize: () => void;
   onOpenTranslator: () => void;
+  onOpenSettings: () => void;
   onTuck: () => void;
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;
@@ -294,6 +294,8 @@ const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
   "focusd-island-last-saved-signature";
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
 const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
+// Main island -> settings window request to reveal a section; survives the window being created.
+const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 const MIN_COLLAPSED_ISLAND_WIDTH = 280;
 const MAX_COLLAPSED_ISLAND_WIDTH = 340;
 const MIN_COLLAPSED_TEXT_UNITS = 2;
@@ -303,7 +305,6 @@ const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
 const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
-const EDITOR_EXPANDED_ISLAND_HEIGHT = 430;
 const TODO_ROW_HEIGHT = 46;
 const TODO_GROW_START_ROWS = 2;
 const TODO_SCROLL_START_ROWS = 6;
@@ -1088,6 +1089,27 @@ function createTodoId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function isSameSettings(a: IslandSettings, b: IslandSettings) {
+  return (Object.keys(a) as (keyof IslandSettings)[]).every(
+    (key) => a[key] === b[key],
+  );
+}
+
+type SettingsFocusSection = "savePath";
+
+function openSettingsWindow(section?: SettingsFocusSection) {
+  if (section) {
+    window.localStorage.setItem(
+      SETTINGS_FOCUS_STORAGE_KEY,
+      JSON.stringify({ section, requestedAt: Date.now() }),
+    );
+  }
+
+  void invoke("open_settings_window").catch((error) => {
+    console.error("Failed to open settings window", error);
+  });
+}
+
 export function IslandShell({
   qqMail,
   qqNotifications,
@@ -1112,6 +1134,7 @@ export function IslandShell({
   onResetPosition,
   onMinimize,
   onOpenTranslator,
+  onOpenSettings,
   onTuck,
   onReveal,
   onPageChange,
@@ -1469,18 +1492,6 @@ export function IslandShell({
                   onPageChange("clipboard");
                 }}
               />
-              <button
-                className={`dot-button dot-button--layout ${
-                  page === "layout" ? "dot-button--active" : ""
-                }`}
-                type="button"
-                title={t.island.layoutEditor}
-                aria-label={t.island.layoutEditor}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onPageChange("layout");
-                }}
-              />
             </div>
 
             <button
@@ -1492,6 +1503,18 @@ export function IslandShell({
             />
 
             <div className="window-actions">
+              <button
+                className="icon-button"
+                type="button"
+                title={t.settings.title}
+                aria-label={t.settings.title}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenSettings();
+                }}
+              >
+                <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
+              </button>
               <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={t.messages.label(messageBadgeLabel)} aria-pressed={page === "qq"} title={t.messages.title} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
                 <Bell size={17} strokeWidth={1.8} />
                 {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
@@ -3996,13 +4019,7 @@ function ClipboardHistoryPanel({
   );
 }
 
-function IslandApp({
-  locale,
-  onLocaleChange,
-}: {
-  locale: LocaleCode;
-  onLocaleChange: (locale: LocaleCode) => void;
-}) {
+function IslandApp() {
   const t = useTranslation();
   const [mode, setMode] = useState<IslandMode>("collapsed");
   const [isTucked, setIsTucked] = useState(false);
@@ -4039,10 +4056,6 @@ function IslandApp({
   const [settings, setSettings] = useState<IslandSettings>(loadSettings);
   const [nativeGlassState, setNativeGlassState] =
     useState<NativeGlassState>("disabled");
-  const [launchAtStartup, setLaunchAtStartup] = useState(false);
-  const [settingPresets, setSettingPresets] = useState<IslandPreset[]>(() =>
-    loadSettingPresets(t),
-  );
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
   const [draftTodo, setDraftTodo] = useState("");
@@ -4058,21 +4071,9 @@ function IslandApp({
     null,
   );
   const [saveDirectory, setSaveDirectory] = useState(loadSaveDirectory);
-  const [saveDirectoryDraft, setSaveDirectoryDraft] =
-    useState(loadSaveDirectory);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [savePathState, setSavePathState] = useState<SavePathState>("idle");
   const [clipboardHistory, setClipboardHistory] =
     useState<ClipboardHistorySnapshot>(DEFAULT_CLIPBOARD_HISTORY);
-  const [agentHooksInstallState, setAgentHooksInstallState] =
-    useState<AgentHooksInstallState>("idle");
-  const [agentHooksInstallResult, setAgentHooksInstallResult] =
-    useState<AgentHooksInstallResult | null>(null);
-  const [agentHooksInstallError, setAgentHooksInstallError] = useState("");
-  const [clearingAgentProvider, setClearingAgentProvider] =
-    useState<AgentProvider | null>(null);
-  const [focusClipboardShortcutToken, setFocusClipboardShortcutToken] =
-    useState(0);
   const clipboardShortcutToggleAt = useRef(0);
   const shouldInitializeDefaultSaveDirectory = useRef(
     window.localStorage.getItem(TODO_SAVE_DIRECTORY_STORAGE_KEY) === null,
@@ -4142,9 +4143,7 @@ function IslandApp({
           : MUSIC_EXPANDED_ISLAND_HEIGHT + (mediaCommandError ? 24 : 0)
         : page === "clipboard"
           ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
-          : page === "qq"
-            ? messagePanelHeight(messageSource, Boolean(qqMail.selectedMail))
-            : EDITOR_EXPANDED_ISLAND_HEIGHT;
+          : messagePanelHeight(messageSource, Boolean(qqMail.selectedMail));
   const layoutSync = useRef<{
     frame: number | null;
     inFlight: boolean;
@@ -4358,43 +4357,6 @@ function IslandApp({
     }
   }, []);
 
-  const clearAgentStatus = useCallback(async (provider: AgentProvider) => {
-    setClearingAgentProvider(provider);
-    try {
-      const snapshot = await invoke<AgentStatusSnapshot>("clear_agent_status", {
-        provider,
-      });
-      setAgentStatus(snapshot);
-    } catch (error) {
-      console.error("Failed to clear agent status", error);
-    } finally {
-      setClearingAgentProvider(null);
-    }
-  }, []);
-
-  const updateClipboardSettings = useCallback(
-    async (nextSettings: ClipboardHistorySettings) => {
-      const normalizedSettings = normalizeClipboardSettings(nextSettings);
-
-      setClipboardHistory((currentHistory) => ({
-        ...currentHistory,
-        settings: normalizedSettings,
-      }));
-
-      try {
-        const snapshot = await invoke<ClipboardHistorySnapshot>(
-          "set_clipboard_history_settings",
-          { settings: normalizedSettings },
-        );
-        setClipboardHistory(snapshot);
-      } catch (error) {
-        console.error("Failed to update clipboard history settings", error);
-        void refreshClipboardHistory();
-      }
-    },
-    [refreshClipboardHistory],
-  );
-
   const copyClipboardHistoryItem = useCallback(async (id: string) => {
     try {
       const snapshot = await invoke<ClipboardHistorySnapshot>(
@@ -4539,10 +4501,6 @@ function IslandApp({
 
     openClipboardHistory();
   }, [mode, openClipboardHistory, page, setIslandMode]);
-
-  const clearClipboardShortcutFocus = useCallback(() => {
-    setFocusClipboardShortcutToken(0);
-  }, []);
 
   const collapseIsland = useCallback(() => {
     setIslandMode("collapsed");
@@ -4963,9 +4921,7 @@ function IslandApp({
   const saveTodayTodos = useCallback(async () => {
     if (!saveDirectory.trim()) {
       setSaveState("needs-path");
-      setPage("layout");
-      setMode("expanded");
-      setIsTucked(false);
+      openSettingsWindow("savePath");
       return;
     }
 
@@ -4986,16 +4942,6 @@ function IslandApp({
     showTodoSavedState,
     todos,
   ]);
-
-  const saveDirectoryFromEditor = useCallback(() => {
-    const nextDirectory = saveDirectoryDraft.trim();
-
-    setSaveDirectory(nextDirectory);
-    setSaveDirectoryDraft(nextDirectory);
-    setSaveState("idle");
-    setSavePathState("saved");
-    window.setTimeout(() => setSavePathState("idle"), 1200);
-  }, [saveDirectoryDraft]);
 
   const showArchive = useCallback(() => {
     setTodoPageMode("archive");
@@ -5089,108 +5035,6 @@ function IslandApp({
       upsertArchive,
     ],
   );
-
-  const resetSettings = useCallback(() => {
-    setSettings(DEFAULT_SETTINGS);
-    scheduleNativeLayout(DEFAULT_SETTINGS);
-  }, [scheduleNativeLayout]);
-
-  const saveSettingsPreset = useCallback(() => {
-    setSettingPresets((currentPresets) => {
-      const customPresetCount = currentPresets.filter(
-        (preset) => !preset.isDefault && !isDefaultSettingPreset(preset.id),
-      ).length;
-      const preset: IslandPreset = {
-        id: createTodoId(),
-        name: t.settings.presets.defaultName(customPresetCount + 1),
-        settings,
-        createdAt: Date.now(),
-        isDefault: false,
-      };
-
-      return mergeWithDefaultSettingPresets([preset, ...currentPresets]);
-    });
-  }, [settings, t]);
-
-  const applySettingsPreset = useCallback(
-    (presetId: string) => {
-      const preset = settingPresets.find((item) => item.id === presetId);
-
-      if (!preset) {
-        return;
-      }
-
-      const nextSettings = normalizeSettings(preset.settings);
-      setSettings(nextSettings);
-      scheduleNativeLayout(nextSettings);
-    },
-    [scheduleNativeLayout, settingPresets],
-  );
-
-  const renameSettingsPreset = useCallback((presetId: string, name: string) => {
-    const nextName = name.trim();
-
-    if (
-      !nextName ||
-      isDefaultSettingPreset(presetId) ||
-      LEGACY_DEFAULT_PRESET_NAMES.has(nextName)
-    ) {
-      return;
-    }
-
-    setSettingPresets((currentPresets) =>
-      currentPresets.map((preset) =>
-        preset.id === presetId ? { ...preset, name: nextName } : preset,
-      ),
-    );
-  }, []);
-
-  const deleteSettingsPreset = useCallback((presetId: string) => {
-    if (isDefaultSettingPreset(presetId)) {
-      return;
-    }
-
-    setSettingPresets((currentPresets) =>
-      currentPresets.filter((preset) => preset.id !== presetId),
-    );
-  }, []);
-
-  const updateLaunchAtStartup = useCallback(async (enabled: boolean) => {
-    setLaunchAtStartup(enabled);
-
-    try {
-      await invoke("set_launch_at_startup", { enabled });
-    } catch (error) {
-      console.error("Failed to update launch at startup", error);
-      setLaunchAtStartup(!enabled);
-    }
-  }, []);
-
-  const installAgentHooks = useCallback(async () => {
-    setAgentHooksInstallState("installing");
-    setAgentHooksInstallError("");
-
-    try {
-      const result = await invoke<AgentHooksInstallResult>(
-        "install_agent_status_hooks",
-      );
-      setAgentHooksInstallResult(result);
-      setAgentHooksInstallState("installed");
-      void refreshAgentStatus();
-    } catch (error) {
-      console.error("Failed to install agent status hooks", error);
-      setAgentHooksInstallError(getErrorMessage(error));
-      setAgentHooksInstallState("error");
-    }
-  }, [refreshAgentStatus]);
-
-  useEffect(() => {
-    void invoke<boolean>("get_launch_at_startup")
-      .then(setLaunchAtStartup)
-      .catch((error) => {
-        console.error("Failed to read launch at startup", error);
-      });
-  }, []);
 
   useEffect(() => {
     void refreshClipboardHistory();
@@ -5351,9 +5195,6 @@ function IslandApp({
         setSaveDirectory((currentDirectory) =>
           currentDirectory.trim() ? currentDirectory : nextDirectory,
         );
-        setSaveDirectoryDraft((currentDirectory) =>
-          currentDirectory.trim() ? currentDirectory : nextDirectory,
-        );
       })
       .catch((error) => {
         console.error("Failed to resolve default todo save path", error);
@@ -5374,12 +5215,25 @@ function IslandApp({
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
+  // The settings window edits these keys; storage events deliver its changes here.
   useEffect(() => {
-    window.localStorage.setItem(
-      SETTINGS_PRESETS_STORAGE_KEY,
-      JSON.stringify(settingPresets),
-    );
-  }, [settingPresets]);
+    const syncFromSettingsWindow = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        const nextSettings = loadSettings();
+        setSettings((current) =>
+          isSameSettings(current, nextSettings) ? current : nextSettings,
+        );
+      }
+
+      if (event.key === TODO_SAVE_DIRECTORY_STORAGE_KEY) {
+        setSaveDirectory(loadSaveDirectory());
+        setSaveState((current) => (current === "needs-path" ? "idle" : current));
+      }
+    };
+
+    window.addEventListener("storage", syncFromSettingsWindow);
+    return () => window.removeEventListener("storage", syncFromSettingsWindow);
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos));
@@ -5678,6 +5532,7 @@ function IslandApp({
         onResetPosition={resetIslandPosition}
         onMinimize={minimizeIsland}
         onOpenTranslator={openTranslator}
+        onOpenSettings={openSettingsWindow}
         onTuck={tuckIsland}
         onReveal={revealIsland}
         onPageChange={setPage}
@@ -5686,40 +5541,6 @@ function IslandApp({
           <div className="message-panel">
             <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} onSourceChange={openMessages} />
           </div>
-        )}
-        {page === "layout" && (
-          <LayoutEditor
-            locale={locale}
-            settings={settings}
-            qqNotifications={qqNotifications}
-            wechatReminders={wechatReminders}
-            clipboardSettings={clipboardHistory.settings}
-            saveDirectoryDraft={saveDirectoryDraft}
-            savePathState={savePathState}
-            highlightSavePath={saveState === "needs-path"}
-            focusClipboardShortcutToken={focusClipboardShortcutToken}
-            presets={settingPresets}
-            launchAtStartup={launchAtStartup}
-            agentStatus={agentStatus}
-            clearingAgentProvider={clearingAgentProvider}
-            agentHooksInstallState={agentHooksInstallState}
-            agentHooksInstallResult={agentHooksInstallResult}
-            agentHooksInstallError={agentHooksInstallError}
-            onLocaleChange={onLocaleChange}
-            onSettingsChange={setSettings}
-            onClipboardSettingsChange={updateClipboardSettings}
-            onReset={resetSettings}
-            onSaveDirectoryDraftChange={setSaveDirectoryDraft}
-            onSaveDirectory={saveDirectoryFromEditor}
-            onSavePreset={saveSettingsPreset}
-            onApplyPreset={applySettingsPreset}
-            onRenamePreset={renameSettingsPreset}
-            onDeletePreset={deleteSettingsPreset}
-            onLaunchAtStartupChange={updateLaunchAtStartup}
-            onClearAgentStatus={clearAgentStatus}
-            onInstallAgentHooks={installAgentHooks}
-            onClipboardShortcutFocusHandled={clearClipboardShortcutFocus}
-          />
         )}
         {page === "music" && (
           <MusicPlayerPanel
@@ -5781,11 +5602,43 @@ function IslandApp({
 }
 
 function App() {
-  const { locale, setLocale } = useLocale();
-
-  return (
-    <IslandApp locale={locale} onLocaleChange={setLocale} />
-  );
+  return <IslandApp />;
 }
 
 export default App;
+
+// Shared with SettingsWindow, which edits the same stored settings in its own webview.
+export {
+  AGENT_PROVIDERS,
+  DEFAULT_AGENT_STATUS,
+  DEFAULT_CLIPBOARD_HISTORY,
+  DEFAULT_SETTINGS,
+  LEGACY_DEFAULT_PRESET_NAMES,
+  SETTINGS_FOCUS_STORAGE_KEY,
+  SETTINGS_PRESETS_STORAGE_KEY,
+  STORAGE_KEY,
+  TODO_SAVE_DIRECTORY_STORAGE_KEY,
+  LayoutEditor,
+  createTodoId,
+  getErrorMessage,
+  isDefaultSettingPreset,
+  isSameSettings,
+  loadSaveDirectory,
+  loadSettingPresets,
+  loadSettings,
+  mergeWithDefaultSettingPresets,
+  normalizeClipboardSettings,
+  normalizeSettings,
+};
+export type {
+  AgentHooksInstallResult,
+  AgentHooksInstallState,
+  AgentProvider,
+  AgentStatusSnapshot,
+  ClipboardHistorySettings,
+  ClipboardHistorySnapshot,
+  IslandPreset,
+  IslandSettings,
+  SavePathState,
+  SettingsFocusSection,
+};

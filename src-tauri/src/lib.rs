@@ -4,6 +4,7 @@ mod messenger_activation;
 mod notification_diagnostics;
 mod qq_notifications;
 mod qq_mail;
+mod settings_window;
 mod wechat_reminder_source;
 mod wechat_reminders;
 mod translation;
@@ -1811,8 +1812,9 @@ mod tests {
 fn build_tray(app: &App) -> tauri::Result<()> {
     let show_item = MenuItem::with_id(app, "show", "Show Island", true, None::<&str>)?;
     let hide_item = MenuItem::with_id(app, "hide", "Hide Island", true, None::<&str>)?;
+    let settings_item = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_item, &hide_item, &quit_item])?;
+    let menu = Menu::with_items(app, &[&show_item, &hide_item, &settings_item, &quit_item])?;
 
     let mut tray = TrayIconBuilder::new()
         .tooltip("fly-island")
@@ -1823,6 +1825,11 @@ fn build_tray(app: &App) -> tauri::Result<()> {
                 let _ = show_island(app);
             }
             "hide" => hide_island(app),
+            "settings" => {
+                if let Err(error) = settings_window::open(app) {
+                    eprintln!("failed to open settings window: {error}");
+                }
+            }
             "quit" => app.exit(0),
             _ => {}
         })
@@ -1959,6 +1966,7 @@ pub fn run() {
             translation::delete_translation_secret,
             translation::translate_text,
             translation::set_translation_shortcut,
+            settings_window::open_settings_window,
         ])
         .run(context)
         .expect("error while running FocuSD Island");

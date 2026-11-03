@@ -120,11 +120,13 @@ fn publish(service: &ReminderService, snapshot: ReminderSnapshot) {
         .app
         .get_webview_window("main")
         .is_some_and(|window| window.is_visible().unwrap_or(false));
+    let payload = serde_json::json!({"snapshot": snapshot, "windowVisible": visible});
     let _ = service.app.emit_to(
-        "main",
+        crate::settings_window::WINDOW_LABEL,
         "wechat-reminder-changed",
-        serde_json::json!({"snapshot": snapshot, "windowVisible": visible}),
+        payload.clone(),
     );
+    let _ = service.app.emit_to("main", "wechat-reminder-changed", payload);
 }
 
 #[tauri::command]

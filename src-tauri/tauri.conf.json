@@ -39,6 +39,20 @@
         "skipTaskbar": true,
         "visible": false,
         "shadow": false
+      },
+      {
+        "label": "settings",
+        "create": false,
+        "title": "fly-island",
+        "url": "index.html?window=settings",
+        "width": 560,
+        "height": 720,
+        "minWidth": 460,
+        "minHeight": 420,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#17191d"
       }
     ],
     "security": {

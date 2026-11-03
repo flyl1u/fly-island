@@ -294,15 +294,15 @@ fn publish(
         .app
         .get_webview_window("main")
         .is_some_and(|window| window.is_visible().unwrap_or(false));
-    let _ = service.app.emit_to(
-        "main",
-        EVENT_NAME,
-        NotificationEvent {
-            snapshot,
-            newest_id,
-            window_visible,
-        },
-    );
+    let event = NotificationEvent {
+        snapshot,
+        newest_id,
+        window_visible,
+    };
+    let _ = service
+        .app
+        .emit_to(crate::settings_window::WINDOW_LABEL, EVENT_NAME, event.clone());
+    let _ = service.app.emit_to("main", EVENT_NAME, event);
 }
 
 fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receiver<()>) {

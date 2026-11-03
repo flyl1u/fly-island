@@ -146,10 +146,6 @@ input,
   --glass-page-accent: 182, 169, 211;
 }
 
-.island--layout {
-  --glass-page-accent: 153, 214, 230;
-}
-
 .island__glass {
   display: none;
 }
@@ -750,11 +746,6 @@ input,
   outline-offset: 4px;
 }
 
-.dot-button--layout {
-  background: #858585;
-  box-shadow: 0 0 10px rgba(133, 133, 133, 0.36);
-}
-
 .dot-button--todo {
   background: #74d6ff;
   box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
@@ -786,12 +777,6 @@ input,
   box-shadow:
     0 0 0 3px rgba(255, 255, 255, 0.18),
     0 0 14px rgba(255, 209, 102, 0.56);
-}
-
-.dot-button--layout.dot-button--active {
-  box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.18),
-    0 0 14px rgba(133, 133, 133, 0.46);
 }
 
 .island--todo .icon-button {
