@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { messagePreviewText, type MessagePreview } from "./messagePreview";
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../i18n";
 import "./CollapsedMessageContent.css";
 
 type ContentTransition = {

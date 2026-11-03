@@ -17,8 +17,8 @@ import { TODO_SAVE_DIRECTORY_STORAGE_KEY, createTodoId, loadSaveDirectory } from
 import type { SavePathState } from "./features/todos/types";
 import { getClipboardHistory, listenClipboardHistoryChanged, setClipboardHistorySettings, type ClipboardHistorySettings } from "./features/clipboard/api";
 import { DEFAULT_CLIPBOARD_HISTORY, normalizeClipboardSettings } from "./features/clipboard/settings";
-import { useQQNotifications } from "./QQNotifications";
-import { useWeChatReminders } from "./WeChatReminders";
+import { useQQNotifications } from "./features/messages/qq-notifications/QQNotifications";
+import { useWeChatReminders } from "./features/messages/wechat/WeChatReminders";
 import "./SettingsWindow.css";
 
 const FOCUS_REQUEST_MAX_AGE_MS = 10_000;

@@ -28,17 +28,17 @@ import {
   QQNotificationControls,
   useQQNotifications,
   type QQNotificationsController,
-} from "./QQNotifications";
+} from "./features/messages/qq-notifications/QQNotifications";
 import {
   WeChatReminderControls,
   useWeChatReminders,
   type WeChatRemindersController,
-} from "./WeChatReminders";
-import { useQQMail, type QQMailController } from "./QQMail";
-import { MessagesPanel, messagePanelHeight, type MessageView } from "./Messages";
-import { MessageSourceIcon } from "./MessageSourceIcon";
-import { CollapsedMessageContent } from "./CollapsedMessageContent";
-import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
+} from "./features/messages/wechat/WeChatReminders";
+import { useQQMail, type QQMailController } from "./features/messages/qq-mail/QQMail";
+import { MessagesPanel, messagePanelHeight, type MessageView } from "./features/messages/Messages";
+import { MessageSourceIcon } from "./features/messages/MessageSourceIcon";
+import { CollapsedMessageContent } from "./features/messages/CollapsedMessageContent";
+import { latestMessagePreview, messagePreviewText, type MessageSource } from "./features/messages/messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {

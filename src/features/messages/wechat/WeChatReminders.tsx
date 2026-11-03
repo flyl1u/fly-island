@@ -1,9 +1,9 @@
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ArrowUpRight, Power } from "lucide-react";
-import { MessageSourceIcon } from "./MessageSourceIcon";
+import { MessageSourceIcon } from "../MessageSourceIcon";
 import "./WeChatReminders.css";
 
 const ENABLED_KEY = "focusd-island-wechat-reminders-enabled";

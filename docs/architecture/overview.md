@@ -117,9 +117,9 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `App.tsx` |
 | `focusd-island-qq-mail-settings` | `features/messages/qq-mail/storage.ts` |
 | `focusd-island-qq-mail-remote-images` | `features/messages/qq-mail/storage.ts` |
-| `focusd-island-qq-notifications-enabled` | `QQNotifications.tsx` |
-| `focusd-island-qq-notification-access-requested` | `QQNotifications.tsx` |
-| `focusd-island-wechat-reminders-enabled` | `WeChatReminders.tsx` |
+| `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/QQNotifications.tsx` |
+| `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/QQNotifications.tsx` |
+| `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/WeChatReminders.tsx` |
 | `focusd-island-translation-settings` | `TranslationWindow.tsx` |
 | `focusd-island-locale` | `i18n/index.ts` |
 

@@ -1,14 +1,14 @@
-import { useTranslation } from "./i18n";
+import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Unplug } from "lucide-react";
 import DOMPurify from "dompurify";
-import { MessageSourceIcon } from "./MessageSourceIcon";
-import { nextQQPreview, type QQPreviewTiming } from "./qqNotificationTiming";
-import type { MailContent, MailEvent, MailMessage, MailSnapshot } from "./features/messages/qq-mail/api";
-import { SETTINGS_KEY, loadRemoteImagePreference, loadSettings, saveRemoteImagePreference } from "./features/messages/qq-mail/storage";
+import { MessageSourceIcon } from "../MessageSourceIcon";
+import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
+import type { MailContent, MailEvent, MailMessage, MailSnapshot } from "./api";
+import { SETTINGS_KEY, loadRemoteImagePreference, loadSettings, saveRemoteImagePreference } from "./storage";
 import "./QQMail.css";
 
 // 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；

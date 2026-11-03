@@ -1,7 +1,7 @@
-import { useTranslation } from "./i18n";
-import { QQMailPanel, type QQMailController } from "./QQMail";
-import { QQNotificationPanel, type QQNotificationsController } from "./QQNotifications";
-import { WeChatReminderPanel, type WeChatRemindersController } from "./WeChatReminders";
+import { useTranslation } from "../../i18n";
+import { QQMailPanel, type QQMailController } from "./qq-mail/QQMail";
+import { QQNotificationPanel, type QQNotificationsController } from "./qq-notifications/QQNotifications";
+import { WeChatReminderPanel, type WeChatRemindersController } from "./wechat/WeChatReminders";
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { mailBadgeCount, type MessageSource } from "./messagePreview";
 
