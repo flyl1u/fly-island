@@ -90,7 +90,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `qq_mail.rs` | `qq_mail/{mod, service, session, content, credentials, tests}.rs` |
 | `qq_notifications.rs` | `qq_notifications/{mod, listener, history, tests}.rs`（以实际职责为准） |
 | `clipboard_history.rs` | `clipboard_history/{mod, service, store, hotkey}.rs`（以实际职责为准） |
-| `media_control.rs` | `media_control/{mod, session, audio}.rs` |
+| `media_control.rs`、`lib.rs` 中的媒体命令 | `media_control/{mod, service, session, audio}.rs`（5.7 已完成：命令在 `mod.rs`，内部入口与状态类型在 `service.rs`） |
 | `wechat_reminders.rs` + `wechat_reminder_source.rs` | `wechat_reminders/{mod, source, tests}.rs` |
 | 各模块中的 `unsafe` Win32 / COM 调用 | `win32/` 安全封装 |
 
