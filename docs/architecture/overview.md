@@ -111,7 +111,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `App.tsx` |
-| `focusd-island-music-sources` | `App.tsx` |
+| `focusd-island-music-sources` | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `App.tsx` |
 | `focusd-island-qq-mail-settings` | `QQMail.tsx` |
 | `focusd-island-qq-mail-remote-images` | `QQMail.tsx` |

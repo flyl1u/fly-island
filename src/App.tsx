@@ -18,22 +18,16 @@ import {
   ClipboardList,
   Copy,
   ExternalLink,
-  GripVertical,
   ImageIcon,
   Keyboard,
   Languages,
   Minus,
-  Music2,
   Pencil,
-  Pause,
-  Play,
   RefreshCcw,
   RotateCcw,
   Save,
   Search,
   Settings,
-  SkipBack,
-  SkipForward,
   Star,
   Trash2,
   X,
@@ -59,7 +53,6 @@ import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
-import { MediaWaveform } from "./MediaWaveform";
 import {
   LOCALE_CODES,
   TRANSLATIONS,
@@ -77,6 +70,11 @@ import { NumberControl } from "./components/controls/NumberControl";
 import { SliderControl } from "./components/controls/SliderControl";
 import { ToggleControl } from "./components/controls/ToggleControl";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
+import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
+import { MusicWaveButton } from "./features/media/MusicWaveButton";
+import { DEFAULT_MEDIA_STATE, isSameMediaState } from "./features/media/mediaState";
+import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, type KnownMediaSource } from "./features/media/storage";
+import type { AudioLevel, MediaPlaybackStatus, MediaState } from "./features/media/api";
 import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
 import { saveTodoMarkdown } from "./features/todos/api";
 import { formatTodoDocumentAsMarkdown, getTodoSignature } from "./features/todos/markdown";
@@ -109,48 +107,9 @@ import "./App.css";
 export type IslandMode = "collapsed" | "expanded";
 
 type IslandPage = "todo" | "music" | "clipboard" | "qq";
-type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 type AgentProvider = "codex" | "claudeCode";
 type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
 type AgentVisualState = "idle" | "running" | "attention";
-
-type MediaRepeatMode = "none" | "track" | "list" | "unknown";
-
-type MediaSessionInfo = {
-  id: string;
-  label: string;
-  playing: boolean;
-};
-
-type KnownMediaSource = {
-  id: string;
-  label: string;
-};
-
-type MediaState = {
-  available: boolean;
-  audioActive: boolean;
-  audioPeak: number;
-  playbackStatus: MediaPlaybackStatus;
-  title: string | null;
-  artist: string | null;
-  album: string | null;
-  thumbnail: string | null;
-  positionMs: number;
-  durationMs: number;
-  canSeek: boolean;
-  canNext: boolean;
-  canPrevious: boolean;
-  shuffleActive: boolean | null;
-  canShuffle: boolean;
-  repeatMode: MediaRepeatMode;
-  canRepeat: boolean;
-  volume: number;
-  sourceApp: string | null;
-  activeSessionId: string | null;
-  sessions: MediaSessionInfo[];
-  updatedAt: number;
-};
 
 type ClipboardHistorySettings = {
   enabled: boolean;
@@ -185,12 +144,6 @@ type ClipboardHistoryItem = {
 type ClipboardHistorySnapshot = {
   settings: ClipboardHistorySettings;
   items: ClipboardHistoryItem[];
-};
-
-type AudioLevel = {
-  active: boolean;
-  peak: number;
-  updatedAt: number;
 };
 
 type AgentTaskStatus = {
@@ -291,7 +244,6 @@ const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
   "focusd-island-collapsed-text-default-v1";
 const SETTINGS_PRESETS_STORAGE_KEY = "focusd-island-setting-presets";
 const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
-const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
 // Main island -> settings window request to reveal a section; survives the window being created.
 const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 const MIN_COLLAPSED_ISLAND_WIDTH = 280;
@@ -309,68 +261,6 @@ const MAX_CUSTOM_SETTING_PRESETS = 6;
 const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 const DEFAULT_CLIPBOARD_SHORTCUT = "Ctrl+X";
 const AUDIO_ACTIVE_THRESHOLD = 0.000015;
-const DEFAULT_MEDIA_STATE: MediaState = {
-  available: false,
-  audioActive: false,
-  audioPeak: 0,
-  playbackStatus: "unavailable",
-  title: null,
-  artist: null,
-  album: null,
-  thumbnail: null,
-  positionMs: 0,
-  durationMs: 0,
-  canSeek: false,
-  canNext: false,
-  canPrevious: false,
-  shuffleActive: null,
-  canShuffle: false,
-  repeatMode: "unknown",
-  canRepeat: false,
-  volume: -1,
-  sourceApp: null,
-  activeSessionId: null,
-  sessions: [],
-  updatedAt: 0,
-};
-
-function isSameMediaState(a: MediaState, b: MediaState): boolean {
-  if (
-    a.available !== b.available ||
-    a.audioActive !== b.audioActive ||
-    a.audioPeak !== b.audioPeak ||
-    a.playbackStatus !== b.playbackStatus ||
-    a.title !== b.title ||
-    a.artist !== b.artist ||
-    a.album !== b.album ||
-    a.thumbnail !== b.thumbnail ||
-    a.positionMs !== b.positionMs ||
-    a.durationMs !== b.durationMs ||
-    a.canSeek !== b.canSeek ||
-    a.canNext !== b.canNext ||
-    a.canPrevious !== b.canPrevious ||
-    a.shuffleActive !== b.shuffleActive ||
-    a.canShuffle !== b.canShuffle ||
-    a.repeatMode !== b.repeatMode ||
-    a.canRepeat !== b.canRepeat ||
-    a.volume !== b.volume ||
-    a.sourceApp !== b.sourceApp ||
-    a.activeSessionId !== b.activeSessionId ||
-    a.sessions.length !== b.sessions.length
-  ) {
-    return false;
-  }
-
-  return a.sessions.every((session, index) => {
-    const other = b.sessions[index];
-    return (
-      session.id === other.id &&
-      session.label === other.label &&
-      session.playing === other.playing
-    );
-  });
-}
-
 const DEFAULT_AGENT_TASK_STATUS: AgentTaskStatus = {
   phase: "idle",
   updatedAt: 0,
@@ -884,43 +774,6 @@ function loadSettingPresets(t: Translations): IslandPreset[] {
   }
 }
 
-function loadMusicSourcePriority(): KnownMediaSource[] {
-  try {
-    const stored = window.localStorage.getItem(
-      MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
-    );
-
-    if (!stored) {
-      return [];
-    }
-
-    const parsed = JSON.parse(stored) as Partial<KnownMediaSource>[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    const seen = new Set<string>();
-    return parsed
-      .filter(
-        (source): source is KnownMediaSource =>
-          typeof source?.id === "string" &&
-          source.id.length > 0 &&
-          typeof source.label === "string",
-      )
-      .filter((source) => {
-        if (seen.has(source.id)) {
-          return false;
-        }
-        seen.add(source.id);
-        return true;
-      })
-      .map((source) => ({ id: source.id, label: source.label }));
-  } catch {
-    return [];
-  }
-}
-
 function isSameSettings(a: IslandSettings, b: IslandSettings) {
   return (Object.keys(a) as (keyof IslandSettings)[]).every(
     (key) => a[key] === b[key],
@@ -1395,91 +1248,6 @@ export function IslandShell({
         </div>
       </div>
     </section>
-  );
-}
-
-function MusicWaveButton({
-  isAvailable,
-  isPlaying,
-  audioPeak,
-  label,
-  onClick,
-}: {
-  isAvailable: boolean;
-  isPlaying: boolean;
-  audioPeak: number;
-  label: string;
-  onClick: () => void;
-}) {
-  const [phase, setPhase] = useState(0);
-  const className = [
-    "music-wave-button",
-    isAvailable ? "music-wave-button--available" : "music-wave-button--idle",
-    isPlaying ? "music-wave-button--playing" : "music-wave-button--paused",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const shouldAnimate = isAvailable || isPlaying;
-  const prefersReducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  useEffect(() => {
-    if (!shouldAnimate) {
-      setPhase(0);
-      return;
-    }
-
-    const interval = window.setInterval(
-      () => {
-        setPhase(performance.now() / (isPlaying ? 260 : 900));
-      },
-      prefersReducedMotion ? 420 : isPlaying ? 72 : 180,
-    );
-
-    return () => window.clearInterval(interval);
-  }, [isPlaying, prefersReducedMotion, shouldAnimate]);
-
-  const liftedPeak = isPlaying
-    ? clamp(Math.log1p(clamp(audioPeak, 0, 1) * 150) / Math.log1p(150), 0, 1)
-    : 0;
-  const barScales = [0.34, 0.72, 0.48, 0.86, 0.42].map((bar, index) => {
-    const floor = isAvailable ? 0.22 : 0.12;
-    const breath =
-      shouldAnimate && !prefersReducedMotion
-        ? 0.07 + Math.sin(phase + index * 0.82) * 0.045
-        : 0;
-    const movement =
-      liftedPeak *
-      (0.26 + bar * 1.02) *
-      (0.82 + Math.sin(phase * (1.15 + index * 0.08) + index * 1.7) * 0.24);
-
-    return clamp(floor + breath + movement, 0.12, 1.22);
-  });
-
-  return (
-    <button
-      className={className}
-      type="button"
-      title={label}
-      aria-label={label}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-    >
-      {barScales.map((scale, index) => (
-        <span
-          key={index}
-          style={
-            {
-              "--wave-scale": scale.toFixed(3),
-              "--wave-opacity": (0.42 + scale * 0.52).toFixed(3),
-            } as CSSProperties
-          }
-        />
-      ))}
-    </button>
   );
 }
 
@@ -2302,305 +2070,6 @@ function LayoutEditor({
         )}
       </section>
     </div>
-  );
-}
-
-function MusicPlayerPanel({
-  mediaState,
-  isTrackChanging,
-  commandError,
-  sourcePriority,
-  settingsOpen,
-  onToggleSettings,
-  onPlayPause,
-  onNext,
-  onPrevious,
-  onReorderSource,
-  onRemoveSource,
-}: {
-  mediaState: MediaState;
-  isTrackChanging: boolean;
-  commandError: string | null;
-  sourcePriority: KnownMediaSource[];
-  settingsOpen: boolean;
-  onToggleSettings: () => void;
-  onPlayPause: () => void;
-  onNext: () => void;
-  onPrevious: () => void;
-  onReorderSource: (sourceId: string, targetId: string) => void;
-  onRemoveSource: (sourceId: string) => void;
-}) {
-  const t = useTranslation();
-  const [draggedSourceId, setDraggedSourceId] = useState<string | null>(null);
-  const [dragOverSourceId, setDragOverSourceId] = useState<string | null>(null);
-
-  const isPlaying = mediaState.playbackStatus === "playing";
-  const hasTrack = Boolean(mediaState.title);
-
-  const prevDisabled = mediaState.available && !mediaState.canPrevious;
-  const nextDisabled = mediaState.available && !mediaState.canNext;
-
-  const liveSessions = mediaState.sessions;
-
-  const getSourceIdAtPoint = useCallback((clientX: number, clientY: number) => {
-    const element = document.elementFromPoint(clientX, clientY);
-    const sourceElement = element?.closest("[data-source-id]");
-    return sourceElement instanceof HTMLElement
-      ? sourceElement.dataset.sourceId ?? null
-      : null;
-  }, []);
-
-  const startSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>, sourceId: string) => {
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      setDraggedSourceId(sourceId);
-      setDragOverSourceId(null);
-    },
-    [],
-  );
-
-  const moveSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
-      if (!draggedSourceId) {
-        return;
-      }
-      event.preventDefault();
-      const targetId = getSourceIdAtPoint(event.clientX, event.clientY);
-      setDragOverSourceId(
-        targetId && targetId !== draggedSourceId ? targetId : null,
-      );
-    },
-    [draggedSourceId, getSourceIdAtPoint],
-  );
-
-  const finishSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
-      if (!draggedSourceId) {
-        return;
-      }
-      event.preventDefault();
-      const targetId =
-        dragOverSourceId || getSourceIdAtPoint(event.clientX, event.clientY);
-
-      if (targetId && targetId !== draggedSourceId) {
-        onReorderSource(draggedSourceId, targetId);
-      }
-
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-
-      setDraggedSourceId(null);
-      setDragOverSourceId(null);
-    },
-    [dragOverSourceId, draggedSourceId, getSourceIdAtPoint, onReorderSource],
-  );
-
-  const cancelSourceDrag = useCallback(() => {
-    setDraggedSourceId(null);
-    setDragOverSourceId(null);
-  }, []);
-
-  const settingsButton = (
-    <button
-      className={[
-        "music-icon-button",
-        settingsOpen ? "music-icon-button--on" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      type="button"
-      title={settingsOpen ? t.music.closeSettings : t.music.openSettings}
-      aria-label={settingsOpen ? t.music.closeSettings : t.music.openSettings}
-      aria-pressed={settingsOpen}
-      onClick={onToggleSettings}
-    >
-      {settingsOpen ? (
-        <X size={16} strokeWidth={2.4} />
-      ) : (
-        <Settings size={16} strokeWidth={2.2} />
-      )}
-    </button>
-  );
-
-  return (
-    <section
-      className={[
-        "music-player",
-        !settingsOpen && !mediaState.available ? "music-player--empty" : "",
-        settingsOpen ? "music-player--settings" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      aria-label={t.music.playerLabel}
-      title={!settingsOpen && commandError ? commandError : undefined}
-    >
-      {settingsOpen ? (
-        <>
-          <div className="music-player__settings-head">
-            <span className="music-player__settings-title">
-              {t.music.settingsTitle}
-            </span>
-            {settingsButton}
-          </div>
-          <p className="music-player__settings-hint">{t.music.settingsHint}</p>
-          {sourcePriority.length === 0 ? (
-            <div className="music-source-empty">{t.music.noSources}</div>
-          ) : (
-            <div className="music-source-list" role="list">
-              {sourcePriority.map((source) => {
-                const live = liveSessions.find(
-                  (session) => session.id === source.id,
-                );
-                return (
-                  <div
-                    key={source.id}
-                    className={[
-                      "music-source-item",
-                      draggedSourceId === source.id
-                        ? "music-source-item--dragging"
-                        : "",
-                      dragOverSourceId === source.id
-                        ? "music-source-item--drag-over"
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    role="listitem"
-                    data-source-id={source.id}
-                  >
-                    <button
-                      className="music-source-drag"
-                      type="button"
-                      title={t.music.reorderSource}
-                      aria-label={t.music.reorderSource}
-                      onPointerDown={(event) =>
-                        startSourceDrag(event, source.id)
-                      }
-                      onPointerMove={moveSourceDrag}
-                      onPointerUp={finishSourceDrag}
-                      onPointerCancel={cancelSourceDrag}
-                    >
-                      <GripVertical size={15} strokeWidth={2.4} />
-                    </button>
-                    <span
-                      className={[
-                        "music-source-dot",
-                        live?.playing ? "music-source-dot--playing" : "",
-                        live ? "music-source-dot--live" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      aria-hidden="true"
-                    />
-                    <span className="music-source-label" title={source.id}>
-                      {source.label}
-                    </span>
-                    {!live && (
-                      <button
-                        className="music-source-remove"
-                        type="button"
-                        title={t.music.removeSource}
-                        aria-label={t.music.removeSource}
-                        onClick={() => onRemoveSource(source.id)}
-                      >
-                        <Trash2 size={14} strokeWidth={2.2} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="music-player__body">
-          <div className="music-player__details">
-            <div className="music-player__artwork" aria-hidden="true">
-              {mediaState.thumbnail ? (
-                <img src={mediaState.thumbnail} alt="" draggable={false} />
-              ) : (
-                <Music2 size={42} strokeWidth={1.7} />
-              )}
-            </div>
-            <div className="music-player__meta">
-              <span
-                className="music-player__track"
-                title={mediaState.title ?? undefined}
-              >
-                {mediaState.title ?? t.music.noMedia}
-              </span>
-              {hasTrack && (
-                <span
-                  className="music-player__artist"
-                  title={mediaState.artist ?? undefined}
-                >
-                  {mediaState.artist ?? t.music.unknownArtist}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="music-player__stack">
-            <div className="music-player__head-aside">{settingsButton}</div>
-
-            {commandError && (
-              <p className="music-player__error" role="alert">
-                {t.music.controlFailed}
-              </p>
-            )}
-
-            <MediaWaveform
-              playing={isPlaying || mediaState.audioActive}
-              audioPeak={mediaState.audioPeak}
-            />
-
-            <div className="music-player__controls">
-              <button
-                className="music-control-button"
-                type="button"
-                title={t.music.previous}
-                aria-label={t.music.previousTrack}
-                disabled={prevDisabled}
-                onClick={onPrevious}
-              >
-                <SkipBack size={18} strokeWidth={2.4} />
-              </button>
-              <button
-                className="music-control-button music-control-button--primary"
-                type="button"
-                title={isPlaying ? t.music.pause : t.music.play}
-                aria-label={isPlaying ? t.music.pause : t.music.play}
-                aria-busy={isTrackChanging}
-                onClick={onPlayPause}
-              >
-                {isTrackChanging ? (
-                  <RefreshCcw
-                    className="music-control-button__track-change"
-                    size={19}
-                    strokeWidth={2.4}
-                  />
-                ) : isPlaying ? (
-                  <Pause size={20} strokeWidth={2.5} />
-                ) : (
-                  <Play size={20} strokeWidth={2.5} />
-                )}
-              </button>
-              <button
-                className="music-control-button"
-                type="button"
-                title={t.music.next}
-                aria-label={t.music.nextTrack}
-                disabled={nextDisabled}
-                onClick={onNext}
-              >
-                <SkipForward size={18} strokeWidth={2.4} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
   );
 }
 
