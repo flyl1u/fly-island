@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 2440 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 2395 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 1120 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -207,7 +207,8 @@
 | 2026-11-03 | 2.6（3/n，搬迁） | `3374ece` | `QQNotifications`、`WeChatReminders` 的类型原样搬到各自目录的 `api.ts`，存储 key 常量原样搬到各自的 `storage.ts`；组件文件 -24 / -13 行 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.6（4/n，改写） | `63f8b1a` | 三个消息来源的 `invoke` / `listen` 收口到各自的 `api.ts`（含事件名常量），`localStorage` 读写收口到各自的 `storage.ts`（读写语义不变，未增减异常处理）；命令名、参数名、事件名、key 不变。打开 QQ / 微信的封装命名为 `launchQQ`、`launchWeChat`，避免与 hook 中同名回调冲突。`eslint.config.js` 的存量 IPC 文件列表移除这三个文件，ESLint warn 17 → 11 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.7（1/3，搬迁） | `daf73ba` | `UpdatePanel.tsx/.css`、`updaterController.ts` 用 `git mv` 迁入 `features/updater/`，只改导入路径（含 `tests/updater-controller.test.mjs` 的源码路径和 `eslint.config.js` 的存量 IPC 文件列表） | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.7（2/3，改写） | 见提交说明 | 新增 `features/updater/api.ts`（`isUpdaterConfigured`、`getUpdaterProxy`），`updaterController.ts` 改为调用封装；`tests/updater-controller.test.mjs` 的 mock 表增加 `./api`，并让 `api.ts` 在同一个 core mock 上运行，命令名仍被测试覆盖；`updaterController.ts` 移出存量 IPC 文件列表，ESLint warn 11 → 10 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.7（2/3，改写） | `154082e` | 新增 `features/updater/api.ts`（`isUpdaterConfigured`、`getUpdaterProxy`），`updaterController.ts` 改为调用封装；`tests/updater-controller.test.mjs` 的 mock 表增加 `./api`，并让 `api.ts` 在同一个 core mock 上运行，命令名仍被测试覆盖；`updaterController.ts` 移出存量 IPC 文件列表，ESLint warn 11 → 10 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.7（3/3，拆分） | 见提交说明 | 项目链接区块（含打开链接失败的状态与处理函数）直接拆到 `features/updater/ProjectSettingsSection.tsx`（54），作为一个零行为变化的拆分提交（根目录规则允许"只移动或拆分代码"）；超过 400 行组件的三步流程不适用于这个小区块，且原地拆分会让 `App.tsx` 超出白名单 5 行。`App.tsx` 2440 → 2395，白名单同步下调 | `pnpm check`（78/78）、`pnpm build` |
 
 ## 待人工验收
 

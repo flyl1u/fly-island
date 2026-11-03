@@ -5,25 +5,21 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import {
   Bell,
   CircleDot,
-  ExternalLink,
   Languages,
   Minus,
   RefreshCcw,
   RotateCcw,
   Settings,
-  Star,
 } from "lucide-react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   QQNotificationControls,
   useQQNotifications,
@@ -39,7 +35,7 @@ import { MessagesPanel, messagePanelHeight, type MessageView } from "./features/
 import { MessageSourceIcon } from "./features/messages/MessageSourceIcon";
 import { CollapsedMessageContent } from "./features/messages/CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./features/messages/messagePreview";
-import { UpdatePanel } from "./features/updater/UpdatePanel";
+import { ProjectSettingsSection } from "./features/updater/ProjectSettingsSection";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import {
   useTranslation,
@@ -741,25 +737,6 @@ function LayoutEditor({
   onClipboardShortcutFocusHandled: () => void;
 }) {
   const t = useTranslation();
-  const [projectLinkFailed, setProjectLinkFailed] = useState(false);
-
-  const openProjectLink = async (event: ReactMouseEvent<HTMLAnchorElement>) => {
-    if (!isTauri()) {
-      return;
-    }
-
-    event.preventDefault();
-    const url = event.currentTarget.href;
-    setProjectLinkFailed(false);
-
-    try {
-      await openUrl(url);
-    } catch (error) {
-      console.error("Failed to open project link", error);
-      setProjectLinkFailed(true);
-    }
-  };
-
   return (
     <div className="editor-panel">
       <div className="editor-panel__header">
@@ -836,29 +813,7 @@ function LayoutEditor({
         onSaveDirectory={onSaveDirectory}
       />
 
-      <section className="settings-section settings-section--project">
-        <div className="settings-section__header">
-          <span>{t.settings.project.title}</span>
-        </div>
-        <UpdatePanel />
-        <a
-          className="project-link project-link--star"
-          href="https://github.com/flyl1u/fly-island"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={openProjectLink}
-        >
-          <Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />
-          <span className="project-link__copy">
-            <strong>{t.settings.project.star}</strong>
-            <span>{t.settings.project.starHint}</span>
-          </span>
-          <ExternalLink className="project-link__arrow" size={14} aria-hidden="true" />
-        </a>
-        {projectLinkFailed && (
-          <p className="project-link-error" role="alert">{t.settings.project.openFailed}</p>
-        )}
-      </section>
+      <ProjectSettingsSection />
     </div>
   );
 }
