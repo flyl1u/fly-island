@@ -17,7 +17,7 @@
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
 | `src/App.tsx` | 5644 | 2440 | 5644 / 400 | — | 行数 |
-| `src/App.css` | 3865 | 1311 | 3865 / 500 | — | 行数 |
+| `src/App.css` | 3865 | 1120 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 1970 | 1770 / 800 | 203 / 150 | 生产代码、测试 |
@@ -92,7 +92,7 @@
   - `LayoutEditor` 实际是设置窗口的整个页面（10 个区块，横跨约 7 个领域），不整体迁入 `features/appearance/`（2026-11-03 经确认调整）：各区块拆成子组件、放到所属领域，`LayoutEditor` 外壳只负责组合，在 2.8 随设置窗口迁到 `windows/settings/`。区块归属：布局、颜色、预设 → `features/appearance/`（2.4）；保存路径 → `features/todos/`、剪贴板设置 → `features/clipboard/`、语言 → `i18n/LocaleControl.tsx`（2.4 之后补做，见 2.4a）；AI 代理钩子 → `features/agent-status/`（2.5）；消息 → `features/messages/`（2.6）；项目链接与更新 → `features/updater/`（2.7）。
 - [x] **2.4a 已完成领域的设置区块归位**：把 `LayoutEditor` 中的保存路径、剪贴板设置区块分别迁入 `features/todos/`、`features/clipboard/`，`LocaleControl` 迁入 `i18n/`。
   - 待办设置区块（跨天保留未完成、拖拽排序、轮播）编辑的是 `IslandSettings`，数据归外观存储所有，为避免 `features/todos` 依赖外观类型，放入 `features/appearance/TodoSettingsSection.tsx`。语言区块只有一个 `LocaleControl`，作为组合代码留在 `LayoutEditor` 外壳中。
-- [ ] **2.5 agent-status**：状态标签和视觉状态函数、代理状态命令的封装，以及 `LayoutEditor` 中的 AI 代理钩子区块。
+- [x] **2.5 agent-status**：状态标签和视觉状态函数、代理状态命令的封装，以及 `LayoutEditor` 中的 AI 代理钩子区块。
 - [ ] **2.6 messages**：`Messages`、`MessageSourceIcon`、`CollapsedMessageContent`、`messagePreview.ts`、`qqNotificationTiming.ts`、`QQMail`、`QQNotifications`、`WeChatReminders` 迁入 `features/messages/`，拆出各自的 `api.ts` 和 `storage.ts`，并迁入 `LayoutEditor` 中的消息区块。`QQMail.tsx` 拆分后应低于 400 行。
 - [ ] **2.7 updater**：`UpdatePanel`、`updaterController.ts`，以及 `LayoutEditor` 中的项目链接区块。同步更新 `tests/updater-controller.test.mjs` 中的 import mock 表。
 - [ ] **2.8 窗口目录**：`SettingsWindow`、`LayoutEditor` 外壳（只做组合）、`TranslationWindow` 迁入 `windows/settings/`、`windows/translation/`，并抽出各自的 `api.ts` 和 `storage.ts`。
@@ -199,7 +199,8 @@
 | 2026-11-03 | 2.5（1/5，搬迁） | `786329c` | `App.tsx` 2633 → 2532（-101，白名单暂不下调）；新增 `features/agent-status/api.ts`（与 Rust 对应的类型）、`status.ts`（默认值、提供方列表与标签、视觉状态与标签函数）和 `tests/agent-status.test.mjs`（4 个用例）；`SettingsWindow.tsx` 改为直接从 `features/agent-status` 导入 | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.5（2/5，改写） | `a85d047` | 在 `App.tsx` 中拆出 `AgentHooksSettingsSection`（113，无状态），只被该区块使用的 `agentStatusRows`、`agentStatusLabel` 计算一并移入。`LayoutEditor` 276 → 185；`App.tsx` 2532 → 2555（低于白名单记录 2633） | `pnpm check`（78/78）、`pnpm build` |
 | 2026-11-03 | 2.5（3/5，搬迁） | `cc43c85` | `AgentHooksSettingsSection`（118）原样搬到 `features/agent-status/`；`App.tsx` 2555 → 2440，白名单 2633 → 2440 | `pnpm check`（78/78）、`pnpm build` |
-| 2026-11-03 | 2.5（4/5，改写） | 见提交说明 | `features/agent-status/api.ts` 新增 `getAgentStatus`、`clearAgentProviderStatus`（避免与 `SettingsWindow` 中的同名回调冲突）、`installAgentStatusHooks`；`App.tsx`、`SettingsWindow.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 行数不变 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.5（4/5，改写） | `ce5f912` | `features/agent-status/api.ts` 新增 `getAgentStatus`、`clearAgentProviderStatus`（避免与 `SettingsWindow` 中的同名回调冲突）、`installAgentStatusHooks`；`App.tsx`、`SettingsWindow.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 行数不变 | `pnpm check`（78/78）、`pnpm build` |
+| 2026-11-03 | 2.5（5/5，CSS 搬迁） | 见提交说明 | `App.css` 1311 → 1120（-191），白名单同步下调；新增 `AgentHooksSettingsSection.css`（190）。主窗口上的 `.island__pulse--agent-*`、`.island__agent-status-icon*` 属于岛屿外壳，留在 `App.css`。打包产物级检查：677 条规则不变，无冲突 | `pnpm check`（78/78）、`pnpm build`；设置窗口检查待人工验收 |
 
 ## 待人工验收
 
@@ -215,6 +216,7 @@
 | `5592ae5` | 2.3 | 剪贴板页（中英文、两种外观）：列表与搜索、全部/收藏切换、复制回剪贴板及"已复制"状态、收藏、备注编辑（Enter 保存、Esc 取消）、删除与清空的二次确认（3 秒自动取消、点击其他位置取消）、列表重排动画、图片缩略图；快捷键显示与按快捷键展开；设置窗口中修改剪贴板设置后主窗口同步。 |
 | `b035d02` | 2.4 | 设置窗口（中英文）：外观模式与字体切换、毛玻璃强度、透明度、缩放、边距等滑块，开机自启与各开关，颜色选择与脉冲亮度；预设的保存、应用、改名（Enter / Esc / 失焦）、删除；修改后主窗口外观同步，重启后设置与预设保留。 |
 | `afdac27` | 2.4a | 设置窗口（中英文）：语言切换；待办设置开关与轮播间隔；剪贴板设置（启用、截图、条数、快捷键开关、录制快捷键，Esc 取消录制）；保存路径的填写与保存（"已保存"状态）；从主窗口"未设置保存路径"跳转后滚动到保存路径并聚焦输入框；从主窗口跳转到剪贴板快捷键后自动进入录制。 |
+| 2.5 的提交 | 2.5 | 设置窗口（中英文）：AI 代理区块的安装钩子按钮（安装中、已安装、出错三种状态与脚本目录显示）、当前状态汇总、各提供方的阶段显示、失败或过期时的"清除状态"按钮；主窗口的代理状态脉冲点与图标随状态变化。 |
 
 ## 待处理问题
 
