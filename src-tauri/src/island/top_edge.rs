@@ -3,7 +3,8 @@
 
 use tauri::{Emitter, PhysicalPosition, Position, WebviewWindow};
 
-use crate::{IslandPosition, IslandWindowState};
+use super::geometry::{monitor_for_island_position, work_area_top_inset};
+use super::state::{mutate_window_state, read_window_state, IslandPosition, IslandWindowState};
 
 // Mirrored by TOP_ATTACHMENT_CHANGED_EVENT in src/windows/island/api.ts.
 pub(crate) const TOP_ATTACHMENT_CHANGED_EVENT: &str = "island-top-attachment-changed";
@@ -11,7 +12,7 @@ pub(crate) const TOP_ATTACHMENT_CHANGED_EVENT: &str = "island-top-attachment-cha
 const SNAP_DISTANCE: f64 = 16.0;
 
 pub(crate) fn is_attached() -> bool {
-    crate::read_window_state().top_attached
+    read_window_state().top_attached
 }
 
 /// Recomputes the attachment once the stage geometry has resolved the window position.
@@ -22,12 +23,12 @@ pub(crate) fn sync_from_stage(window: &WebviewWindow, state: IslandWindowState, 
 
 /// Pulls a dropped island flush with the top edge when it lands close to it.
 pub(crate) fn snap_to_top(window: &WebviewWindow, position: IslandPosition) -> IslandPosition {
-    let Ok(Some(monitor)) = crate::monitor_for_island_position(window, position) else {
+    let Ok(Some(monitor)) = monitor_for_island_position(window, position) else {
         set_attached(window, false);
         return position;
     };
     let monitor_top = monitor.position().y;
-    let top = monitor_top + crate::work_area_top_inset(monitor_top, monitor.work_area().position.y);
+    let top = monitor_top + work_area_top_inset(monitor_top, monitor.work_area().position.y);
     let snap_distance = (SNAP_DISTANCE * monitor.scale_factor()).round() as i32;
     let snapped = IslandPosition {
         x: position.x,
@@ -49,7 +50,7 @@ pub(crate) fn snap_to_top(window: &WebviewWindow, position: IslandPosition) -> I
 
 pub(crate) fn set_attached(window: &WebviewWindow, attached: bool) {
     let mut changed = false;
-    crate::mutate_window_state(|state| {
+    mutate_window_state(|state| {
         changed = state.top_attached != attached;
         state.top_attached = attached;
         *state
