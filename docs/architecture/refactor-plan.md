@@ -19,7 +19,7 @@
 | `src/App.tsx` | 5644 | 0（已删除） | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 0（已删除） | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 360（已移出白名单） | 404 / 400 | — | 行数 |
-| `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
+| `src-tauri/src/qq_mail.rs` | 2162 | 0（已拆为 `qq_mail/`） | 1465 / 800 | 697 / 150 | 生产代码、测试 |
 | `src-tauri/src/lib.rs` | 1973 | 141（只剩组装代码，已移出白名单） | 1770 / 800 | 203 / 150 | 生产代码、测试 |
 | `src-tauri/src/clipboard_history.rs` | 1068 | 1068 | 1068 / 800 | 0 | 生产代码 |
 | `src-tauri/src/media_control.rs` | 829 | 0（已拆为 `media_control/`） | 829 / 800 | 0 | 生产代码 |
@@ -141,7 +141,7 @@
 - [x] **5.3** 从 `lib.rs` 中拆出 `system/`（`startup.rs`、`updater.rs`、`todo_export.rs`）和 `tray.rs`。完成后 `lib.rs` 只剩组装代码。
   - `windows_home_dir`（待办导出与 `agent_status` 共用）和 `CREATE_NO_WINDOW`（自启与代理查询共用）放在 `system/mod.rs`。更新配置测试随 `updater.rs` 迁移，`lib.rs` 不再有测试模块，clippy 的 `items_after_test_module` 随之消失（84 → 83）。
   - `lib.rs` 的格式化：直接运行 rustfmt 会顺着 `mod` 声明格式化尚未拆分的文件，因此把子模块临时替换为空的内联模块单独格式化，`mod` 声明按 rustfmt 的规则排序。
-- [ ] **5.4** 拆分 `qq_mail/`。
+- [x] **5.4** 拆分 `qq_mail/`。
 - [ ] **5.5** 拆分 `qq_notifications/`。
 - [ ] **5.6** 拆分 `clipboard_history/`。
 - [x] **5.7** 拆分 `media_control/`。（在 5.3 之前完成，见 5.2 的说明）
@@ -248,6 +248,8 @@
 | 2026-11-03 | 5.7（2/2，格式化） | `829dd2c` | 对 `media_control/` 运行 rustfmt（4 个文件 +56/-43，最大 `session.rs` 639 行） | 同上，桌面快捷方式已核对 |
 | 2026-11-03 | 5.3（1/2，搬迁） | `7ac01ed` | `lib.rs` 430 → 139。拆出 `system/startup.rs`（64）、`updater.rs`（128，含 3 个更新配置测试）、`todo_export.rs`（49）、`system/mod.rs`（`CREATE_NO_WINDOW`、`windows_home_dir`）和 `tray.rs`（52）。函数体不变；测试的 `include_str!` 路径多一层 `../`；`agent_status` 改为引用 `crate::system::windows_home_dir`；`lib.rs` 多余的 `use` 已清理。clippy 84 → 83（`items_after_test_module` 消失） | `cargo test`（63 / 5）、clippy 83 条；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 5.3（2/2，格式化） | `bb66b4d` | `lib.rs`（141）单独格式化（见 5.3 说明），`system/`、`tray.rs` 用 rustfmt；改动 `lib.rs` 与 `updater.rs` 两个文件 | 同上，桌面快捷方式已核对 |
+| 2026-11-03 | 5.4（1/2，搬迁） | `8008d5a` | `qq_mail.rs`（2162）按顶层块原样拆为 `qq_mail/`：`mod.rs`（301，类型、`init`、6 个命令）、`service.rs`（350，后台 worker 与状态）、`session.rs`（442，IMAP 连接、IDLE、收件箱同步、邮件头）、`content.rs`（393，正文与内嵌图片）、`credentials.rs`（39）、`tests.rs`（700，原内联测试）。两条白名单条目（生产 1465、测试 697）删除。函数体不变；子模块之间用 `use super::*`；`BoundedStream` 的元组字段改为 `pub(super)`（测试在 `tests.rs` 中构造它）；`tests.rs` 补上原来从模块根继承的 std / imap 导入。逐行比较无差异 | `cargo test`（63 / 5）、clippy 83 条；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-03 | 5.4（2/2，格式化） | `a6e71dc` | 对 `qq_mail/` 运行 rustfmt（5 个文件 +61/-22，最大生产文件 `session.rs` 449 行） | 同上，桌面快捷方式已核对 |
 
 ## 待人工验收
 
@@ -277,6 +279,7 @@
 | `179b8ef`、`4dc4908` | 5.2 | 设置窗口（中英文）：AI 代理区块安装钩子（脚本写入应用数据目录，`~/.codex/config.toml` 与 `~/.claude/settings.json` 中的托管块与原有内容保留），状态读取、运行中 / 过期显示、清除状态；主窗口代理状态随 Codex / Claude Code 实际运行变化。 |
 | `c1a4730`、`829dd2c` | 5.7 | 音乐页（中英文）：多个播放器同时存在时的会话列表与控制目标、播放 / 暂停 / 上一首 / 下一首、随机与循环、拖动进度、音量调节、封面与曲目信息、有声音时波形跳动。 |
 | `7ac01ed`、`bb66b4d` | 5.3 | 设置窗口：开机自启的读取与切换（注册表 `HKCU\…\Run` 的 `FocuSD Island` 值）、检查更新（含系统代理）；主窗口保存待办到 Markdown 与默认保存目录；托盘菜单的显示 / 隐藏 / 设置 / 退出与左键单击唤出。 |
+| `8008d5a`、`a6e71dc` | 5.4 | QQ 邮箱（中英文）：连接（授权码写入凭据管理器）、开关、刷新、新邮件推送（IDLE）与 60 秒兜底刷新、阅读邮件（HTML / 纯文本、内嵌 cid 图片）、断开后凭据删除、重启后自动恢复。可在 `pnpm dev` 中打开 `/tests/mail-reader.html` 辅助检查前端部分。 |
 
 ## 待处理问题
 
@@ -292,3 +295,4 @@
 | 2.6 | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。 |
 | 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
 | 3.3 | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。 |
+| 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。 |
