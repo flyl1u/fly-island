@@ -15,7 +15,9 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_opener::OpenerExt;
-use windows::UI::Notifications::Management::{UserNotificationListener, UserNotificationListenerAccessStatus};
+use windows::UI::Notifications::Management::{
+    UserNotificationListener, UserNotificationListenerAccessStatus,
+};
 
 use history::*;
 use launcher::*;

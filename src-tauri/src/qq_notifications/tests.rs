@@ -1,20 +1,15 @@
+use super::*;
 use crate::messenger_activation::is_interactive_window;
-use std::{
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
+use windows::Win32::UI::WindowsAndMessaging::IsIconic;
 use windows::{
     core::{w, BOOL, HRESULT},
     Win32::{
         Foundation::{HWND, LPARAM},
-        UI::WindowsAndMessaging::{
-                GetClassNameW, GetForegroundWindow, GetWindowThreadProcessId,
-            },
+        UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow, GetWindowThreadProcessId},
     },
     UI::Notifications::NotificationSetting,
 };
-use super::*;
-use windows::Win32::UI::WindowsAndMessaging::IsIconic;
 
 #[test]
 fn diagnostic_reports_never_include_chat_content() {
@@ -138,9 +133,7 @@ fn restored_qq_has_a_taskbar_button() {
             COINIT_MULTITHREADED,
         },
         UI::{
-            Accessibility::{
-                CUIAutomation8, IUIAutomation, IUIAutomation2, TreeScope_Descendants,
-            },
+            Accessibility::{CUIAutomation8, IUIAutomation, IUIAutomation2, TreeScope_Descendants},
             WindowsAndMessaging::{EnumChildWindows, FindWindowW},
         },
     };
@@ -176,8 +169,8 @@ fn restored_qq_has_a_taskbar_button() {
             let mut count = 0;
             for root in roots {
                 let taskbar = automation.ElementFromHandle(root)?;
-                let elements = taskbar
-                    .FindAll(TreeScope_Descendants, &automation.CreateTrueCondition()?)?;
+                let elements =
+                    taskbar.FindAll(TreeScope_Descendants, &automation.CreateTrueCondition()?)?;
                 for index in 0..elements.Length()? {
                     let element = elements.GetElement(index)?;
                     let class = element.CurrentClassName()?.to_string();
@@ -286,8 +279,7 @@ fn notification_history_is_bounded_and_keeps_latest_first() {
 fn reads_a_real_qq_system_notification() {
     let deadline = std::time::Instant::now() + Duration::from_secs(60);
     loop {
-        let (status, items) =
-            read_notifications().expect("Windows notifications must be readable");
+        let (status, items) = read_notifications().expect("Windows notifications must be readable");
         assert_eq!(status, NotificationStatus::Listening);
         if !items.is_empty() {
             assert!(items
