@@ -50,7 +50,7 @@ import { clamp } from "./utils/number";
 import { getLocalDateString } from "./utils/date";
 import { TodoNotebook } from "./features/todos/TodoNotebook";
 import { AgentHooksSettingsSection } from "./features/agent-status/AgentHooksSettingsSection";
-import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./features/agent-status/api";
+import { getAgentStatus, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "./features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, getAgentStatusLabel, getAgentVisualState, type AgentHooksInstallState, type AgentVisualState } from "./features/agent-status/status";
 import { LocaleControl } from "./i18n/LocaleControl";
 import { ColorSettingsSection } from "./features/appearance/ColorSettingsSection";
@@ -1181,7 +1181,7 @@ function IslandApp() {
 
     isRefreshingAgentStatus.current = true;
     try {
-      const snapshot = await invoke<AgentStatusSnapshot>("get_agent_status");
+      const snapshot = await getAgentStatus();
       setAgentStatus((currentState) =>
         currentState.statusPath === snapshot.statusPath &&
         AGENT_PROVIDERS.every((provider) =>
