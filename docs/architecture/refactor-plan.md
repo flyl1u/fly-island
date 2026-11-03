@@ -16,7 +16,7 @@
 
 | 文件 | 原始行数 | 当前行数 | 计入上限的行数 | 内联测试 | 超限项 |
 |---|---|---|---|---|---|
-| `src/App.tsx` | 5644 | 4260 | 5644 / 400 | — | 行数 |
+| `src/App.tsx` | 5644 | 4255 | 5644 / 400 | — | 行数 |
 | `src/App.css` | 3865 | 2727 | 3865 / 500 | — | 行数 |
 | `src/QQMail.tsx` | 404 | 404 | 404 / 400 | — | 行数 |
 | `src-tauri/src/qq_mail.rs` | 2162 | 2162 | 1465 / 800 | 697 / 150 | 生产代码、测试 |
@@ -174,7 +174,8 @@
 | 2026-11-03 | 2.1（3/4，改写） | `3705001` | 在 `App.tsx` 中把 `TodoNotebook`（470 行）的书脊按钮组拆为 `TodoNotebookSpine`（71 行）、单条待办拆为 `TodoListItem`（156 行），二者无状态，编辑与拖拽状态仍在 `TodoNotebook`（334 行）中；DOM 结构与 class 不变。`App.tsx` 5265 → 5358（+93，低于白名单记录 5488） | `pnpm check`（57/57）、`pnpm build`；交互待人工验收 |
 | 2026-11-03 | 2.1（4/4，搬迁） | `2b7b6f3` | `TodoNotebook`、`TodoNotebookSpine`、`TodoListItem` 原样搬到 `features/todos/`（343 / 75 / 162 行），`TODO_SCROLL_START_ROWS` 移到 `features/todos/layout.ts`；`App.tsx` 5358 → 4791，白名单 5488 → 4791 | `pnpm check`（57/57）、`pnpm build` |
 | 2026-11-03 | 2.1（CSS 搬迁） | `1597286` | `App.css` 3622 → 2727（-895），白名单同步下调；待办样式按组件拆到 `TodoNotebook.css`（301）、`TodoNotebookSpine.css`（91，含 `saveSpin` / `savePop` 关键帧）、`TodoListItem.css`（230）、`ArchiveBrowser.css`（269）。打包产物的规则集合与长度不变（681 条），只有顺序变化；脚本检查顺序发生变化的规则对中，没有同特异性、同目标 class、同属性的冲突 | `pnpm check`（57/57）、`pnpm build`；面板检查待人工验收 |
-| 2026-11-03 | 2.2（1/3，搬迁） | 见提交说明 | `App.tsx` 4791 → 4260（-531），白名单同步下调；新增 `features/media/api.ts`（与 Rust 对应的类型）、`mediaState.ts`、`storage.ts`、`MusicWaveButton.tsx`、`MusicPlayerPanel.tsx`，`MediaWaveform.tsx/.css` 用 `git mv` 迁入；新增 `tests/media.test.mjs`（4 个用例）。`AUDIO_ACTIVE_THRESHOLD` 和音乐面板高度属于主窗口，留到 3.x | `pnpm check`（61/61）、`pnpm build` |
+| 2026-11-03 | 2.2（1/3，搬迁） | `49d34be` | `App.tsx` 4791 → 4260（-531），白名单同步下调；新增 `features/media/api.ts`（与 Rust 对应的类型）、`mediaState.ts`、`storage.ts`、`MusicWaveButton.tsx`、`MusicPlayerPanel.tsx`，`MediaWaveform.tsx/.css` 用 `git mv` 迁入；新增 `tests/media.test.mjs`（4 个用例）。`AUDIO_ACTIVE_THRESHOLD` 和音乐面板高度属于主窗口，留到 3.x | `pnpm check`（61/61）、`pnpm build` |
+| 2026-11-03 | 2.2（2/3，改写） | 见提交说明 | `features/media/api.ts` 新增 `getMediaState`、`sendMediaCommand`、`getAudioLevel` 和 `MediaCommand`；`App.tsx` 改为调用封装，命令名和参数名不变；`App.tsx` 4260 → 4255，白名单同步下调 | `pnpm check`（61/61）、`pnpm build` |
 
 ## 待人工验收
 

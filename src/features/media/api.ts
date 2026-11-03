@@ -1,3 +1,5 @@
+import { invoke } from "@tauri-apps/api/core";
+
 // 与 src-tauri/src/media_control.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
 export type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 
@@ -39,3 +41,17 @@ export type AudioLevel = {
   peak: number;
   updatedAt: number;
 };
+
+export type MediaCommand = "media_play_pause" | "media_next" | "media_previous";
+
+export function getMediaState(target: string | undefined) {
+  return invoke<MediaState>("get_media_state", { target });
+}
+
+export function sendMediaCommand(command: MediaCommand, target: string | undefined) {
+  return invoke<MediaState>(command, { target });
+}
+
+export function getAudioLevel() {
+  return invoke<AudioLevel>("get_audio_level");
+}
