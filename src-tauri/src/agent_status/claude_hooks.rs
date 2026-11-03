@@ -56,7 +56,11 @@ pub(super) fn install_claude_code_status_hooks(
     write_text_file(config_path, &json)
 }
 
-pub(super) fn install_claude_code_hook_event(hooks: &mut Map<String, Value>, event_name: &str, entry: Value) {
+pub(super) fn install_claude_code_hook_event(
+    hooks: &mut Map<String, Value>,
+    event_name: &str,
+    entry: Value,
+) {
     let mut entries = hooks
         .remove(event_name)
         .and_then(|value| match value {

@@ -2,7 +2,9 @@
 
 use std::{fs, path::Path};
 
-use super::snapshot::{current_unix_millis, system_time_to_unix_millis, AgentStatusSnapshot, AgentTaskStatus};
+use super::snapshot::{
+    current_unix_millis, system_time_to_unix_millis, AgentStatusSnapshot, AgentTaskStatus,
+};
 
 pub(super) const CODEX_RUNNING_MARKER_FILE_NAME: &str = "agent-codex-running.flag";
 pub(super) const CODEX_RUNNING_HOLD_FILE_NAME: &str = "agent-codex-running-hold.flag";
@@ -82,7 +84,11 @@ pub(super) fn active_agent_running_marker_status(
     }
 }
 
-pub(super) fn remove_agent_marker_files(app_dir: &Path, running_file_name: &str, hold_file_name: &str) {
+pub(super) fn remove_agent_marker_files(
+    app_dir: &Path,
+    running_file_name: &str,
+    hold_file_name: &str,
+) {
     fs::remove_file(app_dir.join(running_file_name)).ok();
     fs::remove_file(app_dir.join(hold_file_name)).ok();
 }

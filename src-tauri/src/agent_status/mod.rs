@@ -13,8 +13,16 @@ use crate::windows_home_dir;
 
 use claude_hooks::install_claude_code_status_hooks;
 use codex_hooks::install_codex_status_hooks;
-use markers::{apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_RUNNING_HOLD_FILE_NAME, CLAUDE_CODE_RUNNING_MARKER_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME, CODEX_RUNNING_MARKER_FILE_NAME};
-use snapshot::{agent_status_snapshot_from_persisted, current_unix_millis, default_agent_phase, default_agent_status_snapshot, default_persisted_agent_status, AgentStatusSnapshot, AgentTaskStatus, PersistedAgentStatus};
+use markers::{
+    apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
+    CLAUDE_CODE_RUNNING_MARKER_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME,
+    CODEX_RUNNING_MARKER_FILE_NAME,
+};
+use snapshot::{
+    agent_status_snapshot_from_persisted, current_unix_millis, default_agent_phase,
+    default_agent_status_snapshot, default_persisted_agent_status, AgentStatusSnapshot,
+    AgentTaskStatus, PersistedAgentStatus,
+};
 
 pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
@@ -22,8 +30,10 @@ pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cm
 pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
 
 pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
-pub(super) const AGENT_RUNNING_SCRIPT: &str = include_str!("../../../scripts/focusd-agent-running.cmd");
-pub(super) const AGENT_STATUS_SCRIPT: &str = include_str!("../../../scripts/focusd-agent-status.ps1");
+pub(super) const AGENT_RUNNING_SCRIPT: &str =
+    include_str!("../../../scripts/focusd-agent-running.cmd");
+pub(super) const AGENT_STATUS_SCRIPT: &str =
+    include_str!("../../../scripts/focusd-agent-status.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
