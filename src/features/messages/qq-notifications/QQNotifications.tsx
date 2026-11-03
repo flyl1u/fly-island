@@ -1,12 +1,11 @@
 import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { isTauri } from "@tauri-apps/api/core";
 import { ArrowUpRight, KeyRound, Power, RefreshCw, Settings2, Trash2 } from "lucide-react";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
-import type { QQNotificationEvent, QQNotificationSnapshot } from "./api";
-import { ACCESS_REQUESTED_KEY, ENABLED_KEY } from "./storage";
+import { clearQQNotifications, getQQNotificationState, launchQQ, listenQQNotificationsChanged, openQQNotificationSettings, requestQQNotificationAccess, setQQNotificationsEnabled, type QQNotificationSnapshot } from "./api";
+import { hasRequestedQQNotificationAccess, isQQNotificationsEnabled, markQQNotificationAccessRequested, saveQQNotificationsEnabled } from "./storage";
 import "./QQNotifications.css";
 
 const EMPTY_SNAPSHOT: QQNotificationSnapshot = {
@@ -48,7 +47,7 @@ export function useQQNotifications(canPreview: boolean) {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     void (async () => {
-      unlisten = await listen<QQNotificationEvent>("qq-notifications-changed", ({ payload }) => {
+      unlisten = await listenQQNotificationsChanged(({ payload }) => {
         if (cancelled || !acceptSnapshot(payload.snapshot)) return;
         if (!payload.snapshot.enabled || !payload.windowVisible || !canPreviewRef.current) {
           setPreviewWindow(null);
@@ -63,14 +62,14 @@ export function useQQNotifications(canPreview: boolean) {
         }
       });
       if (cancelled) { unlisten(); return; }
-      const next = await invoke<QQNotificationSnapshot>("set_qq_notifications_enabled", {
-        enabled: window.localStorage.getItem(ENABLED_KEY) !== "false",
-      });
+      const next = await setQQNotificationsEnabled(
+        isQQNotificationsEnabled(),
+      );
       if (!cancelled) acceptSnapshot(next);
-      if (!cancelled && next.enabled && window.localStorage.getItem(ACCESS_REQUESTED_KEY) !== "true") {
+      if (!cancelled && next.enabled && !hasRequestedQQNotificationAccess()) {
         // Remember the attempt before invoking so a dismissed prompt never repeats on startup.
-        window.localStorage.setItem(ACCESS_REQUESTED_KEY, "true");
-        await invoke<string>("request_qq_notification_access");
+        markQQNotificationAccessRequested();
+        await requestQQNotificationAccess();
       }
     })().catch((error: unknown) => {
       if (!cancelled) setActionError(String(error));
@@ -108,37 +107,37 @@ export function useQQNotifications(canPreview: boolean) {
   }, [t]);
 
   const setEnabled = useCallback((enabled: boolean) => run(async () => {
-    acceptSnapshot(await invoke<QQNotificationSnapshot>("set_qq_notifications_enabled", { enabled }));
-    window.localStorage.setItem(ENABLED_KEY, String(enabled));
+    acceptSnapshot(await setQQNotificationsEnabled(enabled));
+    saveQQNotificationsEnabled(enabled);
     if (!enabled) { timingRef.current = null; setPreviewWindow(null); }
     if (enabled) {
-      window.localStorage.setItem(ACCESS_REQUESTED_KEY, "true");
-      await invoke<string>("request_qq_notification_access");
+      markQQNotificationAccessRequested();
+      await requestQQNotificationAccess();
     }
   }), [acceptSnapshot, run]);
 
   const requestAccess = useCallback(() => run(async () => {
-    window.localStorage.setItem(ACCESS_REQUESTED_KEY, "true");
-    await invoke<string>("request_qq_notification_access");
+    markQQNotificationAccessRequested();
+    await requestQQNotificationAccess();
   }), [run]);
 
   const openSettings = useCallback(() => run(async () => {
-    await invoke("open_qq_notification_settings", {
-      access: snapshot.status === "permissionDenied" || snapshot.status === "permissionRequired",
-    });
+    await openQQNotificationSettings(
+      snapshot.status === "permissionDenied" || snapshot.status === "permissionRequired",
+    );
   }), [run, snapshot.status]);
 
   const refresh = useCallback(() => run(async () => {
-    acceptSnapshot(await invoke<QQNotificationSnapshot>("get_qq_notification_state"));
+    acceptSnapshot(await getQQNotificationState());
   }), [acceptSnapshot, run]);
 
   const clear = useCallback(() => run(async () => {
-    acceptSnapshot(await invoke<QQNotificationSnapshot>("clear_qq_notifications"));
+    acceptSnapshot(await clearQQNotifications());
     setPreviewWindow(null);
   }), [acceptSnapshot, run]);
 
   const openQQ = useCallback(() => run(async () => {
-    await invoke("open_qq");
+    await launchQQ();
     setPreviewWindow(null);
   }), [run]);
 

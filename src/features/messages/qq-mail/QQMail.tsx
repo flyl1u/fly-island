@@ -1,14 +1,13 @@
 import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Unplug } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
-import type { MailContent, MailEvent, MailMessage, MailSnapshot } from "./api";
-import { SETTINGS_KEY, loadRemoteImagePreference, loadSettings, saveRemoteImagePreference } from "./storage";
+import { getQQMailState, invokeQQMailCommand, listenQQMailChanged, readQQMail, type MailContent, type MailMessage, type MailSnapshot, type QQMailCommand } from "./api";
+import { clearMailSettings, loadRemoteImagePreference, loadSettings, saveMailSettings, saveRemoteImagePreference } from "./storage";
 import "./QQMail.css";
 
 // 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；
@@ -115,9 +114,9 @@ export function useQQMail(canPreview: boolean) {
     if (persist) {
       try {
         if (next.configured && next.email) {
-          localStorage.setItem(SETTINGS_KEY, JSON.stringify({ email: next.email, enabled: next.enabled }));
+          saveMailSettings({ email: next.email, enabled: next.enabled });
         } else if (next.status === "disconnected" && next.revision > 0) {
-          localStorage.removeItem(SETTINGS_KEY);
+          clearMailSettings();
         }
       } catch { setActionError(translationsRef.current.mail.savePreferencesFailed); }
     }
@@ -130,7 +129,7 @@ export function useQQMail(canPreview: boolean) {
     let unlisten: (() => void) | undefined;
     const saved = loadSettings();
     void (async () => {
-      unlisten = await listen<MailEvent>("qq-mail-changed", ({ payload }) => {
+      unlisten = await listenQQMailChanged(({ payload }) => {
         if (cancelled || !acceptSnapshot(payload.snapshot)) return;
         if (!canPreviewRef.current || !payload.windowVisible || !payload.snapshot.enabled
           || payload.snapshot.status !== "connected") {
@@ -145,11 +144,11 @@ export function useQQMail(canPreview: boolean) {
         }
       });
       if (cancelled) { unlisten(); return; }
-      const current = await invoke<MailSnapshot>("get_qq_mail_state");
+      const current = await getQQMailState();
       if (cancelled) return;
       acceptSnapshot(current, false);
       if (!current.email && saved) {
-        const restored = await invoke<MailSnapshot>("set_qq_mail_enabled", saved);
+        const restored = await invokeQQMailCommand("set_qq_mail_enabled", saved);
         if (!cancelled) acceptSnapshot(restored);
       }
     })().catch((error: unknown) => {
@@ -164,13 +163,13 @@ export function useQQMail(canPreview: boolean) {
     return () => window.clearTimeout(timer);
   }, [previewWindow]);
 
-  const run = useCallback(async (command: string, args?: Record<string, unknown>) => {
+  const run = useCallback(async (command: QQMailCommand, args?: Record<string, unknown>) => {
     if (!isTauri()) { setActionError(t.mail.desktopConnect); return false; }
     const id = ++actionIdRef.current;
     setBusy(true);
     setActionError(null);
     try {
-      const next = await invoke<MailSnapshot>(command, args);
+      const next = await invokeQQMailCommand(command, args);
       return id === actionIdRef.current && acceptSnapshot(next);
     } catch (error) {
       if (id === actionIdRef.current) setActionError(String(error));
@@ -193,7 +192,7 @@ export function useQQMail(canPreview: boolean) {
     if (!isTauri()) { setReadError(t.mail.desktopRead); setReading(false); return false; }
     setReading(true);
     try {
-      const next = await invoke<MailContent>("read_qq_mail", { messageId: message.id });
+      const next = await readQQMail(message.id);
       if (requestId !== readerRequestRef.current) return false;
       if (next.id !== message.id) throw new Error(t.mail.changed);
       setContent(next);
