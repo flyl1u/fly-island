@@ -11,6 +11,7 @@ import type { WeChatRemindersController } from "../../features/messages/wechat/W
 import { useTranslation } from "../../i18n";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
+import "./IslandCollapsedBar.css";
 
 type IslandCollapsedBarProps = {
   qqMail: QQMailController;

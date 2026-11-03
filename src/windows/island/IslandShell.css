@@ -1,0 +1,329 @@
+.island {
+  --glass-pointer-x: 50%;
+  --glass-pointer-y: 18%;
+  --glass-page-accent: 116, 214, 255;
+  position: relative;
+  flex: 0 0 auto;
+  color: #f8f6f0;
+  background:
+    linear-gradient(90deg, transparent 0 86px, rgba(168, 216, 234, 0.12) 87px, transparent 88px),
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.28)),
+    var(--island-background-color);
+  background-size:
+    100% 100%,
+    100% 42px,
+    100% 100%,
+    100% 100%;
+  opacity: var(--island-opacity);
+  border: 0;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -28px 48px rgba(0, 0, 0, 0.18);
+  overflow: visible;
+  transform: scale(var(--island-scale));
+  transform-origin: top center;
+  will-change: transform;
+  transition:
+    width 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island__surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.island--music {
+  --glass-page-accent: 182, 156, 255;
+}
+
+.island--clipboard {
+  --glass-page-accent: 182, 169, 211;
+}
+
+.island__glass {
+  display: none;
+}
+
+.island--appearance-liquidGlass {
+  isolation: isolate;
+  opacity: 1;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.36), transparent 96px),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, var(--glass-soft-alpha)),
+      transparent 42%
+    ),
+    linear-gradient(
+      165deg,
+      transparent 42%,
+      rgba(2, 8, 14, 0.08)
+    ),
+    var(--glass-tint-color);
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, var(--glass-shadow-alpha)),
+    inset 0 1px 0 rgba(255, 255, 255, var(--glass-inset-alpha)),
+    inset 0 -1px 0 rgba(8, 18, 28, 0.16),
+    inset 1px 0 0 rgba(130, 224, 255, var(--glass-cyan-alpha)),
+    inset -1px 0 0 rgba(255, 158, 230, var(--glass-magenta-alpha));
+  backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.18);
+  -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.18);
+}
+
+.island--appearance-liquidGlass.island--glass-css-fallback {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    linear-gradient(165deg, transparent 40%, rgba(4, 12, 20, 0.2)),
+    var(--glass-tint-color);
+}
+
+.island--appearance-liquidGlass .island__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.island__glass::before,
+.island__glass::after,
+.island__glass-refraction,
+.island__glass-highlight {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.island__glass::before {
+  width: 48%;
+  aspect-ratio: 1;
+  left: var(--glass-pointer-x);
+  top: var(--glass-pointer-y);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, var(--glass-glow-alpha)),
+    rgba(var(--glass-page-accent), var(--glass-accent-alpha)) 38%,
+    transparent 70%
+  );
+  filter: blur(20px);
+  opacity: 0.9;
+  transform: translate(-50%, -50%);
+  transition:
+    left 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.island__glass::after {
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(116, 214, 255, 0.1), transparent 16% 82%, rgba(255, 156, 224, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 22% 82%, rgba(20, 40, 52, 0.08));
+  mix-blend-mode: screen;
+  opacity: var(--glass-refraction-opacity);
+}
+
+.island__glass-refraction {
+  inset: 1px;
+  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 14px rgba(var(--glass-page-accent), var(--glass-inner-accent-alpha)),
+    inset 0 0 2px rgba(255, 255, 255, 0.24);
+}
+
+.island__glass-highlight {
+  top: 2px;
+  left: var(--glass-pointer-x);
+  width: 42%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
+  filter: blur(0.4px);
+  opacity: var(--glass-highlight-opacity);
+  transform: translateX(-50%);
+  transition: left 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.island--expanded.island--todo {
+  color: #f8f4e9;
+}
+
+.island--collapsed {
+  width: var(--collapsed-island-width);
+  height: 38px;
+  border-radius: 0 0 22px 22px;
+  cursor: pointer;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.22)),
+    var(--island-background-color);
+  box-shadow: none;
+}
+
+.island--collapsed:hover,
+.island--collapsed:focus-within {
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 0 18px rgba(255, 255, 255, 0.08),
+    0 5px 16px rgba(0, 0, 0, 0.12);
+}
+
+.island--appearance-liquidGlass.island--collapsed {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.11), transparent 42%),
+    linear-gradient(180deg, transparent 48%, rgba(6, 16, 24, 0.1)),
+    var(--glass-collapsed-tint-color);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(8, 22, 32, 0.18),
+    inset 1px 0 0 rgba(116, 214, 255, 0.14),
+    inset -1px 0 0 rgba(255, 156, 224, 0.08);
+}
+
+.island--appearance-liquidGlass.island--collapsed:hover,
+.island--appearance-liquidGlass.island--collapsed:focus-within {
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 0 18px rgba(255, 255, 255, 0.1),
+    inset 1px 0 0 rgba(116, 214, 255, 0.24),
+    inset -1px 0 0 rgba(255, 156, 224, 0.16);
+}
+
+.island--appearance-liquidGlass.island--expanded .island__glass::after {
+  animation: glassBloomExpand 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.island--appearance-liquidGlass.island--collapsed .island__glass::after {
+  animation: glassBloomCollapse 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes glassBloomExpand {
+  0% {
+    opacity: 0.28;
+    transform: scale(0.7, 0.28);
+    transform-origin: top center;
+  }
+  48% {
+    opacity: 1;
+    transform: scale(1.015, 1.02);
+  }
+  100% {
+    opacity: var(--glass-refraction-opacity);
+    transform: none;
+  }
+}
+
+@keyframes glassBloomCollapse {
+  0% {
+    opacity: var(--glass-refraction-opacity);
+    transform: none;
+  }
+  52% {
+    opacity: 0.9;
+    transform: scale(1.02, 0.76);
+    transform-origin: top center;
+  }
+  100% {
+    opacity: var(--glass-refraction-opacity);
+    transform: none;
+  }
+}
+
+.island--expanded {
+  width: 560px;
+  height: var(--expanded-island-height, 306px);
+  border-radius: 0 0 30px 30px;
+  cursor: default;
+}
+
+.island--detached.island--collapsed {
+  border-radius: 14px 14px 22px 22px;
+}
+
+.island--detached.island--expanded {
+  border-radius: 22px 22px 30px 30px;
+}
+
+.island__collapsed,
+.island__expanded {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  will-change: opacity, transform;
+  transition:
+    opacity 120ms ease,
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island__collapsed {
+  width: var(--collapsed-island-width);
+  height: 38px;
+  margin-left: calc(var(--collapsed-island-width) / -2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: 140ms, 0s;
+}
+
+.island--expanded .island__collapsed {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition-delay: 0s;
+}
+
+.island__expanded {
+  width: 560px;
+  height: var(--expanded-island-height, 306px);
+  margin-left: -280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transform-origin: top center;
+}
+
+.island--preparing.island--collapsed .island__surface {
+  overflow: visible;
+}
+
+.island--preparing.island--collapsed .island__expanded {
+  opacity: 0.001;
+  transition: none;
+}
+
+.island--expanded .island__expanded {
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 260ms ease 160ms,
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 140ms;
+}
+
+.island--collapsed:active {
+  cursor: pointer;
+}
+
+.island__content {
+  min-height: 0;
+  flex: 1;
+}

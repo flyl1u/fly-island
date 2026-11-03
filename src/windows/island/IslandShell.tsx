@@ -12,6 +12,7 @@ import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
+import "./IslandShell.css";
 
 type IslandShellProps = {
   qqMail: QQMailController;

@@ -3,6 +3,7 @@ import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import type { IslandPage } from "./types";
+import "./IslandHeader.css";
 
 type IslandHeaderProps = {
   page: IslandPage;
