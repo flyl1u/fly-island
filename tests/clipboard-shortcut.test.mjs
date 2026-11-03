@@ -14,6 +14,7 @@ const key = (k, mods = {}) => ({ key: k, ctrlKey: false, altKey: false, shiftKey
 test("key labels are normalized for display", () => {
   assert.equal(normalizeShortcutKeyLabel("v"), "V");
   assert.equal(normalizeShortcutKeyLabel("Spacebar"), "Space");
+  assert.equal(normalizeShortcutKeyLabel(" "), "Space");
   assert.equal(normalizeShortcutKeyLabel("Escape"), "Esc");
   assert.equal(normalizeShortcutKeyLabel("ArrowLeft"), "Left");
   assert.equal(normalizeShortcutKeyLabel("F5"), "F5");
@@ -22,6 +23,7 @@ test("key labels are normalized for display", () => {
 test("shortcuts are built from key events in a fixed modifier order", () => {
   assert.equal(buildShortcutFromEvent(key("v", { ctrlKey: true, shiftKey: true })), "Ctrl+Shift+V");
   assert.equal(buildShortcutFromEvent(key("x", { metaKey: true, altKey: true, ctrlKey: true })), "Ctrl+Alt+Win+X");
+  assert.equal(buildShortcutFromEvent(key(" ", { ctrlKey: true })), "Ctrl+Space", "the space key records as Space");
   assert.equal(buildShortcutFromEvent(key("x")), null, "a shortcut needs a modifier");
   assert.equal(buildShortcutFromEvent(key("Control", { ctrlKey: true })), null, "a lone modifier is not a shortcut");
 });
@@ -47,6 +49,7 @@ test("the shortcut matches key events except inside editable fields", () => {
     assert.equal(matchesClipboardShortcut(event(null), "Ctrl+X"), true);
     assert.equal(matchesClipboardShortcut(event(new HTMLElement()), "ctrl + x"), true);
     assert.equal(matchesClipboardShortcut(event(new HTMLElement()), "Ctrl+V"), false);
+    assert.equal(matchesClipboardShortcut({ ...key(" ", { ctrlKey: true }), target: null }, "Ctrl+Space"), true);
     assert.equal(matchesClipboardShortcut(event(new HTMLInputElement()), "Ctrl+X"), false);
     assert.equal(matchesClipboardShortcut(event(new HTMLTextAreaElement()), "Ctrl+X"), false);
     const editable = new HTMLElement();

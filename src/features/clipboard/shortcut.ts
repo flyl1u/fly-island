@@ -14,14 +14,16 @@ export const MODIFIER_KEY_NAMES = new Set([
 ]);
 
 export function normalizeShortcutKeyLabel(key: string) {
+  // The space key is a single character too; check it before the letter case.
+  if (key === " " || key === "Spacebar") {
+    return "Space";
+  }
+
   if (key.length === 1) {
     return key.toUpperCase();
   }
 
   switch (key) {
-    case " ":
-    case "Spacebar":
-      return "Space";
     case "Escape":
       return "Esc";
     case "ArrowUp":
