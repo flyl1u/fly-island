@@ -3,7 +3,5 @@
   "lines": {
     "src-tauri/src/clipboard_history.rs": 1068
   },
-  "inlineTests": {
-    "src-tauri/src/qq_notifications.rs": 292
-  }
+  "inlineTests": {}
 }
