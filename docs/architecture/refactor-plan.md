@@ -75,9 +75,13 @@
 - [x] **1.4** 建立 `src/styles/`：从 `App.css` 中提取全局变量、重置样式和字体声明，作为 `tokens.css`、`base.css`、`fonts.css`，由 `main.tsx` 引入。
   - 实际 `App.css` 中没有全局 CSS 变量（现有变量都限定在 `.stage` 等组件上），因此本步只建 `fonts.css` 和 `base.css`，`tokens.css` 在 4.2 引入变量时再建。`.stage--font-pixel` 是 `.stage` 的修饰类，留在 `App.css`。
 
-**验收**：`pnpm check`、`pnpm build` 通过；`App.tsx` 至少减少 600 行；界面截图对比没有差异。
+**验收**：`pnpm check`、`pnpm build` 通过；`App.tsx` 减少约 150 行；界面截图对比没有差异。
+
+（原指标为"`App.tsx` 至少减少 600 行"。按本阶段实际列出的内容（若干纯函数和 4 个通用控件），可移出的代码只有约 150 行，600 行以上的体量都在 Phase 2 的各个 feature 中。2026-11-03 经确认改为按实际计算，实际为 5644 → 5488（-156），已达成。）
 
 ## Phase 2：拆分 feature（每个 feature 单独提交）
+
+阶段目标：Phase 2 完成后 `App.tsx` 应比基线至少减少 600 行（承接原 Phase 1 的预期）。
 
 每一步都要：把组件、领域函数、存储 key 和对应的 CSS 一起迁到 `features/<领域>/`；把该领域的 `invoke` / `listen` 收口到 `api.ts`；在 `App.tsx` 中改为导入新模块。
 
@@ -158,6 +162,7 @@
 | 2026-11-03 | 1.2 | `bd16b6c` | `App.tsx` 5644 → 5602（-42）；新增 `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` 和 `tests/utils.test.mjs`（6 个用例）；`SettingsWindow.tsx` 改为从 `utils/error` 导入 `getErrorMessage`；`getDisplayDateParts` 的参数类型改为结构类型 `{ localeTag: string }`（运行时不变）；`hexToRgba` 推迟到 2.4 | `pnpm check`（51/51）、`pnpm build` |
 | 2026-11-03 | 1.3 | `5d17988` | `App.tsx` 5602 → 5488（-114）、`App.css` 3865 → 3677（-188）；新增 `components/controls/` 下 4 组 `.tsx` + `.css`。已核对 CSS 迁移不改变层叠结果：没有其他规则以相同特异性命中这些控件 | `pnpm check`（51/51）、`pnpm build`；截图对比待人工验收 |
 | 2026-11-03 | 1.4 | `bc7cccd` | `App.css` 3677 → 3622（-55）；新增 `styles/fonts.css`（`@font-face`，url 改为 `../assets/…`）、`styles/base.css`，由 `main.tsx` 在 `App` 之前引入。打包产物 CSS 与 1.3 完全一致，只是这 785 字节的全局规则移到了开头；之前加载的组件 CSS 中没有同特异性的冲突规则 | `pnpm check`（51/51）、`pnpm build` |
+| 2026-11-03 | Phase 1 验收 | 见提交说明 | `App.tsx` 5644 → 5488（-156），`App.css` 3865 → 3622（-243）；验收指标改为"减少约 150 行"，600 行预期移到 Phase 2 | `pnpm check`、`pnpm build`；截图对比待人工验收 |
 
 ## 待人工验收
 
