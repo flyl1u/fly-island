@@ -170,7 +170,8 @@
 | 2026-11-03 | 1.4 | `bc7cccd` | `App.css` 3677 → 3622（-55）；新增 `styles/fonts.css`（`@font-face`，url 改为 `../assets/…`）、`styles/base.css`，由 `main.tsx` 在 `App` 之前引入。打包产物 CSS 与 1.3 完全一致，只是这 785 字节的全局规则移到了开头；之前加载的组件 CSS 中没有同特异性的冲突规则 | `pnpm check`（51/51）、`pnpm build` |
 | 2026-11-03 | Phase 1 验收 | 见提交说明 | `App.tsx` 5644 → 5488（-156），`App.css` 3865 → 3622（-243）；验收指标改为"减少约 150 行"，600 行预期移到 Phase 2 | `pnpm check`、`pnpm build`；截图对比待人工验收 |
 | 2026-11-03 | 2.1（1/4，搬迁） | `4aba0c4` | `App.tsx` 5488 → 5268（-220，白名单按约定暂不下调）；新增 `features/todos/types.ts`、`storage.ts`、`markdown.ts`、`ArchiveBrowser.tsx` 和 `tests/todos.test.mjs`（6 个用例）；`SettingsWindow.tsx` 改为直接从 `features/todos` 导入 | `pnpm check`（57/57）、`pnpm build` |
-| 2026-11-03 | 2.1（2/4，改写） | 见提交说明 | 新增 `features/todos/api.ts`（`saveTodoMarkdown`、`SaveTodoResult`）；`App.tsx` 改为调用封装函数，命令名和参数名不变；`App.tsx` 5268 → 5266 | `pnpm check`（57/57）、`pnpm build` |
+| 2026-11-03 | 2.1（2/4，改写） | `7b044ca` | 新增 `features/todos/api.ts`（`saveTodoMarkdown`、`SaveTodoResult`）；`App.tsx` 改为调用封装函数，命令名和参数名不变；`App.tsx` 5268 → 5265 | `pnpm check`（57/57）、`pnpm build` |
+| 2026-11-03 | 2.1（3/4，改写） | 见提交说明 | 在 `App.tsx` 中把 `TodoNotebook`（470 行）的书脊按钮组拆为 `TodoNotebookSpine`（71 行）、单条待办拆为 `TodoListItem`（156 行），二者无状态，编辑与拖拽状态仍在 `TodoNotebook`（334 行）中；DOM 结构与 class 不变。`App.tsx` 5265 → 5358（+93，低于白名单记录 5488） | `pnpm check`（57/57）、`pnpm build`；交互待人工验收 |
 
 ## 待人工验收
 
