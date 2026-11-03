@@ -4,7 +4,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -26,11 +25,11 @@ import {
   type WeChatRemindersController,
 } from "./features/messages/wechat/WeChatReminders";
 import { useQQMail, type QQMailController } from "./features/messages/qq-mail/QQMail";
-import { MessagesPanel, messagePanelHeight, type MessageView } from "./features/messages/Messages";
+import { MessagesPanel, type MessageView } from "./features/messages/Messages";
 import { MessageSourceIcon } from "./features/messages/MessageSourceIcon";
 import { CollapsedMessageContent } from "./features/messages/CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./features/messages/messagePreview";
-import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
+import { useIdleTuck } from "./useIslandAutomation";
 import {
   useTranslation,
 } from "./i18n";
@@ -40,21 +39,22 @@ import { openSettingsWindow } from "./windows/settings/api";
 import { toggleTranslationWindow } from "./windows/translation/api";
 import { getAgentStatusLabel, getAgentVisualState, type AgentVisualState } from "./features/agent-status/status";
 import { useAgentStatus } from "./features/agent-status/useAgentStatus";
-import { hexToRgba, isSameSettings } from "./features/appearance/settings";
-import { STORAGE_KEY, loadSettings } from "./features/appearance/storage";
-import type { AppearanceMode, IslandSettings } from "./features/appearance/types";
+import { useIslandSettings } from "./features/appearance/useIslandSettings";
+import type { AppearanceMode } from "./features/appearance/types";
 import { ClipboardHistoryPanel } from "./features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "./features/clipboard/useClipboardHistory";
-import { matchesClipboardShortcut } from "./features/clipboard/shortcut";
 import { MusicPlayerPanel } from "./features/media/MusicPlayerPanel";
 import { MusicWaveButton } from "./features/media/MusicWaveButton";
 import { useMediaState } from "./features/media/useMediaState";
 import type { MediaState } from "./features/media/api";
-import { TODO_SCROLL_START_ROWS } from "./features/todos/layout";
 import { useTodos } from "./features/todos/useTodos";
 import type { IslandMode, IslandPage, NativeGlassState } from "./windows/island/types";
 import { useIslandWindow } from "./windows/island/useIslandWindow";
-import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getCollapsedIslandWidth, getTodoVisualRows } from "./windows/island/layout";
+import { getExpandedIslandHeight } from "./windows/island/expandedHeight";
+import { getIslandStageStyle } from "./windows/island/stageStyle";
+import { useCollapsedTodo } from "./windows/island/useCollapsedTodo";
+import { useIslandKeyboard } from "./windows/island/useIslandKeyboard";
+import { useIslandNavigation } from "./windows/island/useIslandNavigation";
 import "./App.css";
 
 type IslandShellProps = {
@@ -546,13 +546,21 @@ export function IslandShell({
 
 function IslandApp() {
   const t = useTranslation();
-  const [mode, setMode] = useState<IslandMode>("collapsed");
-  const [isTucked, setIsTucked] = useState(false);
+  const {
+    mode,
+    isTucked,
+    page,
+    setPage,
+    collapseIsland,
+    tuckIsland,
+    revealIsland,
+    openIslandPage,
+    toggleClipboardHistory,
+  } = useIslandNavigation();
   const qqNotifications = useQQNotifications(mode === "collapsed" && !isTucked);
   const wechatReminders = useWeChatReminders(mode === "collapsed" && !isTucked);
   const qqMail = useQQMail(mode === "collapsed" && !isTucked);
   const [messageSource, setMessageSource] = useState<MessageView>("qq");
-  const [page, setPage] = useState<IslandPage>("todo");
   const {
     mediaState,
     isMediaTrackChanging,
@@ -564,16 +572,7 @@ function IslandApp() {
   } = useMediaState();
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus();
-  const [settings, setSettings] = useState<IslandSettings>(loadSettings);
-
-  const setIslandMode = useCallback((nextMode: IslandMode) => {
-    setMode(nextMode);
-    setIsTucked(false);
-  }, []);
-
-  const collapseIsland = useCallback(() => {
-    setIslandMode("collapsed");
-  }, [setIslandMode]);
+  const [settings, setSettings] = useIslandSettings();
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
@@ -585,163 +584,35 @@ function IslandApp() {
     onMissingSaveDirectory: openSavePathSettings,
   });
 
-  const clipboardShortcutToggleAt = useRef(0);
-  const pendingTodoIds = useMemo(
-    () => todos.filter((todo) => !todo.completed).map((todo) => todo.id),
-    [todos],
-  );
-  const displayedTodoId = useTodoRotation(
-    pendingTodoIds,
-    activeTodoId,
-    settings.rotateTodos,
-    settings.todoRotationSeconds,
-    mode !== "collapsed" || isTucked || !settings.showCollapsedText ||
-      Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview),
-  );
-  const collapsedTaskTitle = useMemo(() => {
-    const activeTodo = todos.find(
-      (todo) => todo.id === displayedTodoId && !todo.completed,
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
+    useCollapsedTodo(
+      todos,
+      activeTodoId,
+      settings,
+      mode !== "collapsed" || isTucked || !settings.showCollapsedText ||
+        Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview),
     );
-    return activeTodo?.title ?? null;
-  }, [displayedTodoId, todos]);
-  const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle
-    ? todos.filter((todo) => !todo.completed).length
-    : null;
-  const collapsedIslandWidth = useMemo(
-    () =>
-      getCollapsedIslandWidth(
-        settings.showCollapsedText
-          ? collapsedTaskTitle ?? (collapsedTodoCount !== null
-            ? t.island.pendingTodos(collapsedTodoCount)
-            : settings.showTitle ? "fly-island" : "")
-          : "",
-      ),
-    [collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t],
-  );
-  const isTodoArchivePage =
-    page === "todo" && (todoPageMode === "archive" || todoPageMode === "review");
-  const visibleTodoRows = Math.min(
-    Math.max(
-      todoPageMode === "daily" || isTodoArchivePage
-        ? TODO_GROW_START_ROWS
-        : getTodoVisualRows(todos),
-      1,
-    ),
-    TODO_SCROLL_START_ROWS,
-  );
-  const expandedIslandHeight =
-    page === "todo"
-      ? isTodoArchivePage
-        ? TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT
-        : BASE_EXPANDED_ISLAND_HEIGHT +
-          Math.max(0, visibleTodoRows - TODO_GROW_START_ROWS) * TODO_ROW_HEIGHT
-      : page === "music"
-        ? musicSettingsOpen
-          ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
-          : MUSIC_EXPANDED_ISLAND_HEIGHT + (mediaCommandError ? 24 : 0)
-        : page === "clipboard"
-          ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
-          : messagePanelHeight(messageSource, Boolean(qqMail.selectedMail));
+  const expandedIslandHeight = getExpandedIslandHeight({
+    page,
+    todoPageMode,
+    todos,
+    musicSettingsOpen,
+    hasMediaCommandError: Boolean(mediaCommandError),
+    messageSource,
+    isReadingMail: Boolean(qqMail.selectedMail),
+  });
   const stageStyle = useMemo(
-    () => {
-      const glassStrength = settings.glassIntensity / 100;
-      const glassMaskOpacity = settings.opacity / 100;
-
-      return ({
-        "--island-opacity": settings.opacity / 100,
-        "--island-scale": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
-        "--collapsed-island-width": `${collapsedIslandWidth}px`,
-        "--expanded-island-height": `${expandedIslandHeight}px`,
-        "--task-text-color": settings.taskTextColor,
-        "--island-pulse-color": settings.pulseColor,
-        "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),
-        "--island-pulse-brightness": `${settings.pulseBrightness}%`,
-        "--island-background-color": settings.islandBackgroundColor,
-        "--glass-intensity": glassStrength,
-        "--glass-mask-opacity": glassMaskOpacity,
-        "--glass-soft-alpha": 0.045 + glassStrength * 0.045,
-        "--glass-shadow-alpha": 0.14 + glassStrength * 0.1,
-        "--glass-inset-alpha": 0.2 + glassStrength * 0.2,
-        "--glass-cyan-alpha": glassStrength * 0.16,
-        "--glass-magenta-alpha": glassStrength * 0.1,
-        "--glass-glow-alpha": 0.16 + glassStrength * 0.14,
-        "--glass-accent-alpha": glassStrength * 0.055,
-        "--glass-refraction-opacity": 0.45 + glassStrength * 0.38,
-        "--glass-border-alpha": 0.1 + glassStrength * 0.18,
-        "--glass-inner-accent-alpha": glassStrength * 0.08,
-        "--glass-highlight-opacity": 0.34 + glassStrength * 0.38,
-        "--glass-panel-accent-alpha": glassStrength * 0.085,
-        "--glass-panel-blur": `${10 + glassStrength * 9}px`,
-        "--glass-tint-color": hexToRgba(
-          settings.islandBackgroundColor,
-          glassMaskOpacity,
-        ),
-        "--glass-collapsed-tint-color": hexToRgba(
-          settings.islandBackgroundColor,
-          glassMaskOpacity,
-        ),
-        "--todo-background-color": settings.todoBackgroundColor,
-      }) as CSSProperties;
-    },
-    [
-      expandedIslandHeight,
-      collapsedIslandWidth,
-      mode,
-      settings.glassIntensity,
-      settings.islandBackgroundColor,
-      settings.opacity,
-      settings.pulseBrightness,
-      settings.pulseColor,
-      settings.collapsedScale,
-      settings.expandedScale,
-      settings.taskTextColor,
-      settings.todoBackgroundColor,
-    ],
+    () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
+    [collapsedIslandWidth, expandedIslandHeight, mode, settings],
   );
-
-  const tuckIsland = useCallback(() => {
-    setIslandMode("collapsed");
-    setIsTucked(true);
-  }, [setIslandMode]);
-
-  const revealIsland = useCallback(() => {
-    setIsTucked(false);
-  }, []);
 
   useIdleTuck(settings.autoTuck, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
-
-  const openIslandPage = useCallback((nextPage: IslandPage) => {
-    setPage(nextPage);
-    setMode("expanded");
-    setIsTucked(false);
-  }, []);
 
   const openMessages = useCallback((source: MessageSource) => {
     qqMail.closeReader();
     setMessageSource(source);
     openIslandPage("qq");
   }, [openIslandPage, qqMail.closeReader]);
-
-  const openClipboardHistory = useCallback(() => {
-    openIslandPage("clipboard");
-  }, [openIslandPage]);
-
-  const toggleClipboardHistory = useCallback(() => {
-    const now = Date.now();
-
-    if (now - clipboardShortcutToggleAt.current < 250) {
-      return;
-    }
-
-    clipboardShortcutToggleAt.current = now;
-
-    if (mode === "expanded" && page === "clipboard") {
-      setIslandMode("collapsed");
-      return;
-    }
-
-    openClipboardHistory();
-  }, [mode, openClipboardHistory, page, setIslandMode]);
 
   const {
     clipboardHistory,
@@ -757,25 +628,6 @@ function IslandApp() {
       setMusicSettingsOpen(false);
     }
   }, [page]);
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
-
-  // The settings window edits this key; storage events deliver its changes here.
-  useEffect(() => {
-    const syncFromSettingsWindow = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) {
-        const nextSettings = loadSettings();
-        setSettings((current) =>
-          isSameSettings(current, nextSettings) ? current : nextSettings,
-        );
-      }
-    };
-
-    window.addEventListener("storage", syncFromSettingsWindow);
-    return () => window.removeEventListener("storage", syncFromSettingsWindow);
-  }, []);
 
   const {
     isPositionDetached,
@@ -793,30 +645,12 @@ function IslandApp() {
     onCollapse: collapseIsland,
   });
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        clipboardHistory.settings.shortcutEnabled &&
-        matchesClipboardShortcut(event, clipboardHistory.settings.shortcut)
-      ) {
-        event.preventDefault();
-        toggleClipboardHistory();
-        return;
-      }
-
-      if (event.key === "Escape") {
-        collapseIsland();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    clipboardHistory.settings.shortcut,
+  useIslandKeyboard(
     clipboardHistory.settings.shortcutEnabled,
-    collapseIsland,
+    clipboardHistory.settings.shortcut,
     toggleClipboardHistory,
-  ]);
+    collapseIsland,
+  );
 
   const agentVisualState = useMemo(
     () => getAgentVisualState(agentStatus),
