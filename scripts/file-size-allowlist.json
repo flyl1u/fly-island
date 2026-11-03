@@ -5,12 +5,12 @@
     "src/App.tsx": 5488,
     "src/QQMail.tsx": 404,
     "src-tauri/src/clipboard_history.rs": 1068,
-    "src-tauri/src/lib.rs": 1770,
+    "src-tauri/src/lib.rs": 1769,
     "src-tauri/src/media_control.rs": 829,
     "src-tauri/src/qq_mail.rs": 1465
   },
   "inlineTests": {
-    "src-tauri/src/lib.rs": 203,
+    "src-tauri/src/lib.rs": 201,
     "src-tauri/src/qq_mail.rs": 697,
     "src-tauri/src/qq_notifications.rs": 292
   }

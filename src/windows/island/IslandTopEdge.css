@@ -1,0 +1,79 @@
+/*
+ * Top-edge attachment. Rust reports it on the root element as
+ * data-island-top-edge (see topEdge.ts). Before the first report, and in the
+ * browser preview, the docked / detached class from App stands in.
+ */
+
+/* A dragged island dropped flush with the top gets the docked flat top. */
+:root[data-island-top-edge="attached"] .island--detached.island--collapsed {
+  border-radius: 0 0 22px 22px;
+}
+
+:root[data-island-top-edge="attached"] .island--detached.island--expanded {
+  border-radius: 0 0 30px 30px;
+}
+
+/*
+ * Concave fillets that flare the flat top into the screen edge. The layer spans
+ * the full island height plus one fillet on each side and paints the island's
+ * own background, so vertical gradients, glass tints and custom colours line up
+ * at the seam. The mask keeps only the two cut-out corners outside the island.
+ * They sit outside the native hit area, so clicks there reach the desktop.
+ */
+.island::before {
+  --island-top-fillet: 12px;
+  --island-top-fillet-edge: calc(var(--island-top-fillet) - 0.6px);
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--island-top-fillet));
+  right: calc(-1 * var(--island-top-fillet));
+  z-index: -1;
+  background: inherit;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-mask:
+    radial-gradient(
+        circle var(--island-top-fillet) at 0 100%,
+        transparent var(--island-top-fillet-edge),
+        #000 var(--island-top-fillet)
+      )
+      left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    radial-gradient(
+        circle var(--island-top-fillet) at 100% 100%,
+        transparent var(--island-top-fillet-edge),
+        #000 var(--island-top-fillet)
+      )
+      right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat;
+  mask:
+    radial-gradient(
+        circle var(--island-top-fillet) at 0 100%,
+        transparent var(--island-top-fillet-edge),
+        #000 var(--island-top-fillet)
+      )
+      left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    radial-gradient(
+        circle var(--island-top-fillet) at 100% 100%,
+        transparent var(--island-top-fillet-edge),
+        #000 var(--island-top-fillet)
+      )
+      right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat;
+  /* Fades with the 560ms corner-radius morph on .island. */
+  transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island--docked::before,
+:root[data-island-top-edge="attached"] .island::before {
+  opacity: 1;
+}
+
+:root[data-island-top-edge="detached"] .island::before {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island::before {
+    transition: none;
+  }
+}
