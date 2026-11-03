@@ -125,6 +125,9 @@ export function useIslandWindow({
     ).finally(() => {
       void showReadyIsland();
     });
+    // Lists exactly the settings fields syncNativeInteraction sends, so unrelated
+    // settings changes do not cost a native round trip (expansion performance).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     expandedIslandHeight,
     collapsedIslandWidth,
