@@ -336,6 +336,15 @@ export type Translations = {
       title: string;
     };
 
+    expand: {
+      title: string;
+      trigger: string;
+      click: string;
+      hover: string;
+      hoverDelay: string;
+      hoverCollapseDelay: string;
+    };
+
     project: {
       title: string;
       star: string;
@@ -389,6 +398,7 @@ export type Translations = {
       marginY: string;
       topFilletRadius: string;
       islandCornerRadius: string;
+      maxPanelHeight: string;
       launchAtStartup: string;
       showTitle: string;
       displayTitle: string;

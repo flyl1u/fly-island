@@ -65,6 +65,14 @@ export function alignCollapsedIslandWidth(
   return width;
 }
 
+/** Todo rows the expanded panel grows to before the list scrolls, within the tallest panel allowed. */
+export function getTodoScrollStartRows(maxPanelHeight: number) {
+  return (
+    TODO_GROW_START_ROWS +
+    Math.max(0, Math.floor((maxPanelHeight - BASE_EXPANDED_ISLAND_HEIGHT) / TODO_ROW_HEIGHT))
+  );
+}
+
 export function getTodoVisualRows(todoList: TodoItem[]) {
   return todoList.reduce(
     (total, todo) => total + getTodoTitleLineCount(todo.title),

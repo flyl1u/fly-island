@@ -1,7 +1,6 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
-import { TODO_SCROLL_START_ROWS } from "../../features/todos/layout";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { IslandPage } from "./types";
 
 type ExpandedHeightInput = {
@@ -12,9 +11,14 @@ type ExpandedHeightInput = {
   hasMediaCommandError: boolean;
   messageSource: MessageView;
   isReadingMail: boolean;
+  maxPanelHeight: number;
 };
 
-/** Height of the expanded island for the open page; the todo page grows with its rows up to a scroll limit. */
+/**
+ * Height of the expanded island for the open page. The todo page grows with its
+ * rows, and the pages that scroll (todos, clipboard, messages) stop at the
+ * panel height limit; the music and archive layouts keep their fixed heights.
+ */
 export function getExpandedIslandHeight({
   page,
   todoPageMode,
@@ -23,6 +27,7 @@ export function getExpandedIslandHeight({
   hasMediaCommandError,
   messageSource,
   isReadingMail,
+  maxPanelHeight,
 }: ExpandedHeightInput) {
   const isTodoArchivePage =
     page === "todo" && (todoPageMode === "archive" || todoPageMode === "review");
@@ -33,7 +38,7 @@ export function getExpandedIslandHeight({
         : getTodoVisualRows(todos),
       1,
     ),
-    TODO_SCROLL_START_ROWS,
+    getTodoScrollStartRows(maxPanelHeight),
   );
 
   return page === "todo"
@@ -46,6 +51,6 @@ export function getExpandedIslandHeight({
         ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
         : MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "clipboard"
-        ? CLIPBOARD_EXPANDED_ISLAND_HEIGHT
-        : messagePanelHeight(messageSource, isReadingMail);
+        ? Math.min(CLIPBOARD_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
+        : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);
 }

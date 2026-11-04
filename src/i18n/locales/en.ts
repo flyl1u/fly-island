@@ -330,7 +330,16 @@ const en: Translations = {
     },
 
     behavior: {
-      title: "Startup & tuck",
+      title: "Startup",
+    },
+
+    expand: {
+      title: "Open & close",
+      trigger: "Open the island by",
+      click: "Click",
+      hover: "Hover",
+      hoverDelay: "Hover delay",
+      hoverCollapseDelay: "Close delay after leaving",
     },
 
     project: {
@@ -386,6 +395,7 @@ const en: Translations = {
       marginY: "Top margin",
       topFilletRadius: "Top-edge corner radius",
       islandCornerRadius: "Island corner radius",
+      maxPanelHeight: "Max panel height",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
       displayTitle: "Display",

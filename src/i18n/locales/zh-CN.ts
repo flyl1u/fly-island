@@ -333,7 +333,16 @@ const zhCN: Translations = {
     },
 
     behavior: {
-      title: "启动与收起",
+      title: "启动",
+    },
+
+    expand: {
+      title: "展开与收起",
+      trigger: "展开方式",
+      click: "点击",
+      hover: "鼠标悬停",
+      hoverDelay: "悬停延迟",
+      hoverCollapseDelay: "移开后收起延迟",
     },
 
     project: {
@@ -389,6 +398,7 @@ const zhCN: Translations = {
       marginY: "顶部距离",
       topFilletRadius: "贴顶圆角",
       islandCornerRadius: "岛屿圆角",
+      maxPanelHeight: "最大面板高度",
       launchAtStartup: "开机自启动",
       showTitle: "显示岛屿名称",
       displayTitle: "显示内容",

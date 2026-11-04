@@ -1,6 +1,6 @@
 import { useTranslation } from "../../i18n";
 import { SliderControl } from "../../components/controls/SliderControl";
-import { MAX_ISLAND_CORNER_RADIUS, MAX_TOP_FILLET_RADIUS, MIN_ISLAND_CORNER_RADIUS, MIN_TOP_FILLET_RADIUS } from "./settings";
+import { MAX_ISLAND_CORNER_RADIUS, MAX_MAX_PANEL_HEIGHT, MAX_TOP_FILLET_RADIUS, MIN_ISLAND_CORNER_RADIUS, MIN_MAX_PANEL_HEIGHT, MIN_TOP_FILLET_RADIUS } from "./settings";
 import type { IslandSettings } from "./types";
 
 export function LayoutSettingsSection({
@@ -34,6 +34,15 @@ export function LayoutSettingsSection({
         step={0.01}
         suffix="x"
         onChange={(expandedScale) => onSettingsChange({ ...settings, expandedScale })}
+      />
+      <SliderControl
+        label={t.settings.layout.maxPanelHeight}
+        value={settings.maxPanelHeight}
+        min={MIN_MAX_PANEL_HEIGHT}
+        max={MAX_MAX_PANEL_HEIGHT}
+        step={1}
+        suffix="px"
+        onChange={(maxPanelHeight) => onSettingsChange({ ...settings, maxPanelHeight })}
       />
       <SliderControl
         label={t.settings.layout.marginY}

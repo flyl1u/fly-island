@@ -1,6 +1,7 @@
 import { useTranslation, type LocaleCode } from "../../i18n";
 import { LocaleControl } from "../../i18n/LocaleControl";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
+import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
@@ -31,11 +32,10 @@ export function GeneralSettingsPage({
         />
       </section>
       <BehaviorSettingsSection
-        settings={settings}
         launchAtStartup={launchAtStartup}
-        onSettingsChange={onSettingsChange}
         onLaunchAtStartupChange={updateLaunchAtStartup}
       />
+      <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );
 }

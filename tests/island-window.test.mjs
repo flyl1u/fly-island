@@ -5,6 +5,7 @@ import {
   MIN_COLLAPSED_ISLAND_WIDTH,
   alignCollapsedIslandWidth,
   getCollapsedIslandWidth,
+  getTodoScrollStartRows,
   getTodoVisualRows,
 } from "../src/windows/island/layout.ts";
 import { ISLAND_POSITION_STORAGE_KEY, loadIslandPosition } from "../src/windows/island/storage.ts";
@@ -27,6 +28,15 @@ test("the collapsed island grows with its text between the min and max widths", 
   const mid = getCollapsedIslandWidth("abcdefg");
   assert.ok(mid > MIN_COLLAPSED_ISLAND_WIDTH && mid < MAX_COLLAPSED_ISLAND_WIDTH, String(mid));
   assert.equal(Number.isInteger(mid), true);
+});
+
+test("the todo list scrolls after as many rows as fit under the max panel height", () => {
+  // 490px is the default and keeps the six rows the todo page always had.
+  assert.equal(getTodoScrollStartRows(490), 6);
+  assert.equal(getTodoScrollStartRows(306), 2);
+  assert.equal(getTodoScrollStartRows(351), 2);
+  assert.equal(getTodoScrollStartRows(352), 3);
+  assert.equal(getTodoScrollStartRows(546), 7);
 });
 
 test("the collapsed width is nudged so the centred island starts on a whole device pixel", () => {

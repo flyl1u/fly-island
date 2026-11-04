@@ -17,6 +17,16 @@ export function listenIslandTopAttachment(
   return listen<boolean>(TOP_ATTACHMENT_CHANGED_EVENT, ({ payload }) => handler(payload));
 }
 
+// Mirrors ISLAND_HOVER_CHANGED_EVENT in src-tauri/src/island/passthrough.rs.
+export const ISLAND_HOVER_CHANGED_EVENT = "island-hover-changed";
+
+/** Calls `handler` whenever the cursor enters (`true`) or leaves (`false`) the island shape. */
+export function listenIslandHover(
+  handler: (inside: boolean) => void,
+): Promise<UnlistenFn> {
+  return listen<boolean>(ISLAND_HOVER_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
+
 // 与 src-tauri/src/island/mod.rs 中 start_island_drag 推送的事件名一致。
 export const ISLAND_POSITION_CHANGED_EVENT = "island-position-changed";
 

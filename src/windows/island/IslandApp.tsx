@@ -21,8 +21,10 @@ import { useMediaState } from "../../features/media/useMediaState";
 import { useTodos } from "../../features/todos/useTodos";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
+import { getTodoScrollStartRows } from "./layout";
 import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
+import { useHoverExpand } from "./useHoverExpand";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useIslandNavigation } from "./useIslandNavigation";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
@@ -84,6 +86,7 @@ export function IslandApp() {
     hasMediaCommandError: Boolean(mediaCommandError),
     messageSource,
     isReadingMail: Boolean(qqMail.selectedMail),
+    maxPanelHeight: settings.maxPanelHeight,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
@@ -127,6 +130,17 @@ export function IslandApp() {
     setSettings,
     expandedIslandHeight,
     collapsedIslandWidth,
+    onCollapse: collapseIsland,
+  });
+
+  const openCurrentPage = useCallback(() => openIslandPage(page), [openIslandPage, page]);
+  useHoverExpand({
+    enabled: settings.expandTrigger === "hover",
+    delayMs: settings.hoverExpandDelayMs,
+    collapseDelayMs: settings.hoverCollapseDelayMs,
+    mode,
+    isTucked,
+    onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
 
@@ -217,6 +231,7 @@ export function IslandApp() {
           <TodoNotebook
             {...notebookProps}
             enableTodoReorder={settings.enableTodoReorder}
+            scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
           />
         )}
       </IslandShell>

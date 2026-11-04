@@ -2,7 +2,6 @@ import { useCallback, useState, type PointerEvent as ReactPointerEvent } from "r
 import { ClipboardList, Columns2, NotebookPen, Plus } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { ArchiveBrowser } from "./ArchiveBrowser";
-import { TODO_SCROLL_START_ROWS } from "./layout";
 import { TodoListItem } from "./TodoListItem";
 import { TodoNotebookSpine } from "./TodoNotebookSpine";
 import type { ArchiveLayout, SaveState, TodoArchive, TodoItem, TodoPageMode } from "./types";
@@ -20,6 +19,7 @@ export function TodoNotebook({
   selectedArchive,
   saveState,
   enableTodoReorder,
+  scrollStartRows,
   onDraftChange,
   onAddTodo,
   onToggleTodo,
@@ -46,6 +46,8 @@ export function TodoNotebook({
   selectedArchive: TodoArchive | null;
   saveState: SaveState;
   enableTodoReorder: boolean;
+  /** Rows shown before the list scrolls; the island grows to fit this many. */
+  scrollStartRows: number;
   onDraftChange: (value: string) => void;
   onAddTodo: () => void;
   onToggleTodo: (id: string) => void;
@@ -71,7 +73,7 @@ export function TodoNotebook({
   const openCount = displayedTodos.filter((todo) => !todo.completed).length;
   const listClassName = [
     "todo-list",
-    displayedTodos.length > TODO_SCROLL_START_ROWS ? "todo-list--scroll" : "",
+    displayedTodos.length > scrollStartRows ? "todo-list--scroll" : "",
   ]
     .filter(Boolean)
     .join(" ");

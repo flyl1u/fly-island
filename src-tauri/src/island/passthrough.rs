@@ -1,7 +1,7 @@
 //! Lets clicks fall through the transparent stage everywhere outside the island shape.
 
 use std::{thread, time::Duration};
-use tauri::WebviewWindow;
+use tauri::{Emitter, WebviewWindow};
 use windows::Win32::{
     Foundation::{POINT, RECT},
     UI::WindowsAndMessaging::{GetCursorPos, GetWindowRect},
@@ -9,17 +9,29 @@ use windows::Win32::{
 
 use super::{geometry::STAGE_WINDOW_WIDTH, state::read_window_state};
 
+// Mirrored by ISLAND_HOVER_CHANGED_EVENT in src/windows/island/api.ts. The payload says
+// whether the cursor is over the island shape. The webview's own mouseleave is unreliable
+// here, because the window stops receiving the cursor as soon as it leaves the shape.
+pub(crate) const ISLAND_HOVER_CHANGED_EVENT: &str = "island-hover-changed";
+
 pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
     thread::spawn(move || {
         let mut ignoring_cursor = false;
+        let mut was_inside = false;
 
         loop {
-            let should_ignore = !cursor_is_inside_island(&window);
+            let is_inside = cursor_is_inside_island(&window);
+            let should_ignore = !is_inside;
 
             if should_ignore != ignoring_cursor {
                 if window.set_ignore_cursor_events(should_ignore).is_ok() {
                     ignoring_cursor = should_ignore;
                 }
+            }
+
+            if is_inside != was_inside {
+                was_inside = is_inside;
+                let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, is_inside);
             }
 
             thread::sleep(Duration::from_millis(12));

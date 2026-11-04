@@ -10,6 +10,19 @@ export const MAX_TOP_FILLET_RADIUS = 12;
 export const DEFAULT_ISLAND_CORNER_RADIUS = 30;
 export const MIN_ISLAND_CORNER_RADIUS = 16;
 export const MAX_ISLAND_CORNER_RADIUS = 40;
+export const DEFAULT_HOVER_EXPAND_DELAY_MS = 300;
+export const MIN_HOVER_EXPAND_DELAY_MS = 0;
+export const MAX_HOVER_EXPAND_DELAY_MS = 1_000;
+export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 400;
+export const MIN_HOVER_COLLAPSE_DELAY_MS = 0;
+export const MAX_HOVER_COLLAPSE_DELAY_MS = 2_000;
+// Tallest panel before the todo list and other long pages scroll. The default is the
+// height the todo page reached before this was a setting (six rows).
+export const DEFAULT_MAX_PANEL_HEIGHT = 490;
+// The todo page's height with no rows below its two fixed ones.
+export const MIN_MAX_PANEL_HEIGHT = 306;
+// The tallest expanded height the native window accepts.
+export const MAX_MAX_PANEL_HEIGHT = 546;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -22,6 +35,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   marginY: 0,
   topFilletRadius: 8,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
+  maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -36,6 +50,9 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoRotationSeconds: 5,
   autoTuck: false,
   autoTuckSeconds: 30,
+  expandTrigger: "click",
+  hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
+  hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
 };
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
@@ -51,6 +68,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "marginY",
   "topFilletRadius",
   "islandCornerRadius",
+  "maxPanelHeight",
   "taskTextColor",
   "pulseColor",
   "pulseBrightness",
@@ -140,6 +158,9 @@ export function normalizeSettings(
     islandCornerRadius: typeof settings?.islandCornerRadius === "number" && Number.isFinite(settings.islandCornerRadius)
       ? clamp(Math.round(settings.islandCornerRadius), MIN_ISLAND_CORNER_RADIUS, MAX_ISLAND_CORNER_RADIUS)
       : DEFAULT_SETTINGS.islandCornerRadius,
+    maxPanelHeight: typeof settings?.maxPanelHeight === "number" && Number.isFinite(settings.maxPanelHeight)
+      ? clamp(Math.round(settings.maxPanelHeight), MIN_MAX_PANEL_HEIGHT, MAX_MAX_PANEL_HEIGHT)
+      : DEFAULT_SETTINGS.maxPanelHeight,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,
@@ -186,6 +207,13 @@ export function normalizeSettings(
     autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
       ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
       : DEFAULT_SETTINGS.autoTuckSeconds,
+    expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
+    hoverExpandDelayMs: typeof settings?.hoverExpandDelayMs === "number" && Number.isFinite(settings.hoverExpandDelayMs)
+      ? clamp(Math.round(settings.hoverExpandDelayMs), MIN_HOVER_EXPAND_DELAY_MS, MAX_HOVER_EXPAND_DELAY_MS)
+      : DEFAULT_SETTINGS.hoverExpandDelayMs,
+    hoverCollapseDelayMs: typeof settings?.hoverCollapseDelayMs === "number" && Number.isFinite(settings.hoverCollapseDelayMs)
+      ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
+      : DEFAULT_SETTINGS.hoverCollapseDelayMs,
   };
 }
 

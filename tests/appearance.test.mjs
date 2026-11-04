@@ -80,6 +80,24 @@ test("the island corner radius is rounded, clamped, and defaults to 30 for older
   assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 40);
 });
 
+test("expand trigger, hover delays and max panel height default for older settings and stay in range", () => {
+  const older = normalizeSettings({});
+  assert.equal(older.expandTrigger, "click");
+  assert.equal(older.hoverExpandDelayMs, 300);
+  assert.equal(older.maxPanelHeight, 490);
+  assert.equal(normalizeSettings({ expandTrigger: "hover" }).expandTrigger, "hover");
+  assert.equal(normalizeSettings({ expandTrigger: "doubleClick" }).expandTrigger, "click");
+  assert.equal(normalizeSettings({ hoverExpandDelayMs: -50 }).hoverExpandDelayMs, 0);
+  assert.equal(normalizeSettings({ hoverExpandDelayMs: 5_000 }).hoverExpandDelayMs, 1_000);
+  assert.equal(normalizeSettings({ hoverExpandDelayMs: "600" }).hoverExpandDelayMs, 300);
+  assert.equal(older.hoverCollapseDelayMs, 400);
+  assert.equal(normalizeSettings({ hoverCollapseDelayMs: 9_000 }).hoverCollapseDelayMs, 2_000);
+  assert.equal(normalizeSettings({ hoverCollapseDelayMs: 0 }).hoverCollapseDelayMs, 0);
+  assert.equal(normalizeSettings({ maxPanelHeight: 100 }).maxPanelHeight, 306);
+  assert.equal(normalizeSettings({ maxPanelHeight: 999 }).maxPanelHeight, 546);
+  assert.equal(normalizeSettings({ maxPanelHeight: 400.6 }).maxPanelHeight, 401);
+});
+
 test("old default margins and scales move to the current defaults", () => {
   assert.equal(normalizeSettings({ marginY: 31 }).marginY, DEFAULT_SETTINGS.marginY);
   assert.equal(normalizeSettings({ marginY: 31, topEdgeLayoutVersion: 1 }).marginY, 31);
