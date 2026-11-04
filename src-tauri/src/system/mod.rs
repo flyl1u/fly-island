@@ -6,7 +6,7 @@ pub(crate) mod updater;
 
 use std::{env, path::PathBuf};
 
-pub(super) const CREATE_NO_WINDOW: u32 = 0x08000000;
+pub(crate) const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 pub(crate) fn windows_home_dir() -> Result<PathBuf, String> {
     if let Ok(user_profile) = env::var("USERPROFILE") {

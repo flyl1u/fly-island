@@ -6,6 +6,7 @@ mod local_api;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
+mod plugin_host;
 mod qq_mail;
 mod qq_notifications;
 mod settings_window;
@@ -61,6 +62,9 @@ pub fn run() {
             if let Err(error) = local_api::init(app.handle()) {
                 eprintln!("failed to initialize the local API: {error}");
             }
+            if let Err(error) = plugin_host::init(app.handle()) {
+                eprintln!("failed to initialize plugins: {error}");
+            }
             if let Err(error) = qq_mail::init(app.handle()) {
                 eprintln!("failed to initialize QQ mail: {error}");
             }
@@ -98,6 +102,12 @@ pub fn run() {
             local_api::set_local_api_settings,
             local_api::reset_local_api_token,
             local_api::answer_local_api_request,
+            plugin_host::list_plugins,
+            plugin_host::set_plugins_allowed,
+            plugin_host::set_plugin_enabled,
+            plugin_host::reload_plugins,
+            plugin_host::open_plugins_folder,
+            plugin_host::run_plugin_command,
             qq_mail::get_qq_mail_state,
             qq_mail::connect_qq_mail,
             qq_mail::set_qq_mail_enabled,

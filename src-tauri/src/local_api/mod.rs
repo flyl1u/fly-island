@@ -148,6 +148,14 @@ pub fn reset_local_api_token() -> Result<LocalApiState, String> {
     snapshot()
 }
 
+/// Runs a todo / note method (e.g. `todos.add`) in the island window. Used by
+/// plugins; works whether or not the HTTP API is switched on. Errors carry an
+/// HTTP-style status.
+pub(crate) fn call_island(app: &AppHandle, method: &'static str, params: serde_json::Value) -> Result<serde_json::Value, (u16, String)> {
+    let call = routes::ApiCall { method, params, writes: false };
+    bridge::dispatch(app, call).map_err(|error| (error.status, error.message))
+}
+
 /// The island window's answer to a `local-api-request` event.
 #[tauri::command]
 pub fn answer_local_api_request(id: u64, response: BridgeResponse) {
