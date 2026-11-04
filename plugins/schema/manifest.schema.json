@@ -64,7 +64,17 @@
             "required": ["id", "title"],
             "properties": {
               "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
-              "title": { "$ref": "#/$defs/localizedText" }
+              "title": { "$ref": "#/$defs/localizedText" },
+              "keybinding": {
+                "description": "apiVersion 2: a global shortcut that runs the command, e.g. \"Ctrl+Alt+P\": Ctrl/Alt/Shift/Win (at least one) plus one key (letter, digit, F1-F24, Esc, Tab, Enter, Space, arrows, Home/End, PageUp/PageDown, Insert/Delete, Backspace). Ignored for apiVersion 1. A shortcut something else already uses is not registered and is shown on the plugin card.",
+                "type": "string"
+              },
+              "when": {
+                "description": "apiVersion 2: when the keybinding runs the command. Names: island.expanded and todos.hasActive (true/false), island.page (todo, music, clipboard, shelf, qq, agents, translation), compared with == / !=; joined with && || ! and parentheses. Unknown names are false; a clause that does not parse never runs the command. Empty or missing: always.",
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9 ._&|!=()'\"-]*$"
+              }
             }
           }
         },

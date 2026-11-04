@@ -689,6 +689,7 @@ const en: Translations = {
         secrets: "Keep passwords and tokens in Windows Credential Manager",
       },
       needsApproval: "The new version asks for more permissions, so it is paused. Switch it off and on to allow them.",
+      keybindingConflict: (shortcuts: string) => `Shortcut already in use by another app: ${shortcuts}`,
       notAllowed: "Turn on “Allow third-party plugins” above first.",
       describedOnly: "This plugin has nothing to run.",
       invalid: "Cannot load",

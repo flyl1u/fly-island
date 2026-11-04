@@ -692,6 +692,7 @@ const zhCN: Translations = {
         secrets: "在 Windows 凭据管理器中保存密码和令牌",
       },
       needsApproval: "新版本需要更多权限，已暂停。关掉再打开开关即可授权。",
+      keybindingConflict: (shortcuts: string) => `快捷键已被其他程序占用：${shortcuts}`,
       notAllowed: "先在上面打开“允许运行第三方插件”。",
       describedOnly: "这个插件没有需要运行的程序。",
       invalid: "无法加载",

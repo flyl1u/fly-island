@@ -683,6 +683,7 @@ export type Translations = {
       noPermissions: string;
       permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets", string>;
       needsApproval: string;
+      keybindingConflict: (shortcuts: string) => string;
       notAllowed: string;
       describedOnly: string;
       invalid: string;

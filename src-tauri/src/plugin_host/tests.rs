@@ -531,3 +531,19 @@ fn storage_keeps_values_within_the_limits() {
     assert_eq!(call("storage.set", json!({ "key": "y" })).expect_err("no value").0, 400);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn keybindings_are_checked_for_version_2_and_dropped_for_version_1() {
+    let commands = |keybinding: &str| {
+        json!({ "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" }, "keybinding": keybinding, "when": "island.expanded && !todos.hasActive" }] })
+    };
+    let v2 = parse(json!({ "apiVersion": 2, "contributes": commands("ctrl + alt + p") })).expect("valid");
+    let command = &v2.contributes.commands[0];
+    assert_eq!(command.keybinding(), Some("Ctrl+Alt+P"));
+    assert_eq!(command.when(), Some("island.expanded && !todos.hasActive"));
+    let v1 = parse(json!({ "apiVersion": 1, "contributes": commands("not a key") })).expect("v1 ignores keybindings");
+    assert_eq!(v1.contributes.commands[0].keybinding(), None);
+    assert!(parse(json!({ "apiVersion": 2, "contributes": commands("P") })).expect_err("no modifier").contains("keybinding"));
+    let bad_when = json!({ "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" }, "when": "a; b" }] });
+    assert!(parse(json!({ "apiVersion": 2, "contributes": bad_when })).expect_err("bad when").contains("when"));
+}

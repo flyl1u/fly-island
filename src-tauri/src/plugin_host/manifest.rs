@@ -8,6 +8,7 @@ use std::{
 
 use super::permissions::is_known_permission;
 use super::settings::{validate_specs, SettingSpec};
+use crate::clipboard_history::parse_shortcut_binding;
 
 pub(super) const MANIFEST_FILE_NAME: &str = "focusd-plugin.json";
 /// The newest host API version this build speaks. Plugins declare the one they
@@ -66,12 +67,52 @@ pub(super) enum PluginRuntime {
 pub struct PluginCommand {
     id: String,
     title: LocalizedText,
+    /// A global shortcut such as "Ctrl+Alt+P" (API version 2; see keybindings.rs).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    keybinding: Option<String>,
+    /// When the shortcut runs the command, e.g. "island.expanded && !todos.hasActive";
+    /// read by src/features/plugins/when.ts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    when: Option<String>,
 }
 
 impl PluginCommand {
     pub(super) fn id(&self) -> &str {
         &self.id
     }
+
+    pub(super) fn keybinding(&self) -> Option<&str> {
+        self.keybinding.as_deref()
+    }
+
+    pub(super) fn when(&self) -> Option<&str> {
+        self.when.as_deref()
+    }
+}
+
+const MAX_WHEN_CHARS: usize = 200;
+
+/// Checks a command's keybinding and when clause; version 1 plugins never had
+/// them, so theirs are dropped to keep version 1 behaviour.
+fn check_keybinding(command: &mut PluginCommand, api_version: u32) -> Result<(), String> {
+    if api_version < 2 {
+        command.keybinding = None;
+        command.when = None;
+        return Ok(());
+    }
+    if let Some(keybinding) = &command.keybinding {
+        let binding = parse_shortcut_binding(keybinding).ok_or_else(|| {
+            format!("Command \"{}\" has keybinding \"{keybinding}\": use modifiers and one key, like \"Ctrl+Alt+P\".", command.id)
+        })?;
+        command.keybinding = Some(binding.label);
+    }
+    if let Some(when) = &command.when {
+        let allowed = |c: char| c.is_ascii_alphanumeric() || " ._-&|!=()'\"".contains(c);
+        if when.chars().count() > MAX_WHEN_CHARS || !when.chars().all(allowed) {
+            return Err(format!("Command \"{}\" has a \"when\" that is too long or uses other characters.", command.id));
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -179,6 +220,10 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
             "Command \"{}\" needs an id (letters, digits, '-') and a title in both languages.",
             bad.id
         ));
+    }
+    let api_version = manifest.api_version;
+    for command in &mut manifest.contributes.commands {
+        check_keybinding(command, api_version)?;
     }
     Ok(manifest)
 }

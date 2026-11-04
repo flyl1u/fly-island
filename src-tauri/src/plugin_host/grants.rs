@@ -8,7 +8,7 @@ use std::{
 };
 
 use super::{
-    app_version, builtin, host, lock,
+    app_version, builtin, host, keybindings, lock,
     manifest::{launch_command, PluginRuntime},
     permissions::missing_permissions,
     runtime::{LaunchSpec, RuntimeStatus, Supervisor},
@@ -132,6 +132,7 @@ pub(super) fn sync_processes() -> Result<(), String> {
     }
     drop(supervisors);
     sync_builtins(host);
+    keybindings::refresh();
     Ok(())
 }
 

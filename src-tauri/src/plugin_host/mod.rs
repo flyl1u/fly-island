@@ -7,6 +7,7 @@
 //! - grants.rs: saves the user's choices and starts / stops plugins to match
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
+//! - keybindings.rs: global shortcuts of plugin commands
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
@@ -15,6 +16,7 @@ mod builtin;
 mod commands;
 mod events;
 mod grants;
+mod keybindings;
 mod manifest;
 mod market;
 mod notify;
@@ -102,6 +104,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         return Err("The plugin host was initialized twice.".into());
     }
     events::listen(app);
+    keybindings::start();
     sync_processes()
 }
 

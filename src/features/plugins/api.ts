@@ -17,7 +17,14 @@ export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
 // 与 src-tauri/src/plugin_host/manifest.rs 中的 LocalizedText、PluginCommand 对应。
 export type LocalizedText = { "zh-CN": string; en: string };
-export type PluginCommand = { id: string; title: LocalizedText };
+export type PluginCommand = {
+  id: string;
+  title: LocalizedText;
+  /** A global shortcut such as "Ctrl+Alt+P" (API version 2). */
+  keybinding?: string;
+  /** When the shortcut runs the command; see when.ts. */
+  when?: string;
+};
 
 // 与 src-tauri/src/plugin_host/manifest.rs 中的 runtime_requirement 对应：插件运行需要另外安装什么。
 export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none" | "builtin";
@@ -70,6 +77,8 @@ export type PluginInfo = {
   info: PluginInfoItem[];
   /** The user turned off its island.notify messages. */
   notificationsMuted: boolean;
+  /** Command shortcuts that could not be registered because something else uses them. */
+  keybindingConflicts: string[];
 };
 
 export type PluginsSnapshot = {
@@ -180,6 +189,15 @@ export type PluginNotification = {
 /** Calls `onNotification` for each plugin island.notify message; resolves to the unlisten function. */
 export function listenPluginNotifications(onNotification: (notification: PluginNotification) => void) {
   return listen<PluginNotification>(PLUGIN_NOTIFICATION_EVENT, (event) => onNotification(event.payload));
+}
+
+// 与 src-tauri/src/plugin_host/keybindings.rs 中的 KEYBINDING_EVENT 对应。
+const PLUGIN_KEYBINDING_EVENT = "plugin-keybinding";
+export type PluginKeybindingPress = { pluginId: string; command: string; when: string | null };
+
+/** Calls `onPress` when a plugin command's global shortcut is pressed; resolves to the unlisten function. */
+export function listenPluginKeybindings(onPress: (press: PluginKeybindingPress) => void) {
+  return listen<PluginKeybindingPress>(PLUGIN_KEYBINDING_EVENT, (event) => onPress(event.payload));
 }
 
 export function runPluginNotificationAction(id: string, action: string) {

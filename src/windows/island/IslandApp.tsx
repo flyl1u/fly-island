@@ -45,6 +45,7 @@ import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
 import { useIslandTranslation } from "./useIslandTranslation";
 import { usePluginHostEvents } from "./usePluginHostEvents";
+import { usePluginKeybindings } from "./usePluginKeybindings";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -115,6 +116,7 @@ export function IslandApp() {
     agentStatus,
     mode,
   });
+  usePluginKeybindings({ mode, page, hasActiveTodo: activeTodoId !== null });
 
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
     useCollapsedTodo(

@@ -88,6 +88,9 @@ export function PluginCard({
           {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
           {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
           {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
+          {plugin.keybindingConflicts.length > 0 ? (
+            <p className="plugin-card__hint">{t.settings.plugins.keybindingConflict(plugin.keybindingConflicts.join(", "))}</p>
+          ) : null}
           <div className="plugin-card__actions">
             <button className="plugin-card__button" type="button" onClick={onOpenDetail}>
               <Settings2 size={12} strokeWidth={2.4} />

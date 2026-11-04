@@ -9,7 +9,7 @@ use std::{fs, path::PathBuf};
 use super::{
     app_version, builtin,
     grants::sync_processes,
-    host, lock,
+    host, keybindings, lock,
     manifest::{parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginRuntime, MANIFEST_FILE_NAME},
     market,
     permissions::missing_permissions,
@@ -51,6 +51,8 @@ pub struct PluginInfo {
     info: Vec<InfoItem>,
     /// The user turned off its `island.notify` messages.
     notifications_muted: bool,
+    /// Command shortcuts another app or plugin already uses.
+    keybinding_conflicts: Vec<String>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -169,6 +171,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 settings: Map::new(),
                 info: runtime.info,
                 notifications_muted: grant.notifications_muted,
+                keybinding_conflicts: keybindings::conflicts(&plugin.folder),
             };
             match &plugin.manifest {
                 Ok(manifest) => {
