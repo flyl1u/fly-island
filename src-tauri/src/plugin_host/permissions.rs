@@ -2,7 +2,14 @@
 //! only gate the host API: a plugin process still runs with the user's rights.
 
 /// Mirrored by `PLUGIN_PERMISSIONS` in src/features/plugins/api.ts.
-pub(super) const PERMISSIONS: [&str; 5] = ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"];
+pub(super) const PERMISSIONS: [&str; 6] = [
+    "todos:read",
+    "todos:write",
+    "notes:read",
+    "notes:write",
+    "agent-status:read",
+    "agent-status:write",
+];
 
 /// (method, permission). `agentStatus.*` is handled natively (agent_status);
 /// the rest are answered by the island window, see src/features/todos/apiCommands.ts.
@@ -20,7 +27,7 @@ pub(super) const METHODS: [(&str, &str); 8] = [
 /// Host features added after API version 1, sent in `initialize`. Plugins
 /// check these instead of the island's version. plugins/schema/rpc.json lists
 /// the same names (checked by a test).
-pub(super) const CAPABILITIES: [&str; 0] = [];
+pub(super) const CAPABILITIES: [&str; 1] = ["events"];
 
 pub(super) fn is_known_permission(name: &str) -> bool {
     PERMISSIONS.contains(&name)

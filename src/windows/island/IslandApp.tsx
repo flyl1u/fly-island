@@ -43,6 +43,7 @@ import { useFileShelfDrop } from "./useFileShelfDrop";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
 import { useIslandTranslation } from "./useIslandTranslation";
+import { usePluginHostEvents } from "./usePluginHostEvents";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -103,6 +104,13 @@ export function IslandApp() {
     onMissingSaveDirectory: openSavePathSettings,
   });
   useLocalApiBridge(apiHandlers);
+  usePluginHostEvents({
+    date: notebookProps.currentDate,
+    todosVersion: [todos, notebookProps.scheduledTodos, activeTodoId],
+    note: notebookProps.dailyNote,
+    agentStatus,
+    mode,
+  });
 
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
     useCollapsedTodo(

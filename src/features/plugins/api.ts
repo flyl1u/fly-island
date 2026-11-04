@@ -1,8 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 // 与 src-tauri/src/plugin_host/permissions.rs 中的 PERMISSIONS 对应。
-export const PLUGIN_PERMISSIONS = ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"] as const;
+export const PLUGIN_PERMISSIONS = [
+  "todos:read",
+  "todos:write",
+  "notes:read",
+  "notes:write",
+  "agent-status:read",
+  "agent-status:write",
+] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
 // 与 src-tauri/src/plugin_host/manifest.rs 中的 LocalizedText、PluginCommand 对应。
@@ -136,4 +144,19 @@ export function setPluginSetting(id: string, key: string, value: unknown) {
 
 export function runPluginCommand(id: string, command: string) {
   return invoke<void>("run_plugin_command", { id, command });
+}
+
+// 与 src-tauri/src/plugin_host/events.rs 中的 HOST_EVENT、EVENTS 对应。
+const PLUGIN_HOST_EVENT = "plugin-host-event";
+export type PluginHostEventName =
+  | "todos.changed"
+  | "note.changed"
+  | "agentStatus.changed"
+  | "island.expanded"
+  | "island.collapsed"
+  | "app.locale.changed";
+
+/** Tells the plugin host that something plugins can subscribe to changed; it merges bursts. */
+export function emitPluginHostEvent(name: PluginHostEventName, payload: Record<string, unknown>) {
+  return emit(PLUGIN_HOST_EVENT, { name, payload });
 }

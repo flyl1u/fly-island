@@ -51,8 +51,16 @@ fn the_host_matches_the_protocol_description() {
         list.as_array().expect("array").iter().map(|item| item["name"].as_str().expect("name").to_string()).collect()
     };
     assert_eq!(names(&rpc["permissions"]), PERMISSIONS);
-    let capabilities: Vec<&str> = rpc["capabilities"].as_array().expect("array").iter().filter_map(Value::as_str).collect();
-    assert_eq!(capabilities, CAPABILITIES);
+    assert_eq!(names(&rpc["capabilities"]), CAPABILITIES);
+    let events: Vec<(String, Option<String>)> = rpc["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .map(|event| (event["name"].as_str().expect("name").into(), event["permission"].as_str().map(Into::into)))
+        .collect();
+    let host_events: Vec<(String, Option<String>)> =
+        super::events::EVENTS.iter().map(|(name, permission)| ((*name).into(), permission.map(Into::into))).collect();
+    assert_eq!(events, host_events);
     assert_eq!(rpc["apiVersions"]["current"], super::manifest::HOST_API_VERSION);
     assert_eq!(rpc["apiVersions"]["min"], super::manifest::MIN_API_VERSION);
 
@@ -64,7 +72,7 @@ fn the_host_matches_the_protocol_description() {
     assert_eq!(gated, METHODS);
     // Methods without a permission are answered in runtime/dispatch.rs.
     let open: Vec<&str> = methods.iter().filter(|method| method["permission"].is_null()).filter_map(|method| method["name"].as_str()).collect();
-    assert_eq!(open, ["host.info", "settings.get", "ui.setInfo"]);
+    assert_eq!(open, ["host.info", "settings.get", "ui.setInfo", "events.subscribe", "events.unsubscribe"]);
     assert!(open.iter().all(|name| method_permission(name).is_none()));
 
     let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");

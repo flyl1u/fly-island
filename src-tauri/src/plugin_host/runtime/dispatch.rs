@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 
 use super::{current_entry, lock, Context};
 use crate::plugin_host::{
+    events::{event_permission, MAX_SUBSCRIBE},
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -15,7 +16,8 @@ pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
     json!({
         "apiVersion": spec.api_version,
-        "capabilities": CAPABILITIES,
+        // Every capability so far needs API version 2.
+        "capabilities": if spec.api_version >= 2 { &CAPABILITIES[..] } else { &[] },
         "appVersion": spec.app_version,
         "pluginId": spec.plugin_id,
         "dataDir": spec.data_dir.display().to_string(),
@@ -41,6 +43,10 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
                 Err(message) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": 400 }))),
             };
         }
+        // Version 1 plugins keep getting "unknown method" for these.
+        "events.subscribe" | "events.unsubscribe" if context.spec.api_version >= 2 => {
+            return change_subscriptions(context, id, method == "events.subscribe", &params);
+        }
         _ => {}
     }
     let Some((name, permission)) = method_permission(method) else {
@@ -60,4 +66,42 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         Ok(result) => rpc::result_line(id, result),
         Err((status, message)) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": status }))),
     }
+}
+
+/// `events.subscribe` / `events.unsubscribe` with `{ events: [name] }`. Every
+/// name is checked before any is applied; answers `{ events }`, the plugin's
+/// subscriptions afterwards.
+fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: &Value) -> String {
+    let bad_params = |message: &str| rpc::error_line(id, rpc::HOST_ERROR, message, Some(json!({ "status": 400 })));
+    let Some(requested) = params.get("events").and_then(Value::as_array) else {
+        return bad_params("Expected { events: [string] }.");
+    };
+    if requested.len() > MAX_SUBSCRIBE {
+        return bad_params(&format!("At most {MAX_SUBSCRIBE} events at once."));
+    }
+    let mut names = Vec::with_capacity(requested.len());
+    for value in requested {
+        let Some(text) = value.as_str() else {
+            return bad_params("Event names must be strings.");
+        };
+        let Some((name, permission)) = event_permission(text) else {
+            return bad_params(&format!("Unknown event \"{text}\"."));
+        };
+        if let Some(permission) = permission.filter(|_| subscribe) {
+            if !context.spec.granted.iter().any(|granted| granted == permission) {
+                let message = format!("The \"{name}\" event needs the \"{permission}\" permission.");
+                return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
+            }
+        }
+        names.push(name);
+    }
+    let mut subscriptions = lock(&context.subscriptions);
+    for name in names {
+        if subscribe {
+            subscriptions.insert(name);
+        } else {
+            subscriptions.remove(name);
+        }
+    }
+    rpc::result_line(id, json!({ "events": *subscriptions }))
 }

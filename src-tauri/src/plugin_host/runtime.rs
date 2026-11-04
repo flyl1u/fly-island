@@ -6,7 +6,7 @@
 use serde::Serialize;
 use serde_json::{json, Map, Value};
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{BTreeSet, HashMap, VecDeque},
     ffi::OsString,
     io::{BufRead, BufReader, ErrorKind, Read, Write},
     os::windows::process::CommandExt,
@@ -92,6 +92,8 @@ struct Context {
     stdin: Mutex<Option<ChildStdin>>,
     child: Mutex<Option<Child>>,
     in_flight: AtomicUsize,
+    /// Events the running process asked for; emptied when it (re)starts.
+    subscriptions: Mutex<BTreeSet<&'static str>>,
 }
 
 pub(super) struct Supervisor {
@@ -110,6 +112,7 @@ impl Supervisor {
             stdin: Mutex::new(None),
             child: Mutex::new(None),
             in_flight: AtomicUsize::new(0),
+            subscriptions: Mutex::default(),
         });
         let worker = Arc::clone(&context);
         thread::Builder::new()
@@ -132,6 +135,13 @@ impl Supervisor {
         *lock(&self.context.settings) = settings.clone();
         // Not running right now: it reads the new values from `initialize` on start.
         let _ = self.notify("settings.changed", json!({ "settings": settings }));
+    }
+
+    /// Sends `event` if the plugin subscribed to `name`.
+    pub fn deliver_event(&self, name: &str, payload: &Value) {
+        if lock(&self.context.subscriptions).contains(name) {
+            let _ = self.notify("event", json!({ "name": name, "payload": payload }));
+        }
     }
 
     /// Asks the plugin to exit (a `shutdown` notification, then stdin closes)
@@ -180,6 +190,7 @@ fn supervise(context: &Arc<Context>) {
                 return;
             }
         };
+        lock(&context.subscriptions).clear();
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
         *lock(&context.stdin) = child.stdin.take();

@@ -1,13 +1,24 @@
 {
   "$comment": "The FocuSD Island plugin protocol: JSON-RPC 2.0 over stdio, one message per line. This file is the source of truth; src-tauri/src/plugin_host/tests.rs checks the host against it and docs/plugins/README.md describes it for people. 'since' is the plugin API version (manifest apiVersion) that introduced the item; 'capability' names the entry in initialize.capabilities that says the host has it.",
   "apiVersions": { "min": 1, "current": 2 },
-  "capabilities": [],
+  "capabilities": [
+    { "name": "events", "since": 2, "meaning": "events.subscribe / events.unsubscribe and the 'event' notification." }
+  ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
     { "name": "todos:write", "since": 1 },
     { "name": "notes:read", "since": 1 },
     { "name": "notes:write", "since": 1 },
+    { "name": "agent-status:read", "since": 2 },
     { "name": "agent-status:write", "since": 1 }
+  ],
+  "events": [
+    { "name": "todos.changed", "permission": "todos:read", "since": 2, "payload": "{ date }; call todos.list for the todos" },
+    { "name": "note.changed", "permission": "notes:read", "since": 2, "payload": "{ date }; call note.get for the text" },
+    { "name": "agentStatus.changed", "permission": "agent-status:read", "since": 2, "payload": "{ agents: [{ id, name, phase, title? }] }" },
+    { "name": "island.expanded", "permission": null, "since": 2, "payload": "{}" },
+    { "name": "island.collapsed", "permission": null, "since": 2, "payload": "{}" },
+    { "name": "app.locale.changed", "permission": null, "since": 2, "payload": "{ locale }" }
   ],
   "methods": [
     {
@@ -30,6 +41,20 @@
       "since": 1,
       "params": { "items": "[{ label: LocalizedText, value: string (max 500 chars), copy?: boolean, secret?: boolean }] (max 10; empty clears)" },
       "result": "{}"
+    },
+    {
+      "name": "events.subscribe",
+      "permission": null,
+      "since": 2,
+      "params": { "events": "[string] (max 16; each needs the event's permission; all are checked before any is applied)" },
+      "result": "{ events }: every event the plugin is subscribed to, sorted"
+    },
+    {
+      "name": "events.unsubscribe",
+      "permission": null,
+      "since": 2,
+      "params": { "events": "[string] (max 16)" },
+      "result": "{ events }"
     },
     {
       "name": "todos.list",
@@ -96,6 +121,7 @@
     },
     { "name": "command", "since": 1, "params": "{ id }" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },
+    { "name": "event", "since": 2, "params": "{ name, payload }; at most one per event name every 200 ms, carrying the latest payload. Subscriptions end when the process exits." },
     { "name": "shutdown", "since": 1, "params": "{}" }
   ],
   "fromPlugin": [

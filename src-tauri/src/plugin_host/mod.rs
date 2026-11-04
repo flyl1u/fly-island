@@ -6,10 +6,12 @@
 //! - registry.rs: which plugins are installed, and the settings-page snapshot
 //! - grants.rs: saves the user's choices and starts / stops plugins to match
 //! - commands.rs: the Tauri commands
+//! - events.rs: island events plugins subscribe to
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 
 mod builtin;
 mod commands;
+mod events;
 mod grants;
 mod manifest;
 mod market;
@@ -95,6 +97,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     if HOST.set(host).is_err() {
         return Err("The plugin host was initialized twice.".into());
     }
+    events::listen(app);
     sync_processes()
 }
 

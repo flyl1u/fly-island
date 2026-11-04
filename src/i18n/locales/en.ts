@@ -682,6 +682,7 @@ const en: Translations = {
         "todos:write": "Add, change and delete todos",
         "notes:read": "Read the daily note",
         "notes:write": "Change the daily note",
+        "agent-status:read": "Read AI Agent status",
         "agent-status:write": "Show AI Agent status on the light",
       },
       needsApproval: "The new version asks for more permissions, so it is paused. Switch it off and on to allow them.",

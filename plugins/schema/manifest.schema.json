@@ -51,7 +51,7 @@
     },
     "permissions": {
       "type": "array",
-      "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"] }
+      "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:read", "agent-status:write"] }
     },
     "contributes": {
       "type": "object",
