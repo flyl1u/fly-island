@@ -201,7 +201,7 @@ const en: Translations = {
     todoList: "Tasks",
     music: "Music",
     clipboardHistory: "Clipboard history",
-    shelf: "Shelf",
+    shelf: "File shelf",
     layoutEditor: "Layout editor",
   },
 
@@ -378,7 +378,7 @@ const en: Translations = {
       music: "Music",
       clipboard: "Clipboard",
       translation: "Translation",
-      shelf: "Shelf",
+      shelf: "File shelf",
       agents: "AI Agent",
       about: "About",
     },

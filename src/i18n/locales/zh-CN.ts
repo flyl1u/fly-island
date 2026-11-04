@@ -201,7 +201,7 @@ const zhCN: Translations = {
     todoList: "任务清单",
     music: "Music",
     clipboardHistory: "剪贴板历史",
-    shelf: "中转",
+    shelf: "文件中转",
     layoutEditor: "布局编辑",
   },
 
@@ -337,10 +337,10 @@ const zhCN: Translations = {
 
   fileShelf: {
     title: "文件中转",
-    clear: "清空中转",
+    clear: "清空文件中转",
     confirmClear: "确认清空（不会删除文件）",
     empty: "把文件拖到岛上，就会暂存在这里",
-    dropHint: "松开鼠标，加入中转",
+    dropHint: "松开鼠标，加入文件中转",
     dragHint: "拖出到其他应用，双击打开",
     folder: "文件夹",
     missing: "已失效",
@@ -348,7 +348,7 @@ const zhCN: Translations = {
     copyItem: "复制文件，可直接粘贴",
     copied: "已复制",
     reveal: "在文件夹中显示",
-    removeItem: "从中转移除（不会删除文件）",
+    removeItem: "从文件中转移除（不会删除文件）",
     alreadyOnShelf: "已在列表中",
   },
 
@@ -381,7 +381,7 @@ const zhCN: Translations = {
       music: "音乐",
       clipboard: "剪贴板",
       translation: "翻译",
-      shelf: "中转",
+      shelf: "文件中转",
       agents: "AI Agent",
       about: "关于",
     },
