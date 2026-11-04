@@ -89,6 +89,9 @@ fn the_host_matches_the_protocol_description() {
             "ui.setInfo",
             "events.subscribe",
             "events.unsubscribe",
+            "view.update",
+            "view.patch",
+            "status.update",
             "storage.get",
             "storage.set",
             "storage.delete",
@@ -660,4 +663,41 @@ fn view_icons_match_the_manifest_schema() {
     let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");
     let icons = &schema["properties"]["contributes"]["properties"]["views"]["items"]["properties"]["icon"]["enum"];
     assert_eq!(*icons, json!(super::view_specs::VIEW_ICONS.to_vec()));
+}
+
+mod view_tests {
+    use serde_json::json;
+
+    use super::super::views::{is_action_id, parse_status, patch_items, MAX_STATUS_CHARS};
+
+    #[test]
+    fn patches_replace_items_by_id_in_the_list_and_its_groups() {
+        let model = json!({
+            "items": [{ "id": "a", "title": "A" }, { "id": "b", "title": "B" }],
+            "groups": [{ "title": "G", "items": [{ "id": "c", "title": "C" }] }]
+        });
+        let (next, missing) = patch_items(&model, &[json!({ "id": "b", "title": "B2" }), json!({ "id": "c", "title": "C2" }), json!({ "id": "z" })]).expect("patch");
+        assert_eq!(next["items"][1]["title"], "B2");
+        assert_eq!(next["items"][0]["title"], "A");
+        assert_eq!(next["groups"][0]["items"][0]["title"], "C2");
+        assert_eq!(missing, vec!["z".to_string()]);
+        assert_eq!(patch_items(&model, &[json!({ "title": "no id" })]).expect_err("no id").0, 400);
+    }
+
+    #[test]
+    fn status_texts_are_short_and_empty_clears() {
+        let status = parse_status(&json!({ "text": " 24:59 ", "tone": "accent" })).expect("ok").expect("text");
+        assert_eq!(serde_json::to_value(&status).expect("json"), json!({ "text": "24:59", "tooltip": null, "tone": "accent" }));
+        assert_eq!(parse_status(&json!({ "text": "" })).expect("ok"), None);
+        assert!(parse_status(&json!({ "text": "番".repeat(MAX_STATUS_CHARS) })).is_ok());
+        assert!(parse_status(&json!({ "text": "x".repeat(MAX_STATUS_CHARS + 1) })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "tone": "loud" })).is_err());
+        assert!(parse_status(&json!({ "text": 5 })).is_err());
+    }
+
+    #[test]
+    fn action_ids_are_plain() {
+        assert!(is_action_id("open") && is_action_id("issue/42") && is_action_id("a.b_c-d:e"));
+        assert!(!is_action_id("") && !is_action_id("a b") && !is_action_id(&"x".repeat(129)));
+    }
 }

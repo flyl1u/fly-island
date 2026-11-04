@@ -405,14 +405,18 @@ fn current_entry<'a>(context: &Context, table: &'a mut HashMap<String, RuntimeIn
 }
 
 fn set_status(context: &Context, status: RuntimeStatus, error: Option<String>) {
-    let mut table = lock(&context.table);
-    let Some(info) = current_entry(context, &mut table) else { return };
-    info.status = status;
-    info.error = error;
-    if status != RuntimeStatus::Running {
-        // Info describes a running process (its address, its last sync).
-        info.info.clear();
+    {
+        let mut table = lock(&context.table);
+        let Some(info) = current_entry(context, &mut table) else { return };
+        info.status = status;
+        info.error = error;
+        if status != RuntimeStatus::Running {
+            // Info describes a running process (its address, its last sync).
+            info.info.clear();
+        }
     }
+    // What the old process showed on the island is gone either way.
+    super::views::runtime_changed(&context.app, &context.spec.plugin_id, status);
 }
 
 fn log_line(context: &Context, line: &str) {

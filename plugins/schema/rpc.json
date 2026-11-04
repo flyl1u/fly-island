@@ -5,7 +5,9 @@
     { "name": "events", "since": 2, "meaning": "events.subscribe / events.unsubscribe and the 'event' notification." },
     { "name": "notifications", "since": 2, "meaning": "island.notify and the 'notification.action' notification." },
     { "name": "storage", "since": 2, "meaning": "storage.get / set / delete / keys." },
-    { "name": "secrets", "since": 2, "meaning": "secrets.get / set / delete." }
+    { "name": "secrets", "since": 2, "meaning": "secrets.get / set / delete." },
+    { "name": "views", "since": 2, "meaning": "contributes.views drawn on the island; view.update / view.patch and the view.action / view.submit / view.search / view.visible notifications." },
+    { "name": "status", "since": 2, "meaning": "contributes.statusItems on the collapsed bar; status.update." }
   ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
@@ -69,6 +71,27 @@
       "since": 2,
       "params": { "events": "[string] (max 16)" },
       "result": "{ events }"
+    },
+    {
+      "name": "view.update",
+      "permission": null,
+      "since": 2,
+      "params": { "viewId": "one of the plugin's contributes.views", "model": "object for the view's template (see docs/plugins/README.md); max 256 KB as JSON, else status 413" },
+      "result": "{}. The island shows at most 10 changes a second per view (later ones are merged) and only while the page is on screen."
+    },
+    {
+      "name": "view.patch",
+      "permission": null,
+      "since": 2,
+      "params": { "viewId": "string", "items": "[{ id, ... }]: replace the items with these ids in model.items and model.groups[].items" },
+      "result": "{ missing: [id] }: ids not found. Status 409 before the first view.update."
+    },
+    {
+      "name": "status.update",
+      "permission": null,
+      "since": 2,
+      "params": { "itemId": "one of the plugin's contributes.statusItems", "text": "string, max 24 characters; empty clears the item", "tooltip?": "string, max 200", "tone?": "neutral | accent | warning | danger" },
+      "result": "{}"
     },
     {
       "name": "storage.get",
@@ -238,6 +261,10 @@
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },
     { "name": "event", "since": 2, "params": "{ name, payload }; at most one per event name every 200 ms, carrying the latest payload. Subscriptions end when the process exits." },
     { "name": "notification.action", "since": 2, "params": "{ id }: the user clicked that button of an island.notify message" },
+    { "name": "view.visible", "since": 2, "params": "{ viewId, visible }: the page was opened or closed; send updates while it is visible" },
+    { "name": "view.action", "since": 2, "params": "{ viewId, actionId, itemId?, checked? }: the user clicked an action or an item, or a check box (checked)" },
+    { "name": "view.submit", "since": 2, "params": "{ viewId, values }: the user submitted the form" },
+    { "name": "view.search", "since": 2, "params": "{ viewId, query }: the user typed in the list's search box (only if the model asks for searchMode remote)" },
     { "name": "shutdown", "since": 1, "params": "{}" }
   ],
   "fromPlugin": [

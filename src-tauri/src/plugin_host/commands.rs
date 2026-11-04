@@ -10,6 +10,7 @@ use super::{
     host, lock, market, menus, notify, sensitive,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings, storage,
+    views::{self, PluginViewsSnapshot},
 };
 
 /// One index entry with what this install knows about it. Mirrored by
@@ -299,4 +300,79 @@ pub async fn clear_plugin_data(id: String) -> Result<PluginsSnapshot, String> {
     .await
     .map_err(|error| format!("The clear task failed: {error}"))??;
     snapshot()
+}
+
+/// Sends a running plugin a notification about one of its views.
+fn notify_view(id: &str, view_id: &str, method: &str, params: Value) -> Result<(), String> {
+    if !views::declares_view(id, view_id) {
+        return Err("Unknown plugin view.".into());
+    }
+    let host = host()?;
+    let supervisors = lock(&host.supervisors);
+    let supervisor = supervisors.get(id).ok_or("The plugin is not running.")?;
+    supervisor.notify(method, params)
+}
+
+/// The pages plugins add to the island and the status texts they show now.
+#[tauri::command]
+pub fn list_plugin_views() -> Result<PluginViewsSnapshot, String> {
+    views::snapshot()
+}
+
+/// The island shows or hides a plugin page. The plugin gets `view.visible`;
+/// while hidden, its updates are not sent to the window. Returns the page's
+/// model when it becomes visible (null before the plugin sent one).
+#[tauri::command]
+pub fn set_plugin_view_visible(id: String, view_id: String, visible: bool) -> Result<Option<Value>, String> {
+    if !views::declares_view(&id, &view_id) {
+        return Err("Unknown plugin view.".into());
+    }
+    let model = views::set_visible(&id, &view_id, visible);
+    // Not running: it is told when it next shows the page.
+    let _ = notify_view(&id, &view_id, "view.visible", json!({ "viewId": view_id, "visible": visible }));
+    Ok(model)
+}
+
+/// The user clicked an action (or a check box, with `checked`) on a plugin page.
+#[tauri::command]
+pub fn run_plugin_view_action(id: String, view_id: String, item_id: Option<String>, action_id: String, checked: Option<bool>) -> Result<(), String> {
+    if !views::is_action_id(&action_id) || item_id.as_deref().is_some_and(|item| !views::is_action_id(item)) {
+        return Err("Unknown plugin view action.".into());
+    }
+    let mut params = json!({ "viewId": view_id, "actionId": action_id });
+    if let Some(item) = item_id {
+        params["itemId"] = json!(item);
+    }
+    if let Some(checked) = checked {
+        params["checked"] = json!(checked);
+    }
+    notify_view(&id, &view_id, "view.action", params)
+}
+
+/// The user submitted the form on a plugin page.
+#[tauri::command]
+pub fn submit_plugin_view(id: String, view_id: String, values: Value) -> Result<(), String> {
+    views::check_view_values(&values)?;
+    notify_view(&id, &view_id, "view.submit", json!({ "viewId": view_id, "values": values }))
+}
+
+/// The user typed in the search box of a plugin's list page.
+#[tauri::command]
+pub fn search_plugin_view(id: String, view_id: String, query: String) -> Result<(), String> {
+    views::check_query(&query)?;
+    notify_view(&id, &view_id, "view.search", json!({ "viewId": view_id, "query": query }))
+}
+
+/// Starts a stopped or crashed plugin again ("插件已停止" on its page).
+#[tauri::command]
+pub async fn restart_plugin(id: String) -> Result<(), String> {
+    if builtin::is_builtin(&id) {
+        return Err("Built-in plugins cannot be restarted here.".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        stop_plugin(&id)?;
+        sync_processes()
+    })
+    .await
+    .map_err(|error| format!("The restart task failed: {error}"))?
 }
