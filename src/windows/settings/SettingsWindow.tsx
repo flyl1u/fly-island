@@ -8,6 +8,7 @@ import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { ShelfSettingsPage } from "./ShelfSettingsPage";
+import { ShortcutsSettingsPage } from "./ShortcutsSettingsPage";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { showSettingsWindow } from "./api";
@@ -110,6 +111,8 @@ export function SettingsWindow() {
     setSettings((current) => withAppearanceFrom(current, DEFAULT_SETTINGS));
   }, []);
 
+  const openShortcuts = () => setCategory("shortcuts");
+
   return (
     <main className={`settings-stage stage--font-${settings.fontFamily}`}>
       <LayoutEditor
@@ -132,6 +135,7 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
+        {category === "shortcuts" && <ShortcutsSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "todos" && (
           <TodosSettingsPage
             settings={settings}
@@ -147,8 +151,8 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
-        {category === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} />}
-        {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} onOpenShortcuts={openShortcuts} />}
+        {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} onOpenShortcuts={openShortcuts} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}

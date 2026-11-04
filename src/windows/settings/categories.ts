@@ -2,6 +2,7 @@
 export const SETTINGS_CATEGORIES = [
   "general",
   "appearance",
+  "shortcuts",
   "todos",
   "music",
   "notifications",
@@ -23,7 +24,7 @@ export type SettingsGroup = "basics" | "features" | "extensions";
  * and the market. A null label leaves About on its own at the end.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
-  { label: "basics", categories: ["general", "appearance"] },
+  { label: "basics", categories: ["general", "appearance", "shortcuts"] },
   { label: "features", categories: ["todos", "music", "notifications", "translation", "clipboard", "shelf", "agents"] },
   { label: "extensions", categories: ["plugins", "market"] },
   { label: null, categories: ["about"] },

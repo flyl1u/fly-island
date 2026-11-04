@@ -1,0 +1,78 @@
+/* Read-only key list and the link that feature pages show in place of their recorders. */
+.shortcut-reference {
+  display: grid;
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+.shortcut-reference__row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.shortcut-reference dt {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortcut-reference dd {
+  margin: 0;
+}
+
+.shortcut-reference kbd {
+  display: inline-block;
+  padding: 4px 9px;
+  color: rgba(248, 246, 240, 0.9);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.shortcuts-link__row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.shortcuts-link__row .settings-section__hint {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+}
+
+.shortcuts-link__button {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 12px;
+  color: #101013;
+  background: #b8e2cc;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.shortcuts-link__button:hover {
+  background: #d2eddf;
+}
+
+.shortcuts-link__button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

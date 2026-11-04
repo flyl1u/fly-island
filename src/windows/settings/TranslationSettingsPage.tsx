@@ -2,14 +2,17 @@ import type { IslandSettings, TranslationTarget } from "../../features/appearanc
 import { TranslationSettingsSection } from "../../features/translation/TranslationSettingsSection";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
+import { ShortcutsLinkSection } from "./ShortcutsSettingsPage";
 import "../../features/appearance/AppearanceModeControl.css";
 
 export function TranslationSettingsPage({
   settings,
   onSettingsChange,
+  onOpenShortcuts,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  onOpenShortcuts: () => void;
 }) {
   const t = useTranslation();
   const targets: [TranslationTarget, string][] = [
@@ -47,6 +50,7 @@ export function TranslationSettingsPage({
         </section>
       )}
       {settings.translationEnabled && <TranslationSettingsSection />}
+      {settings.translationEnabled && <ShortcutsLinkSection onOpen={onOpenShortcuts} />}
     </>
   );
 }

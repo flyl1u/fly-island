@@ -1,6 +1,7 @@
 import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
+import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, pageShortcutLabel, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
@@ -49,6 +50,7 @@ export function IslandHeader({
   pageDigitModifiers,
 }: IslandHeaderProps) {
   const t = useTranslation();
+  const [{ shortcut: translationShortcut }] = useTranslationSettings();
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   const withShortcut = (label: string, target: IslandPage) => {
     const shortcut = pageShortcutLabel(features, target, pageDigitModifiers);
@@ -179,7 +181,7 @@ export function IslandHeader({
           <button
             className={`icon-button island-translate-button${page === "translation" ? " island-translate-button--active" : ""}`}
             type="button"
-            title={features.translation ? withShortcut(t.translator.title, "translation") : `${t.translator.title} (Ctrl+Shift+F)`}
+            title={features.translation ? withShortcut(t.translator.title, "translation") : `${t.translator.title} (${translationShortcut})`}
             aria-label={features.translation ? withShortcut(t.translator.title, "translation") : t.translator.title}
             aria-pressed={features.translation ? page === "translation" : undefined}
             onClick={(event) => {

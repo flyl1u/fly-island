@@ -430,6 +430,7 @@ export type Translations = {
       };
       general: string;
       appearance: string;
+      shortcuts: string;
       notifications: string;
       todos: string;
       music: string;
@@ -458,8 +459,6 @@ export type Translations = {
       pasteOnOpenHint: string;
       autoTranslate: string;
       autoTranslateHint: string;
-      shortcutTitle: string;
-      shortcutHint: string;
       selectionShortcut: string;
       selectionShortcutHint: string;
     };
@@ -479,6 +478,23 @@ export type Translations = {
       hoverDelay: string;
       hoverCollapseDelay: string;
       revealOnMessage: string;
+    };
+
+    shortcuts: {
+      globalTitle: string;
+      globalHint: string;
+      openTranslation: string;
+      noGlobal: string;
+      islandTitle: string;
+      collapse: string;
+      moveIsland: string;
+      ctrlDrag: string;
+      inputTitle: string;
+      translate: string;
+      newLine: string;
+      pasteClipboard: string;
+      editHint: string;
+      openPage: string;
     };
 
     pageShortcuts: {

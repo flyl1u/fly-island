@@ -5,15 +5,16 @@ import { MAX_CLIPBOARD_VISIBLE_ROWS, MIN_CLIPBOARD_VISIBLE_ROWS } from "../../fe
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
-
-function noop() {}
+import { ShortcutsLinkSection } from "./ShortcutsSettingsPage";
 
 export function ClipboardSettingsPage({
   settings,
   onSettingsChange,
+  onOpenShortcuts,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  onOpenShortcuts: () => void;
 }) {
   const t = useTranslation();
   const [clipboardSettings, updateClipboardSettings] = useClipboardSettings();
@@ -28,9 +29,7 @@ export function ClipboardSettingsPage({
       {clipboardSettings.enabled && (
         <ClipboardSettingsSection
           clipboardSettings={clipboardSettings}
-          focusClipboardShortcutToken={0}
           onClipboardSettingsChange={updateClipboardSettings}
-          onClipboardShortcutFocusHandled={noop}
         >
           <NumberControl
             label={t.settings.clipboard.visibleRows}
@@ -41,6 +40,7 @@ export function ClipboardSettingsPage({
           />
         </ClipboardSettingsSection>
       )}
+      {clipboardSettings.enabled && <ShortcutsLinkSection onOpen={onOpenShortcuts} />}
     </>
   );
 }

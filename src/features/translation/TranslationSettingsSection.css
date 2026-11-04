@@ -53,8 +53,7 @@
   gap: var(--space-sm);
 }
 
-.translation-settings__button,
-.translation-settings__shortcut {
+.translation-settings__button {
   height: 32px;
   flex: 0 0 auto;
   display: inline-flex;
@@ -73,14 +72,12 @@
   white-space: nowrap;
 }
 
-.translation-settings__button:hover,
-.translation-settings__shortcut:hover {
+.translation-settings__button:hover {
   color: var(--color-white);
   background: rgba(255, 255, 255, 0.15);
 }
 
-.translation-settings__button:focus-visible,
-.translation-settings__shortcut:focus-visible {
+.translation-settings__button:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -99,18 +96,6 @@
   color: rgba(248, 246, 240, 0.42);
   background: rgba(255, 255, 255, 0.05);
   cursor: default;
-}
-
-.translation-settings__shortcut {
-  min-width: 112px;
-  justify-self: end;
-}
-
-.translation-settings__shortcut--recording,
-.translation-settings__shortcut--recording:hover {
-  color: var(--color-white);
-  background: var(--color-danger);
-  box-shadow: 0 0 0 4px rgba(199, 80, 101, 0.16);
 }
 
 .translation-settings__error {
