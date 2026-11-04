@@ -25,6 +25,7 @@ import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySe
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
 import { PluginMarketSection } from "../../features/plugins/PluginMarketSection";
 import { PluginsSettingsSection } from "../../features/plugins/PluginsSettingsSection";
+import { PluginIslandPagesSection } from "../../features/plugin-views/PluginIslandPagesSection";
 import { useLocale, useTranslation } from "../../i18n";
 import "./SettingsWindow.css";
 
@@ -156,7 +157,12 @@ export function SettingsWindow() {
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
-        {category === "plugins" && <PluginsSettingsSection />}
+        {category === "plugins" && (
+          <>
+            <PluginsSettingsSection />
+            <PluginIslandPagesSection />
+          </>
+        )}
         {category === "market" && <PluginMarketSection />}
         {category === "about" && <ProjectSettingsSection />}
       </LayoutEditor>

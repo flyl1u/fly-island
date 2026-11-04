@@ -399,6 +399,14 @@ const en: Translations = {
     actions: "Actions",
     submit: "Submit",
     submitted: "Sent",
+    pagesSettings: {
+      title: "Island pages",
+      hint: "Pages plugins add come after the built-in pages; this order is also their number shortcut order. Only plugins that are on are listed.",
+      empty: "No plugin that is on has added a page yet.",
+      show: "Show",
+      moveUp: "Move up",
+      moveDown: "Move down",
+    },
   },
   settings: {
     fileShelf: {

@@ -402,6 +402,14 @@ const zhCN: Translations = {
     actions: "操作",
     submit: "提交",
     submitted: "已提交",
+    pagesSettings: {
+      title: "岛上页面",
+      hint: "插件加到岛上的页面排在内置页面之后，这里的顺序也是它们的数字快捷键顺序。只列出已启用插件的页面。",
+      empty: "已启用的插件还没有添加页面。",
+      show: "显示",
+      moveUp: "上移",
+      moveDown: "下移",
+    },
   },
   settings: {
     fileShelf: {

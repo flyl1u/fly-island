@@ -1,0 +1,40 @@
+/* Settings → plugins → island pages: one row per plugin page. */
+.plugin-pages {
+  display: grid;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-pages__row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.plugin-pages__row > svg {
+  flex: 0 0 auto;
+}
+
+.plugin-pages__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+}
+
+.plugin-pages__name strong,
+.plugin-pages__name small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-pages__name small {
+  opacity: 0.6;
+}
+
+.plugin-pages__row .toggle-control {
+  flex: 0 0 auto;
+}

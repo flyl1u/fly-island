@@ -67,7 +67,8 @@ export function pageForAltDigit(features: IslandFeatures, digit: number): Island
 
 export function pageShortcutLabel(features: IslandFeatures, page: IslandPage, modifiers: string): string | null {
   const index = pageShortcutOrder(features).indexOf(page);
-  return index < 0 ? null : `${modifiers}+${index + 1}`;
+  // Only 1-9 have a key; plugin pages can push later pages past it.
+  return index < 0 || index > 8 ? null : `${modifiers}+${index + 1}`;
 }
 
 /** The next or previous visible page, wrapping around. Null when there is nowhere to move. */
