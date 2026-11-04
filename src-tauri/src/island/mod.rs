@@ -17,7 +17,6 @@ use std::{
     time::Duration,
 };
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 
 use geometry::{
     monitor_for_island_position, COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT,
@@ -176,7 +175,7 @@ fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Resul
     }
 
     thread::spawn(move || {
-        while unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } < 0 {
+        while win32::input::is_left_button_down() {
             thread::sleep(Duration::from_millis(8));
         }
         thread::sleep(Duration::from_millis(8));

@@ -2,10 +2,6 @@
 
 use std::{thread, time::Duration};
 use tauri::{Emitter, WebviewWindow};
-use windows::Win32::{
-    Foundation::{POINT, RECT},
-    UI::WindowsAndMessaging::{GetCursorPos, GetWindowRect},
-};
 
 use super::{geometry::STAGE_WINDOW_WIDTH, state::read_window_state};
 use crate::win32;
@@ -58,16 +54,12 @@ pub(super) fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
         Ok(hwnd) => hwnd,
         Err(_) => return true,
     };
-    let mut window_rect = RECT::default();
-    let mut cursor = POINT::default();
-
-    if unsafe { GetWindowRect(hwnd, &mut window_rect) }.is_err() {
+    let Some(window_rect) = win32::window::window_rect(hwnd) else {
         return true;
-    }
-
-    if unsafe { GetCursorPos(&mut cursor) }.is_err() {
+    };
+    let Some(cursor) = win32::window::cursor_position() else {
         return true;
-    }
+    };
 
     let window_width = (window_rect.right - window_rect.left).max(1) as f64;
     let physical_scale = window_width / STAGE_WINDOW_WIDTH;

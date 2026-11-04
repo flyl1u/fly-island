@@ -5,3 +5,4 @@ pub(crate) mod input;
 pub(crate) mod ole;
 pub(crate) mod process;
 pub(crate) mod registry;
+pub(crate) mod window;
