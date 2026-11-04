@@ -1,0 +1,51 @@
+.plugin-market__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plugin-market__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+}
+
+.plugin-market__text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.plugin-market__text strong {
+  overflow: hidden;
+  color: var(--color-text-strong);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-market__text span,
+.plugin-market__text p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.plugin-market__action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.plugin-market__state {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}

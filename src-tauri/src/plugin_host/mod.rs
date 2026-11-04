@@ -4,6 +4,7 @@
 //! plugin authors: docs/plugins/README.md.
 
 mod manifest;
+mod market;
 mod permissions;
 mod rpc;
 mod runtime;
@@ -126,6 +127,7 @@ fn scan(plugins_dir: &PathBuf, app_version: &str) -> Vec<InstalledPlugin> {
     let mut plugins: Vec<InstalledPlugin> = entries
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
+        .filter(|entry| !entry.file_name().to_string_lossy().starts_with(market::WORK_DIR_PREFIX))
         .map(|entry| {
             let folder = entry.file_name().to_string_lossy().into_owned();
             let dir = entry.path();
@@ -204,6 +206,23 @@ fn sync_processes() -> Result<(), String> {
     Ok(())
 }
 
+/// Stops one plugin (if running) and drops the agent statuses it reported.
+fn stop_plugin(id: &str) -> Result<(), String> {
+    let supervisor = lock(&host()?.supervisors).remove(id);
+    if let Some(supervisor) = supervisor {
+        supervisor.stop();
+    }
+    agent_status::clear_external_owner(id);
+    Ok(())
+}
+
+/// Reads the plugins folder again and starts what should run.
+fn rescan() -> Result<(), String> {
+    let host = host()?;
+    *lock(&host.installed) = scan(&host.plugins_dir, &app_version(&host.app));
+    sync_processes()
+}
+
 /// Stops every running plugin so the next sync starts them with fresh files.
 fn stop_all() -> Result<(), String> {
     let stopping: Vec<Supervisor> = lock(&host()?.supervisors).drain().map(|(_, supervisor)| supervisor).collect();
@@ -275,6 +294,106 @@ fn update_state(change: impl FnOnce(&mut PluginsState, &[InstalledPlugin]) -> Re
     save_state(&host.state_path, &next)?;
     *state = next;
     Ok(())
+}
+
+/// One index entry with what this install knows about it. Mirrored by
+/// `MarketPlugin` in src/features/plugins/api.ts.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketPlugin {
+    #[serde(flatten)]
+    entry: market::MarketEntry,
+    installed_version: Option<String>,
+    /// Why this FocuSD Island cannot install it, if it cannot.
+    incompatible: Option<String>,
+}
+
+/// Mirrored by `MarketSnapshot` in src/features/plugins/api.ts.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketSnapshot {
+    index_url: String,
+    plugins: Vec<MarketPlugin>,
+}
+
+fn installed_version(host: &PluginHost, id: &str) -> Option<String> {
+    lock(&host.installed)
+        .iter()
+        .find(|plugin| plugin.folder == id)
+        .map(|plugin| plugin.manifest.as_ref().map(|manifest| manifest.version.clone()).unwrap_or_default())
+}
+
+#[tauri::command]
+pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
+    let host = host()?;
+    let version = app_version(&host.app);
+    let plugins = market::fetch_index()
+        .await?
+        .into_iter()
+        .map(|entry| MarketPlugin {
+            installed_version: installed_version(host, &entry.id),
+            incompatible: market::incompatibility(&entry, &version),
+            entry,
+        })
+        .collect();
+    Ok(MarketSnapshot {
+        index_url: market::INDEX_URL.to_string(),
+        plugins,
+    })
+}
+
+/// Installs or updates a plugin from the market. A fresh install starts off; an
+/// update keeps the plugin's switch, and pauses it if it now asks for more
+/// permissions.
+#[tauri::command]
+pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String> {
+    let host = host()?;
+    let version = app_version(&host.app);
+    let entry = market::fetch_index()
+        .await?
+        .into_iter()
+        .find(|entry| entry.id == id)
+        .ok_or("The plugin is no longer in the market.")?;
+    if let Some(reason) = market::incompatibility(&entry, &version) {
+        return Err(reason);
+    }
+    let bytes = market::fetch_package(&entry).await?;
+    let plugins_dir = host.plugins_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        stop_plugin(&entry.id)?;
+        let installed = market::install_package(&plugins_dir, &entry, &bytes, &version);
+        lock(&host.runtimes).remove(&entry.id);
+        rescan()?;
+        installed
+    })
+    .await
+    .map_err(|error| format!("The install task failed: {error}"))??;
+    snapshot()
+}
+
+/// Removes a plugin's folder and its switch and grants. Its private data in
+/// plugins-data/ is kept, so reinstalling picks it up again.
+#[tauri::command]
+pub async fn uninstall_plugin(id: String) -> Result<PluginsSnapshot, String> {
+    let host = host()?;
+    let dir = lock(&host.installed)
+        .iter()
+        .find(|plugin| plugin.folder == id)
+        .map(|plugin| plugin.dir.clone())
+        .ok_or("Plugin not found.")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        stop_plugin(&id)?;
+        fs::remove_dir_all(&dir).map_err(|error| format!("Could not delete {} (is a file in it open?): {error}", dir.display()))?;
+        update_state(|state, _| {
+            state.plugins.remove(&id);
+            Ok(())
+        })?;
+        lock(&host.runtimes).remove(&id);
+        rescan()
+    })
+    .await
+    .map_err(|error| format!("The uninstall task failed: {error}"))??;
+    snapshot()
 }
 
 #[tauri::command]

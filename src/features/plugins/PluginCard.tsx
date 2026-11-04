@@ -1,4 +1,5 @@
-import { ExternalLink, Play } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Play, Trash2 } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import { openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
@@ -14,13 +15,17 @@ export function PluginCard({
   busy,
   onEnabledChange,
   onRunCommand,
+  onUninstall,
 }: {
   plugin: PluginInfo;
   allowed: boolean;
   busy: boolean;
   onEnabledChange: (enabled: boolean) => void;
   onRunCommand: (command: string) => void;
+  onUninstall: () => void;
 }) {
+  // Uninstalling takes a second click, so a stray click cannot delete a plugin.
+  const [confirmingUninstall, setConfirmingUninstall] = useState(false);
   const t = useTranslation();
   const { locale } = useLocale();
   const name = plugin.name?.[locale] ?? plugin.id;
@@ -49,7 +54,8 @@ export function PluginCard({
         <p className="plugin-card__error">
           {t.settings.plugins.invalid}: {plugin.invalidReason}
         </p>
-      ) : (
+      ) : null}
+      {plugin.invalidReason ? null : (
         <>
           {plugin.description?.[locale] ? <p className="plugin-card__description">{plugin.description[locale]}</p> : null}
           <div className="plugin-card__permissions">
@@ -95,6 +101,18 @@ export function PluginCard({
           ) : null}
         </>
       )}
+      <div className="plugin-card__actions">
+        <button
+          className={`plugin-card__button${confirmingUninstall ? " plugin-card__button--danger" : ""}`}
+          type="button"
+          disabled={busy}
+          onBlur={() => setConfirmingUninstall(false)}
+          onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
+        >
+          <Trash2 size={12} strokeWidth={2.4} />
+          <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
+        </button>
+      </div>
     </article>
   );
 }

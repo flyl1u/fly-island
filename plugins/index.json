@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plugins": [
+    {
+      "id": "dev.focusd.todo-digest",
+      "name": {
+        "zh-CN": "待办摘要（示例）",
+        "en": "Todo digest (example)"
+      },
+      "description": {
+        "zh-CN": "定期在日志里记录未完成待办的数量；点“写入摘要”会把未完成的待办追加到每日笔记。",
+        "en": "Logs how many todos are open; Write digest appends the open todos to the daily note."
+      },
+      "version": "1.0.0",
+      "apiVersion": 1,
+      "author": "FocuSD",
+      "homepage": "https://github.com/TixXin/fly-island/tree/main/plugins/examples/dev.focusd.todo-digest",
+      "permissions": [
+        "notes:write",
+        "todos:read"
+      ],
+      "download": {
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.todo-digest-1.0.0.zip",
+        "sha256": "7bd45e849aaf72a6edb56e4d5e5d653167db57ee33e39f21001b77f049227286",
+        "size": 2656
+      }
+    }
+  ]
+}

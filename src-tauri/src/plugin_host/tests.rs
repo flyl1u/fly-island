@@ -134,3 +134,113 @@ fn a_missing_or_broken_state_file_allows_nothing() {
     assert!(state.allow_third_party && state.plugins["a.b"].enabled);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+mod market_tests {
+    use std::io::Write;
+
+    use super::super::market::{extract_package, incompatibility, install_package, parse_index, verify_package, MarketEntry};
+
+    const INDEX: &str = include_str!("../../../plugins/index.json");
+    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.0.0.zip");
+
+    fn example_entry() -> MarketEntry {
+        parse_index(INDEX)
+            .expect("index")
+            .into_iter()
+            .find(|entry| entry.id == "dev.focusd.todo-digest")
+            .expect("example in index")
+    }
+
+    fn temp_dir(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("focusd-market-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        dir
+    }
+
+    #[test]
+    fn the_repository_index_parses_and_its_package_checks_out() {
+        let entry = example_entry();
+        let download: serde_json::Value = serde_json::to_value(&entry).expect("json")["download"].clone();
+        let download = serde_json::from_value(download).expect("download");
+        verify_package(PACKAGE, &download).expect("checksum matches");
+        assert!(verify_package(&PACKAGE[1..], &download).is_err());
+        let mut tampered = PACKAGE.to_vec();
+        let last = tampered.len() - 1;
+        tampered[last] ^= 1;
+        assert!(verify_package(&tampered, &download).expect_err("tampered").contains("checksum"));
+        assert_eq!(incompatibility(&entry, "0.2.14"), None);
+    }
+
+    #[test]
+    fn bad_indexes_and_entries_are_rejected() {
+        assert!(parse_index(r#"{"version":2,"plugins":[]}"#).expect_err("format").contains("format 2"));
+        assert!(parse_index("nope").is_err());
+        let mut index: serde_json::Value = serde_json::from_str(INDEX).expect("json");
+        let good = index["plugins"][0].clone();
+        let mut http = good.clone();
+        http["id"] = "a.http".into();
+        http["download"]["url"] = "http://example.com/x.zip".into();
+        let mut bad_hash = good.clone();
+        bad_hash["id"] = "a.hash".into();
+        bad_hash["download"]["sha256"] = "xyz".into();
+        let mut work_dir = good.clone();
+        work_dir["id"] = ".installing-x".into();
+        index["plugins"] = serde_json::json!([http, good, bad_hash, work_dir, "junk"]);
+        let entries = parse_index(&index.to_string()).expect("index");
+        assert_eq!(entries.iter().map(|entry| entry.id.as_str()).collect::<Vec<_>>(), vec!["dev.focusd.todo-digest"]);
+    }
+
+    #[test]
+    fn installing_twice_replaces_the_old_version() {
+        let plugins = temp_dir("install");
+        let entry = example_entry();
+        install_package(&plugins, &entry, PACKAGE, "0.2.14").expect("install");
+        let target = plugins.join("dev.focusd.todo-digest");
+        assert!(target.join("focusd-plugin.json").is_file());
+        assert!(target.join("lib").join("focusd.mjs").is_file());
+
+        std::fs::write(target.join("stale.txt"), "from the old version").expect("write");
+        install_package(&plugins, &entry, PACKAGE, "0.2.14").expect("update");
+        assert!(!target.join("stale.txt").exists());
+        let names: Vec<String> = std::fs::read_dir(&plugins)
+            .expect("list")
+            .map(|item| item.expect("entry").file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(names, vec!["dev.focusd.todo-digest"], "no work folders left behind");
+        let _ = std::fs::remove_dir_all(&plugins);
+    }
+
+    #[test]
+    fn packages_that_do_not_match_the_index_are_not_installed() {
+        let plugins = temp_dir("mismatch");
+        let mut entry = serde_json::to_value(example_entry()).expect("json");
+        entry["version"] = "9.9.9".into();
+        let entry: MarketEntry = serde_json::from_value(entry).expect("entry");
+        assert!(install_package(&plugins, &entry, PACKAGE, "0.2.14").expect_err("version").contains("9.9.9"));
+
+        let mut entry = serde_json::to_value(example_entry()).expect("json");
+        entry["permissions"] = serde_json::json!(["todos:read"]);
+        let entry: MarketEntry = serde_json::from_value(entry).expect("entry");
+        assert!(install_package(&plugins, &entry, PACKAGE, "0.2.14").expect_err("permissions").contains("notes:write"));
+        assert_eq!(std::fs::read_dir(&plugins).expect("list").count(), 0);
+        let _ = std::fs::remove_dir_all(&plugins);
+    }
+
+    #[test]
+    fn paths_that_leave_the_folder_are_refused() {
+        let mut bytes = Vec::new();
+        {
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            let options = zip::write::SimpleFileOptions::default();
+            writer.start_file("../escape.txt", options).expect("start");
+            writer.write_all(b"x").expect("write");
+            writer.finish().expect("finish");
+        }
+        let dir = temp_dir("escape");
+        let target = dir.join("plugin");
+        assert!(extract_package(&bytes, &target).expect_err("unsafe").contains("unsafe path"));
+        assert!(!dir.join("escape.txt").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}

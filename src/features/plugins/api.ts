@@ -37,6 +37,39 @@ export type PluginsSnapshot = {
   plugins: PluginInfo[];
 };
 
+// 与 src-tauri/src/plugin_host/market.rs 中的 MarketEntry，以及 plugin_host/mod.rs 中的 MarketPlugin、MarketSnapshot 对应。
+export type MarketPlugin = {
+  id: string;
+  name: LocalizedText;
+  description: LocalizedText | null;
+  version: string;
+  apiVersion: number;
+  minAppVersion: string | null;
+  author: string;
+  homepage: string;
+  permissions: string[];
+  download: { url: string; sha256: string; size: number };
+  installedVersion: string | null;
+  incompatible: string | null;
+};
+
+export type MarketSnapshot = {
+  indexUrl: string;
+  plugins: MarketPlugin[];
+};
+
+export function getPluginMarket() {
+  return invoke<MarketSnapshot>("get_plugin_market");
+}
+
+export function installMarketPlugin(id: string) {
+  return invoke<PluginsSnapshot>("install_market_plugin", { id });
+}
+
+export function uninstallPlugin(id: string) {
+  return invoke<PluginsSnapshot>("uninstall_plugin", { id });
+}
+
 export function listPlugins() {
   return invoke<PluginsSnapshot>("list_plugins");
 }

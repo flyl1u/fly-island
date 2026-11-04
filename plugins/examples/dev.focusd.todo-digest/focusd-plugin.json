@@ -8,7 +8,7 @@
   "version": "1.0.0",
   "apiVersion": 1,
   "author": "FocuSD",
-  "homepage": "https://github.com/flyl1u/fly-island/tree/main/plugins/examples/dev.focusd.todo-digest",
+  "homepage": "https://github.com/TixXin/fly-island/tree/main/plugins/examples/dev.focusd.todo-digest",
   "runtime": { "type": "process", "command": "main.mjs" },
   "permissions": ["todos:read", "notes:write"],
   "contributes": {

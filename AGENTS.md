@@ -40,7 +40,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 │   ├── capabilities/    # Tauri 权限能力配置
 │   └── tauri.conf.json  # 窗口、更新、打包配置
 ├── tests/               # node:test 单元测试（*.test.mjs）与浏览器回归页（*.html + *.tsx）
-├── plugins/examples/    # 示例插件（含无依赖的 Node SDK lib/focusd.mjs），不进入发布产物；开发文档见 docs/plugins/
+├── plugins/             # 插件市场：examples/ 示例插件源码（含 Node SDK），packages/ 打包好的 zip，index.json 市场索引（pnpm plugins:index 生成）；不进入发布产物
 ├── scripts/             # 发布、签名、latest.json 生成、代理状态 hook 脚本
 ├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
 ├── DESIGN.md            # 已确认的界面设计约定

@@ -2,13 +2,14 @@ import { FolderOpen, RefreshCcw } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation } from "../../i18n";
 import { PluginCard } from "./PluginCard";
+import { PluginMarketSection } from "./PluginMarketSection";
 import { usePlugins } from "./usePlugins";
 import "./PluginsSettingsSection.css";
 
 /** The plugins page: the third-party switch, the plugins folder and each installed plugin. */
 export function PluginsSettingsSection() {
   const t = useTranslation();
-  const { snapshot, error, busy, setAllowed, setEnabled, reload, openFolder, runCommand } = usePlugins();
+  const { snapshot, error, busy, setAllowed, setEnabled, reload, openFolder, runCommand, uninstall, applySnapshot } = usePlugins();
   const allowed = snapshot?.allowThirdParty ?? false;
 
   return (
@@ -45,9 +46,11 @@ export function PluginsSettingsSection() {
             busy={busy}
             onEnabledChange={(enabled) => setEnabled(plugin.id, enabled)}
             onRunCommand={(command) => runCommand(plugin.id, command)}
+            onUninstall={() => uninstall(plugin.id)}
           />
         ))}
       </section>
+      <PluginMarketSection onInstalled={applySnapshot} />
     </>
   );
 }

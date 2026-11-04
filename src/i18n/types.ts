@@ -616,6 +616,20 @@ export type Translations = {
       log: string;
       noLog: string;
       status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed", string>;
+      uninstall: string;
+      confirmUninstall: string;
+      market: {
+        title: string;
+        hint: string;
+        refresh: string;
+        loading: string;
+        empty: string;
+        install: string;
+        installing: string;
+        update: (version: string) => string;
+        installed: string;
+        incompatible: string;
+      };
     };
   };
 };

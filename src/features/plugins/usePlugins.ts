@@ -6,6 +6,7 @@ import {
   runPluginCommand,
   setPluginEnabled,
   setPluginsAllowed,
+  uninstallPlugin,
   type PluginsSnapshot,
 } from "./api";
 
@@ -56,5 +57,8 @@ export function usePlugins() {
     reload: useCallback(() => void run(reloadPlugins), [run]),
     openFolder: useCallback(() => void run(openPluginsFolder), [run]),
     runCommand: useCallback((id: string, command: string) => void run(() => runPluginCommand(id, command)), [run]),
+    uninstall: useCallback((id: string) => void run(() => uninstallPlugin(id)), [run]),
+    /** Takes the list returned by a market install. */
+    applySnapshot: setSnapshot,
   };
 }
