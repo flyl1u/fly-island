@@ -43,6 +43,7 @@ FocuSD brings frequent actions from separate windows into one compact island:
 
 - **Tasks, daily notes, and archives**: manage today's tasks, mark them complete, set the active task, write a daily note, and browse saved days as cards or a timeline. Optionally carry unfinished tasks forward and save a day as Markdown.
 - **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, remove entries, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut.
+- **File shelf**: drop files on the island to keep them at hand, then drag them out to Explorer, WeChat, QQ, or any app, or copy and paste them. Only paths are stored, never copies; select several, search, pin, and clean up automatically.
 - **Music and system audio**: control the Windows media session with previous, play/pause, and next actions; a live waveform reflects audio activity.
 - **AI status light**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. Install or repair the hooks from Settings.
 - **DeepSeek quick translation**: open a separate translation window with a global shortcut, auto-detect Chinese/English or choose a direction, paste the latest clipboard text, and copy the result.
@@ -66,6 +67,8 @@ Expand the island to switch between tasks, music, clipboard, and messages. Open 
 - **AI status light**: open **Settings → AI Agent 状态灯** and choose **安装/修复**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
 
 - **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut in Settings.
+
+- **File shelf**: drop files on the island to add them, and press and drag an entry to take it out (a copy; hold Shift to move). Cleanup, missing files, and double-click behavior are under **Settings → File shelf**. See the [file shelf guide (Chinese)](docs/file-shelf.md).
 
 ### Tech stack
 
