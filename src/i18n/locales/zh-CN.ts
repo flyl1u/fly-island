@@ -402,7 +402,7 @@ const zhCN: Translations = {
       translation: "翻译",
       shelf: "文件中转",
       agents: "AI Agent",
-      plugins: "插件",
+      plugins: "插件扩展",
       about: "关于",
     },
 
