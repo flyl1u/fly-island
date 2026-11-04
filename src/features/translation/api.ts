@@ -6,6 +6,7 @@ import type { Direction } from "./storage";
 // 与 translation/mod.rs 中推送的事件名一致。
 export const TRANSLATION_WINDOW_OPENED_EVENT = "translation-window-opened";
 export const TRANSLATION_SELECTION_EVENT = "translation-selection";
+export const TRANSLATION_ISLAND_SHORTCUT_EVENT = "translation-island-shortcut";
 
 /** Service, base URL (custom provider only) and model for a translation request. */
 export type TranslationService = {
@@ -21,6 +22,11 @@ export function hasTranslationSecret(provider: TranslationProvider) {
 /** Off unregisters the global shortcut; on lets set_translation_shortcut register it again. */
 export function setTranslationEnabled(enabled: boolean) {
   return invoke("set_translation_enabled", { enabled });
+}
+
+/** True sends the window shortcut to the island page instead of the translation window. */
+export function setTranslationTarget(island: boolean) {
+  return invoke("set_translation_target", { island });
 }
 
 export function setTranslationShortcut(shortcut: string) {
@@ -70,4 +76,8 @@ export function presentTranslationWindow() {
 
 export function listenTranslationSelection(handler: EventCallback<string>) {
   return listen<string>(TRANSLATION_SELECTION_EVENT, handler);
+}
+
+export function listenTranslationIslandShortcut(handler: EventCallback<unknown>) {
+  return listen(TRANSLATION_ISLAND_SHORTCUT_EVENT, handler);
 }

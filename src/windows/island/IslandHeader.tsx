@@ -177,10 +177,11 @@ export function IslandHeader({
         </button>}
         {onOpenTranslator && (
           <button
-            className="icon-button island-translate-button"
+            className={`icon-button island-translate-button${page === "translation" ? " island-translate-button--active" : ""}`}
             type="button"
-            title={`${t.translator.title} (Ctrl+Shift+F)`}
-            aria-label={t.translator.title}
+            title={features.translation ? withShortcut(t.translator.title, "translation") : `${t.translator.title} (Ctrl+Shift+F)`}
+            aria-label={features.translation ? withShortcut(t.translator.title, "translation") : t.translator.title}
+            aria-pressed={features.translation ? page === "translation" : undefined}
             onClick={(event) => {
               event.stopPropagation();
               onOpenTranslator();

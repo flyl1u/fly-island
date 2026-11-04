@@ -237,3 +237,9 @@ test("file shelf settings default for older settings and only take known values"
   assert.equal(normalizeSettings({ shelfDoubleClick: "delete" }).shelfDoubleClick, "open");
   assert.equal(normalizeSettings({ shelfRemoveMissing: true, shelfShowCount: true }).shelfShowCount, true);
 });
+
+test("translation opens in its window unless the island page was chosen", () => {
+  assert.equal(normalizeSettings({}).translationTarget, "window");
+  assert.equal(normalizeSettings({ translationTarget: "island" }).translationTarget, "island");
+  assert.equal(normalizeSettings({ translationTarget: "page" }).translationTarget, "window");
+});

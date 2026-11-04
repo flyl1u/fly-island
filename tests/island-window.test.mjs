@@ -128,3 +128,11 @@ test("the clipboard page fits whole rows and six rows stay within the native hei
   assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 70);
   assert.equal(getClipboardExpandedHeight(6), 656);
 });
+
+test("the translation page comes last in the page shortcuts, and only when it is an island page", async () => {
+  const { pageForAltDigit, pageShortcutOrder } = await import("../src/windows/island/features.ts");
+  const all = { agents: true, todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true };
+  assert.equal(pageShortcutOrder(all).includes("translation"), false);
+  assert.equal(pageForAltDigit({ ...all, translation: true }, 7), "translation");
+  assert.equal(pageForAltDigit({ ...all, translation: true }, 1), "agents");
+});

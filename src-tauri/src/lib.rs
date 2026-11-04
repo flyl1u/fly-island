@@ -176,6 +176,7 @@ pub fn run() {
             translation::set_translation_selection_shortcut,
             translation::set_translation_enabled,
             translation::present_translation_window,
+            translation::set_translation_target,
             settings_window::open_settings_window,
             settings_window::show_settings_window,
         ])

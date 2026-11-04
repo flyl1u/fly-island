@@ -12,12 +12,14 @@ export type IslandFeatures = {
   qqMail: boolean;
   /** The AI Agent switch; off hides the Agent page. */
   agents: boolean;
+  /** Translation is on and set to open as an island page rather than its own window. */
+  translation: boolean;
 };
 
-const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents"];
+const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
 const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
 // Header controls from left to right. Alt+1 is the first one that is switched on.
-const SHORTCUT_ORDER: IslandPage[] = ["agents", "todo", "music", "clipboard", "shelf", "qq"];
+const SHORTCUT_ORDER: IslandPage[] = ["agents", "todo", "music", "clipboard", "shelf", "qq", "translation"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures) {
   return page === "qq" ? features.qq || features.wechat || features.qqMail : features[page];

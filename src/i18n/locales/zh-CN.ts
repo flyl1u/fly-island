@@ -183,6 +183,7 @@ const zhCN: Translations = {
     translate: "翻译",
     emptyClipboard: "剪贴板中没有可粘贴的文本。",
     nothingToTranslate: "没有可翻译的文字",
+    panelPlaceholder: "输入要翻译的文字，Enter 翻译",
     peekLabel: (text) => `译文：${text}`,
     emptySource: "请输入原文，或按 Tab 填入剪贴板内容。",
     tooLong: "单次最多翻译 5000 个字符。",
@@ -447,6 +448,11 @@ const zhCN: Translations = {
 
     translation: {
       serviceTitle: "翻译服务",
+      targetTitle: "打开位置",
+      target: "翻译打开在",
+      targetWindow: "独立窗口",
+      targetIsland: "岛内页面",
+      targetHint: "选岛内页面时，顶栏翻译按钮、快捷键和点击岛上的译文都会打开岛屿里的翻译页；独立窗口不再弹出。",
       behaviorTitle: "翻译方式",
       pasteOnOpen: "打开时填入剪贴板",
       pasteOnOpenHint: "原文为空时，用最新一条文字剪贴板填上。已有内容不会被覆盖。",

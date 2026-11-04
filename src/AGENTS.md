@@ -21,7 +21,7 @@ src/
 │   ├── messages/            # 消息导航与预览；qq-mail/、qq-notifications/、wechat/ 子目录
 │   ├── agent-status/        # AI 代理状态
 │   ├── appearance/          # 外观设置、布局编辑器、预设
-│   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装
+│   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
 │   └── updater/             # 自动更新
 ├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写

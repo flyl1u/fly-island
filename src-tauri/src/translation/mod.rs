@@ -25,6 +25,7 @@ use crate::win32::{
 };
 
 const WINDOW_LABEL: &str = "translation";
+const MAIN_WINDOW_LABEL: &str = "main";
 const DEFAULT_SHORTCUT: &str = "Ctrl+Shift+F";
 const DEFAULT_SELECTION_SHORTCUT: &str = "Ctrl+Alt+T";
 const HOTKEY_ID: i32 = 0x4654;
@@ -32,6 +33,7 @@ const SELECTION_HOTKEY_ID: i32 = 0x4655;
 const CHANGE_HOTKEY_MESSAGE: u32 = WM_APP + 0x52;
 const CHANGE_SELECTION_HOTKEY_MESSAGE: u32 = WM_APP + 0x53;
 const TRANSLATION_SELECTION_EVENT: &str = "translation-selection";
+const TRANSLATION_ISLAND_SHORTCUT_EVENT: &str = "translation-island-shortcut";
 const MAX_CHARACTERS: usize = 5_000;
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
@@ -42,6 +44,9 @@ static SELECTION_BINDING: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
 /// Off when translation is switched off in settings: the shortcut is unregistered,
 /// so its keys reach other programs again, and stays so until it is switched on.
 static ENABLED: AtomicBool = AtomicBool::new(true);
+/// On when translation opens as a page of the island: the window shortcut then
+/// brings the island forward and asks it to toggle that page.
+static OPENS_IN_ISLAND: AtomicBool = AtomicBool::new(false);
 /// A requested shortcut (None to unregister) and where to report the result (the
 /// registered label, empty after unregistering, or an error).
 type PendingBinding = (Option<ShortcutBinding>, mpsc::Sender<Result<String, String>>);
@@ -297,6 +302,12 @@ pub fn set_translation_enabled(enabled: bool) -> Result<(), String> {
     Ok(())
 }
 
+/// Chooses where the window shortcut opens translation: its own window or the island page.
+#[tauri::command]
+pub fn set_translation_target(island: bool) {
+    OPENS_IN_ISLAND.store(island, Ordering::SeqCst);
+}
+
 #[tauri::command]
 pub fn set_translation_selection_shortcut(shortcut: String) -> Result<String, String> {
     let binding = parse_shortcut_binding(&shortcut)
@@ -423,7 +434,15 @@ impl WindowMessages for TranslationHotkeyWindow {
     fn handle(hwnd: HWND, message: u32, wparam: WPARAM, _: LPARAM) -> Option<LRESULT> {
         if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
             if let Some(app) = APP.get().filter(|_| ENABLED.load(Ordering::SeqCst)) {
-                let _ = toggle_translation_window(app.clone());
+                if OPENS_IN_ISLAND.load(Ordering::SeqCst) {
+                    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                    let _ = app.emit(TRANSLATION_ISLAND_SHORTCUT_EVENT, ());
+                } else {
+                    let _ = toggle_translation_window(app.clone());
+                }
             }
             return Some(LRESULT(0));
         }

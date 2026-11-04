@@ -183,6 +183,7 @@ const en: Translations = {
     translate: "Translate",
     emptyClipboard: "The clipboard has no text to paste.",
     nothingToTranslate: "Nothing to translate",
+    panelPlaceholder: "Type text to translate; Enter translates",
     peekLabel: (text) => `Translation: ${text}`,
     emptySource: "Enter source text, or press Tab to paste from the clipboard.",
     tooLong: "Translate up to 5,000 characters at a time.",
@@ -444,6 +445,11 @@ const en: Translations = {
 
     translation: {
       serviceTitle: "Translation service",
+      targetTitle: "Where it opens",
+      target: "Open translation in",
+      targetWindow: "Its own window",
+      targetIsland: "An island page",
+      targetHint: "With the island page, the header button, the shortcut and a click on the quick result open the translation page on the island instead of the window.",
       behaviorTitle: "How to translate",
       pasteOnOpen: "Fill from the clipboard on open",
       pasteOnOpenHint: "When the source is empty, fill it from the latest clipboard text. Existing text is left as it is.",

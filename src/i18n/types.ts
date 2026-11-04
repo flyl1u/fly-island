@@ -185,6 +185,7 @@ export type Translations = {
     translate: string;
     emptyClipboard: string;
     nothingToTranslate: string;
+    panelPlaceholder: string;
     peekLabel: (text: string) => string;
     emptySource: string;
     tooLong: string;
@@ -447,6 +448,11 @@ export type Translations = {
 
     translation: {
       serviceTitle: string;
+      targetTitle: string;
+      target: string;
+      targetWindow: string;
+      targetIsland: string;
+      targetHint: string;
       behaviorTitle: string;
       pasteOnOpen: string;
       pasteOnOpenHint: string;

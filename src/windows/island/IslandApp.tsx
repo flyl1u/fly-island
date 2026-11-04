@@ -8,10 +8,8 @@ import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
-import { presentTranslationWindow, toggleTranslationWindow } from "../../features/translation/api";
-import { requestTranslationHandoffOpen } from "../../features/translation/storage";
+import { TranslationPanel } from "../../features/translation/TranslationPanel";
 import { useQuickTranslation } from "../../features/translation/useQuickTranslation";
-import { useTranslationEnabled } from "../../features/translation/useTranslationEnabled";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
@@ -43,6 +41,7 @@ import { useIslandFeatures } from "./useIslandFeatures";
 import { useFileShelfDrop } from "./useFileShelfDrop";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
+import { useIslandTranslation } from "./useIslandTranslation";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -241,19 +240,14 @@ export function IslandApp() {
     [agentStatus, t],
   );
 
-  useTranslationEnabled(settings.translationEnabled);
-  const openTranslator = useCallback(() => {
-    void toggleTranslationWindow().catch((error) => {
-      console.error("Failed to open translation", error);
-    });
-  }, []);
-  // The flag goes first so the window, once shown, opens onto the quick result.
-  const openTranslationPeek = useCallback(() => {
-    requestTranslationHandoffOpen();
-    void presentTranslationWindow().catch((error) => {
-      console.error("Failed to open translation", error);
-    });
-  }, []);
+  const { openTranslator, openTranslationPeek } = useIslandTranslation(
+    settings.translationEnabled,
+    features.translation,
+    mode,
+    page,
+    openIslandPage,
+    collapseIsland,
+  );
 
   return (
     <main className={`stage stage--font-${settings.fontFamily}`} style={stageStyle}>
@@ -321,6 +315,7 @@ export function IslandApp() {
           />
         )}
         {page === "agents" && <AgentSessionsPanel sessions={agentSessions} />}
+        {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (
           <TodoNotebook

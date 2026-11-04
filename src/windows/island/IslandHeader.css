@@ -188,3 +188,9 @@
   outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: 1px;
 }
+
+/* Translation opened as an island page: the header button shows it is the open page. */
+.icon-button.island-translate-button--active {
+  color: #fff;
+  background: var(--color-white-a16);
+}

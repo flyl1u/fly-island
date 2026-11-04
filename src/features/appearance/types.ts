@@ -1,3 +1,5 @@
+export type TranslationTarget = "window" | "island";
+
 export type AppearanceMode = "classic" | "liquidGlass";
 export type IslandFont = "system" | "pixel";
 /** How the collapsed island opens: a click, or resting the pointer on it. */
@@ -64,6 +66,8 @@ export type IslandSettings = {
   shelfEnabled: boolean;
   /** Off hides the island's translate button and releases the global translation shortcut. */
   translationEnabled: boolean;
+  /** Where translation opens: its own window, or a page of the expanded island. */
+  translationTarget: TranslationTarget;
   /** Dragging files onto a collapsed or tucked island opens the shelf as a drop zone. */
   shelfExpandOnDrop: boolean;
   /** Days after which shelf entries leave the list (0 keeps them). */

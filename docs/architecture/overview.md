@@ -146,6 +146,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-selection`（载荷为 `string`：「翻译选中文字」快捷键取到的文字，没有可译内容时为空字符串） | `translation/mod.rs` | 广播 |
+| `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `local-api-request`（载荷 `{ id, method, params }`，前端用 `answer_local_api_request` 回复） | `local_api/bridge.rs` | `main` |
 
 ### 其他

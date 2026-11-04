@@ -5,6 +5,8 @@ import type { IslandPage } from "./types";
 
 // Tall enough for about four shelf rows before the list scrolls.
 const SHELF_EXPANDED_ISLAND_HEIGHT = 430;
+// Header, direction bar, a few lines of source, the result and the action row.
+const TRANSLATION_EXPANDED_ISLAND_HEIGHT = 420;
 
 type ExpandedHeightInput = {
   page: IslandPage;
@@ -58,6 +60,8 @@ export function getExpandedIslandHeight({
       ? MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "shelf"
         ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
+      : page === "translation"
+        ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"
         ? getAgentPageExpandedHeight(agentVisibleRows)
       : page === "clipboard"

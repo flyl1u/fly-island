@@ -81,6 +81,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentTitleEnabled: true,
   shelfEnabled: true,
   translationEnabled: true,
+  translationTarget: "window",
   shelfExpandOnDrop: true,
   shelfAutoCleanupDays: 0,
   shelfRemoveMissing: false,
@@ -268,6 +269,7 @@ export function normalizeSettings(
     agentTitleEnabled: settings?.agentTitleEnabled !== false,
     shelfEnabled: settings?.shelfEnabled !== false,
     translationEnabled: settings?.translationEnabled !== false,
+    translationTarget: settings?.translationTarget === "island" ? "island" : "window",
     shelfExpandOnDrop: settings?.shelfExpandOnDrop !== false,
     shelfAutoCleanupDays: (SHELF_CLEANUP_DAYS as readonly unknown[]).includes(settings?.shelfAutoCleanupDays)
       ? (settings?.shelfAutoCleanupDays as number)
