@@ -26,7 +26,8 @@
 
 | 数据 | 位置 | 负责方 |
 |---|---|---|
-| 设置、预设、待办、笔记、归档、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 待办、以后的待办、每日笔记、归档、正在进行的待办、待办日期（2026-11 起；更早的版本存在 `localStorage`，首次启动时迁移） | 应用数据目录（`todos.json`；迁移时的原文备份 `todos-migration-backup.json` / `todos-migration-backup-<毫秒>.json`；旧版本改过数据后重新导入前的备份 `todos.before-reimport-<毫秒>.json`；这些备份都不会自动删除） | `todos`（Rust）、`features/todos/todoStore.ts` |
 | AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，标题与提问文字处理在 `title.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 设置窗口上次关闭时的大小与位置（位置已不在任何屏幕上时忽略） | 应用数据目录（`settings-window.json`） | `settings_window/bounds.rs` |
@@ -112,12 +113,13 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-settings` | `features/appearance/storage.ts` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
 | `focusd-island-setting-presets` | `features/appearance/storage.ts` |
-| `focusd-island-todos` | `features/todos/storage.ts` |
+| `focusd-island-todos`（这一行到 `focusd-island-daily-note` 的 6 个待办 key：迁移到 `todos.json` 后只在启动时读取用于迁移，不再写入也不删除，保留给旧版本用） | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |
 | `focusd-island-daily-note` | `features/todos/storage.ts` |
+| `focusd-island-todos-migrated-v1`（`{ at }`：待办已迁移到 `todos.json`；只是标记，是否迁移以 `todos.json` 里的 `migration.sourceHash` 为准） | `features/todos/storage.ts` |
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
@@ -155,6 +157,9 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `plugin-host-event`（载荷 `{ name, payload }`：插件可订阅的变化，由 Rust 合并后转给订阅的插件；`name` 见 `plugins/schema/rpc.json` 的 `events`） | 主窗口 `windows/island/usePluginHostEvents.ts` | Rust（`plugin_host/events.rs`） |
 | `plugin-notification`（载荷 `{ pluginId, pluginName, title, body, durationMs, actions }`：插件的 `island.notify`，按钮用 `run_plugin_notification_action` 回复） | `plugin_host/notify.rs` | `main` |
 | `plugin-keybinding`（载荷 `{ pluginId, command, when }`：插件命令的全局快捷键被按下，主窗口求值 `when` 后用 `run_plugin_command` 执行） | `plugin_host/keybindings.rs` | `main` |
+| `todos-changed`（载荷 `{ revision, data, fields, reason }`：插件或本地接口改了 `todos.json`，主窗口只采纳 `fields` 列出的字段） | `todos/service.rs` | `main` |
+| `plugin-permission-request`（载荷 `{ requestId, pluginId, pluginName, permission, timeoutMs }`：插件第一次使用敏感权限，主窗口显示确认，用 `answer_plugin_permission` 回复） | `plugin_host/sensitive.rs` | `main` |
+| `file-shelf-changed`（无载荷：插件改了文件中转列表，主窗口重新读取） | `file_shelf/plugin_view.rs` | `main` |
 
 ### 其他
 
@@ -165,5 +170,6 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。
 - 插件市场：索引地址 `https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json`（暂用 fork 仓库的 `dev` 分支）、`index.json` 格式（`version: 1`）与 `plugins/packages/<id>-<version>.zip` 文件名；已发布的版本不得修改内容。索引签名 `index.json.sig`（`{ keyId, signature }`，Ed25519）与可信公钥列表 `plugins/signing-keys.json`；签名私钥在 `~/.tauri/fly-island/plugin-index-signing.key`（DPAPI），不在仓库中。
-- 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)；机器可读的描述在 `plugins/schema/manifest.schema.json` 与 `plugins/schema/rpc.json`（`plugin_host/tests.rs` 对照检查）。插件 API 第 2 版（2026-11-05）新增：清单 `apiVersion: 2`、`contributes.commands[].keybinding` / `when`、`contributes.menus["todo/context"]`；`initialize.capabilities`；方法 `events.*`、`island.notify`、`storage.*`、`secrets.*`，通知 `event`、`notification.action`，`command` 的 `args`；权限 `agent-status:read`、`island:notify`、`secrets`；`plugins.json` 授权项字段 `notificationsMuted`；文件 `plugins-data/<id>/storage.json` 与 `plugin-secrets.json`（各插件已存秘密的名称）；凭据服务名 `com.focusd.island.plugin.<id>`；Tauri 命令 `run_plugin_notification_action`、`set_plugin_notifications_muted`、`clear_plugin_data`、`list_plugin_menu`、`run_plugin_menu_command`。全部是新增，`apiVersion: 1` 插件的行为不变。
+- 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)；机器可读的描述在 `plugins/schema/manifest.schema.json` 与 `plugins/schema/rpc.json`（`plugin_host/tests.rs` 对照检查）。插件 API 第 2 版（2026-11-05）新增：清单 `apiVersion: 2`、`contributes.commands[].keybinding` / `when`、`contributes.menus["todo/context"]`；`initialize.capabilities`；方法 `events.*`、`island.notify`、`storage.*`、`secrets.*`，通知 `event`、`notification.action`，`command` 的 `args`；权限 `agent-status:read`、`island:notify`、`secrets`；`plugins.json` 授权项字段 `notificationsMuted`；文件 `plugins-data/<id>/storage.json` 与 `plugin-secrets.json`（各插件已存秘密的名称）；凭据服务名 `com.focusd.island.plugin.<id>`；Tauri 命令 `run_plugin_notification_action`、`set_plugin_notifications_muted`、`clear_plugin_data`、`list_plugin_menu`、`run_plugin_menu_command`。全部是新增，`apiVersion: 1` 插件的行为不变。插件平台 P6（2026-11-05）新增：权限 `clipboard:read`、`messages:read`、`media:read`、`shelf:read`、`shelf:write`（敏感，首次使用时在岛上确认）与 `media:control`；方法 `clipboard.history`、`messages.list`、`media.nowPlaying`、`media.playPause` / `next` / `previous`、`shelf.list` / `add` / `remove`；事件 `clipboard.changed`、`messages.received`、`media.changed`，`todos.changed` 增加 `reason`；`plugins.json` 授权项字段 `sensitive`（`{ <权限>: "allowed" | "denied" }`）；Tauri 命令 `answer_plugin_permission`、`revoke_plugin_sensitive_permission`。凭据（QQ 邮箱授权码、翻译密钥）不对插件开放。
+- 待办数据（P6，2026-11-05 起，**数据位置的契约变更**）：`todos.json`（`{ version: 1, revision, migration?, date, todos, scheduled, archives, dailyNote, activeTodoId }`，字段形状与原 localStorage 一致）及上面列出的备份文件；Tauri 命令 `migrate_todos`、`get_todos_state`、`apply_todos_change`（`baseRevision` 之后被插件或本地接口改过的字段不会被覆盖）；事件 `todos-changed`。待办数据在 `todos.json` 时，插件和本地接口的 `todos.*` / `note.*` 由 Rust 直接读写；迁移失败、退回 localStorage 的那次运行仍经 `local-api-request` 由主窗口回答，所以该事件保留。
 - 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。自 2026-11-04 起它是内置插件 `focusd.local-api`（插件 id 与设置键 `allowWrite` 也属于契约），命令 `get_local_api_state`、`set_local_api_settings`、`reset_local_api_token` 已删除。

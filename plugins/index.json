@@ -2,6 +2,31 @@
   "version": 1,
   "plugins": [
     {
+      "id": "dev.focusd.now-playing",
+      "name": {
+        "zh-CN": "正在播放（示例）",
+        "en": "Now playing (example)"
+      },
+      "description": {
+        "zh-CN": "换歌时在岛上提示正在播放的歌曲。演示敏感权限：第一次读取播放信息时，岛上会先问你是否允许。用 Windows 自带的 PowerShell 运行。",
+        "en": "Shows the new song on the island when the track changes. Shows a sensitive permission: the first time it reads what is playing, the island asks you first. Runs on the PowerShell built into Windows."
+      },
+      "version": "1.0.0",
+      "apiVersion": 2,
+      "author": "FocuSD",
+      "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.now-playing",
+      "permissions": [
+        "island:notify",
+        "media:read"
+      ],
+      "runtime": "powershell",
+      "download": {
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.now-playing-1.0.0.zip",
+        "sha256": "8a95e329fd660e5592c382fd2fa1eb2fa22f37a880ae4952f3bc2555742a9eca",
+        "size": 3132
+      }
+    },
+    {
       "id": "dev.focusd.pomodoro",
       "name": {
         "zh-CN": "番茄钟（示例）",

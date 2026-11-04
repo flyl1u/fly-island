@@ -157,12 +157,31 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `agent-status:write` | 1 | `agentStatus.report`、`agentStatus.clear` | |
 | `island:notify` | 2 | `island.notify` | |
 | `secrets` | 2 | `secrets.get`、`secrets.set`、`secrets.delete` | |
+| `clipboard:read`（敏感） | 2 | `clipboard.history` | `clipboard.changed` |
+| `messages:read`（敏感） | 2 | `messages.list` | `messages.received` |
+| `media:read`（敏感） | 2 | `media.nowPlaying` | `media.changed` |
+| `media:control` | 2 | `media.playPause`、`media.next`、`media.previous` | |
+| `shelf:read`（敏感） | 2 | `shelf.list` | |
+| `shelf:write`（敏感） | 2 | `shelf.add`、`shelf.remove` | |
+
+QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到。
 
 不需要权限的方法：`host.info`、`settings.get`、`ui.setInfo`，以及第 2 版的 `events.subscribe`、`events.unsubscribe`、`storage.*`。事件 `island.expanded`、`island.collapsed`、`app.locale.changed` 也不需要权限。
 
 用户启用插件时，会授予清单里列出的全部权限。新版本如果要求更多权限，插件会暂停，直到用户重新授权。
 
 注意：权限只限制插件能调用哪些岛屿接口。插件程序本身以用户身份运行，可以读写文件和联网。
+
+### 敏感权限
+
+标着"敏感"的权限，启用插件时照常授予，但插件**第一次实际使用**（调用方法或订阅事件）时，岛上还会弹出一行确认："<插件名> 想读取剪贴板历史 [允许] [本次] [拒绝]"。
+
+- 插件的这次请求会一直等到用户回答，最多 30 秒。所以插件的请求超时要设得比 30 秒长（Node.js SDK 不限时；PowerShell 示例 `dev.focusd.now-playing` 里的 `lib/focusd.ps1` 等 40 秒）。
+- **允许** / **拒绝**：记在 `plugins.json` 里，以后不再询问。拒绝时插件收到 `-32001`。
+- **本次**：这次允许，插件进程重启后会再问。
+- 30 秒没有回答：这次按拒绝处理（`-32001`），不记下来，下次使用再问。
+- 用户可以在插件设置页的"敏感权限"里看到这些回答，并随时撤销；撤销后下次使用会再问。
+- 岛屿贴边收起时，确认会先把岛屿露出来；全屏游戏等让岛屿隐藏的时候，用户可能看不到，插件会在 30 秒后收到 `-32001`。
 
 ## 通信协议
 
@@ -225,6 +244,13 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `secrets.get` | 2 | `secrets` | `{ key }` | `{ value }`，没有时为 `null` |
 | `secrets.set` | 2 | `secrets` | `{ key, value }` | `{}` |
 | `secrets.delete` | 2 | `secrets` | `{ key }` | `{ deleted }` |
+| `clipboard.history` | 2 | `clipboard:read` | `{ limit? }`（1–50，默认 20） | `{ items: [{ id, text, truncated, copiedAt, favorite }] }`：只有文字，没有图片，最新的在前；`text` 最长 4000 个字符，被截断时 `truncated` 为 `true`。剪贴板历史关闭时返回状态 409 |
+| `messages.list` | 2 | `messages:read` | — | `{ items: [{ source, id, sender, preview, receivedAt, unread? }] }`，最新的在前，只包含用户打开了的来源。`source` 为 `qq`、`wechat` 或 `qqMail`；微信只知道托盘图标在闪，所以 `sender`、`preview` 为 `null`；QQ 邮箱的 `preview` 是主题，从不包含正文、邮箱地址或授权码 |
+| `media.nowPlaying` | 2 | `media:read` | — | `{ available, status, title, artist, album, sourceApp, positionMs, durationMs }`，不含封面图片；`status` 为 `playing`、`paused` 或 `unavailable` |
+| `media.playPause`、`media.next`、`media.previous` | 2 | `media:control` | — | 执行后的 `media.nowPlaying` 结果 |
+| `shelf.list` | 2 | `shelf:read` | — | `{ items: [{ id, path, name, isDir, size, addedAt, pinned, missing, unreachable }] }`：只有路径等信息，不读取文件内容 |
+| `shelf.add` | 2 | `shelf:write` | `{ paths }`（1–20 个已存在的文件或文件夹的绝对路径，其他的会被跳过） | 同 `shelf.list` |
+| `shelf.remove` | 2 | `shelf:write` | `{ ids }`（1–20 个） | 同 `shelf.list`；只把条目移出列表，不删除文件 |
 
 `todos.*`、`note.*`、`agentStatus.*` 和 [本地接口](../local-api.md) 的 HTTP 接口一一对应，参数和结果完全相同。`agentStatus.*` 的字段规则见本地接口文档的“AI Agent 状态”一节；`name` 省略时默认使用插件清单里的英文名称。插件停止、停用或出错退出时，它上报的来源会被自动清除。
 
@@ -236,12 +262,15 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 | 事件 | 权限 | `payload` | 时机 |
 |---|---|---|---|
-| `todos.changed` | `todos:read` | `{ date }` | 今天的待办、"以后"列表或正在进行的待办变了，或者换了一天。不带待办内容，需要时调 `todos.list` |
+| `todos.changed` | `todos:read` | `{ date, reason? }` | 今天的待办、"以后"列表或正在进行的待办变了，或者换了一天。不带待办内容，需要时调 `todos.list`。`reason` 为 `add`、`remove`、`reorder`、`update` 或 `dayChanged`；待办数据还留在 localStorage 时（迁移失败的那次运行）没有 `reason` |
 | `note.changed` | `notes:read` | `{ date }` | 每日笔记变了，需要时调 `note.get` |
 | `agentStatus.changed` | `agent-status:read` | `{ agents: [{ id, name, phase, title? }] }` | AI 代理状态变了 |
 | `island.expanded` | — | `{}` | 岛屿展开 |
 | `island.collapsed` | — | `{}` | 岛屿收起 |
 | `app.locale.changed` | — | `{ locale }` | 界面语言变了，`locale` 为 `zh-CN` 或 `en` |
+| `clipboard.changed` | `clipboard:read` | `{}` | 剪贴板历史变了（只在剪贴板历史打开时），需要时调 `clipboard.history` |
+| `messages.received` | `messages:read` | 与 `messages.list` 的一项相同 | 新的 QQ 通知、QQ 邮件或微信提醒到了 |
+| `media.changed` | `media:read` | 与 `media.nowPlaying` 相同 | 换歌、换播放器或播放 / 暂停时（有插件订阅时每 2 秒检查一次），进度变化不算 |
 
 - 同一个事件 200 毫秒内最多发一次，带最后一次的 `payload`。连续输入时不会刷屏。
 - 订阅只在这次进程里有效：插件重启后要重新订阅，一般在收到 `initialize` 后马上订阅。
@@ -269,8 +298,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `-32700` | 不是合法的 JSON |
 | `-32600` | 不是合法的 JSON-RPC 消息（缺少 `"jsonrpc": "2.0"`、`method` 或 `id` 类型不对） |
 | `-32601` | 方法不存在（第 1 版插件调用第 2 版才有的 `events.*`、`storage.*` 也是这个错误） |
-| `-32001` | 没有对应的权限（包括订阅没有权限的事件） |
-| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码：400 参数错误、404 不存在、413 太大（存储或秘密超出上限）、429 请求太多（同时发送的请求超过 16 个，或 `island.notify` 超过每分钟 6 条）、500 岛屿做不到（例如写文件或凭据管理器失败）、504 岛屿没有及时响应 |
+| `-32001` | 没有对应的权限（包括订阅没有权限的事件），或者用户拒绝了敏感权限、30 秒内没有回答 |
+| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码：400 参数错误、404 不存在、409 对应功能被用户关掉了（例如剪贴板历史）、413 太大（存储或秘密超出上限）、429 请求太多（同时发送的请求超过 16 个，或 `island.notify` 超过每分钟 6 条）、500 岛屿做不到（例如写文件或凭据管理器失败）、504 岛屿没有及时响应 |
 
 ### 环境变量
 

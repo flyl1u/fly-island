@@ -51,6 +51,15 @@ fn the_host_matches_the_protocol_description() {
         list.as_array().expect("array").iter().map(|item| item["name"].as_str().expect("name").to_string()).collect()
     };
     assert_eq!(names(&rpc["permissions"]), PERMISSIONS);
+    let sensitive: Vec<&str> = rpc["permissions"]
+        .as_array()
+        .expect("permissions")
+        .iter()
+        .filter(|permission| permission["sensitive"] == true)
+        .filter_map(|permission| permission["name"].as_str())
+        .collect();
+    assert_eq!(sensitive, super::sensitive::SENSITIVE_PERMISSIONS);
+    assert!(sensitive.iter().all(|name| PERMISSIONS.contains(name)));
     assert_eq!(names(&rpc["capabilities"]), CAPABILITIES);
     let events: Vec<(String, Option<String>)> = rpc["events"]
         .as_array()

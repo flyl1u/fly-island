@@ -1,0 +1,17 @@
+{
+  "id": "dev.focusd.now-playing",
+  "name": { "zh-CN": "正在播放（示例）", "en": "Now playing (example)" },
+  "description": {
+    "zh-CN": "换歌时在岛上提示正在播放的歌曲。演示敏感权限：第一次读取播放信息时，岛上会先问你是否允许。用 Windows 自带的 PowerShell 运行。",
+    "en": "Shows the new song on the island when the track changes. Shows a sensitive permission: the first time it reads what is playing, the island asks you first. Runs on the PowerShell built into Windows."
+  },
+  "version": "1.0.0",
+  "apiVersion": 2,
+  "author": "FocuSD",
+  "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.now-playing",
+  "runtime": { "type": "process", "command": "main.ps1" },
+  "permissions": ["island:notify", "media:read"],
+  "contributes": {
+    "commands": [{ "id": "show", "title": { "zh-CN": "显示正在播放", "en": "Show now playing" } }]
+  }
+}

@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5 已完成**（2026-11-05，见 P5 一节末尾的「完成记录」）；P6 起仍是计划。
+> 状态：**P5、P6 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P7 起仍是计划。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -255,6 +255,21 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 **验收**：已有用户升级后待办、归档、笔记、以后的待办全部还在；关闭主窗口的渲染（例如岛屿刚启动、主窗口还没加载完）时，本地接口照常读写待办；拒绝剪贴板权限后插件收到 `-32001`，岛屿其他功能不受影响。
 
 **风险**：数据迁移是这份计划里风险最高的一步。上线前要在一份真实用户数据的副本上验证，并保留回滚办法（旧 key 不删）。
+
+**完成记录（2026-11-05）** ✅ 本地提交，未推送、未发版：`ba3c89f` 把待办数据的解析抽成纯函数（`features/todos/normalize.ts`）、`0191ba3` Rust `todos` 模块（模型与原子写入）、`3a81316` 迁移到 `todos.json`、`f44e6a7` 插件和本地接口由 Rust 直接读写待办、`ffcb270` 敏感权限的首次确认、`731cbe8` `clipboard:read`、`483cfb5` `messages:read` / `media:read` / `media:control`、`6cda52c` `shelf:read` / `shelf:write`，以及文档与示例的提交。另有 `65031b6` 修复了 P5 文档提交弄坏的市场测试。新增示例 `dev.focusd.now-playing`（`media:read` + `island.notify`）；发布说明草稿在 `docs/releases/draft-p6-todos-json.md`。
+
+已验证：迁移的单测覆盖 v0.1.1–v0.2.14 写下的格式（这些版本的待办格式相同；`focusd-island-scheduled-todos` 尚未发布过）、当前格式、空数据、损坏的 JSON、缺字段、超大归档；另在隔离的应用标识下用 release 程序端到端跑过首次迁移、窗口重载、旧版本改过数据后重新导入、`todos.json` 来自更新的版本时退回 localStorage、本地接口直接读写、敏感权限的允许 / 本次 / 拒绝 / 超时 / 撤销。
+
+与上面设计的偏差：
+
+- **迁移期间的排队**：由 Rust 在本地接口和插件的待办请求上等待主窗口完成迁移，最多 10 秒，而不是在前端排队。
+- **"主窗口没加载完时本地接口照常读写"只部分做到**：每次启动都要先由主窗口读一次 localStorage（只有它能判断旧版本有没有改过数据），完成后即使主窗口卡住或不显示，Rust 也能直接读写；如果这次启动主窗口一直没加载，待办请求等 10 秒后按旧路径交给窗口，最终返回 504。
+- **提示位置**：迁移失败和重新导入的提示显示在待办页底部的一行（可关闭），不在折叠条上。
+- **新增的保护**：`apply_todos_change` 带 `baseRevision`，插件或本地接口在这之后改过的字段不会被岛屿窗口的旧值覆盖；`todos-changed` 带 `fields`。备份文件除 `todos-migration-backup.json` 外，内容不同时另存 `todos-migration-backup-<毫秒>.json`。localStorage 被清空（`todos.json` 有数据而 6 个 key 都没有）时继续用 `todos.json`，不当作"旧版本改过"。
+- **`local-api-request` 保留**：迁移失败、退回 localStorage 的那次运行仍要用它。
+- **敏感权限**："拒绝"也记在 `plugins.json`（不然插件可以反复弹窗），30 秒没回答只拒绝这一次。确认条叠在岛屿顶部一行，折叠和展开时都能看到，贴边收起时会先露出岛屿；全屏游戏等隐藏岛屿时用户看不到，只能等超时。
+- **数据范围**：微信只有"托盘图标在闪"，所以 `messages.list` 里微信条目没有发送者和预览；`media.changed` 由 Rust 在有插件订阅时每 2 秒检查一次；文件中转的开关只在前端设置里，Rust 不知道，所以 `shelf.*` 在文件中转页关掉时也能用。
+- **未做**：§3.2 的 `optionalPermissions` / `permissions.request` 和最近 200 条调用记录（不在本次的步骤里）；新的浏览器回归页；单独发版（只写了发布说明草稿）。PowerShell 的 `lib/focusd.ps1` 等回答的时间只在新示例里改成 40 秒，旧示例的包不变（它们不用敏感权限）。
 
 ### P7 岛上界面扩展点：宿主绘制的模板
 
