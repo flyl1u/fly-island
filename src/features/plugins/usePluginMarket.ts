@@ -3,9 +3,9 @@ import { getPluginMarket, installMarketPlugin, type MarketSnapshot, type Plugins
 
 /**
  * The plugin market index, fetched when the page opens and on Refresh, and
- * installing from it. `onInstalled` receives the new list of installed plugins.
+ * installing from it. `onInstalled`, when given, receives the new list of installed plugins.
  */
-export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void) {
+export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => void) {
   const [market, setMarket] = useState<MarketSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   // Kept apart so a failed install does not read as the list failing to load.
@@ -36,7 +36,8 @@ export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void
       setInstallingId(id);
       setInstallError(null);
       try {
-        onInstalled(await installMarketPlugin(id));
+        const installed = await installMarketPlugin(id);
+        onInstalled?.(installed);
         setMarket((current) =>
           current && {
             ...current,

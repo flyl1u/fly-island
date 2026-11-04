@@ -10,7 +10,7 @@ const isPermission = (name: string): name is PluginPermission =>
   (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 
 /** Plugins from the market index, each with Install, Update or its state. */
-export function PluginMarketSection({ onInstalled }: { onInstalled: (snapshot: PluginsSnapshot) => void }) {
+export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: PluginsSnapshot) => void } = {}) {
   const t = useTranslation();
   const { locale } = useLocale();
   const { market, loading, loadError, installError, installingId, refresh, install } = usePluginMarket(onInstalled);

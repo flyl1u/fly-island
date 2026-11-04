@@ -431,6 +431,7 @@ const en: Translations = {
       shelf: "File shelf",
       agents: "AI Agent",
       plugins: "Plugins",
+      market: "Plugin market",
       about: "About",
     },
 

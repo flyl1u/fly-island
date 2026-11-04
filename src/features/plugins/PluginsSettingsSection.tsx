@@ -4,17 +4,16 @@ import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation } from "../../i18n";
 import { PluginCard } from "./PluginCard";
 import { PluginDetailPage } from "./PluginDetailPage";
-import { PluginMarketSection } from "./PluginMarketSection";
 import { usePlugins } from "./usePlugins";
 import "./PluginsSettingsSection.css";
 
 /**
- * The plugins page: the third-party switch, the plugins folder, each installed
- * plugin and the market; or one plugin's own page once its Settings is opened.
+ * The plugins page: the third-party switch, the plugins folder and each installed
+ * plugin; or one plugin's own page once its Settings is opened. The market is its own page.
  */
 export function PluginsSettingsSection() {
   const t = useTranslation();
-  const { snapshot, error, busy, setAllowed, setEnabled, setSetting, reload, openFolder, runCommand, uninstall, applySnapshot } =
+  const { snapshot, error, busy, setAllowed, setEnabled, setSetting, reload, openFolder, runCommand, uninstall } =
     usePlugins();
   const [openId, setOpenId] = useState<string | null>(null);
   const allowed = snapshot?.allowThirdParty ?? false;
@@ -74,7 +73,6 @@ export function PluginsSettingsSection() {
           />
         ))}
       </section>
-      <PluginMarketSection onInstalled={applySnapshot} />
     </>
   );
 }

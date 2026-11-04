@@ -434,6 +434,7 @@ const zhCN: Translations = {
       shelf: "文件中转",
       agents: "AI Agent",
       plugins: "插件扩展",
+      market: "插件市场",
       about: "关于",
     },
 

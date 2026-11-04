@@ -63,7 +63,5 @@ export function usePlugins() {
       (id: string, key: string, value: unknown) => void run(() => setPluginSetting(id, key, value)),
       [run],
     ),
-    /** Takes the list returned by a market install. */
-    applySnapshot: setSnapshot,
   };
 }

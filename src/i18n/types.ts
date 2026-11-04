@@ -434,6 +434,7 @@ export type Translations = {
       shelf: string;
       agents: string;
       plugins: string;
+      market: string;
       about: string;
     };
 
