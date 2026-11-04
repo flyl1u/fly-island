@@ -1,55 +1,75 @@
-import { useState, type MouseEvent as ReactMouseEvent } from "react";
-import { ExternalLink, Star } from "lucide-react";
-import { isTauri } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { useSyncExternalStore } from "react";
+import { CircleHelp, Globe, Star, Tag } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import markUrl from "../../../src-tauri/icons/mark.svg";
+import { ProjectLink } from "./ProjectLink";
+import { PROJECT_ISSUES_URL, PROJECT_RELEASES_URL, PROJECT_REPO_URL, PROJECT_SITE_URL } from "./projectLinks";
+import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import { UpdatePanel } from "./UpdatePanel";
 import "./ProjectSettingsSection.css";
 
+/** Settings → About: what this build is, and where to get the next one. */
 export function ProjectSettingsSection() {
   const t = useTranslation();
-  const [projectLinkFailed, setProjectLinkFailed] = useState(false);
-
-  const openProjectLink = async (event: ReactMouseEvent<HTMLAnchorElement>) => {
-    if (!isTauri()) {
-      return;
-    }
-
-    event.preventDefault();
-    const url = event.currentTarget.href;
-    setProjectLinkFailed(false);
-
-    try {
-      await openUrl(url);
-    } catch (error) {
-      console.error("Failed to open project link", error);
-      setProjectLinkFailed(true);
-    }
-  };
+  const { version, stage } = useSyncExternalStore(subscribeToUpdate, getUpdateState);
+  // The update card itself opens the release page when in-app updates are off.
+  const showReleasesLink = stage !== "disabled";
 
   return (
-    <section className="settings-section settings-section--project">
-      <div className="settings-section__header">
-        <span>{t.settings.project.title}</span>
-      </div>
-      <UpdatePanel />
-      <a
-        className="project-link project-link--star"
-        href="https://github.com/flyl1u/fly-island"
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={openProjectLink}
-      >
-        <Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />
-        <span className="project-link__copy">
-          <strong>{t.settings.project.star}</strong>
-          <span>{t.settings.project.starHint}</span>
-        </span>
-        <ExternalLink className="project-link__arrow" size={14} aria-hidden="true" />
-      </a>
-      {projectLinkFailed && (
-        <p className="project-link-error" role="alert">{t.settings.project.openFailed}</p>
-      )}
-    </section>
+    <>
+      <section className="settings-section settings-section--about">
+        <div className="about-identity">
+          <img className="about-identity__mark" src={markUrl} alt="" width={48} height={48} />
+          <div className="about-identity__body">
+            <div className="about-identity__heading">
+              <p className="about-identity__name">{t.settings.project.appName}</p>
+              {version && (
+                <span className="about-identity__version">{t.settings.project.versionChip(version)}</span>
+              )}
+            </div>
+            <p className="about-identity__description">{t.settings.project.description}</p>
+          </div>
+        </div>
+      </section>
+      <section className="settings-section settings-section--about-version">
+        <div className="settings-section__header">
+          <span>{t.settings.project.versionTitle}</span>
+        </div>
+        <UpdatePanel />
+      </section>
+      <section className="settings-section settings-section--about-links">
+        <div className="settings-section__header">
+          <span>{t.settings.project.linksTitle}</span>
+        </div>
+        <ProjectLink
+          href={PROJECT_SITE_URL}
+          title={t.settings.project.site}
+          hint={t.settings.project.siteHint}
+          icon={<Globe className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+        />
+        {showReleasesLink && (
+          <ProjectLink
+            href={PROJECT_RELEASES_URL}
+            tone="release"
+            title={t.settings.project.releases}
+            hint={t.settings.project.releasesHint}
+            icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+          />
+        )}
+        <ProjectLink
+          href={PROJECT_ISSUES_URL}
+          title={t.settings.project.issues}
+          hint={t.settings.project.issuesHint}
+          icon={<CircleHelp className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+        />
+        <ProjectLink
+          href={PROJECT_REPO_URL}
+          tone="star"
+          title={t.settings.project.star}
+          hint={t.settings.project.starHint}
+          icon={<Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />}
+        />
+      </section>
+    </>
   );
 }

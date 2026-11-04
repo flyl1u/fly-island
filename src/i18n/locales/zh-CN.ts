@@ -467,6 +467,17 @@ const zhCN: Translations = {
 
     project: {
       title: "关于小岛",
+      appName: "fly-island",
+      versionChip: (version) => `v${version}`,
+      description: "在屏幕顶部集中待办、剪贴板、音乐、快捷翻译、AI 状态和消息提醒。",
+      versionTitle: "版本",
+      linksTitle: "链接",
+      site: "在线预览",
+      siteHint: "在浏览器里看看小岛长什么样",
+      releases: "版本发布",
+      releasesHint: "查看更新说明，或手动下载安装包",
+      issues: "反馈问题",
+      issuesHint: "到 GitHub 提一个 Issue",
       star: "觉得小岛还不错？",
       starHint: "去 GitHub 给小岛一颗 Star",
       latestRelease: "查看最新版本",

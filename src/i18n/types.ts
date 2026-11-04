@@ -467,6 +467,17 @@ export type Translations = {
 
     project: {
       title: string;
+      appName: string;
+      versionChip: (version: string) => string;
+      description: string;
+      versionTitle: string;
+      linksTitle: string;
+      site: string;
+      siteHint: string;
+      releases: string;
+      releasesHint: string;
+      issues: string;
+      issuesHint: string;
       star: string;
       starHint: string;
       latestRelease: string;

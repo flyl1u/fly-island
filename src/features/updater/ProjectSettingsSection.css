@@ -1,4 +1,57 @@
 /* UpdatePanel 复用这里的 project-link 卡片样式（它只在本区块内渲染）。 */
+.about-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xl);
+  min-width: 0;
+}
+
+.about-identity__mark {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+}
+
+.about-identity__body {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.about-identity__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.about-identity__name {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.about-identity__version {
+  padding: 1px 7px;
+  color: var(--color-text-muted);
+  background: var(--color-white-a08);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.about-identity__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .project-link {
   display: flex;
   align-items: center;

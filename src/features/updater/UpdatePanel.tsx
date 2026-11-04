@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
-import { ArrowRight, RefreshCcw } from "lucide-react";
+import { ArrowRight, Download, RefreshCcw } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import { ProjectLink } from "./ProjectLink";
+import { PROJECT_RELEASES_URL } from "./projectLinks";
 import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
 import "./UpdatePanel.css";
 
@@ -18,9 +20,21 @@ export function UpdatePanel() {
   let action = t.settings.project.latestRelease;
   let onAction = checkForUpdate;
 
+  // A build without an updater key cannot check. The card still has to open the
+  // release page: the hint tells the user to download from there.
   if (stage === "disabled") {
-    status = t.settings.project.update.unavailable;
-  } else if (stage === "checking") {
+    return (
+      <ProjectLink
+        href={PROJECT_RELEASES_URL}
+        tone="release"
+        title={t.settings.project.latestRelease}
+        hint={t.settings.project.update.unavailable}
+        icon={<Download className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+      />
+    );
+  }
+
+  if (stage === "checking") {
     status = t.settings.project.update.checking;
   } else if (stage === "latest") {
     status = t.settings.project.update.upToDate(version);
@@ -47,7 +61,7 @@ export function UpdatePanel() {
       <button
         className="project-link project-link--release update-panel__button"
         type="button"
-        disabled={busy || stage === "done" || stage === "disabled"}
+        disabled={busy || stage === "done"}
         onClick={() => void onAction()}
       >
         <RefreshCcw className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />

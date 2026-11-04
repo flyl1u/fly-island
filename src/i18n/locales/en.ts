@@ -464,6 +464,17 @@ const en: Translations = {
 
     project: {
       title: "About the island",
+      appName: "fly-island",
+      versionChip: (version) => `v${version}`,
+      description: "Todos, clipboard, music, quick translation, AI status, and message alerts, gathered at the top of the screen.",
+      versionTitle: "Version",
+      linksTitle: "Links",
+      site: "Live preview",
+      siteHint: "See the island in a browser",
+      releases: "Releases",
+      releasesHint: "Read the notes, or download a build by hand",
+      issues: "Report a problem",
+      issuesHint: "Open an issue on GitHub",
       star: "Enjoying your little island?",
       starHint: "Give it a Star on GitHub",
       latestRelease: "View latest release",
