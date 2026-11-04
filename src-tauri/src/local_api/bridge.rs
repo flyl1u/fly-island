@@ -1,6 +1,6 @@
-//! Hands API calls to the island window and waits for its answer. Todos and
-//! notes live in the window's localStorage, so the window is the only place
-//! that can read or change them.
+//! Answers todo and note calls from todos.json (crate::todos) or, when the
+//! todos are still in the island window's localStorage (the migration failed),
+//! hands them to the window and waits for its answer.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -55,6 +55,10 @@ pub(super) fn dispatch(app: &AppHandle, call: ApiCall) -> Result<Value, ApiError
     // only then listens; hold todo calls until it has.
     if call.method.starts_with("todos.") || call.method.starts_with("note.") {
         todos::wait_until_decided(TODOS_READY_TIMEOUT);
+        // Once they are in todos.json, Rust answers without the window.
+        if let Some(answer) = todos::call(call.method, &call.params) {
+            return answer.map_err(|(status, message)| ApiError::new(status, message));
+        }
     }
     let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
     let (sender, receiver) = mpsc::channel();

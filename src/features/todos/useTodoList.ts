@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createTodoId, loadActiveTodoId, loadTodos, saveActiveTodoId, saveTodos } from "./storage";
 import type { TodoItem } from "./types";
+import { useTodoFileField } from "./useTodoFileField";
 
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
 export function useTodoList(onStartTodo: () => void) {
@@ -9,6 +10,8 @@ export function useTodoList(onStartTodo: () => void) {
   const [activeTodoId, setActiveTodoId] = useState<string | null>(
     loadActiveTodoId,
   );
+  useTodoFileField("todos", setTodos);
+  useTodoFileField("activeTodoId", setActiveTodoId);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();

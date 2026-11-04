@@ -3,6 +3,7 @@ import { getLocalDateString } from "../../utils/date";
 import { sortScheduledTodos, splitDueTodos, toTodoItems } from "./schedule";
 import { createTodoId, loadScheduledTodos, saveScheduledTodos } from "./storage";
 import type { ScheduledTodo, TodoItem } from "./types";
+import { useTodoFileField } from "./useTodoFileField";
 
 /**
  * Todos planned for later days. Once the list on screen is today's list, every
@@ -14,6 +15,7 @@ export function useScheduledTodos(
   setTodos: Dispatch<SetStateAction<TodoItem[]>>,
 ) {
   const [scheduledTodos, setScheduledTodos] = useState<ScheduledTodo[]>(loadScheduledTodos);
+  useTodoFileField("scheduled", setScheduledTodos);
 
   useEffect(() => {
     saveScheduledTodos(scheduledTodos);

@@ -263,3 +263,158 @@ mod migration_tests {
         assert_eq!(patched(&active, &untouched).active_todo_id.as_deref(), Some("a"));
     }
 }
+
+mod call_tests {
+    use serde_json::{json, Value};
+
+    use super::super::calls::{new_todo_id, run, todos_reason};
+    use super::super::model::TodosData;
+    use super::super::service::{changed_fields, without_conflicts, OutsideChanges, TodosChange};
+
+    fn data() -> TodosData {
+        serde_json::from_value(json!({
+            "date": "2026-11-05",
+            "todos": [
+                { "id": "a", "title": "first", "completed": false, "createdAt": 1 },
+                { "id": "b", "title": "second", "completed": false, "createdAt": 2 }
+            ],
+            "scheduled": [{ "id": "s", "title": "later", "date": "2026-11-20", "createdAt": 5 }],
+            "archives": [], "dailyNote": "", "activeTodoId": "a"
+        }))
+        .expect("data")
+    }
+
+    fn call(method: &str, params: Value) -> Result<(Value, Option<TodosData>), (u16, String)> {
+        run(method, &params, &data(), "new-id", 99).map(|outcome| (outcome.result, outcome.next))
+    }
+
+    #[test]
+    fn list_and_get_change_nothing() {
+        let (list, next) = call("todos.list", Value::Null).expect("list");
+        assert_eq!(next, None);
+        assert_eq!(list["activeTodoId"], "a");
+        assert_eq!(list["scheduled"][0]["id"], "s");
+        assert_eq!(call("note.get", json!({})).expect("note").0, json!({ "date": "2026-11-05", "note": "" }));
+    }
+
+    #[test]
+    fn add_puts_todos_on_top_or_on_a_later_day() {
+        let (todo, next) = call("todos.add", json!({ "title": "  new  " })).expect("add");
+        assert_eq!(todo, json!({ "id": "new-id", "title": "new", "completed": false, "createdAt": 99 }));
+        assert_eq!(next.expect("next").todos[0].id, "new-id");
+        let (later, next) = call("todos.add", json!({ "title": "x", "date": "2026-11-10" })).expect("later");
+        assert_eq!(later["date"], "2026-11-10");
+        let next = next.expect("next");
+        assert_eq!(next.scheduled.iter().map(|todo| todo.id.as_str()).collect::<Vec<_>>(), vec!["new-id", "s"]);
+        assert_eq!(next.todos.len(), 2);
+        let today = call("todos.add", json!({ "title": "x", "date": "2026-11-05" })).expect("today").1.expect("next");
+        assert_eq!(today.todos.len(), 3);
+    }
+
+    #[test]
+    fn add_refuses_bad_titles_and_dates() {
+        for params in [json!({}), json!({ "title": "   " }), json!({ "title": 5 }), json!({ "title": "x".repeat(501) })] {
+            assert!(call("todos.add", params).expect_err("title").1.contains("title"));
+        }
+        // 500 characters is fine, counted like JavaScript (an emoji is two).
+        assert!(call("todos.add", json!({ "title": "x".repeat(500) })).is_ok());
+        assert!(call("todos.add", json!({ "title": "😀".repeat(251) })).is_err());
+        assert_eq!(call("todos.add", json!({ "title": "x", "date": "2026-1-5" })).expect_err("date").0, 400);
+        assert_eq!(call("todos.add", json!({ "title": "x", "date": "2026-02-30" })).expect_err("date").0, 400);
+        assert!(call("todos.add", json!({ "title": "x", "date": "2026-11-01" })).expect_err("past").1.contains("2026-11-05"));
+    }
+
+    #[test]
+    fn update_and_remove_find_the_todo_and_clear_the_active_one() {
+        assert_eq!(call("todos.update", json!({ "id": "zzz" })).expect_err("missing").0, 404);
+        assert_eq!(call("todos.update", json!({ "id": 1 })).expect_err("number id").0, 404);
+        assert_eq!(call("todos.update", json!({ "id": "a", "title": "" })).expect_err("title").0, 400);
+        assert_eq!(call("todos.update", json!({ "id": "a", "completed": "yes" })).expect_err("bool").0, 400);
+        let (todo, next) = call("todos.update", json!({ "id": "a", "title": " renamed ", "completed": true })).expect("update");
+        assert_eq!((todo["title"].clone(), todo["completed"].clone()), (json!("renamed"), json!(true)));
+        assert_eq!(next.expect("next").active_todo_id, None);
+        let (_, next) = call("todos.update", json!({ "id": "b", "completed": true })).expect("other");
+        assert_eq!(next.expect("next").active_todo_id.as_deref(), Some("a"));
+
+        assert_eq!(call("todos.remove", json!({ "id": "zzz" })).expect_err("missing").0, 404);
+        let (removed, next) = call("todos.remove", json!({ "id": "a" })).expect("remove");
+        assert_eq!(removed, json!({ "id": "a" }));
+        let next = next.expect("next");
+        assert_eq!((next.todos.len(), next.active_todo_id), (1, None));
+    }
+
+    #[test]
+    fn notes_are_replaced_or_appended_line_by_line() {
+        let note = |params: Value| call("note.set", params).map(|(result, next)| (result["note"].clone(), next.expect("next").daily_note));
+        assert_eq!(note(json!({ "note": "a\nb" })).expect("set").1, "a\nb");
+        assert_eq!(note(json!({ "append": "line" })).expect("append").1, "line");
+        for bad in [json!({}), json!({ "note": "a", "append": "b" }), json!({ "note": 1 })] {
+            assert_eq!(call("note.set", bad).expect_err("bad").0, 400);
+        }
+        let mut with_note = data();
+        with_note.daily_note = "first".into();
+        let next = run("note.set", &json!({ "append": "second" }), &with_note, "", 0).expect("append").next.expect("next");
+        assert_eq!(next.daily_note, "first\nsecond");
+        let next = run("note.set", &json!({ "append": "" }), &with_note, "", 0).expect("empty").next.expect("next");
+        assert_eq!(next.daily_note, "first");
+    }
+
+    #[test]
+    fn the_reason_says_what_happened_to_the_todos() {
+        let old = data();
+        let changed = |change: fn(&mut TodosData)| {
+            let mut new = data();
+            change(&mut new);
+            todos_reason(&old, &new)
+        };
+        assert_eq!(changed(|_| {}), None);
+        assert_eq!(changed(|d| d.daily_note = "x".into()), None);
+        assert_eq!(changed(|d| d.date = "2026-11-06".into()), Some("dayChanged"));
+        assert_eq!(
+            changed(|d| {
+                let mut todo = d.todos[0].clone();
+                todo.id = "c".into();
+                d.todos.push(todo);
+            }),
+            Some("add")
+        );
+        assert_eq!(changed(|d| { d.todos.remove(0); }), Some("remove"));
+        assert_eq!(changed(|d| d.todos.swap(0, 1)), Some("reorder"));
+        assert_eq!(changed(|d| d.todos[0].completed = true), Some("update"));
+        assert_eq!(changed(|d| d.active_todo_id = None), Some("update"));
+        assert_eq!(changed(|d| d.scheduled.clear()), Some("remove"));
+    }
+
+    #[test]
+    fn island_saves_keep_fields_a_plugin_changed_after_the_window_saw_them() {
+        let outside = OutsideChanges { todos: 7, scheduled: 0, daily_note: 3, active_todo_id: 0 };
+        let change = |base: Option<u64>| TodosChange {
+            base_revision: base,
+            todos: Some(vec![]),
+            daily_note: Some("n".into()),
+            date: Some("2026-11-06".into()),
+            ..Default::default()
+        };
+        let (kept, conflicts) = without_conflicts(&change(Some(5)), &outside);
+        assert_eq!(conflicts, vec!["todos"]);
+        assert!(kept.todos.is_none() && kept.daily_note.is_some() && kept.date.is_some());
+        let (kept, conflicts) = without_conflicts(&change(Some(2)), &outside);
+        assert_eq!(conflicts, vec!["todos", "dailyNote"]);
+        assert!(kept.daily_note.is_none());
+        let (kept, conflicts) = without_conflicts(&change(Some(7)), &outside);
+        assert!(conflicts.is_empty() && kept.todos.is_some());
+        assert!(without_conflicts(&change(None), &outside).1.is_empty());
+        let mut later = super::super::model::TodosData { daily_note: "x".into(), ..data() };
+        later.todos.clear();
+        assert_eq!(changed_fields(&data(), &later), vec!["todos", "dailyNote"]);
+    }
+
+    #[test]
+    fn new_ids_look_like_crypto_random_uuid() {
+        let id = new_todo_id().expect("id");
+        assert_eq!(id.len(), 36);
+        assert_eq!(&id[14..15], "4");
+        assert!("89ab".contains(&id[19..20]));
+        assert_ne!(id, new_todo_id().expect("id"));
+    }
+}

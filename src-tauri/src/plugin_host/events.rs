@@ -52,6 +52,13 @@ pub(super) fn listen(app: &AppHandle) {
     });
 }
 
+/// For changes Rust notices itself (todos.json); unknown names are ignored.
+pub(super) fn publish_known(name: &str, payload: Value) {
+    if let Some((name, _)) = event_permission(name) {
+        publish(name, payload);
+    }
+}
+
 /// Sends `name` to subscribed plugins after COALESCE; later payloads in the
 /// meantime replace earlier ones.
 fn publish(name: &'static str, payload: Value) {

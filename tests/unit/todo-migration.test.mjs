@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeLocalTodoKeys } from "../../src/features/todos/normalize.ts";
-import { queueTodoChange, switchToTodoFile, takeTodoStoreNotice, setTodoStoreNotice, todoFileData } from "../../src/features/todos/todoStore.ts";
+import {
+  adoptTodoFileData,
+  queueTodoChange,
+  setTodoStoreNotice,
+  subscribeTodoFile,
+  switchToTodoFile,
+  takeTodoStoreNotice,
+  todoFileData,
+} from "../../src/features/todos/todoStore.ts";
 
 Object.defineProperty(globalThis, "window", {
   configurable: true,
@@ -144,28 +152,61 @@ test("queued saves skip unchanged fields, merge while writing and retry failures
   let release;
   const writer = (change) => {
     writes.push(change);
-    if (writes.length === 1) return new Promise((resolve) => (release = () => resolve({ revision: 1 })));
+    if (writes.length === 1) return new Promise((resolve) => (release = () => resolve({ revision: 1, conflicts: [], data: null })));
     if (fail) {
       fail = false;
       return Promise.reject(new Error("disk full"));
     }
-    return Promise.resolve({ revision: writes.length });
+    return Promise.resolve({ revision: writes.length, conflicts: [], data: null });
   };
-  switchToTodoFile({ date: "2026-11-05", todos: [], scheduled: [], archives: [], dailyNote: "", activeTodoId: null }, writer);
+  switchToTodoFile({ date: "2026-11-05", todos: [], scheduled: [], archives: [], dailyNote: "", activeTodoId: null }, 0, writer);
   queueTodoChange({ todos: [] });
   assert.equal(writes.length, 0, "unchanged fields are not written");
   queueTodoChange({ dailyNote: "a" });
   queueTodoChange({ dailyNote: "ab" });
   queueTodoChange({ activeTodoId: null, date: "2026-11-06" });
-  assert.deepEqual(writes, [{ dailyNote: "a" }]);
+  assert.deepEqual(writes, [{ dailyNote: "a", baseRevision: 0 }]);
   release();
   await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.deepEqual(writes[1], { dailyNote: "ab", date: "2026-11-06" }, "changes made while writing go out together");
+  assert.deepEqual(writes[1], { dailyNote: "ab", date: "2026-11-06", baseRevision: 1 }, "changes made while writing go out together");
   await new Promise((resolve) => setTimeout(resolve, 2100));
-  assert.deepEqual(writes[2], { dailyNote: "ab", date: "2026-11-06" }, "a failed write is retried");
+  assert.deepEqual(writes[2], { dailyNote: "ab", date: "2026-11-06", baseRevision: 1 }, "a failed write is retried");
   assert.equal(todoFileData().dailyNote, "ab");
 
   setTodoStoreNotice("reimported");
   assert.equal(takeTodoStoreNotice(), "reimported");
   assert.equal(takeTodoStoreNotice(), null);
+});
+
+test("changes from plugins replace only the fields they changed, and win over unsaved edits of those", async () => {
+  const writes = [];
+  let release;
+  const writer = (change) => {
+    writes.push(change);
+    return new Promise((resolve) => (release = (value) => resolve(value)));
+  };
+  const base = { date: "2026-11-05", todos: [], scheduled: [], archives: [], dailyNote: "", activeTodoId: null };
+  switchToTodoFile(base, 4, writer);
+  const seen = [];
+  const unsubscribe = subscribeTodoFile((data, changed) => seen.push([[...changed], data.todos.length, data.dailyNote]));
+
+  queueTodoChange({ dailyNote: "typing" }); // in flight
+  queueTodoChange({ todos: [{ id: "mine", title: "mine", completed: false, createdAt: 1 }] }); // waiting
+  const plugin = { ...base, todos: [{ id: "p", title: "from plugin", completed: false, createdAt: 2 }] };
+  adoptTodoFileData(plugin, 5, ["todos"]);
+  assert.deepEqual(seen, [[["todos"], 1, "typing"]], "the note being typed is kept");
+  assert.equal(todoFileData().todos[0].id, "p");
+
+  release({ revision: 6, conflicts: [], data: null });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(writes.length, 1, "the unsaved todo edit was replaced by the plugin's, so nothing more to write");
+
+  // A save that lost a field to a plugin takes that field back from Rust.
+  queueTodoChange({ activeTodoId: "p" });
+  release({ revision: 8, conflicts: ["activeTodoId"], data: { ...plugin, dailyNote: "typing", activeTodoId: null } });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(todoFileData().activeTodoId, null);
+  assert.deepEqual(writes.at(-1), { activeTodoId: "p", baseRevision: 6 });
+  assert.deepEqual(seen.at(-1)[0], ["activeTodoId"]);
+  unsubscribe();
 });

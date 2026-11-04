@@ -7,6 +7,7 @@ import { useScheduledTodos } from "./useScheduledTodos";
 import { useTodoApiHandlers } from "./useTodoApiHandlers";
 import { useTodoRollover } from "./useTodoRollover";
 import { useTodoSaving } from "./useTodoSaving";
+import { useTodoFileField } from "./useTodoFileField";
 
 type TodosOptions = {
   carryOverIncompleteTodos: boolean;
@@ -25,6 +26,7 @@ export function useTodos({
   const list = useTodoList(onStartTodo);
   const { todos, setTodos, setDraftTodo, activeTodoId, setActiveTodoId } = list;
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
+  useTodoFileField("dailyNote", setDailyNote);
   const [currentTodoDate, setCurrentTodoDate] =
     useState<string>(loadCurrentTodoDate);
   const { archives, upsertArchive } = useTodoArchives();

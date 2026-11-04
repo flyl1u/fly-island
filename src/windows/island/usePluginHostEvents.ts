@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { AgentStatusSnapshot } from "../../features/agent-status/api";
 import { listAgentStatuses } from "../../features/agent-status/status";
 import { emitPluginHostEvent, type PluginHostEventName } from "../../features/plugins/api";
+import { todoFileData } from "../../features/todos/todoStore";
 import { useLocale } from "../../i18n";
 import type { IslandMode } from "./types";
 
@@ -20,8 +21,10 @@ type PluginHostEventSources = {
  */
 export function usePluginHostEvents({ date, todosVersion, note, agentStatus, mode }: PluginHostEventSources) {
   const { locale } = useLocale();
-  useChangeEvent("todos.changed", [date, ...todosVersion], () => ({ date }));
-  useChangeEvent("note.changed", [date, note], () => ({ date }));
+  // With todos.json, Rust reports todo and note changes itself (with a reason).
+  const fromRust = todoFileData() !== null;
+  useChangeEvent("todos.changed", [date, ...todosVersion], () => ({ date }), fromRust);
+  useChangeEvent("note.changed", [date, note], () => ({ date }), fromRust);
   useChangeEvent("agentStatus.changed", [agentStatus], () => ({
     agents: listAgentStatuses(agentStatus).map(({ key, label, status }) => ({
       id: key,
@@ -34,14 +37,14 @@ export function usePluginHostEvents({ date, todosVersion, note, agentStatus, mod
   useChangeEvent("app.locale.changed", [locale], () => ({ locale }));
 }
 
-function useChangeEvent(name: PluginHostEventName, deps: readonly unknown[], payload: () => Record<string, unknown>) {
+function useChangeEvent(name: PluginHostEventName, deps: readonly unknown[], payload: () => Record<string, unknown>, skip = false) {
   const previous = useRef<readonly unknown[] | null>(null);
   const latestPayload = useRef(payload);
   latestPayload.current = payload;
   useEffect(() => {
     const before = previous.current;
     previous.current = deps;
-    if (before === null || (before.length === deps.length && before.every((value, index) => Object.is(value, deps[index])))) {
+    if (skip || before === null || (before.length === deps.length && before.every((value, index) => Object.is(value, deps[index])))) {
       return;
     }
     void emitPluginHostEvent(name, latestPayload.current()).catch((error: unknown) => {

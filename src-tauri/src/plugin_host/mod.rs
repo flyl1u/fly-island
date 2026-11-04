@@ -110,6 +110,12 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     sync_processes()
 }
 
+/// Tells subscribed plugins about a change made outside the island window,
+/// e.g. `todos.changed` after a write to todos.json.
+pub(crate) fn publish_event(name: &str, payload: serde_json::Value) {
+    events::publish_known(name, payload);
+}
+
 fn host() -> Result<&'static PluginHost, String> {
     HOST.get().ok_or_else(|| "The plugin host is not initialized.".to_string())
 }

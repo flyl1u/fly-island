@@ -7,7 +7,9 @@
 //! - store.rs: atomic, read-back-checked writes of `todos.json`
 //! - migration.rs: the one-time move out of localStorage, and re-imports
 //! - service.rs: where the todos live now, and saving changes
+//! - calls.rs: todo and note calls of plugins and the local API
 
+mod calls;
 mod migration;
 mod model;
 mod service;
@@ -18,7 +20,7 @@ mod tests;
 pub use migration::{LocalTodoKeys, TodosSnapshot};
 pub use model::TodosData;
 pub use service::{AppliedTodosChange, TodosChange};
-pub(crate) use service::{init, wait_until_decided};
+pub(crate) use service::{call, init, wait_until_decided};
 
 /// Moves the todo keys the island window read from localStorage into
 /// todos.json (or confirms it is already done) and returns the data in use.
