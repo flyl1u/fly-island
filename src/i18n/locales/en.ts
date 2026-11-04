@@ -385,6 +385,7 @@ const en: Translations = {
       opacity: "Opacity",
       marginY: "Top margin",
       topFilletRadius: "Top-edge corner radius",
+      islandCornerRadius: "Island corner radius",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
       displayTitle: "Display",

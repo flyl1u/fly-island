@@ -58,6 +58,7 @@ export function useIslandWindow({
           glassEnabled: nextSettings.appearanceMode === "liquidGlass",
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
+          cornerRadius: nextSettings.islandCornerRadius,
         });
         setNativeGlassState(glassState);
       } catch (error) {
@@ -139,6 +140,7 @@ export function useIslandWindow({
     settings.islandBackgroundColor,
     settings.collapsedScale,
     settings.expandedScale,
+    settings.islandCornerRadius,
     showReadyIsland,
     syncNativeInteraction,
   ]);

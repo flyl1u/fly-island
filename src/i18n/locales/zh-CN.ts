@@ -388,6 +388,7 @@ const zhCN: Translations = {
       opacity: "不透明度",
       marginY: "顶部距离",
       topFilletRadius: "贴顶圆角",
+      islandCornerRadius: "岛屿圆角",
       launchAtStartup: "开机自启动",
       showTitle: "显示岛屿名称",
       displayTitle: "显示内容",

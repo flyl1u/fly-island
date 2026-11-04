@@ -17,8 +17,8 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 
 use geometry::{
     monitor_for_island_position, COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT,
-    EXPANDED_ISLAND_HEIGHT_RANGE, MIN_COLLAPSED_ISLAND_WIDTH, MIN_EXPANDED_ISLAND_HEIGHT,
-    POSITION_ANIMATION_GENERATION,
+    EXPANDED_ISLAND_HEIGHT_RANGE, MAX_CORNER_RADIUS, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
+    MIN_EXPANDED_ISLAND_HEIGHT, POSITION_ANIMATION_GENERATION,
 };
 use glass::{apply_glass_material, parse_hex_color};
 use state::{mutate_window_state, read_window_state, window_state, IslandMode};
@@ -64,6 +64,7 @@ pub fn set_island_interaction(
     glass_enabled: Option<bool>,
     glass_intensity: Option<f64>,
     glass_tint: Option<String>,
+    corner_radius: Option<f64>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -103,6 +104,9 @@ pub fn set_island_interaction(
         }
         if let Some(glass_tint) = glass_tint.as_deref().and_then(parse_hex_color) {
             state.glass_tint = glass_tint;
+        }
+        if let Some(corner_radius) = corner_radius {
+            state.corner_radius = corner_radius.clamp(MIN_CORNER_RADIUS, MAX_CORNER_RADIUS);
         }
         *state
     });

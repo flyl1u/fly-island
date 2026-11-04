@@ -37,6 +37,8 @@ export type IslandInteraction = {
   glassEnabled: boolean;
   glassIntensity: number;
   glassTint: string;
+  /** Expanded bottom corner radius; the native hit test scales its other corners from it. */
+  cornerRadius: number;
 };
 
 export function setIslandLayout(layout: IslandLayout) {

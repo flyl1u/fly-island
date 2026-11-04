@@ -2,6 +2,17 @@
   --glass-pointer-x: 50%;
   --glass-pointer-y: 18%;
   --glass-page-accent: 116, 214, 255;
+  /*
+   * Island corner radii, all scaled from the expanded bottom radius in the appearance
+   * settings (stageStyle.ts) with the ratios of the original 30 / 22 / 14 px design.
+   * Rust scales its hit-test corners the same way (island/state.rs).
+   */
+  --island-radius: calc(var(--island-corner-radius-size, 30) * 1px);
+  --island-radius-collapsed: calc(var(--island-radius) * 22 / 30);
+  --island-radius-expanded-top: calc(var(--island-radius) * 22 / 30);
+  --island-radius-collapsed-top: calc(var(--island-radius) * 14 / 30);
+  /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
+  --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
   position: relative;
   flex: 0 0 auto;
   color: var(--color-text);
@@ -161,7 +172,7 @@
 .island--collapsed {
   width: var(--collapsed-island-width);
   height: 38px;
-  border-radius: 0 0 22px 22px;
+  border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
   cursor: pointer;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.22)),
@@ -243,16 +254,16 @@
 .island--expanded {
   width: 560px;
   height: var(--expanded-island-height, 306px);
-  border-radius: 0 0 30px 30px;
+  border-radius: 0 0 var(--island-radius) var(--island-radius);
   cursor: default;
 }
 
 .island--detached.island--collapsed {
-  border-radius: 14px 14px 22px 22px;
+  border-radius: var(--island-radius-collapsed-top) var(--island-radius-collapsed-top) var(--island-radius-collapsed) var(--island-radius-collapsed);
 }
 
 .island--detached.island--expanded {
-  border-radius: 22px 22px 30px 30px;
+  border-radius: var(--island-radius-expanded-top) var(--island-radius-expanded-top) var(--island-radius) var(--island-radius);
 }
 
 .island__collapsed,

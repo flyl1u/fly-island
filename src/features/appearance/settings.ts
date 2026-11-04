@@ -6,6 +6,10 @@ export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;
 // The island window leaves room beside the island for fillets up to this size.
 export const MAX_TOP_FILLET_RADIUS = 12;
+// Bottom corner radius of the expanded island; every other island radius scales from it.
+export const DEFAULT_ISLAND_CORNER_RADIUS = 30;
+export const MIN_ISLAND_CORNER_RADIUS = 16;
+export const MAX_ISLAND_CORNER_RADIUS = 40;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -17,6 +21,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   expandedScale: 0.91,
   marginY: 0,
   topFilletRadius: 8,
+  islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -45,6 +50,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "expandedScale",
   "marginY",
   "topFilletRadius",
+  "islandCornerRadius",
   "taskTextColor",
   "pulseColor",
   "pulseBrightness",
@@ -131,6 +137,9 @@ export function normalizeSettings(
     topFilletRadius: typeof settings?.topFilletRadius === "number" && Number.isFinite(settings.topFilletRadius)
       ? clamp(Math.round(settings.topFilletRadius), MIN_TOP_FILLET_RADIUS, MAX_TOP_FILLET_RADIUS)
       : DEFAULT_SETTINGS.topFilletRadius,
+    islandCornerRadius: typeof settings?.islandCornerRadius === "number" && Number.isFinite(settings.islandCornerRadius)
+      ? clamp(Math.round(settings.islandCornerRadius), MIN_ISLAND_CORNER_RADIUS, MAX_ISLAND_CORNER_RADIUS)
+      : DEFAULT_SETTINGS.islandCornerRadius,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

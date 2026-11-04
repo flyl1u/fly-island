@@ -17,7 +17,8 @@
 .island__open-button:focus-visible {
   outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: -3px;
-  border-radius: 0 0 12px 12px;
+  /* Inset 3px inside the collapsed island corners. */
+  border-radius: 0 0 calc(var(--island-radius-collapsed, 22px) - 3px) calc(var(--island-radius-collapsed, 22px) - 3px);
 }
 
 .island__pulse {

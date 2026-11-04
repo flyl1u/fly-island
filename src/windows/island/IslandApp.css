@@ -95,7 +95,7 @@
 .music-player,
 .editor-panel {
   height: 100%;
-  border-radius: 22px;
+  border-radius: var(--island-panel-radius, 10px);
   border: 0;
 }
 

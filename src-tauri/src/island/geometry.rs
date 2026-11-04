@@ -23,6 +23,10 @@ pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 pub(super) const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
 pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 240.0;
 pub(super) const EXPANDED_RADIUS: f64 = 30.0;
+// Range of the expanded bottom radius setting; matches MIN / MAX_ISLAND_CORNER_RADIUS in
+// src/features/appearance/settings.ts.
+pub(super) const MIN_CORNER_RADIUS: f64 = 16.0;
+pub(super) const MAX_CORNER_RADIUS: f64 = 40.0;
 pub(super) const STAGE_WINDOW_PADDING_Y: f64 = 24.0;
 pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);

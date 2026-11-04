@@ -57,15 +57,28 @@ pub(crate) struct IslandWindowState {
     pub(super) glass_enabled: bool,
     pub(super) glass_intensity: f64,
     pub(super) glass_tint: (u8, u8, u8),
+    /// Expanded bottom corner radius from the appearance settings. The other corner
+    /// radii keep their default ratios to it, matching IslandShell.css.
+    pub(super) corner_radius: f64,
 }
 
 impl IslandWindowState {
+    /// How much the corner radius setting enlarges or shrinks the default radii.
+    fn corner_radius_factor(self) -> f64 {
+        self.corner_radius / EXPANDED_RADIUS
+    }
+
+    pub(super) fn bottom_corner_radius(self) -> f64 {
+        self.mode.corner_radius() * self.corner_radius_factor()
+    }
+
     pub(super) fn top_corner_radius(self) -> f64 {
-        match (self.top_attached, self.mode) {
+        let radius = match (self.top_attached, self.mode) {
             (true, _) => 0.0,
             (false, IslandMode::Collapsed) => 14.0,
             (false, IslandMode::Expanded) => 22.0,
-        }
+        };
+        radius * self.corner_radius_factor()
     }
 
     pub(super) fn active_scale(self) -> f64 {
@@ -98,6 +111,7 @@ impl Default for IslandWindowState {
             glass_enabled: false,
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
+            corner_radius: EXPANDED_RADIUS,
         }
     }
 }

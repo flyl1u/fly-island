@@ -62,11 +62,11 @@
 
 /* A dragged island dropped flush with the top gets the docked flat top. */
 :root[data-island-top-edge="attached"] .island--detached.island--collapsed {
-  border-radius: 0 0 22px 22px;
+  border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
 }
 
 :root[data-island-top-edge="attached"] .island--detached.island--expanded {
-  border-radius: 0 0 30px 30px;
+  border-radius: 0 0 var(--island-radius) var(--island-radius);
 }
 
 /*

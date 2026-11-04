@@ -195,3 +195,22 @@ fn hex_tint_parser_rejects_invalid_values() {
     assert_eq!(parse_hex_color("101013"), None);
     assert_eq!(parse_hex_color("#xyzxyz"), None);
 }
+
+#[test]
+fn corner_radius_setting_scales_every_hit_test_radius() {
+    let mut expanded = state(IslandMode::Expanded, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    let mut collapsed = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    expanded.top_attached = false;
+    collapsed.top_attached = false;
+    assert_eq!(expanded.bottom_corner_radius(), EXPANDED_RADIUS);
+    assert_eq!(collapsed.bottom_corner_radius(), COLLAPSED_RADIUS);
+    assert_eq!(expanded.top_corner_radius(), 22.0);
+    assert_eq!(collapsed.top_corner_radius(), 14.0);
+
+    expanded.corner_radius = 20.0;
+    collapsed.corner_radius = 20.0;
+    assert_eq!(expanded.bottom_corner_radius(), 20.0);
+    assert!((collapsed.bottom_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((expanded.top_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((collapsed.top_corner_radius() - 14.0 * 20.0 / 30.0).abs() < 1e-9);
+}

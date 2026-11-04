@@ -20,6 +20,8 @@ export function getIslandStageStyle(
     "--expanded-island-height": `${expandedIslandHeight}px`,
     // Unitless so IslandTopEdge.css can also fade the fillet layers out at 0.
     "--island-top-fillet-size": settings.topFilletRadius,
+    // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
+    "--island-corner-radius-size": settings.islandCornerRadius,
     "--task-text-color": settings.taskTextColor,
     "--island-pulse-color": settings.pulseColor,
     "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),

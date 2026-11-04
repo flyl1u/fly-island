@@ -71,6 +71,15 @@ test("the top fillet radius is rounded, clamped, and defaults for older settings
   assert.equal(normalizeSettings({ topFilletRadius: 40 }).topFilletRadius, 12);
 });
 
+test("the island corner radius is rounded, clamped, and defaults to 30 for older settings", () => {
+  assert.equal(normalizeSettings({}).islandCornerRadius, 30);
+  assert.equal(normalizeSettings({ islandCornerRadius: "20" }).islandCornerRadius, 30);
+  assert.equal(normalizeSettings({ islandCornerRadius: Number.POSITIVE_INFINITY }).islandCornerRadius, 30);
+  assert.equal(normalizeSettings({ islandCornerRadius: 24.4 }).islandCornerRadius, 24);
+  assert.equal(normalizeSettings({ islandCornerRadius: 2 }).islandCornerRadius, 16);
+  assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 40);
+});
+
 test("old default margins and scales move to the current defaults", () => {
   assert.equal(normalizeSettings({ marginY: 31 }).marginY, DEFAULT_SETTINGS.marginY);
   assert.equal(normalizeSettings({ marginY: 31, topEdgeLayoutVersion: 1 }).marginY, 31);
