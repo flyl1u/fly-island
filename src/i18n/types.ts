@@ -466,6 +466,16 @@ export type Translations = {
       revealOnMessage: string;
     };
 
+    pageShortcuts: {
+      title: string;
+      hint: string;
+      digitModifiers: string;
+      nextPage: string;
+      previousPage: string;
+      pressDigit: string;
+      pressKeys: string;
+    };
+
     project: {
       title: string;
       appName: string;

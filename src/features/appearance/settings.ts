@@ -1,4 +1,5 @@
 import { clamp } from "../../utils/number.ts";
+import { DEFAULT_PAGE_DIGIT_MODIFIERS, DEFAULT_PAGE_NEXT_SHORTCUT, DEFAULT_PAGE_PREVIOUS_SHORTCUT, normalizePageCycleShortcut, normalizePageDigitModifiers } from "./pageShortcuts.ts";
 import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
 
@@ -71,6 +72,9 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   minimizeAction: "tray",
+  pageDigitModifiers: DEFAULT_PAGE_DIGIT_MODIFIERS,
+  pageNextShortcut: DEFAULT_PAGE_NEXT_SHORTCUT,
+  pagePreviousShortcut: DEFAULT_PAGE_PREVIOUS_SHORTCUT,
   todoEnabled: true,
   musicEnabled: true,
   agentStatusEnabled: true,
@@ -254,6 +258,9 @@ export function normalizeSettings(
       ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
       : DEFAULT_SETTINGS.hoverCollapseDelayMs,
     minimizeAction: settings?.minimizeAction === "tuck" ? "tuck" : "tray",
+    pageDigitModifiers: normalizePageDigitModifiers(settings?.pageDigitModifiers),
+    pageNextShortcut: normalizePageCycleShortcut(settings?.pageNextShortcut, DEFAULT_PAGE_NEXT_SHORTCUT),
+    pagePreviousShortcut: normalizePageCycleShortcut(settings?.pagePreviousShortcut, DEFAULT_PAGE_PREVIOUS_SHORTCUT),
     // Module switches: anything but an explicit false keeps the module on.
     todoEnabled: settings?.todoEnabled !== false,
     musicEnabled: settings?.musicEnabled !== false,

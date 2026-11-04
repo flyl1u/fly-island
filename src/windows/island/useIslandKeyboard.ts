@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { matchesClipboardShortcut } from "../../features/clipboard/shortcut";
-import { altPageDigit, pageForAltDigit, type IslandFeatures } from "./features";
+import { pageCycleDirection, pageDigitFromEvent } from "../../features/appearance/pageShortcuts";
+import { cycleShortcutPage, pageForAltDigit, type IslandFeatures } from "./features";
 import type { IslandMode, IslandPage } from "./types";
 
 /** In-window keys: the clipboard history shortcut toggles its page, Escape collapses the island. */
@@ -13,6 +14,9 @@ export function useIslandKeyboard(
   features: IslandFeatures,
   page: IslandPage,
   onPageChange: (page: IslandPage) => void,
+  pageDigitModifiers: string,
+  pageNextShortcut: string,
+  pagePreviousShortcut: string,
 ) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -27,13 +31,21 @@ export function useIslandKeyboard(
 
       // Only while this window is focused and expanded. A collapsed or tucked island
       // stays put, and holding the key does not repeat the switch.
-      const digit = altPageDigit(event);
+      const digit = pageDigitFromEvent(event, pageDigitModifiers);
       if (digit !== null && mode === "expanded") {
         const target = pageForAltDigit(features, digit);
         if (target) {
           event.preventDefault();
           if (target !== page) onPageChange(target);
         }
+        return;
+      }
+
+      const direction = pageCycleDirection(event, pageNextShortcut, pagePreviousShortcut);
+      if (direction !== null && mode === "expanded") {
+        event.preventDefault();
+        const target = cycleShortcutPage(features, page, direction);
+        if (target) onPageChange(target);
         return;
       }
 
@@ -53,5 +65,8 @@ export function useIslandKeyboard(
     onPageChange,
     onToggleClipboardHistory,
     page,
+    pageDigitModifiers,
+    pageNextShortcut,
+    pagePreviousShortcut,
   ]);
 }

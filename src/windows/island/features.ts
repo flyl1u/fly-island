@@ -46,23 +46,17 @@ export function pageForAltDigit(features: IslandFeatures, digit: number): Island
   return pageShortcutOrder(features)[digit - 1] ?? null;
 }
 
-export function pageShortcutLabel(features: IslandFeatures, page: IslandPage): string | null {
+export function pageShortcutLabel(features: IslandFeatures, page: IslandPage, modifiers: string): string | null {
   const index = pageShortcutOrder(features).indexOf(page);
-  return index < 0 ? null : `Alt+${index + 1}`;
+  return index < 0 ? null : `${modifiers}+${index + 1}`;
 }
 
-type AltDigitEvent = {
-  altKey: boolean;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  shiftKey: boolean;
-  repeat: boolean;
-  code: string;
-};
-
-/** Main-row Alt+1..9. Numpad digits stay free for Windows Alt character codes. */
-export function altPageDigit(event: AltDigitEvent): number | null {
-  if (event.repeat || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
-  const match = /^Digit([1-9])$/.exec(event.code);
-  return match ? Number(match[1]) : null;
+/** The next or previous visible page, wrapping around. Null when there is nowhere to move. */
+export function cycleShortcutPage(features: IslandFeatures, page: IslandPage, direction: 1 | -1): IslandPage | null {
+  const order = pageShortcutOrder(features);
+  if (order.length < 2) return null;
+  const index = order.indexOf(page);
+  const start = index < 0 ? (direction > 0 ? -1 : 0) : index;
+  const target = order[(start + direction + order.length) % order.length];
+  return target === page ? null : target;
 }

@@ -55,6 +55,7 @@ type IslandShellProps = {
   onTuck: () => void;
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;
+  pageDigitModifiers: string;
   children: ReactNode;
 };
 
@@ -91,6 +92,7 @@ export function IslandShell({
   onTuck,
   onReveal,
   onPageChange,
+  pageDigitModifiers,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -205,6 +207,7 @@ export function IslandShell({
             onResetPosition={onResetPosition}
             minimizesToTray={minimizesToTray}
             onMinimize={onMinimize}
+            pageDigitModifiers={pageDigitModifiers}
           />
           <div ref={contentRef} className="island__content">{children}</div>
         </div>

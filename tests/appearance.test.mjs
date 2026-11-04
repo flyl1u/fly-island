@@ -100,6 +100,13 @@ test("expand trigger, hover delays and max panel height default for older settin
   assert.equal(normalizeSettings({ maxPanelHeight: 999 }).maxPanelHeight, 546);
   assert.equal(normalizeSettings({ maxPanelHeight: 400.6 }).maxPanelHeight, 401);
   assert.equal(older.minimizeAction, "tray");
+  assert.equal(older.pageDigitModifiers, "Alt");
+  assert.equal(older.pageNextShortcut, "Ctrl+Tab");
+  assert.equal(older.pagePreviousShortcut, "Ctrl+Shift+Tab");
+  assert.equal(normalizeSettings({ pageDigitModifiers: "ctrl+shift" }).pageDigitModifiers, "Ctrl+Shift");
+  assert.equal(normalizeSettings({ pageDigitModifiers: "Win+1" }).pageDigitModifiers, "Alt");
+  assert.equal(normalizeSettings({ pageNextShortcut: "Alt+Tab" }).pageNextShortcut, "Ctrl+Tab");
+  assert.equal(normalizeSettings({ pagePreviousShortcut: "alt+q" }).pagePreviousShortcut, "Alt+Q");
   assert.equal(normalizeSettings({ minimizeAction: "tuck" }).minimizeAction, "tuck");
   assert.equal(normalizeSettings({ minimizeAction: "hide" }).minimizeAction, "tray");
   for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "mailEnabled", "shelfEnabled", "shelfExpandOnDrop", "translationEnabled"]) {

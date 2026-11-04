@@ -221,6 +221,9 @@ export function IslandApp() {
     features,
     page,
     setPage,
+    settings.pageDigitModifiers,
+    settings.pageNextShortcut,
+    settings.pagePreviousShortcut,
   );
 
   const agentVisualState = useMemo(
@@ -274,6 +277,7 @@ export function IslandApp() {
         onTuck={tuckIsland}
         onReveal={peekIsland}
         onPageChange={setPage}
+        pageDigitModifiers={settings.pageDigitModifiers}
       >
         {page === "qq" && (
           <div className="message-panel">

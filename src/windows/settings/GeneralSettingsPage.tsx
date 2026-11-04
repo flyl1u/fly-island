@@ -2,6 +2,7 @@ import { useTranslation, type LocaleCode } from "../../i18n";
 import { LocaleControl } from "../../i18n/LocaleControl";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
+import { PageShortcutSection } from "../../features/appearance/PageShortcutSection";
 import { PositionSettingsSection } from "../../features/appearance/PositionSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
@@ -38,6 +39,7 @@ export function GeneralSettingsPage({
         onLaunchAtStartupChange={updateLaunchAtStartup}
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} />
       <PositionSettingsSection
         settings={settings}
         onSettingsChange={onSettingsChange}

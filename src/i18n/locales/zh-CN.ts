@@ -466,6 +466,16 @@ const zhCN: Translations = {
       revealOnMessage: "收起到边缘时，收到新消息自动露出",
     },
 
+    pageShortcuts: {
+      title: "页面切换",
+      hint: "数字键从左到右打开页面。Alt+Tab 和 Win+Tab 由 Windows 使用，不能设成翻页。",
+      digitModifiers: "数字切页",
+      nextPage: "下一页",
+      previousPage: "上一页",
+      pressDigit: "按下修饰键和数字",
+      pressKeys: "按下快捷键",
+    },
+
     project: {
       title: "关于小岛",
       appName: "fly-island",

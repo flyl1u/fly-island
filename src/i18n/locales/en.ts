@@ -463,6 +463,16 @@ const en: Translations = {
       revealOnMessage: "Slide out from the edge for new messages",
     },
 
+    pageShortcuts: {
+      title: "Page switching",
+      hint: "Number keys open pages from left to right. Alt+Tab and Win+Tab belong to Windows and can't turn the page.",
+      digitModifiers: "Number keys",
+      nextPage: "Next page",
+      previousPage: "Previous page",
+      pressDigit: "Press the modifier and a number",
+      pressKeys: "Press the shortcut",
+    },
+
     project: {
       title: "About the island",
       appName: "fly-island",

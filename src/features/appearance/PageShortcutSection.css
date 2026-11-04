@@ -1,0 +1,6 @@
+.page-shortcut-hint {
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

@@ -48,6 +48,12 @@ export type IslandSettings = {
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;
+  /** Modifiers held with 1–9 to open that page, left to right. The digits themselves stay fixed. */
+  pageDigitModifiers: string;
+  /** Shortcut for the next visible page while the island is expanded and focused. */
+  pageNextShortcut: string;
+  /** Shortcut for the previous visible page while the island is expanded and focused. */
+  pagePreviousShortcut: string;
   /**
    * Module switches. Off hides the module on the island and stops its background work;
    * its data is kept. QQ, WeChat and clipboard history use their existing switches.

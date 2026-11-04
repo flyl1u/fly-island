@@ -24,6 +24,8 @@ type IslandHeaderProps = {
   /** False when minimizing tucks the island to the top edge instead. */
   minimizesToTray: boolean;
   onMinimize: () => void;
+  /** Modifiers shown with each page number, such as "Alt" or "Ctrl+Shift". */
+  pageDigitModifiers: string;
 };
 
 /** Header of the expanded island: agent status, page dots, collapse target and window actions. */
@@ -44,11 +46,12 @@ export function IslandHeader({
   onResetPosition,
   minimizesToTray,
   onMinimize,
+  pageDigitModifiers,
 }: IslandHeaderProps) {
   const t = useTranslation();
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   const withShortcut = (label: string, target: IslandPage) => {
-    const shortcut = pageShortcutLabel(features, target);
+    const shortcut = pageShortcutLabel(features, target, pageDigitModifiers);
     return shortcut ? `${label} (${shortcut})` : label;
   };
   const agentStatusIconClassName = [

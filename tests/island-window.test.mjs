@@ -92,7 +92,8 @@ test("pages and message sources that are switched off fall back to ones still on
 });
 
 test("Alt+number follows the header from left to right and skips modules that are off", async () => {
-  const { altPageDigit, pageForAltDigit, pageShortcutLabel } = await import("../src/windows/island/features.ts");
+  const { pageForAltDigit, pageShortcutLabel, cycleShortcutPage } = await import("../src/windows/island/features.ts");
+  const { pageDigitFromEvent, pageCycleDirection, normalizePageDigitModifiers, normalizePageCycleShortcut } = await import("../src/features/appearance/pageShortcuts.ts");
   const all = { agents: true, todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: false, qqMail: false };
   assert.equal(pageForAltDigit(all, 1), "agents");
   assert.equal(pageForAltDigit(all, 2), "todo");
@@ -102,14 +103,25 @@ test("Alt+number follows the header from left to right and skips modules that ar
   assert.equal(pageForAltDigit({ ...all, music: false, agents: false }, 1), "todo");
   assert.equal(pageForAltDigit({ ...all, music: false, agents: false }, 2), "clipboard");
   assert.equal(pageForAltDigit({ ...all, qq: false, wechat: true, agents: false, todo: false, music: false, clipboard: false, shelf: false }, 1), "qq");
-  assert.equal(pageShortcutLabel({ ...all, agents: false }, "todo"), "Alt+1");
-  assert.equal(pageShortcutLabel({ ...all, todo: false }, "todo"), null);
-  const down = { altKey: true, ctrlKey: false, metaKey: false, shiftKey: false, repeat: false };
-  assert.equal(altPageDigit({ ...down, code: "Digit4" }), 4);
-  assert.equal(altPageDigit({ ...down, code: "Numpad4" }), null);
-  assert.equal(altPageDigit({ ...down, code: "Digit1", repeat: true }), null);
-  assert.equal(altPageDigit({ ...down, code: "Digit1", ctrlKey: true }), null);
-  assert.equal(altPageDigit({ ...down, code: "Digit0" }), null);
+  assert.equal(pageShortcutLabel({ ...all, agents: false }, "todo", "Ctrl"), "Ctrl+1");
+  assert.equal(pageShortcutLabel({ ...all, todo: false }, "todo", "Alt"), null);
+  assert.equal(cycleShortcutPage(all, "todo", 1), "music");
+  assert.equal(cycleShortcutPage(all, "agents", -1), "qq");
+  assert.equal(cycleShortcutPage({ ...all, music: false, clipboard: false, shelf: false, qq: false, wechat: false, qqMail: false }, "agents", 1), "todo");
+  assert.equal(cycleShortcutPage({ ...all, todo: false, music: false, clipboard: false, shelf: false, qq: false, wechat: false, qqMail: false }, "agents", 1), null);
+  const down = { altKey: true, ctrlKey: false, metaKey: false, shiftKey: false, repeat: false, key: "4" };
+  assert.equal(pageDigitFromEvent({ ...down, code: "Digit4" }, "Alt"), 4);
+  assert.equal(pageDigitFromEvent({ ...down, code: "Digit4", ctrlKey: true, altKey: false }, "Ctrl"), 4);
+  assert.equal(pageDigitFromEvent({ ...down, code: "Numpad4" }, "Alt"), null);
+  assert.equal(pageDigitFromEvent({ ...down, code: "Digit1", repeat: true }, "Alt"), null);
+  assert.equal(pageDigitFromEvent({ ...down, code: "Digit1", ctrlKey: true }, "Alt"), null);
+  assert.equal(normalizePageDigitModifiers("shift+ctrl"), "Ctrl+Shift");
+  assert.equal(normalizePageDigitModifiers("Win+Alt"), "Alt");
+  assert.equal(normalizePageCycleShortcut("Alt+Tab", "Ctrl+Tab"), "Ctrl+Tab");
+  assert.equal(normalizePageCycleShortcut("ctrl+shift+tab", "Ctrl+Tab"), "Ctrl+Shift+Tab");
+  assert.equal(pageCycleDirection({ ...down, key: "Tab", code: "Tab", altKey: false, ctrlKey: true }, "Ctrl+Tab", "Ctrl+Shift+Tab"), 1);
+  assert.equal(pageCycleDirection({ ...down, key: "Tab", code: "Tab", altKey: false, ctrlKey: true, shiftKey: true }, "Ctrl+Tab", "Ctrl+Shift+Tab"), -1);
+  assert.equal(pageCycleDirection({ ...down, key: "Tab", code: "Tab" }, "Ctrl+Tab", "Ctrl+Shift+Tab"), null);
 });
 
 test("the clipboard page fits whole rows and six rows stay within the native height limit", () => {
