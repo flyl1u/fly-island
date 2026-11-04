@@ -400,7 +400,7 @@ const DEFAULT_CLIPBOARD_HISTORY: ClipboardHistorySnapshot = {
 };
 const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
-  appearanceMode: "liquidGlass",
+  appearanceMode: "classic",
   fontFamily: "system",
   glassIntensity: 72,
   opacity: 95,
