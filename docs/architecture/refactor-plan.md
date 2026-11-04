@@ -199,9 +199,11 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 
 **需要人工验证**：上述调用全部依赖真实桌面环境（窗口、托盘、热键、COM、通知），单元测试覆盖不到，每步都要在 `pnpm tauri dev` 中检查相关功能，检查项可参考"待人工验收"中 5.1、5.5–5.8、6.1 各行。
 
-### 5.4 可见性收窄交接说明（2026-11-03）
+### 5.4 可见性收窄交接说明（2026-11-03，已于 2026-11-04 完成）
 
-待处理问题 5.4 的代码改动留给上游贡献者。拆分 `qq_mail/`、`qq_notifications/`、`clipboard_history/` 时为了零行为变化，子文件之间统一用 `use super::*` 互相引用，搬过去的顶层项、结构体字段和固有方法一律加了 `pub(super)`。目标是改成显式导入和最小可见性，不改任何逻辑。
+已完成：`0d4c11e`（`qq_mail/`）、`1265ded`（`qq_notifications/`）、`66f379e`（`clipboard_history/`）。只改了可见性和导入；核对时去掉缩进、`pub(super)` 和 `use` 行之后，仅剩 rustfmt 合并签名时去掉的尾随逗号。`wechat_reminders/` 没有这种 glob 导入，未改。下面的表格是动手前的基线。
+
+拆分 `qq_mail/`、`qq_notifications/`、`clipboard_history/` 时为了零行为变化，子文件之间统一用 `use super::*` 互相引用，搬过去的顶层项、结构体字段和固有方法一律加了 `pub(super)`。目标是改成显式导入和最小可见性，不改任何逻辑。
 
 **现状（按单词搜索统计，`tests.rs` 中的引用也计入；以编译器结果为准）**
 
@@ -346,6 +348,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.3（2/n） | 见提交说明 | 22 处测试与示例中的 `unsafe` 块补上 `// SAFETY:` 注释，代码不变 | `cargo test`（122 / 5）、`cargo build --all-targets`、clippy 30 → 8（剩下的都不是 Phase 0 的三条 lint）；`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.3（3/n） | 见提交说明 | 清掉其余 8 条 clippy 告警：`PersistedClipboardHistory` 改为 derive `Default`（字段默认值相同）；鼠标穿透循环的嵌套 `if` 合并为 `&&`（仍只在状态需要变化时调用）；`lib.rs` 去掉多余的 `return`；缩略图缓存与待处理快捷键的类型提取为类型别名；`responses_for_message` 省略生命周期；`set_island_interaction`（参数即 IPC 契约，不能改）与 `point_in_notch` 用带理由的 `#[expect(clippy::too_many_arguments)]`。另外 `run()` 的启动失败由 `expect` 改为打印错误后 `exit(1)`，只影响失败路径 | `cargo test`（123 / 6，含另一会话新增）、clippy 8 → 0；`pnpm check`（120/120）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.3（4/4）、Phase 6 验收 | 见提交说明 | 三条 lint 升级为 deny。Phase 6 验收：生产代码中 `win32/` 以外没有 `unsafe`（测试模块与探测示例中的均有 SAFETY 注释）；`cargo clippy --all-targets` 0 告警；`win32/` 共 13 个文件（`audio`、`clipboard`、`com`、`hotkey`、`input`、`message_window`、`ole`、`process`、`process_times`、`registry`、`shell_hook`、`window` 及 `mod.rs`）。各步提交前另在干净 worktree 中对 HEAD 做 `cargo check --all-targets`，确认提交不依赖其他会话未提交的代码 | `cargo test`、`cargo clippy --all-targets`（0 告警，退出码 0）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对；涉及桌面行为的手动检查见"待人工验收" 6.2 |
+| 2026-11-04 | 5.4 可见性收窄 | `0d4c11e`、`1265ded`、`66f379e` | `qq_mail/`、`qq_notifications/`、`clipboard_history/` 去掉只在本文件使用的 `pub(super)`，并把 `use <子模块>::*` 与 `use super::*` 换成显式导入。`tests.rs` 保留 `use super::*`，补上变私有后不再被 glob 带入的项；`hotkey.rs` 的测试模块同样。不改函数体，核对后仅剩 rustfmt 去掉的签名尾随逗号。`wechat_reminders/` 没有这种 glob，未改 | `cargo test`（143 / 5）、clippy 0、`pnpm tauri build --no-bundle`，桌面快捷方式已核对。未跑 `pnpm check`：改动只在 Rust 可见性与导入 |
 
 ## 待人工验收
 
@@ -396,7 +399,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2.6（已处理） | 回归页 `tests/collapsed-message-animation.tsx` 第 75 行传给 `IslandShell` 的 `mediaState` 缺少 `MediaState` 的大部分字段，按 tsconfig 的严格模式单独类型检查会报 TS2740（存量问题，与本次迁移无关；`tests/` 不在 `tsc` 的检查范围内） | 运行时不受影响；补全 mock 属于测试修改，单独提交。已补全为与 Rust `MediaState::empty()` 相同的值；补全后类型检查又发现缺 `collapsedTodoCount`、`onOpenSettings` 两个必填属性，分别补为 `null` 和空函数（回归页始终传入 `collapsedTaskTitle`，前者不会被读取）。用临时 tsconfig 检查 4 个回归页均无错误，`collapsed-message-animation.html?test=1` 仍为 24/24。`tests/*.tsx` 仍不在 `pnpm check` 的类型检查范围内。 |
 | 3.2 | 音频电平没有放进叶子组件：`audioPeak` / `audioActive` 存在 `mediaState` 里，500ms 电平轮询和 1500ms 会话轮询都会衰减同一个峰值，电平轮询还会在暂停意图下把 `playbackStatus` 改成 `paused`；电平每次变化都会让 `IslandApp` 整体重渲染。另外 `useMediaState.ts` 216 行，超过 hook 150 行软上限 | 拆到叶子组件要重新设计峰值的归属与合并方式，属于行为变更，单独提交；届时可顺带把命令执行从 `useMediaState` 拆出。 |
 | 3.3（已处理） | 回归页 `tests/i18n.tsx` 存量失败，有两处：一是 `get_media_state` 的 mock 缺少 `sessions`，`IslandApp` 渲染时在 `effectiveMediaTarget` 读 `sessions.length` 抛错（`4669733` 新增音源列表时引入，搬迁前的 `App.tsx` 同样会抛）；二是补齐 mock 后，第 88、112 行点击的 `.dot-button--layout` 已在 `f8e847d`（设置移到独立窗口）中删除 | 修改测试属于测试修复，单独提交：补齐 mock，并把这两步改成打开设置窗口或删除。已修复：`get_media_state` 的 mock 补成与 `MediaState::empty()` 相同的完整空状态；页面在同一个 `I18nProvider` 下同时挂载 `IslandApp` 与 `SettingsWindow`，去掉两处点击 `.dot-button--layout`；`get_clipboard_history` 的 mock 补上 `shortcutEnabled`（真实后端总会返回该字段，缺失时设置窗口会报受控输入警告）。`i18n.html?test=1` 16/16 通过。 |
-| 5.4 | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 收窄为显式导入和最小可见性属于整理改动，单独提交；之后拆分的 `qq_notifications/`、`clipboard_history/`、`wechat_reminders/` 若采用同样做法，一并处理。详细交接说明见 Phase 6 之后的"5.4 可见性收窄交接说明"。 |
+| 5.4（已处理） | `qq_mail/` 的子模块之间用 `use super::*` 互相引用，搬迁时为跨文件访问给大部分项加了 `pub(super)`，可见性比需要的宽 | 已收窄为显式导入和最小可见性（2026-11-04）：`0d4c11e`、`1265ded`、`66f379e`。`wechat_reminders/` 没有这种 glob 导入。交接说明见 Phase 6 之后的"5.4 可见性收窄交接说明"。 |
 | 6.1 | `system/startup.rs`、`system/updater.rs` 通过 `reg.exe` 子进程读写注册表（开机自启、系统代理），每次调用都要启动一个进程 | 不含 `unsafe`，不在 Phase 6 的收口范围内；改为 `win32/registry.rs` 中的 API 调用会改变实现方式与错误信息，需单独评估、单独提交。 |
 | 2.6（已处理） | `tests/*.tsx` 回归页不在 `pnpm check` 的类型检查范围内，IslandShell 等组件的属性变化不会被发现（2.6 的缺失属性就是这样遗留下来的） | 可新增一个包含 `tests/*.tsx` 的 tsconfig 并加入 `pnpm check`；属于工具链改动，单独提交。当前 4 个回归页用临时 tsconfig 检查均无错误。已新增 `tsconfig.tests.json`（继承主配置，包含 `tests/*.tsx`）与脚本 `check:tests-types`，并加入 `pnpm check`；用故意写错类型的探针文件确认检查生效。 |
 | 7 | `src/AGENTS.md` 的软性上限（组件函数 ≤ 200 行、hook ≤ 150 行、单组件 `useState` ≤ 8）在 2026-11-03 统计时超限：组件 `ClipboardHistoryPanel` 360、`TodoNotebook` 334、`SettingsWindow` 304、`MusicPlayerPanel` 298、`TranslationWindow` 254；hook `useMediaState` 209、`useQQMail` 169、`useIslandWindow` 153；`useState` 超过 8 个的有 `SettingsWindow` 12、`TranslationWindow` 13。接近上限：`IslandApp` 195、`ClipboardHistoryItemRow` 184、`useQQNotifications` 133。另外 `useQQMail`、`useQQNotifications`、`useWeChatReminders` 这些 hook 写在 `.tsx` 文件里，不符合"不含 JSX 的逻辑不放进 `.tsx`" | 软性上限只在代码评审时检查，拆分属于整理改动，逐个单独提交。`SettingsWindow` 已在 2026-11-04 拆分：状态移入 `useSettingPresets`、`useClipboardSettings`、`useAgentStatusSettings`、`useSaveDirectorySetting`、`useLaunchAtStartup`，各页拆成 `windows/settings/*SettingsPage.tsx`，`useState` 12 → 2；`useMediaState` 的拆分与 3.2（音频电平叶子组件）一起考虑。统计口径：从函数声明行数到顶格的 `}`。 |
