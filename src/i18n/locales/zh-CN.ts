@@ -596,7 +596,7 @@ const zhCN: Translations = {
       stopped: "未运行",
     },
     plugins: {
-      title: "插件",
+      title: "插件扩展",
       allowThirdParty: "允许运行第三方插件",
       warning: "插件是在你电脑上运行的程序，可以读写文件和联网，下面列出的权限只限制它能读写岛上的哪些数据。只安装你信任的插件。",
       folder: "插件目录",
