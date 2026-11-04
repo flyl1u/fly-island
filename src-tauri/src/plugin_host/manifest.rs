@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::menus::{self, PluginMenus};
+use super::view_specs::{self, StatusItemSpec, ViewSpec};
 use super::permissions::is_known_permission;
 use super::settings::{validate_specs, SettingSpec};
 use crate::clipboard_history::parse_shortcut_binding;
@@ -130,6 +131,17 @@ pub(super) struct PluginContributions {
     /// Commands listed in island menus (API version 2); see menus.rs.
     #[serde(default)]
     pub menus: PluginMenus,
+    /// As written; read by view_specs::check, which version 1 plugins skip.
+    #[serde(default, rename = "views", skip_serializing)]
+    pub views_raw: serde_json::Value,
+    #[serde(default, rename = "statusItems", skip_serializing)]
+    pub status_items_raw: serde_json::Value,
+    /// Pages on the expanded island (API version 2); see view_specs.rs.
+    #[serde(skip)]
+    pub views: Vec<ViewSpec>,
+    /// Short texts on the collapsed bar (API version 2).
+    #[serde(skip)]
+    pub status_items: Vec<StatusItemSpec>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -236,6 +248,7 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     let contributes = &mut manifest.contributes;
     let command_ids: Vec<&str> = contributes.commands.iter().map(PluginCommand::id).collect();
     menus::check(&mut contributes.menus, &command_ids, api_version)?;
+    (contributes.views, contributes.status_items) = view_specs::check(&contributes.views_raw, &contributes.status_items_raw, api_version)?;
     Ok(manifest)
 }
 

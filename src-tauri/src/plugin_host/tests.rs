@@ -625,3 +625,39 @@ fn messages_are_listed_newest_first_with_undated_ones_last() {
     super::feeds::sort_messages(&mut items);
     assert_eq!(items.iter().map(|item| item["id"].as_str().unwrap_or("")).collect::<Vec<_>>(), vec!["new", "old", "none"]);
 }
+
+#[test]
+fn views_and_status_items_are_checked_for_version_2_and_dropped_for_version_1() {
+    let contributes = |views: Value, status: Value| json!({ "views": views, "statusItems": status });
+    let board = json!({ "id": "board", "title": { "zh-CN": "看板", "en": "Board" }, "icon": "kanban", "template": "list" });
+    let v2 = parse(json!({ "apiVersion": 2, "contributes": contributes(json!([board]), json!([{ "id": "timer", "priority": 10 }])) })).expect("valid");
+    assert_eq!(v2.contributes.views[0].template, super::view_specs::ViewTemplate::List);
+    assert_eq!(v2.contributes.status_items[0].priority, 10);
+    let no_icon = json!({ "id": "x", "title": { "zh-CN": "x", "en": "x" }, "template": "status" });
+    assert_eq!(parse(json!({ "apiVersion": 2, "contributes": contributes(json!([no_icon]), json!([])) })).expect("default icon").contributes.views[0].icon, "puzzle");
+    let v1 = parse(json!({ "apiVersion": 1, "contributes": contributes(json!(5), json!([{ "id": "?" }])) })).expect("v1 ignores views");
+    assert!(v1.contributes.views.is_empty() && v1.contributes.status_items.is_empty());
+
+    let reason = |views: Value, status: Value| parse(json!({ "apiVersion": 2, "contributes": contributes(views, status) })).expect_err("invalid");
+    let mut svg = board.clone();
+    svg["icon"] = json!("<svg/>");
+    assert!(reason(json!([svg]), json!([])).contains("icon"));
+    assert!(reason(json!([board.clone(), board.clone()]), json!([])).contains("unique"));
+    let mut third = board.clone();
+    third["id"] = json!("c");
+    let mut second = board.clone();
+    second["id"] = json!("b");
+    assert!(reason(json!([board.clone(), second, third]), json!([])).contains("at most 2"));
+    let mut bad_template = board.clone();
+    bad_template["template"] = json!("webview");
+    assert!(reason(json!([bad_template]), json!([])).contains("webview"));
+    assert!(reason(json!([]), json!([{ "id": "t", "priority": 101 }])).contains("priority"));
+    assert!(reason(json!([]), json!([{ "id": "a b" }])).contains("a b"));
+}
+
+#[test]
+fn view_icons_match_the_manifest_schema() {
+    let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");
+    let icons = &schema["properties"]["contributes"]["properties"]["views"]["items"]["properties"]["icon"]["enum"];
+    assert_eq!(*icons, json!(super::view_specs::VIEW_ICONS.to_vec()));
+}

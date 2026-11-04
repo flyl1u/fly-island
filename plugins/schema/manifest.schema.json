@@ -100,6 +100,34 @@
               }
             }
           }
+        },
+        "views": {
+          "description": "apiVersion 2: pages on the expanded island, drawn by the island from a template; the plugin fills them with view.update / view.patch. Ignored for apiVersion 1.",
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "template"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "title": { "$ref": "#/$defs/localizedText" },
+              "icon": { "description": "A lucide icon name from this list; default puzzle.", "enum": ["list", "list-checks", "list-todo", "kanban", "square-check", "timer", "clock", "calendar", "bell", "book-open", "bookmark", "star", "heart", "folder", "file-text", "git-pull-request", "bug", "code", "terminal", "cloud", "sun", "music", "newspaper", "rss", "mail", "message-square", "globe", "link", "activity", "chart-column", "zap", "flame", "coffee", "puzzle", "gauge", "target", "trophy", "rocket", "sparkles", "inbox", "tag", "hash", "search", "house", "notebook", "circle-check", "info"] },
+              "template": { "enum": ["list", "detail", "form", "status"] }
+            }
+          }
+        },
+        "statusItems": {
+          "description": "apiVersion 2: short texts on the collapsed bar, set with status.update. Of all items with text, the highest priority is shown. Ignored for apiVersion 1.",
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "priority": { "type": "integer", "minimum": -100, "maximum": 100, "default": 0 }
+            }
+          }
         }
       }
     }

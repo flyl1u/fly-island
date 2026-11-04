@@ -9,6 +9,7 @@
 //! - events.rs: island events plugins subscribe to
 //! - feeds.rs: messages and media for plugins (`messages.list`, `media.changed`)
 //! - keybindings.rs: global shortcuts of plugin commands
+//! - view_specs.rs: `contributes.views` / `statusItems` in the manifest
 //! - menus.rs: plugin commands in island menus (`contributes.menus`)
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
@@ -24,6 +25,7 @@ mod keybindings;
 mod manifest;
 mod market;
 mod menus;
+mod view_specs;
 mod notify;
 mod permissions;
 mod registry;
