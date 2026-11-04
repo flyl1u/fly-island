@@ -9,6 +9,7 @@ import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
+import { ResetAppearanceButton } from "../../features/appearance/ResetAppearanceButton";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useSettingPresets } from "../../features/appearance/useSettingPresets";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
@@ -73,7 +74,7 @@ export function SettingsWindow() {
     return () => window.removeEventListener("storage", syncFromIsland);
   }, [focusSavePath]);
 
-  const resetSettings = useCallback(() => {
+  const resetAppearance = useCallback(() => {
     setSettings((current) => withAppearanceFrom(current, DEFAULT_SETTINGS));
   }, []);
 
@@ -82,7 +83,7 @@ export function SettingsWindow() {
       <LayoutEditor
         category={category}
         onCategoryChange={setCategory}
-        onReset={resetSettings}
+        titleAction={category === "appearance" && <ResetAppearanceButton onReset={resetAppearance} />}
       >
         {category === "general" && (
           <GeneralSettingsPage

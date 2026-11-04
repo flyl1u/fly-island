@@ -311,7 +311,12 @@ const en: Translations = {
   settings: {
     messageReception: "Message reception",
     title: "Settings",
-    reset: "Reset to defaults",
+    resetAppearance: {
+      label: "Reset appearance",
+      hint: "Style, colors, size and display go back to defaults. Todo options, auto tuck and saved presets are kept.",
+      confirm: "Reset",
+      cancel: "Cancel",
+    },
 
     categories: {
       label: "Settings categories",

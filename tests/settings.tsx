@@ -23,7 +23,9 @@ const restore = () => {
 window.addEventListener("beforeunload", restore);
 
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "zh-CN");
-localStorage.removeItem("focusd-island-settings");
+// The checks below expect a customized look plus a General page choice that a reset must keep.
+if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: true }));
+else localStorage.removeItem("focusd-island-settings");
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 
@@ -94,6 +96,18 @@ if (!automated) {
       check(panel.querySelector(".settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
     }
+
+    const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
+    check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
+    await openPage("appearance");
+    await click(".appearance-reset");
+    check(storedSettings().opacity === 60, "The first reset click only asks for confirmation");
+    await click(".appearance-reset__confirm .appearance-reset:not(.appearance-reset--danger)");
+    check(storedSettings().opacity === 60 && document.querySelector(".appearance-reset"), "Cancelling keeps the appearance");
+    await click(".appearance-reset");
+    await click(".appearance-reset--danger");
+    check(storedSettings().opacity === 95, "Confirming resets the appearance");
+    check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
 
     const agentPolls = () => commands.filter(command => command === "get_agent_status").length;
     const pollsAway = agentPolls();

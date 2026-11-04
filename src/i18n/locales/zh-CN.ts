@@ -314,7 +314,12 @@ const zhCN: Translations = {
   settings: {
     messageReception: "消息接收",
     title: "设置",
-    reset: "恢复默认",
+    resetAppearance: {
+      label: "恢复默认外观",
+      hint: "风格、颜色、尺寸和显示内容恢复为默认值；待办设置、自动收起和已保存的预设不受影响",
+      confirm: "确认恢复",
+      cancel: "取消",
+    },
 
     categories: {
       label: "设置分类",

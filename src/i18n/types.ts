@@ -314,7 +314,12 @@ export type Translations = {
   settings: {
     messageReception: string;
     title: string;
-    reset: string;
+    resetAppearance: {
+      label: string;
+      hint: string;
+      confirm: string;
+      cancel: string;
+    };
 
     categories: {
       label: string;
