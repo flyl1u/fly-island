@@ -57,11 +57,11 @@ fly-island 把分散在不同窗口中的高频操作放到一个可折叠、可
 
 ## 使用说明
 
-展开岛屿即可切换待办、音乐、剪贴板、设置和消息页面。默认使用液态玻璃外观，岛屿名称隐藏，任务文字为白色；设置中的样式预设可保存和恢复个性化布局。
+展开岛屿即可切换待办、音乐、剪贴板和消息页面；设置按钮打开带分类侧栏的独立窗口。新用户默认使用经典外观，岛屿名称隐藏，任务文字为白色；设置中的样式预设可保存和恢复个性化布局。
 
 ### 功能设置
 
-- **QQ 和微信提醒**：首次默认开启。QQ 需要 Windows 通知访问权限，且 QQ 已登录并启用系统通知；微信需要电脑版保持登录并发出任务栏提醒。两个来源可分别在「设置 → 消息接收」或消息页面关闭。参见 [QQ 通知说明](docs/qq-notification-compatibility.md)和[微信提醒说明](docs/wechat-reminder-compatibility.md)。
+- **QQ 和微信提醒**：首次默认开启。QQ 需要 Windows 通知访问权限，且 QQ 已登录并启用系统通知；微信需要电脑版保持登录并发出任务栏提醒。两个来源可分别在「设置 → 通知」或消息页面关闭。参见 [QQ 通知说明](docs/qq-notification-compatibility.md)和[微信提醒说明](docs/wechat-reminder-compatibility.md)。
 
 - **QQ 邮箱**：在邮箱设置中开启 IMAP 并生成授权码，然后在消息页面填写 `@qq.com` 地址和授权码（不是 QQ 登录密码）。凭据保存在 Windows 凭据管理器。支持手动刷新、暂停接收和断开连接；首次同步不提醒历史邮件。详见 [QQ 邮箱接入说明](docs/qq-mail.md)。
 
@@ -99,6 +99,12 @@ git clone https://github.com/flyl1u/fly-island.git
 cd fly-island
 pnpm install
 pnpm tauri dev
+```
+
+运行统一检查：
+
+```powershell
+pnpm check
 ```
 
 ### 构建 Release

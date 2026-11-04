@@ -21,12 +21,14 @@ FocuSD Island 是一个 Windows 优先的桌面效率工具，以透明、无边
 ```text
 .
 ├── src/                    # React 前端
-│   ├── App.tsx             # 核心 UI、状态、交互与 Tauri invoke 调用
-│   ├── App.css             # 主要样式
+│   ├── windows/            # 岛屿、设置、翻译窗口的组合与行为
+│   ├── features/           # 领域组件、状态、IPC、存储和样式
+│   ├── components/         # 通用控件
+│   ├── styles/             # 全局变量、字体和基础样式
 │   ├── main.tsx            # React 入口
 │   └── vite-env.d.ts
 ├── src-tauri/              # Tauri / Rust 桌面端
-│   ├── src/lib.rs          # 原生命令、窗口定位、托盘、文件保存、媒体控制
+│   ├── src/lib.rs          # 原生模块、插件、初始化和命令注册
 │   ├── src/main.rs         # Tauri 应用入口
 │   ├── Cargo.toml          # Rust 依赖与构建配置
 │   ├── tauri.conf.json     # Tauri 配置
@@ -77,7 +79,7 @@ pnpm tauri build --no-bundle
 
 ## 开发约定
 
-- 默认使用 TypeScript 和 React 函数组件，延续当前 `src/App.tsx` 中的状态组织与命名风格。
+- 默认使用 TypeScript 和 React 函数组件，遵循 `src/AGENTS.md` 中的领域和窗口边界。
 - 优先复用现有组件、类型、工具函数和 CSS class，不为小改动引入新的抽象层。
 - 继续使用 `localStorage` 存储前端状态，除非需求明确要求迁移到文件、数据库或云同步。
 - Tauri 命令通过 `@tauri-apps/api/core` 的 `invoke` 调用；新增命令时需同步更新 Rust 侧 handler、前端类型和必要的权限配置。
@@ -90,14 +92,14 @@ pnpm tauri build --no-bundle
 
 ## 前端注意事项
 
-- `src/App.tsx` 目前承载了大部分业务逻辑，新增功能前先查找是否已有相关类型、状态和工具函数。
-- 样式主要在 `src/App.css`，请保持现有视觉语言：悬浮岛、紧凑面板、透明背景、可读的控件状态。
+- 业务逻辑在 `src/features/`，窗口组合在 `src/windows/`；新增功能前先查找已有类型、状态和工具函数。
+- 样式随组件放置，全局样式在 `src/styles/`；保持悬浮岛、紧凑面板、透明背景和可读的控件状态。
 - 文本应注意中英文混排和窄窗口显示，避免按钮、标签和任务标题溢出。
 - 对任务、每日笔记、归档、设置预设等状态的改动，需要维护对应的 `localStorage` key 兼容性。
 
 ## Tauri / Rust 注意事项
 
-- 主要逻辑位于 `src-tauri/src/lib.rs`。
+- `src-tauri/src/lib.rs` 负责组装，领域逻辑在各模块目录；补充规则见 `src-tauri/AGENTS.md`。
 - 与 Windows API 相关的代码需保持最小权限和明确错误处理。
 - 开机自启使用当前用户注册表路径：
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
@@ -109,7 +111,7 @@ pnpm tauri build --no-bundle
 根据改动范围选择最小且充分的验证方式，避免无关、耗时的构建：
 
 - 仅文档改动：确认 Markdown 内容可读即可。
-- 前端逻辑、样式或依赖改动：必须运行 `pnpm build`，必要时运行 `pnpm dev` 进行浏览器检查。
+- 前端逻辑、样式或依赖改动：运行 `pnpm check` 和 `pnpm build`，必要时运行 `pnpm dev` 进行浏览器检查。
 - Tauri 命令、窗口、托盘、注册表、Windows API 或桌面配置改动：必须运行 `pnpm tauri build --no-bundle`，并在行为风险需要时运行 `pnpm tauri dev` 手动验证。
 - 发布相关改动：必须运行完整的 `pnpm tauri build`。
 
