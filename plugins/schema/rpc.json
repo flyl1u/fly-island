@@ -10,7 +10,8 @@
     { "name": "notes:read", "since": 1 },
     { "name": "notes:write", "since": 1 },
     { "name": "agent-status:read", "since": 2 },
-    { "name": "agent-status:write", "since": 1 }
+    { "name": "agent-status:write", "since": 1 },
+    { "name": "island:notify", "since": 2 }
   ],
   "events": [
     { "name": "todos.changed", "permission": "todos:read", "since": 2, "payload": "{ date }; call todos.list for the todos" },
@@ -111,6 +112,13 @@
       "since": 1,
       "params": { "source?": "string; omitted clears every source of the plugin" },
       "result": "{ cleared }"
+    },
+    {
+      "name": "island.notify",
+      "permission": "island:notify",
+      "since": 2,
+      "params": { "title": "string (1-80 chars)", "body?": "string (max 200)", "durationMs?": "number, clamped to 2000-15000, default 5000", "actions?": "[{ id: [A-Za-z0-9-]{1,32}, title: string (max 16) }] (max 2)" },
+      "result": "{ muted }: true when the user turned this plugin's messages off (nothing is shown). At most 6 per minute per plugin, else -32000 with status 429."
     }
   ],
   "toPlugin": [
@@ -122,6 +130,7 @@
     { "name": "command", "since": 1, "params": "{ id }" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },
     { "name": "event", "since": 2, "params": "{ name, payload }; at most one per event name every 200 ms, carrying the latest payload. Subscriptions end when the process exits." },
+    { "name": "notification.action", "since": 2, "params": "{ id }: the user clicked that button of an island.notify message" },
     { "name": "shutdown", "since": 1, "params": "{}" }
   ],
   "fromPlugin": [

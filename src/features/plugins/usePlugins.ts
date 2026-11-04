@@ -5,6 +5,7 @@ import {
   reloadPlugins,
   runPluginCommand,
   setPluginEnabled,
+  setPluginNotificationsMuted,
   setPluginSetting,
   setPluginsAllowed,
   uninstallPlugin,
@@ -59,6 +60,10 @@ export function usePlugins() {
     openFolder: useCallback(() => void run(openPluginsFolder), [run]),
     runCommand: useCallback((id: string, command: string) => void run(() => runPluginCommand(id, command)), [run]),
     uninstall: useCallback((id: string) => void run(() => uninstallPlugin(id)), [run]),
+    setNotificationsMuted: useCallback(
+      (id: string, muted: boolean) => void run(() => setPluginNotificationsMuted(id, muted)),
+      [run],
+    ),
     setSetting: useCallback(
       (id: string, key: string, value: unknown) => void run(() => setPluginSetting(id, key, value)),
       [run],

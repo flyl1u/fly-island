@@ -1,4 +1,5 @@
 import { ArrowLeft, Play } from "lucide-react";
+import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import type { PluginInfo } from "./api";
 import { PluginInfoList } from "./PluginInfoList";
@@ -12,12 +13,14 @@ export function PluginDetailPage({
   onBack,
   onSettingChange,
   onRunCommand,
+  onNotificationsMutedChange,
 }: {
   plugin: PluginInfo;
   busy: boolean;
   onBack: () => void;
   onSettingChange: (key: string, value: unknown) => void;
   onRunCommand: (command: string) => void;
+  onNotificationsMutedChange: (muted: boolean) => void;
 }) {
   const t = useTranslation();
   const { locale } = useLocale();
@@ -75,6 +78,19 @@ export function PluginDetailPage({
           ))
         )}
       </section>
+
+      {plugin.permissions.includes("island:notify") ? (
+        <section className="settings-section plugins-panel">
+          <div className="settings-section__header">
+            <span>{t.settings.plugins.detail.notifications}</span>
+          </div>
+          <ToggleControl
+            label={t.settings.plugins.detail.showNotifications}
+            checked={!plugin.notificationsMuted}
+            onChange={(show) => !busy && onNotificationsMutedChange(!show)}
+          />
+        </section>
+      ) : null}
 
       {plugin.commands.length > 0 || plugin.hasProcess ? (
         <section className="settings-section plugins-panel">

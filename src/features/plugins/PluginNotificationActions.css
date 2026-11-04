@@ -1,0 +1,25 @@
+/* Buttons of a plugin message (island.notify) in the collapsed island. */
+.plugin-notification-action {
+  flex: 0 1 auto;
+  max-width: 72px;
+  height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  color: rgba(190, 240, 225, 0.88);
+  background: rgba(110, 231, 200, 0.12);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.plugin-notification-action:hover,
+.plugin-notification-action:focus-visible {
+  color: var(--color-white);
+  background: rgba(110, 231, 200, 0.22);
+}

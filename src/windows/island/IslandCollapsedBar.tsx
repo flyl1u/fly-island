@@ -11,6 +11,8 @@ import { messagePreviewText, type MessagePreview, type MessageSource } from "../
 import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import { PluginNotificationActions } from "../../features/plugins/PluginNotificationActions";
+import type { PluginNotificationsController } from "../../features/plugins/usePluginNotifications";
 import { useTranslation } from "../../i18n";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
@@ -20,6 +22,7 @@ type IslandCollapsedBarProps = {
   qqMail: QQMailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
+  pluginNotifications: PluginNotificationsController;
   preview: MessagePreview | null;
   page: IslandPage;
   isExpanded: boolean;
@@ -56,6 +59,7 @@ export function IslandCollapsedBar({
   qqMail,
   qqNotifications,
   wechatReminders,
+  pluginNotifications,
   preview,
   page,
   isExpanded,
@@ -117,14 +121,19 @@ export function IslandCollapsedBar({
         onClick={(event) => {
           if (event.detail === 0 || !didDragRef.current) {
             if (preview) {
-              if (preview.source === "qqMail" && qqMail.preview) {
+              const source = preview.source;
+              if (source === "plugin") {
+                pluginNotifications.dismiss();
+                return;
+              }
+              if (source === "qqMail" && qqMail.preview) {
                 onOpenMessages("qqMail");
                 void qqMail.readMail(qqMail.preview);
                 return;
               }
-              const open = preview.source === "qq" ? qqNotifications.openQQ : wechatReminders.openWeChat;
+              const open = source === "qq" ? qqNotifications.openQQ : wechatReminders.openWeChat;
               void open().then((opened) => {
-                if (opened === false) onOpenMessages(preview.source);
+                if (opened === false) onOpenMessages(source);
               });
             } else if (translationPeek) {
               onOpenTranslationPeek();
@@ -168,6 +177,9 @@ export function IslandCollapsedBar({
           </>}
         </CollapsedMessageContent>
       </button>
+      {preview?.source === "plugin" && pluginNotifications.notification && (
+        <PluginNotificationActions actions={pluginNotifications.notification.actions} onAction={pluginNotifications.runAction} />
+      )}
       {qqMail.preview !== null && (
         <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} title={t.messages.openNewMail} onClick={() => onOpenMessages("qqMail")}>
           <MessageSourceIcon source="qqMail" size={16} />

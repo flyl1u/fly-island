@@ -49,6 +49,8 @@ pub struct PluginInfo {
     settings: Map<String, Value>,
     /// What the running plugin shows with `ui.setInfo`.
     info: Vec<InfoItem>,
+    /// The user turned off its `island.notify` messages.
+    notifications_muted: bool,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -166,6 +168,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 settings_schema: Vec::new(),
                 settings: Map::new(),
                 info: runtime.info,
+                notifications_muted: grant.notifications_muted,
             };
             match &plugin.manifest {
                 Ok(manifest) => {

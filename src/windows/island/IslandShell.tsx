@@ -7,6 +7,7 @@ import { latestMessagePreview, type MessageSource } from "../../features/message
 import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
+import type { PluginNotificationsController } from "../../features/plugins/usePluginNotifications";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
@@ -21,6 +22,7 @@ type IslandShellProps = {
   qqMail: QQMailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
+  pluginNotifications: PluginNotificationsController;
   onOpenMessages: (source: MessageSource) => void;
   mode: IslandMode;
   page: IslandPage;
@@ -66,6 +68,7 @@ export function IslandShell({
   qqMail,
   qqNotifications,
   wechatReminders,
+  pluginNotifications,
   onOpenMessages,
   mode,
   page,
@@ -110,11 +113,13 @@ export function IslandShell({
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
   const wechatPreviewAt = wechatReminders.previewReceivedAt;
+  const pluginNotification = pluginNotifications.notification;
   const [latestPreviewAt, setLatestPreviewAt] = useState(0);
   const preview = latestMessagePreview([
     qqPreview ? { ...qqPreview, source: "qq", receivedAt: qqNotifications.previewReceivedAt ?? 0 } : null,
     wechatPreviewAt !== null ? { source: "wechat", title: t.messages.wechat, body: t.messages.newReminder, receivedAt: wechatPreviewAt } : null,
     qqMail.preview ? { source: "qqMail", title: qqMail.preview.sender, body: qqMail.preview.subject, receivedAt: qqMail.previewReceivedAt ?? 0 } : null,
+    pluginNotification ? { source: "plugin", title: pluginNotification.title, body: pluginNotification.body, receivedAt: pluginNotification.receivedAt } : null,
   ], latestPreviewAt);
   if (preview && preview.receivedAt > latestPreviewAt) setLatestPreviewAt(preview.receivedAt);
   const className = [
@@ -167,6 +172,7 @@ export function IslandShell({
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}
+          pluginNotifications={pluginNotifications}
           preview={preview}
           page={page}
           isExpanded={isExpanded}

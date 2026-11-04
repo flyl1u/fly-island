@@ -17,7 +17,7 @@ function MessageContent({ preview }: { preview: MessagePreview }) {
   const t = useTranslation();
   return <>
     <MessageSourceIcon source={preview.source} size={18} />
-    {preview.source === "qq" ? (
+    {preview.source === "qq" || (preview.source === "plugin" && preview.body.trim()) ? (
       <span className="island-message-preview__text">
         <strong className="island-message-preview__sender">{preview.title.trim() || "QQ"}</strong>
         <span className="island-message-preview__separator" aria-hidden="true">·</span>

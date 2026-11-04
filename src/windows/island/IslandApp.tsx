@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useQQMail } from "../../features/messages/qq-mail/QQMail";
+import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
@@ -75,7 +76,10 @@ export function IslandApp() {
   const qqNotifications = useQQNotifications(canPreviewMessages);
   const wechatReminders = useWeChatReminders(canPreviewMessages);
   const qqMail = useQQMail(canPreviewMessages);
-  const hasMessagePreview = Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview);
+  const pluginNotifications = usePluginNotifications(canPreviewMessages);
+  const hasMessagePreview = Boolean(
+    qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
+  );
   const [messageSource, setMessageSource] = useState<MessageView>("qq");
   const {
     mediaState,
@@ -266,6 +270,7 @@ export function IslandApp() {
         qqMail={qqMail}
         qqNotifications={qqNotifications}
         wechatReminders={wechatReminders}
+        pluginNotifications={pluginNotifications}
         onOpenMessages={openMessages}
         mode={mode}
         page={page}

@@ -2,18 +2,20 @@
 //! only gate the host API: a plugin process still runs with the user's rights.
 
 /// Mirrored by `PLUGIN_PERMISSIONS` in src/features/plugins/api.ts.
-pub(super) const PERMISSIONS: [&str; 6] = [
+pub(super) const PERMISSIONS: [&str; 7] = [
     "todos:read",
     "todos:write",
     "notes:read",
     "notes:write",
     "agent-status:read",
     "agent-status:write",
+    "island:notify",
 ];
 
-/// (method, permission). `agentStatus.*` is handled natively (agent_status);
-/// the rest are answered by the island window, see src/features/todos/apiCommands.ts.
-pub(super) const METHODS: [(&str, &str); 8] = [
+/// (method, permission). `agentStatus.*` is handled natively (agent_status),
+/// `island.notify` in notify.rs; the rest are answered by the island window,
+/// see src/features/todos/apiCommands.ts.
+pub(super) const METHODS: [(&str, &str); 9] = [
     ("todos.list", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
@@ -22,6 +24,7 @@ pub(super) const METHODS: [(&str, &str); 8] = [
     ("note.set", "notes:write"),
     ("agentStatus.report", "agent-status:write"),
     ("agentStatus.clear", "agent-status:write"),
+    ("island.notify", "island:notify"),
 ];
 
 /// Host features added after API version 1, sent in `initialize`. Plugins

@@ -26,6 +26,9 @@ pub(super) struct PluginGrant {
     /// Values of the plugin's declared settings (contributes.settings).
     #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
     pub settings: serde_json::Map<String, serde_json::Value>,
+    /// The user turned off this plugin's `island.notify` messages.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub notifications_muted: bool,
 }
 
 /// A missing or broken file reads as "nothing allowed".

@@ -2,9 +2,11 @@ import zhCN from "../../i18n/locales/zh-CN.ts";
 import type { Translations } from "../../i18n/types";
 
 export type MessageSource = "qq" | "wechat" | "qqMail";
+/** Where a collapsed preview comes from: a message source, or a plugin's island.notify. */
+export type PreviewSource = MessageSource | "plugin";
 
 export type MessagePreview = {
-  source: MessageSource;
+  source: PreviewSource;
   title: string;
   body: string;
   receivedAt: number;
@@ -15,6 +17,7 @@ export const MESSAGE_SOURCE_LABELS: Record<MessageSource, string> = zhCN.message
 export function messagePreviewText(preview: MessagePreview, copy: Translations["messages"] = zhCN.messages): string {
   if (preview.source === "wechat") return copy.wechatPreview;
   if (preview.source === "qqMail") return preview.body.trim() || copy.newMail;
+  if (preview.source === "plugin") return preview.body.trim() ? copy.qqPreview(preview.title, preview.body.trim()) : preview.title;
   return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
 }
 

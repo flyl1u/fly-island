@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
+    notify,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -60,6 +61,7 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
     let answer = match name {
         "agentStatus.report" => agent_status::report_external_status(owner, &context.spec.display_name, &params),
         "agentStatus.clear" => agent_status::clear_external_status(owner, &params),
+        "island.notify" => notify::show(&context.app, owner, &params),
         _ => local_api::call_island(&context.app, name, params),
     };
     match answer {

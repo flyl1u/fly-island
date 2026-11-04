@@ -112,6 +112,8 @@ pub fn run() {
             plugin_host::get_plugin_market,
             plugin_host::install_market_plugin,
             plugin_host::uninstall_plugin,
+            plugin_host::run_plugin_notification_action,
+            plugin_host::set_plugin_notifications_muted,
             qq_mail::get_qq_mail_state,
             qq_mail::connect_qq_mail,
             qq_mail::set_qq_mail_enabled,

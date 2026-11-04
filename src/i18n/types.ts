@@ -33,6 +33,7 @@ export type Translations = {
       qq: string;
       wechat: string;
       qqMail: string;
+      plugin: string;
     };
     collapsedTask: (title: string) => string;
     expand: (label: string) => string;
@@ -680,7 +681,7 @@ export type Translations = {
       homepage: string;
       permissions: string;
       noPermissions: string;
-      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write", string>;
+      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify", string>;
       needsApproval: string;
       notAllowed: string;
       describedOnly: string;
@@ -707,6 +708,8 @@ export type Translations = {
         copied: string;
         show: string;
         hide: string;
+        notifications: string;
+        showNotifications: string;
       };
       market: {
         title: string;

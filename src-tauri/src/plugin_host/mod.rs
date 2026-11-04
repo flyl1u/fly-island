@@ -7,6 +7,7 @@
 //! - grants.rs: saves the user's choices and starts / stops plugins to match
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
+//! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 
 mod builtin;
@@ -15,6 +16,7 @@ mod events;
 mod grants;
 mod manifest;
 mod market;
+mod notify;
 mod permissions;
 mod registry;
 mod rpc;

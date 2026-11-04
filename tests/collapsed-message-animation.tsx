@@ -89,7 +89,7 @@ function Fixture() {
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
+    <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 // 与 src-tauri/src/plugin_host/permissions.rs 中的 PERMISSIONS 对应。
@@ -10,6 +10,7 @@ export const PLUGIN_PERMISSIONS = [
   "notes:write",
   "agent-status:read",
   "agent-status:write",
+  "island:notify",
 ] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
@@ -66,6 +67,8 @@ export type PluginInfo = {
   /** Every declared setting with its value, defaults filled in. */
   settings: Record<string, unknown>;
   info: PluginInfoItem[];
+  /** The user turned off its island.notify messages. */
+  notificationsMuted: boolean;
 };
 
 export type PluginsSnapshot = {
@@ -159,4 +162,29 @@ export type PluginHostEventName =
 /** Tells the plugin host that something plugins can subscribe to changed; it merges bursts. */
 export function emitPluginHostEvent(name: PluginHostEventName, payload: Record<string, unknown>) {
   return emit(PLUGIN_HOST_EVENT, { name, payload });
+}
+
+// 与 src-tauri/src/plugin_host/notify.rs 中的 NOTIFICATION_EVENT、Notification 对应。
+const PLUGIN_NOTIFICATION_EVENT = "plugin-notification";
+export type PluginNotification = {
+  pluginId: string;
+  /** Null if the plugin was removed in the meantime. */
+  pluginName: LocalizedText | null;
+  title: string;
+  body: string;
+  durationMs: number;
+  actions: { id: string; title: string }[];
+};
+
+/** Calls `onNotification` for each plugin island.notify message; resolves to the unlisten function. */
+export function listenPluginNotifications(onNotification: (notification: PluginNotification) => void) {
+  return listen<PluginNotification>(PLUGIN_NOTIFICATION_EVENT, (event) => onNotification(event.payload));
+}
+
+export function runPluginNotificationAction(id: string, action: string) {
+  return invoke<void>("run_plugin_notification_action", { id, action });
+}
+
+export function setPluginNotificationsMuted(id: string, muted: boolean) {
+  return invoke<PluginsSnapshot>("set_plugin_notifications_muted", { id, muted });
 }

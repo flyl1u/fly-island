@@ -7,7 +7,7 @@ use std::fs;
 use super::{
     app_version, builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
-    host, lock, market,
+    host, lock, market, notify,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings,
 };
@@ -219,5 +219,31 @@ pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<Plugi
     } else if let Some(supervisor) = lock(&host.supervisors).get(&id) {
         supervisor.update_settings(resolved);
     }
+    snapshot()
+}
+
+/// The user clicked a button of a plugin's `island.notify` message; the plugin
+/// gets `notification.action` with the button's id.
+#[tauri::command]
+pub fn run_plugin_notification_action(id: String, action: String) -> Result<(), String> {
+    if !notify::is_action_id(&action) {
+        return Err("Unknown notification action.".into());
+    }
+    let host = host()?;
+    let supervisors = lock(&host.supervisors);
+    let supervisor = supervisors.get(&id).ok_or("The plugin is not running.")?;
+    supervisor.notify("notification.action", json!({ "id": action }))
+}
+
+/// Turns a plugin's `island.notify` messages off or back on.
+#[tauri::command]
+pub fn set_plugin_notifications_muted(id: String, muted: bool) -> Result<PluginsSnapshot, String> {
+    update_state(|state, installed| {
+        if !installed.iter().any(|plugin| plugin.folder == id) {
+            return Err("Plugin not found.".into());
+        }
+        state.plugins.entry(id.clone()).or_default().notifications_muted = muted;
+        Ok(())
+    })?;
     snapshot()
 }

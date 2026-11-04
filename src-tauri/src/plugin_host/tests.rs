@@ -448,3 +448,43 @@ mod builtin_tests {
         assert!(read_only.plugins[LOCAL_API_ID].granted_permissions.is_empty());
     }
 }
+
+#[test]
+fn notifications_are_checked_and_clamped() {
+    use super::notify::parse_notification;
+    let plain = parse_notification(&json!({ "title": "  Done  " })).expect("valid");
+    assert_eq!((plain.title.as_str(), plain.body.as_str(), plain.duration_ms), ("Done", "", 5000));
+    assert!(plain.actions.is_empty());
+    let full = parse_notification(&json!({
+        "title": "Break", "body": "5 minutes", "durationMs": 60000,
+        "actions": [{ "id": "skip", "title": "Skip" }, { "id": "snooze-5", "title": "Later" }]
+    }))
+    .expect("valid");
+    assert_eq!(full.duration_ms, 15000);
+    assert_eq!(full.actions.len(), 2);
+    assert_eq!(parse_notification(&json!({ "title": "x", "durationMs": 10 })).expect("valid").duration_ms, 2000);
+
+    let reason = |params: Value| parse_notification(&params).expect_err("invalid");
+    assert!(reason(json!({})).contains("title"));
+    assert!(reason(json!({ "title": " " })).contains("empty"));
+    assert!(reason(json!({ "title": "x".repeat(81) })).contains("80"));
+    assert!(reason(json!({ "title": "x", "body": 3 })).contains("body"));
+    assert!(reason(json!({ "title": "x", "durationMs": "long" })).contains("durationMs"));
+    assert!(reason(json!({ "title": "x", "actions": [{ "id": "a b", "title": "A" }] })).contains("a b"));
+    assert!(reason(json!({ "title": "x", "actions": [{ "id": "a", "title": "A" }, { "id": "a", "title": "B" }] })).contains("unique"));
+    let three = json!([{ "id": "a", "title": "A" }, { "id": "b", "title": "B" }, { "id": "c", "title": "C" }]);
+    assert!(reason(json!({ "title": "x", "actions": three })).contains("at most 2"));
+}
+
+#[test]
+fn notifications_are_limited_per_minute() {
+    use super::notify::{take_slot, RATE_LIMIT};
+    use std::{collections::VecDeque, time::{Duration, Instant}};
+    let start = Instant::now();
+    let mut times = VecDeque::new();
+    for _ in 0..RATE_LIMIT {
+        assert!(take_slot(&mut times, start));
+    }
+    assert!(!take_slot(&mut times, start + Duration::from_secs(59)));
+    assert!(take_slot(&mut times, start + Duration::from_secs(60)));
+}
