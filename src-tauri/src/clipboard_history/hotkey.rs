@@ -1,6 +1,7 @@
 //! Global shortcut that opens the clipboard page: parsing and registration.
 
 use std::sync::{Mutex, OnceLock};
+use tauri::Emitter;
 use windows::Win32::{
     Foundation::HWND,
     UI::{
@@ -14,6 +15,10 @@ use crate::win32;
 
 pub(super) const HOTKEY_EVENT: &str = "clipboard-history-shortcut";
 
+/// Sent after each registration attempt; the payload is the error, or null when the
+/// shortcut is registered or turned off.
+const HOTKEY_STATUS_EVENT: &str = "clipboard-history-shortcut-status";
+
 pub(super) const HOTKEY_ID: i32 = 0x4643;
 
 pub(super) const HOTKEY_REFRESH_MESSAGE: u32 = WM_APP + 0x51;
@@ -21,6 +26,22 @@ pub(super) const HOTKEY_REFRESH_MESSAGE: u32 = WM_APP + 0x51;
 pub(super) static CLIPBOARD_HOTKEY_WINDOW: OnceLock<Mutex<Option<isize>>> = OnceLock::new();
 
 static CLIPBOARD_HOTKEY_REGISTERED: OnceLock<Mutex<bool>> = OnceLock::new();
+
+/// Why the last registration failed, kept so a settings page opened later can show it.
+static CLIPBOARD_HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
+
+pub(super) fn hotkey_error() -> Option<String> {
+    CLIPBOARD_HOTKEY_ERROR.lock().ok().and_then(|error| error.clone())
+}
+
+fn report_hotkey_error(error: Option<String>) {
+    if let Ok(mut current) = CLIPBOARD_HOTKEY_ERROR.lock() {
+        current.clone_from(&error);
+    }
+    if let Ok(service) = service() {
+        let _ = service.app.emit(HOTKEY_STATUS_EVENT, error);
+    }
+}
 
 pub(super) fn request_hotkey_refresh() {
     let hwnd = CLIPBOARD_HOTKEY_WINDOW
@@ -44,6 +65,7 @@ pub(super) fn refresh_registered_hotkey(hwnd: HWND) {
         .as_ref()
         .is_some_and(|snapshot| !snapshot.settings.enabled || !snapshot.settings.shortcut_enabled)
     {
+        report_hotkey_error(None);
         return;
     }
 
@@ -55,13 +77,16 @@ pub(super) fn refresh_registered_hotkey(hwnd: HWND) {
     };
 
     match win32::hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code) {
-        Ok(()) => set_hotkey_registered(true),
+        Ok(()) => {
+            set_hotkey_registered(true);
+            report_hotkey_error(None);
+        }
         Err(error) => {
             set_hotkey_registered(false);
-            eprintln!(
-                "failed to register clipboard history shortcut {}: {error}",
+            report_hotkey_error(Some(format!(
+                "快捷键 {} 已被占用或无法注册：{error}",
                 binding.label
-            );
+            )));
         }
     }
 }

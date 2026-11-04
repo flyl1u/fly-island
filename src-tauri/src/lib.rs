@@ -161,6 +161,7 @@ pub fn run() {
             media_control::media_set_volume,
             clipboard_history::get_clipboard_history,
             clipboard_history::set_clipboard_history_settings,
+            clipboard_history::get_clipboard_shortcut_error,
             clipboard_history::copy_clipboard_history_item,
             clipboard_history::toggle_clipboard_history_favorite,
             clipboard_history::set_clipboard_history_item_note,

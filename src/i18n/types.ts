@@ -504,6 +504,7 @@ export type Translations = {
       pasteClipboard: string;
       editHint: string;
       openPage: string;
+      taken: (shortcut: string, owner: string) => string;
     };
 
     pageShortcuts: {

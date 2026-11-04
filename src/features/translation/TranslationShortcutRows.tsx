@@ -1,12 +1,11 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
 import { Keyboard } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { setTranslationSelectionShortcut, setTranslationShortcut } from "./api";
-import { useTranslationSettings } from "./useTranslationSettings";
+import type { TranslationSettings } from "./storage";
 import "../clipboard/ClipboardSettingsSection.css";
-import "./TranslationShortcutRows.css";
 
-type Target = "window" | "selection";
+export type TranslationShortcutTarget = "window" | "selection";
 
 function shortcutFromEvent(event: KeyboardEvent<HTMLElement>) {
   if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return null;
@@ -18,20 +17,25 @@ function shortcutFromEvent(event: KeyboardEvent<HTMLElement>) {
 
 /**
  * The two global translation shortcuts, recorded in place. Opening the rows registers
- * the saved keys again, so one taken by another program shows its error here.
+ * the saved keys again, so one taken by another program shows its error here; one
+ * taken by another row of the page (`takenBy`) is refused before it is registered.
  */
-export function TranslationShortcutRows() {
+export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }: {
+  settings: TranslationSettings;
+  onSettingsChange: Dispatch<SetStateAction<TranslationSettings>>;
+  takenBy: (shortcut: string, target: TranslationShortcutTarget) => string | null;
+}) {
   const t = useTranslation();
-  const [settings, setSettings] = useTranslationSettings();
-  const [recording, setRecording] = useState<Target | null>(null);
-  const [errors, setErrors] = useState<Record<Target, string>>({ window: "", selection: "" });
+  const [recording, setRecording] = useState<TranslationShortcutTarget | null>(null);
+  const [errors, setErrors] = useState<Record<TranslationShortcutTarget, string>>({ window: "", selection: "" });
+  const setError = (target: TranslationShortcutTarget, error: string) => setErrors((current) => ({ ...current, [target]: error }));
 
   useEffect(() => {
     let didCancel = false;
-    const check = (target: Target, register: Promise<string>) => {
+    const check = (target: TranslationShortcutTarget, register: Promise<string>) => {
       void register
-        .then(() => { if (!didCancel) setErrors((current) => ({ ...current, [target]: "" })); })
-        .catch((failure) => { if (!didCancel) setErrors((current) => ({ ...current, [target]: String(failure) })); });
+        .then(() => { if (!didCancel) setError(target, ""); })
+        .catch((failure) => { if (!didCancel) setError(target, String(failure)); });
     };
     check("window", setTranslationShortcut(settings.shortcut));
     check("selection", setTranslationSelectionShortcut(settings.selectionShortcut));
@@ -48,25 +52,27 @@ export function TranslationShortcutRows() {
     if (event.key === "Escape") { setRecording(null); return; }
     const shortcut = shortcutFromEvent(event);
     if (!shortcut) return;
+    const owner = takenBy(shortcut, target);
+    if (owner) { setError(target, t.settings.shortcuts.taken(shortcut, owner)); setRecording(null); return; }
     const register = target === "window" ? setTranslationShortcut : setTranslationSelectionShortcut;
     void register(shortcut)
       .then((registered) => {
-        setSettings((current) => target === "window"
+        onSettingsChange((current) => target === "window"
           ? { ...current, shortcut: registered }
           : { ...current, selectionShortcut: registered });
-        setErrors((current) => ({ ...current, [target]: "" }));
+        setError(target, "");
         setRecording(null);
       })
-      .catch((failure) => setErrors((current) => ({ ...current, [target]: String(failure) })));
+      .catch((failure) => setError(target, String(failure)));
   };
 
-  const rows: [Target, string, string][] = [
+  const rows: [TranslationShortcutTarget, string, string][] = [
     ["window", t.settings.shortcuts.openTranslation, settings.shortcut],
     ["selection", t.settings.translation.selectionShortcut, settings.selectionShortcut],
   ];
 
   return rows.map(([target, label, value]) => (
-    <div className="translation-shortcut" key={target}>
+    <div className="shortcut-row" key={target}>
       <div className="shortcut-control">
         <div className="shortcut-control__meta">
           <span>{label}</span>
@@ -83,7 +89,7 @@ export function TranslationShortcutRows() {
           <span>{recording === target ? t.translator.pressShortcut : value}</span>
         </button>
       </div>
-      {errors[target] && <p className="translation-shortcut__error" role="alert">{errors[target]}</p>}
+      {errors[target] && <p className="shortcut-control__error" role="alert">{errors[target]}</p>}
     </div>
   ));
 }

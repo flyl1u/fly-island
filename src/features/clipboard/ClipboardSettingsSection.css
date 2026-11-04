@@ -80,3 +80,18 @@
   box-shadow: 0 0 0 4px rgba(199, 80, 101, 0.16);
   animation: saveButtonPop 760ms ease both;
 }
+
+/* A recorded shortcut with the error below it, if its keys could not be used. */
+.shortcut-row {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.shortcut-control__error {
+  margin: 0;
+  color: #ff9aa9;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

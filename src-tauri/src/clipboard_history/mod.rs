@@ -178,6 +178,12 @@ pub fn get_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
     service()?.snapshot()
 }
 
+/// Why the clipboard shortcut could not be registered, or null when it is fine or off.
+#[tauri::command]
+pub fn get_clipboard_shortcut_error() -> Option<String> {
+    hotkey::hotkey_error()
+}
+
 #[tauri::command]
 pub fn set_clipboard_history_settings(
     settings: ClipboardHistorySettings,
