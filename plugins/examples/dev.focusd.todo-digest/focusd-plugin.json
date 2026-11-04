@@ -2,11 +2,11 @@
   "id": "dev.focusd.todo-digest",
   "name": { "zh-CN": "待办摘要（示例）", "en": "Todo digest (example)" },
   "description": {
-    "zh-CN": "定期在日志里记录未完成待办的数量；点“写入摘要”会把未完成的待办追加到每日笔记。用 Windows 自带的 PowerShell 运行，不需要另外安装任何东西。",
-    "en": "Logs how many todos are open; Write digest appends the open todos to the daily note. Runs on the PowerShell built into Windows, so nothing else needs installing."
+    "zh-CN": "待办变化时在日志里记录未完成待办的数量；点“写入摘要”会把未完成的待办追加到每日笔记。用 Windows 自带的 PowerShell 运行，不需要另外安装任何东西。",
+    "en": "Logs how many todos are open whenever they change; Write digest appends the open todos to the daily note. Runs on the PowerShell built into Windows, so nothing else needs installing."
   },
-  "version": "1.1.0",
-  "apiVersion": 1,
+  "version": "1.2.0",
+  "apiVersion": 2,
   "author": "FocuSD",
   "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.todo-digest",
   "runtime": { "type": "process", "command": "main.ps1" },

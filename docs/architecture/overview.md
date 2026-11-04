@@ -152,6 +152,9 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `translation-selection`（载荷为 `string`：「翻译选中文字」快捷键取到的文字，没有可译内容时为空字符串） | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `local-api-request`（载荷 `{ id, method, params }`，前端用 `answer_local_api_request` 回复） | `local_api/bridge.rs` | `main` |
+| `plugin-host-event`（载荷 `{ name, payload }`：插件可订阅的变化，由 Rust 合并后转给订阅的插件；`name` 见 `plugins/schema/rpc.json` 的 `events`） | 主窗口 `windows/island/usePluginHostEvents.ts` | Rust（`plugin_host/events.rs`） |
+| `plugin-notification`（载荷 `{ pluginId, pluginName, title, body, durationMs, actions }`：插件的 `island.notify`，按钮用 `run_plugin_notification_action` 回复） | `plugin_host/notify.rs` | `main` |
+| `plugin-keybinding`（载荷 `{ pluginId, command, when }`：插件命令的全局快捷键被按下，主窗口求值 `when` 后用 `run_plugin_command` 执行） | `plugin_host/keybindings.rs` | `main` |
 
 ### 其他
 
@@ -162,5 +165,5 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。
 - 插件市场：索引地址 `https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json`（暂用 fork 仓库的 `dev` 分支）、`index.json` 格式（`version: 1`）与 `plugins/packages/<id>-<version>.zip` 文件名；已发布的版本不得修改内容。索引签名 `index.json.sig`（`{ keyId, signature }`，Ed25519）与可信公钥列表 `plugins/signing-keys.json`；签名私钥在 `~/.tauri/fly-island/plugin-index-signing.key`（DPAPI），不在仓库中。
-- 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)。
+- 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)；机器可读的描述在 `plugins/schema/manifest.schema.json` 与 `plugins/schema/rpc.json`（`plugin_host/tests.rs` 对照检查）。插件 API 第 2 版（2026-11-05）新增：清单 `apiVersion: 2`、`contributes.commands[].keybinding` / `when`、`contributes.menus["todo/context"]`；`initialize.capabilities`；方法 `events.*`、`island.notify`、`storage.*`、`secrets.*`，通知 `event`、`notification.action`，`command` 的 `args`；权限 `agent-status:read`、`island:notify`、`secrets`；`plugins.json` 授权项字段 `notificationsMuted`；文件 `plugins-data/<id>/storage.json` 与 `plugin-secrets.json`（各插件已存秘密的名称）；凭据服务名 `com.focusd.island.plugin.<id>`；Tauri 命令 `run_plugin_notification_action`、`set_plugin_notifications_muted`、`clear_plugin_data`、`list_plugin_menu`、`run_plugin_menu_command`。全部是新增，`apiVersion: 1` 插件的行为不变。
 - 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。自 2026-11-04 起它是内置插件 `focusd.local-api`（插件 id 与设置键 `allowWrite` 也属于契约），命令 `get_local_api_state`、`set_local_api_settings`、`reset_local_api_token` 已删除。

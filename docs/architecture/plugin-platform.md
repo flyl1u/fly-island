@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**计划，未实施**（2026-11-04）。
+> 状态：**P5 已完成**（2026-11-05，见 P5 一节末尾的「完成记录」）；P6 起仍是计划。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -144,7 +144,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 ### 3.4 代码规模
 
-`plugin_host/mod.rs` 已有 638 行，`runtime.rs` 460 行，离 800 行的上限不远。**P5 开工前先做一个纯搬迁的重构提交**：把 `mod.rs` 拆成 `commands.rs`（Tauri 命令）、`registry.rs`（扫描、内置插件合并、迁移）、`grants.rs`（授权与设置）；`runtime.rs` 把 RPC 方法分派拆到 `dispatch.rs`。新功能各放新文件（`events.rs`、`views.rs`、`activation.rs`、`job.rs` 等），不往大文件里加。
+`plugin_host/mod.rs` 已有 638 行，`runtime.rs` 460 行，离 800 行的上限不远。**P5 开工前先做一个纯搬迁的重构提交**：把 `mod.rs` 拆成 `commands.rs`（Tauri 命令）、`registry.rs`（扫描、内置插件合并、迁移）、`grants.rs`（授权与设置）；`runtime.rs` 把 RPC 方法分派拆到 `runtime/dispatch.rs`（`runtime` 的子模块，这样能直接用进程上下文 `Context`）。新功能各放新文件（`events.rs`、`views.rs`、`activation.rs`、`job.rs` 等），不往大文件里加。
 
 ### 3.5 验证
 
@@ -194,6 +194,17 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 **验收**：示例插件不再定时轮询；番茄钟示例在岛上发出提示，点“再来一轮”后插件收到动作；同一快捷键被两个插件声明时，第二个显示冲突且不影响第一个；关掉岛屿后 `storage.json` 内容仍在。
 
 **提交拆分（建议）**：① 拆 `mod.rs` / `runtime.rs`（纯搬迁）② 能力协商 ③ 事件 ④ `island.notify` ⑤ 存储与 secrets ⑥ 快捷键与 `when` ⑦ `todo/context` 菜单 ⑧ 文档与示例。
+
+**完成记录（2026-11-05）** ✅ 按上面 8 步提交：`40294fa` 拆分、`ce1fe39` 能力协商、`a55c603` 事件、`b2018aa` `island.notify`、`6ff2d7a` 存储与 secrets、`aac2e00` 快捷键与 `when`、`58337dd` `todo/context` 菜单，以及文档与示例的提交。示例 `dev.focusd.todo-digest` 1.2.0 改为订阅 `todos.changed`，新增 `dev.focusd.pomodoro` 1.0.0；市场索引已重新签名。
+
+与上面设计的偏差：
+
+- **版本"协商"**：宿主不另选版本，`initialize.apiVersion` 就是清单里写的版本；`capabilities` 对第 2 版插件是 `["events","notifications","storage","secrets"]`，对第 1 版插件是空列表（字段对两者都发送，属于新增字段）。
+- **新方法对第 1 版插件**：设计写的是"同样可用"。为了保证第 1 版插件行为完全不变，不需要权限的 `events.*`、`storage.*` 只对第 2 版开放，第 1 版仍返回"方法不存在"；需要新权限的 `island.notify`、`secrets.*` 第 1 版清单也能申请。清单里的 `keybinding`、`when`、`menus` 对第 1 版忽略。
+- **`todos.changed` 的载荷**只有 `{ date }`，没有 `reason`：主窗口只知道待办状态变了，区分 add / update / reorder 需要改动 `features/todos/` 的每个写入点，留到 P6 数据下沉时再做。另新增权限 `agent-status:read`，用于订阅 `agentStatus.changed`。
+- **快捷键**：只有冲突提示（插件卡片），插件设置页里"改键或关闭"没做，留作后续；没有新增 capability，因为快捷键是清单声明，不是运行时方法。
+- **菜单**：新增 Tauri 命令 `list_plugin_menu`、`run_plugin_menu_command`，原有 `run_plugin_command` 不变；每个插件的 `todo/context` 最多 4 项，`command` 通知多了可选的 `args`。
+- **未做**：`local_api/routes.rs` 的 `POST /v1/island/notify`（设计中为可选）；消息来源排序的 node 测试（插件来源复用了现有排序，未单独加测试）；岛上新界面没有新增浏览器回归页，只更新了已有回归页的 mock。
 
 ### P6 数据下沉与更多数据权限
 

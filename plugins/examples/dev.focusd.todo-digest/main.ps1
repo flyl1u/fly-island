@@ -1,10 +1,7 @@
-# Example plugin: logs how many todos are open, and on request writes a short
-# digest of them into the daily note. Runs on the Windows PowerShell that ships
-# with Windows, so users install nothing.
+# Example plugin: logs how many todos are open whenever they change, and on
+# request writes a short digest of them into the daily note. Runs on the Windows
+# PowerShell that ships with Windows, so users install nothing.
 . "$PSScriptRoot\lib\focusd.ps1"
-
-$logEvery = [TimeSpan]::FromMinutes(30)
-$nextLog = [DateTime]::MaxValue
 
 # PowerShell unrolls a returned array, so callers wrap the result in @().
 function Get-OpenTodos {
@@ -13,23 +10,28 @@ function Get-OpenTodos {
 
 function Write-OpenCount {
     Write-FocusdLog "$(@(Get-OpenTodos).Count) open todos"
-    $script:nextLog = [DateTime]::Now + $logEvery
 }
 
 while ($true) {
-    $message = Receive-FocusdNotification 1000
+    # No timer work any more: the island tells us when todos change.
+    $message = Receive-FocusdNotification 60000
+    if ($null -eq $message) {
+        continue
+    }
     try {
-        if ($null -eq $message) {
-            if ([DateTime]::Now -ge $nextLog) {
-                Write-OpenCount
-            }
-            continue
-        }
         switch ($message.method) {
             'initialize' {
                 $permissions = @($message.params.permissions) -join ', '
                 Write-FocusdLog "ready (FocuSD $($message.params.appVersion); permissions: $permissions)"
+                if (@($message.params.capabilities) -contains 'events') {
+                    [void](Invoke-FocusdMethod 'events.subscribe' @{ events = @('todos.changed') })
+                }
                 Write-OpenCount
+            }
+            'event' {
+                if ($message.params.name -eq 'todos.changed') {
+                    Write-OpenCount
+                }
             }
             'command' {
                 if ($message.params.id -eq 'write-digest') {

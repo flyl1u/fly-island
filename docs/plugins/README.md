@@ -2,7 +2,7 @@
 
 插件是一个由岛屿启动的程序。它通过 stdin / stdout 与岛屿通信，可以按授予的权限读写待办和每日笔记，并在设置页里提供按钮。设计背景见 [架构提案](../architecture/plugins.md)，和 VS Code 的差别见 [和 VS Code 插件系统的对比](vscode.md)，后续计划见 [插件平台第 2 版](../architecture/plugin-platform.md)。
 
-> 当前状态：插件 API 第 1 版。可以在 设置 → 插件市场 中安装，也可以手动放进插件目录。
+> 当前状态：插件 API 第 2 版（第 1 版的插件照常运行，见下文的「API 版本」）。可以在 设置 → 插件市场 中安装，也可以手动放进插件目录。机器可读的协议描述在 [`plugins/schema/`](../../plugins/schema/)：`manifest.schema.json`（清单）和 `rpc.json`（方法、事件、权限、错误码），岛屿的单元测试会对照检查，本文和它不一致时以它为准。
 
 ## 快速开始
 
@@ -45,14 +45,19 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
   "name": { "zh-CN": "待办同步", "en": "Todo Sync" },
   "description": { "zh-CN": "……", "en": "…" },
   "version": "1.0.0",
-  "apiVersion": 1,
+  "apiVersion": 2,
   "minAppVersion": "0.2.14",
   "author": "example",
   "homepage": "https://github.com/example/todo-sync",
   "runtime": { "type": "process", "command": "main.ps1", "args": [] },
   "permissions": ["todos:read", "todos:write"],
   "contributes": {
-    "commands": [{ "id": "sync-now", "title": { "zh-CN": "立即同步", "en": "Sync now" } }]
+    "commands": [
+      { "id": "sync-now", "title": { "zh-CN": "立即同步", "en": "Sync now" },
+        "keybinding": "Ctrl+Alt+S", "when": "!todos.hasActive" },
+      { "id": "push-todo", "title": { "zh-CN": "推送这条", "en": "Push this one" } }
+    ],
+    "menus": { "todo/context": [{ "command": "push-todo" }] }
   }
 }
 ```
@@ -63,13 +68,39 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `name` | ✅ | 中英文名称都要提供。 |
 | `description` | | 中英文说明。 |
 | `version` | ✅ | 1–32 个字符。 |
-| `apiVersion` | ✅ | 目前只能是 `1`。 |
+| `apiVersion` | ✅ | `1` 或 `2`，见下文的「API 版本」。新插件请写 `2`。 |
 | `minAppVersion` | | 需要的最低 FocuSD Island 版本，版本不够时插件显示为"无法加载"。 |
 | `author`、`homepage` | | 主页只显示 `https://` 链接。 |
 | `runtime` | ✅ | `{ "type": "process", "command": "...", "args": [...] }` 表示运行一个程序；`{ "type": "none" }` 表示只有清单、不运行程序。 |
 | `permissions` | | 见下文的权限表。 |
 | `contributes.commands` | | 最多 8 个，显示为插件设置页上"操作"一栏里的按钮。`id` 只能用字母、数字和 `-`。 |
+| `contributes.commands[].keybinding` | | 第 2 版：全局快捷键，见下文的「快捷键与 `when`」。 |
+| `contributes.commands[].when` | | 第 2 版：快捷键在什么情况下生效，最长 200 个字符。 |
+| `contributes.menus` | | 第 2 版：把命令放进岛屿的菜单，见下文的「待办右键菜单」。 |
 | `contributes.settings` | | 最多 20 个设置项，由岛屿画在插件自己的设置页上并负责保存，见下文的"设置页"。 |
+
+第 1 版的清单里如果写了 `keybinding`、`when` 或 `menus`，岛屿会忽略它们，不会报错。
+
+### 快捷键与 `when`
+
+```json
+{ "id": "start", "title": { "zh-CN": "开始番茄钟", "en": "Start pomodoro" },
+  "keybinding": "Ctrl+Alt+P", "when": "island.expanded && island.page == todo" }
+```
+
+- `keybinding` 是一个或多个修饰键（`Ctrl`、`Alt`、`Shift`、`Win`）加一个键：字母、数字、`F1`–`F24`、`Esc`、`Tab`、`Enter`、`Space`、方向键、`Home` / `End`、`PageUp` / `PageDown`、`Insert` / `Delete`、`Backspace`。大小写和空格不限，岛屿会规范成 `Ctrl+Alt+P` 这样的写法；写不出合法组合时，清单无效。
+- 只有运行中的插件才会注册快捷键。快捷键已经被其他程序、岛屿自己或另一个插件占用时，注册失败，插件卡片上会提示"快捷键已被其他程序占用"，先注册的一方不受影响。
+- 按下快捷键时，岛屿先求值 `when`，结果为真才给插件发送 `command { id }`，和点了设置页上的按钮一样。
+- `when` 可用的名称：`island.expanded`（岛屿是否展开）、`todos.hasActive`（是否有正在进行的待办）、`island.page`（当前页面：`todo`、`music`、`clipboard`、`shelf`、`qq`、`agents`、`translation`）。用 `==` / `!=` 比较（值可以加引号），用 `&&`、`||`、`!` 和括号组合，`&&` 比 `||` 优先。不认识的名称当作假；写错语法的 `when` 永远不生效；省略或为空表示总是生效。
+- `when` 由岛屿求值（`src/features/plugins/when.ts`），不会执行插件代码。
+
+### 待办右键菜单
+
+```json
+"menus": { "todo/context": [{ "command": "push-todo" }] }
+```
+
+`todo/context` 是待办条目的右键菜单，最多列 4 个命令，每个都必须是本插件 `contributes.commands` 里的命令，且不能重复。用户右键一条待办时，菜单里会列出所有运行中插件的条目（显示命令标题和插件名）；点了以后插件收到 `command { id, args: { todoId } }`。需要待办内容时，用 `todos.list` 查（要 `todos:read` 权限）。没有插件提供条目时，右键行为和以前一样。
 
 ### 设置页
 
@@ -116,13 +147,18 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 ## 权限
 
-| 权限 | 允许调用的方法 |
-|---|---|
-| `todos:read` | `todos.list` |
-| `todos:write` | `todos.add`、`todos.update`、`todos.remove` |
-| `notes:read` | `note.get` |
-| `notes:write` | `note.set` |
-| `agent-status:write` | `agentStatus.report`、`agentStatus.clear` |
+| 权限 | 版本 | 允许的方法 | 允许订阅的事件 |
+|---|---|---|---|
+| `todos:read` | 1 | `todos.list` | `todos.changed` |
+| `todos:write` | 1 | `todos.add`、`todos.update`、`todos.remove` | |
+| `notes:read` | 1 | `note.get` | `note.changed` |
+| `notes:write` | 1 | `note.set` | |
+| `agent-status:read` | 2 | | `agentStatus.changed` |
+| `agent-status:write` | 1 | `agentStatus.report`、`agentStatus.clear` | |
+| `island:notify` | 2 | `island.notify` | |
+| `secrets` | 2 | `secrets.get`、`secrets.set`、`secrets.delete` | |
+
+不需要权限的方法：`host.info`、`settings.get`、`ui.setInfo`，以及第 2 版的 `events.subscribe`、`events.unsubscribe`、`storage.*`。事件 `island.expanded`、`island.collapsed`、`app.locale.changed` 也不需要权限。
 
 用户启用插件时，会授予清单里列出的全部权限。新版本如果要求更多权限，插件会暂停，直到用户重新授权。
 
@@ -135,36 +171,96 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 - **stdout** 只能输出协议消息。
 - **stderr** 的每一行都会进入插件日志（设置页里最多保留 200 行）。
 
+### API 版本
+
+清单的 `apiVersion` 是插件按哪一版 API 编写的。岛屿支持第 1 版和第 2 版，`initialize`、`host.info` 和环境变量 `FOCUSD_PLUGIN_API_VERSION` 里的 `apiVersion` 就是清单里写的版本。
+
+- `initialize.capabilities` 列出岛屿为这个插件提供的能力。第 2 版插件收到 `["events", "notifications", "storage", "secrets"]`，第 1 版插件收到空列表。以后的岛屿可能增加能力；插件应先查这个列表，再调用对应的方法。
+
+| 能力 | 含义 |
+|---|---|
+| `events` | `events.subscribe` / `events.unsubscribe` 和 `event` 通知 |
+| `notifications` | `island.notify` 和 `notification.action` 通知 |
+| `storage` | `storage.get` / `set` / `delete` / `keys` |
+| `secrets` | `secrets.get` / `set` / `delete` |
+
+- **第 1 版插件的行为不变**：`events.*`、`storage.*` 对它们仍然返回"方法不存在"；清单里的 `keybinding`、`when`、`menus` 被忽略。新权限（`island:notify`、`secrets` 等）在第 1 版清单里也能申请，申请了就能调用对应方法。
+- 兼容规则：同一版本内只做新增（新方法、新的可选参数和结果字段、新事件）。插件要忽略不认识的字段和通知。
+
 ### 岛屿发给插件的通知
 
-| 方法 | 参数 | 时机 |
-|---|---|---|
-| `initialize` | `{ apiVersion, appVersion, pluginId, dataDir, permissions, settings }` | 进程启动后立即发送 |
-| `command` | `{ id }` | 用户点击了 `contributes.commands` 中的某个按钮 |
-| `settings.changed` | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
-| `shutdown` | `{}` | 插件被停用、重新加载或删除时发送；随后 stdin 会关闭，2 秒后进程被结束 |
+| 方法 | 版本 | 参数 | 时机 |
+|---|---|---|---|
+| `initialize` | 1 | `{ apiVersion, capabilities, appVersion, pluginId, dataDir, permissions, settings }` | 进程启动后立即发送；`capabilities` 见上文 |
+| `command` | 1 | `{ id, args? }` | 用户点击了 `contributes.commands` 中的某个按钮，或按下了它的快捷键（第 2 版），参数为 `{ id }`；在待办右键菜单里选了它（第 2 版），参数为 `{ id, args: { todoId } }` |
+| `settings.changed` | 1 | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
+| `event` | 2 | `{ name, payload }` | 订阅的事件发生了，见下文的「事件」 |
+| `notification.action` | 2 | `{ id }` | 用户点了 `island.notify` 消息上的某个按钮 |
+| `shutdown` | 1 | `{}` | 插件被停用、重新加载或删除时发送；随后 stdin 会关闭，2 秒后进程被结束 |
 
 **stdin 关闭时插件必须退出。** 岛屿自己退出时也会关闭 stdin。
 
 ### 插件调用的方法（请求）
 
-| 方法 | 参数 | 结果 |
-|---|---|---|
-| `host.info` | — | 与 `initialize` 的参数相同 |
-| `settings.get` | — | 全部设置的当前值（不需要权限） |
-| `ui.setInfo` | `{ items: [{ label, value, copy?, secret? }] }` | `{}`。替换设置页上的"运行信息"，最多 10 项，`value` 最长 500 个字符；`copy` 表示显示"复制"按钮，`secret` 表示默认隐藏（适合令牌）；传空列表表示清空。插件停止后信息会自动清空。不需要权限。 |
-| `todos.list` | — | `{ date, todos, scheduled, activeTodoId }` |
-| `todos.add` | `{ title, date? }` | 新增的待办；`date` 晚于今天时加入"以后"列表 |
-| `todos.update` | `{ id, title?, completed? }` | 修改后的待办 |
-| `todos.remove` | `{ id }` | `{ id }` |
-| `note.get` | — | `{ date, note }` |
-| `note.set` | `{ note }` 或 `{ append }` | `{ date, note }` |
-| `agentStatus.report` | `{ source, phase, name?, title?, taskId? }` | 保存后的状态，`id` 为 `<插件 id>/<source>` |
-| `agentStatus.clear` | `{ source? }` | `{ cleared }`；省略 `source` 时清除这个插件的全部来源 |
+| 方法 | 版本 | 权限 | 参数 | 结果 |
+|---|---|---|---|---|
+| `host.info` | 1 | — | — | 与 `initialize` 的参数相同 |
+| `settings.get` | 1 | — | — | 全部设置的当前值 |
+| `ui.setInfo` | 1 | — | `{ items: [{ label, value, copy?, secret? }] }` | `{}`。替换设置页上的"运行信息"，最多 10 项，`value` 最长 500 个字符；`copy` 表示显示"复制"按钮，`secret` 表示默认隐藏（适合令牌）；传空列表表示清空。插件停止后信息会自动清空。 |
+| `events.subscribe` | 2 | — | `{ events: [名称] }`，一次最多 16 个 | `{ events }`：现在订阅的全部事件（已排序）。每个事件都要有对应权限；只要有一个不认识或没权限，整次请求失败，一个也不订阅。 |
+| `events.unsubscribe` | 2 | — | `{ events: [名称] }` | `{ events }` |
+| `storage.get` | 2 | — | `{ key }`（1–128 个字符） | `{ value }`，没有时为 `null` |
+| `storage.set` | 2 | — | `{ key, value }`，`value` 是任意 JSON | `{}`。单个值序列化后不超过 64 KB，整个插件不超过 1 MB，超过返回状态 413 |
+| `storage.delete` | 2 | — | `{ key }` | `{ deleted }` |
+| `storage.keys` | 2 | — | — | `{ keys }` |
+| `todos.list` | 1 | `todos:read` | — | `{ date, todos, scheduled, activeTodoId }` |
+| `todos.add` | 1 | `todos:write` | `{ title, date? }` | 新增的待办；`date` 晚于今天时加入"以后"列表 |
+| `todos.update` | 1 | `todos:write` | `{ id, title?, completed? }` | 修改后的待办 |
+| `todos.remove` | 1 | `todos:write` | `{ id }` | `{ id }` |
+| `note.get` | 1 | `notes:read` | — | `{ date, note }` |
+| `note.set` | 1 | `notes:write` | `{ note }` 或 `{ append }` | `{ date, note }` |
+| `agentStatus.report` | 1 | `agent-status:write` | `{ source, phase, name?, title?, taskId? }` | 保存后的状态，`id` 为 `<插件 id>/<source>` |
+| `agentStatus.clear` | 1 | `agent-status:write` | `{ source? }` | `{ cleared }`；省略 `source` 时清除这个插件的全部来源 |
+| `island.notify` | 2 | `island:notify` | `{ title, body?, durationMs?, actions? }` | `{ muted }`，见下文的「岛上提示」 |
+| `secrets.get` | 2 | `secrets` | `{ key }` | `{ value }`，没有时为 `null` |
+| `secrets.set` | 2 | `secrets` | `{ key, value }` | `{}` |
+| `secrets.delete` | 2 | `secrets` | `{ key }` | `{ deleted }` |
 
-这些方法和 [本地接口](../local-api.md) 的 HTTP 接口一一对应，参数和结果完全相同。`agentStatus.*` 的字段规则见本地接口文档的“AI Agent 状态”一节；`name` 省略时默认使用插件清单里的英文名称。插件停止、停用或出错退出时，它上报的来源会被自动清除。
+`todos.*`、`note.*`、`agentStatus.*` 和 [本地接口](../local-api.md) 的 HTTP 接口一一对应，参数和结果完全相同。`agentStatus.*` 的字段规则见本地接口文档的“AI Agent 状态”一节；`name` 省略时默认使用插件清单里的英文名称。插件停止、停用或出错退出时，它上报的来源会被自动清除。
 
 插件还可以发送通知 `log`，参数为 `{ message }`，内容会写入日志。
+
+### 事件（第 2 版）
+
+插件用 `events.subscribe` 订阅，岛屿用通知 `event { name, payload }` 推送。不用再定时轮询。
+
+| 事件 | 权限 | `payload` | 时机 |
+|---|---|---|---|
+| `todos.changed` | `todos:read` | `{ date }` | 今天的待办、"以后"列表或正在进行的待办变了，或者换了一天。不带待办内容，需要时调 `todos.list` |
+| `note.changed` | `notes:read` | `{ date }` | 每日笔记变了，需要时调 `note.get` |
+| `agentStatus.changed` | `agent-status:read` | `{ agents: [{ id, name, phase, title? }] }` | AI 代理状态变了 |
+| `island.expanded` | — | `{}` | 岛屿展开 |
+| `island.collapsed` | — | `{}` | 岛屿收起 |
+| `app.locale.changed` | — | `{ locale }` | 界面语言变了，`locale` 为 `zh-CN` 或 `en` |
+
+- 同一个事件 200 毫秒内最多发一次，带最后一次的 `payload`。连续输入时不会刷屏。
+- 订阅只在这次进程里有效：插件重启后要重新订阅，一般在收到 `initialize` 后马上订阅。
+- 订阅之前发生的变化不会补发；插件启动时自己读一次当前状态。
+
+### 岛上提示（第 2 版）
+
+`island.notify { title, body?, durationMs?, actions? }` 在岛屿上显示一条消息，和 QQ、邮件消息一样出现在折叠条的消息预览里，来源显示为插件名。
+
+- `title` 1–80 个字符，`body` 最长 200 个字符。`durationMs` 默认 5000，限制在 2000–15000 之间。
+- `actions` 最多 2 个按钮：`{ id, title }`，`id` 为 1–32 个字母、数字或 `-`，`title` 最长 16 个字符。用户点了按钮，插件收到 `notification.action { id }`。
+- 每个插件每分钟最多 6 条，超过返回 `-32000`、状态 429。
+- 用户可以在插件设置页关掉这个插件的提示。关掉后调用仍然成功，但什么也不显示，结果是 `{ muted: true }`。
+
+### 存储与秘密（第 2 版）
+
+- `storage.*` 由岛屿保存在 `plugins-data/<id>/storage.json`，不需要权限，适合保存设置以外的小量数据（对应 VS Code 的 `globalState`）。写入是原子的，岛屿崩溃也不会留下半个文件。
+- `secrets.*` 保存在 Windows 凭据管理器中（服务名 `com.focusd.island.plugin.<id>`），需要 `secrets` 权限，适合令牌和密码。`key` 为 1–64 个字母、数字、`.`、`_`、`-`；`value` 是最长 1024 个字符的字符串；每个插件最多 32 个，超过返回状态 413。
+- 卸载插件时，存储和秘密都会保留，重新安装后还能读到。插件设置页的 **清除数据** 会删除 `plugins-data/<id>/` 整个目录和这个插件的全部秘密，运行中的插件会被重启。
 
 ### 错误码
 
@@ -172,9 +268,9 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 |---|---|
 | `-32700` | 不是合法的 JSON |
 | `-32600` | 不是合法的 JSON-RPC 消息（缺少 `"jsonrpc": "2.0"`、`method` 或 `id` 类型不对） |
-| `-32601` | 方法不存在 |
-| `-32001` | 没有对应的权限 |
-| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码（400 参数错误、404 不存在、429 同时发送的请求超过 16 个、504 岛屿没有及时响应） |
+| `-32601` | 方法不存在（第 1 版插件调用第 2 版才有的 `events.*`、`storage.*` 也是这个错误） |
+| `-32001` | 没有对应的权限（包括订阅没有权限的事件） |
+| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码：400 参数错误、404 不存在、413 太大（存储或秘密超出上限）、429 请求太多（同时发送的请求超过 16 个，或 `island.notify` 超过每分钟 6 条）、500 岛屿做不到（例如写文件或凭据管理器失败）、504 岛屿没有及时响应 |
 
 ### 环境变量
 
@@ -182,7 +278,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 |---|---|
 | `FOCUSD_PLUGIN_ID` | 插件 id |
 | `FOCUSD_PLUGIN_DATA_DIR` | 插件私有的数据目录 `%APPDATA%\com.focusd.island\plugins-data\<id>\`，已经创建好。插件的数据请存在这里，不要写进插件目录，否则更新插件时会被覆盖。 |
-| `FOCUSD_PLUGIN_API_VERSION` | `1` |
+| `FOCUSD_PLUGIN_API_VERSION` | 清单里的 `apiVersion`（`1` 或 `2`） |
 
 工作目录是插件文件夹，进程不会显示控制台窗口。
 
@@ -280,7 +376,7 @@ plugin.onCommand("sync-now", async () => {
 4. 清单的 `id` 和 `version` 与索引一致。
 5. 清单申请的权限没有超出索引里列出的权限。
 
-全部通过后才会替换旧版本。新安装的插件默认不启用；更新时保留启用状态，但如果新版本需要更多权限，插件会暂停，等待用户重新授权。卸载插件会删除插件目录和授权记录，但保留 `plugins-data/<id>/` 中的数据。
+全部通过后才会替换旧版本。新安装的插件默认不启用；更新时保留启用状态，但如果新版本需要更多权限，插件会暂停，等待用户重新授权。卸载插件会删除插件目录和授权记录，但保留 `plugins-data/<id>/` 中的数据和凭据管理器里的秘密。
 
 ## 调试
 
