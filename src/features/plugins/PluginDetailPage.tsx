@@ -2,8 +2,9 @@ import { useState } from "react";
 import { ArrowLeft, Eraser, Play } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
-import type { PluginInfo } from "./api";
+import type { PluginInfo, SensitivePermission } from "./api";
 import { PluginInfoList } from "./PluginInfoList";
+import { PluginSensitiveSection } from "./PluginSensitiveSection";
 import { PluginSettingField } from "./PluginSettingField";
 import "./PluginDetailPage.css";
 
@@ -16,6 +17,7 @@ export function PluginDetailPage({
   onRunCommand,
   onNotificationsMutedChange,
   onClearData,
+  onRevokeSensitive,
 }: {
   plugin: PluginInfo;
   busy: boolean;
@@ -24,6 +26,7 @@ export function PluginDetailPage({
   onRunCommand: (command: string) => void;
   onNotificationsMutedChange: (muted: boolean) => void;
   onClearData: () => void;
+  onRevokeSensitive: (permission: SensitivePermission) => void;
 }) {
   const t = useTranslation();
   const { locale } = useLocale();
@@ -96,6 +99,8 @@ export function PluginDetailPage({
           />
         </section>
       ) : null}
+
+      <PluginSensitiveSection plugin={plugin} busy={busy} onRevoke={onRevokeSensitive} />
 
       {plugin.commands.length > 0 || plugin.hasProcess ? (
         <section className="settings-section plugins-panel">

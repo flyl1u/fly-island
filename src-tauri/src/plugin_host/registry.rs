@@ -4,7 +4,7 @@
 
 use serde::Serialize;
 use serde_json::{Map, Value};
-use std::{fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use super::{
     app_version, builtin,
@@ -14,6 +14,7 @@ use super::{
     market,
     permissions::missing_permissions,
     runtime::{self, RuntimeStatus},
+    sensitive::SensitiveChoice,
     settings::{self, InfoItem, SettingSpec},
     store::PluginsState,
     InstalledPlugin, PluginHost,
@@ -53,6 +54,8 @@ pub struct PluginInfo {
     notifications_muted: bool,
     /// Command shortcuts another app or plugin already uses.
     keybinding_conflicts: Vec<String>,
+    /// Remembered answers for sensitive permissions, which the user can revoke.
+    sensitive: BTreeMap<String, SensitiveChoice>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -172,6 +175,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 info: runtime.info,
                 notifications_muted: grant.notifications_muted,
                 keybinding_conflicts: keybindings::conflicts(&plugin.folder),
+                sensitive: grant.sensitive.clone(),
             };
             match &plugin.manifest {
                 Ok(manifest) => {

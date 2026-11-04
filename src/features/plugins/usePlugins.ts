@@ -4,6 +4,7 @@ import {
   listPlugins,
   openPluginsFolder,
   reloadPlugins,
+  revokePluginSensitivePermission,
   runPluginCommand,
   setPluginEnabled,
   setPluginNotificationsMuted,
@@ -11,6 +12,7 @@ import {
   setPluginsAllowed,
   uninstallPlugin,
   type PluginsSnapshot,
+  type SensitivePermission,
 } from "./api";
 
 // Status and log lines change in the background; refreshed while the page is open.
@@ -62,6 +64,10 @@ export function usePlugins() {
     runCommand: useCallback((id: string, command: string) => void run(() => runPluginCommand(id, command)), [run]),
     uninstall: useCallback((id: string) => void run(() => uninstallPlugin(id)), [run]),
     clearData: useCallback((id: string) => void run(() => clearPluginData(id)), [run]),
+    revokeSensitive: useCallback(
+      (id: string, permission: SensitivePermission) => void run(() => revokePluginSensitivePermission(id, permission)),
+      [run],
+    ),
     setNotificationsMuted: useCallback(
       (id: string, muted: boolean) => void run(() => setPluginNotificationsMuted(id, muted)),
       [run],

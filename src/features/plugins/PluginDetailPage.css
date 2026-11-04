@@ -67,3 +67,32 @@
 .plugin-setting__input:focus {
   border-color: rgba(116, 214, 255, 0.58);
 }
+
+.plugin-detail__sensitive {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-detail__sensitive li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugin-detail__sensitive span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-detail__sensitive em {
+  flex: 0 0 auto;
+  font-style: normal;
+  opacity: 0.7;
+}

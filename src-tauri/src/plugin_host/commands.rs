@@ -7,7 +7,7 @@ use std::fs;
 use super::{
     app_version, builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
-    host, lock, market, menus, notify,
+    host, lock, market, menus, notify, sensitive,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings, storage,
 };
@@ -246,6 +246,23 @@ pub fn list_plugin_menu(menu: String) -> Result<Vec<menus::PluginMenuEntry>, Str
 #[tauri::command]
 pub fn run_plugin_menu_command(id: String, menu: String, command: String, todo_id: String) -> Result<(), String> {
     menus::run(&id, &menu, &command, &todo_id)
+}
+
+/// The user's answer to a sensitive-permission prompt on the island:
+/// "allow", "deny" or "once".
+#[tauri::command]
+pub fn answer_plugin_permission(request_id: u64, answer: String) -> Result<(), String> {
+    let answer = sensitive::Answer::parse(&answer).ok_or("Unknown answer.")?;
+    sensitive::answer(request_id, answer);
+    Ok(())
+}
+
+/// Forgets the user's answer for one sensitive permission; the plugin's next
+/// call asks again.
+#[tauri::command]
+pub fn revoke_plugin_sensitive_permission(id: String, permission: String) -> Result<PluginsSnapshot, String> {
+    sensitive::revoke(&id, &permission)?;
+    snapshot()
 }
 
 /// Turns a plugin's `island.notify` messages off or back on.

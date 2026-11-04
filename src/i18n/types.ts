@@ -689,6 +689,20 @@ export type Translations = {
       permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets", string>;
       needsApproval: string;
       keybindingConflict: (shortcuts: string) => string;
+      /** Sensitive permissions: the island asks before the first use. */
+      sensitive: {
+        prompt: (plugin: string, action: string) => string;
+        allow: string;
+        once: string;
+        deny: string;
+        action: Record<"clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write", string>;
+        title: string;
+        hint: string;
+        allowed: string;
+        denied: string;
+        revoke: string;
+        none: string;
+      };
       notAllowed: string;
       describedOnly: string;
       invalid: string;

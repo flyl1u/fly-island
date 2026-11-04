@@ -4,6 +4,8 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, path::Path};
 
+use super::sensitive::SensitiveChoice;
+
 pub(super) const STATE_FILE_NAME: &str = "plugins.json";
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +31,9 @@ pub(super) struct PluginGrant {
     /// The user turned off this plugin's `island.notify` messages.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub notifications_muted: bool,
+    /// The user's remembered answers for sensitive permissions (sensitive.rs).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub sensitive: BTreeMap<String, SensitiveChoice>,
 }
 
 /// A missing or broken file reads as "nothing allowed".

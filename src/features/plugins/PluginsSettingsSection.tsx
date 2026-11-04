@@ -21,6 +21,7 @@ export function PluginsSettingsSection() {
     setEnabled,
     setSetting,
     setNotificationsMuted,
+    revokeSensitive,
     clearData,
     reload,
     openFolder,
@@ -42,6 +43,7 @@ export function PluginsSettingsSection() {
           onRunCommand={(command) => runCommand(openPlugin.id, command)}
           onNotificationsMutedChange={(muted) => setNotificationsMuted(openPlugin.id, muted)}
           onClearData={() => clearData(openPlugin.id)}
+          onRevokeSensitive={(permission) => revokeSensitive(openPlugin.id, permission)}
         />
         {error ? <p className="plugin-card__error">{error}</p> : null}
       </>

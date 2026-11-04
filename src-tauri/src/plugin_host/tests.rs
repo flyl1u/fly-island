@@ -567,3 +567,45 @@ fn todo_menus_must_name_own_commands_and_are_dropped_for_version_1() {
     let twice = parse(json!({ "apiVersion": 2, "contributes": contributes(json!([{ "command": "go" }, { "command": "go" }])) }));
     assert!(twice.expect_err("duplicate").contains("twice"));
 }
+
+mod sensitive_tests {
+    use super::super::sensitive::{decide, is_sensitive, outcome, Answer, Decision, Outcome, SensitiveChoice};
+    use super::super::store::PluginsState;
+
+    #[test]
+    fn remembered_answers_decide_and_unknown_ones_ask() {
+        assert_eq!(decide(Some(SensitiveChoice::Allowed), false), Decision::Allow);
+        assert_eq!(decide(Some(SensitiveChoice::Denied), true), Decision::Deny);
+        assert_eq!(decide(None, true), Decision::Allow);
+        assert_eq!(decide(None, false), Decision::Ask);
+    }
+
+    #[test]
+    fn answers_are_remembered_except_allow_once_and_no_answer() {
+        assert_eq!(outcome(Some(Answer::Allow)), Outcome { allowed: true, remember: Some(SensitiveChoice::Allowed), this_run: false });
+        assert_eq!(outcome(Some(Answer::Deny)), Outcome { allowed: false, remember: Some(SensitiveChoice::Denied), this_run: false });
+        assert_eq!(outcome(Some(Answer::AllowOnce)), Outcome { allowed: true, remember: None, this_run: true });
+        // Timing out denies this call only; the next one asks again.
+        assert_eq!(outcome(None), Outcome { allowed: false, remember: None, this_run: false });
+        assert_eq!(Answer::parse("once"), Some(Answer::AllowOnce));
+        assert_eq!(Answer::parse("yes"), None);
+    }
+
+    #[test]
+    fn only_the_data_permissions_are_sensitive() {
+        assert!(is_sensitive("clipboard:read") && is_sensitive("shelf:write"));
+        assert!(!is_sensitive("todos:read") && !is_sensitive("media:control"));
+    }
+
+    #[test]
+    fn plugins_json_without_answers_still_reads_and_new_answers_round_trip() {
+        let old: PluginsState = serde_json::from_str(r#"{"allowThirdParty":true,"plugins":{"a.b":{"enabled":true,"grantedPermissions":["todos:read"]}}}"#).expect("old file");
+        assert!(old.plugins["a.b"].sensitive.is_empty());
+        assert!(!serde_json::to_string(&old).expect("json").contains("sensitive"));
+        let mut state = old.clone();
+        state.plugins.get_mut("a.b").expect("grant").sensitive.insert("clipboard:read".into(), SensitiveChoice::Denied);
+        let text = serde_json::to_string(&state).expect("json");
+        assert!(text.contains(r#""sensitive":{"clipboard:read":"denied"}"#), "{text}");
+        assert_eq!(serde_json::from_str::<PluginsState>(&text).expect("read back"), state);
+    }
+}

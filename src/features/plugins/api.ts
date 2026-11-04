@@ -79,7 +79,16 @@ export type PluginInfo = {
   notificationsMuted: boolean;
   /** Command shortcuts that could not be registered because something else uses them. */
   keybindingConflicts: string[];
+  /** Remembered answers for sensitive permissions; the user can revoke them. */
+  sensitive: Partial<Record<SensitivePermission, PluginSensitiveChoice>>;
 };
+
+// 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。
+export const SENSITIVE_PERMISSIONS = ["clipboard:read", "messages:read", "media:read", "shelf:read", "shelf:write"] as const;
+export type SensitivePermission = (typeof SENSITIVE_PERMISSIONS)[number];
+export type PluginSensitiveChoice = "allowed" | "denied";
+export const isSensitivePermission = (name: string): name is SensitivePermission =>
+  (SENSITIVE_PERMISSIONS as readonly string[]).includes(name);
 
 export type PluginsSnapshot = {
   allowThirdParty: boolean;
@@ -213,6 +222,33 @@ export type PluginKeybindingPress = { pluginId: string; command: string; when: s
 /** Calls `onPress` when a plugin command's global shortcut is pressed; resolves to the unlisten function. */
 export function listenPluginKeybindings(onPress: (press: PluginKeybindingPress) => void) {
   return listen<PluginKeybindingPress>(PLUGIN_KEYBINDING_EVENT, (event) => onPress(event.payload));
+}
+
+// 与 src-tauri/src/plugin_host/sensitive.rs 中的 REQUEST_EVENT 对应。
+const PLUGIN_PERMISSION_REQUEST_EVENT = "plugin-permission-request";
+export type PluginPermissionRequest = {
+  requestId: number;
+  pluginId: string;
+  /** Null if the plugin was removed in the meantime. */
+  pluginName: LocalizedText | null;
+  permission: SensitivePermission;
+  /** The plugin's call is refused if there is no answer within this time. */
+  timeoutMs: number;
+};
+export type PluginPermissionAnswer = "allow" | "deny" | "once";
+
+/** Calls `onRequest` when a plugin first uses a sensitive permission; resolves to the unlisten function. */
+export function listenPluginPermissionRequests(onRequest: (request: PluginPermissionRequest) => void) {
+  return listen<PluginPermissionRequest>(PLUGIN_PERMISSION_REQUEST_EVENT, (event) => onRequest(event.payload));
+}
+
+export function answerPluginPermission(requestId: number, answer: PluginPermissionAnswer) {
+  return invoke<void>("answer_plugin_permission", { requestId, answer });
+}
+
+/** Forgets the answer for one sensitive permission; the plugin's next use asks again. */
+export function revokePluginSensitivePermission(id: string, permission: SensitivePermission) {
+  return invoke<PluginsSnapshot>("revoke_plugin_sensitive_permission", { id, permission });
 }
 
 export function runPluginNotificationAction(id: string, action: string) {

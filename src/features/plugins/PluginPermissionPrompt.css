@@ -1,0 +1,58 @@
+/* A plugin asks for a sensitive permission: one row over the top of the island,
+   the same height as the collapsed bar, so it fits collapsed and expanded. */
+.plugin-permission-prompt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 0 14px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(20, 22, 26, 0.97);
+  border-radius: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plugin-permission-prompt > svg {
+  flex: 0 0 auto;
+  color: rgba(255, 210, 120, 0.95);
+}
+
+.plugin-permission-prompt__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-permission-prompt__button {
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 8px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.1);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.plugin-permission-prompt__button:hover,
+.plugin-permission-prompt__button:focus-visible {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.plugin-permission-prompt__button--allow {
+  color: rgba(190, 240, 225, 0.95);
+  background: rgba(110, 231, 200, 0.16);
+}

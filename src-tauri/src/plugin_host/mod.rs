@@ -11,6 +11,7 @@
 //! - menus.rs: plugin commands in island menus (`contributes.menus`)
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
+//! - sensitive.rs: asking the user before a sensitive permission is first used
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 
 mod builtin;
@@ -26,6 +27,7 @@ mod permissions;
 mod registry;
 mod rpc;
 mod runtime;
+mod sensitive;
 mod settings;
 mod signature;
 mod storage;

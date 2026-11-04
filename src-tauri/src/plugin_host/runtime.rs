@@ -191,6 +191,7 @@ fn supervise(context: &Arc<Context>) {
             }
         };
         lock(&context.subscriptions).clear();
+        super::sensitive::forget_this_run(&context.spec.plugin_id);
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
         *lock(&context.stdin) = child.stdin.take();

@@ -61,6 +61,8 @@ type IslandShellProps = {
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;
   pageDigitModifiers: string;
+  /** Shown over the top row in both modes, e.g. a plugin permission question. */
+  overlay?: ReactNode;
   children: ReactNode;
 };
 
@@ -101,6 +103,7 @@ export function IslandShell({
   onReveal,
   onPageChange,
   pageDigitModifiers,
+  overlay,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -224,6 +227,7 @@ export function IslandShell({
           />
           <div ref={contentRef} className="island__content">{children}</div>
         </div>
+        {overlay}
       </div>
     </section>
   );

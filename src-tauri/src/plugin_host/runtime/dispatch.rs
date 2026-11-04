@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    notify, storage,
+    notify, sensitive, storage,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -60,6 +60,10 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         let message = format!("The plugin was not given the \"{permission}\" permission.");
         return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
     }
+    if sensitive::is_sensitive(permission) && !sensitive::check(&context.app, &context.spec.plugin_id, permission) {
+        let message = format!("The user did not allow the \"{permission}\" permission.");
+        return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
+    }
     let owner = &context.spec.plugin_id;
     let result = match name {
         "agentStatus.report" => agent_status::report_external_status(owner, &context.spec.display_name, &params),
@@ -100,6 +104,10 @@ fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: 
         if let Some(permission) = permission.filter(|_| subscribe) {
             if !context.spec.granted.iter().any(|granted| granted == permission) {
                 let message = format!("The \"{name}\" event needs the \"{permission}\" permission.");
+                return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
+            }
+            if sensitive::is_sensitive(permission) && !sensitive::check(&context.app, &context.spec.plugin_id, permission) {
+                let message = format!("The user did not allow the \"{permission}\" permission.");
                 return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
             }
         }

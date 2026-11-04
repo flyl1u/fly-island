@@ -121,6 +121,8 @@ pub fn run() {
             plugin_host::clear_plugin_data,
             plugin_host::list_plugin_menu,
             plugin_host::run_plugin_menu_command,
+            plugin_host::answer_plugin_permission,
+            plugin_host::revoke_plugin_sensitive_permission,
             qq_mail::get_qq_mail_state,
             qq_mail::connect_qq_mail,
             qq_mail::set_qq_mail_enabled,

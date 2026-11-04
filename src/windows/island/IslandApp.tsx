@@ -3,6 +3,8 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useQQMail } from "../../features/messages/qq-mail/QQMail";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
+import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
+import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
@@ -79,6 +81,7 @@ export function IslandApp() {
   const wechatReminders = useWeChatReminders(canPreviewMessages);
   const qqMail = useQQMail(canPreviewMessages);
   const pluginNotifications = usePluginNotifications(canPreviewMessages);
+  const permissionPrompts = usePluginPermissionPrompts();
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
   );
@@ -147,6 +150,8 @@ export function IslandApp() {
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   useIdleTuck(settings.autoTuck && !hasMessagePreview && !translationPeek, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
   useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
+  // A plugin waits for this answer, so it is shown even when tucked away.
+  useRevealOnMessage(permissionPrompts.current !== null, isTucked, revealIsland);
   useRevealOnMessage(Boolean(translationPeek), isTucked && settings.revealOnMessage, revealIsland);
   useTuckPeek(isPeeking, endPeek);
 
@@ -306,6 +311,7 @@ export function IslandApp() {
         onReveal={peekIsland}
         onPageChange={setPage}
         pageDigitModifiers={settings.pageDigitModifiers}
+        overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
       >
         {page === "qq" && (
           <div className="message-panel">
