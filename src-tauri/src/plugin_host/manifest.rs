@@ -22,6 +22,13 @@ pub struct LocalizedText {
 }
 
 impl LocalizedText {
+    pub(super) fn new(zh_cn: &str, en: &str) -> Self {
+        Self {
+            zh_cn: zh_cn.to_string(),
+            en: en.to_string(),
+        }
+    }
+
     pub(super) fn en(&self) -> &str {
         &self.en
     }
@@ -42,6 +49,8 @@ pub(super) enum PluginRuntime {
     },
     /// Nothing to run; the manifest only describes the plugin.
     None,
+    /// Compiled into the island (builtin.rs); refused in plugins from disk.
+    Builtin,
 }
 
 /// A button the settings page shows for the plugin. Mirrored by `PluginCommand`
@@ -98,6 +107,19 @@ fn empty_text() -> LocalizedText {
 
 /// Parses and checks a manifest found in the folder `folder_name`.
 pub(super) fn parse_manifest(text: &str, folder_name: &str, app_version: &str) -> Result<PluginManifest, String> {
+    let manifest = parse_any_manifest(text, folder_name, app_version)?;
+    if manifest.runtime == PluginRuntime::Builtin {
+        return Err("Only plugins that come with FocuSD Island can use runtime \"builtin\".".into());
+    }
+    Ok(manifest)
+}
+
+/// Parses a manifest compiled into the island (builtin.rs).
+pub(super) fn parse_builtin_manifest(text: &str, id: &str, app_version: &str) -> Result<PluginManifest, String> {
+    parse_any_manifest(text, id, app_version)
+}
+
+fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Result<PluginManifest, String> {
     let mut manifest: PluginManifest = serde_json::from_str(text)
         .map_err(|error| format!("{MANIFEST_FILE_NAME} is not valid: {error}"))?;
 
@@ -231,6 +253,7 @@ pub(super) fn launch_kind(command: &str) -> Result<LaunchKind, String> {
 pub(super) fn runtime_requirement(runtime: &PluginRuntime) -> &'static str {
     match runtime {
         PluginRuntime::None => "none",
+        PluginRuntime::Builtin => "builtin",
         PluginRuntime::Process { command, .. } => match launch_kind(command) {
             Ok(LaunchKind::Executable) => "exe",
             Ok(LaunchKind::PowerShell) => "powershell",

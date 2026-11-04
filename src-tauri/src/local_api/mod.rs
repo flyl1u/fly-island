@@ -1,6 +1,8 @@
 //! Local API: lets scripts and other programs read and change todos and the
-//! daily note over HTTP on 127.0.0.1. Off by default; the port and token are
-//! saved in `local-api.json` so scripts can find them. See docs/local-api.md.
+//! daily note over HTTP on 127.0.0.1. It is the built-in plugin
+//! `focusd.local-api` (plugin_host/builtin.rs), which switches it on and off;
+//! the port and token stay in `local-api.json` so scripts can find them.
+//! See docs/local-api.md.
 
 mod bridge;
 mod config;
@@ -9,10 +11,9 @@ mod server;
 #[cfg(test)]
 mod tests;
 
-use serde::Serialize;
 use std::{
     path::PathBuf,
-    sync::{Mutex, OnceLock, PoisonError},
+    sync::{Mutex, MutexGuard, OnceLock, PoisonError},
 };
 use tauri::{AppHandle, Manager};
 
@@ -25,21 +26,15 @@ struct LocalApiService {
     app: AppHandle,
     path: PathBuf,
     config: Mutex<LocalApiConfig>,
-    /// Why the server is not running although it is switched on.
-    error: Mutex<Option<String>>,
+    /// The switches as saved before the API became a plugin, read once at start.
+    legacy: (bool, bool),
 }
 
-/// Mirrored by `LocalApiState` in src/features/local-api/api.ts.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LocalApiState {
-    enabled: bool,
-    allow_write: bool,
-    running: bool,
-    url: String,
-    token: String,
-    config_path: String,
-    error: Option<String>,
+/// What the local API's plugin page shows.
+pub(crate) struct LocalApiStatus {
+    pub url: String,
+    pub token: String,
+    pub config_path: String,
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {
@@ -52,16 +47,12 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     if changed {
         save_config(&path, &config)?;
     }
-    let enabled = config.enabled;
     let _ = SERVICE.set(LocalApiService {
         app: app.clone(),
         path,
+        legacy: (config.enabled, config.allow_write),
         config: Mutex::new(config),
-        error: Mutex::new(None),
     });
-    if enabled {
-        apply_running_state()?;
-    }
     Ok(())
 }
 
@@ -71,81 +62,73 @@ fn service() -> Result<&'static LocalApiService, String> {
         .ok_or_else(|| "The local API is not initialized.".to_string())
 }
 
+fn config(service: &LocalApiService) -> MutexGuard<'_, LocalApiConfig> {
+    service.config.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
 /// Config snapshot for request handling. Before `init` it is the (disabled,
 /// tokenless) default, which rejects every request.
 fn current_config() -> LocalApiConfig {
-    SERVICE
-        .get()
-        .map(|service| service.config.lock().unwrap_or_else(PoisonError::into_inner).clone())
-        .unwrap_or_default()
+    SERVICE.get().map(|service| config(service).clone()).unwrap_or_default()
 }
 
-/// Starts or stops the listener to match `enabled`, saving the actual port.
-fn apply_running_state() -> Result<(), String> {
+/// `(enabled, allow_write)` from local-api.json as it was when the island
+/// started, so plugin_host can carry the old settings over to the plugin once.
+pub(crate) fn legacy_switches() -> Option<(bool, bool)> {
+    SERVICE.get().map(|service| service.legacy)
+}
+
+/// Starts listening (keeping the saved port when it is free) and records the
+/// switches in local-api.json, which scripts read.
+pub(crate) fn start(allow_write: bool) -> Result<LocalApiStatus, String> {
     let service = service()?;
-    let mut config = service.config.lock().unwrap_or_else(PoisonError::into_inner);
-    let mut error = service.error.lock().unwrap_or_else(PoisonError::into_inner);
-    if !config.enabled {
-        server::stop();
-        *error = None;
-        return Ok(());
-    }
-    match server::start(service.app.clone(), config.port) {
-        Ok(port) => {
-            *error = None;
-            if config.port != port {
-                config.port = port;
-                save_config(&service.path, &config)?;
-            }
-        }
-        Err(message) => *error = Some(message),
-    }
-    Ok(())
-}
-
-fn snapshot() -> Result<LocalApiState, String> {
-    let service = service()?;
-    let config = service.config.lock().unwrap_or_else(PoisonError::into_inner).clone();
-    let running = server::running_port();
-    Ok(LocalApiState {
-        enabled: config.enabled,
-        allow_write: config.allow_write,
-        running: running.is_some(),
-        url: format!("http://127.0.0.1:{}/v1", running.unwrap_or(config.port)),
-        token: config.token,
-        config_path: service.path.display().to_string(),
-        error: service.error.lock().unwrap_or_else(PoisonError::into_inner).clone(),
-    })
-}
-
-#[tauri::command]
-pub fn get_local_api_state() -> Result<LocalApiState, String> {
-    snapshot()
-}
-
-#[tauri::command]
-pub async fn set_local_api_settings(enabled: bool, allow_write: bool) -> Result<LocalApiState, String> {
     {
-        let service = service()?;
-        let mut config = service.config.lock().unwrap_or_else(PoisonError::into_inner);
-        config.enabled = enabled;
+        let mut config = config(service);
+        let port = server::start(service.app.clone(), config.port)?;
+        config.enabled = true;
         config.allow_write = allow_write;
+        config.port = port;
         save_config(&service.path, &config)?;
     }
-    apply_running_state()?;
-    snapshot()
+    status()
+}
+
+pub(crate) fn stop() -> Result<(), String> {
+    let service = service()?;
+    server::stop();
+    // Agent statuses reported over HTTP would otherwise stay lit.
+    crate::agent_status::clear_external_owner(server::LOCAL_API_OWNER);
+    let mut config = config(service);
+    config.enabled = false;
+    save_config(&service.path, &config)
+}
+
+pub(crate) fn set_allow_write(allow_write: bool) -> Result<(), String> {
+    let service = service()?;
+    let mut config = config(service);
+    config.allow_write = allow_write;
+    save_config(&service.path, &config)
 }
 
 /// Replaces the token; scripts holding the old one stop working.
-#[tauri::command]
-pub fn reset_local_api_token() -> Result<LocalApiState, String> {
+pub(crate) fn reset_token() -> Result<LocalApiStatus, String> {
+    let service = service()?;
     {
-        let service = service()?;
-        let mut config = service.config.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut config = config(service);
         config.token = config::generate_token()?;
         save_config(&service.path, &config)?;
     }
-    snapshot()
+    status()
+}
+
+pub(crate) fn status() -> Result<LocalApiStatus, String> {
+    let service = service()?;
+    let config = config(service).clone();
+    Ok(LocalApiStatus {
+        url: format!("http://127.0.0.1:{}/v1", server::running_port().unwrap_or(config.port)),
+        token: config.token,
+        config_path: service.path.display().to_string(),
+    })
 }
 
 /// Runs a todo / note method (e.g. `todos.add`) in the island window. Used by

@@ -602,21 +602,6 @@ export type Translations = {
       saved: string;
       save: string;
     };
-    localApi: {
-      title: string;
-      hint: string;
-      enable: string;
-      allowWrite: string;
-      allowWriteHint: string;
-      address: string;
-      token: string;
-      copy: string;
-      copied: string;
-      resetToken: string;
-      configFile: string;
-      running: string;
-      stopped: string;
-    };
     plugins: {
       title: string;
       allowThirdParty: string;
@@ -640,6 +625,7 @@ export type Translations = {
       status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed", string>;
       uninstall: string;
       confirmUninstall: string;
+      builtin: string;
       runtimeBuiltIn: string;
       runtimeNode: string;
       nodeMissing: string;

@@ -144,6 +144,12 @@ pub struct InfoItem {
     secret: bool,
 }
 
+impl InfoItem {
+    pub(super) fn new(label: LocalizedText, value: String, copy: bool, secret: bool) -> Self {
+        Self { label, value, copy, secret }
+    }
+}
+
 /// `ui.setInfo` params: `{ items: [...] }`; an empty list clears the info.
 pub(super) fn parse_info(params: &Value) -> Result<Vec<InfoItem>, String> {
     let items = params.get("items").cloned().unwrap_or(Value::Array(Vec::new()));

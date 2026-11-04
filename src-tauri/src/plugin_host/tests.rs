@@ -346,3 +346,59 @@ mod settings_tests {
         assert!(parse_info(&json!({ "items": many })).is_err());
     }
 }
+
+mod builtin_tests {
+    use std::path::PathBuf;
+
+    use super::super::builtin::{manifests, LOCAL_API_ALLOW_WRITE, LOCAL_API_ID};
+    use super::super::manifest::{parse_manifest, PluginRuntime};
+    use super::super::store::PluginsState;
+    use super::super::{migrate_local_api, InstalledPlugin};
+
+    fn installed() -> Vec<InstalledPlugin> {
+        manifests("0.2.14")
+            .into_iter()
+            .map(|(id, manifest)| InstalledPlugin { folder: id.to_string(), dir: PathBuf::new(), manifest, builtin: true })
+            .collect()
+    }
+
+    #[test]
+    fn the_local_api_manifest_is_valid() {
+        let plugins = installed();
+        let manifest = plugins[0].manifest.as_ref().expect("valid built-in manifest");
+        assert_eq!(manifest.id, LOCAL_API_ID);
+        assert_eq!(manifest.runtime, PluginRuntime::Builtin);
+        assert!(manifest.permissions.contains(&"agent-status:write".to_string()));
+    }
+
+    #[test]
+    fn plugins_from_disk_cannot_claim_builtin() {
+        let text = r#"{ "id": "dev.sneaky", "name": { "zh-CN": "x", "en": "x" }, "version": "1", "apiVersion": 1, "runtime": { "type": "builtin" } }"#;
+        assert!(parse_manifest(text, "dev.sneaky", "0.2.14").expect_err("refused").contains("builtin"));
+    }
+
+    #[test]
+    fn the_old_local_api_switches_carry_over_once() {
+        let plugins = installed();
+
+        let mut state = PluginsState::default();
+        assert!(migrate_local_api(&mut state, &plugins, Some((true, true))));
+        let grant = &state.plugins[LOCAL_API_ID];
+        assert!(grant.enabled);
+        assert_eq!(grant.granted_permissions.len(), 5);
+        assert_eq!(grant.settings[LOCAL_API_ALLOW_WRITE], true);
+        // Already migrated (or set by the user): left alone.
+        assert!(!migrate_local_api(&mut state, &plugins, Some((false, false))));
+        assert!(state.plugins[LOCAL_API_ID].enabled);
+
+        let mut never_used = PluginsState::default();
+        assert!(!migrate_local_api(&mut never_used, &plugins, Some((false, false))));
+        assert!(never_used.plugins.is_empty());
+        assert!(!migrate_local_api(&mut never_used, &plugins, None));
+
+        let mut read_only = PluginsState::default();
+        assert!(migrate_local_api(&mut read_only, &plugins, Some((false, true))));
+        assert!(!read_only.plugins[LOCAL_API_ID].enabled);
+        assert!(read_only.plugins[LOCAL_API_ID].granted_permissions.is_empty());
+    }
+}

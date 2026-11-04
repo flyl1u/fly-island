@@ -18,7 +18,7 @@ use super::{
 };
 
 /// Owner of agent statuses reported over HTTP; their ids are `local-api/<source>`.
-const LOCAL_API_OWNER: &str = "local-api";
+pub(super) const LOCAL_API_OWNER: &str = "local-api";
 
 struct RunningServer {
     server: Arc<Server>,

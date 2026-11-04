@@ -10,7 +10,7 @@ export type LocalizedText = { "zh-CN": string; en: string };
 export type PluginCommand = { id: string; title: LocalizedText };
 
 // 与 src-tauri/src/plugin_host/manifest.rs 中的 runtime_requirement 对应：插件运行需要另外安装什么。
-export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none";
+export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none" | "builtin";
 
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
 export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed";
@@ -37,6 +37,8 @@ export type PluginInfoItem = {
 // 与 src-tauri/src/plugin_host/mod.rs 中的 PluginInfo、PluginsSnapshot 对应。
 export type PluginInfo = {
   id: string;
+  /** Comes with the island: needs no "allow third-party plugins" and cannot be uninstalled. */
+  builtin: boolean;
   invalidReason: string | null;
   name: LocalizedText | null;
   description: LocalizedText | null;

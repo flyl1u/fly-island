@@ -3,6 +3,7 @@
 //! ones as child processes. Design: docs/architecture/plugins.md; guide for
 //! plugin authors: docs/plugins/README.md.
 
+mod builtin;
 mod manifest;
 mod market;
 mod permissions;
@@ -17,14 +18,14 @@ mod tests;
 use serde::Serialize;
 use serde_json::{json, Map, Value};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     path::PathBuf,
     sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError},
 };
 use tauri::{AppHandle, Manager};
 
-use crate::agent_status;
+use crate::{agent_status, local_api};
 
 use manifest::{launch_command, parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginManifest, PluginRuntime, MANIFEST_FILE_NAME};
 use permissions::missing_permissions;
@@ -45,13 +46,17 @@ struct PluginHost {
     state: Mutex<PluginsState>,
     installed: Mutex<Vec<InstalledPlugin>>,
     supervisors: Mutex<HashMap<String, Supervisor>>,
+    /// Built-in plugins that are running (they have no supervisor).
+    builtins_running: Mutex<HashSet<String>>,
     runtimes: RuntimeTable,
 }
 
 struct InstalledPlugin {
     folder: String,
+    /// Empty for built-in plugins.
     dir: PathBuf,
     manifest: Result<PluginManifest, String>,
+    builtin: bool,
 }
 
 /// Mirrored by `PluginInfo` in src/features/plugins/api.ts.
@@ -59,6 +64,8 @@ struct InstalledPlugin {
 #[serde(rename_all = "camelCase")]
 pub struct PluginInfo {
     id: String,
+    /// Comes with the island: no "allow third-party" needed, cannot be uninstalled.
+    builtin: bool,
     /// Why the plugin cannot be used (bad manifest); the other fields are then empty.
     invalid_reason: Option<String>,
     name: Option<LocalizedText>,
@@ -104,14 +111,20 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     fs::create_dir_all(&plugins_dir)
         .map_err(|error| format!("Could not create {}: {error}", plugins_dir.display()))?;
     let state_path = app_dir.join(STATE_FILE_NAME);
+    let installed = scan(&plugins_dir, &app_version(app));
+    let mut state = load_state(&state_path);
+    if migrate_local_api(&mut state, &installed, local_api::legacy_switches()) {
+        save_state(&state_path, &state)?;
+    }
     let host = PluginHost {
         app: app.clone(),
-        installed: Mutex::new(scan(&plugins_dir, &app_version(app))),
+        installed: Mutex::new(installed),
         plugins_dir,
         data_dir: app_dir.join(PLUGIN_DATA_DIR_NAME),
-        state: Mutex::new(load_state(&state_path)),
+        state: Mutex::new(state),
         state_path,
         supervisors: Mutex::new(HashMap::new()),
+        builtins_running: Mutex::new(HashSet::new()),
         runtimes: Arc::new(Mutex::new(HashMap::new())),
     };
     if HOST.set(host).is_err() {
@@ -132,25 +145,112 @@ fn app_version(app: &AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+/// Built-in plugins first, then the plugins folder sorted by id.
 fn scan(plugins_dir: &PathBuf, app_version: &str) -> Vec<InstalledPlugin> {
+    let mut plugins: Vec<InstalledPlugin> = builtin::manifests(app_version)
+        .into_iter()
+        .map(|(id, manifest)| InstalledPlugin {
+            folder: id.to_string(),
+            dir: PathBuf::new(),
+            manifest,
+            builtin: true,
+        })
+        .collect();
     let Ok(entries) = fs::read_dir(plugins_dir) else {
-        return Vec::new();
+        return plugins;
     };
-    let mut plugins: Vec<InstalledPlugin> = entries
+    let mut from_disk: Vec<InstalledPlugin> = entries
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
         .filter(|entry| !entry.file_name().to_string_lossy().starts_with(market::WORK_DIR_PREFIX))
         .map(|entry| {
             let folder = entry.file_name().to_string_lossy().into_owned();
             let dir = entry.path();
-            let manifest = fs::read_to_string(dir.join(MANIFEST_FILE_NAME))
-                .map_err(|error| format!("Could not read {MANIFEST_FILE_NAME}: {error}"))
-                .and_then(|text| parse_manifest(&text, &folder, app_version));
-            InstalledPlugin { folder, dir, manifest }
+            let manifest = if builtin::is_builtin(&folder) {
+                Err("This id belongs to a plugin built into FocuSD Island.".to_string())
+            } else {
+                fs::read_to_string(dir.join(MANIFEST_FILE_NAME))
+                    .map_err(|error| format!("Could not read {MANIFEST_FILE_NAME}: {error}"))
+                    .and_then(|text| parse_manifest(&text, &folder, app_version))
+            };
+            InstalledPlugin { folder, dir, manifest, builtin: false }
         })
         .collect();
-    plugins.sort_by(|left, right| left.folder.cmp(&right.folder));
+    from_disk.sort_by(|left, right| left.folder.cmp(&right.folder));
+    plugins.append(&mut from_disk);
     plugins
+}
+
+/// The local API used to have its own switches in local-api.json. The first
+/// time the plugin host sees no entry for it, those become the plugin's switch
+/// and its "allow changes" setting, so scripts keep working. True if changed.
+fn migrate_local_api(state: &mut PluginsState, installed: &[InstalledPlugin], legacy: Option<(bool, bool)>) -> bool {
+    if state.plugins.contains_key(builtin::LOCAL_API_ID) {
+        return false;
+    }
+    let Some((enabled, allow_write)) = legacy else { return false };
+    if !enabled && !allow_write {
+        return false;
+    }
+    let permissions = installed
+        .iter()
+        .find(|plugin| plugin.folder == builtin::LOCAL_API_ID)
+        .and_then(|plugin| plugin.manifest.as_ref().ok())
+        .map(|manifest| manifest.permissions.clone())
+        .unwrap_or_default();
+    let grant = state.plugins.entry(builtin::LOCAL_API_ID.to_string()).or_default();
+    grant.enabled = enabled;
+    grant.granted_permissions = if enabled { permissions } else { Vec::new() };
+    grant.settings.insert(builtin::LOCAL_API_ALLOW_WRITE.to_string(), Value::Bool(allow_write));
+    true
+}
+
+/// Starts and stops built-in plugins like sync_processes does for processes;
+/// they do not need "allow third-party plugins".
+fn sync_builtins(host: &PluginHost) {
+    let mut wanted: HashMap<String, Map<String, Value>> = HashMap::new();
+    {
+        let state = lock(&host.state);
+        for plugin in lock(&host.installed).iter().filter(|plugin| plugin.builtin) {
+            let Ok(manifest) = &plugin.manifest else { continue };
+            let Some(grant) = state.plugins.get(&manifest.id) else { continue };
+            if grant.enabled && missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty() {
+                wanted.insert(manifest.id.clone(), settings::resolve(&manifest.contributes.settings, &grant.settings));
+            }
+        }
+    }
+    let mut running = lock(&host.builtins_running);
+    let stopping: Vec<String> = running.iter().filter(|id| !wanted.contains_key(*id)).cloned().collect();
+    for id in stopping {
+        running.remove(&id);
+        let result = builtin::stop(&id);
+        let mut runtimes = lock(&host.runtimes);
+        let entry = runtimes.entry(id).or_default();
+        entry.status = RuntimeStatus::Stopped;
+        entry.error = result.err();
+        entry.info.clear();
+    }
+    for (id, settings) in wanted {
+        if running.contains(&id) {
+            continue;
+        }
+        let started = builtin::start(&id, &settings);
+        let mut runtimes = lock(&host.runtimes);
+        let entry = runtimes.entry(id.clone()).or_default();
+        match started {
+            Ok(info) => {
+                running.insert(id);
+                entry.status = RuntimeStatus::Running;
+                entry.error = None;
+                entry.info = info;
+            }
+            Err(error) => {
+                entry.status = RuntimeStatus::Crashed;
+                entry.error = Some(error);
+                entry.info.clear();
+            }
+        }
+    }
 }
 
 /// Starts plugins that should run and stops the rest. A plugin runs when
@@ -216,6 +316,8 @@ fn sync_processes() -> Result<(), String> {
             Err(error) => lock(&host.runtimes).entry(id).or_default().error = Some(error),
         }
     }
+    drop(supervisors);
+    sync_builtins(host);
     Ok(())
 }
 
@@ -258,6 +360,7 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
             let grant = state.plugins.get(&plugin.folder).cloned().unwrap_or_default();
             let mut info = PluginInfo {
                 id: plugin.folder.clone(),
+                builtin: plugin.builtin,
                 invalid_reason: None,
                 name: None,
                 description: None,
@@ -288,7 +391,7 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.homepage = manifest.homepage.clone();
                     info.permissions = manifest.permissions.clone();
                     info.commands = manifest.contributes.commands.clone();
-                    info.has_process = matches!(manifest.runtime, PluginRuntime::Process { .. });
+                    info.has_process = matches!(manifest.runtime, PluginRuntime::Process { .. } | PluginRuntime::Builtin);
                     info.runtime = runtime_requirement(&manifest.runtime);
                     info.settings_schema = manifest.contributes.settings.clone();
                     info.settings = settings::resolve(&manifest.contributes.settings, &grant.settings);
@@ -370,6 +473,9 @@ pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
 /// permissions.
 #[tauri::command]
 pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String> {
+    if builtin::is_builtin(&id) {
+        return Err("This plugin is built into FocuSD Island.".into());
+    }
     let host = host()?;
     let version = app_version(&host.app);
     let entry = market::fetch_index()
@@ -398,6 +504,9 @@ pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String
 /// plugins-data/ is kept, so reinstalling picks it up again.
 #[tauri::command]
 pub async fn uninstall_plugin(id: String) -> Result<PluginsSnapshot, String> {
+    if builtin::is_builtin(&id) {
+        return Err("Built-in plugins cannot be uninstalled; switch it off instead.".into());
+    }
     let host = host()?;
     let dir = lock(&host.installed)
         .iter()
@@ -461,7 +570,8 @@ pub async fn reload_plugins() -> Result<PluginsSnapshot, String> {
     let host = host()?;
     stop_all()?;
     *lock(&host.installed) = scan(&host.plugins_dir, &app_version(&host.app));
-    lock(&host.runtimes).clear();
+    // Built-in plugins keep running across a reload, and so does what they show.
+    lock(&host.runtimes).retain(|id, _| builtin::is_builtin(id));
     sync_processes()?;
     snapshot()
 }
@@ -476,6 +586,14 @@ pub fn open_plugins_folder() -> Result<(), String> {
 #[tauri::command]
 pub fn run_plugin_command(id: String, command: String) -> Result<(), String> {
     let host = host()?;
+    if builtin::is_builtin(&id) {
+        if !lock(&host.builtins_running).contains(&id) {
+            return Err("The plugin is not running.".into());
+        }
+        let info = builtin::run_command(&id, &command)?;
+        lock(&host.runtimes).entry(id).or_default().info = info;
+        return Ok(());
+    }
     let known = lock(&host.installed).iter().any(|plugin| {
         plugin.folder == id
             && plugin
@@ -511,7 +629,9 @@ pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<Plugi
         resolved = settings::resolve(specs, &grant.settings);
         Ok(())
     })?;
-    if let Some(supervisor) = lock(&host.supervisors).get(&id) {
+    if lock(&host.builtins_running).contains(&id) {
+        builtin::settings_changed(&id, &resolved)?;
+    } else if let Some(supervisor) = lock(&host.supervisors).get(&id) {
         supervisor.update_settings(resolved);
     }
     snapshot()

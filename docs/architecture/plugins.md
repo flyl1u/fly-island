@@ -203,7 +203,7 @@
 | 阶段 | 内容 | 交付给用户的价值 |
 |---|---|---|
 | P0 | 完成重构 Phase 6、7 | — |
-| P1 ✅ | Rust `local_api` + 前端 `features/local-api/`（即本文的 plugin-bridge），只开放待办和笔记，见 [local-api.md](../local-api.md) | **待办外部接口**（当前用户的需求）直接可用 |
+| P1 ✅ | Rust `local_api` + 前端 `features/local-api/`（即本文的 plugin-bridge），只开放待办和笔记，见 [local-api.md](../local-api.md)。2026-11-04 起改为内置插件 `focusd.local-api`（`plugin_host/builtin.rs`），在"插件扩展"中开启和设置 | **待办外部接口**（当前用户的需求）直接可用 |
 | P2 ✅ | 插件（权限 `agent-status:write`）和本地接口（`/v1/agent-status/{source}`）都可以上报 AI Agent 状态，在快照里作为 `others` 列表返回；Codex / Claude Code 的 hook 保持不变。声明式插件加载随 P3 一起完成（`runtime.type: none`） | 新的 AI Agent 适配不必再等发版 |
 | P3 ✅ | 进程插件宿主（`src-tauri/src/plugin_host/`）、设置 → 插件页（`src/features/plugins/`）、Node SDK 和示例插件，开发文档见 [docs/plugins/README.md](../plugins/README.md) | 第三方开发者可以写插件 |
 | P4 ✅ | 暂用 fork 仓库 `TixXin/fly-island` 的 `dev` 分支上的 `plugins/index.json` 作为索引，插件包放在同一仓库的 `plugins/packages/`；应用内可以浏览、安装、更新、卸载插件，并校验 SHA-256 | 用户可以在应用内浏览和安装插件 |

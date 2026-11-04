@@ -34,7 +34,9 @@ export function PluginCard({
   const { locale } = useLocale();
   const name = plugin.name?.[locale] ?? plugin.id;
   const isOn = plugin.enabled && !plugin.needsApproval;
-  const showStatus = plugin.hasProcess && allowed && isOn;
+  // Built-in plugins run without "allow third-party plugins".
+  const canRun = allowed || plugin.builtin;
+  const showStatus = plugin.hasProcess && canRun && isOn;
 
   return (
     <article className="plugin-card">
@@ -42,7 +44,11 @@ export function PluginCard({
         <div className="plugin-card__title">
           <strong title={plugin.id}>{name}</strong>
           <span>
-            {[plugin.version && `v${plugin.version}`, plugin.author && t.settings.plugins.by(plugin.author)]
+            {[
+              plugin.builtin && t.settings.plugins.builtin,
+              plugin.version && `v${plugin.version}`,
+              plugin.author && t.settings.plugins.by(plugin.author),
+            ]
               .filter(Boolean)
               .join(" · ")}
           </span>
@@ -78,7 +84,7 @@ export function PluginCard({
           </div>
           <ToggleControl label={t.settings.plugins.enable} checked={isOn} onChange={(enabled) => !busy && onEnabledChange(enabled)} />
           {plugin.needsApproval ? <p className="plugin-card__hint">{t.settings.plugins.needsApproval}</p> : null}
-          {isOn && !allowed ? <p className="plugin-card__hint">{t.settings.plugins.notAllowed}</p> : null}
+          {isOn && !canRun ? <p className="plugin-card__hint">{t.settings.plugins.notAllowed}</p> : null}
           {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
           {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
           {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
@@ -96,18 +102,20 @@ export function PluginCard({
           </div>
         </>
       )}
-      <div className="plugin-card__actions">
-        <button
-          className={`plugin-card__button${confirmingUninstall ? " plugin-card__button--danger" : ""}`}
-          type="button"
-          disabled={busy}
-          onBlur={() => setConfirmingUninstall(false)}
-          onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
-        >
-          <Trash2 size={12} strokeWidth={2.4} />
-          <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
-        </button>
-      </div>
+      {plugin.builtin ? null : (
+        <div className="plugin-card__actions">
+          <button
+            className={`plugin-card__button${confirmingUninstall ? " plugin-card__button--danger" : ""}`}
+            type="button"
+            disabled={busy}
+            onBlur={() => setConfirmingUninstall(false)}
+            onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
+          >
+            <Trash2 size={12} strokeWidth={2.4} />
+            <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
+          </button>
+        </div>
+      )}
     </article>
   );
 }

@@ -23,7 +23,6 @@ import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminde
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
 import { PluginsSettingsSection } from "../../features/plugins/PluginsSettingsSection";
-import { LocalApiSettingsSection } from "../../features/local-api/LocalApiSettingsSection";
 import { useLocale, useTranslation } from "../../i18n";
 import "./SettingsWindow.css";
 
@@ -151,13 +150,7 @@ export function SettingsWindow() {
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
-        {category === "plugins" && (
-          <>
-            <PluginsSettingsSection />
-            {/* Scripts and other programs reach the island here too, so it sits with plugins. */}
-            <LocalApiSettingsSection />
-          </>
-        )}
+        {category === "plugins" && <PluginsSettingsSection />}
         {category === "about" && <ProjectSettingsSection />}
       </LayoutEditor>
     </main>

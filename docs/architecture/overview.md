@@ -13,7 +13,7 @@
 ┌──────────────────────────────── Rust（Tauri 2）──────────────────────────────────────┐
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
-│           local_api（127.0.0.1 HTTP，请求经事件转给 main 窗口处理）                    │
+│           local_api（127.0.0.1 HTTP，内置插件 focusd.local-api，请求经事件转给 main 窗口） │
 │           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
 │           qq_mail · qq_notifications · wechat_reminders · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信窗口闪烁检测、鼠标穿透循环        │
@@ -30,7 +30,7 @@
 | AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-*-hook-input.json` 为最近一次提交提问时的 hook 输入，只用于取会话标题，清除状态时删除） | `agent_status`（标题解析在 `title.rs`、读取与缓存在 `title_cache.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 插件：已安装插件、启用与授权状态、插件私有数据 | 应用数据目录（`plugins/<id>/`、`plugins.json`、`plugins-data/<id>/`，见 [docs/plugins/README.md](../plugins/README.md)） | `plugin_host` |
-| 本地接口开关、端口与访问令牌（脚本也会读取） | 应用数据目录（`local-api.json`，见 [docs/local-api.md](../local-api.md)） | `local_api` |
+| 本地接口端口与访问令牌（脚本也会读取）；开关与"允许修改"由内置插件 `focusd.local-api` 在 `plugins.json` 中保存，并同步写入此文件供脚本参考 | 应用数据目录（`local-api.json`，见 [docs/local-api.md](../local-api.md)） | `local_api`、`plugin_host/builtin.rs` |
 | Codex / Claude Code hook 配置 | `~/.codex/config.toml`、`~/.claude/settings.json` 中带标记的受管区块 | `agent_status` |
 | QQ 邮箱授权码、翻译 API 密钥 | Windows 凭据管理器（`com.focusd.island.qq-mail`、`com.focusd.island.translation`；翻译密钥按服务分条目，用户名为服务 id，DeepSeek 沿用 `deepseek`） | `qq_mail`、`translation` |
 | 待办 Markdown 导出 | 用户选择的目录（经过校验） | `system` |
@@ -156,4 +156,4 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。
 - 插件市场：索引地址 `https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json`（暂用 fork 仓库的 `dev` 分支）、`index.json` 格式（`version: 1`）与 `plugins/packages/<id>-<version>.zip` 文件名；已发布的版本不得修改内容。索引签名 `index.json.sig`（`{ keyId, signature }`，Ed25519）与可信公钥列表 `plugins/signing-keys.json`；签名私钥在 `~/.tauri/fly-island/plugin-index-signing.key`（DPAPI），不在仓库中。
 - 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)。
-- 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。
+- 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。自 2026-11-04 起它是内置插件 `focusd.local-api`（插件 id 与设置键 `allowWrite` 也属于契约），命令 `get_local_api_state`、`set_local_api_settings`、`reset_local_api_token` 已删除。
