@@ -116,6 +116,10 @@ pnpm tauri build
 
 应用内更新（检查更新、签名与 `latest.json` 发布流程）见 [docs/updater.md](docs/updater.md)。
 
+## 贡献致谢
+
+感谢 [@TixXin](https://github.com/TixXin) 在 [PR #36](https://github.com/flyl1u/fly-island/pull/36) 中提出的模块化架构方案与实现。本地重构在当前主线上适配并复用了其中部分代码，来源与验证记录见[改造说明](docs/architecture/local-refactor.md)。
+
 ## 开源协议
 
 本项目采用 [MIT 协议](LICENSE)。

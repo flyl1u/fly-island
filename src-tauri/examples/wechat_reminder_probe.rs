@@ -1,4 +1,4 @@
-#[path = "../src/wechat_reminder_source.rs"]
+#[path = "../src/wechat_reminders/source.rs"]
 mod wechat_reminder_source;
 
 use serde_json::json;
@@ -94,3 +94,5 @@ fn run() -> Result<bool, String> {
     );
     Ok(counts[0] > 0)
 }
+#[path = "../src/win32/mod.rs"]
+mod win32;
