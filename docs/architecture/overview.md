@@ -26,7 +26,7 @@
 | 数据 | 位置 | 负责方 |
 |---|---|---|
 | 设置、预设、待办、笔记、归档、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
-| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`） | `agent_status` |
+| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-*-hook-input.json` 为最近一次提交提问时的 hook 输入，只用于取会话标题，清除状态时删除） | `agent_status`（标题解析在 `title.rs`、读取与缓存在 `title_cache.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 本地接口开关、端口与访问令牌（脚本也会读取） | 应用数据目录（`local-api.json`，见 [docs/local-api.md](../local-api.md)） | `local_api` |
 | Codex / Claude Code hook 配置 | `~/.codex/config.toml`、`~/.claude/settings.json` 中带标记的受管区块 | `agent_status` |

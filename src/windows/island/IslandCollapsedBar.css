@@ -83,6 +83,31 @@
   animation: taskFlowIn 260ms ease-out both;
 }
 
+/* Running agent: icon and session title, laid out like the active task. */
+.island__agent-session {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  color: var(--task-text-color);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  animation: taskFlowIn 260ms ease-out both;
+}
+
+.island__agent-session-separator {
+  flex: 0 0 auto;
+}
+
+.island__agent-session-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @keyframes taskFlowIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

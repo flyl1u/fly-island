@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import type { AgentVisualState } from "../../features/agent-status/status";
+import type { AgentSession } from "../../features/agent-status/session";
+import { AGENT_PROVIDER_LABELS, type AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
@@ -31,6 +32,8 @@ type IslandShellProps = {
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
+  /** Running agent session shown in place of the todo, or null. */
+  agentSession: AgentSession | null;
   mediaState: MediaState;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
@@ -65,6 +68,7 @@ export function IslandShell({
   showCollapsedText,
   collapsedTaskTitle,
   collapsedTodoCount,
+  agentSession,
   mediaState,
   agentVisualState,
   agentStatusLabel,
@@ -112,7 +116,9 @@ export function IslandShell({
     .filter(Boolean)
     .join(" ");
   const collapsedLabel = showCollapsedText
-    ? collapsedTaskTitle
+    ? agentSession
+      ? t.island.agentSession(AGENT_PROVIDER_LABELS[agentSession.provider], agentSession.title)
+      : collapsedTaskTitle
       ? t.messages.collapsedTask(collapsedTaskTitle)
       : collapsedTodoCount !== null
         ? t.island.pendingTodos(collapsedTodoCount)
@@ -156,6 +162,7 @@ export function IslandShell({
           collapsedLabel={collapsedLabel}
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
+          agentSession={agentSession}
           mediaState={mediaState}
           showMusic={features.music}
           agentVisualState={agentVisualState}

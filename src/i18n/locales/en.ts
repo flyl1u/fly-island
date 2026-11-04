@@ -190,6 +190,7 @@ const en: Translations = {
     appName: "fly-island",
     focusing: (taskTitle) => `Focusing: ${taskTitle}`,
     pendingTodos: (count) => (count === 1 ? "1 todo left" : `${count} todos left`),
+    agentSession: (provider, title) => `${provider} is working on: ${title}`,
     openMusic: "Open music controls",
     collapse: "Collapse",
     collapseIsland: "Collapse island",
@@ -496,6 +497,9 @@ const en: Translations = {
         running: "Blue: an agent is running",
         attention: "Yellow: failed or possibly interrupted; clear it above",
       },
+      sessionTitleSection: "On the island",
+      sessionTitle: "Show the session title while running",
+      sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. After updating, click Install/repair below once.",
     },
 
     clipboard: {

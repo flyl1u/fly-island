@@ -190,6 +190,7 @@ const zhCN: Translations = {
     appName: "fly-island",
     focusing: (taskTitle) => `正在专注：${taskTitle}`,
     pendingTodos: (count) => `剩余${count}个待办`,
+    agentSession: (provider, title) => `${provider} 正在处理：${title}`,
     openMusic: "打开音乐控制",
     collapse: "收起",
     collapseIsland: "收起岛屿",
@@ -499,6 +500,9 @@ const zhCN: Translations = {
         running: "蓝色：有 Agent 正在运行",
         attention: "黄色：运行失败或可能已中断，可在上方清除状态",
       },
+      sessionTitleSection: "小岛显示",
+      sessionTitle: "运行时在小岛显示会话标题",
+      sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。更新后需在下方点一次“安装/修复”。",
     },
 
     clipboard: {

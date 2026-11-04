@@ -8,6 +8,8 @@ export type AgentTaskStatus = {
   phase: AgentTaskPhase;
   taskId?: string;
   updatedAt: number;
+  /** Session title resolved by the native side; missing for hooks installed before titles existed. */
+  title?: string;
 };
 
 export type AgentStatusSnapshot = Record<AgentProvider, AgentTaskStatus> & {

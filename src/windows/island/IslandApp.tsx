@@ -11,6 +11,7 @@ import { openSettingsWindow } from "../settings/api";
 import { toggleTranslationWindow } from "../../features/translation/api";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
+import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
@@ -77,6 +78,7 @@ export function IslandApp() {
   } = useMediaState(settings.musicEnabled);
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
+  const agentSession = useAgentSession(agentStatus, settings.agentStatusEnabled && settings.agentTitleEnabled);
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
@@ -95,6 +97,7 @@ export function IslandApp() {
       settings.todoEnabled ? activeTodoId : null,
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
+      agentSession?.title ?? null,
     );
   const expandedIslandHeight = getExpandedIslandHeight({
     page,
@@ -236,6 +239,7 @@ export function IslandApp() {
         showCollapsedText={settings.showCollapsedText}
         collapsedTaskTitle={collapsedTaskTitle}
         collapsedTodoCount={collapsedTodoCount}
+        agentSession={agentSession}
         mediaState={mediaState}
         agentVisualState={agentVisualState}
         agentStatusLabel={agentStatusLabel}

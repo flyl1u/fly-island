@@ -14,6 +14,7 @@ import { useQQMail } from "../src/features/messages/qq-mail/QQMail";
 import type { MailSnapshot } from "../src/features/messages/qq-mail/api";
 import type { MessageSource } from "../src/features/messages/messagePreview";
 import type { MediaState } from "../src/features/media/api";
+import type { AgentSession } from "../src/features/agent-status/session";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -64,6 +65,7 @@ let changeTask: (task: string | null) => void;
 let changeWidth: (width: number) => void;
 let changeTitle: (show: boolean) => void;
 let changeFont: (pixel: boolean) => void;
+let changeAgent: (session: AgentSession | null) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -74,16 +76,17 @@ function Fixture() {
   const [width, setWidth] = useState(280);
   const [title, setTitle] = useState(false);
   const [pixel, setPixel] = useState(false);
+  const [agent, setAgent] = useState<AgentSession | null>(null);
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
   const qqMail = useQQMail(canPreview);
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
-  changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel;
+  changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
-      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null}
+      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
       mediaState={UNAVAILABLE_MEDIA}
       features={{ todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true }}
@@ -197,7 +200,25 @@ async function runChecks() {
     window.matchMedia = matchMedia;
     await act(async () => button().click());
     check(openedPage === "todo", "恢复后点击原文字仍打开待办");
-    await act(async () => { changeTask(null); changeTitle(false); changeFont(false); changeWidth(280); });
+    await act(async () => { changeTask(null); changeTitle(false); changeFont(false); changeAgent({ provider: "claudeCode", title: "设置界面完善思路：把外观、通用和 AI Agent 分开" }); });
+    await settle();
+    const agentRow = summary().querySelector<HTMLElement>(".island__agent-session");
+    const agentTitle = agentRow?.querySelector<HTMLElement>(".island__agent-session-title");
+    check(agentRow?.querySelector(".agent-provider-icon--claudeCode") && agentTitle && !incoming().textContent?.includes("完成今日设计评审"), "Agent 运行时显示图标和会话标题，代替待办");
+    check(agentTitle!.scrollWidth > agentTitle!.clientWidth && agentTitle!.clientWidth > 40, "280px 岛屿内长会话标题省略且不挤掉图标");
+    check(document.querySelector(".island")!.getAttribute("aria-label")?.includes("Claude Code"), "无障碍标签说明是哪个 Agent");
+    await notify("qq");
+    check(incoming().querySelector(".island-message-preview") && !incoming().querySelector(".island__agent-session"), "消息预览优先于 Agent 标题");
+    await act(async () => button().click());
+    await settle();
+    check(incoming().querySelector(".agent-provider-icon--claudeCode"), "预览结束后回到 Agent 标题");
+    await act(async () => changeAgent({ provider: "codex", title: "恢复 Windows 发布机环境" }));
+    await settle();
+    check(incoming().querySelector(".agent-provider-icon--codex") && incoming().textContent?.includes("恢复 Windows 发布机环境"), "切换为 Codex 会话时更换图标和标题");
+    await act(async () => changeAgent(null));
+    await settle();
+    check(!summary().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
+    await act(async () => changeWidth(280));
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {
@@ -216,7 +237,7 @@ for (const [label, action] of [
   ["微信消息", () => notify("wechat")], ["QQ 消息", () => notify("qq")], ["邮箱消息", () => notify("qqMail")],
   ["长 QQ 消息", () => notify("qq", true)], ["340px", () => update(async () => changeWidth(340))],
   ["像素主题", () => update(async () => changeFont(true))], ["系统主题", () => update(async () => changeFont(false))],
-  ["280px", () => update(async () => changeWidth(280))], ["自动检查", () => { location.search = "?test=1"; }],
+  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["自动检查", () => { location.search = "?test=1"; }],
 ] as const) {
   const control = document.createElement("button");
   control.textContent = label;

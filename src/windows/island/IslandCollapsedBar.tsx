@@ -1,3 +1,5 @@
+import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
+import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MediaState } from "../../features/media/api";
 import { CollapsedMessageContent } from "../../features/messages/CollapsedMessageContent";
@@ -26,6 +28,7 @@ type IslandCollapsedBarProps = {
   collapsedLabel: string;
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
+  agentSession: AgentSession | null;
   mediaState: MediaState;
   /** False while music is switched off, which hides the waveform button. */
   showMusic: boolean;
@@ -51,6 +54,7 @@ export function IslandCollapsedBar({
   collapsedLabel,
   collapsedTaskTitle,
   collapsedTodoCount,
+  agentSession,
   mediaState,
   showMusic,
   agentVisualState,
@@ -113,13 +117,20 @@ export function IslandCollapsedBar({
           {showCollapsedText && showTitle && (
             <span className="island__brand">fly-island</span>
           )}
-          {showCollapsedText && collapsedTaskTitle && (
+          {showCollapsedText && agentSession && (
+            <span className="island__agent-session" key={`${agentSession.provider}:${agentSession.title}`}>
+              {showTitle && <span className="island__agent-session-separator">·</span>}
+              <AgentProviderIcon provider={agentSession.provider} size={16} />
+              <span className="island__agent-session-title">{agentSession.title}</span>
+            </span>
+          )}
+          {showCollapsedText && !agentSession && collapsedTaskTitle && (
             <span className="island__active-task" key={collapsedTaskTitle}>
               {showTitle ? "· " : ""}
               {collapsedTaskTitle}
             </span>
           )}
-          {showCollapsedText && !collapsedTaskTitle && collapsedTodoCount !== null && (
+          {showCollapsedText && !agentSession && !collapsedTaskTitle && collapsedTodoCount !== null && (
             <span className="island__todo-count">
               {showTitle ? "· " : ""}
               {t.island.pendingTodos(collapsedTodoCount)}

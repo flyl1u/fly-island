@@ -5,15 +5,20 @@ import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
 import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
 
+// Stands in for the agent icon (16px plus gap) when sizing the island for a session title.
+const AGENT_ICON_TEXT = "MM";
+
 /**
  * What the collapsed island shows for todos: the active (or rotating) todo
- * title, otherwise the pending count, and the width that text needs.
+ * title, otherwise the pending count, and the width that text needs. A running
+ * agent's session title (`agentTitle`) takes the place of both when given.
  */
 export function useCollapsedTodo(
   todos: TodoItem[],
   activeTodoId: string | null,
   settings: IslandSettings,
   isRotationPaused: boolean,
+  agentTitle: string | null = null,
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
@@ -41,7 +46,8 @@ export function useCollapsedTodo(
       alignCollapsedIslandWidth(
         getCollapsedIslandWidth(
           settings.showCollapsedText
-            ? collapsedTaskTitle ?? (collapsedTodoCount !== null
+            ? (agentTitle !== null ? AGENT_ICON_TEXT + agentTitle : null) ??
+              collapsedTaskTitle ?? (collapsedTodoCount !== null
               ? t.island.pendingTodos(collapsedTodoCount)
               : settings.showTitle ? "fly-island" : "")
             : "",
@@ -49,7 +55,7 @@ export function useCollapsedTodo(
         window.innerWidth,
         window.devicePixelRatio,
       ),
-    [collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t],
+    [agentTitle, collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t],
   );
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth };

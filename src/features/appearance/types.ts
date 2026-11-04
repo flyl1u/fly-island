@@ -53,6 +53,8 @@ export type IslandSettings = {
   agentStatusEnabled: boolean;
   shelfEnabled: boolean;
   mailEnabled: boolean;
+  /** Show the running agent's icon and session title on the collapsed island. */
+  agentTitleEnabled: boolean;
 };
 
 export type IslandPreset = {

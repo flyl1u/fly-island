@@ -192,6 +192,7 @@ export type Translations = {
     appName: string;
     focusing: (taskTitle: string) => string;
     pendingTodos: (count: number) => string;
+    agentSession: (provider: string, title: string) => string;
     openMusic: string;
     collapse: string;
     collapseIsland: string;
@@ -499,6 +500,9 @@ export type Translations = {
         running: string;
         attention: string;
       };
+      sessionTitleSection: string;
+      sessionTitle: string;
+      sessionTitleHint: string;
     };
 
     clipboard: {
