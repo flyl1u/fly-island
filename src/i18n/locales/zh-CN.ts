@@ -601,6 +601,7 @@ const zhCN: Translations = {
         "todos:write": "添加、修改和删除待办",
         "notes:read": "读取每日笔记",
         "notes:write": "修改每日笔记",
+        "agent-status:write": "在状态灯上显示 AI Agent 状态",
       },
       needsApproval: "新版本需要更多权限，已暂停。关掉再打开开关即可授权。",
       notAllowed: "先在上面打开“允许运行第三方插件”。",

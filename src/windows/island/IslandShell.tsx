@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
-import { AGENT_PROVIDER_LABELS, type AgentVisualState } from "../../features/agent-status/status";
+import type { AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
@@ -120,7 +120,7 @@ export function IslandShell({
     .join(" ");
   const collapsedLabel = showCollapsedText
     ? agentSession
-      ? t.island.agentSession(AGENT_PROVIDER_LABELS[agentSession.provider], agentSession.title)
+      ? t.island.agentSession(agentSession.label, agentSession.title)
       : collapsedTaskTitle
       ? t.messages.collapsedTask(collapsedTaskTitle)
       : collapsedTodoCount !== null

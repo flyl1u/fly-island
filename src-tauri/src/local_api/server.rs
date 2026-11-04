@@ -10,10 +10,15 @@ use std::{
 use tauri::AppHandle;
 use tiny_http::{Header, Request, Response, Server};
 
+use crate::agent_status;
+
 use super::{
     bridge,
     routes::{self, ApiError, RequestHeaders, API_VERSION, MAX_BODY_BYTES},
 };
+
+/// Owner of agent statuses reported over HTTP; their ids are `local-api/<source>`.
+const LOCAL_API_OWNER: &str = "local-api";
 
 struct RunningServer {
     server: Arc<Server>,
@@ -110,7 +115,16 @@ fn answer(app: &AppHandle, request: &mut Request, port: u16) -> Result<Value, Ap
             "allowWrite": config.allow_write,
         }));
     }
-    bridge::dispatch(app, call)
+    // Agent statuses live natively; everything else is answered by the island window.
+    let to_api_error = |(status, message): (u16, String)| ApiError::new(status, message);
+    match call.method {
+        "agentStatus.report" => {
+            let name = call.params.get("source").and_then(Value::as_str).unwrap_or_default().to_string();
+            agent_status::report_external_status(LOCAL_API_OWNER, &name, &call.params).map_err(to_api_error)
+        }
+        "agentStatus.clear" => agent_status::clear_external_status(LOCAL_API_OWNER, &call.params).map_err(to_api_error),
+        _ => bridge::dispatch(app, call),
+    }
 }
 
 fn request_headers(request: &Request) -> RequestHeaders {

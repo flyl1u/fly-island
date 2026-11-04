@@ -201,7 +201,7 @@ async function runChecks() {
     window.matchMedia = matchMedia;
     await act(async () => button().click());
     check(openedPage === "todo", "恢复后点击原文字仍打开待办");
-    await act(async () => { changeTask(null); changeTitle(false); changeFont(false); changeAgent({ provider: "claudeCode", title: "设置界面完善思路：把外观、通用和 AI Agent 分开" }); });
+    await act(async () => { changeTask(null); changeTitle(false); changeFont(false); changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路：把外观、通用和 AI Agent 分开" }); });
     await settle();
     const agentRow = summary().querySelector<HTMLElement>(".island__agent-session");
     const agentTitle = agentRow?.querySelector<HTMLElement>(".island__agent-session-title");
@@ -213,7 +213,7 @@ async function runChecks() {
     await act(async () => button().click());
     await settle();
     check(incoming().querySelector(".agent-provider-icon--claudeCode"), "预览结束后回到 Agent 标题");
-    await act(async () => changeAgent({ provider: "codex", title: "恢复 Windows 发布机环境" }));
+    await act(async () => changeAgent({ provider: "codex", label: "Codex", title: "恢复 Windows 发布机环境" }));
     await settle();
     check(incoming().querySelector(".agent-provider-icon--codex") && incoming().textContent?.includes("恢复 Windows 发布机环境"), "切换为 Codex 会话时更换图标和标题");
     await act(async () => changeAgent(null));
@@ -238,7 +238,7 @@ for (const [label, action] of [
   ["微信消息", () => notify("wechat")], ["QQ 消息", () => notify("qq")], ["邮箱消息", () => notify("qqMail")],
   ["长 QQ 消息", () => notify("qq", true)], ["340px", () => update(async () => changeWidth(340))],
   ["像素主题", () => update(async () => changeFont(true))], ["系统主题", () => update(async () => changeFont(false))],
-  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["自动检查", () => { location.search = "?test=1"; }],
+  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["自动检查", () => { location.search = "?test=1"; }],
 ] as const) {
   const control = document.createElement("button");
   control.textContent = label;

@@ -86,6 +86,7 @@ fn launch_uses_the_right_interpreter() {
 fn methods_need_their_permission() {
     assert_eq!(method_permission("todos.list"), Some(("todos.list", "todos:read")));
     assert_eq!(method_permission("note.set"), Some(("note.set", "notes:write")));
+    assert_eq!(method_permission("agentStatus.report"), Some(("agentStatus.report", "agent-status:write")));
     assert_eq!(method_permission("clipboard.read"), None);
 
     let requested = vec!["todos:read".to_string(), "todos:write".to_string()];

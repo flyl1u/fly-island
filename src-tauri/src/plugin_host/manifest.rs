@@ -21,6 +21,10 @@ pub struct LocalizedText {
 }
 
 impl LocalizedText {
+    pub(super) fn en(&self) -> &str {
+        &self.en
+    }
+
     fn is_filled(&self) -> bool {
         !self.zh_cn.trim().is_empty() && !self.en.trim().is_empty()
     }

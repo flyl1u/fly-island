@@ -2,17 +2,19 @@
 //! only gate the host API: a plugin process still runs with the user's rights.
 
 /// Mirrored by `PLUGIN_PERMISSIONS` in src/features/plugins/api.ts.
-pub(super) const PERMISSIONS: [&str; 4] = ["todos:read", "todos:write", "notes:read", "notes:write"];
+pub(super) const PERMISSIONS: [&str; 5] = ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"];
 
-/// (method, permission). The methods are the ones the island window answers;
-/// see src/features/todos/apiCommands.ts.
-const METHODS: [(&str, &str); 6] = [
+/// (method, permission). `agentStatus.*` is handled natively (agent_status);
+/// the rest are answered by the island window, see src/features/todos/apiCommands.ts.
+const METHODS: [(&str, &str); 8] = [
     ("todos.list", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
     ("todos.remove", "todos:write"),
     ("note.get", "notes:read"),
     ("note.set", "notes:write"),
+    ("agentStatus.report", "agent-status:write"),
+    ("agentStatus.clear", "agent-status:write"),
 ];
 
 pub(super) fn is_known_permission(name: &str) -> bool {

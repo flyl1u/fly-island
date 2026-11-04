@@ -92,7 +92,17 @@ pub(super) fn route(method: &str, url: &str, body: &[u8]) -> Result<ApiCall, Api
         }
         ("GET", ["v1", "note"]) => Ok(call("note.get", Value::Null, false)),
         ("PUT", ["v1", "note"]) => Ok(call("note.set", body_object(body)?, true)),
-        (_, ["v1", "health"] | ["v1", "todos"] | ["v1", "todos", _] | ["v1", "note"]) => {
+        ("PUT", ["v1", "agent-status", source]) => {
+            let mut params = body_map(body)?;
+            params.insert("source".into(), Value::String((*source).to_string()));
+            Ok(call("agentStatus.report", Value::Object(params), true))
+        }
+        ("DELETE", ["v1", "agent-status", source]) => {
+            let mut params = Map::new();
+            params.insert("source".into(), Value::String((*source).to_string()));
+            Ok(call("agentStatus.clear", Value::Object(params), true))
+        }
+        (_, ["v1", "health"] | ["v1", "todos"] | ["v1", "todos", _] | ["v1", "note"] | ["v1", "agent-status", _]) => {
             Err(ApiError::new(405, "Method not allowed for this path."))
         }
         _ => Err(ApiError::new(404, "Unknown path.")),

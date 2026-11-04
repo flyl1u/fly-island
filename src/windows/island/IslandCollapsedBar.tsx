@@ -1,4 +1,4 @@
-import { Inbox } from "lucide-react";
+import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -122,9 +122,13 @@ export function IslandCollapsedBar({
             <span className="island__brand">fly-island</span>
           )}
           {showCollapsedText && agentSession && (
-            <span className="island__agent-session" key={`${agentSession.provider}:${agentSession.title}`}>
+            <span className="island__agent-session" key={`${agentSession.label}:${agentSession.title}`}>
               {showTitle && <span className="island__agent-session-separator">·</span>}
-              <AgentProviderIcon provider={agentSession.provider} size={16} />
+              {agentSession.provider ? (
+                <AgentProviderIcon provider={agentSession.provider} size={16} />
+              ) : (
+                <Bot className="island__agent-session-bot" size={16} strokeWidth={2.2} aria-hidden="true" />
+              )}
               <span className="island__agent-session-title">{agentSession.title}</span>
             </span>
           )}

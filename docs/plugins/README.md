@@ -75,6 +75,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `todos:write` | `todos.add`、`todos.update`、`todos.remove` |
 | `notes:read` | `note.get` |
 | `notes:write` | `note.set` |
+| `agent-status:write` | `agentStatus.report`、`agentStatus.clear` |
 
 用户启用插件时，会授予清单里列出的全部权限。新版本如果要求更多权限，插件会暂停，直到用户重新授权。
 
@@ -108,8 +109,10 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `todos.remove` | `{ id }` | `{ id }` |
 | `note.get` | — | `{ date, note }` |
 | `note.set` | `{ note }` 或 `{ append }` | `{ date, note }` |
+| `agentStatus.report` | `{ source, phase, name?, title?, taskId? }` | 保存后的状态，`id` 为 `<插件 id>/<source>` |
+| `agentStatus.clear` | `{ source? }` | `{ cleared }`；省略 `source` 时清除这个插件的全部来源 |
 
-这些方法和 [本地接口](../local-api.md) 的 HTTP 接口一一对应，参数和结果完全相同。
+这些方法和 [本地接口](../local-api.md) 的 HTTP 接口一一对应，参数和结果完全相同。`agentStatus.*` 的字段规则见本地接口文档的“AI Agent 状态”一节；`name` 省略时默认使用插件清单里的英文名称。插件停止、停用或出错退出时，它上报的来源会被自动清除。
 
 插件还可以发送通知 `log`，参数为 `{ message }`，内容会写入日志。
 

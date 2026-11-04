@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 // 与 src-tauri/src/plugin_host/permissions.rs 中的 PERMISSIONS 对应。
-export const PLUGIN_PERMISSIONS = ["todos:read", "todos:write", "notes:read", "notes:write"] as const;
+export const PLUGIN_PERMISSIONS = ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
 // 与 src-tauri/src/plugin_host/manifest.rs 中的 LocalizedText、PluginCommand 对应。

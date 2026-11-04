@@ -46,6 +46,8 @@ pub struct AgentStatusSnapshot {
     pub(super) claude_code: AgentTaskStatus,
     pub(super) updated_at: i64,
     pub(super) status_path: String,
+    /// Sources reported by plugins and the local API (see external.rs).
+    pub(super) others: Vec<super::external::ExternalAgentStatus>,
 }
 
 pub(super) fn default_agent_phase() -> String {
@@ -58,6 +60,7 @@ pub(super) fn default_agent_status_snapshot(status_path: String) -> AgentStatusS
         claude_code: AgentTaskStatus::default(),
         updated_at: current_unix_millis(),
         status_path,
+        others: super::external::current(),
     }
 }
 
@@ -82,6 +85,7 @@ pub(super) fn agent_status_snapshot_from_persisted(
             current_unix_millis()
         },
         status_path,
+        others: super::external::current(),
     }
 }
 

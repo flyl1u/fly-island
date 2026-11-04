@@ -2,6 +2,7 @@
 
 mod claude_hooks;
 mod codex_hooks;
+mod external;
 mod hooks_state;
 mod markers;
 mod snapshot;
@@ -11,6 +12,7 @@ mod title;
 mod title_cache;
 
 use serde::Serialize;
+use serde_json::{json, Value};
 use std::{fs, path::Path};
 use tauri::{AppHandle, Manager};
 
@@ -88,6 +90,14 @@ fn read_agent_status(app: AppHandle) -> Result<AgentStatusSnapshot, String> {
 
 #[tauri::command]
 pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatusSnapshot, String> {
+    if provider != "codex" && provider != "claudeCode" {
+        // A plugin or local API source, named by its full id.
+        return if external::clear_by_id(&provider) {
+            read_agent_status(app)
+        } else {
+            Err("Unsupported agent provider.".to_string())
+        };
+    }
     let app_dir = app
         .path()
         .app_data_dir()
@@ -144,6 +154,29 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
         persisted,
         status_path_display,
     ))
+}
+
+/// `agentStatus.report` for plugins (`owner` = plugin id) and the local API
+/// (`owner` = `local-api`). Errors carry an HTTP-style status.
+pub(crate) fn report_external_status(owner: &str, default_name: &str, params: &Value) -> Result<Value, (u16, String)> {
+    let report = external::parse_report(params).map_err(|message| (400, message))?;
+    let status = external::report(owner, default_name, report).map_err(|message| (429, message))?;
+    serde_json::to_value(status).map_err(|error| (500, error.to_string()))
+}
+
+/// `agentStatus.clear`: one source (`{ source }`) or all of the owner's (`{}`).
+pub(crate) fn clear_external_status(owner: &str, params: &Value) -> Result<Value, (u16, String)> {
+    let source = match params.get("source") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(source)) => Some(source.as_str()),
+        Some(_) => return Err((400, "\"source\" must be a string.".into())),
+    };
+    Ok(json!({ "cleared": external::clear(owner, source) }))
+}
+
+/// Drops every source a stopped plugin reported.
+pub(crate) fn clear_external_owner(owner: &str) {
+    external::clear(owner, None);
 }
 
 #[tauri::command]

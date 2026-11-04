@@ -22,7 +22,7 @@ use std::{
 use tauri::AppHandle;
 
 use super::{manifest::HOST_API_VERSION, permissions::method_permission, rpc};
-use crate::{local_api, system::CREATE_NO_WINDOW};
+use crate::{agent_status, local_api, system::CREATE_NO_WINDOW};
 
 const LOG_LINES: usize = 200;
 const RESTART_DELAYS: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(5), Duration::from_secs(30)];
@@ -68,6 +68,8 @@ pub(super) struct LaunchSpec {
     pub data_dir: PathBuf,
     pub granted: Vec<String>,
     pub app_version: String,
+    /// Shown for agent statuses the plugin reports without a name.
+    pub display_name: String,
 }
 
 struct Context {
@@ -103,6 +105,10 @@ impl Supervisor {
             .spawn(move || supervise(&worker))
             .map_err(|error| format!("Could not start the plugin thread: {error}"))?;
         Ok(Self { context })
+    }
+
+    pub fn plugin_id(&self) -> &str {
+        &self.context.spec.plugin_id
     }
 
     pub fn notify(&self, method: &str, params: Value) -> Result<(), String> {
@@ -194,6 +200,7 @@ fn supervise(context: &Arc<Context>) {
         let Some(delay) = RESTART_DELAYS.get(failures).copied() else {
             let message = format!("The plugin stopped {} times in a row ({exit}).", failures + 1);
             set_status(context, RuntimeStatus::Crashed, Some(message));
+            agent_status::clear_external_owner(&context.spec.plugin_id);
             return;
         };
         failures += 1;
@@ -307,7 +314,13 @@ fn answer_request(context: &Context, id: &Value, method: &str, params: Value) ->
         let message = format!("The plugin was not given the \"{permission}\" permission.");
         return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
     }
-    match local_api::call_island(&context.app, name, params) {
+    let owner = &context.spec.plugin_id;
+    let answer = match name {
+        "agentStatus.report" => agent_status::report_external_status(owner, &context.spec.display_name, &params),
+        "agentStatus.clear" => agent_status::clear_external_status(owner, &params),
+        _ => local_api::call_island(&context.app, name, params),
+    };
+    match answer {
         Ok(result) => rpc::result_line(id, result),
         Err((status, message)) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": status }))),
     }

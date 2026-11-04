@@ -1,14 +1,16 @@
 import type { AgentProvider, AgentStatusSnapshot } from "./api";
+import { listAgentStatuses } from "./status.ts";
 
 /** How long a finished session's title stays on the island before the todo comes back. */
 export const COMPLETED_TITLE_HOLD_MS = 3000;
 
 export type AgentSession = {
-  provider: AgentProvider;
+  /** Null for a source reported by a plugin or the local API. */
+  provider: AgentProvider | null;
+  /** Who is working, e.g. "Claude Code" or a reported source's name. */
+  label: string;
   title: string;
 };
-
-const PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
 
 /**
  * The session the collapsed island should name: a running, failed or stale one, or one that
@@ -16,8 +18,7 @@ const PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
  */
 export function pickAgentSession(snapshot: AgentStatusSnapshot, now: number): AgentSession | null {
   let picked: { session: AgentSession; updatedAt: number } | null = null;
-  for (const provider of PROVIDERS) {
-    const status = snapshot[provider];
+  for (const { provider, label, status } of listAgentStatuses(snapshot)) {
     const title = status.title?.trim();
     if (!title) continue;
     const visible =
@@ -26,7 +27,7 @@ export function pickAgentSession(snapshot: AgentStatusSnapshot, now: number): Ag
       status.phase === "stale" ||
       (status.phase === "completed" && now - status.updatedAt < COMPLETED_TITLE_HOLD_MS);
     if (visible && (!picked || status.updatedAt > picked.updatedAt)) {
-      picked = { session: { provider, title }, updatedAt: status.updatedAt };
+      picked = { session: { provider, label, title }, updatedAt: status.updatedAt };
     }
   }
   return picked?.session ?? null;
@@ -34,7 +35,8 @@ export function pickAgentSession(snapshot: AgentStatusSnapshot, now: number): Ag
 
 /** When the picked completed session stops being shown, or null when nothing expires. */
 export function agentSessionExpiresAt(snapshot: AgentStatusSnapshot, now: number): number | null {
-  const expiries = PROVIDERS.map((provider) => snapshot[provider])
+  const expiries = listAgentStatuses(snapshot)
+    .map((entry) => entry.status)
     .filter((status) => status.phase === "completed" && status.title?.trim())
     .map((status) => status.updatedAt + COMPLETED_TITLE_HOLD_MS)
     .filter((expiresAt) => expiresAt > now);

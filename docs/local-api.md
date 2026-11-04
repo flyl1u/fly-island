@@ -27,7 +27,7 @@
 - 带 `Origin` 头的请求（来自网页）一律拒绝，返回 403。
 - `Host` 必须是 `127.0.0.1:<端口>` 或 `localhost:<端口>`，用来防止 DNS 重绑定攻击。
 - 请求体最大 64 KB。
-- 只开放待办和每日笔记，剪贴板、邮件、消息、凭据都不开放。
+- 只开放待办、每日笔记和 AI Agent 状态灯，剪贴板、邮件、消息、凭据都不开放。
 
 ## 接口
 
@@ -42,10 +42,28 @@
 | DELETE | `/v1/todos/{id}` | — | 删除 |
 | GET | `/v1/note` | — | `{ date, note }` |
 | PUT | `/v1/note` | `{ "note": "..." }` 或 `{ "append": "..." }` | `note` 整体替换；`append` 追加一行 |
+| PUT | `/v1/agent-status/{source}` | `{ "phase": "running", "name"?: "Aider", "title"?: "...", "taskId"?: "..." }` | 上报一个 AI Agent 的状态，见下文 |
+| DELETE | `/v1/agent-status/{source}` | — | 移除这个来源 |
 
 待办对象的格式为 `{ id, title, completed, createdAt }`。标题不能为空，最长 500 个字符。
 
 状态码：`400` 参数错误，`401` 令牌错误，`403` 被拒绝（网页请求、Host 不对、未允许修改），`404` 路径或待办不存在，`405` 方法不对，`413` 请求体太大，`503` / `504` 岛屿暂时没有响应。
+
+## AI Agent 状态
+
+除了内置的 Codex 和 Claude Code，任何工具都可以通过这个接口点亮状态灯，并在折叠的岛上显示会话标题（没有品牌图标时显示机器人图标）：
+
+- `source`：来源名，1–32 个小写字母、数字或 `-`，例如 `aider`。在设置里显示的 id 是 `local-api/<source>`。
+- `phase`：`running`（蓝灯）、`failed`（黄灯）、`completed` 或 `idle`（不亮）。`running` 超过 10 分钟没有再次上报时显示为 `stale`（黄灯）。
+- `name` 是显示名称，省略时沿用上次的名称，第一次上报时默认用 `source`。`title` 最长 120 个字符，`name` 最长 40 个字符。
+- 这些状态只保存在内存里，岛屿重启后就没有了。最多同时存在 16 个来源。
+
+```powershell
+# 在 Aider 等工具的开始 / 结束钩子里调用
+Invoke-RestMethod "$api/agent-status/aider" -Method Put -Headers $headers -ContentType "application/json; charset=utf-8" `
+  -Body ([Text.Encoding]::UTF8.GetBytes((@{ phase = "running"; name = "Aider"; title = "重构解析器" } | ConvertTo-Json)))
+Invoke-RestMethod "$api/agent-status/aider" -Method Put -Headers $headers -ContentType "application/json" -Body '{"phase":"completed"}'
+```
 
 ## 示例
 
@@ -73,7 +91,7 @@ curl -X PATCH -H "Authorization: Bearer $TOKEN" -d '{"completed":true}' \
 
 ## 实现说明
 
-待办和笔记存放在主窗口的 `localStorage` 中，Rust 端读不到。所以请求的处理流程是：
+AI Agent 状态由 Rust 直接处理（`src-tauri/src/agent_status/external.rs`）。待办和笔记存放在主窗口的 `localStorage` 中，Rust 端读不到。所以请求的处理流程是：
 
 1. Rust（`src-tauri/src/local_api/`）校验请求并转换成方法名，例如 `todos.add`。
 2. 通过事件 `local-api-request` 把请求发给 `main` 窗口。

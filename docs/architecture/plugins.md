@@ -202,7 +202,7 @@
 |---|---|---|
 | P0 | 完成重构 Phase 6、7 | — |
 | P1 ✅ | Rust `local_api` + 前端 `features/local-api/`（即本文的 plugin-bridge），只开放待办和笔记，见 [local-api.md](../local-api.md) | **待办外部接口**（当前用户的需求）直接可用 |
-| P2 | 开放 Agent 来源 id + 声明式插件加载（仅本地目录） | 新的 AI Agent 适配不必再等发版 |
+| P2 ✅ | 插件（权限 `agent-status:write`）和本地接口（`/v1/agent-status/{source}`）都可以上报 AI Agent 状态，在快照里作为 `others` 列表返回；Codex / Claude Code 的 hook 保持不变。声明式插件加载随 P3 一起完成（`runtime.type: none`） | 新的 AI Agent 适配不必再等发版 |
 | P3 ✅ | 进程插件宿主（`src-tauri/src/plugin_host/`）、设置 → 插件页（`src/features/plugins/`）、Node SDK 和示例插件，开发文档见 [docs/plugins/README.md](../plugins/README.md) | 第三方开发者可以写插件 |
 | P4 | 索引仓库 + 应用内插件市场页 + 哈希校验 | 用户可以在应用内浏览和安装插件 |
 | P5（视情况） | 展开态面板模板、索引签名、WASM 沙箱 | 根据生态规模再决定 |

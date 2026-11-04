@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../utils/error";
-import { clearAgentProviderStatus, getAgentHooksState, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentHooksState, type AgentProvider, type AgentStatusSnapshot } from "./api";
+import { clearAgentProviderStatus, getAgentHooksState, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentHooksState, type AgentStatusSnapshot } from "./api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "./status";
 
 const AGENT_STATUS_POLL_MS = 1_000;
@@ -10,7 +10,7 @@ export function useAgentStatusSettings() {
   const [agentStatus, setAgentStatus] =
     useState<AgentStatusSnapshot>(DEFAULT_AGENT_STATUS);
   const [clearingAgentProvider, setClearingAgentProvider] =
-    useState<AgentProvider | null>(null);
+    useState<string | null>(null);
   const [agentHooksInstallState, setAgentHooksInstallState] =
     useState<AgentHooksInstallState>("idle");
   const [agentHooksInstallResult, setAgentHooksInstallResult] =
@@ -57,7 +57,7 @@ export function useAgentStatusSettings() {
     return () => window.clearInterval(interval);
   }, [refreshAgentHooksState, refreshAgentStatus]);
 
-  const clearAgentStatus = useCallback(async (provider: AgentProvider) => {
+  const clearAgentStatus = useCallback(async (provider: string) => {
     setClearingAgentProvider(provider);
     try {
       const snapshot = await clearAgentProviderStatus(provider);

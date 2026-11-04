@@ -21,6 +21,8 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
+use crate::agent_status;
+
 use manifest::{launch_command, parse_manifest, LocalizedText, PluginCommand, PluginManifest, PluginRuntime, MANIFEST_FILE_NAME};
 use permissions::missing_permissions;
 use runtime::{LaunchSpec, RuntimeStatus, RuntimeTable, Supervisor};
@@ -170,6 +172,7 @@ fn sync_processes() -> Result<(), String> {
                     data_dir: host.data_dir.join(&manifest.id),
                     granted: manifest.permissions.clone(),
                     app_version: app_version(&host.app),
+                    display_name: manifest.name.en().to_string(),
                 },
             );
         }
@@ -181,7 +184,9 @@ fn sync_processes() -> Result<(), String> {
         gone.iter().filter_map(|id| supervisors.remove(id)).collect()
     };
     for supervisor in stopping {
+        let id = supervisor.plugin_id().to_string();
         supervisor.stop();
+        agent_status::clear_external_owner(&id);
     }
 
     let mut supervisors = lock(&host.supervisors);
@@ -203,7 +208,9 @@ fn sync_processes() -> Result<(), String> {
 fn stop_all() -> Result<(), String> {
     let stopping: Vec<Supervisor> = lock(&host()?.supervisors).drain().map(|(_, supervisor)| supervisor).collect();
     for supervisor in stopping {
+        let id = supervisor.plugin_id().to_string();
         supervisor.stop();
+        agent_status::clear_external_owner(&id);
     }
     Ok(())
 }

@@ -56,6 +56,13 @@ fn routes_map_to_methods() {
     assert_eq!(route("GET", "/v1/note", b"").expect("note").method, "note.get");
     assert_eq!(route("PUT", "/v1/note", br#"{"note":"hi"}"#).expect("note").method, "note.set");
     assert_eq!(route("GET", "/v1/health", b"").expect("health").method, "health");
+
+    let report = route("PUT", "/v1/agent-status/aider", br#"{"phase":"running","source":"other"}"#).expect("report");
+    assert_eq!((report.method, report.writes), ("agentStatus.report", true));
+    assert_eq!(report.params, json!({ "phase": "running", "source": "aider" }));
+    let clear = route("DELETE", "/v1/agent-status/aider", b"").expect("clear");
+    assert_eq!((clear.method, clear.params), ("agentStatus.clear", json!({ "source": "aider" })));
+    assert_eq!(route("GET", "/v1/agent-status/aider", b"").map_err(|error| error.status), Err(405));
 }
 
 #[test]

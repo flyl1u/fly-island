@@ -12,9 +12,18 @@ export type AgentTaskStatus = {
   title?: string;
 };
 
+/** A source reported by a plugin or the local API. Mirrors ExternalAgentStatus in src-tauri/src/agent_status/external.rs. */
+export type ExternalAgentStatus = AgentTaskStatus & {
+  /** `<owner>/<source>`, e.g. `local-api/aider`. */
+  id: string;
+  name: string;
+};
+
 export type AgentStatusSnapshot = Record<AgentProvider, AgentTaskStatus> & {
   updatedAt: number;
   statusPath: string;
+  /** Missing in snapshots from builds before plugins could report agents. */
+  others?: ExternalAgentStatus[];
 };
 
 export type AgentHooksInstallResult = {
@@ -40,7 +49,8 @@ export function getAgentStatus() {
   return invoke<AgentStatusSnapshot>("get_agent_status");
 }
 
-export function clearAgentProviderStatus(provider: AgentProvider) {
+/** Clears a built-in provider, or an external source by its id. */
+export function clearAgentProviderStatus(provider: string) {
   return invoke<AgentStatusSnapshot>("clear_agent_status", { provider });
 }
 

@@ -1,26 +1,26 @@
 import { CircleAlert, Check, RefreshCcw, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import type { AgentHooksInstallResult, AgentHooksState, AgentProvider, AgentStatusSnapshot } from "./api";
-import { AGENT_PROVIDERS, AGENT_PROVIDER_LABELS, getAgentHooksNotice, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, type AgentHooksInstallState } from "./status";
+import type { AgentHooksInstallResult, AgentHooksState, AgentStatusSnapshot } from "./api";
+import { getAgentHooksNotice, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, listAgentStatuses, type AgentHooksInstallState } from "./status";
 import "./AgentHooksSettingsSection.css";
 
 export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, agentHooksInstallState, agentHooksInstallResult, agentHooksInstallError, agentHooksState, onClearAgentStatus, onInstallAgentHooks }: {
   agentStatus: AgentStatusSnapshot;
-  clearingAgentProvider: AgentProvider | null;
+  /** The provider or reported source id being cleared. */
+  clearingAgentProvider: string | null;
   agentHooksInstallState: AgentHooksInstallState;
   agentHooksInstallResult: AgentHooksInstallResult | null;
   agentHooksInstallError: string;
   /** Null until read; outdated hooks get a notice asking for Install/Repair. */
   agentHooksState: AgentHooksState | null;
-  onClearAgentStatus: (provider: AgentProvider) => void;
+  onClearAgentStatus: (provider: string) => void;
   onInstallAgentHooks: () => void;
 }) {
   const t = useTranslation();
-  const agentStatusRows = AGENT_PROVIDERS.map((provider) => {
-    const status = agentStatus[provider];
+  const agentStatusRows = listAgentStatuses(agentStatus).map(({ key, label, status }) => {
     return {
-      provider,
-      label: AGENT_PROVIDER_LABELS[provider],
+      provider: key,
+      label,
       phase: status.phase,
       phaseLabel: getAgentPhaseLabel(status.phase, t),
       needsAttention: isAgentAttentionPhase(status.phase),

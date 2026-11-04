@@ -13,18 +13,41 @@ export const DEFAULT_AGENT_STATUS: AgentStatusSnapshot = {
   claudeCode: DEFAULT_AGENT_TASK_STATUS,
   updatedAt: 0,
   statusPath: "",
+  others: [],
 };
 export const AGENT_PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
 export const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   codex: "Codex",
   claudeCode: "Claude Code",
 };
+/** One row of agent status: a built-in provider or a source reported by a plugin or the local API. */
+export type AgentStatusEntry = {
+  /** The provider for built-ins, the source id for the others; what clear_agent_status takes. */
+  key: string;
+  label: string;
+  /** Null for reported sources, which have no brand icon. */
+  provider: AgentProvider | null;
+  status: AgentTaskStatus;
+};
+
+export function listAgentStatuses(snapshot: AgentStatusSnapshot): AgentStatusEntry[] {
+  return [
+    ...AGENT_PROVIDERS.map((provider) => ({
+      key: provider,
+      label: AGENT_PROVIDER_LABELS[provider],
+      provider,
+      status: snapshot[provider],
+    })),
+    ...(snapshot.others ?? []).map((other) => ({ key: other.id, label: other.name, provider: null, status: other })),
+  ];
+}
+
 export function isAgentAttentionPhase(phase: AgentTaskPhase) {
   return phase === "failed" || phase === "stale";
 }
 
 export function getAgentVisualState(snapshot: AgentStatusSnapshot): AgentVisualState {
-  const statuses = AGENT_PROVIDERS.map((provider) => snapshot[provider]);
+  const statuses = listAgentStatuses(snapshot).map((entry) => entry.status);
 
   if (statuses.some((status) => isAgentAttentionPhase(status.phase))) {
     return "attention";
@@ -49,24 +72,19 @@ export function getAgentHooksNotice(state: AgentHooksState | null): AgentHooksNo
 }
 
 export function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translations) {
-  const attentionProvider = AGENT_PROVIDERS.find((provider) =>
-    isAgentAttentionPhase(snapshot[provider].phase),
-  );
+  const entries = listAgentStatuses(snapshot);
+  const attention = entries.find((entry) => isAgentAttentionPhase(entry.status.phase));
 
-  if (attentionProvider) {
-    const phase = snapshot[attentionProvider].phase;
-    const providerLabel = AGENT_PROVIDER_LABELS[attentionProvider];
-    return phase === "stale"
-      ? t.agent.stale(providerLabel)
-      : t.agent.failed(providerLabel);
+  if (attention) {
+    return attention.status.phase === "stale"
+      ? t.agent.stale(attention.label)
+      : t.agent.failed(attention.label);
   }
 
-  const runningProvider = AGENT_PROVIDERS.find(
-    (provider) => snapshot[provider].phase === "running",
-  );
+  const running = entries.find((entry) => entry.status.phase === "running");
 
-  if (runningProvider) {
-    return t.agent.running(AGENT_PROVIDER_LABELS[runningProvider]);
+  if (running) {
+    return t.agent.running(running.label);
   }
 
   return t.agent.idleOrDone;

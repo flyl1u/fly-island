@@ -86,6 +86,10 @@ Titles are cut to 40 characters. Clearing a provider's status also deletes its s
 
 The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It reports each agent as `notInstalled`, `outdated` (FocuSD hooks without `capture`, or the legacy unmanaged Codex hooks) or `current`, plus whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
 
+## Other Agents
+
+Tools other than Codex and Claude Code can report their status too, with no FocuSD release needed: either from a plugin with the `agent-status:write` permission (`agentStatus.report`), or over the local API (`PUT /v1/agent-status/{source}`). These reports are kept in memory only and appear in the snapshot's `others` list. They light the island and name their session in the same way as the built-in agents, using a robot icon instead of a brand icon. See [local-api.md](local-api.md#ai-agent-状态) and [plugins/README.md](plugins/README.md).
+
 ## Manual Smoke Test
 
 After using the in-app installer, run these commands with the app-data scripts:

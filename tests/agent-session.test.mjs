@@ -20,7 +20,7 @@ function snapshot(codex = {}, claudeCode = {}) {
 test("a running session with a title is picked", () => {
   assert.deepEqual(
     pickAgentSession(snapshot({}, { phase: "running", updatedAt: NOW - 10, title: "设置界面完善思路" }), NOW),
-    { provider: "claudeCode", title: "设置界面完善思路" },
+    { provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" },
   );
 });
 
@@ -55,4 +55,12 @@ test("with several sessions the most recently updated wins", () => {
     { phase: "running", updatedAt: NOW - 100, title: "claude task" },
   );
   assert.equal(pickAgentSession(codexNewer, NOW)?.provider, "codex");
+});
+
+test("sources reported by plugins or the local API are named by their own name", () => {
+  const reported = {
+    ...snapshot(),
+    others: [{ id: "local-api/aider", name: "Aider", phase: "running", title: "Refactor parser", updatedAt: NOW - 10 }],
+  };
+  assert.deepEqual(pickAgentSession(reported, NOW), { provider: null, label: "Aider", title: "Refactor parser" });
 });

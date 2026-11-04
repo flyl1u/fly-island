@@ -44,3 +44,17 @@ test("phase labels fall back to idle for unknown phases", () => {
   assert.equal(getAgentPhaseLabel("completed", t), t.agent.phase.completed);
   assert.equal(getAgentPhaseLabel("unknown", t), t.agent.phase.idle);
 });
+
+test("reported sources light the island and are named in the label", () => {
+  const withOther = (phase) => ({
+    ...snapshot("idle", "idle"),
+    others: [{ id: "dev.example.cursor/cursor", name: "Cursor", phase, updatedAt: 1 }],
+  });
+  assert.equal(getAgentVisualState(withOther("running")), "running");
+  assert.equal(getAgentVisualState(withOther("stale")), "attention");
+  assert.equal(getAgentStatusLabel(withOther("running"), t), t.agent.running("Cursor"));
+  assert.equal(getAgentStatusLabel(withOther("failed"), t), t.agent.failed("Cursor"));
+  // Snapshots from older builds have no `others`.
+  const { others: _ignored, ...older } = withOther("running");
+  assert.equal(getAgentVisualState(older), "idle");
+});

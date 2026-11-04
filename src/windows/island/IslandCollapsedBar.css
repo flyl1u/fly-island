@@ -101,6 +101,11 @@
   flex: 0 0 auto;
 }
 
+/* Agents reported by plugins or the local API have no brand icon. */
+.island__agent-session-bot {
+  flex: 0 0 auto;
+}
+
 .island__agent-session-title {
   min-width: 0;
   overflow: hidden;

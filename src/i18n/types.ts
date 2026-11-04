@@ -596,7 +596,7 @@ export type Translations = {
       homepage: string;
       permissions: string;
       noPermissions: string;
-      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write", string>;
+      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:write", string>;
       needsApproval: string;
       notAllowed: string;
       describedOnly: string;
