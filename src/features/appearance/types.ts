@@ -2,6 +2,8 @@ export type AppearanceMode = "classic" | "liquidGlass";
 export type IslandFont = "system" | "pixel";
 /** How the collapsed island opens: a click, or resting the pointer on it. */
 export type ExpandTrigger = "click" | "hover";
+/** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
+export type MinimizeAction = "tray" | "tuck";
 
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;
@@ -39,6 +41,7 @@ export type IslandSettings = {
   hoverExpandDelayMs: number;
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
+  minimizeAction: MinimizeAction;
 };
 
 export type IslandPreset = {

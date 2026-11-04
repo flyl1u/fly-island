@@ -196,6 +196,7 @@ export type Translations = {
     collapse: string;
     collapseIsland: string;
     minimizeToTray: string;
+    tuckToTop: string;
     resetPosition: string;
     resetPositionLabel: string;
     editor: string;
@@ -425,6 +426,9 @@ export type Translations = {
       launchAtStartup: string;
       showTitle: string;
       displayTitle: string;
+      minimizeAction: string;
+      minimizeToTray: string;
+      minimizeToTop: string;
       autoTuck: string;
       autoTuckSeconds: string;
     };

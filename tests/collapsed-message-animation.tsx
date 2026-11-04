@@ -88,7 +88,7 @@ function Fixture() {
       mediaState={UNAVAILABLE_MEDIA}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}
-      onResetPosition={() => {}} onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
+      onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
       <span>待办清单</span>
     </IslandShell>
   </div>;

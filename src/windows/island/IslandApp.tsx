@@ -28,6 +28,7 @@ import { useHoverExpand } from "./useHoverExpand";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
 import { useIslandNavigation } from "./useIslandNavigation";
+import { useTuckPeek } from "./useTuckPeek";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -36,11 +37,15 @@ export function IslandApp() {
   const {
     mode,
     isTucked,
+    isPeeking,
     page,
     setPage,
     collapseIsland,
     tuckIsland,
     revealIsland,
+    minimizeToEdge,
+    peekIsland,
+    endPeek,
     openIslandPage,
     toggleClipboardHistory,
   } = useIslandNavigation();
@@ -99,6 +104,7 @@ export function IslandApp() {
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   useIdleTuck(settings.autoTuck && !hasMessagePreview, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
   useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
+  useTuckPeek(isPeeking, endPeek);
 
   const closeMailReader = qqMail.closeReader;
   const openMessages = useCallback((source: MessageSource) => {
@@ -145,7 +151,8 @@ export function IslandApp() {
     paused: hasMessagePreview,
     collapseDelayMs: settings.hoverCollapseDelayMs,
     mode,
-    isTucked,
+    // A peeking island opens on a click only; hovering it just keeps it out.
+    isTucked: isTucked || isPeeking,
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
@@ -197,11 +204,12 @@ export function IslandApp() {
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
         onResetPosition={resetIslandPosition}
-        onMinimize={minimizeIsland}
+        minimizesToTray={settings.minimizeAction === "tray"}
+        onMinimize={settings.minimizeAction === "tray" ? minimizeIsland : minimizeToEdge}
         onOpenTranslator={openTranslator}
         onOpenSettings={openSettingsWindow}
         onTuck={tuckIsland}
-        onReveal={revealIsland}
+        onReveal={peekIsland}
         onPageChange={setPage}
       >
         {page === "qq" && (

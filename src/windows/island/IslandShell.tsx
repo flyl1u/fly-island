@@ -36,6 +36,7 @@ type IslandShellProps = {
   onWindowDragStart: () => void;
   onCollapse: () => void;
   onResetPosition: () => void;
+  minimizesToTray: boolean;
   onMinimize: () => void;
   onOpenTranslator: () => void;
   onOpenSettings: () => void;
@@ -67,6 +68,7 @@ export function IslandShell({
   onWindowDragStart,
   onCollapse,
   onResetPosition,
+  minimizesToTray,
   onMinimize,
   onOpenTranslator,
   onOpenSettings,
@@ -177,6 +179,7 @@ export function IslandShell({
             onOpenMessages={onOpenMessages}
             onOpenTranslator={onOpenTranslator}
             onResetPosition={onResetPosition}
+            minimizesToTray={minimizesToTray}
             onMinimize={onMinimize}
           />
           <div className="island__content">{children}</div>

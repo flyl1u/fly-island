@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   expandTrigger: "click",
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
+  minimizeAction: "tray",
 };
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
@@ -216,6 +217,7 @@ export function normalizeSettings(
     hoverCollapseDelayMs: typeof settings?.hoverCollapseDelayMs === "number" && Number.isFinite(settings.hoverCollapseDelayMs)
       ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
       : DEFAULT_SETTINGS.hoverCollapseDelayMs,
+    minimizeAction: settings?.minimizeAction === "tuck" ? "tuck" : "tray",
   };
 }
 

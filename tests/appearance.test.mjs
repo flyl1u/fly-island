@@ -99,6 +99,9 @@ test("expand trigger, hover delays and max panel height default for older settin
   assert.equal(normalizeSettings({ maxPanelHeight: 100 }).maxPanelHeight, 306);
   assert.equal(normalizeSettings({ maxPanelHeight: 999 }).maxPanelHeight, 546);
   assert.equal(normalizeSettings({ maxPanelHeight: 400.6 }).maxPanelHeight, 401);
+  assert.equal(older.minimizeAction, "tray");
+  assert.equal(normalizeSettings({ minimizeAction: "tuck" }).minimizeAction, "tuck");
+  assert.equal(normalizeSettings({ minimizeAction: "hide" }).minimizeAction, "tray");
 });
 
 test("old default margins and scales move to the current defaults", () => {

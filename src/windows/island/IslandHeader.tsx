@@ -19,6 +19,8 @@ type IslandHeaderProps = {
   onOpenMessages: (source: MessageSource) => void;
   onOpenTranslator: () => void;
   onResetPosition: () => void;
+  /** False when minimizing tucks the island to the top edge instead. */
+  minimizesToTray: boolean;
   onMinimize: () => void;
 };
 
@@ -37,6 +39,7 @@ export function IslandHeader({
   onOpenMessages,
   onOpenTranslator,
   onResetPosition,
+  minimizesToTray,
   onMinimize,
 }: IslandHeaderProps) {
   const t = useTranslation();
@@ -154,8 +157,8 @@ export function IslandHeader({
         <button
           className="icon-button"
           type="button"
-          title={t.island.minimizeToTray}
-          aria-label={t.island.minimizeToTray}
+          title={minimizesToTray ? t.island.minimizeToTray : t.island.tuckToTop}
+          aria-label={minimizesToTray ? t.island.minimizeToTray : t.island.tuckToTop}
           onClick={(event) => {
             event.stopPropagation();
             onMinimize();
