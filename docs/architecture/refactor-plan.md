@@ -163,6 +163,7 @@
   - [x] 媒体与音频：`win32/audio.rs`（`AudioDevices` → `AudioOutput` → `OutputVolume` / `PeakMeter`，每一层单独返回 `Result`，调用方仍按原来的阶段映射错误文案）；`win32/input.rs` 新增 `send_key_down` / `send_key_up`，媒体键的 80ms 按住时间留在调用方。
   - [x] 通知：`win32/window.rs` 新增 `for_each_top_level_window`（闭包经 `LPARAM` 传给 `EnumWindows`，只在同步调用期间有效）和标题、类名、所有者、还原位置、可见性、前台窗口、`AllowSetForegroundWindow`、`SendMessageTimeoutW`、托盘图标查询；`qq_notifications/launcher.rs` 的枚举回调改为普通的安全函数，不再含 `unsafe`。
   - [x] 剪贴板：新增 `win32/message_window.rs`（`WindowMessages` trait 让窗口过程成为安全的 `handle` 方法，返回 `None` 时交给 `DefWindowProcW`；类注册、仅消息窗口、`PostMessageW`、`GetMessageW` 循环）、`win32/hotkey.rs`（注册时总是加 `MOD_NOREPEAT`）、`win32/clipboard.rs`（剪贴板格式监听）。`clipboard_history/service.rs`、`hotkey.rs` 不再含 `unsafe`，`unregister_current_hotkey` 不再是 `unsafe fn`。
+  - [x] 翻译：复用上一步的 `message_window`、`hotkey`，以及 `window::foreground_window` / `window_rect`；`translation/` 不再含 `unsafe`。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
 
 **验收**：除 `win32/` 外，生产代码中不再出现 `unsafe`；clippy 没有告警；`cargo test` 和 `pnpm tauri build --no-bundle` 通过。
@@ -333,6 +334,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.2（1/n，改写） | 见提交说明 | 新增 `win32/audio.rs`，`media_control/audio.rs` 不再含 `unsafe`：三个函数的阶段顺序、`ok()?` / 错误文案、音量钳制与"至少找到一个电平表"的判断逐一对应原代码。`send_media_key` 改用 `win32::input`，键码截断为 `u8` 与 80ms 间隔不变。`media_control/` 生产代码中已无 `unsafe` | `cargo test`（101 / 5）、clippy 68 → 63；`pnpm tauri build --no-bundle`，桌面快捷方式已核对。`pnpm check` 当时因另一会话进行中的前端改动（回归页缺少 `agentSession` 属性）失败，与本次 Rust 改动无关 |
 | 2026-11-04 | 6.2（2/n，改写） | 见提交说明 | QQ 窗口查找：回调体逐行对应原代码（标题缓冲 32、类名缓冲 256、托盘宿主窗口优先记录、标题 / 类名 / 所有者 / 还原位置四个条件的短路顺序、500×300 阈值），枚举失败的错误文案不变；托盘图标 id 查找的嵌套 `if` 合并为 `&&`，只在图标存在时记录 id，与原来相同；托盘点击仍按相同的消息、参数、标志和 1 秒超时发送。`qq_notifications/` 生产代码中已无 `unsafe` | `cargo test`（102 / 5）、clippy 63 → 56；`pnpm check`（114/114）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.2（3/n，改写） | 见提交说明 | 剪贴板监听：类名、窗口标题、仅消息窗口的样式与父窗口不变；取模块句柄、建窗、加监听失败仍返回 `error.to_string()`，注册类失败仍返回原来的固定文案；监听窗口句柄的保存、首次注册快捷键、消息循环（`GetMessageW` 返回 -1 时继续循环，与原写法相同）和退出时的注销顺序不变。窗口过程的三个分支和返回值逐一对应，未处理的消息仍交给 `DefWindowProcW`。快捷键注册的修饰键、`MOD_NOREPEAT`、失败日志不变 | `cargo test`（111 / 5）、clippy 56 → 51；`pnpm check`（115/115）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-04 | 6.2（4/n，改写） | 见提交说明 | 翻译快捷键窗口：与剪贴板相同的对齐方式（类名、标题、仅消息窗口、错误文案、消息循环、退出时注销）；`CHANGE_HOTKEY_MESSAGE` 投递失败仍清空待处理绑定并返回同一文案；窗口过程中先注销旧快捷键、注册新快捷键、失败时恢复旧绑定的顺序不变。首次定位窗口仍只在前台窗口非空且能取到矩形时用它的中心点 | `cargo test`（115 / 5）、clippy 51 → 44；`pnpm check`（118/118）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 

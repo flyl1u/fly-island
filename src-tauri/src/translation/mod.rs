@@ -13,22 +13,14 @@ use std::{
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Position, Size};
-use windows::{
-    core::w,
-    Win32::{
-        Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM},
-        System::LibraryLoader::GetModuleHandleW,
-        UI::{
-            Input::KeyboardAndMouse::{
-                RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_NOREPEAT,
-            },
-            WindowsAndMessaging::{
-                CreateWindowExW, DefWindowProcW, DispatchMessageW, GetForegroundWindow,
-                GetMessageW, GetWindowRect, PostMessageW, RegisterClassW, TranslateMessage,
-                HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_APP, WM_HOTKEY, WNDCLASSW,
-            },
-        },
-    },
+use windows::Win32::{
+    Foundation::{HWND, LPARAM, LRESULT, WPARAM},
+    UI::WindowsAndMessaging::{WM_APP, WM_HOTKEY},
+};
+
+use crate::win32::{
+    self,
+    message_window::{self, WindowMessages},
 };
 
 const WINDOW_LABEL: &str = "translation";
@@ -67,14 +59,13 @@ pub fn toggle_translation_window(app: AppHandle) -> Result<(), String> {
         let monitors = window
             .available_monitors()
             .map_err(|error| error.to_string())?;
-        let foreground = unsafe { GetForegroundWindow() };
-        let mut rect = RECT::default();
-        let center =
-            if !foreground.0.is_null() && unsafe { GetWindowRect(foreground, &mut rect) }.is_ok() {
-                Some(((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2))
-            } else {
-                None
-            };
+        let foreground = win32::window::foreground_window();
+        let center = if foreground.0.is_null() {
+            None
+        } else {
+            win32::window::window_rect(foreground)
+                .map(|rect| ((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2))
+        };
         let monitor = monitors
             .into_iter()
             .find(|monitor| {
@@ -276,14 +267,7 @@ pub fn set_translation_shortcut(shortcut: String) -> Result<String, String> {
         }
         *pending = Some((binding, sender));
     }
-    if let Err(error) = unsafe {
-        PostMessageW(
-            Some(HWND(hwnd as *mut _)),
-            CHANGE_HOTKEY_MESSAGE,
-            WPARAM(0),
-            LPARAM(0),
-        )
-    } {
+    if let Err(error) = message_window::post_message(HWND(hwnd as *mut _), CHANGE_HOTKEY_MESSAGE) {
         *PENDING_BINDING.lock().map_err(|error| error.to_string())? = None;
         return Err(format!("无法更新快捷键：{error}"));
     }
@@ -293,98 +277,68 @@ pub fn set_translation_shortcut(shortcut: String) -> Result<String, String> {
 }
 
 fn run_hotkey_loop() -> Result<(), String> {
-    unsafe {
-        let class_name = w!("FocuSDTranslationHotkey");
-        let module = GetModuleHandleW(None).map_err(|error| error.to_string())?;
-        let instance = HINSTANCE(module.0);
-        let class = WNDCLASSW {
-            lpfnWndProc: Some(hotkey_window_proc),
-            hInstance: instance,
-            lpszClassName: class_name,
-            ..Default::default()
-        };
-        if RegisterClassW(&class) == 0 {
-            return Err("无法注册翻译快捷键窗口。".to_string());
-        }
-        let hwnd = CreateWindowExW(
-            WINDOW_EX_STYLE(0),
-            class_name,
-            w!("FocuSD Translation Hotkey"),
-            WINDOW_STYLE(0),
-            0,
-            0,
-            0,
-            0,
-            Some(HWND_MESSAGE),
-            None,
-            Some(instance),
-            None,
-        )
-        .map_err(|error| error.to_string())?;
-        if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT) {
-            if register_binding(hwnd, &binding).is_ok() {
-                *ACTIVE_BINDING.lock().map_err(|error| error.to_string())? = Some(binding);
-            }
-        }
-        *HOTKEY_WINDOW.lock().map_err(|error| error.to_string())? = Some(hwnd.0 as isize);
-        let mut message = MSG::default();
-        while GetMessageW(&mut message, None, 0, 0).into() {
-            let _ = TranslateMessage(&message);
-            DispatchMessageW(&message);
-        }
-        let _ = UnregisterHotKey(Some(hwnd), HOTKEY_ID);
+    let class_name = "FocuSDTranslationHotkey";
+    let instance = message_window::module_instance().map_err(|error| error.to_string())?;
+    if message_window::register_class::<TranslationHotkeyWindow>(instance, class_name).is_err() {
+        return Err("无法注册翻译快捷键窗口。".to_string());
     }
+    let hwnd = message_window::create_message_only_window(
+        instance,
+        class_name,
+        "FocuSD Translation Hotkey",
+    )
+    .map_err(|error| error.to_string())?;
+    if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT) {
+        if register_binding(hwnd, &binding).is_ok() {
+            *ACTIVE_BINDING.lock().map_err(|error| error.to_string())? = Some(binding);
+        }
+    }
+    *HOTKEY_WINDOW.lock().map_err(|error| error.to_string())? = Some(hwnd.0 as isize);
+    message_window::run_message_loop();
+    let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
     Ok(())
 }
 
 fn register_binding(hwnd: HWND, binding: &ShortcutBinding) -> Result<(), String> {
-    unsafe {
-        RegisterHotKey(
-            Some(hwnd),
-            HOTKEY_ID,
-            HOT_KEY_MODIFIERS(binding.modifiers | MOD_NOREPEAT.0),
-            binding.key_code,
-        )
+    win32::hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code)
         .map_err(|error| format!("快捷键 {} 已被占用或无法注册：{error}", binding.label))
-    }
 }
 
-unsafe extern "system" fn hotkey_window_proc(
-    hwnd: HWND,
-    message: u32,
-    wparam: WPARAM,
-    lparam: LPARAM,
-) -> LRESULT {
-    if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
-        if let Some(app) = APP.get() {
-            let _ = toggle_translation_window(app.clone());
+struct TranslationHotkeyWindow;
+
+impl WindowMessages for TranslationHotkeyWindow {
+    fn handle(hwnd: HWND, message: u32, wparam: WPARAM, _: LPARAM) -> Option<LRESULT> {
+        if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
+            if let Some(app) = APP.get() {
+                let _ = toggle_translation_window(app.clone());
+            }
+            return Some(LRESULT(0));
         }
-        return LRESULT(0);
-    }
-    if message == CHANGE_HOTKEY_MESSAGE {
-        let pending = PENDING_BINDING
-            .lock()
-            .ok()
-            .and_then(|mut value| value.take());
-        if let Some((binding, sender)) = pending {
-            let previous = ACTIVE_BINDING
+        if message == CHANGE_HOTKEY_MESSAGE {
+            let pending = PENDING_BINDING
                 .lock()
                 .ok()
                 .and_then(|mut value| value.take());
-            if previous.is_some() {
-                let _ = unsafe { UnregisterHotKey(Some(hwnd), HOTKEY_ID) };
+            if let Some((binding, sender)) = pending {
+                let previous = ACTIVE_BINDING
+                    .lock()
+                    .ok()
+                    .and_then(|mut value| value.take());
+                if previous.is_some() {
+                    let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
+                }
+                let result = register_binding(hwnd, &binding).map(|()| binding.label.clone());
+                if let Ok(mut active) = ACTIVE_BINDING.lock() {
+                    *active = if result.is_ok() {
+                        Some(binding)
+                    } else {
+                        previous.and_then(|old| register_binding(hwnd, &old).ok().map(|()| old))
+                    };
+                }
+                let _ = sender.send(result);
             }
-            let result = register_binding(hwnd, &binding).map(|()| binding.label.clone());
-            if let Ok(mut active) = ACTIVE_BINDING.lock() {
-                *active = if result.is_ok() {
-                    Some(binding)
-                } else {
-                    previous.and_then(|old| register_binding(hwnd, &old).ok().map(|()| old))
-                };
-            }
-            let _ = sender.send(result);
+            return Some(LRESULT(0));
         }
-        return LRESULT(0);
+        None
     }
-    unsafe { DefWindowProcW(hwnd, message, wparam, lparam) }
 }
