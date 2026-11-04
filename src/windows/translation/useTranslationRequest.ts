@@ -14,6 +14,7 @@ export function useTranslationRequest({
   setError,
   setIsLoading,
   setDidCopy,
+  onStart,
 }: {
   input: string;
   settings: TranslationSettings;
@@ -25,6 +26,8 @@ export function useTranslationRequest({
   setError: (value: string) => void;
   setIsLoading: (value: boolean) => void;
   setDidCopy: (value: boolean) => void;
+  /** Called once a request is actually sent, so auto-translate does not send it again. */
+  onStart?: () => void;
 }) {
   const t = useTranslation();
 
@@ -32,6 +35,7 @@ export function useTranslationRequest({
     const text = input.trim();
     if (!text) { setError(t.translator.emptySource); return; }
     if (Array.from(text).length > 5000) { setError(t.translator.tooLong); return; }
+    onStart?.();
     const currentId = ++requestId.current;
     setError("");
     setOutput("");
@@ -49,7 +53,7 @@ export function useTranslationRequest({
     } finally {
       if (currentId === requestId.current) setIsLoading(false);
     }
-  }, [input, requestId, setError, setIsLoading, setOutput, settings, t]);
+  }, [input, onStart, requestId, setError, setIsLoading, setOutput, settings, t]);
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

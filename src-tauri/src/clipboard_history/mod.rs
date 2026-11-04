@@ -9,6 +9,7 @@ use std::{
     fs,
     path::PathBuf,
     sync::{Mutex, OnceLock},
+    time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};
 
@@ -38,6 +39,28 @@ const SHORT_DUPLICATE_WINDOW_MS: i64 = 2_000;
 const MAX_NOTE_CHARACTERS: usize = 80;
 
 static CLIPBOARD_HISTORY: OnceLock<ClipboardHistoryService> = OnceLock::new();
+
+/// Selection translation copies via Ctrl+C and then puts the clipboard back. Captures
+/// that land before this instant are the temporary copy, not something the user copied.
+static CAPTURE_SUSPENDED_UNTIL: Mutex<Option<Instant>> = Mutex::new(None);
+
+pub(crate) fn suspend_clipboard_capture(duration: Duration) {
+    let until = Instant::now() + duration;
+    let Ok(mut slot) = CAPTURE_SUSPENDED_UNTIL.lock() else {
+        return;
+    };
+    if slot.is_none_or(|current| current < until) {
+        *slot = Some(until);
+    }
+}
+
+pub(crate) fn clipboard_capture_suspended() -> bool {
+    CAPTURE_SUSPENDED_UNTIL
+        .lock()
+        .ok()
+        .and_then(|slot| *slot)
+        .is_some_and(|until| Instant::now() < until)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

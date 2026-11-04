@@ -25,6 +25,15 @@ pub(crate) fn send_key_up(key: VIRTUAL_KEY) {
     send_key_event(key, KEYEVENTF_KEYUP);
 }
 
+/// Synthesizes Ctrl+C, so the foreground app copies its selection.
+pub(crate) fn send_copy_shortcut() {
+    let key_c = VIRTUAL_KEY(u16::from(b'C'));
+    send_key_down(VK_CONTROL);
+    send_key_down(key_c);
+    send_key_up(key_c);
+    send_key_up(VK_CONTROL);
+}
+
 fn send_key_event(key: VIRTUAL_KEY, flags: KEYBD_EVENT_FLAGS) {
     // SAFETY: keybd_event takes only plain values and inserts the event into the
     // input stream; it reads no caller memory. Virtual-key codes fit in a u8.

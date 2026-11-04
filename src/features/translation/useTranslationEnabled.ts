@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { hideTranslationWindow, setTranslationEnabled, setTranslationShortcut } from "./api";
+import { hideTranslationWindow, setTranslationEnabled, setTranslationSelectionShortcut, setTranslationShortcut } from "./api";
 import { loadSettings } from "./storage";
 
 /**
@@ -10,7 +10,14 @@ import { loadSettings } from "./storage";
 export function useTranslationEnabled(enabled: boolean) {
   useEffect(() => {
     void setTranslationEnabled(enabled)
-      .then(() => (enabled ? setTranslationShortcut(loadSettings().shortcut) : hideTranslationWindow()))
+      .then(() => {
+        if (!enabled) return hideTranslationWindow();
+        const settings = loadSettings();
+        return Promise.all([
+          setTranslationShortcut(settings.shortcut),
+          setTranslationSelectionShortcut(settings.selectionShortcut),
+        ]);
+      })
       .catch((error) => {
         console.error("Failed to switch quick translation", error);
       });

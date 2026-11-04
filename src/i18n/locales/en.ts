@@ -182,6 +182,8 @@ const en: Translations = {
     enterHint: "Enter to translate · Shift+Enter for a new line",
     translate: "Translate",
     emptyClipboard: "The clipboard has no text to paste.",
+    nothingToTranslate: "Nothing to translate",
+    peekLabel: (text) => `Translation: ${text}`,
     emptySource: "Enter source text, or press Tab to paste from the clipboard.",
     tooLong: "Translate up to 5,000 characters at a time.",
     clipboard: (text) => `Clipboard: ${text}`,
@@ -442,8 +444,15 @@ const en: Translations = {
 
     translation: {
       serviceTitle: "Translation service",
+      behaviorTitle: "How to translate",
+      pasteOnOpen: "Fill from the clipboard on open",
+      pasteOnOpenHint: "When the source is empty, fill it from the latest clipboard text. Existing text is left as it is.",
+      autoTranslate: "Translate after you pause",
+      autoTranslateHint: "Translate about half a second after the source stops changing. Nothing is sent without an API key.",
       shortcutTitle: "Shortcut",
       shortcutHint: "Click the button, then press a new key combination; Esc cancels. The shortcut opens the quick translation window.",
+      selectionShortcut: "Translate selected text",
+      selectionShortcutHint: "Press it after selecting text in another window. The selection is copied and the clipboard is restored, and it is not added to clipboard history. With nothing selected, the clipboard text is translated.",
     },
 
     position: {

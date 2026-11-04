@@ -1,8 +1,9 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { Keyboard } from "lucide-react";
 import { SelectControl } from "../../components/controls/SelectControl";
+import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation } from "../../i18n";
-import { deleteTranslationSecret, hasTranslationSecret, saveTranslationSecret, setTranslationShortcut } from "./api";
+import { deleteTranslationSecret, hasTranslationSecret, saveTranslationSecret, setTranslationSelectionShortcut, setTranslationShortcut } from "./api";
 import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS } from "./providers";
 import { useTranslationSettings } from "./useTranslationSettings";
 import "./TranslationSettingsSection.css";
@@ -22,7 +23,7 @@ export function TranslationSettingsSection() {
   const [hasSecret, setHasSecret] = useState(false);
   const [secretDraft, setSecretDraft] = useState("");
   const [savingSecret, setSavingSecret] = useState(false);
-  const [recordingShortcut, setRecordingShortcut] = useState(false);
+  const [recordingShortcut, setRecordingShortcut] = useState<"window" | "selection" | null>(null);
   const [serviceError, setServiceError] = useState("");
   const [shortcutError, setShortcutError] = useState("");
   const provider = settings.provider;
@@ -58,19 +59,30 @@ export function TranslationSettingsSection() {
   };
 
   const recordShortcut = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (!recordingShortcut) return;
+    const target = recordingShortcut;
+    if (!target) return;
     event.preventDefault();
-    if (event.key === "Escape") { setRecordingShortcut(false); return; }
+    if (event.key === "Escape") { setRecordingShortcut(null); return; }
     const shortcut = shortcutFromEvent(event);
     if (!shortcut) return;
-    void setTranslationShortcut(shortcut)
+    const register = target === "window" ? setTranslationShortcut : setTranslationSelectionShortcut;
+    void register(shortcut)
       .then((registered) => {
-        setSettings((current) => ({ ...current, shortcut: registered }));
+        setSettings((current) => target === "window"
+          ? { ...current, shortcut: registered }
+          : { ...current, selectionShortcut: registered });
         setShortcutError("");
-        setRecordingShortcut(false);
+        setRecordingShortcut(null);
       })
       .catch((failure) => setShortcutError(String(failure)));
   };
+
+  const shortcutButton = (target: "window" | "selection", value: string) => (
+    <button type="button" className={`translation-settings__shortcut${recordingShortcut === target ? " translation-settings__shortcut--recording" : ""}`} onClick={() => setRecordingShortcut(target)} onKeyDown={recordShortcut} onBlur={() => setRecordingShortcut(null)}>
+      <Keyboard size={14} strokeWidth={2.3} />
+      <span>{recordingShortcut === target ? t.translator.pressShortcut : value}</span>
+    </button>
+  );
 
   return (
     <>
@@ -111,16 +123,25 @@ export function TranslationSettingsSection() {
         </div>
         {serviceError && <p className="translation-settings__error" role="alert">{serviceError}</p>}
       </section>
+      <section className="settings-section settings-section--translation-behavior">
+        <div className="settings-section__header"><span>{t.settings.translation.behaviorTitle}</span></div>
+        <ToggleControl label={t.settings.translation.pasteOnOpen} checked={settings.pasteClipboardOnOpen} onChange={(pasteClipboardOnOpen) => setSettings((current) => ({ ...current, pasteClipboardOnOpen }))} />
+        <p className="settings-section__hint">{t.settings.translation.pasteOnOpenHint}</p>
+        <ToggleControl label={t.settings.translation.autoTranslate} checked={settings.autoTranslate} onChange={(autoTranslate) => setSettings((current) => ({ ...current, autoTranslate }))} />
+        <p className="settings-section__hint">{t.settings.translation.autoTranslateHint}</p>
+      </section>
       <section className="settings-section settings-section--translation-shortcut">
         <div className="settings-section__header"><span>{t.settings.translation.shortcutTitle}</span></div>
         <div className="translation-settings__row">
           <span>{t.translator.shortcut}</span>
-          <button type="button" className={`translation-settings__shortcut${recordingShortcut ? " translation-settings__shortcut--recording" : ""}`} onClick={() => setRecordingShortcut(true)} onKeyDown={recordShortcut} onBlur={() => setRecordingShortcut(false)}>
-            <Keyboard size={14} strokeWidth={2.3} />
-            <span>{recordingShortcut ? t.translator.pressShortcut : settings.shortcut}</span>
-          </button>
+          {shortcutButton("window", settings.shortcut)}
         </div>
         <p className="settings-section__hint">{t.settings.translation.shortcutHint}</p>
+        <div className="translation-settings__row">
+          <span>{t.settings.translation.selectionShortcut}</span>
+          {shortcutButton("selection", settings.selectionShortcut)}
+        </div>
+        <p className="settings-section__hint">{t.settings.translation.selectionShortcutHint}</p>
         {shortcutError && <p className="translation-settings__error" role="alert">{shortcutError}</p>}
       </section>
     </>

@@ -129,6 +129,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
+| `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 
 ### 事件
@@ -144,6 +145,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
+| `translation-selection`（载荷为 `string`：「翻译选中文字」快捷键取到的文字，没有可译内容时为空字符串） | `translation/mod.rs` | 广播 |
 | `local-api-request`（载荷 `{ id, method, params }`，前端用 `answer_local_api_request` 回复） | `local_api/bridge.rs` | `main` |
 
 ### 其他

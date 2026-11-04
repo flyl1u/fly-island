@@ -51,6 +51,9 @@ type IslandShellProps = {
   onMinimize: () => void;
   /** Null while translation is switched off, which hides its button. */
   onOpenTranslator: (() => void) | null;
+  /** One line from the selection shortcut, shown on the collapsed island, or null. */
+  translationPeek: string | null;
+  onOpenTranslationPeek: () => void;
   onOpenSettings: () => void;
   onTuck: () => void;
   onReveal: () => void;
@@ -88,6 +91,8 @@ export function IslandShell({
   minimizesToTray,
   onMinimize,
   onOpenTranslator,
+  translationPeek,
+  onOpenTranslationPeek,
   onOpenSettings,
   onTuck,
   onReveal,
@@ -180,6 +185,8 @@ export function IslandShell({
           agentStatusLabel={agentStatusLabel}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
+          translationPeek={translationPeek}
+          onOpenTranslationPeek={onOpenTranslationPeek}
           onWindowDragStart={onWindowDragStart}
           onTuck={onTuck}
         />

@@ -184,6 +184,8 @@ export type Translations = {
     enterHint: string;
     translate: string;
     emptyClipboard: string;
+    nothingToTranslate: string;
+    peekLabel: (text: string) => string;
     emptySource: string;
     tooLong: string;
     clipboard: (text: string) => string;
@@ -445,8 +447,15 @@ export type Translations = {
 
     translation: {
       serviceTitle: string;
+      behaviorTitle: string;
+      pasteOnOpen: string;
+      pasteOnOpenHint: string;
+      autoTranslate: string;
+      autoTranslateHint: string;
       shortcutTitle: string;
       shortcutHint: string;
+      selectionShortcut: string;
+      selectionShortcutHint: string;
     };
 
     position: {

@@ -197,6 +197,10 @@ impl ClipboardHistoryService {
     }
 
     fn capture_current_clipboard(&self) {
+        if super::clipboard_capture_suspended() {
+            return;
+        }
+
         let settings = match self.state.lock() {
             Ok(state) => state.settings.clone(),
             Err(error) => {

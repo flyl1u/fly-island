@@ -5,6 +5,7 @@ import type { Direction } from "./storage";
 
 // 与 translation/mod.rs 中推送的事件名一致。
 export const TRANSLATION_WINDOW_OPENED_EVENT = "translation-window-opened";
+export const TRANSLATION_SELECTION_EVENT = "translation-selection";
 
 /** Service, base URL (custom provider only) and model for a translation request. */
 export type TranslationService = {
@@ -24,6 +25,10 @@ export function setTranslationEnabled(enabled: boolean) {
 
 export function setTranslationShortcut(shortcut: string) {
   return invoke<string>("set_translation_shortcut", { shortcut });
+}
+
+export function setTranslationSelectionShortcut(shortcut: string) {
+  return invoke<string>("set_translation_selection_shortcut", { shortcut });
 }
 
 export function readTranslationClipboard() {
@@ -56,4 +61,13 @@ export function listenTranslationWindowOpened(handler: EventCallback<unknown>) {
 
 export function toggleTranslationWindow() {
   return invoke("toggle_translation_window");
+}
+
+/** Shows the translation window without hiding it when it is already open. */
+export function presentTranslationWindow() {
+  return invoke("present_translation_window");
+}
+
+export function listenTranslationSelection(handler: EventCallback<string>) {
+  return listen<string>(TRANSLATION_SELECTION_EVENT, handler);
 }

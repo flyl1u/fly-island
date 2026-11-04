@@ -182,6 +182,8 @@ const zhCN: Translations = {
     enterHint: "Enter 翻译 · Shift+Enter 换行",
     translate: "翻译",
     emptyClipboard: "剪贴板中没有可粘贴的文本。",
+    nothingToTranslate: "没有可翻译的文字",
+    peekLabel: (text) => `译文：${text}`,
     emptySource: "请输入原文，或按 Tab 填入剪贴板内容。",
     tooLong: "单次最多翻译 5000 个字符。",
     clipboard: (text) => `剪贴板：${text}`,
@@ -445,8 +447,15 @@ const zhCN: Translations = {
 
     translation: {
       serviceTitle: "翻译服务",
+      behaviorTitle: "翻译方式",
+      pasteOnOpen: "打开时填入剪贴板",
+      pasteOnOpenHint: "原文为空时，用最新一条文字剪贴板填上。已有内容不会被覆盖。",
+      autoTranslate: "停稳后自动翻译",
+      autoTranslateHint: "原文停止输入约半秒后自动翻译。未配置密钥时不发送。",
       shortcutTitle: "快捷键",
       shortcutHint: "点击按钮后按下新的组合键，按 Esc 取消。按下快捷键会打开快捷翻译窗口。",
+      selectionShortcut: "翻译选中文字",
+      selectionShortcutHint: "在其他窗口选中文字后按下。会临时复制选中内容再还原剪贴板，不记入剪贴板历史。没有选中时翻译剪贴板里的文字。",
     },
 
     position: {

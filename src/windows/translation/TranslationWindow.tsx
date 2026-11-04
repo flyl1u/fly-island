@@ -3,9 +3,10 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Settings2, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut } from "../../features/translation/api";
-import type { Direction } from "../../features/translation/storage";
+import { takeTranslationHandoff, type Direction } from "../../features/translation/storage";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { openSettingsWindow } from "../settings/api";
+import { useAutoTranslate } from "./useAutoTranslate";
 import { useTranslationRequest } from "./useTranslationRequest";
 import "./TranslationWindow.css";
 
@@ -25,6 +26,9 @@ export function TranslationWindow() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const requestId = useRef(0);
   const clipboardRequestId = useRef(0);
+  const pasteOnOpenRef = useRef(settings.pasteClipboardOnOpen);
+  const skipAutoSource = useRef<string | null>(null);
+  pasteOnOpenRef.current = settings.pasteClipboardOnOpen;
   const inputLength = Array.from(input).length;
   const targetLanguage = settings.direction === "zh-en"
     ? t.translator.english
@@ -49,41 +53,50 @@ export function TranslationWindow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshClipboard = useCallback(() => {
-    const currentId = ++clipboardRequestId.current;
-    void readTranslationClipboard()
-      .then((text) => { if (currentId === clipboardRequestId.current) setClipboardPreview(text ?? ""); })
-      .catch(() => { if (currentId === clipboardRequestId.current) setClipboardPreview(""); });
-  }, []);
-
-  const pasteLatestClipboard = useCallback(async () => {
+  const readClipboard = useCallback(async (intoInput: boolean, reportEmpty: boolean) => {
     const currentId = ++clipboardRequestId.current;
     try {
       const text = await readTranslationClipboard();
       if (currentId !== clipboardRequestId.current) return;
-      if (!text) { setError(t.translator.emptyClipboard); return; }
-      setClipboardPreview(text);
-      setInput(text);
-      setError("");
-      setDidCopy(false);
-      inputRef.current?.focus();
+      setClipboardPreview(text ?? "");
+      if (!text) {
+        if (reportEmpty) setError(t.translator.emptyClipboard);
+        return;
+      }
+      if (intoInput) {
+        setInput(text);
+        setError("");
+        setDidCopy(false);
+        inputRef.current?.focus();
+      }
     } catch (failure) {
       if (currentId === clipboardRequestId.current) setError(String(failure));
     }
   }, [t]);
 
+  const pasteLatestClipboard = useCallback(() => readClipboard(true, true), [readClipboard]);
+
   const handleOpened = useCallback(() => {
     requestId.current += 1;
-    setInput("");
-    setOutput("");
     setError("");
     setDidCopy(false);
     setIsLoading(false);
     setSecretCheck((value) => value + 1);
     setClipboardPreview("");
-    refreshClipboard();
+    const handoff = takeTranslationHandoff();
+    if (handoff) {
+      setInput(handoff.source);
+      setOutput(handoff.output);
+      skipAutoSource.current = handoff.output ? handoff.source.trim() : null;
+      void readClipboard(false, false);
+    } else {
+      setInput("");
+      setOutput("");
+      skipAutoSource.current = null;
+      void readClipboard(pasteOnOpenRef.current, false);
+    }
     window.requestAnimationFrame(() => inputRef.current?.focus());
-  }, [refreshClipboard]);
+  }, [readClipboard]);
 
   useEffect(() => {
     let unlisten: (() => void) | null = null;
@@ -109,6 +122,9 @@ export function TranslationWindow() {
     return () => window.removeEventListener("keydown", handleTab, true);
   }, [pasteLatestClipboard]);
 
+  const noteAutoSource = useCallback(() => {
+    skipAutoSource.current = input.trim();
+  }, [input]);
   const { submit, handleInputKeyDown, copyResult, clearSource } = useTranslationRequest({
     input,
     settings,
@@ -120,7 +136,10 @@ export function TranslationWindow() {
     setError,
     setIsLoading,
     setDidCopy,
+    onStart: noteAutoSource,
   });
+  const autoTranslateKey = `${settings.direction}\0${settings.provider}\0${settings.customBaseUrl}\0${settings.models[settings.provider] ?? ""}`;
+  useAutoTranslate(settings.autoTranslate && hasSecret && !isLoading, input, autoTranslateKey, skipAutoSource, submit);
 
   const openSettings = () => openSettingsWindow("translation");
   const close = () => { requestId.current += 1; clipboardRequestId.current += 1; void hideTranslationWindow(); };

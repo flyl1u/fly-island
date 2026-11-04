@@ -4,7 +4,10 @@ use windows::{
     core::Result,
     Win32::{
         Foundation::HWND,
-        System::DataExchange::{AddClipboardFormatListener, RemoveClipboardFormatListener},
+        System::DataExchange::{
+            AddClipboardFormatListener, CloseClipboard, EmptyClipboard, OpenClipboard,
+            RemoveClipboardFormatListener,
+        },
     },
 };
 
@@ -17,4 +20,17 @@ pub(crate) fn add_format_listener(window: HWND) -> Result<()> {
 pub(crate) fn remove_format_listener(window: HWND) -> Result<()> {
     // SAFETY: takes the HWND by value; fails harmlessly if not registered.
     unsafe { RemoveClipboardFormatListener(window) }
+}
+
+/// Removes whatever is on the clipboard. Used to put back an empty clipboard.
+pub(crate) fn empty() -> Result<()> {
+    // SAFETY: OpenClipboard(None) claims the clipboard for this thread and fails if
+    // another owner holds it. EmptyClipboard and CloseClipboard are the matching
+    // calls; none of them read caller memory. Close runs even when emptying fails.
+    unsafe {
+        OpenClipboard(None)?;
+        let emptied = EmptyClipboard();
+        CloseClipboard()?;
+        emptied
+    }
 }

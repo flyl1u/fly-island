@@ -1,4 +1,5 @@
 mod provider;
+mod selection;
 
 use crate::clipboard_history::{parse_shortcut_binding, ShortcutBinding};
 use arboard::Clipboard;
@@ -25,14 +26,19 @@ use crate::win32::{
 
 const WINDOW_LABEL: &str = "translation";
 const DEFAULT_SHORTCUT: &str = "Ctrl+Shift+F";
+const DEFAULT_SELECTION_SHORTCUT: &str = "Ctrl+Alt+T";
 const HOTKEY_ID: i32 = 0x4654;
+const SELECTION_HOTKEY_ID: i32 = 0x4655;
 const CHANGE_HOTKEY_MESSAGE: u32 = WM_APP + 0x52;
+const CHANGE_SELECTION_HOTKEY_MESSAGE: u32 = WM_APP + 0x53;
+const TRANSLATION_SELECTION_EVENT: &str = "translation-selection";
 const MAX_CHARACTERS: usize = 5_000;
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 static HAS_POSITIONED_WINDOW: AtomicBool = AtomicBool::new(false);
 static HOTKEY_WINDOW: Mutex<Option<isize>> = Mutex::new(None);
 static ACTIVE_BINDING: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
+static SELECTION_BINDING: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
 /// Off when translation is switched off in settings: the shortcut is unregistered,
 /// so its keys reach other programs again, and stays so until it is switched on.
 static ENABLED: AtomicBool = AtomicBool::new(true);
@@ -41,6 +47,7 @@ static ENABLED: AtomicBool = AtomicBool::new(true);
 type PendingBinding = (Option<ShortcutBinding>, mpsc::Sender<Result<String, String>>);
 
 static PENDING_BINDING: Mutex<Option<PendingBinding>> = Mutex::new(None);
+static PENDING_SELECTION_BINDING: Mutex<Option<PendingBinding>> = Mutex::new(None);
 
 pub fn init(app: &AppHandle) {
     if APP.set(app.clone()).is_ok() {
@@ -112,6 +119,21 @@ pub fn toggle_translation_window(app: AppHandle) -> Result<(), String> {
     window.set_focus().map_err(|error| error.to_string())?;
     let _ = app.emit("translation-window-opened", ());
     Ok(())
+}
+
+/// Shows the translation window and asks its page to read a prepared handoff.
+/// Unlike the shortcut toggle, this does not hide a window that is already open.
+#[tauri::command]
+pub fn present_translation_window(app: AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window(WINDOW_LABEL)
+        .ok_or_else(|| "Translation window was not found.".to_string())?;
+    if window.is_visible().map_err(|error| error.to_string())? {
+        window.set_focus().map_err(|error| error.to_string())?;
+        let _ = app.emit("translation-window-opened", ());
+        return Ok(());
+    }
+    toggle_translation_window(app)
 }
 
 #[tauri::command]
@@ -268,13 +290,37 @@ pub fn set_translation_shortcut(shortcut: String) -> Result<String, String> {
 pub fn set_translation_enabled(enabled: bool) -> Result<(), String> {
     ENABLED.store(enabled, Ordering::SeqCst);
     if !enabled {
-        change_hotkey(None)?;
+        let window = change_hotkey(None);
+        let selection = change_selection_hotkey(None);
+        window.and(selection).map(|_| ())?;
     }
     Ok(())
 }
 
+#[tauri::command]
+pub fn set_translation_selection_shortcut(shortcut: String) -> Result<String, String> {
+    let binding = parse_shortcut_binding(&shortcut)
+        .ok_or_else(|| "快捷键无效，请使用至少一个修饰键。".to_string())?;
+    if !ENABLED.load(Ordering::SeqCst) {
+        return Ok(binding.label);
+    }
+    change_selection_hotkey(Some(binding))
+}
+
 /// Hands `binding` to the hotkey thread, which owns the registration, and waits for it.
 fn change_hotkey(binding: Option<ShortcutBinding>) -> Result<String, String> {
+    post_binding(&PENDING_BINDING, CHANGE_HOTKEY_MESSAGE, binding)
+}
+
+fn change_selection_hotkey(binding: Option<ShortcutBinding>) -> Result<String, String> {
+    post_binding(&PENDING_SELECTION_BINDING, CHANGE_SELECTION_HOTKEY_MESSAGE, binding)
+}
+
+fn post_binding(
+    slot: &Mutex<Option<PendingBinding>>,
+    message: u32,
+    binding: Option<ShortcutBinding>,
+) -> Result<String, String> {
     let started = Instant::now();
     let hwnd = loop {
         if let Some(hwnd) = *HOTKEY_WINDOW.lock().map_err(|error| error.to_string())? {
@@ -287,14 +333,14 @@ fn change_hotkey(binding: Option<ShortcutBinding>) -> Result<String, String> {
     };
     let (sender, receiver) = mpsc::channel();
     {
-        let mut pending = PENDING_BINDING.lock().map_err(|error| error.to_string())?;
+        let mut pending = slot.lock().map_err(|error| error.to_string())?;
         if pending.is_some() {
             return Err("快捷键正在更新。".to_string());
         }
         *pending = Some((binding, sender));
     }
-    if let Err(error) = message_window::post_message(HWND(hwnd as *mut _), CHANGE_HOTKEY_MESSAGE) {
-        *PENDING_BINDING.lock().map_err(|error| error.to_string())? = None;
+    if let Err(error) = message_window::post_message(HWND(hwnd as *mut _), message) {
+        *slot.lock().map_err(|error| error.to_string())? = None;
         return Err(format!("无法更新快捷键：{error}"));
     }
     receiver
@@ -314,20 +360,61 @@ fn run_hotkey_loop() -> Result<(), String> {
         "FocuSD Translation Hotkey",
     )
     .map_err(|error| error.to_string())?;
-    if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT).filter(|_| ENABLED.load(Ordering::SeqCst)) {
-        if register_binding(hwnd, &binding).is_ok() {
-            *ACTIVE_BINDING.lock().map_err(|error| error.to_string())? = Some(binding);
-        }
-    }
+    register_default(hwnd, DEFAULT_SHORTCUT, HOTKEY_ID, &ACTIVE_BINDING)?;
+    register_default(hwnd, DEFAULT_SELECTION_SHORTCUT, SELECTION_HOTKEY_ID, &SELECTION_BINDING)?;
     *HOTKEY_WINDOW.lock().map_err(|error| error.to_string())? = Some(hwnd.0 as isize);
     message_window::run_message_loop();
     let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
+    let _ = win32::hotkey::unregister(hwnd, SELECTION_HOTKEY_ID);
     Ok(())
 }
 
-fn register_binding(hwnd: HWND, binding: &ShortcutBinding) -> Result<(), String> {
-    win32::hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code)
+fn register_default(
+    hwnd: HWND,
+    shortcut: &str,
+    id: i32,
+    slot: &Mutex<Option<ShortcutBinding>>,
+) -> Result<(), String> {
+    if let Some(binding) = parse_shortcut_binding(shortcut).filter(|_| ENABLED.load(Ordering::SeqCst)) {
+        if register_binding(hwnd, id, &binding).is_ok() {
+            *slot.lock().map_err(|error| error.to_string())? = Some(binding);
+        }
+    }
+    Ok(())
+}
+
+fn register_binding(hwnd: HWND, id: i32, binding: &ShortcutBinding) -> Result<(), String> {
+    win32::hotkey::register(hwnd, id, binding.modifiers, binding.key_code)
         .map_err(|error| format!("快捷键 {} 已被占用或无法注册：{error}", binding.label))
+}
+
+fn apply_binding_change(
+    hwnd: HWND,
+    id: i32,
+    pending_slot: &Mutex<Option<PendingBinding>>,
+    active_slot: &Mutex<Option<ShortcutBinding>>,
+) {
+    let pending = pending_slot.lock().ok().and_then(|mut value| value.take());
+    let Some((binding, sender)) = pending else {
+        return;
+    };
+    let previous = active_slot.lock().ok().and_then(|mut value| value.take());
+    if previous.is_some() {
+        let _ = win32::hotkey::unregister(hwnd, id);
+    }
+    let Some(binding) = binding else {
+        let _ = sender.send(Ok(String::new()));
+        return;
+    };
+    let result = register_binding(hwnd, id, &binding).map(|()| binding.label.clone());
+    if let Ok(mut active) = active_slot.lock() {
+        *active = if result.is_ok() {
+            Some(binding)
+        } else {
+            previous.and_then(|old| register_binding(hwnd, id, &old).ok().map(|()| old))
+        };
+    }
+    let _ = sender.send(result);
 }
 
 struct TranslationHotkeyWindow;
@@ -340,34 +427,21 @@ impl WindowMessages for TranslationHotkeyWindow {
             }
             return Some(LRESULT(0));
         }
-        if message == CHANGE_HOTKEY_MESSAGE {
-            let pending = PENDING_BINDING
-                .lock()
-                .ok()
-                .and_then(|mut value| value.take());
-            if let Some((binding, sender)) = pending {
-                let previous = ACTIVE_BINDING
-                    .lock()
-                    .ok()
-                    .and_then(|mut value| value.take());
-                if previous.is_some() {
-                    let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
-                }
-                let Some(binding) = binding else {
-                    // Switched off: stay unregistered.
-                    let _ = sender.send(Ok(String::new()));
-                    return Some(LRESULT(0));
-                };
-                let result = register_binding(hwnd, &binding).map(|()| binding.label.clone());
-                if let Ok(mut active) = ACTIVE_BINDING.lock() {
-                    *active = if result.is_ok() {
-                        Some(binding)
-                    } else {
-                        previous.and_then(|old| register_binding(hwnd, &old).ok().map(|()| old))
-                    };
-                }
-                let _ = sender.send(result);
+        if message == WM_HOTKEY && wparam.0 == SELECTION_HOTKEY_ID as usize {
+            if let Some(app) = APP.get().cloned().filter(|_| ENABLED.load(Ordering::SeqCst)) {
+                thread::spawn(move || {
+                    let text = selection::capture_selection_text().unwrap_or_default();
+                    let _ = app.emit(TRANSLATION_SELECTION_EVENT, text);
+                });
             }
+            return Some(LRESULT(0));
+        }
+        if message == CHANGE_HOTKEY_MESSAGE {
+            apply_binding_change(hwnd, HOTKEY_ID, &PENDING_BINDING, &ACTIVE_BINDING);
+            return Some(LRESULT(0));
+        }
+        if message == CHANGE_SELECTION_HOTKEY_MESSAGE {
+            apply_binding_change(hwnd, SELECTION_HOTKEY_ID, &PENDING_SELECTION_BINDING, &SELECTION_BINDING);
             return Some(LRESULT(0));
         }
         None

@@ -8,7 +8,9 @@ import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
-import { toggleTranslationWindow } from "../../features/translation/api";
+import { presentTranslationWindow, toggleTranslationWindow } from "../../features/translation/api";
+import { requestTranslationHandoffOpen } from "../../features/translation/storage";
+import { useQuickTranslation } from "../../features/translation/useQuickTranslation";
 import { useTranslationEnabled } from "../../features/translation/useTranslationEnabled";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
@@ -123,9 +125,11 @@ export function IslandApp() {
     [collapsedIslandWidth, expandedIslandHeight, mode, settings],
   );
 
+  const translationPeek = useQuickTranslation(settings.translationEnabled);
   // A showing preview holds the idle timer, which then restarts in full once it ends.
-  useIdleTuck(settings.autoTuck && !hasMessagePreview, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
+  useIdleTuck(settings.autoTuck && !hasMessagePreview && !translationPeek, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
   useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
+  useRevealOnMessage(Boolean(translationPeek), isTucked && settings.revealOnMessage, revealIsland);
   useTuckPeek(isPeeking, endPeek);
 
   const closeMailReader = qqMail.closeReader;
@@ -241,6 +245,13 @@ export function IslandApp() {
       console.error("Failed to open translation", error);
     });
   }, []);
+  // The flag goes first so the window, once shown, opens onto the quick result.
+  const openTranslationPeek = useCallback(() => {
+    requestTranslationHandoffOpen();
+    void presentTranslationWindow().catch((error) => {
+      console.error("Failed to open translation", error);
+    });
+  }, []);
 
   return (
     <main className={`stage stage--font-${settings.fontFamily}`} style={stageStyle}>
@@ -273,6 +284,8 @@ export function IslandApp() {
         minimizesToTray={settings.minimizeAction === "tray"}
         onMinimize={settings.minimizeAction === "tray" ? minimizeIsland : minimizeToEdge}
         onOpenTranslator={settings.translationEnabled ? openTranslator : null}
+        translationPeek={translationPeek}
+        onOpenTranslationPeek={openTranslationPeek}
         onOpenSettings={openSettingsWindow}
         onTuck={tuckIsland}
         onReveal={peekIsland}

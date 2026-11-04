@@ -44,6 +44,9 @@ type IslandCollapsedBarProps = {
   agentStatusLabel: string;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
+  /** Quick translation line; it takes the place of the agent or todo text while shown. */
+  translationPeek: string | null;
+  onOpenTranslationPeek: () => void;
   onWindowDragStart: () => void;
   onTuck: () => void;
 };
@@ -71,6 +74,8 @@ export function IslandCollapsedBar({
   agentStatusLabel,
   onOpenPage,
   onOpenMessages,
+  translationPeek,
+  onOpenTranslationPeek,
   onWindowDragStart,
   onTuck,
 }: IslandCollapsedBarProps) {
@@ -92,16 +97,19 @@ export function IslandCollapsedBar({
       inert={isExpanded}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onOpenPage(openTarget);
+          if (translationPeek && !preview) onOpenTranslationPeek();
+          else onOpenPage(openTarget);
         }
       }}
     >
       <button
         className="island__open-button"
         type="button"
-        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source]) : t.messages.expand(collapsedLabel)}
-        aria-expanded={preview ? undefined : isExpanded}
-        aria-controls={preview ? undefined : "island-panel"}
+        aria-label={preview
+          ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
+          : translationPeek ? t.translator.peekLabel(translationPeek) : t.messages.expand(collapsedLabel)}
+        aria-expanded={preview || translationPeek ? undefined : isExpanded}
+        aria-controls={preview || translationPeek ? undefined : "island-panel"}
         onPointerDown={prepareWindowDrag}
         onPointerMove={handleWindowDragMove}
         onPointerUp={cancelWindowDrag}
@@ -118,6 +126,8 @@ export function IslandCollapsedBar({
               void open().then((opened) => {
                 if (opened === false) onOpenMessages(preview.source);
               });
+            } else if (translationPeek) {
+              onOpenTranslationPeek();
             } else {
               onOpenPage(openTarget);
             }
@@ -126,6 +136,9 @@ export function IslandCollapsedBar({
       >
         <span className={pulseClassName} title={agentStatusLabel} />
         <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
+          {translationPeek ? (
+            <span className="island__active-task" key={translationPeek}>{translationPeek}</span>
+          ) : <>
           {showCollapsedText && showTitle && (
             <span className="island__brand">fly-island</span>
           )}
@@ -152,6 +165,7 @@ export function IslandCollapsedBar({
               {t.island.pendingTodos(collapsedTodoCount)}
             </span>
           )}
+          </>}
         </CollapsedMessageContent>
       </button>
       {qqMail.preview !== null && (
