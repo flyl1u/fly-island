@@ -1,0 +1,107 @@
+/* The detail template of plugin pages. */
+.plugin-detail {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-md);
+}
+
+.plugin-detail__scroll {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
+  scrollbar-width: thin;
+  overflow-wrap: anywhere;
+}
+
+.plugin-detail__title {
+  margin: 0 0 var(--space-md);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.plugin-detail__error {
+  margin: 0 0 var(--space-md);
+  padding: 6px 10px;
+  color: rgba(255, 210, 218, 0.95);
+  background: rgba(199, 80, 101, 0.18);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.plugin-detail__muted {
+  margin: 0;
+  color: rgba(225, 223, 233, 0.46);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plugin-detail__markdown {
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.plugin-detail__markdown :is(h3, h4, h5) {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.plugin-detail__markdown h3 {
+  font-size: 14px;
+}
+
+.plugin-detail__markdown :is(p, ul, ol) {
+  margin: 0 0 8px;
+}
+
+.plugin-detail__markdown :is(ul, ol) {
+  padding-left: 18px;
+}
+
+.plugin-detail__markdown code {
+  padding: 1px 4px;
+  background: var(--color-white-a10);
+  border-radius: 4px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+}
+
+.plugin-detail__markdown a {
+  color: var(--color-sky);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.plugin-detail__meta {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 4px;
+}
+
+.plugin-detail__meta div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.4fr) minmax(0, 1fr);
+  gap: var(--space-md);
+  font-size: 12px;
+}
+
+.plugin-detail__meta :is(dt, dd) {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-detail__meta dt {
+  color: rgba(225, 223, 233, 0.52);
+  font-weight: 700;
+}
+
+.plugin-detail__meta dd {
+  font-weight: 700;
+}

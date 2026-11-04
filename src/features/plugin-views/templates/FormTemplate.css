@@ -1,0 +1,109 @@
+/* The form template of plugin pages. */
+.plugin-form {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-md);
+}
+
+.plugin-form__fields {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-lg);
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.plugin-form__field {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.plugin-form__field > label {
+  overflow: hidden;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-form__field small {
+  color: rgba(225, 223, 233, 0.5);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.plugin-form__field :is(input, textarea, select) {
+  min-width: 0;
+  padding: 6px 8px;
+  color: rgba(241, 240, 246, 0.92);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 12px;
+}
+
+.plugin-form__field textarea {
+  resize: vertical;
+}
+
+.plugin-form__field option {
+  color: var(--color-ink);
+}
+
+.plugin-form__error,
+.plugin-form__message {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.plugin-form__error {
+  color: rgba(255, 210, 218, 0.95);
+  background: rgba(199, 80, 101, 0.18);
+}
+
+.plugin-form__message {
+  color: rgba(225, 223, 233, 0.72);
+  background: var(--color-white-a08);
+}
+
+.plugin-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  color: rgba(190, 240, 225, 0.85);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.plugin-form__submit {
+  max-width: 60%;
+  height: 28px;
+  padding: 0 14px;
+  overflow: hidden;
+  color: rgba(190, 240, 225, 0.95);
+  background: rgba(110, 231, 200, 0.16);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.plugin-form__submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

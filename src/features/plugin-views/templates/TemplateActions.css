@@ -1,0 +1,35 @@
+/* Action buttons under a plugin's detail or status page. */
+.plugin-template-actions {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.plugin-template-actions__button {
+  max-width: 100%;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 12px;
+  color: rgba(241, 240, 246, 0.9);
+  background: var(--color-white-a10);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.plugin-template-actions__button:hover {
+  background: var(--color-white-a18);
+}
+
+.plugin-template-actions__button span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

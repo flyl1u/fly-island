@@ -1,0 +1,78 @@
+/* The status template of plugin pages: large text and a progress bar. */
+.plugin-status {
+  --plugin-status-tone: rgba(241, 240, 246, 0.92);
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: var(--space-lg);
+  padding: 4px 6px;
+}
+
+.plugin-status--accent {
+  --plugin-status-tone: var(--color-accent);
+}
+
+.plugin-status--warning {
+  --plugin-status-tone: var(--color-warning);
+}
+
+.plugin-status--danger {
+  --plugin-status-tone: rgba(255, 150, 168, 0.95);
+}
+
+.plugin-status__text {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.plugin-status__text strong,
+.plugin-status__text span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-status__text strong {
+  color: var(--plugin-status-tone);
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.plugin-status__text span {
+  color: rgba(225, 223, 233, 0.72);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.plugin-status__bar {
+  height: 6px;
+  overflow: hidden;
+  background: var(--color-white-a10);
+  border-radius: var(--radius-pill);
+}
+
+/* scaleX keeps progress changes off layout and paint. */
+.plugin-status__bar span {
+  display: block;
+  height: 100%;
+  background: var(--plugin-status-tone);
+  border-radius: inherit;
+  transform-origin: left center;
+  transition: transform 300ms ease;
+}
+
+.plugin-status__caption {
+  margin: 0;
+  color: rgba(225, 223, 233, 0.5);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

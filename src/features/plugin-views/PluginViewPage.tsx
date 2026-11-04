@@ -3,7 +3,10 @@ import { RotateCcw } from "lucide-react";
 import { useLocale, useTranslation } from "../../i18n";
 import { restartPlugin, type PluginViewEntry } from "./api";
 import { viewIcon } from "./icons";
+import { DetailTemplate } from "./templates/DetailTemplate";
+import { FormTemplate } from "./templates/FormTemplate";
 import { ListTemplate } from "./templates/ListTemplate";
+import { StatusTemplate } from "./templates/StatusTemplate";
 import { usePluginViewModel } from "./usePluginViewModel";
 import "./PluginViewPage.css";
 
@@ -56,8 +59,12 @@ export function PluginViewPage({
     body = <p className="plugin-view__state">{t.pluginViews.waiting}</p>;
   } else if (entry.template === "list") {
     body = <ListTemplate pluginId={entry.pluginId} viewId={entry.viewId} model={model} onRowsChange={onRowsChange} />;
+  } else if (entry.template === "detail") {
+    body = <DetailTemplate pluginId={entry.pluginId} viewId={entry.viewId} model={model} />;
+  } else if (entry.template === "form") {
+    body = <FormTemplate pluginId={entry.pluginId} viewId={entry.viewId} model={model} />;
   } else {
-    body = <p className="plugin-view__state">{t.pluginViews.waiting}</p>;
+    body = <StatusTemplate pluginId={entry.pluginId} viewId={entry.viewId} model={model} />;
   }
 
   return (
