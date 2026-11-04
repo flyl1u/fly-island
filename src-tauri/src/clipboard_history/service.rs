@@ -19,21 +19,34 @@ use windows::Win32::{
     UI::WindowsAndMessaging::{WM_CLIPBOARDUPDATE, WM_HOTKEY},
 };
 
-use super::*;
+use super::hotkey::{
+    refresh_registered_hotkey, request_hotkey_refresh, unregister_current_hotkey,
+    CLIPBOARD_HOTKEY_WINDOW, HOTKEY_EVENT, HOTKEY_ID, HOTKEY_REFRESH_MESSAGE,
+};
+use super::store::{
+    create_item_id, encode_png, hash_bytes, make_thumbnail, preview_text,
+    PersistedClipboardHistory, MAX_IMAGE_PNG_BYTES,
+};
+use super::{
+    current_unix_millis, service, ClipboardHistoryImage, ClipboardHistoryItem,
+    ClipboardHistoryItemKind, ClipboardHistoryService, ClipboardHistorySettings,
+    ClipboardHistorySnapshot, ClipboardHistoryState, HISTORY_CHANGED_EVENT, MAIN_WINDOW_LABEL,
+    MAX_NOTE_CHARACTERS, SHORT_DUPLICATE_WINDOW_MS,
+};
 use crate::win32::{
     self,
     message_window::{self, WindowMessages},
 };
 
-pub(super) const POLL_INTERVAL: Duration = Duration::from_secs(2);
+const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
-pub(super) const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 8;
+const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 8;
 
-pub(super) const CLIPBOARD_WRITE_RETRY_DELAY: Duration = Duration::from_millis(35);
+const CLIPBOARD_WRITE_RETRY_DELAY: Duration = Duration::from_millis(35);
 
-pub(super) static CLIPBOARD_NOTIFY_TX: OnceLock<Mutex<Option<SyncSender<()>>>> = OnceLock::new();
+static CLIPBOARD_NOTIFY_TX: OnceLock<Mutex<Option<SyncSender<()>>>> = OnceLock::new();
 
-pub(super) enum ClipboardCapture {
+enum ClipboardCapture {
     Text {
         hash: String,
         text: String,
@@ -183,7 +196,7 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
-    pub(super) fn capture_current_clipboard(&self) {
+    fn capture_current_clipboard(&self) {
         let settings = match self.state.lock() {
             Ok(state) => state.settings.clone(),
             Err(error) => {
@@ -210,7 +223,7 @@ impl ClipboardHistoryService {
         }
     }
 
-    pub(super) fn insert_capture(&self, capture: ClipboardCapture) -> Result<(), String> {
+    fn insert_capture(&self, capture: ClipboardCapture) -> Result<(), String> {
         let now = current_unix_millis();
         let hash = capture.hash().to_string();
         let mut state = self.state.lock().map_err(|error| error.to_string())?;
@@ -286,7 +299,7 @@ impl ClipboardHistoryService {
         Ok(())
     }
 
-    pub(super) fn persist_image(
+    fn persist_image(
         &self,
         hash: &str,
         width: usize,
@@ -325,7 +338,7 @@ impl ClipboardHistoryService {
         })
     }
 
-    pub(super) fn enforce_limit_locked(&self, state: &mut ClipboardHistoryState) {
+    fn enforce_limit_locked(&self, state: &mut ClipboardHistoryState) {
         while state.items.len() > state.settings.max_items {
             let removal_index = state
                 .items
@@ -341,7 +354,7 @@ impl ClipboardHistoryService {
         }
     }
 
-    pub(super) fn persist_locked(&self, state: &ClipboardHistoryState) -> Result<(), String> {
+    fn persist_locked(&self, state: &ClipboardHistoryState) -> Result<(), String> {
         let history = PersistedClipboardHistory {
             settings: state.settings.clone(),
             items: state.items.clone(),
@@ -352,25 +365,25 @@ impl ClipboardHistoryService {
             .map_err(|error| format!("Failed to write clipboard history: {error}"))
     }
 
-    pub(super) fn remove_item_files(&self, item: &ClipboardHistoryItem) {
+    fn remove_item_files(&self, item: &ClipboardHistoryItem) {
         if let Some(image) = &item.image {
             let _ = fs::remove_file(&image.original_path);
             let _ = fs::remove_file(&image.thumbnail_path);
         }
     }
 
-    pub(super) fn snapshot_locked(state: &ClipboardHistoryState) -> ClipboardHistorySnapshot {
+    fn snapshot_locked(state: &ClipboardHistoryState) -> ClipboardHistorySnapshot {
         ClipboardHistorySnapshot {
             settings: state.settings.clone(),
             items: state.items.clone(),
         }
     }
 
-    pub(super) fn emit_changed(&self) {
+    fn emit_changed(&self) {
         let _ = self.app.emit(HISTORY_CHANGED_EVENT, ());
     }
 
-    pub(super) fn emit_shortcut(&self) {
+    fn emit_shortcut(&self) {
         if let Some(window) = self.app.get_webview_window(MAIN_WINDOW_LABEL) {
             let _ = window.show();
             let _ = window.set_focus();
@@ -381,16 +394,14 @@ impl ClipboardHistoryService {
 }
 
 impl ClipboardCapture {
-    pub(super) fn hash(&self) -> &str {
+    fn hash(&self) -> &str {
         match self {
             Self::Text { hash, .. } | Self::Image { hash, .. } => hash,
         }
     }
 }
 
-pub(super) fn read_clipboard_capture(
-    capture_images: bool,
-) -> Result<Option<ClipboardCapture>, String> {
+fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
 
     if let Ok(text) = clipboard.get_text() {
@@ -424,7 +435,7 @@ pub(super) fn read_clipboard_capture(
     Ok(None)
 }
 
-pub(super) fn write_clipboard_text(text: &str) -> Result<(), String> {
+fn write_clipboard_text(text: &str) -> Result<(), String> {
     retry_clipboard_write("set clipboard text", || {
         Clipboard::new()
             .map_err(|error| format!("Failed to open clipboard: {error}"))?
@@ -433,11 +444,7 @@ pub(super) fn write_clipboard_text(text: &str) -> Result<(), String> {
     })
 }
 
-pub(super) fn write_clipboard_image(
-    width: usize,
-    height: usize,
-    image: &RgbaImage,
-) -> Result<(), String> {
+fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Result<(), String> {
     retry_clipboard_write("set clipboard image", || {
         Clipboard::new()
             .map_err(|error| format!("Failed to open clipboard: {error}"))?
@@ -450,7 +457,7 @@ pub(super) fn write_clipboard_image(
     })
 }
 
-pub(super) fn retry_clipboard_write(
+fn retry_clipboard_write(
     action: &str,
     mut write: impl FnMut() -> Result<(), String>,
 ) -> Result<(), String> {
@@ -511,7 +518,7 @@ pub(super) fn notify_clipboard_changed() {
     }
 }
 
-pub(super) fn run_windows_clipboard_listener() -> Result<(), String> {
+fn run_windows_clipboard_listener() -> Result<(), String> {
     let class_name = "FocuSDClipboardHistoryListener";
     let instance = message_window::module_instance().map_err(|error| error.to_string())?;
 

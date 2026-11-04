@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{fs, io::Cursor, path::Path};
 
-use super::*;
+use super::{ClipboardHistoryItem, ClipboardHistoryItemKind, ClipboardHistorySettings};
 
 pub(super) const HISTORY_FILE_NAME: &str = "clipboard-history.json";
 
@@ -13,7 +13,7 @@ pub(super) const IMAGE_DIRECTORY_NAME: &str = "clipboard-images";
 
 pub(super) const MAX_IMAGE_PNG_BYTES: usize = 10 * 1024 * 1024;
 
-pub(super) const THUMBNAIL_MAX_SIDE: u32 = 128;
+const THUMBNAIL_MAX_SIDE: u32 = 128;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

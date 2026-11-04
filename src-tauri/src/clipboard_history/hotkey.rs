@@ -9,7 +9,7 @@ use windows::Win32::{
     },
 };
 
-use super::*;
+use super::{default_shortcut_binding, service, ShortcutBinding};
 use crate::win32;
 
 pub(super) const HOTKEY_EVENT: &str = "clipboard-history-shortcut";
@@ -20,7 +20,7 @@ pub(super) const HOTKEY_REFRESH_MESSAGE: u32 = WM_APP + 0x51;
 
 pub(super) static CLIPBOARD_HOTKEY_WINDOW: OnceLock<Mutex<Option<isize>>> = OnceLock::new();
 
-pub(super) static CLIPBOARD_HOTKEY_REGISTERED: OnceLock<Mutex<bool>> = OnceLock::new();
+static CLIPBOARD_HOTKEY_REGISTERED: OnceLock<Mutex<bool>> = OnceLock::new();
 
 pub(super) fn request_hotkey_refresh() {
     let hwnd = CLIPBOARD_HOTKEY_WINDOW
@@ -73,7 +73,7 @@ pub(super) fn unregister_current_hotkey(hwnd: HWND) {
     }
 }
 
-pub(super) fn hotkey_registered() -> bool {
+fn hotkey_registered() -> bool {
     CLIPBOARD_HOTKEY_REGISTERED
         .get_or_init(|| Mutex::new(false))
         .lock()
@@ -81,7 +81,7 @@ pub(super) fn hotkey_registered() -> bool {
         .unwrap_or(false)
 }
 
-pub(super) fn set_hotkey_registered(value: bool) {
+fn set_hotkey_registered(value: bool) {
     if let Ok(mut registered) = CLIPBOARD_HOTKEY_REGISTERED
         .get_or_init(|| Mutex::new(false))
         .lock()
@@ -158,7 +158,7 @@ pub(crate) fn parse_shortcut_binding(shortcut: &str) -> Option<ShortcutBinding> 
     })
 }
 
-pub(super) fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
+fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
     let upper = key.trim().to_ascii_uppercase();
 
     if upper.len() == 1 {
@@ -200,6 +200,7 @@ pub(super) fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::{ClipboardHistorySettings, DEFAULT_SHORTCUT};
     use super::*;
 
     #[test]
