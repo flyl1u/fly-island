@@ -1,6 +1,6 @@
 # 编写 FocuSD Island 插件
 
-插件是一个由岛屿启动的程序。它通过 stdin / stdout 与岛屿通信，可以按授予的权限读写待办和每日笔记，并在设置页里提供按钮。设计背景见 [架构提案](../architecture/plugins.md)。
+插件是一个由岛屿启动的程序。它通过 stdin / stdout 与岛屿通信，可以按授予的权限读写待办和每日笔记，并在设置页里提供按钮。设计背景见 [架构提案](../architecture/plugins.md)，和 VS Code 的差别见 [和 VS Code 插件系统的对比](vscode.md)。
 
 > 当前状态：插件 API 第 1 版。可以在 设置 → 插件市场 中安装，也可以手动放进插件目录。
 
