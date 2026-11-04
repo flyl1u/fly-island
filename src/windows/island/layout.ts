@@ -31,6 +31,40 @@ export function getCollapsedIslandWidth(text: string) {
   );
 }
 
+// Widest nudge allowed when aligning; covers the 1.25x and 1.75x display scales.
+const MAX_ALIGNMENT_NUDGE = 4;
+
+/**
+ * The stage centres the island, so an odd width leaves it on a half pixel. The
+ * compositor draws it there while the collapse animation runs and snaps it to
+ * a whole device pixel when the animation ends, which shows as a jump. This
+ * picks the nearest width whose centred left edge is a whole device pixel.
+ */
+export function alignCollapsedIslandWidth(
+  width: number,
+  stageWidth: number,
+  devicePixelRatio: number,
+) {
+  const isAligned = (candidate: number) => {
+    const left = ((stageWidth - candidate) / 2) * devicePixelRatio;
+    return Math.abs(left - Math.round(left)) < 0.001;
+  };
+
+  for (let nudge = 0; nudge <= MAX_ALIGNMENT_NUDGE; nudge++) {
+    for (const candidate of [width - nudge, width + nudge]) {
+      if (
+        candidate >= MIN_COLLAPSED_ISLAND_WIDTH &&
+        candidate <= MAX_COLLAPSED_ISLAND_WIDTH &&
+        isAligned(candidate)
+      ) {
+        return candidate;
+      }
+    }
+  }
+
+  return width;
+}
+
 export function getTodoVisualRows(todoList: TodoItem[]) {
   return todoList.reduce(
     (total, todo) => total + getTodoTitleLineCount(todo.title),

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   MAX_COLLAPSED_ISLAND_WIDTH,
   MIN_COLLAPSED_ISLAND_WIDTH,
+  alignCollapsedIslandWidth,
   getCollapsedIslandWidth,
   getTodoVisualRows,
 } from "../src/windows/island/layout.ts";
@@ -26,6 +27,23 @@ test("the collapsed island grows with its text between the min and max widths", 
   const mid = getCollapsedIslandWidth("abcdefg");
   assert.ok(mid > MIN_COLLAPSED_ISLAND_WIDTH && mid < MAX_COLLAPSED_ISLAND_WIDTH, String(mid));
   assert.equal(Number.isInteger(mid), true);
+});
+
+test("the collapsed width is nudged so the centred island starts on a whole device pixel", () => {
+  const leftEdge = (width, ratio) => ((820 - width) / 2) * ratio;
+  // 301 is the width "剩余1个待办" produced: its centred left edge was 259.5px.
+  assert.equal(alignCollapsedIslandWidth(301, 820, 1), 300);
+  assert.equal(alignCollapsedIslandWidth(300, 820, 1), 300);
+  for (const ratio of [1, 1.25, 1.5, 1.75, 2]) {
+    for (let width = MIN_COLLAPSED_ISLAND_WIDTH; width <= MAX_COLLAPSED_ISLAND_WIDTH; width++) {
+      const aligned = alignCollapsedIslandWidth(width, 820, ratio);
+      assert.ok(Math.abs(aligned - width) <= 4, `${width} at ${ratio} -> ${aligned}`);
+      assert.ok(aligned >= MIN_COLLAPSED_ISLAND_WIDTH && aligned <= MAX_COLLAPSED_ISLAND_WIDTH);
+      assert.equal(Number.isInteger(leftEdge(aligned, ratio)), true, `${width} at ${ratio} -> ${aligned}`);
+    }
+  }
+  // A ratio no nearby width can satisfy keeps the computed width.
+  assert.equal(alignCollapsedIslandWidth(301, 820, 1.13), 301);
 });
 
 test("todo visual rows add up the estimated lines of every title", () => {

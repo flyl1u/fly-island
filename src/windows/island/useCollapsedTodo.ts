@@ -3,7 +3,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
-import { getCollapsedIslandWidth } from "./layout";
+import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
 
 /**
  * What the collapsed island shows for todos: the active (or rotating) todo
@@ -38,12 +38,16 @@ export function useCollapsedTodo(
     : null;
   const collapsedIslandWidth = useMemo(
     () =>
-      getCollapsedIslandWidth(
-        settings.showCollapsedText
-          ? collapsedTaskTitle ?? (collapsedTodoCount !== null
-            ? t.island.pendingTodos(collapsedTodoCount)
-            : settings.showTitle ? "fly-island" : "")
-          : "",
+      alignCollapsedIslandWidth(
+        getCollapsedIslandWidth(
+          settings.showCollapsedText
+            ? collapsedTaskTitle ?? (collapsedTodoCount !== null
+              ? t.island.pendingTodos(collapsedTodoCount)
+              : settings.showTitle ? "fly-island" : "")
+            : "",
+        ),
+        window.innerWidth,
+        window.devicePixelRatio,
       ),
     [collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t],
   );
