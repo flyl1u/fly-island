@@ -208,7 +208,7 @@ mod market_tests {
     use super::super::market::{extract_package, incompatibility, install_package, parse_index, verify_package, MarketEntry};
 
     const INDEX: &str = include_str!("../../../plugins/index.json");
-    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.1.0.zip");
+    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.2.0.zip");
 
     fn example_entry() -> MarketEntry {
         parse_index(INDEX)
@@ -228,7 +228,7 @@ mod market_tests {
         let crlf = INDEX.replace("\r\n", "\n").replace('\n', "\r\n");
         verify_index(&crlf, SIGNATURE, TRUSTED_KEYS).expect("CRLF");
 
-        let tampered = INDEX.replace("\"version\": \"1.1.0\"", "\"version\": \"1.1.1\"");
+        let tampered = INDEX.replace("\"version\": \"1.2.0\"", "\"version\": \"1.2.1\"");
         assert_ne!(tampered, INDEX);
         assert!(verify_index(&tampered, SIGNATURE, TRUSTED_KEYS).expect_err("tampered").contains("does not match"));
 
@@ -265,7 +265,12 @@ mod market_tests {
         assert!(parse_index(r#"{"version":2,"plugins":[]}"#).expect_err("format").contains("format 2"));
         assert!(parse_index("nope").is_err());
         let mut index: serde_json::Value = serde_json::from_str(INDEX).expect("json");
-        let good = index["plugins"][0].clone();
+        let good = serde_json::to_value(example_entry()).expect("json");
+        let good = index["plugins"]
+            .as_array()
+            .and_then(|plugins| plugins.iter().find(|plugin| plugin["id"] == good["id"]))
+            .cloned()
+            .expect("example in index");
         let mut http = good.clone();
         http["id"] = "a.http".into();
         http["download"]["url"] = "http://example.com/x.zip".into();
