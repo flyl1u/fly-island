@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 // 与 src-tauri/src/file_shelf/mod.rs 中的 FileShelfItem / FileShelfEntry 对应。
@@ -97,4 +97,12 @@ export function listenFileDrop(handler: (event: FileDropEvent) => void): Promise
       handler({ type: "leave" });
     }
   });
+}
+
+// 与 src-tauri/src/file_shelf/plugin_view.rs 中的 CHANGED_EVENT 对应：插件改了文件中转列表。
+const FILE_SHELF_CHANGED_EVENT = "file-shelf-changed";
+
+/** Calls `onChange` when a plugin changed the shelf; resolves to the unlisten function. */
+export function listenFileShelfChanged(onChange: () => void) {
+  return listen(FILE_SHELF_CHANGED_EVENT, () => onChange());
 }

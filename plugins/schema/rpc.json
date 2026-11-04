@@ -19,7 +19,9 @@
     { "name": "clipboard:read", "since": 2, "sensitive": true },
     { "name": "messages:read", "since": 2, "sensitive": true },
     { "name": "media:read", "since": 2, "sensitive": true },
-    { "name": "media:control", "since": 2 }
+    { "name": "media:control", "since": 2 },
+    { "name": "shelf:read", "since": 2, "sensitive": true },
+    { "name": "shelf:write", "since": 2, "sensitive": true }
   ],
   "events": [
     { "name": "todos.changed", "permission": "todos:read", "since": 2, "payload": "{ date }; call todos.list for the todos" },
@@ -203,7 +205,28 @@
     },
     { "name": "media.playPause", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
     { "name": "media.next", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
-    { "name": "media.previous", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." }
+    { "name": "media.previous", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
+    {
+      "name": "shelf.list",
+      "permission": "shelf:read",
+      "since": 2,
+      "params": null,
+      "result": "{ items: [{ id, path, name, isDir, size, addedAt, pinned, missing, unreachable }] }: paths only, never file contents."
+    },
+    {
+      "name": "shelf.add",
+      "permission": "shelf:write",
+      "since": 2,
+      "params": { "paths": "[string] (1-20 absolute paths of existing files or folders; others are skipped)" },
+      "result": "Same as shelf.list, afterwards."
+    },
+    {
+      "name": "shelf.remove",
+      "permission": "shelf:write",
+      "since": 2,
+      "params": { "ids": "[string] (1-20); only takes entries off the shelf, never deletes files" },
+      "result": "Same as shelf.list, afterwards."
+    }
   ],
   "toPlugin": [
     {

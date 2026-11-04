@@ -5,6 +5,7 @@ import {
   clearFileShelf,
   copyFileShelfItems,
   getFileShelf,
+  listenFileShelfChanged,
   openFileShelfItem,
   removeFileShelfItems,
   revealFileShelfItem,
@@ -63,6 +64,23 @@ export function useFileShelf(
   useEffect(() => {
     if (enabled) void run(() => setFileShelfOptions({ maxItems, maxAgeDays, removeMissing }));
   }, [enabled, maxAgeDays, maxItems, removeMissing, run]);
+
+  // Plugins (shelf.add / shelf.remove) change the list behind this window's back.
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    void listenFileShelfChanged(() => void refresh())
+      .then((stop) => {
+        if (cancelled) stop();
+        else unlisten = stop;
+      })
+      .catch((caught: unknown) => console.error("Failed to listen for file shelf changes", caught));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [enabled, refresh]);
 
   useEffect(() => {
     if (!recentDrop) return;

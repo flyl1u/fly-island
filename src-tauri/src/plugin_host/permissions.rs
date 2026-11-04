@@ -2,7 +2,7 @@
 //! only gate the host API: a plugin process still runs with the user's rights.
 
 /// Mirrored by `PLUGIN_PERMISSIONS` in src/features/plugins/api.ts.
-pub(super) const PERMISSIONS: [&str; 12] = [
+pub(super) const PERMISSIONS: [&str; 14] = [
     "todos:read",
     "todos:write",
     "notes:read",
@@ -15,13 +15,15 @@ pub(super) const PERMISSIONS: [&str; 12] = [
     "messages:read",
     "media:read",
     "media:control",
+    "shelf:read",
+    "shelf:write",
 ];
 
 /// (method, permission). `agentStatus.*` is handled natively (agent_status),
 /// `island.notify` in notify.rs, `secrets.*` in storage.rs, `clipboard.*` in
-/// clipboard_history, `messages.*` / `media.*` in feeds.rs; the rest are
+/// clipboard_history, `messages.*` / `media.*` in feeds.rs, `shelf.*` in file_shelf; the rest are
 /// answered by the island window, see src/features/todos/apiCommands.ts.
-pub(super) const METHODS: [(&str, &str); 18] = [
+pub(super) const METHODS: [(&str, &str); 21] = [
     ("todos.list", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
@@ -40,6 +42,9 @@ pub(super) const METHODS: [(&str, &str); 18] = [
     ("media.playPause", "media:control"),
     ("media.next", "media:control"),
     ("media.previous", "media:control"),
+    ("shelf.list", "shelf:read"),
+    ("shelf.add", "shelf:write"),
+    ("shelf.remove", "shelf:write"),
 ];
 
 /// Host features added after API version 1, sent in `initialize`. Plugins

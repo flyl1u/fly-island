@@ -700,6 +700,8 @@ const zhCN: Translations = {
         "messages:read": "读取 QQ、微信、QQ 邮箱的提醒：发送者和预览文字，不含邮件正文（敏感）",
         "media:read": "读取正在播放的歌曲和播放器（敏感）",
         "media:control": "播放、暂停、上一首、下一首",
+        "shelf:read": "读取文件中转列表（只有路径，敏感）",
+        "shelf:write": "往文件中转添加或移除条目，不会删除文件（敏感）",
       },
       needsApproval: "新版本需要更多权限，已暂停。关掉再打开开关即可授权。",
       keybindingConflict: (shortcuts: string) => `快捷键已被其他程序占用：${shortcuts}`,

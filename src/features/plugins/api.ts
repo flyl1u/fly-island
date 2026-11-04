@@ -16,6 +16,8 @@ export const PLUGIN_PERMISSIONS = [
   "messages:read",
   "media:read",
   "media:control",
+  "shelf:read",
+  "shelf:write",
 ] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 

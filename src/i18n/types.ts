@@ -686,7 +686,7 @@ export type Translations = {
       homepage: string;
       permissions: string;
       noPermissions: string;
-      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control", string>;
+      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control" | "shelf:read" | "shelf:write", string>;
       needsApproval: string;
       keybindingConflict: (shortcuts: string) => string;
       /** Sensitive permissions: the island asks before the first use. */

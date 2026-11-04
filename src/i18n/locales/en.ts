@@ -697,6 +697,8 @@ const en: Translations = {
         "messages:read": "Read QQ, WeChat and QQ Mail alerts: sender and preview, never mail bodies (sensitive)",
         "media:read": "See what is playing and in which player (sensitive)",
         "media:control": "Play, pause, next and previous track",
+        "shelf:read": "Read the file shelf (paths only; sensitive)",
+        "shelf:write": "Add to or remove from the file shelf; never deletes files (sensitive)",
       },
       needsApproval: "The new version asks for more permissions, so it is paused. Switch it off and on to allow them.",
       keybindingConflict: (shortcuts: string) => `Shortcut already in use by another app: ${shortcuts}`,

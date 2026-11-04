@@ -2,6 +2,7 @@
 //! so they can be dragged out, copied, opened or shown in Explorer later.
 
 mod availability;
+mod plugin_view;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -23,6 +24,8 @@ use crate::win32;
 use availability::{Availability, Presence};
 use store::*;
 use thumbnail::Thumbnails;
+
+pub(crate) use plugin_view::{plugin_shelf_add, plugin_shelf_list, plugin_shelf_remove};
 
 static FILE_SHELF: OnceLock<FileShelfService> = OnceLock::new();
 

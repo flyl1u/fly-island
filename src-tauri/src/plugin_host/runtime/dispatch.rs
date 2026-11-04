@@ -11,7 +11,7 @@ use crate::plugin_host::{
     rpc,
     settings::parse_info,
 };
-use crate::{agent_status, clipboard_history, local_api, media_control};
+use crate::{agent_status, clipboard_history, file_shelf, local_api, media_control};
 
 pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
@@ -74,6 +74,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "messages.list" => feeds::messages_list(),
         "media.nowPlaying" => media_control::plugin_now_playing(),
         "media.playPause" | "media.next" | "media.previous" => media_control::plugin_media_command(name),
+        "shelf.list" => file_shelf::plugin_shelf_list(),
+        "shelf.add" => file_shelf::plugin_shelf_add(&context.app, &params),
+        "shelf.remove" => file_shelf::plugin_shelf_remove(&context.app, &params),
         _ => local_api::call_island(&context.app, name, params),
     };
     answer(id, result)
