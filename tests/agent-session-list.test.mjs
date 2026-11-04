@@ -61,3 +61,21 @@ test("the Agent page follows the AI Agent switch", () => {
   const onlyAgents = { todo: false, music: false, clipboard: false, shelf: false, qq: false, wechat: false, qqMail: false, agents: true };
   assert.equal(resolveIslandPage("todo", onlyAgents), "agents");
 });
+
+test("the Agent page fits the session rows set in Settings", async () => {
+  const { getAgentPageExpandedHeight } = await import("../src/windows/island/layout.ts");
+  const { normalizeSettings, DEFAULT_SETTINGS, MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS } = await import("../src/features/appearance/settings.ts");
+  // Three rows is close to the page's height before this was a setting (430px).
+  assert.equal(getAgentPageExpandedHeight(3), 429);
+  // Each extra session adds one row and its gap.
+  assert.equal(getAgentPageExpandedHeight(4) - getAgentPageExpandedHeight(3), 99);
+  // The tallest choice still fits the native window (656px).
+  assert.ok(getAgentPageExpandedHeight(MAX_AGENT_VISIBLE_ROWS) <= 656);
+
+  assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 3);
+  assert.equal(normalizeSettings({}).agentVisibleRows, 3);
+  assert.equal(normalizeSettings({ agentVisibleRows: 99 }).agentVisibleRows, MAX_AGENT_VISIBLE_ROWS);
+  assert.equal(normalizeSettings({ agentVisibleRows: 0 }).agentVisibleRows, MIN_AGENT_VISIBLE_ROWS);
+  assert.equal(normalizeSettings({ agentVisibleRows: 3.6 }).agentVisibleRows, 4);
+  assert.equal(normalizeSettings({ agentVisibleRows: "4" }).agentVisibleRows, 3);
+});

@@ -24,6 +24,8 @@ export type IslandSettings = {
   maxPanelHeight: number;
   /** Clipboard history rows the expanded clipboard page shows before it scrolls. */
   clipboardVisibleRows: number;
+  /** Agent sessions the expanded Agent page shows before it scrolls. */
+  agentVisibleRows: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

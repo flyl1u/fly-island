@@ -27,6 +27,10 @@ export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 3;
 export const MIN_CLIPBOARD_VISIBLE_ROWS = 2;
 // Six rows is the tallest clipboard page the native window accepts (656px).
 export const MAX_CLIPBOARD_VISIBLE_ROWS = 6;
+export const DEFAULT_AGENT_VISIBLE_ROWS = 3;
+export const MIN_AGENT_VISIBLE_ROWS = 2;
+// Five sessions is the tallest Agent page the native window accepts (627px of 656px).
+export const MAX_AGENT_VISIBLE_ROWS = 5;
 // File shelf cap; matches MAX_ITEMS and MIN / MAX_MAX_ITEMS in src-tauri/src/file_shelf/store.rs.
 export const DEFAULT_SHELF_ITEMS = 100;
 export const MIN_SHELF_ITEMS = 20;
@@ -47,6 +51,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
+  agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -191,6 +196,9 @@ export function normalizeSettings(
     clipboardVisibleRows: typeof settings?.clipboardVisibleRows === "number" && Number.isFinite(settings.clipboardVisibleRows)
       ? clamp(Math.round(settings.clipboardVisibleRows), MIN_CLIPBOARD_VISIBLE_ROWS, MAX_CLIPBOARD_VISIBLE_ROWS)
       : DEFAULT_SETTINGS.clipboardVisibleRows,
+    agentVisibleRows: typeof settings?.agentVisibleRows === "number" && Number.isFinite(settings.agentVisibleRows)
+      ? clamp(Math.round(settings.agentVisibleRows), MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS)
+      : DEFAULT_SETTINGS.agentVisibleRows,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

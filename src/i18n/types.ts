@@ -546,6 +546,9 @@ export type Translations = {
       sessionTitleSection: string;
       sessionTitle: string;
       sessionTitleHint: string;
+      sessionPageSection: string;
+      sessionVisibleRows: string;
+      sessionPageHint: string;
       hooksOutdated: string;
       hooksMissing: string;
     };

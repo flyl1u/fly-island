@@ -1,9 +1,11 @@
-/* Same dark panel as the file shelf, so the two list pages read alike. */
+/* Same dark panel as the file shelf, so the two list pages read alike. The padding, title and
+   row heights are fixed because getAgentPageExpandedHeight (windows/island/layout.ts) sizes the
+   island to fit exactly the number of rows set in Settings. */
 .agent-sessions {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 8px;
   overflow: hidden;
   padding: 14px 14px 12px;
   color: rgba(241, 240, 246, 0.92);
@@ -19,6 +21,7 @@
 
 .agent-sessions__header {
   flex: none;
+  height: 18px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -58,18 +61,23 @@
   flex: 1;
   min-height: 0;
   display: grid;
+  /* One column no wider than the list, or a long title or reply widens every row. */
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 6px;
   margin: 0;
   padding: 0 4px 0 0;
+  overflow-x: hidden;
   overflow-y: auto;
   list-style: none;
   scrollbar-color: rgba(190, 210, 240, 0.28) transparent;
   scrollbar-width: thin;
 }
 
+/* Every row is the same height, with or without a reply, so N rows fill the page exactly. */
 .agent-session {
   width: 100%;
+  height: 93px;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -101,13 +109,17 @@
 
 .agent-session__main {
   min-width: 0;
+  height: 100%;
   flex: 1;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 3px;
 }
 
 .agent-session__heading {
   min-width: 0;
+  height: 18px;
+  flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -164,14 +176,17 @@
   overflow: hidden;
   color: rgba(241, 240, 246, 0.7);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 17px;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
+/* Pinned to the bottom so the status line lines up across rows. */
 .agent-session__meta {
+  margin-top: auto;
   color: rgba(241, 240, 246, 0.42);
+  line-height: 15px;
   font-size: 11px;
   font-weight: 700;
 }

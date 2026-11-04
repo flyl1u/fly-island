@@ -3,9 +3,11 @@
   <meta charset="UTF-8" />
   <title>Agent 会话页检查</title>
   <style>
+    /* As in src/styles/base.css, which this page does not load; the row heights depend on it. */
+    * { box-sizing: border-box; }
     html body { height: auto; min-height: 100%; margin: 0; overflow: auto; background: #1d2230; font: 14px "Segoe UI", "Microsoft YaHei", sans-serif; }
-    /* Roughly the island's content box on the Agent page at the default size. */
-    #fixture { width: 520px; height: 360px; margin: 32px auto 0; }
+    /* The island's content box on the Agent page; agent-sessions.tsx sets the height. */
+    #fixture { width: 520px; margin: 32px auto 0; }
     #results { max-width: 760px; margin: 24px auto; padding: 0 24px; color: #dfe6f3; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
   </style>
   <div id="fixture"></div>

@@ -1,5 +1,5 @@
 // pnpm dev, then open /tests/agent-sessions.html?test=1 (without ?test=1 the page is for visual QA;
-// add &empty=1 to see the empty state).
+// add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does).
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -7,6 +7,12 @@ import "../src/styles/tokens.css";
 import { I18nProvider } from "../src/i18n";
 import { AgentSessionsPanel } from "../src/features/agent-status/AgentSessionsPanel";
 import type { AgentSessionSummary } from "../src/features/agent-status/api";
+import { getAgentPageExpandedHeight } from "../src/windows/island/layout";
+
+// Island padding, header and gap above the page content; see AGENT_PAGE_CHROME_HEIGHT in layout.ts.
+const ISLAND_CHROME_HEIGHT = 86;
+const fixture = document.getElementById("fixture")!;
+const sizeFor = (rows: number) => { fixture.style.height = `${getAgentPageExpandedHeight(rows) - ISLAND_CHROME_HEIGHT}px`; };
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
@@ -39,7 +45,8 @@ const SESSIONS: AgentSessionSummary[] = [
   },
 ];
 
-const root = createRoot(document.getElementById("fixture")!);
+sizeFor(Number(params.get("rows")) || 3);
+const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
 await act(async () => {
   root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} /></I18nProvider></StrictMode>);
@@ -68,6 +75,15 @@ async function runChecks() {
     check(!third.querySelector(".agent-session__message") && !third.querySelector(".agent-session__model")?.textContent?.includes("·"), "没有回复和推理强度时不留空位");
     const panel = document.querySelector<HTMLElement>(".agent-sessions")!;
     check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");
+    const list = document.querySelector<HTMLElement>(".agent-sessions__list")!;
+    const rowHeights = rows().map((row) => row.getBoundingClientRect().height);
+    check(rowHeights.every((height) => height === rowHeights[0]), "有无回复摘要的行一样高");
+    check(Math.abs(list.scrollHeight - list.clientHeight) <= 1, "设为 3 条时正好放下 3 个会话，不滚动");
+    sizeFor(2);
+    check(list.scrollHeight > list.clientHeight + 40, "设为 2 条时第 3 个会话需要滚动");
+    sizeFor(5);
+    check(list.scrollHeight <= list.clientHeight, "设为 5 条时 3 个会话不滚动");
+    sizeFor(3);
 
     await act(async () => { first.click(); await Promise.resolve(); });
     const lastCall = focusCalls[focusCalls.length - 1];
