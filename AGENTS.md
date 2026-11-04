@@ -39,7 +39,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 │   ├── examples/        # 手动运行的 QQ / 微信探测程序，不进入发布产物
 │   ├── capabilities/    # Tauri 权限能力配置
 │   └── tauri.conf.json  # 窗口、更新、打包配置
-├── tests/               # node:test 单元测试（*.test.mjs）与浏览器回归页（*.html + *.tsx）
+├── tests/               # unit/ 前端单元测试、scripts/ 脚本测试（node:test，*.test.mjs）；regression/ 浏览器回归页（*.html + *.tsx）
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），sdk/node/ Node.js SDK，packages/ 打包好的 zip，index.json 市场索引与 index.json.sig 签名（pnpm plugins:index 生成），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
 ├── scripts/             # 发布、签名、latest.json 生成、代理状态 hook 脚本
 ├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
@@ -57,17 +57,17 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 前端开发服务器 | `pnpm dev` |
 | 桌面开发模式 | `pnpm tauri dev` |
 | 类型检查并构建前端 | `pnpm build` |
-| 前端单元测试 | `pnpm test`（即 `node --test tests/*.test.mjs`） |
+| 前端单元测试 | `pnpm test`（即 `node --test "tests/**/*.test.mjs"`） |
 | 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
 | 文件行数检查 | `pnpm check:size` |
-| 回归页类型检查 | `pnpm check:tests-types`（`tsconfig.tests.json`，检查 `tests/*.tsx`） |
+| 回归页类型检查 | `pnpm check:tests-types`（`tsconfig.tests.json`，检查 `tests/regression/*.tsx`） |
 | 提交前总检查 | `pnpm check`（类型检查 + 回归页类型检查 + lint + 行数检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
 | 完整打包 | `pnpm tauri build` |
 | 发布 | `pnpm release`（流程见 `docs/updater.md`） |
 
-如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。如果 `vite build` 报错无法删除系统临时目录中的 esbuild 文件（Access is denied），可以把 `TEMP` / `TMP` 指向 `node_modules/.cache/` 下的目录后重试。
+如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/scripts/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。如果 `vite build` 报错无法删除系统临时目录中的 esbuild 文件（Access is denied），可以把 `TEMP` / `TMP` 指向 `node_modules/.cache/` 下的目录后重试。
 
 ## 代码规模规则（全局）
 

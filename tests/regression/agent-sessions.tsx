@@ -1,0 +1,108 @@
+// pnpm dev, then open /tests/agent-sessions.html?test=1 (without ?test=1 the page is for visual QA;
+// add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does).
+import { act, StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { mockIPC } from "@tauri-apps/api/mocks";
+import "../../src/styles/tokens.css";
+import { I18nProvider } from "../../src/i18n";
+import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
+import type { AgentSessionSummary } from "../../src/features/agent-status/api";
+import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
+
+// Island padding, header and gap above the page content; see AGENT_PAGE_CHROME_HEIGHT in layout.ts.
+const ISLAND_CHROME_HEIGHT = 86;
+const fixture = document.getElementById("fixture")!;
+const sizeFor = (rows: number) => { fixture.style.height = `${getAgentPageExpandedHeight(rows) - ISLAND_CHROME_HEIGHT}px`; };
+
+Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
+const params = new URLSearchParams(location.search);
+const now = Date.now();
+const focusCalls: Array<Record<string, unknown>> = [];
+mockIPC((command, payload) => {
+  if (command === "focus_agent_window") {
+    const args = (payload ?? {}) as Record<string, unknown>;
+    focusCalls.push(args);
+    // Only the fly-island session has a window to switch to.
+    return args.cwd === "E:\\Projects\\fly-island";
+  }
+});
+
+const SESSIONS: AgentSessionSummary[] = [
+  {
+    provider: "claudeCode", sessionId: "a", cwd: "E:\\Projects\\fly-island", title: "设置界面完善思路",
+    model: "Opus 5.5", effort: "medium", phase: "running", updatedAt: now - 20_000,
+    // As long as the native side sends (120 characters), so it needs more than two lines.
+    lastMessage: "24 个测试全部通过。接下来用真实数据看看列表的实际效果和耗时，再决定要不要给第一句提问加缓存，顺便检查一下项目名是不是会话开始时的目录，以及跳转窗口时能不能按项目文件夹找到对应的编辑器窗口和终端窗口…",
+  },
+  {
+    provider: "codex", sessionId: "b", cwd: "E:\\Projects\\MioPicFlow", title: "恢复 Windows 发布机环境，顺便把代理配置也整理一遍",
+    model: "gpt-6-astra", effort: "high", phase: "waiting", updatedAt: now - 14 * 60_000,
+    lastMessage: "关闭系统代理后国内网站立即恢复，说明问题集中在 Clash 的代理链路。",
+  },
+  {
+    provider: "claudeCode", sessionId: "c", cwd: "E:\\Projects\\TixXinBlog", title: "Nexus 紧凑视口密度变量",
+    model: "Opus 5.5", effort: null, phase: "completed", updatedAt: now - 95 * 60_000, lastMessage: null,
+  },
+];
+
+sizeFor(Number(params.get("rows")) || 3);
+const root = createRoot(fixture);
+const sessions = params.has("empty") ? [] : SESSIONS;
+await act(async () => {
+  root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} /></I18nProvider></StrictMode>);
+});
+
+const messages: string[] = [];
+function check(condition: unknown, label: string) {
+  if (!condition) throw new Error(label);
+  messages.push(`PASS ${label}`);
+}
+const rows = () => [...document.querySelectorAll<HTMLButtonElement>(".agent-session")];
+const results = document.getElementById("results")!;
+
+async function runChecks() {
+  try {
+    check(rows().length === 3, "列出全部会话");
+    const [first, second, third] = rows();
+    check(first.textContent?.includes("fly-island · 设置界面完善思路") && first.querySelector(".agent-provider-icon--claudeCode"), "每行显示图标、项目名和标题");
+    check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Medium", "显示模型和推理强度");
+    check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
+    check(second.textContent?.includes("等待确认 · 14 分钟前") && getComputedStyle(second.querySelector(".agent-session__dot")!).backgroundColor === "rgb(255, 159, 67)", "等待确认的会话显示橙色状态灯和状态文字");
+    check(first.textContent?.includes("正在运行 · 刚刚") && second.textContent?.includes("14 分钟前") && third.textContent?.includes("1 小时前"), "显示状态和多久前更新");
+    const title = second.querySelector<HTMLElement>(".agent-session__title")!;
+    const message = first.querySelector<HTMLElement>(".agent-session__message")!;
+    check(title.scrollWidth > title.clientWidth, "长标题单行省略");
+    check(message.scrollHeight > message.clientHeight && message.clientHeight < 40, "最新回复最多两行");
+    check(!third.querySelector(".agent-session__message") && !third.querySelector(".agent-session__model")?.textContent?.includes("·"), "没有回复和推理强度时不留空位");
+    const panel = document.querySelector<HTMLElement>(".agent-sessions")!;
+    check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");
+    const list = document.querySelector<HTMLElement>(".agent-sessions__list")!;
+    const rowHeights = rows().map((row) => row.getBoundingClientRect().height);
+    check(rowHeights.every((height) => height === rowHeights[0]), "有无回复摘要的行一样高");
+    check(Math.abs(list.scrollHeight - list.clientHeight) <= 1, "设为 3 条时正好放下 3 个会话，不滚动");
+    sizeFor(2);
+    check(list.scrollHeight > list.clientHeight + 40, "设为 2 条时第 3 个会话需要滚动");
+    sizeFor(5);
+    check(list.scrollHeight <= list.clientHeight, "设为 5 条时 3 个会话不滚动");
+    sizeFor(3);
+
+    await act(async () => { first.click(); await Promise.resolve(); });
+    const lastCall = focusCalls[focusCalls.length - 1];
+    check(lastCall?.provider === "claudeCode" && lastCall?.title === "设置界面完善思路", "点击会话按项目和标题查找窗口");
+    check(!document.querySelector(".agent-session__not-found"), "找到窗口时不提示");
+    await act(async () => { second.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
+    check(second.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口", "找不到窗口时在该行提示");
+    results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
+    results.dataset.result = "passed";
+  } catch (error) {
+    results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`;
+    results.dataset.result = "failed";
+    console.error(error);
+  }
+}
+
+if (params.has("test")) await runChecks();
+else {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });
+  results.textContent = "点击会话查看跳转结果：只有 fly-island 会话能找到窗口。";
+}

@@ -101,13 +101,13 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 ## 测试
 
-- 纯逻辑写在不含 JSX 的 `.ts` 文件中，由 `tests/*.test.mjs` 用 `node:test` 覆盖。
+- 纯逻辑写在不含 JSX 的 `.ts` 文件中，由 `tests/unit/*.test.mjs` 用 `node:test` 覆盖。
 - Node 直接加载 `.ts` 源码，所以被测模块必须满足：
   - 运行时的相对导入写完整的 `.ts` 扩展名（纯类型导入用 `import type`，可以不写扩展名）；
   - 只使用可擦除的 TS 语法，不用 `enum`、`namespace`、构造函数参数属性。
-- `tests/updater-controller.test.mjs` 和 `tests/island-automation.test.mjs` 用 `vm` 加载源码，并按 import 路径注入 mock。修改这些被测模块的 import 时，必须同步更新测试里的 mock 表。
+- `tests/unit/updater-controller.test.mjs` 和 `tests/unit/island-automation.test.mjs` 用 `vm` 加载源码，并按 import 路径注入 mock。修改这些被测模块的 import 时，必须同步更新测试里的 mock 表。
 - 移动被测模块时，同步更新 `tests/` 中的导入路径，并确认测试通过。
-- 浏览器回归页 `tests/*.html` 在 `pnpm dev` 启动后通过 `/tests/<name>.html` 访问，用于检查界面和数据兼容性。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
+- 浏览器回归页 `tests/regression/*.html` 在 `pnpm dev` 启动后通过 `/tests/regression/<name>.html` 访问，用于检查界面和数据兼容性。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
 
 ## 新增 Tauri 命令清单
 

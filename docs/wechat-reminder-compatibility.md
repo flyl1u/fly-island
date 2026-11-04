@@ -62,7 +62,7 @@ Windows 文档将 `RegisterShellHookWindow` 标为非通用接口，未来版本
 ```powershell
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 cargo test --manifest-path src-tauri/Cargo.toml --lib wechat_reminders::tests::finds_existing_wechat_main_window_without_launching -- --ignored --exact
-node --test tests/qq-notification-timing.test.mjs
+node --test tests/unit/qq-notification-timing.test.mjs
 pnpm build
 pnpm tauri build --no-bundle
 ```

@@ -37,7 +37,7 @@
 
 ```powershell
 cargo test --manifest-path src-tauri/Cargo.toml --lib qq_mail::tests
-node --test tests/qq-notification-timing.test.mjs tests/message-preview.test.mjs
+node --test tests/unit/qq-notification-timing.test.mjs tests/unit/message-preview.test.mjs
 pnpm build
 pnpm tauri build --no-bundle
 ```
@@ -46,7 +46,7 @@ pnpm tauri build --no-bundle
 
 正文协议测试另外覆盖只读按需获取、中文正文解码、嵌套 MIME、纯文本优先、跳过附件、正文大小上限、UID 有效性变化，以及不完整或格式不匹配的正文。
 
-运行 `pnpm dev` 后打开 `/tests/mail-reader.html?run=1`，可运行真实 React 组件与模拟 Tauri 边界的导航和阅读回归检查。`?state=qq`、`wechat`、`empty`、`disconnected`、`reader`、`html`、`loading`、`error`、`auth`、`wechatError` 可预览各状态；夹具不使用真实账号，不操作微信或 QQ。
+运行 `pnpm dev` 后打开 `/tests/regression/mail-reader.html?run=1`，可运行真实 React 组件与模拟 Tauri 边界的导航和阅读回归检查。`?state=qq`、`wechat`、`empty`、`disconnected`、`reader`、`html`、`loading`、`error`、`auth`、`wechatError` 可预览各状态；夹具不使用真实账号，不操作微信或 QQ。
 
 ## 本机验证记录（2026-10-19）
 

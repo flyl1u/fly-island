@@ -239,7 +239,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
    - 凭据（QQ 邮箱授权码、翻译密钥）**永不开放**。
 3. **首次调用确认**：敏感权限第一次被调用时，岛上弹出确认（“<插件名> 想读取剪贴板历史：允许 / 拒绝 / 本次允许”），结果写进 `plugins.json` 的 `grants.<id>.sensitive`。在用户回答之前，请求最多挂起 30 秒，超时按拒绝处理。
 
-**测试**：迁移的单测（各种旧格式、损坏数据、空数据，与 `tests/todos-storage.test.mjs` 现有用例对齐）；原子写入；并发修改；敏感权限确认的状态机；`tests/` 回归页覆盖迁移后数据完全一致。
+**测试**：迁移的单测（各种旧格式、损坏数据、空数据，与 `tests/unit/todos-storage.test.mjs` 现有用例对齐）；原子写入；并发修改；敏感权限确认的状态机；`tests/` 回归页覆盖迁移后数据完全一致。
 
 **验收**：已有用户升级后待办、归档、笔记、以后的待办全部还在；关闭主窗口的渲染（例如岛屿刚启动、主窗口还没加载完）时，本地接口照常读写待办；拒绝剪贴板权限后插件收到 `-32001`，岛屿其他功能不受影响。
 
@@ -276,7 +276,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 - 前端：新目录 `src/features/plugin-views/`（`PluginViewPage.tsx`、`templates/ListTemplate.tsx`、`DetailTemplate.tsx`、`FormTemplate.tsx`、`StatusTemplate.tsx`、`model.ts` 负责校验和规范化插件数据、`api.ts`）；`windows/island/` 的页面类型、导航、快捷键、高度计算；设置窗口增加“岛上页面”的显示与排序。
 - Rust：`plugin_host/views.rs`（缓存每个视图的最新模型、限流、按窗口转发），事件 `plugin-view-changed`。
-- 回归页：`tests/plugin-views.html` + `.tsx`，覆盖四种模板、窄宽度、超长文字、空状态、恶意 Markdown。
+- 回归页：`tests/regression/plugin-views.html` + `.tsx`，覆盖四种模板、窄宽度、超长文字、空状态、恶意 Markdown。
 
 **验收**：示例插件 `dev.focusd.github-issues`（列表模板，展示一个仓库的待处理 issue，点条目用浏览器打开）和 `dev.focusd.pomodoro`（状态模板加折叠条倒计时）都能正常运行；插件崩溃时页面显示“插件已停止”和重启按钮，岛屿其他页面不受影响；展开动画帧率不比现在差（按性能调查文档的方法测）。
 
