@@ -18,7 +18,8 @@ export function TodoNotebookSpine({
 }) {
   const t = useTranslation();
   const isTodayMode = pageMode === "today";
-  const isDailyMode = pageMode === "daily";
+  // The daily note and the upcoming list belong to today's group of pages.
+  const isDailyMode = pageMode === "daily" || pageMode === "upcoming";
 
   return (
     <div className="todo-notebook__spine">

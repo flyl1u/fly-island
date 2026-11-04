@@ -1,10 +1,12 @@
 import { useCallback, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { ClipboardList, Columns2, NotebookPen, Plus } from "lucide-react";
+import { CalendarClock, ClipboardList, Columns2, NotebookPen, Plus } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { ArchiveBrowser } from "./ArchiveBrowser";
+import { ScheduledTodoList } from "./ScheduledTodoList";
+import { TodoDatePicker } from "./TodoDatePicker";
 import { TodoListItem } from "./TodoListItem";
 import { TodoNotebookSpine } from "./TodoNotebookSpine";
-import type { ArchiveLayout, SaveState, TodoArchive, TodoItem, TodoPageMode } from "./types";
+import type { ArchiveLayout, SaveState, ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
 import "./TodoNotebook.css";
 
 export function TodoNotebook({
@@ -20,8 +22,13 @@ export function TodoNotebook({
   saveState,
   enableTodoReorder,
   scrollStartRows,
+  draftDate,
+  scheduledTodos,
   onDraftChange,
+  onDraftDateChange,
   onAddTodo,
+  onShowUpcoming,
+  onDeleteScheduledTodo,
   onToggleTodo,
   onUpdateTodo,
   onStartTodo,
@@ -48,8 +55,14 @@ export function TodoNotebook({
   enableTodoReorder: boolean;
   /** Rows shown before the list scrolls; the island grows to fit this many. */
   scrollStartRows: number;
+  /** Day the next todo is for, or null for the list's own day. */
+  draftDate: string | null;
+  scheduledTodos: ScheduledTodo[];
   onDraftChange: (value: string) => void;
+  onDraftDateChange: (date: string | null) => void;
   onAddTodo: () => void;
+  onShowUpcoming: () => void;
+  onDeleteScheduledTodo: (id: string) => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
   onStartTodo: (id: string) => void;
@@ -70,6 +83,7 @@ export function TodoNotebook({
   const isDailyMode = pageMode === "daily";
   const isArchiveMode = pageMode === "archive";
   const isReviewMode = pageMode === "review";
+  const isUpcomingMode = pageMode === "upcoming";
   const openCount = displayedTodos.filter((todo) => !todo.completed).length;
   const listClassName = [
     "todo-list",
@@ -79,7 +93,7 @@ export function TodoNotebook({
     .join(" ");
   const inputPlaceholder =
     pageMode === "today"
-      ? t.notebook.addTaskFor(currentDate)
+      ? t.notebook.addTaskFor(draftDate && draftDate > currentDate ? draftDate : currentDate)
       : t.notebook.reviewTodos;
   const archiveTitle =
     archiveLayout === "cards"
@@ -90,6 +104,7 @@ export function TodoNotebook({
     isDailyMode ? "todo-notebook--daily" : "",
     isArchiveMode ? "todo-notebook--archive" : "",
     isReviewMode ? "todo-notebook--review" : "",
+    isUpcomingMode ? "todo-notebook--upcoming" : "",
     isArchiveMode ? `todo-notebook--archive-${archiveLayout}` : "",
   ]
     .filter(Boolean)
@@ -213,9 +228,21 @@ export function TodoNotebook({
               ? selectedArchive?.date ?? t.notebook.reviewTab
               : isDailyMode
                 ? t.notebook.dailyTab
-                : t.notebook.tasksTab}
+                : isUpcomingMode ? t.notebook.upcomingTab : t.notebook.tasksTab}
           </span>
-          {!isArchiveMode && !isReviewMode && (
+          {(isUpcomingMode || (isTodayMode && scheduledTodos.length > 0)) && (
+            <button
+              className={`todo-page-toggle todo-page-toggle--count${isUpcomingMode ? " todo-page-toggle--active" : ""}`}
+              type="button"
+              title={isUpcomingMode ? t.notebook.backToTasks : t.notebook.showUpcoming(scheduledTodos.length)}
+              aria-label={isUpcomingMode ? t.notebook.backToTasks : t.notebook.showUpcoming(scheduledTodos.length)}
+              onClick={isUpcomingMode ? onShowToday : onShowUpcoming}
+            >
+              <CalendarClock size={14} strokeWidth={2.2} />
+              <span className="todo-page-toggle__count">{scheduledTodos.length}</span>
+            </button>
+          )}
+          {(isTodayMode || isDailyMode) && (
             <button
               className={[
                 "todo-page-toggle",
@@ -261,14 +288,14 @@ export function TodoNotebook({
           </div>
         ) : (
           <span className="todo-notebook__open-count">
-            {t.notebook.openCount(openCount)}
+            {isUpcomingMode ? t.notebook.scheduledCount(scheduledTodos.length) : t.notebook.openCount(openCount)}
           </span>
         )}
       </div>
 
-      {!isDailyMode && !isArchiveMode && (
+      {!isDailyMode && !isArchiveMode && !isUpcomingMode && (
         <form
-          className="todo-form"
+          className={`todo-form${isTodayMode ? " todo-form--dated" : ""}`}
           onSubmit={(event) => {
             event.preventDefault();
             if (isTodayMode) {
@@ -284,6 +311,9 @@ export function TodoNotebook({
             aria-label={t.notebook.addTaskHint}
             onChange={(event) => onDraftChange(event.currentTarget.value)}
           />
+          {isTodayMode && (
+            <TodoDatePicker value={draftDate} today={currentDate} disabled={false} onChange={onDraftDateChange} />
+          )}
         </form>
       )}
 
@@ -302,6 +332,8 @@ export function TodoNotebook({
           spellCheck={false}
           onChange={(event) => onDailyNoteChange(event.currentTarget.value)}
         />
+      ) : isUpcomingMode ? (
+        <ScheduledTodoList todos={scheduledTodos} onDelete={onDeleteScheduledTodo} />
       ) : (
         <div className={listClassName} role="list">
           {displayedTodos.length === 0 ? (

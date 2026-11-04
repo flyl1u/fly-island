@@ -121,3 +121,43 @@ test("blocked storage falls back to defaults instead of throwing", () => {
     else delete globalThis.window;
   }
 });
+
+test("scheduled dates are real days and step across months", async () => {
+  const { addDays, isDateString } = await import("../src/features/todos/schedule.ts");
+  assert.equal(isDateString("2026-11-05"), true);
+  assert.equal(isDateString("2026-02-30"), false);
+  assert.equal(isDateString("2026-1-5"), false);
+  assert.equal(isDateString(20261105), false);
+  assert.equal(addDays("2026-11-30", 1), "2026-12-01");
+  assert.equal(addDays("2026-12-31", 1), "2027-01-01");
+});
+
+test("due scheduled todos are split off in date order and keep their ids", async () => {
+  const { splitDueTodos, toTodoItems } = await import("../src/features/todos/schedule.ts");
+  const todos = [
+    { id: "c", title: "later", date: "2026-11-09", createdAt: 3 },
+    { id: "b", title: "today", date: "2026-11-05", createdAt: 2 },
+    { id: "a", title: "missed", date: "2026-11-03", createdAt: 1 },
+  ];
+  const { due, later } = splitDueTodos(todos, "2026-11-05");
+  assert.deepEqual(due.map((todo) => todo.id), ["a", "b"]);
+  assert.deepEqual(later.map((todo) => todo.id), ["c"]);
+  assert.deepEqual(toTodoItems(due)[0], { id: "a", title: "missed", completed: false, createdAt: 1 });
+});
+
+test("stored scheduled todos drop invalid entries and sort by date", async () => {
+  const { SCHEDULED_TODOS_STORAGE_KEY, loadScheduledTodos } = await import("../src/features/todos/storage.ts");
+  const stored = [
+    { id: "2", title: " Later ", date: "2026-12-01", createdAt: 5 },
+    { id: "1", title: "Sooner", date: "2026-11-20" },
+    { id: "3", title: "", date: "2026-11-21" },
+    { id: "4", title: "Bad date", date: "2026-13-01" },
+    { title: "No id", date: "2026-11-22" },
+    null,
+  ];
+  withStorage([[SCHEDULED_TODOS_STORAGE_KEY, JSON.stringify(stored)]], () => {
+    const todos = loadScheduledTodos();
+    assert.deepEqual(todos.map((todo) => [todo.id, todo.title, todo.date]), [["1", "Sooner", "2026-11-20"], ["2", "Later", "2026-12-01"]]);
+  });
+  withStorage([[SCHEDULED_TODOS_STORAGE_KEY, "{broken"]], () => assert.deepEqual(loadScheduledTodos(), []));
+});

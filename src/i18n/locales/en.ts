@@ -236,6 +236,14 @@ const en: Translations = {
     addTaskHint: "Add a task, press Enter to save",
     dailyPlaceholder: "Write today's notes...",
     dailyNoteLabel: "Daily note",
+    pickDate: "Pick a date",
+    dateToday: "Today",
+    dateTomorrow: "Tomorrow",
+    upcomingTab: "Upcoming",
+    showUpcoming: (count) => `Show ${count} scheduled ${count === 1 ? "task" : "tasks"}`,
+    scheduledCount: (count) => `${count} scheduled`,
+    noScheduled: "Nothing scheduled for later",
+    deleteScheduled: (title) => `Delete scheduled task: ${title}`,
   },
 
   archive: {

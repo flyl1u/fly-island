@@ -1,6 +1,38 @@
-import type { TodoArchive, TodoItem } from "./types";
+import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 import { getLocalDateString } from "../../utils/date.ts";
 import { readString, removeItem, writeString } from "../../lib/storage.ts";
+import { normalizeScheduledTodo, sortScheduledTodos } from "./schedule.ts";
+
+// Todos planned for later days (ScheduledTodo[]); added for upstream issue #30.
+export const SCHEDULED_TODOS_STORAGE_KEY = "focusd-island-scheduled-todos";
+
+export function loadScheduledTodos(): ScheduledTodo[] {
+  const stored = readString(SCHEDULED_TODOS_STORAGE_KEY);
+
+  if (!stored) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as unknown;
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return sortScheduledTodos(
+      parsed
+        .map((value) => normalizeScheduledTodo((value ?? {}) as Partial<ScheduledTodo>))
+        .filter((todo): todo is ScheduledTodo => todo !== null),
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveScheduledTodos(todos: ScheduledTodo[]) {
+  writeString(SCHEDULED_TODOS_STORAGE_KEY, JSON.stringify(todos));
+}
 
 export const TODOS_STORAGE_KEY = "focusd-island-todos";
 export const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";

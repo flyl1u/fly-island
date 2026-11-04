@@ -190,6 +190,10 @@
   border-radius: var(--radius-md);
 }
 
+.todo-form--dated {
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+}
+
 .todo-form input {
   width: 100%;
   min-width: 0;

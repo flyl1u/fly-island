@@ -238,6 +238,14 @@ export type Translations = {
     addTaskHint: string;
     dailyPlaceholder: string;
     dailyNoteLabel: string;
+    pickDate: string;
+    dateToday: string;
+    dateTomorrow: string;
+    upcomingTab: string;
+    showUpcoming: (count: number) => string;
+    scheduledCount: (count: number) => string;
+    noScheduled: string;
+    deleteScheduled: (title: string) => string;
   };
 
   archive: {

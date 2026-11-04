@@ -29,8 +29,10 @@ export function getExpandedIslandHeight({
   isReadingMail,
   maxPanelHeight,
 }: ExpandedHeightInput) {
+  // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =
-    page === "todo" && (todoPageMode === "archive" || todoPageMode === "review");
+    page === "todo" &&
+    (todoPageMode === "archive" || todoPageMode === "review" || todoPageMode === "upcoming");
   const visibleTodoRows = Math.min(
     Math.max(
       todoPageMode === "daily" || isTodoArchivePage
