@@ -6,13 +6,14 @@ use tauri::{
     App,
 };
 
-use crate::island;
+use crate::{island, settings_window};
 
 pub(crate) fn build_tray(app: &App) -> tauri::Result<()> {
     let show_item = MenuItem::with_id(app, "show", "Show Island", true, None::<&str>)?;
     let hide_item = MenuItem::with_id(app, "hide", "Hide Island", true, None::<&str>)?;
+    let settings_item = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_item, &hide_item, &quit_item])?;
+    let menu = Menu::with_items(app, &[&show_item, &hide_item, &settings_item, &quit_item])?;
 
     let mut tray = TrayIconBuilder::new()
         .tooltip("fly-island")
@@ -23,6 +24,7 @@ pub(crate) fn build_tray(app: &App) -> tauri::Result<()> {
                 let _ = island::show_island(app);
             }
             "hide" => island::hide_island(app),
+            "settings" => settings_window::open_from_tray(app),
             "quit" => app.exit(0),
             _ => {}
         })

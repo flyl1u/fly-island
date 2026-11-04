@@ -1,0 +1,245 @@
+/*
+ * Top-edge attachment. Rust reports it on the root element as
+ * data-island-top-edge (see topEdge.ts). Before the first report, and in the
+ * browser preview, the docked class from App stands in. Every "attached" rule
+ * below uses the same pair of selectors for that reason.
+ */
+
+.island {
+  /*
+   * Radius of the concave fillets that flare the flat top into the screen edge.
+   * The unitless size comes from the appearance settings (stageStyle.ts).
+   */
+  --island-top-fillet: calc(var(--island-top-fillet-size, 8) * 1px);
+  /* The rim layer reaches this far into the island so it can take over its side rim. */
+  --island-top-fillet-box: calc(var(--island-top-fillet) + 4px);
+  /* Rim that continues the island outline along the fillet curve. */
+  --island-top-fillet-rim: transparent;
+  --island-top-fillet-rim-inset: 0px;
+  --island-top-fillet-rim-width: 1px;
+  /*
+   * Classic draws its rim with an all-round inset shadow. The opaque fill layer
+   * repaints the 1px top edge, and the 1px sides beside the fillets, so
+   * the outline follows the fillet rim instead. Glass is translucent, so it hides
+   * its rim through the refraction mask and shadow override below instead.
+   */
+  --island-top-fillet-cover: #000;
+  /*
+   * The glass layers inside the island (.island__glass::after in App.css) lift the
+   * edges with a white top sheen and cyan / pink side tints. The fillet fill only
+   * gets the island background, so the same lift is layered on top of it.
+   */
+  --island-top-fillet-sheen: transparent;
+  --island-top-fillet-tint-left: transparent;
+  --island-top-fillet-tint-right: transparent;
+}
+
+/* Classic: the expanded island draws a 1px rim from its own inset shadow. */
+.island--expanded {
+  --island-top-fillet-rim: rgba(255, 255, 255, 0.08);
+}
+
+/* Liquid glass: the rim is the refraction border, 1px inside the edge. */
+.island--appearance-liquidGlass {
+  --island-top-fillet-rim: rgba(255, 255, 255, var(--glass-border-alpha));
+  --island-top-fillet-rim-inset: 1px;
+  --island-top-fillet-rim-width: 1.6px;
+  /* A colour, not a size: a zero-sized mask layer makes Chromium drop the whole mask. */
+  --island-top-fillet-cover: transparent;
+  --island-top-fillet-sheen: rgba(255, 255, 255, calc(0.13 * var(--glass-refraction-opacity)));
+  --island-top-fillet-tint-left: rgba(116, 214, 255, calc(0.1 * var(--glass-refraction-opacity)));
+  --island-top-fillet-tint-right: rgba(255, 156, 224, calc(0.08 * var(--glass-refraction-opacity)));
+}
+
+/* A dragged island dropped flush with the top gets the docked flat top. */
+:root[data-island-top-edge="attached"] .island--detached.island--collapsed {
+  border-radius: 0 0 22px 22px;
+}
+
+:root[data-island-top-edge="attached"] .island--detached.island--expanded {
+  border-radius: 0 0 30px 30px;
+}
+
+/*
+ * Fillet fill. The layer spans the full island height plus one fillet on each
+ * side and paints the island's own background, so vertical gradients, glass
+ * tints and custom colours line up at the seam. The mask keeps only the two
+ * cut-out corners outside the island. The fillets sit outside the native hit
+ * area, so clicks there reach the desktop.
+ */
+.island::before,
+.island::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--island-top-fillet));
+  right: calc(-1 * var(--island-top-fillet));
+  opacity: 0;
+  pointer-events: none;
+  /* Fades with the 560ms corner-radius morph on .island. */
+  transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island::before {
+  --island-top-fillet-edge: calc(var(--island-top-fillet) - 0.6px);
+  bottom: 0;
+  z-index: -1;
+  background: inherit;
+  -webkit-mask:
+    radial-gradient(
+        circle var(--island-top-fillet) at 0 100%,
+        transparent var(--island-top-fillet-edge),
+        var(--color-black) var(--island-top-fillet)
+      )
+      left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    radial-gradient(
+        circle var(--island-top-fillet) at 100% 100%,
+        transparent var(--island-top-fillet-edge),
+        var(--color-black) var(--island-top-fillet)
+      )
+      right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+      calc(100% - 2 * var(--island-top-fillet)) 1px no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+      1px var(--island-top-fillet) no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) right var(--island-top-fillet) top 0 /
+      1px var(--island-top-fillet) no-repeat;
+  mask:
+    radial-gradient(
+        circle var(--island-top-fillet) at 0 100%,
+        transparent var(--island-top-fillet-edge),
+        var(--color-black) var(--island-top-fillet)
+      )
+      left top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    radial-gradient(
+        circle var(--island-top-fillet) at 100% 100%,
+        transparent var(--island-top-fillet-edge),
+        var(--color-black) var(--island-top-fillet)
+      )
+      right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+      calc(100% - 2 * var(--island-top-fillet)) 1px no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+      1px var(--island-top-fillet) no-repeat,
+    linear-gradient(var(--island-top-fillet-cover) 0 0) right var(--island-top-fillet) top 0 /
+      1px var(--island-top-fillet) no-repeat;
+}
+
+/*
+ * Fillet rim and glass lift, above the glass layers. Each ring is centred on the
+ * fillet's circle and offset by the rim inset, so at the bottom of the fillet it
+ * lands exactly on the island's side rim and then curves out into the screen edge.
+ * The mask keeps the fillet shape plus a thin strip of the island edge, where the
+ * ring takes over from the island's own side rim.
+ */
+.island::after {
+  --rim-from: calc(var(--island-top-fillet) + var(--island-top-fillet-rim-inset));
+  --rim-to: calc(var(--rim-from) + var(--island-top-fillet-rim-width));
+  --fillet-edge: calc(var(--island-top-fillet) - 0.6px);
+  --fillet-strip: calc(var(--island-top-fillet-box) - var(--island-top-fillet));
+  height: var(--island-top-fillet);
+  z-index: 1;
+  -webkit-mask:
+    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
+      left top / var(--island-top-fillet) 100% no-repeat,
+    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
+      right top / var(--island-top-fillet) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
+      left top / var(--island-top-fillet) 100% no-repeat,
+    radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
+      right top / var(--island-top-fillet) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+  background:
+    radial-gradient(
+        circle at 0 100%,
+        transparent calc(var(--rim-from) - 0.5px),
+        var(--island-top-fillet-rim) var(--rim-from),
+        var(--island-top-fillet-rim) var(--rim-to),
+        transparent calc(var(--rim-to) + 0.5px)
+      )
+      left top / var(--island-top-fillet-box) 100% no-repeat,
+    radial-gradient(
+        circle at 100% 100%,
+        transparent calc(var(--rim-from) - 0.5px),
+        var(--island-top-fillet-rim) var(--rim-from),
+        var(--island-top-fillet-rim) var(--rim-to),
+        transparent calc(var(--rim-to) + 0.5px)
+      )
+      right top / var(--island-top-fillet-box) 100% no-repeat,
+    linear-gradient(180deg, var(--island-top-fillet-sheen), transparent 8px)
+      left top / var(--island-top-fillet) 100% no-repeat,
+    linear-gradient(180deg, var(--island-top-fillet-sheen), transparent 8px)
+      right top / var(--island-top-fillet) 100% no-repeat,
+    linear-gradient(var(--island-top-fillet-tint-left) 0 0)
+      left top / var(--island-top-fillet) 100% no-repeat,
+    linear-gradient(var(--island-top-fillet-tint-right) 0 0)
+      right top / var(--island-top-fillet) 100% no-repeat;
+}
+
+:root[data-island-top-edge="attached"] .island::before,
+:root[data-island-top-edge="attached"] .island::after,
+:root:not([data-island-top-edge]) .island--docked::before,
+:root:not([data-island-top-edge]) .island--docked::after {
+  /*
+   * Hidden at size 0 rather than drawn with zero-sized masks, which Chromium
+   * drops entirely. Any size of 1px or more clamps to fully visible.
+   */
+  opacity: min(1, var(--island-top-fillet-size, 8));
+}
+
+/*
+ * The fillet rim takes over the island's side rim at the top corners, and the
+ * screen edge replaces the lit top rim, so the outline runs as one line.
+ */
+:root[data-island-top-edge="attached"] .island__glass-refraction,
+:root:not([data-island-top-edge]) .island--docked .island__glass-refraction {
+  --refraction-band: calc(var(--island-top-fillet) - 1px);
+  /*
+   * Clip rather than mask: a masked refraction changes how the screen-blended
+   * .island__glass::after composites over it in Chromium, which shows as a
+   * lighter block. The clip drops the top glow along the screen edge and the
+   * side rim beside the fillets, where the fillet rim takes over.
+   */
+  clip-path: polygon(
+    5px 4px,
+    calc(100% - 5px) 4px,
+    calc(100% - 5px) var(--refraction-band),
+    100% var(--refraction-band),
+    100% 100%,
+    0 100%,
+    0 var(--refraction-band),
+    5px var(--refraction-band)
+  );
+}
+
+/* Same shadows as App.css without the inset top highlight. */
+:root[data-island-top-edge="attached"] .island--appearance-liquidGlass.island--expanded,
+:root:not([data-island-top-edge]) .island--docked.island--appearance-liquidGlass.island--expanded {
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, var(--glass-shadow-alpha)),
+    inset 0 -1px 0 rgba(8, 18, 28, 0.16),
+    inset 1px 0 0 rgba(130, 224, 255, var(--glass-cyan-alpha)),
+    inset -1px 0 0 rgba(255, 158, 230, var(--glass-magenta-alpha));
+}
+
+:root[data-island-top-edge="attached"]
+  .island--appearance-liquidGlass.island--collapsed:not(:hover, :focus-within),
+:root:not([data-island-top-edge])
+  .island--docked.island--appearance-liquidGlass.island--collapsed:not(:hover, :focus-within) {
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 rgba(8, 22, 32, 0.18),
+    inset 1px 0 0 rgba(116, 214, 255, 0.14),
+    inset -1px 0 0 rgba(255, 156, 224, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island::before,
+  .island::after {
+    transition: none;
+  }
+}

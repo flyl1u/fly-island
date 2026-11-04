@@ -39,6 +39,21 @@
         "skipTaskbar": true,
         "visible": false,
         "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "fly-island 设置",
+        "url": "index.html?window=settings",
+        "create": false,
+        "width": 720,
+        "height": 640,
+        "minWidth": 580,
+        "minHeight": 420,
+        "decorations": true,
+        "transparent": false,
+        "resizable": true,
+        "visible": true,
+        "center": true
       }
     ],
     "security": {

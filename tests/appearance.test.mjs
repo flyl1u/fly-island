@@ -1,0 +1,160 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  DEFAULT_SETTINGS,
+  MAX_CUSTOM_SETTING_PRESETS,
+  hexToRgba,
+  isDefaultSettingPreset,
+  isSameSettings,
+  mergeWithDefaultSettingPresets,
+  normalizeSettings,
+} from "../src/features/appearance/settings.ts";
+import {
+  COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY,
+  SETTINGS_PRESETS_STORAGE_KEY,
+  STORAGE_KEY,
+  loadSettingPresets,
+  loadSettings,
+  saveSettings,
+} from "../src/features/appearance/storage.ts";
+
+function withStorage(entries, run) {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const values = new Map(entries);
+  const localStorage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)) };
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage, crypto: globalThis.crypto } });
+  try {
+    run(values);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    else delete globalThis.window;
+  }
+}
+
+const t = { settings: { presets: { defaultName: (n) => `Preset ${n}` } } };
+
+test("new installations use classic appearance and existing choices remain unchanged", () => {
+  withStorage([], () => assert.equal(loadSettings().appearanceMode, "classic"));
+  withStorage([[STORAGE_KEY, JSON.stringify({ appearanceMode: "liquidGlass" })]], () => {
+    assert.equal(loadSettings().appearanceMode, "liquidGlass");
+  });
+});
+
+test("blocked appearance storage does not prevent opening either window", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", { configurable: true, value: {
+    get localStorage() { throw new Error("Storage disabled"); },
+  } });
+  try {
+    assert.equal(loadSettings().appearanceMode, "classic");
+    assert.deepEqual(loadSettingPresets(t), []);
+    assert.doesNotThrow(() => saveSettings(DEFAULT_SETTINGS));
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    else delete globalThis.window;
+  }
+});
+
+test("hex colors convert to rgba and invalid input falls back to the pulse color", () => {
+  assert.equal(hexToRgba("#2F2F37", 0.5), "rgba(47, 47, 55, 0.5)");
+  assert.equal(hexToRgba("nope", 1), "rgba(58, 228, 137, 1)");
+});
+
+test("settings are clamped and legacy fields are migrated", () => {
+  const normalized = normalizeSettings({
+    opacity: 10,
+    glassIntensity: 999,
+    margin: 40,
+    sizeScale: 1.2,
+    taskTitleColor: "#123456",
+    appearanceMode: "neon",
+    fontFamily: "pixel",
+    todoRotationSeconds: 0.2,
+  });
+  assert.equal(normalized.opacity, 50);
+  assert.equal(normalized.glassIntensity, 100);
+  assert.equal(normalized.marginY, 40);
+  assert.equal(normalized.collapsedScale, 1.2);
+  assert.equal(normalized.expandedScale, 1.2);
+  assert.equal(normalized.taskTextColor, "#123456");
+  assert.equal(normalized.appearanceMode, "classic");
+  assert.equal(normalized.fontFamily, "pixel");
+  assert.equal(normalized.todoRotationSeconds, 1);
+  assert.equal(normalized.topEdgeLayoutVersion, 1);
+});
+
+test("the top fillet radius is rounded, clamped, and defaults for older settings", () => {
+  assert.equal(normalizeSettings({}).topFilletRadius, 8);
+  assert.equal(normalizeSettings({ topFilletRadius: "10" }).topFilletRadius, 8);
+  assert.equal(normalizeSettings({ topFilletRadius: Number.NaN }).topFilletRadius, 8);
+  assert.equal(normalizeSettings({ topFilletRadius: 5.6 }).topFilletRadius, 6);
+  assert.equal(normalizeSettings({ topFilletRadius: 0 }).topFilletRadius, 0);
+  assert.equal(normalizeSettings({ topFilletRadius: -3 }).topFilletRadius, 0);
+  assert.equal(normalizeSettings({ topFilletRadius: 40 }).topFilletRadius, 12);
+});
+
+test("old default margins and scales move to the current defaults", () => {
+  assert.equal(normalizeSettings({ marginY: 31 }).marginY, DEFAULT_SETTINGS.marginY);
+  assert.equal(normalizeSettings({ marginY: 31, topEdgeLayoutVersion: 1 }).marginY, 31);
+  const scaled = normalizeSettings({ collapsedScale: 0.81, expandedScale: 0.88 });
+  assert.equal(scaled.collapsedScale, 0.82);
+  assert.equal(scaled.expandedScale, DEFAULT_SETTINGS.expandedScale);
+});
+
+test("normalizing missing settings gives defaults except the stored appearance fallback", () => {
+  const normalized = normalizeSettings(undefined);
+  assert.deepEqual({ ...normalized, appearanceMode: DEFAULT_SETTINGS.appearanceMode }, DEFAULT_SETTINGS);
+  assert.equal(normalized.appearanceMode, "classic");
+  assert.equal(isSameSettings(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS }), true);
+  assert.equal(isSameSettings(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, opacity: 60 }), false);
+});
+
+test("legacy default presets are dropped and custom presets are capped", () => {
+  const preset = (id, name) => ({ id, name, settings: DEFAULT_SETTINGS, createdAt: 1 });
+  const merged = mergeWithDefaultSettingPresets([
+    preset("default-white", "White"),
+    preset("x", " 卡其 "),
+    ...Array.from({ length: 8 }, (_, i) => preset(`p${i}`, `P${i}`)),
+  ]);
+  assert.equal(merged.length, MAX_CUSTOM_SETTING_PRESETS);
+  assert.deepEqual(merged.map((p) => p.id), ["p0", "p1", "p2", "p3", "p4", "p5"]);
+  assert.ok(merged.every((p) => p.isDefault === false));
+  assert.equal(isDefaultSettingPreset("default-khaki"), true);
+  assert.equal(isDefaultSettingPreset("p0"), false);
+});
+
+test("first launch stores the collapsed-text migration marker and uses defaults", () => {
+  withStorage([], (values) => {
+    assert.deepEqual(loadSettings(), DEFAULT_SETTINGS);
+    assert.equal(values.get(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY), "1");
+  });
+});
+
+test("existing settings get collapsed text turned on once by the migration", () => {
+  withStorage([[STORAGE_KEY, JSON.stringify({ showCollapsedText: false, opacity: 80 })]], (values) => {
+    const migrated = loadSettings();
+    assert.equal(migrated.showCollapsedText, true);
+    assert.equal(migrated.opacity, 80);
+    assert.equal(values.get(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY), "1");
+    assert.equal(JSON.parse(values.get(STORAGE_KEY)).showCollapsedText, true);
+  });
+  withStorage([[STORAGE_KEY, JSON.stringify({ showCollapsedText: false })], [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"]], () => {
+    assert.equal(loadSettings().showCollapsedText, false);
+  });
+  withStorage([[STORAGE_KEY, "{broken"]], () => {
+    assert.deepEqual(loadSettings(), DEFAULT_SETTINGS);
+  });
+});
+
+test("stored presets are normalized with fallback names", () => {
+  const stored = [{ id: "a", name: "  Mine  ", settings: { opacity: 1 }, createdAt: 5 }, { name: "" }, { id: "default-white", name: "x" }];
+  withStorage([[SETTINGS_PRESETS_STORAGE_KEY, JSON.stringify(stored)]], () => {
+    const presets = loadSettingPresets(t);
+    assert.equal(presets.length, 2);
+    assert.equal(presets[0].name, "Mine");
+    assert.equal(presets[0].settings.opacity, 50);
+    assert.equal(presets[1].name, "Preset 2");
+    assert.equal(typeof presets[1].id, "string");
+  });
+  withStorage([[SETTINGS_PRESETS_STORAGE_KEY, "{}"]], () => assert.deepEqual(loadSettingPresets(t), []));
+});

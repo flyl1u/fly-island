@@ -1,0 +1,78 @@
+.music-wave-button {
+  width: 28px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 0 0 28px;
+  padding: 0;
+  color: #aef5d0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.music-wave-button span {
+  width: 3px;
+  height: 13px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  opacity: var(--wave-opacity, 0.72);
+  transform: scaleY(var(--wave-scale, 0.35));
+  transform-origin: 50% 50%;
+  transition:
+    opacity 90ms linear,
+    transform 90ms linear;
+}
+
+.island--appearance-liquidGlass .music-wave-button {
+  color: rgba(225, 251, 255, 0.9);
+  filter: drop-shadow(0 0 9px rgba(116, 214, 255, 0.22));
+}
+
+.island--appearance-liquidGlass .music-wave-button span {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.68), rgba(190, 239, 255, 0.2) 34%, rgba(182, 156, 255, 0.2) 72%, rgba(255, 255, 255, 0.54)),
+    rgba(206, 243, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow:
+    inset 1px 0 1px rgba(255, 255, 255, 0.7),
+    inset -1px 0 1px rgba(116, 214, 255, 0.2),
+    0 0 8px rgba(116, 214, 255, 0.18);
+  backdrop-filter: blur(5px) saturate(1.35);
+  -webkit-backdrop-filter: blur(5px) saturate(1.35);
+}
+
+.island--appearance-liquidGlass .music-wave-button--idle span {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(190, 239, 255, 0.1), rgba(255, 255, 255, 0.3)),
+    rgba(210, 240, 248, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.music-wave-button:hover {
+  color: #c7ffdf;
+}
+
+.music-wave-button:focus-visible {
+  outline: 2px solid rgba(174, 245, 208, 0.72);
+  outline-offset: 4px;
+}
+
+.music-wave-button--playing {
+  filter: drop-shadow(0 0 7px rgba(73, 225, 143, 0.26));
+}
+
+.music-wave-button--idle {
+  color: rgba(248, 246, 240, 0.5);
+}

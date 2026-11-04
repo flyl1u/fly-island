@@ -1,8 +1,19 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import TranslationWindow from "./TranslationWindow";
+import "./styles/tokens.css";
+import "./styles/fonts.css";
+import "./styles/base.css";
+import { IslandApp } from "./windows/island/IslandApp";
+import { TranslationWindow } from "./windows/translation/TranslationWindow";
+import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { I18nProvider } from "./i18n";
+import { trackIslandTopEdge } from "./windows/island/topEdge";
+
+const windowKind = new URLSearchParams(window.location.search).get("window");
+
+if (windowKind === null) {
+  trackIslandTopEdge();
+}
 
 window.addEventListener(
   "pointerdown",
@@ -25,7 +36,7 @@ window.addEventListener(
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <I18nProvider>
-      {new URLSearchParams(window.location.search).get("window") === "translation" ? <TranslationWindow /> : <App />}
+      {windowKind === "translation" ? <TranslationWindow /> : windowKind === "settings" ? <SettingsWindow /> : <IslandApp />}
     </I18nProvider>
   </React.StrictMode>,
 );

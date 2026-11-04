@@ -313,6 +313,19 @@ const en: Translations = {
     title: "Settings",
     reset: "Reset to defaults",
 
+    categories: {
+      label: "Settings categories",
+      general: "General",
+      appearance: "Appearance",
+      notifications: "Notifications",
+      integrations: "Integrations",
+      about: "About",
+    },
+
+    behavior: {
+      title: "Startup & tuck",
+    },
+
     project: {
       title: "About the island",
       star: "Enjoying your little island?",
@@ -370,6 +383,7 @@ const en: Translations = {
       title: "Layout",
       opacity: "Opacity",
       marginY: "Top margin",
+      topFilletRadius: "Top-edge corner radius",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
       autoTuck: "Auto-tuck to screen edge when idle",

@@ -1,0 +1,91 @@
+.todo-notebook__spine {
+  position: absolute;
+  left: 15px;
+  top: 28px;
+  bottom: 28px;
+  width: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.todo-spine-button {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--color-white);
+  border-radius: var(--radius-pill);
+  border: 0;
+  outline: none;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow:
+    0 8px 14px rgba(72, 56, 43, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.44);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.todo-spine-button:hover,
+.todo-spine-button--active {
+  transform: scale(1.12);
+  filter: saturate(1.08);
+}
+
+.todo-spine-button:focus-visible {
+  outline: 2px solid rgba(116, 214, 255, 0.8);
+  outline-offset: 4px;
+}
+
+.todo-spine-button--today {
+  background: #98d4bb;
+}
+
+.todo-spine-button--save {
+  background: #c7b8ea;
+}
+
+.todo-spine-button--archive {
+  background: #f4b8c5;
+}
+
+.todo-spine-button--saving {
+  animation: saveSpin 800ms linear infinite;
+}
+
+.todo-spine-button--saved {
+  animation: savePop 800ms ease both;
+  background: var(--color-success);
+  box-shadow:
+    0 0 0 5px rgba(152, 212, 187, 0.24),
+    0 10px 18px rgba(72, 56, 43, 0.2);
+}
+
+.todo-spine-button--attention {
+  box-shadow:
+    0 0 0 5px rgba(244, 184, 197, 0.3),
+    0 10px 18px rgba(72, 56, 43, 0.2);
+}
+
+@keyframes saveSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes savePop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.34);
+  }
+  100% {
+    transform: scale(1.08);
+  }
+}

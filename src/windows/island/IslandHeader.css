@@ -1,0 +1,154 @@
+.island__agent-status-icon {
+  flex: 0 0 auto;
+  filter: brightness(var(--island-pulse-brightness));
+  transition:
+    color 160ms ease,
+    filter 160ms ease;
+}
+
+.island__agent-status-icon--idle {
+  color: var(--color-agent-idle);
+}
+
+.island__agent-status-icon--running {
+  color: var(--color-agent-running);
+}
+
+.island__agent-status-icon--attention {
+  color: var(--color-warning);
+}
+
+.island__title .island__agent-status-icon--idle {
+  color: var(--color-agent-idle);
+}
+
+.island__title .island__agent-status-icon--running {
+  color: var(--color-agent-running);
+}
+
+.island__title .island__agent-status-icon--attention {
+  color: var(--color-warning);
+}
+
+.island__header {
+  display: grid;
+  grid-template-columns: auto 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 34px;
+}
+
+.island__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: rgba(248, 246, 240, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.island__title svg {
+  flex: 0 0 auto;
+  color: var(--color-accent);
+}
+
+.island--todo .island__title {
+  color: rgba(248, 246, 240, 0.92);
+}
+
+.island--todo .island__title svg {
+  color: var(--color-accent);
+}
+
+.editor-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 9px;
+  width: 96px;
+  height: 34px;
+  padding-left: 4px;
+}
+
+.island__collapse-target {
+  min-width: 0;
+  height: 68px;
+  margin: -18px 0 -16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.island__collapse-target:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: -5px;
+}
+
+.dot-button {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  outline: none;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.dot-button:hover,
+.dot-button--active {
+  transform: scale(1.18);
+  opacity: 1;
+}
+
+.dot-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 4px;
+}
+
+.dot-button--todo {
+  background: var(--color-accent);
+  box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
+}
+
+.dot-button--music {
+  background: #b69cff;
+  box-shadow: 0 0 12px rgba(182, 156, 255, 0.46);
+}
+
+.dot-button--clipboard {
+  background: var(--color-warning);
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.48);
+}
+
+.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(116, 214, 255, 0.42);
+}
+
+.dot-button--music.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(182, 156, 255, 0.54);
+}
+
+.dot-button--clipboard.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(255, 209, 102, 0.56);
+}
+
+.window-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
