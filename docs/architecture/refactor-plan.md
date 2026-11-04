@@ -161,6 +161,7 @@
   - [x] COM：`win32/com.rs`（`ComApartment`、`WinRtApartment`，均为不可 `Send` 的 RAII 守卫）替换媒体线程的 `CoInitializeEx` / `CoUninitialize` 配对和 `qq_notifications/listener.rs` 的 `RoInitialize` + `WinRT` 守卫。示例程序中的 `RoInitialize` 不属于生产代码，本步不改。
 - [ ] **6.2** 逐模块迁移剩余的 `unsafe` 调用：媒体与音频、通知、剪贴板、翻译、微信。
   - [x] 媒体与音频：`win32/audio.rs`（`AudioDevices` → `AudioOutput` → `OutputVolume` / `PeakMeter`，每一层单独返回 `Result`，调用方仍按原来的阶段映射错误文案）；`win32/input.rs` 新增 `send_key_down` / `send_key_up`，媒体键的 80ms 按住时间留在调用方。
+  - [x] 通知：`win32/window.rs` 新增 `for_each_top_level_window`（闭包经 `LPARAM` 传给 `EnumWindows`，只在同步调用期间有效）和标题、类名、所有者、还原位置、可见性、前台窗口、`AllowSetForegroundWindow`、`SendMessageTimeoutW`、托盘图标查询；`qq_notifications/launcher.rs` 的枚举回调改为普通的安全函数，不再含 `unsafe`。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
 
 **验收**：除 `win32/` 外，生产代码中不再出现 `unsafe`；clippy 没有告警；`cargo test` 和 `pnpm tauri build --no-bundle` 通过。
@@ -329,6 +330,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.1（3/n，改写） | 见提交说明 | 新增 `win32/window.rs`（5 个封装 + 1 个测试），`win32/input.rs` 新增 `is_left_button_down`（与原 `GetAsyncKeyState(VK_LBUTTON) < 0` 相同）。失败分支逐一对齐：取不到窗口矩形或光标位置仍视为"在岛屿内"；`SetWindowRgn` 返回 0 仍报同样的错误；可交互判断的短路顺序与 250ms 超时不变；前台切换仍先比较当前前台窗口。生产代码中 `island/`、`messenger_activation.rs` 不再含 `unsafe`（`messenger_activation.rs` 测试模块中的仍保留） | `cargo test`（84 通过 / 5 忽略）、clippy 79 → 73（基线按当前 HEAD 重新统计）；`pnpm check`（100/100）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.1（4/n，改写） | 见提交说明 | 新增 `win32/com.rs`（`ComApartment`、`WinRtApartment` 与 1 个测试）。媒体线程改为持有 `ComApartment`：初始化失败仍返回同一条错误、不调用反初始化；成功时反初始化仍在 `operation()` 返回之后、结果移出线程之前。唯一差异是 `operation()` panic 时现在也会反初始化（线程随即结束，`join` 仍报同一条错误）。通知监听删除 `WinRT` 守卫，两处改用 `WinRtApartment`，错误文案与 `?` 传播不变 | `cargo test`（101 通过 / 5 忽略，含另一会话新增的测试）、clippy 73 → 68（改用 JSON 输出按位置去重统计）；`pnpm check`（109/109）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.2（1/n，改写） | 见提交说明 | 新增 `win32/audio.rs`，`media_control/audio.rs` 不再含 `unsafe`：三个函数的阶段顺序、`ok()?` / 错误文案、音量钳制与"至少找到一个电平表"的判断逐一对应原代码。`send_media_key` 改用 `win32::input`，键码截断为 `u8` 与 80ms 间隔不变。`media_control/` 生产代码中已无 `unsafe` | `cargo test`（101 / 5）、clippy 68 → 63；`pnpm tauri build --no-bundle`，桌面快捷方式已核对。`pnpm check` 当时因另一会话进行中的前端改动（回归页缺少 `agentSession` 属性）失败，与本次 Rust 改动无关 |
+| 2026-11-04 | 6.2（2/n，改写） | 见提交说明 | QQ 窗口查找：回调体逐行对应原代码（标题缓冲 32、类名缓冲 256、托盘宿主窗口优先记录、标题 / 类名 / 所有者 / 还原位置四个条件的短路顺序、500×300 阈值），枚举失败的错误文案不变；托盘图标 id 查找的嵌套 `if` 合并为 `&&`，只在图标存在时记录 id，与原来相同；托盘点击仍按相同的消息、参数、标志和 1 秒超时发送。`qq_notifications/` 生产代码中已无 `unsafe` | `cargo test`（102 / 5）、clippy 63 → 56；`pnpm check`（114/114）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 
