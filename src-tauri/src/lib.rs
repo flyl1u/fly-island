@@ -175,6 +175,7 @@ pub fn run() {
             translation::set_translation_shortcut,
             translation::set_translation_enabled,
             settings_window::open_settings_window,
+            settings_window::show_settings_window,
         ])
         .run(context);
     if let Err(error) = result {

@@ -10,6 +10,7 @@ import { MusicSettingsPage } from "./MusicSettingsPage";
 import { ShelfSettingsPage } from "./ShelfSettingsPage";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
+import { showSettingsWindow } from "./api";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
 import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
@@ -47,6 +48,29 @@ export function SettingsWindow() {
     if (section === "savePath") focusSavePath();
     if (section === "translation") setCategory("translation");
   }, [focusSavePath]);
+
+  // The window opens hidden and is shown once the page has rendered, so it never shows
+  // empty. A hidden webview may not run animation frames at all, so then the rendered
+  // DOM is enough; otherwise wait two frames (the first runs before its paint).
+  useEffect(() => {
+    const show = () => {
+      void showSettingsWindow().catch((error) => {
+        console.error("Failed to show settings window", error);
+      });
+    };
+    if (document.visibilityState === "hidden") {
+      show();
+      return;
+    }
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(show);
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, []);
 
   useEffect(() => {
     void getCurrentWindow()
