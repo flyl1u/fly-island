@@ -17,7 +17,7 @@ src-tauri/src/
 ├── qq_mail/                 # 命令、后台服务、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/
 ├── wechat_reminders/        # 提醒服务与命令；source.rs 为托盘闪烁监听（examples 通过 #[path] 复用）
-├── translation.rs
+├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
 ├── settings_window.rs
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs

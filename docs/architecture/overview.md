@@ -136,7 +136,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `qq-mail-changed` | `qq_mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
-| `translation-window-opened` | `translation.rs` | 广播 |
+| `translation-window-opened` | `translation/mod.rs` | 广播 |
 
 ### 其他
 
