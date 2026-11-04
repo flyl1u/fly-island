@@ -483,7 +483,7 @@ const zhCN: Translations = {
 
     pageShortcuts: {
       title: "页面切换",
-      hint: "数字键从左到右打开页面。Alt+Tab 和 Win+Tab 由 Windows 使用，不能设成翻页。",
+      hint: "数字键从左到右打开页面。鼠标停在展开的岛上，或岛有焦点时生效。Alt+Tab 和 Win+Tab 由 Windows 使用，不能设成翻页。",
       digitModifiers: "数字切页",
       nextPage: "下一页",
       previousPage: "上一页",

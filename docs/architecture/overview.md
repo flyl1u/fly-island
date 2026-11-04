@@ -86,7 +86,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 |---|---|
 | `lib.rs`：`run()`、插件、setup、`generate_handler!` | 保留在 `lib.rs` |
 | `lib.rs`：托盘创建与事件 | `tray.rs`（5.3 已完成） |
-| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough, top_edge, tests}.rs`（5.1 已完成：`mod.rs` 放命令与窗口访问，`state.rs` 放状态类型与全局状态，`geometry.rs` 放尺寸常量、定位与贴边动画，`top_edge.rs` 负责顶边贴合判断与拖放吸附） |
+| `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough, focus, top_edge, tests}.rs`（5.1 已完成：`mod.rs` 放命令与窗口访问，`state.rs` 放状态类型与全局状态，`geometry.rs` 放尺寸常量、定位与贴边动画，`top_edge.rs` 负责顶边贴合判断与拖放吸附，`focus.rs` 在光标停在展开面板上时获取并归还键盘焦点） |
 | `lib.rs`：代理状态快照、运行标记、Codex / Claude Code hook 安装、`write_text_file`（只有 hook 安装使用） | `agent_status/{mod, snapshot, markers, codex_hooks, claude_hooks}.rs`（5.2 已完成） |
 | `lib.rs`：开机自启、注册表读取 | `system/startup.rs`（5.3 已完成；底层注册表调用在 6.1 放 `win32/registry.rs`）；共用的 `CREATE_NO_WINDOW`、`windows_home_dir` 在 `system/mod.rs` |
 | `lib.rs`：`get_updater_proxy`、`updater_configured` | `system/updater.rs` |

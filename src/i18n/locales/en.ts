@@ -480,7 +480,7 @@ const en: Translations = {
 
     pageShortcuts: {
       title: "Page switching",
-      hint: "Number keys open pages from left to right. Alt+Tab and Win+Tab belong to Windows and can't turn the page.",
+      hint: "Number keys open pages from left to right. They work while the cursor rests on the expanded island or the island has focus. Alt+Tab and Win+Tab belong to Windows and can't turn the page.",
       digitModifiers: "Number keys",
       nextPage: "Next page",
       previousPage: "Previous page",

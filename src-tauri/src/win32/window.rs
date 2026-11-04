@@ -6,13 +6,14 @@ use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, POINT, RECT, WPARAM},
         Graphics::Gdi::SetWindowRgn,
+        System::Threading::{AttachThreadInput, GetCurrentThreadId},
         UI::{
             Input::KeyboardAndMouse::IsWindowEnabled,
             Shell::{Shell_NotifyIconGetRect, NOTIFYICONIDENTIFIER},
             WindowsAndMessaging::{
                 AllowSetForegroundWindow, EnumWindows, GetClassNameW, GetCursorPos,
                 GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
-                GetWindowRect, GetWindowTextW, IsIconic, IsWindowVisible, SendMessageTimeoutW,
+                GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SendMessageTimeoutW,
                 SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SMTO_ABORTIFHUNG,
                 SMTO_BLOCK, SMTO_ERRORONEXIT, SW_RESTORE, WINDOWPLACEMENT, WM_NULL,
                 WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
@@ -212,6 +213,32 @@ pub(crate) fn restore_minimized(window: HWND) {
         // windows; its return value only reports the previous visibility.
         let _ = unsafe { ShowWindow(window, SW_RESTORE) };
     }
+}
+
+/// Brings `window`, owned by the calling thread, to the foreground while another
+/// app holds it. Windows refuses SetForegroundWindow to a process that did not get
+/// the last input; attaching to the foreground thread's input state lifts that
+/// without synthesizing a key press (tao's fallback taps Alt, which leaves menu
+/// bars armed in the app underneath). Returns whether `window` is now in front.
+pub(crate) fn activate_from_background(window: HWND) -> bool {
+    let foreground = foreground_window();
+    if foreground == window {
+        return true;
+    }
+    // SAFETY: both calls take only plain values; a null HWND yields thread id 0.
+    let (foreground_thread, own_thread) =
+        unsafe { (GetWindowThreadProcessId(foreground, None), GetCurrentThreadId()) };
+    let attach = foreground_thread != 0 && foreground_thread != own_thread;
+    // SAFETY: AttachThreadInput takes two thread ids and a flag; each attach is
+    // undone below before returning, whatever SetForegroundWindow did.
+    unsafe {
+        let attached = attach && AttachThreadInput(own_thread, foreground_thread, true).as_bool();
+        let _ = SetForegroundWindow(window);
+        if attached {
+            let _ = AttachThreadInput(own_thread, foreground_thread, false);
+        }
+    }
+    foreground_window() == window
 }
 
 /// Whether `window` is already in the foreground or was just brought there.
