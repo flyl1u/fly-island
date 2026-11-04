@@ -1,8 +1,8 @@
-import { useCallback, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { GripVertical, Music2, Pause, Play, RefreshCcw, Settings, SkipBack, SkipForward, Trash2, X } from "lucide-react";
+import { Music2, Pause, Play, RefreshCcw, Settings, SkipBack, SkipForward, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { MediaState } from "./api";
 import { MediaWaveform } from "./MediaWaveform";
+import { MusicSourceList } from "./MusicSourceList";
 import type { KnownMediaSource } from "./storage";
 import "./MusicPlayerPanel.css";
 
@@ -32,9 +32,6 @@ export function MusicPlayerPanel({
   onRemoveSource: (sourceId: string) => void;
 }) {
   const t = useTranslation();
-  const [draggedSourceId, setDraggedSourceId] = useState<string | null>(null);
-  const [dragOverSourceId, setDragOverSourceId] = useState<string | null>(null);
-
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
 
@@ -42,66 +39,6 @@ export function MusicPlayerPanel({
   const nextDisabled = mediaState.available && !mediaState.canNext;
 
   const liveSessions = mediaState.sessions;
-
-  const getSourceIdAtPoint = useCallback((clientX: number, clientY: number) => {
-    const element = document.elementFromPoint(clientX, clientY);
-    const sourceElement = element?.closest("[data-source-id]");
-    return sourceElement instanceof HTMLElement
-      ? sourceElement.dataset.sourceId ?? null
-      : null;
-  }, []);
-
-  const startSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>, sourceId: string) => {
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      setDraggedSourceId(sourceId);
-      setDragOverSourceId(null);
-    },
-    [],
-  );
-
-  const moveSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
-      if (!draggedSourceId) {
-        return;
-      }
-      event.preventDefault();
-      const targetId = getSourceIdAtPoint(event.clientX, event.clientY);
-      setDragOverSourceId(
-        targetId && targetId !== draggedSourceId ? targetId : null,
-      );
-    },
-    [draggedSourceId, getSourceIdAtPoint],
-  );
-
-  const finishSourceDrag = useCallback(
-    (event: ReactPointerEvent<HTMLButtonElement>) => {
-      if (!draggedSourceId) {
-        return;
-      }
-      event.preventDefault();
-      const targetId =
-        dragOverSourceId || getSourceIdAtPoint(event.clientX, event.clientY);
-
-      if (targetId && targetId !== draggedSourceId) {
-        onReorderSource(draggedSourceId, targetId);
-      }
-
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-
-      setDraggedSourceId(null);
-      setDragOverSourceId(null);
-    },
-    [dragOverSourceId, draggedSourceId, getSourceIdAtPoint, onReorderSource],
-  );
-
-  const cancelSourceDrag = useCallback(() => {
-    setDraggedSourceId(null);
-    setDragOverSourceId(null);
-  }, []);
 
   const settingsButton = (
     <button
@@ -146,74 +83,12 @@ export function MusicPlayerPanel({
             {settingsButton}
           </div>
           <p className="music-player__settings-hint">{t.music.settingsHint}</p>
-          {sourcePriority.length === 0 ? (
-            <div className="music-source-empty">{t.music.noSources}</div>
-          ) : (
-            <div className="music-source-list" role="list">
-              {sourcePriority.map((source) => {
-                const live = liveSessions.find(
-                  (session) => session.id === source.id,
-                );
-                return (
-                  <div
-                    key={source.id}
-                    className={[
-                      "music-source-item",
-                      draggedSourceId === source.id
-                        ? "music-source-item--dragging"
-                        : "",
-                      dragOverSourceId === source.id
-                        ? "music-source-item--drag-over"
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    role="listitem"
-                    data-source-id={source.id}
-                  >
-                    <button
-                      className="music-source-drag"
-                      type="button"
-                      title={t.music.reorderSource}
-                      aria-label={t.music.reorderSource}
-                      onPointerDown={(event) =>
-                        startSourceDrag(event, source.id)
-                      }
-                      onPointerMove={moveSourceDrag}
-                      onPointerUp={finishSourceDrag}
-                      onPointerCancel={cancelSourceDrag}
-                    >
-                      <GripVertical size={15} strokeWidth={2.4} />
-                    </button>
-                    <span
-                      className={[
-                        "music-source-dot",
-                        live?.playing ? "music-source-dot--playing" : "",
-                        live ? "music-source-dot--live" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      aria-hidden="true"
-                    />
-                    <span className="music-source-label" title={source.id}>
-                      {source.label}
-                    </span>
-                    {!live && (
-                      <button
-                        className="music-source-remove"
-                        type="button"
-                        title={t.music.removeSource}
-                        aria-label={t.music.removeSource}
-                        onClick={() => onRemoveSource(source.id)}
-                      >
-                        <Trash2 size={14} strokeWidth={2.2} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <MusicSourceList
+            sourcePriority={sourcePriority}
+            liveSessions={liveSessions}
+            onReorderSource={onReorderSource}
+            onRemoveSource={onRemoveSource}
+          />
         </>
       ) : (
         <div className="music-player__body">
