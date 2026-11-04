@@ -9,6 +9,11 @@ const OWN_ACTION_SELECTOR = ".island__collapsed button:not(.island__open-button)
 type HoverExpandOptions = {
   enabled: boolean;
   delayMs: number;
+  /**
+   * True while the collapsed island shows a message preview. A click on the preview
+   * opens QQ or WeChat, so hovering must not open the panel over it.
+   */
+  paused: boolean;
   /** How long the panel stays open after the cursor leaves it. */
   collapseDelayMs: number;
   mode: IslandMode;
@@ -36,7 +41,7 @@ function isEditingText() {
  * Pressing cancels a pending open, so drags and clicks on the collapsed island work,
  * and hovering never takes focus from the app the user is typing in.
  */
-export function useHoverExpand({ enabled, delayMs, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
+export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
   const [isHovering, setIsHovering] = useState(false);
   const isHoveringRef = useRef(false);
   const modeRef = useRef(mode);
@@ -108,6 +113,12 @@ export function useHoverExpand({ enabled, delayMs, collapseDelayMs, mode, isTuck
     if (!enabled || !isHovering || mode !== "collapsed" || isTucked || !armedRef.current) {
       return;
     }
+    if (paused) {
+      // A cursor that rested here during the preview has to leave and come back
+      // before the panel opens, so it does not pop open when the preview ends.
+      armedRef.current = false;
+      return;
+    }
 
     const open = () => {
       if (document.querySelector(OWN_ACTION_SELECTOR)) {
@@ -120,7 +131,7 @@ export function useHoverExpand({ enabled, delayMs, collapseDelayMs, mode, isTuck
 
     expandTimerRef.current = window.setTimeout(open, delayMs);
     return () => window.clearTimeout(expandTimerRef.current);
-  }, [delayMs, enabled, isHovering, isTucked, mode, onExpand]);
+  }, [delayMs, enabled, isHovering, isTucked, mode, onExpand, paused]);
 
   useEffect(() => {
     if (!enabled || isHovering || mode !== "expanded" || !enteredRef.current) {

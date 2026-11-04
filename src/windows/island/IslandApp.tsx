@@ -142,6 +142,7 @@ export function IslandApp() {
   useHoverExpand({
     enabled: settings.expandTrigger === "hover",
     delayMs: settings.hoverExpandDelayMs,
+    paused: hasMessagePreview,
     collapseDelayMs: settings.hoverCollapseDelayMs,
     mode,
     isTucked,
