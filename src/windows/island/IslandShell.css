@@ -329,9 +329,11 @@
   pointer-events: auto;
   opacity: 1;
   transform: none;
+  /* Height follows the shell (.island) when switching between pages of different heights. */
   transition:
     opacity 260ms ease 160ms,
-    transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 140ms;
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 140ms,
+    height 560ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .island--collapsed:active {

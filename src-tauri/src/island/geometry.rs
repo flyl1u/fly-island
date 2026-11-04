@@ -34,6 +34,11 @@ pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);
 
 pub(super) static POSITION_ANIMATION_GENERATION: AtomicU64 = AtomicU64::new(0);
+// A shorter stage waits for the island's 560ms height transition (.island in
+// src/windows/island/IslandShell.css) to finish; shrinking at once would cut off the
+// bottom of the island while it is still animating down from a taller page.
+const STAGE_SHRINK_DELAY: Duration = Duration::from_millis(600);
+static STAGE_SHRINK_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 pub(crate) fn apply_stage_geometry(
     window: &WebviewWindow,
@@ -45,15 +50,7 @@ pub(crate) fn apply_stage_geometry(
     let stage_height = STAGE_WINDOW_HEIGHT
         .max((state.expanded_height * state.expanded_scale).ceil() + STAGE_WINDOW_PADDING_Y);
 
-    let stage_size = LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height);
-    let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
-    if window.inner_size().map_err(|error| error.to_string())?
-        != stage_size.to_physical::<u32>(scale_factor)
-    {
-        window
-            .set_size(Size::Logical(stage_size))
-            .map_err(|error| error.to_string())?;
-    }
+    resize_stage(window, LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height))?;
 
     let current_monitor = window
         .current_monitor()
@@ -119,6 +116,34 @@ pub(crate) fn apply_stage_geometry(
                 break;
             }
             thread::sleep(Duration::from_millis(8));
+        }
+    });
+    Ok(())
+}
+
+/// Grows the stage at once, so a taller page has room from the first frame, and
+/// shrinks it only after the height transition; a newer resize cancels a pending one.
+fn resize_stage(window: &WebviewWindow, stage_size: LogicalSize<f64>) -> Result<(), String> {
+    let generation = STAGE_SHRINK_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
+    let current = window.inner_size().map_err(|error| error.to_string())?;
+    let target = stage_size.to_physical::<u32>(scale_factor);
+    if current == target {
+        return Ok(());
+    }
+    if target.height >= current.height {
+        return window
+            .set_size(Size::Logical(stage_size))
+            .map_err(|error| error.to_string());
+    }
+
+    let window = window.clone();
+    thread::spawn(move || {
+        thread::sleep(STAGE_SHRINK_DELAY);
+        if STAGE_SHRINK_GENERATION.load(Ordering::SeqCst) == generation {
+            if let Err(error) = window.set_size(Size::Logical(stage_size)) {
+                eprintln!("Failed to shrink island stage: {error}");
+            }
         }
     });
     Ok(())
