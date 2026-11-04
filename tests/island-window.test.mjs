@@ -91,6 +91,27 @@ test("pages and message sources that are switched off fall back to ones still on
   assert.equal(resolveMessageSource("qqMail", none), "qqMail");
 });
 
+test("Alt+number follows the header from left to right and skips modules that are off", async () => {
+  const { altPageDigit, pageForAltDigit, pageShortcutLabel } = await import("../src/windows/island/features.ts");
+  const all = { agents: true, todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: false, qqMail: false };
+  assert.equal(pageForAltDigit(all, 1), "agents");
+  assert.equal(pageForAltDigit(all, 2), "todo");
+  assert.equal(pageForAltDigit(all, 5), "shelf");
+  assert.equal(pageForAltDigit(all, 6), "qq");
+  assert.equal(pageForAltDigit(all, 7), null);
+  assert.equal(pageForAltDigit({ ...all, music: false, agents: false }, 1), "todo");
+  assert.equal(pageForAltDigit({ ...all, music: false, agents: false }, 2), "clipboard");
+  assert.equal(pageForAltDigit({ ...all, qq: false, wechat: true, agents: false, todo: false, music: false, clipboard: false, shelf: false }, 1), "qq");
+  assert.equal(pageShortcutLabel({ ...all, agents: false }, "todo"), "Alt+1");
+  assert.equal(pageShortcutLabel({ ...all, todo: false }, "todo"), null);
+  const down = { altKey: true, ctrlKey: false, metaKey: false, shiftKey: false, repeat: false };
+  assert.equal(altPageDigit({ ...down, code: "Digit4" }), 4);
+  assert.equal(altPageDigit({ ...down, code: "Numpad4" }), null);
+  assert.equal(altPageDigit({ ...down, code: "Digit1", repeat: true }), null);
+  assert.equal(altPageDigit({ ...down, code: "Digit1", ctrlKey: true }), null);
+  assert.equal(altPageDigit({ ...down, code: "Digit0" }), null);
+});
+
 test("the clipboard page fits whole rows and six rows stay within the native height limit", () => {
   assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 70);
   assert.equal(getClipboardExpandedHeight(6), 656);

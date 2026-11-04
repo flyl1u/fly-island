@@ -217,6 +217,10 @@ export function IslandApp() {
     clipboardHistory.settings.shortcut,
     toggleClipboardHistory,
     collapseIsland,
+    mode,
+    features,
+    page,
+    setPage,
   );
 
   const agentVisualState = useMemo(

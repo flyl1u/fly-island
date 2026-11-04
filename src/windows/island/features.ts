@@ -16,6 +16,8 @@ export type IslandFeatures = {
 
 const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents"];
 const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
+// Header controls from left to right. Alt+1 is the first one that is switched on.
+const SHORTCUT_ORDER: IslandPage[] = ["agents", "todo", "music", "clipboard", "shelf", "qq"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures) {
   return page === "qq" ? features.qq || features.wechat || features.qqMail : features[page];
@@ -31,4 +33,36 @@ export function resolveIslandPage(page: IslandPage, features: IslandFeatures): I
 export function resolveMessageSource(source: MessageSource, features: IslandFeatures): MessageSource {
   if (features[source]) return source;
   return SOURCE_ORDER.find((candidate) => features[candidate]) ?? source;
+}
+
+/** Pages a focused, expanded island switches with Alt+1, Alt+2, … Off modules leave no gap. */
+export function pageShortcutOrder(features: IslandFeatures): IslandPage[] {
+  return SHORTCUT_ORDER.filter((page) => isPageEnabled(page, features));
+}
+
+/** The page Alt+`digit` opens, or null when that number is past the last visible page. */
+export function pageForAltDigit(features: IslandFeatures, digit: number): IslandPage | null {
+  if (!Number.isInteger(digit) || digit < 1 || digit > 9) return null;
+  return pageShortcutOrder(features)[digit - 1] ?? null;
+}
+
+export function pageShortcutLabel(features: IslandFeatures, page: IslandPage): string | null {
+  const index = pageShortcutOrder(features).indexOf(page);
+  return index < 0 ? null : `Alt+${index + 1}`;
+}
+
+type AltDigitEvent = {
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  repeat: boolean;
+  code: string;
+};
+
+/** Main-row Alt+1..9. Numpad digits stay free for Windows Alt character codes. */
+export function altPageDigit(event: AltDigitEvent): number | null {
+  if (event.repeat || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  const match = /^Digit([1-9])$/.exec(event.code);
+  return match ? Number(match[1]) : null;
 }
