@@ -342,7 +342,7 @@ const zhCN: Translations = {
       hint: "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。",
       todo: "启用待办",
       music: "启用音乐控制",
-      agents: "启用 AI 代理状态灯",
+      agents: "启用 AI Agent 状态灯",
       mail: "QQ 邮箱",
     },
     title: "设置",
@@ -361,7 +361,7 @@ const zhCN: Translations = {
       todos: "待办",
       music: "音乐",
       clipboard: "剪贴板",
-      agents: "AI 代理",
+      agents: "AI Agent",
       about: "关于",
     },
 
@@ -466,6 +466,12 @@ const zhCN: Translations = {
       clearing: "清除中",
       clearStatus: "清除状态",
       scriptsDir: "脚本目录",
+      legendTitle: "状态灯颜色",
+      legend: {
+        idle: "绿色：空闲或已完成",
+        running: "红色：有 Agent 正在运行",
+        attention: "黄色：运行失败或可能已中断，可在上方清除状态",
+      },
     },
 
     clipboard: {

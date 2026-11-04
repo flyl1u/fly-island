@@ -208,7 +208,7 @@ const en: Translations = {
     running: (provider) => `${provider} is running`,
     failed: (provider) => `${provider} failed`,
     stale: (provider) => `${provider} may have stalled`,
-    idleOrDone: "AI agent idle or finished",
+    idleOrDone: "AI Agent idle or finished",
     phase: {
       running: "Running",
       completed: "Done",
@@ -339,7 +339,7 @@ const en: Translations = {
       hint: "When off, the island hides this module and stops its background work. Your data is kept.",
       todo: "Enable todos",
       music: "Enable music controls",
-      agents: "Enable the AI agent status light",
+      agents: "Enable the AI Agent status light",
       mail: "QQ Mail",
     },
     title: "Settings",
@@ -358,7 +358,7 @@ const en: Translations = {
       todos: "Todos",
       music: "Music",
       clipboard: "Clipboard",
-      agents: "AI agents",
+      agents: "AI Agent",
       about: "About",
     },
 
@@ -454,7 +454,7 @@ const en: Translations = {
     },
 
     agent: {
-      title: "AI agent status light",
+      title: "AI Agent status light",
       install: "Install/repair",
       installing: "Installing",
       installed: "Installed",
@@ -463,6 +463,12 @@ const en: Translations = {
       clearing: "Clearing",
       clearStatus: "Clear status",
       scriptsDir: "Scripts folder",
+      legendTitle: "Light colors",
+      legend: {
+        idle: "Green: idle or finished",
+        running: "Red: an agent is running",
+        attention: "Yellow: failed or possibly interrupted; clear it above",
+      },
     },
 
     clipboard: {

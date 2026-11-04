@@ -466,6 +466,12 @@ export type Translations = {
       clearing: string;
       clearStatus: string;
       scriptsDir: string;
+      legendTitle: string;
+      legend: {
+        idle: string;
+        running: string;
+        attention: string;
+      };
     };
 
     clipboard: {

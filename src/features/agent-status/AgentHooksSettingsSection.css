@@ -188,3 +188,45 @@
   outline: 2px solid rgba(255, 209, 102, 0.82);
   outline-offset: 2px;
 }
+
+/* Same colors as the island's status light (IslandCollapsedBar.css, IslandHeader.css). */
+.agent-status-legend {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.agent-status-legend__title {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.agent-status-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-status-legend__dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+}
+
+.agent-status-legend__dot--idle {
+  background: var(--color-agent-idle);
+  box-shadow: 0 0 8px rgba(53, 233, 133, 0.6);
+}
+
+.agent-status-legend__dot--running {
+  background: var(--color-agent-running);
+  box-shadow: 0 0 8px rgba(255, 77, 94, 0.6);
+}
+
+.agent-status-legend__dot--attention {
+  background: var(--color-warning);
+  box-shadow: 0 0 8px rgba(255, 209, 102, 0.6);
+}

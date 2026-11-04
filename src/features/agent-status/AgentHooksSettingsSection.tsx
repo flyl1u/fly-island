@@ -101,6 +101,15 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
           ))}
         </div>
       </div>
+      <div className="agent-status-legend" role="group" aria-label={t.settings.agent.legendTitle}>
+        <span className="agent-status-legend__title">{t.settings.agent.legendTitle}</span>
+        {(["idle", "running", "attention"] as const).map((state) => (
+          <span className="agent-status-legend__item" key={state}>
+            <span className={`agent-status-legend__dot agent-status-legend__dot--${state}`} aria-hidden="true" />
+            {t.settings.agent.legend[state]}
+          </span>
+        ))}
+      </div>
       {agentHooksInstallState === "installed" && agentHooksInstallResult ? (
         <div className="agent-hooks-status agent-hooks-status--ok">
           <span>{t.settings.agent.scriptsDir}</span>
