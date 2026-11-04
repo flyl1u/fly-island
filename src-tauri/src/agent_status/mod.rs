@@ -4,6 +4,10 @@ mod claude_hooks;
 mod codex_hooks;
 mod markers;
 mod snapshot;
+#[cfg(test)]
+mod tests;
+mod title;
+mod title_cache;
 
 use serde::Serialize;
 use std::{fs, path::Path};
@@ -14,15 +18,16 @@ use crate::system::windows_home_dir;
 use claude_hooks::install_claude_code_status_hooks;
 use codex_hooks::install_codex_status_hooks;
 use markers::{
-    apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
-    CLAUDE_CODE_RUNNING_MARKER_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME,
-    CODEX_RUNNING_MARKER_FILE_NAME,
+    apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_HOOK_INPUT_FILE_NAME,
+    CLAUDE_CODE_RUNNING_HOLD_FILE_NAME, CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
+    CODEX_HOOK_INPUT_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME, CODEX_RUNNING_MARKER_FILE_NAME,
 };
 use snapshot::{
     agent_status_snapshot_from_persisted, current_unix_millis, default_agent_phase,
     default_agent_status_snapshot, default_persisted_agent_status, AgentStatusSnapshot,
     AgentTaskStatus, PersistedAgentStatus,
 };
+use title_cache::apply_session_titles;
 
 pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
@@ -72,6 +77,7 @@ fn read_agent_status(app: AppHandle) -> Result<AgentStatusSnapshot, String> {
         Err(_) => default_agent_status_snapshot(status_path_display),
     };
     apply_agent_running_markers(&app_dir, &mut snapshot);
+    apply_session_titles(&app_dir, &mut snapshot);
 
     Ok(snapshot)
 }
@@ -98,6 +104,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
         phase: default_agent_phase(),
         task_id: None,
         updated_at: now,
+        title: None,
     };
 
     match provider.as_str() {
@@ -107,6 +114,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CODEX_RUNNING_MARKER_FILE_NAME,
                 CODEX_RUNNING_HOLD_FILE_NAME,
+                CODEX_HOOK_INPUT_FILE_NAME,
             );
         }
         "claudeCode" => {
@@ -115,6 +123,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
                 CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
+                CLAUDE_CODE_HOOK_INPUT_FILE_NAME,
             );
         }
         _ => {

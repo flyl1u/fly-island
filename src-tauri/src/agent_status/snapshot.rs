@@ -12,6 +12,9 @@ pub(super) struct AgentTaskStatus {
     pub(super) task_id: Option<String>,
     #[serde(default)]
     pub(super) updated_at: i64,
+    /// Session title for the island. Only filled in snapshots, never written to agent-status.json.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) title: Option<String>,
 }
 
 impl Default for AgentTaskStatus {
@@ -20,6 +23,7 @@ impl Default for AgentTaskStatus {
             phase: default_agent_phase(),
             task_id: None,
             updated_at: 0,
+            title: None,
         }
     }
 }
