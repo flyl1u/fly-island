@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      /* As in src/styles/base.css, which this page does not load; layouts depend on it. */
+      * { box-sizing: border-box; }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>fly-island plugin views regression</title>
+    <style>
+      body { margin: 0; padding: 16px; background: #15202d !important; color: #d3eddf; font-family: system-ui, sans-serif; }
+      .cases { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+      .case { display: grid; gap: 6px; font: 12px monospace; }
+      .case > div { height: 300px; display: grid; }
+      #results { font: 12px/1.6 monospace; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <pre id="results"></pre>
+    <div id="root"></div>
+    <script type="module" src="/tests/regression/plugin-views.tsx"></script>
+  </body>
+</html>

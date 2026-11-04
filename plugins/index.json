@@ -2,6 +2,28 @@
   "version": 1,
   "plugins": [
     {
+      "id": "dev.focusd.github-issues",
+      "name": {
+        "zh-CN": "GitHub Issue（示例）",
+        "en": "GitHub issues (example)"
+      },
+      "description": {
+        "zh-CN": "在岛上加一个页面，列出一个公开仓库的未关闭 issue，点一条就在浏览器里打开。不需要令牌，仓库在设置里填。演示列表模板。用 Windows 自带的 PowerShell 运行。",
+        "en": "Adds an island page listing the open issues of a public repository; click one to open it in the browser. No token needed; set the repository in the settings. Shows the list template. Runs on the PowerShell built into Windows."
+      },
+      "version": "1.0.0",
+      "apiVersion": 2,
+      "author": "FocuSD",
+      "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.github-issues",
+      "permissions": [],
+      "runtime": "powershell",
+      "download": {
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.github-issues-1.0.0.zip",
+        "sha256": "ebe9814f92fdcd29dc0c57d0d37eff8fb23ad99bbd7368e989f0085b8bb0abc8",
+        "size": 4357
+      }
+    },
+    {
       "id": "dev.focusd.now-playing",
       "name": {
         "zh-CN": "正在播放（示例）",
@@ -33,10 +55,10 @@
         "en": "Pomodoro (example)"
       },
       "description": {
-        "zh-CN": "按 Ctrl+Alt+P 或在待办上右键开始一个番茄钟，结束时在岛上提示，可以点“再来一轮”。完成的轮数保存在插件存储里。用 Windows 自带的 PowerShell 运行。",
-        "en": "Press Ctrl+Alt+P or right-click a todo to start a pomodoro; when it ends the island shows a message with One more round. Finished rounds are kept in plugin storage. Runs on the PowerShell built into Windows."
+        "zh-CN": "按 Ctrl+Alt+P 或在待办上右键开始一个番茄钟，计时显示在岛上的番茄钟页面和折叠条上，结束时在岛上提示，可以点“再来一轮”。完成的轮数保存在插件存储里。用 Windows 自带的 PowerShell 运行。",
+        "en": "Press Ctrl+Alt+P or right-click a todo to start a pomodoro; the countdown shows on its island page and the collapsed bar, and when it ends the island shows a message with One more round. Finished rounds are kept in plugin storage. Runs on the PowerShell built into Windows."
       },
-      "version": "1.0.0",
+      "version": "1.1.0",
       "apiVersion": 2,
       "author": "FocuSD",
       "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.pomodoro",
@@ -46,9 +68,9 @@
       ],
       "runtime": "powershell",
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.pomodoro-1.0.0.zip",
-        "sha256": "a150ff64d1bda305fb1f4e0199232590c66254bd4bac2e051e3ccdf8f183dd1c",
-        "size": 4297
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.pomodoro-1.1.0.zip",
+        "sha256": "b39a0345604874525760659dcc479627172594cbb8418e201a87adc4cbc9212c",
+        "size": 5166
       }
     },
     {

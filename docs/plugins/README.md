@@ -77,6 +77,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `contributes.commands[].keybinding` | | 第 2 版：全局快捷键，见下文的「快捷键与 `when`」。 |
 | `contributes.commands[].when` | | 第 2 版：快捷键在什么情况下生效，最长 200 个字符。 |
 | `contributes.menus` | | 第 2 版：把命令放进岛屿的菜单，见下文的「待办右键菜单」。 |
+| `contributes.views` | | 第 2 版：岛屿展开后的页面，最多 2 个，由岛屿按模板绘制，见下文的「岛上页面」。 |
+| `contributes.statusItems` | | 第 2 版：折叠条上的一小段状态文字，最多 2 个，见下文的「岛上页面」。 |
 | `contributes.settings` | | 最多 20 个设置项，由岛屿画在插件自己的设置页上并负责保存，见下文的"设置页"。 |
 
 第 1 版的清单里如果写了 `keybinding`、`when` 或 `menus`，岛屿会忽略它们，不会报错。
@@ -101,6 +103,55 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 ```
 
 `todo/context` 是待办条目的右键菜单，最多列 4 个命令，每个都必须是本插件 `contributes.commands` 里的命令，且不能重复。用户右键一条待办时，菜单里会列出所有运行中插件的条目（显示命令标题和插件名）；点了以后插件收到 `command { id, args: { todoId } }`。需要待办内容时，用 `todos.list` 查（要 `todos:read` 权限）。没有插件提供条目时，右键行为和以前一样。
+
+### 岛上页面（第 2 版）
+
+插件可以在岛屿展开后拥有自己的页面，并在折叠条上显示一小段状态。**插件不能自带界面代码**：不能发 HTML、脚本或 SVG，只能发数据，页面由岛屿按模板绘制，所以和岛屿的其他页面风格一致。
+
+```json
+"contributes": {
+  "views": [{ "id": "issues", "title": { "zh-CN": "Issue", "en": "Issues" }, "icon": "git-pull-request", "template": "list" }],
+  "statusItems": [{ "id": "countdown", "priority": 10 }]
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `views[].id` | 1–32 个字母、数字或 `-`，同一插件内不能重复。 |
+| `views[].title` | 中英文都要提供。 |
+| `views[].icon` | lucide 图标名，只能用 `plugins/schema/manifest.schema.json` 里列出的那些（如 `list`、`timer`、`git-pull-request`、`kanban`），省略时为 `puzzle`。 |
+| `views[].template` | `list`、`detail`、`form` 或 `status`，见下面的模板说明。 |
+| `statusItems[].id` | 同上。 |
+| `statusItems[].priority` | -100 到 100，默认 0。所有插件有文字的状态项里，只显示优先级最高的一个。 |
+
+- 页面在岛上的 id 是 `plugin:<插件 id>/<view id>`。插件页面排在内置页面之后，用页眉里的小图标打开，也参与 Alt+数字 和左右切换（数字键只到 9）。用户可以在 **设置 → 插件扩展 → 岛上页面** 里隐藏某个页面、调整顺序。
+- 插件用 `view.update { viewId, model }` 发整个模型（序列化后不超过 256 KB，超过返回状态 413），用 `view.patch { viewId, items }` 按 `id` 替换列表里的几项（在 `view.update` 之前调用返回 409）。每个页面每秒最多显示 10 次更新，更快的会合并成最后一次。
+- 页面不在屏幕上时，岛屿不转发更新；打开和关上页面时插件会收到 `view.visible { viewId, visible }`。插件可以只在 `visible` 为 `true` 时去准备数据（`dev.focusd.github-issues` 就是这样）。
+- 用户的操作以通知发回：`view.action { viewId, actionId, itemId?, checked? }`、`view.submit { viewId, values }`、`view.search { viewId, query }`。
+- 插件进程停止或崩溃时，它发过的模型和状态文字都会清空；页面显示"插件已停止"、原因和"重新启动"按钮，不影响其他页面。插件重启后要重新发模型（一般在收到 `view.visible` 时发）。
+- 所有文字都可以是字符串，或 `{ "zh-CN": "…", "en": "…" }`（按岛屿当前语言选）。超长的文字会被截断，不合格式的字段会被忽略。
+
+**`list` 模板**：`{ items?, groups?: [{ title?, items }], empty?, loading?, error?, search? }`
+
+| 条目字段 | 说明 |
+|---|---|
+| `id` | 必填，1–128 个字母、数字或 `-_.:/`，同一页面内不能重复。 |
+| `title` / `subtitle` / `note` | 标题（必填）、第二行、右侧的短附注。 |
+| `icon` | 同 `views[].icon` 的图标名。 |
+| `checked` | `true` / `false` 时显示勾选框；点击后插件收到 `view.action { actionId: "check", itemId, checked }`，界面以插件下一次发来的模型为准。 |
+| `url` | 只收 `https://` 链接；点条目时岛屿用系统浏览器打开。 |
+| `action` | 没有 `url` 时，点条目发 `view.action { actionId: <action>, itemId }`。 |
+| `actions` | 最多 3 个行内按钮 `[{ id, title, icon? }]`，点击发 `view.action`。 |
+
+`search` 为 `{ placeholder?, mode? }` 时显示搜索框：`mode` 默认 `local`，由岛屿按标题、第二行和附注过滤；`remote` 时岛屿把输入（停顿 250 毫秒后）以 `view.search` 发给插件，由插件发回新的列表。一个页面最多 500 项，超过 8 行时页面滚动。
+
+**`detail` 模板**：`{ title?, markdown?, meta?: [{ label, value }], actions?, loading?, error? }`。`markdown` 只支持标题、粗体、斜体、行内代码、列表、段落和 `https://` 链接（在浏览器中打开）；其他写法（包括 HTML）原样显示为文字。`meta` 最多 20 项，`actions` 最多 3 个，显示在底部。
+
+**`form` 模板**：`{ fields, submitTitle?, message?, error? }`。`fields[]` 为 `{ key, type, title, description?, placeholder?, value?, options?, min?, max? }`，`type` 与插件设置页相同（`boolean`、`string`、`number`、`select`），另外多一个 `multiline`（多行文字，最长 4000 字）。用户点提交后插件收到 `view.submit { viewId, values }`，`values` 已按字段类型整理（数字取整并限定在 `min`–`max`）。用 `message` / `error` 告诉用户结果。
+
+**`status` 模板**：`{ primary, secondary?, caption?, progress?, tone?, actions? }`。`primary` 是一行大字（例如倒计时），`secondary` 是第二行，`progress` 是 0–1 的进度条，`tone` 为 `neutral`、`accent`、`warning` 或 `danger`。
+
+**折叠条状态**：`status.update { itemId, text, tooltip?, tone? }`，`text` 最多 24 个字符，空字符串表示清除。状态文字显示在折叠条右侧的小标签里，和待办摘要、Agent 标题同时显示，不替换它们；有消息预览或快捷翻译时先让位。点击标签会打开这个插件的第一个页面。
 
 ### 设置页
 
@@ -194,7 +245,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 
 清单的 `apiVersion` 是插件按哪一版 API 编写的。岛屿支持第 1 版和第 2 版，`initialize`、`host.info` 和环境变量 `FOCUSD_PLUGIN_API_VERSION` 里的 `apiVersion` 就是清单里写的版本。
 
-- `initialize.capabilities` 列出岛屿为这个插件提供的能力。第 2 版插件收到 `["events", "notifications", "storage", "secrets"]`，第 1 版插件收到空列表。以后的岛屿可能增加能力；插件应先查这个列表，再调用对应的方法。
+- `initialize.capabilities` 列出岛屿为这个插件提供的能力。第 2 版插件收到 `["events", "notifications", "storage", "secrets", "views", "status"]`，第 1 版插件收到空列表。以后的岛屿可能增加能力；插件应先查这个列表，再调用对应的方法。
 
 | 能力 | 含义 |
 |---|---|
@@ -202,8 +253,10 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `notifications` | `island.notify` 和 `notification.action` 通知 |
 | `storage` | `storage.get` / `set` / `delete` / `keys` |
 | `secrets` | `secrets.get` / `set` / `delete` |
+| `views` | `contributes.views` 页面；`view.update` / `view.patch` 和 `view.*` 通知 |
+| `status` | `contributes.statusItems` 折叠条状态；`status.update` |
 
-- **第 1 版插件的行为不变**：`events.*`、`storage.*` 对它们仍然返回"方法不存在"；清单里的 `keybinding`、`when`、`menus` 被忽略。新权限（`island:notify`、`secrets` 等）在第 1 版清单里也能申请，申请了就能调用对应方法。
+- **第 1 版插件的行为不变**：`events.*`、`storage.*`、`view.*`、`status.update` 对它们仍然返回"方法不存在"；清单里的 `keybinding`、`when`、`menus`、`views`、`statusItems` 被忽略（写成什么样都不影响加载）。新权限（`island:notify`、`secrets` 等）在第 1 版清单里也能申请，申请了就能调用对应方法。
 - 兼容规则：同一版本内只做新增（新方法、新的可选参数和结果字段、新事件）。插件要忽略不认识的字段和通知。
 
 ### 岛屿发给插件的通知
@@ -215,6 +268,10 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `settings.changed` | 1 | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
 | `event` | 2 | `{ name, payload }` | 订阅的事件发生了，见下文的「事件」 |
 | `notification.action` | 2 | `{ id }` | 用户点了 `island.notify` 消息上的某个按钮 |
+| `view.visible` | 2 | `{ viewId, visible }` | 插件页面出现在屏幕上或被关上；不可见时岛屿不转发更新 |
+| `view.action` | 2 | `{ viewId, actionId, itemId?, checked? }` | 用户点了页面上的按钮、条目或勾选框 |
+| `view.submit` | 2 | `{ viewId, values }` | 用户提交了 `form` 页面 |
+| `view.search` | 2 | `{ viewId, query }` | 用户在 `list` 页面的搜索框里输入（`search.mode` 为 `remote` 时） |
 | `shutdown` | 1 | `{}` | 插件被停用、重新加载或删除时发送；随后 stdin 会关闭，2 秒后进程被结束 |
 
 **stdin 关闭时插件必须退出。** 岛屿自己退出时也会关闭 stdin。
@@ -244,6 +301,9 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `secrets.get` | 2 | `secrets` | `{ key }` | `{ value }`，没有时为 `null` |
 | `secrets.set` | 2 | `secrets` | `{ key, value }` | `{}` |
 | `secrets.delete` | 2 | `secrets` | `{ key }` | `{ deleted }` |
+| `view.update` | 2 | — | `{ viewId, model }` | `{}`；见上文的「岛上页面」 |
+| `view.patch` | 2 | — | `{ viewId, items }` | `{ missing }`：没找到的条目 id |
+| `status.update` | 2 | — | `{ itemId, text, tooltip?, tone? }` | `{}` |
 | `clipboard.history` | 2 | `clipboard:read` | `{ limit? }`（1–50，默认 20） | `{ items: [{ id, text, truncated, copiedAt, favorite }] }`：只有文字，没有图片，最新的在前；`text` 最长 4000 个字符，被截断时 `truncated` 为 `true`。剪贴板历史关闭时返回状态 409 |
 | `messages.list` | 2 | `messages:read` | — | `{ items: [{ source, id, sender, preview, receivedAt, unread? }] }`，最新的在前，只包含用户打开了的来源。`source` 为 `qq`、`wechat` 或 `qqMail`；微信只知道托盘图标在闪，所以 `sender`、`preview` 为 `null`；QQ 邮箱的 `preview` 是主题，从不包含正文、邮箱地址或授权码 |
 | `media.nowPlaying` | 2 | `media:read` | — | `{ available, status, title, artist, album, sourceApp, positionMs, durationMs }`，不含封面图片；`status` 为 `playing`、`paused` 或 `unavailable` |
@@ -297,9 +357,9 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 |---|---|
 | `-32700` | 不是合法的 JSON |
 | `-32600` | 不是合法的 JSON-RPC 消息（缺少 `"jsonrpc": "2.0"`、`method` 或 `id` 类型不对） |
-| `-32601` | 方法不存在（第 1 版插件调用第 2 版才有的 `events.*`、`storage.*` 也是这个错误） |
+| `-32601` | 方法不存在（第 1 版插件调用第 2 版才有的 `events.*`、`storage.*`、`view.*`、`status.update` 也是这个错误） |
 | `-32001` | 没有对应的权限（包括订阅没有权限的事件），或者用户拒绝了敏感权限、30 秒内没有回答 |
-| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码：400 参数错误、404 不存在、409 对应功能被用户关掉了（例如剪贴板历史）、413 太大（存储或秘密超出上限）、429 请求太多（同时发送的请求超过 16 个，或 `island.notify` 超过每分钟 6 条）、500 岛屿做不到（例如写文件或凭据管理器失败）、504 岛屿没有及时响应 |
+| `-32000` | 岛屿返回了错误，`data.status` 是对应的 HTTP 状态码：400 参数错误、404 不存在（包括清单里没有声明的页面或状态项）、409 对应功能被用户关掉了（例如剪贴板历史），或在 `view.update` 之前调用了 `view.patch`、413 太大（存储、秘密或页面模型超出上限）、429 请求太多（同时发送的请求超过 16 个，或 `island.notify` 超过每分钟 6 条）、500 岛屿做不到（例如写文件或凭据管理器失败）、504 岛屿没有及时响应 |
 
 ### 环境变量
 

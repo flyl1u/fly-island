@@ -2,10 +2,10 @@
   "id": "dev.focusd.pomodoro",
   "name": { "zh-CN": "番茄钟（示例）", "en": "Pomodoro (example)" },
   "description": {
-    "zh-CN": "按 Ctrl+Alt+P 或在待办上右键开始一个番茄钟，结束时在岛上提示，可以点“再来一轮”。完成的轮数保存在插件存储里。用 Windows 自带的 PowerShell 运行。",
-    "en": "Press Ctrl+Alt+P or right-click a todo to start a pomodoro; when it ends the island shows a message with One more round. Finished rounds are kept in plugin storage. Runs on the PowerShell built into Windows."
+    "zh-CN": "按 Ctrl+Alt+P 或在待办上右键开始一个番茄钟，计时显示在岛上的番茄钟页面和折叠条上，结束时在岛上提示，可以点“再来一轮”。完成的轮数保存在插件存储里。用 Windows 自带的 PowerShell 运行。",
+    "en": "Press Ctrl+Alt+P or right-click a todo to start a pomodoro; the countdown shows on its island page and the collapsed bar, and when it ends the island shows a message with One more round. Finished rounds are kept in plugin storage. Runs on the PowerShell built into Windows."
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "apiVersion": 2,
   "author": "FocuSD",
   "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.pomodoro",
@@ -18,6 +18,8 @@
       { "id": "focus-todo", "title": { "zh-CN": "为这条待办开始番茄钟", "en": "Pomodoro on this todo" } }
     ],
     "menus": { "todo/context": [{ "command": "focus-todo" }] },
+    "views": [{ "id": "timer", "title": { "zh-CN": "番茄钟", "en": "Pomodoro" }, "icon": "timer", "template": "status" }],
+    "statusItems": [{ "id": "countdown", "priority": 10 }],
     "settings": [
       { "key": "minutes", "type": "number", "title": { "zh-CN": "每轮时长（分钟）", "en": "Round length (minutes)" }, "min": 1, "max": 90, "default": 25 }
     ]
