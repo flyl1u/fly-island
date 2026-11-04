@@ -32,6 +32,40 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   autoTuck: false,
   autoTuckSeconds: 30,
 };
+/**
+ * Settings that belong to the appearance page. Resetting the appearance or applying a
+ * preset changes only these, so todo and tuck behavior chosen on the general page survive.
+ */
+export const APPEARANCE_SETTING_KEYS = [
+  "appearanceMode",
+  "fontFamily",
+  "glassIntensity",
+  "opacity",
+  "collapsedScale",
+  "expandedScale",
+  "marginY",
+  "topFilletRadius",
+  "taskTextColor",
+  "pulseColor",
+  "pulseBrightness",
+  "islandBackgroundColor",
+  "todoBackgroundColor",
+  "showTitle",
+  "showCollapsedText",
+  "showIdleTodoCount",
+] as const satisfies readonly (keyof IslandSettings)[];
+
+type AppearanceSettings = Pick<IslandSettings, (typeof APPEARANCE_SETTING_KEYS)[number]>;
+
+/** `settings` with its appearance fields taken from `source`. */
+export function withAppearanceFrom(settings: IslandSettings, source: IslandSettings): IslandSettings {
+  const appearance = Object.fromEntries(
+    APPEARANCE_SETTING_KEYS.map((key) => [key, source[key]]),
+  ) as AppearanceSettings;
+
+  return { ...settings, ...appearance };
+}
+
 export const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
 export const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "../../i18n";
 import { createTodoId } from "../todos";
-import { LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, mergeWithDefaultSettingPresets, normalizeSettings } from "./settings";
+import { LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, mergeWithDefaultSettingPresets, normalizeSettings, withAppearanceFrom } from "./settings";
 import { loadSettingPresets, saveSettingPresets } from "./storage";
 import type { IslandPreset, IslandSettings } from "./types";
 
@@ -41,10 +41,10 @@ export function useSettingPresets(
       const preset = presets.find((item) => item.id === presetId);
 
       if (preset) {
-        onSettingsChange(normalizeSettings(preset.settings));
+        onSettingsChange(withAppearanceFrom(settings, normalizeSettings(preset.settings)));
       }
     },
-    [presets, onSettingsChange],
+    [presets, settings, onSettingsChange],
   );
 
   const renameSettingsPreset = useCallback((presetId: string, name: string) => {

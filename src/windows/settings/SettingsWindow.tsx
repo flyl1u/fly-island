@@ -7,7 +7,7 @@ import { IntegrationsSettingsPage } from "./IntegrationsSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
-import { DEFAULT_SETTINGS, isSameSettings } from "../../features/appearance/settings";
+import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useSettingPresets } from "../../features/appearance/useSettingPresets";
@@ -74,7 +74,7 @@ export function SettingsWindow() {
   }, [focusSavePath]);
 
   const resetSettings = useCallback(() => {
-    setSettings(DEFAULT_SETTINGS);
+    setSettings((current) => withAppearanceFrom(current, DEFAULT_SETTINGS));
   }, []);
 
   return (

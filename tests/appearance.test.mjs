@@ -8,6 +8,7 @@ import {
   isSameSettings,
   mergeWithDefaultSettingPresets,
   normalizeSettings,
+  withAppearanceFrom,
 } from "../src/features/appearance/settings.ts";
 import {
   COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY,
@@ -134,4 +135,29 @@ test("stored presets are normalized with fallback names", () => {
     assert.equal(typeof presets[1].id, "string");
   });
   withStorage([[SETTINGS_PRESETS_STORAGE_KEY, "{}"]], () => assert.deepEqual(loadSettingPresets(t), []));
+});
+
+test("taking the appearance from other settings keeps todo and tuck behavior", () => {
+  const current = {
+    ...DEFAULT_SETTINGS,
+    opacity: 60,
+    pulseColor: "#123456",
+    showTitle: true,
+    carryOverIncompleteTodos: true,
+    rotateTodos: true,
+    todoRotationSeconds: 12,
+    autoTuck: true,
+    autoTuckSeconds: 90,
+  };
+  const next = withAppearanceFrom(current, DEFAULT_SETTINGS);
+
+  assert.equal(next.opacity, DEFAULT_SETTINGS.opacity);
+  assert.equal(next.pulseColor, DEFAULT_SETTINGS.pulseColor);
+  assert.equal(next.showTitle, DEFAULT_SETTINGS.showTitle);
+  assert.equal(next.carryOverIncompleteTodos, true);
+  assert.equal(next.rotateTodos, true);
+  assert.equal(next.todoRotationSeconds, 12);
+  assert.equal(next.autoTuck, true);
+  assert.equal(next.autoTuckSeconds, 90);
+  assert.deepEqual(withAppearanceFrom(DEFAULT_SETTINGS, DEFAULT_SETTINGS), DEFAULT_SETTINGS);
 });
