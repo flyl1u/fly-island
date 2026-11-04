@@ -21,13 +21,11 @@ use std::{
 };
 use tauri::AppHandle;
 
-use super::{
-    manifest::HOST_API_VERSION,
-    permissions::method_permission,
-    rpc,
-    settings::{parse_info, InfoItem},
-};
-use crate::{agent_status, local_api, system::CREATE_NO_WINDOW};
+mod dispatch;
+
+use super::{manifest::HOST_API_VERSION, rpc, settings::InfoItem};
+use crate::{agent_status, system::CREATE_NO_WINDOW};
+use dispatch::{answer_request, initialize_params};
 
 const LOG_LINES: usize = 200;
 const RESTART_DELAYS: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(5), Duration::from_secs(30)];
@@ -273,18 +271,6 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
         })
 }
 
-fn initialize_params(context: &Context) -> Value {
-    let spec = &context.spec;
-    json!({
-        "apiVersion": HOST_API_VERSION,
-        "appVersion": spec.app_version,
-        "pluginId": spec.plugin_id,
-        "dataDir": spec.data_dir.display().to_string(),
-        "permissions": spec.granted,
-        "settings": *lock(&context.settings),
-    })
-}
-
 fn read_messages(context: &Arc<Context>, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
@@ -340,44 +326,6 @@ fn handle_line(context: &Arc<Context>, line: &str) {
                 let _ = write_line(context, &rpc::error_line(&id, code, &message, None));
             }
         }
-    }
-}
-
-fn answer_request(context: &Context, id: &Value, method: &str, params: Value) -> String {
-    // Methods about the plugin itself need no permission.
-    match method {
-        "host.info" => return rpc::result_line(id, initialize_params(context)),
-        "settings.get" => return rpc::result_line(id, Value::Object(lock(&context.settings).clone())),
-        "ui.setInfo" => {
-            return match parse_info(&params) {
-                Ok(items) => {
-                    let mut table = lock(&context.table);
-                    if let Some(info) = current_entry(context, &mut table) {
-                        info.info = items;
-                    }
-                    rpc::result_line(id, json!({}))
-                }
-                Err(message) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": 400 }))),
-            };
-        }
-        _ => {}
-    }
-    let Some((name, permission)) = method_permission(method) else {
-        return rpc::error_line(id, rpc::METHOD_NOT_FOUND, &format!("Unknown method \"{method}\"."), None);
-    };
-    if !context.spec.granted.iter().any(|granted| granted == permission) {
-        let message = format!("The plugin was not given the \"{permission}\" permission.");
-        return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
-    }
-    let owner = &context.spec.plugin_id;
-    let answer = match name {
-        "agentStatus.report" => agent_status::report_external_status(owner, &context.spec.display_name, &params),
-        "agentStatus.clear" => agent_status::clear_external_status(owner, &params),
-        _ => local_api::call_island(&context.app, name, params),
-    };
-    match answer {
-        Ok(result) => rpc::result_line(id, result),
-        Err((status, message)) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": status }))),
     }
 }
 

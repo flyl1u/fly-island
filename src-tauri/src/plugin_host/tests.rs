@@ -353,7 +353,8 @@ mod builtin_tests {
     use super::super::builtin::{manifests, LOCAL_API_ALLOW_WRITE, LOCAL_API_ID};
     use super::super::manifest::{parse_manifest, PluginRuntime};
     use super::super::store::PluginsState;
-    use super::super::{migrate_local_api, InstalledPlugin};
+    use super::super::registry::migrate_local_api;
+    use super::super::InstalledPlugin;
 
     fn installed() -> Vec<InstalledPlugin> {
         manifests("0.2.14")
