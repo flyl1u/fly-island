@@ -21,7 +21,9 @@ pub(super) const COLLAPSED_RADIUS: f64 = 22.0;
 pub(super) const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 pub(super) const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
-pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 240.0;
+// Up to 656px: six clipboard rows (MAX_CLIPBOARD_VISIBLE_ROWS in
+// src/features/appearance/settings.ts); the panel height setting stops at 546.
+pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 350.0;
 pub(super) const EXPANDED_RADIUS: f64 = 30.0;
 // Range of the expanded bottom radius setting; matches MIN / MAX_ISLAND_CORNER_RADIUS in
 // src/features/appearance/settings.ts.

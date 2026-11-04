@@ -119,7 +119,7 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
-        {category === "clipboard" && <ClipboardSettingsPage />}
+        {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}

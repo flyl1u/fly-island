@@ -4,6 +4,7 @@ import {
   MAX_COLLAPSED_ISLAND_WIDTH,
   MIN_COLLAPSED_ISLAND_WIDTH,
   alignCollapsedIslandWidth,
+  getClipboardExpandedHeight,
   getCollapsedIslandWidth,
   getTodoScrollStartRows,
   getTodoVisualRows,
@@ -88,4 +89,9 @@ test("pages and message sources that are switched off fall back to ones still on
   assert.equal(resolveMessageSource("qq", { ...all, qq: false }), "wechat");
   assert.equal(resolveMessageSource("wechat", { ...all, qq: false, wechat: false }), "qqMail");
   assert.equal(resolveMessageSource("qqMail", none), "qqMail");
+});
+
+test("the clipboard page fits whole rows and six rows stay within the native height limit", () => {
+  assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 70);
+  assert.equal(getClipboardExpandedHeight(6), 656);
 });

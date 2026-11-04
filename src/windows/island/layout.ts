@@ -10,7 +10,12 @@ export const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 export const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
-export const CLIPBOARD_EXPANDED_ISLAND_HEIGHT = 430;
+// Expanded island around an empty clipboard list: island padding, header and gap (86),
+// then the panel's padding, title, tabs, search and their gaps (158).
+const CLIPBOARD_CHROME_HEIGHT = 244;
+// One history row (62) plus the gap below it.
+const CLIPBOARD_ROW_PITCH = 70;
+const CLIPBOARD_ROW_GAP = 8;
 export const TODO_ROW_HEIGHT = 46;
 export const TODO_GROW_START_ROWS = 2;
 export function getCollapsedIslandWidth(text: string) {
@@ -78,4 +83,9 @@ export function getTodoVisualRows(todoList: TodoItem[]) {
     (total, todo) => total + getTodoTitleLineCount(todo.title),
     0,
   );
+}
+
+/** Expanded height that fits exactly `rows` clipboard history rows. */
+export function getClipboardExpandedHeight(rows: number) {
+  return CLIPBOARD_CHROME_HEIGHT + rows * CLIPBOARD_ROW_PITCH - CLIPBOARD_ROW_GAP;
 }

@@ -1,6 +1,6 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { IslandPage } from "./types";
 
 // Tall enough for about four shelf rows before the list scrolls.
@@ -15,12 +15,14 @@ type ExpandedHeightInput = {
   messageSource: MessageView;
   isReadingMail: boolean;
   maxPanelHeight: number;
+  clipboardVisibleRows: number;
 };
 
 /**
  * Height of the expanded island for the open page. The todo page grows with its
- * rows, and the pages that scroll (todos, clipboard, shelf, messages) stop at the
- * panel height limit; the music and archive layouts keep their fixed heights.
+ * rows, and the todo, shelf and message pages stop at the panel height limit;
+ * the clipboard page shows the row count set for it, and the music and archive
+ * layouts keep their fixed heights.
  */
 export function getExpandedIslandHeight({
   page,
@@ -31,6 +33,7 @@ export function getExpandedIslandHeight({
   messageSource,
   isReadingMail,
   maxPanelHeight,
+  clipboardVisibleRows,
 }: ExpandedHeightInput) {
   // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =
@@ -58,6 +61,6 @@ export function getExpandedIslandHeight({
       : page === "shelf"
         ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "clipboard"
-        ? Math.min(CLIPBOARD_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
+        ? getClipboardExpandedHeight(clipboardVisibleRows)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);
 }

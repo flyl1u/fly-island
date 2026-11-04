@@ -20,6 +20,8 @@ export type IslandSettings = {
   islandCornerRadius: number;
   /** Tallest expanded panel (px) before the todo list, clipboard and messages scroll. */
   maxPanelHeight: number;
+  /** Clipboard history rows the expanded clipboard page shows before it scrolls. */
+  clipboardVisibleRows: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

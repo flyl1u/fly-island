@@ -498,6 +498,8 @@ export type Translations = {
       enabled: string;
       captureImages: string;
       maxItems: string;
+      panelTitle: string;
+      visibleRows: string;
       shortcut: string;
       shortcutEnabled: string;
       pressKeys: string;

@@ -23,6 +23,10 @@ export const DEFAULT_MAX_PANEL_HEIGHT = 490;
 export const MIN_MAX_PANEL_HEIGHT = 306;
 // The tallest expanded height the native window accepts.
 export const MAX_MAX_PANEL_HEIGHT = 546;
+export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 3;
+export const MIN_CLIPBOARD_VISIBLE_ROWS = 2;
+// Six rows is the tallest clipboard page the native window accepts (656px).
+export const MAX_CLIPBOARD_VISIBLE_ROWS = 6;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -36,6 +40,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   topFilletRadius: 8,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
+  clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -168,6 +173,9 @@ export function normalizeSettings(
     maxPanelHeight: typeof settings?.maxPanelHeight === "number" && Number.isFinite(settings.maxPanelHeight)
       ? clamp(Math.round(settings.maxPanelHeight), MIN_MAX_PANEL_HEIGHT, MAX_MAX_PANEL_HEIGHT)
       : DEFAULT_SETTINGS.maxPanelHeight,
+    clipboardVisibleRows: typeof settings?.clipboardVisibleRows === "number" && Number.isFinite(settings.clipboardVisibleRows)
+      ? clamp(Math.round(settings.clipboardVisibleRows), MIN_CLIPBOARD_VISIBLE_ROWS, MAX_CLIPBOARD_VISIBLE_ROWS)
+      : DEFAULT_SETTINGS.clipboardVisibleRows,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

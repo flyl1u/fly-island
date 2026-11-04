@@ -103,6 +103,7 @@ export function IslandApp() {
     messageSource,
     isReadingMail: Boolean(qqMail.selectedMail),
     maxPanelHeight: settings.maxPanelHeight,
+    clipboardVisibleRows: settings.clipboardVisibleRows,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),

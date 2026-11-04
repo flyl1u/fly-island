@@ -199,3 +199,11 @@ test("taking the appearance from other settings keeps todo and tuck behavior", (
   assert.equal(next.autoTuckSeconds, 90);
   assert.deepEqual(withAppearanceFrom(DEFAULT_SETTINGS, DEFAULT_SETTINGS), DEFAULT_SETTINGS);
 });
+
+test("clipboard visible rows default to three for older settings and stay in range", () => {
+  assert.equal(normalizeSettings({}).clipboardVisibleRows, 3);
+  assert.equal(normalizeSettings({ clipboardVisibleRows: 1 }).clipboardVisibleRows, 2);
+  assert.equal(normalizeSettings({ clipboardVisibleRows: 9 }).clipboardVisibleRows, 6);
+  assert.equal(normalizeSettings({ clipboardVisibleRows: 4.4 }).clipboardVisibleRows, 4);
+  assert.equal(normalizeSettings({ clipboardVisibleRows: "5" }).clipboardVisibleRows, 3);
+});

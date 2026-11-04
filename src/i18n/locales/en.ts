@@ -495,6 +495,8 @@ const en: Translations = {
       enabled: "Record clipboard",
       captureImages: "Record images",
       maxItems: "Max entries",
+      panelTitle: "Panel",
+      visibleRows: "Entries shown when open",
       shortcut: "Expand shortcut",
       shortcutEnabled: "Enable expand shortcut",
       pressKeys: "Press keys",
