@@ -8,9 +8,9 @@
 
 1. 复制示例 [`plugins/examples/dev.focusd.todo-digest`](../../plugins/examples/dev.focusd.todo-digest/) 到
    `%APPDATA%\com.focusd.island\plugins\dev.focusd.todo-digest\`。
-   插件目录也可以在 设置 → 插件 → 插件目录 → **打开** 中找到。
+   插件目录也可以在 设置 → 插件扩展 → 插件目录 → **打开** 中找到。
 2. 示例使用 Windows 自带的 PowerShell 运行，不需要另外安装任何东西。
-3. 在 设置 → 插件 中打开 **允许运行第三方插件**，点 **重新加载**，再打开插件卡片上的 **启用**。
+3. 在 设置 → 插件扩展 中打开 **允许运行第三方插件**，点 **重新加载**，再打开插件卡片上的 **启用**。
 4. 状态显示"运行中"后，点 **写入摘要**，每日笔记里会追加一段未完成待办的摘要。展开 **日志** 可以看到插件的输出。
 
 修改插件文件后，点 **重新加载** 就会用新文件重启插件。
@@ -234,13 +234,26 @@ plugin.onCommand("sync-now", async () => {
 
 用其他语言写插件时，只要在 stdin / stdout 上实现上面的协议即可。
 
-## 发布到插件市场
+## 提交插件
 
-目前市场索引放在 `TixXin/fly-island` 仓库的 `dev` 分支中：
+插件进岛屿有两条路：只在自己的电脑上用，或者放进插件市场，让别人在 **设置 → 插件市场** 里安装。
 
-1. 把插件文件夹放到仓库的 `plugins/examples/<插件 id>/` 下。
-2. 运行 `pnpm plugins:index`。脚本会把插件打包成 `plugins/packages/<id>-<version>.zip`，重新生成 `plugins/index.json`（包含 SHA-256 和文件大小），并用签名私钥生成 `plugins/index.json.sig`。
-3. 提交以上文件并推送到 fork 的 `dev` 分支后，应用里的插件市场就能看到这个插件。
+### 只在这台电脑上用
+
+按上面的「快速开始」把插件文件夹放进插件目录，在 **设置 → 插件扩展** 里允许第三方插件并重新加载。这种方式不经过市场，也不需要签名。改完文件后再点一次 **重新加载** 即可。
+
+### 放进插件市场
+
+市场列表来自 [`TixXin/fly-island`](https://github.com/TixXin/fly-island) 仓库 `dev` 分支上的 `plugins/index.json`。索引必须由私钥签名，私钥不在仓库里。自己改 `index.json`、签名文件或 zip，岛屿都不会接受。
+
+插件作者提交源码，持有私钥的人打包并签名：
+
+1. 把插件放在 `plugins/examples/<插件 id>/`。文件夹名必须等于清单里的 `id`，里面要有 `focusd-plugin.json` 和要运行的程序。
+2. 向该仓库的 `dev` 分支提 pull request，**只包含插件源码**。不要提交 `plugins/index.json`、`plugins/index.json.sig` 或 `plugins/packages/` 里的 zip，这些由打包脚本生成。不要推到 `main`：上游的 pull request 跟踪的是这个仓库的 `main`。
+3. 审核通过后，维护者在本机运行 `pnpm plugins:index`（需要签名私钥，见下文）。脚本会把插件打成 `plugins/packages/<id>-<version>.zip`，重写 `plugins/index.json`（含 SHA-256 和文件大小），并用私钥写 `plugins/index.json.sig`。文本文件打包时统一成 LF，时间戳固定，所以同一份源码每次得到同一个哈希。
+4. 维护者把生成的索引、签名、zip 和源码一起提交，推送到 `dev`。用户在 **设置 → 插件市场** 点 **刷新** 就能看到。装好后插件默认是关闭的，到 **设置 → 插件扩展** 里启用并授权。
+
+如果你自己持有签名私钥，可以跳过 pull request，直接做第 1、3、4 步。没有私钥时不要运行 `pnpm plugins:index`，它签不了名。
 
 ### 签名
 
@@ -271,5 +284,5 @@ plugin.onCommand("sync-now", async () => {
 
 ## 调试
 
-- 设置 → 插件 → 展开插件卡片上的 **日志**。启动失败的原因（例如找不到 Node.js）也会显示在卡片上。
+- 设置 → 插件扩展 → 展开插件卡片上的 **日志**。启动失败的原因（例如找不到 Node.js）也会显示在卡片上。
 - 不启动岛屿也能测试插件：自己写一个小脚本扮演宿主，往插件的 stdin 写 `initialize`，再回应它发出的请求。
