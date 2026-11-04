@@ -72,7 +72,20 @@ fn the_host_matches_the_protocol_description() {
     assert_eq!(gated, METHODS);
     // Methods without a permission are answered in runtime/dispatch.rs.
     let open: Vec<&str> = methods.iter().filter(|method| method["permission"].is_null()).filter_map(|method| method["name"].as_str()).collect();
-    assert_eq!(open, ["host.info", "settings.get", "ui.setInfo", "events.subscribe", "events.unsubscribe"]);
+    assert_eq!(
+        open,
+        [
+            "host.info",
+            "settings.get",
+            "ui.setInfo",
+            "events.subscribe",
+            "events.unsubscribe",
+            "storage.get",
+            "storage.set",
+            "storage.delete",
+            "storage.keys"
+        ]
+    );
     assert!(open.iter().all(|name| method_permission(name).is_none()));
 
     let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");
@@ -487,4 +500,34 @@ fn notifications_are_limited_per_minute() {
     }
     assert!(!take_slot(&mut times, start + Duration::from_secs(59)));
     assert!(take_slot(&mut times, start + Duration::from_secs(60)));
+}
+
+#[test]
+fn storage_keeps_values_within_the_limits() {
+    use super::storage::{answer_storage, set_value, MAX_TOTAL_BYTES, MAX_VALUE_BYTES};
+    let mut values = serde_json::Map::new();
+    set_value(&mut values, "a".into(), json!({ "n": 1 })).expect("small");
+    assert!(set_value(&mut values, "big".into(), json!("x".repeat(MAX_VALUE_BYTES))).is_err());
+    let chunk = json!("x".repeat(MAX_VALUE_BYTES - 100));
+    let mut stored = 0;
+    while set_value(&mut values, format!("k{stored}"), chunk.clone()).is_ok() {
+        stored += 1;
+    }
+    assert!(Value::Object(values.clone()).to_string().len() <= MAX_TOTAL_BYTES);
+    assert!(!values.contains_key(&format!("k{stored}")));
+    // Replacing a value with one that does not fit keeps the old one.
+    assert!(set_value(&mut values, "a".into(), chunk).is_err());
+    assert_eq!(values["a"], json!({ "n": 1 }));
+
+    let dir = std::env::temp_dir().join(format!("focusd-storage-test-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let call = |method: &str, params: Value| answer_storage(&dir, method, &params);
+    assert_eq!(call("storage.get", json!({ "key": "x" })).expect("get"), json!({ "value": null }));
+    call("storage.set", json!({ "key": "x", "value": [1, 2] })).expect("set");
+    assert_eq!(call("storage.get", json!({ "key": "x" })).expect("get"), json!({ "value": [1, 2] }));
+    assert_eq!(call("storage.keys", Value::Null).expect("keys"), json!({ "keys": ["x"] }));
+    assert_eq!(call("storage.delete", json!({ "key": "x" })).expect("delete"), json!({ "deleted": true }));
+    assert_eq!(call("storage.set", json!({ "key": "" , "value": 1 })).expect_err("empty key").0, 400);
+    assert_eq!(call("storage.set", json!({ "key": "y" })).expect_err("no value").0, 400);
+    let _ = std::fs::remove_dir_all(&dir);
 }

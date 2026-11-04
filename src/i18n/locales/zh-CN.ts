@@ -689,6 +689,7 @@ const zhCN: Translations = {
         "agent-status:read": "读取 AI Agent 状态",
         "agent-status:write": "在状态灯上显示 AI Agent 状态",
         "island:notify": "在岛上显示通知",
+        secrets: "在 Windows 凭据管理器中保存密码和令牌",
       },
       needsApproval: "新版本需要更多权限，已暂停。关掉再打开开关即可授权。",
       notAllowed: "先在上面打开“允许运行第三方插件”。",
@@ -724,6 +725,10 @@ const zhCN: Translations = {
         hide: "隐藏",
         notifications: "通知",
         showNotifications: "在岛上显示这个插件的通知",
+        data: "数据",
+        dataHint: "删除插件保存的数据和凭据，插件会重新启动。卸载插件不会删除这些数据。",
+        clearData: "清除数据",
+        confirmClearData: "确认清除",
       },
       market: {
         title: "插件市场",

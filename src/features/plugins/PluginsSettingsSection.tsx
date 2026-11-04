@@ -13,8 +13,20 @@ import "./PluginsSettingsSection.css";
  */
 export function PluginsSettingsSection() {
   const t = useTranslation();
-  const { snapshot, error, busy, setAllowed, setEnabled, setSetting, setNotificationsMuted, reload, openFolder, runCommand, uninstall } =
-    usePlugins();
+  const {
+    snapshot,
+    error,
+    busy,
+    setAllowed,
+    setEnabled,
+    setSetting,
+    setNotificationsMuted,
+    clearData,
+    reload,
+    openFolder,
+    runCommand,
+    uninstall,
+  } = usePlugins();
   const [openId, setOpenId] = useState<string | null>(null);
   const allowed = snapshot?.allowThirdParty ?? false;
   const openPlugin = snapshot?.plugins.find((plugin) => plugin.id === openId);
@@ -29,6 +41,7 @@ export function PluginsSettingsSection() {
           onSettingChange={(key, value) => setSetting(openPlugin.id, key, value)}
           onRunCommand={(command) => runCommand(openPlugin.id, command)}
           onNotificationsMutedChange={(muted) => setNotificationsMuted(openPlugin.id, muted)}
+          onClearData={() => clearData(openPlugin.id)}
         />
         {error ? <p className="plugin-card__error">{error}</p> : null}
       </>

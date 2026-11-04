@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    notify,
+    notify, storage,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -48,6 +48,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "events.subscribe" | "events.unsubscribe" if context.spec.api_version >= 2 => {
             return change_subscriptions(context, id, method == "events.subscribe", &params);
         }
+        "storage.get" | "storage.set" | "storage.delete" | "storage.keys" if context.spec.api_version >= 2 => {
+            return answer(id, storage::answer_storage(&context.spec.data_dir, method, &params));
+        }
         _ => {}
     }
     let Some((name, permission)) = method_permission(method) else {
@@ -58,12 +61,17 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
     }
     let owner = &context.spec.plugin_id;
-    let answer = match name {
+    let result = match name {
         "agentStatus.report" => agent_status::report_external_status(owner, &context.spec.display_name, &params),
         "agentStatus.clear" => agent_status::clear_external_status(owner, &params),
         "island.notify" => notify::show(&context.app, owner, &params),
+        "secrets.get" | "secrets.set" | "secrets.delete" => storage::answer_secret(owner, name, &params),
         _ => local_api::call_island(&context.app, name, params),
     };
+    answer(id, result)
+}
+
+fn answer(id: &Value, answer: Result<Value, (u16, String)>) -> String {
     match answer {
         Ok(result) => rpc::result_line(id, result),
         Err((status, message)) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": status }))),

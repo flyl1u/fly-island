@@ -11,6 +11,7 @@ export const PLUGIN_PERMISSIONS = [
   "agent-status:read",
   "agent-status:write",
   "island:notify",
+  "secrets",
 ] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
@@ -187,4 +188,9 @@ export function runPluginNotificationAction(id: string, action: string) {
 
 export function setPluginNotificationsMuted(id: string, muted: boolean) {
   return invoke<PluginsSnapshot>("set_plugin_notifications_muted", { id, muted });
+}
+
+/** Deletes what the plugin stored (its data folder and secrets); a running plugin is restarted. */
+export function clearPluginData(id: string) {
+  return invoke<PluginsSnapshot>("clear_plugin_data", { id });
 }

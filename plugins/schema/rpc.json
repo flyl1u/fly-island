@@ -2,7 +2,10 @@
   "$comment": "The FocuSD Island plugin protocol: JSON-RPC 2.0 over stdio, one message per line. This file is the source of truth; src-tauri/src/plugin_host/tests.rs checks the host against it and docs/plugins/README.md describes it for people. 'since' is the plugin API version (manifest apiVersion) that introduced the item; 'capability' names the entry in initialize.capabilities that says the host has it.",
   "apiVersions": { "min": 1, "current": 2 },
   "capabilities": [
-    { "name": "events", "since": 2, "meaning": "events.subscribe / events.unsubscribe and the 'event' notification." }
+    { "name": "events", "since": 2, "meaning": "events.subscribe / events.unsubscribe and the 'event' notification." },
+    { "name": "notifications", "since": 2, "meaning": "island.notify and the 'notification.action' notification." },
+    { "name": "storage", "since": 2, "meaning": "storage.get / set / delete / keys." },
+    { "name": "secrets", "since": 2, "meaning": "secrets.get / set / delete." }
   ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
@@ -11,7 +14,8 @@
     { "name": "notes:write", "since": 1 },
     { "name": "agent-status:read", "since": 2 },
     { "name": "agent-status:write", "since": 1 },
-    { "name": "island:notify", "since": 2 }
+    { "name": "island:notify", "since": 2 },
+    { "name": "secrets", "since": 2 }
   ],
   "events": [
     { "name": "todos.changed", "permission": "todos:read", "since": 2, "payload": "{ date }; call todos.list for the todos" },
@@ -56,6 +60,34 @@
       "since": 2,
       "params": { "events": "[string] (max 16)" },
       "result": "{ events }"
+    },
+    {
+      "name": "storage.get",
+      "permission": null,
+      "since": 2,
+      "params": { "key": "string (1-128 chars)" },
+      "result": "{ value }: null when the key is not set"
+    },
+    {
+      "name": "storage.set",
+      "permission": null,
+      "since": 2,
+      "params": { "key": "string (1-128 chars)", "value": "any JSON (max 64 KB as JSON; the plugin's whole storage max 1 MB, else status 413)" },
+      "result": "{}"
+    },
+    {
+      "name": "storage.delete",
+      "permission": null,
+      "since": 2,
+      "params": { "key": "string" },
+      "result": "{ deleted }"
+    },
+    {
+      "name": "storage.keys",
+      "permission": null,
+      "since": 2,
+      "params": null,
+      "result": "{ keys }"
     },
     {
       "name": "todos.list",
@@ -119,6 +151,27 @@
       "since": 2,
       "params": { "title": "string (1-80 chars)", "body?": "string (max 200)", "durationMs?": "number, clamped to 2000-15000, default 5000", "actions?": "[{ id: [A-Za-z0-9-]{1,32}, title: string (max 16) }] (max 2)" },
       "result": "{ muted }: true when the user turned this plugin's messages off (nothing is shown). At most 6 per minute per plugin, else -32000 with status 429."
+    },
+    {
+      "name": "secrets.get",
+      "permission": "secrets",
+      "since": 2,
+      "params": { "key": "letters, digits, '.', '_', '-' (1-64 chars)" },
+      "result": "{ value }: null when not set"
+    },
+    {
+      "name": "secrets.set",
+      "permission": "secrets",
+      "since": 2,
+      "params": { "key": "as above", "value": "string (max 1024 chars); at most 32 secrets per plugin (status 413)" },
+      "result": "{}"
+    },
+    {
+      "name": "secrets.delete",
+      "permission": "secrets",
+      "since": 2,
+      "params": { "key": "as above" },
+      "result": "{ deleted }"
     }
   ],
   "toPlugin": [
@@ -141,6 +194,6 @@
     { "code": -32600, "meaning": "Not a valid JSON-RPC 2.0 message." },
     { "code": -32601, "meaning": "Unknown method." },
     { "code": -32001, "meaning": "The plugin was not given the permission the method needs." },
-    { "code": -32000, "meaning": "The island answered with an error; data.status is 400 bad params, 404 not found, 429 too many requests, 504 no answer in time." }
+    { "code": -32000, "meaning": "The island answered with an error; data.status is 400 bad params, 404 not found, 413 too large, 429 too many requests, 500 the host could not do it (e.g. a file or the Credential Manager failed), 504 no answer in time." }
   ]
 }

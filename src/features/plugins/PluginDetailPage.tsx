@@ -1,4 +1,5 @@
-import { ArrowLeft, Play } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Eraser, Play } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import type { PluginInfo } from "./api";
@@ -14,6 +15,7 @@ export function PluginDetailPage({
   onSettingChange,
   onRunCommand,
   onNotificationsMutedChange,
+  onClearData,
 }: {
   plugin: PluginInfo;
   busy: boolean;
@@ -21,10 +23,13 @@ export function PluginDetailPage({
   onSettingChange: (key: string, value: unknown) => void;
   onRunCommand: (command: string) => void;
   onNotificationsMutedChange: (muted: boolean) => void;
+  onClearData: () => void;
 }) {
   const t = useTranslation();
   const { locale } = useLocale();
   const running = plugin.status === "running";
+  // Clearing takes a second click, like uninstalling.
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   return (
     <>
@@ -112,6 +117,30 @@ export function PluginDetailPage({
                     <span>{command.title[locale]}</span>
                   </button>
                 ))}
+              </div>
+            </>
+          ) : null}
+          {plugin.hasProcess && !plugin.builtin ? (
+            <>
+              <div className="settings-section__header">
+                <span>{t.settings.plugins.detail.data}</span>
+              </div>
+              <p className="settings-section__hint">{t.settings.plugins.detail.dataHint}</p>
+              <div className="plugin-card__actions">
+                <button
+                  className={`plugin-card__button${confirmingClear ? " plugin-card__button--danger" : ""}`}
+                  type="button"
+                  disabled={busy}
+                  onBlur={() => setConfirmingClear(false)}
+                  onClick={() => {
+                    if (!confirmingClear) return setConfirmingClear(true);
+                    setConfirmingClear(false);
+                    onClearData();
+                  }}
+                >
+                  <Eraser size={12} strokeWidth={2.4} />
+                  <span>{confirmingClear ? t.settings.plugins.detail.confirmClearData : t.settings.plugins.detail.clearData}</span>
+                </button>
               </div>
             </>
           ) : null}

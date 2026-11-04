@@ -8,6 +8,7 @@
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
 //! - notify.rs: messages plugins show on the island (`island.notify`)
+//! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 
 mod builtin;
@@ -23,6 +24,7 @@ mod rpc;
 mod runtime;
 mod settings;
 mod signature;
+mod storage;
 mod store;
 #[cfg(test)]
 mod tests;

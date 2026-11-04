@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  clearPluginData,
   listPlugins,
   openPluginsFolder,
   reloadPlugins,
@@ -60,6 +61,7 @@ export function usePlugins() {
     openFolder: useCallback(() => void run(openPluginsFolder), [run]),
     runCommand: useCallback((id: string, command: string) => void run(() => runPluginCommand(id, command)), [run]),
     uninstall: useCallback((id: string) => void run(() => uninstallPlugin(id)), [run]),
+    clearData: useCallback((id: string) => void run(() => clearPluginData(id)), [run]),
     setNotificationsMuted: useCallback(
       (id: string, muted: boolean) => void run(() => setPluginNotificationsMuted(id, muted)),
       [run],

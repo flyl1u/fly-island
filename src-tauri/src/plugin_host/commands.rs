@@ -9,7 +9,7 @@ use super::{
     grants::{stop_all, stop_plugin, sync_processes, update_state},
     host, lock, market, notify,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
-    runtime, settings,
+    runtime, settings, storage,
 };
 
 /// One index entry with what this install knows about it. Mirrored by
@@ -245,5 +245,28 @@ pub fn set_plugin_notifications_muted(id: String, muted: bool) -> Result<Plugins
         state.plugins.entry(id.clone()).or_default().notifications_muted = muted;
         Ok(())
     })?;
+    snapshot()
+}
+
+/// "清除数据": stops the plugin, deletes its data folder and its secrets, and
+/// starts it again if it is on.
+#[tauri::command]
+pub async fn clear_plugin_data(id: String) -> Result<PluginsSnapshot, String> {
+    if builtin::is_builtin(&id) {
+        return Err("Built-in plugins keep no plugin data.".into());
+    }
+    let host = host()?;
+    if !lock(&host.installed).iter().any(|plugin| plugin.folder == id) {
+        return Err("Plugin not found.".into());
+    }
+    let data_dir = host.data_dir.join(&id);
+    tauri::async_runtime::spawn_blocking(move || {
+        stop_plugin(&id)?;
+        let cleared = storage::clear_plugin_data(&id, &data_dir);
+        sync_processes()?;
+        cleared
+    })
+    .await
+    .map_err(|error| format!("The clear task failed: {error}"))??;
     snapshot()
 }

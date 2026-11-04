@@ -686,6 +686,7 @@ const en: Translations = {
         "agent-status:read": "Read AI Agent status",
         "agent-status:write": "Show AI Agent status on the light",
         "island:notify": "Show notifications on the island",
+        secrets: "Keep passwords and tokens in Windows Credential Manager",
       },
       needsApproval: "The new version asks for more permissions, so it is paused. Switch it off and on to allow them.",
       notAllowed: "Turn on “Allow third-party plugins” above first.",
@@ -721,6 +722,10 @@ const en: Translations = {
         hide: "Hide",
         notifications: "Notifications",
         showNotifications: "Show this plugin's notifications on the island",
+        data: "Data",
+        dataHint: "Deletes what the plugin saved, including its secrets, and restarts it. Uninstalling keeps this data.",
+        clearData: "Clear data",
+        confirmClearData: "Confirm clear",
       },
       market: {
         title: "Plugin market",
