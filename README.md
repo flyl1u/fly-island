@@ -13,6 +13,8 @@
     <a href="https://github.com/flyl1u/fly-island/releases/latest">下载 Release</a>
     ·
     <a href="https://github.com/flyl1u/fly-island/issues">反馈 Issue</a>
+    ·
+    <a href="#用户交流群">用户交流群</a>
   </p>
 
   <p>
@@ -75,6 +77,16 @@ fly-island 把分散在不同窗口中的高频操作放到一个可折叠、可
 - React 19 + TypeScript：前端界面和交互
 - Rust：窗口、快捷键、剪贴板、媒体和文件等桌面能力
 - pnpm：依赖安装与项目脚本
+
+## 用户交流群
+
+欢迎加入 **fly-island 用户交流群**，交流使用体验、反馈问题和分享建议。使用微信扫描下方二维码即可入群。
+
+<p align="center">
+  <img src="docs/assets/wechat-community.jpg" alt="fly-island 微信用户交流群二维码" width="360">
+</p>
+
+二维码有有效期，当前图片标注为 **11 月 11 日前有效**；若已失效，可通过 [Issue](https://github.com/flyl1u/fly-island/issues) 反馈以便更新。
 
 ## 开发与构建
 

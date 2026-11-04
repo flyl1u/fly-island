@@ -13,6 +13,8 @@
     <a href="https://github.com/flyl1u/fly-island/releases/latest">Download Release</a>
     ·
     <a href="https://github.com/flyl1u/fly-island/issues">Report an Issue</a>
+    ·
+    <a href="#community">Community</a>
   </p>
 
   <p>
@@ -73,6 +75,16 @@ Expand the island to switch between tasks, music, clipboard, settings, and messa
 - React 19 + TypeScript for the interface and interactions
 - Rust for windows, shortcuts, clipboard, media, and file capabilities
 - pnpm for dependency management and project scripts
+
+## Community
+
+Join the **fly-island user group on WeChat** to discuss the app, report problems, and share suggestions. Scan the QR code below with WeChat to join.
+
+<p align="center">
+  <img src="docs/assets/wechat-community.jpg" alt="QR code for the fly-island WeChat user group" width="360">
+</p>
+
+The QR code expires; the current image says it is **valid before November 11**. If it has expired, please [open an issue](https://github.com/flyl1u/fly-island/issues) to request an update.
 
 ## Development and build
 
