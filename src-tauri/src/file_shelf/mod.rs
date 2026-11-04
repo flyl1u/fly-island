@@ -1,9 +1,11 @@
 //! File shelf: files dropped on the island, kept as path references (never copied)
 //! so they can be dragged out, copied, opened or shown in Explorer later.
 
+mod availability;
 mod store;
 #[cfg(test)]
 mod tests;
+mod thumbnail;
 
 use serde::{Deserialize, Serialize};
 use std::{
@@ -18,7 +20,9 @@ use std::{
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 use crate::win32;
+use availability::{Availability, Presence};
 use store::*;
+use thumbnail::Thumbnails;
 
 static FILE_SHELF: OnceLock<FileShelfService> = OnceLock::new();
 
@@ -38,6 +42,9 @@ pub struct FileShelfItem {
     size: u64,
     #[serde(default)]
     added_at: i64,
+    /// Kept at the top, and never removed by auto cleanup or the entry cap.
+    #[serde(default)]
+    pinned: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -48,6 +55,8 @@ pub struct FileShelfEntry {
     /// The path no longer exists (moved, renamed or deleted). Worked out on each
     /// snapshot, never stored.
     missing: bool,
+    /// Its drive or network share did not answer, so whether it exists is unknown.
+    unreachable: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -60,6 +69,8 @@ struct FileShelfService {
     path: PathBuf,
     items: Mutex<Vec<FileShelfItem>>,
     options: Mutex<FileShelfOptions>,
+    availability: Availability,
+    thumbnails: Thumbnails,
 }
 
 impl FileShelfService {
@@ -79,15 +90,26 @@ impl FileShelfService {
         change: impl FnOnce(Vec<FileShelfItem>) -> Vec<FileShelfItem>,
     ) -> Result<FileShelfSnapshot, String> {
         let options = self.options();
+        // Checked before taking the list lock: a slow volume may take a moment.
+        let paths: Vec<String> = self.items().iter().map(|item| item.path.clone()).collect();
+        let known = self.availability.check(&paths);
+        let presence = |path: &str| {
+            known.get(path).copied().unwrap_or_else(|| {
+                // Just added, so on a volume that answered a moment ago.
+                if Path::new(path).exists() {
+                    Presence::Present
+                } else {
+                    Presence::Missing
+                }
+            })
+        };
         let mut items = self.items();
-        let next = prune(change(items.clone()), options, current_unix_millis(), |path| {
-            Path::new(path).exists()
-        });
+        let next = prune(change(items.clone()), options, current_unix_millis(), presence);
         if next != *items {
             save_items(&self.path, &next)?;
             *items = next;
         }
-        Ok(snapshot_of(&items))
+        Ok(snapshot_of(&items, presence))
     }
 
     fn path_of(&self, id: &str) -> Result<String, String> {
@@ -115,13 +137,17 @@ impl FileShelfService {
     }
 }
 
-fn snapshot_of(items: &[FileShelfItem]) -> FileShelfSnapshot {
+fn snapshot_of(items: &[FileShelfItem], presence: impl Fn(&str) -> Presence) -> FileShelfSnapshot {
     FileShelfSnapshot {
         items: items
             .iter()
-            .map(|item| FileShelfEntry {
-                missing: !Path::new(&item.path).exists(),
-                item: item.clone(),
+            .map(|item| {
+                let presence = presence(&item.path);
+                FileShelfEntry {
+                    missing: presence == Presence::Missing,
+                    unreachable: presence == Presence::Unreachable,
+                    item: item.clone(),
+                }
             })
             .collect(),
     }
@@ -137,8 +163,13 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         .map_err(|error| format!("Failed to resolve app data directory: {error}"))?
         .join(FILE_SHELF_FILE_NAME);
     let items = Mutex::new(load_items(&path));
-    let options = Mutex::new(FileShelfOptions::default());
-    let _ = FILE_SHELF.set(FileShelfService { path, items, options });
+    let _ = FILE_SHELF.set(FileShelfService {
+        path,
+        items,
+        options: Mutex::new(FileShelfOptions::default()),
+        availability: Availability::default(),
+        thumbnails: Thumbnails::default(),
+    });
     Ok(())
 }
 
@@ -174,6 +205,7 @@ fn describe(path: &str, now: i64) -> Option<FileShelfItem> {
         is_dir: metadata.is_dir(),
         size: if metadata.is_dir() { 0 } else { metadata.len() },
         added_at: now,
+        pinned: false,
     })
 }
 
@@ -202,11 +234,36 @@ pub async fn add_file_shelf_paths(paths: Vec<String>) -> Result<FileShelfSnapsho
 }
 
 #[tauri::command]
-pub async fn remove_file_shelf_item(id: String) -> Result<FileShelfSnapshot, String> {
+pub async fn remove_file_shelf_items(ids: Vec<String>) -> Result<FileShelfSnapshot, String> {
     service()?.update(|mut items| {
-        items.retain(|item| item.id != id);
+        items.retain(|item| !ids.contains(&item.id));
         items
     })
+}
+
+#[tauri::command]
+pub async fn toggle_file_shelf_pin(id: String) -> Result<FileShelfSnapshot, String> {
+    service()?.update(|mut items| {
+        if let Some(item) = items.iter_mut().find(|item| item.id == id) {
+            item.pinned = !item.pinned;
+        }
+        items
+    })
+}
+
+/// A small PNG data URL previewing an image entry; `None` for other files or when the
+/// image cannot be read. Decoding runs off the async runtime's threads.
+#[tauri::command]
+pub async fn get_file_shelf_thumbnail(id: String) -> Result<Option<String>, String> {
+    let path = service()?.path_of(&id)?;
+    if !thumbnail::is_previewable(&path) {
+        return Ok(None);
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        service().map(|service| service.thumbnails.preview(&path))
+    })
+    .await
+    .map_err(|error| format!("Failed to preview {error}"))?
 }
 
 #[tauri::command]

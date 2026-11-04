@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowDownToLine, Check, Inbox, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDownToLine } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import { FileShelfHeader } from "./FileShelfHeader";
 import { FileShelfItemRow } from "./FileShelfItemRow";
+import { EMPTY_SELECTION, filterShelfItems, keepVisible, selectEntry, targetIds } from "./selection";
 import type { FileShelfController } from "./useFileShelf";
 import "./FileShelfPanel.css";
-
-// A first click on Clear arms it; it disarms again if not confirmed in time.
-const CLEAR_CONFIRM_MS = 3_000;
 
 export function FileShelfPanel({
   shelf,
@@ -20,74 +19,71 @@ export function FileShelfPanel({
   revealOnDoubleClick: boolean;
 }) {
   const t = useTranslation();
-  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [query, setQuery] = useState("");
+  const [rawSelection, setSelection] = useState(EMPTY_SELECTION);
   const listRef = useRef<HTMLDivElement>(null);
   const { items, error, recentDrop, refresh } = shelf;
   const recentIds = new Set(recentDrop?.ids ?? []);
+  const visible = useMemo(() => filterShelfItems(items, query), [items, query]);
+  const visibleIds = useMemo(() => visible.map((item) => item.id), [visible]);
+  // Entries that left the list (removed, cleaned up, filtered out) leave the selection.
+  const selection = keepVisible(rawSelection, visibleIds);
+  const selected = new Set(selection.ids);
 
   // Files may have moved since the page was last open.
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  // Dropped files land on top; clear the search and bring them into view.
   useEffect(() => {
-    if (!confirmingClear) return;
-    const timer = window.setTimeout(() => setConfirmingClear(false), CLEAR_CONFIRM_MS);
-    return () => window.clearTimeout(timer);
-  }, [confirmingClear]);
-
-  // Dropped files land on top; bring them into view.
-  useEffect(() => {
-    if (recentDrop) listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    if (!recentDrop) return;
+    setQuery("");
+    listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [recentDrop]);
 
   return (
     <section className={`shelf-panel${isDropTarget ? " shelf-panel--dropping" : ""}`} aria-label={t.fileShelf.title}>
-      <header className="shelf-panel__header">
-        <div className="shelf-panel__title">
-          <Inbox size={16} strokeWidth={2.2} />
-          <span>{t.fileShelf.title}</span>
-          <strong>{items.length}</strong>
-          {recentDrop?.allExisting && (
-            <em key={recentDrop.key} className="shelf-panel__notice" role="status">
-              {t.fileShelf.alreadyOnShelf}
-            </em>
-          )}
-        </div>
-        <button
-          className={`shelf-clear-button${confirmingClear ? " shelf-clear-button--confirming" : ""}`}
-          type="button"
-          disabled={items.length === 0}
-          title={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
-          aria-label={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
-          onClick={() => {
-            if (confirmingClear) {
-              setConfirmingClear(false);
-              void shelf.clear();
-            } else {
-              setConfirmingClear(true);
-            }
-          }}
-        >
-          {confirmingClear ? <Check size={14} strokeWidth={2.7} /> : <Trash2 size={14} strokeWidth={2.2} />}
-        </button>
-      </header>
+      <FileShelfHeader
+        count={items.length}
+        noticeKey={recentDrop?.allExisting ? recentDrop.key : null}
+        query={query}
+        selectedCount={selection.ids.length}
+        onQueryChange={setQuery}
+        onClear={() => void shelf.clear()}
+        onCopySelected={() => void shelf.copy(selection.ids)}
+        onRemoveSelected={() => void shelf.remove(selection.ids)}
+        onClearSelection={() => setSelection(EMPTY_SELECTION)}
+      />
       {error && <p className="shelf-panel__error" role="alert">{error}</p>}
       {items.length === 0 ? (
         <div className="shelf-empty">{isDropTarget ? t.fileShelf.dropHint : t.fileShelf.empty}</div>
+      ) : visible.length === 0 ? (
+        <div className="shelf-empty">{t.fileShelf.emptySearch}</div>
       ) : (
-        <div ref={listRef} className="shelf-list" role="list">
-          {items.map((item) => (
+        <div
+          ref={listRef}
+          className="shelf-list"
+          role="list"
+          aria-multiselectable="true"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelection(EMPTY_SELECTION);
+          }}
+        >
+          {visible.map((item) => (
             <FileShelfItemRow
               key={item.id}
               item={item}
               isRecent={recentIds.has(item.id)}
+              isSelected={selected.has(item.id)}
               dragHint={revealOnDoubleClick ? t.fileShelf.dragHintReveal : t.fileShelf.dragHint}
-              onDragOut={(id) => void shelf.startDrag(id)}
+              onSelect={(id, mode) => setSelection((current) => selectEntry(keepVisible(current, visibleIds), visibleIds, id, mode))}
+              onDragOut={(id) => void shelf.startDrag(targetIds(selection, id))}
               onOpen={(id) => void (revealOnDoubleClick ? shelf.reveal(id) : shelf.open(id))}
-              onCopy={shelf.copy}
+              onCopy={(id) => shelf.copy([id])}
               onReveal={(id) => void shelf.reveal(id)}
-              onRemove={(id) => void shelf.remove(id)}
+              onTogglePin={(id) => void shelf.togglePin(id)}
+              onRemove={(id) => void shelf.remove([id])}
             />
           ))}
         </div>

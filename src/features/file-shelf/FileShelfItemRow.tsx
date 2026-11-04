@@ -1,49 +1,53 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { Check, Copy, File, FileArchive, FileAudio, FileImage, FileText, FileVideo, Folder, FolderOpen, X, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { Check, Copy, FolderOpen, Pin, PinOff, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { FileShelfItem } from "./api";
-import { formatFileSize, getFileKind, type FileKind } from "./fileShelf";
+import { formatFileSize } from "./fileShelf";
+import { FileShelfItemIcon } from "./FileShelfItemIcon";
+import type { SelectMode } from "./selection";
 import "./FileShelfItemRow.css";
-
-const KIND_ICONS: Record<FileKind, LucideIcon> = {
-  folder: Folder,
-  image: FileImage,
-  video: FileVideo,
-  audio: FileAudio,
-  archive: FileArchive,
-  text: FileText,
-  file: File,
-};
 
 // Movement (px) that turns a press on a row into a drag, so double-clicks still open.
 const DRAG_THRESHOLD_PX = 4;
 const COPIED_FLASH_MS = 1_100;
 
+function selectMode(event: ReactMouseEvent): SelectMode {
+  if (event.shiftKey) return "range";
+  return event.ctrlKey || event.metaKey ? "toggle" : "single";
+}
+
 export function FileShelfItemRow({
   item,
   isRecent,
+  isSelected,
   dragHint,
+  onSelect,
   onDragOut,
   onOpen,
   onCopy,
   onReveal,
+  onTogglePin,
   onRemove,
 }: {
   item: FileShelfItem;
   /** Just added (or moved to the top) by a drop. */
   isRecent: boolean;
+  isSelected: boolean;
   /** Tooltip saying how to drag the entry out and what double-clicking does. */
   dragHint: string;
+  onSelect: (id: string, mode: SelectMode) => void;
+  /** Drags this entry out, with the rest of the selection when it is selected. */
   onDragOut: (id: string) => void;
   onOpen: (id: string) => void;
   onCopy: (id: string) => Promise<boolean>;
   onReveal: (id: string) => void;
+  onTogglePin: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
   const t = useTranslation();
   const [copied, setCopied] = useState(false);
   const pressRef = useRef<{ x: number; y: number } | null>(null);
-  const Icon = KIND_ICONS[getFileKind(item.name, item.isDir)];
+  const isAvailable = !item.missing && !item.unreachable;
 
   useEffect(() => {
     if (!copied) return;
@@ -52,7 +56,7 @@ export function FileShelfItemRow({
   }, [copied]);
 
   const press = (event: ReactPointerEvent) => {
-    pressRef.current = event.button === 0 && !item.missing ? { x: event.clientX, y: event.clientY } : null;
+    pressRef.current = event.button === 0 && isAvailable ? { x: event.clientX, y: event.clientY } : null;
   };
   const move = (event: ReactPointerEvent) => {
     const start = pressRef.current;
@@ -66,36 +70,46 @@ export function FileShelfItemRow({
     onDragOut(item.id);
   };
 
+  const status = item.missing ? t.fileShelf.missing : item.unreachable ? t.fileShelf.unreachable : null;
+  const hint = item.missing ? t.fileShelf.missingHint : item.unreachable ? t.fileShelf.unreachableHint : dragHint;
+  const className = [
+    "shelf-item",
+    item.missing ? "shelf-item--missing" : "",
+    item.unreachable ? "shelf-item--unreachable" : "",
+    item.pinned ? "shelf-item--pinned" : "",
+    isSelected ? "shelf-item--selected" : "",
+    isRecent ? "shelf-item--recent" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <article className={`shelf-item${item.missing ? " shelf-item--missing" : ""}${isRecent ? " shelf-item--recent" : ""}`} role="listitem">
+    <article className={className} role="listitem" aria-selected={isSelected}>
       <button
         className="shelf-item__main"
         type="button"
-        title={item.missing ? `${t.fileShelf.missingHint}\n${item.path}` : `${dragHint}\n${item.path}`}
+        title={`${hint}\n${item.path}`}
         onPointerDown={press}
         onPointerMove={move}
         onPointerUp={() => {
           pressRef.current = null;
         }}
+        onClick={(event) => onSelect(item.id, selectMode(event))}
         onDoubleClick={() => {
-          if (!item.missing) onOpen(item.id);
+          if (isAvailable) onOpen(item.id);
         }}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && !item.missing) onOpen(item.id);
+          if (event.key === "Enter" && isAvailable) onOpen(item.id);
         }}
       >
-        <span className="shelf-item__icon" aria-hidden="true">
-          <Icon size={20} strokeWidth={1.9} />
-        </span>
+        <FileShelfItemIcon id={item.id} name={item.name} isDir={item.isDir} available={isAvailable} />
         <span className="shelf-item__body">
           <span className="shelf-item__name">{item.name}</span>
           <span className="shelf-item__meta">
-            {item.missing ? t.fileShelf.missing : item.isDir ? t.fileShelf.folder : formatFileSize(item.size)}
+            {status ?? (item.isDir ? t.fileShelf.folder : formatFileSize(item.size))}
           </span>
         </span>
       </button>
       <div className="shelf-item__actions">
-        {!item.missing && (
+        {isAvailable && (
           <>
             <button
               className={`shelf-copy-button${copied ? " shelf-copy-button--copied" : ""}`}
@@ -118,6 +132,16 @@ export function FileShelfItemRow({
             </button>
           </>
         )}
+        <button
+          className={`shelf-pin-button${item.pinned ? " shelf-pin-button--active" : ""}`}
+          type="button"
+          title={item.pinned ? t.fileShelf.unpin : t.fileShelf.pin}
+          aria-label={item.pinned ? t.fileShelf.unpin : t.fileShelf.pin}
+          aria-pressed={item.pinned}
+          onClick={() => onTogglePin(item.id)}
+        >
+          {item.pinned ? <PinOff size={14} strokeWidth={2.2} /> : <Pin size={14} strokeWidth={2.2} />}
+        </button>
         <button
           type="button"
           title={t.fileShelf.removeItem}

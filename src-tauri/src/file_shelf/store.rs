@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fs, path::Path};
 
-use super::FileShelfItem;
+use super::{availability::Presence, FileShelfItem};
 
 pub(super) const FILE_SHELF_FILE_NAME: &str = "file-shelf.json";
 
@@ -78,42 +78,53 @@ pub(super) fn parse_items(content: &str) -> Vec<FileShelfItem> {
     normalize(items, MAX_MAX_ITEMS)
 }
 
-/// `added` goes on top in the given order. A path already on the shelf moves up
-/// instead of appearing twice.
+/// `added` goes on top in the given order (below pinned entries). A path already on
+/// the shelf moves up instead of appearing twice, and stays pinned if it was.
 pub(super) fn insert_items(
     existing: Vec<FileShelfItem>,
     added: Vec<FileShelfItem>,
     max_items: usize,
 ) -> Vec<FileShelfItem> {
-    normalize(added.into_iter().chain(existing).collect(), max_items)
+    let pinned: HashSet<String> = existing
+        .iter()
+        .filter(|item| item.pinned)
+        .map(|item| path_key(&item.path))
+        .collect();
+    let added = added.into_iter().map(|mut item| {
+        item.pinned = pinned.contains(&path_key(&item.path));
+        item
+    });
+    normalize(added.chain(existing).collect(), max_items)
 }
 
 /// Applies the cleanup options: drops entries past the age limit, entries whose
-/// file is gone (when asked to; `exists` checks a path), and the oldest ones over
-/// the cap.
+/// file is known to be gone (when asked to; `presence` checks a path), and the
+/// oldest ones over the cap. Pinned entries never age out or count toward the cap.
 pub(super) fn prune(
     items: Vec<FileShelfItem>,
     options: FileShelfOptions,
     now: i64,
-    exists: impl Fn(&str) -> bool,
+    presence: impl Fn(&str) -> Presence,
 ) -> Vec<FileShelfItem> {
     let max_age = i64::from(options.max_age_days) * DAY_MILLIS;
     let kept = items
         .into_iter()
-        .filter(|item| max_age == 0 || now - item.added_at <= max_age)
-        .filter(|item| !options.remove_missing || exists(&item.path))
+        .filter(|item| item.pinned || max_age == 0 || now - item.added_at <= max_age)
+        // An unreachable share or unplugged drive is not proof the file is gone.
+        .filter(|item| !options.remove_missing || presence(&item.path) != Presence::Missing)
         .collect();
     normalize(kept, options.max_items)
 }
 
-/// Keeps the first entry for each path and at most `max_items` entries.
+/// Pinned entries first, then the rest, each in their own order; keeps the first
+/// entry for each path and at most `max_items` unpinned entries.
 fn normalize(items: Vec<FileShelfItem>, max_items: usize) -> Vec<FileShelfItem> {
     let mut seen = HashSet::new();
-    items
+    let (pinned, rest): (Vec<_>, Vec<_>) = items
         .into_iter()
         .filter(|item| seen.insert(path_key(&item.path)))
-        .take(max_items)
-        .collect()
+        .partition(|item| item.pinned);
+    pinned.into_iter().chain(rest.into_iter().take(max_items)).collect()
 }
 
 /// Windows paths are case-insensitive and accept either slash.

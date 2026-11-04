@@ -22,7 +22,7 @@ arboard = "3"
 base64 = "0.22"
 clipboard-win = "5"
 getrandom = "0.3"
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 imap = "2.4"
 imap-proto = "0.10"
 keyring = { version = "4.2", default-features = false, features = ["v1", "windows-native-keyring-store"] }

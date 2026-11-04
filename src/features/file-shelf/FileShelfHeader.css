@@ -1,0 +1,181 @@
+.shelf-panel__header {
+  flex: none;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+}
+
+.shelf-panel__title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: rgba(243, 242, 247, 0.9);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shelf-panel__title svg {
+  color: rgba(204, 244, 232, 0.8);
+}
+
+.shelf-panel__title strong {
+  color: rgba(205, 229, 222, 0.68);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.shelf-clear-button {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(229, 226, 238, 0.62);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--color-white-a08);
+  border-radius: 7px;
+  outline: none;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.shelf-clear-button:hover:not(:disabled) {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.11);
+  transform: translateY(-1px);
+}
+
+.shelf-clear-button--confirming,
+.shelf-clear-button--confirming:hover:not(:disabled) {
+  color: var(--color-white);
+  background: var(--color-danger);
+}
+
+.shelf-clear-button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.shelf-clear-button:focus-visible {
+  outline: 2px solid rgba(190, 240, 225, 0.76);
+  outline-offset: 2px;
+}
+
+.shelf-panel__notice {
+  color: rgba(190, 240, 225, 0.86);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  animation: shelfNoticeFade 1200ms ease both;
+}
+
+@keyframes shelfNoticeFade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Covers the whole panel while files are dragged over a non-empty shelf; the list
+   stays in place underneath so nothing jumps. */
+
+.shelf-search {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: rgba(225, 223, 233, 0.5);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--color-white-a08);
+  border-radius: 7px;
+}
+
+.shelf-search:focus-within {
+  border-color: rgba(110, 231, 200, 0.5);
+}
+
+.shelf-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  color: rgba(243, 242, 247, 0.9);
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shelf-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.shelf-search button,
+.shelf-selection-bar button {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  outline: none;
+  cursor: pointer;
+}
+
+.shelf-search button {
+  width: 18px;
+  height: 18px;
+}
+
+/* Acts on two or more selected entries. */
+.shelf-selection-bar {
+  flex: none;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 4px 0 10px;
+  color: rgba(214, 248, 238, 0.92);
+  background: rgba(110, 231, 200, 0.1);
+  border: 1px solid rgba(110, 231, 200, 0.28);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.shelf-selection-bar span {
+  flex: 1;
+}
+
+.shelf-selection-bar button {
+  width: 24px;
+  height: 24px;
+}
+
+.shelf-selection-bar button:hover,
+.shelf-search button:hover {
+  color: var(--color-white);
+  background: var(--color-white-a16);
+}
+
+.shelf-search button:focus-visible,
+.shelf-selection-bar button:focus-visible {
+  outline: 2px solid rgba(190, 240, 225, 0.76);
+  outline-offset: 1px;
+}

@@ -11,8 +11,12 @@ export type FileShelfItem = {
   /** Bytes for a file; 0 for a folder. */
   size: number;
   addedAt: number;
+  /** Kept at the top, and never removed by auto cleanup or the entry cap. */
+  pinned: boolean;
   /** The original was moved, renamed or deleted since it was added. */
   missing: boolean;
+  /** Its drive or network share did not answer; whether it exists is unknown. */
+  unreachable: boolean;
 };
 
 // 与 src-tauri/src/file_shelf/mod.rs 中的 FileShelfSnapshot 对应。
@@ -41,8 +45,17 @@ export function addFileShelfPaths(paths: string[]) {
   return invoke<FileShelfSnapshot>("add_file_shelf_paths", { paths });
 }
 
-export function removeFileShelfItem(id: string) {
-  return invoke<FileShelfSnapshot>("remove_file_shelf_item", { id });
+export function removeFileShelfItems(ids: string[]) {
+  return invoke<FileShelfSnapshot>("remove_file_shelf_items", { ids });
+}
+
+export function toggleFileShelfPin(id: string) {
+  return invoke<FileShelfSnapshot>("toggle_file_shelf_pin", { id });
+}
+
+/** A small PNG data URL previewing an image entry, or null for other files. */
+export function getFileShelfThumbnail(id: string) {
+  return invoke<string | null>("get_file_shelf_thumbnail", { id });
 }
 
 export function clearFileShelf() {

@@ -6,10 +6,11 @@ import {
   copyFileShelfItems,
   getFileShelf,
   openFileShelfItem,
-  removeFileShelfItem,
+  removeFileShelfItems,
   revealFileShelfItem,
   setFileShelfOptions,
   startFileShelfDrag,
+  toggleFileShelfPin,
   type FileShelfItem,
   type FileShelfOptions,
   type FileShelfSnapshot,
@@ -78,11 +79,11 @@ export function useFileShelf(
     if (result.ids.length > 0) setRecentDrop({ key: Date.now(), ...result });
   }, [run]);
 
-  const startDrag = useCallback(async (id: string) => {
+  const startDrag = useCallback(async (ids: string[]) => {
     if (draggingOutRef.current) return;
     draggingOutRef.current = true;
     try {
-      await run(() => startFileShelfDrag([id], removeAfterDragOut));
+      await run(() => startFileShelfDrag(ids, removeAfterDragOut));
     } finally {
       draggingOutRef.current = false;
     }
@@ -98,9 +99,10 @@ export function useFileShelf(
     addPaths,
     startDrag,
     isDraggingOut,
-    remove: (id: string) => run(() => removeFileShelfItem(id)),
+    remove: (ids: string[]) => run(() => removeFileShelfItems(ids)),
+    togglePin: (id: string) => run(() => toggleFileShelfPin(id)),
     clear: () => run(clearFileShelf),
-    copy: async (id: string) => (await run(() => copyFileShelfItems([id]))) !== null,
+    copy: async (ids: string[]) => (await run(() => copyFileShelfItems(ids))) !== null,
     open: (id: string) => run(() => openFileShelfItem(id)),
     reveal: (id: string) => run(() => revealFileShelfItem(id)),
   }), [addPaths, error, isDraggingOut, items, recentDrop, refresh, run, startDrag]);

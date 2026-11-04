@@ -353,6 +353,18 @@ export type Translations = {
     removeItem: string;
     alreadyOnShelf: string;
     dragHintReveal: string;
+    unreachable: string;
+    unreachableHint: string;
+    pin: string;
+    unpin: string;
+    searchPlaceholder: string;
+    searchLabel: string;
+    clearSearch: string;
+    emptySearch: string;
+    selectedCount: (count: number) => string;
+    copySelected: string;
+    removeSelected: string;
+    clearSelection: string;
   };
 
   settings: {
