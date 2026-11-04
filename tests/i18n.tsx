@@ -80,8 +80,8 @@ const click = async (selector: string) => {
   await act(async () => { element.click(); });
 };
 const switchTo = async (locale: string) => {
-  const select = document.querySelector<HTMLSelectElement>(".locale-control select")!;
-  await act(async () => { select.value = locale; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  await click(".locale-control .select-control__trigger");
+  await click(`.locale-control .select-control__option[data-value='${locale}']`);
 };
 
 if (!automated) mount();

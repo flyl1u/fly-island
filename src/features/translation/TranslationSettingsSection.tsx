@@ -1,8 +1,9 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { Keyboard } from "lucide-react";
+import { SelectControl } from "../../components/controls/SelectControl";
 import { useTranslation } from "../../i18n";
 import { deleteTranslationSecret, hasTranslationSecret, saveTranslationSecret, setTranslationShortcut } from "./api";
-import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS, isTranslationProvider } from "./providers";
+import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS } from "./providers";
 import { useTranslationSettings } from "./useTranslationSettings";
 import "./TranslationSettingsSection.css";
 
@@ -76,18 +77,19 @@ export function TranslationSettingsSection() {
       <section className="settings-section settings-section--translation">
         <div className="settings-section__header"><span>{t.settings.translation.serviceTitle}</span></div>
         <p className="settings-section__hint">{t.translator.credentialHint}</p>
-        <label className="translation-settings__row">
+        <div className="translation-settings__row">
           <span>{t.translator.provider}</span>
-          <select value={provider} onChange={(event) => {
-            const next = event.currentTarget.value;
-            if (!isTranslationProvider(next)) return;
-            setSecretDraft("");
-            setServiceError("");
-            setSettings((current) => ({ ...current, provider: next }));
-          }}>
-            {TRANSLATION_PROVIDERS.map((id) => <option key={id} value={id}>{t.translator.providers[id]}</option>)}
-          </select>
-        </label>
+          <SelectControl
+            value={provider}
+            options={TRANSLATION_PROVIDERS.map((id) => ({ value: id, label: t.translator.providers[id] }))}
+            ariaLabel={t.translator.provider}
+            onChange={(next) => {
+              setSecretDraft("");
+              setServiceError("");
+              setSettings((current) => ({ ...current, provider: next }));
+            }}
+          />
+        </div>
         {provider === "custom" && (
           <label className="translation-settings__row translation-settings__row--stacked">
             <span>{t.translator.baseUrl}</span>

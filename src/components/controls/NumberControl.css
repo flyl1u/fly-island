@@ -1,7 +1,7 @@
 .number-control {
   min-height: 34px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 86px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-xl);
   color: var(--color-text-muted);
@@ -10,21 +10,63 @@
   line-height: 1;
 }
 
-.number-control input {
-  width: 86px;
+.number-control__field {
+  width: 112px;
   height: 32px;
-  min-width: 0;
-  padding: 0 9px;
-  color: var(--color-text);
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: center;
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-md);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.number-control__field:focus-within {
+  border-color: rgba(255, 209, 102, 0.68);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
+}
+
+.number-control__field input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
   outline: none;
   font-size: 12px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
-.number-control input:focus {
-  border-color: rgba(255, 209, 102, 0.68);
-  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
+.number-control__field button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.number-control__field button:hover:not(:disabled) {
+  color: var(--color-white);
+  background: var(--color-white-a10);
+}
+
+.number-control__field button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }

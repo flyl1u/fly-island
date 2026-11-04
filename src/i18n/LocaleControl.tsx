@@ -1,5 +1,8 @@
+import { SelectControl } from "../components/controls/SelectControl";
 import { LOCALE_CODES, TRANSLATIONS, isLocaleCode, type LocaleCode } from "./index";
 import "./LocaleControl.css";
+
+const LOCALE_OPTIONS = LOCALE_CODES.map((code) => ({ value: code, label: TRANSLATIONS[code].localeLabel }));
 
 export function LocaleControl({
   label,
@@ -11,23 +14,18 @@ export function LocaleControl({
   onChange: (locale: LocaleCode) => void;
 }) {
   return (
-    <label className="locale-control">
+    <div className="locale-control">
       <span>{label}</span>
-      <select
+      <SelectControl
         value={value}
-        onChange={(event) => {
-          const next = event.currentTarget.value;
+        options={LOCALE_OPTIONS}
+        ariaLabel={label}
+        onChange={(next) => {
           if (isLocaleCode(next)) {
             onChange(next);
           }
         }}
-      >
-        {LOCALE_CODES.map((code) => (
-          <option key={code} value={code}>
-            {TRANSLATIONS[code].localeLabel}
-          </option>
-        ))}
-      </select>
-    </label>
+      />
+    </div>
   );
 }

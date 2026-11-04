@@ -27,7 +27,6 @@
   line-height: 1.5;
 }
 
-.translation-settings__row select,
 .translation-settings__row input {
   width: 100%;
   height: 32px;
@@ -42,15 +41,6 @@
   font-weight: 700;
 }
 
-.translation-settings__row select {
-  cursor: pointer;
-}
-
-.translation-settings__row option {
-  color: #101013;
-}
-
-.translation-settings__row select:focus,
 .translation-settings__row input:focus {
   border-color: rgba(255, 209, 102, 0.68);
   box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
