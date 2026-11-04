@@ -28,7 +28,8 @@ export function ListTemplate({
   const remote = list.search?.mode === "remote";
   const groups = remote ? list.groups : filterListGroups(list.groups, query ?? "");
   // Items and group titles, plus the search box and error line, for the island's height.
-  const rows = listRowCount(groups) + (list.search ? 1 : 0) + (list.error ? 1 : 0);
+  // The empty and loading box is about three rows tall.
+  const rows = Math.max(listRowCount(groups), groups.length === 0 ? 3 : 0) + (list.search ? 1 : 0) + (list.error ? 1 : 0);
 
   useEffect(() => {
     onRowsChange?.(rows);
