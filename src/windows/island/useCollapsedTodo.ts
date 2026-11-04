@@ -38,8 +38,11 @@ export function useCollapsedTodo(
     );
     return activeTodo?.title ?? null;
   }, [displayedTodoId, todos]);
-  const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle
-    ? todos.filter((todo) => !todo.completed).length
+  // "0 todos left" is not worth a hint; with nothing pending the bar shows what it
+  // would without a todo count.
+  const pendingTodoCount = pendingTodoIds.length;
+  const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
+    ? pendingTodoCount
     : null;
   const collapsedIslandWidth = useMemo(
     () =>
