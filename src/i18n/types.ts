@@ -369,6 +369,7 @@ export type Translations = {
       classic: string;
       liquidGlass: string;
       glassStrength: string;
+      styleTitle: string;
     };
 
     layout: {
@@ -382,6 +383,7 @@ export type Translations = {
       topFilletRadius: string;
       launchAtStartup: string;
       showTitle: string;
+      displayTitle: string;
       autoTuck: string;
       autoTuckSeconds: string;
     };

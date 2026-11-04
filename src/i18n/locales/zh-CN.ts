@@ -369,6 +369,7 @@ const zhCN: Translations = {
       classic: "经典",
       liquidGlass: "液态玻璃",
       glassStrength: "玻璃强度",
+      styleTitle: "风格",
     },
 
     layout: {
@@ -376,12 +377,13 @@ const zhCN: Translations = {
       expandedScale: "展开面板大小",
       showCollapsedText: "显示折叠岛屿文字",
       showIdleTodoCount: "空闲时显示剩余待办数",
-      title: "布局设置",
+      title: "尺寸与位置",
       opacity: "不透明度",
       marginY: "顶部距离",
       topFilletRadius: "贴顶圆角",
       launchAtStartup: "开机自启动",
       showTitle: "显示岛屿名称",
+      displayTitle: "显示内容",
       autoTuck: "无操作时自动收起到屏幕边缘",
       autoTuckSeconds: "闲置多久后收起（秒）",
     },
@@ -417,7 +419,7 @@ const zhCN: Translations = {
     },
 
     colors: {
-      title: "颜色设置",
+      title: "颜色",
       taskText: "任务/待办字样",
       pulse: "亮点颜色",
       islandBackground: "岛屿背景",

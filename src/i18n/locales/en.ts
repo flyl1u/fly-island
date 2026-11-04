@@ -366,6 +366,7 @@ const en: Translations = {
       classic: "Classic",
       liquidGlass: "Liquid glass",
       glassStrength: "Glass strength",
+      styleTitle: "Style",
     },
 
     layout: {
@@ -373,12 +374,13 @@ const en: Translations = {
       expandedScale: "Expanded panel scale",
       showCollapsedText: "Show collapsed island text",
       showIdleTodoCount: "Show todo count when idle",
-      title: "Layout",
+      title: "Size & position",
       opacity: "Opacity",
       marginY: "Top margin",
       topFilletRadius: "Top-edge corner radius",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
+      displayTitle: "Display",
       autoTuck: "Auto-tuck to screen edge when idle",
       autoTuckSeconds: "Idle time before tucking (seconds)",
     },
