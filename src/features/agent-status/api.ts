@@ -41,6 +41,11 @@ export type AgentHooksState = Record<AgentProvider, HookInstallState> & {
   scriptsOutdated: boolean;
 };
 
+/** Brings the editor or terminal window of a session to the front; false when none matched. */
+export function focusAgentWindow(provider: AgentProvider, cwd: string | null, title: string | null) {
+  return invoke<boolean>("focus_agent_window", { provider, cwd, title });
+}
+
 export function getAgentHooksState() {
   return invoke<AgentHooksState>("get_agent_hooks_state");
 }

@@ -404,3 +404,58 @@ fn first_prompt_is_found_after_a_huge_screenshot_line() {
         Some("终端上的乱码是什么情况")
     );
 }
+
+#[test]
+fn session_windows_are_matched_by_folder_and_title() {
+    use super::window_focus::{app_name, best_window, SessionHints, WindowCandidate};
+
+    let window = |title: &str, app: &str| WindowCandidate {
+        title: title.to_string(),
+        app: app.to_string(),
+    };
+    let windows = vec![
+        window("fly-island settings regression - Google Chrome", "chrome"),
+        window("README.md - code - Visual Studio Code", "code"),
+        window(
+            "message_window.rs - fly-island - Visual Studio Code",
+            "code",
+        ),
+        window("✳ 插件市场功能", "windowsterminal"),
+        window("PS E:\\Projects\\MioPicFlow>", "windowsterminal"),
+        window("Codex", "codex"),
+    ];
+    let find = |folder: Option<&str>, title: Option<&str>, is_codex: bool| {
+        best_window(
+            &windows,
+            &SessionHints {
+                folder,
+                title,
+                is_codex,
+            },
+        )
+    };
+
+    // The terminal showing the session title beats the editor with the folder.
+    assert_eq!(
+        find(Some("fly-island"), Some("插件市场功能"), false),
+        Some(3)
+    );
+    // A title cut with an ellipsis still matches.
+    assert_eq!(find(None, Some("插件市场…"), false), Some(3));
+    // Folder only: the editor naming it as a whole segment, not Chrome.
+    assert_eq!(find(Some("fly-island"), Some("别的标题"), false), Some(2));
+    // A folder called "code" is not every "Visual Studio Code" window: only the segment.
+    assert_eq!(find(Some("code"), None, false), Some(1));
+    // A terminal showing the working directory.
+    assert_eq!(find(Some("MioPicFlow"), None, false), Some(4));
+    // Codex sessions fall back to the Codex app; others do not.
+    assert_eq!(find(Some("elsewhere"), None, true), Some(5));
+    assert_eq!(find(Some("elsewhere"), None, false), None);
+    assert_eq!(find(None, Some("x"), false), None);
+
+    assert_eq!(
+        app_name(r"C:\Program Files\Microsoft VS Code\Code.exe"),
+        "code"
+    );
+    assert_eq!(app_name(r"C:\x\WindowsTerminal.exe"), "windowsterminal");
+}

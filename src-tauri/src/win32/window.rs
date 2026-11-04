@@ -13,8 +13,9 @@ use windows::{
                 AllowSetForegroundWindow, EnumWindows, GetClassNameW, GetCursorPos,
                 GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
                 GetWindowRect, GetWindowTextW, IsIconic, IsWindowVisible, SendMessageTimeoutW,
-                SetForegroundWindow, GWL_EXSTYLE, GW_OWNER, SMTO_ABORTIFHUNG, SMTO_BLOCK,
-                SMTO_ERRORONEXIT, WINDOWPLACEMENT, WM_NULL, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+                SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SMTO_ABORTIFHUNG,
+                SMTO_BLOCK, SMTO_ERRORONEXIT, SW_RESTORE, WINDOWPLACEMENT, WM_NULL,
+                WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
             },
         },
     },
@@ -199,6 +200,17 @@ pub(crate) fn is_interactive(window: HWND) -> bool {
                 None,
             )
             .0 != 0
+    }
+}
+
+/// Restores a minimized `window` to its previous size and position. Only for
+/// ordinary windows such as editors and terminals; apps that hide their UI in
+/// a webview should restore themselves (see messenger_activation.rs).
+pub(crate) fn restore_minimized(window: HWND) {
+    if is_minimized(window) {
+        // SAFETY: ShowWindow takes the HWND by value and fails for invalid
+        // windows; its return value only reports the previous visibility.
+        let _ = unsafe { ShowWindow(window, SW_RESTORE) };
     }
 }
 

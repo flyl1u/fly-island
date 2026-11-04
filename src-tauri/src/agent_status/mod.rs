@@ -10,6 +10,7 @@ mod snapshot;
 mod tests;
 mod title;
 mod title_cache;
+mod window_focus;
 
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -217,6 +218,29 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         claude_config_path: claude_config_path.to_string_lossy().to_string(),
         installed_at: current_unix_millis(),
     })
+}
+
+/// Brings the editor or terminal window of an agent session to the front, matched by the
+/// session's folder (`cwd`) and title. Returns false when no window matched.
+#[tauri::command]
+pub async fn focus_agent_window(
+    provider: String,
+    cwd: Option<String>,
+    title: Option<String>,
+) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let folder = cwd
+            .as_deref()
+            .and_then(|cwd| Path::new(cwd.trim_end_matches(['\\', '/'])).file_name())
+            .map(|folder| folder.to_string_lossy().to_string());
+        window_focus::focus_session_window(&window_focus::SessionHints {
+            folder: folder.as_deref(),
+            title: title.as_deref(),
+            is_codex: provider == "codex",
+        })
+    })
+    .await
+    .map_err(|error| format!("Failed to join the window focus task: {error}"))
 }
 
 /// Compares the installed hooks with what Install/Repair would write. Only reads files.
