@@ -216,4 +216,15 @@ mod tests {
         let binding = default_shortcut_binding().expect("the default shortcut is valid");
         assert_eq!(binding.label, DEFAULT_SHORTCUT);
     }
+
+    #[test]
+    fn saved_settings_on_the_old_default_move_to_the_new_one() {
+        let saved = |shortcut: &str| ClipboardHistorySettings {
+            shortcut: shortcut.to_string(),
+            ..ClipboardHistorySettings::default()
+        };
+        assert_eq!(saved("Ctrl+X").normalized().shortcut, DEFAULT_SHORTCUT);
+        assert_eq!(saved("ctrl + x").normalized().shortcut, DEFAULT_SHORTCUT);
+        assert_eq!(saved("Ctrl+Alt+V").normalized().shortcut, "Ctrl+Alt+V");
+    }
 }

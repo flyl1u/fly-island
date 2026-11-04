@@ -24,7 +24,7 @@ use crate::win32::{
 };
 
 const WINDOW_LABEL: &str = "translation";
-const DEFAULT_SHORTCUT: &str = "Alt+C";
+const DEFAULT_SHORTCUT: &str = "Ctrl+Shift+F";
 const HOTKEY_ID: i32 = 0x4654;
 const CHANGE_HOTKEY_MESSAGE: u32 = WM_APP + 0x52;
 const MAX_CHARACTERS: usize = 5_000;

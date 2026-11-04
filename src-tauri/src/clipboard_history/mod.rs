@@ -24,7 +24,11 @@ const MAIN_WINDOW_LABEL: &str = "main";
 
 const DEFAULT_MAX_ITEMS: usize = 30;
 
-const DEFAULT_SHORTCUT: &str = "Ctrl+X";
+const DEFAULT_SHORTCUT: &str = "Ctrl+Shift+W";
+
+// The default before Ctrl+Shift+W. Saved settings still holding it move to the new
+// default; it also took over Cut (Ctrl+X) in every other program.
+const LEGACY_DEFAULT_SHORTCUT: &str = "Ctrl+X";
 
 const MIN_MAX_ITEMS: usize = 5;
 
@@ -73,6 +77,7 @@ impl ClipboardHistorySettings {
         // The default parses to its own label (see hotkey tests), so falling back
         // to the constant matches falling back to its parsed binding.
         self.shortcut = parse_shortcut_binding(&self.shortcut)
+            .filter(|binding| binding.label != LEGACY_DEFAULT_SHORTCUT)
             .map_or_else(default_clipboard_shortcut, |binding| binding.label);
         self
     }

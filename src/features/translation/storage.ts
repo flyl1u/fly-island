@@ -11,8 +11,9 @@ export type TranslationSettings = {
   models: Partial<Record<TranslationProvider, string>>;
 };
 export const STORAGE_KEY = "focusd-island-translation-settings";
+const LEGACY_DEFAULT_SHORTCUTS = new Set(["Alt+Space", "Alt+C"]);
 export const DEFAULT_SETTINGS: TranslationSettings = {
-  shortcut: "Alt+C",
+  shortcut: "Ctrl+Shift+F",
   direction: "auto",
   provider: DEFAULT_TRANSLATION_PROVIDER,
   customBaseUrl: "",
@@ -33,7 +34,8 @@ export function normalizeTranslationSettings(stored: unknown): TranslationSettin
   const value = (typeof stored === "object" && stored !== null ? stored : {}) as Record<string, unknown>;
   const shortcut = typeof value.shortcut === "string" ? value.shortcut : DEFAULT_SETTINGS.shortcut;
   return {
-    shortcut: shortcut === "Alt+Space" ? DEFAULT_SETTINGS.shortcut : shortcut,
+    // Earlier defaults move to the current one; a shortcut the user picked is kept.
+    shortcut: LEGACY_DEFAULT_SHORTCUTS.has(shortcut) ? DEFAULT_SETTINGS.shortcut : shortcut,
     direction: value.direction === "zh-en" || value.direction === "en-zh" ? value.direction : "auto",
     provider: isTranslationProvider(value.provider) ? value.provider : DEFAULT_TRANSLATION_PROVIDER,
     customBaseUrl: typeof value.customBaseUrl === "string" ? value.customBaseUrl : "",

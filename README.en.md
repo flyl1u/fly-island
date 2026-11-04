@@ -62,11 +62,11 @@ Expand the island to switch between tasks, music, clipboard, and messages. Open 
 
 - **QQ Mail** connects from the message panel. Enable IMAP in QQ Mail settings, generate an authorization code, then enter your `@qq.com` address and that code (not your QQ login password). The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect to delete the code. Initial sync does not replay old mail. See the [QQ Mail setup guide (Chinese)](docs/qq-mail.md).
 
-- **Quick translation** opens with **Alt+C** by default. Add a DeepSeek API key in the translator settings; it is stored in Windows Credential Manager. Text is sent to the DeepSeek API when you request a translation. Choose automatic detection or a direction, and press **Tab** in the input to paste the latest clipboard text.
+- **Quick translation** opens with **Ctrl+Shift+F** by default. Add a DeepSeek API key in the translator settings; it is stored in Windows Credential Manager. Text is sent to the DeepSeek API when you request a translation. Choose automatic detection or a direction, and press **Tab** in the input to paste the latest clipboard text.
 
 - **AI status light**: open **Settings → AI Agent 状态灯** and choose **安装/修复**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
 
-- **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut in Settings.
+- **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut (**Ctrl+Shift+W** by default) in Settings.
 
 - **File shelf**: drop files on the island to add them, and press and drag an entry to take it out (a copy; hold Shift to move). Cleanup, missing files, and double-click behavior are under **Settings → File shelf**. See the [file shelf guide (Chinese)](docs/file-shelf.md).
 

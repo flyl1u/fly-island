@@ -154,7 +154,7 @@ export function IslandHeader({
         <button
           className="icon-button island-translate-button"
           type="button"
-          title={`${t.translator.title} (Alt+C)`}
+          title={`${t.translator.title} (Ctrl+Shift+F)`}
           aria-label={t.translator.title}
           onClick={(event) => {
             event.stopPropagation();

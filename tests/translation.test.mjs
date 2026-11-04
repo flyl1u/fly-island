@@ -11,7 +11,8 @@ test("settings saved before providers existed keep DeepSeek and their shortcut a
     models: {},
   });
   assert.deepEqual(normalizeTranslationSettings(null), DEFAULT_SETTINGS);
-  assert.equal(normalizeTranslationSettings({ shortcut: "Alt+Space" }).shortcut, "Alt+C");
+  assert.equal(normalizeTranslationSettings({ shortcut: "Alt+Space" }).shortcut, "Ctrl+Shift+F");
+  assert.equal(normalizeTranslationSettings({ shortcut: "Alt+C" }).shortcut, "Ctrl+Shift+F");
 });
 
 test("provider, custom base URL and per-provider models are kept when valid", () => {
