@@ -760,6 +760,7 @@ input,
   box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
 }
 
+
 .dot-button--music {
   background: #b69cff;
   box-shadow: 0 0 12px rgba(182, 156, 255, 0.46);
@@ -2271,6 +2272,7 @@ input,
   grid-template-columns: 22px minmax(0, 1fr);
 }
 
+
 .todo-check {
   width: 22px;
   height: 22px;
@@ -2385,6 +2387,22 @@ input,
 
 .todo-start--active {
   background: #c74444;
+}
+
+.todo-start--busy svg {
+  animation: todo-start-spin 900ms linear infinite;
+}
+
+@keyframes todo-start-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-start--busy svg {
+    animation: none;
+  }
 }
 
 .todo-start--active:hover {
