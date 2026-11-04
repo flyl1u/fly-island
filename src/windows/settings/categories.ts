@@ -3,6 +3,7 @@ export const SETTINGS_CATEGORIES = [
   "general",
   "appearance",
   "todos",
+  "music",
   "notifications",
   "clipboard",
   "agents",

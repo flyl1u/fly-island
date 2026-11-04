@@ -42,6 +42,14 @@ export type IslandSettings = {
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;
+  /**
+   * Module switches. Off hides the module on the island and stops its background work;
+   * its data is kept. QQ, WeChat and clipboard history use their existing switches.
+   */
+  todoEnabled: boolean;
+  musicEnabled: boolean;
+  agentStatusEnabled: boolean;
+  mailEnabled: boolean;
 };
 
 export type IslandPreset = {

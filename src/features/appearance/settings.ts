@@ -55,6 +55,10 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   minimizeAction: "tray",
+  todoEnabled: true,
+  musicEnabled: true,
+  agentStatusEnabled: true,
+  mailEnabled: true,
 };
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
@@ -218,6 +222,11 @@ export function normalizeSettings(
       ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
       : DEFAULT_SETTINGS.hoverCollapseDelayMs,
     minimizeAction: settings?.minimizeAction === "tuck" ? "tuck" : "tray",
+    // Module switches: anything but an explicit false keeps the module on.
+    todoEnabled: settings?.todoEnabled !== false,
+    musicEnabled: settings?.musicEnabled !== false,
+    agentStatusEnabled: settings?.agentStatusEnabled !== false,
+    mailEnabled: settings?.mailEnabled !== false,
   };
 }
 

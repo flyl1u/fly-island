@@ -4,8 +4,11 @@ import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from ".
 import { useAudioLevel } from "./useAudioLevel";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
 
-/** Media session state, playback commands and the source the island currently controls. */
-export function useMediaState() {
+/**
+ * Media session state, playback commands and the source the island currently controls.
+ * With `enabled` false (music switched off) nothing is polled and the state stays empty.
+ */
+export function useMediaState(enabled = true) {
   const [mediaState, setMediaState] =
     useState<MediaState>(DEFAULT_MEDIA_STATE);
   const [isMediaTrackChanging, setIsMediaTrackChanging] = useState(false);
@@ -161,9 +164,14 @@ export function useMediaState() {
     [mediaState.playbackStatus, refreshMediaState],
   );
 
-  useAudioLevel(setMediaState, mediaPlaybackIntent);
+  useAudioLevel(setMediaState, mediaPlaybackIntent, enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setMediaState(DEFAULT_MEDIA_STATE);
+      return;
+    }
+
     void refreshMediaState();
 
     const interval = window.setInterval(() => {
@@ -171,7 +179,7 @@ export function useMediaState() {
     }, 1500);
 
     return () => window.clearInterval(interval);
-  }, [refreshMediaState]);
+  }, [enabled, refreshMediaState]);
 
   const effectiveMediaTarget = useMemo(() => {
     if (mediaState.sessions.length === 0) {
@@ -196,13 +204,13 @@ export function useMediaState() {
   }, [musicSourcePriority, mediaState.sessions]);
 
   useEffect(() => {
-    if (mediaTargetRef.current === effectiveMediaTarget) {
+    if (!enabled || mediaTargetRef.current === effectiveMediaTarget) {
       return;
     }
     mediaTargetRef.current = effectiveMediaTarget;
     mediaPlaybackIntent.current = null;
     void refreshMediaState();
-  }, [effectiveMediaTarget, refreshMediaState]);
+  }, [effectiveMediaTarget, enabled, refreshMediaState]);
 
   return {
     mediaState,

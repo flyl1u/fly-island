@@ -8,10 +8,15 @@ export type MediaPlaybackIntent = { status: MediaPlaybackStatus; expiresAt: numb
 export function useAudioLevel(
   setMediaState: Dispatch<SetStateAction<MediaState>>,
   mediaPlaybackIntent: RefObject<MediaPlaybackIntent | null>,
+  enabled = true,
 ) {
   const isRefreshingAudioLevel = useRef(false);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let didCancel = false;
 
     const refreshAudioLevel = async () => {
@@ -89,5 +94,5 @@ export function useAudioLevel(
       didCancel = true;
       window.clearInterval(interval);
     };
-  }, [mediaPlaybackIntent, setMediaState]);
+  }, [enabled, mediaPlaybackIntent, setMediaState]);
 }

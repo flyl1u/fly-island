@@ -6,6 +6,7 @@ import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import { AgentSettingsPage } from "./AgentSettingsPage";
 import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
+import { MusicSettingsPage } from "./MusicSettingsPage";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
@@ -111,12 +112,15 @@ export function SettingsWindow() {
         )}
         {category === "notifications" && (
           <NotificationsSettingsPage
+            settings={settings}
             qqNotifications={qqNotifications}
             wechatReminders={wechatReminders}
+            onSettingsChange={setSettings}
           />
         )}
         {category === "clipboard" && <ClipboardSettingsPage />}
-        {category === "agents" && <AgentSettingsPage />}
+        {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "about" && <ProjectSettingsSection />}
       </LayoutEditor>
     </main>

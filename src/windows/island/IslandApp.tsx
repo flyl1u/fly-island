@@ -18,6 +18,7 @@ import { MusicPlayerPanel } from "../../features/media/MusicPlayerPanel";
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
+import type { TodoItem } from "../../features/todos/types";
 import { useTodos } from "../../features/todos/useTodos";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
@@ -27,10 +28,14 @@ import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useHoverExpand } from "./useHoverExpand";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
+import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
+
+// Stands in for the todo list while todos are switched off, so the collapsed island shows none.
+const NO_TODOS: TodoItem[] = [];
 
 export function IslandApp() {
   const t = useTranslation();
@@ -65,9 +70,9 @@ export function IslandApp() {
     runMediaCommand,
     reorderMusicSource,
     removeMusicSource,
-  } = useMediaState();
+  } = useMediaState(settings.musicEnabled);
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
-  const agentStatus = useAgentStatus();
+  const agentStatus = useAgentStatus(settings.agentStatusEnabled);
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
@@ -81,9 +86,9 @@ export function IslandApp() {
 
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
     useCollapsedTodo(
-      todos,
-      activeTodoId,
-      settings,
+      settings.todoEnabled ? todos : NO_TODOS,
+      settings.todoEnabled ? activeTodoId : null,
+      settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
     );
   const expandedIslandHeight = getExpandedIslandHeight({
@@ -122,6 +127,19 @@ export function IslandApp() {
     clearClipboardHistoryItems,
   } = useClipboardHistory(toggleClipboardHistory);
 
+  const { features, openEnabledPage } = useIslandFeatures({
+    settings,
+    clipboardEnabled: clipboardHistory.settings.enabled,
+    qqEnabled: qqNotifications.snapshot.enabled,
+    wechatEnabled: wechatReminders.snapshot.enabled,
+    qqMail,
+    page,
+    messageSource,
+    setPage,
+    setMessageSource,
+    openIslandPage,
+  });
+
   useEffect(() => {
     if (page !== "music") {
       setMusicSettingsOpen(false);
@@ -144,7 +162,7 @@ export function IslandApp() {
     onCollapse: collapseIsland,
   });
 
-  const openCurrentPage = useCallback(() => openIslandPage(page), [openIslandPage, page]);
+  const openCurrentPage = useCallback(() => openEnabledPage(page), [openEnabledPage, page]);
   useHoverExpand({
     enabled: settings.expandTrigger === "hover",
     delayMs: settings.hoverExpandDelayMs,
@@ -159,15 +177,15 @@ export function IslandApp() {
   usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
   useIslandKeyboard(
-    clipboardHistory.settings.shortcutEnabled,
+    clipboardHistory.settings.enabled && clipboardHistory.settings.shortcutEnabled,
     clipboardHistory.settings.shortcut,
     toggleClipboardHistory,
     collapseIsland,
   );
 
   const agentVisualState = useMemo(
-    () => getAgentVisualState(agentStatus),
-    [agentStatus],
+    () => (settings.agentStatusEnabled ? getAgentVisualState(agentStatus) : "idle"),
+    [agentStatus, settings.agentStatusEnabled],
   );
   const agentStatusLabel = useMemo(
     () => getAgentStatusLabel(agentStatus, t),
@@ -200,7 +218,8 @@ export function IslandApp() {
         mediaState={mediaState}
         agentVisualState={agentVisualState}
         agentStatusLabel={agentStatusLabel}
-        onOpenPage={openIslandPage}
+        features={features}
+        onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
         onResetPosition={resetIslandPosition}
@@ -214,7 +233,7 @@ export function IslandApp() {
       >
         {page === "qq" && (
           <div className="message-panel">
-            <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} onSourceChange={openMessages} />
+            <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} enabledSources={features} onSourceChange={openMessages} />
           </div>
         )}
         {page === "music" && (

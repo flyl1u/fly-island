@@ -44,10 +44,10 @@ pub(super) fn refresh_registered_hotkey(hwnd: HWND) {
 
         let snapshot = service().ok().and_then(|service| service.snapshot().ok());
 
-        if snapshot
-            .as_ref()
-            .is_some_and(|snapshot| !snapshot.settings.shortcut_enabled)
-        {
+        // Turning clipboard history off also frees its shortcut for other apps.
+        if snapshot.as_ref().is_some_and(|snapshot| {
+            !snapshot.settings.enabled || !snapshot.settings.shortcut_enabled
+        }) {
             return;
         }
 

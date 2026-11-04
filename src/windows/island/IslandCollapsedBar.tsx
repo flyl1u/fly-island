@@ -27,6 +27,8 @@ type IslandCollapsedBarProps = {
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
   mediaState: MediaState;
+  /** False while music is switched off, which hides the waveform button. */
+  showMusic: boolean;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
   onOpenPage: (page: IslandPage) => void;
@@ -50,6 +52,7 @@ export function IslandCollapsedBar({
   collapsedTaskTitle,
   collapsedTodoCount,
   mediaState,
+  showMusic,
   agentVisualState,
   agentStatusLabel,
   onOpenPage,
@@ -130,13 +133,15 @@ export function IslandCollapsedBar({
           <span className="island-message-button__dot" aria-hidden="true" />
         </button>
       )}
-      <MusicWaveButton
-        isAvailable={mediaState.available || mediaState.audioActive}
-        isPlaying={isMusicPlaying}
-        audioPeak={mediaState.audioPeak}
-        label={t.island.openMusic}
-        onClick={() => onOpenPage("music")}
-      />
+      {showMusic && (
+        <MusicWaveButton
+          isAvailable={mediaState.available || mediaState.audioActive}
+          isPlaying={isMusicPlaying}
+          audioPeak={mediaState.audioPeak}
+          label={t.island.openMusic}
+          onClick={() => onOpenPage("music")}
+        />
+      )}
       <button
         className="island__quiet-button"
         type="button"

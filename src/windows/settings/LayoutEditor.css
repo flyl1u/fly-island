@@ -107,3 +107,10 @@
     0 0 0 4px rgba(255, 209, 102, 0.12),
     inset 0 1px 0 var(--color-white-a08);
 }
+
+.settings-section__hint {
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

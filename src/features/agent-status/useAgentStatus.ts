@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getAgentStatus, type AgentStatusSnapshot } from "./api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS } from "./status";
 
-/** Polls agent status and keeps the previous snapshot when nothing the island renders has changed. */
-export function useAgentStatus() {
+/**
+ * Polls agent status and keeps the previous snapshot when nothing the island renders has changed.
+ * With `enabled` false (the status light switched off) it stops polling and reports idle.
+ */
+export function useAgentStatus(enabled = true) {
   const [agentStatus, setAgentStatus] =
     useState<AgentStatusSnapshot>(DEFAULT_AGENT_STATUS);
   const isRefreshingAgentStatus = useRef(false);
@@ -34,6 +37,11 @@ export function useAgentStatus() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setAgentStatus(DEFAULT_AGENT_STATUS);
+      return;
+    }
+
     void refreshAgentStatus();
 
     const interval = window.setInterval(() => {
@@ -41,7 +49,7 @@ export function useAgentStatus() {
     }, 200);
 
     return () => window.clearInterval(interval);
-  }, [refreshAgentStatus]);
+  }, [enabled, refreshAgentStatus]);
 
   return agentStatus;
 }

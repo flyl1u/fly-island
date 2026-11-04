@@ -54,7 +54,7 @@ function Fixture() {
   const wechatReminders = useWeChatReminders(false);
   [view, setView] = useState<MessageView>(["reader", "html", "loading", "error", "auth", "mail", "disconnected"].includes(state) ? "qqMail" : ["wechat", "wechatError"].includes(state) ? "wechat" : "qq");
   const height = messagePanelHeight(view, Boolean(mail.selectedMail));
-  return <section className="message-fixture" style={{ height }}><header className="fixture-heading">fly-island<span>消息</span></header><div className="message-panel"><MessagesPanel source={view} onSourceChange={next => { mail.closeReader(); setView(next); }} qqMail={mail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} /></div></section>;
+  return <section className="message-fixture" style={{ height }}><header className="fixture-heading">fly-island<span>消息</span></header><div className="message-panel"><MessagesPanel source={view} enabledSources={{ qq: true, wechat: true, qqMail: true }} onSourceChange={next => { mail.closeReader(); setView(next); }} qqMail={mail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} /></div></section>;
 }
 
 const root = createRoot(document.getElementById("fixture")!);

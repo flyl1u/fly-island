@@ -7,6 +7,7 @@ import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
+import type { IslandFeatures } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -32,6 +33,8 @@ type IslandShellProps = {
   mediaState: MediaState;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
+  /** Modules switched on; the header and collapsed bar hide the rest. */
+  features: IslandFeatures;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -64,6 +67,7 @@ export function IslandShell({
   mediaState,
   agentVisualState,
   agentStatusLabel,
+  features,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -151,6 +155,7 @@ export function IslandShell({
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
           mediaState={mediaState}
+          showMusic={features.music}
           agentVisualState={agentVisualState}
           agentStatusLabel={agentStatusLabel}
           onOpenPage={onOpenPage}
@@ -167,6 +172,7 @@ export function IslandShell({
         >
           <IslandHeader
             page={page}
+            features={features}
             showTitle={showTitle}
             isDetached={isDetached}
             agentVisualState={agentVisualState}
