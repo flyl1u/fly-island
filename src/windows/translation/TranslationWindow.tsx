@@ -1,11 +1,12 @@
 import { useTranslation } from "../../i18n";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Settings2, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { copyTranslationResult, hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut, translateText } from "../../features/translation/api";
+import { hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut } from "../../features/translation/api";
 import type { Direction } from "../../features/translation/storage";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { openSettingsWindow } from "../settings/api";
+import { useTranslationRequest } from "./useTranslationRequest";
 import "./TranslationWindow.css";
 
 export function TranslationWindow() {
@@ -108,53 +109,18 @@ export function TranslationWindow() {
     return () => window.removeEventListener("keydown", handleTab, true);
   }, [pasteLatestClipboard]);
 
-  const submit = useCallback(async () => {
-    const text = input.trim();
-    if (!text) { setError(t.translator.emptySource); return; }
-    if (Array.from(text).length > 5000) { setError(t.translator.tooLong); return; }
-    const currentId = ++requestId.current;
-    setError("");
-    setOutput("");
-    setIsLoading(true);
-    try {
-      const { provider } = settings;
-      const translated = await translateText(text, settings.direction, {
-        provider,
-        baseUrl: provider === "custom" ? settings.customBaseUrl.trim() : null,
-        model: settings.models[provider]?.trim() || null,
-      });
-      if (currentId === requestId.current) setOutput(translated);
-    } catch (failure) {
-      if (currentId === requestId.current) setError(String(failure));
-    } finally {
-      if (currentId === requestId.current) setIsLoading(false);
-    }
-  }, [input, settings, t]);
-
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      void submit();
-    }
-  };
-
-  const copyResult = async () => {
-    if (!output) return;
-    try {
-      await copyTranslationResult(output);
-      setDidCopy(true);
-    } catch (failure) { setError(String(failure)); }
-  };
-
-  const clearSource = () => {
-    requestId.current += 1;
-    setInput("");
-    setOutput("");
-    setError("");
-    setDidCopy(false);
-    setIsLoading(false);
-    inputRef.current?.focus();
-  };
+  const { submit, handleInputKeyDown, copyResult, clearSource } = useTranslationRequest({
+    input,
+    settings,
+    output,
+    requestId,
+    inputRef,
+    setInput,
+    setOutput,
+    setError,
+    setIsLoading,
+    setDidCopy,
+  });
 
   const openSettings = () => openSettingsWindow("translation");
   const close = () => { requestId.current += 1; clipboardRequestId.current += 1; void hideTranslationWindow(); };
