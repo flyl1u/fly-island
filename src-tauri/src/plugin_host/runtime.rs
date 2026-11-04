@@ -138,6 +138,10 @@ impl Supervisor {
     }
 
     /// Sends `event` if the plugin subscribed to `name`.
+    pub fn is_subscribed(&self, name: &str) -> bool {
+        lock(&self.context.subscriptions).contains(name)
+    }
+
     pub fn deliver_event(&self, name: &str, payload: &Value) {
         if lock(&self.context.subscriptions).contains(name) {
             let _ = self.notify("event", json!({ "name": name, "payload": payload }));

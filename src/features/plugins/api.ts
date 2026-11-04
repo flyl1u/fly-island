@@ -13,6 +13,9 @@ export const PLUGIN_PERMISSIONS = [
   "island:notify",
   "secrets",
   "clipboard:read",
+  "messages:read",
+  "media:read",
+  "media:control",
 ] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 

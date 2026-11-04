@@ -1,8 +1,11 @@
 //! Windows media sessions (SMTC) and the system audio endpoint behind the music page.
 
 mod audio;
+mod plugin_view;
 mod service;
 mod session;
+
+pub(crate) use plugin_view::{now_playing_key, plugin_media_command, plugin_now_playing};
 
 #[tauri::command]
 pub async fn get_media_state(target: Option<String>) -> Result<service::MediaState, String> {

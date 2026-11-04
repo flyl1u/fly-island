@@ -22,7 +22,7 @@ pub(super) const MAX_SUBSCRIBE: usize = 16;
 
 /// (event, the permission a plugin needs to subscribe to it). Listed in
 /// plugins/schema/rpc.json too (checked by a test).
-pub(super) const EVENTS: [(&str, Option<&str>); 7] = [
+pub(super) const EVENTS: [(&str, Option<&str>); 9] = [
     ("todos.changed", Some("todos:read")),
     ("note.changed", Some("notes:read")),
     ("agentStatus.changed", Some("agent-status:read")),
@@ -30,6 +30,8 @@ pub(super) const EVENTS: [(&str, Option<&str>); 7] = [
     ("island.collapsed", None),
     ("app.locale.changed", None),
     ("clipboard.changed", Some("clipboard:read")),
+    ("messages.received", Some("messages:read")),
+    ("media.changed", Some("media:read")),
 ];
 
 /// The event's static name and the permission it needs, or `None` if there is
@@ -51,6 +53,11 @@ pub(super) fn listen(app: &AppHandle) {
         let payload = message.get("payload").cloned().unwrap_or(Value::Object(Default::default()));
         publish(name, payload);
     });
+}
+
+/// Whether any running plugin listens for `name`.
+pub(super) fn anyone_subscribed(name: &str) -> bool {
+    host().is_ok_and(|host| lock(&host.supervisors).values().any(|supervisor| supervisor.is_subscribed(name)))
 }
 
 /// For changes Rust notices itself (todos.json); unknown names are ignored.

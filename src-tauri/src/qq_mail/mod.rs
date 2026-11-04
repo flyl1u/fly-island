@@ -2,6 +2,7 @@
 
 mod content;
 mod credentials;
+mod plugin_view;
 mod service;
 mod session;
 
@@ -17,6 +18,8 @@ use std::{
 use tauri::AppHandle;
 
 use content::parse_message_id;
+
+pub(crate) use plugin_view::plugin_messages;
 use credentials::{delete_secret, normalize_email, read_secret};
 use service::{worker, MailService, MailState, Work, SERVICE};
 

@@ -3,6 +3,7 @@
 mod history;
 mod launcher;
 mod listener;
+mod plugin_view;
 
 #[cfg(test)]
 mod tests;
@@ -22,6 +23,8 @@ use windows::UI::Notifications::Management::{
 use history::NotificationBuffer;
 use launcher::{activate_existing_qq, qq_executable};
 use listener::monitor;
+
+pub(crate) use plugin_view::plugin_messages;
 
 const EVENT_NAME: &str = "qq-notifications-changed";
 
@@ -236,6 +239,7 @@ fn publish(
     snapshot: NotificationSnapshot,
     newest_id: Option<String>,
 ) {
+    plugin_view::publish_received(&snapshot, newest_id.as_deref());
     let window_visible = service
         .app
         .get_webview_window("main")

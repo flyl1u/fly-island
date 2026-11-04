@@ -7,6 +7,7 @@
 //! - grants.rs: saves the user's choices and starts / stops plugins to match
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
+//! - feeds.rs: messages and media for plugins (`messages.list`, `media.changed`)
 //! - keybindings.rs: global shortcuts of plugin commands
 //! - menus.rs: plugin commands in island menus (`contributes.menus`)
 //! - notify.rs: messages plugins show on the island (`island.notify`)
@@ -17,6 +18,7 @@
 mod builtin;
 mod commands;
 mod events;
+mod feeds;
 mod grants;
 mod keybindings;
 mod manifest;

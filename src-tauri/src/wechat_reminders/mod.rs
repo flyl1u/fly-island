@@ -1,5 +1,6 @@
 //! WeChat reminders: watches WeChat's tray flash and restores its window on request.
 
+mod plugin_view;
 mod source;
 
 #[cfg(test)]
@@ -14,6 +15,8 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 use windows::Win32::Foundation::HWND;
+
+pub(crate) use plugin_view::plugin_messages;
 
 use crate::win32;
 
@@ -112,6 +115,7 @@ fn service() -> Result<&'static Arc<ReminderService>, String> {
 }
 
 fn publish(service: &ReminderService, snapshot: ReminderSnapshot) {
+    plugin_view::publish_received(&snapshot);
     let visible = service
         .app
         .get_webview_window("main")

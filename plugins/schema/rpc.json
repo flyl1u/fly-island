@@ -16,7 +16,10 @@
     { "name": "agent-status:write", "since": 1 },
     { "name": "island:notify", "since": 2 },
     { "name": "secrets", "since": 2 },
-    { "name": "clipboard:read", "since": 2, "sensitive": true }
+    { "name": "clipboard:read", "since": 2, "sensitive": true },
+    { "name": "messages:read", "since": 2, "sensitive": true },
+    { "name": "media:read", "since": 2, "sensitive": true },
+    { "name": "media:control", "since": 2 }
   ],
   "events": [
     { "name": "todos.changed", "permission": "todos:read", "since": 2, "payload": "{ date }; call todos.list for the todos" },
@@ -25,7 +28,9 @@
     { "name": "island.expanded", "permission": null, "since": 2, "payload": "{}" },
     { "name": "island.collapsed", "permission": null, "since": 2, "payload": "{}" },
     { "name": "app.locale.changed", "permission": null, "since": 2, "payload": "{ locale }" },
-    { "name": "clipboard.changed", "permission": "clipboard:read", "since": 2, "payload": "{}; call clipboard.history. Only while clipboard history is on." }
+    { "name": "clipboard.changed", "permission": "clipboard:read", "since": 2, "payload": "{}; call clipboard.history. Only while clipboard history is on." },
+    { "name": "messages.received", "permission": "messages:read", "since": 2, "payload": "One entry as in messages.list: { source, id, sender, preview, receivedAt, unread? }" },
+    { "name": "media.changed", "permission": "media:read", "since": 2, "payload": "Same as media.nowPlaying; sent when the track, player or play state changes (checked every 2 s while subscribed), not for the position." }
   ],
   "methods": [
     {
@@ -181,7 +186,24 @@
       "since": 2,
       "params": { "limit?": "1-50, default 20" },
       "result": "{ items: [{ id, text (max 4000 chars), truncated, copiedAt, favorite }] }: text items only, newest first. Status 409 while clipboard history is off."
-    }
+    },
+    {
+      "name": "messages.list",
+      "permission": "messages:read",
+      "since": 2,
+      "params": null,
+      "result": "{ items: [{ source: qq | wechat | qqMail, id, sender, preview, receivedAt, unread? }] }, newest first, from the sources the user switched on. WeChat entries have sender and preview null (only the tray flash is known); qqMail preview is the subject, never the body."
+    },
+    {
+      "name": "media.nowPlaying",
+      "permission": "media:read",
+      "since": 2,
+      "params": null,
+      "result": "{ available, status, title, artist, album, sourceApp, positionMs, durationMs } (no cover image)"
+    },
+    { "name": "media.playPause", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
+    { "name": "media.next", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
+    { "name": "media.previous", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." }
   ],
   "toPlugin": [
     {

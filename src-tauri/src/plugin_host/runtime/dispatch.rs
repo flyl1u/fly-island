@@ -6,12 +6,12 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    notify, sensitive, storage,
+    feeds, notify, sensitive, storage,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
 };
-use crate::{agent_status, clipboard_history, local_api};
+use crate::{agent_status, clipboard_history, local_api, media_control};
 
 pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
@@ -71,6 +71,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "island.notify" => notify::show(&context.app, owner, &params),
         "secrets.get" | "secrets.set" | "secrets.delete" => storage::answer_secret(owner, name, &params),
         "clipboard.history" => clipboard_history::plugin_history(&params),
+        "messages.list" => feeds::messages_list(),
+        "media.nowPlaying" => media_control::plugin_now_playing(),
+        "media.playPause" | "media.next" | "media.previous" => media_control::plugin_media_command(name),
         _ => local_api::call_island(&context.app, name, params),
     };
     answer(id, result)
@@ -114,13 +117,20 @@ fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: 
         }
         names.push(name);
     }
-    let mut subscriptions = lock(&context.subscriptions);
-    for name in names {
-        if subscribe {
-            subscriptions.insert(name);
-        } else {
-            subscriptions.remove(name);
+    let answer = {
+        let mut subscriptions = lock(&context.subscriptions);
+        for name in names.iter().copied() {
+            if subscribe {
+                subscriptions.insert(name);
+            } else {
+                subscriptions.remove(name);
+            }
         }
+        rpc::result_line(id, json!({ "events": *subscriptions }))
+    };
+    // After the subscription is in place, so the watcher sees it.
+    if subscribe && names.contains(&"media.changed") {
+        feeds::watch_media();
     }
-    rpc::result_line(id, json!({ "events": *subscriptions }))
+    answer
 }

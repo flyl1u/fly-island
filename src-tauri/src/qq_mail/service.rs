@@ -153,6 +153,7 @@ impl MailService {
     }
 
     pub(super) fn publish(&self, snapshot: MailSnapshot, newest_id: Option<String>) {
+        super::plugin_view::publish_received(&snapshot, newest_id.as_deref());
         let window_visible = self
             .app
             .get_webview_window("main")

@@ -609,3 +609,10 @@ mod sensitive_tests {
         assert_eq!(serde_json::from_str::<PluginsState>(&text).expect("read back"), state);
     }
 }
+
+#[test]
+fn messages_are_listed_newest_first_with_undated_ones_last() {
+    let mut items = vec![json!({ "id": "old", "receivedAt": 1 }), json!({ "id": "none", "receivedAt": null }), json!({ "id": "new", "receivedAt": 9 })];
+    super::feeds::sort_messages(&mut items);
+    assert_eq!(items.iter().map(|item| item["id"].as_str().unwrap_or("")).collect::<Vec<_>>(), vec!["new", "old", "none"]);
+}
