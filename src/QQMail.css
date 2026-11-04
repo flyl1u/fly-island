@@ -1,12 +1,16 @@
 .qq-mail-panel { overflow: hidden; }
-.qq-mail-account { display: flex; align-items: center; gap: 7px; min-height: 22px; flex: 0 0 auto; padding: 4px 8px; }
+.qq-mail-accounts { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; padding: 2px 4px; overflow-x: auto; scrollbar-width: none; }
+.qq-mail-account { display: flex; align-items: center; gap: 6px; min-height: 22px; max-width: 170px; flex: 0 0 auto; padding: 3px 8px; color: inherit; font: inherit; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
+.qq-mail-account:hover, .qq-mail-account[aria-selected="true"], .qq-mail-account[aria-pressed="true"] { background: rgba(255, 255, 255, .08); }
+.qq-mail-account[aria-selected="true"] .qq-mail-account__email { color: rgba(241, 246, 250, .85); }
+.qq-mail-account--add { color: rgba(241, 246, 250, .55); padding: 3px 6px; }
 .qq-mail-account__email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 11px; color: rgba(241, 246, 250, .55); }
-.qq-mail-form { display: flex; flex-direction: column; flex: 1; gap: 12px; min-height: 0; width: min(100%, 380px); margin: 0 auto; padding: 16px 4px 4px; overflow-y: auto; }
-.qq-mail-fields { display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto; }
+.qq-mail-form { display: flex; flex-direction: column; flex: 1; gap: 8px; min-height: 0; width: min(100%, 380px); margin: 0 auto; padding: 6px 4px 4px; overflow-y: auto; }
+.qq-mail-fields { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
 .qq-mail-field { display: flex; align-items: center; gap: 10px; padding: 0 14px; color: rgba(241, 246, 250, .4); border: 1px solid rgba(255, 255, 255, .1); border-radius: 10px; background: rgba(255, 255, 255, .035); transition: border-color 160ms, background 160ms; }
 .qq-mail-field > svg { flex: 0 0 auto; }
 .qq-mail-field:focus-within { border-color: rgba(143, 216, 255, .65); background: rgba(255, 255, 255, .055); }
-.qq-mail-field > input { width: 100%; min-width: 0; padding: 13px 0; color: #f7f5ef; font: inherit; font-size: 12px; border: 0; background: transparent; }
+.qq-mail-field > input { width: 100%; min-width: 0; padding: 9px 0; color: #f7f5ef; font: inherit; font-size: 12px; border: 0; background: transparent; }
 .qq-mail-field > input:focus-visible { outline: none; }
 .qq-mail-field > input::placeholder { color: rgba(241, 246, 250, .4); }
 .qq-mail-field > input:disabled { opacity: .5; }
