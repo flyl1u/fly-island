@@ -115,6 +115,10 @@ export type Translations = {
     disconnect: string;
     disconnectLabel: string;
     email: string;
+    host: string;
+    hostPlaceholder: string;
+    accounts: string;
+    addAccount: string;
     emailPlaceholder: string;
     authorizationCode: string;
     authorizationPlaceholder: string;

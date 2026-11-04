@@ -26,7 +26,7 @@ window.addEventListener("beforeunload", restoreStorage);
 let revision = 0;
 const commands: string[] = [];
 let mail: MailSnapshot = {
-  revision: 0, email: "island-test@qq.com", configured: true, enabled: true, syncing: false,
+  revision: 0, email: "island-test@qq.com", host: "imap.qq.com", configured: true, enabled: true, syncing: false,
   status: "connected", unreadCount: 0, items: [], lastSyncedAt: null, error: null,
 };
 mockIPC((command, payload) => {
@@ -39,7 +39,7 @@ mockIPC((command, payload) => {
   if (command === "set_wechat_reminders_enabled") return {
     revision: ++revision, enabled: args.enabled, status: "listening", pending: false, lastAttentionAt: null, error: null,
   };
-  if (command === "get_qq_mail_state") return mail;
+  if (command === "get_qq_mail_state") return [mail];
   if (command === "read_qq_mail") return { id: args.messageId, content: "本周项目进度已更新", contentType: "text/plain" };
 }, { shouldMockEvents: true });
 

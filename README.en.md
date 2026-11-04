@@ -48,10 +48,10 @@ FocuSD brings frequent actions from separate windows into one compact island:
 - **Music and system audio**: control the Windows media session with previous, play/pause, and next actions; a live waveform reflects audio activity.
 - **AI status light**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. Install or repair the hooks from Settings.
 - **DeepSeek quick translation**: open a separate translation window with a global shortcut, auto-detect Chinese/English or choose a direction, paste the latest clipboard text, and copy the result.
-- **QQ, WeChat, and QQ Mail**: switch between QQ, WeChat, and Mail from one row of brand tabs, with source actions alongside them. Review the latest 20 QQ notifications or emails, and open email bodies inside the island before returning to the list.
+- **QQ, WeChat, and Mail**: switch between QQ, WeChat, and Mail from one row of brand tabs, with source actions alongside them. Review the latest 20 QQ notifications or emails per mailbox, and open email bodies inside the island before returning to the list.
 - **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; save up to six custom style presets, hide the island title, or enable launch at startup.
 
-Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; QQ Mail syncs only headers in the background and reads bodies on demand into memory. It does not download attachments, load remote images, or change read status.
+Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; Mail syncs only headers in the background and reads bodies on demand into memory. It does not download attachments, load remote images, or change read status.
 
 ## Getting started
 
@@ -61,7 +61,7 @@ Expand the island to switch between tasks, music, clipboard, settings, and messa
 
 - **QQ and WeChat reminders** are enabled by default. QQ needs Windows notification access, and QQ must be signed in with system notifications enabled. WeChat must be running and issue a taskbar-attention request. Pause either source in **Settings → Message reception** or from the message panel. See the [QQ notification guide (Chinese)](docs/qq-notification-compatibility.md) and [WeChat reminder guide (Chinese)](docs/wechat-reminder-compatibility.md).
 
-- **QQ Mail** connects from the message panel. Enable IMAP in QQ Mail settings, generate an authorization code, then enter your `@qq.com` address and that code (not your QQ login password). The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect to delete the code. Initial sync does not replay old mail. See the [QQ Mail setup guide (Chinese)](docs/qq-mail.md).
+- **Mail** connects from the message panel and works with QQ, 163/126, school, and other IMAP mailboxes; several accounts can be connected at once. Enable IMAP in your mailbox settings, generate an authorization code, then enter your address and that code (not your login password). The IMAP server is optional and defaults to `imap.<domain>`. The code is stored in Windows Credential Manager. Each account can be refreshed, paused, or disconnected (which deletes its code). Initial sync does not replay old mail. See the [QQ Mail setup guide (Chinese)](docs/qq-mail.md).
 
 - **Quick translation** opens with **Alt+C** by default. Add a DeepSeek API key in the translator settings; it is stored in Windows Credential Manager. Text is sent to the DeepSeek API when you request a translation. Choose automatic detection or a direction, and press **Tab** in the input to paste the latest clipboard text.
 

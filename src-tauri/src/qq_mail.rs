@@ -11,15 +11,18 @@ use keyring::{Entry, Error as KeyringError};
 use mailparse::MailHeaderMap;
 use serde::Serialize;
 use std::{
+    collections::BTreeMap,
     io::{Read, Write},
     net::{Shutdown, TcpStream, ToSocketAddrs},
-    sync::{mpsc, Arc, Mutex, MutexGuard, OnceLock},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        mpsc, Arc, Mutex, MutexGuard, OnceLock,
+    },
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
 
-const HOST: &str = "imap.qq.com";
 const EVENT: &str = "qq-mail-changed";
 const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
 const MAX_ITEMS: u32 = 20;
@@ -33,7 +36,11 @@ const MAX_MIME_BYTES: usize = 65_536;
 const MAX_INLINE_IMAGES: usize = 8;
 const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
 const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
-static SERVICE: OnceLock<Arc<MailService>> = OnceLock::new();
+static APP: OnceLock<AppHandle> = OnceLock::new();
+// One service and worker thread per mailbox, keyed by the normalized address.
+static SERVICES: Mutex<BTreeMap<String, Arc<MailService>>> = Mutex::new(BTreeMap::new());
+// Shared by all mailboxes so a re-added account never reuses revisions the frontend already saw.
+static REVISION: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -70,6 +77,7 @@ pub enum MailStatus {
 pub struct MailSnapshot {
     revision: u64,
     email: Option<String>,
+    host: Option<String>,
     configured: bool,
     enabled: bool,
     syncing: bool,
@@ -85,6 +93,7 @@ impl Default for MailSnapshot {
         Self {
             revision: 0,
             email: None,
+            host: None,
             configured: false,
             enabled: false,
             syncing: false,
@@ -129,14 +138,14 @@ impl MailFailure {
     fn network() -> Self {
         Self {
             authentication: false,
-            message: "无法同步 QQ 邮箱，请检查网络或稍后重试。",
+            message: "无法同步邮箱，请检查网络、IMAP 服务器地址或稍后重试。",
         }
     }
 
     fn authentication() -> Self {
         Self {
             authentication: true,
-            message: "QQ 邮箱拒绝了连接，请确认已开启 IMAP，并重新输入邮箱授权码。",
+            message: "邮箱拒绝了连接，请确认已开启 IMAP，并重新输入授权码或密码。",
         }
     }
 }
@@ -160,7 +169,7 @@ impl MailState {
     }
 
     fn changed(&mut self) -> MailSnapshot {
-        self.snapshot.revision += 1;
+        self.snapshot.revision = REVISION.fetch_add(1, Ordering::Relaxed) + 1;
         self.snapshot.clone()
     }
 
@@ -237,6 +246,7 @@ enum Work {
         reply: Reply,
     },
     Wake,
+    Stop,
 }
 
 #[derive(Debug)]
@@ -266,7 +276,44 @@ impl<T: SetReadTimeout> SetReadTimeout for BoundedStream<T> {
     }
 }
 
-type MailSession = Session<BoundedStream<native_tls::TlsStream<TcpStream>>>;
+/// Shares the TLS stream so the ID exchange can run beside the imap session (see `send_client_id`).
+#[derive(Debug)]
+struct SharedStream<T>(Arc<Mutex<T>>);
+
+impl<T> SharedStream<T> {
+    fn lock(&self) -> std::io::Result<MutexGuard<'_, T>> {
+        self.0
+            .lock()
+            .map_err(|_| std::io::Error::other("mail stream lock poisoned"))
+    }
+}
+
+impl<T: Read> Read for SharedStream<T> {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.lock()?.read(buffer)
+    }
+}
+
+impl<T: Write> Write for SharedStream<T> {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        self.lock()?.write(buffer)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.lock()?.flush()
+    }
+}
+
+impl<T: SetReadTimeout> SetReadTimeout for SharedStream<T> {
+    fn set_read_timeout(&mut self, timeout: Option<Duration>) -> imap::Result<()> {
+        self.0
+            .lock()
+            .map_err(|_| imap::Error::ConnectionLost)?
+            .set_read_timeout(timeout)
+    }
+}
+
+type MailSession = Session<BoundedStream<SharedStream<native_tls::TlsStream<TcpStream>>>>;
 
 enum MailWake {
     Work(Work),
@@ -351,7 +398,7 @@ impl SyncConnection {
         }
     }
 
-    fn fetch(&mut self, email: &str, secret: Option<&str>) -> Result<Inbox, MailFailure> {
+    fn fetch(&mut self, host: &str, email: &str, secret: Option<&str>) -> Result<Inbox, MailFailure> {
         // Only a failed connection needs another TLS handshake, login and credential lookup.
         if let Some(session) = &mut self.session {
             if let Ok(inbox) = fetch_inbox_cached(session, self.cached.as_ref()) {
@@ -374,7 +421,7 @@ impl SyncConnection {
                     .ok_or_else(MailFailure::authentication)?
             }
         };
-        let (mut session, socket) = open_connection(email, secret)?;
+        let (mut session, socket) = open_connection(host, email, secret)?;
         self.idle_supported = session
             .capabilities()
             .map_err(|_| MailFailure::network())?
@@ -399,13 +446,13 @@ impl MailService {
     fn send(&self, work: Work) -> Result<(), String> {
         self.sender
             .send(work)
-            .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+            .map_err(|_| "邮箱服务不可用。".to_string())?;
         interrupt_idle(&self.idle_socket);
         Ok(())
     }
 
     fn lock(&self) -> Result<MutexGuard<'_, MailState>, String> {
-        self.state.lock().map_err(|_| "QQ 邮箱状态不可用。".into())
+        self.state.lock().map_err(|_| "邮箱状态不可用。".into())
     }
 
     fn publish(&self, snapshot: MailSnapshot, newest_id: Option<String>) {
@@ -452,14 +499,15 @@ impl MailService {
         secret: Option<&str>,
         connection: &mut SyncConnection,
     ) -> Result<MailSnapshot, String> {
-        {
+        let host = {
             let state = self.lock()?;
             if generation != state.generation || !state.snapshot.enabled {
                 return Err("邮箱连接已取消。".into());
             }
-        }
+            state.snapshot.host.clone().ok_or("请先连接邮箱。")?
+        };
         connection.reset(generation);
-        let result = connection.fetch(email, secret);
+        let result = connection.fetch(&host, email, secret);
         let mut state = self.lock()?;
         if generation != state.generation || !state.snapshot.enabled {
             return Err("邮箱连接已取消。".into());
@@ -506,7 +554,7 @@ impl MailService {
     }
 
     fn read(&self, generation: u64, email: &str, message_id: &str) -> Result<MailContent, String> {
-        let current = || -> Result<(), String> {
+        let current = || -> Result<String, String> {
             let state = self.lock()?;
             if state.generation != generation
                 || !state.snapshot.configured
@@ -514,12 +562,12 @@ impl MailService {
             {
                 return Err("邮箱连接已改变，请重新打开邮件。".into());
             }
-            Ok(())
+            state.snapshot.host.clone().ok_or_else(|| "请先连接邮箱。".into())
         };
-        current()?;
+        let host = current()?;
         let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
-        let mut session =
-            open_session(email, &secret).map_err(|failure| failure.message.to_string())?;
+        let mut session = open_session(&host, email, &secret)
+            .map_err(|failure| failure.message.to_string())?;
         let result = fetch_content(&mut session, message_id);
         let _ = session.logout();
         current()?;
@@ -528,28 +576,41 @@ impl MailService {
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {
-    if SERVICE.get().is_some() {
-        return Ok(());
+    let _ = APP.set(app.clone());
+    Ok(())
+}
+
+fn services() -> Result<MutexGuard<'static, BTreeMap<String, Arc<MailService>>>, String> {
+    SERVICES.lock().map_err(|_| "邮箱服务不可用。".into())
+}
+
+fn service(email: &str) -> Result<Arc<MailService>, String> {
+    services()?
+        .get(email)
+        .cloned()
+        .ok_or_else(|| "请先连接该邮箱。".into())
+}
+
+fn service_or_start(email: &str) -> Result<Arc<MailService>, String> {
+    let mut services = services()?;
+    if let Some(service) = services.get(email) {
+        return Ok(service.clone());
     }
+    let app = APP.get().ok_or("邮箱服务尚未就绪。")?.clone();
     let (sender, receiver) = mpsc::channel();
     let service = Arc::new(MailService {
-        app: app.clone(),
+        app,
         state: Mutex::new(MailState::default()),
         sender,
         idle_socket: Mutex::new(None),
     });
-    SERVICE
-        .set(service.clone())
-        .map_err(|_| "QQ 邮箱服务已启动。")?;
+    let worker_service = service.clone();
     thread::Builder::new()
-        .name("qq-mail".into())
-        .spawn(move || worker(service, receiver))
-        .map_err(|_| "无法启动 QQ 邮箱服务。".to_string())?;
-    Ok(())
-}
-
-fn service() -> Result<&'static Arc<MailService>, String> {
-    SERVICE.get().ok_or_else(|| "QQ 邮箱服务尚未就绪。".into())
+        .name(format!("mail-{email}"))
+        .spawn(move || worker(worker_service, receiver))
+        .map_err(|_| "无法启动邮箱服务。".to_string())?;
+    services.insert(email.to_string(), service.clone());
+    Ok(service)
 }
 
 fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
@@ -600,12 +661,12 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
                     .ok()
                     .and_then(|state| state.snapshot.email.clone());
                 let result = email
-                    .ok_or_else(|| "请先连接 QQ 邮箱。".to_string())
+                    .ok_or_else(|| "请先连接邮箱。".to_string())
                     .and_then(|email| service.sync(generation, &email, None, &mut connection));
                 let _ = reply.send(result);
             }
             MailWake::Work(Work::Wake) => {}
-            MailWake::Closed => return,
+            MailWake::Work(Work::Stop) | MailWake::Closed => return,
             change => {
                 if let MailWake::Failed(error) = change {
                     if matches!(error, imap::Error::No(_) | imap::Error::Bad(_)) {
@@ -623,34 +684,32 @@ fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
 }
 
 #[tauri::command]
-pub fn get_qq_mail_state() -> Result<MailSnapshot, String> {
-    Ok(service()?.lock()?.snapshot.clone())
+pub fn get_qq_mail_state() -> Result<Vec<MailSnapshot>, String> {
+    let services: Vec<_> = services()?.values().cloned().collect();
+    services
+        .iter()
+        .map(|service| Ok(service.lock()?.snapshot.clone()))
+        .collect()
 }
 
 #[tauri::command]
 pub async fn connect_qq_mail(
     email: String,
     authorization_code: String,
+    host: Option<String>,
 ) -> Result<MailSnapshot, String> {
     let email = normalize_email(&email)?;
+    let host = resolve_host(&email, host.as_deref())?;
     let secret = authorization_code.trim().to_string();
     if secret.is_empty() || secret.len() > 256 || secret.chars().any(char::is_control) {
-        return Err("请输入 QQ 邮箱设置中生成的授权码。".into());
+        return Err("请输入邮箱设置中生成的授权码或密码。".into());
     }
-    let service = service()?;
+    let service = service_or_start(&email)?;
     let (generation, snapshot) = {
         let mut state = service.lock()?;
-        if state.snapshot.configured
-            && state
-                .snapshot
-                .email
-                .as_ref()
-                .is_some_and(|current| current != &email)
-        {
-            return Err("请先断开当前邮箱，再连接其他账号。".into());
-        }
         state.invalidate();
         state.snapshot.email = Some(email.clone());
+        state.snapshot.host = Some(host);
         state.snapshot.enabled = true;
         state.snapshot.syncing = true;
         state.snapshot.status = MailStatus::Connecting;
@@ -666,24 +725,21 @@ pub async fn connect_qq_mail(
             secret,
             reply,
         })
-        .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+        .map_err(|_| "邮箱服务不可用。".to_string())?;
     await_reply(receiver).await
 }
 
 #[tauri::command]
-pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSnapshot, String> {
+pub async fn set_qq_mail_enabled(
+    email: String,
+    enabled: bool,
+    host: Option<String>,
+) -> Result<MailSnapshot, String> {
     let email = normalize_email(&email)?;
+    let host = resolve_host(&email, host.as_deref())?;
     tauri::async_runtime::spawn_blocking(move || {
-        let service = service()?;
+        let service = service_or_start(&email)?;
         let mut state = service.lock()?;
-        if state
-            .snapshot
-            .email
-            .as_ref()
-            .is_some_and(|current| current != &email)
-        {
-            return Err("请先断开当前邮箱，再连接其他账号。".into());
-        }
         if state.snapshot.email.as_ref() == Some(&email)
             && state.snapshot.configured
             && state.snapshot.enabled == enabled
@@ -693,6 +749,7 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
         let configured = read_secret(&email)?.is_some();
         state.invalidate();
         state.snapshot.email = Some(email);
+        state.snapshot.host = Some(host);
         state.snapshot.configured = configured;
         state.snapshot.enabled = enabled && configured;
         state.snapshot.status = if !configured {
@@ -717,35 +774,35 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法更新 QQ 邮箱连接。".to_string())?
+    .map_err(|_| "无法更新邮箱连接。".to_string())?
 }
 
 #[tauri::command]
-pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
-    let service = service()?;
+pub async fn refresh_qq_mail(email: String) -> Result<MailSnapshot, String> {
+    let service = service(&normalize_email(&email)?)?;
     let Some((generation, _)) = service.begin_sync() else {
         let snapshot = service.lock()?.snapshot.clone();
         return if snapshot.syncing {
             Ok(snapshot)
         } else {
-            Err("请先连接并开启 QQ 邮箱接收。".into())
+            Err("请先连接并开启该邮箱接收。".into())
         };
     };
     let (reply, receiver) = mpsc::channel();
     service
         .send(Work::Refresh { generation, reply })
-        .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+        .map_err(|_| "邮箱服务不可用。".to_string())?;
     await_reply(receiver).await
 }
 
 #[tauri::command]
-pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
+pub async fn read_qq_mail(email: String, message_id: String) -> Result<MailContent, String> {
     parse_message_id(&message_id)?;
-    let service = service()?;
+    let service = service(&normalize_email(&email)?)?;
     let (generation, email) = {
         let state = service.lock()?;
         if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
-            return Err("请先连接 QQ 邮箱。".into());
+            return Err("请先连接邮箱。".into());
         }
         if !state
             .snapshot
@@ -757,47 +814,46 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
         }
         (
             state.generation,
-            state.snapshot.email.clone().ok_or("请先连接 QQ 邮箱。")?,
+            state.snapshot.email.clone().ok_or("请先连接邮箱。")?,
         )
     };
-    let service = service.clone();
     tauri::async_runtime::spawn_blocking(move || service.read(generation, &email, &message_id))
         .await
-        .map_err(|_| "无法读取 QQ 邮件。".to_string())?
+        .map_err(|_| "无法读取邮件。".to_string())?
 }
 
 #[tauri::command]
-pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
-    tauri::async_runtime::spawn_blocking(|| {
-        let service = service()?;
+pub async fn disconnect_qq_mail(email: String) -> Result<MailSnapshot, String> {
+    let email = normalize_email(&email)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let service = service(&email)?;
         let mut state = service.lock()?;
         state.invalidate();
         state.snapshot.enabled = false;
-        if let Some(email) = &state.snapshot.email {
-            if delete_secret(email).is_err() {
-                state.snapshot.status = MailStatus::Paused;
-                state.snapshot.error =
-                    Some("已停止接收，但删除 Windows 邮箱凭据失败，请重试断开。".into());
-                let snapshot = state.changed();
-                drop(state);
-                service.publish(snapshot, None);
-                let _ = service.send(Work::Wake);
-                return Err("删除邮箱凭据失败，请重试断开。".into());
-            }
+        if delete_secret(&email).is_err() {
+            state.snapshot.status = MailStatus::Paused;
+            state.snapshot.error =
+                Some("已停止接收，但删除 Windows 邮箱凭据失败，请重试断开。".into());
+            let snapshot = state.changed();
+            drop(state);
+            service.publish(snapshot, None);
+            let _ = service.send(Work::Wake);
+            return Err("删除邮箱凭据失败，请重试断开。".into());
         }
-        let revision = state.snapshot.revision;
+        // Keep the address in the final snapshot so the frontend knows which account left.
         state.snapshot = MailSnapshot {
-            revision,
+            email: Some(email.clone()),
             ..MailSnapshot::default()
         };
         let snapshot = state.changed();
         drop(state);
+        services()?.remove(&email);
         service.publish(snapshot.clone(), None);
-        let _ = service.send(Work::Wake);
+        let _ = service.send(Work::Stop);
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法断开 QQ 邮箱。".to_string())?
+    .map_err(|_| "无法断开邮箱。".to_string())?
 }
 
 async fn await_reply<T: Send + 'static>(
@@ -806,10 +862,10 @@ async fn await_reply<T: Send + 'static>(
     tauri::async_runtime::spawn_blocking(move || {
         receiver
             .recv()
-            .unwrap_or_else(|_| Err("QQ 邮箱服务不可用。".into()))
+            .unwrap_or_else(|_| Err("邮箱服务不可用。".into()))
     })
     .await
-    .map_err(|_| "QQ 邮箱连接任务未完成。".to_string())?
+    .map_err(|_| "邮箱连接任务未完成。".to_string())?
 }
 
 fn credential(email: &str) -> Result<Entry, String> {
@@ -831,18 +887,47 @@ fn delete_secret(email: &str) -> Result<(), String> {
     }
 }
 
+fn is_domain(value: &str) -> bool {
+    value.len() <= 253
+        && value.contains('.')
+        && value.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        })
+}
+
+// The address is also the IMAP login and the credential key, so only plain ASCII is accepted.
 fn normalize_email(email: &str) -> Result<String, String> {
     let email = email.trim().to_ascii_lowercase();
-    let local = email.strip_suffix("@qq.com").unwrap_or("");
-    if local.is_empty()
-        || local.len() > 64
-        || !local
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b"._+-".contains(&byte))
-    {
-        return Err("请输入有效的 @qq.com 邮箱地址。".into());
+    let valid = email.split_once('@').is_some_and(|(local, domain)| {
+        !local.is_empty()
+            && local.len() <= 64
+            && local
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"._+-".contains(&byte))
+            && is_domain(domain)
+    });
+    if !valid {
+        return Err("请输入有效的邮箱地址。".into());
     }
     Ok(email)
+}
+
+/// An explicit IMAP host, or `imap.<domain>`, which covers QQ, 163, 126 and most school mail.
+fn resolve_host(email: &str, host: Option<&str>) -> Result<String, String> {
+    let host = match host.map(str::trim).filter(|host| !host.is_empty()) {
+        Some(host) => host.to_ascii_lowercase(),
+        None => format!("imap.{}", email.split_once('@').map_or("", |(_, domain)| domain)),
+    };
+    if !is_domain(&host) {
+        return Err("IMAP 服务器地址无效。".into());
+    }
+    Ok(host)
 }
 
 fn retry_delay(failures: u32) -> Duration {
@@ -870,13 +955,17 @@ fn login_failure(error: imap::Error) -> MailFailure {
     }
 }
 
-fn open_session(email: &str, secret: &str) -> Result<MailSession, MailFailure> {
-    open_connection(email, secret).map(|(session, _)| session)
+fn open_session(host: &str, email: &str, secret: &str) -> Result<MailSession, MailFailure> {
+    open_connection(host, email, secret).map(|(session, _)| session)
 }
 
-fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
+fn open_connection(
+    host: &str,
+    email: &str,
+    secret: &str,
+) -> Result<(MailSession, TcpStream), MailFailure> {
     let mut stream = None;
-    let addresses = (HOST, 993)
+    let addresses = (host, 993)
         .to_socket_addrs()
         .map_err(|_| MailFailure::network())?;
     for address in addresses {
@@ -895,14 +984,50 @@ fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream)
     let interrupt = stream.try_clone().map_err(|_| MailFailure::network())?;
     let tls = native_tls::TlsConnector::new().map_err(|_| MailFailure::network())?;
     let stream = tls
-        .connect(HOST, stream)
+        .connect(host, stream)
         .map_err(|_| MailFailure::network())?;
-    let mut client = imap::Client::new(BoundedStream(stream));
+    let shared = Arc::new(Mutex::new(stream));
+    let mut client = imap::Client::new(BoundedStream(SharedStream(shared.clone())));
     client.read_greeting().map_err(|_| MailFailure::network())?;
-    client
+    let mut session = client
         .login(email, secret)
-        .map(|session| (session, interrupt))
-        .map_err(|(error, _)| login_failure(error))
+        .map_err(|(error, _)| login_failure(error))?;
+    if session
+        .capabilities()
+        .is_ok_and(|capabilities| capabilities.has_str("ID"))
+    {
+        // A half-finished exchange would leave our tagged reply for imap to trip over, so drop the connection.
+        send_client_id(&shared).map_err(|_| MailFailure::network())?;
+    }
+    Ok((session, interrupt))
+}
+
+/// 163/126 reject SELECT ("Unsafe Login") until the client sends a non-empty RFC 2971 ID.
+/// imap 2.x cannot parse the `* ID (...)` reply and then panics on the leftover tagged line,
+/// so the exchange runs directly on the stream while the session is idle between commands.
+fn send_client_id<T: Read + Write>(stream: &Mutex<T>) -> std::io::Result<()> {
+    let mut stream = stream
+        .lock()
+        .map_err(|_| std::io::Error::other("mail stream lock poisoned"))?;
+    stream.write_all(b"fly0 ID (\"name\" \"fly-island\" \"version\" \"1.0\" \"vendor\" \"fly-island\")\r\n")?;
+    stream.flush()?;
+    let mut line = Vec::new();
+    let mut byte = [0u8; 1];
+    // One byte at a time so nothing after our tagged reply is taken from the session.
+    loop {
+        if stream.read(&mut byte)? == 0 {
+            return Err(std::io::ErrorKind::UnexpectedEof.into());
+        }
+        line.push(byte[0]);
+        if byte[0] == b'\n' {
+            if line.starts_with(b"fly0 ") {
+                return Ok(());
+            }
+            line.clear();
+        } else if line.len() > 8_192 {
+            return Err(std::io::ErrorKind::InvalidData.into());
+        }
+    }
 }
 
 fn parse_message_id(message_id: &str) -> Result<(u32, u32), String> {
@@ -1502,17 +1627,39 @@ mod tests {
     }
 
     #[test]
-    fn validates_qq_addresses_and_rejects_other_hosts_or_commands() {
+    fn validates_addresses_and_rejects_commands_or_malformed_hosts() {
         assert_eq!(normalize_email(" User@QQ.COM ").unwrap(), "user@qq.com");
+        assert_eq!(normalize_email("a.b@example.edu.cn").unwrap(), "a.b@example.edu.cn");
         for email in [
             "",
             "@qq.com",
-            "a@gmail.com",
-            "a@qq.com.evil",
+            "a@",
+            "a@qq",
+            "a@qq..com",
+            "a@-qq.com",
+            "a@b@qq.com",
+            "a b@qq.com",
             "a\r\nLOGIN@qq.com",
+            "a@qq.com\r\nx",
         ] {
-            assert!(normalize_email(email).is_err());
+            assert!(normalize_email(email).is_err(), "{email:?}");
         }
+        assert_eq!(resolve_host("x@163.com", None).unwrap(), "imap.163.com");
+        assert_eq!(resolve_host("x@example.edu.cn", Some(" ")).unwrap(), "imap.example.edu.cn");
+        assert_eq!(resolve_host("x@foxmail.com", Some("IMAP.QQ.COM")).unwrap(), "imap.qq.com");
+        assert!(resolve_host("x@qq.com", Some("imap.qq.com:993")).is_err());
+        assert!(resolve_host("x@qq.com", Some("imap.qq.com/x")).is_err());
+    }
+
+    #[test]
+    #[ignore = "Logs in to the mailbox in FLY_MAIL_TEST with its saved Windows credential; prints counts only"]
+    fn live_mailbox_sync_with_saved_credential() {
+        let email = normalize_email(&std::env::var("FLY_MAIL_TEST").unwrap()).unwrap();
+        let host = resolve_host(&email, None).unwrap();
+        let started = Instant::now();
+        let mut connection = SyncConnection::default();
+        let inbox = connection.fetch(&host, &email, None).map_err(|failure| failure.message).unwrap();
+        eprintln!("{email}: unread={} items={} idle={} in {:?}", inbox.unread_count, inbox.items.len(), connection.idle_supported, started.elapsed());
     }
 
     #[test]
@@ -1874,6 +2021,26 @@ mod tests {
             MailWake::Failed(imap::Error::Bad(_))
         ));
         assert!(gate.lock().unwrap().is_none());
+    }
+
+    #[test]
+    fn client_id_consumes_only_its_own_reply() {
+        let input = b"* ID (\"name\" \"Coremail Imap\")\r\nfly0 OK ID completed\r\na2 OK next\r\n".to_vec();
+        let stream = Mutex::new(ScriptedStream {
+            input: IoCursor::new(input),
+            output: Arc::new(Mutex::new(Vec::new())),
+        });
+        send_client_id(&stream).unwrap();
+        let mut stream = stream.into_inner().unwrap();
+        assert!(String::from_utf8_lossy(&stream.output.lock().unwrap()).starts_with("fly0 ID (\"name\" \"fly-island\""));
+        let mut rest = String::new();
+        stream.input.read_to_string(&mut rest).unwrap();
+        assert_eq!(rest, "a2 OK next\r\n");
+        let silent = Mutex::new(ScriptedStream {
+            input: IoCursor::new(b"* ID NIL\r\n".to_vec()),
+            output: Arc::new(Mutex::new(Vec::new())),
+        });
+        assert!(send_client_id(&silent).is_err());
     }
 
     #[test]
