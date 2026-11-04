@@ -8,8 +8,10 @@ import {
   openFileShelfItem,
   removeFileShelfItem,
   revealFileShelfItem,
+  setFileShelfOptions,
   startFileShelfDrag,
   type FileShelfItem,
+  type FileShelfOptions,
   type FileShelfSnapshot,
 } from "./api";
 import { getDropResult } from "./fileShelf";
@@ -22,8 +24,14 @@ export type FileShelfController = ReturnType<typeof useFileShelf>;
 /** What the last drop did; `key` changes on every drop so the panel can react to it. */
 export type FileShelfDrop = { key: number; ids: string[]; allExisting: boolean };
 
+/** The shelf's settings, from the island settings. */
+export type FileShelfPreferences = FileShelfOptions & { removeAfterDragOut: boolean };
+
 /** Shelf entries, their actions, and the last native error to show on the page. */
-export function useFileShelf(enabled: boolean) {
+export function useFileShelf(
+  enabled: boolean,
+  { maxItems, maxAgeDays, removeMissing, removeAfterDragOut }: FileShelfPreferences,
+) {
   const [items, setItems] = useState<FileShelfItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [recentDrop, setRecentDrop] = useState<FileShelfDrop | null>(null);
@@ -50,9 +58,10 @@ export function useFileShelf(enabled: boolean) {
 
   const refresh = useCallback(() => run(getFileShelf), [run]);
 
+  // Sending the options also loads the list, cleaned up by them.
   useEffect(() => {
-    if (enabled) void refresh();
-  }, [enabled, refresh]);
+    if (enabled) void run(() => setFileShelfOptions({ maxItems, maxAgeDays, removeMissing }));
+  }, [enabled, maxAgeDays, maxItems, removeMissing, run]);
 
   useEffect(() => {
     if (!recentDrop) return;
@@ -73,11 +82,11 @@ export function useFileShelf(enabled: boolean) {
     if (draggingOutRef.current) return;
     draggingOutRef.current = true;
     try {
-      await run(() => startFileShelfDrag([id]));
+      await run(() => startFileShelfDrag([id], removeAfterDragOut));
     } finally {
       draggingOutRef.current = false;
     }
-  }, [run]);
+  }, [removeAfterDragOut, run]);
 
   const isDraggingOut = useCallback(() => draggingOutRef.current, []);
 

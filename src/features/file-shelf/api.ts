@@ -20,8 +20,21 @@ export type FileShelfSnapshot = {
   items: FileShelfItem[];
 };
 
+// 与 src-tauri/src/file_shelf/store.rs 中的 FileShelfOptions 对应。
+export type FileShelfOptions = {
+  maxItems: number;
+  /** Entries added more than this many days ago leave the list; 0 keeps them. */
+  maxAgeDays: number;
+  removeMissing: boolean;
+};
+
 export function getFileShelf() {
   return invoke<FileShelfSnapshot>("get_file_shelf");
+}
+
+/** Hands the cleanup options to the shelf, which applies them at once. */
+export function setFileShelfOptions(options: FileShelfOptions) {
+  return invoke<FileShelfSnapshot>("set_file_shelf_options", { options });
 }
 
 export function addFileShelfPaths(paths: string[]) {
@@ -49,9 +62,12 @@ export function revealFileShelfItem(id: string) {
   return invoke<void>("reveal_file_shelf_item", { id });
 }
 
-/** Starts a native drag while the button is held; resolves when it ends. */
-export function startFileShelfDrag(ids: string[]) {
-  return invoke<FileShelfSnapshot>("start_file_shelf_drag", { ids });
+/**
+ * Starts a native drag while the button is held; resolves when it ends. With
+ * `removeAfter`, entries a target accepted leave the shelf.
+ */
+export function startFileShelfDrag(ids: string[], removeAfter: boolean) {
+  return invoke<FileShelfSnapshot>("start_file_shelf_drag", { ids, removeAfter });
 }
 
 export type FileDropEvent =

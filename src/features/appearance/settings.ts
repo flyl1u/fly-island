@@ -27,6 +27,12 @@ export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 3;
 export const MIN_CLIPBOARD_VISIBLE_ROWS = 2;
 // Six rows is the tallest clipboard page the native window accepts (656px).
 export const MAX_CLIPBOARD_VISIBLE_ROWS = 6;
+// File shelf cap; matches MAX_ITEMS and MIN / MAX_MAX_ITEMS in src-tauri/src/file_shelf/store.rs.
+export const DEFAULT_SHELF_ITEMS = 100;
+export const MIN_SHELF_ITEMS = 20;
+export const MAX_SHELF_ITEMS = 200;
+/** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
+export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -65,6 +71,13 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentStatusEnabled: true,
   agentTitleEnabled: true,
   shelfEnabled: true,
+  shelfExpandOnDrop: true,
+  shelfAutoCleanupDays: 0,
+  shelfRemoveMissing: false,
+  shelfRemoveAfterDragOut: false,
+  shelfMaxItems: DEFAULT_SHELF_ITEMS,
+  shelfDoubleClick: "open",
+  shelfShowCount: false,
   mailEnabled: true,
 };
 /**
@@ -238,6 +251,17 @@ export function normalizeSettings(
     agentStatusEnabled: settings?.agentStatusEnabled !== false,
     agentTitleEnabled: settings?.agentTitleEnabled !== false,
     shelfEnabled: settings?.shelfEnabled !== false,
+    shelfExpandOnDrop: settings?.shelfExpandOnDrop !== false,
+    shelfAutoCleanupDays: (SHELF_CLEANUP_DAYS as readonly unknown[]).includes(settings?.shelfAutoCleanupDays)
+      ? (settings?.shelfAutoCleanupDays as number)
+      : DEFAULT_SETTINGS.shelfAutoCleanupDays,
+    shelfRemoveMissing: settings?.shelfRemoveMissing === true,
+    shelfRemoveAfterDragOut: settings?.shelfRemoveAfterDragOut === true,
+    shelfMaxItems: typeof settings?.shelfMaxItems === "number" && Number.isFinite(settings.shelfMaxItems)
+      ? clamp(Math.round(settings.shelfMaxItems), MIN_SHELF_ITEMS, MAX_SHELF_ITEMS)
+      : DEFAULT_SETTINGS.shelfMaxItems,
+    shelfDoubleClick: settings?.shelfDoubleClick === "reveal" ? "reveal" : "open",
+    shelfShowCount: settings?.shelfShowCount === true,
     mailEnabled: settings?.mailEnabled !== false,
   };
 }

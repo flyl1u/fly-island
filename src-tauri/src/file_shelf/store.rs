@@ -7,8 +7,43 @@ use super::FileShelfItem;
 
 pub(super) const FILE_SHELF_FILE_NAME: &str = "file-shelf.json";
 
-/// Oldest entries drop off once the shelf holds this many.
+/// Default cap; the oldest entries drop off once the shelf holds more.
 pub(super) const MAX_ITEMS: usize = 100;
+/// Range of the item cap setting; matches MIN / MAX_SHELF_ITEMS in
+/// src/features/appearance/settings.ts.
+pub(super) const MIN_MAX_ITEMS: usize = 20;
+pub(super) const MAX_MAX_ITEMS: usize = 200;
+
+const DAY_MILLIS: i64 = 24 * 60 * 60 * 1_000;
+
+/// Cleanup rules from the shelf's settings page. Mirrored by `FileShelfOptions` in
+/// src/features/file-shelf/api.ts. Not stored here: the island sends them on start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileShelfOptions {
+    pub(super) max_items: usize,
+    /// Entries added more than this many days ago are dropped; 0 keeps them.
+    pub(super) max_age_days: u32,
+    /// Entries whose file no longer exists are dropped instead of shown as missing.
+    pub(super) remove_missing: bool,
+}
+
+impl Default for FileShelfOptions {
+    fn default() -> Self {
+        Self {
+            max_items: MAX_ITEMS,
+            max_age_days: 0,
+            remove_missing: false,
+        }
+    }
+}
+
+impl FileShelfOptions {
+    pub(super) fn normalized(mut self) -> Self {
+        self.max_items = self.max_items.clamp(MIN_MAX_ITEMS, MAX_MAX_ITEMS);
+        self
+    }
+}
 
 #[derive(Deserialize)]
 struct StoredFileShelf {
@@ -29,7 +64,7 @@ pub(super) fn load_items(path: &Path) -> Vec<FileShelfItem> {
 }
 
 /// Entries that fail to parse are skipped one by one, so a single bad entry does
-/// not empty the whole shelf.
+/// not empty the whole shelf. The user's cap is applied later, by `prune`.
 pub(super) fn parse_items(content: &str) -> Vec<FileShelfItem> {
     let Ok(stored) = serde_json::from_str::<StoredFileShelf>(content) else {
         return Vec::new();
@@ -40,7 +75,7 @@ pub(super) fn parse_items(content: &str) -> Vec<FileShelfItem> {
         .filter_map(|value| serde_json::from_value::<FileShelfItem>(value).ok())
         .filter(|item| !item.id.is_empty() && !item.path.is_empty())
         .collect();
-    normalize(items)
+    normalize(items, MAX_MAX_ITEMS)
 }
 
 /// `added` goes on top in the given order. A path already on the shelf moves up
@@ -48,17 +83,36 @@ pub(super) fn parse_items(content: &str) -> Vec<FileShelfItem> {
 pub(super) fn insert_items(
     existing: Vec<FileShelfItem>,
     added: Vec<FileShelfItem>,
+    max_items: usize,
 ) -> Vec<FileShelfItem> {
-    normalize(added.into_iter().chain(existing).collect())
+    normalize(added.into_iter().chain(existing).collect(), max_items)
 }
 
-/// Keeps the first entry for each path and at most `MAX_ITEMS` entries.
-fn normalize(items: Vec<FileShelfItem>) -> Vec<FileShelfItem> {
+/// Applies the cleanup options: drops entries past the age limit, entries whose
+/// file is gone (when asked to; `exists` checks a path), and the oldest ones over
+/// the cap.
+pub(super) fn prune(
+    items: Vec<FileShelfItem>,
+    options: FileShelfOptions,
+    now: i64,
+    exists: impl Fn(&str) -> bool,
+) -> Vec<FileShelfItem> {
+    let max_age = i64::from(options.max_age_days) * DAY_MILLIS;
+    let kept = items
+        .into_iter()
+        .filter(|item| max_age == 0 || now - item.added_at <= max_age)
+        .filter(|item| !options.remove_missing || exists(&item.path))
+        .collect();
+    normalize(kept, options.max_items)
+}
+
+/// Keeps the first entry for each path and at most `max_items` entries.
+fn normalize(items: Vec<FileShelfItem>, max_items: usize) -> Vec<FileShelfItem> {
     let mut seen = HashSet::new();
     items
         .into_iter()
         .filter(|item| seen.insert(path_key(&item.path)))
-        .take(MAX_ITEMS)
+        .take(max_items)
         .collect()
 }
 

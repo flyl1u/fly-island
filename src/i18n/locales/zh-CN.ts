@@ -203,6 +203,7 @@ const zhCN: Translations = {
     music: "Music",
     clipboardHistory: "剪贴板历史",
     shelf: "文件中转",
+    shelfCount: (count) => `文件中转里有 ${count} 个文件`,
     layoutEditor: "布局编辑",
   },
 
@@ -351,9 +352,26 @@ const zhCN: Translations = {
     reveal: "在文件夹中显示",
     removeItem: "从文件中转移除（不会删除文件）",
     alreadyOnShelf: "已在列表中",
+    dragHintReveal: "拖出到其他应用，双击在文件夹中显示",
   },
 
   settings: {
+    fileShelf: {
+      title: "文件中转",
+      expandOnDrop: "拖入文件时自动展开",
+      expandOnDropHint: "关闭后，只能把文件拖到已经打开的文件中转页里。",
+      autoCleanup: "自动清理",
+      cleanupNever: "从不",
+      cleanupDays: (days) => (days === 1 ? "1 天后" : `${days} 天后`),
+      removeMissing: "自动移除已失效的文件",
+      removeAfterDragOut: "拖出后从列表移除",
+      maxItems: "最多保留条数",
+      doubleClick: "双击文件",
+      doubleClickOpen: "打开文件",
+      doubleClickReveal: "在文件夹中显示",
+      showCount: "折叠时显示文件数量",
+      cleanupHint: "清理和移除只影响列表，不会删除你的文件。",
+    },
     messageReception: "消息接收",
 
     modules: {

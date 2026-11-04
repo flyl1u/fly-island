@@ -1,3 +1,4 @@
+import { Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -32,6 +33,8 @@ type IslandCollapsedBarProps = {
   mediaState: MediaState;
   /** False while music is switched off, which hides the waveform button. */
   showMusic: boolean;
+  /** Files on the shelf, or null when the count is not shown. */
+  shelfCount: number | null;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
   onOpenPage: (page: IslandPage) => void;
@@ -57,6 +60,7 @@ export function IslandCollapsedBar({
   agentSession,
   mediaState,
   showMusic,
+  shelfCount,
   agentVisualState,
   agentStatusLabel,
   onOpenPage,
@@ -142,6 +146,12 @@ export function IslandCollapsedBar({
         <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} title={t.messages.openNewMail} onClick={() => onOpenMessages("qqMail")}>
           <MessageSourceIcon source="qqMail" size={16} />
           <span className="island-message-button__dot" aria-hidden="true" />
+        </button>
+      )}
+      {shelfCount !== null && shelfCount > 0 && (
+        <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} title={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
+          <Inbox size={13} strokeWidth={2.3} aria-hidden="true" />
+          <span>{shelfCount}</span>
         </button>
       )}
       {showMusic && (

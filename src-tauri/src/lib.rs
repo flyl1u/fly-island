@@ -91,6 +91,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             file_shelf::get_file_shelf,
+            file_shelf::set_file_shelf_options,
             file_shelf::add_file_shelf_paths,
             file_shelf::remove_file_shelf_item,
             file_shelf::clear_file_shelf,

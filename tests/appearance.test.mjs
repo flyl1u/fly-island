@@ -102,7 +102,7 @@ test("expand trigger, hover delays and max panel height default for older settin
   assert.equal(older.minimizeAction, "tray");
   assert.equal(normalizeSettings({ minimizeAction: "tuck" }).minimizeAction, "tuck");
   assert.equal(normalizeSettings({ minimizeAction: "hide" }).minimizeAction, "tray");
-  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "mailEnabled", "shelfEnabled"]) {
+  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "mailEnabled", "shelfEnabled", "shelfExpandOnDrop"]) {
     assert.equal(older[key], true, key);
     assert.equal(normalizeSettings({ [key]: false })[key], false, key);
     assert.equal(normalizeSettings({ [key]: "no" })[key], true, key);
@@ -206,4 +206,22 @@ test("clipboard visible rows default to three for older settings and stay in ran
   assert.equal(normalizeSettings({ clipboardVisibleRows: 9 }).clipboardVisibleRows, 6);
   assert.equal(normalizeSettings({ clipboardVisibleRows: 4.4 }).clipboardVisibleRows, 4);
   assert.equal(normalizeSettings({ clipboardVisibleRows: "5" }).clipboardVisibleRows, 3);
+});
+
+test("file shelf settings default for older settings and only take known values", () => {
+  const older = normalizeSettings({});
+  assert.equal(older.shelfAutoCleanupDays, 0);
+  assert.equal(older.shelfRemoveMissing, false);
+  assert.equal(older.shelfRemoveAfterDragOut, false);
+  assert.equal(older.shelfMaxItems, 100);
+  assert.equal(older.shelfDoubleClick, "open");
+  assert.equal(older.shelfShowCount, false);
+  assert.equal(normalizeSettings({ shelfAutoCleanupDays: 7 }).shelfAutoCleanupDays, 7);
+  assert.equal(normalizeSettings({ shelfAutoCleanupDays: 3 }).shelfAutoCleanupDays, 0);
+  assert.equal(normalizeSettings({ shelfAutoCleanupDays: "7" }).shelfAutoCleanupDays, 0);
+  assert.equal(normalizeSettings({ shelfMaxItems: 5 }).shelfMaxItems, 20);
+  assert.equal(normalizeSettings({ shelfMaxItems: 999 }).shelfMaxItems, 200);
+  assert.equal(normalizeSettings({ shelfDoubleClick: "reveal" }).shelfDoubleClick, "reveal");
+  assert.equal(normalizeSettings({ shelfDoubleClick: "delete" }).shelfDoubleClick, "open");
+  assert.equal(normalizeSettings({ shelfRemoveMissing: true, shelfShowCount: true }).shelfShowCount, true);
 });

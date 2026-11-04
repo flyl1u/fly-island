@@ -203,6 +203,7 @@ const en: Translations = {
     music: "Music",
     clipboardHistory: "Clipboard history",
     shelf: "File shelf",
+    shelfCount: (count) => (count === 1 ? "1 file on the shelf" : `${count} files on the shelf`),
     layoutEditor: "Layout editor",
   },
 
@@ -348,9 +349,26 @@ const en: Translations = {
     reveal: "Show in folder",
     removeItem: "Remove from shelf (the file is kept)",
     alreadyOnShelf: "Already on the shelf",
+    dragHintReveal: "Drag out to another app, double-click to show in folder",
   },
 
   settings: {
+    fileShelf: {
+      title: "File shelf",
+      expandOnDrop: "Open when files are dragged in",
+      expandOnDropHint: "When off, files can only be dropped on the shelf page while it is open.",
+      autoCleanup: "Auto clean up",
+      cleanupNever: "Never",
+      cleanupDays: (days) => (days === 1 ? "After 1 day" : `After ${days} days`),
+      removeMissing: "Remove files that were moved or deleted",
+      removeAfterDragOut: "Remove after dragging out",
+      maxItems: "Maximum entries",
+      doubleClick: "Double-click a file",
+      doubleClickOpen: "Open it",
+      doubleClickReveal: "Show in folder",
+      showCount: "Show the file count when collapsed",
+      cleanupHint: "Cleaning up only changes the list; your files are never deleted.",
+    },
     messageReception: "Message reception",
 
     modules: {

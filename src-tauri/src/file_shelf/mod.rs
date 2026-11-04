@@ -59,6 +59,7 @@ pub struct FileShelfSnapshot {
 struct FileShelfService {
     path: PathBuf,
     items: Mutex<Vec<FileShelfItem>>,
+    options: Mutex<FileShelfOptions>,
 }
 
 impl FileShelfService {
@@ -66,19 +67,26 @@ impl FileShelfService {
         self.items.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    fn snapshot(&self) -> FileShelfSnapshot {
-        snapshot_of(&self.items())
+    fn options(&self) -> FileShelfOptions {
+        *self.options.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    /// Applies `change`, saves the result and only then keeps it in memory.
+    /// Applies `change` and the cleanup options, saves the result when it differs and
+    /// only then keeps it in memory. Every read goes through here too, so entries
+    /// age out and missing files drop off without any other trigger.
     fn update(
         &self,
         change: impl FnOnce(Vec<FileShelfItem>) -> Vec<FileShelfItem>,
     ) -> Result<FileShelfSnapshot, String> {
+        let options = self.options();
         let mut items = self.items();
-        let next = change(items.clone());
-        save_items(&self.path, &next)?;
-        *items = next;
+        let next = prune(change(items.clone()), options, current_unix_millis(), |path| {
+            Path::new(path).exists()
+        });
+        if next != *items {
+            save_items(&self.path, &next)?;
+            *items = next;
+        }
         Ok(snapshot_of(&items))
     }
 
@@ -129,7 +137,8 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         .map_err(|error| format!("Failed to resolve app data directory: {error}"))?
         .join(FILE_SHELF_FILE_NAME);
     let items = Mutex::new(load_items(&path));
-    let _ = FILE_SHELF.set(FileShelfService { path, items });
+    let options = Mutex::new(FileShelfOptions::default());
+    let _ = FILE_SHELF.set(FileShelfService { path, items, options });
     Ok(())
 }
 
@@ -170,14 +179,26 @@ fn describe(path: &str, now: i64) -> Option<FileShelfItem> {
 
 #[tauri::command]
 pub async fn get_file_shelf() -> Result<FileShelfSnapshot, String> {
-    Ok(service()?.snapshot())
+    service()?.update(|items| items)
+}
+
+/// Takes the cleanup options from the settings page and applies them at once.
+#[tauri::command]
+pub async fn set_file_shelf_options(
+    options: FileShelfOptions,
+) -> Result<FileShelfSnapshot, String> {
+    let service = service()?;
+    *service.options.lock().unwrap_or_else(PoisonError::into_inner) = options.normalized();
+    service.update(|items| items)
 }
 
 #[tauri::command]
 pub async fn add_file_shelf_paths(paths: Vec<String>) -> Result<FileShelfSnapshot, String> {
     let now = current_unix_millis();
     let added: Vec<FileShelfItem> = paths.iter().filter_map(|path| describe(path, now)).collect();
-    service()?.update(|items| insert_items(items, added))
+    let service = service()?;
+    let max_items = service.options().max_items;
+    service.update(|items| insert_items(items, added, max_items))
 }
 
 #[tauri::command]
@@ -218,11 +239,13 @@ pub async fn reveal_file_shelf_item(id: String) -> Result<(), String> {
 }
 
 /// Drags the files out of the island; resolves once they are dropped or the drag
-/// is cancelled, with a fresh snapshot (a Shift-drag may have moved them).
+/// is cancelled, with a fresh snapshot (a Shift-drag may have moved them). With
+/// `remove_after`, entries a target accepted leave the shelf.
 #[tauri::command]
 pub async fn start_file_shelf_drag(
     window: WebviewWindow,
     ids: Vec<String>,
+    remove_after: bool,
 ) -> Result<FileShelfSnapshot, String> {
     let paths = service()?.existing_paths(&ids)?;
     let (sender, receiver) = mpsc::channel();
@@ -237,9 +260,15 @@ pub async fn start_file_shelf_drag(
             let _ = sender.send(result);
         })
         .map_err(|error| format!("Failed to start the drag: {error}"))?;
-    tauri::async_runtime::spawn_blocking(move || receiver.recv())
+    let outcome = tauri::async_runtime::spawn_blocking(move || receiver.recv())
         .await
         .map_err(|error| format!("Failed to finish the drag: {error}"))?
         .map_err(|_| "The drag ended unexpectedly.".to_string())??;
-    Ok(service()?.snapshot())
+    let dropped = outcome != win32::ole::DragOutcome::None;
+    service()?.update(|mut items| {
+        if remove_after && dropped {
+            items.retain(|item| !ids.contains(&item.id));
+        }
+        items
+    })
 }

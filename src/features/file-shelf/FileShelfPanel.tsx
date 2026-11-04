@@ -11,10 +11,13 @@ const CLEAR_CONFIRM_MS = 3_000;
 export function FileShelfPanel({
   shelf,
   isDropTarget,
+  revealOnDoubleClick,
 }: {
   shelf: FileShelfController;
   /** Files are being dragged over the island. */
   isDropTarget: boolean;
+  /** Double-clicking (or Enter on) an entry shows it in its folder instead of opening it. */
+  revealOnDoubleClick: boolean;
 }) {
   const t = useTranslation();
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -79,8 +82,9 @@ export function FileShelfPanel({
               key={item.id}
               item={item}
               isRecent={recentIds.has(item.id)}
+              dragHint={revealOnDoubleClick ? t.fileShelf.dragHintReveal : t.fileShelf.dragHint}
               onDragOut={(id) => void shelf.startDrag(id)}
-              onOpen={(id) => void shelf.open(id)}
+              onOpen={(id) => void (revealOnDoubleClick ? shelf.reveal(id) : shelf.open(id))}
               onCopy={shelf.copy}
               onReveal={(id) => void shelf.reveal(id)}
               onRemove={(id) => void shelf.remove(id)}

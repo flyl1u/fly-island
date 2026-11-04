@@ -5,6 +5,8 @@ import type { IslandMode, IslandPage } from "./types";
 
 type FileShelfDropOptions = {
   enabled: boolean;
+  /** False: files are only taken while the shelf page is already open. */
+  expandOnDrop: boolean;
   mode: IslandMode;
   page: IslandPage;
   isTucked: boolean;
@@ -27,6 +29,8 @@ export function useFileShelfDrop(options: FileShelfDropOptions) {
   const latestRef = useRef(options);
   // How to undo the page change a drag made, until it drops or leaves.
   const restoreRef = useRef<(() => void) | null>(null);
+  // The current drag is not for the shelf (it is closed and may not open for drops).
+  const ignoringRef = useRef(false);
 
   useEffect(() => {
     latestRef.current = options;
@@ -42,8 +46,11 @@ export function useFileShelfDrop(options: FileShelfDropOptions) {
       if (!current.enabled || current.shelf.isDraggingOut()) return;
 
       if (event.type === "enter") {
+        const isShelfOpen = current.mode === "expanded" && current.page === "shelf";
+        ignoringRef.current = !isShelfOpen && !current.expandOnDrop;
+        if (ignoringRef.current) return;
         setIsDropping(true);
-        if (current.mode === "expanded" && current.page === "shelf") return;
+        if (isShelfOpen) return;
         const previousPage = current.page;
         restoreRef.current = current.isTucked
           ? current.tuckIsland
@@ -53,6 +60,8 @@ export function useFileShelfDrop(options: FileShelfDropOptions) {
               ? current.collapseIsland
               : () => latestRef.current.setPage(previousPage);
         current.openIslandPage("shelf");
+      } else if (ignoringRef.current) {
+        ignoringRef.current = false;
       } else if (event.type === "drop") {
         setIsDropping(false);
         restoreRef.current = null;

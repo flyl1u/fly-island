@@ -205,6 +205,7 @@ export type Translations = {
     music: string;
     clipboardHistory: string;
     shelf: string;
+    shelfCount: (count: number) => string;
     layoutEditor: string;
   };
 
@@ -351,9 +352,26 @@ export type Translations = {
     reveal: string;
     removeItem: string;
     alreadyOnShelf: string;
+    dragHintReveal: string;
   };
 
   settings: {
+    fileShelf: {
+      title: string;
+      expandOnDrop: string;
+      expandOnDropHint: string;
+      autoCleanup: string;
+      cleanupNever: string;
+      cleanupDays: (days: number) => string;
+      removeMissing: string;
+      removeAfterDragOut: string;
+      maxItems: string;
+      doubleClick: string;
+      doubleClickOpen: string;
+      doubleClickReveal: string;
+      showCount: string;
+      cleanupHint: string;
+    };
     messageReception: string;
 
     modules: {

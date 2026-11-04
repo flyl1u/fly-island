@@ -22,6 +22,7 @@ const COPIED_FLASH_MS = 1_100;
 export function FileShelfItemRow({
   item,
   isRecent,
+  dragHint,
   onDragOut,
   onOpen,
   onCopy,
@@ -31,6 +32,8 @@ export function FileShelfItemRow({
   item: FileShelfItem;
   /** Just added (or moved to the top) by a drop. */
   isRecent: boolean;
+  /** Tooltip saying how to drag the entry out and what double-clicking does. */
+  dragHint: string;
   onDragOut: (id: string) => void;
   onOpen: (id: string) => void;
   onCopy: (id: string) => Promise<boolean>;
@@ -68,7 +71,7 @@ export function FileShelfItemRow({
       <button
         className="shelf-item__main"
         type="button"
-        title={item.missing ? `${t.fileShelf.missingHint}\n${item.path}` : `${t.fileShelf.dragHint}\n${item.path}`}
+        title={item.missing ? `${t.fileShelf.missingHint}\n${item.path}` : `${dragHint}\n${item.path}`}
         onPointerDown={press}
         onPointerMove={move}
         onPointerUp={() => {

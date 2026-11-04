@@ -4,6 +4,8 @@ export type IslandFont = "system" | "pixel";
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
 export type MinimizeAction = "tray" | "tuck";
+/** What double-clicking a file shelf entry does. */
+export type ShelfDoubleClick = "open" | "reveal";
 
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;
@@ -52,6 +54,18 @@ export type IslandSettings = {
   musicEnabled: boolean;
   agentStatusEnabled: boolean;
   shelfEnabled: boolean;
+  /** Dragging files onto a collapsed or tucked island opens the shelf as a drop zone. */
+  shelfExpandOnDrop: boolean;
+  /** Days after which shelf entries leave the list (0 keeps them). */
+  shelfAutoCleanupDays: number;
+  /** Entries whose file was moved or deleted leave the list instead of showing as missing. */
+  shelfRemoveMissing: boolean;
+  /** An entry leaves the list once it has been dragged out somewhere. */
+  shelfRemoveAfterDragOut: boolean;
+  shelfMaxItems: number;
+  shelfDoubleClick: ShelfDoubleClick;
+  /** The collapsed island shows how many files are on the shelf. */
+  shelfShowCount: boolean;
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;

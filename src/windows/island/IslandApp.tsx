@@ -149,9 +149,15 @@ export function IslandApp() {
     openIslandPage,
   });
 
-  const fileShelf = useFileShelf(settings.shelfEnabled);
+  const fileShelf = useFileShelf(settings.shelfEnabled, {
+    maxItems: settings.shelfMaxItems,
+    maxAgeDays: settings.shelfAutoCleanupDays,
+    removeMissing: settings.shelfRemoveMissing,
+    removeAfterDragOut: settings.shelfRemoveAfterDragOut,
+  });
   const isShelfDropping = useFileShelfDrop({
     enabled: settings.shelfEnabled,
+    expandOnDrop: settings.shelfExpandOnDrop,
     mode,
     page,
     isTucked,
@@ -244,6 +250,7 @@ export function IslandApp() {
         agentVisualState={agentVisualState}
         agentStatusLabel={agentStatusLabel}
         features={features}
+        shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
@@ -286,7 +293,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} />}
+        {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (
           <TodoNotebook
             {...notebookProps}

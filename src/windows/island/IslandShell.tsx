@@ -39,6 +39,8 @@ type IslandShellProps = {
   agentStatusLabel: string;
   /** Modules switched on; the header and collapsed bar hide the rest. */
   features: IslandFeatures;
+  /** Files on the shelf for the collapsed bar, or null when it does not show them. */
+  shelfCount: number | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -73,6 +75,7 @@ export function IslandShell({
   agentVisualState,
   agentStatusLabel,
   features,
+  shelfCount,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -165,6 +168,7 @@ export function IslandShell({
           agentSession={agentSession}
           mediaState={mediaState}
           showMusic={features.music}
+          shelfCount={shelfCount}
           agentVisualState={agentVisualState}
           agentStatusLabel={agentStatusLabel}
           onOpenPage={onOpenPage}

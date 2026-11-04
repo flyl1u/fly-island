@@ -152,3 +152,27 @@
   outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: 4px;
 }
+
+/* Files waiting on the shelf; opens the shelf page. */
+.island-shelf-count {
+  flex: 0 0 auto;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px;
+  color: rgba(190, 240, 225, 0.88);
+  background: rgba(110, 231, 200, 0.12);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.island-shelf-count:hover {
+  color: var(--color-white);
+  background: rgba(110, 231, 200, 0.22);
+}
