@@ -201,6 +201,7 @@ const en: Translations = {
     todoList: "Tasks",
     music: "Music",
     clipboardHistory: "Clipboard history",
+    shelf: "Shelf",
     layoutEditor: "Layout editor",
   },
 
@@ -331,6 +332,22 @@ const en: Translations = {
     noteFallback: "Note",
   },
 
+  fileShelf: {
+    title: "File shelf",
+    clear: "Clear shelf",
+    confirmClear: "Confirm clear (files are kept)",
+    empty: "Drop files on the island to keep them here",
+    dropHint: "Release to add to the shelf",
+    dragHint: "Drag out to another app, double-click to open",
+    folder: "Folder",
+    missing: "Missing",
+    missingHint: "The original was moved, renamed or deleted",
+    copyItem: "Copy the file to paste elsewhere",
+    copied: "Copied",
+    reveal: "Show in folder",
+    removeItem: "Remove from shelf (the file is kept)",
+  },
+
   settings: {
     messageReception: "Message reception",
 
@@ -341,6 +358,7 @@ const en: Translations = {
       music: "Enable music controls",
       agents: "Enable the AI Agent status light",
       mail: "QQ Mail",
+      shelf: "Enable the file shelf",
     },
     title: "Settings",
     resetAppearance: {
@@ -358,6 +376,7 @@ const en: Translations = {
       todos: "Todos",
       music: "Music",
       clipboard: "Clipboard",
+      shelf: "Shelf",
       agents: "AI Agent",
       about: "About",
     },

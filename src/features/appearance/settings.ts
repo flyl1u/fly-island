@@ -58,6 +58,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoEnabled: true,
   musicEnabled: true,
   agentStatusEnabled: true,
+  shelfEnabled: true,
   mailEnabled: true,
 };
 /**
@@ -226,6 +227,7 @@ export function normalizeSettings(
     todoEnabled: settings?.todoEnabled !== false,
     musicEnabled: settings?.musicEnabled !== false,
     agentStatusEnabled: settings?.agentStatusEnabled !== false,
+    shelfEnabled: settings?.shelfEnabled !== false,
     mailEnabled: settings?.mailEnabled !== false,
   };
 }

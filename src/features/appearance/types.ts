@@ -49,6 +49,7 @@ export type IslandSettings = {
   todoEnabled: boolean;
   musicEnabled: boolean;
   agentStatusEnabled: boolean;
+  shelfEnabled: boolean;
   mailEnabled: boolean;
 };
 

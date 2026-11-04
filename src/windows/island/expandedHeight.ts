@@ -3,6 +3,9 @@ import type { TodoItem, TodoPageMode } from "../../features/todos/types";
 import { BASE_EXPANDED_ISLAND_HEIGHT, CLIPBOARD_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { IslandPage } from "./types";
 
+// Tall enough for about four shelf rows before the list scrolls.
+const SHELF_EXPANDED_ISLAND_HEIGHT = 430;
+
 type ExpandedHeightInput = {
   page: IslandPage;
   todoPageMode: TodoPageMode;
@@ -16,7 +19,7 @@ type ExpandedHeightInput = {
 
 /**
  * Height of the expanded island for the open page. The todo page grows with its
- * rows, and the pages that scroll (todos, clipboard, messages) stop at the
+ * rows, and the pages that scroll (todos, clipboard, shelf, messages) stop at the
  * panel height limit; the music and archive layouts keep their fixed heights.
  */
 export function getExpandedIslandHeight({
@@ -52,6 +55,8 @@ export function getExpandedIslandHeight({
       ? musicSettingsOpen
         ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
         : MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
+      : page === "shelf"
+        ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "clipboard"
         ? Math.min(CLIPBOARD_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

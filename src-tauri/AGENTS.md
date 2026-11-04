@@ -13,6 +13,7 @@ src-tauri/src/
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装
 ├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出
 ├── clipboard_history/
+├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
 ├── media_control/
 ├── qq_mail/                 # 命令、后台服务、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/
@@ -21,7 +22,7 @@ src-tauri/src/
 ├── settings_window.rs
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs
-└── win32/                   # Win32 / COM 的安全封装：registry.rs、process.rs、input.rs（按键状态）已建立，窗口与 COM 初始化待迁移
+└── win32/                   # Win32 / COM 的安全封装：registry.rs、process.rs、input.rs（按键状态）、ole.rs（文件拖出）已建立，窗口与 COM 初始化待迁移
 ```
 
 ## lib.rs 与模块组织

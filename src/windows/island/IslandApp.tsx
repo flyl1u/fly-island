@@ -15,11 +15,13 @@ import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
 import { MusicPlayerPanel } from "../../features/media/MusicPlayerPanel";
+import { FileShelfPanel } from "../../features/file-shelf/FileShelfPanel";
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
 import type { TodoItem } from "../../features/todos/types";
 import { useTodos } from "../../features/todos/useTodos";
+import { useFileShelf } from "../../features/file-shelf/useFileShelf";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getTodoScrollStartRows } from "./layout";
@@ -29,6 +31,7 @@ import { useHoverExpand } from "./useHoverExpand";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
 import { useIslandFeatures } from "./useIslandFeatures";
+import { useFileShelfDrop } from "./useFileShelfDrop";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
@@ -138,6 +141,21 @@ export function IslandApp() {
     setPage,
     setMessageSource,
     openIslandPage,
+  });
+
+  const fileShelf = useFileShelf(settings.shelfEnabled);
+  const isShelfDropping = useFileShelfDrop({
+    enabled: settings.shelfEnabled,
+    mode,
+    page,
+    isTucked,
+    isPeeking,
+    shelf: fileShelf,
+    openIslandPage,
+    setPage,
+    collapseIsland,
+    tuckIsland,
+    minimizeToEdge,
   });
 
   useEffect(() => {
@@ -261,6 +279,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
+        {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} />}
         {page === "todo" && (
           <TodoNotebook
             {...notebookProps}

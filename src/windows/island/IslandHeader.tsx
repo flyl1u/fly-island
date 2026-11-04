@@ -110,6 +110,20 @@ export function IslandHeader({
             }}
           />
         )}
+        {features.shelf && (
+          <button
+            className={`dot-button dot-button--shelf ${
+              page === "shelf" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            title={t.island.shelf}
+            aria-label={t.island.shelf}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("shelf");
+            }}
+          />
+        )}
       </div>
 
       <button

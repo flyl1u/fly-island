@@ -15,6 +15,7 @@ src/
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出
 │   ├── media/               # 媒体控制、波形
 │   ├── clipboard/           # 剪贴板历史、快捷键
+│   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
 │   ├── messages/            # 消息导航与预览；qq-mail/、qq-notifications/、wechat/ 子目录
 │   ├── agent-status/        # AI 代理状态
 │   ├── appearance/          # 外观设置、布局编辑器、预设

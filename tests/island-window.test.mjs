@@ -75,13 +75,14 @@ test("a stored island position is rounded and invalid data is ignored", () => {
 
 test("pages and message sources that are switched off fall back to ones still on", async () => {
   const { isPageEnabled, resolveIslandPage, resolveMessageSource } = await import("../src/windows/island/features.ts");
-  const all = { todo: true, music: true, clipboard: true, qq: true, wechat: true, qqMail: true };
+  const all = { todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true };
   assert.equal(resolveIslandPage("music", all), "music");
   assert.equal(resolveIslandPage("todo", { ...all, todo: false }), "music");
-  assert.equal(resolveIslandPage("todo", { ...all, todo: false, music: false, clipboard: false }), "qq");
+  assert.equal(resolveIslandPage("todo", { ...all, todo: false, music: false, clipboard: false }), "shelf");
+  assert.equal(resolveIslandPage("todo", { ...all, todo: false, music: false, clipboard: false, shelf: false }), "qq");
   // The messages page stays while any one of its sources is on.
   assert.equal(isPageEnabled("qq", { ...all, qq: false, wechat: false }), true);
-  const none = { todo: false, music: false, clipboard: false, qq: false, wechat: false, qqMail: false };
+  const none = { todo: false, music: false, clipboard: false, shelf: false, qq: false, wechat: false, qqMail: false };
   assert.equal(isPageEnabled("qq", none), false);
   assert.equal(resolveIslandPage("todo", none), null);
   assert.equal(resolveMessageSource("qq", { ...all, qq: false }), "wechat");

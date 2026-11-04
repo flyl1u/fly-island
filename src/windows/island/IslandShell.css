@@ -57,6 +57,10 @@
   --glass-page-accent: 182, 169, 211;
 }
 
+.island--shelf {
+  --glass-page-accent: 110, 231, 200;
+}
+
 .island__glass {
   display: none;
 }

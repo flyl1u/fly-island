@@ -201,6 +201,7 @@ const zhCN: Translations = {
     todoList: "任务清单",
     music: "Music",
     clipboardHistory: "剪贴板历史",
+    shelf: "中转",
     layoutEditor: "布局编辑",
   },
 
@@ -334,6 +335,22 @@ const zhCN: Translations = {
     noteFallback: "备注",
   },
 
+  fileShelf: {
+    title: "文件中转",
+    clear: "清空中转",
+    confirmClear: "确认清空（不会删除文件）",
+    empty: "把文件拖到岛上，就会暂存在这里",
+    dropHint: "松开鼠标，加入中转",
+    dragHint: "拖出到其他应用，双击打开",
+    folder: "文件夹",
+    missing: "已失效",
+    missingHint: "原文件已被移动、改名或删除",
+    copyItem: "复制文件，可直接粘贴",
+    copied: "已复制",
+    reveal: "在文件夹中显示",
+    removeItem: "从中转移除（不会删除文件）",
+  },
+
   settings: {
     messageReception: "消息接收",
 
@@ -344,6 +361,7 @@ const zhCN: Translations = {
       music: "启用音乐控制",
       agents: "启用 AI Agent 状态灯",
       mail: "QQ 邮箱",
+      shelf: "启用文件中转",
     },
     title: "设置",
     resetAppearance: {
@@ -361,6 +379,7 @@ const zhCN: Translations = {
       todos: "待办",
       music: "音乐",
       clipboard: "剪贴板",
+      shelf: "中转",
       agents: "AI Agent",
       about: "关于",
     },

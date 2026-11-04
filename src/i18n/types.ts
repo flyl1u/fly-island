@@ -203,6 +203,7 @@ export type Translations = {
     todoList: string;
     music: string;
     clipboardHistory: string;
+    shelf: string;
     layoutEditor: string;
   };
 
@@ -334,6 +335,22 @@ export type Translations = {
     noteFallback: string;
   };
 
+  fileShelf: {
+    title: string;
+    clear: string;
+    confirmClear: string;
+    empty: string;
+    dropHint: string;
+    dragHint: string;
+    folder: string;
+    missing: string;
+    missingHint: string;
+    copyItem: string;
+    copied: string;
+    reveal: string;
+    removeItem: string;
+  };
+
   settings: {
     messageReception: string;
 
@@ -344,6 +361,7 @@ export type Translations = {
       music: string;
       agents: string;
       mail: string;
+      shelf: string;
     };
     title: string;
     resetAppearance: {
@@ -361,6 +379,7 @@ export type Translations = {
       todos: string;
       music: string;
       clipboard: string;
+      shelf: string;
       agents: string;
       about: string;
     };

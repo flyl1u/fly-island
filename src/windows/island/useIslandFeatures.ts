@@ -40,10 +40,11 @@ export function useIslandFeatures({
     todo: settings.todoEnabled,
     music: settings.musicEnabled,
     clipboard: clipboardEnabled,
+    shelf: settings.shelfEnabled,
     qq: qqEnabled,
     wechat: wechatEnabled,
     qqMail: settings.mailEnabled,
-  }), [clipboardEnabled, qqEnabled, settings.mailEnabled, settings.musicEnabled, settings.todoEnabled, wechatEnabled]);
+  }), [clipboardEnabled, qqEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, wechatEnabled]);
 
   useEffect(() => {
     const next = resolveIslandPage(page, features);
