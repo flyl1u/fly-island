@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { Keyboard } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { NumberControl } from "../../components/controls/NumberControl";
@@ -7,11 +7,16 @@ import type { ClipboardHistorySettings } from "./api";
 import { buildShortcutFromEvent, normalizeClipboardShortcut } from "./shortcut";
 import "./ClipboardSettingsSection.css";
 
-export function ClipboardSettingsSection({ clipboardSettings, focusClipboardShortcutToken, onClipboardSettingsChange, onClipboardShortcutFocusHandled }: {
+/**
+ * The clipboard history options below the module switch (which is `enabled`, set by the
+ * page). `children` are further rows from outside this feature, such as the row count.
+ */
+export function ClipboardSettingsSection({ clipboardSettings, focusClipboardShortcutToken, onClipboardSettingsChange, onClipboardShortcutFocusHandled, children }: {
   clipboardSettings: ClipboardHistorySettings;
   focusClipboardShortcutToken: number;
   onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
   onClipboardShortcutFocusHandled: () => void;
+  children?: ReactNode;
 }) {
   const t = useTranslation();
   const clipboardShortcutPanelRef = useRef<HTMLElement | null>(null);
@@ -83,13 +88,6 @@ export function ClipboardSettingsSection({ clipboardSettings, focusClipboardShor
         <span>{t.settings.clipboard.title}</span>
       </div>
       <ToggleControl
-        label={t.settings.clipboard.enabled}
-        checked={clipboardSettings.enabled}
-        onChange={(enabled) =>
-          onClipboardSettingsChange({ ...clipboardSettings, enabled })
-        }
-      />
-      <ToggleControl
         label={t.settings.clipboard.captureImages}
         checked={clipboardSettings.captureImages}
         onChange={(captureImages) =>
@@ -146,6 +144,7 @@ export function ClipboardSettingsSection({ clipboardSettings, focusClipboardShor
           </span>
         </button>
       </div>
+      {children}
     </section>
   );
 }

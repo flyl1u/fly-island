@@ -406,6 +406,7 @@ export type Translations = {
       mail: string;
       shelf: string;
       translation: string;
+      clipboard: string;
     };
     title: string;
     resetAppearance: {
@@ -562,10 +563,8 @@ export type Translations = {
 
     clipboard: {
       title: string;
-      enabled: string;
       captureImages: string;
       maxItems: string;
-      panelTitle: string;
       visibleRows: string;
       shortcut: string;
       shortcutEnabled: string;

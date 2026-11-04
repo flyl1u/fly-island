@@ -406,6 +406,7 @@ const zhCN: Translations = {
       mail: "QQ 邮箱",
       shelf: "启用文件中转",
       translation: "启用快捷翻译",
+      clipboard: "启用剪贴板历史",
     },
     title: "设置",
     resetAppearance: {
@@ -562,10 +563,8 @@ const zhCN: Translations = {
 
     clipboard: {
       title: "剪贴板历史",
-      enabled: "记录剪贴板",
       captureImages: "记录图片",
       maxItems: "最大历史条数",
-      panelTitle: "面板",
       visibleRows: "展开后显示条数",
       shortcut: "展开快捷键",
       shortcutEnabled: "启用展开快捷键",

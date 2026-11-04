@@ -403,6 +403,7 @@ const en: Translations = {
       mail: "QQ Mail",
       shelf: "Enable the file shelf",
       translation: "Enable quick translation",
+      clipboard: "Enable clipboard history",
     },
     title: "Settings",
     resetAppearance: {
@@ -559,10 +560,8 @@ const en: Translations = {
 
     clipboard: {
       title: "Clipboard history",
-      enabled: "Record clipboard",
       captureImages: "Record images",
       maxItems: "Max entries",
-      panelTitle: "Panel",
       visibleRows: "Entries shown when open",
       shortcut: "Expand shortcut",
       shortcutEnabled: "Enable expand shortcut",
