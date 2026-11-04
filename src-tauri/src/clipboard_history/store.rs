@@ -15,20 +15,11 @@ pub(super) const MAX_IMAGE_PNG_BYTES: usize = 10 * 1024 * 1024;
 
 pub(super) const THUMBNAIL_MAX_SIDE: u32 = 128;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct PersistedClipboardHistory {
     pub(super) settings: ClipboardHistorySettings,
     pub(super) items: Vec<ClipboardHistoryItem>,
-}
-
-impl Default for PersistedClipboardHistory {
-    fn default() -> Self {
-        Self {
-            settings: ClipboardHistorySettings::default(),
-            items: Vec::new(),
-        }
-    }
 }
 
 pub(super) fn load_history(history_path: &Path) -> PersistedClipboardHistory {

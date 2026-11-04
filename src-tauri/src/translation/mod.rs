@@ -33,8 +33,11 @@ static APP: OnceLock<AppHandle> = OnceLock::new();
 static HAS_POSITIONED_WINDOW: AtomicBool = AtomicBool::new(false);
 static HOTKEY_WINDOW: Mutex<Option<isize>> = Mutex::new(None);
 static ACTIVE_BINDING: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
-static PENDING_BINDING: Mutex<Option<(ShortcutBinding, mpsc::Sender<Result<String, String>>)>> =
-    Mutex::new(None);
+/// A requested shortcut and where to report its registration result (the label
+/// or an error).
+type PendingBinding = (ShortcutBinding, mpsc::Sender<Result<String, String>>);
+
+static PENDING_BINDING: Mutex<Option<PendingBinding>> = Mutex::new(None);
 
 pub fn init(app: &AppHandle) {
     if APP.set(app.clone()).is_ok() {

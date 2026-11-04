@@ -208,7 +208,7 @@ pub(super) fn replace_cid_references(html: &str, replacements: &[(String, String
 // UID FETCH 只查这一封邮件，但服务器可以把分段拆成多条 FETCH 响应发回来，而且续包不一定
 // 重复 UID（QQ 实测就只给第一条带 UID）。按 uid 相等过滤会把续包整批丢掉，只剩下第一批分段，
 // 所以这里只把带 UID 的响应排在前面，其余响应照样参与合并。
-pub(super) fn responses_for_message<'a>(messages: &'a [Fetch], uid: u32) -> Vec<&'a Fetch> {
+pub(super) fn responses_for_message(messages: &[Fetch], uid: u32) -> Vec<&Fetch> {
     let (mut mine, others): (Vec<&Fetch>, Vec<&Fetch>) =
         messages.iter().partition(|item| item.uid == Some(uid));
     mine.extend(others);

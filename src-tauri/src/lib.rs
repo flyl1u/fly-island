@@ -24,11 +24,7 @@ pub fn run() {
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
         context.config_mut().identifier = identifier;
     }
-    #[expect(
-        clippy::expect_used,
-        reason = "the app cannot run without its Tauri runtime; panicking with this message is the intended startup failure"
-    )]
-    tauri::Builder::default()
+    let result = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = island::show_island(app);
         }))
@@ -48,7 +44,6 @@ pub fn run() {
 
             if let WindowEvent::Moved(position) = event {
                 island::record_dragged_position(*position);
-                return;
             }
 
             // Native Acrylic/Region is intentionally not reapplied on DPI
@@ -173,6 +168,9 @@ pub fn run() {
             translation::set_translation_shortcut,
             settings_window::open_settings_window,
         ])
-        .run(context)
-        .expect("error while running FocuSD Island");
+        .run(context);
+    if let Err(error) = result {
+        eprintln!("error while running FocuSD Island: {error}");
+        std::process::exit(1);
+    }
 }

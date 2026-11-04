@@ -54,6 +54,10 @@ pub fn set_island_layout(app: AppHandle, layout: IslandLayout) -> Result<(), Str
 }
 
 #[tauri::command]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "each argument is a named field of the set_island_interaction IPC contract"
+)]
 pub fn set_island_interaction(
     app: AppHandle,
     mode: String,

@@ -26,10 +26,10 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             let is_inside = cursor_is_inside_island(&window);
             let should_ignore = !is_inside;
 
-            if should_ignore != ignoring_cursor {
-                if window.set_ignore_cursor_events(should_ignore).is_ok() {
-                    ignoring_cursor = should_ignore;
-                }
+            if should_ignore != ignoring_cursor
+                && window.set_ignore_cursor_events(should_ignore).is_ok()
+            {
+                ignoring_cursor = should_ignore;
             }
 
             if is_inside != was_inside {
@@ -89,6 +89,10 @@ pub(super) fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
     )
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "a point and the notch's rectangle and two radii, all plain numbers"
+)]
 pub(super) fn point_in_notch(
     x: f64,
     y: f64,

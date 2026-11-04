@@ -29,11 +29,13 @@ pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
 pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
+/// Cache key (source app, title and artist) and the data URL decoded for it.
+pub(super) type CachedThumbnail = (String, Option<String>);
+
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
 /// source app, title and artist, which is stable while a track is playing.
-pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> =
-    OnceLock::new();
+pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<CachedThumbnail>>> = OnceLock::new();
 
 pub(super) fn on_media_thread<T, F>(operation: F) -> Result<T, String>
 where
