@@ -25,5 +25,6 @@ test("provider, custom base URL and per-provider models are kept when valid", ()
   assert.equal(settings.customBaseUrl, "http://localhost:11434/v1");
   assert.deepEqual(settings.models, { custom: "qwen3:8b", volcengine: "ep-123" });
   assert.equal(normalizeTranslationSettings({ provider: "baidu" }).provider, "deepseek");
+  assert.equal(normalizeTranslationSettings({ provider: "siliconflow" }).provider, "siliconflow");
   assert.deepEqual(normalizeTranslationSettings({ models: "x" }).models, {});
 });

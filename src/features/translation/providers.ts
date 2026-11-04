@@ -5,6 +5,7 @@ export const TRANSLATION_PROVIDERS = [
   "volcengine",
   "dashscope",
   "moonshot",
+  "siliconflow",
   "openai",
   "custom",
 ] as const;

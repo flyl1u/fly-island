@@ -144,6 +144,7 @@ const en: Translations = {
       volcengine: "Volcano Ark",
       dashscope: "Qwen (DashScope)",
       moonshot: "Kimi",
+      siliconflow: "SiliconFlow",
       openai: "OpenAI",
       custom: "Custom (OpenAI-compatible)",
     },

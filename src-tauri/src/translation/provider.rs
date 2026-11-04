@@ -14,7 +14,7 @@ pub(super) struct Provider {
     default_model: Option<&'static str>,
 }
 
-// Mirrored by TRANSLATION_PROVIDERS in src/windows/translation/providers.ts.
+// Mirrored by TRANSLATION_PROVIDERS in src/features/translation/providers.ts.
 const PROVIDERS: &[Provider] = &[
     Provider {
         id: "deepseek",
@@ -38,6 +38,12 @@ const PROVIDERS: &[Provider] = &[
         id: "moonshot",
         name: "Kimi",
         base_url: Some("https://api.moonshot.cn/v1"),
+        default_model: None,
+    },
+    Provider {
+        id: "siliconflow",
+        name: "硅基流动",
+        base_url: Some("https://api.siliconflow.cn/v1"),
         default_model: None,
     },
     Provider {
@@ -187,6 +193,22 @@ mod tests {
         assert!(resolve_model(ark, None).is_err());
         assert_eq!(resolve_model(ark, Some(" doubao-x ")).unwrap(), "doubao-x");
         assert!(resolve_model(ark, Some(&"m".repeat(201))).is_err());
+    }
+
+    #[test]
+    fn siliconflow_uses_its_openai_compatible_endpoint_and_needs_a_model() {
+        let siliconflow = provider("siliconflow");
+        assert_eq!(
+            completions_url(siliconflow, Some("https://attacker.example"))
+                .unwrap()
+                .as_str(),
+            "https://api.siliconflow.cn/v1/chat/completions"
+        );
+        assert!(resolve_model(siliconflow, None).is_err());
+        assert_eq!(
+            resolve_model(siliconflow, Some("Qwen/Qwen2.5-7B-Instruct")).unwrap(),
+            "Qwen/Qwen2.5-7B-Instruct"
+        );
     }
 
     #[test]

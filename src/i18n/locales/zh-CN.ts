@@ -144,6 +144,7 @@ const zhCN: Translations = {
       volcengine: "火山方舟",
       dashscope: "通义千问",
       moonshot: "Kimi",
+      siliconflow: "硅基流动",
       openai: "OpenAI",
       custom: "自定义（OpenAI 兼容）",
     },

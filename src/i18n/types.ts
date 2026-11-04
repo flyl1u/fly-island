@@ -146,6 +146,7 @@ export type Translations = {
       volcengine: string;
       dashscope: string;
       moonshot: string;
+      siliconflow: string;
       openai: string;
       custom: string;
     };
