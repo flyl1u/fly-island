@@ -235,7 +235,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 
 - [x] **7.1** 白名单清空，删除白名单机制中的存量条目。（5.6 完成后 `lines`、`inlineTests` 均为空；检查脚本保留，用于阻止新的超限文件）
 - [x] **7.2** 把 ESLint 中的存量 warn 全部升级为 error。（`exhaustive-deps` 是唯一的 warn 规则；5 处存量警告在 `14eff59` 处理后升级，ESLint 0 error / 0 warning）
-- [ ] **7.3** 更新根目录 `AGENTS.md`，删除"结构重构进行中"的说明；更新两份子目录 `AGENTS.md` 中的目录地图。如果 README 中的项目结构说明也受影响，同步更新中英文两个版本。
+- [x] **7.3** 更新根目录 `AGENTS.md`，删除"结构重构进行中"的说明；更新两份子目录 `AGENTS.md` 中的目录地图。如果 README 中的项目结构说明也受影响，同步更新中英文两个版本。（根目录改为"已完成"并指向计划中的待人工验收项；`src-tauri/AGENTS.md` 的 `win32/` 地图、`unsafe` 规则与 clippy 规则按 Phase 6 结果更新；`src/AGENTS.md` 的地图与实际目录一致，无需修改；三份 README 没有项目结构说明，不受影响；`overview.md` 的 Rust 迁移映射标记 6.x 完成。）
 - [ ] **7.4** 运行完整的 `pnpm tauri build`，在本机做一轮回归。
 
 ---

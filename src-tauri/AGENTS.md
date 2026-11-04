@@ -24,7 +24,9 @@ src-tauri/src/
 ├── settings_window.rs
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs
-└── win32/                   # Win32 / COM 的安全封装：registry.rs、process.rs、input.rs（按键状态）、ole.rs（文件拖出）已建立，窗口与 COM 初始化待迁移
+└── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
+                             # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
+                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry
 ```
 
 ## lib.rs 与模块组织
@@ -61,7 +63,8 @@ src-tauri/src/
 
 ## unsafe 与 Windows API
 
-- **新增的 `unsafe` 只能写在 `win32/` 中**，对外暴露安全函数。存量的 `unsafe` 按重构计划迁移，迁移前不在原处新增。
+- **`unsafe` 只能写在 `win32/` 中**，对外暴露安全函数，参数尽量用 Rust 类型（`&str`、`u32`），不让调用方传裸指针。生产代码中 `win32/` 以外没有 `unsafe`；窗口过程实现 `win32::message_window::WindowMessages`，枚举窗口用 `win32::window::for_each_top_level_window` 的闭包。
+- `wechat_reminders/source.rs` 及它用到的 `win32/` 文件也被 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 编译，这些文件只能依赖 `windows` crate，不能引用 crate 内其他模块。
 - 每个 `unsafe` 块上方必须写 `// SAFETY:` 注释，说明满足了哪些前置条件。
 - 句柄、COM 对象等资源用 RAII 类型包装，在 `Drop` 中释放，不手动配对 close。
 - COM 初始化与反初始化在同一线程中配对完成。
@@ -86,6 +89,6 @@ src-tauri/src/
 
 - 修改 `tauri.conf.json` 中的窗口配置时，同步检查 `capabilities/default.json`、前端 `main.tsx` 的窗口分发，以及 Rust 中的 label 常量。
 - `scripts/focusd-agent-*.{cmd,ps1}` 通过 `include_str!` 编入二进制，修改后需要完整的 Rust 验证。
-- clippy lint 在 `Cargo.toml` 的 `[lints.clippy]` 中声明，测试代码的放行写在 `clippy.toml`；不要在源文件中用 `#![warn]` / `#[allow]` 重复声明。告警数量只减不增，基线见 `docs/architecture/refactor-plan.md`。
+- clippy lint 在 `Cargo.toml` 的 `[lints.clippy]` 中声明（`undocumented_unsafe_blocks`、`unwrap_used`、`expect_used` 为 deny），测试代码的放行写在 `clippy.toml`；不要在源文件中用 `#![warn]` / `#[allow]` 重复声明这些 lint。`cargo clippy --all-targets` 保持 0 告警；个别确实无法消除的默认 lint（例如参数即 IPC 契约的命令触发 `too_many_arguments`）在该项上用带 `reason` 的 `#[expect(...)]`。
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。

@@ -4,7 +4,7 @@
 
 - 修改 `src/` 时还须遵守 [src/AGENTS.md](src/AGENTS.md)（前端规则）。
 - 修改 `src-tauri/` 时还须遵守 [src-tauri/AGENTS.md](src-tauri/AGENTS.md)（Rust / Tauri 规则）。
-- 目标架构见 [docs/architecture/overview.md](docs/architecture/overview.md)，结构重构的分步计划与进度见 [docs/architecture/refactor-plan.md](docs/architecture/refactor-plan.md)。
+- 目标架构见 [docs/architecture/overview.md](docs/architecture/overview.md)，结构重构的分步记录、验证结果与待人工验收项见 [docs/architecture/refactor-plan.md](docs/architecture/refactor-plan.md)。
 
 子目录规则比本文件更具体，两者冲突时以子目录规则为准。
 
@@ -20,7 +20,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | `translation` | `?window=translation` | 快捷翻译窗口，常驻、隐藏显示 |
 | `settings` | `?window=settings` | 设置窗口，`create: false`，按需创建 |
 
-**当前阶段：结构重构进行中（Phase 5 已完成，下一步是 Phase 6 的 `unsafe` 收口）。** 各模块中散落的 `unsafe` Win32 / COM 调用、`expect` 等旧写法是重构对象，**不是**新代码的风格样板。新代码按目标结构编写，旧代码按重构计划逐步迁移。
+**结构重构已完成（Phase 0–6，收尾与待人工验收项见 [refactor-plan.md](docs/architecture/refactor-plan.md)）。** 代码已按 [overview.md](docs/architecture/overview.md) 的目标结构组织：Rust 侧的 `unsafe` 只在 `src-tauri/src/win32/` 中，生产代码不用 `unwrap` / `expect`，clippy 与 ESLint 均为 0 告警。新代码沿用这套结构与子目录规则。
 
 ## 技术栈
 
