@@ -26,7 +26,8 @@ src-tauri/src/
 ├── notification_diagnostics.rs
 └── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
-                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry
+                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry、
+                             # notification_state（前台是否有全屏程序）
 ```
 
 ## lib.rs 与模块组织

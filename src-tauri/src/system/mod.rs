@@ -1,5 +1,7 @@
-//! Windows integration: launch at startup, updater proxy and config, todo Markdown export.
+//! Windows integration: launch at startup, updater proxy and config, todo Markdown
+//! export, full-screen app detection.
 
+pub(crate) mod fullscreen;
 pub(crate) mod startup;
 pub(crate) mod todo_export;
 pub(crate) mod updater;

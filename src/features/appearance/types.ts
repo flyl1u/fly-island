@@ -83,6 +83,10 @@ export type IslandSettings = {
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;
+  /** While a full-screen app (game, video, slides) is in front: no hover opening or focus, no message pop-ups. */
+  gameDoNotDisturb: boolean;
+  /** While a full-screen app is in front, the island tucks to the top edge and comes back after. */
+  gameAutoTuck: boolean;
 };
 
 export type IslandPreset = {

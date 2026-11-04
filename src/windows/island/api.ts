@@ -91,6 +91,18 @@ export function releaseIslandHoverFocus() {
   return invoke<boolean>("release_island_hover_focus");
 }
 
+// Mirrors FOREGROUND_FULLSCREEN_CHANGED_EVENT in src-tauri/src/system/fullscreen.rs.
+export const FOREGROUND_FULLSCREEN_CHANGED_EVENT = "foreground-fullscreen-changed";
+
+/** Whether a full-screen app (game, video, slides) was in the foreground at the last check. */
+export function getForegroundFullscreen() {
+  return invoke<boolean>("get_foreground_fullscreen");
+}
+
+export function listenForegroundFullscreen(handler: (fullscreen: boolean) => void): Promise<UnlistenFn> {
+  return listen<boolean>(FOREGROUND_FULLSCREEN_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
+
 export function startIslandDrag() {
   return invoke("start_island_drag");
 }

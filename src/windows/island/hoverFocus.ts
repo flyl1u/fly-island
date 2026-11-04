@@ -6,10 +6,10 @@ export const HOVER_FOCUS_RETRY_MS = 120;
 export type HoverFocusState = {
   expanded: boolean;
   hovering: boolean;
-  /** The island took the focus (or asked to) and has not handed it back yet. */
-  holding: boolean;
   /** A text field in the island has focus. */
   editing: boolean;
+  /** Game mode: a full-screen app is in front and must keep the focus. */
+  blocked: boolean;
 };
 
 export type HoverFocusAction = "take" | "release" | "none";
@@ -17,10 +17,12 @@ export type HoverFocusAction = "take" | "release" | "none";
 /**
  * What the island does with the keyboard focus: take it while the cursor is on the
  * expanded panel, hand it back once the cursor leaves or the island collapses. A
- * draft being typed keeps it while the panel stays open.
+ * draft being typed keeps it while the panel stays open. Handing back is safe to ask
+ * for at any time: the native side only acts when it took the focus from a window
+ * (on hover or for a global shortcut) and still holds it.
  */
-export function hoverFocusAction({ expanded, hovering, holding, editing }: HoverFocusState): HoverFocusAction {
-  if (expanded && hovering) return "take";
-  if (!holding || (expanded && editing)) return "none";
+export function hoverFocusAction({ expanded, hovering, editing, blocked }: HoverFocusState): HoverFocusAction {
+  if (expanded && hovering) return blocked ? "none" : "take";
+  if (expanded && editing) return "none";
   return "release";
 }

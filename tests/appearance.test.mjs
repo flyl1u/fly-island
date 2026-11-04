@@ -238,6 +238,15 @@ test("file shelf settings default for older settings and only take known values"
   assert.equal(normalizeSettings({ shelfRemoveMissing: true, shelfShowCount: true }).shelfShowCount, true);
 });
 
+test("game mode keeps quiet by default and tucks only when asked", () => {
+  const older = normalizeSettings({});
+  assert.equal(older.gameDoNotDisturb, true);
+  assert.equal(older.gameAutoTuck, false);
+  assert.equal(normalizeSettings({ gameDoNotDisturb: false }).gameDoNotDisturb, false);
+  assert.equal(normalizeSettings({ gameAutoTuck: true }).gameAutoTuck, true);
+  assert.equal(normalizeSettings({ gameAutoTuck: "yes" }).gameAutoTuck, false);
+});
+
 test("translation opens in its window unless the island page was chosen", () => {
   assert.equal(normalizeSettings({}).translationTarget, "window");
   assert.equal(normalizeSettings({ translationTarget: "island" }).translationTarget, "island");

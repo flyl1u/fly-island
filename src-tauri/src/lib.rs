@@ -86,6 +86,7 @@ pub fn run() {
                 }
                 island::start_cursor_passthrough_loop(window);
             }
+            system::fullscreen::start(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -138,6 +139,7 @@ pub fn run() {
             island::minimize_island,
             island::focus::take_island_hover_focus,
             island::focus::release_island_hover_focus,
+            system::fullscreen::get_foreground_fullscreen,
             system::startup::get_launch_at_startup,
             system::startup::set_launch_at_startup,
             system::updater::get_updater_proxy,

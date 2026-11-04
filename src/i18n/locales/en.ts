@@ -477,6 +477,15 @@ const en: Translations = {
       revealOnMessage: "Slide out from the edge for new messages",
     },
 
+    gameMode: {
+      title: "Game mode",
+      hint: "Applies while a full-screen app is in front, such as a game, a full-screen video or slides.",
+      doNotDisturb: "Do not disturb in games",
+      doNotDisturbHint: "No opening on hover, no taking the keyboard focus, no message pop-ups. Messages still arrive.",
+      autoTuck: "Tuck away during games",
+      autoTuckHint: "Tucks to the top edge while a full-screen app is in front and slides back out afterwards.",
+    },
+
     shortcuts: {
       globalTitle: "Global shortcuts",
       globalHint: "These work in any program. Click a button, then press a new key combination; Esc cancels.",

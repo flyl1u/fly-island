@@ -4,7 +4,7 @@
 //! is over it and hands it back to that app afterwards.
 
 use std::sync::atomic::{AtomicIsize, Ordering};
-use tauri::AppHandle;
+use tauri::{AppHandle, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
 use super::main_window;
@@ -40,6 +40,23 @@ pub fn take_island_hover_focus(app: AppHandle) -> Result<bool, String> {
     // Already in front, so this only moves the focus into the webview.
     window.set_focus().map_err(|error| error.to_string())?;
     Ok(true)
+}
+
+/// Focuses the island for a global shortcut and remembers the window it took the
+/// focus from, so collapsing the island hands it back. A hotkey press lets the
+/// process take the foreground, so set_focus does not need its Alt fallback here.
+pub(crate) fn focus_island_for_shortcut(window: &WebviewWindow) {
+    let foreground = win32::window::foreground_window();
+    let _ = window.set_focus();
+    let Ok(island) = window.hwnd() else {
+        return;
+    };
+    if foreground != island
+        && !foreground.is_invalid()
+        && win32::window::foreground_window() == island
+    {
+        PREVIOUS_FOREGROUND.store(foreground.0 as isize, Ordering::SeqCst);
+    }
 }
 
 /// Gives the focus back to the window the island took it from, but only while the

@@ -480,6 +480,15 @@ const zhCN: Translations = {
       revealOnMessage: "收起到边缘时，收到新消息自动露出",
     },
 
+    gameMode: {
+      title: "游戏模式",
+      hint: "前台是全屏程序时生效，比如游戏、全屏视频和演示。",
+      doNotDisturb: "游戏勿扰",
+      doNotDisturbHint: "不悬停展开，不抢键盘焦点，不弹消息预览。消息照常接收。",
+      autoTuck: "游戏时收起到顶部",
+      autoTuckHint: "全屏程序在前台时收起到屏幕顶部，退出后自动露出。",
+    },
+
     shortcuts: {
       globalTitle: "全局快捷键",
       globalHint: "在任何程序里都能按。点击按钮后按下新的组合键，按 Esc 取消。",

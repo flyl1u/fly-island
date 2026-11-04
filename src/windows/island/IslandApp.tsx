@@ -35,6 +35,7 @@ import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useHoverExpand } from "./useHoverExpand";
 import { useHoverFocus } from "./useHoverFocus";
+import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
 import { useIslandFeatures } from "./useIslandFeatures";
@@ -66,8 +67,10 @@ export function IslandApp() {
     toggleClipboardHistory,
   } = useIslandNavigation();
   const [settings, setSettings] = useIslandSettings();
+  // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
+  const game = useGameMode(settings, isTucked, tuckIsland, revealIsland);
   // A tucked island still takes message previews when it will slide out to show them.
-  const canPreviewMessages = mode === "collapsed" && (!isTucked || settings.revealOnMessage);
+  const canPreviewMessages = !game.quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
   const qqNotifications = useQQNotifications(canPreviewMessages);
   const wechatReminders = useWeChatReminders(canPreviewMessages);
   const qqMail = useQQMail(canPreviewMessages);
@@ -204,7 +207,7 @@ export function IslandApp() {
     [agentSession, openEnabledPage, page],
   );
   useHoverExpand({
-    enabled: settings.expandTrigger === "hover",
+    enabled: settings.expandTrigger === "hover" && !game.quiet,
     delayMs: settings.hoverExpandDelayMs,
     paused: hasMessagePreview,
     collapseDelayMs: settings.hoverCollapseDelayMs,
@@ -214,7 +217,7 @@ export function IslandApp() {
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
-  useHoverFocus(mode);
+  useHoverFocus(mode, game.quiet);
   usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
   useIslandKeyboard(

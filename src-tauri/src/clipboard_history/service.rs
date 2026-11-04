@@ -390,7 +390,7 @@ impl ClipboardHistoryService {
     fn emit_shortcut(&self) {
         if let Some(window) = self.app.get_webview_window(MAIN_WINDOW_LABEL) {
             let _ = window.show();
-            let _ = window.set_focus();
+            crate::island::focus::focus_island_for_shortcut(&window);
         }
 
         let _ = self.app.emit(HOTKEY_EVENT, ());

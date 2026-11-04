@@ -13,11 +13,15 @@ function logFocusError(error: unknown) {
  * While the cursor rests on the expanded island, the island holds the keyboard focus,
  * so its shortcuts work even when it opened on hover with another app focused. The
  * focus goes back to that app when the cursor leaves or the island collapses; a text
- * field being edited keeps it until the island collapses. Rules in hoverFocus.ts.
+ * field being edited keeps it until the island collapses or the field loses focus.
+ * `blocked` (game mode) stops it taking the focus. Rules in hoverFocus.ts.
  */
-export function useHoverFocus(mode: IslandMode) {
+export function useHoverFocus(mode: IslandMode, blocked: boolean) {
   const [isHovering, setIsHovering] = useState(false);
-  const holdingRef = useRef(false);
+  const stateRef = useRef({ mode, isHovering });
+  useEffect(() => {
+    stateRef.current = { mode, isHovering };
+  }, [isHovering, mode]);
 
   useEffect(() => {
     let didCancel = false;
@@ -38,8 +42,8 @@ export function useHoverFocus(mode: IslandMode) {
     const action = hoverFocusAction({
       expanded: mode === "expanded",
       hovering: isHovering,
-      holding: holdingRef.current,
       editing: isEditingText(),
+      blocked,
     });
     if (action === "none") return;
 
@@ -49,8 +53,6 @@ export function useHoverFocus(mode: IslandMode) {
     // and the change waits until it is released.
     const run = (delayMs: number) => {
       timer = window.setTimeout(() => {
-        // Set before the call, so a leave during it still hands the focus back.
-        holdingRef.current = action === "take";
         const call = action === "take" ? takeIslandHoverFocus() : releaseIslandHoverFocus();
         void call.catch(logFocusError).then((settled) => {
           if (!settled && !cancelled) run(HOVER_FOCUS_RETRY_MS);
@@ -62,5 +64,20 @@ export function useHoverFocus(mode: IslandMode) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [isHovering, mode]);
+  }, [blocked, isHovering, mode]);
+
+  // A draft kept the focus when the cursor left; once its field loses focus while the
+  // cursor is still away, hand the focus back without waiting for the island to close.
+  useEffect(() => {
+    const handleFocusOut = () => {
+      window.setTimeout(() => {
+        const { mode: currentMode, isHovering: hovering } = stateRef.current;
+        if (currentMode === "expanded" && !hovering && !isEditingText()) {
+          void releaseIslandHoverFocus().catch(logFocusError);
+        }
+      }, 0);
+    };
+    window.addEventListener("focusout", handleFocusOut);
+    return () => window.removeEventListener("focusout", handleFocusOut);
+  }, []);
 }

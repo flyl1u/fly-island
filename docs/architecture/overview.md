@@ -91,13 +91,14 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `lib.rs`：开机自启、注册表读取 | `system/startup.rs`（5.3 已完成；底层注册表调用在 6.1 放 `win32/registry.rs`）；共用的 `CREATE_NO_WINDOW`、`windows_home_dir` 在 `system/mod.rs` |
 | `lib.rs`：`get_updater_proxy`、`updater_configured` | `system/updater.rs` |
 | `lib.rs`：`save_todo_markdown`、默认保存目录 | `system/todo_export.rs` |
+| （新增）游戏模式的全屏程序检测 | `system/fullscreen.rs`（每 800ms 轮询，底层调用在 `win32/notification_state.rs`） |
 | `lib.rs`：`tests` 模块（窗口几何、更新配置等） | 窗口几何测试 → `island/tests.rs`（5.1），更新配置测试 → `system/updater.rs` 内联测试（5.3） |
 | `qq_mail.rs` | `qq_mail/{mod, service, session, content, credentials, tests}.rs`（5.4 已完成） |
 | `qq_notifications.rs` | `qq_notifications/{mod, listener, history, launcher, tests}.rs`（5.5 已完成；`launcher.rs` 负责查找并激活 QQ 窗口） |
 | `clipboard_history.rs` | `clipboard_history/{mod, service, store, hotkey}.rs`（5.6 已完成） |
 | `media_control.rs`、`lib.rs` 中的媒体命令 | `media_control/{mod, service, session, audio}.rs`（5.7 已完成：命令在 `mod.rs`，内部入口与状态类型在 `service.rs`） |
 | `wechat_reminders.rs` + `wechat_reminder_source.rs` | `wechat_reminders/{mod, source, tests}.rs`（5.8 已完成） |
-| 各模块中的 `unsafe` Win32 / COM 调用 | `win32/` 安全封装（6.1–6.3 已完成：`window`、`message_window`、`hotkey`、`clipboard`、`shell_hook`、`input`、`com`、`audio`、`ole`、`process`、`process_times`、`registry`；生产代码中 `win32/` 以外没有 `unsafe`） |
+| 各模块中的 `unsafe` Win32 / COM 调用 | `win32/` 安全封装（6.1–6.3 已完成：`window`、`message_window`、`hotkey`、`clipboard`、`shell_hook`、`input`、`com`、`audio`、`ole`、`process`、`process_times`、`registry`、`notification_state`；生产代码中 `win32/` 以外没有 `unsafe`） |
 
 ## 对外契约清单
 
@@ -139,6 +140,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `island-position-changed` | `island/mod.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-hover-changed`（载荷为 `bool`：光标是否在岛屿形状内，供悬停展开使用） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
+| `foreground-fullscreen-changed`（载荷为 `bool`：前台是否有全屏程序，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `qq-mail-changed` | `qq_mail/service.rs`（常量在 `mod.rs`） | 广播 |

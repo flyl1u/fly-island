@@ -90,6 +90,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   shelfDoubleClick: "open",
   shelfShowCount: false,
   mailEnabled: true,
+  gameDoNotDisturb: true,
+  gameAutoTuck: false,
 };
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
@@ -282,6 +284,8 @@ export function normalizeSettings(
     shelfDoubleClick: settings?.shelfDoubleClick === "reveal" ? "reveal" : "open",
     shelfShowCount: settings?.shelfShowCount === true,
     mailEnabled: settings?.mailEnabled !== false,
+    gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
+    gameAutoTuck: settings?.gameAutoTuck === true,
   };
 }
 

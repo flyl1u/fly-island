@@ -480,6 +480,15 @@ export type Translations = {
       revealOnMessage: string;
     };
 
+    gameMode: {
+      title: string;
+      hint: string;
+      doNotDisturb: string;
+      doNotDisturbHint: string;
+      autoTuck: string;
+      autoTuckHint: string;
+    };
+
     shortcuts: {
       globalTitle: string;
       globalHint: string;
