@@ -13,6 +13,7 @@ import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
+import { usePageFadeIn } from "./usePageFadeIn";
 import "./IslandShell.css";
 
 type IslandShellProps = {
@@ -86,6 +87,7 @@ export function IslandShell({
   const isLiquidGlass = appearanceMode === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
+  const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const qqPreview = qqNotifications.preview;
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
@@ -188,7 +190,7 @@ export function IslandShell({
             minimizesToTray={minimizesToTray}
             onMinimize={onMinimize}
           />
-          <div className="island__content">{children}</div>
+          <div ref={contentRef} className="island__content">{children}</div>
         </div>
       </div>
     </section>
