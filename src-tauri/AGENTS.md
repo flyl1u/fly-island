@@ -21,7 +21,7 @@ src-tauri/src/
 ├── settings_window.rs
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs
-└── win32/                   # Win32 / COM 的安全封装：registry.rs、process.rs 已建立，窗口与 COM 初始化待迁移
+└── win32/                   # Win32 / COM 的安全封装：registry.rs、process.rs、input.rs（按键状态与模拟输入）已建立，窗口与 COM 初始化待迁移
 ```
 
 ## lib.rs 与模块组织

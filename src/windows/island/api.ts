@@ -27,6 +27,16 @@ export function listenIslandHover(
   return listen<boolean>(ISLAND_HOVER_CHANGED_EVENT, ({ payload }) => handler(payload));
 }
 
+// Mirrors ISLAND_MOVE_ARMED_CHANGED_EVENT in src-tauri/src/island/passthrough.rs.
+export const ISLAND_MOVE_ARMED_CHANGED_EVENT = "island-move-armed-changed";
+
+/** Calls `handler` whenever holding Win over the island starts (`true`) or stops arming a move. */
+export function listenIslandMoveArmed(
+  handler: (armed: boolean) => void,
+): Promise<UnlistenFn> {
+  return listen<boolean>(ISLAND_MOVE_ARMED_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
+
 // 与 src-tauri/src/island/mod.rs 中 start_island_drag 推送的事件名一致。
 export const ISLAND_POSITION_CHANGED_EVENT = "island-position-changed";
 
@@ -69,6 +79,11 @@ export function minimizeIsland() {
 
 export function startIslandDrag() {
   return invoke("start_island_drag");
+}
+
+/** Win + left-button drag; works collapsed or expanded and is a no-op unless Win is held. */
+export function startIslandModifierDrag() {
+  return invoke("start_island_modifier_drag");
 }
 
 export function resetIslandPosition() {

@@ -11,7 +11,11 @@ pub(crate) mod top_edge;
 mod tests;
 
 use serde::Deserialize;
-use std::{sync::atomic::Ordering, thread, time::Duration};
+use std::{
+    sync::{atomic::Ordering, PoisonError},
+    thread,
+    time::Duration,
+};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 
@@ -21,6 +25,7 @@ use geometry::{
     MIN_EXPANDED_ISLAND_HEIGHT, POSITION_ANIMATION_GENERATION,
 };
 use glass::{apply_glass_material, parse_hex_color};
+use crate::win32;
 use state::{mutate_window_state, read_window_state, window_state, IslandMode};
 
 pub(crate) use geometry::apply_stage_geometry;
@@ -123,10 +128,32 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     let window = main_window(&app)?;
     let current_state = read_window_state();
 
-    if !matches!(current_state.mode, IslandMode::Collapsed)
-        || current_state.is_tucked
-        || current_state.is_dragging
-    {
+    if !matches!(current_state.mode, IslandMode::Collapsed) {
+        return Ok(());
+    }
+
+    drag_island(window, current_state)
+}
+
+/// Win + left-button drag: moves the island from anywhere on its shape, collapsed or
+/// expanded. The frontend calls it on pointer down while the passthrough loop reports
+/// the Win key held over the island.
+#[tauri::command]
+pub fn start_island_modifier_drag(app: AppHandle) -> Result<(), String> {
+    let window = main_window(&app)?;
+
+    if !win32::input::is_windows_key_down() {
+        return Ok(());
+    }
+    // Win was pressed and released with only a mouse drag in between, which the shell
+    // would otherwise read as a tap that opens the Start menu.
+    win32::input::suppress_start_menu();
+
+    drag_island(window, read_window_state())
+}
+
+fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Result<(), String> {
+    if current_state.is_tucked || current_state.is_dragging {
         return Ok(());
     }
 
@@ -167,7 +194,7 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
             )
         });
         let did_finish_drag = {
-            let mut state = window_state().lock().expect("window state poisoned");
+            let mut state = window_state().lock().unwrap_or_else(PoisonError::into_inner);
             if !state.is_dragging {
                 false
             } else {

@@ -36,6 +36,12 @@ export function GeneralSettingsPage({
         onLaunchAtStartupChange={updateLaunchAtStartup}
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      <section className="settings-section settings-section--position">
+        <div className="settings-section__header">
+          <span>{t.settings.position.title}</span>
+        </div>
+        <p className="settings-section__hint">{t.settings.position.moveHint}</p>
+      </section>
     </>
   );
 }

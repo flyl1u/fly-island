@@ -333,6 +333,15 @@ const en: Translations = {
 
   settings: {
     messageReception: "Message reception",
+
+    modules: {
+      title: "Module",
+      hint: "When off, the island hides this module and stops its background work. Your data is kept.",
+      todo: "Enable todos",
+      music: "Enable music controls",
+      agents: "Enable the AI agent status light",
+      mail: "QQ Mail",
+    },
     title: "Settings",
     resetAppearance: {
       label: "Reset appearance",
@@ -347,6 +356,7 @@ const en: Translations = {
       appearance: "Appearance",
       notifications: "Notifications",
       todos: "Todos",
+      music: "Music",
       clipboard: "Clipboard",
       agents: "AI agents",
       about: "About",
@@ -354,6 +364,11 @@ const en: Translations = {
 
     behavior: {
       title: "Startup",
+    },
+
+    position: {
+      title: "Position",
+      moveHint: "Hold Win and drag any part of the island with the left mouse button to move it, even while it is open. When collapsed, a plain drag works too. Drop it near the top of the screen to snap flush.",
     },
 
     expand: {

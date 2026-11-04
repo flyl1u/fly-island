@@ -1,0 +1,8 @@
+/*
+ * Win held over the island (see useModifierWindowDrag.ts): every part of it,
+ * including buttons and inputs, now moves the window instead, so say so.
+ */
+html.island-move-armed,
+html.island-move-armed * {
+  cursor: move !important;
+}

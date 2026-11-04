@@ -8,16 +8,23 @@ use windows::Win32::{
 };
 
 use super::{geometry::STAGE_WINDOW_WIDTH, state::read_window_state};
+use crate::win32;
 
 // Mirrored by ISLAND_HOVER_CHANGED_EVENT in src/windows/island/api.ts. The payload says
 // whether the cursor is over the island shape. The webview's own mouseleave is unreliable
 // here, because the window stops receiving the cursor as soon as it leaves the shape.
 pub(crate) const ISLAND_HOVER_CHANGED_EVENT: &str = "island-hover-changed";
 
+// Mirrored by ISLAND_MOVE_ARMED_CHANGED_EVENT in src/windows/island/api.ts. The payload
+// says whether a Win + left-button press over the island would move it. Polled here
+// because the webview cannot reliably see the Win key while another window has focus.
+pub(crate) const ISLAND_MOVE_ARMED_CHANGED_EVENT: &str = "island-move-armed-changed";
+
 pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
     thread::spawn(move || {
         let mut ignoring_cursor = false;
         let mut was_inside = false;
+        let mut was_move_armed = false;
 
         loop {
             let is_inside = cursor_is_inside_island(&window);
@@ -32,6 +39,13 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             if is_inside != was_inside {
                 was_inside = is_inside;
                 let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, is_inside);
+            }
+
+            let is_move_armed =
+                is_inside && !read_window_state().is_tucked && win32::input::is_windows_key_down();
+            if is_move_armed != was_move_armed {
+                was_move_armed = is_move_armed;
+                let _ = window.emit(ISLAND_MOVE_ARMED_CHANGED_EVENT, is_move_armed);
             }
 
             thread::sleep(Duration::from_millis(12));

@@ -336,6 +336,15 @@ const zhCN: Translations = {
 
   settings: {
     messageReception: "消息接收",
+
+    modules: {
+      title: "功能开关",
+      hint: "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。",
+      todo: "启用待办",
+      music: "启用音乐控制",
+      agents: "启用 AI 代理状态灯",
+      mail: "QQ 邮箱",
+    },
     title: "设置",
     resetAppearance: {
       label: "恢复默认外观",
@@ -350,6 +359,7 @@ const zhCN: Translations = {
       appearance: "外观",
       notifications: "通知",
       todos: "待办",
+      music: "音乐",
       clipboard: "剪贴板",
       agents: "AI 代理",
       about: "关于",
@@ -357,6 +367,11 @@ const zhCN: Translations = {
 
     behavior: {
       title: "启动",
+    },
+
+    position: {
+      title: "位置",
+      moveHint: "按住 Win 键，用鼠标左键拖动灵动岛的任意位置即可移动它，展开时也可以；收起时直接拖动也行。拖到屏幕顶部附近会自动贴齐。",
     },
 
     expand: {

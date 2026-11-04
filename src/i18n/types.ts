@@ -336,6 +336,15 @@ export type Translations = {
 
   settings: {
     messageReception: string;
+
+    modules: {
+      title: string;
+      hint: string;
+      todo: string;
+      music: string;
+      agents: string;
+      mail: string;
+    };
     title: string;
     resetAppearance: {
       label: string;
@@ -350,6 +359,7 @@ export type Translations = {
       appearance: string;
       notifications: string;
       todos: string;
+      music: string;
       clipboard: string;
       agents: string;
       about: string;
@@ -357,6 +367,11 @@ export type Translations = {
 
     behavior: {
       title: string;
+    };
+
+    position: {
+      title: string;
+      moveHint: string;
     };
 
     expand: {
