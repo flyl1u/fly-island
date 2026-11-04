@@ -102,7 +102,7 @@ fn bad_manifests_say_why() {
     assert!(reason(json!({ "apiVersion": 0 })).contains("version 0"));
     assert!(reason(json!({ "minAppVersion": "0.3.0" })).contains("0.3.0"));
     assert!(reason(json!({ "name": { "zh-CN": "同步", "en": " " } })).contains("name"));
-    assert!(reason(json!({ "permissions": ["clipboard:read"] })).contains("clipboard:read"));
+    assert!(reason(json!({ "permissions": ["camera:read"] })).contains("camera:read"));
     assert!(reason(json!({ "runtime": { "type": "process", "command": "../evil.exe" } })).contains("inside"));
     assert!(reason(json!({ "runtime": { "type": "process", "command": "C:\\evil.exe" } })).contains("inside"));
     assert!(reason(json!({ "runtime": { "type": "process", "command": "run.bat" } })).contains(".exe"));

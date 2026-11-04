@@ -696,6 +696,7 @@ const zhCN: Translations = {
         "agent-status:write": "在状态灯上显示 AI Agent 状态",
         "island:notify": "在岛上显示通知",
         secrets: "在 Windows 凭据管理器中保存密码和令牌",
+        "clipboard:read": "读取剪贴板历史中的文字（敏感，首次使用时询问）",
       },
       needsApproval: "新版本需要更多权限，已暂停。关掉再打开开关即可授权。",
       keybindingConflict: (shortcuts: string) => `快捷键已被其他程序占用：${shortcuts}`,

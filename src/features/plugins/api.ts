@@ -12,6 +12,7 @@ export const PLUGIN_PERMISSIONS = [
   "agent-status:write",
   "island:notify",
   "secrets",
+  "clipboard:read",
 ] as const;
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 

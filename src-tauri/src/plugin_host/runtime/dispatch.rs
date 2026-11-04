@@ -11,7 +11,7 @@ use crate::plugin_host::{
     rpc,
     settings::parse_info,
 };
-use crate::{agent_status, local_api};
+use crate::{agent_status, clipboard_history, local_api};
 
 pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
@@ -70,6 +70,7 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "agentStatus.clear" => agent_status::clear_external_status(owner, &params),
         "island.notify" => notify::show(&context.app, owner, &params),
         "secrets.get" | "secrets.set" | "secrets.delete" => storage::answer_secret(owner, name, &params),
+        "clipboard.history" => clipboard_history::plugin_history(&params),
         _ => local_api::call_island(&context.app, name, params),
     };
     answer(id, result)

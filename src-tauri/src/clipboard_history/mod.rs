@@ -1,6 +1,7 @@
 //! Clipboard history: commands, item types and the background capture service.
 
 mod hotkey;
+mod plugin_view;
 mod service;
 mod store;
 
@@ -17,6 +18,7 @@ use service::{notify_clipboard_changed, start_workers};
 use store::{load_history, HISTORY_FILE_NAME, IMAGE_DIRECTORY_NAME};
 
 pub(crate) use hotkey::parse_shortcut_binding;
+pub(crate) use plugin_view::plugin_history;
 
 const HISTORY_CHANGED_EVENT: &str = "clipboard-history-changed";
 

@@ -693,6 +693,7 @@ const en: Translations = {
         "agent-status:write": "Show AI Agent status on the light",
         "island:notify": "Show notifications on the island",
         secrets: "Keep passwords and tokens in Windows Credential Manager",
+        "clipboard:read": "Read text from the clipboard history (sensitive: asks on first use)",
       },
       needsApproval: "The new version asks for more permissions, so it is paused. Switch it off and on to allow them.",
       keybindingConflict: (shortcuts: string) => `Shortcut already in use by another app: ${shortcuts}`,

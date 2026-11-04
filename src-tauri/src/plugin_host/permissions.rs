@@ -2,7 +2,7 @@
 //! only gate the host API: a plugin process still runs with the user's rights.
 
 /// Mirrored by `PLUGIN_PERMISSIONS` in src/features/plugins/api.ts.
-pub(super) const PERMISSIONS: [&str; 8] = [
+pub(super) const PERMISSIONS: [&str; 9] = [
     "todos:read",
     "todos:write",
     "notes:read",
@@ -11,12 +11,14 @@ pub(super) const PERMISSIONS: [&str; 8] = [
     "agent-status:write",
     "island:notify",
     "secrets",
+    "clipboard:read",
 ];
 
 /// (method, permission). `agentStatus.*` is handled natively (agent_status),
-/// `island.notify` in notify.rs, `secrets.*` in storage.rs; the rest are
+/// `island.notify` in notify.rs, `secrets.*` in storage.rs, `clipboard.*` in
+/// clipboard_history; the rest are
 /// answered by the island window, see src/features/todos/apiCommands.ts.
-pub(super) const METHODS: [(&str, &str); 12] = [
+pub(super) const METHODS: [(&str, &str); 13] = [
     ("todos.list", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
@@ -29,6 +31,7 @@ pub(super) const METHODS: [(&str, &str); 12] = [
     ("secrets.get", "secrets"),
     ("secrets.set", "secrets"),
     ("secrets.delete", "secrets"),
+    ("clipboard.history", "clipboard:read"),
 ];
 
 /// Host features added after API version 1, sent in `initialize`. Plugins
