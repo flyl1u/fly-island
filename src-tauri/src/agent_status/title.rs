@@ -90,16 +90,17 @@ pub(super) fn latest_ai_title(transcript: &str) -> Option<String> {
         .find_map(|record| record["aiTitle"].as_str().and_then(display_title))
 }
 
-/// The first prompt the user typed in a Claude Code transcript excerpt, skipping system records,
-/// tool results and slash-command output.
-pub(super) fn first_user_prompt(transcript: &str) -> Option<String> {
-    transcript
-        .lines()
-        .filter(|line| line.contains("\"user\""))
-        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
-        .filter(|record| record["type"] == "user" && record["isMeta"] != Value::Bool(true))
-        .find_map(|record| user_message_text(&record["message"]["content"]))
-        .and_then(|text| prompt_title(&text))
+/// The prompt title in one Claude Code transcript line, if it is a prompt the user typed: system
+/// records, tool results and slash-command output are skipped.
+pub(super) fn user_prompt_in_record(line: &str) -> Option<String> {
+    if !line.contains("\"user\"") {
+        return None;
+    }
+    let record = serde_json::from_str::<Value>(line).ok()?;
+    if record["type"] != "user" || record["isMeta"] == Value::Bool(true) {
+        return None;
+    }
+    user_message_text(&record["message"]["content"]).and_then(|text| prompt_title(&text))
 }
 
 fn user_message_text(content: &Value) -> Option<String> {
@@ -120,16 +121,31 @@ fn user_message_text(content: &Value) -> Option<String> {
     };
 
     let trimmed = text.trim_start();
-    let is_command_output = ["<command-name>", "<local-command", "Caveat:"]
+    if trimmed.starts_with("<command-name>") {
+        // A slash command such as `/goal …` carries what the user wrote in its arguments;
+        // ones without arguments (`/model`) say nothing about the task.
+        return tag_content(trimmed, "command-args")
+            .filter(|args| !args.trim().is_empty())
+            .map(str::to_string);
+    }
+    let is_command_output = ["<local-command", "Caveat:"]
         .iter()
         .any(|prefix| trimmed.starts_with(prefix));
     (!is_command_output).then_some(text)
 }
 
-/// A prompt shortened for display: wrapper tags such as `<pasted_content …>` and `[Image #1]`
-/// placeholders are removed, keeping the text the user wrote.
+fn tag_content<'a>(text: &'a str, tag: &str) -> Option<&'a str> {
+    let open = format!("<{tag}>");
+    let start = text.find(&open)? + open.len();
+    let end = text[start..].find(&format!("</{tag}>"))?;
+    Some(&text[start..start + end])
+}
+
+/// A prompt shortened for display: wrapper tags such as `<pasted_content …>`, `[Image #1]`
+/// placeholders and a leading Markdown heading marker are removed, keeping the text the user wrote.
 pub(super) fn prompt_title(prompt: &str) -> Option<String> {
-    display_title(&strip_image_placeholders(&strip_tags(prompt)))
+    let text = strip_image_placeholders(&strip_tags(prompt));
+    display_title(text.trim_start().trim_start_matches('#'))
 }
 
 fn strip_tags(text: &str) -> String {

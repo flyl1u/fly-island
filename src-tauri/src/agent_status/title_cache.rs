@@ -3,7 +3,7 @@
 
 use std::{
     fs::{self, File},
-    io::{Read, Seek, SeekFrom},
+    io::{BufRead, BufReader, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
     sync::{Mutex, PoisonError},
     time::SystemTime,
@@ -12,13 +12,15 @@ use std::{
 use super::markers::{CLAUDE_CODE_HOOK_INPUT_FILE_NAME, CODEX_HOOK_INPUT_FILE_NAME};
 use super::snapshot::AgentStatusSnapshot;
 use super::title::{
-    codex_thread_name, first_user_prompt, folder_title, is_path_inside, latest_ai_title,
-    parse_hook_input, prompt_title, HookInput,
+    codex_thread_name, folder_title, is_path_inside, latest_ai_title, parse_hook_input,
+    prompt_title, user_prompt_in_record, HookInput,
 };
 use crate::system::windows_home_dir;
 
-/// Transcripts are only read this far from the start (first prompt) and the end (newest title).
+/// Transcripts and the Codex index are only read this far from the end (newest title).
 const READ_WINDOW_BYTES: u64 = 256 * 1024;
+/// Transcripts are scanned this far from the start for the first prompt.
+const FIRST_PROMPT_SCAN_BYTES: u64 = 4 * 1024 * 1024;
 /// Codex first prompts remembered per session, oldest dropped first.
 const CODEX_FIRST_PROMPT_LIMIT: usize = 16;
 
@@ -55,6 +57,7 @@ struct ProviderTitle {
     computed: bool,
     source_stamp: Option<FileStamp>,
     title: Option<String>,
+    first_prompt: Option<FirstPrompt>,
 }
 
 impl ProviderTitle {
@@ -70,7 +73,20 @@ impl ProviderTitle {
             computed: false,
             source_stamp: None,
             title: None,
+            first_prompt: None,
         }
+    }
+
+    /// The first prompt in `path`, scanning the transcript again only while it may still appear.
+    fn first_prompt_in(&mut self, path: &Path) -> Option<String> {
+        let cached = self
+            .first_prompt
+            .as_ref()
+            .filter(|known| known.path == path && known.final_answer);
+        if cached.is_none() {
+            self.first_prompt = scan_first_prompt(path);
+        }
+        self.first_prompt.as_ref()?.prompt.clone()
     }
 
     /// Re-reads the hook input when it changed. Returns false when there is none.
@@ -128,7 +144,7 @@ impl TitleCache {
         let from_transcript = transcript.as_deref().and_then(|path| {
             read_tail(path)
                 .and_then(|tail| latest_ai_title(&tail))
-                .or_else(|| read_head(path).and_then(|head| first_user_prompt(&head)))
+                .or_else(|| entry.first_prompt_in(path))
         });
         entry.title = from_transcript
             .or_else(|| entry.input.prompt.as_deref().and_then(prompt_title))
@@ -187,19 +203,28 @@ fn remember_first_prompt(first_prompts: &mut Vec<(String, String)>, input: &Hook
     first_prompts.push((session_id.clone(), prompt.clone()));
 }
 
-/// The first `READ_WINDOW_BYTES` of a file, cut back to whole lines.
-fn read_head(path: &Path) -> Option<String> {
-    let mut bytes = Vec::new();
-    File::open(path)
-        .ok()?
-        .take(READ_WINDOW_BYTES)
-        .read_to_end(&mut bytes)
-        .ok()?;
-    if bytes.len() as u64 == READ_WINDOW_BYTES {
-        let last_newline = bytes.iter().rposition(|&byte| byte == b'\n')?;
-        bytes.truncate(last_newline);
-    }
-    Some(String::from_utf8_lossy(&bytes).into_owned())
+/// The first prompt found in one transcript scan. It never changes once found, and a scan that
+/// covered the whole window without finding one will not find one later either.
+struct FirstPrompt {
+    path: PathBuf,
+    prompt: Option<String>,
+    final_answer: bool,
+}
+
+/// Scans whole lines from the start, up to `FIRST_PROMPT_SCAN_BYTES`. Lines are parsed in full,
+/// because a first message with a screenshot is one line of several hundred KiB.
+fn scan_first_prompt(path: &Path) -> Option<FirstPrompt> {
+    let file = File::open(path).ok()?;
+    let len = file.metadata().ok()?.len();
+    let prompt = BufReader::new(file.take(FIRST_PROMPT_SCAN_BYTES))
+        .split(b'\n')
+        .map_while(Result::ok)
+        .find_map(|line| user_prompt_in_record(&String::from_utf8_lossy(&line)));
+    Some(FirstPrompt {
+        path: path.to_path_buf(),
+        final_answer: prompt.is_some() || len >= FIRST_PROMPT_SCAN_BYTES,
+        prompt,
+    })
 }
 
 /// The last `READ_WINDOW_BYTES` of a file, starting at a whole line.

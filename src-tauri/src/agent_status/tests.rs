@@ -10,6 +10,10 @@ use super::markers::{CLAUDE_CODE_HOOK_INPUT_FILE_NAME, CODEX_HOOK_INPUT_FILE_NAM
 use super::title::*;
 use super::title_cache::TitleCache;
 
+fn first_prompt(transcript: &str) -> Option<String> {
+    transcript.lines().find_map(user_prompt_in_record)
+}
+
 fn line(value: serde_json::Value) -> String {
     format!("{value}\n")
 }
@@ -73,10 +77,7 @@ fn first_prompt_skips_system_records_and_command_output() {
         user_line(json!("later prompt")),
     ]
     .concat();
-    assert_eq!(
-        first_user_prompt(&transcript).as_deref(),
-        Some("展开后的最小化")
-    );
+    assert_eq!(first_prompt(&transcript).as_deref(), Some("展开后的最小化"));
 }
 
 #[test]
@@ -337,4 +338,69 @@ fn hooks_state_matches_what_the_installers_write() {
     assert!(script_outdated(Some("a\nold\n"), "a\nb\n", true));
     assert!(script_outdated(None, "a", true));
     assert!(!script_outdated(None, "a", false));
+}
+
+#[test]
+fn first_prompt_uses_slash_command_arguments_and_drops_headings() {
+    let transcript = [
+        user_line(json!("<command-name>/model</command-name>\n<command-message>model</command-message>\n<command-args></command-args>")),
+        user_line(json!("<command-name>/goal</command-name>\n<command-message>goal</command-message>\n<command-args># 目标：按重构计划完成结构重构</command-args>")),
+        user_line(json!("later prompt")),
+    ]
+    .concat();
+    assert_eq!(
+        first_prompt(&transcript).as_deref(),
+        Some("目标：按重构计划完成结构重构")
+    );
+    assert_eq!(
+        prompt_title("## 任务：继续适配").as_deref(),
+        Some("任务：继续适配")
+    );
+    // A message that is only a screenshot placeholder moves on to the next prompt.
+    let image_only = [
+        user_line(json!([{"type": "text", "text": "[Image #1]"}])),
+        user_line(json!("下一句")),
+    ]
+    .concat();
+    assert_eq!(first_prompt(&image_only).as_deref(), Some("下一句"));
+}
+
+#[test]
+fn first_prompt_is_found_after_a_huge_screenshot_line() {
+    let (home, app) = temp_dirs();
+    let transcript = home
+        .join(".claude")
+        .join("projects")
+        .join("E--p")
+        .join("s.jsonl");
+    let screenshot = "A".repeat(700 * 1024);
+    let content = [
+        line(json!({"type": "permission-mode", "mode": "default"})),
+        user_line(json!([
+            {"type": "text", "text": "[Image #1] 终端上的乱码是什么情况"},
+            {"type": "image", "source": {"type": "base64", "data": screenshot}}
+        ])),
+    ]
+    .concat();
+    fs::write(&transcript, content).unwrap();
+    let input = json!({"session_id": "s", "transcript_path": transcript, "cwd": "E:\\Projects\\fly-island", "prompt": "最新"});
+    fs::write(
+        app.join(CLAUDE_CODE_HOOK_INPUT_FILE_NAME),
+        input.to_string(),
+    )
+    .unwrap();
+
+    let mut cache = TitleCache::new();
+    assert_eq!(
+        cache.claude_code_title(&app, &home).as_deref(),
+        Some("终端上的乱码是什么情况")
+    );
+    // Appending to the transcript keeps the cached first prompt.
+    let mut grown = fs::read_to_string(&transcript).unwrap();
+    grown.push_str(&user_line(json!("又一句")));
+    fs::write(&transcript, grown).unwrap();
+    assert_eq!(
+        cache.claude_code_title(&app, &home).as_deref(),
+        Some("终端上的乱码是什么情况")
+    );
 }
