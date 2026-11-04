@@ -1298,6 +1298,7 @@ version = "0.2.14"
 dependencies = [
  "arboard",
  "base64 0.22.1",
+ "clipboard-win",
  "image",
  "imap",
  "imap-proto",

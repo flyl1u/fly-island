@@ -2,5 +2,6 @@
 //! module; callers elsewhere use the safe functions it exposes.
 
 pub(crate) mod input;
+pub(crate) mod ole;
 pub(crate) mod process;
 pub(crate) mod registry;

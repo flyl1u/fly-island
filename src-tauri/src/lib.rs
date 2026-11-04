@@ -1,5 +1,6 @@
 mod agent_status;
 mod clipboard_history;
+mod file_shelf;
 mod island;
 mod media_control;
 mod messenger_activation;
@@ -53,6 +54,9 @@ pub fn run() {
                 eprintln!("failed to initialize clipboard history: {error}");
             }
             translation::init(app.handle());
+            if let Err(error) = file_shelf::init(app.handle()) {
+                eprintln!("failed to initialize the file shelf: {error}");
+            }
             if let Err(error) = qq_mail::init(app.handle()) {
                 eprintln!("failed to initialize QQ mail: {error}");
             }
@@ -78,6 +82,14 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            file_shelf::get_file_shelf,
+            file_shelf::add_file_shelf_paths,
+            file_shelf::remove_file_shelf_item,
+            file_shelf::clear_file_shelf,
+            file_shelf::copy_file_shelf_items,
+            file_shelf::open_file_shelf_item,
+            file_shelf::reveal_file_shelf_item,
+            file_shelf::start_file_shelf_drag,
             qq_mail::get_qq_mail_state,
             qq_mail::connect_qq_mail,
             qq_mail::set_qq_mail_enabled,
