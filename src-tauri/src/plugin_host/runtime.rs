@@ -4,7 +4,7 @@
 //! which also happens when the island itself exits.
 
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::{
     collections::{HashMap, VecDeque},
     ffi::OsString,
@@ -21,7 +21,12 @@ use std::{
 };
 use tauri::AppHandle;
 
-use super::{manifest::HOST_API_VERSION, permissions::method_permission, rpc};
+use super::{
+    manifest::HOST_API_VERSION,
+    permissions::method_permission,
+    rpc,
+    settings::{parse_info, InfoItem},
+};
 use crate::{agent_status, local_api, system::CREATE_NO_WINDOW};
 
 const LOG_LINES: usize = 200;
@@ -55,6 +60,8 @@ pub(super) struct RuntimeInfo {
     pub status: RuntimeStatus,
     pub error: Option<String>,
     pub log: VecDeque<String>,
+    /// What the running plugin shows with `ui.setInfo`; cleared when it stops.
+    pub info: Vec<InfoItem>,
 }
 
 /// Status and recent log lines per plugin id, shared with the settings snapshot.
@@ -70,12 +77,16 @@ pub(super) struct LaunchSpec {
     pub app_version: String,
     /// Shown for agent statuses the plugin reports without a name.
     pub display_name: String,
+    /// The plugin's settings with defaults filled in (settings::resolve).
+    pub settings: Map<String, Value>,
 }
 
 struct Context {
     generation: u64,
     app: AppHandle,
     spec: LaunchSpec,
+    /// Starts as spec.settings; replaced by Supervisor::update_settings.
+    settings: Mutex<Map<String, Value>>,
     table: RuntimeTable,
     stop: AtomicBool,
     stdin: Mutex<Option<ChildStdin>>,
@@ -92,6 +103,7 @@ impl Supervisor {
         let context = Arc::new(Context {
             generation: NEXT_GENERATION.fetch_add(1, Ordering::SeqCst),
             app,
+            settings: Mutex::new(spec.settings.clone()),
             spec,
             table,
             stop: AtomicBool::new(false),
@@ -113,6 +125,13 @@ impl Supervisor {
 
     pub fn notify(&self, method: &str, params: Value) -> Result<(), String> {
         write_line(&self.context, &rpc::notification_line(method, params))
+    }
+
+    /// New setting values from the settings page; the plugin gets `settings.changed`.
+    pub fn update_settings(&self, settings: Map<String, Value>) {
+        *lock(&self.context.settings) = settings.clone();
+        // Not running right now: it reads the new values from `initialize` on start.
+        let _ = self.notify("settings.changed", json!({ "settings": settings }));
     }
 
     /// Asks the plugin to exit (a `shutdown` notification, then stdin closes)
@@ -175,7 +194,7 @@ fn supervise(context: &Arc<Context>) {
         let started = Instant::now();
         set_status(context, RuntimeStatus::Running, None);
         log_line(context, "started");
-        let _ = write_line(context, &rpc::notification_line("initialize", initialize_params(&context.spec)));
+        let _ = write_line(context, &rpc::notification_line("initialize", initialize_params(context)));
 
         if let Some(stderr) = stderr {
             let reader = Arc::clone(context);
@@ -254,13 +273,15 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
         })
 }
 
-fn initialize_params(spec: &LaunchSpec) -> Value {
+fn initialize_params(context: &Context) -> Value {
+    let spec = &context.spec;
     json!({
         "apiVersion": HOST_API_VERSION,
         "appVersion": spec.app_version,
         "pluginId": spec.plugin_id,
         "dataDir": spec.data_dir.display().to_string(),
         "permissions": spec.granted,
+        "settings": *lock(&context.settings),
     })
 }
 
@@ -323,8 +344,23 @@ fn handle_line(context: &Arc<Context>, line: &str) {
 }
 
 fn answer_request(context: &Context, id: &Value, method: &str, params: Value) -> String {
-    if method == "host.info" {
-        return rpc::result_line(id, initialize_params(&context.spec));
+    // Methods about the plugin itself need no permission.
+    match method {
+        "host.info" => return rpc::result_line(id, initialize_params(context)),
+        "settings.get" => return rpc::result_line(id, Value::Object(lock(&context.settings).clone())),
+        "ui.setInfo" => {
+            return match parse_info(&params) {
+                Ok(items) => {
+                    let mut table = lock(&context.table);
+                    if let Some(info) = current_entry(context, &mut table) {
+                        info.info = items;
+                    }
+                    rpc::result_line(id, json!({}))
+                }
+                Err(message) => rpc::error_line(id, rpc::HOST_ERROR, &message, Some(json!({ "status": 400 }))),
+            };
+        }
+        _ => {}
     }
     let Some((name, permission)) = method_permission(method) else {
         return rpc::error_line(id, rpc::METHOD_NOT_FOUND, &format!("Unknown method \"{method}\"."), None);
@@ -407,6 +443,10 @@ fn set_status(context: &Context, status: RuntimeStatus, error: Option<String>) {
     let Some(info) = current_entry(context, &mut table) else { return };
     info.status = status;
     info.error = error;
+    if status != RuntimeStatus::Running {
+        // Info describes a running process (its address, its last sync).
+        info.info.clear();
+    }
 }
 
 fn log_line(context: &Context, line: &str) {

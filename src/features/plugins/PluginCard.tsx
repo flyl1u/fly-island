@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Play, Trash2 } from "lucide-react";
+import { ExternalLink, Settings2, Trash2 } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import { openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
@@ -9,14 +9,14 @@ import "./PluginCard.css";
 const isPermission = (name: string): name is PluginPermission =>
   (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 
-/** One installed plugin: description, permissions, switch, status, commands and log. */
+/** One installed plugin: description, permissions, switch and status; the rest is on its own page. */
 export function PluginCard({
   plugin,
   allowed,
   nodeAvailable,
   busy,
   onEnabledChange,
-  onRunCommand,
+  onOpenDetail,
   onUninstall,
 }: {
   plugin: PluginInfo;
@@ -24,7 +24,8 @@ export function PluginCard({
   nodeAvailable: boolean;
   busy: boolean;
   onEnabledChange: (enabled: boolean) => void;
-  onRunCommand: (command: string) => void;
+  /** Opens the plugin's own page (info, settings, actions, log). */
+  onOpenDetail: () => void;
   onUninstall: () => void;
 }) {
   // Uninstalling takes a second click, so a stray click cannot delete a plugin.
@@ -82,14 +83,10 @@ export function PluginCard({
           {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
           {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
           <div className="plugin-card__actions">
-            {showStatus && plugin.status === "running"
-              ? plugin.commands.map((command) => (
-                  <button className="plugin-card__button" type="button" key={command.id} onClick={() => onRunCommand(command.id)}>
-                    <Play size={12} strokeWidth={2.4} />
-                    <span>{command.title[locale]}</span>
-                  </button>
-                ))
-              : null}
+            <button className="plugin-card__button" type="button" onClick={onOpenDetail}>
+              <Settings2 size={12} strokeWidth={2.4} />
+              <span>{t.settings.plugins.detail.open}</span>
+            </button>
             {plugin.homepage.startsWith("https://") ? (
               <button className="plugin-card__button" type="button" onClick={() => void openPluginHomepage(plugin.homepage)}>
                 <ExternalLink size={12} strokeWidth={2.4} />
@@ -97,12 +94,6 @@ export function PluginCard({
               </button>
             ) : null}
           </div>
-          {plugin.hasProcess && plugin.enabled ? (
-            <details className="plugin-card__log">
-              <summary>{t.settings.plugins.log}</summary>
-              <pre>{plugin.log.length > 0 ? plugin.log.join("\n") : t.settings.plugins.noLog}</pre>
-            </details>
-          ) : null}
         </>
       )}
       <div className="plugin-card__actions">

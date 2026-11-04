@@ -15,6 +15,25 @@ export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none";
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
 export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed";
 
+// 与 src-tauri/src/plugin_host/settings.rs 中的 SettingSpec、InfoItem 对应。
+export type PluginSettingSpec = {
+  key: string;
+  type: "boolean" | "string" | "number" | "select";
+  title: LocalizedText;
+  description?: LocalizedText;
+  default?: unknown;
+  options?: { value: string; title: LocalizedText }[];
+  min?: number;
+  max?: number;
+};
+
+export type PluginInfoItem = {
+  label: LocalizedText;
+  value: string;
+  copy: boolean;
+  secret: boolean;
+};
+
 // 与 src-tauri/src/plugin_host/mod.rs 中的 PluginInfo、PluginsSnapshot 对应。
 export type PluginInfo = {
   id: string;
@@ -33,6 +52,10 @@ export type PluginInfo = {
   status: PluginStatus;
   error: string | null;
   log: string[];
+  settingsSchema: PluginSettingSpec[];
+  /** Every declared setting with its value, defaults filled in. */
+  settings: Record<string, unknown>;
+  info: PluginInfoItem[];
 };
 
 export type PluginsSnapshot = {
@@ -103,6 +126,10 @@ export const NODE_DOWNLOAD_URL = { "zh-CN": "https://nodejs.org/zh-cn/download",
 /** Opens a plugin's homepage (or the Node.js download page) in the browser; only https links are allowed. */
 export function openPluginHomepage(url: string) {
   return url.startsWith("https://") ? openUrl(url) : Promise.resolve();
+}
+
+export function setPluginSetting(id: string, key: string, value: unknown) {
+  return invoke<PluginsSnapshot>("set_plugin_setting", { id, key, value });
 }
 
 export function runPluginCommand(id: string, command: string) {

@@ -1,6 +1,6 @@
 import { Bell, Bot, ClipboardList, Inbox, Info, Languages, ListTodo, Music, Palette, Puzzle, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
+import { SETTINGS_GROUPS, type SettingsCategory } from "./categories";
 import "./SettingsSidebar.css";
 
 const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
@@ -31,27 +31,34 @@ export function SettingsSidebar({
       <div className="settings-sidebar__header">
         <span>{t.settings.title}</span>
       </div>
-      <ul className="settings-sidebar__list">
-        {SETTINGS_CATEGORIES.map((item) => {
-          const Icon = CATEGORY_ICONS[item];
-          const isActive = item === category;
+      <div className="settings-sidebar__list">
+        {SETTINGS_GROUPS.map((group) => (
+          <section className="settings-sidebar__group" key={group.categories[0]} aria-label={group.label ? t.settings.categories.groups[group.label] : undefined}>
+            {group.label && <h2 className="settings-sidebar__group-label">{t.settings.categories.groups[group.label]}</h2>}
+            <ul>
+              {group.categories.map((item) => {
+                const Icon = CATEGORY_ICONS[item];
+                const isActive = item === category;
 
-          return (
-            <li key={item}>
-              <button
-                className={`settings-sidebar__item${isActive ? " settings-sidebar__item--active" : ""}`}
-                type="button"
-                aria-current={isActive ? "page" : undefined}
-                data-category={item}
-                onClick={() => onCategoryChange(item)}
-              >
-                <Icon size={16} strokeWidth={2} aria-hidden="true" />
-                <span>{t.settings.categories[item]}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                return (
+                  <li key={item}>
+                    <button
+                      className={`settings-sidebar__item${isActive ? " settings-sidebar__item--active" : ""}`}
+                      type="button"
+                      aria-current={isActive ? "page" : undefined}
+                      data-category={item}
+                      onClick={() => onCategoryChange(item)}
+                    >
+                      <Icon size={16} strokeWidth={2} aria-hidden="true" />
+                      <span>{t.settings.categories[item]}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </nav>
   );
 }

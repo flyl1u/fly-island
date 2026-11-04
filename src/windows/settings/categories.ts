@@ -15,4 +15,17 @@ export const SETTINGS_CATEGORIES = [
 
 export type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number];
 
+export type SettingsGroup = "basics" | "features" | "extensions";
+
+/**
+ * Sidebar sections: app-wide settings, one page per module, then plugins and the
+ * local API. A null label leaves About on its own at the end.
+ */
+export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
+  { label: "basics", categories: ["general", "appearance"] },
+  { label: "features", categories: ["todos", "music", "notifications", "translation", "clipboard", "shelf", "agents"] },
+  { label: "extensions", categories: ["plugins"] },
+  { label: null, categories: ["about"] },
+];
+
 export const DEFAULT_SETTINGS_CATEGORY: SettingsCategory = "general";

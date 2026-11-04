@@ -8,13 +8,14 @@ mod market;
 mod permissions;
 mod rpc;
 mod runtime;
+mod settings;
 mod signature;
 mod store;
 #[cfg(test)]
 mod tests;
 
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{json, Map, Value};
 use std::{
     collections::HashMap,
     fs,
@@ -28,6 +29,7 @@ use crate::agent_status;
 use manifest::{launch_command, parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginManifest, PluginRuntime, MANIFEST_FILE_NAME};
 use permissions::missing_permissions;
 use runtime::{LaunchSpec, RuntimeStatus, RuntimeTable, Supervisor};
+use settings::{InfoItem, SettingSpec};
 use store::{load_state, save_state, PluginsState, STATE_FILE_NAME};
 
 const PLUGINS_DIR_NAME: &str = "plugins";
@@ -75,6 +77,11 @@ pub struct PluginInfo {
     status: RuntimeStatus,
     error: Option<String>,
     log: Vec<String>,
+    /// Declared settings and their current values (defaults filled in).
+    settings_schema: Vec<SettingSpec>,
+    settings: Map<String, Value>,
+    /// What the running plugin shows with `ui.setInfo`.
+    info: Vec<InfoItem>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -180,6 +187,7 @@ fn sync_processes() -> Result<(), String> {
                     granted: manifest.permissions.clone(),
                     app_version: app_version(&host.app),
                     display_name: manifest.name.en().to_string(),
+                    settings: settings::resolve(&manifest.contributes.settings, &grant.settings),
                 },
             );
         }
@@ -265,6 +273,9 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
                 status: runtime.status,
                 error: runtime.error,
                 log: runtime.log.into_iter().collect(),
+                settings_schema: Vec::new(),
+                settings: Map::new(),
+                info: runtime.info,
             };
             match &plugin.manifest {
                 Ok(manifest) => {
@@ -279,6 +290,8 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.commands = manifest.contributes.commands.clone();
                     info.has_process = matches!(manifest.runtime, PluginRuntime::Process { .. });
                     info.runtime = runtime_requirement(&manifest.runtime);
+                    info.settings_schema = manifest.contributes.settings.clone();
+                    info.settings = settings::resolve(&manifest.contributes.settings, &grant.settings);
                 }
                 Err(reason) => info.invalid_reason = Some(reason.clone()),
             }
@@ -476,4 +489,30 @@ pub fn run_plugin_command(id: String, command: String) -> Result<(), String> {
     let supervisors = lock(&host.supervisors);
     let supervisor = supervisors.get(&id).ok_or("The plugin is not running.")?;
     supervisor.notify("command", json!({ "id": command }))
+}
+
+/// Saves one of the plugin's declared settings (checked against its type) and
+/// sends the running plugin `settings.changed`.
+#[tauri::command]
+pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<PluginsSnapshot, String> {
+    let host = host()?;
+    let mut resolved = Map::new();
+    update_state(|state, installed| {
+        let manifest = installed
+            .iter()
+            .find(|plugin| plugin.folder == id)
+            .and_then(|plugin| plugin.manifest.as_ref().ok())
+            .ok_or("Plugin not found.")?;
+        let specs = &manifest.contributes.settings;
+        let spec = specs.iter().find(|spec| spec.key() == key).ok_or("Unknown plugin setting.")?;
+        let value = settings::coerce(spec, &value).map_err(|error| format!("\"{key}\" {error}."))?;
+        let grant = state.plugins.entry(id.clone()).or_default();
+        grant.settings.insert(key.clone(), value);
+        resolved = settings::resolve(specs, &grant.settings);
+        Ok(())
+    })?;
+    if let Some(supervisor) = lock(&host.supervisors).get(&id) {
+        supervisor.update_settings(resolved);
+    }
+    snapshot()
 }

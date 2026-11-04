@@ -55,7 +55,39 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `author`、`homepage` | | 主页只显示 `https://` 链接。 |
 | `runtime` | ✅ | `{ "type": "process", "command": "...", "args": [...] }` 表示运行一个程序；`{ "type": "none" }` 表示只有清单、不运行程序。 |
 | `permissions` | | 见下文的权限表。 |
-| `contributes.commands` | | 最多 8 个，显示为插件卡片上的按钮。`id` 只能用字母、数字和 `-`。 |
+| `contributes.commands` | | 最多 8 个，显示为插件设置页上"操作"一栏里的按钮。`id` 只能用字母、数字和 `-`。 |
+| `contributes.settings` | | 最多 20 个设置项，由岛屿画在插件自己的设置页上并负责保存，见下文的"设置页"。 |
+
+### 设置页
+
+插件不能自带界面代码。插件卡片上有一个"设置"按钮，点开后是这个插件自己的设置页，页面由岛屿统一绘制，包括四部分：
+
+- **运行信息**：插件运行时调用 `ui.setInfo` 提供的信息。
+- **设置**：清单里 `contributes.settings` 声明的设置项。
+- **操作**：`contributes.commands` 声明的按钮。
+- **日志**。
+
+```json
+"contributes": {
+  "settings": [
+    { "key": "allowWrite", "type": "boolean", "title": { "zh-CN": "允许修改", "en": "Allow changes" }, "default": false },
+    { "key": "interval", "type": "number", "title": { "zh-CN": "间隔（分钟）", "en": "Every (minutes)" }, "min": 1, "max": 60, "default": 5 },
+    { "key": "name", "type": "string", "title": { "zh-CN": "名称", "en": "Name" },
+      "description": { "zh-CN": "显示在……", "en": "Shown in…" } },
+    { "key": "mode", "type": "select", "title": { "zh-CN": "模式", "en": "Mode" },
+      "options": [{ "value": "fast", "title": { "zh-CN": "快", "en": "Fast" } }, { "value": "slow", "title": { "zh-CN": "慢", "en": "Slow" } }] }
+  ]
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `key` | 1–32 个字符，只能用字母、数字、`-`、`_`，在同一个插件里不能重复。 |
+| `type` | `boolean`（开关）、`number`（整数输入框，范围由 `min` / `max` 限定）、`string`（文本，最长 1000 个字符）、`select`（下拉，选项来自 `options`）。 |
+| `title` / `description` | 中英文都要提供；`description` 可以省略。 |
+| `default` | 默认值，必须符合 `type`。省略时：开关为 `false`，数字为 `min` 或 0，文本为空，下拉为第一个选项。 |
+
+设置值由岛屿保存在 `plugins.json` 里，卸载插件时一并删除。插件拿到的设置总是完整的：默认值已经填好，过期或不合法的值会被换成默认值。
 
 `runtime.command` 必须是插件文件夹内的相对路径，按扩展名决定如何启动：
 
@@ -94,8 +126,9 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 | 方法 | 参数 | 时机 |
 |---|---|---|
-| `initialize` | `{ apiVersion, appVersion, pluginId, dataDir, permissions }` | 进程启动后立即发送 |
+| `initialize` | `{ apiVersion, appVersion, pluginId, dataDir, permissions, settings }` | 进程启动后立即发送 |
 | `command` | `{ id }` | 用户点击了 `contributes.commands` 中的某个按钮 |
+| `settings.changed` | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
 | `shutdown` | `{}` | 插件被停用、重新加载或删除时发送；随后 stdin 会关闭，2 秒后进程被结束 |
 
 **stdin 关闭时插件必须退出。** 岛屿自己退出时也会关闭 stdin。
@@ -105,6 +138,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | 方法 | 参数 | 结果 |
 |---|---|---|
 | `host.info` | — | 与 `initialize` 的参数相同 |
+| `settings.get` | — | 全部设置的当前值（不需要权限） |
+| `ui.setInfo` | `{ items: [{ label, value, copy?, secret? }] }` | `{}`。替换设置页上的"运行信息"，最多 10 项，`value` 最长 500 个字符；`copy` 表示显示"复制"按钮，`secret` 表示默认隐藏（适合令牌）；传空列表表示清空。插件停止后信息会自动清空。不需要权限。 |
 | `todos.list` | — | `{ date, todos, scheduled, activeTodoId }` |
 | `todos.add` | `{ title, date? }` | 新增的待办；`date` 晚于今天时加入"以后"列表 |
 | `todos.update` | `{ id, title?, completed? }` | 修改后的待办 |

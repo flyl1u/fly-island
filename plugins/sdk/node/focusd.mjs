@@ -60,10 +60,16 @@ export function createPlugin() {
   return {
     call,
     log,
-    /** Runs once the island has started the plugin; receives { apiVersion, appVersion, pluginId, dataDir, permissions }. */
+    /** Runs once the island has started the plugin; receives { apiVersion, appVersion, pluginId, dataDir, permissions, settings }. */
     onReady: (handler) => on("initialize", handler),
     /** Runs when the user clicks one of the commands from `contributes.commands`. */
     onCommand: (id, handler) => on("command", (params) => (params?.id === id ? handler() : undefined)),
+    /** Runs with all setting values when the user changes one on the plugin's page. */
+    onSettingsChanged: (handler) => on("settings.changed", (params) => handler(params?.settings ?? {})),
+    /** Current values of the plugin's declared settings (contributes.settings). */
+    settings: () => call("settings.get"),
+    /** Replaces the Info shown on the plugin's page: [{ label: { "zh-CN", en }, value, copy?, secret? }]. */
+    setInfo: (items) => call("ui.setInfo", { items }),
     info: () => call("host.info"),
     todos: {
       list: () => call("todos.list"),

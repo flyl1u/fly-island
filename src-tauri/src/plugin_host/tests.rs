@@ -274,3 +274,75 @@ mod market_tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
+
+mod settings_tests {
+    use serde_json::{json, Map, Value};
+
+    use super::super::settings::{coerce, parse_info, resolve, validate_specs, SettingSpec};
+
+    fn specs() -> Vec<SettingSpec> {
+        serde_json::from_value(json!([
+            { "key": "allowWrite", "type": "boolean", "title": { "zh-CN": "允许修改", "en": "Allow changes" }, "default": false },
+            { "key": "interval", "type": "number", "title": { "zh-CN": "间隔", "en": "Interval" }, "min": 1, "max": 60, "default": 30 },
+            { "key": "name", "type": "string", "title": { "zh-CN": "名称", "en": "Name" } },
+            { "key": "mode", "type": "select", "title": { "zh-CN": "模式", "en": "Mode" },
+              "options": [{ "value": "fast", "title": { "zh-CN": "快", "en": "Fast" } }, { "value": "slow", "title": { "zh-CN": "慢", "en": "Slow" } }] }
+        ]))
+        .expect("specs")
+    }
+
+    #[test]
+    fn values_are_checked_against_their_type() {
+        let specs = specs();
+        validate_specs(&specs).expect("valid");
+        assert_eq!(coerce(&specs[0], &json!(true)), Ok(json!(true)));
+        assert!(coerce(&specs[0], &json!("yes")).is_err());
+        assert_eq!(coerce(&specs[1], &json!(5)), Ok(json!(5)));
+        assert!(coerce(&specs[1], &json!(0)).is_err());
+        assert!(coerce(&specs[1], &json!(61)).is_err());
+        assert!(coerce(&specs[2], &json!("x".repeat(1001))).is_err());
+        assert_eq!(coerce(&specs[3], &json!("slow")), Ok(json!("slow")));
+        assert!(coerce(&specs[3], &json!("medium")).is_err());
+    }
+
+    #[test]
+    fn resolving_fills_defaults_and_drops_stale_values() {
+        let mut stored = Map::new();
+        stored.insert("interval".into(), json!(99)); // out of range now
+        stored.insert("mode".into(), json!("slow"));
+        stored.insert("removed".into(), json!(1));
+        let resolved = resolve(&specs(), &stored);
+        assert_eq!(
+            Value::Object(resolved),
+            json!({ "allowWrite": false, "interval": 30, "name": "", "mode": "slow" })
+        );
+    }
+
+    #[test]
+    fn bad_declarations_are_refused() {
+        let declare = |spec: Value| validate_specs(&serde_json::from_value::<Vec<SettingSpec>>(json!([spec])).expect("parse"));
+        let title = json!({ "zh-CN": "x", "en": "x" });
+        assert!(declare(json!({ "key": "a b", "type": "boolean", "title": title })).is_err());
+        assert!(declare(json!({ "key": "a", "type": "select", "title": title })).is_err());
+        assert!(declare(json!({ "key": "a", "type": "number", "title": title, "max": 3, "default": 9 })).is_err());
+        assert!(declare(json!({ "key": "a", "type": "boolean", "title": { "zh-CN": "x", "en": "" } })).is_err());
+        let twice = serde_json::from_value::<Vec<SettingSpec>>(json!([
+            { "key": "a", "type": "boolean", "title": title },
+            { "key": "a", "type": "string", "title": title }
+        ]))
+        .expect("parse");
+        assert!(validate_specs(&twice).is_err());
+    }
+
+    #[test]
+    fn info_items_are_limited() {
+        let label = json!({ "zh-CN": "地址", "en": "Address" });
+        let items = parse_info(&json!({ "items": [{ "label": label, "value": "http://127.0.0.1:1/v1", "copy": true }] })).expect("valid");
+        assert_eq!(items.len(), 1);
+        assert!(parse_info(&json!({})).expect("empty clears").is_empty());
+        assert!(parse_info(&json!({ "items": [{ "label": label, "value": "x".repeat(501) }] })).is_err());
+        assert!(parse_info(&json!({ "items": [{ "label": "plain", "value": "x" }] })).is_err());
+        let many: Vec<Value> = (0..11).map(|_| json!({ "label": label, "value": "x" })).collect();
+        assert!(parse_info(&json!({ "items": many })).is_err());
+    }
+}

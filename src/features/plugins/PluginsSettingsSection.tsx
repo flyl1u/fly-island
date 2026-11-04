@@ -1,16 +1,39 @@
+import { useState } from "react";
 import { FolderOpen, RefreshCcw } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation } from "../../i18n";
 import { PluginCard } from "./PluginCard";
+import { PluginDetailPage } from "./PluginDetailPage";
 import { PluginMarketSection } from "./PluginMarketSection";
 import { usePlugins } from "./usePlugins";
 import "./PluginsSettingsSection.css";
 
-/** The plugins page: the third-party switch, the plugins folder and each installed plugin. */
+/**
+ * The plugins page: the third-party switch, the plugins folder, each installed
+ * plugin and the market; or one plugin's own page once its Settings is opened.
+ */
 export function PluginsSettingsSection() {
   const t = useTranslation();
-  const { snapshot, error, busy, setAllowed, setEnabled, reload, openFolder, runCommand, uninstall, applySnapshot } = usePlugins();
+  const { snapshot, error, busy, setAllowed, setEnabled, setSetting, reload, openFolder, runCommand, uninstall, applySnapshot } =
+    usePlugins();
+  const [openId, setOpenId] = useState<string | null>(null);
   const allowed = snapshot?.allowThirdParty ?? false;
+  const openPlugin = snapshot?.plugins.find((plugin) => plugin.id === openId);
+
+  if (openPlugin) {
+    return (
+      <>
+        <PluginDetailPage
+          plugin={openPlugin}
+          busy={busy}
+          onBack={() => setOpenId(null)}
+          onSettingChange={(key, value) => setSetting(openPlugin.id, key, value)}
+          onRunCommand={(command) => runCommand(openPlugin.id, command)}
+        />
+        {error ? <p className="plugin-card__error">{error}</p> : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -46,7 +69,7 @@ export function PluginsSettingsSection() {
             nodeAvailable={snapshot.nodeAvailable}
             busy={busy}
             onEnabledChange={(enabled) => setEnabled(plugin.id, enabled)}
-            onRunCommand={(command) => runCommand(plugin.id, command)}
+            onOpenDetail={() => setOpenId(plugin.id)}
             onUninstall={() => uninstall(plugin.id)}
           />
         ))}

@@ -24,11 +24,33 @@
 .settings-sidebar__list {
   display: grid;
   align-content: start;
+  gap: var(--space-xl);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.settings-sidebar__group ul {
+  display: grid;
   gap: var(--space-xs);
   margin: 0;
   padding: 0;
-  overflow-y: auto;
   list-style: none;
+}
+
+.settings-sidebar__group-label {
+  margin: 0 0 var(--space-xs);
+  padding-left: var(--space-md);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* About stands alone at the end, set off by a rule instead of a label. */
+.settings-sidebar__group:last-child {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-white-a08);
 }
 
 .settings-sidebar__item {

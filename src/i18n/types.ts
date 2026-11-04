@@ -417,6 +417,11 @@ export type Translations = {
 
     categories: {
       label: string;
+      groups: {
+        basics: string;
+        features: string;
+        extensions: string;
+      };
       general: string;
       appearance: string;
       notifications: string;
@@ -637,6 +642,19 @@ export type Translations = {
       runtimeNode: string;
       nodeMissing: string;
       getNode: string;
+      detail: {
+        open: string;
+        back: string;
+        info: string;
+        infoWhenRunning: string;
+        settings: string;
+        noSettings: string;
+        actions: string;
+        copy: string;
+        copied: string;
+        show: string;
+        hide: string;
+      };
       market: {
         title: string;
         hint: string;

@@ -1,0 +1,69 @@
+.plugin-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plugin-info {
+  display: grid;
+  gap: 8px;
+}
+
+.plugin-info__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugin-info__row > span,
+.plugin-setting__row > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.plugin-info__row code {
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-setting {
+  display: grid;
+  gap: 4px;
+}
+
+.plugin-setting__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 220px);
+  align-items: center;
+  gap: 10px;
+}
+
+.plugin-setting__input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  outline: none;
+  font-size: 12px;
+}
+
+.plugin-setting__input:focus {
+  border-color: rgba(116, 214, 255, 0.58);
+}

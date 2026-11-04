@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::permissions::is_known_permission;
+use super::settings::{validate_specs, SettingSpec};
 
 pub(super) const MANIFEST_FILE_NAME: &str = "focusd-plugin.json";
 /// The host API version this build speaks. Plugins declare the one they need.
@@ -25,7 +26,7 @@ impl LocalizedText {
         &self.en
     }
 
-    fn is_filled(&self) -> bool {
+    pub(super) fn is_filled(&self) -> bool {
         !self.zh_cn.trim().is_empty() && !self.en.trim().is_empty()
     }
 }
@@ -57,13 +58,16 @@ impl PluginCommand {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub(super) struct PluginContributions {
     #[serde(default)]
     pub commands: Vec<PluginCommand>,
+    /// Drawn and stored by the island; see settings.rs.
+    #[serde(default)]
+    pub settings: Vec<SettingSpec>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct PluginManifest {
     pub id: String,
@@ -136,6 +140,7 @@ pub(super) fn parse_manifest(text: &str, folder_name: &str, app_version: &str) -
         relative_command_path(command)?;
         launch_kind(command)?;
     }
+    validate_specs(&manifest.contributes.settings)?;
     let commands = &manifest.contributes.commands;
     if commands.len() > MAX_COMMANDS {
         return Err(format!("A plugin can add at most {MAX_COMMANDS} commands."));

@@ -110,6 +110,7 @@ pub fn run() {
             plugin_host::reload_plugins,
             plugin_host::open_plugins_folder,
             plugin_host::run_plugin_command,
+            plugin_host::set_plugin_setting,
             plugin_host::get_plugin_market,
             plugin_host::install_market_plugin,
             plugin_host::uninstall_plugin,

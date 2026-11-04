@@ -414,6 +414,11 @@ const en: Translations = {
 
     categories: {
       label: "Settings categories",
+      groups: {
+        basics: "Basics",
+        features: "Features",
+        extensions: "Extensions",
+      },
       general: "General",
       appearance: "Appearance",
       notifications: "Notifications",
@@ -646,6 +651,19 @@ const en: Translations = {
       runtimeNode: "Needs Node.js",
       nodeMissing: "Node.js was not found on this computer; this plugin runs once it is installed.",
       getNode: "Get Node.js",
+      detail: {
+        open: "Settings",
+        back: "Back to plugins",
+        info: "Info",
+        infoWhenRunning: "Once the plugin runs, what it shares appears here.",
+        settings: "Settings",
+        noSettings: "This plugin has no settings.",
+        actions: "Actions",
+        copy: "Copy",
+        copied: "Copied",
+        show: "Show",
+        hide: "Hide",
+      },
       market: {
         title: "Plugin market",
         hint: "Plugins installed from here are checked first to make sure the files are complete and unchanged. They start off, and you choose what they may access when you turn one on.",

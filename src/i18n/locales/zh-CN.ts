@@ -417,6 +417,11 @@ const zhCN: Translations = {
 
     categories: {
       label: "设置分类",
+      groups: {
+        basics: "基础",
+        features: "功能",
+        extensions: "扩展",
+      },
       general: "通用",
       appearance: "外观",
       notifications: "通知",
@@ -649,6 +654,19 @@ const zhCN: Translations = {
       runtimeNode: "需要 Node.js",
       nodeMissing: "这台电脑上没有找到 Node.js，装好之后这个插件才能运行。",
       getNode: "下载 Node.js",
+      detail: {
+        open: "设置",
+        back: "返回插件列表",
+        info: "运行信息",
+        infoWhenRunning: "插件运行后，会在这里显示它提供的信息。",
+        settings: "设置",
+        noSettings: "这个插件没有可以调整的设置。",
+        actions: "操作",
+        copy: "复制",
+        copied: "已复制",
+        show: "显示",
+        hide: "隐藏",
+      },
       market: {
         title: "插件市场",
         hint: "从这里安装的插件会先核对校验值，确认文件完整、没被改动过。装好后默认是关闭的，打开时再决定给它哪些权限。",

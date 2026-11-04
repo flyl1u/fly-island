@@ -23,6 +23,9 @@ pub(super) struct PluginGrant {
     pub enabled: bool,
     #[serde(default)]
     pub granted_permissions: Vec<String>,
+    /// Values of the plugin's declared settings (contributes.settings).
+    #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+    pub settings: serde_json::Map<String, serde_json::Value>,
 }
 
 /// A missing or broken file reads as "nothing allowed".
