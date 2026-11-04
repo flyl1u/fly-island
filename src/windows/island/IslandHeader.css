@@ -163,3 +163,28 @@
   justify-content: flex-end;
   gap: var(--space-md);
 }
+
+/* The status light opens the Agent page; a ring marks it while that page is open. */
+.island__agent-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.island__agent-button:hover,
+.island__agent-button--active {
+  background: var(--color-white-a10);
+}
+
+.island__agent-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 1px;
+}

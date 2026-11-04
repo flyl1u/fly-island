@@ -66,6 +66,8 @@ let changeWidth: (width: number) => void;
 let changeTitle: (show: boolean) => void;
 let changeFont: (pixel: boolean) => void;
 let changeAgent: (session: AgentSession | null) => void;
+let changeAgentCount: (count: number) => void;
+let changeAgentsEnabled: (enabled: boolean) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -77,6 +79,9 @@ function Fixture() {
   const [title, setTitle] = useState(false);
   const [pixel, setPixel] = useState(false);
   const [agent, setAgent] = useState<AgentSession | null>(null);
+  const [agentCount, setAgentCount] = useState(0);
+  const [agentsEnabled, setAgentsEnabled] = useState(true);
+  changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
@@ -86,10 +91,10 @@ function Fixture() {
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
-      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent}
+      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
       mediaState={UNAVAILABLE_MEDIA}
-      features={{ todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true }}
+      features={{ todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true, agents: agentsEnabled }}
       shelfCount={null}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}
@@ -219,7 +224,24 @@ async function runChecks() {
     await act(async () => changeAgent(null));
     await settle();
     check(!summary().querySelector(".island__agent-session") && incoming().textContent?.includes("剩余2个待办"), "Agent 结束后恢复待办");
-    await act(async () => changeWidth(280));
+    await act(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "插件市场功能" }));
+    await settle();
+    await act(async () => button().click());
+    check(openedPage === "agents", "显示 Agent 标题时点击小岛打开 Agent 页");
+    const agentCount = () => document.querySelector<HTMLButtonElement>(".island-agent-count");
+    const tuckDot = () => document.querySelector(".island__quiet-button");
+    check(!agentCount() && !tuckDot(), "AI Agent 开启且没有运行中的会话时不显示灰点和数量");
+    await act(async () => changeAgentCount(2));
+    check(agentCount()?.textContent === "2" && !tuckDot() && agentCount()?.getAttribute("aria-label")?.includes("2"), "运行中的会话数量代替灰点");
+    openedPage = null;
+    await act(async () => agentCount()!.click());
+    check(openedPage === "agents", "点击会话数量打开 Agent 页");
+    await act(async () => { changeAgentsEnabled(false); changeAgent(null); });
+    await settle();
+    check(tuckDot() && !agentCount(), "AI Agent 关闭时保留收起灰点");
+    await act(async () => { button().click(); });
+    check(openedPage === "todo", "没有 Agent 标题时点击小岛仍打开原页面");
+    await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {
@@ -238,7 +260,7 @@ for (const [label, action] of [
   ["微信消息", () => notify("wechat")], ["QQ 消息", () => notify("qq")], ["邮箱消息", () => notify("qqMail")],
   ["长 QQ 消息", () => notify("qq", true)], ["340px", () => update(async () => changeWidth(340))],
   ["像素主题", () => update(async () => changeFont(true))], ["系统主题", () => update(async () => changeFont(false))],
-  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["自动检查", () => { location.search = "?test=1"; }],
+  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["2 个会话", () => update(async () => changeAgentCount(2))], ["自动检查", () => { location.search = "?test=1"; }],
 ] as const) {
   const control = document.createElement("button");
   control.textContent = label;

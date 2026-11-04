@@ -219,6 +219,17 @@ const zhCN: Translations = {
       stale: "可能已中断",
       idle: "空闲",
     },
+    sessions: {
+      title: "Agent 会话",
+      open: "查看 Agent 会话",
+      empty: "最近 2 小时没有 Agent 会话",
+      emptyHint: "在 Claude Code 或 Codex 里开始对话后会显示在这里",
+      focus: (title) => `切换到「${title}」所在的窗口`,
+      notFound: "没找到对应的窗口",
+      justNow: "刚刚",
+      minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分钟前` : `${Math.floor(minutes / 60)} 小时前`),
+      activeCount: (count) => `${count} 个 Agent 会话正在运行，点击查看`,
+    },
   },
 
   // These panels shipped in English in the original Chinese-first build.

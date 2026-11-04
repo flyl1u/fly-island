@@ -10,9 +10,11 @@ export type IslandFeatures = {
   qq: boolean;
   wechat: boolean;
   qqMail: boolean;
+  /** The AI Agent switch; off hides the Agent page. */
+  agents: boolean;
 };
 
-const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq"];
+const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents"];
 const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures) {

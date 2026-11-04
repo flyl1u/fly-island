@@ -3,7 +3,8 @@ import type { TodoItem, TodoPageMode } from "../../features/todos/types";
 import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { IslandPage } from "./types";
 
-// Tall enough for about four shelf rows before the list scrolls.
+// Tall enough for about four shelf rows before the list scrolls; the Agent page shows about
+// four sessions at the same height.
 const SHELF_EXPANDED_ISLAND_HEIGHT = 430;
 
 type ExpandedHeightInput = {
@@ -58,7 +59,7 @@ export function getExpandedIslandHeight({
       ? musicSettingsOpen
         ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
         : MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
-      : page === "shelf"
+      : page === "shelf" || page === "agents"
         ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)

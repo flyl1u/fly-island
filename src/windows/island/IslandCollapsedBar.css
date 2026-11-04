@@ -177,6 +177,36 @@
   transition: background 140ms ease, color 140ms ease;
 }
 
+/* Running agent sessions, in the tuck dot's place while the AI Agent switch is on. */
+.island-agent-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 6px;
+  color: var(--color-white);
+  background: rgba(61, 139, 255, 0.32);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 10px rgba(61, 139, 255, 0.36);
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.island-agent-count:hover {
+  background: rgba(61, 139, 255, 0.5);
+}
+
+.island-agent-count:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 2px;
+}
+
 .island-shelf-count:hover {
   color: var(--color-white);
   background: rgba(110, 231, 200, 0.22);

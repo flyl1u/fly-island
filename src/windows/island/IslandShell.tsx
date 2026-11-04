@@ -34,6 +34,8 @@ type IslandShellProps = {
   collapsedTodoCount: number | null;
   /** Running agent session shown in place of the todo, or null. */
   agentSession: AgentSession | null;
+  /** Agent sessions still working, shown in place of the tuck dot while the AI Agent switch is on. */
+  activeAgentSessionCount: number;
   mediaState: MediaState;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
@@ -72,6 +74,7 @@ export function IslandShell({
   collapsedTaskTitle,
   collapsedTodoCount,
   agentSession,
+  activeAgentSessionCount,
   mediaState,
   agentVisualState,
   agentStatusLabel,
@@ -135,7 +138,7 @@ export function IslandShell({
       aria-label={collapsedLabel}
       onClick={(event) => {
         if (!isExpanded && event.target === event.currentTarget) {
-          onOpenPage(page);
+          onOpenPage(agentSession ? "agents" : page);
         }
       }}
       onPointerMove={handleGlassPointerMove}
@@ -167,6 +170,7 @@ export function IslandShell({
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
           agentSession={agentSession}
+          agentSessionCount={features.agents ? activeAgentSessionCount : null}
           mediaState={mediaState}
           showMusic={features.music}
           shelfCount={shelfCount}

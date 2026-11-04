@@ -55,12 +55,29 @@ export function IslandHeader({
   return (
     <header className="island__header">
       <div className="island__title">
-        <CircleDot
-          className={agentStatusIconClassName}
-          size={16}
-          strokeWidth={2.2}
-          aria-label={agentStatusLabel}
-        />
+        {features.agents ? (
+          // The status light doubles as the way into the Agent page.
+          <button
+            className={`island__agent-button${page === "agents" ? " island__agent-button--active" : ""}`}
+            type="button"
+            title={`${agentStatusLabel} · ${t.agent.sessions.open}`}
+            aria-label={`${agentStatusLabel} · ${t.agent.sessions.open}`}
+            aria-pressed={page === "agents"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("agents");
+            }}
+          >
+            <CircleDot className={agentStatusIconClassName} size={16} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        ) : (
+          <CircleDot
+            className={agentStatusIconClassName}
+            size={16}
+            strokeWidth={2.2}
+            aria-label={agentStatusLabel}
+          />
+        )}
         {showTitle && <span>fly-island</span>}
       </div>
 

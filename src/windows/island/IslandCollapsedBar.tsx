@@ -30,6 +30,11 @@ type IslandCollapsedBarProps = {
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
   agentSession: AgentSession | null;
+  /**
+   * Agent sessions still working, shown where the tuck dot was; null while the AI Agent switch
+   * is off, which keeps the tuck dot.
+   */
+  agentSessionCount: number | null;
   mediaState: MediaState;
   /** False while music is switched off, which hides the waveform button. */
   showMusic: boolean;
@@ -58,6 +63,7 @@ export function IslandCollapsedBar({
   collapsedTaskTitle,
   collapsedTodoCount,
   agentSession,
+  agentSessionCount,
   mediaState,
   showMusic,
   shelfCount,
@@ -76,6 +82,8 @@ export function IslandCollapsedBar({
     "island__pulse",
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
+  // While the island names a running agent, opening it shows the Agent page.
+  const openTarget: IslandPage = agentSession ? "agents" : page;
 
   return (
     <div
@@ -84,7 +92,7 @@ export function IslandCollapsedBar({
       inert={isExpanded}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onOpenPage(page);
+          onOpenPage(openTarget);
         }
       }}
     >
@@ -111,7 +119,7 @@ export function IslandCollapsedBar({
                 if (opened === false) onOpenMessages(preview.source);
               });
             } else {
-              onOpenPage(page);
+              onOpenPage(openTarget);
             }
           }
         }}
@@ -167,16 +175,31 @@ export function IslandCollapsedBar({
           onClick={() => onOpenPage("music")}
         />
       )}
-      <button
-        className="island__quiet-button"
-        type="button"
-        title={t.island.collapse}
-        aria-label={t.island.collapseIsland}
-        onClick={(event) => {
-          event.stopPropagation();
-          onTuck();
-        }}
-      />
+      {agentSessionCount === null ? (
+        <button
+          className="island__quiet-button"
+          type="button"
+          title={t.island.collapse}
+          aria-label={t.island.collapseIsland}
+          onClick={(event) => {
+            event.stopPropagation();
+            onTuck();
+          }}
+        />
+      ) : agentSessionCount > 0 ? (
+        <button
+          className="island-agent-count"
+          type="button"
+          title={t.agent.sessions.activeCount(agentSessionCount)}
+          aria-label={t.agent.sessions.activeCount(agentSessionCount)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenPage("agents");
+          }}
+        >
+          {agentSessionCount}
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -219,6 +219,17 @@ const en: Translations = {
       stale: "Stalled",
       idle: "Idle",
     },
+    sessions: {
+      title: "Agent sessions",
+      open: "Show agent sessions",
+      empty: "No agent sessions in the last 2 hours",
+      emptyHint: "Conversations in Claude Code or Codex show up here",
+      focus: (title) => `Switch to the window running "${title}"`,
+      notFound: "No matching window found",
+      justNow: "Just now",
+      minutesAgo: (minutes) => (minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`),
+      activeCount: (count) => (count === 1 ? "1 agent session running; click to view" : `${count} agent sessions running; click to view`),
+    },
   },
 
   notebook: {

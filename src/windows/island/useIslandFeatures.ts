@@ -44,7 +44,8 @@ export function useIslandFeatures({
     qq: qqEnabled,
     wechat: wechatEnabled,
     qqMail: settings.mailEnabled,
-  }), [clipboardEnabled, qqEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, wechatEnabled]);
+    agents: settings.agentStatusEnabled,
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, wechatEnabled]);
 
   useEffect(() => {
     const next = resolveIslandPage(page, features);

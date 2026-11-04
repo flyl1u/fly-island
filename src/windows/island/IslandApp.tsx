@@ -13,6 +13,9 @@ import { useTranslationEnabled } from "../../features/translation/useTranslation
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
+import { useAgentSessions } from "../../features/agent-status/useAgentSessions";
+import { countActiveSessions } from "../../features/agent-status/sessionList";
+import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
@@ -80,6 +83,12 @@ export function IslandApp() {
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
   const agentSession = useAgentSession(agentStatus, settings.agentStatusEnabled && settings.agentTitleEnabled);
+  // Polled faster while the Agent page is open; the collapsed island needs it for the session count.
+  const agentSessions = useAgentSessions(
+    settings.agentStatusEnabled,
+    mode === "expanded" && page === "agents" ? 2000 : 3000,
+  );
+  const activeAgentSessionCount = countActiveSessions(agentSessions);
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
@@ -193,7 +202,11 @@ export function IslandApp() {
     onCollapse: collapseIsland,
   });
 
-  const openCurrentPage = useCallback(() => openEnabledPage(page), [openEnabledPage, page]);
+  // While the island names a running agent, opening it shows the Agent page.
+  const openCurrentPage = useCallback(
+    () => openEnabledPage(agentSession ? "agents" : page),
+    [agentSession, openEnabledPage, page],
+  );
   useHoverExpand({
     enabled: settings.expandTrigger === "hover",
     delayMs: settings.hoverExpandDelayMs,
@@ -248,6 +261,7 @@ export function IslandApp() {
         collapsedTaskTitle={collapsedTaskTitle}
         collapsedTodoCount={collapsedTodoCount}
         agentSession={agentSession}
+        activeAgentSessionCount={activeAgentSessionCount}
         mediaState={mediaState}
         agentVisualState={agentVisualState}
         agentStatusLabel={agentStatusLabel}
@@ -295,6 +309,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
+        {page === "agents" && <AgentSessionsPanel sessions={agentSessions} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (
           <TodoNotebook

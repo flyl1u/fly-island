@@ -221,6 +221,17 @@ export type Translations = {
       stale: string;
       idle: string;
     };
+    sessions: {
+      title: string;
+      open: string;
+      empty: string;
+      emptyHint: string;
+      focus: (title: string) => string;
+      notFound: string;
+      justNow: string;
+      minutesAgo: (minutes: number) => string;
+      activeCount: (count: number) => string;
+    };
   };
 
   notebook: {
