@@ -140,6 +140,20 @@ export type Translations = {
     settings: string;
     closeLabel: string;
     credentialHint: string;
+    provider: string;
+    providers: {
+      deepseek: string;
+      volcengine: string;
+      dashscope: string;
+      moonshot: string;
+      openai: string;
+      custom: string;
+    };
+    baseUrl: string;
+    baseUrlHint: string;
+    model: string;
+    modelDefault: (model: string) => string;
+    modelRequired: string;
     secret: string;
     replaceSecret: string;
     enterSecret: string;

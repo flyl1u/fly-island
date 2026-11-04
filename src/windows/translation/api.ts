@@ -1,12 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback } from "@tauri-apps/api/event";
+import type { TranslationProvider } from "./providers";
 import type { Direction } from "./storage";
 
-// 与 translation.rs 中推送的事件名一致。
+// 与 translation/mod.rs 中推送的事件名一致。
 export const TRANSLATION_WINDOW_OPENED_EVENT = "translation-window-opened";
 
-export function hasTranslationSecret() {
-  return invoke<boolean>("has_translation_secret");
+/** Service, base URL (custom provider only) and model for a translation request. */
+export type TranslationService = {
+  provider: TranslationProvider;
+  baseUrl: string | null;
+  model: string | null;
+};
+
+export function hasTranslationSecret(provider: TranslationProvider) {
+  return invoke<boolean>("has_translation_secret", { provider });
 }
 
 export function setTranslationShortcut(shortcut: string) {
@@ -17,16 +25,16 @@ export function readTranslationClipboard() {
   return invoke<string | null>("read_translation_clipboard");
 }
 
-export function translateText(text: string, direction: Direction) {
-  return invoke<string>("translate_text", { text, direction });
+export function translateText(text: string, direction: Direction, service: TranslationService) {
+  return invoke<string>("translate_text", { text, direction, ...service });
 }
 
-export function saveTranslationSecret(secret: string) {
-  return invoke("save_translation_secret", { secret });
+export function saveTranslationSecret(secret: string, provider: TranslationProvider) {
+  return invoke("save_translation_secret", { secret, provider });
 }
 
-export function deleteTranslationSecret() {
-  return invoke("delete_translation_secret");
+export function deleteTranslationSecret(provider: TranslationProvider) {
+  return invoke("delete_translation_secret", { provider });
 }
 
 export function copyTranslationResult(text: string) {

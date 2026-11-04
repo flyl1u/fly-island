@@ -299,6 +299,15 @@
 .translation-window__section-heading p { margin: 0; color: var(--translation-muted); font-size: 13px; line-height: 1.6; }
 .translation-window__field { display: flex; flex-direction: column; gap: 9px; font-size: 13px; }
 .translation-window__field input { width: 100%; user-select: text; }
+/* A form field, unlike the compact toolbar select above it. */
+.translation-window__field select {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  padding-left: 9px;
+  background: var(--translation-control);
+  border-color: var(--translation-border);
+}
 .translation-window__field em { margin-left: 5px; color: var(--translation-accent); font-size: 12px; font-style: normal; }
 .translation-window__field small { color: var(--translation-muted); font-size: 12px; line-height: 1.6; }
 .translation-window__config-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-lg); }

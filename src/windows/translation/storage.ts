@@ -1,16 +1,49 @@
+import { DEFAULT_TRANSLATION_PROVIDER, isTranslationProvider, type TranslationProvider } from "./providers.ts";
+
 export type Direction = "auto" | "zh-en" | "en-zh";
-export type TranslationSettings = { shortcut: string; direction: Direction };
+export type TranslationSettings = {
+  shortcut: string;
+  direction: Direction;
+  provider: TranslationProvider;
+  /** Base URL of the OpenAI-compatible service used by the "custom" provider. */
+  customBaseUrl: string;
+  /** Model per provider; an empty or missing entry uses the provider's default. */
+  models: Partial<Record<TranslationProvider, string>>;
+};
 export const STORAGE_KEY = "focusd-island-translation-settings";
-export const DEFAULT_SETTINGS: TranslationSettings = { shortcut: "Alt+C", direction: "auto" };
+export const DEFAULT_SETTINGS: TranslationSettings = {
+  shortcut: "Alt+C",
+  direction: "auto",
+  provider: DEFAULT_TRANSLATION_PROVIDER,
+  customBaseUrl: "",
+  models: {},
+};
+
+function normalizeModels(value: unknown): TranslationSettings["models"] {
+  if (typeof value !== "object" || value === null) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [TranslationProvider, string] =>
+        isTranslationProvider(entry[0]) && typeof entry[1] === "string",
+    ),
+  );
+}
+
+export function normalizeTranslationSettings(stored: unknown): TranslationSettings {
+  const value = (typeof stored === "object" && stored !== null ? stored : {}) as Record<string, unknown>;
+  const shortcut = typeof value.shortcut === "string" ? value.shortcut : DEFAULT_SETTINGS.shortcut;
+  return {
+    shortcut: shortcut === "Alt+Space" ? DEFAULT_SETTINGS.shortcut : shortcut,
+    direction: value.direction === "zh-en" || value.direction === "en-zh" ? value.direction : "auto",
+    provider: isTranslationProvider(value.provider) ? value.provider : DEFAULT_TRANSLATION_PROVIDER,
+    customBaseUrl: typeof value.customBaseUrl === "string" ? value.customBaseUrl : "",
+    models: normalizeModels(value.models),
+  };
+}
 
 export function loadSettings(): TranslationSettings {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as Partial<TranslationSettings> | null;
-    const shortcut = typeof stored?.shortcut === "string" ? stored.shortcut : DEFAULT_SETTINGS.shortcut;
-    return {
-      shortcut: shortcut === "Alt+Space" ? DEFAULT_SETTINGS.shortcut : shortcut,
-      direction: stored?.direction === "zh-en" || stored?.direction === "en-zh" ? stored.direction : "auto",
-    };
+    return normalizeTranslationSettings(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"));
   } catch {
     return DEFAULT_SETTINGS;
   }
