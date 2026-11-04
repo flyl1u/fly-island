@@ -63,8 +63,19 @@ import { MessageSourceIcon } from "./MessageSourceIcon";
 import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
-import { UpdateReadyTodo } from "./UpdateReadyTodo";
-import { getUpdateState, subscribeToUpdate } from "./updaterController";
+import {
+  dismissUpdatePrompt,
+  getUpdateState,
+  installUpdate,
+  subscribeToUpdate,
+} from "./updaterController";
+import {
+  isUpdateTodo,
+  syncUpdateTodo,
+  withoutUpdateTodo,
+  UPDATE_TODO_ID,
+  type TodoItem,
+} from "./updateTodo";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import { MediaWaveform } from "./MediaWaveform";
 import {
@@ -88,13 +99,6 @@ type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
 type AgentProvider = "codex" | "claudeCode";
 type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
 type AgentVisualState = "idle" | "running" | "attention";
-
-type TodoItem = {
-  id: string;
-  title: string;
-  completed: boolean;
-  createdAt: number;
-};
 
 type TodoArchive = {
   date: string;
@@ -910,6 +914,7 @@ function normalizeTodo(todo: Partial<TodoItem>): TodoItem {
     title: todo.title?.trim() ?? "",
     completed: Boolean(todo.completed),
     createdAt: typeof todo.createdAt === "number" ? todo.createdAt : Date.now(),
+    ...(todo.kind === "update" ? { kind: "update" as const } : {}),
   };
 }
 
@@ -928,7 +933,12 @@ function loadTodos(): TodoItem[] {
     }
 
     return parsed
-      .filter((todo) => typeof todo.title === "string" && todo.title.trim())
+      .filter(
+        (todo) =>
+          typeof todo.title === "string" &&
+          todo.title.trim() &&
+          !isUpdateTodo(todo),
+      )
       .map(normalizeTodo);
   } catch {
     return [];
@@ -1121,11 +1131,6 @@ export function IslandShell({
   children,
 }: IslandShellProps) {
   const t = useTranslation();
-  const { stage: updateStage, dismissed: updateDismissed } = useSyncExternalStore(
-    subscribeToUpdate,
-    getUpdateState,
-  );
-  const updateReady = updateStage === "ready" && !updateDismissed;
   const glassFrameRef = useRef<number | null>(null);
   const didDragRef = useRef(false);
   const windowDragRef = useRef<{
@@ -1444,7 +1449,7 @@ export function IslandShell({
               <button
                 className={`dot-button dot-button--todo ${
                   page === "todo" ? "dot-button--active" : ""
-                } ${updateReady ? "dot-button--update-ready" : ""}`}
+                }`}
                 type="button"
                 title={t.island.todoList}
                 aria-label={t.island.todoList}
@@ -1452,11 +1457,7 @@ export function IslandShell({
                   event.stopPropagation();
                   onPageChange("todo");
                 }}
-              >
-                {updateReady && (
-                  <span className="dot-button__badge" aria-hidden="true" />
-                )}
-              </button>
+              />
               <button
                 className={`dot-button dot-button--music ${
                   page === "music" ? "dot-button--active" : ""
@@ -2634,6 +2635,20 @@ function TodoNotebook({
   onSelectArchive: (date: string) => void;
 }) {
   const t = useTranslation();
+  const updateProgressKey = useSyncExternalStore(subscribeToUpdate, () => {
+    const { stage, downloaded, total } = getUpdateState();
+    return `${stage}|${downloaded}|${total}`;
+  });
+  const [updateProgressStage, updateDownloaded, updateTotal] =
+    updateProgressKey.split("|");
+  const updateBusy = updateProgressStage === "downloading";
+  const updatePercent =
+    Number(updateTotal) > 0
+      ? Math.min(
+          100,
+          Math.round((Number(updateDownloaded) / Number(updateTotal)) * 100),
+        )
+      : null;
   const displayedTodos =
     pageMode === "review" ? selectedArchive?.todos ?? [] : todos;
   const isTodayMode = pageMode === "today";
@@ -2918,16 +2933,23 @@ function TodoNotebook({
         />
       ) : (
         <div className={listClassName} role="list">
-          {isTodayMode && <UpdateReadyTodo />}
           {displayedTodos.length === 0 ? (
             <div className="todo-empty">
               {isReviewMode ? t.todo.emptyReview : t.todo.empty}
             </div>
           ) : (
             displayedTodos.map((todo) => {
+              const isUpdateTodoItem = isUpdateTodo(todo);
               const isActive =
                 isTodayMode && todo.id === activeTodoId && !todo.completed;
               const titleLineCount = getTodoTitleLineCount(todo.title);
+              const updateAction = isUpdateTodoItem
+                ? updateBusy
+                  ? updatePercent === null
+                    ? t.settings.project.update.downloadingUnknown
+                    : t.settings.project.update.updateDownloading(updatePercent)
+                  : t.settings.project.update.updateNow
+                : null;
 
               return (
                 <div
@@ -3001,20 +3023,41 @@ function TodoNotebook({
                   {isTodayMode && (
                     <>
                       <button
-                        className={["todo-start", isActive ? "todo-start--active" : ""]
+                        className={[
+                          "todo-start",
+                          isActive ? "todo-start--active" : "",
+                          isUpdateTodoItem && updateBusy ? "todo-start--busy" : "",
+                        ]
                           .filter(Boolean)
                           .join(" ")}
                         type="button"
-                        title={isActive ? t.todo.stop : t.todo.start}
-                        aria-label={t.todo.actionOnTask(
-                          isActive ? t.todo.stop : t.todo.start,
-                          todo.title,
-                        )}
-                        disabled={todo.completed}
-                        onClick={() => onStartTodo(todo.id)}
+                        title={
+                          updateAction ??
+                          (isActive ? t.todo.stop : t.todo.start)
+                        }
+                        aria-label={
+                          updateAction ??
+                          t.todo.actionOnTask(
+                            isActive ? t.todo.stop : t.todo.start,
+                            todo.title,
+                          )
+                        }
+                        disabled={isUpdateTodoItem ? updateBusy : todo.completed}
+                        onClick={() =>
+                          isUpdateTodoItem
+                            ? void installUpdate()
+                            : onStartTodo(todo.id)
+                        }
                       >
-                        <Play size={13} strokeWidth={2.4} />
-                        <span>{isActive ? t.todo.stop : t.todo.start}</span>
+                        {isUpdateTodoItem ? (
+                          <RefreshCcw size={13} strokeWidth={2.4} />
+                        ) : (
+                          <Play size={13} strokeWidth={2.4} />
+                        )}
+                        <span>
+                          {updateAction ??
+                            (isActive ? t.todo.stop : t.todo.start)}
+                        </span>
                       </button>
                       <button
                         className="todo-delete"
@@ -4100,9 +4143,27 @@ function IslandApp({
   const islandPositionRef = useRef<IslandPosition | null>(loadIslandPosition());
   const selectedArchive =
     archives.find((archive) => archive.date === selectedArchiveDate) ?? null;
+  const updateTodoKey = useSyncExternalStore(subscribeToUpdate, () => {
+    const { stage, dismissed } = getUpdateState();
+    return `${stage}|${dismissed}`;
+  });
+  const [updateStage, updateDismissed] = updateTodoKey.split("|");
+  const updateTodoText = t.settings.project.update.updateTodo;
+  const persistedTodos = useMemo(() => withoutUpdateTodo(todos), [todos]);
+
+  useEffect(() => {
+    setTodos((currentTodos) =>
+      syncUpdateTodo(
+        currentTodos,
+        { stage: updateStage, dismissed: updateDismissed === "true" },
+        updateTodoText,
+      ),
+    );
+  }, [updateStage, updateDismissed, updateTodoText, todos]);
+
   const pendingTodoIds = useMemo(
-    () => todos.filter((todo) => !todo.completed).map((todo) => todo.id),
-    [todos],
+    () => persistedTodos.filter((todo) => !todo.completed).map((todo) => todo.id),
+    [persistedTodos],
   );
   const displayedTodoId = useTodoRotation(
     pendingTodoIds,
@@ -4113,11 +4174,11 @@ function IslandApp({
       Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview),
   );
   const collapsedTaskTitle = useMemo(() => {
-    const activeTodo = todos.find(
+    const activeTodo = persistedTodos.find(
       (todo) => todo.id === displayedTodoId && !todo.completed,
     );
     return activeTodo?.title ?? null;
-  }, [displayedTodoId, todos]);
+  }, [displayedTodoId, persistedTodos]);
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle
     ? todos.filter((todo) => !todo.completed).length
     : null;
@@ -4884,6 +4945,10 @@ function IslandApp({
   );
 
   const deleteTodo = useCallback((id: string) => {
+    if (id === UPDATE_TODO_ID) {
+      dismissUpdatePrompt();
+      return;
+    }
     setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id));
     setActiveTodoId((currentId) => (currentId === id ? null : currentId));
   }, []);
@@ -4985,7 +5050,7 @@ function IslandApp({
     setSaveState("saving");
 
     try {
-      await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+      await saveTodosToDisk(currentTodoDate, persistedTodos, dailyNote);
       showTodoSavedState();
     } catch (error) {
       console.error("Failed to save todo markdown", error);
@@ -5044,13 +5109,13 @@ function IslandApp({
 
   const rolloverToToday = useCallback(
     async (nextDate: string) => {
-      const signature = getTodoSignature(currentTodoDate, todos, dailyNote);
+      const signature = getTodoSignature(currentTodoDate, persistedTodos, dailyNote);
       const lastSavedSignature = window.localStorage.getItem(
         TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
       );
       const carryOverCreatedAt = Date.now();
       const carriedTodos = settings.carryOverIncompleteTodos
-        ? todos
+        ? persistedTodos
             .filter((todo) => !todo.completed)
             .map((todo, index) => ({
               ...todo,
@@ -5061,18 +5126,18 @@ function IslandApp({
         : [];
 
       if (
-        (todos.length > 0 || dailyNote.trim()) &&
+        (persistedTodos.length > 0 || dailyNote.trim()) &&
         signature !== lastSavedSignature
       ) {
         if (saveDirectory.trim()) {
           try {
-            await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+            await saveTodosToDisk(currentTodoDate, persistedTodos, dailyNote);
           } catch (error) {
             console.error("Failed to auto-save todo markdown", error);
-            upsertArchive(currentTodoDate, todos, dailyNote, false);
+            upsertArchive(currentTodoDate, persistedTodos, dailyNote, false);
           }
         } else {
-          upsertArchive(currentTodoDate, todos, dailyNote, false);
+          upsertArchive(currentTodoDate, persistedTodos, dailyNote, false);
         }
       }
 
@@ -5395,8 +5460,11 @@ function IslandApp({
   }, [settingPresets]);
 
   useEffect(() => {
-    window.localStorage.setItem(TODOS_STORAGE_KEY, JSON.stringify(todos));
-  }, [todos]);
+    window.localStorage.setItem(
+      TODOS_STORAGE_KEY,
+      JSON.stringify(persistedTodos),
+    );
+  }, [todos, persistedTodos]);
 
   useEffect(() => {
     window.localStorage.setItem(DAILY_NOTE_STORAGE_KEY, dailyNote);
@@ -5433,12 +5501,12 @@ function IslandApp({
       return;
     }
 
-    const signature = getTodoSignature(currentTodoDate, todos, dailyNote);
+    const signature = getTodoSignature(currentTodoDate, persistedTodos, dailyNote);
     const lastSavedSignature = window.localStorage.getItem(
       TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY,
     );
 
-    if (!todos.length && !dailyNote.trim() && !lastSavedSignature) {
+    if (!persistedTodos.length && !dailyNote.trim() && !lastSavedSignature) {
       return;
     }
 
@@ -5451,7 +5519,7 @@ function IslandApp({
       autoSaveRequestId.current += 1;
       const requestId = autoSaveRequestId.current;
 
-      void saveTodosToDisk(currentTodoDate, todos, dailyNote)
+      void saveTodosToDisk(currentTodoDate, persistedTodos, dailyNote)
         .catch((error) => {
           if (requestId === autoSaveRequestId.current) {
             console.error("Failed to auto-save todo markdown", error);

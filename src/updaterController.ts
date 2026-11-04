@@ -162,7 +162,9 @@ async function downloadPending() {
     );
     // Keep the update handle open: installing is deferred until the user agrees
     // to restart, and closing it would throw the downloaded package away.
-    setState({ stage: "ready", dismissed: false });
+    // Keep a dismissed flag: if the user hid the todo while it was downloading,
+    // finishing the download must not pop it back up.
+    setState({ stage: "ready" });
   } catch (error) {
     console.error("Failed to download the update", error);
     setState({ stage: "error", detail: errorReason(error) });
