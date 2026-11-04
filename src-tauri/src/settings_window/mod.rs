@@ -1,5 +1,7 @@
+mod bounds;
+
 use std::{thread, time::Duration};
-use tauri::{AppHandle, Manager, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 pub const WINDOW_LABEL: &str = "settings";
 
@@ -14,7 +16,8 @@ const SCREEN_MARGIN: f64 = 48.0;
 /// so a closed window does not keep a webview running in the background.
 ///
 /// A new window starts hidden and the page shows it (show_settings_window) after
-/// its first paint; shown at once, it sat empty while the webview loaded.
+/// its first paint; shown at once, it sat empty while the webview loaded. It opens at
+/// the size and place it had when last closed (see `bounds`).
 pub fn open(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.unminimize();
@@ -30,6 +33,11 @@ pub fn open(app: &AppHandle) -> Result<(), String> {
         .ok_or_else(|| "Settings window config was not found.".to_string())?
         .clone();
     let mut config = config;
+    let saved = bounds::load(app);
+    if let Some(saved) = saved {
+        config.width = saved.width.max(config.min_width.unwrap_or(0.0));
+        config.height = saved.height;
+    }
     if let Ok(Some(monitor)) = app.primary_monitor() {
         let usable = f64::from(monitor.work_area().size.height) / monitor.scale_factor();
         config.height = fit_height(config.height, config.min_height, usable);
@@ -39,6 +47,15 @@ pub fn open(app: &AppHandle) -> Result<(), String> {
         .visible(false)
         .build()
         .map_err(|error| error.to_string())?;
+    if let Some(saved) = saved {
+        bounds::restore_position(app, &window, saved);
+    }
+    let closing = window.clone();
+    window.on_window_event(move |event| {
+        if matches!(event, WindowEvent::CloseRequested { .. }) {
+            bounds::save(&closing);
+        }
+    });
 
     thread::spawn(move || {
         thread::sleep(SHOW_FALLBACK_DELAY);
@@ -78,7 +95,24 @@ pub async fn show_settings_window(app: AppHandle) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    use super::bounds::title_bar_on_screen;
     use super::fit_height;
+
+    #[test]
+    fn a_saved_place_on_a_screen_is_reused() {
+        let screens = [(0, 0, 1920, 1040), (1920, 0, 2560, 1400)];
+        assert!(title_bar_on_screen(100, 80, &screens));
+        assert!(title_bar_on_screen(2400, 200, &screens));
+    }
+
+    #[test]
+    fn a_saved_place_off_every_screen_is_dropped() {
+        let screens = [(0, 0, 1920, 1040)];
+        assert!(!title_bar_on_screen(2400, 200, &screens));
+        assert!(!title_bar_on_screen(1850, 200, &screens));
+        assert!(!title_bar_on_screen(100, 1030, &screens));
+        assert!(!title_bar_on_screen(-32000, -32000, &screens));
+    }
 
     #[test]
     fn keeps_the_configured_height_on_a_tall_screen() {

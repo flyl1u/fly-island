@@ -31,7 +31,10 @@ static CLIPBOARD_HOTKEY_REGISTERED: OnceLock<Mutex<bool>> = OnceLock::new();
 static CLIPBOARD_HOTKEY_ERROR: Mutex<Option<String>> = Mutex::new(None);
 
 pub(super) fn hotkey_error() -> Option<String> {
-    CLIPBOARD_HOTKEY_ERROR.lock().ok().and_then(|error| error.clone())
+    CLIPBOARD_HOTKEY_ERROR
+        .lock()
+        .ok()
+        .and_then(|error| error.clone())
 }
 
 fn report_hotkey_error(error: Option<String>) {
