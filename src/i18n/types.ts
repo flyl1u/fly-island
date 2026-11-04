@@ -140,6 +140,9 @@ export type Translations = {
     settings: string;
     closeLabel: string;
     credentialHint: string;
+    baseUrl: string;
+    baseUrlHint: string;
+    model: string;
     secret: string;
     replaceSecret: string;
     enterSecret: string;

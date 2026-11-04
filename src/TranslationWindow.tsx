@@ -7,9 +7,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./TranslationWindow.css";
 
 type Direction = "auto" | "zh-en" | "en-zh";
-type TranslationSettings = { shortcut: string; direction: Direction };
+type TranslationSettings = { shortcut: string; direction: Direction; baseUrl: string; model: string };
 const STORAGE_KEY = "focusd-island-translation-settings";
-const DEFAULT_SETTINGS: TranslationSettings = { shortcut: "Alt+C", direction: "auto" };
+const DEFAULT_SETTINGS: TranslationSettings = { shortcut: "Alt+C", direction: "auto", baseUrl: "https://api.deepseek.com", model: "deepseek-flash" };
 
 function loadSettings(): TranslationSettings {
   try {
@@ -18,6 +18,8 @@ function loadSettings(): TranslationSettings {
     return {
       shortcut: shortcut === "Alt+Space" ? DEFAULT_SETTINGS.shortcut : shortcut,
       direction: stored?.direction === "zh-en" || stored?.direction === "en-zh" ? stored.direction : "auto",
+      baseUrl: typeof stored?.baseUrl === "string" && stored.baseUrl.trim() ? stored.baseUrl : DEFAULT_SETTINGS.baseUrl,
+      model: typeof stored?.model === "string" && stored.model.trim() ? stored.model : DEFAULT_SETTINGS.model,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -138,14 +140,14 @@ export default function TranslationWindow() {
     setOutput("");
     setIsLoading(true);
     try {
-      const translated = await invoke<string>("translate_text", { text, direction: settings.direction });
+      const translated = await invoke<string>("translate_text", { text, direction: settings.direction, baseUrl: settings.baseUrl, model: settings.model });
       if (currentId === requestId.current) setOutput(translated);
     } catch (failure) {
       if (currentId === requestId.current) setError(String(failure));
     } finally {
       if (currentId === requestId.current) setIsLoading(false);
     }
-  }, [input, settings.direction, t]);
+  }, [input, settings.direction, settings.baseUrl, settings.model, t]);
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -220,6 +222,13 @@ export default function TranslationWindow() {
         {showConfig ? (
           <section className="translation-window__config">
             <div className="translation-window__section-heading"><h2>{t.translator.settings}</h2><p>{t.translator.credentialHint}</p></div>
+            <label className="translation-window__field"><span>{t.translator.baseUrl}</span>
+              <input type="url" autoComplete="off" spellCheck={false} value={settings.baseUrl} onChange={(event) => setSettings((current) => ({ ...current, baseUrl: event.target.value }))} placeholder={DEFAULT_SETTINGS.baseUrl} />
+              <small>{t.translator.baseUrlHint}</small>
+            </label>
+            <label className="translation-window__field"><span>{t.translator.model}</span>
+              <input autoComplete="off" spellCheck={false} value={settings.model} onChange={(event) => setSettings((current) => ({ ...current, model: event.target.value }))} placeholder={DEFAULT_SETTINGS.model} />
+            </label>
             <label className="translation-window__field"><span>{t.translator.secret} {hasSecret && <em>{t.common.saved}</em>}</span>
               <input type="password" autoComplete="off" value={secretDraft} onChange={(event) => setSecretDraft(event.target.value)} placeholder={hasSecret ? t.translator.replaceSecret : t.translator.enterSecret} />
             </label>
@@ -252,7 +261,7 @@ export default function TranslationWindow() {
                 <ArrowRight size={15} aria-hidden="true" />
                 <span>{targetLanguage}</span>
               </div>
-              <span className="translation-window__provider">DeepSeek AI</span>
+              <span className="translation-window__provider" title={settings.baseUrl}>{settings.model.trim() || DEFAULT_SETTINGS.model}</span>
             </div>
             <div className="translation-window__content">
               <section className="translation-window__panel translation-window__source">
