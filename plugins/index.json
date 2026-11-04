@@ -14,14 +14,14 @@
       "version": "1.0.0",
       "apiVersion": 1,
       "author": "FocuSD",
-      "homepage": "https://github.com/TixXin/fly-island/tree/main/plugins/examples/dev.focusd.todo-digest",
+      "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.todo-digest",
       "permissions": [
         "notes:write",
         "todos:read"
       ],
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.todo-digest-1.0.0.zip",
-        "sha256": "7bd45e849aaf72a6edb56e4d5e5d653167db57ee33e39f21001b77f049227286",
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.todo-digest-1.0.0.zip",
+        "sha256": "ebba3a744f3b108f7fba231e73a1f58abd3a4984ecff61de9345521e3cd54bd8",
         "size": 2656
       }
     }

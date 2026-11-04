@@ -163,11 +163,11 @@ plugin.onCommand("sync-now", async () => {
 
 ## 发布到插件市场
 
-目前市场索引放在 `TixXin/fly-island` 仓库中：
+目前市场索引放在 `TixXin/fly-island` 仓库的 `dev` 分支中：
 
 1. 把插件文件夹放到仓库的 `plugins/examples/<插件 id>/` 下。
 2. 运行 `pnpm plugins:index`。脚本会把插件打包成 `plugins/packages/<id>-<version>.zip`，并重新生成 `plugins/index.json`（包含 SHA-256 和文件大小）。
-3. 提交以上文件并合并到 `main` 分支后，应用里的插件市场就能看到这个插件。
+3. 提交以上文件并推送到 fork 的 `dev` 分支后，应用里的插件市场就能看到这个插件。
 
 规则：
 

@@ -7,8 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { crc32, deflateRawSync } from "node:zlib";
 
-/** Where the app downloads the index and packages from: the fork, not upstream (for now). */
-export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins";
+/** Where the app downloads the index and packages from: the fork's dev branch, not main or upstream (for now). */
+export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins";
 export const INDEX_VERSION = 1;
 const SOURCE_DIRS = ["plugins/examples"];
 const PACKAGES_DIR = "plugins/packages";

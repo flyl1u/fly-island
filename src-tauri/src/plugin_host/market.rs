@@ -15,8 +15,9 @@ use std::{
 use super::manifest::{parse_manifest, version_at_least, LocalizedText, HOST_API_VERSION, MANIFEST_FILE_NAME};
 use crate::system::updater::get_updater_proxy;
 
-/// The fork's main branch for now, not upstream (see scripts/build-plugin-index.mjs).
-pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json";
+/// The fork's dev branch for now, so publishing plugins leaves main (and upstream
+/// PR #36, which tracks it) alone. See scripts/build-plugin-index.mjs.
+pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json";
 const INDEX_VERSION: u32 = 1;
 const MAX_INDEX_BYTES: usize = 1024 * 1024;
 const MAX_PACKAGE_BYTES: u64 = 20 * 1024 * 1024;

@@ -182,7 +182,7 @@
 
 ## 10. 分发（插件市场）
 
-> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `plugins/` 目录下，应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `INDEX_URL`。索引签名还没有做。
+> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `dev` 分支的 `plugins/` 目录下（不用 `main`，因为上游 PR #36 跟踪的是 `TixXin:main`），应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `INDEX_URL`。索引签名还没有做。
 
 参考 Obsidian / Zed，第一版不建服务器：
 
@@ -206,7 +206,7 @@
 | P1 ✅ | Rust `local_api` + 前端 `features/local-api/`（即本文的 plugin-bridge），只开放待办和笔记，见 [local-api.md](../local-api.md) | **待办外部接口**（当前用户的需求）直接可用 |
 | P2 ✅ | 插件（权限 `agent-status:write`）和本地接口（`/v1/agent-status/{source}`）都可以上报 AI Agent 状态，在快照里作为 `others` 列表返回；Codex / Claude Code 的 hook 保持不变。声明式插件加载随 P3 一起完成（`runtime.type: none`） | 新的 AI Agent 适配不必再等发版 |
 | P3 ✅ | 进程插件宿主（`src-tauri/src/plugin_host/`）、设置 → 插件页（`src/features/plugins/`）、Node SDK 和示例插件，开发文档见 [docs/plugins/README.md](../plugins/README.md) | 第三方开发者可以写插件 |
-| P4 ✅ | 暂用 fork 仓库 `TixXin/fly-island` 的 `plugins/index.json` 作为索引，插件包放在同一仓库的 `plugins/packages/`；应用内可以浏览、安装、更新、卸载插件，并校验 SHA-256 | 用户可以在应用内浏览和安装插件 |
+| P4 ✅ | 暂用 fork 仓库 `TixXin/fly-island` 的 `dev` 分支上的 `plugins/index.json` 作为索引，插件包放在同一仓库的 `plugins/packages/`；应用内可以浏览、安装、更新、卸载插件，并校验 SHA-256 | 用户可以在应用内浏览和安装插件 |
 | P5（视情况） | 展开态面板模板、索引签名、WASM 沙箱 | 根据生态规模再决定 |
 
 每个阶段都可以单独发布、单独验证。如果 P3 之后没人写插件，P4 可以不做，P1、P2 的成果仍然有用。
