@@ -9,5 +9,7 @@ pub(crate) mod input;
 pub(crate) mod message_window;
 pub(crate) mod ole;
 pub(crate) mod process;
+pub(crate) mod process_times;
 pub(crate) mod registry;
+pub(crate) mod shell_hook;
 pub(crate) mod window;

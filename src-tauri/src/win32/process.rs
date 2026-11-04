@@ -19,7 +19,17 @@ use windows::{
 const MAX_IMAGE_PATH_UNITS: usize = 32768;
 
 /// Owns a process handle and closes it when dropped.
-struct ProcessHandle(HANDLE);
+pub(super) struct ProcessHandle(pub(super) HANDLE);
+
+/// Opens `process_id` for limited queries (path, times); `None` when the process
+/// does not exist or cannot be opened.
+pub(super) fn open_for_limited_query(process_id: u32) -> Option<ProcessHandle> {
+    // SAFETY: OpenProcess takes no pointers; a returned handle is owned by
+    // ProcessHandle, which closes it.
+    unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) }
+        .ok()
+        .map(ProcessHandle)
+}
 
 impl Drop for ProcessHandle {
     fn drop(&mut self) {
@@ -41,11 +51,7 @@ pub(crate) fn window_process_id(window: HWND) -> u32 {
 /// Full Win32 path of the executable running as `process_id`. `None` when the
 /// process cannot be opened for limited queries or its path cannot be read.
 pub(crate) fn image_path(process_id: u32) -> Option<String> {
-    // SAFETY: OpenProcess takes no pointers; a returned handle is owned by
-    // ProcessHandle, which closes it.
-    let process = ProcessHandle(
-        unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) }.ok()?,
-    );
+    let process = open_for_limited_query(process_id)?;
     let mut path = [0u16; MAX_IMAGE_PATH_UNITS];
     let mut length = path.len() as u32;
     // SAFETY: `process.0` is a live handle opened with

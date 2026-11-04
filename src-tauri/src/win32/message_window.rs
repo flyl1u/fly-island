@@ -9,9 +9,10 @@ use windows::{
         Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
         System::LibraryLoader::GetModuleHandleW,
         UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, PostMessageW,
-            RegisterClassW, TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE,
-            WNDCLASSW,
+            CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW,
+            PeekMessageW, PostMessageW, RegisterClassW, TranslateMessage, UnregisterClassW,
+            HWND_MESSAGE, MSG, PM_REMOVE, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSW,
+            WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -98,6 +99,49 @@ pub(crate) fn create_message_only_window(
     }
 }
 
+/// Creates a never-shown top-level tool popup that cannot be activated, of a
+/// class registered with [`register_class`]. Unlike a message-only window it
+/// receives shell hook notifications.
+pub(crate) fn create_tool_popup_window(
+    instance: HINSTANCE,
+    class: &str,
+    title: &str,
+) -> Result<HWND> {
+    let class = wide(class);
+    let title = wide(title);
+    // SAFETY: as in `create_message_only_window`.
+    unsafe {
+        CreateWindowExW(
+            WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            PCWSTR(class.as_ptr()),
+            PCWSTR(title.as_ptr()),
+            WS_POPUP,
+            0,
+            0,
+            0,
+            0,
+            None,
+            None,
+            Some(instance),
+            None,
+        )
+    }
+}
+
+pub(crate) fn destroy_window(window: HWND) -> Result<()> {
+    // SAFETY: DestroyWindow takes the HWND by value and fails for windows that do
+    // not exist or belong to another thread.
+    unsafe { DestroyWindow(window) }
+}
+
+/// Unregisters a class registered with [`register_class`]. Fails while windows
+/// of the class still exist.
+pub(crate) fn unregister_class(instance: HINSTANCE, name: &str) -> Result<()> {
+    let name = wide(name);
+    // SAFETY: `name` is NUL-terminated and outlives the call.
+    unsafe { UnregisterClassW(PCWSTR(name.as_ptr()), Some(instance)) }
+}
+
 /// Posts `message` with zero parameters to `window`'s queue without waiting.
 pub(crate) fn post_message(window: HWND, message: u32) -> Result<()> {
     // SAFETY: both parameters are zero, so the receiver is never handed a pointer.
@@ -113,6 +157,18 @@ pub(crate) fn run_message_loop() {
     // calls only read.
     unsafe {
         while GetMessageW(&mut message, None, 0, 0).into() {
+            let _ = TranslateMessage(&message);
+            DispatchMessageW(&message);
+        }
+    }
+}
+
+/// Dispatches every message already queued for this thread, then returns.
+pub(crate) fn dispatch_pending_messages() {
+    let mut message = MSG::default();
+    // SAFETY: as in `run_message_loop`.
+    unsafe {
+        while PeekMessageW(&mut message, None, 0, 0, PM_REMOVE).as_bool() {
             let _ = TranslateMessage(&message);
             DispatchMessageW(&message);
         }
@@ -150,6 +206,34 @@ mod tests {
             post_message(window, WM_QUIT).unwrap();
             run_message_loop();
             assert_eq!(RECEIVED.load(Ordering::SeqCst), 1);
+        })
+        .join()
+        .unwrap();
+    }
+
+    struct Silent;
+
+    impl WindowMessages for Silent {
+        fn handle(_: HWND, _: u32, _: WPARAM, _: LPARAM) -> Option<LRESULT> {
+            None
+        }
+    }
+
+    #[test]
+    fn tool_popups_can_be_created_drained_destroyed_and_unregistered() {
+        std::thread::spawn(|| {
+            let class = "FocuSDToolPopupTest";
+            let instance = module_instance().unwrap();
+            register_class::<Silent>(instance, class).unwrap();
+            let window = create_tool_popup_window(instance, class, "").unwrap();
+            assert!(!crate::win32::window::is_visible(window));
+            dispatch_pending_messages();
+            assert!(
+                unregister_class(instance, class).is_err(),
+                "window still alive"
+            );
+            destroy_window(window).unwrap();
+            unregister_class(instance, class).unwrap();
         })
         .join()
         .unwrap();

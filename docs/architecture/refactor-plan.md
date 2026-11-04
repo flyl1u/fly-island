@@ -159,11 +159,12 @@
   - [x] 进程句柄：`win32/process.rs`（`window_process_id`、`image_path`，句柄由 RAII 关闭）替换 QQ 与微信两处"窗口属于哪个可执行文件"的查询（`a918a97`）。进程相关调用单独成文件，是因为 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 只引入它和 `registry.rs`，避免示例编译到用不上的窗口函数。
   - [x] 窗口：`win32/window.rs`（`window_rect`、`cursor_position`、`clear_window_region`、`is_interactive`、`bring_to_foreground`）替换 `island/glass.rs`、`island/passthrough.rs`、`messenger_activation.rs` 中的调用；`island/mod.rs` 等待左键松开改用 `win32/input.rs` 新增的 `is_left_button_down`。窗口枚举回调属于 6.2（`qq_notifications/launcher.rs`），本步不做。
   - [x] COM：`win32/com.rs`（`ComApartment`、`WinRtApartment`，均为不可 `Send` 的 RAII 守卫）替换媒体线程的 `CoInitializeEx` / `CoUninitialize` 配对和 `qq_notifications/listener.rs` 的 `RoInitialize` + `WinRT` 守卫。示例程序中的 `RoInitialize` 不属于生产代码，本步不改。
-- [ ] **6.2** 逐模块迁移剩余的 `unsafe` 调用：媒体与音频、通知、剪贴板、翻译、微信。
+- [x] **6.2** 逐模块迁移剩余的 `unsafe` 调用：媒体与音频、通知、剪贴板、翻译、微信。
   - [x] 媒体与音频：`win32/audio.rs`（`AudioDevices` → `AudioOutput` → `OutputVolume` / `PeakMeter`，每一层单独返回 `Result`，调用方仍按原来的阶段映射错误文案）；`win32/input.rs` 新增 `send_key_down` / `send_key_up`，媒体键的 80ms 按住时间留在调用方。
   - [x] 通知：`win32/window.rs` 新增 `for_each_top_level_window`（闭包经 `LPARAM` 传给 `EnumWindows`，只在同步调用期间有效）和标题、类名、所有者、还原位置、可见性、前台窗口、`AllowSetForegroundWindow`、`SendMessageTimeoutW`、托盘图标查询；`qq_notifications/launcher.rs` 的枚举回调改为普通的安全函数，不再含 `unsafe`。
   - [x] 剪贴板：新增 `win32/message_window.rs`（`WindowMessages` trait 让窗口过程成为安全的 `handle` 方法，返回 `None` 时交给 `DefWindowProcW`；类注册、仅消息窗口、`PostMessageW`、`GetMessageW` 循环）、`win32/hotkey.rs`（注册时总是加 `MOD_NOREPEAT`）、`win32/clipboard.rs`（剪贴板格式监听）。`clipboard_history/service.rs`、`hotkey.rs` 不再含 `unsafe`，`unregister_current_hotkey` 不再是 `unsafe fn`。
   - [x] 翻译：复用上一步的 `message_window`、`hotkey`，以及 `window::foreground_window` / `window_rect`；`translation/` 不再含 `unsafe`。
+  - [x] 微信：`win32/process_times.rs`（进程启动时间，复用 `process.rs` 中改为 `pub(super)` 的句柄类型）、`win32/shell_hook.rs`（`SHELLHOOK` 消息与注册），`message_window.rs` 增加工具弹窗、销毁窗口、注销类和 `PeekMessageW` 派发，`window.rs` 增加 `is_minimized`。`wechat_reminders/mod.rs`、`source.rs` 不再含 `unsafe`。示例程序 `wechat_reminder_probe.rs` 同步引入 `message_window.rs`、`shell_hook.rs`、`window.rs`，只用到其中一部分的两个文件加了 `#[allow(dead_code)]`。至此生产代码中 `win32/` 以外没有 `unsafe`（`messenger_activation.rs` 测试模块里的 1 处除外）。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
 
 **验收**：除 `win32/` 外，生产代码中不再出现 `unsafe`；clippy 没有告警；`cargo test` 和 `pnpm tauri build --no-bundle` 通过。
@@ -183,7 +184,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 
 - 每类调用一个提交，提交信息用 `refactor(win32): ...`；封装函数尽量接收 Rust 类型（`&str`、`u32`），不让调用方传裸指针；每个 `unsafe` 块写 `// SAFETY:`；句柄用 RAII 类型。
 - 迁移只改实现方式，不改行为：缓冲区大小、失败分支（跳过 / 返回错误 / 回退默认值）与原代码逐一对齐，提交说明里写明对照结果。
-- `wechat_reminders/source.rs` 也被 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 编译。它用到的 `win32` 文件要在示例的 `mod win32 { ... }` 中逐个引入，并且这些文件不能依赖 crate 内其他模块；只把示例用得到的函数放在这些文件里，避免示例产生 dead_code 告警。
+- `wechat_reminders/source.rs` 也被 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 编译。它用到的 `win32` 文件要在示例的 `mod win32 { ... }` 中逐个引入，并且这些文件不能依赖 crate 内其他模块；只把示例用得到的函数放在这些文件里，避免示例产生 dead_code 告警。（6.2 更新：`message_window.rs`、`window.rs` 由主程序和示例共用，示例只用到一部分，在示例中对这两个引入加了 `#[allow(dead_code)]`；`process.rs` 仍只放示例用得到的函数，进程启动时间放在单独的 `process_times.rs`。）
 - 每步验证：`cargo test`（当前 68 通过 / 5 忽略）、`cargo clippy --all-targets`（告警只减不增）、`cargo build --all-targets`、`pnpm check`、`pnpm build`、`pnpm tauri build --no-bundle`，并按根目录规则同步桌面快捷方式。
 
 **建议的剩余步骤**
@@ -335,6 +336,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.2（2/n，改写） | 见提交说明 | QQ 窗口查找：回调体逐行对应原代码（标题缓冲 32、类名缓冲 256、托盘宿主窗口优先记录、标题 / 类名 / 所有者 / 还原位置四个条件的短路顺序、500×300 阈值），枚举失败的错误文案不变；托盘图标 id 查找的嵌套 `if` 合并为 `&&`，只在图标存在时记录 id，与原来相同；托盘点击仍按相同的消息、参数、标志和 1 秒超时发送。`qq_notifications/` 生产代码中已无 `unsafe` | `cargo test`（102 / 5）、clippy 63 → 56；`pnpm check`（114/114）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.2（3/n，改写） | 见提交说明 | 剪贴板监听：类名、窗口标题、仅消息窗口的样式与父窗口不变；取模块句柄、建窗、加监听失败仍返回 `error.to_string()`，注册类失败仍返回原来的固定文案；监听窗口句柄的保存、首次注册快捷键、消息循环（`GetMessageW` 返回 -1 时继续循环，与原写法相同）和退出时的注销顺序不变。窗口过程的三个分支和返回值逐一对应，未处理的消息仍交给 `DefWindowProcW`。快捷键注册的修饰键、`MOD_NOREPEAT`、失败日志不变 | `cargo test`（111 / 5）、clippy 56 → 51；`pnpm check`（115/115）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.2（4/n，改写） | 见提交说明 | 翻译快捷键窗口：与剪贴板相同的对齐方式（类名、标题、仅消息窗口、错误文案、消息循环、退出时注销）；`CHANGE_HOTKEY_MESSAGE` 投递失败仍清空待处理绑定并返回同一文案；窗口过程中先注销旧快捷键、注册新快捷键、失败时恢复旧绑定的顺序不变。首次定位窗口仍只在前台窗口非空且能取到矩形时用它的中心点 | `cargo test`（115 / 5）、clippy 51 → 44；`pnpm check`（118/118）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-04 | 6.2（5/5，改写） | 见提交说明 | 微信窗口查找：打不开进程或读不到路径仍跳过该窗口；路径比较、标题缓冲 32 与三个候选标题、500×300 判断不变；启动时间读不到仍记为 `u64::MAX`。差异：原代码用同一个进程句柄先读路径再读启动时间，现在 `image_path` 与 `start_time` 各自打开一次（进程在两次打开之间退出时启动时间记为 `u64::MAX`，只影响多个微信实例之间的排序）。提醒监听：注册 `SHELLHOOK`、取模块句柄、注册类、建窗失败的文案与清理不变，建窗失败仍注销类；监听对象仍在注册 shell hook 之前构造，失败时由 `Drop` 清理；窗口过程处理后仍总是调用 `DefWindowProcW`；`Drop` 的注销、销毁、注销类、清空上下文顺序不变。`tests.rs` 补上原来经 `use super::*` 得到的两个导入，测试函数未改 | `cargo test`（117 / 5）、`cargo build --all-targets`（示例无新增告警）、clippy 44 → 34；`pnpm check`（118/118）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 

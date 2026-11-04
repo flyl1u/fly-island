@@ -1,12 +1,22 @@
 #[path = "../src/wechat_reminders/source.rs"]
 mod wechat_reminder_source;
 
-// source.rs uses crate::win32::{process, registry}.
+// source.rs uses crate::win32::{message_window, process, registry, shell_hook, window}.
+// The probe needs only part of message_window and window, so their other
+// functions are unused here.
 mod win32 {
+    #[path = "../../src/win32/message_window.rs"]
+    #[allow(dead_code)]
+    pub(crate) mod message_window;
     #[path = "../../src/win32/process.rs"]
     pub(crate) mod process;
     #[path = "../../src/win32/registry.rs"]
     pub(crate) mod registry;
+    #[path = "../../src/win32/shell_hook.rs"]
+    pub(crate) mod shell_hook;
+    #[path = "../../src/win32/window.rs"]
+    #[allow(dead_code)]
+    pub(crate) mod window;
 }
 
 use serde_json::json;

@@ -90,6 +90,12 @@ pub(crate) fn is_visible(window: HWND) -> bool {
     unsafe { IsWindowVisible(window) }.as_bool()
 }
 
+pub(crate) fn is_minimized(window: HWND) -> bool {
+    // SAFETY: IsIconic takes the HWND by value and returns false for invalid
+    // windows.
+    unsafe { IsIconic(window) }.as_bool()
+}
+
 /// The current foreground window; a null HWND when there is none.
 pub(crate) fn foreground_window() -> HWND {
     // SAFETY: GetForegroundWindow takes no arguments.

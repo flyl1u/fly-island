@@ -1,4 +1,5 @@
 use super::*;
+use windows::Win32::UI::WindowsAndMessaging::{GetWindowThreadProcessId, IsIconic};
 
 #[test]
 fn visible_main_is_preferred_and_login_windows_are_not_restored() {

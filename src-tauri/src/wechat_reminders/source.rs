@@ -1,20 +1,15 @@
-use crate::win32::{process, registry};
+use crate::win32::{
+    message_window::{self, WindowMessages},
+    process, registry, shell_hook, window,
+};
 use std::{cell::RefCell, path::PathBuf};
-use windows::{
-    core::{w, Error},
-    Win32::{
-        Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
-        System::{LibraryLoader::GetModuleHandleW, Registry::HKEY_CURRENT_USER},
-        UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DeregisterShellHookWindow, DestroyWindow,
-            DispatchMessageW, GetForegroundWindow, PeekMessageW, RegisterClassW,
-            RegisterShellHookWindow, RegisterWindowMessageW, TranslateMessage, UnregisterClassW,
-            HSHELL_REDRAW, HSHELL_WINDOWACTIVATED, HSHELL_WINDOWCREATED, MSG, PM_REMOVE, WNDCLASSW,
-            WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
-        },
-    },
+use windows::Win32::{
+    Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
+    System::Registry::HKEY_CURRENT_USER,
+    UI::WindowsAndMessaging::{HSHELL_REDRAW, HSHELL_WINDOWACTIVATED, HSHELL_WINDOWCREATED},
 };
 
+const CLASS_NAME: &str = "FocuSDWeChatReminderSource";
 const HSHELL_FLASH: u32 = HSHELL_REDRAW | 0x8000;
 const HSHELL_RUDEAPPACTIVATED: u32 = HSHELL_WINDOWACTIVATED | 0x8000;
 
@@ -64,7 +59,7 @@ fn normalized_path(path: &str) -> String {
         .to_lowercase()
 }
 
-unsafe fn matches_window(window: HWND, executable: &str) -> Result<bool, ()> {
+fn matches_window(window: HWND, executable: &str) -> Result<bool, ()> {
     if window.is_invalid() {
         return Ok(false);
     }
@@ -72,44 +67,46 @@ unsafe fn matches_window(window: HWND, executable: &str) -> Result<bool, ()> {
     Ok(normalized_path(&path) == executable)
 }
 
-unsafe extern "system" fn window_proc(
-    window: HWND,
-    message: u32,
-    kind: WPARAM,
-    target: LPARAM,
-) -> LRESULT {
-    CONTEXT.with(|slot| {
-        let Ok(mut context) = slot.try_borrow_mut() else {
-            return;
-        };
-        let Some(context) = context.as_mut() else {
-            return;
-        };
-        if message != context.message {
-            return;
-        }
-        context.stats.shell_events += 1;
-        let signal = match kind.0 as u32 {
-            HSHELL_FLASH => ReminderSignal::Attention,
-            HSHELL_WINDOWACTIVATED | HSHELL_RUDEAPPACTIVATED => ReminderSignal::Activated,
-            HSHELL_REDRAW => ReminderSignal::Redraw,
-            HSHELL_WINDOWCREATED => ReminderSignal::WindowCreated,
-            _ => return, // Other messages may contain pointers instead of window handles.
-        };
-        match matches_window(HWND(target.0 as *mut _), &context.executable) {
-            Ok(true) => {
-                if signal == ReminderSignal::Attention
-                    && matches_window(GetForegroundWindow(), &context.executable).unwrap_or(false)
-                {
-                    return;
-                }
-                (context.callback)(signal);
+struct ReminderWindow;
+
+impl WindowMessages for ReminderWindow {
+    /// Records shell hook notifications; every message, handled or not, still
+    /// goes on to `DefWindowProcW`.
+    fn handle(_: HWND, message: u32, kind: WPARAM, target: LPARAM) -> Option<LRESULT> {
+        CONTEXT.with(|slot| {
+            let Ok(mut context) = slot.try_borrow_mut() else {
+                return;
+            };
+            let Some(context) = context.as_mut() else {
+                return;
+            };
+            if message != context.message {
+                return;
             }
-            Err(()) => context.stats.metadata_errors += 1,
-            Ok(false) => {}
-        }
-    });
-    DefWindowProcW(window, message, kind, target)
+            context.stats.shell_events += 1;
+            let signal = match kind.0 as u32 {
+                HSHELL_FLASH => ReminderSignal::Attention,
+                HSHELL_WINDOWACTIVATED | HSHELL_RUDEAPPACTIVATED => ReminderSignal::Activated,
+                HSHELL_REDRAW => ReminderSignal::Redraw,
+                HSHELL_WINDOWCREATED => ReminderSignal::WindowCreated,
+                _ => return, // Other messages may contain pointers instead of window handles.
+            };
+            match matches_window(HWND(target.0 as *mut _), &context.executable) {
+                Ok(true) => {
+                    if signal == ReminderSignal::Attention
+                        && matches_window(window::foreground_window(), &context.executable)
+                            .unwrap_or(false)
+                    {
+                        return;
+                    }
+                    (context.callback)(signal);
+                }
+                Err(()) => context.stats.metadata_errors += 1,
+                Ok(false) => {}
+            }
+        });
+        None
+    }
 }
 
 pub struct ReminderListener {
@@ -128,65 +125,36 @@ impl ReminderListener {
         let executable = executable
             .canonicalize()
             .map_err(|error| format!("无法确认微信安装路径：{error}"))?;
-        unsafe {
-            let message = RegisterWindowMessageW(w!("SHELLHOOK"));
-            if message == 0 {
-                return Err(format!("无法注册微信提醒事件：{}", Error::from_win32()));
+        let message =
+            shell_hook::hook_message().map_err(|error| format!("无法注册微信提醒事件：{error}"))?;
+        let instance = message_window::module_instance().map_err(|error| error.to_string())?;
+        message_window::register_class::<ReminderWindow>(instance, CLASS_NAME)
+            .map_err(|error| error.to_string())?;
+        let window = match message_window::create_tool_popup_window(instance, CLASS_NAME, "") {
+            Ok(window) => window,
+            Err(error) => {
+                let _ = message_window::unregister_class(instance, CLASS_NAME);
+                return Err(format!("无法创建微信提醒接收器：{error}"));
             }
-            let instance = HINSTANCE(GetModuleHandleW(None).map_err(|error| error.to_string())?.0);
-            let class = WNDCLASSW {
-                hInstance: instance,
-                lpszClassName: w!("FocuSDWeChatReminderSource"),
-                lpfnWndProc: Some(window_proc),
-                ..Default::default()
-            };
-            if RegisterClassW(&class) == 0 {
-                return Err(Error::from_win32().to_string());
-            }
-            let window = match CreateWindowExW(
-                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-                class.lpszClassName,
-                w!(""),
-                WS_POPUP,
-                0,
-                0,
-                0,
-                0,
-                None,
-                None,
-                Some(instance),
-                None,
-            ) {
-                Ok(window) => window,
-                Err(error) => {
-                    let _ = UnregisterClassW(class.lpszClassName, Some(instance));
-                    return Err(format!("无法创建微信提醒接收器：{error}"));
-                }
-            };
-            CONTEXT.with(|slot| {
-                *slot.borrow_mut() = Some(ListenerContext {
-                    message,
-                    executable: normalized_path(&executable.to_string_lossy()),
-                    callback: Box::new(callback),
-                    stats: SourceStats::default(),
-                })
-            });
-            let listener = Self { window, instance };
-            RegisterShellHookWindow(window)
-                .ok()
-                .map_err(|error| format!("无法监听微信任务栏提醒：{error}"))?;
-            Ok(listener)
-        }
+        };
+        CONTEXT.with(|slot| {
+            *slot.borrow_mut() = Some(ListenerContext {
+                message,
+                executable: normalized_path(&executable.to_string_lossy()),
+                callback: Box::new(callback),
+                stats: SourceStats::default(),
+            })
+        });
+        // Built before registering the hook so a failure below still cleans up
+        // through Drop.
+        let listener = Self { window, instance };
+        shell_hook::register_window(window)
+            .map_err(|error| format!("无法监听微信任务栏提醒：{error}"))?;
+        Ok(listener)
     }
 
     pub fn poll(&self) {
-        let mut message = MSG::default();
-        unsafe {
-            while PeekMessageW(&mut message, None, 0, 0, PM_REMOVE).as_bool() {
-                let _ = TranslateMessage(&message);
-                DispatchMessageW(&message);
-            }
-        }
+        message_window::dispatch_pending_messages();
     }
 
     pub fn stats(&self) -> SourceStats {
@@ -201,11 +169,9 @@ impl ReminderListener {
 
 impl Drop for ReminderListener {
     fn drop(&mut self) {
-        unsafe {
-            let _ = DeregisterShellHookWindow(self.window);
-            let _ = DestroyWindow(self.window);
-            let _ = UnregisterClassW(w!("FocuSDWeChatReminderSource"), Some(self.instance));
-        }
+        let _ = shell_hook::deregister_window(self.window);
+        let _ = message_window::destroy_window(self.window);
+        let _ = message_window::unregister_class(self.instance, CLASS_NAME);
         CONTEXT.with(|slot| *slot.borrow_mut() = None);
     }
 }
