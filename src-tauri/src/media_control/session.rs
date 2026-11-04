@@ -18,16 +18,14 @@ use windows::{
         MediaPlaybackAutoRepeatMode as RepeatMode,
     },
     Storage::Streams::{DataReader, IInputStream, IRandomAccessStreamReference},
-    Win32::{
-        System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED},
-        UI::Input::KeyboardAndMouse::{
-            keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
-        },
+    Win32::UI::Input::KeyboardAndMouse::{
+        keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
     },
 };
 
 use super::audio::{read_master_volume, read_system_audio_peak, AUDIO_ACTIVE_THRESHOLD};
 use super::service::*;
+use crate::win32;
 
 pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
@@ -45,14 +43,10 @@ where
     F: FnOnce() -> Result<T, String> + Send + 'static,
 {
     thread::spawn(move || {
-        let initialize_result = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
-        initialize_result
-            .ok()
+        let _apartment = win32::com::ComApartment::multithreaded()
             .map_err(|error| media_error("Failed to initialize the media COM thread", error))?;
 
-        let result = operation();
-        unsafe { CoUninitialize() };
-        result
+        operation()
     })
     .join()
     .map_err(|_| "The Windows media control thread panicked.".to_string())?

@@ -11,7 +11,6 @@ use std::{
 };
 use windows::{
     core::{HRESULT, HSTRING},
-    Win32::System::WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED},
     UI::Notifications::{
         KnownNotificationBindings,
         Management::{UserNotificationListener, UserNotificationListenerAccessStatus},
@@ -20,6 +19,7 @@ use windows::{
 };
 
 use super::*;
+use crate::win32;
 
 pub(super) const QQ_APP_ID: &str = "QQ";
 
@@ -112,8 +112,7 @@ pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receive
 }
 
 pub(super) fn qq_notification_setting() -> windows::core::Result<NotificationSetting> {
-    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }?;
-    let _apartment = WinRT;
+    let _apartment = win32::com::WinRtApartment::multithreaded()?;
     ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(QQ_APP_ID))?.Setting()
 }
 
@@ -203,18 +202,9 @@ pub(super) fn repair_registration(
     }
 }
 
-pub(super) struct WinRT;
-
-impl Drop for WinRT {
-    fn drop(&mut self) {
-        unsafe { RoUninitialize() };
-    }
-}
-
 pub(super) fn read_notifications() -> Result<(NotificationStatus, Vec<QQNotification>), String> {
-    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }
+    let _apartment = win32::com::WinRtApartment::multithreaded()
         .map_err(|error| format!("无法初始化 Windows 通知：{error}"))?;
-    let _apartment = WinRT;
     let listener = UserNotificationListener::Current()
         .map_err(|error| format!("Windows 通知监听不可用：{error}"))?;
     let access = listener

@@ -158,7 +158,7 @@
   - [x] 注册表：`win32/registry.rs` 的 `read_string` 替换两处 `RegGetValueW`（`1fcfa89`）。`system/startup.rs`、`updater.rs` 通过 `reg.exe` 子进程读写注册表，不含 `unsafe`，本步不改（见"待处理问题" 6.1）。
   - [x] 进程句柄：`win32/process.rs`（`window_process_id`、`image_path`，句柄由 RAII 关闭）替换 QQ 与微信两处"窗口属于哪个可执行文件"的查询（`a918a97`）。进程相关调用单独成文件，是因为 `examples/wechat_reminder_probe.rs` 通过 `#[path]` 只引入它和 `registry.rs`，避免示例编译到用不上的窗口函数。
   - [x] 窗口：`win32/window.rs`（`window_rect`、`cursor_position`、`clear_window_region`、`is_interactive`、`bring_to_foreground`）替换 `island/glass.rs`、`island/passthrough.rs`、`messenger_activation.rs` 中的调用；`island/mod.rs` 等待左键松开改用 `win32/input.rs` 新增的 `is_left_button_down`。窗口枚举回调属于 6.2（`qq_notifications/launcher.rs`），本步不做。
-  - [ ] COM：`com.rs`（媒体线程的 `CoInitializeEx` / `CoUninitialize`、通知监听的 WinRT 初始化）。
+  - [x] COM：`win32/com.rs`（`ComApartment`、`WinRtApartment`，均为不可 `Send` 的 RAII 守卫）替换媒体线程的 `CoInitializeEx` / `CoUninitialize` 配对和 `qq_notifications/listener.rs` 的 `RoInitialize` + `WinRT` 守卫。示例程序中的 `RoInitialize` 不属于生产代码，本步不改。
 - [ ] **6.2** 逐模块迁移剩余的 `unsafe` 调用：媒体与音频、通知、剪贴板、翻译、微信。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
 
@@ -326,6 +326,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-03 | 6.1（2/n，改写） | `a918a97` | 新增 `win32/process.rs`（`window_process_id`、`image_path`，`ProcessHandle` 在 `Drop` 中关闭句柄）。QQ 窗口枚举与微信窗口匹配改用它，失败路径与原来一致（打不开进程或读不到路径都跳过 / 返回 `Err(())`）；示例程序同步引入。新增 2 个测试 | `cargo test` 65 → 67、clippy 80（原调用在 `unsafe fn` 内，不计为 `unsafe` 块）；`pnpm check`（81/81）、`pnpm build`、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-03 | 0.3、7.2 | `14eff59` 等 | 5 处 `exhaustive-deps` 警告逐个分析，均为有意省略或误报（结论见"待处理问题" 0.3）；2 处改为等价写法，3 处注释并就地禁用；`exhaustive-deps` 由 warn 升级为 error | `pnpm check`（82/82，ESLint 0 / 0）、`pnpm build`；回归页 collapsed 24/24、i18n 16/16、mail-reader 33/33 |
 | 2026-11-04 | 6.1（3/n，改写） | 见提交说明 | 新增 `win32/window.rs`（5 个封装 + 1 个测试），`win32/input.rs` 新增 `is_left_button_down`（与原 `GetAsyncKeyState(VK_LBUTTON) < 0` 相同）。失败分支逐一对齐：取不到窗口矩形或光标位置仍视为"在岛屿内"；`SetWindowRgn` 返回 0 仍报同样的错误；可交互判断的短路顺序与 250ms 超时不变；前台切换仍先比较当前前台窗口。生产代码中 `island/`、`messenger_activation.rs` 不再含 `unsafe`（`messenger_activation.rs` 测试模块中的仍保留） | `cargo test`（84 通过 / 5 忽略）、clippy 79 → 73（基线按当前 HEAD 重新统计）；`pnpm check`（100/100）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-04 | 6.1（4/n，改写） | 见提交说明 | 新增 `win32/com.rs`（`ComApartment`、`WinRtApartment` 与 1 个测试）。媒体线程改为持有 `ComApartment`：初始化失败仍返回同一条错误、不调用反初始化；成功时反初始化仍在 `operation()` 返回之后、结果移出线程之前。唯一差异是 `operation()` panic 时现在也会反初始化（线程随即结束，`join` 仍报同一条错误）。通知监听删除 `WinRT` 守卫，两处改用 `WinRtApartment`，错误文案与 `?` 传播不变 | `cargo test`（101 通过 / 5 忽略，含另一会话新增的测试）、clippy 73 → 68（改用 JSON 输出按位置去重统计）；`pnpm check`（109/109）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 
