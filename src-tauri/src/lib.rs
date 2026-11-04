@@ -11,6 +11,7 @@ mod qq_mail;
 mod qq_notifications;
 mod settings_window;
 mod system;
+mod todos;
 mod translation;
 mod tray;
 mod wechat_reminders;
