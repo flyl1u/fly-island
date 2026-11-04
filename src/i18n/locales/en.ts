@@ -502,6 +502,7 @@ const en: Translations = {
       editHint: "Shortcuts are changed on the Shortcuts page.",
       openPage: "Open Shortcuts",
       taken: (shortcut, owner) => `${shortcut} is already used by "${owner}". Choose another.`,
+      reset: (shortcut) => `Reset to default (${shortcut})`,
     },
 
     pageShortcuts: {

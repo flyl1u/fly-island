@@ -83,7 +83,7 @@ export function ShortcutsSettingsPage({
         )}
         {!hasGlobal && <p className="settings-section__hint">{t.settings.shortcuts.noGlobal}</p>}
       </section>
-      <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} />
+      <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} takenBy={takenBy} />
       <ReferenceSection
         title={t.settings.shortcuts.islandTitle}
         rows={[[t.settings.shortcuts.collapse, "Esc"], [t.settings.shortcuts.moveIsland, t.settings.shortcuts.ctrlDrag]]}

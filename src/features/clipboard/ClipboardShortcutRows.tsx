@@ -1,9 +1,10 @@
 import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Keyboard } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { getClipboardShortcutError, listenClipboardShortcutStatus, type ClipboardHistorySettings } from "./api";
-import { buildShortcutFromEvent, normalizeClipboardShortcut } from "./shortcut";
+import { buildShortcutFromEvent, DEFAULT_CLIPBOARD_SHORTCUT, normalizeClipboardShortcut } from "./shortcut";
 import "./ClipboardSettingsSection.css";
 
 /**
@@ -40,10 +41,15 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
     if (event.key === "Escape") { setIsRecording(false); return; }
     const next = buildShortcutFromEvent(event.nativeEvent);
     if (!next) return;
+    setIsRecording(false);
+    apply(next);
+  };
+
+  /** Saves new keys for the service to register; keys another row uses are refused. */
+  const apply = (next: string) => {
     const owner = takenBy(next);
     setConflict(owner ? t.settings.shortcuts.taken(next, owner) : "");
     if (!owner) onClipboardSettingsChange({ ...clipboardSettings, shortcut: next });
-    setIsRecording(false);
   };
 
   const error = clipboardSettings.shortcutEnabled ? conflict || registerError : "";
@@ -61,17 +67,25 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
             <span>{t.settings.clipboard.shortcut}</span>
             <strong>{shortcut}</strong>
           </div>
-          <button
-            className={`shortcut-record-button${isRecording ? " shortcut-record-button--recording" : ""}`}
-            type="button"
-            disabled={!clipboardSettings.shortcutEnabled}
-            onClick={() => setIsRecording(true)}
-            onKeyDown={record}
-            onBlur={() => setIsRecording(false)}
-          >
-            <Keyboard size={14} strokeWidth={2.3} />
-            <span>{isRecording ? t.settings.clipboard.pressKeys : shortcut}</span>
-          </button>
+          <div className="shortcut-control__actions">
+            <ShortcutResetButton
+              label={t.settings.shortcuts.reset(DEFAULT_CLIPBOARD_SHORTCUT)}
+              isDefault={shortcut === DEFAULT_CLIPBOARD_SHORTCUT}
+              disabled={!clipboardSettings.shortcutEnabled}
+              onReset={() => apply(DEFAULT_CLIPBOARD_SHORTCUT)}
+            />
+            <button
+              className={`shortcut-record-button${isRecording ? " shortcut-record-button--recording" : ""}`}
+              type="button"
+              disabled={!clipboardSettings.shortcutEnabled}
+              onClick={() => setIsRecording(true)}
+              onKeyDown={record}
+              onBlur={() => setIsRecording(false)}
+            >
+              <Keyboard size={14} strokeWidth={2.3} />
+              <span>{isRecording ? t.settings.clipboard.pressKeys : shortcut}</span>
+            </button>
+          </div>
         </div>
         {error && <p className="shortcut-control__error" role="alert">{error}</p>}
       </div>

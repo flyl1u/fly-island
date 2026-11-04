@@ -73,6 +73,14 @@ fn fit_height(wanted: f64, min_height: Option<f64>, usable: f64) -> f64 {
     fitted.max(min_height.unwrap_or(0.0))
 }
 
+/// Saves the open settings window's size and place before the app quits, which
+/// closes it without a close request.
+pub fn remember_bounds(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
+        bounds::save(&window);
+    }
+}
+
 fn reveal(window: &WebviewWindow) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
     window.set_focus().map_err(|error| error.to_string())

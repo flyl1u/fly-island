@@ -29,7 +29,10 @@ pub(crate) fn build_tray(app: &App) -> tauri::Result<()> {
                     eprintln!("failed to open settings window: {error}");
                 }
             }
-            "quit" => app.exit(0),
+            "quit" => {
+                settings_window::remember_bounds(app);
+                app.exit(0);
+            }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

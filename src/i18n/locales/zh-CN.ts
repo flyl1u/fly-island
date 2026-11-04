@@ -505,6 +505,7 @@ const zhCN: Translations = {
       editHint: "快捷键统一在「快捷键」页修改。",
       openPage: "前往快捷键",
       taken: (shortcut, owner) => `${shortcut} 已被「${owner}」使用，请换一个。`,
+      reset: (shortcut) => `恢复默认（${shortcut}）`,
     },
 
     pageShortcuts: {

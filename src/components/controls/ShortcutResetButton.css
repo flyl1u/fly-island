@@ -1,0 +1,33 @@
+.shortcut-reset-button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: rgba(248, 246, 240, 0.72);
+  background: var(--color-white-a08);
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.shortcut-reset-button:hover:not(:disabled) {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.shortcut-reset-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.shortcut-reset-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.shortcut-reset-button--hidden {
+  visibility: hidden;
+}

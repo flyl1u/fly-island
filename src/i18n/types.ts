@@ -505,6 +505,7 @@ export type Translations = {
       editHint: string;
       openPage: string;
       taken: (shortcut: string, owner: string) => string;
+      reset: (shortcut: string) => string;
     };
 
     pageShortcuts: {

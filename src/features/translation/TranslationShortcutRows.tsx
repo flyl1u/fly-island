@@ -1,9 +1,10 @@
 import { useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
 import { Keyboard } from "lucide-react";
+import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
 import { useTranslation } from "../../i18n";
 import { buildShortcutFromEvent } from "../clipboard/shortcut";
 import { setTranslationSelectionShortcut, setTranslationShortcut } from "./api";
-import type { TranslationSettings } from "./storage";
+import { DEFAULT_SETTINGS, type TranslationSettings } from "./storage";
 import "../clipboard/ClipboardSettingsSection.css";
 
 export type TranslationShortcutTarget = "window" | "selection";
@@ -45,8 +46,14 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
     if (event.key === "Escape") { setRecording(null); return; }
     const shortcut = buildShortcutFromEvent(event.nativeEvent);
     if (!shortcut) return;
+    setRecording(null);
+    apply(target, shortcut);
+  };
+
+  /** Registers new keys and saves them; refused keys keep the old ones and say why. */
+  const apply = (target: TranslationShortcutTarget, shortcut: string) => {
     const owner = takenBy(shortcut, target);
-    if (owner) { setError(target, t.settings.shortcuts.taken(shortcut, owner)); setRecording(null); return; }
+    if (owner) { setError(target, t.settings.shortcuts.taken(shortcut, owner)); return; }
     const register = target === "window" ? setTranslationShortcut : setTranslationSelectionShortcut;
     void register(shortcut)
       .then((registered) => {
@@ -54,33 +61,35 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
           ? { ...current, shortcut: registered }
           : { ...current, selectionShortcut: registered });
         setError(target, "");
-        setRecording(null);
       })
       .catch((failure) => setError(target, String(failure)));
   };
 
-  const rows: [TranslationShortcutTarget, string, string][] = [
-    ["window", t.settings.shortcuts.openTranslation, settings.shortcut],
-    ["selection", t.settings.translation.selectionShortcut, settings.selectionShortcut],
+  const rows: [TranslationShortcutTarget, string, string, string][] = [
+    ["window", t.settings.shortcuts.openTranslation, settings.shortcut, DEFAULT_SETTINGS.shortcut],
+    ["selection", t.settings.translation.selectionShortcut, settings.selectionShortcut, DEFAULT_SETTINGS.selectionShortcut],
   ];
 
-  return rows.map(([target, label, value]) => (
+  return rows.map(([target, label, value, fallback]) => (
     <div className="shortcut-row" key={target}>
       <div className="shortcut-control">
         <div className="shortcut-control__meta">
           <span>{label}</span>
           <strong>{value}</strong>
         </div>
-        <button
-          className={`shortcut-record-button${recording === target ? " shortcut-record-button--recording" : ""}`}
-          type="button"
-          onClick={() => setRecording(target)}
-          onKeyDown={record}
-          onBlur={() => setRecording((current) => (current === target ? null : current))}
-        >
-          <Keyboard size={14} strokeWidth={2.3} />
-          <span>{recording === target ? t.translator.pressShortcut : value}</span>
-        </button>
+        <div className="shortcut-control__actions">
+          <ShortcutResetButton label={t.settings.shortcuts.reset(fallback)} isDefault={value === fallback} onReset={() => apply(target, fallback)} />
+          <button
+            className={`shortcut-record-button${recording === target ? " shortcut-record-button--recording" : ""}`}
+            type="button"
+            onClick={() => setRecording(target)}
+            onKeyDown={record}
+            onBlur={() => setRecording((current) => (current === target ? null : current))}
+          >
+            <Keyboard size={14} strokeWidth={2.3} />
+            <span>{recording === target ? t.translator.pressShortcut : value}</span>
+          </button>
+        </div>
       </div>
       {errors[target] && <p className="shortcut-control__error" role="alert">{errors[target]}</p>}
     </div>
