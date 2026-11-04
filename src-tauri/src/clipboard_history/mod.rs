@@ -70,9 +70,10 @@ impl Default for ClipboardHistorySettings {
 impl ClipboardHistorySettings {
     fn normalized(mut self) -> Self {
         self.max_items = self.max_items.clamp(MIN_MAX_ITEMS, MAX_MAX_ITEMS);
+        // The default parses to its own label (see hotkey tests), so falling back
+        // to the constant matches falling back to its parsed binding.
         self.shortcut = parse_shortcut_binding(&self.shortcut)
-            .unwrap_or_else(default_shortcut_binding)
-            .label;
+            .map_or_else(default_clipboard_shortcut, |binding| binding.label);
         self
     }
 }
@@ -92,8 +93,9 @@ fn default_clipboard_shortcut() -> String {
     DEFAULT_SHORTCUT.to_string()
 }
 
-fn default_shortcut_binding() -> ShortcutBinding {
-    parse_shortcut_binding(DEFAULT_SHORTCUT).expect("default clipboard shortcut should be valid")
+/// Always `Some`: the constant is a valid shortcut (checked by a hotkey test).
+fn default_shortcut_binding() -> Option<ShortcutBinding> {
+    parse_shortcut_binding(DEFAULT_SHORTCUT)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

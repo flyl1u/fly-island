@@ -1,7 +1,7 @@
 //! Native-side island window state shared by the commands, geometry and cursor passthrough.
 
 use serde::{Deserialize, Serialize};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock, PoisonError};
 use tauri::PhysicalPosition;
 
 use super::geometry::{
@@ -123,12 +123,19 @@ pub(super) fn window_state() -> &'static Mutex<IslandWindowState> {
 pub(super) fn mutate_window_state(
     update: impl FnOnce(&mut IslandWindowState) -> IslandWindowState,
 ) -> IslandWindowState {
-    let mut state = window_state().lock().expect("window state poisoned");
+    // The state is plain Copy values. A panic in another update leaves at worst a
+    // partly applied update, which is better to keep using than to turn into a
+    // panic in every later window call.
+    let mut state = window_state()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
     update(&mut state)
 }
 
 pub(super) fn read_window_state() -> IslandWindowState {
-    *window_state().lock().expect("window state poisoned")
+    *window_state()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
 }
 
 pub(crate) fn record_dragged_position(position: PhysicalPosition<i32>) {

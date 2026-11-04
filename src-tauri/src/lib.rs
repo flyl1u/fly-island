@@ -24,6 +24,10 @@ pub fn run() {
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
         context.config_mut().identifier = identifier;
     }
+    #[expect(
+        clippy::expect_used,
+        reason = "the app cannot run without its Tauri runtime; panicking with this message is the intended startup failure"
+    )]
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = island::show_island(app);

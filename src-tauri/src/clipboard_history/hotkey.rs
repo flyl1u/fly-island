@@ -47,9 +47,12 @@ pub(super) fn refresh_registered_hotkey(hwnd: HWND) {
         return;
     }
 
-    let binding = snapshot
+    let Some(binding) = snapshot
         .and_then(|snapshot| parse_shortcut_binding(&snapshot.settings.shortcut))
-        .unwrap_or_else(default_shortcut_binding);
+        .or_else(default_shortcut_binding)
+    else {
+        return;
+    };
 
     match win32::hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code) {
         Ok(()) => set_hotkey_registered(true),
@@ -206,5 +209,11 @@ mod tests {
         assert_eq!(binding.key_code, 0x20);
         // What the settings recorder produced before the space key fix.
         assert!(parse_shortcut_binding("Ctrl+ ").is_none());
+    }
+
+    #[test]
+    fn the_default_shortcut_parses_to_its_own_label() {
+        let binding = default_shortcut_binding().expect("the default shortcut is valid");
+        assert_eq!(binding.label, DEFAULT_SHORTCUT);
     }
 }
