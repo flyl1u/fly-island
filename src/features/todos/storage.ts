@@ -1,33 +1,21 @@
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
-import { getLocalDateString } from "../../utils/date.ts";
 import { readString, removeItem, writeString } from "../../lib/storage.ts";
-import { normalizeScheduledTodo, sortScheduledTodos } from "./schedule.ts";
+import {
+  createTodoId,
+  normalizeTodo,
+  parseCurrentTodoDate,
+  parseScheduledTodos,
+  parseTodoArchives,
+  parseTodos,
+} from "./normalize.ts";
+
+export { createTodoId, normalizeTodo };
 
 // Todos planned for later days (ScheduledTodo[]); added for upstream issue #30.
 export const SCHEDULED_TODOS_STORAGE_KEY = "focusd-island-scheduled-todos";
 
 export function loadScheduledTodos(): ScheduledTodo[] {
-  const stored = readString(SCHEDULED_TODOS_STORAGE_KEY);
-
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as unknown;
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return sortScheduledTodos(
-      parsed
-        .map((value) => normalizeScheduledTodo((value ?? {}) as Partial<ScheduledTodo>))
-        .filter((todo): todo is ScheduledTodo => todo !== null),
-    );
-  } catch {
-    return [];
-  }
+  return parseScheduledTodos(readString(SCHEDULED_TODOS_STORAGE_KEY));
 }
 
 export function saveScheduledTodos(todos: ScheduledTodo[]) {
@@ -43,35 +31,8 @@ export const TODO_SAVE_DIRECTORY_STORAGE_KEY = "focusd-island-save-directory";
 export const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
   "focusd-island-last-saved-signature";
 
-export function normalizeTodo(todo: Partial<TodoItem>): TodoItem {
-  return {
-    id: typeof todo.id === "string" && todo.id ? todo.id : createTodoId(),
-    title: todo.title?.trim() ?? "",
-    completed: Boolean(todo.completed),
-    createdAt: typeof todo.createdAt === "number" ? todo.createdAt : Date.now(),
-  };
-}
-
 export function loadTodos(): TodoItem[] {
-  const stored = readString(TODOS_STORAGE_KEY);
-
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<TodoItem>[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((todo) => typeof todo.title === "string" && todo.title.trim())
-      .map(normalizeTodo);
-  } catch {
-    return [];
-  }
+  return parseTodos(readString(TODOS_STORAGE_KEY));
 }
 
 export function loadActiveTodoId() {
@@ -79,45 +40,11 @@ export function loadActiveTodoId() {
 }
 
 export function loadCurrentTodoDate() {
-  return readString(TODO_DATE_STORAGE_KEY) ?? getLocalDateString();
+  return parseCurrentTodoDate(readString(TODO_DATE_STORAGE_KEY));
 }
 
 export function loadTodoArchives(): TodoArchive[] {
-  const stored = readString(TODO_ARCHIVE_STORAGE_KEY);
-
-  if (!stored) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<TodoArchive>[];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((archive) => typeof archive.date === "string" && archive.date)
-      .map((archive) => ({
-        date: archive.date ?? getLocalDateString(),
-        todos: Array.isArray(archive.todos)
-          ? archive.todos
-              .filter(
-                (todo) => typeof todo.title === "string" && todo.title.trim(),
-              )
-              .map(normalizeTodo)
-          : [],
-        dailyNote:
-          typeof archive.dailyNote === "string" ? archive.dailyNote : "",
-        savedAt: typeof archive.savedAt === "number" ? archive.savedAt : 0,
-        savedToDisk: Boolean(archive.savedToDisk),
-        filePath:
-          typeof archive.filePath === "string" ? archive.filePath : undefined,
-      }))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  } catch {
-    return [];
-  }
+  return parseTodoArchives(readString(TODO_ARCHIVE_STORAGE_KEY));
 }
 
 export function loadSaveDirectory() {
@@ -126,14 +53,6 @@ export function loadSaveDirectory() {
 
 export function loadDailyNote() {
   return readString(DAILY_NOTE_STORAGE_KEY) ?? "";
-}
-
-export function createTodoId() {
-  if ("crypto" in window && typeof window.crypto.randomUUID === "function") {
-    return window.crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 /** Returns false when the value could not be stored. */
