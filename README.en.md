@@ -112,6 +112,10 @@ The generated installers are placed in:
 
 You can also download the latest Windows x64 installers from [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest).
 
+## Contributors
+
+Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture and implementation in [PR #36](https://github.com/flyl1u/fly-island/pull/36). The local refactor adapts and reuses parts of that work on the current main branch; see the [provenance and validation notes](docs/architecture/local-refactor.md).
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
