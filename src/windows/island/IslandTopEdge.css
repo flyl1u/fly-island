@@ -17,6 +17,9 @@
   --island-top-fillet-rim: transparent;
   --island-top-fillet-rim-inset: 0px;
   --island-top-fillet-rim-width: 1px;
+  /* Soft falloff on the island side of the rim, to match a side rim that has an inner glow. */
+  --island-top-fillet-rim-glow: transparent;
+  --island-top-fillet-rim-glow-width: 0px;
   /*
    * Classic draws its rim with an all-round inset shadow. The opaque fill layer
    * repaints the 1px top edge, and the 1px sides beside the fillets, so
@@ -39,11 +42,17 @@
   --island-top-fillet-rim: rgba(255, 255, 255, 0.08);
 }
 
-/* Liquid glass: the rim is the refraction border, 1px inside the edge. */
+/*
+ * Liquid glass: the rim is the refraction border, 1px wide and 1px inside the edge,
+ * softened inwards by its 2px white inset glow. The fillet rim copies both, so it
+ * does not thicken into a hook where it leaves the side.
+ */
 .island--appearance-liquidGlass {
   --island-top-fillet-rim: rgba(255, 255, 255, var(--glass-border-alpha));
   --island-top-fillet-rim-inset: 1px;
-  --island-top-fillet-rim-width: 1.6px;
+  --island-top-fillet-rim-width: 1px;
+  --island-top-fillet-rim-glow: rgba(255, 255, 255, calc(var(--glass-border-alpha) * 0.35));
+  --island-top-fillet-rim-glow-width: 1.5px;
   /* A colour, not a size: a zero-sized mask layer makes Chromium drop the whole mask. */
   --island-top-fillet-cover: transparent;
   --island-top-fillet-sheen: rgba(255, 255, 255, calc(0.13 * var(--glass-refraction-opacity)));
@@ -159,7 +168,8 @@
         transparent calc(var(--rim-from) - 0.5px),
         var(--island-top-fillet-rim) var(--rim-from),
         var(--island-top-fillet-rim) var(--rim-to),
-        transparent calc(var(--rim-to) + 0.5px)
+        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.5px),
+        transparent calc(var(--rim-to) + 0.5px + var(--island-top-fillet-rim-glow-width))
       )
       left top / var(--island-top-fillet-box) 100% no-repeat,
     radial-gradient(
@@ -167,7 +177,8 @@
         transparent calc(var(--rim-from) - 0.5px),
         var(--island-top-fillet-rim) var(--rim-from),
         var(--island-top-fillet-rim) var(--rim-to),
-        transparent calc(var(--rim-to) + 0.5px)
+        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.5px),
+        transparent calc(var(--rim-to) + 0.5px + var(--island-top-fillet-rim-glow-width))
       )
       right top / var(--island-top-fillet-box) 100% no-repeat,
     linear-gradient(180deg, var(--island-top-fillet-sheen), transparent 8px)
