@@ -47,6 +47,7 @@ export function SettingsWindow() {
     const section = takeFocusRequest();
     if (section === "savePath") focusSavePath();
     if (section === "translation") setCategory("translation");
+    if (section === "music") setCategory("music");
   }, [focusSavePath]);
 
   // The window opens hidden and is shown once the page has rendered, so it never shows

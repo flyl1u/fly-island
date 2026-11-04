@@ -9,7 +9,6 @@ export const MAX_COLLAPSED_TEXT_UNITS = 12;
 export const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
-export const MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
 // then the panel's padding, title, tabs, search and their gaps (158).
 const CLIPBOARD_CHROME_HEIGHT = 244;

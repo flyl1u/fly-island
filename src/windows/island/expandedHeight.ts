@@ -1,6 +1,6 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { IslandPage } from "./types";
 
 // Tall enough for about four shelf rows before the list scrolls.
@@ -10,7 +10,6 @@ type ExpandedHeightInput = {
   page: IslandPage;
   todoPageMode: TodoPageMode;
   todos: TodoItem[];
-  musicSettingsOpen: boolean;
   hasMediaCommandError: boolean;
   messageSource: MessageView;
   isReadingMail: boolean;
@@ -29,7 +28,6 @@ export function getExpandedIslandHeight({
   page,
   todoPageMode,
   todos,
-  musicSettingsOpen,
   hasMediaCommandError,
   messageSource,
   isReadingMail,
@@ -57,9 +55,7 @@ export function getExpandedIslandHeight({
       : BASE_EXPANDED_ISLAND_HEIGHT +
         Math.max(0, visibleTodoRows - TODO_GROW_START_ROWS) * TODO_ROW_HEIGHT
     : page === "music"
-      ? musicSettingsOpen
-        ? MUSIC_SETTINGS_EXPANDED_ISLAND_HEIGHT
-        : MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
+      ? MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "shelf"
         ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"

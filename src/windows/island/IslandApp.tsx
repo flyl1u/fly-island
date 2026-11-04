@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useQQMail } from "../../features/messages/qq-mail/QQMail";
@@ -75,12 +75,8 @@ export function IslandApp() {
     mediaState,
     isMediaTrackChanging,
     mediaCommandError,
-    musicSourcePriority,
     runMediaCommand,
-    reorderMusicSource,
-    removeMusicSource,
   } = useMediaState(settings.musicEnabled);
-  const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
   // Read every second: the collapsed island names sessions from it and holds a finished one's
   // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
@@ -115,7 +111,6 @@ export function IslandApp() {
     page,
     todoPageMode,
     todos,
-    musicSettingsOpen,
     hasMediaCommandError: Boolean(mediaCommandError),
     messageSource,
     isReadingMail: Boolean(qqMail.selectedMail),
@@ -182,12 +177,6 @@ export function IslandApp() {
     tuckIsland,
     minimizeToEdge,
   });
-
-  useEffect(() => {
-    if (page !== "music") {
-      setMusicSettingsOpen(false);
-    }
-  }, [page]);
 
   const {
     isPositionDetached,
@@ -292,14 +281,10 @@ export function IslandApp() {
             mediaState={mediaState}
             isTrackChanging={isMediaTrackChanging}
             commandError={mediaCommandError}
-            sourcePriority={musicSourcePriority}
-            settingsOpen={musicSettingsOpen}
-            onToggleSettings={() => setMusicSettingsOpen((open) => !open)}
+            onOpenSettings={() => openSettingsWindow("music")}
             onPlayPause={() => void runMediaCommand("media_play_pause")}
             onNext={() => void runMediaCommand("media_next")}
             onPrevious={() => void runMediaCommand("media_previous")}
-            onReorderSource={reorderMusicSource}
-            onRemoveSource={removeMusicSource}
           />
         )}
         {page === "clipboard" && (
