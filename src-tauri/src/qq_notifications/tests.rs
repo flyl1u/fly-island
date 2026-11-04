@@ -1,3 +1,8 @@
+use super::history::{NotificationBuffer, MAX_ITEMS};
+use super::launcher::{
+    activate_existing_qq, existing_qq_windows, preferred_qq_window, qq_executable, QQWindow,
+};
+use super::listener::{read_notifications, registration_error, should_repair_registration};
 use super::*;
 use crate::messenger_activation::is_interactive_window;
 use std::{thread, time::Duration};

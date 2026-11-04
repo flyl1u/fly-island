@@ -19,9 +19,9 @@ use windows::UI::Notifications::Management::{
     UserNotificationListener, UserNotificationListenerAccessStatus,
 };
 
-use history::*;
-use launcher::*;
-use listener::*;
+use history::NotificationBuffer;
+use launcher::{activate_existing_qq, qq_executable};
+use listener::monitor;
 
 const EVENT_NAME: &str = "qq-notifications-changed";
 

@@ -18,17 +18,18 @@ use windows::{
     },
 };
 
-use super::*;
+use super::history::NotificationBuffer;
+use super::{publish, NotificationService, NotificationStatus, QQNotification};
 use crate::win32;
 
-pub(super) const QQ_APP_ID: &str = "QQ";
+const QQ_APP_ID: &str = "QQ";
 
-pub(super) const REGISTRATION_REPAIR: &str =
+const REGISTRATION_REPAIR: &str =
     include_str!("../../../scripts/repair-qq-notification-registration.ps1");
 
-pub(super) const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
+const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
 
-pub(super) const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
+const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
 
 pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receiver<()>) {
     let mut repair_generation = None;
@@ -111,7 +112,7 @@ pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receive
     }
 }
 
-pub(super) fn qq_notification_setting() -> windows::core::Result<NotificationSetting> {
+fn qq_notification_setting() -> windows::core::Result<NotificationSetting> {
     let _apartment = win32::com::WinRtApartment::multithreaded()?;
     ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(QQ_APP_ID))?.Setting()
 }
@@ -145,10 +146,7 @@ pub(super) fn registration_error(
     }
 }
 
-pub(super) fn repair_registration(
-    service: &NotificationService,
-    generation: u64,
-) -> Result<(), String> {
+fn repair_registration(service: &NotificationService, generation: u64) -> Result<(), String> {
     // Embed the existing guarded repair so installed builds do not depend on the repository.
     let script = format!("& {{\n{REGISTRATION_REPAIR}\n}} -Repair");
     let bytes: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
@@ -234,7 +232,7 @@ pub(super) fn read_notifications() -> Result<(NotificationStatus, Vec<QQNotifica
     Ok((NotificationStatus::Listening, items))
 }
 
-pub(super) fn read_qq_notification(
+fn read_qq_notification(
     notification: &UserNotification,
 ) -> windows::core::Result<Option<QQNotification>> {
     if notification.AppInfo()?.AppUserModelId()? != QQ_APP_ID {

@@ -42,10 +42,10 @@ pub(super) fn qq_executable() -> Result<PathBuf, String> {
 }
 
 pub(super) struct QQWindowSearch<'a> {
-    pub(super) executable: &'a Path,
+    executable: &'a Path,
     pub(super) windows: Vec<QQWindow>,
-    pub(super) tray_windows: Vec<(HWND, u32)>,
-    pub(super) running: bool,
+    tray_windows: Vec<(HWND, u32)>,
+    running: bool,
 }
 
 pub(super) struct QQWindow {
