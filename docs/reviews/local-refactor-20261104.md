@@ -19,10 +19,19 @@
 | `pnpm check` | 通过；包含主代码/回归页类型检查、ESLint、文件大小检查、104 项 Node 测试 |
 | `pnpm build` | 通过 |
 | `cargo test --manifest-path src-tauri/Cargo.toml` | 69 通过，5 项真实桌面环境测试忽略 |
-| `pnpm tauri build --no-bundle` | 原生拆分和设置窗口两批均通过；最终主仓库产物同步后另记 |
+| `pnpm tauri build --no-bundle` | 原生拆分、设置窗口和最终 `D:\FocuSD` 主仓库构建均通过 |
+| `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets` | 通过，仍有 9 条警告 |
 | 浏览器回归 | 消息动画 24 项、多语言 17 项通过；邮件阅读与通知启动本轮未完成，不能视为通过 |
 
 跨窗口更新用两个独立 JavaScript 上下文验证：下载到 40% 后重建设置；后续进度及 ready 状态同步；重复点击安装只运行一次；设置先于主窗口初始化；并发检查只发出一次请求。
+
+## 最终本机产物
+
+- 程序：`D:\FocuSD\src-tauri\target\release\focusd-island.exe`，版本 `0.2.16`，19,488,768 字节。
+- SHA-256：`31AEC9C4F687953632C71C3C308EF1C84DC228BA12E88FFEAD8E69D10626347C`。
+- 当前用户桌面的 `fly-island.lnk` 已保存并重新读取：目标为上述程序，工作目录为 `D:\FocuSD\src-tauri\target\release`，图标使用同一程序。
+- 三个实现提交为 `acb1a64`（原生）、`edd0520`（前端与设置）、`f8c3878`（检查和说明），均保留 @TixXin 的共同作者信息。收尾提交仅记录最终验收结果。
+- 已退出本次启动的临时预览程序；最终程序没有自动启动，可从桌面快捷方式手动打开。
 
 ## 待本地人工 review
 
@@ -39,3 +48,4 @@
 - [ ] QQ 通知、QQ 邮箱阅读、微信提醒与实际客户端唤起。
 
 本轮没有完整安装包构建、发布、真实更新安装、开机自启写入或真实账户消息验收。
+本轮未进行独立视觉评审；真实桌面交互与设置最小宽度仍以人工 review 为准。
