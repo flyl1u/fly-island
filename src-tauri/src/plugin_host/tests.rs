@@ -37,11 +37,48 @@ fn a_valid_manifest_is_read_and_permissions_are_deduplicated() {
 }
 
 #[test]
+fn api_versions_1_and_2_are_both_accepted() {
+    assert_eq!(parse(json!({ "apiVersion": 1 })).expect("v1").api_version, 1);
+    assert_eq!(parse(json!({ "apiVersion": 2 })).expect("v2").api_version, 2);
+}
+
+/// plugins/schema/ is the protocol's source of truth; the host must match it.
+#[test]
+fn the_host_matches_the_protocol_description() {
+    use super::permissions::{CAPABILITIES, METHODS, PERMISSIONS};
+    let rpc: Value = serde_json::from_str(include_str!("../../../plugins/schema/rpc.json")).expect("rpc.json");
+    let names = |list: &Value| -> Vec<String> {
+        list.as_array().expect("array").iter().map(|item| item["name"].as_str().expect("name").to_string()).collect()
+    };
+    assert_eq!(names(&rpc["permissions"]), PERMISSIONS);
+    let capabilities: Vec<&str> = rpc["capabilities"].as_array().expect("array").iter().filter_map(Value::as_str).collect();
+    assert_eq!(capabilities, CAPABILITIES);
+    assert_eq!(rpc["apiVersions"]["current"], super::manifest::HOST_API_VERSION);
+    assert_eq!(rpc["apiVersions"]["min"], super::manifest::MIN_API_VERSION);
+
+    let methods = rpc["methods"].as_array().expect("methods");
+    let gated: Vec<(&str, &str)> = methods
+        .iter()
+        .filter_map(|method| Some((method["name"].as_str()?, method["permission"].as_str()?)))
+        .collect();
+    assert_eq!(gated, METHODS);
+    // Methods without a permission are answered in runtime/dispatch.rs.
+    let open: Vec<&str> = methods.iter().filter(|method| method["permission"].is_null()).filter_map(|method| method["name"].as_str()).collect();
+    assert_eq!(open, ["host.info", "settings.get", "ui.setInfo"]);
+    assert!(open.iter().all(|name| method_permission(name).is_none()));
+
+    let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");
+    assert_eq!(schema["properties"]["permissions"]["items"]["enum"], json!(PERMISSIONS));
+    assert_eq!(schema["properties"]["apiVersion"]["maximum"], super::manifest::HOST_API_VERSION);
+}
+
+#[test]
 fn bad_manifests_say_why() {
     let reason = |overrides: Value| parse(overrides).expect_err("invalid");
     assert!(reason(json!({ "id": "Dev.Example" })).contains("lowercase"));
     assert!(reason(json!({ "id": "dev.other" })).contains("folder"));
-    assert!(reason(json!({ "apiVersion": 2 })).contains("version 2"));
+    assert!(reason(json!({ "apiVersion": 3 })).contains("version 3"));
+    assert!(reason(json!({ "apiVersion": 0 })).contains("version 0"));
     assert!(reason(json!({ "minAppVersion": "0.3.0" })).contains("0.3.0"));
     assert!(reason(json!({ "name": { "zh-CN": "同步", "en": " " } })).contains("name"));
     assert!(reason(json!({ "permissions": ["clipboard:read"] })).contains("clipboard:read"));

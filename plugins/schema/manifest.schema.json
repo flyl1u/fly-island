@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/TixXin/fly-island/plugins/schema/manifest.schema.json",
+  "title": "FocuSD Island plugin manifest (focusd-plugin.json)",
+  "description": "Checked again by the island (src-tauri/src/plugin_host/manifest.rs), which also enforces rules a schema cannot: the folder name must equal id, runtime.command must stay inside the plugin folder, setting keys must be unique, minAppVersion is compared with the running island.",
+  "type": "object",
+  "required": ["id", "name", "version", "apiVersion", "runtime"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9.-]*$",
+      "description": "Lowercase letters, digits, '.' and '-'; no '..'. Must equal the folder name."
+    },
+    "name": { "$ref": "#/$defs/localizedText" },
+    "description": { "$ref": "#/$defs/localizedText" },
+    "version": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "apiVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "description": "The plugin API version the plugin was written for. Version 2 adds initialize.capabilities; everything in version 1 still works."
+    },
+    "minAppVersion": { "type": "string" },
+    "author": { "type": "string" },
+    "homepage": { "type": "string", "description": "Only https:// links are shown." },
+    "runtime": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "command"],
+          "properties": {
+            "type": { "const": "process" },
+            "command": {
+              "type": "string",
+              "pattern": "\\.(exe|ps1|js|mjs|cjs)$",
+              "description": "A relative path inside the plugin folder."
+            },
+            "args": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "none" } },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"] }
+    },
+    "contributes": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "title": { "$ref": "#/$defs/localizedText" }
+            }
+          }
+        },
+        "settings": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/setting" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "localizedText": {
+      "type": "object",
+      "required": ["zh-CN", "en"],
+      "properties": {
+        "zh-CN": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 }
+      }
+    },
+    "setting": {
+      "type": "object",
+      "required": ["key", "type", "title"],
+      "properties": {
+        "key": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$" },
+        "type": { "enum": ["boolean", "number", "string", "select"] },
+        "title": { "$ref": "#/$defs/localizedText" },
+        "description": { "$ref": "#/$defs/localizedText" },
+        "default": {},
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "title"],
+            "properties": {
+              "value": { "type": "string" },
+              "title": { "$ref": "#/$defs/localizedText" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -23,7 +23,7 @@ use tauri::AppHandle;
 
 mod dispatch;
 
-use super::{manifest::HOST_API_VERSION, rpc, settings::InfoItem};
+use super::{rpc, settings::InfoItem};
 use crate::{agent_status, system::CREATE_NO_WINDOW};
 use dispatch::{answer_request, initialize_params};
 
@@ -71,6 +71,8 @@ pub(super) struct LaunchSpec {
     pub args: Vec<OsString>,
     pub dir: PathBuf,
     pub data_dir: PathBuf,
+    /// The plugin API version the plugin declared; it is told this one.
+    pub api_version: u32,
     pub granted: Vec<String>,
     pub app_version: String,
     /// Shown for agent statuses the plugin reports without a name.
@@ -256,7 +258,7 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
         .current_dir(&spec.dir)
         .env("FOCUSD_PLUGIN_ID", &spec.plugin_id)
         .env("FOCUSD_PLUGIN_DATA_DIR", &spec.data_dir)
-        .env("FOCUSD_PLUGIN_API_VERSION", HOST_API_VERSION.to_string())
+        .env("FOCUSD_PLUGIN_API_VERSION", spec.api_version.to_string())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

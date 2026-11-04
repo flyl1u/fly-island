@@ -4,13 +4,18 @@
 use serde_json::{json, Value};
 
 use super::{current_entry, lock, Context};
-use crate::plugin_host::{manifest::HOST_API_VERSION, permissions::method_permission, rpc, settings::parse_info};
+use crate::plugin_host::{
+    permissions::{method_permission, CAPABILITIES},
+    rpc,
+    settings::parse_info,
+};
 use crate::{agent_status, local_api};
 
 pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
     json!({
-        "apiVersion": HOST_API_VERSION,
+        "apiVersion": spec.api_version,
+        "capabilities": CAPABILITIES,
         "appVersion": spec.app_version,
         "pluginId": spec.plugin_id,
         "dataDir": spec.data_dir.display().to_string(),

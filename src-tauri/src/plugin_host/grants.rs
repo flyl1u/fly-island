@@ -97,6 +97,7 @@ pub(super) fn sync_processes() -> Result<(), String> {
                     args,
                     dir: plugin.dir.clone(),
                     data_dir: host.data_dir.join(&manifest.id),
+                    api_version: manifest.api_version,
                     granted: manifest.permissions.clone(),
                     app_version: app_version(&host.app),
                     display_name: manifest.name.en().to_string(),

@@ -12,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-use super::manifest::{parse_manifest, version_at_least, LocalizedText, HOST_API_VERSION, MANIFEST_FILE_NAME};
+use super::manifest::{parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
 use super::signature::{verify_index, TRUSTED_KEYS};
 use crate::system::updater::get_updater_proxy;
 
@@ -105,7 +105,7 @@ fn is_valid_entry(entry: &MarketEntry) -> bool {
 
 /// Why this build cannot install `entry`, if it cannot.
 pub(super) fn incompatibility(entry: &MarketEntry, app_version: &str) -> Option<String> {
-    if entry.api_version != HOST_API_VERSION {
+    if !supports_api_version(entry.api_version) {
         return Some(format!("Needs plugin API version {}.", entry.api_version));
     }
     match entry.min_app_version.as_deref() {

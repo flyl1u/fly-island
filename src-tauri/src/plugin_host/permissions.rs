@@ -6,7 +6,7 @@ pub(super) const PERMISSIONS: [&str; 5] = ["todos:read", "todos:write", "notes:r
 
 /// (method, permission). `agentStatus.*` is handled natively (agent_status);
 /// the rest are answered by the island window, see src/features/todos/apiCommands.ts.
-const METHODS: [(&str, &str); 8] = [
+pub(super) const METHODS: [(&str, &str); 8] = [
     ("todos.list", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
@@ -16,6 +16,11 @@ const METHODS: [(&str, &str); 8] = [
     ("agentStatus.report", "agent-status:write"),
     ("agentStatus.clear", "agent-status:write"),
 ];
+
+/// Host features added after API version 1, sent in `initialize`. Plugins
+/// check these instead of the island's version. plugins/schema/rpc.json lists
+/// the same names (checked by a test).
+pub(super) const CAPABILITIES: [&str; 0] = [];
 
 pub(super) fn is_known_permission(name: &str) -> bool {
     PERMISSIONS.contains(&name)

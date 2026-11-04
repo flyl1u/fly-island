@@ -10,8 +10,15 @@ use super::permissions::is_known_permission;
 use super::settings::{validate_specs, SettingSpec};
 
 pub(super) const MANIFEST_FILE_NAME: &str = "focusd-plugin.json";
-/// The host API version this build speaks. Plugins declare the one they need.
-pub(super) const HOST_API_VERSION: u32 = 1;
+/// The newest host API version this build speaks. Plugins declare the one they
+/// were written for; any version from MIN_API_VERSION up to this one runs, and
+/// the plugin is told the version it declared (see docs/plugins/README.md).
+pub(super) const HOST_API_VERSION: u32 = 2;
+pub(super) const MIN_API_VERSION: u32 = 1;
+
+pub(super) fn supports_api_version(version: u32) -> bool {
+    (MIN_API_VERSION..=HOST_API_VERSION).contains(&version)
+}
 const MAX_COMMANDS: usize = 8;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -135,9 +142,9 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
             manifest.id
         ));
     }
-    if manifest.api_version != HOST_API_VERSION {
+    if !supports_api_version(manifest.api_version) {
         return Err(format!(
-            "The plugin needs plugin API version {}; this FocuSD Island supports version {HOST_API_VERSION}.",
+            "The plugin needs plugin API version {}; this FocuSD Island supports versions {MIN_API_VERSION}-{HOST_API_VERSION}.",
             manifest.api_version
         ));
     }
