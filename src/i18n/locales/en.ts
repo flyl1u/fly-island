@@ -368,7 +368,7 @@ const en: Translations = {
 
     position: {
       title: "Position",
-      moveHint: "Hold Win and drag any part of the island with the left mouse button to move it, even while it is open. When collapsed, a plain drag works too. Drop it near the top of the screen to snap flush.",
+      moveHint: "Hold Ctrl and drag any part of the island with the left mouse button to move it, even while it is open. When collapsed, a plain drag works too. Drop it near the top of the screen to snap flush.",
     },
 
     expand: {

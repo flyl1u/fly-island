@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import * as islandApi from "./api";
 import "./ModifierWindowDrag.css";
 
-/** Set on <html> while holding Win over the island would move it; shows the move cursor. */
+/** Set on <html> while holding Ctrl over the island would move it; shows the move cursor. */
 const MOVE_ARMED_CLASS = "island-move-armed";
 
 /**
- * Win + left-button drag moves the island from anywhere on its shape, collapsed or
+ * Ctrl + left-button drag moves the island from anywhere on its shape, collapsed or
  * expanded. The press is taken in the capture phase so buttons and inputs under the
  * cursor never see it.
  */
@@ -47,11 +47,11 @@ export function useModifierWindowDrag(onDragStart: () => void) {
   useEffect(() => {
     let swallowNextClick = false;
 
-    // Native polling is the reliable signal; metaKey covers a press that lands before
-    // the first poll. Rust checks the Win key again, so a stale value cannot move it.
+    // Native polling is the reliable signal; ctrlKey covers a press that lands before
+    // the first poll. Rust checks Ctrl again, so a stale value cannot move it.
     const press = (event: PointerEvent) => {
       swallowNextClick = false;
-      if (event.button !== 0 || !(isArmedRef.current || event.metaKey)) {
+      if (event.button !== 0 || !(isArmedRef.current || event.ctrlKey)) {
         return;
       }
 

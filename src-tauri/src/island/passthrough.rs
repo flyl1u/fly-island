@@ -16,8 +16,8 @@ use crate::win32;
 pub(crate) const ISLAND_HOVER_CHANGED_EVENT: &str = "island-hover-changed";
 
 // Mirrored by ISLAND_MOVE_ARMED_CHANGED_EVENT in src/windows/island/api.ts. The payload
-// says whether a Win + left-button press over the island would move it. Polled here
-// because the webview cannot reliably see the Win key while another window has focus.
+// says whether a Ctrl + left-button press over the island would move it. Polled here
+// because the webview cannot see Ctrl while another window has keyboard focus.
 pub(crate) const ISLAND_MOVE_ARMED_CHANGED_EVENT: &str = "island-move-armed-changed";
 
 pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
@@ -42,7 +42,7 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             }
 
             let is_move_armed =
-                is_inside && !read_window_state().is_tucked && win32::input::is_windows_key_down();
+                is_inside && !read_window_state().is_tucked && win32::input::is_control_key_down();
             if is_move_armed != was_move_armed {
                 was_move_armed = is_move_armed;
                 let _ = window.emit(ISLAND_MOVE_ARMED_CHANGED_EVENT, is_move_armed);

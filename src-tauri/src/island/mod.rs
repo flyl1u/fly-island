@@ -135,19 +135,16 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     drag_island(window, current_state)
 }
 
-/// Win + left-button drag: moves the island from anywhere on its shape, collapsed or
+/// Ctrl + left-button drag: moves the island from anywhere on its shape, collapsed or
 /// expanded. The frontend calls it on pointer down while the passthrough loop reports
-/// the Win key held over the island.
+/// Ctrl held over the island.
 #[tauri::command]
 pub fn start_island_modifier_drag(app: AppHandle) -> Result<(), String> {
     let window = main_window(&app)?;
 
-    if !win32::input::is_windows_key_down() {
+    if !win32::input::is_control_key_down() {
         return Ok(());
     }
-    // Win was pressed and released with only a mouse drag in between, which the shell
-    // would otherwise read as a tap that opens the Start menu.
-    win32::input::suppress_start_menu();
 
     drag_island(window, read_window_state())
 }

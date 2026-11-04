@@ -1,5 +1,5 @@
 /*
- * Win held over the island (see useModifierWindowDrag.ts): every part of it,
+ * Ctrl held over the island (see useModifierWindowDrag.ts): every part of it,
  * including buttons and inputs, now moves the window instead, so say so.
  */
 html.island-move-armed,

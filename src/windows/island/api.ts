@@ -30,7 +30,7 @@ export function listenIslandHover(
 // Mirrors ISLAND_MOVE_ARMED_CHANGED_EVENT in src-tauri/src/island/passthrough.rs.
 export const ISLAND_MOVE_ARMED_CHANGED_EVENT = "island-move-armed-changed";
 
-/** Calls `handler` whenever holding Win over the island starts (`true`) or stops arming a move. */
+/** Calls `handler` whenever holding Ctrl over the island starts (`true`) or stops arming a move. */
 export function listenIslandMoveArmed(
   handler: (armed: boolean) => void,
 ): Promise<UnlistenFn> {
@@ -81,7 +81,7 @@ export function startIslandDrag() {
   return invoke("start_island_drag");
 }
 
-/** Win + left-button drag; works collapsed or expanded and is a no-op unless Win is held. */
+/** Ctrl + left-button drag; works collapsed or expanded and is a no-op unless Ctrl is held. */
 export function startIslandModifierDrag() {
   return invoke("start_island_modifier_drag");
 }
