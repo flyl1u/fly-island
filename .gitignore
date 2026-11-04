@@ -25,6 +25,9 @@ src-tauri/tauri.release.conf.json
 *.dpapi
 *.local
 
+# Local Claude Code skills. This machine only; not part of the repo.
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
