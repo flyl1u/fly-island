@@ -466,7 +466,7 @@ const en: Translations = {
       legendTitle: "Light colors",
       legend: {
         idle: "Green: idle or finished",
-        running: "Red: an agent is running",
+        running: "Blue: an agent is running",
         attention: "Yellow: failed or possibly interrupted; clear it above",
       },
     },

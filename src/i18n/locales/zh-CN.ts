@@ -469,7 +469,7 @@ const zhCN: Translations = {
       legendTitle: "状态灯颜色",
       legend: {
         idle: "绿色：空闲或已完成",
-        running: "红色：有 Agent 正在运行",
+        running: "蓝色：有 Agent 正在运行",
         attention: "黄色：运行失败或可能已中断，可在上方清除状态",
       },
     },

@@ -38,7 +38,7 @@
 
 .island__pulse--agent-running {
   background: var(--color-agent-running);
-  box-shadow: 0 0 14px rgba(255, 77, 94, 0.72);
+  box-shadow: 0 0 14px rgba(61, 139, 255, 0.72);
 }
 
 .island__pulse--agent-attention {

@@ -96,7 +96,7 @@
 }
 
 .agent-status-panel--running {
-  border-color: rgba(255, 77, 94, 0.24);
+  border-color: rgba(61, 139, 255, 0.28);
 }
 
 .agent-status-panel--attention {
@@ -223,7 +223,7 @@
 
 .agent-status-legend__dot--running {
   background: var(--color-agent-running);
-  box-shadow: 0 0 8px rgba(255, 77, 94, 0.6);
+  box-shadow: 0 0 8px rgba(61, 139, 255, 0.6);
 }
 
 .agent-status-legend__dot--attention {
