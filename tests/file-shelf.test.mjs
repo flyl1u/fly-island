@@ -23,3 +23,17 @@ test("file sizes use binary units with one decimal below ten", () => {
   assert.equal(formatFileSize(3 * 1024 ** 3), "3.0 GB");
   assert.equal(formatFileSize(Number.NaN), "0 B");
 });
+
+test("a drop reports the entries it added and whether they were all on the shelf already", async () => {
+  const { getDropResult } = await import("../src/features/file-shelf/fileShelf.ts");
+  const before = [{ path: String.raw`C:\a.txt` }];
+  const after = [
+    { id: "2", path: String.raw`C:\b.txt` },
+    { id: "1", path: String.raw`C:\a.txt` },
+  ];
+  assert.deepEqual(getDropResult(["C:/B.TXT"], before, after), { ids: ["2"], allExisting: false });
+  assert.deepEqual(getDropResult([String.raw`c:\A.txt`], before, after), { ids: ["1"], allExisting: true });
+  assert.deepEqual(getDropResult([String.raw`C:\a.txt`, String.raw`C:\b.txt`], before, after), { ids: ["2", "1"], allExisting: false });
+  // Paths the shelf refused (missing or relative) add nothing.
+  assert.deepEqual(getDropResult(["relative.txt"], before, after), { ids: [], allExisting: false });
+});

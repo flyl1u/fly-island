@@ -19,7 +19,30 @@ export function getFileKind(name: string, isDir: boolean): FileKind {
   return match ?? "file";
 }
 
-const SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"];
+/** Same rule as path_key in src-tauri/src/file_shelf/store.rs: case and slash style do not matter. */
+export function pathKey(path: string) {
+  return path.replace(/\//g, "\\").toLowerCase();
+}
+
+/**
+ * Which shelf entries a drop of `paths` produced, and whether every one of them was
+ * already on the shelf before (`before`), so the drop only moved them to the top.
+ */
+export function getDropResult(
+  paths: string[],
+  before: { path: string }[],
+  after: { id: string; path: string }[],
+) {
+  const dropped = new Set(paths.map(pathKey));
+  const existing = new Set(before.map((item) => pathKey(item.path)));
+  const ids = after.filter((item) => dropped.has(pathKey(item.path))).map((item) => item.id);
+  const allExisting = ids.length > 0 && after
+    .filter((item) => dropped.has(pathKey(item.path)))
+    .every((item) => existing.has(pathKey(item.path)));
+  return { ids, allExisting };
+}
+
+const SIZE_UNITS =["B", "KB", "MB", "GB", "TB"];
 
 /** "820 B", "1.4 MB", "12 GB": one decimal below 10, none above. */
 export function formatFileSize(bytes: number) {

@@ -69,6 +69,18 @@
   font-weight: 800;
 }
 
+.shelf-item--recent {
+  animation: shelfItemArrive 1200ms ease both;
+}
+
+@keyframes shelfItemArrive {
+  0%,
+  45% {
+    background: rgba(110, 231, 200, 0.16);
+    border-color: rgba(110, 231, 200, 0.6);
+  }
+}
+
 .shelf-item--missing .shelf-item__main {
   cursor: default;
 }

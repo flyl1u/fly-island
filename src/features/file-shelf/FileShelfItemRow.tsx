@@ -21,6 +21,7 @@ const COPIED_FLASH_MS = 1_100;
 
 export function FileShelfItemRow({
   item,
+  isRecent,
   onDragOut,
   onOpen,
   onCopy,
@@ -28,6 +29,8 @@ export function FileShelfItemRow({
   onRemove,
 }: {
   item: FileShelfItem;
+  /** Just added (or moved to the top) by a drop. */
+  isRecent: boolean;
   onDragOut: (id: string) => void;
   onOpen: (id: string) => void;
   onCopy: (id: string) => Promise<boolean>;
@@ -61,7 +64,7 @@ export function FileShelfItemRow({
   };
 
   return (
-    <article className={`shelf-item${item.missing ? " shelf-item--missing" : ""}`} role="listitem">
+    <article className={`shelf-item${item.missing ? " shelf-item--missing" : ""}${isRecent ? " shelf-item--recent" : ""}`} role="listitem">
       <button
         className="shelf-item__main"
         type="button"

@@ -349,6 +349,7 @@ export type Translations = {
     copied: string;
     reveal: string;
     removeItem: string;
+    alreadyOnShelf: string;
   };
 
   settings: {

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Check, Inbox, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowDownToLine, Check, Inbox, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { FileShelfItemRow } from "./FileShelfItemRow";
 import type { FileShelfController } from "./useFileShelf";
@@ -18,7 +18,9 @@ export function FileShelfPanel({
 }) {
   const t = useTranslation();
   const [confirmingClear, setConfirmingClear] = useState(false);
-  const { items, error, refresh } = shelf;
+  const listRef = useRef<HTMLDivElement>(null);
+  const { items, error, recentDrop, refresh } = shelf;
+  const recentIds = new Set(recentDrop?.ids ?? []);
 
   // Files may have moved since the page was last open.
   useEffect(() => {
@@ -31,6 +33,11 @@ export function FileShelfPanel({
     return () => window.clearTimeout(timer);
   }, [confirmingClear]);
 
+  // Dropped files land on top; bring them into view.
+  useEffect(() => {
+    if (recentDrop) listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [recentDrop]);
+
   return (
     <section className={`shelf-panel${isDropTarget ? " shelf-panel--dropping" : ""}`} aria-label={t.fileShelf.title}>
       <header className="shelf-panel__header">
@@ -38,6 +45,11 @@ export function FileShelfPanel({
           <Inbox size={16} strokeWidth={2.2} />
           <span>{t.fileShelf.title}</span>
           <strong>{items.length}</strong>
+          {recentDrop?.allExisting && (
+            <em key={recentDrop.key} className="shelf-panel__notice" role="status">
+              {t.fileShelf.alreadyOnShelf}
+            </em>
+          )}
         </div>
         <button
           className={`shelf-clear-button${confirmingClear ? " shelf-clear-button--confirming" : ""}`}
@@ -58,14 +70,15 @@ export function FileShelfPanel({
         </button>
       </header>
       {error && <p className="shelf-panel__error" role="alert">{error}</p>}
-      {isDropTarget || items.length === 0 ? (
+      {items.length === 0 ? (
         <div className="shelf-empty">{isDropTarget ? t.fileShelf.dropHint : t.fileShelf.empty}</div>
       ) : (
-        <div className="shelf-list" role="list">
+        <div ref={listRef} className="shelf-list" role="list">
           {items.map((item) => (
             <FileShelfItemRow
               key={item.id}
               item={item}
+              isRecent={recentIds.has(item.id)}
               onDragOut={(id) => void shelf.startDrag(id)}
               onOpen={(id) => void shelf.open(id)}
               onCopy={shelf.copy}
@@ -73,6 +86,12 @@ export function FileShelfPanel({
               onRemove={(id) => void shelf.remove(id)}
             />
           ))}
+        </div>
+      )}
+      {isDropTarget && items.length > 0 && (
+        <div className="shelf-drop-overlay" aria-hidden="true">
+          <ArrowDownToLine size={22} strokeWidth={2.2} />
+          <span>{t.fileShelf.dropHint}</span>
         </div>
       )}
     </section>

@@ -346,6 +346,7 @@ const en: Translations = {
     copied: "Copied",
     reveal: "Show in folder",
     removeItem: "Remove from shelf (the file is kept)",
+    alreadyOnShelf: "Already on the shelf",
   },
 
   settings: {

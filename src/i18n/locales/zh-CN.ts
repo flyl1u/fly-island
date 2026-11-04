@@ -349,6 +349,7 @@ const zhCN: Translations = {
     copied: "已复制",
     reveal: "在文件夹中显示",
     removeItem: "从中转移除（不会删除文件）",
+    alreadyOnShelf: "已在列表中",
   },
 
   settings: {
