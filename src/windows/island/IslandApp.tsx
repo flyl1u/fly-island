@@ -22,6 +22,7 @@ import { useMediaState } from "../../features/media/useMediaState";
 import type { TodoItem } from "../../features/todos/types";
 import { useTodos } from "../../features/todos/useTodos";
 import { useFileShelf } from "../../features/file-shelf/useFileShelf";
+import { useLocalApiBridge } from "../../features/local-api/useLocalApiBridge";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getTodoScrollStartRows } from "./layout";
@@ -81,11 +82,12 @@ export function IslandApp() {
     openSettingsWindow("savePath");
   }, []);
 
-  const { todos, activeTodoId, todoPageMode, notebookProps } = useTodos({
+  const { todos, activeTodoId, todoPageMode, apiHandlers, notebookProps } = useTodos({
     carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
     onStartTodo: collapseIsland,
     onMissingSaveDirectory: openSavePathSettings,
   });
+  useLocalApiBridge(apiHandlers);
 
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
     useCollapsedTodo(

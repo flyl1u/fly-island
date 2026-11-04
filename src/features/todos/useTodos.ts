@@ -4,6 +4,7 @@ import type { ArchiveLayout, TodoItem, TodoPageMode } from "./types";
 import { useTodoArchives } from "./useTodoArchives";
 import { useTodoList } from "./useTodoList";
 import { useScheduledTodos } from "./useScheduledTodos";
+import { useTodoApiHandlers } from "./useTodoApiHandlers";
 import { useTodoRollover } from "./useTodoRollover";
 import { useTodoSaving } from "./useTodoSaving";
 
@@ -29,6 +30,10 @@ export function useTodos({
   const { archives, upsertArchive } = useTodoArchives();
   const { scheduledTodos, scheduleTodo, deleteScheduledTodo } =
     useScheduledTodos(currentTodoDate, setTodos);
+  const apiHandlers = useTodoApiHandlers({
+    date: currentTodoDate, todos, scheduledTodos, activeTodoId, dailyNote,
+    setTodos, setDailyNote, scheduleTodo,
+  });
   // Day the next added todo is for; null is the list's own day.
   const [draftDate, setDraftDate] = useState<string | null>(null);
   const draftTodo = list.draftTodo;
@@ -133,6 +138,8 @@ export function useTodos({
     todos,
     activeTodoId,
     todoPageMode,
+    /** Local API handlers for todos and the daily note; see useTodoApiHandlers. */
+    apiHandlers,
     notebookProps: {
       todos,
       dailyNote,

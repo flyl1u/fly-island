@@ -38,10 +38,10 @@ export function useScheduledTodos(
     ]);
   }, [currentTodoDate, scheduledTodos, setTodos]);
 
-  const scheduleTodo = useCallback((title: string, date: string) => {
-    setScheduledTodos((current) =>
-      sortScheduledTodos([...current, { id: createTodoId(), title, date, createdAt: Date.now() }]),
-    );
+  const scheduleTodo = useCallback((title: string, date: string): ScheduledTodo => {
+    const todo = { id: createTodoId(), title, date, createdAt: Date.now() };
+    setScheduledTodos((current) => sortScheduledTodos([...current, todo]));
+    return todo;
   }, []);
 
   const deleteScheduledTodo = useCallback((id: string) => {

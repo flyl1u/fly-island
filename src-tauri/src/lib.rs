@@ -2,6 +2,7 @@ mod agent_status;
 mod clipboard_history;
 mod file_shelf;
 mod island;
+mod local_api;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
@@ -57,6 +58,9 @@ pub fn run() {
             if let Err(error) = file_shelf::init(app.handle()) {
                 eprintln!("failed to initialize the file shelf: {error}");
             }
+            if let Err(error) = local_api::init(app.handle()) {
+                eprintln!("failed to initialize the local API: {error}");
+            }
             if let Err(error) = qq_mail::init(app.handle()) {
                 eprintln!("failed to initialize QQ mail: {error}");
             }
@@ -90,6 +94,10 @@ pub fn run() {
             file_shelf::open_file_shelf_item,
             file_shelf::reveal_file_shelf_item,
             file_shelf::start_file_shelf_drag,
+            local_api::get_local_api_state,
+            local_api::set_local_api_settings,
+            local_api::reset_local_api_token,
+            local_api::answer_local_api_request,
             qq_mail::get_qq_mail_state,
             qq_mail::connect_qq_mail,
             qq_mail::set_qq_mail_enabled,

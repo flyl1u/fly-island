@@ -1,5 +1,6 @@
 import { TodoSettingsSection } from "../../features/appearance/TodoSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
+import { LocalApiSettingsSection } from "../../features/local-api/LocalApiSettingsSection";
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { useTranslation } from "../../i18n";
@@ -31,6 +32,7 @@ export function TodosSettingsPage({
         onSaveDirectoryDraftChange={saveDirectory.onSaveDirectoryDraftChange}
         onSaveDirectory={saveDirectory.onSaveDirectory}
       />
+      <LocalApiSettingsSection />
     </>
   );
 }

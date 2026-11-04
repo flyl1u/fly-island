@@ -543,5 +543,20 @@ export type Translations = {
       saved: string;
       save: string;
     };
+    localApi: {
+      title: string;
+      hint: string;
+      enable: string;
+      allowWrite: string;
+      allowWriteHint: string;
+      address: string;
+      token: string;
+      copy: string;
+      copied: string;
+      resetToken: string;
+      configFile: string;
+      running: string;
+      stopped: string;
+    };
   };
 };
