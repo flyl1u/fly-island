@@ -18,9 +18,7 @@ use windows::{
         MediaPlaybackAutoRepeatMode as RepeatMode,
     },
     Storage::Streams::{DataReader, IInputStream, IRandomAccessStreamReference},
-    Win32::UI::Input::KeyboardAndMouse::{
-        keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
-    },
+    Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY,
 };
 
 use super::audio::{read_master_volume, read_system_audio_peak, AUDIO_ACTIVE_THRESHOLD};
@@ -251,11 +249,9 @@ pub(super) fn run_session_command(
 }
 
 pub(super) fn send_media_key(key: VIRTUAL_KEY) {
-    let key_code = key.0 as u8;
-
-    unsafe { keybd_event(key_code, 0, KEYBD_EVENT_FLAGS(0), 0) };
+    win32::input::send_key_down(key);
     thread::sleep(Duration::from_millis(80));
-    unsafe { keybd_event(key_code, 0, KEYEVENTF_KEYUP, 0) };
+    win32::input::send_key_up(key);
 }
 
 pub(super) fn read_media_state(target: Option<&str>) -> Result<MediaState, String> {
