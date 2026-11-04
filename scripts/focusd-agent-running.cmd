@@ -26,4 +26,12 @@ if not exist "%STATUS_DIR%" mkdir "%STATUS_DIR%" >nul 2>nul
 break > "%STATUS_DIR%\%MARKER%"
 del "%STATUS_DIR%\%HOLD%" >nul 2>nul
 
+rem "capture" (prompt submit only) saves the hook's stdin JSON so the island can show the
+rem session title. findstr copies bytes unchanged but cuts lines past ~64 KB; the app
+rem tolerates that. Write a temp file and move it so the app never reads half a file.
+if /I "%~2"=="capture" (
+  findstr "^" > "%STATUS_DIR%\agent-%PROVIDER%-hook-input.tmp" 2>nul
+  move /y "%STATUS_DIR%\agent-%PROVIDER%-hook-input.tmp" "%STATUS_DIR%\agent-%PROVIDER%-hook-input.json" >nul 2>nul
+)
+
 exit /b 0

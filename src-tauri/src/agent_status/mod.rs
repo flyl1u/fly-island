@@ -30,6 +30,8 @@ pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cm
 pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
 
 pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
+/// Second argument of the running script: also save the hook input (see focusd-agent-running.cmd).
+pub(super) const AGENT_RUNNING_CAPTURE_ARG: &str = "capture";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
     include_str!("../../../scripts/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =

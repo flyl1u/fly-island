@@ -3,7 +3,7 @@
 use serde_json::{json, Map, Value};
 use std::{fs, path::Path};
 
-use super::{write_text_file, FOCUSD_AGENT_HOOK_SIGNATURE};
+use super::{write_text_file, AGENT_RUNNING_CAPTURE_ARG, FOCUSD_AGENT_HOOK_SIGNATURE};
 
 pub(super) fn install_claude_code_status_hooks(
     config_path: &Path,
@@ -33,12 +33,16 @@ pub(super) fn install_claude_code_status_hooks(
     install_claude_code_hook_event(
         hooks,
         "UserPromptSubmit",
-        claude_code_running_hook_entry(running_script_path),
+        claude_code_running_hook_entry(running_script_path, true),
     );
+    // Tool input can be whole files, so tool calls only refresh the running marker.
     install_claude_code_hook_event(
         hooks,
         "PreToolUse",
-        claude_code_match_all_hook_entry(claude_code_running_hook_entry(running_script_path)),
+        claude_code_match_all_hook_entry(claude_code_running_hook_entry(
+            running_script_path,
+            false,
+        )),
     );
     install_claude_code_hook_event(
         hooks,
@@ -114,20 +118,21 @@ pub(super) fn claude_code_match_all_hook_entry(mut entry: Value) -> Value {
     entry
 }
 
-pub(super) fn claude_code_running_hook_entry(script_path: &Path) -> Value {
+/// `capture` makes the script save the hook input, which carries the session details for the title.
+pub(super) fn claude_code_running_hook_entry(script_path: &Path, capture: bool) -> Value {
     // Claude Code spawns `args` with MSVC-style escaping, which turns embedded
     // quotes into `\"` that cmd.exe cannot parse. Pass the path as its own
     // argument and let the spawner add plain quotes only when it needs them.
-    claude_code_hook_entry(
-        "cmd.exe",
-        vec![
-            "/d".to_string(),
-            "/c".to_string(),
-            script_path.to_string_lossy().to_string(),
-            "claudeCode".to_string(),
-        ],
-        1,
-    )
+    let mut args = vec![
+        "/d".to_string(),
+        "/c".to_string(),
+        script_path.to_string_lossy().to_string(),
+        "claudeCode".to_string(),
+    ];
+    if capture {
+        args.push(AGENT_RUNNING_CAPTURE_ARG.to_string());
+    }
+    claude_code_hook_entry("cmd.exe", args, 1)
 }
 
 pub(super) fn claude_code_status_hook_entry(script_path: &Path, phase: &str) -> Value {
@@ -166,7 +171,7 @@ mod tests {
     #[test]
     fn running_hook_passes_script_path_as_unquoted_argument() {
         let path = Path::new(r"C:\Users\a b\focusd-agent-running.cmd");
-        let entry = claude_code_running_hook_entry(path);
+        let entry = claude_code_running_hook_entry(path, false);
         let args = entry["hooks"][0]["args"].as_array().unwrap();
 
         assert_eq!(
@@ -179,5 +184,31 @@ mod tests {
             ]
         );
         assert!(args.iter().all(|arg| !arg.as_str().unwrap().contains('"')));
+    }
+
+    #[test]
+    fn only_prompt_submit_captures_hook_input() {
+        let path = Path::new(r"C:\focusd-agent-running.cmd");
+        let mut hooks = Map::new();
+        install_claude_code_hook_event(
+            &mut hooks,
+            "UserPromptSubmit",
+            claude_code_running_hook_entry(path, true),
+        );
+        install_claude_code_hook_event(
+            &mut hooks,
+            "PreToolUse",
+            claude_code_match_all_hook_entry(claude_code_running_hook_entry(path, false)),
+        );
+
+        let last_arg = |event: &str| {
+            hooks[event][0]["hooks"][0]["args"]
+                .as_array()
+                .unwrap()
+                .last()
+                .cloned()
+        };
+        assert_eq!(last_arg("UserPromptSubmit"), Some(json!("capture")));
+        assert_eq!(last_arg("PreToolUse"), Some(json!("claudeCode")));
     }
 }

@@ -136,6 +136,6 @@ Agent hook（UserPromptSubmit）
 |---|---|
 | `ai-title`、`session_index.jsonl` 格式变化 | 解析失败逐级后备，最差显示文件夹名；单测固定当前格式 |
 | 会话记录很大，200ms 轮询反复读文件 | 只读首尾各 256 KiB，并按大小与修改时间缓存 |
-| `cmd` 转存 stdin 的编码或耗时问题 | 第 1 步先实测，不通过就换方案 |
+| `cmd` 转存 stdin 的编码或耗时问题 | 已实测（2026-11-04）：`findstr "^"` 原样保留 UTF-8（含中文、emoji、制表符），整个脚本约 35ms；单行超过约 64 KiB 时截断（`more` 会改制表符、超长时输出为空，不采用）。因此 Rust 端须宽松解析：JSON 解析失败时逐个提取完整的字符串字段（Claude Code 的 `prompt` 排在最后，截断不影响 `session_id`、`transcript_path`、`cwd`） |
 | 标题含敏感内容 | 只在内存和岛上显示截断后的标题，不写入 `agent-status.json`；hook-input 仅存于本机应用数据目录，下次提问覆盖，清除状态时删除 |
 | 品牌图标的使用 | 只作为来源标识使用小尺寸官方图标，与 QQ / 微信图标做法一致 |
