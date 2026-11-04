@@ -52,6 +52,9 @@ pub struct MarketEntry {
     homepage: String,
     #[serde(default)]
     pub(super) permissions: Vec<String>,
+    /// "exe", "powershell", "node" or "none"; missing in indexes written before it existed.
+    #[serde(default)]
+    runtime: Option<String>,
     download: PackageDownload,
 }
 

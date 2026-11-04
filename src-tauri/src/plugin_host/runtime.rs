@@ -212,10 +212,29 @@ fn supervise(context: &Arc<Context>) {
     set_status(context, RuntimeStatus::Stopped, None);
 }
 
+/// Where `node.exe` is: on PATH, or in the default install folder. The island
+/// keeps the PATH it started with, so Node.js installed while it runs is only
+/// found through the install folder.
+pub(super) fn find_node() -> Option<PathBuf> {
+    let on_path = std::env::var_os("PATH")
+        .into_iter()
+        .flat_map(|path| std::env::split_paths(&path).collect::<Vec<_>>())
+        .map(|dir| dir.join("node.exe"));
+    let installed = ["ProgramFiles", "ProgramW6432"]
+        .into_iter()
+        .filter_map(std::env::var_os)
+        .map(|dir| PathBuf::from(dir).join("nodejs").join("node.exe"));
+    on_path.chain(installed).find(|candidate| candidate.is_file())
+}
+
 fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
     std::fs::create_dir_all(&spec.data_dir)
         .map_err(|error| format!("Could not create {}: {error}", spec.data_dir.display()))?;
-    Command::new(&spec.program)
+    let program = match find_node() {
+        Some(node) if spec.program == "node" => node.into_os_string(),
+        _ => spec.program.clone(),
+    };
+    Command::new(&program)
         .args(&spec.args)
         .current_dir(&spec.dir)
         .env("FOCUSD_PLUGIN_ID", &spec.plugin_id)
@@ -230,7 +249,7 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
             if error.kind() == ErrorKind::NotFound && spec.program == "node" {
                 "This plugin needs Node.js: install it so that `node` is on PATH.".to_string()
             } else {
-                format!("Could not start {}: {error}", spec.program.to_string_lossy())
+                format!("Could not start {}: {error}", program.to_string_lossy())
             }
         })
 }

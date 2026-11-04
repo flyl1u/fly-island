@@ -9,7 +9,7 @@
 1. 复制示例 [`plugins/examples/dev.focusd.todo-digest`](../../plugins/examples/dev.focusd.todo-digest/) 到
    `%APPDATA%\com.focusd.island\plugins\dev.focusd.todo-digest\`。
    插件目录也可以在 设置 → 插件 → 插件目录 → **打开** 中找到。
-2. 示例需要 [Node.js](https://nodejs.org/)，并且 `node` 要在 PATH 中。
+2. 示例使用 Windows 自带的 PowerShell 运行，不需要另外安装任何东西。
 3. 在 设置 → 插件 中打开 **允许运行第三方插件**，点 **重新加载**，再打开插件卡片上的 **启用**。
 4. 状态显示"运行中"后，点 **写入摘要**，每日笔记里会追加一段未完成待办的摘要。展开 **日志** 可以看到插件的输出。
 
@@ -20,7 +20,7 @@
 ```text
 plugins/<插件 id>/        # 文件夹名必须等于插件 id
 ├── focusd-plugin.json    # 清单
-├── main.mjs              # runtime.command 指向的程序
+├── main.ps1              # runtime.command 指向的程序
 └── ...                   # 其他文件随意
 ```
 
@@ -36,7 +36,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
   "minAppVersion": "0.2.14",
   "author": "example",
   "homepage": "https://github.com/example/todo-sync",
-  "runtime": { "type": "process", "command": "main.mjs", "args": [] },
+  "runtime": { "type": "process", "command": "main.ps1", "args": [] },
   "permissions": ["todos:read", "todos:write"],
   "contributes": {
     "commands": [{ "id": "sync-now", "title": { "zh-CN": "立即同步", "en": "Sync now" } }]
@@ -63,6 +63,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 |---|---|
 | `.exe` | 直接运行 |
 | `.js` / `.mjs` / `.cjs` | `node <文件>`，需要用户已经安装 Node.js |
+
+**选择建议：给普通用户用的插件，优先选 `.ps1` 或 `.exe`，这样用户不需要另外安装任何东西。** 插件市场和插件卡片会根据扩展名显示"无需另外安装"或"需要 Node.js"。检测不到 Node.js 时，会提示用户并给出下载链接。岛屿会在 PATH 和默认安装目录 `%ProgramFiles%\nodejs` 中查找 `node.exe`，所以用户在岛屿运行期间装好 Node.js，不需要重启岛屿也能找到。
 | `.ps1` | `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File <文件>` |
 
 不支持 `.cmd` / `.bat`：停止 `cmd.exe` 时，它启动的程序会继续运行。
@@ -142,9 +144,32 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 - 进程意外退出后，会依次在 1 秒、5 秒、30 秒后重启。连续失败 3 次后停止，状态显示为"已出错停止"。只要插件连续运行超过 60 秒，失败次数就会清零。
 - 状态信息包括：未运行、启动中、运行中、重启中、已出错停止。
 
-## Node.js SDK
+## SDK
 
-示例中的 [`lib/focusd.mjs`](../../plugins/examples/dev.focusd.todo-digest/lib/focusd.mjs) 是一个没有任何依赖的 SDK，可以直接复制到你的插件里使用：
+### PowerShell（不需要用户安装任何东西）
+
+示例中的 [`lib/focusd.ps1`](../../plugins/examples/dev.focusd.todo-digest/lib/focusd.ps1) 适用于 Windows 自带的 PowerShell 5.1，可以直接复制到你的插件里使用。完整用法见示例的 [`main.ps1`](../../plugins/examples/dev.focusd.todo-digest/main.ps1)。
+
+```powershell
+. "$PSScriptRoot\lib\focusd.ps1"
+
+while ($true) {
+    $message = Receive-FocusdNotification 1000   # 1 秒内没有消息时返回 $null，可以借机做定时任务
+    if ($message.method -eq 'command' -and $message.params.id -eq 'sync-now') {
+        $todos = @((Invoke-FocusdMethod 'todos.list').todos)
+        Write-FocusdLog "$($todos.Count) todos"
+    }
+}
+```
+
+注意：
+
+- 函数返回数组时，PowerShell 会把只有一个元素的数组展开成单个对象，所以调用处要用 `@(...)` 包起来再取 `.Count`。
+- stdin 关闭时，`Read-FocusdLine` 会让插件自动退出。
+
+### Node.js（需要用户安装 Node.js）
+
+[`plugins/sdk/node/focusd.mjs`](../../plugins/sdk/node/focusd.mjs) 是一个没有任何依赖的 SDK，可以直接复制到你的插件里使用：
 
 ```js
 import { createPlugin } from "./lib/focusd.mjs";

@@ -153,3 +153,10 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.plugin-node-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}

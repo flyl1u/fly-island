@@ -24,7 +24,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::agent_status;
 
-use manifest::{launch_command, parse_manifest, LocalizedText, PluginCommand, PluginManifest, PluginRuntime, MANIFEST_FILE_NAME};
+use manifest::{launch_command, parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginManifest, PluginRuntime, MANIFEST_FILE_NAME};
 use permissions::missing_permissions;
 use runtime::{LaunchSpec, RuntimeStatus, RuntimeTable, Supervisor};
 use store::{load_state, save_state, PluginsState, STATE_FILE_NAME};
@@ -65,6 +65,8 @@ pub struct PluginInfo {
     homepage: String,
     permissions: Vec<String>,
     commands: Vec<PluginCommand>,
+    /// What it needs installed: "exe", "powershell", "node" or "none".
+    runtime: &'static str,
     has_process: bool,
     enabled: bool,
     /// On, but the plugin now asks for permissions the user has not granted.
@@ -79,6 +81,8 @@ pub struct PluginInfo {
 #[serde(rename_all = "camelCase")]
 pub struct PluginsSnapshot {
     allow_third_party: bool,
+    /// Whether Node.js was found, for plugins whose runtime is "node".
+    node_available: bool,
     plugins_dir: String,
     plugins: Vec<PluginInfo>,
 }
@@ -253,6 +257,7 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
                 homepage: String::new(),
                 permissions: Vec::new(),
                 commands: Vec::new(),
+                runtime: "none",
                 has_process: false,
                 enabled: grant.enabled,
                 needs_approval: false,
@@ -272,6 +277,7 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.permissions = manifest.permissions.clone();
                     info.commands = manifest.contributes.commands.clone();
                     info.has_process = matches!(manifest.runtime, PluginRuntime::Process { .. });
+                    info.runtime = runtime_requirement(&manifest.runtime);
                 }
                 Err(reason) => info.invalid_reason = Some(reason.clone()),
             }
@@ -280,6 +286,7 @@ fn snapshot() -> Result<PluginsSnapshot, String> {
         .collect();
     Ok(PluginsSnapshot {
         allow_third_party: state.allow_third_party,
+        node_available: runtime::find_node().is_some(),
         plugins_dir: host.plugins_dir.display().to_string(),
         plugins,
     })
@@ -313,6 +320,7 @@ pub struct MarketPlugin {
 #[serde(rename_all = "camelCase")]
 pub struct MarketSnapshot {
     index_url: String,
+    node_available: bool,
     plugins: Vec<MarketPlugin>,
 }
 
@@ -338,6 +346,7 @@ pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
         .collect();
     Ok(MarketSnapshot {
         index_url: market::INDEX_URL.to_string(),
+        node_available: runtime::find_node().is_some(),
         plugins,
     })
 }

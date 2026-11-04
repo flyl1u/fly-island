@@ -633,6 +633,10 @@ export type Translations = {
       status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed", string>;
       uninstall: string;
       confirmUninstall: string;
+      runtimeBuiltIn: string;
+      runtimeNode: string;
+      nodeMissing: string;
+      getNode: string;
       market: {
         title: string;
         hint: string;

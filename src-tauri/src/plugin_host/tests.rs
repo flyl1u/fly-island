@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 use std::{ffi::OsString, path::Path};
 
-use super::manifest::{launch_command, parse_manifest, version_at_least, PluginRuntime};
+use super::manifest::{launch_command, parse_manifest, runtime_requirement, version_at_least, PluginRuntime};
 use super::permissions::{method_permission, missing_permissions};
 use super::rpc::{error_line, parse_line, result_line, Incoming, INVALID_REQUEST, PARSE_ERROR};
 use super::store::{load_state, PluginsState};
@@ -51,6 +51,15 @@ fn bad_manifests_say_why() {
     assert!(reason(json!({ "contributes": { "commands": [{ "id": "a b", "title": { "zh-CN": "x", "en": "x" } }] } })).contains("a b"));
     assert!(reason(json!({ "version": "" })).contains("version"));
     assert!(parse_manifest("{", "dev.example.sync", "1.0.0").expect_err("invalid").contains("not valid"));
+}
+
+#[test]
+fn runtime_requirement_follows_the_command() {
+    let process = |command: &str| PluginRuntime::Process { command: command.into(), args: vec![] };
+    assert_eq!(runtime_requirement(&process("bin/app.exe")), "exe");
+    assert_eq!(runtime_requirement(&process("main.ps1")), "powershell");
+    assert_eq!(runtime_requirement(&process("main.mjs")), "node");
+    assert_eq!(runtime_requirement(&PluginRuntime::None), "none");
 }
 
 #[test]
@@ -141,7 +150,7 @@ mod market_tests {
     use super::super::market::{extract_package, incompatibility, install_package, parse_index, verify_package, MarketEntry};
 
     const INDEX: &str = include_str!("../../../plugins/index.json");
-    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.0.0.zip");
+    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.1.0.zip");
 
     fn example_entry() -> MarketEntry {
         parse_index(INDEX)
@@ -198,7 +207,7 @@ mod market_tests {
         install_package(&plugins, &entry, PACKAGE, "0.2.14").expect("install");
         let target = plugins.join("dev.focusd.todo-digest");
         assert!(target.join("focusd-plugin.json").is_file());
-        assert!(target.join("lib").join("focusd.mjs").is_file());
+        assert!(target.join("lib").join("focusd.ps1").is_file());
 
         std::fs::write(target.join("stale.txt"), "from the old version").expect("write");
         install_package(&plugins, &entry, PACKAGE, "0.2.14").expect("update");

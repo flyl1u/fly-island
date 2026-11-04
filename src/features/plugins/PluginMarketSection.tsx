@@ -1,6 +1,7 @@
 import { Download, RefreshCcw } from "lucide-react";
 import { useLocale, useTranslation } from "../../i18n";
 import { PLUGIN_PERMISSIONS, type MarketPlugin, type PluginPermission, type PluginsSnapshot } from "./api";
+import { NodeMissingHint } from "./NodeMissingHint";
 import { usePluginMarket } from "./usePluginMarket";
 import { isNewerVersion } from "./version";
 import "./PluginMarketSection.css";
@@ -79,6 +80,10 @@ export function PluginMarketSection({ onInstalled }: { onInstalled: (snapshot: P
                     .map((permission) => (isPermission(permission) ? t.settings.plugins.permission[permission] : permission))
                     .join(locale === "zh-CN" ? "、" : ", ")}
             </p>
+            {plugin.runtime ? (
+              <p>{plugin.runtime === "node" ? t.settings.plugins.runtimeNode : t.settings.plugins.runtimeBuiltIn}</p>
+            ) : null}
+            {plugin.runtime === "node" && !market.nodeAvailable ? <NodeMissingHint /> : null}
           </div>
           <div className="plugin-market__action">{action(plugin)}</div>
         </article>

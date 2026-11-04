@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { MARKET_BASE_URL, createZip, packPlugin, readPackedFile, sha256 } from "../scripts/build-plugin-index.mjs";
+import { MARKET_BASE_URL, createZip, packPlugin, readPackedFile, runtimeRequirement, sha256 } from "../scripts/build-plugin-index.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -36,6 +36,7 @@ test("plugins/index.json and plugins/packages match the plugin sources (run pnpm
     const { manifest, fileName, zip } = packPlugin(path.join(examplesDir, id));
     const entry = index.plugins.find((item) => item.id === id);
     assert.equal(entry.version, manifest.version, id);
+    assert.equal(entry.runtime, runtimeRequirement(manifest.runtime), id);
     assert.equal(entry.download.url, `${MARKET_BASE_URL}/packages/${fileName}`);
     assert.equal(entry.download.sha256, sha256(zip), `${id}: package is out of date`);
     assert.equal(entry.download.size, zip.length);
@@ -52,4 +53,12 @@ test("market updates are offered only for newer versions", async () => {
   assert.equal(isNewerVersion("1.0", "1.0.0"), false);
   assert.equal(isNewerVersion("1.0.0-beta", "1.0.0"), false);
   assert.equal(isNewerVersion("0.9.0", "1.0.0"), false);
+});
+
+test("the index says what each plugin needs installed", () => {
+  assert.equal(runtimeRequirement({ type: "process", command: "bin/app.EXE" }), "exe");
+  assert.equal(runtimeRequirement({ type: "process", command: "main.ps1" }), "powershell");
+  assert.equal(runtimeRequirement({ type: "process", command: "main.mjs" }), "node");
+  assert.equal(runtimeRequirement({ type: "none" }), "none");
+  assert.equal(runtimeRequirement(undefined), "none");
 });

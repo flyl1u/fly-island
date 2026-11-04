@@ -3,6 +3,7 @@ import { ExternalLink, Play, Trash2 } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import { openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
+import { NodeMissingHint } from "./NodeMissingHint";
 import "./PluginCard.css";
 
 const isPermission = (name: string): name is PluginPermission =>
@@ -12,6 +13,7 @@ const isPermission = (name: string): name is PluginPermission =>
 export function PluginCard({
   plugin,
   allowed,
+  nodeAvailable,
   busy,
   onEnabledChange,
   onRunCommand,
@@ -19,6 +21,7 @@ export function PluginCard({
 }: {
   plugin: PluginInfo;
   allowed: boolean;
+  nodeAvailable: boolean;
   busy: boolean;
   onEnabledChange: (enabled: boolean) => void;
   onRunCommand: (command: string) => void;
@@ -76,6 +79,7 @@ export function PluginCard({
           {plugin.needsApproval ? <p className="plugin-card__hint">{t.settings.plugins.needsApproval}</p> : null}
           {isOn && !allowed ? <p className="plugin-card__hint">{t.settings.plugins.notAllowed}</p> : null}
           {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
+          {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
           {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
           <div className="plugin-card__actions">
             {showStatus && plugin.status === "running"

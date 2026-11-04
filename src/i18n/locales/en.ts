@@ -642,6 +642,10 @@ const en: Translations = {
       },
       uninstall: "Uninstall",
       confirmUninstall: "Confirm uninstall",
+      runtimeBuiltIn: "Nothing else to install",
+      runtimeNode: "Needs Node.js",
+      nodeMissing: "Node.js was not found on this computer; this plugin runs once it is installed.",
+      getNode: "Get Node.js",
       market: {
         title: "Plugin market",
         hint: "Plugins installed from here are checked first to make sure the files are complete and unchanged. They start off, and you choose what they may access when you turn one on.",

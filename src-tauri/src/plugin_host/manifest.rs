@@ -221,6 +221,20 @@ pub(super) fn launch_kind(command: &str) -> Result<LaunchKind, String> {
     }
 }
 
+/// What a plugin needs installed to run, shown on the settings page: "exe" and
+/// "powershell" need nothing, "node" needs Node.js, "none" runs nothing.
+pub(super) fn runtime_requirement(runtime: &PluginRuntime) -> &'static str {
+    match runtime {
+        PluginRuntime::None => "none",
+        PluginRuntime::Process { command, .. } => match launch_kind(command) {
+            Ok(LaunchKind::Executable) => "exe",
+            Ok(LaunchKind::PowerShell) => "powershell",
+            Ok(LaunchKind::Node) => "node",
+            Err(_) => "none",
+        },
+    }
+}
+
 /// The program and arguments that start a plugin. Scripts go through their
 /// interpreter: Windows PowerShell or `node` on PATH. Batch files are not
 /// supported: stopping cmd.exe would leave the program it started running.

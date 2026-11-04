@@ -645,6 +645,10 @@ const zhCN: Translations = {
       },
       uninstall: "卸载",
       confirmUninstall: "确认卸载",
+      runtimeBuiltIn: "无需另外安装",
+      runtimeNode: "需要 Node.js",
+      nodeMissing: "这台电脑上没有找到 Node.js，装好之后这个插件才能运行。",
+      getNode: "下载 Node.js",
       market: {
         title: "插件市场",
         hint: "从这里安装的插件会先核对校验值，确认文件完整、没被改动过。装好后默认是关闭的，打开时再决定给它哪些权限。",

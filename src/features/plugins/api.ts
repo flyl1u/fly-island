@@ -9,6 +9,9 @@ export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 export type LocalizedText = { "zh-CN": string; en: string };
 export type PluginCommand = { id: string; title: LocalizedText };
 
+// 与 src-tauri/src/plugin_host/manifest.rs 中的 runtime_requirement 对应：插件运行需要另外安装什么。
+export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none";
+
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
 export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed";
 
@@ -23,6 +26,7 @@ export type PluginInfo = {
   homepage: string;
   permissions: string[];
   commands: PluginCommand[];
+  runtime: PluginRuntimeRequirement;
   hasProcess: boolean;
   enabled: boolean;
   needsApproval: boolean;
@@ -33,6 +37,7 @@ export type PluginInfo = {
 
 export type PluginsSnapshot = {
   allowThirdParty: boolean;
+  nodeAvailable: boolean;
   pluginsDir: string;
   plugins: PluginInfo[];
 };
@@ -48,6 +53,8 @@ export type MarketPlugin = {
   author: string;
   homepage: string;
   permissions: string[];
+  /** Missing in indexes written before the field existed. */
+  runtime: PluginRuntimeRequirement | null;
   download: { url: string; sha256: string; size: number };
   installedVersion: string | null;
   incompatible: string | null;
@@ -55,6 +62,7 @@ export type MarketPlugin = {
 
 export type MarketSnapshot = {
   indexUrl: string;
+  nodeAvailable: boolean;
   plugins: MarketPlugin[];
 };
 
@@ -90,7 +98,9 @@ export function openPluginsFolder() {
   return invoke<void>("open_plugins_folder");
 }
 
-/** Opens a plugin's homepage in the browser; only https links are allowed. */
+export const NODE_DOWNLOAD_URL = { "zh-CN": "https://nodejs.org/zh-cn/download", en: "https://nodejs.org/en/download" } as const;
+
+/** Opens a plugin's homepage (or the Node.js download page) in the browser; only https links are allowed. */
 export function openPluginHomepage(url: string) {
   return url.startsWith("https://") ? openUrl(url) : Promise.resolve();
 }

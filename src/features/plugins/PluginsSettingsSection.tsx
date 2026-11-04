@@ -43,6 +43,7 @@ export function PluginsSettingsSection() {
             key={plugin.id}
             plugin={plugin}
             allowed={allowed}
+            nodeAvailable={snapshot.nodeAvailable}
             busy={busy}
             onEnabledChange={(enabled) => setEnabled(plugin.id, enabled)}
             onRunCommand={(command) => runCommand(plugin.id, command)}

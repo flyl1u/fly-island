@@ -50,20 +50,22 @@ mockIPC((command, payload) => {
     case "updater_configured": return true;
     case "get_updater_proxy": return null;
     case "plugin:app|version": return "0.0.0-test";
-    case "get_local_api_state": return { enabled: true, allowWrite: false, running: true, url: "http://127.0.0.1:39271/v1", token: "0".repeat(64), configPath: "C:\Users\demo\AppData\Roaming\com.focusd.island\local-api.json", error: null };
+    case "get_local_api_state": return { enabled: true, allowWrite: false, running: true, url: "http://127.0.0.1:39271/v1", token: "0".repeat(64), configPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\local-api.json", error: null };
     case "get_plugin_market": return {
       indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json",
+      nodeAvailable: false,
       plugins: [
-        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: "1.0.0", incompatible: null },
-        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: null, incompatible: null },
+        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: "1.0.0", incompatible: null },
+        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: null, incompatible: null },
       ],
     };
     case "list_plugins": return {
       allowThirdParty: true,
-      pluginsDir: "C:\Users\demo\AppData\Roaming\com.focusd.island\plugins",
+      nodeAvailable: false,
+      pluginsDir: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\plugins",
       plugins: [
-        { id: "dev.example.todo-sync", invalidReason: null, name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: { "zh-CN": "每 5 分钟把待办数量写进日志。", en: "Logs the todo count every 5 minutes." }, version: "1.0.0", author: "FocuSD", homepage: "https://github.com/flyl1u/fly-island", permissions: ["todos:read", "notes:write"], commands: [{ id: "sync-now", title: { "zh-CN": "立即同步", en: "Sync now" } }], hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: ["started", "3 open todos"] },
-        { id: "broken.plugin", invalidReason: "focusd-plugin.json is not valid: expected value at line 1 column 1", name: null, description: null, version: "", author: "", homepage: "", permissions: [], commands: [], hasProcess: false, enabled: false, needsApproval: false, status: "stopped", error: null, log: [] },
+        { id: "dev.example.todo-sync", invalidReason: null, name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: { "zh-CN": "每 5 分钟把待办数量写进日志。", en: "Logs the todo count every 5 minutes." }, version: "1.0.0", author: "FocuSD", homepage: "https://github.com/flyl1u/fly-island", permissions: ["todos:read", "notes:write"], commands: [{ id: "sync-now", title: { "zh-CN": "立即同步", en: "Sync now" } }], runtime: "node", hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: ["started", "3 open todos"] },
+        { id: "broken.plugin", invalidReason: "focusd-plugin.json is not valid: expected value at line 1 column 1", name: null, description: null, version: "", author: "", homepage: "", permissions: [], commands: [], runtime: "none", hasProcess: false, enabled: false, needsApproval: false, status: "stopped", error: null, log: [] },
       ],
     };
     default: return null;

@@ -1,5 +1,6 @@
 // FocuSD Island plugin SDK for Node.js (no dependencies). Copy this file into
-// your plugin. Protocol reference: docs/plugins/README.md.
+// your plugin. Plugins that use it need Node.js installed (`node` on PATH);
+// see docs/plugins/README.md for the protocol and for options that need nothing.
 import readline from "node:readline";
 
 /**

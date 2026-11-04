@@ -90,6 +90,16 @@ export function createZip(files) {
 
 export const sha256 = (buffer) => createHash("sha256").update(buffer).digest("hex");
 
+/** What the plugin needs installed, like runtime_requirement in src-tauri/src/plugin_host/manifest.rs. */
+export function runtimeRequirement(runtime) {
+  if (runtime?.type !== "process") return "none";
+  const extension = path.extname(runtime.command ?? "").toLowerCase();
+  if (extension === ".exe") return "exe";
+  if (extension === ".ps1") return "powershell";
+  if ([".js", ".mjs", ".cjs"].includes(extension)) return "node";
+  return "none";
+}
+
 /** The index entry for a plugin manifest and its package. */
 export function indexEntry(manifest, fileName, zip) {
   return {
@@ -102,6 +112,7 @@ export function indexEntry(manifest, fileName, zip) {
     author: manifest.author ?? "",
     homepage: manifest.homepage ?? "",
     permissions: [...new Set(manifest.permissions ?? [])].sort(),
+    runtime: runtimeRequirement(manifest.runtime),
     download: { url: `${MARKET_BASE_URL}/packages/${fileName}`, sha256: sha256(zip), size: zip.length },
   };
 }
