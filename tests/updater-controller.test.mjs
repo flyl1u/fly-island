@@ -9,7 +9,7 @@ const source = ts.transpileModule(
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
 ).outputText;
 
-async function controller({ configured = true, check = async () => null, proxy = null } = {}) {
+async function controller({ configured = true, check = async () => null, proxy = null, search = "?window=translation" } = {}) {
   const exports = {};
   const mocks = {
     "@tauri-apps/api/app": { getVersion: async () => "0.2.11" },
@@ -23,6 +23,9 @@ async function controller({ configured = true, check = async () => null, proxy =
     },
     "@tauri-apps/plugin-updater": { check },
   };
+  // The controller reads window.location.search to keep the translation window
+  // out of the startup update flow. A bare vm context has no browser globals,
+  // so they have to be supplied here or initialize() rejects at module load.
   runInNewContext(source, {
     exports,
     require: (name) => {
@@ -30,9 +33,26 @@ async function controller({ configured = true, check = async () => null, proxy =
       return mocks[name];
     },
     console: { error() {} },
+    URLSearchParams,
+    window: { location: { search } },
   });
+  // Let the fire-and-forget initialize()/startup download chain settle.
+  await new Promise(setImmediate);
   await new Promise(setImmediate);
   return exports;
+}
+
+function downloadedUpdate({ version = "0.2.12", download, install, close } = {}) {
+  return {
+    version,
+    download: download ?? (async () => {}),
+    install: install ?? (async () => {}),
+    close: close ?? (async () => {}),
+    // installUpdate() must never fall back to this once a package is ready.
+    downloadAndInstall: async () => {
+      throw new Error("downloadAndInstall must not run for a ready update");
+    },
+  };
 }
 
 test("an unsigned preview disables update checks", async () => {
@@ -126,4 +146,95 @@ test("check failures can be retried without retaining stale errors", async () =>
   await app.checkForUpdate();
   assert.equal(app.getUpdateState().stage, "latest");
   assert.equal(app.getUpdateState().detail, "");
+});
+
+test("a main window downloads a new version at startup and waits for confirmation", async () => {
+  let installCalls = 0;
+  const update = downloadedUpdate({
+    download: async (onEvent) => {
+      onEvent({ event: "Started", data: { contentLength: 100 } });
+      onEvent({ event: "Progress", data: { chunkLength: 100 } });
+    },
+    install: async () => { installCalls++; },
+  });
+  const app = await controller({ search: "", check: async () => update });
+  assert.equal(app.getUpdateState().stage, "ready");
+  assert.equal(app.getUpdateState().nextVersion, "0.2.12");
+  assert.equal(app.getUpdateState().downloaded, 100);
+  assert.equal(app.getUpdateState().total, 100);
+  assert.equal(installCalls, 0, "installing waits for the user");
+  assert.equal(app.getUpdateState().dismissed, false);
+});
+
+test("installing a ready update runs the installer instead of downloading again", async () => {
+  let downloadCalls = 0;
+  let installCalls = 0;
+  const update = downloadedUpdate({
+    download: async () => { downloadCalls++; },
+    install: async () => { installCalls++; },
+  });
+  const app = await controller({ search: "", check: async () => update });
+  assert.equal(app.getUpdateState().stage, "ready");
+  await app.installUpdate();
+  assert.equal(installCalls, 1);
+  assert.equal(downloadCalls, 1, "the startup download is not repeated");
+  assert.equal(app.getUpdateState().stage, "installing");
+});
+
+test("dismissing the ready prompt keeps the package and the settings restart action", async () => {
+  let installCalls = 0;
+  let closes = 0;
+  const update = downloadedUpdate({
+    install: async () => { installCalls++; },
+    close: async () => { closes++; },
+  });
+  const app = await controller({ search: "", check: async () => update });
+  app.dismissUpdatePrompt();
+  assert.equal(app.getUpdateState().dismissed, true);
+  assert.equal(app.getUpdateState().stage, "ready");
+  assert.equal(installCalls, 0);
+  assert.equal(closes, 0, "the downloaded package is kept");
+  await app.installUpdate();
+  assert.equal(installCalls, 1);
+});
+
+test("the translation window skips the startup download", async () => {
+  let checks = 0;
+  const app = await controller({
+    search: "?window=translation",
+    check: async () => { checks++; return null; },
+  });
+  assert.equal(checks, 0);
+  assert.equal(app.getUpdateState().stage, "idle");
+});
+
+test("a startup check with no new version never downloads", async () => {
+  let checks = 0;
+  const app = await controller({
+    search: "",
+    check: async () => { checks++; return null; },
+  });
+  assert.equal(checks, 1);
+  assert.equal(app.getUpdateState().stage, "latest");
+});
+
+test("a failed startup download reports the error and can be retried", async () => {
+  let checks = 0;
+  const app = await controller({
+    search: "",
+    check: async () => {
+      checks++;
+      if (checks === 1) {
+        return downloadedUpdate({
+          download: async () => { throw "network down"; },
+        });
+      }
+      return null;
+    },
+  });
+  assert.equal(app.getUpdateState().stage, "error");
+  assert.equal(app.getUpdateState().detail, "network down");
+  await app.checkForUpdate();
+  assert.equal(checks, 2);
+  assert.equal(app.getUpdateState().stage, "latest");
 });

@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -62,7 +63,8 @@ import { MessageSourceIcon } from "./MessageSourceIcon";
 import { CollapsedMessageContent } from "./CollapsedMessageContent";
 import { latestMessagePreview, messagePreviewText, type MessageSource } from "./messagePreview";
 import { UpdatePanel } from "./UpdatePanel";
-import { UpdateReadyPrompt } from "./UpdateReadyPrompt";
+import { UpdateReadyTodo } from "./UpdateReadyTodo";
+import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import { useIdleTuck, useTodoRotation } from "./useIslandAutomation";
 import { MediaWaveform } from "./MediaWaveform";
 import {
@@ -1119,6 +1121,11 @@ export function IslandShell({
   children,
 }: IslandShellProps) {
   const t = useTranslation();
+  const { stage: updateStage, dismissed: updateDismissed } = useSyncExternalStore(
+    subscribeToUpdate,
+    getUpdateState,
+  );
+  const updateReady = updateStage === "ready" && !updateDismissed;
   const glassFrameRef = useRef<number | null>(null);
   const didDragRef = useRef(false);
   const windowDragRef = useRef<{
@@ -1437,7 +1444,7 @@ export function IslandShell({
               <button
                 className={`dot-button dot-button--todo ${
                   page === "todo" ? "dot-button--active" : ""
-                }`}
+                } ${updateReady ? "dot-button--update-ready" : ""}`}
                 type="button"
                 title={t.island.todoList}
                 aria-label={t.island.todoList}
@@ -1445,7 +1452,11 @@ export function IslandShell({
                   event.stopPropagation();
                   onPageChange("todo");
                 }}
-              />
+              >
+                {updateReady && (
+                  <span className="dot-button__badge" aria-hidden="true" />
+                )}
+              </button>
               <button
                 className={`dot-button dot-button--music ${
                   page === "music" ? "dot-button--active" : ""
@@ -1540,7 +1551,6 @@ export function IslandShell({
           <div className="island__content">{children}</div>
         </div>
       </div>
-      <UpdateReadyPrompt hidden={isTucked || page === "layout"} onReveal={onReveal} />
     </section>
   );
 }
@@ -2908,6 +2918,7 @@ function TodoNotebook({
         />
       ) : (
         <div className={listClassName} role="list">
+          {isTodayMode && <UpdateReadyTodo />}
           {displayedTodos.length === 0 ? (
             <div className="todo-empty">
               {isReviewMode ? t.todo.emptyReview : t.todo.empty}

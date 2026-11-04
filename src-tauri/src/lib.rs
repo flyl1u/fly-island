@@ -45,9 +45,6 @@ const MIN_COLLAPSED_ISLAND_WIDTH: f64 = 280.0;
 const COLLAPSED_ISLAND_WIDTH: f64 = 340.0;
 const COLLAPSED_ISLAND_HEIGHT: f64 = 38.0;
 const COLLAPSED_RADIUS: f64 = 22.0;
-// The startup-update prompt hangs just below the collapsed pill, outside the
-// island itself, so the cursor-passthrough rect has to grow with it.
-const UPDATE_PROMPT_HEIGHT: f64 = 64.0;
 const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
@@ -121,7 +118,6 @@ struct IslandWindowState {
     glass_enabled: bool,
     glass_intensity: f64,
     glass_tint: (u8, u8, u8),
-    update_prompt_visible: bool,
 }
 
 impl IslandWindowState {
@@ -168,7 +164,6 @@ impl Default for IslandWindowState {
             glass_enabled: false,
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
-            update_prompt_visible: false,
         }
     }
 }
@@ -535,17 +530,6 @@ fn updater_configured(app: AppHandle) -> bool {
         .and_then(|config| config.get("pubkey"))
         .and_then(|value| value.as_str())
         .is_some_and(|key| !key.trim().is_empty())
-}
-
-/// The "update downloaded, restart to install" prompt floats below the
-/// collapsed pill, outside the island rect the cursor-passthrough loop clips
-/// to. Track whether it is on screen so that area stays clickable.
-#[tauri::command]
-fn set_update_prompt_visible(visible: bool) {
-    mutate_window_state(|state| {
-        state.update_prompt_visible = visible;
-        *state
-    });
 }
 
 #[tauri::command]
@@ -1560,13 +1544,7 @@ fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
         .mode
         .base_size(state.collapsed_width, state.expanded_height);
     let island_width = base_width * state.active_scale() * physical_scale;
-    let prompt_height =
-        if matches!(state.mode, IslandMode::Collapsed) && state.update_prompt_visible {
-            UPDATE_PROMPT_HEIGHT * state.active_scale() * physical_scale
-        } else {
-            0.0
-        };
-    let island_height = base_height * state.active_scale() * physical_scale + prompt_height;
+    let island_height = base_height * state.active_scale() * physical_scale;
     let island_left = (window_width - island_width) / 2.0;
     let island_top = 0.0;
     let radius = state.mode.corner_radius() * state.active_scale() * physical_scale;
@@ -1953,7 +1931,6 @@ pub fn run() {
             set_launch_at_startup,
             get_updater_proxy,
             updater_configured,
-            set_update_prompt_visible,
             get_agent_status,
             clear_agent_status,
             install_agent_status_hooks,

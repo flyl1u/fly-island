@@ -21,6 +21,7 @@ export type UpdateState = {
   downloaded: number;
   total: number;
   detail: string;
+  dismissed: boolean;
 };
 
 // The check/download run lives outside the settings panel on purpose: the panel
@@ -33,6 +34,7 @@ const initialState: UpdateState = {
   downloaded: 0,
   total: 0,
   detail: "",
+  dismissed: false,
 };
 
 let state: UpdateState = initialState;const listeners = new Set<() => void>();
@@ -56,6 +58,13 @@ export function subscribeToUpdate(listener: () => void) {
 
 export function getUpdateState() {
   return state;
+}
+
+// Hiding the todo row must not install anything or drop the downloaded
+// package: the settings panel keeps offering the same restart action.
+export function dismissUpdatePrompt() {
+  if (state.dismissed) return;
+  setState({ dismissed: true });
 }
 
 export function errorReason(error: unknown) {
@@ -111,7 +120,7 @@ async function closePending() {
 
 async function findUpdate() {
   await closePending();
-  setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
+  setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", dismissed: false, stage: "checking" });
 
   try {
     const found = await check({ timeout: 20000, ...(proxy ? { proxy } : {}) });
@@ -153,7 +162,7 @@ async function downloadPending() {
     );
     // Keep the update handle open: installing is deferred until the user agrees
     // to restart, and closing it would throw the downloaded package away.
-    setState({ stage: "ready" });
+    setState({ stage: "ready", dismissed: false });
   } catch (error) {
     console.error("Failed to download the update", error);
     setState({ stage: "error", detail: errorReason(error) });
