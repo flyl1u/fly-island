@@ -1,4 +1,4 @@
-import { Bell, Blocks, Info, Palette, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Bell, Bot, ClipboardList, Info, ListTodo, Palette, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
 import "./SettingsSidebar.css";
@@ -7,7 +7,9 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   general: SlidersHorizontal,
   appearance: Palette,
   notifications: Bell,
-  integrations: Blocks,
+  todos: ListTodo,
+  clipboard: ClipboardList,
+  agents: Bot,
   about: Info,
 };
 

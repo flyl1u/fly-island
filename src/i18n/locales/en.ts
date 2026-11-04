@@ -323,7 +323,9 @@ const en: Translations = {
       general: "General",
       appearance: "Appearance",
       notifications: "Notifications",
-      integrations: "Integrations",
+      todos: "Todos",
+      clipboard: "Clipboard",
+      agents: "AI agents",
       about: "About",
     },
 

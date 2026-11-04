@@ -118,7 +118,8 @@ if (!automated) {
       localStorage.setItem("focusd-island-settings-focus", JSON.stringify({ section: "savePath", requestedAt: Date.now() }));
       window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings-focus", newValue: "x", storageArea: localStorage }));
     });
-    check(document.querySelector(".editor-panel .save-path-panel--attention"), "A save path request from the island opens and highlights the save path");
+    check(element(".settings-sidebar__item[data-category='todos']").getAttribute("aria-current") === "page", "A save path request from the island opens the todos page");
+    check(document.querySelector(".editor-panel .save-path-panel--attention"), "A save path request from the island highlights the save path");
 
     await act(async () => { root.unmount(); });
     document.documentElement.dataset.testResult = "passed";

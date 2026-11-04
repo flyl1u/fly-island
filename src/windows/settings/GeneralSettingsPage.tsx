@@ -1,22 +1,17 @@
 import { useTranslation, type LocaleCode } from "../../i18n";
 import { LocaleControl } from "../../i18n/LocaleControl";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
-import { TodoSettingsSection } from "../../features/appearance/TodoSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
-import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
-import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 export function GeneralSettingsPage({
   locale,
   settings,
-  saveDirectory,
   onLocaleChange,
   onSettingsChange,
 }: {
   locale: LocaleCode;
   settings: IslandSettings;
-  saveDirectory: ReturnType<typeof useSaveDirectorySetting>;
   onLocaleChange: (locale: LocaleCode) => void;
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
@@ -40,14 +35,6 @@ export function GeneralSettingsPage({
         launchAtStartup={launchAtStartup}
         onSettingsChange={onSettingsChange}
         onLaunchAtStartupChange={updateLaunchAtStartup}
-      />
-      <TodoSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
-      <SavePathSettingsSection
-        saveDirectoryDraft={saveDirectory.saveDirectoryDraft}
-        savePathState={saveDirectory.savePathState}
-        highlightSavePath={saveDirectory.highlightSavePath}
-        onSaveDirectoryDraftChange={saveDirectory.onSaveDirectoryDraftChange}
-        onSaveDirectory={saveDirectory.onSaveDirectory}
       />
     </>
   );

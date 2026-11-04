@@ -326,7 +326,9 @@ export type Translations = {
       general: string;
       appearance: string;
       notifications: string;
-      integrations: string;
+      todos: string;
+      clipboard: string;
+      agents: string;
       about: string;
     };
 

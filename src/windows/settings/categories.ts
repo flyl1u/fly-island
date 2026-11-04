@@ -2,8 +2,10 @@
 export const SETTINGS_CATEGORIES = [
   "general",
   "appearance",
+  "todos",
   "notifications",
-  "integrations",
+  "clipboard",
+  "agents",
   "about",
 ] as const;
 

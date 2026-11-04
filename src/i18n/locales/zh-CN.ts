@@ -326,7 +326,9 @@ const zhCN: Translations = {
       general: "通用",
       appearance: "外观",
       notifications: "通知",
-      integrations: "集成",
+      todos: "待办",
+      clipboard: "剪贴板",
+      agents: "AI 代理",
       about: "关于",
     },
 

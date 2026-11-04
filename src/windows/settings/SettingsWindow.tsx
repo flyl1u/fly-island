@@ -3,10 +3,12 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppearanceSettingsPage } from "./AppearanceSettingsPage";
 import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
-import { IntegrationsSettingsPage } from "./IntegrationsSettingsPage";
+import { AgentSettingsPage } from "./AgentSettingsPage";
+import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
+import { TodosSettingsPage } from "./TodosSettingsPage";
 import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
 import { ResetAppearanceButton } from "../../features/appearance/ResetAppearanceButton";
@@ -30,9 +32,9 @@ export function SettingsWindow() {
   const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
   const highlightSaveDirectory = saveDirectory.highlight;
 
-  // The island asks for the save path when an export has nowhere to go; it lives on the general page.
+  // The island asks for the save path when an export has nowhere to go; it lives on the todos page.
   const focusSavePath = useCallback(() => {
-    setCategory("general");
+    setCategory("todos");
     highlightSaveDirectory();
   }, [highlightSaveDirectory]);
 
@@ -89,7 +91,6 @@ export function SettingsWindow() {
           <GeneralSettingsPage
             locale={locale}
             settings={settings}
-            saveDirectory={saveDirectory}
             onLocaleChange={setLocale}
             onSettingsChange={setSettings}
           />
@@ -101,13 +102,21 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
+        {category === "todos" && (
+          <TodosSettingsPage
+            settings={settings}
+            saveDirectory={saveDirectory}
+            onSettingsChange={setSettings}
+          />
+        )}
         {category === "notifications" && (
           <NotificationsSettingsPage
             qqNotifications={qqNotifications}
             wechatReminders={wechatReminders}
           />
         )}
-        {category === "integrations" && <IntegrationsSettingsPage />}
+        {category === "clipboard" && <ClipboardSettingsPage />}
+        {category === "agents" && <AgentSettingsPage />}
         {category === "about" && <ProjectSettingsSection />}
       </LayoutEditor>
     </main>
