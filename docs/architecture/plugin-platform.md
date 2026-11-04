@@ -108,7 +108,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 | 进程清理 | 关闭 stdin，2 秒后结束 | Job Object 连同子进程一起结束 | P9 |
 | 资源 | 看不到 | 显示内存和 CPU，超限提醒 | P9 |
 | SDK | PowerShell 和 Node 各一个文件，需要复制 | npm 包加类型定义；PowerShell 模块 | P10 |
-| 脚手架和 CLI | 没有 | `create-focusd-plugin`、`focusd-plugin validate/pack/dev/test` | P10 |
+| 脚手架和 CLI | 没有 | `npm create fly-island-plugin`、`fly-island-plugin validate/pack/dev/test` | P10 |
 | 开发模式 | 改完点“重新加载” | 加载任意目录、文件变化后自动重启、请求日志 | P10 |
 | 测试 | 自己写脚本扮演宿主 | 模拟宿主库加 CLI | P10 |
 | 实验 API | 没有 | `experimentalApis`，只在开发模式可用 | P10 |
@@ -206,8 +206,30 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 1. **待办与笔记由 Rust 持有**
    - 新模块 `src-tauri/src/todos/`：`store.rs`（读写应用数据目录下的 `todos.json`，原子写入：先写临时文件再改名）、`model.rs`（与 `features/todos/storage.ts` 的格式完全一致）、`mod.rs`（命令 `get_todos_state`、`apply_todos_change`，事件 `todos-changed`）。
    - 前端 `features/todos/storage.ts` 改为调用这些命令，并订阅 `todos-changed`，同时更新内存中的状态。
-   - **迁移**：第一次启动新版本时，主窗口把 localStorage 中的 `focusd-island-todos`、`focusd-island-archives`、`focusd-island-scheduled-todos`、`focusd-island-daily-note`、`focusd-island-active-todo`、`focusd-island-current-date` 发给 Rust 一次，写入 `todos.json`，并记录迁移标记 `focusd-island-todos-migrated-v1`。**旧 key 保留不删**，以便回滚到旧版本时数据还在；之后的版本再决定何时清理。
+   - **迁移**：见下面的“从已发布的旧版本升级”。
    - 这是对外契约变更（数据位置），必须在同一提交里完成前后端、迁移和兼容读取，并在提交说明中写明（根目录 AGENTS.md）。
+
+**从已发布的旧版本升级（已决定要做，必须保证不丢数据）**
+
+用户会通过自动更新从任意已发布的旧版本直接升到这个版本，中间可能跳过很多版本，所以迁移要按“生产环境”的标准来做：
+
+1. **迁移什么**：`focusd-island-todos`、`focusd-island-archives`、`focusd-island-scheduled-todos`、`focusd-island-daily-note`、`focusd-island-active-todo`、`focusd-island-current-date`。`focusd-island-save-directory` 和 `focusd-island-last-saved-signature` 是导出归档的设置，继续留在前端，不迁移。
+2. **由谁来迁**：localStorage 存在 WebView2 的用户数据目录里，Rust 读不到，只能由主窗口读出来交给 Rust。主窗口启动时**先迁移、再显示待办**：迁移完成之前不渲染待办列表，也不处理插件和本地接口的待办请求（这些请求排队等待）。
+3. **先规范化**：每个 key 都先用 `features/todos/storage.ts` 现有的 load / normalize 函数读一遍。它们已经兼容历史上的各种旧格式和损坏数据，所以新版本拿到的一定是当前格式。Rust 侧再按 `model.rs` 校验一次，不合法就拒绝，不写文件。
+4. **安全写入**：
+   - 写之前先把原始的 localStorage 内容（未经规范化的原文）存一份到应用数据目录的 `todos-migration-backup.json`，这个文件以后不自动删除；
+   - `todos.json` 先写临时文件、刷盘，再改名替换；
+   - 写完后读回来，和要写入的内容逐项比较，一致才算成功；
+   - 成功后在 `todos.json` 里记录 `migration: { version: 1, fromAppVersion, at, sourceHash }`（`sourceHash` 是迁移时 localStorage 原文的哈希），同时在 localStorage 写入迁移标记 `focusd-island-todos-migrated-v1`。
+5. **失败时**：任何一步失败，这次启动继续使用 localStorage（和旧版本行为相同），在岛上提示“待办数据迁移失败，已继续使用原数据”，并写日志；下次启动再试。不会出现“一半在文件、一半在 localStorage”的情况。
+6. **可以重复执行**：迁移过程中断电或崩溃，下次启动发现没有迁移标记或 `todos.json` 不完整，就从头再迁一次。旧 key 一直在，所以重来是安全的。
+7. **旧 key 保留不删**：新版本不再写这些 key，但也不删除。
+8. **回退到旧版本再升级回来**：用户可能在迁移后又装回旧版本，在旧版本里继续改待办，然后再升级。这时 localStorage 的内容和 `sourceHash` 对不上，说明旧版本改过数据。新版本不能直接用 `todos.json` 覆盖用户在旧版本里的修改，处理方式是：把当前的 `todos.json` 另存为 `todos.before-reimport-<时间>.json`，再用 localStorage 的内容重新迁移一次，并在岛上提示“检测到旧版本修改过待办，已按旧版本的数据重新导入，之前的数据已备份”。
+9. **发布前的验证**：
+   - 自动化测试的样例数据覆盖每一个修改过待办存储格式的已发布版本，以及空数据、损坏的 JSON、缺字段、超大归档；
+   - 在一台装着旧版本、有真实数据的电脑（或真实数据的副本）上走一遍完整的自动更新流程：旧版本 → 新版本，检查待办、归档、笔记、以后的待办和当前选中的待办全部一致；
+   - 再测一遍“新版本 → 装回旧版本修改 → 再升级”。
+10. **单独发版**：这一步单独发一个版本，不和其他新功能一起发；发布说明里写明数据位置的变化，以及备份文件放在哪里。
    - `local_api::call_island` 改为直接调用 `todos` 模块，不再经过主窗口；`local-api-request` 事件保留给仍在前端的数据（若没有了就删除，同样是契约变更）。
 2. **新的数据权限**（都是“敏感”级，见 3.2）
    - `clipboard:read`：`clipboard.history`（最近 N 条文字，不含图片），事件 `clipboard.changed`。只有剪贴板历史模块开启时可用。
@@ -303,11 +325,11 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 **交付物**
 
 1. **SDK**
-   - `@focusd/plugin-sdk`（npm，TypeScript）：类型由 `plugins/schema/` 生成；封装请求、通知、事件订阅、视图模型构造器、`storage`、`secrets`；零运行时依赖。现有的 `plugins/sdk/node/focusd.mjs` 改为由它构建出的单文件版本，供不想用 npm 的人复制。
-   - `FocusdPlugin` PowerShell 模块（PSGallery，兼容 Windows PowerShell 5.1）：现有 `lib/focusd.ps1` 的正式版，加上事件和视图辅助函数。
+   - npm 包 `fly-island-plugin`（TypeScript）：类型由 `plugins/schema/` 生成；封装请求、通知、事件订阅、视图模型构造器、`storage`、`secrets`；零运行时依赖。现有的 `plugins/sdk/node/focusd.mjs` 改为由它构建出的单文件版本，供不想用 npm 的人复制。
+   - PowerShell 模块 `FlyIsland.Plugin`（PowerShell Gallery，兼容 Windows PowerShell 5.1）：现有 `lib/focusd.ps1` 的正式版，加上事件和视图辅助函数。
    - 给其他语言的协议说明（Python、Go、Rust、C# 各一个最小示例，放在 `plugins/examples/minimal-*`）。
-2. **脚手架** `npm create focusd-plugin@latest`：交互式选择语言（PowerShell / TypeScript）、模板（命令、列表页面、状态项、空白），生成清单、源码、`.focusdignore`、README、LICENSE、GitHub Actions 发布工作流。
-3. **CLI** `focusd-plugin`（随 SDK 发布）：
+2. **脚手架** `npm create fly-island-plugin@latest`（npm 包 `create-fly-island-plugin`）：交互式选择语言（PowerShell / TypeScript）、模板（命令、列表页面、状态项、空白），生成清单、源码、`.focusdignore`、README、LICENSE、GitHub Actions 发布工作流。
+3. **CLI** `fly-island-plugin`（和 SDK 在同一个 npm 包里，安装后就有这个命令）：
    - `validate`：用 `manifest.schema.json` 校验清单，检查文件夹名、入口文件、图标、文案中英文是否齐全、权限是否都用得到（静态扫描方法名）。
    - `pack`：生成和市场完全相同的确定性 zip（复用 `scripts/build-plugin-index.mjs` 的打包代码，抽成独立包），排除 `.focusdignore` 中的文件。
    - `dev`：通知正在运行的岛屿以开发模式加载当前目录，文件变化后自动重启插件，把插件日志实时打印到终端。
@@ -317,13 +339,29 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
    - 设置 → 插件扩展 → “开发者”区域（默认收起）：加载一个本地目录作为插件、显示原始 JSON-RPC 收发记录、手动发送事件。
    - 开发模式插件不需要打开“允许第三方插件”，但卡片上标“开发中”，岛屿重启后需要重新确认。
    - 本地接口增加 `POST /v1/dev/plugins/{id}/reload`，只在开发模式打开时可用，供 CLI 的 `dev` 使用。
-5. **模拟宿主** `@focusd/plugin-test`：在 Node 里启动插件进程，实现全部宿主方法（数据放在内存里），可以注入事件、断言插件发出的请求和视图模型，可以模拟授权和拒绝。相当于 VS Code 的 `@vscode/test-electron`，但不用启动岛屿。CI 里可以直接跑。
+5. **模拟宿主** `fly-island-plugin/test`（同一个 npm 包的子路径，不另起名字）：在 Node 里启动插件进程，实现全部宿主方法（数据放在内存里），可以注入事件、断言插件发出的请求和视图模型，可以模拟授权和拒绝。相当于 VS Code 的 `@vscode/test-electron`，但不用启动岛屿。CI 里可以直接跑。
 6. **实验 API**：清单 `experimentalApis: ["views.chart"]`。只有开发模式插件能用；`validate` 和市场 CI 都拒收带此字段的插件（对应 VS Code 的 `enabledApiProposals`）。
 7. **文档**：`docs/plugins/` 拆成：快速开始、清单参考、API 参考（由 `rpc.json` 生成）、界面模板指南（含截图和设计规则：文字长度、图标、何时用折叠条）、权限说明、发布指南、常见问题、更新日志（每个岛屿版本新增了哪些 API）。
 
-**放在哪里**：SDK、CLI、脚手架、模拟宿主体量较大，有自己的发布节奏，建议放在**单独的仓库**（例如 `focusd-plugin-tools`）。本仓库只保留 `plugins/schema/`（协议的权威来源）和示例。这一点需要你决定（见第 8 节）。
+**放在哪里（已决定：只放本仓库）**
 
-**验收**：一个没接触过本项目的人，按快速开始用脚手架建一个 TypeScript 列表页面插件，`dev` 模式下改代码能在 2 秒内看到变化，`focusd-plugin test` 在 GitHub Actions 中通过。
+```text
+packages/
+├── fly-island-plugin/          # npm 包：SDK + CLI + 模拟宿主（子路径 /test）
+├── create-fly-island-plugin/   # npm 包：脚手架和模板
+└── powershell/FlyIsland.Plugin/ # PowerShell 模块
+plugins/schema/                 # 协议的唯一来源，岛屿和上面的包都读它
+```
+
+- 仓库根目录增加 `pnpm-workspace.yaml`（`packages/*`）。岛屿本身仍是根目录的包，`pnpm dev`、`pnpm tauri build` 等命令不变；`packages/` 不进入岛屿的发布产物。
+- `pnpm check` 增加 `packages/` 的类型检查和测试；`scripts/check-file-size.mjs` 的扫描范围加上 `packages/`，行数上限沿用根目录规则。
+- 协议改动时，在**同一个提交**里改 `plugins/schema/`、Rust 宿主和 `packages/` 的 SDK 与模拟宿主，测试对照同一份描述。
+- 发布：npm 包和 PowerShell 模块用独立的版本号和标签（`sdk-v1.2.0`），和岛屿的 `v0.x.y` 分开；由一个只在推送 `sdk-v*` 标签时运行的 GitHub Actions 工作流发布（npm 用 Trusted Publishing，不放长期令牌）。
+- 现在 `plugins/sdk/node/focusd.mjs` 和示例里的 `lib/focusd.ps1` 改为从 `packages/` 构建生成，`pnpm test` 检查生成结果与源码一致。
+
+**名字（已决定：以仓库名命名）**：npm 包 `fly-island-plugin`（SDK、CLI 命令、模拟宿主都在里面），脚手架 `create-fly-island-plugin`，PowerShell 模块 `FlyIsland.Plugin`。2026-11-04 查过，这三个名字在 npm 和 PowerShell Gallery 上都还没人用；P10 开始时先发一个占位版本把名字占住。不带 `@组织/` 前缀，不需要注册 npm 组织。
+
+**验收**：一个没接触过本项目的人，按快速开始用脚手架建一个 TypeScript 列表页面插件，`dev` 模式下改代码能在 2 秒内看到变化，`fly-island-plugin test` 在 GitHub Actions 中通过。
 
 ### P11 市场：能接收外部作者
 
@@ -337,8 +375,8 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
    index.json / index.json.sig # CI 生成，不接受人工修改
    revoked.json               # 黑名单：[{ id, versions: "*" | ["1.2.0"], reason, action: "disable" | "uninstall" }]
    ```
-   插件包不再存在索引仓库中，而是作者仓库的 GitHub Release（Obsidian 的做法）：Release 标签等于清单 `version`，附件是 `focusd-plugin pack` 生成的 `<id>-<version>.zip`。
-2. **第一次提交**：作者（或 `focusd-plugin publish`）向索引仓库开 PR，只新增 `plugins/<id>.json`。CI 检查：
+   插件包不再存在索引仓库中，而是作者仓库的 GitHub Release（Obsidian 的做法）：Release 标签等于清单 `version`，附件是 `fly-island-plugin pack` 生成的 `<id>-<version>.zip`。
+2. **第一次提交**：作者（或 `fly-island-plugin publish`）向索引仓库开 PR，只新增 `plugins/<id>.json`。CI 检查：
    - PR 作者对 `repo` 有写权限（用 GitHub API 查），`publisher` 等于仓库所有者；
    - 插件 id 没被占用，不与已有 id 过于相似（防抢注），不包含 `focusd`（官方保留，参照 Obsidian 不允许 id 含 `obsidian`）；
    - 从 Release 下载 zip，大小 ≤ 20 MB，用 `validate` 校验，确认清单 id / version 与标签一致，zip 可以重现（重新打包得到同样的哈希）；
@@ -402,7 +440,7 @@ P10 + P7 ──> P11 外部市场
 
 | 风险 | 应对 |
 |---|---|
-| P6 数据迁移出错导致用户丢待办 | 旧 key 不删；迁移前在真实数据副本上验证；迁移失败时继续用 localStorage 并提示 |
+| P6 数据迁移出错导致用户丢待办 | 旧 key 不删；迁移前备份原文；写后读回比较；失败时继续用 localStorage 并提示；回退旧版本后再升级时重新导入；在真实旧版本上验证完整的自动更新流程（见 P6） |
 | 插件页面拖慢岛屿展开 | 模板组件放叶子组件，按可见性暂停更新，限流；按性能调查文档的方法复测 |
 | Webview 沙箱验证不通过 | P8 只是可选项；模板覆盖大多数需求 |
 | API 发布后改不动 | 实验通道先行；协议描述是唯一来源；大版本至少兼容一代 |
@@ -411,22 +449,18 @@ P10 + P7 ──> P11 外部市场
 | 维护者审核跟不上 | 只有首版和权限变化需要人工；普通更新全自动 |
 | 和上游 PR #36 的关系 | 索引仓库放在 `TixXin` 账号下，与上游仓库无关；PR #36 合并后，岛屿读取的索引地址不变 |
 
-## 8. 需要你决定的问题
+## 8. 已决定的问题
 
-已决定（2026-11-04）：
+全部已决定（2026-11-04）：
 
-- **市场索引仓库**：放在 `TixXin` 账号下（`TixXin/focusd-plugins`），签名密钥放在这个仓库的 CI 里。
-- **自动更新**：默认关，只提示有新版本。
-- **敏感数据**：剪贴板和消息预览开放给第三方插件，第一次调用时要用户确认；凭据永不开放。
-
-待决定：
-
-1. ~~市场索引仓库放在哪~~（已决定）。
-2. **开发者工具单独建仓库，还是放在本仓库的 `packages/` 下**（后者需要把仓库改成 pnpm workspace 并调整 `check:size` 的扫描范围）。
-3. **P6 数据下沉**是否接受？这是对现有用户数据位置的改动。不做的话，P5、P7 仍然可以实现，但事件只能由前端发起，主窗口卡住时插件会失败。
-4. ~~自动更新默认开还是关~~（已决定：默认关）。
-5. ~~敏感数据开放到什么程度~~（已决定：开放，首次调用确认）。
-6. npm 包名和 PowerShell 模块名（`@focusd/plugin-sdk` 需要先注册 `focusd` 组织）。
+| # | 问题 | 决定 |
+|---|---|---|
+| 1 | 市场索引仓库放在哪 | `TixXin` 账号下（`TixXin/focusd-plugins`），签名密钥放在这个仓库的 CI 里 |
+| 2 | 开发者工具放在哪 | 只放本仓库的 `packages/`，仓库改为 pnpm workspace（见 P10） |
+| 3 | 待办和笔记是否移到 Rust | 移，并且要处理好从已发布旧版本自动更新时的数据迁移（见 P6） |
+| 4 | 插件自动更新 | 默认关，只提示有新版本 |
+| 5 | 敏感数据 | 剪贴板和消息预览开放给第三方插件，第一次调用时要用户确认；凭据永不开放 |
+| 6 | npm 包名和 PowerShell 模块名 | 以仓库名命名：`fly-island-plugin`、`create-fly-island-plugin`、`FlyIsland.Plugin` |
 
 ## 9. 来源
 
