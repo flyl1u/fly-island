@@ -1,3 +1,4 @@
+import type { LocalTodoKeys, TodosData } from "./api";
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 import { getLocalDateString } from "../../utils/date.ts";
 import { normalizeScheduledTodo, sortScheduledTodos } from "./schedule.ts";
@@ -105,4 +106,20 @@ export function parseTodoArchives(stored: string | null): TodoArchive[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * What the island showed from these keys, in the shape of todos.json: the data
+ * the migration writes. The empty active todo id older versions could leave
+ * behind means "none".
+ */
+export function normalizeLocalTodoKeys(keys: LocalTodoKeys): TodosData {
+  return {
+    date: parseCurrentTodoDate(keys["focusd-island-current-date"]),
+    todos: parseTodos(keys["focusd-island-todos"]),
+    scheduled: parseScheduledTodos(keys["focusd-island-scheduled-todos"]),
+    archives: parseTodoArchives(keys["focusd-island-archives"]),
+    dailyNote: keys["focusd-island-daily-note"] ?? "",
+    activeTodoId: keys["focusd-island-active-todo"] || null,
+  };
 }

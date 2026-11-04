@@ -260,6 +260,11 @@ const zhCN: Translations = {
     addTaskHint: "Add a task, press Enter to save",
     dailyPlaceholder: "Write today's notes...",
     dailyNoteLabel: "Daily note",
+    dataNotice: {
+      migrationFailed: "待办数据迁移失败，已继续使用原数据。下次启动会再试。",
+      reimported: "检测到旧版本修改过待办，已按旧版本的数据重新导入，之前的数据已备份在应用数据目录。",
+    },
+    dismissNotice: "知道了",
     pickDate: "Pick a date",
     dateToday: "Today",
     dateTomorrow: "Tomorrow",

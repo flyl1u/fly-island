@@ -11,7 +11,7 @@ pub(crate) const FILE_VERSION: u32 = 1;
 /// Mirrored by `TodoItem` in src/features/todos/types.ts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct TodoItem {
+pub struct TodoItem {
     pub id: String,
     pub title: String,
     pub completed: bool,
@@ -22,7 +22,7 @@ pub(crate) struct TodoItem {
 /// Mirrored by `ScheduledTodo` in src/features/todos/types.ts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ScheduledTodo {
+pub struct ScheduledTodo {
     pub id: String,
     pub title: String,
     /// Local date, YYYY-MM-DD.
@@ -33,7 +33,7 @@ pub(crate) struct ScheduledTodo {
 /// Mirrored by `TodoArchive` in src/features/todos/types.ts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct TodoArchive {
+pub struct TodoArchive {
     pub date: String,
     pub todos: Vec<TodoItem>,
     pub daily_note: String,
@@ -46,7 +46,7 @@ pub(crate) struct TodoArchive {
 /// Everything the six migrated localStorage keys held.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct TodosData {
+pub struct TodosData {
     /// The day the list is for (`focusd-island-current-date`).
     pub date: String,
     pub todos: Vec<TodoItem>,
@@ -59,7 +59,7 @@ pub(crate) struct TodosData {
 /// Where the data came from, written once by the localStorage migration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Migration {
+pub struct Migration {
     pub version: u32,
     pub from_app_version: String,
     /// Milliseconds since 1970.
@@ -71,7 +71,7 @@ pub(crate) struct Migration {
 /// The whole `todos.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct TodosFile {
+pub struct TodosFile {
     pub version: u32,
     /// Goes up by one with every saved change.
     pub revision: u64,

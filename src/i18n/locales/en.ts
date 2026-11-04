@@ -257,6 +257,11 @@ const en: Translations = {
     addTaskHint: "Add a task, press Enter to save",
     dailyPlaceholder: "Write today's notes...",
     dailyNoteLabel: "Daily note",
+    dataNotice: {
+      migrationFailed: "Could not move the todos to the new storage; still using the old data. It will try again next start.",
+      reimported: "An older version changed the todos, so its data was imported again. The previous data is backed up in the app data folder.",
+    },
+    dismissNotice: "Dismiss",
     pickDate: "Pick a date",
     dateToday: "Today",
     dateTomorrow: "Tomorrow",

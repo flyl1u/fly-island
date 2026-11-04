@@ -1,6 +1,7 @@
 import { useTranslation } from "../../i18n";
 import { ArchiveBrowser } from "./ArchiveBrowser";
 import { ScheduledTodoList } from "./ScheduledTodoList";
+import { TodoDataNotice } from "./TodoDataNotice";
 import { TodoNotebookSpine } from "./TodoNotebookSpine";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
@@ -161,6 +162,7 @@ export function TodoNotebook({
       ) : isUpcomingMode ? (
         <ScheduledTodoList todos={scheduledTodos} onDelete={onDeleteScheduledTodo} />
       ) : null}
+      <TodoDataNotice />
     </section>
   );
 }

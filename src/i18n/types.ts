@@ -259,6 +259,9 @@ export type Translations = {
     addTaskHint: string;
     dailyPlaceholder: string;
     dailyNoteLabel: string;
+    /** Start-up notice about moving the todos to todos.json. */
+    dataNotice: { migrationFailed: string; reimported: string };
+    dismissNotice: string;
     pickDate: string;
     dateToday: string;
     dateTomorrow: string;

@@ -15,12 +15,13 @@ use std::{
 use tauri::{AppHandle, Emitter};
 
 use super::routes::{ApiCall, ApiError};
-use crate::island;
+use crate::{island, todos};
 
 /// Sent to the island window. Mirrored by `LOCAL_API_REQUEST_EVENT` in
 /// src/features/local-api/api.ts.
 pub(super) const REQUEST_EVENT: &str = "local-api-request";
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(5);
+const TODOS_READY_TIMEOUT: Duration = Duration::from_secs(10);
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 static PENDING: OnceLock<Mutex<HashMap<u64, mpsc::Sender<BridgeResponse>>>> = OnceLock::new();
@@ -50,6 +51,11 @@ fn pending() -> &'static Mutex<HashMap<u64, mpsc::Sender<BridgeResponse>>> {
 }
 
 pub(super) fn dispatch(app: &AppHandle, call: ApiCall) -> Result<Value, ApiError> {
+    // Right after start-up the window first moves the todos to todos.json and
+    // only then listens; hold todo calls until it has.
+    if call.method.starts_with("todos.") || call.method.starts_with("note.") {
+        todos::wait_until_decided(TODOS_READY_TIMEOUT);
+    }
     let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
     let (sender, receiver) = mpsc::channel();
     pending()

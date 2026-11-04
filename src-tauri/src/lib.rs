@@ -59,6 +59,9 @@ pub fn run() {
             if let Err(error) = file_shelf::init(app.handle()) {
                 eprintln!("failed to initialize the file shelf: {error}");
             }
+            if let Err(error) = todos::init(app.handle()) {
+                eprintln!("failed to initialize the todo store: {error}");
+            }
             if let Err(error) = local_api::init(app.handle()) {
                 eprintln!("failed to initialize the local API: {error}");
             }
@@ -139,6 +142,9 @@ pub fn run() {
             island::start_island_modifier_drag,
             island::reset_island_position,
             island::get_island_top_attachment,
+            todos::migrate_todos,
+            todos::get_todos_state,
+            todos::apply_todos_change,
             system::todo_export::save_todo_markdown,
             system::todo_export::get_default_todo_save_directory,
             island::show_ready_island,
