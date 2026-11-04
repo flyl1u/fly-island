@@ -14,6 +14,7 @@
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
 │           local_api（127.0.0.1 HTTP，请求经事件转给 main 窗口处理）                    │
+│           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
 │           qq_mail · qq_notifications · wechat_reminders · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信窗口闪烁检测、鼠标穿透循环        │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
@@ -28,6 +29,7 @@
 | 设置、预设、待办、笔记、归档、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
 | AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-*-hook-input.json` 为最近一次提交提问时的 hook 输入，只用于取会话标题，清除状态时删除） | `agent_status`（标题解析在 `title.rs`、读取与缓存在 `title_cache.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
+| 插件：已安装插件、启用与授权状态、插件私有数据 | 应用数据目录（`plugins/<id>/`、`plugins.json`、`plugins-data/<id>/`，见 [docs/plugins/README.md](../plugins/README.md)） | `plugin_host` |
 | 本地接口开关、端口与访问令牌（脚本也会读取） | 应用数据目录（`local-api.json`，见 [docs/local-api.md](../local-api.md)） | `local_api` |
 | Codex / Claude Code hook 配置 | `~/.codex/config.toml`、`~/.claude/settings.json` 中带标记的受管区块 | `agent_status` |
 | QQ 邮箱授权码、翻译 API 密钥 | Windows 凭据管理器（`com.focusd.island.qq-mail`、`com.focusd.island.translation`；翻译密钥按服务分条目，用户名为服务 id，DeepSeek 沿用 `deepseek`） | `qq_mail`、`translation` |
@@ -151,4 +153,5 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - 注册表值：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `FocuSD Island`。
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。
+- 插件：`focusd-plugin.json` 清单格式、`plugins.json` 字段、JSON-RPC 方法与通知、错误码、`FOCUSD_PLUGIN_*` 环境变量，见 [docs/plugins/README.md](../plugins/README.md)。
 - 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。

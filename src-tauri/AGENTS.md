@@ -15,6 +15,7 @@ src-tauri/src/
 ├── clipboard_history/
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
 ├── local_api/               # 本地接口：127.0.0.1 HTTP（tiny_http）、鉴权与路由、转给 main 窗口的桥、local-api.json
+├── plugin_host/             # 插件：清单校验、plugins.json、子进程监督与 stdio JSON-RPC、权限表
 ├── media_control/
 ├── qq_mail/                 # 命令、后台服务、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/

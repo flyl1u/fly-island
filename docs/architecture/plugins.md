@@ -203,11 +203,19 @@
 | P0 | 完成重构 Phase 6、7 | — |
 | P1 ✅ | Rust `local_api` + 前端 `features/local-api/`（即本文的 plugin-bridge），只开放待办和笔记，见 [local-api.md](../local-api.md) | **待办外部接口**（当前用户的需求）直接可用 |
 | P2 | 开放 Agent 来源 id + 声明式插件加载（仅本地目录） | 新的 AI Agent 适配不必再等发版 |
-| P3 | 进程插件宿主：JSON-RPC、权限、生命周期、开发者模式、SDK 和模板 | 第三方开发者可以写插件 |
+| P3 ✅ | 进程插件宿主（`src-tauri/src/plugin_host/`）、设置 → 插件页（`src/features/plugins/`）、Node SDK 和示例插件，开发文档见 [docs/plugins/README.md](../plugins/README.md) | 第三方开发者可以写插件 |
 | P4 | 索引仓库 + 应用内插件市场页 + 哈希校验 | 用户可以在应用内浏览和安装插件 |
 | P5（视情况） | 展开态面板模板、索引签名、WASM 沙箱 | 根据生态规模再决定 |
 
 每个阶段都可以单独发布、单独验证。如果 P3 之后没人写插件，P4 可以不做，P1、P2 的成果仍然有用。
+
+### P3 实现与本草案的差异
+
+- 没有实现 `activation`：插件启用后立即启动，`activation` 字段会被忽略。
+- 没有实现 `contributes.settings`、`statusSources` 和 `island.notify`，所以也没有 `secret` 设置项和凭据条目。
+- 不支持 `.cmd` / `.bat`。没有使用 Job Object，而是约定插件在 stdin 关闭时退出；岛屿退出时 stdin 会自动关闭。
+- 没有单独的"开发者模式"：插件目录里的任何插件都可以直接加载，改完文件后点"重新加载"即可。
+- 权限名使用 `notes:*`，方法名沿用本地接口的 `note.get` / `note.set`。
 
 ## 13. 待决定的问题
 
