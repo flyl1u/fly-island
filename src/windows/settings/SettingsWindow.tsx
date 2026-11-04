@@ -11,6 +11,7 @@ import { ShelfSettingsPage } from "./ShelfSettingsPage";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
+import { TranslationSettingsSection } from "../../features/translation/TranslationSettingsSection";
 import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
 import { ResetAppearanceButton } from "../../features/appearance/ResetAppearanceButton";
@@ -39,6 +40,12 @@ export function SettingsWindow() {
     setCategory("todos");
     highlightSaveDirectory();
   }, [highlightSaveDirectory]);
+  // The translation window's settings button opens its page here.
+  const focusRequestedSection = useCallback(() => {
+    const section = takeFocusRequest();
+    if (section === "savePath") focusSavePath();
+    if (section === "translation") setCategory("translation");
+  }, [focusSavePath]);
 
   useEffect(() => {
     void getCurrentWindow()
@@ -53,9 +60,7 @@ export function SettingsWindow() {
   }, [settings]);
 
   useEffect(() => {
-    if (takeFocusRequest() === "savePath") {
-      focusSavePath();
-    }
+    focusRequestedSection();
 
     const syncFromIsland = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) {
@@ -65,18 +70,14 @@ export function SettingsWindow() {
         );
       }
 
-      if (
-        event.key === SETTINGS_FOCUS_STORAGE_KEY &&
-        event.newValue !== null &&
-        takeFocusRequest() === "savePath"
-      ) {
-        focusSavePath();
+      if (event.key === SETTINGS_FOCUS_STORAGE_KEY && event.newValue !== null) {
+        focusRequestedSection();
       }
     };
 
     window.addEventListener("storage", syncFromIsland);
     return () => window.removeEventListener("storage", syncFromIsland);
-  }, [focusSavePath]);
+  }, [focusRequestedSection]);
 
   const resetAppearance = useCallback(() => {
     setSettings((current) => withAppearanceFrom(current, DEFAULT_SETTINGS));
@@ -119,6 +120,7 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
+        {category === "translation" && <TranslationSettingsSection />}
         {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}

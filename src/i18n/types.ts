@@ -379,6 +379,7 @@ export type Translations = {
       todos: string;
       music: string;
       clipboard: string;
+      translation: string;
       shelf: string;
       agents: string;
       about: string;
@@ -386,6 +387,12 @@ export type Translations = {
 
     behavior: {
       title: string;
+    };
+
+    translation: {
+      serviceTitle: string;
+      shortcutTitle: string;
+      shortcutHint: string;
     };
 
     position: {

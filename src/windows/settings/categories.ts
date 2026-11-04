@@ -6,6 +6,7 @@ export const SETTINGS_CATEGORIES = [
   "music",
   "notifications",
   "clipboard",
+  "translation",
   "shelf",
   "agents",
   "about",

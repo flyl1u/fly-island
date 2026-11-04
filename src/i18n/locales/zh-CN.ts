@@ -379,6 +379,7 @@ const zhCN: Translations = {
       todos: "待办",
       music: "音乐",
       clipboard: "剪贴板",
+      translation: "翻译",
       shelf: "中转",
       agents: "AI Agent",
       about: "关于",
@@ -386,6 +387,12 @@ const zhCN: Translations = {
 
     behavior: {
       title: "启动",
+    },
+
+    translation: {
+      serviceTitle: "翻译服务",
+      shortcutTitle: "快捷键",
+      shortcutHint: "点击按钮后按下新的组合键，按 Esc 取消。按下快捷键会打开快捷翻译窗口。",
     },
 
     position: {

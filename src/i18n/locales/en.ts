@@ -376,6 +376,7 @@ const en: Translations = {
       todos: "Todos",
       music: "Music",
       clipboard: "Clipboard",
+      translation: "Translation",
       shelf: "Shelf",
       agents: "AI Agent",
       about: "About",
@@ -383,6 +384,12 @@ const en: Translations = {
 
     behavior: {
       title: "Startup",
+    },
+
+    translation: {
+      serviceTitle: "Translation service",
+      shortcutTitle: "Shortcut",
+      shortcutHint: "Click the button, then press a new key combination; Esc cancels. The shortcut opens the quick translation window.",
     },
 
     position: {
