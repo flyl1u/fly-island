@@ -47,7 +47,8 @@ type IslandShellProps = {
   onResetPosition: () => void;
   minimizesToTray: boolean;
   onMinimize: () => void;
-  onOpenTranslator: () => void;
+  /** Null while translation is switched off, which hides its button. */
+  onOpenTranslator: (() => void) | null;
   onOpenSettings: () => void;
   onTuck: () => void;
   onReveal: () => void;

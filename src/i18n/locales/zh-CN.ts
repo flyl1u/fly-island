@@ -394,6 +394,7 @@ const zhCN: Translations = {
       agents: "启用 AI Agent 状态灯",
       mail: "QQ 邮箱",
       shelf: "启用文件中转",
+      translation: "启用快捷翻译",
     },
     title: "设置",
     resetAppearance: {

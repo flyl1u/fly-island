@@ -11,7 +11,7 @@ import { ShelfSettingsPage } from "./ShelfSettingsPage";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
-import { TranslationSettingsSection } from "../../features/translation/TranslationSettingsSection";
+import { TranslationSettingsPage } from "./TranslationSettingsPage";
 import { DEFAULT_SETTINGS, isSameSettings, withAppearanceFrom } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
 import { ResetAppearanceButton } from "../../features/appearance/ResetAppearanceButton";
@@ -121,7 +121,7 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
-        {category === "translation" && <TranslationSettingsSection />}
+        {category === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}

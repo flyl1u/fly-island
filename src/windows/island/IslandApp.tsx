@@ -9,6 +9,7 @@ import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
 import { toggleTranslationWindow } from "../../features/translation/api";
+import { useTranslationEnabled } from "../../features/translation/useTranslationEnabled";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
@@ -222,6 +223,7 @@ export function IslandApp() {
     [agentStatus, t],
   );
 
+  useTranslationEnabled(settings.translationEnabled);
   const openTranslator = useCallback(() => {
     void toggleTranslationWindow().catch((error) => {
       console.error("Failed to open translation", error);
@@ -257,7 +259,7 @@ export function IslandApp() {
         onResetPosition={resetIslandPosition}
         minimizesToTray={settings.minimizeAction === "tray"}
         onMinimize={settings.minimizeAction === "tray" ? minimizeIsland : minimizeToEdge}
-        onOpenTranslator={openTranslator}
+        onOpenTranslator={settings.translationEnabled ? openTranslator : null}
         onOpenSettings={openSettingsWindow}
         onTuck={tuckIsland}
         onReveal={peekIsland}

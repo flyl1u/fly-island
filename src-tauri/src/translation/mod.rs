@@ -33,9 +33,12 @@ static APP: OnceLock<AppHandle> = OnceLock::new();
 static HAS_POSITIONED_WINDOW: AtomicBool = AtomicBool::new(false);
 static HOTKEY_WINDOW: Mutex<Option<isize>> = Mutex::new(None);
 static ACTIVE_BINDING: Mutex<Option<ShortcutBinding>> = Mutex::new(None);
-/// A requested shortcut and where to report its registration result (the label
-/// or an error).
-type PendingBinding = (ShortcutBinding, mpsc::Sender<Result<String, String>>);
+/// Off when translation is switched off in settings: the shortcut is unregistered,
+/// so its keys reach other programs again, and stays so until it is switched on.
+static ENABLED: AtomicBool = AtomicBool::new(true);
+/// A requested shortcut (None to unregister) and where to report the result (the
+/// registered label, empty after unregistering, or an error).
+type PendingBinding = (Option<ShortcutBinding>, mpsc::Sender<Result<String, String>>);
 
 static PENDING_BINDING: Mutex<Option<PendingBinding>> = Mutex::new(None);
 
@@ -252,6 +255,26 @@ pub async fn translate_text(
 pub fn set_translation_shortcut(shortcut: String) -> Result<String, String> {
     let binding = parse_shortcut_binding(&shortcut)
         .ok_or_else(|| "快捷键无效，请使用至少一个修饰键。".to_string())?;
+    if !ENABLED.load(Ordering::SeqCst) {
+        // Remembered by the frontend and registered when translation is switched on.
+        return Ok(binding.label);
+    }
+    change_hotkey(Some(binding))
+}
+
+/// Switching off unregisters the shortcut; switching on registers nothing by itself,
+/// the frontend then calls set_translation_shortcut with the saved shortcut.
+#[tauri::command]
+pub fn set_translation_enabled(enabled: bool) -> Result<(), String> {
+    ENABLED.store(enabled, Ordering::SeqCst);
+    if !enabled {
+        change_hotkey(None)?;
+    }
+    Ok(())
+}
+
+/// Hands `binding` to the hotkey thread, which owns the registration, and waits for it.
+fn change_hotkey(binding: Option<ShortcutBinding>) -> Result<String, String> {
     let started = Instant::now();
     let hwnd = loop {
         if let Some(hwnd) = *HOTKEY_WINDOW.lock().map_err(|error| error.to_string())? {
@@ -291,7 +314,7 @@ fn run_hotkey_loop() -> Result<(), String> {
         "FocuSD Translation Hotkey",
     )
     .map_err(|error| error.to_string())?;
-    if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT) {
+    if let Some(binding) = parse_shortcut_binding(DEFAULT_SHORTCUT).filter(|_| ENABLED.load(Ordering::SeqCst)) {
         if register_binding(hwnd, &binding).is_ok() {
             *ACTIVE_BINDING.lock().map_err(|error| error.to_string())? = Some(binding);
         }
@@ -312,7 +335,7 @@ struct TranslationHotkeyWindow;
 impl WindowMessages for TranslationHotkeyWindow {
     fn handle(hwnd: HWND, message: u32, wparam: WPARAM, _: LPARAM) -> Option<LRESULT> {
         if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
-            if let Some(app) = APP.get() {
+            if let Some(app) = APP.get().filter(|_| ENABLED.load(Ordering::SeqCst)) {
                 let _ = toggle_translation_window(app.clone());
             }
             return Some(LRESULT(0));
@@ -330,6 +353,11 @@ impl WindowMessages for TranslationHotkeyWindow {
                 if previous.is_some() {
                     let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
                 }
+                let Some(binding) = binding else {
+                    // Switched off: stay unregistered.
+                    let _ = sender.send(Ok(String::new()));
+                    return Some(LRESULT(0));
+                };
                 let result = register_binding(hwnd, &binding).map(|()| binding.label.clone());
                 if let Ok(mut active) = ACTIVE_BINDING.lock() {
                     *active = if result.is_ok() {

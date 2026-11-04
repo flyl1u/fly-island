@@ -391,6 +391,7 @@ const en: Translations = {
       agents: "Enable the AI Agent status light",
       mail: "QQ Mail",
       shelf: "Enable the file shelf",
+      translation: "Enable quick translation",
     },
     title: "Settings",
     resetAppearance: {

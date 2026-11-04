@@ -173,6 +173,7 @@ pub fn run() {
             translation::delete_translation_secret,
             translation::translate_text,
             translation::set_translation_shortcut,
+            translation::set_translation_enabled,
             settings_window::open_settings_window,
         ])
         .run(context);

@@ -54,6 +54,8 @@ export type IslandSettings = {
   musicEnabled: boolean;
   agentStatusEnabled: boolean;
   shelfEnabled: boolean;
+  /** Off hides the island's translate button and releases the global translation shortcut. */
+  translationEnabled: boolean;
   /** Dragging files onto a collapsed or tucked island opens the shelf as a drop zone. */
   shelfExpandOnDrop: boolean;
   /** Days after which shelf entries leave the list (0 keeps them). */

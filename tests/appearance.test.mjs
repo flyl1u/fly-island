@@ -102,7 +102,7 @@ test("expand trigger, hover delays and max panel height default for older settin
   assert.equal(older.minimizeAction, "tray");
   assert.equal(normalizeSettings({ minimizeAction: "tuck" }).minimizeAction, "tuck");
   assert.equal(normalizeSettings({ minimizeAction: "hide" }).minimizeAction, "tray");
-  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "mailEnabled", "shelfEnabled", "shelfExpandOnDrop"]) {
+  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "mailEnabled", "shelfEnabled", "shelfExpandOnDrop", "translationEnabled"]) {
     assert.equal(older[key], true, key);
     assert.equal(normalizeSettings({ [key]: false })[key], false, key);
     assert.equal(normalizeSettings({ [key]: "no" })[key], true, key);

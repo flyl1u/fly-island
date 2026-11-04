@@ -17,6 +17,11 @@ export function hasTranslationSecret(provider: TranslationProvider) {
   return invoke<boolean>("has_translation_secret", { provider });
 }
 
+/** Off unregisters the global shortcut; on lets set_translation_shortcut register it again. */
+export function setTranslationEnabled(enabled: boolean) {
+  return invoke("set_translation_enabled", { enabled });
+}
+
 export function setTranslationShortcut(shortcut: string) {
   return invoke<string>("set_translation_shortcut", { shortcut });
 }

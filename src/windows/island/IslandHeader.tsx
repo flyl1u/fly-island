@@ -19,7 +19,7 @@ type IslandHeaderProps = {
   onCollapse: () => void;
   onOpenSettings: () => void;
   onOpenMessages: (source: MessageSource) => void;
-  onOpenTranslator: () => void;
+  onOpenTranslator: (() => void) | null;
   onResetPosition: () => void;
   /** False when minimizing tucks the island to the top edge instead. */
   minimizesToTray: boolean;
@@ -151,18 +151,20 @@ export function IslandHeader({
           <Bell size={17} strokeWidth={1.8} />
           {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
         </button>}
-        <button
-          className="icon-button island-translate-button"
-          type="button"
-          title={`${t.translator.title} (Ctrl+Shift+F)`}
-          aria-label={t.translator.title}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenTranslator();
-          }}
-        >
-          <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
-        </button>
+        {onOpenTranslator && (
+          <button
+            className="icon-button island-translate-button"
+            type="button"
+            title={`${t.translator.title} (Ctrl+Shift+F)`}
+            aria-label={t.translator.title}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenTranslator();
+            }}
+          >
+            <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
+          </button>
+        )}
         <button
           className={`icon-button island-reset-button${
             isDetached ? " island-reset-button--available" : ""

@@ -394,6 +394,7 @@ export type Translations = {
       agents: string;
       mail: string;
       shelf: string;
+      translation: string;
     };
     title: string;
     resetAppearance: {
