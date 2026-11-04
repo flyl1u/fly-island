@@ -14,23 +14,16 @@ use std::{
     time::Duration,
 };
 use tauri::{Emitter, Manager};
-use windows::{
-    core::w,
-    Win32::{
-        Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
-        System::{
-            DataExchange::{AddClipboardFormatListener, RemoveClipboardFormatListener},
-            LibraryLoader::GetModuleHandleW,
-        },
-        UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, RegisterClassW,
-            TranslateMessage, HWND_MESSAGE, MSG, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLIPBOARDUPDATE,
-            WM_HOTKEY, WNDCLASSW,
-        },
-    },
+use windows::Win32::{
+    Foundation::{HWND, LPARAM, LRESULT, WPARAM},
+    UI::WindowsAndMessaging::{WM_CLIPBOARDUPDATE, WM_HOTKEY},
 };
 
 use super::*;
+use crate::win32::{
+    self,
+    message_window::{self, WindowMessages},
+};
 
 pub(super) const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
@@ -519,82 +512,59 @@ pub(super) fn notify_clipboard_changed() {
 }
 
 pub(super) fn run_windows_clipboard_listener() -> Result<(), String> {
-    unsafe {
-        let class_name = w!("FocuSDClipboardHistoryListener");
-        let module = GetModuleHandleW(None).map_err(|error| error.to_string())?;
-        let instance = HINSTANCE(module.0);
-        let window_class = WNDCLASSW {
-            lpfnWndProc: Some(clipboard_window_proc),
-            hInstance: instance,
-            lpszClassName: class_name,
-            ..Default::default()
-        };
+    let class_name = "FocuSDClipboardHistoryListener";
+    let instance = message_window::module_instance().map_err(|error| error.to_string())?;
 
-        if RegisterClassW(&window_class) == 0 {
-            return Err("Failed to register clipboard listener window class.".to_string());
-        }
-
-        let hwnd = CreateWindowExW(
-            WINDOW_EX_STYLE(0),
-            class_name,
-            w!("FocuSD Clipboard History Listener"),
-            WINDOW_STYLE(0),
-            0,
-            0,
-            0,
-            0,
-            Some(HWND_MESSAGE),
-            None,
-            Some(instance),
-            None,
-        )
-        .map_err(|error| error.to_string())?;
-
-        AddClipboardFormatListener(hwnd).map_err(|error| error.to_string())?;
-        if let Some(window) = CLIPBOARD_HOTKEY_WINDOW.get() {
-            if let Ok(mut stored_window) = window.lock() {
-                *stored_window = Some(hwnd.0 as isize);
-            }
-        } else {
-            let _ = CLIPBOARD_HOTKEY_WINDOW.set(Mutex::new(Some(hwnd.0 as isize)));
-        }
-        refresh_registered_hotkey(hwnd);
-
-        let mut message = MSG::default();
-        while GetMessageW(&mut message, None, 0, 0).into() {
-            let _ = TranslateMessage(&message);
-            DispatchMessageW(&message);
-        }
-
-        unregister_current_hotkey(hwnd);
-        let _ = RemoveClipboardFormatListener(hwnd);
+    if message_window::register_class::<ClipboardWindow>(instance, class_name).is_err() {
+        return Err("Failed to register clipboard listener window class.".to_string());
     }
+
+    let hwnd = message_window::create_message_only_window(
+        instance,
+        class_name,
+        "FocuSD Clipboard History Listener",
+    )
+    .map_err(|error| error.to_string())?;
+
+    win32::clipboard::add_format_listener(hwnd).map_err(|error| error.to_string())?;
+    if let Some(window) = CLIPBOARD_HOTKEY_WINDOW.get() {
+        if let Ok(mut stored_window) = window.lock() {
+            *stored_window = Some(hwnd.0 as isize);
+        }
+    } else {
+        let _ = CLIPBOARD_HOTKEY_WINDOW.set(Mutex::new(Some(hwnd.0 as isize)));
+    }
+    refresh_registered_hotkey(hwnd);
+
+    message_window::run_message_loop();
+
+    unregister_current_hotkey(hwnd);
+    let _ = win32::clipboard::remove_format_listener(hwnd);
 
     Ok(())
 }
 
-pub(super) unsafe extern "system" fn clipboard_window_proc(
-    hwnd: HWND,
-    message: u32,
-    wparam: WPARAM,
-    lparam: LPARAM,
-) -> LRESULT {
-    if message == WM_CLIPBOARDUPDATE {
-        notify_clipboard_changed();
-        return LRESULT(0);
-    }
+struct ClipboardWindow;
 
-    if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
-        if let Ok(service) = service() {
-            service.emit_shortcut();
+impl WindowMessages for ClipboardWindow {
+    fn handle(hwnd: HWND, message: u32, wparam: WPARAM, _: LPARAM) -> Option<LRESULT> {
+        if message == WM_CLIPBOARDUPDATE {
+            notify_clipboard_changed();
+            return Some(LRESULT(0));
         }
-        return LRESULT(0);
-    }
 
-    if message == HOTKEY_REFRESH_MESSAGE {
-        refresh_registered_hotkey(hwnd);
-        return LRESULT(0);
-    }
+        if message == WM_HOTKEY && wparam.0 == HOTKEY_ID as usize {
+            if let Ok(service) = service() {
+                service.emit_shortcut();
+            }
+            return Some(LRESULT(0));
+        }
 
-    unsafe { DefWindowProcW(hwnd, message, wparam, lparam) }
+        if message == HOTKEY_REFRESH_MESSAGE {
+            refresh_registered_hotkey(hwnd);
+            return Some(LRESULT(0));
+        }
+
+        None
+    }
 }

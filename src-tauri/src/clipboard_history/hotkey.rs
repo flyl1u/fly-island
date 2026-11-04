@@ -2,17 +2,15 @@
 
 use std::sync::{Mutex, OnceLock};
 use windows::Win32::{
-    Foundation::{HWND, LPARAM, WPARAM},
+    Foundation::HWND,
     UI::{
-        Input::KeyboardAndMouse::{
-            RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
-            MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
-        },
-        WindowsAndMessaging::{PostMessageW, WM_APP},
+        Input::KeyboardAndMouse::{MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN},
+        WindowsAndMessaging::WM_APP,
     },
 };
 
 use super::*;
+use crate::win32;
 
 pub(super) const HOTKEY_EVENT: &str = "clipboard-history-shortcut";
 
@@ -32,50 +30,42 @@ pub(super) fn request_hotkey_refresh() {
         .map(|window| HWND(window as *mut core::ffi::c_void));
 
     if let Some(hwnd) = hwnd {
-        unsafe {
-            let _ = PostMessageW(Some(hwnd), HOTKEY_REFRESH_MESSAGE, WPARAM(0), LPARAM(0));
-        }
+        let _ = win32::message_window::post_message(hwnd, HOTKEY_REFRESH_MESSAGE);
     }
 }
 
 pub(super) fn refresh_registered_hotkey(hwnd: HWND) {
-    unsafe {
-        unregister_current_hotkey(hwnd);
+    unregister_current_hotkey(hwnd);
 
-        let snapshot = service().ok().and_then(|service| service.snapshot().ok());
+    let snapshot = service().ok().and_then(|service| service.snapshot().ok());
 
-        // Turning clipboard history off also frees its shortcut for other apps.
-        if snapshot.as_ref().is_some_and(|snapshot| {
-            !snapshot.settings.enabled || !snapshot.settings.shortcut_enabled
-        }) {
-            return;
-        }
+    // Turning clipboard history off also frees its shortcut for other apps.
+    if snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.settings.enabled || !snapshot.settings.shortcut_enabled)
+    {
+        return;
+    }
 
-        let binding = snapshot
-            .and_then(|snapshot| parse_shortcut_binding(&snapshot.settings.shortcut))
-            .unwrap_or_else(default_shortcut_binding);
+    let binding = snapshot
+        .and_then(|snapshot| parse_shortcut_binding(&snapshot.settings.shortcut))
+        .unwrap_or_else(default_shortcut_binding);
 
-        match RegisterHotKey(
-            Some(hwnd),
-            HOTKEY_ID,
-            HOT_KEY_MODIFIERS(binding.modifiers | MOD_NOREPEAT.0),
-            binding.key_code,
-        ) {
-            Ok(()) => set_hotkey_registered(true),
-            Err(error) => {
-                set_hotkey_registered(false);
-                eprintln!(
-                    "failed to register clipboard history shortcut {}: {error}",
-                    binding.label
-                );
-            }
+    match win32::hotkey::register(hwnd, HOTKEY_ID, binding.modifiers, binding.key_code) {
+        Ok(()) => set_hotkey_registered(true),
+        Err(error) => {
+            set_hotkey_registered(false);
+            eprintln!(
+                "failed to register clipboard history shortcut {}: {error}",
+                binding.label
+            );
         }
     }
 }
 
-pub(super) unsafe fn unregister_current_hotkey(hwnd: HWND) {
+pub(super) fn unregister_current_hotkey(hwnd: HWND) {
     if hotkey_registered() {
-        let _ = unsafe { UnregisterHotKey(Some(hwnd), HOTKEY_ID) };
+        let _ = win32::hotkey::unregister(hwnd, HOTKEY_ID);
         set_hotkey_registered(false);
     }
 }
