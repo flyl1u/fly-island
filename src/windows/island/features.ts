@@ -1,5 +1,5 @@
 import type { MessageSource } from "../../features/messages/messagePreview";
-import type { BuiltinPage, IslandPage } from "./types";
+import type { BuiltinPage, IslandPage, PluginPageId } from "./types";
 
 /** Which modules are switched on; an off module is hidden on the island. */
 export type IslandFeatures = {
@@ -14,7 +14,13 @@ export type IslandFeatures = {
   agents: boolean;
   /** Translation is on and set to open as an island page rather than its own window. */
   translation: boolean;
+  /** Pages of running plugins, in the order the user set; they come after the built-in pages. */
+  pluginPages?: readonly PluginPageId[];
 };
+
+export function isPluginPage(page: IslandPage): page is PluginPageId {
+  return page.startsWith("plugin:");
+}
 
 const BUILTIN_PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
 const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
@@ -22,23 +28,24 @@ const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
 const BUILTIN_SHORTCUT_ORDER: BuiltinPage[] = ["agents", "todo", "music", "clipboard", "shelf", "qq", "translation"];
 
 /** Every page in the order an off page falls back through. */
-function pageOrder(): IslandPage[] {
-  return BUILTIN_PAGE_ORDER;
+function pageOrder(features: IslandFeatures): IslandPage[] {
+  return [...BUILTIN_PAGE_ORDER, ...(features.pluginPages ?? [])];
 }
 
 /** Every page in header order, which is also the Alt+digit order. */
-function shortcutOrder(): IslandPage[] {
-  return BUILTIN_SHORTCUT_ORDER;
+function shortcutOrder(features: IslandFeatures): IslandPage[] {
+  return [...BUILTIN_SHORTCUT_ORDER, ...(features.pluginPages ?? [])];
 }
 
-export function isPageEnabled(page: IslandPage, features: IslandFeatures) {
+export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
+  if (isPluginPage(page)) return features.pluginPages?.includes(page) ?? false;
   return page === "qq" ? features.qq || features.wechat || features.qqMail : features[page];
 }
 
 /** `page` when it is on, otherwise the first page that is, or null when every page is off. */
 export function resolveIslandPage(page: IslandPage, features: IslandFeatures): IslandPage | null {
   if (isPageEnabled(page, features)) return page;
-  return pageOrder().find((candidate) => isPageEnabled(candidate, features)) ?? null;
+  return pageOrder(features).find((candidate) => isPageEnabled(candidate, features)) ?? null;
 }
 
 /** `source` when it is on, otherwise the first message source that is (or `source` if none). */
@@ -49,7 +56,7 @@ export function resolveMessageSource(source: MessageSource, features: IslandFeat
 
 /** Pages a focused, expanded island switches with Alt+1, Alt+2, … Off modules leave no gap. */
 export function pageShortcutOrder(features: IslandFeatures): IslandPage[] {
-  return shortcutOrder().filter((page) => isPageEnabled(page, features));
+  return shortcutOrder(features).filter((page) => isPageEnabled(page, features));
 }
 
 /** The page Alt+`digit` opens, or null when that number is past the last visible page. */

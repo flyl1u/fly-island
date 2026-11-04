@@ -389,6 +389,20 @@ export type Translations = {
     clearSelection: string;
   };
 
+  /** Pages and status texts plugins put on the island (drawn from templates). */
+  pluginViews: {
+    pageLabel: (title: string, plugin: string) => string;
+    waiting: string;
+    starting: string;
+    stopped: string;
+    restart: string;
+    empty: string;
+    search: string;
+    loading: string;
+    actions: string;
+    submit: string;
+    submitted: string;
+  };
   settings: {
     fileShelf: {
       title: string;

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
@@ -27,6 +28,8 @@ type IslandHeaderProps = {
   onMinimize: () => void;
   /** Modifiers shown with each page number, such as "Alt" or "Ctrl+Shift". */
   pageDigitModifiers: string;
+  /** Buttons for plugin pages, after the built-in page dots. */
+  pluginPageButtons?: ReactNode;
 };
 
 /** Header of the expanded island: agent status, page dots, collapse target and window actions. */
@@ -48,6 +51,7 @@ export function IslandHeader({
   minimizesToTray,
   onMinimize,
   pageDigitModifiers,
+  pluginPageButtons,
 }: IslandHeaderProps) {
   const t = useTranslation();
   const [{ shortcut: translationShortcut }] = useTranslationSettings();
@@ -150,6 +154,7 @@ export function IslandHeader({
             }}
           />
         )}
+        {pluginPageButtons}
       </div>
 
       <button

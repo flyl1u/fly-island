@@ -1,0 +1,216 @@
+/* The list template of plugin pages. Scrolls like the clipboard page. */
+.plugin-list {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
+.plugin-list__search {
+  min-width: 0;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 10px;
+  color: rgba(225, 223, 233, 0.6);
+  background: var(--color-white-a08);
+  border-radius: var(--radius-md);
+}
+
+.plugin-list__search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: rgba(241, 240, 246, 0.92);
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+}
+
+.plugin-list__error {
+  margin: 0;
+  padding: 6px 10px;
+  color: rgba(255, 210, 218, 0.95);
+  background: rgba(199, 80, 101, 0.18);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.plugin-list__scroll {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-lg);
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.plugin-list__empty {
+  margin: 0;
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  padding: var(--space-xl);
+  color: rgba(225, 223, 233, 0.42);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.plugin-list__group {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.plugin-list__group-title {
+  margin: 0;
+  padding: 0 2px;
+  overflow: hidden;
+  color: rgba(225, 223, 233, 0.5);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-list__item {
+  min-width: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 4px 6px;
+  background: var(--color-white-a08);
+  border-radius: var(--radius-md);
+}
+
+.plugin-list__check {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--color-surface-dark);
+  background: transparent;
+  border: 1.5px solid rgba(225, 223, 233, 0.5);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.plugin-list__item--checked .plugin-list__check {
+  background: rgba(190, 240, 225, 0.92);
+  border-color: transparent;
+}
+
+.plugin-list__item--checked .plugin-list__title {
+  color: rgba(225, 223, 233, 0.5);
+  text-decoration: line-through;
+}
+
+.plugin-list__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 2px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+}
+
+button.plugin-list__main {
+  cursor: pointer;
+}
+
+button.plugin-list__main:hover .plugin-list__title {
+  color: var(--color-white);
+}
+
+.plugin-list__icon,
+.plugin-list__link {
+  flex: 0 0 auto;
+  color: rgba(204, 195, 228, 0.72);
+}
+
+.plugin-list__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+}
+
+.plugin-list__title,
+.plugin-list__subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-list__title {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plugin-list__subtitle {
+  color: rgba(225, 223, 233, 0.52);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.plugin-list__note {
+  flex: 0 1 auto;
+  max-width: 30%;
+  overflow: hidden;
+  color: rgba(225, 223, 233, 0.5);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-list__actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+}
+
+.plugin-list__action {
+  max-width: 64px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 6px;
+  overflow: hidden;
+  color: rgba(225, 223, 233, 0.78);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.plugin-list__action:hover {
+  color: var(--color-white);
+  background: var(--color-white-a12);
+}
+
+.plugin-list__action span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

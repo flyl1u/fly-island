@@ -1,0 +1,122 @@
+/* A plugin's page on the expanded island; the template draws inside the body. */
+.plugin-view {
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-md);
+  overflow: hidden;
+  padding: 12px 16px 14px;
+  color: rgba(241, 240, 246, 0.92);
+  background:
+    linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
+    rgba(20, 20, 25, 0.88);
+  border-radius: var(--island-panel-radius, 10px);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px var(--color-white-a09);
+}
+
+.plugin-view__title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 12px;
+}
+
+.plugin-view__title > svg {
+  flex: 0 0 auto;
+  color: rgba(204, 195, 228, 0.8);
+}
+
+.plugin-view__title strong,
+.plugin-view__title span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-view__title strong {
+  flex: 0 1 auto;
+  font-weight: 800;
+}
+
+.plugin-view__title span {
+  flex: 0 1 auto;
+  color: rgba(225, 223, 233, 0.46);
+  font-weight: 700;
+}
+
+.plugin-view__body {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+}
+
+.plugin-view__state {
+  margin: 0;
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  color: rgba(225, 223, 233, 0.52);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.plugin-view__state--stopped strong {
+  color: rgba(255, 196, 206, 0.92);
+}
+
+.plugin-view__state--stopped span {
+  max-width: 100%;
+  font-weight: 600;
+}
+
+.plugin-view__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 26px;
+  max-width: 100%;
+  padding: 0 10px;
+  color: rgba(241, 240, 246, 0.9);
+  background: var(--color-white-a10);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.plugin-view__button:hover:not(:disabled) {
+  background: var(--color-white-a18);
+}
+
+.plugin-view__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.plugin-view__button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plugin-view button:focus-visible,
+.plugin-view input:focus-visible,
+.plugin-view textarea:focus-visible,
+.plugin-view select:focus-visible,
+.plugin-view a:focus-visible {
+  outline: 2px solid rgba(210, 202, 232, 0.76);
+  outline-offset: 2px;
+}

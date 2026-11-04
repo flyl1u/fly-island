@@ -32,7 +32,8 @@
 
 .island__header {
   display: grid;
-  grid-template-columns: auto 96px minmax(0, 1fr) auto;
+  /* The dots stay 96px wide unless plugin page buttons need more. */
+  grid-template-columns: auto minmax(96px, auto) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-md);
   min-height: 34px;
@@ -67,7 +68,7 @@
   align-items: center;
   justify-self: start;
   gap: 9px;
-  width: 96px;
+  min-width: 96px;
   height: 34px;
   padding-left: 4px;
 }

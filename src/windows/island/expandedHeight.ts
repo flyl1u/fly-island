@@ -1,6 +1,8 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentPageExpandedHeight, getClipboardExpandedHeight, getPluginPageExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import type { PluginViewTemplate } from "../../features/plugin-views/api";
+import { isPluginPage } from "./features";
 import type { IslandPage } from "./types";
 
 // Tall enough for about four shelf rows before the list scrolls.
@@ -18,6 +20,8 @@ type ExpandedHeightInput = {
   maxPanelHeight: number;
   clipboardVisibleRows: number;
   agentVisibleRows: number;
+  /** The template of the open plugin page; null when it is not known (yet). */
+  pluginTemplate?: PluginViewTemplate | null;
 };
 
 /**
@@ -36,7 +40,11 @@ export function getExpandedIslandHeight({
   maxPanelHeight,
   clipboardVisibleRows,
   agentVisibleRows,
+  pluginTemplate,
 }: ExpandedHeightInput) {
+  if (isPluginPage(page)) {
+    return getPluginPageExpandedHeight(pluginTemplate, maxPanelHeight);
+  }
   // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =
     page === "todo" &&

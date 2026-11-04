@@ -101,3 +101,11 @@ export function getAgentPageExpandedHeight(rows: number) {
 export function getClipboardExpandedHeight(rows: number) {
   return CLIPBOARD_CHROME_HEIGHT + rows * CLIPBOARD_ROW_PITCH - CLIPBOARD_ROW_GAP;
 }
+
+// Plugin pages by template, before the panel height limit.
+const PLUGIN_PAGE_HEIGHT = { list: 400, detail: 380, form: 400, status: 260 } as const;
+
+/** Height of the expanded island on a plugin page. */
+export function getPluginPageExpandedHeight(template: keyof typeof PLUGIN_PAGE_HEIGHT | null | undefined, maxPanelHeight: number) {
+  return Math.min(PLUGIN_PAGE_HEIGHT[template ?? "list"], maxPanelHeight);
+}

@@ -3,7 +3,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import type { MessageView } from "../../features/messages/Messages";
 import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
 import { resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
-import type { IslandPage } from "./types";
+import type { IslandPage, PluginPageId } from "./types";
 
 type IslandFeatureOptions = {
   settings: IslandSettings;
@@ -16,6 +16,8 @@ type IslandFeatureOptions = {
   setPage: (page: IslandPage) => void;
   setMessageSource: (source: MessageView) => void;
   openIslandPage: (page: IslandPage) => void;
+  /** Plugin pages to show, in order. */
+  pluginPages?: readonly PluginPageId[];
 };
 
 /**
@@ -35,6 +37,7 @@ export function useIslandFeatures({
   setPage,
   setMessageSource,
   openIslandPage,
+  pluginPages,
 }: IslandFeatureOptions) {
   const features = useMemo<IslandFeatures>(() => ({
     todo: settings.todoEnabled,
@@ -46,7 +49,8 @@ export function useIslandFeatures({
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled]);
+    pluginPages,
+  }), [pluginPages, clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled]);
 
   useEffect(() => {
     const next = resolveIslandPage(page, features);

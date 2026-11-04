@@ -387,6 +387,19 @@ const en: Translations = {
     clearSelection: "Clear selection",
   },
 
+  pluginViews: {
+    pageLabel: (title, plugin) => `${title} (${plugin})`,
+    waiting: "Waiting for the plugin…",
+    starting: "The plugin is starting…",
+    stopped: "The plugin has stopped",
+    restart: "Restart",
+    empty: "Nothing here yet",
+    search: "Search",
+    loading: "Loading…",
+    actions: "Actions",
+    submit: "Submit",
+    submitted: "Sent",
+  },
   settings: {
     fileShelf: {
       title: "File shelf",

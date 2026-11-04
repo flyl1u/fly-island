@@ -390,6 +390,19 @@ const zhCN: Translations = {
     clearSelection: "取消选择",
   },
 
+  pluginViews: {
+    pageLabel: (title, plugin) => `${title}（${plugin}）`,
+    waiting: "等待插件发来内容…",
+    starting: "插件正在启动…",
+    stopped: "插件已停止",
+    restart: "重新启动",
+    empty: "这里还没有内容",
+    search: "搜索",
+    loading: "加载中…",
+    actions: "操作",
+    submit: "提交",
+    submitted: "已提交",
+  },
   settings: {
     fileShelf: {
       title: "文件中转",

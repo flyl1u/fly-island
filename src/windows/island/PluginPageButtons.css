@@ -1,0 +1,28 @@
+/* Plugin page buttons sit with the page dots in the expanded header. */
+.plugin-page-button {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(241, 240, 246, 0.62);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.plugin-page-button:hover,
+.plugin-page-button--active {
+  color: var(--color-white);
+  background: var(--color-white-a16);
+}
+
+.plugin-page-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}

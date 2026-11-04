@@ -6,6 +6,7 @@ import { usePluginNotifications } from "../../features/plugins/usePluginNotifica
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
+import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
@@ -49,6 +50,8 @@ import { useTuckPeek } from "./useTuckPeek";
 import { useIslandTranslation } from "./useIslandTranslation";
 import { usePluginHostEvents } from "./usePluginHostEvents";
 import { usePluginKeybindings } from "./usePluginKeybindings";
+import { usePluginPages } from "./usePluginPages";
+import { PluginPageButtons } from "./PluginPageButtons";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -72,6 +75,7 @@ export function IslandApp() {
     openIslandPage,
     toggleClipboardHistory,
   } = useIslandNavigation();
+  const pluginPages = usePluginPages(page);
   const [settings, setSettings] = useIslandSettings();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
@@ -140,6 +144,7 @@ export function IslandApp() {
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
+    pluginTemplate: pluginPages.entry?.template,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
@@ -182,6 +187,7 @@ export function IslandApp() {
     setPage,
     setMessageSource,
     openIslandPage,
+    pluginPages: pluginPages.pageIds,
   });
 
   const fileShelf = useFileShelf(settings.shelfEnabled, {
@@ -312,6 +318,7 @@ export function IslandApp() {
         onPageChange={setPage}
         pageDigitModifiers={settings.pageDigitModifiers}
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
+        pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
         {page === "qq" && (
           <div className="message-panel">
@@ -340,6 +347,7 @@ export function IslandApp() {
           />
         )}
         {page === "agents" && <AgentSessionsPanel sessions={agentSessions} />}
+        {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (

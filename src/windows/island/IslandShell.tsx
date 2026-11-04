@@ -9,7 +9,7 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import type { PluginNotificationsController } from "../../features/plugins/usePluginNotifications";
 import { useTranslation } from "../../i18n";
-import type { IslandFeatures } from "./features";
+import { isPluginPage, type IslandFeatures } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -63,6 +63,8 @@ type IslandShellProps = {
   pageDigitModifiers: string;
   /** Shown over the top row in both modes, e.g. a plugin permission question. */
   overlay?: ReactNode;
+  /** Buttons for plugin pages in the expanded header. */
+  pluginPageButtons?: ReactNode;
   children: ReactNode;
 };
 
@@ -104,6 +106,7 @@ export function IslandShell({
   onPageChange,
   pageDigitModifiers,
   overlay,
+  pluginPageButtons,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -128,7 +131,8 @@ export function IslandShell({
   const className = [
     "island",
     `island--${mode}`,
-    `island--${page}`,
+    // Plugin page ids contain ":" and "/", so they share one class.
+    isPluginPage(page) ? "island--plugin" : `island--${page}`,
     `island--appearance-${appearanceMode}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
@@ -224,6 +228,7 @@ export function IslandShell({
             minimizesToTray={minimizesToTray}
             onMinimize={onMinimize}
             pageDigitModifiers={pageDigitModifiers}
+            pluginPageButtons={pluginPageButtons}
           />
           <div ref={contentRef} className="island__content">{children}</div>
         </div>
