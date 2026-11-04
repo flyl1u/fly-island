@@ -1,0 +1,56 @@
+import { useTranslation, type LocaleCode } from "../../i18n";
+import { LocaleControl } from "../../i18n/LocaleControl";
+import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
+import { TodoSettingsSection } from "../../features/appearance/TodoSettingsSection";
+import type { IslandSettings } from "../../features/appearance/types";
+import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
+import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
+
+export function GeneralSettingsPage({
+  locale,
+  settings,
+  launchAtStartup,
+  saveDirectory,
+  onLocaleChange,
+  onSettingsChange,
+  onLaunchAtStartupChange,
+}: {
+  locale: LocaleCode;
+  settings: IslandSettings;
+  launchAtStartup: boolean;
+  saveDirectory: ReturnType<typeof useSaveDirectorySetting>;
+  onLocaleChange: (locale: LocaleCode) => void;
+  onSettingsChange: (settings: IslandSettings) => void;
+  onLaunchAtStartupChange: (enabled: boolean) => void;
+}) {
+  const t = useTranslation();
+
+  return (
+    <>
+      <section className="settings-section settings-section--language">
+        <div className="settings-section__header">
+          <span>{t.settings.language.title}</span>
+        </div>
+        <LocaleControl
+          label={t.settings.language.label}
+          value={locale}
+          onChange={onLocaleChange}
+        />
+      </section>
+      <BehaviorSettingsSection
+        settings={settings}
+        launchAtStartup={launchAtStartup}
+        onSettingsChange={onSettingsChange}
+        onLaunchAtStartupChange={onLaunchAtStartupChange}
+      />
+      <TodoSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      <SavePathSettingsSection
+        saveDirectoryDraft={saveDirectory.saveDirectoryDraft}
+        savePathState={saveDirectory.savePathState}
+        highlightSavePath={saveDirectory.highlightSavePath}
+        onSaveDirectoryDraftChange={saveDirectory.onSaveDirectoryDraftChange}
+        onSaveDirectory={saveDirectory.onSaveDirectory}
+      />
+    </>
+  );
+}
