@@ -21,7 +21,7 @@ src-tauri/src/
 ├── qq_notifications/
 ├── wechat_reminders/        # 提醒服务与命令；source.rs 为托盘闪烁监听（examples 通过 #[path] 复用）
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
-├── settings_window.rs
+├── settings_window/         # 设置窗口：按需创建与显示（mod.rs）
 ├── messenger_activation.rs
 ├── notification_diagnostics.rs
 └── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
@@ -49,7 +49,7 @@ src-tauri/src/
 ## 命令
 
 - 命令返回 `Result<T, String>`，错误信息要让用户能读懂，因为前端会原样显示。
-- 会阻塞的命令，或调用窗口、COM、Windows UI 的命令，声明为 `async`，避免阻塞 IPC 线程（在 Windows 上可能死锁，见 `settings_window.rs`）。
+- 会阻塞的命令，或调用窗口、COM、Windows UI 的命令，声明为 `async`，避免阻塞 IPC 线程（在 Windows 上可能死锁，见 `settings_window/mod.rs`）。
 - 命令函数保持薄：只做参数校验，然后调用服务或领域函数。
 - 命令名就是函数名，属于对外契约。纯重构中可以移动函数所在模块，但不能改函数名或参数名。
 - 事件名定义为模块内的 `const`，向特定窗口发事件时使用窗口 label 常量（例如 `settings_window::WINDOW_LABEL`），不写字面量。
