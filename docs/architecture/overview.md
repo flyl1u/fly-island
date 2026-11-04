@@ -140,7 +140,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `island-position-changed` | `island/mod.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-top-attachment-changed`（载荷为 `bool`：岛屿是否贴住所在显示器顶边） | `island/top_edge.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-hover-changed`（载荷为 `bool`：光标是否在岛屿形状内，供悬停展开使用） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
-| `foreground-fullscreen-changed`（载荷为 `bool`：前台是否有全屏程序，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
+| `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `qq-mail-changed` | `qq_mail/service.rs`（常量在 `mod.rs`） | 广播 |

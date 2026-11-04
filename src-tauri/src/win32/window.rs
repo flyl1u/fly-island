@@ -5,7 +5,7 @@ use windows::{
     core::BOOL,
     Win32::{
         Foundation::{HWND, LPARAM, POINT, RECT, WPARAM},
-        Graphics::Gdi::SetWindowRgn,
+        Graphics::Gdi::{MonitorFromWindow, SetWindowRgn, MONITOR_DEFAULTTONEAREST},
         System::Threading::{AttachThreadInput, GetCurrentThreadId},
         UI::{
             Input::KeyboardAndMouse::IsWindowEnabled,
@@ -239,6 +239,14 @@ pub(crate) fn activate_from_background(window: HWND) -> bool {
         }
     }
     foreground_window() == window
+}
+
+/// Whether `a` and `b` are mostly on the same monitor (each counted on the one it
+/// overlaps most).
+pub(crate) fn share_monitor(a: HWND, b: HWND) -> bool {
+    // SAFETY: MonitorFromWindow takes the HWND by value; with DEFAULTTONEAREST it
+    // returns a monitor even for invalid windows and never fails.
+    unsafe { MonitorFromWindow(a, MONITOR_DEFAULTTONEAREST) == MonitorFromWindow(b, MONITOR_DEFAULTTONEAREST) }
 }
 
 /// Whether `window` is already in the foreground or was just brought there.

@@ -68,7 +68,7 @@ export function IslandApp() {
   } = useIslandNavigation();
   const [settings, setSettings] = useIslandSettings();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
-  const game = useGameMode(settings, isTucked, tuckIsland, revealIsland);
+  const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   // A tucked island still takes message previews when it will slide out to show them.
   const canPreviewMessages = !game.quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
   const qqNotifications = useQQNotifications(canPreviewMessages);

@@ -437,7 +437,7 @@ impl WindowMessages for TranslationHotkeyWindow {
                 if OPENS_IN_ISLAND.load(Ordering::SeqCst) {
                     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
                         let _ = window.show();
-                        let _ = window.set_focus();
+                        crate::island::focus::focus_island_for_shortcut(&window);
                     }
                     let _ = app.emit(TRANSLATION_ISLAND_SHORTCUT_EVENT, ());
                 } else {

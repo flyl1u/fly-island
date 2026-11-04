@@ -94,13 +94,21 @@ export function releaseIslandHoverFocus() {
 // Mirrors FOREGROUND_FULLSCREEN_CHANGED_EVENT in src-tauri/src/system/fullscreen.rs.
 export const FOREGROUND_FULLSCREEN_CHANGED_EVENT = "foreground-fullscreen-changed";
 
-/** Whether a full-screen app (game, video, slides) was in the foreground at the last check. */
+/** Mirrors ForegroundFullscreen in src-tauri/src/system/fullscreen.rs. */
+export type ForegroundFullscreen = {
+  /** A full-screen app (game, full-screen video, slides) is in the foreground. */
+  active: boolean;
+  /** It fills the monitor the island is on. */
+  onIslandMonitor: boolean;
+};
+
+/** The full-screen state at the last native check (every 800 ms). */
 export function getForegroundFullscreen() {
-  return invoke<boolean>("get_foreground_fullscreen");
+  return invoke<ForegroundFullscreen>("get_foreground_fullscreen");
 }
 
-export function listenForegroundFullscreen(handler: (fullscreen: boolean) => void): Promise<UnlistenFn> {
-  return listen<boolean>(FOREGROUND_FULLSCREEN_CHANGED_EVENT, ({ payload }) => handler(payload));
+export function listenForegroundFullscreen(handler: (state: ForegroundFullscreen) => void): Promise<UnlistenFn> {
+  return listen<ForegroundFullscreen>(FOREGROUND_FULLSCREEN_CHANGED_EVENT, ({ payload }) => handler(payload));
 }
 
 export function startIslandDrag() {

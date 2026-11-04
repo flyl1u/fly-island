@@ -27,9 +27,16 @@ test("game mode stops the island taking the focus but still lets it go", () => {
   assert.equal(hoverFocusAction(state({ blocked: true, hovering: false })), "release");
 });
 
+const here = { active: true, onIslandMonitor: true };
+const elsewhere = { active: true, onIslandMonitor: false };
+const both = { gameDoNotDisturb: true, gameAutoTuck: true };
+
 test("game mode only acts while a full-screen app is in front", () => {
-  const off = gameModeEffects(false, { gameDoNotDisturb: true, gameAutoTuck: true });
-  assert.deepEqual(off, { quiet: false, tuck: false });
-  assert.deepEqual(gameModeEffects(true, { gameDoNotDisturb: true, gameAutoTuck: false }), { quiet: true, tuck: false });
-  assert.deepEqual(gameModeEffects(true, { gameDoNotDisturb: false, gameAutoTuck: true }), { quiet: false, tuck: true });
+  assert.deepEqual(gameModeEffects({ active: false, onIslandMonitor: false }, both), { quiet: false, tuck: false });
+  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: true, gameAutoTuck: false }), { quiet: true, tuck: false });
+  assert.deepEqual(gameModeEffects(here, { gameDoNotDisturb: false, gameAutoTuck: true }), { quiet: false, tuck: true });
+});
+
+test("a game on another monitor keeps the island quiet but not tucked", () => {
+  assert.deepEqual(gameModeEffects(elsewhere, both), { quiet: true, tuck: false });
 });

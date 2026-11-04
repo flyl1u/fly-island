@@ -1,32 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { getForegroundFullscreen, listenForegroundFullscreen } from "./api";
-import { gameModeEffects, type GameModeEffects, type GameModeSettings } from "./gameMode";
+import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
+import type { IslandMode } from "./types";
+
+const NOT_FULLSCREEN: FullscreenState = { active: false, onIslandMonitor: false };
 
 function logError(error: unknown) {
   console.error("Failed to watch for full-screen apps", error);
 }
 
+type GameModeActions = {
+  mode: IslandMode;
+  isTucked: boolean;
+  collapseIsland: () => void;
+  tuckIsland: () => void;
+  revealIsland: () => void;
+};
+
 /**
  * Game mode: watches for a full-screen app in the foreground while either game
- * setting is on. Returns what to hold back, and tucks the island when the app takes
- * the screen (bringing it back afterwards if it is still tucked). Revealing it by
- * hand during the game keeps it out until the next full-screen app.
+ * setting is on, and returns what to hold back. When quiet starts, an open panel
+ * closes (hover closing is held back too, so it would stay over the game). When the
+ * app takes the island's screen, the island tucks, and comes back afterwards if it is
+ * still tucked; revealing it by hand during the game keeps it out.
  */
 export function useGameMode(
   settings: GameModeSettings,
-  isTucked: boolean,
-  tuckIsland: () => void,
-  revealIsland: () => void,
+  { mode, isTucked, collapseIsland, tuckIsland, revealIsland }: GameModeActions,
 ): GameModeEffects {
   const watching = settings.gameDoNotDisturb || settings.gameAutoTuck;
-  const [fullscreen, setFullscreen] = useState(false);
-  const effects = gameModeEffects(watching && fullscreen, settings);
+  const [fullscreen, setFullscreen] = useState<FullscreenState>(NOT_FULLSCREEN);
+  const effects = gameModeEffects(watching ? fullscreen : NOT_FULLSCREEN, settings);
   const tuckedByGameRef = useRef(false);
-  const isTuckedRef = useRef(isTucked);
+  const stateRef = useRef({ mode, isTucked });
   useEffect(() => {
-    isTuckedRef.current = isTucked;
+    stateRef.current = { mode, isTucked };
     if (!isTucked) tuckedByGameRef.current = false;
-  }, [isTucked]);
+  }, [isTucked, mode]);
 
   useEffect(() => {
     if (!watching) return;
@@ -48,14 +58,18 @@ export function useGameMode(
   }, [watching]);
 
   useEffect(() => {
+    if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland();
+  }, [collapseIsland, effects.quiet]);
+
+  useEffect(() => {
     if (effects.tuck) {
-      if (!isTuckedRef.current) {
+      if (!stateRef.current.isTucked) {
         tuckIsland();
         tuckedByGameRef.current = true;
       }
     } else if (tuckedByGameRef.current) {
       tuckedByGameRef.current = false;
-      if (isTuckedRef.current) revealIsland();
+      if (stateRef.current.isTucked) revealIsland();
     }
   }, [effects.tuck, revealIsland, tuckIsland]);
 
