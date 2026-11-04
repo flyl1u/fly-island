@@ -218,16 +218,21 @@ pub(super) fn folder_title(cwd: &str) -> Option<String> {
 
 /// Collapses whitespace and cuts to `TITLE_MAX_CHARS` characters with an ellipsis.
 pub(super) fn display_title(text: &str) -> Option<String> {
+    shorten(text, TITLE_MAX_CHARS)
+}
+
+/// Collapses whitespace and cuts to `max_chars` characters (at least 2) with an ellipsis.
+pub(super) fn shorten(text: &str, max_chars: usize) -> Option<String> {
     let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
     if collapsed.is_empty() {
         return None;
     }
-    if collapsed.chars().count() <= TITLE_MAX_CHARS {
+    if collapsed.chars().count() <= max_chars {
         return Some(collapsed);
     }
     let mut title = collapsed
         .chars()
-        .take(TITLE_MAX_CHARS - 1)
+        .take(max_chars.max(2) - 1)
         .collect::<String>()
         .trim_end()
         .to_string();

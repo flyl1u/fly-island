@@ -9,6 +9,8 @@ mod snapshot;
 #[cfg(test)]
 mod tests;
 mod title;
+mod session_scan;
+mod sessions;
 mod title_cache;
 mod window_focus;
 
@@ -218,6 +220,16 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         claude_config_path: claude_config_path.to_string_lossy().to_string(),
         installed_at: current_unix_millis(),
     })
+}
+
+/// Claude Code and Codex sessions active in the last two hours, running ones first.
+#[tauri::command]
+pub async fn list_agent_sessions() -> Result<Vec<sessions::AgentSessionSummary>, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        windows_home_dir().map(|home_dir| session_scan::list_sessions(&home_dir))
+    })
+    .await
+    .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
 }
 
 /// Brings the editor or terminal window of an agent session to the front, matched by the

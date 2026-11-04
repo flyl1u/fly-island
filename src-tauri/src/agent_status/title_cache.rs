@@ -227,8 +227,9 @@ fn scan_first_prompt(path: &Path) -> Option<FirstPrompt> {
     })
 }
 
-/// The last `READ_WINDOW_BYTES` of a file, starting at a whole line.
-fn read_tail(path: &Path) -> Option<String> {
+/// The last `READ_WINDOW_BYTES` of a file, starting at a whole line. Also reads the ends of
+/// session files for the Agent page (session_scan.rs).
+pub(super) fn read_tail(path: &Path) -> Option<String> {
     let mut file = File::open(path).ok()?;
     let len = file.metadata().ok()?.len();
     let start = len.saturating_sub(READ_WINDOW_BYTES);

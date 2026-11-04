@@ -459,3 +459,260 @@ fn session_windows_are_matched_by_folder_and_title() {
     );
     assert_eq!(app_name(r"C:\x\WindowsTerminal.exe"), "windowsterminal");
 }
+
+#[test]
+fn claude_session_tail_gives_state_model_and_latest_reply() {
+    use super::sessions::{claude_model_label, parse_claude_tail, TurnState};
+
+    let assistant = |stop: Option<&str>, content: serde_json::Value| {
+        line(
+            json!({"type": "assistant", "sessionId": "s1", "cwd": "E:\\p", "effort": "medium",
+            "message": {"model": "group/auto-claude-opus-5-5", "stop_reason": stop, "content": content}}),
+        )
+    };
+    let text = |text: &str| json!([{"type": "text", "text": text}]);
+    let tool = json!([{"type": "tool_use", "name": "Bash"}]);
+
+    let working = [
+        line(json!({"type": "ai-title", "aiTitle": "设置界面完善思路"})),
+        assistant(Some("tool_use"), text("先看一下  现有代码。")),
+        assistant(Some("tool_use"), tool.clone()),
+    ]
+    .concat();
+    let parsed = parse_claude_tail(&working);
+    assert_eq!(parsed.state, TurnState::Working);
+    assert_eq!(parsed.session_id.as_deref(), Some("s1"));
+    assert_eq!(parsed.cwd.as_deref(), Some(r"E:\p"));
+    assert_eq!(parsed.title.as_deref(), Some("设置界面完善思路"));
+    assert_eq!(parsed.model.as_deref(), Some("Opus 5.5"));
+    assert_eq!(parsed.effort.as_deref(), Some("medium"));
+    assert_eq!(parsed.last_message.as_deref(), Some("先看一下 现有代码。"));
+
+    let done = [working.clone(), assistant(Some("end_turn"), text("做完了"))].concat();
+    assert_eq!(parse_claude_tail(&done).state, TurnState::Done);
+    assert_eq!(
+        parse_claude_tail(&done).last_message.as_deref(),
+        Some("做完了")
+    );
+
+    let interrupted = [
+        working.clone(),
+        user_line(json!([{"type": "text", "text": "[Request interrupted by user]"}])),
+    ]
+    .concat();
+    assert_eq!(parse_claude_tail(&interrupted).state, TurnState::Done);
+    let new_prompt = [done.clone(), user_line(json!("再改一下"))].concat();
+    assert_eq!(parse_claude_tail(&new_prompt).state, TurnState::Working);
+
+    let failed = [
+        working,
+        line(json!({"type": "assistant", "isApiErrorMessage": true,
+            "message": {"model": "<synthetic>", "content": [{"type": "text", "text": "API Error"}]}})),
+    ]
+    .concat();
+    let parsed = parse_claude_tail(&failed);
+    assert_eq!(parsed.state, TurnState::Failed);
+    // The synthetic error record does not hide the real model.
+    assert_eq!(parsed.model.as_deref(), Some("Opus 5.5"));
+
+    assert_eq!(
+        claude_model_label("claude-sonnet-5-5-20261001"),
+        "Sonnet 5.5"
+    );
+    assert_eq!(claude_model_label("claude-haiku-5-5"), "Haiku 5.5");
+    assert_eq!(claude_model_label("gpt-6-astra"), "gpt-6-astra");
+}
+
+#[test]
+fn codex_session_tail_and_meta() {
+    use super::sessions::{codex_user_prompt, parse_codex_meta, parse_codex_tail, TurnState};
+
+    let event = |payload: serde_json::Value| line(json!({"type": "event_msg", "payload": payload}));
+    let tail = [
+        line(json!({"type": "turn_context", "payload": {"model": "gpt-6-astra", "effort": "high", "cwd": "E:\\Projects\\MioPicFlow"}})),
+        event(json!({"type": "user_message", "message": "排查网络"})),
+        event(json!({"type": "task_started"})),
+        event(json!({"type": "agent_message", "message": "关闭系统代理后恢复了。"})),
+    ]
+    .concat();
+    let parsed = parse_codex_tail(&tail);
+    assert_eq!(parsed.state, TurnState::Working);
+    assert_eq!(parsed.model.as_deref(), Some("gpt-6-astra"));
+    assert_eq!(parsed.effort.as_deref(), Some("high"));
+    assert_eq!(parsed.cwd.as_deref(), Some(r"E:\Projects\MioPicFlow"));
+    assert_eq!(
+        parsed.last_message.as_deref(),
+        Some("关闭系统代理后恢复了。")
+    );
+
+    let done = [
+        tail.clone(),
+        event(json!({"type": "task_complete", "last_agent_message": "完成", "error": null})),
+    ]
+    .concat();
+    assert_eq!(parse_codex_tail(&done).state, TurnState::Done);
+    assert_eq!(
+        parse_codex_tail(&done).last_message.as_deref(),
+        Some("完成")
+    );
+    let failed = [
+        tail,
+        event(
+            json!({"type": "task_complete", "last_agent_message": null, "error": {"message": "x"}}),
+        ),
+    ]
+    .concat();
+    assert_eq!(parse_codex_tail(&failed).state, TurnState::Failed);
+
+    let meta =
+        json!({"type": "session_meta", "payload": {"id": "01a1", "cwd": "E:\\p"}}).to_string();
+    assert_eq!(
+        parse_codex_meta(&meta),
+        Some(("01a1".to_string(), Some(r"E:\p".to_string())))
+    );
+    assert_eq!(parse_codex_meta("{\"type\":\"turn_context\"}"), None);
+    assert_eq!(
+        codex_user_prompt(&event(
+            json!({"type": "user_message", "message": "# 恢复发布机环境"})
+        ))
+        .as_deref(),
+        Some("恢复发布机环境")
+    );
+}
+
+#[test]
+fn session_phase_turns_stale_after_the_limit() {
+    use super::sessions::{session_phase, TurnState};
+    assert_eq!(session_phase(TurnState::Working, 1_000, 600_000), "running");
+    assert_eq!(session_phase(TurnState::Working, 600_000, 600_000), "stale");
+    assert_eq!(session_phase(TurnState::Done, 1, 600_000), "completed");
+    assert_eq!(session_phase(TurnState::Unknown, 1, 600_000), "completed");
+    assert_eq!(session_phase(TurnState::Failed, 1, 600_000), "failed");
+}
+
+#[test]
+fn recent_sessions_are_listed_running_first() {
+    use super::session_scan::{list_sessions, ACTIVE_WINDOW_MS};
+
+    let (home, _app) = temp_dirs();
+    let project = home.join(".claude").join("projects").join("E--p");
+    let assistant = |stop: &str, text: &str| {
+        line(
+            json!({"type": "assistant", "sessionId": "x", "cwd": "E:\\Projects\\fly-island",
+            "message": {"model": "claude-opus-5-5", "stop_reason": stop, "content": [{"type": "text", "text": text}]}}),
+        )
+    };
+    fs::write(
+        project.join("done.jsonl"),
+        [
+            user_line(json!("第一句提问")),
+            assistant("end_turn", "好了"),
+        ]
+        .concat()
+        .replace("\"x\"", "\"done\""),
+    )
+    .unwrap();
+    fs::write(
+        project.join("busy.jsonl"),
+        [
+            line(json!({"type": "ai-title", "aiTitle": "正在跑的任务"})),
+            assistant("tool_use", "跑测试"),
+        ]
+        .concat()
+        .replace("\"x\"", "\"busy\""),
+    )
+    .unwrap();
+    let old = project.join("old.jsonl");
+    fs::write(&old, assistant("end_turn", "很久以前")).unwrap();
+    let long_ago = std::time::SystemTime::now()
+        - std::time::Duration::from_millis(ACTIVE_WINDOW_MS as u64 + 60_000);
+    fs::File::options()
+        .write(true)
+        .open(&old)
+        .unwrap()
+        .set_modified(long_ago)
+        .unwrap();
+    // Subagent transcripts are not sessions of their own.
+    fs::create_dir_all(project.join("done").join("subagents")).unwrap();
+    fs::write(
+        project.join("done").join("subagents").join("a.jsonl"),
+        assistant("tool_use", "x"),
+    )
+    .unwrap();
+
+    let day = home
+        .join(".codex")
+        .join("sessions")
+        .join("2026")
+        .join("11")
+        .join("04");
+    fs::create_dir_all(&day).unwrap();
+    fs::write(
+        day.join("rollout-1.jsonl"),
+        [
+            line(json!({"type": "session_meta", "payload": {"id": "c1", "cwd": "E:\\Projects\\MioPicFlow"}})),
+            line(json!({"type": "event_msg", "payload": {"type": "user_message", "message": "排查网络"}})),
+            line(json!({"type": "event_msg", "payload": {"type": "task_complete", "last_agent_message": "完成", "error": null}})),
+        ]
+        .concat(),
+    )
+    .unwrap();
+    fs::write(
+        home.join(".codex").join("session_index.jsonl"),
+        line(json!({"id": "c1", "thread_name": "恢复网络"})),
+    )
+    .unwrap();
+
+    let sessions = list_sessions(&home);
+    let ids = sessions
+        .iter()
+        .map(|s| s.session_id.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(ids.first(), Some(&"busy"));
+    assert_eq!(ids.len(), 3, "{ids:?}");
+    let by_id = |id: &str| sessions.iter().find(|s| s.session_id == id).unwrap();
+    assert_eq!(by_id("busy").phase, "running");
+    assert_eq!(by_id("busy").title.as_deref(), Some("正在跑的任务"));
+    assert_eq!(by_id("done").phase, "completed");
+    assert_eq!(by_id("done").title.as_deref(), Some("第一句提问"));
+    assert_eq!(by_id("c1").provider, "codex");
+    assert_eq!(by_id("c1").title.as_deref(), Some("恢复网络"));
+    assert_eq!(by_id("c1").cwd.as_deref(), Some(r"E:\Projects\MioPicFlow"));
+
+    // A second call is answered from the cache and gives the same list.
+    assert_eq!(list_sessions(&home), sessions);
+}
+
+#[test]
+fn a_session_keeps_the_folder_it_started_in() {
+    use super::session_scan::list_sessions;
+
+    let (home, _app) = temp_dirs();
+    let project = home
+        .join(".claude")
+        .join("projects")
+        .join("E--Projects-fly-island");
+    fs::create_dir_all(&project).unwrap();
+    let record = |cwd: &str, value: serde_json::Value| {
+        let mut value = value;
+        value["sessionId"] = json!("moved");
+        value["cwd"] = json!(cwd);
+        line(value)
+    };
+    fs::write(
+        project.join("moved.jsonl"),
+        [
+            record(r"E:\Projects\fly-island", json!({"type": "user", "message": {"content": "开始"}})),
+            record(
+                r"E:\Projects\fly-island\src-tauri",
+                json!({"type": "assistant", "message": {"model": "claude-opus-5-5", "stop_reason": "tool_use", "content": []}}),
+            ),
+        ]
+        .concat(),
+    )
+    .unwrap();
+
+    let sessions = list_sessions(&home);
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].cwd.as_deref(), Some(r"E:\Projects\fly-island"));
+}

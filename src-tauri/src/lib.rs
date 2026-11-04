@@ -144,6 +144,7 @@ pub fn run() {
             agent_status::install_agent_status_hooks,
             agent_status::get_agent_hooks_state,
             agent_status::focus_agent_window,
+            agent_status::list_agent_sessions,
             media_control::get_media_state,
             media_control::get_audio_level,
             media_control::media_play_pause,

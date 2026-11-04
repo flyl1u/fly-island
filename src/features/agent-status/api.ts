@@ -41,6 +41,25 @@ export type AgentHooksState = Record<AgentProvider, HookInstallState> & {
   scriptsOutdated: boolean;
 };
 
+/** Mirrors AgentSessionSummary in src-tauri/src/agent_status/sessions.rs. */
+export type AgentSessionSummary = {
+  provider: AgentProvider;
+  sessionId: string;
+  cwd: string | null;
+  title: string | null;
+  /** "Opus 5.5" for Claude models, the raw name otherwise. */
+  model: string | null;
+  effort: string | null;
+  phase: Exclude<AgentTaskPhase, "idle">;
+  lastMessage: string | null;
+  updatedAt: number;
+};
+
+/** Claude Code and Codex sessions active in the last two hours, running ones first. */
+export function listAgentSessions() {
+  return invoke<AgentSessionSummary[]>("list_agent_sessions");
+}
+
 /** Brings the editor or terminal window of a session to the front; false when none matched. */
 export function focusAgentWindow(provider: AgentProvider, cwd: string | null, title: string | null) {
   return invoke<boolean>("focus_agent_window", { provider, cwd, title });
