@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TODO_SAVE_DIRECTORY_STORAGE_KEY, loadSaveDirectory, saveSaveDirectory } from "./storage";
 import type { SavePathState } from "./types";
+
+const SAVED_CONFIRMATION_MS = 2_500;
 
 /** The save directory field in the settings window: an editable draft saved on demand. */
 export function useSaveDirectorySetting() {
@@ -8,6 +10,9 @@ export function useSaveDirectorySetting() {
     useState(loadSaveDirectory);
   const [savePathState, setSavePathState] = useState<SavePathState>("idle");
   const [highlightSavePath, setHighlightSavePath] = useState(false);
+  const savedTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(savedTimer.current), []);
 
   useEffect(() => {
     const syncFromIsland = (event: StorageEvent) => {
@@ -28,7 +33,9 @@ export function useSaveDirectorySetting() {
     setSaveDirectoryDraft(nextDirectory);
     setHighlightSavePath(false);
     setSavePathState("saved");
-    window.setTimeout(() => setSavePathState("idle"), 1200);
+    // Restart the timer on every save so a second save keeps the confirmation up for the full time.
+    window.clearTimeout(savedTimer.current);
+    savedTimer.current = window.setTimeout(() => setSavePathState("idle"), SAVED_CONFIRMATION_MS);
   }, [saveDirectoryDraft]);
 
   const highlight = useCallback(() => setHighlightSavePath(true), []);

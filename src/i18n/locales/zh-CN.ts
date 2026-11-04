@@ -396,7 +396,7 @@ const zhCN: Translations = {
     },
 
     todo: {
-      title: "待办设置",
+      title: "任务",
       carryOverIncomplete: "自动将未完成任务写入下一天",
       enableReorder: "允许拖动调整任务顺序",
       rotateTodos: "多任务流动",
