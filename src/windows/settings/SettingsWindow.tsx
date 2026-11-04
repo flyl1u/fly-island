@@ -7,13 +7,10 @@ import { IntegrationsSettingsPage } from "./IntegrationsSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
-import { useLaunchAtStartup } from "./useLaunchAtStartup";
-import { useAgentStatusSettings } from "../../features/agent-status/useAgentStatusSettings";
 import { DEFAULT_SETTINGS, isSameSettings } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettings, saveSettings } from "../../features/appearance/storage";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useSettingPresets } from "../../features/appearance/useSettingPresets";
-import { useClipboardSettings } from "../../features/clipboard/useClipboardSettings";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
@@ -28,9 +25,6 @@ export function SettingsWindow() {
   const wechatReminders = useWeChatReminders(false);
   const [settings, setSettings] = useState<IslandSettings>(loadSettings);
   const presets = useSettingPresets(settings, setSettings);
-  const [launchAtStartup, updateLaunchAtStartup] = useLaunchAtStartup();
-  const [clipboardSettings, updateClipboardSettings] = useClipboardSettings();
-  const agentStatus = useAgentStatusSettings();
   const saveDirectory = useSaveDirectorySetting();
   const [category, setCategory] = useState<SettingsCategory>(DEFAULT_SETTINGS_CATEGORY);
   const highlightSaveDirectory = saveDirectory.highlight;
@@ -94,11 +88,9 @@ export function SettingsWindow() {
           <GeneralSettingsPage
             locale={locale}
             settings={settings}
-            launchAtStartup={launchAtStartup}
             saveDirectory={saveDirectory}
             onLocaleChange={setLocale}
             onSettingsChange={setSettings}
-            onLaunchAtStartupChange={updateLaunchAtStartup}
           />
         )}
         {category === "appearance" && (
@@ -114,13 +106,7 @@ export function SettingsWindow() {
             wechatReminders={wechatReminders}
           />
         )}
-        {category === "integrations" && (
-          <IntegrationsSettingsPage
-            agentStatus={agentStatus}
-            clipboardSettings={clipboardSettings}
-            onClipboardSettingsChange={updateClipboardSettings}
-          />
-        )}
+        {category === "integrations" && <IntegrationsSettingsPage />}
         {category === "about" && <ProjectSettingsSection />}
       </LayoutEditor>
     </main>

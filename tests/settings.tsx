@@ -95,6 +95,11 @@ if (!automated) {
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
     }
 
+    const agentPolls = () => commands.filter(command => command === "get_agent_status").length;
+    const pollsAway = agentPolls();
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_200)); });
+    check(agentPolls() === pollsAway, "Agent status is not polled while its page is closed");
+
     await act(async () => {
       localStorage.setItem("focusd-island-settings-focus", JSON.stringify({ section: "savePath", requestedAt: Date.now() }));
       window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings-focus", newValue: "x", storageArea: localStorage }));

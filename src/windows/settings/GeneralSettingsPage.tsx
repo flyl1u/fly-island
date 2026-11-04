@@ -5,25 +5,23 @@ import { TodoSettingsSection } from "../../features/appearance/TodoSettingsSecti
 import type { IslandSettings } from "../../features/appearance/types";
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
+import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 export function GeneralSettingsPage({
   locale,
   settings,
-  launchAtStartup,
   saveDirectory,
   onLocaleChange,
   onSettingsChange,
-  onLaunchAtStartupChange,
 }: {
   locale: LocaleCode;
   settings: IslandSettings;
-  launchAtStartup: boolean;
   saveDirectory: ReturnType<typeof useSaveDirectorySetting>;
   onLocaleChange: (locale: LocaleCode) => void;
   onSettingsChange: (settings: IslandSettings) => void;
-  onLaunchAtStartupChange: (enabled: boolean) => void;
 }) {
   const t = useTranslation();
+  const [launchAtStartup, updateLaunchAtStartup] = useLaunchAtStartup();
 
   return (
     <>
@@ -41,7 +39,7 @@ export function GeneralSettingsPage({
         settings={settings}
         launchAtStartup={launchAtStartup}
         onSettingsChange={onSettingsChange}
-        onLaunchAtStartupChange={onLaunchAtStartupChange}
+        onLaunchAtStartupChange={updateLaunchAtStartup}
       />
       <TodoSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <SavePathSettingsSection
