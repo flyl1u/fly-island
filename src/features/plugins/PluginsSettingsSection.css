@@ -1,0 +1,32 @@
+.plugins-panel {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.plugins-folder {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugins-folder > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.plugins-folder code {
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

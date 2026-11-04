@@ -1,0 +1,150 @@
+.plugin-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+}
+
+.plugin-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugin-card__title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.plugin-card__title strong {
+  overflow: hidden;
+  color: var(--color-text-strong);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-card__title span,
+.plugin-card__description,
+.plugin-card__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.plugin-card__status {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.plugin-card__status--running {
+  color: #98d4bb;
+}
+
+.plugin-card__status--restarting,
+.plugin-card__status--starting {
+  color: #f2d27a;
+}
+
+.plugin-card__status--crashed {
+  color: #ffb4a8;
+}
+
+.plugin-card__permissions {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.plugin-card__permissions > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-weight: 700;
+}
+
+.plugin-card__permissions ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-card__permissions li {
+  padding: 3px 8px;
+  color: var(--color-text);
+  background: var(--color-white-a10);
+  border-radius: var(--radius-pill);
+}
+
+.plugin-card__permissions em {
+  color: var(--color-text-muted);
+  font-style: normal;
+}
+
+.plugin-card__error {
+  margin: 0;
+  color: #ffb4a8;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.plugin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plugin-card__actions:empty {
+  display: none;
+}
+
+.plugin-card__button {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.plugin-card__button:hover {
+  background: var(--color-white-a10);
+}
+
+.plugin-card__log summary {
+  color: rgba(248, 246, 240, 0.62);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plugin-card__log pre {
+  max-height: 160px;
+  margin: 6px 0 0;
+  padding: 8px;
+  overflow: auto;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.24);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

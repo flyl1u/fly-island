@@ -9,6 +9,7 @@ export const SETTINGS_CATEGORIES = [
   "clipboard",
   "shelf",
   "agents",
+  "plugins",
   "about",
 ] as const;
 

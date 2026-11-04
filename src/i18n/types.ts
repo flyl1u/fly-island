@@ -402,6 +402,7 @@ export type Translations = {
       translation: string;
       shelf: string;
       agents: string;
+      plugins: string;
       about: string;
     };
 
@@ -579,6 +580,28 @@ export type Translations = {
       configFile: string;
       running: string;
       stopped: string;
+    };
+    plugins: {
+      title: string;
+      allowThirdParty: string;
+      warning: string;
+      folder: string;
+      openFolder: string;
+      reload: string;
+      empty: string;
+      enable: string;
+      by: (author: string) => string;
+      homepage: string;
+      permissions: string;
+      noPermissions: string;
+      permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write", string>;
+      needsApproval: string;
+      notAllowed: string;
+      describedOnly: string;
+      invalid: string;
+      log: string;
+      noLog: string;
+      status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed", string>;
     };
   };
 };
