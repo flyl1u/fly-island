@@ -550,7 +550,7 @@ const zhCN: Translations = {
       },
       sessionTitleSection: "小岛显示",
       sessionTitle: "运行时在小岛显示会话标题",
-      sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。更新后需在下方点一次“安装/修复”。",
+      sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code 和 Codex 的会话记录，不需要安装钩子。",
       sessionPageSection: "会话列表",
       sessionVisibleRows: "展开后显示条数",
       sessionPageHint: "岛屿展开后的 Agent 页一次显示的会话数，更多的会话可以滚动查看。",

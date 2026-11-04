@@ -54,7 +54,7 @@
 ## AI Agent 会话标题
 
 - Codex / Claude Code 运行时，小岛在待办位置显示"Agent 图标 + 会话标题"，标题单行省略、不撑宽小岛；完成后保留 3 秒再恢复待办，失败或可能中断时配黄灯继续显示。优先级：消息预览 > Agent 标题 > 待办。多个 Agent 同时运行时只显示最近有动静的一个。（用户确认：图标和标题）
-- 标题优先用 Agent 自己生成的标题（Claude Code 的 `ai-title`、Codex 的 `session_index.jsonl`），没有时依次退回第一句提问、文件夹名。"AI Agent"设置页"小岛显示"中可关闭，默认开启；需要点一次"安装/修复"才会生效。设计与实测见 `docs/architecture/agent-session-title.md`。（Agent 推断，依据同类项目调研）
+- 标题优先用 Agent 自己生成的标题（Claude Code 的 `ai-title`、Codex 的 `session_index.jsonl`），没有时依次退回第一句提问、文件夹名。"AI Agent"设置页"小岛显示"中可关闭，默认开启。Claude Code / Codex 的标题与 Agent 页同源，直接读会话记录，不依赖钩子（用户确认：统一数据来源）；插件和本地接口上报的来源用各自上报的标题。设计与实测见 `docs/architecture/agent-session-title.md`。（Agent 推断，依据同类项目调研）
 - 图标使用官网的 Claude、OpenAI 应用图标，16px 圆角 4px，与 QQ / 微信图标同尺寸。（Agent 推断）
 - 小岛显示 Agent 标题时，点击（或悬停展开）打开岛上的 Agent 页，不直接跳终端。（用户确认）
 - AI Agent 开启时，小岛最右侧的灰色收起圆点换成正在运行的会话数（蓝色数字，含可能中断的会话），点击打开 Agent 页；没有运行中的会话时不显示。收起到边缘改由闲置自动收起或展开后的最小化按钮（最小化方式选"收起到边缘"）完成。AI Agent 关闭时保留原灰点。（用户确认：灰点改成数字、去掉收起）

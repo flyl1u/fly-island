@@ -547,7 +547,7 @@ const en: Translations = {
       },
       sessionTitleSection: "On the island",
       sessionTitle: "Show the session title while running",
-      sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. After updating, click Install/repair below once.",
+      sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the Claude Code and Codex session files, so no hooks are needed.",
       sessionPageSection: "Session list",
       sessionVisibleRows: "Entries shown when open",
       sessionPageHint: "How many sessions the island's Agent page shows at once; scroll for the rest.",

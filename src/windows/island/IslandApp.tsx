@@ -82,13 +82,15 @@ export function IslandApp() {
   } = useMediaState(settings.musicEnabled);
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
-  const agentSession = useAgentSession(agentStatus, settings.agentStatusEnabled && settings.agentTitleEnabled);
-  // Polled faster while the Agent page is open; the collapsed island needs it for the session count.
-  const agentSessions = useAgentSessions(
-    settings.agentStatusEnabled,
-    mode === "expanded" && page === "agents" ? 2000 : 3000,
-  );
+  // Read every second: the collapsed island names sessions from it and holds a finished one's
+  // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
+  const agentSessions = useAgentSessions(settings.agentStatusEnabled, 1000);
   const activeAgentSessionCount = countActiveSessions(agentSessions);
+  const agentSession = useAgentSession(
+    agentSessions,
+    agentStatus.others,
+    settings.agentStatusEnabled && settings.agentTitleEnabled,
+  );
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
