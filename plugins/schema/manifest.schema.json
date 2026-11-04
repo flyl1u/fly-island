@@ -82,6 +82,24 @@
           "type": "array",
           "maxItems": 20,
           "items": { "$ref": "#/$defs/setting" }
+        },
+        "menus": {
+          "description": "apiVersion 2: commands the island lists in its own menus. Ignored for apiVersion 1.",
+          "type": "object",
+          "properties": {
+            "todo/context": {
+              "description": "The right-click menu of a todo. Picking an entry sends the plugin `command` with { id, args: { todoId } }; read the todo with todos.list (todos:read).",
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
+                }
+              }
+            }
+          }
         }
       }
     }

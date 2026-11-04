@@ -311,6 +311,7 @@ const en: Translations = {
     deleteTask: (taskTitle) => `Delete: ${taskTitle}`,
     reorder: "Drag to reorder",
     reorderTask: (taskTitle) => `Reorder: ${taskTitle}`,
+    pluginMenu: "Plugin actions",
   },
 
   clipboard: {

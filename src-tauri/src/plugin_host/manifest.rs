@@ -6,6 +6,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
+use super::menus::{self, PluginMenus};
 use super::permissions::is_known_permission;
 use super::settings::{validate_specs, SettingSpec};
 use crate::clipboard_history::parse_shortcut_binding;
@@ -81,6 +82,10 @@ impl PluginCommand {
         &self.id
     }
 
+    pub(super) fn title(&self) -> &LocalizedText {
+        &self.title
+    }
+
     pub(super) fn keybinding(&self) -> Option<&str> {
         self.keybinding.as_deref()
     }
@@ -122,6 +127,9 @@ pub(super) struct PluginContributions {
     /// Drawn and stored by the island; see settings.rs.
     #[serde(default)]
     pub settings: Vec<SettingSpec>,
+    /// Commands listed in island menus (API version 2); see menus.rs.
+    #[serde(default)]
+    pub menus: PluginMenus,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -225,6 +233,9 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     for command in &mut manifest.contributes.commands {
         check_keybinding(command, api_version)?;
     }
+    let contributes = &mut manifest.contributes;
+    let command_ids: Vec<&str> = contributes.commands.iter().map(PluginCommand::id).collect();
+    menus::check(&mut contributes.menus, &command_ids, api_version)?;
     Ok(manifest)
 }
 

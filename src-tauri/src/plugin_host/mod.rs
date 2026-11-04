@@ -8,6 +8,7 @@
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
 //! - keybindings.rs: global shortcuts of plugin commands
+//! - menus.rs: plugin commands in island menus (`contributes.menus`)
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
@@ -19,6 +20,7 @@ mod grants;
 mod keybindings;
 mod manifest;
 mod market;
+mod menus;
 mod notify;
 mod permissions;
 mod registry;

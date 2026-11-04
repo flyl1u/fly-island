@@ -191,6 +191,21 @@ export function listenPluginNotifications(onNotification: (notification: PluginN
   return listen<PluginNotification>(PLUGIN_NOTIFICATION_EVENT, (event) => onNotification(event.payload));
 }
 
+// 与 src-tauri/src/plugin_host/menus.rs 中的 TODO_CONTEXT、PluginMenuEntry 对应。
+export const TODO_CONTEXT_MENU = "todo/context";
+export type PluginMenu = typeof TODO_CONTEXT_MENU;
+export type PluginMenuEntry = { pluginId: string; pluginName: LocalizedText; command: string; title: LocalizedText };
+
+/** What running plugins add to an island menu (contributes.menus). */
+export function listPluginMenu(menu: PluginMenu) {
+  return invoke<PluginMenuEntry[]>("list_plugin_menu", { menu });
+}
+
+/** Sends the plugin `command` with `args.todoId`. */
+export function runPluginMenuCommand(id: string, menu: PluginMenu, command: string, todoId: string) {
+  return invoke<void>("run_plugin_menu_command", { id, menu, command, todoId });
+}
+
 // 与 src-tauri/src/plugin_host/keybindings.rs 中的 KEYBINDING_EVENT 对应。
 const PLUGIN_KEYBINDING_EVENT = "plugin-keybinding";
 export type PluginKeybindingPress = { pluginId: string; command: string; when: string | null };

@@ -547,3 +547,18 @@ fn keybindings_are_checked_for_version_2_and_dropped_for_version_1() {
     let bad_when = json!({ "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" }, "when": "a; b" }] });
     assert!(parse(json!({ "apiVersion": 2, "contributes": bad_when })).expect_err("bad when").contains("when"));
 }
+
+#[test]
+fn todo_menus_must_name_own_commands_and_are_dropped_for_version_1() {
+    let contributes = |menu: Value| {
+        json!({ "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" } }], "menus": { "todo/context": menu } })
+    };
+    let v2 = parse(json!({ "apiVersion": 2, "contributes": contributes(json!([{ "command": "go" }])) })).expect("valid");
+    assert_eq!(v2.contributes.menus.todo_context.len(), 1);
+    let v1 = parse(json!({ "apiVersion": 1, "contributes": contributes(json!([{ "command": "missing" }])) })).expect("v1 ignores menus");
+    assert!(v1.contributes.menus.todo_context.is_empty());
+    let unknown = parse(json!({ "apiVersion": 2, "contributes": contributes(json!([{ "command": "missing" }])) }));
+    assert!(unknown.expect_err("unknown command").contains("missing"));
+    let twice = parse(json!({ "apiVersion": 2, "contributes": contributes(json!([{ "command": "go" }, { "command": "go" }])) }));
+    assert!(twice.expect_err("duplicate").contains("twice"));
+}

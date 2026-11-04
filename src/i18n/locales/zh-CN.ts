@@ -314,6 +314,7 @@ const zhCN: Translations = {
     deleteTask: (taskTitle) => `删除：${taskTitle}`,
     reorder: "拖动排序",
     reorderTask: (taskTitle) => `拖动排序：${taskTitle}`,
+    pluginMenu: "插件操作",
   },
 
   clipboard: {

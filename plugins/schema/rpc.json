@@ -180,7 +180,7 @@
       "since": 1,
       "params": "{ apiVersion, capabilities (since 2), appVersion, pluginId, dataDir, permissions, settings }"
     },
-    { "name": "command", "since": 1, "params": "{ id }" },
+    { "name": "command", "since": 1, "params": "{ id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus \"todo/context\", since 2) sends { id, args: { todoId } }" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },
     { "name": "event", "since": 2, "params": "{ name, payload }; at most one per event name every 200 ms, carrying the latest payload. Subscriptions end when the process exits." },
     { "name": "notification.action", "since": 2, "params": "{ id }: the user clicked that button of an island.notify message" },

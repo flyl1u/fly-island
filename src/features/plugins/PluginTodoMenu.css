@@ -1,0 +1,58 @@
+/* The todo page wrapper adds no box of its own. */
+.plugin-todo-menu-area {
+  display: contents;
+}
+
+/* Right-click menu of a todo with commands from plugins (contributes.menus "todo/context"). */
+.plugin-todo-menu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(24, 26, 30, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.plugin-todo-menu__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 9px;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 30px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plugin-todo-menu__item span,
+.plugin-todo-menu__item small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-todo-menu__item small {
+  flex: 0 1 auto;
+  max-width: 45%;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.plugin-todo-menu__item:hover,
+.plugin-todo-menu__item:focus-visible {
+  background: rgba(110, 231, 200, 0.16);
+  outline: none;
+}

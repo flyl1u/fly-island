@@ -7,7 +7,7 @@ use std::fs;
 use super::{
     app_version, builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
-    host, lock, market, notify,
+    host, lock, market, menus, notify,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings, storage,
 };
@@ -233,6 +233,19 @@ pub fn run_plugin_notification_action(id: String, action: String) -> Result<(), 
     let supervisors = lock(&host.supervisors);
     let supervisor = supervisors.get(&id).ok_or("The plugin is not running.")?;
     supervisor.notify("notification.action", json!({ "id": action }))
+}
+
+/// What running plugins add to an island menu (`contributes.menus`), e.g. "todo/context".
+#[tauri::command]
+pub fn list_plugin_menu(menu: String) -> Result<Vec<menus::PluginMenuEntry>, String> {
+    menus::entries(&menu)
+}
+
+/// The user picked a plugin entry in the right-click menu of a todo; the plugin
+/// gets `command` with `args.todoId`.
+#[tauri::command]
+pub fn run_plugin_menu_command(id: String, menu: String, command: String, todo_id: String) -> Result<(), String> {
+    menus::run(&id, &menu, &command, &todo_id)
 }
 
 /// Turns a plugin's `island.notify` messages off or back on.

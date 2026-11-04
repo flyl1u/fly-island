@@ -3,6 +3,7 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useQQMail } from "../../features/messages/qq-mail/QQMail";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
+import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
@@ -336,11 +337,13 @@ export function IslandApp() {
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (
-          <TodoNotebook
-            {...notebookProps}
-            enableTodoReorder={settings.enableTodoReorder}
-            scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
-          />
+          <PluginTodoMenuArea>
+            <TodoNotebook
+              {...notebookProps}
+              enableTodoReorder={settings.enableTodoReorder}
+              scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
+            />
+          </PluginTodoMenuArea>
         )}
       </IslandShell>
     </main>

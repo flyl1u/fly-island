@@ -314,6 +314,8 @@ export type Translations = {
     deleteTask: (taskTitle: string) => string;
     reorder: string;
     reorderTask: (taskTitle: string) => string;
+    /** The right-click menu plugins add commands to. */
+    pluginMenu: string;
   };
 
   clipboard: {
