@@ -1,0 +1,75 @@
+/* UpdatePanel 复用这里的 project-link 卡片样式（它只在本区块内渲染）。 */
+.project-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  min-width: 0;
+  padding: 10px 12px;
+  color: var(--color-text-strong);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--color-white-a08);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.project-link:hover {
+  background: var(--color-white-a10);
+  border-color: var(--color-white-a18);
+}
+
+.project-link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.project-link__icon,
+.project-link__arrow {
+  flex: 0 0 auto;
+  color: rgba(248, 246, 240, 0.52);
+}
+
+.project-link--star .project-link__icon {
+  color: var(--color-warning);
+  transition: transform 140ms ease, fill 140ms ease;
+}
+
+.project-link--star:is(:hover, :focus-visible) .project-link__icon {
+  fill: currentColor;
+  transform: rotate(-12deg) scale(1.1);
+}
+
+.project-link--release .project-link__icon {
+  transition: transform 180ms ease, color 140ms ease;
+}
+
+.project-link--release:is(:hover, :focus-visible) .project-link__icon {
+  color: var(--color-sky);
+  transform: rotate(-30deg);
+}
+
+.project-link__copy {
+  display: grid;
+  flex: 1;
+  gap: var(--space-xs);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.project-link__copy strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-link__copy > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 11px;
+}
+
+.project-link-error {
+  margin: 0;
+  color: #ffd8df;
+  font-size: 12px;
+  line-height: 1.5;
+}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { detectLocale, isLocaleCode, loadLocale, saveLocale, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../src/i18n/index.ts";
-import { messagePreviewText } from "../src/messagePreview.ts";
+import { messagePreviewText } from "../src/features/messages/messagePreview.ts";
 import { getCollapsedTextUnits, getTodoTitleLineCount, getTodoTitleVisualLength } from "../src/utils/text.ts";
 
 test("locale detection respects language preference order and regional tags", () => {

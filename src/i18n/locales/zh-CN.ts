@@ -316,6 +316,19 @@ const zhCN: Translations = {
     title: "设置",
     reset: "恢复默认",
 
+    categories: {
+      label: "设置分类",
+      general: "通用",
+      appearance: "外观",
+      notifications: "通知",
+      integrations: "集成",
+      about: "关于",
+    },
+
+    behavior: {
+      title: "启动与收起",
+    },
+
     project: {
       title: "关于小岛",
       star: "觉得小岛还不错？",
@@ -373,6 +386,7 @@ const zhCN: Translations = {
       title: "布局设置",
       opacity: "不透明度",
       marginY: "顶部距离",
+      topFilletRadius: "贴顶圆角",
       launchAtStartup: "开机自启动",
       showTitle: "显示岛屿名称",
       autoTuck: "无操作时自动收起到屏幕边缘",

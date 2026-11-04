@@ -1,0 +1,49 @@
+/* Shared design tokens. Values are the exact literals they replaced; changing one restyles every user. */
+:root {
+  /* Neutrals */
+  --color-white: #ffffff;
+  --color-black: #000;
+  --color-text: #f8f6f0;
+  --color-text-strong: rgba(248, 246, 240, 0.88);
+  --color-text-muted: rgba(248, 246, 240, 0.72);
+  --color-page-text: #f7f5ef;
+  --color-surface-dark: #111112;
+
+  /* Translucent white overlays and borders */
+  --color-white-a08: rgba(255, 255, 255, 0.08);
+  --color-white-a09: rgba(255, 255, 255, 0.09);
+  --color-white-a10: rgba(255, 255, 255, 0.1);
+  --color-white-a12: rgba(255, 255, 255, 0.12);
+  --color-white-a16: rgba(255, 255, 255, 0.16);
+  --color-white-a18: rgba(255, 255, 255, 0.18);
+
+  /* Todo notebook paper */
+  --color-ink: #1f1b16;
+  --color-ink-muted: rgba(31, 27, 22, 0.58);
+
+  /* Accents and states */
+  --color-accent: #74d6ff;
+  --color-sky: #a8d8ea;
+  --color-success: #2f8c61;
+  --color-danger: #c75065;
+  --color-warning: #ffd166;
+  --color-agent-idle: #35e985;
+  --color-agent-running: #ff4d5e;
+  --color-focus-ring: rgba(143, 216, 255, 0.88);
+  --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* Spacing (gaps) */
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 8px;
+  --space-lg: 10px;
+  --space-xl: 12px;
+  --space-2xl: 14px;
+}

@@ -6,6 +6,7 @@ mod messenger_activation;
 mod notification_diagnostics;
 mod qq_mail;
 mod qq_notifications;
+mod settings_window;
 mod system;
 mod translation;
 mod tray;
@@ -133,6 +134,7 @@ pub fn run() {
             translation::delete_translation_secret,
             translation::translate_text,
             translation::set_translation_shortcut,
+            settings_window::open_settings_window,
         ])
         .run(context)
         .expect("error while running FocuSD Island");

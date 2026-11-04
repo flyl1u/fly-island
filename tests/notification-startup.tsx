@@ -2,8 +2,9 @@
 import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
-import { QQNotificationControls, useQQNotifications, type QQNotificationsController } from "../src/QQNotifications";
-import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../src/WeChatReminders";
+import "../src/styles/tokens.css";
+import { QQNotificationControls, useQQNotifications, type QQNotificationsController } from "../src/features/messages/qq-notifications/QQNotifications";
+import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../src/features/messages/wechat/WeChatReminders";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested"];

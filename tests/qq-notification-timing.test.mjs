@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { nextQQPreview } from "../src/qqNotificationTiming.ts";
+import { nextQQPreview } from "../src/features/messages/qqNotificationTiming.ts";
 
 test("a new message previews for five seconds", () => {
   assert.equal(nextQQPreview(null, 1_000).expiresAt, 6_000);

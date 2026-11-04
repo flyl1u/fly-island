@@ -1,0 +1,9 @@
+.message-brand-icon {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.message-brand-icon--wechat {
+  border-radius: 4px;
+}
