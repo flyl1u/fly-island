@@ -165,7 +165,8 @@
   - [x] 剪贴板：新增 `win32/message_window.rs`（`WindowMessages` trait 让窗口过程成为安全的 `handle` 方法，返回 `None` 时交给 `DefWindowProcW`；类注册、仅消息窗口、`PostMessageW`、`GetMessageW` 循环）、`win32/hotkey.rs`（注册时总是加 `MOD_NOREPEAT`）、`win32/clipboard.rs`（剪贴板格式监听）。`clipboard_history/service.rs`、`hotkey.rs` 不再含 `unsafe`，`unregister_current_hotkey` 不再是 `unsafe fn`。
   - [x] 翻译：复用上一步的 `message_window`、`hotkey`，以及 `window::foreground_window` / `window_rect`；`translation/` 不再含 `unsafe`。
   - [x] 微信：`win32/process_times.rs`（进程启动时间，复用 `process.rs` 中改为 `pub(super)` 的句柄类型）、`win32/shell_hook.rs`（`SHELLHOOK` 消息与注册），`message_window.rs` 增加工具弹窗、销毁窗口、注销类和 `PeekMessageW` 派发，`window.rs` 增加 `is_minimized`。`wechat_reminders/mod.rs`、`source.rs` 不再含 `unsafe`。示例程序 `wechat_reminder_probe.rs` 同步引入 `message_window.rs`、`shell_hook.rs`、`window.rs`，只用到其中一部分的两个文件加了 `#[allow(dead_code)]`。至此生产代码中 `win32/` 以外没有 `unsafe`（`messenger_activation.rs` 测试模块里的 1 处除外）。
-- [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
+- [x] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
+  - [x] `Cargo.toml` 的 `undocumented_unsafe_blocks`、`unwrap_used`、`expect_used` 升级为 deny（测试中的 `unwrap` / `expect` 仍由 `clippy.toml` 放行）。CI 的 `cargo clippy --all-targets` 遇到这三条会失败。
   - [x] `expect`：窗口状态锁改为 `unwrap_or_else(PoisonError::into_inner)`（与 `island/mod.rs` 拖动结束时的写法一致）；默认剪贴板快捷键改为返回 `Option`，调用方不再 panic，新增测试确认默认值能解析且解析后的标签与常量相同；`lib.rs` 中 `run()` 的启动失败先保留了 `expect` 并用 `#[expect(clippy::expect_used)]` 标注（`c5110f5`），随后按 src-tauri/AGENTS.md"生产代码禁止 `expect`"改为打印错误后 `exit(1)`（见 6.3（3/n））。
   - [x] 测试与示例中的 `unsafe` 块补上 `// SAFETY:` 注释（`qq_notifications/tests.rs` 7、`wechat_reminders/tests.rs` 3、`messenger_activation.rs` 测试模块 1、3 个探测示例 11），只加注释，不改代码。升级为 deny 后这些位置也会被检查。
 
@@ -342,6 +343,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.3（1/n） | 见提交说明 | 生产代码中的 4 处 `expect` 处理完毕（见 6.3 说明）。行为差异只在失败路径：窗口状态锁中毒后不再 panic，而是继续使用锁内的值；默认快捷键（`Ctrl+X`）由测试保证可解析，正常路径不变 | `cargo test`（122 / 5）、clippy 34 → 30；`pnpm tauri build --no-bundle`，桌面快捷方式已核对。`pnpm check` 当时因另一会话进行中的前端改动（回归页 `AgentSession` 类型）失败，与本次 Rust 改动无关 |
 | 2026-11-04 | 6.3（2/n） | 见提交说明 | 22 处测试与示例中的 `unsafe` 块补上 `// SAFETY:` 注释，代码不变 | `cargo test`（122 / 5）、`cargo build --all-targets`、clippy 30 → 8（剩下的都不是 Phase 0 的三条 lint）；`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.3（3/n） | 见提交说明 | 清掉其余 8 条 clippy 告警：`PersistedClipboardHistory` 改为 derive `Default`（字段默认值相同）；鼠标穿透循环的嵌套 `if` 合并为 `&&`（仍只在状态需要变化时调用）；`lib.rs` 去掉多余的 `return`；缩略图缓存与待处理快捷键的类型提取为类型别名；`responses_for_message` 省略生命周期；`set_island_interaction`（参数即 IPC 契约，不能改）与 `point_in_notch` 用带理由的 `#[expect(clippy::too_many_arguments)]`。另外 `run()` 的启动失败由 `expect` 改为打印错误后 `exit(1)`，只影响失败路径 | `cargo test`（123 / 6，含另一会话新增）、clippy 8 → 0；`pnpm check`（120/120）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
+| 2026-11-04 | 6.3（4/4）、Phase 6 验收 | 见提交说明 | 三条 lint 升级为 deny。Phase 6 验收：生产代码中 `win32/` 以外没有 `unsafe`（测试模块与探测示例中的均有 SAFETY 注释）；`cargo clippy --all-targets` 0 告警；`win32/` 共 13 个文件（`audio`、`clipboard`、`com`、`hotkey`、`input`、`message_window`、`ole`、`process`、`process_times`、`registry`、`shell_hook`、`window` 及 `mod.rs`）。各步提交前另在干净 worktree 中对 HEAD 做 `cargo check --all-targets`，确认提交不依赖其他会话未提交的代码 | `cargo test`、`cargo clippy --all-targets`（0 告警，退出码 0）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对；涉及桌面行为的手动检查见"待人工验收" 6.2 |
 
 ## 待人工验收
 
@@ -375,6 +377,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | `2c12ab1`、`ef6b311` | 5.5 | QQ 通知（中英文）：开关、首次请求通知权限、打开系统通知设置、收到 QQ 消息后列表与折叠态预览更新、清空、打开 QQ（已运行时激活窗口，未运行时启动）、通知注册损坏时的自动修复、设置窗口的通知诊断。 |
 | `a729752`、`9b7393f` | 5.6 | 剪贴板（同 2.3 检查项），重点看原生侧：复制文字与图片后列表实时更新、图片缩略图、复制回剪贴板、重启后历史与收藏保留、全局快捷键打开剪贴板页、在设置中修改快捷键后重新注册、快捷翻译快捷键仍可录制与注册（复用快捷键解析）。 |
 | `f290a34`、`53e9de3` | 5.8 | 微信提醒（中英文）：开关、微信托盘图标闪烁时主窗口出现提醒、打开微信（恢复原主窗口，失败时显示提示）；可选：`cargo run --example wechat_reminder_probe` 仍能运行。 |
+| `b2b5248`…`8252f0e` | 6.1–6.3 | `pnpm tauri dev` 或桌面快捷方式：鼠标穿透与悬停（折叠 / 展开、圆角处）、Ctrl + 拖动移动岛屿并在松开左键后吸附与保存位置、液态玻璃开关；音乐页播放控制、音量调节、波形；QQ 通知开关与"打开 QQ"（托盘唤回）；剪贴板变化实时更新、剪贴板全局快捷键及在设置中改快捷键；快捷翻译快捷键（Alt+C）开关窗口、在设置中改快捷键（冲突时恢复旧快捷键）、首次打开时出现在前台窗口所在的屏幕；微信托盘闪烁提醒与打开微信。启动失败路径改为打印错误后 `exit(1)`，无需手动检查。 |
 | `1fcfa89`、`a918a97` | 6.1 | 打开 QQ：已运行时激活现有窗口、未运行时按注册表中的安装路径启动；未安装 QQ 时显示"未找到 QQ 安装路径"。微信提醒：开启后能识别微信窗口与托盘闪烁，打开微信可恢复主窗口；未安装微信时显示"未找到微信安装路径"。 |
 
 ## 待处理问题

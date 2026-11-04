@@ -43,10 +43,10 @@ windows = { version = "0.61", features = ["ApplicationModel", "Foundation", "Fou
 windows-future = { version = "0.2", features = ["std"] }
 
 [lints.clippy]
-# 告警基线见 docs/architecture/refactor-plan.md 0.5，只减不增；Phase 6.3 后升级为 deny。
-undocumented_unsafe_blocks = "warn"
-unwrap_used = "warn"
-expect_used = "warn"
+# Phase 6.3 起为 deny：unsafe 块必须有 SAFETY 注释，生产代码不用 unwrap / expect（测试放行见 clippy.toml）。
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
 
 [dev-dependencies]
 windows = { version = "0.61", features = ["ApplicationModel", "UI_Notifications_Management", "Win32_System_WinRT", "Win32_UI_Accessibility"] }
