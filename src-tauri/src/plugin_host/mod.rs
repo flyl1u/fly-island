@@ -8,6 +8,7 @@ mod market;
 mod permissions;
 mod rpc;
 mod runtime;
+mod signature;
 mod store;
 #[cfg(test)]
 mod tests;

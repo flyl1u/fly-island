@@ -13,10 +13,14 @@ use std::{
 };
 
 use super::manifest::{parse_manifest, version_at_least, LocalizedText, HOST_API_VERSION, MANIFEST_FILE_NAME};
+use super::signature::{verify_index, TRUSTED_KEYS};
 use crate::system::updater::get_updater_proxy;
 
 /// The fork's dev branch for now, so publishing plugins leaves main (and upstream
-/// PR #36, which tracks it) alone. See scripts/build-plugin-index.mjs.
+/// PR #36, which tracks it) alone. See MARKET_BASE_URL in scripts/build-plugin-index.mjs.
+const MARKET_REPO: &str = "TixXin/fly-island";
+const MARKET_BRANCH: &str = "dev";
+/// Shown on the settings page; the index itself is read at the branch's newest commit.
 pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json";
 const INDEX_VERSION: u32 = 1;
 const MAX_INDEX_BYTES: usize = 1024 * 1024;
@@ -144,9 +148,36 @@ async fn download(url: &str, limit: u64) -> Result<Vec<u8>, String> {
     Ok(bytes.to_vec())
 }
 
+/// The newest commit on the market branch, so the index and its signature are
+/// read from the same commit and not from a stale CDN copy of the branch.
+/// None when the GitHub API cannot be used (offline, rate limited).
+async fn market_commit() -> Option<String> {
+    let response = client()
+        .ok()?
+        .get(format!("https://api.github.com/repos/{MARKET_REPO}/commits/{MARKET_BRANCH}"))
+        .header("Accept", "application/vnd.github.sha")
+        .send()
+        .await
+        .ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let sha = response.text().await.ok()?.trim().to_string();
+    (sha.len() == 40 && sha.bytes().all(|byte| byte.is_ascii_hexdigit())).then_some(sha)
+}
+
+async fn download_text(url: &str) -> Result<String, String> {
+    let bytes = download(url, MAX_INDEX_BYTES as u64).await?;
+    String::from_utf8(bytes).map_err(|_| format!("{url} is not UTF-8."))
+}
+
+/// Downloads the index and its signature, checks the signature, then parses it.
 pub(super) async fn fetch_index() -> Result<Vec<MarketEntry>, String> {
-    let bytes = download(INDEX_URL, MAX_INDEX_BYTES as u64).await?;
-    let text = String::from_utf8(bytes).map_err(|_| "The plugin index is not UTF-8.".to_string())?;
+    let reference = market_commit().await.unwrap_or_else(|| MARKET_BRANCH.to_string());
+    let base = format!("https://raw.githubusercontent.com/{MARKET_REPO}/{reference}/plugins");
+    let text = download_text(&format!("{base}/index.json")).await?;
+    let signature = download_text(&format!("{base}/index.json.sig")).await?;
+    verify_index(&text, &signature, TRUSTED_KEYS)?;
     parse_index(&text)
 }
 

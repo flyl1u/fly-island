@@ -1,11 +1,13 @@
 // Packs every plugin under plugins/examples into plugins/packages/<id>-<version>.zip
-// and writes plugins/index.json, the plugin market index the app downloads.
+// and writes plugins/index.json, the plugin market index the app downloads, and
+// its signature plugins/index.json.sig (see scripts/plugin-signing.mjs).
 // Usage: pnpm plugins:index. Design: docs/architecture/plugins.md (P4).
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { crc32, deflateRawSync } from "node:zlib";
+import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 /** Where the app downloads the index and packages from: the fork's dev branch, not main or upstream (for now). */
 export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins";
@@ -13,6 +15,7 @@ export const INDEX_VERSION = 1;
 const SOURCE_DIRS = ["plugins/examples"];
 const PACKAGES_DIR = "plugins/packages";
 const INDEX_PATH = "plugins/index.json";
+const SIGNATURE_PATH = "plugins/index.json.sig";
 const MANIFEST = "focusd-plugin.json";
 // 1980-01-01 00:00 in DOS format, so the same files always give the same bytes.
 const DOS_DATE = (0 << 9) | (1 << 5) | 1;
@@ -127,7 +130,8 @@ export function packPlugin(dir) {
   return { manifest, fileName: `${manifest.id}-${manifest.version}.zip`, zip: createZip(files) };
 }
 
-export function buildIndex(root) {
+/** Writes the index and its signature (see scripts/plugin-signing.mjs). */
+export function buildIndex(root, privateKey = loadPrivateKey()) {
   const packagesDir = path.join(root, PACKAGES_DIR);
   mkdirSync(packagesDir, { recursive: true });
   const entries = [];
@@ -148,7 +152,9 @@ export function buildIndex(root) {
   }
   entries.sort((left, right) => left.id.localeCompare(right.id));
   const index = { version: INDEX_VERSION, plugins: entries };
-  writeFileSync(path.join(root, INDEX_PATH), `${JSON.stringify(index, null, 2)}\n`);
+  const text = `${JSON.stringify(index, null, 2)}\n`;
+  writeFileSync(path.join(root, INDEX_PATH), text);
+  writeFileSync(path.join(root, SIGNATURE_PATH), `${JSON.stringify(signIndex(text, privateKey), null, 2)}\n`);
   return index;
 }
 

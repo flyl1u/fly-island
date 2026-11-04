@@ -160,6 +160,27 @@ mod market_tests {
             .expect("example in index")
     }
 
+    const SIGNATURE: &str = include_str!("../../../plugins/index.json.sig");
+
+    #[test]
+    fn the_repository_index_is_signed_by_a_trusted_key() {
+        use super::super::signature::{verify_index, TRUSTED_KEYS};
+        verify_index(INDEX, SIGNATURE, TRUSTED_KEYS).expect("signed");
+        // The same index with CRLF line ends (a Windows checkout) still verifies.
+        let crlf = INDEX.replace("\r\n", "\n").replace('\n', "\r\n");
+        verify_index(&crlf, SIGNATURE, TRUSTED_KEYS).expect("CRLF");
+
+        let tampered = INDEX.replace("\"version\": \"1.1.0\"", "\"version\": \"1.1.1\"");
+        assert_ne!(tampered, INDEX);
+        assert!(verify_index(&tampered, SIGNATURE, TRUSTED_KEYS).expect_err("tampered").contains("does not match"));
+
+        let mut signature: serde_json::Value = serde_json::from_str(SIGNATURE).expect("json");
+        signature["keyId"] = "0000000000000000".into();
+        assert!(verify_index(INDEX, &signature.to_string(), TRUSTED_KEYS).expect_err("unknown key").contains("does not trust"));
+        assert!(verify_index(INDEX, "", TRUSTED_KEYS).expect_err("missing").contains("missing"));
+        assert!(verify_index(INDEX, r#"{"keyId":"7ee2729370070df6","signature":"AAAA"}"#, TRUSTED_KEYS).is_err());
+    }
+
     fn temp_dir(name: &str) -> std::path::PathBuf {
         let dir = std::env::temp_dir().join(format!("focusd-market-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);

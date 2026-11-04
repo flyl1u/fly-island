@@ -191,8 +191,18 @@ plugin.onCommand("sync-now", async () => {
 目前市场索引放在 `TixXin/fly-island` 仓库的 `dev` 分支中：
 
 1. 把插件文件夹放到仓库的 `plugins/examples/<插件 id>/` 下。
-2. 运行 `pnpm plugins:index`。脚本会把插件打包成 `plugins/packages/<id>-<version>.zip`，并重新生成 `plugins/index.json`（包含 SHA-256 和文件大小）。
+2. 运行 `pnpm plugins:index`。脚本会把插件打包成 `plugins/packages/<id>-<version>.zip`，重新生成 `plugins/index.json`（包含 SHA-256 和文件大小），并用签名私钥生成 `plugins/index.json.sig`。
 3. 提交以上文件并推送到 fork 的 `dev` 分支后，应用里的插件市场就能看到这个插件。
+
+### 签名
+
+岛屿只接受签名有效的索引。索引里有每个插件包的 SHA-256，所以给索引签名，也就间接保护了插件包：即使有人能修改仓库或 CDN 上的文件，没有私钥也无法让岛屿安装被改过的插件。
+
+- **算法**：Ed25519。签名对象是 LF 换行的 `index.json`。签名文件的格式为 `{ "keyId", "signature" }`。
+- **公钥**：放在 `plugins/signing-keys.json` 中，编译时嵌入岛屿。如果要换密钥，需要把新公钥加进这个文件，并发布一个新版本的岛屿。
+- **私钥**：只有一份，由 `pnpm plugins:keygen` 生成（只需要运行一次），保存在 `~/.tauri/fly-island/plugin-index-signing.key`，用 Windows DPAPI 加密，只有生成它的 Windows 账户能解开。也可以用环境变量 `FOCUSD_PLUGIN_SIGNING_KEY`（PEM 文本）提供私钥，比如在 CI 里。
+- **备份私钥**：私钥丢失后，已经安装的岛屿不会接受用新密钥签名的索引，只能随新版岛屿换密钥。DPAPI 加密的文件换了电脑或账户就解不开，所以备份时要另外导出一份明文 PEM，放在安全的地方。
+- **下载方式**：岛屿先通过 GitHub API 查出 `dev` 分支最新的提交号，再按提交号下载 `index.json` 和 `index.json.sig`。这样两个文件一定来自同一次提交，也不会读到 CDN 的旧缓存。GitHub API 不可用时，退回按分支名下载；这时如果刚好赶上 CDN 缓存，可能短暂出现"签名不匹配"，稍等几分钟再刷新即可。
 
 规则：
 
@@ -202,6 +212,7 @@ plugin.onCommand("sync-now", async () => {
 
 应用安装插件时会依次检查：
 
+1. 索引的签名有效（见上文）。
 1. 下载的包大小和 SHA-256 与索引一致。
 2. zip 内的路径没有跳出插件目录。
 3. 解压后总大小不超过 100 MB。

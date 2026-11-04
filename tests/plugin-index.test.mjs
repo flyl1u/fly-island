@@ -4,9 +4,32 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { generateKeyPairSync } from "node:crypto";
 import { MARKET_BASE_URL, createZip, packPlugin, readPackedFile, runtimeRequirement, sha256 } from "../scripts/build-plugin-index.mjs";
+import { keyIdOf, rawPublicKey, signIndex, verifyIndex } from "../scripts/plugin-signing.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+test("index signatures verify, survive CRLF and catch changes", () => {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  const raw = rawPublicKey(publicKey);
+  const trusted = [{ keyId: keyIdOf(raw), publicKey: raw.toString("base64") }];
+  const text = '{\n  "version": 1\n}\n';
+  const signature = signIndex(text, privateKey);
+  assert.equal(signature.keyId, trusted[0].keyId);
+  assert.equal(verifyIndex(text, signature, trusted), true);
+  assert.equal(verifyIndex(text.replaceAll("\n", "\r\n"), signature, trusted), true);
+  assert.equal(verifyIndex(text.replace("1", "2"), signature, trusted), false);
+  assert.equal(verifyIndex(text, { ...signature, keyId: "other" }, trusted), false);
+  assert.equal(verifyIndex(text, null, trusted), false);
+});
+
+test("the committed index is signed by a key in plugins/signing-keys.json", () => {
+  const text = readFileSync(path.join(root, "plugins/index.json"), "utf8");
+  const signature = JSON.parse(readFileSync(path.join(root, "plugins/index.json.sig"), "utf8"));
+  const { keys } = JSON.parse(readFileSync(path.join(root, "plugins/signing-keys.json"), "utf8"));
+  assert.equal(verifyIndex(text, signature, keys), true, "run pnpm plugins:index to re-sign");
+});
 
 test("zips are byte-for-byte reproducible", () => {
   const files = [["a.txt", Buffer.from("hello")], ["lib/b.mjs", Buffer.from("export {}")]];

@@ -182,7 +182,7 @@
 
 ## 10. 分发（插件市场）
 
-> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `dev` 分支的 `plugins/` 目录下（不用 `main`，因为上游 PR #36 跟踪的是 `TixXin:main`），应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `INDEX_URL`。索引签名还没有做。
+> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `dev` 分支的 `plugins/` 目录下（不用 `main`，因为上游 PR #36 跟踪的是 `TixXin:main`），应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `MARKET_REPO` / `MARKET_BRANCH` / `INDEX_URL`。索引用 Ed25519 签名（`index.json.sig`），岛屿只信任编译进去的 `plugins/signing-keys.json` 中的公钥，并按 `dev` 分支最新的提交号下载索引和签名，避免读到 CDN 的旧缓存。细节见 [docs/plugins/README.md](../plugins/README.md#签名)。
 
 参考 Obsidian / Zed，第一版不建服务器：
 

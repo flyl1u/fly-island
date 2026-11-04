@@ -21,6 +21,7 @@ tauri-build = { version = "2", features = [] }
 arboard = "3"
 base64 = "0.22"
 clipboard-win = "5"
+ed25519-dalek = "2"
 getrandom = "0.3"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 imap = "2.4"
