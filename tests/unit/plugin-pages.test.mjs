@@ -51,3 +51,12 @@ test("plugin pages get a height by template, within the panel limit", () => {
   assert.equal(getPluginPageExpandedHeight("list", 320), 320);
   assert.equal(getPluginPageExpandedHeight(null, 1000), 400);
 });
+
+test("the collapsed bar shows the status text with the highest priority, first plugin on ties", async () => {
+  const { topStatusItem } = await import("../../src/features/plugin-views/statusItems.ts");
+  const entry = (pluginId, priority, text = "x") => ({ pluginId, itemId: "t", priority, text, tooltip: null, tone: "neutral" });
+  assert.equal(topStatusItem([]), null);
+  assert.equal(topStatusItem([entry("a", 1), entry("b", 5), entry("c", 5)]).pluginId, "b");
+  assert.equal(topStatusItem([entry("a", -3), entry("b", -1)]).pluginId, "b");
+  assert.equal(topStatusItem([entry("a", 9, "")]), null);
+});

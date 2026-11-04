@@ -7,6 +7,7 @@ import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPerm
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
 import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
+import { PluginStatusChip } from "../../features/plugin-views/PluginStatusChip";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
@@ -318,6 +319,7 @@ export function IslandApp() {
         onPageChange={setPage}
         pageDigitModifiers={settings.pageDigitModifiers}
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
+        pluginStatusChip={pluginPages.topStatus && <PluginStatusChip status={pluginPages.topStatus} onOpen={pluginPages.topStatusPage ? () => openEnabledPage(pluginPages.topStatusPage ?? "todo") : null} />}
         pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
         {page === "qq" && (

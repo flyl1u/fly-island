@@ -65,6 +65,8 @@ type IslandShellProps = {
   overlay?: ReactNode;
   /** Buttons for plugin pages in the expanded header. */
   pluginPageButtons?: ReactNode;
+  /** A plugin's status text on the collapsed bar. */
+  pluginStatusChip?: ReactNode;
   children: ReactNode;
 };
 
@@ -107,6 +109,7 @@ export function IslandShell({
   pageDigitModifiers,
   overlay,
   pluginPageButtons,
+  pluginStatusChip,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -180,6 +183,7 @@ export function IslandShell({
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}
           pluginNotifications={pluginNotifications}
+          pluginStatusChip={pluginStatusChip}
           preview={preview}
           page={page}
           isExpanded={isExpanded}

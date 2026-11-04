@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { AgentSession } from "../../features/agent-status/session";
@@ -52,6 +53,8 @@ type IslandCollapsedBarProps = {
   onOpenTranslationPeek: () => void;
   onWindowDragStart: () => void;
   onTuck: () => void;
+  /** A plugin's status text; it waits while a message preview or a translation line shows. */
+  pluginStatusChip?: ReactNode;
 };
 
 /** The collapsed island: agent pulse, todo or message summary, mail badge, music button and tuck handle. */
@@ -82,6 +85,7 @@ export function IslandCollapsedBar({
   onOpenTranslationPeek,
   onWindowDragStart,
   onTuck,
+  pluginStatusChip,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
@@ -186,6 +190,7 @@ export function IslandCollapsedBar({
           <span className="island-message-button__dot" aria-hidden="true" />
         </button>
       )}
+      {showCollapsedText && !preview && !translationPeek && pluginStatusChip}
       {shelfCount !== null && shelfCount > 0 && (
         <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} title={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
           <Inbox size={13} strokeWidth={2.3} aria-hidden="true" />

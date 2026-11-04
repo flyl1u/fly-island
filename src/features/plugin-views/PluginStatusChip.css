@@ -1,0 +1,44 @@
+/* A plugin's short status text on the collapsed bar, like the shelf count beside it. */
+.plugin-status-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 96px;
+  height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  color: rgba(241, 240, 246, 0.86);
+  background: var(--color-white-a10);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 22px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.plugin-status-chip:disabled {
+  cursor: default;
+}
+
+.plugin-status-chip--accent {
+  color: rgba(190, 232, 255, 0.95);
+  background: rgba(116, 214, 255, 0.14);
+}
+
+.plugin-status-chip--warning {
+  color: rgba(255, 228, 160, 0.95);
+  background: rgba(255, 209, 102, 0.14);
+}
+
+.plugin-status-chip--danger {
+  color: rgba(255, 196, 206, 0.95);
+  background: rgba(199, 80, 101, 0.2);
+}
+
+.plugin-status-chip:hover:not(:disabled) {
+  background: var(--color-white-a18);
+}
