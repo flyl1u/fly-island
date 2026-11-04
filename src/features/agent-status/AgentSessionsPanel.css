@@ -166,6 +166,16 @@
   box-shadow: 0 0 8px rgba(61, 139, 255, 0.72);
 }
 
+/* Waiting for the user to allow a tool or answer a question. */
+.agent-session--waiting .agent-session__dot {
+  background: var(--color-agent-waiting);
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.72);
+}
+
+.agent-session--waiting .agent-session__meta {
+  color: var(--color-agent-waiting);
+}
+
 .agent-session--failed .agent-session__dot,
 .agent-session--stale .agent-session__dot {
   background: var(--color-warning);

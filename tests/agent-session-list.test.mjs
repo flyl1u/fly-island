@@ -22,14 +22,15 @@ const session = (overrides = {}) => ({
   ...overrides,
 });
 
-test("running and stale sessions count as active", () => {
+test("running, waiting and stale sessions count as active", () => {
   const sessions = [
     session(),
     session({ sessionId: "s2", phase: "stale" }),
     session({ sessionId: "s3", phase: "completed" }),
     session({ sessionId: "s4", phase: "failed" }),
+    session({ sessionId: "s5", phase: "waiting" }),
   ];
-  assert.equal(countActiveSessions(sessions), 2);
+  assert.equal(countActiveSessions(sessions), 3);
   assert.equal(countActiveSessions([]), 0);
 });
 

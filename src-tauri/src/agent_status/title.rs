@@ -1,94 +1,11 @@
-//! Session titles: pure parsing of the saved hook input, Claude Code transcripts and the Codex
-//! session index. Both title formats are undocumented, so every parser returns `None` on anything
-//! unexpected and the caller falls back to the next source.
+//! Session titles and prompts for the Agent page: pure parsing of Claude Code transcript lines and
+//! the Codex session index, and shortening for display. Both formats are undocumented, so every
+//! parser returns `None` on anything unexpected and the caller falls back to the next source.
 
 use serde_json::Value;
-use std::path::{Component, Path};
+use std::path::Path;
 
 pub(super) const TITLE_MAX_CHARS: usize = 40;
-
-/// The fields of a hook's stdin JSON that titles need.
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub(super) struct HookInput {
-    pub(super) session_id: Option<String>,
-    pub(super) transcript_path: Option<String>,
-    pub(super) cwd: Option<String>,
-    pub(super) prompt: Option<String>,
-}
-
-/// Parses the saved hook input. The capture script cuts lines past ~64 KiB, so when the JSON is
-/// incomplete the complete string fields are still picked out one by one.
-pub(super) fn parse_hook_input(text: &str) -> HookInput {
-    let text = text.trim_start_matches('\u{feff}').trim();
-    if let Ok(Value::Object(map)) = serde_json::from_str::<Value>(text) {
-        let field = |key: &str| {
-            map.get(key)
-                .and_then(Value::as_str)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string)
-        };
-        return HookInput {
-            session_id: field("session_id"),
-            transcript_path: field("transcript_path"),
-            cwd: field("cwd"),
-            prompt: field("prompt"),
-        };
-    }
-
-    HookInput {
-        session_id: lenient_string_field(text, "session_id", false),
-        transcript_path: lenient_string_field(text, "transcript_path", false),
-        cwd: lenient_string_field(text, "cwd", false),
-        prompt: lenient_string_field(text, "prompt", true),
-    }
-}
-
-/// Finds `"key": "value"` in possibly truncated JSON. A cut-off value is only accepted when
-/// `allow_truncated` is set (the prompt, which is shortened for display anyway).
-fn lenient_string_field(text: &str, key: &str, allow_truncated: bool) -> Option<String> {
-    let needle = format!("\"{key}\"");
-    let start = text.find(&needle)? + needle.len();
-    let rest = text[start..].trim_start().strip_prefix(':')?.trim_start();
-    let body = rest.strip_prefix('"')?;
-
-    let mut escaped = false;
-    for (index, character) in body.char_indices() {
-        match character {
-            _ if escaped => escaped = false,
-            '\\' => escaped = true,
-            '"' => return decode_json_string(&body[..index]).filter(|value| !value.is_empty()),
-            _ => {}
-        }
-    }
-
-    if !allow_truncated {
-        return None;
-    }
-    // Drop a cut-off escape sequence at the end (at most `\uXXXX`) until the rest decodes.
-    let mut end = body.len();
-    for _ in 0..6 {
-        if let Some(value) = decode_json_string(&body[..end]) {
-            return Some(value).filter(|value| !value.is_empty());
-        }
-        end = body[..end].char_indices().last()?.0;
-    }
-    None
-}
-
-fn decode_json_string(raw: &str) -> Option<String> {
-    serde_json::from_str::<String>(&format!("\"{raw}\"")).ok()
-}
-
-/// The newest `{"type":"ai-title","aiTitle":…}` record in a Claude Code transcript excerpt.
-pub(super) fn latest_ai_title(transcript: &str) -> Option<String> {
-    transcript
-        .lines()
-        .rev()
-        .filter(|line| line.contains("\"ai-title\""))
-        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
-        .filter(|record| record["type"] == "ai-title")
-        .find_map(|record| record["aiTitle"].as_str().and_then(display_title))
-}
 
 /// The prompt title in one Claude Code transcript line, if it is a prompt the user typed: system
 /// records, tool results and slash-command output are skipped.
@@ -238,20 +155,4 @@ pub(super) fn shorten(text: &str, max_chars: usize) -> Option<String> {
         .to_string();
     title.push('…');
     Some(title)
-}
-
-/// Whether `path` is an absolute path inside `root`, without `..` (compared case-insensitively,
-/// as on Windows). The hook input is outside data, so it must not name arbitrary files to read.
-pub(super) fn is_path_inside(path: &Path, root: &Path) -> bool {
-    if !path.is_absolute() || path.components().any(|part| part == Component::ParentDir) {
-        return false;
-    }
-    let lower = |value: &Path| {
-        value
-            .components()
-            .map(|part| part.as_os_str().to_string_lossy().to_lowercase())
-            .collect::<Vec<_>>()
-    };
-    let (path, root) = (lower(path), lower(root));
-    path.len() > root.len() && path.starts_with(&root)
 }

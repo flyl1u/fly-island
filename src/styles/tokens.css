@@ -29,6 +29,7 @@
   --color-warning: #ffd166;
   --color-agent-idle: #35e985;
   --color-agent-running: #3d8bff;
+  --color-agent-waiting: #ff9f43;
   --color-focus-ring: rgba(143, 216, 255, 0.88);
   --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
 

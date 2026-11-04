@@ -10,9 +10,21 @@ pub(super) const CODEX_RUNNING_MARKER_FILE_NAME: &str = "agent-codex-running.fla
 pub(super) const CODEX_RUNNING_HOLD_FILE_NAME: &str = "agent-codex-running-hold.flag";
 pub(super) const CLAUDE_CODE_RUNNING_MARKER_FILE_NAME: &str = "agent-claudeCode-running.flag";
 pub(super) const CLAUDE_CODE_RUNNING_HOLD_FILE_NAME: &str = "agent-claudeCode-running-hold.flag";
-/// Hook stdin saved by `focusd-agent-running.cmd <provider> capture`, read for session titles.
-pub(super) const CODEX_HOOK_INPUT_FILE_NAME: &str = "agent-codex-hook-input.json";
-pub(super) const CLAUDE_CODE_HOOK_INPUT_FILE_NAME: &str = "agent-claudeCode-hook-input.json";
+/// Claude Code's latest waiting notification, saved by `focusd-agent-running.cmd claudeCode
+/// notification`; see notifications.rs.
+pub(super) const CLAUDE_CODE_NOTIFICATION_FILE_NAME: &str = "agent-claudeCode-notification.json";
+/// The prompt-submit hook input that versions before titles came from the session files saved
+/// (`capture`). It holds the whole prompt and nothing reads it any more, so it is deleted.
+const LEGACY_HOOK_INPUT_FILE_NAMES: [&str; 2] = [
+    "agent-codex-hook-input.json",
+    "agent-claudeCode-hook-input.json",
+];
+/// Hook input saved per provider, deleted when its status is cleared.
+pub(super) const CODEX_SAVED_INPUT_FILE_NAMES: &[&str] = &["agent-codex-hook-input.json"];
+pub(super) const CLAUDE_CODE_SAVED_INPUT_FILE_NAMES: &[&str] = &[
+    "agent-claudeCode-hook-input.json",
+    CLAUDE_CODE_NOTIFICATION_FILE_NAME,
+];
 
 pub(super) const AGENT_RUNNING_STALE_AFTER_MS: i64 = 10 * 60 * 1000;
 
@@ -69,7 +81,6 @@ pub(super) fn active_agent_running_marker_status(
             phase: phase.to_string(),
             task_id: status.task_id.clone(),
             updated_at: marker_updated_at,
-            title: None,
         });
     }
 
@@ -82,23 +93,31 @@ pub(super) fn active_agent_running_marker_status(
             phase: "running".to_string(),
             task_id: status.task_id.clone(),
             updated_at: now,
-            title: None,
         })
     } else {
         None
     }
 }
 
-/// Removes the running markers and the saved hook input, which also clears the session title.
+/// Removes the running markers and any hook input saved for the provider.
 pub(super) fn remove_agent_marker_files(
     app_dir: &Path,
     running_file_name: &str,
     hold_file_name: &str,
-    hook_input_file_name: &str,
+    saved_input_file_names: &[&str],
 ) {
     fs::remove_file(app_dir.join(running_file_name)).ok();
     fs::remove_file(app_dir.join(hold_file_name)).ok();
-    fs::remove_file(app_dir.join(hook_input_file_name)).ok();
+    for file_name in saved_input_file_names {
+        fs::remove_file(app_dir.join(file_name)).ok();
+    }
+}
+
+/// Deletes the prompt copies older versions saved; done on Install/Repair.
+pub(super) fn remove_legacy_hook_inputs(app_dir: &Path) {
+    for file_name in LEGACY_HOOK_INPUT_FILE_NAMES {
+        fs::remove_file(app_dir.join(file_name)).ok();
+    }
 }
 
 pub(super) fn file_modified_unix_millis(path: &Path) -> Option<i64> {

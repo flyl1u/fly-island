@@ -217,6 +217,7 @@ const en: Translations = {
       completed: "Done",
       failed: "Failed",
       stale: "Stalled",
+      waiting: "Waiting for you",
       idle: "Idle",
     },
     sessions: {
@@ -554,7 +555,7 @@ const en: Translations = {
       sessionPageSection: "Session list",
       sessionVisibleRows: "Entries shown when open",
       sessionPageHint: "How many sessions the island's Agent page shows at once; scroll for the rest.",
-      hooksOutdated: "The installed hooks are from an older version, so newer features such as session titles won't work. Click Install/repair, then restart Codex and Claude Code.",
+      hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
       hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
     },
 

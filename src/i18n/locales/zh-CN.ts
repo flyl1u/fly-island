@@ -217,6 +217,7 @@ const zhCN: Translations = {
       completed: "已完成",
       failed: "运行失败",
       stale: "可能已中断",
+      waiting: "等待确认",
       idle: "空闲",
     },
     sessions: {
@@ -557,7 +558,7 @@ const zhCN: Translations = {
       sessionPageSection: "会话列表",
       sessionVisibleRows: "展开后显示条数",
       sessionPageHint: "岛屿展开后的 Agent 页一次显示的会话数，更多的会话可以滚动查看。",
-      hooksOutdated: "已安装的钩子是旧版本，会话标题等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
+      hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
       hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
     },
 

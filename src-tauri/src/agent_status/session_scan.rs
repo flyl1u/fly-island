@@ -4,53 +4,68 @@
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::{BufRead, BufReader, Read},
+    io::{BufRead, BufReader, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
     sync::{Mutex, PoisonError},
     time::SystemTime,
 };
 
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
+use super::notifications::{is_waiting, WaitingNotifications};
 use super::sessions::{
     codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
     session_phase, AgentSessionSummary, SessionTail, TurnState,
 };
 use super::snapshot::{current_unix_millis, system_time_to_unix_millis};
 use super::title::{codex_thread_name, folder_title, user_prompt_in_record};
-use super::title_cache::read_tail;
 
 /// Sessions untouched for longer are left out of the list.
 pub(super) const ACTIVE_WINDOW_MS: i64 = 2 * 60 * 60 * 1000;
 /// The list shows at most this many sessions, running ones first.
 const MAX_SESSIONS: usize = 12;
+/// Session files and the Codex index are read this far from the end for the state, model, latest
+/// reply and thread names.
+const TAIL_BYTES: u64 = 256 * 1024;
 /// Session files are scanned this far from the start for the first prompt.
 const HEAD_BYTES: u64 = 4 * 1024 * 1024;
 
 static SESSION_CACHE: Mutex<SessionCache> = Mutex::new(SessionCache::new());
 
-pub(super) fn list_sessions(home_dir: &Path) -> Vec<AgentSessionSummary> {
+/// `waiting` names the Claude Code sessions that asked the user something (notifications.rs).
+pub(super) fn list_sessions(
+    home_dir: &Path,
+    waiting: &WaitingNotifications,
+) -> Vec<AgentSessionSummary> {
     let now = current_unix_millis();
     let mut cache = SESSION_CACHE.lock().unwrap_or_else(PoisonError::into_inner);
     let mut sessions = Vec::new();
 
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
     for (provider, path, modified) in recent_session_files(home_dir, now) {
-        // The phase is worked out here, because a working session turns stale without its
-        // file changing.
+        // The phase is worked out here, because a working session turns stale, or stops
+        // waiting, without its file changing.
         if let Some((mut summary, state)) =
             cache.summary(provider, &path, modified, codex_index.as_deref())
         {
-            summary.phase = session_phase(
-                state,
-                now - summary.updated_at,
-                AGENT_RUNNING_STALE_AFTER_MS,
-            );
+            let asked_user = provider == "claudeCode"
+                && is_waiting(waiting, &summary.session_id, summary.updated_at);
+            summary.phase = if state == TurnState::Working && asked_user {
+                // Waiting on the user is not a stall, however long it takes.
+                "waiting"
+            } else {
+                session_phase(
+                    state,
+                    now - summary.updated_at,
+                    AGENT_RUNNING_STALE_AFTER_MS,
+                )
+            };
             sessions.push(summary);
         }
     }
     cache.forget_missing(&sessions);
 
-    sessions.sort_by_key(|session| (session.phase != "running", -session.updated_at));
+    let is_active = |phase: &str| matches!(phase, "running" | "waiting");
+    sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
     sessions.truncate(MAX_SESSIONS);
     sessions
 }
@@ -271,4 +286,19 @@ fn read_first_line(path: &Path) -> Option<String> {
         .read_until(b'\n', &mut line)
         .ok()?;
     Some(String::from_utf8_lossy(&line).into_owned())
+}
+
+/// The last `TAIL_BYTES` of a file, starting at a whole line.
+fn read_tail(path: &Path) -> Option<String> {
+    let mut file = File::open(path).ok()?;
+    let len = file.metadata().ok()?.len();
+    let start = len.saturating_sub(TAIL_BYTES);
+    file.seek(SeekFrom::Start(start)).ok()?;
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes).ok()?;
+    if start > 0 {
+        let first_newline = bytes.iter().position(|&byte| byte == b'\n')?;
+        bytes.drain(..=first_newline);
+    }
+    Some(String::from_utf8_lossy(&bytes).into_owned())
 }

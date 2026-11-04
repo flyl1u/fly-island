@@ -21,7 +21,8 @@ pub struct AgentSessionSummary {
     /// "Opus 5.5" for Claude models, the raw name otherwise.
     pub(super) model: Option<String>,
     pub(super) effort: Option<String>,
-    /// "running", "completed", "failed" or "stale" (still working after a long silence).
+    /// "running", "waiting" (asked the user mid-turn, Claude Code only), "completed", "failed" or
+    /// "stale" (still working after a long silence).
     pub(super) phase: &'static str,
     pub(super) last_message: Option<String>,
     /// Last change of the session file, Unix milliseconds.

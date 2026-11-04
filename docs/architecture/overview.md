@@ -27,7 +27,7 @@
 | 数据 | 位置 | 负责方 |
 |---|---|---|
 | 设置、预设、待办、笔记、归档、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
-| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-*-hook-input.json` 为最近一次提交提问时的 hook 输入，只用于取会话标题，清除状态时删除） | `agent_status`（标题解析在 `title.rs`、读取与缓存在 `title_cache.rs`） |
+| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，标题与提问文字处理在 `title.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 插件：已安装插件、启用与授权状态、插件私有数据 | 应用数据目录（`plugins/<id>/`、`plugins.json`、`plugins-data/<id>/`，见 [docs/plugins/README.md](../plugins/README.md)） | `plugin_host` |
 | 本地接口端口与访问令牌（脚本也会读取）；开关与"允许修改"由内置插件 `focusd.local-api` 在 `plugins.json` 中保存，并同步写入此文件供脚本参考 | 应用数据目录（`local-api.json`，见 [docs/local-api.md](../local-api.md)） | `local_api`、`plugin_host/builtin.rs` |

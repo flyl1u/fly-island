@@ -17,9 +17,9 @@ export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSumma
   );
 }
 
-/** Sessions still working: running, or silent mid-turn for a while (stale). */
+/** Sessions still working: running, waiting for the user, or silent mid-turn for a while (stale). */
 export function countActiveSessions(sessions: AgentSessionSummary[]) {
-  return sessions.filter((session) => session.phase === "running" || session.phase === "stale").length;
+  return sessions.filter((session) => session.phase === "running" || session.phase === "waiting" || session.phase === "stale").length;
 }
 
 /** The last folder of a session's working directory. */

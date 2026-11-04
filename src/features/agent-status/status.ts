@@ -100,6 +100,8 @@ export function getAgentPhaseLabel(phase: AgentTaskPhase, t: Translations) {
       return t.agent.phase.failed;
     case "stale":
       return t.agent.phase.stale;
+    case "waiting":
+      return t.agent.phase.waiting;
     case "idle":
     default:
       return t.agent.phase.idle;

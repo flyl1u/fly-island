@@ -2,7 +2,7 @@
 
 use std::{fs, path::Path};
 
-use super::{write_text_file, AGENT_RUNNING_CAPTURE_ARG, FOCUSD_AGENT_HOOK_SIGNATURE};
+use super::{write_text_file, FOCUSD_AGENT_HOOK_SIGNATURE};
 
 pub(super) const FOCUSD_AGENT_HOOK_BLOCK_BEGIN: &str = "# BEGIN FocuSD Agent Status Hooks";
 pub(super) const FOCUSD_AGENT_HOOK_BLOCK_END: &str = "# END FocuSD Agent Status Hooks";
@@ -28,7 +28,7 @@ pub(super) fn build_codex_hook_block(
     running_script_path: &Path,
     status_script_path: &Path,
 ) -> String {
-    let submit_command = agent_running_command(running_script_path, "codex", true);
+    let submit_command = agent_running_command(running_script_path, "codex");
     let stop_command = agent_status_command(status_script_path, "codex", "completed");
 
     format!(
@@ -161,17 +161,11 @@ pub(super) fn is_codex_nested_hook_header_for(header: &str, hook_path: &str) -> 
     header == format!("[[{hook_path}.hooks]]")
 }
 
-pub(super) fn agent_running_command(script_path: &Path, provider: &str, capture: bool) -> String {
-    let capture = if capture {
-        format!(" {AGENT_RUNNING_CAPTURE_ARG}")
-    } else {
-        String::new()
-    };
+pub(super) fn agent_running_command(script_path: &Path, provider: &str) -> String {
     format!(
-        "cmd.exe /d /s /c \"\"{}\" {}{}\"",
+        "cmd.exe /d /s /c \"\"{}\" {}\"",
         script_path.to_string_lossy(),
-        provider,
-        capture
+        provider
     )
 }
 
@@ -193,22 +187,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn prompt_submit_hook_captures_input() {
+    fn prompt_submit_hook_only_marks_running() {
         let block = build_codex_hook_block(
             Path::new(r"C:\a b\focusd-agent-running.cmd"),
             Path::new(r"C:\a b\focusd-agent-status.ps1"),
         );
 
         assert!(block.contains(
-            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex capture\"""#
+            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex\"""#
         ));
-        assert!(!block.contains("completed capture"));
-    }
-
-    #[test]
-    fn running_command_without_capture_keeps_old_form() {
+        assert!(!block.contains("capture"));
         assert_eq!(
-            agent_running_command(Path::new(r"C:\s.cmd"), "codex", false),
+            agent_running_command(Path::new(r"C:\s.cmd"), "codex"),
             r#"cmd.exe /d /s /c ""C:\s.cmd" codex""#
         );
     }

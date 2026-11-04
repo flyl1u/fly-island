@@ -41,6 +41,7 @@ function candidates(sessions: AgentSessionSummary[], others: ExternalAgentStatus
 function isVisible({ phase, updatedAt }: Candidate, now: number) {
   return (
     phase === "running" ||
+    phase === "waiting" ||
     phase === "failed" ||
     phase === "stale" ||
     (phase === "completed" && now - updatedAt < COMPLETED_TITLE_HOLD_MS)
@@ -48,9 +49,9 @@ function isVisible({ phase, updatedAt }: Candidate, now: number) {
 }
 
 /**
- * The session the collapsed island should name: a running, failed or stale one, or one that
- * completed less than `COMPLETED_TITLE_HOLD_MS` ago. With several, the most recently updated
- * wins.
+ * The session the collapsed island should name: a running, waiting, failed or stale one, or one
+ * that completed less than `COMPLETED_TITLE_HOLD_MS` ago. With several, the most recently
+ * updated wins.
  */
 export function pickAgentSession(
   sessions: AgentSessionSummary[],

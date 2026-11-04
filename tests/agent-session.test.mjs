@@ -37,6 +37,10 @@ test("a session without a title is named by its project folder", () => {
   assert.equal(pickAgentSession([session({ title: "  ", cwd: null })], undefined, NOW), null);
 });
 
+test("a session waiting for the user keeps its title", () => {
+  assert.equal(pickAgentSession([session({ phase: "waiting", updatedAt: 1, title: "跑测试" })], undefined, NOW)?.title, "跑测试");
+});
+
 test("failed and stale sessions keep their title", () => {
   assert.equal(pickAgentSession([session({ phase: "failed", updatedAt: 1, title: "a" })], undefined, NOW)?.title, "a");
   assert.equal(pickAgentSession([session({ phase: "stale", updatedAt: 1, title: "b" })], undefined, NOW)?.title, "b");

@@ -1,6 +1,8 @@
 # AI Agent 会话标题（设计）
 
-> 状态：**已实施**（2026-11-04，第 8 节三步全部完成）。用户确认：小岛显示"Agent 图标 + 会话标题"。
+> 状态：**已实施，后经调整**（2026-11-04）。用户确认：小岛显示"Agent 图标 + 会话标题"。
+>
+> **调整（同日，用户确认：统一数据来源）**：Agent 页上线后，标题改为与会话列表同源，直接读 Claude Code / Codex 的会话记录（`list_agent_sessions`），不再依赖 hook 转存的提问。第 5 节的 `capture` 转存与 `agent-*-hook-input.json` 已移除（安装/修复时删除旧文件，旧安装传入的 `capture` 参数被脚本忽略），`get_agent_status` 也不再带 `title`。下文第 4–8 节记录的是最初的实现，标题后备顺序与读取限制在 `sessions.rs`、`session_scan.rs` 中沿用。现在唯一转存的 hook 输入是 Claude Code `Notification`（等待授权），见 [agent-status-hooks.md](../agent-status-hooks.md)。
 > 相关文档：现有状态灯协议见 [agent-status-hooks.md](../agent-status-hooks.md)，模块位置见 [overview.md](overview.md)。
 
 ## 1. 目标与非目标

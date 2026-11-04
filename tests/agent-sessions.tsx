@@ -36,7 +36,7 @@ const SESSIONS: AgentSessionSummary[] = [
   },
   {
     provider: "codex", sessionId: "b", cwd: "E:\\Projects\\MioPicFlow", title: "恢复 Windows 发布机环境，顺便把代理配置也整理一遍",
-    model: "gpt-6-astra", effort: "high", phase: "stale", updatedAt: now - 14 * 60_000,
+    model: "gpt-6-astra", effort: "high", phase: "waiting", updatedAt: now - 14 * 60_000,
     lastMessage: "关闭系统代理后国内网站立即恢复，说明问题集中在 Clash 的代理链路。",
   },
   {
@@ -66,7 +66,8 @@ async function runChecks() {
     const [first, second, third] = rows();
     check(first.textContent?.includes("fly-island · 设置界面完善思路") && first.querySelector(".agent-provider-icon--claudeCode"), "每行显示图标、项目名和标题");
     check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Medium", "显示模型和推理强度");
-    check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--stale") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
+    check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
+    check(second.textContent?.includes("等待确认 · 14 分钟前") && getComputedStyle(second.querySelector(".agent-session__dot")!).backgroundColor === "rgb(255, 159, 67)", "等待确认的会话显示橙色状态灯和状态文字");
     check(first.textContent?.includes("正在运行 · 刚刚") && second.textContent?.includes("14 分钟前") && third.textContent?.includes("1 小时前"), "显示状态和多久前更新");
     const title = second.querySelector<HTMLElement>(".agent-session__title")!;
     const message = first.querySelector<HTMLElement>(".agent-session__message")!;

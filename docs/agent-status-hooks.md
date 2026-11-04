@@ -66,26 +66,19 @@ When the turn finishes, `focusd-agent-status.ps1` removes the marker, writes `ag
 
 `phase === "running"` turns the light blue. `phase === "failed"` turns the light yellow. Missing files, invalid JSON, missing fields, unknown phases, `idle`, and `completed` are treated as green states. A derived `stale` phase is returned by the app when a running marker remains for more than 10 minutes without a later status update.
 
-## Session Titles
+## Sessions, Titles and Waiting
 
-The `UserPromptSubmit` hooks call the running script with a second argument, `capture`:
+Session titles and the island's Agent page do not depend on hooks: `list_agent_sessions` reads the Claude Code transcripts (`~/.claude/projects/*/*.jsonl`) and the Codex rollouts (`~/.codex/sessions/`) of the last two hours directly. Titles come from Claude Code's `ai-title` records or the Codex `thread_name` in `~/.codex/session_index.jsonl`, else the first typed prompt, else the project folder. Earlier versions copied the prompt-submit hook input (`capture`, `agent-*-hook-input.json`) for this; that copy held the whole prompt and is gone. Install/Repair deletes leftover copies, and the script ignores the `capture` argument older installs still pass.
+
+The only hook input still saved is Claude Code's `Notification` hook, installed with the matcher `permission_prompt|elicitation_dialog`:
 
 ```text
-focusd-agent-running.cmd codex capture
-focusd-agent-running.cmd claudeCode capture
+focusd-agent-running.cmd claudeCode notification
 ```
 
-With `capture`, the script also copies the hook's stdin JSON to `agent-codex-hook-input.json` / `agent-claudeCode-hook-input.json` (written to a temp file, then moved). `PreToolUse` does not capture, because tool input can be whole files. Without the argument the script behaves exactly as before, so hooks installed by older versions keep lighting the island; they just show no title until **安装/修复** is clicked again.
+With `notification`, the script copies the hook's stdin JSON (session id, notification type, a short message such as "Claude needs your permission to use Bash"; no prompt) to `agent-claudeCode-notification.json` (temp file, then moved) and leaves the running marker alone. A session is listed as `waiting` while its transcript has not changed since such a notification (2 s slack): answering the prompt runs the tool and the transcript grows. A waiting session never turns stale. Codex has no equivalent hook, so Codex sessions are never `waiting`. Clearing Claude Code's status deletes the saved notification.
 
-`get_agent_status` adds an optional `title` to each provider. It is resolved from the saved input and never written to `agent-status.json`:
-
-- Claude Code: the newest `ai-title` record in `transcript_path` (only files under `~/.claude/projects`), else the first typed prompt in the transcript, else the latest prompt, else the `cwd` folder name.
-- Codex: `thread_name` for `session_id` in `~/.codex/session_index.jsonl`, else the first prompt seen for the session while the app runs, else the `cwd` folder name.
-
-Titles are cut to 40 characters. Clearing a provider's status also deletes its saved hook input.
-
-The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It reports each agent as `notInstalled`, `outdated` (FocuSD hooks without `capture`, or the legacy unmanaged Codex hooks) or `current`, plus whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
-
+The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It builds the hooks Install/Repair would write and compares: each agent is `current` when all of them are there as written, `outdated` when FocuSD hooks differ (for example installed before the `Notification` hook, or pointing at an old script folder), or `notInstalled`; it also reports whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
 ## Other Agents
 
 Tools other than Codex and Claude Code can report their status too, with no FocuSD release needed: either from a plugin with the `agent-status:write` permission (`agentStatus.report`), or over the local API (`PUT /v1/agent-status/{source}`). These reports are kept in memory only and appear in the snapshot's `others` list. They light the island and name their session in the same way as the built-in agents, using a robot icon instead of a brand icon. See [local-api.md](local-api.md#ai-agent-状态) and [plugins/README.md](plugins/README.md).

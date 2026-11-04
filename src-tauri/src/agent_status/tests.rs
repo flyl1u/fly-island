@@ -6,9 +6,8 @@ use std::{
 
 use serde_json::json;
 
-use super::markers::{CLAUDE_CODE_HOOK_INPUT_FILE_NAME, CODEX_HOOK_INPUT_FILE_NAME};
+use super::notifications::WaitingNotifications;
 use super::title::*;
-use super::title_cache::TitleCache;
 
 fn first_prompt(transcript: &str) -> Option<String> {
     transcript.lines().find_map(user_prompt_in_record)
@@ -20,50 +19,6 @@ fn line(value: serde_json::Value) -> String {
 
 fn user_line(content: serde_json::Value) -> String {
     line(json!({"type": "user", "message": {"role": "user", "content": content}}))
-}
-
-#[test]
-fn hook_input_reads_complete_json() {
-    let input = parse_hook_input(
-        "\u{feff}{\"session_id\":\"s1\",\"transcript_path\":\"C:\\\\t.jsonl\",\"cwd\":\"E:\\\\p\",\"prompt\":\"标题 😀\"}\r\n",
-    );
-    assert_eq!(input.session_id.as_deref(), Some("s1"));
-    assert_eq!(input.transcript_path.as_deref(), Some(r"C:\t.jsonl"));
-    assert_eq!(input.cwd.as_deref(), Some(r"E:\p"));
-    assert_eq!(input.prompt.as_deref(), Some("标题 😀"));
-}
-
-#[test]
-fn hook_input_survives_a_cut_off_prompt() {
-    // Claude Code's field order: the prompt comes last. (`json!` would sort the keys.)
-    let full = format!(
-        r#"{{"session_id":"s1","cwd":"E:\\p","prompt":"修复\"bug\" {}"}}"#,
-        "长".repeat(50)
-    );
-    // Cut inside the prompt, right after an escape backslash.
-    let cut = &full[..full.find("bug").unwrap() + 4];
-    let input = parse_hook_input(cut);
-    assert_eq!(input.session_id.as_deref(), Some("s1"));
-    assert_eq!(input.cwd.as_deref(), Some(r"E:\p"));
-    assert_eq!(input.prompt.as_deref(), Some("修复\"bug"));
-
-    let without_session = parse_hook_input(r#"{"prompt":"x","session_id":"cut-off"#);
-    assert_eq!(without_session.session_id, None);
-    assert_eq!(without_session.prompt.as_deref(), Some("x"));
-}
-
-#[test]
-fn newest_ai_title_wins() {
-    let transcript = [
-        user_line(json!("first")),
-        line(json!({"type": "ai-title", "aiTitle": "旧标题"})),
-        line(json!({"type": "assistant", "message": {"content": "mentions \"ai-title\""}})),
-        line(json!({"type": "ai-title", "aiTitle": "  新标题\n "})),
-        "{broken json \"ai-title\"\n".to_string(),
-    ]
-    .concat();
-    assert_eq!(latest_ai_title(&transcript).as_deref(), Some("新标题"));
-    assert_eq!(latest_ai_title(&user_line(json!("no title"))), None);
 }
 
 #[test]
@@ -131,29 +86,6 @@ fn codex_index_and_folder_titles() {
     assert_eq!(folder_title(r"C:\"), None);
 }
 
-#[test]
-fn only_paths_inside_the_root_are_read() {
-    let root = Path::new(r"C:\Users\me\.claude\projects");
-    assert!(is_path_inside(
-        Path::new(r"C:\Users\me\.claude\projects\E--p\s.jsonl"),
-        root
-    ));
-    assert!(is_path_inside(
-        Path::new(r"c:\users\ME\.Claude\Projects\E--p\s.jsonl"),
-        root
-    ));
-    assert!(!is_path_inside(
-        Path::new(r"C:\Users\me\.claude\projects\..\settings.json"),
-        root
-    ));
-    assert!(!is_path_inside(
-        Path::new(r"C:\Users\me\.claude\projects-evil\s.jsonl"),
-        root
-    ));
-    assert!(!is_path_inside(Path::new(r"projects\s.jsonl"), root));
-    assert!(!is_path_inside(root, root));
-}
-
 /// A fresh directory per test with `home/` and `app/` inside.
 fn temp_dirs() -> (PathBuf, PathBuf) {
     static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -168,176 +100,6 @@ fn temp_dirs() -> (PathBuf, PathBuf) {
     fs::create_dir_all(home.join(".codex")).unwrap();
     fs::create_dir_all(&app).unwrap();
     (home, app)
-}
-
-#[test]
-fn claude_code_title_falls_back_from_ai_title_to_folder() {
-    let (home, app) = temp_dirs();
-    let mut cache = TitleCache::new();
-    assert_eq!(cache.claude_code_title(&app, &home), None);
-
-    let transcript = home
-        .join(".claude")
-        .join("projects")
-        .join("E--p")
-        .join("s.jsonl");
-    let input_path = app.join(CLAUDE_CODE_HOOK_INPUT_FILE_NAME);
-    let write_input = |transcript: &Path| {
-        let input = json!({"session_id": "s", "transcript_path": transcript, "cwd": "E:\\Projects\\fly-island", "prompt": "最新的提问"});
-        fs::write(&input_path, input.to_string()).unwrap();
-    };
-
-    write_input(&transcript);
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("最新的提问")
-    );
-
-    fs::write(&transcript, user_line(json!("第一句提问"))).unwrap();
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("第一句提问")
-    );
-
-    let mut content = fs::read_to_string(&transcript).unwrap();
-    content.push_str(&line(
-        json!({"type": "ai-title", "aiTitle": "设置界面完善思路"}),
-    ));
-    fs::write(&transcript, content).unwrap();
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("设置界面完善思路")
-    );
-
-    // A transcript outside ~/.claude/projects is never read.
-    let outside = home.join("outside.jsonl");
-    fs::write(
-        &outside,
-        line(json!({"type": "ai-title", "aiTitle": "不该读到"})),
-    )
-    .unwrap();
-    write_input(&outside);
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("最新的提问")
-    );
-
-    fs::write(&input_path, "not json").unwrap();
-    assert_eq!(cache.claude_code_title(&app, &home), None);
-
-    fs::remove_file(&input_path).unwrap();
-    assert_eq!(cache.claude_code_title(&app, &home), None);
-}
-
-#[test]
-fn codex_title_uses_index_then_first_prompt_then_folder() {
-    let (home, app) = temp_dirs();
-    let mut cache = TitleCache::new();
-    let input_path = app.join(CODEX_HOOK_INPUT_FILE_NAME);
-    let write_input = |session: &str, prompt: &str| {
-        let input =
-            json!({"session_id": session, "cwd": "E:\\Projects\\fly-island", "prompt": prompt});
-        fs::write(&input_path, input.to_string()).unwrap();
-    };
-
-    write_input("t1", "第一句");
-    assert_eq!(cache.codex_title(&app, &home).as_deref(), Some("第一句"));
-    write_input("t1", "第二句提问");
-    assert_eq!(cache.codex_title(&app, &home).as_deref(), Some("第一句"));
-
-    let index = home.join(".codex").join("session_index.jsonl");
-    fs::write(
-        &index,
-        line(json!({"id": "t1", "thread_name": "恢复发布机环境"})),
-    )
-    .unwrap();
-    assert_eq!(
-        cache.codex_title(&app, &home).as_deref(),
-        Some("恢复发布机环境")
-    );
-
-    fs::write(
-        &input_path,
-        json!({"session_id": "t2", "cwd": "E:\\Projects\\fly-island"}).to_string(),
-    )
-    .unwrap();
-    assert_eq!(
-        cache.codex_title(&app, &home).as_deref(),
-        Some("fly-island")
-    );
-}
-
-#[test]
-fn hooks_state_matches_what_the_installers_write() {
-    use super::claude_hooks::{
-        claude_code_match_all_hook_entry, claude_code_running_hook_entry,
-        install_claude_code_hook_event,
-    };
-    use super::codex_hooks::build_codex_hook_block;
-    use super::hooks_state::{
-        claude_code_hooks_state, codex_hooks_state, script_outdated, HookInstallState,
-    };
-
-    let running = Path::new(r"C:\a b\focusd-agent-running.cmd");
-    let status = Path::new(r"C:\a b\focusd-agent-status.ps1");
-
-    // Codex: the block written now is current; a block without `capture` is outdated.
-    let current = format!(
-        "model = \"x\"\n\n{}",
-        build_codex_hook_block(running, status)
-    );
-    assert_eq!(codex_hooks_state(Some(&current)), HookInstallState::Current);
-    let old = current.replace(" codex capture", " codex");
-    assert_eq!(codex_hooks_state(Some(&old)), HookInstallState::Outdated);
-    assert_eq!(
-        codex_hooks_state(Some(
-            "[[hooks.Stop]]\ncommand = \"focusd-agent-status.ps1\""
-        )),
-        HookInstallState::Outdated
-    );
-    assert_eq!(
-        codex_hooks_state(Some("model = \"x\"")),
-        HookInstallState::NotInstalled
-    );
-    assert_eq!(codex_hooks_state(None), HookInstallState::NotInstalled);
-
-    // Claude Code: same, built with the installer's own entries.
-    let settings = |capture: bool| {
-        let mut hooks = serde_json::Map::new();
-        install_claude_code_hook_event(
-            &mut hooks,
-            "UserPromptSubmit",
-            claude_code_running_hook_entry(running, capture),
-        );
-        install_claude_code_hook_event(
-            &mut hooks,
-            "PreToolUse",
-            claude_code_match_all_hook_entry(claude_code_running_hook_entry(running, false)),
-        );
-        json!({ "model": "opus", "hooks": hooks }).to_string()
-    };
-    assert_eq!(
-        claude_code_hooks_state(Some(&settings(true))),
-        HookInstallState::Current
-    );
-    assert_eq!(
-        claude_code_hooks_state(Some(&settings(false))),
-        HookInstallState::Outdated
-    );
-    assert_eq!(
-        claude_code_hooks_state(Some(r#"{"hooks":{"Stop":[]}}"#)),
-        HookInstallState::NotInstalled
-    );
-    assert_eq!(
-        claude_code_hooks_state(Some("not json")),
-        HookInstallState::NotInstalled
-    );
-
-    // Scripts: compared ignoring line endings; missing only matters while hooks point at it.
-    assert!(!script_outdated(Some("a\r\nb\r\n"), "a\nb\n", true));
-    assert!(script_outdated(Some("a\nold\n"), "a\nb\n", true));
-    assert!(script_outdated(None, "a", true));
-    assert!(!script_outdated(None, "a", false));
 }
 
 #[test]
@@ -363,46 +125,6 @@ fn first_prompt_uses_slash_command_arguments_and_drops_headings() {
     ]
     .concat();
     assert_eq!(first_prompt(&image_only).as_deref(), Some("下一句"));
-}
-
-#[test]
-fn first_prompt_is_found_after_a_huge_screenshot_line() {
-    let (home, app) = temp_dirs();
-    let transcript = home
-        .join(".claude")
-        .join("projects")
-        .join("E--p")
-        .join("s.jsonl");
-    let screenshot = "A".repeat(700 * 1024);
-    let content = [
-        line(json!({"type": "permission-mode", "mode": "default"})),
-        user_line(json!([
-            {"type": "text", "text": "[Image #1] 终端上的乱码是什么情况"},
-            {"type": "image", "source": {"type": "base64", "data": screenshot}}
-        ])),
-    ]
-    .concat();
-    fs::write(&transcript, content).unwrap();
-    let input = json!({"session_id": "s", "transcript_path": transcript, "cwd": "E:\\Projects\\fly-island", "prompt": "最新"});
-    fs::write(
-        app.join(CLAUDE_CODE_HOOK_INPUT_FILE_NAME),
-        input.to_string(),
-    )
-    .unwrap();
-
-    let mut cache = TitleCache::new();
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("终端上的乱码是什么情况")
-    );
-    // Appending to the transcript keeps the cached first prompt.
-    let mut grown = fs::read_to_string(&transcript).unwrap();
-    grown.push_str(&user_line(json!("又一句")));
-    fs::write(&transcript, grown).unwrap();
-    assert_eq!(
-        cache.claude_code_title(&app, &home).as_deref(),
-        Some("终端上的乱码是什么情况")
-    );
 }
 
 #[test]
@@ -663,7 +385,7 @@ fn recent_sessions_are_listed_running_first() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home);
+    let sessions = list_sessions(&home, &WaitingNotifications::new());
     let ids = sessions
         .iter()
         .map(|s| s.session_id.as_str())
@@ -680,7 +402,7 @@ fn recent_sessions_are_listed_running_first() {
     assert_eq!(by_id("c1").cwd.as_deref(), Some(r"E:\Projects\MioPicFlow"));
 
     // A second call is answered from the cache and gives the same list.
-    assert_eq!(list_sessions(&home), sessions);
+    assert_eq!(list_sessions(&home, &WaitingNotifications::new()), sessions);
 }
 
 #[test]
@@ -712,7 +434,208 @@ fn a_session_keeps_the_folder_it_started_in() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home);
+    let sessions = list_sessions(&home, &WaitingNotifications::new());
     assert_eq!(sessions.len(), 1);
     assert_eq!(sessions[0].cwd.as_deref(), Some(r"E:\Projects\fly-island"));
+}
+
+#[test]
+fn hooks_state_matches_what_the_installers_write() {
+    use super::claude_hooks::{claude_code_hook_entries, install_claude_code_hook_event};
+    use super::codex_hooks::build_codex_hook_block;
+    use super::hooks_state::{
+        claude_code_hooks_state, codex_hooks_state, script_outdated, HookInstallState,
+    };
+
+    let running = Path::new(r"C:\a b\focusd-agent-running.cmd");
+    let status = Path::new(r"C:\a b\focusd-agent-status.ps1");
+
+    // Codex: the block written now is current; an older block (from before, with `capture`)
+    // or one pointing elsewhere is outdated.
+    let current = format!(
+        "model = \"x\"\r\n\r\n{}",
+        build_codex_hook_block(running, status)
+    );
+    assert_eq!(
+        codex_hooks_state(Some(&current), running, status),
+        HookInstallState::Current
+    );
+    let old = current.replace(" codex\\\"", " codex capture\\\"");
+    assert_ne!(old, current);
+    assert_eq!(
+        codex_hooks_state(Some(&old), running, status),
+        HookInstallState::Outdated
+    );
+    let elsewhere = Path::new(r"D:\FocuSD\scripts\focusd-agent-running.cmd");
+    assert_eq!(
+        codex_hooks_state(Some(&current), elsewhere, status),
+        HookInstallState::Outdated
+    );
+    assert_eq!(
+        codex_hooks_state(Some("model = \"x\""), running, status),
+        HookInstallState::NotInstalled
+    );
+    assert_eq!(
+        codex_hooks_state(None, running, status),
+        HookInstallState::NotInstalled
+    );
+
+    // Claude Code: every installed entry has to be there; without the Notification hook (as
+    // installed before waiting states) it is outdated.
+    let settings = |skip: Option<&str>| {
+        let mut hooks = serde_json::Map::new();
+        for (event_name, entry) in claude_code_hook_entries(running, status) {
+            if Some(event_name) != skip {
+                install_claude_code_hook_event(&mut hooks, event_name, entry);
+            }
+        }
+        json!({ "model": "opus", "hooks": hooks }).to_string()
+    };
+    assert_eq!(
+        claude_code_hooks_state(Some(&settings(None)), running, status),
+        HookInstallState::Current
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some(&settings(Some("Notification"))), running, status),
+        HookInstallState::Outdated
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some(r#"{"hooks":{"Stop":[]}}"#), running, status),
+        HookInstallState::NotInstalled
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some("not json"), running, status),
+        HookInstallState::NotInstalled
+    );
+
+    // Scripts: compared ignoring line endings; missing only matters while hooks point at it.
+    assert!(!script_outdated(Some("a\r\nb\r\n"), "a\nb\n", true));
+    assert!(script_outdated(Some("a\nold\n"), "a\nb\n", true));
+    assert!(script_outdated(None, "a", true));
+    assert!(!script_outdated(None, "a", false));
+}
+
+#[test]
+fn only_permission_and_input_notifications_mean_waiting() {
+    use super::notifications::{is_waiting, waiting_session_id};
+
+    let notification = |kind: &str| {
+        json!({"session_id": "s1", "hook_event_name": "Notification", "notification_type": kind,
+            "message": "Claude needs your permission to use Bash"})
+        .to_string()
+    };
+    assert_eq!(
+        waiting_session_id(&notification("permission_prompt")).as_deref(),
+        Some("s1")
+    );
+    assert_eq!(
+        waiting_session_id(&format!(
+            "\u{feff}{}\r\n",
+            notification("elicitation_dialog")
+        ))
+        .as_deref(),
+        Some("s1")
+    );
+    // The idle prompt comes after the turn ended; it is not a wait mid-turn.
+    assert_eq!(waiting_session_id(&notification("idle_prompt")), None);
+    assert_eq!(
+        waiting_session_id("{\"notification_type\":\"permission_prompt\"}"),
+        None
+    );
+    assert_eq!(waiting_session_id("not json"), None);
+
+    let waiting = WaitingNotifications::from([("s1".to_string(), 10_000)]);
+    // The transcript last changed before the notification, or just after it: still waiting.
+    assert!(is_waiting(&waiting, "s1", 9_000));
+    assert!(is_waiting(&waiting, "s1", 11_500));
+    // The tool ran after the answer, so the transcript moved on.
+    assert!(!is_waiting(&waiting, "s1", 13_000));
+    assert!(!is_waiting(&waiting, "other", 9_000));
+}
+
+#[test]
+fn a_session_asking_for_permission_is_listed_as_waiting() {
+    use super::session_scan::list_sessions;
+
+    let (home, _app) = temp_dirs();
+    let project = home.join(".claude").join("projects").join("E--p");
+    let transcript = project.join("ask.jsonl");
+    fs::write(
+        &transcript,
+        [
+            user_line(json!("跑一下测试")),
+            line(json!({"type": "assistant", "sessionId": "ask", "cwd": "E:\\p",
+                "message": {"model": "claude-opus-5-5", "stop_reason": "tool_use", "content": [{"type": "tool_use", "name": "Bash"}]}})),
+        ]
+        .concat(),
+    )
+    .unwrap();
+    let changed_at = fs::metadata(&transcript)
+        .unwrap()
+        .modified()
+        .unwrap()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+
+    let listed = |waiting: &WaitingNotifications| list_sessions(&home, waiting)[0].phase;
+    assert_eq!(listed(&WaitingNotifications::new()), "running");
+    assert_eq!(
+        listed(&WaitingNotifications::from([(
+            "ask".to_string(),
+            changed_at + 500
+        )])),
+        "waiting"
+    );
+    // A notification older than the latest transcript change has been answered.
+    assert_eq!(
+        listed(&WaitingNotifications::from([(
+            "ask".to_string(),
+            changed_at - 10_000
+        )])),
+        "running"
+    );
+}
+
+#[test]
+fn a_first_prompt_behind_a_huge_screenshot_names_the_session() {
+    use super::session_scan::list_sessions;
+
+    let (home, _app) = temp_dirs();
+    let project = home.join(".claude").join("projects").join("E--p");
+    let screenshot = "A".repeat(700 * 1024);
+    fs::write(
+        project.join("shot.jsonl"),
+        [
+            line(json!({"type": "permission-mode", "mode": "default"})),
+            line(json!({"type": "user", "sessionId": "shot", "cwd": "E:\\p", "message": {"content": [
+                {"type": "text", "text": "[Image #1] 终端上的乱码是什么情况"},
+                {"type": "image", "source": {"type": "base64", "data": screenshot}}
+            ]}})),
+            line(json!({"type": "assistant", "sessionId": "shot", "message": {"model": "claude-opus-5-5", "stop_reason": "end_turn", "content": [{"type": "text", "text": "看看"}]}})),
+        ]
+        .concat(),
+    )
+    .unwrap();
+    let sessions = list_sessions(&home, &WaitingNotifications::new());
+    assert_eq!(sessions[0].title.as_deref(), Some("终端上的乱码是什么情况"));
+}
+
+#[test]
+fn install_deletes_the_prompt_copies_older_versions_saved() {
+    use super::markers::remove_legacy_hook_inputs;
+
+    let (_home, app) = temp_dirs();
+    for name in [
+        "agent-codex-hook-input.json",
+        "agent-claudeCode-hook-input.json",
+        "agent-claudeCode-notification.json",
+    ] {
+        fs::write(app.join(name), "{}").unwrap();
+    }
+    remove_legacy_hook_inputs(&app);
+    assert!(!app.join("agent-codex-hook-input.json").exists());
+    assert!(!app.join("agent-claudeCode-hook-input.json").exists());
+    // The notification file is current and stays.
+    assert!(app.join("agent-claudeCode-notification.json").exists());
 }

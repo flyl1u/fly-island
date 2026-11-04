@@ -219,6 +219,7 @@ export type Translations = {
       completed: string;
       failed: string;
       stale: string;
+      waiting: string;
       idle: string;
     };
     sessions: {

@@ -5,13 +5,13 @@ mod codex_hooks;
 mod external;
 mod hooks_state;
 mod markers;
+mod notifications;
 mod snapshot;
 #[cfg(test)]
 mod tests;
-mod title;
 mod session_scan;
 mod sessions;
-mod title_cache;
+mod title;
 mod window_focus;
 
 use serde::Serialize;
@@ -27,16 +27,16 @@ use hooks_state::{
     claude_code_hooks_state, codex_hooks_state, script_outdated, AgentHooksState, HookInstallState,
 };
 use markers::{
-    apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_HOOK_INPUT_FILE_NAME,
+    apply_agent_running_markers, remove_agent_marker_files, remove_legacy_hook_inputs,
     CLAUDE_CODE_RUNNING_HOLD_FILE_NAME, CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
-    CODEX_HOOK_INPUT_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME, CODEX_RUNNING_MARKER_FILE_NAME,
+    CLAUDE_CODE_SAVED_INPUT_FILE_NAMES, CODEX_RUNNING_HOLD_FILE_NAME,
+    CODEX_RUNNING_MARKER_FILE_NAME, CODEX_SAVED_INPUT_FILE_NAMES,
 };
 use snapshot::{
     agent_status_snapshot_from_persisted, current_unix_millis, default_agent_phase,
     default_agent_status_snapshot, default_persisted_agent_status, AgentStatusSnapshot,
     AgentTaskStatus, PersistedAgentStatus,
 };
-use title_cache::apply_session_titles;
 
 pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
@@ -44,8 +44,9 @@ pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cm
 pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
 
 pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
-/// Second argument of the running script: also save the hook input (see focusd-agent-running.cmd).
-pub(super) const AGENT_RUNNING_CAPTURE_ARG: &str = "capture";
+/// Second argument of the running script for Claude Code's Notification hook: save the hook input
+/// instead of marking the session as running (see focusd-agent-running.cmd).
+pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
     include_str!("../../../scripts/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
@@ -86,7 +87,6 @@ fn read_agent_status(app: AppHandle) -> Result<AgentStatusSnapshot, String> {
         Err(_) => default_agent_status_snapshot(status_path_display),
     };
     apply_agent_running_markers(&app_dir, &mut snapshot);
-    apply_session_titles(&app_dir, &mut snapshot);
 
     Ok(snapshot)
 }
@@ -121,7 +121,6 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
         phase: default_agent_phase(),
         task_id: None,
         updated_at: now,
-        title: None,
     };
 
     match provider.as_str() {
@@ -131,7 +130,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CODEX_RUNNING_MARKER_FILE_NAME,
                 CODEX_RUNNING_HOLD_FILE_NAME,
-                CODEX_HOOK_INPUT_FILE_NAME,
+                CODEX_SAVED_INPUT_FILE_NAMES,
             );
         }
         "claudeCode" => {
@@ -140,7 +139,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
                 CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
-                CLAUDE_CODE_HOOK_INPUT_FILE_NAME,
+                CLAUDE_CODE_SAVED_INPUT_FILE_NAMES,
             );
         }
         _ => {
@@ -222,11 +221,18 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
     })
 }
 
-/// Claude Code and Codex sessions active in the last two hours, running ones first.
+/// Claude Code and Codex sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
-pub async fn list_agent_sessions() -> Result<Vec<sessions::AgentSessionSummary>, String> {
-    tauri::async_runtime::spawn_blocking(|| {
-        windows_home_dir().map(|home_dir| session_scan::list_sessions(&home_dir))
+pub async fn list_agent_sessions(
+    app: AppHandle,
+) -> Result<Vec<sessions::AgentSessionSummary>, String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let waiting = notifications::waiting_notifications(&app_dir);
+        windows_home_dir().map(|home_dir| session_scan::list_sessions(&home_dir, &waiting))
     })
     .await
     .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
@@ -270,9 +276,19 @@ pub async fn get_agent_hooks_state(app: AppHandle) -> Result<AgentHooksState, St
 fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
     let home_dir = windows_home_dir()?;
     let read = |path: &Path| fs::read_to_string(path).ok();
-    let codex = codex_hooks_state(read(&home_dir.join(".codex").join("config.toml")).as_deref());
-    let claude_code =
-        claude_code_hooks_state(read(&home_dir.join(".claude").join("settings.json")).as_deref());
+    // Install/Repair always points the hooks at the scripts in the app data folder.
+    let running_script_path = app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME);
+    let status_script_path = app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME);
+    let codex = codex_hooks_state(
+        read(&home_dir.join(".codex").join("config.toml")).as_deref(),
+        &running_script_path,
+        &status_script_path,
+    );
+    let claude_code = claude_code_hooks_state(
+        read(&home_dir.join(".claude").join("settings.json")).as_deref(),
+        &running_script_path,
+        &status_script_path,
+    );
     let hooks_installed =
         codex != HookInstallState::NotInstalled || claude_code != HookInstallState::NotInstalled;
     let scripts_outdated = script_outdated(
@@ -293,6 +309,7 @@ fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
 }
 
 pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
+    remove_legacy_hook_inputs(app_dir);
     write_text_file(
         &app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME),
         &normalize_windows_line_endings(AGENT_RUNNING_SCRIPT),

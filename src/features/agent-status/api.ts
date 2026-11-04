@@ -2,7 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
 export type AgentProvider = "codex" | "claudeCode";
-export type AgentTaskPhase = "idle" | "running" | "completed" | "failed" | "stale";
+/** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */
+export type AgentTaskPhase = "idle" | "running" | "waiting" | "completed" | "failed" | "stale";
 
 export type AgentTaskStatus = {
   phase: AgentTaskPhase;
