@@ -2,8 +2,8 @@ import { useTranslation } from "../../i18n";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Settings2, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { copyTranslationResult, hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut, translateText } from "./api";
-import { loadSettings, saveTranslationSettings, type Direction, type TranslationSettings } from "./storage";
+import { copyTranslationResult, hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut, translateText } from "../../features/translation/api";
+import { loadSettings, saveTranslationSettings, type Direction, type TranslationSettings } from "../../features/translation/storage";
 import { TranslationSettingsPanel } from "./TranslationSettingsPanel";
 import "./TranslationWindow.css";
 

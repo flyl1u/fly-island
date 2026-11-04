@@ -73,7 +73,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `UpdatePanel.tsx/.css`、`updaterController.ts` | `features/updater/` |
 | `useIslandAutomation.ts` | `windows/island/useIslandAutomation.ts` |
 | `SettingsWindow.tsx/.css` | `windows/settings/` |
-| `TranslationWindow.tsx/.css` | `windows/translation/` |
+| `TranslationWindow.tsx/.css` | `windows/translation/`（翻译的 `api.ts`、`storage.ts`、`providers.ts` 在 `features/translation/`） |
 | `utils/text.ts`、`i18n/`、`assets/` | 保持不动 |
 
 ## 迁移映射：Rust
@@ -123,7 +123,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
-| `focusd-island-translation-settings` | `windows/translation/storage.ts` |
+| `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 
 ### 事件

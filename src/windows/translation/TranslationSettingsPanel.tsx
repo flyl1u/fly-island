@@ -1,8 +1,8 @@
 import { useState, type KeyboardEvent } from "react";
 import { useTranslation } from "../../i18n";
-import { deleteTranslationSecret, saveTranslationSecret, setTranslationShortcut } from "./api";
-import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS, type TranslationProvider } from "./providers";
-import type { TranslationSettings } from "./storage";
+import { deleteTranslationSecret, saveTranslationSecret, setTranslationShortcut } from "../../features/translation/api";
+import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS, type TranslationProvider } from "../../features/translation/providers";
+import type { TranslationSettings } from "../../features/translation/storage";
 
 function normalizeShortcut(event: KeyboardEvent<HTMLInputElement>) {
   if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return null;

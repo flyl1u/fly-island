@@ -8,7 +8,7 @@ import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
-import { toggleTranslationWindow } from "../translation/api";
+import { toggleTranslationWindow } from "../../features/translation/api";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
