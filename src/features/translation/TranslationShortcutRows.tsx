@@ -1,19 +1,12 @@
 import { useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
 import { Keyboard } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import { buildShortcutFromEvent } from "../clipboard/shortcut";
 import { setTranslationSelectionShortcut, setTranslationShortcut } from "./api";
 import type { TranslationSettings } from "./storage";
 import "../clipboard/ClipboardSettingsSection.css";
 
 export type TranslationShortcutTarget = "window" | "selection";
-
-function shortcutFromEvent(event: KeyboardEvent<HTMLElement>) {
-  if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return null;
-  const modifiers = [event.ctrlKey && "Ctrl", event.altKey && "Alt", event.shiftKey && "Shift", event.metaKey && "Win"].filter(Boolean);
-  if (!modifiers.length) return null;
-  const key = event.key === " " || event.key === "Spacebar" ? "Space" : event.key.length === 1 ? event.key.toUpperCase() : event.key;
-  return [...modifiers, key].join("+");
-}
 
 /**
  * The two global translation shortcuts, recorded in place. Opening the rows registers
@@ -50,7 +43,7 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
     event.preventDefault();
     event.stopPropagation();
     if (event.key === "Escape") { setRecording(null); return; }
-    const shortcut = shortcutFromEvent(event);
+    const shortcut = buildShortcutFromEvent(event.nativeEvent);
     if (!shortcut) return;
     const owner = takenBy(shortcut, target);
     if (owner) { setError(target, t.settings.shortcuts.taken(shortcut, owner)); setRecording(null); return; }
