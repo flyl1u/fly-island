@@ -501,6 +501,7 @@ const en: Translations = {
       pasteClipboard: "Fill from the clipboard (window only)",
       editHint: "Shortcuts are changed on the Shortcuts page.",
       openPage: "Open Shortcuts",
+      taken: (shortcut, owner) => `${shortcut} is already used by "${owner}". Choose another.`,
     },
 
     pageShortcuts: {

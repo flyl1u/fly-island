@@ -504,6 +504,7 @@ const zhCN: Translations = {
       pasteClipboard: "填入剪贴板（独立窗口）",
       editHint: "快捷键统一在「快捷键」页修改。",
       openPage: "前往快捷键",
+      taken: (shortcut, owner) => `${shortcut} 已被「${owner}」使用，请换一个。`,
     },
 
     pageShortcuts: {
