@@ -6,6 +6,7 @@ import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
 import { useIslandPosition } from "./useIslandPosition";
 import { useNativeLayout } from "./useNativeLayout";
+import { useSettingsPositionReset } from "./useSettingsPositionReset";
 import type { IslandMode, NativeGlassState } from "./types";
 
 type IslandWindowOptions = {
@@ -108,6 +109,7 @@ export function useIslandWindow({
       console.error("Failed to reset island position", error);
     }
   }, [islandPositionRef, setIsPositionDetached, setSettings, settings, syncNativeLayout]);
+  useSettingsPositionReset(resetIslandPosition);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");

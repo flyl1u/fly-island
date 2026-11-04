@@ -89,6 +89,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
  * preset changes only these, so todo and tuck behavior chosen on the general page survive.
+ * The top margin (general page) and the idle todo count (todos page) are not among them,
+ * so presets saved with those values no longer move the island or change the count.
  */
 export const APPEARANCE_SETTING_KEYS = [
   "appearanceMode",
@@ -97,7 +99,6 @@ export const APPEARANCE_SETTING_KEYS = [
   "opacity",
   "collapsedScale",
   "expandedScale",
-  "marginY",
   "topFilletRadius",
   "islandCornerRadius",
   "maxPanelHeight",
@@ -108,7 +109,6 @@ export const APPEARANCE_SETTING_KEYS = [
   "todoBackgroundColor",
   "showTitle",
   "showCollapsedText",
-  "showIdleTodoCount",
 ] as const satisfies readonly (keyof IslandSettings)[];
 
 type AppearanceSettings = Pick<IslandSettings, (typeof APPEARANCE_SETTING_KEYS)[number]>;

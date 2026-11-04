@@ -15,6 +15,13 @@ export function TodoSettingsSection({ settings, onSettingsChange }: {
         <span>{t.settings.todo.title}</span>
       </div>
       <ToggleControl
+        label={t.settings.layout.showIdleTodoCount}
+        checked={settings.showIdleTodoCount}
+        onChange={(showIdleTodoCount) =>
+          onSettingsChange({ ...settings, showIdleTodoCount })
+        }
+      />
+      <ToggleControl
         label={t.settings.todo.carryOverIncomplete}
         checked={settings.carryOverIncompleteTodos}
         onChange={(carryOverIncompleteTodos) =>

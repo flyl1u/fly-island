@@ -39,6 +39,31 @@ export function requestSettingsFocus(section: SettingsFocusSection) {
   );
 }
 
+// Settings window -> island: put the island back at the top center of the primary
+// screen, as its own reset button does. The time makes every request a change that
+// fires a storage event, and lets a leftover from an earlier session be ignored.
+export const ISLAND_POSITION_RESET_STORAGE_KEY = "focusd-island-position-reset";
+
+const POSITION_RESET_MAX_AGE_MS = 5_000;
+
+export function requestIslandPositionReset() {
+  writeJson(ISLAND_POSITION_RESET_STORAGE_KEY, { requestedAt: Date.now() });
+}
+
+/** Whether a stored reset request is fresh and well formed. */
+export function isFreshPositionReset(stored: string | null, now = Date.now()) {
+  if (stored === null) {
+    return false;
+  }
+
+  try {
+    const request = JSON.parse(stored) as { requestedAt?: unknown };
+    return typeof request.requestedAt === "number" && now - request.requestedAt < POSITION_RESET_MAX_AGE_MS;
+  } catch {
+    return false;
+  }
+}
+
 // Settings window -> island: show the island expanded or collapsed while a size slider
 // moves, so the change is visible. Each request carries a fresh time, which also makes
 // every write a change that fires a storage event in the island window.

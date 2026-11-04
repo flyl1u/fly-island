@@ -3,7 +3,7 @@ import { NumberControl } from "../../components/controls/NumberControl";
 import { SliderControl } from "../../components/controls/SliderControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { MAX_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_EXPAND_DELAY_MS, MIN_HOVER_COLLAPSE_DELAY_MS, MIN_HOVER_EXPAND_DELAY_MS } from "./settings";
-import type { ExpandTrigger, IslandSettings } from "./types";
+import type { ExpandTrigger, IslandSettings, MinimizeAction } from "./types";
 import "./AppearanceModeControl.css";
 
 export function ExpandSettingsSection({
@@ -17,6 +17,10 @@ export function ExpandSettingsSection({
   const triggers: [ExpandTrigger, string][] = [
     ["click", t.settings.expand.click],
     ["hover", t.settings.expand.hover],
+  ];
+  const minimizeActions: [MinimizeAction, string][] = [
+    ["tray", t.settings.layout.minimizeToTray],
+    ["tuck", t.settings.layout.minimizeToTop],
   ];
 
   return (
@@ -62,6 +66,22 @@ export function ExpandSettingsSection({
           />
         </>
       )}
+      <div className="appearance-mode-control">
+        <span>{t.settings.layout.minimizeAction}</span>
+        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.layout.minimizeAction}>
+          {minimizeActions.map(([minimizeAction, label]) => (
+            <button
+              key={minimizeAction}
+              className={settings.minimizeAction === minimizeAction ? "appearance-mode-control--active" : ""}
+              type="button"
+              aria-pressed={settings.minimizeAction === minimizeAction}
+              onClick={() => onSettingsChange({ ...settings, minimizeAction })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <ToggleControl
         label={t.settings.layout.autoTuck}
         checked={settings.autoTuck}

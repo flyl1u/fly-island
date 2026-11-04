@@ -54,15 +54,6 @@ export function LayoutSettingsSection({
         onChange={(maxPanelHeight) => change({ ...settings, maxPanelHeight }, true)}
       />
       <SliderControl
-        label={t.settings.layout.marginY}
-        value={settings.marginY}
-        min={0}
-        max={160}
-        step={1}
-        suffix="px"
-        onChange={(marginY) => change({ ...settings, marginY })}
-      />
-      <SliderControl
         label={t.settings.layout.islandCornerRadius}
         value={settings.islandCornerRadius}
         min={MIN_ISLAND_CORNER_RADIUS}

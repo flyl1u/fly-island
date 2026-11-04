@@ -448,6 +448,8 @@ export type Translations = {
     position: {
       title: string;
       moveHint: string;
+      reset: string;
+      resetHint: string;
     };
 
     expand: {

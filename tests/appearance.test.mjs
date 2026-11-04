@@ -186,6 +186,8 @@ test("taking the appearance from other settings keeps todo and tuck behavior", (
     todoRotationSeconds: 12,
     autoTuck: true,
     autoTuckSeconds: 90,
+    marginY: 48,
+    showIdleTodoCount: false,
   };
   const next = withAppearanceFrom(current, DEFAULT_SETTINGS);
 
@@ -197,6 +199,9 @@ test("taking the appearance from other settings keeps todo and tuck behavior", (
   assert.equal(next.todoRotationSeconds, 12);
   assert.equal(next.autoTuck, true);
   assert.equal(next.autoTuckSeconds, 90);
+  // Shown on the general and todos pages, so presets and Reset appearance leave them.
+  assert.equal(next.marginY, 48);
+  assert.equal(next.showIdleTodoCount, false);
   assert.deepEqual(withAppearanceFrom(DEFAULT_SETTINGS, DEFAULT_SETTINGS), DEFAULT_SETTINGS);
 });
 

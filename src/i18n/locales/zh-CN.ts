@@ -448,6 +448,8 @@ const zhCN: Translations = {
     position: {
       title: "位置",
       moveHint: "按住 Ctrl 键，用鼠标左键拖动灵动岛的任意位置即可移动它，展开时也可以；收起时直接拖动也行。拖到屏幕顶部附近会自动贴齐。",
+      reset: "复位",
+      resetHint: "回到主屏幕顶部居中，顶部距离恢复默认",
     },
 
     expand: {

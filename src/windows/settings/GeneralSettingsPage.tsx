@@ -2,7 +2,9 @@ import { useTranslation, type LocaleCode } from "../../i18n";
 import { LocaleControl } from "../../i18n/LocaleControl";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
+import { PositionSettingsSection } from "../../features/appearance/PositionSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
+import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 export function GeneralSettingsPage({
@@ -36,12 +38,11 @@ export function GeneralSettingsPage({
         onLaunchAtStartupChange={updateLaunchAtStartup}
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
-      <section className="settings-section settings-section--position">
-        <div className="settings-section__header">
-          <span>{t.settings.position.title}</span>
-        </div>
-        <p className="settings-section__hint">{t.settings.position.moveHint}</p>
-      </section>
+      <PositionSettingsSection
+        settings={settings}
+        onSettingsChange={onSettingsChange}
+        onResetPosition={requestIslandPositionReset}
+      />
     </>
   );
 }
