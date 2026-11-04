@@ -6,8 +6,8 @@ import { hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpe
 import { takeTranslationHandoff, type Direction } from "../../features/translation/storage";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { openSettingsWindow } from "../settings/api";
-import { useAutoTranslate } from "./useAutoTranslate";
-import { useTranslationRequest } from "./useTranslationRequest";
+import { useAutoTranslate } from "../../features/translation/useAutoTranslate";
+import { useTranslationRequest } from "../../features/translation/useTranslationRequest";
 import "./TranslationWindow.css";
 
 export function TranslationWindow() {

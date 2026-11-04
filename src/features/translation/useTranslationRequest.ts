@@ -1,7 +1,7 @@
 import { useCallback, type KeyboardEvent } from "react";
 import { useTranslation } from "../../i18n";
-import { copyTranslationResult, translateText } from "../../features/translation/api";
-import type { TranslationSettings } from "../../features/translation/storage";
+import { copyTranslationResult, translateText } from "./api";
+import type { TranslationSettings } from "./storage";
 
 export function useTranslationRequest({
   input,
