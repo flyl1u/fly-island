@@ -7,17 +7,17 @@ use imap_proto::types::{
 };
 use std::io::{Read, Write};
 
-use super::*;
+use super::MailContent;
 
 pub(super) const MAX_BODY_BYTES: u32 = 512 * 1024;
 
-pub(super) const MAX_MIME_BYTES: usize = 65_536;
+const MAX_MIME_BYTES: usize = 65_536;
 
-pub(super) const MAX_INLINE_IMAGES: usize = 8;
+const MAX_INLINE_IMAGES: usize = 8;
 
-pub(super) const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
+const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
 
-pub(super) const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
+const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
 
 pub(super) fn parse_message_id(message_id: &str) -> Result<(u32, u32), String> {
     let parsed = message_id.split_once(':').and_then(|(validity, uid)| {
@@ -33,13 +33,13 @@ pub(super) fn parse_message_id(message_id: &str) -> Result<(u32, u32), String> {
         .ok_or_else(|| "邮件标识无效，请刷新收件箱。".into())
 }
 
-pub(super) struct TextPart {
-    pub(super) path: Vec<u32>,
-    pub(super) mime: &'static str,
-    pub(super) octets: u32,
+struct TextPart {
+    path: Vec<u32>,
+    mime: &'static str,
+    octets: u32,
 }
 
-pub(super) fn is_attachment(common: &BodyContentCommon<'_>) -> bool {
+fn is_attachment(common: &BodyContentCommon<'_>) -> bool {
     common.disposition.as_ref().is_some_and(|disposition| {
         !disposition.ty.eq_ignore_ascii_case("inline")
             || disposition.params.as_ref().is_some_and(|params| {
@@ -54,7 +54,7 @@ pub(super) fn is_attachment(common: &BodyContentCommon<'_>) -> bool {
     })
 }
 
-pub(super) fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
+fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<TextPart> {
     if path.len() > 16 {
         return None;
     }
@@ -95,17 +95,17 @@ pub(super) fn text_part(body: &BodyStructure<'_>, path: Vec<u32>) -> Option<Text
     }
 }
 
-pub(super) struct InlineImage {
-    pub(super) path: Vec<u32>,
-    pub(super) content_id: String,
-    pub(super) mime: String,
-    pub(super) octets: u32,
-    pub(super) base64: bool,
-    pub(super) quoted_printable: bool,
+struct InlineImage {
+    path: Vec<u32>,
+    content_id: String,
+    mime: String,
+    octets: u32,
+    base64: bool,
+    quoted_printable: bool,
 }
 
 // cid 引用的结束位置：遇到分隔符才算 token 结束，否则 cid:image1 会把 cid:image10 一起吞掉。
-pub(super) fn cid_token_end(html: &str, start: usize) -> usize {
+fn cid_token_end(html: &str, start: usize) -> usize {
     html[start..]
         .find(|character: char| {
             character.is_whitespace()
@@ -133,7 +133,7 @@ pub(super) fn cid_references(html: &str) -> Vec<String> {
     ids
 }
 
-pub(super) fn collect_inline_images(
+fn collect_inline_images(
     body: &BodyStructure<'_>,
     path: Vec<u32>,
     ids: &[String],
@@ -208,7 +208,7 @@ pub(super) fn replace_cid_references(html: &str, replacements: &[(String, String
 // UID FETCH 只查这一封邮件，但服务器可以把分段拆成多条 FETCH 响应发回来，而且续包不一定
 // 重复 UID（QQ 实测就只给第一条带 UID）。按 uid 相等过滤会把续包整批丢掉，只剩下第一批分段，
 // 所以这里只把带 UID 的响应排在前面，其余响应照样参与合并。
-pub(super) fn responses_for_message(messages: &[Fetch], uid: u32) -> Vec<&Fetch> {
+fn responses_for_message(messages: &[Fetch], uid: u32) -> Vec<&Fetch> {
     let (mut mine, others): (Vec<&Fetch>, Vec<&Fetch>) =
         messages.iter().partition(|item| item.uid == Some(uid));
     mine.extend(others);
@@ -216,7 +216,7 @@ pub(super) fn responses_for_message(messages: &[Fetch], uid: u32) -> Vec<&Fetch>
 }
 
 // 内嵌图只是锦上添花：任何一步失败都退回原正文，不能把已经拿到的文字一起弄丢。
-pub(super) fn inline_cid_images<T: Read + Write>(
+fn inline_cid_images<T: Read + Write>(
     session: &mut Session<T>,
     uid: u32,
     structure: &BodyStructure<'_>,

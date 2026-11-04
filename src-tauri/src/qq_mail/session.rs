@@ -14,11 +14,13 @@ use std::{
     time::Duration,
 };
 
-use super::*;
+use super::credentials::read_secret;
+use super::service::Work;
+use super::MailMessage;
 
-pub(super) const HOST: &str = "imap.qq.com";
+const HOST: &str = "imap.qq.com";
 
-pub(super) const MAX_ITEMS: u32 = 20;
+const MAX_ITEMS: u32 = 20;
 
 pub(super) const IO_TIMEOUT: Duration = Duration::from_secs(15);
 
@@ -99,7 +101,7 @@ pub(super) enum MailWake {
     Closed,
 }
 
-pub(super) fn queued_work(receiver: &mpsc::Receiver<Work>) -> Option<MailWake> {
+fn queued_work(receiver: &mpsc::Receiver<Work>) -> Option<MailWake> {
     match receiver.try_recv() {
         Ok(work) => Some(MailWake::Work(work)),
         Err(mpsc::TryRecvError::Disconnected) => Some(MailWake::Closed),
@@ -158,10 +160,10 @@ pub(super) fn wait_for_mail<T: Read + Write + SetReadTimeout>(
 
 #[derive(Default)]
 pub(super) struct SyncConnection {
-    pub(super) generation: u64,
+    generation: u64,
     pub(super) session: Option<MailSession>,
     pub(super) socket: Option<TcpStream>,
-    pub(super) cached: Option<Inbox>,
+    cached: Option<Inbox>,
     pub(super) idle_supported: bool,
     pub(super) idle_rejected: bool,
 }
@@ -226,10 +228,7 @@ pub(super) fn open_session(email: &str, secret: &str) -> Result<MailSession, Mai
     open_connection(email, secret).map(|(session, _)| session)
 }
 
-pub(super) fn open_connection(
-    email: &str,
-    secret: &str,
-) -> Result<(MailSession, TcpStream), MailFailure> {
+fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
     let mut stream = None;
     let addresses = (HOST, 993)
         .to_socket_addrs()
@@ -265,7 +264,7 @@ pub(super) fn fetch_inbox<T: Read + Write>(session: &mut Session<T>) -> Result<I
     fetch_inbox_cached(session, None)
 }
 
-pub(super) fn header_message(message: &Fetch, validity: u32) -> Option<MailMessage> {
+fn header_message(message: &Fetch, validity: u32) -> Option<MailMessage> {
     let uid = message.uid?;
     let (sender, subject) = parse_header(message.header()?);
     Some(MailMessage {
@@ -278,7 +277,7 @@ pub(super) fn header_message(message: &Fetch, validity: u32) -> Option<MailMessa
     })
 }
 
-pub(super) fn drain_mail_updates<T: Read + Write>(
+fn drain_mail_updates<T: Read + Write>(
     session: &Session<T>,
     exists: u32,
     unread: &mut Option<usize>,

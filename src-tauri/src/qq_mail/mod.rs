@@ -16,10 +16,9 @@ use std::{
 };
 use tauri::AppHandle;
 
-use content::*;
-use credentials::*;
-use service::*;
-use session::*;
+use content::parse_message_id;
+use credentials::{delete_secret, normalize_email, read_secret};
+use service::{worker, MailService, MailState, Work, SERVICE};
 
 const EVENT: &str = "qq-mail-changed";
 

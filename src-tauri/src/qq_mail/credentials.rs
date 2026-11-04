@@ -2,7 +2,7 @@
 
 use keyring::{Entry, Error as KeyringError};
 
-pub(super) const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
+const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
 
 pub(super) fn credential(email: &str) -> Result<Entry, String> {
     Entry::new(CREDENTIAL_SERVICE, email).map_err(|_| "无法访问 Windows 邮箱凭据。".into())

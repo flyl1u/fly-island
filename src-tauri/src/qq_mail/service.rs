@@ -8,9 +8,15 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 
-use super::*;
+use super::content::fetch_content;
+use super::credentials::{credential, read_secret};
+use super::session::{
+    interrupt_idle, open_session, wait_for_mail, Cursor, Inbox, MailFailure, MailWake,
+    SyncConnection,
+};
+use super::{MailContent, MailSnapshot, MailStatus, EVENT};
 
-pub(super) const SYNC_INTERVAL: Duration = Duration::from_secs(5);
+const SYNC_INTERVAL: Duration = Duration::from_secs(5);
 
 pub(super) const PUSH_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
 
@@ -18,10 +24,10 @@ pub(super) static SERVICE: OnceLock<Arc<MailService>> = OnceLock::new();
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct MailEvent {
-    pub(super) snapshot: MailSnapshot,
-    pub(super) newest_id: Option<String>,
-    pub(super) window_visible: bool,
+struct MailEvent {
+    snapshot: MailSnapshot,
+    newest_id: Option<String>,
+    window_visible: bool,
 }
 
 #[derive(Default)]
@@ -183,7 +189,7 @@ impl MailService {
         Some((generation, email))
     }
 
-    pub(super) fn sync(
+    fn sync(
         &self,
         generation: u64,
         email: &str,
@@ -351,7 +357,7 @@ pub(super) fn retry_delay(failures: u32) -> Duration {
     })
 }
 
-pub(super) fn now_ms() -> i64 {
+fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
