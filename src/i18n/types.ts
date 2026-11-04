@@ -522,6 +522,8 @@ export type Translations = {
       sessionTitleSection: string;
       sessionTitle: string;
       sessionTitleHint: string;
+      hooksOutdated: string;
+      hooksMissing: string;
     };
 
     clipboard: {

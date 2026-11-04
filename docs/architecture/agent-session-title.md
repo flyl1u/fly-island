@@ -91,6 +91,7 @@ Agent hook（UserPromptSubmit）
 
 | 项 | 变化 | 兼容 |
 |---|---|---|
+| 新命令 `get_agent_hooks_state`（实施后补充：用户更新后不知道要重装 hook） | 返回 `{ codex, claudeCode: "notInstalled" \| "outdated" \| "current", scriptsOutdated }`，只读文件；设置页据此提示点"安装/修复" | 新增命令，不影响旧命令 |
 | `get_agent_status` 返回值 | `codex`、`claudeCode` 各新增可选字段 `title?: string` | 只增不改；前端缺字段时不显示标题 |
 | `agent-status.json` | 不变 | — |
 | 应用数据目录 | 新增 `agent-codex-hook-input.json`、`agent-claudeCode-hook-input.json` | 新文件；"清除状态"时一并删除 |

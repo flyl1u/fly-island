@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../utils/error";
-import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "./api";
+import { clearAgentProviderStatus, getAgentHooksState, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentHooksState, type AgentProvider, type AgentStatusSnapshot } from "./api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "./status";
 
 const AGENT_STATUS_POLL_MS = 1_000;
@@ -16,6 +16,20 @@ export function useAgentStatusSettings() {
   const [agentHooksInstallResult, setAgentHooksInstallResult] =
     useState<AgentHooksInstallResult | null>(null);
   const [agentHooksInstallError, setAgentHooksInstallError] = useState("");
+  const [agentHooksState, setAgentHooksState] = useState<AgentHooksState | null>(null);
+
+  // The configs only change on Install/Repair (or by hand), so they are read on open and after installing.
+  const refreshAgentHooksState = useCallback(async () => {
+    try {
+      setAgentHooksState(await getAgentHooksState());
+    } catch (error) {
+      console.error("Failed to read agent hooks state", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAgentHooksState();
+  }, [refreshAgentHooksState]);
 
   const refreshAgentStatus = useCallback(async () => {
     try {
@@ -41,7 +55,7 @@ export function useAgentStatusSettings() {
       void refreshAgentStatus();
     }, AGENT_STATUS_POLL_MS);
     return () => window.clearInterval(interval);
-  }, [refreshAgentStatus]);
+  }, [refreshAgentHooksState, refreshAgentStatus]);
 
   const clearAgentStatus = useCallback(async (provider: AgentProvider) => {
     setClearingAgentProvider(provider);
@@ -64,12 +78,13 @@ export function useAgentStatusSettings() {
       setAgentHooksInstallResult(result);
       setAgentHooksInstallState("installed");
       void refreshAgentStatus();
+      void refreshAgentHooksState();
     } catch (error) {
       console.error("Failed to install agent status hooks", error);
       setAgentHooksInstallError(getErrorMessage(error));
       setAgentHooksInstallState("error");
     }
-  }, [refreshAgentStatus]);
+  }, [refreshAgentHooksState, refreshAgentStatus]);
 
   return {
     agentStatus,
@@ -77,6 +92,7 @@ export function useAgentStatusSettings() {
     agentHooksInstallState,
     agentHooksInstallResult,
     agentHooksInstallError,
+    agentHooksState,
     onClearAgentStatus: clearAgentStatus,
     onInstallAgentHooks: installAgentHooks,
   };

@@ -25,6 +25,17 @@ export type AgentHooksInstallResult = {
   installedAt: number;
 };
 
+/** Mirrors HookInstallState / AgentHooksState in src-tauri/src/agent_status/hooks_state.rs. */
+export type HookInstallState = "notInstalled" | "outdated" | "current";
+
+export type AgentHooksState = Record<AgentProvider, HookInstallState> & {
+  scriptsOutdated: boolean;
+};
+
+export function getAgentHooksState() {
+  return invoke<AgentHooksState>("get_agent_hooks_state");
+}
+
 export function getAgentStatus() {
   return invoke<AgentStatusSnapshot>("get_agent_status");
 }

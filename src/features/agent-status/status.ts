@@ -1,5 +1,5 @@
 import type { Translations } from "../../i18n";
-import type { AgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
+import type { AgentHooksState, AgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
 
 export type AgentVisualState = "idle" | "running" | "attention";
 export type AgentHooksInstallState = "idle" | "installing" | "installed" | "error";
@@ -35,6 +35,17 @@ export function getAgentVisualState(snapshot: AgentStatusSnapshot): AgentVisualS
   }
 
   return "idle";
+}
+
+/** What the settings page should say about the installed hooks, or null when they are current. */
+export type AgentHooksNotice = "update" | "install";
+
+export function getAgentHooksNotice(state: AgentHooksState | null): AgentHooksNotice | null {
+  if (!state) return null;
+  if (state.scriptsOutdated || AGENT_PROVIDERS.some((provider) => state[provider] === "outdated")) {
+    return "update";
+  }
+  return AGENT_PROVIDERS.every((provider) => state[provider] === "notInstalled") ? "install" : null;
 }
 
 export function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translations) {

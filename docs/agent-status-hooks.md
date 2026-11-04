@@ -82,7 +82,9 @@ With `capture`, the script also copies the hook's stdin JSON to `agent-codex-hoo
 - Claude Code: the newest `ai-title` record in `transcript_path` (only files under `~/.claude/projects`), else the first typed prompt in the transcript, else the latest prompt, else the `cwd` folder name.
 - Codex: `thread_name` for `session_id` in `~/.codex/session_index.jsonl`, else the first prompt seen for the session while the app runs, else the `cwd` folder name.
 
-Titles are cut to 40 characters. Clearing a provider's status also deletes its saved hook input. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
+Titles are cut to 40 characters. Clearing a provider's status also deletes its saved hook input.
+
+The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It reports each agent as `notInstalled`, `outdated` (FocuSD hooks without `capture`, or the legacy unmanaged Codex hooks) or `current`, plus whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
 
 ## Manual Smoke Test
 

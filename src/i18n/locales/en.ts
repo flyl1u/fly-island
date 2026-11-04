@@ -519,6 +519,8 @@ const en: Translations = {
       sessionTitleSection: "On the island",
       sessionTitle: "Show the session title while running",
       sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. After updating, click Install/repair below once.",
+      hooksOutdated: "The installed hooks are from an older version, so newer features such as session titles won't work. Click Install/repair, then restart Codex and Claude Code.",
+      hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
     },
 
     clipboard: {

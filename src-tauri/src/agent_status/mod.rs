@@ -2,6 +2,7 @@
 
 mod claude_hooks;
 mod codex_hooks;
+mod hooks_state;
 mod markers;
 mod snapshot;
 #[cfg(test)]
@@ -17,6 +18,9 @@ use crate::system::windows_home_dir;
 
 use claude_hooks::install_claude_code_status_hooks;
 use codex_hooks::install_codex_status_hooks;
+use hooks_state::{
+    claude_code_hooks_state, codex_hooks_state, script_outdated, AgentHooksState, HookInstallState,
+};
 use markers::{
     apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_HOOK_INPUT_FILE_NAME,
     CLAUDE_CODE_RUNNING_HOLD_FILE_NAME, CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
@@ -179,6 +183,43 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         codex_config_path: codex_config_path.to_string_lossy().to_string(),
         claude_config_path: claude_config_path.to_string_lossy().to_string(),
         installed_at: current_unix_millis(),
+    })
+}
+
+/// Compares the installed hooks with what Install/Repair would write. Only reads files.
+#[tauri::command]
+pub async fn get_agent_hooks_state(app: AppHandle) -> Result<AgentHooksState, String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    tauri::async_runtime::spawn_blocking(move || read_agent_hooks_state(&app_dir))
+        .await
+        .map_err(|error| format!("Failed to join the agent hooks task: {error}"))?
+}
+
+fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
+    let home_dir = windows_home_dir()?;
+    let read = |path: &Path| fs::read_to_string(path).ok();
+    let codex = codex_hooks_state(read(&home_dir.join(".codex").join("config.toml")).as_deref());
+    let claude_code =
+        claude_code_hooks_state(read(&home_dir.join(".claude").join("settings.json")).as_deref());
+    let hooks_installed =
+        codex != HookInstallState::NotInstalled || claude_code != HookInstallState::NotInstalled;
+    let scripts_outdated = script_outdated(
+        read(&app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_RUNNING_SCRIPT,
+        hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_STATUS_SCRIPT,
+        hooks_installed,
+    );
+
+    Ok(AgentHooksState {
+        codex,
+        claude_code,
+        scripts_outdated,
     })
 }
 

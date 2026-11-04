@@ -265,3 +265,76 @@ fn codex_title_uses_index_then_first_prompt_then_folder() {
         Some("fly-island")
     );
 }
+
+#[test]
+fn hooks_state_matches_what_the_installers_write() {
+    use super::claude_hooks::{
+        claude_code_match_all_hook_entry, claude_code_running_hook_entry,
+        install_claude_code_hook_event,
+    };
+    use super::codex_hooks::build_codex_hook_block;
+    use super::hooks_state::{
+        claude_code_hooks_state, codex_hooks_state, script_outdated, HookInstallState,
+    };
+
+    let running = Path::new(r"C:\a b\focusd-agent-running.cmd");
+    let status = Path::new(r"C:\a b\focusd-agent-status.ps1");
+
+    // Codex: the block written now is current; a block without `capture` is outdated.
+    let current = format!(
+        "model = \"x\"\n\n{}",
+        build_codex_hook_block(running, status)
+    );
+    assert_eq!(codex_hooks_state(Some(&current)), HookInstallState::Current);
+    let old = current.replace(" codex capture", " codex");
+    assert_eq!(codex_hooks_state(Some(&old)), HookInstallState::Outdated);
+    assert_eq!(
+        codex_hooks_state(Some(
+            "[[hooks.Stop]]\ncommand = \"focusd-agent-status.ps1\""
+        )),
+        HookInstallState::Outdated
+    );
+    assert_eq!(
+        codex_hooks_state(Some("model = \"x\"")),
+        HookInstallState::NotInstalled
+    );
+    assert_eq!(codex_hooks_state(None), HookInstallState::NotInstalled);
+
+    // Claude Code: same, built with the installer's own entries.
+    let settings = |capture: bool| {
+        let mut hooks = serde_json::Map::new();
+        install_claude_code_hook_event(
+            &mut hooks,
+            "UserPromptSubmit",
+            claude_code_running_hook_entry(running, capture),
+        );
+        install_claude_code_hook_event(
+            &mut hooks,
+            "PreToolUse",
+            claude_code_match_all_hook_entry(claude_code_running_hook_entry(running, false)),
+        );
+        json!({ "model": "opus", "hooks": hooks }).to_string()
+    };
+    assert_eq!(
+        claude_code_hooks_state(Some(&settings(true))),
+        HookInstallState::Current
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some(&settings(false))),
+        HookInstallState::Outdated
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some(r#"{"hooks":{"Stop":[]}}"#)),
+        HookInstallState::NotInstalled
+    );
+    assert_eq!(
+        claude_code_hooks_state(Some("not json")),
+        HookInstallState::NotInstalled
+    );
+
+    // Scripts: compared ignoring line endings; missing only matters while hooks point at it.
+    assert!(!script_outdated(Some("a\r\nb\r\n"), "a\nb\n", true));
+    assert!(script_outdated(Some("a\nold\n"), "a\nb\n", true));
+    assert!(script_outdated(None, "a", true));
+    assert!(!script_outdated(None, "a", false));
+}

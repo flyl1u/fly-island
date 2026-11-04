@@ -1,15 +1,17 @@
-import { Check, RefreshCcw, X } from "lucide-react";
+import { CircleAlert, Check, RefreshCcw, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import type { AgentHooksInstallResult, AgentProvider, AgentStatusSnapshot } from "./api";
-import { AGENT_PROVIDERS, AGENT_PROVIDER_LABELS, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, type AgentHooksInstallState } from "./status";
+import type { AgentHooksInstallResult, AgentHooksState, AgentProvider, AgentStatusSnapshot } from "./api";
+import { AGENT_PROVIDERS, AGENT_PROVIDER_LABELS, getAgentHooksNotice, getAgentPhaseLabel, getAgentStatusLabel, getAgentVisualState, isAgentAttentionPhase, type AgentHooksInstallState } from "./status";
 import "./AgentHooksSettingsSection.css";
 
-export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, agentHooksInstallState, agentHooksInstallResult, agentHooksInstallError, onClearAgentStatus, onInstallAgentHooks }: {
+export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, agentHooksInstallState, agentHooksInstallResult, agentHooksInstallError, agentHooksState, onClearAgentStatus, onInstallAgentHooks }: {
   agentStatus: AgentStatusSnapshot;
   clearingAgentProvider: AgentProvider | null;
   agentHooksInstallState: AgentHooksInstallState;
   agentHooksInstallResult: AgentHooksInstallResult | null;
   agentHooksInstallError: string;
+  /** Null until read; outdated hooks get a notice asking for Install/Repair. */
+  agentHooksState: AgentHooksState | null;
   onClearAgentStatus: (provider: AgentProvider) => void;
   onInstallAgentHooks: () => void;
 }) {
@@ -25,6 +27,7 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
     };
   });
   const agentStatusLabel = getAgentStatusLabel(agentStatus, t);
+  const hooksNotice = getAgentHooksNotice(agentHooksState);
 
   return (
     <section className="settings-section settings-section--agent-hooks">
@@ -36,6 +39,7 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
             agentHooksInstallState === "installed"
               ? "agent-hooks-button--installed"
               : "",
+            hooksNotice ? "agent-hooks-button--attention" : "",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -57,6 +61,12 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
           </span>
         </button>
       </div>
+      {hooksNotice ? (
+        <p className="agent-hooks-notice" role="status">
+          <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" />
+          <span>{hooksNotice === "update" ? t.settings.agent.hooksOutdated : t.settings.agent.hooksMissing}</span>
+        </p>
+      ) : null}
       <div
         className={[
           "agent-status-panel",

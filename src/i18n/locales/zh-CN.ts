@@ -522,6 +522,8 @@ const zhCN: Translations = {
       sessionTitleSection: "小岛显示",
       sessionTitle: "运行时在小岛显示会话标题",
       sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。更新后需在下方点一次“安装/修复”。",
+      hooksOutdated: "已安装的钩子是旧版本，会话标题等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
+      hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
     },
 
     clipboard: {

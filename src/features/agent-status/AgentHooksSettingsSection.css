@@ -38,6 +38,35 @@
   background: #37a06f;
 }
 
+/* Installed hooks are from an older version: draw the eye to Install/Repair. */
+.agent-hooks-button--attention {
+  background: var(--color-warning);
+}
+
+.agent-hooks-button--attention:hover:not(:disabled) {
+  background: #ffdd8c;
+}
+
+.agent-hooks-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 7px 10px;
+  color: #ffe7ad;
+  background: rgba(255, 209, 102, 0.09);
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.agent-hooks-notice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-warning);
+}
+
 .agent-hooks-button:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
