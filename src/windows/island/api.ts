@@ -77,6 +77,16 @@ export function minimizeIsland() {
   return invoke("minimize_island");
 }
 
+/** Focuses the island and remembers the window it took the focus from (src-tauri/src/island/focus.rs). */
+export function takeIslandHoverFocus() {
+  return invoke("take_island_hover_focus");
+}
+
+/** Hands the focus back to that window, unless the user has since clicked elsewhere. */
+export function releaseIslandHoverFocus() {
+  return invoke("release_island_hover_focus");
+}
+
 export function startIslandDrag() {
   return invoke("start_island_drag");
 }

@@ -36,6 +36,7 @@ import { getTodoScrollStartRows } from "./layout";
 import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useHoverExpand } from "./useHoverExpand";
+import { useHoverFocus } from "./useHoverFocus";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
 import { useIslandFeatures } from "./useIslandFeatures";
@@ -214,6 +215,7 @@ export function IslandApp() {
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
+  useHoverFocus(mode);
   usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
   useIslandKeyboard(

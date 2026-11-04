@@ -1,6 +1,7 @@
 //! Main island window: Tauri commands, window access, and the submodules for state,
 //! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
 
+pub(crate) mod focus;
 mod geometry;
 mod glass;
 mod passthrough;

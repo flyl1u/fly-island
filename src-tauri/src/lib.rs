@@ -136,6 +136,8 @@ pub fn run() {
             system::todo_export::get_default_todo_save_directory,
             island::show_ready_island,
             island::minimize_island,
+            island::focus::take_island_hover_focus,
+            island::focus::release_island_hover_focus,
             system::startup::get_launch_at_startup,
             system::startup::set_launch_at_startup,
             system::updater::get_updater_proxy,

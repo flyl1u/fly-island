@@ -23,7 +23,7 @@ type HoverExpandOptions = {
 };
 
 // Typing goes into a focused text field; closing the panel under it would lose the draft.
-function isEditingText() {
+export function isEditingText() {
   const element = document.activeElement;
   return (
     element instanceof HTMLTextAreaElement ||
@@ -39,7 +39,8 @@ function isEditingText() {
  * drag that left the panel), and closes when that ends. A panel the cursor never
  * entered (opened by a shortcut or a settings preview) is left to its own closing.
  * Pressing cancels a pending open, so drags and clicks on the collapsed island work,
- * and hovering never takes focus from the app the user is typing in.
+ * and hovering the collapsed island never takes focus from the app the user is typing
+ * in (the expanded panel takes it while under the cursor, see useHoverFocus).
  */
 export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
   const [isHovering, setIsHovering] = useState(false);
