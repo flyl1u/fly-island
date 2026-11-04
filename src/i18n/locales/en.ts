@@ -340,6 +340,7 @@ const en: Translations = {
       hover: "Hover",
       hoverDelay: "Hover delay",
       hoverCollapseDelay: "Close delay after leaving",
+      revealOnMessage: "Slide out from the edge for new messages",
     },
 
     project: {

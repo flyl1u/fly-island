@@ -4,7 +4,7 @@ import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminde
 import { useQQMail } from "../../features/messages/qq-mail/QQMail";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
-import { useIdleTuck } from "./useIslandAutomation";
+import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
@@ -44,9 +44,13 @@ export function IslandApp() {
     openIslandPage,
     toggleClipboardHistory,
   } = useIslandNavigation();
-  const qqNotifications = useQQNotifications(mode === "collapsed" && !isTucked);
-  const wechatReminders = useWeChatReminders(mode === "collapsed" && !isTucked);
-  const qqMail = useQQMail(mode === "collapsed" && !isTucked);
+  const [settings, setSettings] = useIslandSettings();
+  // A tucked island still takes message previews when it will slide out to show them.
+  const canPreviewMessages = mode === "collapsed" && (!isTucked || settings.revealOnMessage);
+  const qqNotifications = useQQNotifications(canPreviewMessages);
+  const wechatReminders = useWeChatReminders(canPreviewMessages);
+  const qqMail = useQQMail(canPreviewMessages);
+  const hasMessagePreview = Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview);
   const [messageSource, setMessageSource] = useState<MessageView>("qq");
   const {
     mediaState,
@@ -59,7 +63,6 @@ export function IslandApp() {
   } = useMediaState();
   const [musicSettingsOpen, setMusicSettingsOpen] = useState(false);
   const agentStatus = useAgentStatus();
-  const [settings, setSettings] = useIslandSettings();
 
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
@@ -76,8 +79,7 @@ export function IslandApp() {
       todos,
       activeTodoId,
       settings,
-      mode !== "collapsed" || isTucked || !settings.showCollapsedText ||
-        Boolean(qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview),
+      mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
     );
   const expandedIslandHeight = getExpandedIslandHeight({
     page,
@@ -94,7 +96,9 @@ export function IslandApp() {
     [collapsedIslandWidth, expandedIslandHeight, mode, settings],
   );
 
-  useIdleTuck(settings.autoTuck, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
+  // A showing preview holds the idle timer, which then restarts in full once it ends.
+  useIdleTuck(settings.autoTuck && !hasMessagePreview, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
+  useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
 
   const closeMailReader = qqMail.closeReader;
   const openMessages = useCallback((source: MessageSource) => {

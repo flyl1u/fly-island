@@ -76,6 +76,11 @@ export function ExpandSettingsSection({
           onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
         />
       )}
+      <ToggleControl
+        label={t.settings.expand.revealOnMessage}
+        checked={settings.revealOnMessage}
+        onChange={(revealOnMessage) => onSettingsChange({ ...settings, revealOnMessage })}
+      />
     </section>
   );
 }

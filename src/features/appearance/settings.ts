@@ -50,6 +50,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoRotationSeconds: 5,
   autoTuck: false,
   autoTuckSeconds: 30,
+  revealOnMessage: true,
   expandTrigger: "click",
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
@@ -207,6 +208,7 @@ export function normalizeSettings(
     autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
       ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
       : DEFAULT_SETTINGS.autoTuckSeconds,
+    revealOnMessage: settings?.revealOnMessage !== false,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     hoverExpandDelayMs: typeof settings?.hoverExpandDelayMs === "number" && Number.isFinite(settings.hoverExpandDelayMs)
       ? clamp(Math.round(settings.hoverExpandDelayMs), MIN_HOVER_EXPAND_DELAY_MS, MAX_HOVER_EXPAND_DELAY_MS)

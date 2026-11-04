@@ -32,6 +32,8 @@ export type IslandSettings = {
   todoRotationSeconds: number;
   autoTuck: boolean;
   autoTuckSeconds: number;
+  /** A tucked island slides back into view to show a new message preview. */
+  revealOnMessage: boolean;
   expandTrigger: ExpandTrigger;
   /** Pointer rest time (ms) before a hover opens the island. */
   hoverExpandDelayMs: number;

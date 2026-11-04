@@ -343,6 +343,7 @@ export type Translations = {
       hover: string;
       hoverDelay: string;
       hoverCollapseDelay: string;
+      revealOnMessage: string;
     };
 
     project: {

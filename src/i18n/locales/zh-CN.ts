@@ -343,6 +343,7 @@ const zhCN: Translations = {
       hover: "鼠标悬停",
       hoverDelay: "悬停延迟",
       hoverCollapseDelay: "移开后收起延迟",
+      revealOnMessage: "收起到边缘时，收到新消息自动露出",
     },
 
     project: {
