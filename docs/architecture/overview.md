@@ -115,6 +115,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-position` | `windows/island/storage.ts` |
 | `focusd-island-music-sources` | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
+| `focusd-island-panel-preview`（设置窗口 → 主窗口：拖动尺寸滑块时让岛展开或收起预览，`{ mode, requestedAt }`，超过 2 秒的请求忽略） | `windows/settings/storage.ts` |
 | `focusd-island-qq-mail-settings` | `features/messages/qq-mail/storage.ts` |
 | `focusd-island-qq-mail-remote-images` | `features/messages/qq-mail/storage.ts` |
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |

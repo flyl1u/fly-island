@@ -6,11 +6,20 @@ import type { IslandSettings } from "./types";
 export function LayoutSettingsSection({
   settings,
   onSettingsChange,
+  onPreviewIsland,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  /** Called while a slider moves with the island state it changes: expanded or not. */
+  onPreviewIsland?: (expanded: boolean) => void;
 }) {
   const t = useTranslation();
+  const change = (next: IslandSettings, previewExpanded?: boolean) => {
+    onSettingsChange(next);
+    if (previewExpanded !== undefined) {
+      onPreviewIsland?.(previewExpanded);
+    }
+  };
 
   return (
     <section className="settings-section settings-section--layout">
@@ -24,7 +33,7 @@ export function LayoutSettingsSection({
         max={1.4}
         step={0.01}
         suffix="x"
-        onChange={(collapsedScale) => onSettingsChange({ ...settings, collapsedScale })}
+        onChange={(collapsedScale) => change({ ...settings, collapsedScale }, false)}
       />
       <SliderControl
         label={t.settings.layout.expandedScale}
@@ -33,7 +42,7 @@ export function LayoutSettingsSection({
         max={1.4}
         step={0.01}
         suffix="x"
-        onChange={(expandedScale) => onSettingsChange({ ...settings, expandedScale })}
+        onChange={(expandedScale) => change({ ...settings, expandedScale }, true)}
       />
       <SliderControl
         label={t.settings.layout.maxPanelHeight}
@@ -42,7 +51,7 @@ export function LayoutSettingsSection({
         max={MAX_MAX_PANEL_HEIGHT}
         step={1}
         suffix="px"
-        onChange={(maxPanelHeight) => onSettingsChange({ ...settings, maxPanelHeight })}
+        onChange={(maxPanelHeight) => change({ ...settings, maxPanelHeight }, true)}
       />
       <SliderControl
         label={t.settings.layout.marginY}
@@ -51,7 +60,7 @@ export function LayoutSettingsSection({
         max={160}
         step={1}
         suffix="px"
-        onChange={(marginY) => onSettingsChange({ ...settings, marginY })}
+        onChange={(marginY) => change({ ...settings, marginY })}
       />
       <SliderControl
         label={t.settings.layout.islandCornerRadius}
@@ -60,7 +69,7 @@ export function LayoutSettingsSection({
         max={MAX_ISLAND_CORNER_RADIUS}
         step={1}
         suffix="px"
-        onChange={(islandCornerRadius) => onSettingsChange({ ...settings, islandCornerRadius })}
+        onChange={(islandCornerRadius) => change({ ...settings, islandCornerRadius }, true)}
       />
       <SliderControl
         label={t.settings.layout.topFilletRadius}
@@ -69,7 +78,7 @@ export function LayoutSettingsSection({
         max={MAX_TOP_FILLET_RADIUS}
         step={1}
         suffix="px"
-        onChange={(topFilletRadius) => onSettingsChange({ ...settings, topFilletRadius })}
+        onChange={(topFilletRadius) => change({ ...settings, topFilletRadius })}
       />
     </section>
   );

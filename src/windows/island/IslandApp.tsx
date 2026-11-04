@@ -26,6 +26,7 @@ import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useHoverExpand } from "./useHoverExpand";
 import { useIslandKeyboard } from "./useIslandKeyboard";
+import { usePanelPreview } from "./usePanelPreview";
 import { useIslandNavigation } from "./useIslandNavigation";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
@@ -143,6 +144,7 @@ export function IslandApp() {
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
+  usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
   useIslandKeyboard(
     clipboardHistory.settings.shortcutEnabled,
