@@ -167,6 +167,7 @@
   - [x] 微信：`win32/process_times.rs`（进程启动时间，复用 `process.rs` 中改为 `pub(super)` 的句柄类型）、`win32/shell_hook.rs`（`SHELLHOOK` 消息与注册），`message_window.rs` 增加工具弹窗、销毁窗口、注销类和 `PeekMessageW` 派发，`window.rs` 增加 `is_minimized`。`wechat_reminders/mod.rs`、`source.rs` 不再含 `unsafe`。示例程序 `wechat_reminder_probe.rs` 同步引入 `message_window.rs`、`shell_hook.rs`、`window.rs`，只用到其中一部分的两个文件加了 `#[allow(dead_code)]`。至此生产代码中 `win32/` 以外没有 `unsafe`（`messenger_activation.rs` 测试模块里的 1 处除外）。
 - [ ] **6.3** 清理生产代码中剩余的 `unwrap` / `expect`，将 Phase 0 中的 clippy lint 从 warn 升级为 deny。
   - [x] `expect`：窗口状态锁改为 `unwrap_or_else(PoisonError::into_inner)`（与 `island/mod.rs` 拖动结束时的写法一致）；默认剪贴板快捷键改为返回 `Option`，调用方不再 panic，新增测试确认默认值能解析且解析后的标签与常量相同；`lib.rs` 中 `run()` 的启动失败保留 `expect`（运行时起不来时 panic 是预期行为），在该语句上用 `#[expect(clippy::expect_used, reason = ...)]` 说明。
+  - [x] 测试与示例中的 `unsafe` 块补上 `// SAFETY:` 注释（`qq_notifications/tests.rs` 7、`wechat_reminders/tests.rs` 3、`messenger_activation.rs` 测试模块 1、3 个探测示例 11），只加注释，不改代码。升级为 deny 后这些位置也会被检查。
 
 **验收**：除 `win32/` 外，生产代码中不再出现 `unsafe`；clippy 没有告警；`cargo test` 和 `pnpm tauri build --no-bundle` 通过。
 
@@ -339,6 +340,7 @@ Phase 6 剩余部分（6.1 的窗口与 COM、6.2、6.3）留给后续贡献者�
 | 2026-11-04 | 6.2（4/n，改写） | 见提交说明 | 翻译快捷键窗口：与剪贴板相同的对齐方式（类名、标题、仅消息窗口、错误文案、消息循环、退出时注销）；`CHANGE_HOTKEY_MESSAGE` 投递失败仍清空待处理绑定并返回同一文案；窗口过程中先注销旧快捷键、注册新快捷键、失败时恢复旧绑定的顺序不变。首次定位窗口仍只在前台窗口非空且能取到矩形时用它的中心点 | `cargo test`（115 / 5）、clippy 51 → 44；`pnpm check`（118/118）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.2（5/5，改写） | 见提交说明 | 微信窗口查找：打不开进程或读不到路径仍跳过该窗口；路径比较、标题缓冲 32 与三个候选标题、500×300 判断不变；启动时间读不到仍记为 `u64::MAX`。差异：原代码用同一个进程句柄先读路径再读启动时间，现在 `image_path` 与 `start_time` 各自打开一次（进程在两次打开之间退出时启动时间记为 `u64::MAX`，只影响多个微信实例之间的排序）。提醒监听：注册 `SHELLHOOK`、取模块句柄、注册类、建窗失败的文案与清理不变，建窗失败仍注销类；监听对象仍在注册 shell hook 之前构造，失败时由 `Drop` 清理；窗口过程处理后仍总是调用 `DefWindowProcW`；`Drop` 的注销、销毁、注销类、清空上下文顺序不变。`tests.rs` 补上原来经 `use super::*` 得到的两个导入，测试函数未改 | `cargo test`（117 / 5）、`cargo build --all-targets`（示例无新增告警）、clippy 44 → 34；`pnpm check`（118/118）、`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 | 2026-11-04 | 6.3（1/n） | 见提交说明 | 生产代码中的 4 处 `expect` 处理完毕（见 6.3 说明）。行为差异只在失败路径：窗口状态锁中毒后不再 panic，而是继续使用锁内的值；默认快捷键（`Ctrl+X`）由测试保证可解析，正常路径不变 | `cargo test`（122 / 5）、clippy 34 → 30；`pnpm tauri build --no-bundle`，桌面快捷方式已核对。`pnpm check` 当时因另一会话进行中的前端改动（回归页 `AgentSession` 类型）失败，与本次 Rust 改动无关 |
+| 2026-11-04 | 6.3（2/n） | 见提交说明 | 22 处测试与示例中的 `unsafe` 块补上 `// SAFETY:` 注释，代码不变 | `cargo test`（122 / 5）、`cargo build --all-targets`、clippy 30 → 8（剩下的都不是 Phase 0 的三条 lint）；`pnpm tauri build --no-bundle`，桌面快捷方式已核对 |
 
 ## 待人工验收
 

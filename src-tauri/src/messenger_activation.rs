@@ -31,6 +31,8 @@ mod tests {
 
     #[test]
     fn a_hidden_preloaded_window_is_never_forced_visible() {
+        // SAFETY: creates, inspects and destroys a test-owned window on this thread;
+        // the class and title are static wide strings.
         unsafe {
             let window = CreateWindowExW(
                 WINDOW_EX_STYLE::default(),
