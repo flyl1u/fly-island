@@ -12,7 +12,8 @@ const isPermission = (name: string): name is PluginPermission =>
 export function PluginMarketSection({ onInstalled }: { onInstalled: (snapshot: PluginsSnapshot) => void }) {
   const t = useTranslation();
   const { locale } = useLocale();
-  const { market, loading, error, installingId, refresh, install } = usePluginMarket(onInstalled);
+  const { market, loading, loadError, installError, installingId, refresh, install } = usePluginMarket(onInstalled);
+  const failedPlugin = installError && market?.plugins.find((plugin) => plugin.id === installError.id);
 
   const action = (plugin: MarketPlugin) => {
     if (plugin.incompatible) {
@@ -46,8 +47,21 @@ export function PluginMarketSection({ onInstalled }: { onInstalled: (snapshot: P
         </button>
       </div>
       <p className="settings-section__hint">{t.settings.plugins.market.hint}</p>
-      {loading && !market ? <p className="settings-section__hint">{t.settings.plugins.market.loading}</p> : null}
-      {error ? <p className="plugin-card__error">{error}</p> : null}
+      {loading ? <p className="settings-section__hint">{t.settings.plugins.market.loading}</p> : null}
+      {loadError ? (
+        <div className="plugin-market__failure" role="alert">
+          <p className="plugin-card__error">{t.settings.plugins.market.loadFailed}</p>
+          <p className="plugin-market__detail">{loadError}</p>
+        </div>
+      ) : null}
+      {installError ? (
+        <div className="plugin-market__failure" role="alert">
+          <p className="plugin-card__error">
+            {t.settings.plugins.market.installFailed(failedPlugin ? failedPlugin.name[locale] : installError.id)}
+          </p>
+          <p className="plugin-market__detail">{installError.detail}</p>
+        </div>
+      ) : null}
       {market && market.plugins.length === 0 ? <p className="settings-section__hint">{t.settings.plugins.market.empty}</p> : null}
       {market?.plugins.map((plugin) => (
         <article className="plugin-market__item" key={plugin.id}>

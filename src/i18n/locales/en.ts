@@ -629,10 +629,12 @@ const en: Translations = {
       confirmUninstall: "Confirm uninstall",
       market: {
         title: "Plugin market",
-        hint: "Packages are checked against their SHA-256 before installing. New plugins start off; permissions are granted when you turn one on.",
+        hint: "Plugins installed from here are checked first to make sure the files are complete and unchanged. They start off, and you choose what they may access when you turn one on.",
         refresh: "Refresh",
         loading: "Loading plugins…",
         empty: "No plugins in the market yet.",
+        loadFailed: "Could not load the plugin list. Check your network or the Windows proxy settings, then click Refresh.",
+        installFailed: (name: string) => `${name} was not installed. Your other plugins are unaffected.`,
         install: "Install",
         installing: "Installing…",
         update: (version: string) => `Update to v${version}`,

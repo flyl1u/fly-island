@@ -624,6 +624,8 @@ export type Translations = {
         refresh: string;
         loading: string;
         empty: string;
+        loadFailed: string;
+        installFailed: (name: string) => string;
         install: string;
         installing: string;
         update: (version: string) => string;

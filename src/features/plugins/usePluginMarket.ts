@@ -8,16 +8,20 @@ import { getPluginMarket, installMarketPlugin, type MarketSnapshot, type Plugins
 export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void) {
   const [market, setMarket] = useState<MarketSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // Kept apart so a failed install does not read as the list failing to load.
+  const [loadError, setLoadError] = useState("");
+  const [installError, setInstallError] = useState<{ id: string; detail: string } | null>(null);
   const [installingId, setInstallingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // Clear the old failure first, so a retry shows only "Loading" until it answers.
+    setLoadError("");
+    setInstallError(null);
     setLoading(true);
     try {
       setMarket(await getPluginMarket());
-      setError("");
     } catch (nextError) {
-      setError(String(nextError));
+      setLoadError(String(nextError));
     } finally {
       setLoading(false);
     }
@@ -30,6 +34,7 @@ export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void
   const install = useCallback(
     async (id: string) => {
       setInstallingId(id);
+      setInstallError(null);
       try {
         onInstalled(await installMarketPlugin(id));
         setMarket((current) =>
@@ -40,9 +45,8 @@ export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void
             ),
           },
         );
-        setError("");
       } catch (nextError) {
-        setError(String(nextError));
+        setInstallError({ id, detail: String(nextError) });
       } finally {
         setInstallingId(null);
       }
@@ -50,5 +54,5 @@ export function usePluginMarket(onInstalled: (snapshot: PluginsSnapshot) => void
     [onInstalled],
   );
 
-  return { market, loading, error, installingId, refresh, install };
+  return { market, loading, loadError, installError, installingId, refresh, install };
 }
