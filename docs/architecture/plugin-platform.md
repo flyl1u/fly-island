@@ -112,7 +112,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 | 开发模式 | 改完点“重新加载” | 加载任意目录、文件变化后自动重启、请求日志 | P10 |
 | 测试 | 自己写脚本扮演宿主 | 模拟宿主库加 CLI | P10 |
 | 实验 API | 没有 | `experimentalApis`，只在开发模式可用 | P10 |
-| 市场位置 | fork 的 `dev` 分支 | 独立索引仓库（待决定） | P11 |
+| 市场位置 | fork 的 `dev` 分支 | 独立索引仓库 `TixXin/focusd-plugins` | P11 |
 | 上架 | 持有私钥的人手动打包签名 | PR 加 CI 校验，CI 签名 | P11 |
 | 包托管 | 存在仓库里 | 作者的 GitHub Release | P11 |
 | 发布者 | 没有概念 | GitHub 账号即发布者，首次安装确认信任 | P11 |
