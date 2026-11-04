@@ -7,7 +7,7 @@ import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPerm
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
 import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
-import { PluginStatusChip } from "../../features/plugin-views/PluginStatusChip";
+import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
@@ -146,6 +146,7 @@ export function IslandApp() {
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
     pluginTemplate: pluginPages.entry?.template,
+    pluginListRows: pluginPages.rows,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
@@ -319,7 +320,7 @@ export function IslandApp() {
         onPageChange={setPage}
         pageDigitModifiers={settings.pageDigitModifiers}
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
-        pluginStatusChip={pluginPages.topStatus && <PluginStatusChip status={pluginPages.topStatus} onOpen={pluginPages.topStatusPage ? () => openEnabledPage(pluginPages.topStatusPage ?? "todo") : null} />}
+        pluginStatusChip={<PluginStatusSlot views={pluginPages.views} onOpen={openEnabledPage} />}
         pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
         {page === "qq" && (
@@ -349,7 +350,7 @@ export function IslandApp() {
           />
         )}
         {page === "agents" && <AgentSessionsPanel sessions={agentSessions} />}
-        {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} />}
+        {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (

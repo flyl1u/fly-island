@@ -22,6 +22,8 @@ type ExpandedHeightInput = {
   agentVisibleRows: number;
   /** The template of the open plugin page; null when it is not known (yet). */
   pluginTemplate?: PluginViewTemplate | null;
+  /** Rows the open plugin list shows (items, group titles, search box). */
+  pluginListRows?: number | null;
 };
 
 /**
@@ -41,9 +43,10 @@ export function getExpandedIslandHeight({
   clipboardVisibleRows,
   agentVisibleRows,
   pluginTemplate,
+  pluginListRows,
 }: ExpandedHeightInput) {
   if (isPluginPage(page)) {
-    return getPluginPageExpandedHeight(pluginTemplate, maxPanelHeight);
+    return getPluginPageExpandedHeight(pluginTemplate, maxPanelHeight, pluginListRows);
   }
   // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =

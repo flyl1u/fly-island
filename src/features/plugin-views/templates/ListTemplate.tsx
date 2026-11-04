@@ -27,7 +27,8 @@ export function ListTemplate({
   const [query, setQuery] = useState<string | null>(null);
   const remote = list.search?.mode === "remote";
   const groups = remote ? list.groups : filterListGroups(list.groups, query ?? "");
-  const rows = listRowCount(groups);
+  // Items and group titles, plus the search box and error line, for the island's height.
+  const rows = listRowCount(groups) + (list.search ? 1 : 0) + (list.error ? 1 : 0);
 
   useEffect(() => {
     onRowsChange?.(rows);

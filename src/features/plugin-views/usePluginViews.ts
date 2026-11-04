@@ -1,34 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { listenPluginViewChanged, listPluginViews, type PluginViewsSnapshot } from "./api";
+import { listenPluginViewChanged, listPluginViews, type PluginStatusEntry, type PluginViewEntry, type PluginViewsSnapshot } from "./api";
 
-const EMPTY: PluginViewsSnapshot = { views: [], status: [] };
+type Part = "views" | "status";
 
 /**
- * The plugin pages and status texts for the island. Read again when a plugin
- * starts, stops or changes a status text; view models are not kept here (each
- * page listens for its own), so model updates do not re-render the island.
+ * One part of the plugin views snapshot, read again only on the events that
+ * change it: the page list when a plugin starts or stops, status texts also
+ * when one is set. Keeping the two apart means a countdown on the collapsed
+ * bar re-renders only the bar's chip, not the island.
  */
-export function usePluginViews(): PluginViewsSnapshot {
-  const [snapshot, setSnapshot] = useState<PluginViewsSnapshot>(EMPTY);
-  const lastText = useRef(JSON.stringify(EMPTY));
+function usePluginViewsPart<K extends Part>(part: K): PluginViewsSnapshot[K] {
+  const [value, setValue] = useState<PluginViewsSnapshot[K]>([] as PluginViewsSnapshot[K]);
+  const lastText = useRef("[]");
 
   const refresh = useCallback(() => {
     listPluginViews()
-      .then((next) => {
+      .then((snapshot) => {
+        const next = snapshot[part];
         const text = JSON.stringify(next);
         if (text === lastText.current) return;
         lastText.current = text;
-        setSnapshot(next);
+        setValue(next);
       })
       .catch((error: unknown) => console.error("Failed to list plugin views", error));
-  }, []);
+  }, [part]);
 
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     refresh();
     void listenPluginViewChanged((change) => {
-      if (change.kind !== "view") refresh();
+      if (change.kind === "reset" || (part === "status" && change.kind === "status")) refresh();
     })
       .then((stop) => {
         if (cancelled) stop();
@@ -39,7 +41,17 @@ export function usePluginViews(): PluginViewsSnapshot {
       cancelled = true;
       unlisten?.();
     };
-  }, [refresh]);
+  }, [part, refresh]);
 
-  return snapshot;
+  return value;
+}
+
+/** The pages of plugins that are on, with each plugin's run state. View models are not kept here. */
+export function usePluginViews(): PluginViewEntry[] {
+  return usePluginViewsPart("views");
+}
+
+/** The status texts plugins set now (status.update). */
+export function usePluginStatus(): PluginStatusEntry[] {
+  return usePluginViewsPart("status");
 }

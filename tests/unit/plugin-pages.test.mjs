@@ -54,6 +54,11 @@ test("plugin pages get a height by template, within the panel limit", () => {
   assert.equal(getPluginPageExpandedHeight("list", 1000), 400);
   assert.equal(getPluginPageExpandedHeight("list", 320), 320);
   assert.equal(getPluginPageExpandedHeight(null, 1000), 400);
+  // A list grows with its rows between 2 and 8, then scrolls.
+  assert.equal(getPluginPageExpandedHeight("list", 1000, 0), getPluginPageExpandedHeight("list", 1000, 2));
+  assert.equal(getPluginPageExpandedHeight("list", 1000, 4) - getPluginPageExpandedHeight("list", 1000, 3), 40);
+  assert.equal(getPluginPageExpandedHeight("list", 1000, 50), getPluginPageExpandedHeight("list", 1000, 8));
+  assert.equal(getPluginPageExpandedHeight("list", 300, 8), 300);
 });
 
 test("the collapsed bar shows the status text with the highest priority, first plugin on ties", async () => {
