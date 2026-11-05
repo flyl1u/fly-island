@@ -3,7 +3,7 @@ import { ArrowLeft, Eraser, Play } from "lucide-react";
 import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
-import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo, type SensitivePermission } from "./api";
+import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo, type PromptedPermission } from "./api";
 import { PluginInfoList } from "./PluginInfoList";
 import { PluginSensitiveSection } from "./PluginSensitiveSection";
 import { PluginSettingField } from "./PluginSettingField";
@@ -31,7 +31,7 @@ export function PluginDetailPage({
   onPreReleaseChange: (enabled: boolean) => void;
   onMemoryLimitChange: (megabytes: number) => void;
   onClearData: () => void;
-  onRevokeSensitive: (permission: SensitivePermission) => void;
+  onRevokeSensitive: (permission: PromptedPermission) => void;
 }) {
   const t = useTranslation();
   const { locale } = useLocale();

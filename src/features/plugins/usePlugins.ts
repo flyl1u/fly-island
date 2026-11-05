@@ -17,7 +17,7 @@ import {
   setPluginsAllowed,
   uninstallPlugin,
   type PluginsSnapshot,
-  type SensitivePermission,
+  type PromptedPermission,
 } from "./api";
 
 // Status and log lines change in the background; refreshed while the page is open.
@@ -73,7 +73,7 @@ export function usePlugins() {
     untrustPublisher: useCallback((publisher: string) => void run(() => setPluginPublisherTrusted(publisher, false)), [run]),
     checkUpdates: useCallback(() => void run(checkPluginUpdates), [run]),
     revokeSensitive: useCallback(
-      (id: string, permission: SensitivePermission) => void run(() => revokePluginSensitivePermission(id, permission)),
+      (id: string, permission: PromptedPermission) => void run(() => revokePluginSensitivePermission(id, permission)),
       [run],
     ),
     setMemoryLimit: useCallback(

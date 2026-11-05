@@ -1,8 +1,8 @@
 import { RotateCcw } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { isSensitivePermission, type PluginInfo, type SensitivePermission } from "./api";
+import { promptedPermissions, type PluginInfo, type PromptedPermission } from "./api";
 
-/** The plugin's sensitive permissions, what the user answered, and revoking the answer. */
+/** The plugin's sensitive permissions (and links, for onUri), what the user answered, and revoking the answer. */
 export function PluginSensitiveSection({
   plugin,
   busy,
@@ -10,11 +10,11 @@ export function PluginSensitiveSection({
 }: {
   plugin: PluginInfo;
   busy: boolean;
-  onRevoke: (permission: SensitivePermission) => void;
+  onRevoke: (permission: PromptedPermission) => void;
 }) {
   const t = useTranslation();
   const labels = t.settings.plugins.sensitive;
-  const permissions = plugin.permissions.filter(isSensitivePermission);
+  const permissions = promptedPermissions(plugin);
   if (permissions.length === 0) return null;
 
   return (

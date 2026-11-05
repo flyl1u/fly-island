@@ -24,12 +24,12 @@
     },
     "minAppVersion": { "type": "string" },
     "activationEvents": {
-      "description": "apiVersion 2: when the island starts the plugin's process. Without this field the plugin runs while the island runs (onStartup). With it, the plugin starts on one of these events (commands and views add onCommand:<id> / onView:<id> by themselves) and is stopped again after 60 s with nothing to do; host.keepAlive keeps it running. onEvent:<name> needs the event's permission. Ignored for apiVersion 1.",
+      "description": "apiVersion 2: when the island starts the plugin's process. Without this field the plugin runs while the island runs (onStartup). With it, the plugin starts on one of these events (commands and views add onCommand:<id> / onView:<id> by themselves) and is stopped again after 60 s with nothing to do; host.keepAlive keeps it running. onEvent:<name> needs the event's permission. onUri: focusd://plugin/<id>/... links (the user confirms the first one on the island). Ignored for apiVersion 1.",
       "type": "array",
       "maxItems": 20,
       "items": {
         "type": "string",
-        "pattern": "^(onStartup|onStartupFinished|onCommand:[A-Za-z0-9-]{1,32}|onView:[A-Za-z0-9-]{1,32}|onEvent:[A-Za-z.]+|onSchedule:[0-9]{1,4})$"
+        "pattern": "^(onStartup|onStartupFinished|onCommand:[A-Za-z0-9-]{1,32}|onView:[A-Za-z0-9-]{1,32}|onEvent:[A-Za-z.]+|onSchedule:[0-9]{1,4}|onUri)$"
       }
     },
     "experimentalApis": {

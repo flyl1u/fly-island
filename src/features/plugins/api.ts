@@ -100,7 +100,7 @@ export type PluginInfo = {
   /** Command shortcuts that could not be registered because something else uses them. */
   keybindingConflicts: string[];
   /** Remembered answers for sensitive permissions; the user can revoke them. */
-  sensitive: Partial<Record<SensitivePermission, PluginSensitiveChoice>>;
+  sensitive: Partial<Record<PromptedPermission, PluginSensitiveChoice>>;
   /** "startup": runs while the island runs; "onDemand": starts on its activation events. */
   activation: "startup" | "onDemand";
   activationEvents: string[];
@@ -129,6 +129,16 @@ export type SensitivePermission = (typeof SENSITIVE_PERMISSIONS)[number];
 export type PluginSensitiveChoice = "allowed" | "denied";
 export const isSensitivePermission = (name: string): name is SensitivePermission =>
   (SENSITIVE_PERMISSIONS as readonly string[]).includes(name);
+// 与 src-tauri/src/plugin_host/uri.rs 中的 URI_PERMISSION 对应：插件第一次收到 focusd:// 链接前，岛上像敏感权限一样询问。
+export const PLUGIN_URI_PERMISSION = "uri";
+/** What the island asks about before first use: a sensitive permission, or opening links (onUri). */
+export type PromptedPermission = SensitivePermission | typeof PLUGIN_URI_PERMISSION;
+/** The plugin's permissions the island asks about, plus links when it lists onUri. */
+export function promptedPermissions(plugin: Pick<PluginInfo, "permissions" | "activationEvents">): PromptedPermission[] {
+  const prompted: PromptedPermission[] = plugin.permissions.filter(isSensitivePermission);
+  if (plugin.activationEvents.includes("onUri")) prompted.push(PLUGIN_URI_PERMISSION);
+  return prompted;
+}
 
 export type PluginsSnapshot = {
   allowThirdParty: boolean;
@@ -315,7 +325,7 @@ export type PluginPermissionRequest = {
   pluginId: string;
   /** Null if the plugin was removed in the meantime. */
   pluginName: LocalizedText | null;
-  permission: SensitivePermission;
+  permission: PromptedPermission;
   /** The plugin's call is refused if there is no answer within this time. */
   timeoutMs: number;
 };
@@ -331,7 +341,7 @@ export function answerPluginPermission(requestId: number, answer: PluginPermissi
 }
 
 /** Forgets the answer for one sensitive permission; the plugin's next use asks again. */
-export function revokePluginSensitivePermission(id: string, permission: SensitivePermission) {
+export function revokePluginSensitivePermission(id: string, permission: PromptedPermission) {
   return invoke<PluginsSnapshot>("revoke_plugin_sensitive_permission", { id, permission });
 }
 

@@ -23,6 +23,8 @@ pub(super) enum ActivationEvent {
     Event(&'static str),
     /// Woken every N minutes.
     Schedule(u32),
+    /// A `focusd://plugin/<id>/...` link was opened (uri.rs).
+    Uri,
 }
 
 impl ActivationEvent {
@@ -30,6 +32,7 @@ impl ActivationEvent {
         match text {
             "onStartup" => return Some(Self::Startup),
             "onStartupFinished" => return Some(Self::StartupFinished),
+            "onUri" => return Some(Self::Uri),
             _ => {}
         }
         let (kind, value) = text.split_once(':')?;
@@ -55,6 +58,7 @@ impl ActivationEvent {
             Self::View(id) => format!("onView:{id}"),
             Self::Event(name) => format!("onEvent:{name}"),
             Self::Schedule(minutes) => format!("onSchedule:{minutes}"),
+            Self::Uri => "onUri".into(),
         }
     }
 }
@@ -79,6 +83,11 @@ impl Activation {
 
     pub(super) fn on_event(&self, name: &str) -> bool {
         self.events.iter().any(|event| matches!(event, ActivationEvent::Event(known) if *known == name))
+    }
+
+    /// Whether the plugin handles `focusd://plugin/<id>/...` links.
+    pub(super) fn on_uri(&self) -> bool {
+        self.events.contains(&ActivationEvent::Uri)
     }
 
     pub(super) fn on_startup_finished(&self) -> bool {

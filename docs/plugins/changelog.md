@@ -4,6 +4,9 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 链接
+- 激活事件 `onUri` 和通知 `uri { uri, path, query }`：打开 `focusd://plugin/<id>/...` 链接时发给插件。第一次之前岛上询问用户，答案和敏感权限放在一起，可以撤销。SDK：Node `plugin.onUri`；模拟宿主 `openUri()`。见 [链接](README.md#链接第-2-版)。
+
 ## 自定义界面（P8）
 
 - `contributes.views[].template: "webview"`，配 `entry`（插件文件夹里的 .html）和 `height`：插件自己的网页显示在岛上。页面在单独的 WebView2 里，不能联网，也没有岛屿的接口，只能通过 `acquireFocusdApi()` 和插件进程收发消息。

@@ -174,6 +174,12 @@ export class MockHost extends EventEmitter {
     this.send("command", args === undefined ? { id } : { id, args });
   }
 
+  /** Opens focusd://plugin/<id><path>?<query> as if the user allowed it, e.g. openUri("/auth", "code=1"). */
+  openUri(path = "", query = "") {
+    const id = this.manifest?.id ?? "plugin";
+    this.send("uri", { uri: `focusd://plugin/${id}${path}${query ? `?${query}` : ""}`, path, query });
+  }
+
   /** Sends an island event if the plugin subscribed to it; returns whether it did. */
   publish(name, payload = {}) {
     if (!this.subscriptions.has(name)) return false;

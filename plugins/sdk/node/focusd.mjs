@@ -109,6 +109,8 @@ export function createPlugin(options = {}) {
     onReady: (handler) => on("initialize", handler),
     /** Runs when the user runs one of the commands from `contributes.commands`; receives `args` (todo menu: { todoId }). */
     onCommand: (id, handler) => on("command", (params) => (params?.id === id ? handler(params?.args ?? {}) : undefined)),
+    /** Runs when a focusd://plugin/<id>/<path>?<query> link is opened (needs activationEvents onUri); receives { uri, path, query }. */
+    onUri: (handler) => on("uri", handler),
     /** Runs with all setting values when the user changes one on the plugin's page. */
     onSettingsChanged: (handler) => on("settings.changed", (params) => handler(params?.settings ?? {})),
     /** Runs before the process exits on `shutdown` (awaited). */

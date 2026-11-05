@@ -294,6 +294,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `settings.changed` | 1 | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
 | `event` | 2 | `{ name, payload }` | 订阅的事件发生了，见下文的「事件」 |
 | `notification.action` | 2 | `{ id }` | 用户点了 `island.notify` 消息上的某个按钮 |
+| `uri` | 2 | `{ uri, path, query }` | 打开了发给这个插件的 `focusd://` 链接（清单需要 `onUri`），见「链接」 |
 | `view.visible` | 2 | `{ viewId, visible }` | 插件页面出现在屏幕上或被关上；不可见时岛屿不转发更新 |
 | `view.action` | 2 | `{ viewId, actionId, itemId?, checked? }` | 用户点了页面上的按钮、条目或勾选框 |
 | `view.submit` | 2 | `{ viewId, values }` | 用户提交了 `form` 页面 |
@@ -422,12 +423,23 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `onView:<id>` | 用户打开了这个岛上页面 |
 | `onEvent:<事件名>` | 发生了这个事件（需要事件对应的权限；敏感权限会先在岛上询问）。插件会直接收到这次的 `event` 通知，不用先订阅 |
 | `onSchedule:<分钟>` | 每隔这么多分钟启动一次，5–1440 |
+| `onUri` | 打开了 `focusd://plugin/<插件 id>/...` 链接，见下文的「链接」 |
 
 - `contributes.commands` 和 `contributes.views` 会自动加上对应的 `onCommand:<id>` / `onView:<id>`，不用重复写。所以 `"activationEvents": []` 表示"只在用户用到命令或页面时启动"。
 - 启动时，触发这次启动的命令、事件或页面消息会等 `initialize` 发出之后再送达，最多等 10 秒。`initialize.activationEvent` 告诉插件这次是因为什么启动的（常驻插件为 `onStartup`）。
 - **空闲停止**：按需启动的插件 60 秒内没有收到消息、没有发出请求、没有打开的岛上页面时，岛屿发送 `shutdown` 让它退出，之后有激活事件时再启动。插件订阅了不在 `activationEvents` 里的事件时，会一直运行，以免错过事件。
 - 需要一直运行时调用 `host.keepAlive { reason }`，插件卡片会显示原因；`{ reason: null }` 取消。插件重启后要重新申请。
 - 插件被停止时，它的 `storage` 不受影响，但订阅、岛上页面的模型和折叠条状态文字都会清空，下次启动后要重新设置。
+
+### 链接（第 2 版）
+
+岛屿为当前用户注册了 `focusd://` 链接。网页或其他程序打开 `focusd://plugin/<插件 id>/<路径>?<查询>` 时，Windows 把链接交给岛屿（岛屿没在运行时会先启动它），岛屿再发给这个插件，插件可以借此接收登录回调之类的数据。
+
+- 只有 `activationEvents` 里写了 `onUri` 的插件能收到链接；按需启动的插件会被唤醒。插件收到 `uri { uri, path, query }`：`path` 是插件 id 后面的部分（以 `/` 开头，没有时为空），`query` 是 `?` 后面、`#` 前面的部分，仍是百分号编码。整个链接最长 2048 个字符，不能有空白。
+- 任何网页都能放这种链接，所以插件第一次收到链接前，岛上会像敏感权限一样询问用户（允许 / 本次 / 拒绝）。答案记在插件的「敏感权限」里，可以撤销。插件被关闭、没写 `onUri` 或用户拒绝时，链接被丢弃。
+- 把链接里的数据当成不可信的输入：检查格式，不要直接执行；做登录回调时用 `state` 参数核对是自己发起的请求。
+- Node SDK：`plugin.onUri(({ path, query }) => ...)`；模拟宿主：`host.openUri("/auth", "code=1")`。PowerShell：在 `Invoke-FocusdLoop` 的处理函数表里加 `uri`。
+- 注册写在 `HKCU\Software\Classes\focusd`，指向最近一次启动的岛屿程序；卸载岛屿不会删除它。
 
 ## SDK
 

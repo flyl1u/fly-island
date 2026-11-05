@@ -36,8 +36,12 @@ pub fn run() {
         context.config_mut().identifier = identifier;
     }
     let result = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let _ = island::show_island(app);
+            // A focusd:// link opened while the island runs (plugin_host/uri.rs).
+            if let Some(link) = plugin_host::find_link(&args) {
+                plugin_host::open_link(app, link, false);
+            }
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -77,6 +81,10 @@ pub fn run() {
             }
             if let Err(error) = plugin_host::init(app.handle()) {
                 eprintln!("failed to initialize plugins: {error}");
+            }
+            let args: Vec<String> = std::env::args().collect();
+            if let Some(link) = plugin_host::find_link(&args) {
+                plugin_host::open_link(app.handle(), link, true);
             }
             if let Err(error) = mail::init(app.handle()) {
                 eprintln!("failed to initialize QQ mail: {error}");

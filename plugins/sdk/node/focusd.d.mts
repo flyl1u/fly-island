@@ -143,6 +143,8 @@ export interface Plugin {
   hasCapability(name: Capability | (string & {})): boolean;
   onReady(handler: Handler<InitializeParams>): Off;
   onCommand(id: string, handler: Handler<Record<string, unknown>>): Off;
+  /** A focusd://plugin/<id>/<path>?<query> link was opened; needs activationEvents onUri. `query` is still percent-encoded. */
+  onUri(handler: Handler<{ uri: string; path: string; query: string }>): Off;
   onSettingsChanged(handler: Handler<Record<string, unknown>>): Off;
   onShutdown(handler: () => unknown): void;
   onEvent(name: PluginEventName | (string & {}), handler: Handler<any>): Off;

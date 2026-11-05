@@ -18,6 +18,7 @@
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - sensitive.rs: asking the user before a sensitive permission is first used
+//! - uri.rs: `focusd://plugin/<id>/...` links (`onUri`)
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 //! - market.rs / signature.rs: the market index and its signatures
 //! - revocations.rs / updates.rs: revoked versions, background update checks,
@@ -52,9 +53,11 @@ mod store;
 #[cfg(test)]
 mod tests;
 mod updates;
+mod uri;
 mod webviews;
 
 pub use commands::*;
+pub(crate) use uri::{find_link, open as open_link};
 // The Tauri commands of development mode and updates (the macro needs its
 // generated items re-exported too).
 pub use dev::*;
@@ -133,6 +136,9 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     };
     if HOST.set(host).is_err() {
         return Err("The plugin host was initialized twice.".into());
+    }
+    if let Err(error) = uri::register_scheme() {
+        eprintln!("could not register focusd:// links: {error}");
     }
     events::listen(app);
     keybindings::start();

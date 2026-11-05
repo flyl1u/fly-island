@@ -11,7 +11,7 @@ export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.s
 /** Events for events.subscribe. */
 export type PluginEventName = "todos.changed" | "note.changed" | "agentStatus.changed" | "island.expanded" | "island.collapsed" | "app.locale.changed" | "clipboard.changed" | "messages.received" | "media.changed";
 /** Notifications the island sends to the plugin. */
-export type IslandNotification = "initialize" | "command" | "settings.changed" | "event" | "notification.action" | "view.visible" | "view.action" | "view.submit" | "view.search" | "webview.message" | "shutdown";
+export type IslandNotification = "initialize" | "command" | "settings.changed" | "event" | "notification.action" | "uri" | "view.visible" | "view.action" | "view.submit" | "view.search" | "webview.message" | "shutdown";
 
 /** The permission each host method needs (null: none). */
 export interface MethodPermissions {

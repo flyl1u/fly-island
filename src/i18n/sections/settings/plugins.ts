@@ -20,7 +20,7 @@ export type SettingsPluginsText = {
     allow: string;
     once: string;
     deny: string;
-    action: Record<"clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write", string>;
+    action: Record<"clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write" | "uri", string>;
     title: string;
     hint: string;
     allowed: string;
@@ -191,9 +191,10 @@ export const zhCN: SettingsPluginsText = {
       "media:read": "读取正在播放的内容",
       "shelf:read": "读取文件中转列表",
       "shelf:write": "修改文件中转列表",
+      uri: "处理网页或其他程序打开的 focusd:// 链接",
     },
     title: "敏感权限",
-    hint: "插件第一次使用这些权限时，岛上会询问你。撤销后，下次使用会再问一次。",
+    hint: "插件第一次使用这些权限或收到链接时，岛上会询问你。撤销后，下次使用会再问一次。",
     allowed: "已允许",
     denied: "已拒绝",
     revoke: "撤销",
@@ -373,9 +374,10 @@ export const en: SettingsPluginsText = {
       "media:read": "see what is playing",
       "shelf:read": "read the file shelf",
       "shelf:write": "change the file shelf",
+      uri: "handle a focusd:// link opened by a web page or another app",
     },
     title: "Sensitive permissions",
-    hint: "The island asks you the first time a plugin uses one of these. After you revoke an answer, it asks again.",
+    hint: "The island asks you the first time a plugin uses one of these or receives a link. After you revoke an answer, it asks again.",
     allowed: "Allowed",
     denied: "Denied",
     revoke: "Revoke",

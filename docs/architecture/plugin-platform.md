@@ -361,7 +361,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 **设计**
 
-1. **激活事件**：清单 `activationEvents`，取值 `onStartup`（相当于 VS Code 的 `*`，市场审核时要说明理由）、`onStartupFinished`（岛屿启动 10 秒后）、`onCommand:<id>`、`onView:<id>`、`onEvent:<事件名>`、`onSchedule:<分钟>`（每 N 分钟唤醒一次，最小 5）、`onUri`（`focusd://plugin/<id>/...` 链接，以后需要时再加）。
+1. **激活事件**：清单 `activationEvents`，取值 `onStartup`（相当于 VS Code 的 `*`，市场审核时要说明理由）、`onStartupFinished`（岛屿启动 10 秒后）、`onCommand:<id>`、`onView:<id>`、`onEvent:<事件名>`、`onSchedule:<分钟>`（每 N 分钟唤醒一次，最小 5）、`onUri`（`focusd://plugin/<id>/...` 链接；第一次之前岛上询问，见 `plugin_host/uri.rs`）。
    - 与 VS Code 1.74 以后的做法一样，**从贡献项自动推导**：声明了命令就隐含 `onCommand`，声明了视图就隐含 `onView`。没写 `activationEvents` 的旧插件按 `onStartup` 处理，保持现有行为。
    - 触发事件时插件还没启动：宿主先启动它，等 `initialize` 完成后再投递这次的命令或事件（排队，超时 10 秒）。
 2. **空闲停止**：不是 `onStartup` 的插件，60 秒内没有请求、没有可见视图、没有事件订阅需要处理时，宿主发 `shutdown` 让它退出；下次事件再启动。插件可以用 `host.keepAlive { reason }` 申请常驻，设置页会显示原因。

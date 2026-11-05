@@ -739,6 +739,9 @@ mod lifecycle_tests {
         assert!(!parsed.activation.is_eager());
         assert_eq!(parse(manifest(json!(["onEvent:todos.changed", "onSchedule:30"]))).expect("p").activation.schedule_minutes(), Some(30));
         assert!(parse(manifest(json!(["onStartup", "onCommand:go"]))).expect("eager").activation.is_eager());
+        let links = parse(manifest(json!(["onUri"]))).expect("links").activation;
+        assert!(links.on_uri() && !links.is_eager());
+        assert!(!parse(manifest(json!([]))).expect("none").activation.on_uri());
     }
 
     #[test]
