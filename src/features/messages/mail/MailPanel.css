@@ -27,6 +27,12 @@
 .qq-mail-reader__meta time { flex: 0 0 auto; }
 .qq-mail-reader__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xl); padding: 14px 0; color: rgba(241, 246, 250, .65); font-size: 13px; }
 .qq-mail-reader__state .qq-panel__error { flex-basis: 100%; margin: 0; }
+.qq-mail-compose__from { flex: 1 1 auto; min-width: 0; overflow: hidden; color: rgba(241, 246, 250, .55); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.qq-mail-compose__fields { display: flex; flex: 1; flex-direction: column; gap: 6px; min-height: 0; padding: 8px 8px 0; }
+.qq-mail-compose__fields label { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 8px; color: rgba(241, 246, 250, .6); font-size: 12px; }
+.qq-mail-compose__fields input, .qq-mail-compose__fields textarea { width: 100%; min-width: 0; padding: 7px 10px; color: var(--color-page-text); font: inherit; font-size: 12px; border: 1px solid var(--color-white-a10); border-radius: var(--radius-md); background: rgba(255, 255, 255, .035); }
+.qq-mail-compose__fields textarea { flex: 1; min-height: 120px; resize: none; line-height: 1.6; }
+.qq-mail-compose__fields input:focus-visible, .qq-mail-compose__fields textarea:focus-visible { outline: none; border-color: rgba(143, 216, 255, .65); }
 .qq-mail-attachments { flex: 0 0 auto; margin: 8px 8px 0; padding: 8px 10px; border-radius: var(--radius-md); background: rgba(255, 255, 255, .04); }
 .qq-mail-attachments__title { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: rgba(241, 246, 250, .7); font-size: 11px; font-weight: 700; }
 .qq-mail-attachments ul { display: flex; flex-direction: column; gap: 4px; max-height: 120px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }

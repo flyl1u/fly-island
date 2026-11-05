@@ -1,12 +1,13 @@
 import { useTranslation } from "../../../i18n";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, MailCheck, PenSquare, Power, RefreshCw, Reply, Settings2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
 import { MailAccountTabs } from "./MailAccountTabs";
 import { MailAttachments } from "./MailAttachments";
+import { MailCompose } from "./MailCompose";
 import "./MailPanel.css";
 import type { MailController } from "./useMail";
 
@@ -82,7 +83,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
   const listRef = useRef<HTMLDivElement>(null);
   const listScroll = useRef(0);
   const returnFocus = useRef<string | null>(null);
-  const { selectedMail, content, reading, readError, readMail, closeReader, openLink, readerAccount, markRead } = controller;
+  const { selectedMail, content, reading, readError, readMail, closeReader, openLink, readerAccount, markRead, compose, startCompose, startReply, closeCompose } = controller;
   // The open mail as listed now, so the button goes once it is marked read here or elsewhere.
   const readerStillUnread = Boolean(selectedMail && mailboxes.find((mailbox) => mailbox.email === readerAccount)?.items.find((item) => item.id === selectedMail.id)?.unread);
   const [remoteImages, setRemoteImages] = useState(loadRemoteImagePreference);
@@ -113,11 +114,14 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
     if (selectedMail && readerRef.current) { returnFocus.current = selectedMail.id; readerRef.current.scrollTop = 0; readerRef.current.focus(); }
   }, [selectedMail]);
 
+  if (compose) return <MailCompose key={compose.draft.replyTo ?? "new"} account={compose.account} draft={compose.draft} onClose={closeCompose} />;
+
   if (selectedMail) return (
     <section className="qq-panel qq-mail-panel" aria-label={t.mail.reader}>
       <header className="qq-panel__header">
         <button className="message-action qq-mail-back" type="button" onClick={onBack ?? closeReader}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.back}</button>
         {content?.contentType === "text/html" && <button className="icon-button" type="button" aria-label={t.mail.remoteImages} aria-pressed={remoteImages} title={remoteImages ? t.mail.remoteImagesOn : t.mail.remoteImagesOff} onClick={toggleRemoteImages}>{remoteImages ? <Image size={15} strokeWidth={1.8} /> : <ImageOff size={15} strokeWidth={1.8} />}</button>}
+        <button className="message-action" type="button" disabled={busy} onClick={() => void startReply()}><Reply size={14} strokeWidth={1.8} />{t.mail.reply}</button>
         {readerStillUnread ? <button className="message-action" type="button" disabled={busy} onClick={() => { if (readerAccount && selectedMail) void markRead(readerAccount, selectedMail.id); }}><MailCheck size={14} strokeWidth={1.8} />{t.mail.markRead}</button> : null}
         <button className="message-action" type="button" title={t.mail.webHint} onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
       </header>
@@ -147,6 +151,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
         {navigation}
         <div className="qq-panel__toolbar">
           {snapshot.configured && <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.mail.receive} title={snapshot.enabled ? t.mail.pause : t.mail.resume} disabled={busy || snapshot.status === "authRequired"} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button>}
+          {snapshot.configured && snapshot.status !== "authRequired" ? <button className="icon-button" type="button" title={t.mail.compose} aria-label={t.mail.compose} disabled={busy} onClick={startCompose}><PenSquare size={16} strokeWidth={1.8} /></button> : null}
           <button className="icon-button" type="button" title={t.mail.open} aria-label={t.mail.openLabel} onClick={() => void openMail()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
           {snapshot.configured && <button className="icon-button" type="button" title={snapshot.lastSyncedAt === null ? t.mail.refresh : t.mail.lastSynced(formatMailTime(snapshot.lastSyncedAt, t.localeTag))} aria-label={t.mail.refreshLabel} disabled={busy || snapshot.syncing || !snapshot.enabled || snapshot.status === "authRequired"} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} className={snapshot.syncing ? "qq-mail-spinning" : undefined} /></button>}
         </div>

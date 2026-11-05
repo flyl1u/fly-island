@@ -26,6 +26,7 @@ getrandom = "0.3"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 imap = "2.4"
 imap-proto = "0.10"
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "native-tls", "builder", "hostname"] }
 keyring = { version = "4.2", default-features = false, features = ["v1", "windows-native-keyring-store"] }
 mailparse = "0.17"
 native-tls = "0.2"

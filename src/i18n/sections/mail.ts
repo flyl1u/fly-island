@@ -11,6 +11,17 @@ export type MailText = {
   webHint: string;
   openWeb: string;
   markRead: string;
+  compose: string;
+  reply: string;
+  from: (email: string) => string;
+  to: string;
+  cc: string;
+  subject: string;
+  messageBody: string;
+  recipientsPlaceholder: string;
+  bodyPlaceholder: string;
+  send: string;
+  sending: string;
   attachments: (count: number) => string;
   saveAttachment: string;
   saveAttachmentHint: string;
@@ -89,6 +100,17 @@ export const zhCN: MailText = {
   webHint: "附件和回复请在网页中处理",
   openWeb: "在网页打开",
   markRead: "标为已读",
+  compose: "写邮件",
+  reply: "回复",
+  from: (email: string) => `由 ${email} 发出`,
+  to: "收件人",
+  cc: "抄送",
+  subject: "主题",
+  messageBody: "正文",
+  recipientsPlaceholder: "多个地址用逗号分隔",
+  bodyPlaceholder: "纯文本正文",
+  send: "发送",
+  sending: "发送中",
   attachments: (count: number) => `附件（${count}）`,
   saveAttachment: "保存",
   saveAttachmentHint: "保存到下载文件夹，并在资源管理器中显示",
@@ -167,6 +189,17 @@ export const en: MailText = {
   webHint: "Open the website for attachments and replies",
   openWeb: "Open in browser",
   markRead: "Mark as read",
+  compose: "Write mail",
+  reply: "Reply",
+  from: (email: string) => `From ${email}`,
+  to: "To",
+  cc: "Cc",
+  subject: "Subject",
+  messageBody: "Message",
+  recipientsPlaceholder: "Separate addresses with commas",
+  bodyPlaceholder: "Plain text",
+  send: "Send",
+  sending: "Sending",
   attachments: (count: number) => `Attachments (${count})`,
   saveAttachment: "Save",
   saveAttachmentHint: "Save to the Downloads folder and show it in Explorer",

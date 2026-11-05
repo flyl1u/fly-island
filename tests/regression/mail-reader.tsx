@@ -40,6 +40,8 @@ mockIPC((command, payload) => {
     case "get_qq_mail_state": return snapshot.configured || snapshot.status !== "disconnected" ? [snapshot] : [];
     case "read_qq_mail": return readBehavior(String(args.messageId));
     case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
+    case "get_qq_mail_reply": return { to: "team@example.com", subject: "Re: 工作进展 2" };
+    case "send_qq_mail": return null;
     case "save_qq_mail_attachment": return "C:\\Users\\demo\\Downloads\\季度报告.pdf";
     case "mark_qq_mail_read": snapshot = { ...snapshot, revision: ++revision, unreadCount: Math.max(0, (snapshot.unreadCount ?? 0) - 1), items: snapshot.items.map(item => item.id === args.messageId ? { ...item, unread: false } : item) }; return snapshot;
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
@@ -55,7 +57,7 @@ function Fixture() {
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false);
   [view, setView] = useState<MessageView>(["reader", "html", "loading", "error", "auth", "mail", "disconnected"].includes(state) ? "qqMail" : ["wechat", "wechatError"].includes(state) ? "wechat" : "qq");
-  const height = messagePanelHeight(view, Boolean(mail.selectedMail));
+  const height = messagePanelHeight(view, mail.wantsTallPanel);
   return <section className="message-fixture" style={{ height }}><header className="fixture-heading">fly-island<span>消息</span></header><div className="message-panel"><MessagesPanel source={view} enabledSources={{ qq: true, wechat: true, qqMail: true }} onSourceChange={next => { mail.closeReader(); setView(next); }} onOpenMailSettings={() => calls.push({ command: "open_mail_settings", args: {} })} qqMail={mail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} /></div></section>;
 }
 
@@ -68,6 +70,11 @@ const button = (label: string) => {
   return result[0];
 };
 const click = async (label: string) => { await act(async () => { button(label).click(); }); };
+/** Types into a controlled field the way a user would, so React sees the change. */
+const type = async (field: HTMLInputElement | HTMLTextAreaElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value")!.set!;
+  await act(async () => { setter.call(field, value); field.dispatchEvent(new Event("input", { bubbles: true })); });
+};
 const deferred = () => {
   let resolve!: (value: MailContent) => void;
   const promise = new Promise<MailContent>(done => { resolve = done; });
@@ -159,7 +166,29 @@ try {
     check(calls.some(call => call.command === "save_qq_mail_attachment" && call.args.email === "demo@qq.com" && call.args.messageId === "7:18" && call.args.part === "2")
       && document.querySelector('.qq-mail-attachment button')?.textContent === "已保存",
       "保存附件发给这封邮件的这个分段，完成后显示已保存");
+
+    await click("回复");
+    const compose = () => document.querySelector<HTMLElement>(".qq-mail-compose");
+    const field = (label: string) => [...compose()!.querySelectorAll("label")].find((item) => item.querySelector("span")?.textContent === label)!.querySelector("input")!;
+    check(compose() && field("收件人").value === "team@example.com" && field("主题").value === "Re: 工作进展 2" && mail!.wantsTallPanel,
+      "回复从服务器读出的发件人和 Re: 主题开始，面板保持阅读时的高度");
+    await type(compose()!.querySelector("textarea")!, "收到，谢谢。");
+    await click("发送");
+    const replied = calls.find(call => call.command === "send_qq_mail");
+    const sent = replied?.args.mail as { to: string[]; subject: string; body: string } | undefined;
+    check(replied?.args.email === "demo@qq.com" && replied.args.replyTo === "7:18" && sent?.to.join() === "team@example.com" && sent.body === "收到，谢谢。" && !compose(),
+      "回复带上原邮件的标识发出，发送后回到阅读页");
     await click("返回列表");
+
+    await click("写邮件");
+    await type(field("收件人"), "a@163.com， b@126.com");
+    await type(field("主题"), "周会");
+    await click("发送");
+    const sends = calls.filter(call => call.command === "send_qq_mail");
+    const written = sends[sends.length - 1];
+    const writtenMail = written?.args.mail as { to: string[]; subject: string } | undefined;
+    check(writtenMail?.to.join() === "a@163.com,b@126.com" && writtenMail.subject === "周会" && written?.args.replyTo === null && !compose(),
+      "写邮件按逗号拆分收件人，不是回复，发送后回到列表");
 
     const late = deferred();
     readBehavior = () => late.promise;

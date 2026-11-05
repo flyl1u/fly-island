@@ -4,6 +4,7 @@
 
 mod accounts;
 mod attachments;
+mod send;
 mod client_id;
 mod content;
 mod credentials;
@@ -251,6 +252,41 @@ pub async fn read_qq_mail(email: String, message_id: String) -> Result<MailConte
         .map_err(|_| "无法读取邮件。".to_string())?
 }
 
+fn configured_service(email: &str) -> Result<std::sync::Arc<MailService>, String> {
+    let service = accounts::find(email)?;
+    let state = service.lock()?;
+    if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
+        return Err("请先连接邮箱。".into());
+    }
+    drop(state);
+    Ok(service)
+}
+
+/// Recipient and subject to start a reply to a listed message with.
+#[tauri::command]
+pub async fn get_qq_mail_reply(email: String, message_id: String) -> Result<send::ReplyDraft, String> {
+    parse_message_id(&message_id)?;
+    let email = normalize_email(&email)?;
+    let service = configured_service(&email)?;
+    tauri::async_runtime::spawn_blocking(move || service.reply_draft(&email, &message_id))
+        .await
+        .map_err(|_| "无法读取邮件。".to_string())?
+}
+
+/// Sends plain-text mail from a connected mailbox over SMTP (smtp.<domain>, TLS),
+/// as a reply to `reply_to` when given; the threading headers are read from the server.
+#[tauri::command]
+pub async fn send_qq_mail(email: String, mail: send::OutgoingMail, reply_to: Option<String>) -> Result<(), String> {
+    if let Some(message_id) = &reply_to {
+        parse_message_id(message_id)?;
+    }
+    let email = normalize_email(&email)?;
+    let service = configured_service(&email)?;
+    tauri::async_runtime::spawn_blocking(move || service.send_mail(&email, &mail, reply_to.as_deref()))
+        .await
+        .map_err(|_| "发送任务未完成。".to_string())?
+}
+
 /// Saves one attachment of a listed message into the Downloads folder and shows it
 /// in Explorer. Returns the path written (never an existing file).
 #[tauri::command]
@@ -357,6 +393,8 @@ macro_rules! tauri_commands {
             crate::mail::read_qq_mail,
             crate::mail::mark_qq_mail_read,
             crate::mail::save_qq_mail_attachment,
+            crate::mail::get_qq_mail_reply,
+            crate::mail::send_qq_mail,
             crate::mail::disconnect_qq_mail,
         ] $($rest)*)
     };

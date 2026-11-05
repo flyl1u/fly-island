@@ -313,6 +313,33 @@ impl MailService {
         result
     }
 
+    /// Who and what a reply to `message_id` starts with.
+    pub(super) fn reply_draft(&self, email: &str, message_id: &str) -> Result<super::send::ReplyDraft, String> {
+        let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
+        let mut session =
+            open_session(&self.host(), email, &secret).map_err(|failure| failure.message.to_string())?;
+        let source = super::send::reply_source(&mut session, message_id);
+        let _ = session.logout();
+        source.map(|(draft, _)| draft)
+    }
+
+    /// Sends a message; as a reply to `reply_to` (a listed message) when given.
+    pub(super) fn send_mail(&self, email: &str, mail: &super::send::OutgoingMail, reply_to: Option<&str>) -> Result<(), String> {
+        let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
+        let thread = match reply_to {
+            Some(message_id) => {
+                let mut session =
+                    open_session(&self.host(), email, &secret).map_err(|failure| failure.message.to_string())?;
+                let source = super::send::reply_source(&mut session, message_id);
+                let _ = session.logout();
+                source?.1
+            }
+            None => super::send::Thread::default(),
+        };
+        let message = super::send::build(email, mail, &thread)?;
+        super::send::deliver(&super::send::smtp_server(email, &self.host()), email, &secret, &message)
+    }
+
     /// Downloads one attachment and writes it to the Downloads folder.
     pub(super) fn save_attachment(&self, email: &str, message_id: &str, part: &str) -> Result<std::path::PathBuf, String> {
         let dir = crate::win32::known_folder::downloads().ok_or("找不到下载文件夹。")?;

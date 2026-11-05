@@ -16,6 +16,20 @@ export type MailAttachment = { part: string; name: string; size: number; mime: s
 
 export type MailContent = { id: string; content: string; contentType: "text/plain" | "text/html"; attachments: MailAttachment[] };
 
+/** Mirrors OutgoingMail in src-tauri/src/mail/send.rs. */
+export type OutgoingMail = { to: string[]; cc: string[]; subject: string; body: string };
+/** Mirrors ReplyDraft in src-tauri/src/mail/send.rs. */
+export type MailReplyDraft = { to: string; subject: string };
+
+export function getMailReply(email: string, messageId: string) {
+  return invoke<MailReplyDraft>("get_qq_mail_reply", { email, messageId });
+}
+
+/** Sends over SMTP from a connected mailbox; `replyTo` is a listed message being answered. */
+export function sendMail(email: string, mail: OutgoingMail, replyTo?: string) {
+  return invoke<void>("send_qq_mail", { email, mail, replyTo: replyTo ?? null });
+}
+
 /** Saves one attachment into Downloads and shows it in Explorer; resolves to the path written. */
 export function saveMailAttachment(email: string, messageId: string, part: string) {
   return invoke<string>("save_qq_mail_attachment", { email, messageId, part });

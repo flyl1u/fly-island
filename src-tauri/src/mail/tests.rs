@@ -594,6 +594,21 @@ fn attachments_are_listed_decoded_and_only_listed_parts_are_fetched() {
 }
 
 #[test]
+fn a_reply_goes_to_reply_to_with_re_and_the_thread() {
+    let header = "From: =?UTF-8?B?5Lqn5ZOB5Zui6Zif?= <team@example.com>\r\nReply-To: list@example.com\r\nSubject: =?UTF-8?B?5ZGo5oql?=\r\nMessage-ID: <b@example.com>\r\nReferences: <a@example.com>\r\n\r\n";
+    let script = format!(
+        "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODY[HEADER]<0> {{{}}}\r\n{header})\r\na3 OK header\r\n",
+        header.len()
+    );
+    let (imap, _) = client(script);
+    let mut session = imap.login("user@qq.com", "test-secret").unwrap();
+    let (draft, thread) = super::send::reply_source(&mut session, "7:9").unwrap();
+    assert_eq!((draft.to.as_str(), draft.subject.as_str()), ("list@example.com", "Re: 周报"));
+    assert_eq!(thread.message_id.as_deref(), Some("<b@example.com>"));
+    assert_eq!(thread.references.as_deref(), Some("<a@example.com>"));
+}
+
+#[test]
 fn attachment_file_names_are_safe_and_never_overwrite() {
     use super::attachments::{safe_file_name, write_unused};
     assert_eq!(safe_file_name("报告.pdf"), "报告.pdf");

@@ -145,7 +145,7 @@ export function IslandApp() {
     todos,
     hasMediaCommandError: Boolean(mediaCommandError),
     messageSource,
-    isReadingMail: Boolean(qqMail.selectedMail),
+    isReadingMail: qqMail.wantsTallPanel,
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
