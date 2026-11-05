@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8、P11 仍是计划。
+> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 做了技术验证，结论是暂不实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 仍是计划。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -334,6 +334,8 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 **通过的标准**：插件页面里的脚本无法调用任何 Tauri 命令；无法加载插件包以外的资源（除非清单声明并且用户同意）；一个 Webview 的额外内存在可接受范围（目标 < 30 MB）。任何一条做不到就不做 P8，在文档里写明原因。
 
+**验证结果（2026-11-05）：不通过，暂不实现。** 详见 [p8-webview-validation.md](p8-webview-validation.md)。要点：Windows 上 Tauri 的 IPC 脚本和调用密钥会被注入沙箱 iframe，现在只因为 iframe 的来源是 `null` 才调用不了命令，不是设计上的保证；本应用没有应用级 ACL，单独的 webview 从本地来源加载时能调用全部应用命令；CSP 挡得住子资源，但挡不住 iframe 把自己导航到外部网址（实测可以带出数据）。内存一条通过（沙箱 `srcdoc` iframe 在同一渲染进程，测不出差别）。文档里列了重新评估的条件。下面的设计保留，供以后参考。
+
 **通过后的设计（照搬 VS Code 的规则）**
 
 - 贡献点：`views[].template: "webview"`，`entry: "ui/index.html"`；`webviewOptions: { enableScripts, localResourceRoots, allowNetwork: [...] }`。
@@ -479,7 +481,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 | P5 | 清单：`apiVersion: 2`、`commands[].keybinding/when`、`menus`；RPC：`events.*`、`event`、`island.notify`、`notification.action`、`storage.*`、`secrets.*`；权限：`island:notify`、`secrets`；凭据条目 `com.focusd.island.plugin.<id>`；文件 `plugins-data/<id>/storage.json`；事件 `plugin-host-event` | 全部新增，`apiVersion: 1` 插件不受影响 |
 | P6 | 待办和笔记移到 `todos.json`；新命令 `get_todos_state`、`apply_todos_change`，事件 `todos-changed`；迁移标记 `focusd-island-todos-migrated-v1`；新权限 `clipboard:read`、`messages:read`、`media:read`、`media:control`、`shelf:read`、`shelf:write`；`plugins.json` 增加 `sensitive` 授权 | 首次启动迁移，旧 localStorage key 保留；`local-api-request` 只在确认无用后删除 |
 | P7 | 清单 `views`、`statusItems`；RPC `view.*`、`status.update`；岛上页面 id `plugin:<id>/<view>`；事件 `plugin-view-changed` | 新增 |
-| P8 | `views[].template: "webview"`、`webviewOptions`；页面 API `acquireFocusdApi` | 新增，验证不通过就不做 |
+| P8 | 验证不通过，没有新增（原计划：`views[].template: "webview"`、`webviewOptions`；页面 API `acquireFocusdApi`） | — |
 | P9 | 清单 `activationEvents`；RPC `host.keepAlive` | 没写的插件按 `onStartup` 处理 |
 | P10 | 清单 `experimentalApis`；本地接口 `POST /v1/dev/plugins/{id}/reload` | 新增 |
 | P11 | 索引地址改到新仓库；`index.json.sig` 支持数组；新增 `revoked.json`；索引条目增加 `publisher`、`categories`、`repo`、`preRelease` | 旧地址保留一段时间并指向新索引；岛屿同时接受旧的单签名格式 |
