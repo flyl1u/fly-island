@@ -83,14 +83,21 @@ test("settings are clamped and legacy fields are migrated", () => {
   assert.equal(normalized.topEdgeLayoutVersion, 1);
 });
 
-test("the top fillet radius is rounded, clamped, and defaults for older settings", () => {
-  assert.equal(normalizeSettings({}).topFilletRadius, 8);
-  assert.equal(normalizeSettings({ topFilletRadius: "10" }).topFilletRadius, 8);
-  assert.equal(normalizeSettings({ topFilletRadius: Number.NaN }).topFilletRadius, 8);
-  assert.equal(normalizeSettings({ topFilletRadius: 5.6 }).topFilletRadius, 6);
-  assert.equal(normalizeSettings({ topFilletRadius: 0 }).topFilletRadius, 0);
-  assert.equal(normalizeSettings({ topFilletRadius: -3 }).topFilletRadius, 0);
-  assert.equal(normalizeSettings({ topFilletRadius: 40 }).topFilletRadius, 12);
+test("removing the added top fillet preserves the user's original appearance settings", () => {
+  const saved = {
+    ...DEFAULT_SETTINGS,
+    appearanceMode: "liquidGlass",
+    fontFamily: "pixel",
+    opacity: 81,
+    glassIntensity: 55,
+    marginY: 24,
+    collapsedScale: 1.12,
+    expandedScale: 0.98,
+    islandBackgroundColor: "#123456",
+    taskTextColor: "#abcdef",
+  };
+  assert.deepEqual(normalizeSettings(saved), saved);
+  assert.deepEqual(normalizeSettings({ ...saved, topFilletRadius: 8 }), saved);
 });
 
 test("old default margins and scales move to the current defaults", () => {

@@ -1,21 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type EventCallback } from "@tauri-apps/api/event";
 import type { IslandPosition } from "./storage";
 import type { IslandMode, NativeGlassState } from "./types";
-
-// Mirrors TOP_ATTACHMENT_CHANGED_EVENT in src-tauri/src/island/top_edge.rs.
-export const TOP_ATTACHMENT_CHANGED_EVENT = "island-top-attachment-changed";
-
-/** Whether the island currently sits flush with the top edge of its monitor. */
-export function getIslandTopAttachment(): Promise<boolean> {
-  return invoke<boolean>("get_island_top_attachment");
-}
-
-export function listenIslandTopAttachment(
-  handler: (attached: boolean) => void,
-): Promise<UnlistenFn> {
-  return listen<boolean>(TOP_ATTACHMENT_CHANGED_EVENT, ({ payload }) => handler(payload));
-}
 
 // 与 src-tauri/src/island/mod.rs 中 start_island_drag 推送的事件名一致。
 export const ISLAND_POSITION_CHANGED_EVENT = "island-position-changed";

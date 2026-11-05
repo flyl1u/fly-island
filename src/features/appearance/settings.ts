@@ -3,9 +3,6 @@ import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
-export const MIN_TOP_FILLET_RADIUS = 0;
-// The island window leaves room beside the island for fillets up to this size.
-export const MAX_TOP_FILLET_RADIUS = 12;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
@@ -16,7 +13,6 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   collapsedScale: 0.89,
   expandedScale: 0.91,
   marginY: 0,
-  topFilletRadius: 8,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -94,9 +90,6 @@ export function normalizeSettings(
       0,
       160,
     ),
-    topFilletRadius: typeof settings?.topFilletRadius === "number" && Number.isFinite(settings.topFilletRadius)
-      ? clamp(Math.round(settings.topFilletRadius), MIN_TOP_FILLET_RADIUS, MAX_TOP_FILLET_RADIUS)
-      : DEFAULT_SETTINGS.topFilletRadius,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

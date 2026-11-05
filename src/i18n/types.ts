@@ -386,7 +386,6 @@ export type Translations = {
       title: string;
       opacity: string;
       marginY: string;
-      topFilletRadius: string;
       launchAtStartup: string;
       showTitle: string;
       autoTuck: string;

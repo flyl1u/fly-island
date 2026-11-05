@@ -1,11 +1,10 @@
 //! Main island window: Tauri commands, window access, and the submodules for state,
-//! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
+//! stage geometry, liquid glass and cursor passthrough.
 
 mod geometry;
 mod glass;
 mod passthrough;
 mod state;
-pub(crate) mod top_edge;
 
 #[cfg(test)]
 mod tests;
@@ -136,7 +135,6 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
         state.is_dragging = true;
         *state
     });
-    top_edge::set_attached(&window, false);
 
     if let Err(error) = window.start_dragging() {
         mutate_window_state(|state| {
@@ -153,14 +151,9 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
         }
         thread::sleep(Duration::from_millis(8));
 
-        let final_position = window.outer_position().ok().map(|position| {
-            top_edge::snap_to_top(
-                &window,
-                IslandPosition {
-                    x: position.x,
-                    y: position.y,
-                },
-            )
+        let final_position = window.outer_position().ok().map(|position| IslandPosition {
+            x: position.x,
+            y: position.y,
         });
         let did_finish_drag = {
             let mut state = window_state().lock().expect("window state poisoned");
@@ -226,9 +219,4 @@ pub(crate) fn hide_island(app: &AppHandle) {
     if let Ok(window) = main_window(app) {
         let _ = window.hide();
     }
-}
-
-#[tauri::command]
-pub fn get_island_top_attachment() -> bool {
-    top_edge::is_attached()
 }

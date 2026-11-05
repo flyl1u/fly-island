@@ -383,7 +383,6 @@ const en: Translations = {
       title: "Layout",
       opacity: "Opacity",
       marginY: "Top margin",
-      topFilletRadius: "Top-edge corner radius",
       launchAtStartup: "Launch at startup",
       showTitle: "Show island name",
       autoTuck: "Auto-tuck to screen edge when idle",

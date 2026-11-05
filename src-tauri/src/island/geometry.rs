@@ -81,7 +81,6 @@ pub(crate) fn apply_stage_geometry(
         positioned_state.custom_position = None;
     }
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
-    super::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
 
     let target = PhysicalPosition::new(x, y);
     let start = window.outer_position().map_err(|error| error.to_string())?;
