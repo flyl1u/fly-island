@@ -5,11 +5,9 @@
 
   <p>English · <a href="README.md">中文</a></p>
 
-  <p>A Windows desktop productivity app that brings tasks, clipboard history, music, AI status, quick translation, and notifications to the top of your screen.</p>
+  <p>A Windows desktop productivity app that brings tasks, clipboard history, music, AI status, quick translation, and notifications to the top of your screen, and can be extended with plugins.</p>
 
   <p>
-    <a href="https://island.flyliu.org/">Live Preview</a>
-    ·
     <a href="https://github.com/TixXin/fly-island/releases/latest">Download Release</a>
     ·
     <a href="https://github.com/TixXin/fly-island/issues">Report an Issue</a>
@@ -23,38 +21,49 @@
   </p>
 </div>
 
+> [!NOTE]
+> This repository is an independently maintained version of [flyl1u/fly-island](https://github.com/flyl1u/fly-island). It branched from upstream 0.2.14 and has its own release line from 0.3.0 onward.
+>
+> - Installers and in-app updates come from this repository's [Releases](https://github.com/TixXin/fly-island/releases/latest) and are signed with this repository's own key.
+> - You can install it over the upstream version; tasks, notes, and settings are kept. The two versions cannot be installed side by side.
+> - Please report problems with this version in [this repository's Issues](https://github.com/TixXin/fly-island/issues).
+
 ## What is this?
 
-FocuSD Island is a Windows desktop productivity app. Its floating island brings together tasks and daily notes, clipboard history, music controls, AI coding assistant status, quick translation, and message notifications.
+Fly Island is a Windows desktop productivity app. Its floating island brings together tasks and daily notes, clipboard history, music controls, AI coding assistant status, quick translation, and message notifications, and a plugin market adds more.
 
 It runs as a lightweight, borderless, always-on-top floating island. Expand it when you need information, then return to the compact state and keep working.
 
-## Why I built this
+## Origins
 
-During everyday work and study, I often write Todo Lists in Obsidian, open music to block out noise, use translation websites, and copy or paste code, passwords, and document snippets.
+In the words of the upstream author, [flyl1u](https://github.com/flyl1u):
 
-Switching between all those windows reduces efficiency and makes it easier to lose focus. I wanted to bring these frequent actions into one lightweight place.
-
-Apple's Dynamic Island was an inspiration: it gathers delivery updates, timers, media controls, and other information into one small surface. FocuSD follows the same idea for focused study and deep work. The name stands for **Focu Study and DeepWork**, and the app is built with the lightweight Tauri framework.
+> During everyday work and study, I often write Todo Lists in Obsidian, open music to block out noise, use translation websites, and copy or paste code, passwords, and document snippets.
+>
+> Switching between all those windows reduces efficiency and makes it easier to lose focus. I wanted to bring these frequent actions into one lightweight place.
+>
+> Apple's Dynamic Island was an inspiration: it gathers delivery updates, timers, media controls, and other information into one small surface. FocuSD follows the same idea for focused study and deep work. The name stands for **Focu Study and DeepWork**, and the app is built with the lightweight Tauri framework.
 
 ## Features
 
-FocuSD brings frequent actions from separate windows into one compact island:
+Fly Island brings frequent actions from separate windows into one compact island:
 
 - **Tasks, daily notes, and archives**: manage today's tasks, mark them complete, set the active task, write a daily note, and browse saved days as cards or a timeline. Optionally carry unfinished tasks forward and save a day as Markdown.
 - **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, remove entries, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut.
 - **File shelf**: drop files on the island to keep them at hand, then drag them out to Explorer, WeChat, QQ, or any app, or copy and paste them. Only paths are stored, never copies; select several, search, pin, and clean up automatically.
 - **Music and system audio**: control the Windows media session with previous, play/pause, and next actions; a live waveform reflects audio activity.
-- **AI status light**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. Install or repair the hooks from Settings.
-- **DeepSeek quick translation**: open a separate translation window with a global shortcut, auto-detect Chinese/English or choose a direction, paste the latest clipboard text, and copy the result.
+- **AI status light and Agent page**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. The Agent page lists recent sessions, the island shows how many are running, and sessions waiting for permission are marked.
+- **Quick translation**: a translation page on the island, opened with a global shortcut. Auto-detect Chinese/English or choose a direction, fill in the clipboard, translate automatically, or translate the selected text. Works with DeepSeek, SiliconFlow, Qwen (DashScope), Kimi, Volcengine Ark, OpenAI, and any OpenAI-compatible endpoint.
 - **QQ, WeChat, and QQ Mail**: switch between QQ, WeChat, and Mail from one row of brand tabs, with source actions alongside them. Review the latest 20 QQ notifications or emails, and open email bodies inside the island before returning to the list.
-- **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; save up to six custom style presets, hide the island title, or enable launch at startup.
+- **Plugins**: install, update, and uninstall plugins from a market with a signed index. Plugins can show their own pages and status text on the island, send notifications, and add global shortcuts and todo context-menu commands. Reading the clipboard, messages, media, the file shelf, or todos each needs its own permission.
+- **Shortcuts and game mode**: every shortcut is on one settings page, can be changed, and conflicts are reported; Alt+number switches expanded pages. The island tucks away while a full-screen game runs on its screen.
+- **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; tuck the island to the screen edge when idle; save up to six custom style presets, hide the island title, or enable launch at startup.
 
 Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; QQ Mail syncs only headers in the background and reads bodies on demand into memory. It does not download attachments, load remote images, or change read status.
 
 ## Getting started
 
-Expand the island to switch between tasks, music, clipboard, and messages. Open the separate settings window from the gear button at the top right or from **Settings** in the tray menu; changes apply to the island immediately. The first-run appearance uses liquid glass, hides the island title, and displays task text in white.
+Expand the island to switch between tasks, music, clipboard, files, messages, translation, and agents. Open the separate settings window from the gear button at the top right or from **Settings** in the tray menu; changes apply to the island immediately. The first-run appearance uses liquid glass, hides the island title, and displays task text in white.
 
 ### Feature setup
 
@@ -62,13 +71,15 @@ Expand the island to switch between tasks, music, clipboard, and messages. Open 
 
 - **QQ Mail** connects from the message panel. Enable IMAP in QQ Mail settings, generate an authorization code, then enter your `@qq.com` address and that code (not your QQ login password). The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect to delete the code. Initial sync does not replay old mail. See the [QQ Mail setup guide (Chinese)](docs/qq-mail.md).
 
-- **Quick translation** opens with **Ctrl+Shift+F** by default. Add a DeepSeek API key in the translator settings; it is stored in Windows Credential Manager. Text is sent to the DeepSeek API when you request a translation. Choose automatic detection or a direction, and press **Tab** in the input to paste the latest clipboard text.
+- **Quick translation** opens with **Ctrl+Shift+F** by default. Pick a translation service and enter its API key; keys are stored per service in Windows Credential Manager. Text is sent to the selected service when you request a translation.
 
 - **AI status light**: open **Settings → AI Agent 状态灯** and choose **安装/修复**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
 
 - **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut (**Ctrl+Shift+W** by default) in Settings.
 
 - **File shelf**: drop files on the island to add them, and press and drag an entry to take it out (a copy; hold Shift to move). Cleanup, missing files, and double-click behavior are under **Settings → File shelf**. See the [file shelf guide (Chinese)](docs/file-shelf.md).
+
+- **Plugins**: browse and install plugins in **Settings → Plugin market**; manage, order, and grant permissions to installed plugins in **Settings → Plugins**. To write your own, see the [plugin docs](docs/plugins/README.md).
 
 ### Tech stack
 
@@ -101,20 +112,10 @@ The generated installers are placed in:
 - `src-tauri/target/release/bundle/nsis/fly-island_VERSION_x64-setup.exe`
 - `src-tauri/target/release/bundle/msi/fly-island_VERSION_x64_en-US.msi`
 
-You can also download the latest Windows x64 installers from [GitHub Releases](https://github.com/TixXin/fly-island/releases/latest).
+You can also download the latest Windows x64 installers from [GitHub Releases](https://github.com/TixXin/fly-island/releases/latest). In-app updates, signing, and the `latest.json` release flow are described in [docs/updater.md (Chinese)](docs/updater.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE). It is based on [flyl1u/fly-island](https://github.com/flyl1u/fly-island) and keeps the upstream copyright notice.
 
 Third-party dependencies and bundled assets retain their respective licenses. See the [font notices](src/assets/fonts/README.md) for bundled fonts.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=TixXin%2Ffly-island&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=light&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=light&legend=top-left" />
-  </picture>
-</a>
