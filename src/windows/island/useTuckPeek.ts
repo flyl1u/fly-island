@@ -6,7 +6,7 @@ import { listenIslandHover } from "./api";
 const PEEK_RETRACT_DELAY_MS = 300;
 
 /** Slides a peeking island (minimized to the top edge) back once the cursor leaves it. */
-export function useTuckPeek(isPeeking: boolean, onRetract: () => void) {
+export function useTuckPeek(isPeeking: boolean, onRetract: () => void, delayMs: number = PEEK_RETRACT_DELAY_MS) {
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export function useTuckPeek(isPeeking: boolean, onRetract: () => void) {
 
   useEffect(() => {
     if (!isPeeking || isHovering) return;
-    const timer = window.setTimeout(onRetract, PEEK_RETRACT_DELAY_MS);
+    const timer = window.setTimeout(onRetract, delayMs);
     return () => window.clearTimeout(timer);
-  }, [isHovering, isPeeking, onRetract]);
+  }, [delayMs, isHovering, isPeeking, onRetract]);
 }

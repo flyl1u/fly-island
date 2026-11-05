@@ -42,6 +42,10 @@ export type IslandSettings = {
   todoRotationSeconds: number;
   autoTuck: boolean;
   autoTuckSeconds: number;
+  /** An island tucked after idling slides back once the cursor that brought it out leaves. */
+  autoTuckRetract: boolean;
+  /** How long (ms) it waits after the cursor leaves before sliding back. */
+  autoTuckRetractDelayMs: number;
   /** A tucked island slides back into view to show a new message preview. */
   revealOnMessage: boolean;
   expandTrigger: ExpandTrigger;

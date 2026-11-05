@@ -65,12 +65,14 @@ export function IslandApp() {
     mode,
     isTucked,
     isPeeking,
+    peekRetractDelayMs,
     page,
     setPage,
     collapseIsland,
     tuckIsland,
     revealIsland,
     minimizeToEdge,
+    idleTuck,
     peekIsland,
     endPeek,
     openIslandPage,
@@ -155,12 +157,16 @@ export function IslandApp() {
 
   const translationPeek = useQuickTranslation(settings.translationEnabled);
   // A showing preview holds the idle timer, which then restarts in full once it ends.
-  useIdleTuck(settings.autoTuck && !hasMessagePreview && !translationPeek, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckIsland);
+  const tuckWhenIdle = useCallback(
+    () => idleTuck(settings.autoTuckRetract ? settings.autoTuckRetractDelayMs : null),
+    [idleTuck, settings.autoTuckRetract, settings.autoTuckRetractDelayMs],
+  );
+  useIdleTuck(settings.autoTuck && !hasMessagePreview && !translationPeek, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckWhenIdle);
   useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
   // A plugin waits for this answer, so it is shown even when tucked away.
   useRevealOnMessage(permissionPrompts.current !== null, isTucked, revealIsland);
   useRevealOnMessage(Boolean(translationPeek), isTucked && settings.revealOnMessage, revealIsland);
-  useTuckPeek(isPeeking, endPeek);
+  useTuckPeek(isPeeking, endPeek, peekRetractDelayMs ?? undefined);
 
   const closeMailReader = qqMail.closeReader;
   const openMessages = useCallback((source: MessageSource) => {

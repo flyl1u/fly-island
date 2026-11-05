@@ -613,6 +613,8 @@ export type Translations = {
       minimizeToTop: string;
       autoTuck: string;
       autoTuckSeconds: string;
+      autoTuckRetract: string;
+      autoTuckRetractDelay: string;
     };
 
     todo: {

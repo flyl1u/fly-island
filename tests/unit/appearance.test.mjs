@@ -94,6 +94,11 @@ test("expand trigger, hover delays and max panel height default for older settin
   assert.equal(older.revealOnMessage, true);
   assert.equal(normalizeSettings({ revealOnMessage: false }).revealOnMessage, false);
   assert.equal(normalizeSettings({ revealOnMessage: "no" }).revealOnMessage, true);
+  assert.equal(older.autoTuckRetract, true);
+  assert.equal(older.autoTuckRetractDelayMs, 500);
+  assert.equal(normalizeSettings({ autoTuckRetract: false }).autoTuckRetract, false);
+  assert.equal(normalizeSettings({ autoTuckRetractDelayMs: 9_000 }).autoTuckRetractDelayMs, 3_000);
+  assert.equal(normalizeSettings({ autoTuckRetractDelayMs: -1 }).autoTuckRetractDelayMs, 0);
   assert.equal(normalizeSettings({ hoverCollapseDelayMs: 9_000 }).hoverCollapseDelayMs, 2_000);
   assert.equal(normalizeSettings({ hoverCollapseDelayMs: 0 }).hoverCollapseDelayMs, 0);
   assert.equal(normalizeSettings({ maxPanelHeight: 100 }).maxPanelHeight, 306);

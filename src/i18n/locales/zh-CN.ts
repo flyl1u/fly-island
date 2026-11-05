@@ -619,6 +619,8 @@ const zhCN: Translations = {
       minimizeToTop: "收起到顶部",
       autoTuck: "无操作时自动收起到屏幕边缘",
       autoTuckSeconds: "闲置多久后收起（秒）",
+      autoTuckRetract: "鼠标移开后重新收起",
+      autoTuckRetractDelay: "移开后重新收起延迟",
     },
 
     todo: {

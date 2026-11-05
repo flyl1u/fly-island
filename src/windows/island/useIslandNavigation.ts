@@ -8,6 +8,8 @@ export function useIslandNavigation() {
   // Tucked by the minimize button: hovering only peeks the island out, and it slides
   // back once the cursor leaves. A click (or anything else that reveals it) ends this.
   const [isPeekTuck, setIsPeekTuck] = useState(false);
+  // How long a peeking island waits after the cursor leaves; null keeps the minimize default.
+  const [peekRetractDelayMs, setPeekRetractDelayMs] = useState<number | null>(null);
   const [page, setPage] = useState<IslandPage>("todo");
   const clipboardShortcutToggleAt = useRef(0);
 
@@ -30,6 +32,18 @@ export function useIslandNavigation() {
     setIslandMode("collapsed");
     setIsTucked(true);
     setIsPeekTuck(true);
+    setPeekRetractDelayMs(null);
+  }, [setIslandMode]);
+
+  /**
+   * Tucks after idling. Given a delay, hovering only peeks the island out and it slides
+   * back that long after the cursor leaves, like a minimized one; null leaves it out.
+   */
+  const idleTuck = useCallback((retractDelayMs: number | null) => {
+    setIslandMode("collapsed");
+    setIsTucked(true);
+    setIsPeekTuck(retractDelayMs !== null);
+    setPeekRetractDelayMs(retractDelayMs);
   }, [setIslandMode]);
 
   const revealIsland = useCallback(() => {
@@ -78,12 +92,14 @@ export function useIslandNavigation() {
     mode,
     isTucked,
     isPeeking: isPeekTuck && !isTucked,
+    peekRetractDelayMs,
     page,
     setPage,
     collapseIsland,
     tuckIsland,
     revealIsland,
     minimizeToEdge,
+    idleTuck,
     peekIsland,
     endPeek,
     openIslandPage,

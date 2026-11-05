@@ -2,7 +2,14 @@ import { useTranslation } from "../../i18n";
 import { NumberControl } from "../../components/controls/NumberControl";
 import { SliderControl } from "../../components/controls/SliderControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
-import { MAX_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_EXPAND_DELAY_MS, MIN_HOVER_COLLAPSE_DELAY_MS, MIN_HOVER_EXPAND_DELAY_MS } from "./settings";
+import {
+  MAX_AUTO_TUCK_RETRACT_DELAY_MS,
+  MAX_HOVER_COLLAPSE_DELAY_MS,
+  MAX_HOVER_EXPAND_DELAY_MS,
+  MIN_AUTO_TUCK_RETRACT_DELAY_MS,
+  MIN_HOVER_COLLAPSE_DELAY_MS,
+  MIN_HOVER_EXPAND_DELAY_MS,
+} from "./settings";
 import type { ExpandTrigger, IslandSettings, MinimizeAction } from "./types";
 import "./AppearanceModeControl.css";
 
@@ -88,13 +95,31 @@ export function ExpandSettingsSection({
         onChange={(autoTuck) => onSettingsChange({ ...settings, autoTuck })}
       />
       {settings.autoTuck && (
-        <NumberControl
-          label={t.settings.layout.autoTuckSeconds}
-          value={settings.autoTuckSeconds}
-          min={1}
-          max={3_600}
-          onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
-        />
+        <>
+          <NumberControl
+            label={t.settings.layout.autoTuckSeconds}
+            value={settings.autoTuckSeconds}
+            min={1}
+            max={3_600}
+            onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
+          />
+          <ToggleControl
+            label={t.settings.layout.autoTuckRetract}
+            checked={settings.autoTuckRetract}
+            onChange={(autoTuckRetract) => onSettingsChange({ ...settings, autoTuckRetract })}
+          />
+          {settings.autoTuckRetract && (
+            <SliderControl
+              label={t.settings.layout.autoTuckRetractDelay}
+              value={settings.autoTuckRetractDelayMs}
+              min={MIN_AUTO_TUCK_RETRACT_DELAY_MS}
+              max={MAX_AUTO_TUCK_RETRACT_DELAY_MS}
+              step={100}
+              suffix="ms"
+              onChange={(autoTuckRetractDelayMs) => onSettingsChange({ ...settings, autoTuckRetractDelayMs })}
+            />
+          )}
+        </>
       )}
       <ToggleControl
         label={t.settings.expand.revealOnMessage}

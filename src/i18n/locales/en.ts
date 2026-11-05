@@ -616,6 +616,8 @@ const en: Translations = {
       minimizeToTop: "Top edge",
       autoTuck: "Auto-tuck to screen edge when idle",
       autoTuckSeconds: "Idle time before tucking (seconds)",
+      autoTuckRetract: "Tuck again when the pointer leaves",
+      autoTuckRetractDelay: "Tuck-again delay after leaving",
     },
 
     todo: {

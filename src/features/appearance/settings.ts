@@ -17,6 +17,9 @@ export const MAX_HOVER_EXPAND_DELAY_MS = 1_000;
 export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 400;
 export const MIN_HOVER_COLLAPSE_DELAY_MS = 0;
 export const MAX_HOVER_COLLAPSE_DELAY_MS = 2_000;
+export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;
+export const MIN_AUTO_TUCK_RETRACT_DELAY_MS = 0;
+export const MAX_AUTO_TUCK_RETRACT_DELAY_MS = 3_000;
 // Tallest panel before the todo list and other long pages scroll. The default is the
 // height the todo page reached before this was a setting (six rows).
 export const DEFAULT_MAX_PANEL_HEIGHT = 490;
@@ -67,6 +70,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoRotationSeconds: 5,
   autoTuck: false,
   autoTuckSeconds: 30,
+  autoTuckRetract: true,
+  autoTuckRetractDelayMs: DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS,
   revealOnMessage: true,
   expandTrigger: "click",
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
@@ -252,6 +257,10 @@ export function normalizeSettings(
     autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
       ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
       : DEFAULT_SETTINGS.autoTuckSeconds,
+    autoTuckRetract: settings?.autoTuckRetract !== false,
+    autoTuckRetractDelayMs: typeof settings?.autoTuckRetractDelayMs === "number" && Number.isFinite(settings.autoTuckRetractDelayMs)
+      ? clamp(Math.round(settings.autoTuckRetractDelayMs), MIN_AUTO_TUCK_RETRACT_DELAY_MS, MAX_AUTO_TUCK_RETRACT_DELAY_MS)
+      : DEFAULT_SETTINGS.autoTuckRetractDelayMs,
     revealOnMessage: settings?.revealOnMessage !== false,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     hoverExpandDelayMs: typeof settings?.hoverExpandDelayMs === "number" && Number.isFinite(settings.hoverExpandDelayMs)
