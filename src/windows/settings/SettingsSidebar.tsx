@@ -1,4 +1,4 @@
-import { Bell, Blocks, Info, Palette, RefreshCcw, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Bell, Blocks, Info, Palette, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
 import "./SettingsSidebar.css";
@@ -14,11 +14,9 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
 export function SettingsSidebar({
   category,
   onCategoryChange,
-  onReset,
 }: {
   category: SettingsCategory;
   onCategoryChange: (category: SettingsCategory) => void;
-  onReset: () => void;
 }) {
   const t = useTranslation();
 
@@ -26,15 +24,6 @@ export function SettingsSidebar({
     <nav className="settings-sidebar" aria-label={t.settings.categories.label}>
       <div className="settings-sidebar__header">
         <span>{t.settings.title}</span>
-        <button
-          className="reset-button"
-          type="button"
-          title={t.settings.reset}
-          aria-label={t.settings.reset}
-          onClick={onReset}
-        >
-          <RefreshCcw size={15} strokeWidth={2.2} />
-        </button>
       </div>
       <ul className="settings-sidebar__list">
         {SETTINGS_CATEGORIES.map((item) => {

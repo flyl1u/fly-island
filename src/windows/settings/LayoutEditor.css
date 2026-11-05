@@ -100,35 +100,3 @@
     0 0 0 4px rgba(255, 209, 102, 0.12),
     inset 0 1px 0 var(--color-white-a08);
 }
-
-.reset-button {
-  width: 28px;
-  height: 28px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
-  color: rgba(248, 246, 240, 0.76);
-  background: var(--color-white-a08);
-  border: 0;
-  border-radius: var(--radius-pill);
-  outline: none;
-  cursor: pointer;
-  transition:
-    color 140ms ease,
-    background 140ms ease,
-    transform 140ms ease;
-}
-
-.reset-button:hover {
-  color: var(--color-white);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.reset-button:active {
-  transform: rotate(-18deg) scale(0.96);
-}
-
-.reset-button:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 3px;
-}

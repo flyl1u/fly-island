@@ -42,7 +42,6 @@ export function LayoutEditor({
   onLocaleChange,
   onSettingsChange,
   onClipboardSettingsChange,
-  onReset,
   onSaveDirectoryDraftChange,
   onSaveDirectory,
   onSavePreset,
@@ -75,7 +74,6 @@ export function LayoutEditor({
   onLocaleChange: (locale: LocaleCode) => void;
   onSettingsChange: (settings: IslandSettings) => void;
   onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
-  onReset: () => void;
   onSaveDirectoryDraftChange: (value: string) => void;
   onSaveDirectory: () => void;
   onSavePreset: () => void;
@@ -93,7 +91,6 @@ export function LayoutEditor({
       <SettingsSidebar
         category={category}
         onCategoryChange={onCategoryChange}
-        onReset={onReset}
       />
 
       {/* Keyed by page so each page opens scrolled to the top. */}

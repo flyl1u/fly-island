@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { clearAgentProviderStatus, getAgentStatus, installAgentStatusHooks, type AgentHooksInstallResult, type AgentProvider, type AgentStatusSnapshot } from "../../features/agent-status/api";
 import { AGENT_PROVIDERS, DEFAULT_AGENT_STATUS, type AgentHooksInstallState } from "../../features/agent-status/status";
-import { DEFAULT_SETTINGS, LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "../../features/appearance/settings";
+import { LEGACY_DEFAULT_PRESET_NAMES, isDefaultSettingPreset, isSameSettings, mergeWithDefaultSettingPresets, normalizeSettings } from "../../features/appearance/settings";
 import { STORAGE_KEY, loadSettingPresets, loadSettings, saveSettingPresets, saveSettings } from "../../features/appearance/storage";
 import type { IslandPreset, IslandSettings } from "../../features/appearance/types";
 import { useLocale, useTranslation } from "../../i18n";
@@ -237,10 +237,6 @@ export function SettingsWindow() {
     window.setTimeout(() => setSavePathState("idle"), 1200);
   }, [saveDirectoryDraft]);
 
-  const resetSettings = useCallback(() => {
-    setSettings(DEFAULT_SETTINGS);
-  }, []);
-
   const saveSettingsPreset = useCallback(() => {
     setPresets((currentPresets) => {
       const customPresetCount = currentPresets.filter(
@@ -321,7 +317,6 @@ export function SettingsWindow() {
         onLocaleChange={setLocale}
         onSettingsChange={setSettings}
         onClipboardSettingsChange={updateClipboardSettings}
-        onReset={resetSettings}
         onSaveDirectoryDraftChange={setSaveDirectoryDraft}
         onSaveDirectory={saveDirectory}
         onSavePreset={saveSettingsPreset}
