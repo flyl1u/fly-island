@@ -226,7 +226,8 @@ fn page_spec(plugin_id: &str, view_id: &str) -> Result<PageSpec, String> {
     let installed = lock(&host.installed);
     let plugin = installed.iter().find(|plugin| plugin.folder == plugin_id).ok_or("Plugin not found.")?;
     let manifest = plugin.manifest.as_ref().map_err(|_| "The plugin's manifest is not valid.".to_string())?;
-    let enabled = lock(&host.state).plugins.get(plugin_id).is_some_and(|grant| grant.enabled);
+    // Development plugins (dev.rs) are on without a switch, like in grants.rs.
+    let enabled = plugin.dev || lock(&host.state).plugins.get(plugin_id).is_some_and(|grant| grant.enabled);
     if !enabled || plugin.builtin {
         return Err("The plugin is not switched on.".into());
     }

@@ -141,7 +141,7 @@ export type SettingsPluginsText = {
 
 export const zhCN: SettingsPluginsText = {
   allowThirdParty: "允许运行第三方插件",
-  warning: "插件是在你电脑上运行的程序，可以读写文件和联网，下面列出的权限只限制它能读写岛上的哪些数据。只安装你信任的插件。",
+  warning: "插件是在你电脑上运行的程序，和你本人有同样的权限：可以读写文件、联网，也能读到这台电脑上保存的密码和授权码（包括岛屿保存的邮箱授权码和翻译密钥）。下面列出的权限只限制它能通过岛屿读写哪些数据。只安装你信任的插件。",
   folder: "插件目录",
   openFolder: "打开",
   reload: "重新加载",
@@ -288,7 +288,7 @@ export const zhCN: SettingsPluginsText = {
     official: "官方",
     publisher: (name: string) => `发布者 ${name}`,
     trustAndInstall: "信任并安装",
-    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。信任后它的插件可以安装和自动更新，可在 插件扩展 → 更新 中取消。`,
+    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件扩展 → 更新 中取消。`,
     revoked: "已下架",
     details: "详情",
     hideDetails: "收起",
@@ -313,7 +313,7 @@ export const zhCN: SettingsPluginsText = {
 
 export const en: SettingsPluginsText = {
   allowThirdParty: "Allow third-party plugins",
-  warning: "Plugins are programs that run on your computer and can read and write files and use the network. The permissions below only limit which island data they can use. Only install plugins you trust.",
+  warning: "Plugins are programs that run on your computer with the same rights as you: they can read and write files, use the network, and read passwords and codes saved on this computer (including the mail codes and translation keys the island saves). The permissions below only limit which data they can use through the island. Only install plugins you trust.",
   folder: "Plugins folder",
   openFolder: "Open",
   reload: "Reload",
@@ -460,7 +460,7 @@ export const en: SettingsPluginsText = {
     official: "Official",
     publisher: (name: string) => `Published by ${name}`,
     trustAndInstall: "Trust and install",
-    trustHint: (publisher: string) => `This is the first plugin from ${publisher}. Trust the publisher to install it; its plugins can then be installed and updated automatically. You can undo this under Plugins > Updates.`,
+    trustHint: (publisher: string) => `This is the first plugin from ${publisher}. Trust the publisher to install it. Plugins run as you and can reach your files and saved passwords, so only trust publishers you know. Its plugins can then be installed and updated automatically. You can undo this under Plugins > Updates.`,
     revoked: "Taken down",
     details: "Details",
     hideDetails: "Less",

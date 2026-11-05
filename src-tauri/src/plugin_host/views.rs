@@ -331,7 +331,8 @@ pub(super) fn snapshot() -> Result<PluginViewsSnapshot, String> {
     let mut status = Vec::new();
     for plugin in lock(&host.installed).iter() {
         let Ok(manifest) = &plugin.manifest else { continue };
-        let on = state.plugins.get(&manifest.id).is_some_and(|grant| grant.enabled) && (plugin.builtin || state.allow_third_party);
+        // Development plugins (dev.rs) are on without a switch, like in grants.rs.
+        let on = plugin.dev || state.plugins.get(&manifest.id).is_some_and(|grant| grant.enabled) && (plugin.builtin || state.allow_third_party);
         if !on || !matches!(manifest.runtime, PluginRuntime::Process { .. }) {
             continue;
         }
