@@ -1,0 +1,11 @@
+.todo-start--busy svg {
+  animation: todo-start-spin 900ms linear infinite;
+}
+
+@keyframes todo-start-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-start--busy svg { animation: none; }
+}

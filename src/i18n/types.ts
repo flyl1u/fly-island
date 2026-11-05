@@ -316,6 +316,19 @@ export type Translations = {
     title: string;
     reset: string;
 
+    categories: {
+      label: string;
+      general: string;
+      appearance: string;
+      notifications: string;
+      integrations: string;
+      about: string;
+    };
+
+    behavior: {
+      title: string;
+    };
+
     project: {
       title: string;
       star: string;

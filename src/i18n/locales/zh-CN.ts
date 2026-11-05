@@ -316,6 +316,19 @@ const zhCN: Translations = {
     title: "设置",
     reset: "恢复默认",
 
+    categories: {
+      label: "设置分类",
+      general: "通用",
+      appearance: "外观",
+      notifications: "通知",
+      integrations: "集成",
+      about: "关于",
+    },
+
+    behavior: {
+      title: "启动与收起",
+    },
+
     project: {
       title: "关于小岛",
       star: "觉得小岛还不错？",

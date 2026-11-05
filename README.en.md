@@ -55,11 +55,11 @@ Tasks, clipboard history, and app preferences stay on the device. WeChat reminde
 
 ## Getting started
 
-Expand the island to switch between tasks, music, clipboard, settings, and messages. The first-run appearance uses liquid glass, hides the island title, and displays task text in white.
+Expand the island to switch between tasks, music, clipboard, and messages. The settings button opens a separate window with category navigation. New installations use classic appearance, hide the island title, and display task text in white.
 
 ### Feature setup
 
-- **QQ and WeChat reminders** are enabled by default. QQ needs Windows notification access, and QQ must be signed in with system notifications enabled. WeChat must be running and issue a taskbar-attention request. Pause either source in **Settings → Message reception** or from the message panel. See the [QQ notification guide (Chinese)](docs/qq-notification-compatibility.md) and [WeChat reminder guide (Chinese)](docs/wechat-reminder-compatibility.md).
+- **QQ and WeChat reminders** are enabled by default. QQ needs Windows notification access, and QQ must be signed in with system notifications enabled. WeChat must be running and issue a taskbar-attention request. Pause either source in **Settings → Notifications** or from the message panel. See the [QQ notification guide (Chinese)](docs/qq-notification-compatibility.md) and [WeChat reminder guide (Chinese)](docs/wechat-reminder-compatibility.md).
 
 - **QQ Mail** connects from the message panel. Enable IMAP in QQ Mail settings, generate an authorization code, then enter your `@qq.com` address and that code (not your QQ login password). The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect to delete the code. Initial sync does not replay old mail. See the [QQ Mail setup guide (Chinese)](docs/qq-mail.md).
 
@@ -99,6 +99,12 @@ pnpm install
 pnpm tauri dev
 ```
 
+Run the unified checks:
+
+```powershell
+pnpm check
+```
+
 ### Build a release
 
 ```powershell
@@ -111,6 +117,10 @@ The generated installers are placed in:
 - `src-tauri/target/release/bundle/msi/fly-island_VERSION_x64_en-US.msi`
 
 You can also download the latest Windows x64 installers from [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest).
+
+## Contributors
+
+Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture and implementation in [PR #36](https://github.com/flyl1u/fly-island/pull/36). The local refactor adapts and reuses parts of that work on the current main branch; see the [provenance and validation notes](docs/architecture/local-refactor.md).
 
 ## License
 

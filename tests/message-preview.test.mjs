@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { latestMessagePreview, mailBadgeCount, messagePreviewText } from "../src/messagePreview.ts";
+import { latestMessagePreview, mailBadgeCount, messagePreviewText } from "../src/features/messages/messagePreview.ts";
 
 test("collapsed previews use source-specific copy and blank-content fallbacks", () => {
   assert.equal(messagePreviewText({ source: "wechat", title: "微信", body: "有新提醒", receivedAt: 0 }), "你收到了一条消息");

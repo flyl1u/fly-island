@@ -313,6 +313,19 @@ const en: Translations = {
     title: "Settings",
     reset: "Reset to defaults",
 
+    categories: {
+      label: "Settings categories",
+      general: "General",
+      appearance: "Appearance",
+      notifications: "Notifications",
+      integrations: "Integrations",
+      about: "About",
+    },
+
+    behavior: {
+      title: "Startup & tuck",
+    },
+
     project: {
       title: "About the island",
       star: "Enjoying your little island?",

@@ -1,0 +1,68 @@
+//! Registry reads through the Win32 API.
+//!
+//! Also compiled into `examples/wechat_reminder_probe.rs` through `#[path]`, so it
+//! must not depend on anything else in the crate.
+
+use windows::{
+    core::HSTRING,
+    Win32::System::Registry::{RegGetValueW, HKEY, RRF_RT_REG_SZ},
+};
+
+/// UTF-16 units read per value, including the terminating NUL. Longer values
+/// fail with `ERROR_MORE_DATA` and are reported as missing.
+const MAX_STRING_UNITS: usize = 2048;
+
+/// Reads a `REG_SZ` value under `root\subkey`. Returns `None` when the key or
+/// value does not exist, is not a string, or does not fit in the buffer.
+pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<String> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    let mut data = [0u16; MAX_STRING_UNITS];
+    let mut bytes = (data.len() * 2) as u32;
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the
+    // call. `data` is a writable buffer of exactly `bytes` bytes, and `bytes` is a
+    // valid in/out pointer; RegGetValueW writes at most that many bytes.
+    let result = unsafe {
+        RegGetValueW(
+            root,
+            &subkey,
+            &value,
+            RRF_RT_REG_SZ,
+            None,
+            Some(data.as_mut_ptr().cast()),
+            Some(&mut bytes),
+        )
+    };
+    if result.is_err() {
+        return None;
+    }
+    let length = data
+        .iter()
+        .position(|unit| *unit == 0)
+        .unwrap_or(data.len());
+    Some(String::from_utf16_lossy(&data[..length]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+
+    const CURRENT_VERSION: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
+
+    #[test]
+    fn reads_a_string_value_present_on_every_windows_install() {
+        let name = read_string(HKEY_LOCAL_MACHINE, CURRENT_VERSION, "ProductName");
+        assert!(name.is_some_and(|name| !name.trim().is_empty()));
+    }
+
+    #[test]
+    fn missing_keys_and_values_read_as_none() {
+        let missing_key = r"Software\FocuSD\NoSuchKey";
+        assert_eq!(read_string(HKEY_CURRENT_USER, missing_key, "Value"), None);
+        assert_eq!(
+            read_string(HKEY_LOCAL_MACHINE, CURRENT_VERSION, "NoSuchValue"),
+            None
+        );
+    }
+}

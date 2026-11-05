@@ -2,12 +2,14 @@
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { emit } from "@tauri-apps/api/event";
-import { useQQMail, type MailContent, type MailSnapshot, type QQMailController, sanitizeMailHtml } from "../src/QQMail";
-import { useQQNotifications } from "../src/QQNotifications";
-import { useWeChatReminders } from "../src/WeChatReminders";
-import { MessagesPanel, messagePanelHeight, type MessageView } from "../src/Messages";
-import "../src/App.css";
+import { useQQMail, type QQMailController, sanitizeMailHtml } from "../src/features/messages/qq-mail/QQMail";
+import type { MailContent, MailSnapshot } from "../src/features/messages/qq-mail/api";
+import { useQQNotifications } from "../src/features/messages/qq-notifications/QQNotifications";
+import { useWeChatReminders } from "../src/features/messages/wechat/WeChatReminders";
+import { MessagesPanel, messagePanelHeight, type MessageView } from "../src/features/messages/Messages";
+import "../src/windows/island/IslandApp.css";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);

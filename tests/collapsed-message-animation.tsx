@@ -2,15 +2,29 @@
 import { act, StrictMode, useState, type CSSProperties } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
+import "../src/styles/tokens.css";
 import { emit } from "@tauri-apps/api/event";
-import { IslandShell, type IslandMode } from "../src/App";
-import { useQQNotifications } from "../src/QQNotifications";
-import { useWeChatReminders } from "../src/WeChatReminders";
-import { useQQMail, type MailSnapshot } from "../src/QQMail";
-import type { MessageSource } from "../src/messagePreview";
+// Loads the island stylesheets in the same order as the app.
+import "../src/windows/island/IslandApp";
+import { IslandShell } from "../src/windows/island/IslandShell";
+import type { IslandMode } from "../src/windows/island/types";
+import { useQQNotifications } from "../src/features/messages/qq-notifications/QQNotifications";
+import { useWeChatReminders } from "../src/features/messages/wechat/WeChatReminders";
+import { useQQMail } from "../src/features/messages/qq-mail/QQMail";
+import type { MailSnapshot } from "../src/features/messages/qq-mail/api";
+import type { MessageSource } from "../src/features/messages/messagePreview";
+import type { MediaState } from "../src/features/media/api";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
+// Same values as MediaState::empty() in src-tauri/src/media_control/session.rs.
+const UNAVAILABLE_MEDIA: MediaState = {
+  available: false, audioActive: false, audioPeak: 0, playbackStatus: "unavailable",
+  title: null, artist: null, album: null, thumbnail: null, positionMs: 0, durationMs: 0,
+  canSeek: false, canNext: false, canPrevious: false, shuffleActive: null, canShuffle: false,
+  repeatMode: "unknown", canRepeat: false, volume: -1, sourceApp: null, activeSessionId: null,
+  sessions: [], updatedAt: 0,
+};
 async function update(action: () => void | Promise<void>) {
   if (automated) await act(action);
   else await action();
@@ -69,12 +83,12 @@ function Fixture() {
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
-      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`}
+      showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
-      mediaState={{ available: false, audioActive: false, audioPeak: 0, playbackStatus: "unavailable", updatedAt: 0 }}
+      mediaState={UNAVAILABLE_MEDIA}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}
-      onResetPosition={() => {}} onMinimize={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
+      onResetPosition={() => {}} onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} onTuck={() => setTucked(true)} onReveal={() => setTucked(false)}>
       <span>待办清单</span>
     </IslandShell>
   </div>;

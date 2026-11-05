@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
 const source = ts.transpileModule(
-  readFileSync(new URL("../src/updaterController.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/features/updater/updaterController.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
 ).outputText;
 
@@ -22,6 +22,14 @@ async function controller({ configured = true, check = async () => null, proxy =
       },
     },
     "@tauri-apps/plugin-updater": { check },
+    "./api": {
+      isUpdaterConfigured: async () => configured,
+      getUpdaterProxy: async () => proxy,
+      listenUpdateRequests: async () => () => {},
+      listenUpdateState: async () => () => {},
+      publishUpdateState: async () => {},
+      requestUpdateAction: async () => {},
+    },
   };
   // The controller reads window.location.search to keep the translation window
   // out of the startup update flow. A bare vm context has no browser globals,
