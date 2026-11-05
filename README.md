@@ -10,13 +10,13 @@
   <p>
     <a href="https://island.flyliu.org/">在线预览</a>
     ·
-    <a href="https://github.com/flyl1u/fly-island/releases/latest">下载 Release</a>
+    <a href="https://github.com/TixXin/fly-island/releases/latest">下载 Release</a>
     ·
-    <a href="https://github.com/flyl1u/fly-island/issues">反馈 Issue</a>
+    <a href="https://github.com/TixXin/fly-island/issues">反馈 Issue</a>
   </p>
 
   <p>
-    <img alt="Version" src="https://img.shields.io/github/v/release/flyl1u/fly-island?label=version">
+    <img alt="Version" src="https://img.shields.io/github/v/release/TixXin/fly-island?label=version">
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
@@ -86,7 +86,7 @@ fly-island 把分散在不同窗口中的高频操作放到一个可折叠、可
 需要 Windows 10/11、Node.js、pnpm、Rust、Visual Studio C++ Build Tools 和 WebView2 Runtime。
 
 ```powershell
-git clone https://github.com/flyl1u/fly-island.git
+git clone https://github.com/TixXin/fly-island.git
 cd fly-island
 pnpm install
 pnpm tauri dev
@@ -103,7 +103,7 @@ pnpm tauri build
 - `src-tauri/target/release/bundle/nsis/fly-island_版本号_x64-setup.exe`
 - `src-tauri/target/release/bundle/msi/fly-island_版本号_x64_en-US.msi`
 
-也可以直接从 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载 Windows x64 安装包。
+也可以直接从 [GitHub Releases](https://github.com/TixXin/fly-island/releases/latest) 下载 Windows x64 安装包。
 
 应用内更新（检查更新、签名与 `latest.json` 发布流程）见 [docs/updater.md](docs/updater.md)。
 
@@ -115,10 +115,10 @@ pnpm tauri build
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=TixXin%2Ffly-island&type=date&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=light&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=TixXin/fly-island&type=date&theme=light&legend=top-left" />
   </picture>
 </a>

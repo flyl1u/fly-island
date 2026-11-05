@@ -128,4 +128,4 @@ CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBK
 - **一直显示已是最新版本**：确认 release 里的 `latest.json` 的 `version` 高于客户端版本；同一版本号重发不会触发更新。
 - **提示签名校验失败**：`latest.json` 里的 `signature` 必须来自本次安装包的 `.sig` 文件，且签名私钥与构建时注入的公钥配对。
 - **发布后短时间内检查不到**：`releases/latest/download/` 走 CDN，通常几分钟内生效。
-- **只想手动下载安装包**：直接访问 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest)；设置中的「查看最新版本」用于应用内检查、下载和安装。
+- **只想手动下载安装包**：直接访问 [GitHub Releases](https://github.com/TixXin/fly-island/releases/latest)；设置中的「查看最新版本」用于应用内检查、下载和安装。

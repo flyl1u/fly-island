@@ -21,7 +21,7 @@ const OVERLAY = "src-tauri/tauri.release.conf.json";
 const CARGO = "src-tauri/Cargo.toml";
 const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 const MSI_DIR = "src-tauri/target/release/bundle/msi";
-const REPO = "flyl1u/fly-island";
+const REPO = "TixXin/fly-island";
 
 const args = process.argv.slice(2);
 const baseFlag = args.indexOf("--base-url");
