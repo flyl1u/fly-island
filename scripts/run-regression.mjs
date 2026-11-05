@@ -104,6 +104,13 @@ async function connect(port) {
   });
   await send("Runtime.enable");
   await send("Page.enable");
+  // Windows Server (the CI runner) has animations off, which Chrome reports as
+  // prefers-reduced-motion: reduce and the island then swaps messages without a
+  // transition. Pages that test reduced motion stub matchMedia themselves, so the
+  // run uses an ordinary desktop's setting unless REGRESSION_REDUCED_MOTION says otherwise.
+  await send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: process.env.REGRESSION_REDUCED_MOTION ?? "no-preference" }],
+  });
   return { send, errors, close: () => socket.close() };
 }
 
@@ -145,7 +152,10 @@ async function main() {
   let failed = 0;
   try {
     await waitForHttp(`${base}${pages[0].split("?")[0]}`, 30_000);
-    browser = spawn(findBrowser(), ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
+    // Pages that do not pick a language follow the browser's, and their checks are written
+    // against the Chinese interface; an English CI runner would otherwise fail them.
+    const language = process.env.REGRESSION_LANG ?? "zh-CN";
+    browser = spawn(findBrowser(), ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
     const session = await connect(debugPort);
     for (const page of pages) {
       const started = Date.now();
