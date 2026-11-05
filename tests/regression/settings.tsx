@@ -8,6 +8,8 @@ import "../../src/styles/tokens.css";
 import "../../src/styles/fonts.css";
 import "../../src/styles/base.css";
 import { SettingsWindow } from "../../src/windows/settings/SettingsWindow";
+import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import type { MailSnapshot } from "../../src/features/messages/qq-mail/api";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 
 const query = new URLSearchParams(location.search);
@@ -31,6 +33,12 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 
 let revision = 0;
 const commands: string[] = [];
+const mailCalls: { command: string; args: Record<string, unknown> }[] = [];
+const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot => ({
+  revision: ++revision, email, configured: true, enabled: true, syncing: false, status: "connected",
+  unreadCount: 2, items: [], lastSyncedAt: 0, error: null, ...extra,
+});
+let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
@@ -42,6 +50,18 @@ mockIPC((command, payload) => {
     case "set_clipboard_history_settings":
       return { settings: { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true, ...(args.settings as object | undefined) }, items: [] };
     case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\agent-status.json" };
+    case "get_qq_mail_state": return mailboxes;
+    case "connect_qq_mail":
+    case "disconnect_qq_mail":
+    case "set_qq_mail_enabled": {
+      mailCalls.push({ command, args });
+      const email = String(args.email).trim().toLowerCase();
+      const next = command === "disconnect_qq_mail"
+        ? mailbox(email, { configured: false, enabled: false, status: "disconnected", unreadCount: null })
+        : mailbox(email, { enabled: args.enabled !== false, status: args.enabled === false ? "paused" : "connected" });
+      mailboxes = [...mailboxes.filter((box) => box.email !== email), ...(next.configured ? [next] : [])];
+      return next;
+    }
     case "get_qq_notification_state": return { revision: ++revision, enabled: false, status: "disabled", items: [], error: null };
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", pending: false, lastAttentionAt: null, error: null };
@@ -106,6 +126,11 @@ const click = async (selector: string) => {
   const target = element<HTMLButtonElement>(selector);
   await act(async () => { target.click(); });
 };
+/** Types into a controlled input the way a user would, so React sees the change. */
+const type = async (input: HTMLInputElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  await act(async () => { setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true })); });
+};
 const openPage = (category: string) => click(`.settings-sidebar__item[data-category='${category}']`);
 const categories = () =>
   [...document.querySelectorAll<HTMLElement>(".settings-sidebar__item")].map(item => item.dataset.category!);
@@ -143,7 +168,7 @@ if (!automated) {
     check(storedSettings().opacity === 60 && document.querySelector(".appearance-reset"), "Cancelling keeps the appearance");
     await click(".appearance-reset");
     await click(".appearance-reset--danger");
-    check(storedSettings().opacity === 95, "Confirming resets the appearance");
+    check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
     check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
 
     const agentPolls = () => commands.filter(command => command === "get_agent_status").length;
@@ -160,6 +185,31 @@ if (!automated) {
     await click(".save-path-button");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_500)); });
     check(document.querySelector(".save-path-button--saved"), "The saved confirmation stays long enough to notice");
+
+    await openPage("mail");
+    const rows = () => [...document.querySelectorAll<HTMLElement>(".mail-settings__account")];
+    check(rows().length === 2 && rows()[0].textContent?.includes("demo@qq.com"), "The mail page lists every mailbox");
+    const rowButton = (row: number, text: string) => [...rows()[row].querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent?.includes(text));
+    await act(async () => { rowButton(1, "重新授权")!.click(); });
+    const formEmail = () => element<HTMLInputElement>(".mail-settings__form input[type='email']");
+    check(formEmail().value === "louis@163.com" && formEmail().disabled && !document.querySelector(".mail-settings__form input[type='text']"),
+      "Re-authorizing fixes the address and hides the server field");
+    await act(async () => { [...document.querySelectorAll<HTMLButtonElement>(".mail-settings__form button")].find((button) => button.textContent === "取消")!.click(); });
+    await act(async () => { rowButton(0, "断开")!.click(); });
+    check(!mailCalls.some((call) => call.command === "disconnect_qq_mail") && document.querySelector(".mail-settings__confirm"),
+      "The first disconnect click only asks for confirmation");
+    await act(async () => { rowButton(0, "确认断开")!.click(); });
+    check(mailCalls.some((call) => call.command === "disconnect_qq_mail" && call.args.email === "demo@qq.com") && rows().length === 1,
+      "Confirming disconnects and removes the mailbox");
+    await type(formEmail(), "new@example.edu.cn");
+    await type(element<HTMLInputElement>(".mail-settings__form input[type='password']"), "code");
+    await type(element<HTMLInputElement>(".mail-settings__form input[type='text']"), "imap.example.edu.cn");
+    await act(async () => { element<HTMLButtonElement>(".mail-settings__form button[type='submit']").click(); });
+    check(mailCalls.some((call) => call.command === "connect_qq_mail" && call.args.host === "imap.example.edu.cn") && rows().length === 2,
+      "Adding a mailbox sends the typed server and lists it");
+    const saved = JSON.parse(localStorage.getItem("focusd-island-qq-mail-settings") ?? "{}") as { accounts?: { email: string; host: string }[] };
+    check(saved.accounts?.some((account) => account.email === "new@example.edu.cn" && account.host === "imap.example.edu.cn"),
+      "The typed server is saved with the mailbox");
 
     await act(async () => { root.unmount(); });
     document.documentElement.dataset.testResult = "passed";
