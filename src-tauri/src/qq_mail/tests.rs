@@ -2,7 +2,7 @@ use super::content::{
     cid_references, fetch_content, parse_message_id, replace_cid_references, MAX_BODY_BYTES,
 };
 use super::client_id::send_client_id;
-use super::credentials::{imap_host, normalize_email};
+use super::credentials::{imap_host, normalize_email, resolve_host};
 use super::service::{retry_delay, MailState, Work, PUSH_REFRESH_INTERVAL};
 use super::session::{
     display_header, fetch_inbox, fetch_inbox_cached, interrupt_idle, login_failure, parse_header,
@@ -15,6 +15,8 @@ use std::io::Cursor as IoCursor;
 use std::{
     io::{Read, Write},
     net::TcpStream,
+    sync::{mpsc, Arc, Mutex},
+    thread,
     time::Duration,
 };
 
@@ -77,6 +79,26 @@ fn the_imap_host_follows_the_address_domain() {
     assert_eq!(imap_host("x@qq.com"), "imap.qq.com");
     assert_eq!(imap_host("x@163.com"), "imap.163.com");
     assert_eq!(imap_host("x@mail.example.edu.cn"), "imap.mail.example.edu.cn");
+}
+
+#[test]
+fn a_typed_imap_host_must_be_a_bare_domain() {
+    assert_eq!(resolve_host("x@163.com", None).unwrap(), "imap.163.com");
+    assert_eq!(resolve_host("x@example.edu.cn", Some(" ")).unwrap(), "imap.example.edu.cn");
+    assert_eq!(resolve_host("x@foxmail.com", Some("IMAP.QQ.COM")).unwrap(), "imap.qq.com");
+    for host in ["imap.qq.com:993", "imap.qq.com/x", "imaps://imap.qq.com", "localhost", "a b.com"] {
+        assert!(resolve_host("x@qq.com", Some(host)).is_err(), "{host:?}");
+    }
+}
+
+#[test]
+fn revisions_keep_rising_across_mailboxes() {
+    let mut first = MailState::default();
+    let mut second = MailState::default();
+    let a = first.changed().revision;
+    let b = second.changed().revision;
+    let c = first.changed().revision;
+    assert!(a < b && b < c);
 }
 
 #[test]

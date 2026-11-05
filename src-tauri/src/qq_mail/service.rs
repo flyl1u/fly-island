@@ -3,11 +3,12 @@
 use serde::Serialize;
 use std::{
     net::TcpStream,
-    sync::{mpsc, Arc, Mutex, MutexGuard, OnceLock},
+    sync::{mpsc, Arc, Mutex, MutexGuard, PoisonError},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
 
+use super::accounts::next_revision;
 use super::content::fetch_content;
 use super::credentials::{credential, read_secret};
 use super::session::{
@@ -19,8 +20,6 @@ use super::{MailContent, MailSnapshot, MailStatus, EVENT};
 const SYNC_INTERVAL: Duration = Duration::from_secs(5);
 
 pub(super) const PUSH_REFRESH_INTERVAL: Duration = Duration::from_secs(60);
-
-pub(super) static SERVICE: OnceLock<Arc<MailService>> = OnceLock::new();
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,7 +48,7 @@ impl MailState {
     }
 
     pub(super) fn changed(&mut self) -> MailSnapshot {
-        self.snapshot.revision += 1;
+        self.snapshot.revision = next_revision();
         self.snapshot.clone()
     }
 
@@ -130,16 +129,28 @@ pub(super) enum Work {
         reply: Reply,
     },
     Wake,
+    /// The mailbox was disconnected: end the worker thread.
+    Stop,
 }
 
 pub(super) struct MailService {
     pub(super) app: AppHandle,
+    pub(super) email: String,
+    pub(super) host: Mutex<String>,
     pub(super) state: Mutex<MailState>,
     pub(super) sender: mpsc::Sender<Work>,
     pub(super) idle_socket: Mutex<Option<TcpStream>>,
 }
 
 impl MailService {
+    pub(super) fn host(&self) -> String {
+        self.host.lock().unwrap_or_else(PoisonError::into_inner).clone()
+    }
+
+    pub(super) fn set_host(&self, host: &str) {
+        *self.host.lock().unwrap_or_else(PoisonError::into_inner) = host.to_string();
+    }
+
     pub(super) fn send(&self, work: Work) -> Result<(), String> {
         self.sender
             .send(work)
@@ -204,7 +215,7 @@ impl MailService {
             }
         }
         connection.reset(generation);
-        let result = connection.fetch(email, secret);
+        let result = connection.fetch(&self.host(), email, secret);
         let mut state = self.lock()?;
         if generation != state.generation || !state.snapshot.enabled {
             return Err("邮箱连接已取消。".into());
@@ -269,7 +280,7 @@ impl MailService {
         current()?;
         let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
         let mut session =
-            open_session(email, &secret).map_err(|failure| failure.message.to_string())?;
+            open_session(&self.host(), email, &secret).map_err(|failure| failure.message.to_string())?;
         let result = fetch_content(&mut session, message_id);
         let _ = session.logout();
         current()?;
@@ -330,7 +341,7 @@ pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) 
                 let _ = reply.send(result);
             }
             MailWake::Work(Work::Wake) => {}
-            MailWake::Closed => return,
+            MailWake::Work(Work::Stop) | MailWake::Closed => return,
             change => {
                 if let MailWake::Failed(error) = change {
                     if matches!(error, imap::Error::No(_) | imap::Error::Bad(_)) {

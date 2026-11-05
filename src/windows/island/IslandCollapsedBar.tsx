@@ -132,7 +132,7 @@ export function IslandCollapsedBar({
               }
               if (source === "qqMail" && qqMail.preview) {
                 onOpenMessages("qqMail");
-                void qqMail.readMail(qqMail.preview);
+                void qqMail.readMail(qqMail.preview, qqMail.previewAccount);
                 return;
               }
               const open = source === "qq" ? qqNotifications.openQQ : wechatReminders.openWeChat;

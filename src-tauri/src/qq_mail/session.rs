@@ -15,7 +15,7 @@ use std::{
 };
 
 use super::client_id::{send_client_id, SharedStream};
-use super::credentials::{imap_host, read_secret};
+use super::credentials::read_secret;
 use super::service::Work;
 use super::MailMessage;
 
@@ -177,6 +177,7 @@ impl SyncConnection {
 
     pub(super) fn fetch(
         &mut self,
+        host: &str,
         email: &str,
         secret: Option<&str>,
     ) -> Result<Inbox, MailFailure> {
@@ -202,7 +203,7 @@ impl SyncConnection {
                     .ok_or_else(MailFailure::authentication)?
             }
         };
-        let (mut session, socket) = open_connection(email, secret)?;
+        let (mut session, socket) = open_connection(host, email, secret)?;
         self.idle_supported = session
             .capabilities()
             .map_err(|_| MailFailure::network())?
@@ -223,14 +224,21 @@ pub(super) fn login_failure(error: imap::Error) -> MailFailure {
     }
 }
 
-pub(super) fn open_session(email: &str, secret: &str) -> Result<MailSession, MailFailure> {
-    open_connection(email, secret).map(|(session, _)| session)
+pub(super) fn open_session(
+    host: &str,
+    email: &str,
+    secret: &str,
+) -> Result<MailSession, MailFailure> {
+    open_connection(host, email, secret).map(|(session, _)| session)
 }
 
-fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
-    let host = imap_host(email);
+fn open_connection(
+    host: &str,
+    email: &str,
+    secret: &str,
+) -> Result<(MailSession, TcpStream), MailFailure> {
     let mut stream = None;
-    let addresses = (host.as_str(), 993)
+    let addresses = (host, 993)
         .to_socket_addrs()
         .map_err(|_| MailFailure::network())?;
     for address in addresses {
@@ -249,7 +257,7 @@ fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream)
     let interrupt = stream.try_clone().map_err(|_| MailFailure::network())?;
     let tls = native_tls::TlsConnector::new().map_err(|_| MailFailure::network())?;
     let stream = tls
-        .connect(&host, stream)
+        .connect(host, stream)
         .map_err(|_| MailFailure::network())?;
     let shared = Arc::new(Mutex::new(stream));
     let mut client = imap::Client::new(BoundedStream(SharedStream(shared.clone())));

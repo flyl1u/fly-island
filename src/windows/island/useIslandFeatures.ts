@@ -62,11 +62,11 @@ export function useIslandFeatures({
     if (next !== messageSource) setMessageSource(next);
   }, [features, messageSource, setMessageSource]);
 
-  // Switching mail off pauses the account's sync; switching it back on resumes it.
+  // Switching mail off pauses every mailbox; switching it back on resumes them.
   // While mail is on, the panel's own receive switch is left to the user.
-  const mailConfigured = qqMail.snapshot.configured;
-  const mailReceiving = qqMail.snapshot.enabled;
-  const setMailReceiving = qqMail.setEnabled;
+  const mailConfigured = qqMail.anyConfigured;
+  const mailReceiving = qqMail.anyReceiving;
+  const setMailReceiving = qqMail.setAllEnabled;
   const mailSwitch = settings.mailEnabled;
   const lastMailSwitchRef = useRef(mailSwitch);
   useEffect(() => {

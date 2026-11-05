@@ -1,11 +1,12 @@
 import { useTranslation } from "../../../i18n";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Unplug } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Server, Unplug } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
 import { hasQQMailHelp } from "./mailDomain";
+import { MailAccountTabs } from "./MailAccountTabs";
 import "./QQMail.css";
 import type { QQMailController } from "./useQQMail";
 
@@ -73,10 +74,13 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
   onRead?: (message: MailMessage) => void;
   onBack?: () => void;
 }) {
-  const { snapshot, busy, actionError, connect, setEnabled, refresh, disconnect, openMail, openHelp } = controller;
+  const { snapshot, mailboxes, adding, busy, actionError, connect, setEnabled, refresh, disconnect, openMail, openHelp, selectMailbox, startAdding } = controller;
   const t = useTranslation();
   const [email, setEmail] = useState(snapshot.email ?? "");
   const [authorizationCode, setAuthorizationCode] = useState("");
+  const [host, setHost] = useState("");
+  // A known mailbox only re-enters its code; its address and server stay as saved.
+  const newMailbox = !snapshot.email;
   const showForm = !snapshot.configured || snapshot.status === "authRequired";
   const error = actionError || snapshot.error;
   const listRef = useRef<HTMLDivElement>(null);
@@ -90,7 +94,7 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
   const readerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (snapshot.email) setEmail(snapshot.email); }, [snapshot.email]);
+  useEffect(() => { setEmail(snapshot.email ?? ""); setAuthorizationCode(""); setHost(""); }, [snapshot.email]);
   // 远程图可能失效或被 CDN 拒绝，出错时就地隐藏，避免正文里出现裂图占位
   useEffect(() => {
     const node = bodyRef.current;
@@ -150,16 +154,17 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
           {snapshot.configured && <button className="icon-button" type="button" title={t.mail.disconnect} aria-label={t.mail.disconnectLabel} disabled={busy} onClick={() => void disconnect().then((disconnected) => { if (disconnected) setAuthorizationCode(""); })}><Unplug size={16} strokeWidth={1.8} /></button>}
         </div>
       </header>
-      {snapshot.configured && <div className="qq-mail-account" title={`${snapshot.email} · ${t.mail.status[snapshot.status]}`}><span className="message-status" data-state={snapshot.status} role="status" aria-label={t.mail.status[snapshot.status]} /><span className="qq-mail-account__email">{snapshot.email}</span></div>}
+      {mailboxes.length > 0 && <MailAccountTabs mailboxes={mailboxes} selected={snapshot.email} adding={adding} busy={busy} onSelect={selectMailbox} onAdd={startAdding} />}
       {error && <p className="qq-panel__error" role="alert">{error}</p>}
       {showForm ? (
         <form className="qq-mail-form" onSubmit={(event) => {
           event.preventDefault();
-          void connect(email, authorizationCode).then((connected) => { if (connected) setAuthorizationCode(""); });
+          void connect(email, authorizationCode, newMailbox ? host : undefined).then((connected) => { if (connected) setAuthorizationCode(""); });
         }}>
           <div className="qq-mail-fields">
             <label className="qq-mail-field"><AtSign size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-email" aria-label={t.mail.email} type="email" autoComplete="username" placeholder={t.mail.emailPlaceholder} required maxLength={80} value={email} disabled={busy || snapshot.configured} onChange={(event) => setEmail(event.currentTarget.value)} /></label>
             <label className="qq-mail-field"><KeyRound size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-code" aria-label={t.mail.authorizationCode} type="password" autoComplete="off" placeholder={t.mail.authorizationPlaceholder} required maxLength={256} value={authorizationCode} disabled={busy} onChange={(event) => setAuthorizationCode(event.currentTarget.value)} /></label>
+            {newMailbox && <label className="qq-mail-field"><Server size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-host" aria-label={t.mail.imapHost} type="text" autoComplete="off" spellCheck={false} placeholder={t.mail.imapHostPlaceholder} maxLength={253} value={host} disabled={busy} onChange={(event) => setHost(event.currentTarget.value)} /></label>}
           </div>
           <div className="qq-mail-form__actions">
             <button className="message-action qq-mail-connect" type="submit" disabled={busy || !email.trim() || !authorizationCode.trim()}>{busy ? <LoaderCircle size={15} strokeWidth={1.8} className="qq-mail-spinning" /> : <ArrowRight size={15} strokeWidth={1.8} />}{busy ? t.common.connecting : t.mail.connect}</button>

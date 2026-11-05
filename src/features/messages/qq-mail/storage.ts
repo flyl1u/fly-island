@@ -1,14 +1,23 @@
+import { normalizeMailAccounts, type MailAccountSettings } from "./mailAccounts.ts";
+
 export const SETTINGS_KEY = "focusd-island-qq-mail-settings";
 export const REMOTE_IMAGES_KEY = "focusd-island-qq-mail-remote-images";
 
-export type MailSettings = { email: string; enabled: boolean };
-
-export function loadSettings(): MailSettings | null {
+/** Saved mailboxes; the single-account format of older versions is read too. */
+export function loadMailAccounts(): MailAccountSettings[] {
   try {
-    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null") as Partial<MailSettings> | null;
-    return typeof stored?.email === "string" && typeof stored.enabled === "boolean"
-      ? { email: stored.email, enabled: stored.enabled } : null;
-  } catch { return null; }
+    return normalizeMailAccounts(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null"));
+  } catch { return []; }
+}
+
+export function saveMailAccounts(accounts: MailAccountSettings[]) {
+  if (accounts.length === 0) {
+    localStorage.removeItem(SETTINGS_KEY);
+    return;
+  }
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+    accounts: accounts.map(({ email, host, enabled }) => ({ email, host, enabled })),
+  }));
 }
 
 export function loadRemoteImagePreference() {
@@ -17,12 +26,4 @@ export function loadRemoteImagePreference() {
 
 export function saveRemoteImagePreference(allow: boolean) {
   try { localStorage.setItem(REMOTE_IMAGES_KEY, String(allow)); } catch { /* 偏好保存失败不影响本次阅读 */ }
-}
-
-export function saveMailSettings(settings: MailSettings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ email: settings.email, enabled: settings.enabled }));
-}
-
-export function clearMailSettings() {
-  localStorage.removeItem(SETTINGS_KEY);
 }

@@ -1,10 +1,10 @@
-//! What plugins with the sensitive `messages:read` permission see of QQ Mail:
-//! sender and subject of the listed mail. Never the body, the address or the
-//! authorization code.
+//! What plugins with the sensitive `messages:read` permission see of the mail:
+//! sender and subject of the listed mail, from every mailbox that is switched on.
+//! Never the body, the address (so not which mailbox) or the authorization code.
 
 use serde_json::{json, Value};
 
-use super::{service, MailMessage, MailSnapshot};
+use super::{accounts, MailMessage, MailSnapshot};
 
 fn entry(item: &MailMessage) -> Value {
     json!({
@@ -17,14 +17,17 @@ fn entry(item: &MailMessage) -> Value {
     })
 }
 
-/// The mail the island lists; empty while QQ Mail is off or not set up.
+/// The mail the island lists for every mailbox that is set up and switched on.
 pub(crate) fn plugin_messages() -> Vec<Value> {
-    let Ok(service) = service() else { return Vec::new() };
-    let Ok(state) = service.lock() else { return Vec::new() };
-    if !state.snapshot.enabled || !state.snapshot.configured {
-        return Vec::new();
-    }
-    state.snapshot.items.iter().map(entry).collect()
+    accounts::all()
+        .iter()
+        .filter_map(|service| {
+            let state = service.lock().ok()?;
+            (state.snapshot.enabled && state.snapshot.configured)
+                .then(|| state.snapshot.items.iter().map(entry).collect::<Vec<_>>())
+        })
+        .flatten()
+        .collect()
 }
 
 /// `messages.received` for the mail that just arrived.

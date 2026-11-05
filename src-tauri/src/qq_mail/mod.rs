@@ -2,6 +2,7 @@
 //! snapshot types and the background service. The module keeps its qq_mail
 //! name because the command names are a contract with the frontend.
 
+mod accounts;
 mod client_id;
 mod content;
 mod credentials;
@@ -13,18 +14,14 @@ mod session;
 mod tests;
 
 use serde::Serialize;
-use std::{
-    sync::{mpsc, Arc, Mutex},
-    thread,
-    time::Instant,
-};
+use std::{sync::mpsc, time::Instant};
 use tauri::AppHandle;
 
 use content::parse_message_id;
 
 pub(crate) use plugin_view::plugin_messages;
-use credentials::{delete_secret, normalize_email, read_secret};
-use service::{worker, MailService, MailState, Work, SERVICE};
+use credentials::{delete_secret, normalize_email, read_secret, resolve_host};
+use service::{MailService, Work};
 
 const EVENT: &str = "qq-mail-changed";
 
@@ -91,59 +88,34 @@ impl Default for MailSnapshot {
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {
-    if SERVICE.get().is_some() {
-        return Ok(());
-    }
-    let (sender, receiver) = mpsc::channel();
-    let service = Arc::new(MailService {
-        app: app.clone(),
-        state: Mutex::new(MailState::default()),
-        sender,
-        idle_socket: Mutex::new(None),
-    });
-    SERVICE
-        .set(service.clone())
-        .map_err(|_| "邮箱服务已启动。")?;
-    thread::Builder::new()
-        .name("qq-mail".into())
-        .spawn(move || worker(service, receiver))
-        .map_err(|_| "无法启动邮箱服务。".to_string())?;
+    accounts::init(app);
     Ok(())
 }
 
-fn service() -> Result<&'static Arc<MailService>, String> {
-    SERVICE.get().ok_or_else(|| "邮箱服务尚未就绪。".into())
-}
-
 #[tauri::command]
-pub fn get_qq_mail_state() -> Result<MailSnapshot, String> {
-    Ok(service()?.lock()?.snapshot.clone())
+pub fn get_qq_mail_state() -> Result<Vec<MailSnapshot>, String> {
+    accounts::all()
+        .iter()
+        .map(|service| Ok(service.lock()?.snapshot.clone()))
+        .collect()
 }
 
 #[tauri::command]
 pub async fn connect_qq_mail(
     email: String,
     authorization_code: String,
+    host: Option<String>,
 ) -> Result<MailSnapshot, String> {
     let email = normalize_email(&email)?;
+    let host = resolve_host(&email, host.as_deref())?;
     let secret = authorization_code.trim().to_string();
     if secret.is_empty() || secret.len() > 256 || secret.chars().any(char::is_control) {
         return Err("请输入邮箱设置中生成的授权码。".into());
     }
-    let service = service()?;
+    let service = accounts::find_or_start(&email, &host)?;
     let (generation, snapshot) = {
         let mut state = service.lock()?;
-        if state.snapshot.configured
-            && state
-                .snapshot
-                .email
-                .as_ref()
-                .is_some_and(|current| current != &email)
-        {
-            return Err("请先断开当前邮箱，再连接其他账号。".into());
-        }
         state.invalidate();
-        state.snapshot.email = Some(email.clone());
         state.snapshot.enabled = true;
         state.snapshot.syncing = true;
         state.snapshot.status = MailStatus::Connecting;
@@ -160,32 +132,47 @@ pub async fn connect_qq_mail(
             reply,
         })
         .map_err(|_| "邮箱服务不可用。".to_string())?;
-    await_reply(receiver).await
+    let result = await_reply(receiver).await;
+    if result.is_err() {
+        forget_if_never_connected(&service);
+    }
+    result
+}
+
+/// A mailbox whose first connection failed has no saved code; drop it so it
+/// neither lingers as a tab nor counts toward the account limit.
+fn forget_if_never_connected(service: &MailService) {
+    let Ok(mut state) = service.lock() else { return };
+    if state.snapshot.configured {
+        return;
+    }
+    state.invalidate();
+    state.snapshot = MailSnapshot {
+        email: Some(service.email.clone()),
+        ..MailSnapshot::default()
+    };
+    let snapshot = state.changed();
+    drop(state);
+    accounts::remove(&service.email);
+    service.publish(snapshot, None);
 }
 
 #[tauri::command]
-pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSnapshot, String> {
+pub async fn set_qq_mail_enabled(
+    email: String,
+    enabled: bool,
+    host: Option<String>,
+) -> Result<MailSnapshot, String> {
     let email = normalize_email(&email)?;
+    let host = resolve_host(&email, host.as_deref())?;
     tauri::async_runtime::spawn_blocking(move || {
-        let service = service()?;
+        let service = accounts::find_or_start(&email, &host)?;
         let mut state = service.lock()?;
-        if state
-            .snapshot
-            .email
-            .as_ref()
-            .is_some_and(|current| current != &email)
-        {
-            return Err("请先断开当前邮箱，再连接其他账号。".into());
-        }
-        if state.snapshot.email.as_ref() == Some(&email)
-            && state.snapshot.configured
-            && state.snapshot.enabled == enabled
-        {
+        if state.snapshot.configured && state.snapshot.enabled == enabled {
             return Ok(state.snapshot.clone());
         }
         let configured = read_secret(&email)?.is_some();
         state.invalidate();
-        state.snapshot.email = Some(email);
         state.snapshot.configured = configured;
         state.snapshot.enabled = enabled && configured;
         state.snapshot.status = if !configured {
@@ -214,8 +201,8 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
 }
 
 #[tauri::command]
-pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
-    let service = service()?;
+pub async fn refresh_qq_mail(email: String) -> Result<MailSnapshot, String> {
+    let service = accounts::find(&normalize_email(&email)?)?;
     let Some((generation, _)) = service.begin_sync() else {
         let snapshot = service.lock()?.snapshot.clone();
         return if snapshot.syncing {
@@ -232,10 +219,11 @@ pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
 }
 
 #[tauri::command]
-pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
+pub async fn read_qq_mail(email: String, message_id: String) -> Result<MailContent, String> {
     parse_message_id(&message_id)?;
-    let service = service()?;
-    let (generation, email) = {
+    let email = normalize_email(&email)?;
+    let service = accounts::find(&email)?;
+    let generation = {
         let state = service.lock()?;
         if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
             return Err("请先连接邮箱。".into());
@@ -248,45 +236,45 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
         {
             return Err("邮件已不在最近列表中，请刷新收件箱。".into());
         }
-        (
-            state.generation,
-            state.snapshot.email.clone().ok_or("请先连接邮箱。")?,
-        )
+        state.generation
     };
-    let service = service.clone();
     tauri::async_runtime::spawn_blocking(move || service.read(generation, &email, &message_id))
         .await
         .map_err(|_| "无法读取邮件。".to_string())?
 }
 
 #[tauri::command]
-pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
-    tauri::async_runtime::spawn_blocking(|| {
-        let service = service()?;
+pub async fn disconnect_qq_mail(email: String) -> Result<MailSnapshot, String> {
+    let email = normalize_email(&email)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let disconnected = |revision| MailSnapshot {
+            revision,
+            email: Some(email.clone()),
+            ..MailSnapshot::default()
+        };
+        let Ok(service) = accounts::find(&email) else {
+            // Nothing running for it: still make sure no code stays behind.
+            delete_secret(&email)?;
+            return Ok(disconnected(accounts::next_revision()));
+        };
         let mut state = service.lock()?;
         state.invalidate();
         state.snapshot.enabled = false;
-        if let Some(email) = &state.snapshot.email {
-            if delete_secret(email).is_err() {
-                state.snapshot.status = MailStatus::Paused;
-                state.snapshot.error =
-                    Some("已停止接收，但删除 Windows 邮箱凭据失败，请重试断开。".into());
-                let snapshot = state.changed();
-                drop(state);
-                service.publish(snapshot, None);
-                let _ = service.send(Work::Wake);
-                return Err("删除邮箱凭据失败，请重试断开。".into());
-            }
+        if delete_secret(&email).is_err() {
+            state.snapshot.status = MailStatus::Paused;
+            state.snapshot.error =
+                Some("已停止接收，但删除 Windows 邮箱凭据失败，请重试断开。".into());
+            let snapshot = state.changed();
+            drop(state);
+            service.publish(snapshot, None);
+            let _ = service.send(Work::Wake);
+            return Err("删除邮箱凭据失败，请重试断开。".into());
         }
-        let revision = state.snapshot.revision;
-        state.snapshot = MailSnapshot {
-            revision,
-            ..MailSnapshot::default()
-        };
+        state.snapshot = disconnected(0);
         let snapshot = state.changed();
         drop(state);
+        accounts::remove(&email);
         service.publish(snapshot.clone(), None);
-        let _ = service.send(Work::Wake);
         Ok(snapshot)
     })
     .await

@@ -54,8 +54,21 @@ pub(super) fn normalize_email(email: &str) -> Result<String, String> {
     Ok(email)
 }
 
-/// `imap.<domain>` serves QQ, Foxmail, 163, 126 and most school and company mail.
+/// `imap.<domain>` serves QQ, 163, 126 and most school and company mail.
 pub(super) fn imap_host(email: &str) -> String {
     let domain = email.split_once('@').map_or(email, |(_, domain)| domain);
     format!("imap.{domain}")
+}
+
+/// The IMAP server the user typed, or `imap.<domain>` when left empty. Only a
+/// bare domain is accepted: no port, path or scheme (the port is always 993).
+pub(super) fn resolve_host(email: &str, host: Option<&str>) -> Result<String, String> {
+    let host = match host.map(str::trim).filter(|host| !host.is_empty()) {
+        Some(host) => host.to_ascii_lowercase(),
+        None => imap_host(email),
+    };
+    if !is_domain(&host) {
+        return Err("IMAP 服务器地址无效，只填写域名，例如 imap.example.com。".into());
+    }
+    Ok(host)
 }

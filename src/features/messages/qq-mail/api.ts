@@ -26,6 +26,7 @@ export type MailSnapshot = {
   error: string | null;
 };
 
+// 每个邮箱各自推送；断开或首次连接失败的邮箱推送 configured: false、status: "disconnected"。
 export type MailEvent = { snapshot: MailSnapshot; newestId: string | null; windowVisible: boolean };
 
 // 与 qq_mail/mod.rs 中的 EVENT 一致。
@@ -33,16 +34,17 @@ export const QQ_MAIL_CHANGED_EVENT = "qq-mail-changed";
 
 export type QQMailCommand = "connect_qq_mail" | "set_qq_mail_enabled" | "refresh_qq_mail" | "disconnect_qq_mail";
 
+/** One snapshot per mailbox the backend knows, in no particular order. */
 export function getQQMailState() {
-  return invoke<MailSnapshot>("get_qq_mail_state");
+  return invoke<MailSnapshot[]>("get_qq_mail_state");
 }
 
 export function invokeQQMailCommand(command: QQMailCommand, args?: Record<string, unknown>) {
   return invoke<MailSnapshot>(command, args);
 }
 
-export function readQQMail(messageId: string) {
-  return invoke<MailContent>("read_qq_mail", { messageId });
+export function readQQMail(email: string, messageId: string) {
+  return invoke<MailContent>("read_qq_mail", { email, messageId });
 }
 
 export function listenQQMailChanged(handler: EventCallback<MailEvent>) {

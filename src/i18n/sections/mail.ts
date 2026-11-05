@@ -35,6 +35,10 @@ export type MailText = {
   emailPlaceholder: string;
   authorizationCode: string;
   authorizationPlaceholder: string;
+  imapHost: string;
+  imapHostPlaceholder: string;
+  accounts: string;
+  addAccount: string;
   connect: string;
   inbox: string;
   syncing: string;
@@ -88,6 +92,10 @@ export const zhCN: MailText = {
   emailPlaceholder: "QQ / 163 / 126 等邮箱地址",
   authorizationCode: "邮箱授权码",
   authorizationPlaceholder: "邮箱授权码",
+  imapHost: "IMAP 服务器",
+  imapHostPlaceholder: "IMAP 服务器（可留空，默认 imap.域名）",
+  accounts: "邮箱账户",
+  addAccount: "添加邮箱",
   connect: "连接",
   inbox: "收件箱最近 20 封邮件",
   syncing: "同步中",
@@ -141,6 +149,10 @@ export const en: MailText = {
   emailPlaceholder: "QQ, 163, 126 or other address",
   authorizationCode: "Mail authorization code",
   authorizationPlaceholder: "Mail authorization code",
+  imapHost: "IMAP server",
+  imapHostPlaceholder: "IMAP server (optional, imap.<domain>)",
+  accounts: "Mailboxes",
+  addAccount: "Add mailbox",
   connect: "Connect",
   inbox: "Latest 20 inbox messages",
   syncing: "Syncing",

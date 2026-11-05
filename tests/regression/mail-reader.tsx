@@ -37,9 +37,9 @@ mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   calls.push({ command, args });
   switch (command) {
-    case "get_qq_mail_state": return snapshot;
+    case "get_qq_mail_state": return snapshot.configured || snapshot.status !== "disconnected" ? [snapshot] : [];
     case "read_qq_mail": return readBehavior(String(args.messageId));
-    case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, email: null, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
+    case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
     case "request_qq_notification_access": return "allowed";
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: "listening", error: null, items: state === "empty" || state === "disconnected" ? [] : [{ id: "qq:1", title: "设计讨论组", body: "新版界面已准备好，方便时看一下。", createdAt: now - 30_000 }] };
@@ -87,7 +87,7 @@ try {
     await click("接收微信提醒");
     await click("QQ 通知");
     check(view! === "qq" && document.querySelector('[aria-label="QQ 最近通知"]'), "切回 QQ 显示自己的通知列表");
-    await click("QQ 邮箱");
+    await click("邮箱");
     const list = document.querySelector<HTMLDivElement>('.qq-mail-list')!;
     list.scrollTop = 120;
     list.dispatchEvent(new Event("scroll", { bubbles: true }));
@@ -115,7 +115,7 @@ try {
     check(view! === "qqMail" && !mail!.selectedMail && document.querySelector<HTMLDivElement>('.qq-mail-list')!.scrollTop === scrollBefore, "返回邮箱列表并保留滚动位置");
     check((document.activeElement as HTMLElement)?.dataset.mailId === "7:20", "返回列表时恢复原邮件的键盘焦点");
 
-    await click("QQ 邮箱");
+    await click("邮箱");
     readBehavior = async id => ({ id, contentType: "text/plain", content: '<img src=x onerror=alert(1)>\n纯文本邮件' });
     await click("阅读邮件：项目周报与下周安排，未读");
     check(document.querySelector(".qq-mail-body--text")?.textContent?.includes("<img") && !document.querySelector(".qq-mail-body img"), "纯文本邮件按文字显示，不解释为 HTML");
@@ -143,7 +143,7 @@ try {
     const late = deferred();
     readBehavior = () => late.promise;
     await act(async () => { void mail!.readMail(mail!.snapshot.items[0]); });
-    await act(async () => { snapshot = { ...snapshot, revision: ++revision, email: null, configured: false, status: "disconnected", enabled: false, items: [], unreadCount: null }; await emit("qq-mail-changed", { snapshot, newestId: null, windowVisible: true }); });
+    await act(async () => { snapshot = { ...snapshot, revision: ++revision, configured: false, status: "disconnected", enabled: false, items: [], unreadCount: null }; await emit("qq-mail-changed", { snapshot, newestId: null, windowVisible: true }); });
     await act(async () => { late.resolve({ id: "7:20", contentType: "text/plain", content: "断开后的敏感正文" }); await late.promise; });
     check(!mail!.selectedMail && !mail!.content && !document.body.textContent?.includes("断开后的敏感正文"), "断开连接后清空正文并忽略在途结果");
     const sanitized = sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p><img src="https://cdn.example.com/a.png" onerror="alert(1)" width="40"><img src="cid:inline@example"><img src="data:image/png;base64,iVBORw0KGgo=">', { allowRemoteImages: true });

@@ -54,7 +54,7 @@ mockIPC((command, payload) => {
   if (command === "set_wechat_reminders_enabled") return {
     revision: ++revision, enabled: args.enabled, status: "listening", pending: false, lastAttentionAt: null, error: null,
   };
-  if (command === "get_qq_mail_state") return mail;
+  if (command === "get_qq_mail_state") return [mail];
   if (command === "read_qq_mail") return { id: args.messageId, content: "本周项目进度已更新", contentType: "text/plain" };
 }, { shouldMockEvents: true });
 
