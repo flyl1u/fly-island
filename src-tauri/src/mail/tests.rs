@@ -566,6 +566,24 @@ fn body_client(
 }
 
 #[test]
+fn marking_read_selects_the_inbox_and_stores_seen_on_that_uid() {
+    let script = "* OK ready\r\na1 OK login\r\n* 3 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-WRITE] selected\r\na3 OK stored\r\n".to_string();
+    let (imap, output) = client(script);
+    let mut session = imap.login("user@qq.com", "test-secret").unwrap();
+    super::session::mark_seen(&mut session, "7:9").unwrap();
+    let sent = String::from_utf8_lossy(&output.lock().unwrap()).to_string();
+    assert!(sent.contains("a2 SELECT \"INBOX\""), "{sent}");
+    assert!(sent.contains("a3 UID STORE 9 +FLAGS.SILENT (\\Seen)"), "{sent}");
+
+    // An id from before the inbox was rebuilt flags nothing.
+    let stale = "* OK ready\r\na1 OK login\r\n* OK [UIDVALIDITY 8] valid\r\na2 OK [READ-WRITE] selected\r\n".to_string();
+    let (imap, output) = client(stale);
+    let mut session = imap.login("user@qq.com", "test-secret").unwrap();
+    assert!(super::session::mark_seen(&mut session, "7:9").is_err());
+    assert!(!String::from_utf8_lossy(&output.lock().unwrap()).contains("STORE"));
+}
+
+#[test]
 fn mail_ids_cannot_change_the_imap_query() {
     assert_eq!(parse_message_id("7:9").unwrap(), (7, 9));
     for id in [

@@ -10,6 +10,7 @@ export type MailText = {
   back: string;
   webHint: string;
   openWeb: string;
+  markRead: string;
   body: string;
   loading: string;
   emptyHtml: string;
@@ -83,6 +84,7 @@ export const zhCN: MailText = {
   back: "返回列表",
   webHint: "附件和回复请在网页中处理",
   openWeb: "在网页打开",
+  markRead: "标为已读",
   body: "邮件正文",
   loading: "正在加载正文",
   emptyHtml: "这封邮件没有可显示的文字，请在网页中查看。",
@@ -156,6 +158,7 @@ export const en: MailText = {
   back: "Back to list",
   webHint: "Open the website for attachments and replies",
   openWeb: "Open in browser",
+  markRead: "Mark as read",
   body: "Email body",
   loading: "Loading email",
   emptyHtml: "No text to display. View this email in your browser.",

@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../i18n";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Settings2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
@@ -81,7 +81,9 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
   const listRef = useRef<HTMLDivElement>(null);
   const listScroll = useRef(0);
   const returnFocus = useRef<string | null>(null);
-  const { selectedMail, content, reading, readError, readMail, closeReader, openLink } = controller;
+  const { selectedMail, content, reading, readError, readMail, closeReader, openLink, readerAccount, markRead } = controller;
+  // The open mail as listed now, so the button goes once it is marked read here or elsewhere.
+  const readerStillUnread = Boolean(selectedMail && mailboxes.find((mailbox) => mailbox.email === readerAccount)?.items.find((item) => item.id === selectedMail.id)?.unread);
   const [remoteImages, setRemoteImages] = useState(loadRemoteImagePreference);
   const html = useMemo(() => content?.contentType === "text/html" ? sanitizeMailHtml(content.content, { allowRemoteImages: remoteImages }) : "", [content, remoteImages]);
   const blockedImages = useMemo(() => content?.contentType === "text/html" && !remoteImages ? countRemoteImages(content.content) : 0, [content, remoteImages]);
@@ -115,6 +117,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
       <header className="qq-panel__header">
         <button className="message-action qq-mail-back" type="button" onClick={onBack ?? closeReader}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.back}</button>
         {content?.contentType === "text/html" && <button className="icon-button" type="button" aria-label={t.mail.remoteImages} aria-pressed={remoteImages} title={remoteImages ? t.mail.remoteImagesOn : t.mail.remoteImagesOff} onClick={toggleRemoteImages}>{remoteImages ? <Image size={15} strokeWidth={1.8} /> : <ImageOff size={15} strokeWidth={1.8} />}</button>}
+        {readerStillUnread ? <button className="message-action" type="button" disabled={busy} onClick={() => { if (readerAccount && selectedMail) void markRead(readerAccount, selectedMail.id); }}><MailCheck size={14} strokeWidth={1.8} />{t.mail.markRead}</button> : null}
         <button className="message-action" type="button" title={t.mail.webHint} onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
       </header>
       {actionError && <p className="qq-panel__error" role="alert">{actionError}</p>}

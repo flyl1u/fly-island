@@ -108,13 +108,15 @@ export function useMailAccounts({ restore, onSnapshot, onEvent }: {
   }, [mailboxes, setEnabled]);
   const refresh = useCallback((email: string) => run("refresh_qq_mail", { email }), [run]);
   const disconnect = useCallback((email: string) => run("disconnect_qq_mail", { email }), [run]);
+  /** Marks a message read on the server; reading in the island leaves it unread. */
+  const markRead = useCallback((email: string, messageId: string) => run("mark_qq_mail_read", { email, messageId }), [run]);
   const openHelp = useCallback(async () => {
     try { await openUrl("https://service.mail.qq.com/"); }
     catch { setActionError(t.mail.helpFailed); }
   }, [t]);
 
   return {
-    mailboxes, busy, actionError, setActionError, connect, setEnabled, setAllEnabled, refresh, disconnect, openHelp,
+    mailboxes, busy, actionError, setActionError, connect, setEnabled, setAllEnabled, refresh, disconnect, markRead, openHelp,
     unreadTotal: totalUnread(mailboxes),
     anyConfigured: mailboxes.some((mailbox) => mailbox.configured),
     anyReceiving: mailboxes.some((mailbox) => mailbox.configured && mailbox.enabled),

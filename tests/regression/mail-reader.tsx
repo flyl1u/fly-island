@@ -40,6 +40,7 @@ mockIPC((command, payload) => {
     case "get_qq_mail_state": return snapshot.configured || snapshot.status !== "disconnected" ? [snapshot] : [];
     case "read_qq_mail": return readBehavior(String(args.messageId));
     case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
+    case "mark_qq_mail_read": snapshot = { ...snapshot, revision: ++revision, unreadCount: Math.max(0, (snapshot.unreadCount ?? 0) - 1), items: snapshot.items.map(item => item.id === args.messageId ? { ...item, unread: false } : item) }; return snapshot;
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
     case "request_qq_notification_access": return "allowed";
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: "listening", error: null, items: state === "empty" || state === "disconnected" ? [] : [{ id: "qq:1", title: "设计讨论组", body: "新版界面已准备好，方便时看一下。", createdAt: now - 30_000 }] };
@@ -139,6 +140,17 @@ try {
     await click("阅读邮件：工作进展 1，未读");
     await act(async () => { stale.resolve({ id: "7:20", contentType: "text/plain", content: "过期的第一封正文" }); await stale.promise; });
     check(mail!.selectedMail?.id === "7:19" && mail!.content?.content === "第二封正文", "快速返回和切换后，旧请求不会覆盖当前邮件");
+
+    await click("返回列表");
+    readBehavior = async id => ({ id, contentType: "text/plain", content: "第三封正文" });
+    await click("阅读邮件：工作进展 2，未读");
+    check(!calls.some(call => call.command === "mark_qq_mail_read"), "只是阅读不会把邮件标为已读");
+    await click("标为已读");
+    check(calls.some(call => call.command === "mark_qq_mail_read" && call.args.email === "demo@qq.com" && call.args.messageId === "7:18")
+      && ![...document.querySelectorAll("button")].some(button => button.textContent === "标为已读")
+      && mail!.snapshot.unreadCount === 2,
+      "标为已读发给这封邮件所在的邮箱，之后按钮消失、未读数减一");
+    await click("返回列表");
 
     const late = deferred();
     readBehavior = () => late.promise;

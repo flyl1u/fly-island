@@ -32,7 +32,7 @@ export type MailEvent = { snapshot: MailSnapshot; newestId: string | null; windo
 // 与 mail/mod.rs 中的 EVENT 一致。
 export const MAIL_CHANGED_EVENT = "qq-mail-changed";
 
-export type MailCommand = "connect_qq_mail" | "set_qq_mail_enabled" | "refresh_qq_mail" | "disconnect_qq_mail";
+export type MailCommand = "connect_qq_mail" | "set_qq_mail_enabled" | "refresh_qq_mail" | "disconnect_qq_mail" | "mark_qq_mail_read";
 
 /** One snapshot per mailbox the backend knows, in no particular order. */
 export function getMailState() {

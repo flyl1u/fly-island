@@ -453,6 +453,21 @@ pub(super) fn parse_header(raw: &[u8]) -> (String, String) {
     )
 }
 
+/// Marks one message read on the server (`\Seen`). Opens the inbox writable with
+/// SELECT, unlike reading, and checks UIDVALIDITY so an id from an older listing
+/// can never flag a different message.
+pub(super) fn mark_seen<T: Read + Write>(session: &mut Session<T>, message_id: &str) -> Result<(), String> {
+    let (validity, uid) = super::content::parse_message_id(message_id)?;
+    let mailbox = session.select("INBOX").map_err(|_| "无法打开收件箱，请稍后重试。")?;
+    if mailbox.uid_validity != Some(validity) {
+        return Err("收件箱已更新，请刷新列表后重试。".into());
+    }
+    session
+        .uid_store(uid.to_string(), "+FLAGS.SILENT (\\Seen)")
+        .map_err(|_| "无法把邮件标为已读，请稍后重试。")?;
+    Ok(())
+}
+
 pub(super) fn display_header(value: &str, fallback: &str) -> String {
     let value = value.split_whitespace().collect::<Vec<_>>().join(" ");
     if value.is_empty() {

@@ -12,7 +12,7 @@ use super::accounts::next_revision;
 use super::content::fetch_content;
 use super::credentials::{credential, read_secret};
 use super::session::{
-    interrupt_idle, open_session, wait_for_mail, Cursor, Inbox, MailFailure, MailWake,
+    interrupt_idle, mark_seen, open_session, wait_for_mail, Cursor, Inbox, MailFailure, MailWake,
     SyncConnection,
 };
 use super::{MailContent, MailSnapshot, MailStatus, EVENT};
@@ -311,6 +311,33 @@ impl MailService {
         let _ = session.logout();
         current()?;
         result
+    }
+
+    /// Marks a message read on the server, then shows it read at once instead of
+    /// waiting for the next sync.
+    pub(super) fn mark_read(&self, generation: u64, email: &str, message_id: &str) -> Result<MailSnapshot, String> {
+        let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
+        let mut session =
+            open_session(&self.host(), email, &secret).map_err(|failure| failure.message.to_string())?;
+        let result = mark_seen(&mut session, message_id);
+        let _ = session.logout();
+        result?;
+        let mut state = self.lock()?;
+        if state.generation != generation {
+            return Err("邮箱连接已改变，请刷新收件箱。".into());
+        }
+        let Some(item) = state.snapshot.items.iter_mut().find(|item| item.id == message_id) else {
+            return Ok(state.snapshot.clone());
+        };
+        if !item.unread {
+            return Ok(state.snapshot.clone());
+        }
+        item.unread = false;
+        state.snapshot.unread_count = state.snapshot.unread_count.map(|count| count.saturating_sub(1));
+        let snapshot = state.changed();
+        drop(state);
+        self.publish(snapshot.clone(), None);
+        Ok(snapshot)
     }
 }
 

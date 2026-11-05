@@ -248,6 +248,27 @@ pub async fn read_qq_mail(email: String, message_id: String) -> Result<MailConte
         .map_err(|_| "无法读取邮件。".to_string())?
 }
 
+/// Marks a listed message read on the server; reading in the island never does.
+#[tauri::command]
+pub async fn mark_qq_mail_read(email: String, message_id: String) -> Result<MailSnapshot, String> {
+    parse_message_id(&message_id)?;
+    let email = normalize_email(&email)?;
+    let service = accounts::find(&email)?;
+    let generation = {
+        let state = service.lock()?;
+        if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
+            return Err("请先连接邮箱。".into());
+        }
+        if !state.snapshot.items.iter().any(|item| item.id == message_id) {
+            return Err("邮件已不在最近列表中，请刷新收件箱。".into());
+        }
+        state.generation
+    };
+    tauri::async_runtime::spawn_blocking(move || service.mark_read(generation, &email, &message_id))
+        .await
+        .map_err(|_| "无法把邮件标为已读。".to_string())?
+}
+
 #[tauri::command]
 pub async fn disconnect_qq_mail(email: String) -> Result<MailSnapshot, String> {
     let email = normalize_email(&email)?;
@@ -308,6 +329,7 @@ macro_rules! tauri_commands {
             crate::mail::set_qq_mail_enabled,
             crate::mail::refresh_qq_mail,
             crate::mail::read_qq_mail,
+            crate::mail::mark_qq_mail_read,
             crate::mail::disconnect_qq_mail,
         ] $($rest)*)
     };
