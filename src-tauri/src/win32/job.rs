@@ -159,15 +159,33 @@ mod tests {
         assert!(ids.len() >= 2, "cmd and ping are both in the job: {ids:?}");
         assert!(job.usage().is_some_and(|usage| usage.memory_bytes > 0));
         drop(job);
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        // Ending a process tree is asynchronous; under a parallel test run it can take
+        // well over the half second this used to wait, so poll with a generous deadline.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        let mut ended = || child_ended(&mut child) && ids.iter().all(|id| !alive(*id));
+        while !ended() && std::time::Instant::now() < deadline {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
         assert!(child.try_wait().expect("wait").is_some(), "cmd ended with the job");
-        for id in ids {
-            assert!(!alive(id), "process {id} ended with the job");
+        for id in &ids {
+            assert!(!alive(*id), "process {id} ended with the job");
         }
     }
 
+    fn child_ended(child: &mut std::process::Child) -> bool {
+        child.try_wait().is_ok_and(|status| status.is_some())
+    }
+
+    /// Whether a process with exactly this id is running. Matches the PID column, not
+    /// any digits in the output (a memory column like "14,927 K" contains "4927").
     fn alive(process_id: u32) -> bool {
-        let output = Command::new("tasklist").args(["/FI", &format!("PID eq {process_id}"), "/NH"]).output().expect("tasklist");
-        String::from_utf8_lossy(&output.stdout).contains(&process_id.to_string())
+        let output = Command::new("tasklist")
+            .args(["/FI", &format!("PID eq {process_id}"), "/FO", "CSV", "/NH"])
+            .output()
+            .expect("tasklist");
+        let wanted = format!("\"{process_id}\"");
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .any(|line| line.split(',').nth(1) == Some(wanted.as_str()))
     }
 }
