@@ -11,7 +11,7 @@ const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024;
 const NOTIFY_PER_MINUTE = 6;
 /** Methods only plugins on API version 2 have; version 1 gets "unknown method". */
-const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "storage.get", "storage.set", "storage.delete", "storage.keys"]);
+const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "webview.postMessage", "storage.get", "storage.set", "storage.delete", "storage.keys"]);
 
 export class RpcError extends Error {
   constructor(code, message, status) {
@@ -73,6 +73,14 @@ function viewMethod(host, method, params) {
     return {};
   }
   if (!views.includes(params?.viewId)) fail(404, `Unknown view "${params?.viewId}".`);
+  if (method === "webview.postMessage") {
+    const view = host.manifest.contributes.views.find((item) => item.id === params.viewId);
+    if (view.template !== "webview") fail(400, `The plugin has no webview page "${params.viewId}".`);
+    if (size({ type: "message", message: params.message ?? null }) > MAX_MODEL_BYTES) fail(400, "The message is larger than 256 KB.");
+    const shown = host.openWebviews.has(params.viewId);
+    if (shown) host.webviewMessages.push({ viewId: params.viewId, message: structuredClone(params.message ?? null) });
+    return { shown };
+  }
   if (method === "view.update") {
     if (params.model === null || typeof params.model !== "object" || Array.isArray(params.model)) fail(400, '"model" must be an object.');
     if (size(params.model) > MAX_MODEL_BYTES) fail(413, "The model is larger than 256 KB.");

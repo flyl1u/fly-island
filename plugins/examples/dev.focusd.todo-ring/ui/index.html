@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Todo progress ring</title>
+    <link rel="stylesheet" href="ring.css" />
+  </head>
+  <body>
+    <main class="ring">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ring__track" cx="60" cy="60" r="50" />
+        <circle class="ring__value" cx="60" cy="60" r="50" pathLength="100" />
+      </svg>
+      <div class="ring__text">
+        <strong id="percent">–</strong>
+        <span id="counts"></span>
+      </div>
+      <button id="refresh" type="button"></button>
+    </main>
+    <script src="ring.js"></script>
+  </body>
+</html>

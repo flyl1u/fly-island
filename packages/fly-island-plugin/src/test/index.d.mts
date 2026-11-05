@@ -51,6 +51,10 @@ export class MockHost {
   readonly logs: string[];
   readonly views: Map<string, ViewModel>;
   readonly statuses: Map<string, { text: string; tooltip?: string; tone?: string }>;
+  /** Webview pages on screen (viewVisible opens and closes them). */
+  readonly openWebviews: Set<string>;
+  /** Messages the plugin sent to open webview pages. */
+  readonly webviewMessages: { viewId: string; message: unknown }[];
   readonly notifications: { title: string; body?: string; actions?: { id: string }[] }[];
   info: unknown[];
   keepAlive: string | null;
@@ -68,6 +72,8 @@ export class MockHost {
   /** Sends an island event if the plugin subscribed to it; returns whether it did. */
   publish(name: string, payload?: unknown): boolean;
   changeSettings(values: Record<string, unknown>): void;
+  /** Sends what the plugin's webview page would post (the webview.message notification). */
+  webviewMessage(viewId: string, message: unknown): void;
   viewVisible(viewId: string, visible?: boolean): void;
   viewAction(viewId: string, actionId: string, extra?: { itemId?: string; checked?: boolean }): void;
   viewSubmit(viewId: string, values: Record<string, unknown>): void;

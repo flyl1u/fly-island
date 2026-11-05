@@ -295,6 +295,9 @@ pub struct PluginViewEntry {
     title: LocalizedText,
     icon: String,
     template: ViewTemplate,
+    /// Webview pages only: their height on the island in pixels.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    height: Option<u32>,
     status: RuntimeStatus,
     error: Option<String>,
 }
@@ -341,6 +344,7 @@ pub(super) fn snapshot() -> Result<PluginViewsSnapshot, String> {
                 title: view.title.clone(),
                 icon: view.icon.clone(),
                 template: view.template,
+                height: (view.template == ViewTemplate::Webview).then(|| super::webviews::page_height(view.height)),
                 status: runtime.status,
                 error: runtime.error.clone(),
             });

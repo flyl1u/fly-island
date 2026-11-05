@@ -6,7 +6,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 export type ViewLocalizedText = { "zh-CN": string; en: string };
 
 // 与 src-tauri/src/plugin_host/view_specs.rs 中的 ViewTemplate 对应。
-export type PluginViewTemplate = "list" | "detail" | "form" | "status";
+export type PluginViewTemplate = "list" | "detail" | "form" | "status" | "webview";
 
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
 export type PluginViewRunState = "stopped" | "starting" | "running" | "restarting" | "crashed" | "idle";
@@ -19,9 +19,24 @@ export type PluginViewEntry = {
   title: ViewLocalizedText;
   icon: string;
   template: PluginViewTemplate;
+  /** Webview pages only: their height on the island in pixels. */
+  height?: number;
   status: PluginViewRunState;
   error: string | null;
 };
+
+// 与 src-tauri/src/plugin_host/webviews.rs 中的 WebviewBounds 对应（窗口内的 CSS 像素）。
+export type PluginWebviewBounds = { x: number; y: number; width: number; height: number };
+
+/** Shows a webview page over `bounds` of the island window (creating it the first time, in `locale`) or moves it there. */
+export function showPluginWebview(id: string, viewId: string, bounds: PluginWebviewBounds, locale: string) {
+  return invoke<void>("show_plugin_webview", { id, viewId, bounds, locale });
+}
+
+/** Closes a webview page; the state it saved is kept for the next time. */
+export function hidePluginWebview(id: string, viewId: string) {
+  return invoke<void>("hide_plugin_webview", { id, viewId });
+}
 
 // 与 src-tauri/src/plugin_host/views.rs 中的 PluginStatusEntry 对应。
 export type PluginStatusEntry = {

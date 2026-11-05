@@ -140,6 +140,10 @@ export function createPlugin(options = {}) {
       onAction: (viewId, handler) => forView("view.action", viewId, handler),
       onSubmit: (viewId, handler) => forView("view.submit", viewId, (params) => handler(params.values ?? {})),
       onSearch: (viewId, handler) => forView("view.search", viewId, (params) => handler(String(params.query ?? ""))),
+      /** Sends a message to a webview page (template "webview"); resolves to { shown }: false when the page is closed. */
+      postMessage: (viewId, message) => call("webview.postMessage", { viewId, message }),
+      /** Messages a webview page sends with acquireFocusdApi().postMessage. */
+      onMessage: (viewId, handler) => forView("webview.message", viewId, (params) => handler(params.message)),
     },
     status: {
       /** Sets the text (max 24 characters) of one of the plugin's statusItems; "" clears it. */

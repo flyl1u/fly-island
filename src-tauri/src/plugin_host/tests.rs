@@ -90,6 +90,7 @@ fn the_host_matches_the_protocol_description() {
             "events.subscribe",
             "events.unsubscribe",
             "view.update",
+            "webview.postMessage",
             "view.patch",
             "status.update",
             "storage.get",
@@ -654,7 +655,8 @@ fn views_and_status_items_are_checked_for_version_2_and_dropped_for_version_1() 
     assert!(reason(json!([board.clone(), second, third]), json!([])).contains("at most 2"));
     let mut bad_template = board.clone();
     bad_template["template"] = json!("webview");
-    assert!(reason(json!([bad_template]), json!([])).contains("webview"));
+    // A webview page needs its HTML file.
+    assert!(reason(json!([bad_template]), json!([])).contains("entry"));
     assert!(reason(json!([]), json!([{ "id": "t", "priority": 101 }])).contains("priority"));
     assert!(reason(json!([]), json!([{ "id": "a b" }])).contains("a b"));
 }
@@ -883,5 +885,81 @@ mod market_trust_tests {
         assert_eq!(entries[0].publisher(), "someone");
         assert!(entries[0].is_newer_than("1.0.0"));
         assert!(!entries[0].is_newer_than("99.0.0"));
+    }
+}
+
+mod webview_tests {
+    use serde_json::json;
+    use std::fs;
+
+    use super::super::view_specs::{check, is_valid_entry};
+    use super::super::webviews::{content_type, init_script, may_navigate, origin, parse_page_message, resource_path, PageMessage, CSP};
+
+    #[test]
+    fn webview_views_need_a_safe_entry_and_others_take_none() {
+        let view = |extra: serde_json::Value| {
+            let mut view = json!({ "id": "page", "title": { "zh-CN": "页", "en": "Page" }, "template": "webview" });
+            view.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+            check(&json!([view]), &serde_json::Value::Null, 2)
+        };
+        let (views, _) = view(json!({ "entry": "ui/index.html", "height": 200 })).unwrap();
+        assert_eq!(views[0].entry.as_deref(), Some("ui/index.html"));
+        assert!(view(json!({})).is_err());
+        assert!(view(json!({ "entry": "ui/index.html", "height": 900 })).is_err());
+        for bad in ["../x.html", "ui/../x.html", "/x.html", "C:/x.html", r"ui\x.html", "x.js", "ui//x.html", "x.html?a"] {
+            assert!(!is_valid_entry(bad), "{bad}");
+            assert!(view(json!({ "entry": bad })).is_err(), "{bad}");
+        }
+        let list = json!([{ "id": "l", "title": { "zh-CN": "列", "en": "List" }, "template": "list", "entry": "a.html" }]);
+        assert!(check(&list, &serde_json::Value::Null, 2).is_err());
+    }
+
+    #[test]
+    fn pages_load_only_files_under_their_folder() {
+        let base = std::env::temp_dir().join(format!("focusd-webview-test-{}", std::process::id()));
+        let root = base.join("plugin").join("ui");
+        fs::create_dir_all(root.join("img")).unwrap();
+        fs::write(root.join("index.html"), "<p>hi</p>").unwrap();
+        fs::write(root.join("img").join("a b.png"), [1u8]).unwrap();
+        fs::write(base.join("plugin").join("focusd-plugin.json"), "{}").unwrap();
+        let origin = origin("dev.example.page");
+        assert_eq!(origin, "https://dev.example.page.plugin.focusd.invalid");
+        let get = |path: &str| resource_path(&root, &origin, &format!("{origin}{path}"));
+        assert!(get("/index.html?x=1#top").is_some());
+        assert!(get("/img/a%20b.png").is_some());
+        for bad in ["/../focusd-plugin.json", "/%2e%2e/focusd-plugin.json", "/img/..%2F..%2Ffocusd-plugin.json", "/img%5C..%5C..%5Cfocusd-plugin.json", "/", "/missing.html", "//index.html", "/%zz"] {
+            assert!(get(bad).is_none(), "{bad}");
+        }
+        assert!(resource_path(&root, &origin, "https://dev.example.page.plugin.focusd.invalid.evil.com/index.html").is_none());
+        assert!(resource_path(&root, &origin, "http://tauri.localhost/index.html").is_none());
+        assert_eq!(content_type(std::path::Path::new("a/B.JS")), "text/javascript; charset=utf-8");
+        assert_eq!(content_type(std::path::Path::new("a.exe")), "application/octet-stream");
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn pages_stay_on_their_origin() {
+        let origin = origin("dev.example.page");
+        assert!(may_navigate(&origin, &format!("{origin}/other.html"), false));
+        assert!(!may_navigate(&origin, &format!("{origin}.evil.com/"), false));
+        assert!(!may_navigate(&origin, "https://example.com/?leak=1", false));
+        assert!(!may_navigate(&origin, "http://ipc.localhost/", true));
+        assert!(!may_navigate(&origin, "about:blank", false));
+        assert!(may_navigate(&origin, "about:srcdoc", true));
+        assert!(!may_navigate(&origin, "data:text/html,hi", true));
+        assert!(CSP.contains("default-src 'none'") && CSP.contains("connect-src 'self'") && CSP.contains("form-action 'none'"));
+    }
+
+    #[test]
+    fn page_messages_are_typed_and_limited() {
+        assert_eq!(parse_page_message(r#"{"type":"message","message":{"a":1}}"#), Ok(PageMessage::Message(json!({ "a": 1 }))));
+        assert_eq!(parse_page_message(r#"{"type":"state","state":[1]}"#), Ok(PageMessage::State(json!([1]))));
+        assert!(parse_page_message(r#"{"type":"invoke","cmd":"get_todos_state"}"#).is_err());
+        assert!(parse_page_message("not json").is_err());
+        let big = json!({ "type": "state", "state": "x".repeat(70 * 1024) }).to_string();
+        assert!(parse_page_message(&big).is_err());
+        let script = init_script(&json!({ "done": 1 }), "fr");
+        assert!(script.contains(r#"let state = {"done":1};"#) && script.contains(r#"locale: "en""#));
+        assert!(script.contains("RTCPeerConnection") && !script.contains("__STATE__"));
     }
 }

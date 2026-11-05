@@ -51,12 +51,14 @@ mod store;
 #[cfg(test)]
 mod tests;
 mod updates;
+mod webviews;
 
 pub use commands::*;
 // The Tauri commands of development mode and updates (the macro needs its
 // generated items re-exported too).
 pub use dev::*;
 pub use updates::*;
+pub use webviews::*;
 pub(crate) use dev::answer_local_api as answer_dev_api;
 
 use std::{
@@ -181,6 +183,8 @@ macro_rules! tauri_commands {
             crate::plugin_host::revoke_plugin_sensitive_permission,
             crate::plugin_host::list_plugin_views,
             crate::plugin_host::set_plugin_view_visible,
+            crate::plugin_host::show_plugin_webview,
+            crate::plugin_host::hide_plugin_webview,
             crate::plugin_host::run_plugin_view_action,
             crate::plugin_host::submit_plugin_view,
             crate::plugin_host::search_plugin_view,

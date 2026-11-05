@@ -7,6 +7,7 @@ import { DetailTemplate } from "./templates/DetailTemplate";
 import { FormTemplate } from "./templates/FormTemplate";
 import { ListTemplate } from "./templates/ListTemplate";
 import { StatusTemplate } from "./templates/StatusTemplate";
+import { WebviewTemplate } from "./templates/WebviewTemplate";
 import { usePluginViewModel } from "./usePluginViewModel";
 import "./PluginViewPage.css";
 
@@ -31,6 +32,7 @@ export function PluginViewPage({
   const stopped = entry.status === "crashed" || entry.status === "stopped";
   // Showing the page also starts an idle (on-demand) plugin, so it counts as shown too.
   const { model, loaded } = usePluginViewModel(entry.pluginId, entry.viewId, isOpen && !stopped);
+  const webview = entry.template === "webview";
   const [restarting, setRestarting] = useState(false);
   const Icon = viewIcon(entry.icon);
   const title = entry.title[locale];
@@ -57,6 +59,9 @@ export function PluginViewPage({
     );
   } else if (!running) {
     body = <p className="plugin-view__state">{t.pluginViews.starting}</p>;
+  } else if (webview) {
+    // The plugin's own page: it talks to its plugin directly and needs no model.
+    body = <WebviewTemplate pluginId={entry.pluginId} viewId={entry.viewId} active={isOpen} />;
   } else if (!loaded || model === null) {
     body = <p className="plugin-view__state">{t.pluginViews.waiting}</p>;
   } else if (entry.template === "list") {

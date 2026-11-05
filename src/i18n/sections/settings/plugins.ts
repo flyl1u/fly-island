@@ -116,6 +116,8 @@ export type SettingsPluginsText = {
     hideDetails: string;
     repository: string;
     reportIssue: string;
+    customUi: string;
+    customUiHint: string;
   };
   /** Plugin updates and trusted publishers on the plugins page (P11). */
   updates: {
@@ -282,6 +284,8 @@ export const zhCN: SettingsPluginsText = {
     hideDetails: "收起",
     repository: "源码仓库",
     reportIssue: "报告问题",
+    customUi: "自定义界面",
+    customUiHint: "这个插件在岛上显示自己写的网页。网页只能和插件自己通信，不能联网，也调用不了岛屿的功能。",
   },
   updates: {
     title: "更新",
@@ -447,6 +451,8 @@ export const en: SettingsPluginsText = {
     hideDetails: "Less",
     repository: "Source code",
     reportIssue: "Report a problem",
+    customUi: "Custom UI",
+    customUiHint: "This plugin shows its own web page on the island. The page can only talk to the plugin, cannot go online and cannot use the island's features.",
   },
   updates: {
     title: "Updates",

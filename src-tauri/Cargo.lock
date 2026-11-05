@@ -1416,6 +1416,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tiny_http",
+ "webview2-com",
  "window-vibrancy",
  "windows",
  "windows-future",

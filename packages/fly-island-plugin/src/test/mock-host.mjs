@@ -66,6 +66,9 @@ export class MockHost extends EventEmitter {
     this.logs = [];
     this.views = new Map();
     this.statuses = new Map();
+    // Webview pages open now (viewVisible) and what the plugin sent them.
+    this.openWebviews = new Set();
+    this.webviewMessages = [];
     this.notifications = [];
     this.info = [];
     this.keepAlive = null;
@@ -184,7 +187,14 @@ export class MockHost extends EventEmitter {
   }
 
   viewVisible(viewId, visible = true) {
+    if (visible) this.openWebviews.add(viewId);
+    else this.openWebviews.delete(viewId);
     this.send("view.visible", { viewId, visible });
+  }
+
+  /** Sends what the plugin's webview page would post with acquireFocusdApi().postMessage. */
+  webviewMessage(viewId, message) {
+    this.send("webview.message", { viewId, message });
   }
 
   viewAction(viewId, actionId, extra = {}) {

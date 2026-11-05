@@ -90,6 +90,22 @@ function checkContributions(manifest, errors, warnings) {
   }
 }
 
+/** Webview views need an entry page that exists; other templates take neither entry nor height. */
+function checkWebviews(dir, manifest, errors) {
+  for (const view of manifest.contributes?.views ?? []) {
+    if (view?.template !== "webview") {
+      if (view?.entry !== undefined || view?.height !== undefined) errors.push(`View "${view.id}": entry and height are only for the webview template.`);
+      continue;
+    }
+    if (typeof view.entry !== "string") {
+      errors.push(`View "${view.id}" needs an entry: the .html page inside the plugin folder.`);
+      continue;
+    }
+    const full = path.join(dir, view.entry);
+    if (!existsSync(full) || !statSync(full).isFile()) errors.push(`View "${view.id}": the page "${view.entry}" does not exist.`);
+  }
+}
+
 function checkRuntime(dir, manifest, rules, errors) {
   const runtime = manifest.runtime;
   if (runtime?.type !== "process" || typeof runtime.command !== "string") return;
@@ -134,6 +150,7 @@ export function validatePlugin(dir, { allowExperimental = false } = {}) {
 
   const rules = loadIgnore(dir);
   checkRuntime(dir, manifest, rules, errors);
+  checkWebviews(dir, manifest, errors);
   checkContributions(manifest, errors, warnings);
 
   const packed = listFiles(dir).filter(([name]) => !isIgnored(rules, name));

@@ -159,6 +159,10 @@ export interface Plugin {
     onAction(viewId: string, handler: Handler<ViewActionParams>): Off;
     onSubmit(viewId: string, handler: Handler<Record<string, unknown>>): Off;
     onSearch(viewId: string, handler: Handler<string>): Off;
+    /** Sends a message to a webview page; `shown` is false when the page is closed (the message is dropped). */
+    postMessage(viewId: string, message: unknown): Promise<{ shown: boolean }>;
+    /** Messages a webview page sends with `acquireFocusdApi().postMessage`. */
+    onMessage(viewId: string, handler: Handler<unknown>): Off;
   };
   status: {
     update(itemId: string, text: string, options?: { tooltip?: string; tone?: Tone }): Promise<unknown>;

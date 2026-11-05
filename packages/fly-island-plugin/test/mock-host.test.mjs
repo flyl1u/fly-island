@@ -35,6 +35,7 @@ plugin.onCommand("view", async () => {
   await attempt("unknown", () => plugin.views.update("nope", {}));
 });
 plugin.views.onAction("board", (params) => report("action", params));
+plugin.views.onMessage("page", async (message) => report("posted", await plugin.views.postMessage("page", { echo: message })));
 plugin.onCommand("notify", async () => {
   for (let index = 0; index < 7; index += 1) await attempt("notify", () => plugin.notify("Hi " + index));
 });
@@ -73,7 +74,7 @@ test("the mock host runs a plugin like the island does", async () => {
     const ready = await logged(host, "ready");
     assert.equal(ready.pluginId, "me.mock");
     assert.equal(ready.activationEvent, "onCommand:todos");
-    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status"]);
+    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status", "webview"]);
     assert.deepEqual(ready.settings, { repo: "a/b", extra: true });
     await host.waitFor((state) => state.subscriptions.has("todos.changed"));
 
@@ -109,6 +110,24 @@ test("the mock host runs a plugin like the island does", async () => {
     rmSync(path.dirname(dir), { recursive: true, force: true });
   }
   assert.ok(host.logs.includes("bye"));
+});
+
+test("a webview page and its plugin exchange messages while the page is open", async () => {
+  const page = { id: "page", title: { "zh-CN": "页面", en: "Page" }, template: "webview", entry: "ui/index.html" };
+  const dir = makePlugin({ ...manifest, contributes: { ...manifest.contributes, views: [...manifest.contributes.views, page] } });
+  const host = startMockHost(dir);
+  try {
+    await logged(host, "ready");
+    host.webviewMessage("page", { type: "ready" });
+    assert.deepEqual(await logged(host, "posted"), { shown: false });
+    host.viewVisible("page");
+    host.webviewMessage("page", { type: "again" });
+    await host.waitFor((state) => state.webviewMessages.length === 1);
+    assert.deepEqual(host.webviewMessages, [{ viewId: "page", message: { echo: { type: "again" } } }]);
+  } finally {
+    await host.stop();
+    rmSync(path.dirname(dir), { recursive: true, force: true });
+  }
 });
 
 test("API version 1 plugins get no version 2 methods", async () => {

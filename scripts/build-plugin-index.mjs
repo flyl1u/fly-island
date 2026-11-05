@@ -66,6 +66,8 @@ export function indexEntry(manifest, fileName, zip, details = {}) {
     homepage: manifest.homepage ?? "",
     permissions: [...new Set(manifest.permissions ?? [])].sort(),
     runtime: runtimeRequirement(manifest.runtime),
+    // Pages with the plugin's own HTML (P8); the market shows them as custom UI.
+    ...((manifest.contributes?.views ?? []).some((view) => view.template === "webview") ? { webview: true } : {}),
     ...details,
     download: { url: `${MARKET_BASE_URL}/packages/${fileName}`, sha256: sha256(zip), size: zip.length },
   };

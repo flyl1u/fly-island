@@ -64,6 +64,11 @@ export function MarketPluginItem({
             {official ? <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" /> : null}
             {official ? `${text.publisher(publisher)} · ${text.official}` : text.publisher(publisher)}
           </span>
+          {plugin.webview ? (
+            <span className="plugin-market__tag plugin-market__tag--custom" title={text.customUiHint}>
+              {text.customUi}
+            </span>
+          ) : null}
           {plugin.categories.filter(isCategory).map((category) => (
             <span key={category} className="plugin-market__tag">
               {text.category[category]}

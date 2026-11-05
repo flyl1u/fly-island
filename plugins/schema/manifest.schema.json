@@ -117,7 +117,7 @@
           }
         },
         "views": {
-          "description": "apiVersion 2: pages on the expanded island, drawn by the island from a template; the plugin fills them with view.update / view.patch. Ignored for apiVersion 1.",
+          "description": "apiVersion 2: pages on the expanded island, drawn by the island from a template; the plugin fills them with view.update / view.patch. Template webview shows the plugin's own HTML instead (entry), which talks to the plugin with webview.postMessage / webview.message. Ignored for apiVersion 1.",
           "type": "array",
           "maxItems": 2,
           "items": {
@@ -127,7 +127,9 @@
               "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
               "title": { "$ref": "#/$defs/localizedText" },
               "icon": { "description": "A lucide icon name from this list; default puzzle.", "enum": ["list", "list-checks", "list-todo", "kanban", "square-check", "timer", "clock", "calendar", "bell", "book-open", "bookmark", "star", "heart", "folder", "file-text", "git-pull-request", "bug", "code", "terminal", "cloud", "sun", "music", "newspaper", "rss", "mail", "message-square", "globe", "link", "activity", "chart-column", "zap", "flame", "coffee", "puzzle", "gauge", "target", "trophy", "rocket", "sparkles", "inbox", "tag", "hash", "search", "house", "notebook", "circle-check", "info"] },
-              "template": { "enum": ["list", "detail", "form", "status"] }
+              "template": { "enum": ["list", "detail", "form", "status", "webview"] },
+              "entry": { "description": "Template webview only (required there): the page, a relative path inside the plugin folder ending in .html. The page can load files from its folder and below, nothing else.", "type": "string", "pattern": "^(?!/)(?!.*(^|/)\\.{1,2}(/|$))[^\\\\:?#%]+\\.html?$" },
+              "height": { "description": "Template webview only: the page's height on the island in pixels; default 240.", "type": "integer", "minimum": 80, "maximum": 480 }
             }
           }
         },

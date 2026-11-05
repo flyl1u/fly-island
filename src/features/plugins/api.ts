@@ -148,6 +148,8 @@ export type MarketPlugin = {
   /** "owner/name" of the plugin's repository. */
   repo: string | null;
   categories: string[];
+  /** It has pages with its own HTML (custom UI). */
+  webview?: boolean;
   installedVersion: string | null;
   incompatible: string | null;
   /** This version was taken off the market, and why. */

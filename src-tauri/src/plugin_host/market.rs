@@ -78,6 +78,9 @@ pub struct MarketEntry {
     /// Pre-releases are not listed yet (choosing them per plugin is not built).
     #[serde(default)]
     pre_release: bool,
+    /// It has pages with its own HTML (template webview); shown as custom UI.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    webview: bool,
 }
 
 impl MarketEntry {

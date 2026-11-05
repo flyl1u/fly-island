@@ -69,6 +69,12 @@
   font-size: 11px;
 }
 
+/* Custom UI is worth a second look before installing. */
+.plugin-market__text .plugin-market__tag--custom {
+  color: var(--color-warning);
+  background: rgba(255, 209, 102, 0.12);
+}
+
 .plugin-market__clamp {
   display: -webkit-box;
   overflow: hidden;

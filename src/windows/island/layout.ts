@@ -103,7 +103,7 @@ export function getClipboardExpandedHeight(rows: number) {
 }
 
 // Plugin pages by template, before the panel height limit.
-const PLUGIN_PAGE_HEIGHT = { list: 400, detail: 380, form: 400, status: 260 } as const;
+const PLUGIN_PAGE_HEIGHT = { list: 400, detail: 380, form: 400, status: 260, webview: 376 } as const;
 
 // A plugin list: island padding and header (86), the page's padding and title (50),
 // then one row (36) plus the gap below it per item, group title or search box.
@@ -113,12 +113,19 @@ const PLUGIN_LIST_MIN_ROWS = 2;
 // Longer lists scroll, as the clipboard page does.
 const PLUGIN_LIST_MAX_ROWS = 8;
 
-/** Height of the expanded island on a plugin page; a list grows with its rows. */
+/**
+ * Height of the expanded island on a plugin page; a list grows with its rows,
+ * and a webview page is as tall as its manifest asks (below the same chrome).
+ */
 export function getPluginPageExpandedHeight(
   template: keyof typeof PLUGIN_PAGE_HEIGHT | null | undefined,
   maxPanelHeight: number,
   listRows?: number | null,
+  webviewHeight?: number | null,
 ) {
+  if (template === "webview" && typeof webviewHeight === "number") {
+    return Math.min(PLUGIN_LIST_CHROME_HEIGHT + webviewHeight, maxPanelHeight);
+  }
   if (template === "list" && typeof listRows === "number") {
     const rows = clamp(listRows, PLUGIN_LIST_MIN_ROWS, PLUGIN_LIST_MAX_ROWS);
     return Math.min(PLUGIN_LIST_CHROME_HEIGHT + rows * PLUGIN_LIST_ROW_PITCH, maxPanelHeight);

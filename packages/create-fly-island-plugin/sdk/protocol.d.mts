@@ -2,16 +2,16 @@
 
 /** Plugin API versions the island supports: 1 to 2. */
 export type ApiVersion = 1 | 2;
-export type Capability = "events" | "notifications" | "storage" | "secrets" | "views" | "status";
+export type Capability = "events" | "notifications" | "storage" | "secrets" | "views" | "status" | "webview";
 export type Permission = "todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control" | "shelf:read" | "shelf:write";
 /** Confirmed by the user on the island the first time they are used. */
 export type SensitivePermission = "clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write";
 /** Requests a plugin sends to the island. */
-export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.subscribe" | "events.unsubscribe" | "view.update" | "view.patch" | "status.update" | "storage.get" | "storage.set" | "storage.delete" | "storage.keys" | "host.keepAlive" | "todos.list" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set" | "agentStatus.report" | "agentStatus.clear" | "island.notify" | "secrets.get" | "secrets.set" | "secrets.delete" | "clipboard.history" | "messages.list" | "media.nowPlaying" | "media.playPause" | "media.next" | "media.previous" | "shelf.list" | "shelf.add" | "shelf.remove";
+export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.subscribe" | "events.unsubscribe" | "view.update" | "webview.postMessage" | "view.patch" | "status.update" | "storage.get" | "storage.set" | "storage.delete" | "storage.keys" | "host.keepAlive" | "todos.list" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set" | "agentStatus.report" | "agentStatus.clear" | "island.notify" | "secrets.get" | "secrets.set" | "secrets.delete" | "clipboard.history" | "messages.list" | "media.nowPlaying" | "media.playPause" | "media.next" | "media.previous" | "shelf.list" | "shelf.add" | "shelf.remove";
 /** Events for events.subscribe. */
 export type PluginEventName = "todos.changed" | "note.changed" | "agentStatus.changed" | "island.expanded" | "island.collapsed" | "app.locale.changed" | "clipboard.changed" | "messages.received" | "media.changed";
 /** Notifications the island sends to the plugin. */
-export type IslandNotification = "initialize" | "command" | "settings.changed" | "event" | "notification.action" | "view.visible" | "view.action" | "view.submit" | "view.search" | "shutdown";
+export type IslandNotification = "initialize" | "command" | "settings.changed" | "event" | "notification.action" | "view.visible" | "view.action" | "view.submit" | "view.search" | "webview.message" | "shutdown";
 
 /** The permission each host method needs (null: none). */
 export interface MethodPermissions {
@@ -21,6 +21,7 @@ export interface MethodPermissions {
   "events.subscribe": null;
   "events.unsubscribe": null;
   "view.update": null;
+  "webview.postMessage": null;
   "view.patch": null;
   "status.update": null;
   "storage.get": null;

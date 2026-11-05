@@ -147,6 +147,12 @@ function Update-FocusdViewItems([string]$ViewId, [object[]]$Items) {
     return @((Invoke-FocusdMethod 'view.patch' @{ viewId = $ViewId; items = @($Items) }).missing)
 }
 
+# Sends a message to one of the plugin's webview pages (template "webview").
+# Returns $true when the page is on screen; a closed page drops the message.
+function Send-FocusdWebviewMessage([string]$ViewId, $Message) {
+    [bool](Invoke-FocusdMethod 'webview.postMessage' @{ viewId = $ViewId; message = $Message }).shown
+}
+
 # Sets the collapsed-bar text (max 24 characters) of one of the plugin's statusItems.
 function Update-FocusdStatus([string]$ItemId, [string]$Text, [string]$Tooltip = $null, [string]$Tone = $null) {
     $params = @{ itemId = $ItemId; text = $Text }

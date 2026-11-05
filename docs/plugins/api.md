@@ -14,6 +14,7 @@
 | `secrets` | 2 | secrets.get / set / delete. |
 | `views` | 2 | contributes.views drawn on the island; view.update / view.patch and the view.action / view.submit / view.search / view.visible notifications. |
 | `status` | 2 | contributes.statusItems on the collapsed bar; status.update. |
+| `webview` | 2 | contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification. |
 
 ## 权限
 
@@ -46,6 +47,7 @@
 | `events.subscribe` | 无 | 2 | `events`：[string] (max 16; each needs the event's permission; all are checked before any is applied) | { events }: every event the plugin is subscribed to, sorted |
 | `events.unsubscribe` | 无 | 2 | `events`：[string] (max 16) | { events } |
 | `view.update` | 无 | 2 | `viewId`：one of the plugin's contributes.views<br>`model`：object for the view's template (see docs/plugins/README.md); max 256 KB as JSON, else status 413 | {}. The island shows at most 10 changes a second per view (later ones are merged) and only while the page is on screen. |
+| `webview.postMessage` | 无 | 2 | `viewId`：one of the plugin's views with template webview<br>`message`：any JSON value; max 256 KB | { shown }: false when the page is not on screen (the message is dropped). Messages sent before the page's script runs are lost too, so wait for the page to post that it is ready. |
 | `view.patch` | 无 | 2 | `viewId`：string<br>`items`：[{ id, ... }]: replace the items with these ids in model.items and model.groups[].items | { missing: [id] }: ids not found. Status 409 before the first view.update. |
 | `status.update` | 无 | 2 | `itemId`：one of the plugin's contributes.statusItems<br>`text`：string, max 24 characters; empty clears the item<br>`tooltip?`：string, max 200<br>`tone?`：neutral \| accent \| warning \| danger | {} |
 | `storage.get` | 无 | 2 | `key`：string (1-128 chars) | { value }: null when the key is not set |
@@ -102,6 +104,7 @@
 | `view.action` | 2 | { viewId, actionId, itemId?, checked? }: the user clicked an action or an item, or a check box (checked) |
 | `view.submit` | 2 | { viewId, values }: the user submitted the form |
 | `view.search` | 2 | { viewId, query }: the user typed in the list's search box (only if the model asks for searchMode remote) |
+| `webview.message` | 2 | { viewId, message }: the plugin's webview page called acquireFocusdApi().postMessage(message) (max 256 KB) |
 | `shutdown` | 1 | {} |
 
 ## 插件发给岛屿的通知

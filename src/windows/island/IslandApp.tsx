@@ -149,6 +149,7 @@ export function IslandApp() {
     agentVisibleRows: settings.agentVisibleRows,
     pluginTemplate: pluginPages.entry?.template,
     pluginListRows: pluginPages.rows,
+    pluginWebviewHeight: pluginPages.entry?.height,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),

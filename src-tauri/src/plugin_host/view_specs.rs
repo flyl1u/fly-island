@@ -1,7 +1,9 @@
 //! `contributes.views` and `contributes.statusItems` (API version 2): pages a
 //! plugin adds to the expanded island and short texts it shows on the
 //! collapsed bar. The island draws both from templates (views.rs, and
-//! src/features/plugin-views/); plugins never send markup.
+//! src/features/plugin-views/); plugins never send markup to the island
+//! window. The one exception, the `webview` template (P8), shows the plugin's
+//! own HTML in a separate, locked-down page (webviews.rs).
 
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +12,9 @@ use super::manifest::LocalizedText;
 const MAX_VIEWS: usize = 2;
 const MAX_STATUS_ITEMS: usize = 2;
 const MAX_PRIORITY: i32 = 100;
+/// Height of a webview page on the island when the manifest does not say, and the allowed range.
+pub(super) const DEFAULT_WEBVIEW_HEIGHT: u32 = 240;
+const WEBVIEW_HEIGHTS: std::ops::RangeInclusive<u32> = 80..=480;
 
 /// lucide icon names a view may use; anything else is refused. Listed in
 /// plugins/schema/manifest.schema.json and src/features/plugin-views/icons.ts
@@ -29,6 +34,8 @@ pub enum ViewTemplate {
     Detail,
     Form,
     Status,
+    /// The plugin's own HTML page (P8).
+    Webview,
 }
 
 /// One page on the island. Mirrored by `PluginViewSpec` in src/features/plugin-views/api.ts.
@@ -39,6 +46,41 @@ pub struct ViewSpec {
     #[serde(default = "default_icon")]
     pub icon: String,
     pub template: ViewTemplate,
+    /// `webview` only: the page, relative to the plugin folder (`ui/index.html`).
+    /// The page can load files from the folder it is in and below.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entry: Option<String>,
+    /// `webview` only: the page's height on the island in pixels.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+}
+
+/// A relative path inside the plugin folder: no "..", no drive or root, "/" separators, ends in .html.
+pub(super) fn is_valid_entry(entry: &str) -> bool {
+    let lower = entry.to_ascii_lowercase();
+    (1..=200).contains(&entry.len())
+        && (lower.ends_with(".html") || lower.ends_with(".htm"))
+        && !entry.starts_with('/')
+        && !entry.contains(['\\', ':', '?', '#', '%'])
+        && entry.split('/').all(|part| !part.is_empty() && part != "." && part != "..")
+}
+
+fn check_webview(view: &ViewSpec) -> Result<(), String> {
+    match view.template {
+        ViewTemplate::Webview => {
+            if !view.entry.as_deref().is_some_and(is_valid_entry) {
+                return Err(format!("View \"{}\" needs an \"entry\": a relative path to an .html file inside the plugin folder.", view.id));
+            }
+            if view.height.is_some_and(|height| !WEBVIEW_HEIGHTS.contains(&height)) {
+                return Err(format!("View \"{}\" has a height outside {}..{}.", view.id, WEBVIEW_HEIGHTS.start(), WEBVIEW_HEIGHTS.end()));
+            }
+        }
+        _ if view.entry.is_some() || view.height.is_some() => {
+            return Err(format!("View \"{}\": \"entry\" and \"height\" are only for the webview template.", view.id));
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn default_icon() -> String {
@@ -89,6 +131,7 @@ pub(super) fn check(
         if !VIEW_ICONS.contains(&view.icon.as_str()) {
             return Err(format!("View \"{}\" uses the icon \"{}\", which is not in the list of allowed icons.", view.id, view.icon));
         }
+        check_webview(view)?;
     }
     if status_items.len() > MAX_STATUS_ITEMS {
         return Err(format!("A plugin can add at most {MAX_STATUS_ITEMS} status items."));

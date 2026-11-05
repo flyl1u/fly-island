@@ -1,0 +1,26 @@
+{
+  "id": "dev.focusd.todo-ring",
+  "name": { "zh-CN": "待办进度环（示例）", "en": "Todo progress ring (example)" },
+  "description": {
+    "zh-CN": "在岛上加一个页面，用一个圆环画出今天的待办完成了多少，待办一变就跟着动。页面是插件自己写的 HTML（自定义界面），只能和插件进程通信，不能联网。用 Windows 自带的 PowerShell 运行。",
+    "en": "Adds an island page with a ring showing how much of today's todos is done; it moves as soon as they change. The page is the plugin's own HTML (custom UI) that can only talk to the plugin process and cannot go online. Runs on the PowerShell built into Windows."
+  },
+  "version": "1.0.0",
+  "apiVersion": 2,
+  "author": "FocuSD",
+  "homepage": "https://github.com/TixXin/fly-island/tree/main/plugins/examples/dev.focusd.todo-ring",
+  "runtime": { "type": "process", "command": "main.ps1" },
+  "permissions": ["todos:read"],
+  "contributes": {
+    "views": [
+      {
+        "id": "ring",
+        "title": { "zh-CN": "进度环", "en": "Progress" },
+        "icon": "target",
+        "template": "webview",
+        "entry": "ui/index.html",
+        "height": 200
+      }
+    ]
+  }
+}
