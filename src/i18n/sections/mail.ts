@@ -50,6 +50,8 @@ export type MailText = {
   resumeShort: string;
   disconnectShort: string;
   cancel: string;
+  confirmDisconnect: string;
+  confirmDisconnectHint: string;
   defaultHost: string;
   limitReached: (max: number) => string;
   unread: (count: number) => string;
@@ -121,6 +123,8 @@ export const zhCN: MailText = {
   resumeShort: "接收",
   disconnectShort: "断开",
   cancel: "取消",
+  confirmDisconnect: "确认断开",
+  confirmDisconnectHint: "断开会停止接收，并从 Windows 凭据管理器删除这个邮箱的授权码。以后再连接需要重新生成授权码。",
   defaultHost: "默认服务器",
   limitReached: (max) => `最多同时连接 ${max} 个邮箱，请先断开一个再添加。`,
   unread: (count) => `${count} 封未读`,
@@ -192,6 +196,8 @@ export const en: MailText = {
   resumeShort: "Receive",
   disconnectShort: "Disconnect",
   cancel: "Cancel",
+  confirmDisconnect: "Disconnect",
+  confirmDisconnectHint: "Disconnecting stops receiving and deletes this mailbox's authorization code from Windows Credential Manager. Connecting again needs a new code.",
   defaultHost: "Default server",
   limitReached: (max) => `Up to ${max} mailboxes can be connected. Disconnect one to add another.`,
   unread: (count) => `${count} unread`,

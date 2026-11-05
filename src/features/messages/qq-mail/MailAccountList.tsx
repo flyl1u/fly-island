@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { KeyRound, Pause, Play, Unplug } from "lucide-react";
 import { useTranslation } from "../../../i18n";
 import type { MailSnapshot } from "./api";
@@ -14,6 +15,9 @@ export function MailAccountList({ mailboxes, hosts, busy, onSetEnabled, onReauth
   onDisconnect: (email: string) => void;
 }) {
   const t = useTranslation();
+  // Disconnecting deletes the saved code, which has to be generated again on the webmail
+  // site, so it takes a second click on the same row.
+  const [confirming, setConfirming] = useState<string | null>(null);
   if (mailboxes.length === 0) return <p className="mail-settings__empty">{t.mail.noMailbox}</p>;
 
   return (
@@ -43,10 +47,20 @@ export function MailAccountList({ mailboxes, hosts, busy, onSetEnabled, onReauth
                   {mailbox.enabled ? t.mail.pauseShort : t.mail.resumeShort}
                 </button>
               )}
-              <button className="mail-settings__button" type="button" disabled={busy} title={t.mail.disconnectLabel} aria-label={`${t.mail.disconnectLabel} · ${email}`} onClick={() => onDisconnect(email)}>
-                <Unplug size={13} strokeWidth={2} aria-hidden="true" />{t.mail.disconnectShort}
-              </button>
+              {confirming === email ? (
+                <>
+                  <button className="mail-settings__button mail-settings__button--danger" type="button" disabled={busy} aria-label={`${t.mail.confirmDisconnect} · ${email}`} onClick={() => { setConfirming(null); onDisconnect(email); }}>
+                    <Unplug size={13} strokeWidth={2} aria-hidden="true" />{t.mail.confirmDisconnect}
+                  </button>
+                  <button className="mail-settings__button" type="button" onClick={() => setConfirming(null)}>{t.mail.cancel}</button>
+                </>
+              ) : (
+                <button className="mail-settings__button" type="button" disabled={busy} title={t.mail.disconnectLabel} aria-label={`${t.mail.disconnectLabel} · ${email}`} onClick={() => setConfirming(email)}>
+                  <Unplug size={13} strokeWidth={2} aria-hidden="true" />{t.mail.disconnectShort}
+                </button>
+              )}
             </span>
+            {confirming === email && <small className="mail-settings__confirm" role="alert">{t.mail.confirmDisconnectHint}</small>}
           </li>
         );
       })}

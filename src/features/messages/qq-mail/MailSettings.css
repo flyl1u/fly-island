@@ -150,6 +150,23 @@
   background: #d2eddf;
 }
 
+.mail-settings__button--danger {
+  color: #101013;
+  background: #ff9aa9;
+}
+
+.mail-settings__button--danger:hover:not(:disabled) {
+  color: #101013;
+  background: #ffb7c2;
+}
+
+.mail-settings__confirm {
+  grid-column: 1 / -1;
+  color: #ffb7c2;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .mail-settings__error {
   margin: 0;
   color: #ff9aa9;
