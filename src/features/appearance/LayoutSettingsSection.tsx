@@ -2,6 +2,7 @@ import { useTranslation } from "../../i18n";
 import { SliderControl } from "../../components/controls/SliderControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { AppearanceModeControl } from "./AppearanceModeControl";
+import { LIQUID_GLASS_ENABLED } from "./settings";
 import type { IslandSettings } from "./types";
 
 export function LayoutSettingsSection({
@@ -40,7 +41,7 @@ export function LayoutSettingsSection({
           ))}
         </div>
       </div>
-      {settings.appearanceMode === "liquidGlass" && (
+      {LIQUID_GLASS_ENABLED && settings.appearanceMode === "liquidGlass" && (
         <SliderControl
           label={t.settings.appearance.glassStrength}
           value={settings.glassIntensity}

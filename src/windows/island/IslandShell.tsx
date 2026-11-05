@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
+import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
@@ -77,7 +78,8 @@ export function IslandShell({
 }: IslandShellProps) {
   const t = useTranslation();
   const isExpanded = mode === "expanded";
-  const isLiquidGlass = appearanceMode === "liquidGlass";
+  const effectiveAppearanceMode = getEffectiveAppearanceMode(appearanceMode);
+  const isLiquidGlass = effectiveAppearanceMode === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
   const qqPreview = qqNotifications.preview;
@@ -95,7 +97,7 @@ export function IslandShell({
     "island",
     `island--${mode}`,
     `island--${page}`,
-    `island--appearance-${appearanceMode}`,
+    `island--appearance-${effectiveAppearanceMode}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
