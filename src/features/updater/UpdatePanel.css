@@ -1,0 +1,61 @@
+.update-panel {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.update-panel__button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.update-panel__button:disabled {
+  cursor: default;
+}
+
+.update-panel--checking .project-link__icon,
+.update-panel--downloading .project-link__icon,
+.update-panel--installing .project-link__icon {
+  color: var(--color-sky);
+  animation: update-panel-spin 900ms linear infinite;
+}
+
+.update-panel--error .project-link__copy > span {
+  color: #ffd8df;
+}
+
+.update-panel__detail {
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.update-panel__track {
+  height: 4px;
+  margin: 0 12px;
+  overflow: hidden;
+  background: var(--color-white-a12);
+  border-radius: var(--radius-pill);
+}
+
+.update-panel__fill {
+  display: block;
+  height: 100%;
+  background: #98d4bb;
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+@keyframes update-panel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-panel .project-link__icon,
+  .update-panel__fill {
+    animation: none;
+    transition: none;
+  }
+}

@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
 const source = ts.transpileModule(
-  readFileSync(new URL("../src/updateTodo.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/features/todos/updateTodo.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
 ).outputText;
 

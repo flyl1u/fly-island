@@ -1,0 +1,128 @@
+.island__open-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  touch-action: none;
+}
+
+.island__open-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: -3px;
+  border-radius: 0 0 12px 12px;
+}
+
+.island__pulse {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  background: var(--island-pulse-color);
+  box-shadow: 0 0 14px var(--island-pulse-glow-color);
+  filter: brightness(var(--island-pulse-brightness));
+}
+
+.island__pulse--agent-idle {
+  background: var(--color-agent-idle);
+  box-shadow: 0 0 14px rgba(53, 233, 133, 0.72);
+}
+
+.island__pulse--agent-running {
+  background: var(--color-agent-running);
+  box-shadow: 0 0 14px rgba(255, 77, 94, 0.72);
+}
+
+.island__pulse--agent-attention {
+  background: var(--color-warning);
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.72);
+}
+
+.island--title-hidden .island__open-button {
+  padding-left: 8px;
+}
+
+.island__brand {
+  min-width: 0;
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.island__todo-count {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--task-text-color);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.island__active-task {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--task-text-color);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: taskFlowIn 260ms ease-out both;
+}
+
+@keyframes taskFlowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.island__quiet-button {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  margin-left: 0;
+  padding: 0;
+  background: rgba(186, 186, 186, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  outline: none;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 var(--color-white-a18),
+    0 0 12px var(--color-white-a08);
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.island__quiet-button::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.island__quiet-button:hover {
+  background: rgba(210, 210, 210, 0.58);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
+}
+
+.island__quiet-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 4px;
+}

@@ -1,0 +1,85 @@
+.settings-sidebar {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-xl);
+  min-height: 0;
+  padding: 16px var(--space-lg);
+  background: rgba(255, 255, 255, 0.035);
+  border-right: 1px solid var(--color-white-a08);
+}
+
+.settings-sidebar__header {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-left: var(--space-md);
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.settings-sidebar__list {
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.settings-sidebar__item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0 var(--space-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.settings-sidebar__item > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-sidebar__item > svg {
+  flex: none;
+}
+
+.settings-sidebar__item:hover {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+}
+
+.settings-sidebar__item--active,
+.settings-sidebar__item--active:hover {
+  color: var(--color-white);
+  background: var(--color-white-a12);
+}
+
+.settings-sidebar__item--active > svg {
+  color: var(--color-accent);
+}
+
+.settings-sidebar__item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}

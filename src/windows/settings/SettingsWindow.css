@@ -1,0 +1,17 @@
+.settings-stage {
+  height: 100%;
+  color: var(--color-page-text);
+  background: #17191d;
+}
+
+.settings-stage select {
+  font: inherit;
+}
+
+.settings-stage .editor-panel {
+  height: 100%;
+  min-height: 0;
+  padding: 16px 24px 24px;
+  border-radius: 0;
+  background: transparent;
+}
