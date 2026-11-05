@@ -375,6 +375,7 @@ export type Translations = {
       title: string;
       classic: string;
       liquidGlass: string;
+      liquidGlassUnavailable: string;
       glassStrength: string;
     };
 

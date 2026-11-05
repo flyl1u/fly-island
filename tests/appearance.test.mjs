@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   DEFAULT_SETTINGS,
+  LIQUID_GLASS_ENABLED,
   MAX_CUSTOM_SETTING_PRESETS,
+  getEffectiveAppearanceMode,
   hexToRgba,
   isDefaultSettingPreset,
   isSameSettings,
@@ -37,6 +39,25 @@ test("new installations use classic appearance and existing choices remain uncha
   withStorage([], () => assert.equal(loadSettings().appearanceMode, "classic"));
   withStorage([[STORAGE_KEY, JSON.stringify({ appearanceMode: "liquidGlass" })]], () => {
     assert.equal(loadSettings().appearanceMode, "liquidGlass");
+  });
+});
+
+test("pausing glass uses classic at runtime without erasing saved settings or presets", () => {
+  const saved = { ...DEFAULT_SETTINGS, appearanceMode: "liquidGlass", glassIntensity: 56, fontFamily: "pixel", islandBackgroundColor: "#123456" };
+  const preset = { id: "glass-preset", name: "My glass", settings: saved, createdAt: 1 };
+  withStorage([
+    [STORAGE_KEY, JSON.stringify(saved)],
+    [SETTINGS_PRESETS_STORAGE_KEY, JSON.stringify([preset])],
+    [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"],
+  ], (values) => {
+    assert.equal(LIQUID_GLASS_ENABLED, false);
+    const settings = loadSettings();
+    assert.equal(getEffectiveAppearanceMode(settings.appearanceMode), "classic");
+    assert.equal(getEffectiveAppearanceMode("classic"), "classic");
+    saveSettings({ ...settings, opacity: 82 });
+    assert.deepEqual(JSON.parse(values.get(STORAGE_KEY)), { ...saved, opacity: 82 });
+    assert.deepEqual(loadSettingPresets(t)[0].settings, saved);
+    assert.equal(getEffectiveAppearanceMode(loadSettingPresets(t)[0].settings.appearanceMode), "classic");
   });
 });
 

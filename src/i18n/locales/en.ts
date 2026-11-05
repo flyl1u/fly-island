@@ -372,6 +372,7 @@ const en: Translations = {
       title: "Appearance",
       classic: "Classic",
       liquidGlass: "Liquid glass",
+      liquidGlassUnavailable: "Liquid glass is temporarily unavailable",
       glassStrength: "Glass strength",
     },
 
