@@ -4,6 +4,7 @@ import { ArrowRight, Check, Clipboard, Copy, Grip, Languages, LoaderCircle, Sett
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { hasTranslationSecret, hideTranslationWindow, listenTranslationWindowOpened, readTranslationClipboard, setTranslationShortcut } from "../../features/translation/api";
 import { takeTranslationHandoff, type Direction } from "../../features/translation/storage";
+import { DEFAULT_PROVIDER_MODELS } from "../../features/translation/providers";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { openSettingsWindow } from "../settings/api";
 import { useAutoTranslate } from "../../features/translation/useAutoTranslate";
@@ -138,6 +139,9 @@ export function TranslationWindow() {
     setDidCopy,
     onStart: noteAutoSource,
   });
+  // Service and model in use, e.g. "DeepSeek · deepseek-flash", so a wrong model is easy to spot.
+  const model = settings.models[settings.provider]?.trim() || DEFAULT_PROVIDER_MODELS[settings.provider];
+  const providerLabel = model ? `${t.translator.providers[settings.provider]} · ${model}` : t.translator.providers[settings.provider];
   const autoTranslateKey = `${settings.direction}\0${settings.provider}\0${settings.customBaseUrl}\0${settings.models[settings.provider] ?? ""}`;
   useAutoTranslate(settings.autoTranslate && hasSecret && !isLoading, input, autoTranslateKey, skipAutoSource, submit);
 
@@ -175,7 +179,7 @@ export function TranslationWindow() {
             <ArrowRight size={15} aria-hidden="true" />
             <span>{targetLanguage}</span>
           </div>
-          <span className="translation-window__provider">{t.translator.providers[settings.provider]}</span>
+          <span className="translation-window__provider" title={providerLabel}>{providerLabel}</span>
         </div>
         <div className="translation-window__content">
           <section className="translation-window__panel translation-window__source">

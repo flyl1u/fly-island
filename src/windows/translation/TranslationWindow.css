@@ -126,9 +126,14 @@
 .translation-window__languages > svg { flex: 0 0 auto; }
 .translation-window__languages > span { overflow-wrap: anywhere; }
 .translation-window__provider {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
   color: var(--translation-muted);
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .translation-window select,
 .translation-window input {

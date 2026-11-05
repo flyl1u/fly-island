@@ -242,7 +242,8 @@ pub async fn translate_text(
     let name = provider.name;
     let secret = read_secret(provider)?.ok_or_else(|| format!("请先配置{name}的 API 密钥。"))?;
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(20))
+        // Self-hosted gateways and relays can be slow to answer a long text.
+        .timeout(Duration::from_secs(30))
         .build()
         .map_err(|error| format!("无法创建翻译请求：{error}"))?;
 
