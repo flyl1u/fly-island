@@ -1,0 +1,24 @@
+{
+  "name": "create-fly-island-plugin",
+  "version": "0.1.0",
+  "description": "Creates a FocuSD Island plugin: npm create fly-island-plugin@latest",
+  "keywords": ["focusd", "fly-island", "plugin", "create"],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TixXin/fly-island.git",
+    "directory": "packages/create-fly-island-plugin"
+  },
+  "homepage": "https://github.com/TixXin/fly-island/tree/main/docs/plugins",
+  "bin": {
+    "create-fly-island-plugin": "bin/create-fly-island-plugin.mjs"
+  },
+  "files": ["bin", "src", "sdk", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

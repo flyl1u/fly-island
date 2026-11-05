@@ -58,6 +58,10 @@ importers:
         specifier: ^7.0.4
         version: 7.3.6
 
+  packages/create-fly-island-plugin: {}
+
+  packages/fly-island-plugin: {}
+
 packages:
 
   '@babel/code-frame@7.29.7':

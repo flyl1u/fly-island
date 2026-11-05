@@ -5,7 +5,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createZip, listFiles, readPackedFile, sha256 } from "../packages/fly-island-plugin/src/pack.mjs";
+import { createZip, listFiles, packFolder, readPackedFile, sha256 } from "../packages/fly-island-plugin/src/pack.mjs";
 import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 export { createZip, listFiles, readPackedFile, sha256 };
@@ -47,14 +47,7 @@ export function indexEntry(manifest, fileName, zip) {
 }
 
 /** Packs one plugin folder: its manifest, package file name and zip bytes. */
-export function packPlugin(dir) {
-  const manifest = JSON.parse(readFileSync(path.join(dir, MANIFEST), "utf8"));
-  if (path.basename(dir) !== manifest.id) {
-    throw new Error(`${dir}: the folder must be named after the plugin id "${manifest.id}".`);
-  }
-  const files = listFiles(dir).map(([name, full]) => [name, readPackedFile(full)]);
-  return { manifest, fileName: `${manifest.id}-${manifest.version}.zip`, zip: createZip(files) };
-}
+export const packPlugin = packFolder;
 
 /** Writes the index and its signature (see scripts/plugin-signing.mjs). */
 export function buildIndex(root, privateKey = loadPrivateKey()) {

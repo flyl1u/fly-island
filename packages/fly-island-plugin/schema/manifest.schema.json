@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/TixXin/fly-island/plugins/schema/manifest.schema.json",
+  "title": "FocuSD Island plugin manifest (focusd-plugin.json)",
+  "description": "Checked again by the island (src-tauri/src/plugin_host/manifest.rs), which also enforces rules a schema cannot: the folder name must equal id, runtime.command must stay inside the plugin folder, setting keys must be unique, minAppVersion is compared with the running island.",
+  "type": "object",
+  "required": ["id", "name", "version", "apiVersion", "runtime"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9.-]*$",
+      "description": "Lowercase letters, digits, '.' and '-'; no '..'. Must equal the folder name."
+    },
+    "name": { "$ref": "#/$defs/localizedText" },
+    "description": { "$ref": "#/$defs/localizedText" },
+    "version": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "apiVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "description": "The plugin API version the plugin was written for. Version 2 adds initialize.capabilities; everything in version 1 still works."
+    },
+    "minAppVersion": { "type": "string" },
+    "activationEvents": {
+      "description": "apiVersion 2: when the island starts the plugin's process. Without this field the plugin runs while the island runs (onStartup). With it, the plugin starts on one of these events (commands and views add onCommand:<id> / onView:<id> by themselves) and is stopped again after 60 s with nothing to do; host.keepAlive keeps it running. onEvent:<name> needs the event's permission. Ignored for apiVersion 1.",
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "pattern": "^(onStartup|onStartupFinished|onCommand:[A-Za-z0-9-]{1,32}|onView:[A-Za-z0-9-]{1,32}|onEvent:[A-Za-z.]+|onSchedule:[0-9]{1,4})$"
+      }
+    },
+    "experimentalApis": {
+      "description": "APIs still being designed (e.g. \"views.chart\"). Only a plugin loaded in development mode (Settings > Plugins > Developer, or `fly-island-plugin dev`) may list them; the island refuses any other plugin that does, and `fly-island-plugin validate` and the market reject them. initialize.experimentalApis says which of them the island has.",
+      "type": "array",
+      "maxItems": 10,
+      "items": { "type": "string", "pattern": "^[a-z][A-Za-z0-9.]{0,63}$" }
+    },
+    "author": { "type": "string" },
+    "homepage": { "type": "string", "description": "Only https:// links are shown." },
+    "runtime": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "command"],
+          "properties": {
+            "type": { "const": "process" },
+            "command": {
+              "type": "string",
+              "pattern": "\\.(exe|ps1|js|mjs|cjs)$",
+              "description": "A relative path inside the plugin folder."
+            },
+            "args": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "none" } },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:read", "agent-status:write", "island:notify", "secrets", "clipboard:read", "messages:read", "media:read", "media:control", "shelf:read", "shelf:write"] }
+    },
+    "contributes": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "title": { "$ref": "#/$defs/localizedText" },
+              "keybinding": {
+                "description": "apiVersion 2: a global shortcut that runs the command, e.g. \"Ctrl+Alt+P\": Ctrl/Alt/Shift/Win (at least one) plus one key (letter, digit, F1-F24, Esc, Tab, Enter, Space, arrows, Home/End, PageUp/PageDown, Insert/Delete, Backspace). Ignored for apiVersion 1. A shortcut something else already uses is not registered and is shown on the plugin card.",
+                "type": "string"
+              },
+              "when": {
+                "description": "apiVersion 2: when the keybinding runs the command. Names: island.expanded and todos.hasActive (true/false), island.page (todo, music, clipboard, shelf, qq, agents, translation), compared with == / !=; joined with && || ! and parentheses. Unknown names are false; a clause that does not parse never runs the command. Empty or missing: always.",
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9 ._&|!=()'\"-]*$"
+              }
+            }
+          }
+        },
+        "settings": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/setting" }
+        },
+        "menus": {
+          "description": "apiVersion 2: commands the island lists in its own menus. Ignored for apiVersion 1.",
+          "type": "object",
+          "properties": {
+            "todo/context": {
+              "description": "The right-click menu of a todo. Picking an entry sends the plugin `command` with { id, args: { todoId } }; read the todo with todos.list (todos:read).",
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
+                }
+              }
+            }
+          }
+        },
+        "views": {
+          "description": "apiVersion 2: pages on the expanded island, drawn by the island from a template; the plugin fills them with view.update / view.patch. Ignored for apiVersion 1.",
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "template"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "title": { "$ref": "#/$defs/localizedText" },
+              "icon": { "description": "A lucide icon name from this list; default puzzle.", "enum": ["list", "list-checks", "list-todo", "kanban", "square-check", "timer", "clock", "calendar", "bell", "book-open", "bookmark", "star", "heart", "folder", "file-text", "git-pull-request", "bug", "code", "terminal", "cloud", "sun", "music", "newspaper", "rss", "mail", "message-square", "globe", "link", "activity", "chart-column", "zap", "flame", "coffee", "puzzle", "gauge", "target", "trophy", "rocket", "sparkles", "inbox", "tag", "hash", "search", "house", "notebook", "circle-check", "info"] },
+              "template": { "enum": ["list", "detail", "form", "status"] }
+            }
+          }
+        },
+        "statusItems": {
+          "description": "apiVersion 2: short texts on the collapsed bar, set with status.update. Of all items with text, the highest priority is shown. Ignored for apiVersion 1.",
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,32}$" },
+              "priority": { "type": "integer", "minimum": -100, "maximum": 100, "default": 0 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "localizedText": {
+      "type": "object",
+      "required": ["zh-CN", "en"],
+      "properties": {
+        "zh-CN": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 }
+      }
+    },
+    "setting": {
+      "type": "object",
+      "required": ["key", "type", "title"],
+      "properties": {
+        "key": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$" },
+        "type": { "enum": ["boolean", "number", "string", "select"] },
+        "title": { "$ref": "#/$defs/localizedText" },
+        "description": { "$ref": "#/$defs/localizedText" },
+        "default": {},
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "title"],
+            "properties": {
+              "value": { "type": "string" },
+              "title": { "$ref": "#/$defs/localizedText" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

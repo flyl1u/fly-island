@@ -1,2 +1,6 @@
+packages:
+  - packages/fly-island-plugin
+  - packages/create-fly-island-plugin
+
 allowBuilds:
   esbuild: true

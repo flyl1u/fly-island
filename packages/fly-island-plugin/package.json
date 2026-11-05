@@ -1,0 +1,35 @@
+{
+  "name": "fly-island-plugin",
+  "version": "0.1.0",
+  "description": "SDK, CLI (validate, pack, dev, test) and mock host for FocuSD Island plugins",
+  "keywords": ["focusd", "fly-island", "plugin", "sdk"],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TixXin/fly-island.git",
+    "directory": "packages/fly-island-plugin"
+  },
+  "homepage": "https://github.com/TixXin/fly-island/tree/main/docs/plugins",
+  "bin": {
+    "fly-island-plugin": "bin/fly-island-plugin.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.d.mts",
+      "default": "./src/index.mjs"
+    },
+    "./test": {
+      "types": "./src/test/index.d.mts",
+      "default": "./src/test/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["bin", "src", "schema", "README.md"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\""
+  }
+}

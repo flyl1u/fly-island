@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { crc32, deflateRawSync } from "node:zlib";
+import { isIgnored, loadIgnore } from "./ignore.mjs";
 
 // 1980-01-01 00:00 in DOS format, so the same files always give the same bytes.
 const DOS_DATE = (0 << 9) | (1 << 5) | 1;
@@ -80,3 +81,26 @@ export function createZip(files) {
 }
 
 export const sha256 = (buffer) => createHash("sha256").update(buffer).digest("hex");
+
+export const MANIFEST_FILE = "focusd-plugin.json";
+
+/** The files that go into a plugin's zip: [zip path, bytes], without what .focusdignore leaves out. */
+export function packageFiles(dir) {
+  const rules = loadIgnore(dir);
+  return listFiles(dir)
+    .filter(([name]) => !isIgnored(rules, name))
+    .map(([name, full]) => [name, readPackedFile(full)]);
+}
+
+/**
+ * Packs one plugin folder: its manifest, package file name (<id>-<version>.zip)
+ * and zip bytes. The folder must be named after the plugin id, as the island
+ * installs it under that name.
+ */
+export function packFolder(dir) {
+  const manifest = JSON.parse(readFileSync(path.join(dir, MANIFEST_FILE), "utf8"));
+  if (path.basename(path.resolve(dir)) !== manifest.id) {
+    throw new Error(`${dir}: the folder must be named after the plugin id "${manifest.id}".`);
+  }
+  return { manifest, fileName: `${manifest.id}-${manifest.version}.zip`, zip: createZip(packageFiles(dir)) };
+}
