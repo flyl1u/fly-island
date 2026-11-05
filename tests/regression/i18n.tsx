@@ -35,6 +35,8 @@ if (!translation) {
 }
 let revision = 0;
 let reads = 0;
+// The translation window pastes this on open; emptied before its empty-source check.
+let clipboardText = "用户复制的文本";
 const commands: string[] = [];
 mockIPC((command, payload) => {
   commands.push(command);
@@ -47,6 +49,7 @@ mockIPC((command, payload) => {
     // Same values as MediaState::empty() in src-tauri/src/media_control/session.rs.
     case "get_media_state": return { available: false, audioActive: false, audioPeak: 0, playbackStatus: "unavailable", title: null, artist: null, album: null, thumbnail: null, positionMs: 0, durationMs: 0, canSeek: false, canNext: false, canPrevious: false, shuffleActive: null, canShuffle: false, repeatMode: "unknown", canRepeat: false, volume: -1, sourceApp: null, activeSessionId: null, sessions: [], updatedAt: 0 };
     case "get_audio_level": return { active: false, peak: 0, updatedAt: 0 };
+    case "get_foreground_fullscreen": return { active: false, onIslandMonitor: false };
     case "set_island_interaction": return "disabled";
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", pending: false, lastAttentionAt: null, error: null };
@@ -54,7 +57,7 @@ mockIPC((command, payload) => {
     case "read_qq_mail": ++reads; return { id: args.messageId, content: "<script>removed</script>", contentType: "text/html" };
     case "has_translation_secret": return false;
     case "set_translation_shortcut": return args.shortcut;
-    case "read_translation_clipboard": return "用户复制的文本";
+    case "read_translation_clipboard": return clipboardText;
     case "plugin:window|is_visible": return true;
     default: return null;
   }
@@ -107,7 +110,7 @@ else {
     check(document.querySelector(".todo-title")?.textContent?.includes("保留用户任务 Привет"), "User task content stays as written");
     await click("button[aria-label='Review saved todo lists']");
     check(document.querySelector(".archive-card__empty")?.textContent === "No tasks", "Archive empty states follow the selected language");
-    await click("button.island-message-button[title='Messages']");
+    await click("button.island-message-button[title^='Messages']");
     check(document.querySelector(".qq-panel__empty")?.textContent?.includes("No messages"), "QQ panel uses English copy");
     await click(".message-sources button[aria-label='WeChat reminders']");
     check(document.querySelector(".qq-panel__empty")?.textContent?.includes("No reminders"), "WeChat panel uses English copy");
@@ -120,6 +123,7 @@ else {
     await act(async () => { localStorage.setItem(LOCALE_STORAGE_KEY, "en"); window.dispatchEvent(new StorageEvent("storage", { key: LOCALE_STORAGE_KEY, newValue: "en", storageArea: localStorage })); });
     check(document.documentElement.lang === "en", "The provider accepts language changes from another window");
     await act(async () => { root.unmount(); });
+    clipboardText = "";
     const translationRoot = createRoot(document.getElementById("root")!);
     await act(async () => { translationRoot.render(<I18nProvider><TranslationWindow /></I18nProvider>); });
     check(document.querySelector("h1")?.textContent === "Quick translation", "A fresh translation window loads the persisted language");
