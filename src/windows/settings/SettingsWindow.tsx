@@ -9,7 +9,9 @@ import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { ShelfSettingsPage } from "./ShelfSettingsPage";
 import { ShortcutsSettingsPage } from "./ShortcutsSettingsPage";
-import { NotificationsSettingsPage } from "./NotificationsSettingsPage";
+import { MailSettingsPage } from "./MailSettingsPage";
+import { QQSettingsPage } from "./QQSettingsPage";
+import { WeChatSettingsPage } from "./WeChatSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { showSettingsWindow } from "./api";
 import { TodosSettingsPage } from "./TodosSettingsPage";
@@ -145,14 +147,9 @@ export function SettingsWindow() {
             onSettingsChange={setSettings}
           />
         )}
-        {category === "notifications" && (
-          <NotificationsSettingsPage
-            settings={settings}
-            qqNotifications={qqNotifications}
-            wechatReminders={wechatReminders}
-            onSettingsChange={setSettings}
-          />
-        )}
+        {category === "qq" && <QQSettingsPage qqNotifications={qqNotifications} />}
+        {category === "wechat" && <WeChatSettingsPage wechatReminders={wechatReminders} />}
+        {category === "mail" && <MailSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "translation" && <TranslationSettingsPage settings={settings} onSettingsChange={setSettings} onOpenShortcuts={openShortcuts} />}
         {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} onOpenShortcuts={openShortcuts} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}

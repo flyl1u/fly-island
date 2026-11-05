@@ -1,5 +1,6 @@
 import type { SettingsFileShelfText } from "./fileShelf";
 import type { SettingsModulesText } from "./modules";
+import type { SettingsMessageSourcesText } from "./messageSources";
 import type { SettingsResetAppearanceText } from "./resetAppearance";
 import type { SettingsCategoriesText } from "./categories";
 import type { SettingsBehaviorText } from "./behavior";
@@ -22,6 +23,7 @@ import type { SettingsSaveText } from "./save";
 import type { SettingsPluginsText } from "./plugins";
 import * as fileShelf from "./fileShelf.ts";
 import * as modules from "./modules.ts";
+import * as messageSources from "./messageSources.ts";
 import * as resetAppearance from "./resetAppearance.ts";
 import * as categories from "./categories.ts";
 import * as behavior from "./behavior.ts";
@@ -45,7 +47,7 @@ import * as plugins from "./plugins.ts";
 
 export type SettingsText = {
   fileShelf: SettingsFileShelfText;
-  messageReception: string;
+  messageSources: SettingsMessageSourcesText;
 
   modules: SettingsModulesText;
   title: string;
@@ -91,7 +93,7 @@ export type SettingsText = {
 
 export const zhCN: SettingsText = {
   fileShelf: fileShelf.zhCN,
-  messageReception: "消息接收",
+  messageSources: messageSources.zhCN,
 
   modules: modules.zhCN,
   title: "设置",
@@ -137,7 +139,7 @@ export const zhCN: SettingsText = {
 
 export const en: SettingsText = {
   fileShelf: fileShelf.en,
-  messageReception: "Message reception",
+  messageSources: messageSources.en,
 
   modules: modules.en,
   title: "Settings",

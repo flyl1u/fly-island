@@ -3,12 +3,15 @@ export type SettingsCategoriesText = {
   groups: {
     basics: string;
     features: string;
+    messages: string;
     extensions: string;
   };
   general: string;
   appearance: string;
   shortcuts: string;
-  notifications: string;
+  qq: string;
+  wechat: string;
+  mail: string;
   todos: string;
   music: string;
   clipboard: string;
@@ -25,12 +28,15 @@ export const zhCN: SettingsCategoriesText = {
   groups: {
     basics: "基础",
     features: "功能",
+    messages: "消息",
     extensions: "扩展",
   },
   general: "通用",
   appearance: "外观",
   shortcuts: "快捷键",
-  notifications: "通知",
+  qq: "QQ 通知",
+  wechat: "微信提醒",
+  mail: "邮箱",
   todos: "待办",
   music: "音乐",
   clipboard: "剪贴板",
@@ -47,12 +53,15 @@ export const en: SettingsCategoriesText = {
   groups: {
     basics: "Basics",
     features: "Features",
+    messages: "Messages",
     extensions: "Extensions",
   },
   general: "General",
   appearance: "Appearance",
   shortcuts: "Shortcuts",
-  notifications: "Notifications",
+  qq: "QQ notifications",
+  wechat: "WeChat reminders",
+  mail: "Mail",
   todos: "Todos",
   music: "Music",
   clipboard: "Clipboard",
