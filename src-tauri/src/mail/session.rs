@@ -237,8 +237,9 @@ fn open_connection(
     email: &str,
     secret: &str,
 ) -> Result<(MailSession, TcpStream), MailFailure> {
+    let (host, port) = super::credentials::server_address(host);
     let mut stream = None;
-    let addresses = (host, 993)
+    let addresses = (host, port)
         .to_socket_addrs()
         .map_err(|_| MailFailure::network())?;
     for address in addresses {

@@ -60,15 +60,35 @@ pub(super) fn imap_host(email: &str) -> String {
     format!("imap.{domain}")
 }
 
-/// The IMAP server the user typed, or `imap.<domain>` when left empty. Only a
-/// bare domain is accepted: no port, path or scheme (the port is always 993).
+/// The IMAPS port used when the server is given without one.
+pub(super) const DEFAULT_IMAP_PORT: u16 = 993;
+
+/// The IMAP server the user typed, or `imap.<domain>` when left empty: a domain,
+/// optionally with `:port`; no path or scheme. The connection is always TLS, so a
+/// port is for servers that offer IMAPS somewhere other than 993. `:993` is dropped.
 pub(super) fn resolve_host(email: &str, host: Option<&str>) -> Result<String, String> {
     let host = match host.map(str::trim).filter(|host| !host.is_empty()) {
         Some(host) => host.to_ascii_lowercase(),
         None => imap_host(email),
     };
-    if !is_domain(&host) {
-        return Err("IMAP 服务器地址无效，只填写域名，例如 imap.example.com。".into());
+    let invalid = || "IMAP 服务器地址无效：填写域名，需要时加端口，例如 imap.example.com 或 imap.example.com:9993。".to_string();
+    let (name, port) = match host.split_once(':') {
+        Some((name, port)) => {
+            let port = port.parse::<u16>().ok().filter(|port| *port > 0).ok_or_else(invalid)?;
+            (name, port)
+        }
+        None => (host.as_str(), DEFAULT_IMAP_PORT),
+    };
+    if !is_domain(name) {
+        return Err(invalid());
     }
-    Ok(host)
+    Ok(if port == DEFAULT_IMAP_PORT { name.to_string() } else { format!("{name}:{port}") })
+}
+
+/// Splits a resolved server into its name and port.
+pub(super) fn server_address(server: &str) -> (&str, u16) {
+    match server.split_once(':') {
+        Some((name, port)) => (name, port.parse().unwrap_or(DEFAULT_IMAP_PORT)),
+        None => (server, DEFAULT_IMAP_PORT),
+    }
 }

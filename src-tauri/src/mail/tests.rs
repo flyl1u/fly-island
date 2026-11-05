@@ -88,7 +88,12 @@ fn a_typed_imap_host_must_be_a_bare_domain() {
     assert_eq!(resolve_host("x@163.com", None).unwrap(), "imap.163.com");
     assert_eq!(resolve_host("x@example.edu.cn", Some(" ")).unwrap(), "imap.example.edu.cn");
     assert_eq!(resolve_host("x@foxmail.com", Some("IMAP.QQ.COM")).unwrap(), "imap.qq.com");
-    for host in ["imap.qq.com:993", "imap.qq.com/x", "imaps://imap.qq.com", "localhost", "a b.com"] {
+    // A port is kept unless it is the default 993.
+    assert_eq!(resolve_host("x@qq.com", Some("imap.qq.com:993")).unwrap(), "imap.qq.com");
+    assert_eq!(resolve_host("x@corp.cn", Some("mail.corp.cn:9993")).unwrap(), "mail.corp.cn:9993");
+    assert_eq!(super::credentials::server_address("mail.corp.cn:9993"), ("mail.corp.cn", 9993));
+    assert_eq!(super::credentials::server_address("imap.qq.com"), ("imap.qq.com", 993));
+    for host in ["imap.qq.com/x", "imaps://imap.qq.com", "localhost", "a b.com", "imap.qq.com:0", "imap.qq.com:99999", "imap.qq.com:abc", ":993", "imap.qq.com:993:1"] {
         assert!(resolve_host("x@qq.com", Some(host)).is_err(), "{host:?}");
     }
 }
