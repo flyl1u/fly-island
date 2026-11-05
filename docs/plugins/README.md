@@ -112,7 +112,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 ### 岛上页面（第 2 版）
 
-插件可以在岛屿展开后拥有自己的页面，并在折叠条上显示一小段状态。**插件不能自带界面代码**：不能发 HTML、脚本或 SVG，只能发数据，页面由岛屿按模板绘制，所以和岛屿的其他页面风格一致。
+插件可以在岛屿展开后拥有自己的页面，并在折叠条上显示一小段状态。页面一般由岛屿按模板绘制：插件只发数据，不发 HTML、脚本或 SVG，所以和岛屿的其他页面风格一致。模板画不出来的（图表、小工具），可以用 `webview` 模板显示插件自己的网页，见下面的「自定义界面」。
 
 ```json
 "contributes": {
@@ -126,7 +126,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `views[].id` | 1–32 个字母、数字或 `-`，同一插件内不能重复。 |
 | `views[].title` | 中英文都要提供。 |
 | `views[].icon` | lucide 图标名，只能用 `plugins/schema/manifest.schema.json` 里列出的那些（如 `list`、`timer`、`git-pull-request`、`kanban`），省略时为 `puzzle`。 |
-| `views[].template` | `list`、`detail`、`form` 或 `status`，见下面的模板说明。 |
+| `views[].template` | `list`、`detail`、`form`、`status` 或 `webview`，见下面的模板说明。 |
+| `views[].entry` / `views[].height` | 只用于 `webview`：页面文件和页面高度，见「自定义界面」。 |
 | `statusItems[].id` | 同上。 |
 | `statusItems[].priority` | -100 到 100，默认 0。所有插件有文字的状态项里，只显示优先级最高的一个。 |
 
@@ -156,6 +157,23 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 **`form` 模板**：`{ fields, submitTitle?, message?, error? }`。`fields[]` 为 `{ key, type, title, description?, placeholder?, value?, options?, min?, max? }`，`type` 与插件设置页相同（`boolean`、`string`、`number`、`select`），另外多一个 `multiline`（多行文字，最长 4000 字）。用户点提交后插件收到 `view.submit { viewId, values }`，`values` 已按字段类型整理（数字取整并限定在 `min`–`max`）。用 `message` / `error` 告诉用户结果。
 
 **`status` 模板**：`{ primary, secondary?, caption?, progress?, tone?, actions? }`。`primary` 是一行大字（例如倒计时），`secondary` 是第二行，`progress` 是 0–1 的进度条，`tone` 为 `neutral`、`accent`、`warning` 或 `danger`。
+
+**自定义界面（`webview` 模板，P8）**：`{ "id": "ring", "title": …, "template": "webview", "entry": "ui/index.html", "height": 200 }`
+
+- `entry` 必填，是插件文件夹里的 `.html` 文件（相对路径，不能有 `..`）。页面只能加载 `entry` 所在文件夹及其子文件夹里的文件；`height` 是页面在岛上的高度，80–480 像素，默认 240。
+- 页面不在岛屿自己的网页里，而是一个单独的 WebView2：页面里**没有**岛屿的任何接口（`__TAURI__` 之类都不存在），只能和自己的插件进程通信。页面在无痕模式下运行，关掉后不留下 `localStorage` 之类的数据。
+- 页面不能联网：岛屿拦截页面和其中所有框架、Worker 的每一个请求，只回答插件文件夹里的文件，其他一律拒绝；离开插件来源的跳转、新窗口、下载和权限请求（摄像头等）都会被拒绝，WebRTC 不可用。每个文件都带固定的 CSP：`default-src 'none'`，允许本插件的脚本（含内联脚本）、样式、图片和字体，`connect-src 'self'`（只能 `fetch` 自己的文件），禁止 `eval`、Worker、表单提交。页面可以用 `<meta>` 再加限制，不能放宽。
+- 页面来源是 `https://<插件 id>.plugin.focusd.invalid`，用相对路径引用文件即可。
+- 页面脚本调用 `acquireFocusdApi()`（每个页面只能调用一次）拿到：
+  - `postMessage(message)`：发给插件进程，插件收到通知 `webview.message { viewId, message }`（不超过 256 KB）；
+  - `onMessage(listener)`：收插件用 `webview.postMessage { viewId, message }` 发来的消息，返回取消函数；
+  - `getState()` / `setState(state)`：岛屿运行期间为这个页面保存的一小段数据（不超过 64 KB），页面关掉再打开时能马上拿到；
+  - `locale`：岛屿当前语言，`"zh-CN"` 或 `"en"`。
+- 页面打开时才创建，离开屏幕就关闭。`webview.postMessage` 返回 `{ shown }`，页面不在屏幕上时为 `false`，消息被丢弃；页面脚本还没运行时发的消息也会丢失，所以让页面加载后先发一条"准备好了"，插件收到再发数据（示例 `dev.focusd.todo-ring` 就是这样）。
+- 主题：页面里有岛屿的颜色变量 `--focusd-text`、`--focusd-text-muted`、`--focusd-accent`、`--focusd-surface`、`--focusd-border`、`--focusd-success`、`--focusd-warning`、`--focusd-danger`、`--focusd-radius`、`--focusd-font`。页面背景默认透明，下面是岛屿的页面底色。
+- 开发模式加载的插件，页面可以右键打开开发者工具（F12）；其他插件没有右键菜单和浏览器快捷键。
+- 插件市场会给带自定义界面的插件加上"自定义界面"标签，安装前值得多看一眼。
+- `initialize.capabilities` 含 `webview` 时岛屿支持这个模板。不支持的旧版本岛屿无法安装带 `webview` 页面的插件（清单校验不通过），发布这样的插件时最好写上 `minAppVersion`。
 
 **折叠条状态**：`status.update { itemId, text, tooltip?, tone? }`，`text` 最多 24 个字符，空字符串表示清除。状态文字显示在折叠条右侧的小标签里，和待办摘要、Agent 标题同时显示，不替换它们；有消息预览或快捷翻译时先让位。点击标签会打开这个插件的第一个页面。
 

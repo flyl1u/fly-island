@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 做了技术验证，结论是暂不实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库和 CI 签名还没建。
+> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 第一轮技术验证不通过，换成不经过 Tauri 的独立 WebView2 后第二轮验证通过并已实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库和 CI 签名还没建。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -336,6 +336,18 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 **验证结果（2026-11-05）：不通过，暂不实现。** 详见 [p8-webview-validation.md](p8-webview-validation.md)。要点：Windows 上 Tauri 的 IPC 脚本和调用密钥会被注入沙箱 iframe，现在只因为 iframe 的来源是 `null` 才调用不了命令，不是设计上的保证；本应用没有应用级 ACL，单独的 webview 从本地来源加载时能调用全部应用命令；CSP 挡得住子资源，但挡不住 iframe 把自己导航到外部网址（实测可以带出数据）。内存一条通过（沙箱 `srcdoc` iframe 在同一渲染进程，测不出差别）。文档里列了重新评估的条件。下面的设计保留，供以后参考。
 
+**第二轮验证与实现（2026-11-05）：通过，已实现。** 插件页面改用岛屿自己创建的 WebView2（与岛屿共用 WebView2 环境，但不是 Tauri 的 webview，没有任何 Tauri 脚本），所有请求和跳转在原生层拦截。隔离实例里以页面脚本的身份重跑了第一轮的检查和更多外传手段，全部挡住；页面打开时多占约 25 MB，关闭后释放。详见 [p8-webview-validation.md](p8-webview-validation.md#第二轮独立的-webview2)。
+
+**完成记录（2026-11-05）** ✅ 本地提交：`win32/webview_page.rs`（创建与加固 WebView2，unsafe 只在这里）、`plugin_host/webviews.rs`（放行规则、提供插件文件、消息与状态、页面的创建和关闭）、前端 `WebviewTemplate`、RPC `webview.postMessage` / `webview.message`、能力 `webview`、SDK 与模拟宿主、示例 `dev.focusd.todo-ring`、市场"自定义界面"标签。
+
+与下面原设计的差异：
+
+- **不是 iframe，也不是 Tauri webview**，而是独立的 WebView2 控制器，叠放在岛屿窗口里占位框的位置（前端报告占位框的位置，原生层移动页面）。岛屿弹出的菜单等不会盖在页面上面。
+- **`webviewOptions` 没做**：脚本总是开启；可加载的文件固定为 `entry` 所在文件夹（相当于只有一个 `localResourceRoots`）；**不支持 `allowNetwork`**，页面需要网络数据时由插件进程去取再发给页面。
+- **页面 API**：`acquireFocusdApi()` 返回 `{ locale, postMessage, onMessage, getState, setState }`（多了 `locale` 和 `onMessage`，消息不走 `window` 的 `message` 事件）。`getState` / `setState` 只保存在内存里，岛屿重启后清空。
+- **权限确认**里没有单独标注"自定义界面"，只在插件市场加标签。
+- 旧版本岛屿遇到 `webview` 模板会拒绝整个清单；示例没写 `minAppVersion`，因为 fork 的版本号还没变。
+
 **通过后的设计（照搬 VS Code 的规则）**
 
 - 贡献点：`views[].template: "webview"`，`entry: "ui/index.html"`；`webviewOptions: { enableScripts, localResourceRoots, allowNetwork: [...] }`。
@@ -498,7 +510,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 | P5 | 清单：`apiVersion: 2`、`commands[].keybinding/when`、`menus`；RPC：`events.*`、`event`、`island.notify`、`notification.action`、`storage.*`、`secrets.*`；权限：`island:notify`、`secrets`；凭据条目 `com.focusd.island.plugin.<id>`；文件 `plugins-data/<id>/storage.json`；事件 `plugin-host-event` | 全部新增，`apiVersion: 1` 插件不受影响 |
 | P6 | 待办和笔记移到 `todos.json`；新命令 `get_todos_state`、`apply_todos_change`，事件 `todos-changed`；迁移标记 `focusd-island-todos-migrated-v1`；新权限 `clipboard:read`、`messages:read`、`media:read`、`media:control`、`shelf:read`、`shelf:write`；`plugins.json` 增加 `sensitive` 授权 | 首次启动迁移，旧 localStorage key 保留；`local-api-request` 只在确认无用后删除 |
 | P7 | 清单 `views`、`statusItems`；RPC `view.*`、`status.update`；岛上页面 id `plugin:<id>/<view>`；事件 `plugin-view-changed` | 新增 |
-| P8 | 验证不通过，没有新增（原计划：`views[].template: "webview"`、`webviewOptions`；页面 API `acquireFocusdApi`） | — |
+| P8 | 清单 `views[].template: "webview"`、`entry`、`height`；RPC `webview.postMessage`、通知 `webview.message`；能力 `webview`；页面 API `acquireFocusdApi()`；Tauri 命令 `show_plugin_webview`、`hide_plugin_webview`；索引字段 `webview` | 新增；不支持的旧版本拒绝含 `webview` 页面的清单 |
 | P9 | 清单 `activationEvents`；RPC `host.keepAlive` | 没写的插件按 `onStartup` 处理 |
 | P10 | 清单 `experimentalApis`；本地接口 `POST /v1/dev/plugins/{id}/reload` | 新增 |
 | P11 | `index.json.sig` 支持数组；新增 `revoked.json`（`.sig`）；索引条目增加 `publisher`、`categories`、`repo`、`preRelease`；`plugins.json` 增加 `revoked`、`trustedPublishers`、`autoUpdate`；新命令 `set_plugin_auto_update`、`set_plugin_publisher_trusted`、`check_plugin_updates`（索引地址暂未改到新仓库） | 岛屿同时接受旧的单签名格式；新字段都可省略 |

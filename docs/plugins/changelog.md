@@ -4,6 +4,12 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 自定义界面（P8）
+
+- `contributes.views[].template: "webview"`，配 `entry`（插件文件夹里的 .html）和 `height`：插件自己的网页显示在岛上。页面在单独的 WebView2 里，不能联网，也没有岛屿的接口，只能通过 `acquireFocusdApi()` 和插件进程收发消息。
+- 方法 `webview.postMessage`，通知 `webview.message`，能力 `webview`。SDK：Node `plugin.views.postMessage` / `views.onMessage`，PowerShell `Send-FocusdWebviewMessage`；模拟宿主 `webviewMessage()`、`openWebviews`、`webviewMessages`。
+- 新示例 `dev.focusd.todo-ring`（待办进度环）。市场给这类插件加"自定义界面"标签（索引字段 `webview`）。
+
 ## 市场（P11）
 
 - 插件 API 没有变化；改的是上架和分发。

@@ -4,7 +4,9 @@
 
 ## 结论
 
-**不通过，P8 暂不实现。**三条标准里，内存一条通过；“页面脚本调用不了任何 Tauri 命令”目前做得到，但只是碰巧，不是设计上的保证；“页面加载不了插件包以外的资源”做不到：页面可以把自己导航到外部网址，把数据带出去。模板（P7）继续作为插件界面的唯一方式。
+> **更新（2026-11-05）**：下面是第一轮的结论。第二轮换成不经过 Tauri 的独立 WebView2，三条标准都通过，P8 已按此实现，见文末 [第二轮：独立的 WebView2](#第二轮独立的-webview2)。
+
+**第一轮：不通过。**三条标准里，内存一条通过；“页面脚本调用不了任何 Tauri 命令”目前做得到，但只是碰巧，不是设计上的保证；“页面加载不了插件包以外的资源”做不到：页面可以把自己导航到外部网址，把数据带出去。模板（P7）继续作为插件界面的唯一方式。
 
 | 标准 | 沙箱 iframe（`sandbox="allow-scripts"` + `srcdoc`） | 单独的 Tauri webview |
 |---|---|---|
@@ -86,3 +88,39 @@ CSP 不管框架自己的导航（曾经计划的 `navigate-to` 指令没有被�
 - `p8-probe.mjs`：通过 `http://127.0.0.1:<端口>/json/list` 找到岛屿窗口，用 `Runtime.evaluate` 插入 `sandbox="allow-scripts"` 的 `srcdoc` iframe；iframe 里的脚本做第 1、3 节表格里的检查，用 `parent.postMessage` 把结果发回；之后读取 `get_plugin_dev_state` 确认开发模式没有被 iframe 打开。分别在不加 CSP 和加 `default-src 'none'` 时运行。
 - `p8-nav-mem.mjs`：插入三个分别做自身导航、表单提交、点击链接的 iframe，4 秒后用 `Page.getFrameTree` 和 `/json/list` 看框架去了哪里；再用 PowerShell 统计 `msedgewebview2.exe`（命令行里含隔离应用标识的那些）的 `PrivateMemorySize64`，对比插入 iframe 前后。
 - 隔离实例启动时设置 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`，使用单独的应用标识和数据目录，不碰真实数据。
+
+## 第二轮：独立的 WebView2
+
+> 日期：2026-11-05。同样的环境，用第一轮未考虑的做法：插件页面是岛屿自己用 WebView2 API 创建的控制器（`win32/webview_page.rs`），从 Tauri 的 webview 拿到同一个 WebView2 环境，但页面本身不经过 Tauri。
+
+**为什么能挡住调用**：Tauri 的 IPC 脚本、调用密钥和 `ipc.localhost` 的处理都是按 webview 注册的（`AddScriptToExecuteOnDocumentCreated`、`WebResourceRequested`），只挂在 Tauri 自己创建的 webview 上。新控制器上一个都没有，所以页面里根本不存在调用岛屿命令的通道，不再依赖 Tauri 对 `null` 来源的处理。
+
+**怎么禁止外部网络**：
+
+- `WebResourceRequested` 过滤 `*`，覆盖所有资源类型和所有来源（`ICoreWebView2_22`，含 iframe、Worker）。只有页面来源 `https://<插件 id>.plugin.focusd.invalid` 下、`entry` 文件夹里的文件才回答，其他请求都返回 403，没有任何请求到达网络。
+- `NavigationStarting` / `FrameNavigationStarting`：顶层只能停在页面来源，框架另外可以是 `about:blank` / `about:srcdoc`，其他跳转取消。这挡住了第一轮里 CSP 管不到的"自身导航带出数据"。
+- `NewWindowRequested` 不开窗口，`PermissionRequested` 全部拒绝，`DownloadStarting` 取消；关掉宿主对象、脚本对话框、缩放、自动填充、滑动导航，开发模式之外关掉开发者工具、右键菜单和浏览器快捷键。
+- 每个文件带固定 CSP（`default-src 'none'`，`connect-src 'self'`，禁止 Worker、表单提交、`<object>`）；文档创建时运行的脚本把 `RTCPeerConnection` 等设为 `undefined`（WebRTC 能绕过 CSP），这个脚本也在页面新建的 `about:blank` 框架里运行。
+- 页面是 InPrivate 的，和岛屿不共享存储，也不在磁盘上留下数据。
+
+**结果**（隔离实例，用远程调试在插件页面里运行脚本，模拟恶意页面）：
+
+| 检查 | 结果 |
+|---|---|
+| `__TAURI_INTERNALS__`、`__TAURI__`、`ipc`（页面和新建的空白框架里） | 都不存在 |
+| `fetch` `http://ipc.localhost/…`、`http://tauri.localhost/`、`https://example.com/` | 都失败 |
+| `fetch` 自己的文件 / `/../focusd-plugin.json` / `/%2e%2e/main.ps1` | 200 / 404 / 404 |
+| 外部图片、WebSocket、Service Worker、`window.open` | 失败 / 失败 / 被 CSP 拒绝 / `null` |
+| `RTCPeerConnection`（页面和空白框架） | `undefined` |
+| `location.href = "https://example.com/?leak=…"` | 被取消，页面停在原地址 |
+| iframe `src` 外部网址、`srcdoc` 里跳转、点击外部链接、表单提交 | 框架变成 `chrome-error://`，没有出现任何外部页面 |
+| 本机起一个 HTTP 服务器，页面用 `sendBeacon`、`fetch`、XHR、`EventSource`、图片、音视频、`<object>` / `<embed>`、`<link>` 的 dns-prefetch / preconnect / prefetch / preload / stylesheet、CSS `url()`、`<a ping>`、`<meta refresh>`、Worker 去访问它 | 服务器**没有收到任何请求** |
+| `localStorage`、`indexedDB` | 空 |
+| 插件进程与页面互发消息；岛屿里改待办后页面更新 | 正常（进度环显示 1 / 3） |
+| 关闭后页面目标消失；再次打开重新创建 | 正常 |
+
+**内存**：同一个隔离实例的 `msedgewebview2.exe` 私有内存合计，页面关闭 316.6–318.7 MB（7 个进程），打开 342.4–342.5 MB（8 个进程），即约 24–26 MB、一个渲染进程，关闭后释放。满足 < 30 MB。
+
+**仍然存在的限制**：页面和岛屿共用一个 WebView2 浏览器进程（不同渲染进程）；同一插件的多个页面共用来源；页面能消耗 CPU（和插件进程一样，靠用户停用）；DNS 预解析由 `X-DNS-Prefetch-Control: off` 和请求拦截双重限制，实测没有请求发出，但没有抓包确认 DNS 层面。
+
+**真实界面**：页面跟随前端占位框的位置（前端在页面打开和尺寸变化后的约 0.9 秒内逐帧报告位置）。隔离实例里报告的位置正确（岛屿标题下方 434×178），但没有在真实桌面上截图确认视觉效果，需要人工验收。
