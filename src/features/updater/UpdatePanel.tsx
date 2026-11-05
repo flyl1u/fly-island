@@ -4,6 +4,7 @@ import { useLocale, useTranslation } from "../../i18n";
 import { ProjectLink } from "./ProjectLink";
 import { PROJECT_RELEASES_URL } from "./projectLinks";
 import { releaseNoteLines } from "./releaseNotes";
+import { UpdateChannelRow } from "./UpdateChannelRow";
 import {
   checkForUpdate,
   checkOnFirstVisit,
@@ -16,7 +17,7 @@ import "./UpdatePanel.css";
 export function UpdatePanel() {
   const t = useTranslation();
   const { locale } = useLocale();
-  const { stage, version, nextVersion, notes, downloaded, total, detail } = useSyncExternalStore(
+  const { stage, version, channel, nextVersion, notes, downloaded, total, detail } = useSyncExternalStore(
     subscribeToUpdate,
     getUpdateState,
   );
@@ -71,6 +72,7 @@ export function UpdatePanel() {
 
   return (
     <div className={`update-panel update-panel--${stage}`}>
+      <UpdateChannelRow channel={channel} disabled={busy || stage === "done"} />
       <button
         className="project-link project-link--release update-panel__button"
         type="button"

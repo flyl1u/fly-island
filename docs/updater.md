@@ -3,9 +3,19 @@
 小岛在「设置 → 关于小岛 → 查看最新版本」里检查新版本，发现更新后可以在应用内下载、安装并自动重启。
 实现基于 Tauri 2 的 `tauri-plugin-updater`，所有更新包都用 minisign 签名，App 内置公钥校验，签名不符的包不会被安装。
 
+## 更新通道
+
+「关于」页的「更新通道」可选**稳定版**或**测试版（beta）**，保存在 `focusd-island-update-channel`。没选过时，beta 版本的程序默认测试版（是用户特意装的），其他版本默认稳定版，所以**不主动选测试版的用户永远收不到 beta**：
+
+- **稳定版**读 `plugins.updater.endpoints`，即 `releases/latest/download/latest.json`。GitHub 的 latest 永远不会是 Pre-release，而 beta 版都发成 Pre-release。0.3.0 及更早的客户端没有通道设置，也只读这里。
+- **测试版**读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算）。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。
+- 每次 `pnpm release`（正式版和 beta 版都算）发布后会刷新 `beta-channel` 上的清单，除非它已经指向更新的版本。所以测试版用户也会收到正式版；从测试版切回稳定版不会降级，要等稳定版追上当前版本才收到更新。
+
+版本号带 `-`（如 `0.3.1-beta.1`）就算 beta：`release.mjs` 会把它发成 Pre-release、不设为 latest，判断与比较在 `scripts/release/channel.mjs`。
+
 ## 检查与安装流程
 
-1. 前端调用 `check()`，依次尝试 `plugins.updater.endpoints` 里的地址：GitHub 直连、`ghfast.top`、`gh-proxy.com`，第一个能取到清单的胜出。
+1. 设置页调用 `updater_check`（按通道选端点，`src-tauri/src/system/update_channel.rs`），依次尝试各端点：GitHub 直连、`ghfast.top`、`gh-proxy.com`，第一个能取到清单的胜出。
 2. 清单里的 `version` 高于当前版本时，界面显示「发现新版本 vX.Y.Z」。
 3. 点「下载并安装」后，安装包下载到本地临时目录，边下边用清单里的 `signature` 校验。
 4. Windows 走 NSIS 安装模式 `passive`：显示安装进度条，装完由安装器拉起新版本，旧进程自动退出。

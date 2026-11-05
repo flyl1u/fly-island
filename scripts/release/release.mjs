@@ -11,10 +11,15 @@
 // The script refuses to run when the three version fields disagree, when the
 // release notes file is missing, or when the working tree has uncommitted
 // changes. Published versions are never overwritten.
+//
+// A pre-release version (0.3.1-beta.1) is published as a GitHub pre-release,
+// so the stable channel (GitHub's "latest" release) never offers it. Every
+// release also refreshes the beta channel's manifest; see channel.mjs.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { BETA_CHANNEL_TAG, isPrerelease, shouldUpdateBetaManifest } from "./channel.mjs";
 import { msiNames, msiVersion } from "./msi-version.mjs";
 import { loadSigningEnvironment } from "./release-signing.mjs";
 
@@ -24,6 +29,7 @@ const CARGO = "src-tauri/Cargo.toml";
 const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 const MSI_DIR = "src-tauri/target/release/bundle/msi";
 const MSI_OVERLAY = "src-tauri/target/release/msi-version.conf.json";
+const BETA_CHANNEL_DIR = "src-tauri/target/release/beta-channel";
 const REPO = "TixXin/fly-island";
 
 const args = process.argv.slice(2);
@@ -135,7 +141,12 @@ if (!upload) {
 
 const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath];
 const revision = run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim();
-run("gh", ["release", "create", tag, "--repo", REPO, "--target", revision, "--draft", "--title", tag, "--notes-file", notesFile, ...assets]);
+const prerelease = isPrerelease(version);
+run("gh", [
+  "release", "create", tag, "--repo", REPO, "--target", revision, "--draft",
+  ...(prerelease ? ["--prerelease"] : []),
+  "--title", tag, "--notes-file", notesFile, ...assets,
+]);
 // An unpublished draft's tag may not exist yet, so fetch its assets by release ID.
 const releaseId = run("gh", ["release", "view", tag, "--repo", REPO, "--json", "databaseId", "--jq", ".databaseId"], { capture: true }).stdout.trim();
 const remote = JSON.parse(run("gh", ["api", `repos/${REPO}/releases/${releaseId}`], { capture: true }).stdout);
@@ -147,6 +158,39 @@ for (const path of assets) {
     fail(`Uploaded asset verification failed for ${name}. The release remains a draft.`);
   }
 }
-run("gh", ["release", "edit", tag, "--repo", REPO, "--draft=false", "--latest"]);
+run("gh", [
+  "release", "edit", tag, "--repo", REPO, "--draft=false",
+  ...(prerelease ? ["--prerelease", "--latest=false"] : ["--latest"]),
+]);
+console.log(`\n✓ Published ${tag}${prerelease ? " as a pre-release (beta channel only)" : ""}.`);
 
-console.log(`\n✓ Published ${tag}.`);
+updateBetaChannel(revision);
+
+function updateBetaChannel(target) {
+  // `run` goes through the Windows shell, which splits arguments at spaces, so
+  // nothing passed here may contain one.
+  const dir = BETA_CHANNEL_DIR;
+  mkdirSync(dir, { recursive: true });
+  const exists = run("gh", ["release", "view", BETA_CHANNEL_TAG, "--repo", REPO], { capture: true, allowFailure: true });
+  if (exists.status !== 0) {
+    const notes = join(dir, "notes.md");
+    writeFileSync(notes, "Update manifest of the beta channel, refreshed by every release. Do not delete.\n");
+    // A pre-release, so it can never become GitHub's "latest" release.
+    run("gh", [
+      "release", "create", BETA_CHANNEL_TAG, "--repo", REPO, "--target", target,
+      "--prerelease", "--latest=false", "--title", BETA_CHANNEL_TAG, "--notes-file", notes,
+    ]);
+  }
+  const current = run("gh", [
+    "release", "download", BETA_CHANNEL_TAG, "--repo", REPO, "--pattern", "latest.json", "--dir", dir, "--clobber",
+  ], { capture: true, allowFailure: true });
+  const currentVersion = current.status === 0
+    ? JSON.parse(readFileSync(join(dir, "latest.json"), "utf8")).version
+    : null;
+  if (!shouldUpdateBetaManifest(version, currentVersion)) {
+    console.log(`Beta channel keeps v${currentVersion}, which is newer than ${tag}.`);
+    return;
+  }
+  run("gh", ["release", "upload", BETA_CHANNEL_TAG, `${BUNDLE_DIR}/latest.json`, "--repo", REPO, "--clobber"]);
+  console.log(`✓ Beta channel now offers ${tag}.`);
+}

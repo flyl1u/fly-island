@@ -1,7 +1,7 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { isTauri } from "@tauri-apps/api/core";
-import { check, type Update } from "@tauri-apps/plugin-updater";
-import { getUpdaterProxy, isUpdaterConfigured } from "./api";
+import { checkUpdate, downloadAndInstallUpdate, getUpdaterProxy, isUpdaterConfigured } from "./api";
+import { loadUpdateChannel, saveUpdateChannel, type UpdateChannel } from "./storage";
 
 export type UpdateStage =
   | "idle"
@@ -17,6 +17,7 @@ export type UpdateStage =
 export type UpdateState = {
   stage: UpdateStage;
   version: string;
+  channel: UpdateChannel;
   nextVersion: string;
   /** Release notes of `nextVersion`, as published in latest.json. */
   notes: string;
@@ -31,6 +32,7 @@ export type UpdateState = {
 const initialState: UpdateState = {
   stage: "idle",
   version: "",
+  channel: "stable",
   nextVersion: "",
   notes: "",
   downloaded: 0,
@@ -42,7 +44,7 @@ let state: UpdateState = initialState;
 const listeners = new Set<() => void>();
 
 let proxy: string | null = null;
-let pending: Update | null = null;
+let hasPending = false;
 let ready: Promise<void> | null = null;
 
 function setState(patch: Partial<UpdateState>) {
@@ -89,19 +91,9 @@ async function loadBuildInfo() {
 
   setState({
     version,
+    channel: loadUpdateChannel(version),
     stage: configured ? state.stage : "disabled",
   });
-}
-
-async function closePending() {
-  const update = pending;
-  pending = null;
-  if (!update) return;
-  try {
-    await update.close();
-  } catch {
-    // The installer takes over the update resource, so closing it can fail.
-  }
 }
 
 /** Checks once per run, when the About page is first opened. A manual check, a
@@ -115,18 +107,17 @@ export async function checkForUpdate() {
   await initialize();
   if (busy(state.stage) || state.stage === "disabled") return;
 
-  await closePending();
+  hasPending = false;
   setState({ nextVersion: "", notes: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
 
   try {
-    const found = await check({ timeout: 20000, ...(proxy ? { proxy } : {}) });
-    pending = found;
-
+    const found = await checkUpdate(state.channel, proxy);
     if (!found) {
       setState({ stage: "latest" });
       return;
     }
 
+    hasPending = true;
     setState({ stage: "available", nextVersion: found.version, notes: found.body?.trim() ?? "" });
   } catch (error) {
     console.error("Failed to check for updates", error);
@@ -134,35 +125,39 @@ export async function checkForUpdate() {
   }
 }
 
+/** Switches the update channel and checks it right away. Ignored mid-download. */
+export async function setUpdateChannel(channel: UpdateChannel) {
+  await initialize();
+  if (busy(state.stage) || channel === state.channel) return;
+  saveUpdateChannel(channel);
+  setState({ channel });
+  if (state.stage !== "disabled") await checkForUpdate();
+}
+
 export async function installUpdate() {
-  const update = pending;
-  if (!update || busy(state.stage)) return;
+  if (!hasPending || busy(state.stage)) return;
+  hasPending = false;
 
   setState({ downloaded: 0, total: 0, detail: "", stage: "downloading" });
 
   try {
-    await update.downloadAndInstall(
-      (event) => {
-        if (event.event === "Started") {
-          setState({ total: event.data.contentLength ?? 0 });
-          return;
-        }
+    await downloadAndInstallUpdate((event) => {
+      if (event.event === "Started") {
+        setState({ total: event.data.contentLength ?? 0 });
+        return;
+      }
 
-        if (event.event === "Progress") {
-          setState({ downloaded: state.downloaded + event.data.chunkLength });
-          return;
-        }
+      if (event.event === "Progress") {
+        setState({ downloaded: state.downloaded + event.data.chunkLength });
+        return;
+      }
 
-        setState({ stage: "installing" });
-      },
-      { timeout: 600000, ...(proxy ? { proxy } : {}) },
-    );
+      setState({ stage: "installing" });
+    });
     setState({ stage: "done" });
   } catch (error) {
     console.error("Failed to install the update", error);
     setState({ stage: "error", detail: errorReason(error) });
-  } finally {
-    await closePending();
   }
 }
 

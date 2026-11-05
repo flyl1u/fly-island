@@ -31,6 +31,11 @@ export type SettingsProjectText = {
     errorDetail: (reason: string) => string;
     notesTitle: (version: string) => string;
     unavailable: string;
+    channel: string;
+    channelStable: string;
+    channelBeta: string;
+    channelStableHint: string;
+    channelBetaHint: string;
   };
 };
 
@@ -67,6 +72,11 @@ export const zhCN: SettingsProjectText = {
     errorDetail: (reason) => `原因：${reason}`,
     notesTitle: (version) => `v${version} 更新内容`,
     unavailable: "这里不能应用内更新，请到 Release 页手动下载。",
+    channel: "更新通道",
+    channelStable: "稳定版",
+    channelBeta: "测试版（beta）",
+    channelStableHint: "只接收正式版本",
+    channelBetaHint: "提前体验新功能，也会收到正式版本；可能不太稳定",
   },
 };
 
@@ -103,5 +113,10 @@ export const en: SettingsProjectText = {
     errorDetail: (reason) => `Reason: ${reason}`,
     notesTitle: (version) => `What's new in v${version}`,
     unavailable: "In-app updates aren't available here. Grab new versions from the release page.",
+    channel: "Update channel",
+    channelStable: "Stable",
+    channelBeta: "Beta",
+    channelStableHint: "Only final releases",
+    channelBetaHint: "Try new features early, and still get final releases; may be less stable",
   },
 };
