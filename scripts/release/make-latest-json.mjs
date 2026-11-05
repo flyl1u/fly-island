@@ -4,6 +4,7 @@
 // Usage: node scripts/release/make-latest-json.mjs [--notes-file docs/releases/vX.Y.Z.md]
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { msiNames } from "./msi-version.mjs";
 
 const REPO = "TixXin/fly-island";
 const CONFIG = "src-tauri/tauri.conf.json";
@@ -46,7 +47,7 @@ if (!existsSync(signaturePath)) {
 }
 
 const notes = notesFile && existsSync(notesFile) ? readFileSync(notesFile, "utf8").trim() : "";
-const msi = existsSync(MSI_DIR) && readdirSync(MSI_DIR).find((name) => name.endsWith(`_${version}_x64_en-US.msi`));
+const msi = existsSync(MSI_DIR) && readdirSync(MSI_DIR).find((name) => msiNames(version).some((suffix) => name.endsWith(suffix)));
 const msiSignaturePath = msi && join(MSI_DIR, `${msi}.sig`);
 if (!msiSignaturePath || !existsSync(msiSignaturePath)) {
   console.error(`Missing signed MSI installer in ${MSI_DIR}. Build both nsis and msi release bundles first.`);

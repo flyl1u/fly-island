@@ -13,7 +13,9 @@
 // changes. Published versions are never overwritten.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { msiNames, msiVersion } from "./msi-version.mjs";
 import { loadSigningEnvironment } from "./release-signing.mjs";
 
 const CONFIG = "src-tauri/tauri.conf.json";
@@ -21,6 +23,7 @@ const OVERLAY = "src-tauri/tauri.release.conf.json";
 const CARGO = "src-tauri/Cargo.toml";
 const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 const MSI_DIR = "src-tauri/target/release/bundle/msi";
+const MSI_OVERLAY = "src-tauri/target/release/msi-version.conf.json";
 const REPO = "TixXin/fly-island";
 
 const args = process.argv.slice(2);
@@ -95,7 +98,21 @@ if (upload) {
 }
 
 run("node", ["scripts/release/prepare-release-config.mjs"]);
-run("pnpm", ["tauri", "build", "--ci", "--config", OVERLAY, "--bundles", "nsis,msi"]);
+const configs = ["--config", OVERLAY];
+let wixVersion;
+try {
+  wixVersion = msiVersion(version);
+} catch (error) {
+  fail(error.message);
+}
+if (wixVersion) {
+  // A pre-release (0.3.1-beta.1) needs a numeric MSI version; see msi-version.mjs.
+  mkdirSync(dirname(MSI_OVERLAY), { recursive: true });
+  writeFileSync(MSI_OVERLAY, `${JSON.stringify({ bundle: { windows: { wix: { version: wixVersion } } } })}\n`);
+  configs.push("--config", MSI_OVERLAY);
+  console.log(`MSI version for ${version}: ${wixVersion}`);
+}
+run("pnpm", ["tauri", "build", "--ci", ...configs, "--bundles", "nsis,msi"]);
 
 const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
@@ -103,7 +120,7 @@ run("node", latestArgs);
 
 const installer = readdirSync(BUNDLE_DIR).find((name) => name.endsWith(`_${version}_x64-setup.exe`));
 if (!installer) fail(`Missing installer in ${BUNDLE_DIR}.`);
-const msi = readdirSync(MSI_DIR).find((name) => name.endsWith(`_${version}_x64_en-US.msi`));
+const msi = readdirSync(MSI_DIR).find((name) => msiNames(version).some((suffix) => name.endsWith(suffix)));
 if (!msi) fail(`Missing MSI installer in ${MSI_DIR}.`);
 const installers = [`${BUNDLE_DIR}/${installer}`, `${MSI_DIR}/${msi}`];
 const checksumPath = `${BUNDLE_DIR}/SHA256SUMS.txt`;
