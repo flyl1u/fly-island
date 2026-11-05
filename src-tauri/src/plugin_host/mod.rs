@@ -155,3 +155,46 @@ fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 fn app_version(app: &AppHandle) -> String {
     app.package_info().version.to_string()
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::plugin_host::list_plugins,
+            crate::plugin_host::set_plugins_allowed,
+            crate::plugin_host::set_plugin_enabled,
+            crate::plugin_host::reload_plugins,
+            crate::plugin_host::open_plugins_folder,
+            crate::plugin_host::run_plugin_command,
+            crate::plugin_host::set_plugin_setting,
+            crate::plugin_host::get_plugin_market,
+            crate::plugin_host::install_market_plugin,
+            crate::plugin_host::uninstall_plugin,
+            crate::plugin_host::run_plugin_notification_action,
+            crate::plugin_host::set_plugin_notifications_muted,
+            crate::plugin_host::clear_plugin_data,
+            crate::plugin_host::list_plugin_menu,
+            crate::plugin_host::run_plugin_menu_command,
+            crate::plugin_host::answer_plugin_permission,
+            crate::plugin_host::revoke_plugin_sensitive_permission,
+            crate::plugin_host::list_plugin_views,
+            crate::plugin_host::set_plugin_view_visible,
+            crate::plugin_host::run_plugin_view_action,
+            crate::plugin_host::submit_plugin_view,
+            crate::plugin_host::search_plugin_view,
+            crate::plugin_host::restart_plugin,
+            crate::plugin_host::get_plugin_dev_state,
+            crate::plugin_host::set_plugin_dev_mode,
+            crate::plugin_host::load_dev_plugin,
+            crate::plugin_host::reload_dev_plugin,
+            crate::plugin_host::unload_dev_plugin,
+            crate::plugin_host::get_plugin_rpc_trace,
+            crate::plugin_host::send_plugin_dev_event,
+            crate::plugin_host::set_plugin_auto_update,
+            crate::plugin_host::set_plugin_publisher_trusted,
+            crate::plugin_host::check_plugin_updates,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

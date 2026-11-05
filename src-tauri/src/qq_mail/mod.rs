@@ -301,3 +301,19 @@ async fn await_reply<T: Send + 'static>(
     .await
     .map_err(|_| "QQ 邮箱连接任务未完成。".to_string())?
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::qq_mail::get_qq_mail_state,
+            crate::qq_mail::connect_qq_mail,
+            crate::qq_mail::set_qq_mail_enabled,
+            crate::qq_mail::refresh_qq_mail,
+            crate::qq_mail::read_qq_mail,
+            crate::qq_mail::disconnect_qq_mail,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

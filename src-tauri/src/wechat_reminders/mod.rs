@@ -358,3 +358,16 @@ fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String
     }
     Err("微信未能恢复原来的主窗口，请双击系统托盘中的微信图标。".into())
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::wechat_reminders::get_wechat_reminder_state,
+            crate::wechat_reminders::set_wechat_reminders_enabled,
+            crate::wechat_reminders::open_wechat,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

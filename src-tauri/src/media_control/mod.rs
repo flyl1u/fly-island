@@ -71,3 +71,22 @@ async fn run_media_command(
         .await
         .map_err(|error| format!("Failed to join the media command task: {error}"))?
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::media_control::get_media_state,
+            crate::media_control::get_audio_level,
+            crate::media_control::media_play_pause,
+            crate::media_control::media_next,
+            crate::media_control::media_previous,
+            crate::media_control::media_toggle_shuffle,
+            crate::media_control::media_cycle_repeat,
+            crate::media_control::media_seek,
+            crate::media_control::media_set_volume,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

@@ -86,7 +86,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 | 现有位置 | 目标位置 |
 |---|---|
-| `lib.rs`：`run()`、插件、setup、`generate_handler!` | 保留在 `lib.rs` |
+| `lib.rs`：`run()`、插件、setup、`generate_handler!` | 保留在 `lib.rs`；命令清单已移到各模块 `mod.rs` 的 `tauri_commands!`，`lib.rs` 用 `collect_commands!` 汇总 |
 | `lib.rs`：托盘创建与事件 | `tray.rs`（5.3 已完成） |
 | `lib.rs`：`IslandWindowState`、布局/交互/拖拽/位置命令、几何计算、毛玻璃、鼠标穿透、动画 | `island/{mod, state, geometry, glass, passthrough, focus, top_edge, tests}.rs`（5.1 已完成：`mod.rs` 放命令与窗口访问，`state.rs` 放状态类型与全局状态，`geometry.rs` 放尺寸常量、定位与贴边动画，`top_edge.rs` 负责顶边贴合判断与拖放吸附，`focus.rs` 在光标停在展开面板上时获取并归还键盘焦点） |
 | `lib.rs`：代理状态快照、运行标记、Codex / Claude Code hook 安装、`write_text_file`（只有 hook 安装使用） | `agent_status/{mod, snapshot, markers, codex_hooks, claude_hooks}.rs`（5.2 已完成） |

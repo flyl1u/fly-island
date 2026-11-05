@@ -332,3 +332,24 @@ pub async fn start_file_shelf_drag(
         items
     })
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::file_shelf::get_file_shelf,
+            crate::file_shelf::set_file_shelf_options,
+            crate::file_shelf::add_file_shelf_paths,
+            crate::file_shelf::remove_file_shelf_items,
+            crate::file_shelf::toggle_file_shelf_pin,
+            crate::file_shelf::get_file_shelf_thumbnail,
+            crate::file_shelf::clear_file_shelf,
+            crate::file_shelf::copy_file_shelf_items,
+            crate::file_shelf::open_file_shelf_item,
+            crate::file_shelf::reveal_file_shelf_item,
+            crate::file_shelf::start_file_shelf_drag,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

@@ -7,7 +7,7 @@
 ```text
 src-tauri/src/
 ├── main.rs                  # 只调用 focusd_island_lib::run()
-├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、generate_handler!
+├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、collect_commands!（汇总各模块的 tauri_commands!）
 ├── tray.rs                  # 托盘菜单与事件
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装
@@ -32,8 +32,8 @@ src-tauri/src/
 
 ## lib.rs 与模块组织
 
-- `lib.rs` 只做组装：`mod` 声明、插件注册、`setup`、托盘创建、`generate_handler!`。不写业务逻辑、不定义命令。
-- `generate_handler!` 中的命令按模块分组排列，写完整路径（例如 `qq_mail::refresh_qq_mail`）。
+- `lib.rs` 只做组装：`mod` 声明、插件注册、`setup`、托盘创建、命令注册。不写业务逻辑、不定义命令。
+- 命令清单不写在 `lib.rs`：每个有命令的模块在自己的 `mod.rs` 里用 `tauri_commands!` 宏列出命令（写 `crate::` 开头的完整路径，例如 `crate::qq_mail::refresh_qq_mail`，子模块的命令也列在顶层模块里），`lib.rs` 的 `collect_commands!` 把各模块的清单串成一个 `generate_handler!`。新增命令只改所在模块的 `tauri_commands!`；新增一个有命令的模块时，才在 `collect_commands!([] ...)` 里加上模块名。`tauri_commands!` 要放在内联测试模块之前（clippy `items_after_test_module`）。
 - 文件超过 800 行或承担多个职责时，改成目录模块 `foo/mod.rs` 加子文件。常见的拆法：
 
   | 文件 | 内容 |

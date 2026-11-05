@@ -146,6 +146,18 @@ pub async fn show_settings_window(app: AppHandle) -> Result<(), String> {
     reveal(&window)
 }
 
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::settings_window::open_settings_window,
+            crate::settings_window::show_settings_window,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;
+
 #[cfg(test)]
 mod tests {
     use super::bounds::title_bar_on_screen;

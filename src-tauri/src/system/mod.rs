@@ -25,3 +25,20 @@ pub(crate) fn windows_home_dir() -> Result<PathBuf, String> {
         _ => Err("Failed to resolve the Windows user profile directory.".to_string()),
     }
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::system::todo_export::save_todo_markdown,
+            crate::system::todo_export::get_default_todo_save_directory,
+            crate::system::fullscreen::get_foreground_fullscreen,
+            crate::system::startup::get_launch_at_startup,
+            crate::system::startup::set_launch_at_startup,
+            crate::system::updater::get_updater_proxy,
+            crate::system::updater::updater_configured,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

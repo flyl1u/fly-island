@@ -340,3 +340,19 @@ pub(super) fn write_text_file(path: &Path, content: &str) -> Result<(), String> 
 pub(super) fn normalize_windows_line_endings(content: &str) -> String {
     content.replace("\r\n", "\n").replace('\n', "\r\n")
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::agent_status::get_agent_status,
+            crate::agent_status::clear_agent_status,
+            crate::agent_status::install_agent_status_hooks,
+            crate::agent_status::get_agent_hooks_state,
+            crate::agent_status::focus_agent_window,
+            crate::agent_status::list_agent_sessions,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

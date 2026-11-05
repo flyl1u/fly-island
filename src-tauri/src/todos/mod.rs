@@ -44,3 +44,16 @@ pub async fn apply_todos_change(change: TodosChange) -> Result<AppliedTodosChang
         .await
         .map_err(|error| format!("The save task failed: {error}"))?
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::todos::migrate_todos,
+            crate::todos::get_todos_state,
+            crate::todos::apply_todos_change,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

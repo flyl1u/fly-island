@@ -263,3 +263,19 @@ pub async fn open_qq() -> Result<(), String> {
         .await
         .map_err(|error| format!("打开 QQ 的线程失败：{error}"))?
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::qq_notifications::get_qq_notification_state,
+            crate::qq_notifications::set_qq_notifications_enabled,
+            crate::qq_notifications::request_qq_notification_access,
+            crate::qq_notifications::open_qq_notification_settings,
+            crate::qq_notifications::clear_qq_notifications,
+            crate::qq_notifications::open_qq,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

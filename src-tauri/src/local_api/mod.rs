@@ -144,3 +144,14 @@ pub(crate) fn call_island(app: &AppHandle, method: &'static str, params: serde_j
 pub fn answer_local_api_request(id: u64, response: BridgeResponse) {
     bridge::complete(id, response);
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::local_api::answer_local_api_request,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

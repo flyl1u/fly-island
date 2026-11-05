@@ -466,3 +466,26 @@ impl WindowMessages for TranslationHotkeyWindow {
         None
     }
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::translation::toggle_translation_window,
+            crate::translation::hide_translation_window,
+            crate::translation::read_translation_clipboard,
+            crate::translation::copy_translation_result,
+            crate::translation::has_translation_secret,
+            crate::translation::save_translation_secret,
+            crate::translation::delete_translation_secret,
+            crate::translation::translate_text,
+            crate::translation::set_translation_shortcut,
+            crate::translation::set_translation_selection_shortcut,
+            crate::translation::set_translation_enabled,
+            crate::translation::present_translation_window,
+            crate::translation::set_translation_target,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

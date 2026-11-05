@@ -268,3 +268,21 @@ fn current_unix_millis() -> i64 {
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::clipboard_history::get_clipboard_history,
+            crate::clipboard_history::set_clipboard_history_settings,
+            crate::clipboard_history::get_clipboard_shortcut_error,
+            crate::clipboard_history::copy_clipboard_history_item,
+            crate::clipboard_history::toggle_clipboard_history_favorite,
+            crate::clipboard_history::set_clipboard_history_item_note,
+            crate::clipboard_history::delete_clipboard_history_item,
+            crate::clipboard_history::clear_clipboard_history,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

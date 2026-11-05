@@ -264,3 +264,23 @@ pub(crate) fn hide_island(app: &AppHandle) {
 pub fn get_island_top_attachment() -> bool {
     top_edge::is_attached()
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::island::set_island_layout,
+            crate::island::set_island_interaction,
+            crate::island::start_island_drag,
+            crate::island::start_island_modifier_drag,
+            crate::island::reset_island_position,
+            crate::island::get_island_top_attachment,
+            crate::island::show_ready_island,
+            crate::island::minimize_island,
+            crate::island::focus::take_island_hover_focus,
+            crate::island::focus::release_island_hover_focus,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;
