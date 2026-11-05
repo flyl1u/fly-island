@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7、P9 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P8、P10、P11 仍是计划。
+> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8、P11 仍是计划。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -414,6 +414,19 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 **名字（已决定：以仓库名命名）**：npm 包 `fly-island-plugin`（SDK、CLI 命令、模拟宿主都在里面），脚手架 `create-fly-island-plugin`，PowerShell 模块 `FlyIsland.Plugin`。2026-11-04 查过，这三个名字在 npm 和 PowerShell Gallery 上都还没人用；P10 开始时先发一个占位版本把名字占住。不带 `@组织/` 前缀，不需要注册 npm 组织。
 
 **验收**：一个没接触过本项目的人，按快速开始用脚手架建一个 TypeScript 列表页面插件，`dev` 模式下改代码能在 2 秒内看到变化，`fly-island-plugin test` 在 GitHub Actions 中通过。
+
+**完成记录（2026-11-05）** ✅ 本地提交，未推送、未发布到 npm / PowerShell Gallery（见 git log 中 P10 的提交）。`packages/fly-island-plugin`（SDK、CLI、模拟宿主）、`packages/create-fly-island-plugin`（PowerShell / TypeScript / JavaScript × command / list / status / blank）、`packages/powershell/FlyIsland.Plugin`；岛屿的开发模式与 `/v1/dev` 接口；清单 `experimentalApis`；文档 `docs/plugins/quickstart.md`、`api.md`（生成）、`changelog.md`。自动化测试覆盖 12 种语言 × 模板组合（生成、`validate`、TypeScript 编译、各自的模拟宿主测试）。隔离实例端到端验证：`fly-island-plugin dev` 加载文件夹，改文件后约 0.3 秒插件重启，终端打印日志；收发记录和手动发事件；插件目录里带 `experimentalApis` 的插件被拒绝、以开发模式加载则可用；关闭开发模式后开发中的插件被移除。
+
+与上面设计的偏差：
+
+- **包的写法**：仓库没有 `@types/node`，又不新增依赖，所以 SDK、CLI、模拟宿主都是不需要构建的 ESM JavaScript 加手写的 `.d.mts` 类型；协议名称的类型（`protocol.d.mts`）和 API 参考由 `pnpm sdk:build` 从 `rpc.json` 生成，`pnpm test` 检查生成结果是否最新。清单校验用包内一个只支持 schema 所用关键字的小校验器，不依赖 ajv。
+- **示例插件的 `lib/focusd.ps1` 没改**：已发布版本的包内容不能变，新的单文件版本放在 `plugins/sdk/powershell/focusd.ps1`，脚手架复制它。
+- **其他语言的最小示例**（Python、Go、Rust、C#）没做，快速开始里只说明了协议和启动规则。
+- **开发模式**：只在内存里，岛屿重启后要重新打开；开发中的插件自动获得清单申请的全部权限（敏感权限仍询问），同 id 时取代插件目录里的插件。CLI 通过本地 API 工作，所以还需要打开本地 API 插件。除 `reload` 外另加了加载、移除和读日志三个接口。
+- **实验 API**：通道已建好，但岛屿目前没有任何实验 API，`initialize.experimentalApis` 总是空列表。
+- **`publish`**：只打包并打印发布步骤；创建 Release 交给脚手架生成的 GitHub Actions 工作流。向索引仓库开 PR 等 P11 的索引仓库建好后再做。
+- **pnpm workspace** 只列出两个 npm 包（不含 PowerShell 模块），`check:size` 已扫描 `packages/`。
+- **未做**：npm 和 PowerShell Gallery 的占位发布、`sdk-v*` 标签的发布工作流（都需要维护者账号）。
 
 ### P11 市场：能接收外部作者
 

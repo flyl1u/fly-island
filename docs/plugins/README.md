@@ -4,7 +4,11 @@
 
 > 当前状态：插件 API 第 2 版（第 1 版的插件照常运行，见下文的「API 版本」）。可以在 设置 → 插件市场 中安装，也可以手动放进插件目录。机器可读的协议描述在 [`plugins/schema/`](../../plugins/schema/)：`manifest.schema.json`（清单）和 `rpc.json`（方法、事件、权限、错误码），岛屿的单元测试会对照检查，本文和它不一致时以它为准。
 
+> 从零写一个新插件请看 [快速开始：一小时写出一个插件](quickstart.md)（脚手架、开发模式、模拟宿主、打包）。全部方法和事件见 [API 参考](api.md)（由 `rpc.json` 生成），各批次新增的内容见 [更新日志](changelog.md)。
+
 ## 快速开始
+
+下面是不用任何工具、手动安装一个示例插件的步骤。
 
 1. 复制示例 [`plugins/examples/dev.focusd.todo-digest`](../../plugins/examples/dev.focusd.todo-digest/) 到
    `%APPDATA%\com.focusd.island\plugins\dev.focusd.todo-digest\`。
@@ -71,6 +75,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `apiVersion` | ✅ | `1` 或 `2`，见下文的「API 版本」。新插件请写 `2`。 |
 | `minAppVersion` | | 需要的最低 FocuSD Island 版本，版本不够时插件显示为"无法加载"。 |
 | `activationEvents` | | 第 2 版：什么时候启动插件进程，见下文的「按需启动」。不写时随岛屿一直运行。 |
+| `experimentalApis` | | 申请还在设计中的 API（最多 10 个名称，如 `views.chart`）。只有以开发模式加载的插件能用，装在插件目录里的插件写了它就无法使用，见下文的「调试」。目前岛屿没有实验 API。 |
 | `author`、`homepage` | | 主页只显示 `https://` 链接。 |
 | `runtime` | ✅ | `{ "type": "process", "command": "...", "args": [...] }` 表示运行一个程序；`{ "type": "none" }` 表示只有清单、不运行程序。 |
 | `permissions` | | 见下文的权限表。 |
@@ -264,7 +269,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 
 | 方法 | 版本 | 参数 | 时机 |
 |---|---|---|---|
-| `initialize` | 1 | `{ apiVersion, capabilities, activationEvent?, appVersion, pluginId, dataDir, permissions, settings }` | 进程启动后立即发送；`capabilities` 见上文；`activationEvent`（第 2 版）是这次启动的原因，见「按需启动」 |
+| `initialize` | 1 | `{ apiVersion, capabilities, activationEvent?, appVersion, pluginId, dataDir, permissions, settings, experimentalApis? }` | 进程启动后立即发送；`capabilities` 见上文；`activationEvent`（第 2 版）是这次启动的原因，见「按需启动」；`experimentalApis` 只发给清单里写了 `experimentalApis` 的开发中插件，列出岛屿实际提供的那些 |
 | `command` | 1 | `{ id, args? }` | 用户点击了 `contributes.commands` 中的某个按钮，或按下了它的快捷键（第 2 版），参数为 `{ id }`；在待办右键菜单里选了它（第 2 版），参数为 `{ id, args: { todoId } }` |
 | `settings.changed` | 1 | `{ settings }` | 用户在设置页上改了设置；`settings` 是全部设置的新值 |
 | `event` | 2 | `{ name, payload }` | 订阅的事件发生了，见下文的「事件」 |
@@ -406,9 +411,11 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 
 ## SDK
 
+SDK 的源码在 [`packages/`](../../packages/)：npm 包 `fly-island-plugin`（Node.js SDK、命令行工具和模拟宿主）、脚手架 `create-fly-island-plugin` 和 PowerShell 模块 `FlyIsland.Plugin`。供直接复制的单文件版本在 [`plugins/sdk/`](../../plugins/sdk/)，由 `pnpm sdk:build` 从源码生成（`pnpm test` 检查是否最新），不要手改。
+
 ### PowerShell（不需要用户安装任何东西）
 
-示例中的 [`lib/focusd.ps1`](../../plugins/examples/dev.focusd.todo-digest/lib/focusd.ps1) 适用于 Windows 自带的 PowerShell 5.1，可以直接复制到你的插件里使用。完整用法见示例的 [`main.ps1`](../../plugins/examples/dev.focusd.todo-digest/main.ps1)。
+[`plugins/sdk/powershell/focusd.ps1`](../../plugins/sdk/powershell/focusd.ps1) 适用于 Windows 自带的 PowerShell 5.1，复制到插件的 `lib/` 里使用。除了下面的基本函数，还有 `Invoke-FocusdLoop`（按通知名分派处理函数）、事件、提示、页面、状态文字、存储和秘密的辅助函数，见 [快速开始](quickstart.md#6-其他写法)。示例插件里的 `lib/focusd.ps1` 是较早的版本（已发布的插件包不能改），只有下面这几个基本函数。完整用法见示例的 [`main.ps1`](../../plugins/examples/dev.focusd.todo-digest/main.ps1)。
 
 ```powershell
 . "$PSScriptRoot\lib\focusd.ps1"
@@ -429,7 +436,7 @@ while ($true) {
 
 ### Node.js（需要用户安装 Node.js）
 
-[`plugins/sdk/node/focusd.mjs`](../../plugins/sdk/node/focusd.mjs) 是一个没有任何依赖的 SDK，可以直接复制到你的插件里使用：
+[`plugins/sdk/node/focusd.mjs`](../../plugins/sdk/node/focusd.mjs) 是一个没有任何依赖的 SDK，可以直接复制到你的插件里使用（同目录的 `focusd.d.mts`、`protocol.d.mts` 是它的类型）。它还封装了事件（`onEvent`）、提示（`notify`）、页面（`views.*`）、状态文字（`status.*`）、`storage`、`secrets`、`keepAlive` 等，见 [API 参考](api.md) 和类型定义：
 
 ```js
 import { createPlugin } from "./lib/focusd.mjs";
@@ -497,4 +504,6 @@ plugin.onCommand("sync-now", async () => {
 ## 调试
 
 - 设置 → 插件扩展 → 展开插件卡片上的 **日志**。启动失败的原因（例如找不到 Node.js）也会显示在卡片上。
-- 不启动岛屿也能测试插件：自己写一个小脚本扮演宿主，往插件的 stdin 写 `initialize`，再回应它发出的请求。
+- **开发模式**：设置 → 插件扩展 → **开发者**（默认收起）→ 打开 **开发模式**。之后可以从任意文件夹加载插件（文件夹名不必等于插件 id），不需要打开"允许运行第三方插件"；开发中的插件卡片标着"开发中"，自动获得清单里申请的全部权限（敏感权限第一次使用时仍会询问），可以使用 `experimentalApis`，和插件目录里同 id 的插件同时存在时以开发中的为准。选中一个开发中的插件可以看到最近 200 行原始 JSON-RPC 收发记录，也可以手动给它发一个事件（不管有没有订阅）。开发模式只在内存里，岛屿重启后需要重新打开、重新加载。
+- **命令行**：`npx fly-island-plugin dev` 通过[本地 API](../local-api.md#开发模式) 让岛屿加载当前文件夹，文件变化后自动重启插件，并在终端打印插件日志。需要打开本地 API 插件和开发模式。
+- **不启动岛屿**：`npx fly-island-plugin test` 用模拟宿主运行插件，或在自己的测试里用 `fly-island-plugin/test` 的 `startMockHost`，见 [快速开始](quickstart.md#4-测试不用启动岛屿)。

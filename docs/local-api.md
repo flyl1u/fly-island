@@ -55,6 +55,17 @@
 
 状态码：`400` 参数错误，`401` 令牌错误，`403` 被拒绝（网页请求、Host 不对、未允许修改），`404` 路径或待办不存在，`405` 方法不对，`413` 请求体太大，`503` / `504` 岛屿暂时没有响应。
 
+## 开发模式
+
+供插件开发工具 `fly-island-plugin dev` 使用（见 [插件快速开始](plugins/quickstart.md)）。只有在 设置 → 插件扩展 → 开发者 中打开了开发模式时可用，否则返回 403；不受"允许修改"开关限制。
+
+| 方法 | 路径 | 请求体 | 说明 |
+|---|---|---|---|
+| POST | `/v1/dev/plugins` | `{ "path": "C:/work/my-plugin" }` | 以开发模式加载这个文件夹里的插件（已加载时重新加载），返回 `{ id, path }`；清单无效时返回 400 和原因 |
+| POST | `/v1/dev/plugins/{id}/reload` | — | 重新读取清单并重启插件 |
+| DELETE | `/v1/dev/plugins/{id}` | — | 移除，返回 `{ removed }` |
+| GET | `/v1/dev/plugins/{id}/log?after=<序号>` | — | 序号大于 `after` 的日志行 `{ lines: [{ seq, text }], next, status, error }`；下次用 `next` 作为 `after`。在设置里点"重新加载"后序号会从头开始（`next` 变小） |
+
 ## AI Agent 状态
 
 除了内置的 Codex 和 Claude Code，任何工具都可以通过这个接口点亮状态灯，并在折叠的岛上显示会话标题（没有品牌图标时显示机器人图标）：
