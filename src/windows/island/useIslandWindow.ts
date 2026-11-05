@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { DEFAULT_SETTINGS } from "../../features/appearance/settings";
+import { DEFAULT_SETTINGS, getEffectiveAppearanceMode } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
 import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
@@ -55,7 +55,7 @@ export function useIslandWindow({
           customPosition: islandPositionRef.current,
           isTucked: nextIsTucked,
           animatePosition: !reducedMotion,
-          glassEnabled: nextSettings.appearanceMode === "liquidGlass",
+          glassEnabled: getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass",
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
         });
@@ -63,7 +63,7 @@ export function useIslandWindow({
       } catch (error) {
         console.error("Failed to sync island interaction", error);
         setNativeGlassState(
-          nextSettings.appearanceMode === "liquidGlass"
+          getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass"
             ? "css-fallback"
             : "disabled",
         );
