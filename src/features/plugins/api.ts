@@ -39,7 +39,16 @@ export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none" | 
 export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed" | "idle";
 
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 Resources 对应：插件进程树占用的内存和 CPU。
-export type PluginResources = { memoryBytes: number; cpuPercent: number; highCpu: boolean };
+export type PluginProcess = { name: string; memoryBytes: number; workingSetBytes: number };
+export type PluginResources = {
+  /** Private bytes of every process in the plugin's job. */
+  memoryBytes: number;
+  /** The idle runtime's share (PowerShell, Node.js); null for native plugins or until measured. */
+  runtimeBytes: number | null;
+  processes: PluginProcess[];
+  cpuPercent: number;
+  highCpu: boolean;
+};
 
 // 与 src-tauri/src/plugin_host/settings.rs 中的 SettingSpec、InfoItem 对应。
 export type PluginSettingSpec = {

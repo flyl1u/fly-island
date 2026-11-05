@@ -78,13 +78,27 @@ pub(super) struct RuntimeInfo {
 }
 
 /// Mirrored by `PluginResources` in src/features/plugins/api.ts.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Resources {
+    /// Private bytes of every process in the plugin's job.
     pub memory_bytes: u64,
+    /// What the plugin's runtime (PowerShell, Node.js) takes with no plugin code
+    /// running (baseline.rs); `None` for native plugins or until measured.
+    pub runtime_bytes: Option<u64>,
+    pub processes: Vec<ProcessResources>,
     pub cpu_percent: f32,
     /// Over 25 % CPU for the last minute.
     pub high_cpu: bool,
+}
+
+/// One process of a plugin. Mirrored by `PluginProcess` in src/features/plugins/api.ts.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessResources {
+    pub name: String,
+    pub memory_bytes: u64,
+    pub working_set_bytes: u64,
 }
 
 /// Status and recent log lines per plugin id, shared with the settings snapshot.

@@ -16,7 +16,7 @@ use windows::Win32::{
     },
 };
 
-use super::process::open_for_limited_query;
+use super::process::{image_path, open_for_limited_query};
 
 /// Most process ids read from a job at once; plugins rarely start more.
 const MAX_LISTED_PROCESSES: usize = 64;
@@ -31,12 +31,25 @@ unsafe impl Send for Job {}
 unsafe impl Sync for Job {}
 
 /// What the processes of a job use now.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct JobUsage {
     /// Private bytes (commit) of every process still in the job.
     pub memory_bytes: u64,
     /// User plus kernel time of every process that ran in the job, in 100 ns ticks.
     pub cpu_ticks: u64,
+    /// Each process still in the job, in the order the job lists them.
+    pub processes: Vec<JobProcess>,
+}
+
+/// One process of a job and its memory.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct JobProcess {
+    /// File name of its executable, e.g. `powershell.exe`; empty if unreadable.
+    pub name: String,
+    /// Private bytes (commit charge): memory only this process uses.
+    pub private_bytes: u64,
+    /// Working set: memory in RAM now, including pages shared with other processes.
+    pub working_set_bytes: u64,
 }
 
 impl Job {
@@ -85,8 +98,9 @@ impl Job {
         }
         .ok()?;
         let cpu_ticks = u64::try_from(accounting.TotalUserTime).unwrap_or(0) + u64::try_from(accounting.TotalKernelTime).unwrap_or(0);
-        let memory_bytes = self.process_ids().into_iter().filter_map(private_bytes).sum();
-        Some(JobUsage { memory_bytes, cpu_ticks })
+        let processes: Vec<JobProcess> = self.process_ids().into_iter().filter_map(process_memory).collect();
+        let memory_bytes = processes.iter().map(|process| process.private_bytes).sum();
+        Some(JobUsage { memory_bytes, cpu_ticks, processes })
     }
 
     fn process_ids(&self) -> Vec<u32> {
@@ -121,14 +135,21 @@ impl Job {
     }
 }
 
-/// Private bytes (commit charge) of a process, or `None` if it cannot be read.
-fn private_bytes(process_id: u32) -> Option<u64> {
+/// Name and memory of a process, or `None` if it cannot be read.
+fn process_memory(process_id: u32) -> Option<JobProcess> {
     let process = open_for_limited_query(process_id)?;
     let mut counters = PROCESS_MEMORY_COUNTERS::default();
     // SAFETY: `process.0` is a live handle opened with PROCESS_QUERY_LIMITED_INFORMATION,
     // which GetProcessMemoryInfo accepts, and `counters` is a valid output of the size passed.
     unsafe { GetProcessMemoryInfo(process.0, &mut counters, size_of::<PROCESS_MEMORY_COUNTERS>() as u32) }.ok()?;
-    Some(counters.PagefileUsage as u64)
+    let name = image_path(process_id)
+        .and_then(|path| path.rsplit(['\\', '/']).next().map(str::to_string))
+        .unwrap_or_default();
+    Some(JobProcess {
+        name,
+        private_bytes: counters.PagefileUsage as u64,
+        working_set_bytes: counters.WorkingSetSize as u64,
+    })
 }
 
 impl Drop for Job {
@@ -157,7 +178,10 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_millis(500));
         let ids = job.process_ids();
         assert!(ids.len() >= 2, "cmd and ping are both in the job: {ids:?}");
-        assert!(job.usage().is_some_and(|usage| usage.memory_bytes > 0));
+        let usage = job.usage().expect("usage");
+        assert!(usage.memory_bytes > 0);
+        assert!(usage.processes.iter().any(|process| process.name.eq_ignore_ascii_case("cmd.exe") && process.working_set_bytes > 0), "{:?}", usage.processes);
+        assert_eq!(usage.memory_bytes, usage.processes.iter().map(|process| process.private_bytes).sum::<u64>());
         drop(job);
         // Ending a process tree is asynchronous; under a parallel test run it can take
         // well over the half second this used to wait, so poll with a generous deadline.

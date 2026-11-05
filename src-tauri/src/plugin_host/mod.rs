@@ -24,6 +24,7 @@
 //!   automatic updates and trusted publishers
 
 mod activation;
+mod baseline;
 mod builtin;
 mod commands;
 mod dev;

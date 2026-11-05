@@ -18,10 +18,11 @@ use std::{
 
 use super::{
     activation::{Activation, ActivationEvent},
+    baseline,
     events::event_permission,
     grants::sync_processes,
     host, lock,
-    runtime::{IdleState, Resources},
+    runtime::{IdleState, ProcessResources, Resources},
     sensitive, views,
 };
 use crate::agent_status;
@@ -237,7 +238,23 @@ fn tick() {
                 sample.high = if percent > HIGH_CPU_PERCENT { sample.high + 1 } else { 0 };
                 sample.at = now;
                 sample.ticks = usage.cpu_ticks;
-                let resources = Resources { memory_bytes: usage.memory_bytes, cpu_percent: (percent * 10.0).round() / 10.0, high_cpu: sample.high >= HIGH_CPU_SAMPLES };
+                let runtime_bytes = usage.processes.first().and_then(|process| baseline::runtime_bytes(&process.name));
+                let processes = usage
+                    .processes
+                    .iter()
+                    .map(|process| ProcessResources {
+                        name: process.name.clone(),
+                        memory_bytes: process.private_bytes,
+                        working_set_bytes: process.working_set_bytes,
+                    })
+                    .collect();
+                let resources = Resources {
+                    memory_bytes: usage.memory_bytes,
+                    runtime_bytes,
+                    processes,
+                    cpu_percent: (percent * 10.0).round() / 10.0,
+                    high_cpu: sample.high >= HIGH_CPU_SAMPLES,
+                };
                 if let Some(info) = lock(&host.runtimes).get_mut(id) {
                     info.resources = Some(resources);
                 }

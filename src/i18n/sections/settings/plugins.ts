@@ -38,7 +38,12 @@ export type SettingsPluginsText = {
   run: {
     onDemand: string;
     memory: (megabytes: string) => string;
+    memorySplit: (total: string, runtime: string, runtimeMegabytes: string, pluginMegabytes: string) => string;
     cpu: (percent: string) => string;
+    cpuIdle: string;
+    processLine: (name: string, commitMegabytes: string, workingSetMegabytes: string) => string;
+    runtimeHelp: (runtime: string, megabytes: string) => string;
+    memoryHelp: string;
     startup: (milliseconds: number) => string;
     highCpu: string;
     keepAlive: (reason: string) => string;
@@ -200,7 +205,12 @@ export const zhCN: SettingsPluginsText = {
   run: {
     onDemand: "按需启动：用到时才运行，空闲 1 分钟后自动停止。",
     memory: (megabytes: string) => `内存 ${megabytes} MB`,
+    memorySplit: (total, runtime, runtimeMegabytes, pluginMegabytes) => `内存 ${total} MB（${runtime} ${runtimeMegabytes} MB + 插件 ${pluginMegabytes} MB）`,
     cpu: (percent: string) => `CPU ${percent}%`,
+    cpuIdle: "CPU 空闲",
+    processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}：已提交 ${commitMegabytes} MB，工作集 ${workingSetMegabytes} MB`,
+    runtimeHelp: (runtime, megabytes) => `${runtime} ${megabytes} MB 是什么都不做的 ${runtime} 本身的占用，每个用 ${runtime} 运行的插件都有这一份；插件自己的代码只占剩下的部分。`,
+    memoryHelp: "内存按「已提交」计算：只属于这个插件的进程、不和别的程序共享的内存，对应任务管理器「详细信息」里的「提交大小」。任务管理器默认的「内存」列是私有工作集，数字会不一样。",
     startup: (milliseconds: number) => `启动 ${milliseconds} ms`,
     highCpu: "这个插件过去 1 分钟一直占用较多 CPU。",
     keepAlive: (reason: string) => `插件申请常驻：${reason}`,
@@ -367,7 +377,12 @@ export const en: SettingsPluginsText = {
   run: {
     onDemand: "Starts on demand: runs only when needed and stops after a minute with nothing to do.",
     memory: (megabytes: string) => `Memory ${megabytes} MB`,
+    memorySplit: (total, runtime, runtimeMegabytes, pluginMegabytes) => `Memory ${total} MB (${runtime} ${runtimeMegabytes} MB + plugin ${pluginMegabytes} MB)`,
     cpu: (percent: string) => `CPU ${percent}%`,
+    cpuIdle: "CPU idle",
+    processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}: ${commitMegabytes} MB committed, ${workingSetMegabytes} MB working set`,
+    runtimeHelp: (runtime, megabytes) => `${runtime} ${megabytes} MB is what an idle ${runtime} takes by itself; every plugin that runs on ${runtime} has this share, and the plugin's own code uses the rest.`,
+    memoryHelp: "Memory is the committed (private) memory of the plugin's processes, not shared with other programs: the Commit size column in Task Manager's Details tab. Task Manager's default Memory column is the private working set, so its numbers differ.",
     startup: (milliseconds: number) => `Started in ${milliseconds} ms`,
     highCpu: "This plugin has used a lot of CPU for the last minute.",
     keepAlive: (reason: string) => `Keeps running: ${reason}`,
