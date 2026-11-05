@@ -107,7 +107,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     thread::Builder::new()
         .name("qq-mail".into())
         .spawn(move || worker(service, receiver))
-        .map_err(|_| "无法启动 邮箱服务。".to_string())?;
+        .map_err(|_| "无法启动邮箱服务。".to_string())?;
     Ok(())
 }
 
@@ -128,7 +128,7 @@ pub async fn connect_qq_mail(
     let email = normalize_email(&email)?;
     let secret = authorization_code.trim().to_string();
     if secret.is_empty() || secret.len() > 256 || secret.chars().any(char::is_control) {
-        return Err("请输入 邮箱设置中生成的授权码。".into());
+        return Err("请输入邮箱设置中生成的授权码。".into());
     }
     let service = service()?;
     let (generation, snapshot) = {
@@ -210,7 +210,7 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法更新 邮箱连接。".to_string())?
+    .map_err(|_| "无法更新邮箱连接。".to_string())?
 }
 
 #[tauri::command]
@@ -221,7 +221,7 @@ pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
         return if snapshot.syncing {
             Ok(snapshot)
         } else {
-            Err("请先连接并开启 邮箱接收。".into())
+            Err("请先连接并开启邮箱接收。".into())
         };
     };
     let (reply, receiver) = mpsc::channel();
@@ -238,7 +238,7 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
     let (generation, email) = {
         let state = service.lock()?;
         if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
-            return Err("请先连接 邮箱。".into());
+            return Err("请先连接邮箱。".into());
         }
         if !state
             .snapshot
@@ -250,13 +250,13 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
         }
         (
             state.generation,
-            state.snapshot.email.clone().ok_or("请先连接 邮箱。")?,
+            state.snapshot.email.clone().ok_or("请先连接邮箱。")?,
         )
     };
     let service = service.clone();
     tauri::async_runtime::spawn_blocking(move || service.read(generation, &email, &message_id))
         .await
-        .map_err(|_| "无法读取 QQ 邮件。".to_string())?
+        .map_err(|_| "无法读取邮件。".to_string())?
 }
 
 #[tauri::command]
@@ -290,7 +290,7 @@ pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法断开 邮箱。".to_string())?
+    .map_err(|_| "无法断开邮箱。".to_string())?
 }
 
 async fn await_reply<T: Send + 'static>(

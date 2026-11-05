@@ -51,7 +51,7 @@ impl MailFailure {
     pub(super) fn network() -> Self {
         Self {
             authentication: false,
-            message: "无法同步 邮箱，请检查网络或稍后重试。",
+            message: "无法同步邮箱，请检查网络或稍后重试。",
         }
     }
 

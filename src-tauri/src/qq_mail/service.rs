@@ -325,7 +325,7 @@ pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) 
                     .ok()
                     .and_then(|state| state.snapshot.email.clone());
                 let result = email
-                    .ok_or_else(|| "请先连接 邮箱。".to_string())
+                    .ok_or_else(|| "请先连接邮箱。".to_string())
                     .and_then(|email| service.sync(generation, &email, None, &mut connection));
                 let _ = reply.send(result);
             }
