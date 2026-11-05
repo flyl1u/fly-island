@@ -20,7 +20,10 @@ use windows::{
     core::{Interface, HSTRING, PWSTR},
     Win32::{
         Foundation::{HWND, RECT},
-        UI::Shell::SHCreateMemStream,
+        UI::{
+            Shell::SHCreateMemStream,
+            WindowsAndMessaging::{GetAncestor, GetWindow, SetWindowPos, GA_ROOT, GW_CHILD, GW_HWNDNEXT, HWND_TOP, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE},
+        },
     },
 };
 
@@ -58,14 +61,41 @@ pub(crate) struct PageOptions {
 pub(crate) struct Page {
     controller: ICoreWebView2Controller,
     webview: ICoreWebView2,
+    /// The child window WebView2 made for the page. It starts below the
+    /// island's own webview, which covers the whole window and would hide it,
+    /// so `place` raises it.
+    window: Option<HWND>,
 }
 
-/// The window a Tauri webview sits in, to put a page in the same window.
+/// The direct child windows of `parent`, top of the z-order first.
+fn child_windows(parent: HWND) -> Vec<HWND> {
+    let mut windows = Vec::new();
+    // SAFETY: GetWindow only reads the window list; invalid or vanished
+    // handles end the walk with an error instead of misbehaving.
+    let mut next = unsafe { GetWindow(parent, GW_CHILD) };
+    while let Ok(window) = next {
+        if window.is_invalid() || windows.len() >= 64 {
+            break;
+        }
+        windows.push(window);
+        // SAFETY: as above.
+        next = unsafe { GetWindow(window, GW_HWNDNEXT) };
+    }
+    windows
+}
+
+/// The top-level window a Tauri webview sits in, to put a page in the same window.
+///
+/// Not the webview's direct parent: that is wry's container, which fills the
+/// client area and, when it gets the focus, passes it to its topmost child, which
+/// would then be the plugin page instead of the island.
 pub(crate) fn parent_window(controller: &ICoreWebView2Controller) -> Result<HWND, String> {
     let mut hwnd = HWND::default();
     // SAFETY: `controller` is a live controller and `hwnd` a valid out pointer.
     unsafe { controller.ParentWindow(&mut hwnd) }.map_err(|error| format!("Could not find the island window: {error}"))?;
-    Ok(hwnd)
+    // SAFETY: GetAncestor only reads the window tree; a null result is handled.
+    let root = unsafe { GetAncestor(hwnd, GA_ROOT) };
+    Ok(if root.is_invalid() { hwnd } else { root })
 }
 
 /// Starts creating a page in `parent`; `done` gets it (hidden, with zero size)
@@ -81,11 +111,14 @@ pub(crate) fn create(
         .cast()
         .map_err(|_| "Plugin pages need a newer WebView2 runtime.".to_string())?;
     let page_env = env.clone();
+    // WebView2 has no call that returns the page's window; it is the child that is new afterwards.
+    let before = child_windows(parent);
     let handler = CreateCoreWebView2ControllerCompletedHandler::create(Box::new(move |result, controller| {
+        let window = child_windows(parent).into_iter().find(|window| !before.contains(window));
         let page = result
             .map_err(|error| format!("WebView2 could not create the page: {error}"))
             .and_then(|()| controller.ok_or_else(|| "WebView2 returned no page.".to_string()))
-            .and_then(|controller| set_up(&page_env, controller, options, host));
+            .and_then(|controller| set_up(&page_env, controller, window, options, host));
         done(page);
         Ok(())
     }));
@@ -104,7 +137,13 @@ pub(crate) fn create(
     }
 }
 
-fn set_up(env: &ICoreWebView2Environment, controller: ICoreWebView2Controller, options: PageOptions, host: Rc<dyn PageHost>) -> Result<Page, String> {
+fn set_up(
+    env: &ICoreWebView2Environment,
+    controller: ICoreWebView2Controller,
+    window: Option<HWND>,
+    options: PageOptions,
+    host: Rc<dyn PageHost>,
+) -> Result<Page, String> {
     let fail = |error: windows::core::Error| format!("Could not set up the page: {error}");
     // SAFETY: every call is on a live controller / webview of this thread, with
     // owned HSTRINGs and handler objects that WebView2 keeps alive itself.
@@ -120,7 +159,7 @@ fn set_up(env: &ICoreWebView2Environment, controller: ICoreWebView2Controller, o
         listen_for_messages(&webview, host).map_err(fail)?;
         webview
     };
-    let page = Page { controller, webview };
+    let page = Page { controller, webview, window };
     let navigate_webview = page.webview.clone();
     let start_url = HSTRING::from(options.start_url);
     // Navigate only after the script is registered, so it runs before the page's own.
@@ -302,6 +341,11 @@ impl Page {
         unsafe {
             let _ = self.controller.SetBounds(bounds);
             let _ = self.controller.SetIsVisible(width > 0 && height > 0);
+        }
+        if let Some(window) = self.window {
+            // SAFETY: only changes the z-order of the page's own child window;
+            // a handle that is gone makes the call fail, which is ignored.
+            let _ = unsafe { SetWindowPos(window, Some(HWND_TOP), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) };
         }
     }
 
