@@ -182,7 +182,7 @@
 
 ## 10. 分发（插件市场）
 
-> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `dev` 分支的 `plugins/` 目录下（不用 `main`，因为上游 PR #36 跟踪的是 `TixXin:main`），应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `MARKET_REPO` / `MARKET_BRANCH` / `INDEX_URL`。索引用 Ed25519 签名（`index.json.sig`），岛屿只信任编译进去的 `plugins/signing-keys.json` 中的公钥，并按 `dev` 分支最新的提交号下载索引和签名，避免读到 CDN 的旧缓存。
+> P4 的实际做法（2026-11-04）：没有单独建索引仓库，也没有使用 GitHub Releases。索引和插件包都放在当前 fork 仓库 `TixXin/fly-island` 的 `dev` 分支的 `plugins/` 目录下（不用 `main`，因为上游 PR #36 跟踪的是 `TixXin:main`），应用从 `raw.githubusercontent.com` 下载。打包脚本生成的 zip 内容是固定的（同样的文件每次得到同样的哈希），已发布的版本内容不得修改。以后迁到上游仓库或独立仓库时，需要同时修改 `scripts/plugins/build-plugin-index.mjs` 中的 `MARKET_BASE_URL` 和 `src-tauri/src/plugin_host/market.rs` 中的 `MARKET_REPO` / `MARKET_BRANCH` / `INDEX_URL`。索引用 Ed25519 签名（`index.json.sig`），岛屿只信任编译进去的 `plugins/signing-keys.json` 中的公钥，并按 `dev` 分支最新的提交号下载索引和签名，避免读到 CDN 的旧缓存。
 >
 > 2026-11-05 起 fork 独立维护，上游 PR #36 已关闭，市场改用 `main` 分支：`MARKET_BRANCH`、`INDEX_URL` 和 `MARKET_BASE_URL` 都指向 `main`，`index.json` 里的下载地址也随之改为 `main`。已安装的旧版本仍按 `dev` 读取索引，所以每次推送都把 `dev` 推到与 `main` 相同的提交（`git push origin main main:dev`）；旧版本读到的索引里指向 `main` 的下载地址同样有效。各插件清单里的 `homepage` 仍写 `tree/dev`：它们打在已发布的包里，不能修改，`dev` 与 `main` 同步时这些链接照常可用。细节见 [docs/plugins/README.md](../plugins/README.md#签名)。
 

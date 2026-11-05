@@ -1,6 +1,6 @@
 //! Ed25519 check of the market's signed files (index.json, revoked.json)
 //! against the keys in plugins/signing-keys.json, compiled in. Signatures are
-//! made by scripts/plugin-signing.mjs over the file with LF line ends.
+//! made by scripts/plugins/plugin-signing.mjs over the file with LF line ends.
 //!
 //! A `.sig` file is one `{ keyId, signature }` (the first format) or a list of
 //! them, so a file can be signed by the old key and a new one while islands

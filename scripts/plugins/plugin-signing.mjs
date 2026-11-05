@@ -103,11 +103,11 @@ function keygen(root) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   if (process.argv[2] === "keygen") {
     keygen(root);
   } else {
-    console.error("Usage: node scripts/plugin-signing.mjs keygen");
+    console.error("Usage: node scripts/plugins/plugin-signing.mjs keygen");
     process.exit(1);
   }
 }

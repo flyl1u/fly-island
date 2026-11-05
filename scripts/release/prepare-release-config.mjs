@@ -10,7 +10,7 @@
 // Usage:
 //   TAURI_UPDATER_PUBKEY="$(cat ~/.tauri/fly-island.key.pub)" \
 //   TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/fly-island.key)" \
-//   node scripts/prepare-release-config.mjs
+//   node scripts/release/prepare-release-config.mjs
 //
 // Optional:
 //   TAURI_UPDATER_ENDPOINTS  comma or newline separated list, overrides the

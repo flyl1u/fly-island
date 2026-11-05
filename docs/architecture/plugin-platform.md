@@ -397,7 +397,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 2. **脚手架** `npm create fly-island-plugin@latest`（npm 包 `create-fly-island-plugin`）：交互式选择语言（PowerShell / TypeScript）、模板（命令、列表页面、状态项、空白），生成清单、源码、`.focusdignore`、README、LICENSE、GitHub Actions 发布工作流。
 3. **CLI** `fly-island-plugin`（和 SDK 在同一个 npm 包里，安装后就有这个命令）：
    - `validate`：用 `manifest.schema.json` 校验清单，检查文件夹名、入口文件、图标、文案中英文是否齐全、权限是否都用得到（静态扫描方法名）。
-   - `pack`：生成和市场完全相同的确定性 zip（复用 `scripts/build-plugin-index.mjs` 的打包代码，抽成独立包），排除 `.focusdignore` 中的文件。
+   - `pack`：生成和市场完全相同的确定性 zip（复用 `scripts/plugins/build-plugin-index.mjs` 的打包代码，抽成独立包），排除 `.focusdignore` 中的文件。
    - `dev`：通知正在运行的岛屿以开发模式加载当前目录，文件变化后自动重启插件，把插件日志实时打印到终端。
    - `test`：用模拟宿主运行插件（见下）。
    - `publish`：在作者的仓库创建 GitHub Release 并上传 zip，然后向索引仓库开 PR（第一次）或触发更新（之后），流程见 P11。
@@ -488,7 +488,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 
 **完成记录（2026-11-05，岛屿端）** ✅ 本地提交，未推送：岛屿这一侧的多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索 / 分类 / 详情在一个 `feat(plugins)` 提交里，文档另一个提交。
 
-- **多签名**：`index.json.sig` 可以是单个 `{ keyId, signature }`，也可以是数组，任一可信公钥的有效签名即通过；`scripts/plugin-signing.mjs` 的校验同样接受数组。
+- **多签名**：`index.json.sig` 可以是单个 `{ keyId, signature }`，也可以是数组，任一可信公钥的有效签名即通过；`scripts/plugins/plugin-signing.mjs` 的校验同样接受数组。
 - **`revoked.json`**：`{ "version": 1, "revoked": [{ id, versions: "*" | ["1.2.0"], reason: { "zh-CN", "en" }, action: "disable" | "uninstall" }] }`，配 `revoked.json.sig`（同样的签名格式）；与 `index.json` 从同一个提交读取，文件不存在（404）视为空列表，签名不对则整个市场刷新失败。命中的版本立即停止；`disable` 禁用，`uninstall` 删除插件目录（保留 `plugins-data`）。名单存进 `plugins.json` 的 `revoked`，离线时仍然生效；被撤销的版本不能启用、不能从市场安装；开发模式的插件不受影响。`pnpm plugins:index` 同时签名 `revoked.json`。
 - **发布者**：索引条目新增 `publisher`、`repo`、`categories`、`preRelease`，由 `pnpm plugins:index` 从 `plugins/market/<id>.json` 读取；没有 `publisher` 的条目按官方发布者 `TixXin` 处理。官方发布者总是可信，市场上显示“官方”。安装其他发布者的插件时按钮变为“信任并安装”，信任列表存进 `plugins.json` 的 `trustedPublishers`，可以在插件设置页取消。
 - **后台检查**：只在允许第三方插件时运行，启动 30 秒后检查一次，之后每 6 小时一次，也可以在设置里手动检查。检查会应用黑名单，并在卡片上提示“有新版本”。

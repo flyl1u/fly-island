@@ -125,7 +125,7 @@ export type PluginsSnapshot = {
   trustedPublishers: string[];
 };
 
-// 与 scripts/build-plugin-index.mjs 中的 CATEGORIES 对应。
+// 与 scripts/plugins/build-plugin-index.mjs 中的 CATEGORIES 对应。
 export const MARKET_CATEGORIES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities"] as const;
 export type MarketCategory = (typeof MARKET_CATEGORIES)[number];
 

@@ -94,10 +94,10 @@ if (upload) {
   if (existing.status === 0) fail(`Release ${tag} already exists. Bump the version instead of replacing published update packages.`);
 }
 
-run("node", ["scripts/prepare-release-config.mjs"]);
+run("node", ["scripts/release/prepare-release-config.mjs"]);
 run("pnpm", ["tauri", "build", "--ci", "--config", OVERLAY, "--bundles", "nsis,msi"]);
 
-const latestArgs = ["scripts/make-latest-json.mjs", "--notes-file", notesFile];
+const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
 run("node", latestArgs);
 

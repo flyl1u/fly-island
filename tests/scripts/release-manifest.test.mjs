@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const script = fileURLToPath(new URL("../../scripts/make-latest-json.mjs", import.meta.url));
+const script = fileURLToPath(new URL("../../scripts/release/make-latest-json.mjs", import.meta.url));
 function fixture({ msiSignature = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "focusd-manifest-test-"));
   const nsis = join(root, "src-tauri/target/release/bundle/nsis");

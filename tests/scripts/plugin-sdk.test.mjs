@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { generatedFiles } from "../../scripts/build-plugin-sdk.mjs";
+import { generatedFiles } from "../../scripts/plugins/build-plugin-sdk.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (relative) => readFileSync(path.join(root, relative), "utf8").replaceAll("\r\n", "\n");

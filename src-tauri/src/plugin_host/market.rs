@@ -1,6 +1,6 @@
 //! Plugin market: the index (plugins/index.json in the GitHub repo), package
 //! download with size and SHA-256 checks, safe unzip and the folder swap that
-//! installs or updates a plugin. Packages are built by scripts/build-plugin-index.mjs.
+//! installs or updates a plugin. Packages are built by scripts/plugins/build-plugin-index.mjs.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -21,7 +21,7 @@ use crate::system::updater::get_updater_proxy;
 
 /// The fork's main branch. Builds before this change read dev, which is pushed
 /// to the same commit as main so they keep working. See MARKET_BASE_URL in
-/// scripts/build-plugin-index.mjs.
+/// scripts/plugins/build-plugin-index.mjs.
 const MARKET_REPO: &str = "TixXin/fly-island";
 const MARKET_BRANCH: &str = "main";
 /// Shown on the settings page; the index itself is read at the branch's newest commit.

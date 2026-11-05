@@ -18,10 +18,10 @@
 - `src-tauri/capabilities/default.json`：`updater:default` 权限
 - `src/updaterController.ts`：检查 / 下载 / 安装状态机，跨页面存活
 - `src/UpdatePanel.tsx`：设置页里的检查更新面板，只负责渲染
-- `scripts/prepare-release-config.mjs`：构建发布包时写入公钥与签名开关
-- `scripts/make-latest-json.mjs`：根据构建产物生成 `latest.json`
-- `scripts/release.mjs`：一键构建 + 签名 + 生成清单 + 上传 Release
-- `scripts/release-signing.mjs`：优先使用显式环境变量，否则读取本机签名配置并通过 Windows DPAPI 解锁密码
+- `scripts/release/prepare-release-config.mjs`：构建发布包时写入公钥与签名开关
+- `scripts/release/make-latest-json.mjs`：根据构建产物生成 `latest.json`
+- `scripts/release/release.mjs`：一键构建 + 签名 + 生成清单 + 上传 Release
+- `scripts/release/release-signing.mjs`：优先使用显式环境变量，否则读取本机签名配置并通过 Windows DPAPI 解锁密码
 
 ## 网络、代理与镜像
 
@@ -32,14 +32,14 @@ GitHub 的 `github.com` 在国内经常连不上（`api.github.com` 往往还能
 
 清单同时提供 `windows-x86_64-nsis` 与 `windows-x86_64-msi`，客户端按当前安装格式选择对应包；通用 `windows-x86_64` 入口保留为 NSIS 回退。
 
-清单里的下载地址由 `scripts/make-latest-json.mjs --base-url` 决定：
+清单里的下载地址由 `scripts/release/make-latest-json.mjs --base-url` 决定：
 
 ```powershell
 # 默认：直连 GitHub，海外用户最稳
-node scripts/make-latest-json.mjs
+node scripts/release/make-latest-json.mjs
 
 # 国内分发：安装包也走加速前缀（清单里额外的那两个端点会返回同一份清单）
-node scripts/make-latest-json.mjs --base-url "https://ghfast.top/https://github.com/<owner>/<repo>/releases/download/v0.2.12"
+node scripts/release/make-latest-json.mjs --base-url "https://ghfast.top/https://github.com/<owner>/<repo>/releases/download/v0.2.12"
 ```
 
 公共加速前缀是第三方服务，可用性不由本项目保证；有条件时换成自己的对象存储或 CDN，把地址填进 `--base-url` 即可，代码无需改动。

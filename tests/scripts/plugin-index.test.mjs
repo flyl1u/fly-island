@@ -5,8 +5,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { generateKeyPairSync } from "node:crypto";
-import { MARKET_BASE_URL, createZip, packPlugin, readPackedFile, runtimeRequirement, sha256 } from "../../scripts/build-plugin-index.mjs";
-import { keyIdOf, rawPublicKey, signIndex, verifyIndex } from "../../scripts/plugin-signing.mjs";
+import { MARKET_BASE_URL, createZip, packPlugin, readPackedFile, runtimeRequirement, sha256 } from "../../scripts/plugins/build-plugin-index.mjs";
+import { keyIdOf, rawPublicKey, signIndex, verifyIndex } from "../../scripts/plugins/plugin-signing.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 

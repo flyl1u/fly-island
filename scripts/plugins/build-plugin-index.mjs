@@ -1,6 +1,6 @@
 // Packs every plugin under plugins/examples into plugins/packages/<id>-<version>.zip
 // and writes plugins/index.json, the plugin market index the app downloads, and
-// its signature plugins/index.json.sig (see scripts/plugin-signing.mjs). Market
+// its signature plugins/index.json.sig (see scripts/plugins/plugin-signing.mjs). Market
 // details that are not in the manifest (publisher, repository, categories) come
 // from plugins/market/<id>.json, as they will in the index repository. It also
 // signs plugins/revoked.json, the list of versions taken off the market.
@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createZip, listFiles, packFolder, readPackedFile, sha256 } from "../packages/fly-island-plugin/src/pack.mjs";
+import { createZip, listFiles, packFolder, readPackedFile, sha256 } from "../../packages/fly-island-plugin/src/pack.mjs";
 import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 export { createZip, listFiles, readPackedFile, sha256 };
@@ -76,7 +76,7 @@ export function indexEntry(manifest, fileName, zip, details = {}) {
 /** Packs one plugin folder: its manifest, package file name and zip bytes. */
 export const packPlugin = packFolder;
 
-/** Writes the index and its signature (see scripts/plugin-signing.mjs). */
+/** Writes the index and its signature (see scripts/plugins/plugin-signing.mjs). */
 export function buildIndex(root, privateKey = loadPrivateKey()) {
   const packagesDir = path.join(root, PACKAGES_DIR);
   mkdirSync(packagesDir, { recursive: true });
@@ -116,7 +116,7 @@ export function signRevoked(root, privateKey) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const index = buildIndex(root);
   console.log(`Wrote ${INDEX_PATH} with ${index.plugins.length} plugin(s).`);
 }

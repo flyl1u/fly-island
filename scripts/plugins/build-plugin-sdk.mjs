@@ -89,7 +89,7 @@ export function generatedFiles(root) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   for (const [relative, text] of generatedFiles(root)) {
     mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
     writeFileSync(path.join(root, relative), text);
