@@ -18,7 +18,7 @@ use windows::Win32::{
     UI::WindowsAndMessaging::{WM_APP, WM_HOTKEY},
 };
 
-use super::{host, lock};
+use super::{host, lifecycle, lock};
 use crate::{
     clipboard_history::parse_shortcut_binding,
     island,
@@ -88,7 +88,8 @@ pub(super) fn start() {
 /// Registers the shortcuts of the plugins running now, replacing the old ones.
 pub(super) fn refresh() {
     let Ok(host) = host() else { return };
-    let running: Vec<String> = lock(&host.supervisors).keys().cloned().collect();
+    // Plugins that may run: pressing a shortcut starts an on-demand one.
+    let running = lifecycle::runnable_ids();
     let wanted: Vec<Binding> = lock(&host.installed)
         .iter()
         .filter(|plugin| running.contains(&plugin.folder))

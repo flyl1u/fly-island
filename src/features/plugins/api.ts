@@ -36,7 +36,10 @@ export type PluginCommand = {
 export type PluginRuntimeRequirement = "exe" | "powershell" | "node" | "none" | "builtin";
 
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
-export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed";
+export type PluginStatus = "stopped" | "starting" | "running" | "restarting" | "crashed" | "idle";
+
+// 与 src-tauri/src/plugin_host/runtime.rs 中的 Resources 对应：插件进程树占用的内存和 CPU。
+export type PluginResources = { memoryBytes: number; cpuPercent: number; highCpu: boolean };
 
 // 与 src-tauri/src/plugin_host/settings.rs 中的 SettingSpec、InfoItem 对应。
 export type PluginSettingSpec = {
@@ -87,6 +90,14 @@ export type PluginInfo = {
   keybindingConflicts: string[];
   /** Remembered answers for sensitive permissions; the user can revoke them. */
   sensitive: Partial<Record<SensitivePermission, PluginSensitiveChoice>>;
+  /** "startup": runs while the island runs; "onDemand": starts on its activation events. */
+  activation: "startup" | "onDemand";
+  activationEvents: string[];
+  /** From starting the process to its first message. */
+  startupMs: number | null;
+  resources: PluginResources | null;
+  /** Why an on-demand plugin asked to keep running (host.keepAlive). */
+  keepAlive: string | null;
 };
 
 // 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。

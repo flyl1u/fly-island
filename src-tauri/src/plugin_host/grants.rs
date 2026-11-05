@@ -8,7 +8,8 @@ use std::{
 };
 
 use super::{
-    app_version, builtin, host, keybindings, lock,
+    activation::Activation,
+    app_version, builtin, host, keybindings, lifecycle, lock,
     manifest::{launch_command, PluginRuntime},
     permissions::missing_permissions,
     runtime::{LaunchSpec, RuntimeStatus, Supervisor},
@@ -66,12 +67,13 @@ fn sync_builtins(host: &PluginHost) {
     }
 }
 
-/// Starts plugins that should run and stops the rest. A plugin runs when
+/// Starts plugins that should run and stops the rest. A plugin may run when
 /// third-party plugins are allowed, it is on, it has a process, and every
-/// permission it asks for was granted.
+/// permission it asks for was granted; it runs when it is eager or one of its
+/// activation events started it (lifecycle.rs).
 pub(super) fn sync_processes() -> Result<(), String> {
     let host = host()?;
-    let mut wanted: HashMap<String, LaunchSpec> = HashMap::new();
+    let mut candidates: Vec<(Activation, LaunchSpec)> = Vec::new();
     {
         let state = lock(&host.state);
         for plugin in lock(&host.installed).iter() {
@@ -89,8 +91,8 @@ pub(super) fn sync_processes() -> Result<(), String> {
                     continue;
                 }
             };
-            wanted.insert(
-                manifest.id.clone(),
+            candidates.push((
+                manifest.activation.clone(),
                 LaunchSpec {
                     plugin_id: manifest.id.clone(),
                     program,
@@ -102,8 +104,27 @@ pub(super) fn sync_processes() -> Result<(), String> {
                     app_version: app_version(&host.app),
                     display_name: manifest.name.en().to_string(),
                     settings: settings::resolve(&manifest.contributes.settings, &grant.settings),
+                    activation_event: String::new(),
                 },
-            );
+            ));
+        }
+    }
+    lifecycle::set_runnable(candidates.iter().map(|(activation, spec)| (spec.plugin_id.clone(), activation.clone())).collect());
+    let mut wanted: HashMap<String, LaunchSpec> = HashMap::new();
+    for (activation, mut spec) in candidates {
+        match lifecycle::should_run(&spec.plugin_id, &activation) {
+            Some(reason) => {
+                spec.activation_event = reason;
+                wanted.insert(spec.plugin_id.clone(), spec);
+            }
+            None => {
+                // Waits for an activation event; shown as idle, not stopped.
+                let mut runtimes = lock(&host.runtimes);
+                let entry = runtimes.entry(spec.plugin_id).or_default();
+                if entry.status == RuntimeStatus::Stopped {
+                    entry.status = RuntimeStatus::Idle;
+                }
+            }
         }
     }
 

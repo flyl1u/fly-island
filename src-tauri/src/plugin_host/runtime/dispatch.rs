@@ -3,7 +3,7 @@
 
 use serde_json::{json, Value};
 
-use super::{current_entry, lock, Context};
+use super::{current_entry, lock, set_keep_alive, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
     feeds, notify, sensitive, storage, views,
@@ -15,7 +15,7 @@ use crate::{agent_status, clipboard_history, file_shelf, local_api, media_contro
 
 pub(super) fn initialize_params(context: &Context) -> Value {
     let spec = &context.spec;
-    json!({
+    let mut params = json!({
         "apiVersion": spec.api_version,
         // Every capability so far needs API version 2.
         "capabilities": if spec.api_version >= 2 { &CAPABILITIES[..] } else { &[] },
@@ -24,7 +24,12 @@ pub(super) fn initialize_params(context: &Context) -> Value {
         "dataDir": spec.data_dir.display().to_string(),
         "permissions": spec.granted,
         "settings": *lock(&context.settings),
-    })
+    });
+    if spec.api_version >= 2 {
+        // Why this process was started: onStartup, onCommand:<id>, onSchedule:<minutes>, ...
+        params["activationEvent"] = json!(spec.activation_event);
+    }
+    params
 }
 
 pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params: Value) -> String {
@@ -47,6 +52,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         // Version 1 plugins keep getting "unknown method" for these.
         "events.subscribe" | "events.unsubscribe" if context.spec.api_version >= 2 => {
             return change_subscriptions(context, id, method == "events.subscribe", &params);
+        }
+        "host.keepAlive" if context.spec.api_version >= 2 => {
+            return answer(id, keep_alive(context, &params));
         }
         "view.update" | "view.patch" | "status.update" if context.spec.api_version >= 2 => {
             return answer(id, views::answer(&context.app, &context.spec.plugin_id, method, &params));
@@ -139,4 +147,16 @@ fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: 
         feeds::watch_media();
     }
     answer
+}
+
+/// `host.keepAlive { reason }`: an on-demand plugin asks not to be stopped when
+/// idle (the settings page shows why); `reason: null` lets it be stopped again.
+fn keep_alive(context: &Context, params: &Value) -> Result<Value, (u16, String)> {
+    let reason = match params.get("reason") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(text)) if (1..=100).contains(&text.trim().chars().count()) => Some(text.trim().to_string()),
+        Some(_) => return Err((400, "\"reason\" must be 1-100 characters, or null to let the plugin stop when idle.".into())),
+    };
+    set_keep_alive(context, reason);
+    Ok(json!({}))
 }

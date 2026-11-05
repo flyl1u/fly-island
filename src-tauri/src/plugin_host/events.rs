@@ -12,7 +12,7 @@ use std::{
 };
 use tauri::{AppHandle, Listener};
 
-use super::{host, lock};
+use super::{host, lifecycle, lock};
 
 /// Mirrored by `PLUGIN_HOST_EVENT` in src/features/plugins/api.ts.
 const HOST_EVENT: &str = "plugin-host-event";
@@ -84,9 +84,11 @@ fn publish(name: &'static str, payload: Value) {
     }
 }
 
-fn deliver(name: &str, payload: &Value) {
+fn deliver(name: &'static str, payload: &Value) {
     let Ok(host) = host() else { return };
     for supervisor in lock(&host.supervisors).values() {
         supervisor.deliver_event(name, payload);
     }
+    // On-demand plugins that start on this event (onEvent) and are not running.
+    lifecycle::wake_for_event(name, payload);
 }

@@ -6,6 +6,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
+use super::activation::{self, Activation};
 use super::menus::{self, PluginMenus};
 use super::view_specs::{self, StatusItemSpec, ViewSpec};
 use super::permissions::is_known_permission;
@@ -164,6 +165,12 @@ pub(super) struct PluginManifest {
     pub permissions: Vec<String>,
     #[serde(default)]
     pub contributes: PluginContributions,
+    /// As written; read by activation::read, which version 1 plugins skip.
+    #[serde(default, rename = "activationEvents", skip_serializing)]
+    pub activation_raw: serde_json::Value,
+    /// When the host starts the plugin's process (API version 2); see activation.rs.
+    #[serde(skip)]
+    pub activation: Activation,
 }
 
 fn empty_text() -> LocalizedText {
@@ -249,6 +256,13 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     let command_ids: Vec<&str> = contributes.commands.iter().map(PluginCommand::id).collect();
     menus::check(&mut contributes.menus, &command_ids, api_version)?;
     (contributes.views, contributes.status_items) = view_specs::check(&contributes.views_raw, &contributes.status_items_raw, api_version)?;
+    manifest.activation = activation::read(
+        &manifest.activation_raw,
+        api_version,
+        &manifest.contributes.commands,
+        &manifest.contributes.views,
+        &manifest.permissions,
+    )?;
     Ok(manifest)
 }
 

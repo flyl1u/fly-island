@@ -95,7 +95,8 @@ fn the_host_matches_the_protocol_description() {
             "storage.get",
             "storage.set",
             "storage.delete",
-            "storage.keys"
+            "storage.keys",
+            "host.keepAlive"
         ]
     );
     assert!(open.iter().all(|name| method_permission(name).is_none()));
@@ -699,5 +700,82 @@ mod view_tests {
     fn action_ids_are_plain() {
         assert!(is_action_id("open") && is_action_id("issue/42") && is_action_id("a.b_c-d:e"));
         assert!(!is_action_id("") && !is_action_id("a b") && !is_action_id(&"x".repeat(129)));
+    }
+}
+
+mod lifecycle_tests {
+    use serde_json::{json, Value};
+    use std::time::Duration;
+
+    use super::super::lifecycle::{cpu_percent, is_idle, IDLE_AFTER};
+    use super::super::runtime::IdleState;
+    use super::parse;
+
+    fn manifest(activation: Value) -> Value {
+        json!({
+            "apiVersion": 2,
+            "permissions": ["todos:read"],
+            "activationEvents": activation,
+            "contributes": {
+                "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" } }],
+                "views": [{ "id": "board", "title": { "zh-CN": "看板", "en": "Board" }, "template": "list" }]
+            }
+        })
+    }
+
+    fn labels(value: Value) -> Result<Vec<String>, String> {
+        parse(value).map(|manifest| manifest.activation.events.iter().map(|event| event.label()).collect())
+    }
+
+    #[test]
+    fn activation_events_are_read_and_contributions_imply_more() {
+        assert_eq!(labels(json!({ "apiVersion": 2 })).expect("none"), vec!["onStartup"]);
+        assert_eq!(labels(json!({ "apiVersion": 1, "activationEvents": ["junk"] })).expect("v1"), vec!["onStartup"]);
+        let lazy = labels(manifest(json!(["onEvent:todos.changed", "onSchedule:30", "onStartupFinished"]))).expect("lazy");
+        assert_eq!(lazy, vec!["onEvent:todos.changed", "onSchedule:30", "onStartupFinished", "onCommand:go", "onView:board"]);
+        let parsed = parse(manifest(json!(["onCommand:go"]))).expect("parsed");
+        assert!(!parsed.activation.is_eager());
+        assert_eq!(parse(manifest(json!(["onEvent:todos.changed", "onSchedule:30"]))).expect("p").activation.schedule_minutes(), Some(30));
+        assert!(parse(manifest(json!(["onStartup", "onCommand:go"]))).expect("eager").activation.is_eager());
+    }
+
+    #[test]
+    fn bad_activation_events_say_why() {
+        let reason = |events: Value| parse(manifest(events)).expect_err("invalid");
+        assert!(reason(json!(["onSomething"])).contains("onSomething"));
+        assert!(reason(json!(["onCommand:missing"])).contains("command"));
+        assert!(reason(json!(["onView:missing"])).contains("view"));
+        assert!(reason(json!(["onEvent:nope"])).contains("nope"));
+        assert!(reason(json!(["onSchedule:1"])).contains("onSchedule:1"));
+        assert!(reason(json!(["onEvent:note.changed"])).contains("notes:read"));
+        assert!(reason(json!("onStartup")).contains("list"));
+    }
+
+    fn idle(seconds: u64) -> IdleState {
+        IdleState { ready: true, busy: false, idle_for: Duration::from_secs(seconds), keep_alive: false, subscriptions: Vec::new() }
+    }
+
+    #[test]
+    fn on_demand_plugins_stop_only_when_nothing_needs_them() {
+        let activation = parse(manifest(json!(["onEvent:todos.changed"]))).expect("p").activation;
+        let after = IDLE_AFTER.as_secs();
+        assert!(is_idle(&idle(after), &activation, false));
+        assert!(!is_idle(&idle(after - 1), &activation, false));
+        assert!(!is_idle(&idle(after), &activation, true), "a visible page keeps it");
+        assert!(!is_idle(&IdleState { busy: true, ..idle(after) }, &activation, false), "a request in flight keeps it");
+        assert!(!is_idle(&IdleState { keep_alive: true, ..idle(after) }, &activation, false));
+        assert!(!is_idle(&IdleState { ready: false, ..idle(after) }, &activation, false));
+        // Events that would wake it again do not keep it; others do.
+        assert!(is_idle(&IdleState { subscriptions: vec!["todos.changed"], ..idle(after) }, &activation, false));
+        assert!(!is_idle(&IdleState { subscriptions: vec!["island.expanded"], ..idle(after) }, &activation, false));
+    }
+
+    #[test]
+    fn cpu_use_is_a_share_of_the_whole_machine() {
+        // 1 s of CPU time in 1 s on 4 cores is 25 %.
+        assert!((cpu_percent(10_000_000, 0, Duration::from_secs(1), 4) - 25.0).abs() < 0.01);
+        assert_eq!(cpu_percent(5, 10, Duration::from_secs(1), 4), 0.0);
+        assert_eq!(cpu_percent(10, 0, Duration::ZERO, 4), 0.0);
+        assert_eq!(cpu_percent(u64::MAX, 0, Duration::from_millis(1), 1), 100.0);
     }
 }

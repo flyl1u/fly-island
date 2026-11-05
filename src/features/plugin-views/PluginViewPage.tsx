@@ -28,7 +28,9 @@ export function PluginViewPage({
   const t = useTranslation();
   const { locale } = useLocale();
   const running = entry.status === "running";
-  const { model, loaded } = usePluginViewModel(entry.pluginId, entry.viewId, isOpen && running);
+  const stopped = entry.status === "crashed" || entry.status === "stopped";
+  // Showing the page also starts an idle (on-demand) plugin, so it counts as shown too.
+  const { model, loaded } = usePluginViewModel(entry.pluginId, entry.viewId, isOpen && !stopped);
   const [restarting, setRestarting] = useState(false);
   const Icon = viewIcon(entry.icon);
   const title = entry.title[locale];
@@ -42,7 +44,7 @@ export function PluginViewPage({
   };
 
   let body;
-  if (entry.status === "crashed" || entry.status === "stopped") {
+  if (stopped) {
     body = (
       <div className="plugin-view__state plugin-view__state--stopped" role="status">
         <strong>{t.pluginViews.stopped}</strong>

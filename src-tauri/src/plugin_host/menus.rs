@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use super::{host, lock, manifest::LocalizedText, PluginHost};
+use super::{host, lifecycle, lock, manifest::LocalizedText, PluginHost};
 
 pub(super) const TODO_CONTEXT: &str = "todo/context";
 const MAX_MENU_ITEMS: usize = 4;
@@ -69,7 +69,8 @@ fn known_menu(menu: &str) -> Result<(), String> {
 pub(super) fn entries(menu: &str) -> Result<Vec<PluginMenuEntry>, String> {
     known_menu(menu)?;
     let host = host()?;
-    let running: Vec<String> = lock(&host.supervisors).keys().cloned().collect();
+    // Plugins that may run: picking an entry starts an on-demand one.
+    let running = lifecycle::runnable_ids();
     let entries = lock(&host.installed)
         .iter()
         .filter(|plugin| running.contains(&plugin.folder))
@@ -99,9 +100,7 @@ pub(super) fn run(id: &str, menu: &str, command: &str, todo_id: &str) -> Result<
     if !lists(host, id, command) {
         return Err("Unknown plugin menu command.".into());
     }
-    let supervisors = lock(&host.supervisors);
-    let supervisor = supervisors.get(id).ok_or("The plugin is not running.")?;
-    supervisor.notify("command", json!({ "id": command, "args": { "todoId": todo_id } }))
+    lifecycle::deliver(id, format!("onCommand:{command}"), "command", json!({ "id": command, "args": { "todoId": todo_id } }))
 }
 
 fn lists(host: &PluginHost, id: &str, command: &str) -> bool {

@@ -24,7 +24,7 @@ use tauri::AppHandle;
 mod dispatch;
 
 use super::{rpc, settings::InfoItem};
-use crate::{agent_status, system::CREATE_NO_WINDOW};
+use crate::{agent_status, system::CREATE_NO_WINDOW, win32::job::{Job, JobUsage}};
 use dispatch::{answer_request, initialize_params};
 
 const LOG_LINES: usize = 200;
@@ -50,6 +50,8 @@ pub enum RuntimeStatus {
     Running,
     Restarting,
     Crashed,
+    /// Starts on demand (activationEvents) and is not running now.
+    Idle,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -60,6 +62,22 @@ pub(super) struct RuntimeInfo {
     pub log: VecDeque<String>,
     /// What the running plugin shows with `ui.setInfo`; cleared when it stops.
     pub info: Vec<InfoItem>,
+    /// From starting the process to its first message, in ms.
+    pub startup_ms: Option<u64>,
+    /// Memory and CPU of the plugin's process tree, sampled by lifecycle.rs.
+    pub resources: Option<Resources>,
+    /// Why the plugin asked to keep running (`host.keepAlive`).
+    pub keep_alive: Option<String>,
+}
+
+/// Mirrored by `PluginResources` in src/features/plugins/api.ts.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Resources {
+    pub memory_bytes: u64,
+    pub cpu_percent: f32,
+    /// Over 25 % CPU for the last minute.
+    pub high_cpu: bool,
 }
 
 /// Status and recent log lines per plugin id, shared with the settings snapshot.
@@ -79,6 +97,8 @@ pub(super) struct LaunchSpec {
     pub display_name: String,
     /// The plugin's settings with defaults filled in (settings::resolve).
     pub settings: Map<String, Value>,
+    /// Why the process is started (activation.rs), told in `initialize`.
+    pub activation_event: String,
 }
 
 struct Context {
@@ -94,6 +114,27 @@ struct Context {
     in_flight: AtomicUsize,
     /// Events the running process asked for; emptied when it (re)starts.
     subscriptions: Mutex<BTreeSet<&'static str>>,
+    /// `initialize` was sent to the current process.
+    ready: AtomicBool,
+    /// Last request from, or message to, the plugin.
+    last_activity: Mutex<Instant>,
+    keep_alive: Mutex<Option<String>>,
+    /// The process tree of the current process; dropping it ends the tree.
+    job: Mutex<Option<Job>>,
+    spawned_at: Mutex<Option<Instant>>,
+    /// Stopped because it was idle: ends as Idle instead of Stopped.
+    idle_stop: AtomicBool,
+    /// Ended by the host (e.g. too much memory): ends as Crashed with this reason.
+    failed: Mutex<Option<String>>,
+}
+
+/// What lifecycle.rs needs to decide whether a plugin is idle.
+pub(super) struct IdleState {
+    pub ready: bool,
+    pub busy: bool,
+    pub idle_for: Duration,
+    pub keep_alive: bool,
+    pub subscriptions: Vec<&'static str>,
 }
 
 pub(super) struct Supervisor {
@@ -113,6 +154,13 @@ impl Supervisor {
             child: Mutex::new(None),
             in_flight: AtomicUsize::new(0),
             subscriptions: Mutex::default(),
+            ready: AtomicBool::new(false),
+            last_activity: Mutex::new(Instant::now()),
+            keep_alive: Mutex::default(),
+            job: Mutex::default(),
+            spawned_at: Mutex::default(),
+            idle_stop: AtomicBool::new(false),
+            failed: Mutex::default(),
         });
         let worker = Arc::clone(&context);
         thread::Builder::new()
@@ -127,7 +175,43 @@ impl Supervisor {
     }
 
     pub fn notify(&self, method: &str, params: Value) -> Result<(), String> {
+        *lock(&self.context.last_activity) = Instant::now();
         write_line(&self.context, &rpc::notification_line(method, params))
+    }
+
+    /// `initialize` went to the current process, so other messages may follow.
+    pub fn is_ready(&self) -> bool {
+        self.context.ready.load(Ordering::SeqCst)
+    }
+
+    pub fn idle_state(&self) -> IdleState {
+        IdleState {
+            ready: self.is_ready(),
+            busy: self.context.in_flight.load(Ordering::SeqCst) > 0,
+            idle_for: lock(&self.context.last_activity).elapsed(),
+            keep_alive: lock(&self.context.keep_alive).is_some(),
+            subscriptions: lock(&self.context.subscriptions).iter().copied().collect(),
+        }
+    }
+
+    /// Memory and CPU time of the plugin's process tree.
+    pub fn usage(&self) -> Option<JobUsage> {
+        lock(&self.context.job).as_ref().and_then(Job::usage)
+    }
+
+    /// Ends the process for good (until restarted by the user) with `reason` as its error.
+    pub fn fail(&self, reason: String) {
+        *lock(&self.context.failed) = Some(reason);
+        self.context.stop.store(true, Ordering::SeqCst);
+        if let Some(process) = lock(&self.context.child).as_mut() {
+            let _ = process.kill();
+        }
+    }
+
+    /// Stops an on-demand plugin that has nothing to do; it starts again when needed.
+    pub fn stop_idle(self) {
+        self.context.idle_stop.store(true, Ordering::SeqCst);
+        self.stop();
     }
 
     /// New setting values from the settings page; the plugin gets `settings.changed`.
@@ -195,7 +279,18 @@ fn supervise(context: &Arc<Context>) {
             }
         };
         lock(&context.subscriptions).clear();
+        lock(&context.keep_alive).take();
         super::sensitive::forget_this_run(&context.spec.plugin_id);
+        // Everything the plugin starts goes into the job, so it ends with the plugin.
+        match Job::new().and_then(|job| job.assign(&child).map(|()| job)) {
+            Ok(job) => *lock(&context.job) = Some(job),
+            Err(error) => log_line(context, &error),
+        }
+        *lock(&context.spawned_at) = Some(Instant::now());
+        update_entry(context, |info| {
+            info.startup_ms = None;
+            info.keep_alive = None;
+        });
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
         *lock(&context.stdin) = child.stdin.take();
@@ -211,6 +306,8 @@ fn supervise(context: &Arc<Context>) {
         set_status(context, RuntimeStatus::Running, None);
         log_line(context, "started");
         let _ = write_line(context, &rpc::notification_line("initialize", initialize_params(context)));
+        *lock(&context.last_activity) = Instant::now();
+        context.ready.store(true, Ordering::SeqCst);
 
         if let Some(stderr) = stderr {
             let reader = Arc::clone(context);
@@ -224,7 +321,17 @@ fn supervise(context: &Arc<Context>) {
             read_messages(context, stdout);
         }
         let exit = wait_for_exit(context);
+        context.ready.store(false, Ordering::SeqCst);
         lock(&context.stdin).take();
+        // Ends whatever the plugin started and left behind.
+        lock(&context.job).take();
+        update_entry(context, |info| info.resources = None);
+        if let Some(reason) = lock(&context.failed).take() {
+            log_line(context, &reason);
+            set_status(context, RuntimeStatus::Crashed, Some(reason));
+            agent_status::clear_external_owner(&context.spec.plugin_id);
+            return;
+        }
         if context.stop.load(Ordering::SeqCst) {
             break;
         }
@@ -244,7 +351,8 @@ fn supervise(context: &Arc<Context>) {
             break;
         }
     }
-    set_status(context, RuntimeStatus::Stopped, None);
+    let last = if context.idle_stop.load(Ordering::SeqCst) { RuntimeStatus::Idle } else { RuntimeStatus::Stopped };
+    set_status(context, last, None);
 }
 
 /// Where `node.exe` is: on PATH, or in the default install folder. The island
@@ -312,6 +420,11 @@ fn read_messages(context: &Arc<Context>, stdout: ChildStdout) {
 fn handle_line(context: &Arc<Context>, line: &str) {
     if line.is_empty() {
         return;
+    }
+    *lock(&context.last_activity) = Instant::now();
+    if let Some(started) = lock(&context.spawned_at).take() {
+        let elapsed = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        update_entry(context, |info| info.startup_ms = Some(elapsed));
     }
     match rpc::parse_line(line) {
         rpc::Incoming::Request { id, method, params } => {
@@ -402,6 +515,20 @@ fn current_entry<'a>(context: &Context, table: &'a mut HashMap<String, RuntimeIn
     }
     info.generation = context.generation;
     Some(info)
+}
+
+/// Changes the plugin's entry, unless a newer supervisor owns it.
+fn update_entry(context: &Context, change: impl FnOnce(&mut RuntimeInfo)) {
+    let mut table = lock(&context.table);
+    if let Some(info) = current_entry(context, &mut table) {
+        change(info);
+    }
+}
+
+/// Records the reason a running plugin gave for staying on (`host.keepAlive`), or clears it.
+fn set_keep_alive(context: &Context, reason: Option<String>) {
+    *lock(&context.keep_alive) = reason.clone();
+    update_entry(context, |info| info.keep_alive = reason);
 }
 
 fn set_status(context: &Context, status: RuntimeStatus, error: Option<String>) {

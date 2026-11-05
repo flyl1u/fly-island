@@ -23,6 +23,15 @@
       "description": "The plugin API version the plugin was written for. Version 2 adds initialize.capabilities; everything in version 1 still works."
     },
     "minAppVersion": { "type": "string" },
+    "activationEvents": {
+      "description": "apiVersion 2: when the island starts the plugin's process. Without this field the plugin runs while the island runs (onStartup). With it, the plugin starts on one of these events (commands and views add onCommand:<id> / onView:<id> by themselves) and is stopped again after 60 s with nothing to do; host.keepAlive keeps it running. onEvent:<name> needs the event's permission. Ignored for apiVersion 1.",
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "pattern": "^(onStartup|onStartupFinished|onCommand:[A-Za-z0-9-]{1,32}|onView:[A-Za-z0-9-]{1,32}|onEvent:[A-Za-z.]+|onSchedule:[0-9]{1,4})$"
+      }
+    },
     "author": { "type": "string" },
     "homepage": { "type": "string", "description": "Only https:// links are shown." },
     "runtime": {

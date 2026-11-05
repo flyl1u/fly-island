@@ -724,7 +724,16 @@ export type Translations = {
       invalid: string;
       log: string;
       noLog: string;
-      status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed", string>;
+      status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed" | "idle", string>;
+      /** How a plugin runs: on demand, memory, CPU, start-up time (P9). */
+      run: {
+        onDemand: string;
+        memory: (megabytes: string) => string;
+        cpu: (percent: string) => string;
+        startup: (milliseconds: number) => string;
+        highCpu: string;
+        keepAlive: (reason: string) => string;
+      };
       uninstall: string;
       confirmUninstall: string;
       builtin: string;

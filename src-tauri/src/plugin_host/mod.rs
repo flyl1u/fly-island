@@ -8,6 +8,8 @@
 //! - commands.rs: the Tauri commands
 //! - events.rs: island events plugins subscribe to
 //! - feeds.rs: messages and media for plugins (`messages.list`, `media.changed`)
+//! - activation.rs / lifecycle.rs: when plugin processes run (`activationEvents`),
+//!   stopping idle ones, and their memory and CPU
 //! - keybindings.rs: global shortcuts of plugin commands
 //! - views.rs: what plugins show on the island (`view.*`, `status.update`)
 //! - view_specs.rs: `contributes.views` / `statusItems` in the manifest
@@ -17,12 +19,14 @@
 //! - sensitive.rs: asking the user before a sensitive permission is first used
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 
+mod activation;
 mod builtin;
 mod commands;
 mod events;
 mod feeds;
 mod grants;
 mod keybindings;
+mod lifecycle;
 mod manifest;
 mod market;
 mod menus;
@@ -115,6 +119,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     }
     events::listen(app);
     keybindings::start();
+    lifecycle::start();
     sync_processes()
 }
 

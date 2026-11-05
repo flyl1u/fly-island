@@ -240,6 +240,11 @@ pub(super) fn runtime_changed(app: &AppHandle, plugin_id: &str, status: RuntimeS
     let _ = app.emit_to(island::WINDOW_LABEL, VIEW_EVENT, json!({ "kind": "reset", "pluginId": plugin_id, "status": status }));
 }
 
+/// Whether one of the plugin's pages is on screen (keeps an on-demand plugin running).
+pub(super) fn any_visible(plugin_id: &str) -> bool {
+    lock(store()).visible.iter().any(|(plugin, _)| plugin == plugin_id)
+}
+
 /// The window shows or hides a view. Returns its model when it becomes visible.
 pub(super) fn set_visible(plugin_id: &str, view: &str, visible: bool) -> Option<Value> {
     let key = slot(plugin_id, "view", view);

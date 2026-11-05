@@ -9,7 +9,7 @@ export type ViewLocalizedText = { "zh-CN": string; en: string };
 export type PluginViewTemplate = "list" | "detail" | "form" | "status";
 
 // 与 src-tauri/src/plugin_host/runtime.rs 中的 RuntimeStatus 对应。
-export type PluginViewRunState = "stopped" | "starting" | "running" | "restarting" | "crashed";
+export type PluginViewRunState = "stopped" | "starting" | "running" | "restarting" | "crashed" | "idle";
 
 // 与 src-tauri/src/plugin_host/views.rs 中的 PluginViewEntry 对应。
 export type PluginViewEntry = {

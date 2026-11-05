@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P8 起仍是计划。
+> 状态：**P5、P6、P7、P9 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P8、P10、P11 仍是计划。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -358,6 +358,17 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 **测试**：自动推导激活事件、排队投递、空闲停止的状态机单测；Job Object 用一个会拉起子进程的测试程序（`src-tauri/examples/`）验证结束后不留下子进程。
 
 **验收**：装 10 个非常驻插件，岛屿空闲时只运行常驻的那些；点某插件的命令，它被拉起并执行，1 分钟后自动退出；插件里 `Start-Process notepad` 启动的程序在停用插件后被一起关掉。
+
+**完成记录（2026-11-05）** ✅ 本地提交，未推送：按需启动、空闲停止、Job Object 与资源显示在一个提交里（见 git log 中 P9 的 `feat(plugins)` 提交）。隔离实例端到端验证过：启用后不启动、点命令被拉起（`initialize.activationEvent` 为 `onCommand:spawn`）、空闲 60 秒后停止且它用 `detached` 方式拉起的 `ping` 一并结束、`host.keepAlive` 后超过 60 秒仍在运行、资源采样（约 24 MB）。
+
+与上面设计的偏差：
+
+- **启动耗时**：从启动进程到插件在 stdout 写出第一条消息为止（宿主不知道插件何时"处理完" `initialize`）；只写 stderr 的插件不显示。
+- **内存上限**：固定 512 MB，没有给每个插件单独设置；超过时由宿主结束插件（状态"已出错停止"），没有用 Job 的内核内存限制（那会让分配失败而不是结束进程）。
+- **进程树**：进程启动后才放进 Job，在这之间极短的时间里启动的子进程不受管（std 的 `Command` 不能挂起启动）。
+- **Job Object 的测试**用 `win32/job.rs` 里的单元测试（cmd 拉起 ping），没有另写 `examples/` 程序。
+- **空闲判断**：订阅了不在 `activationEvents` 里的事件时视为不空闲，以免错过事件。
+- **`onUri`** 没做（计划里也写了以后再加）。
 
 ### P10 开发者工具
 

@@ -7,7 +7,7 @@ use std::fs;
 use super::{
     app_version, builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
-    host, lock, market, menus, notify, sensitive,
+    host, lifecycle, lock, market, menus, notify, sensitive,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings, storage,
     views::{self, PluginViewsSnapshot},
@@ -190,9 +190,8 @@ pub fn run_plugin_command(id: String, command: String) -> Result<(), String> {
     if !known {
         return Err("Unknown plugin command.".into());
     }
-    let supervisors = lock(&host.supervisors);
-    let supervisor = supervisors.get(&id).ok_or("The plugin is not running.")?;
-    supervisor.notify("command", json!({ "id": command }))
+    // Starts an on-demand plugin first (onCommand).
+    lifecycle::deliver(&id, format!("onCommand:{command}"), "command", json!({ "id": command }))
 }
 
 /// Saves one of the plugin's declared settings (checked against its type) and
@@ -230,10 +229,8 @@ pub fn run_plugin_notification_action(id: String, action: String) -> Result<(), 
     if !notify::is_action_id(&action) {
         return Err("Unknown notification action.".into());
     }
-    let host = host()?;
-    let supervisors = lock(&host.supervisors);
-    let supervisor = supervisors.get(&id).ok_or("The plugin is not running.")?;
-    supervisor.notify("notification.action", json!({ "id": action }))
+    // A plugin stopped for being idle since is started again to hear the answer.
+    lifecycle::deliver(&id, "notification.action".into(), "notification.action", json!({ "id": action }))
 }
 
 /// What running plugins add to an island menu (`contributes.menus`), e.g. "todo/context".
@@ -302,15 +299,13 @@ pub async fn clear_plugin_data(id: String) -> Result<PluginsSnapshot, String> {
     snapshot()
 }
 
-/// Sends a running plugin a notification about one of its views.
+/// Sends the plugin a notification about one of its views, starting an
+/// on-demand plugin first (onView).
 fn notify_view(id: &str, view_id: &str, method: &str, params: Value) -> Result<(), String> {
     if !views::declares_view(id, view_id) {
         return Err("Unknown plugin view.".into());
     }
-    let host = host()?;
-    let supervisors = lock(&host.supervisors);
-    let supervisor = supervisors.get(id).ok_or("The plugin is not running.")?;
-    supervisor.notify(method, params)
+    lifecycle::deliver(id, format!("onView:{view_id}"), method, params)
 }
 
 /// The pages plugins add to the island and the status texts they show now.
@@ -328,8 +323,14 @@ pub fn set_plugin_view_visible(id: String, view_id: String, visible: bool) -> Re
         return Err("Unknown plugin view.".into());
     }
     let model = views::set_visible(&id, &view_id, visible);
-    // Not running: it is told when it next shows the page.
-    let _ = notify_view(&id, &view_id, "view.visible", json!({ "viewId": view_id, "visible": visible }));
+    let params = json!({ "viewId": view_id, "visible": visible });
+    if visible {
+        // Showing the page starts an on-demand plugin.
+        let _ = notify_view(&id, &view_id, "view.visible", params);
+    } else if let Some(supervisor) = lock(&host()?.supervisors).get(&id).filter(|supervisor| supervisor.is_ready()) {
+        // Hiding it never starts one.
+        let _ = supervisor.notify("view.visible", params);
+    }
     Ok(model)
 }
 

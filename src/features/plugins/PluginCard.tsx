@@ -4,6 +4,7 @@ import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
 import { openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
 import { NodeMissingHint } from "./NodeMissingHint";
+import { PluginRunStats } from "./PluginRunStats";
 import "./PluginCard.css";
 
 const isPermission = (name: string): name is PluginPermission =>
@@ -88,6 +89,7 @@ export function PluginCard({
           {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
           {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
           {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
+          {showStatus ? <PluginRunStats plugin={plugin} /> : null}
           {plugin.keybindingConflicts.length > 0 ? (
             <p className="plugin-card__hint">{t.settings.plugins.keybindingConflict(plugin.keybindingConflicts.join(", "))}</p>
           ) : null}

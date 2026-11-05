@@ -13,7 +13,7 @@ use super::{
     manifest::{parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginRuntime, MANIFEST_FILE_NAME},
     market,
     permissions::missing_permissions,
-    runtime::{self, RuntimeStatus},
+    runtime::{self, Resources, RuntimeStatus},
     sensitive::SensitiveChoice,
     settings::{self, InfoItem, SettingSpec},
     store::PluginsState,
@@ -56,6 +56,16 @@ pub struct PluginInfo {
     keybinding_conflicts: Vec<String>,
     /// Remembered answers for sensitive permissions, which the user can revoke.
     sensitive: BTreeMap<String, SensitiveChoice>,
+    /// "startup" (runs while the island runs) or "onDemand" (activationEvents).
+    activation: &'static str,
+    /// The activation events, as written plus those the contributions imply.
+    activation_events: Vec<String>,
+    /// From starting the process to its first message, in ms.
+    startup_ms: Option<u64>,
+    /// Memory and CPU of the plugin's process tree while it runs.
+    resources: Option<Resources>,
+    /// Why an on-demand plugin asked to keep running (`host.keepAlive`).
+    keep_alive: Option<String>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -176,6 +186,11 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 notifications_muted: grant.notifications_muted,
                 keybinding_conflicts: keybindings::conflicts(&plugin.folder),
                 sensitive: grant.sensitive.clone(),
+                activation: "startup",
+                activation_events: Vec::new(),
+                startup_ms: runtime.startup_ms,
+                resources: runtime.resources,
+                keep_alive: runtime.keep_alive.clone(),
             };
             match &plugin.manifest {
                 Ok(manifest) => {
@@ -192,6 +207,8 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.runtime = runtime_requirement(&manifest.runtime);
                     info.settings_schema = manifest.contributes.settings.clone();
                     info.settings = settings::resolve(&manifest.contributes.settings, &grant.settings);
+                    info.activation = if manifest.activation.is_eager() { "startup" } else { "onDemand" };
+                    info.activation_events = manifest.activation.events.iter().map(|event| event.label()).collect();
                 }
                 Err(reason) => info.invalid_reason = Some(reason.clone()),
             }
