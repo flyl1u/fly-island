@@ -28,7 +28,7 @@ src/
 ├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）
-├── i18n/                    # 类型化多语言字典与 Provider
+├── i18n/                    # 类型化多语言字典与 Provider；sections/ 按分区放文案（settings/ 再按设置页分），types.ts 与 locales/ 只做汇总
 ├── styles/                  # 全局 CSS：变量、基础样式、字体
 └── assets/                  # 品牌图标、字体及其许可证
 ```
@@ -98,7 +98,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 ## 多语言
 
 - 所有用户可见文案，包括 `aria-label` 和 `title`，都通过 `useTranslation()` 取得，不硬编码。
-- 新增文案时同步修改 `i18n/types.ts`、`locales/zh-CN.ts`、`locales/en.ts`。由类型检查保证没有遗漏。
+- 新增文案只改对应分区文件 `i18n/sections/<分区>.ts`（设置页文案在 `i18n/sections/settings/<子分区>.ts`）：同一个文件里有类型、`zhCN` 和 `en` 三处，由类型检查保证没有遗漏。只有新增整个分区时才需要改 `i18n/types.ts` 和 `locales/*.ts` 这几个汇总文件。
 - 用户输入的内容（待办、笔记、预设名、消息原文）保持原样，不翻译。原生服务返回的错误信息原样显示。
 
 ## 测试

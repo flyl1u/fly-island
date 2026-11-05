@@ -83,7 +83,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | `.rs` | 800 行，只计生产代码（不含内联测试模块）；内联测试模块上限 150 行，超过时移到同目录的 `tests.rs`，`tests.rs` 不设上限 |
 | `.ps1` / `.cmd` | 400 行 |
 
-- **豁免**：`src/i18n/locales/*.ts`、`src/i18n/types.ts`（文案字典），锁文件、二进制资源和生成产物。
+- **豁免**：`src/i18n/locales/*.ts`、`src/i18n/sections/**/*.ts`、`src/i18n/types.ts`（文案字典），锁文件、二进制资源和生成产物。
 - **存量白名单（只减不增）**：重构前已经超限的文件登记在 `scripts/file-size-allowlist.json` 中，并记录当前行数作为上限。白名单内的文件**不得变得更长**；变短后把记录值同步改小；降到上限以下或文件被移走后，必须删除对应条目。只允许调小或删除白名单记录，不得调大或新增。
 - `pnpm check:size`（`scripts/check-file-size.mjs`）负责检查以上规则，扫描 `src/`、`src-tauri/src/`、`src-tauri/examples/`、`scripts/`、`tests/`。
 - **不往超限文件里加新功能**。新功能写在目标结构的对应位置，再从旧文件中引用。

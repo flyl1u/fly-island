@@ -18,7 +18,12 @@ const LINE_LIMITS = {
 };
 
 // Translation dictionaries grow with copy, and extracted Rust test files hold tests only.
-const EXEMPT_PATTERNS = [/^src\/i18n\/locales\/[^/]+\.ts$/, /^src\/i18n\/types\.ts$/, /(^|\/)tests\.rs$/];
+const EXEMPT_PATTERNS = [
+  /^src\/i18n\/locales\/[^/]+\.ts$/,
+  /^src\/i18n\/sections\/.+\.ts$/,
+  /^src\/i18n\/types\.ts$/,
+  /(^|\/)tests\.rs$/,
+];
 const SKIPPED_DIRECTORIES = new Set(["node_modules", "target", "gen", "dist"]);
 
 export function countLines(source) {
