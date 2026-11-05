@@ -113,6 +113,11 @@
   outline-offset: 4px;
 }
 
+.dot-button--layout {
+  background: #858585;
+  box-shadow: 0 0 10px rgba(133, 133, 133, 0.36);
+}
+
 .dot-button--todo {
   background: var(--color-accent);
   box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);

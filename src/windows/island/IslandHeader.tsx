@@ -1,4 +1,4 @@
-import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
+import { Bell, CircleDot, Languages, Minus, RotateCcw } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
@@ -98,6 +98,16 @@ export function IslandHeader({
             onPageChange("clipboard");
           }}
         />
+        <button
+          className="dot-button dot-button--layout"
+          type="button"
+          title={t.settings.title}
+          aria-label={t.settings.title}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenSettings();
+          }}
+        />
       </div>
 
       <button
@@ -109,18 +119,6 @@ export function IslandHeader({
       />
 
       <div className="window-actions">
-        <button
-          className="icon-button"
-          type="button"
-          title={t.settings.title}
-          aria-label={t.settings.title}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenSettings();
-          }}
-        >
-          <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
-        </button>
         <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={t.messages.label(messageBadgeLabel)} aria-pressed={page === "qq"} title={t.messages.title} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
           <Bell size={17} strokeWidth={1.8} />
           {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
