@@ -41,9 +41,13 @@ jobs:
       - name: Build frontend
         run: pnpm build
 
+      # 自带 Vite，用 runner 上预装的 Chrome 跑 tests/regression/ 下的全部回归页。
+      - name: Browser regression pages
+        run: pnpm test:regression
+
       - name: Rust tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
-      # 存量告警只记录、不阻断，基线见 docs/architecture/refactor-plan.md 0.5；Phase 6.3 后改为 -D warnings。
+      # 结构重构后 clippy 为 0 告警（AGENTS.md），新告警直接让检查失败。
       - name: Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
