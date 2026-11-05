@@ -42,7 +42,8 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── tests/               # unit/ 前端单元测试、scripts/ 脚本测试（node:test，*.test.mjs）；regression/ 浏览器回归页（*.html + *.tsx）
 ├── packages/            # 插件开发者工具（pnpm workspace）：fly-island-plugin（Node SDK、CLI、模拟宿主）、create-fly-island-plugin（脚手架）、powershell/FlyIsland.Plugin；不进入岛屿的发布产物
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），schema/ 协议描述，sdk/ 单文件 SDK（pnpm sdk:build 从 packages/ 生成），packages/ 打包好的 zip，index.json 市场索引与 index.json.sig 签名（pnpm plugins:index 生成），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
-├── scripts/             # 发布、签名、latest.json 生成、插件索引与 SDK 生成、代理状态 hook 脚本
+├── scripts/             # 发布、签名、latest.json 生成、插件索引与 SDK 生成、代理状态 hook 脚本、合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）
+├── .githooks/           # pre-push：合并队列的推送保护与检查（core.hooksPath 指向这里）
 ├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
 ├── DESIGN.md            # 已确认的界面设计约定
 └── README*.md           # 中英文项目说明
@@ -67,6 +68,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
 | 完整打包 | `pnpm tauri build` |
 | 发布 | `pnpm release`（流程见 `docs/updater.md`） |
+| 合入 main（在 lane 里） | `pnpm mq:land`；主工作区快进 `pnpm mq:sync`；列出无人使用的 lane `pnpm mq:reconcile` |
 
 如果运行环境禁止派生子进程（例如受限沙箱），`node --test` 需要加 `--test-isolation=none`。此时 `tests/scripts/release-manifest.test.mjs` 仍会因 `spawnSync` 被拦截而失败，这是环境限制，报告时应如实说明。如果 `vite build` 报错无法删除系统临时目录中的 esbuild 文件（Access is denied），可以把 `TEMP` / `TMP` 指向 `node_modules/.cache/` 下的目录后重试。
 
@@ -143,15 +145,20 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 
 ## Git 与协作
 
-- **每个代理会话在自己的 worktree 和分支上工作**，不要多个会话共用主工作区：开始任务时 `git worktree add ../fly-island-wt/<任务名> -b wip/<任务名> main`，在其中开发、验证和提交；完成一个功能单元后回到主工作区把分支合入 `main`（能快进就快进，否则先在自己分支上 `git rebase main`），再 `git worktree remove` 并删除分支。这样暂存区和验证结果都只属于本会话，amend / autosquash 也不会碰到别人的提交。
-  - 新 worktree 需要单独 `pnpm install`（pnpm 走全局 store，较快）。Rust 构建可以设置同一个 `CARGO_TARGET_DIR` 共享编译缓存，代价是多个会话同时构建会互相等锁。
-  - 用户自己在主工作区运行的 `pnpm tauri dev` 不会看到 worktree 里的改动，合入 `main` 之后才会生效。
+- **每个代理会话在自己的 lane（worktree + 分支）上工作，经合并队列合入 `main`**（工具是 [claude-code-merge-queue](https://github.com/funador/claude-code-merge-queue)，配置在 `claude-code-merge-queue.config.mjs`）：
+  - 开 lane：用 `claude -w <任务名>` 启动，或在会话里调用 EnterWorktree。本机 `.claude/settings.json` 的 WorktreeCreate 钩子会分配 `lane/N` 分支，并在 `../fly-island-lane-N` 建 worktree。钩子不可用时，手动 `git worktree add ../fly-island-lane-<N> -b lane/<N> main`。新 lane 先运行 `pnpm install`（工具自带的依赖安装在 Windows 上会失败，所以已关闭）。
+  - 在 lane 里开发、验证、提交。一个功能单元完成并提交后，在 lane 里运行 `pnpm mq:land`，不用问用户。它会排队、rebase 到 `origin/main`、跑 `scripts/land-check.mjs`（`pnpm check`，改到 Rust 相关文件时再加 `cargo test`），然后推送 `origin/main`，并把主工作区快进到新的 `main`。land 成功后会自动把 fork 的 `dev` 推到同一提交（旧版本岛屿从 `dev` 读插件市场），结果记在 `.git/land-sync-dev.log`。
+  - land 失败不算完成：rebase 冲突时它会自动中止，自己 `git fetch origin main && git rebase origin/main` 解决冲突后重新 land；检查失败就修好再 land。如果输出里已经有 `landed`，只是后面的快进主工作区失败了，不要重复 land，在主工作区运行 `pnpm mq:sync`。
+  - `release` 可执行文件构建（`pnpm tauri build --no-bundle`）和桌面快捷方式同步不在队列里，按"验证"一节在 land 之后另外做。
+  - 主工作区留给用户（例如运行 `pnpm tauri dev`），必须保持干净并停在 `main` 上，代理不要在里面改文件或提交。`main` 只通过 land 移动：`.githooks/pre-push`（`git config core.hooksPath .githooks`）会拒绝直接推送 `main`，紧急情况才设 `CLAUDE_CODE_MERGE_QUEUE_EMERGENCY_PUSH=1`。
+  - 别人留下的、没有会话在用的 lane（land 或会话开始时输出里带 `⚠`，`pnpm mq:reconcile` 会列出）：问用户怎么处理，不要删除。已经合入的 lane 会在下次 land 时自动清理。
+  - Rust 构建默认共用主工作区的 `src-tauri/target`（`land-check.mjs` 会设置 `CARGO_TARGET_DIR`），多个会话同时构建时会互相等锁。
 - 修改前先查看 `git status --short`，不要覆盖用户已有改动。
 - 不要使用 `git reset --hard`、`git checkout --` 等破坏性命令，除非用户明确要求。
 - 如果工作区已有与当前任务无关的修改，保留它们，只处理本次任务相关的文件。
 - 每完成一个**可验证的功能单元**（一个用户可感知的功能、一个完整的修复，或计划中的一个步骤），按改动范围执行必要验证，再主动创建 Git 提交，无需再次确认。不要每改一处就提交一次；同一功能单元内的多处改动合在一个提交里。只提交当前任务相关的文件，在最终说明中给出提交号和验证结果。
 - 修补自己尚未推送的提交（漏掉的文案、测试、拼写、小 bug）时，不新开 `fix:` 提交：最近一个提交用 `git commit --amend`，更早的用 `git commit --fixup=<提交号>`，推送前再用 `GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <基点>` 合并（非交互，代理可执行）。
-- 改写历史只限于自己创建、尚未推送、也尚未合入 `main` 的提交（即自己 worktree 分支上的提交）。已经合入 `main` 的提交不再改写，有问题就新开修复提交。
+- 改写历史只限于自己创建、尚未推送、也尚未合入 `main` 的提交（即自己 lane 分支上还没 land 的提交）。已经合入 `main` 的提交不再改写，有问题就新开修复提交。
 - 一个功能阶段（例如插件 API 的一期）通常对应 1–5 个提交，而不是十几个。修复提交只用于已推送内容的问题。
 - 提交前尽量让改动范围保持聚焦，并在最终说明中列出已验证的命令。
 

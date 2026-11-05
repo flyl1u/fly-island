@@ -42,6 +42,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.6.0
         version: 4.7.0(vite@7.3.6)
+      claude-code-merge-queue:
+        specifier: 0.7.1
+        version: 0.7.1
       eslint:
         specifier: ^10.14.0
         version: 10.14.0
@@ -746,6 +749,11 @@ packages:
 
   caniuse-lite@1.0.30001800:
     resolution: {integrity: sha512-MMHtuAz9Ys840zAY5F4k6fV5GaivZ9sPk+nz0mY+GYVzRBnYkN0mpqkSR92oWRQ19yQWo4HvBV/FnC16AJX8MA==}
+
+  claude-code-merge-queue@0.7.1:
+    resolution: {integrity: sha512-p+12twnwIWV/S4uipPw8f0cDDoDEf6AwDSmjgRJ8tgM6wYzW9m+0G+vOdjvV5w7PJpAPw2WH38rWOupRyvOD4w==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -1753,6 +1761,8 @@ snapshots:
       qified: 0.10.1
 
   caniuse-lite@1.0.30001800: {}
+
+  claude-code-merge-queue@0.7.1: {}
 
   convert-source-map@2.0.0: {}
 

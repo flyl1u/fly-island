@@ -17,7 +17,10 @@
     "check:tests-types": "tsc -p tsconfig.tests.json",
     "lint": "eslint src",
     "check": "tsc && pnpm run check:tests-types && pnpm run check:packages-types && pnpm run lint && pnpm run check:size && pnpm run test",
-    "check:packages-types": "tsc -p packages/tsconfig.json"
+    "check:packages-types": "tsc -p packages/tsconfig.json",
+    "mq:land": "claude-code-merge-queue land",
+    "mq:sync": "claude-code-merge-queue sync",
+    "mq:reconcile": "claude-code-merge-queue reconcile"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -33,6 +36,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "claude-code-merge-queue": "0.7.1",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "~5.8.3",
