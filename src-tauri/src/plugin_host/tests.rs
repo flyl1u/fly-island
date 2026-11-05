@@ -817,10 +817,10 @@ mod market_trust_tests {
     use serde_json::json;
 
     use super::super::market::{parse_index, OFFICIAL_PUBLISHER};
-    use super::super::revocations::{find, parse_revoked, RevokeAction};
+    use super::super::revocations::{find, merge, parse_revoked, RevokeAction};
     use super::super::signature::{verify_file, verify_index, TRUSTED_KEYS};
-    use super::super::store::PluginsState;
-    use super::super::updates::trusts;
+    use super::super::store::{load_state, save_state, PluginsState};
+    use super::super::updates::{downgrade, trusts};
 
     const INDEX: &str = include_str!("../../../plugins/index.json");
     const SIGNATURE: &str = include_str!("../../../plugins/index.json.sig");
@@ -860,6 +860,38 @@ mod market_trust_tests {
         assert!(find(&list, "a.two", "1.0.1").is_none());
         assert!(find(&list, "a.bad", "1.0.0").is_none());
         assert!(parse_revoked(r#"{"version":2,"revoked":[]}"#).is_err());
+    }
+
+    #[test]
+    fn a_download_never_takes_a_revocation_back() {
+        let one = |id: &str| json!({ "id": id, "versions": "*", "reason": { "zh-CN": "x", "en": "x" }, "action": "disable" });
+        let saved = parse_revoked(&json!({ "version": 1, "revoked": [one("a.old")] }).to_string()).expect("saved");
+        let fetched = parse_revoked(&json!({ "version": 1, "revoked": [one("a.new")] }).to_string()).expect("fetched");
+        let merged = merge(&saved, fetched.clone());
+        assert!(find(&merged, "a.old", "1.0.0").is_some(), "a stale or empty list keeps what was revoked");
+        assert!(find(&merged, "a.new", "1.0.0").is_some());
+        assert_eq!(merge(&merged, fetched).len(), 2, "entries are not duplicated");
+        assert_eq!(merge(&saved, Vec::new()), saved, "a missing revoked.json changes nothing");
+    }
+
+    #[test]
+    fn the_market_never_rolls_a_plugin_back() {
+        assert!(downgrade("1.2.0", "1.1.9"));
+        assert!(!downgrade("1.2.0", "1.2.0"));
+        assert!(!downgrade("1.2.0", "1.10.0"));
+    }
+
+    #[test]
+    fn plugins_json_is_replaced_whole() {
+        let dir = std::env::temp_dir().join(format!("focusd-state-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        let path = dir.join("plugins.json");
+        let mut state = PluginsState::default();
+        state.trusted_publishers.push("someone".into());
+        save_state(&path, &state).expect("save");
+        assert_eq!(load_state(&path).trusted_publishers, vec!["someone".to_string()]);
+        assert!(!path.with_extension("json.tmp").exists(), "no temporary file is left");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

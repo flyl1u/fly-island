@@ -103,9 +103,10 @@ pub(super) fn route(method: &str, url: &str, body: &[u8]) -> Result<ApiCall, Api
             Ok(call("agentStatus.clear", Value::Object(params), true))
         }
         // Development mode (plugin_host/dev.rs), for `fly-island-plugin dev`.
-        ("POST", ["v1", "dev", "plugins"]) => Ok(call("dev.load", body_object(body)?, false)),
-        ("POST", ["v1", "dev", "plugins", id, "reload"]) => Ok(call("dev.reload", json!({ "id": id }), false)),
-        ("DELETE", ["v1", "dev", "plugins", id]) => Ok(call("dev.unload", json!({ "id": id }), false)),
+        // Loading runs code from any folder, so it also needs "allow changes".
+        ("POST", ["v1", "dev", "plugins"]) => Ok(call("dev.load", body_object(body)?, true)),
+        ("POST", ["v1", "dev", "plugins", id, "reload"]) => Ok(call("dev.reload", json!({ "id": id }), true)),
+        ("DELETE", ["v1", "dev", "plugins", id]) => Ok(call("dev.unload", json!({ "id": id }), true)),
         ("GET", ["v1", "dev", "plugins", id, "log"]) => Ok(call("dev.log", json!({ "id": id, "after": query_number(url, "after") }), false)),
         (_, ["v1", "dev", "plugins"] | ["v1", "dev", "plugins", _] | ["v1", "dev", "plugins", _, "reload" | "log"]) => {
             Err(ApiError::new(405, "Method not allowed for this path."))

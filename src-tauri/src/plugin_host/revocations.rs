@@ -80,10 +80,25 @@ pub(super) fn find<'a>(list: &'a [Revocation], id: &str, version: &str) -> Optio
     list.iter().find(|item| item.covers(id, version))
 }
 
-/// Keeps `list` as the current revocations: matching plugins are switched off,
-/// those marked "uninstall" deleted, and running ones stopped.
-pub(super) fn apply(list: Vec<Revocation>) -> Result<(), String> {
+/// The fetched list plus every entry seen before. Revocations are never taken
+/// back by a download: a stale CDN copy, an older (validly signed) list or a
+/// missing revoked.json must not let a revoked version run again. A wrongly
+/// revoked plugin comes back with a new version instead.
+pub(super) fn merge(saved: &[Revocation], fetched: Vec<Revocation>) -> Vec<Revocation> {
+    let mut list = fetched;
+    for item in saved {
+        if !list.contains(item) {
+            list.push(item.clone());
+        }
+    }
+    list
+}
+
+/// Adds `fetched` to the current revocations (see `merge`): matching plugins
+/// are switched off, those marked "uninstall" deleted, and running ones stopped.
+pub(super) fn apply(fetched: Vec<Revocation>) -> Result<(), String> {
     let host = host()?;
+    let list = merge(&lock(&host.state).revoked, fetched);
     let hits: Vec<(String, RevokeAction, std::path::PathBuf)> = lock(&host.installed)
         .iter()
         .filter(|plugin| !plugin.builtin && !plugin.dev)

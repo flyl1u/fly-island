@@ -16,7 +16,7 @@ use super::{
     app_version,
     grants::{stop_plugin, update_state},
     host, lock,
-    manifest::LocalizedText,
+    manifest::{version_at_least, LocalizedText},
     market::{self, MarketData, MarketEntry, OFFICIAL_PUBLISHER},
     registry::{rescan, snapshot, PluginsSnapshot},
     revocations,
@@ -128,14 +128,30 @@ pub(super) fn start() {
     });
 }
 
-/// Why `entry` may not be installed: revoked, or from a publisher the user has not trusted.
+/// Why `entry` may not be installed: revoked (in this market or in the saved
+/// list), older than the installed version, or from a publisher the user has
+/// not trusted.
 pub(super) fn install_refusal(entry: &MarketEntry, revoked: &[revocations::Revocation]) -> Option<String> {
-    if let Some(item) = revocations::find(revoked, &entry.id, &entry.version) {
-        return Some(format!("This version was taken off the market: {}", item.reason.en()));
-    }
     let host = host().ok()?;
     let state = lock(&host.state);
+    let revocation = revocations::find(revoked, &entry.id, &entry.version)
+        .or_else(|| revocations::find(&state.revoked, &entry.id, &entry.version));
+    if let Some(item) = revocation {
+        return Some(format!("This version was taken off the market: {}", item.reason.en()));
+    }
+    let installed = lock(&host.installed)
+        .iter()
+        .find(|plugin| plugin.folder == entry.id && !plugin.dev)
+        .and_then(|plugin| plugin.manifest.as_ref().ok().map(|manifest| manifest.version.clone()));
+    if let Some(installed) = installed.filter(|installed| downgrade(installed, &entry.version)) {
+        return Some(format!("Version {installed} is installed; the market offers the older {}.", entry.version));
+    }
     (!trusts(&state, entry.publisher())).then(|| format!("Trust the publisher \"{}\" first.", entry.publisher()))
+}
+
+/// True when `offered` is older than `installed` (an old or stale index must not roll a plugin back).
+pub(super) fn downgrade(installed: &str, offered: &str) -> bool {
+    installed != offered && version_at_least(installed, offered)
 }
 
 /// The reason a revoked plugin version shows.

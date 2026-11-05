@@ -54,7 +54,13 @@ pub(super) fn load_state(path: &Path) -> PluginsState {
         .unwrap_or_default()
 }
 
+/// Writes next to the file and renames, so a crash mid-write leaves the old
+/// file whole (a broken plugins.json would read as "nothing allowed" and lose
+/// the revocations, trusted publishers and remembered answers).
 pub(super) fn save_state(path: &Path, state: &PluginsState) -> Result<(), String> {
     let text = serde_json::to_string_pretty(state).map_err(|error| error.to_string())?;
-    fs::write(path, text).map_err(|error| format!("Could not write {}: {error}", path.display()))
+    let fail = |error: std::io::Error| format!("Could not write {}: {error}", path.display());
+    let temp = path.with_extension("json.tmp");
+    fs::write(&temp, text).map_err(fail)?;
+    fs::rename(&temp, path).map_err(fail)
 }
