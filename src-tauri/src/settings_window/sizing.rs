@@ -33,7 +33,7 @@ mod tests {
     };
     const WANTED: Size = Size {
         width: 820.0,
-        height: 650.0,
+        height: 860.0,
     };
 
     fn size(width: f64, height: f64) -> Size {
@@ -44,6 +44,11 @@ mod tests {
     fn keeps_the_configured_size_on_a_large_screen() {
         assert_eq!(fit(WANTED, MIN, size(3840.0, 2112.0)), WANTED);
         assert_eq!(fit(WANTED, MIN, size(1920.0, 1032.0)), WANTED);
+    }
+
+    #[test]
+    fn shortens_on_a_scaled_laptop_screen() {
+        assert_eq!(fit(WANTED, MIN, size(1536.0, 824.0)), size(820.0, 728.0));
     }
 
     #[test]
