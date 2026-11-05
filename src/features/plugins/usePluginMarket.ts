@@ -9,11 +9,20 @@ import {
 } from "./api";
 
 /**
+ * The last index this window loaded, so reopening the page shows it at once
+ * while a fresh copy loads in the background.
+ */
+let lastMarket: MarketSnapshot | null = null;
+
+/**
  * The plugin market index, fetched when the page opens and on Refresh, and
  * installing from it. `onInstalled`, when given, receives the new list of installed plugins.
  */
 export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => void) {
-  const [market, setMarket] = useState<MarketSnapshot | null>(null);
+  const [market, setMarket] = useState<MarketSnapshot | null>(lastMarket);
+  useEffect(() => {
+    lastMarket = market;
+  }, [market]);
   const [loading, setLoading] = useState(false);
   // Kept apart so a failed install does not read as the list failing to load.
   const [loadError, setLoadError] = useState("");

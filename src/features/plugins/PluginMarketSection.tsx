@@ -22,18 +22,19 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
     [market, query, category],
   );
   const hasPlugins = Boolean(market && market.plugins.length > 0);
+  // Search and categories stay in place while the list loads; only an index that is known to be empty hides them.
+  const showFilters = hasPlugins || (market === null && !loadError);
 
   return (
     <section className="settings-section plugins-panel">
       <div className="settings-section__header plugin-market__header">
         <span>{text.title}</span>
         <button className="plugin-card__button" type="button" disabled={loading} onClick={() => void refresh()}>
-          <RefreshCcw size={12} strokeWidth={2.4} />
+          <RefreshCcw className={loading ? "plugin-market__spin" : undefined} size={12} strokeWidth={2.4} />
           <span>{text.refresh}</span>
         </button>
       </div>
       <p className="settings-section__hint">{text.hint}</p>
-      {loading ? <p className="settings-section__hint">{text.loading}</p> : null}
       {loadError ? (
         <div className="plugin-market__failure" role="alert">
           <p className="plugin-card__error">{text.loadFailed}</p>
@@ -47,7 +48,7 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
         </div>
       ) : null}
       {market && !hasPlugins ? <p className="settings-section__hint">{text.empty}</p> : null}
-      {hasPlugins ? (
+      {showFilters ? (
         <div className="plugin-market__filters">
           <input
             className="plugin-setting__input"
@@ -57,7 +58,7 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
             aria-label={text.search}
             onChange={(event) => setQuery(event.currentTarget.value)}
           />
-          {categories.length > 0 ? (
+          {market === null || categories.length > 0 ? (
             <div className="plugin-market__categories" role="group">
               {(["", ...categories] as const).map((name) => (
                 <button
@@ -74,18 +75,28 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
           ) : null}
         </div>
       ) : null}
-      {hasPlugins && shown.length === 0 ? <p className="settings-section__hint">{text.noMatches}</p> : null}
-      {market
-        ? shown.map((plugin) => (
-            <MarketPluginItem
-              key={plugin.id}
-              plugin={plugin}
-              market={market}
-              installingId={installingId}
-              onInstall={(id, trust) => void install(id, trust)}
-            />
-          ))
-        : null}
+      <div className="plugin-market__list" aria-busy={loading}>
+        {market === null && loading ? (
+          <>
+            <p className="settings-section__hint">{text.loading}</p>
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="plugin-market__item plugin-market__placeholder" aria-hidden="true" />
+            ))}
+          </>
+        ) : null}
+        {hasPlugins && shown.length === 0 ? <p className="settings-section__hint">{text.noMatches}</p> : null}
+        {market
+          ? shown.map((plugin) => (
+              <MarketPluginItem
+                key={plugin.id}
+                plugin={plugin}
+                market={market}
+                installingId={installingId}
+                onInstall={(id, trust) => void install(id, trust)}
+              />
+            ))
+          : null}
+      </div>
     </section>
   );
 }

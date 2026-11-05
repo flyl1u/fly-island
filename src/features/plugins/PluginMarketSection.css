@@ -86,6 +86,41 @@
   color: #ff9d8a;
 }
 
+/* Spaced like the panel it sits in, so wrapping the items does not change the layout. */
+.plugin-market__list {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+/* Stand-ins for market items while the first index loads. */
+.plugin-market__placeholder {
+  min-height: 76px;
+  animation: plugin-market-pulse 1.4s ease-in-out infinite;
+}
+
+.plugin-market__spin {
+  animation: plugin-market-spin 0.9s linear infinite;
+}
+
+@keyframes plugin-market-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes plugin-market-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plugin-market__placeholder,
+  .plugin-market__spin {
+    animation: none;
+  }
+}
+
 .plugin-market__filters {
   display: grid;
   gap: 8px;
