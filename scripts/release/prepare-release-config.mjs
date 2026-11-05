@@ -1,11 +1,13 @@
 // Writes the release-only Tauri config overlay that turns on updater signing.
 //
-// The base src-tauri/tauri.conf.json keeps an empty `pubkey` placeholder and
-// leaves updater artifacts off, so a normal `pnpm tauri build` works on any
-// machine. The placeholder cannot be omitted: tauri-plugin-updater declares
-// `pubkey` as a mandatory field, and a build without it aborts at startup with
-// "missing field `pubkey`". Release builds pass this overlay with
-// `tauri build --config <file>` to replace it with the real key.
+// The base src-tauri/tauri.conf.json carries the fork's public key (so every
+// build can update) and leaves updater artifacts off, so a normal
+// `pnpm tauri build` works on any machine without the private key. The field
+// cannot be omitted: tauri-plugin-updater declares `pubkey` as mandatory, and a
+// build without it aborts at startup with "missing field `pubkey`". Release
+// builds pass this overlay with `tauri build --config <file>` to turn on
+// signing. The release key must match the shipped key, or installed builds
+// would reject the update.
 //
 // Usage:
 //   TAURI_UPDATER_PUBKEY="$(cat ~/.tauri/fly-island.key.pub)" \
@@ -25,6 +27,16 @@ if (!pubkey) {
     "TAURI_UPDATER_PUBKEY is missing.\n" +
       "Generate a key pair once with `pnpm tauri signer generate -w <path>`, then export the public key:\n" +
       "  TAURI_UPDATER_PUBKEY=$(cat <path>.pub)",
+  );
+  process.exit(1);
+}
+
+const base = JSON.parse(readFileSync("src-tauri/tauri.conf.json", "utf8"));
+const shippedKey = (base.plugins?.updater?.pubkey ?? "").trim();
+if (shippedKey && shippedKey !== pubkey) {
+  console.error(
+    "TAURI_UPDATER_PUBKEY does not match plugins.updater.pubkey in src-tauri/tauri.conf.json.\n" +
+      "Installed builds trust only the shipped key and would reject this release.",
   );
   process.exit(1);
 }
@@ -56,7 +68,6 @@ if (endpoints.length > 0) {
   overlay.plugins.updater.endpoints = endpoints;
 }
 
-const base = JSON.parse(readFileSync("src-tauri/tauri.conf.json", "utf8"));
 const version = process.env.TAURI_RELEASE_VERSION?.trim();
 if (version) {
   overlay.version = version;

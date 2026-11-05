@@ -47,9 +47,11 @@ node scripts/release/make-latest-json.mjs --base-url "https://ghfast.top/https:/
 
 ## 签名密钥
 
-更新包必须用私钥签名，App 用构建时注入的公钥验证。**仓库里不保存任何公钥或私钥**，密钥归仓库维护者所有。
+更新包必须用私钥签名，App 用内置的公钥验证。**私钥不进仓库**，归仓库维护者所有。
 
-`tauri.conf.json` 里的 `plugins.updater.pubkey` 保留为空字符串占位。这个字段在插件配置里是必填项（没有默认值），删掉整个键会让应用在启动阶段报 `missing field \`pubkey\`` 并直接退出；空串不会影响启动，面板会识别为「没带更新公钥」并禁用更新入口。发布构建用上面的 `TAURI_UPDATER_PUBKEY` 覆盖它。
+`tauri.conf.json` 的 `plugins.updater.pubkey` 里直接写着本仓库（TixXin/fly-island）的更新公钥。公钥本身不是秘密，写进仓库后，本地 `pnpm tauri build`、`pnpm tauri dev` 出来的程序也能检查和安装本仓库发布的更新。这个字段在插件配置里是必填项（没有默认值），删掉整个键会让应用在启动阶段报 `missing field \`pubkey\`` 并直接退出；改成空串不会影响启动，面板会显示「这里不能应用内更新」并禁用更新入口。别人 fork 本仓库做自己的发布线时，应把它换成自己的公钥或清空。
+
+发布构建仍通过 `TAURI_UPDATER_PUBKEY` 传入公钥，`prepare-release-config.mjs` 会核对它和 `tauri.conf.json` 里的公钥一致，不一致就中止：用别的私钥签名的更新包，已装的 App 都会拒绝安装。
 
 ```powershell
 # 只需在第一次启用应用内更新前生成一次
@@ -59,11 +61,11 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 生成后同目录会有 `fly-island.key`（私钥）和 `fly-island.key.pub`（公钥）：
 
 - 私钥：自己保管，放在密码管理器或发布机器的 `%USERPROFILE%\.tauri\` 下，不要提交、不要外传。
-- 公钥：发布构建时通过 `TAURI_UPDATER_PUBKEY` 传进去，被写进 App 二进制（`plugins.updater.pubkey`）。
+- 公钥：写进 `tauri.conf.json` 的 `plugins.updater.pubkey`，发布构建时也通过 `TAURI_UPDATER_PUBKEY` 传入并核对。
 
 **私钥一旦丢失，已装上的旧版本就收不到更新**，只能让用户手动重装；换新密钥同样会让旧客户端拒绝新包。所以第一条发布线尽量只生成一次密钥，换机器时把私钥文件拷过去，不要重新生成。
 
-普通 `pnpm tauri build` 不带公钥、也不产出签名包，任何机器都能直接编出来自测；只有发布构建（`pnpm release`）才要求密钥。
+普通 `pnpm tauri build` 带着公钥、能检查更新，但不产出签名包，任何机器都能直接编出来自测；只有发布构建（`pnpm release`）才要求私钥。
 
 ### Windows 本机自动读取
 
@@ -123,7 +125,7 @@ CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBK
 ## 常见问题
 
 - **构建提示缺少私钥**：只有发布构建需要签名。普通 `pnpm tauri build` 不会产出签名包，也不会要求私钥；要出正式包请走 `pnpm release` 并配好环境变量。
-- **面板显示「这个构建没带更新公钥」**：这是开发构建或没走发布流程的包。更新入口会显示不可用提示并禁用。
+- **面板显示「这里不能应用内更新」**：浏览器预览页，或 `tauri.conf.json` 的公钥被清空的构建。更新入口会显示不可用提示并禁用。
 - **点了检查提示失败**：面板会显示「原因：…」。`Could not fetch a valid release JSON from the remote` 表示三个端点都没拿到清单——最常见是这次 Release 没上传 `latest.json`，其次是本机到 GitHub 和镜像都不通；带 `error sending request` 字样的是网络或代理问题。
 - **一直显示已是最新版本**：确认 release 里的 `latest.json` 的 `version` 高于客户端版本；同一版本号重发不会触发更新。
 - **提示签名校验失败**：`latest.json` 里的 `signature` 必须来自本次安装包的 `.sig` 文件，且签名私钥与构建时注入的公钥配对。

@@ -1,17 +1,30 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { ArrowRight, Download, RefreshCcw } from "lucide-react";
-import { useTranslation } from "../../i18n";
+import { useLocale, useTranslation } from "../../i18n";
 import { ProjectLink } from "./ProjectLink";
 import { PROJECT_RELEASES_URL } from "./projectLinks";
-import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
+import { releaseNoteLines } from "./releaseNotes";
+import {
+  checkForUpdate,
+  checkOnFirstVisit,
+  getUpdateState,
+  installUpdate,
+  subscribeToUpdate,
+} from "./updaterController";
 import "./UpdatePanel.css";
 
 export function UpdatePanel() {
   const t = useTranslation();
-  const { stage, version, nextVersion, downloaded, total, detail } = useSyncExternalStore(
+  const { locale } = useLocale();
+  const { stage, version, nextVersion, notes, downloaded, total, detail } = useSyncExternalStore(
     subscribeToUpdate,
     getUpdateState,
   );
+  const noteLines = useMemo(() => releaseNoteLines(notes, locale), [notes, locale]);
+
+  useEffect(() => {
+    void checkOnFirstVisit();
+  }, []);
 
   const percent = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : null;
   const busy = stage === "checking" || stage === "downloading" || stage === "installing";
@@ -83,6 +96,18 @@ export function UpdatePanel() {
           aria-valuenow={percent}
         >
           <span className="update-panel__fill" style={{ width: `${percent}%` }} />
+        </div>
+      )}
+      {noteLines.length > 0 && (stage === "available" || stage === "downloading") && (
+        <div className="update-panel__notes" aria-label={t.settings.project.update.notesTitle(nextVersion)}>
+          <p className="update-panel__notes-title">{t.settings.project.update.notesTitle(nextVersion)}</p>
+          {noteLines.map((line, index) =>
+            line.kind === "heading" ? (
+              <p key={index} className="update-panel__notes-heading">{line.text}</p>
+            ) : (
+              <p key={index} className={`update-panel__notes-${line.kind}`}>{line.text}</p>
+            ),
+          )}
         </div>
       )}
     </div>

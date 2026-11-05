@@ -68,9 +68,9 @@ pub fn get_updater_proxy() -> Option<String> {
     Some(normalize_proxy(&server))
 }
 
-/// Whether this build carries an updater public key. Only release builds do:
-/// the key is injected at build time, so a plain `tauri build` (and dev runs)
-/// cannot check for updates and the settings panel hides the action.
+/// Whether this build carries an updater public key. tauri.conf.json ships the
+/// fork's key, so every build can update; a build whose config clears it (for
+/// example another fork's) cannot, and the settings panel hides the action.
 #[tauri::command]
 pub fn updater_configured(app: AppHandle) -> bool {
     app.config()
@@ -86,19 +86,10 @@ pub fn updater_configured(app: AppHandle) -> bool {
 mod tests {
     use serde_json::{json, Value};
 
-    #[test]
-    fn preview_updater_config_is_valid_without_a_release_key() {
-        let config: serde_json::Value =
-            serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-        let updater: tauri_plugin_updater::Config =
-            serde_json::from_value(config["plugins"]["updater"].clone()).unwrap();
-        assert!(updater.pubkey.is_empty());
-    }
-
     // tauri-plugin-updater declares `pubkey` as a mandatory config field with no
     // serde default, so dropping the key aborts startup with "missing field
-    // `pubkey`". The shipped config keeps an empty placeholder; release builds
-    // replace it through `src-tauri/tauri.release.conf.json`.
+    // `pubkey`". The shipped config carries the fork's public key; release
+    // builds pass the same key again through `src-tauri/tauri.release.conf.json`.
     fn shipped_updater_config() -> Value {
         let config: Value = serde_json::from_str(include_str!("../../tauri.conf.json"))
             .expect("tauri.conf.json must be valid JSON");
@@ -109,11 +100,13 @@ mod tests {
     }
 
     #[test]
-    fn shipped_updater_config_parses_with_the_empty_pubkey_placeholder() {
+    fn shipped_updater_config_carries_a_minisign_public_key() {
         let parsed: tauri_plugin_updater::Config = serde_json::from_value(shipped_updater_config())
             .expect("plugins.updater must deserialize or the app aborts at startup");
 
-        assert_eq!(parsed.pubkey, "");
+        // The key is the base64 of a minisign `.pub` file; its first line is
+        // "untrusted comment: minisign public key: ...".
+        assert!(parsed.pubkey.starts_with("dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6"));
         assert!(!parsed.endpoints.is_empty());
     }
 

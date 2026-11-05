@@ -5,8 +5,6 @@ export type SettingsProjectText = {
   description: string;
   versionTitle: string;
   linksTitle: string;
-  site: string;
-  siteHint: string;
   releases: string;
   releasesHint: string;
   issues: string;
@@ -31,6 +29,7 @@ export type SettingsProjectText = {
     done: string;
     error: string;
     errorDetail: (reason: string) => string;
+    notesTitle: (version: string) => string;
     unavailable: string;
   };
 };
@@ -42,8 +41,6 @@ export const zhCN: SettingsProjectText = {
   description: "在屏幕顶部集中待办、剪贴板、音乐、快捷翻译、AI 状态和消息提醒。",
   versionTitle: "版本",
   linksTitle: "链接",
-  site: "在线预览",
-  siteHint: "在浏览器里看看小岛长什么样",
   releases: "版本发布",
   releasesHint: "查看更新说明，或手动下载安装包",
   issues: "反馈问题",
@@ -68,7 +65,8 @@ export const zhCN: SettingsProjectText = {
     done: "更新完成，小岛正在重启…",
     error: "检查更新失败，请稍后再试。",
     errorDetail: (reason) => `原因：${reason}`,
-    unavailable: "这个构建没带更新公钥，应用内更新不可用，请到 Release 页手动下载。",
+    notesTitle: (version) => `v${version} 更新内容`,
+    unavailable: "这里不能应用内更新，请到 Release 页手动下载。",
   },
 };
 
@@ -79,8 +77,6 @@ export const en: SettingsProjectText = {
   description: "Todos, clipboard, music, quick translation, AI status, and message alerts, gathered at the top of the screen.",
   versionTitle: "Version",
   linksTitle: "Links",
-  site: "Live preview",
-  siteHint: "See the island in a browser",
   releases: "Releases",
   releasesHint: "Read the notes, or download a build by hand",
   issues: "Report a problem",
@@ -105,6 +101,7 @@ export const en: SettingsProjectText = {
     done: "Update installed, restarting…",
     error: "Couldn't check for updates. Please try again later.",
     errorDetail: (reason) => `Reason: ${reason}`,
-    unavailable: "This build ships without an updater key, so in-app updates are off. Grab new versions from the release page.",
+    notesTitle: (version) => `What's new in v${version}`,
+    unavailable: "In-app updates aren't available here. Grab new versions from the release page.",
   },
 };

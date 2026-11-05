@@ -18,6 +18,8 @@ export type UpdateState = {
   stage: UpdateStage;
   version: string;
   nextVersion: string;
+  /** Release notes of `nextVersion`, as published in latest.json. */
+  notes: string;
   downloaded: number;
   total: number;
   detail: string;
@@ -30,6 +32,7 @@ const initialState: UpdateState = {
   stage: "idle",
   version: "",
   nextVersion: "",
+  notes: "",
   downloaded: 0,
   total: 0,
   detail: "",
@@ -40,7 +43,7 @@ const listeners = new Set<() => void>();
 
 let proxy: string | null = null;
 let pending: Update | null = null;
-let initialized = false;
+let ready: Promise<void> | null = null;
 
 function setState(patch: Partial<UpdateState>) {
   state = { ...state, ...patch };
@@ -67,10 +70,12 @@ function busy(stage: UpdateStage) {
   return stage === "checking" || stage === "downloading" || stage === "installing";
 }
 
-async function initialize() {
-  if (initialized) return;
-  initialized = true;
+function initialize() {
+  ready ??= loadBuildInfo();
+  return ready;
+}
 
+async function loadBuildInfo() {
   if (!isTauri()) {
     setState({ stage: "disabled" });
     return;
@@ -99,11 +104,19 @@ async function closePending() {
   }
 }
 
+/** Checks once per run, when the About page is first opened. A manual check, a
+ * finished check or a running download is left alone. */
+export async function checkOnFirstVisit() {
+  await initialize();
+  if (state.stage === "idle") await checkForUpdate();
+}
+
 export async function checkForUpdate() {
+  await initialize();
   if (busy(state.stage) || state.stage === "disabled") return;
 
   await closePending();
-  setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
+  setState({ nextVersion: "", notes: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
 
   try {
     const found = await check({ timeout: 20000, ...(proxy ? { proxy } : {}) });
@@ -114,7 +127,7 @@ export async function checkForUpdate() {
       return;
     }
 
-    setState({ stage: "available", nextVersion: found.version });
+    setState({ stage: "available", nextVersion: found.version, notes: found.body?.trim() ?? "" });
   } catch (error) {
     console.error("Failed to check for updates", error);
     setState({ stage: "error", detail: errorReason(error) });

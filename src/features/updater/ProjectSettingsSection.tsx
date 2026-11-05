@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from "react";
-import { CircleHelp, Globe, Star, Tag } from "lucide-react";
+import { CircleHelp, Star, Tag } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
 import { ProjectLink } from "./ProjectLink";
-import { PROJECT_ISSUES_URL, PROJECT_RELEASES_URL, PROJECT_REPO_URL, PROJECT_SITE_URL } from "./projectLinks";
+import { PROJECT_ISSUES_URL, PROJECT_RELEASES_URL, PROJECT_REPO_URL } from "./projectLinks";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import { UpdatePanel } from "./UpdatePanel";
 import "./ProjectSettingsSection.css";
@@ -41,12 +41,6 @@ export function ProjectSettingsSection() {
         <div className="settings-section__header">
           <span>{t.settings.project.linksTitle}</span>
         </div>
-        <ProjectLink
-          href={PROJECT_SITE_URL}
-          title={t.settings.project.site}
-          hint={t.settings.project.siteHint}
-          icon={<Globe className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-        />
         {showReleasesLink && (
           <ProjectLink
             href={PROJECT_RELEASES_URL}
