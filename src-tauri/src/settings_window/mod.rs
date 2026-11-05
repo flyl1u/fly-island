@@ -17,9 +17,9 @@ const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(2);
 /// so a closed window does not keep a webview running in the background.
 ///
 /// A new window starts hidden and the page shows it (show_settings_window) after
-/// its first paint; shown at once, it sat empty while the webview loaded. It opens at
-/// the size and place it had when last closed (see `bounds`), shrunk to fit if that
-/// screen is smaller now; a first window is sized for and centered on the island's screen.
+/// its first paint; shown at once, it sat empty while the webview loaded. It always
+/// opens at the configured size, shrunk to fit a small screen, at the place it had
+/// when last closed (see `bounds`); a first window is centered on the island's screen.
 pub fn open(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
         let _ = window.unminimize();
@@ -45,16 +45,9 @@ pub fn open(app: &AppHandle) -> Result<(), String> {
     let screen = saved_screen.cloned().or_else(|| island_screen(app));
     let screen_size = screen.as_ref().map(logical_work_area);
 
-    let wanted = match (saved, screen_size) {
-        (Some(saved), _) => Size {
-            width: saved.width,
-            height: saved.height,
-        },
-        (None, Some(screen_size)) => sizing::default_size(screen_size),
-        (None, None) => Size {
-            width: config.width,
-            height: config.height,
-        },
+    let wanted = Size {
+        width: config.width,
+        height: config.height,
     };
     let size = match screen_size {
         Some(screen_size) => sizing::fit(wanted, min, screen_size),

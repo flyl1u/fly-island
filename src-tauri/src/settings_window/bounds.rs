@@ -1,5 +1,6 @@
-//! The settings window's last size and place, saved when it closes and used the
-//! next time it opens, as long as that place is still on a screen.
+//! The settings window's last place, saved when it closes and used the next time it
+//! opens, as long as that place is still on a screen. The size is saved too but no
+//! longer read back: the window always opens at its configured size.
 
 use serde::{Deserialize, Serialize};
 use std::fs;
