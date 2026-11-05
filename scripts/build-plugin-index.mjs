@@ -10,8 +10,8 @@ import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 export { createZip, listFiles, readPackedFile, sha256 };
 
-/** Where the app downloads the index and packages from: the fork's dev branch, not main or upstream (for now). */
-export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins";
+/** Where the app downloads the index and packages from: the fork's main branch (dev is kept at the same commit for older builds). */
+export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins";
 export const INDEX_VERSION = 1;
 const SOURCE_DIRS = ["plugins/examples"];
 const PACKAGES_DIR = "plugins/packages";

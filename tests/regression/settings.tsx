@@ -51,7 +51,7 @@ mockIPC((command, payload) => {
     case "get_updater_proxy": return null;
     case "plugin:app|version": return "0.0.0-test";
     case "get_plugin_market": return {
-      indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/index.json",
+      indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json",
       nodeAvailable: false,
       plugins: [
         { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: "1.0.0", incompatible: null },

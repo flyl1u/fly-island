@@ -18,7 +18,7 @@
       "permissions": [],
       "runtime": "powershell",
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.github-issues-1.0.0.zip",
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.github-issues-1.0.0.zip",
         "sha256": "ebe9814f92fdcd29dc0c57d0d37eff8fb23ad99bbd7368e989f0085b8bb0abc8",
         "size": 4357
       }
@@ -43,7 +43,7 @@
       ],
       "runtime": "powershell",
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.now-playing-1.0.0.zip",
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.now-playing-1.0.0.zip",
         "sha256": "8a95e329fd660e5592c382fd2fa1eb2fa22f37a880ae4952f3bc2555742a9eca",
         "size": 3132
       }
@@ -68,7 +68,7 @@
       ],
       "runtime": "powershell",
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.pomodoro-1.1.0.zip",
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.pomodoro-1.1.0.zip",
         "sha256": "b39a0345604874525760659dcc479627172594cbb8418e201a87adc4cbc9212c",
         "size": 5166
       }
@@ -93,7 +93,7 @@
       ],
       "runtime": "powershell",
       "download": {
-        "url": "https://raw.githubusercontent.com/TixXin/fly-island/dev/plugins/packages/dev.focusd.todo-digest-1.2.0.zip",
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.todo-digest-1.2.0.zip",
         "sha256": "3f0376c411a23ac5a4723e23275b2306627a34c6c1c48669b3bc93d803c14af3",
         "size": 3034
       }
