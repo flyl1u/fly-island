@@ -65,6 +65,8 @@ export type PluginInfo = {
   id: string;
   /** Comes with the island: needs no "allow third-party plugins" and cannot be uninstalled. */
   builtin: boolean;
+  /** Loaded in development mode from a folder: always on, with every permission it asks for (P10). */
+  dev: boolean;
   invalidReason: string | null;
   name: LocalizedText | null;
   description: LocalizedText | null;

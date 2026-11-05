@@ -35,8 +35,8 @@ export function PluginCard({
   const { locale } = useLocale();
   const name = plugin.name?.[locale] ?? plugin.id;
   const isOn = plugin.enabled && !plugin.needsApproval;
-  // Built-in plugins run without "allow third-party plugins".
-  const canRun = allowed || plugin.builtin;
+  // Built-in and development plugins run without "allow third-party plugins".
+  const canRun = allowed || plugin.builtin || plugin.dev;
   const showStatus = plugin.hasProcess && canRun && isOn;
 
   return (
@@ -47,6 +47,7 @@ export function PluginCard({
           <span>
             {[
               plugin.builtin && t.settings.plugins.builtin,
+              plugin.dev && t.settings.plugins.dev.badge,
               plugin.version && `v${plugin.version}`,
               plugin.author && t.settings.plugins.by(plugin.author),
             ]
@@ -83,7 +84,9 @@ export function PluginCard({
               </ul>
             )}
           </div>
-          <ToggleControl label={t.settings.plugins.enable} checked={isOn} onChange={(enabled) => !busy && onEnabledChange(enabled)} />
+          {plugin.dev ? null : (
+            <ToggleControl label={t.settings.plugins.enable} checked={isOn} onChange={(enabled) => !busy && onEnabledChange(enabled)} />
+          )}
           {plugin.needsApproval ? <p className="plugin-card__hint">{t.settings.plugins.needsApproval}</p> : null}
           {isOn && !canRun ? <p className="plugin-card__hint">{t.settings.plugins.notAllowed}</p> : null}
           {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
@@ -107,7 +110,7 @@ export function PluginCard({
           </div>
         </>
       )}
-      {plugin.builtin ? null : (
+      {plugin.builtin || plugin.dev ? null : (
         <div className="plugin-card__actions">
           <button
             className={`plugin-card__button${confirmingUninstall ? " plugin-card__button--danger" : ""}`}

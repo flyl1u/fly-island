@@ -262,7 +262,7 @@
     {
       "name": "initialize",
       "since": 1,
-      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes> or onStartupFinished), appVersion, pluginId, dataDir, permissions, settings }"
+      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes> or onStartupFinished), appVersion, pluginId, dataDir, permissions, settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) }"
     },
     { "name": "command", "since": 1, "params": "{ id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus \"todo/context\", since 2) sends { id, args: { todoId } }" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },

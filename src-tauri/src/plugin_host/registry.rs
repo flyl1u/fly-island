@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use super::{
-    app_version, builtin,
+    app_version, builtin, dev,
     grants::sync_processes,
     host, keybindings, lock,
     manifest::{parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginRuntime, MANIFEST_FILE_NAME},
@@ -27,6 +27,8 @@ pub struct PluginInfo {
     id: String,
     /// Comes with the island: no "allow third-party" needed, cannot be uninstalled.
     builtin: bool,
+    /// Loaded in development mode from a folder (dev.rs): always on, every permission granted.
+    dev: bool,
     /// Why the plugin cannot be used (bad manifest); the other fields are then empty.
     invalid_reason: Option<String>,
     name: Option<LocalizedText>,
@@ -88,12 +90,33 @@ pub(super) fn scan(plugins_dir: &PathBuf, app_version: &str) -> Vec<InstalledPlu
             dir: PathBuf::new(),
             manifest,
             builtin: true,
+            dev: false,
+        })
+        .collect();
+    plugins.extend(scan_folder(plugins_dir, app_version));
+    plugins
+}
+
+/// The plugins folder, sorted by id, with development plugins (dev.rs) in place
+/// of an installed plugin with the same id.
+fn scan_folder(plugins_dir: &PathBuf, app_version: &str) -> Vec<InstalledPlugin> {
+    let development = dev::plugins();
+    let mut found: Vec<InstalledPlugin> = development
+        .iter()
+        .map(|(id, dir)| InstalledPlugin {
+            folder: id.clone(),
+            dir: dir.clone(),
+            manifest: dev::read_manifest(dir, app_version).and_then(|manifest| {
+                if &manifest.id == id { Ok(manifest) } else { Err(format!("The id changed to \"{}\"; load the folder again.", manifest.id)) }
+            }),
+            builtin: false,
+            dev: true,
         })
         .collect();
     let Ok(entries) = fs::read_dir(plugins_dir) else {
-        return plugins;
+        return found;
     };
-    let mut from_disk: Vec<InstalledPlugin> = entries
+    let mut installed: Vec<InstalledPlugin> = entries
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
         .filter(|entry| !entry.file_name().to_string_lossy().starts_with(market::WORK_DIR_PREFIX))
@@ -106,13 +129,15 @@ pub(super) fn scan(plugins_dir: &PathBuf, app_version: &str) -> Vec<InstalledPlu
                 fs::read_to_string(dir.join(MANIFEST_FILE_NAME))
                     .map_err(|error| format!("Could not read {MANIFEST_FILE_NAME}: {error}"))
                     .and_then(|text| parse_manifest(&text, &folder, app_version))
+                    .and_then(dev::check_installed)
             };
-            InstalledPlugin { folder, dir, manifest, builtin: false }
+            InstalledPlugin { folder, dir, manifest, builtin: false, dev: false }
         })
+        .filter(|plugin| !development.iter().any(|(id, _)| *id == plugin.folder))
         .collect();
-    from_disk.sort_by(|left, right| left.folder.cmp(&right.folder));
-    plugins.append(&mut from_disk);
-    plugins
+    found.append(&mut installed);
+    found.sort_by(|left, right| left.folder.cmp(&right.folder));
+    found
 }
 
 /// The local API used to have its own switches in local-api.json. The first
@@ -165,6 +190,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
             let mut info = PluginInfo {
                 id: plugin.folder.clone(),
                 builtin: plugin.builtin,
+                dev: plugin.dev,
                 invalid_reason: None,
                 name: None,
                 description: None,
@@ -175,7 +201,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 commands: Vec::new(),
                 runtime: "none",
                 has_process: false,
-                enabled: grant.enabled,
+                enabled: grant.enabled || plugin.dev,
                 needs_approval: false,
                 status: runtime.status,
                 error: runtime.error,
@@ -195,6 +221,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
             match &plugin.manifest {
                 Ok(manifest) => {
                     info.needs_approval = grant.enabled
+                        && !plugin.dev
                         && !missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty();
                     info.name = Some(manifest.name.clone());
                     info.description = Some(manifest.description.clone());

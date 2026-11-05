@@ -435,7 +435,7 @@ mod builtin_tests {
     fn installed() -> Vec<InstalledPlugin> {
         manifests("0.2.14")
             .into_iter()
-            .map(|(id, manifest)| InstalledPlugin { folder: id.to_string(), dir: PathBuf::new(), manifest, builtin: true })
+            .map(|(id, manifest)| InstalledPlugin { folder: id.to_string(), dir: PathBuf::new(), manifest, builtin: true, dev: false })
             .collect()
     }
 
@@ -777,5 +777,36 @@ mod lifecycle_tests {
         assert_eq!(cpu_percent(5, 10, Duration::from_secs(1), 4), 0.0);
         assert_eq!(cpu_percent(10, 0, Duration::ZERO, 4), 0.0);
         assert_eq!(cpu_percent(u64::MAX, 0, Duration::from_millis(1), 1), 100.0);
+    }
+}
+
+mod dev_tests {
+    use super::*;
+    use std::collections::VecDeque;
+
+    #[test]
+    fn experimental_apis_are_read_and_refused_outside_development_mode() {
+        let listed = parse(json!({ "experimentalApis": ["views.chart"] })).expect("valid");
+        assert_eq!(listed.experimental_apis, vec!["views.chart"]);
+        assert!(super::super::dev::check_installed(listed).expect_err("refused").contains("development mode"));
+        assert!(super::super::dev::check_installed(parse(json!({})).expect("valid")).is_ok());
+        assert!(parse(json!({ "experimentalApis": ["Bad Name"] })).expect_err("invalid").contains("experimentalApis"));
+        let eleven: Vec<String> = (0..11).map(|index| format!("api{index}")).collect();
+        assert!(parse(json!({ "experimentalApis": eleven })).is_err());
+        // Nothing is experimental right now, so a development plugin is told none.
+        assert!(super::super::dev::granted_experimental(&["views.chart".into()]).is_empty());
+        let schema: Value = serde_json::from_str(include_str!("../../../plugins/schema/manifest.schema.json")).expect("schema");
+        assert_eq!(schema["properties"]["experimentalApis"]["maxItems"], 10);
+    }
+
+    #[test]
+    fn log_lines_are_numbered_for_the_cli() {
+        let log: VecDeque<String> = ["c", "d", "e"].into_iter().map(String::from).collect();
+        // Five lines were logged, the first two already dropped: c is 3, e is 5.
+        let numbers = |after| super::super::dev::lines_after(&log, 5, after).iter().map(|line| line["seq"].as_u64().expect("seq")).collect::<Vec<_>>();
+        assert_eq!(numbers(0), vec![3, 4, 5]);
+        assert_eq!(numbers(3), vec![4, 5]);
+        assert!(numbers(5).is_empty());
+        assert!(super::super::dev::lines_after(&VecDeque::new(), 0, 0).is_empty());
     }
 }

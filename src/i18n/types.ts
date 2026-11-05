@@ -734,6 +734,26 @@ export type Translations = {
         highCpu: string;
         keepAlive: (reason: string) => string;
       };
+      /** Settings > Plugins > Developer: development mode (P10). */
+      dev: {
+        title: string;
+        badge: string;
+        mode: string;
+        modeHint: string;
+        path: string;
+        pathPlaceholder: string;
+        load: string;
+        reload: string;
+        unload: string;
+        noPlugins: string;
+        inspect: string;
+        trace: (id: string) => string;
+        traceEmpty: string;
+        event: string;
+        payload: string;
+        send: string;
+        badJson: string;
+      };
       uninstall: string;
       confirmUninstall: string;
       builtin: string;

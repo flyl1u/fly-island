@@ -24,6 +24,7 @@ pub(super) fn supports_api_version(version: u32) -> bool {
     (MIN_API_VERSION..=HOST_API_VERSION).contains(&version)
 }
 const MAX_COMMANDS: usize = 8;
+const MAX_EXPERIMENTAL_APIS: usize = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocalizedText {
@@ -171,6 +172,9 @@ pub(super) struct PluginManifest {
     /// When the host starts the plugin's process (API version 2); see activation.rs.
     #[serde(skip)]
     pub activation: Activation,
+    /// APIs still being designed; only development plugins may list them (dev.rs).
+    #[serde(default)]
+    pub experimental_apis: Vec<String>,
 }
 
 fn empty_text() -> LocalizedText {
@@ -238,6 +242,9 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
         launch_kind(command)?;
     }
     validate_specs(&manifest.contributes.settings)?;
+    if manifest.experimental_apis.len() > MAX_EXPERIMENTAL_APIS || !manifest.experimental_apis.iter().all(|name| is_valid_api_name(name)) {
+        return Err(format!("experimentalApis takes at most {MAX_EXPERIMENTAL_APIS} names like \"views.chart\"."));
+    }
     let commands = &manifest.contributes.commands;
     if commands.len() > MAX_COMMANDS {
         return Err(format!("A plugin can add at most {MAX_COMMANDS} commands."));
@@ -264,6 +271,13 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
         &manifest.permissions,
     )?;
     Ok(manifest)
+}
+
+/// An experimental API name such as `views.chart`.
+fn is_valid_api_name(name: &str) -> bool {
+    (1..=64).contains(&name.len())
+        && name.starts_with(|first: char| first.is_ascii_lowercase())
+        && name.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'.')
 }
 
 fn is_valid_id(id: &str) -> bool {

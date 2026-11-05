@@ -6,6 +6,7 @@
 //! - registry.rs: which plugins are installed, and the settings-page snapshot
 //! - grants.rs: saves the user's choices and starts / stops plugins to match
 //! - commands.rs: the Tauri commands
+//! - dev.rs: development mode (plugins loaded from any folder, `/v1/dev` routes)
 //! - events.rs: island events plugins subscribe to
 //! - feeds.rs: messages and media for plugins (`messages.list`, `media.changed`)
 //! - activation.rs / lifecycle.rs: when plugin processes run (`activationEvents`),
@@ -22,6 +23,7 @@
 mod activation;
 mod builtin;
 mod commands;
+mod dev;
 mod events;
 mod feeds;
 mod grants;
@@ -46,6 +48,9 @@ mod store;
 mod tests;
 
 pub use commands::*;
+// The Tauri commands of development mode (the macro needs its generated items re-exported too).
+pub use dev::*;
+pub(crate) use dev::answer_local_api as answer_dev_api;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -87,6 +92,8 @@ struct InstalledPlugin {
     dir: PathBuf,
     manifest: Result<PluginManifest, String>,
     builtin: bool,
+    /// Loaded in development mode from `dir` (dev.rs).
+    dev: bool,
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {

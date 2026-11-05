@@ -1,6 +1,6 @@
 //! Pure request checks and routing: HTTP method + path + body to an API call.
 
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 
 pub(super) const API_VERSION: u32 = 1;
 pub(super) const MAX_BODY_BYTES: usize = 64 * 1024;
@@ -102,11 +102,31 @@ pub(super) fn route(method: &str, url: &str, body: &[u8]) -> Result<ApiCall, Api
             params.insert("source".into(), Value::String((*source).to_string()));
             Ok(call("agentStatus.clear", Value::Object(params), true))
         }
+        // Development mode (plugin_host/dev.rs), for `fly-island-plugin dev`.
+        ("POST", ["v1", "dev", "plugins"]) => Ok(call("dev.load", body_object(body)?, false)),
+        ("POST", ["v1", "dev", "plugins", id, "reload"]) => Ok(call("dev.reload", json!({ "id": id }), false)),
+        ("DELETE", ["v1", "dev", "plugins", id]) => Ok(call("dev.unload", json!({ "id": id }), false)),
+        ("GET", ["v1", "dev", "plugins", id, "log"]) => Ok(call("dev.log", json!({ "id": id, "after": query_number(url, "after") }), false)),
+        (_, ["v1", "dev", "plugins"] | ["v1", "dev", "plugins", _] | ["v1", "dev", "plugins", _, "reload" | "log"]) => {
+            Err(ApiError::new(405, "Method not allowed for this path."))
+        }
         (_, ["v1", "health"] | ["v1", "todos"] | ["v1", "todos", _] | ["v1", "note"] | ["v1", "agent-status", _]) => {
             Err(ApiError::new(405, "Method not allowed for this path."))
         }
         _ => Err(ApiError::new(404, "Unknown path.")),
     }
+}
+
+/// A non-negative number from the query string, 0 when missing or not a number.
+fn query_number(url: &str, name: &str) -> u64 {
+    url.split_once('?')
+        .map(|(_, query)| query)
+        .unwrap_or("")
+        .split('&')
+        .filter_map(|pair| pair.split_once('='))
+        .find(|(key, _)| *key == name)
+        .and_then(|(_, value)| value.parse().ok())
+        .unwrap_or(0)
 }
 
 fn body_object(body: &[u8]) -> Result<Value, ApiError> {

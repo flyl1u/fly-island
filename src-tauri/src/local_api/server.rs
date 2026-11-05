@@ -10,7 +10,7 @@ use std::{
 use tauri::AppHandle;
 use tiny_http::{Header, Request, Response, Server};
 
-use crate::agent_status;
+use crate::{agent_status, plugin_host};
 
 use super::{
     bridge,
@@ -123,6 +123,7 @@ fn answer(app: &AppHandle, request: &mut Request, port: u16) -> Result<Value, Ap
             agent_status::report_external_status(LOCAL_API_OWNER, &name, &call.params).map_err(to_api_error)
         }
         "agentStatus.clear" => agent_status::clear_external_status(LOCAL_API_OWNER, &call.params).map_err(to_api_error),
+        "dev.load" | "dev.reload" | "dev.unload" | "dev.log" => plugin_host::answer_dev_api(call.method, &call.params).map_err(to_api_error),
         _ => bridge::dispatch(app, call),
     }
 }

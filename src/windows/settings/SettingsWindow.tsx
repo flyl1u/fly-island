@@ -25,6 +25,7 @@ import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySe
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
 import { PluginMarketSection } from "../../features/plugins/PluginMarketSection";
 import { PluginsSettingsSection } from "../../features/plugins/PluginsSettingsSection";
+import { PluginDevSection } from "../../features/plugin-dev/PluginDevSection";
 import { PluginIslandPagesSection } from "../../features/plugin-views/PluginIslandPagesSection";
 import { useLocale, useTranslation } from "../../i18n";
 import "./SettingsWindow.css";
@@ -161,6 +162,7 @@ export function SettingsWindow() {
           <>
             <PluginsSettingsSection />
             <PluginIslandPagesSection />
+            <PluginDevSection />
           </>
         )}
         {category === "market" && <PluginMarketSection />}

@@ -68,6 +68,15 @@ mockIPC((command, payload) => {
         { id: "broken.plugin", builtin: false, invalidReason: "focusd-plugin.json is not valid: expected value at line 1 column 1", name: null, description: null, version: "", author: "", homepage: "", permissions: [], commands: [], runtime: "none", hasProcess: false, enabled: false, needsApproval: false, status: "stopped", error: null, log: [], settingsSchema: [], settings: {}, info: [] },
       ],
     };
+    // Development mode (P10): on, with one plugin loaded from a folder and some JSON-RPC lines.
+    case "get_plugin_dev_state":
+    case "set_plugin_dev_mode":
+    case "load_dev_plugin":
+      return { enabled: true, plugins: [{ id: "me.very-long-plugin-id-to-check-wrapping", path: "D:\code\plugins\a-folder-with-a-rather-long-name\me.very-long-plugin-id-to-check-wrapping" }] };
+    case "get_plugin_rpc_trace": return [
+      { at: Date.now() - 2000, outgoing: true, text: JSON.stringify({ jsonrpc: "2.0", method: "initialize", params: { apiVersion: 2, pluginId: "me.very-long-plugin-id-to-check-wrapping", settings: { repo: "a/b" } } }) },
+      { at: Date.now() - 1000, outgoing: false, text: '{"jsonrpc":"2.0","id":1,"method":"view.update","params":{"viewId":"main","model":{"items":[]}}}' },
+    ];
     default: return null;
   }
 }, { shouldMockEvents: true });

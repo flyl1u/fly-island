@@ -32,6 +32,12 @@
         "pattern": "^(onStartup|onStartupFinished|onCommand:[A-Za-z0-9-]{1,32}|onView:[A-Za-z0-9-]{1,32}|onEvent:[A-Za-z.]+|onSchedule:[0-9]{1,4})$"
       }
     },
+    "experimentalApis": {
+      "description": "APIs still being designed (e.g. \"views.chart\"). Only a plugin loaded in development mode (Settings > Plugins > Developer, or `fly-island-plugin dev`) may list them; the island refuses any other plugin that does, and `fly-island-plugin validate` and the market reject them. initialize.experimentalApis says which of them the island has.",
+      "type": "array",
+      "maxItems": 10,
+      "items": { "type": "string", "pattern": "^[a-z][A-Za-z0-9.]{0,63}$" }
+    },
     "author": { "type": "string" },
     "homepage": { "type": "string", "description": "Only https:// links are shown." },
     "runtime": {

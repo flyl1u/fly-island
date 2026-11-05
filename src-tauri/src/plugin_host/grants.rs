@@ -79,10 +79,16 @@ pub(super) fn sync_processes() -> Result<(), String> {
         for plugin in lock(&host.installed).iter() {
             let Ok(manifest) = &plugin.manifest else { continue };
             let PluginRuntime::Process { command, args } = &manifest.runtime else { continue };
-            let Some(grant) = state.plugins.get(&manifest.id) else { continue };
-            if !state.allow_third_party || !grant.enabled || !missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty() {
+            // Development plugins (dev.rs) are on, with every permission they ask for.
+            let grant = state.plugins.get(&manifest.id).cloned();
+            let allowed = plugin.dev
+                || grant.as_ref().is_some_and(|grant| {
+                    state.allow_third_party && grant.enabled && missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty()
+                });
+            if !allowed {
                 continue;
             }
+            let saved_settings = grant.map(|grant| grant.settings).unwrap_or_default();
             let launch = launch_command(&plugin.dir, command, args);
             let (program, args) = match launch {
                 Ok(launch) => launch,
@@ -103,8 +109,10 @@ pub(super) fn sync_processes() -> Result<(), String> {
                     granted: manifest.permissions.clone(),
                     app_version: app_version(&host.app),
                     display_name: manifest.name.en().to_string(),
-                    settings: settings::resolve(&manifest.contributes.settings, &grant.settings),
+                    settings: settings::resolve(&manifest.contributes.settings, &saved_settings),
                     activation_event: String::new(),
+                    dev: plugin.dev,
+                    experimental_apis: manifest.experimental_apis.clone(),
                 },
             ));
         }

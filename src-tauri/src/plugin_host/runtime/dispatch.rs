@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, set_keep_alive, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    feeds, notify, sensitive, storage, views,
+    dev, feeds, notify, sensitive, storage, views,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -28,6 +28,10 @@ pub(super) fn initialize_params(context: &Context) -> Value {
     if spec.api_version >= 2 {
         // Why this process was started: onStartup, onCommand:<id>, onSchedule:<minutes>, ...
         params["activationEvent"] = json!(spec.activation_event);
+    }
+    if !spec.experimental_apis.is_empty() {
+        // Development plugins only: which of the experimental APIs they listed the island has.
+        params["experimentalApis"] = json!(dev::granted_experimental(&spec.experimental_apis));
     }
     params
 }

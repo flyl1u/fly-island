@@ -22,6 +22,9 @@ use std::{
 use tauri::AppHandle;
 
 mod dispatch;
+mod trace;
+
+pub use trace::TraceEntry;
 
 use super::{rpc, settings::InfoItem};
 use crate::{agent_status, system::CREATE_NO_WINDOW, win32::job::{Job, JobUsage}};
@@ -68,6 +71,10 @@ pub(super) struct RuntimeInfo {
     pub resources: Option<Resources>,
     /// Why the plugin asked to keep running (`host.keepAlive`).
     pub keep_alive: Option<String>,
+    /// How many lines were ever logged; the last line in `log` has this number.
+    pub log_seq: u64,
+    /// Raw JSON-RPC lines of a development plugin (dev.rs).
+    pub trace: VecDeque<TraceEntry>,
 }
 
 /// Mirrored by `PluginResources` in src/features/plugins/api.ts.
@@ -99,6 +106,10 @@ pub(super) struct LaunchSpec {
     pub settings: Map<String, Value>,
     /// Why the process is started (activation.rs), told in `initialize`.
     pub activation_event: String,
+    /// Loaded in development mode (dev.rs): its JSON-RPC lines are recorded.
+    pub dev: bool,
+    /// `experimentalApis` from the manifest (only development plugins have any).
+    pub experimental_apis: Vec<String>,
 }
 
 struct Context {
@@ -422,6 +433,7 @@ fn handle_line(context: &Arc<Context>, line: &str) {
         return;
     }
     *lock(&context.last_activity) = Instant::now();
+    trace::record(context, false, line);
     if let Some(started) = lock(&context.spawned_at).take() {
         let elapsed = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         update_entry(context, |info| info.startup_ms = Some(elapsed));
@@ -466,7 +478,10 @@ fn write_line(context: &Context, line: &str) -> Result<(), String> {
     pipe.write_all(line.as_bytes())
         .and_then(|()| pipe.write_all(b"\n"))
         .and_then(|()| pipe.flush())
-        .map_err(|error| format!("Could not write to the plugin: {error}"))
+        .map_err(|error| format!("Could not write to the plugin: {error}"))?;
+    drop(stdin);
+    trace::record(context, true, line);
+    Ok(())
 }
 
 /// Waits until the process has exited (after stdout closed). Returns how it ended.
@@ -551,6 +566,7 @@ fn log_line(context: &Context, line: &str) {
     let Some(info) = current_entry(context, &mut table) else { return };
     let line: String = line.chars().take(500).collect();
     info.log.push_back(line);
+    info.log_seq += 1;
     while info.log.len() > LOG_LINES {
         info.log.pop_front();
     }
