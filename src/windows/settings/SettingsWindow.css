@@ -8,7 +8,9 @@
   font: inherit;
 }
 
+/* Pages stop at a readable width in a wide window; the rest stays empty on the right. */
 .settings-stage .editor-panel {
+  grid-template-columns: minmax(0, 860px);
   height: 100%;
   min-height: 0;
   padding: 16px 24px 24px;

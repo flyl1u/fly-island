@@ -1,8 +1,6 @@
-/* Plugin pages stop at a readable width when the settings window is wide. */
 .plugins-panel {
   display: grid;
   gap: var(--space-lg);
-  max-width: 820px;
 }
 
 .plugins-folder {
