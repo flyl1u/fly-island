@@ -13,7 +13,7 @@
 「更新」页的「更新通道」可选**稳定版**或**测试版（beta）**，保存在 `focusd-island-update-channel`。没选过时，beta 版本的程序默认测试版（是用户特意装的），其他版本默认稳定版，所以**不主动选测试版的用户永远收不到 beta**：
 
 - **稳定版**读 `plugins.updater.endpoints`，即 `releases/latest/download/latest.json`。GitHub 的 latest 永远不会是 Pre-release，而 beta 版都发成 Pre-release。0.3.0 及更早的客户端没有通道设置，也只读这里。
-- **测试版**读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算）。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。
+- **测试版**读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算），全部取不到时再退回稳定版端点，所以 beta 清单缺失或下载失败时，测试版用户仍能收到正式版。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。
 - 每次 `pnpm release`（正式版和 beta 版都算）发布后会刷新 `beta-channel` 上的清单，除非它已经指向更新的版本。所以测试版用户也会收到正式版；从测试版切回稳定版不会降级，要等稳定版追上当前版本才收到更新。
 
 版本号带 `-`（如 `0.3.1-beta.1`）就算 beta：`release.mjs` 会把它发成 Pre-release、不设为 latest，判断与比较在 `scripts/release/channel.mjs`。

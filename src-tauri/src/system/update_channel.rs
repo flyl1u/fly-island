@@ -41,20 +41,26 @@ pub enum DownloadEvent {
 }
 
 /// The endpoints to check for `channel`. The beta manifest sits next to the
-/// stable one on every configured mirror.
+/// stable one on every configured mirror. The stable endpoints follow it, so a
+/// missing or unreachable beta manifest still lets beta users get final releases
+/// (the updater moves on to the next endpoint when one fails).
 pub(crate) fn channel_endpoints(configured: &[Url], channel: &str) -> Result<Vec<Url>, String> {
     match channel {
         "stable" => Ok(configured.to_vec()),
-        "beta" => configured
-            .iter()
-            .map(|endpoint| {
-                let url = endpoint.as_str();
-                let base = url
-                    .strip_suffix(STABLE_MANIFEST)
-                    .ok_or_else(|| format!("Cannot derive the beta channel from {url}"))?;
-                Url::parse(&format!("{base}{BETA_MANIFEST}")).map_err(|error| error.to_string())
-            })
-            .collect(),
+        "beta" => {
+            let mut endpoints = configured
+                .iter()
+                .map(|endpoint| {
+                    let url = endpoint.as_str();
+                    let base = url
+                        .strip_suffix(STABLE_MANIFEST)
+                        .ok_or_else(|| format!("Cannot derive the beta channel from {url}"))?;
+                    Url::parse(&format!("{base}{BETA_MANIFEST}")).map_err(|error| error.to_string())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            endpoints.extend_from_slice(configured);
+            Ok(endpoints)
+        }
         other => Err(format!("Unknown update channel: {other}")),
     }
 }
@@ -144,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    fn beta_reads_the_beta_manifest_on_every_mirror() {
+    fn beta_reads_the_beta_manifest_on_every_mirror_then_falls_back_to_stable() {
         let configured = urls(&[
             "https://github.com/o/r/releases/latest/download/latest.json",
             "https://ghfast.top/https://github.com/o/r/releases/latest/download/latest.json",
@@ -152,6 +158,8 @@ mod tests {
         let beta = urls(&[
             "https://github.com/o/r/releases/download/beta-channel/latest.json",
             "https://ghfast.top/https://github.com/o/r/releases/download/beta-channel/latest.json",
+            "https://github.com/o/r/releases/latest/download/latest.json",
+            "https://ghfast.top/https://github.com/o/r/releases/latest/download/latest.json",
         ]);
         assert_eq!(channel_endpoints(&configured, "beta"), Ok(beta));
     }
@@ -171,6 +179,6 @@ mod tests {
             serde_json::from_value(config["plugins"]["updater"].clone())
                 .expect("plugins.updater must deserialize");
         let beta = channel_endpoints(&updater.endpoints, "beta").expect("beta endpoints");
-        assert_eq!(beta.len(), updater.endpoints.len());
+        assert_eq!(beta.len(), 2 * updater.endpoints.len());
     }
 }
