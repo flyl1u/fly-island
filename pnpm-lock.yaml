@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  claude-code-merge-queue@0.7.1: 0e87382d1fc3aeedb489a7061a686861383759f488ebfba469c07e69c2880ee1
+  claude-code-merge-queue@0.7.1: 538c64b68b7ee7f43c1d67db9955b7a827dc8f411ef2292c10e9bf1c6e6e0954
 
 importers:
 
@@ -47,7 +47,7 @@ importers:
         version: 4.7.0(vite@7.3.6)
       claude-code-merge-queue:
         specifier: 0.7.1
-        version: 0.7.1(patch_hash=0e87382d1fc3aeedb489a7061a686861383759f488ebfba469c07e69c2880ee1)
+        version: 0.7.1(patch_hash=538c64b68b7ee7f43c1d67db9955b7a827dc8f411ef2292c10e9bf1c6e6e0954)
       eslint:
         specifier: ^10.14.0
         version: 10.14.0
@@ -1765,7 +1765,7 @@ snapshots:
 
   caniuse-lite@1.0.30001800: {}
 
-  claude-code-merge-queue@0.7.1(patch_hash=0e87382d1fc3aeedb489a7061a686861383759f488ebfba469c07e69c2880ee1): {}
+  claude-code-merge-queue@0.7.1(patch_hash=538c64b68b7ee7f43c1d67db9955b7a827dc8f411ef2292c10e9bf1c6e6e0954): {}
 
   convert-source-map@2.0.0: {}
 

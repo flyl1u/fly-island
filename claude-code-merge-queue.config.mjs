@@ -1,6 +1,9 @@
-// claude-code-merge-queue: agent lanes (../fly-island-lane-N) and the landing
+// claude-code-merge-queue: agent lanes (../fly-island-lanes/N) and the landing
 // queue. Workflow in AGENTS.md, "Git 与协作".
 export default {
+  // All lanes in one sibling folder instead of a fly-island-lane-N folder each.
+  // Needs patches/claude-code-merge-queue@0.7.1.patch to be found and pruned.
+  worktreeSuffix: "-lanes/",
   integrationBranch: "main",
   // Builds from before c3aaf55 read the plugin market from dev; onLand keeps it
   // at the landed commit instead of a separate promote step.
