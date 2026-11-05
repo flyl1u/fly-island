@@ -10,8 +10,6 @@ export type IslandSettings = {
   collapsedScale: number;
   expandedScale: number;
   marginY: number;
-  /** Radius (px) of the concave corners drawn while the island is flush with the screen top. */
-  topFilletRadius: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

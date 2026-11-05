@@ -97,7 +97,6 @@ pub fn run() {
             island::set_island_interaction,
             island::start_island_drag,
             island::reset_island_position,
-            island::get_island_top_attachment,
             system::todo_export::save_todo_markdown,
             system::todo_export::get_default_todo_save_directory,
             island::show_ready_island,

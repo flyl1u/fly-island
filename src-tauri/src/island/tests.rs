@@ -108,7 +108,7 @@ fn detached_island_rounds_top_corners() {
     for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
         let mut detached = state(mode, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
         assert_eq!(detached.top_corner_radius(), 0.0);
-        detached.top_attached = false;
+        detached.custom_position = Some(IslandPosition { x: 420, y: 0 });
         assert!(detached.top_corner_radius() > 0.0);
         let (width, height) =
             mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
@@ -128,8 +128,10 @@ fn detached_island_rounds_top_corners() {
         assert!(!contains(80.0 + width, 0.0));
         assert!(contains(80.0 + width / 2.0, 0.0));
         assert!(!contains(79.0, 0.0));
-        detached.top_attached = true;
+        detached.custom_position = None;
         assert_eq!(detached.top_corner_radius(), 0.0);
+        detached.margin_y = 12.0;
+        assert!(detached.top_corner_radius() > 0.0);
     }
 }
 

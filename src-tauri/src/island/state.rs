@@ -53,7 +53,6 @@ pub(crate) struct IslandWindowState {
     pub(super) expanded_height: f64,
     pub(super) custom_position: Option<IslandPosition>,
     pub(super) is_dragging: bool,
-    pub(super) top_attached: bool,
     pub(super) glass_enabled: bool,
     pub(super) glass_intensity: f64,
     pub(super) glass_tint: (u8, u8, u8),
@@ -61,10 +60,12 @@ pub(crate) struct IslandWindowState {
 
 impl IslandWindowState {
     pub(super) fn top_corner_radius(self) -> f64 {
-        match (self.top_attached, self.mode) {
-            (true, _) => 0.0,
-            (false, IslandMode::Collapsed) => 14.0,
-            (false, IslandMode::Expanded) => 22.0,
+        if self.custom_position.is_none() && self.margin_y <= 0.0 {
+            return 0.0;
+        }
+        match self.mode {
+            IslandMode::Collapsed => 14.0,
+            IslandMode::Expanded => 22.0,
         }
     }
 
@@ -94,7 +95,6 @@ impl Default for IslandWindowState {
             expanded_height: DEFAULT_EXPANDED_ISLAND_HEIGHT,
             custom_position: None,
             is_dragging: false,
-            top_attached: true,
             glass_enabled: false,
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
