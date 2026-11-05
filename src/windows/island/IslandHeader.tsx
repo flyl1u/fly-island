@@ -3,6 +3,7 @@ import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-r
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
+import { useUpdateReminder } from "../../features/updater/useBackgroundUpdateCheck";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, pageShortcutLabel, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
@@ -19,7 +20,8 @@ type IslandHeaderProps = {
   wechatPending: boolean;
   onPageChange: (page: IslandPage) => void;
   onCollapse: () => void;
-  onOpenSettings: () => void;
+  /** With "updates", opens the Updates page, for the new-version reminder. */
+  onOpenSettings: (section?: "updates") => void;
   onOpenMessages: (source: MessageSource) => void;
   onOpenTranslator: (() => void) | null;
   onResetPosition: () => void;
@@ -55,6 +57,8 @@ export function IslandHeader({
 }: IslandHeaderProps) {
   const t = useTranslation();
   const [{ shortcut: translationShortcut }] = useTranslationSettings();
+  const updateVersion = useUpdateReminder();
+  const settingsLabel = updateVersion ? t.settings.project.update.islandReminder(updateVersion) : t.settings.title;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   const withShortcut = (label: string, target: IslandPage) => {
     const shortcut = pageShortcutLabel(features, target, pageDigitModifiers);
@@ -167,16 +171,17 @@ export function IslandHeader({
 
       <div className="window-actions">
         <button
-          className="icon-button"
+          className="icon-button island-settings-button"
           type="button"
-          title={t.settings.title}
-          aria-label={t.settings.title}
+          title={settingsLabel}
+          aria-label={settingsLabel}
           onClick={(event) => {
             event.stopPropagation();
-            onOpenSettings();
+            onOpenSettings(updateVersion ? "updates" : undefined);
           }}
         >
           <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
+          {updateVersion && <span className="island-settings-button__dot" aria-hidden="true" />}
         </button>
         {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={withShortcut(t.messages.label(messageBadgeLabel), "qq")} aria-pressed={page === "qq"} title={withShortcut(t.messages.title, "qq")} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
           <Bell size={17} strokeWidth={1.8} />

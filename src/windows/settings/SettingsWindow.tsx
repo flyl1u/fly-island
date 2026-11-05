@@ -25,6 +25,7 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
+import { UpdateSettingsSection } from "../../features/updater/UpdateSettingsSection";
 import { PluginMarketSection } from "../../features/plugins/PluginMarketSection";
 import { PluginsSettingsSection } from "../../features/plugins/PluginsSettingsSection";
 import { PluginDevSection } from "../../features/plugin-dev/PluginDevSection";
@@ -55,6 +56,7 @@ export function SettingsWindow() {
     if (section === "translation") setCategory("translation");
     if (section === "music") setCategory("music");
     if (section === "mail") setCategory("mail");
+    if (section === "updates") setCategory("updates");
   }, [focusSavePath]);
 
   // The window opens hidden and is shown once the page has rendered, so it never shows
@@ -164,7 +166,8 @@ export function SettingsWindow() {
           </>
         )}
         {category === "market" && <PluginMarketSection />}
-        {category === "about" && <ProjectSettingsSection />}
+        {category === "updates" && <UpdateSettingsSection />}
+        {category === "about" && <ProjectSettingsSection onOpenUpdates={() => setCategory("updates")} />}
       </LayoutEditor>
     </main>
   );

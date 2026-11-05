@@ -135,6 +135,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
+| `focusd-island-update-preferences`（`{ autoCheck, skippedVersion, lastCheckedAt }`：后台自动检查开关、跳过的版本、上次检查成功的时间；设置窗口写，主窗口通过 `storage` 事件跟随） | `features/updater/storage.ts` |
 | `focusd-island-update-channel`（`"stable"` / `"beta"`；没有时 beta 版本按 `beta`、其他版本按 `stable`） | `features/updater/storage.ts` |
 | `focusd-island-plugin-pages`（`{ order, hidden }`：岛上插件页面的顺序和隐藏的页面，值为页面 id `plugin:<插件 id>/<view id>`；设置窗口写，主窗口通过 `storage` 事件跟随） | `features/plugin-views/storage.ts` |
 

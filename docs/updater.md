@@ -1,11 +1,16 @@
 # 应用内更新
 
-小岛在「设置 → 关于小岛 → 查看最新版本」里检查新版本，发现更新后可以在应用内下载、安装并自动重启。
+小岛在「设置 → 更新」里检查新版本，发现更新后可以在应用内下载、安装并自动重启。「关于」页只留一张跳到「更新」页的卡片。
+
+- **自动检查**（默认开）：岛屿启动 20 秒后检查一次，之后每 6 小时一次（`features/updater/useBackgroundUpdateCheck.ts`）。发现新版本时，展开态右上角的设置按钮出现小圆点，点它直接打开「更新」页。
+- **跳过这个版本**：跳过后岛上不再提醒这个版本，「更新」页仍可手动安装；更新的版本照常提醒。
+- 打开「更新」页时也会检查一次；页面显示上次检查成功的时间。
+- 以上偏好存在 `focusd-island-update-preferences`。
 实现基于 Tauri 2 的 `tauri-plugin-updater`，所有更新包都用 minisign 签名，App 内置公钥校验，签名不符的包不会被安装。
 
 ## 更新通道
 
-「关于」页的「更新通道」可选**稳定版**或**测试版（beta）**，保存在 `focusd-island-update-channel`。没选过时，beta 版本的程序默认测试版（是用户特意装的），其他版本默认稳定版，所以**不主动选测试版的用户永远收不到 beta**：
+「更新」页的「更新通道」可选**稳定版**或**测试版（beta）**，保存在 `focusd-island-update-channel`。没选过时，beta 版本的程序默认测试版（是用户特意装的），其他版本默认稳定版，所以**不主动选测试版的用户永远收不到 beta**：
 
 - **稳定版**读 `plugins.updater.endpoints`，即 `releases/latest/download/latest.json`。GitHub 的 latest 永远不会是 Pre-release，而 beta 版都发成 Pre-release。0.3.0 及更早的客户端没有通道设置，也只读这里。
 - **测试版**读同一组镜像下的 `releases/download/beta-channel/latest.json`（由 `src-tauri/src/system/update_channel.rs` 从稳定端点换算）。`beta-channel` 是一个固定的 Pre-release，只放这份清单，**不要删除**。

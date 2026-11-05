@@ -34,6 +34,7 @@ import type { TodoItem } from "../../features/todos/types";
 import { useTodos } from "../../features/todos/useTodos";
 import { useFileShelf } from "../../features/file-shelf/useFileShelf";
 import { useLocalApiBridge } from "../../features/local-api/useLocalApiBridge";
+import { useBackgroundUpdateCheck } from "../../features/updater/useBackgroundUpdateCheck";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getTodoScrollStartRows } from "./layout";
@@ -120,6 +121,7 @@ export function IslandApp() {
     onMissingSaveDirectory: openSavePathSettings,
   });
   useLocalApiBridge(apiHandlers);
+  useBackgroundUpdateCheck();
   usePluginHostEvents({
     date: notebookProps.currentDate,
     todosVersion: [todos, notebookProps.scheduledTodos, activeTodoId],

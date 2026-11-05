@@ -56,7 +56,7 @@ type IslandShellProps = {
   /** One line from the selection shortcut, shown on the collapsed island, or null. */
   translationPeek: string | null;
   onOpenTranslationPeek: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (section?: "updates") => void;
   onTuck: () => void;
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;

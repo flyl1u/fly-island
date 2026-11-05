@@ -1,7 +1,13 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { isTauri } from "@tauri-apps/api/core";
 import { checkUpdate, downloadAndInstallUpdate, getUpdaterProxy, isUpdaterConfigured } from "./api";
-import { loadUpdateChannel, saveUpdateChannel, type UpdateChannel } from "./storage";
+import {
+  loadUpdateChannel,
+  loadUpdatePreferences,
+  saveUpdateChannel,
+  saveUpdatePreferences,
+  type UpdateChannel,
+} from "./storage";
 
 export type UpdateStage =
   | "idle"
@@ -24,6 +30,9 @@ export type UpdateState = {
   downloaded: number;
   total: number;
   detail: string;
+  autoCheck: boolean;
+  skippedVersion: string | null;
+  lastCheckedAt: number | null;
 };
 
 // The check/download run lives outside the settings panel on purpose: the panel
@@ -38,6 +47,9 @@ const initialState: UpdateState = {
   downloaded: 0,
   total: 0,
   detail: "",
+  autoCheck: true,
+  skippedVersion: null,
+  lastCheckedAt: null,
 };
 
 let state: UpdateState = initialState;
@@ -63,6 +75,13 @@ export function getUpdateState() {
   return state;
 }
 
+/** The version the island should remind about: found, not skipped, not yet installing. */
+export function reminderVersion(current: UpdateState) {
+  return current.stage === "available" && current.nextVersion !== current.skippedVersion
+    ? current.nextVersion
+    : null;
+}
+
 export function errorReason(error: unknown) {
   const reason = error instanceof Error ? error.message : String(error);
   return reason.length > 240 ? `${reason.slice(0, 240)}…` : reason;
@@ -78,6 +97,7 @@ function initialize() {
 }
 
 async function loadBuildInfo() {
+  reloadPreferences();
   if (!isTauri()) {
     setState({ stage: "disabled" });
     return;
@@ -96,11 +116,25 @@ async function loadBuildInfo() {
   });
 }
 
-/** Checks once per run, when the About page is first opened. A manual check, a
+/** Picks up preferences and the channel another window changed. */
+export function reloadPreferences() {
+  const { autoCheck, skippedVersion, lastCheckedAt } = loadUpdatePreferences();
+  setState({ autoCheck, skippedVersion, lastCheckedAt, ...(state.version ? { channel: loadUpdateChannel(state.version) } : {}) });
+}
+
+/** Checks once per run, when the updates page is first opened. A manual check, a
  * finished check or a running download is left alone. */
 export async function checkOnFirstVisit() {
   await initialize();
   if (state.stage === "idle") await checkForUpdate();
+}
+
+/** The island's startup and periodic check; does nothing while auto-check is off. */
+export async function checkInBackground() {
+  await initialize();
+  reloadPreferences();
+  if (!state.autoCheck || state.stage === "available" || state.stage === "done") return;
+  await checkForUpdate();
 }
 
 export async function checkForUpdate() {
@@ -108,17 +142,26 @@ export async function checkForUpdate() {
   if (busy(state.stage) || state.stage === "disabled") return;
 
   hasPending = false;
-  setState({ nextVersion: "", notes: "", downloaded: 0, total: 0, detail: "", stage: "checking" });
+  setState({
+    channel: loadUpdateChannel(state.version),
+    nextVersion: "",
+    notes: "",
+    downloaded: 0,
+    total: 0,
+    detail: "",
+    stage: "checking",
+  });
 
   try {
     const found = await checkUpdate(state.channel, proxy);
+    const { lastCheckedAt } = saveUpdatePreferences({ lastCheckedAt: Date.now() });
     if (!found) {
-      setState({ stage: "latest" });
+      setState({ stage: "latest", lastCheckedAt });
       return;
     }
 
     hasPending = true;
-    setState({ stage: "available", nextVersion: found.version, notes: found.body?.trim() ?? "" });
+    setState({ stage: "available", nextVersion: found.version, notes: found.body?.trim() ?? "", lastCheckedAt });
   } catch (error) {
     console.error("Failed to check for updates", error);
     setState({ stage: "error", detail: errorReason(error) });
@@ -132,6 +175,17 @@ export async function setUpdateChannel(channel: UpdateChannel) {
   saveUpdateChannel(channel);
   setState({ channel });
   if (state.stage !== "disabled") await checkForUpdate();
+}
+
+export function setAutoCheck(autoCheck: boolean) {
+  saveUpdatePreferences({ autoCheck });
+  setState({ autoCheck });
+}
+
+/** Stops reminding about `version`, or reminds again with null. */
+export function skipVersion(version: string | null) {
+  saveUpdatePreferences({ skippedVersion: version });
+  setState({ skippedVersion: version });
 }
 
 export async function installUpdate() {

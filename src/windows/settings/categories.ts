@@ -3,6 +3,7 @@ export const SETTINGS_CATEGORIES = [
   "general",
   "appearance",
   "shortcuts",
+  "updates",
   "todos",
   "music",
   "translation",
@@ -26,7 +27,7 @@ export type SettingsGroup = "basics" | "features" | "messages" | "extensions";
  * source, then installed plugins and the market. A null label leaves About on its own at the end.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
-  { label: "basics", categories: ["general", "appearance", "shortcuts"] },
+  { label: "basics", categories: ["general", "appearance", "shortcuts", "updates"] },
   { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents"] },
   { label: "messages", categories: ["qq", "wechat", "mail"] },
   { label: "extensions", categories: ["plugins", "market"] },

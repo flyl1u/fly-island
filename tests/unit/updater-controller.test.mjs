@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { normalizeUpdateChannel } from "../../src/features/updater/storage.ts";
+import { normalizeUpdateChannel, normalizeUpdatePreferences } from "../../src/features/updater/storage.ts";
 
 const transpile = (path) => ts.transpileModule(
   readFileSync(new URL(path, import.meta.url), "utf8"),
@@ -23,9 +23,12 @@ async function controller({
   proxy = null,
   version = "0.2.11",
   storedChannel = null,
+  preferences = {},
 } = {}) {
   const exports = {};
   const saved = [];
+  let channel = storedChannel;
+  let prefs = normalizeUpdatePreferences(preferences);
   const mocks = {
     "@tauri-apps/api/app": { getVersion: async () => version },
     "@tauri-apps/api/core": {
@@ -40,8 +43,13 @@ async function controller({
       },
     },
     "./storage": {
-      loadUpdateChannel: (current) => normalizeUpdateChannel(storedChannel, current),
-      saveUpdateChannel: (channel) => saved.push(channel),
+      loadUpdateChannel: (current) => normalizeUpdateChannel(channel, current),
+      saveUpdateChannel: (next) => {
+        channel = next;
+        saved.push(next);
+      },
+      loadUpdatePreferences: () => prefs,
+      saveUpdatePreferences: (patch) => (prefs = { ...prefs, ...patch }),
     },
   };
   // api.ts runs against the same core mock, so the command names stay covered.
@@ -57,8 +65,45 @@ async function controller({
     console: { error() {} },
   });
   await new Promise(setImmediate);
-  return Object.assign(exports, { saved });
+  return Object.assign(exports, { saved, prefs: () => prefs, setPrefs: (patch) => (prefs = { ...prefs, ...patch }) });
 }
+
+test("update preferences default to automatic checks and drop malformed fields", () => {
+  assert.deepEqual(normalizeUpdatePreferences(undefined), { autoCheck: true, skippedVersion: null, lastCheckedAt: null });
+  assert.deepEqual(
+    normalizeUpdatePreferences({ autoCheck: false, skippedVersion: "0.3.1", lastCheckedAt: 5 }),
+    { autoCheck: false, skippedVersion: "0.3.1", lastCheckedAt: 5 },
+  );
+  assert.deepEqual(
+    normalizeUpdatePreferences({ autoCheck: "no", skippedVersion: "", lastCheckedAt: "x" }),
+    { autoCheck: true, skippedVersion: null, lastCheckedAt: null },
+  );
+});
+
+test("background checks follow the auto-check switch and record the check time", async () => {
+  let checks = 0;
+  const app = await controller({ preferences: { autoCheck: false }, check: async () => { checks++; return null; } });
+  await app.checkInBackground();
+  assert.equal(checks, 0);
+  app.setPrefs({ autoCheck: true });
+  await app.checkInBackground();
+  assert.equal(checks, 1);
+  assert.equal(typeof app.prefs().lastCheckedAt, "number");
+  assert.equal(app.getUpdateState().lastCheckedAt, app.prefs().lastCheckedAt);
+});
+
+test("the island reminds about a new version unless it is skipped", async () => {
+  const app = await controller({ check: async () => ({ version: "0.3.1", body: null }) });
+  await app.checkInBackground();
+  assert.equal(app.reminderVersion(app.getUpdateState()), "0.3.1");
+  app.skipVersion("0.3.1");
+  assert.equal(app.prefs().skippedVersion, "0.3.1");
+  assert.equal(app.reminderVersion(app.getUpdateState()), null);
+  // A skipped version can still be installed by hand.
+  assert.equal(app.getUpdateState().stage, "available");
+  app.skipVersion(null);
+  assert.equal(app.reminderVersion(app.getUpdateState()), "0.3.1");
+});
 
 test("an unsigned preview disables update checks", async () => {
   let checks = 0;

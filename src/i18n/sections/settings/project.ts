@@ -36,6 +36,18 @@ export type SettingsProjectText = {
     channelBeta: string;
     channelStableHint: string;
     channelBetaHint: string;
+    openPage: string;
+    openPageHint: string;
+    skip: string;
+    unskip: string;
+    skipHint: string;
+    skipped: (version: string) => string;
+    autoTitle: string;
+    autoCheck: string;
+    autoCheckHint: string;
+    lastChecked: (time: string) => string;
+    neverChecked: string;
+    islandReminder: (version: string) => string;
   };
 };
 
@@ -77,6 +89,18 @@ export const zhCN: SettingsProjectText = {
     channelBeta: "测试版（beta）",
     channelStableHint: "只接收正式版本",
     channelBetaHint: "提前体验新功能，也会收到正式版本；可能不太稳定",
+    openPage: "检查更新",
+    openPageHint: "在「更新」页检查新版本、选择更新通道",
+    skip: "跳过这个版本",
+    unskip: "取消跳过",
+    skipHint: "不想装这个版本？跳过后岛上不再提醒，以后的新版本照常提醒",
+    skipped: (version) => `已跳过 v${version}，岛上不再提醒；仍可在这里手动安装`,
+    autoTitle: "自动检查",
+    autoCheck: "自动检查更新",
+    autoCheckHint: "启动后和之后每 6 小时检查一次；发现新版本时，岛上的设置按钮会出现小圆点",
+    lastChecked: (time) => `上次检查：${time}`,
+    neverChecked: "还没有检查过",
+    islandReminder: (version) => `发现新版本 v${version}，点击查看`,
   },
 };
 
@@ -118,5 +142,17 @@ export const en: SettingsProjectText = {
     channelBeta: "Beta",
     channelStableHint: "Only final releases",
     channelBetaHint: "Try new features early, and still get final releases; may be less stable",
+    openPage: "Check for updates",
+    openPageHint: "Check for new versions and pick an update channel on the Updates page",
+    skip: "Skip this version",
+    unskip: "Don't skip",
+    skipHint: "Not this one? Skipping stops the island's reminder for it; later versions still remind you",
+    skipped: (version) => `v${version} is skipped, so the island won't remind you. You can still install it here`,
+    autoTitle: "Automatic checks",
+    autoCheck: "Check for updates automatically",
+    autoCheckHint: "At startup and every 6 hours after. When a new version is out, the island's settings button shows a dot",
+    lastChecked: (time) => `Last checked: ${time}`,
+    neverChecked: "Not checked yet",
+    islandReminder: (version) => `Version v${version} is available. Click to see it`,
   },
 };

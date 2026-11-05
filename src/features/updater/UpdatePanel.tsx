@@ -10,14 +10,17 @@ import {
   checkOnFirstVisit,
   getUpdateState,
   installUpdate,
+  skipVersion,
   subscribeToUpdate,
 } from "./updaterController";
+// The project-link card styles live with the About section; the Updates page needs them too.
+import "./ProjectSettingsSection.css";
 import "./UpdatePanel.css";
 
 export function UpdatePanel() {
   const t = useTranslation();
   const { locale } = useLocale();
-  const { stage, version, channel, nextVersion, notes, downloaded, total, detail } = useSyncExternalStore(
+  const { stage, version, channel, nextVersion, notes, downloaded, total, detail, skippedVersion } = useSyncExternalStore(
     subscribeToUpdate,
     getUpdateState,
   );
@@ -89,6 +92,22 @@ export function UpdatePanel() {
         </span>
         <ArrowRight className="project-link__arrow" size={14} aria-hidden="true" />
       </button>
+      {stage === "available" && (
+        <div className="update-panel__skip">
+          <span>
+            {skippedVersion === nextVersion
+              ? t.settings.project.update.skipped(nextVersion)
+              : t.settings.project.update.skipHint}
+          </span>
+          <button
+            className="update-panel__skip-button"
+            type="button"
+            onClick={() => skipVersion(skippedVersion === nextVersion ? null : nextVersion)}
+          >
+            {skippedVersion === nextVersion ? t.settings.project.update.unskip : t.settings.project.update.skip}
+          </button>
+        </div>
+      )}
       {percent !== null && (stage === "downloading" || stage === "installing") && (
         <div
           className="update-panel__track"

@@ -1,4 +1,4 @@
-/* UpdatePanel 复用这里的 project-link 卡片样式（它只在本区块内渲染）。 */
+/* 「关于」页和「更新」页的 UpdatePanel 共用这里的 project-link 卡片样式，两处都导入本文件。 */
 .about-identity {
   display: flex;
   align-items: flex-start;

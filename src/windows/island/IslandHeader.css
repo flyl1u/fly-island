@@ -195,3 +195,20 @@
   color: #fff;
   background: var(--color-white-a16);
 }
+
+.island-settings-button {
+  position: relative;
+}
+
+/* A newer version is out; clicking opens the Updates page. */
+.island-settings-button__dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: #ffd166;
+  box-shadow: 0 0 0 2px var(--island-background-color);
+  pointer-events: none;
+}

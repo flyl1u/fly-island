@@ -9,6 +9,7 @@ export type SettingsCategoriesText = {
   general: string;
   appearance: string;
   shortcuts: string;
+  updates: string;
   qq: string;
   wechat: string;
   mail: string;
@@ -34,6 +35,7 @@ export const zhCN: SettingsCategoriesText = {
   general: "通用",
   appearance: "外观",
   shortcuts: "快捷键",
+  updates: "更新",
   qq: "QQ 通知",
   wechat: "微信提醒",
   mail: "邮箱",
@@ -59,6 +61,7 @@ export const en: SettingsCategoriesText = {
   general: "General",
   appearance: "Appearance",
   shortcuts: "Shortcuts",
+  updates: "Updates",
   qq: "QQ notifications",
   wechat: "WeChat reminders",
   mail: "Mail",

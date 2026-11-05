@@ -1,19 +1,17 @@
 import { useSyncExternalStore } from "react";
-import { CircleHelp, Star, Tag } from "lucide-react";
+import { ArrowRight, CircleHelp, RefreshCcw, Star, Tag } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
 import { ProjectLink } from "./ProjectLink";
 import { PROJECT_ISSUES_URL, PROJECT_RELEASES_URL, PROJECT_REPO_URL } from "./projectLinks";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
-import { UpdatePanel } from "./UpdatePanel";
 import "./ProjectSettingsSection.css";
+import "./UpdatePanel.css";
 
 /** Settings → About: what this build is, and where to get the next one. */
-export function ProjectSettingsSection() {
+export function ProjectSettingsSection({ onOpenUpdates }: { onOpenUpdates: () => void }) {
   const t = useTranslation();
-  const { version, stage } = useSyncExternalStore(subscribeToUpdate, getUpdateState);
-  // The update card itself opens the release page when in-app updates are off.
-  const showReleasesLink = stage !== "disabled";
+  const { version, stage, nextVersion } = useSyncExternalStore(subscribeToUpdate, getUpdateState);
 
   return (
     <>
@@ -35,21 +33,30 @@ export function ProjectSettingsSection() {
         <div className="settings-section__header">
           <span>{t.settings.project.versionTitle}</span>
         </div>
-        <UpdatePanel />
+        <button className="project-link project-link--release update-panel__button" type="button" onClick={onOpenUpdates}>
+          <RefreshCcw className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />
+          <span className="project-link__copy">
+            <strong>{t.settings.project.update.openPage}</strong>
+            <span>
+              {stage === "available"
+                ? t.settings.project.update.available(nextVersion)
+                : t.settings.project.update.openPageHint}
+            </span>
+          </span>
+          <ArrowRight className="project-link__arrow" size={14} aria-hidden="true" />
+        </button>
       </section>
       <section className="settings-section settings-section--about-links">
         <div className="settings-section__header">
           <span>{t.settings.project.linksTitle}</span>
         </div>
-        {showReleasesLink && (
-          <ProjectLink
-            href={PROJECT_RELEASES_URL}
-            tone="release"
-            title={t.settings.project.releases}
-            hint={t.settings.project.releasesHint}
-            icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-          />
-        )}
+        <ProjectLink
+          href={PROJECT_RELEASES_URL}
+          tone="release"
+          title={t.settings.project.releases}
+          hint={t.settings.project.releasesHint}
+          icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+        />
         <ProjectLink
           href={PROJECT_ISSUES_URL}
           title={t.settings.project.issues}
