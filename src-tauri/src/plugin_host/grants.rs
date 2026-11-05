@@ -4,7 +4,7 @@
 use serde_json::{Map, Value};
 use std::{
     collections::HashMap,
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 
 use super::{
@@ -73,6 +73,11 @@ fn sync_builtins(host: &PluginHost) {
 /// permission it asks for was granted; it runs when it is eager or one of its
 /// activation events started it (lifecycle.rs).
 pub(super) fn sync_processes() -> Result<(), String> {
+    // One sync at a time: it runs from the lifecycle tick, activation threads
+    // and commands, and a sync that decided what to run before another one
+    // started an on-demand plugin would stop that plugin again.
+    static SYNC: Mutex<()> = Mutex::new(());
+    let _one_at_a_time = lock(&SYNC);
     let host = host()?;
     let mut candidates: Vec<(Activation, LaunchSpec)> = Vec::new();
     {

@@ -139,6 +139,7 @@ pub async fn uninstall_plugin(id: String) -> Result<PluginsSnapshot, String> {
             Ok(())
         })?;
         lock(&host.runtimes).remove(&id);
+        super::webviews::forget_plugin(&id);
         rescan()
     })
     .await

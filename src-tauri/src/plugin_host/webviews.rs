@@ -201,6 +201,11 @@ fn states() -> &'static Mutex<HashMap<Key, Value>> {
     STATES.get_or_init(Mutex::default)
 }
 
+/// Forgets the saved page state of an uninstalled plugin.
+pub(super) fn forget_plugin(plugin_id: &str) {
+    lock(states()).retain(|(plugin, _), _| plugin != plugin_id);
+}
+
 /// Views whose page is on screen now (any thread may ask).
 fn open() -> &'static Mutex<HashSet<Key>> {
     static OPEN: std::sync::OnceLock<Mutex<HashSet<Key>>> = std::sync::OnceLock::new();

@@ -963,3 +963,29 @@ mod webview_tests {
         assert!(script.contains("RTCPeerConnection") && !script.contains("__STATE__"));
     }
 }
+
+mod event_tests {
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    use super::super::events::add_pending;
+
+    #[test]
+    fn message_events_keep_every_payload_and_others_only_the_latest() {
+        let mut waiting = HashMap::new();
+        assert!(add_pending(&mut waiting, "messages.received", json!({ "id": 1 })));
+        assert!(!add_pending(&mut waiting, "messages.received", json!({ "id": 2 })));
+        assert_eq!(waiting["messages.received"], vec![json!({ "id": 1 }), json!({ "id": 2 })]);
+
+        assert!(add_pending(&mut waiting, "todos.changed", json!({ "date": "a" })));
+        assert!(!add_pending(&mut waiting, "todos.changed", json!({ "date": "b" })));
+        assert_eq!(waiting["todos.changed"], vec![json!({ "date": "b" })]);
+
+        for id in 3..100 {
+            add_pending(&mut waiting, "messages.received", json!({ "id": id }));
+        }
+        let kept = &waiting["messages.received"];
+        assert_eq!(kept.len(), 50);
+        assert_eq!(kept.last(), Some(&json!({ "id": 99 })));
+    }
+}

@@ -37,7 +37,7 @@ pub(super) fn watch_media() {
     if WATCHING.swap(true, Ordering::SeqCst) {
         return;
     }
-    let started = thread::Builder::new().name("plugin-media-watch".into()).spawn(|| {
+    let started = thread::Builder::new().name("plugin-media-watch".into()).spawn(|| loop {
         let mut last: Option<Value> = None;
         while events::anyone_subscribed(MEDIA_EVENT) {
             if let Ok(now) = media_control::plugin_now_playing() {
@@ -51,6 +51,11 @@ pub(super) fn watch_media() {
             thread::sleep(MEDIA_POLL);
         }
         WATCHING.store(false, Ordering::SeqCst);
+        // A plugin that subscribed after the last check saw WATCHING still set
+        // and started nothing: keep watching for it.
+        if !events::anyone_subscribed(MEDIA_EVENT) || WATCHING.swap(true, Ordering::SeqCst) {
+            return;
+        }
     });
     if started.is_err() {
         WATCHING.store(false, Ordering::SeqCst);

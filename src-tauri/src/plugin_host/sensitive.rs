@@ -220,7 +220,20 @@ pub(super) fn answer(request_id: u64, answer: Answer) {
     }
 }
 
-/// Removes a remembered answer and any "allow once": the next call asks again.
+/// Whether `plugin_id` may use `permission` right now without asking: the
+/// user allowed it, or allowed it once for this run. Checked before each
+/// event that carries sensitive data.
+pub(super) fn allowed_now(plugin_id: &str, permission: &str) -> bool {
+    let stored = host()
+        .ok()
+        .and_then(|host| lock(&host.state).plugins.get(plugin_id).and_then(|grant| grant.sensitive.get(permission).copied()));
+    let this_run = lock(&prompts().this_run).iter().any(|(plugin, asked)| plugin == plugin_id && *asked == permission);
+    decide(stored, this_run) == Decision::Allow
+}
+
+/// Removes a remembered answer and any "allow once": the next call asks
+/// again. The running plugin also loses its subscriptions to events that need
+/// the permission, so data stops flowing at once, not after a restart.
 pub(super) fn revoke(plugin_id: &str, permission: &str) -> Result<(), String> {
     lock(&prompts().this_run).retain(|(plugin, asked)| !(plugin == plugin_id && *asked == permission));
     update_state(|state, _| {
@@ -228,5 +241,11 @@ pub(super) fn revoke(plugin_id: &str, permission: &str) -> Result<(), String> {
             grant.sensitive.remove(permission);
         }
         Ok(())
-    })
+    })?;
+    if let Ok(host) = host() {
+        if let Some(supervisor) = lock(&host.supervisors).get(plugin_id) {
+            supervisor.unsubscribe_needing(permission);
+        }
+    }
+    Ok(())
 }

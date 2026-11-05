@@ -5,14 +5,14 @@
 
 use serde_json::Value;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Mutex, OnceLock},
     thread,
     time::Duration,
 };
 use tauri::{AppHandle, Listener};
 
-use super::{host, lifecycle, lock};
+use super::{host, lifecycle, lock, sensitive};
 
 /// Mirrored by `PLUGIN_HOST_EVENT` in src/features/plugins/api.ts.
 const HOST_EVENT: &str = "plugin-host-event";
@@ -40,10 +40,31 @@ pub(super) fn event_permission(name: &str) -> Option<(&'static str, Option<&'sta
     EVENTS.iter().copied().find(|(event, _)| *event == name)
 }
 
-/// The latest payload of each event waiting for its COALESCE to pass.
-fn pending() -> &'static Mutex<HashMap<&'static str, Value>> {
-    static PENDING: OnceLock<Mutex<HashMap<&'static str, Value>>> = OnceLock::new();
+/// Events whose payloads are separate items (one message each), not "this
+/// changed": every payload is delivered instead of only the latest.
+const QUEUED_EVENTS: [&str; 1] = ["messages.received"];
+/// At most this many payloads of a queued event wait for one COALESCE; the oldest go first.
+const MAX_QUEUED: usize = 50;
+
+/// The payloads of each event waiting for its COALESCE to pass.
+fn pending() -> &'static Mutex<HashMap<&'static str, Vec<Value>>> {
+    static PENDING: OnceLock<Mutex<HashMap<&'static str, Vec<Value>>>> = OnceLock::new();
     PENDING.get_or_init(Mutex::default)
+}
+
+/// Adds `payload` to what waits for `name`. True when nothing was waiting yet.
+pub(super) fn add_pending(waiting: &mut HashMap<&'static str, Vec<Value>>, name: &'static str, payload: Value) -> bool {
+    let list = waiting.entry(name).or_default();
+    let first = list.is_empty();
+    if QUEUED_EVENTS.contains(&name) {
+        if list.len() >= MAX_QUEUED {
+            list.remove(0);
+        }
+        list.push(payload);
+    } else {
+        *list = vec![payload];
+    }
+    first
 }
 
 pub(super) fn listen(app: &AppHandle) {
@@ -68,15 +89,16 @@ pub(super) fn publish_known(name: &str, payload: Value) {
 }
 
 /// Sends `name` to subscribed plugins after COALESCE; later payloads in the
-/// meantime replace earlier ones.
+/// meantime replace earlier ones, except for QUEUED_EVENTS, which keep them all.
 fn publish(name: &'static str, payload: Value) {
-    if lock(pending()).insert(name, payload).is_some() {
+    if !add_pending(&mut lock(pending()), name, payload) {
         return;
     }
     let spawned = thread::Builder::new().name("plugin-event".into()).spawn(move || {
         thread::sleep(COALESCE);
-        if let Some(payload) = lock(pending()).remove(name) {
-            deliver(name, &payload);
+        let payloads = lock(pending()).remove(name).unwrap_or_default();
+        for payload in &payloads {
+            deliver(name, payload);
         }
     });
     if spawned.is_err() {
@@ -86,8 +108,19 @@ fn publish(name: &'static str, payload: Value) {
 
 fn deliver(name: &'static str, payload: &Value) {
     let Ok(host) = host() else { return };
+    // A sensitive permission the user revoked since the plugin subscribed stops the delivery.
+    // Checked before taking the supervisors lock: allowed_now takes the state lock.
+    let refused: HashSet<String> = match event_permission(name).and_then(|(_, permission)| permission) {
+        Some(permission) if sensitive::is_sensitive(permission) => {
+            let running: Vec<String> = lock(&host.supervisors).keys().cloned().collect();
+            running.into_iter().filter(|id| !sensitive::allowed_now(id, permission)).collect()
+        }
+        _ => HashSet::new(),
+    };
     for supervisor in lock(&host.supervisors).values() {
-        supervisor.deliver_event(name, payload);
+        if !refused.contains(supervisor.plugin_id()) {
+            supervisor.deliver_event(name, payload);
+        }
     }
     // On-demand plugins that start on this event (onEvent) and are not running.
     lifecycle::wake_for_event(name, payload);

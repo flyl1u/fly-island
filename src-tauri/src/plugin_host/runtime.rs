@@ -252,6 +252,12 @@ impl Supervisor {
         lock(&self.context.subscriptions).contains(name)
     }
 
+    /// Drops subscriptions to events that need `permission` (the user revoked it).
+    pub fn unsubscribe_needing(&self, permission: &str) {
+        lock(&self.context.subscriptions)
+            .retain(|name| super::events::event_permission(name).and_then(|(_, needed)| needed) != Some(permission));
+    }
+
     pub fn deliver_event(&self, name: &str, payload: &Value) {
         if lock(&self.context.subscriptions).contains(name) {
             let _ = self.notify("event", json!({ "name": name, "payload": payload }));
