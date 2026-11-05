@@ -42,8 +42,13 @@
     box-shadow 140ms ease;
 }
 
-.appearance-mode-control__segments button:hover {
+.appearance-mode-control__segments button:hover:not(:disabled) {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.appearance-mode-control__segments button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .appearance-mode-control__segments .appearance-mode-control--active {

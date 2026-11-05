@@ -375,6 +375,7 @@ const zhCN: Translations = {
       title: "外观模式",
       classic: "经典",
       liquidGlass: "液态玻璃",
+      liquidGlassUnavailable: "液态玻璃暂不可用",
       glassStrength: "玻璃强度",
     },
 
