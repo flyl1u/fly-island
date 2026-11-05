@@ -378,8 +378,8 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 与上面设计的偏差：
 
 - **启动耗时**：从启动进程到插件在 stdout 写出第一条消息为止（宿主不知道插件何时"处理完" `initialize`）；只写 stderr 的插件不显示。
-- **内存上限**：固定 512 MB，没有给每个插件单独设置；超过时由宿主结束插件（状态"已出错停止"），没有用 Job 的内核内存限制（那会让分配失败而不是结束进程）。
-- **进程树**：进程启动后才放进 Job，在这之间极短的时间里启动的子进程不受管（std 的 `Command` 不能挂起启动）。
+- **内存上限**：默认 512 MB，用户可在插件设置页按插件改为 256 MB、1 GB 或 2 GB（`plugins.json` 的 `memoryLimitMb`，命令 `set_plugin_memory_limit`；清单不能声明）；超过时由宿主结束插件（状态"已出错停止"），没有用 Job 的内核内存限制（那会让分配失败而不是结束进程）。
+- **进程树**：插件以 `CREATE_SUSPENDED` 启动，放进 Job 之后再恢复运行（`win32::job::resume` 通过 Toolhelp 线程快照恢复，因为 std 不暴露主线程句柄），所以它启动的每个子进程都在 Job 里。
 - **Job Object 的测试**用 `win32/job.rs` 里的单元测试（cmd 拉起 ping），没有另写 `examples/` 程序。
 - **空闲判断**：订阅了不在 `activationEvents` 里的事件时视为不空闲，以免错过事件。
 - **`onUri`** 没做（计划里也写了以后再加）。

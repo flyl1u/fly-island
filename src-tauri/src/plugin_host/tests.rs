@@ -709,7 +709,7 @@ mod lifecycle_tests {
     use serde_json::{json, Value};
     use std::time::Duration;
 
-    use super::super::lifecycle::{cpu_percent, is_idle, IDLE_AFTER};
+    use super::super::lifecycle::{cpu_percent, is_idle, memory_limit_mb, IDLE_AFTER};
     use super::super::runtime::IdleState;
     use super::parse;
 
@@ -779,6 +779,16 @@ mod lifecycle_tests {
         assert_eq!(cpu_percent(5, 10, Duration::from_secs(1), 4), 0.0);
         assert_eq!(cpu_percent(10, 0, Duration::ZERO, 4), 0.0);
         assert_eq!(cpu_percent(u64::MAX, 0, Duration::from_millis(1), 1), 100.0);
+    }
+
+    #[test]
+    fn the_memory_limit_is_a_listed_choice_or_the_default() {
+        assert_eq!(memory_limit_mb(None), 512);
+        assert_eq!(memory_limit_mb(Some(2048)), 2048);
+        assert_eq!(memory_limit_mb(Some(256)), 256);
+        // A hand-edited plugins.json cannot lift the limit to any size.
+        assert_eq!(memory_limit_mb(Some(100_000)), 512);
+        assert_eq!(memory_limit_mb(Some(0)), 512);
     }
 }
 

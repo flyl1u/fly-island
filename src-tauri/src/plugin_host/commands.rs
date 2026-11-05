@@ -312,6 +312,23 @@ pub fn set_plugin_notifications_muted(id: String, muted: bool) -> Result<Plugins
     snapshot()
 }
 
+/// The memory limit for a plugin, one of lifecycle::MEMORY_LIMIT_CHOICES_MB.
+#[tauri::command]
+pub fn set_plugin_memory_limit(id: String, megabytes: u32) -> Result<PluginsSnapshot, String> {
+    if !super::lifecycle::MEMORY_LIMIT_CHOICES_MB.contains(&megabytes) {
+        return Err(format!("A memory limit is one of {:?} MB.", super::lifecycle::MEMORY_LIMIT_CHOICES_MB));
+    }
+    update_state(|state, installed| {
+        if !installed.iter().any(|plugin| plugin.folder == id && !plugin.builtin) {
+            return Err("Plugin not found.".into());
+        }
+        let grant = state.plugins.entry(id.clone()).or_default();
+        grant.memory_limit_mb = (megabytes != super::lifecycle::DEFAULT_MEMORY_LIMIT_MB).then_some(megabytes);
+        Ok(())
+    })?;
+    snapshot()
+}
+
 /// "清除数据": stops the plugin, deletes its data folder and its secrets, and
 /// starts it again if it is on.
 #[tauri::command]

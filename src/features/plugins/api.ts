@@ -119,6 +119,8 @@ export type PluginInfo = {
   preRelease: boolean;
   /** A pre-release in the market newer than the stable version. */
   preReleaseAvailable: string | null;
+  /** The memory limit in MB that applies to the plugin; one of PLUGIN_MEMORY_LIMITS_MB. */
+  memoryLimitMb: number;
 };
 
 // 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。
@@ -335,6 +337,13 @@ export function revokePluginSensitivePermission(id: string, permission: Sensitiv
 
 export function runPluginNotificationAction(id: string, action: string) {
   return invoke<void>("run_plugin_notification_action", { id, action });
+}
+
+/** Memory limits to pick from, as MEMORY_LIMIT_CHOICES_MB in src-tauri/src/plugin_host/lifecycle.rs. */
+export const PLUGIN_MEMORY_LIMITS_MB = [256, 512, 1024, 2048] as const;
+
+export function setPluginMemoryLimit(id: string, megabytes: number) {
+  return invoke<PluginsSnapshot>("set_plugin_memory_limit", { id, megabytes });
 }
 
 export function setPluginPreRelease(id: string, enabled: boolean) {

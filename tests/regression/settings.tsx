@@ -82,7 +82,7 @@ mockIPC((command, payload) => {
       ],
     };
     case "list_plugins": {
-      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null, revoked: null, updateAvailable: null, autoUpdated: null, preRelease: false, preReleaseAvailable: null };
+      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null, revoked: null, updateAvailable: null, autoUpdated: null, preRelease: false, preReleaseAvailable: null, memoryLimitMb: 512 };
       return {
       allowThirdParty: true,
       nodeAvailable: false,

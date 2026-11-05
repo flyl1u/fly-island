@@ -12,6 +12,7 @@ import {
   setPluginPublisherTrusted,
   setPluginNotificationsMuted,
   setPluginPreRelease,
+  setPluginMemoryLimit,
   setPluginSetting,
   setPluginsAllowed,
   uninstallPlugin,
@@ -73,6 +74,10 @@ export function usePlugins() {
     checkUpdates: useCallback(() => void run(checkPluginUpdates), [run]),
     revokeSensitive: useCallback(
       (id: string, permission: SensitivePermission) => void run(() => revokePluginSensitivePermission(id, permission)),
+      [run],
+    ),
+    setMemoryLimit: useCallback(
+      (id: string, megabytes: number) => void run(() => setPluginMemoryLimit(id, megabytes)),
       [run],
     ),
     setPreRelease: useCallback(

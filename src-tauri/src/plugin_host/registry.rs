@@ -76,6 +76,8 @@ pub struct PluginInfo {
     auto_updated: Option<String>,
     /// Updates may install pre-releases of this plugin (the user's choice).
     pre_release: bool,
+    /// The memory limit in MB that applies to the plugin (lifecycle.rs).
+    memory_limit_mb: u32,
     /// A pre-release in the market newer than the stable version.
     pre_release_available: Option<String>,
 }
@@ -235,6 +237,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 update_available: None,
                 auto_updated: None,
                 pre_release: grant.pre_release,
+                memory_limit_mb: super::lifecycle::memory_limit_mb(grant.memory_limit_mb),
                 pre_release_available: None,
             };
             if !plugin.builtin && !plugin.dev {

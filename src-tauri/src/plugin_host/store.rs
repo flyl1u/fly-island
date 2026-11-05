@@ -47,6 +47,9 @@ pub(super) struct PluginGrant {
     /// Updates may install this plugin's pre-releases (market.rs, MarketData::entry_for).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub pre_release: bool,
+    /// The user's memory limit for this plugin in MB (lifecycle.rs); none means the default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_limit_mb: Option<u32>,
 }
 
 /// A missing or broken file reads as "nothing allowed".

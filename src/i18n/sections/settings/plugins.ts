@@ -89,6 +89,9 @@ export type SettingsPluginsText = {
     hide: string;
     notifications: string;
     showNotifications: string;
+    memoryLimit: string;
+    memoryLimitOption: (megabytes: number) => string;
+    memoryLimitHint: string;
     data: string;
     dataHint: string;
     clearData: string;
@@ -262,6 +265,9 @@ export const zhCN: SettingsPluginsText = {
     hide: "隐藏",
     notifications: "通知",
     showNotifications: "在岛上显示这个插件的通知",
+    memoryLimit: "内存上限",
+    memoryLimitOption: (megabytes: number) => (megabytes >= 1024 ? `${megabytes / 1024} GB` : `${megabytes} MB`) + (megabytes === 512 ? "（默认）" : ""),
+    memoryLimitHint: "插件（连同它启动的程序）占用的已提交内存超过上限时，岛屿会结束它并显示原因。一般不需要改；插件说明里要求更多内存时再调高。",
     data: "数据",
     dataHint: "删除插件保存的数据和凭据，插件会重新启动。卸载插件不会删除这些数据。",
     clearData: "清除数据",
@@ -441,6 +447,9 @@ export const en: SettingsPluginsText = {
     hide: "Hide",
     notifications: "Notifications",
     showNotifications: "Show this plugin's notifications on the island",
+    memoryLimit: "Memory limit",
+    memoryLimitOption: (megabytes: number) => (megabytes >= 1024 ? `${megabytes / 1024} GB` : `${megabytes} MB`) + (megabytes === 512 ? " (default)" : ""),
+    memoryLimitHint: "When the plugin, with the programs it starts, commits more memory than this, the island stops it and says why. Leave it unless the plugin's description asks for more.",
     data: "Data",
     dataHint: "Deletes what the plugin saved, including its secrets, and restarts it. Uninstalling keeps this data.",
     clearData: "Clear data",

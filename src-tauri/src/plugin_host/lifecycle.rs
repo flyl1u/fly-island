@@ -10,7 +10,7 @@
 
 use serde_json::{json, Value};
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     sync::{Mutex, OnceLock},
     thread,
     time::{Duration, Instant},
@@ -31,7 +31,14 @@ const READY_TIMEOUT: Duration = Duration::from_secs(10);
 pub(super) const IDLE_AFTER: Duration = Duration::from_secs(60);
 const TICK: Duration = Duration::from_secs(5);
 const STARTUP_FINISHED_AFTER: Duration = Duration::from_secs(10);
-pub(super) const MEMORY_LIMIT_BYTES: u64 = 512 * 1024 * 1024;
+/// Memory limits the user can pick per plugin, in MB; DEFAULT_MEMORY_LIMIT_MB unless chosen.
+pub(super) const MEMORY_LIMIT_CHOICES_MB: [u32; 4] = [256, 512, 1024, 2048];
+pub(super) const DEFAULT_MEMORY_LIMIT_MB: u32 = 512;
+
+/// The limit in MB that applies to a plugin, ignoring a stored value that is not a choice.
+pub(super) fn memory_limit_mb(chosen: Option<u32>) -> u32 {
+    chosen.filter(|mb| MEMORY_LIMIT_CHOICES_MB.contains(mb)).unwrap_or(DEFAULT_MEMORY_LIMIT_MB)
+}
 const HIGH_CPU_PERCENT: f32 = 25.0;
 /// A minute of TICKs above HIGH_CPU_PERCENT.
 const HIGH_CPU_SAMPLES: u32 = 12;
@@ -228,6 +235,12 @@ fn tick() {
     let cores = thread::available_parallelism().map(usize::from).unwrap_or(1);
     let now = Instant::now();
     let mut idle: Vec<String> = Vec::new();
+    // Read before taking the supervisors' lock, which other code takes before the state.
+    let limits: BTreeMap<String, u32> = lock(&host.state)
+        .plugins
+        .iter()
+        .map(|(id, grant)| (id.clone(), memory_limit_mb(grant.memory_limit_mb)))
+        .collect();
     {
         let supervisors = lock(&host.supervisors);
         let mut state = lock(state());
@@ -258,11 +271,11 @@ fn tick() {
                 if let Some(info) = lock(&host.runtimes).get_mut(id) {
                     info.resources = Some(resources);
                 }
-                if usage.memory_bytes > MEMORY_LIMIT_BYTES {
+                let limit_mb = limits.get(id).copied().unwrap_or(DEFAULT_MEMORY_LIMIT_MB);
+                if usage.memory_bytes > u64::from(limit_mb) * 1024 * 1024 {
                     supervisor.fail(format!(
-                        "The plugin used {} MB of memory, more than the {} MB allowed, and was stopped.",
+                        "The plugin used {} MB of memory, more than the {limit_mb} MB allowed, and was stopped. The limit can be raised on the plugin's settings page.",
                         usage.memory_bytes / (1024 * 1024),
-                        MEMORY_LIMIT_BYTES / (1024 * 1024)
                     ));
                     continue;
                 }

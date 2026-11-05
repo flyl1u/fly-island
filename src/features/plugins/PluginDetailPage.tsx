@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ArrowLeft, Eraser, Play } from "lucide-react";
+import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
-import type { PluginInfo, SensitivePermission } from "./api";
+import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo, type SensitivePermission } from "./api";
 import { PluginInfoList } from "./PluginInfoList";
 import { PluginSensitiveSection } from "./PluginSensitiveSection";
 import { PluginSettingField } from "./PluginSettingField";
@@ -17,6 +18,7 @@ export function PluginDetailPage({
   onRunCommand,
   onNotificationsMutedChange,
   onPreReleaseChange,
+  onMemoryLimitChange,
   onClearData,
   onRevokeSensitive,
 }: {
@@ -27,6 +29,7 @@ export function PluginDetailPage({
   onRunCommand: (command: string) => void;
   onNotificationsMutedChange: (muted: boolean) => void;
   onPreReleaseChange: (enabled: boolean) => void;
+  onMemoryLimitChange: (megabytes: number) => void;
   onClearData: () => void;
   onRevokeSensitive: (permission: SensitivePermission) => void;
 }) {
@@ -116,6 +119,22 @@ export function PluginDetailPage({
             {plugin.preReleaseAvailable ? t.settings.plugins.updates.preReleaseAvailable(plugin.preReleaseAvailable) : null}
             {t.settings.plugins.updates.preReleaseHint}
           </p>
+        </section>
+      ) : null}
+
+      {plugin.hasProcess && !plugin.builtin ? (
+        <section className="settings-section plugins-panel">
+          <div className="settings-section__header">
+            <span>{t.settings.plugins.detail.memoryLimit}</span>
+          </div>
+          <SelectControl
+            value={String(plugin.memoryLimitMb)}
+            ariaLabel={t.settings.plugins.detail.memoryLimit}
+            disabled={busy}
+            options={PLUGIN_MEMORY_LIMITS_MB.map((megabytes) => ({ value: String(megabytes), label: t.settings.plugins.detail.memoryLimitOption(megabytes) }))}
+            onChange={(value) => onMemoryLimitChange(Number(value))}
+          />
+          <p className="settings-section__hint">{t.settings.plugins.detail.memoryLimitHint}</p>
         </section>
       ) : null}
 
