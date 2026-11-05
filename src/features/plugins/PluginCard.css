@@ -1,7 +1,7 @@
 .plugin-card {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 12px 14px;
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-md);
@@ -9,14 +9,21 @@
 
 .plugin-card__header {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
 .plugin-card__title {
   display: grid;
   gap: 4px;
+  min-width: 0;
+}
+
+.plugin-card__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -28,7 +35,7 @@
   white-space: nowrap;
 }
 
-.plugin-card__title span,
+.plugin-card__title > span,
 .plugin-card__description,
 .plugin-card__hint {
   margin: 0;
@@ -37,13 +44,36 @@
   line-height: 1.5;
 }
 
+/* Long descriptions stop at two lines; the full text is in the tooltip. */
+.plugin-card__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.plugin-card__hint--warn {
+  color: #f2d27a;
+}
+
 .plugin-card__status {
   flex: none;
-  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.plugin-card__status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: var(--radius-pill);
 }
 
 .plugin-card__status--running {
@@ -59,22 +89,88 @@
   color: #ffb4a8;
 }
 
-.plugin-card__permissions {
+/* The switch sits beside the name; its label stays for screen readers only. */
+.plugin-card__switch {
+  flex: none;
+  margin-left: auto;
+}
+
+.plugin-card__switch .toggle-control > span:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.plugin-card__notes {
   display: grid;
-  gap: 4px;
+  gap: 2px;
+}
+
+.plugin-card__notes:empty {
+  display: none;
+}
+
+.plugin-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugin-card__permissions,
+.plugin-card__permissions-none {
+  min-width: 0;
+  flex: 1 1 240px;
   font-size: 12px;
 }
 
-.plugin-card__permissions > span {
-  color: rgba(248, 246, 240, 0.62);
+.plugin-card__permissions-none {
+  align-self: center;
+  color: var(--color-text-muted);
+}
+
+.plugin-card__permissions summary {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-muted);
+  cursor: pointer;
   font-weight: 700;
+  list-style: none;
+}
+
+.plugin-card__permissions summary::-webkit-details-marker {
+  display: none;
+}
+
+.plugin-card__permissions summary::after {
+  content: "▾";
+  font-size: 11px;
+}
+
+.plugin-card__permissions[open] summary::after {
+  content: "▴";
+}
+
+.plugin-card__permissions summary:hover {
+  color: var(--color-text);
+}
+
+.plugin-card__permissions--sensitive summary {
+  color: #f2d27a;
 }
 
 .plugin-card__permissions ul {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -86,9 +182,9 @@
   border-radius: var(--radius-pill);
 }
 
-.plugin-card__permissions em {
-  color: var(--color-text-muted);
-  font-style: normal;
+.plugin-card__permissions li.plugin-card__permission--sensitive {
+  color: #f2d27a;
+  background: rgba(242, 210, 122, 0.12);
 }
 
 .plugin-card__error {
@@ -103,6 +199,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.plugin-card__footer .plugin-card__actions {
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .plugin-card__actions:empty {
@@ -126,6 +227,17 @@
 
 .plugin-card__button:hover {
   background: var(--color-white-a10);
+}
+
+.plugin-card__button--quiet {
+  color: var(--color-text-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.plugin-card__button--quiet:hover {
+  color: #ffb4a8;
+  background: rgba(255, 180, 168, 0.08);
 }
 
 .plugin-card__button--danger {

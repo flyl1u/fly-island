@@ -696,7 +696,6 @@ const zhCN: Translations = {
       save: "保存",
     },
     plugins: {
-      title: "插件扩展",
       allowThirdParty: "允许运行第三方插件",
       warning: "插件是在你电脑上运行的程序，可以读写文件和联网，下面列出的权限只限制它能读写岛上的哪些数据。只安装你信任的插件。",
       folder: "插件目录",
@@ -708,6 +707,7 @@ const zhCN: Translations = {
       homepage: "主页",
       permissions: "需要的权限",
       noPermissions: "不需要读写岛上的数据",
+      permissionCount: (count: number) => `${count} 项权限`,
       permission: {
         "todos:read": "读取待办",
         "todos:write": "添加、修改和删除待办",

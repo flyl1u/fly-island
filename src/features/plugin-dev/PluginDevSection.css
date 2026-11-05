@@ -9,8 +9,19 @@
 
 .plugin-dev > summary::after {
   content: "▸";
-  color: rgba(248, 246, 240, 0.5);
-  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: rgba(248, 246, 240, 0.62);
+  border-radius: var(--radius-md);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.plugin-dev > summary:hover::after {
+  color: var(--color-text);
+  background: var(--color-white-a08);
 }
 
 .plugin-dev[open] > summary::after {

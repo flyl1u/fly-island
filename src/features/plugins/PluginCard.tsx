@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ExternalLink, Settings2, Trash2 } from "lucide-react";
+import { ExternalLink, Lock, Settings2, Trash2 } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
-import { openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
+import { isSensitivePermission, openPluginHomepage, PLUGIN_PERMISSIONS, type PluginInfo, type PluginPermission } from "./api";
 import { NodeMissingHint } from "./NodeMissingHint";
 import { PluginRunStats } from "./PluginRunStats";
 import "./PluginCard.css";
@@ -10,7 +10,32 @@ import "./PluginCard.css";
 const isPermission = (name: string): name is PluginPermission =>
   (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 
-/** One installed plugin: description, permissions, switch and status; the rest is on its own page. */
+/** The permissions folded into a count; opening it lists them, sensitive ones marked. */
+function PermissionSummary({ permissions }: { permissions: string[] }) {
+  const t = useTranslation();
+  if (permissions.length === 0) {
+    return <span className="plugin-card__permissions-none">{t.settings.plugins.noPermissions}</span>;
+  }
+  const hasSensitive = permissions.some(isSensitivePermission);
+
+  return (
+    <details className={`plugin-card__permissions${hasSensitive ? " plugin-card__permissions--sensitive" : ""}`}>
+      <summary title={t.settings.plugins.permissions}>
+        <Lock size={11} strokeWidth={2.4} />
+        <span>{t.settings.plugins.permissionCount(permissions.length)}</span>
+      </summary>
+      <ul>
+        {permissions.map((permission) => (
+          <li key={permission} className={isSensitivePermission(permission) ? "plugin-card__permission--sensitive" : undefined}>
+            {isPermission(permission) ? t.settings.plugins.permission[permission] : permission}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/** One installed plugin: name, status and switch on one row, then notes and actions; the rest is on its own page. */
 export function PluginCard({
   plugin,
   allowed,
@@ -38,12 +63,22 @@ export function PluginCard({
   // Built-in and development plugins run without "allow third-party plugins".
   const canRun = allowed || plugin.builtin || plugin.dev;
   const showStatus = plugin.hasProcess && canRun && isOn;
+  const description = plugin.description?.[locale];
+  const invalid = Boolean(plugin.invalidReason);
+  const canUninstall = !plugin.builtin && !plugin.dev;
 
   return (
     <article className="plugin-card">
       <header className="plugin-card__header">
         <div className="plugin-card__title">
-          <strong title={plugin.id}>{name}</strong>
+          <div className="plugin-card__name">
+            <strong title={plugin.id}>{name}</strong>
+            {showStatus ? (
+              <span className={`plugin-card__status plugin-card__status--${plugin.status}`}>
+                {t.settings.plugins.status[plugin.status]}
+              </span>
+            ) : null}
+          </div>
           <span>
             {[
               plugin.builtin && t.settings.plugins.builtin,
@@ -55,75 +90,69 @@ export function PluginCard({
               .join(" · ")}
           </span>
         </div>
-        {showStatus ? (
-          <span className={`plugin-card__status plugin-card__status--${plugin.status}`}>
-            {t.settings.plugins.status[plugin.status]}
-          </span>
-        ) : null}
+        {plugin.dev || invalid ? null : (
+          <div className="plugin-card__switch">
+            <ToggleControl label={t.settings.plugins.enable} checked={isOn} onChange={(enabled) => !busy && onEnabledChange(enabled)} />
+          </div>
+        )}
       </header>
 
-      {plugin.invalidReason ? (
+      {invalid ? (
         <p className="plugin-card__error">
           {t.settings.plugins.invalid}: {plugin.invalidReason}
         </p>
-      ) : null}
-      {plugin.invalidReason ? null : (
+      ) : (
         <>
-          {plugin.description?.[locale] ? <p className="plugin-card__description">{plugin.description[locale]}</p> : null}
-          <div className="plugin-card__permissions">
-            <span>{t.settings.plugins.permissions}</span>
-            {plugin.permissions.length === 0 ? (
-              <em>{t.settings.plugins.noPermissions}</em>
-            ) : (
-              <ul>
-                {plugin.permissions.map((permission) => (
-                  <li key={permission}>
-                    {isPermission(permission) ? t.settings.plugins.permission[permission] : permission}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          {plugin.dev ? null : (
-            <ToggleControl label={t.settings.plugins.enable} checked={isOn} onChange={(enabled) => !busy && onEnabledChange(enabled)} />
-          )}
-          {plugin.needsApproval ? <p className="plugin-card__hint">{t.settings.plugins.needsApproval}</p> : null}
-          {isOn && !canRun ? <p className="plugin-card__hint">{t.settings.plugins.notAllowed}</p> : null}
-          {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
-          {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
-          {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
-          {showStatus ? <PluginRunStats plugin={plugin} /> : null}
-          {plugin.keybindingConflicts.length > 0 ? (
-            <p className="plugin-card__hint">{t.settings.plugins.keybindingConflict(plugin.keybindingConflicts.join(", "))}</p>
+          {description ? (
+            <p className="plugin-card__description" title={description}>
+              {description}
+            </p>
           ) : null}
-          <div className="plugin-card__actions">
-            <button className="plugin-card__button" type="button" onClick={onOpenDetail}>
-              <Settings2 size={12} strokeWidth={2.4} />
-              <span>{t.settings.plugins.detail.open}</span>
-            </button>
-            {plugin.homepage.startsWith("https://") ? (
-              <button className="plugin-card__button" type="button" onClick={() => void openPluginHomepage(plugin.homepage)}>
-                <ExternalLink size={12} strokeWidth={2.4} />
-                <span>{t.settings.plugins.homepage}</span>
-              </button>
+          <div className="plugin-card__notes">
+            {plugin.needsApproval ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.needsApproval}</p> : null}
+            {isOn && !canRun ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.notAllowed}</p> : null}
+            {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}
+            {plugin.runtime === "node" && !nodeAvailable ? <NodeMissingHint /> : null}
+            {showStatus && plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}
+            {showStatus ? <PluginRunStats plugin={plugin} /> : null}
+            {plugin.keybindingConflicts.length > 0 ? (
+              <p className="plugin-card__hint plugin-card__hint--warn">
+                {t.settings.plugins.keybindingConflict(plugin.keybindingConflicts.join(", "))}
+              </p>
             ) : null}
           </div>
         </>
       )}
-      {plugin.builtin || plugin.dev ? null : (
+
+      <footer className="plugin-card__footer">
+        {invalid ? <span /> : <PermissionSummary permissions={plugin.permissions} />}
         <div className="plugin-card__actions">
-          <button
-            className={`plugin-card__button${confirmingUninstall ? " plugin-card__button--danger" : ""}`}
-            type="button"
-            disabled={busy}
-            onBlur={() => setConfirmingUninstall(false)}
-            onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
-          >
-            <Trash2 size={12} strokeWidth={2.4} />
-            <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
-          </button>
+          {invalid ? null : (
+            <button className="plugin-card__button" type="button" onClick={onOpenDetail}>
+              <Settings2 size={12} strokeWidth={2.4} />
+              <span>{t.settings.plugins.detail.open}</span>
+            </button>
+          )}
+          {!invalid && plugin.homepage.startsWith("https://") ? (
+            <button className="plugin-card__button" type="button" onClick={() => void openPluginHomepage(plugin.homepage)}>
+              <ExternalLink size={12} strokeWidth={2.4} />
+              <span>{t.settings.plugins.homepage}</span>
+            </button>
+          ) : null}
+          {canUninstall ? (
+            <button
+              className={`plugin-card__button ${confirmingUninstall ? "plugin-card__button--danger" : "plugin-card__button--quiet"}`}
+              type="button"
+              disabled={busy}
+              onBlur={() => setConfirmingUninstall(false)}
+              onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
+            >
+              <Trash2 size={12} strokeWidth={2.4} />
+              <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
+            </button>
+          ) : null}
         </div>
-      )}
+      </footer>
     </article>
   );
 }

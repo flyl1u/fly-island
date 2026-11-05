@@ -53,21 +53,32 @@ export function PluginsSettingsSection() {
   return (
     <>
       <section className="settings-section plugins-panel">
-        <div className="settings-section__header">
-          <span>{t.settings.plugins.title}</span>
-        </div>
         <ToggleControl label={t.settings.plugins.allowThirdParty} checked={allowed} onChange={(next) => !busy && setAllowed(next)} />
         <p className="settings-section__hint">{t.settings.plugins.warning}</p>
         <div className="plugins-folder">
           <span>{t.settings.plugins.folder}</span>
-          <code title={snapshot?.pluginsDir}>{snapshot?.pluginsDir ?? ""}</code>
-          <button className="plugin-card__button" type="button" onClick={openFolder}>
-            <FolderOpen size={12} strokeWidth={2.4} />
-            <span>{t.settings.plugins.openFolder}</span>
+          {/* Right-to-left so a long path loses its start, not the plugins folder at its end. */}
+          <code dir="rtl" title={snapshot?.pluginsDir}>
+            <bdi>{snapshot?.pluginsDir ?? ""}</bdi>
+          </code>
+          <button
+            className="plugin-card__button plugins-folder__icon"
+            type="button"
+            title={t.settings.plugins.openFolder}
+            aria-label={t.settings.plugins.openFolder}
+            onClick={openFolder}
+          >
+            <FolderOpen size={13} strokeWidth={2.4} />
           </button>
-          <button className="plugin-card__button" type="button" disabled={busy} onClick={reload}>
-            <RefreshCcw size={12} strokeWidth={2.4} />
-            <span>{t.settings.plugins.reload}</span>
+          <button
+            className="plugin-card__button plugins-folder__icon"
+            type="button"
+            title={t.settings.plugins.reload}
+            aria-label={t.settings.plugins.reload}
+            disabled={busy}
+            onClick={reload}
+          >
+            <RefreshCcw size={13} strokeWidth={2.4} />
           </button>
         </div>
         {error ? <p className="plugin-card__error">{error}</p> : null}

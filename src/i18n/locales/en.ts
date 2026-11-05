@@ -693,7 +693,6 @@ const en: Translations = {
       save: "Save",
     },
     plugins: {
-      title: "Plugins",
       allowThirdParty: "Allow third-party plugins",
       warning: "Plugins are programs that run on your computer and can read and write files and use the network. The permissions below only limit which island data they can use. Only install plugins you trust.",
       folder: "Plugins folder",
@@ -705,6 +704,7 @@ const en: Translations = {
       homepage: "Homepage",
       permissions: "Permissions",
       noPermissions: "Uses no island data",
+      permissionCount: (count: number) => (count === 1 ? "1 permission" : `${count} permissions`),
       permission: {
         "todos:read": "Read todos",
         "todos:write": "Add, change and delete todos",
