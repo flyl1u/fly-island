@@ -497,11 +497,20 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 
 **与设计的差异**
 
-- **索引仍在本仓库**：没有新建 `TixXin/focusd-plugins`，也没有 PR 加 CI 校验、CI 签名、从作者 Release 拉包和定时 CI。市场仍从 fork 的 `main` 分支读取，插件包仍存在 `plugins/packages/`，由持有私钥的人运行 `pnpm plugins:index`。岛屿端已经能接受多签名和 CI 生成的索引，新仓库建好后只需要改地址并加入 CI 公钥。
+- **索引仓库已建，岛屿还没切过去**：岛屿仍从 fork 的 `main` 读市场（见下面“索引仓库”）。
 - **发布者信息**来自 `plugins/market/<id>.json`，不显示 GitHub 头像（避免在设置页请求外部图片）。
 - **预发布版本**：索引能标记 `preRelease`，但岛屿目前直接跳过这些条目，设置里没有“接收预发布版本”的开关。
 - **详情页**没有渲染 README、版本历史和更新说明；“报告问题”先指向本仓库的 issue。
 - **作者签名、“已验证”发布者**没做（设计里本来就是以后再做）。
+
+**索引仓库（2026-11-05）** ✅ [`TixXin/focusd-plugins`](https://github.com/TixXin/focusd-plugins) 已建好并运行：
+
+- 结构：`plugins/<id>.json`（作者提交）；仓库根目录的 `index.json`、`revoked.json` 和它们的 `.sig`（CI 生成）；`keys/trusted.json`（与本仓库 `plugins/signing-keys.json` 一致）。
+- `Check submission`（每个 PR，只读、无密钥）：检查格式、id 是否被占用或易混淆、`focusd` 保留、PR 作者拥有 `repo`（本人或组织的公开成员），下载最新 Release 附件，用 `fly-island-plugin validate` 校验，重新打包核对，把权限、运行时、webview 写进运行摘要。
+- `Update index`（每小时、`main` 变化时）：已上架的版本不重新下载；新版本申请新权限、首次加 webview 或改运行时则暂缓，开 `review-needed` issue，维护者在提交里写 `"approved": "<版本>"` 后上架。签名用 `release` 环境的 secret，该环境只允许 `main` 使用；**没有设人工审批**，否则每小时都要批准一次。
+- CI 公钥 `e862885af5bba3dc` 已加进 `plugins/signing-keys.json`。旧密钥 `7ee2729370070df6` 保留，fork 里的索引仍由它签名。
+- 官方示例插件的提交用 `"package"` 固定指向 fork 里的 zip（只允许官方发布者），没有在本仓库建按插件的 Release，以免影响岛屿更新用的 `releases/latest`。第一次 CI 生成的 5 个条目与 fork 的 `plugins/index.json` 完全一致。
+- **还没做**：岛屿改读新仓库（`market.rs` 的 `MARKET_REPO`，索引在仓库根目录而不是 `plugins/`）。要等带 CI 公钥的版本普及后再切；在此之前，旧版本仍读 fork，切换时需要由旧密钥对新索引再签一份（`index.json.sig` 数组），或者继续在 fork 同步索引。`docs/plugins/README.md` 的“提交插件”一节也等切换时再改。
 
 ## 5. 对外契约变化汇总
 
