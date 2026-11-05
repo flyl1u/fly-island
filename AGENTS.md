@@ -146,12 +146,13 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ## Git 与协作
 
 - **每个代理会话在自己的 lane（worktree + 分支）上工作，经合并队列合入 `main`**（工具是 [claude-code-merge-queue](https://github.com/funador/claude-code-merge-queue)，配置在 `claude-code-merge-queue.config.mjs`）：
-  - 开 lane：用 `claude -w <任务名>` 启动，或在会话里调用 EnterWorktree。本机 `.claude/settings.json` 的 WorktreeCreate 钩子会分配 `lane/N` 分支，并在 `../fly-island-lane-N` 建 worktree。钩子不可用时，手动 `git worktree add ../fly-island-lane-<N> -b lane/<N> main`。新 lane 先运行 `pnpm install`（工具自带的依赖安装在 Windows 上会失败，所以已关闭）。
+  - 开 lane：用 `claude -w <任务名>` 启动，或在会话里调用 EnterWorktree。本机 `.claude/settings.json` 的 WorktreeCreate 钩子会分配 `lane/N` 分支，并在 `../fly-island-lane-N` 建 worktree。钩子不可用时，手动 `git worktree add ../fly-island-lane-<N> -b lane/<N> main`。钩子建 lane 时会自动 `pnpm install`；手动建的 lane 自己运行一次。
   - 在 lane 里开发、验证、提交。一个功能单元完成并提交后，在 lane 里运行 `pnpm mq:land`，不用问用户。它会排队、rebase 到 `origin/main`、跑 `scripts/land-check.mjs`（`pnpm check`，改到 Rust 相关文件时再加 `cargo test`），然后推送 `origin/main`，并把主工作区快进到新的 `main`。land 成功后会自动把 fork 的 `dev` 推到同一提交（旧版本岛屿从 `dev` 读插件市场），结果记在 `.git/land-sync-dev.log`。
   - land 失败不算完成：rebase 冲突时它会自动中止，自己 `git fetch origin main && git rebase origin/main` 解决冲突后重新 land；检查失败就修好再 land。如果输出里已经有 `landed`，只是后面的快进主工作区失败了，不要重复 land，在主工作区运行 `pnpm mq:sync`。
   - `release` 可执行文件构建（`pnpm tauri build --no-bundle`）和桌面快捷方式同步不在队列里，按"验证"一节在 land 之后另外做。
   - 主工作区留给用户（例如运行 `pnpm tauri dev`），必须保持干净并停在 `main` 上，代理不要在里面改文件或提交。`main` 只通过 land 移动：`.githooks/pre-push`（`git config core.hooksPath .githooks`）会拒绝直接推送 `main`，紧急情况才设 `CLAUDE_CODE_MERGE_QUEUE_EMERGENCY_PUSH=1`。
   - 别人留下的、没有会话在用的 lane（land 或会话开始时输出里带 `⚠`，`pnpm mq:reconcile` 会列出）：问用户怎么处理，不要删除。已经合入的 lane 会在下次 land 时自动清理。
+  - 工具在 Windows 上的几个问题（找不到 `pwd` 导致各 lane 的队列锁互不相通、调用 `pnpm` 时没开 shell）由 `patches/claude-code-merge-queue@0.7.1.patch` 修复（`pnpm-workspace.yaml` 的 `patchedDependencies`）。升级这个包时要重新做补丁，并确认两个 lane 同时 land 会排队。
   - Rust 构建默认共用主工作区的 `src-tauri/target`（`land-check.mjs` 会设置 `CARGO_TARGET_DIR`），多个会话同时构建时会互相等锁。
 - 修改前先查看 `git status --short`，不要覆盖用户已有改动。
 - 不要使用 `git reset --hard`、`git checkout --` 等破坏性命令，除非用户明确要求。

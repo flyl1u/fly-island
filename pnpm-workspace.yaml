@@ -4,3 +4,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+patchedDependencies:
+  claude-code-merge-queue@0.7.1: patches/claude-code-merge-queue@0.7.1.patch

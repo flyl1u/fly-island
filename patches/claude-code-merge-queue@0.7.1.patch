@@ -1,0 +1,73 @@
+diff --git a/dist/hooks/worktree-create.js b/dist/hooks/worktree-create.js
+index 558e886b00a53edf989b804182f90ef4431d0912..c9a851cb27fd75c8e8722bbe5206a1cc87ce2c80 100644
+--- a/dist/hooks/worktree-create.js
++++ b/dist/hooks/worktree-create.js
+@@ -152,7 +152,7 @@ export function createLane(mainTop, cfg) {
+             // way a `git worktree add` failure does.
+             const pm = detectPackageManager(wt);
+             try {
+-                execFileSync(pm, ["install"], { cwd: wt, stdio: ["ignore", "pipe", "pipe"] });
++                execFileSync(pm, ["install"], { cwd: wt, shell: process.platform === "win32" /* fly-island patch: pnpm is a .cmd on Windows */, stdio: ["ignore", "pipe", "pipe"] });
+             }
+             catch (e) {
+                 const err = e;
+diff --git a/dist/land.js b/dist/land.js
+index 76a40f553c9746841bca0e0d8d316af81a3f4443..a1147a8eb74b124e3ae4331449ea0f45c14f7c8a 100644
+--- a/dist/land.js
++++ b/dist/land.js
+@@ -75,7 +75,7 @@ function refreshLaneDepsAfterRebase(root, preRebaseHead) {
+         return;
+     const pm = detectPackageManager(root);
+     console.log(dim(`land: the rebase changed the lockfile and this lane has its own node_modules — running "${pm} install" so the checks see the rebased deps…`));
+-    const result = spawnSync(pm, ["install"], { cwd: root, stdio: "inherit" });
++    const result = spawnSync(pm, ["install"], { cwd: root, shell: process.platform === "win32" /* fly-island patch: pnpm is a .cmd on Windows */, stdio: "inherit" });
+     if (result.status !== 0) {
+         console.error(red(`land: "${pm} install" failed (exit ${result.status ?? 1}) — the checks below may fail on stale dependencies.`));
+     }
+diff --git a/dist/lib/queue-lock.js b/dist/lib/queue-lock.js
+index 08c5872b8b3718c717dceede4fadedf22016e3e4..ba046c04a020856abd58a0487b383c8dc72c2875 100644
+--- a/dist/lib/queue-lock.js
++++ b/dist/lib/queue-lock.js
+@@ -19,7 +19,8 @@
+ import { mkdirSync, writeFileSync, readFileSync, linkSync, unlinkSync, readdirSync, } from "node:fs";
+ import { createHash } from "node:crypto";
+ import { tmpdir } from "node:os";
+-import { join, basename } from "node:path";
++import { join, basename, resolve } from "node:path";
++import { realpathSync } from "node:fs";
+ import { execSync } from "node:child_process";
+ // How often a waiter re-checks whether it's its turn. Not a behavioral cap —
+ // just poll granularity.
+@@ -41,7 +42,8 @@ export function repoKey() {
+         }).trim();
+         // Resolve to an absolute, worktree-independent path so every worktree of
+         // the same repo hashes to the same queue.
+-        return execSync(`cd "${commonDir}" && pwd -P`, { encoding: "utf8" }).trim();
++        // fly-island patch: no `pwd` under cmd.exe on Windows; resolve in Node instead.
++        return realpathSync(resolve(commonDir));
+     }
+     catch {
+         return process.cwd();
+@@ -53,7 +55,8 @@ export function repoKey() {
+  * they share this exact same code.
+  */
+ export function createQueueLock(queueName) {
+-    const QUEUE_DIR = join(tmpdir(), `claude-code-merge-queue-${queueName}-queue-${createHash("sha1").update(repoKey()).digest("hex").slice(0, 12)}`);
++    // fly-island patch: inside the shared git dir, so lanes with a different TEMP still share one queue.
++    const QUEUE_DIR = join(repoKey(), "claude-code-merge-queue", `${queueName}-queue`);
+     const TICKETS_DIR = join(QUEUE_DIR, "tickets");
+     const LOCK_FILE = join(QUEUE_DIR, "lock");
+     mkdirSync(TICKETS_DIR, { recursive: true });
+diff --git a/dist/sync.js b/dist/sync.js
+index b13a582e2fe6443349e109800ef0510bba089aa3..e985787050573f7cd63d27217e2cb73810693102 100644
+--- a/dist/sync.js
++++ b/dist/sync.js
+@@ -81,7 +81,7 @@ function refreshDependenciesIfChanged(root, before, after) {
+         return;
+     }
+     console.log(`${tag("sync")} ${dim(`lockfile changed — running "${pm} install" so the shared node_modules (symlinked into every lane) stays in sync…`)}`);
+-    const result = spawnSync(pm, ["install"], { cwd: root, stdio: "inherit" });
++    const result = spawnSync(pm, ["install"], { cwd: root, shell: process.platform === "win32" /* fly-island patch: pnpm is a .cmd on Windows */, stdio: "inherit" });
+     if (result.status !== 0) {
+         console.error(red(`claude-code-merge-queue sync: "${pm} install" failed (exit ${result.status ?? 1}) — shared node_modules may be stale. Run it manually in ${root}.`));
+     }
