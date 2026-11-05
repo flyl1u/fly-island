@@ -9,9 +9,11 @@ use std::{
     fs,
     io::{Cursor, Read},
     path::Path,
-    time::Duration,
+    sync::Mutex,
+    time::{Duration, Instant},
 };
 
+use super::lock;
 use super::manifest::{parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
 use super::revocations::{parse_revoked, Revocation};
 use super::signature::{verify_file, verify_index, TRUSTED_KEYS};
@@ -89,9 +91,22 @@ impl MarketEntry {
 }
 
 /// The index and the revocation list, read from the same commit.
+#[derive(Clone)]
 pub(super) struct MarketData {
     pub entries: Vec<MarketEntry>,
     pub revoked: Vec<Revocation>,
+}
+
+/// The last market read that passed its signature checks, and when. Lets the
+/// market page show something at once and an install skip a second download.
+static LAST_MARKET: Mutex<Option<(Instant, MarketData)>> = Mutex::new(None);
+
+/// The last verified market, if it was read within `max_age`.
+pub(super) fn recent_market(max_age: Duration) -> Option<MarketData> {
+    lock(&LAST_MARKET)
+        .as_ref()
+        .filter(|(at, _)| at.elapsed() <= max_age)
+        .map(|(_, data)| data.clone())
 }
 
 #[derive(Debug, Deserialize)]
@@ -256,7 +271,9 @@ pub(super) async fn fetch_market() -> Result<MarketData, String> {
             parse_revoked(&text)?
         }
     };
-    Ok(MarketData { entries, revoked })
+    let data = MarketData { entries, revoked };
+    *lock(&LAST_MARKET) = Some((Instant::now(), data.clone()));
+    Ok(data)
 }
 
 /// Downloads the package and checks its size and SHA-256 against the index.

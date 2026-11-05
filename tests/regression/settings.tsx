@@ -50,6 +50,7 @@ mockIPC((command, payload) => {
     case "updater_configured": return true;
     case "get_updater_proxy": return null;
     case "plugin:app|version": return "0.0.0-test";
+    case "get_cached_plugin_market": return null;
     case "get_plugin_market": return {
       indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json",
       nodeAvailable: false,

@@ -184,6 +184,11 @@ export function getPluginMarket() {
   return invoke<MarketSnapshot>("get_plugin_market");
 }
 
+/** The market as the island last read it (page or background check), without going online; null before that. */
+export function getCachedPluginMarket() {
+  return invoke<MarketSnapshot | null>("get_cached_plugin_market");
+}
+
 export function installMarketPlugin(id: string) {
   return invoke<PluginsSnapshot>("install_market_plugin", { id });
 }

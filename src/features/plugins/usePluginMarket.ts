@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  getCachedPluginMarket,
   getPluginMarket,
   installMarketPlugin,
   marketPublisher,
@@ -44,6 +45,12 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
   }, []);
 
   useEffect(() => {
+    // Show the island's last verified copy while the fresh one downloads; never over a newer answer.
+    if (lastMarket === null) {
+      getCachedPluginMarket()
+        .then((cached) => cached && setMarket((current) => current ?? cached))
+        .catch(() => undefined);
+    }
     void refresh();
   }, [refresh]);
 

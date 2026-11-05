@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
-use std::fs;
+use std::{fs, time::Duration};
 
 use super::{
     app_version, builtin,
@@ -41,17 +41,34 @@ pub struct MarketSnapshot {
     official_publisher: &'static str,
 }
 
+/// How long a market read stays good enough to show first or to install from.
+/// Installing still checks the package against the hash in that verified index.
+const MARKET_REUSE_FOR: Duration = Duration::from_secs(10 * 60);
+/// The cached market may be older; it is only shown while a fresh copy loads.
+const MARKET_SHOW_CACHED_FOR: Duration = Duration::from_secs(24 * 60 * 60);
+
 /// Reads the market; also applies its revocations and notes available updates.
 #[tauri::command]
 pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
-    let host = host()?;
-    let version = app_version(&host.app);
     let data = market::fetch_market().await?;
-    let revoked = data.revoked.clone();
-    let entries = data.entries.clone();
-    tauri::async_runtime::spawn_blocking(move || updates::absorb(&data))
+    let absorbed = data.clone();
+    tauri::async_runtime::spawn_blocking(move || updates::absorb(&absorbed))
         .await
         .map_err(|error| format!("The market task failed: {error}"))??;
+    market_snapshot(data)
+}
+
+/// The market as last read this session (by the page or the background update
+/// check), without going online; None before the first read.
+#[tauri::command]
+pub fn get_cached_plugin_market() -> Result<Option<MarketSnapshot>, String> {
+    market::recent_market(MARKET_SHOW_CACHED_FOR).map(market_snapshot).transpose()
+}
+
+fn market_snapshot(data: market::MarketData) -> Result<MarketSnapshot, String> {
+    let host = host()?;
+    let version = app_version(&host.app);
+    let market::MarketData { entries, revoked } = data;
     let plugins = entries
         .into_iter()
         .map(|entry| MarketPlugin {
@@ -80,7 +97,11 @@ pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String
     }
     let host = host()?;
     let version = app_version(&host.app);
-    let data = market::fetch_market().await?;
+    // The page loaded a verified index moments ago; read it again only when it is old.
+    let data = match market::recent_market(MARKET_REUSE_FOR) {
+        Some(data) => data,
+        None => market::fetch_market().await?,
+    };
     let entry = data
         .entries
         .iter()

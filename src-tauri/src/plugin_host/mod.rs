@@ -169,6 +169,7 @@ macro_rules! tauri_commands {
             crate::plugin_host::run_plugin_command,
             crate::plugin_host::set_plugin_setting,
             crate::plugin_host::get_plugin_market,
+            crate::plugin_host::get_cached_plugin_market,
             crate::plugin_host::install_market_plugin,
             crate::plugin_host::uninstall_plugin,
             crate::plugin_host::run_plugin_notification_action,
