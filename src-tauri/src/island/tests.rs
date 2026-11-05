@@ -120,7 +120,7 @@ fn detached_island_rounds_top_corners() {
                 0.0,
                 width,
                 height,
-                mode.corner_radius(),
+                detached.bottom_corner_radius(),
                 detached.top_corner_radius(),
             )
         };
@@ -133,6 +133,39 @@ fn detached_island_rounds_top_corners() {
         detached.margin_y = 12.0;
         assert!(detached.top_corner_radius() > 0.0);
     }
+}
+
+#[test]
+fn detached_collapsed_capsule_has_symmetric_visible_and_clickable_ends() {
+    let mut capsule = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    capsule.custom_position = Some(IslandPosition { x: 420, y: 180 });
+    assert_eq!(capsule.top_corner_radius(), COLLAPSED_ISLAND_HEIGHT / 2.0);
+    assert_eq!(capsule.bottom_corner_radius(), capsule.top_corner_radius());
+
+    for scale in [0.75, DEFAULT_COLLAPSED_SCALE, 1.0, 1.4, 2.1] {
+        for width in [MIN_COLLAPSED_ISLAND_WIDTH, COLLAPSED_ISLAND_WIDTH] {
+            let width = width * scale;
+            let height = COLLAPSED_ISLAND_HEIGHT * scale;
+            let radius = height / 2.0;
+            let contains = |x, y| point_in_notch(x, y, 0.0, 0.0, width, height, radius, radius);
+            for x in [radius / 2.0, radius, width / 2.0, width - radius, width - radius / 2.0] {
+                for y in [0.0, radius / 4.0, radius / 2.0, radius] {
+                    assert_eq!(contains(x, y), contains(x, height - y));
+                    assert_eq!(contains(x, y), contains(width - x, y));
+                }
+            }
+            assert!(contains(0.0, radius));
+            assert!(contains(width, radius));
+            assert!(!contains(0.0, radius - 0.1));
+            assert!(!contains(0.0, radius + 0.1));
+            assert!(!contains(width, radius - 0.1));
+            assert!(!contains(width, radius + 0.1));
+        }
+    }
+
+    capsule.custom_position = None;
+    assert_eq!(capsule.top_corner_radius(), 0.0);
+    assert_eq!(capsule.bottom_corner_radius(), COLLAPSED_RADIUS);
 }
 
 #[test]

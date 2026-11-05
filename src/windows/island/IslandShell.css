@@ -248,7 +248,7 @@
 }
 
 .island--detached.island--collapsed {
-  border-radius: 14px 14px 22px 22px;
+  border-radius: 19px;
 }
 
 .island--detached.island--expanded {
