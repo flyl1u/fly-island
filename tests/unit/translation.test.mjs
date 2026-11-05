@@ -20,6 +20,7 @@ test("settings saved before providers existed keep DeepSeek and their shortcut a
     autoTranslate: false,
   });
   assert.deepEqual(normalizeTranslationSettings(null), DEFAULT_SETTINGS);
+  assert.equal(DEFAULT_SETTINGS.provider, "siliconflow");
   assert.equal(normalizeTranslationSettings({ shortcut: "Alt+Space" }).shortcut, "Ctrl+Shift+F");
   assert.equal(normalizeTranslationSettings({ shortcut: "Alt+C" }).shortcut, "Ctrl+Shift+F");
 });

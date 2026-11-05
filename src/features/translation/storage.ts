@@ -1,4 +1,9 @@
-import { DEFAULT_TRANSLATION_PROVIDER, isTranslationProvider, type TranslationProvider } from "./providers.ts";
+import {
+  DEFAULT_TRANSLATION_PROVIDER,
+  LEGACY_TRANSLATION_PROVIDER,
+  isTranslationProvider,
+  type TranslationProvider,
+} from "./providers.ts";
 
 export type Direction = "auto" | "zh-en" | "en-zh";
 export type TranslationSettings = {
@@ -52,13 +57,14 @@ function normalizeModels(value: unknown): TranslationSettings["models"] {
 }
 
 export function normalizeTranslationSettings(stored: unknown): TranslationSettings {
-  const value = (typeof stored === "object" && stored !== null ? stored : {}) as Record<string, unknown>;
+  if (typeof stored !== "object" || stored === null) return DEFAULT_SETTINGS;
+  const value = stored as Record<string, unknown>;
   const shortcut = typeof value.shortcut === "string" ? value.shortcut : DEFAULT_SETTINGS.shortcut;
   return {
     // Earlier defaults move to the current one; a shortcut the user picked is kept.
     shortcut: LEGACY_DEFAULT_SHORTCUTS.has(shortcut) ? DEFAULT_SETTINGS.shortcut : shortcut,
     direction: value.direction === "zh-en" || value.direction === "en-zh" ? value.direction : "auto",
-    provider: isTranslationProvider(value.provider) ? value.provider : DEFAULT_TRANSLATION_PROVIDER,
+    provider: isTranslationProvider(value.provider) ? value.provider : LEGACY_TRANSLATION_PROVIDER,
     customBaseUrl: typeof value.customBaseUrl === "string" ? value.customBaseUrl : "",
     models: normalizeModels(value.models),
     selectionShortcut: typeof value.selectionShortcut === "string" && value.selectionShortcut

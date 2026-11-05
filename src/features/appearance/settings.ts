@@ -8,13 +8,13 @@ export const MIN_TOP_FILLET_RADIUS = 0;
 // The island window leaves room beside the island for fillets up to this size.
 export const MAX_TOP_FILLET_RADIUS = 12;
 // Bottom corner radius of the expanded island; every other island radius scales from it.
-export const DEFAULT_ISLAND_CORNER_RADIUS = 30;
+export const DEFAULT_ISLAND_CORNER_RADIUS = 16;
 export const MIN_ISLAND_CORNER_RADIUS = 16;
 export const MAX_ISLAND_CORNER_RADIUS = 40;
-export const DEFAULT_HOVER_EXPAND_DELAY_MS = 300;
+export const DEFAULT_HOVER_EXPAND_DELAY_MS = 0;
 export const MIN_HOVER_EXPAND_DELAY_MS = 0;
 export const MAX_HOVER_EXPAND_DELAY_MS = 1_000;
-export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 400;
+export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 0;
 export const MIN_HOVER_COLLAPSE_DELAY_MS = 0;
 export const MAX_HOVER_COLLAPSE_DELAY_MS = 2_000;
 export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;
@@ -27,11 +27,11 @@ export const DEFAULT_MAX_PANEL_HEIGHT = 490;
 export const MIN_MAX_PANEL_HEIGHT = 306;
 // The tallest expanded height the native window accepts.
 export const MAX_MAX_PANEL_HEIGHT = 546;
-export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 3;
+export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 6;
 export const MIN_CLIPBOARD_VISIBLE_ROWS = 2;
 // Six rows is the tallest clipboard page the native window accepts (656px).
 export const MAX_CLIPBOARD_VISIBLE_ROWS = 6;
-export const DEFAULT_AGENT_VISIBLE_ROWS = 3;
+export const DEFAULT_AGENT_VISIBLE_ROWS = 2;
 export const MIN_AGENT_VISIBLE_ROWS = 2;
 // Five sessions is the tallest Agent page the native window accepts (627px of 656px).
 export const MAX_AGENT_VISIBLE_ROWS = 5;
@@ -42,16 +42,19 @@ export const MAX_SHELF_ITEMS = 200;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
+// First-launch settings. A saved setting that lacks a newer field keeps the
+// fallback in normalizeSettings, which for behavior switches is what older
+// versions did, so upgrading never flips them.
 export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
-  appearanceMode: "liquidGlass",
+  appearanceMode: "classic",
   fontFamily: "system",
   glassIntensity: 72,
-  opacity: 95,
-  collapsedScale: 0.89,
-  expandedScale: 0.91,
+  opacity: 100,
+  collapsedScale: 0.96,
+  expandedScale: 1.05,
   marginY: 0,
-  topFilletRadius: 8,
+  topFilletRadius: 12,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
@@ -59,7 +62,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
-  islandBackgroundColor: "#2F2F37",
+  islandBackgroundColor: "#030303",
   todoBackgroundColor: "#ffffff",
   showTitle: false,
   showCollapsedText: true,
@@ -68,15 +71,15 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   enableTodoReorder: false,
   rotateTodos: false,
   todoRotationSeconds: 5,
-  autoTuck: false,
+  autoTuck: true,
   autoTuckSeconds: 30,
   autoTuckRetract: true,
   autoTuckRetractDelayMs: DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS,
   revealOnMessage: true,
-  expandTrigger: "click",
+  expandTrigger: "hover",
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
-  minimizeAction: "tray",
+  minimizeAction: "tuck",
   pageDigitModifiers: DEFAULT_PAGE_DIGIT_MODIFIERS,
   pageNextShortcut: DEFAULT_PAGE_NEXT_SHORTCUT,
   pagePreviousShortcut: DEFAULT_PAGE_PREVIOUS_SHORTCUT,
@@ -86,18 +89,28 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentTitleEnabled: true,
   shelfEnabled: true,
   translationEnabled: true,
-  translationTarget: "window",
+  translationTarget: "island",
   shelfExpandOnDrop: true,
   shelfAutoCleanupDays: 0,
-  shelfRemoveMissing: false,
-  shelfRemoveAfterDragOut: false,
+  shelfRemoveMissing: true,
+  shelfRemoveAfterDragOut: true,
   shelfMaxItems: DEFAULT_SHELF_ITEMS,
   shelfDoubleClick: "open",
-  shelfShowCount: false,
+  shelfShowCount: true,
   mailEnabled: true,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
 };
+// What versions before these fields existed showed. A saved setting without the
+// field loads as this, not as the first-launch default, so an upgrade keeps the look.
+const LEGACY_FALLBACKS = {
+  topFilletRadius: 8,
+  islandCornerRadius: 30,
+  clipboardVisibleRows: 3,
+  agentVisibleRows: 3,
+  hoverExpandDelayMs: 300,
+  hoverCollapseDelayMs: 400,
+} as const satisfies Partial<IslandSettings>;
 /**
  * Settings that belong to the appearance page. Resetting the appearance or applying a
  * preset changes only these, so todo and tuck behavior chosen on the general page survive.
@@ -198,19 +211,19 @@ export function normalizeSettings(
     ),
     topFilletRadius: typeof settings?.topFilletRadius === "number" && Number.isFinite(settings.topFilletRadius)
       ? clamp(Math.round(settings.topFilletRadius), MIN_TOP_FILLET_RADIUS, MAX_TOP_FILLET_RADIUS)
-      : DEFAULT_SETTINGS.topFilletRadius,
+      : LEGACY_FALLBACKS.topFilletRadius,
     islandCornerRadius: typeof settings?.islandCornerRadius === "number" && Number.isFinite(settings.islandCornerRadius)
       ? clamp(Math.round(settings.islandCornerRadius), MIN_ISLAND_CORNER_RADIUS, MAX_ISLAND_CORNER_RADIUS)
-      : DEFAULT_SETTINGS.islandCornerRadius,
+      : LEGACY_FALLBACKS.islandCornerRadius,
     maxPanelHeight: typeof settings?.maxPanelHeight === "number" && Number.isFinite(settings.maxPanelHeight)
       ? clamp(Math.round(settings.maxPanelHeight), MIN_MAX_PANEL_HEIGHT, MAX_MAX_PANEL_HEIGHT)
       : DEFAULT_SETTINGS.maxPanelHeight,
     clipboardVisibleRows: typeof settings?.clipboardVisibleRows === "number" && Number.isFinite(settings.clipboardVisibleRows)
       ? clamp(Math.round(settings.clipboardVisibleRows), MIN_CLIPBOARD_VISIBLE_ROWS, MAX_CLIPBOARD_VISIBLE_ROWS)
-      : DEFAULT_SETTINGS.clipboardVisibleRows,
+      : LEGACY_FALLBACKS.clipboardVisibleRows,
     agentVisibleRows: typeof settings?.agentVisibleRows === "number" && Number.isFinite(settings.agentVisibleRows)
       ? clamp(Math.round(settings.agentVisibleRows), MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS)
-      : DEFAULT_SETTINGS.agentVisibleRows,
+      : LEGACY_FALLBACKS.agentVisibleRows,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,
@@ -265,10 +278,10 @@ export function normalizeSettings(
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     hoverExpandDelayMs: typeof settings?.hoverExpandDelayMs === "number" && Number.isFinite(settings.hoverExpandDelayMs)
       ? clamp(Math.round(settings.hoverExpandDelayMs), MIN_HOVER_EXPAND_DELAY_MS, MAX_HOVER_EXPAND_DELAY_MS)
-      : DEFAULT_SETTINGS.hoverExpandDelayMs,
+      : LEGACY_FALLBACKS.hoverExpandDelayMs,
     hoverCollapseDelayMs: typeof settings?.hoverCollapseDelayMs === "number" && Number.isFinite(settings.hoverCollapseDelayMs)
       ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
-      : DEFAULT_SETTINGS.hoverCollapseDelayMs,
+      : LEGACY_FALLBACKS.hoverCollapseDelayMs,
     minimizeAction: settings?.minimizeAction === "tuck" ? "tuck" : "tray",
     pageDigitModifiers: normalizePageDigitModifiers(settings?.pageDigitModifiers),
     pageNextShortcut: normalizePageCycleShortcut(settings?.pageNextShortcut, DEFAULT_PAGE_NEXT_SHORTCUT),

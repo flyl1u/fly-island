@@ -129,12 +129,31 @@ test("old default margins and scales move to the current defaults", () => {
   assert.equal(scaled.expandedScale, DEFAULT_SETTINGS.expandedScale);
 });
 
-test("normalizing missing settings gives defaults except the stored appearance fallback", () => {
-  const normalized = normalizeSettings(undefined);
-  assert.deepEqual({ ...normalized, appearanceMode: DEFAULT_SETTINGS.appearanceMode }, DEFAULT_SETTINGS);
-  assert.equal(normalized.appearanceMode, "classic");
+test("normalizing saved settings keeps the first-launch defaults", () => {
+  assert.deepEqual(normalizeSettings(DEFAULT_SETTINGS), DEFAULT_SETTINGS);
   assert.equal(isSameSettings(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS }), true);
   assert.equal(isSameSettings(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, opacity: 60 }), false);
+});
+
+test("first launch uses the maintainer's layout, while saved settings missing a field keep older behavior", () => {
+  assert.equal(DEFAULT_SETTINGS.appearanceMode, "classic");
+  assert.equal(DEFAULT_SETTINGS.islandBackgroundColor, "#030303");
+  assert.equal(DEFAULT_SETTINGS.islandCornerRadius, 16);
+  assert.equal(DEFAULT_SETTINGS.expandTrigger, "hover");
+  assert.equal(DEFAULT_SETTINGS.autoTuck, true);
+  assert.equal(DEFAULT_SETTINGS.minimizeAction, "tuck");
+  assert.equal(DEFAULT_SETTINGS.translationTarget, "island");
+  assert.equal(DEFAULT_SETTINGS.clipboardVisibleRows, 6);
+
+  const older = normalizeSettings({ opacity: 95 });
+  assert.equal(older.expandTrigger, "click");
+  assert.equal(older.autoTuck, false);
+  assert.equal(older.minimizeAction, "tray");
+  assert.equal(older.translationTarget, "window");
+  assert.equal(older.shelfShowCount, false);
+  assert.equal(older.clipboardVisibleRows, 3);
+  assert.equal(older.agentVisibleRows, 3);
+  assert.equal(older.hoverCollapseDelayMs, 400);
 });
 
 test("legacy default presets are dropped and custom presets are capped", () => {

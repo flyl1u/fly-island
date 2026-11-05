@@ -73,7 +73,8 @@ test("the Agent page fits the session rows set in Settings", async () => {
   // The tallest choice still fits the native window (656px).
   assert.ok(getAgentPageExpandedHeight(MAX_AGENT_VISIBLE_ROWS) <= 656);
 
-  assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 3);
+  assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
+  // Settings saved before this was a setting keep the old three rows.
   assert.equal(normalizeSettings({}).agentVisibleRows, 3);
   assert.equal(normalizeSettings({ agentVisibleRows: 99 }).agentVisibleRows, MAX_AGENT_VISIBLE_ROWS);
   assert.equal(normalizeSettings({ agentVisibleRows: 0 }).agentVisibleRows, MIN_AGENT_VISIBLE_ROWS);
