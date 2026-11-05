@@ -25,7 +25,7 @@ src/
 │   ├── appearance/          # 外观设置、布局编辑器、预设
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
 │   └── updater/             # 自动更新
-├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件）
+├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）
 ├── i18n/                    # 类型化多语言字典与 Provider；sections/ 按分区放文案（settings/ 再按设置页分），types.ts 与 locales/ 只做汇总

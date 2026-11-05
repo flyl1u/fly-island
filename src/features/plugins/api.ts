@@ -163,6 +163,9 @@ export type MarketPlugin = {
   categories: string[];
   /** It has pages with its own HTML (custom UI). */
   webview?: boolean;
+  /** README.md and CHANGELOG.md from the plugin, Markdown, carried in the signed index. */
+  readme?: string;
+  changelog?: string;
   installedVersion: string | null;
   incompatible: string | null;
   /** This version was taken off the market, and why. */

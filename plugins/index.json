@@ -23,6 +23,8 @@
         "developer",
         "information"
       ],
+      "readme": "# GitHub Issues（示例）\n\n在岛上列出一个公开仓库里还没关闭的 issue。\n\n## 怎么用\n\n- 在插件设置里填写仓库，格式是 `owner/name`，例如 `TixXin/fly-island`。\n- 岛上会多一个页面列出未关闭的 issue，点一条就在浏览器里打开。\n- 运行命令「立即刷新」可以马上更新；平时按设置里的间隔刷新，只在页面打开时才去请求。\n\n## 设置\n\n- **仓库**：要查看的公开仓库。\n- **刷新间隔（分钟）**。\n\n## 说明\n\n不需要 GitHub 令牌，所以只能看公开仓库，并受 GitHub 匿名访问的频率限制。\n\n## English\n\nLists the open issues of a public GitHub repository on an island page; click one to open it in the browser. No token needed; set the repository in the plugin's settings.",
+      "changelog": "# 更新记录\n\n## 1.0.1\n\n- 作者改为 TixXin。功能没有变化。\n\n## 1.0.0\n\n- 第一个版本。",
       "download": {
         "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.github-issues-1.0.1.zip",
         "sha256": "26945f9952f932054b71fab91235fa81c0df83b6e45c9b3301045848d14d2945",
@@ -53,6 +55,8 @@
       "categories": [
         "media"
       ],
+      "readme": "# 正在播放（示例）\n\n换歌时在岛上提示正在播放的歌曲。\n\n## 怎么用\n\n- 安装并启用后，切换歌曲时岛上会提示歌名和歌手。\n- 运行命令「显示正在播放」可以随时看一次。\n\n## 权限\n\n- `island:notify`：在岛上显示提示。\n- `media:read`：读取正在播放的媒体信息。这是敏感权限，第一次读取时岛上会先问你是否允许。\n\n## 示例演示了什么\n\n敏感权限的使用前确认、订阅媒体变化事件、岛上提示。\n\n## English\n\nShows the song that just started playing on the island. Reading media is a sensitive permission, so the island asks you the first time.",
+      "changelog": "# 更新记录\n\n## 1.0.1\n\n- 作者改为 TixXin。功能没有变化。\n\n## 1.0.0\n\n- 第一个版本。",
       "download": {
         "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.now-playing-1.0.1.zip",
         "sha256": "64e5238f34281fafe855558fc349a96c500a8df34823981193755fa0e3b69bc2",
@@ -83,6 +87,8 @@
       "categories": [
         "productivity"
       ],
+      "readme": "# 番茄钟（示例）\n\n在岛上计时一个番茄钟，结束时提醒你休息。\n\n## 怎么用\n\n- 按 **Ctrl+Alt+P** 开始，或者在待办上右键选择「为这条待办开始番茄钟」。\n- 计时显示在岛上的「番茄钟」页面和折叠条上。\n- 一轮结束后岛上会提示，可以点「再来一轮」。完成的轮数保存在插件存储里，重启后还在。\n\n## 设置\n\n- **每轮时长（分钟）**：默认 25。\n\n## 权限\n\n- `island:notify`：在岛上显示结束提示。\n- `todos:read`：读取你右键的那条待办的标题。\n\n## 示例演示了什么\n\n命令与全局快捷键、待办右键菜单、状态模板页面、折叠条状态文字、插件存储。\n\n## English\n\nStarts a pomodoro with Ctrl+Alt+P or from a todo's right-click menu. The countdown shows on its island page and the collapsed bar, and the island tells you when it ends. Finished rounds are kept in plugin storage.",
+      "changelog": "# 更新记录\n\n## 1.1.1\n\n- 作者改为 TixXin。功能没有变化。\n\n## 1.1.0\n\n- 新增岛上的「番茄钟」页面和折叠条上的倒计时。\n\n## 1.0.0\n\n- 第一个版本：快捷键和待办右键菜单开始番茄钟，结束时在岛上提醒，记录完成的轮数。",
       "download": {
         "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.pomodoro-1.1.1.zip",
         "sha256": "111712896a57ccfc221b9eb052cb25d5603a50f96135be2696f5286d16937efe",
@@ -114,6 +120,8 @@
         "todos",
         "productivity"
       ],
+      "readme": "# 待办摘要（示例）\n\n把还没完成的待办整理进每日笔记。\n\n## 怎么用\n\n- 待办有变化时，插件会在日志里记下未完成待办的数量（在插件设置页可以看到日志）。\n- 运行命令「写入摘要」，未完成的待办会追加到今天的每日笔记。\n\n## 权限\n\n- `todos:read`：读取待办。\n- `notes:write`：写入每日笔记。\n\n## 示例演示了什么\n\n订阅待办变化事件、读取待办、写每日笔记。用 Windows 自带的 PowerShell 运行，不需要安装别的东西。\n\n## English\n\nLogs how many todos are open whenever they change; the Write digest command appends the open todos to today's daily note.",
+      "changelog": "# 更新记录\n\n## 1.2.1\n\n- 作者改为 TixXin。功能没有变化。\n\n## 1.2.0\n\n- 改用插件 API 第 2 版：待办变化时立即记录，不再定时检查。\n\n## 1.1.0\n\n- 改用 Windows 自带的 PowerShell 运行，不需要另外安装 Node.js。\n\n## 1.0.0\n\n- 第一个版本。",
       "download": {
         "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.todo-digest-1.2.1.zip",
         "sha256": "d31d1dfa2f411928e31dc3370b46bb0b055daecea7ca9a625f10b99f0a736dc8",
@@ -145,6 +153,8 @@
         "todos",
         "productivity"
       ],
+      "readme": "# 待办进度环（示例）\n\n在岛上加一个页面，用圆环画出今天的待办完成了多少。\n\n## 怎么用\n\n- 安装并启用后，岛上会多一个「待办进度环」页面。\n- 完成或新增待办时，圆环会立刻跟着变。\n\n## 权限\n\n- `todos:read`：读取今天的待办。\n\n## 示例演示了什么\n\n自定义界面页面：页面是插件自己写的 HTML，只能通过消息和插件进程通信，不能联网，也不能调用岛屿的任何命令。\n\n## English\n\nAdds an island page with a ring showing how much of today's todos are done. The page is the plugin's own HTML; it can only talk to the plugin process and cannot reach the network.",
+      "changelog": "# 更新记录\n\n## 1.0.1\n\n- 作者改为 TixXin。功能没有变化。\n\n## 1.0.0\n\n- 第一个版本。",
       "download": {
         "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.todo-ring-1.0.1.zip",
         "sha256": "c30e625e026a64b4d74048a72a11e6b2871b71f2709571ad46f133e26532d04d",

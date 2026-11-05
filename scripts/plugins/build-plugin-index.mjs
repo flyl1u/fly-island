@@ -53,6 +53,33 @@ export function marketDetails(root, id) {
   };
 }
 
+/** Longest README.md / CHANGELOG.md text carried in the index (MAX_MARKET_TEXT in market.rs). */
+export const MAX_MARKET_TEXT = 16 * 1024;
+
+/** A Markdown file cut to `limit` characters at a line break, or null when missing or empty. */
+export function marketText(text, limit = MAX_MARKET_TEXT) {
+  const trimmed = (text ?? "").replace(/\r\n/g, "\n").trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= limit) return trimmed;
+  const cut = trimmed.slice(0, limit);
+  const lineEnd = cut.lastIndexOf("\n");
+  return `${(lineEnd > 0 ? cut.slice(0, lineEnd) : cut).trimEnd()}\n\n…`;
+}
+
+/**
+ * README.md and CHANGELOG.md from the plugin folder, shown on the market page. They
+ * are signed with the index; list them in .focusdignore to keep them out of the zip.
+ */
+export function marketTexts(dir) {
+  const read = (name) => {
+    const file = path.join(dir, name);
+    return existsSync(file) ? marketText(readFileSync(file, "utf8")) : null;
+  };
+  const readme = read("README.md");
+  const changelog = read("CHANGELOG.md");
+  return { ...(readme ? { readme } : {}), ...(changelog ? { changelog } : {}) };
+}
+
 /** The index entry for a plugin manifest, its package and its market details. */
 export function indexEntry(manifest, fileName, zip, details = {}) {
   return {
@@ -93,7 +120,7 @@ export function buildIndex(root, privateKey = loadPrivateKey()) {
         throw new Error(`${fileName} already exists with different contents; raise "version" in ${source}/${name}/${MANIFEST}.`);
       }
       writeFileSync(target, zip);
-      entries.push(indexEntry(manifest, fileName, zip, marketDetails(root, manifest.id)));
+      entries.push(indexEntry(manifest, fileName, zip, { ...marketDetails(root, manifest.id), ...marketTexts(dir) }));
     }
   }
   entries.sort((left, right) => left.id.localeCompare(right.id));

@@ -77,7 +77,7 @@ mockIPC((command, payload) => {
       trustedPublishers: [],
       officialPublisher: "TixXin",
       plugins: [
-        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], installedVersion: "1.0.0", incompatible: null, revoked: null },
+        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], readme: "# 待办同步\n\n每 **5 分钟**同步一次，见 [文档](https://example.com/docs)。\n\n- 读取待办\n- 写入日志", changelog: "## 1.1.0\n\n- 新增同步间隔设置", installedVersion: "1.0.0", incompatible: null, revoked: null },
         { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null },
       ],
     };
@@ -167,6 +167,20 @@ if (!automated) {
       "Hovering the run line lists each process and explains the numbers");
     check([...document.querySelectorAll(".plugin-card__hint")].some((hint) => hint.textContent === "有预发布版本 v1.1.0-beta.1，可在插件设置里选择接收。"),
       "A plugin with a pre-release in the market says so on its card");
+
+    await openPage("market");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    const marketItem = [...document.querySelectorAll<HTMLElement>(".plugin-market__item")].find((item) => item.textContent?.includes("待办同步示例"));
+    const detailsButton = [...(marketItem?.querySelectorAll<HTMLButtonElement>("button[aria-expanded]") ?? [])][0];
+    await act(async () => { detailsButton?.click(); });
+    check(marketItem?.querySelector(".plugin-market__doc h3")?.textContent === "待办同步"
+      && marketItem.querySelector(".plugin-market__doc strong")?.textContent === "5 分钟"
+      && marketItem.querySelector(".plugin-market__doc a")?.getAttribute("href") === "https://example.com/docs"
+      && marketItem.querySelectorAll(".plugin-market__doc li").length === 2,
+      "The market details render the plugin's README");
+    check(marketItem?.querySelector(".plugin-market__history summary")?.textContent === "版本历史"
+      && marketItem.querySelector(".plugin-market__history h4")?.textContent === "1.1.0",
+      "The market details show the plugin's version history");
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");

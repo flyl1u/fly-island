@@ -164,3 +164,29 @@
   opacity: 0.7;
   overflow-wrap: anywhere;
 }
+
+.plugin-market__doc,
+.plugin-market__history {
+  max-height: 260px;
+  margin: 6px 0;
+  padding: 8px 10px;
+  overflow-y: auto;
+  background: var(--color-white-a08);
+  border-radius: var(--radius-md);
+}
+
+.plugin-market__history summary {
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.plugin-market__history[open] summary {
+  margin-bottom: 4px;
+}
+
+.plugin-market__history summary:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

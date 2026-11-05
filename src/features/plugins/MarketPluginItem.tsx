@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BadgeCheck, Download, ExternalLink, Flag, GitBranch } from "lucide-react";
+import { Markdown } from "../../components/markdown/Markdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { MARKET_CATEGORIES, marketPublisher, openPluginHomepage, PLUGIN_PERMISSIONS, type MarketCategory, type MarketPlugin, type MarketSnapshot, type PluginPermission } from "./api";
 import { repositoryUrl } from "./marketFilter";
@@ -8,7 +9,7 @@ import { isNewerVersion } from "./version";
 
 const isPermission = (name: string): name is PluginPermission => (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 const isCategory = (name: string): name is MarketCategory => (MARKET_CATEGORIES as readonly string[]).includes(name);
-/** Where problems with market plugins are reported until the index repository has its own issues. */
+/** Where problems are reported for plugins whose index entry names no repository. */
 const REPORT_URL = "https://github.com/TixXin/fly-island/issues/new";
 
 /** One plugin on the market page: what it is, who publishes it, and Install / Update / its state. */
@@ -32,7 +33,9 @@ export function MarketPluginItem({
   const official = publisher === market.officialPublisher;
   const trusted = official || market.trustedPublishers.includes(publisher);
   const repo = repositoryUrl(plugin.repo);
-  const report = `${REPORT_URL}?title=${encodeURIComponent(`[plugin] ${plugin.id} ${plugin.version}`)}`;
+  // A plugin's own repository takes its problem reports; the island's repository takes the rest.
+  const report = `${repo ? `${repo}/issues/new` : REPORT_URL}?title=${encodeURIComponent(`[plugin] ${plugin.id} ${plugin.version}`)}`;
+  const openLink = (href: string) => void openPluginHomepage(href);
 
   const action = () => {
     if (plugin.revoked) return <span className="plugin-market__state plugin-market__state--revoked">{text.revoked}</span>;
@@ -87,6 +90,17 @@ export function MarketPluginItem({
                 : plugin.permissions.map((name) => (isPermission(name) ? t.settings.plugins.permission[name] : name)).join(locale === "zh-CN" ? "、" : ", ")}
             </p>
             {plugin.runtime ? <p>{plugin.runtime === "node" ? t.settings.plugins.runtimeNode : t.settings.plugins.runtimeBuiltIn}</p> : null}
+            {plugin.readme ? (
+              <section className="plugin-market__doc" aria-label={text.readme}>
+                <Markdown text={plugin.readme} onOpenLink={openLink} />
+              </section>
+            ) : null}
+            {plugin.changelog ? (
+              <details className="plugin-market__history">
+                <summary>{text.changelog}</summary>
+                <Markdown text={plugin.changelog} onOpenLink={openLink} />
+              </details>
+            ) : null}
             <div className="plugin-market__links">
               {repo ? (
                 <button className="plugin-card__button plugin-card__button--quiet" type="button" onClick={() => void openPluginHomepage(repo)}>

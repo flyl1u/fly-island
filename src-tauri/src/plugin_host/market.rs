@@ -81,6 +81,23 @@ pub struct MarketEntry {
     /// It has pages with its own HTML (template webview); shown as custom UI.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     webview: bool,
+    /// The plugin's README.md, Markdown, shown in the market details (at most MAX_MARKET_TEXT).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    readme: Option<String>,
+    /// The plugin's CHANGELOG.md, Markdown, shown as its version history.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    changelog: Option<String>,
+}
+
+/// Longest README / changelog text kept from the index (MAX_MARKET_TEXT in build-plugin-index.mjs).
+const MAX_MARKET_TEXT: usize = 16 * 1024;
+
+/// `text` cut to MAX_MARKET_TEXT characters; the index is signed, but a page of text is enough.
+fn cap_text(text: String) -> String {
+    match text.char_indices().nth(MAX_MARKET_TEXT) {
+        Some((end, _)) => format!("{}\n\n…", &text[..end]),
+        None => text,
+    }
 }
 
 impl MarketEntry {
@@ -164,6 +181,7 @@ pub(super) fn split_index(text: &str) -> Result<(Vec<MarketEntry>, Vec<MarketEnt
         .into_iter()
         .filter_map(|value| serde_json::from_value::<MarketEntry>(value).ok())
         .filter(is_valid_entry)
+        .map(|entry| MarketEntry { readme: entry.readme.map(cap_text), changelog: entry.changelog.map(cap_text), ..entry })
         .partition(|entry| entry.pre_release);
     entries.sort_by(|left, right| left.id.cmp(&right.id));
     entries.dedup_by(|left, right| left.id == right.id);

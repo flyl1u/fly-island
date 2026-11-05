@@ -1060,6 +1060,24 @@ mod pre_release_tests {
     }
 
     #[test]
+    fn readme_and_changelog_come_through_and_are_capped() {
+        let mut long = entry("a.one", "1.0.0", false);
+        long["readme"] = json!("x".repeat(40_000));
+        long["changelog"] = json!("# 更新记录\n\n## 1.0.0\n");
+        let data = market(vec![long]);
+        let shown = serde_json::to_value(&data.entries[0]).expect("json");
+        let readme = shown["readme"].as_str().expect("readme");
+        assert!(readme.chars().count() < 16 * 1024 + 10 && readme.ends_with('…'), "a long README is cut");
+        assert_eq!(shown["changelog"], "# 更新记录\n\n## 1.0.0\n");
+
+        let repository = split_index(include_str!("../../../plugins/index.json")).expect("index").0;
+        let digest = repository.iter().find(|entry| entry.id == "dev.focusd.todo-digest").expect("example");
+        let digest = serde_json::to_value(digest).expect("json");
+        assert!(digest["readme"].as_str().is_some_and(|text| text.starts_with("# 待办摘要")));
+        assert!(digest["changelog"].as_str().is_some_and(|text| text.contains("## 1.2.1")));
+    }
+
+    #[test]
     fn pre_releases_are_kept_apart_and_only_the_newest_counts() {
         let data = market(vec![
             entry("a.one", "1.2.0", false),
