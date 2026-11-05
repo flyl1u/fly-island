@@ -13,10 +13,48 @@ use windows::Win32::{
             JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
         },
         ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
+        Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32},
+        Threading::{OpenThread, ResumeThread, CREATE_SUSPENDED, THREAD_SUSPEND_RESUME},
     },
 };
 
-use super::process::{image_path, open_for_limited_query};
+use super::process::{image_path, open_for_limited_query, ProcessHandle};
+
+/// Creation flag for a process that should not run until it is in its job; see `resume`.
+pub(crate) const START_SUSPENDED: u32 = CREATE_SUSPENDED.0;
+
+/// Lets a process started with `START_SUSPENDED` run, once it has been put in its job,
+/// so nothing it starts can slip out before the job is in place. Resumes every thread
+/// of the process; an error means none could be resumed.
+pub(crate) fn resume(process_id: u32) -> Result<(), String> {
+    // SAFETY: a thread snapshot takes no pointers; the returned handle is owned by
+    // ProcessHandle, which closes it (CloseHandle closes snapshot handles too).
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) }
+        .map(ProcessHandle)
+        .map_err(|error| format!("Could not list the plugin's threads: {error}"))?;
+    let mut entry = THREADENTRY32 { dwSize: size_of::<THREADENTRY32>() as u32, ..Default::default() };
+    let mut resumed = 0;
+    // SAFETY: the snapshot handle is live and `entry` is a THREADENTRY32 with dwSize set.
+    let mut more = unsafe { Thread32First(snapshot.0, &mut entry) }.is_ok();
+    while more {
+        if entry.th32OwnerProcessID == process_id {
+            // SAFETY: OpenThread takes no pointers; a returned handle is owned by
+            // ProcessHandle, which closes it.
+            if let Ok(thread) = unsafe { OpenThread(THREAD_SUSPEND_RESUME, false, entry.th32ThreadID) }.map(ProcessHandle) {
+                // SAFETY: `thread.0` is a live handle opened with THREAD_SUSPEND_RESUME.
+                if unsafe { ResumeThread(thread.0) } != u32::MAX {
+                    resumed += 1;
+                }
+            }
+        }
+        // SAFETY: as for Thread32First.
+        more = unsafe { Thread32Next(snapshot.0, &mut entry) }.is_ok();
+    }
+    if resumed == 0 {
+        return Err("Could not let the plugin process start.".into());
+    }
+    Ok(())
+}
 
 /// Most process ids read from a job at once; plugins rarely start more.
 const MAX_LISTED_PROCESSES: usize = 64;
@@ -164,6 +202,42 @@ impl Drop for Job {
 mod tests {
     use super::*;
     use std::process::{Command, Stdio};
+
+    #[test]
+    fn a_suspended_process_runs_only_after_it_is_resumed() {
+        use std::os::windows::process::CommandExt;
+        let job = Job::new().expect("job");
+        let mut child = Command::new("cmd")
+            .args(["/c", "exit 7"])
+            .creation_flags(START_SUSPENDED)
+            .spawn()
+            .expect("spawn");
+        job.assign(&child).expect("assign");
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        assert!(child.try_wait().expect("wait").is_none(), "suspended until resumed");
+        resume(child.id()).expect("resume");
+        assert_eq!(child.wait().expect("wait").code(), Some(7));
+    }
+
+    #[test]
+    fn a_resumed_powershell_answers_on_stdout_like_a_plugin() {
+        use std::io::{BufRead, BufReader};
+        use std::os::windows::process::CommandExt;
+        let job = Job::new().expect("job");
+        let mut child = Command::new("powershell.exe")
+            .args(["-NoProfile", "-NonInteractive", "-Command", "[Console]::Out.WriteLine('ready')"])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .creation_flags(START_SUSPENDED)
+            .spawn()
+            .expect("spawn");
+        job.assign(&child).expect("assign");
+        resume(child.id()).expect("resume");
+        let mut line = String::new();
+        BufReader::new(child.stdout.take().expect("stdout")).read_line(&mut line).expect("read");
+        assert_eq!(line.trim(), "ready");
+        assert!(child.wait().expect("wait").success());
+    }
 
     #[test]
     fn closing_the_job_ends_the_process_tree() {

@@ -28,7 +28,7 @@ mod trace;
 pub use trace::TraceEntry;
 
 use super::{rpc, settings::InfoItem};
-use crate::{agent_status, system::CREATE_NO_WINDOW, win32::job::{Job, JobUsage}};
+use crate::{agent_status, system::CREATE_NO_WINDOW, win32::job::{self, Job, JobUsage}};
 use dispatch::{answer_request, initialize_params};
 use outbox::{Outbox, SendError};
 
@@ -330,10 +330,18 @@ fn supervise(context: &Arc<Context>) {
         lock(&context.subscriptions).clear();
         lock(&context.keep_alive).take();
         super::sensitive::forget_this_run(&context.spec.plugin_id);
-        // Everything the plugin starts goes into the job, so it ends with the plugin.
+        // Everything the plugin starts goes into the job, so it ends with the plugin. The
+        // process was started suspended, so it cannot start anything before this.
         match Job::new().and_then(|job| job.assign(&child).map(|()| job)) {
             Ok(job) => *lock(&context.job) = Some(job),
             Err(error) => log_line(context, &error),
+        }
+        if let Err(error) = job::resume(child.id()) {
+            let _ = child.kill();
+            let _ = child.wait();
+            log_line(context, &error);
+            set_status(context, RuntimeStatus::Crashed, Some(error));
+            return;
         }
         *lock(&context.spawned_at) = Some(Instant::now());
         update_entry(context, |info| {
@@ -435,7 +443,7 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .creation_flags(CREATE_NO_WINDOW)
+        .creation_flags(CREATE_NO_WINDOW | job::START_SUSPENDED)
         .spawn()
         .map_err(|error| {
             if error.kind() == ErrorKind::NotFound && spec.program == "node" {
