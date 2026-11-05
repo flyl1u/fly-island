@@ -6,8 +6,8 @@ import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** src-tauri itself, the scripts it embeds with include_str!, and plugins/ (keys, index and schema its tests read). */
-const RUST_INPUTS = ["src-tauri/", "scripts/focusd-agent-", "plugins/"];
+/** src-tauri itself (including the scripts it embeds with include_str!) and plugins/ (keys, index and schema its tests read). */
+const RUST_INPUTS = ["src-tauri/", "plugins/"];
 
 export function needsRust(files) {
   return files.some((file) => RUST_INPUTS.some((prefix) => file.startsWith(prefix)));

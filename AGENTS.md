@@ -42,14 +42,14 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── tests/               # unit/ 前端单元测试、scripts/ 脚本测试（node:test，*.test.mjs）；regression/ 浏览器回归页（*.html + *.tsx）
 ├── packages/            # 插件开发者工具（pnpm workspace）：fly-island-plugin（Node SDK、CLI、模拟宿主）、create-fly-island-plugin（脚手架）、powershell/FlyIsland.Plugin；不进入岛屿的发布产物
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），schema/ 协议描述，sdk/ 单文件 SDK（pnpm sdk:build 从 packages/ 生成），packages/ 打包好的 zip，index.json 市场索引与 index.json.sig 签名（pnpm plugins:index 生成），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
-├── scripts/             # 发布、签名、latest.json 生成、插件索引与 SDK 生成、代理状态 hook 脚本、合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）
+├── scripts/             # 发布、签名、latest.json 生成、插件索引与 SDK 生成、合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）
 ├── .githooks/           # pre-push：合并队列的推送保护与检查（core.hooksPath 指向这里）
 ├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
 ├── DESIGN.md            # 已确认的界面设计约定
 └── README*.md           # 中英文项目说明
 ```
 
-注意：`scripts/focusd-agent-running.cmd` 和 `scripts/focusd-agent-status.ps1` 通过 `include_str!` 编译进 Rust 二进制，修改它们等同于修改 Rust 侧代码。
+注意：被 `include_str!` 编译进 Rust 二进制的脚本放在使用它们的模块旁边（`src-tauri/src/agent_status/hooks/`、`src-tauri/src/qq_notifications/`），修改它们按 Rust 改动验证。
 
 ## 常用命令
 

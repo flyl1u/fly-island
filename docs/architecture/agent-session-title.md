@@ -108,7 +108,7 @@ Agent hook（UserPromptSubmit）
 
 | 位置 | 内容 |
 |---|---|
-| `scripts/focusd-agent-running.cmd` | `capture` 参数：把 stdin 写入 hook-input 文件 |
+| `src-tauri/src/agent_status/hooks/focusd-agent-running.cmd` | `capture` 参数：把 stdin 写入 hook-input 文件 |
 | `src-tauri/src/agent_status/claude_hooks.rs`、`codex_hooks.rs` | `UserPromptSubmit` 命令加 `capture` 参数 |
 | `src-tauri/src/agent_status/title.rs`（新增） | 纯逻辑：解析 hook 输入、读记录尾部 / 开头、查 Codex 索引、后备与截断、路径校验 |
 | `src-tauri/src/agent_status/title_cache.rs`（如需要） | 缓存与 Codex 首句提问的内存记录；全局状态封装在模块内部 |

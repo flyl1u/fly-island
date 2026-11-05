@@ -25,7 +25,7 @@ use crate::win32;
 const QQ_APP_ID: &str = "QQ";
 
 const REGISTRATION_REPAIR: &str =
-    include_str!("../../../scripts/repair-qq-notification-registration.ps1");
+    include_str!("repair-qq-notification-registration.ps1");
 
 const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
 

@@ -21,7 +21,7 @@ test("limits follow the file type and exempt dictionaries and extracted Rust tes
   assert.equal(lineLimitFor("tests/i18n.test.mjs"), 400);
   assert.equal(lineLimitFor("src/App.css"), 500);
   assert.equal(lineLimitFor("src-tauri/src/lib.rs"), 800);
-  assert.equal(lineLimitFor("scripts/focusd-agent-status.ps1"), 400);
+  assert.equal(lineLimitFor("src-tauri/src/agent_status/hooks/focusd-agent-status.ps1"), 400);
   assert.equal(lineLimitFor("src/i18n/locales/en.ts"), null);
   assert.equal(lineLimitFor("src/i18n/types.ts"), null);
   assert.equal(lineLimitFor("src/i18n/sections/settings/plugins.ts"), null);

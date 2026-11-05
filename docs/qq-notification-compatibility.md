@@ -29,13 +29,13 @@ QQ 消息上岛首版使用 Windows 系统通知作为来源。只有同一台�
 检查状态（只读）：
 
 ```powershell
-powershell -NoProfile -File scripts/repair-qq-notification-registration.ps1
+powershell -NoProfile -File src-tauri/src/qq_notifications/repair-qq-notification-registration.ps1
 ```
 
 自动修复未完成时，也可在确认安装正常后手动执行修复：
 
 ```powershell
-powershell -NoProfile -File scripts/repair-qq-notification-registration.ps1 -Repair
+powershell -NoProfile -File src-tauri/src/qq_notifications/repair-qq-notification-registration.ps1 -Repair
 ```
 
 脚本确认开始菜单中的 QQ 标识和腾讯签名，备份 QQ 通知设置，再用一条静默、明确标注「不是聊天消息」的本机测试通知初始化 Windows 发送者记录。结束后仅移除这一条测试通知。已有正常注册时直接返回，不做修改。

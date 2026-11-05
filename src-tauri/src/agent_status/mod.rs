@@ -48,9 +48,9 @@ pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
 /// instead of marking the session as running (see focusd-agent-running.cmd).
 pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
-    include_str!("../../../scripts/focusd-agent-running.cmd");
+    include_str!("hooks/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
-    include_str!("../../../scripts/focusd-agent-status.ps1");
+    include_str!("hooks/focusd-agent-status.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
