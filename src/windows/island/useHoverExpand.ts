@@ -110,6 +110,17 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
     }
   }, [mode]);
 
+  // Sliding a tucked island out under the cursor only reveals it: the cursor has to
+  // leave and come back (or click) to open the panel. Checked through :hover too,
+  // because the page sees the cursor before the native hover event arrives.
+  const wasTuckedRef = useRef(isTucked);
+  useEffect(() => {
+    if (wasTuckedRef.current && !isTucked && (isHoveringRef.current || document.querySelector(".island:hover"))) {
+      armedRef.current = false;
+    }
+    wasTuckedRef.current = isTucked;
+  }, [isTucked]);
+
   useEffect(() => {
     if (!enabled || !isHovering || mode !== "collapsed" || isTucked || !armedRef.current) {
       return;

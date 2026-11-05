@@ -139,6 +139,7 @@ export function IslandShell({
     `island--appearance-${appearanceMode}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
+    isTucked ? "island--tucked" : "",
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]

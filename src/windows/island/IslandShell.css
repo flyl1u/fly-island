@@ -295,6 +295,14 @@
   transition-delay: 140ms, 0s;
 }
 
+/* Tucked, only the island's bottom rim is on screen: show it empty, not cut-off contents.
+   They fade back in after the island slides out (the 140ms delay above). */
+.island--tucked .island__collapsed {
+  pointer-events: none;
+  opacity: 0;
+  transition-delay: 0s;
+}
+
 .island--expanded .island__collapsed {
   pointer-events: none;
   opacity: 0;
