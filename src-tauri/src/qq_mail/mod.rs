@@ -1,5 +1,8 @@
-//! QQ Mail over IMAP: commands, snapshot types and the background service.
+//! Mail over IMAP (QQ Mail first, any `imap.<domain>` server): commands,
+//! snapshot types and the background service. The module keeps its qq_mail
+//! name because the command names are a contract with the frontend.
 
+mod client_id;
 mod content;
 mod credentials;
 mod plugin_view;
@@ -100,16 +103,16 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     });
     SERVICE
         .set(service.clone())
-        .map_err(|_| "QQ 邮箱服务已启动。")?;
+        .map_err(|_| "邮箱服务已启动。")?;
     thread::Builder::new()
         .name("qq-mail".into())
         .spawn(move || worker(service, receiver))
-        .map_err(|_| "无法启动 QQ 邮箱服务。".to_string())?;
+        .map_err(|_| "无法启动 邮箱服务。".to_string())?;
     Ok(())
 }
 
 fn service() -> Result<&'static Arc<MailService>, String> {
-    SERVICE.get().ok_or_else(|| "QQ 邮箱服务尚未就绪。".into())
+    SERVICE.get().ok_or_else(|| "邮箱服务尚未就绪。".into())
 }
 
 #[tauri::command]
@@ -125,7 +128,7 @@ pub async fn connect_qq_mail(
     let email = normalize_email(&email)?;
     let secret = authorization_code.trim().to_string();
     if secret.is_empty() || secret.len() > 256 || secret.chars().any(char::is_control) {
-        return Err("请输入 QQ 邮箱设置中生成的授权码。".into());
+        return Err("请输入 邮箱设置中生成的授权码。".into());
     }
     let service = service()?;
     let (generation, snapshot) = {
@@ -156,7 +159,7 @@ pub async fn connect_qq_mail(
             secret,
             reply,
         })
-        .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+        .map_err(|_| "邮箱服务不可用。".to_string())?;
     await_reply(receiver).await
 }
 
@@ -207,7 +210,7 @@ pub async fn set_qq_mail_enabled(email: String, enabled: bool) -> Result<MailSna
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法更新 QQ 邮箱连接。".to_string())?
+    .map_err(|_| "无法更新 邮箱连接。".to_string())?
 }
 
 #[tauri::command]
@@ -218,13 +221,13 @@ pub async fn refresh_qq_mail() -> Result<MailSnapshot, String> {
         return if snapshot.syncing {
             Ok(snapshot)
         } else {
-            Err("请先连接并开启 QQ 邮箱接收。".into())
+            Err("请先连接并开启 邮箱接收。".into())
         };
     };
     let (reply, receiver) = mpsc::channel();
     service
         .send(Work::Refresh { generation, reply })
-        .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+        .map_err(|_| "邮箱服务不可用。".to_string())?;
     await_reply(receiver).await
 }
 
@@ -235,7 +238,7 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
     let (generation, email) = {
         let state = service.lock()?;
         if !state.snapshot.configured || state.snapshot.status == MailStatus::AuthRequired {
-            return Err("请先连接 QQ 邮箱。".into());
+            return Err("请先连接 邮箱。".into());
         }
         if !state
             .snapshot
@@ -247,7 +250,7 @@ pub async fn read_qq_mail(message_id: String) -> Result<MailContent, String> {
         }
         (
             state.generation,
-            state.snapshot.email.clone().ok_or("请先连接 QQ 邮箱。")?,
+            state.snapshot.email.clone().ok_or("请先连接 邮箱。")?,
         )
     };
     let service = service.clone();
@@ -287,7 +290,7 @@ pub async fn disconnect_qq_mail() -> Result<MailSnapshot, String> {
         Ok(snapshot)
     })
     .await
-    .map_err(|_| "无法断开 QQ 邮箱。".to_string())?
+    .map_err(|_| "无法断开 邮箱。".to_string())?
 }
 
 async fn await_reply<T: Send + 'static>(
@@ -296,10 +299,10 @@ async fn await_reply<T: Send + 'static>(
     tauri::async_runtime::spawn_blocking(move || {
         receiver
             .recv()
-            .unwrap_or_else(|_| Err("QQ 邮箱服务不可用。".into()))
+            .unwrap_or_else(|_| Err("邮箱服务不可用。".into()))
     })
     .await
-    .map_err(|_| "QQ 邮箱连接任务未完成。".to_string())?
+    .map_err(|_| "邮箱连接任务未完成。".to_string())?
 }
 
 /// This module's Tauri commands. `lib.rs` chains every module's list into one

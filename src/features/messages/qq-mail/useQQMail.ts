@@ -5,6 +5,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
 import { getQQMailState, invokeQQMailCommand, listenQQMailChanged, readQQMail, type MailContent, type MailMessage, type MailSnapshot, type QQMailCommand } from "./api";
 import { clearMailSettings, loadSettings, saveMailSettings } from "./storage";
+import { mailWebUrl } from "./mailDomain";
 
 const EMPTY_SNAPSHOT: MailSnapshot = {
   revision: 0, email: null, configured: false, enabled: false, syncing: false,
@@ -158,14 +159,14 @@ export function useQQMail(canPreview: boolean) {
   }, [t]);
   const openMail = useCallback(async () => {
     try {
-      await openUrl("https://mail.qq.com/");
+      await openUrl(mailWebUrl(snapshot.email));
       clearPreview();
       return true;
     } catch {
       setActionError(t.mail.openFailed);
       return false;
     }
-  }, [clearPreview, t]);
+  }, [clearPreview, snapshot.email, t]);
   const openHelp = useCallback(async () => {
     try { await openUrl("https://service.mail.qq.com/"); }
     catch { setActionError(t.mail.helpFailed); }

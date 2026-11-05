@@ -23,16 +23,39 @@ pub(super) fn delete_secret(email: &str) -> Result<(), String> {
     }
 }
 
+fn is_domain(value: &str) -> bool {
+    value.len() <= 253
+        && value.contains('.')
+        && value.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        })
+}
+
+// The address is also the IMAP login and the credential key, so only plain ASCII is accepted.
 pub(super) fn normalize_email(email: &str) -> Result<String, String> {
     let email = email.trim().to_ascii_lowercase();
-    let local = email.strip_suffix("@qq.com").unwrap_or("");
-    if local.is_empty()
-        || local.len() > 64
-        || !local
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || b"._+-".contains(&byte))
-    {
-        return Err("请输入有效的 @qq.com 邮箱地址。".into());
+    let valid = email.split_once('@').is_some_and(|(local, domain)| {
+        !local.is_empty()
+            && local.len() <= 64
+            && local
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"._+-".contains(&byte))
+            && is_domain(domain)
+    });
+    if !valid {
+        return Err("请输入有效的邮箱地址。".into());
     }
     Ok(email)
+}
+
+/// `imap.<domain>` serves QQ, Foxmail, 163, 126 and most school and company mail.
+pub(super) fn imap_host(email: &str) -> String {
+    let domain = email.split_once('@').map_or(email, |(_, domain)| domain);
+    format!("imap.{domain}")
 }

@@ -1,7 +1,8 @@
 use super::content::{
     cid_references, fetch_content, parse_message_id, replace_cid_references, MAX_BODY_BYTES,
 };
-use super::credentials::normalize_email;
+use super::client_id::send_client_id;
+use super::credentials::{imap_host, normalize_email};
 use super::service::{retry_delay, MailState, Work, PUSH_REFRESH_INTERVAL};
 use super::session::{
     display_header, fetch_inbox, fetch_inbox_cached, interrupt_idle, login_failure, parse_header,
@@ -51,17 +52,52 @@ fn active_state() -> MailState {
 }
 
 #[test]
-fn validates_qq_addresses_and_rejects_other_hosts_or_commands() {
+fn validates_addresses_and_rejects_commands_or_malformed_domains() {
     assert_eq!(normalize_email(" User@QQ.COM ").unwrap(), "user@qq.com");
+    assert_eq!(normalize_email("x@163.com").unwrap(), "x@163.com");
+    assert_eq!(normalize_email("a.b@example.edu.cn").unwrap(), "a.b@example.edu.cn");
     for email in [
         "",
         "@qq.com",
-        "a@gmail.com",
-        "a@qq.com.evil",
+        "a@",
+        "a@qq",
+        "a@qq..com",
+        "a@-qq.com",
+        "a@b@qq.com",
+        "a b@qq.com",
         "a\r\nLOGIN@qq.com",
+        "a@qq.com\r\nx",
     ] {
-        assert!(normalize_email(email).is_err());
+        assert!(normalize_email(email).is_err(), "{email:?}");
     }
+}
+
+#[test]
+fn the_imap_host_follows_the_address_domain() {
+    assert_eq!(imap_host("x@qq.com"), "imap.qq.com");
+    assert_eq!(imap_host("x@163.com"), "imap.163.com");
+    assert_eq!(imap_host("x@mail.example.edu.cn"), "imap.mail.example.edu.cn");
+}
+
+#[test]
+fn client_id_consumes_only_its_own_reply() {
+    let input = b"* ID (\"name\" \"Coremail Imap\")\r\nfly0 OK ID completed\r\na2 OK next\r\n".to_vec();
+    let output = Arc::new(Mutex::new(Vec::new()));
+    let stream = Mutex::new(ScriptedStream {
+        input: IoCursor::new(input),
+        output: output.clone(),
+    });
+    send_client_id(&stream).unwrap();
+    assert!(String::from_utf8_lossy(&output.lock().unwrap()).starts_with("fly0 ID (\"name\" \"fly-island\""));
+    let mut rest = String::new();
+    stream.into_inner().unwrap().input.read_to_string(&mut rest).unwrap();
+    assert_eq!(rest, "a2 OK next\r\n");
+
+    let silent = Mutex::new(ScriptedStream {
+        input: IoCursor::new(b"* ID NIL\r\n".to_vec()),
+        output: Arc::new(Mutex::new(Vec::new())),
+    });
+    assert!(send_client_id(&silent).is_err());
 }
 
 #[test]

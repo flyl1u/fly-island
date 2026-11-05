@@ -10,15 +10,14 @@ use mailparse::MailHeaderMap;
 use std::{
     io::{Read, Write},
     net::{Shutdown, TcpStream, ToSocketAddrs},
-    sync::{mpsc, Mutex},
+    sync::{mpsc, Arc, Mutex},
     time::Duration,
 };
 
-use super::credentials::read_secret;
+use super::client_id::{send_client_id, SharedStream};
+use super::credentials::{imap_host, read_secret};
 use super::service::Work;
 use super::MailMessage;
-
-const HOST: &str = "imap.qq.com";
 
 const MAX_ITEMS: u32 = 20;
 
@@ -52,14 +51,14 @@ impl MailFailure {
     pub(super) fn network() -> Self {
         Self {
             authentication: false,
-            message: "无法同步 QQ 邮箱，请检查网络或稍后重试。",
+            message: "无法同步 邮箱，请检查网络或稍后重试。",
         }
     }
 
     pub(super) fn authentication() -> Self {
         Self {
             authentication: true,
-            message: "QQ 邮箱拒绝了连接，请确认已开启 IMAP，并重新输入邮箱授权码。",
+            message: "邮箱拒绝了连接，请确认已开启 IMAP，并重新输入邮箱授权码。",
         }
     }
 }
@@ -91,7 +90,7 @@ impl<T: SetReadTimeout> SetReadTimeout for BoundedStream<T> {
     }
 }
 
-type MailSession = Session<BoundedStream<native_tls::TlsStream<TcpStream>>>;
+type MailSession = Session<BoundedStream<SharedStream<native_tls::TlsStream<TcpStream>>>>;
 
 pub(super) enum MailWake {
     Work(Work),
@@ -229,8 +228,9 @@ pub(super) fn open_session(email: &str, secret: &str) -> Result<MailSession, Mai
 }
 
 fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream), MailFailure> {
+    let host = imap_host(email);
     let mut stream = None;
-    let addresses = (HOST, 993)
+    let addresses = (host.as_str(), 993)
         .to_socket_addrs()
         .map_err(|_| MailFailure::network())?;
     for address in addresses {
@@ -249,14 +249,21 @@ fn open_connection(email: &str, secret: &str) -> Result<(MailSession, TcpStream)
     let interrupt = stream.try_clone().map_err(|_| MailFailure::network())?;
     let tls = native_tls::TlsConnector::new().map_err(|_| MailFailure::network())?;
     let stream = tls
-        .connect(HOST, stream)
+        .connect(&host, stream)
         .map_err(|_| MailFailure::network())?;
-    let mut client = imap::Client::new(BoundedStream(stream));
+    let shared = Arc::new(Mutex::new(stream));
+    let mut client = imap::Client::new(BoundedStream(SharedStream(shared.clone())));
     client.read_greeting().map_err(|_| MailFailure::network())?;
-    client
+    let mut session = client
         .login(email, secret)
-        .map(|session| (session, interrupt))
-        .map_err(|(error, _)| login_failure(error))
+        .map_err(|(error, _)| login_failure(error))?;
+    if session
+        .capabilities()
+        .is_ok_and(|capabilities| capabilities.has_str("ID"))
+    {
+        send_client_id(&shared).map_err(|_| MailFailure::network())?;
+    }
+    Ok((session, interrupt))
 }
 
 #[cfg(test)]

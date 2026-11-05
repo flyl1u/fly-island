@@ -143,13 +143,13 @@ impl MailService {
     pub(super) fn send(&self, work: Work) -> Result<(), String> {
         self.sender
             .send(work)
-            .map_err(|_| "QQ 邮箱服务不可用。".to_string())?;
+            .map_err(|_| "邮箱服务不可用。".to_string())?;
         interrupt_idle(&self.idle_socket);
         Ok(())
     }
 
     pub(super) fn lock(&self) -> Result<MutexGuard<'_, MailState>, String> {
-        self.state.lock().map_err(|_| "QQ 邮箱状态不可用。".into())
+        self.state.lock().map_err(|_| "邮箱状态不可用。".into())
     }
 
     pub(super) fn publish(&self, snapshot: MailSnapshot, newest_id: Option<String>) {
@@ -325,7 +325,7 @@ pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) 
                     .ok()
                     .and_then(|state| state.snapshot.email.clone());
                 let result = email
-                    .ok_or_else(|| "请先连接 QQ 邮箱。".to_string())
+                    .ok_or_else(|| "请先连接 邮箱。".to_string())
                     .and_then(|email| service.sync(generation, &email, None, &mut connection));
                 let _ = reply.send(result);
             }
