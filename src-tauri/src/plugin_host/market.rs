@@ -159,13 +159,15 @@ fn client() -> Result<reqwest::Client, String> {
     builder.build().map_err(|error| format!("Could not create the HTTP client: {error}"))
 }
 
-async fn download(url: &str, limit: u64) -> Result<Vec<u8>, String> {
-    download_unless_missing(url, limit).await?.ok_or_else(|| format!("{url} answered 404 Not Found."))
+async fn download(client: &reqwest::Client, url: &str, limit: u64) -> Result<Vec<u8>, String> {
+    download_unless_missing(client, url, limit)
+        .await?
+        .ok_or_else(|| format!("{url} answered 404 Not Found."))
 }
 
 /// None when the file does not exist (404).
-async fn download_unless_missing(url: &str, limit: u64) -> Result<Option<Vec<u8>>, String> {
-    let response = client()?
+async fn download_unless_missing(client: &reqwest::Client, url: &str, limit: u64) -> Result<Option<Vec<u8>>, String> {
+    let response = client
         .get(url)
         .send()
         .await
@@ -192,9 +194,8 @@ async fn download_unless_missing(url: &str, limit: u64) -> Result<Option<Vec<u8>
 /// The newest commit on the market branch, so the index and its signature are
 /// read from the same commit and not from a stale CDN copy of the branch.
 /// None when the GitHub API cannot be used (offline, rate limited).
-async fn market_commit() -> Option<String> {
-    let response = client()
-        .ok()?
+async fn market_commit(client: &reqwest::Client) -> Option<String> {
+    let response = client
         .get(format!("https://api.github.com/repos/{MARKET_REPO}/commits/{MARKET_BRANCH}"))
         .header("Accept", "application/vnd.github.sha")
         .send()
@@ -207,26 +208,50 @@ async fn market_commit() -> Option<String> {
     (sha.len() == 40 && sha.bytes().all(|byte| byte.is_ascii_hexdigit())).then_some(sha)
 }
 
-async fn download_text(url: &str) -> Result<String, String> {
-    let bytes = download(url, MAX_INDEX_BYTES as u64).await?;
-    String::from_utf8(bytes).map_err(|_| format!("{url} is not UTF-8."))
+/// Starts downloading one market file (up to the index size limit) on its own task.
+fn spawn_download(client: &reqwest::Client, url: String) -> tauri::async_runtime::JoinHandle<Result<Option<Vec<u8>>, String>> {
+    let client = client.clone();
+    tauri::async_runtime::spawn(async move { download_unless_missing(&client, &url, MAX_INDEX_BYTES as u64).await })
+}
+
+/// The text of a file from `spawn_download`, or None when it does not exist.
+async fn finish_download(
+    name: &str,
+    task: tauri::async_runtime::JoinHandle<Result<Option<Vec<u8>>, String>>,
+) -> Result<Option<String>, String> {
+    let bytes = task.await.map_err(|error| format!("Downloading {name} failed: {error}"))??;
+    bytes
+        .map(|bytes| String::from_utf8(bytes).map_err(|_| format!("{name} is not UTF-8.")))
+        .transpose()
 }
 
 /// Downloads the index and the revocation list with their signatures from the
 /// same commit, checks the signatures, then parses them. A market without
 /// revoked.json (older ones) has nothing revoked; one that has it must have it signed.
+/// The four files are fetched at once over one client: each GitHub request costs
+/// a TLS handshake, and one after another they made the market page slow.
 pub(super) async fn fetch_market() -> Result<MarketData, String> {
-    let reference = market_commit().await.unwrap_or_else(|| MARKET_BRANCH.to_string());
+    let client = client()?;
+    let reference = market_commit(&client).await.unwrap_or_else(|| MARKET_BRANCH.to_string());
     let base = format!("https://raw.githubusercontent.com/{MARKET_REPO}/{reference}/plugins");
-    let text = download_text(&format!("{base}/index.json")).await?;
-    let signature = download_text(&format!("{base}/index.json.sig")).await?;
+    let index = spawn_download(&client, format!("{base}/index.json"));
+    let index_signature = spawn_download(&client, format!("{base}/index.json.sig"));
+    let revoked = spawn_download(&client, format!("{base}/revoked.json"));
+    let revoked_signature = spawn_download(&client, format!("{base}/revoked.json.sig"));
+
+    let missing = |name: &str| format!("{base}/{name} answered 404 Not Found.");
+    let text = finish_download("index.json", index).await?.ok_or_else(|| missing("index.json"))?;
+    let signature = finish_download("index.json.sig", index_signature)
+        .await?
+        .ok_or_else(|| missing("index.json.sig"))?;
     verify_index(&text, &signature, TRUSTED_KEYS)?;
     let entries = parse_index(&text)?;
-    let revoked = match download_unless_missing(&format!("{base}/revoked.json"), MAX_INDEX_BYTES as u64).await? {
+    let revoked_text = finish_download("revoked.json", revoked).await?;
+    let revoked_signature = finish_download("revoked.json.sig", revoked_signature).await?;
+    let revoked = match revoked_text {
         None => Vec::new(),
-        Some(bytes) => {
-            let text = String::from_utf8(bytes).map_err(|_| "revoked.json is not UTF-8.".to_string())?;
-            let signature = download_text(&format!("{base}/revoked.json.sig")).await?;
+        Some(text) => {
+            let signature = revoked_signature.ok_or_else(|| missing("revoked.json.sig"))?;
             verify_file(&text, &signature, TRUSTED_KEYS, "revocation list")?;
             parse_revoked(&text)?
         }
@@ -236,7 +261,7 @@ pub(super) async fn fetch_market() -> Result<MarketData, String> {
 
 /// Downloads the package and checks its size and SHA-256 against the index.
 pub(super) async fn fetch_package(entry: &MarketEntry) -> Result<Vec<u8>, String> {
-    let bytes = download(&entry.download.url, entry.download.size).await?;
+    let bytes = download(&client()?, &entry.download.url, entry.download.size).await?;
     verify_package(&bytes, &entry.download)?;
     Ok(bytes)
 }
