@@ -76,6 +76,14 @@ test("market updates are offered only for newer versions", async () => {
   assert.equal(isNewerVersion("1.0", "1.0.0"), false);
   assert.equal(isNewerVersion("1.0.0-beta", "1.0.0"), false);
   assert.equal(isNewerVersion("0.9.0", "1.0.0"), false);
+  // Pre-releases, in the same order as compare_versions in manifest.rs.
+  assert.equal(isNewerVersion("1.0.0", "1.0.0-beta.2"), true, "a release updates its own beta");
+  assert.equal(isNewerVersion("1.0.0-beta.2", "1.0.0-beta.1"), true);
+  assert.equal(isNewerVersion("1.0.0-beta.10", "1.0.0-beta.2"), true);
+  assert.equal(isNewerVersion("1.0.0-beta", "1.0.0-alpha"), true);
+  assert.equal(isNewerVersion("1.0.0-beta.1", "1.0.0-beta"), true);
+  assert.equal(isNewerVersion("1.0.0-beta", "1.0.0-1"), true);
+  assert.equal(isNewerVersion("1.0.0+build.2", "1.0.0"), false);
 });
 
 test("the index says what each plugin needs installed", () => {
