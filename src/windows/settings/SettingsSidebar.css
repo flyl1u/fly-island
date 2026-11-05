@@ -21,17 +21,21 @@
   line-height: 1;
 }
 
+/* Sized so every page fits the 650px-tall window without scrolling; a shorter
+   window scrolls with the same thin bar as the page. */
 .settings-sidebar__list {
   display: grid;
   align-content: start;
-  gap: var(--space-xl);
+  gap: var(--space-md);
   min-height: 0;
   overflow-y: auto;
+  scrollbar-color: rgba(116, 214, 255, 0.38) transparent;
+  scrollbar-width: thin;
 }
 
 .settings-sidebar__group ul {
   display: grid;
-  gap: var(--space-xs);
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -49,13 +53,13 @@
 
 /* About stands alone at the end, set off by a rule instead of a label. */
 .settings-sidebar__group:last-child {
-  padding-top: var(--space-md);
+  padding-top: var(--space-sm);
   border-top: 1px solid var(--color-white-a08);
 }
 
 .settings-sidebar__item {
   width: 100%;
-  min-height: 34px;
+  min-height: 31px;
   display: flex;
   align-items: center;
   gap: var(--space-md);
