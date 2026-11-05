@@ -159,6 +159,32 @@ impl MailService {
         Ok(())
     }
 
+    /// False once the worker thread is gone for good, so commands cannot reach it.
+    pub(super) fn is_alive(&self) -> bool {
+        self.sender.send(Work::Wake).is_ok()
+    }
+
+    /// After the worker crashed: show the error and, when it restarts, sync again
+    /// after the usual back-off. A lock poisoned by the crash is cleared first.
+    pub(super) fn recover_after_crash(&self, restarting: bool) {
+        self.state.clear_poison();
+        self.idle_socket.clear_poison();
+        let Ok(mut state) = self.lock() else { return };
+        state.invalidate();
+        state.failures = state.failures.saturating_add(1);
+        state.snapshot.status = MailStatus::Error;
+        state.snapshot.error = Some(if restarting {
+            "邮箱后台连接意外中断，正在重新连接。".into()
+        } else {
+            "邮箱后台连接多次意外中断，已停止重试。请在设置里重新授权或暂停后再接收，也可以重启岛屿。".into()
+        });
+        state.next_check = (restarting && state.snapshot.enabled && state.snapshot.configured)
+            .then(|| Instant::now() + retry_delay(state.failures));
+        let snapshot = state.changed();
+        drop(state);
+        self.publish(snapshot, None);
+    }
+
     pub(super) fn lock(&self) -> Result<MutexGuard<'_, MailState>, String> {
         self.state.lock().map_err(|_| "邮箱状态不可用。".into())
     }
@@ -288,7 +314,14 @@ impl MailService {
     }
 }
 
-pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) {
+/// How a worker loop ended: told to stop, or unable to go on (see supervisor.rs).
+#[derive(Debug, PartialEq)]
+pub(super) enum WorkerExit {
+    Stopped,
+    Failed,
+}
+
+pub(super) fn worker(service: Arc<MailService>, receiver: &mpsc::Receiver<Work>) -> WorkerExit {
     let mut connection = SyncConnection::default();
     loop {
         let (wait, can_idle) = match service.lock() {
@@ -304,12 +337,12 @@ pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) 
                         && state.snapshot.status == MailStatus::Connected,
                 )
             }
-            Err(_) => return,
+            Err(_) => return WorkerExit::Failed,
         };
         let wake = if can_idle && connection.idle_supported && !wait.is_zero() {
             match (&mut connection.session, &connection.socket) {
                 (Some(session), Some(socket)) => {
-                    wait_for_mail(session, socket, &service.idle_socket, &receiver, wait)
+                    wait_for_mail(session, socket, &service.idle_socket, receiver, wait)
                 }
                 _ => MailWake::TimedOut,
             }
@@ -341,7 +374,7 @@ pub(super) fn worker(service: Arc<MailService>, receiver: mpsc::Receiver<Work>) 
                 let _ = reply.send(result);
             }
             MailWake::Work(Work::Wake) => {}
-            MailWake::Work(Work::Stop) | MailWake::Closed => return,
+            MailWake::Work(Work::Stop) | MailWake::Closed => return WorkerExit::Stopped,
             change => {
                 if let MailWake::Failed(error) = change {
                     if matches!(error, imap::Error::No(_) | imap::Error::Bad(_)) {

@@ -4,6 +4,8 @@ use super::content::{
 use super::client_id::send_client_id;
 use super::credentials::{imap_host, normalize_email, resolve_host};
 use super::service::{retry_delay, MailState, Work, PUSH_REFRESH_INTERVAL};
+use super::supervisor::RestartPolicy;
+use std::time::Instant;
 use super::session::{
     display_header, fetch_inbox, fetch_inbox_cached, interrupt_idle, login_failure, parse_header,
     wait_for_mail, BoundedStream, Cursor, Inbox, MailFailure, MailWake, FLAGS_QUERY, HEADER_QUERY,
@@ -773,4 +775,25 @@ fn incomplete_or_mismatched_mime_bodies_are_rejected() {
         let (mut session, _) = body_client(&structure, "HEADER", "1", mime, "hello");
         assert!(fetch_content(&mut session, "7:9").is_err());
     }
+}
+
+#[test]
+fn a_crashed_worker_restarts_until_it_crashes_too_often() {
+    let start = Instant::now();
+    let mut policy = RestartPolicy::default();
+    assert!(policy.allow_restart(start));
+    assert!(policy.allow_restart(start + Duration::from_secs(5)));
+    assert!(policy.allow_restart(start + Duration::from_secs(60)));
+    assert!(!policy.allow_restart(start + Duration::from_secs(120)));
+}
+
+#[test]
+fn crashes_long_ago_do_not_count_toward_the_limit() {
+    let start = Instant::now();
+    let mut policy = RestartPolicy::default();
+    for minute in [0, 1, 2] {
+        assert!(policy.allow_restart(start + Duration::from_secs(minute * 60)));
+    }
+    // Ten minutes after the first crash it has left the window.
+    assert!(policy.allow_restart(start + Duration::from_secs(10 * 60 + 1)));
 }

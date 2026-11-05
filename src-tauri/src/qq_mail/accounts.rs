@@ -12,7 +12,8 @@ use std::{
 };
 use tauri::AppHandle;
 
-use super::service::{worker, MailService, MailState, Work};
+use super::service::{MailService, MailState, Work};
+use super::supervisor::supervise;
 
 /// Each mailbox holds a thread and an IMAP connection, so the count stays small.
 pub(super) const MAX_ACCOUNTS: usize = 5;
@@ -49,8 +50,13 @@ pub(super) fn find(email: &str) -> Result<Arc<MailService>, String> {
 pub(super) fn find_or_start(email: &str, host: &str) -> Result<Arc<MailService>, String> {
     let mut services = services();
     if let Some(service) = services.get(email) {
-        service.set_host(host);
-        return Ok(service.clone());
+        // A worker that crashed too often has ended; connecting or switching
+        // the mailbox on again starts a fresh one in its place.
+        if service.is_alive() {
+            service.set_host(host);
+            return Ok(service.clone());
+        }
+        services.remove(email);
     }
     if services.len() >= MAX_ACCOUNTS {
         return Err(format!("最多同时连接 {MAX_ACCOUNTS} 个邮箱，请先断开一个。"));
@@ -70,10 +76,17 @@ pub(super) fn find_or_start(email: &str, host: &str) -> Result<Arc<MailService>,
     let worker_service = service.clone();
     thread::Builder::new()
         .name("qq-mail".into())
-        .spawn(move || worker(worker_service, receiver))
+        .spawn(move || supervise(worker_service, receiver, is_registered))
         .map_err(|_| "无法启动邮箱服务。".to_string())?;
     services.insert(email.to_string(), service.clone());
     Ok(service)
+}
+
+/// Whether this service is still the one the mailbox uses.
+fn is_registered(service: &Arc<MailService>) -> bool {
+    services()
+        .get(&service.email)
+        .is_some_and(|current| Arc::ptr_eq(current, service))
 }
 
 /// Forgets the mailbox and ends its worker thread.

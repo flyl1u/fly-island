@@ -9,6 +9,7 @@ mod credentials;
 mod plugin_view;
 mod service;
 mod session;
+mod supervisor;
 
 #[cfg(test)]
 mod tests;
@@ -203,6 +204,10 @@ pub async fn set_qq_mail_enabled(
 #[tauri::command]
 pub async fn refresh_qq_mail(email: String) -> Result<MailSnapshot, String> {
     let service = accounts::find(&normalize_email(&email)?)?;
+    if !service.is_alive() {
+        // Checked first: begin_sync would mark it syncing with no worker to finish.
+        return Err("邮箱后台连接已停止，请在设置里重新授权，或暂停后再接收。".into());
+    }
     let Some((generation, _)) = service.begin_sync() else {
         let snapshot = service.lock()?.snapshot.clone();
         return if snapshot.syncing {
