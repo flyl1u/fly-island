@@ -2,7 +2,7 @@ import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { getQQMailState, invokeQQMailCommand, listenQQMailChanged, type MailEvent, type MailSnapshot, type QQMailCommand } from "./api";
+import { getMailState, invokeMailCommand, listenMailChanged, type MailEvent, type MailSnapshot, type MailCommand } from "./api";
 import { loadMailAccounts, saveMailAccounts } from "./storage";
 import { orderMailboxes, rememberMailbox, totalUnread, upsertMailbox } from "./mailAccounts";
 
@@ -53,19 +53,19 @@ export function useMailAccounts({ restore, onSnapshot, onEvent }: {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     void (async () => {
-      unlisten = await listenQQMailChanged(({ payload }) => {
+      unlisten = await listenMailChanged(({ payload }) => {
         if (!cancelled && acceptSnapshot(payload.snapshot)) onEventRef.current?.(payload);
       });
       if (cancelled) { unlisten(); return; }
       const saved = loadMailAccounts();
-      const current = await getQQMailState();
+      const current = await getMailState();
       if (cancelled) return;
       for (const snapshot of orderMailboxes(current, saved)) acceptSnapshot(snapshot, false);
       if (!restore) return;
       for (const account of saved) {
         if (current.some((snapshot) => snapshot.email === account.email)) continue;
         try {
-          const restored = await invokeQQMailCommand("set_qq_mail_enabled", { email: account.email, enabled: account.enabled, host: account.host || null });
+          const restored = await invokeMailCommand("set_qq_mail_enabled", { email: account.email, enabled: account.enabled, host: account.host || null });
           if (cancelled) return;
           acceptSnapshot(restored);
         } catch (error) { if (!cancelled) setActionError(String(error)); }
@@ -76,13 +76,13 @@ export function useMailAccounts({ restore, onSnapshot, onEvent }: {
     return () => { cancelled = true; unlisten?.(); };
   }, [acceptSnapshot, restore]);
 
-  const run = useCallback(async (command: QQMailCommand, args: Record<string, unknown>) => {
+  const run = useCallback(async (command: MailCommand, args: Record<string, unknown>) => {
     if (!isTauri()) { setActionError(t.mail.desktopConnect); return false; }
     const id = ++actionIdRef.current;
     setBusy(true);
     setActionError(null);
     try {
-      const next = await invokeQQMailCommand(command, args);
+      const next = await invokeMailCommand(command, args);
       return id === actionIdRef.current && acceptSnapshot(next);
     } catch (error) {
       if (id === actionIdRef.current) setActionError(String(error));

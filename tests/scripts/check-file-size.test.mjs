@@ -25,7 +25,7 @@ test("limits follow the file type and exempt dictionaries and extracted Rust tes
   assert.equal(lineLimitFor("src/i18n/locales/en.ts"), null);
   assert.equal(lineLimitFor("src/i18n/types.ts"), null);
   assert.equal(lineLimitFor("src/i18n/sections/settings/plugins.ts"), null);
-  assert.equal(lineLimitFor("src-tauri/src/qq_mail/tests.rs"), null);
+  assert.equal(lineLimitFor("src-tauri/src/mail/tests.rs"), null);
   assert.equal(lineLimitFor("src/i18n/index.ts"), 400);
   assert.equal(lineLimitFor("docs/i18n.md"), null);
 });

@@ -41,7 +41,7 @@
 ## 验证
 
 ```powershell
-cargo test --manifest-path src-tauri/Cargo.toml --lib qq_mail::tests
+cargo test --manifest-path src-tauri/Cargo.toml --lib mail::tests
 node --test tests/unit/qq-notification-timing.test.mjs tests/unit/message-preview.test.mjs
 pnpm build
 pnpm tauri build --no-bundle

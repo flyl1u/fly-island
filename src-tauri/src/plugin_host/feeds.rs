@@ -10,7 +10,7 @@ use std::{
 };
 
 use super::events;
-use crate::{media_control, qq_mail, qq_notifications, wechat_reminders};
+use crate::{media_control, mail, qq_notifications, wechat_reminders};
 
 const MEDIA_POLL: Duration = Duration::from_secs(2);
 const MEDIA_EVENT: &str = "media.changed";
@@ -25,7 +25,7 @@ pub(super) fn sort_messages(items: &mut [Value]) {
 pub(super) fn messages_list() -> Result<Value, (u16, String)> {
     let mut items = qq_notifications::plugin_messages();
     items.extend(wechat_reminders::plugin_messages());
-    items.extend(qq_mail::plugin_messages());
+    items.extend(mail::plugin_messages());
     sort_messages(&mut items);
     Ok(json!({ "items": items }))
 }

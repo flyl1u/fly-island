@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   MAX_MAIL_ACCOUNTS, normalizeMailAccounts, orderMailboxes, rememberMailbox, totalUnread, upsertMailbox,
-} from "../../src/features/messages/qq-mail/mailAccounts.ts";
+} from "../../src/features/messages/mail/mailAccounts.ts";
 
 const box = (email, extra = {}) => ({
   revision: 1, email, configured: true, enabled: true, syncing: false, status: "connected",

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
-import { MailAccountList } from "../../features/messages/qq-mail/MailAccountList";
-import { MailConnectForm } from "../../features/messages/qq-mail/MailConnectForm";
-import { MAX_MAIL_ACCOUNTS } from "../../features/messages/qq-mail/mailAccounts";
-import { loadMailAccounts } from "../../features/messages/qq-mail/storage";
-import { useMailAccounts } from "../../features/messages/qq-mail/useMailAccounts";
+import { MailAccountList } from "../../features/messages/mail/MailAccountList";
+import { MailConnectForm } from "../../features/messages/mail/MailConnectForm";
+import { MAX_MAIL_ACCOUNTS } from "../../features/messages/mail/mailAccounts";
+import { loadMailAccounts } from "../../features/messages/mail/storage";
+import { useMailAccounts } from "../../features/messages/mail/useMailAccounts";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 

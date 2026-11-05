@@ -9,7 +9,7 @@ import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 // After CollapsedMessageContent, matching the original stylesheet order.
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
-import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
+import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { PluginNotificationActions } from "../../features/plugins/PluginNotificationActions";
@@ -20,7 +20,7 @@ import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
 
 type IslandCollapsedBarProps = {
-  qqMail: QQMailController;
+  qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   pluginNotifications: PluginNotificationsController;

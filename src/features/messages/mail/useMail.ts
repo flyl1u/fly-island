@@ -15,7 +15,7 @@ const EMPTY_SNAPSHOT: MailSnapshot = {
 type PreviewWindow = { email: string; id: string; receivedAt: number; expiresAt: number };
 
 /** The island's mail: which mailbox tab is shown, new-mail previews and the reader. */
-export function useQQMail(canPreview: boolean) {
+export function useMail(canPreview: boolean) {
   const t = useTranslation();
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [previewWindow, setPreviewWindow] = useState<PreviewWindow | null>(null);
@@ -104,4 +104,4 @@ export function useQQMail(canPreview: boolean) {
   };
 }
 
-export type QQMailController = ReturnType<typeof useQQMail>;
+export type MailController = ReturnType<typeof useMail>;

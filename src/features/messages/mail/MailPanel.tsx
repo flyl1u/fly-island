@@ -6,8 +6,8 @@ import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
 import { MailAccountTabs } from "./MailAccountTabs";
-import "./QQMail.css";
-import type { QQMailController } from "./useQQMail";
+import "./MailPanel.css";
+import type { MailController } from "./useMail";
 
 // 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；
 // 统一关闭 referrer 并延迟加载，避免把当前页地址带给发件人。
@@ -60,15 +60,15 @@ export function countRemoteImages(content: string) {
     .filter((image) => /^https?:/i.test(image.getAttribute("src") ?? "")).length;
 }
 
-export { useQQMail } from "./useQQMail";
-export type { QQMailController };
+export { useMail } from "./useMail";
+export type { MailController };
 
 function formatMailTime(time: number, locale: string) {
   return new Date(time).toLocaleString(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export function QQMailPanel({ controller, navigation, onRead, onBack, onOpenSettings }: {
-  controller: QQMailController;
+export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettings }: {
+  controller: MailController;
   navigation: ReactNode;
   /** Opens the mail settings page, where mailboxes are added and re-authorized. */
   onOpenSettings?: () => void;

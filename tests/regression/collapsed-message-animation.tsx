@@ -10,8 +10,8 @@ import { IslandShell } from "../../src/windows/island/IslandShell";
 import type { IslandMode } from "../../src/windows/island/types";
 import { useQQNotifications } from "../../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatReminders";
-import { useQQMail } from "../../src/features/messages/qq-mail/QQMail";
-import type { MailSnapshot } from "../../src/features/messages/qq-mail/api";
+import { useMail } from "../../src/features/messages/mail/MailPanel";
+import type { MailSnapshot } from "../../src/features/messages/mail/api";
 import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
@@ -85,7 +85,7 @@ function Fixture() {
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
-  const qqMail = useQQMail(canPreview);
+  const qqMail = useMail(canPreview);
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>

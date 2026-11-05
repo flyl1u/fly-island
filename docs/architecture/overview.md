@@ -15,7 +15,7 @@
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
 │           local_api（127.0.0.1 HTTP，内置插件 focusd.local-api，请求经事件转给 main 窗口） │
 │           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
-│           qq_mail · qq_notifications · wechat_reminders · translation · settings_window │
+│           mail · qq_notifications · wechat_reminders · translation · settings_window │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信窗口闪烁检测、鼠标穿透循环        │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼
@@ -73,7 +73,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `App.tsx`：`clamp`、颜色校验（`HEX_COLOR_PATTERN`、`getColorSetting`）、日期格式化（`getLocalDateString`、`getDisplayDateParts`）、`getErrorMessage` | `utils/number.ts`、`color.ts`、`date.ts`、`error.ts` |
 | `App.css` | 拆分到各组件的同名 `.css`（已删除）：岛屿外壳、折叠条、页头 → `windows/island/IslandShell.css`、`IslandCollapsedBar.css`、`IslandHeader.css`；品牌图标 → `features/messages/MessageSourceIcon.css`；跨领域规则（`.stage`、`.icon-button`、面板玻璃背景、保存勾选动画、减少动效列表）→ `windows/island/IslandApp.css`；全局部分放到 `styles/tokens.css`（4.2 新增，颜色 / 圆角 / 间距变量）、`base.css`、`fonts.css` |
 | `Messages.tsx/.css`、`MessageSourceIcon.tsx`、`CollapsedMessageContent.tsx/.css`、`messagePreview.ts`、`qqNotificationTiming.ts` | `features/messages/` |
-| `QQMail.tsx/.css` | `features/messages/qq-mail/` |
+| `QQMail.tsx/.css` | `features/messages/mail/` |
 | `QQNotifications.tsx/.css` | `features/messages/qq-notifications/` |
 | `WeChatReminders.tsx/.css` | `features/messages/wechat/` |
 | `UpdatePanel.tsx/.css`、`updaterController.ts` | `features/updater/` |
@@ -95,7 +95,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `lib.rs`：`save_todo_markdown`、默认保存目录 | `system/todo_export.rs` |
 | （新增）游戏模式的全屏程序检测 | `system/fullscreen.rs`（每 800ms 轮询，底层调用在 `win32/notification_state.rs`） |
 | `lib.rs`：`tests` 模块（窗口几何、更新配置等） | 窗口几何测试 → `island/tests.rs`（5.1），更新配置测试 → `system/updater.rs` 内联测试（5.3） |
-| `qq_mail.rs` | `qq_mail/{mod, service, session, content, credentials, tests}.rs`（5.4 已完成） |
+| `qq_mail.rs` | `mail/{mod, accounts, supervisor, service, session, client_id, content, credentials, plugin_view, tests}.rs`（5.4 已完成；目录由 qq_mail/ 改名为 mail/） |
 | `qq_notifications.rs` | `qq_notifications/{mod, listener, history, launcher, tests}.rs`（5.5 已完成；`launcher.rs` 负责查找并激活 QQ 窗口） |
 | `clipboard_history.rs` | `clipboard_history/{mod, service, store, hotkey}.rs`（5.6 已完成） |
 | `media_control.rs`、`lib.rs` 中的媒体命令 | `media_control/{mod, service, session, audio}.rs`（5.7 已完成：命令在 `mod.rs`，内部入口与状态类型在 `service.rs`） |
@@ -127,8 +127,8 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
 | `focusd-island-position-reset`（设置窗口 → 主窗口：让岛回到主屏顶部居中，`{ requestedAt }`，超过 5 秒的请求忽略） | `windows/settings/storage.ts` |
 | `focusd-island-panel-preview`（设置窗口 → 主窗口：拖动尺寸滑块时让岛展开或收起预览，`{ mode, requestedAt }`，超过 2 秒的请求忽略） | `windows/settings/storage.ts` |
-| `focusd-island-qq-mail-settings` | `features/messages/qq-mail/storage.ts`（`{ accounts: [{ email, host, enabled }] }`，兼容读取旧的单账户 `{ email, enabled }`，解析在 `mailAccounts.ts`） |
-| `focusd-island-qq-mail-remote-images` | `features/messages/qq-mail/storage.ts` |
+| `focusd-island-qq-mail-settings` | `features/messages/mail/storage.ts`（`{ accounts: [{ email, host, enabled }] }`，兼容读取旧的单账户 `{ email, enabled }`，解析在 `mailAccounts.ts`） |
+| `focusd-island-qq-mail-remote-images` | `features/messages/mail/storage.ts` |
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
@@ -150,7 +150,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `clipboard-history-shortcut-status`（载荷为字符串或 `null`：剪贴板快捷键注册失败的原因，成功或关闭时为 `null`；最近一次结果也可用 `get_clipboard_shortcut_error` 读取） | `clipboard_history/hotkey.rs` | 广播 |
-| `qq-mail-changed` | `qq_mail/service.rs`（常量在 `mod.rs`） | 广播 |
+| `qq-mail-changed` | `mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |

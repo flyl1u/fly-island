@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { MessageView } from "../../features/messages/Messages";
-import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
+import type { MailController } from "../../features/messages/mail/MailPanel";
 import { resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage, PluginPageId } from "./types";
 
@@ -10,7 +10,7 @@ type IslandFeatureOptions = {
   clipboardEnabled: boolean;
   qqEnabled: boolean;
   wechatEnabled: boolean;
-  qqMail: QQMailController;
+  qqMail: MailController;
   page: IslandPage;
   messageSource: MessageView;
   setPage: (page: IslandPage) => void;

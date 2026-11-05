@@ -7,7 +7,7 @@ mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
 mod plugin_host;
-mod qq_mail;
+mod mail;
 mod qq_notifications;
 mod settings_window;
 mod system;
@@ -78,7 +78,7 @@ pub fn run() {
             if let Err(error) = plugin_host::init(app.handle()) {
                 eprintln!("failed to initialize plugins: {error}");
             }
-            if let Err(error) = qq_mail::init(app.handle()) {
+            if let Err(error) = mail::init(app.handle()) {
                 eprintln!("failed to initialize QQ mail: {error}");
             }
             if let Err(error) = qq_notifications::init(app.handle()) {
@@ -107,7 +107,7 @@ pub fn run() {
             file_shelf;
             local_api;
             plugin_host;
-            qq_mail;
+            mail;
             wechat_reminders;
             qq_notifications;
             island;

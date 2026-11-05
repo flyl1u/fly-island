@@ -3,7 +3,7 @@ import type { MailSnapshot } from "./api";
 /** One saved mailbox. `host` is the IMAP server the user typed; empty means imap.<domain>. */
 export type MailAccountSettings = { email: string; host: string; enabled: boolean };
 
-/** Up to this many accounts are kept, matching MAX_ACCOUNTS in qq_mail/accounts.rs. */
+/** Up to this many accounts are kept, matching MAX_ACCOUNTS in mail/accounts.rs. */
 export const MAX_MAIL_ACCOUNTS = 5;
 
 function account(value: unknown): MailAccountSettings | null {

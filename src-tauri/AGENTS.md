@@ -17,7 +17,7 @@ src-tauri/src/
 ├── local_api/               # 本地接口：127.0.0.1 HTTP（tiny_http）、鉴权与路由、转给 main 窗口的桥、local-api.json；由内置插件开关
 ├── plugin_host/             # 插件：清单校验、plugins.json、子进程监督与 stdio JSON-RPC、权限表、设置页、市场与签名、撤销名单（revocations.rs）、后台检查与自动更新（updates.rs）、自定义界面页面（webviews.rs）、内置插件（builtin.rs）、按需启动与资源（activation.rs、lifecycle.rs）、开发模式（dev.rs）
 ├── media_control/
-├── qq_mail/                 # 命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
+├── mail/                    # 邮箱（命令名仍为 *_qq_mail）： 命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
 ├── wechat_reminders/        # 提醒服务与命令；source.rs 为托盘闪烁监听（examples 通过 #[path] 复用）
 ├── translation/             # 快捷翻译：窗口、全局快捷键、凭据与翻译请求（mod.rs）
@@ -33,7 +33,7 @@ src-tauri/src/
 ## lib.rs 与模块组织
 
 - `lib.rs` 只做组装：`mod` 声明、插件注册、`setup`、托盘创建、命令注册。不写业务逻辑、不定义命令。
-- 命令清单不写在 `lib.rs`：每个有命令的模块在自己的 `mod.rs` 里用 `tauri_commands!` 宏列出命令（写 `crate::` 开头的完整路径，例如 `crate::qq_mail::refresh_qq_mail`，子模块的命令也列在顶层模块里），`lib.rs` 的 `collect_commands!` 把各模块的清单串成一个 `generate_handler!`。新增命令只改所在模块的 `tauri_commands!`；新增一个有命令的模块时，才在 `collect_commands!([] ...)` 里加上模块名。`tauri_commands!` 要放在内联测试模块之前（clippy `items_after_test_module`）。
+- 命令清单不写在 `lib.rs`：每个有命令的模块在自己的 `mod.rs` 里用 `tauri_commands!` 宏列出命令（写 `crate::` 开头的完整路径，例如 `crate::mail::refresh_qq_mail`，子模块的命令也列在顶层模块里），`lib.rs` 的 `collect_commands!` 把各模块的清单串成一个 `generate_handler!`。新增命令只改所在模块的 `tauri_commands!`；新增一个有命令的模块时，才在 `collect_commands!([] ...)` 里加上模块名。`tauri_commands!` 要放在内联测试模块之前（clippy `items_after_test_module`）。
 - 文件超过 800 行或承担多个职责时，改成目录模块 `foo/mod.rs` 加子文件。常见的拆法：
 
   | 文件 | 内容 |

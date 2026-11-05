@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { Translations } from "../../../i18n";
-import { readQQMail, type MailContent, type MailMessage } from "./api";
+import { readMailContent, type MailContent, type MailMessage } from "./api";
 
 /** The in-island reader: which mail of which mailbox is open, its body, and loading state. */
 export function useMailReader(t: Translations, onOpen: () => void, onError: (message: string) => void) {
@@ -38,7 +38,7 @@ export function useMailReader(t: Translations, onOpen: () => void, onError: (mes
     if (!isTauri()) { setReadError(t.mail.desktopRead); setReading(false); return false; }
     setReading(true);
     try {
-      const next = await readQQMail(account, message.id);
+      const next = await readMailContent(account, message.id);
       if (requestId !== requestRef.current) return false;
       if (next.id !== message.id) throw new Error(t.mail.changed);
       setContent(next);

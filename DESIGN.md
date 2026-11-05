@@ -14,7 +14,7 @@
 ## 品牌与组件
 
 - 复用已有品牌图标、系统字体、深色表面、lucide 动作图标、圆角及浅绿提醒色，不另建视觉主题。（用户确认）
-- 主要样板为 `src/Messages.tsx`、`src/WeChatReminders.tsx` 和 `src/QQMail.tsx`；样式复用 `src/QQNotifications.css`，新增语义样式放在对应模块。（Agent 推断）
+- 主要样板为 `src/features/messages/Messages.tsx`、`wechat/WeChatReminders.tsx` 和 `mail/MailPanel.tsx`；样式复用 `qq-notifications/QQNotifications.css`，新增语义样式放在对应模块。（Agent 推断）
 - 长主题和发件人不能挤压时间；列表文本截断，阅读页完整换行。（Agent 推断）
 - 处理过程中保留返回动作，失败时原地给出重试入口。（Agent 推断）
 

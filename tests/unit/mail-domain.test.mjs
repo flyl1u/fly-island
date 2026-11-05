@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hasQQMailHelp, mailWebUrl } from "../../src/features/messages/qq-mail/mailDomain.ts";
+import { hasQQMailHelp, mailWebUrl } from "../../src/features/messages/mail/mailDomain.ts";
 
 test("the webmail link follows the mailbox domain and falls back to QQ Mail", () => {
   assert.equal(mailWebUrl("x@163.com"), "https://mail.163.com/");

@@ -4,7 +4,7 @@ import type { AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
-import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
+import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import type { PluginNotificationsController } from "../../features/plugins/usePluginNotifications";
@@ -19,7 +19,7 @@ import { usePageFadeIn } from "./usePageFadeIn";
 import "./IslandShell.css";
 
 type IslandShellProps = {
-  qqMail: QQMailController;
+  qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   pluginNotifications: PluginNotificationsController;

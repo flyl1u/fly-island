@@ -1,5 +1,5 @@
 //! Mail over IMAP (QQ Mail first, any `imap.<domain>` server): commands,
-//! snapshot types and the background service. The module keeps its qq_mail
+//! snapshot types and the background service. The module keeps its mail
 //! name because the command names are a contract with the frontend.
 
 mod accounts;
@@ -303,12 +303,12 @@ async fn await_reply<T: Send + 'static>(
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
-            crate::qq_mail::get_qq_mail_state,
-            crate::qq_mail::connect_qq_mail,
-            crate::qq_mail::set_qq_mail_enabled,
-            crate::qq_mail::refresh_qq_mail,
-            crate::qq_mail::read_qq_mail,
-            crate::qq_mail::disconnect_qq_mail,
+            crate::mail::get_qq_mail_state,
+            crate::mail::connect_qq_mail,
+            crate::mail::set_qq_mail_enabled,
+            crate::mail::refresh_qq_mail,
+            crate::mail::read_qq_mail,
+            crate::mail::disconnect_qq_mail,
         ] $($rest)*)
     };
 }

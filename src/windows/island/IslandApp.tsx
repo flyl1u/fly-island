@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
-import { useQQMail } from "../../features/messages/qq-mail/QQMail";
+import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
@@ -87,7 +87,7 @@ export function IslandApp() {
   const canPreviewMessages = !game.quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
   const qqNotifications = useQQNotifications(canPreviewMessages);
   const wechatReminders = useWeChatReminders(canPreviewMessages);
-  const qqMail = useQQMail(canPreviewMessages);
+  const qqMail = useMail(canPreviewMessages);
   const pluginNotifications = usePluginNotifications(canPreviewMessages);
   const permissionPrompts = usePluginPermissionPrompts();
   const hasMessagePreview = Boolean(

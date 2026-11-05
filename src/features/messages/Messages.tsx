@@ -1,5 +1,5 @@
 import { useTranslation } from "../../i18n";
-import { QQMailPanel, type QQMailController } from "./qq-mail/QQMail";
+import { MailPanel, type MailController } from "./mail/MailPanel";
 import { QQNotificationPanel, type QQNotificationsController } from "./qq-notifications/QQNotifications";
 import { WeChatReminderPanel, type WeChatRemindersController } from "./wechat/WeChatReminders";
 import { MessageSourceIcon } from "./MessageSourceIcon";
@@ -8,7 +8,7 @@ import { mailBadgeCount, type MessageSource } from "./messagePreview";
 export type MessageView = MessageSource;
 
 type MessagesProps = {
-  qqMail: QQMailController;
+  qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   source: MessageView;
@@ -35,7 +35,7 @@ export function MessagesPanel({ qqMail, qqNotifications, wechatReminders, source
     </div>
   );
 
-  if (source === "qqMail") return <QQMailPanel controller={qqMail} navigation={navigation} onOpenSettings={onOpenMailSettings} />;
+  if (source === "qqMail") return <MailPanel controller={qqMail} navigation={navigation} onOpenSettings={onOpenMailSettings} />;
   if (source === "wechat") return <WeChatReminderPanel controller={wechatReminders} navigation={navigation} />;
   return <QQNotificationPanel controller={qqNotifications} navigation={navigation} />;
 }

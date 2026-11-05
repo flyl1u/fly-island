@@ -20,7 +20,7 @@ src/
 │   ├── plugins/             # 设置 → 插件扩展页与插件市场页：已安装插件、启用与授权、从市场安装
 │   ├── plugin-dev/          # 设置 → 插件扩展 → 开发者：开发模式开关、从文件夹加载插件、JSON-RPC 收发记录、手动发送事件
 │   ├── plugin-views/        # 插件在岛上的页面与折叠条状态：模板（list / detail / form / status）、插件数据的规范化、页面顺序与隐藏
-│   ├── messages/            # 消息导航与预览；qq-mail/、qq-notifications/、wechat/ 子目录
+│   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/ 子目录
 │   ├── agent-status/        # AI 代理状态
 │   ├── appearance/          # 外观设置、布局编辑器、预设
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
@@ -46,7 +46,7 @@ features/<领域>/
 └── <Name>.css                     # 与组件同名的样式文件
 ```
 
-`features/messages/` 下的 `qq-mail/QQMail.tsx`、`qq-notifications/QQNotifications.tsx`、`wechat/WeChatReminders.tsx`采用的就是"领域 hook + 面板 + 控件"的组织方式，可作为样板。迁移时再把其中的 invoke 调用和存储 key 拆到 `api.ts` 与 `storage.ts`。
+`features/messages/` 下的 `mail/MailPanel.tsx`、`qq-notifications/QQNotifications.tsx`、`wechat/WeChatReminders.tsx`采用的就是"领域 hook + 面板 + 控件"的组织方式，可作为样板。迁移时再把其中的 invoke 调用和存储 key 拆到 `api.ts` 与 `storage.ts`。
 
 ## 分层与依赖方向
 

@@ -4,8 +4,8 @@ import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import { emit } from "@tauri-apps/api/event";
-import { useQQMail, type QQMailController, sanitizeMailHtml } from "../../src/features/messages/qq-mail/QQMail";
-import type { MailContent, MailSnapshot } from "../../src/features/messages/qq-mail/api";
+import { useMail, type MailController, sanitizeMailHtml } from "../../src/features/messages/mail/MailPanel";
+import type { MailContent, MailSnapshot } from "../../src/features/messages/mail/api";
 import { useQQNotifications } from "../../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatReminders";
 import { MessagesPanel, messagePanelHeight, type MessageView } from "../../src/features/messages/Messages";
@@ -20,7 +20,7 @@ const original = keys.map(key => localStorage.getItem(key));
 keys.forEach(key => localStorage.removeItem(key));
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let revision = 0;
-let mail: QQMailController;
+let mail: MailController;
 let view: MessageView;
 let setView: (source: MessageView) => void;
 let readBehavior = async (id: string): Promise<MailContent> => ({ id, contentType: "text/plain", content: "你好，\n\n本周的开发工作已完成，请查看下面的安排：\n\n1. 周二完成消息界面验收。\n2. 周四讨论下个版本。\n3. 周五汇总反馈。\n\n谢谢。\n产品团队" });
@@ -49,7 +49,7 @@ mockIPC((command, payload) => {
 }, { shouldMockEvents: true });
 
 function Fixture() {
-  mail = useQQMail(false);
+  mail = useMail(false);
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false);
   [view, setView] = useState<MessageView>(["reader", "html", "loading", "error", "auth", "mail", "disconnected"].includes(state) ? "qqMail" : ["wechat", "wechatError"].includes(state) ? "wechat" : "qq");
