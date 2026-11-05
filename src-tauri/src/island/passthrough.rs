@@ -56,7 +56,7 @@ pub(super) fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
     let island_height = base_height * state.active_scale() * physical_scale;
     let island_left = (window_width - island_width) / 2.0;
     let island_top = 0.0;
-    let radius = state.mode.corner_radius() * state.active_scale() * physical_scale;
+    let radius = state.bottom_corner_radius() * state.active_scale() * physical_scale;
     let top_radius = state.top_corner_radius() * state.active_scale() * physical_scale;
 
     point_in_notch(

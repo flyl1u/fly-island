@@ -64,8 +64,16 @@ impl IslandWindowState {
             return 0.0;
         }
         match self.mode {
-            IslandMode::Collapsed => 14.0,
+            IslandMode::Collapsed => COLLAPSED_ISLAND_HEIGHT / 2.0,
             IslandMode::Expanded => 22.0,
+        }
+    }
+
+    pub(super) fn bottom_corner_radius(self) -> f64 {
+        if matches!(self.mode, IslandMode::Collapsed) && self.top_corner_radius() > 0.0 {
+            COLLAPSED_ISLAND_HEIGHT / 2.0
+        } else {
+            self.mode.corner_radius()
         }
     }
 
