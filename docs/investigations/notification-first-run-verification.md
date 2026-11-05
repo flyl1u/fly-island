@@ -71,7 +71,7 @@ powershell -NoProfile -File scripts/verify-first-run-notifications.ps1 -Observat
 
 脚本开启的诊断模式仅用于验收，不增加正式功能的授权。临时应用标识必须带有效的独立运行标识，诊断才会记录；单轮最长五分钟。
 
-相关机制和既有验证见 [QQ 接入与修复](qq-notification-compatibility.md)、[微信提醒](wechat-reminder-compatibility.md)。
+相关机制和既有验证见 [QQ 接入与修复](../qq-notification-compatibility.md)、[微信提醒](../wechat-reminder-compatibility.md)。
 
 ## 本次检查
 

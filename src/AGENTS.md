@@ -83,7 +83,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - 一个 `useEffect` 只做一件事。订阅、定时器、监听器必须返回清理函数。
 - 能由现有状态计算出来的值，直接计算或用 `useMemo`，不要用 effect 把一个 state 同步到另一个 state。
 - 状态共享按以下顺序选择：props 下传 → 提升到共同父级的 hook → React Context。Context 只用于语言、主题这类全局低频数据。不引入第三方状态管理库。
-- 主窗口在展开时有性能约束（见 `docs/expansion-performance-investigation.md`）。高频更新的状态（音频电平、计时器等）应放在叶子组件或独立 hook 中，避免带动整个窗口重渲染。
+- 主窗口在展开时有性能约束（见 `docs/investigations/expansion-performance-investigation.md`）。高频更新的状态（音频电平、计时器等）应放在叶子组件或独立 hook 中，避免带动整个窗口重渲染。
 - 类型禁止使用 `any`；外部数据先当作 `unknown`，经过校验或 normalize 后再使用。
 
 ## 样式

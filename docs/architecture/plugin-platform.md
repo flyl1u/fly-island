@@ -296,7 +296,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
    - 插件调用 `view.update { viewId, model }` 替换整个模型，或 `view.patch { viewId, items }` 只更新条目。模型序列化后不超过 256 KB，每个视图每秒最多 10 次更新，超过就合并。
    - 用户操作以通知发回：`view.action { viewId, itemId?, actionId }`、`view.submit { viewId, values }`、`view.search { viewId, query }`、`view.visible { viewId, visible }`。
    - 折叠条：`status.update { itemId, text, tooltip?, tone? }`，文字最多 24 个字符；折叠条只显示优先级最高的一个，与现有的待办摘要、消息预览、Agent 标题按现有规则排队，不挤掉它们。
-4. **性能**：插件页面只在可见时订阅更新（宿主收到 `view.visible false` 后暂停转发）；模板组件放在叶子组件中，避免带动整个岛重渲染（见 `docs/expansion-performance-investigation.md`）；展开高度由 `expandedHeight.ts` 按模板计算行数，滚动规则沿用剪贴板页。
+4. **性能**：插件页面只在可见时订阅更新（宿主收到 `view.visible false` 后暂停转发）；模板组件放在叶子组件中，避免带动整个岛重渲染（见 `docs/investigations/expansion-performance-investigation.md`）；展开高度由 `expandedHeight.ts` 按模板计算行数，滚动规则沿用剪贴板页。
 
 **改动位置**
 

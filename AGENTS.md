@@ -44,7 +44,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），schema/ 协议描述，sdk/ 单文件 SDK（pnpm sdk:build 从 packages/ 生成），packages/ 打包好的 zip，index.json 市场索引与 index.json.sig 签名（pnpm plugins:index 生成），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；plugins/ 插件索引、签名与 SDK 生成；根目录放开发流程脚本：合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）、行数检查、dev 前停止运行中的岛屿
 ├── .githooks/           # pre-push：合并队列的推送保护与检查（core.hooksPath 指向这里）
-├── docs/                # 专题文档；architecture/ 架构，releases/ 发布说明，reviews/ 评审记录
+├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，plugins/ 插件开发，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
 ├── DESIGN.md            # 已确认的界面设计约定
 └── README*.md           # 中英文项目说明
 ```

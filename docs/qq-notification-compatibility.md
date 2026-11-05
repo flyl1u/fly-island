@@ -46,7 +46,7 @@ powershell -NoProfile -File src-tauri/src/qq_notifications/repair-qq-notificatio
 
 ## 运行诊断
 
-全新应用数据和安装包内程序的真实消息验收，见 [首次使用消息接收验收](notification-first-run-verification.md)。其中区分了本机已通过的项目、公开安装包状态和仍需全新 Windows 账户验证的条件。
+全新应用数据和安装包内程序的真实消息验收，见 [首次使用消息接收验收](investigations/notification-first-run-verification.md)。其中区分了本机已通过的项目、公开安装包状态和仍需全新 Windows 账户验证的条件。
 
 ### 默认开启与首次授权回归检查
 
