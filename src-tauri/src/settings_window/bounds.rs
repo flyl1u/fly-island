@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fs;
-use tauri::{AppHandle, Manager, PhysicalPosition, WebviewWindow};
+use tauri::{AppHandle, Manager, Monitor, WebviewWindow};
 
 const BOUNDS_FILE_NAME: &str = "settings-window.json";
 
@@ -62,26 +62,19 @@ pub(super) fn save(window: &WebviewWindow) {
     }
 }
 
-/// Puts a new window back where it was, unless that place is off every screen now
-/// (a monitor was unplugged or rearranged); then it stays centered.
-pub(super) fn restore_position(app: &AppHandle, window: &WebviewWindow, bounds: SavedBounds) {
-    let areas: Vec<WorkArea> = app
-        .available_monitors()
-        .unwrap_or_default()
-        .iter()
-        .map(|monitor| {
-            let area = monitor.work_area();
-            (
-                area.position.x,
-                area.position.y,
-                area.size.width,
-                area.size.height,
-            )
-        })
-        .collect();
-    if title_bar_on_screen(bounds.x, bounds.y, &areas) {
-        let _ = window.set_position(PhysicalPosition::new(bounds.x, bounds.y));
-    }
+/// The screen a saved window goes back to: the one its title bar is on. None when
+/// that place is off every screen now (a monitor was unplugged or rearranged).
+pub(super) fn screen_of(bounds: SavedBounds, monitors: &[Monitor]) -> Option<&Monitor> {
+    monitors.iter().find(|monitor| {
+        let area = monitor.work_area();
+        let area = (
+            area.position.x,
+            area.position.y,
+            area.size.width,
+            area.size.height,
+        );
+        title_bar_on_screen(bounds.x, bounds.y, &[area])
+    })
 }
 
 pub(super) fn title_bar_on_screen(x: i32, y: i32, areas: &[WorkArea]) -> bool {
