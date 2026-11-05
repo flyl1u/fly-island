@@ -22,6 +22,8 @@ export function createPlugin(options = {}) {
   /** The initialize params, once they arrived. */
   let context = null;
   const shutdownHandlers = [];
+  /** Settles when the shutdown handlers are done (set on `shutdown`). */
+  let shuttingDown = null;
 
   const send = (message) => output.write(`${JSON.stringify({ jsonrpc: "2.0", ...message })}\n`);
   const log = (message) => send({ method: "log", params: { message: String(message) } });
@@ -81,12 +83,14 @@ export function createPlugin(options = {}) {
       void subscribe([...wantedEvents]);
     }
     if (message.method === "shutdown") {
-      Promise.allSettled(shutdownHandlers.map((handler) => Promise.resolve().then(handler))).then(() => exit(0));
+      shuttingDown ??= Promise.allSettled(shutdownHandlers.map((handler) => Promise.resolve().then(handler)));
+      void shuttingDown.then(() => exit(0));
       return;
     }
     dispatch(message.method, message.params);
   });
-  lines.on("close", () => exit(0));
+  // The island closes stdin right after `shutdown`: let the shutdown handlers finish first.
+  lines.on("close", () => void (shuttingDown ?? Promise.resolve()).then(() => exit(0)));
 
   const forView = (method, viewId, handler) => on(method, (params) => (params?.viewId === viewId ? handler(params) : undefined));
 

@@ -8,10 +8,10 @@ use serde_json::{json, Map, Value};
 use std::{
     collections::{BTreeSet, HashMap, VecDeque},
     ffi::OsString,
-    io::{BufRead, BufReader, ErrorKind, Read, Write},
+    io::{BufRead, BufReader, ErrorKind, Read},
     os::windows::process::CommandExt,
     path::PathBuf,
-    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    process::{Child, ChildStderr, ChildStdout, Command, Stdio},
     sync::{
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex, PoisonError,
@@ -22,6 +22,7 @@ use std::{
 use tauri::AppHandle;
 
 mod dispatch;
+mod outbox;
 mod trace;
 
 pub use trace::TraceEntry;
@@ -29,12 +30,15 @@ pub use trace::TraceEntry;
 use super::{rpc, settings::InfoItem};
 use crate::{agent_status, system::CREATE_NO_WINDOW, win32::job::{Job, JobUsage}};
 use dispatch::{answer_request, initialize_params};
+use outbox::{Outbox, SendError};
 
 const LOG_LINES: usize = 200;
 const RESTART_DELAYS: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(5), Duration::from_secs(30)];
 /// Running this long resets the failure count.
 const HEALTHY_UPTIME: Duration = Duration::from_secs(60);
 const STOP_GRACE: Duration = Duration::from_secs(2);
+/// After `kill`, how long `stop` waits for the process to be gone.
+const KILL_WAIT: Duration = Duration::from_secs(2);
 const MAX_LINE_BYTES: u64 = 1024 * 1024;
 const MAX_IN_FLIGHT: usize = 16;
 const POLL: Duration = Duration::from_millis(50);
@@ -134,7 +138,8 @@ struct Context {
     settings: Mutex<Map<String, Value>>,
     table: RuntimeTable,
     stop: AtomicBool,
-    stdin: Mutex<Option<ChildStdin>>,
+    /// Messages to the process (outbox.rs); dropping it closes stdin.
+    stdin: Mutex<Option<Outbox>>,
     child: Mutex<Option<Child>>,
     in_flight: AtomicUsize,
     /// Events the running process asked for; emptied when it (re)starts.
@@ -226,11 +231,7 @@ impl Supervisor {
 
     /// Ends the process for good (until restarted by the user) with `reason` as its error.
     pub fn fail(&self, reason: String) {
-        *lock(&self.context.failed) = Some(reason);
-        self.context.stop.store(true, Ordering::SeqCst);
-        if let Some(process) = lock(&self.context.child).as_mut() {
-            let _ = process.kill();
-        }
+        fail(&self.context, reason);
     }
 
     /// Stops an on-demand plugin that has nothing to do; it starts again when needed.
@@ -257,30 +258,47 @@ impl Supervisor {
         }
     }
 
-    /// Asks the plugin to exit (a `shutdown` notification, then stdin closes)
-    /// and kills it after a short grace period. Does not wait for the
-    /// supervising thread, which ends by itself.
+    /// Asks the plugin to exit (a `shutdown` notification, then stdin closes),
+    /// kills it after a short grace period and returns once the process and
+    /// everything it started are gone, so its folder can be removed or replaced.
+    /// Does not wait for the supervising thread, which ends by itself.
     pub fn stop(self) {
         let context = self.context;
         context.stop.store(true, Ordering::SeqCst);
         let _ = write_line(&context, &rpc::notification_line("shutdown", json!({})));
+        // The writer thread sends what is queued, then closes stdin; this thread never waits on the pipe.
         lock(&context.stdin).take();
-        let deadline = Instant::now() + STOP_GRACE;
+        let grace = Instant::now() + STOP_GRACE;
+        let mut killed_at: Option<Instant> = None;
         loop {
             {
                 let mut child = lock(&context.child);
                 let Some(process) = child.as_mut() else { break };
                 match process.try_wait() {
-                    Ok(Some(_)) => break,
-                    _ if Instant::now() >= deadline => {
-                        let _ = process.kill();
-                        break;
-                    }
-                    _ => {}
+                    Ok(Some(_)) | Err(_) => break,
+                    Ok(None) => match killed_at {
+                        None if Instant::now() >= grace => {
+                            let _ = process.kill();
+                            killed_at = Some(Instant::now());
+                        }
+                        Some(at) if at.elapsed() >= KILL_WAIT => break,
+                        _ => {}
+                    },
                 }
             }
             thread::sleep(POLL);
         }
+        // Closing the job ends whatever the plugin started and left behind.
+        lock(&context.job).take();
+    }
+}
+
+/// Ends the process for good (until restarted by the user) with `reason` as its error.
+fn fail(context: &Context, reason: String) {
+    *lock(&context.failed) = Some(reason);
+    context.stop.store(true, Ordering::SeqCst);
+    if let Some(process) = lock(&context.child).as_mut() {
+        let _ = process.kill();
     }
 }
 
@@ -318,7 +336,10 @@ fn supervise(context: &Arc<Context>) {
         });
         let stdout = child.stdout.take();
         let stderr = child.stderr.take();
-        *lock(&context.stdin) = child.stdin.take();
+        *lock(&context.stdin) = child
+            .stdin
+            .take()
+            .and_then(|stdin| Outbox::new(stdin).map_err(|error| log_line(context, &error)).ok());
         *lock(&context.child) = Some(child);
         if context.stop.load(Ordering::SeqCst) {
             // `stop` ran while the process was starting and found no child to end.
@@ -336,14 +357,11 @@ fn supervise(context: &Arc<Context>) {
 
         if let Some(stderr) = stderr {
             let reader = Arc::clone(context);
-            let _ = thread::Builder::new().name("plugin-stderr".into()).spawn(move || {
-                for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-                    log_line(&reader, &line);
-                }
-            });
+            let _ = thread::Builder::new().name("plugin-stderr".into()).spawn(move || read_stderr(&reader, stderr));
         }
         if let Some(stdout) = stdout {
-            read_messages(context, stdout);
+            let refused = read_messages(context, stdout);
+            end_after_output(context, refused);
         }
         let exit = wait_for_exit(context);
         context.ready.store(false, Ordering::SeqCst);
@@ -422,22 +440,69 @@ fn spawn(spec: &LaunchSpec) -> Result<Child, String> {
         })
 }
 
-fn read_messages(context: &Arc<Context>, stdout: ChildStdout) {
+/// Reads the plugin's messages until stdout closes. True when the host gave up
+/// on the plugin (a message over 1 MB, or stdout could not be read).
+fn read_messages(context: &Arc<Context>, stdout: ChildStdout) -> bool {
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
     loop {
         line.clear();
         match reader.by_ref().take(MAX_LINE_BYTES).read_line(&mut line) {
-            Ok(0) => break,
+            Ok(0) => return false,
             Ok(_) if !line.ends_with('\n') && line.len() as u64 >= MAX_LINE_BYTES => {
                 log_line(context, "A message longer than 1 MB was dropped; stopping the plugin.");
-                break;
+                return true;
             }
             Ok(_) => handle_line(context, line.trim()),
             Err(error) if error.kind() == ErrorKind::InvalidData => {
                 log_line(context, "A message that is not UTF-8 was dropped.");
             }
-            Err(_) => break,
+            Err(error) => {
+                log_line(context, &format!("Could not read the plugin's output ({error}); stopping the plugin."));
+                return true;
+            }
+        }
+    }
+}
+
+/// Once stdout has ended the plugin cannot talk to the island any more. A
+/// process that does not exit by itself (within the stop grace period, or at
+/// once when the host refused its output) is ended, so the restart rules apply.
+fn end_after_output(context: &Context, refused: bool) {
+    let deadline = Instant::now() + if refused { Duration::ZERO } else { STOP_GRACE };
+    loop {
+        {
+            let mut child = lock(&context.child);
+            let Some(process) = child.as_mut() else { return };
+            match process.try_wait() {
+                Ok(Some(_)) | Err(_) => return,
+                Ok(None) if Instant::now() >= deadline => {
+                    let _ = process.kill();
+                    return;
+                }
+                Ok(None) => {}
+            }
+        }
+        thread::sleep(POLL);
+    }
+}
+
+/// Logs stderr line by line. A line over 1 MB is cut there and the rest of it
+/// skipped, so a plugin cannot make the island buffer without limit.
+fn read_stderr(context: &Context, stderr: ChildStderr) {
+    let mut reader = BufReader::new(stderr);
+    let mut line = Vec::new();
+    loop {
+        line.clear();
+        match reader.by_ref().take(MAX_LINE_BYTES).read_until(b'\n', &mut line) {
+            Ok(0) | Err(_) => return,
+            Ok(_) => {
+                let complete = line.ends_with(b"\n");
+                log_line(context, String::from_utf8_lossy(&line).trim_end());
+                if !complete && line.len() as u64 >= MAX_LINE_BYTES && reader.skip_until(b'\n').is_err() {
+                    return;
+                }
+            }
         }
     }
 }
@@ -486,16 +551,25 @@ fn handle_line(context: &Arc<Context>, line: &str) {
     }
 }
 
+/// Queues a message for the plugin (outbox.rs) and never blocks, so callers
+/// may hold the host's locks. A plugin that stopped reading is ended instead.
 fn write_line(context: &Context, line: &str) -> Result<(), String> {
-    let mut stdin = lock(&context.stdin);
-    let pipe = stdin.as_mut().ok_or_else(|| "The plugin is not running.".to_string())?;
-    pipe.write_all(line.as_bytes())
-        .and_then(|()| pipe.write_all(b"\n"))
-        .and_then(|()| pipe.flush())
-        .map_err(|error| format!("Could not write to the plugin: {error}"))?;
-    drop(stdin);
-    trace::record(context, true, line);
-    Ok(())
+    let sent = match lock(&context.stdin).as_ref() {
+        Some(outbox) => outbox.send(line.to_string()),
+        None => Err(SendError::Closed),
+    };
+    match sent {
+        Ok(()) => {
+            trace::record(context, true, line);
+            Ok(())
+        }
+        Err(SendError::Closed) => Err("The plugin is not running.".into()),
+        Err(SendError::Full) => {
+            let reason = format!("The plugin stopped reading its input ({} messages were waiting).", outbox::CAPACITY);
+            fail(context, reason.clone());
+            Err(reason)
+        }
+    }
 }
 
 /// Waits until the process has exited (after stdout closed). Returns how it ended.
