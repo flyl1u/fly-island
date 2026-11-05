@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 做了技术验证，结论是暂不实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 仍是计划。
+> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 做了技术验证，结论是暂不实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库和 CI 签名还没建。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -474,6 +474,23 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 
 **验收**：一个外部账号按文档上架插件，从开 PR 到在岛屿市场里看到不超过一个工作日（审核时间除外）；作者发布新 Release 后 1 小时内岛屿能看到更新；把一个版本加进 `revoked.json` 后，已安装它的岛屿在下一次刷新时停止并禁用它。
 
+**完成记录（2026-11-05，岛屿端）** ✅ 本地提交，未推送：岛屿这一侧的多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索 / 分类 / 详情在一个 `feat(plugins)` 提交里，文档另一个提交。
+
+- **多签名**：`index.json.sig` 可以是单个 `{ keyId, signature }`，也可以是数组，任一可信公钥的有效签名即通过；`scripts/plugin-signing.mjs` 的校验同样接受数组。
+- **`revoked.json`**：`{ "version": 1, "revoked": [{ id, versions: "*" | ["1.2.0"], reason: { "zh-CN", "en" }, action: "disable" | "uninstall" }] }`，配 `revoked.json.sig`（同样的签名格式）；与 `index.json` 从同一个提交读取，文件不存在（404）视为空列表，签名不对则整个市场刷新失败。命中的版本立即停止；`disable` 禁用，`uninstall` 删除插件目录（保留 `plugins-data`）。名单存进 `plugins.json` 的 `revoked`，离线时仍然生效；被撤销的版本不能启用、不能从市场安装；开发模式的插件不受影响。`pnpm plugins:index` 同时签名 `revoked.json`。
+- **发布者**：索引条目新增 `publisher`、`repo`、`categories`、`preRelease`，由 `pnpm plugins:index` 从 `plugins/market/<id>.json` 读取；没有 `publisher` 的条目按官方发布者 `TixXin` 处理。官方发布者总是可信，市场上显示“官方”。安装其他发布者的插件时按钮变为“信任并安装”，信任列表存进 `plugins.json` 的 `trustedPublishers`，可以在插件设置页取消。
+- **后台检查**：只在允许第三方插件时运行，启动 30 秒后检查一次，之后每 6 小时一次，也可以在设置里手动检查。检查会应用黑名单，并在卡片上提示“有新版本”。
+- **自动更新**：默认关，存进 `plugins.json` 的 `autoUpdate`。打开后只自动安装来自可信发布者、且不申请新权限的更新，卡片显示“已更新到 x.y.z”。
+- **市场页**：搜索名称、描述、id 与发布者，按分类筛选（`productivity`、`todos`、`developer`、`media`、`messages`、`information`、`utilities`），每个条目可展开详情：权限、运行时、仓库、主页和“报告问题”。
+
+**与设计的差异**
+
+- **索引仍在本仓库**：没有新建 `TixXin/focusd-plugins`，也没有 PR 加 CI 校验、CI 签名、从作者 Release 拉包和定时 CI。市场仍从 fork 的 `main` 分支读取，插件包仍存在 `plugins/packages/`，由持有私钥的人运行 `pnpm plugins:index`。岛屿端已经能接受多签名和 CI 生成的索引，新仓库建好后只需要改地址并加入 CI 公钥。
+- **发布者信息**来自 `plugins/market/<id>.json`，不显示 GitHub 头像（避免在设置页请求外部图片）。
+- **预发布版本**：索引能标记 `preRelease`，但岛屿目前直接跳过这些条目，设置里没有“接收预发布版本”的开关。
+- **详情页**没有渲染 README、版本历史和更新说明；“报告问题”先指向本仓库的 issue。
+- **作者签名、“已验证”发布者**没做（设计里本来就是以后再做）。
+
 ## 5. 对外契约变化汇总
 
 | 阶段 | 变化 | 兼容方式 |
@@ -484,7 +501,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 | P8 | 验证不通过，没有新增（原计划：`views[].template: "webview"`、`webviewOptions`；页面 API `acquireFocusdApi`） | — |
 | P9 | 清单 `activationEvents`；RPC `host.keepAlive` | 没写的插件按 `onStartup` 处理 |
 | P10 | 清单 `experimentalApis`；本地接口 `POST /v1/dev/plugins/{id}/reload` | 新增 |
-| P11 | 索引地址改到新仓库；`index.json.sig` 支持数组；新增 `revoked.json`；索引条目增加 `publisher`、`categories`、`repo`、`preRelease` | 旧地址保留一段时间并指向新索引；岛屿同时接受旧的单签名格式 |
+| P11 | `index.json.sig` 支持数组；新增 `revoked.json`（`.sig`）；索引条目增加 `publisher`、`categories`、`repo`、`preRelease`；`plugins.json` 增加 `revoked`、`trustedPublishers`、`autoUpdate`；新命令 `set_plugin_auto_update`、`set_plugin_publisher_trusted`、`check_plugin_updates`（索引地址暂未改到新仓库） | 岛屿同时接受旧的单签名格式；新字段都可省略 |
 
 ## 6. 顺序与依赖
 
