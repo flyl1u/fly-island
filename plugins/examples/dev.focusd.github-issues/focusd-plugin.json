@@ -5,9 +5,9 @@
     "zh-CN": "在岛上加一个页面，列出一个公开仓库的未关闭 issue，点一条就在浏览器里打开。不需要令牌，仓库在设置里填。演示列表模板。用 Windows 自带的 PowerShell 运行。",
     "en": "Adds an island page listing the open issues of a public repository; click one to open it in the browser. No token needed; set the repository in the settings. Shows the list template. Runs on the PowerShell built into Windows."
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "apiVersion": 2,
-  "author": "FocuSD",
+  "author": "TixXin",
   "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.github-issues",
   "runtime": { "type": "process", "command": "main.ps1" },
   "permissions": [],

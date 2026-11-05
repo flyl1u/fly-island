@@ -5,9 +5,9 @@
     "zh-CN": "待办变化时在日志里记录未完成待办的数量；点“写入摘要”会把未完成的待办追加到每日笔记。用 Windows 自带的 PowerShell 运行，不需要另外安装任何东西。",
     "en": "Logs how many todos are open whenever they change; Write digest appends the open todos to the daily note. Runs on the PowerShell built into Windows, so nothing else needs installing."
   },
-  "version": "1.2.0",
+  "version": "1.2.1",
   "apiVersion": 2,
-  "author": "FocuSD",
+  "author": "TixXin",
   "homepage": "https://github.com/TixXin/fly-island/tree/dev/plugins/examples/dev.focusd.todo-digest",
   "runtime": { "type": "process", "command": "main.ps1" },
   "permissions": ["todos:read", "notes:write"],

@@ -21,7 +21,7 @@ const LOCAL_API_MANIFEST: &str = r#"{
   },
   "version": "1.0.0",
   "apiVersion": 1,
-  "author": "FocuSD",
+  "author": "TixXin",
   "runtime": { "type": "builtin" },
   "permissions": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:write"],
   "contributes": {

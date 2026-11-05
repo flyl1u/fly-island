@@ -222,7 +222,7 @@ mod market_tests {
     use super::super::market::{extract_package, incompatibility, install_package, parse_index, verify_package, MarketEntry};
 
     const INDEX: &str = include_str!("../../../plugins/index.json");
-    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.2.0.zip");
+    const PACKAGE: &[u8] = include_bytes!("../../../plugins/packages/dev.focusd.todo-digest-1.2.1.zip");
 
     fn example_entry() -> MarketEntry {
         parse_index(INDEX)
@@ -242,7 +242,7 @@ mod market_tests {
         let crlf = INDEX.replace("\r\n", "\n").replace('\n', "\r\n");
         verify_index(&crlf, SIGNATURE, TRUSTED_KEYS).expect("CRLF");
 
-        let tampered = INDEX.replace("\"version\": \"1.2.0\"", "\"version\": \"1.2.1\"");
+        let tampered = INDEX.replace("\"version\": \"1.2.1\"", "\"version\": \"1.2.2\"");
         assert_ne!(tampered, INDEX);
         assert!(verify_index(&tampered, SIGNATURE, TRUSTED_KEYS).expect_err("tampered").contains("does not match"));
 
