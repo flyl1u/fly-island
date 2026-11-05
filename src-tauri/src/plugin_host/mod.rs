@@ -19,6 +19,9 @@
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - sensitive.rs: asking the user before a sensitive permission is first used
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
+//! - market.rs / signature.rs: the market index and its signatures
+//! - revocations.rs / updates.rs: revoked versions, background update checks,
+//!   automatic updates and trusted publishers
 
 mod activation;
 mod builtin;
@@ -37,6 +40,7 @@ mod views;
 mod notify;
 mod permissions;
 mod registry;
+mod revocations;
 mod rpc;
 mod runtime;
 mod sensitive;
@@ -46,10 +50,13 @@ mod storage;
 mod store;
 #[cfg(test)]
 mod tests;
+mod updates;
 
 pub use commands::*;
-// The Tauri commands of development mode (the macro needs its generated items re-exported too).
+// The Tauri commands of development mode and updates (the macro needs its
+// generated items re-exported too).
 pub use dev::*;
+pub use updates::*;
 pub(crate) use dev::answer_local_api as answer_dev_api;
 
 use std::{
@@ -127,6 +134,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     events::listen(app);
     keybindings::start();
     lifecycle::start();
+    updates::start();
     sync_processes()
 }
 

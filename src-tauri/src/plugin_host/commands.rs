@@ -7,7 +7,9 @@ use std::fs;
 use super::{
     app_version, builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
-    host, lifecycle, lock, market, menus, notify, sensitive,
+    host, lifecycle, lock,
+    manifest::LocalizedText,
+    market, menus, notify, revocations, sensitive, updates,
     registry::{installed_version, rescan, scan, snapshot, PluginsSnapshot},
     runtime, settings, storage,
     views::{self, PluginViewsSnapshot},
@@ -23,6 +25,8 @@ pub struct MarketPlugin {
     installed_version: Option<String>,
     /// Why this FocuSD Island cannot install it, if it cannot.
     incompatible: Option<String>,
+    /// This version was taken off the market (revoked.json), and why.
+    revoked: Option<LocalizedText>,
 }
 
 /// Mirrored by `MarketSnapshot` in src/features/plugins/api.ts.
@@ -32,18 +36,28 @@ pub struct MarketSnapshot {
     index_url: String,
     node_available: bool,
     plugins: Vec<MarketPlugin>,
+    /// Publishers the user trusts; the official one is always trusted.
+    trusted_publishers: Vec<String>,
+    official_publisher: &'static str,
 }
 
+/// Reads the market; also applies its revocations and notes available updates.
 #[tauri::command]
 pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
     let host = host()?;
     let version = app_version(&host.app);
-    let plugins = market::fetch_index()
-        .await?
+    let data = market::fetch_market().await?;
+    let revoked = data.revoked.clone();
+    let entries = data.entries.clone();
+    tauri::async_runtime::spawn_blocking(move || updates::absorb(&data))
+        .await
+        .map_err(|error| format!("The market task failed: {error}"))??;
+    let plugins = entries
         .into_iter()
         .map(|entry| MarketPlugin {
             installed_version: installed_version(host, &entry.id),
             incompatible: market::incompatibility(&entry, &version),
+            revoked: revocations::find(&revoked, &entry.id, &entry.version).map(|item| item.reason.clone()),
             entry,
         })
         .collect();
@@ -51,12 +65,14 @@ pub async fn get_plugin_market() -> Result<MarketSnapshot, String> {
         index_url: market::INDEX_URL.to_string(),
         node_available: runtime::find_node().is_some(),
         plugins,
+        trusted_publishers: lock(&host.state).trusted_publishers.clone(),
+        official_publisher: market::OFFICIAL_PUBLISHER,
     })
 }
 
 /// Installs or updates a plugin from the market. A fresh install starts off; an
 /// update keeps the plugin's switch, and pauses it if it now asks for more
-/// permissions.
+/// permissions. The publisher must be trusted and the version not revoked.
 #[tauri::command]
 pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String> {
     if builtin::is_builtin(&id) {
@@ -64,25 +80,20 @@ pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String
     }
     let host = host()?;
     let version = app_version(&host.app);
-    let entry = market::fetch_index()
-        .await?
-        .into_iter()
+    let data = market::fetch_market().await?;
+    let entry = data
+        .entries
+        .iter()
         .find(|entry| entry.id == id)
+        .cloned()
         .ok_or("The plugin is no longer in the market.")?;
-    if let Some(reason) = market::incompatibility(&entry, &version) {
+    if let Some(reason) = market::incompatibility(&entry, &version).or_else(|| updates::install_refusal(&entry, &data.revoked)) {
         return Err(reason);
     }
     let bytes = market::fetch_package(&entry).await?;
-    let plugins_dir = host.plugins_dir.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        stop_plugin(&entry.id)?;
-        let installed = market::install_package(&plugins_dir, &entry, &bytes, &version);
-        lock(&host.runtimes).remove(&entry.id);
-        rescan()?;
-        installed
-    })
-    .await
-    .map_err(|error| format!("The install task failed: {error}"))??;
+    tauri::async_runtime::spawn_blocking(move || updates::install_entry(&entry, &bytes))
+        .await
+        .map_err(|error| format!("The install task failed: {error}"))??;
     snapshot()
 }
 
@@ -135,11 +146,15 @@ pub async fn set_plugins_allowed(allowed: bool) -> Result<PluginsSnapshot, Strin
 pub async fn set_plugin_enabled(id: String, enabled: bool) -> Result<PluginsSnapshot, String> {
     update_state(|state, installed| {
         let plugin = installed.iter().find(|plugin| plugin.folder == id).ok_or("Plugin not found.")?;
-        let grant = state.plugins.entry(id.clone()).or_default();
         if enabled {
             let manifest = plugin.manifest.as_ref().map_err(Clone::clone)?;
+            if let Some(item) = revocations::find(&state.revoked, &id, &manifest.version).filter(|_| !plugin.dev) {
+                return Err(format!("This version was taken off the market: {}", item.reason.en()));
+            }
+            let grant = state.plugins.entry(id.clone()).or_default();
             grant.granted_permissions = manifest.permissions.clone();
         }
+        let grant = state.plugins.entry(id.clone()).or_default();
         grant.enabled = enabled;
         Ok(())
     })?;

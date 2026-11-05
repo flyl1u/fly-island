@@ -793,6 +793,33 @@ export type Translations = {
         update: (version: string) => string;
         installed: string;
         incompatible: string;
+        /** Search, categories, publishers and details (P11). */
+        search: string;
+        noMatches: string;
+        allCategories: string;
+        category: Record<"productivity" | "todos" | "developer" | "media" | "messages" | "information" | "utilities", string>;
+        official: string;
+        publisher: (name: string) => string;
+        trustAndInstall: string;
+        trustHint: (publisher: string) => string;
+        revoked: string;
+        details: string;
+        hideDetails: string;
+        repository: string;
+        reportIssue: string;
+      };
+      /** Plugin updates and trusted publishers on the plugins page (P11). */
+      updates: {
+        title: string;
+        autoUpdate: string;
+        autoUpdateHint: string;
+        check: string;
+        trusted: string;
+        noTrusted: string;
+        untrust: string;
+        available: (version: string) => string;
+        autoUpdated: (version: string) => string;
+        revoked: (reason: string) => string;
       };
     };
   };

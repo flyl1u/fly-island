@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  checkPluginUpdates,
   clearPluginData,
   listPlugins,
   openPluginsFolder,
   reloadPlugins,
   revokePluginSensitivePermission,
   runPluginCommand,
+  setPluginAutoUpdate,
   setPluginEnabled,
+  setPluginPublisherTrusted,
   setPluginNotificationsMuted,
   setPluginSetting,
   setPluginsAllowed,
@@ -64,6 +67,9 @@ export function usePlugins() {
     runCommand: useCallback((id: string, command: string) => void run(() => runPluginCommand(id, command)), [run]),
     uninstall: useCallback((id: string) => void run(() => uninstallPlugin(id)), [run]),
     clearData: useCallback((id: string) => void run(() => clearPluginData(id)), [run]),
+    setAutoUpdate: useCallback((enabled: boolean) => void run(() => setPluginAutoUpdate(enabled)), [run]),
+    untrustPublisher: useCallback((publisher: string) => void run(() => setPluginPublisherTrusted(publisher, false)), [run]),
+    checkUpdates: useCallback(() => void run(checkPluginUpdates), [run]),
     revokeSensitive: useCallback(
       (id: string, permission: SensitivePermission) => void run(() => revokePluginSensitivePermission(id, permission)),
       [run],

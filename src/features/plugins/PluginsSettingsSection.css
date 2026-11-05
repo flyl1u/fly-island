@@ -37,3 +37,37 @@
   justify-content: center;
   padding: 0;
 }
+
+.plugin-updates__trusted {
+  display: grid;
+  gap: 6px;
+}
+
+.plugin-updates__trusted > span {
+  color: rgba(248, 246, 240, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plugin-updates__trusted ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-updates__trusted li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plugin-updates__trusted strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { getPluginMarket, installMarketPlugin, type MarketSnapshot, type PluginsSnapshot } from "./api";
+import {
+  getPluginMarket,
+  installMarketPlugin,
+  marketPublisher,
+  setPluginPublisherTrusted,
+  type MarketSnapshot,
+  type PluginsSnapshot,
+} from "./api";
 
 /**
  * The plugin market index, fetched when the page opens and on Refresh, and
@@ -31,19 +38,24 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
     void refresh();
   }, [refresh]);
 
+  /** `trust`: trust the plugin's publisher first (the user agreed on the button). */
   const install = useCallback(
-    async (id: string) => {
+    async (id: string, trust = false) => {
       setInstallingId(id);
       setInstallError(null);
       try {
+        const plugin = market?.plugins.find((item) => item.id === id);
+        if (trust && plugin && market) {
+          const publisher = marketPublisher(plugin, market);
+          await setPluginPublisherTrusted(publisher, true);
+          setMarket((current) => current && { ...current, trustedPublishers: [...current.trustedPublishers, publisher] });
+        }
         const installed = await installMarketPlugin(id);
         onInstalled?.(installed);
         setMarket((current) =>
           current && {
             ...current,
-            plugins: current.plugins.map((plugin) =>
-              plugin.id === id ? { ...plugin, installedVersion: plugin.version } : plugin,
-            ),
+            plugins: current.plugins.map((item) => (item.id === id ? { ...item, installedVersion: item.version } : item)),
           },
         );
       } catch (nextError) {
@@ -52,7 +64,7 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
         setInstallingId(null);
       }
     },
-    [onInstalled],
+    [market, onInstalled],
   );
 
   return { market, loading, loadError, installError, installingId, refresh, install };

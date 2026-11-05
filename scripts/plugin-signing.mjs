@@ -35,8 +35,13 @@ export function signIndex(text, privateKey) {
   return { keyId: keyIdOf(raw), signature: sign(null, signedBytes(text), privateKey).toString("base64") };
 }
 
-/** True when `signature` ({ keyId, signature }) is a valid signature of `text` by one of `trustedKeys`. */
+/**
+ * True when `signature` ({ keyId, signature }, or a list of them like
+ * src-tauri/src/plugin_host/signature.rs accepts) holds a valid signature of
+ * `text` by one of `trustedKeys`.
+ */
 export function verifyIndex(text, signature, trustedKeys) {
+  if (Array.isArray(signature)) return signature.some((one) => verifyIndex(text, one, trustedKeys));
   const trusted = trustedKeys.find((key) => key.keyId === signature?.keyId);
   if (!trusted || typeof signature.signature !== "string") return false;
   const publicKey = createPublicKey({

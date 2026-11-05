@@ -100,6 +100,12 @@ export type PluginInfo = {
   resources: PluginResources | null;
   /** Why an on-demand plugin asked to keep running (host.keepAlive). */
   keepAlive: string | null;
+  /** This version was taken off the market (revoked.json), and why (P11). */
+  revoked: LocalizedText | null;
+  /** A newer version in the market. */
+  updateAvailable: string | null;
+  /** The version an automatic update installed while the island has been running. */
+  autoUpdated: string | null;
 };
 
 // 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。
@@ -114,9 +120,16 @@ export type PluginsSnapshot = {
   nodeAvailable: boolean;
   pluginsDir: string;
   plugins: PluginInfo[];
+  /** Install market updates that ask for no new permissions by themselves (default off). */
+  autoUpdate: boolean;
+  trustedPublishers: string[];
 };
 
-// 与 src-tauri/src/plugin_host/market.rs 中的 MarketEntry，以及 plugin_host/mod.rs 中的 MarketPlugin、MarketSnapshot 对应。
+// 与 scripts/build-plugin-index.mjs 中的 CATEGORIES 对应。
+export const MARKET_CATEGORIES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities"] as const;
+export type MarketCategory = (typeof MARKET_CATEGORIES)[number];
+
+// 与 src-tauri/src/plugin_host/market.rs 中的 MarketEntry，以及 plugin_host/commands.rs 中的 MarketPlugin、MarketSnapshot 对应。
 export type MarketPlugin = {
   id: string;
   name: LocalizedText;
@@ -130,15 +143,42 @@ export type MarketPlugin = {
   /** Missing in indexes written before the field existed. */
   runtime: PluginRuntimeRequirement | null;
   download: { url: string; sha256: string; size: number };
+  /** GitHub user or organization; null in indexes written before publishers existed (the official one). */
+  publisher: string | null;
+  /** "owner/name" of the plugin's repository. */
+  repo: string | null;
+  categories: string[];
   installedVersion: string | null;
   incompatible: string | null;
+  /** This version was taken off the market, and why. */
+  revoked: LocalizedText | null;
 };
 
 export type MarketSnapshot = {
   indexUrl: string;
   nodeAvailable: boolean;
   plugins: MarketPlugin[];
+  trustedPublishers: string[];
+  /** Always trusted; plugins without a publisher are its. */
+  officialPublisher: string;
 };
+
+export const marketPublisher = (plugin: MarketPlugin, market: MarketSnapshot) => plugin.publisher || market.officialPublisher;
+
+/** Turns on or off installing updates that ask for no new permissions by themselves. */
+export function setPluginAutoUpdate(enabled: boolean) {
+  return invoke<PluginsSnapshot>("set_plugin_auto_update", { enabled });
+}
+
+/** Trusting a publisher lets its plugins be installed. */
+export function setPluginPublisherTrusted(publisher: string, trusted: boolean) {
+  return invoke<PluginsSnapshot>("set_plugin_publisher_trusted", { publisher, trusted });
+}
+
+/** Reads the market now: revocations, available updates, automatic updates. */
+export function checkPluginUpdates() {
+  return invoke<PluginsSnapshot>("check_plugin_updates");
+}
 
 export function getPluginMarket() {
   return invoke<MarketSnapshot>("get_plugin_market");

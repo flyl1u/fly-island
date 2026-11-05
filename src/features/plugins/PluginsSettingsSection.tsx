@@ -4,6 +4,7 @@ import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation } from "../../i18n";
 import { PluginCard } from "./PluginCard";
 import { PluginDetailPage } from "./PluginDetailPage";
+import { PluginUpdatesSection } from "./PluginUpdatesSection";
 import { usePlugins } from "./usePlugins";
 import "./PluginsSettingsSection.css";
 
@@ -27,6 +28,9 @@ export function PluginsSettingsSection() {
     openFolder,
     runCommand,
     uninstall,
+    setAutoUpdate,
+    untrustPublisher,
+    checkUpdates,
   } = usePlugins();
   const [openId, setOpenId] = useState<string | null>(null);
   const allowed = snapshot?.allowThirdParty ?? false;
@@ -100,6 +104,15 @@ export function PluginsSettingsSection() {
           />
         ))}
       </section>
+      {snapshot ? (
+        <PluginUpdatesSection
+          snapshot={snapshot}
+          busy={busy}
+          onAutoUpdateChange={setAutoUpdate}
+          onCheck={checkUpdates}
+          onUntrust={untrustPublisher}
+        />
+      ) : null}
     </>
   );
 }

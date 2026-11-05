@@ -1,10 +1,11 @@
-//! `plugins.json`: whether third-party plugins may run, and per plugin whether
-//! it is on and which permissions the user granted.
+//! `plugins.json`: whether third-party plugins may run, per plugin whether it
+//! is on and which permissions the user granted, and the market's revocations,
+//! trusted publishers and the automatic-update switch.
 
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, path::Path};
 
-use super::sensitive::SensitiveChoice;
+use super::{revocations::Revocation, sensitive::SensitiveChoice};
 
 pub(super) const STATE_FILE_NAME: &str = "plugins.json";
 
@@ -16,6 +17,15 @@ pub(super) struct PluginsState {
     pub allow_third_party: bool,
     #[serde(default)]
     pub plugins: BTreeMap<String, PluginGrant>,
+    /// The market's latest revocation list (revocations.rs), kept for offline starts.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub revoked: Vec<Revocation>,
+    /// Market publishers the user trusts (GitHub user or organization names).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trusted_publishers: Vec<String>,
+    /// Install updates that ask for no new permissions by themselves (off by default).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub auto_update: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

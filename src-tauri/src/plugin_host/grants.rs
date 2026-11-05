@@ -12,6 +12,7 @@ use super::{
     app_version, builtin, host, keybindings, lifecycle, lock,
     manifest::{launch_command, PluginRuntime},
     permissions::missing_permissions,
+    revocations,
     runtime::{LaunchSpec, RuntimeStatus, Supervisor},
     settings,
     store::{save_state, PluginsState},
@@ -81,10 +82,13 @@ pub(super) fn sync_processes() -> Result<(), String> {
             let PluginRuntime::Process { command, args } = &manifest.runtime else { continue };
             // Development plugins (dev.rs) are on, with every permission they ask for.
             let grant = state.plugins.get(&manifest.id).cloned();
+            // A version taken off the market (revocations.rs) never runs.
+            let revoked = revocations::find(&state.revoked, &manifest.id, &manifest.version).is_some();
             let allowed = plugin.dev
-                || grant.as_ref().is_some_and(|grant| {
-                    state.allow_third_party && grant.enabled && missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty()
-                });
+                || !revoked
+                    && grant.as_ref().is_some_and(|grant| {
+                        state.allow_third_party && grant.enabled && missing_permissions(&manifest.permissions, &grant.granted_permissions).is_empty()
+                    });
             if !allowed {
                 continue;
             }

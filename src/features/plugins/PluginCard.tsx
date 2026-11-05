@@ -109,6 +109,13 @@ export function PluginCard({
             </p>
           ) : null}
           <div className="plugin-card__notes">
+            {plugin.revoked ? (
+              <p className="plugin-card__error">{t.settings.plugins.updates.revoked(plugin.revoked[locale])}</p>
+            ) : null}
+            {plugin.autoUpdated ? <p className="plugin-card__hint">{t.settings.plugins.updates.autoUpdated(plugin.autoUpdated)}</p> : null}
+            {plugin.updateAvailable && plugin.updateAvailable !== plugin.autoUpdated ? (
+              <p className="plugin-card__hint">{t.settings.plugins.updates.available(plugin.updateAvailable)}</p>
+            ) : null}
             {plugin.needsApproval ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.needsApproval}</p> : null}
             {isOn && !canRun ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.notAllowed}</p> : null}
             {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}

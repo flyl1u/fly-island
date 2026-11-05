@@ -53,16 +53,20 @@ mockIPC((command, payload) => {
     case "get_plugin_market": return {
       indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json",
       nodeAvailable: false,
+      trustedPublishers: [],
+      officialPublisher: "TixXin",
       plugins: [
-        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: "1.0.0", incompatible: null },
-        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, installedVersion: null, incompatible: null },
+        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], installedVersion: "1.0.0", incompatible: null, revoked: null },
+        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null },
       ],
     };
     case "list_plugins": {
-      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null };
+      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null, revoked: null, updateAvailable: null, autoUpdated: null };
       return {
       allowThirdParty: true,
       nodeAvailable: false,
+      autoUpdate: false,
+      trustedPublishers: ["someone"],
       pluginsDir: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\plugins",
       plugins: [
         { ...base, id: "focusd.local-api", builtin: true, invalidReason: null, name: { "zh-CN": "本地接口", en: "Local API" }, description: { "zh-CN": "让脚本通过 HTTP 读写待办。", en: "Lets scripts read and change todos over HTTP." }, version: "1.0.0", author: "FocuSD", homepage: "", permissions: ["todos:read", "todos:write"], commands: [{ id: "reset-token", title: { "zh-CN": "重新生成令牌", en: "Regenerate token" } }], runtime: "builtin", hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: [], settingsSchema: [{ key: "allowWrite", type: "boolean", title: { "zh-CN": "允许修改", en: "Allow changes" }, default: false }], settings: { allowWrite: false }, info: [{ label: { "zh-CN": "地址", en: "Address" }, value: "http://127.0.0.1:39271/v1", copy: true, secret: false }, { label: { "zh-CN": "访问令牌", en: "Access token" }, value: "0".repeat(64), copy: true, secret: true }] },

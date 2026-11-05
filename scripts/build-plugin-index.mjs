@@ -1,7 +1,11 @@
 // Packs every plugin under plugins/examples into plugins/packages/<id>-<version>.zip
 // and writes plugins/index.json, the plugin market index the app downloads, and
-// its signature plugins/index.json.sig (see scripts/plugin-signing.mjs).
-// Usage: pnpm plugins:index. Design: docs/architecture/plugins.md (P4).
+// its signature plugins/index.json.sig (see scripts/plugin-signing.mjs). Market
+// details that are not in the manifest (publisher, repository, categories) come
+// from plugins/market/<id>.json, as they will in the index repository. It also
+// signs plugins/revoked.json, the list of versions taken off the market.
+// Usage: pnpm plugins:index. Design: docs/architecture/plugins.md (P4),
+// docs/architecture/plugin-platform.md (P11).
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +21,13 @@ const SOURCE_DIRS = ["plugins/examples"];
 const PACKAGES_DIR = "plugins/packages";
 const INDEX_PATH = "plugins/index.json";
 const SIGNATURE_PATH = "plugins/index.json.sig";
+export const REVOKED_PATH = "plugins/revoked.json";
+const MARKET_DIR = "plugins/market";
 const MANIFEST = "focusd-plugin.json";
+/** The island's own publisher (OFFICIAL_PUBLISHER in src-tauri/src/plugin_host/market.rs). */
+export const OFFICIAL_PUBLISHER = "TixXin";
+/** Categories the market page offers (MARKET_CATEGORIES in src/features/plugins/api.ts). */
+export const CATEGORIES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities"];
 
 /** What the plugin needs installed, like runtime_requirement in src-tauri/src/plugin_host/manifest.rs. */
 export function runtimeRequirement(runtime) {
@@ -29,8 +39,22 @@ export function runtimeRequirement(runtime) {
   return "none";
 }
 
-/** The index entry for a plugin manifest and its package. */
-export function indexEntry(manifest, fileName, zip) {
+/** plugins/market/<id>.json ({ publisher?, repo?, categories?, preRelease? }) with defaults filled in. */
+export function marketDetails(root, id) {
+  const file = path.join(root, MARKET_DIR, `${id}.json`);
+  const details = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+  const unknown = (details.categories ?? []).filter((name) => !CATEGORIES.includes(name));
+  if (unknown.length > 0) throw new Error(`${MARKET_DIR}/${id}.json: unknown categories ${unknown.join(", ")}.`);
+  return {
+    publisher: details.publisher ?? OFFICIAL_PUBLISHER,
+    ...(details.repo ? { repo: details.repo } : {}),
+    categories: [...new Set(details.categories ?? [])],
+    ...(details.preRelease === true ? { preRelease: true } : {}),
+  };
+}
+
+/** The index entry for a plugin manifest, its package and its market details. */
+export function indexEntry(manifest, fileName, zip, details = {}) {
   return {
     id: manifest.id,
     name: manifest.name,
@@ -42,6 +66,7 @@ export function indexEntry(manifest, fileName, zip) {
     homepage: manifest.homepage ?? "",
     permissions: [...new Set(manifest.permissions ?? [])].sort(),
     runtime: runtimeRequirement(manifest.runtime),
+    ...details,
     download: { url: `${MARKET_BASE_URL}/packages/${fileName}`, sha256: sha256(zip), size: zip.length },
   };
 }
@@ -66,7 +91,7 @@ export function buildIndex(root, privateKey = loadPrivateKey()) {
         throw new Error(`${fileName} already exists with different contents; raise "version" in ${source}/${name}/${MANIFEST}.`);
       }
       writeFileSync(target, zip);
-      entries.push(indexEntry(manifest, fileName, zip));
+      entries.push(indexEntry(manifest, fileName, zip, marketDetails(root, manifest.id)));
     }
   }
   entries.sort((left, right) => left.id.localeCompare(right.id));
@@ -74,7 +99,18 @@ export function buildIndex(root, privateKey = loadPrivateKey()) {
   const text = `${JSON.stringify(index, null, 2)}\n`;
   writeFileSync(path.join(root, INDEX_PATH), text);
   writeFileSync(path.join(root, SIGNATURE_PATH), `${JSON.stringify(signIndex(text, privateKey), null, 2)}\n`);
+  signRevoked(root, privateKey);
   return index;
+}
+
+/** Checks and signs plugins/revoked.json, creating an empty list the first time. */
+export function signRevoked(root, privateKey) {
+  const file = path.join(root, REVOKED_PATH);
+  if (!existsSync(file)) writeFileSync(file, `${JSON.stringify({ version: 1, revoked: [] }, null, 2)}\n`);
+  const text = readFileSync(file, "utf8");
+  const list = JSON.parse(text);
+  if (list.version !== 1 || !Array.isArray(list.revoked)) throw new Error(`${REVOKED_PATH} must be { "version": 1, "revoked": [...] }.`);
+  writeFileSync(`${file}.sig`, `${JSON.stringify(signIndex(text, privateKey), null, 2)}\n`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

@@ -810,3 +810,78 @@ mod dev_tests {
         assert!(super::super::dev::lines_after(&VecDeque::new(), 0, 0).is_empty());
     }
 }
+
+mod market_trust_tests {
+    use serde_json::json;
+
+    use super::super::market::{parse_index, OFFICIAL_PUBLISHER};
+    use super::super::revocations::{find, parse_revoked, RevokeAction};
+    use super::super::signature::{verify_file, verify_index, TRUSTED_KEYS};
+    use super::super::store::PluginsState;
+    use super::super::updates::trusts;
+
+    const INDEX: &str = include_str!("../../../plugins/index.json");
+    const SIGNATURE: &str = include_str!("../../../plugins/index.json.sig");
+    const REVOKED: &str = include_str!("../../../plugins/revoked.json");
+    const REVOKED_SIGNATURE: &str = include_str!("../../../plugins/revoked.json.sig");
+
+    #[test]
+    fn a_list_of_signatures_needs_one_valid_one_by_a_trusted_key() {
+        let one: serde_json::Value = serde_json::from_str(SIGNATURE).expect("json");
+        let unknown = json!({ "keyId": "0000000000000000", "signature": "AAAA" });
+        verify_index(INDEX, &json!([unknown, one]).to_string(), TRUSTED_KEYS).expect("one valid signature is enough");
+        assert!(verify_index(INDEX, &json!([unknown]).to_string(), TRUSTED_KEYS).expect_err("none trusted").contains("does not trust"));
+        let mut broken = one.clone();
+        broken["signature"] = json!("AAAA");
+        assert!(verify_index(INDEX, &json!([unknown, broken]).to_string(), TRUSTED_KEYS).expect_err("bad").contains("does not match"));
+        assert!(verify_index(INDEX, "[]", TRUSTED_KEYS).is_err());
+        verify_file(REVOKED, REVOKED_SIGNATURE, TRUSTED_KEYS, "revocation list").expect("the repository revoked.json is signed");
+        assert!(verify_file(REVOKED, SIGNATURE, TRUSTED_KEYS, "revocation list").is_err());
+    }
+
+    #[test]
+    fn revocations_match_ids_and_versions() {
+        assert!(parse_revoked(REVOKED).is_ok());
+        let list = parse_revoked(
+            &json!({ "version": 1, "revoked": [
+                { "id": "a.one", "versions": "*", "reason": { "zh-CN": "恶意", "en": "Malware" }, "action": "uninstall" },
+                { "id": "a.two", "versions": ["1.0.0"], "reason": { "zh-CN": "崩溃", "en": "Crashes" }, "action": "disable" },
+                { "id": "a.bad", "versions": "1.0.0", "reason": { "zh-CN": "x", "en": "x" }, "action": "disable" },
+                { "id": "a.junk" }
+            ] })
+            .to_string(),
+        )
+        .expect("list");
+        assert_eq!(list.len(), 2, "entries that do not check out are dropped");
+        assert_eq!(find(&list, "a.one", "9.9.9").map(|item| item.action), Some(RevokeAction::Uninstall));
+        assert!(find(&list, "a.two", "1.0.0").is_some());
+        assert!(find(&list, "a.two", "1.0.1").is_none());
+        assert!(find(&list, "a.bad", "1.0.0").is_none());
+        assert!(parse_revoked(r#"{"version":2,"revoked":[]}"#).is_err());
+    }
+
+    #[test]
+    fn publishers_default_to_the_official_one_and_need_trust() {
+        let entries = parse_index(INDEX).expect("index");
+        assert!(entries.iter().all(|entry| entry.publisher() == OFFICIAL_PUBLISHER));
+        let mut state = PluginsState::default();
+        assert!(trusts(&state, OFFICIAL_PUBLISHER));
+        assert!(!trusts(&state, "someone"));
+        state.trusted_publishers.push("someone".into());
+        assert!(trusts(&state, "someone"));
+
+        let mut index: serde_json::Value = serde_json::from_str(INDEX).expect("json");
+        let mut entry = index["plugins"][0].clone();
+        entry["publisher"] = json!("someone");
+        entry["version"] = json!("99.0.0");
+        let mut pre = entry.clone();
+        pre["id"] = json!("a.pre-release");
+        pre["preRelease"] = json!(true);
+        index["plugins"] = json!([entry, pre]);
+        let entries = parse_index(&index.to_string()).expect("index");
+        assert_eq!(entries.len(), 1, "pre-releases are not listed");
+        assert_eq!(entries[0].publisher(), "someone");
+        assert!(entries[0].is_newer_than("1.0.0"));
+        assert!(!entries[0].is_newer_than("99.0.0"));
+    }
+}

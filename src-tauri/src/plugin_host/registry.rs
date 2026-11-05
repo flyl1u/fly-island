@@ -17,7 +17,7 @@ use super::{
     sensitive::SensitiveChoice,
     settings::{self, InfoItem, SettingSpec},
     store::PluginsState,
-    InstalledPlugin, PluginHost,
+    updates, InstalledPlugin, PluginHost,
 };
 
 /// Mirrored by `PluginInfo` in src/features/plugins/api.ts.
@@ -68,6 +68,12 @@ pub struct PluginInfo {
     resources: Option<Resources>,
     /// Why an on-demand plugin asked to keep running (`host.keepAlive`).
     keep_alive: Option<String>,
+    /// This version was taken off the market (revocations.rs), and why.
+    revoked: Option<LocalizedText>,
+    /// A newer version in the market (updates.rs).
+    update_available: Option<String>,
+    /// The version an automatic update installed while the island has been running.
+    auto_updated: Option<String>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -79,6 +85,10 @@ pub struct PluginsSnapshot {
     node_available: bool,
     plugins_dir: String,
     plugins: Vec<PluginInfo>,
+    /// Install market updates that ask for no new permissions by themselves.
+    auto_update: bool,
+    /// Market publishers the user trusts.
+    trusted_publishers: Vec<String>,
 }
 
 /// Built-in plugins first, then the plugins folder sorted by id.
@@ -217,7 +227,13 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 startup_ms: runtime.startup_ms,
                 resources: runtime.resources,
                 keep_alive: runtime.keep_alive.clone(),
+                revoked: None,
+                update_available: None,
+                auto_updated: None,
             };
+            if !plugin.builtin && !plugin.dev {
+                (info.update_available, info.auto_updated) = updates::status_for(&plugin.folder);
+            }
             match &plugin.manifest {
                 Ok(manifest) => {
                     info.needs_approval = grant.enabled
@@ -236,6 +252,9 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.settings = settings::resolve(&manifest.contributes.settings, &grant.settings);
                     info.activation = if manifest.activation.is_eager() { "startup" } else { "onDemand" };
                     info.activation_events = manifest.activation.events.iter().map(|event| event.label()).collect();
+                    if !plugin.builtin && !plugin.dev {
+                        info.revoked = updates::revoked_reason(&state, &plugin.folder, &manifest.version);
+                    }
                 }
                 Err(reason) => info.invalid_reason = Some(reason.clone()),
             }
@@ -247,5 +266,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
         node_available: runtime::find_node().is_some(),
         plugins_dir: host.plugins_dir.display().to_string(),
         plugins,
+        auto_update: state.auto_update,
+        trusted_publishers: state.trusted_publishers.clone(),
     })
 }

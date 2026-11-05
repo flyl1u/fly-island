@@ -13,7 +13,8 @@ use std::{
 };
 
 use super::manifest::{parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
-use super::signature::{verify_index, TRUSTED_KEYS};
+use super::revocations::{parse_revoked, Revocation};
+use super::signature::{verify_file, verify_index, TRUSTED_KEYS};
 use crate::system::updater::get_updater_proxy;
 
 /// The fork's main branch. Builds before this change read dev, which is pushed
@@ -24,6 +25,8 @@ const MARKET_BRANCH: &str = "main";
 /// Shown on the settings page; the index itself is read at the branch's newest commit.
 pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json";
 const INDEX_VERSION: u32 = 1;
+/// The island's own publisher, shown as "official".
+pub(super) const OFFICIAL_PUBLISHER: &str = "TixXin";
 const MAX_INDEX_BYTES: usize = 1024 * 1024;
 const MAX_PACKAGE_BYTES: u64 = 20 * 1024 * 1024;
 const MAX_UNPACKED_BYTES: u64 = 100 * 1024 * 1024;
@@ -61,6 +64,34 @@ pub struct MarketEntry {
     #[serde(default)]
     runtime: Option<String>,
     download: PackageDownload,
+    /// The GitHub user or organization that publishes it; missing means the
+    /// island's own publisher (indexes written before publishers existed).
+    #[serde(default)]
+    publisher: Option<String>,
+    /// The plugin's repository, "owner/name".
+    #[serde(default)]
+    repo: Option<String>,
+    #[serde(default)]
+    categories: Vec<String>,
+    /// Pre-releases are not listed yet (choosing them per plugin is not built).
+    #[serde(default)]
+    pre_release: bool,
+}
+
+impl MarketEntry {
+    pub(super) fn publisher(&self) -> &str {
+        self.publisher.as_deref().filter(|name| !name.is_empty()).unwrap_or(OFFICIAL_PUBLISHER)
+    }
+
+    pub(super) fn is_newer_than(&self, installed: &str) -> bool {
+        !version_at_least(installed, &self.version)
+    }
+}
+
+/// The index and the revocation list, read from the same commit.
+pub(super) struct MarketData {
+    pub entries: Vec<MarketEntry>,
+    pub revoked: Vec<Revocation>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -86,6 +117,7 @@ pub(super) fn parse_index(text: &str) -> Result<Vec<MarketEntry>, String> {
         .into_iter()
         .filter_map(|value| serde_json::from_value::<MarketEntry>(value).ok())
         .filter(is_valid_entry)
+        .filter(|entry| !entry.pre_release)
         .collect();
     entries.sort_by(|left, right| left.id.cmp(&right.id));
     entries.dedup_by(|left, right| left.id == right.id);
@@ -128,11 +160,19 @@ fn client() -> Result<reqwest::Client, String> {
 }
 
 async fn download(url: &str, limit: u64) -> Result<Vec<u8>, String> {
+    download_unless_missing(url, limit).await?.ok_or_else(|| format!("{url} answered 404 Not Found."))
+}
+
+/// None when the file does not exist (404).
+async fn download_unless_missing(url: &str, limit: u64) -> Result<Option<Vec<u8>>, String> {
     let response = client()?
         .get(url)
         .send()
         .await
         .map_err(|error| format!("Could not reach {url}: {error}"))?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
     if !response.status().is_success() {
         return Err(format!("{url} answered {}.", response.status()));
     }
@@ -146,7 +186,7 @@ async fn download(url: &str, limit: u64) -> Result<Vec<u8>, String> {
     if bytes.len() as u64 > limit {
         return Err(format!("{url} is larger than {limit} bytes."));
     }
-    Ok(bytes.to_vec())
+    Ok(Some(bytes.to_vec()))
 }
 
 /// The newest commit on the market branch, so the index and its signature are
@@ -172,14 +212,26 @@ async fn download_text(url: &str) -> Result<String, String> {
     String::from_utf8(bytes).map_err(|_| format!("{url} is not UTF-8."))
 }
 
-/// Downloads the index and its signature, checks the signature, then parses it.
-pub(super) async fn fetch_index() -> Result<Vec<MarketEntry>, String> {
+/// Downloads the index and the revocation list with their signatures from the
+/// same commit, checks the signatures, then parses them. A market without
+/// revoked.json (older ones) has nothing revoked; one that has it must have it signed.
+pub(super) async fn fetch_market() -> Result<MarketData, String> {
     let reference = market_commit().await.unwrap_or_else(|| MARKET_BRANCH.to_string());
     let base = format!("https://raw.githubusercontent.com/{MARKET_REPO}/{reference}/plugins");
     let text = download_text(&format!("{base}/index.json")).await?;
     let signature = download_text(&format!("{base}/index.json.sig")).await?;
     verify_index(&text, &signature, TRUSTED_KEYS)?;
-    parse_index(&text)
+    let entries = parse_index(&text)?;
+    let revoked = match download_unless_missing(&format!("{base}/revoked.json"), MAX_INDEX_BYTES as u64).await? {
+        None => Vec::new(),
+        Some(bytes) => {
+            let text = String::from_utf8(bytes).map_err(|_| "revoked.json is not UTF-8.".to_string())?;
+            let signature = download_text(&format!("{base}/revoked.json.sig")).await?;
+            verify_file(&text, &signature, TRUSTED_KEYS, "revocation list")?;
+            parse_revoked(&text)?
+        }
+    };
+    Ok(MarketData { entries, revoked })
 }
 
 /// Downloads the package and checks its size and SHA-256 against the index.

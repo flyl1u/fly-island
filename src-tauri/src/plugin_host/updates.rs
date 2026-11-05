@@ -1,0 +1,180 @@
+//! Keeping market plugins current: the index and revocation list are read 30 s
+//! after start and then every 6 hours while third-party plugins are allowed
+//! (and whenever the market page loads). Revocations are applied at once;
+//! newer versions are shown on the plugin cards, and installed by themselves
+//! only when the user turned on automatic updates, the publisher is trusted and
+//! the new version asks for no permission the installed one did not.
+
+use std::{
+    collections::BTreeMap,
+    sync::Mutex,
+    thread,
+    time::Duration,
+};
+
+use super::{
+    app_version,
+    grants::{stop_plugin, update_state},
+    host, lock,
+    manifest::LocalizedText,
+    market::{self, MarketData, MarketEntry, OFFICIAL_PUBLISHER},
+    registry::{rescan, snapshot, PluginsSnapshot},
+    revocations,
+    store::PluginsState,
+};
+
+const FIRST_CHECK_AFTER: Duration = Duration::from_secs(30);
+const CHECK_EVERY: Duration = Duration::from_secs(6 * 60 * 60);
+
+#[derive(Default)]
+struct Status {
+    /// Plugin id -> the newer version in the market.
+    available: BTreeMap<String, String>,
+    /// Plugin id -> the version an automatic update installed this run.
+    updated: BTreeMap<String, String>,
+}
+
+static STATUS: Mutex<Status> = Mutex::new(Status { available: BTreeMap::new(), updated: BTreeMap::new() });
+
+/// (newer version in the market, version installed by an automatic update) for a plugin card.
+pub(super) fn status_for(id: &str) -> (Option<String>, Option<String>) {
+    let status = lock(&STATUS);
+    (status.available.get(id).cloned(), status.updated.get(id).cloned())
+}
+
+/// Whether the user trusts the publisher (the island's own always is).
+pub(super) fn trusts(state: &PluginsState, publisher: &str) -> bool {
+    publisher == OFFICIAL_PUBLISHER || state.trusted_publishers.iter().any(|name| name == publisher)
+}
+
+/// A GitHub user or organization name.
+fn is_valid_publisher(name: &str) -> bool {
+    (1..=39).contains(&name.len()) && name.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+}
+
+/// Applies a freshly read market: revocations, and which installed plugins have
+/// a newer version. Returns the updates to install by themselves.
+pub(super) fn absorb(data: &MarketData) -> Result<Vec<MarketEntry>, String> {
+    revocations::apply(data.revoked.clone())?;
+    let host = host()?;
+    let version = app_version(&host.app);
+    let state = lock(&host.state).clone();
+    let mut available = BTreeMap::new();
+    let mut automatic = Vec::new();
+    for plugin in lock(&host.installed).iter().filter(|plugin| !plugin.builtin && !plugin.dev) {
+        let Ok(manifest) = &plugin.manifest else { continue };
+        let Some(entry) = data.entries.iter().find(|entry| entry.id == plugin.folder) else { continue };
+        if !entry.is_newer_than(&manifest.version)
+            || market::incompatibility(entry, &version).is_some()
+            || revocations::find(&data.revoked, &entry.id, &entry.version).is_some()
+        {
+            continue;
+        }
+        available.insert(entry.id.clone(), entry.version.clone());
+        let no_new_permissions = entry.permissions.iter().all(|name| manifest.permissions.contains(name));
+        if state.auto_update && no_new_permissions && trusts(&state, entry.publisher()) {
+            automatic.push(entry.clone());
+        }
+    }
+    lock(&STATUS).available = available;
+    Ok(automatic)
+}
+
+/// Stops the plugin, swaps in the new package and starts what should run.
+pub(super) fn install_entry(entry: &MarketEntry, bytes: &[u8]) -> Result<(), String> {
+    let host = host()?;
+    stop_plugin(&entry.id)?;
+    let installed = market::install_package(&host.plugins_dir, entry, bytes, &app_version(&host.app));
+    lock(&host.runtimes).remove(&entry.id);
+    rescan()?;
+    installed?;
+    lock(&STATUS).available.remove(&entry.id);
+    Ok(())
+}
+
+/// Reads the market and applies it; installs automatic updates.
+async fn check() -> Result<(), String> {
+    let data = market::fetch_market().await?;
+    let automatic = tauri::async_runtime::spawn_blocking(move || absorb(&data))
+        .await
+        .map_err(|error| format!("The update task failed: {error}"))??;
+    for entry in automatic {
+        let bytes = market::fetch_package(&entry).await?;
+        let installed = entry.clone();
+        tauri::async_runtime::spawn_blocking(move || install_entry(&installed, &bytes))
+            .await
+            .map_err(|error| format!("The update task failed: {error}"))??;
+        lock(&STATUS).updated.insert(entry.id.clone(), entry.version.clone());
+    }
+    Ok(())
+}
+
+fn third_party_allowed() -> bool {
+    host().is_ok_and(|host| lock(&host.state).allow_third_party)
+}
+
+pub(super) fn start() {
+    let _ = thread::Builder::new().name("plugin-updates".into()).spawn(|| {
+        thread::sleep(FIRST_CHECK_AFTER);
+        loop {
+            // No network traffic for people who do not use third-party plugins.
+            if third_party_allowed() {
+                if let Err(error) = tauri::async_runtime::block_on(check()) {
+                    eprintln!("plugin update check failed: {error}");
+                }
+            }
+            thread::sleep(CHECK_EVERY);
+        }
+    });
+}
+
+/// Why `entry` may not be installed: revoked, or from a publisher the user has not trusted.
+pub(super) fn install_refusal(entry: &MarketEntry, revoked: &[revocations::Revocation]) -> Option<String> {
+    if let Some(item) = revocations::find(revoked, &entry.id, &entry.version) {
+        return Some(format!("This version was taken off the market: {}", item.reason.en()));
+    }
+    let host = host().ok()?;
+    let state = lock(&host.state);
+    (!trusts(&state, entry.publisher())).then(|| format!("Trust the publisher \"{}\" first.", entry.publisher()))
+}
+
+/// The reason a revoked plugin version shows.
+pub(super) fn revoked_reason(state: &PluginsState, id: &str, version: &str) -> Option<LocalizedText> {
+    revocations::find(&state.revoked, id, version).map(|item| item.reason.clone())
+}
+
+#[tauri::command]
+pub async fn set_plugin_auto_update(enabled: bool) -> Result<PluginsSnapshot, String> {
+    update_state(|state, _| {
+        state.auto_update = enabled;
+        Ok(())
+    })?;
+    snapshot()
+}
+
+/// Trusting a publisher lets its plugins be installed (the market asks first).
+#[tauri::command]
+pub async fn set_plugin_publisher_trusted(publisher: String, trusted: bool) -> Result<PluginsSnapshot, String> {
+    if !is_valid_publisher(&publisher) {
+        return Err("A publisher is a GitHub user or organization name.".into());
+    }
+    if publisher == OFFICIAL_PUBLISHER {
+        return Err("FocuSD Island's own plugins are always trusted.".into());
+    }
+    update_state(|state, _| {
+        state.trusted_publishers.retain(|name| *name != publisher);
+        if trusted {
+            state.trusted_publishers.push(publisher.clone());
+            state.trusted_publishers.sort();
+        }
+        Ok(())
+    })?;
+    snapshot()
+}
+
+/// Checks the market now (Settings > Plugins > Check for updates).
+#[tauri::command]
+pub async fn check_plugin_updates() -> Result<PluginsSnapshot, String> {
+    check().await?;
+    snapshot()
+}
