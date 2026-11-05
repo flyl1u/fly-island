@@ -174,7 +174,13 @@ async function main() {
     browser?.kill();
     vite.kill();
     await sleep(300);
-    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    // The browser can still hold files in its profile for a moment; a leftover temp
+    // folder must not turn a finished run into a failure.
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+    } catch (error) {
+      console.warn(`Could not remove ${profile}: ${error instanceof Error ? error.message : error}`);
+    }
   }
   console.log(failed === 0 ? `All ${pages.length} regression pages passed.` : `${failed} of ${pages.length} regression pages did not pass.`);
   return failed === 0 ? 0 : 1;
