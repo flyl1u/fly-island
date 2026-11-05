@@ -115,6 +115,10 @@ export type PluginInfo = {
   updateAvailable: string | null;
   /** The version an automatic update installed while the island has been running. */
   autoUpdated: string | null;
+  /** Updates may install this plugin's pre-releases. */
+  preRelease: boolean;
+  /** A pre-release in the market newer than the stable version. */
+  preReleaseAvailable: string | null;
 };
 
 // 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。
@@ -328,6 +332,10 @@ export function revokePluginSensitivePermission(id: string, permission: Sensitiv
 
 export function runPluginNotificationAction(id: string, action: string) {
   return invoke<void>("run_plugin_notification_action", { id, action });
+}
+
+export function setPluginPreRelease(id: string, enabled: boolean) {
+  return invoke<PluginsSnapshot>("set_plugin_pre_release", { id, enabled });
 }
 
 export function setPluginNotificationsMuted(id: string, muted: boolean) {

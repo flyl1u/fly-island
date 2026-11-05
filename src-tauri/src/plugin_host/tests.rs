@@ -1021,3 +1021,72 @@ mod event_tests {
         assert_eq!(kept.last(), Some(&json!({ "id": 99 })));
     }
 }
+
+mod pre_release_tests {
+    use serde_json::json;
+    use std::cmp::Ordering;
+
+    use super::super::manifest::compare_versions;
+    use super::super::market::{split_index, MarketData};
+
+    #[test]
+    fn versions_order_pre_releases_before_their_release() {
+        assert_eq!(compare_versions("1.3.0-beta.1", "1.3.0"), Ordering::Less);
+        assert_eq!(compare_versions("1.3.0-beta.2", "1.3.0-beta.1"), Ordering::Greater);
+        assert_eq!(compare_versions("1.3.0-beta.10", "1.3.0-beta.2"), Ordering::Greater);
+        assert_eq!(compare_versions("1.3.0-alpha", "1.3.0-beta"), Ordering::Less);
+        assert_eq!(compare_versions("1.3.0-beta", "1.3.0-beta.1"), Ordering::Less);
+        assert_eq!(compare_versions("1.3.0-1", "1.3.0-beta"), Ordering::Less);
+        assert_eq!(compare_versions("1.2.10", "1.2.9"), Ordering::Greater);
+        assert_eq!(compare_versions("1.2", "1.2.0"), Ordering::Equal);
+        assert_eq!(compare_versions("1.2.0+build.5", "1.2.0"), Ordering::Equal);
+    }
+
+    fn entry(id: &str, version: &str, pre_release: bool) -> serde_json::Value {
+        json!({
+            "id": id, "name": { "zh-CN": "x", "en": "x" }, "version": version, "apiVersion": 2, "author": "a",
+            "download": { "url": format!("https://example.com/{id}-{version}.zip"), "sha256": "0".repeat(64), "size": 1 },
+            "preRelease": pre_release,
+        })
+    }
+
+    fn market(plugins: Vec<serde_json::Value>) -> MarketData {
+        let (entries, pre_releases) = split_index(&json!({ "version": 1, "plugins": plugins }).to_string()).expect("index");
+        MarketData { entries, pre_releases, revoked: Vec::new() }
+    }
+
+    fn version(entry: Option<&super::super::market::MarketEntry>) -> Option<&str> {
+        entry.map(|entry| entry.version.as_str())
+    }
+
+    #[test]
+    fn pre_releases_are_kept_apart_and_only_the_newest_counts() {
+        let data = market(vec![
+            entry("a.one", "1.2.0", false),
+            entry("a.one", "1.3.0-beta.1", true),
+            entry("a.one", "1.3.0-beta.2", true),
+            entry("a.two", "2.0.0-rc.1", true),
+        ]);
+        assert_eq!(data.entries.len(), 1, "the market page lists stable plugins only");
+        assert_eq!(version(data.pre_release_of("a.one")), Some("1.3.0-beta.2"));
+        assert_eq!(version(data.pre_release_of("a.two")), Some("2.0.0-rc.1"));
+    }
+
+    #[test]
+    fn opting_in_picks_a_newer_pre_release_and_never_an_older_one() {
+        let data = market(vec![entry("a.one", "1.2.0", false), entry("a.one", "1.3.0-beta.1", true)]);
+        assert_eq!(version(data.entry_for("a.one", false)), Some("1.2.0"));
+        assert_eq!(version(data.entry_for("a.one", true)), Some("1.3.0-beta.1"));
+
+        // Once 1.3.0 is out the old beta is not offered, opted in or not, and an installed beta updates to it.
+        let released = market(vec![entry("a.one", "1.3.0", false), entry("a.one", "1.3.0-beta.1", true)]);
+        assert_eq!(version(released.entry_for("a.one", true)), Some("1.3.0"));
+        assert!(released.pre_release_of("a.one").is_none());
+        assert!(released.entry_for("a.one", false).is_some_and(|entry| entry.is_newer_than("1.3.0-beta.1")));
+        assert!(!released.entry_for("a.one", false).is_some_and(|entry| entry.is_newer_than("1.3.0")));
+
+        let only_pre = market(vec![entry("a.two", "2.0.0-rc.1", true)]);
+        assert!(only_pre.entry_for("a.two", false).is_none(), "a plugin with only pre-releases needs the opt-in");
+        assert!(only_pre.entry_for("a.two", true).is_some());
+    }
+}

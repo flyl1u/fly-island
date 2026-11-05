@@ -68,7 +68,7 @@ pub fn get_cached_plugin_market() -> Result<Option<MarketSnapshot>, String> {
 fn market_snapshot(data: market::MarketData) -> Result<MarketSnapshot, String> {
     let host = host()?;
     let version = app_version(&host.app);
-    let market::MarketData { entries, revoked } = data;
+    let market::MarketData { entries, revoked, .. } = data;
     let plugins = entries
         .into_iter()
         .map(|entry| MarketPlugin {
@@ -102,10 +102,9 @@ pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String
         Some(data) => data,
         None => market::fetch_market().await?,
     };
+    let pre_release = updates::wants_pre_release(&lock(&host.state), &id);
     let entry = data
-        .entries
-        .iter()
-        .find(|entry| entry.id == id)
+        .entry_for(&id, pre_release)
         .cloned()
         .ok_or("The plugin is no longer in the market.")?;
     if let Some(reason) = market::incompatibility(&entry, &version).or_else(|| updates::install_refusal(&entry, &data.revoked)) {

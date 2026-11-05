@@ -74,6 +74,10 @@ pub struct PluginInfo {
     update_available: Option<String>,
     /// The version an automatic update installed while the island has been running.
     auto_updated: Option<String>,
+    /// Updates may install pre-releases of this plugin (the user's choice).
+    pre_release: bool,
+    /// A pre-release in the market newer than the stable version.
+    pre_release_available: Option<String>,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -230,9 +234,11 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 revoked: None,
                 update_available: None,
                 auto_updated: None,
+                pre_release: grant.pre_release,
+                pre_release_available: None,
             };
             if !plugin.builtin && !plugin.dev {
-                (info.update_available, info.auto_updated) = updates::status_for(&plugin.folder);
+                (info.update_available, info.auto_updated, info.pre_release_available) = updates::status_for(&plugin.folder);
             }
             match &plugin.manifest {
                 Ok(manifest) => {

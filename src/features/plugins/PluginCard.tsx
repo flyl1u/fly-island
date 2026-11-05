@@ -116,6 +116,9 @@ export function PluginCard({
             {plugin.updateAvailable && plugin.updateAvailable !== plugin.autoUpdated ? (
               <p className="plugin-card__hint">{t.settings.plugins.updates.available(plugin.updateAvailable)}</p>
             ) : null}
+            {plugin.preReleaseAvailable && !plugin.preRelease ? (
+              <p className="plugin-card__hint">{t.settings.plugins.updates.preReleaseOffered(plugin.preReleaseAvailable)}</p>
+            ) : null}
             {plugin.needsApproval ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.needsApproval}</p> : null}
             {isOn && !canRun ? <p className="plugin-card__hint plugin-card__hint--warn">{t.settings.plugins.notAllowed}</p> : null}
             {!plugin.hasProcess ? <p className="plugin-card__hint">{t.settings.plugins.describedOnly}</p> : null}

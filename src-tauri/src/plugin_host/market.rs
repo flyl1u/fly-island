@@ -14,7 +14,7 @@ use std::{
 };
 
 use super::lock;
-use super::manifest::{parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
+use super::manifest::{compare_versions, parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
 use super::revocations::{parse_revoked, Revocation};
 use super::signature::{verify_file, verify_index, TRUSTED_KEYS};
 use crate::system::updater::get_updater_proxy;
@@ -75,9 +75,9 @@ pub struct MarketEntry {
     repo: Option<String>,
     #[serde(default)]
     categories: Vec<String>,
-    /// Pre-releases are not listed yet (choosing them per plugin is not built).
+    /// Offered only to installed plugins whose user opted in (`PluginGrant::pre_release`).
     #[serde(default)]
-    pre_release: bool,
+    pub(super) pre_release: bool,
     /// It has pages with its own HTML (template webview); shown as custom UI.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     webview: bool,
@@ -89,15 +89,38 @@ impl MarketEntry {
     }
 
     pub(super) fn is_newer_than(&self, installed: &str) -> bool {
-        !version_at_least(installed, &self.version)
+        compare_versions(&self.version, installed) == std::cmp::Ordering::Greater
     }
 }
 
 /// The index and the revocation list, read from the same commit.
 #[derive(Clone)]
 pub(super) struct MarketData {
+    /// Stable entries, one per plugin; what the market page lists.
     pub entries: Vec<MarketEntry>,
+    /// The newest pre-release of each plugin that has one.
+    pub pre_releases: Vec<MarketEntry>,
     pub revoked: Vec<Revocation>,
+}
+
+impl MarketData {
+    /// What to install or update `id` to: its pre-release when the user opted in and
+    /// it is newer than the stable version (or there is no stable one), else stable.
+    pub(super) fn entry_for(&self, id: &str, pre_release: bool) -> Option<&MarketEntry> {
+        let stable = self.entries.iter().find(|entry| entry.id == id);
+        match (stable, self.pre_release_of(id).filter(|_| pre_release)) {
+            (Some(stable), Some(pre)) if pre.is_newer_than(&stable.version) => Some(pre),
+            (Some(stable), _) => Some(stable),
+            (None, pre) => pre,
+        }
+    }
+
+    /// The newest pre-release of `id` that is newer than its stable version.
+    pub(super) fn pre_release_of(&self, id: &str) -> Option<&MarketEntry> {
+        let pre = self.pre_releases.iter().find(|entry| entry.id == id)?;
+        let stable = self.entries.iter().find(|entry| entry.id == id);
+        stable.is_none_or(|stable| pre.is_newer_than(&stable.version)).then_some(pre)
+    }
 }
 
 /// The last market read that passed its signature checks, and when. Lets the
@@ -119,9 +142,15 @@ struct MarketIndex {
     plugins: Vec<Value>,
 }
 
-/// Parses the index. Entries that do not check out are left out rather than
-/// failing the whole index.
+/// The index's stable entries, one per plugin.
+#[cfg(test)]
 pub(super) fn parse_index(text: &str) -> Result<Vec<MarketEntry>, String> {
+    split_index(text).map(|(stable, _)| stable)
+}
+
+/// Parses the index into stable entries and the newest pre-release of each plugin.
+/// Entries that do not check out are left out rather than failing the whole index.
+pub(super) fn split_index(text: &str) -> Result<(Vec<MarketEntry>, Vec<MarketEntry>), String> {
     let index: MarketIndex =
         serde_json::from_str(text).map_err(|error| format!("The plugin index is not valid: {error}"))?;
     if index.version != INDEX_VERSION {
@@ -130,16 +159,18 @@ pub(super) fn parse_index(text: &str) -> Result<Vec<MarketEntry>, String> {
             index.version
         ));
     }
-    let mut entries: Vec<MarketEntry> = index
+    let (mut pre_releases, mut entries): (Vec<MarketEntry>, Vec<MarketEntry>) = index
         .plugins
         .into_iter()
         .filter_map(|value| serde_json::from_value::<MarketEntry>(value).ok())
         .filter(is_valid_entry)
-        .filter(|entry| !entry.pre_release)
-        .collect();
+        .partition(|entry| entry.pre_release);
     entries.sort_by(|left, right| left.id.cmp(&right.id));
     entries.dedup_by(|left, right| left.id == right.id);
-    Ok(entries)
+    // Newest first within each plugin, so dedup keeps the newest pre-release.
+    pre_releases.sort_by(|left, right| left.id.cmp(&right.id).then_with(|| compare_versions(&right.version, &left.version)));
+    pre_releases.dedup_by(|left, right| left.id == right.id);
+    Ok((entries, pre_releases))
 }
 
 fn is_valid_entry(entry: &MarketEntry) -> bool {
@@ -263,7 +294,7 @@ pub(super) async fn fetch_market() -> Result<MarketData, String> {
         .await?
         .ok_or_else(|| missing("index.json.sig"))?;
     verify_index(&text, &signature, TRUSTED_KEYS)?;
-    let entries = parse_index(&text)?;
+    let (entries, pre_releases) = split_index(&text)?;
     let revoked_text = finish_download("revoked.json", revoked).await?;
     let revoked_signature = finish_download("revoked.json.sig", revoked_signature).await?;
     let revoked = match revoked_text {
@@ -274,7 +305,7 @@ pub(super) async fn fetch_market() -> Result<MarketData, String> {
             parse_revoked(&text)?
         }
     };
-    let data = MarketData { entries, revoked };
+    let data = MarketData { entries, pre_releases, revoked };
     *lock(&LAST_MARKET) = Some((Instant::now(), data.clone()));
     Ok(data)
 }

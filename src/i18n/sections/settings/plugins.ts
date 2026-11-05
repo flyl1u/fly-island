@@ -136,6 +136,11 @@ export type SettingsPluginsText = {
     available: (version: string) => string;
     autoUpdated: (version: string) => string;
     revoked: (reason: string) => string;
+    preReleaseTitle: string;
+    preRelease: string;
+    preReleaseHint: string;
+    preReleaseAvailable: (version: string) => string;
+    preReleaseOffered: (version: string) => string;
   };
 };
 
@@ -308,6 +313,11 @@ export const zhCN: SettingsPluginsText = {
     available: (version: string) => `有新版本 v${version}，可在插件市场更新。`,
     autoUpdated: (version: string) => `已自动更新到 v${version}。`,
     revoked: (reason: string) => `这个版本已从插件市场下架，已停用：${reason}`,
+    preReleaseTitle: "预发布版本",
+    preRelease: "接收这个插件的预发布版本",
+    preReleaseHint: "预发布版本是作者还在测试的新版本，可能不稳定。关掉后不会退回旧版本，等正式版比当前版本新时再更新。",
+    preReleaseAvailable: (version: string) => `插件市场里有预发布版本 v${version}。`,
+    preReleaseOffered: (version: string) => `有预发布版本 v${version}，可在插件设置里选择接收。`,
   },
 };
 
@@ -480,5 +490,10 @@ export const en: SettingsPluginsText = {
     available: (version: string) => `Version ${version} is available in the plugin market.`,
     autoUpdated: (version: string) => `Updated to ${version} automatically.`,
     revoked: (reason: string) => `This version was taken off the plugin market and is switched off: ${reason}`,
+    preReleaseTitle: "Pre-releases",
+    preRelease: "Get pre-releases of this plugin",
+    preReleaseHint: "Pre-releases are new versions the author is still testing and may be unstable. Turning this off does not roll back; the plugin updates again once a release is newer than what is installed.",
+    preReleaseAvailable: (version: string) => `Pre-release ${version} is in the plugin market. `,
+    preReleaseOffered: (version: string) => `Pre-release ${version} is available; you can opt in from the plugin's settings.`,
   },
 };

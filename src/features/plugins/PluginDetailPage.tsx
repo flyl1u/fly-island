@@ -16,6 +16,7 @@ export function PluginDetailPage({
   onSettingChange,
   onRunCommand,
   onNotificationsMutedChange,
+  onPreReleaseChange,
   onClearData,
   onRevokeSensitive,
 }: {
@@ -25,6 +26,7 @@ export function PluginDetailPage({
   onSettingChange: (key: string, value: unknown) => void;
   onRunCommand: (command: string) => void;
   onNotificationsMutedChange: (muted: boolean) => void;
+  onPreReleaseChange: (enabled: boolean) => void;
   onClearData: () => void;
   onRevokeSensitive: (permission: SensitivePermission) => void;
 }) {
@@ -97,6 +99,23 @@ export function PluginDetailPage({
             checked={!plugin.notificationsMuted}
             onChange={(show) => !busy && onNotificationsMutedChange(!show)}
           />
+        </section>
+      ) : null}
+
+      {plugin.preRelease || plugin.preReleaseAvailable ? (
+        <section className="settings-section plugins-panel">
+          <div className="settings-section__header">
+            <span>{t.settings.plugins.updates.preReleaseTitle}</span>
+          </div>
+          <ToggleControl
+            label={t.settings.plugins.updates.preRelease}
+            checked={plugin.preRelease}
+            onChange={(enabled) => !busy && onPreReleaseChange(enabled)}
+          />
+          <p className="settings-section__hint">
+            {plugin.preReleaseAvailable ? t.settings.plugins.updates.preReleaseAvailable(plugin.preReleaseAvailable) : null}
+            {t.settings.plugins.updates.preReleaseHint}
+          </p>
         </section>
       ) : null}
 

@@ -22,6 +22,7 @@ export function PluginsSettingsSection() {
     setEnabled,
     setSetting,
     setNotificationsMuted,
+    setPreRelease,
     revokeSensitive,
     clearData,
     reload,
@@ -46,6 +47,7 @@ export function PluginsSettingsSection() {
           onSettingChange={(key, value) => setSetting(openPlugin.id, key, value)}
           onRunCommand={(command) => runCommand(openPlugin.id, command)}
           onNotificationsMutedChange={(muted) => setNotificationsMuted(openPlugin.id, muted)}
+          onPreReleaseChange={(enabled) => setPreRelease(openPlugin.id, enabled)}
           onClearData={() => clearData(openPlugin.id)}
           onRevokeSensitive={(permission) => revokeSensitive(openPlugin.id, permission)}
         />

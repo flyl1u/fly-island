@@ -11,6 +11,7 @@ import {
   setPluginEnabled,
   setPluginPublisherTrusted,
   setPluginNotificationsMuted,
+  setPluginPreRelease,
   setPluginSetting,
   setPluginsAllowed,
   uninstallPlugin,
@@ -72,6 +73,10 @@ export function usePlugins() {
     checkUpdates: useCallback(() => void run(checkPluginUpdates), [run]),
     revokeSensitive: useCallback(
       (id: string, permission: SensitivePermission) => void run(() => revokePluginSensitivePermission(id, permission)),
+      [run],
+    ),
+    setPreRelease: useCallback(
+      (id: string, enabled: boolean) => void run(() => setPluginPreRelease(id, enabled)),
       [run],
     ),
     setNotificationsMuted: useCallback(

@@ -44,6 +44,9 @@ pub(super) struct PluginGrant {
     /// The user's remembered answers for sensitive permissions (sensitive.rs).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub sensitive: BTreeMap<String, SensitiveChoice>,
+    /// Updates may install this plugin's pre-releases (market.rs, MarketData::entry_for).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub pre_release: bool,
 }
 
 /// A missing or broken file reads as "nothing allowed".

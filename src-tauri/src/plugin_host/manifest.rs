@@ -318,6 +318,50 @@ pub(super) fn version_at_least(have: &str, need: &str) -> bool {
     true
 }
 
+/// Semantic-version order, pre-releases included: `1.3.0-beta.1` < `1.3.0-beta.2`
+/// < `1.3.0`. Used to decide whether a market version is newer than the installed
+/// one; `version_at_least` (app compatibility) still ignores the pre-release part.
+pub(super) fn compare_versions(left: &str, right: &str) -> std::cmp::Ordering {
+    use std::cmp::Ordering;
+    let split = |version: &str| -> (Vec<u64>, Option<String>) {
+        let version = version.split('+').next().unwrap_or("").trim();
+        let (core, pre) = match version.split_once('-') {
+            Some((core, pre)) => (core, Some(pre.to_string())),
+            None => (version, None),
+        };
+        (core.split('.').map(|part| part.trim().parse().unwrap_or(0)).collect(), pre)
+    };
+    let ((left_core, left_pre), (right_core, right_pre)) = (split(left), split(right));
+    let length = left_core.len().max(right_core.len());
+    let at = |list: &[u64], index: usize| list.get(index).copied().unwrap_or(0);
+    for index in 0..length {
+        let order = at(&left_core, index).cmp(&at(&right_core, index));
+        if order != Ordering::Equal {
+            return order;
+        }
+    }
+    match (left_pre, right_pre) {
+        (None, None) => Ordering::Equal,
+        (None, Some(_)) => Ordering::Greater,
+        (Some(_), None) => Ordering::Less,
+        (Some(left), Some(right)) => {
+            let (left, right): (Vec<&str>, Vec<&str>) = (left.split('.').collect(), right.split('.').collect());
+            for (a, b) in left.iter().zip(&right) {
+                let order = match (a.parse::<u64>(), b.parse::<u64>()) {
+                    (Ok(a), Ok(b)) => a.cmp(&b),
+                    (Ok(_), Err(_)) => Ordering::Less,
+                    (Err(_), Ok(_)) => Ordering::Greater,
+                    (Err(_), Err(_)) => a.cmp(b),
+                };
+                if order != Ordering::Equal {
+                    return order;
+                }
+            }
+            left.len().cmp(&right.len())
+        }
+    }
+}
+
 /// The command must stay inside the plugin folder.
 fn relative_command_path(command: &str) -> Result<PathBuf, String> {
     let path = Path::new(command);

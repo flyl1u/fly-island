@@ -32,14 +32,23 @@ struct Status {
     available: BTreeMap<String, String>,
     /// Plugin id -> the version an automatic update installed this run.
     updated: BTreeMap<String, String>,
+    /// Plugin id -> a pre-release in the market newer than its stable version.
+    pre_releases: BTreeMap<String, String>,
 }
 
-static STATUS: Mutex<Status> = Mutex::new(Status { available: BTreeMap::new(), updated: BTreeMap::new() });
+static STATUS: Mutex<Status> = Mutex::new(Status { available: BTreeMap::new(), updated: BTreeMap::new(), pre_releases: BTreeMap::new() });
+
+/// Whether updates of `id` may install pre-releases.
+pub(super) fn wants_pre_release(state: &PluginsState, id: &str) -> bool {
+    state.plugins.get(id).is_some_and(|grant| grant.pre_release)
+}
 
 /// (newer version in the market, version installed by an automatic update) for a plugin card.
-pub(super) fn status_for(id: &str) -> (Option<String>, Option<String>) {
+/// For an installed plugin: the update available, the version auto-updated to,
+/// and the pre-release the market offers.
+pub(super) fn status_for(id: &str) -> (Option<String>, Option<String>, Option<String>) {
     let status = lock(&STATUS);
-    (status.available.get(id).cloned(), status.updated.get(id).cloned())
+    (status.available.get(id).cloned(), status.updated.get(id).cloned(), status.pre_releases.get(id).cloned())
 }
 
 /// Whether the user trusts the publisher (the island's own always is).
@@ -60,10 +69,14 @@ pub(super) fn absorb(data: &MarketData) -> Result<Vec<MarketEntry>, String> {
     let version = app_version(&host.app);
     let state = lock(&host.state).clone();
     let mut available = BTreeMap::new();
+    let mut pre_releases = BTreeMap::new();
     let mut automatic = Vec::new();
     for plugin in lock(&host.installed).iter().filter(|plugin| !plugin.builtin && !plugin.dev) {
         let Ok(manifest) = &plugin.manifest else { continue };
-        let Some(entry) = data.entries.iter().find(|entry| entry.id == plugin.folder) else { continue };
+        if let Some(pre) = data.pre_release_of(&plugin.folder) {
+            pre_releases.insert(pre.id.clone(), pre.version.clone());
+        }
+        let Some(entry) = data.entry_for(&plugin.folder, wants_pre_release(&state, &plugin.folder)) else { continue };
         if !entry.is_newer_than(&manifest.version)
             || market::incompatibility(entry, &version).is_some()
             || revocations::find(&data.revoked, &entry.id, &entry.version).is_some()
@@ -76,7 +89,9 @@ pub(super) fn absorb(data: &MarketData) -> Result<Vec<MarketEntry>, String> {
             automatic.push(entry.clone());
         }
     }
-    lock(&STATUS).available = available;
+    let mut status = lock(&STATUS);
+    status.available = available;
+    status.pre_releases = pre_releases;
     Ok(automatic)
 }
 
@@ -165,6 +180,24 @@ pub async fn set_plugin_auto_update(enabled: bool) -> Result<PluginsSnapshot, St
         state.auto_update = enabled;
         Ok(())
     })?;
+    snapshot()
+}
+
+/// Lets updates of an installed plugin install its pre-releases, or go back to
+/// stable versions only (an installed pre-release stays until a newer stable).
+#[tauri::command]
+pub async fn set_plugin_pre_release(id: String, enabled: bool) -> Result<PluginsSnapshot, String> {
+    update_state(|state, installed| {
+        if !installed.iter().any(|plugin| plugin.folder == id && !plugin.builtin && !plugin.dev) {
+            return Err("Only plugins installed from the market have pre-releases.".into());
+        }
+        state.plugins.entry(id.clone()).or_default().pre_release = enabled;
+        Ok(())
+    })?;
+    // Show the right update at once when the market was read this session.
+    if let Some(data) = market::recent_market(Duration::from_secs(CHECK_EVERY.as_secs())) {
+        let _ = absorb(&data);
+    }
     snapshot()
 }
 
