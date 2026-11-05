@@ -1,11 +1,10 @@
 import { useTranslation } from "../../../i18n";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, CircleHelp, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Server, Unplug } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, Power, RefreshCw, Settings2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
-import { hasQQMailHelp } from "./mailDomain";
 import { MailAccountTabs } from "./MailAccountTabs";
 import "./QQMail.css";
 import type { QQMailController } from "./useQQMail";
@@ -68,20 +67,16 @@ function formatMailTime(time: number, locale: string) {
   return new Date(time).toLocaleString(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export function QQMailPanel({ controller, navigation, onRead, onBack }: {
+export function QQMailPanel({ controller, navigation, onRead, onBack, onOpenSettings }: {
   controller: QQMailController;
   navigation: ReactNode;
+  /** Opens the mail settings page, where mailboxes are added and re-authorized. */
+  onOpenSettings?: () => void;
   onRead?: (message: MailMessage) => void;
   onBack?: () => void;
 }) {
-  const { snapshot, mailboxes, adding, busy, actionError, connect, setEnabled, refresh, disconnect, openMail, openHelp, selectMailbox, startAdding } = controller;
+  const { snapshot, mailboxes, busy, actionError, setEnabled, refresh, openMail, selectMailbox } = controller;
   const t = useTranslation();
-  const [email, setEmail] = useState(snapshot.email ?? "");
-  const [authorizationCode, setAuthorizationCode] = useState("");
-  const [host, setHost] = useState("");
-  // A known mailbox only re-enters its code; its address and server stay as saved.
-  const newMailbox = !snapshot.email;
-  const showForm = !snapshot.configured || snapshot.status === "authRequired";
   const error = actionError || snapshot.error;
   const listRef = useRef<HTMLDivElement>(null);
   const listScroll = useRef(0);
@@ -94,7 +89,6 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
   const readerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setEmail(snapshot.email ?? ""); setAuthorizationCode(""); setHost(""); }, [snapshot.email]);
   // 远程图可能失效或被 CDN 拒绝，出错时就地隐藏，避免正文里出现裂图占位
   useEffect(() => {
     const node = bodyRef.current;
@@ -148,43 +142,37 @@ export function QQMailPanel({ controller, navigation, onRead, onBack }: {
         {navigation}
         <div className="qq-panel__toolbar">
           {snapshot.configured && <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.mail.receive} title={snapshot.enabled ? t.mail.pause : t.mail.resume} disabled={busy || snapshot.status === "authRequired"} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button>}
-          {showForm && hasQQMailHelp(email) && <button className="icon-button" type="button" title={t.mail.help} aria-label={t.mail.helpLabel} onClick={() => void openHelp()}><CircleHelp size={16} strokeWidth={1.8} /></button>}
           <button className="icon-button" type="button" title={t.mail.open} aria-label={t.mail.openLabel} onClick={() => void openMail()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
           {snapshot.configured && <button className="icon-button" type="button" title={snapshot.lastSyncedAt === null ? t.mail.refresh : t.mail.lastSynced(formatMailTime(snapshot.lastSyncedAt, t.localeTag))} aria-label={t.mail.refreshLabel} disabled={busy || snapshot.syncing || !snapshot.enabled || snapshot.status === "authRequired"} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} className={snapshot.syncing ? "qq-mail-spinning" : undefined} /></button>}
-          {snapshot.configured && <button className="icon-button" type="button" title={t.mail.disconnect} aria-label={t.mail.disconnectLabel} disabled={busy} onClick={() => void disconnect().then((disconnected) => { if (disconnected) setAuthorizationCode(""); })}><Unplug size={16} strokeWidth={1.8} /></button>}
         </div>
       </header>
-      {mailboxes.length > 0 && <MailAccountTabs mailboxes={mailboxes} selected={snapshot.email} adding={adding} busy={busy} onSelect={selectMailbox} onAdd={startAdding} />}
+      {mailboxes.length > 0 && <MailAccountTabs mailboxes={mailboxes} selected={snapshot.email} busy={busy} onSelect={selectMailbox} onAdd={onOpenSettings} />}
       {error && <p className="qq-panel__error" role="alert">{error}</p>}
-      {showForm ? (
-        <form className="qq-mail-form" onSubmit={(event) => {
-          event.preventDefault();
-          void connect(email, authorizationCode, newMailbox ? host : undefined).then((connected) => { if (connected) setAuthorizationCode(""); });
-        }}>
-          <div className="qq-mail-fields">
-            <label className="qq-mail-field"><AtSign size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-email" aria-label={t.mail.email} type="email" autoComplete="username" placeholder={t.mail.emailPlaceholder} required maxLength={80} value={email} disabled={busy || snapshot.configured} onChange={(event) => setEmail(event.currentTarget.value)} /></label>
-            <label className="qq-mail-field"><KeyRound size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-code" aria-label={t.mail.authorizationCode} type="password" autoComplete="off" placeholder={t.mail.authorizationPlaceholder} required maxLength={256} value={authorizationCode} disabled={busy} onChange={(event) => setAuthorizationCode(event.currentTarget.value)} /></label>
-            {newMailbox && <label className="qq-mail-field"><Server size={16} strokeWidth={1.8} aria-hidden="true" /><input id="qq-mail-host" aria-label={t.mail.imapHost} type="text" autoComplete="off" spellCheck={false} placeholder={t.mail.imapHostPlaceholder} maxLength={253} value={host} disabled={busy} onChange={(event) => setHost(event.currentTarget.value)} /></label>}
-          </div>
-          <div className="qq-mail-form__actions">
-            <button className="message-action qq-mail-connect" type="submit" disabled={busy || !email.trim() || !authorizationCode.trim()}>{busy ? <LoaderCircle size={15} strokeWidth={1.8} className="qq-mail-spinning" /> : <ArrowRight size={15} strokeWidth={1.8} />}{busy ? t.common.connecting : t.mail.connect}</button>
-          </div>
-        </form>
+      {mailboxes.length === 0 ? (
+        <div className="qq-panel__empty qq-mail-setup" role="status">
+          <span className="message-empty-icon">{busy ? <LoaderCircle size={26} strokeWidth={1.5} className="qq-mail-spinning" /> : <MessageSourceIcon source="qqMail" size={28} />}</span>
+          <span>{busy ? t.common.connecting : t.mail.noMailbox}</span>
+          {!busy && onOpenSettings && <button className="message-action" type="button" onClick={onOpenSettings}><Settings2 size={14} strokeWidth={1.8} />{t.mail.addInSettings}</button>}
+        </div>
+      ) : snapshot.status === "authRequired" ? (
+        <div className="qq-panel__empty qq-mail-setup" role="status">
+          <span className="message-empty-icon"><KeyRound size={26} strokeWidth={1.5} /></span>
+          <span>{t.mail.status.authRequired}</span>
+          {onOpenSettings && <button className="message-action" type="button" onClick={onOpenSettings}><Settings2 size={14} strokeWidth={1.8} />{t.mail.reauthorizeInSettings}</button>}
+        </div>
       ) : (
-        <>
-          <div className="qq-panel__list qq-mail-list" ref={listRef} onScroll={(event) => { listScroll.current = event.currentTarget.scrollTop; }} role="list" aria-label={t.mail.inbox} aria-busy={snapshot.syncing}>
-            {snapshot.items.length === 0 ? (
-              <div className="qq-panel__empty" role="status"><span className="message-empty-icon">{snapshot.syncing ? <LoaderCircle size={26} strokeWidth={1.5} className="qq-mail-spinning" /> : <MessageSourceIcon source="qqMail" size={28} />}</span><span>{snapshot.syncing ? t.mail.syncing : t.mail.empty}</span></div>
-            ) : snapshot.items.map((item) => (
-              <article className={`qq-panel__item qq-mail-item${item.unread ? " qq-mail-item--unread" : ""}`} key={item.id} role="listitem">
-                <button type="button" data-mail-id={item.id} onClick={() => { if (onRead) onRead(item); else void readMail(item); }} aria-label={t.mail.readMessage(item.subject, item.unread)}>
-                  <div className="qq-panel__item-heading"><strong title={item.sender}>{item.unread && <span className="qq-mail-unread-dot" aria-hidden="true" />}<span>{item.sender}</span></strong>{item.receivedAt !== null && <time dateTime={new Date(item.receivedAt).toISOString()}>{formatMailTime(item.receivedAt, t.localeTag)}</time>}</div>
-                  <p>{item.subject}</p>
-                </button>
-              </article>
-            ))}
-          </div>
-        </>
+      <div className="qq-panel__list qq-mail-list" ref={listRef} onScroll={(event) => { listScroll.current = event.currentTarget.scrollTop; }} role="list" aria-label={t.mail.inbox} aria-busy={snapshot.syncing}>
+        {snapshot.items.length === 0 ? (
+          <div className="qq-panel__empty" role="status"><span className="message-empty-icon">{snapshot.syncing ? <LoaderCircle size={26} strokeWidth={1.5} className="qq-mail-spinning" /> : <MessageSourceIcon source="qqMail" size={28} />}</span><span>{snapshot.syncing ? t.mail.syncing : t.mail.empty}</span></div>
+        ) : snapshot.items.map((item) => (
+          <article className={`qq-panel__item qq-mail-item${item.unread ? " qq-mail-item--unread" : ""}`} key={item.id} role="listitem">
+            <button type="button" data-mail-id={item.id} onClick={() => { if (onRead) onRead(item); else void readMail(item); }} aria-label={t.mail.readMessage(item.subject, item.unread)}>
+              <div className="qq-panel__item-heading"><strong title={item.sender}>{item.unread && <span className="qq-mail-unread-dot" aria-hidden="true" />}<span>{item.sender}</span></strong>{item.receivedAt !== null && <time dateTime={new Date(item.receivedAt).toISOString()}>{formatMailTime(item.receivedAt, t.localeTag)}</time>}</div>
+              <p>{item.subject}</p>
+            </button>
+          </article>
+        ))}
+      </div>
       )}
     </section>
   );

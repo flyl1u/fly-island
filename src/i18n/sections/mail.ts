@@ -38,7 +38,21 @@ export type MailText = {
   imapHost: string;
   imapHostPlaceholder: string;
   accounts: string;
-  addAccount: string;
+  accountsTitle: string;
+  accountsHint: string;
+  addTitle: string;
+  reauthorizeTitle: (email: string) => string;
+  noMailbox: string;
+  addInSettings: string;
+  reauthorizeInSettings: string;
+  reauthorize: string;
+  pauseShort: string;
+  resumeShort: string;
+  disconnectShort: string;
+  cancel: string;
+  defaultHost: string;
+  limitReached: (max: number) => string;
+  unread: (count: number) => string;
   connect: string;
   inbox: string;
   syncing: string;
@@ -95,7 +109,21 @@ export const zhCN: MailText = {
   imapHost: "IMAP 服务器",
   imapHostPlaceholder: "IMAP 服务器（可留空，默认 imap.域名）",
   accounts: "邮箱账户",
-  addAccount: "添加邮箱",
+  accountsTitle: "邮箱账户",
+  accountsHint: "每个邮箱有独立的后台连接，岛上的邮箱面板按标签切换。授权码保存在 Windows 凭据管理器，断开时一并删除。",
+  addTitle: "添加邮箱",
+  reauthorizeTitle: (email) => `重新授权 ${email}`,
+  noMailbox: "还没有连接邮箱",
+  addInSettings: "在设置中添加邮箱",
+  reauthorizeInSettings: "去设置重新授权",
+  reauthorize: "重新授权",
+  pauseShort: "暂停",
+  resumeShort: "接收",
+  disconnectShort: "断开",
+  cancel: "取消",
+  defaultHost: "默认服务器",
+  limitReached: (max) => `最多同时连接 ${max} 个邮箱，请先断开一个再添加。`,
+  unread: (count) => `${count} 封未读`,
   connect: "连接",
   inbox: "收件箱最近 20 封邮件",
   syncing: "同步中",
@@ -152,7 +180,21 @@ export const en: MailText = {
   imapHost: "IMAP server",
   imapHostPlaceholder: "IMAP server (optional, imap.<domain>)",
   accounts: "Mailboxes",
-  addAccount: "Add mailbox",
+  accountsTitle: "Mailboxes",
+  accountsHint: "Each mailbox has its own background connection; the island's mail panel shows one tab each. Authorization codes are kept in Windows Credential Manager and removed on disconnect.",
+  addTitle: "Add a mailbox",
+  reauthorizeTitle: (email) => `Re-authorize ${email}`,
+  noMailbox: "No mailbox connected yet",
+  addInSettings: "Add a mailbox in settings",
+  reauthorizeInSettings: "Re-authorize in settings",
+  reauthorize: "Re-authorize",
+  pauseShort: "Pause",
+  resumeShort: "Receive",
+  disconnectShort: "Disconnect",
+  cancel: "Cancel",
+  defaultHost: "Default server",
+  limitReached: (max) => `Up to ${max} mailboxes can be connected. Disconnect one to add another.`,
+  unread: (count) => `${count} unread`,
   connect: "Connect",
   inbox: "Latest 20 inbox messages",
   syncing: "Syncing",

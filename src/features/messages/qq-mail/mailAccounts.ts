@@ -59,14 +59,19 @@ export function orderMailboxes(snapshots: MailSnapshot[], saved: MailAccountSett
     .map(({ snapshot }) => snapshot);
 }
 
-/** The saved list after a snapshot: connected mailboxes are kept, forgotten ones dropped. */
-export function rememberMailbox(saved: MailAccountSettings[], next: MailSnapshot, host = ""): MailAccountSettings[] {
+/**
+ * The saved list after a snapshot: connected mailboxes are kept, forgotten ones dropped.
+ * `typedHost` is the server this window's connect form sent; it wins over the saved one,
+ * because the island and the settings window both save and either may save first.
+ */
+export function rememberMailbox(saved: MailAccountSettings[], next: MailSnapshot, typedHost = ""): MailAccountSettings[] {
   if (!next.email) return saved;
   const others = saved.filter((entry) => entry.email !== next.email);
   if (isRemovedMailbox(next)) return others;
   if (!next.configured) return saved;
   const index = saved.findIndex((entry) => entry.email === next.email);
-  const entry = { email: next.email, host: index < 0 ? host : saved[index].host, enabled: next.enabled };
+  const host = typedHost.trim() || (index < 0 ? "" : saved[index].host);
+  const entry = { email: next.email, host, enabled: next.enabled };
   return index < 0 ? [...saved, entry] : saved.map((old, i) => (i === index ? entry : old));
 }
 

@@ -332,7 +332,7 @@ export function IslandApp() {
       >
         {page === "qq" && (
           <div className="message-panel">
-            <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} enabledSources={features} onSourceChange={openMessages} />
+            <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} enabledSources={features} onSourceChange={openMessages} onOpenMailSettings={() => openSettingsWindow("mail")} />
           </div>
         )}
         {page === "music" && (

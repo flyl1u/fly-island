@@ -15,13 +15,15 @@ type MessagesProps = {
   /** Sources switched on; the tabs of the others are hidden. */
   enabledSources: Record<MessageSource, boolean>;
   onSourceChange: (source: MessageView) => void;
+  /** Opens the settings window on the mail page, where mailboxes are added. */
+  onOpenMailSettings?: () => void;
 };
 
 export function messagePanelHeight(source: MessageView, readingMail = false) {
   return source === "qqMail" && readingMail ? 450 : 350;
 }
 
-export function MessagesPanel({ qqMail, qqNotifications, wechatReminders, source, enabledSources, onSourceChange }: MessagesProps) {
+export function MessagesPanel({ qqMail, qqNotifications, wechatReminders, source, enabledSources, onSourceChange, onOpenMailSettings }: MessagesProps) {
   const t = useTranslation();
   const { snapshot: qq } = qqNotifications;
   const navigate = (next: MessageView) => onSourceChange(next);
@@ -33,7 +35,7 @@ export function MessagesPanel({ qqMail, qqNotifications, wechatReminders, source
     </div>
   );
 
-  if (source === "qqMail") return <QQMailPanel controller={qqMail} navigation={navigation} />;
+  if (source === "qqMail") return <QQMailPanel controller={qqMail} navigation={navigation} onOpenSettings={onOpenMailSettings} />;
   if (source === "wechat") return <WeChatReminderPanel controller={wechatReminders} navigation={navigation} />;
   return <QQNotificationPanel controller={qqNotifications} navigation={navigation} />;
 }
