@@ -59,7 +59,7 @@ Fly Island brings frequent actions from separate windows into one compact island
 - **Shortcuts and game mode**: every shortcut is on one settings page, can be changed, and conflicts are reported; Alt+number switches expanded pages. The island tucks away while a full-screen game runs on its screen.
 - **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; tuck the island to the screen edge when idle; save up to six custom style presets, hide the island title, or enable launch at startup.
 
-Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; Mail syncs only headers in the background and reads bodies on demand into memory. It does not download attachments, load remote images, or change read status.
+Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; Mail syncs only headers in the background and reads bodies on demand into memory. It only downloads an attachment, into your Downloads folder, when you click Save, does not load remote images, and changes read status only when you click Mark as read.
 
 ## Getting started
 

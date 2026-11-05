@@ -6,6 +6,7 @@ import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
 import { MailAccountTabs } from "./MailAccountTabs";
+import { MailAttachments } from "./MailAttachments";
 import "./MailPanel.css";
 import type { MailController } from "./useMail";
 
@@ -135,6 +136,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
             }} dangerouslySetInnerHTML={{ __html: html || DOMPurify.sanitize(`<p>${t.mail.emptyHtml}</p>`) }} />
           : <div className="qq-mail-body qq-mail-body--text">{content?.content || t.mail.emptyText}</div>}
       </div>
+      {content && readerAccount ? <MailAttachments key={content.id} account={readerAccount} messageId={content.id} attachments={content.attachments ?? []} /> : null}
       <p className="qq-mail-reader__notice">{t.mail.notice}</p>
     </section>
   );

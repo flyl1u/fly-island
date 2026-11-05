@@ -313,6 +313,18 @@ impl MailService {
         result
     }
 
+    /// Downloads one attachment and writes it to the Downloads folder.
+    pub(super) fn save_attachment(&self, email: &str, message_id: &str, part: &str) -> Result<std::path::PathBuf, String> {
+        let dir = crate::win32::known_folder::downloads().ok_or("找不到下载文件夹。")?;
+        let secret = read_secret(email)?.ok_or("未找到邮箱授权码，请重新连接。")?;
+        let mut session =
+            open_session(&self.host(), email, &secret).map_err(|failure| failure.message.to_string())?;
+        let fetched = super::attachments::fetch_attachment(&mut session, message_id, part);
+        let _ = session.logout();
+        let (info, bytes) = fetched?;
+        super::attachments::write_unused(&dir, &super::attachments::safe_file_name(&info.name), &bytes)
+    }
+
     /// Marks a message read on the server, then shows it read at once instead of
     /// waiting for the next sync.
     pub(super) fn mark_read(&self, generation: u64, email: &str, message_id: &str) -> Result<MailSnapshot, String> {

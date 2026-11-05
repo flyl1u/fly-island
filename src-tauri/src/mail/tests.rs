@@ -571,6 +571,53 @@ fn body_client(
 }
 
 #[test]
+fn attachments_are_listed_decoded_and_only_listed_parts_are_fetched() {
+    let structure = "((\"TEXT\" \"PLAIN\" (\"CHARSET\" \"UTF-8\") NIL NIL \"7BIT\" 5 1 NIL NIL NIL NIL)(\"APPLICATION\" \"PDF\" (\"NAME\" \"=?UTF-8?B?5oql5ZGKLnBkZg==?=\") NIL NIL \"BASE64\" 8 NIL (\"ATTACHMENT\" (\"FILENAME\" \"=?UTF-8?B?5oql5ZGKLnBkZg==?=\")) NIL NIL) \"MIXED\" (\"BOUNDARY\" \"x\") NIL NIL NIL)";
+    let mime = "Content-Type: application/pdf\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+    let script = format!(
+        "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[2.MIME] {{{}}}\r\n{mime} BODY[2] {{8}}\r\naGVsbG8=)\r\na4 OK body\r\n",
+        mime.len()
+    );
+    let (imap, output) = client(script);
+    let mut session = imap.login("user@qq.com", "test-secret").unwrap();
+    let (info, bytes) = super::attachments::fetch_attachment(&mut session, "7:9", "2").unwrap();
+    assert_eq!((info.name.as_str(), info.part.as_str(), info.size, info.mime.as_str()), ("报告.pdf", "2", 8, "application/pdf"));
+    assert_eq!(bytes, b"hello");
+    assert!(String::from_utf8_lossy(&output.lock().unwrap()).contains("a4 UID FETCH 9 (UID BODY.PEEK[2.MIME] BODY.PEEK[2])"));
+
+    // The text body is not an attachment, so it cannot be fetched this way.
+    let script = format!("* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n");
+    let (imap, output) = client(script);
+    let mut session = imap.login("user@qq.com", "test-secret").unwrap();
+    assert!(super::attachments::fetch_attachment(&mut session, "7:9", "1").is_err());
+    assert!(!String::from_utf8_lossy(&output.lock().unwrap()).contains("BODY.PEEK[1]"));
+}
+
+#[test]
+fn attachment_file_names_are_safe_and_never_overwrite() {
+    use super::attachments::{safe_file_name, write_unused};
+    assert_eq!(safe_file_name("报告.pdf"), "报告.pdf");
+    assert_eq!(safe_file_name("..\\..\\Windows\\evil.exe"), "_.._Windows_evil.exe");
+    assert_eq!(safe_file_name("a/b:c*?.txt"), "a_b_c__.txt");
+    assert_eq!(safe_file_name("CON.txt"), "_CON.txt");
+    assert_eq!(safe_file_name("com1"), "_com1");
+    assert_eq!(safe_file_name("name. . "), "name");
+    assert_eq!(safe_file_name(""), "attachment");
+    assert_eq!(safe_file_name("x\r\ny.doc"), "x__y.doc");
+    assert!(safe_file_name(&format!("{}.pdf", "长".repeat(400))).chars().count() <= 150);
+
+    let dir = std::env::temp_dir().join(format!("fly-attachments-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let first = write_unused(&dir, "报告.pdf", b"one").unwrap();
+    let second = write_unused(&dir, "报告.pdf", b"two").unwrap();
+    assert_eq!(first.file_name().unwrap(), "报告.pdf");
+    assert_eq!(second.file_name().unwrap(), "报告 (2).pdf");
+    assert_eq!(std::fs::read(&first).unwrap(), b"one", "the first file is not overwritten");
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
 fn marking_read_selects_the_inbox_and_stores_seen_on_that_uid() {
     let script = "* OK ready\r\na1 OK login\r\n* 3 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-WRITE] selected\r\na3 OK stored\r\n".to_string();
     let (imap, output) = client(script);
@@ -778,14 +825,19 @@ fn a_changed_uid_validity_never_reads_a_different_message() {
 
 #[test]
 fn oversized_bodies_and_text_attachments_are_not_downloaded() {
-    for structure in [
-        format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {} 1)", MAX_BODY_BYTES + 1),
-        "(\"TEXT\" \"PLAIN\" (\"NAME\" \"secret.txt\") NIL NIL \"8BIT\" 8 1 NIL (\"ATTACHMENT\" (\"FILENAME\" \"secret.txt\")) NIL NIL)".into(),
-    ] {
-        let (mut session, output) = body_client(&structure, "HEADER", "1", "", "");
-        assert!(fetch_content(&mut session, "7:9").is_err());
-        assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("BODY.PEEK"));
-    }
+    let oversized = format!("(\"TEXT\" \"PLAIN\" NIL NIL NIL \"8BIT\" {} 1)", MAX_BODY_BYTES + 1);
+    let (mut session, output) = body_client(&oversized, "HEADER", "1", "", "");
+    assert!(fetch_content(&mut session, "7:9").is_err());
+    assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("BODY.PEEK"));
+
+    // A message that is only a text attachment opens with the attachment listed,
+    // and its content is not downloaded as the body.
+    let attachment = "(\"TEXT\" \"PLAIN\" (\"NAME\" \"secret.txt\") NIL NIL \"8BIT\" 8 1 NIL (\"ATTACHMENT\" (\"FILENAME\" \"secret.txt\")) NIL NIL)";
+    let (mut session, output) = body_client(attachment, "HEADER", "1", "", "");
+    let content = fetch_content(&mut session, "7:9").unwrap();
+    assert!(content.content.is_empty());
+    assert_eq!(content.attachments.iter().map(|item| item.name.as_str()).collect::<Vec<_>>(), ["secret.txt"]);
+    assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("BODY.PEEK"));
 }
 
 #[test]

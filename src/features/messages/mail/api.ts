@@ -11,7 +11,15 @@ export type MailMessage = {
   unread: boolean;
 };
 
-export type MailContent = { id: string; content: string; contentType: "text/plain" | "text/html" };
+/** Mirrors AttachmentInfo in src-tauri/src/mail/attachments.rs. */
+export type MailAttachment = { part: string; name: string; size: number; mime: string };
+
+export type MailContent = { id: string; content: string; contentType: "text/plain" | "text/html"; attachments: MailAttachment[] };
+
+/** Saves one attachment into Downloads and shows it in Explorer; resolves to the path written. */
+export function saveMailAttachment(email: string, messageId: string, part: string) {
+  return invoke<string>("save_qq_mail_attachment", { email, messageId, part });
+}
 
 export type MailSnapshot = {
   revision: number;

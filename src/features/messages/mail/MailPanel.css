@@ -27,6 +27,13 @@
 .qq-mail-reader__meta time { flex: 0 0 auto; }
 .qq-mail-reader__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xl); padding: 14px 0; color: rgba(241, 246, 250, .65); font-size: 13px; }
 .qq-mail-reader__state .qq-panel__error { flex-basis: 100%; margin: 0; }
+.qq-mail-attachments { flex: 0 0 auto; margin: 8px 8px 0; padding: 8px 10px; border-radius: var(--radius-md); background: rgba(255, 255, 255, .04); }
+.qq-mail-attachments__title { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: rgba(241, 246, 250, .7); font-size: 11px; font-weight: 700; }
+.qq-mail-attachments ul { display: flex; flex-direction: column; gap: 4px; max-height: 120px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.qq-mail-attachment { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; font-size: 12px; }
+.qq-mail-attachment__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-page-text); }
+.qq-mail-attachment__size { color: rgba(241, 246, 250, .5); font-size: 11px; font-variant-numeric: tabular-nums; }
+.qq-mail-attachment .qq-panel__error { grid-column: 1 / -1; margin: 0; }
 .qq-mail-reader__notice { flex: 0 0 auto; margin: 10px 8px 0; color: rgba(241, 246, 250, .55); font-size: 11px; line-height: 1.5; }
 .qq-mail-body { color: rgba(241, 246, 250, .85); font-size: 14px; line-height: 1.85; overflow-wrap: anywhere; user-select: text; }
 .qq-mail-body--text { white-space: pre-wrap; }

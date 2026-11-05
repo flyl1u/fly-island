@@ -39,7 +39,7 @@ struct TextPart {
     octets: u32,
 }
 
-fn is_attachment(common: &BodyContentCommon<'_>) -> bool {
+pub(super) fn is_attachment(common: &BodyContentCommon<'_>) -> bool {
     common.disposition.as_ref().is_some_and(|disposition| {
         !disposition.ty.eq_ignore_ascii_case("inline")
             || disposition.params.as_ref().is_some_and(|params| {
@@ -332,8 +332,15 @@ pub(super) fn fetch_content<T: Read + Write>(
         .filter(|item| item.uid == Some(uid))
         .find_map(|item| item.bodystructure())
         .ok_or("邮件已移除或暂不可用，请刷新收件箱。")?;
-    let part =
-        text_part(structure, Vec::new()).ok_or("这封邮件没有可读取的文字正文，请在网页中查看。")?;
+    let mut attachments = Vec::new();
+    super::attachments::collect(structure, Vec::new(), &mut attachments);
+    // A message that is only attachments still opens, with its list and no text.
+    let Some(part) = text_part(structure, Vec::new()) else {
+        if attachments.is_empty() {
+            return Err("这封邮件没有可读取的文字正文，请在网页中查看。".into());
+        }
+        return Ok(MailContent { id: message_id.into(), content: String::new(), content_type: "text/plain".into(), attachments });
+    };
     if part.octets > MAX_BODY_BYTES {
         return Err("邮件正文超过 512 KB，请在网页中查看。".into());
     }
@@ -405,5 +412,6 @@ pub(super) fn fetch_content<T: Read + Write>(
         id: message_id.into(),
         content,
         content_type: part.mime.into(),
+        attachments,
     })
 }

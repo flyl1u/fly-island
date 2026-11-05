@@ -11,6 +11,10 @@ export type MailText = {
   webHint: string;
   openWeb: string;
   markRead: string;
+  attachments: (count: number) => string;
+  saveAttachment: string;
+  saveAttachmentHint: string;
+  attachmentSaved: string;
   body: string;
   loading: string;
   emptyHtml: string;
@@ -85,6 +89,10 @@ export const zhCN: MailText = {
   webHint: "附件和回复请在网页中处理",
   openWeb: "在网页打开",
   markRead: "标为已读",
+  attachments: (count: number) => `附件（${count}）`,
+  saveAttachment: "保存",
+  saveAttachmentHint: "保存到下载文件夹，并在资源管理器中显示",
+  attachmentSaved: "已保存",
   body: "邮件正文",
   loading: "正在加载正文",
   emptyHtml: "这封邮件没有可显示的文字，请在网页中查看。",
@@ -159,6 +167,10 @@ export const en: MailText = {
   webHint: "Open the website for attachments and replies",
   openWeb: "Open in browser",
   markRead: "Mark as read",
+  attachments: (count: number) => `Attachments (${count})`,
+  saveAttachment: "Save",
+  saveAttachmentHint: "Save to the Downloads folder and show it in Explorer",
+  attachmentSaved: "Saved",
   body: "Email body",
   loading: "Loading email",
   emptyHtml: "No text to display. View this email in your browser.",

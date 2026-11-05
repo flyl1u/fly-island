@@ -3,6 +3,7 @@
 //! name because the command names are a contract with the frontend.
 
 mod accounts;
+mod attachments;
 mod client_id;
 mod content;
 mod credentials;
@@ -43,6 +44,8 @@ pub struct MailContent {
     id: String,
     content: String,
     content_type: String,
+    /// The message's attachments; saved one at a time with save_qq_mail_attachment.
+    attachments: Vec<attachments::AttachmentInfo>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -248,6 +251,29 @@ pub async fn read_qq_mail(email: String, message_id: String) -> Result<MailConte
         .map_err(|_| "无法读取邮件。".to_string())?
 }
 
+/// Saves one attachment of a listed message into the Downloads folder and shows it
+/// in Explorer. Returns the path written (never an existing file).
+#[tauri::command]
+pub async fn save_qq_mail_attachment(email: String, message_id: String, part: String) -> Result<String, String> {
+    parse_message_id(&message_id)?;
+    if part.is_empty() || part.len() > 64 || !part.split('.').all(|segment| !segment.is_empty() && segment.bytes().all(|byte| byte.is_ascii_digit())) {
+        return Err("附件标识无效，请重新打开邮件。".into());
+    }
+    let email = normalize_email(&email)?;
+    let service = accounts::find(&email)?;
+    {
+        let state = service.lock()?;
+        if !state.snapshot.configured || !state.snapshot.items.iter().any(|item| item.id == message_id) {
+            return Err("邮件已不在最近列表中，请刷新收件箱。".into());
+        }
+    }
+    let saved = tauri::async_runtime::spawn_blocking(move || service.save_attachment(&email, &message_id, &part))
+        .await
+        .map_err(|_| "无法保存附件。".to_string())??;
+    let _ = tauri_plugin_opener::reveal_item_in_dir(&saved);
+    Ok(saved.to_string_lossy().into_owned())
+}
+
 /// Marks a listed message read on the server; reading in the island never does.
 #[tauri::command]
 pub async fn mark_qq_mail_read(email: String, message_id: String) -> Result<MailSnapshot, String> {
@@ -330,6 +356,7 @@ macro_rules! tauri_commands {
             crate::mail::refresh_qq_mail,
             crate::mail::read_qq_mail,
             crate::mail::mark_qq_mail_read,
+            crate::mail::save_qq_mail_attachment,
             crate::mail::disconnect_qq_mail,
         ] $($rest)*)
     };

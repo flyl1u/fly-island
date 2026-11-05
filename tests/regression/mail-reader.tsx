@@ -23,7 +23,7 @@ let revision = 0;
 let mail: MailController;
 let view: MessageView;
 let setView: (source: MessageView) => void;
-let readBehavior = async (id: string): Promise<MailContent> => ({ id, contentType: "text/plain", content: "你好，\n\n本周的开发工作已完成，请查看下面的安排：\n\n1. 周二完成消息界面验收。\n2. 周四讨论下个版本。\n3. 周五汇总反馈。\n\n谢谢。\n产品团队" });
+let readBehavior = async (id: string): Promise<MailContent> => ({ id, attachments: [], contentType: "text/plain", content: "你好，\n\n本周的开发工作已完成，请查看下面的安排：\n\n1. 周二完成消息界面验收。\n2. 周四讨论下个版本。\n3. 周五汇总反馈。\n\n谢谢。\n产品团队" });
 let snapshot: MailSnapshot = {
   revision: ++revision, email: "demo@qq.com", configured: state !== "disconnected", enabled: true, syncing: false,
   status: state === "auth" ? "authRequired" : state === "disconnected" ? "disconnected" : "connected",
@@ -40,6 +40,7 @@ mockIPC((command, payload) => {
     case "get_qq_mail_state": return snapshot.configured || snapshot.status !== "disconnected" ? [snapshot] : [];
     case "read_qq_mail": return readBehavior(String(args.messageId));
     case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
+    case "save_qq_mail_attachment": return "C:\\Users\\demo\\Downloads\\季度报告.pdf";
     case "mark_qq_mail_read": snapshot = { ...snapshot, revision: ++revision, unreadCount: Math.max(0, (snapshot.unreadCount ?? 0) - 1), items: snapshot.items.map(item => item.id === args.messageId ? { ...item, unread: false } : item) }; return snapshot;
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
     case "request_qq_notification_access": return "allowed";
@@ -99,7 +100,7 @@ try {
     check(view! === "qqMail" && mail!.reading && document.querySelector('[aria-label="邮件阅读"]'), "点击邮件在岛内打开阅读页并显示加载状态");
     check(!calls.some(call => call.command === "plugin:opener|open_url"), "点邮件不会打开浏览器");
     check(document.activeElement?.getAttribute("aria-label") === "邮件正文", "阅读页接收键盘焦点");
-    await act(async () => { pending.resolve({ id: "7:20", contentType: "text/html", content: '<h2>下周安排</h2><p>保留正文</p><script>window.readerPwned=true</script><img src="https://tracking.example.com/pixel" onerror="alert(1)"><iframe src="https://tracking.example.com/"></iframe><form><input></form><style>body{display:none}</style><a href="javascript:alert(1)">危险链接</a><a href="https://example.com/report">查看周报</a><table><tr><td>会议</td><td>周二</td></tr></table>' }); await pending.promise; });
+    await act(async () => { pending.resolve({ id: "7:20", attachments: [], contentType: "text/html", content: '<h2>下周安排</h2><p>保留正文</p><script>window.readerPwned=true</script><img src="https://tracking.example.com/pixel" onerror="alert(1)"><iframe src="https://tracking.example.com/"></iframe><form><input></form><style>body{display:none}</style><a href="javascript:alert(1)">危险链接</a><a href="https://example.com/report">查看周报</a><table><tr><td>会议</td><td>周二</td></tr></table>' }); await pending.promise; });
     const body = document.querySelector(".qq-mail-body")!;
     check(body.textContent?.includes("保留正文") && !body.querySelector("script,iframe,form,input,style,svg"), "HTML 正文保留排版并去除脚本和嵌入内容");
     check(!body.querySelector("img") && document.querySelector(".qq-mail-remote")?.textContent?.includes("已阻止 1 张远程图片"), "远程图片默认不加载并提示被拦数量");
@@ -117,7 +118,7 @@ try {
     check((document.activeElement as HTMLElement)?.dataset.mailId === "7:20", "返回列表时恢复原邮件的键盘焦点");
 
     await click("邮箱");
-    readBehavior = async id => ({ id, contentType: "text/plain", content: '<img src=x onerror=alert(1)>\n纯文本邮件' });
+    readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: '<img src=x onerror=alert(1)>\n纯文本邮件' });
     await click("阅读邮件：项目周报与下周安排，未读");
     check(document.querySelector(".qq-mail-body--text")?.textContent?.includes("<img") && !document.querySelector(".qq-mail-body img"), "纯文本邮件按文字显示，不解释为 HTML");
     await click("返回列表");
@@ -127,7 +128,7 @@ try {
     readBehavior = async () => { throw new Error("网络中断，请重试。"); };
     await click("阅读邮件：项目周报与下周安排，未读");
     check(document.querySelector('[role="alert"]')?.textContent?.includes("网络中断"), "正文失败保留标题和当前位置并允许重试");
-    readBehavior = async id => ({ id, contentType: "text/plain", content: "恢复后的正文" });
+    readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: "恢复后的正文" });
     await click("重试");
     check(document.querySelector(".qq-mail-body")?.textContent === "恢复后的正文", "重试恢复正文");
     await click("返回列表");
@@ -136,13 +137,13 @@ try {
     readBehavior = () => stale.promise;
     await click("阅读邮件：项目周报与下周安排，未读");
     await click("返回列表");
-    readBehavior = async id => ({ id, contentType: "text/plain", content: "第二封正文" });
+    readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: "第二封正文" });
     await click("阅读邮件：工作进展 1，未读");
-    await act(async () => { stale.resolve({ id: "7:20", contentType: "text/plain", content: "过期的第一封正文" }); await stale.promise; });
+    await act(async () => { stale.resolve({ id: "7:20", attachments: [], contentType: "text/plain", content: "过期的第一封正文" }); await stale.promise; });
     check(mail!.selectedMail?.id === "7:19" && mail!.content?.content === "第二封正文", "快速返回和切换后，旧请求不会覆盖当前邮件");
 
     await click("返回列表");
-    readBehavior = async id => ({ id, contentType: "text/plain", content: "第三封正文" });
+    readBehavior = async id => ({ id, attachments: [{ part: "2", name: "季度报告.pdf", size: 2_150_400, mime: "application/pdf" }], contentType: "text/plain", content: "第三封正文" });
     await click("阅读邮件：工作进展 2，未读");
     check(!calls.some(call => call.command === "mark_qq_mail_read"), "只是阅读不会把邮件标为已读");
     await click("标为已读");
@@ -150,13 +151,21 @@ try {
       && ![...document.querySelectorAll("button")].some(button => button.textContent === "标为已读")
       && mail!.snapshot.unreadCount === 2,
       "标为已读发给这封邮件所在的邮箱，之后按钮消失、未读数减一");
+    const attachmentRow = document.querySelector(".qq-mail-attachment");
+    check(document.querySelector(".qq-mail-attachments__title")?.textContent === "附件（1）"
+      && attachmentRow?.textContent?.includes("季度报告.pdf") && attachmentRow.textContent.includes("2.1 MB"),
+      "阅读页列出附件的名称和大小");
+    await click("保存 · 季度报告.pdf");
+    check(calls.some(call => call.command === "save_qq_mail_attachment" && call.args.email === "demo@qq.com" && call.args.messageId === "7:18" && call.args.part === "2")
+      && document.querySelector('.qq-mail-attachment button')?.textContent === "已保存",
+      "保存附件发给这封邮件的这个分段，完成后显示已保存");
     await click("返回列表");
 
     const late = deferred();
     readBehavior = () => late.promise;
     await act(async () => { void mail!.readMail(mail!.snapshot.items[0]); });
     await act(async () => { snapshot = { ...snapshot, revision: ++revision, configured: false, status: "disconnected", enabled: false, items: [], unreadCount: null }; await emit("qq-mail-changed", { snapshot, newestId: null, windowVisible: true }); });
-    await act(async () => { late.resolve({ id: "7:20", contentType: "text/plain", content: "断开后的敏感正文" }); await late.promise; });
+    await act(async () => { late.resolve({ id: "7:20", attachments: [], contentType: "text/plain", content: "断开后的敏感正文" }); await late.promise; });
     check(!mail!.selectedMail && !mail!.content && !document.body.textContent?.includes("断开后的敏感正文"), "断开连接后清空正文并忽略在途结果");
     const sanitized = sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p><img src="https://cdn.example.com/a.png" onerror="alert(1)" width="40"><img src="cid:inline@example"><img src="data:image/png;base64,iVBORw0KGgo=">', { allowRemoteImages: true });
     check(!/style=|javascript:|<svg/i.test(sanitized), "清理器剔除脚本、SVG 与内联样式");
@@ -171,7 +180,7 @@ try {
   } else if (["reader", "html", "loading", "error"].includes(state)) {
     if (state === "loading") readBehavior = () => new Promise(() => {});
     if (state === "error") readBehavior = async () => { throw new Error("无法加载邮件正文，请检查网络并重试。"); };
-    if (state === "html") readBehavior = async id => ({ id, contentType: "text/html", content: '<h2>下周工作安排</h2><p>你好，以下是本周确认的计划：</p><table><tr><th>时间</th><th>事项</th></tr><tr><td>周二 14:00</td><td>消息界面验收</td></tr><tr><td>周四 10:00</td><td>下一版本讨论</td></tr></table><p>完整细节见<a href="https://example.com/report">项目周报</a>。</p><blockquote>请在周三之前补充反馈，谢谢。</blockquote>' });
+    if (state === "html") readBehavior = async id => ({ id, attachments: [], contentType: "text/html", content: '<h2>下周工作安排</h2><p>你好，以下是本周确认的计划：</p><table><tr><th>时间</th><th>事项</th></tr><tr><td>周二 14:00</td><td>消息界面验收</td></tr><tr><td>周四 10:00</td><td>下一版本讨论</td></tr></table><p>完整细节见<a href="https://example.com/report">项目周报</a>。</p><blockquote>请在周三之前补充反馈，谢谢。</blockquote>' });
     await act(async () => { void mail!.readMail(mail!.snapshot.items[0]); });
   }
 } catch (error) {
