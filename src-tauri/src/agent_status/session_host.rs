@@ -1,17 +1,19 @@
 //! Where an agent session runs (Orca, Windows Terminal, VS Code, the Codex app, ...), shown on the
 //! island's Agent page. A running Claude Code session leads to its process (session_process.rs);
-//! the nearest ancestor that owns a window is its host. A host stays known after the session ends,
-//! for as long as the island runs. Codex records its origin in the rollout instead.
+//! the nearest ancestor that owns a window is its host. A host stays known after the session ends
+//! (session_memory.rs). Codex records its origin in the rollout instead.
 
 use std::{
     collections::{HashMap, HashSet},
     path::Path,
-    sync::{Mutex, PoisonError},
 };
 
 use serde::Serialize;
 
+use super::orca;
+use super::session_memory::{self, SeenSession};
 use super::session_process::{ancestor_chain, running_sessions};
+use super::snapshot::current_unix_millis;
 use super::sessions::AgentSessionSummary;
 use super::window_focus::{app_name, NOT_SESSION_HOSTS};
 use crate::win32;
@@ -95,41 +97,46 @@ pub(super) fn host_of_chain(chain: &[u32], windows: &HashMap<u32, String>) -> Op
     })
 }
 
-/// Hosts found so far: session id -> (its process id, host). Kept after a session ends.
-static HOSTS: Mutex<Option<HashMap<String, (u32, SessionHost)>>> = Mutex::new(None);
-/// Sessions remembered at most; old ones are dropped as a whole past this.
-const MAX_REMEMBERED: usize = 256;
+/// A session without a host is looked at again after this long (its window may not exist yet).
+const HOST_RETRY_MS: i64 = 30_000;
 
-/// Fills in `host` for the listed sessions. Codex sessions already carry theirs. Windows are
-/// only enumerated when a running Claude Code session has no known host yet.
-pub(super) fn attach_hosts(home_dir: &Path, sessions: &mut [AgentSessionSummary]) {
-    let mut guard = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
-    let hosts = guard.get_or_insert_with(HashMap::new);
+/// Works out, for each running Claude Code session not seen yet (or now in another process), its
+/// process, host program and Orca terminal, and remembers them (session_memory.rs) so they outlive
+/// the session. Then fills in `host` for the listed sessions; Codex sessions already carry theirs.
+/// Windows are only enumerated when such a session exists.
+pub(super) fn attach_hosts(home_dir: &Path, app_dir: Option<&Path>, sessions: &mut [AgentSessionSummary]) {
+    let now = current_unix_millis();
     let running = running_sessions(home_dir);
-
-    let unknown: Vec<(&String, u32)> = sessions
+    let unknown: Vec<(String, u32)> = sessions
         .iter()
         .filter(|session| session.provider == "claudeCode")
-        .filter_map(|session| running.get_key_value(&session.session_id))
-        .filter(|(id, pid)| hosts.get(*id).is_none_or(|(known, _)| known != *pid))
-        .map(|(id, pid)| (id, *pid))
+        .filter_map(|session| running.get(&session.session_id).map(|pid| (session.session_id.clone(), *pid)))
+        .filter(|(id, pid)| {
+            session_memory::get(app_dir, id).is_none_or(|seen| {
+                seen.pid != *pid || (seen.host_exe.is_none() && now - seen.seen_at > HOST_RETRY_MS)
+            })
+        })
         .collect();
     if !unknown.is_empty() {
         let windows = window_owners();
         let parents = win32::process_tree::parent_process_ids();
-        if hosts.len() > MAX_REMEMBERED {
-            hosts.clear();
-        }
         for (id, pid) in unknown {
             let chain = ancestor_chain(pid, &parents, win32::process_times::start_time);
-            if let Some(exe) = host_of_chain(&chain, &windows) {
-                hosts.insert(id.clone(), (pid, host_for_exe(&exe)));
-            }
+            let seen = SeenSession {
+                pid,
+                started: win32::process_times::start_time(pid),
+                host_exe: host_of_chain(&chain, &windows),
+                orca_handle: orca::terminal_handle_of_process(pid),
+                seen_at: now,
+            };
+            session_memory::remember(app_dir, &id, seen);
         }
     }
 
     for session in sessions.iter_mut().filter(|session| session.host.is_none()) {
-        session.host = hosts.get(&session.session_id).map(|(_, host)| host.clone());
+        session.host = session_memory::get(app_dir, &session.session_id)
+            .and_then(|seen| seen.host_exe)
+            .map(|exe| host_for_exe(&exe));
     }
 }
 

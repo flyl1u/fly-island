@@ -18,6 +18,7 @@ export type AgentText = {
     emptyHint: string;
     focus: (title: string) => string;
     notFound: string;
+    notFoundEnded: string;
     justNow: string;
     minutesAgo: (minutes: number) => string;
     activeCount: (count: number) => string;
@@ -48,6 +49,7 @@ export const zhCN: AgentText = {
     emptyHint: "在 Claude Code 或 Codex 里开始对话后会显示在这里",
     focus: (title) => `切换到「${title}」所在的窗口`,
     notFound: "没找到对应的窗口",
+    notFoundEnded: "没找到对应的窗口，会话可能已经关掉了",
     justNow: "刚刚",
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分钟前` : `${Math.floor(minutes / 60)} 小时前`),
     activeCount: (count) => `${count} 个 Agent 会话正在运行，点击查看`,
@@ -79,6 +81,7 @@ export const en: AgentText = {
     emptyHint: "Conversations in Claude Code or Codex show up here",
     focus: (title) => `Switch to the window running "${title}"`,
     notFound: "No matching window found",
+    notFoundEnded: "No matching window; the session may have been closed",
     justNow: "Just now",
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`),
     activeCount: (count) => (count === 1 ? "1 agent session running; click to view" : `${count} agent sessions running; click to view`),

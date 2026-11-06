@@ -109,7 +109,7 @@ export function AgentSessionsPanel({
                     <AgentProviderIcon provider={session.provider} size={14} />
                     {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
                     {notFoundId === session.sessionId ? (
-                      <span className="agent-session__not-found" role="status">{t.agent.sessions.notFound}</span>
+                      <span className="agent-session__not-found" role="status">{isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
                     ) : (
                       <span className="agent-session__meta">{status}</span>
                     )}

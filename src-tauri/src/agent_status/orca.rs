@@ -104,9 +104,43 @@ pub(super) fn only_agent_terminal(list_json: &str, agent: &str, cwd: &str) -> Op
     matches.next().is_none().then(|| first.to_string())
 }
 
-/// Asks Orca for its terminals and returns the only one running `agent` in `cwd` (see
-/// `only_agent_terminal`). Blocks for up to LIST_TIMEOUT.
-pub(super) fn find_agent_terminal(orca_exe: &Path, agent: &str, cwd: &str) -> Option<String> {
+/// A tab title without the status glyph Claude Code puts in front ("✳ 修复登录" -> "修复登录").
+fn bare_title(title: &str) -> String {
+    title
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .trim()
+        .trim_end_matches('…')
+        .trim()
+        .to_lowercase()
+}
+
+/// The only live Orca terminal running `agent` whose tab title is the session's title. Orca shows
+/// the title Claude Code sets, which is the session title the island lists. A title the island cut
+/// short with an ellipsis matches a tab title that starts with it. `None` unless exactly one matches.
+pub(super) fn agent_terminal_titled(list_json: &str, agent: &str, title: &str) -> Option<String> {
+    let wanted = bare_title(title);
+    let truncated = title.trim_end().ends_with('…');
+    if wanted.chars().count() < 2 {
+        return None;
+    }
+    let list: Value = serde_json::from_str(list_json).ok()?;
+    let mut matches = list["result"]["terminals"]
+        .as_array()?
+        .iter()
+        .filter(|terminal| terminal["agentIdentity"] == agent && terminal["orphaned"] != true)
+        .filter(|terminal| {
+            terminal["title"].as_str().map(bare_title).is_some_and(|tab| {
+                tab == wanted || (truncated && tab.starts_with(&wanted))
+            })
+        })
+        .filter_map(|terminal| terminal["handle"].as_str().filter(|handle| is_terminal_handle(handle)));
+    let first = matches.next()?;
+    matches.next().is_none().then(|| first.to_string())
+}
+
+/// The JSON of `orca terminal list --json` from the CLI next to `orca_exe`, or `None` when it is
+/// missing, fails or takes longer than LIST_TIMEOUT (it usually takes about a second).
+pub(super) fn list_terminals(orca_exe: &Path) -> Option<String> {
     let cli = cli_path(orca_exe);
     if !cli.is_file() {
         return None;
@@ -138,8 +172,7 @@ pub(super) fn find_agent_terminal(orca_exe: &Path, agent: &str, cwd: &str) -> Op
             }
         }
     }
-    let text = reader.join().ok()?;
-    only_agent_terminal(&text, agent, cwd)
+    reader.join().ok()
 }
 
 /// The Orca CLI that ships with the Orca app at `orca_exe` (`resources\bin\orca.exe`).

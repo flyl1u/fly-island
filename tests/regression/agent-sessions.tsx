@@ -132,6 +132,8 @@ async function runChecks() {
     check(!document.querySelector(".agent-session__not-found"), "找到窗口时不提示");
     await act(async () => { second.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(second.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口", "找不到窗口时在该行提示");
+    await act(async () => { third.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
+    check(third.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口，会话可能已经关掉了", "已结束的会话找不到窗口时说明可能已关掉");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

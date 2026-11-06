@@ -47,6 +47,9 @@ pub(super) struct WindowCandidate {
 #[derive(Debug, Default)]
 pub(super) struct SessionHints<'a> {
     pub(super) folder: Option<&'a str>,
+    /// Names of the folders above `folder`, nearest first: an editor may have one of them open
+    /// (the repository) while the session runs in a subfolder or a worktree below it.
+    pub(super) ancestors: &'a [String],
     pub(super) title: Option<&'a str>,
     pub(super) is_codex: bool,
 }
@@ -75,10 +78,17 @@ pub(super) fn best_window(candidates: &[WindowCandidate], hints: &SessionHints) 
                 .as_ref()
                 .is_some_and(|folder| matches(&window_title, folder))
         };
+        let has_ancestor = || {
+            hints
+                .ancestors
+                .iter()
+                .any(|ancestor| segment_names_folder(&window_title, &ancestor.to_lowercase()))
+        };
         match () {
             _ if (is_editor || is_terminal) && has_title => 4,
             _ if is_editor && has_folder(segment_names_folder) => 3,
             _ if is_terminal && has_folder(path_names_folder) => 2,
+            _ if is_editor && has_ancestor() => 2,
             _ if hints.is_codex && CODEX_APPS.contains(&candidate.app.as_str()) => 1,
             _ => 0,
         }
@@ -96,11 +106,21 @@ pub(super) fn best_window(candidates: &[WindowCandidate], hints: &SessionHints) 
 
 /// Editors: `folder` is one of the " - "-separated segments ("file - fly-island - Visual Studio
 /// Code"). Whole segments only, so a folder named "code" does not match every editor window.
+/// Markers editors add around a name: unsaved files ("● main.rs"), multi-root workspaces
+/// ("app (Workspace)", "app (工作区)") and elevated windows ("[Administrator]", "[管理员]").
+pub(super) fn bare_segment(segment: &str) -> &str {
+    let mut text = segment.trim().trim_start_matches(['●', '•', '*']).trim();
+    for marker in [" (workspace)", " (工作区)", " [administrator]", " [管理员]"] {
+        text = text.strip_suffix(marker).unwrap_or(text).trim();
+    }
+    text
+}
+
 fn segment_names_folder(window_title: &str, folder: &str) -> bool {
     window_title
         .split(" - ")
         .flat_map(|segment| segment.split(" — "))
-        .any(|segment| segment.trim() == folder)
+        .any(|segment| bare_segment(segment) == folder)
 }
 
 /// Terminals: `folder` is a whole path component or word ("PS E:\Projects\fly-island>").
@@ -159,20 +179,22 @@ pub(super) fn open_app_exe(app: &str) -> Option<String> {
     found
 }
 
-/// The window brought to the front: the process that owns it and its executable name.
+/// The window found for a session: the process that owns it, its executable name, and whether
+/// Windows let it come to the front (otherwise its taskbar button flashes).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct FocusedWindow {
     pub(super) process_id: u32,
     pub(super) app: String,
+    pub(super) in_front: bool,
 }
 
 /// Finds the window for the session and brings it to the front: first from the session's process
-/// chain, then (`prefer_orca`, when the session's Orca terminal is known) Orca's window, then by
-/// title and folder. `None` when nothing matched.
+/// chain, then a window of `prefer_app` (the program the session was last seen in, or Orca when
+/// its terminal is known), then by title and folder. `None` when nothing matched.
 pub(super) fn focus_session_window(
     hints: &SessionHints,
     chain: &[u32],
-    prefer_orca: bool,
+    prefer_app: Option<&str>,
 ) -> Option<FocusedWindow> {
     let mut windows = Vec::new();
     let mut candidates = Vec::new();
@@ -201,16 +223,22 @@ pub(super) fn focus_session_window(
     let owners: Vec<u32> = windows.iter().map(|&(_, process_id)| process_id).collect();
     let index = window_of_process_chain(&candidates, &owners, chain, hints)
         .or_else(|| {
-            prefer_orca
-                .then(|| candidates.iter().position(|candidate| candidate.app == super::orca::ORCA_APP))
-                .flatten()
+            let app = prefer_app?;
+            let preferred: Vec<usize> = (0..candidates.len()).filter(|&i| candidates[i].app == app).collect();
+            let subset: Vec<WindowCandidate> = preferred.iter().map(|&i| candidates[i].clone()).collect();
+            // Several windows of that program: let the folder or title pick, else the frontmost.
+            best_window(&subset, hints).map(|i| preferred[i]).or_else(|| preferred.first().copied())
         })
         .or_else(|| best_window(&candidates, hints))?;
     let &(window, process_id) = windows.get(index)?;
     win32::window::allow_set_foreground_window(process_id);
-    win32::window::restore_minimized(window);
-    win32::window::bring_to_foreground(window).then(|| FocusedWindow {
+    let in_front = win32::window::force_foreground(window);
+    if !in_front {
+        win32::window::flash(window);
+    }
+    Some(FocusedWindow {
         process_id,
         app: candidates[index].app.clone(),
+        in_front,
     })
 }

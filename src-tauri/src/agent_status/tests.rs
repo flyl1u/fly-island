@@ -151,6 +151,7 @@ fn session_windows_are_matched_by_folder_and_title() {
             &windows,
             &SessionHints {
                 folder,
+                ancestors: &[],
                 title,
                 is_codex,
             },
@@ -653,7 +654,7 @@ fn the_session_process_chain_picks_its_nearest_window() {
         window("Program Manager", "explorer"),
     ];
     let owners = [10, 20, 20, 1];
-    let hints = SessionHints { folder: Some("fly-island"), title: Some("Commit 频率约束"), is_codex: false };
+    let hints = SessionHints { folder: Some("fly-island"), ancestors: &[], title: Some("Commit 频率约束"), is_codex: false };
 
     // claude (100) <- pwsh (90) <- Orca terminal host (11, no window) <- Orca (10).
     assert_eq!(window_of_process_chain(&candidates, &owners, &[100, 90, 11, 10, 1], &hints), Some(0));
@@ -828,4 +829,93 @@ fn the_turn_starts_at_the_newest_typed_prompt() {
     ]
     .concat();
     assert_eq!(parse_codex_tail(&codex).turn_started_at, Some(1_793_948_400_000));
+}
+
+#[test]
+fn editor_titles_match_through_their_markers_and_parent_folders() {
+    use super::window_focus::{bare_segment, best_window, SessionHints, WindowCandidate};
+
+    assert_eq!(bare_segment(" ● main.rs "), "main.rs");
+    assert_eq!(bare_segment("fly-island (workspace)"), "fly-island");
+    assert_eq!(bare_segment("visual studio code [管理员]"), "visual studio code");
+
+    let window = |title: &str| WindowCandidate { title: title.to_string(), app: "code".to_string() };
+    let windows = [
+        window("● lib.rs - other - Visual Studio Code"),
+        window("● main.rs - fly-island (Workspace) - Visual Studio Code [Administrator]"),
+    ];
+    let hints = |folder, ancestors| SessionHints { folder: Some(folder), ancestors, title: None, is_codex: false };
+    assert_eq!(best_window(&windows, &hints("fly-island", &[])), Some(1));
+    // A session in a worktree below the folder the editor has open.
+    let above = ["fly-island-lanes".to_string(), "Projects".to_string()];
+    let repo = [window("README.md - fly-island-lanes - Visual Studio Code")];
+    assert_eq!(best_window(&repo, &hints("3", &above)), Some(0));
+    assert_eq!(best_window(&repo, &hints("3", &[])), None);
+}
+
+#[test]
+fn session_folders_and_remembered_processes() {
+    use super::focus::{folder_names, still_running};
+    use super::session_memory::SeenSession;
+
+    assert_eq!(
+        folder_names(r"E:\Projects\fly-island-lanes\3\"),
+        (Some("3".to_string()), vec!["fly-island-lanes".to_string(), "Projects".to_string()])
+    );
+    assert_eq!(folder_names("E:/"), (None, vec![]));
+    let seen = SeenSession { pid: 6528, started: Some(42), host_exe: None, orca_handle: None, seen_at: 0 };
+    // /clear keeps the process: same id, same start time.
+    assert!(still_running(&seen, Some(42)));
+    // The id now belongs to another process, or nothing runs under it.
+    assert!(!still_running(&seen, Some(43)));
+    assert!(!still_running(&seen, None));
+}
+
+#[test]
+fn seen_sessions_are_kept_two_days_and_capped() {
+    use super::session_memory::{prune, SeenSession};
+    use std::collections::HashMap;
+
+    let seen = |at| SeenSession { pid: 1, started: None, host_exe: None, orca_handle: None, seen_at: at };
+    let day = 24 * 60 * 60 * 1000;
+    let mut sessions = HashMap::from([("old".to_string(), seen(0)), ("new".to_string(), seen(3 * day))]);
+    prune(&mut sessions, 3 * day);
+    assert!(sessions.contains_key("new") && !sessions.contains_key("old"));
+    let mut many: HashMap<String, SeenSession> = (0..300).map(|i| (i.to_string(), seen(i))).collect();
+    prune(&mut many, 300);
+    assert_eq!(many.len(), 256);
+    assert!(many.contains_key("299") && !many.contains_key("0"));
+}
+
+#[test]
+fn orca_tabs_are_found_by_the_session_title() {
+    use super::orca::agent_terminal_titled;
+
+    let list = json!({ "ok": true, "result": { "terminals": [
+        { "handle": "term_aa", "agentIdentity": "claude", "title": "✳ 0.3.1 正式版发布", "orphaned": false },
+        { "handle": "term_bb", "agentIdentity": "claude", "title": "插件市场功能改版与签名", "orphaned": false },
+        { "handle": "term_cc", "agentIdentity": "claude", "title": "Terminal 1", "orphaned": false },
+        { "handle": "term_dd", "agentIdentity": "claude", "title": "Terminal 1", "orphaned": false },
+        { "handle": "term_ee", "agentIdentity": "codex", "title": "0.3.1 正式版发布", "orphaned": false },
+    ] } })
+    .to_string();
+    assert_eq!(agent_terminal_titled(&list, "claude", "0.3.1 正式版发布").as_deref(), Some("term_aa"));
+    assert_eq!(agent_terminal_titled(&list, "codex", "0.3.1 正式版发布").as_deref(), Some("term_ee"));
+    // A title the island cut short matches the start of the tab title.
+    assert_eq!(agent_terminal_titled(&list, "claude", "插件市场功能…").as_deref(), Some("term_bb"));
+    assert_eq!(agent_terminal_titled(&list, "claude", "插件市场功能"), None);
+    // Two tabs with the same title: never guess.
+    assert_eq!(agent_terminal_titled(&list, "claude", "Terminal 1"), None);
+}
+
+#[test]
+fn focus_attempts_log_their_steps_without_titles() {
+    use super::focus_log::Attempt;
+
+    let mut attempt = Attempt::new("claudeCode", Some("c7cd0d64-4607-4487"));
+    attempt.note("process=remembered(5)");
+    attempt.note("tab=process");
+    let line = attempt.line("focused");
+    assert!(line.contains("claudeCode c7cd0d64 | process=remembered(5), tab=process | focused in"));
+    assert!(line.ends_with(" ms\n"));
 }

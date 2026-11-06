@@ -28,7 +28,7 @@
 |---|---|---|
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
 | 待办、以后的待办、每日笔记、归档、正在进行的待办、待办日期（2026-11 起；更早的版本存在 `localStorage`，首次启动时迁移） | 应用数据目录（`todos.json`；迁移时的原文备份 `todos-migration-backup.json` / `todos-migration-backup-<毫秒>.json`；旧版本改过数据后重新导入前的备份 `todos.before-reimport-<毫秒>.json`；这些备份都不会自动删除） | `todos`（Rust）、`features/todos/todoStore.ts` |
-| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-terminals/<Orca 终端 handle>.json` 为 Claude Code SessionStart hook 的输入，只在 Orca 终端里写，用来从会话切到它的 Orca 标签；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，标题与提问文字处理在 `title.rs`） |
+| AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-sessions-seen.json` 记下见过的会话的进程、启动时间、所在程序和 Orca 终端，保留两天，用于 `/clear`、结束后的会话找回窗口；`agent-focus.log` 是点击会话切换窗口的排查日志（只有步骤和程序名）；`agent-terminals/<Orca 终端 handle>.json` 为 Claude Code SessionStart hook 的输入，只在 Orca 终端里写，用来从会话切到它的 Orca 标签；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，标题与提问文字处理在 `title.rs`） |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 设置窗口上次关闭时的大小与位置（位置已不在任何屏幕上时忽略） | 应用数据目录（`settings-window.json`） | `settings_window/bounds.rs` |
 | 插件：已安装插件、启用与授权状态、插件私有数据 | 应用数据目录（`plugins/<id>/`、`plugins.json`、`plugins-data/<id>/`，见 [docs/plugins/README.md](../plugins/README.md)） | `plugin_host` |

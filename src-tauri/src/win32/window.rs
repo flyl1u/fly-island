@@ -11,7 +11,8 @@ use windows::{
             Input::KeyboardAndMouse::IsWindowEnabled,
             Shell::{Shell_NotifyIconGetRect, NOTIFYICONIDENTIFIER},
             WindowsAndMessaging::{
-                AllowSetForegroundWindow, EnumWindows, GetClassNameW, GetCursorPos,
+                AllowSetForegroundWindow, BringWindowToTop, EnumWindows, FlashWindowEx, IsGUIThread,
+                FLASHWINFO, FLASHW_ALL, FLASHW_TIMERNOFG, GetClassNameW, GetCursorPos,
                 GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
                 GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SendMessageTimeoutW,
                 SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SMTO_ABORTIFHUNG,
@@ -254,6 +255,49 @@ pub(crate) fn bring_to_foreground(window: HWND) -> bool {
     // SAFETY: GetForegroundWindow takes no arguments; SetForegroundWindow takes
     // the HWND by value and fails for invalid windows.
     unsafe { GetForegroundWindow() == window || SetForegroundWindow(window).as_bool() }
+}
+
+/// Brings another app's `window` to the front from any thread of this process. Plain
+/// SetForegroundWindow is refused unless this process got the last input (the island may not
+/// take the focus when clicked); attaching to the foreground thread's input lifts that, as in
+/// `activate_from_background`. Returns whether `window` is now in front.
+pub(crate) fn force_foreground(window: HWND) -> bool {
+    restore_minimized(window);
+    if bring_to_foreground(window) && foreground_window() == window {
+        return true;
+    }
+    let foreground = foreground_window();
+    // SAFETY: IsGUIThread(true) gives this (worker) thread the message queue AttachThreadInput
+    // needs; the other calls take only plain values, and a null HWND yields thread id 0.
+    let (foreground_thread, own_thread) = unsafe {
+        let _ = IsGUIThread(true);
+        (GetWindowThreadProcessId(foreground, None), GetCurrentThreadId())
+    };
+    let attach = foreground_thread != 0 && foreground_thread != own_thread;
+    // SAFETY: AttachThreadInput takes two thread ids and a flag; the attach is undone below
+    // whatever happened. BringWindowToTop and SetForegroundWindow take the HWND by value.
+    unsafe {
+        let attached = attach && AttachThreadInput(own_thread, foreground_thread, true).as_bool();
+        let _ = BringWindowToTop(window);
+        let _ = SetForegroundWindow(window);
+        if attached {
+            let _ = AttachThreadInput(own_thread, foreground_thread, false);
+        }
+    }
+    foreground_window() == window
+}
+
+/// Flashes `window`'s taskbar button until it is activated, when it cannot be brought to the front.
+pub(crate) fn flash(window: HWND) {
+    let info = FLASHWINFO {
+        cbSize: std::mem::size_of::<FLASHWINFO>() as u32,
+        hwnd: window,
+        dwFlags: FLASHW_ALL | FLASHW_TIMERNOFG,
+        uCount: 0,
+        dwTimeout: 0,
+    };
+    // SAFETY: `info` is a valid local FLASHWINFO with cbSize set; the HWND is passed by value.
+    let _ = unsafe { FlashWindowEx(&info) };
 }
 
 #[cfg(test)]

@@ -8,7 +8,10 @@ mod host_icon;
 mod markers;
 mod notifications;
 mod orca;
+mod focus;
+mod focus_log;
 mod session_host;
+mod session_memory;
 mod session_process;
 mod snapshot;
 #[cfg(test)]
@@ -248,7 +251,7 @@ pub async fn list_agent_sessions(
         let waiting = notifications::waiting_notifications(&app_dir);
         windows_home_dir().map(|home_dir| {
             let mut sessions = session_scan::list_sessions(&home_dir, &waiting, window_ms);
-            session_host::attach_hosts(&home_dir, &mut sessions);
+            session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions
         })
     })
@@ -270,50 +273,7 @@ pub async fn focus_agent_window(
 ) -> Result<bool, String> {
     let app_dir = app.path().app_data_dir().ok();
     tauri::async_runtime::spawn_blocking(move || {
-        let folder = cwd
-            .as_deref()
-            .and_then(|cwd| Path::new(cwd.trim_end_matches(['\\', '/'])).file_name())
-            .map(|folder| folder.to_string_lossy().to_string());
-        let session_id = session_id.filter(|id| !id.is_empty());
-        let chain = match (&session_id, windows_home_dir()) {
-            (Some(id), Ok(home_dir)) if provider != "codex" => {
-                session_process::session_process_chain(&home_dir, id)
-            }
-            _ => Vec::new(),
-        };
-        // The Orca tab: from the running session's own environment, else the SessionStart
-        // record, else (Codex, which has neither) the only Codex terminal in its folder.
-        let orca_handle = chain
-            .first()
-            .and_then(|&pid| orca::terminal_handle_of_process(pid))
-            .or_else(|| {
-                session_id
-                    .as_deref()
-                    .zip(app_dir.as_deref())
-                    .and_then(|(id, app_dir)| orca::terminal_handle_for(app_dir, id))
-            })
-            .or_else(|| {
-                let cwd = cwd.as_deref().filter(|_| provider == "codex")?;
-                let orca_exe = window_focus::open_app_exe(orca::ORCA_APP)?;
-                orca::find_agent_terminal(Path::new(&orca_exe), "codex", cwd)
-            });
-        let Some(focused) = window_focus::focus_session_window(
-            &window_focus::SessionHints {
-                folder: folder.as_deref(),
-                title: title.as_deref(),
-                is_codex: provider == "codex",
-            },
-            &chain,
-            orca_handle.is_some(),
-        ) else {
-            return false;
-        };
-        if let Some(handle) = orca_handle.filter(|_| focused.app == orca::ORCA_APP) {
-            if let Some(orca_exe) = crate::win32::process::image_path(focused.process_id) {
-                orca::switch_terminal(Path::new(&orca_exe), &handle);
-            }
-        }
-        true
+        focus::focus_session(app_dir.as_deref(), &provider, cwd.as_deref(), title.as_deref(), session_id.as_deref())
     })
     .await
     .map_err(|error| format!("Failed to join the window focus task: {error}"))
