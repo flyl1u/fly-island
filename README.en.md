@@ -52,12 +52,13 @@ Fly Island brings frequent actions from separate windows into one compact island
 - **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, remove entries, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut.
 - **File shelf**: drop files on the island to keep them at hand, then drag them out to Explorer, WeChat, QQ, or any app, or copy and paste them. Only paths are stored, never copies; select several, search, pin, and clean up automatically.
 - **Music and system audio**: control the Windows media session with previous, play/pause, and next actions; a live waveform reflects audio activity.
-- **AI status light and Agent page**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. The Agent page lists recent sessions, the island shows how many are running, and sessions waiting for permission are marked.
+- **AI status light and Agent page**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. The Agent page lists recent sessions, the island shows how many are running, and sessions waiting for permission are marked. Each session shows the program it runs in (Orca, Windows Terminal, VS Code, Codex, ...) with that program's own icon; clicking it brings that window forward, and in Orca also switches to its terminal tab.
 - **Quick translation**: a translation page on the island, opened with a global shortcut. Auto-detect Chinese/English or choose a direction, fill in the clipboard, translate automatically, or translate the selected text. Works with DeepSeek, SiliconFlow, Qwen (DashScope), Kimi, Volcengine Ark, OpenAI, and any OpenAI-compatible endpoint.
 - **QQ, WeChat, and Mail**: switch between QQ, WeChat, and Mail from one row of brand tabs, with source actions alongside them. Review the latest 20 QQ notifications or emails, open email bodies and save attachments inside the island, and write or reply to mail.
 - **Plugins**: install, update, and uninstall plugins from a market with a signed index. Plugins can show their own pages and status text on the island, send notifications, and add global shortcuts and todo context-menu commands. Reading the clipboard, messages, media, the file shelf, or todos each needs its own permission.
 - **Shortcuts and game mode**: every shortcut is on one settings page, can be changed, and conflicts are reported; Alt+number switches expanded pages. The island tucks away while a full-screen game runs on its screen.
 - **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; tuck the island to the screen edge when idle; save up to six custom style presets, hide the island title, or enable launch at startup.
+- **In-app updates**: a separate Updates page in Settings. The island checks shortly after launch and every 6 hours, and a dot on its settings button tells you when a new version is out. Read what's new, skip a version, or switch to the beta channel to try new features early; only people who pick it get betas.
 
 Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; Mail syncs only headers in the background and reads bodies on demand into memory. It only downloads an attachment, into your Downloads folder, when you click Save, does not load remote images, and changes read status only when you click Mark as read, and sends mail only when you click Send.
 
@@ -73,11 +74,13 @@ Expand the island to switch between tasks, music, clipboard, files, messages, tr
 
 - **Quick translation** opens with **Ctrl+Shift+F** by default. Pick a translation service and enter its API key; keys are stored per service in Windows Credential Manager. Text is sent to the selected service when you request a translation.
 
-- **AI status light**: open **Settings → AI Agent 状态灯** and choose **安装/修复**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
+- **AI status light and Agent page**: open **Settings → AI Agent** and choose **Install/repair**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. In Orca, sessions started or resumed after the repair switch to their terminal tab when clicked. How the session source is shown (icon, name, both, or hidden) is set on the same page. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
 
 - **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut (**Ctrl+Shift+W** by default) in Settings.
 
 - **File shelf**: drop files on the island to add them, and press and drag an entry to take it out (a copy; hold Shift to move). Cleanup, missing files, and double-click behavior are under **Settings → File shelf**. See the [file shelf guide (Chinese)](docs/file-shelf.md).
+
+- **Updates**: check for and install new versions, turn automatic checks off, or pick the stable or beta channel under **Settings → Updates**. Switching from beta back to stable never downgrades; updates resume once stable catches up. See the [in-app update guide (Chinese)](docs/updater.md).
 
 - **Plugins**: browse and install plugins in **Settings → Plugin market**; manage, order, and grant permissions to installed plugins in **Settings → Plugins**. To write your own, see the [plugin docs](docs/plugins/README.md).
 
