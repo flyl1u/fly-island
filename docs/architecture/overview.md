@@ -133,6 +133,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
+| 设置备份文件（`fly-island-settings-<日期时间>.json`，写到「下载」文件夹；`{ app: "fly-island", version: 1, exportedAt, keys }`，`keys` 只含 `features/settings-backup/backup.ts` 的 `BACKUP_KEYS`：不含待办、窗口位置、凭据和一次性请求；恢复时只写这些 key，未知 key 和非字符串值丢弃） | `features/settings-backup/` |
 | `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-update-preferences`（`{ autoCheck, skippedVersion, lastCheckedAt }`：后台自动检查开关、跳过的版本、上次检查成功的时间；设置窗口写，主窗口通过 `storage` 事件跟随） | `features/updater/storage.ts` |

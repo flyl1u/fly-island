@@ -24,6 +24,7 @@ src/
 │   ├── agent-status/        # AI 代理状态
 │   ├── appearance/          # 外观设置、布局编辑器、预设
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
+│   ├── settings-backup/     # 设置 → 通用 → 备份与恢复：导出到「下载」文件夹的 JSON、从文件恢复（只含 BACKUP_KEYS 列出的设置 key）
 │   └── updater/             # 自动更新
 ├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写

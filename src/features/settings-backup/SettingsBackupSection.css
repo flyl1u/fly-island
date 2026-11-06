@@ -1,0 +1,63 @@
+.settings-backup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.settings-backup__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.settings-backup__button:hover {
+  background: var(--color-white-a12);
+}
+
+.settings-backup__button:focus-visible,
+.settings-backup__link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.settings-backup__file {
+  display: none;
+}
+
+.settings-backup__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.settings-backup__status--error {
+  color: var(--color-warning);
+}
+
+.settings-backup__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: var(--color-sky);
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}

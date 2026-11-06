@@ -1,7 +1,8 @@
 //! Windows integration: launch at startup, updater proxy and config, todo Markdown
-//! export, full-screen app detection.
+//! export, full-screen app detection, settings backups.
 
 pub(crate) mod fullscreen;
+pub(crate) mod settings_backup;
 pub(crate) mod startup;
 pub(crate) mod todo_export;
 pub(crate) mod update_channel;
@@ -41,6 +42,8 @@ macro_rules! tauri_commands {
             crate::system::updater::updater_configured,
             crate::system::update_channel::updater_check,
             crate::system::update_channel::updater_install,
+            crate::system::settings_backup::save_settings_backup,
+            crate::system::settings_backup::restart_island,
         ] $($rest)*)
     };
 }

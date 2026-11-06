@@ -4,6 +4,7 @@ import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSetti
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
 import { GameModeSettingsSection } from "../../features/appearance/GameModeSettingsSection";
 import { PositionSettingsSection } from "../../features/appearance/PositionSettingsSection";
+import { SettingsBackupSection } from "../../features/settings-backup/SettingsBackupSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
@@ -45,6 +46,7 @@ export function GeneralSettingsPage({
         onSettingsChange={onSettingsChange}
         onResetPosition={requestIslandPositionReset}
       />
+      <SettingsBackupSection />
     </>
   );
 }
