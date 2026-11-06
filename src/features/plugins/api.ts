@@ -312,7 +312,10 @@ export function listenPluginNotifications(onNotification: (notification: PluginN
 
 // 与 src-tauri/src/plugin_host/menus.rs 中的 TODO_CONTEXT、PluginMenuEntry 对应。
 export const TODO_CONTEXT_MENU = "todo/context";
-export type PluginMenu = typeof TODO_CONTEXT_MENU;
+// 与 menus.rs 中的 CLIPBOARD_CONTEXT、SHELF_CONTEXT、MESSAGE_CONTEXT 对应。
+export const ITEM_CONTEXT_MENUS = ["clipboard/context", "shelf/context", "message/context"] as const;
+export type PluginItemMenu = (typeof ITEM_CONTEXT_MENUS)[number];
+export type PluginMenu = typeof TODO_CONTEXT_MENU | PluginItemMenu;
 export type PluginMenuEntry = { pluginId: string; pluginName: LocalizedText; command: string; title: LocalizedText };
 
 /** What running plugins add to an island menu (contributes.menus). */
@@ -321,8 +324,13 @@ export function listPluginMenu(menu: PluginMenu) {
 }
 
 /** Sends the plugin `command` with `args.todoId`. */
-export function runPluginMenuCommand(id: string, menu: PluginMenu, command: string, todoId: string) {
+export function runPluginMenuCommand(id: string, menu: typeof TODO_CONTEXT_MENU, command: string, todoId: string) {
   return invoke<void>("run_plugin_menu_command", { id, menu, command, todoId });
+}
+
+/** Sends the plugin `command` with the clipboard, shelf or message entry `itemId` in `args.item` (Rust looks it up). */
+export function runPluginItemMenuCommand(id: string, menu: PluginItemMenu, command: string, itemId: string) {
+  return invoke<void>("run_plugin_item_menu_command", { id, menu, command, itemId });
 }
 
 // 与 src-tauri/src/plugin_host/keybindings.rs 中的 KEYBINDING_EVENT 对应。

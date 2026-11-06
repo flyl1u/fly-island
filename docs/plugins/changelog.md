@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 更多右键菜单
+
+- `contributes.menus` 新增 `clipboard/context`（剪贴板历史的文字条目）、`shelf/context`（文件中转条目）、`message/context`（QQ 通知和邮件）。用户在这些条目上右键选了插件的命令，插件收到 `command { id, args: { item } }`，`item` 和 `clipboard.history` / `shelf.list` / `messages.list` 里的一项相同。用户亲手选的这一条不需要对应的读取权限。
+
 ## 修改自己的设置
 
 - 方法 `settings.set { values }`：插件改自己在 `contributes.settings` 里声明的设置（比如登录后的账号），设置页随之显示。全部生效或全部不改；未声明的键或类型不对为 400。插件自己的修改不会再收到 `settings.changed`。SDK：Node `plugin.setSettings(values)`，PowerShell `Set-FocusdSetting`；模拟宿主支持。

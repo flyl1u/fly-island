@@ -42,12 +42,6 @@
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。
 
-## 插件 API 补全
-
-| # | 任务 | 状态 | 负责 | 备注 |
-|---|---|---|---|---|
-| E6 | 更多右键菜单扩展点：剪贴板条目、文件中转条目、消息条目（`contributes.menus`） | 进行中 | fly-island-lanes/2 | 现在只有待办右键菜单 |
-
 ## 第四优先：质量与发布
 
 | # | 任务 | 状态 | 负责 | 备注 |
@@ -65,8 +59,9 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| E6 | 插件右键菜单扩展到剪贴板文字、文件中转、QQ 通知和邮件（`clipboard/context`、`shelf/context`、`message/context`） | 提交 `feat(plugins): plugin entries in the clipboard, shelf and message right-click menus` |
 | — | 设置窗口视觉层级：分区卡片、字号层级代替加粗、滑块横排 | 提交 `feat(settings): cards and a type scale instead of bold everywhere` |
-| E5 | 插件修改自己声明的设置（`settings.set`） | 提交 `feat(plugins): let a plugin change its own settings` |
+| E5 | 插件修改自己声明的设置（`settings.set`） | `24efe79` |
 | E4 | 插件媒体控制：拖进度、音量、随机、循环、封面 | `3dd05f5` |
 | E3 | 插件事件：`shelf.changed`，锁屏 / 睡眠 / 空闲系统事件 | `ea1f9bc` |
 | E2 | 插件按日期读取待办和笔记，`todos.days` | `25f0291` |

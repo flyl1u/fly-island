@@ -114,7 +114,7 @@
 | 通知 | 版本 | 参数 |
 |---|---|---|
 | `initialize` | 1 | { apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions (those usable now: the manifest's permissions plus the optional ones the user allowed), optionalPermissions (since 2), settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) } |
-| `command` | 1 | { id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus "todo/context", since 2) sends { id, args: { todoId } } |
+| `command` | 1 | { id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus "todo/context", since 2) sends { id, args: { todoId } }; of the clipboard, file shelf or message right-click menu ("clipboard/context", "shelf/context", "message/context") sends { id, args: { item } }, the entry as clipboard.history, shelf.list or messages.list show it |
 | `settings.changed` | 1 | { settings } |
 | `event` | 2 | { name, payload }; at most one per event name every 200 ms, carrying the latest payload, except messages.received, which delivers every message (up to 50 per 200 ms). Subscriptions end when the process exits, and events that need a sensitive permission stop as soon as the user revokes it. |
 | `notification.action` | 2 | { id }: the user clicked that button of an island.notify message |

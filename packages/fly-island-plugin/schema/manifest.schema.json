@@ -118,6 +118,42 @@
                   "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
                 }
               }
+            },
+            "clipboard/context": {
+              "description": "The right-click menu of a text entry of the clipboard history. Picking an entry sends `command` with { id, args: { item } }, item as in clipboard.history. The user picked it, so no permission is needed for that entry.",
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
+                }
+              }
+            },
+            "shelf/context": {
+              "description": "The right-click menu of a file shelf entry. Picking an entry sends `command` with { id, args: { item } }, item as in shelf.list. No permission needed for that entry.",
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
+                }
+              }
+            },
+            "message/context": {
+              "description": "The right-click menu of a QQ notification or a mail. Picking an entry sends `command` with { id, args: { item } }, item as in messages.list. No permission needed for that entry.",
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": { "type": "string", "description": "The id of one of this plugin's contributes.commands, listed at most once." }
+                }
+              }
             }
           }
         },

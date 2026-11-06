@@ -21,6 +21,7 @@ export const PAGES = [
   "i18n.html?test=1",
   "mail-reader.html?run=1",
   "notification-startup.html",
+  "plugin-menus.html",
   "plugin-views.html?test=1",
   "settings.html?test=1",
   "tucked-hover.html",

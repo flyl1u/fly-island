@@ -316,6 +316,14 @@ pub fn run_plugin_menu_command(id: String, menu: String, command: String, todo_i
     menus::run(&id, &menu, &command, &todo_id)
 }
 
+/// The user picked a plugin entry in the right-click menu of a clipboard, file
+/// shelf or message entry (`menu`); the plugin gets `command` with that entry
+/// in `args.item`, looked up from `item_id`.
+#[tauri::command]
+pub fn run_plugin_item_menu_command(id: String, menu: String, command: String, item_id: String) -> Result<(), String> {
+    menus::run(&id, &menu, &command, &item_id)
+}
+
 /// The user's answer to a sensitive-permission prompt on the island:
 /// "allow", "deny" or "once".
 #[tauri::command]

@@ -1,9 +1,4 @@
-/* The todo page wrapper adds no box of its own. */
-.plugin-todo-menu-area {
-  display: contents;
-}
-
-/* Right-click menu of a todo with commands from plugins (contributes.menus "todo/context"). */
+/* Right-click menu of a todo, clipboard, file shelf or message entry with commands from plugins (contributes.menus). */
 .plugin-todo-menu {
   position: fixed;
   z-index: 1000;

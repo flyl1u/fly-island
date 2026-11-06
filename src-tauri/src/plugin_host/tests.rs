@@ -608,6 +608,30 @@ fn todo_menus_must_name_own_commands_and_are_dropped_for_version_1() {
     assert!(twice.expect_err("duplicate").contains("twice"));
 }
 
+#[test]
+fn item_menus_are_checked_like_the_todo_menu() {
+    let menus = |menus: Value| json!({ "commands": [{ "id": "go", "title": { "zh-CN": "开始", "en": "Go" } }], "menus": menus });
+    let all = json!({ "clipboard/context": [{ "command": "go" }], "shelf/context": [{ "command": "go" }], "message/context": [{ "command": "go" }] });
+    let parsed = parse(json!({ "apiVersion": 2, "contributes": menus(all) })).expect("valid");
+    for menu in ["clipboard/context", "shelf/context", "message/context"] {
+        assert_eq!(parsed.contributes.menus.items(menu).len(), 1, "{menu}");
+    }
+    let wrong = parse(json!({ "apiVersion": 2, "contributes": menus(json!({ "shelf/context": [{ "command": "nope" }] })) }));
+    assert!(wrong.expect_err("unknown command").contains("shelf/context"));
+    let many = json!({ "message/context": [{ "command": "go" }, { "command": "go" }] });
+    assert!(parse(json!({ "apiVersion": 2, "contributes": menus(many) })).expect_err("twice").contains("message/context"));
+}
+
+#[test]
+fn menu_args_name_the_todo_and_refuse_bad_ids() {
+    use super::menus::check_item;
+    assert_eq!(check_item("todo/context", "t1"), Ok(Some(json!({ "todoId": "t1" }))));
+    assert_eq!(check_item("shelf/context", "s1"), Ok(None), "looked up when run");
+    assert!(check_item("todo/context", "").is_err());
+    assert!(check_item("shelf/context", &"x".repeat(200)).is_err());
+    assert!(check_item("other/context", "x").is_err());
+}
+
 mod sensitive_tests {
     use super::super::sensitive::{decide, is_sensitive, outcome, Answer, Decision, Outcome, SensitiveChoice};
     use super::super::store::PluginsState;

@@ -65,8 +65,10 @@ function checkContributions(manifest, errors, warnings) {
   const views = unique(contributes.views, "id", "View");
   unique(contributes.statusItems, "id", "Status item");
   unique(contributes.settings, "key", "Setting");
-  for (const entry of contributes.menus?.["todo/context"] ?? []) {
-    if (!commands.has(entry.command)) errors.push(`The todo/context menu names "${entry.command}", which is not in contributes.commands.`);
+  for (const menu of ["todo/context", "clipboard/context", "shelf/context", "message/context"]) {
+    for (const entry of contributes.menus?.[menu] ?? []) {
+      if (!commands.has(entry.command)) errors.push(`The ${menu} menu names "${entry.command}", which is not in contributes.commands.`);
+    }
   }
   for (const event of manifest.activationEvents ?? []) {
     const [kind, value] = event.split(":");

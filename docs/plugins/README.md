@@ -111,6 +111,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 `todo/context` 是待办条目的右键菜单，最多列 4 个命令，每个都必须是本插件 `contributes.commands` 里的命令，且不能重复。用户右键一条待办时，菜单里会列出所有运行中插件的条目（显示命令标题和插件名）；点了以后插件收到 `command { id, args: { todoId } }`。需要待办内容时，用 `todos.list` 查（要 `todos:read` 权限）。没有插件提供条目时，右键行为和以前一样。
 
+同样的写法还有三个菜单：`clipboard/context`（剪贴板历史里的文字条目）、`shelf/context`（文件中转条目）和 `message/context`（QQ 通知和邮件）。点了以后插件收到 `command { id, args: { item } }`，`item` 分别和 `clipboard.history`、`shelf.list`、`messages.list` 里的一项相同，由岛屿查出这一条再发给插件。这是用户亲手选的条目，所以不需要 `clipboard:read`、`shelf:read` 或 `messages:read`；要读别的条目仍然需要权限。图片剪贴板条目和微信提醒没有这个菜单。
+
 ### 岛上页面（第 2 版）
 
 插件可以在岛屿展开后拥有自己的页面，并在折叠条上显示一小段状态。页面一般由岛屿按模板绘制：插件只发数据，不发 HTML、脚本或 SVG，所以和岛屿的其他页面风格一致。模板画不出来的（图表、小工具），可以用 `webview` 模板显示插件自己的网页，见下面的「自定义界面」。

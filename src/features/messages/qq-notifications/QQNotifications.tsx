@@ -50,7 +50,7 @@ export function QQNotificationPanel({ controller, navigation }: { controller: QQ
         {snapshot.items.length === 0 ? (
           <div className="qq-panel__empty" role="status"><span className="message-empty-icon"><MessageSourceIcon source="qq" size={28} /></span><span>{t.common.noMessages}</span></div>
         ) : snapshot.items.map((item) => (
-          <article className="qq-panel__item" key={item.id} role="listitem">
+          <article className="qq-panel__item" key={item.id} role="listitem" data-message-id={item.id}>
             <button type="button" disabled={busy} onClick={() => void openQQ()} aria-label={t.qq.openNotification(item.title)}>
               <div className="qq-panel__item-heading"><strong>{item.title}</strong><time dateTime={new Date(item.createdAt).toISOString()}>{new Date(item.createdAt).toLocaleTimeString(t.localeTag, { hour: "2-digit", minute: "2-digit" })}</time></div>
               {item.body && <p>{item.body}</p>}

@@ -5,7 +5,7 @@ import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
-import { PluginTodoMenuArea } from "../../features/plugins/PluginTodoMenu";
+import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
 import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
 import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
@@ -384,15 +384,14 @@ export function IslandApp() {
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
         {page === "todo" && (
-          <PluginTodoMenuArea>
-            <TodoNotebook
-              {...notebookProps}
-              enableTodoReorder={settings.enableTodoReorder}
-              scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
-            />
-          </PluginTodoMenuArea>
+          <TodoNotebook
+            {...notebookProps}
+            enableTodoReorder={settings.enableTodoReorder}
+            scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
+          />
         )}
       </IslandShell>
+      <PluginContextMenus />
     </main>
   );
 }

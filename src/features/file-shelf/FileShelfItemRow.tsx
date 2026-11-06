@@ -78,7 +78,7 @@ export function FileShelfItemRow({
   ].filter(Boolean).join(" ");
 
   return (
-    <article className={className} role="listitem" aria-selected={isSelected}>
+    <article className={className} role="listitem" aria-selected={isSelected} data-shelf-id={item.id}>
       <button
         className="shelf-item__main"
         type="button"

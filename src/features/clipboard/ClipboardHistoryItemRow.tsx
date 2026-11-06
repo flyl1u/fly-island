@@ -37,7 +37,7 @@ export function ClipboardHistoryItemRow({
   const t = useTranslation();
 
   return (
-    <article className="clipboard-item" role="listitem" ref={elementRef}>
+    <article className="clipboard-item" role="listitem" ref={elementRef} data-clipboard-id={item.kind === "text" ? item.id : undefined}>
       <button
         className="clipboard-item__main"
         type="button"

@@ -197,6 +197,7 @@ macro_rules! tauri_commands {
             crate::plugin_host::clear_plugin_data,
             crate::plugin_host::list_plugin_menu,
             crate::plugin_host::run_plugin_menu_command,
+            crate::plugin_host::run_plugin_item_menu_command,
             crate::plugin_host::answer_plugin_permission,
             crate::plugin_host::revoke_plugin_sensitive_permission,
             crate::plugin_host::list_plugin_views,

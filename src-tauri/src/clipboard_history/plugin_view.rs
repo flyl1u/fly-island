@@ -52,6 +52,17 @@ pub(super) fn text_items(items: &[ClipboardHistoryItem], limit: usize) -> Vec<Va
         .collect()
 }
 
+/// One text item as `clipboard.history` shows it, for the `clipboard/context`
+/// plugin menu (the user picked it, so no permission is needed); None for an
+/// image, an unknown id, or while the history is off.
+pub(crate) fn plugin_item(id: &str) -> Option<Value> {
+    let snapshot = service().ok()?.snapshot().ok()?;
+    if !snapshot.settings.enabled {
+        return None;
+    }
+    text_items(&snapshot.items, usize::MAX).into_iter().find(|item| item["id"] == id)
+}
+
 /// Tells subscribed plugins the history changed, if it is on.
 pub(super) fn publish_changed(enabled: bool) {
     if enabled {
