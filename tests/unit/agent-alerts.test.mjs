@@ -68,3 +68,24 @@ test("starts alert every turn, for new sessions only, or never", () => {
   // c showed up finished (an empty session after /clear, say); its first turn is still new.
   assert.deepEqual(started(cAppears, [session("a", "completed"), session("b", "completed"), session("c", "running")], "newSession"), ["c"]);
 });
+
+test("the reply status marker decides how a finished turn alerts", () => {
+  assert.equal(alertKind("running", "completed", "yourTurn"), "waiting");
+  assert.equal(alertKind("running", "completed", "background"), null);
+  assert.equal(alertKind("running", "completed", "done"), "completed");
+  // The marker only speaks for a turn that just finished.
+  assert.equal(alertKind("completed", "completed", "yourTurn"), null);
+  assert.equal(alertKind("running", "failed", "yourTurn"), "failed");
+
+  const before = [session("a", "running"), session("b", "running"), session("c", "running")];
+  const after = [
+    { ...session("a", "completed"), replyMarker: "yourTurn" },
+    { ...session("b", "completed"), replyMarker: "background" },
+    { ...session("c", "completed"), replyMarker: "done" },
+  ];
+  const alerts = detectAlerts(phasesOf(before), after, ALL);
+  assert.deepEqual(alerts.map(({ kind, session }) => `${kind}:${session.sessionId}`), ["waiting:a", "completed:c"]);
+  // "Your turn" follows the waiting switch, not the completed one.
+  const noWaiting = detectAlerts(phasesOf(before), after, { ...ALL, waiting: false });
+  assert.deepEqual(noWaiting.map(({ session }) => session.sessionId), ["c"]);
+});

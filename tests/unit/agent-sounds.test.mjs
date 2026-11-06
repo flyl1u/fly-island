@@ -67,3 +67,11 @@ test("without a manifest, file names give the events; a folder without sounds is
   assert.deepEqual(plan.sounds, { complete: "p/Task_Complete.mp3", error: "p/error.ogg" });
   assert.equal(planSoundPack("p", ["p/readme.txt", "p/song.wav"], []), "noSounds");
 });
+
+test("a finished turn sounds by its reply status marker", () => {
+  const ended = (replyMarker) => ({ currentTool: null, replyMarker });
+  assert.equal(soundFor("running", "completed", ended("yourTurn")), "question");
+  assert.equal(soundFor("running", "completed", ended("background")), null);
+  assert.equal(soundFor("running", "completed", ended("done")), "complete");
+  assert.equal(soundFor("running", "completed", ended(undefined)), "complete");
+});
