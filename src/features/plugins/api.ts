@@ -193,6 +193,8 @@ export type MarketPlugin = {
   authorKeys?: { keyId: string; publicKey: string }[];
   /** The author key that signed this version, when the signature holds. */
   signedBy: string | null;
+  /** The publisher is verified: a GitHub organization with a verified domain, or its own domain. */
+  verified?: { via: "github" } | { via: "domain"; domain: string };
   /** Updating would replace the installed version's author key (or drop the signature): the user confirms it. */
   signingKeyChanged: boolean;
 };

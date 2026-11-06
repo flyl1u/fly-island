@@ -61,6 +61,17 @@
   color: var(--color-text);
 }
 
+.plugin-market__verified {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .plugin-market__text .plugin-market__tag {
   padding: 0 6px;
   color: var(--color-text);

@@ -82,7 +82,7 @@ mockIPC((command, payload) => {
       officialPublisher: "TixXin",
       plugins: [
         { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], readme: "# 待办同步\n\n每 **5 分钟**同步一次，见 [文档](https://example.com/docs)。\n\n- 读取待办\n- 写入日志", changelog: "## 1.1.0\n\n- 新增同步间隔设置", installedVersion: "1.0.0", incompatible: null, revoked: null, signedBy: "0123456789abcdef", signingKeyChanged: true },
-        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null, signedBy: null, signingKeyChanged: false },
+        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null, signedBy: null, signingKeyChanged: false, verified: { via: "domain", domain: "plugins.example.com" } },
       ],
     };
     case "list_plugins": {
@@ -208,6 +208,12 @@ if (!automated) {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true,
       "Confirming installs the update and accepts the new key");
+    const verifiedBadges = [...document.querySelectorAll<HTMLElement>(".plugin-market__verified")];
+    check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证 · plugins.example.com"
+      && verifiedBadges[0].closest(".plugin-market__item")?.textContent?.includes("新插件"),
+      "A verified publisher is marked with its domain; the official one keeps its own label");
+    const verifiedItem = verifiedBadges[0]?.closest<HTMLElement>(".plugin-market__item");
+    check(verifiedItem && verifiedItem.scrollWidth <= verifiedItem.clientWidth, "The verified mark does not make the market overflow");
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");

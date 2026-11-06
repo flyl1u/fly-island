@@ -98,6 +98,35 @@ pub struct MarketEntry {
     /// The keys the author registered with the market.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     author_keys: Vec<AuthorKey>,
+    /// The publisher is verified (docs/architecture/plugin-author-signing.md §4).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    verified: Option<VerifiedPublisher>,
+}
+
+/// How the market verified the publisher: a GitHub organization with a verified
+/// domain ("github"), or the publisher's own domain ("domain"). Only shown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VerifiedPublisher {
+    via: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    domain: Option<String>,
+}
+
+impl VerifiedPublisher {
+    /// A known way, and for "domain" a plain lower-case host name, so the page shows nothing odd.
+    fn is_sane(&self) -> bool {
+        match (self.via.as_str(), self.domain.as_deref()) {
+            ("github", None) => true,
+            ("domain", Some(domain)) => {
+                (4..=253).contains(&domain.len())
+                    && domain.contains('.')
+                    && domain.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.' || byte == b'-')
+                    && domain.split('.').all(|label| !label.is_empty() && !label.starts_with('-') && !label.ends_with('-'))
+            }
+            _ => false,
+        }
+    }
 }
 
 /// Longest README / changelog text kept from the index (MAX_MARKET_TEXT in build-plugin-index.mjs).
@@ -204,7 +233,12 @@ pub(super) fn split_index(text: &str) -> Result<(Vec<MarketEntry>, Vec<MarketEnt
         .into_iter()
         .filter_map(|value| serde_json::from_value::<MarketEntry>(value).ok())
         .filter(is_valid_entry)
-        .map(|entry| MarketEntry { readme: entry.readme.map(cap_text), changelog: entry.changelog.map(cap_text), ..entry })
+        .map(|entry| MarketEntry {
+            readme: entry.readme.map(cap_text),
+            changelog: entry.changelog.map(cap_text),
+            verified: entry.verified.filter(VerifiedPublisher::is_sane),
+            ..entry
+        })
         .partition(|entry| entry.pre_release);
     entries.sort_by(|left, right| left.id.cmp(&right.id));
     entries.dedup_by(|left, right| left.id == right.id);

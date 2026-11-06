@@ -128,6 +128,10 @@ export type SettingsPluginsText = {
     allCategories: string;
     category: Record<"productivity" | "todos" | "developer" | "media" | "messages" | "information" | "utilities", string>;
     official: string;
+    /** Verified publishers (plugin-author-signing.md §4). */
+    verifiedGithub: string;
+    verifiedDomain: (domain: string) => string;
+    verifiedHint: string;
     publisher: (name: string) => string;
     trustAndInstall: string;
     trustHint: (publisher: string) => string;
@@ -334,6 +338,9 @@ export const zhCN: SettingsPluginsText = {
       utilities: "工具",
     },
     official: "官方",
+    verifiedGithub: "已验证 · GitHub 组织",
+    verifiedDomain: (domain: string) => `已验证 · ${domain}`,
+    verifiedHint: "插件市场核实过这个发布者：它是在 GitHub 上验证了域名的组织，或者在自己的域名上声明了这个 GitHub 账号。这只说明发布者是谁，不代表插件安全。",
     publisher: (name: string) => `发布者 ${name}`,
     trustAndInstall: "信任并安装",
     signed: "作者已签名",
@@ -538,6 +545,9 @@ export const en: SettingsPluginsText = {
       utilities: "Utilities",
     },
     official: "Official",
+    verifiedGithub: "Verified · GitHub organization",
+    verifiedDomain: (domain: string) => `Verified · ${domain}`,
+    verifiedHint: "The plugin market checked this publisher: a GitHub organization with a verified domain, or a domain that names this GitHub account. It says who publishes the plugin, not that the plugin is safe.",
     publisher: (name: string) => `Published by ${name}`,
     trustAndInstall: "Trust and install",
     signed: "Signed by author",

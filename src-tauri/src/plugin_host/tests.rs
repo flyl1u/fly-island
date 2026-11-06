@@ -300,6 +300,29 @@ mod market_tests {
     }
 
     #[test]
+    fn only_a_sane_verified_mark_is_kept() {
+        use serde_json::{json, Value};
+        let mut index: Value = serde_json::from_str(INDEX).expect("index");
+        let mut verified = |mark: Value| {
+            index["plugins"][0]["verified"] = mark;
+            let entries = parse_index(&index.to_string()).expect("index");
+            serde_json::to_value(&entries[0]).expect("entry")["verified"].clone()
+        };
+        assert_eq!(verified(json!({ "via": "github" })), json!({ "via": "github" }));
+        assert_eq!(verified(json!({ "via": "domain", "domain": "example.com" })), json!({ "via": "domain", "domain": "example.com" }));
+        for odd in [
+            json!({ "via": "domain", "domain": "Example.com" }),
+            json!({ "via": "domain", "domain": "evil.com/\u{202e}moc" }),
+            json!({ "via": "domain", "domain": "localhost" }),
+            json!({ "via": "domain" }),
+            json!({ "via": "github", "domain": "example.com" }),
+            json!({ "via": "whatever" }),
+        ] {
+            assert_eq!(verified(odd.clone()), Value::Null, "{odd}");
+        }
+    }
+
+    #[test]
     fn installing_twice_replaces_the_old_version() {
         let plugins = temp_dir("install");
         let entry = example_entry();

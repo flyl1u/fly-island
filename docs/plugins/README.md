@@ -538,8 +538,11 @@ plugin.onCommand("sync-now", async () => {
 - `categories`：只能取 `productivity`、`todos`、`developer`、`media`、`messages`、`information`、`utilities`。
 - `preRelease`：为 `true` 时也收录标成 Pre-release 的 Release，版本号用 semver 预发布后缀（例如 `1.3.0-beta.1`）。插件市场只列正式版；已安装的插件在设置页打开「接收这个插件的预发布版本」后，更新会安装比正式版新的预发布版本，卡片上也会提示有预发布版本可选。正式版发布后（例如 `1.3.0` 高于 `1.3.0-beta.2`），装着预发布版本的用户会更新到正式版。关掉开关不会退回旧版本。
 - `tagPrefix`：一个仓库放多个插件时的标签前缀，例如 `clock-`（标签 `clock-v1.2.0`）。
+- `domain`：可选，用来成为已验证发布者的域名（见下文）。
 - `path`：插件在仓库里的文件夹，例如 `plugins/clock`，默认仓库根目录。
 - **说明和版本历史**：插件的 `README.md` 和 `CHANGELOG.md` 会写进索引（各最多 16 KB），在插件市场的详情里显示。先在插件包里找；包里没有（写进了 `.focusdignore`）时，读仓库里 Release 标签处 `path` 文件夹中的同名文件。它们跟着版本走，改了要发新版本才会更新。支持标题、段落、列表、引用、代码块、粗体、斜体和 http(s) 链接；HTML 和图片不显示（图片只显示替代文字）。`CHANGELOG.md` 建议每个版本一节、最新的在最前（`## 1.2.0`）。
+
+**已验证发布者**：市场在发布者名字旁显示「已验证 · GitHub 组织」或「已验证 · <域名>」，说明发布者确实是它的名字所指的组织或个人，不代表插件安全。在 GitHub 上验证过域名的组织自动得到；其他发布者在提交里写 `"domain": "example.com"`，并让 `https://example.com/.well-known/focusd-publisher.json` 返回 `{ "github": "<publisher>" }`。市场每小时重新检查一次。
 
 用户第一次安装非官方发布者的插件时，按钮显示 **信任并安装**，点了就把这个发布者记进信任列表（存在 `plugins.json` 的 `trustedPublishers`），可以在 **设置 → 插件扩展 → 更新** 里取消信任。
 

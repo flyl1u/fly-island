@@ -1,6 +1,6 @@
 # 插件作者签名与“已验证”发布者（设计稿）
 
-状态：**已审**（2026-11-06，决定见第 7 节）。第 1 期已实现（2026-11-06）：SDK `packages/fly-island-plugin/src/sign.mjs`，岛屿 `src-tauri/src/plugin_host/author_signing.rs`，官方作者密钥 `0c663505c8e1d524`（公钥 `plugins/author-key.json`，私钥 `~/.tauri/fly-island/plugin-author-signing.key`）。第 2 期已实现（2026-11-06）：`fly-island-plugin keys rotate`（`packages/fly-island-plugin/src/rotate.mjs`），岛屿 `author_signing::endorsed_keys`（证明可以成链，只对写在里面的插件 id 有效），focusd-plugins 的 CI 校验 `signingKeys` 里的 `endorsedBy`。对应 [plugin-platform.md](plugin-platform.md) P11 里写着“以后再做”的两项：可选的作者签名、“已验证”发布者。
+状态：**已审**（2026-11-06，决定见第 7 节）。第 1 期已实现（2026-11-06）：SDK `packages/fly-island-plugin/src/sign.mjs`，岛屿 `src-tauri/src/plugin_host/author_signing.rs`，官方作者密钥 `0c663505c8e1d524`（公钥 `plugins/author-key.json`，私钥 `~/.tauri/fly-island/plugin-author-signing.key`）。第 2 期已实现（2026-11-06）：`fly-island-plugin keys rotate`（`packages/fly-island-plugin/src/rotate.mjs`），岛屿 `author_signing::endorsed_keys`（证明可以成链，只对写在里面的插件 id 有效），focusd-plugins 的 CI 校验 `signingKeys` 里的 `endorsedBy`。第 3 期已实现（2026-11-06）：focusd-plugins `scripts/lib/publishers.mjs`，岛屿 `market.rs` 的 `VerifiedPublisher`，与第 4 节的差异见那里。对应 [plugin-platform.md](plugin-platform.md) P11 里写着“以后再做”的两项：可选的作者签名、“已验证”发布者。
 
 ## 1. 要防什么
 
@@ -128,6 +128,13 @@
 - 索引条目新增 `"verifiedDomain": "<域名>"`，岛屿在发布者名旁显示“已验证 · <域名>”。官方发布者继续显示“官方”。
 - 域名只显示，岛屿不去访问它（索引签名已经保证这个字段是 CI 写的）。
 
+实现时的差异（2026-11-06）：
+
+- GitHub 的公开接口只给出组织是否 `is_verified`，不说验证的是哪个域名，所以这种情况显示“已验证 · GitHub 组织”。索引字段是 `"verified": { "via": "github" }` 或 `{ "via": "domain", "domain": "example.com" }`，不是 `verifiedDomain`。
+- 每次构建（每小时）都检查，而不是每天。连不上 GitHub 或域名时保留原来的状态，只有明确的否定（404、内容不符、组织不再验证）才去掉标记，以免网络波动让标记时有时无。
+- `.well-known/focusd-publisher.json` 必须是 HTTPS、不跳转、不超过 4 KB。
+- 岛屿只接受 `via` 为这两种、域名是小写主机名的标记，其他的当作没有。
+
 ## 5. 兼容性
 
 - 新字段（`authorSignature`、`authorKeys`、`verifiedDomain`）只出现在 focusd-plugins 的索引里。岛屿的 `MarketEntry` 没有 `deny_unknown_fields`，不认识这些字段的岛屿会忽略它们，照常安装（也就没有作者签名的保护）。
@@ -141,7 +148,7 @@
 |---|---|---|
 | 1 | 签名格式；SDK `keygen` / `pack --sign` / `sign`；focusd-plugins 的登记、CI 校验、索引字段；岛屿校验、首次信任后固定密钥、“签名密钥变了”提示与确认、“作者已签名”标签；官方插件签名 | `packages/fly-island-plugin`、focusd-plugins `scripts/`、`plugin_host/{market,signature,updates,store}.rs`、`src/features/plugins/` |
 | 2 ✅ | 换密钥证明（`keys rotate`、CI 校验、岛屿自动接受） | 同上 |
-| 3 | “已验证”发布者 | focusd-plugins CI、市场页 |
+| 3 ✅ | “已验证”发布者 | focusd-plugins CI、市场页 |
 
 第 1 期之前不需要发岛屿版本：岛屿端的改动随下一个版本发布即可，在那之前已上架的签名版本照常能装（旧岛屿忽略签名）。第 1 期的顺序：先让 focusd-plugins 的索引带上官方插件的签名，再合入岛屿端的“只给签名插件自动更新”，避免中间有一段时间官方插件也不能自动更新。
 

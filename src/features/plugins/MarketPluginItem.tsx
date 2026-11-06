@@ -90,6 +90,12 @@ export function MarketPluginItem({
             {official ? <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" /> : null}
             {official ? `${text.publisher(publisher)} · ${text.official}` : text.publisher(publisher)}
           </span>
+          {!official && plugin.verified ? (
+            <span className="plugin-market__verified" title={text.verifiedHint}>
+              <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" />
+              {plugin.verified.via === "domain" ? text.verifiedDomain(plugin.verified.domain) : text.verifiedGithub}
+            </span>
+          ) : null}
           {plugin.signedBy ? (
             <span className="plugin-market__tag plugin-market__tag--signed" title={text.signedHint(plugin.signedBy)}>
               <KeyRound size={10} strokeWidth={2.4} aria-hidden="true" />
