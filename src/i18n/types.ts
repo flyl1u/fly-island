@@ -11,6 +11,7 @@ import type { SessionRingText } from "./sections/sessionRing";
 import type { NotebookText } from "./sections/notebook";
 import type { ArchiveText } from "./sections/archive";
 import type { MusicText } from "./sections/music";
+import type { CalendarText } from "./sections/calendar";
 import type { TodoText } from "./sections/todo";
 import type { ClipboardText } from "./sections/clipboard";
 import type { FileShelfText } from "./sections/fileShelf";
@@ -43,6 +44,7 @@ export type Translations = {
   archive: ArchiveText;
 
   music: MusicText;
+  calendar: CalendarText;
 
   todo: TodoText;
 

@@ -17,6 +17,7 @@ export type SettingsCategoriesText = {
   clipboard: string;
   translation: string;
   shelf: string;
+  calendar: string;
   agents: string;
   sounds: string;
   plugins: string;
@@ -40,6 +41,7 @@ export const zhCN: SettingsCategoriesText = {
   clipboard: "剪贴板",
   translation: "翻译",
   shelf: "文件中转",
+  calendar: "日历",
   agents: "AI Agent",
   sounds: "声音",
   plugins: "插件",
@@ -63,6 +65,7 @@ export const en: SettingsCategoriesText = {
   clipboard: "Clipboard",
   translation: "Translation",
   shelf: "File shelf",
+  calendar: "Calendar",
   agents: "AI Agent",
   sounds: "Sounds",
   plugins: "Plugins",

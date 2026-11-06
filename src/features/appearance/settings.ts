@@ -1,5 +1,6 @@
 import { clamp } from "../../utils/number.ts";
 import { DEFAULT_LYRICS_SETTINGS, normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
+import { DEFAULT_CALENDAR_SETTINGS, normalizeCalendarSettings } from "../calendar/calendarSettings.ts";
 import { DEFAULT_PAGE_DIGIT_MODIFIERS, DEFAULT_PAGE_NEXT_SHORTCUT, DEFAULT_PAGE_PREVIOUS_SHORTCUT, normalizePageCycleShortcut, normalizePageDigitModifiers } from "./pageShortcuts.ts";
 import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { AgentHostDisplay, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
@@ -129,6 +130,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   levelPopup: true,
   deviceAlerts: true,
   ...DEFAULT_LYRICS_SETTINGS,
+  ...DEFAULT_CALENDAR_SETTINGS,
   mailEnabled: true,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
@@ -358,6 +360,7 @@ export function normalizeSettings(
     levelPopup: settings?.levelPopup !== false,
     deviceAlerts: settings?.deviceAlerts !== false,
     ...normalizeLyricsSettings(settings),
+    ...normalizeCalendarSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     gameAutoTuck: settings?.gameAutoTuck === true,

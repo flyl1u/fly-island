@@ -4,6 +4,8 @@ import type { BuiltinPage, IslandPage, PluginPageId } from "./types";
 /** Which modules are switched on; an off module is hidden on the island. */
 export type IslandFeatures = {
   todo: boolean;
+  /** The calendar switch with at least one calendar added. */
+  calendar?: boolean;
   music: boolean;
   clipboard: boolean;
   shelf: boolean;
@@ -22,10 +24,10 @@ export function isPluginPage(page: IslandPage): page is PluginPageId {
   return page.startsWith("plugin:");
 }
 
-const BUILTIN_PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
+const BUILTIN_PAGE_ORDER: BuiltinPage[] = ["todo", "calendar", "music", "clipboard", "shelf", "qq", "agents", "translation"];
 const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
 // Header controls from left to right. Alt+1 is the first one that is switched on.
-const BUILTIN_SHORTCUT_ORDER: BuiltinPage[] = ["agents", "todo", "music", "clipboard", "shelf", "qq", "translation"];
+const BUILTIN_SHORTCUT_ORDER: BuiltinPage[] = ["agents", "todo", "calendar", "music", "clipboard", "shelf", "qq", "translation"];
 
 /** Every page in the order an off page falls back through. */
 function pageOrder(features: IslandFeatures): IslandPage[] {
@@ -39,7 +41,7 @@ function shortcutOrder(features: IslandFeatures): IslandPage[] {
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
   if (isPluginPage(page)) return features.pluginPages?.includes(page) ?? false;
-  return page === "qq" ? features.qq || features.wechat || features.qqMail : features[page];
+  return page === "qq" ? features.qq || features.wechat || features.qqMail : features[page] === true;
 }
 
 /** `page` when it is on, otherwise the first page that is, or null when every page is off. */

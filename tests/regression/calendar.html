@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" />
+  <title>日历检查</title>
+  <style>
+    html body { margin: 0; background: #1d2230; font: 14px "Segoe UI", "Microsoft YaHei", sans-serif; color: #f1f0f6; }
+    #panel { width: 460px; height: 300px; margin: 24px auto; display: flex; flex-direction: column; }
+    #line { width: 240px; margin: 12px auto; display: flex; overflow: hidden; }
+    #settings { width: 620px; margin: 24px auto; }
+    #results { max-width: 760px; margin: 24px auto; padding: 0 24px; color: #dfe6f3; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+  </style>
+  <div id="panel"></div>
+  <div id="line"></div>
+  <div id="settings"></div>
+  <pre id="results" role="status">准备日历检查…</pre>
+  <script type="module" src="./calendar.tsx"></script>
+</html>

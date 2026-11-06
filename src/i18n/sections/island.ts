@@ -15,6 +15,7 @@ export type IslandText = {
   music: string;
   clipboardHistory: string;
   shelf: string;
+  calendar: string;
   shelfCount: (count: number) => string;
   /** The collapsed island's camera and microphone icons, naming the apps using them. */
   deviceInUse: Record<"camera" | "microphone", (apps: string) => string>;
@@ -50,6 +51,7 @@ export const zhCN: IslandText = {
   music: "Music",
   clipboardHistory: "剪贴板历史",
   shelf: "文件中转",
+  calendar: "日历",
   shelfCount: (count) => `文件中转里有 ${count} 个文件`,
   deviceInUse: {
     camera: (apps) => `${apps} 正在使用摄像头，点击打开隐私设置`,
@@ -85,6 +87,7 @@ export const en: IslandText = {
   music: "Music",
   clipboardHistory: "Clipboard history",
   shelf: "File shelf",
+  calendar: "Calendar",
   shelfCount: (count) => (count === 1 ? "1 file on the shelf" : `${count} files on the shelf`),
   deviceInUse: {
     camera: (apps) => `${apps} using the camera; click for privacy settings`,

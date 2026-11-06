@@ -1,3 +1,4 @@
+import type { CollapsedMeeting } from "../../features/calendar/upcoming";
 import type { DeviceUse } from "../../features/device-use/api";
 import type { LevelChange } from "../../features/system-levels/api";
 import type { DeviceAlert } from "../../features/device-events/api";
@@ -51,6 +52,8 @@ type IslandShellProps = {
   deviceUse: DeviceUse;
   levelPopup?: LevelChange | null;
   deviceAlert?: DeviceAlert | null;
+  /** A meeting about to start (calendar), and whether to name it. */
+  meeting?: CollapsedMeeting | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -104,6 +107,7 @@ export function IslandShell({
   deviceUse,
   levelPopup = null,
   deviceAlert = null,
+  meeting = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -215,6 +219,7 @@ export function IslandShell({
           deviceUse={deviceUse}
           levelPopup={levelPopup}
           deviceAlert={deviceAlert}
+          meeting={meeting}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}

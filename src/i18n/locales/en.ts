@@ -12,6 +12,7 @@ import * as sessionRing from "../sections/sessionRing.ts";
 import * as notebook from "../sections/notebook.ts";
 import * as archive from "../sections/archive.ts";
 import * as music from "../sections/music.ts";
+import * as calendar from "../sections/calendar.ts";
 import * as todo from "../sections/todo.ts";
 import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
@@ -40,6 +41,7 @@ const en: Translations = {
   archive: archive.en,
 
   music: music.en,
+  calendar: calendar.en,
 
   todo: todo.en,
 

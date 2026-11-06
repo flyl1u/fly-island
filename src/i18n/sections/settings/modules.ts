@@ -6,6 +6,7 @@ export type SettingsModulesText = {
   agents: string;
   mail: string;
   shelf: string;
+  calendar: string;
   translation: string;
   clipboard: string;
 };
@@ -18,6 +19,7 @@ export const zhCN: SettingsModulesText = {
   agents: "启用 AI Agent 状态灯",
   mail: "启用邮箱",
   shelf: "启用文件中转",
+  calendar: "启用日历",
   translation: "启用快捷翻译",
   clipboard: "启用剪贴板历史",
 };
@@ -30,6 +32,7 @@ export const en: SettingsModulesText = {
   agents: "Enable the AI Agent status light",
   mail: "Enable mail",
   shelf: "Enable the file shelf",
+  calendar: "Enable the calendar",
   translation: "Enable quick translation",
   clipboard: "Enable clipboard history",
 };

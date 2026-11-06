@@ -4,6 +4,7 @@ import { useIslandNotices } from "./useIslandNotices";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
 // The page panels; before IslandShell so their CSS keeps its place in the cascade.
+import { useCalendar } from "../../features/calendar/useCalendar";
 import { IslandPages } from "./IslandPages";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
 import { useTranslation } from "../../i18n";
@@ -93,6 +94,7 @@ export function IslandApp() {
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
   const clipboard = useClipboardHistory(toggleClipboardHistory);
+  const calendar = useCalendar(settings.calendarEnabled, settings.calendarRemindMinutes);
   const { clipboardHistory } = clipboard;
 
   const { features, openEnabledPage } = useIslandFeatures({
@@ -107,6 +109,7 @@ export function IslandApp() {
     setMessageSource,
     openIslandPage,
     pluginPages: pluginPages.pageIds,
+    calendarAvailable: calendar.snapshot.sourceCount > 0,
   });
   const { alertedSession, approvals: agentApprovals, agentCardHeight } = useIslandAgentAlerts({
     sessions: agentSessions,
@@ -218,6 +221,7 @@ export function IslandApp() {
         deviceUse={notices.deviceUse}
         levelPopup={notices.levelPopup}
         deviceAlert={notices.deviceAlert}
+        meeting={calendar.upcoming && settings.calendarEnabled ? { upcoming: calendar.upcoming, showTitle: settings.calendarShowTitle } : null}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
@@ -259,6 +263,7 @@ export function IslandApp() {
           fileShelf={fileShelf}
           isShelfDropping={isShelfDropping}
           notebookProps={notebookProps}
+          calendar={calendar}
         />
       </IslandShell>
       <PluginContextMenus />

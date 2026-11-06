@@ -8,6 +8,7 @@ import { SoundSettingsSection } from "../../features/agent-status/sounds/SoundSe
 import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
+import { CalendarSettingsPage } from "./CalendarSettingsPage";
 import { ShelfSettingsPage } from "./ShelfSettingsPage";
 import { ShortcutsSettingsPage } from "./ShortcutsSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
@@ -50,6 +51,7 @@ export function SettingsWindow() {
     if (section === "savePath") focusSavePath();
     if (section === "translation") setCategory("translation");
     if (section === "music") setCategory("music");
+    if (section === "calendar") setCategory("calendar");
     if (section === "mail") setCategory("messages");
     if (section === "updates") setCategory("about");
   }, [focusSavePath]);
@@ -168,6 +170,7 @@ export function SettingsWindow() {
         {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} onOpenShortcuts={openShortcuts} />}
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "calendar" && <CalendarSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "sounds" && <SoundSettingsSection />}
         {category === "plugins" && (

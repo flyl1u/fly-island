@@ -8,6 +8,8 @@ export const MIN_COLLAPSED_TEXT_UNITS = 2;
 export const MAX_COLLAPSED_TEXT_UNITS = 12;
 export const BASE_EXPANDED_ISLAND_HEIGHT = 306;
 export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
+/** The calendar page: two days of events, scrolling past about six. */
+export const CALENDAR_EXPANDED_ISLAND_HEIGHT = 340;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
 // then the panel's padding, title, tabs, search and their gaps (158).

@@ -14,6 +14,9 @@ import type { LevelChange } from "../../features/system-levels/api";
 import { LevelPopup } from "../../features/system-levels/LevelPopup";
 import type { DeviceAlert } from "../../features/device-events/api";
 import { DeviceAlertPopup } from "../../features/device-events/DeviceAlertPopup";
+import { MeetingLine } from "../../features/calendar/MeetingLine";
+import { openMeetingLink } from "../../features/calendar/api";
+import type { CollapsedMeeting } from "../../features/calendar/upcoming";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
@@ -58,6 +61,8 @@ type IslandCollapsedBarProps = {
   levelPopup: LevelChange | null;
   /** Headphones connecting, a battery running low or the charger; it comes before the level popup. */
   deviceAlert: DeviceAlert | null;
+  /** A meeting about to start; it takes the summary's place, after alerts and translation. */
+  meeting: CollapsedMeeting | null;
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
@@ -97,6 +102,7 @@ export function IslandCollapsedBar({
   deviceUse,
   levelPopup,
   deviceAlert,
+  meeting,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -118,7 +124,9 @@ export function IslandCollapsedBar({
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
   // While the island names a running agent, opening it shows the Agent page.
-  const openTarget: IslandPage = agentSession ? "agents" : page;
+  // While the island names a meeting or a running agent, opening it shows that page.
+  const showMeeting = showCollapsedText && meeting !== null;
+  const openTarget: IslandPage = showMeeting ? "calendar" : agentSession ? "agents" : page;
   // The centre slot takes the summary's place while the bar has no summary.
   const showCenter = Boolean(slots.center) && !preview && !translationPeek
     && !(showCollapsedText && (showTitle || agentSession !== null || collapsedTaskTitle !== null || collapsedTodoCount !== null));
@@ -180,6 +188,8 @@ export function IslandCollapsedBar({
             <LevelPopup change={levelPopup} />
           ) : translationPeek ? (
             <span className="island__active-task" key={translationPeek}>{translationPeek}</span>
+          ) : showMeeting && meeting ? (
+            <MeetingLine meeting={meeting.upcoming} showTitle={meeting.showTitle} />
           ) : <>
           {showCollapsedText && showTitle && (
             <span className="island__brand">fly-island</span>
@@ -211,6 +221,18 @@ export function IslandCollapsedBar({
         </CollapsedMessageContent>
         {showCenter && <span className="island__center-slot">{slots.center}</span>}
       </button>
+      {showMeeting && !preview && !deviceAlert && !levelPopup && !translationPeek && meeting?.upcoming.event.meetingLink && (
+        <button
+          className="island-meeting-join"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            void openMeetingLink(meeting.upcoming.event.meetingLink!).catch((error: unknown) => console.error("Failed to open the meeting link", error));
+          }}
+        >
+          {t.calendar.join}
+        </button>
+      )}
       {preview?.source === "plugin" && pluginNotifications.notification && (
         <PluginNotificationActions actions={pluginNotifications.notification.actions} onAction={pluginNotifications.runAction} />
       )}

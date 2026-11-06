@@ -1,3 +1,4 @@
+import type { CalendarSettingValues } from "../calendar/calendarSettings";
 export type TranslationTarget = "window" | "island";
 
 export type AppearanceMode = "classic" | "liquidGlass";
@@ -19,7 +20,7 @@ export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
 
-export type IslandSettings = {
+export type IslandSettings = CalendarSettingValues & {
   topEdgeLayoutVersion: 1;
   appearanceMode: AppearanceMode;
   fontFamily: IslandFont;

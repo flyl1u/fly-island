@@ -1,0 +1,52 @@
+.island-meeting {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.island-meeting__icon {
+  flex: none;
+  color: #ff9a76;
+}
+
+.island-meeting__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island-meeting__when {
+  flex: none;
+  color: rgba(var(--island-ink-rgb, 241, 240, 246), 0.62);
+  font-variant-numeric: tabular-nums;
+}
+
+.island-meeting--started .island-meeting__when {
+  color: #ff9a76;
+}
+
+/* Beside the bar, not in it: the bar is one button, and a button cannot hold another. */
+.island-meeting-join {
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 9px;
+  color: #fff;
+  background: rgba(255, 138, 101, 0.85);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.island-meeting-join:hover {
+  background: rgb(255, 138, 101);
+}
+
+.island-meeting-join:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft, rgba(232, 242, 248, 0.78));
+  outline-offset: 1px;
+}

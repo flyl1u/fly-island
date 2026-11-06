@@ -72,7 +72,7 @@
 
 - 窗口 label：`main`、`translation`、`settings`；前端分发参数为 `?window=translation`、`?window=settings`。
 - Tauri 命令：以 `lib.rs` 中 `generate_handler!` 列表为准，命令名即 Rust 函数名。
-- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`。
+- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`、`com.focusd.island.calendar`（2026-11-07 起，账户名为日历 id，存 ICS 订阅链接或 CalDAV 密码）。
 - 注册表值：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `FocuSD Island`。
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。
@@ -82,6 +82,7 @@
 - 本地接口：首选端口 `39271`、`/v1/` 下的路径与 JSON 格式、`local-api.json` 字段，见 [docs/local-api.md](../local-api.md)。自 2026-11-04 起它是内置插件 `focusd.local-api`（插件 id 与设置键 `allowWrite` 也属于契约），命令 `get_local_api_state`、`set_local_api_settings`、`reset_local_api_token` 已删除。
 - 在岛上审批（2026-11-06 起）：端点路径 `POST /claude/permission-request`、`POST /codex/permission-request`，以及 Claude Code `PreToolUse` 钩子的 `POST /claude/ask-user-question`（只接 AskUserQuestion，回答以 `updatedInput.answers` 返回）（`Authorization: Bearer <令牌>`，`Host` 须为本机端口，带 `Origin` 的请求拒绝），返回 Claude Code `PermissionRequest` 钩子的格式，空对象 `{}` 表示交还终端；`agent-approval.json` 字段 `port`、`token`；Tauri 命令 `set_agent_approval_enabled`、`agent_approval_decide`（`decision` 为 `allow` / `deny` / `allowAlways` / `terminal`；提问为 `answer` 加 `answers`（问题原文 → 回答）或 `terminal`）、`agent_approval_pending`；事件见上表。
 - 歌词缓存（2026-11-06 起）：应用数据目录下的 `lyrics-cache/<FNV-1a 哈希>.json`（`{ key, lrc, source?, translation?, fetchedAt }`；`lrc` 为 null 表示所有在线来源都没有，7 天后重查；`source` 为 `lrclib` / `kugou` / `netease`，没有时是 LRCLIB 的旧条目；开着中文来源时 key 末尾多 `cn`；最多 2000 个文件）。设置项 `lyricsFolder`、`lyricsOnline`（默认关）、`lyricsChinese`（也查酷狗和网易云，默认关）、`lyricsOffsetMs`。每首歌自己的偏移存在 localStorage `focusd-island-lyrics-offsets`（`{ <歌名歌手时长/2 秒>: 毫秒 }`，±10 秒，最多 500 首）。媒体状态多了 `trackId`：播放器插件写进流派的歌曲 ID（`NCM-<id>`、`QQ-<id>`），`get_lyrics` 的查询多了 `chinese`、`trackId`，返回值多了 `translation`。
+- 日历（2026-11-07 起，见 [calendar.md](../calendar.md)）：应用数据目录下的 `calendar-sources.json`（`[{ id, kind: "ics" | "caldav", name, url, host, username }]`，不含密码和订阅链接）；Tauri 命令 `get_calendar_events(refresh)`、`list_calendar_sources`、`add_calendar_source(kind, name, url, username, secret)`、`remove_calendar_source(id)`；设置项 `calendarEnabled`（默认开，没添加日历时不显示日历页）、`calendarRemindMinutes`（0/5/10/15/30，默认 10）、`calendarShowTitle`（默认开）；岛屿页面 id `calendar`，设置窗口分类和跳转请求 `calendar`。
 - VS Code 扩展（2026-11-06 起）：扩展 ID `tixxin.focusd-island`（源码 `packages/vscode-extension/`），岛屿打开 `<编辑器 scheme>://tixxin.focusd-island/focus?pids=<进程号,…>&title=<会话标题>`；发布后再改格式时，岛屿和扩展都要兼容旧格式，见 [docs/agent-status-hooks.md](../agent-status-hooks.md)。
 
 总览见 [overview.md](overview.md)。

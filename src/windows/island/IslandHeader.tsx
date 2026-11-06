@@ -126,6 +126,19 @@ export function IslandHeader({
             }}
           />
         )}
+        {features.calendar && (
+          <button
+            className={`dot-button dot-button--calendar ${
+              page === "calendar" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            aria-label={withShortcut(t.island.calendar, "calendar")}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("calendar");
+            }}
+          />
+        )}
         {features.clipboard && (
           <button
             className={`dot-button dot-button--clipboard ${

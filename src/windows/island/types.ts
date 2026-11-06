@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 export type IslandMode = "collapsed" | "expanded";
 
 /** The pages built into the island. */
-export type BuiltinPage = "todo" | "music" | "clipboard" | "shelf" | "qq" | "agents" | "translation";
+export type BuiltinPage = "todo" | "calendar" | "music" | "clipboard" | "shelf" | "qq" | "agents" | "translation";
 
 /** A page a plugin adds: `plugin:<plugin id>/<view id>` (see features/plugin-views/model.ts). */
 export type PluginPageId = `plugin:${string}`;

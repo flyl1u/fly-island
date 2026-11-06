@@ -16,6 +16,7 @@ import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
 import type { DeviceUse } from "../../src/features/device-use/api";
+import type { CollapsedMeeting } from "../../src/features/calendar/upcoming";
 import type { LevelChange } from "../../src/features/system-levels/api";
 import type { DeviceAlert } from "../../src/features/device-events/api";
 
@@ -73,6 +74,7 @@ let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
 let changeDeviceUse: (deviceUse: DeviceUse) => void;
 let changeLevel: (change: LevelChange | null) => void;
+let changeMeeting: (meeting: CollapsedMeeting | null) => void;
 let changeDeviceAlert: (alert: DeviceAlert | null) => void;
 let openedPage: string | null = null;
 
@@ -91,6 +93,8 @@ function Fixture() {
   changeDeviceUse = setDeviceUse;
   const [level, setLevel] = useState<LevelChange | null>(null);
   changeLevel = setLevel;
+  const [meeting, setMeeting] = useState<CollapsedMeeting | null>(null);
+  changeMeeting = setMeeting;
   const [deviceAlert, setDeviceAlert] = useState<DeviceAlert | null>(null);
   changeDeviceAlert = setDeviceAlert;
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
@@ -101,7 +105,7 @@ function Fixture() {
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell deviceUse={deviceUse} levelPopup={level} deviceAlert={deviceAlert} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
+    <IslandShell deviceUse={deviceUse} levelPopup={level} meeting={meeting} deviceAlert={deviceAlert} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
@@ -302,6 +306,20 @@ async function runChecks() {
     check(device()?.classList.contains("device-alert--warn") && device()?.getAttribute("aria-label") === "AirPods 电量低, 电量 10%", "蓝牙设备电量低时提醒");
     await act(async () => changeDeviceAlert(null));
     check(!device(), "设备提示结束后恢复原来的文字");
+    const review = { uid: "r", title: "设计评审", startMs: Date.now() + 8 * 60_000, endMs: Date.now() + 68 * 60_000, allDay: false, location: null, meetingLink: "https://vc.feishu.cn/j/1", calendar: "工作" };
+    await act(async () => changeMeeting({ upcoming: { event: review, minutes: 8 }, showTitle: true }));
+    await settle();
+    const join = () => document.querySelector<HTMLButtonElement>(".island-meeting-join");
+    check(document.querySelector(".island-meeting")?.textContent === "设计评审· 8 分钟后" && !incoming().textContent?.includes("待办") && join()?.textContent === "加入",
+      "会议快开始时代替待办显示倒计时，旁边有加入按钮");
+    openedPage = null;
+    await act(async () => join()!.click());
+    check(openedPage === null && commands.includes("plugin:opener|open_url"), "点加入打开会议链接，不展开岛屿");
+    await act(async () => button().click());
+    check(openedPage === "calendar", "显示会议时点击小岛打开日历页");
+    await act(async () => changeMeeting(null));
+    await settle();
+    check(!document.querySelector(".island-meeting") && !join(), "没有会议时恢复原来的文字");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

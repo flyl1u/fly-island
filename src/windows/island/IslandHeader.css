@@ -104,6 +104,11 @@
 }
 
 .dot-button:hover,
+.dot-button--calendar {
+  background: #ff9a76;
+  box-shadow: 0 0 12px rgba(255, 154, 118, 0.46);
+}
+
 .dot-button--active {
   transform: scale(1.18);
   opacity: 1;

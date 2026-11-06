@@ -1,5 +1,6 @@
 mod agent_approval;
 mod agent_status;
+mod calendar;
 mod claude_usage;
 mod clipboard_history;
 mod dev_lane;
@@ -142,6 +143,7 @@ pub fn run() {
             system_levels;
             device_events;
             agent_status;
+            calendar;
             agent_approval;
             claude_usage;
             device_use;
