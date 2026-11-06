@@ -18,6 +18,7 @@ src/
 │   ├── device-use/          # 摄像头、麦克风使用提示：折叠岛上的图标、设置项
 │   ├── clipboard/           # 剪贴板历史、快捷键
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
+│   ├── center-pattern/      # 折叠态中心图案：内置 SVG 动画（眼睛跟随光标）、Codex Pets 宠物 sprite
 │   ├── local-api/           # 本地接口的前端一侧：转发请求的分发与桥接 hook（待办部分在 todos/apiCommands.ts；开关与设置在内置插件页）
 │   ├── plugins/             # 设置 → 插件扩展页与插件市场页：已安装插件、启用与授权、从市场安装
 │   ├── plugin-dev/          # 设置 → 插件扩展 → 开发者：开发模式开关、从文件夹加载插件、JSON-RPC 收发记录、手动发送事件

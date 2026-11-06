@@ -1,6 +1,11 @@
 //! Lets clicks fall through the transparent stage everywhere outside the island shape.
 
-use std::{thread, time::Duration};
+use serde::Serialize;
+use std::{
+    sync::atomic::{AtomicBool, Ordering},
+    thread,
+    time::Duration,
+};
 use tauri::{Emitter, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
@@ -20,6 +25,28 @@ pub(crate) const ISLAND_HOVER_CHANGED_EVENT: &str = "island-hover-changed";
 // because the webview cannot see Ctrl while another window has keyboard focus.
 pub(crate) const ISLAND_MOVE_ARMED_CHANGED_EVENT: &str = "island-move-armed-changed";
 
+// Mirrored by ISLAND_CURSOR_MOVED_EVENT in src/features/center-pattern/api.ts. The payload
+// is the cursor in the window's CSS pixels, also outside the window, so the center
+// pattern's eyes can follow it anywhere. Sent only while the page asks for it.
+pub(crate) const ISLAND_CURSOR_MOVED_EVENT: &str = "island-cursor-moved";
+// Every third 12 ms poll: about 28 updates a second, only when the cursor moved.
+const CURSOR_EVENT_EVERY_TICKS: u32 = 3;
+
+static CURSOR_TRACKING: AtomicBool = AtomicBool::new(false);
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+struct CursorPoint {
+    x: f64,
+    y: f64,
+}
+
+/// Turns `island-cursor-moved` on while a cursor-following center pattern is shown; the
+/// main window counts its users (acquireIslandCursor in center-pattern/api.ts).
+#[tauri::command]
+pub fn set_island_cursor_tracking(enabled: bool) {
+    CURSOR_TRACKING.store(enabled, Ordering::Relaxed);
+}
+
 pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
     thread::spawn(move || {
         let mut ignoring_cursor = false;
@@ -29,6 +56,8 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
         // this loop's 83 Hz kept the main thread busy even with the cursor nowhere near. The
         // handle stays the same for the window's life.
         let hwnd = window.hwnd().ok();
+        let mut tick: u32 = 0;
+        let mut last_cursor: Option<CursorPoint> = None;
 
         loop {
             let is_inside = hwnd.is_none_or(cursor_is_inside_island);
@@ -52,9 +81,32 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
                 let _ = window.emit(ISLAND_MOVE_ARMED_CHANGED_EVENT, is_move_armed);
             }
 
+            tick = tick.wrapping_add(1);
+            if !CURSOR_TRACKING.load(Ordering::Relaxed) {
+                // Forget the last point, so turning tracking back on sends the cursor at once.
+                last_cursor = None;
+            } else if tick.is_multiple_of(CURSOR_EVENT_EVERY_TICKS) {
+                let point = hwnd.and_then(cursor_in_window);
+                if point.is_some() && point != last_cursor {
+                    last_cursor = point;
+                    let _ = window.emit(ISLAND_CURSOR_MOVED_EVENT, point);
+                }
+            }
+
             thread::sleep(Duration::from_millis(12));
         }
     });
+}
+
+fn cursor_in_window(hwnd: HWND) -> Option<CursorPoint> {
+    let window_rect = win32::window::window_rect(hwnd)?;
+    let cursor = win32::window::cursor_position()?;
+    let physical_scale = (window_rect.right - window_rect.left).max(1) as f64 / STAGE_WINDOW_WIDTH;
+    let round = |value: f64| (value * 10.0).round() / 10.0;
+    Some(CursorPoint {
+        x: round((cursor.x - window_rect.left) as f64 / physical_scale),
+        y: round((cursor.y - window_rect.top) as f64 / physical_scale),
+    })
 }
 
 pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {

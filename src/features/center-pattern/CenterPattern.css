@@ -1,0 +1,170 @@
+/* Built-in center patterns. Light shapes on the dark island, a touch of warm accent;
+   only transform and opacity animate, on loops slow enough to stay in the background. */
+.center-pattern {
+  --center-pattern-ink: rgba(255, 255, 255, 0.94);
+  --center-pattern-shade: rgba(255, 255, 255, 0.62);
+  --center-pattern-dark: #1c1c1e;
+  --center-pattern-accent: #ffb86b;
+  --center-pattern-blush: #f4a3ae;
+  --center-pattern-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: var(--center-pattern-height, 22px);
+  pointer-events: none;
+}
+
+.center-pattern svg {
+  display: block;
+  width: auto;
+  height: 100%;
+  overflow: visible;
+}
+
+.center-pattern svg * {
+  transform-box: view-box;
+}
+
+.center-pattern[data-paused] * {
+  animation-play-state: paused !important;
+}
+
+/* Eyes ------------------------------------------------------------------ */
+.center-eyes-white { fill: var(--center-pattern-ink); }
+.center-eyes-iris { fill: var(--center-pattern-dark); }
+.center-eyes-glint { fill: var(--center-pattern-ink); }
+
+.center-eyes-eye {
+  transform-origin: 20px 11px;
+  animation: center-eyes-blink 5.8s infinite;
+}
+
+/* Following the cursor retargets fast; glancing around on its own is slower. */
+.center-eyes-pupil {
+  transition: transform 140ms var(--center-pattern-ease);
+}
+.center-eyes[data-gaze="wander"] .center-eyes-pupil {
+  transition: transform 520ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@keyframes center-eyes-blink {
+  0%, 92%, 97%, 100% { transform: scaleY(1); }
+  94.5% { transform: scaleY(0.08); }
+}
+
+/* Bird ------------------------------------------------------------------ */
+.center-bird-plumage { fill: var(--center-pattern-ink); }
+.center-bird-wing { fill: var(--center-pattern-shade); }
+.center-bird-beak { fill: var(--center-pattern-accent); }
+.center-bird-eye { fill: var(--center-pattern-dark); }
+.center-bird-legs path {
+  fill: none;
+  stroke: var(--center-pattern-accent);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.center-bird-body {
+  transform-origin: 16px 18.4px;
+  animation: center-bird-peck 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.center-bird-head {
+  transform-origin: 21px 11.5px;
+  animation: center-bird-tilt 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.center-bird-wing {
+  transform-origin: 11px 12.4px;
+  animation: center-bird-flap 8s ease-in-out infinite;
+}
+
+@keyframes center-bird-tilt {
+  0%, 16%, 36%, 100% { transform: rotate(0deg); }
+  20%, 32% { transform: rotate(-16deg); }
+}
+
+@keyframes center-bird-peck {
+  0%, 52%, 72%, 100% { transform: rotate(0deg); }
+  55%, 64% { transform: rotate(20deg); }
+  59%, 68% { transform: rotate(2deg); }
+}
+
+@keyframes center-bird-flap {
+  0%, 80%, 92%, 100% { transform: rotate(0deg); }
+  82%, 86%, 90% { transform: rotate(-34deg); }
+  84%, 88% { transform: rotate(-4deg); }
+}
+
+/* Orb ------------------------------------------------------------------- */
+.center-orb-core { fill: var(--center-pattern-ink); }
+
+.center-orb-halo,
+.center-orb-core {
+  transform-origin: 11px 11px;
+}
+.center-orb-halo {
+  animation: center-orb-breathe-halo 4.4s ease-in-out infinite;
+}
+.center-orb-core {
+  animation: center-orb-breathe-core 4.4s ease-in-out infinite;
+}
+
+@keyframes center-orb-breathe-halo {
+  0%, 100% { opacity: 0.45; transform: scale(0.66); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes center-orb-breathe-core {
+  0%, 100% { opacity: 0.78; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* Cat ------------------------------------------------------------------- */
+.center-cat-fur { fill: var(--center-pattern-ink); }
+.center-cat-inner { fill: var(--center-pattern-blush); opacity: 0.9; }
+.center-cat-nose { fill: var(--center-pattern-blush); }
+.center-cat-eye { fill: var(--center-pattern-dark); }
+.center-cat-mouth {
+  fill: none;
+  stroke: var(--center-pattern-dark);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+}
+
+.center-cat-head {
+  transform-origin: 15px 20px;
+  animation: center-cat-tilt 9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.center-cat-eye {
+  transform-origin: 15px 12.6px;
+  animation: center-cat-blink 9s ease-in-out infinite;
+}
+.center-cat-ear {
+  transform-origin: 22px 9px;
+  animation: center-cat-ear 9s ease-out infinite;
+}
+
+/* A cat's slow blink: close, hold, open. */
+@keyframes center-cat-blink {
+  0%, 58%, 70%, 100% { transform: scaleY(1); }
+  62%, 65% { transform: scaleY(0.12); }
+}
+
+@keyframes center-cat-tilt {
+  0%, 24%, 44%, 100% { transform: rotate(0deg); }
+  30%, 38% { transform: rotate(-6deg); }
+}
+
+@keyframes center-cat-ear {
+  0%, 84%, 89%, 100% { transform: rotate(0deg); }
+  85.5% { transform: rotate(16deg); }
+  87% { transform: rotate(-3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .center-pattern *,
+  .center-pattern[data-paused] * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

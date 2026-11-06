@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" />
+  <title>折叠态中心图案</title>
+  <style>
+    html body { margin: 0; background: #c5cfcc; font: 13px "Segoe UI", "Microsoft YaHei", sans-serif; color: #1b302a; }
+    #fixture { max-width: 980px; margin: 20px auto; padding: 0 20px; }
+    #results { max-width: 980px; margin: 0 auto 24px; padding: 0 20px; line-height: 1.8; white-space: pre-wrap; }
+    .cp-section { margin: 0 0 18px; }
+    .cp-section h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+    .cp-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+    .cp-cell { display: grid; justify-items: center; gap: 4px; font-size: 11px; color: #3c4f49; }
+    .cp-island {
+      display: flex; align-items: center; justify-content: center; position: relative;
+      width: 220px; height: 38px; border-radius: 0 0 19px 19px; background: #0b0b0c;
+    }
+    .cp-island::before { content: ""; position: absolute; left: 16px; width: 7px; height: 7px; border-radius: 50%; background: #35e985; }
+    .cp-island.cp-small { width: 76px; }
+    .cp-small::before { display: none; }
+    .cp-zoom .cp-island { zoom: 3; }
+  </style>
+  <div id="fixture"></div>
+  <pre id="results" role="status">准备检查…</pre>
+  <script type="module" src="./center-pattern.tsx"></script>
+</html>

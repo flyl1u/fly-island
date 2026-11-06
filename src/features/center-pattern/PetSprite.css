@@ -1,0 +1,49 @@
+/* One petdex cell (192×208) shown at --pet-height; the sheet slides under it in steps. */
+.pet-sprite {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--pet-width);
+  height: var(--pet-height);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pet-sprite[data-ready] {
+  opacity: 1;
+}
+
+.pet-sprite-row {
+  display: block;
+  width: calc(var(--pet-width) * 8);
+  transform: translateY(var(--pet-row-shift));
+}
+
+.pet-sprite-sheet {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  /* The sheet is always shrunk (208 px cells to about 22 px), where nearest-neighbour
+     sampling drops pixels and shimmers, pixel art included; smooth sampling reads cleaner. */
+  image-rendering: auto;
+  user-select: none;
+  animation: pet-sprite-loop var(--pet-duration) steps(var(--pet-frames)) infinite;
+}
+
+.pet-sprite[data-paused] .pet-sprite-sheet {
+  animation-play-state: paused;
+}
+
+@keyframes pet-sprite-loop {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--pet-loop-shift)); }
+}
+
+/* Reduced motion: hold the row's first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .pet-sprite-sheet {
+    animation: none;
+  }
+}

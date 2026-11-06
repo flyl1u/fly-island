@@ -4,7 +4,7 @@
 pub(crate) mod focus;
 mod geometry;
 mod glass;
-mod passthrough;
+pub(crate) mod passthrough;
 mod state;
 pub(crate) mod top_edge;
 
@@ -284,6 +284,7 @@ macro_rules! tauri_commands {
             crate::island::minimize_island,
             crate::island::focus::take_island_hover_focus,
             crate::island::focus::release_island_hover_focus,
+            crate::island::passthrough::set_island_cursor_tracking,
         ] $($rest)*)
     };
 }
