@@ -4,6 +4,11 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## npm 包 0.2.0（2026-11-06）
+
+- `fly-island-plugin` 0.2.0：新增 `keygen`、`pack --sign`、`sign`、`keys rotate`（作者签名与换密钥，见 [作者签名](README.md#作者签名)），`publish` 改为指向插件市场 `TixXin/focusd-plugins`；SDK 带上 `onUri`、`view.patch` 增删条目、运行时申请的可选权限等这一批的 API 和类型。
+- `create-fly-island-plugin` 0.2.0：生成的项目依赖 `fly-island-plugin` ^0.2.0，复制的单文件 SDK 是最新版本。
+
 ## 可选权限
 
 - 清单 `optionalPermissions`：用到时再申请的权限。方法 `permissions.request { permissions }` 在岛上询问用户，返回 `{ granted, denied }`；能力 `permissions`；`initialize.optionalPermissions`。索引条目增加可选字段 `optionalPermissions`。SDK：Node `plugin.permissions.request` / `has`，PowerShell `Request-FocusdPermission`，模拟宿主支持。见 [可选权限](README.md#可选权限第-2-版)。

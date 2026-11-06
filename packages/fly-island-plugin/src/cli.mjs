@@ -41,8 +41,8 @@ Commands:
   test       Run test/*.test.mjs with node --test, or without tests start the plugin
              under the mock host, run each command, open each view and check it
              answered without errors
-  publish    Pack and print how to publish a release (the market's index repository
-             takes submissions from P11 on)
+  publish    Pack (--sign to sign it too) and print how to publish a release and
+             submit it to the plugin market (TixXin/focusd-plugins)
   help       Show this text
 
 The folder defaults to the current one.`;
@@ -121,19 +121,22 @@ add its entry to "signingKeys" next to the old key and open a pull request:`);
   return 0;
 }
 
-function publish(dir) {
-  const packed = pack(dir);
+function publish(dir, signWith) {
+  const packed = pack(dir, undefined, console, signWith);
   if (!packed) return 1;
   const { id, version } = packed.manifest;
+  const assets = signWith ? `"${packed.file}" "${packed.file}.sig"` : `"${packed.file}"`;
   console.log(`
 To publish ${id} ${version}:
   1. Commit and push the plugin, then create a GitHub release tagged ${version}
-     (or v${version}) in your repository and attach ${path.basename(packed.file)}.
-     With the GitHub CLI:  gh release create ${version} "${packed.file}"
+     (or v${version}) in your repository and attach ${path.basename(packed.file)}${signWith ? " and its .sig" : ""}.
+     With the GitHub CLI:  gh release create ${version} ${assets}
      The workflow .github/workflows/release.yml made by create-fly-island-plugin
-     does this when you push the tag.
-  2. Until the market's index repository takes submissions, open an issue at
-     https://github.com/TixXin/fly-island/issues with the repository and release link.
+     does this when you push the tag (sign the zip yourself and upload the .sig).
+  2. First release only: open a pull request at https://github.com/TixXin/focusd-plugins
+     that adds plugins/${id}.json (see its CONTRIBUTING.md). After that, new releases
+     reach the market within an hour.${signWith ? "" : `
+  Only signed plugins update by themselves on users' islands: see "keygen" and --sign.`}
   Users can always install the zip by unpacking it into a folder named ${id}
   in the island's plugins folder (Settings > Plugins > Open plugins folder).`);
   return 0;
@@ -166,7 +169,7 @@ export async function main(argv = process.argv.slice(2)) {
     case "test":
       return runTests(dir);
     case "publish":
-      return publish(dir);
+      return publish(dir, options.sign ? loadSigningKey({ file: keyFile(options) }) : null);
     case "--version":
     case "version":
       console.log(JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version);

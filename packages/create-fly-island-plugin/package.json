@@ -1,6 +1,6 @@
 {
   "name": "create-fly-island-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Creates a FocuSD Island plugin: npm create fly-island-plugin@latest",
   "keywords": ["focusd", "fly-island", "plugin", "create"],
   "license": "MIT",

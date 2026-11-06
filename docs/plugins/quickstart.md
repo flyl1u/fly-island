@@ -127,7 +127,7 @@ npx fly-island-plugin pack --sign  # 同时写出 <id>-<version>.zip.sig，和 z
 
 `pack` 生成的 zip 和插件市场的完全一样：文件按名称排序、时间戳固定、文本文件统一为 LF，所以同样的文件每次得到同样的哈希。
 
-发布：提高 `focusd-plugin.json` 的 `version`，提交后推送同名标签（例如 `0.2.0`），脚手架生成的 GitHub Actions 工作流会检查、测试、打包，并把 zip 附到 GitHub Release 上。插件市场接收外部作者之前（P11），可以把 Release 链接发到 [issues](https://github.com/TixXin/fly-island/issues)；用户也可以把 zip 解压到插件目录下名为插件 id 的文件夹里手动安装。`npx fly-island-plugin publish` 会打包并打印这些步骤。
+发布：提高 `focusd-plugin.json` 的 `version`，提交后推送同名标签（例如 `0.2.0`），脚手架生成的 GitHub Actions 工作流会检查、测试、打包，并把 zip 附到 GitHub Release 上。第一次上架时向 [`TixXin/focusd-plugins`](https://github.com/TixXin/focusd-plugins) 开 PR，新增 `plugins/<插件 id>.json`（见 [放进插件市场](README.md#放进插件市场)），之后发新的 Release 一小时内就会出现在市场里。用户也可以把 zip 解压到插件目录下名为插件 id 的文件夹里手动安装。`npx fly-island-plugin publish`（加 `--sign` 同时签名）会打包并打印这些步骤。
 
 ## 6. 其他写法
 
