@@ -44,7 +44,7 @@
 | 2.2 | 「安装/修复」：Claude Code 加 `PermissionRequest`（HTTP），Codex 加 `PermissionRequest`；「在岛上审批」开关 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 22:05 | Codex 没有 HTTP 钩子，用 command 转发脚本 |
 | 2.3 | 审批卡片：完整命令（可展开）、允许一次、拒绝、始终允许（仅 Claude Code，默认只对本次会话生效）、到终端处理 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 22:05 | 先用 mock 事件写，2.1 land 后接上 |
 | 2.4 | 等待上限，超时交还终端；终端已处理时撤掉卡片 | 进行中 | fly-island-67（前端，随 2.3） | Rust 侧已完成（提交 `feat(agent-status): an endpoint that holds agent approvals for the island`）：等待上限 120 秒，到时返回 `{}`（钩子的 timeout 要设成 ≥ 150 秒）；Agent 断开连接（终端按 Esc）时撤掉并发 `agent-approval-closed`（`disconnected`）；岛屿退出时全部返回 `{}`（`shutdown`） |
-| 2.5 | 卡片快捷键：卡片显示时注册、消失时注销；出现后 0.5 秒内不接受点击和按键 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 22:05 | |
+| 2.5 | 卡片快捷键：卡片显示时注册、消失时注销；出现后 0.5 秒内不接受点击和按键 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 22:05 | 已在 lane 里写好（`approval_hotkeys.rs`，卡片可以操作后才注册），等 2.1 合入后一起 land。默认 Ctrl+Alt+Y 允许、Ctrl+Alt+N 拒绝、Ctrl+Alt+T 到终端，避开别的程序常用的 Ctrl+字母；在快捷键页可改留到以后 |
 | 2.6 | 测试：Rust 单元测试（排队、超时、鉴权）、回归页、本机实测两种 Agent | 进行中 | fly-island-67（回归页、本机实测） | Rust 单元测试已完成（提交 `feat(agent-status): an endpoint that holds agent approvals for the island`）：`agent_approval/tests.rs` 12 项，含真实 TCP 下的批准、交还终端、超时、断开、排队、关闭开关、鉴权和退出 |
 
 ## 第 3 期：在岛上回答提问（仅 Claude Code）

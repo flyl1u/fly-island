@@ -42,6 +42,25 @@ export function decideAgentApproval(id: string, decision: AgentApprovalDecision,
   return invoke<void>("agent_approval_decide", { id, decision, message });
 }
 
+/** Mirrored by HOTKEY_EVENT in src-tauri/src/agent_status/approval_hotkeys.rs. */
+export const APPROVAL_HOTKEY_EVENT = "agent-approval-hotkey";
+
+/** System-wide while a card shows, so they avoid the Ctrl+letter keys other apps use. */
+export const APPROVAL_HOTKEYS: { action: AgentApprovalDecision; shortcut: string }[] = [
+  { action: "allow", shortcut: "Ctrl+Alt+Y" },
+  { action: "deny", shortcut: "Ctrl+Alt+N" },
+  { action: "terminal", shortcut: "Ctrl+Alt+T" },
+];
+
+/** Registers the card's shortcuts; an empty list releases them. */
+export function setAgentApprovalHotkeys(hotkeys: typeof APPROVAL_HOTKEYS) {
+  return invoke<void>("set_agent_approval_hotkeys", { hotkeys });
+}
+
+export function listenAgentApprovalHotkey(onPress: (action: AgentApprovalDecision) => void) {
+  return listen<{ action: AgentApprovalDecision }>(APPROVAL_HOTKEY_EVENT, (event) => onPress(event.payload.action));
+}
+
 /** The requests still waiting, oldest first; for a window that (re)loads while some are open. */
 export function getPendingAgentApprovals() {
   return invoke<AgentApprovalRequest[]>("agent_approval_pending");

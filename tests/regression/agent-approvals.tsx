@@ -25,6 +25,7 @@ let pending: AgentApprovalRequest[] = [request("p1", "s1", { permissionSuggestio
 let inFront: string[] = [];
 const decisions: string[] = [];
 const focused: string[] = [];
+let hotkeys: string[] = [];
 mockIPC(
   (command, args) => {
     const payload = args as Record<string, unknown>;
@@ -32,6 +33,7 @@ mockIPC(
     if (command === "agent_approval_pending") return pending;
     if (command === "agent_approval_decide") decisions.push(`${String(payload.id)}:${String(payload.decision)}`);
     if (command === "focus_agent_window") focused.push(String(payload.sessionId));
+    if (command === "set_agent_approval_hotkeys") hotkeys = (payload.hotkeys as { shortcut: string }[]).map((item) => item.shortcut);
     return command === "focus_agent_window" ? true : null;
   },
   { shouldMockEvents: true },
@@ -121,6 +123,16 @@ try {
   await click(button("到终端"));
   await wait(50);
   check(last(decisions) === "t1:terminal" && last(focused) === "s1", "「到终端」交回终端并切到它的窗口");
+
+  check(hotkeys.length === 0, "卡片消失后释放快捷键");
+  await send(request("k1", "s1"));
+  await wait(100);
+  check(hotkeys.length === 0, "卡片出现后 0.5 秒内不注册快捷键");
+  await wait(APPROVAL_ARM_MS);
+  check(hotkeys.join() === "Ctrl+Alt+Y,Ctrl+Alt+N,Ctrl+Alt+T", "卡片可以操作后注册快捷键");
+  await act(async () => { await emit("agent-approval-hotkey", { action: "deny" }); });
+  await wait(50);
+  check(last(decisions) === "k1:deny" && current() === null && hotkeys.length === 0, "按快捷键和点按钮一样，处理完释放快捷键");
 
   inFront = ["s1"];
   await send(request("f1", "s1"));

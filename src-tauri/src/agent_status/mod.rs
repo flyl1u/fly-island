@@ -1,5 +1,6 @@
 //! AI agent status: the snapshot shown on the island and the Codex / Claude Code hooks that write it.
 
+pub(crate) mod approval_hotkeys;
 mod claude_hooks;
 mod codex_hooks;
 mod editor_terminal;
@@ -422,6 +423,7 @@ macro_rules! tauri_commands {
             crate::agent_status::sound_packs::import_sound_pack,
             crate::agent_status::sound_packs::remove_sound_pack,
             crate::agent_status::sound_packs::read_sound_pack_file,
+            crate::agent_status::approval_hotkeys::set_agent_approval_hotkeys,
         ] $($rest)*)
     };
 }
