@@ -30,3 +30,9 @@ test("every listed regression page exists", () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   for (const page of PAGES) assert.ok(existsSync(path.join(root, "tests/regression", page.split("?")[0])), page);
 });
+
+test("each run gets free ports of its own", async () => {
+  const { freePort } = await import("../../scripts/run-regression.mjs");
+  const [a, b] = await Promise.all([freePort(), freePort()]);
+  assert.ok(Number.isInteger(a) && a > 0 && Number.isInteger(b) && b > 0);
+});

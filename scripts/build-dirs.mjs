@@ -9,7 +9,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 
-/** Lane previews' Vite ports start here (1420 is the main dev server, 1460 the regression runner). */
+/** Lane previews' Vite ports start here (1420 is the main dev server; the regression runner picks free ports). */
 export const LANE_PORT_BASE = 1500;
 
 /** The main checkout's folder, from inside it or any of its worktrees. */

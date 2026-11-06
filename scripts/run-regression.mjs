@@ -7,9 +7,12 @@
 // Pages are driven over the DevTools protocol in a normal tab, not with --dump-dom:
 // that mode stops running page scripts after load, so pages that wait on timers
 // (the collapsed message animation waits for a five-second auto-restore) never finish.
-// CHROME_PATH picks the browser; REGRESSION_PORT the Vite port (default 1460).
+// CHROME_PATH picks the browser; REGRESSION_PORT the Vite port (default: a free one).
+// Both ports are free ones picked per run: lanes run this at the same time, and with fixed
+// ports one run would test another lane's Vite and read another lane's browser.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,6 +79,19 @@ async function waitForHttp(url, timeoutMs) {
     await sleep(200);
   }
   throw new Error(`${url} did not answer within ${timeoutMs / 1000}s`);
+}
+
+/** A TCP port nothing listens on right now. */
+export function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.unref();
+    server.on("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
 }
 
 /** A DevTools protocol session on the browser's first tab. */
@@ -152,8 +168,8 @@ async function main() {
   const filters = process.argv.slice(2);
   const pages = PAGES.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
   if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
-  const vitePort = Number(process.env.REGRESSION_PORT ?? 1460);
-  const debugPort = vitePort + 1;
+  const vitePort = Number(process.env.REGRESSION_PORT ?? await freePort());
+  const debugPort = await freePort();
   const base = `http://localhost:${vitePort}/tests/regression/`;
   const profile = mkdtempSync(path.join(tmpdir(), "fly-regression-"));
   const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], { cwd: root, stdio: "ignore" });
@@ -161,6 +177,8 @@ async function main() {
   let failed = 0;
   try {
     await waitForHttp(`${base}${pages[0].split("?")[0]}`, 30_000);
+    // Something else answering on the port (Vite could not take it) is not this checkout's code.
+    if (vite.exitCode !== null) throw new Error(`Vite exited (port ${vitePort} taken?); not testing whatever answers there.`);
     // Pages that do not pick a language follow the browser's, and their checks are written
     // against the Chinese interface; an English CI runner would otherwise fail them.
     const language = process.env.REGRESSION_LANG ?? "zh-CN";
