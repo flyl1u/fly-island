@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useMail } from "../../features/messages/mail/MailPanel";
@@ -9,8 +9,7 @@ import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionP
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
 import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
-import { MessagesPanel, type MessageView } from "../../features/messages/Messages";
-import type { MessageSource } from "../../features/messages/messagePreview";
+import { MessagesPanel } from "../../features/messages/Messages";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
@@ -56,6 +55,7 @@ import { useIslandTranslation } from "./useIslandTranslation";
 import { usePluginHostEvents } from "./usePluginHostEvents";
 import { usePluginKeybindings } from "./usePluginKeybindings";
 import { usePluginPages } from "./usePluginPages";
+import { useMessageView } from "./useMessageView";
 import { PluginPageButtons } from "./PluginPageButtons";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
@@ -99,7 +99,6 @@ export function IslandApp() {
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
   );
-  const [messageSource, setMessageSource] = useState<MessageView>("qq");
   const {
     mediaState,
     isMediaTrackChanging,
@@ -155,12 +154,7 @@ export function IslandApp() {
   useRevealOnMessage(Boolean(translationPeek), isTucked && settings.revealOnMessage, revealIsland);
   useTuckPeek(isPeeking, endPeek, peekRetractDelayMs ?? undefined);
 
-  const closeMailReader = qqMail.closeReader;
-  const openMessages = useCallback((source: MessageSource) => {
-    closeMailReader();
-    setMessageSource(source);
-    openIslandPage("qq");
-  }, [closeMailReader, openIslandPage]);
+  const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
   const {
     clipboardHistory,
