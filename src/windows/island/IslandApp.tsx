@@ -19,9 +19,7 @@ import { useQuickTranslation } from "../../features/translation/useQuickTranslat
 import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
-import { useAgentSessions } from "../../features/agent-status/useAgentSessions";
-import { useUnseenSessions } from "../../features/agent-status/useUnseenSessions";
-import { countActiveSessions, filterSessions, isActivePhase } from "../../features/agent-status/sessionList";
+import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
@@ -105,20 +103,7 @@ export function IslandApp() {
     runMediaCommand,
   } = useMediaState(settings.musicEnabled);
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
-  // Read every second: the collapsed island names sessions from it and holds a finished one's
-  // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
-  const allAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
-  // Agents switched off in Settings → AI Agent are left out of the page and the count.
-  const agentSessions = useMemo(
-    () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
-    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex],
-  );
-  const listedAgentSessions = useMemo(
-    () => (settings.agentHideFinished ? agentSessions.filter((session) => isActivePhase(session.phase)) : agentSessions),
-    [agentSessions, settings.agentHideFinished],
-  );
-  const activeAgentSessionCount = countActiveSessions(agentSessions);
-  const unseenAgentSessions = useUnseenSessions(agentSessions, settings.agentStatusEnabled);
+  const { agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions } = useIslandAgentSessions(settings);
   const agentSession = useAgentSession(
     agentSessions,
     agentStatus.others,
