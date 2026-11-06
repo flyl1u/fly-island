@@ -145,6 +145,11 @@ async function runChecks() {
     check(rows()[0].classList.contains("agent-session--compact") && rows()[0].querySelector(".agent-session__model") && rows()[0].getBoundingClientRect().height < 40, "刚开始一轮、还没有回复的会话不留空白第二行");
     await render("both");
     await render("both");
+    const titleColor = () => getComputedStyle(rows()[0].querySelector(".agent-session__title")!).color;
+    check(titleColor() === "rgba(241, 240, 246, 0.95)", "深色岛屿背景上标题是浅色字");
+    fixture.style.setProperty("--island-ink-rgb", "24, 24, 30");
+    check(titleColor() === "rgba(24, 24, 30, 0.95)", "浅色岛屿背景上标题换成深色字");
+    fixture.style.removeProperty("--island-ink-rgb");
 
     await act(async () => { first.click(); await Promise.resolve(); });
     const lastCall = focusCalls[focusCalls.length - 1];

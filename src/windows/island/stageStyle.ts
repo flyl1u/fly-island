@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { hexToRgba } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
+import { inkOn } from "../../utils/color";
 import type { IslandMode } from "./types";
 
 /** CSS custom properties for the island stage, derived from the appearance settings and current size. */
@@ -27,6 +28,8 @@ export function getIslandStageStyle(
     "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),
     "--island-pulse-brightness": `${settings.pulseBrightness}%`,
     "--island-background-color": settings.islandBackgroundColor,
+    // Text drawn straight on the island (the Agent page) flips to dark on a light background.
+    "--island-ink-rgb": inkOn(settings.islandBackgroundColor),
     "--glass-intensity": glassStrength,
     "--glass-mask-opacity": glassMaskOpacity,
     "--glass-soft-alpha": 0.045 + glassStrength * 0.045,
