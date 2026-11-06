@@ -46,7 +46,6 @@
 | D3 | 代码签名：Microsoft Store 或 Azure Trusted Signing | 待用户确认 | | 涉及费用 |
 | D4 | 对比上游 0.2.15～0.2.19，列出值得移植的修复 | 待做 | | |
 | D5 | 用装了旧版本的电脑完整走一遍应用内自动更新 | 待做 | | 需要用户操作 |
-| D6 | 待办迁移备份文件只保留最近几个 | 进行中 | fly-island-fe · lane 4 · 2026-11-07 | 覆盖问题已由 `e52809b` 修好，新文件不会再增加，旧的还留着 |
 | D7 | 拆分 `scripts/file-size-allowlist.json` 里登记的超长文件 | 待做 | | 属于单独的重构 |
 | D8 | 设置窗口结构调整：通用页「展开与收起」拆成「展开」和「贴边隐藏」，子项缩进挂在父开关下、父开关关闭时隐藏；统一「收起 / 贴边 / 最小化」术语和时间单位（秒）；通用页把语言放到后面；侧栏合并「插件扩展 / 插件市场」，考虑合并 QQ / 微信 / 邮箱；QQ、微信页的开关改成和其他页一样的行；快捷键页去掉标签下重复的组合键 | 待做 | | 用户已确认方案（侧栏不用彩色图标）。组件和「通用」页已完成，其余页面逐页迁移（声音页、AI Agent 页的新分组已用新组件）；fly-island-67 于 2026-11-06 放弃认领，可以接手。视觉一步（卡片、字号层级、滑块横排）已完成，见下方「已完成」。用户提供了参考软件的设置页截图，完整方案和待确认的 6 个问题见 [settings-window-redesign.md](reviews/settings-window-redesign.md)，它取代这里列的做法。这一步会改文案和页面路由，要同步回归页 |
 
@@ -54,6 +53,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| D6 | 待办重新导入前的备份 `todos.before-reimport-*.json` 每次启动只留最近 3 个。原文备份 `todos-migration-backup*.json` 不删：岛屿靠它们的 `sourceHash` 认出另一个构建的旧副本（`e52809b`），删了会重新出现切换构建覆盖待办的问题，而且它们很小 | 提交 `fix(todos): keep only the newest three reimport copies` |
 | B10 | magpie 网关用户的用量：Claude Code 的 `ANTHROPIC_BASE_URL` 指向本机时，岛屿带着 Claude Code 给网关的令牌请求 magpie 的 `GET /v1/magpie/quotas`（每分钟至多一次，只请求本机），不需要 claude-hud 和中间脚本；有数据时优先于 claude-hud 快照，卡片注明「来自 magpie」。`?kept=1` 在实际网关上返回空列表，所以没用。窗口按显示名（"5 hours"、"7 days"、"7 days · 模型"）对应，magpie 改措辞会对不上；分不出 Max / Ultra | 提交 `feat(agent-status): read Claude usage from a local magpie gateway` |
 | B9 | 回复状态标记（默认关）：设置 → AI Agent 打开后，往 `~/.claude/CLAUDE.md` 末尾加一段带起止标记的说明，让 Claude Code 每次回复最后一行写 `↩` 等你回复、`⋯` 等后台任务、`✓` 做完了；会话列表从会话记录读这一行（不改 Stop 钩子），会话环和 Agent 页据此区分「等你回复」和「做完了」。说明文字自己写，没有用 claude-sessions 的原文。B6 的完成提醒还没分成两种，以后需要时再做 | 提交 `feat(agent-status): optional reply status marker tells "your turn" from "done"` |
 | B8 | 用量环可选「直接向 Anthropic 查询」（默认关）：只读 Claude Code 凭据里的 token，经代理（插件设置 → `HTTPS_PROXY` → Windows 系统代理）请求 `api.anthropic.com/api/oauth/usage`，不直连；刷新间隔 5–120 分钟，9 种失败提示；与 claude-hud 快照取较新的，Agent 页顶部和用量环共用。移植自 TixXin/fly-island#3 的 `claude_usage/`；接口未公开，可能随时失效 | 提交 `feat(claude-usage): optionally ask Anthropic for Claude usage directly` |

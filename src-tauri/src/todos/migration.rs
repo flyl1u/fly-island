@@ -3,9 +3,10 @@
 //! text of each key together with the same data run through normalize.ts.
 //! Rules: docs/architecture/plugin-platform.md, P6 「从已发布的旧版本升级」.
 //!
-//! Nothing is ever deleted: the old keys stay in localStorage, the stored text
-//! goes to `todos-migration-backup.json`, and a `todos.json` that is replaced
-//! is first copied to `todos.before-reimport-<ms>.json`.
+//! The old keys stay in localStorage, the stored text goes to
+//! `todos-migration-backup.json` (never deleted: their hashes tell stale copies
+//! from real changes), and a `todos.json` that is replaced is first copied to
+//! `todos.before-reimport-<ms>.json`, of which only the newest few are kept.
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -25,6 +26,9 @@ use super::{
 pub(crate) const FILE_NAME: &str = "todos.json";
 const BACKUP_FILE_NAME: &str = "todos-migration-backup.json";
 const MIGRATION_VERSION: u32 = 1;
+const REIMPORT_COPY_PREFIX: &str = "todos.before-reimport-";
+/// Each copy is a whole todos.json; before e52809b switching builds left one per switch.
+const REIMPORT_COPIES_KEPT: usize = 3;
 
 /// The stored text of each migrated localStorage key (`None`: not set), named
 /// as in localStorage. Mirrored by `LocalTodoKeys` in src/features/todos/api.ts.
@@ -118,6 +122,7 @@ pub(crate) fn migrate(
     normalized: TodosData,
     app_version: &str,
 ) -> Result<(TodosFile, Option<&'static str>), String> {
+    prune_reimport_copies(dir);
     let path = dir.join(FILE_NAME);
     let hash = source_hash(keys);
     let existing = store::load(&path);
@@ -135,7 +140,8 @@ pub(crate) fn migrate(
     backup_local(dir, keys, &hash, app_version, now)?;
     if keep_old {
         let old = fs::read(&path).map_err(|error| format!("Could not read {}: {error}", path.display()))?;
-        store::write_new(&dir.join(format!("todos.before-reimport-{now}.json")), &old)?;
+        store::write_new(&dir.join(format!("{REIMPORT_COPY_PREFIX}{now}.json")), &old)?;
+        prune_reimport_copies(dir);
     }
     let revision = match &existing {
         Ok(Some(file)) => file.revision + 1,
@@ -154,6 +160,26 @@ pub(crate) fn migrate(
     };
     store::save(&path, &file)?;
     Ok((file, reimport.then_some("reimported")))
+}
+
+/// Deletes all but the newest `REIMPORT_COPIES_KEPT` copies, by the time in
+/// their name. Best effort: a copy that cannot be deleted now is tried next start.
+pub(crate) fn prune_reimport_copies(dir: &Path) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    let mut copies: Vec<(u64, std::path::PathBuf)> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let name = entry.file_name();
+            let stamp = name.to_str()?.strip_prefix(REIMPORT_COPY_PREFIX)?.strip_suffix(".json")?.parse().ok()?;
+            Some((stamp, entry.path()))
+        })
+        .collect();
+    copies.sort_unstable_by_key(|copy| std::cmp::Reverse(copy.0));
+    for (_, path) in copies.into_iter().skip(REIMPORT_COPIES_KEPT) {
+        let _ = fs::remove_file(path);
+    }
 }
 
 /// The source hashes of every localStorage text imported so far, from the

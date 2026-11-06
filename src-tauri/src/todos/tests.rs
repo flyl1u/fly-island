@@ -144,7 +144,7 @@ mod migration_tests {
     use serde_json::json;
     use std::fs;
 
-    use super::super::migration::{migrate, plan, source_hash, LocalTodoKeys, Plan};
+    use super::super::migration::{migrate, plan, prune_reimport_copies, source_hash, LocalTodoKeys, Plan};
     use super::super::model::TodosData;
     use super::super::service::{patched, TodosChange};
     use super::super::store::{load, LoadError};
@@ -228,6 +228,33 @@ mod migration_tests {
         assert_eq!(fs::read_to_string(&copies[0]).expect("copy"), before);
         // The first backup keeps its name and text; the new text gets its own file.
         assert_eq!(backups(&dir, "todos-migration-backup"), 2);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn only_the_newest_reimport_copies_are_kept() {
+        let dir = temp_dir("migrate-prune");
+        fs::create_dir_all(&dir).expect("dir");
+        for stamp in [5, 40, 100, 7, 300] {
+            fs::write(dir.join(format!("todos.before-reimport-{stamp}.json")), "{}").expect("copy");
+        }
+        for other in ["todos.before-reimport-x.json", "todos-migration-backup-1.json", "todos.json"] {
+            fs::write(dir.join(other), "{}").expect("other");
+        }
+        prune_reimport_copies(&dir);
+        let mut left: Vec<String> = fs::read_dir(&dir).expect("list").map(|e| e.expect("entry").file_name().to_string_lossy().into_owned()).collect();
+        left.sort();
+        assert_eq!(
+            left,
+            [
+                "todos-migration-backup-1.json",
+                "todos.before-reimport-100.json",
+                "todos.before-reimport-300.json",
+                "todos.before-reimport-40.json",
+                "todos.before-reimport-x.json",
+                "todos.json"
+            ]
+        );
         let _ = fs::remove_dir_all(dir);
     }
 
