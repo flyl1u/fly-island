@@ -358,7 +358,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={agentSessions} />}
+        {page === "agents" && <AgentSessionsPanel sessions={agentSessions} hostDisplay={settings.agentHostDisplay} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

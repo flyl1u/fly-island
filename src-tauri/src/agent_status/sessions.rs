@@ -6,6 +6,7 @@
 use serde::Serialize;
 use serde_json::Value;
 
+use super::session_host::SessionHost;
 use super::title::{display_title, shorten};
 
 /// The latest reply shown under each session.
@@ -27,6 +28,8 @@ pub struct AgentSessionSummary {
     pub(super) last_message: Option<String>,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
+    /// The program the session runs in, when known (session_host.rs).
+    pub(super) host: Option<SessionHost>,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -207,6 +210,15 @@ pub(super) fn parse_codex_meta(first_line: &str) -> Option<(String, Option<Strin
     let payload = &record["payload"];
     let id = string_field(payload, "id").or_else(|| string_field(payload, "session_id"))?;
     Some((id, string_field(payload, "cwd")))
+}
+
+/// Where a Codex session started ("Codex Desktop", "codex_cli_rs", ...), from the
+/// `session_meta` record on the first line of its rollout.
+pub(super) fn codex_originator(first_line: &str) -> Option<String> {
+    let record = serde_json::from_str::<Value>(first_line).ok()?;
+    (record["type"] == "session_meta")
+        .then(|| string_field(&record["payload"], "originator"))
+        .flatten()
 }
 
 /// The first prompt the user typed in a Codex rollout line, if this line is one.

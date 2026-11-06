@@ -12,8 +12,9 @@ use std::{
 
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
 use super::notifications::{is_waiting, WaitingNotifications};
+use super::session_host::codex_host;
 use super::sessions::{
-    codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
+    codex_originator, codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
     session_phase, AgentSessionSummary, SessionTail, TurnState,
 };
 use super::snapshot::{current_unix_millis, system_time_to_unix_millis};
@@ -177,8 +178,11 @@ impl SessionCache {
             .map(|cached| cached.head.clone())
             .filter(|head| head.first_prompt.is_some());
         let tail = read_tail(path)?;
+        let mut host = None;
         let (mut parsed, session_id, cwd) = if provider == "codex" {
-            let (id, cwd) = read_first_line(path).and_then(|line| parse_codex_meta(&line))?;
+            let first_line = read_first_line(path)?;
+            let (id, cwd) = parse_codex_meta(&first_line)?;
+            host = codex_originator(&first_line).map(|origin| codex_host(&origin));
             (parse_codex_tail(&tail), id, cwd)
         } else {
             let parsed = parse_claude_tail(&tail);
@@ -201,7 +205,8 @@ impl SessionCache {
         .or_else(|| cwd.as_deref().and_then(folder_title));
 
         let state = parsed.state;
-        let summary = summary_from(provider, session_id, cwd, title, parsed, modified);
+        let mut summary = summary_from(provider, session_id, cwd, title, parsed, modified);
+        summary.host = host;
         sessions.insert(
             path.to_path_buf(),
             CachedSession {
@@ -245,6 +250,7 @@ fn summary_from(
         phase: "completed",
         last_message: parsed.last_message,
         updated_at,
+        host: None,
     }
 }
 

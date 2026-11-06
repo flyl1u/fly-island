@@ -54,7 +54,24 @@ export type AgentSessionSummary = {
   phase: Exclude<AgentTaskPhase, "idle">;
   lastMessage: string | null;
   updatedAt: number;
+  /** The program the session runs in, when known. */
+  host: SessionHost | null;
 };
+
+/** Mirrors SessionHost in src-tauri/src/agent_status/session_host.rs. */
+export type SessionHost = {
+  /** Product name, such as "Windows Terminal"; not translated. */
+  name: string;
+  /** Its executable, for the icon; null when unknown. */
+  exe: string | null;
+  /** The fallback icon when there is no executable icon. */
+  kind: "terminal" | "editor" | "app";
+};
+
+/** The icon of a session host's executable as a PNG data URL; null when it has none. */
+export function getAgentHostIcon(path: string) {
+  return invoke<string | null>("get_agent_host_icon", { path });
+}
 
 /** Claude Code and Codex sessions active in the last two hours, running ones first. */
 export function listAgentSessions() {

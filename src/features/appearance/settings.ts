@@ -1,7 +1,9 @@
 import { clamp } from "../../utils/number.ts";
 import { DEFAULT_PAGE_DIGIT_MODIFIERS, DEFAULT_PAGE_NEXT_SHORTCUT, DEFAULT_PAGE_PREVIOUS_SHORTCUT, normalizePageCycleShortcut, normalizePageDigitModifiers } from "./pageShortcuts.ts";
 import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
-import type { IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
+import type { AgentHostDisplay, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
+
+export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon", "name", "off"];
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;
@@ -59,6 +61,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
+  agentHostDisplay: "both",
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -224,6 +227,9 @@ export function normalizeSettings(
     agentVisibleRows: typeof settings?.agentVisibleRows === "number" && Number.isFinite(settings.agentVisibleRows)
       ? clamp(Math.round(settings.agentVisibleRows), MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS)
       : LEGACY_FALLBACKS.agentVisibleRows,
+    agentHostDisplay: AGENT_HOST_DISPLAYS.includes(settings?.agentHostDisplay as AgentHostDisplay)
+      ? (settings?.agentHostDisplay as AgentHostDisplay)
+      : DEFAULT_SETTINGS.agentHostDisplay,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

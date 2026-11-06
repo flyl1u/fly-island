@@ -4,9 +4,11 @@ mod claude_hooks;
 mod codex_hooks;
 mod external;
 mod hooks_state;
+mod host_icon;
 mod markers;
 mod notifications;
 mod orca;
+mod session_host;
 mod session_process;
 mod snapshot;
 #[cfg(test)]
@@ -238,7 +240,11 @@ pub async fn list_agent_sessions(
         .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
     tauri::async_runtime::spawn_blocking(move || {
         let waiting = notifications::waiting_notifications(&app_dir);
-        windows_home_dir().map(|home_dir| session_scan::list_sessions(&home_dir, &waiting))
+        windows_home_dir().map(|home_dir| {
+            let mut sessions = session_scan::list_sessions(&home_dir, &waiting);
+            session_host::attach_hosts(&home_dir, &mut sessions);
+            sessions
+        })
     })
     .await
     .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
@@ -293,6 +299,15 @@ pub async fn focus_agent_window(
     })
     .await
     .map_err(|error| format!("Failed to join the window focus task: {error}"))
+}
+
+/// The icon of a session host (`host.exe` of a listed session) as a PNG data URL; null when the
+/// path is not an existing .exe or it has no icon.
+#[tauri::command]
+pub async fn get_agent_host_icon(path: String) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || host_icon::icon_data_url(&path))
+        .await
+        .map_err(|error| format!("Failed to join the host icon task: {error}"))
 }
 
 /// Compares the installed hooks with what Install/Repair would write. Only reads files.
@@ -385,6 +400,7 @@ macro_rules! tauri_commands {
             crate::agent_status::install_agent_status_hooks,
             crate::agent_status::get_agent_hooks_state,
             crate::agent_status::focus_agent_window,
+            crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
         ] $($rest)*)
     };

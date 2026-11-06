@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Bot } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import "./AgentSessionsPanel.css";
 
@@ -11,7 +13,14 @@ const NOT_FOUND_NOTICE_MS = 3000;
 const AGE_REFRESH_MS = 30_000;
 
 /** The island's Agent page: recent sessions; clicking one brings its editor or terminal forward. */
-export function AgentSessionsPanel({ sessions }: { sessions: AgentSessionSummary[] }) {
+export function AgentSessionsPanel({
+  sessions,
+  hostDisplay,
+}: {
+  sessions: AgentSessionSummary[];
+  /** How the program a session runs in is shown; "off" hides it. */
+  hostDisplay: AgentHostDisplay;
+}) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
@@ -82,6 +91,12 @@ export function AgentSessionsPanel({ sessions }: { sessions: AgentSessionSummary
                         <span className="agent-session__not-found" role="status">{t.agent.sessions.notFound}</span>
                       ) : (
                         <>
+                          {session.host && hostDisplay !== "off" && (
+                            <>
+                              <SessionHostLabel host={session.host} display={hostDisplay} />
+                              {hostDisplay === "icon" ? " " : " · "}
+                            </>
+                          )}
                           {getAgentPhaseLabel(session.phase, t)} · {minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)}
                         </>
                       )}

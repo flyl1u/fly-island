@@ -1,11 +1,14 @@
 import { NumberControl } from "../../components/controls/NumberControl";
+import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
-import { MAX_AGENT_VISIBLE_ROWS, MIN_AGENT_VISIBLE_ROWS } from "../../features/appearance/settings";
+import { AGENT_HOST_DISPLAYS, MAX_AGENT_VISIBLE_ROWS, MIN_AGENT_VISIBLE_ROWS } from "../../features/appearance/settings";
 import { AgentHooksSettingsSection } from "../../features/agent-status/AgentHooksSettingsSection";
 import { useAgentStatusSettings } from "../../features/agent-status/useAgentStatusSettings";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
+// The label-beside-dropdown row is shared with the file shelf page.
+import "./ShelfSettingsPage.css";
 
 export function AgentSettingsPage({
   settings,
@@ -48,6 +51,16 @@ export function AgentSettingsPage({
           onChange={(agentVisibleRows) => onSettingsChange({ ...settings, agentVisibleRows })}
         />
         <p className="settings-section__hint">{t.settings.agent.sessionPageHint}</p>
+        <div className="shelf-settings__row">
+          <span>{t.settings.agent.hostDisplay}</span>
+          <SelectControl
+            value={settings.agentHostDisplay}
+            options={AGENT_HOST_DISPLAYS.map((value) => ({ value, label: t.settings.agent.hostDisplayOptions[value] }))}
+            ariaLabel={t.settings.agent.hostDisplay}
+            onChange={(agentHostDisplay) => onSettingsChange({ ...settings, agentHostDisplay })}
+          />
+        </div>
+        <p className="settings-section__hint">{t.settings.agent.hostDisplayHint}</p>
       </section>
       <AgentHooksSettingsSection {...agentStatus} />
     </>

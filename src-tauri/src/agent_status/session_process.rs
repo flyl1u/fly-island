@@ -20,36 +20,41 @@ pub(super) struct SessionProcess {
     pub(super) started: Option<u64>,
 }
 
-/// The process recorded for `session_id` in one `~/.claude/sessions/*.json` entry, if it is
-/// that session's.
-pub(super) fn session_process_from_entry(entry: &str, session_id: &str) -> Option<SessionProcess> {
+/// The session id and process of one `~/.claude/sessions/*.json` entry.
+pub(super) fn session_entry(entry: &str) -> Option<(String, SessionProcess)> {
     let entry: Value = serde_json::from_str(entry).ok()?;
-    if entry["sessionId"].as_str()? != session_id {
-        return None;
-    }
+    let session_id = entry["sessionId"].as_str().filter(|id| !id.is_empty())?.to_string();
     let pid = u32::try_from(entry["pid"].as_u64()?).ok()?;
     let started = match &entry["procStart"] {
         Value::String(ticks) => ticks.parse().ok(),
         Value::Number(ticks) => ticks.as_u64(),
         _ => None,
     };
-    Some(SessionProcess { pid, started })
+    Some((session_id, SessionProcess { pid, started }))
 }
 
-/// The live process of a Claude Code session, or `None` when the session is not running.
-/// A recorded start time must match, so a process id reused by another program is not taken.
-pub(super) fn find_session_process(home_dir: &Path, session_id: &str) -> Option<u32> {
-    let entries = fs::read_dir(home_dir.join(".claude").join("sessions")).ok()?;
+/// Every running Claude Code session: session id -> its live process id. A recorded start time
+/// must match, so a process id reused by another program is not taken.
+pub(super) fn running_sessions(home_dir: &Path) -> HashMap<String, u32> {
+    let Ok(entries) = fs::read_dir(home_dir.join(".claude").join("sessions")) else {
+        return HashMap::new();
+    };
     entries
         .flatten()
         .filter(|entry| entry.path().extension().is_some_and(|extension| extension == "json"))
         .filter_map(|entry| fs::read_to_string(entry.path()).ok())
-        .filter_map(|text| session_process_from_entry(&text, session_id))
-        .find(|process| {
+        .filter_map(|text| session_entry(&text))
+        .filter(|(_, process)| {
             let actual = win32::process_times::start_time(process.pid);
             actual.is_some() && process.started.is_none_or(|started| Some(started) == actual)
         })
-        .map(|process| process.pid)
+        .map(|(id, process)| (id, process.pid))
+        .collect()
+}
+
+/// The live process of a Claude Code session, or `None` when the session is not running.
+pub(super) fn find_session_process(home_dir: &Path, session_id: &str) -> Option<u32> {
+    running_sessions(home_dir).remove(session_id)
 }
 
 /// `pid` and its ancestors, nearest first. Stops at a missing parent, a cycle, or a parent that

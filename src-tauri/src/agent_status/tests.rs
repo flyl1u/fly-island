@@ -667,20 +667,20 @@ fn the_session_process_chain_picks_its_nearest_window() {
 
 #[test]
 fn a_session_registry_entry_names_its_process() {
-    use super::session_process::{session_process_from_entry, SessionProcess};
+    use super::session_process::{session_entry, SessionProcess};
 
     let entry = r#"{"pid":32816,"sessionId":"23e370fd","procStart":"134383392529449190","name":"fly-island-7e"}"#;
     assert_eq!(
-        session_process_from_entry(entry, "23e370fd"),
-        Some(SessionProcess { pid: 32816, started: Some(134383392529449190) })
+        session_entry(entry),
+        Some(("23e370fd".to_string(), SessionProcess { pid: 32816, started: Some(134383392529449190) }))
     );
-    assert_eq!(session_process_from_entry(entry, "other"), None);
     assert_eq!(
-        session_process_from_entry(r#"{"pid":5,"sessionId":"s"}"#, "s"),
-        Some(SessionProcess { pid: 5, started: None })
+        session_entry(r#"{"pid":5,"sessionId":"s"}"#),
+        Some(("s".to_string(), SessionProcess { pid: 5, started: None }))
     );
-    assert_eq!(session_process_from_entry(r#"{"pid":-1,"sessionId":"s"}"#, "s"), None);
-    assert_eq!(session_process_from_entry("not json", "s"), None);
+    assert_eq!(session_entry(r#"{"pid":-1,"sessionId":"s"}"#), None);
+    assert_eq!(session_entry(r#"{"pid":5,"sessionId":""}"#), None);
+    assert_eq!(session_entry("not json"), None);
 }
 
 #[test]
@@ -726,4 +726,51 @@ fn orca_terminal_records_name_their_session() {
     assert_eq!(terminal_handle_for(&app_dir, "s3"), None);
     assert_eq!(terminal_handle_for(&app_dir, "missing"), None);
     let _ = fs::remove_dir_all(&app_dir);
+}
+
+#[test]
+fn session_hosts_are_named_from_their_executable_or_codex_origin() {
+    use super::session_host::{codex_host, host_for_exe, host_of_chain};
+    use std::collections::HashMap;
+
+    let orca = host_for_exe(r"C:\Users\a\AppData\Local\Programs\orca\Orca.exe");
+    assert_eq!((orca.name.as_str(), orca.kind), ("Orca", "terminal"));
+    assert_eq!(orca.exe.as_deref(), Some(r"C:\Users\a\AppData\Local\Programs\orca\Orca.exe"));
+    let code = host_for_exe(r"C:\Apps\Microsoft VS Code\Code.exe");
+    assert_eq!((code.name.as_str(), code.kind), ("VS Code", "editor"));
+    let unknown = host_for_exe(r"C:\Tools\MyTerm.exe");
+    assert_eq!((unknown.name.as_str(), unknown.kind), ("MyTerm", "app"));
+
+    assert_eq!(codex_host("Codex Desktop").name, "Codex");
+    assert_eq!(codex_host("codex_cli_rs").kind, "terminal");
+    assert_eq!(codex_host("codex_vscode").name, "VS Code");
+    assert!(codex_host("Codex Desktop").exe.is_none());
+
+    // claude (100) <- pwsh (90) <- Orca (10) <- Explorer (1).
+    let windows = HashMap::from([
+        (10, r"C:\orca\Orca.exe".to_string()),
+        (1, r"C:\Windows\explorer.exe".to_string()),
+    ]);
+    assert_eq!(host_of_chain(&[100, 90, 10, 1], &windows).as_deref(), Some(r"C:\orca\Orca.exe"));
+    assert_eq!(host_of_chain(&[100, 90, 1], &windows), None);
+}
+
+#[test]
+fn codex_rollouts_name_where_they_started() {
+    use super::sessions::codex_originator;
+
+    let meta = r#"{"type":"session_meta","payload":{"id":"x","originator":"Codex Desktop"}}"#;
+    assert_eq!(codex_originator(meta).as_deref(), Some("Codex Desktop"));
+    assert_eq!(codex_originator(r#"{"type":"turn_context","payload":{"originator":"x"}}"#), None);
+}
+
+#[test]
+fn host_icons_are_only_read_from_existing_executables() {
+    use super::host_icon::{icon_data_url, is_icon_source};
+
+    let explorer = std::env::var("WINDIR").map(|dir| format!(r"{dir}\explorer.exe")).unwrap_or_default();
+    assert!(is_icon_source(&explorer));
+    assert!(!is_icon_source(r"relative\app.exe"));
+    assert!(!is_icon_source(concat!(env!("CARGO_MANIFEST_DIR"), r"\Cargo.toml")));
+    assert!(icon_data_url(&explorer).is_some_and(|url| url.starts_with("data:image/png;base64,")));
 }

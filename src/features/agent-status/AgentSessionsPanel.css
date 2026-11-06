@@ -201,6 +201,20 @@
   font-weight: 700;
 }
 
+.agent-session__host {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: top;
+}
+
+.agent-session__host-icon {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+
 .agent-session__not-found {
   color: var(--color-warning);
 }

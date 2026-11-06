@@ -6,6 +6,8 @@ export type IslandFont = "system" | "pixel";
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
 export type MinimizeAction = "tray" | "tuck";
+/** How the Agent page shows the program a session runs in. */
+export type AgentHostDisplay = "both" | "icon" | "name" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
 
@@ -28,6 +30,7 @@ export type IslandSettings = {
   clipboardVisibleRows: number;
   /** Agent sessions the expanded Agent page shows before it scrolls. */
   agentVisibleRows: number;
+  agentHostDisplay: AgentHostDisplay;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

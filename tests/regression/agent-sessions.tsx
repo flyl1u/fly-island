@@ -6,6 +6,7 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import { I18nProvider } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
+import type { AgentHostDisplay } from "../../src/features/appearance/types";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
 
@@ -25,6 +26,9 @@ mockIPC((command, payload) => {
     // Only the fly-island session has a window to switch to.
     return args.cwd === "E:\\Projects\\fly-island";
   }
+  if (command === "get_agent_host_icon") {
+    return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  }
 });
 
 const SESSIONS: AgentSessionSummary[] = [
@@ -32,25 +36,31 @@ const SESSIONS: AgentSessionSummary[] = [
     provider: "claudeCode", sessionId: "a", cwd: "E:\\Projects\\fly-island", title: "设置界面完善思路",
     model: "Opus 5.5", effort: "medium", phase: "running", updatedAt: now - 20_000,
     // As long as the native side sends (120 characters), so it needs more than two lines.
+    host: { name: "Orca", exe: "C:\\Apps\\orca\\Orca.exe", kind: "terminal" },
     lastMessage: "24 个测试全部通过。接下来用真实数据看看列表的实际效果和耗时，再决定要不要给第一句提问加缓存，顺便检查一下项目名是不是会话开始时的目录，以及跳转窗口时能不能按项目文件夹找到对应的编辑器窗口和终端窗口…",
   },
   {
     provider: "codex", sessionId: "b", cwd: "E:\\Projects\\MioPicFlow", title: "恢复 Windows 发布机环境，顺便把代理配置也整理一遍",
     model: "gpt-6-astra", effort: "high", phase: "waiting", updatedAt: now - 14 * 60_000,
+    host: { name: "Codex", exe: null, kind: "app" },
     lastMessage: "关闭系统代理后国内网站立即恢复，说明问题集中在 Clash 的代理链路。",
   },
   {
     provider: "claudeCode", sessionId: "c", cwd: "E:\\Projects\\TixXinBlog", title: "Nexus 紧凑视口密度变量",
-    model: "Opus 5.5", effort: null, phase: "completed", updatedAt: now - 95 * 60_000, lastMessage: null,
+    model: "Opus 5.5", effort: null, phase: "completed", updatedAt: now - 95 * 60_000, lastMessage: null, host: null,
   },
 ];
 
 sizeFor(Number(params.get("rows")) || 3);
 const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
-await act(async () => {
-  root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} /></I18nProvider></StrictMode>);
-});
+const render = async (hostDisplay: AgentHostDisplay) => {
+  await act(async () => {
+    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} /></I18nProvider></StrictMode>);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+};
+await render((params.get("host") as AgentHostDisplay | null) ?? "both");
 
 const messages: string[] = [];
 function check(condition: unknown, label: string) {
@@ -85,6 +95,18 @@ async function runChecks() {
     sizeFor(5);
     check(list.scrollHeight <= list.clientHeight, "设为 5 条时 3 个会话不滚动");
     sizeFor(3);
+
+    check(first.querySelector(".agent-session__host")?.textContent?.startsWith("Orca") && first.querySelector("img.agent-session__host-icon"), "来源显示程序名和它自己的图标");
+    check(first.textContent?.includes("Orca · 正在运行 · 刚刚"), "来源排在状态前面");
+    check(second.querySelector("svg.agent-session__host-icon") && second.textContent?.includes("Codex · 等待确认"), "没有程序文件的来源用通用图标");
+    check(!third.querySelector(".agent-session__host"), "不知道来源时不显示");
+    await render("icon");
+    check(first.querySelector(".agent-session__host img") && !first.querySelector(".agent-session__host-name") && first.querySelector(".agent-session__host")?.getAttribute("title") === "Orca", "只显示图标时悬停可看名称");
+    await render("name");
+    check(first.querySelector(".agent-session__host-name")?.textContent === "Orca" && !first.querySelector(".agent-session__host-icon"), "只显示名称");
+    await render("off");
+    check(!document.querySelector(".agent-session__host"), "设为不显示时隐藏来源");
+    await render("both");
 
     await act(async () => { first.click(); await Promise.resolve(); });
     const lastCall = focusCalls[focusCalls.length - 1];

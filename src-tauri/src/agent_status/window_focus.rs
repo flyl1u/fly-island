@@ -121,7 +121,7 @@ pub(super) fn app_name(image_path: &str) -> String {
 
 /// Programs whose windows are never a session's: the shell hosts everything started from the
 /// Start menu or Explorer, so the parent chain can reach it.
-const NOT_SESSION_HOSTS: &[&str] = &["explorer", "sihost", "svchost", "services", "winlogon"];
+pub(super) const NOT_SESSION_HOSTS: &[&str] = &["explorer", "sihost", "svchost", "services", "winlogon"];
 
 /// Index of the window that shows a session, found from its process chain (`chain`: the session's
 /// process, then its ancestors). The nearest ancestor that owns a window wins; when it owns

@@ -20,6 +20,9 @@ export type SettingsAgentText = {
   sessionPageSection: string;
   sessionVisibleRows: string;
   sessionPageHint: string;
+  hostDisplay: string;
+  hostDisplayOptions: { both: string; icon: string; name: string; off: string };
+  hostDisplayHint: string;
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -46,6 +49,9 @@ export const zhCN: SettingsAgentText = {
   sessionPageSection: "会话列表",
   sessionVisibleRows: "展开后显示条数",
   sessionPageHint: "岛屿展开后的 Agent 页一次显示的会话数，更多的会话可以滚动查看。",
+  hostDisplay: "会话来源",
+  hostDisplayOptions: { both: "图标和名称", icon: "只显示图标", name: "只显示名称", off: "不显示" },
+  hostDisplayHint: "会话在哪个程序里运行，比如 Orca、Windows Terminal、VS Code、Codex。正在运行的 Claude Code 会话会自动识别；岛屿启动前就结束的会话没有来源。",
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -72,6 +78,9 @@ export const en: SettingsAgentText = {
   sessionPageSection: "Session list",
   sessionVisibleRows: "Entries shown when open",
   sessionPageHint: "How many sessions the island's Agent page shows at once; scroll for the rest.",
+  hostDisplay: "Session source",
+  hostDisplayOptions: { both: "Icon and name", icon: "Icon only", name: "Name only", off: "Hidden" },
+  hostDisplayHint: "The program a session runs in, such as Orca, Windows Terminal, VS Code or Codex. Running Claude Code sessions are recognized automatically; sessions that ended before the island started have no source.",
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
 };
