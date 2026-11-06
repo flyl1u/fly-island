@@ -17,7 +17,10 @@ export interface InitializeParams {
   appVersion: string;
   pluginId: string;
   dataDir: string;
+  /** What the plugin may use now: its permissions plus the optional ones the user allowed. */
   permissions: Permission[];
+  /** Since API version 2: the manifest's optionalPermissions (ask with permissions.request). */
+  optionalPermissions?: Permission[];
   settings: Record<string, unknown>;
 }
 
@@ -163,6 +166,12 @@ export interface Plugin {
   info(): Promise<InitializeParams>;
   notify(title: string, options?: NotifyOptions): Promise<{ muted: boolean }>;
   keepAlive(reason: string | null): Promise<unknown>;
+  permissions: {
+    /** Asks the user for optional permissions (manifest optionalPermissions); needs the "permissions" capability. */
+    request(...names: (Permission | Permission[])[]): Promise<{ granted: Permission[]; denied: Permission[] }>;
+    /** True when the plugin may use `name` now: one of its permissions, or an optional one the user allowed. */
+    has(name: Permission): boolean;
+  };
   views: {
     update(viewId: string, model: ViewModel): Promise<unknown>;
     /**

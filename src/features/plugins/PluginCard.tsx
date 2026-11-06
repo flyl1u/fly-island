@@ -10,26 +10,29 @@ import "./PluginCard.css";
 const isPermission = (name: string): name is PluginPermission =>
   (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 
-/** The permissions folded into a count; opening it lists them, sensitive ones marked. */
-function PermissionSummary({ permissions }: { permissions: string[] }) {
+/** The permissions folded into a count; opening it lists them, sensitive ones marked, optional ones last. */
+function PermissionSummary({ permissions, optional }: { permissions: string[]; optional: string[] }) {
   const t = useTranslation();
-  if (permissions.length === 0) {
+  if (permissions.length + optional.length === 0) {
     return <span className="plugin-card__permissions-none">{t.settings.plugins.noPermissions}</span>;
   }
   const hasSensitive = permissions.some(isSensitivePermission);
+  const item = (permission: string, isOptional: boolean) => (
+    <li key={permission} className={isSensitivePermission(permission) ? "plugin-card__permission--sensitive" : undefined}>
+      {isPermission(permission) ? t.settings.plugins.permission[permission] : permission}
+      {isOptional ? ` (${t.settings.plugins.optionalPermission})` : ""}
+    </li>
+  );
 
   return (
     <details className={`plugin-card__permissions${hasSensitive ? " plugin-card__permissions--sensitive" : ""}`}>
       <summary title={t.settings.plugins.permissions}>
         <Lock size={11} strokeWidth={2.4} />
-        <span>{t.settings.plugins.permissionCount(permissions.length)}</span>
+        <span>{t.settings.plugins.permissionCount(permissions.length + optional.length)}</span>
       </summary>
       <ul>
-        {permissions.map((permission) => (
-          <li key={permission} className={isSensitivePermission(permission) ? "plugin-card__permission--sensitive" : undefined}>
-            {isPermission(permission) ? t.settings.plugins.permission[permission] : permission}
-          </li>
-        ))}
+        {permissions.map((permission) => item(permission, false))}
+        {optional.map((permission) => item(permission, true))}
       </ul>
     </details>
   );
@@ -138,7 +141,7 @@ export function PluginCard({
       )}
 
       <footer className="plugin-card__footer">
-        {invalid ? <span /> : <PermissionSummary permissions={plugin.permissions} />}
+        {invalid ? <span /> : <PermissionSummary permissions={plugin.permissions} optional={plugin.optionalPermissions ?? []} />}
         <div className="plugin-card__actions">
           {invalid ? null : (
             <button className="plugin-card__button" type="button" onClick={onOpenDetail}>

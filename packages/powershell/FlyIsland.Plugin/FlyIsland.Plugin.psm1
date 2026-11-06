@@ -137,6 +137,13 @@ function Show-FocusdNotification([string]$Title, [string]$Body = $null, [object[
     return [bool](Invoke-FocusdMethod 'island.notify' $params).muted
 }
 
+# Asks the user for optional permissions (manifest optionalPermissions), e.g.
+# Request-FocusdPermission 'clipboard:read'. Returns @{ granted = @(...); denied = @(...) }.
+function Request-FocusdPermission([string[]]$Permissions) {
+    $answer = Invoke-FocusdMethod 'permissions.request' @{ permissions = @($Permissions) }
+    return @{ granted = @($answer.granted); denied = @($answer.denied) }
+}
+
 # Replaces the model of one of the plugin's contributes.views.
 function Update-FocusdView([string]$ViewId, [hashtable]$Model) {
     [void](Invoke-FocusdMethod 'view.update' @{ viewId = $ViewId; model = $Model })

@@ -15,6 +15,7 @@
 | `views` | 2 | contributes.views drawn on the island; view.update / view.patch and the view.action / view.submit / view.search / view.visible notifications. |
 | `status` | 2 | contributes.statusItems on the collapsed bar; status.update. |
 | `webview` | 2 | contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification. |
+| `permissions` | 2 | manifest optionalPermissions and permissions.request; initialize.optionalPermissions. |
 
 ## 权限
 
@@ -54,6 +55,7 @@
 | `storage.set` | 无 | 2 | `key`：string (1-128 chars)<br>`value`：any JSON (max 64 KB as JSON; the plugin's whole storage max 1 MB, else status 413) | {} |
 | `storage.delete` | 无 | 2 | `key`：string | { deleted } |
 | `storage.keys` | 无 | 2 | 无 | { keys } |
+| `permissions.request` | 无 | 2 | `permissions`：[name]: 1-14 names from the manifest's optionalPermissions (or permissions) | { granted: [name], denied: [name] }. The island asks the user about each optional permission not answered yet (allow, allow once, deny; at most 30 s each, no answer is a denial that is asked again next time). A remembered deny is not asked again until the user revokes it in the plugin's settings. A name the manifest does not list is status 400. |
 | `host.keepAlive` | 无 | 2 | `reason`：string (1-100 chars) shown on the plugin page; null lets the plugin stop when idle again | {}. Only matters for on-demand plugins (activationEvents), which otherwise stop after 60 s with nothing to do. |
 | `todos.list` | `todos:read` | 1 | 无 | { date, todos, scheduled, activeTodoId } |
 | `todos.add` | `todos:write` | 1 | `title`：string<br>`date?`：YYYY-MM-DD; later than today goes to the 'later' list | The new todo. |
@@ -95,7 +97,7 @@
 
 | 通知 | 版本 | 参数 |
 |---|---|---|
-| `initialize` | 1 | { apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions, settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) } |
+| `initialize` | 1 | { apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions (those usable now: the manifest's permissions plus the optional ones the user allowed), optionalPermissions (since 2), settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) } |
 | `command` | 1 | { id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus "todo/context", since 2) sends { id, args: { todoId } } |
 | `settings.changed` | 1 | { settings } |
 | `event` | 2 | { name, payload }; at most one per event name every 200 ms, carrying the latest payload, except messages.received, which delivers every message (up to 50 per 200 ms). Subscriptions end when the process exits, and events that need a sensitive permission stop as soon as the user revokes it. |

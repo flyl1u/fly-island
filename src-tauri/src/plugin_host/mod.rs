@@ -42,6 +42,7 @@ mod menus;
 mod view_specs;
 mod views;
 mod notify;
+mod optional;
 mod permissions;
 mod registry;
 mod revocations;

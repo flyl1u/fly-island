@@ -258,8 +258,19 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 - **允许** / **拒绝**：记在 `plugins.json` 里，以后不再询问。拒绝时插件收到 `-32001`。
 - **本次**：这次允许，插件进程重启后会再问。
 - 30 秒没有回答：这次按拒绝处理（`-32001`），不记下来，下次使用再问。
-- 用户可以在插件设置页的"敏感权限"里看到这些回答，并随时撤销；撤销后下次使用会再问。
+- 用户可以在插件设置页的"需要询问的权限"里看到这些回答，并随时撤销；撤销后下次使用会再问，需要这个权限的事件订阅也会立即断开。
 - 岛屿贴边收起时，确认会先把岛屿露出来；全屏游戏等让岛屿隐藏的时候，用户可能看不到，插件会在 30 秒后收到 `-32001`。
+
+### 可选权限（第 2 版）
+
+只在某个功能里才用到的权限，写进清单的 `optionalPermissions`（取值和 `permissions` 一样），不要写进 `permissions`。启用插件时不会要求用户同意它们，市场和插件卡片把它们标成"可选，用到时询问"。
+
+- 用之前调用 `permissions.request { permissions: ["clipboard:read"] }`。岛上用和敏感权限一样的确认询问用户，返回 `{ granted, denied }`；一次可以申请多个，逐个询问。
+- 没有获准就调用需要它的方法或订阅事件，返回 `-32001`，错误信息提示先调用 `permissions.request`。
+- 答案的记法和敏感权限相同：允许和拒绝记在 `plugins.json`，本次允许到插件进程重启为止。记下的拒绝不会再弹出询问，`permissions.request` 直接把它放进 `denied`，直到用户在设置页撤销这个回答。
+- `initialize.permissions` 是插件现在能用的权限（`permissions` 加上已获准的可选权限），`initialize.optionalPermissions` 是清单里的可选权限。宿主有这项功能时，`initialize.capabilities` 里有 `permissions`。
+- SDK：Node `plugin.permissions.request("clipboard:read")`、`plugin.permissions.has(name)`；PowerShell `Request-FocusdPermission 'clipboard:read'`；模拟宿主的 `deny` 选项同样决定可选权限的回答。
+- 第 1 版清单里的 `optionalPermissions` 会被忽略。
 
 ## 通信协议
 

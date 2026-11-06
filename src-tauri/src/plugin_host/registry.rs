@@ -37,6 +37,8 @@ pub struct PluginInfo {
     author: String,
     homepage: String,
     permissions: Vec<String>,
+    /// Asked for while it runs (`permissions.request`); see optional.rs.
+    optional_permissions: Vec<String>,
     commands: Vec<PluginCommand>,
     /// What it needs installed: "exe", "powershell", "node" or "none".
     runtime: &'static str,
@@ -220,6 +222,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 author: String::new(),
                 homepage: String::new(),
                 permissions: Vec::new(),
+                optional_permissions: Vec::new(),
                 commands: Vec::new(),
                 runtime: "none",
                 has_process: false,
@@ -264,6 +267,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                     info.author = manifest.author.clone();
                     info.homepage = manifest.homepage.clone();
                     info.permissions = manifest.permissions.clone();
+                    info.optional_permissions = manifest.optional_permissions.clone();
                     info.commands = manifest.contributes.commands.clone();
                     info.has_process = matches!(manifest.runtime, PluginRuntime::Process { .. } | PluginRuntime::Builtin);
                     info.runtime = runtime_requirement(&manifest.runtime);

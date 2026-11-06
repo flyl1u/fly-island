@@ -91,6 +91,13 @@ export function marketTexts(dir) {
   return { ...(readme ? { readme } : {}), ...(changelog ? { changelog } : {}) };
 }
 
+/** Like the island's manifest.rs: version 2 only, without the ones in `permissions`. */
+export function optionalPermissions(manifest) {
+  if ((manifest.apiVersion ?? 1) < 2) return [];
+  const required = new Set(manifest.permissions ?? []);
+  return [...new Set(manifest.optionalPermissions ?? [])].filter((name) => !required.has(name)).sort();
+}
+
 /** The index entry for a plugin manifest, its package and its market details. */
 export function indexEntry(manifest, fileName, zip, details = {}) {
   return {
@@ -103,6 +110,8 @@ export function indexEntry(manifest, fileName, zip, details = {}) {
     author: manifest.author ?? "",
     homepage: manifest.homepage ?? "",
     permissions: [...new Set(manifest.permissions ?? [])].sort(),
+    // Asked for while the plugin runs (permissions.request); only written when there are any.
+    ...(optionalPermissions(manifest).length > 0 ? { optionalPermissions: optionalPermissions(manifest) } : {}),
     runtime: runtimeRequirement(manifest.runtime),
     // Pages with the plugin's own HTML (P8); the market shows them as custom UI.
     ...((manifest.contributes?.views ?? []).some((view) => view.template === "webview") ? { webview: true } : {}),

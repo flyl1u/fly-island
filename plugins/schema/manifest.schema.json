@@ -68,6 +68,11 @@
       "type": "array",
       "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:read", "agent-status:write", "island:notify", "secrets", "clipboard:read", "messages:read", "media:read", "media:control", "shelf:read", "shelf:write"] }
     },
+    "optionalPermissions": {
+      "description": "API version 2: permissions asked for while the plugin runs, with permissions.request, instead of when it is switched on. Ignored by version 1.",
+      "type": "array",
+      "items": { "enum": ["todos:read", "todos:write", "notes:read", "notes:write", "agent-status:read", "agent-status:write", "island:notify", "secrets", "clipboard:read", "messages:read", "media:read", "media:control", "shelf:read", "shelf:write"] }
+    },
     "contributes": {
       "type": "object",
       "properties": {

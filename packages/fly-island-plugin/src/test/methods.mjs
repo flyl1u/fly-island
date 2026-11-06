@@ -11,7 +11,26 @@ const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024;
 const NOTIFY_PER_MINUTE = 6;
 /** Methods only plugins on API version 2 have; version 1 gets "unknown method". */
-const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "webview.postMessage", "storage.get", "storage.set", "storage.delete", "storage.keys"]);
+const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "webview.postMessage", "storage.get", "storage.set", "storage.delete", "storage.keys", "permissions.request"]);
+
+/** permissions.request like plugin_host/optional.rs: the user (the mock's `deny` option) answers each name. */
+function requestPermissions(host, params) {
+  const names = Array.isArray(params?.permissions) ? params.permissions : [];
+  if (names.length === 0 || names.length > 14) fail(400, "Expected { permissions: [name] } with 1-14 names.");
+  const granted = [];
+  const denied = [];
+  for (const name of new Set(names)) {
+    if (typeof name !== "string" || !(host.granted.includes(name) || host.optional.includes(name))) {
+      fail(400, `"${name}" is not in the plugin's permissions or optionalPermissions.`);
+    }
+    if (host.denied.has(name)) denied.push(name);
+    else {
+      if (host.optional.includes(name)) host.allowedOptional.add(name);
+      granted.push(name);
+    }
+  }
+  return { granted, denied };
+}
 
 export class RpcError extends Error {
   constructor(code, message, status) {
@@ -280,6 +299,7 @@ export function answer(host, method, params) {
       host.keepAlive = reason === null ? null : text(reason, 100, "reason");
       return {};
     }
+    if (method === "permissions.request") return requestPermissions(host, params);
     return viewMethod(host, method, params);
   }
   const permission = methodPermissions().get(method);

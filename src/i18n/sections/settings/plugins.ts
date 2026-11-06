@@ -10,6 +10,8 @@ export type SettingsPluginsText = {
   homepage: string;
   permissions: string;
   noPermissions: string;
+  /** Marks a permission the plugin asks for only while it runs. */
+  optionalPermission: string;
   permissionCount: (count: number) => string;
   permission: Record<"todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control" | "shelf:read" | "shelf:write", string>;
   needsApproval: string;
@@ -20,7 +22,13 @@ export type SettingsPluginsText = {
     allow: string;
     once: string;
     deny: string;
-    action: Record<"clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write" | "uri", string>;
+    /** Every permission (sensitive ones, and any of them as an optional permission) and links. */
+    action: Record<
+      | "todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write"
+      | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control"
+      | "shelf:read" | "shelf:write" | "uri",
+      string
+    >;
     title: string;
     hint: string;
     allowed: string;
@@ -167,6 +175,7 @@ export const zhCN: SettingsPluginsText = {
   homepage: "主页",
   permissions: "需要的权限",
   noPermissions: "不需要读写岛上的数据",
+  optionalPermission: "可选，用到时询问",
   permissionCount: (count: number) => `${count} 项权限`,
   permission: {
     "todos:read": "读取待办",
@@ -192,6 +201,15 @@ export const zhCN: SettingsPluginsText = {
     once: "本次",
     deny: "拒绝",
     action: {
+      "todos:read": "读取待办",
+      "todos:write": "修改待办",
+      "notes:read": "读取笔记",
+      "notes:write": "修改笔记",
+      "agent-status:read": "读取 AI Agent 状态",
+      "agent-status:write": "报告 AI Agent 状态",
+      "island:notify": "在岛上显示通知",
+      secrets: "保存自己的密钥",
+      "media:control": "控制媒体播放",
       "clipboard:read": "读取剪贴板历史",
       "messages:read": "读取消息提醒",
       "media:read": "读取正在播放的内容",
@@ -199,8 +217,8 @@ export const zhCN: SettingsPluginsText = {
       "shelf:write": "修改文件中转列表",
       uri: "处理网页或其他程序打开的 focusd:// 链接",
     },
-    title: "敏感权限",
-    hint: "插件第一次使用这些权限或收到链接时，岛上会询问你。撤销后，下次使用会再问一次。",
+    title: "需要询问的权限",
+    hint: "插件第一次使用敏感权限、申请可选权限或收到链接时，岛上会询问你。撤销后，下次会再问一次。",
     allowed: "已允许",
     denied: "已拒绝",
     revoke: "撤销",
@@ -355,6 +373,7 @@ export const en: SettingsPluginsText = {
   homepage: "Homepage",
   permissions: "Permissions",
   noPermissions: "Uses no island data",
+  optionalPermission: "optional, asked when needed",
   permissionCount: (count: number) => (count === 1 ? "1 permission" : `${count} permissions`),
   permission: {
     "todos:read": "Read todos",
@@ -380,6 +399,15 @@ export const en: SettingsPluginsText = {
     once: "Once",
     deny: "Deny",
     action: {
+      "todos:read": "read your todos",
+      "todos:write": "change your todos",
+      "notes:read": "read your note",
+      "notes:write": "change your note",
+      "agent-status:read": "read AI agent statuses",
+      "agent-status:write": "report AI agent statuses",
+      "island:notify": "show notifications on the island",
+      secrets: "keep its own secrets",
+      "media:control": "control media playback",
       "clipboard:read": "read your clipboard history",
       "messages:read": "read your message alerts",
       "media:read": "see what is playing",
@@ -387,8 +415,8 @@ export const en: SettingsPluginsText = {
       "shelf:write": "change the file shelf",
       uri: "handle a focusd:// link opened by a web page or another app",
     },
-    title: "Sensitive permissions",
-    hint: "The island asks you the first time a plugin uses one of these or receives a link. After you revoke an answer, it asks again.",
+    title: "Permissions the island asks about",
+    hint: "The island asks you the first time a plugin uses a sensitive permission, asks for an optional one, or receives a link. After you revoke an answer, it asks again.",
     allowed: "Allowed",
     denied: "Denied",
     revoke: "Revoke",

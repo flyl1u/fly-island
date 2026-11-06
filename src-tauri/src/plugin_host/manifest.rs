@@ -164,6 +164,10 @@ pub(super) struct PluginManifest {
     pub runtime: PluginRuntime,
     #[serde(default)]
     pub permissions: Vec<String>,
+    /// Permissions the plugin asks for while it runs (`permissions.request`,
+    /// API version 2) instead of when it is switched on; see optional.rs.
+    #[serde(default)]
+    pub optional_permissions: Vec<String>,
     #[serde(default)]
     pub contributes: PluginContributions,
     /// As written; read by activation::read, which version 1 plugins skip.
@@ -237,6 +241,17 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     }
     manifest.permissions.sort();
     manifest.permissions.dedup();
+    if let Some(unknown) = manifest.optional_permissions.iter().find(|name| !is_known_permission(name)) {
+        return Err(format!("Unknown permission \"{unknown}\" in optionalPermissions."));
+    }
+    if manifest.api_version < 2 {
+        // Version 1 had no permissions.request; its manifests keep behaving as before.
+        manifest.optional_permissions.clear();
+    }
+    let required = manifest.permissions.clone();
+    manifest.optional_permissions.retain(|name| !required.contains(name));
+    manifest.optional_permissions.sort();
+    manifest.optional_permissions.dedup();
     if let PluginRuntime::Process { command, .. } = &manifest.runtime {
         relative_command_path(command)?;
         launch_kind(command)?;

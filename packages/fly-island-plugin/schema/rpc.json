@@ -8,7 +8,8 @@
     { "name": "secrets", "since": 2, "meaning": "secrets.get / set / delete." },
     { "name": "views", "since": 2, "meaning": "contributes.views drawn on the island; view.update / view.patch and the view.action / view.submit / view.search / view.visible notifications." },
     { "name": "status", "since": 2, "meaning": "contributes.statusItems on the collapsed bar; status.update." },
-    { "name": "webview", "since": 2, "meaning": "contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification." }
+    { "name": "webview", "since": 2, "meaning": "contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification." },
+    { "name": "permissions", "since": 2, "meaning": "manifest optionalPermissions and permissions.request; initialize.optionalPermissions." }
   ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
@@ -128,6 +129,13 @@
       "since": 2,
       "params": null,
       "result": "{ keys }"
+    },
+    {
+      "name": "permissions.request",
+      "permission": null,
+      "since": 2,
+      "params": { "permissions": "[name]: 1-14 names from the manifest's optionalPermissions (or permissions)" },
+      "result": "{ granted: [name], denied: [name] }. The island asks the user about each optional permission not answered yet (allow, allow once, deny; at most 30 s each, no answer is a denial that is asked again next time). A remembered deny is not asked again until the user revokes it in the plugin's settings. A name the manifest does not list is status 400."
     },
     {
       "name": "host.keepAlive",
@@ -270,7 +278,7 @@
     {
       "name": "initialize",
       "since": 1,
-      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions, settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) }"
+      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions (those usable now: the manifest's permissions plus the optional ones the user allowed), optionalPermissions (since 2), settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) }"
     },
     { "name": "command", "since": 1, "params": "{ id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus \"todo/context\", since 2) sends { id, args: { todoId } }" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },

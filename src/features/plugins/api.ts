@@ -83,6 +83,8 @@ export type PluginInfo = {
   author: string;
   homepage: string;
   permissions: string[];
+  /** Asked for while the plugin runs (permissions.request); the answers are in `sensitive`. */
+  optionalPermissions: string[];
   commands: PluginCommand[];
   runtime: PluginRuntimeRequirement;
   hasProcess: boolean;
@@ -137,11 +139,15 @@ export const isSensitivePermission = (name: string): name is SensitivePermission
   (SENSITIVE_PERMISSIONS as readonly string[]).includes(name);
 // 与 src-tauri/src/plugin_host/uri.rs 中的 URI_PERMISSION 对应：插件第一次收到 focusd:// 链接前，岛上像敏感权限一样询问。
 export const PLUGIN_URI_PERMISSION = "uri";
-/** What the island asks about before first use: a sensitive permission, or opening links (onUri). */
-export type PromptedPermission = SensitivePermission | typeof PLUGIN_URI_PERMISSION;
-/** The plugin's permissions the island asks about, plus links when it lists onUri. */
-export function promptedPermissions(plugin: Pick<PluginInfo, "permissions" | "activationEvents">): PromptedPermission[] {
+/** What the island asks the user about: a sensitive permission, an optional permission, or opening links (onUri). */
+export type PromptedPermission = PluginPermission | typeof PLUGIN_URI_PERMISSION;
+const isPluginPermission = (name: string): name is PluginPermission => (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
+/** The plugin's permissions the island asks about: sensitive ones, optional ones (permissions.request), and links when it lists onUri. */
+export function promptedPermissions(plugin: Pick<PluginInfo, "permissions" | "activationEvents"> & { optionalPermissions?: string[] }): PromptedPermission[] {
   const prompted: PromptedPermission[] = plugin.permissions.filter(isSensitivePermission);
+  for (const name of plugin.optionalPermissions ?? []) {
+    if (isPluginPermission(name) && !prompted.includes(name)) prompted.push(name);
+  }
   if (plugin.activationEvents.includes("onUri")) prompted.push(PLUGIN_URI_PERMISSION);
   return prompted;
 }
@@ -171,6 +177,8 @@ export type MarketPlugin = {
   author: string;
   homepage: string;
   permissions: string[];
+  /** Asked for while the plugin runs; missing when there are none. */
+  optionalPermissions?: string[];
   /** Missing in indexes written before the field existed. */
   runtime: PluginRuntimeRequirement | null;
   download: { url: string; sha256: string; size: number };

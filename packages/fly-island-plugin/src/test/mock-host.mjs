@@ -45,6 +45,9 @@ export class MockHost extends EventEmitter {
     this.apiVersion = this.manifest.apiVersion;
     this.granted = options.permissions ?? this.manifest.permissions ?? [];
     this.denied = new Set(options.deny ?? []);
+    // optionalPermissions (API version 2): usable once permissions.request was answered yes.
+    this.optional = this.apiVersion >= 2 ? (this.manifest.optionalPermissions ?? []).filter((name) => !this.granted.includes(name)) : [];
+    this.allowedOptional = new Set();
     this.settings = resolveSettings(this.manifest, options.settings);
     this.activationEvent = options.activationEvent ?? "onStartup";
     this.appVersion = options.appVersion ?? "99.0.0-mock";
@@ -92,15 +95,21 @@ export class MockHost extends EventEmitter {
       appVersion: this.appVersion,
       pluginId: this.manifest.id,
       dataDir: this.dataDir,
-      permissions: [...this.granted],
+      permissions: [...this.granted, ...this.allowedOptional],
       settings: { ...this.settings },
     };
-    if (this.apiVersion >= 2) params.activationEvent = this.activationEvent;
+    if (this.apiVersion >= 2) {
+      params.activationEvent = this.activationEvent;
+      params.optionalPermissions = [...this.optional];
+    }
     return params;
   }
 
   checkPermission(permission) {
-    if (!this.granted.includes(permission)) throw new RpcError(PERMISSION_DENIED, `The plugin was not given the "${permission}" permission.`);
+    if (this.optional.includes(permission) && !this.allowedOptional.has(permission)) {
+      throw new RpcError(PERMISSION_DENIED, `The user has not allowed the optional "${permission}" permission; ask with permissions.request first.`);
+    }
+    if (!this.granted.includes(permission) && !this.allowedOptional.has(permission)) throw new RpcError(PERMISSION_DENIED, `The plugin was not given the "${permission}" permission.`);
     if (this.denied.has(permission)) throw new RpcError(PERMISSION_DENIED, `The user did not allow the "${permission}" permission.`);
   }
 

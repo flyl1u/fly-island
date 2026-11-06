@@ -97,6 +97,7 @@ fn the_host_matches_the_protocol_description() {
             "storage.set",
             "storage.delete",
             "storage.keys",
+            "permissions.request",
             "host.keepAlive"
         ]
     );
@@ -1150,6 +1151,32 @@ mod pre_release_tests {
         let only_pre = market(vec![entry("a.two", "2.0.0-rc.1", true)]);
         assert!(only_pre.entry_for("a.two", false).is_none(), "a plugin with only pre-releases needs the opt-in");
         assert!(only_pre.entry_for("a.two", true).is_some());
+    }
+}
+
+#[test]
+fn optional_permissions_are_checked_and_need_version_2() {
+    let v2 = parse(json!({ "apiVersion": 2, "optionalPermissions": ["clipboard:read", "todos:read", "island:notify", "island:notify"] })).expect("v2");
+    assert_eq!(v2.optional_permissions, vec!["clipboard:read", "island:notify"], "required ones and duplicates are dropped");
+    let v1 = parse(json!({ "optionalPermissions": ["clipboard:read"] })).expect("v1");
+    assert!(v1.optional_permissions.is_empty(), "version 1 never had permissions.request");
+    assert!(parse(json!({ "apiVersion": 2, "optionalPermissions": ["camera"] })).expect_err("unknown").contains("camera"));
+}
+
+mod optional_tests {
+    use serde_json::json;
+
+    use super::super::optional::requested;
+
+    #[test]
+    fn requests_name_only_listed_permissions() {
+        let granted = vec!["todos:read".to_string()];
+        let optional = vec!["clipboard:read".to_string(), "media:read".to_string()];
+        let asked = json!({ "permissions": ["clipboard:read", "todos:read", "clipboard:read"] });
+        assert_eq!(requested(&asked, &granted, &optional).expect("ok"), vec!["clipboard:read", "todos:read"]);
+        assert_eq!(requested(&json!({ "permissions": ["shelf:write"] }), &granted, &optional).expect_err("unlisted").0, 400);
+        assert_eq!(requested(&json!({ "permissions": [] }), &granted, &optional).expect_err("empty").0, 400);
+        assert_eq!(requested(&json!({}), &granted, &optional).expect_err("missing").0, 400);
     }
 }
 

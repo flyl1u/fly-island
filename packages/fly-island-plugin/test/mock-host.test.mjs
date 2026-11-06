@@ -36,6 +36,13 @@ plugin.onCommand("view", async () => {
   await attempt("long", () => plugin.status.update("count", "x".repeat(25)));
   await attempt("unknown", () => plugin.views.update("nope", {}));
 });
+plugin.onCommand("optional", async () => {
+  await attempt("before", () => plugin.call("media.nowPlaying"));
+  report("asked", await plugin.permissions.request("media:read", "shelf:read"));
+  report("has", plugin.permissions.has("media:read"));
+  await plugin.call("media.nowPlaying");
+  report("after", true);
+});
 plugin.views.onAction("board", (params) => report("action", params));
 plugin.views.onMessage("page", async (message) => report("posted", await plugin.views.postMessage("page", { echo: message })));
 plugin.onCommand("notify", async () => {
@@ -60,6 +67,7 @@ const manifest = {
   apiVersion: 2,
   runtime: { type: "process", command: "main.mjs" },
   permissions: ["todos:read", "todos:write", "clipboard:read", "island:notify"],
+  optionalPermissions: ["media:read", "shelf:read"],
   contributes: {
     views: [{ id: "board", title: { "zh-CN": "看板", en: "Board" }, template: "list" }],
     statusItems: [{ id: "count" }],
@@ -71,12 +79,12 @@ const logged = async (host, name) => JSON.parse((await host.waitForLog(`${name} 
 
 test("the mock host runs a plugin like the island does", async () => {
   const dir = makePlugin(manifest);
-  const host = startMockHost(dir, { deny: ["clipboard:read"], settings: { extra: true }, activationEvent: "onCommand:todos" });
+  const host = startMockHost(dir, { deny: ["clipboard:read", "shelf:read"], settings: { extra: true }, activationEvent: "onCommand:todos" });
   try {
     const ready = await logged(host, "ready");
     assert.equal(ready.pluginId, "me.mock");
     assert.equal(ready.activationEvent, "onCommand:todos");
-    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status", "webview"]);
+    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status", "webview", "permissions"]);
     assert.deepEqual(ready.settings, { repo: "a/b", extra: true });
     await host.waitFor((state) => state.subscriptions.has("todos.changed"));
 
@@ -93,6 +101,12 @@ test("the mock host runs a plugin like the island does", async () => {
     assert.deepEqual(await logged(host, "denied"), { code: PERMISSION_DENIED });
     host.command("missing");
     assert.deepEqual(await logged(host, "missing"), { code: PERMISSION_DENIED });
+
+    host.command("optional");
+    assert.deepEqual(await logged(host, "before"), { code: PERMISSION_DENIED });
+    assert.deepEqual(await logged(host, "asked"), { granted: ["media:read"], denied: ["shelf:read"] });
+    assert.equal(await logged(host, "has"), true);
+    assert.equal(await logged(host, "after"), true);
 
     host.command("view");
     assert.deepEqual(await logged(host, "patch"), { missing: ["c"] });

@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 可选权限
+
+- 清单 `optionalPermissions`：用到时再申请的权限。方法 `permissions.request { permissions }` 在岛上询问用户，返回 `{ granted, denied }`；能力 `permissions`；`initialize.optionalPermissions`。索引条目增加可选字段 `optionalPermissions`。SDK：Node `plugin.permissions.request` / `has`，PowerShell `Request-FocusdPermission`，模拟宿主支持。见 [可选权限](README.md#可选权限第-2-版)。
+
 ## 页面与快捷键
 
 - `view.patch` 除了 `items`（按 id 替换），还接受 `remove: [id]`（删除）和 `add: [{ item, before?, group? }]`（插在 `before` 那一项前面，否则加到第 `group` 组末尾，否则加到列表末尾）。三项至少给一项；`add` 的 id 已经在页面里时返回状态 400。SDK：Node `views.patch(viewId, { items, remove, add })`（仍然可以直接传条目数组），PowerShell `Update-FocusdViewItems -Remove ... -Add ...`；模拟宿主同样支持。

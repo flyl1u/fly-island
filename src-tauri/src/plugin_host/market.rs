@@ -64,6 +64,9 @@ pub struct MarketEntry {
     homepage: String,
     #[serde(default)]
     pub(super) permissions: Vec<String>,
+    /// Asked for while it runs (manifest optionalPermissions); not part of the install consent.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    optional_permissions: Vec<String>,
     /// "exe", "powershell", "node" or "none"; missing in indexes written before it existed.
     #[serde(default)]
     runtime: Option<String>,

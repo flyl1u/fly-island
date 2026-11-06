@@ -50,7 +50,7 @@ pub(super) const METHODS: [(&str, &str); 21] = [
 /// Host features added after API version 1, sent in `initialize`. Plugins
 /// check these instead of the island's version. plugins/schema/rpc.json lists
 /// the same names (checked by a test).
-pub(super) const CAPABILITIES: [&str; 7] = ["events", "notifications", "storage", "secrets", "views", "status", "webview"];
+pub(super) const CAPABILITIES: [&str; 8] = ["events", "notifications", "storage", "secrets", "views", "status", "webview", "permissions"];
 
 pub(super) fn is_known_permission(name: &str) -> bool {
     PERMISSIONS.contains(&name)

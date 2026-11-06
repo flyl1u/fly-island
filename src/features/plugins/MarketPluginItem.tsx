@@ -121,6 +121,12 @@ export function MarketPluginItem({
                 ? t.settings.plugins.noPermissions
                 : plugin.permissions.map((name) => (isPermission(name) ? t.settings.plugins.permission[name] : name)).join(locale === "zh-CN" ? "、" : ", ")}
             </p>
+            {plugin.optionalPermissions?.length ? (
+              <p>
+                {t.settings.plugins.optionalPermission}:{" "}
+                {plugin.optionalPermissions.map((name) => (isPermission(name) ? t.settings.plugins.permission[name] : name)).join(locale === "zh-CN" ? "、" : ", ")}
+              </p>
+            ) : null}
             {plugin.runtime ? <p>{plugin.runtime === "node" ? t.settings.plugins.runtimeNode : t.settings.plugins.runtimeBuiltIn}</p> : null}
             {plugin.readme ? (
               <section className="plugin-market__doc" aria-label={text.readme}>

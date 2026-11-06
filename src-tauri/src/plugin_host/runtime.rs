@@ -117,6 +117,8 @@ pub(super) struct LaunchSpec {
     /// The plugin API version the plugin declared; it is told this one.
     pub api_version: u32,
     pub granted: Vec<String>,
+    /// `optionalPermissions`: usable once the user allows them (optional.rs).
+    pub optional: Vec<String>,
     pub app_version: String,
     /// Shown for agent statuses the plugin reports without a name.
     pub display_name: String,

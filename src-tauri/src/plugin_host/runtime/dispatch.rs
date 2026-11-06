@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, set_keep_alive, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    dev, feeds, notify, sensitive, storage, views, webviews,
+    dev, feeds, notify, optional, sensitive, storage, views, webviews,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -22,12 +22,14 @@ pub(super) fn initialize_params(context: &Context) -> Value {
         "appVersion": spec.app_version,
         "pluginId": spec.plugin_id,
         "dataDir": spec.data_dir.display().to_string(),
-        "permissions": spec.granted,
+        // What it may use now: `permissions`, plus the optional ones the user allowed.
+        "permissions": optional::usable(&spec.plugin_id, &spec.granted, &spec.optional),
         "settings": *lock(&context.settings),
     });
     if spec.api_version >= 2 {
         // Why this process was started: onStartup, onCommand:<id>, onSchedule:<minutes>, ...
         params["activationEvent"] = json!(spec.activation_event);
+        params["optionalPermissions"] = json!(spec.optional);
     }
     if !spec.experimental_apis.is_empty() {
         // Development plugins only: which of the experimental APIs they listed the island has.
@@ -69,13 +71,16 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "storage.get" | "storage.set" | "storage.delete" | "storage.keys" if context.spec.api_version >= 2 => {
             return answer(id, storage::answer_storage(&context.spec.data_dir, method, &params));
         }
+        "permissions.request" if context.spec.api_version >= 2 => {
+            let spec = &context.spec;
+            return answer(id, optional::request(&context.app, &spec.plugin_id, &spec.granted, &spec.optional, &params));
+        }
         _ => {}
     }
     let Some((name, permission)) = method_permission(method) else {
         return rpc::error_line(id, rpc::METHOD_NOT_FOUND, &format!("Unknown method \"{method}\"."), None);
     };
-    if !context.spec.granted.iter().any(|granted| granted == permission) {
-        let message = format!("The plugin was not given the \"{permission}\" permission.");
+    if let Some(message) = missing_permission(context, permission) {
         return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
     }
     if sensitive::is_sensitive(permission) && !sensitive::check(&context.app, &context.spec.plugin_id, permission) {
@@ -98,6 +103,19 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         _ => local_api::call_island(&context.app, name, params),
     };
     answer(id, result)
+}
+
+/// Why the plugin may not use `permission` now, or None when it may.
+fn missing_permission(context: &Context, permission: &str) -> Option<String> {
+    let spec = &context.spec;
+    if optional::has(&spec.plugin_id, &spec.granted, &spec.optional, permission) {
+        return None;
+    }
+    Some(if spec.optional.iter().any(|name| name == permission) {
+        format!("The user has not allowed the optional \"{permission}\" permission; ask with permissions.request first.")
+    } else {
+        format!("The plugin was not given the \"{permission}\" permission.")
+    })
 }
 
 fn answer(id: &Value, answer: Result<Value, (u16, String)>) -> String {
@@ -127,8 +145,8 @@ fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: 
             return bad_params(&format!("Unknown event \"{text}\"."));
         };
         if let Some(permission) = permission.filter(|_| subscribe) {
-            if !context.spec.granted.iter().any(|granted| granted == permission) {
-                let message = format!("The \"{name}\" event needs the \"{permission}\" permission.");
+            if let Some(why) = missing_permission(context, permission) {
+                let message = format!("The \"{name}\" event needs the \"{permission}\" permission. {why}");
                 return rpc::error_line(id, rpc::PERMISSION_DENIED, &message, None);
             }
             if sensitive::is_sensitive(permission) && !sensitive::check(&context.app, &context.spec.plugin_id, permission) {

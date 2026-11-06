@@ -137,11 +137,20 @@ export function createPlugin(options = {}) {
     notify: (title, options = {}) => call("island.notify", { title, ...options }),
     /** Keeps an on-demand plugin running with a reason shown on its page; null lets it stop when idle again. */
     keepAlive: (reason) => call("host.keepAlive", { reason }),
+    permissions: {
+      /** Asks the user for optional permissions (manifest optionalPermissions); resolves to { granted, denied }. */
+      request: (...names) =>
+        call("permissions.request", { permissions: names.flat() }).then((result) => {
+          if (context) context.permissions = [...new Set([...(context.permissions ?? []), ...(result?.granted ?? [])])];
+          return result;
+        }),
+      /** True when the plugin may use `name` now (its permissions, or an optional one the user allowed). */
+      has: (name) => Array.isArray(context?.permissions) && context.permissions.includes(name),
+    },
     views: {
       /** Replaces the model of one of the plugin's views (contributes.views). */
       update: (viewId, model) => call("view.update", { viewId, model }),
-      /** Replaces list items by id; resolves to { missing }. */
-      // A list replaces items by id; { items, remove, add } also deletes and inserts.
+      /** A list replaces items by id; { items, remove, add } also deletes and inserts. Resolves to { missing }. */
       patch: (viewId, change) => call("view.patch", Array.isArray(change) ? { viewId, items: change } : { ...change, viewId }),
       onVisible: (viewId, handler) => forView("view.visible", viewId, (params) => handler(Boolean(params.visible))),
       onAction: (viewId, handler) => forView("view.action", viewId, handler),
