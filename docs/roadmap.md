@@ -26,14 +26,14 @@
 | B11 | 会话四色状态：红（卡住等你：提问、审批、计划确认）、橙（回合结束在问你：标记或问句判断）、绿（在跑）、灰（做完了），会话环、Agent 页、弹出提醒、音效统一 | 进行中 | fly-island-c6 · lane 6 · 2026-11-07 | 任务清单 [agent-session-states.md](architecture/agent-session-states.md)；基于 B9 的回复状态标记和会话环 |
 | B14 | 远程服务器上的会话：文档给出 SSH `RemoteForward` 和 HTTP 钩子的配置示例；远程会话在列表里标主机名，点击不找本地窗口 | 进行中 | fly-island-7e · lane 5 · 2026-11-07 09:30 | 完整支持由用户的朋友做成插件；岛屿这边只提供接口和标记 |
 | B13 | 会话行的流光边框（Apple Intelligence 那种绕边框流动的光带），建议只给等你确认的行 | 待做 | | 用户决定以后考虑做成插件，现在不做。用 transform 旋转伪元素，减少动效时关闭 |
-| B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
+| B3b | 卡片显示「正在压缩上下文」 | 进行中 | fly-island-c6 · lane 6 · 2026-11-07 | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 待做 | | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`，另见 B8、B10），Codex 待做：本机没有 Codex 会话记录无法验证，fly-island-fe 于 2026-11-07 放弃认领，需在装了 Codex 的电脑上做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
 
 ## 第三优先：竞品都有、我们还缺的
 
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
-| C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 待做 | | Notchify、Isle Notch、WinIsland 都有 |
+| C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 进行中 | fly-island-c6 · lane 6 · 2026-11-07（排在 B11 任务 7、B3b 之后） | Notchify、Isle Notch、WinIsland 都有 |
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
 | C4b | 歌词的中文来源（网易云、QQ 音乐、酷狗，非官方接口、默认关闭并说明风险）、翻译行、逐字高亮、按单首歌调偏移 | 待做 | | LRCLIB 的中文歌收录较少。调研见 C4 的会话记录：BetterLyrics、Lyricify 用的就是这几家。网易云不向系统报告播放进度和时长，岛只能从切歌起自己计时，在网易云里拖进度条或岛打开时歌已放到一半都会对不上；拿到网易云的歌曲 ID 或进度需要它的插件（如 InfLink-rs），以后可以考虑 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
