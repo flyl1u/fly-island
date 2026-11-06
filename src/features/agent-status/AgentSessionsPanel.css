@@ -155,13 +155,6 @@
   white-space: nowrap;
 }
 
-/* Wide enough for "59 分钟前" / "59 min ago", right-aligned, so a short age like "刚刚" does not
-   pull the icons before it out of their column. Longer statuses still grow. */
-.agent-session__meta {
-  min-width: 5.6em;
-  text-align: right;
-}
-
 .agent-session__dot {
   width: 7px;
   height: 7px;

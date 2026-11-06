@@ -100,7 +100,7 @@ async function runChecks() {
     sizeFor(3);
 
     check(first.querySelector(".agent-session__host")?.textContent?.startsWith("Orca") && first.querySelector("img.agent-session__host-icon"), "来源显示程序名和它自己的图标");
-    check(first.querySelector(".agent-session__host")?.nextElementSibling?.classList.contains("agent-session__meta"), "来源排在标题行右侧、状态前面");
+    check(first.querySelector(".agent-session__meta")?.nextElementSibling?.classList.contains("agent-session__host") && first.querySelector(".agent-session__heading")?.lastElementChild?.classList.contains("agent-provider-icon"), "标题行右侧依次是状态、来源、Agent 图标");
     check(second.querySelector("svg.agent-session__host-icon") && second.querySelector(".agent-session__host")?.textContent === "Codex", "没有程序文件的来源用通用图标");
     check(!third.querySelector(".agent-session__host"), "不知道来源时不显示");
     await render("icon");
@@ -108,7 +108,7 @@ async function runChecks() {
     check(third.querySelector(".agent-session__host--unknown"), "只显示图标时，不知道来源也留出图标位");
     await render("icon", { showElapsed: false });
     const iconRight = (row: HTMLElement) => row.querySelector(".agent-provider-icon")!.getBoundingClientRect().right;
-    check(meta(first) === "刚刚" && meta(third) === "1 小时前" && Math.abs(iconRight(first) - iconRight(third)) < 0.5, "时间长短不同、有无来源时，右侧图标仍在同一列");
+    check(meta(first) === "刚刚" && meta(third) === "1 小时前" && Math.abs(iconRight(first) - iconRight(third)) < 0.5 && Math.abs(iconRight(first) - iconRight(second)) < 0.5, "时间长短不同、有无来源时，右侧图标仍在同一列");
     // The fixture is the island's content box; the island's edge is its 20px side padding further out.
     const dotGap = first.querySelector(".agent-session__dot")!.getBoundingClientRect().left - (fixture.getBoundingClientRect().left - 20);
     check(dotGap > 8 && dotGap < 16, "列表两侧只留很窄的边距（距岛屿边缘约 12px）");

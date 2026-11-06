@@ -106,18 +106,19 @@ export function AgentSessionsPanel({
                       {title}
                     </span>
                     {active && showModel && model && <span className="agent-session__model">{model}</span>}
-                    <AgentProviderIcon provider={session.provider} size={14} />
-                    {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
-                    {/* With icons only, an unknown host still takes an icon's room so the provider icons
-                        stay in one column; names differ in width, so there is no column to keep. */}
-                    {!session.host && hostDisplay === "icon" && (
-                      <span className="agent-session__host agent-session__host--unknown" aria-hidden="true" />
-                    )}
                     {notFoundId === session.sessionId ? (
                       <span className="agent-session__not-found" role="status">{isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
                     ) : (
                       <span className="agent-session__meta">{status}</span>
                     )}
+                    {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
+                    {/* With icons only, an unknown host still takes an icon's room, so the host icons
+                        form a column too; names differ in width, so there is no column to keep. */}
+                    {!session.host && hostDisplay === "icon" && (
+                      <span className="agent-session__host agent-session__host--unknown" aria-hidden="true" />
+                    )}
+                    {/* Last on the line, so the provider icons line up however long the status is. */}
+                    <AgentProviderIcon provider={session.provider} size={14} />
                   </span>
                   {full && <span className="agent-session__message">{session.lastMessage}</span>}
                 </span>
