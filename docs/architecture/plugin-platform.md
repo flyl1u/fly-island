@@ -503,7 +503,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 - **发布者信息**来自 `plugins/market/<id>.json`，不显示 GitHub 头像（避免在设置页请求外部图片）。
 - **预发布版本**（2026-11-06）：按插件选择。插件详情页有「接收这个插件的预发布版本」开关（`plugins.json` 的 `plugins.<id>.preRelease`，新命令 `set_plugin_pre_release`）；打开后更新取比正式版新的最新预发布版本。版本比较按 semver（`compare_versions`：`1.3.0-beta.1` < `1.3.0-beta.2` < `1.3.0`），只用于判断市场版本是否更新；岛屿版本兼容检查仍忽略预发布后缀。市场页只列正式版，只有预发布版本的插件不上架。没有采用设计里“偶数次版本号为正式版”的约定。
 - **详情页**（2026-11-06）：插件文件夹里的 `README.md` 和 `CHANGELOG.md` 由 `pnpm plugins:index` 写进索引的 `readme`、`changelog`（各最多 16 KB，和索引一起签名），市场详情里显示为「插件说明」和可展开的「版本历史」。渲染用 `src/components/markdown/` 的小型 Markdown 子集，只生成元素、不插入 HTML，链接只放行 http(s) 并交给默认浏览器打开。示例插件把这两个文件写进 `.focusdignore`，所以加文档不会改变已发布的包。没有单独的“这个版本的更新说明”，看版本历史的第一节。「报告问题」在索引写了 `repo` 时指向那个仓库的 issue，否则指向本仓库。
-- **作者签名、“已验证”发布者**没做（设计里本来就是以后再做）。
+- **作者签名、“已验证”发布者**没做（设计里本来就是以后再做）；设计稿见 [plugin-author-signing.md](plugin-author-signing.md)（待审）。
 
 **索引仓库（2026-11-05）** ✅ [`TixXin/focusd-plugins`](https://github.com/TixXin/focusd-plugins) 已建好并运行：
 
