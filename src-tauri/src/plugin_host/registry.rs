@@ -56,6 +56,8 @@ pub struct PluginInfo {
     notifications_muted: bool,
     /// Command shortcuts another app or plugin already uses.
     keybinding_conflicts: Vec<String>,
+    /// The user's shortcuts per command id ("" = off); others use the manifest's keybinding.
+    keybindings: BTreeMap<String, String>,
     /// Remembered answers for sensitive permissions, which the user can revoke.
     sensitive: BTreeMap<String, SensitiveChoice>,
     /// "startup" (runs while the island runs) or "onDemand" (activationEvents).
@@ -227,6 +229,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 info: runtime.info,
                 notifications_muted: grant.notifications_muted,
                 keybinding_conflicts: keybindings::conflicts(&plugin.folder),
+                keybindings: grant.keybindings.clone(),
                 sensitive: grant.sensitive.clone(),
                 activation: "startup",
                 activation_events: Vec::new(),

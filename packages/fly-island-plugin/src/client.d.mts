@@ -112,6 +112,16 @@ export interface StatusModel {
 
 export type ViewModel = ListModel | DetailModel | FormModel | StatusModel;
 
+/** What `views.patch` changes in a list page. */
+export interface ViewPatch {
+  /** Replace the items with these ids. */
+  items?: ListItem[];
+  /** Delete the items with these ids. */
+  remove?: string[];
+  /** Insert items: before the item `before`, else at the end of `groups[group]`, else at the end of `items`. */
+  add?: { item: ListItem; before?: string; group?: number }[];
+}
+
 export interface ViewActionParams {
   viewId: string;
   actionId: string;
@@ -155,7 +165,13 @@ export interface Plugin {
   keepAlive(reason: string | null): Promise<unknown>;
   views: {
     update(viewId: string, model: ViewModel): Promise<unknown>;
-    patch(viewId: string, items: ListItem[]): Promise<{ missing: string[] }>;
+    /**
+     * Changes a list page without sending it whole: a list of items replaces
+     * those with the same ids; or pass `{ items?, remove?, add? }`, where `add`
+     * inserts before the item `before`, else at the end of `groups[group]`, else
+     * at the end of the list. `missing` lists the ids that were not found.
+     */
+    patch(viewId: string, change: ListItem[] | ViewPatch): Promise<{ missing: string[] }>;
     onVisible(viewId: string, handler: Handler<boolean>): Off;
     onAction(viewId: string, handler: Handler<ViewActionParams>): Off;
     onSubmit(viewId: string, handler: Handler<Record<string, unknown>>): Off;

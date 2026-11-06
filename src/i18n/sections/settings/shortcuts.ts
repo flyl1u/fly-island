@@ -15,6 +15,16 @@ export type SettingsShortcutsText = {
   openPage: string;
   taken: (shortcut: string, owner: string) => string;
   reset: (shortcut: string) => string;
+  pluginTitle: string;
+  pluginHint: string;
+  pluginNone: string;
+  pluginNotSet: string;
+  pluginOff: string;
+  pluginRecord: string;
+  pluginPressKeys: string;
+  pluginTurnOff: string;
+  pluginClear: string;
+  pluginInUse: string;
 };
 
 export const zhCN: SettingsShortcutsText = {
@@ -34,6 +44,16 @@ export const zhCN: SettingsShortcutsText = {
   openPage: "前往快捷键",
   taken: (shortcut, owner) => `${shortcut} 已被「${owner}」使用，请换一个。`,
   reset: (shortcut) => `恢复默认（${shortcut}）`,
+  pluginTitle: "插件快捷键",
+  pluginHint: "已开启的插件的命令。可以改成别的组合键、关闭，或者恢复插件自带的快捷键；没有快捷键的命令也可以设一个。",
+  pluginNone: "已开启的插件都没有命令。",
+  pluginNotSet: "未设置",
+  pluginOff: "已关闭",
+  pluginRecord: "设置快捷键",
+  pluginPressKeys: "请按组合键…",
+  pluginTurnOff: "关闭这个快捷键",
+  pluginClear: "清除快捷键",
+  pluginInUse: "这个快捷键已被其他程序占用，没有生效，请换一个。",
 };
 
 export const en: SettingsShortcutsText = {
@@ -53,4 +73,14 @@ export const en: SettingsShortcutsText = {
   openPage: "Open Shortcuts",
   taken: (shortcut, owner) => `${shortcut} is already used by "${owner}". Choose another.`,
   reset: (shortcut) => `Reset to default (${shortcut})`,
+  pluginTitle: "Plugin shortcuts",
+  pluginHint: "Commands of the plugins that are on. Change a shortcut, turn it off, or go back to the plugin's own; commands without one can get one too.",
+  pluginNone: "None of the plugins that are on has commands.",
+  pluginNotSet: "Not set",
+  pluginOff: "Off",
+  pluginRecord: "Set shortcut",
+  pluginPressKeys: "Press keys…",
+  pluginTurnOff: "Turn this shortcut off",
+  pluginClear: "Clear the shortcut",
+  pluginInUse: "Another app already uses this shortcut, so it does not work. Choose another.",
 };

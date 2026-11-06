@@ -91,8 +91,8 @@
       "name": "view.patch",
       "permission": null,
       "since": 2,
-      "params": { "viewId": "string", "items": "[{ id, ... }]: replace the items with these ids in model.items and model.groups[].items" },
-      "result": "{ missing: [id] }: ids not found. Status 409 before the first view.update."
+      "params": { "viewId": "string", "items?": "[{ id, ... }]: replace the items with these ids in model.items and model.groups[].items", "remove?": "[id]: delete the items with these ids", "add?": "[{ item: { id, ... }, before?: id, group?: number }]: insert before the item `before`, else at the end of model.groups[group].items, else at the end of model.items; an id already in the view is status 400" },
+      "result": "{ missing: [id] }: ids not found (an add whose `before` is missing goes at the end). At least one of items, remove and add. Status 409 before the first view.update."
     },
     {
       "name": "status.update",

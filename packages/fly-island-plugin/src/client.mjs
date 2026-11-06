@@ -140,7 +140,8 @@ export function createPlugin(options = {}) {
       /** Replaces the model of one of the plugin's views (contributes.views). */
       update: (viewId, model) => call("view.update", { viewId, model }),
       /** Replaces list items by id; resolves to { missing }. */
-      patch: (viewId, items) => call("view.patch", { viewId, items }),
+      // A list replaces items by id; { items, remove, add } also deletes and inserts.
+      patch: (viewId, change) => call("view.patch", Array.isArray(change) ? { viewId, items: change } : { ...change, viewId }),
       onVisible: (viewId, handler) => forView("view.visible", viewId, (params) => handler(Boolean(params.visible))),
       onAction: (viewId, handler) => forView("view.action", viewId, handler),
       onSubmit: (viewId, handler) => forView("view.submit", viewId, (params) => handler(params.values ?? {})),

@@ -98,6 +98,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 - `keybinding` 是一个或多个修饰键（`Ctrl`、`Alt`、`Shift`、`Win`）加一个键：字母、数字、`F1`–`F24`、`Esc`、`Tab`、`Enter`、`Space`、方向键、`Home` / `End`、`PageUp` / `PageDown`、`Insert` / `Delete`、`Backspace`。大小写和空格不限，岛屿会规范成 `Ctrl+Alt+P` 这样的写法；写不出合法组合时，清单无效。
 - 只有运行中的插件才会注册快捷键。快捷键已经被其他程序、岛屿自己或另一个插件占用时，注册失败，插件卡片上会提示"快捷键已被其他程序占用"，先注册的一方不受影响。
+- 清单里的 `keybinding` 只是默认值。用户可以在 **设置 → 快捷键 → 插件快捷键** 里改成别的组合键、关闭，或者给没有写 `keybinding` 的命令设一个；选择保存在 `plugins.json` 里该插件的 `keybindings`（命令 id → 组合键，空字符串表示关闭）。
 - 按下快捷键时，岛屿先求值 `when`，结果为真才给插件发送 `command { id }`，和点了设置页上的按钮一样。
 - `when` 可用的名称：`island.expanded`（岛屿是否展开）、`todos.hasActive`（是否有正在进行的待办）、`island.page`（当前页面：`todo`、`music`、`clipboard`、`shelf`、`qq`、`agents`、`translation`）。用 `==` / `!=` 比较（值可以加引号），用 `&&`、`||`、`!` 和括号组合，`&&` 比 `||` 优先。不认识的名称当作假；写错语法的 `when` 永远不生效；省略或为空表示总是生效。
 - `when` 由岛屿求值（`src/features/plugins/when.ts`），不会执行插件代码。
@@ -132,7 +133,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `statusItems[].priority` | -100 到 100，默认 0。所有插件有文字的状态项里，只显示优先级最高的一个。 |
 
 - 页面在岛上的 id 是 `plugin:<插件 id>/<view id>`。插件页面排在内置页面之后，用页眉里的小图标打开，也参与 Alt+数字 和左右切换（数字键只到 9）。用户可以在 **设置 → 插件扩展 → 岛上页面** 里隐藏某个页面、调整顺序。
-- 插件用 `view.update { viewId, model }` 发整个模型（序列化后不超过 256 KB，超过返回状态 413），用 `view.patch { viewId, items }` 按 `id` 替换列表里的几项（在 `view.update` 之前调用返回 409）。每个页面每秒最多显示 10 次更新，更快的会合并成最后一次。
+- 插件用 `view.update { viewId, model }` 发整个模型（序列化后不超过 256 KB，超过返回状态 413），用 `view.patch` 只改列表里的几项（在 `view.update` 之前调用返回 409）：`items` 按 `id` 替换，`remove: [id]` 删除，`add: [{ item, before?, group? }]` 插入（`before` 那一项前面，否则第 `group` 组末尾，否则列表末尾）。每个页面每秒最多显示 10 次更新，更快的会合并成最后一次。
 - 页面不在屏幕上时，岛屿不转发更新；打开和关上页面时插件会收到 `view.visible { viewId, visible }`。插件可以只在 `visible` 为 `true` 时去准备数据（`dev.focusd.github-issues` 就是这样）。
 - 用户的操作以通知发回：`view.action { viewId, actionId, itemId?, checked? }`、`view.submit { viewId, values }`、`view.search { viewId, query }`。
 - 插件进程停止或崩溃时，它发过的模型和状态文字都会清空；页面显示"插件已停止"、原因和"重新启动"按钮，不影响其他页面。插件重启后要重新发模型（一般在收到 `view.visible` 时发）。

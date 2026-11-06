@@ -88,17 +88,70 @@ function viewMethod(host, method, params) {
     return {};
   }
   const model = host.views.get(params.viewId) ?? fail(409, "Send view.update first.");
-  const replacements = new Map((Array.isArray(params.items) ? params.items : []).map((item) => [item?.id, item]));
-  const lists = [model.items ?? [], ...(model.groups ?? []).map((group) => group.items ?? [])];
-  for (const list of lists) {
-    list.forEach((item, index) => {
-      if (replacements.has(item.id)) {
-        list[index] = structuredClone(replacements.get(item.id));
-        replacements.delete(item.id);
+  return patchModel(model, params);
+}
+
+/** view.patch like plugin_host/views.rs patch_model: replace `items`, delete `remove`, insert `add`. */
+function patchModel(model, params) {
+  const list = (name) => {
+    const value = params[name];
+    if (value === undefined || value === null) return [];
+    if (!Array.isArray(value)) fail(400, `Expected "${name}" as a list.`);
+    return value;
+  };
+  const [items, remove, add] = [list("items"), list("remove"), list("add")];
+  if (items.length + remove.length + add.length === 0) fail(400, 'Expected "items", "remove" or "add".');
+  const lists = () => [model.items, ...(model.groups ?? []).map((group) => group.items)].filter(Array.isArray);
+  const missing = [];
+
+  const replacements = new Map(items.map((item) => [typeof item?.id === "string" ? item.id : fail(400, 'Every patched item needs an "id" string.'), item]));
+  for (const entries of lists()) {
+    entries.forEach((entry, index) => {
+      if (replacements.has(entry.id)) {
+        entries[index] = structuredClone(replacements.get(entry.id));
+        replacements.delete(entry.id);
       }
     });
   }
-  return { missing: [...replacements.keys()] };
+  missing.push(...replacements.keys());
+
+  const gone = new Set(remove.map((id) => (typeof id === "string" ? id : fail(400, '"remove" lists item ids (strings).'))));
+  const removed = new Set();
+  for (const entries of lists()) {
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      if (gone.has(entries[index].id)) {
+        removed.add(entries[index].id);
+        entries.splice(index, 1);
+      }
+    }
+  }
+  missing.push(...[...gone].filter((id) => !removed.has(id)));
+
+  for (const spec of add) {
+    const item = spec?.item;
+    if (item === null || typeof item !== "object" || Array.isArray(item)) fail(400, 'Every added entry needs "item" as an object.');
+    if (typeof item.id !== "string") fail(400, 'Every added item needs an "id" string.');
+    if (lists().some((entries) => entries.some((entry) => entry.id === item.id))) fail(400, `The view already has an item "${item.id}"; replace it with "items".`);
+    if (typeof spec.before === "string") {
+      const entries = lists().find((candidate) => candidate.some((entry) => entry.id === spec.before));
+      if (entries) {
+        entries.splice(entries.findIndex((entry) => entry.id === spec.before), 0, structuredClone(item));
+        continue;
+      }
+      missing.push(spec.before);
+    }
+    if (spec.group === undefined || spec.group === null) {
+      if (!Array.isArray(model.items)) model.items = [];
+      model.items.push(structuredClone(item));
+    } else {
+      const group = Number.isInteger(spec.group) ? model.groups?.[spec.group] : undefined;
+      if (!group || typeof group !== "object") fail(400, `The view has no group ${spec.group} with a list of items.`);
+      if (group.items === undefined) group.items = [];
+      if (!Array.isArray(group.items)) fail(400, `The view has no group ${spec.group} with a list of items.`);
+      group.items.push(structuredClone(item));
+    }
+  }
+  return { missing };
 }
 
 function storageMethod(host, method, params) {

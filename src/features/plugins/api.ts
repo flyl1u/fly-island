@@ -99,6 +99,8 @@ export type PluginInfo = {
   notificationsMuted: boolean;
   /** Command shortcuts that could not be registered because something else uses them. */
   keybindingConflicts: string[];
+  /** The user's shortcuts per command id ("" = off); other commands use their manifest keybinding. */
+  keybindings: Record<string, string>;
   /** Remembered answers for sensitive permissions; the user can revoke them. */
   sensitive: Partial<Record<PromptedPermission, PluginSensitiveChoice>>;
   /** "startup": runs while the island runs; "onDemand": starts on its activation events. */
@@ -354,6 +356,11 @@ export const PLUGIN_MEMORY_LIMITS_MB = [256, 512, 1024, 2048] as const;
 
 export function setPluginMemoryLimit(id: string, megabytes: number) {
   return invoke<PluginsSnapshot>("set_plugin_memory_limit", { id, megabytes });
+}
+
+/** `null` goes back to the manifest's keybinding, `""` turns the shortcut off. */
+export function setPluginKeybinding(id: string, command: string, keybinding: string | null) {
+  return invoke<PluginsSnapshot>("set_plugin_keybinding", { id, command, keybinding });
 }
 
 export function setPluginPreRelease(id: string, enabled: boolean) {

@@ -50,6 +50,10 @@ pub(super) struct PluginGrant {
     /// The user's memory limit for this plugin in MB (lifecycle.rs); none means the default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory_limit_mb: Option<u32>,
+    /// The user's shortcuts per command id (keybindings.rs): "" turns the
+    /// command's shortcut off; a command not listed keeps its manifest keybinding.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub keybindings: BTreeMap<String, String>,
 }
 
 /// A missing or broken file reads as "nothing allowed".

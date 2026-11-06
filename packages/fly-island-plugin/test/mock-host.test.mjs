@@ -30,6 +30,8 @@ plugin.onCommand("missing", () => attempt("missing", () => plugin.media.next()))
 plugin.onCommand("view", async () => {
   await plugin.views.update("board", { items: [{ id: "a", title: "A" }, { id: "b", title: "B" }] });
   report("patch", await plugin.views.patch("board", [{ id: "b", title: "B2" }, { id: "c", title: "C" }]));
+  report("change", await plugin.views.patch("board", { remove: ["a"], add: [{ item: { id: "z", title: "Z" }, before: "b" }, { item: { id: "y", title: "Y" } }] }));
+  await attempt("twice", () => plugin.views.patch("board", { add: [{ item: { id: "z" } }] }));
   await plugin.status.update("count", "2 items");
   await attempt("long", () => plugin.status.update("count", "x".repeat(25)));
   await attempt("unknown", () => plugin.views.update("nope", {}));
@@ -94,7 +96,10 @@ test("the mock host runs a plugin like the island does", async () => {
 
     host.command("view");
     assert.deepEqual(await logged(host, "patch"), { missing: ["c"] });
+    assert.deepEqual(await logged(host, "change"), { missing: [] });
+    assert.deepEqual(host.views.get("board").items.map((item) => item.id), ["z", "b", "y"]);
     assert.equal(host.views.get("board").items[1].title, "B2");
+    assert.deepEqual(await logged(host, "twice"), { code: -32000, status: 400 });
     assert.deepEqual(await logged(host, "long"), { code: -32000, status: 400 });
     assert.equal(host.statuses.get("count").text, "2 items");
     assert.deepEqual(await logged(host, "unknown"), { code: -32000, status: 404 });

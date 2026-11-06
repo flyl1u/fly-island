@@ -671,7 +671,7 @@ fn view_icons_match_the_manifest_schema() {
 mod view_tests {
     use serde_json::json;
 
-    use super::super::views::{is_action_id, parse_status, patch_items, MAX_STATUS_CHARS};
+    use super::super::views::{is_action_id, parse_status, patch_items, patch_model, MAX_STATUS_CHARS};
 
     #[test]
     fn patches_replace_items_by_id_in_the_list_and_its_groups() {
@@ -685,6 +685,37 @@ mod view_tests {
         assert_eq!(next["groups"][0]["items"][0]["title"], "C2");
         assert_eq!(missing, vec!["z".to_string()]);
         assert_eq!(patch_items(&model, &[json!({ "title": "no id" })]).expect_err("no id").0, 400);
+    }
+
+    #[test]
+    fn patches_remove_and_add_items() {
+        let model = json!({
+            "items": [{ "id": "a" }, { "id": "b" }],
+            "groups": [{ "title": "G", "items": [{ "id": "c" }] }, { "title": "Empty" }]
+        });
+        let ids = |list: &serde_json::Value| list.as_array().expect("list").iter().map(|item| item["id"].as_str().expect("id").to_string()).collect::<Vec<_>>();
+        let params = json!({
+            "remove": ["a", "zz"],
+            "add": [
+                { "item": { "id": "x" }, "before": "b" },
+                { "item": { "id": "y" }, "group": 0 },
+                { "item": { "id": "w" }, "group": 1 },
+                { "item": { "id": "v" }, "before": "gone" },
+                { "item": { "id": "u" } }
+            ]
+        });
+        let (next, missing) = patch_model(&model, &params).expect("patch");
+        assert_eq!(ids(&next["items"]), vec!["x", "b", "v", "u"]);
+        assert_eq!(ids(&next["groups"][0]["items"]), vec!["c", "y"]);
+        assert_eq!(ids(&next["groups"][1]["items"]), vec!["w"]);
+        assert_eq!(missing, vec!["zz".to_string(), "gone".to_string()]);
+
+        let empty = json!({ "loading": true });
+        let (next, _) = patch_model(&empty, &json!({ "add": [{ "item": { "id": "a" } }] })).expect("creates items");
+        assert_eq!(ids(&next["items"]), vec!["a"]);
+        assert_eq!(patch_model(&model, &json!({ "add": [{ "item": { "id": "a" } }] })).expect_err("duplicate").0, 400);
+        assert_eq!(patch_model(&model, &json!({ "add": [{ "item": { "id": "q" }, "group": 5 }] })).expect_err("no group").0, 400);
+        assert_eq!(patch_model(&model, &json!({})).expect_err("nothing").0, 400);
     }
 
     #[test]
@@ -1119,5 +1150,18 @@ mod pre_release_tests {
         let only_pre = market(vec![entry("a.two", "2.0.0-rc.1", true)]);
         assert!(only_pre.entry_for("a.two", false).is_none(), "a plugin with only pre-releases needs the opt-in");
         assert!(only_pre.entry_for("a.two", true).is_some());
+    }
+}
+
+mod keybinding_tests {
+    use super::super::keybindings::effective;
+
+    #[test]
+    fn the_users_shortcut_wins_and_an_empty_one_turns_it_off() {
+        assert_eq!(effective(Some("Ctrl+Alt+P"), None), Some("Ctrl+Alt+P"));
+        assert_eq!(effective(Some("Ctrl+Alt+P"), Some("Ctrl+Shift+K")), Some("Ctrl+Shift+K"));
+        assert_eq!(effective(Some("Ctrl+Alt+P"), Some("")), None);
+        assert_eq!(effective(None, Some("Alt+F9")), Some("Alt+F9"), "a command without one can get a shortcut");
+        assert_eq!(effective(None, None), None);
     }
 }

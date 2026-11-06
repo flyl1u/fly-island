@@ -206,6 +206,7 @@ macro_rules! tauri_commands {
             crate::plugin_host::set_plugin_auto_update,
             crate::plugin_host::set_plugin_pre_release,
             crate::plugin_host::set_plugin_memory_limit,
+            crate::plugin_host::set_plugin_keybinding,
             crate::plugin_host::set_plugin_publisher_trusted,
             crate::plugin_host::check_plugin_updates,
         ] $($rest)*)

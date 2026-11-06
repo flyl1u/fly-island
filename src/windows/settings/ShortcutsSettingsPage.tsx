@@ -8,6 +8,7 @@ import {
 import type { IslandSettings } from "../../features/appearance/types";
 import { ClipboardShortcutRows } from "../../features/clipboard/ClipboardShortcutRows";
 import { useClipboardSettings } from "../../features/clipboard/useClipboardSettings";
+import { PluginShortcutSection } from "../../features/plugins/PluginShortcutSection";
 import { TranslationShortcutRows } from "../../features/translation/TranslationShortcutRows";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { useTranslation } from "../../i18n";
@@ -83,6 +84,7 @@ export function ShortcutsSettingsPage({
         )}
         {!hasGlobal && <p className="settings-section__hint">{t.settings.shortcuts.noGlobal}</p>}
       </section>
+      <PluginShortcutSection takenBy={takenBy} />
       <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} takenBy={takenBy} />
       <ReferenceSection
         title={t.settings.shortcuts.islandTitle}

@@ -142,9 +142,16 @@ function Update-FocusdView([string]$ViewId, [hashtable]$Model) {
     [void](Invoke-FocusdMethod 'view.update' @{ viewId = $ViewId; model = $Model })
 }
 
-# Replaces list items by id; returns the ids that were not found.
-function Update-FocusdViewItems([string]$ViewId, [object[]]$Items) {
-    return @((Invoke-FocusdMethod 'view.patch' @{ viewId = $ViewId; items = @($Items) }).missing)
+# Changes a list page: -Items replaces items by id, -Remove deletes ids, and
+# -Add inserts entries like @{ item = @{ id = 'x'; title = 'X' }; before = 'b' }
+# (or group = 0 for the end of a group; neither: the end of the list).
+# Returns the ids that were not found.
+function Update-FocusdViewItems([string]$ViewId, [object[]]$Items = $null, [string[]]$Remove = $null, [object[]]$Add = $null) {
+    $params = @{ viewId = $ViewId }
+    if ($null -ne $Items -and $Items.Count -gt 0) { $params.items = @($Items) }
+    if ($null -ne $Remove -and $Remove.Count -gt 0) { $params.remove = @($Remove) }
+    if ($null -ne $Add -and $Add.Count -gt 0) { $params.add = @($Add) }
+    return @((Invoke-FocusdMethod 'view.patch' $params).missing)
 }
 
 # Sends a message to one of the plugin's webview pages (template "webview").

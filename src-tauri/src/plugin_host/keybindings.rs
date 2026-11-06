@@ -7,7 +7,7 @@
 
 use serde_json::json;
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     sync::{Mutex, OnceLock},
     thread,
     time::Duration,
@@ -85,18 +85,33 @@ pub(super) fn start() {
     });
 }
 
+/// The shortcut that applies to a command: the user's own (`""` means off),
+/// else the manifest's keybinding.
+pub(super) fn effective<'a>(manifest: Option<&'a str>, user: Option<&'a str>) -> Option<&'a str> {
+    match user {
+        Some("") => None,
+        Some(shortcut) => Some(shortcut),
+        None => manifest,
+    }
+}
+
 /// Registers the shortcuts of the plugins running now, replacing the old ones.
 pub(super) fn refresh() {
     let Ok(host) = host() else { return };
     // Plugins that may run: pressing a shortcut starts an on-demand one.
     let running = lifecycle::runnable_ids();
-    let wanted: Vec<Binding> = lock(&host.installed)
+    let installed = lock(&host.installed);
+    let overrides: HashMap<String, BTreeMap<String, String>> =
+        lock(&host.state).plugins.iter().map(|(id, grant)| (id.clone(), grant.keybindings.clone())).collect();
+    let wanted: Vec<Binding> = installed
         .iter()
         .filter(|plugin| running.contains(&plugin.folder))
         .filter_map(|plugin| plugin.manifest.as_ref().ok())
         .flat_map(|manifest| {
-            manifest.contributes.commands.iter().filter_map(|command| {
-                let binding = parse_shortcut_binding(command.keybinding()?)?;
+            let user = overrides.get(&manifest.id);
+            manifest.contributes.commands.iter().filter_map(move |command| {
+                let chosen = user.and_then(|user| user.get(command.id())).map(String::as_str);
+                let binding = parse_shortcut_binding(effective(command.keybinding(), chosen)?)?;
                 Some(Binding {
                     plugin_id: manifest.id.clone(),
                     command: command.id().to_string(),
@@ -108,6 +123,7 @@ pub(super) fn refresh() {
             })
         })
         .collect();
+    drop(installed);
     let window = {
         let mut state = lock(state());
         if state.wanted == wanted {

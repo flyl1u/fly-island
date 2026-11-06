@@ -111,11 +111,10 @@ pub(super) fn answer(app: &AppHandle, plugin_id: &str, method: &str, params: &Va
         }
         "view.patch" => {
             let view = view_id(plugin_id, params)?;
-            let items = params.get("items").and_then(Value::as_array).ok_or_else(|| bad("Expected \"items\" as a list."))?;
             let key = slot(plugin_id, "view", view);
             let mut store = lock(store());
             let model = store.models.get(&key).ok_or_else(|| (409, "Send the view with view.update before patching it.".to_string()))?;
-            let (next, missing) = patch_items(model, items)?;
+            let (next, missing) = patch_model(model, params)?;
             check_size(&next)?;
             store.models.insert(key.clone(), next);
             drop(store);
@@ -161,6 +160,103 @@ pub(super) fn parse_status(params: &Value) -> Result<Option<StatusText>, (u16, S
             .ok_or_else(|| bad(format!("\"tone\" must be one of {}.", TONES.join(", "))))?,
     };
     Ok((!text.is_empty()).then(|| StatusText { text: text.to_string(), tooltip, tone }))
+}
+
+/// `view.patch { items?, remove?, add? }`: `items` replace the items with the
+/// same ids, `remove` deletes ids, and `add` inserts `{ item, before?, group? }`
+/// before the item `before`, else at the end of `model.groups[group].items`, else
+/// at the end of `model.items`. Returns the new model and the ids not found
+/// (an `add` whose `before` is missing goes at the end and lists that id).
+pub(super) fn patch_model(model: &Value, params: &Value) -> Result<(Value, Vec<String>), (u16, String)> {
+    let list = |name: &str| match params.get(name) {
+        None | Some(Value::Null) => Ok(&[][..]),
+        Some(Value::Array(values)) => Ok(values.as_slice()),
+        Some(_) => Err(bad(format!("Expected \"{name}\" as a list."))),
+    };
+    let (items, remove, add) = (list("items")?, list("remove")?, list("add")?);
+    if items.is_empty() && remove.is_empty() && add.is_empty() {
+        return Err(bad("Expected \"items\", \"remove\" or \"add\"."));
+    }
+    let (mut next, mut missing) = patch_items(model, items)?;
+
+    let mut gone: HashSet<&str> = HashSet::new();
+    for id in remove {
+        gone.insert(id.as_str().ok_or_else(|| bad("\"remove\" lists item ids (strings)."))?);
+    }
+    let mut removed: HashSet<String> = HashSet::new();
+    for_each_list(&mut next, |list| {
+        list.retain(|entry| match entry.get("id").and_then(Value::as_str) {
+            Some(id) if gone.contains(id) => {
+                removed.insert(id.to_string());
+                false
+            }
+            _ => true,
+        });
+        false
+    });
+    missing.extend(gone.iter().filter(|id| !removed.contains(**id)).map(|id| id.to_string()));
+
+    for spec in add {
+        let item = spec.get("item").filter(|item| item.is_object()).ok_or_else(|| bad("Every added entry needs \"item\" as an object."))?;
+        let id = item.get("id").and_then(Value::as_str).ok_or_else(|| bad("Every added item needs an \"id\" string."))?;
+        if for_each_list(&mut next, |list| list.iter().any(|entry| entry.get("id").and_then(Value::as_str) == Some(id))) {
+            return Err(bad(format!("The view already has an item \"{id}\"; replace it with \"items\".")));
+        }
+        if let Some(before) = spec.get("before").and_then(Value::as_str) {
+            let placed = for_each_list(&mut next, |list| match list.iter().position(|entry| entry.get("id").and_then(Value::as_str) == Some(before)) {
+                Some(index) => {
+                    list.insert(index, item.clone());
+                    true
+                }
+                None => false,
+            });
+            if placed {
+                continue;
+            }
+            missing.push(before.to_string());
+        }
+        let target = match spec.get("group") {
+            None | Some(Value::Null) => {
+                let model = next.as_object_mut().ok_or_else(|| bad("The view's model is not an object."))?;
+                let items = model.entry("items").or_insert_with(|| Value::Array(Vec::new()));
+                if !items.is_array() {
+                    *items = Value::Array(Vec::new());
+                }
+                items
+            }
+            Some(group) => {
+                let index = group.as_u64().ok_or_else(|| bad("\"group\" is the index of a group in model.groups."))?;
+                next.get_mut("groups")
+                    .and_then(Value::as_array_mut)
+                    .and_then(|groups| groups.get_mut(usize::try_from(index).ok()?))
+                    .and_then(|group| group.as_object_mut())
+                    .map(|group| group.entry("items").or_insert_with(|| Value::Array(Vec::new())))
+                    .filter(|items| items.is_array())
+                    .ok_or_else(|| bad(format!("The view has no group {index} with a list of items.")))?
+            }
+        };
+        if let Some(list) = target.as_array_mut() {
+            list.push(item.clone());
+        }
+    }
+    Ok((next, missing))
+}
+
+/// Calls `visit` on `model.items` and each `model.groups[].items` until it returns true.
+fn for_each_list(model: &mut Value, mut visit: impl FnMut(&mut Vec<Value>) -> bool) -> bool {
+    if let Some(list) = model.get_mut("items").and_then(Value::as_array_mut) {
+        if visit(list) {
+            return true;
+        }
+    }
+    for group in model.get_mut("groups").and_then(Value::as_array_mut).into_iter().flatten() {
+        if let Some(list) = group.get_mut("items").and_then(Value::as_array_mut) {
+            if visit(list) {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 /// Replaces the items with the same `id` in `model.items` and every

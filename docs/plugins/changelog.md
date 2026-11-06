@@ -4,6 +4,11 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 页面与快捷键
+
+- `view.patch` 除了 `items`（按 id 替换），还接受 `remove: [id]`（删除）和 `add: [{ item, before?, group? }]`（插在 `before` 那一项前面，否则加到第 `group` 组末尾，否则加到列表末尾）。三项至少给一项；`add` 的 id 已经在页面里时返回状态 400。SDK：Node `views.patch(viewId, { items, remove, add })`（仍然可以直接传条目数组），PowerShell `Update-FocusdViewItems -Remove ... -Add ...`；模拟宿主同样支持。
+- 用户可以在 设置 → 快捷键 → 插件快捷键 里改插件命令的快捷键、关闭它，或者给没有快捷键的命令设一个；清单里的 `keybinding` 只是默认值。插件不需要做任何改动。
+
 ## 链接
 - 激活事件 `onUri` 和通知 `uri { uri, path, query }`：打开 `focusd://plugin/<id>/...` 链接时发给插件。第一次之前岛上询问用户，答案和敏感权限放在一起，可以撤销。SDK：Node `plugin.onUri`；模拟宿主 `openUri()`。见 [链接](README.md#链接第-2-版)。
 

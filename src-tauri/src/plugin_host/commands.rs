@@ -329,6 +329,40 @@ pub fn set_plugin_memory_limit(id: String, megabytes: u32) -> Result<PluginsSnap
     snapshot()
 }
 
+/// The user's shortcut for one of a plugin's commands: `null` goes back to the
+/// manifest's keybinding, `""` turns the shortcut off, anything else must be
+/// modifiers and one key, like "Ctrl+Alt+P".
+#[tauri::command]
+pub fn set_plugin_keybinding(id: String, command: String, keybinding: Option<String>) -> Result<PluginsSnapshot, String> {
+    let keybinding = match keybinding.as_deref().map(str::trim) {
+        None => None,
+        Some("") => Some(String::new()),
+        Some(text) => Some(
+            crate::clipboard_history::parse_shortcut_binding(text)
+                .ok_or_else(|| format!("\"{text}\" is not a shortcut: use modifiers and one key, like \"Ctrl+Alt+P\"."))?
+                .label,
+        ),
+    };
+    update_state(|state, installed| {
+        let known = installed
+            .iter()
+            .find(|plugin| plugin.folder == id)
+            .and_then(|plugin| plugin.manifest.as_ref().ok())
+            .is_some_and(|manifest| manifest.contributes.commands.iter().any(|item| item.id() == command));
+        if !known {
+            return Err("The plugin has no such command.".into());
+        }
+        let grant = state.plugins.entry(id.clone()).or_default();
+        match keybinding {
+            Some(keybinding) => grant.keybindings.insert(command, keybinding),
+            None => grant.keybindings.remove(&command),
+        };
+        Ok(())
+    })?;
+    super::keybindings::refresh();
+    snapshot()
+}
+
 /// "清除数据": stops the plugin, deletes its data folder and its secrets, and
 /// starts it again if it is on.
 #[tauri::command]
