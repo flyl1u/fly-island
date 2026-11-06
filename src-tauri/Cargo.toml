@@ -1,6 +1,6 @@
 [package]
 name = "focusd-island"
-version = "0.2.20"
+version = "0.2.21"
 description = "A compact floating island shell for Windows."
 authors = ["you"]
 edition = "2021"

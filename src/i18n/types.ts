@@ -326,6 +326,7 @@ export type Translations = {
     };
 
     behavior: {
+      detachedSettings: string;
       title: string;
     };
 

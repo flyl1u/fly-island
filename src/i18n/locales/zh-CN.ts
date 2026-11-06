@@ -326,6 +326,7 @@ const zhCN: Translations = {
     },
 
     behavior: {
+      detachedSettings: "独立设置窗口",
       title: "启动与收起",
     },
 

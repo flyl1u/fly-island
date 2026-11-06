@@ -1,5 +1,5 @@
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindowBuilder};
 
 pub(crate) const WINDOW_LABEL: &str = "settings";
 static OPEN_WINDOW: Mutex<()> = Mutex::new(());
@@ -38,10 +38,22 @@ pub async fn open_settings_window(app: AppHandle) -> Result<(), String> {
 }
 
 pub(crate) fn open_from_tray(app: &AppHandle) {
-    let app = app.clone();
-    tauri::async_runtime::spawn(async move {
-        if let Err(error) = open_settings_window(app).await {
-            eprintln!("failed to open settings window: {error}");
-        }
-    });
+    if let Err(error) = request_settings(app) {
+        eprintln!("failed to open settings: {error}");
+    }
+}
+
+fn request_settings(app: &AppHandle) -> Result<(), String> {
+    crate::island::show_island(app)?;
+    app.emit_to("main", "settings-open-requested", ())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn dock_settings_window(app: AppHandle) -> Result<(), String> {
+    request_settings(&app)?;
+    if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
+        window.close().map_err(|error| error.to_string())?;
+    }
+    Ok(())
 }

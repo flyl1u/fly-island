@@ -134,6 +134,7 @@ pub fn run() {
             translation::translate_text,
             translation::set_translation_shortcut,
             settings_window::open_settings_window,
+            settings_window::dock_settings_window,
         ])
         .run(context)
         .expect("error while running FocuSD Island");
