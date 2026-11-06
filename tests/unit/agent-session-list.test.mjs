@@ -80,4 +80,9 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(normalizeSettings({ agentVisibleRows: 0 }).agentVisibleRows, MIN_AGENT_VISIBLE_ROWS);
   assert.equal(normalizeSettings({ agentVisibleRows: 3.6 }).agentVisibleRows, 4);
   assert.equal(normalizeSettings({ agentVisibleRows: "4" }).agentVisibleRows, 3);
+
+  // Running time is off unless turned on.
+  assert.equal(DEFAULT_SETTINGS.agentShowElapsed, false);
+  assert.equal(normalizeSettings({}).agentShowElapsed, false);
+  assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, true);
 });

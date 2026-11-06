@@ -68,7 +68,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowClaudeCode: true,
   agentShowCodex: true,
   agentHideFinished: false,
-  agentShowElapsed: true,
+  // Off unless asked for: the age alone keeps finished rows short.
+  agentShowElapsed: false,
   agentShowModel: true,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
@@ -245,7 +246,7 @@ export function normalizeSettings(
     agentShowClaudeCode: settings?.agentShowClaudeCode !== false,
     agentShowCodex: settings?.agentShowCodex !== false,
     agentHideFinished: settings?.agentHideFinished === true,
-    agentShowElapsed: settings?.agentShowElapsed !== false,
+    agentShowElapsed: settings?.agentShowElapsed === true,
     agentShowModel: settings?.agentShowModel !== false,
     taskTextColor,
     pulseColor: getColorSetting(
