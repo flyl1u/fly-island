@@ -23,6 +23,7 @@ src-tauri/src/
 ├── media_control/
 ├── lyrics/                  # 音乐页歌词：本地 .lrc 文件夹（local.rs）、LRCLIB（lrclib.rs，用户开启才联网）、按歌名歌手时长匹配（matching.rs），在线结果缓存在 lyrics-cache/
 ├── system_levels/           # 音量、亮度变化提示：后台线程读默认输出的音量和静音、笔记本屏幕亮度（win32/brightness.rs，WMI），变化时发 system-level-changed 事件
+├── device_events/           # 设备提示：后台线程列出在用的耳机和蓝牙音频输出（win32/audio_outputs.rs）、读蓝牙电量（win32/devnode.rs）和电源（win32/power.rs），变化时发 device-alert 事件；判断规则在 tracker.rs
 ├── device_use/              # 摄像头、麦克风正在被哪些程序使用（读注册表 CapabilityAccessManager\ConsentStore），打开系统隐私设置
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据
 ├── qq_notifications/        # QQ 通知监听；repair-qq-notification-registration.ps1 编入二进制，也可手动运行
@@ -37,7 +38,8 @@ src-tauri/src/
                              # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry、
                              # notification_state（前台是否有全屏程序）、webview_page（插件自定义界面的独立 WebView2 页面，P8）、
                              # job（插件进程的作业对象与挂起启动）、known_folder（下载文件夹等已知文件夹）、
-                             # session_notifications（锁屏、睡眠唤醒通知与键鼠空闲时间）
+                             # session_notifications（锁屏、睡眠唤醒通知与键鼠空闲时间）、audio_outputs（在用的音频输出及类型）、
+                             # devnode（设备节点属性：容器、蓝牙电量）、power（电源与电池）
 ```
 
 ## lib.rs 与模块组织

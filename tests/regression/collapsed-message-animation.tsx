@@ -17,6 +17,7 @@ import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
 import type { DeviceUse } from "../../src/features/device-use/api";
 import type { LevelChange } from "../../src/features/system-levels/api";
+import type { DeviceAlert } from "../../src/features/device-events/api";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -72,6 +73,7 @@ let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
 let changeDeviceUse: (deviceUse: DeviceUse) => void;
 let changeLevel: (change: LevelChange | null) => void;
+let changeDeviceAlert: (alert: DeviceAlert | null) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -89,6 +91,8 @@ function Fixture() {
   changeDeviceUse = setDeviceUse;
   const [level, setLevel] = useState<LevelChange | null>(null);
   changeLevel = setLevel;
+  const [deviceAlert, setDeviceAlert] = useState<DeviceAlert | null>(null);
+  changeDeviceAlert = setDeviceAlert;
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
@@ -97,7 +101,7 @@ function Fixture() {
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell deviceUse={deviceUse} levelPopup={level} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
+    <IslandShell deviceUse={deviceUse} levelPopup={level} deviceAlert={deviceAlert} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
@@ -282,6 +286,22 @@ async function runChecks() {
     await act(async () => changeLevel(null));
     await settle();
     check(!popup(), "提示结束后恢复原来的文字");
+    const device = () => document.querySelector<HTMLElement>(".device-alert");
+    await act(async () => changeDeviceAlert({ kind: "audioConnected", name: "耳机 (WH-1000XM4 Wireless Noise Cancelling Stereo Headphones)", device: "headphones", battery: 80 }));
+    await settle();
+    const deviceText = device()?.querySelector<HTMLElement>(".device-alert__text");
+    check(device()?.getAttribute("aria-label")?.endsWith("已连接, 电量 80%") === true && device()?.querySelector(".device-alert__battery")?.textContent === "80%"
+      && document.querySelector(".island")!.getBoundingClientRect().width === islandWidth && deviceText!.scrollWidth > deviceText!.clientWidth,
+      "耳机连接时显示名称和电量，名字太长时截断，不撑宽岛屿");
+    await act(async () => { changeLevel({ kind: "volume", level: 0.3, muted: false }); });
+    check(Boolean(device()) && !popup(), "设备提示和音量提示同时出现时先显示设备提示");
+    await act(async () => { changeLevel(null); changeDeviceAlert({ kind: "powerConnected", battery: null }); });
+    check(device()?.classList.contains("device-alert--charge") && device()?.getAttribute("aria-label") === "正在充电" && !device()?.querySelector(".device-alert__battery"),
+      "插上电源时显示正在充电，没有电量就不显示百分比");
+    await act(async () => changeDeviceAlert({ kind: "batteryLow", name: "AirPods", battery: 10 }));
+    check(device()?.classList.contains("device-alert--warn") && device()?.getAttribute("aria-label") === "AirPods 电量低, 电量 10%", "蓝牙设备电量低时提醒");
+    await act(async () => changeDeviceAlert(null));
+    check(!device(), "设备提示结束后恢复原来的文字");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

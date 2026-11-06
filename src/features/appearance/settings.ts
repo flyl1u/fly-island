@@ -123,6 +123,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   shelfShowCount: true,
   deviceUseIndicator: true,
   levelPopup: true,
+  deviceAlerts: true,
   lyricsFolder: "",
   lyricsOnline: false,
   lyricsOffsetMs: 0,
@@ -353,6 +354,7 @@ export function normalizeSettings(
     shelfShowCount: settings?.shelfShowCount === true,
     deviceUseIndicator: settings?.deviceUseIndicator !== false,
     levelPopup: settings?.levelPopup !== false,
+    deviceAlerts: settings?.deviceAlerts !== false,
     lyricsFolder: typeof settings?.lyricsFolder === "string" ? settings.lyricsFolder.trim() : "",
     lyricsOnline: settings?.lyricsOnline === true,
     lyricsOffsetMs: typeof settings?.lyricsOffsetMs === "number" && Number.isFinite(settings.lyricsOffsetMs)

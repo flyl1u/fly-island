@@ -1,5 +1,6 @@
 import type { DeviceUse } from "../../features/device-use/api";
 import type { LevelChange } from "../../features/system-levels/api";
+import type { DeviceAlert } from "../../features/device-events/api";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -49,6 +50,7 @@ type IslandShellProps = {
   shelfCount: number | null;
   deviceUse: DeviceUse;
   levelPopup?: LevelChange | null;
+  deviceAlert?: DeviceAlert | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -101,6 +103,7 @@ export function IslandShell({
   shelfCount,
   deviceUse,
   levelPopup = null,
+  deviceAlert = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -211,6 +214,7 @@ export function IslandShell({
           shelfCount={shelfCount}
           deviceUse={deviceUse}
           levelPopup={levelPopup}
+          deviceAlert={deviceAlert}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}

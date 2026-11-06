@@ -21,6 +21,15 @@ export type IslandText = {
   deviceAppSeparator: string;
   /** The volume and brightness popup on the collapsed island. */
   levelPopup: { volume: (percent: number) => string; brightness: (percent: number) => string; muted: string; mutedShort: string };
+  /** Headphones and Bluetooth audio connecting, a Bluetooth battery running low, the charger. */
+  deviceAlert: {
+    connected: (name: string) => string;
+    disconnected: (name: string) => string;
+    batteryLow: (name: string) => string;
+    charging: string;
+    unplugged: string;
+    battery: (percent: number) => string;
+  };
   layoutEditor: string;
 };
 
@@ -48,6 +57,14 @@ export const zhCN: IslandText = {
   },
   deviceAppSeparator: "、",
   levelPopup: { volume: (percent) => `音量 ${percent}%`, brightness: (percent) => `亮度 ${percent}%`, muted: "已静音", mutedShort: "静音" },
+  deviceAlert: {
+    connected: (name) => `${name} 已连接`,
+    disconnected: (name) => `${name} 已断开`,
+    batteryLow: (name) => `${name} 电量低`,
+    charging: "正在充电",
+    unplugged: "已拔下电源",
+    battery: (percent) => `电量 ${percent}%`,
+  },
   layoutEditor: "布局编辑",
 };
 
@@ -75,5 +92,13 @@ export const en: IslandText = {
   },
   deviceAppSeparator: ", ",
   levelPopup: { volume: (percent) => `Volume ${percent}%`, brightness: (percent) => `Brightness ${percent}%`, muted: "Muted", mutedShort: "Off" },
+  deviceAlert: {
+    connected: (name) => `${name} connected`,
+    disconnected: (name) => `${name} disconnected`,
+    batteryLow: (name) => `${name} battery low`,
+    charging: "Charging",
+    unplugged: "On battery",
+    battery: (percent) => `Battery ${percent}%`,
+  },
   layoutEditor: "Layout editor",
 };

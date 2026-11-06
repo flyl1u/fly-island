@@ -216,6 +216,7 @@ export function IslandApp() {
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
         deviceUse={notices.deviceUse}
         levelPopup={notices.levelPopup}
+        deviceAlert={notices.deviceAlert}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}

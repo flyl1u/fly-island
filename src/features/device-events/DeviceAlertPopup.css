@@ -1,0 +1,44 @@
+.device-alert {
+  min-width: 0;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(var(--island-ink-rgb, 241, 240, 246), 0.92);
+}
+
+.device-alert__icon {
+  flex: none;
+}
+
+/* The session ring's "running" green, readable on the dark island. */
+.device-alert--on .device-alert__icon,
+.device-alert--charge .device-alert__icon {
+  color: #34c759;
+}
+
+.device-alert--off .device-alert__icon {
+  color: rgba(var(--island-ink-rgb, 241, 240, 246), 0.55);
+}
+
+.device-alert--warn .device-alert__icon,
+.device-alert--warn .device-alert__battery {
+  color: #ff9f0a;
+}
+
+.device-alert__text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-alert__battery {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

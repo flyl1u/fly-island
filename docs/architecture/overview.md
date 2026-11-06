@@ -19,6 +19,7 @@
 │           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
 │           mail · qq_notifications · wechat_reminders · translation · settings_window │
 │           device_use（摄像头、麦克风使用提示）· system_levels（音量、亮度变化提示）    │
+│           device_events（耳机、蓝牙电量、充电提示）                                   │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信窗口闪烁检测、鼠标穿透循环        │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼

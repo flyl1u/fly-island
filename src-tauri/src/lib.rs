@@ -3,6 +3,7 @@ mod agent_status;
 mod claude_usage;
 mod clipboard_history;
 mod dev_lane;
+mod device_events;
 mod device_use;
 mod file_shelf;
 mod island;
@@ -125,6 +126,7 @@ pub fn run() {
             }
             system::fullscreen::start(app.handle());
             system_levels::init(app.handle());
+            device_events::init(app.handle());
             Ok(())
         })
         .invoke_handler(collect_commands!([]
@@ -138,6 +140,7 @@ pub fn run() {
             todos;
             system;
             system_levels;
+            device_events;
             agent_status;
             agent_approval;
             claude_usage;

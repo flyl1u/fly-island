@@ -123,6 +123,8 @@ export type IslandSettings = {
   deviceUseIndicator: boolean;
   /** The collapsed island shows the volume or brightness for a moment when it changes. */
   levelPopup: boolean;
+  /** The collapsed island says when headphones connect, a Bluetooth battery runs low or the charger changes. */
+  deviceAlerts: boolean;
   /** Folder of .lrc files searched for the playing song's lyrics; empty for none. */
   lyricsFolder: string;
   /** Lyrics not in the folder are looked up on LRCLIB. */
