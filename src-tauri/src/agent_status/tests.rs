@@ -1245,3 +1245,66 @@ fn direct_usage_replaces_an_older_hud_snapshot_and_keeps_its_error() {
     assert_eq!(shape["source"], "api");
     assert_eq!(shape["error"], json!({ "kind": "noProxy", "message": "m" }));
 }
+
+#[test]
+fn magpie_is_asked_only_on_this_computer_with_claude_codes_gateway_token() {
+    use super::magpie::{gateway_from, Gateway};
+    let none = |_: &str| None;
+    let settings = json!({ "env": { "ANTHROPIC_BASE_URL": "http://127.0.0.1:3425/", "ANTHROPIC_AUTH_TOKEN": "t" } });
+    assert_eq!(
+        gateway_from(Some(&settings), &none),
+        Some(Gateway { base_url: "http://127.0.0.1:3425".into(), token: Some("t".into()) })
+    );
+    for base in ["http://localhost:3425", "http://[::1]:3425"] {
+        let settings = json!({ "env": { "ANTHROPIC_BASE_URL": base } });
+        assert_eq!(gateway_from(Some(&settings), &none).map(|g| g.token), Some(None), "{base}");
+    }
+    for base in ["https://api.anthropic.com", "http://192.168.1.5:3425", "http://127.0.0.1.example.com", "ftp://127.0.0.1"] {
+        let settings = json!({ "env": { "ANTHROPIC_BASE_URL": base, "ANTHROPIC_AUTH_TOKEN": "t" } });
+        assert_eq!(gateway_from(Some(&settings), &none), None, "{base}");
+    }
+    // Claude Code's settings win over the process environment, which fills in the rest.
+    let process = |key: &str| match key {
+        "ANTHROPIC_BASE_URL" => Some("http://127.0.0.1:9".to_string()),
+        "ANTHROPIC_API_KEY" => Some("k".to_string()),
+        _ => None,
+    };
+    assert_eq!(gateway_from(None, &process).map(|g| (g.base_url, g.token)), Some(("http://127.0.0.1:9".into(), Some("k".into()))));
+    let settings = json!({ "env": { "ANTHROPIC_BASE_URL": "http://localhost:1" } });
+    assert_eq!(gateway_from(Some(&settings), &process).map(|g| g.base_url), Some("http://localhost:1".into()));
+}
+
+#[test]
+fn magpie_quotas_become_usage_by_window_name() {
+    use super::magpie::parse_quotas;
+    use super::usage::UsageSource;
+    let parse_timestamp = super::sessions::parse_timestamp_ms;
+    let answer = json!({ "object": "list", "data": [
+        { "provider": "remote-magpie/~keys", "plan": null, "windows": [{ "unlimited": true, "name": "Limit", "used": 0 }] },
+        { "provider": "remote-magpie/claude", "plan": "max", "last": null, "windows": [
+            { "name": "5 hours", "used": 17, "remaining": 83, "resetsAt": "2026-11-06T10:20:00-08:00" },
+            { "name": "7 days", "used": 44, "resetsAt": "2026-11-11T20:00:00-08:00" },
+            { "name": "7 days \u{b7} Fable", "used": 0, "resetsAt": "2026-11-11T20:00:00-08:00" },
+            { "name": "Something new", "used": 5 }
+        ] }
+    ] })
+    .to_string();
+    let usage = parse_quotas(&answer, 7).unwrap();
+    assert_eq!((usage.updated_at, usage.source, usage.plan.as_deref()), (Some(7), UsageSource::Magpie, Some("Max")));
+    let five = usage.five_hour.as_ref().unwrap();
+    assert_eq!((five.used, five.resets_at), (17.0, parse_timestamp("2026-11-06T18:20:00Z")));
+    assert_eq!(usage.seven_day.as_ref().map(|w| w.used), Some(44.0));
+    assert_eq!(usage.models.iter().map(|w| (w.name.as_str(), w.used)).collect::<Vec<_>>(), [("Fable", 0.0)]);
+
+    // The account magpie served last wins over the first Claude one.
+    let two = json!({ "data": [
+        { "provider": "a/claude", "windows": [{ "name": "5 hours", "used": 1 }] },
+        { "provider": "b/claude", "last": true, "windows": [{ "name": "5 hours", "used": 2 }] }
+    ] })
+    .to_string();
+    assert_eq!(parse_quotas(&two, 0).and_then(|u| u.five_hour).map(|w| w.used), Some(2.0));
+    // No account (magpie lists none without the gateway token), or none with known windows.
+    assert_eq!(parse_quotas(r#"{"data":[],"object":"list"}"#, 0), None);
+    assert_eq!(parse_quotas(&json!({ "data": [{ "provider": "x", "windows": [{ "name": "Limit", "used": 3 }] }] }).to_string(), 0), None);
+    assert_eq!(parse_quotas("not json", 0), None);
+}

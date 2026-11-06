@@ -55,6 +55,8 @@ pub enum UsageSource {
     Hud,
     /// The `claude_usage` poller (Anthropic's OAuth usage endpoint).
     Api,
+    /// A local magpie gateway's quotas (magpie.rs).
+    Magpie,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`
@@ -126,13 +128,17 @@ pub(super) fn parse_snapshot(text: &str) -> Option<AgentUsage> {
     (usage.five_hour.is_some() || usage.seven_day.is_some() || !usage.models.is_empty()).then_some(usage)
 }
 
-/// The current usage, or `None` when there is no snapshot to read.
-pub(super) fn read_usage(home_dir: &Path) -> Option<AgentUsage> {
-    let claude_dir = env::var_os("CLAUDE_CONFIG_DIR")
+/// Claude Code's folder: `CLAUDE_CONFIG_DIR` when set, else `~/.claude`.
+pub(super) fn claude_dir(home_dir: &Path) -> PathBuf {
+    env::var_os("CLAUDE_CONFIG_DIR")
         .map(PathBuf::from)
         .filter(|dir| dir.is_absolute())
-        .unwrap_or_else(|| home_dir.join(".claude"));
-    let path = snapshot_path(&claude_dir, home_dir)?;
+        .unwrap_or_else(|| home_dir.join(".claude"))
+}
+
+/// The current usage, or `None` when there is no snapshot to read.
+pub(super) fn read_usage(home_dir: &Path) -> Option<AgentUsage> {
+    let path = snapshot_path(&claude_dir(home_dir), home_dir)?;
     let mut text = String::new();
     fs::File::open(path).ok()?.take(MAX_SNAPSHOT_BYTES).read_to_string(&mut text).ok()?;
     parse_snapshot(&text)

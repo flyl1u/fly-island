@@ -12,6 +12,7 @@ export type ClaudeUsageText = {
   updatedAgo: (minutes: number) => string;
   fromHud: string;
   fromApi: string;
+  fromMagpie: string;
   /** "3 分钟前更新 · 来自 claude-hud". */
   updated: (ago: string, source: string) => string;
   /** The ring button's label: what the card says, and that a click re-reads it. */
@@ -31,9 +32,10 @@ export const zhCN: ClaudeUsageText = {
   updatedAgo: (minutes) => (minutes < 1 ? "刚刚更新" : minutes < 60 ? `${minutes} 分钟前更新` : `${Math.floor(minutes / 60)} 小时前更新`),
   fromHud: "来自 claude-hud",
   fromApi: "来自 Anthropic",
+  fromMagpie: "来自 magpie",
   updated: (ago, source) => `${ago} · ${source}`,
   ringLabel: (details) => `Claude 用量：${details}。点击刷新`,
-  noData: "暂无 Claude 用量（需要 claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）",
+  noData: "暂无 Claude 用量（需要本机的 magpie 网关、claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）",
   errors: {
     noCredentials: "未找到 Claude Code 的订阅登录，请先在 Claude Code 里登录",
     tokenExpired: "登录已过期，打开 Claude Code 以刷新登录",
@@ -57,9 +59,10 @@ export const en: ClaudeUsageText = {
   updatedAgo: (minutes) => (minutes < 1 ? "updated just now" : minutes < 60 ? `updated ${minutes} min ago` : `updated ${Math.floor(minutes / 60)} h ago`),
   fromHud: "via claude-hud",
   fromApi: "from Anthropic",
+  fromMagpie: "from magpie",
   updated: (ago, source) => `${ago} · ${source}`,
   ringLabel: (details) => `Claude usage: ${details}. Click to refresh`,
-  noData: "No Claude usage yet (needs claude-hud's usage snapshot, or \"Ask Anthropic directly\" in the plugin settings)",
+  noData: "No Claude usage yet (needs a local magpie gateway, claude-hud's usage snapshot, or \"Ask Anthropic directly\" in the plugin settings)",
   errors: {
     noCredentials: "No Claude Code subscription login found; sign in to Claude Code first",
     tokenExpired: "Login expired; open Claude Code to renew it",

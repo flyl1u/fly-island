@@ -25,7 +25,6 @@
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期的 Claude Code 实测已完成（钩子等待时终端不显示审批框，结论见任务清单的「实测记录」），Codex（0.4）待补测；第 1 期的自动弹出提醒和音效（1.1–1.4、1.10）已完成，市场音效包（1.11）待做 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 进行中 | fly-island-fe · lane 4 · 2026-11-06 20:20 | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`），Codex 待做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
-| B10 | magpie 网关用户的用量：Claude Code 经本机 magpie（yetone/magpie）时，岛屿直接读它的 `GET /v1/magpie/quotas?kept=1`，不需要 claude-hud 和中间脚本；只请求本机地址 | 进行中 | fly-island-pr3 · lane 7 · 2026-11-07 01:27 | 窗口名是显示文字（"5 hours"、"7 days · Fable"），magpie 改措辞会对不上；分不出 Max / Ultra |
 
 ## 第三优先：竞品都有、我们还缺的
 
@@ -55,6 +54,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| B10 | magpie 网关用户的用量：Claude Code 的 `ANTHROPIC_BASE_URL` 指向本机时，岛屿带着 Claude Code 给网关的令牌请求 magpie 的 `GET /v1/magpie/quotas`（每分钟至多一次，只请求本机），不需要 claude-hud 和中间脚本；有数据时优先于 claude-hud 快照，卡片注明「来自 magpie」。`?kept=1` 在实际网关上返回空列表，所以没用。窗口按显示名（"5 hours"、"7 days"、"7 days · 模型"）对应，magpie 改措辞会对不上；分不出 Max / Ultra | 提交 `feat(agent-status): read Claude usage from a local magpie gateway` |
 | B9 | 回复状态标记（默认关）：设置 → AI Agent 打开后，往 `~/.claude/CLAUDE.md` 末尾加一段带起止标记的说明，让 Claude Code 每次回复最后一行写 `↩` 等你回复、`⋯` 等后台任务、`✓` 做完了；会话列表从会话记录读这一行（不改 Stop 钩子），会话环和 Agent 页据此区分「等你回复」和「做完了」。说明文字自己写，没有用 claude-sessions 的原文。B6 的完成提醒还没分成两种，以后需要时再做 | 提交 `feat(agent-status): optional reply status marker tells "your turn" from "done"` |
 | B8 | 用量环可选「直接向 Anthropic 查询」（默认关）：只读 Claude Code 凭据里的 token，经代理（插件设置 → `HTTPS_PROXY` → Windows 系统代理）请求 `api.anthropic.com/api/oauth/usage`，不直连；刷新间隔 5–120 分钟，9 种失败提示；与 claude-hud 快照取较新的，Agent 页顶部和用量环共用。移植自 TixXin/fly-island#3 的 `claude_usage/`；接口未公开，可能随时失效 | 提交 `feat(claude-usage): optionally ask Anthropic for Claude usage directly` |
 | B7 | 合入 TixXin/fly-island#3（ShengLin1001）：收起条视觉打磨、插槽与 MiniRing、内置插件「中心图案」「Claude 用量环」「Agent 会话环」。用量环改读 claude-hud 用量快照（不读凭据、不联网）；会话环改用岛屿自己的会话列表（不依赖 claude-sessions） | 提交 `feat(claude-usage): Claude usage double ring on the collapsed bar`、`feat(session-ring): agent session ring in place of the blue session count` 及之前从 PR 摘取的 7 个提交 |

@@ -159,7 +159,7 @@ export type AgentUsage = {
   models: UsageWindow[];
   plan: string | null;
   /** Where the windows come from. Missing from builds before direct asking. */
-  source?: "hud" | "api";
+  source?: "hud" | "api" | "magpie";
   /** Why the last direct request to Anthropic failed; null when it is off or worked. */
   error?: AgentUsageError | null;
 };

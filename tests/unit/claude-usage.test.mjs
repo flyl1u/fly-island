@@ -68,6 +68,7 @@ test("card handles missing reset times, past resets and missing snapshots", () =
 
 test("asking Anthropic directly: its numbers name the source, its failures add a line", () => {
   assert.deepEqual(texts(usageCardLines(usage({ source: "api" }), NOW, zhCN)).slice(2), ["1 分钟前更新 · 来自 Anthropic"]);
+  assert.deepEqual(texts(usageCardLines(usage({ source: "magpie" }), NOW, en)).slice(2), ["updated 1 min ago · from magpie"]);
   // A failure keeps the fresh numbers coloured and says why.
   const failed = usageCardLines(usage({ source: "hud", error: { kind: "loginRequired", message: "" } }), NOW, zhCN);
   assert.deepEqual(texts(failed).slice(2), ["需要在 Claude Code 里重新登录", "1 分钟前更新 · 来自 claude-hud"]);

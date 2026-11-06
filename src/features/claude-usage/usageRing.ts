@@ -68,7 +68,7 @@ export function usageCardLines(usage: AgentUsage | null, now: number, text: Clau
   if (usage.error) lines.push({ text: text.errors[usage.error.kind] });
   if (usage.updatedAt !== null && hasNumbers) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    lines.push({ text: text.updated(text.updatedAgo(minutes), usage.source === "api" ? text.fromApi : text.fromHud), muted: true });
+    lines.push({ text: text.updated(text.updatedAgo(minutes), usage.source === "api" ? text.fromApi : usage.source === "magpie" ? text.fromMagpie : text.fromHud), muted: true });
   }
   return lines;
 }

@@ -7,6 +7,7 @@ mod editor_terminal;
 mod external;
 mod hooks_state;
 mod host_icon;
+mod magpie;
 mod markers;
 mod notifications;
 mod orca;
@@ -305,12 +306,18 @@ pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::Sessio
         .map_err(|error| format!("Failed to join the window check: {error}"))
 }
 
-/// Claude usage limits from claude-hud's usage snapshot, or from asking Anthropic directly
-/// when the usage ring has that on (usage.rs); null when there is neither.
+/// Claude usage limits from a local magpie gateway (magpie.rs), else claude-hud's usage
+/// snapshot, merged with asking Anthropic directly when the usage ring has that on
+/// (usage.rs); null when there is none of them.
 #[tauri::command]
 pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
     let home_dir = windows_home_dir()?;
-    tauri::async_runtime::spawn_blocking(move || usage::merge(usage::read_usage(&home_dir), crate::claude_usage::current()))
+    // magpie answers live and needs no claude-hud, so it wins over the snapshot.
+    let magpie = magpie::read_usage(&usage::claude_dir(&home_dir)).await;
+    tauri::async_runtime::spawn_blocking(move || {
+        let local = magpie.or_else(|| usage::read_usage(&home_dir));
+        usage::merge(local, crate::claude_usage::current())
+    })
         .await
         .map_err(|error| format!("Failed to join the usage task: {error}"))
 }

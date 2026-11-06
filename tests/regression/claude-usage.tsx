@@ -137,7 +137,7 @@ async function runChecks() {
     await push(null);
     check(button().querySelectorAll(".mini-ring__arc").length === 0 && button().querySelectorAll(".mini-ring__track").length === 2, "没有 claude-hud 快照时只显示灰色底轨");
     await hover();
-    check(card()?.textContent === "暂无 Claude 用量（需要 claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）", "卡片说明数据从哪来");
+    check(card()?.textContent === "暂无 Claude 用量（需要本机的 magpie 网关、claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）", "卡片说明数据从哪来");
     await leave();
 
     const before = { reads, refreshes };
