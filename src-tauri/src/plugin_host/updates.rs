@@ -16,7 +16,7 @@ use std::{
 
 use super::{
     app_version,
-    author_signing::{check_key, KeyCheck},
+    author_signing::KeyCheck,
     grants::{stop_plugin, update_state},
     host, lock,
     manifest::{version_at_least, LocalizedText},
@@ -52,7 +52,7 @@ static STATUS: Mutex<Status> = Mutex::new(Status {
 /// None when its signature is wrong (it cannot be installed at all).
 pub(super) fn key_check(state: &PluginsState, entry: &MarketEntry) -> Option<KeyCheck> {
     let remembered = state.plugins.get(&entry.id).map(|grant| grant.author_keys.as_slice()).unwrap_or_default();
-    entry.signer().ok().map(|signer| check_key(remembered, signer.as_deref()))
+    entry.key_check(remembered).ok()
 }
 
 /// Whether the update the market offers for `id` is signed by another key than the installed version.
@@ -131,7 +131,7 @@ pub(super) fn install_entry(entry: &MarketEntry, bytes: &[u8], accept_key_change
     let host = host()?;
     let signer = entry.signer()?;
     let remembered = lock(&host.state).plugins.get(&entry.id).map(|grant| grant.author_keys.clone()).unwrap_or_default();
-    if check_key(&remembered, signer.as_deref()) == KeyCheck::Changed && !accept_key_change {
+    if entry.key_check(&remembered)? == KeyCheck::Changed && !accept_key_change {
         return Err(format!(
             "{} {} is not signed with the key of the installed version; confirm the update to install it anyway.",
             entry.id, entry.version

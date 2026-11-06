@@ -1,0 +1,17 @@
+{
+  "id": "com.example.clock",
+  "keys": [
+    {
+      "keyId": "44147fa582c592a7",
+      "publicKey": "rbUCmcMnqTR+R8QZpZ2/ydFPmTafkOTAJoK366TCy98="
+    },
+    {
+      "keyId": "a955ef0eb3812888",
+      "publicKey": "Y72hRLQs/YW02JkE+8JmcC1uwF+VCEykcqHU7/qUQ3Y=",
+      "endorsedBy": {
+        "keyId": "44147fa582c592a7",
+        "signature": "lo7bTHIowqfmvyYNS6gFV/di0k80YRSnIi5Ut4ucvwsigdaqfEX2hn6GSVGei/ly0gtrmMjlVp3Ma1KBYuQaCw=="
+      }
+    }
+  ]
+}

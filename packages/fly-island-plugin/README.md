@@ -10,6 +10,7 @@ npx fly-island-plugin test              # test/*.test.mjs, or a smoke test under
 npx fly-island-plugin pack              # .package/<id>-<version>.zip, byte-for-byte reproducible
 npx fly-island-plugin keygen            # once: your signing key; prints the public key for the market submission
 npx fly-island-plugin pack --sign       # also <id>-<version>.zip.sig, to attach to the release
+npx fly-island-plugin keys rotate       # new key vouched for by the old one; prints the new signingKeys entry
 ```
 
 Signing is optional, but only signed plugins update by themselves on users' islands, and the island keeps

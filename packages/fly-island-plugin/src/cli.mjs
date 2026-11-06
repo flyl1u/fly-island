@@ -3,7 +3,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { runDev } from "./dev.mjs";
-import { createZip, packageFiles, sha256 } from "./pack.mjs";
+import { createZip, MANIFEST_FILE, packageFiles, sha256 } from "./pack.mjs";
+import { rotateKey } from "./rotate.mjs";
 import { runTests } from "./run-tests.mjs";
 import { DEFAULT_KEY_FILE, generateSigningKey, loadSigningKey, parsePackageName, writePackageSignature } from "./sign.mjs";
 import { report, validatePlugin } from "./validate.mjs";
@@ -26,7 +27,14 @@ Commands:
   sign <zip> Write <zip>.sig for a package made by pack (named <id>-<version>.zip)
              --key <file>     the key file (default ~/.fly-island-plugin/signing.key;
                               or set FLY_ISLAND_PLUGIN_SIGNING_KEY to the PEM text)
-  dev        Load the folder into the running island in development mode, restart
+  keys rotate [folder]
+             Replace your signing key while you still have the old one: the old key
+             vouches for the new one, so users' islands accept it without asking.
+             Prints the new entry for "signingKeys"; the old key file is kept as
+             <key file>.<old keyId>.old.
+             --ids <a,b>      plugin ids the key signs (default: the folder's plugin)
+             --new-key <file> where the new key goes (needed with the key in the env)
+  dev       Load the folder into the running island in development mode, restart
              the plugin when a file changes and print its log (needs the island's
              local API and Settings > Plugins > Developer > development mode)
              --config <file>  local-api.json of another island data folder
@@ -100,6 +108,19 @@ function signZip(zipFile, options) {
   return 0;
 }
 
+function rotate(dir, options) {
+  const ids = typeof options.ids === "string"
+    ? options.ids.split(",").map((id) => id.trim()).filter(Boolean)
+    : [JSON.parse(readFileSync(path.join(dir, MANIFEST_FILE), "utf8")).id];
+  const result = rotateKey({ file: keyFile(options), newFile: typeof options["new-key"] === "string" ? path.resolve(options["new-key"]) : undefined, ids });
+  console.log(`New signing key in ${result.newFile}${result.retiredFile ? `; the old key ${result.oldKeyId} is kept as ${result.retiredFile}` : ""}.
+Back the new key up. In each plugin's market submission (focusd-plugins plugins/<id>.json),
+add its entry to "signingKeys" next to the old key and open a pull request:`);
+  for (const { id, key } of result.endorsed) console.log(`\n${id}:\n${JSON.stringify(key, null, 2)}`);
+  console.log(`\nSign new releases with the new key (pack --sign). Keep the old key listed until users have updated.`);
+  return 0;
+}
+
 function publish(dir) {
   const packed = pack(dir);
   if (!packed) return 1;
@@ -131,6 +152,15 @@ export async function main(argv = process.argv.slice(2)) {
       return keygen(options);
     case "sign":
       return signZip(dir, options);
+    case "keys": {
+      // "keys rotate [folder] [options]": the rest parses like a command of its own.
+      const sub = parseArgs(argv.slice(1));
+      if (sub.command !== "rotate") {
+        console.error(`Unknown "keys" command "${sub.command}"; try "keys rotate".`);
+        return 1;
+      }
+      return rotate(sub.dir, sub.options);
+    }
     case "dev":
       return runDev(dir, { config: typeof options.config === "string" ? options.config : undefined });
     case "test":

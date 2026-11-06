@@ -40,14 +40,36 @@ export function signPackage(id, version, zip, privateKey) {
   return { keyId, signature: sign(null, Buffer.from(signedText(id, version, sha256Hex(zip))), privateKey).toString("base64") };
 }
 
-/** The keyId of the key in `keys` ({ keyId, publicKey }[]) that made `signature`, or null. */
-export function verifyPackage(id, version, sha256, signature, keys) {
+/** The keyId of the key in `keys` that made `signature` ({ keyId, signature }) of `text`, or null. */
+function verifyText(text, signature, keys) {
   const key = keys.find((item) => item.keyId === signature?.keyId);
   if (!key || typeof signature.signature !== "string") return null;
   const raw = Buffer.from(key.publicKey, "base64");
   if (raw.length !== 32 || keyIdOf(raw) !== key.keyId) return null;
   const publicKey = createPublicKey({ key: Buffer.concat([SPKI_PREFIX, raw]), format: "der", type: "spki" });
-  return verify(null, Buffer.from(signedText(id, version, sha256)), publicKey, Buffer.from(signature.signature, "base64")) ? key.keyId : null;
+  return verify(null, Buffer.from(text), publicKey, Buffer.from(signature.signature, "base64")) ? key.keyId : null;
+}
+
+/** The keyId of the key in `keys` ({ keyId, publicKey }[]) that made `signature`, or null. */
+export function verifyPackage(id, version, sha256, signature, keys) {
+  return verifyText(signedText(id, version, sha256), signature, keys);
+}
+
+export const KEY_DOMAIN = "focusd-plugin-key/1";
+
+/** What the old key signs to vouch for a new key of plugin `id` (src-tauri/src/plugin_host/author_signing.rs). */
+export const endorsementText = (id, key) => `${KEY_DOMAIN}\n${id}\n${key.keyId}\n${key.publicKey}`;
+
+/** `newKey` ({ keyId, publicKey }) with `endorsedBy`, the old private key's signature for plugin `id`. */
+export function endorseKey(id, newKey, oldPrivateKey) {
+  const { keyId } = publicKeyOf(oldPrivateKey);
+  const signature = sign(null, Buffer.from(endorsementText(id, newKey)), oldPrivateKey).toString("base64");
+  return { keyId: newKey.keyId, publicKey: newKey.publicKey, endorsedBy: { keyId, signature } };
+}
+
+/** Whether `key.endorsedBy` is a valid signature for plugin `id` by one of `keys`. */
+export function verifyEndorsement(id, key, keys) {
+  return Boolean(key?.endorsedBy) && verifyText(endorsementText(id, key), key.endorsedBy, keys) !== null;
 }
 
 /** Runs DPAPI (CurrentUser) through Windows PowerShell; `mode` is Protect or Unprotect. */

@@ -121,6 +121,13 @@ impl MarketEntry {
         author_signing::signer(&self.id, &self.version, &self.download.sha256, self.author_signature.as_ref(), &self.author_keys)
     }
 
+    /// How this version's signer compares with the keys remembered for the installed
+    /// plugin, counting keys they endorsed; an error when the signature is wrong.
+    pub(super) fn key_check(&self, remembered: &[String]) -> Result<author_signing::KeyCheck, String> {
+        let trusted = author_signing::endorsed_keys(&self.id, remembered, &self.author_keys);
+        Ok(author_signing::check_key(&trusted, self.signer()?.as_deref()))
+    }
+
     pub(super) fn is_newer_than(&self, installed: &str) -> bool {
         compare_versions(&self.version, installed) == std::cmp::Ordering::Greater
     }
