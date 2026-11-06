@@ -81,7 +81,7 @@ async function runChecks() {
     check(meta(second) === "等待确认 · 14 分钟前" && getComputedStyle(second.querySelector(".agent-session__dot")!).backgroundColor === "rgb(255, 159, 67)", "等待确认的会话显示橙色状态灯和状态文字");
     check(meta(first)?.startsWith("已运行 3 分 2") && !meta(first)?.includes("刚刚") && meta(third)?.endsWith("1 小时前"), "运行中的会话显示已运行多久，结束的显示多久前更新");
     check(first.classList.contains("agent-session--full") && second.classList.contains("agent-session--full") && third.classList.contains("agent-session--compact"), "进行中的会话展开，已完成的折叠成一行");
-    check(third.firstElementChild?.classList.contains("agent-session__dot") && third.querySelector(".agent-provider-icon--claudeCode"), "折叠行以状态灯开头，图标挪到右侧");
+    check(rows().every((row) => row.firstElementChild?.classList.contains("agent-session__dot") && row.querySelector(".agent-session__heading .agent-provider-icon") && row.querySelectorAll(".agent-session__dot").length === 1), "每行都以状态灯开头，图标都在标题行右侧");
     const title = second.querySelector<HTMLElement>(".agent-session__title")!;
     const message = first.querySelector<HTMLElement>(".agent-session__message")!;
     check(title.scrollWidth > title.clientWidth, "长标题单行省略");

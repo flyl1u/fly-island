@@ -87,10 +87,6 @@
   outline-offset: -2px;
 }
 
-.agent-session--full > .agent-provider-icon {
-  margin-top: 0;
-}
-
 .agent-session__main {
   min-width: 0;
   flex: 1;
@@ -166,9 +162,13 @@
   background: var(--color-agent-idle);
 }
 
-/* The leading dot of a folded row lines up with the provider icon of a full row. */
-.agent-session--compact > .agent-session__dot {
+/* Every row leads with its status dot, centred on the title line. */
+.agent-session > .agent-session__dot {
   margin-inline: 5.5px;
+}
+
+.agent-session--full > .agent-session__dot {
+  margin-top: 5.5px;
 }
 
 .agent-session--running .agent-session__dot {

@@ -98,11 +98,7 @@ export function AgentSessionsPanel({
                 title={t.agent.sessions.focus(title)}
                 onClick={() => focus(session)}
               >
-                {active ? (
-                  <AgentProviderIcon provider={session.provider} size={18} />
-                ) : (
-                  <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />
-                )}
+                <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />
                 <span className="agent-session__main">
                   <span className="agent-session__heading">
                     <span className="agent-session__title">
@@ -110,14 +106,13 @@ export function AgentSessionsPanel({
                       {title}
                     </span>
                     {active && showModel && model && <span className="agent-session__model">{model}</span>}
-                    {!active && <AgentProviderIcon provider={session.provider} size={14} />}
+                    <AgentProviderIcon provider={session.provider} size={14} />
                     {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
                     {notFoundId === session.sessionId ? (
                       <span className="agent-session__not-found" role="status">{t.agent.sessions.notFound}</span>
                     ) : (
                       <span className="agent-session__meta">{status}</span>
                     )}
-                    {active && <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />}
                   </span>
                   {full && <span className="agent-session__message">{session.lastMessage}</span>}
                 </span>
