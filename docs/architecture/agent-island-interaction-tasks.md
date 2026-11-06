@@ -14,11 +14,11 @@
 
 | # | 任务 | 状态 | 负责 | 提交 / 备注 |
 |---|---|---|---|---|
-| 0.1 | Claude Code：`PermissionRequest` 钩子等待时，终端审批框是同时显示还是等钩子返回 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
-| 0.2 | Claude Code：先在终端里回答后，钩子的请求是否被取消（HTTP 连接是否断开） | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
-| 0.3 | Claude Code：`AskUserQuestion` 的 `PreToolUse` 钩子等待时终端选项界面的表现；`answers` 填不在选项里的文字能否被接受 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
-| 0.4 | Codex：`PermissionRequest` 钩子等待时终端的表现，`allow` / `deny` 是否生效 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
-| 0.5 | Windows 上 HTTP 钩子到 `127.0.0.1` 的延迟；岛屿没运行、端口不对、超时三种情况下 Agent 是否照常弹审批框 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
+| 0.1 | Claude Code：`PermissionRequest` 钩子等待时，终端审批框是同时显示还是等钩子返回 | 已完成 | fly-island-3 · lane 3 | 等钩子返回才显示，见「实测记录」 |
+| 0.2 | Claude Code：先在终端里回答后，钩子的请求是否被取消（HTTP 连接是否断开） | 已完成 | fly-island-3 · lane 3 | 等待时终端没有审批框可答；按 Esc 中断时连接立即断开 |
+| 0.3 | Claude Code：`AskUserQuestion` 的 `PreToolUse` 钩子等待时终端选项界面的表现；`answers` 填不在选项里的文字能否被接受 | 已完成 | fly-island-3 · lane 3 | 阻塞终端选项，之后还会再走一次 `PermissionRequest`；自由文本原样接受 |
+| 0.4 | Codex：`PermissionRequest` 钩子等待时终端的表现，`allow` / `deny` 是否生效 | 待做 | | 这次没测（本机没跑 Codex）。转发脚本（command 钩子 → HTTP）已验证可用，做 2.2 前补测 |
+| 0.5 | Windows 上 HTTP 钩子到 `127.0.0.1` 的延迟；岛屿没运行、端口不对、超时三种情况下 Agent 是否照常弹审批框 | 已完成 | fly-island-3 · lane 3 | 延迟可忽略；没有程序监听时审批框立即出现。「端口不对」与「没运行」相同，超时按 0.1 的空决定处理 |
 
 ## 第 1 期：音效与自动弹出提醒
 
@@ -75,4 +75,29 @@
 
 ## 实测记录
 
-（第 0 期的结论写在这里，注明日期、Agent 版本和做法。）
+### 2026-11-06 · Claude Code 2.1.318 · Windows 11
+
+**做法**：在仓库外的临时目录放了一个 Node 测试服务器（`127.0.0.1:47811`）。它每次请求都重读一个模式文件，可以挂起 N 秒、允许、拒绝、返回空 `{}`、自动回答，并记录连接何时被对方关闭。测试项目的 `.claude/settings.local.json` 配了两个 HTTP 钩子：`PermissionRequest` 带 `Authorization` 头，`PreToolUse` 只匹配 `AskUserQuestion`。用户在这个项目里以**默认（手动）模式**让 Claude 运行 `cmd //c echo ...` 或提问。测试目录用完即删，不进仓库。
+
+| 测试 | 结果 |
+|---|---|
+| auto 模式 | auto 模式自己批准的命令**不触发** `PermissionRequest`，钩子收不到请求。在岛上审批只对手动审批的会话有用 |
+| 挂起 30 秒后返回 `{}` | 等待期间终端**不显示**审批框，只有一行运行中的提示；钩子返回空决定后审批框才出现，用户在终端照常选择 |
+| 返回 `allow` | 立即执行，不出审批框，终端写着 "Allowed by PermissionRequest hook" |
+| 返回 `deny` 加 `message` | 不执行，终端写着 "Denied by PermissionRequest hook"，`message` 传给了模型 |
+| 挂起时按 Esc | 立即中断。服务器在 4.6 秒时看到连接被关闭，可以据此撤掉卡片 |
+| `headers` | `Authorization` 头原样送达，可以用来做令牌鉴权 |
+| `AskUserQuestion`，`PreToolUse` 挂起后返回 `{}` | 等待期间终端不显示选项。返回后**又触发一次** `PermissionRequest`（同样挂起 30 秒），两者都返回后终端选项才出现，前后约 60 秒 |
+| `PreToolUse` 返回 `allow` 加 `updatedInput.answers`（第一个选项） | 立即生效，终端不出选项，之后也不再触发 `PermissionRequest`，模型收到的就是这个答案 |
+| `answers` 填不在选项里的文字 | 原样接受，模型收到了这段文字 |
+| 服务器没运行（端口上没有程序） | 审批框立即出现，没有卡顿，终端也没有报错 |
+| 延迟 | 服务器从收到请求到回复都在 20 毫秒以内，Agent 那边感觉不到差别 |
+
+**对第 2、3 期的影响**：
+
+- 钩子等待时终端没法操作，所以岛上必须有「到终端处理」（立即返回空决定），并且要有等待上限，到时返回空决定交还终端。会话的终端在前台时，直接返回空决定，不弹卡片。
+- 不存在「终端先答了」的情况；需要处理的是用户按 Esc 或 Agent 退出：连接一断就撤掉卡片。
+- `AskUserQuestion` 会先后经过 `PreToolUse` 和 `PermissionRequest`。端点收到工具名为 `AskUserQuestion` 的 `PermissionRequest` 时，如果岛上没有在处理这个提问（例如第 3 期的开关没开，或用户点了「到终端处理」），要立即返回空决定，不能再挂一次。
+- 自由文本回答可以做，提问卡片上一直显示输入框。
+- 岛屿没运行时不影响 Agent，不需要额外兜底。
+- Codex（0.4）还没测，第 2 期做 Codex 那部分之前补上。
