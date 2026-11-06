@@ -151,6 +151,7 @@ export function IslandApp() {
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
+    agentShowUsage: settings.agentShowUsage,
     pluginTemplate: pluginPages.entry?.template,
     pluginListRows: pluginPages.rows,
     pluginWebviewHeight: pluginPages.entry?.height,
@@ -379,7 +380,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} />}
+        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} showUsage={settings.agentShowUsage} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

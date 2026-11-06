@@ -47,6 +47,8 @@ export type IslandSettings = {
   agentShowModel: boolean;
   /** The latest prompt and the tool in use on working session rows. */
   agentShowActivity: boolean;
+  /** Claude's usage limits at the top of the Agent page, when claude-hud keeps a usage snapshot. */
+  agentShowUsage: boolean;
   /** Open the Agent page when a session finishes, fails or waits for the user. */
   agentAlertCompleted: boolean;
   agentAlertFailed: boolean;

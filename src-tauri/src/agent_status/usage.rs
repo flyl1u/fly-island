@@ -1,0 +1,121 @@
+//! Claude usage limits for the Agent page: the 5-hour and 7-day windows, per-model windows and
+//! the plan name. Read from the usage snapshot the claude-hud status line keeps, so the island
+//! needs no network access or credentials of its own: claude-hud writes it from the
+//! `rate_limits` Claude Code passes to status lines (`display.externalUsageWritePath`), or reads
+//! one a script keeps up to date (`display.externalUsagePath`, e.g. from an API gateway).
+
+use std::{
+    env, fs,
+    io::Read,
+    path::{Path, PathBuf},
+};
+
+use serde::Serialize;
+use serde_json::Value;
+
+use super::sessions::parse_timestamp_ms;
+
+/// A snapshot is a few hundred bytes; anything far larger is not one.
+const MAX_SNAPSHOT_BYTES: u64 = 64 * 1024;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageWindow {
+    /// Name of a per-model window ("Fable"); empty for the 5-hour and 7-day windows.
+    pub(super) name: String,
+    /// Percent used, 0 to 100.
+    pub(super) used: f64,
+    /// When the window resets, Unix milliseconds.
+    pub(super) resets_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentUsage {
+    /// When the snapshot was written, Unix milliseconds.
+    pub(super) updated_at: Option<i64>,
+    pub(super) five_hour: Option<UsageWindow>,
+    pub(super) seven_day: Option<UsageWindow>,
+    pub(super) models: Vec<UsageWindow>,
+    /// The plan or balance claude-hud shows after the windows ("Max 20x").
+    pub(super) plan: Option<String>,
+}
+
+/// The snapshot claude-hud reads or writes, from its config in `claude_dir`
+/// (`~/.claude`, or `CLAUDE_CONFIG_DIR`); `None` without claude-hud or without either setting.
+pub(super) fn snapshot_path(claude_dir: &Path, home_dir: &Path) -> Option<PathBuf> {
+    let config = fs::read_to_string(claude_dir.join("plugins").join("claude-hud").join("config.json")).ok()?;
+    let config = serde_json::from_str::<Value>(&config).ok()?;
+    let display = &config["display"];
+    ["externalUsagePath", "externalUsageWritePath"]
+        .iter()
+        .filter_map(|key| display[*key].as_str())
+        .find_map(|path| expand_path(path, home_dir))
+}
+
+/// claude-hud's path rules: a leading `~` and `${VAR}` are expanded; relative paths are ignored.
+pub(super) fn expand_path(path: &str, home_dir: &Path) -> Option<PathBuf> {
+    let path = path.trim();
+    let mut expanded = String::with_capacity(path.len());
+    let mut rest = match path.strip_prefix('~') {
+        Some(after) if after.is_empty() || after.starts_with(['/', '\\']) => {
+            expanded.push_str(&home_dir.to_string_lossy());
+            after
+        }
+        _ => path,
+    };
+    while let Some(start) = rest.find("${") {
+        let end = rest[start..].find('}')? + start;
+        expanded.push_str(&rest[..start]);
+        expanded.push_str(&env::var(&rest[start + 2..end]).ok()?);
+        rest = &rest[end + 1..];
+    }
+    expanded.push_str(rest);
+    let path = PathBuf::from(expanded);
+    path.is_absolute().then_some(path)
+}
+
+/// Parses a snapshot; `None` when it has no usable window at all.
+pub(super) fn parse_snapshot(text: &str) -> Option<AgentUsage> {
+    let snapshot = serde_json::from_str::<Value>(text).ok()?;
+    let window = |value: &Value, name: &str, used_key: &str| {
+        let used = value[used_key].as_f64().filter(|used| used.is_finite())?;
+        Some(UsageWindow {
+            name: name.to_string(),
+            used: used.clamp(0.0, 100.0),
+            resets_at: value["resets_at"].as_str().and_then(parse_timestamp_ms),
+        })
+    };
+    let models = snapshot["model_scoped"]
+        .as_array()
+        .map(|models| {
+            models
+                .iter()
+                .filter_map(|model| {
+                    let name = model["display_name"].as_str().map(str::trim).filter(|name| !name.is_empty())?;
+                    window(model, name, "utilization")
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let usage = AgentUsage {
+        updated_at: snapshot["updated_at"].as_str().and_then(parse_timestamp_ms),
+        five_hour: window(&snapshot["five_hour"], "", "used_percentage"),
+        seven_day: window(&snapshot["seven_day"], "", "used_percentage"),
+        models,
+        plan: snapshot["balance_label"].as_str().map(str::trim).filter(|plan| !plan.is_empty()).map(str::to_string),
+    };
+    (usage.five_hour.is_some() || usage.seven_day.is_some() || !usage.models.is_empty()).then_some(usage)
+}
+
+/// The current usage, or `None` when there is no snapshot to read.
+pub(super) fn read_usage(home_dir: &Path) -> Option<AgentUsage> {
+    let claude_dir = env::var_os("CLAUDE_CONFIG_DIR")
+        .map(PathBuf::from)
+        .filter(|dir| dir.is_absolute())
+        .unwrap_or_else(|| home_dir.join(".claude"));
+    let path = snapshot_path(&claude_dir, home_dir)?;
+    let mut text = String::new();
+    fs::File::open(path).ok()?.take(MAX_SNAPSHOT_BYTES).read_to_string(&mut text).ok()?;
+    parse_snapshot(&text)
+}

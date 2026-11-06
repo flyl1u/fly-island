@@ -1152,3 +1152,45 @@ fn permission_requests_mark_a_session_waiting() {
     let idle = json!({ "session_id": "s3", "hook_event_name": "Notification", "notification_type": "idle_prompt" }).to_string();
     assert_eq!(waiting_session_id(&idle), None);
 }
+
+#[test]
+fn usage_comes_from_the_claude_hud_snapshot() {
+    use super::usage::{expand_path, parse_snapshot, snapshot_path};
+    let parse_timestamp = super::sessions::parse_timestamp_ms;
+
+    let snapshot = json!({
+        "updated_at": "2026-11-06T12:31:21.390Z",
+        "five_hour": { "used_percentage": 27, "resets_at": "2026-11-06T05:20:00-08:00" },
+        "seven_day": { "used_percentage": 38.5, "resets_at": null },
+        "model_scoped": [{ "display_name": "Fable", "utilization": 0, "resets_at": "2026-11-11T20:00:00-08:00" }, { "display_name": " " }],
+        "balance_label": "Ultra 20x"
+    })
+    .to_string();
+    let usage = parse_snapshot(&snapshot).unwrap();
+    assert_eq!(usage.updated_at, parse_timestamp("2026-11-06T12:31:21.390Z"));
+    let five = usage.five_hour.as_ref().unwrap();
+    assert_eq!((five.used, five.resets_at), (27.0, parse_timestamp("2026-11-06T13:20:00Z")));
+    assert_eq!(usage.seven_day.as_ref().map(|w| (w.used, w.resets_at)), Some((38.5, None)));
+    assert_eq!(usage.models.iter().map(|w| w.name.as_str()).collect::<Vec<_>>(), ["Fable"]);
+    assert_eq!(usage.plan.as_deref(), Some("Ultra 20x"));
+    // Out-of-range values are clamped; a snapshot without any window is no usage.
+    let over = parse_snapshot(&json!({ "five_hour": { "used_percentage": 140 } }).to_string()).unwrap();
+    assert_eq!(over.five_hour.map(|w| w.used), Some(100.0));
+    assert_eq!(parse_snapshot(&json!({ "five_hour": { "used_percentage": null } }).to_string()), None);
+    assert_eq!(parse_snapshot("not json"), None);
+
+    let (home, _) = temp_dirs();
+    assert_eq!(expand_path("~/usage.json", &home), Some(home.join("usage.json")));
+    assert_eq!(expand_path("relative/usage.json", &home), None);
+    assert_eq!(expand_path("${FOCUSD_NO_SUCH_VAR}/usage.json", &home), None);
+    let claude = home.join(".claude");
+    assert_eq!(snapshot_path(&claude, &home), None);
+    let hud = claude.join("plugins").join("claude-hud");
+    fs::create_dir_all(&hud).unwrap();
+    fs::write(hud.join("config.json"), json!({ "display": { "externalUsageWritePath": "~/hud-usage.json" } }).to_string()).unwrap();
+    assert_eq!(snapshot_path(&claude, &home), Some(home.join("hud-usage.json")));
+    // A snapshot the HUD reads takes precedence over one it writes.
+    let read_path = home.join("gateway-usage.json");
+    fs::write(hud.join("config.json"), json!({ "display": { "externalUsagePath": read_path, "externalUsageWritePath": "~/hud-usage.json" } }).to_string()).unwrap();
+    assert_eq!(snapshot_path(&claude, &home), Some(read_path));
+}

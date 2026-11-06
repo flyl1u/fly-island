@@ -37,6 +37,8 @@ export type SettingsAgentText = {
   showModel: string;
   showActivity: string;
   showActivityHint: string;
+  showUsage: string;
+  showUsageHint: string;
   alerts: {
     title: string;
     hint: string;
@@ -89,6 +91,8 @@ export const zhCN: SettingsAgentText = {
   showModel: "显示模型和推理强度",
   showActivity: "显示最近提问和正在用的工具",
   showActivityHint: "进行中的会话在回复上方显示你最近一次的提问，运行时显示它正在调用的工具（如 Bash 命令、正在改的文件）。",
+  showUsage: "在顶部显示 Claude 用量",
+  showUsageHint: "5 小时、7 天和各模型的用量，以及最紧的那个何时重置。读的是 claude-hud 状态栏保存的用量文件（它的 externalUsagePath 或 externalUsageWritePath 设置）；没有时不显示。",
   alerts: {
     title: "弹出提醒",
     hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
@@ -141,6 +145,8 @@ export const en: SettingsAgentText = {
   showModel: "Show the model and effort",
   showActivity: "Show the latest prompt and the tool in use",
   showActivityHint: "Sessions in progress show your latest prompt above the reply and, while running, the tool they are calling (a Bash command, the file being edited).",
+  showUsage: "Show Claude usage at the top",
+  showUsageHint: "The 5-hour, 7-day and per-model usage, and when the fullest resets. Read from the usage file the claude-hud status line keeps (its externalUsagePath or externalUsageWritePath setting); hidden without one.",
   alerts: {
     title: "Pop-up alerts",
     hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",

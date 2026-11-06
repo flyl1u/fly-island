@@ -114,6 +114,30 @@ export function agentSessionsInFront(sessions: Pick<AgentSessionSummary, "provid
   });
 }
 
+/** Mirrors UsageWindow in src-tauri/src/agent_status/usage.rs. */
+export type UsageWindow = {
+  /** A per-model window's name ("Fable"); empty for the 5-hour and 7-day windows. */
+  name: string;
+  /** Percent used, 0 to 100. */
+  used: number;
+  /** When it resets, Unix ms. */
+  resetsAt: number | null;
+};
+
+/** Mirrors AgentUsage in src-tauri/src/agent_status/usage.rs. */
+export type AgentUsage = {
+  updatedAt: number | null;
+  fiveHour: UsageWindow | null;
+  sevenDay: UsageWindow | null;
+  models: UsageWindow[];
+  plan: string | null;
+};
+
+/** Claude usage limits from claude-hud's usage snapshot; null when there is none. */
+export function getAgentUsage() {
+  return invoke<AgentUsage | null>("get_agent_usage");
+}
+
 export function getAgentHooksState() {
   return invoke<AgentHooksState>("get_agent_hooks_state");
 }

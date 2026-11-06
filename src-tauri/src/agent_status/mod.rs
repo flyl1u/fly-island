@@ -23,6 +23,7 @@ mod session_scan;
 mod sessions;
 mod title;
 mod tool_call;
+mod usage;
 mod window_focus;
 
 use serde::Serialize;
@@ -295,6 +296,15 @@ pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::Sessio
         .map_err(|error| format!("Failed to join the window check: {error}"))
 }
 
+/// Claude usage limits from claude-hud's usage snapshot (usage.rs); null when there is none.
+#[tauri::command]
+pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
+    let home_dir = windows_home_dir()?;
+    tauri::async_runtime::spawn_blocking(move || usage::read_usage(&home_dir))
+        .await
+        .map_err(|error| format!("Failed to join the usage task: {error}"))
+}
+
 /// The icon of a session host (`host.exe` of a listed session) as a PNG data URL; null when the
 /// path is not an existing .exe or it has no icon.
 #[tauri::command]
@@ -405,6 +415,7 @@ macro_rules! tauri_commands {
             crate::agent_status::agent_sessions_in_front,
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
+            crate::agent_status::get_agent_usage,
         ] $($rest)*)
     };
 }

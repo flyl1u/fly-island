@@ -30,6 +30,16 @@ export type AgentText = {
     permissionModes: Record<"auto" | "bypass" | "acceptEdits" | "plan", string>;
     subagents: (count: number) => string;
   };
+  /** The usage line at the top of the Agent page. */
+  usage: {
+    label: string;
+    fiveHour: string;
+    sevenDay: string;
+    /** Compact time left: "1d10h", "3h20m", "42m". */
+    resetsIn: (parts: { days: number; hours: number; minutes: number }) => string;
+    /** Read out after the line when the snapshot is old. */
+    stale: string;
+  };
 };
 
 export const zhCN: AgentText = {
@@ -64,6 +74,14 @@ export const zhCN: AgentText = {
     permissionModes: { auto: "自动", bypass: "跳过确认", acceptEdits: "自动改文件", plan: "计划" },
     subagents: (count) => `${count} 个子 Agent`,
   },
+  usage: {
+    label: "Claude 用量",
+    fiveHour: "5 小时",
+    sevenDay: "7 天",
+    resetsIn: ({ days, hours, minutes }) =>
+      days > 0 ? `${days} 天 ${hours} 小时后重置` : hours > 0 ? `${hours} 小时 ${minutes} 分后重置` : `${minutes} 分后重置`,
+    stale: "可能已过时",
+  },
 };
 
 export const en: AgentText = {
@@ -97,5 +115,12 @@ export const en: AgentText = {
     elapsedDone: (duration) => `took ${duration}`,
     permissionModes: { auto: "Auto", bypass: "Bypass", acceptEdits: "Accept edits", plan: "Plan" },
     subagents: (count) => (count === 1 ? "1 subagent" : `${count} subagents`),
+  },
+  usage: {
+    label: "Claude usage",
+    fiveHour: "5h",
+    sevenDay: "7d",
+    resetsIn: ({ days, hours, minutes }) => (days > 0 ? `resets in ${days}d${hours}h` : hours > 0 ? `resets in ${hours}h${minutes}m` : `resets in ${minutes}m`),
+    stale: "may be stale",
   },
 };

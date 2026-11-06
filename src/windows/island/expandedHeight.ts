@@ -20,6 +20,8 @@ type ExpandedHeightInput = {
   maxPanelHeight: number;
   clipboardVisibleRows: number;
   agentVisibleRows: number;
+  /** The usage line sits above the Agent page's rows. */
+  agentShowUsage: boolean;
   /** The template of the open plugin page; null when it is not known (yet). */
   pluginTemplate?: PluginViewTemplate | null;
   /** Rows the open plugin list shows (items, group titles, search box). */
@@ -44,6 +46,7 @@ export function getExpandedIslandHeight({
   maxPanelHeight,
   clipboardVisibleRows,
   agentVisibleRows,
+  agentShowUsage,
   pluginTemplate,
   pluginListRows,
   pluginWebviewHeight,
@@ -77,7 +80,7 @@ export function getExpandedIslandHeight({
       : page === "translation"
         ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"
-        ? getAgentPageExpandedHeight(agentVisibleRows)
+        ? getAgentPageExpandedHeight(agentVisibleRows, agentShowUsage)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
+import { AgentUsageBar } from "./AgentUsageBar";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
 import { SessionBody } from "./SessionBody";
@@ -29,6 +30,7 @@ export function AgentSessionsPanel({
   showActivity = true,
   unseen,
   reveal,
+  showUsage = false,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
@@ -41,6 +43,8 @@ export function AgentSessionsPanel({
   unseen?: UnseenSessions;
   /** The session an alert opened the page for, scrolled into view; a new object for each alert. */
   reveal?: AlertedSession | null;
+  /** Claude's usage limits above the list. */
+  showUsage?: boolean;
 }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -89,6 +93,7 @@ export function AgentSessionsPanel({
   if (sessions.length === 0) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
+        {showUsage && <AgentUsageBar />}
         <div className="agent-sessions__empty">
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
@@ -99,6 +104,7 @@ export function AgentSessionsPanel({
 
   return (
     <section className="agent-sessions" aria-label={t.agent.sessions.title}>
+      {showUsage && <AgentUsageBar />}
       <ul
         ref={list.ref}
         className="agent-sessions__list"

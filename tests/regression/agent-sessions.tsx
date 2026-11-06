@@ -29,6 +29,14 @@ mockIPC((command, payload) => {
   if (command === "get_agent_host_icon") {
     return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
   }
+  if (command === "get_agent_usage") {
+    return {
+      updatedAt: now, plan: "Max 20x",
+      fiveHour: { name: "", used: 27, resetsAt: now + 3 * 3_600_000 },
+      sevenDay: { name: "", used: 62, resetsAt: now + 5 * 86_400_000 },
+      models: [{ name: "Fable", used: 100, resetsAt: now + (34 * 60 + 10) * 60_000 }],
+    };
+  }
 });
 
 const SESSIONS: AgentSessionSummary[] = [
@@ -187,6 +195,21 @@ async function runChecks() {
     check(running.getBoundingClientRect().height === 78 && waiting.getBoundingClientRect().height === 78, "提问加一行内容的行和两行回复一样高（78px）");
     await renderActivity(false);
     check(!document.querySelector(".agent-session__prompt") && !document.querySelector(".agent-session__tool") && rows()[0].querySelector(".agent-session__message"), "关掉后只显示回复");
+
+    check(!document.querySelector(".agent-usage"), "没打开用量时不显示用量行");
+    fixture.style.height = `${getAgentPageExpandedHeight(3, true) - ISLAND_CHROME_HEIGHT}px`;
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    const usage = document.querySelector<HTMLElement>(".agent-usage");
+    const values = [...document.querySelectorAll<HTMLElement>(".agent-usage__value")];
+    check(usage?.textContent?.includes("5 小时27%") && usage.textContent.includes("7 天62%") && usage.textContent.includes("Fable100%"), "顶部显示 5 小时、7 天和各模型的用量");
+    check(values.map((value) => value.className.replace("agent-usage__value agent-usage__value--", "")).join() === "low,medium,high", "用量按多少分绿、橙、红");
+    check(usage?.textContent?.includes("1 天 10 小时后重置"), "显示最紧的那个窗口何时重置");
+    const usageList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
+    check(usageList.scrollHeight <= usageList.clientHeight + 1, "加上用量行后，设为 3 条时仍放下 3 个会话");
+    sizeFor(3);
     await render("both");
 
     await act(async () => { first.click(); await Promise.resolve(); });
