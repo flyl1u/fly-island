@@ -7,8 +7,11 @@
 // island keeps running from it, and the next start runs the new build. Moved
 // files are deleted by later builds once nothing runs them. If the build fails,
 // the old exe goes back in place.
+//
+// One build at a time across lanes (a lock file in target/release), and a
+// successful build points the desktop shortcut at the new exe.
 import { spawnSync } from "node:child_process";
-import { closeSync, existsSync, openSync, readdirSync, renameSync, unlinkSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mainCheckout, targetDir } from "./build-dirs.mjs";
@@ -49,8 +52,90 @@ export function moveAsideIfRunning(exe, now = new Date()) {
   return aside;
 }
 
+/** A lock held this long is from a build that died without cleaning up. */
+const LOCK_MAX_AGE_MS = 60 * 60 * 1000;
+const LOCK_WAIT_MS = 5000;
+
+function processAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === "EPERM";
+  }
+}
+
+/** Whether a lock holder `{ pid, since }` still counts: its process runs and it is under an hour old. */
+export function lockHeld(holder, now = Date.now(), alive = processAlive) {
+  return Boolean(holder) && alive(holder.pid) && now - holder.since < LOCK_MAX_AGE_MS;
+}
+
+/**
+ * Waits until no other build (another lane's session) holds `lock`, then takes it; two builds
+ * writing target/release at once would race over the exe being moved aside.
+ */
+function takeLock(lock) {
+  mkdirSync(path.dirname(lock), { recursive: true });
+  for (let waited = false; ; waited = true) {
+    try {
+      writeFileSync(lock, JSON.stringify({ pid: process.pid, since: Date.now() }), { flag: "wx" });
+      return;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+    }
+    let holder = null;
+    try {
+      holder = JSON.parse(readFileSync(lock, "utf8"));
+    } catch {
+      // Being written right now; look again shortly.
+    }
+    if (holder && !lockHeld(holder)) {
+      unlinkSync(lock);
+      continue;
+    }
+    if (!waited) console.log(`[build:exe] another build (pid ${holder?.pid ?? "?"}) is running; waiting for it to finish`);
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, LOCK_WAIT_MS);
+  }
+}
+
+/** The PowerShell that points the desktop's island shortcuts at `exe`, or creates fly-island.lnk. */
+export function shortcutScript(exe) {
+  const quoted = `'${exe.replace(/'/g, "''")}'`;
+  return [
+    `$exe = ${quoted}`,
+    "$desk = [Environment]::GetFolderPath('Desktop')",
+    "$shell = New-Object -ComObject WScript.Shell",
+    "$links = @(Get-ChildItem $desk -Filter *.lnk | Where-Object { $_.Name -match 'focusd|fly-island' -or $shell.CreateShortcut($_.FullName).TargetPath -match 'focusd-island\\.exe$' })",
+    "if ($links.Count -eq 0) { $links = @([pscustomobject]@{ FullName = Join-Path $desk 'fly-island.lnk' }) }",
+    "foreach ($link in $links) {",
+    "  $s = $shell.CreateShortcut($link.FullName); $s.TargetPath = $exe; $s.WorkingDirectory = Split-Path $exe; $s.IconLocation = \"$exe,0\"; $s.Save()",
+    "  $check = $shell.CreateShortcut($link.FullName)",
+    "  if ($check.TargetPath -ne $exe -or -not (Test-Path $check.TargetPath)) { Write-Error \"$($link.FullName) does not point at $exe\"; exit 1 }",
+    "  Write-Output (Split-Path $link.FullName -Leaf)",
+    "}",
+  ].join("\n");
+}
+
+/** Points the desktop shortcut at the new build (AGENTS.md, "本机更新与桌面快捷方式"); Windows only. */
+function syncShortcut(exe) {
+  if (process.platform !== "win32" || process.env.FOCUSD_SKIP_SHORTCUT === "1") return;
+  const result = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", shortcutScript(exe)], { encoding: "utf8" });
+  if (result.status === 0) console.log(`[build:exe] desktop shortcut → ${exe}: ${result.stdout.trim().split(/\r?\n/).join(", ")}`);
+  else console.error(`[build:exe] could not update the desktop shortcut: ${result.stderr.trim()}`);
+}
+
 function main() {
   const releaseDir = targetDir(mainCheckout(), "release");
+  const lock = path.join(releaseDir, ".build-exe.lock");
+  takeLock(lock);
+  try {
+    return build(releaseDir);
+  } finally {
+    rmSync(lock, { force: true });
+  }
+}
+
+function build(releaseDir) {
   const exe = path.join(releaseDir, EXE_NAME);
   removeOldExes(releaseDir);
   const aside = moveAsideIfRunning(exe);
@@ -67,6 +152,7 @@ function main() {
   }
   const left = removeOldExes(releaseDir);
   console.log(`[build:exe] built ${exe}${left > 0 ? ` (${left} older exe still running, removed by a later build)` : ""}`);
+  syncShortcut(exe);
   return 0;
 }
 

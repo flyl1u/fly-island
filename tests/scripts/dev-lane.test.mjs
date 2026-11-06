@@ -56,3 +56,19 @@ test("a running exe is moved aside and a new one can take its place", { skip: pr
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("a build lock counts while its process runs and for under an hour", async () => {
+  const { lockHeld } = await import("../../scripts/build-exe.mjs");
+  const now = 10 * 60 * 60 * 1000;
+  assert.equal(lockHeld({ pid: 1, since: now - 1000 }, now, () => true), true);
+  assert.equal(lockHeld({ pid: 1, since: now - 1000 }, now, () => false), false);
+  assert.equal(lockHeld({ pid: 1, since: now - 61 * 60 * 1000 }, now, () => true), false);
+  assert.equal(lockHeld(null, now, () => true), false);
+});
+
+test("the shortcut script quotes the exe path for PowerShell", async () => {
+  const { shortcutScript } = await import("../../scripts/build-exe.mjs");
+  const script = shortcutScript(String.raw`C:\it's\focusd-island.exe`);
+  assert.ok(script.startsWith(String.raw`$exe = 'C:\it''s\focusd-island.exe'`));
+  assert.match(script, /fly-island\.lnk/);
+});
