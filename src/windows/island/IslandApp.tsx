@@ -367,6 +367,7 @@ export function IslandApp() {
             onPlayPause={() => void runMediaCommand("media_play_pause")}
             onNext={() => void runMediaCommand("media_next")}
             onPrevious={() => void runMediaCommand("media_previous")}
+            lyricsSettings={settings}
           />
         )}
         {page === "clipboard" && (

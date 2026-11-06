@@ -5,6 +5,7 @@ mod device_use;
 mod file_shelf;
 mod island;
 mod local_api;
+mod lyrics;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
@@ -133,6 +134,7 @@ pub fn run() {
             agent_status;
             device_use;
             media_control;
+            lyrics;
             clipboard_history;
             translation;
             settings_window

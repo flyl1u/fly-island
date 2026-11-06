@@ -21,6 +21,7 @@ export const PAGES = [
   "collapsed-message-animation.html?test=1",
   "i18n.html?test=1",
   "mail-reader.html?run=1",
+  "music-lyrics.html",
   "notification-startup.html",
   "plugin-menus.html",
   "plugin-views.html?test=1",

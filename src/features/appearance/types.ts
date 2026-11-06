@@ -120,6 +120,12 @@ export type IslandSettings = {
   deviceUseIndicator: boolean;
   /** The collapsed island shows the volume or brightness for a moment when it changes. */
   levelPopup: boolean;
+  /** Folder of .lrc files searched for the playing song's lyrics; empty for none. */
+  lyricsFolder: string;
+  /** Lyrics not in the folder are looked up on LRCLIB. */
+  lyricsOnline: boolean;
+  /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
+  lyricsOffsetMs: number;
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;

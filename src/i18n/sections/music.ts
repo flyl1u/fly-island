@@ -2,6 +2,7 @@ export type MusicText = {
   playerLabel: string;
   controlFailed: string;
   noMedia: string;
+  lyricsLabel: string;
   unknownArtist: string;
   previous: string;
   previousTrack: string;
@@ -27,6 +28,7 @@ export const zhCN: MusicText = {
   playerLabel: "音乐播放器",
   controlFailed: "控制失败",
   noMedia: "暂无媒体",
+  lyricsLabel: "歌词",
   unknownArtist: "未知艺术家",
   previous: "上一首",
   previousTrack: "上一首",
@@ -52,6 +54,7 @@ export const en: MusicText = {
   playerLabel: "Music player",
   controlFailed: "Control failed",
   noMedia: "No media",
+  lyricsLabel: "Lyrics",
   unknownArtist: "Unknown artist",
   previous: "Previous",
   previousTrack: "Previous track",

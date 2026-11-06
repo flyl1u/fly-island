@@ -1,0 +1,45 @@
+/* Takes the waveform's place and size in the music page's right column. */
+.lyrics-view {
+  height: 76px;
+  flex: 0 0 76px;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.lyrics-view__line {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-view__line--side {
+  color: rgba(232, 237, 239, 0.42);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lyrics-view__line--current {
+  color: rgba(250, 252, 252, 0.98);
+  font-size: 15px;
+  font-weight: 700;
+  animation: lyrics-line-in 220ms ease-out;
+}
+
+@keyframes lyrics-line-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-view__line--current {
+    animation: none;
+  }
+}

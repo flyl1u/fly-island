@@ -2,7 +2,11 @@ import { Music2, Pause, Play, RefreshCcw, Settings, SkipBack, SkipForward } from
 import { useTranslation } from "../../i18n";
 import type { MediaState } from "./api";
 import { MediaWaveform } from "./MediaWaveform";
+import { LyricsView } from "./lyrics/LyricsView";
+import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
 import "./MusicPlayerPanel.css";
+
+const NO_LYRICS = { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 };
 
 export function MusicPlayerPanel({
   mediaState,
@@ -12,6 +16,7 @@ export function MusicPlayerPanel({
   onPlayPause,
   onNext,
   onPrevious,
+  lyricsSettings = NO_LYRICS,
 }: {
   mediaState: MediaState;
   isTrackChanging: boolean;
@@ -21,10 +26,13 @@ export function MusicPlayerPanel({
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  /** Where lyrics come from and how far they are moved; without it there are none. */
+  lyricsSettings?: LyricsSettings & { lyricsOffsetMs: number };
 }) {
   const t = useTranslation();
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
+  const lyrics = useLyrics(mediaState, lyricsSettings);
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
   const nextDisabled = mediaState.available && !mediaState.canNext;
@@ -83,10 +91,14 @@ export function MusicPlayerPanel({
             </p>
           )}
 
-          <MediaWaveform
-            playing={isPlaying || mediaState.audioActive}
-            audioPeak={mediaState.audioPeak}
-          />
+          {lyrics ? (
+            <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs} />
+          ) : (
+            <MediaWaveform
+              playing={isPlaying || mediaState.audioActive}
+              audioPeak={mediaState.audioPeak}
+            />
+          )}
 
           <div className="music-player__controls">
             <button

@@ -13,7 +13,7 @@ src/
 │   └── translation/         # 快捷翻译窗口
 ├── features/                # 业务领域，每个领域自包含
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出
-│   ├── media/               # 媒体控制、波形
+│   ├── media/               # 媒体控制、波形；lyrics/ 为同步歌词（解析 LRC、跟随进度、设置项）
 │   ├── system-levels/       # 音量、亮度变化时收起的小岛上显示的提示、设置项
 │   ├── device-use/          # 摄像头、麦克风使用提示：折叠岛上的图标、设置项
 │   ├── clipboard/           # 剪贴板历史、快捷键

@@ -10,6 +10,7 @@ import type { SettingsExpandText } from "./expand";
 import type { SettingsGameModeText } from "./gameMode";
 import type { SettingsDeviceUseText } from "./deviceUse";
 import type { SettingsLevelPopupText } from "./levelPopup";
+import type { SettingsLyricsText } from "./lyrics";
 import type { SettingsBackupText } from "./backup";
 import type { SettingsShortcutsText } from "./shortcuts";
 import type { SettingsPageShortcutsText } from "./pageShortcuts";
@@ -37,6 +38,7 @@ import * as expand from "./expand.ts";
 import * as gameMode from "./gameMode.ts";
 import * as deviceUse from "./deviceUse.ts";
 import * as levelPopup from "./levelPopup.ts";
+import * as lyrics from "./lyrics.ts";
 import * as backup from "./backup.ts";
 import * as shortcuts from "./shortcuts.ts";
 import * as pageShortcuts from "./pageShortcuts.ts";
@@ -74,6 +76,7 @@ export type SettingsText = {
   gameMode: SettingsGameModeText;
   deviceUse: SettingsDeviceUseText;
   levelPopup: SettingsLevelPopupText;
+  lyrics: SettingsLyricsText;
   backup: SettingsBackupText;
 
   shortcuts: SettingsShortcutsText;
@@ -124,6 +127,7 @@ export const zhCN: SettingsText = {
   gameMode: gameMode.zhCN,
   deviceUse: deviceUse.zhCN,
   levelPopup: levelPopup.zhCN,
+  lyrics: lyrics.zhCN,
   backup: backup.zhCN,
 
   shortcuts: shortcuts.zhCN,
@@ -174,6 +178,7 @@ export const en: SettingsText = {
   gameMode: gameMode.en,
   deviceUse: deviceUse.en,
   levelPopup: levelPopup.en,
+  lyrics: lyrics.en,
   backup: backup.en,
 
   shortcuts: shortcuts.en,

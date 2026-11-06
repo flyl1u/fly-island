@@ -32,7 +32,7 @@
 |---|---|---|---|---|
 | C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 待做 | | Notchify、Isle Notch、WinIsland 都有 |
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
-| C4 | 音乐页同步歌词 | 进行中 | fly-island-7e · lane 5 · 2026-11-06 21:40 | 4 款以上竞品都有 |
+| C4b | 歌词的中文来源（网易云、QQ 音乐、酷狗，非官方接口、默认关闭并说明风险）、翻译行、逐字高亮、按单首歌调偏移 | 待做 | | LRCLIB 的中文歌收录较少。调研见 C4 的会话记录：BetterLyrics、Lyricify 用的就是这几家 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。
@@ -54,6 +54,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| C4 | 音乐页同步歌词：找到带时间轴的歌词时，用上一句、当前句、下一句代替波形，播放时按本地时钟往下走；先找用户的 .lrc 文件夹，再查 LRCLIB（默认关闭，开启后发送歌名、歌手、专辑和时长，结果缓存）；按时长（±3 秒）和歌手核对，不硬配；可调提前或推后。网易云、QQ 音乐等非官方来源和逐字歌词暂不做 | 提交 `feat(media): synced lyrics on the music page` |
 | C2 | 音量、亮度弹出提示：后台线程每 0.1 秒读默认输出的音量和静音、每 0.4 秒读笔记本屏幕亮度（WMI，外接显示器读不到），变化时收起的小岛显示图标、进度条和百分比 1.5 秒；设置 → 通用 → 音量与亮度可关，关掉后不再读取 | 提交 `feat(island): show the volume or brightness when it changes` |
 | B6b | 会话开始也弹出提醒：默认每一轮开始都弹，设置里可改成只在新会话开始时弹或不弹 | 提交 `feat(agent-status): alerts when a session starts` |
 | B6c | 完成 / 出错的弹出卡片显示 AI 最后的回复：Rust 读回复时按行去掉 Markdown 符号，上限从 120 字提到 200 字；卡片最多 3 行，岛屿高度按卡片这一行的实际高度。Agent 页列表里结束的会话仍折叠成一行 | 提交 `feat(agent-status): alert cards show the session's last reply` |

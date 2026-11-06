@@ -122,6 +122,9 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   shelfShowCount: true,
   deviceUseIndicator: true,
   levelPopup: true,
+  lyricsFolder: "",
+  lyricsOnline: false,
+  lyricsOffsetMs: 0,
   mailEnabled: true,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
@@ -356,6 +359,11 @@ export function normalizeSettings(
     shelfShowCount: settings?.shelfShowCount === true,
     deviceUseIndicator: settings?.deviceUseIndicator !== false,
     levelPopup: settings?.levelPopup !== false,
+    lyricsFolder: typeof settings?.lyricsFolder === "string" ? settings.lyricsFolder.trim() : "",
+    lyricsOnline: settings?.lyricsOnline === true,
+    lyricsOffsetMs: typeof settings?.lyricsOffsetMs === "number" && Number.isFinite(settings.lyricsOffsetMs)
+      ? Math.round(Math.min(3000, Math.max(-3000, settings.lyricsOffsetMs)) / 100) * 100
+      : 0,
     mailEnabled: settings?.mailEnabled !== false,
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     gameAutoTuck: settings?.gameAutoTuck === true,
