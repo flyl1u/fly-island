@@ -57,6 +57,8 @@ pub enum UsageSource {
     Api,
     /// A local magpie gateway's quotas (magpie.rs).
     Magpie,
+    /// Codex's rollout files (codex_usage.rs).
+    Codex,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`

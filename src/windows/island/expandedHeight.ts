@@ -20,8 +20,8 @@ type ExpandedHeightInput = {
   maxPanelHeight: number;
   clipboardVisibleRows: number;
   agentVisibleRows: number;
-  /** The usage line sits above the Agent page's rows. */
-  agentShowUsage: boolean;
+  /** How many usage lines (Claude, Codex) sit above the Agent page's rows. */
+  agentUsageLines: number;
   /** An alert's one-session card instead: the height its row measured, without the usage line. */
   agentAlertRowHeight?: number;
   /** The template of the open plugin page; null when it is not known (yet). */
@@ -48,7 +48,7 @@ export function getExpandedIslandHeight({
   maxPanelHeight,
   clipboardVisibleRows,
   agentVisibleRows,
-  agentShowUsage,
+  agentUsageLines,
   agentAlertRowHeight,
   pluginTemplate,
   pluginListRows,
@@ -85,7 +85,7 @@ export function getExpandedIslandHeight({
       : page === "agents"
         ? agentAlertRowHeight !== undefined
           ? getAgentAlertExpandedHeight(agentAlertRowHeight)
-          : getAgentPageExpandedHeight(agentVisibleRows, agentShowUsage)
+          : getAgentPageExpandedHeight(agentVisibleRows, agentUsageLines)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

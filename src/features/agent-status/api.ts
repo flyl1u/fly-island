@@ -178,7 +178,7 @@ export type AgentUsage = {
   models: UsageWindow[];
   plan: string | null;
   /** Where the windows come from. Missing from builds before direct asking. */
-  source?: "hud" | "api" | "magpie";
+  source?: "hud" | "api" | "magpie" | "codex";
   /** Why the last direct request to Anthropic failed; null when it is off or worked. */
   error?: AgentUsageError | null;
 };
@@ -204,6 +204,11 @@ export type AgentUsageError = { kind: AgentUsageErrorKind; message: string };
  */
 export function getAgentUsage() {
   return invoke<AgentUsage | null>("get_agent_usage");
+}
+
+/** Codex's usage limits from its rollout files; null when none reports them. */
+export function getCodexUsage() {
+  return invoke<AgentUsage | null>("get_codex_usage");
 }
 
 export function getAgentHooksState() {

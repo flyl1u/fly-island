@@ -4,10 +4,11 @@ import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
 import { isRemoteSessionReport } from "../../features/agent-status/remoteSessions";
+import { useAgentUsages } from "../../features/agent-status/useAgentUsages";
 
 /**
  * The agent status, the island's agent sessions, the one the collapsed island names, and every
- * agent's phase for the center pattern's pet.
+ * agent's phase for the center pattern's pet, and Claude's and Codex's usage limits for the Agent page.
  */
 export function useIslandAgents(settings: IslandSettings) {
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
@@ -25,5 +26,8 @@ export function useIslandAgents(settings: IslandSettings) {
     [sessions.agentSessions, others],
   );
 
-  return { agentStatus, ...sessions, agentSession, agentActivity };
+  // Read with the page closed too: the page is sized for the usage lines it will show.
+  const agentUsages = useAgentUsages(settings.agentStatusEnabled && settings.agentShowUsage);
+
+  return { agentStatus, ...sessions, agentSession, agentActivity, agentUsages };
 }

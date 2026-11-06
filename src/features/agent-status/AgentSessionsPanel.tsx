@@ -4,6 +4,7 @@ import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentUsageBar } from "./AgentUsageBar";
+import type { AgentUsages } from "./usage";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
 import { SessionBody } from "./SessionBody";
@@ -39,6 +40,7 @@ export function AgentSessionsPanel({
   removal,
   reveal,
   showUsage: usageOn = false,
+  usages,
   approvals,
 }: {
   sessions: AgentSessionSummary[];
@@ -54,8 +56,10 @@ export function AgentSessionsPanel({
   removal?: SessionRemoval;
   /** The session an alert opened the page for; the page then shows it alone, like a card. */
   reveal?: AlertedSession | null;
-  /** Claude's usage limits above the list. */
+  /** Claude's and Codex's usage limits above the list. */
   showUsage?: boolean;
+  /** Those limits as the island read them; without them the usage lines read their own. */
+  usages?: AgentUsages;
   /** Permission requests agents wait on; the page shows the first one alone. */
   approvals?: AgentApprovals;
 }) {
@@ -135,7 +139,7 @@ export function AgentSessionsPanel({
   if (sessions.length === 0) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-        {showUsage && <AgentUsageBar />}
+        {showUsage && <AgentUsageBar usages={usages} />}
         <div className="agent-sessions__empty">
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
@@ -147,7 +151,7 @@ export function AgentSessionsPanel({
 
   return (
     <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-      {showUsage && <AgentUsageBar />}
+      {showUsage && <AgentUsageBar usages={usages} />}
       <ul
         ref={list.ref}
         className="agent-sessions__list"

@@ -253,6 +253,27 @@ async function runChecks() {
     await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: pointer, clientY: line.top + 10 })); });
     check(clear(pointer), "鼠标沿着用量行移动时，卡片继续避开指针");
     await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
+
+    // Codex reporting limits too: a second line, and the page sized for both.
+    const readAt = Date.now();
+    const usages = {
+      claude: { updatedAt: readAt, plan: null, fiveHour: { name: "", used: 27, resetsAt: null }, sevenDay: null, models: [] },
+      codex: { updatedAt: readAt, plan: "Plus", source: "codex" as const, fiveHour: { name: "", used: 9, resetsAt: null }, sevenDay: { name: "", used: 91, resetsAt: readAt + 2 * 86_400_000 }, models: [] },
+      readAt,
+    };
+    fixture.style.height = `${getAgentPageExpandedHeight(3, 2) - ISLAND_CHROME_HEIGHT}px`;
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage usages={usages} /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    const lines = [...document.querySelectorAll<HTMLElement>(".agent-usage")];
+    check(lines.length === 2 && lines[1].getAttribute("aria-label") === "Codex 用量" && lines[1].textContent?.includes("7 天91%"), "Codex 也报告额度时，Claude 下面多一行 Codex 用量");
+    const twoLineList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
+    check(twoLineList.scrollHeight <= twoLineList.clientHeight + 1, "两行用量时，设为 3 条仍放下 3 个会话");
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage usages={{ ...usages, claude: null }} /></I18nProvider></StrictMode>);
+    });
+    check(document.querySelectorAll(".agent-usage").length === 1 && document.querySelector(".agent-usage")?.getAttribute("aria-label") === "Codex 用量", "只有 Codex 有额度时只显示 Codex 一行");
     sizeFor(3);
     await render("both");
 

@@ -41,6 +41,7 @@ export type AgentText = {
   /** The usage line at the top of the Agent page. */
   usage: {
     label: string;
+    codexLabel: string;
     fiveHour: string;
     sevenDay: string;
     /** Compact time left: "1d10h", "3h20m", "42m". */
@@ -110,6 +111,7 @@ export const zhCN: AgentText = {
   },
   usage: {
     label: "Claude 用量",
+    codexLabel: "Codex 用量",
     fiveHour: "5 小时",
     sevenDay: "7 天",
     resetsIn: ({ days, hours, minutes }) =>
@@ -175,6 +177,7 @@ export const en: AgentText = {
   },
   usage: {
     label: "Claude usage",
+    codexLabel: "Codex usage",
     fiveHour: "5h",
     sevenDay: "7d",
     resetsIn: ({ days, hours, minutes }) => (days > 0 ? `resets in ${days}d${hours}h` : hours > 0 ? `resets in ${hours}h${minutes}m` : `resets in ${minutes}m`),

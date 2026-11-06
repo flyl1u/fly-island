@@ -1432,3 +1432,41 @@ fn magpie_quotas_become_usage_by_window_name() {
     assert_eq!(parse_quotas(&json!({ "data": [{ "provider": "x", "windows": [{ "name": "Limit", "used": 3 }] }] }).to_string(), 0), None);
     assert_eq!(parse_quotas("not json", 0), None);
 }
+
+#[test]
+fn codex_usage_comes_from_the_newest_token_count_with_a_window() {
+    use super::codex_usage::parse_rollout;
+    use super::usage::UsageSource;
+    let parse_timestamp = super::sessions::parse_timestamp_ms;
+    let count = |at: &str, limits: serde_json::Value| {
+        line(json!({ "timestamp": at, "type": "event_msg", "payload": { "type": "token_count", "info": null, "rate_limits": limits } }))
+    };
+    let at = "2026-11-07T03:00:00.000Z";
+    let at_ms = parse_timestamp(at).unwrap();
+    let full = count(at, json!({
+        "primary": { "used_percent": 9.0, "window_minutes": 300, "resets_at": 1_793_000_000 },
+        "secondary": { "used_percent": 19.0, "window_minutes": 10080, "resets_in_seconds": 3600 },
+        "plan_type": "plus"
+    }));
+    let usage = parse_rollout(&full).unwrap();
+    assert_eq!((usage.source, usage.updated_at, usage.plan.as_deref()), (UsageSource::Codex, Some(at_ms), Some("Plus")));
+    let five = usage.five_hour.as_ref().unwrap();
+    assert_eq!((five.used, five.resets_at), (9.0, Some(1_793_000_000_000)));
+    let week = usage.seven_day.as_ref().unwrap();
+    assert_eq!((week.used, week.resets_at), (19.0, Some(at_ms + 3_600_000)));
+
+    // Slots can come swapped: the window's length decides.
+    let swapped = count(at, json!({
+        "primary": { "used_percent": 40, "window_minutes": 10080 },
+        "secondary": { "used_percent": 5, "window_minutes": 300 }
+    }));
+    let usage = parse_rollout(&swapped).unwrap();
+    assert_eq!((usage.five_hour.unwrap().used, usage.seven_day.unwrap().used), (5.0, 40.0));
+
+    // Null windows (as an API-key or gateway login writes them) are skipped for an older event with numbers.
+    let empty = count("2026-11-07T04:00:00Z", json!({ "limit_id": "premium", "primary": null, "secondary": null, "plan_type": "pro" }));
+    let mixed = [full.clone(), empty.clone(), line(json!({ "type": "event_msg", "payload": { "type": "agent_message" } }))].concat();
+    assert_eq!(parse_rollout(&mixed).unwrap().updated_at, Some(at_ms));
+    assert_eq!(parse_rollout(&empty), None);
+    assert_eq!(parse_rollout("not json\n"), None);
+}

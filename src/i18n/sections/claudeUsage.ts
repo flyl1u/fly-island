@@ -13,6 +13,7 @@ export type ClaudeUsageText = {
   fromHud: string;
   fromApi: string;
   fromMagpie: string;
+  fromCodex: string;
   /** "3 分钟前更新 · 来自 claude-hud". */
   updated: (ago: string, source: string) => string;
   /** The ring button's label: what the card says, and that a click re-reads it. */
@@ -33,6 +34,7 @@ export const zhCN: ClaudeUsageText = {
   fromHud: "来自 claude-hud",
   fromApi: "来自 Anthropic",
   fromMagpie: "来自 magpie",
+  fromCodex: "来自 Codex 会话记录",
   updated: (ago, source) => `${ago} · ${source}`,
   ringLabel: (details) => `Claude 用量：${details}。点击刷新`,
   noData: "暂无 Claude 用量（需要本机的 magpie 网关、claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）",
@@ -60,6 +62,7 @@ export const en: ClaudeUsageText = {
   fromHud: "via claude-hud",
   fromApi: "from Anthropic",
   fromMagpie: "from magpie",
+  fromCodex: "from Codex's session logs",
   updated: (ago, source) => `${ago} · ${source}`,
   ringLabel: (details) => `Claude usage: ${details}. Click to refresh`,
   noData: "No Claude usage yet (needs a local magpie gateway, claude-hud's usage snapshot, or \"Ask Anthropic directly\" in the plugin settings)",

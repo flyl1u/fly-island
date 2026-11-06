@@ -8,6 +8,7 @@ mod editor_terminal;
 mod external;
 mod hooks_state;
 mod host_icon;
+mod codex_usage;
 mod magpie;
 mod markers;
 mod notifications;
@@ -323,6 +324,15 @@ pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
         .map_err(|error| format!("Failed to join the usage task: {error}"))
 }
 
+/// Codex's usage limits from its rollout files (codex_usage.rs); null when none reports them.
+#[tauri::command]
+pub async fn get_codex_usage() -> Result<Option<usage::AgentUsage>, String> {
+    let home_dir = windows_home_dir()?;
+    tauri::async_runtime::spawn_blocking(move || codex_usage::read_usage(&home_dir))
+        .await
+        .map_err(|error| format!("Failed to join the Codex usage task: {error}"))
+}
+
 /// The icon of a session host (`host.exe` of a listed session) as a PNG data URL; null when the
 /// path is not an existing .exe or it has no icon.
 #[tauri::command]
@@ -454,6 +464,7 @@ macro_rules! tauri_commands {
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
             crate::agent_status::get_agent_usage,
+            crate::agent_status::get_codex_usage,
             crate::agent_status::reply_marker::get_reply_marker_state,
             crate::agent_status::reply_marker::set_reply_marker,
             crate::agent_status::sound_packs::list_sound_packs,

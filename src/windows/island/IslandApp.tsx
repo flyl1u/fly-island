@@ -25,6 +25,7 @@ import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
 import { useAgentIndicator } from "./useAgentIndicator";
+import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useIslandTodos } from "./useIslandTodos";
 import { useIslandTucking } from "./useIslandTucking";
@@ -57,7 +58,7 @@ export function IslandApp() {
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   const { qqNotifications, wechatReminders, qqMail, pluginNotifications, permissionPrompts, hasMessagePreview } = notices;
   const media = useMediaState(settings.musicEnabled);
-  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentActivity } =
+  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentActivity, agentUsages } =
     useIslandAgents(settings);
   const openAgentsPage = useCallback(() => openIslandPage("agents"), [openIslandPage]);
   const collapsedSlots = useCollapsedSlots({
@@ -126,7 +127,7 @@ export function IslandApp() {
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
-    agentShowUsage: settings.agentShowUsage,
+    agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
     agentAlertRowHeight: agentCardHeight,
     pluginTemplate: pluginPages.entry?.template,
     pluginListRows: pluginPages.rows,
@@ -253,6 +254,7 @@ export function IslandApp() {
           agentRemoval={agentRemoval}
           alertedSession={alertedSession}
           agentApprovals={agentApprovals}
+          agentUsages={agentUsages}
           pluginPages={pluginPages}
           fileShelf={fileShelf}
           isShelfDropping={isShelfDropping}

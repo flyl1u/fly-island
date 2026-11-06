@@ -96,12 +96,12 @@ const AGENT_PAGE_CHROME_HEIGHT = 78;
 // it; shorter replies and folded rows leave room for more sessions.
 const AGENT_ROW_PITCH = 80;
 const AGENT_ROW_GAP = 2;
-// The usage line above the list: 22 plus 6 below it (AgentUsageBar.css).
+// A usage line above the list (one per agent that reports usage): 22 plus 6 below it (AgentUsageBar.css).
 const AGENT_USAGE_HEIGHT = 28;
 
-/** Expanded height that fits exactly `rows` Agent session rows, below the usage line when it is on. */
-export function getAgentPageExpandedHeight(rows: number, showUsage = false) {
-  return AGENT_PAGE_CHROME_HEIGHT + (showUsage ? AGENT_USAGE_HEIGHT : 0) + rows * AGENT_ROW_PITCH - AGENT_ROW_GAP;
+/** Expanded height that fits exactly `rows` Agent session rows below `usageLines` usage lines (true: one). */
+export function getAgentPageExpandedHeight(rows: number, usageLines: number | boolean = 0) {
+  return AGENT_PAGE_CHROME_HEIGHT + Number(usageLines) * AGENT_USAGE_HEIGHT + rows * AGENT_ROW_PITCH - AGENT_ROW_GAP;
 }
 
 /** Expanded height around an alert's one-session card, whose row measured `rowHeight`. */

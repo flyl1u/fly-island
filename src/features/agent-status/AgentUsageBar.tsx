@@ -1,45 +1,31 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import { useTranslation } from "../../i18n";
 import { AgentProviderIcon } from "./AgentProviderIcon";
-import { getAgentUsage, type AgentUsage, type UsageWindow } from "./api";
+import type { AgentProvider, AgentUsage, UsageWindow } from "./api";
 import { IslandHoverCard } from "../../components/IslandHoverCard";
-import { isStale, tightestWindow, untilReset, usageLevel, usageSourceLines } from "./usage";
+import { hasUsageNumbers, isStale, tightestWindow, untilReset, usageLevel, usageSourceLines, type AgentUsages } from "./usage";
+import { useAgentUsages } from "./useAgentUsages";
 import "./AgentUsageBar.css";
 
-/** claude-hud refreshes its snapshot about once a minute; reading a local file is cheap. */
-const REFRESH_MS = 30_000;
-
 /**
- * The Agent page's top line: Claude's 5-hour and 7-day usage, per-model windows and when the
- * fullest one resets. Nothing when there is no usage snapshot (no claude-hud, an API key login).
+ * The Agent page's top lines: Claude's, then Codex's 5-hour and 7-day usage (Claude's per-model
+ * windows too) and when the fullest window resets; a line only for an agent that reports numbers.
+ * `usages` comes from the island, which sizes the page for the lines; without it the bar reads
+ * them itself.
  */
-export function AgentUsageBar() {
+export function AgentUsageBar({ usages: given }: { usages?: AgentUsages }) {
+  const own = useAgentUsages(given === undefined);
+  const usages = given ?? own;
+  return (
+    <>
+      {hasUsageNumbers(usages.claude) && <UsageLine provider="claudeCode" usage={usages.claude!} now={usages.readAt} />}
+      {hasUsageNumbers(usages.codex) && <UsageLine provider="codex" usage={usages.codex!} now={usages.readAt} />}
+    </>
+  );
+}
+
+function UsageLine({ provider, usage, now }: { provider: AgentProvider; usage: AgentUsage; now: number }) {
   const t = useTranslation();
-  const [usage, setUsage] = useState<AgentUsage | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () => {
-      void getAgentUsage()
-        .then((next) => {
-          if (!cancelled) {
-            setUsage(next);
-            setNow(Date.now());
-          }
-        })
-        .catch((error: unknown) => console.error("Failed to read the agent usage", error));
-    };
-    refresh();
-    const timer = window.setInterval(refresh, REFRESH_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, []);
-
-  // No numbers yet (asking Anthropic directly before its first answer, or after a failure).
-  if (!usage || (!usage.fiveHour && !usage.sevenDay && usage.models.length === 0)) return null;
   const windows: [string, UsageWindow][] = [
     ...(usage.fiveHour ? [[t.agent.usage.fiveHour, usage.fiveHour] as [string, UsageWindow]] : []),
     ...(usage.sevenDay ? [[t.agent.usage.sevenDay, usage.sevenDay] as [string, UsageWindow]] : []),
@@ -53,8 +39,12 @@ export function AgentUsageBar() {
   // the card right under this line rather than under the island, which is the whole panel here.
   return (
     <IslandHoverCard lines={usageSourceLines(usage, now, t.claudeUsage)} alignTo=":scope" anchorClassName="agent-usage__hover">
-      <div className={`agent-usage${stale ? " agent-usage--stale" : ""}`} role="status" aria-label={t.agent.usage.label}>
-        <AgentProviderIcon provider="claudeCode" size={14} />
+      <div
+        className={`agent-usage${stale ? " agent-usage--stale" : ""}`}
+        role="status"
+        aria-label={provider === "codex" ? t.agent.usage.codexLabel : t.agent.usage.label}
+      >
+        <AgentProviderIcon provider={provider} size={14} />
         {windows.map(([label, window], index) => (
           <Fragment key={`${label}:${index}`}>
             {index > 0 && <span className="agent-usage__divider" aria-hidden="true" />}

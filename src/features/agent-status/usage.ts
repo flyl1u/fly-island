@@ -38,8 +38,23 @@ export function usageSourceLines(usage: AgentUsage, now: number, text: ClaudeUsa
   if (usage.error) lines.push({ text: text.errors[usage.error.kind] });
   if (usage.updatedAt !== null) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    const source = usage.source === "api" ? text.fromApi : usage.source === "magpie" ? text.fromMagpie : text.fromHud;
+    const source = { api: text.fromApi, magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud }[usage.source ?? "hud"];
     lines.push({ text: text.updated(text.updatedAgo(minutes), source), muted: true });
   }
   return lines;
+}
+
+/** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
+export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; readAt: number };
+
+export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, readAt: 0 };
+
+/** Has a window to show; asking Anthropic directly can answer with an error and no numbers. */
+export function hasUsageNumbers(usage: AgentUsage | null): boolean {
+  return Boolean(usage && (usage.fiveHour || usage.sevenDay || usage.models.length > 0));
+}
+
+/** How many usage lines the Agent page shows, for its height. */
+export function usageLineCount(usages: AgentUsages): number {
+  return Number(hasUsageNumbers(usages.claude)) + Number(hasUsageNumbers(usages.codex));
 }

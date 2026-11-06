@@ -22,3 +22,16 @@ test("the reset time shown is the fullest window's", () => {
   assert.equal(isStale(usage, 10 * 60_000), false);
   assert.equal(isStale({ ...usage, updatedAt: null }, 10 ** 12), false);
 });
+
+test("one usage line per agent that reports numbers, and the card names the source", async () => {
+  const { EMPTY_USAGES, hasUsageNumbers, usageLineCount, usageSourceLines } = await import("../../src/features/agent-status/usage.ts");
+  const { zhCN } = await import("../../src/i18n/sections/claudeUsage.ts");
+  const usage = (overrides = {}) => ({ updatedAt: 0, fiveHour: window("", 10), sevenDay: null, models: [], plan: null, ...overrides });
+  assert.equal(usageLineCount(EMPTY_USAGES), 0);
+  assert.equal(usageLineCount({ claude: usage(), codex: null, readAt: 0 }), 1);
+  assert.equal(usageLineCount({ claude: usage(), codex: usage({ source: "codex" }), readAt: 0 }), 2);
+  assert.equal(hasUsageNumbers(usage({ fiveHour: null })), false, "an answer with only an error has no line");
+  assert.equal(hasUsageNumbers(usage({ fiveHour: null, models: [window("Fable", 1)] })), true);
+  assert.deepEqual(usageSourceLines(usage({ source: "codex" }), 60_000, zhCN).map((line) => line.text), ["1 分钟前更新 · 来自 Codex 会话记录"]);
+  assert.deepEqual(usageSourceLines(usage(), 0, zhCN).map((line) => line.text), ["刚刚更新 · 来自 claude-hud"]);
+});
