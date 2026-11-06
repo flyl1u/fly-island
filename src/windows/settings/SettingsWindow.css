@@ -20,20 +20,13 @@
 }
 
 /*
- * Type scale inside the settings window: row labels read as regular body text and
- * values carry a little weight, so section cards and the page title lead. Scoped
- * to .settings-stage because the same controls also render on the island.
+ * Type scale for the plugin pages, which still use the island's controls: labels read
+ * as regular body text and values carry a little weight, so cards and the page title
+ * lead. Scoped to .settings-stage because the same controls also render on the island.
  */
 .settings-stage :is(
     .toggle-control,
     .number-control,
-    .appearance-mode-control,
-    .slider-control__meta > span,
-    .shortcut-control__meta > span,
-    .shortcut-reference dt,
-    .shelf-settings__row,
-    .translation-settings__row,
-    .save-path-field span,
     .plugins-folder > span,
     .plugin-updates__trusted > span
   ) {
@@ -42,63 +35,26 @@
   font-weight: 400;
 }
 
-/* A section heading of its own that predates .settings-section__header; it reads like one. */
-.settings-stage .save-path-panel__header {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.settings-stage :is(.translation-settings__row input, .save-path-field input, .preset-name-input) {
+.settings-stage .preset-name-input {
   font-weight: 400;
 }
 
-.settings-stage :is(
-    .appearance-mode-control__segments button,
-    .select-control__trigger,
-    .shortcut-reference kbd
-  ) {
+.settings-stage .select-control__trigger {
   font-weight: 500;
+}
+
+/* The island's switch, still on the plugin pages, looks like SettingsSwitch here. */
+.settings-stage .toggle-control__switch {
+  background: var(--color-white-a16);
+  border-color: transparent;
+}
+
+.settings-stage .toggle-control input:checked + .toggle-control__switch {
+  background: var(--color-accent);
+  border-color: transparent;
 }
 
 /* Buttons keep some weight, but stay below the page title. */
-.settings-stage .shortcut-record-button {
+.settings-stage :is(.shortcut-record-button, .number-control__field input) {
   font-weight: 600;
-}
-
-.settings-stage .number-control__field input {
-  font-weight: 600;
-}
-
-/* The current keys under a shortcut's name are secondary to its recorder button. */
-.settings-stage .shortcut-control__meta strong {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-/* Sliders follow the other rows: name on the left, slider and value on the right. */
-.settings-stage .slider-control {
-  min-height: 32px;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.8fr) 52px;
-  align-items: center;
-  column-gap: var(--space-xl);
-}
-
-.settings-stage .slider-control__meta {
-  display: contents;
-}
-
-.settings-stage .slider-control input[type="range"] {
-  order: 1;
-}
-
-.settings-stage .slider-control__meta > strong {
-  order: 2;
-  color: var(--color-text-muted);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
 }

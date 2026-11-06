@@ -32,7 +32,7 @@ src/
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
 │   ├── settings-backup/     # 设置 → 通用 → 备份与恢复：导出到「下载」文件夹的 JSON、从文件恢复（只含 BACKUP_KEYS 列出的设置 key）
 │   └── updater/             # 自动更新
-├── components/              # 与领域无关的通用 UI（滑块、颜色、开关、数字输入等控件；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、分段选择、下拉、文字链接，新写或改写的设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
+├── components/              # 与领域无关的通用 UI（controls/ 开关、数字输入、下拉等控件，插件页和岛上还在用；settings/ 设置窗口的分组列表：组、行、开关行、滑块行、数字行、颜色、输入框、分段选择、下拉、文字链接，设置页都用它；markdown/ 把外部 Markdown 渲染成元素，不插入 HTML）
 ├── lib/                     # 有副作用的通用基础设施，例如 localStorage 安全读写
 ├── utils/                   # 无副作用的纯函数（文本测量、颜色、日期、数值）
 ├── i18n/                    # 类型化多语言字典与 Provider；sections/ 按分区放文案（settings/ 再按设置页分），types.ts 与 locales/ 只做汇总
