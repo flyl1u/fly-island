@@ -21,6 +21,8 @@ type IslandHoverCardProps = {
   alignTo?: string;
   /** Where the card is drawn; it inherits that element's CSS variables (default ".stage"; else body). */
   portalTo?: string;
+  /** Extra class on the wrapper around `children`, e.g. to make it a block. */
+  anchorClassName?: string;
 };
 
 const EDGE = 8;
@@ -40,6 +42,7 @@ export function IslandHoverCard({
   suppressed = false,
   alignTo = ".island",
   portalTo = ".stage",
+  anchorClassName,
 }: IslandHoverCardProps) {
   const anchorRef = useRef<HTMLSpanElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -85,7 +88,7 @@ export function IslandHoverCard({
   return (
     <span
       ref={anchorRef}
-      className="island-hover-card__anchor"
+      className={anchorClassName ? `island-hover-card__anchor ${anchorClassName}` : "island-hover-card__anchor"}
       onPointerEnter={schedule}
       onPointerLeave={hide}
       onPointerDown={hide}

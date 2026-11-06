@@ -2,7 +2,8 @@ import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "../../i18n";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { getAgentUsage, type AgentUsage, type UsageWindow } from "./api";
-import { isStale, tightestWindow, untilReset, usageLevel } from "./usage";
+import { IslandHoverCard } from "../../components/IslandHoverCard";
+import { isStale, tightestWindow, untilReset, usageLevel, usageSourceLines } from "./usage";
 import "./AgentUsageBar.css";
 
 /** claude-hud refreshes its snapshot about once a minute; reading a local file is cheap. */
@@ -48,20 +49,24 @@ export function AgentUsageBar() {
   const reset = tightest ? untilReset(tightest.resetsAt, now) : null;
   const stale = isStale(usage, now);
 
+  // Resting on the line names its source and age, as the usage ring's card does. ":scope" puts
+  // the card right under this line rather than under the island, which is the whole panel here.
   return (
-    <div className={`agent-usage${stale ? " agent-usage--stale" : ""}`} role="status" aria-label={t.agent.usage.label}>
-      <AgentProviderIcon provider="claudeCode" size={14} />
-      {windows.map(([label, window], index) => (
-        <Fragment key={`${label}:${index}`}>
-          {index > 0 && <span className="agent-usage__divider" aria-hidden="true" />}
-          <span className="agent-usage__window">
-            <span className="agent-usage__label">{label}</span>
-            <strong className={`agent-usage__value agent-usage__value--${usageLevel(window.used)}`}>{Math.round(window.used)}%</strong>
-          </span>
-        </Fragment>
-      ))}
-      {reset && <span className="agent-usage__reset">{t.agent.usage.resetsIn(reset)}</span>}
-      {stale && <span className="agent-usage__reset">{t.agent.usage.stale}</span>}
-    </div>
+    <IslandHoverCard lines={usageSourceLines(usage, now, t.claudeUsage)} alignTo=":scope" anchorClassName="agent-usage__hover">
+      <div className={`agent-usage${stale ? " agent-usage--stale" : ""}`} role="status" aria-label={t.agent.usage.label}>
+        <AgentProviderIcon provider="claudeCode" size={14} />
+        {windows.map(([label, window], index) => (
+          <Fragment key={`${label}:${index}`}>
+            {index > 0 && <span className="agent-usage__divider" aria-hidden="true" />}
+            <span className="agent-usage__window">
+              <span className="agent-usage__label">{label}</span>
+              <strong className={`agent-usage__value agent-usage__value--${usageLevel(window.used)}`}>{Math.round(window.used)}%</strong>
+            </span>
+          </Fragment>
+        ))}
+        {reset && <span className="agent-usage__reset">{t.agent.usage.resetsIn(reset)}</span>}
+        {stale && <span className="agent-usage__reset">{t.agent.usage.stale}</span>}
+      </div>
+    </IslandHoverCard>
   );
 }

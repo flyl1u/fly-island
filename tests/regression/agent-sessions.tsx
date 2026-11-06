@@ -209,6 +209,13 @@ async function runChecks() {
     check(usage?.textContent?.includes("1 天 10 小时后重置"), "显示最紧的那个窗口何时重置");
     const usageList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
     check(usageList.scrollHeight <= usageList.clientHeight + 1, "加上用量行后，设为 3 条时仍放下 3 个会话");
+    check(usage!.getBoundingClientRect().width > usageList.getBoundingClientRect().width - 20, "悬停卡片的外壳不改变用量行的宽度");
+    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true })); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 260)); });
+    const usageCard = document.querySelector<HTMLElement>(".island-hover-card");
+    check(usageCard?.textContent?.includes("· 来自 claude-hud") && usageCard.getBoundingClientRect().top >= usage!.getBoundingClientRect().bottom
+      && usageCard.getBoundingClientRect().top < usage!.getBoundingClientRect().bottom + 20, `悬停用量行时，行下方的卡片写出更新时间和来源：${usageCard?.textContent}`);
+    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
     sizeFor(3);
     await render("both");
 

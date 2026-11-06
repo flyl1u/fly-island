@@ -55,3 +55,14 @@
   color: var(--text-3);
   font-weight: 400;
 }
+
+/* The hover card's wrapper takes the line's place in the page's column. */
+.island-hover-card__anchor.agent-usage__hover {
+  display: flex;
+  min-width: 0;
+}
+
+.agent-usage__hover > .agent-usage {
+  flex: 1 1 auto;
+  min-width: 0;
+}

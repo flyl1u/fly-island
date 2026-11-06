@@ -1,4 +1,6 @@
 import type { AgentUsage, UsageWindow } from "./api";
+import type { HoverCardLine } from "../../components/IslandHoverCard";
+import type { ClaudeUsageText } from "../../i18n/sections/claudeUsage";
 
 /** A snapshot older than this no longer reads as current. */
 export const USAGE_STALE_MS = 15 * 60_000;
@@ -25,4 +27,19 @@ export function tightestWindow(usage: AgentUsage): UsageWindow | null {
 
 export function isStale(usage: AgentUsage, now: number) {
   return usage.updatedAt !== null && now - usage.updatedAt > USAGE_STALE_MS;
+}
+
+/**
+ * Where the numbers come from and how old they are, after why asking Anthropic directly failed
+ * when it did: the end of the usage ring's card and the Agent page's usage line card.
+ */
+export function usageSourceLines(usage: AgentUsage, now: number, text: ClaudeUsageText): HoverCardLine[] {
+  const lines: HoverCardLine[] = [];
+  if (usage.error) lines.push({ text: text.errors[usage.error.kind] });
+  if (usage.updatedAt !== null) {
+    const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
+    const source = usage.source === "api" ? text.fromApi : usage.source === "magpie" ? text.fromMagpie : text.fromHud;
+    lines.push({ text: text.updated(text.updatedAgo(minutes), source), muted: true });
+  }
+  return lines;
 }

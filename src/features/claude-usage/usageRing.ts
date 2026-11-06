@@ -1,5 +1,5 @@
 import type { AgentUsage, UsageWindow } from "../agent-status/api";
-import { untilReset } from "../agent-status/usage.ts";
+import { untilReset, usageSourceLines } from "../agent-status/usage.ts";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
 import type { MiniRingTrack } from "../../components/MiniRing";
 import type { ClaudeUsageText } from "../../i18n/sections/claudeUsage";
@@ -65,10 +65,7 @@ export function usageCardLines(usage: AgentUsage | null, now: number, text: Clau
   }
   const hasNumbers = lines.length > 0;
   if (!hasNumbers) lines.push({ text: text.noData, muted: true });
-  if (usage.error) lines.push({ text: text.errors[usage.error.kind] });
-  if (usage.updatedAt !== null && hasNumbers) {
-    const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    lines.push({ text: text.updated(text.updatedAgo(minutes), usage.source === "api" ? text.fromApi : usage.source === "magpie" ? text.fromMagpie : text.fromHud), muted: true });
-  }
+  // Without numbers their age says nothing; the failure reason still does.
+  lines.push(...usageSourceLines(hasNumbers ? usage : { ...usage, updatedAt: null }, now, text));
   return lines;
 }
