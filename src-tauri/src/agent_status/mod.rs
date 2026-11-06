@@ -255,7 +255,7 @@ pub async fn list_agent_sessions(
     tauri::async_runtime::spawn_blocking(move || {
         let waiting = notifications::waiting_notifications(&app_dir);
         windows_home_dir().map(|home_dir| {
-            let mut sessions = session_scan::list_sessions(&home_dir, &waiting, window_ms);
+            let mut sessions = session_scan::list_sessions(&home_dir, Some(&app_dir), &waiting, window_ms);
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions
         })

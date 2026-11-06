@@ -67,6 +67,12 @@ impl SessionRecord {
         same_start(self.pid_started, win32::process_times::start_time(pid)).then_some(pid)
     }
 
+    /// Whether the session is over. SessionStart rewrites the record, so an end time belongs to
+    /// the latest start. Without a recorded process (it was not found) only the end time counts.
+    pub(super) fn has_ended(&self) -> bool {
+        self.ended_at.is_some() || (self.pid.is_some_and(|pid| pid != 0) && self.live_pid().is_none())
+    }
+
     /// The recorded Orca tab, if it looks like a handle.
     pub(super) fn orca_handle(&self) -> Option<String> {
         self.orca_handle.clone().filter(|handle| super::orca::is_terminal_handle(handle))

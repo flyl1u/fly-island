@@ -13,6 +13,7 @@ use std::{
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
 use super::notifications::{is_waiting, WaitingNotifications};
 use super::session_host::codex_host;
+use super::session_records;
 use super::sessions::{
     codex_originator, codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
     session_phase, AgentSessionSummary, SessionTail, TurnState,
@@ -33,9 +34,12 @@ const HEAD_BYTES: u64 = 4 * 1024 * 1024;
 static SESSION_CACHE: Mutex<SessionCache> = Mutex::new(SessionCache::new());
 
 /// `waiting` names the Claude Code sessions that asked the user something (notifications.rs).
+/// `app_dir` holds the SessionStart / SessionEnd records (session_records.rs), which tell a
+/// session that was quit mid-turn from one still working.
 /// `window_ms`: how far back a session file may have last changed (ACTIVE_WINDOW_MS by default).
 pub(super) fn list_sessions(
     home_dir: &Path,
+    app_dir: Option<&Path>,
     waiting: &WaitingNotifications,
     window_ms: i64,
 ) -> Vec<AgentSessionSummary> {
@@ -51,7 +55,11 @@ pub(super) fn list_sessions(
             cache.summary(provider, &path, modified, codex_index.as_deref())
         {
             let asked_user = is_waiting(waiting, &summary.session_id, summary.updated_at);
-            summary.phase = if state == TurnState::Working && asked_user {
+            let ended = state == TurnState::Working && has_ended(app_dir, &summary.session_id);
+            summary.phase = if ended {
+                // Quit mid-turn (often while a question was open): nothing left to wait for.
+                "completed"
+            } else if state == TurnState::Working && asked_user {
                 // Waiting on the user is not a stall, however long it takes.
                 "waiting"
             } else {
@@ -70,6 +78,14 @@ pub(super) fn list_sessions(
     sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
     sessions.truncate(MAX_SESSIONS);
     sessions
+}
+
+/// Whether the session's agent has quit: its SessionEnd hook ran after the latest SessionStart,
+/// or the process its SessionStart recorded is gone (killed, or the terminal closed).
+fn has_ended(app_dir: Option<&Path>, session_id: &str) -> bool {
+    app_dir
+        .and_then(|dir| session_records::read(dir, session_id))
+        .is_some_and(|record| record.has_ended())
 }
 
 type SessionFile = (&'static str, PathBuf, i64);

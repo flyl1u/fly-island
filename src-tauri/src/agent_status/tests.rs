@@ -386,7 +386,7 @@ fn recent_sessions_are_listed_running_first() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
+    let sessions = list_sessions(&home, None, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     let ids = sessions
         .iter()
         .map(|s| s.session_id.as_str())
@@ -403,7 +403,7 @@ fn recent_sessions_are_listed_running_first() {
     assert_eq!(by_id("c1").cwd.as_deref(), Some(r"E:\Projects\MioPicFlow"));
 
     // A second call is answered from the cache and gives the same list.
-    assert_eq!(list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS), sessions);
+    assert_eq!(list_sessions(&home, None, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS), sessions);
 }
 
 #[test]
@@ -435,7 +435,7 @@ fn a_session_keeps_the_folder_it_started_in() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
+    let sessions = list_sessions(&home, None, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     assert_eq!(sessions.len(), 1);
     assert_eq!(sessions[0].cwd.as_deref(), Some(r"E:\Projects\fly-island"));
 }
@@ -579,7 +579,7 @@ fn a_session_asking_for_permission_is_listed_as_waiting() {
         .unwrap()
         .as_millis() as i64;
 
-    let listed = |waiting: &WaitingNotifications| list_sessions(&home, waiting, super::session_scan::ACTIVE_WINDOW_MS)[0].phase;
+    let listed = |waiting: &WaitingNotifications| list_sessions(&home, None, waiting, super::session_scan::ACTIVE_WINDOW_MS)[0].phase;
     assert_eq!(listed(&WaitingNotifications::new()), "running");
     assert_eq!(
         listed(&WaitingNotifications::from([(
@@ -596,6 +596,45 @@ fn a_session_asking_for_permission_is_listed_as_waiting() {
         )])),
         "running"
     );
+}
+
+#[test]
+fn a_session_quit_mid_turn_is_no_longer_waiting() {
+    use super::session_records::DIR_NAME;
+    use super::session_scan::{list_sessions, ACTIVE_WINDOW_MS};
+    use super::snapshot::current_unix_millis;
+
+    let (home, app) = temp_dirs();
+    let transcript = home.join(".claude").join("projects").join("E--p").join("quit.jsonl");
+    fs::write(
+        &transcript,
+        [
+            user_line(json!("接下来要做什么")),
+            line(json!({"type": "assistant", "sessionId": "quit", "cwd": "E:\\p",
+                "message": {"model": "claude-opus-5-5", "stop_reason": "tool_use", "content": [{"type": "tool_use", "name": "AskUserQuestion"}]}})),
+        ]
+        .concat(),
+    )
+    .unwrap();
+    let asked = WaitingNotifications::from([("quit".to_string(), current_unix_millis() + 60_000)]);
+    let records = app.join(DIR_NAME);
+    fs::create_dir_all(&records).unwrap();
+    let phase = |record: &str| {
+        fs::write(records.join("quit.json"), record).unwrap();
+        list_sessions(&home, Some(&app), &asked, ACTIVE_WINDOW_MS)[0].phase
+    };
+
+    // Started, its process not found: nothing says it ended.
+    assert_eq!(phase(r#"{"provider":"claudeCode","startedAt":1}"#), "waiting");
+    // SessionEnd ran: the user quit while the question was open.
+    assert_eq!(
+        phase(r#"{"provider":"claudeCode","startedAt":1,"endedAt":2,"endReason":"prompt_input_exit"}"#),
+        "completed"
+    );
+    // The recorded process is gone without a SessionEnd (killed, terminal closed).
+    assert_eq!(phase(r#"{"provider":"claudeCode","startedAt":1,"pid":4294967292}"#), "completed");
+    // Without the records folder nothing changes.
+    assert_eq!(list_sessions(&home, None, &asked, ACTIVE_WINDOW_MS)[0].phase, "waiting");
 }
 
 #[test]
@@ -618,7 +657,7 @@ fn a_first_prompt_behind_a_huge_screenshot_names_the_session() {
         .concat(),
     )
     .unwrap();
-    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
+    let sessions = list_sessions(&home, None, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     assert_eq!(sessions[0].title.as_deref(), Some("终端上的乱码是什么情况"));
 }
 
