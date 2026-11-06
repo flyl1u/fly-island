@@ -1,6 +1,6 @@
 # 插件平台第 2 版：向 VS Code 式扩展靠拢的实施计划
 
-> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm / PowerShell Gallery 发布要用维护者的账号，还没做；P8 第一轮技术验证不通过，换成不经过 Tauri 的独立 WebView2 后第二轮验证通过并已实现（见 [p8-webview-validation.md](p8-webview-validation.md)）；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库和 CI 签名还没建。
+> 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm 包已发布 0.1.0（2026-11-05），PowerShell Gallery 还没发；P8 第一轮技术验证不通过，换成不经过 Tauri 的独立 WebView2 后第二轮验证通过并已实现（见 [p8-webview-validation.md](p8-webview-validation.md)），2026-11-06 人工验收通过；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库 [TixXin/focusd-plugins](https://github.com/TixXin/focusd-plugins) 和 CI 签名已建好，岛屿还没改读新仓库。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
 > 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
 
@@ -340,6 +340,8 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 **完成记录（2026-11-05）** ✅ 本地提交：`win32/webview_page.rs`（创建与加固 WebView2，unsafe 只在这里）、`plugin_host/webviews.rs`（放行规则、提供插件文件、消息与状态、页面的创建和关闭）、前端 `WebviewTemplate`、RPC `webview.postMessage` / `webview.message`、能力 `webview`、SDK 与模拟宿主、示例 `dev.focusd.todo-ring`、市场"自定义界面"标签。
 
+**人工验收（2026-11-06）** ✅ 在 release 版本上用示例 `dev.focusd.todo-ring` 验收通过：页面显示进度环和"完成 x / y"；点页面里的「刷新」岛屿不收起，数字随待办变化更新；切换到其他页面或岛屿收起时页面随之隐藏，不残留在屏幕上。
+
 与下面原设计的差异：
 
 - **不是 iframe，也不是 Tauri webview**，而是独立的 WebView2 控制器，叠放在岛屿窗口里占位框的位置（前端报告占位框的位置，原生层移动页面）。岛屿弹出的菜单等不会盖在页面上面。
@@ -440,7 +442,7 @@ plugins/schema/                 # 协议的唯一来源，岛屿和上面的包�
 - **实验 API**：通道已建好，但岛屿目前没有任何实验 API，`initialize.experimentalApis` 总是空列表。
 - **`publish`**：只打包并打印发布步骤；创建 Release 交给脚手架生成的 GitHub Actions 工作流。向索引仓库开 PR 等 P11 的索引仓库建好后再做。
 - **pnpm workspace** 只列出两个 npm 包（不含 PowerShell 模块），`check:size` 已扫描 `packages/`。
-- **未做**：npm 和 PowerShell Gallery 的占位发布、`sdk-v*` 标签的发布工作流（都需要维护者账号）。
+- **未做**：PowerShell Gallery 发布、`sdk-v*` 标签的发布工作流（都需要维护者账号）。npm 的 `fly-island-plugin` 和 `create-fly-island-plugin` 已于 2026-11-05 发布 0.1.0。
 
 ### P11 市场：能接收外部作者
 
