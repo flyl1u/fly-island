@@ -100,7 +100,6 @@ pub(crate) fn hook_url(agent: Agent) -> Option<String> {
 }
 
 /// The URL Claude Code's `PreToolUse` hook for `AskUserQuestion` posts to (phase 3).
-#[expect(dead_code, reason = "the hook installer (task 3.1) reads it; remove when it does")]
 pub(crate) fn question_hook_url() -> Option<String> {
     endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, decision::QUESTION_PATH))
 }

@@ -54,6 +54,12 @@ export type AgentText = {
     terminal: string;
     terminalHint: string;
   };
+  /** The card for a question Claude Code asks with AskUserQuestion (roadmap B6 phase 3). */
+  question: {
+    label: string;
+    other: string;
+    submit: string;
+  };
 };
 
 export const zhCN: AgentText = {
@@ -108,6 +114,11 @@ export const zhCN: AgentText = {
     terminal: "到终端",
     terminalHint: "交回终端处理，并切换到它的窗口",
   },
+  question: {
+    label: "在问你",
+    other: "其他回答…",
+    submit: "提交",
+  },
 };
 
 export const en: AgentText = {
@@ -160,5 +171,10 @@ export const en: AgentText = {
     allowAlwaysHint: (rule) => `Don't ask again this session: ${rule}`,
     terminal: "Terminal",
     terminalHint: "Hand it back to the terminal and switch to its window",
+  },
+  question: {
+    label: "Asks you",
+    other: "Something else…",
+    submit: "Submit",
   },
 };

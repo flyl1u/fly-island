@@ -51,10 +51,10 @@
 
 | # | 任务 | 状态 | 负责 | 提交 / 备注 |
 |---|---|---|---|---|
-| 3.1 | 安装 `PreToolUse`（只匹配 `AskUserQuestion`，HTTP） | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：端点 `POST /claude/ask-user-question`，安装用 `agent_approval::question_hook_url()` |
-| 3.2 | 提问卡片：单选、多选加提交、数字键选择、到终端处理 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | |
-| 3.3 | 自由文本回答 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | 依赖 0.3；Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：`answer` 决定原样带回自由文本 |
-| 3.4 | 测试与文档 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | Rust 单元测试已完成（fly-island-c6，同上，`agent_approval/tests.rs` 新增 4 项） |
+| 3.1 | 安装 `PreToolUse`（只匹配 `AskUserQuestion`，HTTP） | 已完成 | fly-island-67 · lane 3 | 待本机实测。提交 `feat(agent-status): answer agents' questions on the island`：「安装/修复」在 `PreToolUse` 下加一个只匹配 `AskUserQuestion` 的 HTTP 钩子（和审批钩子同一令牌、标记头、150 秒），排在全匹配的状态钩子后面。Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：端点 `POST /claude/ask-user-question`，安装用 `agent_approval::question_hook_url()` |
+| 3.2 | 提问卡片：单选、多选加提交、数字键选择、到终端处理 | 已完成 | fly-island-67 · lane 3 | 待本机实测。提交 `feat(agent-status): answer agents' questions on the island`（`AgentQuestionCard.tsx`、`questions.ts`）：只有一个单选问题时点选项或按数字键直接提交；多个问题或多选时勾完点「提交」，多选按选项顺序用「, 」连起来；全局快捷键只有 Ctrl+Alt+T 到终端，数字键只在岛屿有焦点时有效 |
+| 3.3 | 自由文本回答 | 已完成 | fly-island-67 · lane 3 | 待本机实测。每个问题下面一直有输入框，填了文字就用文字（优先于勾选），回车提交；Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：`answer` 决定原样带回自由文本 |
+| 3.4 | 测试与文档 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | 前端单元测试 `tests/unit/agent-questions.test.mjs`、回归页 `agent-approvals.html` 的提问部分已完成（提交 `feat(agent-status): answer agents' questions on the island`）；剩本机实测。Rust 单元测试已完成（fly-island-c6，同上，`agent_approval/tests.rs` 新增 4 项） |
 
 ## 第 4 期：其余
 

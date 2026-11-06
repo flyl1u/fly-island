@@ -7,6 +7,7 @@ import {
   listenAgentApprovalClosed,
   listenAgentApprovalRequested,
   type AgentApprovalDecision,
+  type AgentQuestionAnswers,
   type AgentApprovalRequest,
 } from "./api";
 
@@ -18,7 +19,8 @@ export type AgentApprovals = {
   current: AgentApprovalRequest | null;
   /** How many more are waiting. */
   queued: number;
-  decide: (decision: AgentApprovalDecision) => void;
+  /** nswers goes with nswer, for a question. */
+  decide: (decision: AgentApprovalDecision, answers?: AgentQuestionAnswers) => void;
   /** The card's height as it measured it; the island's height follows it. */
   cardHeight: number;
   measure: (height: number) => void;
@@ -134,10 +136,10 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
   }, [isOpenOnAgents]);
 
   const decide = useCallback(
-    (decision: AgentApprovalDecision) => {
+    (decision: AgentApprovalDecision, answers?: AgentQuestionAnswers) => {
       if (!current) return;
       drop(current.id);
-      void decideAgentApproval(current.id, decision).catch(report);
+      void decideAgentApproval(current.id, decision, undefined, answers).catch(report);
     },
     [current, drop],
   );

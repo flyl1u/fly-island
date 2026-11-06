@@ -14,6 +14,7 @@ import { sessionKey } from "./unseen";
 import type { UnseenSessions } from "./useUnseenSessions";
 import type { AlertedSession } from "./useAgentAlerts";
 import { AgentApprovalCard } from "./approvals/AgentApprovalCard";
+import { AgentQuestionCard } from "./approvals/AgentQuestionCard";
 import type { AgentApprovals } from "./approvals/useAgentApprovals";
 import "./AgentSessionsPanel.css";
 
@@ -104,7 +105,11 @@ export function AgentSessionsPanel({
   if (approvals?.current) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-        <AgentApprovalCard approvals={approvals} sessions={listed} />
+        {approvals.current.kind === "question" ? (
+          <AgentQuestionCard approvals={approvals} sessions={listed} />
+        ) : (
+          <AgentApprovalCard approvals={approvals} sessions={listed} />
+        )}
       </section>
     );
   }

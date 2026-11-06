@@ -12,6 +12,8 @@ use super::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ApprovalHook {
     pub url: String,
+    /// Where the AskUserQuestion hook posts (roadmap B6 phase 3); None installs no question hook.
+    pub question_url: Option<String>,
     pub token: String,
 }
 
@@ -116,8 +118,9 @@ pub(super) fn claude_code_hook_entries(
     ]
 }
 
-/// What Install/Repair writes: the status hooks, and the approval hook when the island's endpoint
-/// runs. Both go under `PermissionRequest`, as two entries; Claude Code runs them side by side.
+/// What Install/Repair writes: the status hooks, and the approval hooks when the island's endpoint
+/// runs. They sit beside the status hooks of the same events (`PermissionRequest`, `PreToolUse`)
+/// as separate entries; Claude Code runs them side by side.
 pub(super) fn claude_code_installed_entries(
     running_script_path: &Path,
     status_script_path: &Path,
@@ -125,21 +128,28 @@ pub(super) fn claude_code_installed_entries(
 ) -> Vec<(&'static str, Value)> {
     let mut entries = claude_code_hook_entries(running_script_path, status_script_path);
     if let Some(approval) = approval {
-        entries.push(("PermissionRequest", claude_code_approval_hook_entry(approval)));
+        entries.push(("PermissionRequest", claude_code_http_hook_entry(&approval.url, &approval.token, "approval")));
+        if let Some(question_url) = &approval.question_url {
+            let mut question = claude_code_http_hook_entry(question_url, &approval.token, "question");
+            if let Value::Object(object) = &mut question {
+                object.insert("matcher".to_string(), Value::String("AskUserQuestion".to_string()));
+            }
+            entries.push(("PreToolUse", question));
+        }
     }
     entries
 }
 
-/// The HTTP hook that holds a permission request for the island's card (roadmap B6 2.2).
-pub(super) fn claude_code_approval_hook_entry(approval: &ApprovalHook) -> Value {
+/// An HTTP hook that holds a request for the island's card (roadmap B6 phases 2 and 3).
+fn claude_code_http_hook_entry(url: &str, token: &str, marker: &str) -> Value {
     json!({
         "hooks": [
             {
                 "type": "http",
-                "url": approval.url,
+                "url": url,
                 "headers": {
-                    "Authorization": format!("Bearer {}", approval.token),
-                    APPROVAL_HOOK_MARKER_HEADER: format!("{FOCUSD_AGENT_HOOK_SIGNATURE}approval"),
+                    "Authorization": format!("Bearer {token}"),
+                    APPROVAL_HOOK_MARKER_HEADER: format!("{FOCUSD_AGENT_HOOK_SIGNATURE}{marker}"),
                 },
                 "timeout": APPROVAL_HOOK_TIMEOUT_SECONDS
             }
@@ -340,6 +350,7 @@ mod tests {
         let status = Path::new(r"C:\focusd-agent-status.ps1");
         let approval = |port: u16| ApprovalHook {
             url: format!("http://127.0.0.1:{port}/claude/permission-request"),
+            question_url: Some(format!("http://127.0.0.1:{port}/claude/ask-user-question")),
             token: "t".to_string(),
         };
         let mine = json!({ "hooks": [{ "type": "command", "command": "my-own-hook" }] });
@@ -361,8 +372,19 @@ mod tests {
         assert_eq!(hook["timeout"], json!(APPROVAL_HOOK_TIMEOUT_SECONDS));
         assert!(value_contains_focusd_hook_signature(hook));
 
-        // Without the endpoint only the status hooks are written, and an old approval hook goes.
+        // The question hook: after the match-all status hook, only for AskUserQuestion.
+        let pre_tool = hooks["PreToolUse"].as_array().unwrap();
+        assert_eq!(pre_tool.len(), 2, "the status hook and the question hook");
+        assert_eq!(pre_tool[0]["matcher"], json!("*"));
+        assert_eq!(pre_tool[1]["matcher"], json!("AskUserQuestion"));
+        let question = &pre_tool[1]["hooks"][0];
+        assert_eq!(question["url"], json!("http://127.0.0.1:51000/claude/ask-user-question"));
+        assert_eq!(question["timeout"], json!(APPROVAL_HOOK_TIMEOUT_SECONDS));
+        assert!(value_contains_focusd_hook_signature(question));
+
+        // Without the endpoint only the status hooks are written, and the old approval hooks go.
         install_claude_code_hook_events(&mut hooks, claude_code_installed_entries(running, status, None));
         assert_eq!(hooks["PermissionRequest"].as_array().unwrap().len(), 2);
+        assert_eq!(hooks["PreToolUse"].as_array().unwrap().len(), 1);
     }
 }

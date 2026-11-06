@@ -10,6 +10,8 @@ export const AGENT_APPROVAL_CLOSED_EVENT = "agent-approval-closed";
 /** A tool call an agent waits on the island's approval for; one per session is sent at a time. */
 export type AgentApprovalRequest = {
   id: number;
+  /** A tool waiting for permission, or Claude Code's AskUserQuestion waiting for answers. */
+  kind: "permission" | "question";
   agent: AgentProvider;
   sessionId: string;
   cwd: string | null;
@@ -31,8 +33,14 @@ export type AgentApprovalCloseReason = "decided" | "timeout" | "disconnected" | 
 
 export type AgentApprovalClosed = { id: number; reason: AgentApprovalCloseReason };
 
-/** `allowAlways` keeps the suggested rules for this session only (Claude Code); `terminal` hands it back. */
-export type AgentApprovalDecision = "allow" | "deny" | "allowAlways" | "terminal";
+/**
+ * `allowAlways` keeps the suggested rules for this session only (Claude Code); `terminal` hands it
+ * back; `answer` (questions only, with `answers`) answers an AskUserQuestion.
+ */
+export type AgentApprovalDecision = "allow" | "deny" | "allowAlways" | "terminal" | "answer";
+
+/** Answers to an AskUserQuestion, by question text: an option's label or free text. */
+export type AgentQuestionAnswers = Record<string, string>;
 
 /** On, the endpoint holds hook requests for the island; off (the default), it hands them straight back. */
 export function setAgentApprovalEnabled(enabled: boolean) {
@@ -40,8 +48,8 @@ export function setAgentApprovalEnabled(enabled: boolean) {
 }
 
 /** `message` goes to the agent with a denial. */
-export function decideAgentApproval(id: number, decision: AgentApprovalDecision, message?: string) {
-  return invoke<void>("agent_approval_decide", { id, decision, message: message ?? null });
+export function decideAgentApproval(id: number, decision: AgentApprovalDecision, message?: string, answers?: AgentQuestionAnswers) {
+  return invoke<void>("agent_approval_decide", { id, decision, message: message ?? null, answers: answers ?? null });
 }
 
 /** The requests shown now, for a window that loads while they wait. */
