@@ -16,7 +16,7 @@
 │           local_api（127.0.0.1 HTTP，内置插件 focusd.local-api，请求经事件转给 main 窗口） │
 │           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
 │           mail · qq_notifications · wechat_reminders · translation · settings_window │
-│           device_use（摄像头、麦克风使用提示）                                        │
+│           device_use（摄像头、麦克风使用提示）· system_levels（音量、亮度变化提示）    │
 │  后台服务：IMAP IDLE 收信、剪贴板监听、通知监听、微信窗口闪烁检测、鼠标穿透循环        │
 └────────────┬─────────────────────────────────────────────────────────────────────────┘
              ▼

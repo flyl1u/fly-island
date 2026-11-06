@@ -2,6 +2,7 @@
 //! module; callers elsewhere use the safe functions it exposes.
 
 pub(crate) mod audio;
+pub(crate) mod brightness;
 pub(crate) mod clipboard;
 pub(crate) mod com;
 pub(crate) mod hotkey;

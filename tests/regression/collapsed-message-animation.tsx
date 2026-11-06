@@ -16,6 +16,7 @@ import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
 import type { DeviceUse } from "../../src/features/device-use/api";
+import type { LevelChange } from "../../src/features/system-levels/api";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -70,6 +71,7 @@ let changeAgent: (session: AgentSession | null) => void;
 let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
 let changeDeviceUse: (deviceUse: DeviceUse) => void;
+let changeLevel: (change: LevelChange | null) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -85,6 +87,8 @@ function Fixture() {
   const [agentsEnabled, setAgentsEnabled] = useState(true);
   const [deviceUse, setDeviceUse] = useState<DeviceUse>({ camera: [], microphone: [] });
   changeDeviceUse = setDeviceUse;
+  const [level, setLevel] = useState<LevelChange | null>(null);
+  changeLevel = setLevel;
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
@@ -93,7 +97,7 @@ function Fixture() {
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell deviceUse={deviceUse} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
+    <IslandShell deviceUse={deviceUse} levelPopup={level} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
@@ -263,6 +267,21 @@ async function runChecks() {
     check(commands.includes("open_device_privacy_settings") && openedPage === null, "点击图标打开系统隐私设置，不展开岛屿");
     await act(async () => changeDeviceUse({ camera: [], microphone: [] }));
     check(deviceButtons().length === 0, "程序用完后图标消失");
+    await act(async () => changeLevel({ kind: "volume", level: 0.42, muted: false }));
+    await settle();
+    const popup = () => document.querySelector<HTMLElement>(".level-popup");
+    check(popup()?.getAttribute("aria-label") === "音量 42%" && popup()?.querySelector(".level-popup__value")?.textContent === "42"
+      && document.querySelector(".island")!.getBoundingClientRect().width === islandWidth, "调音量时显示音量图标、进度条和百分比，不撑宽岛屿");
+    const fill = popup()!.querySelector<HTMLElement>(".level-popup__fill")!;
+    const track = popup()!.querySelector<HTMLElement>(".level-popup__track")!;
+    check(Math.abs(fill.getBoundingClientRect().width / track.getBoundingClientRect().width - 0.42) < 0.05, "进度条长度对应音量");
+    await act(async () => changeLevel({ kind: "volume", level: 0.42, muted: true }));
+    check(popup()?.classList.contains("level-popup--muted") && popup()?.getAttribute("aria-label") === "已静音", "静音时显示静音");
+    await act(async () => changeLevel({ kind: "brightness", level: 0.7 }));
+    check(popup()?.classList.contains("level-popup--brightness") && popup()?.getAttribute("aria-label") === "亮度 70%", "调亮度时显示亮度");
+    await act(async () => changeLevel(null));
+    await settle();
+    check(!popup(), "提示结束后恢复原来的文字");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

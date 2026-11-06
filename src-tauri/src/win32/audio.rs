@@ -75,6 +75,12 @@ impl OutputVolume {
         unsafe { self.0.GetMasterVolumeLevelScalar() }
     }
 
+    /// Whether the output is muted.
+    pub(crate) fn muted(&self) -> Result<bool> {
+        // SAFETY: `self.0` is a live endpoint volume interface; the call takes no pointers.
+        unsafe { self.0.GetMute() }.map(|muted| muted.as_bool())
+    }
+
     /// Sets the master volume scalar. Windows rejects values outside 0.0..=1.0.
     pub(crate) fn set_level(&self, level: f32) -> Result<()> {
         // SAFETY: `self.0` is a live endpoint volume interface; a null event

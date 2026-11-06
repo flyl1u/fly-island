@@ -19,6 +19,8 @@ export type IslandText = {
   /** The collapsed island's camera and microphone icons, naming the apps using them. */
   deviceInUse: Record<"camera" | "microphone", (apps: string) => string>;
   deviceAppSeparator: string;
+  /** The volume and brightness popup on the collapsed island. */
+  levelPopup: { volume: (percent: number) => string; brightness: (percent: number) => string; muted: string; mutedShort: string };
   layoutEditor: string;
 };
 
@@ -45,6 +47,7 @@ export const zhCN: IslandText = {
     microphone: (apps) => `${apps} 正在使用麦克风，点击打开隐私设置`,
   },
   deviceAppSeparator: "、",
+  levelPopup: { volume: (percent) => `音量 ${percent}%`, brightness: (percent) => `亮度 ${percent}%`, muted: "已静音", mutedShort: "静音" },
   layoutEditor: "布局编辑",
 };
 
@@ -71,5 +74,6 @@ export const en: IslandText = {
     microphone: (apps) => `${apps} using the microphone; click for privacy settings`,
   },
   deviceAppSeparator: ", ",
+  levelPopup: { volume: (percent) => `Volume ${percent}%`, brightness: (percent) => `Brightness ${percent}%`, muted: "Muted", mutedShort: "Off" },
   layoutEditor: "Layout editor",
 };

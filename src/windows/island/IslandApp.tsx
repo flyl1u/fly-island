@@ -4,6 +4,7 @@ import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminde
 import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
 import { useDeviceUse } from "../../features/device-use/useDeviceUse";
+import { useLevelPopup } from "../../features/system-levels/useLevelPopup";
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
@@ -95,6 +96,7 @@ export function IslandApp() {
   const qqMail = useMail(canPreviewMessages);
   const pluginNotifications = usePluginNotifications(canPreviewMessages);
   const deviceUse = useDeviceUse(settings.deviceUseIndicator);
+  const levelPopup = useLevelPopup(settings.levelPopup, !game.quiet && mode === "collapsed" && !isTucked);
   const permissionPrompts = usePluginPermissionPrompts();
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
@@ -332,6 +334,7 @@ export function IslandApp() {
         features={features}
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
         deviceUse={deviceUse}
+        levelPopup={levelPopup}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}

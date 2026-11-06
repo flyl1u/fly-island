@@ -10,6 +10,8 @@ import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
 import type { DeviceUse } from "../../features/device-use/api";
 import { DeviceUseIndicator } from "../../features/device-use/DeviceUseIndicator";
+import type { LevelChange } from "../../features/system-levels/api";
+import { LevelPopup } from "../../features/system-levels/LevelPopup";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
@@ -50,6 +52,8 @@ type IslandCollapsedBarProps = {
   shelfCount: number | null;
   /** Apps using the camera and microphone; their icons show while any do. */
   deviceUse: DeviceUse;
+  /** A volume or brightness change just made; it takes the place of the text while shown. */
+  levelPopup: LevelChange | null;
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
@@ -83,6 +87,7 @@ export function IslandCollapsedBar({
   showMusic,
   shelfCount,
   deviceUse,
+  levelPopup,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -156,7 +161,9 @@ export function IslandCollapsedBar({
       >
         <span className={pulseClassName} />
         <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-          {translationPeek ? (
+          {levelPopup ? (
+            <LevelPopup change={levelPopup} />
+          ) : translationPeek ? (
             <span className="island__active-task" key={translationPeek}>{translationPeek}</span>
           ) : <>
           {showCollapsedText && showTitle && (
@@ -211,7 +218,7 @@ export function IslandCollapsedBar({
           <span className="island-message-button__dot island-update-badge__dot" aria-hidden="true" />
         </button>
       )}
-      {showCollapsedText && !preview && !translationPeek && pluginStatusChip}
+      {showCollapsedText && !preview && !translationPeek && !levelPopup && pluginStatusChip}
       <DeviceUseIndicator deviceUse={deviceUse} />
       {shelfCount !== null && shelfCount > 0 && (
         <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>

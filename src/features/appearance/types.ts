@@ -118,6 +118,8 @@ export type IslandSettings = {
   shelfShowCount: boolean;
   /** The collapsed island shows a camera or microphone icon while an app uses them. */
   deviceUseIndicator: boolean;
+  /** The collapsed island shows the volume or brightness for a moment when it changes. */
+  levelPopup: boolean;
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;

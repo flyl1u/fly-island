@@ -9,6 +9,7 @@ import type { SettingsPositionText } from "./position";
 import type { SettingsExpandText } from "./expand";
 import type { SettingsGameModeText } from "./gameMode";
 import type { SettingsDeviceUseText } from "./deviceUse";
+import type { SettingsLevelPopupText } from "./levelPopup";
 import type { SettingsBackupText } from "./backup";
 import type { SettingsShortcutsText } from "./shortcuts";
 import type { SettingsPageShortcutsText } from "./pageShortcuts";
@@ -35,6 +36,7 @@ import * as position from "./position.ts";
 import * as expand from "./expand.ts";
 import * as gameMode from "./gameMode.ts";
 import * as deviceUse from "./deviceUse.ts";
+import * as levelPopup from "./levelPopup.ts";
 import * as backup from "./backup.ts";
 import * as shortcuts from "./shortcuts.ts";
 import * as pageShortcuts from "./pageShortcuts.ts";
@@ -71,6 +73,7 @@ export type SettingsText = {
 
   gameMode: SettingsGameModeText;
   deviceUse: SettingsDeviceUseText;
+  levelPopup: SettingsLevelPopupText;
   backup: SettingsBackupText;
 
   shortcuts: SettingsShortcutsText;
@@ -120,6 +123,7 @@ export const zhCN: SettingsText = {
 
   gameMode: gameMode.zhCN,
   deviceUse: deviceUse.zhCN,
+  levelPopup: levelPopup.zhCN,
   backup: backup.zhCN,
 
   shortcuts: shortcuts.zhCN,
@@ -169,6 +173,7 @@ export const en: SettingsText = {
 
   gameMode: gameMode.en,
   deviceUse: deviceUse.en,
+  levelPopup: levelPopup.en,
   backup: backup.en,
 
   shortcuts: shortcuts.en,

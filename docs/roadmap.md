@@ -32,7 +32,6 @@
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
 | C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 待做 | | Notchify、Isle Notch、WinIsland 都有 |
-| C2 | 音量、亮度弹出提示 | 进行中 | fly-island-7e · lane 5 · 2026-11-06 21:10 | |
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
 | C4 | 音乐页同步歌词 | 待做 | | 4 款以上竞品都有 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
@@ -56,6 +55,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| C2 | 音量、亮度弹出提示：后台线程每 0.1 秒读默认输出的音量和静音、每 0.4 秒读笔记本屏幕亮度（WMI，外接显示器读不到），变化时收起的小岛显示图标、进度条和百分比 1.5 秒；设置 → 通用 → 音量与亮度可关，关掉后不再读取 | 提交 `feat(island): show the volume or brightness when it changes` |
 | B6b | 会话开始也弹出提醒：默认每一轮开始都弹，设置里可改成只在新会话开始时弹或不弹 | 提交 `feat(agent-status): alerts when a session starts` |
 | B6a | 自动弹出提醒只显示触发的那一个会话（面板一行高、不显示用量），不再展开整个 Agent 页列表；点岛上别处、切页或收起后回到完整列表 | 提交 `fix(agent-status): an alert shows only its own session` |
 | C6 | 摄像头、麦克风正在使用的提示：读 Windows 的 `CapabilityAccessManager\ConsentStore`（任务栏隐私图标读的同一处），每 2 秒一次；折叠岛上显示绿色摄像头、橙色麦克风，点击打开系统隐私设置；设置 → 通用 → 隐私提示可关 | 提交 `feat(island): show when an app uses the camera or the microphone` |

@@ -13,6 +13,7 @@ mod mail;
 mod qq_notifications;
 mod settings_window;
 mod system;
+mod system_levels;
 mod todos;
 mod translation;
 mod tray;
@@ -115,6 +116,7 @@ pub fn run() {
                 island::start_cursor_passthrough_loop(window);
             }
             system::fullscreen::start(app.handle());
+            system_levels::init(app.handle());
             Ok(())
         })
         .invoke_handler(collect_commands!([]
@@ -127,6 +129,7 @@ pub fn run() {
             island;
             todos;
             system;
+            system_levels;
             agent_status;
             device_use;
             media_control;

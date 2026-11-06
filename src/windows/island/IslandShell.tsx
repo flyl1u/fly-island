@@ -1,4 +1,5 @@
 import type { DeviceUse } from "../../features/device-use/api";
+import type { LevelChange } from "../../features/system-levels/api";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -47,6 +48,7 @@ type IslandShellProps = {
   /** Files on the shelf for the collapsed bar, or null when it does not show them. */
   shelfCount: number | null;
   deviceUse: DeviceUse;
+  levelPopup?: LevelChange | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -96,6 +98,7 @@ export function IslandShell({
   features,
   shelfCount,
   deviceUse,
+  levelPopup = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -203,6 +206,7 @@ export function IslandShell({
           showMusic={features.music}
           shelfCount={shelfCount}
           deviceUse={deviceUse}
+          levelPopup={levelPopup}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
