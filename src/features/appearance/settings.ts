@@ -4,6 +4,8 @@ import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { AgentHostDisplay, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
 
 export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon", "name", "off"];
+/** Choices for how far back the Agent page lists sessions, in hours. */
+export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;
@@ -62,6 +64,12 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
   agentHostDisplay: "both",
+  agentSessionHours: 2,
+  agentShowClaudeCode: true,
+  agentShowCodex: true,
+  agentHideFinished: false,
+  agentShowElapsed: true,
+  agentShowModel: true,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -231,6 +239,14 @@ export function normalizeSettings(
     agentHostDisplay: AGENT_HOST_DISPLAYS.includes(settings?.agentHostDisplay as AgentHostDisplay)
       ? (settings?.agentHostDisplay as AgentHostDisplay)
       : DEFAULT_SETTINGS.agentHostDisplay,
+    agentSessionHours: (AGENT_SESSION_HOURS as readonly unknown[]).includes(settings?.agentSessionHours)
+      ? (settings?.agentSessionHours as number)
+      : DEFAULT_SETTINGS.agentSessionHours,
+    agentShowClaudeCode: settings?.agentShowClaudeCode !== false,
+    agentShowCodex: settings?.agentShowCodex !== false,
+    agentHideFinished: settings?.agentHideFinished === true,
+    agentShowElapsed: settings?.agentShowElapsed !== false,
+    agentShowModel: settings?.agentShowModel !== false,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

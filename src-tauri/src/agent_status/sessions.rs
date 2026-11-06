@@ -30,6 +30,9 @@ pub struct AgentSessionSummary {
     pub(super) updated_at: i64,
     /// The program the session runs in, when known (session_host.rs).
     pub(super) host: Option<SessionHost>,
+    /// When the newest prompt was sent, Unix milliseconds; how long the current (or last) turn
+    /// has run is counted from here. `None` when the prompt is not in the excerpt read.
+    pub(super) turn_started_at: Option<i64>,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -52,6 +55,49 @@ pub(super) struct SessionTail {
     pub(super) effort: Option<String>,
     pub(super) last_message: Option<String>,
     pub(super) state: TurnState,
+    /// Timestamp of the newest prompt, Unix milliseconds.
+    pub(super) turn_started_at: Option<i64>,
+}
+
+/// "2026-11-06T07:24:44.123Z" (or with an offset such as "+08:00") as Unix milliseconds.
+pub(super) fn parse_timestamp_ms(text: &str) -> Option<i64> {
+    let number = |range: std::ops::Range<usize>| text.get(range)?.parse::<i64>().ok();
+    let bytes = text.as_bytes();
+    if bytes.len() < 19 || bytes[4] != b'-' || bytes[7] != b'-' || !matches!(bytes[10], b'T' | b' ') {
+        return None;
+    }
+    let (year, month, day) = (number(0..4)?, number(5..7)?, number(8..10)?);
+    let (hour, minute, second) = (number(11..13)?, number(14..16)?, number(17..19)?);
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) || hour > 23 || minute > 59 || second > 60 {
+        return None;
+    }
+    let mut rest = &text[19..];
+    let mut millis = 0;
+    if let Some(fraction) = rest.strip_prefix('.') {
+        let digits = fraction.chars().take_while(char::is_ascii_digit).count();
+        let first3: String = fraction[..digits].chars().chain("000".chars()).take(3).collect();
+        millis = first3.parse::<i64>().ok()?;
+        rest = &fraction[digits..];
+    }
+    let offset_minutes = match rest {
+        "" | "Z" | "z" => 0,
+        _ => {
+            let sign = match rest.as_bytes()[0] { b'+' => 1, b'-' => -1, _ => return None };
+            let digits: String = rest[1..].chars().filter(char::is_ascii_digit).collect();
+            if digits.len() != 4 { return None; }
+            sign * (digits[..2].parse::<i64>().ok()? * 60 + digits[2..].parse::<i64>().ok()?)
+        }
+    };
+    // Days since 1970-01-01 for a proleptic Gregorian date (Howard Hinnant's days_from_civil).
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (month + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let seconds = days * 86_400 + hour * 3_600 + minute * 60 + second - offset_minutes * 60;
+    Some(seconds * 1_000 + millis)
 }
 
 /// Turns the state and the file age into the phase shown, using the same stale limit as the
@@ -105,8 +151,16 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
         if result.state == TurnState::Unknown {
             result.state = claude_turn_state(kind, &record);
         }
+        if result.turn_started_at.is_none() && kind == "user" && is_typed_prompt(&record) {
+            result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+        }
     }
     result
+}
+
+/// A prompt the user typed, not tool results, an interruption note or a command's output.
+fn is_typed_prompt(record: &Value) -> bool {
+    super::title::user_prompt_in_record(&record.to_string()).is_some()
 }
 
 fn claude_turn_state(kind: &str, record: &Value) -> TurnState {
@@ -188,6 +242,9 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
                 _ => None,
             };
             result.last_message = text.and_then(|text| shorten(text, LAST_MESSAGE_MAX_CHARS));
+        }
+        if result.turn_started_at.is_none() && matches!(payload_kind, "user_message" | "task_started") {
+            result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
         }
         if result.state == TurnState::Unknown {
             result.state = match payload_kind {

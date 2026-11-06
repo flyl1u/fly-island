@@ -8,7 +8,7 @@ const NO_SESSIONS: AgentSessionSummary[] = [];
  * Recent agent sessions, re-read every `intervalMs` while `enabled`. Keeps the previous array
  * when nothing changed so the island does not re-render on every poll.
  */
-export function useAgentSessions(enabled: boolean, intervalMs: number) {
+export function useAgentSessions(enabled: boolean, intervalMs: number, windowHours?: number) {
   const [sessions, setSessions] = useState<AgentSessionSummary[]>(NO_SESSIONS);
   const isLoading = useRef(false);
 
@@ -22,7 +22,7 @@ export function useAgentSessions(enabled: boolean, intervalMs: number) {
       if (isLoading.current) return;
       isLoading.current = true;
       try {
-        const next = await listAgentSessions();
+        const next = await listAgentSessions(windowHours);
         if (!cancelled) setSessions((current) => (sameAgentSessions(current, next) ? current : next));
       } catch (error) {
         console.error("Failed to list agent sessions", error);
@@ -36,7 +36,7 @@ export function useAgentSessions(enabled: boolean, intervalMs: number) {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [enabled, intervalMs]);
+  }, [enabled, intervalMs, windowHours]);
 
   return sessions;
 }

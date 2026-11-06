@@ -5,6 +5,7 @@ import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import "./AgentSessionsPanel.css";
@@ -16,10 +17,14 @@ const AGE_REFRESH_MS = 30_000;
 export function AgentSessionsPanel({
   sessions,
   hostDisplay,
+  showElapsed = true,
+  showModel = true,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
   hostDisplay: AgentHostDisplay;
+  showElapsed?: boolean;
+  showModel?: boolean;
 }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -82,7 +87,7 @@ export function AgentSessionsPanel({
                         {project && project !== title ? <span className="agent-session__project">{project} · </span> : null}
                         {title}
                       </span>
-                      {model && <span className="agent-session__model">{model}</span>}
+                      {showModel && model && <span className="agent-session__model">{model}</span>}
                       <span className="agent-session__dot" aria-hidden="true" />
                     </span>
                     {session.lastMessage && <span className="agent-session__message">{session.lastMessage}</span>}
@@ -97,7 +102,15 @@ export function AgentSessionsPanel({
                               {hostDisplay === "icon" ? " " : " · "}
                             </>
                           )}
-                          {getAgentPhaseLabel(session.phase, t)} · {minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)}
+                          {getAgentPhaseLabel(session.phase, t)}
+                          {showElapsed && session.turnStartedAt !== null && (
+                            <>
+                              {" · "}
+                              <SessionElapsed session={session} />
+                            </>
+                          )}
+                          {" · "}
+                          {minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)}
                         </>
                       )}
                     </span>

@@ -385,7 +385,7 @@ fn recent_sessions_are_listed_running_first() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home, &WaitingNotifications::new());
+    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     let ids = sessions
         .iter()
         .map(|s| s.session_id.as_str())
@@ -402,7 +402,7 @@ fn recent_sessions_are_listed_running_first() {
     assert_eq!(by_id("c1").cwd.as_deref(), Some(r"E:\Projects\MioPicFlow"));
 
     // A second call is answered from the cache and gives the same list.
-    assert_eq!(list_sessions(&home, &WaitingNotifications::new()), sessions);
+    assert_eq!(list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS), sessions);
 }
 
 #[test]
@@ -434,7 +434,7 @@ fn a_session_keeps_the_folder_it_started_in() {
     )
     .unwrap();
 
-    let sessions = list_sessions(&home, &WaitingNotifications::new());
+    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     assert_eq!(sessions.len(), 1);
     assert_eq!(sessions[0].cwd.as_deref(), Some(r"E:\Projects\fly-island"));
 }
@@ -578,7 +578,7 @@ fn a_session_asking_for_permission_is_listed_as_waiting() {
         .unwrap()
         .as_millis() as i64;
 
-    let listed = |waiting: &WaitingNotifications| list_sessions(&home, waiting)[0].phase;
+    let listed = |waiting: &WaitingNotifications| list_sessions(&home, waiting, super::session_scan::ACTIVE_WINDOW_MS)[0].phase;
     assert_eq!(listed(&WaitingNotifications::new()), "running");
     assert_eq!(
         listed(&WaitingNotifications::from([(
@@ -617,7 +617,7 @@ fn a_first_prompt_behind_a_huge_screenshot_names_the_session() {
         .concat(),
     )
     .unwrap();
-    let sessions = list_sessions(&home, &WaitingNotifications::new());
+    let sessions = list_sessions(&home, &WaitingNotifications::new(), super::session_scan::ACTIVE_WINDOW_MS);
     assert_eq!(sessions[0].title.as_deref(), Some("终端上的乱码是什么情况"));
 }
 
@@ -794,4 +794,38 @@ fn host_icons_are_only_read_from_existing_executables() {
     assert!(!is_icon_source(r"relative\app.exe"));
     assert!(!is_icon_source(concat!(env!("CARGO_MANIFEST_DIR"), r"\Cargo.toml")));
     assert!(icon_data_url(&explorer).is_some_and(|url| url.starts_with("data:image/png;base64,")));
+}
+
+#[test]
+fn timestamps_parse_to_unix_milliseconds() {
+    use super::sessions::parse_timestamp_ms;
+
+    assert_eq!(parse_timestamp_ms("1970-01-01T00:00:00Z"), Some(0));
+    assert_eq!(parse_timestamp_ms("2026-11-06T07:24:44.123Z"), Some(1_793_949_884_123));
+    assert_eq!(parse_timestamp_ms("2026-11-06T15:24:44.123456+08:00"), Some(1_793_949_884_123));
+    assert_eq!(parse_timestamp_ms("2000-02-29T00:00:00.5Z"), Some(951_782_400_500));
+    assert_eq!(parse_timestamp_ms("2026-13-01T00:00:00Z"), None);
+    assert_eq!(parse_timestamp_ms("yesterday"), None);
+}
+
+#[test]
+fn the_turn_starts_at_the_newest_typed_prompt() {
+    use super::sessions::{parse_claude_tail, parse_codex_tail};
+
+    let claude = [
+        line(json!({"type": "user", "timestamp": "2026-11-06T07:00:00Z", "message": {"role": "user", "content": "first"}})),
+        line(json!({"type": "user", "timestamp": "2026-11-06T07:10:00Z", "message": {"role": "user", "content": "second"}})),
+        line(json!({"type": "assistant", "timestamp": "2026-11-06T07:10:05Z", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t", "name": "Bash", "input": {}}]}})),
+        // Tool results are user records too, but not a new prompt.
+        line(json!({"type": "user", "timestamp": "2026-11-06T07:11:00Z", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t", "content": "ok"}]}})),
+    ]
+    .concat();
+    assert_eq!(parse_claude_tail(&claude).turn_started_at, Some(1_793_948_400_000 + 600_000));
+
+    let codex = [
+        line(json!({"type": "event_msg", "timestamp": "2026-11-06T07:00:00Z", "payload": {"type": "user_message", "message": "go"}})),
+        line(json!({"type": "event_msg", "timestamp": "2026-11-06T07:05:00Z", "payload": {"type": "agent_message", "message": "done"}})),
+    ]
+    .concat();
+    assert_eq!(parse_codex_tail(&codex).turn_started_at, Some(1_793_948_400_000));
 }

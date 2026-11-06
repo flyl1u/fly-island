@@ -232,9 +232,14 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
 
 /// Claude Code and Codex sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
+/// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
 pub async fn list_agent_sessions(
     app: AppHandle,
+    window_hours: Option<u32>,
 ) -> Result<Vec<sessions::AgentSessionSummary>, String> {
+    let window_ms = window_hours
+        .map(|hours| i64::from(hours.clamp(1, 24)) * 60 * 60 * 1000)
+        .unwrap_or(session_scan::ACTIVE_WINDOW_MS);
     let app_dir = app
         .path()
         .app_data_dir()
@@ -242,7 +247,7 @@ pub async fn list_agent_sessions(
     tauri::async_runtime::spawn_blocking(move || {
         let waiting = notifications::waiting_notifications(&app_dir);
         windows_home_dir().map(|home_dir| {
-            let mut sessions = session_scan::list_sessions(&home_dir, &waiting);
+            let mut sessions = session_scan::list_sessions(&home_dir, &waiting, window_ms);
             session_host::attach_hosts(&home_dir, &mut sessions);
             sessions
         })

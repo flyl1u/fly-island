@@ -21,6 +21,10 @@ export type AgentText = {
     justNow: string;
     minutesAgo: (minutes: number) => string;
     activeCount: (count: number) => string;
+    duration: (parts: { hours: number; minutes: number; seconds: number }) => string;
+    elapsedRunning: (duration: string) => string;
+    elapsedDone: (duration: string) => string;
+    elapsedHint: string;
   };
 };
 
@@ -47,6 +51,11 @@ export const zhCN: AgentText = {
     justNow: "刚刚",
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分钟前` : `${Math.floor(minutes / 60)} 小时前`),
     activeCount: (count) => `${count} 个 Agent 会话正在运行，点击查看`,
+    duration: ({ hours, minutes, seconds }) =>
+      hours > 0 ? `${hours} 小时 ${minutes} 分` : minutes > 0 ? `${minutes} 分 ${seconds} 秒` : `${seconds} 秒`,
+    elapsedRunning: (duration) => `已运行 ${duration}`,
+    elapsedDone: (duration) => `用时 ${duration}`,
+    elapsedHint: "从最近一次提问开始算",
   },
 };
 
@@ -73,5 +82,10 @@ export const en: AgentText = {
     justNow: "Just now",
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`),
     activeCount: (count) => (count === 1 ? "1 agent session running; click to view" : `${count} agent sessions running; click to view`),
+    duration: ({ hours, minutes, seconds }) =>
+      hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
+    elapsedRunning: (duration) => `running ${duration}`,
+    elapsedDone: (duration) => `took ${duration}`,
+    elapsedHint: "Counted from the latest prompt",
   },
 };

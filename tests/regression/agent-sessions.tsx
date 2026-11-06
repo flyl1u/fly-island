@@ -34,29 +34,29 @@ mockIPC((command, payload) => {
 const SESSIONS: AgentSessionSummary[] = [
   {
     provider: "claudeCode", sessionId: "a", cwd: "E:\\Projects\\fly-island", title: "设置界面完善思路",
-    model: "Opus 5.5", effort: "medium", phase: "running", updatedAt: now - 20_000,
+    model: "Opus 5.5", effort: "medium", phase: "running", updatedAt: now - 20_000, turnStartedAt: now - 200_000,
     // As long as the native side sends (120 characters), so it needs more than two lines.
     host: { name: "Orca", exe: "C:\\Apps\\orca\\Orca.exe", kind: "terminal" },
     lastMessage: "24 个测试全部通过。接下来用真实数据看看列表的实际效果和耗时，再决定要不要给第一句提问加缓存，顺便检查一下项目名是不是会话开始时的目录，以及跳转窗口时能不能按项目文件夹找到对应的编辑器窗口和终端窗口…",
   },
   {
     provider: "codex", sessionId: "b", cwd: "E:\\Projects\\MioPicFlow", title: "恢复 Windows 发布机环境，顺便把代理配置也整理一遍",
-    model: "gpt-6-astra", effort: "high", phase: "waiting", updatedAt: now - 14 * 60_000,
+    model: "gpt-6-astra", effort: "high", phase: "waiting", updatedAt: now - 14 * 60_000, turnStartedAt: null,
     host: { name: "Codex", exe: null, kind: "app" },
     lastMessage: "关闭系统代理后国内网站立即恢复，说明问题集中在 Clash 的代理链路。",
   },
   {
     provider: "claudeCode", sessionId: "c", cwd: "E:\\Projects\\TixXinBlog", title: "Nexus 紧凑视口密度变量",
-    model: "Opus 5.5", effort: null, phase: "completed", updatedAt: now - 95 * 60_000, lastMessage: null, host: null,
+    model: "Opus 5.5", effort: null, phase: "completed", updatedAt: now - 95 * 60_000, lastMessage: null, host: null, turnStartedAt: now - 95 * 60_000 - 252_000,
   },
 ];
 
 sizeFor(Number(params.get("rows")) || 3);
 const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
-const render = async (hostDisplay: AgentHostDisplay) => {
+const render = async (hostDisplay: AgentHostDisplay, cards: { showElapsed?: boolean; showModel?: boolean } = {}) => {
   await act(async () => {
-    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} /></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} {...cards} /></I18nProvider></StrictMode>);
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
@@ -78,7 +78,7 @@ async function runChecks() {
     check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Medium", "显示模型和推理强度");
     check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
     check(second.textContent?.includes("等待确认 · 14 分钟前") && getComputedStyle(second.querySelector(".agent-session__dot")!).backgroundColor === "rgb(255, 159, 67)", "等待确认的会话显示橙色状态灯和状态文字");
-    check(first.textContent?.includes("正在运行 · 刚刚") && second.textContent?.includes("14 分钟前") && third.textContent?.includes("1 小时前"), "显示状态和多久前更新");
+    check(first.textContent?.includes("正在运行 · 已运行 3 分 2") && first.textContent?.includes(" · 刚刚") && second.textContent?.includes("14 分钟前") && third.textContent?.includes("1 小时前"), "显示状态和多久前更新");
     const title = second.querySelector<HTMLElement>(".agent-session__title")!;
     const message = first.querySelector<HTMLElement>(".agent-session__message")!;
     check(title.scrollWidth > title.clientWidth, "长标题单行省略");
@@ -97,7 +97,7 @@ async function runChecks() {
     sizeFor(3);
 
     check(first.querySelector(".agent-session__host")?.textContent?.startsWith("Orca") && first.querySelector("img.agent-session__host-icon"), "来源显示程序名和它自己的图标");
-    check(first.textContent?.includes("Orca · 正在运行 · 刚刚"), "来源排在状态前面");
+    check(first.textContent?.includes("Orca · 正在运行 · 已运行"), "来源排在状态前面");
     check(second.querySelector("svg.agent-session__host-icon") && second.textContent?.includes("Codex · 等待确认"), "没有程序文件的来源用通用图标");
     check(!third.querySelector(".agent-session__host"), "不知道来源时不显示");
     await render("icon");
@@ -106,6 +106,15 @@ async function runChecks() {
     check(first.querySelector(".agent-session__host-name")?.textContent === "Orca" && !first.querySelector(".agent-session__host-icon"), "只显示名称");
     await render("off");
     check(!document.querySelector(".agent-session__host"), "设为不显示时隐藏来源");
+    await render("both");
+    check(third.textContent?.includes("已完成 · 用时 4 分 12 秒 · 1 小时前"), "结束的会话显示这一轮用时");
+    check(!second.querySelector(".agent-session__elapsed"), "不知道这一轮何时开始时不显示时长");
+    const before = first.querySelector(".agent-session__elapsed")?.textContent;
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1100)); });
+    check(first.querySelector(".agent-session__elapsed")?.textContent !== before, "进行中的会话时长每秒更新");
+    await render("both", { showElapsed: false, showModel: false });
+    check(!document.querySelector(".agent-session__elapsed") && !document.querySelector(".agent-session__model"), "可以关掉运行时长和模型");
+    await render("both");
     await render("both");
 
     await act(async () => { first.click(); await Promise.resolve(); });

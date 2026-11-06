@@ -56,6 +56,8 @@ export type AgentSessionSummary = {
   updatedAt: number;
   /** The program the session runs in, when known. */
   host: SessionHost | null;
+  /** When the newest prompt was sent (Unix ms): the current or last turn runs from here. */
+  turnStartedAt: number | null;
 };
 
 /** Mirrors SessionHost in src-tauri/src/agent_status/session_host.rs. */
@@ -74,8 +76,8 @@ export function getAgentHostIcon(path: string) {
 }
 
 /** Claude Code and Codex sessions active in the last two hours, running ones first. */
-export function listAgentSessions() {
-  return invoke<AgentSessionSummary[]>("list_agent_sessions");
+export function listAgentSessions(windowHours?: number) {
+  return invoke<AgentSessionSummary[]>("list_agent_sessions", { windowHours });
 }
 
 /**

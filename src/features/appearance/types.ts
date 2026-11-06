@@ -33,6 +33,15 @@ export type IslandSettings = {
   /** Agent sessions the expanded Agent page shows before it scrolls. */
   agentVisibleRows: number;
   agentHostDisplay: AgentHostDisplay;
+  /** How far back (hours) the Agent page lists sessions; one of AGENT_SESSION_HOURS. */
+  agentSessionHours: number;
+  agentShowClaudeCode: boolean;
+  agentShowCodex: boolean;
+  /** List only running, waiting or stalled sessions on the Agent page. */
+  agentHideFinished: boolean;
+  /** Show how long a session's current (or last) turn has run. */
+  agentShowElapsed: boolean;
+  agentShowModel: boolean;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

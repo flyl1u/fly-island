@@ -33,16 +33,18 @@ const HEAD_BYTES: u64 = 4 * 1024 * 1024;
 static SESSION_CACHE: Mutex<SessionCache> = Mutex::new(SessionCache::new());
 
 /// `waiting` names the Claude Code sessions that asked the user something (notifications.rs).
+/// `window_ms`: how far back a session file may have last changed (ACTIVE_WINDOW_MS by default).
 pub(super) fn list_sessions(
     home_dir: &Path,
     waiting: &WaitingNotifications,
+    window_ms: i64,
 ) -> Vec<AgentSessionSummary> {
     let now = current_unix_millis();
     let mut cache = SESSION_CACHE.lock().unwrap_or_else(PoisonError::into_inner);
     let mut sessions = Vec::new();
 
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
-    for (provider, path, modified) in recent_session_files(home_dir, now) {
+    for (provider, path, modified) in recent_session_files(home_dir, now, window_ms) {
         // The phase is worked out here, because a working session turns stale, or stops
         // waiting, without its file changing.
         if let Some((mut summary, state)) =
@@ -73,7 +75,7 @@ pub(super) fn list_sessions(
 
 type SessionFile = (&'static str, PathBuf, i64);
 
-fn recent_session_files(home_dir: &Path, now: i64) -> Vec<SessionFile> {
+fn recent_session_files(home_dir: &Path, now: i64, window_ms: i64) -> Vec<SessionFile> {
     let mut files = Vec::new();
     let mut push_recent = |provider: &'static str, path: PathBuf| {
         let modified = fs::metadata(&path)
@@ -81,7 +83,7 @@ fn recent_session_files(home_dir: &Path, now: i64) -> Vec<SessionFile> {
             .filter(|metadata| metadata.is_file())
             .and_then(|metadata| metadata.modified().ok())
             .and_then(system_time_to_unix_millis);
-        if let Some(modified) = modified.filter(|modified| now - modified <= ACTIVE_WINDOW_MS) {
+        if let Some(modified) = modified.filter(|modified| now - modified <= window_ms) {
             files.push((provider, path, modified));
         }
     };
@@ -98,7 +100,7 @@ fn recent_session_files(home_dir: &Path, now: i64) -> Vec<SessionFile> {
         }
     }
 
-    // ~/.codex/sessions/<year>/<month>/<day>/rollout-*.jsonl; the newest two days cover two hours.
+    // ~/.codex/sessions/<year>/<month>/<day>/rollout-*.jsonl; the newest two days cover up to a day.
     let mut days = Vec::new();
     for year in read_dir_paths(&home_dir.join(".codex").join("sessions")) {
         for month in read_dir_paths(&year) {
@@ -173,6 +175,8 @@ impl SessionCache {
             return Some((summary, cached.state));
         }
 
+        // A long turn can push its prompt out of the tail read; keep the start found before.
+        let known_turn_start = sessions.get(path).and_then(|cached| cached.summary.turn_started_at);
         let known_head = sessions
             .get(path)
             .map(|cached| cached.head.clone())
@@ -205,7 +209,9 @@ impl SessionCache {
         .or_else(|| cwd.as_deref().and_then(folder_title));
 
         let state = parsed.state;
+        let turn_started_at = parsed.turn_started_at.or(known_turn_start);
         let mut summary = summary_from(provider, session_id, cwd, title, parsed, modified);
+        summary.turn_started_at = turn_started_at;
         summary.host = host;
         sessions.insert(
             path.to_path_buf(),
@@ -251,6 +257,7 @@ fn summary_from(
         last_message: parsed.last_message,
         updated_at,
         host: None,
+        turn_started_at: None,
     }
 }
 

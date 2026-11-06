@@ -88,6 +88,12 @@ Each session on the Agent page can show where it runs, as the program's own icon
 - **Codex**: the `originator` of the rollout's `session_meta` ("Codex Desktop", `codex_cli_rs`, `codex_vscode`) gives Codex, Codex CLI or VS Code, without an executable.
 - **Icons**: `get_agent_host_icon(path)` extracts the executable's large icon (`win32/icon.rs`) and returns a PNG data URL, cached per path. It only reads existing absolute `.exe` files. A host without an executable or icon gets a generic terminal, editor or app icon.
 
+## Session List Settings
+
+**Settings → AI Agent** also sets, in `focusd-island-settings`: how far back the list goes (`agentSessionHours`: 1, 2 (default), 6 or 24 hours, passed to `list_agent_sessions` as `windowHours`); whether Claude Code and Codex sessions are shown (`agentShowClaudeCode`, `agentShowCodex`; hidden agents also leave the island's running count); only sessions in progress (`agentHideFinished`); and, per card, the running time (`agentShowElapsed`) and the model (`agentShowModel`).
+
+**Running time** counts from the newest typed prompt: Claude Code's last real `user` record, Codex's last `user_message` / `task_started` (`turnStartedAt` in each summary). A session in progress shows "已运行 3 分 20 秒", ticking every second in its own leaf component; a finished one shows "用时 …" up to its last write. When a long turn pushes the prompt out of the 256 KiB tail read, the start found earlier is kept; if it was never seen, no time is shown.
+
 ## Switching to a Session's Window
 
 Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cwd`, `title`, and the optional `sessionId`). It tries, in order:

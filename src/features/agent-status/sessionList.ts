@@ -1,7 +1,7 @@
 import type { AgentSessionSummary } from "./api";
 
 /** Fields the Agent page shows; `updatedAt` is left out because it only feeds the age label. */
-const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage"] as const;
+const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt"] as const;
 
 export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSummary[]) {
   return (
@@ -11,6 +11,8 @@ export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSumma
       // Ages are shown in minutes, so a newer write only matters once a minute has passed.
       return (
         SHOWN_FIELDS.every((field) => session[field] === other[field]) &&
+        session.host?.exe === other.host?.exe &&
+        session.host?.name === other.host?.name &&
         Math.floor(session.updatedAt / 60_000) === Math.floor(other.updatedAt / 60_000)
       );
     })
@@ -19,7 +21,33 @@ export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSumma
 
 /** Sessions still working: running, waiting for the user, or silent mid-turn for a while (stale). */
 export function countActiveSessions(sessions: AgentSessionSummary[]) {
-  return sessions.filter((session) => session.phase === "running" || session.phase === "waiting" || session.phase === "stale").length;
+  return sessions.filter((session) => isActivePhase(session.phase)).length;
+}
+
+export type SessionFilter = { claudeCode: boolean; codex: boolean };
+
+/** Sessions of the agents the user wants to see. */
+export function filterSessions(sessions: AgentSessionSummary[], filter: SessionFilter) {
+  const shown = sessions.filter((session) => (session.provider === "codex" ? filter.codex : filter.claudeCode));
+  return shown.length === sessions.length ? sessions : shown;
+}
+
+export function isActivePhase(phase: AgentSessionSummary["phase"]) {
+  return phase === "running" || phase === "waiting" || phase === "stale";
+}
+
+/** How long the session's turn has run: until now while it works, until its last write after. */
+export function turnElapsedMs(session: AgentSessionSummary, now: number) {
+  if (session.turnStartedAt === null) return null;
+  const end = isActivePhase(session.phase) ? now : session.updatedAt;
+  const elapsed = end - session.turnStartedAt;
+  return elapsed >= 0 ? elapsed : null;
+}
+
+/** Whole hours, minutes and seconds of `ms`. */
+export function durationParts(ms: number) {
+  const total = Math.floor(ms / 1000);
+  return { hours: Math.floor(total / 3600), minutes: Math.floor((total % 3600) / 60), seconds: total % 60 };
 }
 
 /** The last folder of a session's working directory. */

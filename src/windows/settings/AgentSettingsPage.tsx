@@ -1,7 +1,5 @@
-import { NumberControl } from "../../components/controls/NumberControl";
-import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
-import { AGENT_HOST_DISPLAYS, MAX_AGENT_VISIBLE_ROWS, MIN_AGENT_VISIBLE_ROWS } from "../../features/appearance/settings";
+import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
 import { AgentHooksSettingsSection } from "../../features/agent-status/AgentHooksSettingsSection";
 import { useAgentStatusSettings } from "../../features/agent-status/useAgentStatusSettings";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -39,29 +37,7 @@ export function AgentSettingsPage({
         />
         <p className="settings-section__hint">{t.settings.agent.sessionTitleHint}</p>
       </section>
-      <section className="settings-section settings-section--agent-sessions">
-        <div className="settings-section__header">
-          <span>{t.settings.agent.sessionPageSection}</span>
-        </div>
-        <NumberControl
-          label={t.settings.agent.sessionVisibleRows}
-          value={settings.agentVisibleRows}
-          min={MIN_AGENT_VISIBLE_ROWS}
-          max={MAX_AGENT_VISIBLE_ROWS}
-          onChange={(agentVisibleRows) => onSettingsChange({ ...settings, agentVisibleRows })}
-        />
-        <p className="settings-section__hint">{t.settings.agent.sessionPageHint}</p>
-        <div className="shelf-settings__row">
-          <span>{t.settings.agent.hostDisplay}</span>
-          <SelectControl
-            value={settings.agentHostDisplay}
-            options={AGENT_HOST_DISPLAYS.map((value) => ({ value, label: t.settings.agent.hostDisplayOptions[value] }))}
-            ariaLabel={t.settings.agent.hostDisplay}
-            onChange={(agentHostDisplay) => onSettingsChange({ ...settings, agentHostDisplay })}
-          />
-        </div>
-        <p className="settings-section__hint">{t.settings.agent.hostDisplayHint}</p>
-      </section>
+      <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentHooksSettingsSection {...agentStatus} />
     </>
   );

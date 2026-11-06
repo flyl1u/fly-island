@@ -23,6 +23,18 @@ export type SettingsAgentText = {
   hostDisplay: string;
   hostDisplayOptions: { both: string; icon: string; name: string; off: string };
   hostDisplayHint: string;
+  sessionHours: string;
+  sessionHoursOption: (hours: number) => string;
+  sessionHoursHint: string;
+  sessionCardSection: string;
+  showClaudeCode: string;
+  showCodex: string;
+  showAgentsHint: string;
+  hideFinished: string;
+  hideFinishedHint: string;
+  showElapsed: string;
+  showElapsedHint: string;
+  showModel: string;
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -52,6 +64,18 @@ export const zhCN: SettingsAgentText = {
   hostDisplay: "会话来源",
   hostDisplayOptions: { both: "图标和名称", icon: "只显示图标", name: "只显示名称", off: "不显示" },
   hostDisplayHint: "会话在哪个程序里运行，比如 Orca、Windows Terminal、VS Code、Codex。正在运行的 Claude Code 会话会自动识别；岛屿启动前就结束的会话没有来源。",
+  sessionHours: "列出多久内的会话",
+  sessionHoursOption: (hours) => `最近 ${hours} 小时`,
+  sessionHoursHint: "最后一次活动在这段时间内的会话才会列出。",
+  sessionCardSection: "会话卡片",
+  showClaudeCode: "显示 Claude Code 会话",
+  showCodex: "显示 Codex 会话",
+  showAgentsHint: "关掉的 Agent 不出现在 Agent 页，也不算进岛上的运行数量。",
+  hideFinished: "只显示进行中的会话",
+  hideFinishedHint: "隐藏已完成和失败的会话，只留正在运行、等待确认和可能中断的。",
+  showElapsed: "显示运行时长",
+  showElapsedHint: "进行中的会话显示\"已运行多久\"，每秒更新；结束的显示这一轮\"用时多久\"。从最近一次提问开始算。",
+  showModel: "显示模型和推理强度",
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -81,6 +105,18 @@ export const en: SettingsAgentText = {
   hostDisplay: "Session source",
   hostDisplayOptions: { both: "Icon and name", icon: "Icon only", name: "Name only", off: "Hidden" },
   hostDisplayHint: "The program a session runs in, such as Orca, Windows Terminal, VS Code or Codex. Running Claude Code sessions are recognized automatically; sessions that ended before the island started have no source.",
+  sessionHours: "List sessions from the last",
+  sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
+  sessionHoursHint: "Only sessions active within this time are listed.",
+  sessionCardSection: "Session cards",
+  showClaudeCode: "Show Claude Code sessions",
+  showCodex: "Show Codex sessions",
+  showAgentsHint: "Agents switched off are left out of the Agent page and the island's running count.",
+  hideFinished: "Only sessions in progress",
+  hideFinishedHint: "Hide finished and failed sessions; keep running, waiting and possibly stalled ones.",
+  showElapsed: "Show how long it has run",
+  showElapsedHint: "A session in progress shows how long it has been running, updated every second; a finished one shows how long its last turn took. Counted from the latest prompt.",
+  showModel: "Show the model and effort",
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
 };

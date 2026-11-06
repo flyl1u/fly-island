@@ -20,7 +20,7 @@ import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-s
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useAgentSessions } from "../../features/agent-status/useAgentSessions";
-import { countActiveSessions } from "../../features/agent-status/sessionList";
+import { countActiveSessions, filterSessions, isActivePhase } from "../../features/agent-status/sessionList";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
@@ -106,7 +106,16 @@ export function IslandApp() {
   const agentStatus = useAgentStatus(settings.agentStatusEnabled);
   // Read every second: the collapsed island names sessions from it and holds a finished one's
   // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
-  const agentSessions = useAgentSessions(settings.agentStatusEnabled, 1000);
+  const allAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
+  // Agents switched off in Settings → AI Agent are left out of the page and the count.
+  const agentSessions = useMemo(
+    () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
+    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex],
+  );
+  const listedAgentSessions = useMemo(
+    () => (settings.agentHideFinished ? agentSessions.filter((session) => isActivePhase(session.phase)) : agentSessions),
+    [agentSessions, settings.agentHideFinished],
+  );
   const activeAgentSessionCount = countActiveSessions(agentSessions);
   const agentSession = useAgentSession(
     agentSessions,
@@ -369,7 +378,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={agentSessions} hostDisplay={settings.agentHostDisplay} />}
+        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
