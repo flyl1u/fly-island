@@ -86,6 +86,7 @@ fn the_host_matches_the_protocol_description() {
         [
             "host.info",
             "settings.get",
+            "settings.set",
             "ui.setInfo",
             "events.subscribe",
             "events.unsubscribe",

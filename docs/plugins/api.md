@@ -45,6 +45,7 @@
 |---|---|---|---|---|
 | `host.info` | 无 | 1 | 无 | Same as the initialize params. |
 | `settings.get` | 无 | 1 | 无 | Every declared setting with its current value (defaults filled in). |
+| `settings.set` | 无 | 2 | `values`：{ key: value }: settings from the manifest's contributes.settings, each of its declared type | { settings }: every setting afterwards. All or none: an unknown key or a wrong type is status 400 and changes nothing. The settings page shows the new values; the plugin gets no settings.changed for its own change. |
 | `ui.setInfo` | 无 | 1 | `items`：[{ label: LocalizedText, value: string (max 500 chars), copy?: boolean, secret?: boolean }] (max 10; empty clears) | {} |
 | `events.subscribe` | 无 | 2 | `events`：[string] (max 16; each needs the event's permission; all are checked before any is applied) | { events }: every event the plugin is subscribed to, sorted |
 | `events.unsubscribe` | 无 | 2 | `events`：[string] (max 16) | { events } |

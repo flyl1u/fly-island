@@ -57,6 +57,11 @@ plugin.onCommand("media", async () => {
   report("repeat", (await plugin.media.cycleRepeat()).repeat);
   await attempt("badVolume", () => plugin.media.setVolume(2));
 });
+plugin.onCommand("settings", async () => {
+  report("set", await plugin.setSettings({ repo: "c/d" }));
+  await attempt("badKey", () => plugin.setSettings({ nope: 1 }));
+  await attempt("badType", () => plugin.setSettings({ repo: 3 }));
+});
 plugin.onCommand("history", async () => {
   report("past", await plugin.todos.list("2000-01-02"));
   report("pastNote", await plugin.note.get("2000-01-02"));
@@ -143,6 +148,12 @@ test("the mock host runs a plugin like the island does", async () => {
     assert.equal(await logged(host, "volume"), 0.3);
     assert.equal(await logged(host, "repeat"), "none");
     assert.deepEqual(await logged(host, "badVolume"), { code: -32000, status: 400 });
+
+    host.command("settings");
+    assert.deepEqual(await logged(host, "set"), { repo: "c/d", extra: true });
+    assert.deepEqual(await logged(host, "badKey"), { code: -32000, status: 400 });
+    assert.deepEqual(await logged(host, "badType"), { code: -32000, status: 400 });
+    assert.equal(host.settings.repo, "c/d");
 
     host.command("history");
     assert.deepEqual((await logged(host, "past")).todos.map((todo) => todo.id), ["x"]);

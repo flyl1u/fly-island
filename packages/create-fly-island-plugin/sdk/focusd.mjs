@@ -130,6 +130,8 @@ export function createPlugin(options = {}) {
     onNotificationAction: (id, handler) => on("notification.action", (params) => (params?.id === id ? handler() : undefined)),
     /** Current values of the plugin's declared settings (contributes.settings). */
     settings: () => call("settings.get"),
+    /** Changes declared settings (all or none); resolves to every setting afterwards. Since API version 2. */
+    setSettings: async (values) => (await call("settings.set", { values }))?.settings ?? {},
     /** Replaces the Info shown on the plugin's page: [{ label: { "zh-CN", en }, value, copy?, secret? }]. */
     setInfo: (items) => call("ui.setInfo", { items }),
     info: () => call("host.info"),

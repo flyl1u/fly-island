@@ -183,6 +183,8 @@ export interface Plugin {
   onEvent(name: PluginEventName | (string & {}), handler: Handler<any>): Off;
   onNotificationAction(id: string, handler: () => unknown): Off;
   settings(): Promise<Record<string, unknown>>;
+  /** Changes some of the plugin's declared settings (all or none) so the settings page shows them; resolves to every setting. No settings.changed comes back. Since API version 2. */
+  setSettings(values: Record<string, unknown>): Promise<Record<string, unknown>>;
   setInfo(items: { label: LocalizedText; value: string; copy?: boolean; secret?: boolean }[]): Promise<unknown>;
   info(): Promise<InitializeParams>;
   notify(title: string, options?: NotifyOptions): Promise<{ muted: boolean }>;

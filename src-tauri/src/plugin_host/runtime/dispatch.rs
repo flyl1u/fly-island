@@ -71,6 +71,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "storage.get" | "storage.set" | "storage.delete" | "storage.keys" if context.spec.api_version >= 2 => {
             return answer(id, storage::answer_storage(&context.spec.data_dir, method, &params));
         }
+        "settings.set" if context.spec.api_version >= 2 => {
+            return answer(id, set_own_settings(context, &params));
+        }
         "island.openView" if context.spec.api_version >= 2 => {
             return answer(id, reveal::open_view(&context.app, &context.spec.plugin_id, &params));
         }
@@ -178,6 +181,20 @@ fn change_subscriptions(context: &Context, id: &Value, subscribe: bool, params: 
         feeds::watch_media();
     }
     answer
+}
+
+/// `settings.set { values: { key: value } }`: the plugin changes its own declared
+/// settings (e.g. the account it signed in to), so the settings page shows them.
+/// No `settings.changed` comes back for its own change; answers `{ settings }`.
+fn set_own_settings(context: &Context, params: &Value) -> Result<Value, (u16, String)> {
+    let values = params
+        .get("values")
+        .and_then(Value::as_object)
+        .filter(|values| !values.is_empty())
+        .ok_or((400, "Expected { values: { key: value } } with at least one setting.".to_string()))?;
+    let resolved = crate::plugin_host::commands::store_settings(&context.spec.plugin_id, values).map_err(|error| (400, error))?;
+    *lock(&context.settings) = resolved.clone();
+    Ok(json!({ "settings": resolved }))
 }
 
 /// `host.keepAlive { reason }`: an on-demand plugin asks not to be stopped when

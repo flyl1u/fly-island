@@ -42,6 +42,12 @@
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。
 
+## 插件 API 补全
+
+| # | 任务 | 状态 | 负责 | 备注 |
+|---|---|---|---|---|
+| E6 | 更多右键菜单扩展点：剪贴板条目、文件中转条目、消息条目（`contributes.menus`） | 进行中 | fly-island-lanes/2 | 现在只有待办右键菜单 |
+
 ## 第四优先：质量与发布
 
 | # | 任务 | 状态 | 负责 | 备注 |
@@ -58,6 +64,11 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| E5 | 插件修改自己声明的设置（`settings.set`） | 提交 `feat(plugins): let a plugin change its own settings` |
+| E4 | 插件媒体控制：拖进度、音量、随机、循环、封面 | `3dd05f5` |
+| E3 | 插件事件：`shelf.changed`，锁屏 / 睡眠 / 空闲系统事件 | `ea1f9bc` |
+| E2 | 插件按日期读取待办和笔记，`todos.days` | `25f0291` |
+| E1 | 插件在用户刚用过后打开自己的页面（`island.openView`） | `3792c19` |
 | A1、A4、A5 | 用官方 SessionStart / SessionEnd 钩子记录会话进程、启动时间和终端（`agent-sessions/`，Claude Code 后台运行）；Codex 接上 SessionStart / SessionEnd / PermissionRequest；等待确认改用 PermissionRequest 和 `agent_needs_input`，Codex 也能显示等待确认 | 提交 `feat(agent-status): record sessions with the documented hooks` |
 | — | 点击会话找不到窗口：`/clear` 后找回、Windows 拒绝切前台时改用其他方式、VS Code 标题标记、Orca 按标题找标签、`agent-focus.log` | `ddfcd05` |
 | — | 会话运行时长，Agent 设置页更多选项 | `3597475` |

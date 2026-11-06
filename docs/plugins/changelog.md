@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 修改自己的设置
+
+- 方法 `settings.set { values }`：插件改自己在 `contributes.settings` 里声明的设置（比如登录后的账号），设置页随之显示。全部生效或全部不改；未声明的键或类型不对为 400。插件自己的修改不会再收到 `settings.changed`。SDK：Node `plugin.setSettings(values)`，PowerShell `Set-FocusdSetting`；模拟宿主支持。
+
 ## 媒体控制
 
 - `media.nowPlaying`（以及每个媒体控制方法的结果）多了 `canSeek`、`canNext`、`canPrevious`、`shuffle`、`repeat`、`volume`。

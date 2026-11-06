@@ -213,6 +213,12 @@ function Set-FocusdKeepAlive([string]$Reason = $null) {
     [void](Invoke-FocusdMethod 'host.keepAlive' @{ reason = $value })
 }
 
+# Changes some of the plugin's declared settings (all or none), e.g.
+# @{ account = 'me@example.com' }; the settings page shows them.
+function Set-FocusdSetting([hashtable]$Values) {
+    [void](Invoke-FocusdMethod 'settings.set' @{ values = $Values })
+}
+
 # Opens one of the plugin's pages on the island. Works only right after the
 # user used the plugin (a command, a message button, a link or its page).
 function Open-FocusdView([string]$ViewId) {

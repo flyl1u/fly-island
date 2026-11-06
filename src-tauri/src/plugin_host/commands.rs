@@ -248,11 +248,10 @@ pub fn run_plugin_command(id: String, command: String) -> Result<(), String> {
     lifecycle::deliver(&id, format!("onCommand:{command}"), "command", json!({ "id": command }))
 }
 
-/// Saves one of the plugin's declared settings (checked against its type) and
-/// sends the running plugin `settings.changed`.
-#[tauri::command]
-pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<PluginsSnapshot, String> {
-    let host = host()?;
+/// Saves declared settings of plugin `id`, each checked against its type; all
+/// or none. Returns every setting's value afterwards (defaults filled in).
+/// Used by the settings page and by the plugin itself (`settings.set`).
+pub(super) fn store_settings(id: &str, values: &Map<String, Value>) -> Result<Map<String, Value>, String> {
     let mut resolved = Map::new();
     update_state(|state, installed| {
         let manifest = installed
@@ -261,13 +260,30 @@ pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<Plugi
             .and_then(|plugin| plugin.manifest.as_ref().ok())
             .ok_or("Plugin not found.")?;
         let specs = &manifest.contributes.settings;
-        let spec = specs.iter().find(|spec| spec.key() == key).ok_or("Unknown plugin setting.")?;
-        let value = settings::coerce(spec, &value).map_err(|error| format!("\"{key}\" {error}."))?;
-        let grant = state.plugins.entry(id.clone()).or_default();
-        grant.settings.insert(key.clone(), value);
+        let mut checked = Vec::with_capacity(values.len());
+        for (key, value) in values {
+            let spec = specs
+                .iter()
+                .find(|spec| spec.key() == key)
+                .ok_or_else(|| format!("\"{key}\" is not one of the plugin's contributes.settings."))?;
+            checked.push((key.clone(), settings::coerce(spec, value).map_err(|error| format!("\"{key}\" {error}."))?));
+        }
+        let grant = state.plugins.entry(id.to_string()).or_default();
+        grant.settings.extend(checked);
         resolved = settings::resolve(specs, &grant.settings);
         Ok(())
     })?;
+    Ok(resolved)
+}
+
+/// Saves one of the plugin's declared settings (checked against its type) and
+/// sends the running plugin `settings.changed`.
+#[tauri::command]
+pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<PluginsSnapshot, String> {
+    let host = host()?;
+    let mut values = Map::new();
+    values.insert(key, value);
+    let resolved = store_settings(&id, &values)?;
     if lock(&host.builtins_running).contains(&id) {
         builtin::settings_changed(&id, &resolved)?;
     } else if let Some(supervisor) = lock(&host.supervisors).get(&id) {

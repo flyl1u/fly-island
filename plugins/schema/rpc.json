@@ -62,6 +62,13 @@
       "result": "Every declared setting with its current value (defaults filled in)."
     },
     {
+      "name": "settings.set",
+      "permission": null,
+      "since": 2,
+      "params": { "values": "{ key: value }: settings from the manifest's contributes.settings, each of its declared type" },
+      "result": "{ settings }: every setting afterwards. All or none: an unknown key or a wrong type is status 400 and changes nothing. The settings page shows the new values; the plugin gets no settings.changed for its own change."
+    },
+    {
       "name": "ui.setInfo",
       "permission": null,
       "since": 1,
