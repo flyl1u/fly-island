@@ -33,9 +33,9 @@
 
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
-| 1 | Rust：没有标记时判断最后一段回复是否以问句结尾，新字段 `replyAsks`。必须在截断前、按原文判断（`lastMessage` 只保留开头 200 字，问句通常在末尾） | 进行中 | fly-island-c6 · lane 6 | 规则：去掉 Markdown 后最后一个非空段落以 `？` / `?` 结尾，或以「吗」「呢」等疑问语气收尾；代码块不算 |
-| 2 | Rust：会话记录里最后一个工具调用是 AskUserQuestion / ExitPlanMode 且还没有结果时，回合中的会话算 `waiting`（不依赖钩子，补上计划确认） | 进行中 | fly-island-c6 · lane 6 | 钩子没装或通知被覆盖时也能亮红 |
-| 3 | 前端：四态判断提成一个纯函数（agent-status 内），会话环改用它；没有标记时用 `replyAsks`，不再把「没看过」当成等你回复（没看过仍由 B1 高亮表示） | 进行中 | fly-island-c6 · lane 6 | 单元测试 |
+| 1 | Rust：没有标记时判断最后一段回复是否以问句结尾，新字段 `replyAsks`。必须在截断前、按原文判断（`lastMessage` 只保留开头 200 字，问句通常在末尾） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；规则：去掉 Markdown 后最后一个非空段落以 `？` / `?` 结尾，或以「吗」「呢」等疑问语气收尾；代码块不算 |
+| 2 | Rust：会话记录里最后一个工具调用是 AskUserQuestion / ExitPlanMode 且还没有结果时，回合中的会话算 `waiting`（不依赖钩子，补上计划确认） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；钩子没装或通知被覆盖时也能亮红 |
+| 3 | 前端：四态判断提成一个纯函数（agent-status 内），会话环改用它；没有标记时用 `replyAsks`，不再把「没看过」当成等你回复（没看过仍由 B1 高亮表示） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；单元测试 |
 | 4 | Agent 页：圆点四色，橙色会话显示「等你回复」 | 待做 | | |
 | 5 | 弹出提醒与音效：「会话完成」拆成「等你回复」和「做完了」两个开关，默认都开 | 待做 | | 旧设置的 `agentAlertCompleted` 两个都沿用 |
 | 6 | 回归页、`DESIGN.md`、`overview.md`、中英文文案 | 待做 | | |

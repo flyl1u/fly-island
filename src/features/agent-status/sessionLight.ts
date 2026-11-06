@@ -1,0 +1,40 @@
+import type { AgentSessionSummary } from "./api";
+
+/**
+ * A session's light, the one judgement every place showing agent state uses (roadmap B11,
+ * docs/architecture/agent-session-states.md):
+ * - `needs`: stuck mid-turn on the user (a question, an approval or a plan to confirm);
+ * - `yourTurn`: the turn is over and Claude asked something;
+ * - `working`: running, or waiting on a background task it started (marker ⋯);
+ * - `stale`: silent mid-turn for a long while;
+ * - `done`: the turn is over and nothing is asked;
+ * - `failed`: the turn ended on an error.
+ */
+export type SessionLight = "needs" | "yourTurn" | "working" | "stale" | "done" | "failed";
+
+type LightFields = Pick<AgentSessionSummary, "phase" | "replyMarker" | "replyAsks">;
+
+export function sessionLight(session: LightFields): SessionLight {
+  switch (session.phase) {
+    case "waiting":
+      return "needs";
+    case "running":
+      return "working";
+    case "stale":
+      return "stale";
+    case "failed":
+      return "failed";
+    default:
+      // The reply status marker, when on, says which; otherwise whether the reply ends in a question.
+      switch (session.replyMarker) {
+        case "yourTurn":
+          return "yourTurn";
+        case "background":
+          return "working";
+        case "done":
+          return "done";
+        default:
+          return session.replyAsks ? "yourTurn" : "done";
+      }
+  }
+}

@@ -33,17 +33,21 @@ function session(sessionId, phase, overrides = {}) {
 const NONE = new Set();
 const color = (key) => SESSION_RING_STATES.find((state) => state.key === key).color;
 
-test("phases map to ring states; finished ones by whether they were seen and how long ago", () => {
+test("phases map to ring states; finished ones by whether the reply asks, then how recent they are", () => {
+  const unseen = new Set(["claudeCode:a"]);
+  const old = { updatedAt: NOW - 60 * MINUTE };
   assert.equal(sessionRingState(session("a", "waiting"), NONE, NOW), "needs");
   assert.equal(sessionRingState(session("a", "running"), NONE, NOW), "working");
   assert.equal(sessionRingState(session("a", "stale"), NONE, NOW), "stale");
-  assert.equal(sessionRingState(session("a", "completed"), new Set(["claudeCode:a"]), NOW), "yourturn");
-  assert.equal(sessionRingState(session("a", "failed"), new Set(["claudeCode:a"]), NOW), "yourturn");
-  assert.equal(sessionRingState(session("a", "completed"), new Set(["codex:a"]), NOW), "done");
+  // A reply ending in a question is yellow, seen or not, however old.
+  assert.equal(sessionRingState(session("a", "completed", { replyAsks: true, ...old }), NONE, NOW), "yourturn");
+  // Not seen yet no longer means it asks: grey while unseen, however old.
+  assert.equal(sessionRingState(session("a", "completed", old), unseen, NOW), "done");
   assert.equal(sessionRingState(session("a", "completed", { updatedAt: NOW - DONE_WINDOW_MS }), NONE, NOW), "done");
   assert.equal(sessionRingState(session("a", "completed", { updatedAt: NOW - DONE_WINDOW_MS - 1 }), NONE, NOW), null);
-  // An unseen one stays yellow however old it is.
-  assert.equal(sessionRingState(session("a", "completed", { updatedAt: NOW - 60 * MINUTE }), new Set(["claudeCode:a"]), NOW), "yourturn");
+  // A failed turn is red while unseen or recent.
+  assert.equal(sessionRingState(session("a", "failed", old), unseen, NOW), "needs");
+  assert.equal(sessionRingState(session("a", "failed", old), NONE, NOW), null);
 });
 
 test("the reply status marker decides a finished turn instead of whether it was seen", () => {
@@ -60,7 +64,9 @@ test("the reply status marker decides a finished turn instead of whether it was 
   assert.equal(sessionRingState(session("a", "completed", { replyMarker: "background" }), seen, NOW), "working");
   // A marker only means something on a finished turn.
   assert.equal(sessionRingState(session("a", "running", { replyMarker: "done" }), seen, NOW), "working");
-  assert.equal(sessionRingState(session("a", "failed", { replyMarker: "done" }), unseen, NOW), "yourturn");
+  assert.equal(sessionRingState(session("a", "failed", { replyMarker: "done" }), unseen, NOW), "needs");
+  // The marker wins over the question guess.
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done", replyAsks: true }), unseen, NOW), "done");
 });
 
 test("counts, segments in ring order and the summary list only states that have sessions", () => {
@@ -83,11 +89,11 @@ test("counts, segments in ring order and the summary list only states that have 
 
 test("card names up to three sessions waiting on you, those needing you first", () => {
   const sessions = [
-    session("y1", "completed", { title: "写测试" }),
+    session("y1", "completed", { title: "写测试", replyAsks: true }),
     session("n1", "waiting", { title: "修复登录" }),
-    session("y2", "completed", { title: "x".repeat(45), cwd: null }),
+    session("y2", "completed", { title: "x".repeat(45), cwd: null, replyAsks: true }),
     session("n2", "waiting", { title: null, cwd: null }),
-    session("y3", "completed"),
+    session("y3", "completed", { replyAsks: true }),
   ];
   const unseen = new Set(["claudeCode:y1", "claudeCode:y2", "claudeCode:y3"]);
   const lines = sessionRingCardLines(sessions, unseen, NOW, zhCN);

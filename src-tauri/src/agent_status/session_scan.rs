@@ -55,7 +55,8 @@ pub(super) fn list_sessions(
             cache.summary(provider, &path, modified, codex_index.as_deref())
         {
             let asked_user = is_waiting(waiting, &summary.session_id, summary.updated_at);
-            let ended = state == TurnState::Working && has_ended(app_dir, &summary.session_id);
+            let mid_turn = matches!(state, TurnState::Working | TurnState::AwaitingUser);
+            let ended = mid_turn && has_ended(app_dir, &summary.session_id);
             summary.phase = if ended {
                 // Quit mid-turn (often while a question was open): nothing left to wait for.
                 "completed"
@@ -276,6 +277,7 @@ fn summary_from(
         phase: "completed",
         last_message: parsed.last_message,
         reply_marker: parsed.reply_marker,
+        reply_asks: parsed.reply_asks,
         updated_at,
         host: None,
         turn_started_at: None,

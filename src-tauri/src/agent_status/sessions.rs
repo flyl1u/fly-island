@@ -11,7 +11,7 @@ use serde_json::Value;
 use super::session_host::SessionHost;
 use super::session_mode::{claude_permission_mode, claude_subagent_calls, claude_tool_results, codex_permission_mode};
 use super::reply_marker::split_reply;
-use super::reply_text::plain_reply;
+use super::reply_text::{asks_user, plain_reply};
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
 
@@ -36,6 +36,9 @@ pub struct AgentSessionSummary {
     /// What the last reply's marker line says ("yourTurn", "background" or "done"), when the
     /// optional reply status marker is on (reply_marker.rs); Claude Code only.
     pub(super) reply_marker: Option<&'static str>,
+    /// Whether the last reply ends by asking the user something (reply_text.rs); how a finished
+    /// turn without a marker tells "your turn" from "done".
+    pub(super) reply_asks: bool,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
     /// The program the session runs in, when known (session_host.rs).
@@ -59,9 +62,15 @@ pub(super) enum TurnState {
     #[default]
     Unknown,
     Working,
+    /// Working, but the turn's last call is a tool that waits for the user (a question, or a
+    /// plan to approve): the session waits on the user even without the hooks saying so.
+    AwaitingUser,
     Done,
     Failed,
 }
+
+/// Claude Code tools that stop the turn until the user answers.
+const USER_BLOCKING_TOOLS: [&str; 2] = ["AskUserQuestion", "ExitPlanMode"];
 
 /// What the end of a session file says. `None` fields were not found in the excerpt.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -74,6 +83,7 @@ pub(super) struct SessionTail {
     pub(super) last_message: Option<String>,
     /// The last reply's marker (reply_marker.rs), already cut from `last_message`.
     pub(super) reply_marker: Option<&'static str>,
+    pub(super) reply_asks: bool,
     pub(super) state: TurnState,
     /// Timestamp of the newest prompt, Unix milliseconds.
     pub(super) turn_started_at: Option<i64>,
@@ -88,7 +98,7 @@ pub(super) struct SessionTail {
 impl SessionTail {
     /// A finished turn has no current tool.
     fn settle(mut self) -> Self {
-        if self.state != TurnState::Working {
+        if !matches!(self.state, TurnState::Working | TurnState::AwaitingUser) {
             self.current_tool = None;
             self.subagents = 0;
         }
@@ -144,6 +154,8 @@ pub(super) fn session_phase(state: TurnState, idle_ms: i64, stale_after_ms: i64)
         TurnState::Failed => "failed",
         TurnState::Working if idle_ms >= stale_after_ms => "stale",
         TurnState::Working => "running",
+        // Waiting on the user is not a stall, however long it takes.
+        TurnState::AwaitingUser => "waiting",
         TurnState::Done | TurnState::Unknown => "completed",
     }
 }
@@ -188,8 +200,10 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
             if result.last_message.is_none() {
                 if let Some(text) = text_blocks(&message["content"]) {
                     let (marker, reply) = split_reply(&text);
+                    let plain = plain_reply(reply);
                     result.reply_marker = marker.map(|marker| marker.name());
-                    result.last_message = shorten(&plain_reply(reply), LAST_MESSAGE_MAX_CHARS);
+                    result.reply_asks = asks_user(&plain);
+                    result.last_message = shorten(&plain, LAST_MESSAGE_MAX_CHARS);
                 }
             }
             // Only tools called after the newest prompt belong to the current turn.
@@ -226,6 +240,8 @@ fn claude_turn_state(kind: &str, record: &Value) -> TurnState {
         }
         return match message["stop_reason"].as_str() {
             Some("end_turn" | "stop_sequence" | "max_tokens" | "refusal") => TurnState::Done,
+            // The newest record: nothing answered this call yet.
+            _ if calls_user_blocking_tool(&message["content"]) => TurnState::AwaitingUser,
             _ => TurnState::Working,
         };
     }
@@ -306,7 +322,9 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
                 "task_complete" => payload["last_agent_message"].as_str(),
                 _ => None,
             };
-            result.last_message = text.and_then(|text| shorten(&plain_reply(text), LAST_MESSAGE_MAX_CHARS));
+            let plain = text.map(plain_reply);
+            result.reply_asks = plain.as_deref().is_some_and(asks_user);
+            result.last_message = plain.and_then(|plain| shorten(&plain, LAST_MESSAGE_MAX_CHARS));
         }
         if result.turn_started_at.is_none() && matches!(payload_kind, "user_message" | "task_started") {
             result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
@@ -370,6 +388,14 @@ fn string_field(value: &Value, key: &str) -> Option<String> {
         .as_str()
         .filter(|text| !text.is_empty())
         .map(str::to_string)
+}
+
+fn calls_user_blocking_tool(content: &Value) -> bool {
+    content.as_array().is_some_and(|blocks| {
+        blocks.iter().any(|block| {
+            block["type"] == "tool_use" && block["name"].as_str().is_some_and(|name| USER_BLOCKING_TOOLS.contains(&name))
+        })
+    })
 }
 
 fn text_blocks(content: &Value) -> Option<String> {

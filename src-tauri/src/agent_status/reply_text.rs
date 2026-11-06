@@ -12,6 +12,37 @@ pub(super) fn plain_reply(markdown: &str) -> String {
         .join("\n")
 }
 
+/// Whether a finished reply hands the turn back with a question: its last paragraph asks
+/// something. Used when the reply carries no status marker (reply_marker.rs). Takes the reply as
+/// `plain_reply` gives it, before it is shortened, since the question is usually at the end.
+pub(super) fn asks_user(plain: &str) -> bool {
+    let paragraph = plain
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|paragraph| !paragraph.is_empty())
+        .last()
+        .unwrap_or_default();
+    paragraph.lines().any(has_question)
+}
+
+/// Closing quotes and brackets that can follow a question mark.
+const CLOSERS: &[char] = &['）', ')', '」', '』', '"', '”', '\'', '’', '*', '_', '】', ']'];
+
+fn has_question(line: &str) -> bool {
+    let chars: Vec<char> = line.chars().collect();
+    let asks = chars.iter().enumerate().any(|(index, c)| match c {
+        '？' => true,
+        // A "?" ends a sentence when nothing but space or a closing mark follows it; inside a URL
+        // or code (`page?id=1`) it does not.
+        '?' => index > 0 && chars[index + 1..].iter().find(|next| !CLOSERS.contains(next)).is_none_or(|next| next.is_whitespace() || !next.is_ascii()),
+        _ => false,
+    });
+    // Chinese questions written without a question mark: "……可以吗。"
+    asks || line
+        .split(['。', '！', '!', '；'])
+        .any(|sentence| sentence.trim().trim_end_matches(CLOSERS).ends_with('吗'))
+}
+
 fn plain_line(line: &str) -> Option<String> {
     let trimmed = line.trim();
     // Code fences and the rule under a table header carry no words.
@@ -110,6 +141,24 @@ mod tests {
             plain_reply(reply),
             "修好了，已合入 main（a87dd0e）。\n\n原因\n\n完成提醒只显示标题\n看 文档 了解\n引用\nlet x = 1;\n项  值\na  b"
         );
+    }
+
+    #[test]
+    fn a_reply_ending_in_a_question_hands_the_turn_back() {
+        use super::asks_user;
+        let asks = |reply: &str| asks_user(&plain_reply(reply));
+        assert!(asks("改好了。\n\n要按这个方案做吗？"));
+        assert!(asks("Done.\n\nShould I land it?"));
+        // A question followed by a closing remark in the same paragraph still asks.
+        assert!(asks("要我开工吗？卡片最多几行你也可以另外指定。"));
+        assert!(asks("**你选哪个？**"));
+        assert!(asks("这样可以吗。"));
+        // Done, or a question only earlier on.
+        assert!(!asks("要不要改？\n\n已经改好并合入 main。"));
+        assert!(!asks("已合入 main（`a87dd0e`）。"));
+        assert!(!asks("见 https://example.com/page?id=1"));
+        assert!(!asks("调用 `foo?.bar` 即可。"));
+        assert!(!asks(""));
     }
 
     #[test]

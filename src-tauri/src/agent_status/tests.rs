@@ -353,6 +353,33 @@ fn session_phase_turns_stale_after_the_limit() {
     assert_eq!(session_phase(TurnState::Done, 1, 600_000), "completed");
     assert_eq!(session_phase(TurnState::Unknown, 1, 600_000), "completed");
     assert_eq!(session_phase(TurnState::Failed, 1, 600_000), "failed");
+    // Waiting on the user never turns stale.
+    assert_eq!(session_phase(TurnState::AwaitingUser, 600_000, 600_000), "waiting");
+}
+
+#[test]
+fn an_open_question_or_plan_waits_on_the_user_and_a_finished_reply_may_ask() {
+    use super::sessions::{parse_claude_tail, TurnState};
+    let call = |tool: &str| {
+        line(json!({"type": "assistant", "sessionId": "s", "message": {"model": "claude-opus-5-5", "stop_reason": "tool_use",
+            "content": [{"type": "tool_use", "id": "t1", "name": tool, "input": {}}]}}))
+    };
+    let answered = line(json!({"type": "user", "sessionId": "s", "message": {"content": [{"type": "tool_result", "tool_use_id": "t1", "content": "ok"}]}}));
+    let tail = |records: &[String]| [vec![user_line(json!("做点什么"))], records.to_vec()].concat().concat();
+    assert_eq!(parse_claude_tail(&tail(&[call("AskUserQuestion")])).state, TurnState::AwaitingUser);
+    assert_eq!(parse_claude_tail(&tail(&[call("ExitPlanMode")])).state, TurnState::AwaitingUser);
+    assert_eq!(parse_claude_tail(&tail(&[call("Bash")])).state, TurnState::Working);
+    assert_eq!(parse_claude_tail(&tail(&[call("AskUserQuestion"), answered])).state, TurnState::Working);
+
+    let reply = |text: &str| {
+        line(json!({"type": "assistant", "sessionId": "s", "message": {"model": "claude-opus-5-5", "stop_reason": "end_turn",
+            "content": [{"type": "text", "text": text}]}}))
+    };
+    // The question is past the 200 characters kept for display, and still counts.
+    let long = format!("{}\n\n要按这个方案做吗？", "改动说明。".repeat(60));
+    let asks = parse_claude_tail(&tail(&[reply(&long)]));
+    assert!(asks.reply_asks && !asks.last_message.unwrap_or_default().contains("要按这个方案做吗"));
+    assert!(!parse_claude_tail(&tail(&[reply("已合入 main。")])).reply_asks);
 }
 
 #[test]

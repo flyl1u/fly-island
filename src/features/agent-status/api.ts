@@ -71,6 +71,11 @@ export type AgentSessionSummary = {
    * (Settings → AI Agent; Claude Code only). Missing from older builds.
    */
   replyMarker?: ReplyMarker | null;
+  /**
+   * Whether the last reply ends by asking the user something; tells "your turn" from "done" on a
+   * finished turn without a marker (src-tauri/src/agent_status/reply_text.rs). Missing from older builds.
+   */
+  replyAsks?: boolean;
 };
 
 /** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */
