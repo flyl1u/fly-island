@@ -50,8 +50,7 @@ pub(super) fn list_sessions(
         if let Some((mut summary, state)) =
             cache.summary(provider, &path, modified, codex_index.as_deref())
         {
-            let asked_user = provider == "claudeCode"
-                && is_waiting(waiting, &summary.session_id, summary.updated_at);
+            let asked_user = is_waiting(waiting, &summary.session_id, summary.updated_at);
             summary.phase = if state == TurnState::Working && asked_user {
                 // Waiting on the user is not a stall, however long it takes.
                 "waiting"

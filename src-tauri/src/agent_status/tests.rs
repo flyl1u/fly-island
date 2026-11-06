@@ -919,3 +919,49 @@ fn focus_attempts_log_their_steps_without_titles() {
     assert!(line.contains("claudeCode c7cd0d64 | process=remembered(5), tab=process | focused in"));
     assert!(line.ends_with(" ms\n"));
 }
+
+
+#[test]
+fn session_records_name_a_live_process_and_its_tab() {
+    use super::session_records::{is_session_id, parse, read, same_start, DIR_NAME};
+
+    assert!(is_session_id("23e370fd-7e26-4a93-abff-e6aa3b791ac1"));
+    assert!(!is_session_id("../x") && !is_session_id(""));
+    // WMI start times keep microseconds; the kernel's have 100 ns ticks.
+    assert!(same_start(Some(134383392529449190), Some(134383392529449197)));
+    assert!(!same_start(Some(134383392529449190), Some(134383392529449290)));
+    assert!(same_start(None, Some(1)) && !same_start(Some(1), None));
+
+    let me = std::process::id();
+    let started = crate::win32::process_times::start_time(me).expect("own start time");
+    let record = parse(&format!(
+        "\u{feff}{{\"provider\":\"codex\",\"source\":\"clear\",\"pid\":{me},\"pidStarted\":{started},\"orcaHandle\":\"term_ab-12\",\"wtSession\":null,\"endedAt\":5,\"endReason\":\"clear\"}}"
+    ))
+    .expect("record");
+    // Ended by /clear, but the process carries on under the new session id.
+    assert_eq!(record.live_pid(), Some(me));
+    assert_eq!(record.orca_handle().as_deref(), Some("term_ab-12"));
+    let reused = parse(&format!("{{\"pid\":{me},\"pidStarted\":{}}}", started + 1_000_000)).expect("record");
+    assert_eq!(reused.live_pid(), None);
+    assert_eq!(parse("{\"orcaHandle\":\"x & calc\"}").and_then(|record| record.orca_handle()), None);
+
+    let app_dir = std::env::temp_dir().join(format!("focusd-records-{}", std::process::id()));
+    fs::create_dir_all(app_dir.join(DIR_NAME)).unwrap();
+    fs::write(app_dir.join(DIR_NAME).join("s-1.json"), "{\"source\":\"startup\"}").unwrap();
+    assert_eq!(read(&app_dir, "s-1").and_then(|record| record.source).as_deref(), Some("startup"));
+    assert!(read(&app_dir, "..\\s-1").is_none());
+    let _ = fs::remove_dir_all(&app_dir);
+}
+
+#[test]
+fn permission_requests_mark_a_session_waiting() {
+    use super::notifications::waiting_session_id;
+
+    let request = json!({ "session_id": "s1", "hook_event_name": "PermissionRequest", "tool_name": "Bash" }).to_string();
+    assert_eq!(waiting_session_id(&request).as_deref(), Some("s1"));
+    let needs_input = json!({ "session_id": "s2", "hook_event_name": "Notification", "notification_type": "agent_needs_input" }).to_string();
+    assert_eq!(waiting_session_id(&needs_input).as_deref(), Some("s2"));
+    // An idle prompt comes after the turn ended; the session is not waiting mid-turn.
+    let idle = json!({ "session_id": "s3", "hook_event_name": "Notification", "notification_type": "idle_prompt" }).to_string();
+    assert_eq!(waiting_session_id(&idle), None);
+}

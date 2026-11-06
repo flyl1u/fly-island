@@ -2,7 +2,10 @@
 
 use std::{fs, path::Path};
 
-use super::{write_text_file, FOCUSD_AGENT_HOOK_SIGNATURE};
+use super::{
+    write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME,
+    FOCUSD_AGENT_HOOK_SIGNATURE,
+};
 
 pub(super) const FOCUSD_AGENT_HOOK_BLOCK_BEGIN: &str = "# BEGIN FocuSD Agent Status Hooks";
 pub(super) const FOCUSD_AGENT_HOOK_BLOCK_END: &str = "# END FocuSD Agent Status Hooks";
@@ -30,6 +33,13 @@ pub(super) fn build_codex_hook_block(
 ) -> String {
     let submit_command = agent_running_command(running_script_path, "codex");
     let stop_command = agent_status_command(status_script_path, "codex", "completed");
+    // Codex hooks cannot run in the background yet, so the start record delays the first turn by
+    // about a second, once per session.
+    let session_script_path = status_script_path.with_file_name(AGENT_SESSION_SCRIPT_FILE_NAME);
+    let session_start_command = agent_status_command(&session_script_path, "codex", "start");
+    let session_end_command = agent_status_command(&session_script_path, "codex", "end");
+    // Makes no decision, so Codex goes on to its normal approval prompt.
+    let permission_command = agent_running_command_with(running_script_path, "codex", AGENT_RUNNING_NOTIFICATION_ARG);
 
     format!(
         r#"{begin}
@@ -50,11 +60,35 @@ command_windows = {stop_command}
 timeout = 5
 statusMessage = "Updating FocuSD agent status"
 
+[[hooks.SessionStart]]
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = {session_start_command}
+command_windows = {session_start_command}
+timeout = 15
+
+[[hooks.SessionEnd]]
+[[hooks.SessionEnd.hooks]]
+type = "command"
+command = {session_end_command}
+command_windows = {session_end_command}
+timeout = 5
+
+[[hooks.PermissionRequest]]
+[[hooks.PermissionRequest.hooks]]
+type = "command"
+command = {permission_command}
+command_windows = {permission_command}
+timeout = 2
+
 {end}"#,
         begin = FOCUSD_AGENT_HOOK_BLOCK_BEGIN,
         end = FOCUSD_AGENT_HOOK_BLOCK_END,
         submit_command = toml_basic_string(&submit_command),
         stop_command = toml_basic_string(&stop_command),
+        session_start_command = toml_basic_string(&session_start_command),
+        session_end_command = toml_basic_string(&session_end_command),
+        permission_command = toml_basic_string(&permission_command),
     )
 }
 
@@ -169,6 +203,16 @@ pub(super) fn agent_running_command(script_path: &Path, provider: &str) -> Strin
     )
 }
 
+/// `agent_running_command` with a second argument, such as `notification`.
+pub(super) fn agent_running_command_with(script_path: &Path, provider: &str, arg: &str) -> String {
+    format!(
+        "cmd.exe /d /s /c \"\"{}\" {} {}\"",
+        script_path.to_string_lossy(),
+        provider,
+        arg
+    )
+}
+
 pub(super) fn agent_status_command(script_path: &Path, provider: &str, phase: &str) -> String {
     format!(
         "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"{}\" {} {}",
@@ -197,6 +241,11 @@ mod tests {
             r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex\"""#
         ));
         assert!(!block.contains("capture"));
+        assert!(block.contains(
+            r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex notification\"""#
+        ));
+        assert!(block.contains("[[hooks.SessionStart]]") && block.contains("[[hooks.PermissionRequest]]"));
+        assert!(block.contains(r#"focusd-agent-session.ps1\" codex start"#));
         assert_eq!(
             agent_running_command(Path::new(r"C:\s.cmd"), "codex"),
             r#"cmd.exe /d /s /c ""C:\s.cmd" codex""#

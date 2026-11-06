@@ -24,9 +24,9 @@ if defined FOCUSD_AGENT_STATUS_DIR (
 
 if not exist "%STATUS_DIR%" mkdir "%STATUS_DIR%" >nul 2>nul
 
-rem "notification" (Claude Code's Notification hook) only saves the hook's stdin JSON, which
-rem names the session and the kind of notification, so the island can show a session waiting
-rem for permission. It leaves the running marker alone: an idle-prompt notification comes after
+rem "notification" (the Notification and PermissionRequest hooks of Claude Code, PermissionRequest
+rem of Codex) only saves the hook's stdin JSON, which names the session and why it waits, so the
+rem island can show a session waiting for permission. It prints nothing, so it makes no decision. It leaves the running marker alone: an idle-prompt notification comes after
 rem the turn ended. Written to a temp file and moved so the app never reads half a file.
 rem Any other second argument, such as the "capture" older installs pass, is ignored.
 if /I "%~2"=="notification" (

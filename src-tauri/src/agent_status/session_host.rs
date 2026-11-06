@@ -13,6 +13,7 @@ use serde::Serialize;
 use super::orca;
 use super::session_memory::{self, SeenSession};
 use super::session_process::{ancestor_chain, running_sessions};
+use super::session_records;
 use super::snapshot::current_unix_millis;
 use super::sessions::AgentSessionSummary;
 use super::window_focus::{app_name, NOT_SESSION_HOSTS};
@@ -100,18 +101,27 @@ pub(super) fn host_of_chain(chain: &[u32], windows: &HashMap<u32, String>) -> Op
 /// A session without a host is looked at again after this long (its window may not exist yet).
 const HOST_RETRY_MS: i64 = 30_000;
 
-/// Works out, for each running Claude Code session not seen yet (or now in another process), its
-/// process, host program and Orca terminal, and remembers them (session_memory.rs) so they outlive
-/// the session. Then fills in `host` for the listed sessions; Codex sessions already carry theirs.
+/// Works out, for each running session not seen yet (or now in another process), its process,
+/// host program and Orca terminal, and remembers them (session_memory.rs) so they outlive the
+/// session. The process comes from the session's SessionStart record (session_records.rs, Claude
+/// Code and Codex), else Claude Code's registry. Then fills in `host` for the listed sessions; a
+/// Codex session found this way shows its real program instead of the origin in its rollout.
 /// Windows are only enumerated when such a session exists.
 pub(super) fn attach_hosts(home_dir: &Path, app_dir: Option<&Path>, sessions: &mut [AgentSessionSummary]) {
     let now = current_unix_millis();
     let running = running_sessions(home_dir);
-    let unknown: Vec<(String, u32)> = sessions
+    let record = |id: &str| app_dir.and_then(|dir| session_records::read(dir, id));
+    let unknown: Vec<(String, u32, Option<String>)> = sessions
         .iter()
-        .filter(|session| session.provider == "claudeCode")
-        .filter_map(|session| running.get(&session.session_id).map(|pid| (session.session_id.clone(), *pid)))
-        .filter(|(id, pid)| {
+        .filter_map(|session| {
+            let recorded = record(&session.session_id);
+            let pid = recorded.as_ref().and_then(|recorded| recorded.live_pid()).or_else(|| {
+                (session.provider == "claudeCode").then(|| running.get(&session.session_id).copied()).flatten()
+            })?;
+            let tab = recorded.and_then(|recorded| recorded.orca_handle());
+            Some((session.session_id.clone(), pid, tab))
+        })
+        .filter(|(id, pid, _)| {
             session_memory::get(app_dir, id).is_none_or(|seen| {
                 seen.pid != *pid || (seen.host_exe.is_none() && now - seen.seen_at > HOST_RETRY_MS)
             })
@@ -120,23 +130,24 @@ pub(super) fn attach_hosts(home_dir: &Path, app_dir: Option<&Path>, sessions: &m
     if !unknown.is_empty() {
         let windows = window_owners();
         let parents = win32::process_tree::parent_process_ids();
-        for (id, pid) in unknown {
+        for (id, pid, recorded_tab) in unknown {
             let chain = ancestor_chain(pid, &parents, win32::process_times::start_time);
             let seen = SeenSession {
                 pid,
                 started: win32::process_times::start_time(pid),
                 host_exe: host_of_chain(&chain, &windows),
-                orca_handle: orca::terminal_handle_of_process(pid),
+                orca_handle: orca::terminal_handle_of_process(pid).or(recorded_tab),
                 seen_at: now,
             };
             session_memory::remember(app_dir, &id, seen);
         }
     }
 
-    for session in sessions.iter_mut().filter(|session| session.host.is_none()) {
-        session.host = session_memory::get(app_dir, &session.session_id)
-            .and_then(|seen| seen.host_exe)
-            .map(|exe| host_for_exe(&exe));
+    for session in sessions.iter_mut() {
+        let seen = session_memory::get(app_dir, &session.session_id).and_then(|seen| seen.host_exe);
+        if let Some(exe) = seen {
+            session.host = Some(host_for_exe(&exe));
+        }
     }
 }
 

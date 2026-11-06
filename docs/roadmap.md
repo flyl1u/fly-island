@@ -13,11 +13,10 @@
 
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
-| A1 | 改用官方钩子关联会话：安装 `SessionStart`（带 `source`：startup / resume / clear / compact / fork）和 `SessionEnd`（带 `reason`），钩子里记下 claude 进程号和终端编号；`clear` / `resume` 时把新旧会话 ID 关联起来。`~/.claude/sessions` 这份没有公开文档的内部登记降级为备用 | 待做 | | 现在靠内部登记加 `agent-sessions-seen.json`（`ddfcd05`），Claude Code 升级后可能失效。钩子输入字段见[官方 Hooks 参考](https://code.claude.com/docs/en/hooks) |
 | A2 | VS Code 精确跳到终端：做一个小扩展，注册 `vscode://` 链接，按进程号找到终端并 `terminal.show()`；没装扩展时只调窗口。Cursor、Windsurf 等同样适用 | 待用户确认 | | VS Code 没有从外部选中终端的接口，做法参考 [agents-deck #17](https://github.com/brushknight/agents-deck/issues/17)。发布到扩展市场属于对外发布，开始前要先问用户 |
-| A3 | Windows Terminal 跳到标签：用 UI Automation 按会话标题选中标签，失败时只调窗口 | 待做 | | 微软拒绝了按会话 ID 切标签的接口（[terminal #19783](https://github.com/microsoft/terminal/issues/19783)），只能按序号或用 UIA |
-| A4 | Codex 接新钩子：安装 `hooks.json` 的 `PermissionRequest`、`SessionStart`、`Stop`，让 Codex 有「等待确认」状态，也能精确定位终端 | 待做 | | 现在只用了老的 `notify` 和 `UserPromptSubmit` / `Stop`。参考 [Codex 通知指南](https://codex.danielvaughan.com/2026/04/10/codex-cli-agent-notifications-desktop-alerts-monitoring/) |
-| A5 | 「等待确认」改用 `PermissionRequest` 事件，以及 Notification 的 `agent_needs_input`、`idle_prompt` 类型 | 待做 | | 现在只匹配 `permission_prompt\|elicitation_dialog`，再结合会话记录推断 |
+| A3 | Windows Terminal 跳到标签：用 UI Automation 按会话标题选中标签，失败时只调窗口 | 待做 | | 会话记录里已经有 `WT_SESSION`，可以用来确认是哪个标签。微软拒绝了按会话 ID 切标签的接口（[terminal #19783](https://github.com/microsoft/terminal/issues/19783)），只能按序号或用 UIA |
+| A7 | 核实 Codex 钩子的 `session_id` 和 rollout 里 `session_meta` 的 id 是同一个 | 待做 | | 文档没有明说，不一致的话 Codex 的会话记录对不上会话列表。需要在装了 Codex 的电脑上跑一次 |
+| A8 | Codex 的 SessionStart 记录会让每个会话的第一轮晚约 1 秒（查进程要 1 秒，Codex 钩子还不支持后台运行） | 待做 | | Codex 支持 `async` 后改成后台运行；或改为钩子只记环境变量、由岛屿去查进程 |
 | A6 | 收集一次真实 VS Code 环境下的 `agent-focus.log`，确认那位用户的问题是不是 `ddfcd05` 修好的那两种原因 | 待做 | | 需要那位用户更新后提供日志 |
 
 ## 第二优先：Agent 页体验
@@ -59,6 +58,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| A1、A4、A5 | 用官方 SessionStart / SessionEnd 钩子记录会话进程、启动时间和终端（`agent-sessions/`，Claude Code 后台运行）；Codex 接上 SessionStart / SessionEnd / PermissionRequest；等待确认改用 PermissionRequest 和 `agent_needs_input`，Codex 也能显示等待确认 | 提交 `feat(agent-status): record sessions with the documented hooks` |
 | — | 点击会话找不到窗口：`/clear` 后找回、Windows 拒绝切前台时改用其他方式、VS Code 标题标记、Orca 按标题找标签、`agent-focus.log` | `ddfcd05` |
 | — | 会话运行时长，Agent 设置页更多选项 | `3597475` |
 | — | 已开着的 Orca 会话不用 `/resume` 也能切到标签；Codex 按目录找标签 | `c665312` |

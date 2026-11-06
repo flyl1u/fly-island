@@ -1,23 +1,23 @@
-//! Claude Code sessions waiting for the user mid-turn (a tool permission prompt or an MCP input
-//! request). The Notification hook saves its input to a file; a session counts as waiting while
-//! its transcript has not changed since the notification, because answering the prompt makes the
-//! tool run and the transcript grow.
+//! Sessions waiting for the user mid-turn (a tool permission prompt or an MCP input request).
+//! The Notification and PermissionRequest hooks of Claude Code, and PermissionRequest of Codex,
+//! save their input to a file per agent; a session counts as waiting while its transcript has not
+//! changed since then, because answering the prompt makes the tool run and the transcript grow.
 
 use std::{
     collections::HashMap,
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     sync::{Mutex, PoisonError},
     time::SystemTime,
 };
 
 use serde_json::Value;
 
-use super::markers::CLAUDE_CODE_NOTIFICATION_FILE_NAME;
+use super::markers::{CLAUDE_CODE_NOTIFICATION_FILE_NAME, CODEX_NOTIFICATION_FILE_NAME};
 use super::snapshot::system_time_to_unix_millis;
 
 /// Notification types that mean the user has to answer before the turn goes on.
-const WAITING_TYPES: [&str; 2] = ["permission_prompt", "elicitation_dialog"];
+const WAITING_TYPES: [&str; 3] = ["permission_prompt", "elicitation_dialog", "agent_needs_input"];
 /// Sessions remembered, oldest dropped first; only the newest notification is on disk at a time.
 const REMEMBERED_SESSIONS: usize = 16;
 /// Claude Code may finish writing the transcript just after the notification fires.
@@ -31,8 +31,11 @@ static NOTIFICATIONS: Mutex<NotificationLog> = Mutex::new(NotificationLog::new()
 /// The session id of a saved notification, if it is one that waits for the user.
 pub(super) fn waiting_session_id(input: &str) -> Option<String> {
     let input = serde_json::from_str::<Value>(input.trim_start_matches('\u{feff}').trim()).ok()?;
-    let kind = input["notification_type"].as_str()?;
-    if !WAITING_TYPES.contains(&kind) {
+    let asks_permission = input["hook_event_name"] == "PermissionRequest";
+    let waiting_notification = input["notification_type"]
+        .as_str()
+        .is_some_and(|kind| WAITING_TYPES.contains(&kind));
+    if !asks_permission && !waiting_notification {
         return None;
     }
     input["session_id"]
@@ -56,11 +59,13 @@ pub(super) fn is_waiting(
 pub(super) fn waiting_notifications(app_dir: &Path) -> WaitingNotifications {
     let mut log = NOTIFICATIONS.lock().unwrap_or_else(PoisonError::into_inner);
     log.refresh(&app_dir.join(CLAUDE_CODE_NOTIFICATION_FILE_NAME));
+    log.refresh(&app_dir.join(CODEX_NOTIFICATION_FILE_NAME));
     log.sessions.iter().cloned().collect()
 }
 
 struct NotificationLog {
-    stamp: Option<(u64, Option<SystemTime>)>,
+    /// Size and time of each file when last read.
+    stamps: Vec<(PathBuf, (u64, Option<SystemTime>))>,
     /// `(session id, notified at)`, oldest first.
     sessions: Vec<(String, i64)>,
 }
@@ -68,7 +73,7 @@ struct NotificationLog {
 impl NotificationLog {
     const fn new() -> Self {
         Self {
-            stamp: None,
+            stamps: Vec::new(),
             sessions: Vec::new(),
         }
     }
@@ -78,10 +83,11 @@ impl NotificationLog {
             return;
         };
         let stamp = (metadata.len(), metadata.modified().ok());
-        if self.stamp == Some(stamp) {
-            return;
+        match self.stamps.iter_mut().find(|(known, _)| known == path) {
+            Some((_, known)) if *known == stamp => return,
+            Some((_, known)) => *known = stamp,
+            None => self.stamps.push((path.to_path_buf(), stamp)),
         }
-        self.stamp = Some(stamp);
         let Some(notified_at) = stamp.1.and_then(system_time_to_unix_millis) else {
             return;
         };

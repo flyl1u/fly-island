@@ -4,7 +4,7 @@ use serde_json::{json, Map, Value};
 use std::{fs, path::Path};
 
 use super::{
-    write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, AGENT_RUNNING_SESSION_ARG,
+    write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME,
     FOCUSD_AGENT_HOOK_SIGNATURE,
 };
 
@@ -42,9 +42,10 @@ pub(super) fn install_claude_code_status_hooks(
     write_text_file(config_path, &json)
 }
 
-/// Notifications that mean the session waits for the user mid-turn: a tool permission prompt or
-/// an MCP server asking for input. Claude Code matches this against the notification type.
-pub(super) const CLAUDE_CODE_WAITING_NOTIFICATIONS: &str = "permission_prompt|elicitation_dialog";
+/// Notifications that mean the session waits for the user mid-turn: a tool permission prompt, an
+/// MCP server asking for input, or an agent needing input. Matched against the notification type.
+pub(super) const CLAUDE_CODE_WAITING_NOTIFICATIONS: &str =
+    "permission_prompt|elicitation_dialog|agent_needs_input";
 
 /// Every FocuSD hook for Claude Code, by event name.
 pub(super) fn claude_code_hook_entries(
@@ -62,13 +63,23 @@ pub(super) fn claude_code_hook_entries(
         );
     }
 
-    let mut session_start = claude_code_running_hook_entry(running_script_path);
-    if let Some(args) = session_start["hooks"][0]["args"].as_array_mut() {
-        args.push(Value::String(AGENT_RUNNING_SESSION_ARG.to_string()));
+    // PermissionRequest fires before every permission prompt: the surest sign the session waits.
+    let mut permission = claude_code_running_hook_entry(running_script_path);
+    if let Some(args) = permission["hooks"][0]["args"].as_array_mut() {
+        args.push(Value::String(AGENT_RUNNING_NOTIFICATION_ARG.to_string()));
+    }
+
+    let session_script_path = status_script_path.with_file_name(AGENT_SESSION_SCRIPT_FILE_NAME);
+    // In the background: looking up the session's process takes about a second.
+    let mut session_start = claude_code_session_hook_entry(&session_script_path, "start");
+    if let Some(hook) = session_start["hooks"][0].as_object_mut() {
+        hook.insert("async".to_string(), Value::Bool(true));
     }
 
     vec![
         ("SessionStart", session_start),
+        ("SessionEnd", claude_code_session_hook_entry(&session_script_path, "end")),
+        ("PermissionRequest", permission),
         (
             "UserPromptSubmit",
             claude_code_running_hook_entry(running_script_path),
@@ -176,6 +187,23 @@ pub(super) fn claude_code_status_hook_entry(script_path: &Path, phase: &str) -> 
     )
 }
 
+/// The session script (focusd-agent-session.ps1) for SessionStart (`start`) or SessionEnd (`end`).
+pub(super) fn claude_code_session_hook_entry(script_path: &Path, event: &str) -> Value {
+    claude_code_hook_entry(
+        "powershell.exe",
+        vec![
+            "-NoProfile".to_string(),
+            "-ExecutionPolicy".to_string(),
+            "Bypass".to_string(),
+            "-File".to_string(),
+            script_path.to_string_lossy().to_string(),
+            "claudeCode".to_string(),
+            event.to_string(),
+        ],
+        15,
+    )
+}
+
 pub(super) fn claude_code_hook_entry(command: &str, args: Vec<String>, timeout: i64) -> Value {
     json!({
         "hooks": [
@@ -233,11 +261,18 @@ mod tests {
         assert_eq!(last_arg("Notification"), Some(json!("notification")));
         assert_eq!(
             hooks["Notification"][0]["matcher"],
-            json!("permission_prompt|elicitation_dialog")
+            json!("permission_prompt|elicitation_dialog|agent_needs_input")
         );
         assert_eq!(last_arg("Stop"), Some(json!("completed")));
-        // Session start only records which Orca terminal holds the session.
-        assert_eq!(last_arg("SessionStart"), Some(json!("session")));
-        assert!(hooks["SessionStart"][0].get("matcher").is_none());
+        // Session start and end record the session's process and terminal, the start in the background.
+        assert_eq!(last_arg("SessionStart"), Some(json!("start")));
+        assert_eq!(hooks["SessionStart"][0]["hooks"][0]["async"], json!(true));
+        assert_eq!(last_arg("SessionEnd"), Some(json!("end")));
+        assert!(hooks["SessionEnd"][0]["hooks"][0].get("async").is_none());
+        assert!(hooks["SessionStart"][0]["hooks"][0]["args"][4]
+            .as_str()
+            .is_some_and(|path| path.ends_with("focusd-agent-session.ps1")));
+        assert_eq!(last_arg("PermissionRequest"), Some(json!("notification")));
+        assert!(hooks["PermissionRequest"][0].get("matcher").is_none());
     }
 }

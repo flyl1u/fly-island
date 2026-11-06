@@ -8,6 +8,7 @@ use super::focus_log::Attempt;
 use super::orca;
 use super::session_memory::{self, SeenSession};
 use super::session_process::{ancestor_chain, session_process_chain};
+use super::session_records::{self, SessionRecord};
 use super::window_focus::{self, app_name, SessionHints};
 use crate::system::windows_home_dir;
 use crate::win32;
@@ -32,13 +33,26 @@ pub(super) fn still_running(seen: &SeenSession, started_now: Option<u64>) -> boo
     started_now.is_some() && seen.started.is_none_or(|started| Some(started) == started_now)
 }
 
-/// The session's process and its ancestors. A running session is in Claude Code's registry; a
-/// session that was cleared or resumed under a new id may still run in the process remembered.
-fn process_chain(is_codex: bool, session_id: Option<&str>, seen: Option<&SeenSession>, log: &mut Attempt) -> Vec<u32> {
-    let Some(id) = session_id.filter(|_| !is_codex) else {
+/// The session's process and its ancestors: from its SessionStart record (Claude Code and Codex),
+/// else Claude Code's registry, else the process remembered for it. A session cleared or resumed
+/// under a new id keeps running in the recorded process.
+fn process_chain(
+    is_codex: bool,
+    session_id: Option<&str>,
+    record: Option<&SessionRecord>,
+    seen: Option<&SeenSession>,
+    log: &mut Attempt,
+) -> Vec<u32> {
+    let Some(id) = session_id else {
         return Vec::new();
     };
-    if let Ok(home_dir) = windows_home_dir() {
+    if let Some(pid) = record.and_then(SessionRecord::live_pid) {
+        let chain = ancestor_chain(pid, &win32::process_tree::parent_process_ids(), win32::process_times::start_time);
+        log.note(format!("process=hook({})", chain.len()));
+        return chain;
+    }
+    // Only Claude Code keeps a registry of running sessions.
+    if let (false, Ok(home_dir)) = (is_codex, windows_home_dir()) {
         let chain = session_process_chain(&home_dir, id);
         if !chain.is_empty() {
             log.note(format!("process=registry({})", chain.len()));
@@ -64,6 +78,7 @@ fn process_chain(is_codex: bool, session_id: Option<&str>, seen: Option<&SeenSes
 
 struct Lookup<'a> {
     app_dir: Option<&'a Path>,
+    record: Option<&'a SessionRecord>,
     is_codex: bool,
     session_id: Option<&'a str>,
     cwd: Option<&'a str>,
@@ -82,11 +97,14 @@ fn orca_handle(lookup: &Lookup, chain: &[u32], seen: Option<&SeenSession>, log: 
     if let Some(handle) = found("process", chain.first().and_then(|&pid| orca::terminal_handle_of_process(pid)), log) {
         return Some(handle);
     }
+    if let Some(handle) = found("hook", lookup.record.and_then(SessionRecord::orca_handle), log) {
+        return Some(handle);
+    }
     if let Some(handle) = found("remembered", seen.and_then(|seen| seen.orca_handle.clone()), log) {
         return Some(handle);
     }
     let record = lookup.session_id.zip(lookup.app_dir).and_then(|(id, app_dir)| orca::terminal_handle_for(app_dir, id));
-    if let Some(handle) = found("hook", record, log) {
+    if let Some(handle) = found("hook-orca", record, log) {
         return Some(handle);
     }
     if !chain.is_empty() {
@@ -118,8 +136,12 @@ pub(super) fn focus_session(
     let session_id = session_id.filter(|id| !id.is_empty());
     let mut log = Attempt::new(provider, session_id);
     let seen = session_id.and_then(|id| session_memory::get(app_dir, id));
-    let chain = process_chain(is_codex, session_id, seen.as_ref(), &mut log);
-    let lookup = Lookup { app_dir, is_codex, session_id, cwd, title };
+    let record = session_id.zip(app_dir).and_then(|(id, dir)| session_records::read(dir, id));
+    if record.is_some() {
+        log.note("record=yes");
+    }
+    let chain = process_chain(is_codex, session_id, record.as_ref(), seen.as_ref(), &mut log);
+    let lookup = Lookup { app_dir, record: record.as_ref(), is_codex, session_id, cwd, title };
     let handle = orca_handle(&lookup, &chain, seen.as_ref(), &mut log);
 
     // With no process to follow, the program the session was last seen in is the best guess.

@@ -20,7 +20,9 @@ const LEGACY_HOOK_INPUT_FILE_NAMES: [&str; 2] = [
     "agent-claudeCode-hook-input.json",
 ];
 /// Hook input saved per provider, deleted when its status is cleared.
-pub(super) const CODEX_SAVED_INPUT_FILE_NAMES: &[&str] = &["agent-codex-hook-input.json"];
+pub(super) const CODEX_NOTIFICATION_FILE_NAME: &str = "agent-codex-notification.json";
+pub(super) const CODEX_SAVED_INPUT_FILE_NAMES: &[&str] =
+    &["agent-codex-hook-input.json", CODEX_NOTIFICATION_FILE_NAME];
 pub(super) const CLAUDE_CODE_SAVED_INPUT_FILE_NAMES: &[&str] = &[
     "agent-claudeCode-hook-input.json",
     CLAUDE_CODE_NOTIFICATION_FILE_NAME,

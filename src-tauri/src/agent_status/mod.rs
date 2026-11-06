@@ -13,6 +13,7 @@ mod focus_log;
 mod session_host;
 mod session_memory;
 mod session_process;
+mod session_records;
 mod snapshot;
 #[cfg(test)]
 mod tests;
@@ -49,19 +50,21 @@ pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
 pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cmd";
 pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
+pub(super) const AGENT_SESSION_SCRIPT_FILE_NAME: &str = "focusd-agent-session.ps1";
 
 pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
-/// Second argument of the running script for Claude Code's Notification hook: save the hook input
-/// instead of marking the session as running (see focusd-agent-running.cmd).
+/// Second argument of the running script for the Notification and PermissionRequest hooks (Claude
+/// Code and Codex): save the hook input instead of marking the session as running (see
+/// focusd-agent-running.cmd). Installs from before the session script also pass `session` from
+/// SessionStart, which the script still handles.
 pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
-/// Second argument of the running script for Claude Code's SessionStart hook: inside an Orca
-/// terminal, save the hook input (which names the session) under the terminal's handle; see
-/// orca.rs. Elsewhere it does nothing.
-pub(super) const AGENT_RUNNING_SESSION_ARG: &str = "session";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
     include_str!("hooks/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
     include_str!("hooks/focusd-agent-status.ps1");
+/// SessionStart / SessionEnd: records the session's process and terminal (session_records.rs).
+pub(super) const AGENT_SESSION_SCRIPT: &str =
+    include_str!("hooks/focusd-agent-session.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -326,6 +329,10 @@ fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
         read(&app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME)).as_deref(),
         AGENT_STATUS_SCRIPT,
         hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_SESSION_SCRIPT,
+        hooks_installed,
     );
 
     Ok(AgentHooksState {
@@ -344,6 +351,10 @@ pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
     write_text_file(
         &app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME),
         &normalize_windows_line_endings(AGENT_STATUS_SCRIPT),
+    )?;
+    write_text_file(
+        &app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME),
+        &normalize_windows_line_endings(AGENT_SESSION_SCRIPT),
     )
 }
 
