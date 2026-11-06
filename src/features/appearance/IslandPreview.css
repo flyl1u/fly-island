@@ -1,0 +1,160 @@
+.island-preview {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-lg);
+}
+
+/* A stand-in wallpaper with colour behind the island, so opacity and glass are visible. */
+.island-preview__desktop {
+  position: relative;
+  height: 176px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 22% 30%, rgba(255, 170, 92, 0.85), transparent 46%),
+    radial-gradient(circle at 78% 62%, rgba(84, 156, 255, 0.85), transparent 50%),
+    radial-gradient(circle at 46% 96%, rgba(196, 98, 255, 0.7), transparent 52%),
+    #2b3445;
+}
+
+.island-preview__island {
+  --preview-radius-collapsed: calc(var(--preview-radius) * 22 / 30);
+  display: flex;
+  align-items: center;
+  background: var(--preview-fill);
+  border-radius: 0 0 var(--preview-radius-collapsed) var(--preview-radius-collapsed);
+  corner-shape: var(--preview-corner-shape, round);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  color: rgb(var(--preview-ink));
+  transform-origin: top center;
+}
+
+.island-preview__island--glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, calc(0.04 + var(--preview-glass) * 0.1)), transparent),
+    var(--preview-fill);
+  border: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
+  border-top: 0;
+  backdrop-filter: blur(calc(10px + var(--preview-glass) * 9px)) saturate(1.4);
+}
+
+.island-preview__island--collapsed {
+  min-width: 150px;
+  height: 34px;
+  gap: 8px;
+  padding: 0 14px;
+  transform: scale(var(--preview-collapsed-scale));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.island-preview__island--expanded {
+  width: 86%;
+  padding: 10px;
+  border-radius: 0 0 var(--preview-radius) var(--preview-radius);
+  transform: scale(var(--preview-expanded-scale));
+}
+
+/* Away from the top edge (Position → distance from the top) the island is rounded all round. */
+.island-preview__island--detached {
+  margin-top: 10px;
+}
+
+.island-preview__island--glass.island-preview__island--detached {
+  border-top: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
+}
+
+.island-preview__island--detached.island-preview__island--collapsed {
+  border-radius: var(--preview-radius-collapsed);
+}
+
+.island-preview__island--detached.island-preview__island--expanded {
+  border-radius: var(--preview-radius);
+}
+
+.island-preview__pulse {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--preview-pulse);
+  box-shadow: 0 0 8px var(--preview-pulse-glow);
+  filter: brightness(var(--preview-pulse-brightness));
+}
+
+.island-preview__task {
+  flex: 1;
+  color: var(--preview-text);
+  white-space: nowrap;
+}
+
+.island-preview__count {
+  margin-left: auto;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.island-preview__notebook {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 10px 10px 10px 30px;
+  border-radius: max(6px, calc(var(--preview-radius) - 10px));
+  background:
+    linear-gradient(90deg, transparent 0 20px, rgba(244, 113, 130, 0.52) 21px, transparent 22px),
+    var(--preview-todo-background);
+  color: #24201b;
+  font-size: 12px;
+}
+
+.island-preview__todo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(31, 27, 22, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.48);
+  white-space: nowrap;
+}
+
+.island-preview__todo--active {
+  background: rgba(168, 216, 234, 0.42);
+  border-color: rgba(64, 125, 147, 0.28);
+}
+
+.island-preview__check {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 1.5px solid rgba(31, 27, 22, 0.4);
+  border-radius: 3px;
+}
+
+.island-preview--font-pixel .island-preview__island {
+  font-family: "Fusion Pixel", "Microsoft YaHei", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+}
+
+.island-preview__caption {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.36);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .island-preview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

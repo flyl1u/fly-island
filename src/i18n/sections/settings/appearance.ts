@@ -8,6 +8,14 @@ export type SettingsAppearanceText = {
   liquidGlass: string;
   glassStrength: string;
   styleTitle: string;
+  /** The island preview at the top of the page: sample content and the two captions. */
+  preview: {
+    label: string;
+    collapsed: string;
+    expanded: string;
+    task: string;
+    todos: [string, string, string];
+  };
 };
 
 export const zhCN: SettingsAppearanceText = {
@@ -20,6 +28,13 @@ export const zhCN: SettingsAppearanceText = {
   liquidGlass: "液态玻璃",
   glassStrength: "玻璃强度",
   styleTitle: "风格",
+  preview: {
+    label: "按当前设置画出的岛屿",
+    collapsed: "折叠",
+    expanded: "展开",
+    task: "写周报",
+    todos: ["写周报", "回复设计评审", "订周五的会议室"],
+  },
 };
 
 export const en: SettingsAppearanceText = {
@@ -32,4 +47,11 @@ export const en: SettingsAppearanceText = {
   liquidGlass: "Liquid glass",
   glassStrength: "Glass strength",
   styleTitle: "Style",
+  preview: {
+    label: "The island with the current settings",
+    collapsed: "Collapsed",
+    expanded: "Expanded",
+    task: "Weekly report",
+    todos: ["Weekly report", "Reply to the design review", "Book Friday's meeting room"],
+  },
 };

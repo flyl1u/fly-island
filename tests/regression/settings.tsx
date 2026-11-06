@@ -279,6 +279,10 @@ if (!automated) {
     await click(".appearance-reset--danger");
     check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
     check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
+    check(!document.querySelector(".island-preview__island--glass"), "The island preview starts classic");
+    const glassButton = [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === "液态玻璃");
+    await act(async () => { glassButton!.click(); });
+    check(document.querySelectorAll(".island-preview__island--glass").length === 2, "Choosing liquid glass shows on both preview islands");
 
     await openPage("general");
     const tuckedHover = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "鼠标移到隐藏的岛上");

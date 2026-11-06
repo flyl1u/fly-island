@@ -1,5 +1,6 @@
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { DisplaySettingsSection } from "../../features/appearance/DisplaySettingsSection";
+import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { LayoutSettingsSection } from "../../features/appearance/LayoutSettingsSection";
 import { PresetSettingsSection } from "../../features/appearance/PresetSettingsSection";
 import { StyleSettingsSection } from "../../features/appearance/StyleSettingsSection";
@@ -18,6 +19,7 @@ export function AppearanceSettingsPage({
 }) {
   return (
     <>
+      <IslandPreview settings={settings} />
       <StyleSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <LayoutSettingsSection
