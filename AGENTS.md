@@ -43,7 +43,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── packages/            # 插件开发者工具（pnpm workspace）：fly-island-plugin（Node SDK、CLI、模拟宿主）、create-fly-island-plugin（脚手架）、powershell/FlyIsland.Plugin；vscode-extension（切到会话终端的 VS Code 扩展，不在 workspace 里，`pnpm dlx @vscode/vsce package --no-dependencies` 打包）；不进入岛屿的发布产物
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），schema/ 协议描述，sdk/ 单文件 SDK（pnpm sdk:build 从 packages/ 生成），packages/ 打包好的 zip，index.json 与 index.json.sig 给切换前的旧版岛屿的市场索引（pnpm plugins:index 生成；新版岛屿读 TixXin/focusd-plugins），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；plugins/ 插件索引、签名与 SDK 生成；根目录放开发流程脚本：合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）、行数检查、浏览器回归页运行器（run-regression.mjs）、dev 前停止运行中的岛屿
-├── .githooks/           # pre-push：合并队列的推送保护与检查（core.hooksPath 指向这里）
+├── .githooks/           # pre-push：合并队列的推送保护与检查；commit-msg：拒绝 Claude 署名行（core.hooksPath 指向这里）
 ├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，plugins/ 插件开发，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
 ├── DESIGN.md            # 已确认的界面设计约定
 └── README*.md           # 中英文项目说明
@@ -149,7 +149,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 
 - **每个代理会话在自己的 lane（worktree + 分支）上工作，经合并队列合入 `main`**（工具是 [claude-code-merge-queue](https://github.com/funador/claude-code-merge-queue)，配置在 `claude-code-merge-queue.config.mjs`）：
   - 开 lane：用 `claude -w <任务名>` 启动，或在会话里调用 EnterWorktree。本机 `.claude/settings.json` 的 WorktreeCreate 钩子会分配 `lane/N` 分支，并在 `../fly-island-lanes/N` 建 worktree（所有 lane 都在这一个文件夹里）。钩子不可用时，手动 `git worktree add ../fly-island-lanes/<N> -b lane/<N> origin/main`，`<N>` 选一个 `../fly-island-lanes/<N>` 文件夹和 `lane/<N>` 分支都不存在的编号：往已有文件夹里建会先建出分支、再因为文件夹非空而失败，留下没有 worktree 的孤儿分支。钩子建 lane 时会自动 `pnpm install`；手动建的 lane 自己运行一次。
-  - 在 lane 里开发、验证、提交。一个功能单元完成并提交后，在 lane 里运行 `pnpm mq:land`，不用问用户。它会排队、rebase 到 `origin/main`、跑 `scripts/land-check.mjs`（`pnpm check`，改到 Rust 相关文件时再加 `cargo test`），然后推送 `origin/main`，并把主工作区快进到新的 `main`。land 成功后会自动把 fork 的 `dev` 推到同一提交（旧版本岛屿从 `dev` 读插件市场），结果记在 `.git/land-sync-dev.log`。
+  - 在 lane 里开发、验证、提交。验证用 `pnpm verify`（和 land 时跑的检查相同：`pnpm check`，改到 Rust 相关文件时加 `cargo test`；只改 Markdown 文档时只跑文档检查）；通过的代码树会被记住，land 时同一棵树不再重跑。一个功能单元完成并提交后，在 lane 里运行 `pnpm mq:land`，不用问用户。它会排队、rebase 到 `origin/main`、跑 `scripts/land-check.mjs`（`pnpm check`，改到 Rust 相关文件时再加 `cargo test`），然后推送 `origin/main`，并把主工作区快进到新的 `main`。land 成功后会自动把 fork 的 `dev` 推到同一提交（旧版本岛屿从 `dev` 读插件市场），结果记在 `.git/land-sync-dev.log`。
   - land 失败不算完成：rebase 冲突时它会自动中止，自己 `git fetch origin main && git rebase origin/main` 解决冲突后重新 land；检查失败就修好再 land。如果输出里已经有 `landed`，只是后面的快进主工作区失败了，不要重复 land，在主工作区运行 `pnpm mq:sync`。
   - `release` 可执行文件构建（`pnpm build:exe`）和桌面快捷方式同步不在队列里，按"验证"一节在 land 之后另外做。不要为了构建让用户关掉岛屿或 dev：`build:exe` 会把正在运行的 exe 改名挪开再写新的（Windows 允许改名正在运行的 exe），下次启动就是新版本。
   - **预览**：用户想看某个 lane 的效果时，在那个 lane 里运行 `pnpm dev:lane`。它起一个和用户的岛屿并排的预览岛屿：Vite 端口 1500+lane 编号，应用标识 `com.focusd.island.lane-<N>`（数据、WebView 存储、单实例都和用户的分开，开始时没有数据），不注册 focusd:// 链接，不能改开机自启，也不能安装 AI 代理状态 hook。不要在 lane 里直接跑 `pnpm tauri dev`：它会先关掉所有正在运行的岛屿，还要占用主工作区的 1420 端口。只看界面时也可以起 lane 的 Vite，打开 `tests/regression/*.html`。
@@ -172,10 +172,12 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 - 源码保持项目当前编码风格；中文文档使用 UTF-8。
 - README 包含中英文说明，更新时不要破坏现有的双语结构。
 - 界面方向的决定记录在 `DESIGN.md`；功能专题文档放在 `docs/`；架构变化更新 `docs/architecture/overview.md`。
-- 待完善的任务记在 `docs/roadmap.md`，开发时实时维护；发现的新问题和方案变化写进对应条目。
-- **认领任务以 `origin/main` 上的 roadmap 为准，不等其他会话回消息**（多个会话并行时，谁在做什么不靠互相询问）：
-  1. 开工前 `git fetch origin`，读 `git show origin/main:docs/roadmap.md`。条目已是「进行中」且认领没有失效，就换下一项。
-  2. 没人认领：在 lane 里单独提交一个只改 roadmap 的认领提交（`docs(roadmap): <会话名> takes <编号>`），**立刻 `pnpm mq:land`**，再开始写代码。认领只写在 lane 里，别的会话看不见。两个会话同时认领同一项时，后 land 的那个 rebase 会在 roadmap 上冲突：说明已被别人拿走，放弃自己的认领，换一项。
-  3. 认领的「负责」列写成 `会话名 · lane N · 认领时间`（例如 `fly-island-7e · lane 5 · 2026-11-06 20:40`）。认领 24 小时后 `origin/main` 上仍没有这项的相关提交，就视为失效：接手前给原会话发一条消息说明，不必等回复，直接改写认领并 land。
-  4. 做完改成「已完成」、填上提交号并移到「已完成」表，和功能改动放在同一个提交里。
+- **任务**一项一个文件：`docs/tasks/<编号>.md`（头部 `status`、`owner`、`lane`、`claimed`、`scope`、`depends`，正文是说明、备注和「交接」）。不再往 `docs/roadmap.md` 写表格，`pnpm check:tasks` 会拦。命令见 `docs/roadmap.md`。
+- **认领以 `origin/main` 为准，不等其他会话回消息**：
+  1. 开工前 `pnpm tasks` 看板，挑没人认领的（「进行中」且没有 ⚠ 失效标记的跳过）。
+  2. 在 lane 里 `pnpm task:claim <编号> --as <会话名> --scope <要改的目录/,文件>`。它会同步 `origin/main`、提交、`mq:land`；已经是你的不会重复提交（重试安全）；两个会话抢同一项时后 land 的 rebase 冲突，按提示换一项。
+  3. 会话名用 ListAgents 里自己的名字。`--scope` 写清要改的范围，认领时会提示和别人声明的范围重叠的地方；开发中途和 land 前跑 `pnpm tasks conflicts`，提前发现和 main、和别人范围的冲突。
+  4. 失效：`pnpm tasks` / `pnpm tasks stale` 标出 lane 已删除、建 lane 的会话已退出、或 24 小时没提交的认领。接手前给原会话发一条消息说明，不必等回复，`pnpm task:claim <编号> --takeover`。
+  5. 做完 `pnpm tasks done <编号> --commit "<提交标题>"`，和功能改动放在同一个提交里。
+- **交接写在任务文件里，不靠消息**：停下来、换会话或做到一半时，`pnpm tasks note <编号> "<进度和下一步>"` 并随下一次提交带上。接手的会话先读任务文件的「交接」。
 - **会话之间的消息**（ListAgents / SendMessage）只用于告知和协商接口，不用来确认归属。对方正在跑的工具结束前读不到消息，所以构建、`cargo test` 这类长命令放到后台运行，让消息能及时读到；需要等某个会话时用 SendMessage 的 `notify_when_idle` 订阅它空闲，不要反复发消息询问。
