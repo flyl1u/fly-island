@@ -88,9 +88,9 @@ export function getTodoVisualRows(todoList: TodoItem[]) {
 // the bottom padding (20) the list runs on through, then the list's top padding (4) and room
 // below the last row (8). Keep in step with AgentSessionsPanel.css.
 const AGENT_PAGE_CHROME_HEIGHT = 78;
-// The tallest session row (66, a two-line reply in AgentSessionsPanel.css) plus the gap below
+// The tallest session row (78, a two-line reply in AgentSessionsPanel.css) plus the gap below
 // it; shorter replies and folded rows leave room for more sessions.
-const AGENT_ROW_PITCH = 68;
+const AGENT_ROW_PITCH = 80;
 const AGENT_ROW_GAP = 2;
 
 /** Expanded height that fits exactly `rows` Agent session rows. */

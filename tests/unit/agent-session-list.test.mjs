@@ -73,9 +73,9 @@ test("the Agent page fits the session rows set in Settings", async () => {
   const { getAgentPageExpandedHeight } = await import("../../src/windows/island/layout.ts");
   const { normalizeSettings, DEFAULT_SETTINGS, MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS } = await import("../../src/features/appearance/settings.ts");
   // Flat rows: three full rows take far less room than the old cards (429px).
-  assert.equal(getAgentPageExpandedHeight(3), 280);
+  assert.equal(getAgentPageExpandedHeight(3), 316);
   // Each extra session adds one full row and its gap.
-  assert.equal(getAgentPageExpandedHeight(4) - getAgentPageExpandedHeight(3), 68);
+  assert.equal(getAgentPageExpandedHeight(4) - getAgentPageExpandedHeight(3), 80);
   // The tallest choice still fits the native window (656px).
   assert.ok(getAgentPageExpandedHeight(MAX_AGENT_VISIBLE_ROWS) <= 656);
 

@@ -51,7 +51,7 @@ export const zhCN: AgentText = {
     notFound: "没找到对应的窗口",
     notFoundEnded: "没找到对应的窗口，会话可能已经关掉了",
     justNow: "刚刚",
-    minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分钟前` : `${Math.floor(minutes / 60)} 小时前`),
+    minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分` : `${Math.floor(minutes / 60)} 小时`),
     activeCount: (count) => `${count} 个 Agent 会话正在运行，点击查看`,
     duration: ({ hours, minutes, seconds }) =>
       hours > 0 ? `${hours} 小时 ${minutes} 分` : minutes > 0 ? `${minutes} 分 ${seconds} 秒` : `${seconds} 秒`,
@@ -82,8 +82,8 @@ export const en: AgentText = {
     focus: (title) => `Switch to the window running "${title}"`,
     notFound: "No matching window found",
     notFoundEnded: "No matching window; the session may have been closed",
-    justNow: "Just now",
-    minutesAgo: (minutes) => (minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`),
+    justNow: "<1m",
+    minutesAgo: (minutes) => (minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h`),
     activeCount: (count) => (count === 1 ? "1 agent session running; click to view" : `${count} agent sessions running; click to view`),
     duration: ({ hours, minutes, seconds }) =>
       hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,

@@ -1,6 +1,6 @@
 /* Rows sit straight on the island, with no panel or boxes of their own; they are told apart by
    size and brightness, and only the hovered one lights up. The padding and the tallest row (a
-   two-line reply, 66px) are fixed because getAgentPageExpandedHeight (windows/island/layout.ts)
+   two-line reply, 78px) are fixed because getAgentPageExpandedHeight (windows/island/layout.ts)
    sizes the island by them for the rows set in Settings. */
 .agent-sessions {
   /* Runs on through the island's 20px bottom padding, so a list longer than the page scrolls
@@ -98,7 +98,7 @@
 }
 
 .agent-session--compact {
-  height: 32px;
+  height: 36px;
   align-items: center;
   padding-block: 0;
 }
@@ -118,12 +118,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .agent-session__heading {
   min-width: 0;
-  height: 18px;
+  height: 20px;
   flex: none;
   display: flex;
   align-items: center;
@@ -134,25 +134,22 @@
   min-width: 0;
   flex: 1;
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 800;
+  color: rgba(255, 255, 255, 0.95);
+  /* Semibold, not heavier: 800 picks Segoe UI Black for Latin text. Chinese falls back to
+     Microsoft YaHei, which is bold at any weight above regular. */
+  font-size: 14px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Finished sessions recede; a working one stays bright even before its first reply. */
+/* Finished sessions recede by colour alone; a working one stays bright even before its first reply. */
 .agent-session--completed .agent-session__title,
 .agent-session--failed .agent-session__title {
   color: rgba(241, 240, 246, 0.6);
-  font-weight: 700;
 }
 
 .agent-session__project {
-  color: rgba(241, 240, 246, 0.56);
-}
-
-.agent-session--completed .agent-session__project,
-.agent-session--failed .agent-session__project {
   color: inherit;
 }
 
@@ -160,12 +157,12 @@
   flex: none;
   max-width: 40%;
   overflow: hidden;
-  padding: 1px 6px;
-  color: rgba(241, 240, 246, 0.62);
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: var(--radius-pill);
-  font-size: 10.5px;
-  font-weight: 700;
+  padding: 2px 7px;
+  color: rgba(241, 240, 246, 0.66);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -173,9 +170,9 @@
 .agent-session__meta,
 .agent-session__not-found {
   flex: none;
-  color: rgba(241, 240, 246, 0.42);
-  font-size: 11px;
-  font-weight: 700;
+  color: rgba(241, 240, 246, 0.45);
+  font-size: 12px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -190,7 +187,7 @@
 
 /* Every row leads with its status dot, centred on the title line. */
 .agent-session--full > .agent-session__dot {
-  margin-top: 5.5px;
+  margin-top: 6.5px;
 }
 
 .agent-session--running .agent-session__dot {
@@ -221,9 +218,11 @@
 .agent-session__message {
   display: -webkit-box;
   overflow: hidden;
-  color: rgba(241, 240, 246, 0.55);
-  font-size: 12px;
-  line-height: 15px;
+  /* The reply is what a working row is about, so it reads almost as bright as the title. */
+  color: rgba(241, 240, 246, 0.85);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 19px;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -235,8 +234,8 @@
   align-items: center;
   gap: 4px;
   color: rgba(241, 240, 246, 0.5);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .agent-session__host-icon {
