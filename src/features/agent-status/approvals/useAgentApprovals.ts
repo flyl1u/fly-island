@@ -3,8 +3,9 @@ import { agentSessionsInFront } from "../api";
 import {
   decideAgentApproval,
   getPendingAgentApprovals,
-  listenAgentApprovalRequests,
-  listenAgentApprovalsClosed,
+  setAgentApprovalEnabled,
+  listenAgentApprovalClosed,
+  listenAgentApprovalRequested,
   type AgentApprovalDecision,
   type AgentApprovalRequest,
 } from "./api";
@@ -58,7 +59,7 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
     latest.current = { enabled, isOpenOnAgents, onOpen, onClose };
   });
 
-  const drop = useCallback((id: string) => setQueue((items) => items.filter((item) => item.id !== id)), []);
+  const drop = useCallback((id: number) => setQueue((items) => items.filter((item) => item.id !== id)), []);
 
   useEffect(() => {
     const handBack = (request: AgentApprovalRequest) => {
@@ -66,7 +67,7 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
     };
     const admit = (request: AgentApprovalRequest) => {
       if (!latest.current.enabled) return handBack(request);
-      void agentSessionsInFront([request])
+      void agentSessionsInFront([{ provider: request.agent, sessionId: request.sessionId }])
         .catch(() => [] as string[])
         .then((inFront) => {
           if (inFront.includes(request.sessionId) || !latest.current.enabled) handBack(request);
@@ -77,8 +78,8 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
     let cancelled = false;
     const stops: (() => void)[] = [];
     const keep = (stop: () => void) => (cancelled ? stop() : stops.push(stop));
-    void listenAgentApprovalRequests(admit).then(keep).catch(report);
-    void listenAgentApprovalsClosed((closed) => drop(closed.id)).then(keep).catch(report);
+    void listenAgentApprovalRequested(admit).then(keep).catch(report);
+    void listenAgentApprovalClosed((closed) => drop(closed.id)).then(keep).catch(report);
     // Requests that arrived before this window (re)loaded.
     void getPendingAgentApprovals()
       .then((pending) => {
@@ -90,6 +91,11 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
       stops.forEach((stop) => stop());
     };
   }, [drop]);
+
+  // Off, the endpoint answers hooks itself (back to the terminal) without asking the island.
+  useEffect(() => {
+    void setAgentApprovalEnabled(enabled).catch(report);
+  }, [enabled]);
 
   // Quiet now: what is still waiting goes back to the terminal.
   useEffect(() => {

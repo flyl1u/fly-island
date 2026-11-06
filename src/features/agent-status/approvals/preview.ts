@@ -52,7 +52,7 @@ export function approvalPreview(toolInput: unknown): ApprovalPreview {
  * The rule "always allow" would add, as Claude Code writes it (`Bash(npm test:*)`), from the
  * first `addRules` suggestion; null when there is none, and then the card leaves the button out.
  */
-export function alwaysAllowRule(suggestions: unknown[] | undefined): string | null {
+export function alwaysAllowRule(suggestions: unknown[] | null | undefined): string | null {
   for (const suggestion of suggestions ?? []) {
     const entry = record(suggestion);
     if (entry.type !== "addRules" || !Array.isArray(entry.rules)) continue;

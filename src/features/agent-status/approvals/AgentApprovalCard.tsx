@@ -63,16 +63,16 @@ export function AgentApprovalCard({ approvals, sessions }: { approvals: AgentApp
 
   if (!request) return null;
   const labels = t.agent.approval;
-  const session = sessions.find((item) => item.provider === request.provider && item.sessionId === request.sessionId);
+  const session = sessions.find((item) => item.provider === request.agent && item.sessionId === request.sessionId);
   const cwd = session?.cwd ?? request.cwd;
   const project = sessionProject(cwd);
-  const title = session?.title ?? project ?? AGENT_PROVIDER_LABELS[request.provider];
+  const title = session?.title ?? project ?? AGENT_PROVIDER_LABELS[request.agent];
   const preview = approvalPreview(request.toolInput);
-  const rule = request.provider === "claudeCode" ? alwaysAllowRule(request.permissionSuggestions) : null;
+  const rule = request.agent === "claudeCode" ? alwaysAllowRule(request.permissionSuggestions) : null;
 
   const toTerminal = () => {
     approvals.decide("terminal");
-    void focusAgentWindow(request.provider, cwd, session?.title ?? null, request.sessionId).catch((error: unknown) =>
+    void focusAgentWindow(request.agent, cwd, session?.title ?? null, request.sessionId).catch((error: unknown) =>
       console.error("Failed to focus the agent window", error),
     );
   };
@@ -94,7 +94,7 @@ export function AgentApprovalCard({ approvals, sessions }: { approvals: AgentApp
           {labels.label(request.toolName)}
           {approvals.queued > 0 && ` · ${labels.more(approvals.queued)}`}
         </span>
-        <AgentProviderIcon provider={request.provider} size={14} />
+        <AgentProviderIcon provider={request.agent} size={14} />
       </header>
       {preview.note && <p className="agent-approval__note">{preview.note}</p>}
       <button

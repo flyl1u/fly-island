@@ -15,8 +15,12 @@ import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSession
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 
 const COMMAND = "pnpm test:regression agent && git status --short && cmd //c echo 一条很长的命令，用来看两行之后是否折叠，点开后能看到全部内容";
-const request = (id: string, sessionId: string, extra: Partial<AgentApprovalRequest> = {}): AgentApprovalRequest => ({
-  id, provider: "claudeCode", sessionId, cwd: "E:\\Projects\\fly-island", toolName: "Bash",
+// Requests are named in the checks ("p1"); the endpoint numbers them.
+const names: string[] = [];
+const idOf = (name: string) => (names.includes(name) ? names.indexOf(name) : names.push(name) - 1) + 1;
+const nameOf = (id: unknown) => names[Number(id) - 1] ?? String(id);
+const request = (name: string, sessionId: string, extra: Partial<AgentApprovalRequest> = {}): AgentApprovalRequest => ({
+  id: idOf(name), agent: "claudeCode", sessionId, permissionSuggestions: null, cwd: "E:\\Projects\\fly-island", toolName: "Bash",
   toolInput: { command: COMMAND, description: "跑回归页并查看改动" }, receivedAt: 0, ...extra,
 });
 const SUGGESTIONS = [{ type: "addRules", rules: [{ toolName: "Bash", ruleContent: "pnpm test:regression:*" }], behavior: "allow", destination: "localSettings" }];
@@ -26,13 +30,15 @@ let inFront: string[] = [];
 const decisions: string[] = [];
 const focused: string[] = [];
 let hotkeys: string[] = [];
+let endpointEnabled = false;
 mockIPC(
   (command, args) => {
     const payload = args as Record<string, unknown>;
     if (command === "agent_sessions_in_front") return inFront;
     if (command === "agent_approval_pending") return pending;
-    if (command === "agent_approval_decide") decisions.push(`${String(payload.id)}:${String(payload.decision)}`);
+    if (command === "agent_approval_decide") decisions.push(`${nameOf(payload.id)}:${String(payload.decision)}`);
     if (command === "focus_agent_window") focused.push(String(payload.sessionId));
+    if (command === "set_agent_approval_enabled") endpointEnabled = Boolean(payload.enabled);
     if (command === "set_agent_approval_hotkeys") hotkeys = (payload.hotkeys as { shortcut: string }[]).map((item) => item.shortcut);
     return command === "focus_agent_window" ? true : null;
   },
@@ -67,10 +73,10 @@ function Harness() {
 }
 
 const last = (items: string[]) => items[items.length - 1];
-const current = () => approvals?.current?.id ?? null;
+const current = () => (approvals?.current ? nameOf(approvals.current.id) : null);
 const wait = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
 const send = (item: AgentApprovalRequest) => act(async () => { await emit("agent-approval-requested", item); });
-const close = (id: string, reason: string) => act(async () => { await emit("agent-approval-closed", { id, reason }); });
+const close = (name: string, reason: string) => act(async () => { await emit("agent-approval-closed", { id: idOf(name), reason }); });
 const button = (name: string) =>
   [...document.querySelectorAll<HTMLButtonElement>("#fixture .agent-approval__button")].find((item) => item.textContent === name);
 const click = (target: HTMLElement | undefined) => act(async () => { target?.click(); });
@@ -85,6 +91,7 @@ try {
   await act(async () => { createRoot(document.getElementById("fixture")!).render(<StrictMode><Harness /></StrictMode>); });
   await wait(50);
   check(island.mode === "expanded" && island.page === "agents" && current() === "p1", "打开岛屿时已在等待的请求会弹出 Agent 页");
+  check(endpointEnabled, "岛上审批开着时通知端点挂起请求");
   pending = [];
   const preview = document.querySelector<HTMLElement>("#fixture .agent-approval__preview")!;
   check(preview.textContent === COMMAND && getComputedStyle(preview).getPropertyValue("-webkit-line-clamp") === "2", "卡片显示完整命令，默认折成两行");
@@ -104,7 +111,7 @@ try {
   check(island.mode === "collapsed", "最后一个请求处理完，由它打开的岛屿收起");
 
   await send(request("q1", "s1"));
-  await send(request("q2", "s2", { provider: "codex", toolInput: { command: ["git", "push"] } }));
+  await send(request("q2", "s2", { agent: "codex", toolInput: { command: ["git", "push"] } }));
   await wait(50);
   check(current() === "q1" && document.querySelector("#fixture .agent-approval__meta")?.textContent?.includes("还有 1 个"), "多个请求排队，卡片上显示还有几个");
   check(!button("始终允许"), "没有建议规则时不显示「始终允许」");
@@ -141,6 +148,8 @@ try {
   inFront = [];
 
   await act(async () => setEnabled(false));
+  await wait(50);
+  check(!endpointEnabled, "勿扰或关掉岛上审批时，端点自己把请求交回终端");
   await send(request("g1", "s1"));
   await wait(50);
   check(last(decisions) === "g1:terminal" && island.mode === "collapsed", "游戏模式勿扰时直接交回终端");
