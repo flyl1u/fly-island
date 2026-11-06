@@ -147,9 +147,11 @@ export function AgentSessionsPanel({
           // On an alert's card a finished or failed session shows its last reply (its summary).
           const cardReply = reveal && !active ? session.lastMessage : null;
           const full = Boolean(cardReply) || (active && Boolean(session.lastMessage || (showActivity && (session.lastPrompt || session.currentTool))));
-          const phaseLabel = getAgentPhaseLabel(session.phase, t);
+          // A finished turn whose reply ends on the "your turn" marker waits for an answer.
+          const yourTurn = session.phase === "completed" && session.replyMarker === "yourTurn";
+          const phaseLabel = yourTurn ? t.agent.sessions.yourTurn : getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
-          const showPhase = session.phase !== "running" && session.phase !== "completed";
+          const showPhase = yourTurn || (session.phase !== "running" && session.phase !== "completed");
           const elapsed = showElapsed && session.turnStartedAt !== null;
           // A running session's age is always about now; its running time says more.
           const showAge = session.phase !== "running" || !elapsed;

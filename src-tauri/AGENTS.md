@@ -12,6 +12,7 @@ src-tauri/src/
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
 ├── agent_approval/          # 在岛上审批（B6 第 2 期）：127.0.0.1 上的审批端点（标准库 TcpListener，挂起时能发现 Agent 断开）、按会话排队、等待上限、agent-approval.json
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装；hooks/ 为编入二进制的 hook 脚本；sound_packs.rs 为导入的音效包（应用数据目录的 sound-packs/）
+│                            #   reply_marker.rs：可选的回复状态标记（B9），增删 CLAUDE.md 里岛屿自己的那段说明、识别回复末行的标记
 ├── claude_usage/            # 用量环可选的「直接向 Anthropic 查询」：只读 Claude Code 凭据、经 http(s) 代理（插件设置 → HTTPS_PROXY → Windows 系统代理，从不直连）请求 oauth/usage，后台轮询与退避；结果由 agent_status 的 get_agent_usage 合并（source.rs 为取数与解析）
 ├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出
 ├── clipboard_history/

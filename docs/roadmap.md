@@ -25,7 +25,6 @@
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期的 Claude Code 实测已完成（钩子等待时终端不显示审批框，结论见任务清单的「实测记录」），Codex（0.4）待补测；第 1 期的自动弹出提醒和音效（1.1–1.4、1.10）已完成，市场音效包（1.11）待做 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 进行中 | fly-island-fe · lane 4 · 2026-11-06 20:20 | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`），Codex 待做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
-| B9 | 回复末尾状态标记：可选开关（默认关），往 `~/.claude/CLAUDE.md` 追加一段带起止标记的提示，让 Claude 在回复最后一行标出「等你回复 / 等后台任务 / 做完了」；Stop 钩子读这个符号，把「完成」细分出「等你回复」 | 进行中 | fly-island-pr3 · lane 7 · 2026-11-07 01:05 | 来自 TixXin/fly-island#3 作者的建议 3。会话环的黄色和 B6 的完成提醒（可分成「Claude 问了你问题」和「做完了」）都会用到。提示词要自己写，不能照抄 claude-sessions（AGPL-3.0）；写用户全局指令，必须用户手动打开 |
 
 ## 第三优先：竞品都有、我们还缺的
 
@@ -55,6 +54,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| B9 | 回复状态标记（默认关）：设置 → AI Agent 打开后，往 `~/.claude/CLAUDE.md` 末尾加一段带起止标记的说明，让 Claude Code 每次回复最后一行写 `↩` 等你回复、`⋯` 等后台任务、`✓` 做完了；会话列表从会话记录读这一行（不改 Stop 钩子），会话环和 Agent 页据此区分「等你回复」和「做完了」。说明文字自己写，没有用 claude-sessions 的原文。B6 的完成提醒还没分成两种，以后需要时再做 | 提交 `feat(agent-status): optional reply status marker tells "your turn" from "done"` |
 | B8 | 用量环可选「直接向 Anthropic 查询」（默认关）：只读 Claude Code 凭据里的 token，经代理（插件设置 → `HTTPS_PROXY` → Windows 系统代理）请求 `api.anthropic.com/api/oauth/usage`，不直连；刷新间隔 5–120 分钟，9 种失败提示；与 claude-hud 快照取较新的，Agent 页顶部和用量环共用。移植自 TixXin/fly-island#3 的 `claude_usage/`；接口未公开，可能随时失效 | 提交 `feat(claude-usage): optionally ask Anthropic for Claude usage directly` |
 | B7 | 合入 TixXin/fly-island#3（ShengLin1001）：收起条视觉打磨、插槽与 MiniRing、内置插件「中心图案」「Claude 用量环」「Agent 会话环」。用量环改读 claude-hud 用量快照（不读凭据、不联网）；会话环改用岛屿自己的会话列表（不依赖 claude-sessions） | 提交 `feat(claude-usage): Claude usage double ring on the collapsed bar`、`feat(session-ring): agent session ring in place of the blue session count` 及之前从 PR 摘取的 7 个提交 |
 | C4 | 音乐页同步歌词：找到带时间轴的歌词时，在波形上方显示上一句、当前句、下一句（波形缩成细条），播放时按本地时钟往下走；先找用户的 .lrc 文件夹，再查 LRCLIB（默认关闭，开启后发送歌名、歌手、专辑和时长，结果缓存）；按时长（±3 秒）和歌手核对，不硬配；可调提前或推后。网易云、QQ 音乐等非官方来源和逐字歌词暂不做 | 提交 `feat(media): synced lyrics on the music page` |

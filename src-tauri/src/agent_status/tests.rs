@@ -217,6 +217,11 @@ fn claude_session_tail_gives_state_model_and_latest_reply() {
         parse_claude_tail(&done).last_message.as_deref(),
         Some("做完了")
     );
+    assert_eq!(parse_claude_tail(&done).reply_marker, None);
+    // The reply status marker (reply_marker.rs) is read and cut from the shown reply.
+    let asked = [working.clone(), assistant(Some("end_turn"), text("要用哪个方案？\n\n↩"))].concat();
+    let parsed = parse_claude_tail(&asked);
+    assert_eq!((parsed.reply_marker, parsed.last_message.as_deref()), (Some("yourTurn"), Some("要用哪个方案？")));
 
     let interrupted = [
         working.clone(),

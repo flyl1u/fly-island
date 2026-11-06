@@ -66,7 +66,34 @@ export type AgentSessionSummary = {
   permissionMode?: AgentPermissionMode | null;
   /** Subagents the current turn started that are still running (Claude Code only). */
   subagents?: number;
+  /**
+   * What the last reply's marker line says, when the optional reply status marker is on
+   * (Settings → AI Agent; Claude Code only). Missing from older builds.
+   */
+  replyMarker?: ReplyMarker | null;
 };
+
+/** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */
+export type ReplyMarker = "yourTurn" | "background" | "done";
+
+/** Mirrors ReplyMarkerState in src-tauri/src/agent_status/reply_marker.rs. */
+export type ReplyMarkerState = {
+  /** The island's block is in the user's global CLAUDE.md. */
+  installed: boolean;
+  /** It is an older wording; switching on again replaces it. */
+  outdated: boolean;
+  /** That CLAUDE.md. */
+  path: string;
+};
+
+export function getReplyMarkerState() {
+  return invoke<ReplyMarkerState>("get_reply_marker_state");
+}
+
+/** Adds the reply status marker instruction to the user's CLAUDE.md, or removes it. */
+export function setReplyMarker(enabled: boolean) {
+  return invoke<ReplyMarkerState>("set_reply_marker", { enabled });
+}
 
 /** Mirrors session_mode.rs: Claude Code's permission mode, or Codex's approval and sandbox policy. */
 export type AgentPermissionMode = "default" | "auto" | "bypass" | "acceptEdits" | "plan";

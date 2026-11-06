@@ -10,6 +10,7 @@ mod host_icon;
 mod markers;
 mod notifications;
 mod orca;
+pub(crate) mod reply_marker;
 mod reply_text;
 mod focus;
 mod focus_log;
@@ -445,6 +446,8 @@ macro_rules! tauri_commands {
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
             crate::agent_status::get_agent_usage,
+            crate::agent_status::reply_marker::get_reply_marker_state,
+            crate::agent_status::reply_marker::set_reply_marker,
             crate::agent_status::sound_packs::list_sound_packs,
             crate::agent_status::sound_packs::import_sound_pack,
             crate::agent_status::sound_packs::remove_sound_pack,

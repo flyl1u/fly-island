@@ -10,6 +10,7 @@ use serde_json::Value;
 
 use super::session_host::SessionHost;
 use super::session_mode::{claude_permission_mode, claude_subagent_calls, claude_tool_results, codex_permission_mode};
+use super::reply_marker::split_reply;
 use super::reply_text::plain_reply;
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
@@ -32,6 +33,9 @@ pub struct AgentSessionSummary {
     /// "stale" (still working after a long silence).
     pub(super) phase: &'static str,
     pub(super) last_message: Option<String>,
+    /// What the last reply's marker line says ("yourTurn", "background" or "done"), when the
+    /// optional reply status marker is on (reply_marker.rs); Claude Code only.
+    pub(super) reply_marker: Option<&'static str>,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
     /// The program the session runs in, when known (session_host.rs).
@@ -68,6 +72,8 @@ pub(super) struct SessionTail {
     pub(super) model: Option<String>,
     pub(super) effort: Option<String>,
     pub(super) last_message: Option<String>,
+    /// The last reply's marker (reply_marker.rs), already cut from `last_message`.
+    pub(super) reply_marker: Option<&'static str>,
     pub(super) state: TurnState,
     /// Timestamp of the newest prompt, Unix milliseconds.
     pub(super) turn_started_at: Option<i64>,
@@ -180,8 +186,11 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
                 result.effort = string_field(&record, "effort");
             }
             if result.last_message.is_none() {
-                result.last_message = text_blocks(&message["content"])
-                    .and_then(|text| shorten(&plain_reply(&text), LAST_MESSAGE_MAX_CHARS));
+                if let Some(text) = text_blocks(&message["content"]) {
+                    let (marker, reply) = split_reply(&text);
+                    result.reply_marker = marker.map(|marker| marker.name());
+                    result.last_message = shorten(&plain_reply(reply), LAST_MESSAGE_MAX_CHARS);
+                }
             }
             // Only tools called after the newest prompt belong to the current turn.
             if result.current_tool.is_none() && result.last_prompt.is_none() {

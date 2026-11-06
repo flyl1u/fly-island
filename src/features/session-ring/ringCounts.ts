@@ -22,9 +22,11 @@ export const SESSION_RING_STATES: readonly { key: SessionRingState; color: strin
 ];
 
 /**
- * Where a session sits on the ring: waiting for approval or an answer is red, a finished turn the
- * user has not looked at yet is yellow, running green, silent mid-turn dim green, a seen one that
- * finished in the last 10 minutes grey; older finished ones are left out.
+ * Where a session sits on the ring: waiting for approval or an answer is red, running green,
+ * silent mid-turn dim green. A finished turn is yellow when it waits for the user's reply and grey
+ * when done, while unseen or for 10 minutes after; older finished ones are left out. With the reply
+ * status marker on, the reply's last line says which (a "background" one still works, so green);
+ * without it, a turn the user has not looked at yet counts as waiting.
  */
 export function sessionRingState(session: AgentSessionSummary, unseen: ReadonlySet<string>, now: number): SessionRingState | null {
   switch (session.phase) {
@@ -34,9 +36,21 @@ export function sessionRingState(session: AgentSessionSummary, unseen: ReadonlyS
       return "working";
     case "stale":
       return "stale";
-    default:
-      if (unseen.has(sessionKey(session))) return "yourturn";
-      return now - session.updatedAt <= DONE_WINDOW_MS ? "done" : null;
+    default: {
+      const isUnseen = unseen.has(sessionKey(session));
+      const recent = isUnseen || now - session.updatedAt <= DONE_WINDOW_MS;
+      switch (session.phase === "completed" ? session.replyMarker : null) {
+        case "yourTurn":
+          return "yourturn";
+        case "background":
+          return "working";
+        case "done":
+          return recent ? "done" : null;
+        default:
+          if (isUnseen) return "yourturn";
+          return recent ? "done" : null;
+      }
+    }
   }
 }
 

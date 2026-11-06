@@ -56,6 +56,13 @@ export type SettingsAgentText = {
     onIsland: string;
     hint: string;
   };
+  /** The optional reply status marker in the user's CLAUDE.md (roadmap B9). */
+  replyMarker: {
+    title: string;
+    toggle: string;
+    hint: (path: string) => string;
+    outdated: string;
+  };
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -117,6 +124,12 @@ export const zhCN: SettingsAgentText = {
     onIsland: "在岛上允许或拒绝 Agent 的操作",
     hint: "Claude Code 或 Codex 要运行命令、改文件时，岛上弹出卡片，可以允许、拒绝或交回终端（快捷键 Ctrl+Alt+Y / N / T）。卡片显示期间终端里不出审批框；2 分钟没处理、会话窗口已在前台或游戏模式勿扰时自动交回终端。需要先点下方的“安装/修复”。Codex 还要在它的 /hooks 里信任新钩子。auto 模式自己批准的操作不会弹出。",
   },
+  replyMarker: {
+    title: "回复状态标记",
+    toggle: "让 Claude 在回复末尾标出在等什么",
+    hint: (path) => `打开后，会在你的全局 Claude 指令 ${path} 末尾加一段说明，让 Claude Code 每次回复的最后一行写一个符号：↩ 等你回复、⋯ 在等它自己启动的后台任务、✓ 做完了。岛屿据此区分“等你回复”和“做完了”（Agent 页、会话环）。这一行会出现在终端的回复里。只对之后开始的回复生效；关掉时只删除这段说明，文件里别的内容不动。`,
+    outdated: "CLAUDE.md 里的说明是旧版本，关掉再打开即可更新。",
+  },
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -177,6 +190,12 @@ export const en: SettingsAgentText = {
     title: "Approve on the island",
     onIsland: "Allow or deny agent actions on the island",
     hint: "When Claude Code or Codex wants to run a command or change a file, a card on the island lets you allow, deny or hand it back to the terminal (Ctrl+Alt+Y / N / T). The terminal shows no prompt while the card is up; after 2 minutes, or while the session's window is in front or game mode keeps the island quiet, it goes back to the terminal. Click Install/repair below first, and trust the new hook in Codex's /hooks. Actions auto mode approves by itself don't show up.",
+  },
+  replyMarker: {
+    title: "Reply status marker",
+    toggle: "Have Claude mark what it waits for at the end of each reply",
+    hint: (path) => `When on, a short instruction goes at the end of your global Claude instructions, ${path}, asking Claude Code to end every reply with one symbol on its own line: ↩ your turn, ⋯ waiting on a background task it started, ✓ done. The island uses it to tell "your turn" from "done" (Agent page, session ring). The line shows in the terminal's replies. It applies to replies from then on; switching off removes only that instruction and leaves the rest of the file alone.`,
+    outdated: "The instruction in CLAUDE.md is an older version; switch off and on again to update it.",
   },
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",

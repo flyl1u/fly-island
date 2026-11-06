@@ -46,6 +46,23 @@ test("phases map to ring states; finished ones by whether they were seen and how
   assert.equal(sessionRingState(session("a", "completed", { updatedAt: NOW - 60 * MINUTE }), new Set(["claudeCode:a"]), NOW), "yourturn");
 });
 
+test("the reply status marker decides a finished turn instead of whether it was seen", () => {
+  const seen = NONE;
+  const unseen = new Set(["claudeCode:a"]);
+  const old = { updatedAt: NOW - 60 * MINUTE };
+  // Waiting for a reply stays yellow, seen or not, however old.
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "yourTurn", ...old }), seen, NOW), "yourturn");
+  // Done is grey even before it is seen, and drops off once old and seen.
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done" }), unseen, NOW), "done");
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done", ...old }), unseen, NOW), "done");
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done", ...old }), seen, NOW), null);
+  // Waiting on its own background task still counts as working.
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "background" }), seen, NOW), "working");
+  // A marker only means something on a finished turn.
+  assert.equal(sessionRingState(session("a", "running", { replyMarker: "done" }), seen, NOW), "working");
+  assert.equal(sessionRingState(session("a", "failed", { replyMarker: "done" }), unseen, NOW), "yourturn");
+});
+
 test("counts, segments in ring order and the summary list only states that have sessions", () => {
   const sessions = [
     session("r1", "running"),

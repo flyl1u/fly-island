@@ -275,6 +275,7 @@ fn summary_from(
         // Set by `list_sessions` for the current time.
         phase: "completed",
         last_message: parsed.last_message,
+        reply_marker: parsed.reply_marker,
         updated_at,
         host: None,
         turn_started_at: None,

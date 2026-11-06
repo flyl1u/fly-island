@@ -29,6 +29,8 @@ export type AgentText = {
     /** Badges for the modes in which a session acts without asking; the default mode has none. */
     permissionModes: Record<"auto" | "bypass" | "acceptEdits" | "plan", string>;
     subagents: (count: number) => string;
+    /** A finished session whose reply ends on the "your turn" marker. */
+    yourTurn: string;
   };
   /** The usage line at the top of the Agent page. */
   usage: {
@@ -93,6 +95,7 @@ export const zhCN: AgentText = {
     elapsedDone: (duration) => `用时 ${duration}`,
     permissionModes: { auto: "自动", bypass: "跳过确认", acceptEdits: "自动改文件", plan: "计划" },
     subagents: (count) => `${count} 个子 Agent`,
+    yourTurn: "等你回复",
   },
   usage: {
     label: "Claude 用量",
@@ -152,6 +155,7 @@ export const en: AgentText = {
     elapsedDone: (duration) => `took ${duration}`,
     permissionModes: { auto: "Auto", bypass: "Bypass", acceptEdits: "Accept edits", plan: "Plan" },
     subagents: (count) => (count === 1 ? "1 subagent" : `${count} subagents`),
+    yourTurn: "Your turn",
   },
   usage: {
     label: "Claude usage",

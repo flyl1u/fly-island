@@ -42,6 +42,8 @@ const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot
   unreadCount: 2, items: [], lastSyncedAt: 0, error: null, ...extra,
 });
 let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
+let replyMarkerOn = false;
+const replyMarkerCalls: boolean[] = [];
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
@@ -53,6 +55,11 @@ mockIPC((command, payload) => {
     command = "list_plugins";
   }
   switch (command) {
+    case "get_reply_marker_state": return { installed: replyMarkerOn, outdated: false, path: "C:\\Users\\demo\\.claude\\CLAUDE.md" };
+    case "set_reply_marker":
+      replyMarkerCalls.push(Boolean(args.enabled));
+      replyMarkerOn = Boolean(args.enabled);
+      return { installed: replyMarkerOn, outdated: false, path: "C:\\Users\\demo\\.claude\\CLAUDE.md" };
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
@@ -314,6 +321,16 @@ if (!automated) {
     const saved = JSON.parse(localStorage.getItem("focusd-island-qq-mail-settings") ?? "{}") as { accounts?: { email: string; host: string }[] };
     check(saved.accounts?.some((account) => account.email === "new@example.edu.cn" && account.host === "imap.example.edu.cn"),
       "The typed server is saved with the mailbox");
+
+    await openPage("agents");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    const markerGroup = [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("回复状态标记"));
+    const markerSwitch = markerGroup?.querySelector<HTMLInputElement>("[role='switch']");
+    check(markerSwitch && !markerSwitch.checked && markerGroup!.textContent!.includes("C:\\Users\\demo\\.claude\\CLAUDE.md"),
+      "The reply status marker is off by default and names the CLAUDE.md it would change");
+    await act(async () => { markerSwitch!.click(); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+    check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
 
     await act(async () => { root.unmount(); });
     document.documentElement.dataset.testResult = "passed";
