@@ -6,6 +6,7 @@ import {
   getAgentStatusLabel,
   getAgentVisualState,
   isAgentAttentionPhase,
+  withoutHiddenProviders,
 } from "../../src/features/agent-status/status.ts";
 import { TRANSLATIONS } from "../../src/i18n/index.ts";
 
@@ -57,4 +58,14 @@ test("reported sources light the island and are named in the label", () => {
   // Snapshots from older builds have no `others`.
   const { others: _ignored, ...older } = withOther("running");
   assert.equal(getAgentVisualState(older), "idle");
+});
+
+test("agents switched off in settings neither light nor name the island", () => {
+  const status = snapshot("failed", "running");
+  assert.equal(withoutHiddenProviders(status, { claudeCode: true, codex: true }), status);
+  const noCodex = withoutHiddenProviders(status, { claudeCode: true, codex: false });
+  assert.equal(noCodex.codex.phase, "idle");
+  assert.equal(getAgentVisualState(noCodex), "running");
+  assert.equal(getAgentStatusLabel(noCodex, t), t.agent.running("Claude Code"));
+  assert.equal(getAgentVisualState(withoutHiddenProviders(status, { claudeCode: false, codex: false })), "idle");
 });

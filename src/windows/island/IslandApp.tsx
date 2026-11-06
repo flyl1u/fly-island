@@ -16,7 +16,7 @@ import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
 import { TranslationPanel } from "../../features/translation/TranslationPanel";
 import { useQuickTranslation } from "../../features/translation/useQuickTranslation";
-import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
+import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useAgentSessions } from "../../features/agent-status/useAgentSessions";
@@ -292,14 +292,13 @@ export function IslandApp() {
     settings.pagePreviousShortcut,
   );
 
-  const agentVisualState = useMemo(
-    () => (settings.agentStatusEnabled ? getAgentVisualState(agentStatus) : "idle"),
-    [agentStatus, settings.agentStatusEnabled],
+  // Agents switched off in Settings → AI Agent neither light the island nor name it.
+  const shownAgentStatus = useMemo(
+    () => withoutHiddenProviders(agentStatus, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
+    [agentStatus, settings.agentShowClaudeCode, settings.agentShowCodex],
   );
-  const agentStatusLabel = useMemo(
-    () => getAgentStatusLabel(agentStatus, t),
-    [agentStatus, t],
-  );
+  const agentVisualState = useMemo(() => (settings.agentStatusEnabled ? getAgentVisualState(shownAgentStatus) : "idle"), [shownAgentStatus, settings.agentStatusEnabled]);
+  const agentStatusLabel = useMemo(() => getAgentStatusLabel(shownAgentStatus, t), [shownAgentStatus, t]);
 
   const { openTranslator, openTranslationPeek } = useIslandTranslation(
     settings.translationEnabled,

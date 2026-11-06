@@ -1,5 +1,6 @@
 import type { Translations } from "../../i18n";
 import type { AgentHooksState, AgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
+import type { SessionFilter } from "./sessionList";
 
 export type AgentVisualState = "idle" | "running" | "attention";
 export type AgentHooksInstallState = "idle" | "installing" | "installed" | "error";
@@ -40,6 +41,13 @@ export function listAgentStatuses(snapshot: AgentStatusSnapshot): AgentStatusEnt
     })),
     ...(snapshot.others ?? []).map((other) => ({ key: other.id, label: other.name, provider: null, status: other })),
   ];
+}
+
+/** The snapshot with the agents switched off in Settings → AI Agent shown as idle. */
+export function withoutHiddenProviders(snapshot: AgentStatusSnapshot, shown: SessionFilter): AgentStatusSnapshot {
+  const hidden = AGENT_PROVIDERS.filter((provider) => !shown[provider]);
+  if (hidden.length === 0) return snapshot;
+  return { ...snapshot, ...Object.fromEntries(hidden.map((provider) => [provider, DEFAULT_AGENT_TASK_STATUS])) };
 }
 
 export function isAgentAttentionPhase(phase: AgentTaskPhase) {
