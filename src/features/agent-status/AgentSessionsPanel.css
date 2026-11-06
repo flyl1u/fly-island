@@ -3,14 +3,16 @@
    two-line reply, 66px) are fixed because getAgentPageExpandedHeight (windows/island/layout.ts)
    sizes the island by them for the rows set in Settings. */
 .agent-sessions {
-  height: 100%;
+  /* Runs on through the island's 20px bottom padding, so a list longer than the page scrolls
+     out under the island's edge instead of stopping short above an empty band. */
+  height: calc(100% + 20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   /* Reaches into the island's 20px side padding, so the rows' text sits about 12px from its
      edges and the hovered row's highlight about 6px. */
   margin-inline: -14px;
-  padding: 4px 0;
+  padding: 4px 0 0;
   color: rgba(241, 240, 246, 0.92);
 }
 

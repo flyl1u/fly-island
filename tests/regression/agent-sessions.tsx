@@ -93,6 +93,7 @@ async function runChecks() {
     const rowHeights = rows().map((row) => row.getBoundingClientRect().height);
     check(rowHeights[0] === 66 && rowHeights[1] < rowHeights[0] - 10 && rowHeights[2] < rowHeights[1], "展开行随回复行数变高（两行 66px，一行更矮，不留空行），折叠行最矮");
     check(list.scrollHeight <= list.clientHeight, "设为 3 条时放下 3 个会话，不滚动");
+    check(Math.abs(list.getBoundingClientRect().bottom - (fixture.getBoundingClientRect().bottom + 20)) < 1, "列表一直延伸到岛屿底边，底部不留空白条");
     sizeFor(2);
     check(list.scrollHeight > list.clientHeight, "设为 2 条时第 3 个会话需要滚动");
     sizeFor(5);
