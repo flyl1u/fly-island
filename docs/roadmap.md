@@ -32,7 +32,7 @@
 |---|---|---|---|---|
 | C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 待做 | | Notchify、Isle Notch、WinIsland 都有 |
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
-| C4 | 音乐页同步歌词 | 待做 | | 4 款以上竞品都有 |
+| C4 | 音乐页同步歌词 | 进行中 | fly-island-7e · lane 5 · 2026-11-06 21:40 | 4 款以上竞品都有 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。
