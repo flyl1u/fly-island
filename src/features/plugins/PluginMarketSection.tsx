@@ -92,7 +92,7 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
                 plugin={plugin}
                 market={market}
                 installingId={installingId}
-                onInstall={(id, trust) => void install(id, trust)}
+                onInstall={(id, trust, acceptKeyChange) => void install(id, trust, acceptKeyChange)}
               />
             ))
           : null}

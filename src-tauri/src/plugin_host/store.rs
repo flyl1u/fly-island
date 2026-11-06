@@ -54,6 +54,10 @@ pub(super) struct PluginGrant {
     /// command's shortcut off; a command not listed keeps its manifest keybinding.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub keybindings: BTreeMap<String, String>,
+    /// The author key that signed the installed version (author_signing.rs);
+    /// updates on another key wait for the user. Empty: unsigned, or installed before.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub author_keys: Vec<String>,
 }
 
 /// A missing or broken file reads as "nothing allowed".

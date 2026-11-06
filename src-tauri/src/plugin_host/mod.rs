@@ -21,10 +21,12 @@
 //! - uri.rs: `focusd://plugin/<id>/...` links (`onUri`)
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 //! - market.rs / signature.rs: the market index and its signatures
+//! - author_signing.rs: authors' package signatures and the key kept per plugin
 //! - revocations.rs / updates.rs: revoked versions, background update checks,
 //!   automatic updates and trusted publishers
 
 mod activation;
+mod author_signing;
 mod baseline;
 mod builtin;
 mod commands;

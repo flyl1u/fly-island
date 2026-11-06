@@ -82,6 +82,10 @@ pub struct PluginInfo {
     memory_limit_mb: u32,
     /// A pre-release in the market newer than the stable version.
     pre_release_available: Option<String>,
+    /// The author key that signed the installed version (author_signing.rs).
+    author_key: Option<String>,
+    /// The market's update is signed by another key (or not at all); it waits for the user.
+    signing_key_changed: bool,
 }
 
 /// Mirrored by `PluginsSnapshot` in src/features/plugins/api.ts.
@@ -242,9 +246,12 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 pre_release: grant.pre_release,
                 memory_limit_mb: super::lifecycle::memory_limit_mb(grant.memory_limit_mb),
                 pre_release_available: None,
+                author_key: grant.author_keys.first().cloned(),
+                signing_key_changed: false,
             };
             if !plugin.builtin && !plugin.dev {
                 (info.update_available, info.auto_updated, info.pre_release_available) = updates::status_for(&plugin.folder);
+                info.signing_key_changed = updates::signing_key_changed(&plugin.folder);
             }
             match &plugin.manifest {
                 Ok(manifest) => {

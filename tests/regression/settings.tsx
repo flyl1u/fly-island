@@ -34,6 +34,7 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 let revision = 0;
 const commands: string[] = [];
 const revokedPermissions: string[] = [];
+const marketInstalls: Record<string, unknown>[] = [];
 const mailCalls: { command: string; args: Record<string, unknown> }[] = [];
 const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot => ({
   revision: ++revision, email, configured: true, enabled: true, syncing: false, status: "connected",
@@ -44,6 +45,7 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   if (command === "revoke_plugin_sensitive_permission") revokedPermissions.push(String(args.permission));
+  if (command === "install_market_plugin") marketInstalls.push(args);
   switch (command) {
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
@@ -79,12 +81,12 @@ mockIPC((command, payload) => {
       trustedPublishers: [],
       officialPublisher: "TixXin",
       plugins: [
-        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], readme: "# 待办同步\n\n每 **5 分钟**同步一次，见 [文档](https://example.com/docs)。\n\n- 读取待办\n- 写入日志", changelog: "## 1.1.0\n\n- 新增同步间隔设置", installedVersion: "1.0.0", incompatible: null, revoked: null },
-        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null },
+        { id: "dev.example.todo-sync", name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: null, version: "1.1.0", apiVersion: 1, minAppVersion: null, author: "FocuSD", homepage: "", permissions: ["todos:read"], runtime: "powershell", download: { url: "https://example.com/a.zip", sha256: "0".repeat(64), size: 1 }, publisher: null, repo: "TixXin/fly-island", categories: ["todos", "productivity"], readme: "# 待办同步\n\n每 **5 分钟**同步一次，见 [文档](https://example.com/docs)。\n\n- 读取待办\n- 写入日志", changelog: "## 1.1.0\n\n- 新增同步间隔设置", installedVersion: "1.0.0", incompatible: null, revoked: null, signedBy: "0123456789abcdef", signingKeyChanged: true },
+        { id: "dev.example.new", name: { "zh-CN": "新插件", en: "New plugin" }, description: { "zh-CN": "还没安装。", en: "Not installed yet." }, version: "0.1.0", apiVersion: 1, minAppVersion: null, author: "", homepage: "", permissions: [], runtime: "node", download: { url: "https://example.com/b.zip", sha256: "0".repeat(64), size: 1 }, publisher: "someone-with-a-long-github-name", repo: null, categories: ["developer"], installedVersion: null, incompatible: null, revoked: null, signedBy: null, signingKeyChanged: false },
       ],
     };
     case "list_plugins": {
-      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], keybindings: {}, sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null, revoked: null, updateAvailable: null, autoUpdated: null, preRelease: false, preReleaseAvailable: null, memoryLimitMb: 512 };
+      const base = { dev: false, notificationsMuted: false, keybindingConflicts: [], keybindings: {}, sensitive: {}, activation: "startup", activationEvents: [], startupMs: null, resources: null, keepAlive: null, revoked: null, updateAvailable: null, autoUpdated: null, preRelease: false, preReleaseAvailable: null, memoryLimitMb: 512, signingKeyChanged: false, authorKey: null };
       return {
       allowThirdParty: true,
       nodeAvailable: false,
@@ -193,6 +195,19 @@ if (!automated) {
     check(marketItem?.querySelector(".plugin-market__history summary")?.textContent === "版本历史"
       && marketItem.querySelector(".plugin-market__history h4")?.textContent === "1.1.0",
       "The market details show the plugin's version history");
+    const tags = [...(marketItem?.querySelectorAll<HTMLElement>(".plugin-market__tag--signed") ?? [])];
+    check(tags.length === 1 && tags[0].textContent === "作者已签名" && tags[0].title.includes("0123456789abcdef"),
+      "A plugin signed by its author is tagged in the market");
+    check(marketItem?.querySelector(".plugin-card__hint--warn")?.textContent?.includes("签名密钥变了"),
+      "An update on another author key says so");
+    const marketButton = (label: string) => [...(marketItem?.querySelectorAll<HTMLButtonElement>(".plugin-market__action button") ?? [])].find((item) => item.textContent === label);
+    await act(async () => { marketButton("仍然更新")?.click(); });
+    check(marketInstalls.length === 0 && marketButton("确认更新") && marketButton("取消"),
+      "Updating on another author key first asks to confirm");
+    await act(async () => { marketButton("确认更新")?.click(); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true,
+      "Confirming installs the update and accepts the new key");
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");

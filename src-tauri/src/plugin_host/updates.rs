@@ -2,11 +2,13 @@
 //! after start and then every 6 hours while third-party plugins are allowed
 //! (and whenever the market page loads). Revocations are applied at once;
 //! newer versions are shown on the plugin cards, and installed by themselves
-//! only when the user turned on automatic updates, the publisher is trusted and
-//! the new version asks for no permission the installed one did not.
+//! only when the user turned on automatic updates, the publisher is trusted,
+//! the new version asks for no permission the installed one did not, and it
+//! is signed by its author with the key the installed version had
+//! (author_signing.rs). An update on another key waits for the user to confirm.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     sync::Mutex,
     thread,
     time::Duration,
@@ -14,6 +16,7 @@ use std::{
 
 use super::{
     app_version,
+    author_signing::{check_key, KeyCheck},
     grants::{stop_plugin, update_state},
     host, lock,
     manifest::{version_at_least, LocalizedText},
@@ -34,9 +37,28 @@ struct Status {
     updated: BTreeMap<String, String>,
     /// Plugin id -> a pre-release in the market newer than its stable version.
     pre_releases: BTreeMap<String, String>,
+    /// Plugins whose available update is not signed by the key the installed version had.
+    key_changed: BTreeSet<String>,
 }
 
-static STATUS: Mutex<Status> = Mutex::new(Status { available: BTreeMap::new(), updated: BTreeMap::new(), pre_releases: BTreeMap::new() });
+static STATUS: Mutex<Status> = Mutex::new(Status {
+    available: BTreeMap::new(),
+    updated: BTreeMap::new(),
+    pre_releases: BTreeMap::new(),
+    key_changed: BTreeSet::new(),
+});
+
+/// How `entry` compares with the author key remembered for the installed plugin;
+/// None when its signature is wrong (it cannot be installed at all).
+pub(super) fn key_check(state: &PluginsState, entry: &MarketEntry) -> Option<KeyCheck> {
+    let remembered = state.plugins.get(&entry.id).map(|grant| grant.author_keys.as_slice()).unwrap_or_default();
+    entry.signer().ok().map(|signer| check_key(remembered, signer.as_deref()))
+}
+
+/// Whether the update the market offers for `id` is signed by another key than the installed version.
+pub(super) fn signing_key_changed(id: &str) -> bool {
+    lock(&STATUS).key_changed.contains(id)
+}
 
 /// Whether updates of `id` may install pre-releases.
 pub(super) fn wants_pre_release(state: &PluginsState, id: &str) -> bool {
@@ -70,6 +92,7 @@ pub(super) fn absorb(data: &MarketData) -> Result<Vec<MarketEntry>, String> {
     let state = lock(&host.state).clone();
     let mut available = BTreeMap::new();
     let mut pre_releases = BTreeMap::new();
+    let mut key_changed = BTreeSet::new();
     let mut automatic = Vec::new();
     for plugin in lock(&host.installed).iter().filter(|plugin| !plugin.builtin && !plugin.dev) {
         let Ok(manifest) = &plugin.manifest else { continue };
@@ -84,26 +107,48 @@ pub(super) fn absorb(data: &MarketData) -> Result<Vec<MarketEntry>, String> {
             continue;
         }
         available.insert(entry.id.clone(), entry.version.clone());
+        let check = key_check(&state, entry);
+        if check == Some(KeyCheck::Changed) {
+            key_changed.insert(entry.id.clone());
+        }
         let no_new_permissions = entry.permissions.iter().all(|name| manifest.permissions.contains(name));
-        if state.auto_update && no_new_permissions && trusts(&state, entry.publisher()) {
+        let signed = check.is_some_and(KeyCheck::may_install_by_itself);
+        if state.auto_update && no_new_permissions && signed && trusts(&state, entry.publisher()) {
             automatic.push(entry.clone());
         }
     }
     let mut status = lock(&STATUS);
     status.available = available;
     status.pre_releases = pre_releases;
+    status.key_changed = key_changed;
     Ok(automatic)
 }
 
-/// Stops the plugin, swaps in the new package and starts what should run.
-pub(super) fn install_entry(entry: &MarketEntry, bytes: &[u8]) -> Result<(), String> {
+/// Stops the plugin, swaps in the new package and starts what should run, then
+/// remembers the author key that signed it. A package signed by another key
+/// than the installed version (or no longer signed) needs `accept_key_change`.
+pub(super) fn install_entry(entry: &MarketEntry, bytes: &[u8], accept_key_change: bool) -> Result<(), String> {
     let host = host()?;
+    let signer = entry.signer()?;
+    let remembered = lock(&host.state).plugins.get(&entry.id).map(|grant| grant.author_keys.clone()).unwrap_or_default();
+    if check_key(&remembered, signer.as_deref()) == KeyCheck::Changed && !accept_key_change {
+        return Err(format!(
+            "{} {} is not signed with the key of the installed version; confirm the update to install it anyway.",
+            entry.id, entry.version
+        ));
+    }
     stop_plugin(&entry.id)?;
     let installed = market::install_package(&host.plugins_dir, entry, bytes, &app_version(&host.app));
     lock(&host.runtimes).remove(&entry.id);
     rescan()?;
     installed?;
-    lock(&STATUS).available.remove(&entry.id);
+    update_state(|state, _| {
+        state.plugins.entry(entry.id.clone()).or_default().author_keys = signer.into_iter().collect();
+        Ok(())
+    })?;
+    let mut status = lock(&STATUS);
+    status.available.remove(&entry.id);
+    status.key_changed.remove(&entry.id);
     Ok(())
 }
 
@@ -116,7 +161,7 @@ async fn check() -> Result<(), String> {
     for entry in automatic {
         let bytes = market::fetch_package(&entry).await?;
         let installed = entry.clone();
-        tauri::async_runtime::spawn_blocking(move || install_entry(&installed, &bytes))
+        tauri::async_runtime::spawn_blocking(move || install_entry(&installed, &bytes, false))
             .await
             .map_err(|error| format!("The update task failed: {error}"))??;
         lock(&STATUS).updated.insert(entry.id.clone(), entry.version.clone());

@@ -1,6 +1,6 @@
 # 插件作者签名与“已验证”发布者（设计稿）
 
-状态：**已审**（2026-11-06，决定见第 7 节），还没有实现。对应 [plugin-platform.md](plugin-platform.md) P11 里写着“以后再做”的两项：可选的作者签名、“已验证”发布者。
+状态：**已审**（2026-11-06，决定见第 7 节）。第 1 期已实现（2026-11-06）：SDK `packages/fly-island-plugin/src/sign.mjs`，岛屿 `src-tauri/src/plugin_host/author_signing.rs`，官方作者密钥 `0c663505c8e1d524`（公钥 `plugins/author-key.json`，私钥 `~/.tauri/fly-island/plugin-author-signing.key`）。对应 [plugin-platform.md](plugin-platform.md) P11 里写着“以后再做”的两项：可选的作者签名、“已验证”发布者。
 
 ## 1. 要防什么
 
@@ -82,7 +82,7 @@
     ```
 
     `authorKeys` 是这个插件当前登记的公钥（含换密钥证明，见 3.5），跟着索引一起签名。
-- 已上架的版本不会补签名，也不会去掉签名：条目里的签名和版本一起固定。
+- 已上架的版本的签名不会改，也不会去掉。**可以补签**：已上架但还没有签名的版本，如果提交登记了 `signingKeys`、Release 里（或固定地址旁）有有效的 `.zip.sig`，就给条目补上签名（包本身不变）。这样已上架的官方插件不用发新版本就能带上签名，链路也能马上验证。
 
 ### 3.4 岛屿怎么校验
 

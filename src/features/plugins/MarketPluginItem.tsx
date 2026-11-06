@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BadgeCheck, Download, ExternalLink, Flag, GitBranch } from "lucide-react";
+import { BadgeCheck, Download, ExternalLink, Flag, GitBranch, KeyRound } from "lucide-react";
 import { Markdown } from "../../components/markdown/Markdown";
 import { useLocale, useTranslation } from "../../i18n";
 import { MARKET_CATEGORIES, marketPublisher, openPluginHomepage, PLUGIN_PERMISSIONS, type MarketCategory, type MarketPlugin, type MarketSnapshot, type PluginPermission } from "./api";
@@ -22,13 +22,15 @@ export function MarketPluginItem({
   plugin: MarketPlugin;
   market: MarketSnapshot;
   installingId: string | null;
-  /** `trust`: the user agreed to trust the publisher first. */
-  onInstall: (id: string, trust: boolean) => void;
+  /** `trust`: the user agreed to trust the publisher first. `acceptKeyChange`: the user confirmed a new author key. */
+  onInstall: (id: string, trust: boolean, acceptKeyChange: boolean) => void;
 }) {
   const t = useTranslation();
   const text = t.settings.plugins.market;
   const { locale } = useLocale();
   const [open, setOpen] = useState(false);
+  // An update on another author key takes two clicks: "update anyway", then "confirm".
+  const [confirmingKeyChange, setConfirmingKeyChange] = useState(false);
   const publisher = marketPublisher(plugin, market);
   const official = publisher === market.officialPublisher;
   const trusted = official || market.trustedPublishers.includes(publisher);
@@ -42,14 +44,35 @@ export function MarketPluginItem({
     if (plugin.incompatible) return <span className="plugin-market__state" title={plugin.incompatible}>{text.incompatible}</span>;
     const isUpdate = plugin.installedVersion !== null && isNewerVersion(plugin.version, plugin.installedVersion);
     if (plugin.installedVersion !== null && !isUpdate) return <span className="plugin-market__state">{text.installed}</span>;
-    const label = installingId === plugin.id ? text.installing : !trusted ? text.trustAndInstall : isUpdate ? text.update(plugin.version) : text.install;
+    const keyChanged = isUpdate && plugin.signingKeyChanged;
+    if (keyChanged && confirmingKeyChange) {
+      return (
+        <>
+          <button
+            className="plugin-card__button plugin-card__button--danger"
+            type="button"
+            disabled={installingId !== null}
+            onClick={() => {
+              setConfirmingKeyChange(false);
+              onInstall(plugin.id, !trusted, true);
+            }}
+          >
+            <span>{text.confirmKeyChange}</span>
+          </button>
+          <button className="plugin-card__button plugin-card__button--quiet" type="button" onClick={() => setConfirmingKeyChange(false)}>
+            <span>{text.cancel}</span>
+          </button>
+        </>
+      );
+    }
+    const label = installingId === plugin.id ? text.installing : keyChanged ? text.updateAnyway : !trusted ? text.trustAndInstall : isUpdate ? text.update(plugin.version) : text.install;
     return (
       <button
         className="plugin-card__button"
         type="button"
         title={trusted ? undefined : text.trustHint(publisher)}
         disabled={installingId !== null}
-        onClick={() => onInstall(plugin.id, !trusted)}
+        onClick={() => (keyChanged ? setConfirmingKeyChange(true) : onInstall(plugin.id, !trusted, false))}
       >
         <Download size={12} strokeWidth={2.4} />
         <span>{label}</span>
@@ -67,6 +90,12 @@ export function MarketPluginItem({
             {official ? <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" /> : null}
             {official ? `${text.publisher(publisher)} · ${text.official}` : text.publisher(publisher)}
           </span>
+          {plugin.signedBy ? (
+            <span className="plugin-market__tag plugin-market__tag--signed" title={text.signedHint(plugin.signedBy)}>
+              <KeyRound size={10} strokeWidth={2.4} aria-hidden="true" />
+              {text.signed}
+            </span>
+          ) : null}
           {plugin.webview ? (
             <span className="plugin-market__tag plugin-market__tag--custom" title={text.customUiHint}>
               {text.customUi}
@@ -81,6 +110,9 @@ export function MarketPluginItem({
         {plugin.description?.[locale] ? <p className={open ? undefined : "plugin-market__clamp"}>{plugin.description[locale]}</p> : null}
         {plugin.revoked ? <p className="plugin-card__error">{plugin.revoked[locale]}</p> : null}
         {!trusted && !plugin.revoked ? <p className="plugin-card__hint">{text.trustHint(publisher)}</p> : null}
+        {plugin.signingKeyChanged && plugin.installedVersion !== null && !plugin.revoked ? (
+          <p className="plugin-card__hint plugin-card__hint--warn">{plugin.signedBy ? text.keyChanged(plugin.signedBy) : text.signatureDropped}</p>
+        ) : null}
         {open ? (
           <>
             <p>

@@ -116,6 +116,14 @@ export type SettingsPluginsText = {
     publisher: (name: string) => string;
     trustAndInstall: string;
     trustHint: (publisher: string) => string;
+    /** Author signatures (docs/architecture/plugin-author-signing.md). */
+    signed: string;
+    signedHint: (keyId: string) => string;
+    keyChanged: (keyId: string) => string;
+    signatureDropped: string;
+    updateAnyway: string;
+    confirmKeyChange: string;
+    cancel: string;
     revoked: string;
     details: string;
     hideDetails: string;
@@ -136,6 +144,7 @@ export type SettingsPluginsText = {
     noTrusted: string;
     untrust: string;
     available: (version: string) => string;
+    keyChanged: (version: string) => string;
     autoUpdated: (version: string) => string;
     revoked: (reason: string) => string;
     preReleaseTitle: string;
@@ -296,6 +305,13 @@ export const zhCN: SettingsPluginsText = {
     official: "官方",
     publisher: (name: string) => `发布者 ${name}`,
     trustAndInstall: "信任并安装",
+    signed: "作者已签名",
+    signedHint: (keyId: string) => `作者用密钥 ${keyId} 签了名。岛屿会记下这把密钥，换了密钥的更新要你确认。`,
+    keyChanged: (keyId: string) => `这个版本的签名密钥变了（现在是 ${keyId}），和已安装的版本不同。可能是作者换了密钥，也可能是插件仓库被人盗用。确认是作者本人发布的再更新。`,
+    signatureDropped: "这个版本没有作者签名，而已安装的版本有。可能是作者停用了签名，也可能是插件仓库被人盗用。确认是作者本人发布的再更新。",
+    updateAnyway: "仍然更新",
+    confirmKeyChange: "确认更新",
+    cancel: "取消",
     trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件扩展 → 更新 中取消。`,
     revoked: "已下架",
     details: "详情",
@@ -310,12 +326,13 @@ export const zhCN: SettingsPluginsText = {
   updates: {
     title: "更新",
     autoUpdate: "自动更新插件",
-    autoUpdateHint: "岛屿每 6 小时在后台检查一次插件市场（只在允许第三方插件时）。打开后，不需要新权限、发布者已受信任的更新会自动安装；需要新权限的更新始终只提示。",
+    autoUpdateHint: "岛屿每 6 小时在后台检查一次插件市场（只在允许第三方插件时）。打开后，作者签了名（并且密钥没变）、不需要新权限、发布者已受信任的更新会自动安装；其他更新只提示。",
     check: "立即检查",
     trusted: "受信任的发布者",
     noTrusted: "还没有信任其他发布者（官方插件总是受信任）。",
     untrust: "取消信任",
     available: (version: string) => `有新版本 v${version}，可在插件市场更新。`,
+    keyChanged: (version: string) => `v${version} 的签名密钥和已安装的版本不同，不会自动更新；到插件市场确认后再更新。`,
     autoUpdated: (version: string) => `已自动更新到 v${version}。`,
     revoked: (reason: string) => `这个版本已从插件市场下架，已停用：${reason}`,
     preReleaseTitle: "预发布版本",
@@ -476,6 +493,13 @@ export const en: SettingsPluginsText = {
     official: "Official",
     publisher: (name: string) => `Published by ${name}`,
     trustAndInstall: "Trust and install",
+    signed: "Signed by author",
+    signedHint: (keyId: string) => `The author signed it with key ${keyId}. The island remembers the key; updates on another key need your confirmation.`,
+    keyChanged: (keyId: string) => `This version is signed with a different key (${keyId}) than the installed one. The author may have changed keys, or the plugin's repository may have been taken over. Update only if you are sure the author published it.`,
+    signatureDropped: "This version has no author signature, but the installed one had. The author may have stopped signing, or the plugin's repository may have been taken over. Update only if you are sure the author published it.",
+    updateAnyway: "Update anyway",
+    confirmKeyChange: "Confirm update",
+    cancel: "Cancel",
     trustHint: (publisher: string) => `This is the first plugin from ${publisher}. Trust the publisher to install it. Plugins run as you and can reach your files and saved passwords, so only trust publishers you know. Its plugins can then be installed and updated automatically. You can undo this under Plugins > Updates.`,
     revoked: "Taken down",
     details: "Details",
@@ -490,12 +514,13 @@ export const en: SettingsPluginsText = {
   updates: {
     title: "Updates",
     autoUpdate: "Update plugins automatically",
-    autoUpdateHint: "The island checks the plugin market every 6 hours in the background (only while third-party plugins are allowed). When this is on, updates from trusted publishers that need no new permissions install by themselves; updates that need more permissions are only offered.",
+    autoUpdateHint: "The island checks the plugin market every 6 hours in the background (only while third-party plugins are allowed). When this is on, updates signed by their author (with an unchanged key) from trusted publishers that need no new permissions install by themselves; other updates are only offered.",
     check: "Check now",
     trusted: "Trusted publishers",
     noTrusted: "No other publishers trusted yet (official plugins always are).",
     untrust: "Stop trusting",
     available: (version: string) => `Version ${version} is available in the plugin market.`,
+    keyChanged: (version: string) => `${version} is signed with a different key than the installed version, so it does not update by itself; confirm it in the plugin market.`,
     autoUpdated: (version: string) => `Updated to ${version} automatically.`,
     revoked: (reason: string) => `This version was taken off the plugin market and is switched off: ${reason}`,
     preReleaseTitle: "Pre-releases",

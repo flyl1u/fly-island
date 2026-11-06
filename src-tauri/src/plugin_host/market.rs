@@ -13,6 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use super::author_signing::{self, AuthorKey, AuthorSignature};
 use super::lock;
 use super::manifest::{compare_versions, parse_manifest, supports_api_version, version_at_least, LocalizedText, MANIFEST_FILE_NAME};
 use super::revocations::{parse_revoked, Revocation};
@@ -88,6 +89,12 @@ pub struct MarketEntry {
     /// The plugin's CHANGELOG.md, Markdown, shown as its version history.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     changelog: Option<String>,
+    /// The author's signature of this package (author_signing.rs), when the author signs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    author_signature: Option<AuthorSignature>,
+    /// The keys the author registered with the market.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    author_keys: Vec<AuthorKey>,
 }
 
 /// Longest README / changelog text kept from the index (MAX_MARKET_TEXT in build-plugin-index.mjs).
@@ -104,6 +111,11 @@ fn cap_text(text: String) -> String {
 impl MarketEntry {
     pub(super) fn publisher(&self) -> &str {
         self.publisher.as_deref().filter(|name| !name.is_empty()).unwrap_or(OFFICIAL_PUBLISHER)
+    }
+
+    /// The author key that signed this package, None when unsigned; an error when the signature is wrong.
+    pub(super) fn signer(&self) -> Result<Option<String>, String> {
+        author_signing::signer(&self.id, &self.version, &self.download.sha256, self.author_signature.as_ref(), &self.author_keys)
     }
 
     pub(super) fn is_newer_than(&self, installed: &str) -> bool {

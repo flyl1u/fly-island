@@ -54,9 +54,9 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
     void refresh();
   }, [refresh]);
 
-  /** `trust`: trust the plugin's publisher first (the user agreed on the button). */
+  /** `trust`: trust the plugin's publisher first (the user agreed on the button). `acceptKeyChange`: the user confirmed a new author key. */
   const install = useCallback(
-    async (id: string, trust = false) => {
+    async (id: string, trust = false, acceptKeyChange = false) => {
       setInstallingId(id);
       setInstallError(null);
       try {
@@ -66,12 +66,12 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
           await setPluginPublisherTrusted(publisher, true);
           setMarket((current) => current && { ...current, trustedPublishers: [...current.trustedPublishers, publisher] });
         }
-        const installed = await installMarketPlugin(id);
+        const installed = await installMarketPlugin(id, acceptKeyChange);
         onInstalled?.(installed);
         setMarket((current) =>
           current && {
             ...current,
-            plugins: current.plugins.map((item) => (item.id === id ? { ...item, installedVersion: item.version } : item)),
+            plugins: current.plugins.map((item) => (item.id === id ? { ...item, installedVersion: item.version, signingKeyChanged: false } : item)),
           },
         );
       } catch (nextError) {

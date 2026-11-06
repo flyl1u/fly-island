@@ -115,6 +115,10 @@ export type PluginInfo = {
   revoked: LocalizedText | null;
   /** A newer version in the market. */
   updateAvailable: string | null;
+  /** The market's update is not signed by the installed version's author key; it waits for the user. */
+  signingKeyChanged: boolean;
+  /** The author key that signed the installed version, if it was signed. */
+  authorKey: string | null;
   /** The version an automatic update installed while the island has been running. */
   autoUpdated: string | null;
   /** Updates may install this plugin's pre-releases. */
@@ -184,6 +188,13 @@ export type MarketPlugin = {
   incompatible: string | null;
   /** This version was taken off the market, and why. */
   revoked: LocalizedText | null;
+  /** The author's signature and keys (plugin_host/author_signing.rs), when the author signs. */
+  authorSignature?: { keyId: string; signature: string };
+  authorKeys?: { keyId: string; publicKey: string }[];
+  /** The author key that signed this version, when the signature holds. */
+  signedBy: string | null;
+  /** Updating would replace the installed version's author key (or drop the signature): the user confirms it. */
+  signingKeyChanged: boolean;
 };
 
 export type MarketSnapshot = {
@@ -221,8 +232,9 @@ export function getCachedPluginMarket() {
   return invoke<MarketSnapshot | null>("get_cached_plugin_market");
 }
 
-export function installMarketPlugin(id: string) {
-  return invoke<PluginsSnapshot>("install_market_plugin", { id });
+/** `acceptKeyChange`: the user confirmed an update signed by another author key than the installed version. */
+export function installMarketPlugin(id: string, acceptKeyChange = false) {
+  return invoke<PluginsSnapshot>("install_market_plugin", { id, acceptKeyChange });
 }
 
 export function uninstallPlugin(id: string) {

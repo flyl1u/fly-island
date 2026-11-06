@@ -84,6 +84,7 @@ export function PluginCard({
               plugin.builtin && t.settings.plugins.builtin,
               plugin.dev && t.settings.plugins.dev.badge,
               plugin.version && `v${plugin.version}`,
+              plugin.authorKey && t.settings.plugins.market.signed,
               plugin.author && t.settings.plugins.by(plugin.author),
             ]
               .filter(Boolean)
@@ -114,7 +115,9 @@ export function PluginCard({
             ) : null}
             {plugin.autoUpdated ? <p className="plugin-card__hint">{t.settings.plugins.updates.autoUpdated(plugin.autoUpdated)}</p> : null}
             {plugin.updateAvailable && plugin.updateAvailable !== plugin.autoUpdated ? (
-              <p className="plugin-card__hint">{t.settings.plugins.updates.available(plugin.updateAvailable)}</p>
+              <p className={plugin.signingKeyChanged ? "plugin-card__hint plugin-card__hint--warn" : "plugin-card__hint"}>
+                {plugin.signingKeyChanged ? t.settings.plugins.updates.keyChanged(plugin.updateAvailable) : t.settings.plugins.updates.available(plugin.updateAvailable)}
+              </p>
             ) : null}
             {plugin.preReleaseAvailable && !plugin.preRelease ? (
               <p className="plugin-card__hint">{t.settings.plugins.updates.preReleaseOffered(plugin.preReleaseAvailable)}</p>

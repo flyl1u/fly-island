@@ -5,7 +5,9 @@ use serde_json::{json, Map, Value};
 use std::{fs, time::Duration};
 
 use super::{
-    app_version, builtin,
+    app_version,
+    author_signing::KeyCheck,
+    builtin,
     grants::{stop_all, stop_plugin, sync_processes, update_state},
     host, lifecycle, lock,
     manifest::LocalizedText,
@@ -27,6 +29,11 @@ pub struct MarketPlugin {
     incompatible: Option<String>,
     /// This version was taken off the market (revoked.json), and why.
     revoked: Option<LocalizedText>,
+    /// The author key that signed this version, when it is signed and the signature holds.
+    signed_by: Option<String>,
+    /// Installing it would replace the installed version's author key (or drop the
+    /// signature); the user has to confirm that.
+    signing_key_changed: bool,
 }
 
 /// Mirrored by `MarketSnapshot` in src/features/plugins/api.ts.
@@ -68,14 +75,22 @@ pub fn get_cached_plugin_market() -> Result<Option<MarketSnapshot>, String> {
 fn market_snapshot(data: market::MarketData) -> Result<MarketSnapshot, String> {
     let host = host()?;
     let version = app_version(&host.app);
-    let market::MarketData { entries, revoked, .. } = data;
-    let plugins = entries
-        .into_iter()
-        .map(|entry| MarketPlugin {
-            installed_version: installed_version(host, &entry.id),
-            incompatible: market::incompatibility(&entry, &version),
-            revoked: revocations::find(&revoked, &entry.id, &entry.version).map(|item| item.reason.clone()),
-            entry,
+    let state = lock(&host.state).clone();
+    let plugins = data
+        .entries
+        .iter()
+        .map(|entry| {
+            let installed_version = installed_version(host, &entry.id);
+            // What an install would actually take (a pre-release when the user opted in).
+            let target = data.entry_for(&entry.id, updates::wants_pre_release(&state, &entry.id)).unwrap_or(entry);
+            MarketPlugin {
+                signing_key_changed: installed_version.is_some() && updates::key_check(&state, target) == Some(KeyCheck::Changed),
+                installed_version,
+                signed_by: entry.signer().ok().flatten(),
+                incompatible: market::incompatibility(entry, &version),
+                revoked: revocations::find(&data.revoked, &entry.id, &entry.version).map(|item| item.reason.clone()),
+                entry: entry.clone(),
+            }
         })
         .collect();
     Ok(MarketSnapshot {
@@ -90,8 +105,10 @@ fn market_snapshot(data: market::MarketData) -> Result<MarketSnapshot, String> {
 /// Installs or updates a plugin from the market. A fresh install starts off; an
 /// update keeps the plugin's switch, and pauses it if it now asks for more
 /// permissions. The publisher must be trusted and the version not revoked.
+/// `accept_key_change`: the user confirmed an update signed by another author
+/// key than the installed version (author_signing.rs).
 #[tauri::command]
-pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String> {
+pub async fn install_market_plugin(id: String, accept_key_change: Option<bool>) -> Result<PluginsSnapshot, String> {
     if builtin::is_builtin(&id) {
         return Err("This plugin is built into FocuSD Island.".into());
     }
@@ -111,7 +128,8 @@ pub async fn install_market_plugin(id: String) -> Result<PluginsSnapshot, String
         return Err(reason);
     }
     let bytes = market::fetch_package(&entry).await?;
-    tauri::async_runtime::spawn_blocking(move || updates::install_entry(&entry, &bytes))
+    let accept = accept_key_change.unwrap_or(false);
+    tauri::async_runtime::spawn_blocking(move || updates::install_entry(&entry, &bytes, accept))
         .await
         .map_err(|error| format!("The install task failed: {error}"))??;
     snapshot()
