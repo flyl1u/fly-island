@@ -14,11 +14,11 @@
 
 | # | 任务 | 状态 | 负责 | 提交 / 备注 |
 |---|---|---|---|---|
-| 0.1 | Claude Code：`PermissionRequest` 钩子等待时，终端审批框是同时显示还是等钩子返回 | 待做 | | |
-| 0.2 | Claude Code：先在终端里回答后，钩子的请求是否被取消（HTTP 连接是否断开） | 待做 | | |
-| 0.3 | Claude Code：`AskUserQuestion` 的 `PreToolUse` 钩子等待时终端选项界面的表现；`answers` 填不在选项里的文字能否被接受 | 待做 | | |
-| 0.4 | Codex：`PermissionRequest` 钩子等待时终端的表现，`allow` / `deny` 是否生效 | 待做 | | |
-| 0.5 | Windows 上 HTTP 钩子到 `127.0.0.1` 的延迟；岛屿没运行、端口不对、超时三种情况下 Agent 是否照常弹审批框 | 待做 | | |
+| 0.1 | Claude Code：`PermissionRequest` 钩子等待时，终端审批框是同时显示还是等钩子返回 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
+| 0.2 | Claude Code：先在终端里回答后，钩子的请求是否被取消（HTTP 连接是否断开） | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
+| 0.3 | Claude Code：`AskUserQuestion` 的 `PreToolUse` 钩子等待时终端选项界面的表现；`answers` 填不在选项里的文字能否被接受 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
+| 0.4 | Codex：`PermissionRequest` 钩子等待时终端的表现，`allow` / `deny` 是否生效 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
+| 0.5 | Windows 上 HTTP 钩子到 `127.0.0.1` 的延迟；岛屿没运行、端口不对、超时三种情况下 Agent 是否照常弹审批框 | 进行中 | fly-island-3 · lane 3 · 2026-11-06 21:06 | |
 
 ## 第 1 期：音效与自动弹出提醒
 
