@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { CARD_OFFSET, cardLeft } from "./hoverCardPlacement";
 import "./IslandHoverCard.css";
 
 /** One line of the card; `color` draws a small dot before it (a ring's colour, a status). */
@@ -25,9 +26,6 @@ type IslandHoverCardProps = {
   anchorClassName?: string;
 };
 
-const EDGE = 8;
-const OFFSET = 8;
-
 type Place = { top: number; center: number; root: Element };
 
 /**
@@ -49,17 +47,31 @@ export function IslandHoverCard({
   const timerRef = useRef<number | undefined>(undefined);
   const [place, setPlace] = useState<Place | null>(null);
   const [left, setLeft] = useState<number | null>(null);
+  // Where the pointer is across, while it is on the trigger; null for keyboard focus.
+  const pointerRef = useRef<number | null>(null);
+  const [pointerX, setPointerX] = useState<number | null>(null);
 
   const show = () => {
     const anchor = anchorRef.current;
     if (!anchor) return;
     const rect = (anchor.closest(alignTo) ?? anchor).getBoundingClientRect();
     setLeft(null);
-    setPlace({ top: rect.bottom + OFFSET, center: rect.left + rect.width / 2, root: anchor.closest(portalTo) ?? document.body });
+    setPointerX(pointerRef.current);
+    setPlace({ top: rect.bottom + CARD_OFFSET, center: rect.left + rect.width / 2, root: anchor.closest(portalTo) ?? document.body });
   };
   const hide = () => {
     window.clearTimeout(timerRef.current);
+    pointerRef.current = null;
     setPlace(null);
+  };
+  const onPointerEnter = (event: PointerEvent) => {
+    pointerRef.current = event.clientX;
+    schedule();
+  };
+  // Along a wide trigger the card keeps stepping out of the cursor's way.
+  const onPointerMove = (event: PointerEvent) => {
+    pointerRef.current = event.clientX;
+    if (place) setPointerX(event.clientX);
   };
   const schedule = () => {
     window.clearTimeout(timerRef.current);
@@ -76,20 +88,20 @@ export function IslandHoverCard({
   }, [suppressed]);
   useEffect(() => () => window.clearTimeout(timerRef.current), []);
 
-  // Centred under the island, then kept inside the window.
+  // Centred under the island, kept inside the window and out from under the cursor.
   useLayoutEffect(() => {
     const card = cardRef.current;
     if (!place || !card) return;
-    const width = card.offsetWidth;
-    setLeft(Math.min(Math.max(place.center - width / 2, EDGE), window.innerWidth - width - EDGE));
-  }, [place, lines]);
+    setLeft(cardLeft(place.center, card.getBoundingClientRect().width, window.innerWidth, pointerX));
+  }, [place, lines, pointerX]);
 
   const open = place !== null && !suppressed && lines.length > 0;
   return (
     <span
       ref={anchorRef}
       className={anchorClassName ? `island-hover-card__anchor ${anchorClassName}` : "island-hover-card__anchor"}
-      onPointerEnter={schedule}
+      onPointerEnter={onPointerEnter}
+      onPointerMove={onPointerMove}
       onPointerLeave={hide}
       onPointerDown={hide}
       onFocus={onFocus}

@@ -210,11 +210,22 @@ async function runChecks() {
     const usageList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
     check(usageList.scrollHeight <= usageList.clientHeight + 1, "加上用量行后，设为 3 条时仍放下 3 个会话");
     check(usage!.getBoundingClientRect().width > usageList.getBoundingClientRect().width - 20, "悬停卡片的外壳不改变用量行的宽度");
-    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true })); });
+    // The pointer in the middle of the line, right where a centred card would sit under it.
+    const line = usage!.getBoundingClientRect();
+    const clear = (pointer: number) => {
+      const box = document.querySelector<HTMLElement>(".island-hover-card")!.getBoundingClientRect();
+      return box.right <= pointer - 8 || box.left >= pointer + 22;
+    };
+    let pointer = line.left + line.width / 2;
+    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, clientX: pointer, clientY: line.top + 10 })); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 260)); });
     const usageCard = document.querySelector<HTMLElement>(".island-hover-card");
     check(usageCard?.textContent?.includes("· 来自 claude-hud") && usageCard.getBoundingClientRect().top >= usage!.getBoundingClientRect().bottom
       && usageCard.getBoundingClientRect().top < usage!.getBoundingClientRect().bottom + 20, `悬停用量行时，行下方的卡片写出更新时间和来源：${usageCard?.textContent}`);
+    check(clear(pointer), "卡片避开鼠标指针");
+    pointer = line.left + 20;
+    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: pointer, clientY: line.top + 10 })); });
+    check(clear(pointer), "鼠标沿着用量行移动时，卡片继续避开指针");
     await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
     sizeFor(3);
     await render("both");

@@ -125,6 +125,16 @@ async function runChecks() {
     await leave();
     check(!card(), "移开后卡片消失");
 
+    // With the pointer on the ring, the card steps out from under the cursor.
+    const ring = button().getBoundingClientRect();
+    const pointerX = ring.left + ring.width / 2;
+    await act(async () => { anchor().dispatchEvent(new PointerEvent("pointerover", { bubbles: true, clientX: pointerX, clientY: ring.top + ring.height / 2 })); });
+    await wait(260);
+    const placed = card()!.getBoundingClientRect();
+    check(placed.right <= pointerX - 8 || placed.left >= pointerX + 22, `鼠标停在环上时，卡片避开指针（卡片 ${Math.round(placed.left)}–${Math.round(placed.right)}，指针 ${Math.round(pointerX)}）`);
+    check(placed.top >= document.querySelector(".island")!.getBoundingClientRect().bottom, "避开指针时卡片仍在胶囊下方");
+    await leave();
+
     await push(snapshot({ source: "api", error: { kind: "loginRequired", message: "HTTP 401" } }));
     check(arcColors().join() === [USAGE_COLORS.normal, USAGE_COLORS.warn].join(), "直接查询失败但数据仍新鲜时，环不变灰");
     await hover();
