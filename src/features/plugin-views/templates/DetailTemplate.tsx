@@ -50,8 +50,8 @@ export function DetailTemplate({ pluginId, viewId, model }: { pluginId: string; 
           <dl className="plugin-detail__meta">
             {detail.meta.map((item, index) => (
               <div key={`${item.label}-${index}`}>
-                <dt title={item.label}>{item.label}</dt>
-                <dd title={item.value}>{item.value}</dd>
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
               </div>
             ))}
           </dl>

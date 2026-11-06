@@ -25,7 +25,6 @@ export function ResetAppearanceButton({ onReset }: { onReset: () => void }) {
       <button
         className="appearance-reset"
         type="button"
-        title={t.settings.resetAppearance.hint}
         onClick={() => setConfirming(true)}
       >
         <RotateCcw size={13} strokeWidth={2.4} aria-hidden="true" />

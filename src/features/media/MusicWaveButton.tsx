@@ -65,7 +65,6 @@ export function MusicWaveButton({
     <button
       className={className}
       type="button"
-      title={label}
       aria-label={label}
       onClick={(event) => {
         event.stopPropagation();

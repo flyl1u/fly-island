@@ -33,9 +33,9 @@ export function MailAttachments({ account, messageId, attachments }: { account: 
           const saved = state?.status === "saved" ? state.path : null;
           return (
             <li key={attachment.part} className="qq-mail-attachment">
-              <span className="qq-mail-attachment__name" title={attachment.name}>{attachment.name}</span>
+              <span className="qq-mail-attachment__name">{attachment.name}</span>
               <span className="qq-mail-attachment__size">{formatBytes(attachment.size)}</span>
-              <button className="message-action" type="button" disabled={state?.status === "saving"} title={saved ?? t.mail.saveAttachmentHint}
+              <button className="message-action" type="button" disabled={state?.status === "saving"}
                 aria-label={`${saved ? t.mail.attachmentSaved : t.mail.saveAttachment} · ${attachment.name}`} onClick={() => void save(attachment.part)}>
                 {state?.status === "saving" ? <LoaderCircle size={13} strokeWidth={1.8} className="qq-mail-spinning" /> : saved ? <Check size={13} strokeWidth={1.8} /> : <Download size={13} strokeWidth={1.8} />}
                 {saved ? t.mail.attachmentSaved : t.mail.saveAttachment}

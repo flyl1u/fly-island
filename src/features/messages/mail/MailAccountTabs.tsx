@@ -21,8 +21,7 @@ export function MailAccountTabs({ mailboxes, selected, busy, onSelect, onAdd }: 
           const email = mailbox.email;
           const unread = mailbox.enabled ? mailbox.unreadCount ?? 0 : 0;
           return (
-            <button key={email} type="button" role="tab" className="qq-mail-account" aria-selected={email === selected}
-              title={`${email} · ${t.mail.status[mailbox.status]}`} onClick={() => onSelect(email)}>
+            <button key={email} type="button" role="tab" className="qq-mail-account" aria-selected={email === selected} onClick={() => onSelect(email)}>
               <span className="message-status" data-state={mailbox.status} aria-label={t.mail.status[mailbox.status]} />
               <span className="qq-mail-account__email">{email}</span>
               {unread > 0 && <span className="message-source-count">{mailBadgeCount(unread)}</span>}
@@ -31,8 +30,7 @@ export function MailAccountTabs({ mailboxes, selected, busy, onSelect, onAdd }: 
         })}
       </div>
       {onAdd && mailboxes.length < MAX_MAIL_ACCOUNTS && (
-        <button type="button" className="qq-mail-account qq-mail-account--add"
-          title={t.mail.addInSettings} aria-label={t.mail.addInSettings} disabled={busy} onClick={onAdd}>
+        <button type="button" className="qq-mail-account qq-mail-account--add" aria-label={t.mail.addInSettings} disabled={busy} onClick={onAdd}>
           <Plus size={13} strokeWidth={1.8} aria-hidden="true" />
         </button>
       )}

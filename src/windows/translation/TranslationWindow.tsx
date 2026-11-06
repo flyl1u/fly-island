@@ -166,8 +166,8 @@ export function TranslationWindow() {
           <div className="translation-window__heading"><h1>{t.translator.title}</h1></div>
           <kbd className="translation-window__shortcut">{settings.shortcut}</kbd>
           <div className="translation-window__actions">
-            <button type="button" title={t.translator.settings} aria-label={t.translator.settings} onClick={openSettings}><Settings2 size={18} /></button>
-            <button type="button" title={t.common.close} aria-label={t.translator.closeLabel} onClick={close}><X size={18} /></button>
+            <button type="button" aria-label={t.translator.settings} onClick={openSettings}><Settings2 size={18} /></button>
+            <button type="button" aria-label={t.translator.closeLabel} onClick={close}><X size={18} /></button>
           </div>
         </header>
 
@@ -179,22 +179,22 @@ export function TranslationWindow() {
             <ArrowRight size={15} aria-hidden="true" />
             <span>{targetLanguage}</span>
           </div>
-          <span className="translation-window__provider" title={providerLabel}>{providerLabel}</span>
+          <span className="translation-window__provider">{providerLabel}</span>
         </div>
         <div className="translation-window__content">
           <section className="translation-window__panel translation-window__source">
             <div className="translation-window__panel-heading">
               <h2 id="translation-source-label">{t.translator.source}</h2>
               <div className="translation-window__source-actions">
-                <span className={inputLength > 5000 ? "translation-window__error" : ""} title={t.translator.limit}>{inputLength.toLocaleString()} / 5,000</span>
-                {input && <button type="button" className="translation-window__icon-button" onClick={clearSource} title={t.translator.clearSource} aria-label={t.translator.clearSource}><X size={14} /></button>}
+                <span className={inputLength > 5000 ? "translation-window__error" : ""}>{inputLength.toLocaleString()} / 5,000</span>
+                {input && <button type="button" className="translation-window__icon-button" onClick={clearSource} aria-label={t.translator.clearSource}><X size={14} /></button>}
               </div>
             </div>
             <textarea id="translation-input" aria-labelledby="translation-source-label" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); setDidCopy(false); }} onKeyDown={handleInputKeyDown} placeholder={t.translator.placeholder} />
-            {!input && clipboardPreview && <button type="button" className="translation-window__clipboard" onClick={() => void pasteLatestClipboard()} title={t.translator.paste}><Clipboard size={14} /><span>{t.translator.clipboard(clipboardPreview.slice(0, 120))}</span><kbd>Tab</kbd></button>}
+            {!input && clipboardPreview && <button type="button" className="translation-window__clipboard" onClick={() => void pasteLatestClipboard()}><Clipboard size={14} /><span>{t.translator.clipboard(clipboardPreview.slice(0, 120))}</span><kbd>Tab</kbd></button>}
           </section>
           <section className="translation-window__panel translation-window__target" aria-busy={isLoading} aria-labelledby="translation-result-label">
-            <div className="translation-window__panel-heading"><h2 id="translation-result-label">{t.translator.result}</h2><button type="button" className="translation-window__copy" onClick={() => void copyResult()} disabled={!output} title={t.translator.copy} aria-label={t.translator.copy}>{didCopy ? <><Check size={14} /><span>{t.translator.copied}</span></> : <Copy size={15} />}</button></div>
+            <div className="translation-window__panel-heading"><h2 id="translation-result-label">{t.translator.result}</h2><button type="button" className="translation-window__copy" onClick={() => void copyResult()} disabled={!output} aria-label={t.translator.copy}>{didCopy ? <><Check size={14} /><span>{t.translator.copied}</span></> : <Copy size={15} />}</button></div>
             <div className={`translation-window__result ${output ? "translation-window__result--filled" : ""}`} aria-live="polite">{output || <span className="translation-window__empty-result">{isLoading && <LoaderCircle className="translation-window__spinner" size={16} aria-hidden="true" />}{isLoading ? t.translator.loading : t.translator.emptyResult}</span>}</div>
           </section>
         </div>

@@ -47,7 +47,6 @@ type IslandCollapsedBarProps = {
   /** Files on the shelf, or null when the count is not shown. */
   shelfCount: number | null;
   agentVisualState: AgentVisualState;
-  agentStatusLabel: string;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
   /** Quick translation line; it takes the place of the agent or todo text while shown. */
@@ -80,7 +79,6 @@ export function IslandCollapsedBar({
   showMusic,
   shelfCount,
   agentVisualState,
-  agentStatusLabel,
   onOpenPage,
   onOpenMessages,
   translationPeek,
@@ -151,7 +149,7 @@ export function IslandCollapsedBar({
           }
         }}
       >
-        <span className={pulseClassName} title={agentStatusLabel} />
+        <span className={pulseClassName} />
         <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
           {translationPeek ? (
             <span className="island__active-task" key={translationPeek}>{translationPeek}</span>
@@ -189,7 +187,7 @@ export function IslandCollapsedBar({
         <PluginNotificationActions actions={pluginNotifications.notification.actions} onAction={pluginNotifications.runAction} />
       )}
       {qqMail.preview !== null && (
-        <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} title={t.messages.openNewMail} onClick={() => onOpenMessages("qqMail")}>
+        <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} onClick={() => onOpenMessages("qqMail")}>
           <MessageSourceIcon source="qqMail" size={16} />
           <span className="island-message-button__dot" aria-hidden="true" />
         </button>
@@ -199,7 +197,6 @@ export function IslandCollapsedBar({
           className="island-message-button island-message-button--compact island-update-badge"
           type="button"
           aria-label={t.settings.project.update.islandReminder(updateVersion)}
-          title={t.settings.project.update.islandReminder(updateVersion)}
           onClick={(event) => {
             event.stopPropagation();
             openSettingsWindow("updates");
@@ -211,7 +208,7 @@ export function IslandCollapsedBar({
       )}
       {showCollapsedText && !preview && !translationPeek && pluginStatusChip}
       {shelfCount !== null && shelfCount > 0 && (
-        <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} title={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
+        <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
           <Inbox size={13} strokeWidth={2.3} aria-hidden="true" />
           <span>{shelfCount}</span>
         </button>
@@ -229,7 +226,6 @@ export function IslandCollapsedBar({
         <button
           className="island__quiet-button"
           type="button"
-          title={t.island.collapse}
           aria-label={t.island.collapseIsland}
           onClick={(event) => {
             event.stopPropagation();
@@ -240,7 +236,6 @@ export function IslandCollapsedBar({
         <button
           className="island-agent-count"
           type="button"
-          title={t.agent.sessions.activeCount(agentSessionCount)}
           aria-label={t.agent.sessions.activeCount(agentSessionCount)}
           onClick={(event) => {
             event.stopPropagation();

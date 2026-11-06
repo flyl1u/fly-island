@@ -76,7 +76,6 @@ export function FileShelfPanel({
               item={item}
               isRecent={recentIds.has(item.id)}
               isSelected={selected.has(item.id)}
-              dragHint={revealOnDoubleClick ? t.fileShelf.dragHintReveal : t.fileShelf.dragHint}
               onSelect={(id, mode) => setSelection((current) => selectEntry(keepVisible(current, visibleIds), visibleIds, id, mode))}
               onDragOut={(id) => void shelf.startDrag(targetIds(selection, id))}
               onOpen={(id) => void (revealOnDoubleClick ? shelf.reveal(id) : shelf.open(id))}

@@ -14,15 +14,15 @@ export function QQNotificationControls({ controller, compact = false }: { contro
   const needsAccess = snapshot.status === "permissionRequired" || snapshot.status === "permissionDenied";
   return <div className={`qq-panel__controls${compact ? " qq-panel__controls--compact" : ""}`}>
     <div className="qq-panel__control-row">
-      {compact ? <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.qq.receive} title={snapshot.enabled ? t.qq.pause : t.qq.resume} disabled={busy} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button> : <label className="qq-panel__toggle" title={snapshot.enabled ? t.qq.pause : t.qq.resume}>
+      {compact ? <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.qq.receive} disabled={busy} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button> : <label className="qq-panel__toggle">
         <span>{t.qq.title}</span>
-        <span className="message-status" data-state={snapshot.status} role="status" aria-label={t.qq.status[snapshot.status]} title={t.qq.status[snapshot.status]} />
+        <span className="message-status" data-state={snapshot.status} role="status" aria-label={t.qq.status[snapshot.status]} />
         <input type="checkbox" role="switch" aria-label={t.qq.receive} checked={snapshot.enabled} disabled={busy} onChange={(event) => void setEnabled(event.currentTarget.checked)} />
       </label>}
       {snapshot.enabled && (needsAccess || snapshot.status === "error" || snapshot.error || actionError) && <div className="qq-panel__actions">
-        {snapshot.status === "permissionRequired" && <button className="message-action" type="button" title={t.qq.allow} aria-label={t.qq.allowLabel} disabled={busy} onClick={() => void requestAccess()}><KeyRound size={14} strokeWidth={1.8} />{t.qq.grant}</button>}
-        {(snapshot.status === "permissionDenied" || snapshot.error || actionError) && <button className="icon-button" type="button" title={t.qq.settings} aria-label={t.qq.settings} disabled={busy} onClick={() => void openSettings()}><Settings2 size={16} strokeWidth={1.8} /></button>}
-        {snapshot.status === "error" && <button className="icon-button" type="button" title={t.qq.retry} aria-label={t.qq.retryLabel} disabled={busy} onClick={() => void requestAccess()}><KeyRound size={16} strokeWidth={1.8} /></button>}
+        {snapshot.status === "permissionRequired" && <button className="message-action" type="button" aria-label={t.qq.allowLabel} disabled={busy} onClick={() => void requestAccess()}><KeyRound size={14} strokeWidth={1.8} />{t.qq.grant}</button>}
+        {(snapshot.status === "permissionDenied" || snapshot.error || actionError) && <button className="icon-button" type="button" aria-label={t.qq.settings} disabled={busy} onClick={() => void openSettings()}><Settings2 size={16} strokeWidth={1.8} /></button>}
+        {snapshot.status === "error" && <button className="icon-button" type="button" aria-label={t.qq.retryLabel} disabled={busy} onClick={() => void requestAccess()}><KeyRound size={16} strokeWidth={1.8} /></button>}
       </div>}
     </div>
     {!compact && needsAccess && <p className="qq-panel__error" role="alert">{t.qq.status[snapshot.status]}</p>}
@@ -40,9 +40,9 @@ export function QQNotificationPanel({ controller, navigation }: { controller: QQ
         {navigation}
         <div className="qq-panel__toolbar">
           <QQNotificationControls controller={controller} compact />
-          <button className="icon-button" type="button" title={t.qq.open} aria-label={t.qq.open} disabled={busy} onClick={() => void openQQ()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
-          <button className="icon-button" type="button" title={t.common.refresh} aria-label={t.qq.refresh} disabled={busy} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} /></button>
-          <button className="icon-button" type="button" title={t.common.clear} aria-label={t.qq.clear} disabled={busy || snapshot.items.length === 0} onClick={() => void clear()}><Trash2 size={16} strokeWidth={1.8} /></button>
+          <button className="icon-button" type="button" aria-label={t.qq.open} disabled={busy} onClick={() => void openQQ()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
+          <button className="icon-button" type="button" aria-label={t.qq.refresh} disabled={busy} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} /></button>
+          <button className="icon-button" type="button" aria-label={t.qq.clear} disabled={busy || snapshot.items.length === 0} onClick={() => void clear()}><Trash2 size={16} strokeWidth={1.8} /></button>
         </div>
       </header>
       {error && <p className="qq-panel__error" role="alert">{error}</p>}

@@ -27,7 +27,7 @@ function PermissionSummary({ permissions, optional }: { permissions: string[]; o
 
   return (
     <details className={`plugin-card__permissions${hasSensitive ? " plugin-card__permissions--sensitive" : ""}`}>
-      <summary title={t.settings.plugins.permissions}>
+      <summary>
         <Lock size={11} strokeWidth={2.4} />
         <span>{t.settings.plugins.permissionCount(permissions.length + optional.length)}</span>
       </summary>
@@ -76,7 +76,7 @@ export function PluginCard({
       <header className="plugin-card__header">
         <div className="plugin-card__title">
           <div className="plugin-card__name">
-            <strong title={plugin.id}>{name}</strong>
+            <strong>{name}</strong>
             {showStatus ? (
               <span className={`plugin-card__status plugin-card__status--${plugin.status}`}>
                 {t.settings.plugins.status[plugin.status]}
@@ -109,7 +109,7 @@ export function PluginCard({
       ) : (
         <>
           {description ? (
-            <p className="plugin-card__description" title={description}>
+            <p className="plugin-card__description">
               {description}
             </p>
           ) : null}

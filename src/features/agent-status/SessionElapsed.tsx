@@ -22,7 +22,7 @@ export function SessionElapsed({ session }: { session: AgentSessionSummary }) {
   if (elapsed === null) return null;
   const duration = t.agent.sessions.duration(durationParts(elapsed));
   return (
-    <span className="agent-session__elapsed" title={t.agent.sessions.elapsedHint}>
+    <span className="agent-session__elapsed">
       {active ? t.agent.sessions.elapsedRunning(duration) : t.agent.sessions.elapsedDone(duration)}
     </span>
   );

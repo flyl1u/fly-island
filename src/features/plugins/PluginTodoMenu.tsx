@@ -89,7 +89,6 @@ export function PluginTodoMenuArea({ children }: { children: ReactNode }) {
                   type="button"
                   role="menuitem"
                   key={`${entry.pluginId}/${entry.command}`}
-                  title={`${entry.title[locale]} · ${entry.pluginName[locale]}`}
                   onClick={() => run(entry, menu.todoId)}
                 >
                   <span>{entry.title[locale]}</span>

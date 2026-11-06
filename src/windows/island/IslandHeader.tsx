@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
-import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { useUpdateReminder } from "../../features/updater/useBackgroundUpdateCheck";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, pageShortcutLabel, type IslandFeatures } from "./features";
@@ -56,7 +55,6 @@ export function IslandHeader({
   pluginPageButtons,
 }: IslandHeaderProps) {
   const t = useTranslation();
-  const [{ shortcut: translationShortcut }] = useTranslationSettings();
   const updateVersion = useUpdateReminder();
   const settingsLabel = updateVersion ? t.settings.project.update.islandReminder(updateVersion) : t.settings.title;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
@@ -77,7 +75,6 @@ export function IslandHeader({
           <button
             className={`island__agent-button${page === "agents" ? " island__agent-button--active" : ""}`}
             type="button"
-            title={withShortcut(`${agentStatusLabel} · ${t.agent.sessions.open}`, "agents")}
             aria-label={withShortcut(`${agentStatusLabel} · ${t.agent.sessions.open}`, "agents")}
             aria-pressed={page === "agents"}
             onClick={(event) => {
@@ -108,7 +105,6 @@ export function IslandHeader({
               page === "todo" ? "dot-button--active" : ""
             }`}
             type="button"
-            title={withShortcut(t.island.todoList, "todo")}
             aria-label={withShortcut(t.island.todoList, "todo")}
             onClick={(event) => {
               event.stopPropagation();
@@ -122,7 +118,6 @@ export function IslandHeader({
               page === "music" ? "dot-button--active" : ""
             }`}
             type="button"
-            title={withShortcut(t.island.music, "music")}
             aria-label={withShortcut(t.island.music, "music")}
             onClick={(event) => {
               event.stopPropagation();
@@ -136,7 +131,6 @@ export function IslandHeader({
               page === "clipboard" ? "dot-button--active" : ""
             }`}
             type="button"
-            title={withShortcut(t.island.clipboardHistory, "clipboard")}
             aria-label={withShortcut(t.island.clipboardHistory, "clipboard")}
             onClick={(event) => {
               event.stopPropagation();
@@ -150,7 +144,6 @@ export function IslandHeader({
               page === "shelf" ? "dot-button--active" : ""
             }`}
             type="button"
-            title={withShortcut(t.island.shelf, "shelf")}
             aria-label={withShortcut(t.island.shelf, "shelf")}
             onClick={(event) => {
               event.stopPropagation();
@@ -173,7 +166,6 @@ export function IslandHeader({
         <button
           className="icon-button island-settings-button"
           type="button"
-          title={settingsLabel}
           aria-label={settingsLabel}
           onClick={(event) => {
             event.stopPropagation();
@@ -183,7 +175,7 @@ export function IslandHeader({
           <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
           {updateVersion && <span className="island-settings-button__dot" aria-hidden="true" />}
         </button>
-        {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={withShortcut(t.messages.label(messageBadgeLabel), "qq")} aria-pressed={page === "qq"} title={withShortcut(t.messages.title, "qq")} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
+        {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={withShortcut(t.messages.label(messageBadgeLabel), "qq")} aria-pressed={page === "qq"} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
           <Bell size={17} strokeWidth={1.8} />
           {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
         </button>}
@@ -191,7 +183,6 @@ export function IslandHeader({
           <button
             className={`icon-button island-translate-button${page === "translation" ? " island-translate-button--active" : ""}`}
             type="button"
-            title={features.translation ? withShortcut(t.translator.title, "translation") : `${t.translator.title} (${translationShortcut})`}
             aria-label={features.translation ? withShortcut(t.translator.title, "translation") : t.translator.title}
             aria-pressed={features.translation ? page === "translation" : undefined}
             onClick={(event) => {
@@ -207,7 +198,6 @@ export function IslandHeader({
             isDetached ? " island-reset-button--available" : ""
           }`}
           type="button"
-          title={t.island.resetPositionLabel}
           aria-label={t.island.resetPositionLabel}
           onClick={(event) => {
             event.stopPropagation();
@@ -219,7 +209,6 @@ export function IslandHeader({
         <button
           className="icon-button"
           type="button"
-          title={minimizesToTray ? t.island.minimizeToTray : t.island.tuckToTop}
           aria-label={minimizesToTray ? t.island.minimizeToTray : t.island.tuckToTop}
           onClick={(event) => {
             event.stopPropagation();

@@ -86,9 +86,9 @@ export function PluginDevSection() {
                 <ul className="plugin-dev__plugins">
                   {dev.state.plugins.map((plugin) => (
                     <li key={plugin.id} className={plugin.id === dev.selected ? "plugin-dev__plugin--selected" : undefined}>
-                      <button className="plugin-dev__pick" type="button" onClick={() => dev.select(plugin.id)} title={text.inspect}>
+                      <button className="plugin-dev__pick" type="button" onClick={() => dev.select(plugin.id)}>
                         <strong>{plugin.id}</strong>
-                        <span title={plugin.path}>{plugin.path}</span>
+                        <span>{plugin.path}</span>
                       </button>
                       <button className="plugin-card__button" type="button" disabled={dev.busy} onClick={() => dev.reload(plugin.id)}>
                         <RotateCcw size={12} strokeWidth={2.4} />

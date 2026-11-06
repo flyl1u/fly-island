@@ -8,7 +8,6 @@ export function PluginStatusChip({ status, onOpen }: { status: PluginStatusEntry
     <button
       className={`plugin-status-chip plugin-status-chip--${status.tone}`}
       type="button"
-      title={title}
       aria-label={title}
       disabled={!onOpen}
       onClick={(event) => {

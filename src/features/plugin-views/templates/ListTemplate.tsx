@@ -125,11 +125,11 @@ function PluginListRow({
         </button>
       ) : null}
       {clickable ? (
-        <button className="plugin-list__main" type="button" title={item.title} onClick={() => onOpen(item)}>
+        <button className="plugin-list__main" type="button" onClick={() => onOpen(item)}>
           {text}
         </button>
       ) : (
-        <div className="plugin-list__main" title={item.title}>
+        <div className="plugin-list__main">
           {text}
         </div>
       )}
@@ -142,7 +142,6 @@ function PluginListRow({
                 className="plugin-list__action"
                 type="button"
                 key={action.id}
-                title={action.title}
                 aria-label={`${action.title}: ${item.title}`}
                 onClick={() => onAction(action.id, item)}
               >

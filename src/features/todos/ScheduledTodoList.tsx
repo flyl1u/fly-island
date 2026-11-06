@@ -35,7 +35,6 @@ export function ScheduledTodoList({
                 <span>{todo.title}</span>
                 <button
                   type="button"
-                  title={t.notebook.deleteScheduled(todo.title)}
                   aria-label={t.notebook.deleteScheduled(todo.title)}
                   onClick={() => onDelete(todo.id)}
                 >

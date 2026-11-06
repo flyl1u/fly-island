@@ -46,14 +46,14 @@ export function PluginIslandPagesSection() {
           return (
             <li className="plugin-pages__row" key={id}>
               <Icon size={14} strokeWidth={2.3} aria-hidden="true" />
-              <span className="plugin-pages__name" title={`${title} · ${view.pluginName[locale]}`}>
+              <span className="plugin-pages__name">
                 <strong>{title}</strong>
                 <small>{view.pluginName[locale]}</small>
               </span>
-              <button className="plugin-card__button" type="button" disabled={index === 0} title={labels.moveUp} aria-label={`${labels.moveUp}: ${title}`} onClick={() => setPrefs(movePluginPage(views, prefs, id, -1))}>
+              <button className="plugin-card__button" type="button" disabled={index === 0} aria-label={`${labels.moveUp}: ${title}`} onClick={() => setPrefs(movePluginPage(views, prefs, id, -1))}>
                 <ArrowUp size={12} strokeWidth={2.4} />
               </button>
-              <button className="plugin-card__button" type="button" disabled={index === ordered.length - 1} title={labels.moveDown} aria-label={`${labels.moveDown}: ${title}`} onClick={() => setPrefs(movePluginPage(views, prefs, id, 1))}>
+              <button className="plugin-card__button" type="button" disabled={index === ordered.length - 1} aria-label={`${labels.moveDown}: ${title}`} onClick={() => setPrefs(movePluginPage(views, prefs, id, 1))}>
                 <ArrowDown size={12} strokeWidth={2.4} />
               </button>
               <ToggleControl label={labels.show} checked={!prefs.hidden.includes(id)} onChange={(show) => setPrefs(setPluginPageHidden(prefs, id, !show))} />

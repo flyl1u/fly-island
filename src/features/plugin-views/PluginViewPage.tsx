@@ -78,8 +78,8 @@ export function PluginViewPage({
     <section className={`plugin-view plugin-view--${entry.template}`} aria-label={t.pluginViews.pageLabel(title, pluginName)}>
       <header className="plugin-view__title">
         <Icon size={14} strokeWidth={2.3} aria-hidden="true" />
-        <strong title={title}>{title}</strong>
-        <span title={pluginName}>{pluginName}</span>
+        <strong>{title}</strong>
+        <span>{pluginName}</span>
       </header>
       <div className="plugin-view__body">{body}</div>
     </section>

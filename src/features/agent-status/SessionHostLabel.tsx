@@ -11,7 +11,7 @@ export function SessionHostLabel({ host, display }: { host: SessionHost; display
   const Fallback = FALLBACK_ICONS[host.kind];
 
   return (
-    <span className="agent-session__host" title={host.name}>
+    <span className="agent-session__host">
       {display !== "name" &&
         (icon ? (
           <img className="agent-session__host-icon" src={icon} alt="" width={13} height={13} />

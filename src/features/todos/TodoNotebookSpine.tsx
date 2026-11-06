@@ -32,7 +32,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.backToToday}
         aria-label={t.notebook.backToToday}
         onClick={onShowToday}
       />
@@ -49,7 +48,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.saveToday}
         aria-label={t.notebook.saveTodayMarkdown}
         onClick={onSaveToday}
       >
@@ -68,7 +66,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.reviewSaved}
         aria-label={t.notebook.reviewSaved}
         onClick={onShowArchive}
       />

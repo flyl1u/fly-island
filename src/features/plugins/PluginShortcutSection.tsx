@@ -80,7 +80,7 @@ export function PluginShortcutSection({ takenBy }: { takenBy: (shortcut: string,
           <div className="shortcut-row" key={row.key}>
             <div className="shortcut-control">
               <div className="shortcut-control__meta">
-                <span title={name(row)}>{name(row)}</span>
+                <span>{name(row)}</span>
                 <strong>{row.shortcut ?? (row.changed && row.defaultShortcut ? text.pluginOff : text.pluginNotSet)}</strong>
               </div>
               <div className="shortcut-control__actions">
@@ -90,7 +90,7 @@ export function PluginShortcutSection({ takenBy }: { takenBy: (shortcut: string,
                   onReset={() => save(row, null)}
                 />
                 {row.shortcut ? (
-                  <button className="shortcut-reset-button" type="button" title={text.pluginTurnOff} aria-label={`${text.pluginTurnOff}: ${name(row)}`} onClick={() => save(row, "")}>
+                  <button className="shortcut-reset-button" type="button" aria-label={`${text.pluginTurnOff}: ${name(row)}`} onClick={() => save(row, "")}>
                     <X size={13} strokeWidth={2.3} aria-hidden="true" />
                   </button>
                 ) : null}

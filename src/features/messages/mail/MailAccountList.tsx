@@ -32,7 +32,7 @@ export function MailAccountList({ mailboxes, hosts, busy, onSetEnabled, onReauth
           <li className="mail-settings__account" key={email}>
             <span className="message-status" data-state={mailbox.status} role="status" aria-label={t.mail.status[mailbox.status]} />
             <span className="mail-settings__address">
-              <strong title={email}>{email}</strong>
+              <strong>{email}</strong>
               <small>{t.mail.status[mailbox.status]}{unread} · {host}</small>
               {mailbox.error && <small className="mail-settings__account-error">{mailbox.error}</small>}
             </span>
@@ -55,7 +55,7 @@ export function MailAccountList({ mailboxes, hosts, busy, onSetEnabled, onReauth
                   <button className="mail-settings__button" type="button" onClick={() => setConfirming(null)}>{t.mail.cancel}</button>
                 </>
               ) : (
-                <button className="mail-settings__button" type="button" disabled={busy} title={t.mail.disconnectLabel} aria-label={`${t.mail.disconnectLabel} · ${email}`} onClick={() => setConfirming(email)}>
+                <button className="mail-settings__button" type="button" disabled={busy} aria-label={`${t.mail.disconnectLabel} · ${email}`} onClick={() => setConfirming(email)}>
                   <Unplug size={13} strokeWidth={2} aria-hidden="true" />{t.mail.disconnectShort}
                 </button>
               )}

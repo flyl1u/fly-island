@@ -13,7 +13,7 @@ export function TodoDataNotice() {
   return (
     <div className="todo-data-notice" role="status">
       <span>{t.notebook.dataNotice[notice]}</span>
-      <button type="button" title={t.notebook.dismissNotice} aria-label={t.notebook.dismissNotice} onClick={() => setNotice(null)}>
+      <button type="button" aria-label={t.notebook.dismissNotice} onClick={() => setNotice(null)}>
         <X size={12} strokeWidth={2.4} />
       </button>
     </div>

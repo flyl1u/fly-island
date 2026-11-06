@@ -33,7 +33,6 @@ export function MusicPlayerPanel({
     <button
       className="music-icon-button"
       type="button"
-      title={t.music.openSettings}
       aria-label={t.music.openSettings}
       onClick={onOpenSettings}
     >
@@ -50,7 +49,6 @@ export function MusicPlayerPanel({
         .filter(Boolean)
         .join(" ")}
       aria-label={t.music.playerLabel}
-      title={commandError ?? undefined}
     >
       <div className="music-player__body">
         <div className="music-player__details">
@@ -64,14 +62,12 @@ export function MusicPlayerPanel({
           <div className="music-player__meta">
             <span
               className="music-player__track"
-              title={mediaState.title ?? undefined}
             >
               {mediaState.title ?? t.music.noMedia}
             </span>
             {hasTrack && (
               <span
                 className="music-player__artist"
-                title={mediaState.artist ?? undefined}
               >
                 {mediaState.artist ?? t.music.unknownArtist}
               </span>
@@ -96,7 +92,6 @@ export function MusicPlayerPanel({
             <button
               className="music-control-button"
               type="button"
-              title={t.music.previous}
               aria-label={t.music.previousTrack}
               disabled={prevDisabled}
               onClick={onPrevious}
@@ -106,7 +101,6 @@ export function MusicPlayerPanel({
             <button
               className="music-control-button music-control-button--primary"
               type="button"
-              title={isPlaying ? t.music.pause : t.music.play}
               aria-label={isPlaying ? t.music.pause : t.music.play}
               aria-busy={isTrackChanging}
               onClick={onPlayPause}
@@ -126,7 +120,6 @@ export function MusicPlayerPanel({
             <button
               className="music-control-button"
               type="button"
-              title={t.music.next}
               aria-label={t.music.nextTrack}
               disabled={nextDisabled}
               onClick={onNext}

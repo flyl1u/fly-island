@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { BadgeCheck, KeyRound, Lock } from "lucide-react";
 import { useLocale, useTranslation } from "../../i18n";
-import { MARKET_CATEGORIES, marketPublisher, PLUGIN_PERMISSIONS, type MarketCategory, type MarketPlugin, type MarketSnapshot, type PluginPermission } from "./api";
+import { MARKET_CATEGORIES, marketPublisher, type MarketCategory, type MarketPlugin, type MarketSnapshot } from "./api";
 import { MarketPluginAction } from "./MarketPluginAction";
 import { MarketPluginDetails } from "./MarketPluginDetails";
 import { pluginIconTone, pluginInitial } from "./marketGroups";
 import { NodeMissingHint } from "./NodeMissingHint";
 import { isSensitivePermission } from "./promptedPermissions";
 
-const isPermission = (name: string): name is PluginPermission => (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
 const isCategory = (name: string): name is MarketCategory => (MARKET_CATEGORIES as readonly string[]).includes(name);
 
 /**
@@ -40,7 +39,6 @@ export function MarketPluginItem({
   const trusted = official || market.trustedPublishers.includes(publisher);
   const permissions = [...plugin.permissions, ...(plugin.optionalPermissions ?? [])];
   const sensitive = permissions.some(isSensitivePermission);
-  const permissionNames = permissions.map((name) => (isPermission(name) ? t.settings.plugins.permission[name] : name)).join("\n");
   const runtime = plugin.runtime === "node" || plugin.runtime === "powershell" || plugin.runtime === "exe" ? text.runtime[plugin.runtime] : null;
 
   return (
@@ -48,16 +46,16 @@ export function MarketPluginItem({
       <span className={`plugin-market__icon plugin-market__icon--${pluginIconTone(plugin)}`} aria-hidden="true">
         {pluginInitial(plugin.name[locale])}
       </span>
-      <button className="plugin-market__summary" type="button" aria-expanded={open} title={open ? text.hideDetails : text.details} onClick={() => setOpen(!open)}>
+      <button className="plugin-market__summary" type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="plugin-market__title">
-          <strong title={plugin.id}>{plugin.name[locale]}</strong>
+          <strong>{plugin.name[locale]}</strong>
           {official ? (
-            <span className="plugin-market__badge plugin-market__badge--official" title={text.publisher(publisher)}>
+            <span className="plugin-market__badge plugin-market__badge--official">
               <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" />
               {text.official}
             </span>
           ) : plugin.verified ? (
-            <span className="plugin-market__badge" title={`${plugin.verified.via === "domain" ? text.verifiedDomain(plugin.verified.domain) : text.verifiedGithub}\n${text.verifiedHint}`}>
+            <span className="plugin-market__badge">
               <BadgeCheck size={11} strokeWidth={2.4} aria-hidden="true" />
               {text.verified}
             </span>
@@ -66,19 +64,19 @@ export function MarketPluginItem({
         </span>
         <span className="plugin-market__meta">
           {official ? null : <span>{text.publisher(publisher)}</span>}
-          <span className={`plugin-market__permissions${sensitive ? " plugin-market__permissions--sensitive" : ""}`} title={permissionNames || undefined}>
+          <span className={`plugin-market__permissions${sensitive ? " plugin-market__permissions--sensitive" : ""}`}>
             <Lock size={10} strokeWidth={2.4} aria-hidden="true" />
             {permissions.length > 0 ? t.settings.plugins.permissionCount(permissions.length) : text.noPermissions}
           </span>
           {runtime ? <span>{runtime}</span> : null}
           {plugin.signedBy ? (
-            <span className="plugin-market__tag plugin-market__tag--signed" title={text.signedHint(plugin.signedBy)}>
+            <span className="plugin-market__tag plugin-market__tag--signed">
               <KeyRound size={10} strokeWidth={2.4} aria-hidden="true" />
               {text.signed}
             </span>
           ) : null}
           {plugin.webview ? (
-            <span className="plugin-market__tag plugin-market__tag--custom" title={text.customUiHint}>
+            <span className="plugin-market__tag plugin-market__tag--custom">
               {text.customUi}
             </span>
           ) : null}
@@ -91,7 +89,7 @@ export function MarketPluginItem({
         {plugin.description?.[locale] ? <span className={open ? "plugin-market__description" : "plugin-market__description plugin-market__clamp"}>{plugin.description[locale]}</span> : null}
       </button>
       <div className="plugin-market__action">
-        <MarketPluginAction plugin={plugin} trusted={trusted} publisher={publisher} installingId={installingId} onInstall={onInstall} onManage={onManage} />
+        <MarketPluginAction plugin={plugin} trusted={trusted} installingId={installingId} onInstall={onInstall} onManage={onManage} />
       </div>
       <div className="plugin-market__notes">
         {plugin.revoked ? <p className="plugin-card__error">{plugin.revoked[locale]}</p> : null}

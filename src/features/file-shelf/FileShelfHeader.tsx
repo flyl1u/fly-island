@@ -68,7 +68,7 @@ export function FileShelfHeader({
               }}
             />
             {query && (
-              <button type="button" title={t.fileShelf.clearSearch} aria-label={t.fileShelf.clearSearch} onClick={() => onQueryChange("")}>
+              <button type="button" aria-label={t.fileShelf.clearSearch} onClick={() => onQueryChange("")}>
                 <X size={12} strokeWidth={2.4} />
               </button>
             )}
@@ -78,7 +78,6 @@ export function FileShelfHeader({
           className={`shelf-clear-button${confirmingClear ? " shelf-clear-button--confirming" : ""}`}
           type="button"
           disabled={count === 0}
-          title={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
           aria-label={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
           onClick={() => {
             if (confirmingClear) {
@@ -95,13 +94,13 @@ export function FileShelfHeader({
       {selectedCount > 1 && (
         <div className="shelf-selection-bar" role="toolbar" aria-label={t.fileShelf.selectedCount(selectedCount)}>
           <span>{t.fileShelf.selectedCount(selectedCount)}</span>
-          <button type="button" title={t.fileShelf.copySelected} aria-label={t.fileShelf.copySelected} onClick={onCopySelected}>
+          <button type="button" aria-label={t.fileShelf.copySelected} onClick={onCopySelected}>
             <Copy size={13} strokeWidth={2.2} />
           </button>
-          <button type="button" title={t.fileShelf.removeSelected} aria-label={t.fileShelf.removeSelected} onClick={onRemoveSelected}>
+          <button type="button" aria-label={t.fileShelf.removeSelected} onClick={onRemoveSelected}>
             <Trash2 size={13} strokeWidth={2.2} />
           </button>
-          <button type="button" title={t.fileShelf.clearSelection} aria-label={t.fileShelf.clearSelection} onClick={onClearSelection}>
+          <button type="button" aria-label={t.fileShelf.clearSelection} onClick={onClearSelection}>
             <X size={13} strokeWidth={2.4} />
           </button>
         </div>

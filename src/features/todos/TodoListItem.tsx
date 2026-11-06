@@ -75,7 +75,6 @@ export function TodoListItem({
         type="button"
         aria-pressed={todo.completed}
         disabled={!isTodayMode}
-        title={todo.completed ? t.todo.markIncomplete : t.todo.complete}
         aria-label={t.todo.actionOnTask(
           todo.completed ? t.todo.markIncomplete : t.todo.complete,
           todo.title,
@@ -106,7 +105,6 @@ export function TodoListItem({
         <button
           className="todo-title todo-title--editable"
           type="button"
-          title={t.todo.editTitle}
           onClick={() => onStartEdit(todo)}
         >
           {todo.title}
@@ -121,7 +119,6 @@ export function TodoListItem({
               .filter(Boolean)
               .join(" ")}
             type="button"
-            title={isActive ? t.todo.stop : t.todo.start}
             aria-label={t.todo.actionOnTask(
               isActive ? t.todo.stop : t.todo.start,
               todo.title,
@@ -135,7 +132,6 @@ export function TodoListItem({
           <button
             className="todo-delete"
             type="button"
-            title={t.todo.delete}
             aria-label={t.todo.deleteTask(todo.title)}
             onClick={() => onDelete(todo.id)}
           >
@@ -145,7 +141,6 @@ export function TodoListItem({
             <button
               className="todo-drag-handle"
               type="button"
-              title={t.todo.reorder}
               aria-label={t.todo.reorderTask(todo.title)}
               disabled={isEditing}
               onPointerDown={(event) => onDragStart(event, todo.id)}

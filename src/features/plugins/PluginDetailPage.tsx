@@ -56,7 +56,7 @@ export function PluginDetailPage({
           ) : null}
         </div>
         <div className="plugin-card__title">
-          <strong title={plugin.id}>{plugin.name?.[locale] ?? plugin.id}</strong>
+          <strong>{plugin.name?.[locale] ?? plugin.id}</strong>
           {plugin.version ? <span>v{plugin.version}</span> : null}
         </div>
         {plugin.error ? <p className="plugin-card__error">{plugin.error}</p> : null}

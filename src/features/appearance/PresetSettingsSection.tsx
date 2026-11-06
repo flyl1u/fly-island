@@ -89,11 +89,6 @@ export function PresetSettingsSection({
                 <button
                   className="preset-name-button"
                   type="button"
-                  title={
-                    preset.isDefault
-                      ? t.settings.presets.defaultPreset
-                      : t.settings.presets.rename
-                  }
                   disabled={preset.isDefault}
                   onClick={() => {
                     if (!preset.isDefault) {
@@ -117,7 +112,6 @@ export function PresetSettingsSection({
                 <button
                   className="preset-delete-button"
                   type="button"
-                  title={t.settings.presets.delete}
                   aria-label={t.settings.presets.deleteNamed(preset.name)}
                   onClick={() => onDeletePreset(preset.id)}
                 >

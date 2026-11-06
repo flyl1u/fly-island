@@ -44,7 +44,6 @@ export function TodoDatePicker({
         className={`todo-date-picker__button${isLater ? " todo-date-picker__button--later" : ""}`}
         type="button"
         disabled={disabled}
-        title={t.notebook.pickDate}
         aria-label={`${t.notebook.pickDate}: ${label}`}
         onClick={openPicker}
       >

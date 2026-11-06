@@ -120,10 +120,10 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
     <section className="qq-panel qq-mail-panel" aria-label={t.mail.reader}>
       <header className="qq-panel__header">
         <button className="message-action qq-mail-back" type="button" onClick={onBack ?? closeReader}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.back}</button>
-        {content?.contentType === "text/html" && <button className="icon-button" type="button" aria-label={t.mail.remoteImages} aria-pressed={remoteImages} title={remoteImages ? t.mail.remoteImagesOn : t.mail.remoteImagesOff} onClick={toggleRemoteImages}>{remoteImages ? <Image size={15} strokeWidth={1.8} /> : <ImageOff size={15} strokeWidth={1.8} />}</button>}
+        {content?.contentType === "text/html" && <button className="icon-button" type="button" aria-label={t.mail.remoteImages} aria-pressed={remoteImages} onClick={toggleRemoteImages}>{remoteImages ? <Image size={15} strokeWidth={1.8} /> : <ImageOff size={15} strokeWidth={1.8} />}</button>}
         <button className="message-action" type="button" disabled={busy} onClick={() => void startReply()}><Reply size={14} strokeWidth={1.8} />{t.mail.reply}</button>
         {readerStillUnread ? <button className="message-action" type="button" disabled={busy} onClick={() => { if (readerAccount && selectedMail) void markRead(readerAccount, selectedMail.id); }}><MailCheck size={14} strokeWidth={1.8} />{t.mail.markRead}</button> : null}
-        <button className="message-action" type="button" title={t.mail.webHint} onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
+        <button className="message-action" type="button" onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
       </header>
       {actionError && <p className="qq-panel__error" role="alert">{actionError}</p>}
       <div className="qq-mail-reader" ref={readerRef} tabIndex={-1} aria-label={t.mail.body} aria-busy={reading}>
@@ -150,10 +150,10 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
       <header className="qq-panel__header">
         {navigation}
         <div className="qq-panel__toolbar">
-          {snapshot.configured && <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.mail.receive} title={snapshot.enabled ? t.mail.pause : t.mail.resume} disabled={busy || snapshot.status === "authRequired"} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button>}
-          {snapshot.configured && snapshot.status !== "authRequired" ? <button className="icon-button" type="button" title={t.mail.compose} aria-label={t.mail.compose} disabled={busy} onClick={startCompose}><PenSquare size={16} strokeWidth={1.8} /></button> : null}
-          <button className="icon-button" type="button" title={t.mail.open} aria-label={t.mail.openLabel} onClick={() => void openMail()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
-          {snapshot.configured && <button className="icon-button" type="button" title={snapshot.lastSyncedAt === null ? t.mail.refresh : t.mail.lastSynced(formatMailTime(snapshot.lastSyncedAt, t.localeTag))} aria-label={t.mail.refreshLabel} disabled={busy || snapshot.syncing || !snapshot.enabled || snapshot.status === "authRequired"} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} className={snapshot.syncing ? "qq-mail-spinning" : undefined} /></button>}
+          {snapshot.configured && <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.mail.receive} disabled={busy || snapshot.status === "authRequired"} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button>}
+          {snapshot.configured && snapshot.status !== "authRequired" ? <button className="icon-button" type="button" aria-label={t.mail.compose} disabled={busy} onClick={startCompose}><PenSquare size={16} strokeWidth={1.8} /></button> : null}
+          <button className="icon-button" type="button" aria-label={t.mail.openLabel} onClick={() => void openMail()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
+          {snapshot.configured && <button className="icon-button" type="button" aria-label={t.mail.refreshLabel} disabled={busy || snapshot.syncing || !snapshot.enabled || snapshot.status === "authRequired"} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} className={snapshot.syncing ? "qq-mail-spinning" : undefined} /></button>}
         </div>
       </header>
       {mailboxes.length > 0 && <MailAccountTabs mailboxes={mailboxes} selected={snapshot.email} busy={busy} onSelect={selectMailbox} onAdd={onOpenSettings} />}
@@ -177,7 +177,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
         ) : snapshot.items.map((item) => (
           <article className={`qq-panel__item qq-mail-item${item.unread ? " qq-mail-item--unread" : ""}`} key={item.id} role="listitem">
             <button type="button" data-mail-id={item.id} onClick={() => { if (onRead) onRead(item); else void readMail(item); }} aria-label={t.mail.readMessage(item.subject, item.unread)}>
-              <div className="qq-panel__item-heading"><strong title={item.sender}>{item.unread && <span className="qq-mail-unread-dot" aria-hidden="true" />}<span>{item.sender}</span></strong>{item.receivedAt !== null && <time dateTime={new Date(item.receivedAt).toISOString()}>{formatMailTime(item.receivedAt, t.localeTag)}</time>}</div>
+              <div className="qq-panel__item-heading"><strong>{item.unread && <span className="qq-mail-unread-dot" aria-hidden="true" />}<span>{item.sender}</span></strong>{item.receivedAt !== null && <time dateTime={new Date(item.receivedAt).toISOString()}>{formatMailTime(item.receivedAt, t.localeTag)}</time>}</div>
               <p>{item.subject}</p>
             </button>
           </article>

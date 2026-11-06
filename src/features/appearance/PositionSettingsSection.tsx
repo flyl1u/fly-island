@@ -23,7 +23,6 @@ export function PositionSettingsSection({
         <button
           className="position-settings__reset"
           type="button"
-          title={t.settings.position.resetHint}
           onClick={onResetPosition}
         >
           <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />

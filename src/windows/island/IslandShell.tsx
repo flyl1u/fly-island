@@ -200,7 +200,6 @@ export function IslandShell({
           showMusic={features.music}
           shelfCount={shelfCount}
           agentVisualState={agentVisualState}
-          agentStatusLabel={agentStatusLabel}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
           translationPeek={translationPeek}

@@ -95,10 +95,9 @@ export function AgentSessionsPanel({
               <button
                 className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}`}
                 type="button"
-                title={t.agent.sessions.focus(title)}
                 onClick={() => focus(session)}
               >
-                <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />
+                <span className="agent-session__dot" aria-hidden="true" />
                 <span className="agent-session__main">
                   <span className="agent-session__heading">
                     <span className="agent-session__title">

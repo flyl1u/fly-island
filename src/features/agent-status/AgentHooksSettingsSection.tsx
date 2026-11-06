@@ -95,7 +95,6 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
                   className="agent-status-clear-button"
                   type="button"
                   disabled={clearingAgentProvider === row.provider}
-                  title={t.settings.agent.clearStatusFor(row.label)}
                   aria-label={t.settings.agent.clearStatusFor(row.label)}
                   onClick={() => onClearAgentStatus(row.provider)}
                 >
@@ -123,7 +122,7 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
       {agentHooksInstallState === "installed" && agentHooksInstallResult ? (
         <div className="agent-hooks-status agent-hooks-status--ok">
           <span>{t.settings.agent.scriptsDir}</span>
-          <strong title={agentHooksInstallResult.scriptsDir}>
+          <strong>
             {agentHooksInstallResult.scriptsDir}
           </strong>
         </div>

@@ -105,7 +105,7 @@ async function runChecks() {
     check(second.querySelector("svg.agent-session__host-icon") && second.querySelector(".agent-session__host")?.textContent === "Codex", "没有程序文件的来源用通用图标");
     check(!third.querySelector(".agent-session__host"), "不知道来源时不显示");
     await render("icon");
-    check(first.querySelector(".agent-session__host img") && !first.querySelector(".agent-session__host-name") && first.querySelector(".agent-session__host")?.getAttribute("title") === "Orca", "只显示图标时悬停可看名称");
+    check(first.querySelector(".agent-session__host img") && !first.querySelector(".agent-session__host-name") && document.querySelectorAll("[title]").length === 0, "只显示图标，不弹悬停提示");
     check(third.querySelector(".agent-session__host--unknown"), "只显示图标时，不知道来源也留出图标位");
     await render("icon", { showElapsed: false });
     const iconRight = (row: HTMLElement) => row.querySelector(".agent-provider-icon")!.getBoundingClientRect().right;

@@ -67,13 +67,12 @@ export function PluginsSettingsSection({ initialOpenId = null }: { initialOpenId
         <div className="plugins-folder">
           <span>{t.settings.plugins.folder}</span>
           {/* Right-to-left so a long path loses its start, not the plugins folder at its end. */}
-          <code dir="rtl" title={snapshot?.pluginsDir}>
+          <code dir="rtl">
             <bdi>{snapshot?.pluginsDir ?? ""}</bdi>
           </code>
           <button
             className="plugin-card__button plugins-folder__icon"
             type="button"
-            title={t.settings.plugins.openFolder}
             aria-label={t.settings.plugins.openFolder}
             onClick={openFolder}
           >
@@ -82,7 +81,6 @@ export function PluginsSettingsSection({ initialOpenId = null }: { initialOpenId
           <button
             className="plugin-card__button plugins-folder__icon"
             type="button"
-            title={t.settings.plugins.reload}
             aria-label={t.settings.plugins.reload}
             disabled={busy}
             onClick={reload}

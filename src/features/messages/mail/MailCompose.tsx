@@ -32,7 +32,7 @@ export function MailCompose({ account, draft, onClose }: { account: string; draf
     <section className="qq-panel qq-mail-panel qq-mail-compose" aria-label={draft.replyTo ? t.mail.reply : t.mail.compose}>
       <header className="qq-panel__header">
         <button className="message-action qq-mail-back" type="button" disabled={sending} onClick={onClose}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.cancel}</button>
-        <span className="qq-mail-compose__from" title={account}>{t.mail.from(account)}</span>
+        <span className="qq-mail-compose__from">{t.mail.from(account)}</span>
         <button className="message-action qq-mail-connect" type="button" disabled={sending || splitRecipients(to).length === 0} onClick={() => void send()}>
           {sending ? <LoaderCircle size={14} strokeWidth={1.8} className="qq-mail-spinning" /> : <Send size={14} strokeWidth={1.8} />}
           {sending ? t.mail.sending : t.mail.send}

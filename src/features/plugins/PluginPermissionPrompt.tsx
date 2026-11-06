@@ -15,7 +15,7 @@ export function PluginPermissionPrompt({ prompts }: { prompts: PluginPermissionP
   return (
     <div className="plugin-permission-prompt" role="alertdialog" aria-label={text} key={request.requestId}>
       <ShieldQuestion size={15} strokeWidth={2.3} aria-hidden="true" />
-      <span className="plugin-permission-prompt__text" title={text}>
+      <span className="plugin-permission-prompt__text">
         {text}
       </span>
       <button className="plugin-permission-prompt__button plugin-permission-prompt__button--allow" type="button" onClick={() => prompts.answer("allow")}>

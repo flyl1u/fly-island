@@ -15,7 +15,6 @@ export function ShortcutResetButton({ label, isDefault, disabled, onReset }: {
     <button
       className={`shortcut-reset-button${isDefault ? " shortcut-reset-button--hidden" : ""}`}
       type="button"
-      title={label}
       aria-label={label}
       aria-hidden={isDefault || undefined}
       tabIndex={isDefault ? -1 : undefined}

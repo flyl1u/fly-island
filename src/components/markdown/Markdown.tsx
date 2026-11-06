@@ -10,7 +10,7 @@ function renderInline(content: Inline[], onOpenLink: (href: string) => void): Re
       case "em": return <em key={index}>{part.text}</em>;
       case "link":
         return (
-          <a key={index} href={part.href} title={part.href} onClick={(event) => { event.preventDefault(); onOpenLink(part.href); }}>
+          <a key={index} href={part.href} onClick={(event) => { event.preventDefault(); onOpenLink(part.href); }}>
             {part.text}
           </a>
         );

@@ -111,7 +111,6 @@ export function MusicSourceList({
                 <button
                   className="music-source-drag"
                   type="button"
-                  title={t.music.reorderSource}
                   aria-label={t.music.reorderSource}
                   onPointerDown={(event) =>
                     startSourceDrag(event, source.id)
@@ -132,14 +131,13 @@ export function MusicSourceList({
                     .join(" ")}
                   aria-hidden="true"
                 />
-                <span className="music-source-label" title={source.id}>
+                <span className="music-source-label">
                   {source.label}
                 </span>
                 {!live && (
                   <button
                     className="music-source-remove"
                     type="button"
-                    title={t.music.removeSource}
                     aria-label={t.music.removeSource}
                     onClick={() => onRemoveSource(source.id)}
                   >

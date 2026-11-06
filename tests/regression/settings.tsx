@@ -173,8 +173,7 @@ if (!automated) {
     const runLine = [...document.querySelectorAll<HTMLElement>(".plugin-card__hint")].find((hint) => hint.textContent?.startsWith("内存"));
     check(runLine?.textContent === "内存 4.0 MB",
       "A plugin's card shows only the plugin's own memory, without the runtime");
-    check(runLine?.title.includes("node.exe：已提交 24.0 MB，工作集 31.0 MB") && runLine.title.includes("进程合计 24.0 MB，其中 Node.js 本身占 20.0 MB") && runLine.title.includes("提交大小"),
-      "Hovering the run line lists each process, the runtime's share and explains the numbers");
+    check(runLine && !runLine.hasAttribute("title"), "The run line has no hover tooltip");
     check([...document.querySelectorAll(".plugin-card__hint")].some((hint) => hint.textContent === "有预发布版本 v1.1.0-beta.1，可在插件设置里选择接收。"),
       "A plugin with a pre-release in the market says so on its card");
     const syncCard = [...document.querySelectorAll<HTMLElement>(".plugin-card")].find((card) => card.textContent?.includes("待办同步示例"));
@@ -202,7 +201,7 @@ if (!automated) {
       && marketItem.querySelector(".plugin-market__history h4")?.textContent === "1.1.0",
       "The market details show the plugin's version history");
     const tags = [...(marketItem?.querySelectorAll<HTMLElement>(".plugin-market__tag--signed") ?? [])];
-    check(tags.length === 1 && tags[0].textContent === "作者已签名" && tags[0].title.includes("0123456789abcdef"),
+    check(tags.length === 1 && tags[0].textContent === "作者已签名",
       "A plugin signed by its author is tagged in the market");
     check(marketItem?.querySelector(".plugin-card__hint--warn")?.textContent?.includes("签名密钥变了"),
       "An update on another author key says so");
@@ -215,9 +214,10 @@ if (!automated) {
     check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true,
       "Confirming installs the update and accepts the new key");
     const verifiedBadges = [...document.querySelectorAll<HTMLElement>(".plugin-market__badge:not(.plugin-market__badge--official)")];
-    check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证" && verifiedBadges[0].title.includes("已验证 · plugins.example.com")
+    check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证"
       && verifiedBadges[0].closest(".plugin-market__item")?.textContent?.includes("新插件"),
-      "A verified publisher gets a small mark with its domain in the hover; the official one keeps its own label");
+      "A verified publisher gets a small mark; the official one keeps its own label");
+    check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
     const verifiedItem = verifiedBadges[0]?.closest<HTMLElement>(".plugin-market__item");
     check(verifiedItem && verifiedItem.scrollWidth <= verifiedItem.clientWidth, "The verified mark does not make the market overflow");
     const groupTitles = [...document.querySelectorAll<HTMLElement>(".plugin-market__group-title")].map((title) => title.textContent ?? "");

@@ -13,8 +13,8 @@ export function StatusTemplate({ pluginId, viewId, model }: { pluginId: string; 
   return (
     <div className={`plugin-status plugin-status--${status.tone}`}>
       <div className="plugin-status__text" role="status">
-        <strong title={status.primary ?? undefined}>{status.primary ?? t.pluginViews.empty}</strong>
-        {status.secondary ? <span title={status.secondary}>{status.secondary}</span> : null}
+        <strong>{status.primary ?? t.pluginViews.empty}</strong>
+        {status.secondary ? <span>{status.secondary}</span> : null}
       </div>
       {status.progress !== null ? (
         <div className="plugin-status__bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.progress * 100)}>

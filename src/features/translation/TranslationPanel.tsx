@@ -94,7 +94,7 @@ export function TranslationPanel({ isOpen, onOpenSettings }: { isOpen: boolean; 
       </div>
       <div className="translation-panel__source">
         <textarea ref={inputRef} aria-label={t.translator.source} value={input} placeholder={t.translator.panelPlaceholder} onKeyDown={handleInputKeyDown} onChange={(event) => { setInput(event.target.value); setError(""); setDidCopy(false); }} />
-        {input && <button type="button" className="translation-panel__icon" onClick={clearSource} title={t.translator.clearSource} aria-label={t.translator.clearSource}><X size={13} /></button>}
+        {input && <button type="button" className="translation-panel__icon" onClick={clearSource} aria-label={t.translator.clearSource}><X size={13} /></button>}
       </div>
       <div className={`translation-panel__result${output ? " translation-panel__result--filled" : ""}`} aria-live="polite" aria-busy={isLoading} aria-label={t.translator.result}>
         {output || <span className="translation-panel__empty">{isLoading && <LoaderCircle className="translation-panel__spinner" size={14} aria-hidden="true" />}{isLoading ? t.translator.loading : t.translator.emptyResult}</span>}
@@ -102,11 +102,11 @@ export function TranslationPanel({ isOpen, onOpenSettings }: { isOpen: boolean; 
       <div className="translation-panel__footer">
         <div className="translation-panel__status">
           {error
-            ? <span className="translation-panel__error" role="alert" title={error}>{error}</span>
+            ? <span className="translation-panel__error" role="alert">{error}</span>
             : !hasSecret && <button type="button" className="translation-panel__setup" onClick={onOpenSettings}>{t.translator.configureSecret}</button>}
         </div>
-        <button type="button" className="translation-panel__icon" onClick={() => void paste()} title={t.translator.paste} aria-label={t.translator.paste}><Clipboard size={14} /></button>
-        <button type="button" className="translation-panel__icon" onClick={() => void copyResult()} disabled={!output} title={t.translator.copy} aria-label={didCopy ? t.translator.copied : t.translator.copy}>{didCopy ? <Check size={14} /> : <Copy size={14} />}</button>
+        <button type="button" className="translation-panel__icon" onClick={() => void paste()} aria-label={t.translator.paste}><Clipboard size={14} /></button>
+        <button type="button" className="translation-panel__icon" onClick={() => void copyResult()} disabled={!output} aria-label={didCopy ? t.translator.copied : t.translator.copy}>{didCopy ? <Check size={14} /> : <Copy size={14} />}</button>
         <button type="button" className="translation-panel__primary" onClick={() => void submit()} disabled={isLoading}>{isLoading ? t.translator.loading : t.translator.translate}</button>
       </div>
     </div>

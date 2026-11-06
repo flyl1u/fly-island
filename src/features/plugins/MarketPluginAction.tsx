@@ -12,14 +12,12 @@ import { hasUpdate } from "./marketGroups";
 export function MarketPluginAction({
   plugin,
   trusted,
-  publisher,
   installingId,
   onInstall,
   onManage,
 }: {
   plugin: MarketPlugin;
   trusted: boolean;
-  publisher: string;
   installingId: string | null;
   onInstall: (id: string, trust: boolean, acceptKeyChange: boolean) => void;
   /** Opens the installed plugin on the plugins page; without it there is no Manage button. */
@@ -29,7 +27,7 @@ export function MarketPluginAction({
   const [confirmingKeyChange, setConfirmingKeyChange] = useState(false);
 
   if (plugin.revoked) return <span className="plugin-market__state plugin-market__state--revoked">{text.revoked}</span>;
-  if (plugin.incompatible) return <span className="plugin-market__state" title={plugin.incompatible}>{text.incompatible}</span>;
+  if (plugin.incompatible) return <span className="plugin-market__state">{text.incompatible}</span>;
   const isUpdate = hasUpdate(plugin);
   if (plugin.installedVersion !== null && !isUpdate) {
     return (
@@ -39,7 +37,7 @@ export function MarketPluginAction({
           {text.installed}
         </span>
         {onManage ? (
-          <button className="plugin-card__button plugin-card__button--quiet" type="button" title={text.manageHint} onClick={() => onManage(plugin.id)}>
+          <button className="plugin-card__button plugin-card__button--quiet" type="button" onClick={() => onManage(plugin.id)}>
             <Settings2 size={12} strokeWidth={2.4} />
             <span>{text.manage}</span>
           </button>
@@ -73,7 +71,6 @@ export function MarketPluginAction({
     <button
       className={`plugin-card__button${isUpdate && !keyChanged ? " plugin-market__update" : ""}`}
       type="button"
-      title={trusted ? undefined : text.trustHint(publisher)}
       disabled={installingId !== null}
       onClick={() => (keyChanged ? setConfirmingKeyChange(true) : onInstall(plugin.id, !trusted, false))}
     >

@@ -24,7 +24,7 @@ export function PluginInfoList({ items }: { items: PluginInfoItem[] }) {
         return (
           <div className="plugin-info__row" key={`${item.label.en}-${index}`}>
             <span>{item.label[locale]}</span>
-            <code title={hidden ? undefined : item.value}>{hidden ? "•".repeat(12) : item.value}</code>
+            <code>{hidden ? "•".repeat(12) : item.value}</code>
             {item.secret ? (
               <button className="plugin-card__button" type="button" onClick={() => setRevealed(hidden ? index : null)}>
                 {hidden ? <Eye size={12} strokeWidth={2.4} /> : <EyeOff size={12} strokeWidth={2.4} />}

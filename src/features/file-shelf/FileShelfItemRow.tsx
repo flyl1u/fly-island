@@ -20,7 +20,6 @@ export function FileShelfItemRow({
   item,
   isRecent,
   isSelected,
-  dragHint,
   onSelect,
   onDragOut,
   onOpen,
@@ -33,8 +32,6 @@ export function FileShelfItemRow({
   /** Just added (or moved to the top) by a drop. */
   isRecent: boolean;
   isSelected: boolean;
-  /** Tooltip saying how to drag the entry out and what double-clicking does. */
-  dragHint: string;
   onSelect: (id: string, mode: SelectMode) => void;
   /** Drags this entry out, with the rest of the selection when it is selected. */
   onDragOut: (id: string) => void;
@@ -71,7 +68,6 @@ export function FileShelfItemRow({
   };
 
   const status = item.missing ? t.fileShelf.missing : item.unreachable ? t.fileShelf.unreachable : null;
-  const hint = item.missing ? t.fileShelf.missingHint : item.unreachable ? t.fileShelf.unreachableHint : dragHint;
   const className = [
     "shelf-item",
     item.missing ? "shelf-item--missing" : "",
@@ -86,7 +82,6 @@ export function FileShelfItemRow({
       <button
         className="shelf-item__main"
         type="button"
-        title={`${hint}\n${item.path}`}
         onPointerDown={press}
         onPointerMove={move}
         onPointerUp={() => {
@@ -114,7 +109,6 @@ export function FileShelfItemRow({
             <button
               className={`shelf-copy-button${copied ? " shelf-copy-button--copied" : ""}`}
               type="button"
-              title={copied ? t.fileShelf.copied : t.fileShelf.copyItem}
               aria-label={copied ? t.fileShelf.copied : t.fileShelf.copyItem}
               onClick={() => {
                 void onCopy(item.id).then((ok) => setCopied(ok));
@@ -124,7 +118,6 @@ export function FileShelfItemRow({
             </button>
             <button
               type="button"
-              title={t.fileShelf.reveal}
               aria-label={t.fileShelf.reveal}
               onClick={() => onReveal(item.id)}
             >
@@ -135,7 +128,6 @@ export function FileShelfItemRow({
         <button
           className={`shelf-pin-button${item.pinned ? " shelf-pin-button--active" : ""}`}
           type="button"
-          title={item.pinned ? t.fileShelf.unpin : t.fileShelf.pin}
           aria-label={item.pinned ? t.fileShelf.unpin : t.fileShelf.pin}
           aria-pressed={item.pinned}
           onClick={() => onTogglePin(item.id)}
@@ -144,7 +136,6 @@ export function FileShelfItemRow({
         </button>
         <button
           type="button"
-          title={t.fileShelf.removeItem}
           aria-label={t.fileShelf.removeItem}
           onClick={() => onRemove(item.id)}
         >

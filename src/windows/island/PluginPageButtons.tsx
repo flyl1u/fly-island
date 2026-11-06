@@ -36,7 +36,6 @@ export function PluginPageButtons({
             type="button"
             key={id}
             data-plugin-page={id}
-            title={title}
             aria-label={title}
             aria-pressed={page === id}
             onClick={(event) => {

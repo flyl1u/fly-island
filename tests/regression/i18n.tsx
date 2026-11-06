@@ -110,7 +110,8 @@ else {
     check(document.querySelector(".todo-title")?.textContent?.includes("保留用户任务 Привет"), "User task content stays as written");
     await click("button[aria-label='Review saved todo lists']");
     check(document.querySelector(".archive-card__empty")?.textContent === "No tasks", "Archive empty states follow the selected language");
-    await click("button.island-message-button[title^='Messages']");
+    check(document.querySelectorAll("[title]").length === 0, "No hover tooltips on the island");
+    await click("button.island-message-button[aria-label^='Messages']");
     check(document.querySelector(".qq-panel__empty")?.textContent?.includes("No messages"), "QQ panel uses English copy");
     await click(".message-sources button[aria-label='WeChat reminders']");
     check(document.querySelector(".qq-panel__empty")?.textContent?.includes("No reminders"), "WeChat panel uses English copy");

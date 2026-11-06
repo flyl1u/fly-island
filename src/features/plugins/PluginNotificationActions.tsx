@@ -16,7 +16,6 @@ export function PluginNotificationActions({
           className="plugin-notification-action"
           type="button"
           key={action.id}
-          title={action.title}
           onClick={(event) => {
             event.stopPropagation();
             onAction(action.id);

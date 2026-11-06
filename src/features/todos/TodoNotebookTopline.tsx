@@ -56,7 +56,6 @@ export function TodoNotebookTopline({
           <button
             className={`todo-page-toggle todo-page-toggle--count${isUpcomingMode ? " todo-page-toggle--active" : ""}`}
             type="button"
-            title={isUpcomingMode ? t.notebook.backToTasks : t.notebook.showUpcoming(scheduledCount)}
             aria-label={isUpcomingMode ? t.notebook.backToTasks : t.notebook.showUpcoming(scheduledCount)}
             onClick={isUpcomingMode ? onShowToday : onShowUpcoming}
           >
@@ -73,7 +72,6 @@ export function TodoNotebookTopline({
               .filter(Boolean)
               .join(" ")}
             type="button"
-            title={isDailyMode ? t.notebook.backToTasks : t.notebook.openDailyNote}
             aria-label={
               isDailyMode ? t.notebook.backToTasks : t.notebook.openDailyNote
             }
@@ -92,7 +90,6 @@ export function TodoNotebookTopline({
           <button
             className={archiveLayout === "cards" ? "archive-layout-toggle--active" : ""}
             type="button"
-            title={t.notebook.notebookCards}
             aria-label={t.notebook.notebookCards}
             onClick={() => onArchiveLayoutChange("cards")}
           >
@@ -101,7 +98,6 @@ export function TodoNotebookTopline({
           <button
             className={archiveLayout === "timeline" ? "archive-layout-toggle--active" : ""}
             type="button"
-            title={t.notebook.twoColumnTimeline}
             aria-label={t.notebook.twoColumnTimeline}
             onClick={() => onArchiveLayoutChange("timeline")}
           >

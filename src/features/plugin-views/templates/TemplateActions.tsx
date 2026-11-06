@@ -17,7 +17,6 @@ export function TemplateActions({ pluginId, viewId, actions }: { pluginId: strin
             className="plugin-template-actions__button"
             type="button"
             key={action.id}
-            title={action.title}
             onClick={() =>
               void runPluginViewAction(pluginId, viewId, action.id, null, null).catch((error: unknown) =>
                 console.error("Failed to send a plugin view action", error),
