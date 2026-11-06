@@ -44,6 +44,10 @@ export type SettingsAgentText = {
     waiting: string;
     seconds: string;
     secondsValue: (seconds: number) => string;
+    /** Reminding again about a session still waiting on the user (roadmap B6.4.1). */
+    remind: string;
+    remindDescription: string;
+    remindValue: (seconds: number) => string;
   };
   /** Approving agents' permission requests on the island (roadmap B6 phase 2). */
   approval: {
@@ -107,6 +111,9 @@ export const zhCN: SettingsAgentText = {
     waiting: "等待你确认或回答时",
     seconds: "停留时间",
     secondsValue: (seconds) => `${seconds} 秒`,
+    remind: "没处理时再提醒",
+    remindDescription: "等你确认或回答的会话过了这么久还在等，再弹一次并再响一次；每次等待只补一次",
+    remindValue: (seconds) => (seconds === 0 ? "不再提醒" : seconds < 60 ? `${seconds} 秒后` : `${seconds / 60} 分钟后`),
   },
   approval: {
     title: "在岛上审批",
@@ -168,6 +175,9 @@ export const en: SettingsAgentText = {
     waiting: "When it waits for your approval or answer",
     seconds: "Stays open for",
     secondsValue: (seconds) => `${seconds} s`,
+    remind: "Remind again",
+    remindDescription: "If a session is still waiting for your approval or answer this long, pop up and sound once more; once per wait",
+    remindValue: (seconds) => (seconds === 0 ? "Never" : seconds < 60 ? `after ${seconds} s` : `after ${seconds / 60} min`),
   },
   approval: {
     title: "Approve on the island",

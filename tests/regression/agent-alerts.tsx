@@ -30,6 +30,10 @@ let setSessions: (sessions: AgentSessionSummary[]) => void;
 let setIsland: (island: Island) => void;
 let setCanAlert: (value: boolean) => void;
 let setStarted: (value: AgentAlertStarted) => void;
+let setRemindAfter: (ms: number) => void;
+let reminded: string[] = [];
+let opens = 0;
+let closes = 0;
 
 function Harness() {
   const [sessions, changeSessions] = useState<AgentSessionSummary[]>([session("a", "running"), session("b", "running")]);
@@ -37,6 +41,9 @@ function Harness() {
   const [canAlert, changeCanAlert] = useState(true);
   // Off for the checks below, whose sessions run again between them; checked on its own at the end.
   const [started, changeStarted] = useState<AgentAlertStarted>("off");
+  // Off until the reminder checks, so the waits above stay single alerts.
+  const [remindAfterMs, changeRemindAfter] = useState(0);
+  setRemindAfter = changeRemindAfter;
   setStarted = changeStarted;
   setSessions = changeSessions;
   setIsland = changeIsland;
@@ -49,8 +56,10 @@ function Harness() {
     canAlert,
     isOpenOnAgents: state.mode === "expanded" && state.page === "agents",
     isCollapsed: state.mode === "collapsed",
-    onOpen: () => changeIsland({ mode: "expanded", page: "agents" }),
-    onClose: () => changeIsland((current) => ({ ...current, mode: "collapsed" })),
+    onOpen: () => { opens += 1; changeIsland({ mode: "expanded", page: "agents" }); },
+    onClose: () => { closes += 1; changeIsland((current) => ({ ...current, mode: "collapsed" })); },
+    remindAfterMs,
+    onRemind: (sessions) => { reminded = [...reminded, ...sessions.map((one) => one.sessionId)]; },
   });
   return null;
 }
@@ -145,6 +154,45 @@ try {
   await wait(50);
   check(island.mode === "expanded" && latestAlert()?.key === "claudeCode:n" && latestAlert()?.kind === "started", "新会话开始时弹出");
   await wait(DURATION_MS + 100);
+
+  // Reminders: a session still waiting a while later pops up once more, once per wait.
+  const REMIND_MS = 800;
+  // Reminders fire from a timer, mid-wait: short act() steps let React render in between, as the
+  // app does at once (one long act() would hold the render until it ends).
+  const settle = async (ms: number) => { for (let waited = 0; waited < ms; waited += 25) await wait(25); };
+  const waitFor = (sessions: AgentSessionSummary[]) => act(async () => setSessions(sessions));
+  const done = [session("a", "completed"), session("b", "completed")];
+  await act(async () => setStarted("off"));
+  await waitFor(done);
+  await wait(50);
+  await act(async () => setRemindAfter(REMIND_MS));
+  await waitFor([...done, session("w", "running")]);
+  await wait(50);
+  let opensBefore = opens;
+  await waitFor([...done, session("w", "waiting")]);
+  await wait(50);
+  check(island.mode === "expanded" && latestAlert()?.key === "claudeCode:w" && opens === opensBefore + 1 && reminded.length === 0, "开始等你确认时先弹一次，这时还不算补提醒");
+  await settle(DURATION_MS + 100);
+  check(island.mode === "collapsed", "停留时间到了收起");
+  opensBefore = opens;
+  await settle(REMIND_MS + 400);
+  check(reminded.join() === "w" && opens === opensBefore + 1, `过了设定时间还在等，再弹一次并通知补提醒（放提示音）（${reminded.join()}，弹出 ${opens - opensBefore} 次）`);
+  await settle(REMIND_MS + DURATION_MS + 400);
+  check(island.mode === "collapsed" && reminded.length === 1 && opens === opensBefore + 1, `同一次等待只补提醒一次（${island.mode}，${reminded.join()}，弹出 ${opens - opensBefore}，收起 ${closes}，${latestAlert()?.kind}）`);
+  await waitFor([...done, session("w", "running")]);
+  await wait(50);
+  await waitFor([...done, session("w", "waiting")]);
+  await settle(REMIND_MS + DURATION_MS + 600);
+  check(reminded.join() === "w,w", `回答后再次等待，又会补提醒一次（${reminded.join()}）`);
+  inFront = ["w"];
+  await waitFor([...done, session("w", "running")]);
+  await wait(50);
+  await waitFor([...done, session("w", "waiting")]);
+  await settle(REMIND_MS + DURATION_MS + 600);
+  check(reminded.length === 2 && island.mode === "collapsed", `会话窗口在前台时不补提醒（${reminded.join()}，${island.mode}）`);
+  inFront = [];
+  await act(async () => setRemindAfter(0));
+  await settle(DURATION_MS + 100);
 
   // The panel: an alert shows its session alone and leaves the usage line out.
   const panel = createRoot(document.getElementById("panel")!);

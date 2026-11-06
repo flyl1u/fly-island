@@ -4,6 +4,9 @@ import { useAgentApprovals } from "../../features/agent-status/approvals/useAgen
 import { useAgentApprovalSettings } from "../../features/agent-status/approvals/useAgentApprovalSettings";
 import { alertKindsOf, useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
 import { useAgentSounds } from "../../features/agent-status/sounds/useAgentSounds";
+import { reminderSound } from "../../features/agent-status/sounds/events";
+import { playAgentSound } from "../../features/agent-status/sounds/player";
+import { useAgentSoundSettings } from "../../features/agent-status/sounds/useAgentSoundSettings";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode, IslandPage } from "./types";
 
@@ -35,6 +38,12 @@ export function useIslandAgentAlerts({ sessions, settings, enabled, mode, page, 
   }, [waiting]);
 
   useAgentSounds(sessions, enabled);
+  const [soundSettings] = useAgentSoundSettings();
+  // A reminder sounds like the wait it is about, if that sound is on.
+  const remind = (reminded: AgentSessionSummary[]) => {
+    const event = reminderSound(reminded[reminded.length - 1]);
+    if (soundSettings.enabled && soundSettings.events[event]) playAgentSound(event, soundSettings);
+  };
   const alertedSession = useAgentAlerts({
     sessions,
     kinds: alertKindsOf(settings),
@@ -46,6 +55,8 @@ export function useIslandAgentAlerts({ sessions, settings, enabled, mode, page, 
     onClose: () => {
       if (!waitingRef.current) collapseIsland();
     },
+    remindAfterMs: settings.agentRemindSeconds * 1000,
+    onRemind: remind,
   });
   const agentCardHeight = approvals.current ? approvals.cardHeight : alertedSession?.rowHeight;
   return { alertedSession, approvals, agentCardHeight };

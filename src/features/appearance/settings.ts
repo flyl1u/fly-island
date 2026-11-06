@@ -8,6 +8,8 @@ export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon",
 export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 /** How long a page opened for an agent alert stays, in seconds. */
 export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
+/** Reminding again about a session still waiting on the user: after this many seconds; 0 is off. */
+export const AGENT_REMIND_SECONDS = [0, 30, 60, 120, 300] as const;
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;
@@ -82,6 +84,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentAlertWaiting: true,
   agentAlertStarted: "everyTurn",
   agentAlertSeconds: 5,
+  agentRemindSeconds: 60,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -271,6 +274,7 @@ export function normalizeSettings(
     agentAlertWaiting: settings?.agentAlertWaiting !== false,
     agentAlertStarted: settings?.agentAlertStarted === "newSession" || settings?.agentAlertStarted === "off" ? settings.agentAlertStarted : "everyTurn",
     agentAlertSeconds: oneOf(AGENT_ALERT_SECONDS, settings?.agentAlertSeconds, DEFAULT_SETTINGS.agentAlertSeconds),
+    agentRemindSeconds: oneOf(AGENT_REMIND_SECONDS, settings?.agentRemindSeconds, DEFAULT_SETTINGS.agentRemindSeconds),
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

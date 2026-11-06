@@ -3,7 +3,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
-import { AGENT_ALERT_SECONDS } from "../appearance/settings";
+import { AGENT_ALERT_SECONDS, AGENT_REMIND_SECONDS } from "../appearance/settings";
 import type { AgentAlertStarted, IslandSettings } from "../appearance/types";
 
 /** Settings → AI Agent: which session events open the Agent page, and for how long. */
@@ -18,6 +18,7 @@ export function AgentAlertSettings({
   const update = (patch: Partial<IslandSettings>) => onSettingsChange({ ...settings, ...patch });
   const anyOn = settings.agentAlertStarted !== "off" || settings.agentAlertCompleted || settings.agentAlertFailed || settings.agentAlertWaiting;
   const secondsOptions = AGENT_ALERT_SECONDS.map((seconds) => ({ value: String(seconds), label: text.secondsValue(seconds) }));
+  const remindOptions = AGENT_REMIND_SECONDS.map((seconds) => ({ value: String(seconds), label: text.remindValue(seconds) }));
   const startedOptions = (["everyTurn", "newSession", "off"] as const).map((value) => ({ value, label: text.startedOptions[value] }));
 
   return (
@@ -34,6 +35,21 @@ export function AgentAlertSettings({
         }
       />
       <SettingsToggleRow title={text.waiting} checked={settings.agentAlertWaiting} onChange={(agentAlertWaiting) => update({ agentAlertWaiting })} />
+      {settings.agentAlertWaiting && (
+        <SettingsRow
+          indent
+          title={text.remind}
+          description={text.remindDescription}
+          control={
+            <SettingsSelect
+              value={String(settings.agentRemindSeconds)}
+              options={remindOptions}
+              ariaLabel={text.remind}
+              onChange={(value) => update({ agentRemindSeconds: Number(value) })}
+            />
+          }
+        />
+      )}
       <SettingsToggleRow title={text.completed} checked={settings.agentAlertCompleted} onChange={(agentAlertCompleted) => update({ agentAlertCompleted })} />
       <SettingsToggleRow title={text.failed} checked={settings.agentAlertFailed} onChange={(agentAlertFailed) => update({ agentAlertFailed })} />
       {anyOn && (

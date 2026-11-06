@@ -101,3 +101,28 @@ test("without a marker, a finished reply that asks something alerts as waiting",
   const alerts = detectAlerts(phasesOf(before), after, ALL);
   assert.deepEqual(alerts.map(({ kind, session }) => `${kind}:${session.sessionId}`), ["waiting:a", "completed:b", "completed:c"]);
 });
+
+test("reminders: once per wait, after the delay, for sessions still waiting on the user", async () => {
+  const { isWaitingOnUser, takeDueReminders } = await import("../../src/features/agent-status/alerts.ts");
+  const { reminderSound } = await import("../../src/features/agent-status/sounds/events.ts");
+  assert.equal(isWaitingOnUser(session("a", "waiting")), true);
+  assert.equal(isWaitingOnUser({ ...session("a", "completed"), replyMarker: "yourTurn" }), true);
+  assert.equal(isWaitingOnUser({ ...session("a", "completed"), replyMarker: "done" }), false);
+  assert.equal(isWaitingOnUser(session("a", "running")), false);
+
+  const state = { since: new Map(), reminded: new Set() };
+  const ids = (due) => due.map((one) => one.sessionId);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting"), session("r", "running")], 1000, 60_000)), []);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 60_999, 60_000)), []);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 61_000, 60_000)), ["w"]);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 500_000, 60_000)), [], "once per wait");
+  // Answered, then waiting again: a new wait with its own reminder.
+  takeDueReminders(state, [session("w", "running")], 500_000, 60_000);
+  assert.equal(state.since.size, 0);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 600_000, 60_000)), []);
+  assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 660_000, 60_000)), ["w"]);
+
+  assert.equal(reminderSound({ ...session("a", "waiting"), currentTool: { name: "AskUserQuestion", detail: null } }), "question");
+  assert.equal(reminderSound({ ...session("a", "completed"), replyMarker: "yourTurn" }), "question");
+  assert.equal(reminderSound({ ...session("a", "waiting"), currentTool: { name: "Bash", detail: "ls" } }), "approval");
+});

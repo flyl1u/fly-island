@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { detectAlerts, phasesOf, type AgentAlertKind, type AgentAlertKinds, type SessionPhases } from "./alerts";
+import { detectAlerts, phasesOf, takeDueReminders, trackWaiting, type AgentAlert, type AgentAlertKind, type AgentAlertKinds, type SessionPhases, type WaitingReminders } from "./alerts";
 import { agentSessionsInFront, type AgentSessionSummary } from "./api";
 import { sessionKey } from "./unseen";
 
@@ -7,6 +7,8 @@ export { alertKindsOf } from "./alerts";
 
 /** While the cursor rests on the island (it holds the focus then), closing waits this long more. */
 const HOVER_RETRY_MS = 1000;
+/** How often sessions waiting on the user are checked for a reminder. */
+const REMIND_CHECK_MS = 5000;
 
 /**
  * The session an alert opened the Agent page for, which the page then shows alone. `session` is
@@ -38,6 +40,10 @@ type AgentAlertOptions = {
   isCollapsed: boolean;
   onOpen: () => void;
   onClose: () => void;
+  /** A session still waiting on the user this long pops up once more; 0: never. */
+  remindAfterMs?: number;
+  /** Hears about the sessions a reminder is for (whose windows are not in front), e.g. to play a sound. */
+  onRemind?: (sessions: AgentSessionSummary[]) => void;
 };
 
 /**
@@ -46,18 +52,19 @@ type AgentAlertOptions = {
  * `durationMs`, unless the user pressed inside it; resting the cursor on it holds it open.
  * Returns the session the page shows alone while the alert lasts: until the island collapses,
  * leaves the Agent page, or the user presses anywhere but the session's row (the page header's
- * Agent button, say), which brings back the whole list.
+ * Agent button, say), which brings back the whole list. With `remindAfterMs`, a session still
+ * waiting on the user that long after it started waiting pops up once more.
  */
-export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose }: AgentAlertOptions) {
+export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, remindAfterMs = 0, onRemind }: AgentAlertOptions) {
   const [alerted, setAlerted] = useState<Pick<AlertedSession, "key" | "kind" | "session"> | null>(null);
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
   const phasesRef = useRef<SessionPhases | null>(null);
   const openedByAlertRef = useRef(false);
   const closeTimerRef = useRef<number | undefined>(undefined);
   // Read inside timers and the in-front check, which outlive a render.
-  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose });
+  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind });
   useLayoutEffect(() => {
-    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose };
+    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind };
   });
 
   useEffect(() => {
@@ -92,12 +99,8 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
     if (collapsedNow || leftAgentPage) setAlerted(null);
   }, [isCollapsed, leftAgentPage]);
 
-  const { started, completed, failed, waiting } = kinds;
-  useEffect(() => {
-    const alerts = detectAlerts(phasesRef.current, sessions, { started, completed, failed, waiting });
-    phasesRef.current = phasesOf(sessions, phasesRef.current);
-    if (alerts.length === 0 || !latest.current.canAlert) return;
-
+  /** Shows the newest of `alerts` whose window is not in front; `onShown` hears about each such alert first. */
+  const popUpRef = useRef((alerts: AgentAlert[], onShown?: (shown: AgentAlert[]) => void) => {
     const close = () => {
       if (!openedByAlertRef.current) return;
       // The island takes the focus while the cursor rests on it.
@@ -117,8 +120,10 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
       .then((inFront) => {
         const shown = alerts.filter((alert) => !inFront.includes(alert.session.sessionId));
         const current = latest.current;
+        if (shown.length === 0 || !current.canAlert) return;
+        onShown?.(shown);
         // Leave a panel the user opened alone; an alert's own panel just stays open longer.
-        if (shown.length === 0 || !current.canAlert || !(current.isCollapsed || openedByAlertRef.current)) return;
+        if (!(current.isCollapsed || openedByAlertRef.current)) return;
         const newest = shown[shown.length - 1];
         setAlerted({ key: sessionKey(newest.session), kind: newest.kind, session: newest.session });
         openedByAlertRef.current = true;
@@ -126,7 +131,37 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = window.setTimeout(close, current.durationMs);
       });
+  });
+
+  const { started, completed, failed, waiting } = kinds;
+  useEffect(() => {
+    const alerts = detectAlerts(phasesRef.current, sessions, { started, completed, failed, waiting });
+    phasesRef.current = phasesOf(sessions, phasesRef.current);
+    if (alerts.length > 0 && latest.current.canAlert) popUpRef.current(alerts);
   }, [sessions, started, completed, failed, waiting]);
+
+  // A session still waiting on the user a while later pops up once more (roadmap B6.4.1).
+  const remindersRef = useRef<WaitingReminders>({ since: new Map(), reminded: new Set() });
+  const sessionsRef = useRef(sessions);
+  useLayoutEffect(() => {
+    sessionsRef.current = sessions;
+  });
+  useEffect(() => {
+    if (remindAfterMs > 0) trackWaiting(remindersRef.current, sessions, Date.now());
+  }, [sessions, remindAfterMs]);
+  useEffect(() => {
+    if (remindAfterMs <= 0 || !waiting) return;
+    const check = () => {
+      const due = takeDueReminders(remindersRef.current, sessionsRef.current, Date.now(), remindAfterMs);
+      if (due.length > 0 && latest.current.canAlert) {
+        popUpRef.current(due.map((session) => ({ kind: "waiting", session })), (shown) => latest.current.onRemind?.(shown.map((alert) => alert.session)));
+      }
+    };
+    check();
+    // Often enough for the delay (tests use short ones); real delays are 30 seconds and up.
+    const timer = window.setInterval(check, Math.min(REMIND_CHECK_MS, Math.max(50, remindAfterMs / 4)));
+    return () => window.clearInterval(timer);
+  }, [remindAfterMs, waiting]);
 
   return useMemo(
     () => (alerted ? { ...alerted, rowHeight, measure: setRowHeight } : null),

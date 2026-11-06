@@ -62,6 +62,8 @@ export type IslandSettings = {
   agentAlertStarted: AgentAlertStarted;
   /** How long a page opened for an alert stays, in seconds; one of AGENT_ALERT_SECONDS. */
   agentAlertSeconds: number;
+  /** A session still waiting on the user pops up once more after this many seconds; 0: never. */
+  agentRemindSeconds: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

@@ -40,3 +40,8 @@ export function soundFor(
   if (after === "running" && (before === "completed" || before === "failed")) return "ack";
   return null;
 }
+
+/** The sound of a reminder about a session still waiting on the user: a question, or an approval. */
+export function reminderSound(session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "phase">): AgentSoundEvent {
+  return session.currentTool?.name === QUESTION_TOOL || (session.phase === "completed" && session.replyMarker === "yourTurn") ? "question" : "approval";
+}

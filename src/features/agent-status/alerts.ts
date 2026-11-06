@@ -77,3 +77,47 @@ export function detectAlerts(
     return on ? [{ kind, session }] : [];
   });
 }
+
+/** A session that needs the user: waiting for approval or an answer, or (with the reply status marker) a finished turn ending on "your turn". */
+export function isWaitingOnUser(session: AgentSessionSummary) {
+  return session.phase === "waiting" || (session.phase === "completed" && session.replyMarker === "yourTurn");
+}
+
+/** Since when each session has waited on the user (`provider:sessionId` → Unix ms), and those already reminded. */
+export type WaitingReminders = { since: Map<string, number>; reminded: Set<string> };
+
+/**
+ * Notes which sessions wait on the user now: a session starts its wait when first seen waiting,
+ * and one that stopped waiting is forgotten, so its next wait gets its own reminder. Run on every
+ * change of the session list, so a wait answered between two reminder checks still ends.
+ */
+export function trackWaiting(state: WaitingReminders, sessions: AgentSessionSummary[], now: number) {
+  const waiting = new Set<string>();
+  for (const session of sessions) {
+    if (!isWaitingOnUser(session)) continue;
+    const key = sessionKey(session);
+    waiting.add(key);
+    if (!state.since.has(key)) state.since.set(key, now);
+  }
+  for (const key of [...state.since.keys()]) {
+    if (!waiting.has(key)) {
+      state.since.delete(key);
+      state.reminded.delete(key);
+    }
+  }
+}
+
+/** The sessions due a reminder: waiting on the user for `delayMs` or more and not reminded yet in this wait. */
+export function takeDueReminders(state: WaitingReminders, sessions: AgentSessionSummary[], now: number, delayMs: number) {
+  trackWaiting(state, sessions, now);
+  const due: AgentSessionSummary[] = [];
+  for (const session of sessions) {
+    const key = sessionKey(session);
+    const since = state.since.get(key);
+    if (since !== undefined && now - since >= delayMs && !state.reminded.has(key)) {
+      state.reminded.add(key);
+      due.push(session);
+    }
+  }
+  return due;
+}
