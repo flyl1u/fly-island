@@ -8,22 +8,16 @@ import { useLevelPopup } from "../../features/system-levels/useLevelPopup";
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
-import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
+// The page panels; before IslandShell so their CSS keeps its place in the cascade.
+import { IslandPages } from "./IslandPages";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
-import { MessagesPanel } from "../../features/messages/Messages";
 import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
-import { TodoNotebook } from "../../features/todos/TodoNotebook";
 import { openSettingsWindow } from "../settings/api";
-import { TranslationPanel } from "../../features/translation/TranslationPanel";
 import { useQuickTranslation } from "../../features/translation/useQuickTranslation";
 import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from "../../features/agent-status/status";
-import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
-import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
-import { MusicPlayerPanel } from "../../features/media/MusicPlayerPanel";
-import { FileShelfPanel } from "../../features/file-shelf/FileShelfPanel";
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
@@ -34,7 +28,6 @@ import { useLocalApiBridge } from "../../features/local-api/useLocalApiBridge";
 import { useBackgroundUpdateCheck } from "../../features/updater/useBackgroundUpdateCheck";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
-import { getTodoScrollStartRows } from "./layout";
 import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useHoverExpand } from "./useHoverExpand";
@@ -99,12 +92,7 @@ export function IslandApp() {
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
   );
-  const {
-    mediaState,
-    isMediaTrackChanging,
-    mediaCommandError,
-    runMediaCommand,
-  } = useMediaState(settings.musicEnabled);
+  const media = useMediaState(settings.musicEnabled);
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentSession, agentActivity } =
     useIslandAgents(settings);
   const openAgentsPage = useCallback(() => openIslandPage("agents"), [openIslandPage]);
@@ -161,14 +149,8 @@ export function IslandApp() {
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
-  const {
-    clipboardHistory,
-    copyClipboardHistoryItem,
-    toggleClipboardHistoryFavorite,
-    updateClipboardHistoryItemNote,
-    deleteClipboardHistoryItem,
-    clearClipboardHistoryItems,
-  } = useClipboardHistory(toggleClipboardHistory);
+  const clipboard = useClipboardHistory(toggleClipboardHistory);
+  const { clipboardHistory } = clipboard;
 
   const { features, openEnabledPage } = useIslandFeatures({
     settings,
@@ -196,7 +178,7 @@ export function IslandApp() {
     page,
     todoPageMode,
     todos,
-    hasMediaCommandError: Boolean(mediaCommandError),
+    hasMediaCommandError: Boolean(media.mediaCommandError),
     messageSource,
     isReadingMail: qqMail.wantsTallPanel,
     maxPanelHeight: settings.maxPanelHeight,
@@ -329,7 +311,7 @@ export function IslandApp() {
         collapsedTodoCount={collapsedTodoCount}
         agentSession={agentSession}
         activeAgentSessionCount={activeAgentSessionCount}
-        mediaState={mediaState}
+        mediaState={media.mediaState}
         agentVisualState={agentVisualState}
         agentStatusLabel={agentStatusLabel}
         features={features}
@@ -355,44 +337,27 @@ export function IslandApp() {
         collapsedSlots={collapsedSlots}
         pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
-        {page === "qq" && (
-          <div className="message-panel">
-            <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} enabledSources={features} onSourceChange={openMessages} onOpenMailSettings={() => openSettingsWindow("mail")} />
-          </div>
-        )}
-        {page === "music" && (
-          <MusicPlayerPanel
-            mediaState={mediaState}
-            isTrackChanging={isMediaTrackChanging}
-            commandError={mediaCommandError}
-            onOpenSettings={() => openSettingsWindow("music")}
-            onPlayPause={() => void runMediaCommand("media_play_pause")}
-            onNext={() => void runMediaCommand("media_next")}
-            onPrevious={() => void runMediaCommand("media_previous")}
-            lyricsSettings={settings}
-          />
-        )}
-        {page === "clipboard" && (
-          <ClipboardHistoryPanel
-            snapshot={clipboardHistory}
-            onCopyItem={copyClipboardHistoryItem}
-            onToggleFavorite={(id) => void toggleClipboardHistoryFavorite(id)}
-            onUpdateNote={updateClipboardHistoryItemNote}
-            onDeleteItem={(id) => void deleteClipboardHistoryItem(id)}
-            onClear={() => void clearClipboardHistoryItems()}
-          />
-        )}
-        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} showUsage={settings.agentShowUsage} approvals={agentApprovals} />}
-        {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
-        {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
-        {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
-        {page === "todo" && (
-          <TodoNotebook
-            {...notebookProps}
-            enableTodoReorder={settings.enableTodoReorder}
-            scrollStartRows={getTodoScrollStartRows(settings.maxPanelHeight)}
-          />
-        )}
+        <IslandPages
+          page={page}
+          mode={mode}
+          settings={settings}
+          features={features}
+          qqMail={qqMail}
+          qqNotifications={qqNotifications}
+          wechatReminders={wechatReminders}
+          messageSource={messageSource}
+          openMessages={openMessages}
+          media={media}
+          clipboard={clipboard}
+          agentSessions={listedAgentSessions}
+          unseenAgentSessions={unseenAgentSessions}
+          alertedSession={alertedSession}
+          agentApprovals={agentApprovals}
+          pluginPages={pluginPages}
+          fileShelf={fileShelf}
+          isShelfDropping={isShelfDropping}
+          notebookProps={notebookProps}
+        />
       </IslandShell>
       <PluginContextMenus />
     </main>

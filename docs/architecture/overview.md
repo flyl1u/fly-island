@@ -61,7 +61,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 
 | 现有位置 | 目标位置 |
 |---|---|
-| `App.tsx`：`App`、`IslandApp`、`IslandShell` | `windows/island/IslandApp.tsx`（`App` 包装已去掉，`main.tsx` 直接渲染 `IslandApp`）、`IslandShell.tsx`；外壳拆出 `IslandCollapsedBar.tsx`、`IslandHeader.tsx` 与 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`。`IslandApp` 的导航、快捷键、折叠态待办摘要、展开高度、舞台样式分别在 `useIslandNavigation.ts`、`useIslandKeyboard.ts`、`useCollapsedTodo.ts`、`expandedHeight.ts`、`stageStyle.ts`；外观设置的持久化与同步在 `features/appearance/useIslandSettings.ts` |
+| `App.tsx`：`App`、`IslandApp`、`IslandShell` | `windows/island/IslandApp.tsx`（`App` 包装已去掉，`main.tsx` 直接渲染 `IslandApp`）、`IslandShell.tsx`；外壳拆出 `IslandCollapsedBar.tsx`、`IslandHeader.tsx` 与 `useGlassPointer.ts`、`useIslandPreparing.ts`、`useWindowDragGesture.ts`。展开后各页面的面板在 `IslandPages.tsx`。`IslandApp` 的导航、快捷键、折叠态待办摘要、展开高度、舞台样式分别在 `useIslandNavigation.ts`、`useIslandKeyboard.ts`、`useCollapsedTodo.ts`、`expandedHeight.ts`、`stageStyle.ts`；外观设置的持久化与同步在 `features/appearance/useIslandSettings.ts` |
 | `App.tsx`：窗口尺寸、展开高度、拖拽、位置、贴边相关的 state 与 effect | `windows/island/useIslandWindow.ts`（组合原生同步）、`useNativeLayout.ts`（缩放与边距，每帧至多一次调用）、`useIslandPosition.ts`（拖拽位置）、`api.ts`。展开高度仍由 `IslandApp` 按页面内容算好后传入；贴边收起的 mode 状态在 `useIslandNavigation.ts`。`topEdge.ts` 把原生顶边贴合写到根元素 `data-island-top-edge`，`IslandTopEdge.css` 据此绘制平顶与反向圆角 |
 | `App.tsx`：`openSettingsWindow` 与设置区块跳转 | `windows/settings/api.ts` |
 | `App.tsx`：`TodoNotebook`、`ArchiveBrowser` | `features/todos/` |
