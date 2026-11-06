@@ -1,4 +1,4 @@
-import { Bell, Bot, ClipboardList, Inbox, Info, Keyboard, Languages, ListTodo, Mail, MessageCircle, Music, Palette, Puzzle, RefreshCcw, SlidersHorizontal, Store, type LucideIcon } from "lucide-react";
+import { Bell, Bot, ClipboardList, Inbox, Info, Keyboard, Languages, ListTodo, Mail, MessageCircle, Music, Palette, Puzzle, RefreshCcw, SlidersHorizontal, Store, Volume2, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { SETTINGS_GROUPS, type SettingsCategory } from "./categories";
 import "./SettingsSidebar.css";
@@ -17,6 +17,7 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   translation: Languages,
   shelf: Inbox,
   agents: Bot,
+  sounds: Volume2,
   plugins: Puzzle,
   market: Store,
   about: Info,

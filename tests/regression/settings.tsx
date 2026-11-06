@@ -115,6 +115,7 @@ mockIPC((command, payload) => {
       { at: Date.now() - 2000, outgoing: true, text: JSON.stringify({ jsonrpc: "2.0", method: "initialize", params: { apiVersion: 2, pluginId: "me.very-long-plugin-id-to-check-wrapping", settings: { repo: "a/b" } } }) },
       { at: Date.now() - 1000, outgoing: false, text: '{"jsonrpc":"2.0","id":1,"method":"view.update","params":{"viewId":"main","model":{"items":[]}}}' },
     ];
+    case "list_sound_packs": return [{ id: "chimes-1", name: "Chimes", author: "Ann", license: "CC0-1.0", sounds: { complete: "complete.wav", error: "error.wav" } }];
     default: return null;
   }
 }, { shouldMockEvents: true });

@@ -17,6 +17,7 @@ mod session_mode;
 mod session_process;
 mod session_records;
 mod snapshot;
+pub(crate) mod sound_packs;
 #[cfg(test)]
 mod tests;
 mod session_scan;
@@ -416,6 +417,10 @@ macro_rules! tauri_commands {
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
             crate::agent_status::get_agent_usage,
+            crate::agent_status::sound_packs::list_sound_packs,
+            crate::agent_status::sound_packs::import_sound_pack,
+            crate::agent_status::sound_packs::remove_sound_pack,
+            crate::agent_status::sound_packs::read_sound_pack_file,
         ] $($rest)*)
     };
 }

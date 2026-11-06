@@ -1,0 +1,11 @@
+.sound-packs__input {
+  display: none;
+}
+
+.sound-packs__empty {
+  color: var(--color-text-subtle);
+}
+
+.sound-packs__error {
+  color: var(--color-warning);
+}

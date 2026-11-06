@@ -4,6 +4,7 @@ import { AppearanceSettingsPage } from "./AppearanceSettingsPage";
 import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import { AgentSettingsPage } from "./AgentSettingsPage";
+import { SoundSettingsSection } from "../../features/agent-status/sounds/SoundSettingsSection";
 import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
@@ -168,6 +169,7 @@ export function SettingsWindow() {
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "sounds" && <SoundSettingsSection />}
         {category === "plugins" && (
           <>
             <PluginsSettingsSection key={managedPluginId ?? "list"} initialOpenId={managedPluginId} />

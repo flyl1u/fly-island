@@ -23,6 +23,7 @@ import type { SettingsColorsText } from "./colors";
 import type { SettingsPresetsText } from "./presets";
 import type { SettingsSaveText } from "./save";
 import type { SettingsPluginsText } from "./plugins";
+import type { SettingsSoundsText } from "./sounds";
 import * as fileShelf from "./fileShelf.ts";
 import * as modules from "./modules.ts";
 import * as messageSources from "./messageSources.ts";
@@ -48,6 +49,7 @@ import * as colors from "./colors.ts";
 import * as presets from "./presets.ts";
 import * as save from "./save.ts";
 import * as plugins from "./plugins.ts";
+import * as sounds from "./sounds.ts";
 
 export type SettingsText = {
   fileShelf: SettingsFileShelfText;
@@ -95,6 +97,7 @@ export type SettingsText = {
 
   save: SettingsSaveText;
   plugins: SettingsPluginsText;
+  sounds: SettingsSoundsText;
 };
 
 export const zhCN: SettingsText = {
@@ -143,6 +146,7 @@ export const zhCN: SettingsText = {
 
   save: save.zhCN,
   plugins: plugins.zhCN,
+  sounds: sounds.zhCN,
 };
 
 export const en: SettingsText = {
@@ -191,4 +195,5 @@ export const en: SettingsText = {
 
   save: save.en,
   plugins: plugins.en,
+  sounds: sounds.en,
 };

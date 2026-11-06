@@ -22,6 +22,7 @@ import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
 import { useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
+import { useAgentSounds } from "../../features/agent-status/sounds/useAgentSounds";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
@@ -203,6 +204,7 @@ export function IslandApp() {
     openIslandPage,
     pluginPages: pluginPages.pageIds,
   });
+  useAgentSounds(agentSessions, features.agents && !game.quiet);
   const alertedSession = useAgentAlerts({
     sessions: agentSessions,
     kinds: { completed: settings.agentAlertCompleted, failed: settings.agentAlertFailed, waiting: settings.agentAlertWaiting },

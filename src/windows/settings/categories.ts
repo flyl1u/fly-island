@@ -10,6 +10,7 @@ export const SETTINGS_CATEGORIES = [
   "clipboard",
   "shelf",
   "agents",
+  "sounds",
   "qq",
   "wechat",
   "mail",
@@ -28,7 +29,7 @@ export type SettingsGroup = "basics" | "features" | "messages" | "extensions";
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance", "shortcuts", "updates"] },
-  { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents"] },
+  { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents", "sounds"] },
   { label: "messages", categories: ["qq", "wechat", "mail"] },
   { label: "extensions", categories: ["plugins", "market"] },
   { label: null, categories: ["about"] },
