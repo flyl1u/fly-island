@@ -19,6 +19,7 @@
     "check:tasks": "node scripts/tasks/tasks.mjs check",
     "tasks": "node scripts/tasks/tasks.mjs",
     "task:claim": "node scripts/tasks/tasks.mjs claim",
+    "tasks:plugin": "node scripts/tasks/install-island-plugin.mjs",
     "verify": "node scripts/land-check.mjs",
     "test:regression": "node scripts/run-regression.mjs",
     "check:tests-types": "tsc -p tsconfig.tests.json",

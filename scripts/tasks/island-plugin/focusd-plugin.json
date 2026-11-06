@@ -1,0 +1,28 @@
+{
+  "id": "dev.focusd.dev-tasks",
+  "name": { "zh-CN": "开发任务看板", "en": "Dev task board" },
+  "description": {
+    "zh-CN": "在岛上列出 fly-island 仓库 docs/tasks 里的任务：等你确认的、认领已失效的、进行中的（谁、哪条 lane）和待做的；有等你确认的事时，收起条上显示数量。点一条用默认程序打开任务文件。数据来自仓库里的 pnpm tasks --json，需要 Node。只给开发这个仓库时用，用 pnpm tasks:plugin 安装。",
+    "en": "Lists the tasks in the fly-island repo's docs/tasks on an island page: waiting for you, stale claims, in progress (who, which lane) and to do; the collapsed bar shows how many wait for you. Click one to open its file. Reads pnpm tasks --json from the repo, so it needs Node. For developing this repo only; install with pnpm tasks:plugin."
+  },
+  "version": "1.0.0",
+  "apiVersion": 2,
+  "author": "TixXin",
+  "runtime": { "type": "process", "command": "main.ps1" },
+  "permissions": [],
+  "contributes": {
+    "commands": [{ "id": "refresh", "title": { "zh-CN": "立即刷新", "en": "Refresh now" } }],
+    "views": [{ "id": "tasks", "title": { "zh-CN": "任务", "en": "Tasks" }, "icon": "list-checks", "template": "list" }],
+    "statusItems": [{ "id": "waiting", "priority": 20 }],
+    "settings": [
+      {
+        "key": "repo",
+        "type": "string",
+        "title": { "zh-CN": "仓库目录", "en": "Repository folder" },
+        "description": { "zh-CN": "fly-island 主工作区的路径。留空用安装时记下的目录。", "en": "The fly-island main checkout. Empty uses the folder recorded at install." },
+        "default": ""
+      },
+      { "key": "minutes", "type": "number", "title": { "zh-CN": "刷新间隔（分钟）", "en": "Refresh every (minutes)" }, "min": 1, "max": 30, "default": 2 }
+    ]
+  }
+}

@@ -7,6 +7,7 @@
 - `pnpm tasks add <编号> --title .. --section ..`：新任务（和其他改动一起提交）。
 - `pnpm tasks note <编号> <文字>`：给接手的会话留交接；`pnpm tasks done <编号> --commit <提交>`：标为完成，和功能改动放在同一个提交里。
 - `pnpm tasks stale`：lane 没了、建 lane 的会话退出了、或 24 小时没提交的认领。
+- `pnpm tasks:plugin`：把「开发任务看板」插件装到本机岛屿（插件目录），在岛上看等你确认、失效、进行中和待做的任务，收起条显示等你确认的数量。装好后在 设置 → 插件扩展 里允许第三方插件、重新加载、启用。
 - `pnpm tasks conflicts`：本 lane 和 `origin/main` 有没有冲突（`git merge-tree`），以及改到了别人声明的目录。
 
 状态：`待做` / `进行中` / `待用户确认` / `已完成` / `不做`。决定不做的标「不做」并写原因，不要删文件。
