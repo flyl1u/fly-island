@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Bot } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
-import { minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
 import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
@@ -13,7 +12,10 @@ import "./AgentSessionsPanel.css";
 const NOT_FOUND_NOTICE_MS = 3000;
 const AGE_REFRESH_MS = 30_000;
 
-/** The island's Agent page: recent sessions; clicking one brings its editor or terminal forward. */
+/**
+ * The island's Agent page: recent sessions; clicking one brings its editor or terminal forward.
+ * Sessions still working get a two-line row with the latest reply; finished ones fold to one line.
+ */
 export function AgentSessionsPanel({
   sessions,
   hostDisplay,
@@ -53,74 +55,75 @@ export function AgentSessionsPanel({
       });
   };
 
-  return (
-    <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-      <header className="agent-sessions__header">
-        <Bot size={15} strokeWidth={2.2} aria-hidden="true" />
-        <span>{t.agent.sessions.title}</span>
-        <span className="agent-sessions__count">{sessions.length}</span>
-      </header>
-      {sessions.length === 0 ? (
+  if (sessions.length === 0) {
+    return (
+      <section className="agent-sessions" aria-label={t.agent.sessions.title}>
         <div className="agent-sessions__empty">
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
         </div>
-      ) : (
-        <ul className="agent-sessions__list">
-          {sessions.map((session) => {
-            const project = sessionProject(session.cwd);
-            const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
-            const model = modelLabel(session.model, session.effort);
-            const minutes = minutesAgo(session.updatedAt, now);
-            return (
-              <li key={`${session.provider}:${session.sessionId}`}>
-                <button
-                  className={`agent-session agent-session--${session.phase}`}
-                  type="button"
-                  title={t.agent.sessions.focus(title)}
-                  onClick={() => focus(session)}
-                >
+      </section>
+    );
+  }
+
+  return (
+    <section className="agent-sessions" aria-label={t.agent.sessions.title}>
+      <ul className="agent-sessions__list">
+        {sessions.map((session) => {
+          const project = sessionProject(session.cwd);
+          const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
+          const model = modelLabel(session.model, session.effort);
+          const minutes = minutesAgo(session.updatedAt, now);
+          const active = isActivePhase(session.phase);
+          const phaseLabel = getAgentPhaseLabel(session.phase, t);
+          // Running and done are told apart by the dot; the other states need words.
+          const showPhase = session.phase !== "running" && session.phase !== "completed";
+          const elapsed = showElapsed && session.turnStartedAt !== null;
+          // A running session's age is always about now; its running time says more.
+          const showAge = session.phase !== "running" || !elapsed;
+          const status = [
+            showPhase && phaseLabel,
+            elapsed && <SessionElapsed key="elapsed" session={session} />,
+            showAge && (minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)),
+          ]
+            .filter(Boolean)
+            .flatMap((part, index) => (index === 0 ? [part] : [" · ", part]));
+          return (
+            <li key={`${session.provider}:${session.sessionId}`}>
+              <button
+                className={`agent-session agent-session--${session.phase} agent-session--${active ? "full" : "compact"}`}
+                type="button"
+                title={t.agent.sessions.focus(title)}
+                onClick={() => focus(session)}
+              >
+                {active ? (
                   <AgentProviderIcon provider={session.provider} size={18} />
-                  <span className="agent-session__main">
-                    <span className="agent-session__heading">
-                      <span className="agent-session__title">
-                        {project && project !== title ? <span className="agent-session__project">{project} · </span> : null}
-                        {title}
-                      </span>
-                      {showModel && model && <span className="agent-session__model">{model}</span>}
-                      <span className="agent-session__dot" aria-hidden="true" />
+                ) : (
+                  <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />
+                )}
+                <span className="agent-session__main">
+                  <span className="agent-session__heading">
+                    <span className="agent-session__title">
+                      {project && project !== title ? <span className="agent-session__project">{project} · </span> : null}
+                      {title}
                     </span>
-                    {session.lastMessage && <span className="agent-session__message">{session.lastMessage}</span>}
-                    <span className="agent-session__meta">
-                      {notFoundId === session.sessionId ? (
-                        <span className="agent-session__not-found" role="status">{t.agent.sessions.notFound}</span>
-                      ) : (
-                        <>
-                          {session.host && hostDisplay !== "off" && (
-                            <>
-                              <SessionHostLabel host={session.host} display={hostDisplay} />
-                              {hostDisplay === "icon" ? " " : " · "}
-                            </>
-                          )}
-                          {getAgentPhaseLabel(session.phase, t)}
-                          {showElapsed && session.turnStartedAt !== null && (
-                            <>
-                              {" · "}
-                              <SessionElapsed session={session} />
-                            </>
-                          )}
-                          {" · "}
-                          {minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)}
-                        </>
-                      )}
-                    </span>
+                    {active && showModel && model && <span className="agent-session__model">{model}</span>}
+                    {!active && <AgentProviderIcon provider={session.provider} size={14} />}
+                    {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
+                    {notFoundId === session.sessionId ? (
+                      <span className="agent-session__not-found" role="status">{t.agent.sessions.notFound}</span>
+                    ) : (
+                      <span className="agent-session__meta">{status}</span>
+                    )}
+                    {active && <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />}
                   </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  {active && session.lastMessage && <span className="agent-session__message">{session.lastMessage}</span>}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
