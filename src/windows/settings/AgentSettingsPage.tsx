@@ -1,6 +1,7 @@
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
+import { AgentSessionFilterSettings } from "../../features/agent-status/AgentSessionFilterSettings";
 import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentApprovalSettings } from "../../features/agent-status/approvals/AgentApprovalSettings";
 import { AgentReplyMarkerSettings } from "../../features/agent-status/AgentReplyMarkerSettings";
@@ -39,6 +40,7 @@ export function AgentSettingsPage({
         />
       </SettingsGroup>
       <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
+      <AgentSessionFilterSettings />
       <AgentAlertSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentApprovalSettings />
       <AgentReplyMarkerSettings />

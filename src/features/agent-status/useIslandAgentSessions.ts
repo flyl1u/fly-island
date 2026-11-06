@@ -5,6 +5,8 @@ import { remoteSessions, withRemoteSessions } from "./remoteSessions";
 import { countActiveSessions, filterSessions, isActivePhase } from "./sessionList";
 import { useAgentSessions } from "./useAgentSessions";
 import { useHiddenSessions } from "./useHiddenSessions";
+import { applySessionFilters } from "./sessionFilters";
+import { useSessionFilters } from "./useSessionFilters";
 import { useUnseenSessions } from "./useUnseenSessions";
 
 type AgentSessionSettings = Pick<
@@ -25,10 +27,12 @@ export function useIslandAgentSessions(settings: AgentSessionSettings, others?: 
     () => withRemoteSessions(localAgentSessions, settings.agentStatusEnabled ? remoteSessions(others) : []),
     [localAgentSessions, others, settings.agentStatusEnabled],
   );
-  // Agents switched off in Settings → AI Agent are left out of the page and the count.
+  // Agents switched off in Settings → AI Agent, and sessions its rules hide, are left out of
+  // the page, the count, the collapsed title, alerts and sounds.
+  const [sessionFilters] = useSessionFilters();
   const shownAgentSessions = useMemo(
-    () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
-    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex],
+    () => applySessionFilters(filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }), sessionFilters),
+    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex, sessionFilters],
   );
   // Sessions removed from the Agent page leave the count and the collapsed island too.
   const { visible: agentSessions, removal: agentRemoval } = useHiddenSessions(shownAgentSessions);

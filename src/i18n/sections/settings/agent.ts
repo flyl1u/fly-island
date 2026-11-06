@@ -55,6 +55,18 @@ export type SettingsAgentText = {
     onIsland: string;
     hint: string;
   };
+  /** Rules hiding agent sessions by folder or prompt text (roadmap B6.4.3). */
+  filters: {
+    title: string;
+    hint: string;
+    kinds: { folder: string; prompt: string };
+    kindLabel: string;
+    add: string;
+    addButton: string;
+    folderPlaceholder: string;
+    promptPlaceholder: string;
+    remove: (value: string) => string;
+  };
   /** The optional reply status marker in the user's CLAUDE.md (roadmap B9). */
   replyMarker: {
     title: string;
@@ -120,6 +132,17 @@ export const zhCN: SettingsAgentText = {
     onIsland: "在岛上允许或拒绝 Agent 的操作",
     hint: "Claude Code 或 Codex 要运行命令、改文件时，岛上弹出卡片，可以允许、拒绝或交回终端（快捷键 Ctrl+Alt+Y / N / T）。卡片显示期间终端里不出审批框；2 分钟没处理、会话窗口已在前台或游戏模式勿扰时自动交回终端。需要先点下方的“安装/修复”。Codex 还要在它的 /hooks 里信任新钩子。auto 模式自己批准的操作不会弹出。",
   },
+  filters: {
+    title: "隐藏会话",
+    hint: "符合任一条的会话在岛上完全不出现：Agent 页、会话数、收起条标题、提醒和音效都不算它。目录规则也隐藏它的子目录；文字规则匹配会话标题（没有标题时是第一句提示词）或最近一句提示词，不分大小写。",
+    kinds: { folder: "所在目录", prompt: "标题或提示词包含" },
+    kindLabel: "规则类型",
+    add: "添加规则",
+    addButton: "添加",
+    folderPlaceholder: "例如 E:\\Projects\\scratch",
+    promptPlaceholder: "例如 /loop",
+    remove: (value) => `删除规则「${value}」`,
+  },
   replyMarker: {
     title: "回复状态标记",
     toggle: "让 Claude 在回复末尾标出在等什么",
@@ -183,6 +206,17 @@ export const en: SettingsAgentText = {
     title: "Approve on the island",
     onIsland: "Allow or deny agent actions on the island",
     hint: "When Claude Code or Codex wants to run a command or change a file, a card on the island lets you allow, deny or hand it back to the terminal (Ctrl+Alt+Y / N / T). The terminal shows no prompt while the card is up; after 2 minutes, or while the session's window is in front or game mode keeps the island quiet, it goes back to the terminal. Click Install/repair below first, and trust the new hook in Codex's /hooks. Actions auto mode approves by itself don't show up.",
+  },
+  filters: {
+    title: "Hide sessions",
+    hint: "Sessions matching any rule do not show on the island at all: not on the Agent page, in the session count or the collapsed title, nor in alerts and sounds. A folder rule hides its subfolders too; a text rule matches the session's title (its first prompt when it has none) or latest prompt, ignoring case.",
+    kinds: { folder: "In folder", prompt: "Title or prompt contains" },
+    kindLabel: "Rule type",
+    add: "Add a rule",
+    addButton: "Add",
+    folderPlaceholder: "e.g. E:\\Projects\\scratch",
+    promptPlaceholder: "e.g. /loop",
+    remove: (value) => `Remove the rule \"${value}\"`,
   },
   replyMarker: {
     title: "Reply status marker",

@@ -22,6 +22,7 @@ export const BACKUP_KEYS = [
   "focusd-island-update-preferences",
   // Imported sound packs themselves stay in the app data folder; only the choices travel.
   "focusd-island-agent-sounds",
+  "focusd-island-agent-session-filters",
 ] as const;
 
 export type BackupKey = (typeof BACKUP_KEYS)[number];
