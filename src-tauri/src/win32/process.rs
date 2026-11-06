@@ -3,10 +3,15 @@
 //! Also compiled into `examples/wechat_reminder_probe.rs` through `#[path]`, so it
 //! must not depend on anything else in the crate.
 
+use std::mem::size_of;
 use windows::{
     core::PWSTR,
     Win32::{
         Foundation::{CloseHandle, HANDLE, HWND},
+        System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        },
         System::Threading::{
             OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
             PROCESS_QUERY_LIMITED_INFORMATION,
@@ -69,9 +74,51 @@ pub(crate) fn image_path(process_id: u32) -> Option<String> {
     Some(String::from_utf16_lossy(&path[..length as usize]))
 }
 
+/// Full path of a running process whose executable is named one of `file_names`
+/// (compared without case), such as WeChat started from a folder no registry entry
+/// records. `None` when none is running or its path cannot be read.
+pub(crate) fn running_executable(file_names: &[&str]) -> Option<String> {
+    // SAFETY: a process snapshot takes no pointers; the returned handle is owned by
+    // ProcessHandle, which closes it (CloseHandle closes snapshot handles too).
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }
+        .ok()
+        .map(ProcessHandle)?;
+    let mut entry = PROCESSENTRY32W {
+        dwSize: size_of::<PROCESSENTRY32W>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: the snapshot handle is live and `entry` is a PROCESSENTRY32W with dwSize set.
+    let mut more = unsafe { Process32FirstW(snapshot.0, &mut entry) }.is_ok();
+    while more {
+        let length = entry
+            .szExeFile
+            .iter()
+            .position(|unit| *unit == 0)
+            .unwrap_or(entry.szExeFile.len());
+        let name = String::from_utf16_lossy(&entry.szExeFile[..length]);
+        if file_names.iter().any(|wanted| wanted.eq_ignore_ascii_case(&name)) {
+            if let Some(path) = image_path(entry.th32ProcessID) {
+                return Some(path);
+            }
+        }
+        // SAFETY: as for Process32FirstW.
+        more = unsafe { Process32NextW(snapshot.0, &mut entry) }.is_ok();
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_a_running_process_by_its_file_name() {
+        let current = std::env::current_exe().expect("current exe");
+        let name = current.file_name().expect("file name").to_string_lossy().to_uppercase();
+        let found = running_executable(&["NoSuchProgram.exe", &name]).map(std::path::PathBuf::from);
+        assert_eq!(found.and_then(|path| path.file_name().map(|name| name.to_os_string())), current.file_name().map(|name| name.to_os_string()));
+        assert_eq!(running_executable(&["NoSuchProgram.exe"]), None);
+    }
 
     #[test]
     fn reads_the_image_path_of_the_current_process() {

@@ -20,13 +20,7 @@ pub(super) fn qq_executable() -> Result<PathBuf, String> {
             "Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ",
         ] {
             if let Some(icon) = registry::read_string(root, key, "DisplayIcon") {
-                let executable = icon
-                    .rsplit_once(',')
-                    .filter(|(_, index)| index.trim().parse::<i32>().is_ok())
-                    .map_or(icon.as_str(), |(path, _)| path)
-                    .trim()
-                    .trim_matches('"');
-                let path = PathBuf::from(executable);
+                let path = PathBuf::from(registry::display_icon_path(&icon));
                 if path.is_absolute()
                     && path.is_file()
                     && path
@@ -38,7 +32,10 @@ pub(super) fn qq_executable() -> Result<PathBuf, String> {
             }
         }
     }
-    Err("未找到 QQ 安装路径，请确认已安装 Windows 版 QQ。".into())
+    // Portable copies and copies moved to another folder have no uninstall entry.
+    process::running_executable(&["QQ.exe"])
+        .map(PathBuf::from)
+        .ok_or_else(|| "未找到 QQ 安装路径。请先打开 QQ，再试一次。".into())
 }
 
 pub(super) struct QQWindowSearch<'a> {

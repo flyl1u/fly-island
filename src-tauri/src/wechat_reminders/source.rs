@@ -5,7 +5,7 @@ use crate::win32::{
 use std::{cell::RefCell, path::PathBuf};
 use windows::Win32::{
     Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
-    System::Registry::HKEY_CURRENT_USER,
+    System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
     UI::WindowsAndMessaging::{HSHELL_REDRAW, HSHELL_WINDOWACTIVATED, HSHELL_WINDOWCREATED},
 };
 
@@ -38,19 +38,51 @@ thread_local! {
     static CONTEXT: RefCell<Option<ListenerContext>> = const { RefCell::new(None) };
 }
 
+/// Weixin 4.x first, then the older WeChat 3.x.
+const EXECUTABLES: [(&str, &str); 2] = [("Weixin", "Weixin.exe"), ("WeChat", "WeChat.exe")];
+
+/// Where WeChat is installed. The installer's own key is only written for the user who ran it
+/// (or under HKLM for every user); portable copies and copies moved to another folder have no
+/// key at all, so the uninstall entries and, last, a running WeChat are tried as well.
 pub fn installed_executable() -> Result<PathBuf, String> {
-    for (key, name) in [
-        ("Software\\Tencent\\Weixin", "Weixin.exe"),
-        ("Software\\Tencent\\WeChat", "WeChat.exe"),
-    ] {
-        if let Some(install_path) = registry::read_string(HKEY_CURRENT_USER, key, "InstallPath") {
-            let path = PathBuf::from(install_path).join(name);
-            if path.is_absolute() && path.is_file() {
-                return Ok(path);
+    let existing = |path: PathBuf, name: &str| {
+        let named = path
+            .file_name()
+            .is_some_and(|file| file.to_string_lossy().eq_ignore_ascii_case(name));
+        (path.is_absolute() && named && path.is_file()).then_some(path)
+    };
+    for root in [HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE] {
+        for (product, name) in EXECUTABLES {
+            for key in [
+                format!("Software\\Tencent\\{product}"),
+                format!("Software\\WOW6432Node\\Tencent\\{product}"),
+            ] {
+                if let Some(path) = registry::read_string(root, &key, "InstallPath")
+                    .and_then(|folder| existing(PathBuf::from(folder.trim_matches('"')).join(name), name))
+                {
+                    return Ok(path);
+                }
+            }
+            for key in [
+                format!("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{product}"),
+                format!("Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{product}"),
+            ] {
+                let from_icon = registry::read_string(root, &key, "DisplayIcon")
+                    .and_then(|icon| existing(PathBuf::from(registry::display_icon_path(&icon)), name));
+                let from_folder = || {
+                    registry::read_string(root, &key, "InstallLocation")
+                        .and_then(|folder| existing(PathBuf::from(folder.trim_matches('"')).join(name), name))
+                };
+                if let Some(path) = from_icon.or_else(from_folder) {
+                    return Ok(path);
+                }
             }
         }
     }
-    Err("未找到微信安装路径，请确认已安装 Windows 版微信。".into())
+    let names = EXECUTABLES.map(|(_, name)| name);
+    process::running_executable(&names)
+        .map(PathBuf::from)
+        .ok_or_else(|| "未找到微信安装路径。打开微信后会自动连接。".into())
 }
 
 fn normalized_path(path: &str) -> String {
