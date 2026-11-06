@@ -340,6 +340,20 @@ if (!automated) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
 
+    await openPage("about");
+    const aboutLink = (label: string) =>
+      [...document.querySelectorAll<HTMLButtonElement>(".settings-link-button")].find((button) => button.textContent === label);
+    await act(async () => { aboutLink("重置")!.click(); });
+    check(aboutLink("确认重置") && aboutLink("取消"), "Reset all settings asks first");
+    // The appearance reset above kept the todo setting, so it is the one that shows a full reset.
+    check(storedSettings().carryOverIncompleteTodos === true, "Asking changes nothing yet");
+    await act(async () => { aboutLink("确认重置")!.click(); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+    check(storedSettings().carryOverIncompleteTodos === DEFAULT_SETTINGS.carryOverIncompleteTodos && !aboutLink("确认重置"),
+      "Confirming resets every setting, not just the appearance");
+    await act(async () => { aboutLink("退出")!.click(); });
+    check(commands.includes("quit_island"), "Quit asks the island to exit");
+
     await act(async () => { root.unmount(); });
     document.documentElement.dataset.testResult = "passed";
   } catch (error) {

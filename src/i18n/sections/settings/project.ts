@@ -5,6 +5,15 @@ export type SettingsProjectText = {
   description: string;
   versionTitle: string;
   linksTitle: string;
+  /** The last card of About: resetting every setting, and quitting the island. */
+  resetAll: string;
+  resetAllHint: string;
+  resetAllConfirm: string;
+  resetAllCancel: string;
+  resetAllAction: string;
+  quit: string;
+  quitHint: string;
+  quitAction: string;
   releases: string;
   releasesHint: string;
   issues: string;
@@ -58,6 +67,14 @@ export const zhCN: SettingsProjectText = {
   description: "在屏幕顶部集中待办、剪贴板、音乐、快捷翻译、AI 状态和消息提醒。",
   versionTitle: "版本",
   linksTitle: "链接",
+  resetAll: "重置所有设置",
+  resetAllHint: "外观、行为和各功能的设置恢复默认。待办、笔记、邮箱、插件、密钥、样式预设和界面语言都保留。",
+  resetAllConfirm: "确认重置",
+  resetAllCancel: "取消",
+  resetAllAction: "重置",
+  quit: "退出岛屿",
+  quitHint: "和托盘菜单里的「退出」一样；要再打开，从开始菜单或桌面快捷方式启动。",
+  quitAction: "退出",
   releases: "版本发布",
   releasesHint: "查看更新说明，或手动下载安装包",
   issues: "反馈问题",
@@ -111,6 +128,14 @@ export const en: SettingsProjectText = {
   description: "Todos, clipboard, music, quick translation, AI status, and message alerts, gathered at the top of the screen.",
   versionTitle: "Version",
   linksTitle: "Links",
+  resetAll: "Reset all settings",
+  resetAllHint: "Appearance, behaviour and every feature's settings go back to their defaults. Todos, notes, mailboxes, plugins, keys, style presets and the interface language are kept.",
+  resetAllConfirm: "Reset",
+  resetAllCancel: "Cancel",
+  resetAllAction: "Reset",
+  quit: "Quit the island",
+  quitHint: "Same as Quit in the tray menu; start it again from the Start menu or a desktop shortcut.",
+  quitAction: "Quit",
   releases: "Releases",
   releasesHint: "Read the notes, or download a build by hand",
   issues: "Report a problem",

@@ -126,6 +126,13 @@ pub fn remember_bounds(app: &AppHandle) {
     }
 }
 
+/// Quits the island from the settings window's About page, as the tray's Quit does.
+#[tauri::command]
+pub fn quit_island(app: AppHandle) {
+    remember_bounds(&app);
+    app.exit(0);
+}
+
 fn reveal(window: &WebviewWindow) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
     window.set_focus().map_err(|error| error.to_string())
@@ -153,6 +160,7 @@ macro_rules! tauri_commands {
         $next!([$($done)*
             crate::settings_window::open_settings_window,
             crate::settings_window::show_settings_window,
+            crate::settings_window::quit_island,
         ] $($rest)*)
     };
 }

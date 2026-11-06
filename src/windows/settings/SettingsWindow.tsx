@@ -23,8 +23,7 @@ import { useSettingPresets } from "../../features/appearance/useSettingPresets";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
-import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
-import { UpdateSettingsSection } from "../../features/updater/UpdateSettingsSection";
+import { AboutSettingsPage } from "./AboutSettingsPage";
 import { PluginsSettingsPage, type PluginsTab } from "./PluginsSettingsPage";
 import { useLocale, useTranslation } from "../../i18n";
 import "./SettingsWindow.css";
@@ -52,7 +51,7 @@ export function SettingsWindow() {
     if (section === "translation") setCategory("translation");
     if (section === "music") setCategory("music");
     if (section === "mail") setCategory("messages");
-    if (section === "updates") setCategory("updates");
+    if (section === "updates") setCategory("about");
   }, [focusSavePath]);
 
   // The window opens hidden and is shown once the page has rendered, so it never shows
@@ -174,8 +173,7 @@ export function SettingsWindow() {
         {category === "plugins" && (
           <PluginsSettingsPage tab={pluginsTab} managedPluginId={managedPluginId} onTabChange={changePluginsTab} onManage={managePlugin} />
         )}
-        {category === "updates" && <UpdateSettingsSection />}
-        {category === "about" && <ProjectSettingsSection onOpenUpdates={() => setCategory("updates")} />}
+        {category === "about" && <AboutSettingsPage onSettingsChange={setSettings} />}
       </LayoutEditor>
     </main>
   );

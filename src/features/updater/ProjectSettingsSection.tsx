@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
-import { ArrowRight, CircleHelp, RefreshCcw, Star, Tag } from "lucide-react";
+import { CircleHelp, Star, Tag } from "lucide-react";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
 import { ProjectLink } from "./ProjectLink";
@@ -8,69 +9,53 @@ import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import "./ProjectSettingsSection.css";
 import "./UpdatePanel.css";
 
-/** Settings → About: what this build is, and where to get the next one. */
-export function ProjectSettingsSection({ onOpenUpdates }: { onOpenUpdates: () => void }) {
+/** Settings → About, first: the island's mark, name, version and what it does. */
+export function ProjectIdentitySection() {
   const t = useTranslation();
-  const { version, stage, nextVersion } = useSyncExternalStore(subscribeToUpdate, getUpdateState);
+  const { version } = useSyncExternalStore(subscribeToUpdate, getUpdateState);
 
   return (
-    <>
-      <section className="settings-section settings-section--about">
-        <div className="about-identity">
-          <img className="about-identity__mark" src={markUrl} alt="" width={48} height={48} />
-          <div className="about-identity__body">
-            <div className="about-identity__heading">
-              <p className="about-identity__name">{t.settings.project.appName}</p>
-              {version && (
-                <span className="about-identity__version">{t.settings.project.versionChip(version)}</span>
-              )}
-            </div>
-            <p className="about-identity__description">{t.settings.project.description}</p>
+    <SettingsGroup>
+      <div className="about-identity">
+        <img className="about-identity__mark" src={markUrl} alt="" width={48} height={48} />
+        <div className="about-identity__body">
+          <div className="about-identity__heading">
+            <p className="about-identity__name">{t.settings.project.appName}</p>
+            {version && <span className="about-identity__version">{t.settings.project.versionChip(version)}</span>}
           </div>
+          <p className="about-identity__description">{t.settings.project.description}</p>
         </div>
-      </section>
-      <section className="settings-section settings-section--list settings-section--about-version">
-        <div className="settings-section__header">
-          <span>{t.settings.project.versionTitle}</span>
-        </div>
-        <button className="project-link project-link--release update-panel__button" type="button" onClick={onOpenUpdates}>
-          <RefreshCcw className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />
-          <span className="project-link__copy">
-            <strong>{t.settings.project.update.openPage}</strong>
-            <span>
-              {stage === "available"
-                ? t.settings.project.update.available(nextVersion)
-                : t.settings.project.update.openPageHint}
-            </span>
-          </span>
-          <ArrowRight className="project-link__arrow" size={14} aria-hidden="true" />
-        </button>
-      </section>
-      <section className="settings-section settings-section--list settings-section--about-links">
-        <div className="settings-section__header">
-          <span>{t.settings.project.linksTitle}</span>
-        </div>
-        <ProjectLink
-          href={PROJECT_RELEASES_URL}
-          tone="release"
-          title={t.settings.project.releases}
-          hint={t.settings.project.releasesHint}
-          icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-        />
-        <ProjectLink
-          href={PROJECT_ISSUES_URL}
-          title={t.settings.project.issues}
-          hint={t.settings.project.issuesHint}
-          icon={<CircleHelp className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-        />
-        <ProjectLink
-          href={PROJECT_REPO_URL}
-          tone="star"
-          title={t.settings.project.star}
-          hint={t.settings.project.starHint}
-          icon={<Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />}
-        />
-      </section>
-    </>
+      </div>
+    </SettingsGroup>
+  );
+}
+
+/** Settings → About → Links: releases, reporting a problem, and starring the project. */
+export function ProjectLinksSection() {
+  const t = useTranslation();
+
+  return (
+    <SettingsGroup title={t.settings.project.linksTitle}>
+      <ProjectLink
+        href={PROJECT_RELEASES_URL}
+        tone="release"
+        title={t.settings.project.releases}
+        hint={t.settings.project.releasesHint}
+        icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+      />
+      <ProjectLink
+        href={PROJECT_ISSUES_URL}
+        title={t.settings.project.issues}
+        hint={t.settings.project.issuesHint}
+        icon={<CircleHelp className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
+      />
+      <ProjectLink
+        href={PROJECT_REPO_URL}
+        tone="star"
+        title={t.settings.project.star}
+        hint={t.settings.project.starHint}
+        icon={<Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />}
+      />
+    </SettingsGroup>
   );
 }

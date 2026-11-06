@@ -1,10 +1,11 @@
 import { useSyncExternalStore } from "react";
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useLocale, useTranslation } from "../../i18n";
 import { getUpdateState, setAutoCheck, subscribeToUpdate } from "./updaterController";
 import { UpdatePanel } from "./UpdatePanel";
 
-/** Settings → Updates: check and install, the channel, and the background check. */
+/** Settings → About → Version: check and install, the channel, and the background check. */
 export function UpdateSettingsSection() {
   const t = useTranslation();
   const { locale } = useLocale();
@@ -15,23 +16,13 @@ export function UpdateSettingsSection() {
     : text.lastChecked(new Date(lastCheckedAt).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" }));
 
   return (
-    <>
-      <section className="settings-section settings-section--about-version">
-        <div className="settings-section__header">
-          <span>{t.settings.project.versionTitle}</span>
-        </div>
+    <SettingsGroup title={t.settings.project.versionTitle} footer={stage === "disabled" ? undefined : lastChecked}>
+      <div className="about-update">
         <UpdatePanel />
-      </section>
+      </div>
       {stage !== "disabled" && (
-        <section className="settings-section settings-section--update-auto">
-          <div className="settings-section__header">
-            <span>{text.autoTitle}</span>
-          </div>
-          <ToggleControl label={text.autoCheck} checked={autoCheck} onChange={setAutoCheck} />
-          <p className="settings-section__hint">{text.autoCheckHint}</p>
-          <p className="settings-section__hint">{lastChecked}</p>
-        </section>
+        <SettingsToggleRow title={text.autoCheck} description={text.autoCheckHint} checked={autoCheck} onChange={setAutoCheck} />
       )}
-    </>
+    </SettingsGroup>
   );
 }

@@ -19,7 +19,7 @@ type IslandHeaderProps = {
   wechatPending: boolean;
   onPageChange: (page: IslandPage) => void;
   onCollapse: () => void;
-  /** With "updates", opens the Updates page, for the new-version reminder. */
+  /** With "updates", opens About (its version and updates), for the new-version reminder. */
   onOpenSettings: (section?: "updates") => void;
   onOpenMessages: (source: MessageSource) => void;
   onOpenTranslator: (() => void) | null;

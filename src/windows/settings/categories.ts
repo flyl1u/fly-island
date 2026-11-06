@@ -3,7 +3,6 @@ export const SETTINGS_CATEGORIES = [
   "general",
   "appearance",
   "shortcuts",
-  "updates",
   "todos",
   "music",
   "translation",
@@ -25,7 +24,7 @@ export type SettingsGroup = "basics" | "features" | "extensions";
  * Messages), then plugins (installed and the market on one page). A null label leaves About on its own at the end.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
-  { label: "basics", categories: ["general", "appearance", "shortcuts", "updates"] },
+  { label: "basics", categories: ["general", "appearance", "shortcuts"] },
   { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents", "sounds", "messages"] },
   { label: "extensions", categories: ["plugins"] },
   { label: null, categories: ["about"] },
@@ -40,6 +39,7 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
   mail: "messages",
   // Opens the Plugins page; SettingsWindow shows its Market tab for this name.
   market: "plugins",
+  updates: "about",
 };
 
 /** The page a category name opens, old names included; null when there is no such page. */

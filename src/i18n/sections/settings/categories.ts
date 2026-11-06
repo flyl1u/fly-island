@@ -8,7 +8,6 @@ export type SettingsCategoriesText = {
   general: string;
   appearance: string;
   shortcuts: string;
-  updates: string;
   /** QQ, WeChat and Mail on one page. */
   messages: string;
   /** Mail's group on the Messages page. */
@@ -34,7 +33,6 @@ export const zhCN: SettingsCategoriesText = {
   general: "通用",
   appearance: "外观",
   shortcuts: "快捷键",
-  updates: "更新",
   messages: "消息",
   mail: "邮箱",
   todos: "待办",
@@ -58,7 +56,6 @@ export const en: SettingsCategoriesText = {
   general: "General",
   appearance: "Appearance",
   shortcuts: "Shortcuts",
-  updates: "Updates",
   messages: "Messages",
   mail: "Mail",
   todos: "Todos",

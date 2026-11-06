@@ -23,3 +23,8 @@ export function readLaunchAtStartup() {
 export function saveLaunchAtStartup(enabled: boolean) {
   return invoke("set_launch_at_startup", { enabled });
 }
+
+/** Quits the island, as the tray menu's Quit does. */
+export function quitIsland() {
+  return invoke<void>("quit_island");
+}

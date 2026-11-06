@@ -126,3 +126,28 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* In a grouped-list card: the identity and the update panel sit inset like rows, and each link is a
+   row of the card rather than a card of its own. */
+.settings-group__card > .about-identity {
+  padding: 16px;
+}
+
+.settings-group__card > .about-update {
+  padding: 12px 16px;
+}
+
+.settings-group__card > .project-link {
+  padding: 12px 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.settings-group__card > .project-link:hover {
+  background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+}
+
+.settings-group__card > .project-link:focus-visible {
+  outline-offset: -2px;
+}
