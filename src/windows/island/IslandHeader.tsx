@@ -82,13 +82,14 @@ export function IslandHeader({
               onPageChange("agents");
             }}
           >
-            <CircleDot className={agentStatusIconClassName} size={16} strokeWidth={2.2} aria-hidden="true" />
+            <CircleDot className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           </button>
         ) : (
           <CircleDot
             className={agentStatusIconClassName}
             size={16}
-            strokeWidth={2.2}
+            strokeWidth={1.5}
+            absoluteStrokeWidth
             aria-label={agentStatusLabel}
           />
         )}
@@ -172,11 +173,11 @@ export function IslandHeader({
             onOpenSettings(updateVersion ? "updates" : undefined);
           }}
         >
-          <Settings size={17} strokeWidth={1.8} aria-hidden="true" />
+          <Settings size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           {updateVersion && <span className="island-settings-button__dot" aria-hidden="true" />}
         </button>
         {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={withShortcut(t.messages.label(messageBadgeLabel), "qq")} aria-pressed={page === "qq"} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
-          <Bell size={17} strokeWidth={1.8} />
+          <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth />
           {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
         </button>}
         {onOpenTranslator && (
@@ -190,7 +191,7 @@ export function IslandHeader({
               onOpenTranslator();
             }}
           >
-            <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
+            <Languages size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           </button>
         )}
         <button
@@ -204,7 +205,7 @@ export function IslandHeader({
             onResetPosition();
           }}
         >
-          <RotateCcw size={16} strokeWidth={2} aria-hidden="true" />
+          <RotateCcw size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
         </button>
         <button
           className="icon-button"
@@ -215,7 +216,7 @@ export function IslandHeader({
             onMinimize();
           }}
         >
-          <Minus size={18} strokeWidth={2.2} />
+          <Minus size={16} strokeWidth={1.5} absoluteStrokeWidth />
         </button>
       </div>
     </header>

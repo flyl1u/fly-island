@@ -43,7 +43,7 @@ export function PluginPageButtons({
               onOpen(id);
             }}
           >
-            <Icon size={13} strokeWidth={2.3} aria-hidden="true" />
+            <Icon size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           </button>
         );
       })}

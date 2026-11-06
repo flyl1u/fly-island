@@ -14,7 +14,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: 0 10px;
-  color: rgba(225, 223, 233, 0.6);
+  color: var(--text-2);
   background: var(--color-white-a08);
   border-radius: var(--radius-md);
 }
@@ -22,7 +22,7 @@
 .plugin-list__search input {
   flex: 1 1 auto;
   min-width: 0;
-  color: rgba(241, 240, 246, 0.92);
+  color: var(--text-1);
   background: transparent;
   border: 0;
   outline: none;
@@ -37,7 +37,7 @@
   background: rgba(199, 80, 101, 0.18);
   border-radius: var(--radius-md);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
@@ -58,11 +58,11 @@
   display: grid;
   place-items: center;
   padding: var(--space-xl);
-  color: rgba(225, 223, 233, 0.42);
+  color: var(--text-3);
   border: 1px dashed rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-lg);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -76,9 +76,9 @@
   margin: 0;
   padding: 0 2px;
   overflow: hidden;
-  color: rgba(225, 223, 233, 0.5);
+  color: var(--text-3);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -114,7 +114,7 @@
 }
 
 .plugin-list__item--checked .plugin-list__title {
-  color: rgba(225, 223, 233, 0.5);
+  color: var(--text-3);
   text-decoration: line-through;
 }
 
@@ -161,11 +161,11 @@ button.plugin-list__main:hover .plugin-list__title {
 
 .plugin-list__title {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .plugin-list__subtitle {
-  color: rgba(225, 223, 233, 0.52);
+  color: var(--text-3);
   font-size: 11px;
   font-weight: 600;
 }
@@ -174,9 +174,9 @@ button.plugin-list__main:hover .plugin-list__title {
   flex: 0 1 auto;
   max-width: 30%;
   overflow: hidden;
-  color: rgba(225, 223, 233, 0.5);
+  color: var(--text-3);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -194,12 +194,12 @@ button.plugin-list__main:hover .plugin-list__title {
   place-items: center;
   padding: 0 6px;
   overflow: hidden;
-  color: rgba(225, 223, 233, 0.78);
+  color: var(--text-2);
   background: transparent;
   border: 0;
   border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;

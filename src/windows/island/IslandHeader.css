@@ -44,7 +44,7 @@
   align-items: center;
   gap: 9px;
   min-width: 0;
-  color: rgba(248, 246, 240, 0.92);
+  color: var(--text-1);
   font-size: 15px;
   font-weight: 700;
   line-height: 1;
@@ -56,7 +56,7 @@
 }
 
 .island--todo .island__title {
-  color: rgba(248, 246, 240, 0.92);
+  color: var(--text-1);
 }
 
 .island--todo .island__title svg {
@@ -125,8 +125,9 @@
 }
 
 .dot-button--clipboard {
-  background: var(--color-warning);
-  box-shadow: 0 0 12px rgba(255, 209, 102, 0.48);
+  /* Pink, not yellow: yellow means "needs attention" (agent status). */
+  background: #f4a7c4;
+  box-shadow: 0 0 12px rgba(244, 167, 196, 0.48);
 }
 
 .dot-button--shelf {
@@ -149,7 +150,7 @@
 .dot-button--clipboard.dot-button--active {
   box-shadow:
     0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(255, 209, 102, 0.56);
+    0 0 14px rgba(244, 167, 196, 0.56);
 }
 
 .dot-button--shelf.dot-button--active {
@@ -208,7 +209,7 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-circle);
-  background: #ffd166;
+  background: var(--color-accent);
   box-shadow: 0 0 0 2px var(--island-background-color);
   pointer-events: none;
 }

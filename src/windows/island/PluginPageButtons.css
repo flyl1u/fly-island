@@ -6,7 +6,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(241, 240, 246, 0.62);
+  color: var(--text-2);
   background: transparent;
   border: 0;
   border-radius: var(--radius-pill);

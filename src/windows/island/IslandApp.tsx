@@ -285,8 +285,8 @@ export function IslandApp() {
     () => withoutHiddenProviders(agentStatus, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
     [agentStatus, settings.agentShowClaudeCode, settings.agentShowCodex],
   );
-  const agentVisualState = useMemo(() => (settings.agentStatusEnabled ? getAgentVisualState(shownAgentStatus) : "idle"), [shownAgentStatus, settings.agentStatusEnabled]);
-  const agentStatusLabel = useMemo(() => getAgentStatusLabel(shownAgentStatus, t), [shownAgentStatus, t]);
+  const agentVisualState = useMemo(() => (settings.agentStatusEnabled ? getAgentVisualState(shownAgentStatus, activeAgentSessionCount) : "idle"), [shownAgentStatus, activeAgentSessionCount, settings.agentStatusEnabled]);
+  const agentStatusLabel = useMemo(() => getAgentStatusLabel(shownAgentStatus, t, activeAgentSessionCount), [shownAgentStatus, activeAgentSessionCount, t]);
 
   const { openTranslator, openTranslationPeek } = useIslandTranslation(
     settings.translationEnabled,

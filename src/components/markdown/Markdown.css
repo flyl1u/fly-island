@@ -1,6 +1,6 @@
 .markdown {
   min-width: 0;
-  color: rgba(248, 246, 240, 0.78);
+  color: var(--text-2);
   font-size: 12px;
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -20,7 +20,7 @@
 .markdown h6 {
   margin: 12px 0 4px;
   color: var(--color-text);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.35;
 }
 
@@ -52,7 +52,7 @@
 
 .markdown blockquote {
   padding-left: 10px;
-  color: rgba(248, 246, 240, 0.6);
+  color: var(--text-2);
   border-left: 2px solid var(--color-white-a16);
 }
 

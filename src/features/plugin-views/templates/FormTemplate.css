@@ -27,13 +27,13 @@
 
 .plugin-form__field > label {
   overflow: hidden;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .plugin-form__field small {
-  color: rgba(225, 223, 233, 0.5);
+  color: var(--text-3);
   font-size: 11px;
   overflow-wrap: anywhere;
 }
@@ -41,7 +41,7 @@
 .plugin-form__field :is(input, textarea, select) {
   min-width: 0;
   padding: 6px 8px;
-  color: rgba(241, 240, 246, 0.92);
+  color: var(--text-1);
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-md);
@@ -63,7 +63,7 @@
   padding: 6px 10px;
   border-radius: var(--radius-md);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
@@ -73,7 +73,7 @@
 }
 
 .plugin-form__message {
-  color: rgba(225, 223, 233, 0.72);
+  color: var(--text-2);
   background: var(--color-white-a08);
 }
 
@@ -84,7 +84,7 @@
   gap: var(--space-md);
   color: rgba(190, 240, 225, 0.85);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .plugin-form__submit {
@@ -97,7 +97,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;

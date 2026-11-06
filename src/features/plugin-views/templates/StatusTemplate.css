@@ -40,15 +40,15 @@
 .plugin-status__text strong {
   color: var(--plugin-status-tone);
   font-size: 34px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 
 .plugin-status__text span {
-  color: rgba(225, 223, 233, 0.72);
+  color: var(--text-2);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .plugin-status__bar {
@@ -70,9 +70,9 @@
 
 .plugin-status__caption {
   margin: 0;
-  color: rgba(225, 223, 233, 0.5);
+  color: var(--text-3);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-align: center;
   overflow-wrap: anywhere;
 }

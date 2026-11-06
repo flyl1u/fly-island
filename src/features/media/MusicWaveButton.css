@@ -74,5 +74,5 @@
 }
 
 .music-wave-button--idle {
-  color: rgba(248, 246, 240, 0.5);
+  color: var(--text-3);
 }

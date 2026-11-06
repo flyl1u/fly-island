@@ -58,7 +58,7 @@
   gap: var(--space-xl);
   color: var(--color-ink-muted);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -202,14 +202,9 @@
   background: transparent;
   border: 0;
   outline: none;
-  font-family:
-    "Aptos Display",
-    "Avenir Next",
-    "Segoe UI Variable",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -264,13 +259,9 @@
   border: 1px solid rgba(35, 31, 26, 0.1);
   border-radius: var(--radius-md);
   outline: none;
-  font-family:
-    "Microsoft YaHei",
-    "微软雅黑",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 28px;
   scrollbar-color: rgba(31, 27, 22, 0.18) transparent;
 }
@@ -301,5 +292,5 @@
   border: 1px dashed rgba(31, 27, 22, 0.18);
   border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }

@@ -57,8 +57,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   fontFamily: "system",
   glassIntensity: 72,
   opacity: 100,
-  collapsedScale: 0.96,
-  expandedScale: 1.05,
+  collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
+  expandedScale: 1,
   marginY: 0,
   topFilletRadius: 12,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
@@ -203,7 +203,7 @@ export function normalizeSettings(
     ? 0.82
     : settings?.collapsedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.collapsedScale;
   const expandedScale = hasPreviousDefaultScales
-    ? DEFAULT_SETTINGS.expandedScale
+    ? 1.05 // The default these settings moved to back then, not today's.
     : settings?.expandedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.expandedScale;
   const marginY = settings?.marginY ?? settings?.margin ?? DEFAULT_SETTINGS.marginY;
   const hasPreviousDefaultMargin =

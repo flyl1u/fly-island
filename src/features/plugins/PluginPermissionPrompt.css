@@ -11,11 +11,11 @@
   align-items: center;
   gap: 5px;
   padding: 0 10px 0 14px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--text-1);
   background: rgba(20, 22, 26, 0.97);
   border-radius: inherit;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .plugin-permission-prompt > svg {
@@ -35,12 +35,12 @@
   flex: 0 0 auto;
   height: 22px;
   padding: 0 8px;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--text-1);
   background: rgba(255, 255, 255, 0.1);
   border: 0;
   border-radius: var(--radius-pill);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }

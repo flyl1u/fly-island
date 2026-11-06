@@ -8,7 +8,7 @@
   align-items: center;
   gap: 8px;
   overflow: hidden;
-  color: rgba(var(--agent-ink), 0.5);
+  color: var(--text-3);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -26,7 +26,7 @@
 }
 
 .agent-usage__value {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .agent-usage__value--low {
@@ -52,6 +52,6 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: rgba(var(--agent-ink), 0.38);
-  font-weight: 500;
+  color: var(--text-3);
+  font-weight: 400;
 }

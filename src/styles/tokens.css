@@ -10,6 +10,17 @@
   --color-page-text: #f7f5ef;
   --color-surface-dark: #111112;
 
+  /* Island text: one hue (--color-text), four alphas. Contrast on the island #030303 /
+     an inner panel #1e1e22: 1 = 17.5 / 14.2, 2 = 8.7 / 7.8, 3 = 5.7 / 5.4, placeholder = 3.8 / 3.8.
+     The first three are for reading (>= 4.5:1); placeholder only for input hints. */
+  --text-1: rgba(248, 246, 240, 0.96);
+  --text-2: rgba(248, 246, 240, 0.68);
+  --text-3: rgba(248, 246, 240, 0.54);
+  --text-placeholder: rgba(248, 246, 240, 0.42);
+
+  /* One type family; weights 400 and 600, 700 only at 15px and up. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+
   /* Translucent white overlays and borders */
   --color-white-a04: rgba(255, 255, 255, 0.04);
   --color-white-a06: rgba(255, 255, 255, 0.06);

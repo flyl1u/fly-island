@@ -1,11 +1,5 @@
 :root {
-  font-family:
-    "Segoe UI",
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: var(--font-ui);
   color: var(--color-page-text);
   background: transparent;
   font-synthesis: none;

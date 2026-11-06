@@ -54,14 +54,18 @@ export function isAgentAttentionPhase(phase: AgentTaskPhase) {
   return phase === "failed" || phase === "stale";
 }
 
-export function getAgentVisualState(snapshot: AgentStatusSnapshot): AgentVisualState {
+/**
+ * `activeSessions`: sessions the session list still counts as working. The light turns blue
+ * for them too, so it never shows green beside the island's blue session count.
+ */
+export function getAgentVisualState(snapshot: AgentStatusSnapshot, activeSessions = 0): AgentVisualState {
   const statuses = listAgentStatuses(snapshot).map((entry) => entry.status);
 
   if (statuses.some((status) => isAgentAttentionPhase(status.phase))) {
     return "attention";
   }
 
-  if (statuses.some((status) => status.phase === "running")) {
+  if (activeSessions > 0 || statuses.some((status) => status.phase === "running")) {
     return "running";
   }
 
@@ -79,7 +83,8 @@ export function getAgentHooksNotice(state: AgentHooksState | null): AgentHooksNo
   return AGENT_PROVIDERS.every((provider) => state[provider] === "notInstalled") ? "install" : null;
 }
 
-export function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translations) {
+/** What the status light says (its aria-label); `activeSessions` running in the session list also count as running. */
+export function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translations, activeSessions = 0) {
   const entries = listAgentStatuses(snapshot);
   const attention = entries.find((entry) => isAgentAttentionPhase(entry.status.phase));
 
@@ -95,7 +100,7 @@ export function getAgentStatusLabel(snapshot: AgentStatusSnapshot, t: Translatio
     return t.agent.running(running.label);
   }
 
-  return t.agent.idleOrDone;
+  return activeSessions > 0 ? t.agent.running("AI Agent") : t.agent.idleOrDone;
 }
 
 export function getAgentPhaseLabel(phase: AgentTaskPhase, t: Translations) {

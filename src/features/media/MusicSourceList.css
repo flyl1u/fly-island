@@ -9,7 +9,7 @@
   font-size: 12px;
   font-weight: 600;
   text-align: center;
-  color: rgba(232, 237, 239, 0.5);
+  color: var(--text-3);
 }
 
 .music-source-list {
@@ -51,7 +51,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(238, 243, 244, 0.45);
+  color: var(--text-3);
   background: transparent;
   border: 0;
   border-radius: var(--radius-md);
@@ -60,7 +60,7 @@
 }
 
 .music-source-drag:hover {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-1);
 }
 
 .music-source-drag:active {
@@ -88,8 +88,8 @@
   flex: 1 1 auto;
   min-width: 0;
   font-size: 13px;
-  font-weight: 700;
-  color: rgba(245, 248, 249, 0.92);
+  font-weight: 600;
+  color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,7 +102,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(238, 243, 244, 0.55);
+  color: var(--text-3);
   background: transparent;
   border: 0;
   border-radius: var(--radius-md);

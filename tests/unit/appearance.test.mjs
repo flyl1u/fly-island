@@ -144,7 +144,7 @@ test("old default margins and scales move to the current defaults", () => {
   assert.equal(normalizeSettings({ marginY: 31, topEdgeLayoutVersion: 1 }).marginY, 31);
   const scaled = normalizeSettings({ collapsedScale: 0.81, expandedScale: 0.88 });
   assert.equal(scaled.collapsedScale, 0.82);
-  assert.equal(scaled.expandedScale, DEFAULT_SETTINGS.expandedScale);
+  assert.equal(scaled.expandedScale, 1.05);
 });
 
 test("normalizing saved settings keeps the first-launch defaults", () => {
@@ -157,6 +157,11 @@ test("first launch uses the maintainer's layout, while saved settings missing a 
   assert.equal(DEFAULT_SETTINGS.appearanceMode, "classic");
   assert.equal(DEFAULT_SETTINGS.islandBackgroundColor, "#030303");
   assert.equal(DEFAULT_SETTINGS.islandCornerRadius, 16);
+  assert.equal(DEFAULT_SETTINGS.collapsedScale, 1);
+  assert.equal(DEFAULT_SETTINGS.expandedScale, 1);
+  // Saved settings keep their own scale and radius; only a missing radius falls back.
+  assert.equal(normalizeSettings({ collapsedScale: 0.96, expandedScale: 1.05, islandCornerRadius: 16 }).expandedScale, 1.05);
+  assert.equal(normalizeSettings({ collapsedScale: 0.96, expandedScale: 1.05, islandCornerRadius: 16 }).islandCornerRadius, 16);
   assert.equal(DEFAULT_SETTINGS.expandTrigger, "hover");
   assert.equal(DEFAULT_SETTINGS.autoTuck, true);
   assert.equal(DEFAULT_SETTINGS.minimizeAction, "tuck");

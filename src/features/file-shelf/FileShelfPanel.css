@@ -8,7 +8,7 @@
   gap: var(--space-lg);
   overflow: hidden;
   padding: 16px 18px 18px;
-  color: rgba(241, 240, 246, 0.92);
+  color: var(--text-1);
   background:
     radial-gradient(circle at 88% 12%, rgba(110, 231, 200, 0.1), transparent 32%),
     linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
@@ -25,7 +25,7 @@
   margin: 0;
   color: rgba(255, 178, 188, 0.86);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
@@ -52,12 +52,12 @@
   display: grid;
   place-items: center;
   padding: 0 var(--space-lg);
-  color: rgba(225, 223, 233, 0.42);
+  color: var(--text-3);
   text-align: center;
   border: 1px dashed rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-lg);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   transition:
     color 140ms ease,
     background 140ms ease,
@@ -83,7 +83,7 @@
   border: 1.5px dashed rgba(110, 231, 200, 0.62);
   border-radius: var(--radius-lg);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   pointer-events: none;
   animation: shelfOverlayIn 140ms ease both;
 }

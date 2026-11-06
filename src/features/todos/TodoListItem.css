@@ -82,14 +82,9 @@
   background: transparent;
   border: 0;
   outline: none;
-  font-family:
-    "Aptos",
-    "Avenir Next",
-    "Segoe UI Variable",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -110,14 +105,9 @@
   border: 1px solid rgba(64, 125, 147, 0.32);
   border-radius: var(--radius-sm);
   outline: none;
-  font-family:
-    "Aptos",
-    "Avenir Next",
-    "Segoe UI Variable",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.35;
 }
 
@@ -137,7 +127,7 @@
   outline: none;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
   transition:
     background 140ms ease,

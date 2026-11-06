@@ -3,7 +3,7 @@
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  color: rgba(248, 246, 240, .78);
+  color: var(--text-2);
   background: var(--color-white-a08);
   border: 0;
   border-radius: var(--radius-circle);
@@ -82,7 +82,7 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-md);
-  color: rgba(241, 246, 250, .5);
+  color: var(--text-3);
   background: transparent;
 }
 
@@ -199,7 +199,7 @@
   min-height: 30px;
   flex: 0 0 auto;
   padding: 5px 12px;
-  color: rgba(248, 246, 240, .9);
+  color: var(--text-1);
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-pill);
@@ -232,7 +232,7 @@
   min-height: 0;
   height: 100%;
   padding: 16px;
-  color: rgba(241, 246, 250, .5);
+  color: var(--text-3);
   font-size: 12px;
   text-align: center;
 }
@@ -243,7 +243,7 @@
   width: 36px;
   height: 36px;
   flex: 0 0 auto;
-  color: rgba(241, 246, 250, .28);
+  color: var(--text-3);
 }
 
 .qq-panel__item {
@@ -290,14 +290,14 @@
 
 .qq-panel__item time {
   flex: 0 0 auto;
-  color: rgba(241, 246, 250, .55);
+  color: var(--text-3);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
 
 .qq-panel__item p {
   margin: 5px 0 0;
-  color: rgba(241, 246, 250, .65);
+  color: var(--text-2);
   font-size: 12px;
   line-height: 1.6;
   white-space: pre-wrap;

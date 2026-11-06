@@ -22,13 +22,13 @@
 }
 
 .lyrics-view__line--side {
-  color: rgba(232, 237, 239, 0.42);
+  color: var(--text-3);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .lyrics-view__line--current {
-  color: rgba(250, 252, 252, 0.98);
+  color: var(--text-1);
   font-size: 15px;
   font-weight: 700;
   animation: lyrics-line-in 220ms ease-out;

@@ -14,7 +14,7 @@
 .scheduled-list__date {
   color: #7453d6;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .scheduled-list__item {
@@ -33,7 +33,7 @@
   overflow-wrap: anywhere;
   color: var(--color-ink);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .scheduled-list__item > button {
@@ -72,5 +72,5 @@
 .todo-page-toggle__count {
   margin-left: 1px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
 }

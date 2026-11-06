@@ -15,7 +15,9 @@ export function getIslandStageStyle(
   const glassMaskOpacity = settings.opacity / 100;
 
   return ({
-    "--island-opacity": settings.opacity / 100,
+    // Classic opacity fades the fill only, so text and icons on it stay solid.
+    "--island-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
+    "--island-fill-alpha": settings.opacity / 100,
     "--island-scale": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,

@@ -116,7 +116,7 @@ async function runChecks() {
     const rowHeights = rows().map((row) => row.getBoundingClientRect().height);
     check(rowHeights[0] === 78 && rowHeights[1] < rowHeights[0] - 10 && rowHeights[2] < rowHeights[1], "展开行随回复行数变高（两行 78px，一行更矮，不留空行），折叠行最矮");
     const font = (selector: string) => { const style = getComputedStyle(first.querySelector(selector)!); return `${style.fontSize} ${style.fontWeight}`; };
-    check(font(".agent-session__title") === "14px 600" && font(".agent-session__message") === "13px 400" && font(".agent-session__meta") === "12px 500" && font(".agent-session__model") === "11px 500", "字号字重：标题 14/600，回复 13/400，状态 12/500，模型 11/500");
+    check(font(".agent-session__title") === "14px 600" && font(".agent-session__message") === "13px 400" && font(".agent-session__meta") === "12px 400" && font(".agent-session__model") === "11px 400", "字号字重：标题 14/600，回复 13/400，状态 12/400，模型 11/400");
     check(list.scrollHeight <= list.clientHeight, "设为 3 条时放下 3 个会话，不滚动");
     check(Math.abs(list.getBoundingClientRect().bottom - (fixture.getBoundingClientRect().bottom + 20)) < 1, "列表一直延伸到岛屿底边，底部不留空白条");
     const afterLayout = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
@@ -169,9 +169,9 @@ async function runChecks() {
     await render("both");
     await render("both");
     const titleColor = () => getComputedStyle(rows()[0].querySelector(".agent-session__title")!).color;
-    check(titleColor() === "rgba(241, 240, 246, 0.95)", "深色岛屿背景上标题是浅色字");
+    check(titleColor() === "rgba(241, 240, 246, 0.96)", "深色岛屿背景上标题是浅色字");
     fixture.style.setProperty("--island-ink-rgb", "24, 24, 30");
-    check(titleColor() === "rgba(24, 24, 30, 0.95)", "浅色岛屿背景上标题换成深色字");
+    check(titleColor() === "rgba(24, 24, 30, 0.96)", "浅色岛屿背景上标题换成深色字");
     fixture.style.removeProperty("--island-ink-rgb");
 
     const withActivity: AgentSessionSummary[] = [

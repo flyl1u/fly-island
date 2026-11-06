@@ -14,12 +14,12 @@
   align-items: center;
   gap: var(--space-xs);
   padding: 0 12px;
-  color: rgba(241, 240, 246, 0.9);
+  color: var(--text-1);
   background: var(--color-white-a10);
   border: 0;
   border-radius: var(--radius-pill);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
 }
 

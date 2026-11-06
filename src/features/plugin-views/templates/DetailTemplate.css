@@ -19,7 +19,7 @@
 .plugin-detail__title {
   margin: 0 0 var(--space-md);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .plugin-detail__error {
@@ -29,14 +29,14 @@
   background: rgba(199, 80, 101, 0.18);
   border-radius: var(--radius-md);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .plugin-detail__muted {
   margin: 0;
-  color: rgba(225, 223, 233, 0.46);
+  color: var(--text-3);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .plugin-detail__markdown {
@@ -47,7 +47,7 @@
 .plugin-detail__markdown :is(h3, h4, h5) {
   margin: 10px 0 4px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .plugin-detail__markdown h3 {
@@ -98,10 +98,10 @@
 }
 
 .plugin-detail__meta dt {
-  color: rgba(225, 223, 233, 0.52);
-  font-weight: 700;
+  color: var(--text-3);
+  font-weight: 600;
 }
 
 .plugin-detail__meta dd {
-  font-weight: 700;
+  font-weight: 600;
 }

@@ -22,7 +22,6 @@
 }
 
 .stage {
-  --island-opacity: 0.92;
   --island-scale: 1;
   --collapsed-island-width: 340px;
   --task-text-color: #ffffff;
@@ -45,7 +44,7 @@
 }
 
 .island--todo .icon-button {
-  color: rgba(248, 246, 240, 0.78);
+  color: var(--text-2);
   background: var(--color-white-a09);
 }
 
@@ -61,7 +60,7 @@
   place-items: center;
   flex: 0 0 auto;
   padding: 0;
-  color: rgba(248, 246, 240, 0.78);
+  color: var(--text-2);
   background: var(--color-white-a08);
   border: 0;
   border-radius: var(--radius-pill);
