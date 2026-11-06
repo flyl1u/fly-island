@@ -4,6 +4,9 @@ import type { MessageView } from "../../features/messages/Messages";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import { resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage, PluginPageId } from "./types";
+import { usePluginOpenView } from "./usePluginOpenView";
+
+const NO_PLUGIN_PAGES: readonly PluginPageId[] = [];
 
 type IslandFeatureOptions = {
   settings: IslandSettings;
@@ -83,6 +86,8 @@ export function useIslandFeatures({
     const next = resolveIslandPage(target, features);
     if (next) openIslandPage(next);
   }, [features, openIslandPage]);
+  // A plugin opening its own page right after the user used it (island.openView).
+  usePluginOpenView(pluginPages ?? NO_PLUGIN_PAGES, openEnabledPage);
 
   return { features, openEnabledPage };
 }

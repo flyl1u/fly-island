@@ -35,6 +35,8 @@ plugin.onCommand("view", async () => {
   await plugin.status.update("count", "2 items");
   await attempt("long", () => plugin.status.update("count", "x".repeat(25)));
   await attempt("unknown", () => plugin.views.update("nope", {}));
+  await plugin.openView("board");
+  await attempt("openUnknown", () => plugin.openView("nope"));
 });
 plugin.onCommand("optional", async () => {
   await attempt("before", () => plugin.call("media.nowPlaying"));
@@ -84,7 +86,7 @@ test("the mock host runs a plugin like the island does", async () => {
     const ready = await logged(host, "ready");
     assert.equal(ready.pluginId, "me.mock");
     assert.equal(ready.activationEvent, "onCommand:todos");
-    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status", "webview", "permissions"]);
+    assert.deepEqual(ready.capabilities, ["events", "notifications", "storage", "secrets", "views", "status", "webview", "permissions", "openView"]);
     assert.deepEqual(ready.settings, { repo: "a/b", extra: true });
     await host.waitFor((state) => state.subscriptions.has("todos.changed"));
 
@@ -117,6 +119,8 @@ test("the mock host runs a plugin like the island does", async () => {
     assert.deepEqual(await logged(host, "long"), { code: -32000, status: 400 });
     assert.equal(host.statuses.get("count").text, "2 items");
     assert.deepEqual(await logged(host, "unknown"), { code: -32000, status: 404 });
+    assert.deepEqual(await logged(host, "openUnknown"), { code: -32000, status: 404 });
+    assert.deepEqual(host.openedViews, ["board"]);
     host.viewAction("board", "check", { itemId: "a", checked: true });
     assert.deepEqual(await logged(host, "action"), { viewId: "board", actionId: "check", itemId: "a", checked: true });
 

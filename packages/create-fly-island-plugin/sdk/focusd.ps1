@@ -212,3 +212,9 @@ function Set-FocusdKeepAlive([string]$Reason = $null) {
     if ($Reason) { $value = $Reason }
     [void](Invoke-FocusdMethod 'host.keepAlive' @{ reason = $value })
 }
+
+# Opens one of the plugin's pages on the island. Works only right after the
+# user used the plugin (a command, a message button, a link or its page).
+function Open-FocusdView([string]$ViewId) {
+    [void](Invoke-FocusdMethod 'island.openView' @{ viewId = $ViewId })
+}

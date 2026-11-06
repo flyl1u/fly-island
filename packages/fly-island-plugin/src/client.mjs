@@ -136,6 +136,8 @@ export function createPlugin(options = {}) {
     notify: (title, options = {}) => call("island.notify", { title, ...options }),
     /** Keeps an on-demand plugin running with a reason shown on its page; null lets it stop when idle again. */
     keepAlive: (reason) => call("host.keepAlive", { reason }),
+    /** Opens one of the plugin's pages on the island; only right after the user used the plugin (capability openView). */
+    openView: (viewId) => call("island.openView", { viewId }),
     permissions: {
       /** Asks the user for optional permissions (manifest optionalPermissions); resolves to { granted, denied }. */
       request: (...names) =>

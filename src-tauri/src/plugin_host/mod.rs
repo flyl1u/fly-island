@@ -18,6 +18,7 @@
 //! - notify.rs: messages plugins show on the island (`island.notify`)
 //! - storage.rs: `storage.*` and `secrets.*`, and clearing a plugin's data
 //! - sensitive.rs: asking the user before a sensitive permission is first used
+//! - reveal.rs: a plugin opening its own page right after the user used it (`island.openView`)
 //! - uri.rs: `focusd://plugin/<id>/...` links (`onUri`)
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 //! - market.rs / signature.rs: the market index and its signatures
@@ -45,6 +46,7 @@ mod notify;
 mod optional;
 mod permissions;
 mod registry;
+mod reveal;
 mod revocations;
 mod rpc;
 mod runtime;

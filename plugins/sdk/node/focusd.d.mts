@@ -167,6 +167,8 @@ export interface Plugin {
   info(): Promise<InitializeParams>;
   notify(title: string, options?: NotifyOptions): Promise<{ muted: boolean }>;
   keepAlive(reason: string | null): Promise<unknown>;
+  /** Opens one of the plugin's pages on the island. Only within 15 s of the user using the plugin (command, message button, link, page action), else status 403. Needs the "openView" capability. */
+  openView(viewId: string): Promise<unknown>;
   permissions: {
     /** Asks the user for optional permissions (manifest optionalPermissions); needs the "permissions" capability. */
     request(...names: (Permission | Permission[])[]): Promise<{ granted: Permission[]; denied: Permission[] }>;

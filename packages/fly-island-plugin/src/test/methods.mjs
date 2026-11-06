@@ -11,7 +11,7 @@ const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024;
 const NOTIFY_PER_MINUTE = 6;
 /** Methods only plugins on API version 2 have; version 1 gets "unknown method". */
-const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "webview.postMessage", "storage.get", "storage.set", "storage.delete", "storage.keys", "permissions.request"]);
+const V2_OPEN = new Set(["events.subscribe", "events.unsubscribe", "host.keepAlive", "view.update", "view.patch", "status.update", "webview.postMessage", "storage.get", "storage.set", "storage.delete", "storage.keys", "permissions.request", "island.openView"]);
 
 /** permissions.request like plugin_host/optional.rs: the user (the mock's `deny` option) answers each name. */
 function requestPermissions(host, params) {
@@ -300,6 +300,12 @@ export function answer(host, method, params) {
       return {};
     }
     if (method === "permissions.request") return requestPermissions(host, params);
+    if (method === "island.openView") {
+      // The mock host has no user, so the "right after the user used it" rule is not checked.
+      if (!(host.manifest.contributes?.views ?? []).some((view) => view.id === params?.viewId)) fail(404, `"${params?.viewId}" is not one of the plugin's contributes.views.`);
+      host.openedViews.push(params.viewId);
+      return {};
+    }
     return viewMethod(host, method, params);
   }
   const permission = methodPermissions().get(method);

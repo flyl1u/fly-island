@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 打开自己的页面
+
+- 方法 `island.openView { viewId }`，能力 `openView`：用户刚用过插件（命令、提示按钮、链接、页面操作）后 15 秒内，插件可以展开岛屿并打开自己的页面，比如登录回调回来后显示结果。SDK：Node `plugin.openView(viewId)`，PowerShell `Open-FocusdView`；模拟宿主记在 `openedViews`。
+
 ## npm 包 0.2.0（2026-11-06）
 
 - `fly-island-plugin` 0.2.0：新增 `keygen`、`pack --sign`、`sign`、`keys rotate`（作者签名与换密钥，见 [作者签名](README.md#作者签名)），`publish` 改为指向插件市场 `TixXin/focusd-plugins`；SDK 带上 `onUri`、`view.patch` 增删条目、运行时申请的可选权限等这一批的 API 和类型。

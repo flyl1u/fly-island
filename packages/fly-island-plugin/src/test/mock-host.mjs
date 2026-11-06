@@ -75,6 +75,8 @@ export class MockHost extends EventEmitter {
     this.notifications = [];
     this.info = [];
     this.keepAlive = null;
+    /** View ids the plugin opened with island.openView, in order. */
+    this.openedViews = [];
     this.storage = new Map(Object.entries(options.storage ?? {}));
     this.secrets = new Map(Object.entries(options.secrets ?? {}));
     this.subscriptions = new Set();

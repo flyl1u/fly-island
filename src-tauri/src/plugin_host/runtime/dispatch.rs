@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::{current_entry, lock, set_keep_alive, Context};
 use crate::plugin_host::{
     events::{event_permission, MAX_SUBSCRIBE},
-    dev, feeds, notify, optional, sensitive, storage, views, webviews,
+    dev, feeds, notify, optional, reveal, sensitive, storage, views, webviews,
     permissions::{method_permission, CAPABILITIES},
     rpc,
     settings::parse_info,
@@ -70,6 +70,9 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         }
         "storage.get" | "storage.set" | "storage.delete" | "storage.keys" if context.spec.api_version >= 2 => {
             return answer(id, storage::answer_storage(&context.spec.data_dir, method, &params));
+        }
+        "island.openView" if context.spec.api_version >= 2 => {
+            return answer(id, reveal::open_view(&context.app, &context.spec.plugin_id, &params));
         }
         "permissions.request" if context.spec.api_version >= 2 => {
             let spec = &context.spec;

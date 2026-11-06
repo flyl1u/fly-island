@@ -117,6 +117,7 @@ fn activate(id: &str, reason: String) -> Result<(), String> {
 /// Sends the plugin `method` with `params`, starting it first if it starts on
 /// demand. A plugin that is starting gets the message once `initialize` went out.
 pub(super) fn deliver(id: &str, reason: String, method: &str, params: Value) -> Result<(), String> {
+    super::reveal::note_delivery(id, method);
     let host = host()?;
     let running = {
         let supervisors = lock(&host.supervisors);

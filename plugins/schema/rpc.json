@@ -9,7 +9,8 @@
     { "name": "views", "since": 2, "meaning": "contributes.views drawn on the island; view.update / view.patch and the view.action / view.submit / view.search / view.visible notifications." },
     { "name": "status", "since": 2, "meaning": "contributes.statusItems on the collapsed bar; status.update." },
     { "name": "webview", "since": 2, "meaning": "contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification." },
-    { "name": "permissions", "since": 2, "meaning": "manifest optionalPermissions and permissions.request; initialize.optionalPermissions." }
+    { "name": "permissions", "since": 2, "meaning": "manifest optionalPermissions and permissions.request; initialize.optionalPermissions." },
+    { "name": "openView", "since": 2, "meaning": "island.openView: a plugin opens its own page right after the user used it." }
   ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
@@ -143,6 +144,14 @@
       "since": 2,
       "params": { "reason": "string (1-100 chars) shown on the plugin page; null lets the plugin stop when idle again" },
       "result": "{}. Only matters for on-demand plugins (activationEvents), which otherwise stop after 60 s with nothing to do."
+    },
+    {
+      "name": "island.openView",
+      "permission": null,
+      "since": 2,
+      "capability": "openView",
+      "params": { "viewId": "one of the plugin's contributes.views" },
+      "result": "{}. Shows the island and opens that page. Only within 15 s of the user using the plugin (a command or its shortcut, an island.notify button, a focusd:// link, an action, form or webview message on one of its pages), else status 403; a view the plugin does not declare is status 404."
     },
     {
       "name": "todos.list",

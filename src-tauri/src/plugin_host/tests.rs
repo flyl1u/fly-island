@@ -98,7 +98,8 @@ fn the_host_matches_the_protocol_description() {
             "storage.delete",
             "storage.keys",
             "permissions.request",
-            "host.keepAlive"
+            "host.keepAlive",
+            "island.openView"
         ]
     );
     assert!(open.iter().all(|name| method_permission(name).is_none()));

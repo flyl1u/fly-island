@@ -58,6 +58,15 @@ export type PluginViewChanged =
   | { kind: "status"; pluginId: string; itemId: string; status: unknown }
   | { kind: "reset"; pluginId: string; status: PluginViewRunState };
 
+// 与 src-tauri/src/plugin_host/reveal.rs 中的 OPEN_VIEW_EVENT 对应。
+const PLUGIN_OPEN_VIEW_EVENT = "plugin-open-view";
+export type PluginOpenView = { pluginId: string; viewId: string };
+
+/** Calls `onOpen` when a plugin asks to open one of its pages (island.openView); resolves to the unlisten function. */
+export function listenPluginOpenView(onOpen: (request: PluginOpenView) => void) {
+  return listen<PluginOpenView>(PLUGIN_OPEN_VIEW_EVENT, (event) => onOpen(event.payload));
+}
+
 export function listPluginViews() {
   return invoke<PluginViewsSnapshot>("list_plugin_views");
 }

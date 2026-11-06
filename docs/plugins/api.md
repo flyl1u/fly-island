@@ -16,6 +16,7 @@
 | `status` | 2 | contributes.statusItems on the collapsed bar; status.update. |
 | `webview` | 2 | contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification. |
 | `permissions` | 2 | manifest optionalPermissions and permissions.request; initialize.optionalPermissions. |
+| `openView` | 2 | island.openView: a plugin opens its own page right after the user used it. |
 
 ## 权限
 
@@ -57,6 +58,7 @@
 | `storage.keys` | 无 | 2 | 无 | { keys } |
 | `permissions.request` | 无 | 2 | `permissions`：[name]: 1-14 names from the manifest's optionalPermissions (or permissions) | { granted: [name], denied: [name] }. The island asks the user about each optional permission not answered yet (allow, allow once, deny; at most 30 s each, no answer is a denial that is asked again next time). A remembered deny is not asked again until the user revokes it in the plugin's settings. A name the manifest does not list is status 400. |
 | `host.keepAlive` | 无 | 2 | `reason`：string (1-100 chars) shown on the plugin page; null lets the plugin stop when idle again | {}. Only matters for on-demand plugins (activationEvents), which otherwise stop after 60 s with nothing to do. |
+| `island.openView` | 无 | 2 | `viewId`：one of the plugin's contributes.views | {}. Shows the island and opens that page. Only within 15 s of the user using the plugin (a command or its shortcut, an island.notify button, a focusd:// link, an action, form or webview message on one of its pages), else status 403; a view the plugin does not declare is status 404. |
 | `todos.list` | `todos:read` | 1 | 无 | { date, todos, scheduled, activeTodoId } |
 | `todos.add` | `todos:write` | 1 | `title`：string<br>`date?`：YYYY-MM-DD; later than today goes to the 'later' list | The new todo. |
 | `todos.update` | `todos:write` | 1 | `id`：string<br>`title?`：string<br>`completed?`：boolean | The changed todo. |

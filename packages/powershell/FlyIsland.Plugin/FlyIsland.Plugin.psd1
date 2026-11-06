@@ -14,7 +14,7 @@
         'Register-FocusdEvent', 'Unregister-FocusdEvent', 'Show-FocusdNotification',
         'Update-FocusdView', 'Update-FocusdViewItems', 'Send-FocusdWebviewMessage', 'Update-FocusdStatus', 'Clear-FocusdStatus',
         'Get-FocusdStorage', 'Set-FocusdStorage', 'Remove-FocusdStorage',
-        'Get-FocusdSecret', 'Set-FocusdSecret', 'Remove-FocusdSecret', 'Set-FocusdKeepAlive', 'Request-FocusdPermission'
+        'Get-FocusdSecret', 'Set-FocusdSecret', 'Remove-FocusdSecret', 'Set-FocusdKeepAlive', 'Request-FocusdPermission', 'Open-FocusdView'
     )
     CmdletsToExport = @()
     VariablesToExport = @()
