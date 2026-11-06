@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
@@ -13,6 +14,7 @@ import { useScrollFade } from "./useScrollFade";
 import { sessionKey } from "./unseen";
 import { sessionLight } from "./sessionLight";
 import type { UnseenSessions } from "./useUnseenSessions";
+import type { SessionRemoval } from "./useHiddenSessions";
 import type { AlertedSession } from "./useAgentAlerts";
 import { AgentApprovalCard } from "./approvals/AgentApprovalCard";
 import { AgentQuestionCard } from "./approvals/AgentQuestionCard";
@@ -34,6 +36,7 @@ export function AgentSessionsPanel({
   showModel = true,
   showActivity = true,
   unseen,
+  removal,
   reveal,
   showUsage: usageOn = false,
   approvals,
@@ -47,6 +50,8 @@ export function AgentSessionsPanel({
   showActivity?: boolean;
   /** Finished sessions not looked at yet; they stand out until clicked. */
   unseen?: UnseenSessions;
+  /** Removing a session from the page (an x at a row's right end), and undoing it. */
+  removal?: SessionRemoval;
   /** The session an alert opened the page for; the page then shows it alone, like a card. */
   reveal?: AlertedSession | null;
   /** Claude's usage limits above the list. */
@@ -115,6 +120,13 @@ export function AgentSessionsPanel({
     );
   }
 
+  const removedNotice = removal?.removed && !reveal && (
+    <div className="agent-sessions__removed" role="status">
+      <span>{t.agent.sessions.removed}</span>
+      <button type="button" onClick={removal.undo}>{t.agent.sessions.undo}</button>
+    </div>
+  );
+
   if (sessions.length === 0) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
@@ -123,6 +135,7 @@ export function AgentSessionsPanel({
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
         </div>
+        {removedNotice}
       </section>
     );
   }
@@ -206,10 +219,23 @@ export function AgentSessionsPanel({
                   )}
                 </span>
               </button>
+              {/* Over the row's right end, shown only while the cursor is there: some sessions
+                  never report that they ended and would otherwise stay listed as running. */}
+              {removal && !reveal && (
+                <button
+                  className="agent-session__remove"
+                  type="button"
+                  aria-label={t.agent.sessions.remove(title)}
+                  onClick={() => removal.remove(session)}
+                >
+                  <X size={14} strokeWidth={2.4} aria-hidden="true" />
+                </button>
+              )}
             </li>
           );
         })}
       </ul>
+      {removedNotice}
     </section>
   );
 }

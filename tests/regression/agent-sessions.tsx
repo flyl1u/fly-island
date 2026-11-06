@@ -111,6 +111,30 @@ async function runChecks() {
     // The fly-island session has a window, so clicking it leaves no "not found" note behind.
     first.click();
     check(seenKeys.join() === "a", "点开会话就算看过");
+    const removedIds: string[] = [];
+    let undone = 0;
+    const renderRemoval = async (removed: AgentSessionSummary | null) => {
+      await act(async () => {
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both"
+          removal={{ remove: (session) => removedIds.push(session.sessionId), removed, undo: () => { undone += 1; } }} /></I18nProvider></StrictMode>);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+    };
+    await renderRemoval(null);
+    const removeButtons = [...document.querySelectorAll<HTMLButtonElement>(".agent-session__remove")];
+    const firstRow = rows()[0].getBoundingClientRect();
+    const firstRemove = removeButtons[0].getBoundingClientRect();
+    check(removeButtons.length === 3 && getComputedStyle(removeButtons[0]).opacity === "0"
+      && Math.abs(firstRemove.right - firstRow.right) < 1 && firstRemove.width < 50, "每行右端有一个平时看不见的移除按钮");
+    check(removeButtons[0].getAttribute("aria-label") === "从列表移除「设置界面完善思路」", "移除按钮的读屏文字说明移除哪个会话");
+    const focusesBefore = focusCalls.length;
+    removeButtons[2].click();
+    check(removedIds.join() === "c" && focusCalls.length === focusesBefore, "点 × 只移除这个会话，不去切换窗口");
+    await renderRemoval(sessions[2]);
+    const notice = document.querySelector<HTMLElement>(".agent-sessions__removed");
+    check(notice?.textContent?.startsWith("已从列表移除") && notice.getAttribute("role") === "status", "移除后显示「已从列表移除 · 撤销」");
+    notice!.querySelector("button")!.click();
+    check(undone === 1, "点撤销把会话放回去");
     await render("both");
     const panel = document.querySelector<HTMLElement>(".agent-sessions")!;
     check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");

@@ -1,3 +1,4 @@
+import type { SessionRemoval } from "../../features/agent-status/useHiddenSessions";
 import type { ReactNode } from "react";
 import { PluginViewPage } from "../../features/plugin-views/PluginViewPage";
 import { MessagesPanel } from "../../features/messages/Messages";
@@ -42,6 +43,7 @@ type IslandPagesProps = {
   clipboard: ReturnType<typeof useClipboardHistory>;
   agentSessions: AgentSessionSummary[];
   unseenAgentSessions: UnseenSessions;
+  agentRemoval: SessionRemoval;
   alertedSession: AgentAlerts["alertedSession"];
   agentApprovals: AgentAlerts["approvals"];
   pluginPages: ReturnType<typeof usePluginPages>;
@@ -65,6 +67,7 @@ export function IslandPages({
   clipboard,
   agentSessions,
   unseenAgentSessions,
+  agentRemoval,
   alertedSession,
   agentApprovals,
   pluginPages,
@@ -110,7 +113,7 @@ export function IslandPages({
           onClear={() => void clearClipboardHistoryItems()}
         />
       )}
-      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} showUsage={settings.agentShowUsage} approvals={agentApprovals} />}
+      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} approvals={agentApprovals} />}
       {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
       {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
       {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

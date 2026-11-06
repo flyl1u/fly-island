@@ -13,6 +13,7 @@ use std::{
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
 use super::notifications::{is_waiting, WaitingNotifications};
 use super::session_host::codex_host;
+use super::session_process::running_sessions;
 use super::session_records;
 use super::sessions::{
     codex_originator, codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
@@ -25,6 +26,8 @@ use super::title::{codex_thread_name, folder_title, user_prompt_in_record};
 pub(super) const ACTIVE_WINDOW_MS: i64 = 2 * 60 * 60 * 1000;
 /// The list shows at most this many sessions, running ones first.
 const MAX_SESSIONS: usize = 12;
+/// A session file quiet for less than this is never taken as ended for missing from the registry.
+const REGISTRY_GRACE_MS: i64 = 30_000;
 /// Session files and the Codex index are read this far from the end for the state, model, latest
 /// reply and thread names.
 const TAIL_BYTES: u64 = 256 * 1024;
@@ -48,6 +51,8 @@ pub(super) fn list_sessions(
     let mut sessions = Vec::new();
 
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
+    // Claude Code's registry of live sessions, read once and only if some session needs it.
+    let mut live_claude: Option<HashMap<String, u32>> = None;
     for (provider, path, modified) in recent_session_files(home_dir, now, window_ms) {
         // The phase is worked out here, because a working session turns stale, or stops
         // waiting, without its file changing.
@@ -56,7 +61,9 @@ pub(super) fn list_sessions(
         {
             let asked_user = is_waiting(waiting, &summary.session_id, summary.updated_at);
             let mid_turn = matches!(state, TurnState::Working | TurnState::AwaitingUser);
-            let ended = mid_turn && has_ended(app_dir, &summary.session_id);
+            let ended = mid_turn
+                && has_ended(app_dir, &summary.session_id)
+                    .unwrap_or_else(|| left_claude_registry(home_dir, &summary, now, &mut live_claude));
             summary.phase = if ended {
                 // Quit mid-turn (often while a question was open): nothing left to wait for.
                 "completed"
@@ -81,12 +88,34 @@ pub(super) fn list_sessions(
     sessions
 }
 
-/// Whether the session's agent has quit: its SessionEnd hook ran after the latest SessionStart,
-/// or the process its SessionStart recorded is gone (killed, or the terminal closed).
-fn has_ended(app_dir: Option<&Path>, session_id: &str) -> bool {
-    app_dir
-        .and_then(|dir| session_records::read(dir, session_id))
-        .is_some_and(|record| record.has_ended())
+/// Whether the session's agent has quit, from its SessionStart / SessionEnd record: SessionEnd
+/// ran after the latest start, or the recorded process is gone (killed, or the terminal closed).
+/// `None` when the record says nothing either way (no record, or no process recorded).
+fn has_ended(app_dir: Option<&Path>, session_id: &str) -> Option<bool> {
+    let record = app_dir.and_then(|dir| session_records::read(dir, session_id))?;
+    if record.has_ended() {
+        return Some(true);
+    }
+    record.live_pid().map(|_| false)
+}
+
+/// For a Claude Code session the hooks did not record: whether it has left Claude Code's own
+/// registry of running sessions (`~/.claude/sessions`). Sessions closed in the VS Code extension
+/// often skip SessionEnd, and would otherwise stay listed as running. Only once the file has been
+/// quiet for a while, as a session just started may not be registered yet, and only when this
+/// Claude Code keeps the registry at all.
+fn left_claude_registry(
+    home_dir: &Path,
+    summary: &AgentSessionSummary,
+    now: i64,
+    live: &mut Option<HashMap<String, u32>>,
+) -> bool {
+    summary.provider == "claudeCode"
+        && now - summary.updated_at > REGISTRY_GRACE_MS
+        && home_dir.join(".claude").join("sessions").is_dir()
+        && !live
+            .get_or_insert_with(|| running_sessions(home_dir))
+            .contains_key(&summary.session_id)
 }
 
 type SessionFile = (&'static str, PathBuf, i64);

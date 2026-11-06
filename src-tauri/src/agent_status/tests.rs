@@ -704,6 +704,54 @@ fn a_session_quit_mid_turn_is_no_longer_waiting() {
 }
 
 #[test]
+fn a_claude_session_gone_from_its_registry_is_no_longer_running() {
+    use super::session_scan::{list_sessions, ACTIVE_WINDOW_MS};
+    use std::time::{Duration, SystemTime};
+
+    let (home, _app) = temp_dirs();
+    let project = home.join(".claude").join("projects").join("E--p");
+    let write = |id: &str, quiet: Duration| {
+        let path = project.join(format!("{id}.jsonl"));
+        fs::write(
+            &path,
+            [
+                user_line(json!("改一下设置页")),
+                line(json!({"type": "assistant", "sessionId": id, "cwd": "E:\\p",
+                    "message": {"model": "claude-opus-5-5", "stop_reason": "tool_use", "content": [{"type": "tool_use", "name": "Bash"}]}})),
+            ]
+            .concat(),
+        )
+        .unwrap();
+        let file = fs::File::options().write(true).open(&path).unwrap();
+        file.set_modified(SystemTime::now() - quiet).unwrap();
+    };
+    write("closed", Duration::from_secs(60));
+    write("live", Duration::from_secs(60));
+    write("fresh", Duration::from_secs(1));
+    let phases = || {
+        let mut phases: Vec<(String, &str)> = list_sessions(&home, None, &WaitingNotifications::new(), ACTIVE_WINDOW_MS)
+            .into_iter()
+            .map(|session| (session.session_id, session.phase))
+            .collect();
+        phases.sort();
+        phases
+    };
+    // A Claude Code without the registry: nothing says any of them ended.
+    assert!(phases().iter().all(|(_, phase)| *phase == "running"));
+
+    let registry = home.join(".claude").join("sessions");
+    fs::create_dir_all(&registry).unwrap();
+    let pid = std::process::id();
+    let started = crate::win32::process_times::start_time(pid).unwrap();
+    fs::write(registry.join(format!("{pid}.json")), json!({"pid": pid, "sessionId": "live", "procStart": started.to_string()}).to_string()).unwrap();
+    // Registered and alive: running. Not registered: ended, unless its file changed just now.
+    assert_eq!(
+        phases(),
+        [("closed".to_string(), "completed"), ("fresh".to_string(), "running"), ("live".to_string(), "running")]
+    );
+}
+
+#[test]
 fn a_first_prompt_behind_a_huge_screenshot_names_the_session() {
     use super::session_scan::list_sessions;
 

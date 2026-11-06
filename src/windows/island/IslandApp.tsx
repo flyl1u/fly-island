@@ -93,7 +93,7 @@ export function IslandApp() {
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
   );
   const media = useMediaState(settings.musicEnabled);
-  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentSession, agentActivity } =
+  const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentActivity } =
     useIslandAgents(settings);
   const openAgentsPage = useCallback(() => openIslandPage("agents"), [openIslandPage]);
   const collapsedSlots = useCollapsedSlots({
@@ -351,6 +351,7 @@ export function IslandApp() {
           clipboard={clipboard}
           agentSessions={listedAgentSessions}
           unseenAgentSessions={unseenAgentSessions}
+          agentRemoval={agentRemoval}
           alertedSession={alertedSession}
           agentApprovals={agentApprovals}
           pluginPages={pluginPages}

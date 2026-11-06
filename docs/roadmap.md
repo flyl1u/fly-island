@@ -24,7 +24,6 @@
 | B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 已完成 | fly-island-lanes/4 | 并入 B6 第 1 期，见任务清单 1.5–1.9 |
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期的 Claude Code 实测已完成（钩子等待时终端不显示审批框，结论见任务清单的「实测记录」），Codex（0.4）待补测；第 1 期的自动弹出提醒和音效（1.1–1.4、1.10）已完成，市场音效包（1.11）待做 |
 | B11 | 会话四色状态：红（卡住等你：提问、审批、计划确认）、橙（回合结束在问你：标记或问句判断）、绿（在跑）、灰（做完了），会话环、Agent 页、弹出提醒、音效统一 | 进行中 | fly-island-c6 · lane 6 · 2026-11-07 | 任务清单 [agent-session-states.md](architecture/agent-session-states.md)；基于 B9 的回复状态标记和会话环 |
-| B12 | Agent 页手动移除会话：鼠标停在行右侧出现 ×，点了立即隐藏并弹出「已移除 · 撤销」；被隐藏的会话之后有新动静就自动回来；会话进程已退出却仍显示运行中或等待时自动算结束 | 进行中 | fly-island-7e · lane 5 · 2026-11-07 09:30 | 用户反馈：VS Code 扩展里的会话关掉时不触发 SessionEnd（Codex 是设计如此，要空闲 30 分钟），会一直挂着。只隐藏，不删会话记录 |
 | B14 | 远程服务器上的会话：文档给出 SSH `RemoteForward` 和 HTTP 钩子的配置示例；远程会话在列表里标主机名，点击不找本地窗口 | 进行中 | fly-island-7e · lane 5 · 2026-11-07 09:30 | 完整支持由用户的朋友做成插件；岛屿这边只提供接口和标记 |
 | B13 | 会话行的流光边框（Apple Intelligence 那种绕边框流动的光带），建议只给等你确认的行 | 待做 | | 用户决定以后考虑做成插件，现在不做。用 transform 旋转伪元素，减少动效时关闭 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
@@ -55,6 +54,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| B12 | Agent 页手动移除会话：鼠标停在行右端出现 ×，点了立即隐藏，「已从列表移除 · 撤销」留 5 秒；只隐藏不删记录，会话之后再写文件就自动回来。没有钩子记录的 Claude Code 会话，文件安静 30 秒且不在 `~/.claude/sessions` 的存活进程里，就算结束 | 提交 `feat(agent-status): remove a session from the Agent page by hand` |
 | D2 | 无障碍检查，结果见 [accessibility.md](investigations/accessibility.md)：控件名字齐全（设置窗口 162 个 Tab 停留点都有名字）；外观页滑块和待办保存按钮补了键盘焦点样式；减少动效时所有过渡归零，动画在各自文件里停掉或改成不动的形式，`reduced-motion.test.mjs` 防止新动画漏掉。岛屿本体的逐个 Tab 检查没做 | 提交 `fix(a11y): focus rings and calmer motion when Windows asks for less` |
 | D7 | 拆分 `scripts/file-size-allowlist.json` 里登记的超长文件：登记表已清空，所有文件都在行数上限内（`pnpm check:size` 通过）；最后几步是 QQ 邮箱、QQ 通知、剪贴板历史拆成目录模块 | `c5dbfd6`、`f2027f6`、`a9ed0ba` |
 | D6 | 待办重新导入前的备份 `todos.before-reimport-*.json` 每次启动只留最近 3 个。原文备份 `todos-migration-backup*.json` 不删：岛屿靠它们的 `sourceHash` 认出另一个构建的旧副本（`e52809b`），删了会重新出现切换构建覆盖待办的问题，而且它们很小 | 提交 `fix(todos): keep only the newest three reimport copies` |

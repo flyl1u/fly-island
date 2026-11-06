@@ -122,6 +122,81 @@
   transition-delay: 80ms;
 }
 
+/* The x sits over the row's right end and shows only while the cursor is on it (or it has the
+   keyboard focus); the row stays lit meanwhile. */
+.agent-sessions__list > li {
+  position: relative;
+}
+
+.agent-session__remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(var(--agent-ink), 0.8);
+  background: transparent;
+  border: 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.agent-session__remove svg {
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: rgba(var(--agent-ink), 0.14);
+}
+
+.agent-session__remove:hover,
+.agent-session__remove:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+
+.agent-session__remove:hover svg,
+.agent-session__remove:focus-visible svg {
+  color: #fff;
+  background: rgba(235, 87, 87, 0.9);
+}
+
+.agent-sessions__list > li:has(.agent-session__remove:hover) .agent-session {
+  background: rgba(var(--agent-ink), 0.07);
+  box-shadow: inset 0 0 0 1px rgba(var(--agent-ink), 0.09);
+}
+
+.agent-sessions__removed {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 2px 6px 24px;
+  padding: 6px 10px;
+  color: var(--text-2);
+  background: rgba(var(--agent-ink), 0.08);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+}
+
+.agent-sessions__removed button {
+  padding: 2px 8px;
+  color: var(--text-1);
+  background: rgba(var(--agent-ink), 0.12);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .agent-session:focus-visible {
   outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: -2px;

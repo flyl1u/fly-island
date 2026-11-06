@@ -142,6 +142,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-agent-approval`（`{ onIsland }`：Agent 的权限请求在岛上审批，默认关；开着时岛屿让审批端点挂起请求） | `features/agent-status/approvals/storage.ts` |
+| `focusd-island-agent-hidden-sessions`（`{ "<provider>:<sessionId>": updatedAt }`：在 Agent 页手动移除的会话，只隐藏不删记录；会话之后再写文件就自动回来，最多 200 条） | `features/agent-status/hiddenSessions.ts` |
 | 设置备份文件（`fly-island-settings-<日期时间>.json`，写到「下载」文件夹；`{ app: "fly-island", version: 1, exportedAt, keys }`，`keys` 只含 `features/settings-backup/backup.ts` 的 `BACKUP_KEYS`：不含待办、窗口位置、凭据和一次性请求；恢复时只写这些 key，未知 key 和非字符串值丢弃） | `features/settings-backup/` |
 | `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
