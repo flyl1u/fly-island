@@ -21,8 +21,6 @@ import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
-import { alertKindsOf, useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
-import { useAgentSounds } from "../../features/agent-status/sounds/useAgentSounds";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
@@ -48,6 +46,7 @@ import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { usePanelPreview } from "./usePanelPreview";
 import { useIslandFeatures } from "./useIslandFeatures";
+import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useFileShelfDrop } from "./useFileShelfDrop";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
@@ -180,16 +179,14 @@ export function IslandApp() {
     openIslandPage,
     pluginPages: pluginPages.pageIds,
   });
-  useAgentSounds(agentSessions, features.agents && !game.quiet);
-  const alertedSession = useAgentAlerts({
+  const alertedSession = useIslandAgentAlerts({
     sessions: agentSessions,
-    kinds: alertKindsOf(settings),
-    durationMs: settings.agentAlertSeconds * 1000,
-    canAlert: features.agents && !game.quiet,
-    isOpenOnAgents: mode === "expanded" && page === "agents",
-    isCollapsed: mode === "collapsed",
-    onOpen: () => openIslandPage("agents"),
-    onClose: collapseIsland,
+    settings,
+    enabled: features.agents && !game.quiet,
+    mode,
+    page,
+    openIslandPage,
+    collapseIsland,
   });
   const expandedIslandHeight = getExpandedIslandHeight({
     page,
