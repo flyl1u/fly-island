@@ -241,6 +241,10 @@ async function runChecks() {
     check(tuckDot() && !agentCount(), "AI Agent 关闭时保留收起灰点");
     await act(async () => { button().click(); });
     check(openedPage === "todo", "没有 Agent 标题时点击小岛仍打开原页面");
+    const cursorOf = (selector: string) => { const element = document.querySelector(selector); return element ? getComputedStyle(element).cursor : "missing"; };
+    check(cursorOf(".island--collapsed") === "default" && cursorOf(".island__open-button") === "default",
+      `收起的岛屿用普通鼠标样式（${cursorOf(".island--collapsed")} / ${cursorOf(".island__open-button")}）`);
+    check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

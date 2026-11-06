@@ -269,6 +269,7 @@ export function IslandApp() {
   const hoverTucked = useTuckedHoverOpen({
     opensPanel: settings.tuckedHoverAction === "expand" && !game.quiet,
     delayMs: settings.hoverExpandDelayMs,
+    isPeeking: isPeeking && mode === "collapsed",
     onPeek: peekIsland,
     onOpen: openCurrentPage,
     retractsAfterPeek,

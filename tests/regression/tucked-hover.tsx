@@ -30,6 +30,7 @@ function Harness() {
   enter = useTuckedHoverOpen({
     opensPanel,
     delayMs: HOVER_DELAY_MS,
+    isPeeking: navigation.isPeeking && navigation.mode === "collapsed",
     onPeek: navigation.peekIsland,
     onOpen: () => navigation.openIslandPage("todo"),
     retractsAfterPeek: navigation.retractsAfterPeek,
@@ -93,6 +94,20 @@ async function runChecks() {
     await hover(false);
     await wait(500);
     check(state() === "collapsed/tucked", "鼠标只是划过边缘时不展开面板，岛屿收回");
+
+    // Out and straight back in, before the island slid away: no tucked mouse-enter
+    // comes, and the panel still opens.
+    await arrive();
+    await wait(40);
+    await hover(false);
+    await wait(50);
+    check(state() === "collapsed/out", "快速移出时岛屿还没收回");
+    await hover(true);
+    await wait(400);
+    check(state() === "expanded/out", "快速移出再移入，鼠标停在岛屿上时面板照样展开");
+    await hover(false);
+    await wait(450);
+    check(state() === "collapsed/tucked", "之后移开，面板关闭、岛屿收回");
 
     // A draft in the panel keeps it open after the cursor leaves.
     await arrive();

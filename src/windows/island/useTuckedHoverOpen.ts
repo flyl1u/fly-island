@@ -11,6 +11,11 @@ type TuckedHoverOptions = {
   /** Hovering a tucked island opens its panel (setting "展开面板"); otherwise it only slides out. */
   opensPanel: boolean;
   delayMs: number;
+  /**
+   * The island is out only for the cursor (collapsed, sliding back once it leaves).
+   * A cursor that comes back before it has slid back opens the panel too.
+   */
+  isPeeking: boolean;
   /** Slides the island out under the cursor (useIslandNavigation's peekIsland). */
   onPeek: () => void;
   /** Opens the current page. */
@@ -22,9 +27,24 @@ type TuckedHoverOptions = {
 };
 
 /** What the cursor arriving on a tucked island does; returns the handler for that moment. */
-export function useTuckedHoverOpen({ opensPanel, delayMs, onPeek, onOpen, retractsAfterPeek, resumePeek }: TuckedHoverOptions) {
+export function useTuckedHoverOpen(options: TuckedHoverOptions) {
+  // The hover listener lives as long as the island; it reads the latest options.
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
   const hoveringRef = useRef(false);
   const timerRef = useRef<number | undefined>(undefined);
+
+  const scheduleOpen = useCallback(() => {
+    window.clearTimeout(timerRef.current);
+    if (!optionsRef.current.opensPanel) return;
+    timerRef.current = window.setTimeout(() => {
+      // The page sees the cursor before the native hover event arrives.
+      if (!hoveringRef.current && !document.querySelector(".island:hover")) return;
+      const { onOpen, retractsAfterPeek, resumePeek } = optionsRef.current;
+      onOpen();
+      if (retractsAfterPeek) resumePeek();
+    }, Math.max(optionsRef.current.delayMs, MIN_OPEN_DELAY_MS));
+  }, []);
 
   useEffect(() => {
     let didCancel = false;
@@ -32,6 +52,8 @@ export function useTuckedHoverOpen({ opensPanel, delayMs, onPeek, onOpen, retrac
     void listenIslandHover((inside) => {
       hoveringRef.current = inside;
       if (!inside) window.clearTimeout(timerRef.current);
+      // Back on an island that has not slid away yet: it will not get a tucked mouse-enter.
+      else if (optionsRef.current.isPeeking) scheduleOpen();
     })
       .then((next) => {
         if (didCancel) next();
@@ -43,17 +65,10 @@ export function useTuckedHoverOpen({ opensPanel, delayMs, onPeek, onOpen, retrac
       unlisten?.();
       window.clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [scheduleOpen]);
 
   return useCallback(() => {
-    onPeek();
-    if (!opensPanel) return;
-    window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      // The page sees the cursor before the native hover event arrives.
-      if (!hoveringRef.current && !document.querySelector(".island:hover")) return;
-      onOpen();
-      if (retractsAfterPeek) resumePeek();
-    }, Math.max(delayMs, MIN_OPEN_DELAY_MS));
-  }, [delayMs, onOpen, onPeek, opensPanel, resumePeek, retractsAfterPeek]);
+    optionsRef.current.onPeek();
+    scheduleOpen();
+  }, [scheduleOpen]);
 }

@@ -167,7 +167,8 @@
   width: var(--collapsed-island-width);
   height: 38px;
   border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
-  cursor: pointer;
+  /* The island is a surface, not a link: only its small buttons show the hand. */
+  cursor: default;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.22)),
     var(--island-background-color);
@@ -330,10 +331,6 @@
     opacity 260ms ease 160ms,
     transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 140ms,
     height 560ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.island--collapsed:active {
-  cursor: pointer;
 }
 
 .island__content {

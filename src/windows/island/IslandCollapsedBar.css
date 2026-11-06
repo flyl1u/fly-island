@@ -9,7 +9,7 @@
   color: inherit;
   background: transparent;
   border: 0;
-  cursor: pointer;
+  cursor: default;
   text-align: left;
   touch-action: none;
 }
