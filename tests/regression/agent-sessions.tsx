@@ -87,7 +87,9 @@ async function runChecks() {
     check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Medium", "显示模型和推理强度");
     check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
     const meta = (row: HTMLElement) => row.querySelector(".agent-session__meta")?.textContent;
-    check(meta(second) === "等待确认 · 14 分" && getComputedStyle(second.querySelector(".agent-session__dot")!).backgroundColor === "rgb(255, 159, 67)", "等待确认的会话显示橙色状态灯和状态文字");
+    const dot = (row: HTMLElement) => getComputedStyle(row.querySelector(".agent-session__dot")!).backgroundColor;
+    check(meta(second) === "等待确认 · 14 分" && dot(second) === "rgb(255, 69, 58)", "卡住等你的会话显示红色状态灯和状态文字");
+    check(dot(first) === "rgb(52, 199, 89)" && dot(third) === "rgb(142, 142, 147)", "在跑的会话绿色，做完的灰色");
     check(meta(first)?.startsWith("已运行 3 分 2") && !meta(first)?.includes("刚刚") && meta(third)?.endsWith("1 小时"), "运行中的会话显示已运行多久，结束的显示多久前更新");
     check(first.classList.contains("agent-session--full") && second.classList.contains("agent-session--full") && third.classList.contains("agent-session--compact"), "进行中的会话展开，已完成的折叠成一行");
     check(rows().every((row) => row.firstElementChild?.classList.contains("agent-session__dot") && row.querySelector(".agent-session__heading .agent-provider-icon") && row.querySelectorAll(".agent-session__dot").length === 1), "每行都以状态灯开头，图标都在标题行右侧");
@@ -239,6 +241,15 @@ async function runChecks() {
     check(second.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口", "找不到窗口时在该行提示");
     await act(async () => { third.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(third.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口，会话可能已经关掉了", "已结束的会话找不到窗口时说明可能已关掉");
+
+    // A finished reply that asks something: yellow and named, without the reply status marker.
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[2], sessionId: "d", replyAsks: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    const asking = rows()[0];
+    check(asking.classList.contains("agent-session--light-yourTurn") && dot(asking) === "rgb(255, 214, 10)" && meta(asking)?.startsWith("等你回复"),
+      `回复以问句结尾的会话显示黄色状态灯和「等你回复」：${meta(asking)}`);
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

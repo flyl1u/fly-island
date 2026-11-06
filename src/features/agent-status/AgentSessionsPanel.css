@@ -213,7 +213,7 @@
   height: 7px;
   flex: none;
   border-radius: var(--radius-pill);
-  background: var(--color-agent-idle);
+  background: var(--color-light-done);
 }
 
 /* Every row leads with its status dot, centred on the title line. */
@@ -221,28 +221,41 @@
   margin-top: 6.5px;
 }
 
-.agent-session--running .agent-session__dot {
-  background: var(--color-agent-running);
-  box-shadow: 0 0 8px rgba(61, 139, 255, 0.72);
+/*
+ * The dot shows the session's light (sessionLight.ts) in the session ring's colours: red stuck on
+ * you mid-turn (or failed), yellow your turn after it asked, green running, dim green silent
+ * mid-turn, grey done.
+ */
+.agent-session--light-working .agent-session__dot {
+  background: var(--color-light-working);
+  box-shadow: 0 0 8px rgba(52, 199, 89, 0.72);
 }
 
-/* Waiting for the user to allow a tool or answer a question. */
-.agent-session--waiting .agent-session__dot {
-  background: var(--color-agent-waiting);
-  box-shadow: 0 0 8px rgba(255, 159, 67, 0.72);
+.agent-session--light-stale .agent-session__dot {
+  background: rgba(52, 199, 89, 0.45);
 }
 
-.agent-session--waiting .agent-session__meta {
-  color: var(--color-agent-waiting);
+.agent-session--light-needs .agent-session__dot,
+.agent-session--light-failed .agent-session__dot {
+  background: var(--color-light-needs);
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.72);
 }
 
-.agent-session--failed .agent-session__dot,
-.agent-session--stale .agent-session__dot {
-  background: var(--color-warning);
+.agent-session--light-yourTurn .agent-session__dot {
+  background: var(--color-light-your-turn);
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.6);
 }
 
-.agent-session--failed .agent-session__meta,
-.agent-session--stale .agent-session__meta {
+.agent-session--light-needs .agent-session__meta,
+.agent-session--light-failed .agent-session__meta {
+  color: var(--color-light-needs);
+}
+
+.agent-session--light-yourTurn .agent-session__meta {
+  color: var(--color-light-your-turn);
+}
+
+.agent-session--light-stale .agent-session__meta {
   color: var(--color-warning);
 }
 
@@ -251,12 +264,9 @@
   color: var(--text-1);
 }
 
-.agent-session--unseen.agent-session--completed .agent-session__dot {
-  box-shadow: 0 0 8px rgba(53, 233, 133, 0.8);
-}
-
-.agent-session--unseen.agent-session--failed .agent-session__dot {
-  box-shadow: 0 0 8px var(--color-warning);
+.agent-session--unseen.agent-session--light-done .agent-session__dot {
+  background: rgba(var(--agent-ink), 0.85);
+  box-shadow: 0 0 6px rgba(var(--agent-ink), 0.6);
 }
 
 .agent-session__message {

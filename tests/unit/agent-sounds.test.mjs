@@ -74,4 +74,7 @@ test("a finished turn sounds by its reply status marker", () => {
   assert.equal(soundFor("running", "completed", ended("background")), null);
   assert.equal(soundFor("running", "completed", ended("done")), "complete");
   assert.equal(soundFor("running", "completed", ended(undefined)), "complete");
+  // Without a marker, a reply that asks something sounds as a question.
+  assert.equal(soundFor("running", "completed", { currentTool: null, replyAsks: true }), "question");
+  assert.equal(soundFor("running", "completed", { currentTool: null, replyMarker: "done", replyAsks: true }), "complete");
 });

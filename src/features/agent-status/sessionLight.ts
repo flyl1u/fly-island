@@ -1,4 +1,12 @@
-import type { AgentSessionSummary } from "./api";
+import type { AgentSessionSummary, ReplyMarker } from "./api";
+
+/**
+ * How a finished turn ended: the reply status marker when it carries one (B9), else "yourTurn"
+ * when the reply asks something (replyAsks). Null: done as far as the island can tell.
+ */
+export function replyEnding(session: Pick<AgentSessionSummary, "replyMarker" | "replyAsks">): ReplyMarker | null {
+  return session.replyMarker ?? (session.replyAsks ? "yourTurn" : null);
+}
 
 /**
  * A session's light, the one judgement every place showing agent state uses (roadmap B11,
@@ -26,15 +34,13 @@ export function sessionLight(session: LightFields): SessionLight {
       return "failed";
     default:
       // The reply status marker, when on, says which; otherwise whether the reply ends in a question.
-      switch (session.replyMarker) {
+      switch (replyEnding(session)) {
         case "yourTurn":
           return "yourTurn";
         case "background":
           return "working";
-        case "done":
-          return "done";
         default:
-          return session.replyAsks ? "yourTurn" : "done";
+          return "done";
       }
   }
 }

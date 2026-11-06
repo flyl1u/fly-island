@@ -37,11 +37,11 @@ const session = (sessionId: string, phase: AgentSessionSummary["phase"], title: 
   provider: "claudeCode", sessionId, cwd: "F:\\code\\fly-island", title, model: null, effort: null, phase,
   lastMessage: null, updatedAt: NOW - minutesAgo * 60_000, host: null, turnStartedAt: null,
 });
-// Needs you 1, your turn 1 (finished, not seen), running 2, done 1 (seen 2 minutes ago);
-// one finished an hour ago is left out.
+// Needs you 1, your turn 1 (finished, its reply asks something), running 2, done 1 (seen 2
+// minutes ago); one finished an hour ago is left out.
 const BUSY = [
   session("a1", "waiting", "修复登录"),
-  session("b2", "completed", "写测试"),
+  { ...session("b2", "completed", "写测试"), replyAsks: true },
   session("c3", "running", "重构"),
   session("d4", "running", "文档"),
   session("e5", "completed", "已看过", 2),

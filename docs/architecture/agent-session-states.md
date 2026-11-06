@@ -21,7 +21,7 @@
 
 - `waiting` 状态：Notification（`permission_prompt` 等）和 PermissionRequest 钩子，`notifications.rs`。
 - 回复状态标记 B9（`124be29`，fly-island-pr3）：`reply_marker.rs`，`AgentSessionSummary.replyMarker`。
-- 会话环（`6588bb1`）：`src/features/session-ring/ringCounts.ts`，五态 `needs / yourturn / working / stale / done`。没有标记时把「还没看过」当成等你回复。
+- 会话环（`6588bb1`）：`src/features/session-ring/ringCounts.ts`，五态 `needs / yourturn / working / stale / done`。原来没有标记时把「还没看过」当成等你回复，任务 3 改成看问句。
 
 ## 调研结论（2026-11-07）
 
@@ -36,9 +36,9 @@
 | 1 | Rust：没有标记时判断最后一段回复是否以问句结尾，新字段 `replyAsks`。必须在截断前、按原文判断（`lastMessage` 只保留开头 200 字，问句通常在末尾） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；规则：去掉 Markdown 后最后一个非空段落以 `？` / `?` 结尾，或以「吗」「呢」等疑问语气收尾；代码块不算 |
 | 2 | Rust：会话记录里最后一个工具调用是 AskUserQuestion / ExitPlanMode 且还没有结果时，回合中的会话算 `waiting`（不依赖钩子，补上计划确认） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；钩子没装或通知被覆盖时也能亮红 |
 | 3 | 前端：四态判断提成一个纯函数（agent-status 内），会话环改用它；没有标记时用 `replyAsks`，不再把「没看过」当成等你回复（没看过仍由 B1 高亮表示） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): one session light, with questions and plans waiting on the user`；单元测试 |
-| 4 | Agent 页：圆点四色，橙色会话显示「等你回复」 | 待做 | | |
-| 5 | 弹出提醒与音效：「会话完成」拆成「等你回复」和「做完了」两个开关，默认都开 | 待做 | | 旧设置的 `agentAlertCompleted` 两个都沿用 |
-| 6 | 回归页、`DESIGN.md`、`overview.md`、中英文文案 | 待做 | | |
+| 4 | Agent 页：圆点四色，橙色会话显示「等你回复」 | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): the Agent page and alerts use the session light`。圆点改用会话环的颜色（新变量 `--color-light-*`），运行由蓝改绿、完成由绿改灰、等待确认由橙改红；失败也是红 |
+| 5 | 弹出提醒与音效：「等你回复」和「做完了」分开 | 已完成 | fly-island-c6 · lane 6 | 同上。pr3 的 `3a22b52`（B6 1.12）已让带 ↩ 标记的回合按「等待确认」弹出、播提问音效，不新增开关；这里改成用 `replyEnding`，没有标记时问句结尾的回复也一样 |
+| 6 | 回归页、`DESIGN.md`、中英文文案 | 已完成 | fly-island-c6 · lane 6 | 同上。文案沿用已有的「等你回复」，不需要新文案 |
 | 7 | 回合结束后仍有后台任务 / 子 Agent 时保持绿色（没有标记时） | 待做 | | 需要先确认会话记录里能否看到还在跑的后台任务 |
 | 8 | 实测：问句判断的准确率（拿本机最近的会话记录统计） | 已完成 | fly-island-c6 · lane 6 | 见下方实测记录；补了「同意的话」「要的话」两种征询句 |
 

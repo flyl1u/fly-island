@@ -1,6 +1,7 @@
 import type { AgentSessionSummary, ReplyMarker } from "./api";
 import type { AgentAlertStarted, IslandSettings } from "../appearance/types";
 import { sessionKey } from "./unseen.ts";
+import { replyEnding } from "./sessionLight.ts";
 
 /** What a session just did that the island pops up for. */
 export type AgentAlertKind = "started" | "completed" | "failed" | "waiting";
@@ -40,7 +41,8 @@ export function alertKindsOf(settings: Pick<IslandSettings, "agentAlertStarted" 
  * not a turn that just ended. A turn starts when a finished session runs again; a stalled one
  * running again, or a waiting one answered, carries on the same turn.
  *
- * With the reply status marker on (roadmap B9), the last reply says how a finished turn ended: one
+ * How a finished turn ended (`replyEnding`: the reply status marker of roadmap B9, else whether the
+ * reply asks something) decides its alert: one
  * that waits for the user's reply alerts as waiting, one that waits for its own background task
  * does not alert (it goes on by itself), and a done one alerts as completed.
  */
@@ -67,7 +69,7 @@ export function detectAlerts(
   if (!previous) return [];
   return sessions.flatMap((session) => {
     const key = sessionKey(session);
-    const kind = alertKind(previous.phases.get(key), session.phase, session.replyMarker ?? null);
+    const kind = alertKind(previous.phases.get(key), session.phase, replyEnding(session));
     if (!kind) return [];
     const on = kind === "started"
       ? kinds.started === "everyTurn" || (kinds.started === "newSession" && !previous.worked.has(key))

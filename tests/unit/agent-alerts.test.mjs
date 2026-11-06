@@ -89,3 +89,15 @@ test("the reply status marker decides how a finished turn alerts", () => {
   const noWaiting = detectAlerts(phasesOf(before), after, { ...ALL, waiting: false });
   assert.deepEqual(noWaiting.map(({ session }) => session.sessionId), ["c"]);
 });
+
+test("without a marker, a finished reply that asks something alerts as waiting", () => {
+  const before = [session("a", "running"), session("b", "running"), session("c", "running")];
+  const after = [
+    { ...session("a", "completed"), replyAsks: true },
+    { ...session("b", "completed"), replyAsks: false },
+    // The marker wins over the guess.
+    { ...session("c", "completed"), replyAsks: true, replyMarker: "done" },
+  ];
+  const alerts = detectAlerts(phasesOf(before), after, ALL);
+  assert.deepEqual(alerts.map(({ kind, session }) => `${kind}:${session.sessionId}`), ["waiting:a", "completed:b", "completed:c"]);
+});

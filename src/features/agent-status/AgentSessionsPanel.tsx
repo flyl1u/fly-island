@@ -11,6 +11,7 @@ import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import { useScrollFade } from "./useScrollFade";
 import { sessionKey } from "./unseen";
+import { sessionLight } from "./sessionLight";
 import type { UnseenSessions } from "./useUnseenSessions";
 import type { AlertedSession } from "./useAgentAlerts";
 import { AgentApprovalCard } from "./approvals/AgentApprovalCard";
@@ -147,8 +148,9 @@ export function AgentSessionsPanel({
           // On an alert's card a finished or failed session shows its last reply (its summary).
           const cardReply = reveal && !active ? session.lastMessage : null;
           const full = Boolean(cardReply) || (active && Boolean(session.lastMessage || (showActivity && (session.lastPrompt || session.currentTool))));
-          // A finished turn whose reply ends on the "your turn" marker waits for an answer.
-          const yourTurn = session.phase === "completed" && session.replyMarker === "yourTurn";
+          // A finished turn that asked something (the marker, or a reply ending in a question).
+          const light = sessionLight(session);
+          const yourTurn = light === "yourTurn";
           const phaseLabel = yourTurn ? t.agent.sessions.yourTurn : getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
           const showPhase = yourTurn || (session.phase !== "running" && session.phase !== "completed");
@@ -166,7 +168,7 @@ export function AgentSessionsPanel({
           return (
             <li key={`${session.provider}:${session.sessionId}`} ref={reveal ? cardRef : undefined} data-session-key={sessionKey(session)}>
               <button
-                className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
+                className={`agent-session agent-session--${session.phase} agent-session--light-${light} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
                 type="button"
                 onClick={() => focus(session)}
               >
