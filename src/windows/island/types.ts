@@ -24,6 +24,11 @@ export type CollapsedSlots = {
    * the bar's open button, so phrasing content only (span, svg) and no buttons of its own.
    */
   center?: ReactNode;
+  /**
+   * In place of the agent icon before the session title the bar shows. Keep it about 16 px
+   * wide: the collapsed width reserves the icon's room, not this slot's.
+   */
+  agentIcon?: ReactNode;
   /** Small gauges such as rings, right before the rightmost item (tuck dot or session count). */
   gauges?: ReactNode;
   /** Shown instead of the blue running-session count while AI Agent is on; empty keeps the count. */

@@ -180,11 +180,11 @@ export function IslandCollapsedBar({
           {showCollapsedText && agentSession && (
             <span className="island__agent-session" key={`${agentSession.label}:${agentSession.title}`}>
               {showTitle && <span className="island__agent-session-separator">·</span>}
-              {agentSession.provider ? (
+              {slots.agentIcon ?? (agentSession.provider ? (
                 <AgentProviderIcon provider={agentSession.provider} size={16} />
               ) : (
                 <Bot className="island__agent-session-bot" size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-              )}
+              ))}
               <span className="island__agent-session-title">{agentSession.title}</span>
             </span>
           )}

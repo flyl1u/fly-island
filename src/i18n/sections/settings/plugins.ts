@@ -89,6 +89,7 @@ export type SettingsPluginsText = {
     infoWhenRunning: string;
     settings: string;
     noSettings: string;
+    pets: { unset: string; none: string; failed: string; loading: string; missing: (id: string) => string; app: string };
     actions: string;
     copy: string;
     copied: string;
@@ -290,6 +291,14 @@ export const zhCN: SettingsPluginsText = {
     infoWhenRunning: "插件运行后，会在这里显示它提供的信息。",
     settings: "设置",
     noSettings: "这个插件没有可以调整的设置。",
+    pets: {
+      unset: "未选择（显示眼睛）",
+      none: "没有找到宠物（显示眼睛）",
+      failed: "读不到宠物列表（显示眼睛）",
+      loading: "正在读取宠物…",
+      missing: (id) => `${id}（已找不到）`,
+      app: "本应用",
+    },
     actions: "操作",
     copy: "复制",
     copied: "已复制",
@@ -494,6 +503,14 @@ export const en: SettingsPluginsText = {
     infoWhenRunning: "Once the plugin runs, what it shares appears here.",
     settings: "Settings",
     noSettings: "This plugin has no settings.",
+    pets: {
+      unset: "None (shows the eyes)",
+      none: "No pets found (shows the eyes)",
+      failed: "Could not read the pets (shows the eyes)",
+      loading: "Reading pets…",
+      missing: (id) => `${id} (missing)`,
+      app: "this app",
+    },
     actions: "Actions",
     copy: "Copy",
     copied: "Copied",

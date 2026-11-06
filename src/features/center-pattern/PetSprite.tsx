@@ -12,11 +12,14 @@ type PetSpriteProps = {
   height?: number;
 };
 
+// Rows of the sheets already shown, so a pet that reappears does not blank until its image loads.
+const knownRows = new Map<string, number | null>();
+
 /** A Codex pet (petdex spritesheet) playing the row for `mood` with CSS `steps()`. */
 export function PetSprite({ src, mood, paused = false, height = 22 }: PetSpriteProps) {
   // Rows are only known once the image has loaded: 9, or 11 for a v2 atlas.
   const [sheet, setSheet] = useState<{ src: string; rows: number | null } | null>(null);
-  const rows = sheet?.src === src ? sheet.rows : null;
+  const rows = sheet?.src === src ? sheet.rows : (knownRows.get(src) ?? null);
   const layout = petSpriteLayout(mood, rows ?? 9);
   const style = {
     "--pet-height": `${height}px`,
@@ -46,7 +49,10 @@ export function PetSprite({ src, mood, paused = false, height = 22 }: PetSpriteP
           draggable={false}
           onLoad={(event) => {
             const image = event.currentTarget;
-            setSheet({ src, rows: petSheetRows(image.naturalWidth, image.naturalHeight) });
+            const loaded = petSheetRows(image.naturalWidth, image.naturalHeight);
+            // shortcut: keeps one entry per sheet URL for the window's life; pets are few.
+            knownRows.set(src, loaded);
+            setSheet({ src, rows: loaded });
           }}
         />
       </span>

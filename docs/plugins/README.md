@@ -28,7 +28,10 @@
 - 不能卸载；
 - 卡片上标着"内置"。
 
-目前只有一个内置插件：[本地接口](../local-api.md)（`focusd.local-api`）。
+目前的内置插件：
+
+- [本地接口](../local-api.md)（`focusd.local-api`）；
+- 中心图案（`focusd.center-pattern`，默认关闭）：折叠岛没有摘要文字时，在中间显示眼睛、小鸟、光点、小猫或一只 Codex Pets 宠物，宠物随 Agent 会话的状态变换动作。
 
 内置插件的清单写在 `src-tauri/src/plugin_host/builtin.rs` 中，`runtime.type` 为 `builtin`。插件目录里的第三方插件不能使用这个类型，也不能使用内置插件的 id。
 

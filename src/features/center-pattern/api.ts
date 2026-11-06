@@ -10,20 +10,26 @@ export type PetInfo = { id: string; displayName: string; source: PetSource };
 
 // Sheets are up to a few MB of base64, so each is fetched once per listing.
 const spritesheets = new Map<string, Promise<string>>();
+const failedSheets = new Set<string>();
 
 /** Lists the pets again; a pet changed on disk is read afresh after this. */
 export function listPets(): Promise<PetInfo[]> {
   spritesheets.clear();
+  failedSheets.clear();
   return invoke<PetInfo[]>("list_pets");
 }
 
-/** The pet's spritesheet as a `data:image/webp|png` URL; show it only through `<img>`. */
-export function getPetSpritesheet(id: string): Promise<string> {
+/**
+ * The pet's spritesheet as a `data:image/webp|png` URL; show it only through `<img>`. A failure
+ * is kept too (until listPets) unless `retryFailed` asks again.
+ */
+export function getPetSpritesheet(id: string, { retryFailed = false } = {}): Promise<string> {
+  if (retryFailed && failedSheets.delete(id)) spritesheets.delete(id);
   let sheet = spritesheets.get(id);
   if (!sheet) {
     sheet = invoke<string>("get_pet_spritesheet", { id });
     spritesheets.set(id, sheet);
-    sheet.catch(() => spritesheets.delete(id));
+    sheet.catch(() => failedSheets.add(id));
   }
   return sheet;
 }

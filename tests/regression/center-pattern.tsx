@@ -10,6 +10,9 @@ import { CenterPattern } from "../../src/features/center-pattern/CenterPattern";
 import { PetSprite } from "../../src/features/center-pattern/PetSprite";
 import { ISLAND_CURSOR_MOVED_EVENT } from "../../src/features/center-pattern/api";
 import { CENTER_PATTERNS, type CenterPatternId, type PetMood } from "../../src/features/center-pattern/patterns";
+import type { AgentActivity } from "../../src/features/center-pattern";
+import { useCollapsedSlots } from "../../src/windows/island/useCollapsedSlots";
+import "../../src/windows/island/IslandCollapsedBar.css";
 
 const MOODS: PetMood[] = ["idle", "running", "waiting", "failed", "done"];
 const params = new URLSearchParams(location.search);
@@ -19,8 +22,18 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const trackingCalls: boolean[] = [];
+// The built-in plugin as list_plugins reports it; the slot use cases swap its settings.
+let centerPlugin = { enabled: true, settings: { pattern: "eyes", pet: "" } as Record<string, unknown> };
 mockIPC((command, payload) => {
   if (command === "set_island_cursor_tracking") trackingCalls.push(Boolean((payload as { enabled?: boolean }).enabled));
+  if (command === "list_plugins")
+    return { plugins: [{ id: "focusd.center-pattern", builtin: true, status: "running", ...centerPlugin }] };
+  if (command === "get_pet_spritesheet") {
+    const id = (payload as { id: string }).id;
+    if (id === "synthetic") return SHEET;
+    if (petIds.includes(id)) return `${petsBase}/${id}/spritesheet.webp`;
+    throw new Error(`no pet ${id}`);
+  }
 }, { shouldMockEvents: true });
 mockWindows("main");
 
@@ -50,6 +63,15 @@ const fixture = document.getElementById("fixture")!;
 const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
+
+/** The collapsed bar's center slot as useCollapsedSlots fills it from the plugin's settings. */
+function Slot({ agents = [], paused = false }: { agents?: AgentActivity[]; paused?: boolean }) {
+  const slots = useCollapsedSlots({ paused, agents });
+  return <div className="cp-island cp-slot">
+    {slots.center ? <span className="island__center-slot">{slots.center}</span> : null}
+    {slots.agentIcon ? <span className="cp-agent-icon">{slots.agentIcon}</span> : null}
+  </div>;
+}
 
 function Gallery({ paused, mood }: { paused: boolean; mood?: PetMood }) {
   const pets = petIds.length ? petIds.map((id) => ({ id, src: `${petsBase}/${id}/spritesheet.webp` })) : [{ id: "synthetic", src: SHEET }];
@@ -110,6 +132,30 @@ async function runChecks() {
 
   const pass = (label: string) => messages.push(`PASS ${label}`);
   const expect = (ok: boolean, label: string) => { if (!ok) throw new Error(label); pass(label); };
+  const slotWith = async (settings: Record<string, unknown>, agents: AgentActivity[] = [], enabled = true) => {
+    centerPlugin = { enabled, settings };
+    await render(<Slot key={JSON.stringify([settings, agents, enabled])} agents={agents} />);
+  };
+
+  await slotWith({ pattern: "bird", pet: "" });
+  await waitFor(() => fixture.querySelector(".cp-slot [data-pattern=bird]") !== null, "槽位显示所选图案");
+  pass("插件启用时折叠栏中心槽位显示所选图案（小鸟）");
+  await slotWith({ pattern: "pet", pet: "synthetic" }, [{ phase: "waiting", updatedAt: Date.now() }]);
+  await waitFor(() => fixture.querySelector(".cp-slot .pet-sprite") !== null, "槽位显示宠物");
+  const slotPet = fixture.querySelector<HTMLElement>(".cp-slot .pet-sprite")!;
+  expect(slotPet.dataset.mood === "waiting" && Math.round(slotPet.getBoundingClientRect().height) === 28, "槽位宠物 28px 高，有会话等待确认时演 waiting");
+  const iconPet = fixture.querySelector<HTMLElement>(".cp-agent-icon .pet-sprite");
+  expect(iconPet?.dataset.mood === "waiting" && Math.round(iconPet.getBoundingClientRect().height) === 18 && iconPet.getBoundingClientRect().width < 17,
+    "选宠物时同时给出 Agent 标题前的图标：18px 高、不比 16px 图标占位宽多少，跟随 mood");
+  await slotWith({ pattern: "pet", pet: "gone" });
+  await waitFor(() => fixture.querySelector(".cp-slot [data-pattern=eyes]") !== null, "宠物读不到时退回眼睛");
+  pass("宠物不存在或读取失败时退回眼睛，不留空白");
+  expect(!fixture.querySelector(".cp-agent-icon"), "宠物读不到时不替换 Agent 图标");
+  await slotWith({ pattern: "bird", pet: "" });
+  await waitFor(() => fixture.querySelector(".cp-slot [data-pattern=bird]") !== null, "内置图案");
+  expect(!fixture.querySelector(".cp-agent-icon"), "内置 SVG 图案不替换 Agent 图标");
+  await slotWith({ pattern: "cat", pet: "" }, [], false);
+  expect(fixture.querySelector(".cp-slot")!.childElementCount === 0, "插件关闭时不填槽位");
 
   await render(<Gallery paused={false} />);
   for (const pattern of CENTER_PATTERNS) {
@@ -192,6 +238,9 @@ if (params.has("test")) {
     results.dataset.result = "failed";
   });
 } else {
-  void render(<Gallery paused={params.has("paused")} mood={(params.get("mood") as PetMood) || undefined} />);
-  results.textContent = `prefers-reduced-motion: ${reducedMotion ? "reduce" : "no-preference"}。?paused 暂停，?mood=running 只看一个状态。`;
+  if (params.has("slot")) {
+    centerPlugin.settings = { pattern: params.get("slot") || "eyes", pet: params.get("pet") ?? "synthetic" };
+    void render(<Slot agents={params.has("waiting") ? [{ phase: "waiting", updatedAt: Date.now() }] : []} />);
+  } else void render(<Gallery paused={params.has("paused")} mood={(params.get("mood") as PetMood) || undefined} />);
+  results.textContent = `prefers-reduced-motion: ${reducedMotion ? "reduce" : "no-preference"}。?paused 暂停，?mood=running 只看一个状态，?slot=pet&pet=<id> 看折叠栏槽位。`;
 }

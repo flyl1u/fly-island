@@ -3,6 +3,7 @@ import { ArrowLeft, Eraser, Play } from "lucide-react";
 import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
+import { CENTER_PATTERN_PET_KEY, CENTER_PATTERN_PLUGIN_ID, petChoices, usePetChoices } from "../center-pattern";
 import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo } from "./api";
 import type { PromptedPermission } from "./promptedPermissions";
 import { PluginCallLog } from "./PluginCallLog";
@@ -38,6 +39,8 @@ export function PluginDetailPage({
   const t = useTranslation();
   const { locale } = useLocale();
   const running = plugin.status === "running";
+  // The center pattern's pet is picked from the pets on disk, not typed in.
+  const pets = usePetChoices(plugin.id === CENTER_PATTERN_PLUGIN_ID);
   // Clearing takes a second click, like uninstalling.
   const [confirmingClear, setConfirmingClear] = useState(false);
 
@@ -87,8 +90,13 @@ export function PluginDetailPage({
               key={spec.key}
               spec={spec}
               value={plugin.settings[spec.key]}
-              disabled={busy}
+              disabled={busy || (pets === "loading" && spec.key === CENTER_PATTERN_PET_KEY)}
               onChange={(value) => onSettingChange(spec.key, value)}
+              choices={
+                pets && spec.key === CENTER_PATTERN_PET_KEY
+                  ? petChoices(pets, String(plugin.settings[spec.key] ?? ""), t.settings.plugins.detail.pets)
+                  : undefined
+              }
             />
           ))
         )}

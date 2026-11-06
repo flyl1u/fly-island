@@ -10,11 +10,14 @@ export function PluginSettingField({
   value,
   disabled,
   onChange,
+  choices,
 }: {
   spec: PluginSettingSpec;
   value: unknown;
   disabled: boolean;
   onChange: (value: unknown) => void;
+  /** Values a string setting is picked from, known only at run time (a built-in plugin's list). */
+  choices?: { value: string; label: string }[];
 }) {
   const { locale } = useLocale();
   const title = spec.title[locale];
@@ -49,6 +52,13 @@ export function PluginSettingField({
           </label>
         );
       case "string":
+        if (choices)
+          return (
+            <label className="plugin-setting__row">
+              <span>{title}</span>
+              <SelectControl value={text} options={choices} ariaLabel={title} disabled={disabled} onChange={onChange} />
+            </label>
+          );
         return (
           <label className="plugin-setting__row">
             <span>{title}</span>
