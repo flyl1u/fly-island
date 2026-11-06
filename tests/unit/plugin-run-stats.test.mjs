@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isIdleCpu, megabytes, memorySplit } from "../../src/features/plugins/runStats.ts";
+import { megabytes, memorySplit } from "../../src/features/plugins/runStats.ts";
 
 const MB = 1024 * 1024;
 const resources = (extra) => ({
@@ -24,9 +24,6 @@ test("the plugin's own share is never negative", () => {
   assert.deepEqual(memorySplit(resources({ memoryBytes: 60 * MB })).runtime, { name: "PowerShell", megabytes: "60.0", plugin: "0.0" });
 });
 
-test("CPU under 0.1 % reads as idle and megabytes keep one decimal", () => {
-  assert.equal(isIdleCpu(0), true);
-  assert.equal(isIdleCpu(0.04), true);
-  assert.equal(isIdleCpu(0.1), false);
+test("megabytes keep one decimal", () => {
   assert.equal(megabytes(1.25 * MB), "1.3");
 });

@@ -1,9 +1,6 @@
 // Numbers for a plugin card's run line: memory split into the runtime's share and the
-// plugin's own, CPU that reads "idle" when nothing runs, and the per-process detail.
+// plugin's own, and the per-process detail.
 import type { PluginResources } from "./api";
-
-/** Below this the CPU line says idle: a plugin waiting for messages uses ~0.0 %. */
-export const IDLE_CPU_PERCENT = 0.1;
 
 /** Display names of the runtimes baseline.rs measures, by process file name. */
 const RUNTIME_NAMES: Record<string, string> = {
@@ -32,8 +29,4 @@ export function memorySplit(resources: PluginResources): MemorySplit {
     total,
     runtime: { name, megabytes: megabytes(runtimeBytes), plugin: megabytes(resources.memoryBytes - runtimeBytes) },
   };
-}
-
-export function isIdleCpu(cpuPercent: number): boolean {
-  return cpuPercent < IDLE_CPU_PERCENT;
 }

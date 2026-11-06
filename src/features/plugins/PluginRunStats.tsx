@@ -1,8 +1,8 @@
 import { useTranslation } from "../../i18n";
 import type { PluginInfo } from "./api";
-import { isIdleCpu, megabytes, memorySplit } from "./runStats.ts";
+import { megabytes, memorySplit } from "./runStats.ts";
 
-/** How a plugin runs: on demand or not, its memory and CPU, start-up time, why it keeps running. */
+/** How a plugin runs: on demand or not, its own memory, why it keeps running. */
 export function PluginRunStats({ plugin }: { plugin: PluginInfo }) {
   const t = useTranslation();
   const labels = t.settings.plugins.run;
@@ -11,8 +11,6 @@ export function PluginRunStats({ plugin }: { plugin: PluginInfo }) {
   const facts = [
     // The card shows only the plugin's own share; the runtime's fixed share is in the hover detail.
     split ? labels.memory(split.runtime ? split.runtime.plugin : split.total) : null,
-    resources ? (isIdleCpu(resources.cpuPercent) ? labels.cpuIdle : labels.cpu(resources.cpuPercent.toFixed(1))) : null,
-    plugin.startupMs !== null ? labels.startup(plugin.startupMs) : null,
   ].filter((fact): fact is string => fact !== null);
   // Hover detail: each process of the plugin, then what the numbers mean.
   const detail = resources
