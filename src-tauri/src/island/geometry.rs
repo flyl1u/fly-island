@@ -76,7 +76,7 @@ pub(crate) fn apply_stage_geometry(
             * scale)
             .round() as i32;
     let top_inset = work_area_top_inset(monitor_position.y, monitor.work_area().position.y);
-    let centered_x = monitor_position.x + ((monitor_size.width as i32 - physical_width) / 2);
+    let centered_x = crate::dev_lane::stage_x(monitor_position.x, monitor_size.width as i32, physical_width);
     let normal_y = monitor_position.y + top_inset + physical_top_offset;
     let tucked_y = monitor_position.y + top_inset + tucked_top_offset;
     let mut positioned_state = state;

@@ -5,6 +5,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mainCheckout, targetDir } from "./build-dirs.mjs";
 
 /** src-tauri itself (including the scripts it embeds with include_str!) and plugins/ (keys, index and schema its tests read). */
 const RUST_INPUTS = ["src-tauri/", "plugins/"];
@@ -38,9 +39,9 @@ function main() {
     console.log("[land-check] no Rust inputs changed; skipping cargo test");
     return 0;
   }
-  // Lanes share the main checkout's build cache, as AGENTS.md suggests.
-  const mainCheckout = path.dirname(path.resolve(git(["rev-parse", "--git-common-dir"])));
-  const target = process.env.CARGO_TARGET_DIR ?? path.join(mainCheckout, "src-tauri", "target");
+  // Lanes share one build cache, apart from the user's `pnpm tauri dev` (build-dirs.mjs):
+  // sharing target/debug made each wait on and rebuild after the other.
+  const target = process.env.CARGO_TARGET_DIR ?? targetDir(mainCheckout(), "agents");
   return run("cargo test --manifest-path src-tauri/Cargo.toml", { CARGO_TARGET_DIR: target });
 }
 

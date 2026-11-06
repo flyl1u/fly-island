@@ -140,8 +140,11 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     if HOST.set(host).is_err() {
         return Err("The plugin host was initialized twice.".into());
     }
-    if let Err(error) = uri::register_scheme() {
-        eprintln!("could not register focusd:// links: {error}");
+    // A lane preview must not take focusd:// links away from the user's island.
+    if crate::dev_lane::lane().is_none() {
+        if let Err(error) = uri::register_scheme() {
+            eprintln!("could not register focusd:// links: {error}");
+        }
     }
     events::listen(app);
     keybindings::start();

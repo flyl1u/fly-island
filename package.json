@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lane": "node scripts/dev-lane.mjs",
+    "build:exe": "node scripts/build-exe.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "release": "node scripts/release/release.mjs",

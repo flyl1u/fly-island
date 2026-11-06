@@ -1,5 +1,6 @@
 mod agent_status;
 mod clipboard_history;
+mod dev_lane;
 mod file_shelf;
 mod island;
 mod local_api;
@@ -34,6 +35,10 @@ pub fn run() {
     let mut context = tauri::generate_context!();
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
         context.config_mut().identifier = identifier;
+    }
+    // `pnpm dev:lane`: a preview next to the user's island, with its own data.
+    if let Some(lane) = dev_lane::lane() {
+        context.config_mut().identifier = dev_lane::identifier(lane);
     }
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {

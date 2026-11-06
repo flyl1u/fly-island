@@ -191,6 +191,7 @@ pub(crate) fn clear_external_owner(owner: &str) {
 
 #[tauri::command]
 pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult, String> {
+    crate::dev_lane::refuse_in_preview("install the AI agents' status hooks")?;
     let app_dir = app
         .path()
         .app_data_dir()

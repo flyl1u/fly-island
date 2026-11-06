@@ -57,7 +57,8 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 |---|---|
 | 安装依赖 | `pnpm install` |
 | 前端开发服务器 | `pnpm dev` |
-| 桌面开发模式 | `pnpm tauri dev` |
+| 桌面开发模式 | `pnpm tauri dev`（主工作区，用户自己跑） |
+| lane 的预览岛屿 | `pnpm dev:lane`（在 lane 里运行，和用户的岛屿并排，见下文） |
 | 类型检查并构建前端 | `pnpm build` |
 | 前端单元测试 | `pnpm test`（即 `node --test "tests/**/*.test.mjs"`） |
 | 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
@@ -66,7 +67,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 浏览器回归页 | `pnpm test:regression [页面名中的词]`（自带 Vite，用无头 Chrome / Edge 跑 `tests/regression/` 下全部回归页并汇总结果，约 20 秒） |
 | 提交前总检查 | `pnpm check`（类型检查 + 回归页类型检查 + lint + 行数检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
-| 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle` |
+| 仅生成 release 可执行文件 | `pnpm build:exe`（在主工作区或任意 lane 运行，写到主工作区的 `src-tauri/target/release`，岛屿在运行也不用关） |
 | 完整打包 | `pnpm tauri build` |
 | 发布 | `pnpm release`（流程见 `docs/updater.md`） |
 | 合入 main（在 lane 里） | `pnpm mq:land`；主工作区快进 `pnpm mq:sync`；列出无人使用的 lane `pnpm mq:reconcile` |
@@ -131,7 +132,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 |---|---|
 | 仅文档 | 无需构建，确认 Markdown 可读 |
 | 前端逻辑、样式、依赖或脚本 | `pnpm check` + `pnpm build` |
-| Rust、Tauri 命令、窗口、托盘、注册表、Windows API、桌面配置 | `cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle` |
+| Rust、Tauri 命令、窗口、托盘、注册表、Windows API、桌面配置 | `cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm build:exe` |
 | 发布相关 | 完整的 `pnpm tauri build` |
 
 - 改动岛屿、消息、设置窗口等界面组件或它们的 `api.ts` 类型时，再运行 `pnpm test:regression`；回归页的 mock 落后于代码时页面会失败，要同步更新。其余界面或窗口行为在风险需要时用 `pnpm tauri dev` 手动检查。
@@ -150,11 +151,12 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
   - 开 lane：用 `claude -w <任务名>` 启动，或在会话里调用 EnterWorktree。本机 `.claude/settings.json` 的 WorktreeCreate 钩子会分配 `lane/N` 分支，并在 `../fly-island-lanes/N` 建 worktree（所有 lane 都在这一个文件夹里）。钩子不可用时，手动 `git worktree add ../fly-island-lanes/<N> -b lane/<N> origin/main`，`<N>` 选一个 `../fly-island-lanes/<N>` 文件夹和 `lane/<N>` 分支都不存在的编号：往已有文件夹里建会先建出分支、再因为文件夹非空而失败，留下没有 worktree 的孤儿分支。钩子建 lane 时会自动 `pnpm install`；手动建的 lane 自己运行一次。
   - 在 lane 里开发、验证、提交。一个功能单元完成并提交后，在 lane 里运行 `pnpm mq:land`，不用问用户。它会排队、rebase 到 `origin/main`、跑 `scripts/land-check.mjs`（`pnpm check`，改到 Rust 相关文件时再加 `cargo test`），然后推送 `origin/main`，并把主工作区快进到新的 `main`。land 成功后会自动把 fork 的 `dev` 推到同一提交（旧版本岛屿从 `dev` 读插件市场），结果记在 `.git/land-sync-dev.log`。
   - land 失败不算完成：rebase 冲突时它会自动中止，自己 `git fetch origin main && git rebase origin/main` 解决冲突后重新 land；检查失败就修好再 land。如果输出里已经有 `landed`，只是后面的快进主工作区失败了，不要重复 land，在主工作区运行 `pnpm mq:sync`。
-  - `release` 可执行文件构建（`pnpm tauri build --no-bundle`）和桌面快捷方式同步不在队列里，按"验证"一节在 land 之后另外做。
+  - `release` 可执行文件构建（`pnpm build:exe`）和桌面快捷方式同步不在队列里，按"验证"一节在 land 之后另外做。不要为了构建让用户关掉岛屿或 dev：`build:exe` 会把正在运行的 exe 改名挪开再写新的（Windows 允许改名正在运行的 exe），下次启动就是新版本。
+  - **预览**：用户想看某个 lane 的效果时，在那个 lane 里运行 `pnpm dev:lane`。它起一个和用户的岛屿并排的预览岛屿：Vite 端口 1500+lane 编号，应用标识 `com.focusd.island.lane-<N>`（数据、WebView 存储、单实例都和用户的分开，开始时没有数据），不注册 focusd:// 链接，不能改开机自启，也不能安装 AI 代理状态 hook。不要在 lane 里直接跑 `pnpm tauri dev`：它会先关掉所有正在运行的岛屿，还要占用主工作区的 1420 端口。只看界面时也可以起 lane 的 Vite，打开 `tests/regression/*.html`。
   - 主工作区留给用户（例如运行 `pnpm tauri dev`），必须保持干净并停在 `main` 上，代理不要在里面改文件或提交。`main` 只通过 land 移动：`.githooks/pre-push`（`git config core.hooksPath .githooks`）会拒绝直接推送 `main`，紧急情况才设 `CLAUDE_CODE_MERGE_QUEUE_EMERGENCY_PUSH=1`。
   - 别人留下的、没有会话在用的 lane（land 或会话开始时输出里带 `⚠`，`pnpm mq:reconcile` 会列出）：问用户怎么处理，不要删除。已经合入、没有未提交改动、而且建它的会话（钩子记下的 `claude.exe`）已经退出的 lane，会在下次 land 时自动删除；会话还开着的 lane 不会删。手动建的 lane 没有这条记录，不会被自动删除，用完自己 `git worktree remove` 并删除分支。Windows 上 `git worktree remove` 常常删不掉 `node_modules`，会留下只剩 `node_modules` 的 `../fly-island-lanes/<N>` 文件夹；钩子会把它当成还在用的 lane 而跳过这个编号，所以删完要确认文件夹已经不在，残留的用 `cmd /c rmdir /s /q <路径>` 删除（不会顺着 pnpm 的目录联接删到 store）。
   - 工具在 Windows 上的几个问题（找不到 `pwd` 导致各 lane 的队列锁互不相通、调用 `pnpm` 时没开 shell），以及清理 lane 时路径对不上、没有 `lsof`、删不掉 `node_modules` 导致 lane 越积越多，都由 `patches/claude-code-merge-queue@0.7.1.patch` 修复（`pnpm-workspace.yaml` 的 `patchedDependencies`）。升级这个包时要重新做补丁，并确认两个 lane 同时 land 会排队。
-  - Rust 构建默认共用主工作区的 `src-tauri/target`（`land-check.mjs` 会设置 `CARGO_TARGET_DIR`），多个会话同时构建时会互相等锁。
+  - Rust 构建分几个目录，都在主工作区的 `src-tauri/target` 下（`scripts/build-dirs.mjs`）：用户的 `pnpm tauri dev` 用 `debug`，release 用 `release`，代理的 `cargo test` / `clippy` 用 `agents`（`land-check.mjs` 已经这样设置；在 lane 里手动跑时设 `CARGO_TARGET_DIR=<主工作区>/src-tauri/target/agents`），lane 预览用 `lane-<N>`。代理不要用 `debug`，否则会和用户的 dev 互相等锁、互相触发重编译。
 - 修改前先查看 `git status --short`，不要覆盖用户已有改动。
 - 不要使用 `git reset --hard`、`git checkout --` 等破坏性命令，除非用户明确要求。
 - 如果工作区已有与当前任务无关的修改，保留它们，只处理本次任务相关的文件。
