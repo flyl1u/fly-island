@@ -3,7 +3,10 @@
 use serde_json::{json, Map, Value};
 use std::{fs, path::Path};
 
-use super::{write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, FOCUSD_AGENT_HOOK_SIGNATURE};
+use super::{
+    write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, AGENT_RUNNING_SESSION_ARG,
+    FOCUSD_AGENT_HOOK_SIGNATURE,
+};
 
 pub(super) fn install_claude_code_status_hooks(
     config_path: &Path,
@@ -59,7 +62,13 @@ pub(super) fn claude_code_hook_entries(
         );
     }
 
+    let mut session_start = claude_code_running_hook_entry(running_script_path);
+    if let Some(args) = session_start["hooks"][0]["args"].as_array_mut() {
+        args.push(Value::String(AGENT_RUNNING_SESSION_ARG.to_string()));
+    }
+
     vec![
+        ("SessionStart", session_start),
         (
             "UserPromptSubmit",
             claude_code_running_hook_entry(running_script_path),
@@ -227,5 +236,8 @@ mod tests {
             json!("permission_prompt|elicitation_dialog")
         );
         assert_eq!(last_arg("Stop"), Some(json!("completed")));
+        // Session start only records which Orca terminal holds the session.
+        assert_eq!(last_arg("SessionStart"), Some(json!("session")));
+        assert!(hooks["SessionStart"][0].get("matcher").is_none());
     }
 }

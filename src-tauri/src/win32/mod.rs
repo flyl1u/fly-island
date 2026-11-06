@@ -13,6 +13,7 @@ pub(crate) mod notification_state;
 pub(crate) mod ole;
 pub(crate) mod process;
 pub(crate) mod process_times;
+pub(crate) mod process_tree;
 pub(crate) mod registry;
 pub(crate) mod shell_hook;
 pub(crate) mod url_protocol;

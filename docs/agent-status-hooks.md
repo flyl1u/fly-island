@@ -79,6 +79,22 @@ focusd-agent-running.cmd claudeCode notification
 With `notification`, the script copies the hook's stdin JSON (session id, notification type, a short message such as "Claude needs your permission to use Bash"; no prompt) to `agent-claudeCode-notification.json` (temp file, then moved) and leaves the running marker alone. A session is listed as `waiting` while its transcript has not changed since such a notification (2 s slack): answering the prompt runs the tool and the transcript grows. A waiting session never turns stale. Codex has no equivalent hook, so Codex sessions are never `waiting`. Clearing Claude Code's status deletes the saved notification.
 
 The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It builds the hooks Install/Repair would write and compares: each agent is `current` when all of them are there as written, `outdated` when FocuSD hooks differ (for example installed before the `Notification` hook, or pointing at an old script folder), or `notInstalled`; it also reports whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
+
+## Switching to a Session's Window
+
+Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cwd`, `title`, and the optional `sessionId`). It tries, in order:
+
+1. **The session's own process.** Claude Code records each running session in `~/.claude/sessions/<pid>.json` (`pid`, `sessionId`, `procStart`). The recorded start time must match the live process, so a reused process id is ignored. From that process the island walks up the parent chain (`claude` → `pwsh` → terminal or editor) and focuses the nearest ancestor's window, skipping Explorer and other shell hosts. When that process owns several windows (an editor with several folders open), the folder or title picks one. This works in any terminal or editor, including ones whose window title says nothing about the session.
+2. **Orca's window**, when the session's Orca terminal is known (below) but its process is gone.
+3. **Title and folder matching**, as before: editors whose title names the folder, terminals whose title is the session title, then the Codex app.
+
+**Orca** runs many terminals in one window titled "Orca". After its window comes to the front, the island also runs `orca terminal switch --terminal <handle>` with the CLI shipped next to Orca (`<Orca.exe folder>\resources\bin\orca.exe`). The CLI is started without a console and not waited for, because it takes a few seconds to reach Orca. To know the handle, the Claude Code `SessionStart` hook runs:
+
+```text
+focusd-agent-running.cmd claudeCode session
+```
+
+Inside an Orca terminal (`ORCA_TERMINAL_HANDLE` is set), this saves the hook's stdin JSON (session id, transcript path, folder, start source; no prompt) as `agent-terminals/<handle>.json`. Elsewhere it does nothing. It prints nothing, because SessionStart output would be added to the conversation. Only file names of the form `term_<hex and ->` are used, and records older than 7 days are deleted when read. A session started before this hook was installed has no record until it is resumed, cleared or compacted; until then the island still brings Orca's window to the front. Codex sessions have neither the session registry nor this hook, so they keep title matching. Split panes in one Orca tab may share the tab: `terminal switch` brings the tab forward.
 ## Other Agents
 
 Tools other than Codex and Claude Code can report their status too, with no FocuSD release needed: either from a plugin with the `agent-status:write` permission (`agentStatus.report`), or over the local API (`PUT /v1/agent-status/{source}`). These reports are kept in memory only and appear in the snapshot's `others` list. They light the island and name their session in the same way as the built-in agents, using a robot icon instead of a brand icon. See [local-api.md](local-api.md#ai-agent-状态) and [plugins/README.md](plugins/README.md).

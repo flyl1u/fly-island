@@ -1,7 +1,8 @@
-//! Brings the editor or terminal window running an agent session to the front. Windows offers
-//! no link from a session to its window, so windows are matched by title: VS Code-style editors
-//! show the project folder ("file - fly-island - Visual Studio Code"), and Windows Terminal shows
-//! the title Claude Code sets for the session ("✳ 设置界面完善思路").
+//! Brings the editor or terminal window running an agent session to the front. A running Claude
+//! Code session leads to its process, and its nearest ancestor with a window is the one (see
+//! session_process.rs). Otherwise windows are matched by title: VS Code-style editors show the
+//! project folder ("file - fly-island - Visual Studio Code"), and Windows Terminal shows the title
+//! Claude Code sets for the session ("✳ 设置界面完善思路").
 
 use std::path::Path;
 
@@ -118,8 +119,46 @@ pub(super) fn app_name(image_path: &str) -> String {
         .unwrap_or_default()
 }
 
-/// Finds the window for the session and brings it to the front. False when none matched.
-pub(super) fn focus_session_window(hints: &SessionHints) -> bool {
+/// Programs whose windows are never a session's: the shell hosts everything started from the
+/// Start menu or Explorer, so the parent chain can reach it.
+const NOT_SESSION_HOSTS: &[&str] = &["explorer", "sihost", "svchost", "services", "winlogon"];
+
+/// Index of the window that shows a session, found from its process chain (`chain`: the session's
+/// process, then its ancestors). The nearest ancestor that owns a window wins; when it owns
+/// several (an editor with many folders open), the title or folder picks one, else the frontmost.
+/// `owners[i]` is the process id of `candidates[i]`.
+pub(super) fn window_of_process_chain(
+    candidates: &[WindowCandidate],
+    owners: &[u32],
+    chain: &[u32],
+    hints: &SessionHints,
+) -> Option<usize> {
+    chain.iter().find_map(|pid| {
+        let owned: Vec<usize> = (0..candidates.len())
+            .filter(|&index| owners.get(index) == Some(pid))
+            .filter(|&index| !NOT_SESSION_HOSTS.contains(&candidates[index].app.as_str()))
+            .collect();
+        let first = *owned.first()?;
+        let subset: Vec<WindowCandidate> = owned.iter().map(|&index| candidates[index].clone()).collect();
+        Some(best_window(&subset, hints).map_or(first, |index| owned[index]))
+    })
+}
+
+/// The window brought to the front: the process that owns it and its executable name.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct FocusedWindow {
+    pub(super) process_id: u32,
+    pub(super) app: String,
+}
+
+/// Finds the window for the session and brings it to the front: first from the session's process
+/// chain, then (`prefer_orca`, when the session's Orca terminal is known) Orca's window, then by
+/// title and folder. `None` when nothing matched.
+pub(super) fn focus_session_window(
+    hints: &SessionHints,
+    chain: &[u32],
+    prefer_orca: bool,
+) -> Option<FocusedWindow> {
     let mut windows = Vec::new();
     let mut candidates = Vec::new();
     let enumerated = win32::window::for_each_top_level_window(|window| {
@@ -141,15 +180,22 @@ pub(super) fn focus_session_window(hints: &SessionHints) -> bool {
         });
     });
     if enumerated.is_err() {
-        return false;
+        return None;
     }
 
-    let Some(&(window, process_id)) =
-        best_window(&candidates, hints).and_then(|index| windows.get(index))
-    else {
-        return false;
-    };
+    let owners: Vec<u32> = windows.iter().map(|&(_, process_id)| process_id).collect();
+    let index = window_of_process_chain(&candidates, &owners, chain, hints)
+        .or_else(|| {
+            prefer_orca
+                .then(|| candidates.iter().position(|candidate| candidate.app == super::orca::ORCA_APP))
+                .flatten()
+        })
+        .or_else(|| best_window(&candidates, hints))?;
+    let &(window, process_id) = windows.get(index)?;
     win32::window::allow_set_foreground_window(process_id);
     win32::window::restore_minimized(window);
-    win32::window::bring_to_foreground(window)
+    win32::window::bring_to_foreground(window).then(|| FocusedWindow {
+        process_id,
+        app: candidates[index].app.clone(),
+    })
 }

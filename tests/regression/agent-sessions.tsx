@@ -89,6 +89,7 @@ async function runChecks() {
     await act(async () => { first.click(); await Promise.resolve(); });
     const lastCall = focusCalls[focusCalls.length - 1];
     check(lastCall?.provider === "claudeCode" && lastCall?.title === "设置界面完善思路", "点击会话按项目和标题查找窗口");
+    check(typeof lastCall?.sessionId === "string" && lastCall.sessionId !== "", "点击会话时带上会话 ID，用来找它自己的窗口");
     check(!document.querySelector(".agent-session__not-found"), "找到窗口时不提示");
     await act(async () => { second.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(second.querySelector(".agent-session__not-found")?.textContent === "没找到对应的窗口", "找不到窗口时在该行提示");

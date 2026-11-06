@@ -29,7 +29,7 @@ export function AgentSessionsPanel({ sessions }: { sessions: AgentSessionSummary
 
   const focus = (session: AgentSessionSummary) => {
     setNotFoundId(null);
-    void focusAgentWindow(session.provider, session.cwd, session.title)
+    void focusAgentWindow(session.provider, session.cwd, session.title, session.sessionId)
       .then((found) => {
         if (!found) setNotFoundId(session.sessionId);
       })

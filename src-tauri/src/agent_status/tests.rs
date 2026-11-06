@@ -639,3 +639,91 @@ fn install_deletes_the_prompt_copies_older_versions_saved() {
     // The notification file is current and stays.
     assert!(app.join("agent-claudeCode-notification.json").exists());
 }
+
+#[test]
+fn the_session_process_chain_picks_its_nearest_window() {
+    use super::window_focus::{window_of_process_chain, SessionHints, WindowCandidate};
+
+    let window = |title: &str, app: &str| WindowCandidate { title: title.to_string(), app: app.to_string() };
+    // Orca's single window (pid 10), two VS Code windows (pid 20) and Explorer (pid 1).
+    let candidates = [
+        window("Orca", "orca"),
+        window("main.rs - other - Visual Studio Code", "code"),
+        window("lib.rs - fly-island - Visual Studio Code", "code"),
+        window("Program Manager", "explorer"),
+    ];
+    let owners = [10, 20, 20, 1];
+    let hints = SessionHints { folder: Some("fly-island"), title: Some("Commit 频率约束"), is_codex: false };
+
+    // claude (100) <- pwsh (90) <- Orca terminal host (11, no window) <- Orca (10).
+    assert_eq!(window_of_process_chain(&candidates, &owners, &[100, 90, 11, 10, 1], &hints), Some(0));
+    // An editor with several windows: the folder picks one.
+    assert_eq!(window_of_process_chain(&candidates, &owners, &[100, 90, 20], &hints), Some(2));
+    // The chain ends at Explorer: never focus the desktop.
+    assert_eq!(window_of_process_chain(&candidates, &owners, &[100, 1], &hints), None);
+    // No running process: nothing from the chain.
+    assert_eq!(window_of_process_chain(&candidates, &owners, &[], &hints), None);
+}
+
+#[test]
+fn a_session_registry_entry_names_its_process() {
+    use super::session_process::{session_process_from_entry, SessionProcess};
+
+    let entry = r#"{"pid":32816,"sessionId":"23e370fd","procStart":"134383392529449190","name":"fly-island-7e"}"#;
+    assert_eq!(
+        session_process_from_entry(entry, "23e370fd"),
+        Some(SessionProcess { pid: 32816, started: Some(134383392529449190) })
+    );
+    assert_eq!(session_process_from_entry(entry, "other"), None);
+    assert_eq!(
+        session_process_from_entry(r#"{"pid":5,"sessionId":"s"}"#, "s"),
+        Some(SessionProcess { pid: 5, started: None })
+    );
+    assert_eq!(session_process_from_entry(r#"{"pid":-1,"sessionId":"s"}"#, "s"), None);
+    assert_eq!(session_process_from_entry("not json", "s"), None);
+}
+
+#[test]
+fn the_ancestor_chain_stops_at_reused_ids_and_cycles() {
+    use super::session_process::ancestor_chain;
+    use std::collections::HashMap;
+
+    let parents = HashMap::from([(100, 90), (90, 11), (11, 10), (10, 1), (1, 0)]);
+    let started = |pid: u32| Some(u64::from(pid));
+    assert_eq!(ancestor_chain(100, &parents, started), vec![100, 90, 11, 10, 1]);
+
+    // 90's real parent exited and its id now belongs to a newer process.
+    let reused = |pid: u32| Some(if pid == 11 { 5_000 } else { u64::from(pid) });
+    assert_eq!(ancestor_chain(100, &parents, reused), vec![100, 90]);
+
+    let cycle = HashMap::from([(1, 2), (2, 1)]);
+    assert_eq!(ancestor_chain(1, &cycle, |_| None), vec![1, 2]);
+}
+
+#[test]
+fn orca_terminal_records_name_their_session() {
+    use super::orca::{cli_path, is_terminal_handle, record_session_id, terminal_handle_for, AGENT_TERMINALS_DIR_NAME};
+
+    assert!(is_terminal_handle("term_9654c145-f81e-4afa-a41a-0d939d819d24"));
+    assert!(!is_terminal_handle("term_"));
+    assert!(!is_terminal_handle("term_x & calc"));
+    assert!(!is_terminal_handle("9654c145"));
+    assert_eq!(record_session_id("\u{feff}{\"session_id\":\"s1\",\"source\":\"resume\"}"), Some("s1".to_string()));
+    assert_eq!(record_session_id("{\"session_id\":\"\"}"), None);
+    assert_eq!(
+        cli_path(Path::new(r"C:\Apps\orca\Orca.exe")),
+        PathBuf::from(r"C:\Apps\orca\resources\bin\orca.exe")
+    );
+
+    let app_dir = std::env::temp_dir().join(format!("focusd-orca-records-{}", std::process::id()));
+    let records = app_dir.join(AGENT_TERMINALS_DIR_NAME);
+    fs::create_dir_all(&records).unwrap();
+    fs::write(records.join("term_aaaa.json"), r#"{"session_id":"s1"}"#).unwrap();
+    fs::write(records.join("term_bbbb.json"), r#"{"session_id":"s2"}"#).unwrap();
+    // A file whose name is not a handle is never used, whatever it says.
+    fs::write(records.join("bad name.json"), r#"{"session_id":"s3"}"#).unwrap();
+    assert_eq!(terminal_handle_for(&app_dir, "s2"), Some("term_bbbb".to_string()));
+    assert_eq!(terminal_handle_for(&app_dir, "s3"), None);
+    assert_eq!(terminal_handle_for(&app_dir, "missing"), None);
+    let _ = fs::remove_dir_all(&app_dir);
+}

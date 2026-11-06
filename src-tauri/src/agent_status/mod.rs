@@ -6,6 +6,8 @@ mod external;
 mod hooks_state;
 mod markers;
 mod notifications;
+mod orca;
+mod session_process;
 mod snapshot;
 #[cfg(test)]
 mod tests;
@@ -47,6 +49,10 @@ pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
 /// Second argument of the running script for Claude Code's Notification hook: save the hook input
 /// instead of marking the session as running (see focusd-agent-running.cmd).
 pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
+/// Second argument of the running script for Claude Code's SessionStart hook: inside an Orca
+/// terminal, save the hook input (which names the session) under the terminal's handle; see
+/// orca.rs. Elsewhere it does nothing.
+pub(super) const AGENT_RUNNING_SESSION_ARG: &str = "session";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
     include_str!("hooks/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
@@ -238,24 +244,52 @@ pub async fn list_agent_sessions(
     .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
 }
 
-/// Brings the editor or terminal window of an agent session to the front, matched by the
-/// session's folder (`cwd`) and title. Returns false when no window matched.
+/// Brings the editor or terminal window of an agent session to the front: the window of the
+/// session's own process chain when it is running, else one matched by folder (`cwd`) and title.
+/// In Orca, also switches to the session's terminal tab. Returns false when no window matched.
+/// `session_id` is optional so older callers keep working.
 #[tauri::command]
 pub async fn focus_agent_window(
+    app: AppHandle,
     provider: String,
     cwd: Option<String>,
     title: Option<String>,
+    session_id: Option<String>,
 ) -> Result<bool, String> {
+    let app_dir = app.path().app_data_dir().ok();
     tauri::async_runtime::spawn_blocking(move || {
         let folder = cwd
             .as_deref()
             .and_then(|cwd| Path::new(cwd.trim_end_matches(['\\', '/'])).file_name())
             .map(|folder| folder.to_string_lossy().to_string());
-        window_focus::focus_session_window(&window_focus::SessionHints {
-            folder: folder.as_deref(),
-            title: title.as_deref(),
-            is_codex: provider == "codex",
-        })
+        let session_id = session_id.filter(|id| !id.is_empty());
+        let chain = match (&session_id, windows_home_dir()) {
+            (Some(id), Ok(home_dir)) if provider != "codex" => {
+                session_process::session_process_chain(&home_dir, id)
+            }
+            _ => Vec::new(),
+        };
+        let orca_handle = session_id
+            .as_deref()
+            .zip(app_dir.as_deref())
+            .and_then(|(id, app_dir)| orca::terminal_handle_for(app_dir, id));
+        let Some(focused) = window_focus::focus_session_window(
+            &window_focus::SessionHints {
+                folder: folder.as_deref(),
+                title: title.as_deref(),
+                is_codex: provider == "codex",
+            },
+            &chain,
+            orca_handle.is_some(),
+        ) else {
+            return false;
+        };
+        if let Some(handle) = orca_handle.filter(|_| focused.app == orca::ORCA_APP) {
+            if let Some(orca_exe) = crate::win32::process::image_path(focused.process_id) {
+                orca::switch_terminal(Path::new(&orca_exe), &handle);
+            }
+        }
+        true
     })
     .await
     .map_err(|error| format!("Failed to join the window focus task: {error}"))

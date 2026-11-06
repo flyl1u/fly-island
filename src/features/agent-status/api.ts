@@ -61,9 +61,12 @@ export function listAgentSessions() {
   return invoke<AgentSessionSummary[]>("list_agent_sessions");
 }
 
-/** Brings the editor or terminal window of a session to the front; false when none matched. */
-export function focusAgentWindow(provider: AgentProvider, cwd: string | null, title: string | null) {
-  return invoke<boolean>("focus_agent_window", { provider, cwd, title });
+/**
+ * Brings the editor or terminal window of a session to the front (in Orca, its terminal tab too);
+ * false when none matched. The session id finds a running session's own window.
+ */
+export function focusAgentWindow(provider: AgentProvider, cwd: string | null, title: string | null, sessionId: string) {
+  return invoke<boolean>("focus_agent_window", { provider, cwd, title, sessionId });
 }
 
 export function getAgentHooksState() {
