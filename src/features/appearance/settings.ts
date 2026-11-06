@@ -2,7 +2,7 @@ import { clamp } from "../../utils/number.ts";
 import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { AppearanceMode, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
 
-export const LIQUID_GLASS_ENABLED = false;
+export const LIQUID_GLASS_ENABLED = true;
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 export const DEFAULT_SETTINGS: IslandSettings = {
@@ -32,7 +32,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
 export const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
 export const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
 
-// Keep the saved preference intact while glass is temporarily unavailable.
+// Resolve availability without changing the saved appearance preference.
 export function getEffectiveAppearanceMode(mode: AppearanceMode): AppearanceMode {
   return mode === "liquidGlass" && !LIQUID_GLASS_ENABLED ? "classic" : mode;
 }
