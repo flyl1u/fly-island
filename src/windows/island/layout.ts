@@ -87,8 +87,8 @@ export function getTodoVisualRows(todoList: TodoItem[]) {
 // Expanded island around an empty Agent session list: island padding, header and gap (86),
 // then the panel's padding (10 + 10). Keep in step with AgentSessionsPanel.css.
 const AGENT_PAGE_CHROME_HEIGHT = 106;
-// One full session row (66, fixed in AgentSessionsPanel.css) plus the gap below it; folded
-// rows are shorter, so finished sessions leave room for more.
+// The tallest session row (66, a two-line reply in AgentSessionsPanel.css) plus the gap below
+// it; shorter replies and folded rows leave room for more sessions.
 const AGENT_ROW_PITCH = 68;
 const AGENT_ROW_GAP = 2;
 

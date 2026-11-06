@@ -1,7 +1,7 @@
 /* Same dark panel as the file shelf, so the two list pages read alike. Rows sit flat inside it
-   and are told apart by size and brightness, not by boxes of their own. The padding and row
-   heights are fixed because getAgentPageExpandedHeight (windows/island/layout.ts) sizes the
-   island to fit exactly the number of full rows set in Settings. */
+   and are told apart by size and brightness, not by boxes of their own. The padding and the
+   tallest row (a two-line reply, 66px) are fixed because getAgentPageExpandedHeight
+   (windows/island/layout.ts) sizes the island by them for the rows set in Settings. */
 .agent-sessions {
   height: 100%;
   display: flex;
@@ -53,7 +53,6 @@
   scrollbar-width: thin;
 }
 
-/* A full row is the same height with or without a reply, so N rows fill the page exactly. */
 .agent-session {
   width: 100%;
   display: flex;
@@ -68,8 +67,8 @@
   transition: background 140ms ease;
 }
 
+/* As tall as its reply: one line or two, never a blank line below a short one. */
 .agent-session--full {
-  height: 66px;
   align-items: flex-start;
 }
 

@@ -91,7 +91,7 @@ async function runChecks() {
     check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");
     const list = document.querySelector<HTMLElement>(".agent-sessions__list")!;
     const rowHeights = rows().map((row) => row.getBoundingClientRect().height);
-    check(rowHeights[0] === rowHeights[1] && rowHeights[2] < rowHeights[0] / 1.5, "展开行一样高，折叠行更矮");
+    check(rowHeights[0] === 66 && rowHeights[1] < rowHeights[0] - 10 && rowHeights[2] < rowHeights[1], "展开行随回复行数变高（两行 66px，一行更矮，不留空行），折叠行最矮");
     check(list.scrollHeight <= list.clientHeight, "设为 3 条时放下 3 个会话，不滚动");
     sizeFor(2);
     check(list.scrollHeight > list.clientHeight, "设为 2 条时第 3 个会话需要滚动");
