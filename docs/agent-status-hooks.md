@@ -80,6 +80,14 @@ With `notification`, the script copies the hook's stdin JSON (session id, notifi
 
 The settings page reads `get_agent_hooks_state` when it opens and after **安装/修复**. It builds the hooks Install/Repair would write and compares: each agent is `current` when all of them are there as written, `outdated` when FocuSD hooks differ (for example installed before the `Notification` hook, or pointing at an old script folder), or `notInstalled`; it also reports whether the app-data scripts differ from the ones in this build. When anything is outdated, the page shows a yellow notice and highlights **安装/修复**; nothing is changed until the user clicks it. Design notes: [architecture/agent-session-title.md](architecture/agent-session-title.md).
 
+## Session Source
+
+Each session on the Agent page can show where it runs, as the program's own icon and/or name before its status ("Orca · 正在运行 · 刚刚"). **Settings → AI Agent → 会话来源** picks icon and name (default), icon only (the name shows on hover), name only, or hidden (`agentHostDisplay` in `focusd-island-settings`).
+
+- **Claude Code**: `list_agent_sessions` finds each running session's process the same way window switching does (below) and takes the executable of the nearest ancestor with a window, skipping Explorer and other shell hosts (`agent_status/session_host.rs`). Known executables get a product name (Orca, Windows Terminal, VS Code, Cursor, ...); others show their file name. A host found once is remembered while the island runs, so a session keeps its source after it ends; sessions that ended before the island started have none. Windows are only enumerated when a running session has no known host yet.
+- **Codex**: the `originator` of the rollout's `session_meta` ("Codex Desktop", `codex_cli_rs`, `codex_vscode`) gives Codex, Codex CLI or VS Code, without an executable.
+- **Icons**: `get_agent_host_icon(path)` extracts the executable's large icon (`win32/icon.rs`) and returns a PNG data URL, cached per path. It only reads existing absolute `.exe` files. A host without an executable or icon gets a generic terminal, editor or app icon.
+
 ## Switching to a Session's Window
 
 Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cwd`, `title`, and the optional `sessionId`). It tries, in order:
