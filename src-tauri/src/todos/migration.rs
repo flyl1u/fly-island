@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashSet,
     fs,
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
@@ -75,12 +76,23 @@ pub(crate) enum Plan {
 
 /// What to do at start-up. An unreadable file, or one from a newer version,
 /// is never replaced: the caller falls back to localStorage instead.
-pub(crate) fn plan(existing: &Result<Option<TodosFile>, LoadError>, hash: &str, local_empty: bool) -> Result<Plan, String> {
+/// `already_imported`: this exact localStorage text was imported before (a
+/// migration backup has its hash), so todos.json holds everything since.
+pub(crate) fn plan(
+    existing: &Result<Option<TodosFile>, LoadError>,
+    hash: &str,
+    local_empty: bool,
+    already_imported: bool,
+) -> Result<Plan, String> {
     match existing {
         Ok(None) => Ok(Plan::Import { keep_old: false, reimport: false }),
         Ok(Some(file)) if file.migration.as_ref().is_some_and(|migration| migration.source_hash == hash) => Ok(Plan::UseFile),
         // Cleared localStorage (new WebView profile) must not empty the list.
         Ok(Some(_)) if local_empty => Ok(Plan::UseFile),
+        // Another build of the island (`pnpm tauri dev` next to the installed app) keeps
+        // its own localStorage with its own pre-migration text. Switching builds must not
+        // import that stale copy again over the todos made since.
+        Ok(Some(_)) if already_imported => Ok(Plan::UseFile),
         // localStorage changed after the migration: an older version was used.
         Ok(Some(_)) => Ok(Plan::Import { keep_old: true, reimport: true }),
         Err(LoadError::Damaged(_)) => Ok(Plan::Import { keep_old: true, reimport: false }),
@@ -109,7 +121,8 @@ pub(crate) fn migrate(
     let path = dir.join(FILE_NAME);
     let hash = source_hash(keys);
     let existing = store::load(&path);
-    let (keep_old, reimport) = match plan(&existing, &hash, keys.is_empty())? {
+    let already_imported = imported_hashes(dir).contains(&hash);
+    let (keep_old, reimport) = match plan(&existing, &hash, keys.is_empty(), already_imported)? {
         Plan::UseFile => {
             return match existing {
                 Ok(Some(file)) => Ok((file, None)),
@@ -141,6 +154,25 @@ pub(crate) fn migrate(
     };
     store::save(&path, &file)?;
     Ok((file, reimport.then_some("reimported")))
+}
+
+/// The source hashes of every localStorage text imported so far, from the
+/// migration backups (`todos-migration-backup*.json`), which are never deleted.
+fn imported_hashes(dir: &Path) -> HashSet<String> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return HashSet::new();
+    };
+    entries
+        .flatten()
+        .filter(|entry| {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            name.starts_with("todos-migration-backup") && name.ends_with(".json")
+        })
+        .filter_map(|entry| fs::read_to_string(entry.path()).ok())
+        .filter_map(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .filter_map(|backup| backup.get("sourceHash").and_then(serde_json::Value::as_str).map(str::to_string))
+        .collect()
 }
 
 /// Keeps the stored text before anything is written. The first backup keeps

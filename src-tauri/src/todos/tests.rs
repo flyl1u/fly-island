@@ -172,13 +172,15 @@ mod migration_tests {
         let mut file = sample();
         file.migration = Some(serde_json::from_value(json!({ "version": 1, "fromAppVersion": "x", "at": 0, "sourceHash": "h" })).expect("migration"));
         let some = Ok(Some(file));
-        assert_eq!(plan(&some, "h", false), Ok(Plan::UseFile));
-        assert_eq!(plan(&some, "other", true), Ok(Plan::UseFile));
-        assert_eq!(plan(&some, "other", false), Ok(Plan::Import { keep_old: true, reimport: true }));
-        assert_eq!(plan(&Ok(None), "h", true), Ok(Plan::Import { keep_old: false, reimport: false }));
-        assert_eq!(plan(&Err(LoadError::Damaged("x".into())), "h", false), Ok(Plan::Import { keep_old: true, reimport: false }));
-        assert!(plan(&Err(LoadError::Newer("x".into())), "h", false).is_err());
-        assert!(plan(&Err(LoadError::Unreadable("x".into())), "h", false).is_err());
+        assert_eq!(plan(&some, "h", false, false), Ok(Plan::UseFile));
+        assert_eq!(plan(&some, "other", true, false), Ok(Plan::UseFile));
+        assert_eq!(plan(&some, "other", false, false), Ok(Plan::Import { keep_old: true, reimport: true }));
+        // Text imported once before is a stale copy of another build, not a change.
+        assert_eq!(plan(&some, "other", false, true), Ok(Plan::UseFile));
+        assert_eq!(plan(&Ok(None), "h", true, false), Ok(Plan::Import { keep_old: false, reimport: false }));
+        assert_eq!(plan(&Err(LoadError::Damaged("x".into())), "h", false, false), Ok(Plan::Import { keep_old: true, reimport: false }));
+        assert!(plan(&Err(LoadError::Newer("x".into())), "h", false, false).is_err());
+        assert!(plan(&Err(LoadError::Unreadable("x".into())), "h", false, false).is_err());
     }
 
     #[test]
@@ -226,6 +228,26 @@ mod migration_tests {
         assert_eq!(fs::read_to_string(&copies[0]).expect("copy"), before);
         // The first backup keeps its name and text; the new text gets its own file.
         assert_eq!(backups(&dir, "todos-migration-backup"), 2);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn switching_between_two_builds_does_not_reimport_their_old_copies() {
+        let dir = temp_dir("migrate-two-builds");
+        // The installed app migrates its localStorage; then `pnpm tauri dev`, whose own
+        // localStorage still holds different pre-migration text, takes it once.
+        migrate(&dir, &keys("[release]"), data("one"), "0.3.0").expect("release");
+        migrate(&dir, &keys("[dev]"), data("two"), "0.3.0").expect("dev");
+        // Todos made since then must survive every later switch.
+        let path = dir.join("todos.json");
+        let mut file: crate::todos::model::TodosFile = serde_json::from_str(&fs::read_to_string(&path).expect("file")).expect("json");
+        file.data.todos[0].title = "made in dev".into();
+        fs::write(&path, serde_json::to_string(&file).expect("encode")).expect("write");
+        for build in ["[release]", "[dev]", "[release]"] {
+            let (now, notice) = migrate(&dir, &keys(build), data("stale"), "0.3.0").expect("switch");
+            assert_eq!((now.data.todos[0].title.as_str(), notice), ("made in dev", None));
+        }
+        assert_eq!(backups(&dir, "todos.before-reimport-"), 1);
         let _ = fs::remove_dir_all(dir);
     }
 
