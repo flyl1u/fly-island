@@ -1,0 +1,5 @@
+/* Installed / Market sits at the top of the page, left-aligned under the title. */
+.plugins-page__tabs {
+  display: flex;
+  margin-bottom: 4px;
+}

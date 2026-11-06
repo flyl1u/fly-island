@@ -21,7 +21,6 @@ export type SettingsCategoriesText = {
   agents: string;
   sounds: string;
   plugins: string;
-  market: string;
   about: string;
 };
 
@@ -45,8 +44,7 @@ export const zhCN: SettingsCategoriesText = {
   shelf: "文件中转",
   agents: "AI Agent",
   sounds: "声音",
-  plugins: "插件扩展",
-  market: "插件市场",
+  plugins: "插件",
   about: "关于",
 };
 
@@ -71,6 +69,5 @@ export const en: SettingsCategoriesText = {
   agents: "AI Agent",
   sounds: "Sounds",
   plugins: "Plugins",
-  market: "Plugin market",
   about: "About",
 };

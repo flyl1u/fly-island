@@ -25,10 +25,7 @@ import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminde
 import { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
 import { ProjectSettingsSection } from "../../features/updater/ProjectSettingsSection";
 import { UpdateSettingsSection } from "../../features/updater/UpdateSettingsSection";
-import { PluginMarketSection } from "../../features/plugins/PluginMarketSection";
-import { PluginsSettingsSection } from "../../features/plugins/PluginsSettingsSection";
-import { PluginDevSection } from "../../features/plugin-dev/PluginDevSection";
-import { PluginIslandPagesSection } from "../../features/plugin-views/PluginIslandPagesSection";
+import { PluginsSettingsPage, type PluginsTab } from "./PluginsSettingsPage";
 import { useLocale, useTranslation } from "../../i18n";
 import "./SettingsWindow.css";
 
@@ -118,15 +115,21 @@ export function SettingsWindow() {
   }, []);
 
   const openShortcuts = () => setCategory("shortcuts");
-  // The market's Manage opens that plugin on the plugins page; any other way there shows the list.
+  // The market's Manage opens that plugin under Installed; any other way there shows the list.
   const [managedPluginId, setManagedPluginId] = useState<string | null>(null);
+  const [pluginsTab, setPluginsTab] = useState<PluginsTab>("installed");
   const changeCategory = (next: typeof category) => {
     setManagedPluginId(null);
+    setPluginsTab("installed");
     setCategory(next);
+  };
+  const changePluginsTab = (tab: PluginsTab) => {
+    setManagedPluginId(null);
+    setPluginsTab(tab);
   };
   const managePlugin = (id: string) => {
     setManagedPluginId(id);
-    setCategory("plugins");
+    setPluginsTab("installed");
   };
 
   return (
@@ -169,13 +172,8 @@ export function SettingsWindow() {
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "sounds" && <SoundSettingsSection />}
         {category === "plugins" && (
-          <>
-            <PluginsSettingsSection key={managedPluginId ?? "list"} initialOpenId={managedPluginId} />
-            <PluginIslandPagesSection />
-            <PluginDevSection />
-          </>
+          <PluginsSettingsPage tab={pluginsTab} managedPluginId={managedPluginId} onTabChange={changePluginsTab} onManage={managePlugin} />
         )}
-        {category === "market" && <PluginMarketSection onManage={managePlugin} />}
         {category === "updates" && <UpdateSettingsSection />}
         {category === "about" && <ProjectSettingsSection onOpenUpdates={() => setCategory("updates")} />}
       </LayoutEditor>

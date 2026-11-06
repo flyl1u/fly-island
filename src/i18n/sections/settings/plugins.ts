@@ -57,6 +57,8 @@ export type SettingsPluginsText = {
     keepAlive: (reason: string) => string;
   };
   /** Settings > Plugins > Developer: development mode (P10). */
+  /** The switch at the top of the Plugins page. */
+  tabs: { label: string; installed: string; market: string };
   dev: {
     title: string;
     badge: string;
@@ -259,6 +261,7 @@ export const zhCN: SettingsPluginsText = {
     highCpu: "这个插件过去 1 分钟一直占用较多 CPU。",
     keepAlive: (reason: string) => `插件申请常驻：${reason}`,
   },
+  tabs: { label: "插件页面", installed: "已安装", market: "市场" },
   dev: {
     title: "开发者",
     badge: "开发中",
@@ -348,7 +351,7 @@ export const zhCN: SettingsPluginsText = {
     updateAnyway: "仍然更新",
     confirmKeyChange: "确认更新",
     cancel: "取消",
-    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件扩展 → 更新 中取消。`,
+    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件 → 已安装 → 更新 中取消。`,
     revoked: "已下架",
     repository: "源码仓库",
     reportIssue: "报告问题",
@@ -471,6 +474,7 @@ export const en: SettingsPluginsText = {
     highCpu: "This plugin has used a lot of CPU for the last minute.",
     keepAlive: (reason: string) => `Keeps running: ${reason}`,
   },
+  tabs: { label: "Plugin pages", installed: "Installed", market: "Market" },
   dev: {
     title: "Developer",
     badge: "In development",
