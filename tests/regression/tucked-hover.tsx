@@ -14,7 +14,7 @@ Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 mockIPC(() => null, { shouldMockEvents: true });
 
 const RETRACT_MS = 120;
-const HOVER_DELAY_MS = 0; // The user's setting; opening still waits at least 150 ms.
+const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320 ms slide-out.
 
 type Island = ReturnType<typeof useIslandNavigation>;
 let island: Island;
@@ -69,7 +69,7 @@ async function runChecks() {
     // "只露出岛屿": a minimized island only slides out, and back once the cursor leaves.
     await act(async () => island.minimizeToEdge());
     await arrive();
-    await wait(250);
+    await wait(400);
     check(state() === "collapsed/out" && island.isPeeking, "只露出岛屿：鼠标移上去只露出岛屿，不展开面板");
     await hover(false);
     await wait(450);
@@ -79,7 +79,9 @@ async function runChecks() {
     await act(async () => setOpensPanel(true));
     await arrive();
     check(state() === "collapsed/out", "展开面板：先立即露出岛屿");
-    await wait(250);
+    await wait(200);
+    check(state() === "collapsed/out", "展开面板：露出的动画结束前不展开面板");
+    await wait(400);
     check(state() === "expanded/out" && island.isPeeking, "展开面板：停留后展开面板，仍记得要收回");
     await hover(false);
     await wait(450);
@@ -94,7 +96,7 @@ async function runChecks() {
 
     // A draft in the panel keeps it open after the cursor leaves.
     await arrive();
-    await wait(250);
+    await wait(400);
     await act(async () => document.querySelector<HTMLInputElement>("#draft")!.focus());
     await hover(false);
     await wait(500);
@@ -106,7 +108,7 @@ async function runChecks() {
     // Idle-tucked without "鼠标移开后重新收起": the panel opens and the island stays out.
     await act(async () => island.idleTuck(null));
     await arrive();
-    await wait(250);
+    await wait(400);
     await hover(false);
     await wait(450);
     check(state() === "expanded/out", "没开「鼠标移开后重新收起」时，展开后不自动收回");

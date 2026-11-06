@@ -1,7 +1,10 @@
 //! Stage window size and placement: which monitor, where on it, and the tuck animation.
 
 use std::{
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Mutex, PoisonError,
+    },
     thread,
     time::{Duration, Instant},
 };
@@ -34,6 +37,15 @@ pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);
 
 pub(super) static POSITION_ANIMATION_GENERATION: AtomicU64 = AtomicU64::new(0);
+/// The slide in progress: its generation and where it ends.
+static RUNNING_SLIDE: Mutex<Option<(u64, (i32, i32))>> = Mutex::new(None);
+
+/// Whether an update that does not animate should leave the running slide alone:
+/// it ends where the update would put the window anyway. Jumping there instead cut
+/// the slide-out short when the panel opened from a tucked island mid-slide.
+pub(super) fn continues_slide(running: Option<(u64, (i32, i32))>, current_generation: u64, target: (i32, i32), animate: bool) -> bool {
+    !animate && running == Some((current_generation, target))
+}
 // A shorter stage waits for the island's 560ms height transition (.island in
 // src/windows/island/IslandShell.css) to finish; shrinking at once would cut off the
 // bottom of the island while it is still animating down from a taller page.
@@ -45,7 +57,6 @@ pub(crate) fn apply_stage_geometry(
     state: IslandWindowState,
     animate_position: bool,
 ) -> Result<(), String> {
-    let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     // Keep room for the closing animation at every supported panel scale.
     let stage_height = STAGE_WINDOW_HEIGHT
         .max((state.expanded_height * state.expanded_scale).ceil() + STAGE_WINDOW_PADDING_Y);
@@ -86,6 +97,11 @@ pub(crate) fn apply_stage_geometry(
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
     super::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
 
+    let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+    if continues_slide(running, POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst), (x, y), animate_position) {
+        return Ok(());
+    }
+    let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     let target = PhysicalPosition::new(x, y);
     let start = window.outer_position().map_err(|error| error.to_string())?;
     if start == target {
@@ -97,6 +113,7 @@ pub(crate) fn apply_stage_geometry(
             .map_err(|error| error.to_string());
     }
 
+    *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = Some((generation, (x, y)));
     let window = window.clone();
     thread::spawn(move || {
         let started_at = Instant::now();
@@ -116,6 +133,10 @@ pub(crate) fn apply_stage_geometry(
                 break;
             }
             thread::sleep(Duration::from_millis(8));
+        }
+        let mut running = RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+        if running.is_some_and(|(owner, _)| owner == generation) {
+            *running = None;
         }
     });
     Ok(())

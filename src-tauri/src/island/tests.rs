@@ -214,3 +214,16 @@ fn corner_radius_setting_scales_every_hit_test_radius() {
     assert!((expanded.top_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
     assert!((collapsed.top_corner_radius() - 14.0 * 20.0 / 30.0).abs() < 1e-9);
 }
+
+#[test]
+fn an_update_heading_where_the_slide_ends_lets_it_finish() {
+    let running = Some((7, (900, 12)));
+    // Opening the panel mid-slide: same place, no animation of its own.
+    assert!(continues_slide(running, 7, (900, 12), false));
+    // Anything else takes over: another place, an animated tuck, or a slide another
+    // update (a drag, a reset) already stopped.
+    assert!(!continues_slide(running, 7, (900, -24), false));
+    assert!(!continues_slide(running, 7, (900, 12), true));
+    assert!(!continues_slide(running, 8, (900, 12), false));
+    assert!(!continues_slide(None, 7, (900, 12), false));
+}

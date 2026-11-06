@@ -3,7 +3,9 @@ import { listenIslandHover } from "./api";
 
 // The tucked island sits on the screen's top edge, where the cursor often passes on
 // its way to tabs and menus: it slides out at once, but opens only if the cursor stays.
-const MIN_OPEN_DELAY_MS = 150;
+// It opens no sooner than the slide-out ends (POSITION_ANIMATION_DURATION in
+// src-tauri/src/island/geometry.rs), so the two play one after the other.
+const MIN_OPEN_DELAY_MS = 320;
 
 type TuckedHoverOptions = {
   /** Hovering a tucked island opens its panel (setting "展开面板"); otherwise it only slides out. */
