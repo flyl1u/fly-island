@@ -55,6 +55,7 @@ import { usePluginKeybindings } from "./usePluginKeybindings";
 import { usePluginPages } from "./usePluginPages";
 import { useMessageView } from "./useMessageView";
 import { PluginPageButtons } from "./PluginPageButtons";
+import { useCollapsedSlots } from "./useCollapsedSlots";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -83,6 +84,7 @@ export function IslandApp() {
     toggleClipboardHistory,
   } = useIslandNavigation();
   const pluginPages = usePluginPages(page);
+  const collapsedSlots = useCollapsedSlots();
   const [settings, setSettings] = useIslandSettings();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
@@ -126,6 +128,7 @@ export function IslandApp() {
   });
   usePluginKeybindings({ mode, page, hasActiveTodo: activeTodoId !== null });
 
+  const translationPeek = useQuickTranslation(settings.translationEnabled);
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
@@ -133,8 +136,9 @@ export function IslandApp() {
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
+      collapsedSlots,
+      hasMessagePreview || translationPeek !== null,
     );
-  const translationPeek = useQuickTranslation(settings.translationEnabled);
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   const tuckWhenIdle = useCallback(
     () => idleTuck(settings.autoTuckRetract ? settings.autoTuckRetractDelayMs : null),
@@ -340,6 +344,7 @@ export function IslandApp() {
         pageDigitModifiers={settings.pageDigitModifiers}
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
         pluginStatusChip={<PluginStatusSlot views={pluginPages.views} onOpen={openEnabledPage} />}
+        collapsedSlots={collapsedSlots}
         pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
         {page === "qq" && (

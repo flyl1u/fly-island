@@ -17,7 +17,8 @@ const CLIPBOARD_ROW_PITCH = 70;
 const CLIPBOARD_ROW_GAP = 8;
 export const TODO_ROW_HEIGHT = 46;
 export const TODO_GROW_START_ROWS = 2;
-export function getCollapsedIslandWidth(text: string) {
+/** Collapsed width for the summary `text`, plus `extraWidth` px for plugin slots, up to the widest. */
+export function getCollapsedIslandWidth(text: string, extraWidth = 0) {
   const visualUnits = getCollapsedTextUnits(text);
   const widthProgress =
     (clamp(
@@ -28,10 +29,13 @@ export function getCollapsedIslandWidth(text: string) {
       MIN_COLLAPSED_TEXT_UNITS) /
     (MAX_COLLAPSED_TEXT_UNITS - MIN_COLLAPSED_TEXT_UNITS);
 
-  return Math.round(
-    MIN_COLLAPSED_ISLAND_WIDTH +
-      widthProgress *
-        (MAX_COLLAPSED_ISLAND_WIDTH - MIN_COLLAPSED_ISLAND_WIDTH),
+  return Math.min(
+    MAX_COLLAPSED_ISLAND_WIDTH,
+    Math.round(
+      MIN_COLLAPSED_ISLAND_WIDTH +
+        widthProgress * (MAX_COLLAPSED_ISLAND_WIDTH - MIN_COLLAPSED_ISLAND_WIDTH) +
+        Math.max(0, extraWidth),
+    ),
   );
 }
 

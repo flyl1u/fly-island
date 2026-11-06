@@ -21,7 +21,7 @@ import type { PluginNotificationsController } from "../../features/plugins/usePl
 import { useUpdateReminder } from "../../features/updater/useBackgroundUpdateCheck";
 import { useTranslation } from "../../i18n";
 import { openSettingsWindow } from "../settings/api";
-import type { IslandPage } from "./types";
+import type { CollapsedSlots, IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
 
@@ -64,7 +64,11 @@ type IslandCollapsedBarProps = {
   onTuck: () => void;
   /** A plugin's status text; it waits while a message preview or a translation line shows. */
   pluginStatusChip?: ReactNode;
+  /** Built-in plugins' centre, gauge and session-count slots. */
+  slots?: CollapsedSlots;
 };
+
+const NO_SLOTS: CollapsedSlots = {};
 
 /** The collapsed island: agent pulse, todo or message summary, mail badge, music button and tuck handle. */
 export function IslandCollapsedBar({
@@ -96,6 +100,7 @@ export function IslandCollapsedBar({
   onWindowDragStart,
   onTuck,
   pluginStatusChip,
+  slots = NO_SLOTS,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
   // A newer version found by the background check, unless the user skipped it.
@@ -109,6 +114,9 @@ export function IslandCollapsedBar({
   ].join(" ");
   // While the island names a running agent, opening it shows the Agent page.
   const openTarget: IslandPage = agentSession ? "agents" : page;
+  // The centre slot takes the summary's place while the bar has no summary.
+  const showCenter = Boolean(slots.center) && !preview && !translationPeek
+    && !(showCollapsedText && (showTitle || agentSession !== null || collapsedTaskTitle !== null || collapsedTodoCount !== null));
 
   return (
     <div
@@ -123,7 +131,7 @@ export function IslandCollapsedBar({
       }}
     >
       <button
-        className="island__open-button"
+        className={`island__open-button${showCenter ? " island__open-button--center" : ""}`}
         type="button"
         aria-label={preview
           ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
@@ -194,6 +202,7 @@ export function IslandCollapsedBar({
           )}
           </>}
         </CollapsedMessageContent>
+        {showCenter && <span className="island__center-slot">{slots.center}</span>}
       </button>
       {preview?.source === "plugin" && pluginNotifications.notification && (
         <PluginNotificationActions actions={pluginNotifications.notification.actions} onAction={pluginNotifications.runAction} />
@@ -235,6 +244,7 @@ export function IslandCollapsedBar({
           onClick={() => onOpenPage("music")}
         />
       )}
+      {slots.gauges && <div className="island__gauge-slot">{slots.gauges}</div>}
       {agentSessionCount === null ? (
         <button
           className="island__quiet-button"
@@ -245,6 +255,8 @@ export function IslandCollapsedBar({
             onTuck();
           }}
         />
+      ) : slots.agentCount ? (
+        slots.agentCount
       ) : agentSessionCount > 0 ? (
         <button
           className="island-agent-count"

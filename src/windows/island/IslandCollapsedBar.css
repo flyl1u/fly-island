@@ -119,6 +119,35 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/*
+ * Built-in plugin slots (CollapsedSlots in types.ts). The centre shares the summary's cell, so a
+ * summary still fading out keeps its full width under the pattern.
+ */
+.island__open-button--center {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.island__open-button--center > .island__summary,
+.island__center-slot {
+  grid-area: 1 / 2;
+}
+
+.island__center-slot {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.island__gauge-slot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .island__quiet-button {
   position: relative;
   width: 12px;

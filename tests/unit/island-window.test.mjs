@@ -31,6 +31,12 @@ test("the collapsed island grows with its text between the min and max widths", 
   assert.equal(Number.isInteger(mid), true);
 });
 
+test("plugin slots widen the collapsed island by the width they need, up to the max", () => {
+  assert.equal(getCollapsedIslandWidth("", 42), MIN_COLLAPSED_ISLAND_WIDTH + 42);
+  assert.equal(getCollapsedIslandWidth("", -10), MIN_COLLAPSED_ISLAND_WIDTH);
+  assert.equal(getCollapsedIslandWidth("abcdefg", 1000), MAX_COLLAPSED_ISLAND_WIDTH);
+});
+
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {
   // 490px is the default and keeps the six rows the todo page always had.
   assert.equal(getTodoScrollStartRows(490), 6);
