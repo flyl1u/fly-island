@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
+import type { IslandCornerShape } from "../../features/appearance/types";
 import type { IslandPosition } from "./storage";
 import type { IslandMode, NativeGlassState } from "./types";
 
@@ -59,6 +60,8 @@ export type IslandInteraction = {
   glassTint: string;
   /** Expanded bottom corner radius; the native hit test scales its other corners from it. */
   cornerRadius: number;
+  /** The native hit test follows the island's corner shape. */
+  cornerShape: IslandCornerShape;
 };
 
 export function setIslandLayout(layout: IslandLayout) {

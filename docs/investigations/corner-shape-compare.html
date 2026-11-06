@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>圆角对比：普通圆角 / 苹果连续曲率 / CSS corner-shape</title>
+<!--
+  Standalone comparison page (no build step): open it in Edge or Chrome 139+, the same engine as
+  the island's WebView2. The Apple reference is the iOS continuous corner (spans 1.52866 r along
+  each edge), drawn with Figma's smoothing construction (see appleCorner); CSS shapes are the browser's own
+  rendering of corner-shape: superellipse(K), whose exponent is 2^K (round = 1, squircle = 2).
+-->
+<style>
+  :root { color-scheme: dark; --apple: #ff9f0a; --round: #64d2ff; --cand: #30d158; --sq: #ff453a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 32px 60px; background: #111214; color: #e8e8ea; font: 14px/1.6 "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 36px 0 6px; }
+  p.note { color: #9a9aa0; margin: 0 0 14px; max-width: 920px; }
+  .warn { background: #5a1d1d; color: #ffd0d0; padding: 10px 14px; border-radius: 8px; display: none; margin: 12px 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: center; background: #1b1c1f; padding: 12px 16px; border-radius: 10px; margin: 14px 0; }
+  .controls label { display: flex; gap: 8px; align-items: center; }
+  .controls output { font-variant-numeric: tabular-nums; min-width: 3.2em; color: #fff; }
+  code { background: #232428; padding: 1px 6px; border-radius: 4px; }
+  .row { display: flex; flex-wrap: wrap; gap: 22px; }
+  .cell { display: flex; flex-direction: column; gap: 6px; }
+  .cell .cap { font-size: 13px; color: #c8c8cc; }
+  .cell .cap b { color: #fff; }
+  .cell .dev { font-size: 12px; color: #8e8e93; font-variant-numeric: tabular-nums; }
+  .zoom { position: relative; width: 300px; height: 300px; overflow: hidden; background: #2a2b30; border-radius: 6px;
+    background-image: linear-gradient(#ffffff0a 1px, transparent 1px), linear-gradient(90deg, #ffffff0a 1px, transparent 1px); }
+  .zoom .shape { position: absolute; left: 20px; top: -40px; width: 400px; height: 320px; background: #e9e9ee; }
+  .zoom svg { position: absolute; inset: 0; pointer-events: none; }
+  .legend { display: flex; gap: 18px; font-size: 12px; color: #aaa; margin: 6px 0 12px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  #curv { background: #1b1c1f; border-radius: 10px; }
+  .stage { padding: 0 24px 28px; border-radius: 12px; transition: background .2s; }
+  .stage.dark { background: radial-gradient(120% 140% at 20% 0%, #3b4d74 0%, #1d2233 45%, #0c0d12 100%); }
+  .stage.light { background: radial-gradient(120% 140% at 20% 0%, #f4f1ea 0%, #dfe6f0 55%, #c9d3e2 100%); }
+  .stage.light .cap { color: #333; } .stage.light .cap b { color: #000; }
+  .island { width: 360px; height: 188px; background: #000; position: relative; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 10px 30px #0006; }
+  .island .bar { height: 12px; border-radius: 6px; background: #ffffff22; }
+  .island .panel { flex: 1; background: #ffffff10; }
+  .island .rowline { display: flex; gap: 10px; align-items: center; }
+  .island .dot { width: 22px; height: 22px; border-radius: 50%; background: #ffffff26; flex: none; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  td, th { padding: 4px 14px 4px 0; text-align: left; } th { color: #9a9aa0; font-weight: 500; }
+</style>
+</head>
+<body>
+<h1>圆角对比</h1>
+<p class="note">对比四种圆角：<b style="color:var(--round)">现在的普通圆角</b>、<b style="color:var(--apple)">苹果连续曲率圆角</b>（基准 SVG，用 Figma 的平滑构造画，和 iOS 逆向出的曲线相差不到 0.008r）、<b style="color:var(--sq)">CSS squircle</b>（同样半径，直接替换的写法）、<b style="color:var(--cand)">CSS 候选</b>（<code>superellipse(K)</code> 配放大后的半径，按苹果曲线拟合）。CSS 形状都由浏览器自己渲染，用的就是岛屿 WebView2 的同款内核。</p>
+<div class="warn" id="warn">这个浏览器不支持 <code>corner-shape</code>，下面的 CSS 形状会退回成普通圆角。请用 Edge 或 Chrome 139 以上版本打开。</div>
+
+<div class="controls">
+  <label>岛屿圆角 r <input id="r" type="range" min="16" max="40" step="1" value="30" /> <output id="rOut"></output></label>
+  <label>候选 K <input id="k" type="range" min="1" max="2" step="0.05" value="1.25" /> <output id="kOut"></output></label>
+  <label>候选半径倍数 <input id="m" type="range" min="1" max="1.6" step="0.01" value="1.10" /> <output id="mOut"></output></label>
+  <span id="css" style="color:#9a9aa0"></span>
+</div>
+
+<h2>1. 放大 8 倍看一个角</h2>
+<p class="note">浅色块是浏览器实际渲染出的 CSS 形状，<b style="color:var(--apple)">橙线</b>是苹果曲线。两者贴得越紧越接近苹果。下方数字是两条曲线之间的最大距离，按 1 倍屏的像素算。</p>
+<div class="row" id="zooms"></div>
+
+<h2>2. 曲率：真正的差别在这里</h2>
+<p class="note">横轴是沿边线走过的距离（单位 r，0 是普通圆角开始弯的位置），纵轴是曲率 × r。普通圆角在接缝处曲率从 0 直接跳到 1，这个突变就是"硬"的来源。苹果曲线从直边开始就慢慢弯，曲率从 0 逐渐升高，进入中间圆弧前略有冲高。superellipse（K&gt;1）在接缝处曲率也是 0，但加得很陡。</p>
+<div class="legend"><span><i style="background:var(--round)"></i>普通圆角</span><span><i style="background:var(--apple)"></i>苹果</span><span><i style="background:var(--cand)"></i>CSS 候选</span><span><i style="background:var(--sq)"></i>CSS squircle（同半径）</span></div>
+<canvas id="curv" width="920" height="300"></canvas>
+
+<h2>3. 实际大小（按岛屿展开态的比例）</h2>
+<p class="note">岛屿只有底部两个角是圆的。可以切换背景亮暗，也可以模拟 200% 缩放看高分屏的效果。</p>
+<div class="controls">
+  <label><input type="checkbox" id="light" /> 浅色背景</label>
+  <label><input type="checkbox" id="hidpi" /> 模拟 200% 缩放</label>
+</div>
+<div class="stage dark" id="stage"><div class="row" id="islands" style="padding-top:0"></div></div>
+
+<h2>4. 拟合表（各半径下与苹果曲线的最大距离）</h2>
+<table id="table"></table>
+
+<script>
+"use strict";
+const APPLE_SPAN = 1.52866;
+const cub = (p0, p1, p2, p3, t) => { const u = 1 - t; return [0, 1].map((i) => u*u*u*p0[i] + 3*u*u*t*p1[i] + 3*u*t*t*p2[i] + t*t*t*p3[i]); };
+/*
+ * The Apple reference: Figma's corner-smoothing construction (Bezier, circular arc, Bezier) with
+ * smoothing 0.52866, so it spans 1.52866 r along each edge like iOS. It lies within 0.0078 r of
+ * PaintCode's reverse-engineered iOS corner, whose short line joins would otherwise show up as
+ * spikes in the curvature plot. Its curvature rises from 0 at the edge and overshoots a little
+ * where the Bezier meets the arc; that is the construction, not sampling noise.
+ * Top-left corner in units of r: x along the top edge, y along the left edge; left edge to top edge.
+ */
+const SMOOTHING = APPLE_SPAN - 1;
+function appleCorner(steps = 60) {
+  const rad = (deg) => (deg * Math.PI) / 180, s = SMOOTHING, p = 1 + s;
+  const arcMeasure = 90 * (1 - s), arcLen = Math.sin(rad(arcMeasure / 2)) * Math.SQRT2;
+  const c = Math.tan(rad((90 - arcMeasure) / 4)) * Math.cos(rad(45 * s)), d = c * Math.tan(rad(45 * s));
+  const b = (p - arcLen - c - d) / 3, a = 2 * b;
+  const pts = [];
+  const P0 = [p, 0], P1 = [p - a, 0], P2 = [p - a - b, 0], P3 = [p - a - b - c, d];
+  for (let i = 0; i <= steps; i++) pts.push(cub(P0, P1, P2, P3, i / steps));
+  const Q0 = [P3[0] - arcLen, P3[1] + arcLen];
+  const a0 = Math.atan2(P3[1] - 1, P3[0] - 1), a1 = Math.atan2(Q0[1] - 1, Q0[0] - 1);
+  for (let i = 1; i <= steps; i++) { const t = a0 + (a1 - a0) * i / steps; pts.push([1 + Math.cos(t), 1 + Math.sin(t)]); }
+  const Q1 = [Q0[0] - d, Q0[1] + c], Q2 = [Q0[0] - d, Q0[1] + b + c], Q3 = [Q0[0] - d, Q0[1] + a + b + c];
+  for (let i = 1; i <= steps; i++) pts.push(cub(Q0, Q1, Q2, Q3, i / steps));
+  return pts.reverse();
+}
+/** CSS superellipse(K) corner of radius R (units of r), left edge to top edge, per the CSS Borders 4 algorithm. */
+function seCorner(K, R, steps = 400) {
+  const n = 2 ** K, pts = [];
+  for (let i = steps; i >= 0; i--) { const T = i / steps; pts.push([R * (1 - T ** (1 / n)), R * (1 - (1 - T) ** (1 / n))]); }
+  return pts;
+}
+/** Polyline with straight edge run-outs to `reach`, for distance and curvature work. */
+function withEdges(corner, reach) {
+  const first = corner[0], last = corner[corner.length - 1], pts = [];
+  for (let y = reach; y > first[1]; y -= 0.01) pts.push([0, y]);
+  pts.push(...corner);
+  for (let x = last[0] + 0.01; x <= reach; x += 0.01) pts.push([x, 0]);
+  return pts;
+}
+function maxDistance(a, b) {
+  const one = (p, q) => { let m = 0; for (const s of p) { let best = Infinity; for (const t of q) { const d = (s[0]-t[0])**2 + (s[1]-t[1])**2; if (d < best) best = d; } if (best > m) m = best; } return m; };
+  return Math.sqrt(Math.max(one(a, b), one(b, a)));
+}
+const reachFor = (R) => Math.max(APPLE_SPAN, R) + 0.2;
+const appleRef = (R) => withEdges(appleCorner(30), reachFor(R));
+const devFromApple = (K, R) => maxDistance(appleRef(R), withEdges(seCorner(K, R, 300), reachFor(R)));
+
+// ---- controls
+const $ = (id) => document.getElementById(id);
+const supported = CSS.supports("corner-shape", "superellipse(1.5)");
+if (!supported) $("warn").style.display = "block";
+const state = () => ({ r: +$("r").value, K: +$("k").value, m: +$("m").value });
+
+const VARIANTS = (s) => [
+  { key: "round", name: "现在：普通圆角", color: "var(--round)", K: 1, R: 1 },
+  { key: "sq", name: "CSS squircle（同半径）", color: "var(--sq)", K: 2, R: 1 },
+  { key: "cand", name: `CSS 候选：superellipse(${s.K}) × ${s.m.toFixed(2)}`, color: "var(--cand)", K: s.K, R: s.m },
+];
+
+function cssFor(v, r) { return { radius: v.R * r, shape: v.K === 1 ? "round" : `superellipse(${v.K})` }; }
+
+// ---- 1. zoomed corners: bottom-left corner of a box, CSS-rendered, Apple outline on top
+const Z = 8;
+function renderZooms(s) {
+  const host = $("zooms"); host.textContent = "";
+  // Same scale for every variant, so the frames compare; the corner fills about 3/4 of the frame.
+  const zoom = Math.min(Z, 220 / (APPLE_SPAN * s.r));
+  for (const v of VARIANTS(s)) {
+    const { radius, shape } = cssFor(v, s.r);
+    const cell = document.createElement("div"); cell.className = "cell";
+    const box = document.createElement("div"); box.className = "zoom";
+    const shapeEl = document.createElement("div"); shapeEl.className = "shape";
+    // Bottom-left corner at (20, 280) in the frame.
+    Object.assign(shapeEl.style, { left: "20px", top: `${280 - 320}px`, borderBottomLeftRadius: `${radius * zoom}px` });
+    shapeEl.style.setProperty("corner-shape", shape);
+    box.append(shapeEl);
+    const toFrame = ([x, y]) => [20 + x * s.r * zoom, 280 - y * s.r * zoom];
+    const path = (pts) => "M" + pts.map((p) => toFrame(p).map((n) => n.toFixed(2)).join(" ")).join(" L");
+    const reach = 300 / (s.r * zoom);
+    const svg = `<svg viewBox="0 0 300 300"><path d="${path(withEdges(appleCorner(), reach))}" fill="none" stroke="#ff9f0a" stroke-width="2"/></svg>`;
+    box.insertAdjacentHTML("beforeend", svg);
+    const dev = devFromApple(v.K, v.R) * s.r;
+    cell.innerHTML = `<div class="cap" style="border-left:3px solid ${v.color};padding-left:8px"><b>${v.name}</b></div>`;
+    cell.append(box);
+    cell.insertAdjacentHTML("beforeend", `<div class="dev">r = ${s.r}px · CSS 半径 ${(v.R * s.r).toFixed(1)}px · 最大偏差 ${dev.toFixed(2)}px</div>`);
+    host.append(cell);
+  }
+}
+
+// ---- 2. curvature along arc length
+function curvature(pts) {
+  // Resample by arc length, then turning angle per unit length over a small window.
+  const step = 0.004, res = [pts[0]];
+  let need = step; // arc length still to go before the next sample
+  for (let i = 1; i < pts.length; i++) {
+    let [ax, ay] = pts[i - 1]; const [bx, by] = pts[i]; let seg = Math.hypot(bx - ax, by - ay);
+    while (seg >= need) { const t = need / seg; ax += (bx - ax) * t; ay += (by - ay) * t; res.push([ax, ay]); seg -= need; need = step; }
+    need -= seg;
+  }
+  const w = 6, out = [];
+  for (let i = w; i < res.length - w; i++) {
+    const a = Math.atan2(res[i][1] - res[i - w][1], res[i][0] - res[i - w][0]);
+    const b = Math.atan2(res[i + w][1] - res[i][1], res[i + w][0] - res[i][0]);
+    let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    out.push([i * step, Math.abs(d) / (w * step)]);
+  }
+  return out;
+}
+function renderCurvature(s) {
+  const c = $("curv"), g = c.getContext("2d"), W = c.width, H = c.height, pad = 36;
+  g.clearRect(0, 0, W, H);
+  const reach = 2.2, sMin = -0.7, sMax = 3.3, kMax = 2.6;
+  const X = (sv) => pad + (sv - sMin) / (sMax - sMin) * (W - 2 * pad), Y = (k) => H - pad - k / kMax * (H - 2 * pad);
+  g.strokeStyle = "#ffffff18"; g.fillStyle = "#8e8e93"; g.font = "11px Segoe UI";
+  for (let k = 0; k <= kMax; k += 0.5) { g.beginPath(); g.moveTo(pad, Y(k)); g.lineTo(W - pad, Y(k)); g.stroke(); g.fillText(k.toFixed(1), 6, Y(k) + 4); }
+  for (let sv = 0; sv <= sMax; sv += 0.5) { g.fillText(sv.toFixed(1), X(sv) - 8, H - 12); }
+  // Arc length measured from where the plain circle's straight left edge ends (y = 1).
+  const series = [
+    { pts: withEdges(seCorner(1, 1, 2000), reach), color: "#64d2ff" },
+    { pts: withEdges(seCorner(2, 1, 2000), reach), color: "#ff453a", dash: [5, 4] },
+    { pts: withEdges(seCorner(s.K, s.m, 2000), reach), color: "#30d158" },
+    { pts: withEdges(appleCorner(400), reach), color: "#ff9f0a" },
+  ];
+  const offset = reach - 1; // left edge starts at y = reach
+  for (const sr of series) {
+    const k = curvature(sr.pts);
+    g.strokeStyle = sr.color; g.lineWidth = 2; g.setLineDash(sr.dash || []); g.beginPath();
+    k.forEach(([sv, kv], i) => { const x = X(sv - offset), y = Y(Math.min(kv, kMax)); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke(); g.setLineDash([]);
+  }
+}
+
+// ---- 3. real-size islands
+function islandPath(w, h, r) {
+  // Flat top, Apple corners at the bottom.
+  const rr = Math.min(r, h / APPLE_SPAN, w / 2 / APPLE_SPAN), c = appleCorner(30);
+  const bl = c.map(([x, y]) => [x * rr, h - y * rr]).reverse();       // bottom edge -> left edge
+  const br = c.map(([x, y]) => [w - x * rr, h - y * rr]);             // right edge -> bottom edge
+  const pts = [[0, 0], [w, 0], ...br, ...bl];
+  return "M" + pts.map((p) => p.map((n) => n.toFixed(2)).join(" ")).join(" L") + " Z";
+}
+function renderIslands(s) {
+  const host = $("islands"); host.textContent = "";
+  const variants = [
+    { name: "现在：普通圆角", style: (el) => { el.style.borderRadius = `0 0 ${s.r}px ${s.r}px`; } },
+    { name: "苹果连续曲率（SVG 基准）", style: (el) => { el.style.clipPath = `path("${islandPath(360, 188, s.r)}")`; } },
+    { name: `CSS 候选 superellipse(${s.K}) × ${s.m.toFixed(2)}`, style: (el) => { el.style.borderRadius = `0 0 ${s.r * s.m}px ${s.r * s.m}px`; el.style.setProperty("corner-shape", `superellipse(${s.K})`); } },
+    { name: "CSS squircle（同半径）", style: (el) => { el.style.borderRadius = `0 0 ${s.r}px ${s.r}px`; el.style.setProperty("corner-shape", "squircle"); } },
+  ];
+  const panelR = Math.max(8, s.r - 20);
+  for (const v of variants) {
+    const cell = document.createElement("div"); cell.className = "cell";
+    cell.innerHTML = `<div class="cap"><b>${v.name}</b></div>`;
+    const el = document.createElement("div"); el.className = "island"; v.style(el);
+    el.innerHTML = `<div class="rowline"><div class="dot"></div><div class="bar" style="flex:1"></div><div class="bar" style="width:40px"></div></div>
+      <div class="panel" style="border-radius:${panelR}px"></div><div class="rowline"><div class="bar" style="width:120px"></div></div>`;
+    cell.append(el); host.append(cell);
+  }
+  $("stage").style.zoom = $("hidpi").checked ? 2 : 1;
+}
+
+// ---- 4. table
+function renderTable(s) {
+  const rows = [16, 22, 30, 40].map((r) => {
+    const d = (K, R) => (devFromApple(K, R) * r).toFixed(2) + "px";
+    return `<tr><td>${r}px</td><td>${d(1, 1)}</td><td>${d(2, 1)}</td><td>${d(s.K, s.m)}</td></tr>`;
+  });
+  $("table").innerHTML = `<tr><th>r</th><th>普通圆角</th><th>squircle 同半径</th><th>候选 (${s.K}, ×${s.m.toFixed(2)})</th></tr>` + rows.join("");
+}
+
+function render() {
+  const s = state();
+  $("rOut").textContent = s.r + "px"; $("kOut").textContent = s.K.toFixed(2); $("mOut").textContent = "×" + s.m.toFixed(2);
+  $("css").innerHTML = `候选写法：<code>border-radius: calc(r × ${s.m.toFixed(2)}); corner-shape: superellipse(${s.K});</code>`;
+  renderZooms(s); renderCurvature(s); renderIslands(s); renderTable(s);
+}
+for (const id of ["r", "k", "m", "light", "hidpi"]) $(id).addEventListener("input", render);
+$("light").addEventListener("input", () => { $("stage").className = "stage " + ($("light").checked ? "light" : "dark"); });
+render();
+</script>
+</body>
+</html>

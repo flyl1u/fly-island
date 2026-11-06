@@ -23,6 +23,8 @@ export function getIslandStageStyle(
     "--island-top-fillet-size": settings.topFilletRadius,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
     "--island-corner-radius-size": settings.islandCornerRadius,
+    // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
+    "--island-corner-shape": settings.islandCornerShape,
     "--task-text-color": settings.taskTextColor,
     "--island-pulse-color": settings.pulseColor,
     "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),

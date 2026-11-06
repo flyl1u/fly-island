@@ -62,6 +62,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   marginY: 0,
   topFilletRadius: 12,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
+  islandCornerShape: "squircle",
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
@@ -147,6 +148,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "expandedScale",
   "topFilletRadius",
   "islandCornerRadius",
+  "islandCornerShape",
   "maxPanelHeight",
   "taskTextColor",
   "pulseColor",
@@ -236,6 +238,8 @@ export function normalizeSettings(
     islandCornerRadius: typeof settings?.islandCornerRadius === "number" && Number.isFinite(settings.islandCornerRadius)
       ? clamp(Math.round(settings.islandCornerRadius), MIN_ISLAND_CORNER_RADIUS, MAX_ISLAND_CORNER_RADIUS)
       : LEGACY_FALLBACKS.islandCornerRadius,
+    // Squircle for upgrades too: it replaced the round corners as the island's look.
+    islandCornerShape: settings?.islandCornerShape === "round" ? "round" : "squircle",
     maxPanelHeight: typeof settings?.maxPanelHeight === "number" && Number.isFinite(settings.maxPanelHeight)
       ? clamp(Math.round(settings.maxPanelHeight), MIN_MAX_PANEL_HEIGHT, MAX_MAX_PANEL_HEIGHT)
       : DEFAULT_SETTINGS.maxPanelHeight,

@@ -19,6 +19,7 @@
   outline-offset: -3px;
   /* Inset 3px inside the collapsed island corners. */
   border-radius: 0 0 calc(var(--island-radius-collapsed, 22px) - 3px) calc(var(--island-radius-collapsed, 22px) - 3px);
+  corner-shape: var(--island-corner-shape, round);
 }
 
 .island__pulse {

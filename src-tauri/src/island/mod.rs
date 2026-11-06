@@ -26,7 +26,7 @@ use geometry::{
 };
 use glass::{apply_glass_material, parse_hex_color};
 use crate::win32;
-use state::{mutate_window_state, read_window_state, window_state, IslandMode};
+use state::{mutate_window_state, read_window_state, window_state, CornerShape, IslandMode};
 
 pub(crate) use geometry::apply_stage_geometry;
 pub(crate) use passthrough::start_cursor_passthrough_loop;
@@ -74,6 +74,7 @@ pub fn set_island_interaction(
     glass_intensity: Option<f64>,
     glass_tint: Option<String>,
     corner_radius: Option<f64>,
+    corner_shape: Option<String>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -116,6 +117,9 @@ pub fn set_island_interaction(
         }
         if let Some(corner_radius) = corner_radius {
             state.corner_radius = corner_radius.clamp(MIN_CORNER_RADIUS, MAX_CORNER_RADIUS);
+        }
+        if let Some(corner_shape) = corner_shape.as_deref().and_then(CornerShape::from_value) {
+            state.corner_shape = corner_shape;
         }
         *state
     });

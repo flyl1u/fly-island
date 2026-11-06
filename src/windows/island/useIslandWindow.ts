@@ -60,6 +60,7 @@ export function useIslandWindow({
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
           cornerRadius: nextSettings.islandCornerRadius,
+          cornerShape: nextSettings.islandCornerShape,
         });
         setNativeGlassState(glassState);
       } catch (error) {
@@ -143,6 +144,7 @@ export function useIslandWindow({
     settings.collapsedScale,
     settings.expandedScale,
     settings.islandCornerRadius,
+    settings.islandCornerShape,
     showReadyIsland,
     syncNativeInteraction,
   ]);

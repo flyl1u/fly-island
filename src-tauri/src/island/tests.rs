@@ -46,7 +46,7 @@ fn notch_has_flat_top_and_rounded_bottom_at_all_scales() {
             let width = width * scale;
             let height = height * scale;
             let radius = mode.corner_radius() * scale;
-            let contains = |x, y| point_in_notch(x, y, 80.0, 0.0, width, height, radius, 0.0);
+            let contains = |x, y| point_in_notch(x, y, 80.0, 0.0, width, height, radius, 0.0, CornerShape::Round);
 
             assert!(contains(80.0, 0.0));
             assert!(contains(80.0 + width, 0.0));
@@ -84,6 +84,7 @@ fn compact_messages_and_mail_reader_keep_the_correct_cursor_boundary() {
                     panel_height * scale,
                     EXPANDED_RADIUS * scale,
                     0.0,
+                    CornerShape::Round,
                 )
             };
             assert!(contains(panel_height * scale));
@@ -122,6 +123,7 @@ fn detached_island_rounds_top_corners() {
                 height,
                 mode.corner_radius(),
                 detached.top_corner_radius(),
+                CornerShape::Round,
             )
         };
         assert!(!contains(80.0, 0.0));
@@ -147,6 +149,7 @@ fn docked_island_does_not_capture_cursor_outside_its_sides() {
                 COLLAPSED_ISLAND_HEIGHT * scale,
                 COLLAPSED_RADIUS * scale,
                 0.0,
+                CornerShape::Round,
             )
         };
         assert!(contains(80.0, 0.0));
@@ -213,6 +216,27 @@ fn corner_radius_setting_scales_every_hit_test_radius() {
     assert!((collapsed.bottom_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
     assert!((expanded.top_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
     assert!((collapsed.top_corner_radius() - 14.0 * 20.0 / 30.0).abs() < 1e-9);
+}
+
+#[test]
+fn squircle_corners_take_the_area_css_draws_beyond_a_circle() {
+    // A 100 x 60 island at the top edge with 30px bottom corners. The point sits on the
+    // bottom-left corner's diagonal, 1.1 r from the corner's centre: past the circle (r),
+    // inside the squircle, which meets the diagonal at 2^(-1/4) r per axis, about 1.19 r.
+    let r = 30.0;
+    let along_axis = 1.1 * r * std::f64::consts::FRAC_1_SQRT_2;
+    let (x, y) = (r - along_axis, 60.0 - r + along_axis);
+    let contains = |shape| point_in_notch(x, y, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape);
+    assert!(!contains(CornerShape::Round));
+    assert!(contains(CornerShape::Squircle));
+    // The very corner stays outside both.
+    for shape in [CornerShape::Round, CornerShape::Squircle] {
+        assert!(!point_in_notch(0.5, 59.5, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape));
+        assert!(point_in_notch(50.0, 59.5, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape));
+    }
+    assert_eq!(CornerShape::from_value("squircle"), Some(CornerShape::Squircle));
+    assert_eq!(CornerShape::from_value("round"), Some(CornerShape::Round));
+    assert_eq!(CornerShape::from_value("bevel"), None);
 }
 
 #[test]

@@ -8,6 +8,9 @@ export type SettingsLayoutText = {
   marginY: string;
   topFilletRadius: string;
   islandCornerRadius: string;
+  islandCornerShape: string;
+  cornerShapeSquircle: string;
+  cornerShapeRound: string;
   maxPanelHeight: string;
   launchAtStartup: string;
   showTitle: string;
@@ -37,6 +40,9 @@ export const zhCN: SettingsLayoutText = {
   marginY: "顶部距离",
   topFilletRadius: "贴顶圆角",
   islandCornerRadius: "岛屿圆角",
+  islandCornerShape: "圆角样式",
+  cornerShapeSquircle: "方圆",
+  cornerShapeRound: "圆角",
   maxPanelHeight: "最大面板高度",
   launchAtStartup: "开机自启动",
   showTitle: "显示岛屿名称",
@@ -65,6 +71,9 @@ export const en: SettingsLayoutText = {
   marginY: "Top margin",
   topFilletRadius: "Top-edge corner radius",
   islandCornerRadius: "Island corner radius",
+  islandCornerShape: "Corner style",
+  cornerShapeSquircle: "Squircle",
+  cornerShapeRound: "Round",
   maxPanelHeight: "Max panel height",
   launchAtStartup: "Launch at startup",
   showTitle: "Show island name",

@@ -53,6 +53,22 @@ export function LayoutSettingsSection({
         suffix="px"
         onChange={(maxPanelHeight) => change({ ...settings, maxPanelHeight }, true)}
       />
+      <div className="appearance-mode-control">
+        <span>{t.settings.layout.islandCornerShape}</span>
+        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.layout.islandCornerShape}>
+          {([["squircle", t.settings.layout.cornerShapeSquircle], ["round", t.settings.layout.cornerShapeRound]] as const).map(([islandCornerShape, label]) => (
+            <button
+              key={islandCornerShape}
+              className={settings.islandCornerShape === islandCornerShape ? "appearance-mode-control--active" : ""}
+              type="button"
+              aria-pressed={settings.islandCornerShape === islandCornerShape}
+              onClick={() => change({ ...settings, islandCornerShape }, true)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <SliderControl
         label={t.settings.layout.islandCornerRadius}
         value={settings.islandCornerRadius}

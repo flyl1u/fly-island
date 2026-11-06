@@ -42,6 +42,33 @@ impl IslandMode {
     }
 }
 
+/// The island's corner shape from the appearance settings, as CSS draws it with `corner-shape`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CornerShape {
+    Round,
+    /// `corner-shape: squircle`, the superellipse |x|^4 + |y|^4 = r^4.
+    Squircle,
+}
+
+impl CornerShape {
+    /// `round` or `squircle`; anything else is not a shape the island draws.
+    pub(super) fn from_value(value: &str) -> Option<Self> {
+        match value {
+            "round" => Some(Self::Round),
+            "squircle" => Some(Self::Squircle),
+            _ => None,
+        }
+    }
+
+    /// Whether a point `(dx, dy)` from the corner's centre lies inside a corner of `radius`.
+    pub(super) fn contains(self, dx: f64, dy: f64, radius: f64) -> bool {
+        match self {
+            Self::Round => dx * dx + dy * dy <= radius * radius,
+            Self::Squircle => dx.powi(4) + dy.powi(4) <= radius.powi(4),
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct IslandWindowState {
     pub(super) mode: IslandMode,
@@ -60,6 +87,7 @@ pub(crate) struct IslandWindowState {
     /// Expanded bottom corner radius from the appearance settings. The other corner
     /// radii keep their default ratios to it, matching IslandShell.css.
     pub(super) corner_radius: f64,
+    pub(super) corner_shape: CornerShape,
 }
 
 impl IslandWindowState {
@@ -112,6 +140,8 @@ impl Default for IslandWindowState {
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
             corner_radius: EXPANDED_RADIUS,
+            // The front end's default; it reports the setting with the first interaction sync.
+            corner_shape: CornerShape::Squircle,
         }
     }
 }

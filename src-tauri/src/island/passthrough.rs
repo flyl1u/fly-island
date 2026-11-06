@@ -3,7 +3,10 @@
 use std::{thread, time::Duration};
 use tauri::{Emitter, WebviewWindow};
 
-use super::{geometry::STAGE_WINDOW_WIDTH, state::read_window_state};
+use super::{
+    geometry::STAGE_WINDOW_WIDTH,
+    state::{read_window_state, CornerShape},
+};
 use crate::win32;
 
 // Mirrored by ISLAND_HOVER_CHANGED_EVENT in src/windows/island/api.ts. The payload says
@@ -86,12 +89,13 @@ pub(super) fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
         island_height,
         radius,
         top_radius,
+        state.corner_shape,
     )
 }
 
 #[expect(
     clippy::too_many_arguments,
-    reason = "a point and the notch's rectangle and two radii, all plain numbers"
+    reason = "a point and the notch's rectangle, two radii and their shape, all plain values"
 )]
 pub(super) fn point_in_notch(
     x: f64,
@@ -102,6 +106,7 @@ pub(super) fn point_in_notch(
     height: f64,
     radius: f64,
     top_radius: f64,
+    shape: CornerShape,
 ) -> bool {
     let right = left + width;
     let bottom = top + height;
@@ -114,7 +119,7 @@ pub(super) fn point_in_notch(
     if y < top + top_radius && (x < left + top_radius || x > right - top_radius) {
         let dx = x - x.clamp(left + top_radius, right - top_radius);
         let dy = y - (top + top_radius);
-        return dx * dx + dy * dy <= top_radius * top_radius;
+        return shape.contains(dx, dy, top_radius);
     }
 
     let radius = radius.min(width / 2.0).min(height);
@@ -132,5 +137,5 @@ pub(super) fn point_in_notch(
     let dx = x - center_x;
     let dy = y - center_y;
 
-    (dx * dx) + (dy * dy) <= radius * radius
+    shape.contains(dx, dy, radius)
 }

@@ -97,6 +97,7 @@
 .editor-panel {
   height: 100%;
   border-radius: var(--island-panel-radius, 10px);
+  corner-shape: var(--island-corner-shape, round);
   border: 0;
 }
 

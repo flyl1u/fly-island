@@ -13,6 +13,12 @@
   --island-radius-collapsed-top: calc(var(--island-radius) * 14 / 30);
   /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
+  /*
+   * Squircle (default) or round, from the appearance settings (stageStyle.ts). Every layer that
+   * inherits the island's radius, and the inner panels, take the same shape so the rims, glass and
+   * panels stay concentric; Rust hit-tests the same curve (island/passthrough.rs).
+   */
+  corner-shape: var(--island-corner-shape, round);
   position: relative;
   flex: 0 0 auto;
   color: var(--color-text);
@@ -37,6 +43,7 @@
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
 }
 
 .island--music {
@@ -95,6 +102,7 @@
   display: block;
   overflow: hidden;
   border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
   pointer-events: none;
 }
 
@@ -130,6 +138,7 @@
 .island__glass::after {
   inset: 0;
   border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
   background:
     linear-gradient(112deg, rgba(116, 214, 255, 0.1), transparent 16% 82%, rgba(255, 156, 224, 0.08)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 22% 82%, rgba(20, 40, 52, 0.08));
@@ -141,6 +150,7 @@
   inset: 1px;
   border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
   border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
   box-shadow:
     inset 0 0 14px rgba(var(--glass-page-accent), var(--glass-inner-accent-alpha)),
     inset 0 0 2px rgba(255, 255, 255, 0.24);

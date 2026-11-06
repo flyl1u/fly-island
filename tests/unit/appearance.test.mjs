@@ -80,6 +80,13 @@ test("the island corner radius is rounded, clamped, and defaults to 30 for older
   assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 40);
 });
 
+test("the island corner shape is squircle unless round was chosen, older settings included", () => {
+  assert.equal(DEFAULT_SETTINGS.islandCornerShape, "squircle");
+  assert.equal(normalizeSettings({}).islandCornerShape, "squircle");
+  assert.equal(normalizeSettings({ islandCornerShape: "round" }).islandCornerShape, "round");
+  assert.equal(normalizeSettings({ islandCornerShape: "bevel" }).islandCornerShape, "squircle");
+});
+
 test("expand trigger, hover delays and max panel height default for older settings and stay in range", () => {
   const older = normalizeSettings({});
   assert.equal(older.expandTrigger, "click");

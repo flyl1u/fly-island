@@ -2,6 +2,8 @@ export type TranslationTarget = "window" | "island";
 
 export type AppearanceMode = "classic" | "liquidGlass";
 export type IslandFont = "system" | "pixel";
+/** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
+export type IslandCornerShape = "squircle" | "round";
 /** How the collapsed island opens: a click, or resting the pointer on it. */
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
@@ -26,6 +28,7 @@ export type IslandSettings = {
   topFilletRadius: number;
   /** Bottom corner radius (px) of the expanded island; the collapsed, detached and inner panel radii follow it. */
   islandCornerRadius: number;
+  islandCornerShape: IslandCornerShape;
   /** Tallest expanded panel (px) before the todo list, clipboard and messages scroll. */
   maxPanelHeight: number;
   /** Clipboard history rows the expanded clipboard page shows before it scrolls. */
