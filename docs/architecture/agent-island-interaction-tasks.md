@@ -51,10 +51,10 @@
 
 | # | 任务 | 状态 | 负责 | 提交 / 备注 |
 |---|---|---|---|---|
-| 3.1 | 安装 `PreToolUse`（只匹配 `AskUserQuestion`，HTTP） | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | |
+| 3.1 | 安装 `PreToolUse`（只匹配 `AskUserQuestion`，HTTP） | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：端点 `POST /claude/ask-user-question`，安装用 `agent_approval::question_hook_url()` |
 | 3.2 | 提问卡片：单选、多选加提交、数字键选择、到终端处理 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | |
 | 3.3 | 自由文本回答 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | 依赖 0.3；Rust 侧已完成（fly-island-c6，提交 `feat(agent-status): answer AskUserQuestion through the approval endpoint`）：`answer` 决定原样带回自由文本 |
-| 3.4 | 测试与文档 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | |
+| 3.4 | 测试与文档 | 进行中 | fly-island-67 · lane 3 · 2026-11-06 23:40 | Rust 单元测试已完成（fly-island-c6，同上，`agent_approval/tests.rs` 新增 4 项） |
 
 ## 第 4 期：其余
 
