@@ -89,13 +89,13 @@ fn icon_pixels(icon: &IconHandle) -> Option<IconPixels> {
 
     let mut colors = read_bgra(&color, width, height)?;
     // Old icons have no alpha channel; their transparency is in the mask instead.
-    if colors.chunks_exact(4).all(|pixel| pixel[3] == 0) {
+    if colors.as_chunks::<4>().0.iter().all(|pixel| pixel[3] == 0) {
         let mask_pixels = read_bgra(&mask, width, height)?;
-        for (pixel, masked) in colors.chunks_exact_mut(4).zip(mask_pixels.chunks_exact(4)) {
+        for (pixel, masked) in colors.as_chunks_mut::<4>().0.iter_mut().zip(mask_pixels.as_chunks::<4>().0) {
             pixel[3] = if masked[0] == 0 { 255 } else { 0 };
         }
     }
-    for pixel in colors.chunks_exact_mut(4) {
+    for pixel in colors.as_chunks_mut::<4>().0 {
         pixel.swap(0, 2);
     }
     Some(IconPixels { width, height, rgba: colors })
@@ -153,7 +153,7 @@ mod tests {
         let icon = exe_icon(&explorer).expect("explorer.exe has an icon");
         assert_eq!(icon.width, icon.height);
         assert_eq!(icon.rgba.len(), (icon.width * icon.height * 4) as usize);
-        assert!(icon.rgba.chunks_exact(4).any(|pixel| pixel[3] > 0));
+        assert!(icon.rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] > 0));
         assert!(exe_icon(r"C:\does\not\exist.exe").is_none());
     }
 }
