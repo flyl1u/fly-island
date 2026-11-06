@@ -43,7 +43,7 @@
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
 | D1 | 测出空闲时的内存和 CPU 写进 README；确认 Agent 页每秒轮询不费电 | 已完成 | fly-island-fe · lane 4 | `cef6251`、`376c9cb`，数据见 [idle-usage.md](investigations/idle-usage.md)：收起闲着约单核 10%、330 MB；Agent 页每秒刷新 0.1% |
-| D2 | 无障碍检查：键盘操作、读屏提示（`aria`）、减少动效 | 待做 | | |
+| D2 | 无障碍检查：键盘操作、读屏提示（`aria`）、减少动效 | 进行中 | fly-island-fe · lane 4 · 2026-11-07 01:45 | |
 | D3 | 代码签名：Microsoft Store 或 Azure Trusted Signing | 待用户确认 | | 涉及费用 |
 | D4 | 对比上游 0.2.15～0.2.19，列出值得移植的修复 | 待做 | | |
 | D5 | 用装了旧版本的电脑完整走一遍应用内自动更新 | 待做 | | 需要用户操作 |
