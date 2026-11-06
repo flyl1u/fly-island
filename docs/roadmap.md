@@ -24,6 +24,7 @@
 | B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 已完成 | fly-island-lanes/4 | 并入 B6 第 1 期，见任务清单 1.5–1.9 |
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期先实测钩子等待时终端审批框的行为；第 1 期的自动弹出提醒已完成，音效（1.1–1.4）等用户确认风格 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
+| B6a | 自动弹出提醒只显示触发的那一个会话，不再展开整个 Agent 页列表（用户反馈：弹出时整页会话都出来了）；用户自己打开 Agent 页时照常显示全部 | 进行中 | fly-island-c6 · lane 6 · 2026-11-06 21:00 | 修正 B6 任务 1.6 的做法 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 进行中 | fly-island-fe · lane 4 · 2026-11-06 20:20 | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`），Codex 待做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
 
 ## 第三优先：竞品都有、我们还缺的
