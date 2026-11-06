@@ -39,6 +39,10 @@ Fly Island is a lightweight, borderless, always-on-top floating island. It sits 
 
 The look, size, tucking, shortcuts and every feature can be adjusted in the Settings window, and the app updates itself. Your data stays on your computer.
 
+## Resource use
+
+Collapsed and idle with no music playing (default settings, no plugins): about 10% of one CPU core (about 0.5% of a 20-core machine in total) and about 330 MB of memory, most of it Windows' own WebView2 (the Edge engine). The Agent page reads the session list once a second, which measured at 0.1% of one core. Each PowerShell plugin adds about 60 MB. How it was measured, with the numbers: [idle-usage.md](docs/investigations/idle-usage.md).
+
 ## Getting started
 
 1. Download and install from [Releases](https://github.com/TixXin/fly-island/releases/latest). The installers are not code-signed; if SmartScreen warns, choose "More info → Run anyway".
