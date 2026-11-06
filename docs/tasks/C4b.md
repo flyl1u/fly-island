@@ -2,8 +2,11 @@
 id: C4b
 title: 歌词的中文来源（网易云、QQ 音乐、酷狗，非官方接口、默认关闭并说明风险）、翻译行、逐字高亮、按单首歌调偏移
 section: 第三优先：竞品都有、我们还缺的
-status: 待做
-scope: 
+status: 进行中
+owner: fly-island-7e
+lane: 5
+claimed: 2026-11-07 03:02
+scope: src-tauri/src/lyrics, src/features/media/lyrics
 depends: 
 commits: 
 ---
