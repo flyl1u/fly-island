@@ -88,6 +88,8 @@ export type AgentSessionSummary = {
   backgroundTasks?: number;
   /** Set for a session reported from another computer (remoteSessions.ts); it has no window here. */
   remoteHost?: string;
+  /** Compacting its context now (Claude Code PreCompact / PostCompact hooks). Missing from older builds. */
+  compacting?: boolean;
 };
 
 /** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */

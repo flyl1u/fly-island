@@ -169,9 +169,9 @@ export function AgentSessionsPanel({
           // A finished turn that asked something (the marker, or a reply ending in a question).
           const light = sessionLight(session);
           const yourTurn = light === "yourTurn";
-          const phaseLabel = yourTurn ? t.agent.sessions.yourTurn : getAgentPhaseLabel(session.phase, t);
+          const phaseLabel = session.compacting ? t.agent.sessions.compacting : yourTurn ? t.agent.sessions.yourTurn : getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
-          const showPhase = yourTurn || (session.phase !== "running" && session.phase !== "completed");
+          const showPhase = session.compacting || yourTurn || (session.phase !== "running" && session.phase !== "completed");
           const elapsed = showElapsed && session.turnStartedAt !== null;
           // A running session's age is always about now; its running time says more.
           const showAge = session.phase !== "running" || !elapsed;

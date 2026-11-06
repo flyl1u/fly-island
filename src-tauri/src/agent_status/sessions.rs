@@ -58,6 +58,8 @@ pub struct AgentSessionSummary {
     /// Background tasks the newest turn started that have not ended (background_tasks.rs; Claude
     /// Code only). A finished turn with one running goes on by itself when it ends.
     pub(super) background_tasks: u32,
+    /// Compacting its context now (PreCompact seen, PostCompact not yet; notifications.rs).
+    pub(super) compacting: bool,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.

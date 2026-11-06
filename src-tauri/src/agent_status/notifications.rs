@@ -58,9 +58,36 @@ pub(super) fn is_waiting(
 /// Reads the saved notification when it changed and returns every session seen waiting.
 pub(super) fn waiting_notifications(app_dir: &Path) -> WaitingNotifications {
     let mut log = NOTIFICATIONS.lock().unwrap_or_else(PoisonError::into_inner);
-    log.refresh(&app_dir.join(CLAUDE_CODE_NOTIFICATION_FILE_NAME));
-    log.refresh(&app_dir.join(CODEX_NOTIFICATION_FILE_NAME));
+    log.refresh_all(app_dir);
     log.sessions.iter().cloned().collect()
+}
+
+/// A compaction that lasts longer than this has most likely ended without its PostCompact hook
+/// (an older install, or Claude Code quit); real ones take seconds to a couple of minutes.
+const COMPACTION_LIMIT_MS: i64 = 10 * 60 * 1000;
+
+/// Whether `input` (a saved hook input) starts (`Some(true)`) or ends (`Some(false)`) a session's
+/// context compaction (Claude Code's PreCompact and PostCompact hooks, roadmap B3b).
+pub(super) fn compaction_event(input: &str) -> Option<(String, bool)> {
+    let input = serde_json::from_str::<Value>(input.trim_start_matches('\u{feff}').trim()).ok()?;
+    let starts = match input["hook_event_name"].as_str()? {
+        "PreCompact" => true,
+        "PostCompact" => false,
+        _ => return None,
+    };
+    let session_id = input["session_id"].as_str().filter(|id| !id.is_empty())?;
+    Some((session_id.to_string(), starts))
+}
+
+/// The sessions compacting their context now, by when it started (Unix milliseconds).
+pub(super) fn compacting_sessions(app_dir: &Path, now: i64) -> HashMap<String, i64> {
+    let mut log = NOTIFICATIONS.lock().unwrap_or_else(PoisonError::into_inner);
+    log.refresh_all(app_dir);
+    log.compacting
+        .iter()
+        .filter(|(_, started_at)| now - started_at < COMPACTION_LIMIT_MS)
+        .cloned()
+        .collect()
 }
 
 struct NotificationLog {
@@ -68,6 +95,8 @@ struct NotificationLog {
     stamps: Vec<(PathBuf, (u64, Option<SystemTime>))>,
     /// `(session id, notified at)`, oldest first.
     sessions: Vec<(String, i64)>,
+    /// `(session id, compaction started at)` for compactions not seen ending.
+    compacting: Vec<(String, i64)>,
 }
 
 impl NotificationLog {
@@ -75,7 +104,13 @@ impl NotificationLog {
         Self {
             stamps: Vec::new(),
             sessions: Vec::new(),
+            compacting: Vec::new(),
         }
+    }
+
+    fn refresh_all(&mut self, app_dir: &Path) {
+        self.refresh(&app_dir.join(CLAUDE_CODE_NOTIFICATION_FILE_NAME));
+        self.refresh(&app_dir.join(CODEX_NOTIFICATION_FILE_NAME));
     }
 
     fn refresh(&mut self, path: &Path) {
@@ -91,13 +126,21 @@ impl NotificationLog {
         let Some(notified_at) = stamp.1.and_then(system_time_to_unix_millis) else {
             return;
         };
-        let Some(session_id) = fs::read(path)
-            .ok()
-            .and_then(|bytes| waiting_session_id(&String::from_utf8_lossy(&bytes)))
-        else {
+        let Ok(bytes) = fs::read(path) else {
             return;
         };
-        self.remember(session_id, notified_at);
+        let input = String::from_utf8_lossy(&bytes);
+        if let Some((session_id, starts)) = compaction_event(&input) {
+            self.compacting.retain(|(known, _)| *known != session_id);
+            if starts {
+                if self.compacting.len() >= REMEMBERED_SESSIONS {
+                    self.compacting.remove(0);
+                }
+                self.compacting.push((session_id, notified_at));
+            }
+        } else if let Some(session_id) = waiting_session_id(&input) {
+            self.remember(session_id, notified_at);
+        }
     }
 
     fn remember(&mut self, session_id: String, notified_at: i64) {

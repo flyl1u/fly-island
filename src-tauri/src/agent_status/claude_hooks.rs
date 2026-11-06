@@ -87,6 +87,16 @@ pub(super) fn claude_code_hook_entries(
         args.push(Value::String(AGENT_RUNNING_NOTIFICATION_ARG.to_string()));
     }
 
+    // PreCompact / PostCompact: the session is compacting its context (roadmap B3b). The same
+    // input-saving call; it prints nothing, so it adds no instructions to the summary.
+    let compaction = || {
+        let mut entry = claude_code_running_hook_entry(running_script_path);
+        if let Some(args) = entry["hooks"][0]["args"].as_array_mut() {
+            args.push(Value::String(AGENT_RUNNING_NOTIFICATION_ARG.to_string()));
+        }
+        entry
+    };
+
     let session_script_path = status_script_path.with_file_name(AGENT_SESSION_SCRIPT_FILE_NAME);
     // In the background: looking up the session's process takes about a second.
     let mut session_start = claude_code_session_hook_entry(&session_script_path, "start");
@@ -107,6 +117,8 @@ pub(super) fn claude_code_hook_entries(
             claude_code_match_all_hook_entry(claude_code_running_hook_entry(running_script_path)),
         ),
         ("Notification", notification),
+        ("PreCompact", compaction()),
+        ("PostCompact", compaction()),
         (
             "Stop",
             claude_code_status_hook_entry(status_script_path, "completed"),

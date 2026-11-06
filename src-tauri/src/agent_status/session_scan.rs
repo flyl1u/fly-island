@@ -11,7 +11,7 @@ use std::{
 };
 
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
-use super::notifications::{is_waiting, WaitingNotifications};
+use super::notifications::{compacting_sessions, is_waiting, WaitingNotifications};
 use super::session_host::codex_host;
 use super::session_process::running_sessions;
 use super::session_records;
@@ -53,6 +53,7 @@ pub(super) fn list_sessions(
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
     // Claude Code's registry of live sessions, read once and only if some session needs it.
     let mut live_claude: Option<HashMap<String, u32>> = None;
+    let compacting = app_dir.map(|dir| compacting_sessions(dir, now)).unwrap_or_default();
     for (provider, path, modified) in recent_session_files(home_dir, now, window_ms) {
         // The phase is worked out here, because a working session turns stale, or stops
         // waiting, without its file changing.
@@ -64,9 +65,14 @@ pub(super) fn list_sessions(
             let ended = mid_turn
                 && has_ended(app_dir, &summary.session_id)
                     .unwrap_or_else(|| left_claude_registry(home_dir, &summary, now, &mut live_claude));
+            // Compacting writes nothing to the transcript until it is done, for up to minutes;
+            // the session works meanwhile, whether the turn or `/compact` started it.
+            summary.compacting = compacting.contains_key(&summary.session_id) && !ended;
             summary.phase = if ended {
                 // Quit mid-turn (often while a question was open): nothing left to wait for.
                 "completed"
+            } else if summary.compacting {
+                "running"
             } else if state == TurnState::Working && asked_user {
                 // Waiting on the user is not a stall, however long it takes.
                 "waiting"
@@ -315,6 +321,8 @@ fn summary_from(
         permission_mode: parsed.permission_mode,
         subagents: parsed.subagents,
         background_tasks: parsed.background_tasks,
+        // Set by `list_sessions`.
+        compacting: false,
     }
 }
 

@@ -358,6 +358,34 @@ fn session_phase_turns_stale_after_the_limit() {
 }
 
 #[test]
+fn a_session_compacts_from_pre_compact_until_post_compact() {
+    use super::markers::CLAUDE_CODE_NOTIFICATION_FILE_NAME;
+    use super::notifications::{compacting_sessions, compaction_event, waiting_notifications};
+    use super::snapshot::current_unix_millis;
+
+    assert_eq!(compaction_event(r#"{"hook_event_name":"PreCompact","session_id":"s1","trigger":"auto"}"#), Some(("s1".to_string(), true)));
+    assert_eq!(compaction_event(r#"{"hook_event_name":"PostCompact","session_id":"s1"}"#), Some(("s1".to_string(), false)));
+    assert_eq!(compaction_event(r#"{"hook_event_name":"Notification","session_id":"s1"}"#), None);
+
+    let (_home, app) = temp_dirs();
+    let file = app.join(CLAUDE_CODE_NOTIFICATION_FILE_NAME);
+    let save = |text: &str| {
+        fs::write(&file, text).unwrap();
+        // The log rereads the file when its size or time changes; a later write may share the time.
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    };
+    let now = current_unix_millis();
+    save(r#"{"hook_event_name":"PreCompact","session_id":"compact-a","trigger":"manual"}"#);
+    assert!(compacting_sessions(&app, now).contains_key("compact-a"));
+    // A compaction is not a wait for the user.
+    assert!(!waiting_notifications(&app).contains_key("compact-a"));
+    // Past the limit it no longer counts, in case PostCompact never came.
+    assert!(!compacting_sessions(&app, now + 11 * 60 * 1000).contains_key("compact-a"));
+    save(r#"{"hook_event_name":"PostCompact","session_id":"compact-a","trigger":"manual" }"#);
+    assert!(!compacting_sessions(&app, now).contains_key("compact-a"));
+}
+
+#[test]
 fn background_tasks_of_the_newest_turn_count_until_they_end() {
     use super::sessions::{parse_claude_tail, TurnState};
     let started = |id: &str| {

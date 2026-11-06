@@ -1,7 +1,7 @@
 import type { AgentSessionSummary } from "./api";
 
 /** Fields the Agent page shows; `updatedAt` is left out because it only feeds the age label. */
-const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt", "permissionMode", "subagents", "replyMarker", "replyAsks", "backgroundTasks"] as const;
+const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt", "permissionMode", "subagents", "replyMarker", "replyAsks", "backgroundTasks", "compacting"] as const;
 
 export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSummary[]) {
   return (

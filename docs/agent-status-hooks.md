@@ -70,7 +70,7 @@ When the turn finishes, `focusd-agent-status.ps1` removes the marker, writes `ag
 
 Session titles and the island's Agent page do not depend on hooks: `list_agent_sessions` reads the Claude Code transcripts (`~/.claude/projects/*/*.jsonl`) and the Codex rollouts (`~/.codex/sessions/`) of the last two hours directly. Titles come from Claude Code's `ai-title` records or the Codex `thread_name` in `~/.codex/session_index.jsonl`, else the first typed prompt, else the project folder. Earlier versions copied the prompt-submit hook input (`capture`, `agent-*-hook-input.json`) for this; that copy held the whole prompt and is gone. Install/Repair deletes leftover copies, and the script ignores the `capture` argument older installs still pass.
 
-Waiting is told by hooks that save their input: Claude Code's `PermissionRequest` (fires before every permission prompt) and `Notification` (matcher `permission_prompt|elicitation_dialog|agent_needs_input`), and Codex's `PermissionRequest`:
+Waiting is told by hooks that save their input: Claude Code's `PermissionRequest` (fires before every permission prompt) and `Notification` (matcher `permission_prompt|elicitation_dialog|agent_needs_input`), and Codex's `PermissionRequest`. Claude Code's `PreCompact` and `PostCompact` save their input the same way: from one to the other the session is compacting its context, which writes nothing to the transcript for up to a couple of minutes, so the Agent page says "Compacting context" and keeps it running (taken as over after 10 minutes in case `PostCompact` never comes). The waiting hooks:
 
 ```text
 focusd-agent-running.cmd claudeCode notification

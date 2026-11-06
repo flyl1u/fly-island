@@ -35,6 +35,8 @@ export type AgentText = {
     undo: string;
     /** A finished session whose reply ends on the "your turn" marker. */
     yourTurn: string;
+    /** A session compacting its context (PreCompact hook); it can take a minute or two. */
+    compacting: string;
   };
   /** The usage line at the top of the Agent page. */
   usage: {
@@ -104,6 +106,7 @@ export const zhCN: AgentText = {
     removed: "已从列表移除",
     undo: "撤销",
     yourTurn: "等你回复",
+    compacting: "正在压缩上下文",
   },
   usage: {
     label: "Claude 用量",
@@ -168,6 +171,7 @@ export const en: AgentText = {
     removed: "Removed from the list",
     undo: "Undo",
     yourTurn: "Your turn",
+    compacting: "Compacting context",
   },
   usage: {
     label: "Claude usage",

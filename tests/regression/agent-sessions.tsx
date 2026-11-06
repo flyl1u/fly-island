@@ -274,6 +274,12 @@ async function runChecks() {
     const asking = rows()[0];
     check(asking.classList.contains("agent-session--light-yourTurn") && dot(asking) === "rgb(255, 214, 10)" && meta(asking)?.startsWith("等你回复"),
       `回复以问句结尾的会话显示黄色状态灯和「等你回复」：${meta(asking)}`);
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[0], sessionId: "e", compacting: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    const compacting = rows()[0];
+    check(meta(compacting)?.startsWith("正在压缩上下文") && dot(compacting) === "rgb(52, 199, 89)", `压缩上下文时写明，状态灯仍是绿色：${meta(compacting)}`);
     // Last: it swaps the list for one remote row, which the checks above would not find.
     const remote: AgentSessionSummary = {
       ...sessions[0], sessionId: "local-api/r-1", provider: "codex", cwd: "/srv/app", title: "服务器上的会话",
