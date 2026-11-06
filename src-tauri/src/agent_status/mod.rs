@@ -285,6 +285,16 @@ pub async fn focus_agent_window(
     .map_err(|error| format!("Failed to join the window focus task: {error}"))
 }
 
+/// Which of `sessions` have their window in front (focus.rs); the Agent page counts those as
+/// seen. Returns their session ids.
+#[tauri::command]
+pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::SessionRef>) -> Result<Vec<String>, String> {
+    let app_dir = app.path().app_data_dir().ok();
+    tauri::async_runtime::spawn_blocking(move || focus::sessions_in_front(app_dir.as_deref(), &sessions))
+        .await
+        .map_err(|error| format!("Failed to join the window check: {error}"))
+}
+
 /// The icon of a session host (`host.exe` of a listed session) as a PNG data URL; null when the
 /// path is not an existing .exe or it has no icon.
 #[tauri::command]
@@ -392,6 +402,7 @@ macro_rules! tauri_commands {
             crate::agent_status::install_agent_status_hooks,
             crate::agent_status::get_agent_hooks_state,
             crate::agent_status::focus_agent_window,
+            crate::agent_status::agent_sessions_in_front,
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
         ] $($rest)*)

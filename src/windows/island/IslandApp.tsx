@@ -20,6 +20,7 @@ import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useAgentSessions } from "../../features/agent-status/useAgentSessions";
+import { useUnseenSessions } from "../../features/agent-status/useUnseenSessions";
 import { countActiveSessions, filterSessions, isActivePhase } from "../../features/agent-status/sessionList";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
@@ -117,6 +118,7 @@ export function IslandApp() {
     [agentSessions, settings.agentHideFinished],
   );
   const activeAgentSessionCount = countActiveSessions(agentSessions);
+  const unseenAgentSessions = useUnseenSessions(agentSessions, settings.agentStatusEnabled);
   const agentSession = useAgentSession(
     agentSessions,
     agentStatus.others,
@@ -378,7 +380,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} />}
+        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

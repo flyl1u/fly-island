@@ -107,6 +107,13 @@ export function focusAgentWindow(provider: AgentProvider, cwd: string | null, ti
   return invoke<boolean>("focus_agent_window", { provider, cwd, title, sessionId });
 }
 
+/** Session ids among `sessions` whose window is in front (agent_sessions_in_front). */
+export function agentSessionsInFront(sessions: Pick<AgentSessionSummary, "provider" | "sessionId">[]) {
+  return invoke<string[]>("agent_sessions_in_front", {
+    sessions: sessions.map(({ provider, sessionId }) => ({ provider, sessionId })),
+  });
+}
+
 export function getAgentHooksState() {
   return invoke<AgentHooksState>("get_agent_hooks_state");
 }

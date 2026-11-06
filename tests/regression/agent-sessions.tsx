@@ -90,6 +90,18 @@ async function runChecks() {
     check(!third.querySelector(".agent-session__message") && !third.querySelector(".agent-session__model"), "折叠行不显示回复和模型");
     check(first.querySelector(".agent-session__mode--bypass")?.textContent === "跳过确认" && meta(first)?.includes("2 个子 Agent"), "运行中的会话标出跳过确认的权限模式和正在跑的子 Agent 数");
     check(!second.querySelector(".agent-session__mode") && !third.querySelector(".agent-session__mode") && !meta(third)?.includes("子 Agent"), "默认权限模式和已结束的会话不显示这两项");
+    const titleTone = (row: HTMLElement) => getComputedStyle(row.querySelector(".agent-session__title")!).color;
+    const dimTitle = titleTone(third);
+    const seenKeys: string[] = [];
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" unseen={{ keys: new Set(["claudeCode:c"]), markSeen: (session) => seenKeys.push(session.sessionId) }} /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    check(third.classList.contains("agent-session--unseen") && titleTone(third) === titleTone(first) && titleTone(third) !== dimTitle && !first.classList.contains("agent-session--unseen"), "跑完还没看的会话标题保持亮色，看过的才变灰");
+    // The fly-island session has a window, so clicking it leaves no "not found" note behind.
+    first.click();
+    check(seenKeys.join() === "a", "点开会话就算看过");
+    await render("both");
     const panel = document.querySelector<HTMLElement>(".agent-sessions")!;
     check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");
     const list = document.querySelector<HTMLElement>(".agent-sessions__list")!;

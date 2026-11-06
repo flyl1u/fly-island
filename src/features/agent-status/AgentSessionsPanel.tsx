@@ -9,6 +9,8 @@ import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import { useScrollFade } from "./useScrollFade";
+import { sessionKey } from "./unseen";
+import type { UnseenSessions } from "./useUnseenSessions";
 import "./AgentSessionsPanel.css";
 
 const NOT_FOUND_NOTICE_MS = 3000;
@@ -24,6 +26,7 @@ export function AgentSessionsPanel({
   showElapsed = true,
   showModel = true,
   showActivity = true,
+  unseen,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
@@ -32,6 +35,8 @@ export function AgentSessionsPanel({
   showModel?: boolean;
   /** The latest prompt and the tool in use, on working rows. */
   showActivity?: boolean;
+  /** Finished sessions not looked at yet; they stand out until clicked. */
+  unseen?: UnseenSessions;
 }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -52,6 +57,7 @@ export function AgentSessionsPanel({
 
   const focus = (session: AgentSessionSummary) => {
     setNotFoundId(null);
+    unseen?.markSeen(session);
     void focusAgentWindow(session.provider, session.cwd, session.title, session.sessionId)
       .then((found) => {
         if (!found) setNotFoundId(session.sessionId);
@@ -108,7 +114,7 @@ export function AgentSessionsPanel({
           return (
             <li key={`${session.provider}:${session.sessionId}`}>
               <button
-                className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}`}
+                className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
                 type="button"
                 onClick={() => focus(session)}
               >

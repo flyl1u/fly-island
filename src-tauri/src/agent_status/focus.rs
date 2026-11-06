@@ -184,3 +184,35 @@ pub(super) fn focus_session(
     log.finish(app_dir, if focused.in_front { "focused" } else { "found, flashed (Windows kept it behind)" });
     true
 }
+
+/// A session asked about by `sessions_in_front`.
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionRef {
+    provider: String,
+    session_id: String,
+}
+
+/// Ids of the sessions whose window is the one in front: the foreground window belongs to the
+/// session's process or one of its ancestors (the terminal or editor it runs in). A session whose
+/// process is not known is never in front. Shell hosts such as Explorer, which can be ancestors of
+/// anything, do not count.
+pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef]) -> Vec<String> {
+    let front = win32::process::window_process_id(win32::window::foreground_window());
+    let front_app = win32::process::image_path(front).map(|path| app_name(&path));
+    if front == 0 || front_app.is_none_or(|app| window_focus::NOT_SESSION_HOSTS.contains(&app.as_str())) {
+        return Vec::new();
+    }
+    sessions
+        .iter()
+        .filter(|session| {
+            let id = session.session_id.as_str();
+            // Only to satisfy process_chain; never written to agent-focus.log.
+            let mut log = Attempt::new(&session.provider, Some(id));
+            let seen = session_memory::get(app_dir, id);
+            let record = app_dir.and_then(|dir| session_records::read(dir, id));
+            process_chain(session.provider == "codex", Some(id), record.as_ref(), seen.as_ref(), &mut log).contains(&front)
+        })
+        .map(|session| session.session_id.clone())
+        .collect()
+}

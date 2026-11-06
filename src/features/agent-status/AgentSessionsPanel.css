@@ -241,6 +241,19 @@
   color: var(--color-warning);
 }
 
+/* Finished but not looked at yet: bright until clicked or its window comes to the front. */
+.agent-session--unseen .agent-session__title {
+  color: rgba(var(--agent-ink), 0.95);
+}
+
+.agent-session--unseen.agent-session--completed .agent-session__dot {
+  box-shadow: 0 0 8px rgba(53, 233, 133, 0.8);
+}
+
+.agent-session--unseen.agent-session--failed .agent-session__dot {
+  box-shadow: 0 0 8px var(--color-warning);
+}
+
 .agent-session__message {
   display: -webkit-box;
   overflow: hidden;
