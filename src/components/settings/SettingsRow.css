@@ -1,0 +1,50 @@
+.settings-row {
+  min-width: 0;
+  min-height: 50px;
+  display: grid;
+  align-content: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl) 16px;
+}
+
+.settings-row--indent {
+  padding-left: 36px;
+}
+
+.settings-row__main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-row__text {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.settings-row__title {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+label.settings-row__title {
+  cursor: pointer;
+}
+
+.settings-row__description {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-row__control {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}

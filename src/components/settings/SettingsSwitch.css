@@ -1,0 +1,60 @@
+.settings-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  flex: none;
+  display: inline-block;
+}
+
+/* The real checkbox covers the switch, so clicks and keyboard focus land on it. */
+.settings-switch input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settings-switch__track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-white-a16);
+  border-radius: var(--radius-pill);
+  transition: background 140ms ease;
+}
+
+.settings-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-white);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 140ms ease;
+}
+
+.settings-switch input:checked + .settings-switch__track {
+  background: var(--color-accent);
+}
+
+.settings-switch input:checked + .settings-switch__track::after {
+  transform: translateX(16px);
+}
+
+.settings-switch input:focus-visible + .settings-switch__track {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-switch__track,
+  .settings-switch__track::after {
+    transition: none;
+  }
+}

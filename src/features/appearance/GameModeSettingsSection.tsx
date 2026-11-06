@@ -1,7 +1,7 @@
 import { useTranslation } from "../../i18n";
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import type { IslandSettings } from "./types";
-import "./GameModeSettingsSection.css";
 
 /** Game mode: what the island holds back while a full-screen app is in front. */
 export function GameModeSettingsSection({
@@ -12,25 +12,22 @@ export function GameModeSettingsSection({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const t = useTranslation();
+  const text = t.settings.gameMode;
 
   return (
-    <section className="settings-section settings-section--game-mode">
-      <div className="settings-section__header">
-        <span>{t.settings.gameMode.title}</span>
-      </div>
-      <p className="game-mode-hint">{t.settings.gameMode.hint}</p>
-      <ToggleControl
-        label={t.settings.gameMode.doNotDisturb}
+    <SettingsGroup title={text.title} footer={text.hint}>
+      <SettingsToggleRow
+        title={text.doNotDisturb}
+        description={text.doNotDisturbHint}
         checked={settings.gameDoNotDisturb}
         onChange={(gameDoNotDisturb) => onSettingsChange({ ...settings, gameDoNotDisturb })}
       />
-      <p className="game-mode-hint">{t.settings.gameMode.doNotDisturbHint}</p>
-      <ToggleControl
-        label={t.settings.gameMode.autoTuck}
+      <SettingsToggleRow
+        title={text.autoTuck}
+        description={text.autoTuckHint}
         checked={settings.gameAutoTuck}
         onChange={(gameAutoTuck) => onSettingsChange({ ...settings, gameAutoTuck })}
       />
-      <p className="game-mode-hint">{t.settings.gameMode.autoTuckHint}</p>
-    </section>
+    </SettingsGroup>
   );
 }

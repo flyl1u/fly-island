@@ -12,8 +12,8 @@ export const zhCN: SettingsGameModeText = {
   hint: "前台是全屏程序时生效，比如游戏、全屏视频和演示。",
   doNotDisturb: "游戏勿扰",
   doNotDisturbHint: "不悬停展开，不抢键盘焦点，不弹消息预览，已展开的面板会收起。消息照常接收。",
-  autoTuck: "游戏时收起到顶部",
-  autoTuckHint: "全屏程序占住岛所在的屏幕时收起到顶部，退出后自动露出。",
+  autoTuck: "游戏时贴边隐藏",
+  autoTuckHint: "全屏程序占住岛所在的屏幕时贴到顶部，退出后自动露出。",
 };
 
 export const en: SettingsGameModeText = {

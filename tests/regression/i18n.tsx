@@ -7,7 +7,7 @@ import "../../src/styles/tokens.css";
 import { IslandApp } from "../../src/windows/island/IslandApp";
 import { TranslationWindow } from "../../src/windows/translation/TranslationWindow";
 import { SettingsWindow } from "../../src/windows/settings/SettingsWindow";
-import { I18nProvider, LOCALE_STORAGE_KEY, useLocale } from "../../src/i18n";
+import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS, useLocale } from "../../src/i18n";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -82,9 +82,16 @@ const click = async (selector: string) => {
   if (!element) throw new Error(`Missing ${selector}`);
   await act(async () => { element.click(); });
 };
+// The language row's dropdown is named by its row title in whichever language is showing.
+const LANGUAGE_TRIGGER = [TRANSLATIONS["zh-CN"], TRANSLATIONS.en]
+  .map((text) => `.settings-select .select-control__trigger[aria-label='${text.settings.language.label}']`)
+  .join(", ");
 const switchTo = async (locale: string) => {
-  await click(".locale-control .select-control__trigger");
-  await click(`.locale-control .select-control__option[data-value='${locale}']`);
+  await click(LANGUAGE_TRIGGER);
+  const menu = document.querySelector(LANGUAGE_TRIGGER)?.closest(".select-control");
+  const option = menu?.querySelector<HTMLElement>(`.select-control__option[data-value='${locale}']`);
+  if (!option) throw new Error(`Missing language option ${locale}`);
+  await act(async () => { option.click(); });
 };
 
 if (!automated) mount();
@@ -92,7 +99,7 @@ else {
   try {
     await act(async () => { mount(); });
     await click(".island__open-button");
-    check(document.querySelector(".locale-control")?.textContent?.includes("界面语言"), "Chinese language control is reachable");
+    check(document.querySelector(LANGUAGE_TRIGGER)?.getAttribute("aria-label") === "界面语言", "Chinese language control is reachable");
     const dataKeys = ["focusd-island-todos", "focusd-island-daily-note", "focusd-island-archives", "focusd-island-settings", "focusd-island-setting-presets"];
     const dataBefore = dataKeys.map(key => localStorage.getItem(key));
     const subscriptionsBefore = commands.filter(command => command.startsWith("set_qq_") || command === "set_wechat_reminders_enabled").length;

@@ -19,6 +19,12 @@ export type SettingsLayoutText = {
   autoTuckSeconds: string;
   autoTuckRetract: string;
   autoTuckRetractDelay: string;
+  autoTuckHint: string;
+  minimizeHint: string;
+  /** A duration in seconds, already rounded, as a settings value shows it. */
+  seconds: (value: number) => string;
+  minutes: (value: number) => string;
+  resetToDefault: string;
 };
 
 export const zhCN: SettingsLayoutText = {
@@ -37,11 +43,16 @@ export const zhCN: SettingsLayoutText = {
   displayTitle: "显示内容",
   minimizeAction: "最小化按钮",
   minimizeToTray: "托盘",
-  minimizeToTop: "收起到顶部",
-  autoTuck: "无操作时自动收起到屏幕边缘",
-  autoTuckSeconds: "闲置多久后收起（秒）",
-  autoTuckRetract: "鼠标移开后重新收起",
-  autoTuckRetractDelay: "移开后重新收起延迟",
+  minimizeToTop: "贴边隐藏",
+  autoTuck: "闲置时贴边隐藏",
+  autoTuckSeconds: "闲置多久后隐藏",
+  autoTuckRetract: "鼠标移开后再次隐藏",
+  autoTuckRetractDelay: "再次隐藏前等待",
+  autoTuckHint: "一段时间没有操作后，岛屿贴到屏幕顶部，只露出一条边。",
+  minimizeHint: "点岛上的最小化按钮时，隐藏到托盘还是贴到屏幕顶部。",
+  seconds: (value) => `${value} 秒`,
+  minutes: (value) => `${value} 分钟`,
+  resetToDefault: "恢复默认值",
 };
 
 export const en: SettingsLayoutText = {
@@ -60,9 +71,14 @@ export const en: SettingsLayoutText = {
   displayTitle: "Display",
   minimizeAction: "Minimize button",
   minimizeToTray: "Tray",
-  minimizeToTop: "Top edge",
-  autoTuck: "Auto-tuck to screen edge when idle",
-  autoTuckSeconds: "Idle time before tucking (seconds)",
+  minimizeToTop: "Tuck to edge",
+  autoTuck: "Tuck to the edge when idle",
+  autoTuckSeconds: "Idle time",
   autoTuckRetract: "Tuck again when the pointer leaves",
-  autoTuckRetractDelay: "Tuck-again delay after leaving",
+  autoTuckRetractDelay: "Wait before tucking again",
+  autoTuckHint: "After a while without use, the island slides up to the top of the screen and shows only an edge.",
+  minimizeHint: "Whether the island's minimize button hides it in the tray or tucks it to the top edge.",
+  seconds: (value) => `${value} s`,
+  minutes: (value) => `${value} min`,
+  resetToDefault: "Reset to default",
 };

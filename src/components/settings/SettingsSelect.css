@@ -1,0 +1,43 @@
+.settings-select .select-control {
+  width: auto;
+}
+
+.settings-select .select-control__trigger {
+  width: auto;
+  max-width: 240px;
+  height: 30px;
+  gap: var(--space-sm);
+  padding: 0 6px 0 10px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border-color: transparent;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.settings-select .select-control__trigger:hover,
+.settings-select .select-control--open .select-control__trigger {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  box-shadow: none;
+}
+
+.settings-select .select-control__trigger:focus-visible {
+  border-color: var(--color-focus-ring);
+  box-shadow: none;
+}
+
+/* The menu opens under the value, aligned to the row's right edge. */
+.settings-select .select-control__menu {
+  left: auto;
+  min-width: 180px;
+}
+
+.settings-select .select-control__option {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.settings-select .select-control__option[aria-selected="true"] {
+  color: var(--color-accent);
+}

@@ -1,8 +1,14 @@
 import { useTranslation } from "../../i18n";
-import { NumberControl } from "../../components/controls/NumberControl";
-import { SliderControl } from "../../components/controls/SliderControl";
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsChoice } from "../../components/settings/SettingsChoice";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSelect } from "../../components/settings/SettingsSelect";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import {
+  DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS,
+  DEFAULT_HOVER_COLLAPSE_DELAY_MS,
+  DEFAULT_HOVER_EXPAND_DELAY_MS,
   MAX_AUTO_TUCK_RETRACT_DELAY_MS,
   MAX_HOVER_COLLAPSE_DELAY_MS,
   MAX_HOVER_EXPAND_DELAY_MS,
@@ -10,9 +16,16 @@ import {
   MIN_HOVER_COLLAPSE_DELAY_MS,
   MIN_HOVER_EXPAND_DELAY_MS,
 } from "./settings";
-import type { ExpandTrigger, IslandSettings, MinimizeAction, TuckedHoverAction } from "./types";
-import "./AppearanceModeControl.css";
+import type { ExpandTrigger, IslandSettings, TuckedHoverAction } from "./types";
 
+/** Idle times offered before tucking, in seconds. A saved value outside the list is offered too. */
+const IDLE_SECONDS = [5, 10, 15, 30, 60, 120, 300, 600];
+
+/**
+ * Settings → General: how the island opens, when it tucks to the screen edge, and
+ * how a tucked island comes back. Rows that only matter while a switch is on sit
+ * indented under it and are hidden while it is off.
+ */
 export function ExpandSettingsSection({
   settings,
   onSettingsChange,
@@ -21,131 +34,130 @@ export function ExpandSettingsSection({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const t = useTranslation();
-  const triggers: [ExpandTrigger, string][] = [
-    ["click", t.settings.expand.click],
-    ["hover", t.settings.expand.hover],
+  const layout = t.settings.layout;
+  const expand = t.settings.expand;
+  const update = (patch: Partial<IslandSettings>) => onSettingsChange({ ...settings, ...patch });
+  const seconds = (ms: number) => layout.seconds(Number((ms / 1000).toFixed(2)));
+  const idleLabel = (value: number) => (value >= 60 && value % 60 === 0 ? layout.minutes(value / 60) : layout.seconds(value));
+  const idleOptions = [...new Set([...IDLE_SECONDS, settings.autoTuckSeconds])]
+    .sort((a, b) => a - b)
+    .map((value) => ({ value: String(value), label: idleLabel(value) }));
+  const triggers: { value: ExpandTrigger; label: string }[] = [
+    { value: "click", label: expand.click },
+    { value: "hover", label: expand.hover },
   ];
-  const tuckedHoverActions: [TuckedHoverAction, string][] = [
-    ["reveal", t.settings.expand.tuckedHoverReveal],
-    ["expand", t.settings.expand.tuckedHoverExpand],
-  ];
-  const minimizeActions: [MinimizeAction, string][] = [
-    ["tray", t.settings.layout.minimizeToTray],
-    ["tuck", t.settings.layout.minimizeToTop],
+  const tuckedHoverActions: { value: TuckedHoverAction; label: string }[] = [
+    { value: "reveal", label: expand.tuckedHoverReveal },
+    { value: "expand", label: expand.tuckedHoverExpand },
   ];
 
   return (
-    <section className="settings-section settings-section--expand">
-      <div className="settings-section__header">
-        <span>{t.settings.expand.title}</span>
-      </div>
-      <div className="appearance-mode-control">
-        <span>{t.settings.expand.trigger}</span>
-        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.expand.trigger}>
-          {triggers.map(([expandTrigger, label]) => (
-            <button
-              key={expandTrigger}
-              className={settings.expandTrigger === expandTrigger ? "appearance-mode-control--active" : ""}
-              type="button"
-              aria-pressed={settings.expandTrigger === expandTrigger}
-              onClick={() => onSettingsChange({ ...settings, expandTrigger })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {settings.expandTrigger === "hover" && (
-        <>
-          <SliderControl
-            label={t.settings.expand.hoverDelay}
-            value={settings.hoverExpandDelayMs}
-            min={MIN_HOVER_EXPAND_DELAY_MS}
-            max={MAX_HOVER_EXPAND_DELAY_MS}
-            step={50}
-            suffix="ms"
-            onChange={(hoverExpandDelayMs) => onSettingsChange({ ...settings, hoverExpandDelayMs })}
-          />
-          <SliderControl
-            label={t.settings.expand.hoverCollapseDelay}
-            value={settings.hoverCollapseDelayMs}
-            min={MIN_HOVER_COLLAPSE_DELAY_MS}
-            max={MAX_HOVER_COLLAPSE_DELAY_MS}
-            step={50}
-            suffix="ms"
-            onChange={(hoverCollapseDelayMs) => onSettingsChange({ ...settings, hoverCollapseDelayMs })}
-          />
-        </>
-      )}
-      <div className="appearance-mode-control">
-        <span>{t.settings.layout.minimizeAction}</span>
-        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.layout.minimizeAction}>
-          {minimizeActions.map(([minimizeAction, label]) => (
-            <button
-              key={minimizeAction}
-              className={settings.minimizeAction === minimizeAction ? "appearance-mode-control--active" : ""}
-              type="button"
-              aria-pressed={settings.minimizeAction === minimizeAction}
-              onClick={() => onSettingsChange({ ...settings, minimizeAction })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="appearance-mode-control">
-        <span>{t.settings.expand.tuckedHover}</span>
-        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.expand.tuckedHover}>
-          {tuckedHoverActions.map(([tuckedHoverAction, label]) => (
-            <button
-              key={tuckedHoverAction}
-              className={settings.tuckedHoverAction === tuckedHoverAction ? "appearance-mode-control--active" : ""}
-              type="button"
-              aria-pressed={settings.tuckedHoverAction === tuckedHoverAction}
-              onClick={() => onSettingsChange({ ...settings, tuckedHoverAction })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <ToggleControl
-        label={t.settings.layout.autoTuck}
-        checked={settings.autoTuck}
-        onChange={(autoTuck) => onSettingsChange({ ...settings, autoTuck })}
-      />
-      {settings.autoTuck && (
-        <>
-          <NumberControl
-            label={t.settings.layout.autoTuckSeconds}
-            value={settings.autoTuckSeconds}
-            min={1}
-            max={3_600}
-            onChange={(autoTuckSeconds) => onSettingsChange({ ...settings, autoTuckSeconds })}
-          />
-          <ToggleControl
-            label={t.settings.layout.autoTuckRetract}
-            checked={settings.autoTuckRetract}
-            onChange={(autoTuckRetract) => onSettingsChange({ ...settings, autoTuckRetract })}
-          />
-          {settings.autoTuckRetract && (
-            <SliderControl
-              label={t.settings.layout.autoTuckRetractDelay}
-              value={settings.autoTuckRetractDelayMs}
-              min={MIN_AUTO_TUCK_RETRACT_DELAY_MS}
-              max={MAX_AUTO_TUCK_RETRACT_DELAY_MS}
-              step={100}
-              suffix="ms"
-              onChange={(autoTuckRetractDelayMs) => onSettingsChange({ ...settings, autoTuckRetractDelayMs })}
+    <>
+      <SettingsGroup title={expand.title}>
+        <SettingsRow
+          title={expand.trigger}
+          control={
+            <SettingsChoice
+              value={settings.expandTrigger}
+              options={triggers}
+              ariaLabel={expand.trigger}
+              onChange={(expandTrigger) => update({ expandTrigger })}
             />
-          )}
-        </>
-      )}
-      <ToggleControl
-        label={t.settings.expand.revealOnMessage}
-        checked={settings.revealOnMessage}
-        onChange={(revealOnMessage) => onSettingsChange({ ...settings, revealOnMessage })}
-      />
-    </section>
+          }
+        />
+        {settings.expandTrigger === "hover" && (
+          <>
+            <SettingsSliderRow
+              indent
+              title={expand.hoverDelay}
+              value={settings.hoverExpandDelayMs}
+              min={MIN_HOVER_EXPAND_DELAY_MS}
+              max={MAX_HOVER_EXPAND_DELAY_MS}
+              step={50}
+              format={seconds}
+              defaultValue={DEFAULT_HOVER_EXPAND_DELAY_MS}
+              resetLabel={layout.resetToDefault}
+              onChange={(hoverExpandDelayMs) => update({ hoverExpandDelayMs })}
+            />
+            <SettingsSliderRow
+              indent
+              title={expand.hoverCollapseDelay}
+              value={settings.hoverCollapseDelayMs}
+              min={MIN_HOVER_COLLAPSE_DELAY_MS}
+              max={MAX_HOVER_COLLAPSE_DELAY_MS}
+              step={50}
+              format={seconds}
+              defaultValue={DEFAULT_HOVER_COLLAPSE_DELAY_MS}
+              resetLabel={layout.resetToDefault}
+              onChange={(hoverCollapseDelayMs) => update({ hoverCollapseDelayMs })}
+            />
+          </>
+        )}
+      </SettingsGroup>
+
+      <SettingsGroup title={expand.tuckTitle}>
+        <SettingsToggleRow
+          title={layout.autoTuck}
+          description={layout.autoTuckHint}
+          checked={settings.autoTuck}
+          onChange={(autoTuck) => update({ autoTuck })}
+        />
+        {settings.autoTuck && (
+          <>
+            <SettingsRow
+              indent
+              title={layout.autoTuckSeconds}
+              control={
+                <SettingsSelect
+                  value={String(settings.autoTuckSeconds)}
+                  options={idleOptions}
+                  ariaLabel={layout.autoTuckSeconds}
+                  onChange={(value) => update({ autoTuckSeconds: Number(value) })}
+                />
+              }
+            />
+            <SettingsToggleRow
+              indent
+              title={layout.autoTuckRetract}
+              checked={settings.autoTuckRetract}
+              onChange={(autoTuckRetract) => update({ autoTuckRetract })}
+            />
+            {settings.autoTuckRetract && (
+              <SettingsSliderRow
+                indent
+                title={layout.autoTuckRetractDelay}
+                value={settings.autoTuckRetractDelayMs}
+                min={MIN_AUTO_TUCK_RETRACT_DELAY_MS}
+                max={MAX_AUTO_TUCK_RETRACT_DELAY_MS}
+                step={100}
+                format={seconds}
+                defaultValue={DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS}
+                resetLabel={layout.resetToDefault}
+                onChange={(autoTuckRetractDelayMs) => update({ autoTuckRetractDelayMs })}
+              />
+            )}
+          </>
+        )}
+      </SettingsGroup>
+
+      <SettingsGroup title={expand.revealTitle}>
+        <SettingsRow
+          title={expand.tuckedHover}
+          control={
+            <SettingsChoice
+              value={settings.tuckedHoverAction}
+              options={tuckedHoverActions}
+              ariaLabel={expand.tuckedHover}
+              onChange={(tuckedHoverAction) => update({ tuckedHoverAction })}
+            />
+          }
+        />
+        <SettingsToggleRow
+          title={expand.revealOnMessage}
+          checked={settings.revealOnMessage}
+          onChange={(revealOnMessage) => update({ revealOnMessage })}
+        />
+      </SettingsGroup>
+    </>
   );
 }

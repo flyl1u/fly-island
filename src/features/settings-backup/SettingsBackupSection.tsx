@@ -1,5 +1,8 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { Download, FolderOpen, RotateCw, Upload } from "lucide-react";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import { restartIsland, revealBackup, saveSettingsBackup } from "./api";
 import { backupFileName, parseBackup } from "./backup.ts";
@@ -39,30 +42,9 @@ export function SettingsBackupSection() {
     setStatus({ kind: "restored", count: restoreBackup(parsed.keys) });
   };
 
-  return (
-    <section className="settings-section settings-section--backup">
-      <div className="settings-section__header">
-        <span>{text.title}</span>
-      </div>
-      <div className="settings-backup__actions">
-        <button className="settings-backup__button" type="button" onClick={save}>
-          <Download size={13} strokeWidth={2.2} aria-hidden="true" />
-          <span>{text.save}</span>
-        </button>
-        <button className="settings-backup__button" type="button" onClick={() => fileInput.current?.click()}>
-          <Upload size={13} strokeWidth={2.2} aria-hidden="true" />
-          <span>{text.restore}</span>
-        </button>
-        <input
-          ref={fileInput}
-          className="settings-backup__file"
-          type="file"
-          accept=".json,application/json"
-          aria-label={text.restore}
-          onChange={(event) => void restore(event)}
-        />
-      </div>
-      <p className="settings-section__hint">{text.hint}</p>
+  const footer = (
+    <>
+      <p>{text.hint}</p>
       {status.kind === "saved" && (
         <p className="settings-backup__status" role="status">
           <span>{text.saved(status.path)}</span>
@@ -84,6 +66,39 @@ export function SettingsBackupSection() {
       {status.kind === "error" && (
         <p className="settings-backup__status settings-backup__status--error" role="alert">{status.message}</p>
       )}
-    </section>
+    </>
+  );
+
+  return (
+    <SettingsGroup title={text.title} footer={footer}>
+      <SettingsRow
+        title={text.save}
+        control={
+          <SettingsLinkButton onClick={save}>
+            <Download size={13} strokeWidth={2.2} aria-hidden="true" />
+            {text.saveAction}
+          </SettingsLinkButton>
+        }
+      />
+      <SettingsRow
+        title={text.restore}
+        control={
+          <>
+            <SettingsLinkButton onClick={() => fileInput.current?.click()}>
+              <Upload size={13} strokeWidth={2.2} aria-hidden="true" />
+              {text.restoreAction}
+            </SettingsLinkButton>
+            <input
+              ref={fileInput}
+              className="settings-backup__file"
+              type="file"
+              accept=".json,application/json"
+              aria-label={text.restore}
+              onChange={(event) => void restore(event)}
+            />
+          </>
+        }
+      />
+    </SettingsGroup>
   );
 }

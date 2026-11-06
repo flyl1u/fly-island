@@ -3,9 +3,9 @@ export type SettingsBehaviorText = {
 };
 
 export const zhCN: SettingsBehaviorText = {
-  title: "启动",
+  title: "系统",
 };
 
 export const en: SettingsBehaviorText = {
-  title: "Startup",
+  title: "System",
 };

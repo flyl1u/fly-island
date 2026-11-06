@@ -165,7 +165,7 @@ if (!automated) {
       const panel = element(".editor-panel");
       check(item.getAttribute("aria-current") === "page", `${category}: the sidebar marks the open page`);
       check(element(".settings-page__title").textContent === item.textContent, `${category}: the page title matches the sidebar`);
-      check(panel.querySelector(".settings-section"), `${category}: the page has content`);
+      check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
     }
 
@@ -265,7 +265,7 @@ if (!automated) {
     check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
 
     await openPage("general");
-    const tuckedHover = [...document.querySelectorAll<HTMLElement>(".appearance-mode-control")].find((row) => row.querySelector("span")?.textContent === "收起时鼠标移上去");
+    const tuckedHover = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "鼠标移到隐藏的岛上");
     const tuckedHoverButton = (label: string) => [...(tuckedHover?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find((button) => button.textContent === label);
     check(tuckedHoverButton("只露出岛屿")?.getAttribute("aria-pressed") === "true", "Hovering a tucked island only slides it out by default");
     await act(async () => { tuckedHoverButton("展开面板")?.click(); });

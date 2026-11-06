@@ -2,6 +2,10 @@ export type SettingsBackupText = {
   title: string;
   save: string;
   restore: string;
+  /** Link text at the end of the export row. */
+  saveAction: string;
+  /** Link text at the end of the restore row. */
+  restoreAction: string;
   hint: string;
   saved: (path: string) => string;
   reveal: string;
@@ -15,6 +19,8 @@ export const zhCN: SettingsBackupText = {
   title: "备份与恢复",
   save: "导出设置",
   restore: "从文件恢复",
+  saveAction: "导出…",
+  restoreAction: "选择文件…",
   hint: "把外观、展开收起、快捷键、翻译、消息、插件页面、更新等设置导出成一个文件，重装系统或换电脑后再导入。不包含待办、窗口位置和保存在 Windows 凭据管理器里的密钥与授权码。",
   saved: (path) => `已导出到 ${path}`,
   reveal: "在文件夹中显示",
@@ -33,6 +39,8 @@ export const en: SettingsBackupText = {
   title: "Backup and restore",
   save: "Export settings",
   restore: "Restore from file",
+  saveAction: "Export…",
+  restoreAction: "Choose file…",
   hint: "Export appearance, expand and tuck, shortcuts, translation, messages, plugin pages, updates and other settings to a file, and import it after reinstalling or on another computer. Todos, window positions, and keys and codes kept in Windows Credential Manager are not included.",
   saved: (path) => `Exported to ${path}`,
   reveal: "Show in folder",

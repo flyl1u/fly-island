@@ -1,5 +1,4 @@
-import { useTranslation, type LocaleCode } from "../../i18n";
-import { LocaleControl } from "../../i18n/LocaleControl";
+import type { LocaleCode } from "../../i18n";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
 import { GameModeSettingsSection } from "../../features/appearance/GameModeSettingsSection";
@@ -9,6 +8,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
+/** Settings → General: system, opening, tucking to the edge, sliding back out, games, position and backup. */
 export function GeneralSettingsPage({
   locale,
   settings,
@@ -20,24 +20,17 @@ export function GeneralSettingsPage({
   onLocaleChange: (locale: LocaleCode) => void;
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
-  const t = useTranslation();
   const [launchAtStartup, updateLaunchAtStartup] = useLaunchAtStartup();
 
   return (
     <>
-      <section className="settings-section settings-section--language">
-        <div className="settings-section__header">
-          <span>{t.settings.language.title}</span>
-        </div>
-        <LocaleControl
-          label={t.settings.language.label}
-          value={locale}
-          onChange={onLocaleChange}
-        />
-      </section>
       <BehaviorSettingsSection
         launchAtStartup={launchAtStartup}
+        locale={locale}
+        settings={settings}
         onLaunchAtStartupChange={updateLaunchAtStartup}
+        onLocaleChange={onLocaleChange}
+        onSettingsChange={onSettingsChange}
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <GameModeSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
