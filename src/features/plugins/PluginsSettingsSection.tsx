@@ -90,7 +90,7 @@ export function PluginsSettingsSection({ initialOpenId = null }: { initialOpenId
         </div>
         {error ? <p className="plugin-card__error">{error}</p> : null}
       </section>
-      <section className="settings-section plugins-panel">
+      <section className="settings-section settings-section--list plugins-panel">
         {snapshot && snapshot.plugins.length === 0 ? (
           <p className="settings-section__hint">{t.settings.plugins.empty}</p>
         ) : null}

@@ -17,7 +17,7 @@
   padding-left: var(--space-md);
   color: var(--color-text-strong);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -46,7 +46,7 @@
   padding-left: var(--space-md);
   color: var(--color-text-muted);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   opacity: 0.7;
 }
@@ -71,7 +71,7 @@
   outline: none;
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   text-align: left;
   cursor: pointer;
   transition:
@@ -99,6 +99,7 @@
 .settings-sidebar__item--active:hover {
   color: var(--color-white);
   background: var(--color-white-a12);
+  font-weight: 600;
 }
 
 .settings-sidebar__item--active > svg {

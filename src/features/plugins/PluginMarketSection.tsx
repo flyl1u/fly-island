@@ -59,7 +59,7 @@ export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (
   const showFilters = hasPlugins || (market === null && !loadError);
 
   return (
-    <section className="settings-section plugins-panel">
+    <section className="settings-section settings-section--list plugins-panel">
       {/* The page title already says Plugin market: this line says what was loaded and when. */}
       <div className="plugin-market__header">
         <span className="plugin-market__status" aria-live="polite">

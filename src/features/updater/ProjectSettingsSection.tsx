@@ -29,7 +29,7 @@ export function ProjectSettingsSection({ onOpenUpdates }: { onOpenUpdates: () =>
           </div>
         </div>
       </section>
-      <section className="settings-section settings-section--about-version">
+      <section className="settings-section settings-section--list settings-section--about-version">
         <div className="settings-section__header">
           <span>{t.settings.project.versionTitle}</span>
         </div>
@@ -46,7 +46,7 @@ export function ProjectSettingsSection({ onOpenUpdates }: { onOpenUpdates: () =>
           <ArrowRight className="project-link__arrow" size={14} aria-hidden="true" />
         </button>
       </section>
-      <section className="settings-section settings-section--about-links">
+      <section className="settings-section settings-section--list settings-section--about-links">
         <div className="settings-section__header">
           <span>{t.settings.project.linksTitle}</span>
         </div>

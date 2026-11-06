@@ -71,8 +71,9 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
   align-items: center;
   gap: var(--space-xl);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .mail-settings__row input {
@@ -86,7 +87,7 @@
   border-radius: var(--radius-md);
   outline: none;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .mail-settings__row input:focus {

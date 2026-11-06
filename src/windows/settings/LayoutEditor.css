@@ -50,33 +50,43 @@
   align-items: center;
   margin: 0;
   color: var(--color-text);
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
+/* Each section is a card; the card, not bold type, shows what belongs together. */
 .settings-section {
   position: relative;
   display: grid;
   gap: var(--space-lg);
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
+  padding: var(--space-2xl) 16px;
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a06);
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 
+/* Sections that are themselves a list of cards (plugins, market, About links) skip the outer card. */
+.settings-section--list {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+/* Section titles are quiet labels above the rows, a step below the page title. */
 .settings-section__header {
-  min-height: 28px;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-lg);
   padding-bottom: 0;
-  color: var(--color-text-strong);
+  color: var(--color-text-muted);
   border-bottom: 0;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
@@ -89,17 +99,7 @@
   border-radius: 0;
 }
 
-/* Each page starts right under its title; later sections are divided by a rule. */
-.settings-section + .settings-section {
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-white-a10);
-}
-
 .settings-section--attention {
-  margin-right: -10px;
-  margin-left: -10px;
-  padding: 12px 10px 10px;
   background: rgba(255, 209, 102, 0.08);
   border: 1px solid rgba(255, 209, 102, 0.42);
   border-radius: var(--radius-lg);

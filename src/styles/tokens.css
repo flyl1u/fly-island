@@ -10,6 +10,8 @@
   --color-surface-dark: #111112;
 
   /* Translucent white overlays and borders */
+  --color-white-a04: rgba(255, 255, 255, 0.04);
+  --color-white-a06: rgba(255, 255, 255, 0.06);
   --color-white-a08: rgba(255, 255, 255, 0.08);
   --color-white-a09: rgba(255, 255, 255, 0.09);
   --color-white-a10: rgba(255, 255, 255, 0.1);
