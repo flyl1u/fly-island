@@ -54,7 +54,7 @@ async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | un
 
 function check(condition: unknown, label: string) {
   if (!condition) throw new Error(label);
-  messages.push(`✓ ${label}`);
+  messages.push(`PASS ${label}`);
 }
 
 const view = () => document.querySelector<HTMLElement>(".lyrics-view");
@@ -80,7 +80,7 @@ try {
   await render(track("晴天", 13_500));
   check(lines()[1] === "♪", "间奏的空行显示音符");
   await render(track("晴天", 500));
-  check(lines().join("|") === "||故事的小黄花", "第一句之前只显示下一句");
+  check(lines().join("|") === "|♪|故事的小黄花", "前奏时中间显示音符，第一句在下面等着");
 
   await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: 2000 });
   check(lines()[1] === "故事的小黄花", "推后 2 秒时仍显示上一句");

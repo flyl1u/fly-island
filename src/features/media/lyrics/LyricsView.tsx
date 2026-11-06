@@ -25,7 +25,9 @@ export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]
 
   const index = lineIndexAt(lines, playbackPosition(mediaState, now) - offsetMs);
   const text = (at: number) => (at >= 0 && at < lines.length ? lines[at].text : "");
-  const current = index >= 0 ? text(index) || "♪" : "";
+  // Before the first line (the intro) and in breaks, a note holds the middle row, so the first
+  // line waits below it rather than standing alone.
+  const current = (index >= 0 && text(index)) || "♪";
 
   return (
     <div className="lyrics-view" aria-label={t.music.lyricsLabel}>
