@@ -314,6 +314,7 @@ fn summary_from(
         current_tool: parsed.current_tool,
         permission_mode: parsed.permission_mode,
         subagents: parsed.subagents,
+        background_tasks: parsed.background_tasks,
     }
 }
 

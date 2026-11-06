@@ -11,6 +11,7 @@ use serde_json::Value;
 use super::session_host::SessionHost;
 use super::session_mode::{claude_permission_mode, claude_subagent_calls, claude_tool_results, codex_permission_mode};
 use super::reply_marker::split_reply;
+use super::background_tasks::{ended_tasks, started_tasks};
 use super::reply_text::{asks_user, plain_reply};
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
@@ -54,6 +55,9 @@ pub struct AgentSessionSummary {
     pub(super) permission_mode: Option<&'static str>,
     /// Subagents the current turn started that have not answered yet (Claude Code only).
     pub(super) subagents: u32,
+    /// Background tasks the newest turn started that have not ended (background_tasks.rs; Claude
+    /// Code only). A finished turn with one running goes on by itself when it ends.
+    pub(super) background_tasks: u32,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -93,6 +97,8 @@ pub(super) struct SessionTail {
     pub(super) permission_mode: Option<&'static str>,
     /// Subagents started after the newest prompt with no result yet, while the turn is working.
     pub(super) subagents: u32,
+    /// Background tasks started after the newest prompt that have not ended, however the turn ended.
+    pub(super) background_tasks: u32,
 }
 
 impl SessionTail {
@@ -165,11 +171,14 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
     let mut result = SessionTail::default();
     // Read from the end, so a subagent's result comes before the call that started it.
     let mut answered = HashSet::new();
-    for record in tail
+    // Background tasks seen ending; read from the end, so before the calls that started them.
+    let mut ended: HashSet<String> = HashSet::new();
+    for (line, record) in tail
         .lines()
         .rev()
-        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok().map(|record| (line, record)))
     {
+        ended.extend(ended_tasks(line).into_iter().map(str::to_string));
         let kind = record["type"].as_str().unwrap_or_default();
         if result.permission_mode.is_none() {
             result.permission_mode = record["permissionMode"].as_str().map(claude_permission_mode);
@@ -217,6 +226,8 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
         }
         if kind == "user" && result.last_prompt.is_none() {
             answered.extend(claude_tool_results(&message["content"]).map(str::to_string));
+            let running = started_tasks(&message["content"]).into_iter().filter(|id| !ended.contains(id)).count();
+            result.background_tasks += u32::try_from(running).unwrap_or(0);
         }
         if result.state == TurnState::Unknown {
             result.state = claude_turn_state(kind, &record);

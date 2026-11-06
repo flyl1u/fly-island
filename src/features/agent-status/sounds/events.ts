@@ -25,7 +25,7 @@ const QUESTION_TOOL = "AskUserQuestion";
 export function soundFor(
   before: Phase | undefined,
   after: Phase,
-  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "replyAsks">,
+  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "replyAsks" | "backgroundTasks">,
 ): AgentSoundEvent | null {
   if (after === "waiting" && before !== "waiting") {
     return session.currentTool?.name === QUESTION_TOOL ? "question" : "approval";

@@ -1,6 +1,7 @@
 //! AI agent status: the snapshot shown on the island and the Codex / Claude Code hooks that write it.
 
 pub(crate) mod approval_hotkeys;
+mod background_tasks;
 mod claude_hooks;
 mod codex_hooks;
 mod editor_terminal;

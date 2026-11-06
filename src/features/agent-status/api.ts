@@ -76,6 +76,11 @@ export type AgentSessionSummary = {
    * finished turn without a marker (src-tauri/src/agent_status/reply_text.rs). Missing from older builds.
    */
   replyAsks?: boolean;
+  /**
+   * Background tasks the newest turn started that have not ended (Claude Code only); a finished
+   * turn with one running goes on by itself. Missing from older builds.
+   */
+  backgroundTasks?: number;
 };
 
 /** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */

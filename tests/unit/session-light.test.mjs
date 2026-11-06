@@ -19,6 +19,10 @@ test("a finished turn: the marker decides, else whether the reply asks", () => {
   assert.equal(light("completed", { replyMarker: "done", replyAsks: true }), "done");
   assert.equal(light("completed", { replyAsks: true }), "yourTurn");
   assert.equal(light("completed"), "done");
+  // A background task the turn started keeps it working, unless the reply asks something.
+  assert.equal(light("completed", { backgroundTasks: 1 }), "working");
+  assert.equal(light("completed", { backgroundTasks: 1, replyAsks: true }), "yourTurn");
+  assert.equal(light("completed", { backgroundTasks: 1, replyMarker: "done" }), "done");
   // Builds before replyAsks existed.
   assert.equal(sessionLight({ phase: "completed" }), "done");
 });

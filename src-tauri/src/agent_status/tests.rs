@@ -358,6 +358,27 @@ fn session_phase_turns_stale_after_the_limit() {
 }
 
 #[test]
+fn background_tasks_of_the_newest_turn_count_until_they_end() {
+    use super::sessions::{parse_claude_tail, TurnState};
+    let started = |id: &str| {
+        line(json!({"type": "user", "sessionId": "s", "message": {"content": [{"type": "tool_result", "tool_use_id": id,
+            "content": format!("Command running in background with ID: {id}. Output is being written to: x")}]}}))
+    };
+    let done = line(json!({"type": "assistant", "sessionId": "s", "message": {"model": "claude-opus-5-5", "stop_reason": "end_turn",
+        "content": [{"type": "text", "text": "测试在后台跑，跑完我再看。"}]}}));
+    let notified = |id: &str| line(json!({"type": "queue-operation", "operation": "enqueue",
+        "content": format!("<task-notification>\n<task-id>{id}</task-id>\n<status>completed</status>\n</task-notification>")}));
+    let prompt = |text: &str| user_line(json!(text));
+    let tail = |parts: &[String]| parts.concat();
+
+    let running = parse_claude_tail(&tail(&[prompt("跑测试"), started("b1"), done.clone()]));
+    assert_eq!((running.state, running.background_tasks), (TurnState::Done, 1));
+    assert_eq!(parse_claude_tail(&tail(&[prompt("跑测试"), started("b1"), done.clone(), notified("b1")])).background_tasks, 0);
+    // A task an earlier turn started (a dev server, say) does not hold a later turn open.
+    assert_eq!(parse_claude_tail(&tail(&[prompt("开服务"), started("b1"), done.clone(), prompt("改个字"), done])).background_tasks, 0);
+}
+
+#[test]
 fn an_open_question_or_plan_waits_on_the_user_and_a_finished_reply_may_ask() {
     use super::sessions::{parse_claude_tail, TurnState};
     let call = |tool: &str| {

@@ -1,11 +1,14 @@
 import type { AgentSessionSummary, ReplyMarker } from "./api";
 
 /**
- * How a finished turn ended: the reply status marker when it carries one (B9), else "yourTurn"
- * when the reply asks something (replyAsks). Null: done as far as the island can tell.
+ * How a finished turn ended: the reply status marker when it carries one (B9); else "yourTurn"
+ * when the reply asks something (replyAsks), "background" while a background task the turn
+ * started still runs (backgroundTasks). Null: done as far as the island can tell.
  */
-export function replyEnding(session: Pick<AgentSessionSummary, "replyMarker" | "replyAsks">): ReplyMarker | null {
-  return session.replyMarker ?? (session.replyAsks ? "yourTurn" : null);
+export function replyEnding(session: Pick<AgentSessionSummary, "replyMarker" | "replyAsks" | "backgroundTasks">): ReplyMarker | null {
+  if (session.replyMarker) return session.replyMarker;
+  if (session.replyAsks) return "yourTurn";
+  return session.backgroundTasks ? "background" : null;
 }
 
 /**
@@ -20,7 +23,7 @@ export function replyEnding(session: Pick<AgentSessionSummary, "replyMarker" | "
  */
 export type SessionLight = "needs" | "yourTurn" | "working" | "stale" | "done" | "failed";
 
-type LightFields = Pick<AgentSessionSummary, "phase" | "replyMarker" | "replyAsks">;
+type LightFields = Pick<AgentSessionSummary, "phase" | "replyMarker" | "replyAsks" | "backgroundTasks">;
 
 export function sessionLight(session: LightFields): SessionLight {
   switch (session.phase) {

@@ -39,7 +39,7 @@
 | 4 | Agent 页：圆点四色，橙色会话显示「等你回复」 | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): the Agent page and alerts use the session light`。圆点改用会话环的颜色（新变量 `--color-light-*`），运行由蓝改绿、完成由绿改灰、等待确认由橙改红；失败也是红 |
 | 5 | 弹出提醒与音效：「等你回复」和「做完了」分开 | 已完成 | fly-island-c6 · lane 6 | 同上。pr3 的 `3a22b52`（B6 1.12）已让带 ↩ 标记的回合按「等待确认」弹出、播提问音效，不新增开关；这里改成用 `replyEnding`，没有标记时问句结尾的回复也一样 |
 | 6 | 回归页、`DESIGN.md`、中英文文案 | 已完成 | fly-island-c6 · lane 6 | 同上。文案沿用已有的「等你回复」，不需要新文案 |
-| 7 | 回合结束后仍有后台任务 / 子 Agent 时保持绿色（没有标记时） | 待做 | | 需要先确认会话记录里能否看到还在跑的后台任务 |
+| 7 | 回合结束后仍有后台任务时保持绿色（没有标记时） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): a turn waiting on its own background task stays green`。`background_tasks.rs`：工具结果里的 `running in background with ID` / `moved to the background (ID:` 记为启动，带 `<task-id>` 的任务通知或 TaskStop 的 `stopped task` 记为结束；只数最近一轮启动的。回复在问你时仍是黄色。开发服务器这类一直跑的任务也会让那一轮显示绿色，直到你发下一条指令；子 Agent 只在回合进行中计数，回合结束后不再算 |
 | 8 | 实测：问句判断的准确率（拿本机最近的会话记录统计） | 已完成 | fly-island-c6 · lane 6 | 见下方实测记录；补了「同意的话」「要的话」两种征询句 |
 
 ## 实测记录
