@@ -163,10 +163,10 @@ if (!automated) {
 
     await openPage("plugins");
     const runLine = [...document.querySelectorAll<HTMLElement>(".plugin-card__hint")].find((hint) => hint.textContent?.startsWith("内存"));
-    check(runLine?.textContent === "内存 24.0 MB（Node.js 20.0 MB + 插件 4.0 MB） · CPU 0.4% · 启动 120 ms",
-      "A plugin's memory is split into the runtime and the plugin itself");
-    check(runLine?.title.includes("node.exe：已提交 24.0 MB，工作集 31.0 MB") && runLine.title.includes("提交大小"),
-      "Hovering the run line lists each process and explains the numbers");
+    check(runLine?.textContent === "内存 4.0 MB",
+      "A plugin's card shows only the plugin's own memory, without the runtime");
+    check(runLine?.title.includes("node.exe：已提交 24.0 MB，工作集 31.0 MB") && runLine.title.includes("进程合计 24.0 MB，其中 Node.js 本身占 20.0 MB") && runLine.title.includes("提交大小"),
+      "Hovering the run line lists each process, the runtime's share and explains the numbers");
     check([...document.querySelectorAll(".plugin-card__hint")].some((hint) => hint.textContent === "有预发布版本 v1.1.0-beta.1，可在插件设置里选择接收。"),
       "A plugin with a pre-release in the market says so on its card");
     const syncCard = [...document.querySelectorAll<HTMLElement>(".plugin-card")].find((card) => card.textContent?.includes("待办同步示例"));
