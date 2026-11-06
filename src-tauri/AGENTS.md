@@ -29,7 +29,8 @@ src-tauri/src/
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
                              # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry、
                              # notification_state（前台是否有全屏程序）、webview_page（插件自定义界面的独立 WebView2 页面，P8）、
-                             # job（插件进程的作业对象与挂起启动）、known_folder（下载文件夹等已知文件夹）
+                             # job（插件进程的作业对象与挂起启动）、known_folder（下载文件夹等已知文件夹）、
+                             # session_notifications（锁屏、睡眠唤醒通知与键鼠空闲时间）
 ```
 
 ## lib.rs 与模块组织

@@ -95,6 +95,13 @@
 | `clipboard.changed` | `clipboard:read` | 2 | {}; call clipboard.history. Only while clipboard history is on. |
 | `messages.received` | `messages:read` | 2 | One entry as in messages.list: { source, id, sender, preview, receivedAt, unread? } |
 | `media.changed` | `media:read` | 2 | Same as media.nowPlaying; sent when the track, player or play state changes (checked every 2 s while subscribed), not for the position. |
+| `shelf.changed` | `shelf:read` | 2 | { count }: the file shelf changed (by the user or a plugin); call shelf.list for the entries. |
+| `system.locked` | 无 | 2 | {}: the user locked the session (Win+L, or away). |
+| `system.unlocked` | 无 | 2 | {}: the session was unlocked. |
+| `system.suspended` | 无 | 2 | {}: the computer is going to sleep; there is little time left to save. |
+| `system.resumed` | 无 | 2 | {}: the computer woke up. |
+| `system.idle` | 无 | 2 | { idleSeconds }: no keyboard or mouse input for 5 minutes (checked every 5 s); sent once until input comes back. |
+| `system.active` | 无 | 2 | {}: input again after system.idle. |
 
 ## 岛屿发给插件的通知
 

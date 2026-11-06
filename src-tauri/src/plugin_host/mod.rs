@@ -20,6 +20,7 @@
 //! - sensitive.rs: asking the user before a sensitive permission is first used
 //! - reveal.rs: a plugin opening its own page right after the user used it (`island.openView`)
 //! - uri.rs: `focusd://plugin/<id>/...` links (`onUri`)
+//! - system_events.rs: lock, sleep and idle events (`system.*`)
 //! - runtime.rs: one plugin process; runtime/dispatch.rs answers its requests
 //! - market.rs / signature.rs: the market index and its signatures
 //! - author_signing.rs: authors' package signatures and the key kept per plugin
@@ -54,6 +55,7 @@ mod sensitive;
 mod settings;
 mod signature;
 mod storage;
+mod system_events;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -149,6 +151,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         }
     }
     events::listen(app);
+    system_events::start();
     keybindings::start();
     lifecycle::start();
     updates::start();

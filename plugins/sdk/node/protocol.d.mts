@@ -9,7 +9,7 @@ export type SensitivePermission = "clipboard:read" | "messages:read" | "media:re
 /** Requests a plugin sends to the island. */
 export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.subscribe" | "events.unsubscribe" | "view.update" | "webview.postMessage" | "view.patch" | "status.update" | "storage.get" | "storage.set" | "storage.delete" | "storage.keys" | "permissions.request" | "host.keepAlive" | "island.openView" | "todos.list" | "todos.days" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set" | "agentStatus.report" | "agentStatus.clear" | "island.notify" | "secrets.get" | "secrets.set" | "secrets.delete" | "clipboard.history" | "messages.list" | "media.nowPlaying" | "media.playPause" | "media.next" | "media.previous" | "shelf.list" | "shelf.add" | "shelf.remove";
 /** Events for events.subscribe. */
-export type PluginEventName = "todos.changed" | "note.changed" | "agentStatus.changed" | "island.expanded" | "island.collapsed" | "app.locale.changed" | "clipboard.changed" | "messages.received" | "media.changed";
+export type PluginEventName = "todos.changed" | "note.changed" | "agentStatus.changed" | "island.expanded" | "island.collapsed" | "app.locale.changed" | "clipboard.changed" | "messages.received" | "media.changed" | "shelf.changed" | "system.locked" | "system.unlocked" | "system.suspended" | "system.resumed" | "system.idle" | "system.active";
 /** Notifications the island sends to the plugin. */
 export type IslandNotification = "initialize" | "command" | "settings.changed" | "event" | "notification.action" | "uri" | "view.visible" | "view.action" | "view.submit" | "view.search" | "webview.message" | "shutdown";
 

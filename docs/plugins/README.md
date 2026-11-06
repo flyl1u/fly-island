@@ -237,7 +237,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `messages:read`（敏感） | 2 | `messages.list` | `messages.received` |
 | `media:read`（敏感） | 2 | `media.nowPlaying` | `media.changed` |
 | `media:control` | 2 | `media.playPause`、`media.next`、`media.previous` | |
-| `shelf:read`（敏感） | 2 | `shelf.list` | |
+| `shelf:read`（敏感） | 2 | `shelf.list` | `shelf.changed` |
 | `shelf:write`（敏感） | 2 | `shelf.add`、`shelf.remove` | |
 
 QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到。
@@ -377,6 +377,11 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `clipboard.changed` | `clipboard:read` | `{}` | 剪贴板历史变了（只在剪贴板历史打开时），需要时调 `clipboard.history` |
 | `messages.received` | `messages:read` | 与 `messages.list` 的一项相同 | 新的 QQ 通知、QQ 邮件或微信提醒到了 |
 | `media.changed` | `media:read` | 与 `media.nowPlaying` 相同 | 换歌、换播放器或播放 / 暂停时（有插件订阅时每 2 秒检查一次），进度变化不算 |
+| `shelf.changed` | `shelf:read` | `{ count }` | 文件中转的条目变了（用户或插件改的），需要时调 `shelf.list` |
+| `system.locked` / `system.unlocked` | — | `{}` | 锁屏 / 解锁 |
+| `system.suspended` / `system.resumed` | — | `{}` | 电脑睡眠 / 唤醒。睡眠前留给插件的时间很短，要保存的东西平时就存好 |
+| `system.idle` | — | `{ idleSeconds }` | 5 分钟没有键盘鼠标输入（每 5 秒检查一次）；在有输入之前只发一次 |
+| `system.active` | — | `{}` | `system.idle` 之后又有了输入 |
 
 - 同一个事件 200 毫秒内最多发一次，带最后一次的 `payload`。连续输入时不会刷屏。
 - 订阅只在这次进程里有效：插件重启后要重新订阅，一般在收到 `initialize` 后马上订阅。

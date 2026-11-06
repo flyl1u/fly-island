@@ -22,7 +22,7 @@ pub(super) const MAX_SUBSCRIBE: usize = 16;
 
 /// (event, the permission a plugin needs to subscribe to it). Listed in
 /// plugins/schema/rpc.json too (checked by a test).
-pub(super) const EVENTS: [(&str, Option<&str>); 9] = [
+pub(super) const EVENTS: [(&str, Option<&str>); 16] = [
     ("todos.changed", Some("todos:read")),
     ("note.changed", Some("notes:read")),
     ("agentStatus.changed", Some("agent-status:read")),
@@ -32,6 +32,14 @@ pub(super) const EVENTS: [(&str, Option<&str>); 9] = [
     ("clipboard.changed", Some("clipboard:read")),
     ("messages.received", Some("messages:read")),
     ("media.changed", Some("media:read")),
+    ("shelf.changed", Some("shelf:read")),
+    // system_events.rs
+    ("system.locked", None),
+    ("system.unlocked", None),
+    ("system.suspended", None),
+    ("system.resumed", None),
+    ("system.idle", None),
+    ("system.active", None),
 ];
 
 /// The event's static name and the permission it needs, or `None` if there is

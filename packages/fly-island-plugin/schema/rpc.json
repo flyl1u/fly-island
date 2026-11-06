@@ -37,7 +37,14 @@
     { "name": "app.locale.changed", "permission": null, "since": 2, "payload": "{ locale }" },
     { "name": "clipboard.changed", "permission": "clipboard:read", "since": 2, "payload": "{}; call clipboard.history. Only while clipboard history is on." },
     { "name": "messages.received", "permission": "messages:read", "since": 2, "payload": "One entry as in messages.list: { source, id, sender, preview, receivedAt, unread? }" },
-    { "name": "media.changed", "permission": "media:read", "since": 2, "payload": "Same as media.nowPlaying; sent when the track, player or play state changes (checked every 2 s while subscribed), not for the position." }
+    { "name": "media.changed", "permission": "media:read", "since": 2, "payload": "Same as media.nowPlaying; sent when the track, player or play state changes (checked every 2 s while subscribed), not for the position." },
+    { "name": "shelf.changed", "permission": "shelf:read", "since": 2, "payload": "{ count }: the file shelf changed (by the user or a plugin); call shelf.list for the entries." },
+    { "name": "system.locked", "permission": null, "since": 2, "payload": "{}: the user locked the session (Win+L, or away)." },
+    { "name": "system.unlocked", "permission": null, "since": 2, "payload": "{}: the session was unlocked." },
+    { "name": "system.suspended", "permission": null, "since": 2, "payload": "{}: the computer is going to sleep; there is little time left to save." },
+    { "name": "system.resumed", "permission": null, "since": 2, "payload": "{}: the computer woke up." },
+    { "name": "system.idle", "permission": null, "since": 2, "payload": "{ idleSeconds }: no keyboard or mouse input for 5 minutes (checked every 5 s); sent once until input comes back." },
+    { "name": "system.active", "permission": null, "since": 2, "payload": "{}: input again after system.idle." }
   ],
   "methods": [
     {

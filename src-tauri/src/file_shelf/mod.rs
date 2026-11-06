@@ -111,6 +111,8 @@ impl FileShelfService {
         if next != *items {
             save_items(&self.path, &next)?;
             *items = next;
+            // Plugins with shelf:read call shelf.list for the entries.
+            crate::plugin_host::publish_event("shelf.changed", serde_json::json!({ "count": items.len() }));
         }
         Ok(snapshot_of(&items, presence))
     }

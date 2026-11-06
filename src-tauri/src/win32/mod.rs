@@ -17,6 +17,7 @@ pub(crate) mod process_env;
 pub(crate) mod process_times;
 pub(crate) mod process_tree;
 pub(crate) mod registry;
+pub(crate) mod session_notifications;
 pub(crate) mod shell_hook;
 pub(crate) mod url_protocol;
 pub(crate) mod webview_page;

@@ -17,6 +17,13 @@ export const PLUGIN_EVENT_NAMES = [
   "clipboard.changed",
   "messages.received",
   "media.changed",
+  "shelf.changed",
+  "system.locked",
+  "system.unlocked",
+  "system.suspended",
+  "system.resumed",
+  "system.idle",
+  "system.active",
 ] as const;
 
 export const getPluginDevState = () => invoke<PluginDevState>("get_plugin_dev_state");
