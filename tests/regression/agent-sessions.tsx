@@ -94,9 +94,20 @@ async function runChecks() {
     check(rowHeights[0] === 66 && rowHeights[1] < rowHeights[0] - 10 && rowHeights[2] < rowHeights[1], "展开行随回复行数变高（两行 66px，一行更矮，不留空行），折叠行最矮");
     check(list.scrollHeight <= list.clientHeight, "设为 3 条时放下 3 个会话，不滚动");
     check(Math.abs(list.getBoundingClientRect().bottom - (fixture.getBoundingClientRect().bottom + 20)) < 1, "列表一直延伸到岛屿底边，底部不留空白条");
+    const afterLayout = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    await afterLayout();
+    const masked = () => getComputedStyle(list).maskImage !== "none";
+    check(!list.dataset.fadeTop && !list.dataset.fadeBottom && !masked(), "放得下时两头都不渐隐");
     sizeFor(2);
+    await afterLayout();
     check(list.scrollHeight > list.clientHeight, "设为 2 条时第 3 个会话需要滚动");
+    check(list.dataset.fadeBottom !== undefined && list.dataset.fadeTop === undefined && masked(), "下面还有会话时底部渐隐，顶部不渐隐");
+    list.scrollTop = list.scrollHeight;
+    await afterLayout();
+    check(list.dataset.fadeTop !== undefined && list.dataset.fadeBottom === undefined, "滚到底后顶部渐隐，底部不再渐隐");
+    list.scrollTop = 0;
     sizeFor(5);
+    await afterLayout();
     check(list.scrollHeight <= list.clientHeight, "设为 5 条时 3 个会话不滚动");
     sizeFor(3);
 

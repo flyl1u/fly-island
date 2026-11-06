@@ -7,6 +7,7 @@ import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./session
 import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
+import { useScrollFade } from "./useScrollFade";
 import "./AgentSessionsPanel.css";
 
 const NOT_FOUND_NOTICE_MS = 3000;
@@ -31,6 +32,8 @@ export function AgentSessionsPanel({
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
+  // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
+  const list = useScrollFade<HTMLUListElement>(sessions);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), AGE_REFRESH_MS);
@@ -68,7 +71,13 @@ export function AgentSessionsPanel({
 
   return (
     <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-      <ul className="agent-sessions__list">
+      <ul
+        ref={list.ref}
+        className="agent-sessions__list"
+        data-fade-top={list.fade.top || undefined}
+        data-fade-bottom={list.fade.bottom || undefined}
+        onScroll={list.onScroll}
+      >
         {sessions.map((session) => {
           const project = sessionProject(session.cwd);
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];

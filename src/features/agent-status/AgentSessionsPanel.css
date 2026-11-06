@@ -49,6 +49,29 @@
   list-style: none;
   /* Still scrolls with the wheel; a bar would be the only box on the page. */
   scrollbar-width: none;
+  /* An end with more sessions past it fades out (useScrollFade sets the data attributes), so a
+     cut-off row trails away instead of stopping at a hard edge. A mask, not an overlay, so it
+     works over any island background. */
+  --agent-fade-top: 0px;
+  --agent-fade-bottom: 0px;
+}
+
+.agent-sessions__list:is([data-fade-top], [data-fade-bottom]) {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 var(--agent-fade-top),
+    #000 calc(100% - var(--agent-fade-bottom)),
+    transparent
+  );
+}
+
+.agent-sessions__list[data-fade-top] {
+  --agent-fade-top: 20px;
+}
+
+.agent-sessions__list[data-fade-bottom] {
+  --agent-fade-bottom: 32px;
 }
 
 .agent-sessions__list::-webkit-scrollbar {
