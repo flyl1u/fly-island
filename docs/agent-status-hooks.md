@@ -121,6 +121,62 @@ Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cw
 
 **VS Code** and editors built on it (Cursor, Windsurf, VSCodium, Trae, Kiro) have no way to select one of their terminals from outside. With the **FocuSD Island extension** (`tixxin.focusd-island`, source in `packages/vscode-extension/`) installed in that editor, after the editor window comes to the front the island opens `<scheme>://tixxin.focusd-island/focus?pids=<session process chain>&title=<session title>` (`vscode`, `vscode-insiders`, `cursor`, `windsurf`, `vscodium`, `trae`, `kiro`). The editor hands the link to the window used last, which is the one just brought forward, and the extension shows the terminal whose shell is one of those processes, or else the only terminal named like the session; it does nothing when none matches. The island first looks for a `tixxin.focusd-island-<version>` folder in the editor's extensions folder (`~/.vscode/extensions`, `~/.cursor/extensions`, ...; ignoring ones listed in `.obsolete`), since opening the link without the extension would make the editor offer to install it. It also skips the link when Windows kept the window behind. The log notes `editor-terminal=sent`, `no-extension` or `failed`.
 
+## Sessions on Other Computers
+
+Claude Code or Codex running on another computer (an SSH server, a dev container, VS Code Remote) writes its session files and runs its hooks there, so the island cannot see it, and `127.0.0.1` in a hook there means that computer. Such a session can still be listed: a hook there reports it over the local API (below), through an SSH tunnel back to this computer, or a plugin reports it with `agentStatus.report`. A report that names the machine (`host`) and the agent (`agent`: `claudeCode` or `codex`) is listed on the Agent page with the local sessions, the machine's name in place of the program; clicking it says where it runs instead of looking for a window. Other reports only light the island, as before. Reports are kept in memory (gone after a restart), at most 16 sources at once.
+
+1. Turn on the built-in **Local API** plugin and its "allow changes" switch. `%APPDATA%\com.focusd.island\local-api.json` has the `port` (usually 39271) and the `token`.
+2. Forward that port, unchanged, from the server back to this computer. The local API only answers requests addressed to `127.0.0.1:<its port>`, so the port number must be the same on both ends. In `~/.ssh/config` on this computer:
+
+   ```
+   Host dev-box
+     RemoteForward 39271 127.0.0.1:39271
+   ```
+
+3. On the server, save this as `~/.local/bin/focusd-remote-hook.sh` and make it executable. It needs `curl` and `python3`, gives up after a second and always exits 0, so a closed tunnel never holds the session up.
+
+   ```sh
+   #!/bin/sh
+   # focusd-remote-hook.sh <running|waiting|completed|end> [claudeCode|codex]
+   # Reports this session to FocuSD Island through the SSH tunnel. Needs FOCUSD_TOKEN.
+   phase="$1"; agent="${2:-claudeCode}"; port="${FOCUSD_PORT:-39271}"
+   input=$(cat)
+   source=$(printf '%s' "$input" | python3 -c 'import json,sys; print("r-" + json.load(sys.stdin).get("session_id", "x")[:24].lower())') || exit 0
+   url="http://127.0.0.1:$port/v1/agent-status/$source"
+   if [ "$phase" = end ]; then
+     curl -s -m 1 -X DELETE -H "Authorization: Bearer $FOCUSD_TOKEN" "$url" >/dev/null 2>&1
+     exit 0
+   fi
+   body=$(printf '%s' "$input" | PHASE="$phase" AGENT="$agent" HOST_NAME="$(hostname)" python3 -c '
+   import json, os, sys
+   hook = json.load(sys.stdin)
+   report = {"phase": os.environ["PHASE"], "agent": os.environ["AGENT"], "host": os.environ["HOST_NAME"][:64],
+             "name": "Codex" if os.environ["AGENT"] == "codex" else "Claude Code"}
+   if hook.get("cwd"): report["cwd"] = hook["cwd"][:260]
+   if hook.get("prompt"): report["title"] = " ".join(hook["prompt"].split())[:120]
+   print(json.dumps(report))') || exit 0
+   curl -s -m 1 -X PUT -H "Authorization: Bearer $FOCUSD_TOKEN" -H "Content-Type: application/json" \
+     --data "$body" "$url" >/dev/null 2>&1
+   exit 0
+   ```
+
+4. Set `FOCUSD_TOKEN` on the server (for example in `~/.profile`) and add the hooks to `~/.claude/settings.json` there. Fields left out of a report keep their last value, so the title from the prompt stays after the turn ends.
+
+   ```json
+   {
+     "hooks": {
+       "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "~/.local/bin/focusd-remote-hook.sh running" }] }],
+       "Notification": [{ "hooks": [{ "type": "command", "command": "~/.local/bin/focusd-remote-hook.sh waiting" }] }],
+       "Stop": [{ "hooks": [{ "type": "command", "command": "~/.local/bin/focusd-remote-hook.sh completed" }] }],
+       "SessionEnd": [{ "hooks": [{ "type": "command", "command": "~/.local/bin/focusd-remote-hook.sh end" }] }]
+     }
+   }
+   ```
+
+   Codex takes the same script with `codex` as the second argument, on its `UserPromptSubmit`, `PermissionRequest` (waiting), `Stop` and `SessionEnd` hooks.
+
+Without the tunnel the requests fail at once and nothing else changes. A remote session that never sends `end` can be removed from the Agent page by hand like any other.
+
 ## Other Agents
 
 Tools other than Codex and Claude Code can report their status too, with no FocuSD release needed: either from a plugin with the `agent-status:write` permission (`agentStatus.report`), or over the local API (`PUT /v1/agent-status/{source}`). These reports are kept in memory only and appear in the snapshot's `others` list. They light the island and name their session in the same way as the built-in agents, using a robot icon instead of a brand icon. See [local-api.md](local-api.md#ai-agent-状态) and [plugins/README.md](plugins/README.md).

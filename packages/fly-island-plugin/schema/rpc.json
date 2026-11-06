@@ -220,7 +220,7 @@
       "name": "agentStatus.report",
       "permission": "agent-status:write",
       "since": 1,
-      "params": { "source": "string", "phase": "string", "name?": "string", "title?": "string", "taskId?": "string" },
+      "params": { "source": "string", "phase": "idle | running | waiting | completed | failed", "name?": "string", "title?": "string", "taskId?": "string", "host?": "string (max 64): the machine it runs on", "agent?": "claudeCode | codex", "cwd?": "string (max 260)" },
       "result": "The saved status; id is '<plugin id>/<source>'."
     },
     {

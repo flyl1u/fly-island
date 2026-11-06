@@ -97,6 +97,11 @@ export function AgentSessionsPanel({
   const focus = (session: AgentSessionSummary) => {
     setNotFoundId(null);
     unseen?.markSeen(session);
+    // A session on another computer has no window here; the row says where it runs instead.
+    if (session.remoteHost) {
+      setNotFoundId(session.sessionId);
+      return;
+    }
     void focusAgentWindow(session.provider, session.cwd, session.title, session.sessionId)
       .then((found) => {
         if (!found) setNotFoundId(session.sessionId);
@@ -199,7 +204,7 @@ export function AgentSessionsPanel({
                       </span>
                     )}
                     {notFoundId === session.sessionId ? (
-                      <span className="agent-session__not-found" role="status">{isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
+                      <span className="agent-session__not-found" role="status">{session.remoteHost ? t.agent.sessions.remoteOnly(session.remoteHost) : isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
                     ) : (
                       <span className="agent-session__meta">{status}</span>
                     )}

@@ -1,9 +1,9 @@
-import { AppWindow, SquareCode, SquareTerminal } from "lucide-react";
+import { AppWindow, Server, SquareCode, SquareTerminal } from "lucide-react";
 import type { AgentHostDisplay } from "../appearance/types";
 import type { SessionHost } from "./api";
 import { useHostIcon } from "./useHostIcon";
 
-const FALLBACK_ICONS = { terminal: SquareTerminal, editor: SquareCode, app: AppWindow } as const;
+const FALLBACK_ICONS = { terminal: SquareTerminal, editor: SquareCode, app: AppWindow, remote: Server } as const;
 
 /** Where a session runs: the program's own icon and/or its name, before the session's status. */
 export function SessionHostLabel({ host, display }: { host: SessionHost; display: AgentHostDisplay }) {

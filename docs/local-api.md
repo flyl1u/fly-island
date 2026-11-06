@@ -48,7 +48,7 @@
 | DELETE | `/v1/todos/{id}` | — | 删除 |
 | GET | `/v1/note` | — | `{ date, note }` |
 | PUT | `/v1/note` | `{ "note": "..." }` 或 `{ "append": "..." }` | `note` 整体替换；`append` 追加一行 |
-| PUT | `/v1/agent-status/{source}` | `{ "phase": "running", "name"?: "Aider", "title"?: "...", "taskId"?: "..." }` | 上报一个 AI Agent 的状态，见下文 |
+| PUT | `/v1/agent-status/{source}` | `{ "phase": "running", "name"?: "Aider", "title"?: "...", "taskId"?: "...", "host"?: "dev-box", "agent"?: "claudeCode", "cwd"?: "..." }` | 上报一个 AI Agent 的状态，见下文 |
 | DELETE | `/v1/agent-status/{source}` | — | 移除这个来源 |
 
 待办对象的格式为 `{ id, title, completed, createdAt }`。标题不能为空，最长 500 个字符。
@@ -71,8 +71,9 @@
 除了内置的 Codex 和 Claude Code，任何工具都可以通过这个接口点亮状态灯，并在折叠的岛上显示会话标题（没有品牌图标时显示机器人图标）：
 
 - `source`：来源名，1–32 个小写字母、数字或 `-`，例如 `aider`。在设置里显示的 id 是 `local-api/<source>`。
-- `phase`：`running`（蓝灯）、`failed`（黄灯）、`completed` 或 `idle`（不亮）。`running` 超过 10 分钟没有再次上报时显示为 `stale`（黄灯）。
-- `name` 是显示名称，省略时沿用上次的名称，第一次上报时默认用 `source`。`title` 最长 120 个字符，`name` 最长 40 个字符。
+- `phase`：`running`（蓝灯）、`waiting`（在等用户）、`failed`（黄灯）、`completed` 或 `idle`（不亮）。`running` 超过 10 分钟没有再次上报时显示为 `stale`（黄灯）。
+- `name` 是显示名称，第一次上报时默认用 `source`。`title` 最长 120 个字符，`name` 最长 40 个字符。`name`、`title`、`host`、`agent`、`cwd` 省略时沿用上次的值。
+- 另一台电脑上的会话：同时给出 `host`（机器名，最长 64 个字符）和 `agent`（`claudeCode` 或 `codex`）时，它会和本机会话一起列在 Agent 页上，显示机器名，点击时不找本地窗口；`cwd` 是它的目录（最长 260 个字符）。经 SSH 隧道上报的做法见 [agent-status-hooks.md](agent-status-hooks.md#sessions-on-other-computers)。
 - 这些状态只保存在内存里，岛屿重启后就没有了。最多同时存在 16 个来源。
 
 ```powershell

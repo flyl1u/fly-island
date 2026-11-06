@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import type { IslandSettings } from "../appearance/types";
+import type { ExternalAgentStatus } from "./api";
+import { remoteSessions, withRemoteSessions } from "./remoteSessions";
 import { countActiveSessions, filterSessions, isActivePhase } from "./sessionList";
 import { useAgentSessions } from "./useAgentSessions";
 import { useHiddenSessions } from "./useHiddenSessions";
@@ -14,10 +16,15 @@ type AgentSessionSettings = Pick<
  * The island's agent sessions: all shown ones, the ones the Agent page lists, the running count,
  * the unseen ones, and removing one from the page.
  */
-export function useIslandAgentSessions(settings: AgentSessionSettings) {
+export function useIslandAgentSessions(settings: AgentSessionSettings, others?: ExternalAgentStatus[]) {
   // Read every second: the collapsed island names sessions from it and holds a finished one's
   // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
-  const allAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
+  const localAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
+  // Sessions on other computers, reported by a plugin or over the local API.
+  const allAgentSessions = useMemo(
+    () => withRemoteSessions(localAgentSessions, settings.agentStatusEnabled ? remoteSessions(others) : []),
+    [localAgentSessions, others, settings.agentStatusEnabled],
+  );
   // Agents switched off in Settings → AI Agent are left out of the page and the count.
   const shownAgentSessions = useMemo(
     () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),

@@ -13,6 +13,8 @@ const MAX_SOURCES: usize = 16;
 const MAX_NAME_CHARS: usize = 40;
 const MAX_TITLE_CHARS: usize = 120;
 const MAX_TASK_ID_CHARS: usize = 100;
+const MAX_HOST_CHARS: usize = 64;
+const MAX_CWD_CHARS: usize = 260;
 
 /// One reported source. Mirrored by `ExternalAgentStatus` in src/features/agent-status/api.ts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -26,6 +28,15 @@ pub struct ExternalAgentStatus {
     task_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     title: Option<String>,
+    /// The machine the agent runs on, for a session on another computer (an SSH server, a dev
+    /// container). With `agent` set too, the Agent page lists it as a session.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    host: Option<String>,
+    /// `claudeCode` or `codex`, when the source is one of those agents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    agent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cwd: Option<String>,
     updated_at: i64,
     #[serde(skip)]
     owner: String,
@@ -40,17 +51,24 @@ pub(super) struct AgentReport {
     pub phase: String,
     pub title: Option<String>,
     pub task_id: Option<String>,
+    pub host: Option<String>,
+    pub agent: Option<String>,
+    pub cwd: Option<String>,
 }
 
-/// Checks `{ source, phase, name?, title?, taskId? }`.
+/// Checks `{ source, phase, name?, title?, taskId?, host?, agent?, cwd? }`.
 pub(super) fn parse_report(params: &Value) -> Result<AgentReport, String> {
     let source = params.get("source").and_then(Value::as_str).unwrap_or_default();
     if !is_valid_source(source) {
         return Err("\"source\" must be 1-32 lowercase letters, digits or '-'.".into());
     }
     let phase = params.get("phase").and_then(Value::as_str).unwrap_or_default();
-    if !matches!(phase, "idle" | "running" | "completed" | "failed") {
-        return Err("\"phase\" must be idle, running, completed or failed.".into());
+    if !matches!(phase, "idle" | "running" | "waiting" | "completed" | "failed") {
+        return Err("\"phase\" must be idle, running, waiting, completed or failed.".into());
+    }
+    let agent = optional_text(params, "agent", 16)?;
+    if agent.as_deref().is_some_and(|agent| !matches!(agent, "claudeCode" | "codex")) {
+        return Err("\"agent\" must be claudeCode or codex.".into());
     }
     Ok(AgentReport {
         source: source.to_string(),
@@ -58,6 +76,9 @@ pub(super) fn parse_report(params: &Value) -> Result<AgentReport, String> {
         phase: phase.to_string(),
         title: optional_text(params, "title", MAX_TITLE_CHARS)?,
         task_id: optional_text(params, "taskId", MAX_TASK_ID_CHARS)?,
+        host: optional_text(params, "host", MAX_HOST_CHARS)?,
+        agent,
+        cwd: optional_text(params, "cwd", MAX_CWD_CHARS)?,
     })
 }
 
@@ -89,6 +110,7 @@ pub(super) fn report(owner: &str, default_name: &str, report: AgentReport) -> Re
     if existing.is_none() && sources.len() >= MAX_SOURCES {
         return Err(format!("At most {MAX_SOURCES} agent sources can report at once."));
     }
+    let previous = existing.map(|index| &sources[index]);
     let name = report
         .name
         .or_else(|| existing.map(|index| sources[index].name.clone()))
@@ -98,7 +120,12 @@ pub(super) fn report(owner: &str, default_name: &str, report: AgentReport) -> Re
         name,
         phase: report.phase,
         task_id: report.task_id,
-        title: report.title,
+        // Hooks know different things at different events (only a prompt brings the title), so
+        // what a report leaves out stays as the last one said.
+        title: report.title.or_else(|| previous.and_then(|status| status.title.clone())),
+        host: report.host.or_else(|| previous.and_then(|status| status.host.clone())),
+        agent: report.agent.or_else(|| previous.and_then(|status| status.agent.clone())),
+        cwd: report.cwd.or_else(|| previous.and_then(|status| status.cwd.clone())),
         updated_at: current_unix_millis(),
         owner: owner.to_string(),
     };
@@ -153,10 +180,15 @@ mod tests {
         let ok = parse_report(&json!({ "source": "cursor", "phase": "running", "title": "  Fix bug  " })).expect("valid");
         assert_eq!(ok.title.as_deref(), Some("Fix bug"));
         assert_eq!(ok.name, None);
+        let remote = parse_report(&json!({ "source": "dev-box", "phase": "waiting", "host": "dev-box", "agent": "claudeCode", "cwd": "/home/a/app" }))
+            .expect("valid");
+        assert_eq!((remote.host.as_deref(), remote.agent.as_deref(), remote.cwd.as_deref()), (Some("dev-box"), Some("claudeCode"), Some("/home/a/app")));
         for bad in [
             json!({ "phase": "running" }),
             json!({ "source": "Cursor", "phase": "running" }),
             json!({ "source": "cursor", "phase": "stale" }),
+            json!({ "source": "cursor", "phase": "running", "agent": "aider" }),
+            json!({ "source": "cursor", "phase": "running", "host": "h".repeat(65) }),
             json!({ "source": "cursor", "phase": "running", "title": 3 }),
             json!({ "source": "cursor", "phase": "running", "name": "x".repeat(41) }),
         ] {
@@ -178,6 +210,11 @@ mod tests {
         report_as("test.owner-a", "one", Some("Named"));
         // A later report without a name keeps the earlier one.
         assert_eq!(report_as("test.owner-a", "one", None).name, "Named");
+        let remote = |params: serde_json::Value| report("test.owner-r", "Default", parse_report(&params).expect("valid")).expect("stored");
+        remote(json!({ "source": "r-1", "phase": "running", "title": "修复登录", "host": "dev-box", "agent": "codex" }));
+        let later = remote(json!({ "source": "r-1", "phase": "completed" }));
+        assert_eq!((later.title.as_deref(), later.host.as_deref(), later.agent.as_deref()), (Some("修复登录"), Some("dev-box"), Some("codex")));
+        clear("test.owner-r", None);
         report_as("test.owner-a", "two", None);
         report_as("test.owner-b", "one", None);
 

@@ -246,7 +246,7 @@ export interface Plugin {
     append(text: string): Promise<{ date: string; note: string }>;
   };
   agentStatus: {
-    report(source: string, status: { phase: string; name?: string; title?: string; taskId?: string }): Promise<unknown>;
+    report(source: string, status: { phase: string; name?: string; title?: string; taskId?: string; host?: string; agent?: "claudeCode" | "codex"; cwd?: string }): Promise<unknown>;
     clear(source?: string): Promise<{ cleared: number }>;
   };
   clipboard: { history(limit?: number): Promise<{ items: { id: string; text: string; truncated: boolean; copiedAt: number; favorite: boolean }[] }> };

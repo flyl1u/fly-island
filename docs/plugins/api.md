@@ -67,7 +67,7 @@
 | `todos.remove` | `todos:write` | 1 | `id`：string | { id } |
 | `note.get` | `notes:read` | 1 | `date?`：YYYY-MM-DD (since 2); missing means today | { date, note }. A past date reads that day's archived note ({ ..., archived: true }; status 404 when nothing was archived); a later date is status 400. |
 | `note.set` | `notes:write` | 1 | `note | append`：string | { date, note } |
-| `agentStatus.report` | `agent-status:write` | 1 | `source`：string<br>`phase`：string<br>`name?`：string<br>`title?`：string<br>`taskId?`：string | The saved status; id is '<plugin id>/<source>'. |
+| `agentStatus.report` | `agent-status:write` | 1 | `source`：string<br>`phase`：idle \| running \| waiting \| completed \| failed<br>`name?`：string<br>`title?`：string<br>`taskId?`：string<br>`host?`：string (max 64): the machine it runs on<br>`agent?`：claudeCode \| codex<br>`cwd?`：string (max 260) | The saved status; id is '<plugin id>/<source>'. |
 | `agentStatus.clear` | `agent-status:write` | 1 | `source?`：string; omitted clears every source of the plugin | { cleared } |
 | `island.notify` | `island:notify` | 2 | `title`：string (1-80 chars)<br>`body?`：string (max 200)<br>`durationMs?`：number, clamped to 2000-15000, default 5000<br>`actions?`：[{ id: [A-Za-z0-9-]{1,32}, title: string (max 16) }] (max 2) | { muted }: true when the user turned this plugin's messages off (nothing is shown). At most 6 per minute per plugin, else -32000 with status 429. |
 | `secrets.get` | `secrets` | 2 | `key`：letters, digits, '.', '_', '-' (1-64 chars) | { value }: null when not set |

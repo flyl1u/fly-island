@@ -351,7 +351,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `todos.remove` | 1 | `todos:write` | `{ id }` | `{ id }` |
 | `note.get` | 1 | `notes:read` | `{ date? }`（第 2 版） | `{ date, note }`。过去的日期读那天归档的笔记（`archived: true`，没有归档时 404）；以后的日期 400 |
 | `note.set` | 1 | `notes:write` | `{ note }` 或 `{ append }` | `{ date, note }` |
-| `agentStatus.report` | 1 | `agent-status:write` | `{ source, phase, name?, title?, taskId? }` | 保存后的状态，`id` 为 `<插件 id>/<source>` |
+| `agentStatus.report` | 1 | `agent-status:write` | `{ source, phase, name?, title?, taskId?, host?, agent?, cwd? }` | 保存后的状态，`id` 为 `<插件 id>/<source>`。`phase` 为 `idle`、`running`、`waiting`、`completed` 或 `failed`；同时给出 `host`（机器名）和 `agent`（`claudeCode` / `codex`）时，作为另一台电脑上的会话列在 Agent 页上；省略的字段沿用上次的值 |
 | `agentStatus.clear` | 1 | `agent-status:write` | `{ source? }` | `{ cleared }`；省略 `source` 时清除这个插件的全部来源 |
 | `island.notify` | 2 | `island:notify` | `{ title, body?, durationMs?, actions? }` | `{ muted }`，见下文的「岛上提示」 |
 | `secrets.get` | 2 | `secrets` | `{ key }` | `{ value }`，没有时为 `null` |

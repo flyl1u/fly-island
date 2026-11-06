@@ -18,6 +18,11 @@ export type ExternalAgentStatus = AgentTaskStatus & {
   /** `<owner>/<source>`, e.g. `local-api/aider`. */
   id: string;
   name: string;
+  /** The machine the agent runs on, for a session on another computer. */
+  host?: string;
+  /** Which agent it is, when it is Claude Code or Codex. */
+  agent?: AgentProvider;
+  cwd?: string;
 };
 
 export type AgentStatusSnapshot = Record<AgentProvider, AgentTaskStatus> & {
@@ -81,6 +86,8 @@ export type AgentSessionSummary = {
    * turn with one running goes on by itself. Missing from older builds.
    */
   backgroundTasks?: number;
+  /** Set for a session reported from another computer (remoteSessions.ts); it has no window here. */
+  remoteHost?: string;
 };
 
 /** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */
@@ -122,8 +129,8 @@ export type SessionHost = {
   name: string;
   /** Its executable, for the icon; null when unknown. */
   exe: string | null;
-  /** The fallback icon when there is no executable icon. */
-  kind: "terminal" | "editor" | "app";
+  /** The fallback icon when there is no executable icon; "remote" for another computer. */
+  kind: "terminal" | "editor" | "app" | "remote";
 };
 
 /** The icon of a session host's executable as a PNG data URL; null when it has none. */
