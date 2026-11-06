@@ -192,6 +192,11 @@ export function hexToRgba(hex: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
+/** `value` when it is one of `allowed`, else `fallback`: a saved choice from an older or newer build. */
+function oneOf<T>(allowed: readonly T[], value: unknown, fallback: T): T {
+  return (allowed as readonly unknown[]).includes(value) ? (value as T) : fallback;
+}
+
 export function normalizeSettings(
   settings: LegacyIslandSettings | null | undefined,
 ): IslandSettings {
@@ -253,9 +258,7 @@ export function normalizeSettings(
     agentHostDisplay: AGENT_HOST_DISPLAYS.includes(settings?.agentHostDisplay as AgentHostDisplay)
       ? (settings?.agentHostDisplay as AgentHostDisplay)
       : DEFAULT_SETTINGS.agentHostDisplay,
-    agentSessionHours: (AGENT_SESSION_HOURS as readonly unknown[]).includes(settings?.agentSessionHours)
-      ? (settings?.agentSessionHours as number)
-      : DEFAULT_SETTINGS.agentSessionHours,
+    agentSessionHours: oneOf(AGENT_SESSION_HOURS, settings?.agentSessionHours, DEFAULT_SETTINGS.agentSessionHours),
     agentShowClaudeCode: settings?.agentShowClaudeCode !== false,
     agentShowCodex: settings?.agentShowCodex !== false,
     agentHideFinished: settings?.agentHideFinished === true,
@@ -267,9 +270,7 @@ export function normalizeSettings(
     agentAlertFailed: settings?.agentAlertFailed !== false,
     agentAlertWaiting: settings?.agentAlertWaiting !== false,
     agentAlertStarted: settings?.agentAlertStarted === "newSession" || settings?.agentAlertStarted === "off" ? settings.agentAlertStarted : "everyTurn",
-    agentAlertSeconds: (AGENT_ALERT_SECONDS as readonly unknown[]).includes(settings?.agentAlertSeconds)
-      ? (settings?.agentAlertSeconds as number)
-      : DEFAULT_SETTINGS.agentAlertSeconds,
+    agentAlertSeconds: oneOf(AGENT_ALERT_SECONDS, settings?.agentAlertSeconds, DEFAULT_SETTINGS.agentAlertSeconds),
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,
@@ -342,9 +343,7 @@ export function normalizeSettings(
     translationEnabled: settings?.translationEnabled !== false,
     translationTarget: settings?.translationTarget === "island" ? "island" : "window",
     shelfExpandOnDrop: settings?.shelfExpandOnDrop !== false,
-    shelfAutoCleanupDays: (SHELF_CLEANUP_DAYS as readonly unknown[]).includes(settings?.shelfAutoCleanupDays)
-      ? (settings?.shelfAutoCleanupDays as number)
-      : DEFAULT_SETTINGS.shelfAutoCleanupDays,
+    shelfAutoCleanupDays: oneOf(SHELF_CLEANUP_DAYS, settings?.shelfAutoCleanupDays, DEFAULT_SETTINGS.shelfAutoCleanupDays),
     shelfRemoveMissing: settings?.shelfRemoveMissing === true,
     shelfRemoveAfterDragOut: settings?.shelfRemoveAfterDragOut === true,
     shelfMaxItems: typeof settings?.shelfMaxItems === "number" && Number.isFinite(settings.shelfMaxItems)
