@@ -10,6 +10,7 @@ mod lyrics;
 mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
+mod pets;
 mod plugin_host;
 mod mail;
 mod qq_notifications;
@@ -142,7 +143,8 @@ pub fn run() {
             lyrics;
             clipboard_history;
             translation;
-            settings_window
+            settings_window;
+            pets
         ))
         .build(context)
         .map(|app| {
