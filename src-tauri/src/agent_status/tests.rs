@@ -961,6 +961,35 @@ fn orca_tabs_are_found_by_the_session_title() {
 }
 
 #[test]
+fn windows_terminal_tabs_are_picked_by_the_session_title() {
+    let tabs: Vec<String> = ["PowerShell", "✳ 设置界面完善思路", "⠐ 插件市场功能改版与签名", "Ubuntu", "Ubuntu"]
+        .map(String::from)
+        .to_vec();
+    assert_eq!(only_tab_titled(&tabs, "设置界面完善思路"), Some(1));
+    // Claude Code's working spinner in front of the title is ignored, and a cut title matches the start.
+    assert_eq!(only_tab_titled(&tabs, "插件市场功能…"), Some(2));
+    assert_eq!(only_tab_titled(&tabs, "插件市场功能"), None);
+    // Two tabs with the same title, no match, or a title too short to tell: never guess.
+    assert_eq!(only_tab_titled(&tabs, "Ubuntu"), None);
+    assert_eq!(only_tab_titled(&tabs, "另一个会话"), None);
+    assert_eq!(only_tab_titled(&tabs, "✳"), None);
+    assert_eq!(only_tab_titled(&[], "设置界面完善思路"), None);
+}
+
+#[test]
+fn tab_selection_gives_up_on_a_window_that_does_not_exist() {
+    use windows::Win32::Foundation::HWND;
+
+    let mut asked = false;
+    let selected = crate::win32::uia_tabs::select_tab(HWND(0x7fff_fff0 as *mut _), |_| {
+        asked = true;
+        Some(0)
+    });
+    assert!(!selected && !asked);
+    assert!(!crate::win32::uia_tabs::select_tab(HWND::default(), |_| Some(0)));
+}
+
+#[test]
 fn focus_attempts_log_their_steps_without_titles() {
     use super::focus_log::Attempt;
 

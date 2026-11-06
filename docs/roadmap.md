@@ -14,7 +14,6 @@
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
 | A2 | VS Code 精确跳到终端：做一个小扩展，注册 `vscode://` 链接，按进程号找到终端并 `terminal.show()`；没装扩展时只调窗口。Cursor、Windsurf 等同样适用 | 待用户确认 | | VS Code 没有从外部选中终端的接口，做法参考 [agents-deck #17](https://github.com/brushknight/agents-deck/issues/17)。发布到扩展市场属于对外发布，开始前要先问用户 |
-| A3 | Windows Terminal 跳到标签：用 UI Automation 按会话标题选中标签，失败时只调窗口 | 待做 | | 会话记录里已经有 `WT_SESSION`，可以用来确认是哪个标签。微软拒绝了按会话 ID 切标签的接口（[terminal #19783](https://github.com/microsoft/terminal/issues/19783)），只能按序号或用 UIA |
 | A7 | 核实 Codex 钩子的 `session_id` 和 rollout 里 `session_meta` 的 id 是同一个 | 待做 | | 文档没有明说，不一致的话 Codex 的会话记录对不上会话列表。需要在装了 Codex 的电脑上跑一次 |
 | A8 | Codex 的 SessionStart 记录会让每个会话的第一轮晚约 1 秒（查进程要 1 秒，Codex 钩子还不支持后台运行） | 待做 | | Codex 支持 `async` 后改成后台运行；或改为钩子只记环境变量、由岛屿去查进程 |
 | A6 | 收集一次真实 VS Code 环境下的 `agent-focus.log`，确认那位用户的问题是不是 `ddfcd05` 修好的那两种原因 | 待做 | | 需要那位用户更新后提供日志 |
@@ -59,6 +58,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| A3 | Windows Terminal 跳到标签：调出窗口后用 UI Automation 读标签名，只有恰好一个标签是会话标题时选中它（标题被截断时按开头匹配），标签在同一进程的另一个窗口里时调出那个窗口；日志写 `wt-tab=selected/none`。没有用 `WT_SESSION`：UIA 拿不到标签的会话 ID | 提交 `feat(agent-status): switch to the session's Windows Terminal tab` |
 | E6 | 插件右键菜单扩展到剪贴板文字、文件中转、QQ 通知和邮件（`clipboard/context`、`shelf/context`、`message/context`） | 提交 `feat(plugins): plugin entries in the clipboard, shelf and message right-click menus` |
 | — | 设置窗口视觉层级：分区卡片、字号层级代替加粗、滑块横排 | 提交 `feat(settings): cards and a type scale instead of bold everywhere` |
 | E5 | 插件修改自己声明的设置（`settings.set`） | `24efe79` |

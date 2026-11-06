@@ -156,3 +156,32 @@ pub(super) fn shorten(text: &str, max_chars: usize) -> Option<String> {
     title.push('…');
     Some(title)
 }
+
+/// A tab title without the status glyph Claude Code puts in front ("✳ 修复登录" -> "修复登录").
+fn bare_title(title: &str) -> String {
+    title
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .trim()
+        .trim_end_matches('…')
+        .trim()
+        .to_lowercase()
+}
+
+/// Whether a terminal tab titled `tab` shows the session titled `title`. Terminals show the title
+/// Claude Code sets, which is the session title the island lists; a title the island cut short
+/// with an ellipsis matches a tab title that starts with it. Titles under 2 characters never match.
+pub(super) fn tab_shows_title(tab: &str, title: &str) -> bool {
+    let wanted = bare_title(title);
+    if wanted.chars().count() < 2 {
+        return false;
+    }
+    let tab = bare_title(tab);
+    tab == wanted || (title.trim_end().ends_with('…') && tab.starts_with(&wanted))
+}
+
+/// Index of the only tab in `tabs` showing the session titled `title`; `None` when none or several do.
+pub(super) fn only_tab_titled(tabs: &[String], title: &str) -> Option<usize> {
+    let mut matches = tabs.iter().enumerate().filter(|(_, tab)| tab_shows_title(tab, title));
+    let (index, _) = matches.next()?;
+    matches.next().is_none().then_some(index)
+}

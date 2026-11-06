@@ -16,6 +16,8 @@ use std::{
 
 use serde_json::Value;
 
+use super::title::tab_shows_title;
+
 use crate::system::CREATE_NO_WINDOW;
 
 /// Folder in the app data folder with one file per Orca terminal; must match the hook script.
@@ -104,34 +106,17 @@ pub(super) fn only_agent_terminal(list_json: &str, agent: &str, cwd: &str) -> Op
     matches.next().is_none().then(|| first.to_string())
 }
 
-/// A tab title without the status glyph Claude Code puts in front ("✳ 修复登录" -> "修复登录").
-fn bare_title(title: &str) -> String {
-    title
-        .trim_start_matches(|c: char| !c.is_alphanumeric())
-        .trim()
-        .trim_end_matches('…')
-        .trim()
-        .to_lowercase()
-}
-
 /// The only live Orca terminal running `agent` whose tab title is the session's title. Orca shows
 /// the title Claude Code sets, which is the session title the island lists. A title the island cut
 /// short with an ellipsis matches a tab title that starts with it. `None` unless exactly one matches.
 pub(super) fn agent_terminal_titled(list_json: &str, agent: &str, title: &str) -> Option<String> {
-    let wanted = bare_title(title);
-    let truncated = title.trim_end().ends_with('…');
-    if wanted.chars().count() < 2 {
-        return None;
-    }
     let list: Value = serde_json::from_str(list_json).ok()?;
     let mut matches = list["result"]["terminals"]
         .as_array()?
         .iter()
         .filter(|terminal| terminal["agentIdentity"] == agent && terminal["orphaned"] != true)
         .filter(|terminal| {
-            terminal["title"].as_str().map(bare_title).is_some_and(|tab| {
-                tab == wanted || (truncated && tab.starts_with(&wanted))
-            })
+            terminal["title"].as_str().is_some_and(|tab| tab_shows_title(tab, title))
         })
         .filter_map(|terminal| terminal["handle"].as_str().filter(|handle| is_terminal_handle(handle)));
     let first = matches.next()?;

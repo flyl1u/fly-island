@@ -6,6 +6,9 @@
 
 use std::path::Path;
 
+use windows::Win32::Foundation::HWND;
+
+use super::title::only_tab_titled;
 use crate::win32;
 
 /// Editors whose window title names the open folder. Lowercase executable names without `.exe`.
@@ -183,6 +186,7 @@ pub(super) fn open_app_exe(app: &str) -> Option<String> {
 /// Windows let it come to the front (otherwise its taskbar button flashes).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct FocusedWindow {
+    pub(super) window: HWND,
     pub(super) process_id: u32,
     pub(super) app: String,
     pub(super) in_front: bool,
@@ -237,8 +241,37 @@ pub(super) fn focus_session_window(
         win32::window::flash(window);
     }
     Some(FocusedWindow {
+        window,
         process_id,
         app: candidates[index].app.clone(),
         in_front,
     })
+}
+
+/// Selects the Windows Terminal tab showing the session titled `title`: in the window already
+/// brought forward, else in another window of the same Windows Terminal process, which is then
+/// brought forward instead. Only a tab that alone carries the title is selected.
+pub(super) fn select_terminal_tab(focused: &FocusedWindow, title: &str) -> bool {
+    let choose = |tabs: &[String]| only_tab_titled(tabs, title);
+    if win32::uia_tabs::select_tab(focused.window, choose) {
+        return true;
+    }
+    let mut others = Vec::new();
+    let _ = win32::window::for_each_top_level_window(|window| {
+        if window != focused.window
+            && win32::window::is_visible(window)
+            && !win32::window::has_owner(window)
+            && win32::process::window_process_id(window) == focused.process_id
+        {
+            others.push(window);
+        }
+    });
+    let Some(window) = others.into_iter().find(|&window| win32::uia_tabs::select_tab(window, choose)) else {
+        return false;
+    };
+    win32::window::allow_set_foreground_window(focused.process_id);
+    if !win32::window::force_foreground(window) {
+        win32::window::flash(window);
+    }
+    true
 }

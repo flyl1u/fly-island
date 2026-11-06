@@ -1,6 +1,6 @@
 //! Clicking a session on the Agent page: find the window that shows it and bring it forward, and
-//! in Orca switch to its tab. The order tried is in docs/agent-status-hooks.md, "Switching to a
-//! Session's Window". Every attempt is written to agent-focus.log (focus_log.rs).
+//! in Orca or Windows Terminal switch to its tab. The order tried is in docs/agent-status-hooks.md,
+//! "Switching to a Session's Window". Every attempt is written to agent-focus.log (focus_log.rs).
 
 use std::path::Path;
 
@@ -12,6 +12,9 @@ use super::session_records::{self, SessionRecord};
 use super::window_focus::{self, app_name, SessionHints};
 use crate::system::windows_home_dir;
 use crate::win32;
+
+/// Windows Terminal's executable name; its tabs are switched through UI Automation.
+const WINDOWS_TERMINAL_APP: &str = "windowsterminal";
 
 /// Folder names above a session's folder that an editor might have open instead.
 const MAX_ANCESTORS: usize = 4;
@@ -161,6 +164,10 @@ pub(super) fn focus_session(
         let switched = win32::process::image_path(focused.process_id)
             .is_some_and(|orca_exe| orca::switch_terminal(Path::new(&orca_exe), &handle));
         log.note(if switched { "switch=sent" } else { "switch=failed" });
+    }
+    if let Some(title) = title.filter(|_| focused.app == WINDOWS_TERMINAL_APP) {
+        let selected = window_focus::select_terminal_tab(&focused, title);
+        log.note(if selected { "wt-tab=selected" } else { "wt-tab=none" });
     }
     log.finish(app_dir, if focused.in_front { "focused" } else { "found, flashed (Windows kept it behind)" });
     true
