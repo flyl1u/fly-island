@@ -35,6 +35,8 @@ export type SettingsAgentText = {
   showElapsed: string;
   showElapsedHint: string;
   showModel: string;
+  showActivity: string;
+  showActivityHint: string;
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -76,6 +78,8 @@ export const zhCN: SettingsAgentText = {
   showElapsed: "显示运行时长",
   showElapsedHint: "进行中的会话显示\"已运行多久\"，每秒更新；结束的显示这一轮\"用时多久\"。从最近一次提问开始算。",
   showModel: "显示模型和推理强度",
+  showActivity: "显示最近提问和正在用的工具",
+  showActivityHint: "进行中的会话在回复上方显示你最近一次的提问，运行时显示它正在调用的工具（如 Bash 命令、正在改的文件）。",
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -117,6 +121,8 @@ export const en: SettingsAgentText = {
   showElapsed: "Show how long it has run",
   showElapsedHint: "A session in progress shows how long it has been running, updated every second; a finished one shows how long its last turn took. Counted from the latest prompt.",
   showModel: "Show the model and effort",
+  showActivity: "Show the latest prompt and the tool in use",
+  showActivityHint: "Sessions in progress show your latest prompt above the reply and, while running, the tool they are calling (a Bash command, the file being edited).",
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
 };

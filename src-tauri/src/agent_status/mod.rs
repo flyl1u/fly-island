@@ -20,6 +20,7 @@ mod tests;
 mod session_scan;
 mod sessions;
 mod title;
+mod tool_call;
 mod window_focus;
 
 use serde::Serialize;

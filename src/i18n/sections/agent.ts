@@ -20,6 +20,7 @@ export type AgentText = {
     notFound: string;
     notFoundEnded: string;
     justNow: string;
+    yourPrompt: (prompt: string) => string;
     minutesAgo: (minutes: number) => string;
     activeCount: (count: number) => string;
     duration: (parts: { hours: number; minutes: number; seconds: number }) => string;
@@ -50,6 +51,7 @@ export const zhCN: AgentText = {
     notFound: "没找到对应的窗口",
     notFoundEnded: "没找到对应的窗口，会话可能已经关掉了",
     justNow: "刚刚",
+    yourPrompt: (prompt) => `你：${prompt}`,
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes} 分` : `${Math.floor(minutes / 60)} 小时`),
     activeCount: (count) => `${count} 个 Agent 会话正在运行，点击查看`,
     duration: ({ hours, minutes, seconds }) =>
@@ -81,6 +83,7 @@ export const en: AgentText = {
     notFound: "No matching window found",
     notFoundEnded: "No matching window; the session may have been closed",
     justNow: "<1m",
+    yourPrompt: (prompt) => `You: ${prompt}`,
     minutesAgo: (minutes) => (minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h`),
     activeCount: (count) => (count === 1 ? "1 agent session running; click to view" : `${count} agent sessions running; click to view`),
     duration: ({ hours, minutes, seconds }) =>

@@ -42,6 +42,8 @@ export type IslandSettings = {
   /** Show how long a session's current (or last) turn has run. */
   agentShowElapsed: boolean;
   agentShowModel: boolean;
+  /** The latest prompt and the tool in use on working session rows. */
+  agentShowActivity: boolean;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

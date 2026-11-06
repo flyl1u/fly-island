@@ -7,7 +7,8 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::session_host::SessionHost;
-use super::title::{display_title, shorten};
+use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
+use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
 
 /// The latest reply shown under each session.
 pub(super) const LAST_MESSAGE_MAX_CHARS: usize = 120;
@@ -33,6 +34,10 @@ pub struct AgentSessionSummary {
     /// When the newest prompt was sent, Unix milliseconds; how long the current (or last) turn
     /// has run is counted from here. `None` when the prompt is not in the excerpt read.
     pub(super) turn_started_at: Option<i64>,
+    /// That newest prompt, shortened like a title.
+    pub(super) last_prompt: Option<String>,
+    /// The tool the current turn called last; `None` once the turn is over.
+    pub(super) current_tool: Option<ToolCall>,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -57,6 +62,19 @@ pub(super) struct SessionTail {
     pub(super) state: TurnState,
     /// Timestamp of the newest prompt, Unix milliseconds.
     pub(super) turn_started_at: Option<i64>,
+    pub(super) last_prompt: Option<String>,
+    /// The newest tool call after the newest prompt, while the turn is still working.
+    pub(super) current_tool: Option<ToolCall>,
+}
+
+impl SessionTail {
+    /// A finished turn has no current tool.
+    fn settle(mut self) -> Self {
+        if self.state != TurnState::Working {
+            self.current_tool = None;
+        }
+        self
+    }
 }
 
 /// "2026-11-06T07:24:44.123Z" (or with an offset such as "+08:00") as Unix milliseconds.
@@ -147,20 +165,23 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
                 result.last_message = text_blocks(&message["content"])
                     .and_then(|text| shorten(&text, LAST_MESSAGE_MAX_CHARS));
             }
+            // Only tools called after the newest prompt belong to the current turn.
+            if result.current_tool.is_none() && result.last_prompt.is_none() {
+                result.current_tool = claude_tool_call(&message["content"]);
+            }
         }
         if result.state == TurnState::Unknown {
             result.state = claude_turn_state(kind, &record);
         }
-        if result.turn_started_at.is_none() && kind == "user" && is_typed_prompt(&record) {
-            result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+        // A prompt the user typed, not tool results, an interruption note or a command's output.
+        if result.last_prompt.is_none() && kind == "user" {
+            if let Some(prompt) = user_prompt_in_record(&record.to_string()) {
+                result.last_prompt = Some(prompt);
+                result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+            }
         }
     }
-    result
-}
-
-/// A prompt the user typed, not tool results, an interruption note or a command's output.
-fn is_typed_prompt(record: &Value) -> bool {
-    super::title::user_prompt_in_record(&record.to_string()).is_some()
+    result.settle()
 }
 
 fn claude_turn_state(kind: &str, record: &Value) -> TurnState {
@@ -232,8 +253,15 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
                 result.cwd = string_field(payload, "cwd");
             }
         }
+        // Only tools called after the newest prompt belong to the current turn.
+        if kind == "response_item" && result.current_tool.is_none() && result.last_prompt.is_none() {
+            result.current_tool = codex_tool_call(payload);
+        }
         if kind != "event_msg" {
             continue;
+        }
+        if result.last_prompt.is_none() && payload_kind == "user_message" {
+            result.last_prompt = payload["message"].as_str().and_then(prompt_title);
         }
         if result.last_message.is_none() {
             let text = match payload_kind {
@@ -255,7 +283,7 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
             };
         }
     }
-    result
+    result.settle()
 }
 
 /// `(session id, cwd)` from a Codex rollout's first line.

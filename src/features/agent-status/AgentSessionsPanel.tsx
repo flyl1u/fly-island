@@ -4,6 +4,7 @@ import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { SessionBody } from "./SessionBody";
 import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
@@ -22,12 +23,15 @@ export function AgentSessionsPanel({
   hostDisplay,
   showElapsed = true,
   showModel = true,
+  showActivity = true,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
   hostDisplay: AgentHostDisplay;
   showElapsed?: boolean;
   showModel?: boolean;
+  /** The latest prompt and the tool in use, on working rows. */
+  showActivity?: boolean;
 }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -83,9 +87,9 @@ export function AgentSessionsPanel({
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
           const model = modelLabel(session.model, session.effort);
           const minutes = minutesAgo(session.updatedAt, now);
-          // A working session with no reply yet (a turn just started) has nothing for a second line.
+          // A working session with nothing to say yet (a turn just started) has no second line.
           const active = isActivePhase(session.phase);
-          const full = active && Boolean(session.lastMessage);
+          const full = active && Boolean(session.lastMessage || (showActivity && (session.lastPrompt || session.currentTool)));
           const phaseLabel = getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
           const showPhase = session.phase !== "running" && session.phase !== "completed";
@@ -128,7 +132,7 @@ export function AgentSessionsPanel({
                     {/* Last on the line, so the provider icons line up however long the status is. */}
                     <AgentProviderIcon provider={session.provider} size={14} />
                   </span>
-                  {full && <span className="agent-session__message">{session.lastMessage}</span>}
+                  {full && <SessionBody session={session} showActivity={showActivity} />}
                 </span>
               </button>
             </li>

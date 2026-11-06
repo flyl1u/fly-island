@@ -1,7 +1,7 @@
 import type { AgentSessionSummary } from "./api";
 
 /** Fields the Agent page shows; `updatedAt` is left out because it only feeds the age label. */
-const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt"] as const;
+const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt"] as const;
 
 export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSummary[]) {
   return (
@@ -13,6 +13,8 @@ export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSumma
         SHOWN_FIELDS.every((field) => session[field] === other[field]) &&
         session.host?.exe === other.host?.exe &&
         session.host?.name === other.host?.name &&
+        session.currentTool?.name === other.currentTool?.name &&
+        session.currentTool?.detail === other.currentTool?.detail &&
         Math.floor(session.updatedAt / 60_000) === Math.floor(other.updatedAt / 60_000)
       );
     })

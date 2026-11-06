@@ -71,6 +71,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   // Off unless asked for: the age alone keeps finished rows short.
   agentShowElapsed: false,
   agentShowModel: true,
+  agentShowActivity: true,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -248,6 +249,7 @@ export function normalizeSettings(
     agentHideFinished: settings?.agentHideFinished === true,
     agentShowElapsed: settings?.agentShowElapsed === true,
     agentShowModel: settings?.agentShowModel !== false,
+    agentShowActivity: settings?.agentShowActivity !== false,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

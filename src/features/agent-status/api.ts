@@ -58,6 +58,18 @@ export type AgentSessionSummary = {
   host: SessionHost | null;
   /** When the newest prompt was sent (Unix ms): the current or last turn runs from here. */
   turnStartedAt: number | null;
+  /** That newest prompt, shortened like a title. Missing from builds before it was sent. */
+  lastPrompt?: string | null;
+  /** The tool the current turn called last; null once the turn is over. */
+  currentTool?: AgentToolCall | null;
+};
+
+/** Mirrors ToolCall in src-tauri/src/agent_status/tool_call.rs. */
+export type AgentToolCall = {
+  /** "Bash", "Edit"; an MCP tool by its own name. */
+  name: string;
+  /** The command, file name or pattern, when the tool has an obvious one. */
+  detail: string | null;
 };
 
 /** Mirrors SessionHost in src-tauri/src/agent_status/session_host.rs. */

@@ -151,6 +151,29 @@ async function runChecks() {
     check(titleColor() === "rgba(24, 24, 30, 0.95)", "浅色岛屿背景上标题换成深色字");
     fixture.style.removeProperty("--island-ink-rgb");
 
+    const withActivity: AgentSessionSummary[] = [
+      { ...SESSIONS[0], lastPrompt: "发个 0.5.3 补丁版并升级线上", currentTool: { name: "Bash", detail: "git push origin main && gh run watch --exit-status" } },
+      { ...SESSIONS[1], lastPrompt: "恢复发布机环境" },
+      SESSIONS[2],
+    ];
+    const renderActivity = async (showActivity: boolean) => {
+      await act(async () => {
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={withActivity} hostDisplay="both" showActivity={showActivity} /></I18nProvider></StrictMode>);
+      });
+    };
+    await renderActivity(true);
+    const [running, waiting] = rows();
+    check(running.querySelector(".agent-session__prompt")?.textContent === "你：发个 0.5.3 补丁版并升级线上"
+      && running.querySelector(".agent-session__tool-name")?.textContent === "Bash"
+      && running.querySelector(".agent-session__tool-detail")?.textContent?.startsWith("git push")
+      && !running.querySelector(".agent-session__message"), "运行中的会话显示最近提问和正在调用的工具");
+    const reply = waiting.querySelector<HTMLElement>(".agent-session__message");
+    check(waiting.querySelector(".agent-session__prompt") && reply && reply.clientHeight < 25 && !waiting.querySelector(".agent-session__tool"), "没有工具时提问下面接一行回复");
+    check(running.getBoundingClientRect().height === 78 && waiting.getBoundingClientRect().height === 78, "提问加一行内容的行和两行回复一样高（78px）");
+    await renderActivity(false);
+    check(!document.querySelector(".agent-session__prompt") && !document.querySelector(".agent-session__tool") && rows()[0].querySelector(".agent-session__message"), "关掉后只显示回复");
+    await render("both");
+
     await act(async () => { first.click(); await Promise.resolve(); });
     const lastCall = focusCalls[focusCalls.length - 1];
     check(lastCall?.provider === "claudeCode" && lastCall?.title === "设置界面完善思路", "点击会话按项目和标题查找窗口");

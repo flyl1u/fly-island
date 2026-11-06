@@ -832,6 +832,58 @@ fn the_turn_starts_at_the_newest_typed_prompt() {
 }
 
 #[test]
+fn a_working_turn_shows_its_prompt_and_latest_tool() {
+    use super::sessions::{parse_claude_tail, parse_codex_tail};
+
+    let tool = |name: &str, input: serde_json::Value| {
+        line(json!({"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Next:"}, {"type": "tool_use", "id": "t", "name": name, "input": input}]}}))
+    };
+    let result = line(json!({"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t", "content": "ok"}]}}));
+    let claude = [
+        line(json!({"type": "user", "message": {"role": "user", "content": "first prompt"}})),
+        tool("Grep", json!({"pattern": "old turn"})),
+        line(json!({"type": "assistant", "message": {"role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "done"}]}})),
+        line(json!({"type": "user", "message": {"role": "user", "content": "<pasted_content id=\"1\">  release  0.5.3 </pasted_content>"}})),
+        tool("Bash", json!({"command": "git status\n  && git log -1"})),
+        result.clone(),
+        tool("mcp__magpie__Edit", json!({"file_path": "E:\\Projects\\fly-island\\src\\App.tsx"})),
+        result,
+    ]
+    .concat();
+    let parsed = parse_claude_tail(&claude);
+    assert_eq!(parsed.last_prompt.as_deref(), Some("release 0.5.3"));
+    let current = parsed.current_tool.expect("a tool in the working turn");
+    assert_eq!((current.name.as_str(), current.detail.as_deref()), ("Edit", Some("App.tsx")));
+
+    // Commands collapse to one line; unknown tools have no detail.
+    let bash = parse_claude_tail(&[line(json!({"type": "user", "message": {"role": "user", "content": "go"}})), tool("Bash", json!({"command": "git status\n  && git log -1"}))].concat());
+    assert_eq!(bash.current_tool.and_then(|tool| tool.detail).as_deref(), Some("git status && git log -1"));
+    let other = parse_claude_tail(&[line(json!({"type": "user", "message": {"role": "user", "content": "go"}})), tool("TodoWrite", json!({"todos": []}))].concat());
+    assert_eq!(other.current_tool.map(|tool| (tool.name, tool.detail)), Some(("TodoWrite".to_string(), None)));
+
+    // A finished turn keeps its prompt but has no current tool, nor does a turn before any tool.
+    let finished = [claude.clone(), line(json!({"type": "assistant", "message": {"role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "all done"}]}}))].concat();
+    let parsed = parse_claude_tail(&finished);
+    assert_eq!((parsed.last_prompt.as_deref(), parsed.current_tool), (Some("release 0.5.3"), None));
+    let fresh = [claude, line(json!({"type": "user", "message": {"role": "user", "content": "next one"}}))].concat();
+    let parsed = parse_claude_tail(&fresh);
+    assert_eq!((parsed.last_prompt.as_deref(), parsed.current_tool), (Some("next one"), None));
+
+    let codex = [
+        line(json!({"type": "event_msg", "payload": {"type": "user_message", "message": "fix the build"}})),
+        line(json!({"type": "event_msg", "payload": {"type": "task_started"}})),
+        line(json!({"type": "response_item", "payload": {"type": "function_call", "name": "shell", "arguments": "{\"command\":[\"bash\",\"-lc\",\"cargo test\"]}"}})),
+    ]
+    .concat();
+    let parsed = parse_codex_tail(&codex);
+    assert_eq!(parsed.last_prompt.as_deref(), Some("fix the build"));
+    let current = parsed.current_tool.expect("a Codex tool call");
+    assert_eq!((current.name.as_str(), current.detail.as_deref()), ("shell", Some("cargo test")));
+    let exec = [codex, line(json!({"type": "response_item", "payload": {"type": "function_call", "name": "exec_command", "arguments": "{\"cmd\":\"pnpm build\"}"}}))].concat();
+    assert_eq!(parse_codex_tail(&exec).current_tool.and_then(|tool| tool.detail).as_deref(), Some("pnpm build"));
+}
+
+#[test]
 fn editor_titles_match_through_their_markers_and_parent_folders() {
     use super::window_focus::{bare_segment, best_window, SessionHints, WindowCandidate};
 

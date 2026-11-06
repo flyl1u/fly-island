@@ -174,8 +174,9 @@ impl SessionCache {
             return Some((summary, cached.state));
         }
 
-        // A long turn can push its prompt out of the tail read; keep the start found before.
+        // A long turn can push its prompt out of the tail read; keep the start and prompt found before.
         let known_turn_start = sessions.get(path).and_then(|cached| cached.summary.turn_started_at);
+        let known_prompt = sessions.get(path).and_then(|cached| cached.summary.last_prompt.clone());
         let known_head = sessions
             .get(path)
             .map(|cached| cached.head.clone())
@@ -211,6 +212,7 @@ impl SessionCache {
         let turn_started_at = parsed.turn_started_at.or(known_turn_start);
         let mut summary = summary_from(provider, session_id, cwd, title, parsed, modified);
         summary.turn_started_at = turn_started_at;
+        summary.last_prompt = summary.last_prompt.take().or(known_prompt);
         summary.host = host;
         sessions.insert(
             path.to_path_buf(),
@@ -257,6 +259,8 @@ fn summary_from(
         updated_at,
         host: None,
         turn_started_at: None,
+        last_prompt: parsed.last_prompt,
+        current_tool: parsed.current_tool,
     }
 }
 

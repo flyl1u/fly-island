@@ -88,6 +88,12 @@ export function AgentSessionListSettings({
           checked={settings.agentShowModel}
           onChange={(agentShowModel) => update({ agentShowModel })}
         />
+        <ToggleControl
+          label={text.showActivity}
+          checked={settings.agentShowActivity}
+          onChange={(agentShowActivity) => update({ agentShowActivity })}
+        />
+        <p className="settings-section__hint">{text.showActivityHint}</p>
       </section>
     </>
   );

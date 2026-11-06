@@ -231,6 +231,47 @@
   -webkit-line-clamp: 2;
 }
 
+/* Under the prompt there is room for one line of the reply. */
+.agent-session__message--one-line {
+  -webkit-line-clamp: 1;
+}
+
+/* "你：…" and the tool line read as one two-line paragraph with the reply, so the prompt cancels
+   the gap below it: a row with both stays as tall as one with a two-line reply (78px). */
+.agent-session__prompt {
+  margin-bottom: -4px;
+  overflow: hidden;
+  color: rgba(var(--agent-ink), 0.55);
+  font-size: 13px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-session__tool {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 19px;
+  white-space: nowrap;
+}
+
+.agent-session__tool-name {
+  flex: none;
+  color: var(--color-agent-running);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-weight: 500;
+}
+
+.agent-session__tool-detail {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(var(--agent-ink), 0.55);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  text-overflow: ellipsis;
+}
+
 .agent-session__host {
   flex: none;
   display: inline-flex;
