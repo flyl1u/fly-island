@@ -32,7 +32,7 @@
 |---|---|---|---|---|
 | C1 | 多显示器：每个屏幕一个岛，或岛跟着鼠标所在的屏幕 | 待做 | | Notchify、Isle Notch、WinIsland 都有 |
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
-| C4b | 歌词的中文来源（网易云、QQ 音乐、酷狗，非官方接口、默认关闭并说明风险）、翻译行、逐字高亮、按单首歌调偏移 | 待做 | | LRCLIB 的中文歌收录较少。调研见 C4 的会话记录：BetterLyrics、Lyricify 用的就是这几家 |
+| C4b | 歌词的中文来源（网易云、QQ 音乐、酷狗，非官方接口、默认关闭并说明风险）、翻译行、逐字高亮、按单首歌调偏移 | 待做 | | LRCLIB 的中文歌收录较少。调研见 C4 的会话记录：BetterLyrics、Lyricify 用的就是这几家。网易云不向系统报告播放进度和时长，岛只能从切歌起自己计时，在网易云里拖进度条或岛打开时歌已放到一半都会对不上；拿到网易云的歌曲 ID 或进度需要它的插件（如 InfLink-rs），以后可以考虑 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。

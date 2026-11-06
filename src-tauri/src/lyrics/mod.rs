@@ -17,7 +17,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
-use matching::{cache_key, stable_hash};
+use matching::{cache_key, named_in_simplified, stable_hash, traditional_chars};
+use crate::win32::chinese::to_simplified;
 
 const CACHE_DIR_NAME: &str = "lyrics-cache";
 /// A track LRCLIB had no lyrics for is asked about again after a week.
@@ -112,6 +113,17 @@ fn prune_cache(dir: &Path, keep: usize) {
     }
 }
 
+/// Lyrics as shown: a track named in simplified Chinese gets simplified lyrics, since many
+/// Chinese lyrics on LRCLIB were uploaded in traditional characters.
+fn for_display(source: &'static str, lrc: String, title: &str, artist: &str) -> Lyrics {
+    let lrc = if named_in_simplified(title, artist) && traditional_chars(&lrc) > 2 {
+        to_simplified(&lrc).unwrap_or(lrc)
+    } else {
+        lrc
+    };
+    Lyrics { source, lrc }
+}
+
 /// Synced lyrics for the playing track, or null when none were found. Errors only when LRCLIB
 /// could not be reached; that answer is not cached, so the next track change asks again.
 #[tauri::command]
@@ -126,7 +138,7 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
             .await
             .map_err(|error| format!("Failed to join the lyrics folder search: {error}"))?;
         if let Some(lrc) = found {
-            return Ok(Some(Lyrics { source: "local", lrc }));
+            return Ok(Some(for_display("local", lrc, &query.title, &query.artist)));
         }
     }
     if !query.online {
@@ -135,11 +147,11 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     let cache_dir = app.path().app_data_dir().map_err(|error| error.to_string())?.join(CACHE_DIR_NAME);
     let key = cache_key(&query.title, &query.artist, query.duration_ms);
     if let Some(cached) = read_cache(&cache_dir, &key, now_secs()) {
-        return Ok(cached.map(|lrc| Lyrics { source: "lrclib", lrc }));
+        return Ok(cached.map(|lrc| for_display("lrclib", lrc, &query.title, &query.artist)));
     }
     let fetched = lrclib::fetch(&query.title, &query.artist, &query.album, query.duration_ms).await?;
     write_cache(&cache_dir, &key, fetched.as_deref(), now_secs());
-    Ok(fetched.map(|lrc| Lyrics { source: "lrclib", lrc }))
+    Ok(fetched.map(|lrc| for_display("lrclib", lrc, &query.title, &query.artist)))
 }
 
 /// This module's Tauri commands, chained into `lib.rs`'s `generate_handler!`.
@@ -168,6 +180,13 @@ mod tests {
         // A miss is asked about again after a week.
         assert_eq!(read_cache(&dir, "b", now + MISSING_TTL.as_secs()), None);
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn traditional_lyrics_are_shown_simplified_for_a_track_named_in_simplified() {
+        let lrc = "[00:31.50] 劃一根火柴 將慵倦的夜點亮".to_string();
+        assert_eq!(for_display("lrclib", lrc.clone(), "余香", "张小九").lrc, "[00:31.50] 划一根火柴 将慵倦的夜点亮");
+        assert_eq!(for_display("lrclib", lrc.clone(), "餘香", "張小九").lrc, lrc);
     }
 
     #[test]

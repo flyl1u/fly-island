@@ -69,6 +69,21 @@ pub(super) fn close_duration(playing_ms: i64, found_ms: i64) -> bool {
     playing_ms <= 0 || found_ms <= 0 || (playing_ms - found_ms).abs() <= DURATION_TOLERANCE_MS
 }
 
+/// Common characters written differently in traditional Chinese; any of them in a text marks it
+/// as traditional. Not a converter, only enough to tell the two apart in song titles and lyrics.
+const TRADITIONAL_ONLY: &str = "們個這來時對說會為國與過還見裡開關點嗎聽買門問題經從後兩學頭電話車長際愛夢錯風雲讓將歲憶淚離間遠應聲樣無給隨盡難燈繼續萬髮臉憂鬱戀輕遙燒飄縷劃鎖鑰塵撣髒談顛飽滄調養記暫詳邊楊歡樂謝閃覺寫們歌語書紅綠藍誰變處張帶塊";
+
+/// How many characters of `text` are written the traditional way.
+pub(super) fn traditional_chars(text: &str) -> usize {
+    text.chars().filter(|c| TRADITIONAL_ONLY.contains(*c)).count()
+}
+
+/// Whether the track is named in simplified Chinese: Chinese characters, none of them traditional.
+pub(super) fn named_in_simplified(title: &str, artist: &str) -> bool {
+    let name = format!("{title}{artist}");
+    name.chars().any(|c| ('\u{4E00}'..='\u{9FFF}').contains(&c)) && traditional_chars(&name) == 0
+}
+
 /// The cache key of a track: cleaned title and artist, duration to the nearest 2 seconds.
 pub(super) fn cache_key(title: &str, artist: &str, duration_ms: i64) -> String {
     format!("{}\u{1f}{}\u{1f}{}", clean_title(title), fold(artist), (duration_ms + 1000) / 2000)
@@ -102,6 +117,15 @@ mod tests {
         assert!(same_artist("A / B", "b"));
         assert!(same_artist("", "Anyone"));
         assert!(!same_artist("Taylor Swift", "Taylor Swift Tribute Band"));
+    }
+
+    #[test]
+    fn simplified_and_traditional_names_are_told_apart() {
+        assert!(named_in_simplified("余香", "张小九"));
+        assert!(!named_in_simplified("餘香", "張小九"));
+        assert!(!named_in_simplified("Yesterday", "The Beatles"));
+        assert_eq!(traditional_chars("劃一根火柴 將慵倦的夜點亮"), 3);
+        assert_eq!(traditional_chars("划一根火柴 将慵倦的夜点亮"), 0);
     }
 
     #[test]

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./api";
 import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from "./mediaState";
+import { advanceClock, clockPosition, hasTimeline, NO_CLOCK, type TrackClock } from "./trackClock";
 import { useAudioLevel } from "./useAudioLevel";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
 
@@ -18,6 +19,7 @@ export function useMediaState(enabled = true) {
   const mediaTargetRef = useRef<string | null>(null);
   const isRefreshingMediaState = useRef(false);
   const isRunningMediaCommand = useRef(false);
+  const trackClock = useRef<TrackClock>(NO_CLOCK);
   const mediaPlaybackIntent = useRef<{
     status: MediaPlaybackStatus;
     expiresAt: number;
@@ -37,17 +39,25 @@ export function useMediaState(enabled = true) {
         mediaTargetRef.current ?? undefined,
       );
 
+      const now = Date.now();
+      const intent = mediaPlaybackIntent.current;
+      const playbackStatus =
+        intent && now < intent.expiresAt
+          ? intent.status
+          : nextMediaState.playbackStatus;
+
+      if (intent && now >= intent.expiresAt) {
+        mediaPlaybackIntent.current = null;
+      }
+
+      // A player that reports no position (NetEase Cloud Music) is timed by the island.
+      const untimed = nextMediaState.title && !hasTimeline(nextMediaState)
+        ? `${nextMediaState.sourceApp ?? ""}\u001f${nextMediaState.title}\u001f${nextMediaState.artist ?? ""}`
+        : null;
+      trackClock.current = untimed ? advanceClock(trackClock.current, untimed, playbackStatus === "playing", now) : NO_CLOCK;
+      const timeline = untimed ? { positionMs: clockPosition(trackClock.current, now), updatedAt: now } : {};
+
       setMediaState((currentState) => {
-        const intent = mediaPlaybackIntent.current;
-        const playbackStatus =
-          intent && Date.now() < intent.expiresAt
-            ? intent.status
-            : nextMediaState.playbackStatus;
-
-        if (intent && Date.now() >= intent.expiresAt) {
-          mediaPlaybackIntent.current = null;
-        }
-
         const nextPeak = Math.max(
           currentState.audioPeak * 0.82,
           nextMediaState.audioPeak,
@@ -58,6 +68,7 @@ export function useMediaState(enabled = true) {
 
         const merged: MediaState = {
           ...nextMediaState,
+          ...timeline,
           audioActive,
           audioPeak,
           playbackStatus,

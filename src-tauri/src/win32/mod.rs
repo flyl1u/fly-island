@@ -3,6 +3,7 @@
 
 pub(crate) mod audio;
 pub(crate) mod brightness;
+pub(crate) mod chinese;
 pub(crate) mod clipboard;
 pub(crate) mod com;
 pub(crate) mod hotkey;

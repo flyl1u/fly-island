@@ -11,7 +11,10 @@
   text-align: center;
 }
 
+/* An empty line still holds its row, so the lines never shift into another one's place. */
 .lyrics-view__line {
+  min-height: 1.35em;
+  line-height: 1.35;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
