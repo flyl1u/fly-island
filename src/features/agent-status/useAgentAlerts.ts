@@ -6,8 +6,12 @@ import { sessionKey } from "./unseen";
 /** While the cursor rests on the island (it holds the focus then), closing waits this long more. */
 const HOVER_RETRY_MS = 1000;
 
-/** The session an alert opened the Agent page for; a new object each time, so the page scrolls again. */
-export type AlertedSession = { key: string; kind: AgentAlertKind };
+/**
+ * The session an alert opened the Agent page for, which the page then shows alone. `session` is
+ * the session as the alert saw it, for when the page's own list leaves it out (only running
+ * sessions listed).
+ */
+export type AlertedSession = { key: string; kind: AgentAlertKind; session: AgentSessionSummary };
 
 type AgentAlertOptions = {
   sessions: AgentSessionSummary[];
@@ -27,7 +31,9 @@ type AgentAlertOptions = {
  * Opens the Agent page when a session finishes, fails or waits for the user, unless its window
  * is already in front or the user has the island open. The panel closes again after
  * `durationMs`, unless the user pressed inside it; resting the cursor on it holds it open.
- * Returns the session to scroll into view on the page.
+ * Returns the session the page shows alone while the alert lasts: until the island collapses,
+ * leaves the Agent page, or the user presses anywhere but the session's row (the page header's
+ * Agent button, say), which brings back the whole list.
  */
 export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose }: AgentAlertOptions) {
   const [alerted, setAlerted] = useState<AlertedSession | null>(null);
@@ -41,10 +47,12 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
   });
 
   useEffect(() => {
-    // A press inside the panel means the user took it over: it no longer closes by itself.
-    const keepOpen = () => {
+    // A press inside the panel means the user took it over: it no longer closes by itself, and
+    // anywhere but the alerted row it is the whole Agent page again.
+    const keepOpen = (event: PointerEvent) => {
       openedByAlertRef.current = false;
       window.clearTimeout(closeTimerRef.current);
+      if (!(event.target instanceof Element && event.target.closest(".agent-sessions__list"))) setAlerted(null);
     };
     window.addEventListener("pointerdown", keepOpen, true);
     return () => {
@@ -59,6 +67,16 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
       window.clearTimeout(closeTimerRef.current);
     }
   }, [isCollapsed]);
+
+  // Collapsing or moving to another page ends the alert's one-session view. Not while collapsed:
+  // the alert sets its session just before the island opens.
+  const leftAgentPage = !isCollapsed && !isOpenOnAgents;
+  const wasExpandedRef = useRef(!isCollapsed);
+  useEffect(() => {
+    const collapsedNow = isCollapsed && wasExpandedRef.current;
+    wasExpandedRef.current = !isCollapsed;
+    if (collapsedNow || leftAgentPage) setAlerted(null);
+  }, [isCollapsed, leftAgentPage]);
 
   const { completed, failed, waiting } = kinds;
   useEffect(() => {
@@ -88,7 +106,7 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
         // Leave a panel the user opened alone; an alert's own panel just stays open longer.
         if (shown.length === 0 || !current.canAlert || !(current.isCollapsed || openedByAlertRef.current)) return;
         const newest = shown[shown.length - 1];
-        setAlerted({ key: sessionKey(newest.session), kind: newest.kind });
+        setAlerted({ key: sessionKey(newest.session), kind: newest.kind, session: newest.session });
         openedByAlertRef.current = true;
         current.onOpen();
         window.clearTimeout(closeTimerRef.current);

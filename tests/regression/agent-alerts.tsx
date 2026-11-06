@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { useAgentAlerts, type AlertedSession } from "../../src/features/agent-status/useAgentAlerts";
+import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const DURATION_MS = 300;
@@ -102,9 +103,38 @@ try {
   await act(async () => setSessions([session("a", "running"), session("b", "running")]));
   await act(async () => setSessions([session("a", "completed"), session("b", "running")]));
   await wait(50);
-  await act(async () => { window.dispatchEvent(new PointerEvent("pointerdown")); });
+  const press = (target: EventTarget) => act(async () => { target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
+  await press(document.getElementById("row")!);
   await wait(DURATION_MS + 100);
   check(island.mode === "expanded", "在弹出的面板里点过以后不再自动收起");
+  check(latestAlert()?.key === "claudeCode:a", "点的是这个会话那一行时，仍只显示这一个会话");
+  await press(window);
+  check(island.mode === "expanded" && latestAlert() === null, "点了岛上别处（如 Agent 按钮）就换回完整列表，岛屿不收起");
+  await act(async () => setIsland({ mode: "collapsed", page: "agents" }));
+
+  await act(async () => setSessions([session("a", "running"), session("b", "running")]));
+  await act(async () => setSessions([session("a", "running"), session("b", "failed")]));
+  await wait(50);
+  check(latestAlert()?.key === "claudeCode:b", "下一条提醒只显示它自己的会话");
+  await act(async () => setIsland({ mode: "expanded", page: "todo" }));
+  check(latestAlert() === null, "切到别的页后不再是单会话视图");
+  await act(async () => setIsland({ mode: "collapsed", page: "todo" }));
+  await act(async () => setSessions([session("a", "running"), session("b", "running")]));
+  await act(async () => setSessions([session("a", "completed"), session("b", "running")]));
+  await wait(DURATION_MS + 100);
+  check(island.mode === "collapsed" && latestAlert() === null, "提醒自动收起后，下次打开 Agent 页是完整列表");
+
+  // The panel: an alert shows its session alone and leaves the usage line out.
+  const panel = createRoot(document.getElementById("panel")!);
+  const listed = [session("a", "completed"), session("b", "running"), session("c", "completed")];
+  const rows = () => [...document.querySelectorAll("#panel .agent-sessions__list > li")].map((row) => (row as HTMLElement).dataset.sessionKey);
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" showUsage />));
+  check(rows().length === 3, "平时 Agent 页列出全部会话");
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" showUsage reveal={{ key: "claudeCode:c", kind: "completed", session: listed[2] }} />));
+  check(rows().join() === "claudeCode:c" && !document.querySelector("#panel .agent-usage"), "弹出提醒时只显示触发的那一个会话，不显示用量");
+  const gone = session("d", "completed");
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" reveal={{ key: "claudeCode:d", kind: "completed", session: gone }} />));
+  check(rows().join() === "claudeCode:d", "列表里没有这个会话（只列运行中的）时，按提醒时的样子显示它");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

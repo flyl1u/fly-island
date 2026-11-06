@@ -142,26 +142,6 @@ export function IslandApp() {
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
     );
-  const expandedIslandHeight = getExpandedIslandHeight({
-    page,
-    todoPageMode,
-    todos,
-    hasMediaCommandError: Boolean(mediaCommandError),
-    messageSource,
-    isReadingMail: qqMail.wantsTallPanel,
-    maxPanelHeight: settings.maxPanelHeight,
-    clipboardVisibleRows: settings.clipboardVisibleRows,
-    agentVisibleRows: settings.agentVisibleRows,
-    agentShowUsage: settings.agentShowUsage,
-    pluginTemplate: pluginPages.entry?.template,
-    pluginListRows: pluginPages.rows,
-    pluginWebviewHeight: pluginPages.entry?.height,
-  });
-  const stageStyle = useMemo(
-    () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
-    [collapsedIslandWidth, expandedIslandHeight, mode, settings],
-  );
-
   const translationPeek = useQuickTranslation(settings.translationEnabled);
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   const tuckWhenIdle = useCallback(
@@ -215,6 +195,26 @@ export function IslandApp() {
     onOpen: () => openIslandPage("agents"),
     onClose: collapseIsland,
   });
+
+  const expandedIslandHeight = getExpandedIslandHeight({
+    page,
+    todoPageMode,
+    todos,
+    hasMediaCommandError: Boolean(mediaCommandError),
+    messageSource,
+    isReadingMail: qqMail.wantsTallPanel,
+    maxPanelHeight: settings.maxPanelHeight,
+    clipboardVisibleRows: settings.clipboardVisibleRows,
+    agentVisibleRows: alertedSession ? 1 : settings.agentVisibleRows,
+    agentShowUsage: !alertedSession && settings.agentShowUsage,
+    pluginTemplate: pluginPages.entry?.template,
+    pluginListRows: pluginPages.rows,
+    pluginWebviewHeight: pluginPages.entry?.height,
+  });
+  const stageStyle = useMemo(
+    () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
+    [collapsedIslandWidth, expandedIslandHeight, mode, settings],
+  );
 
   const fileShelf = useFileShelf(settings.shelfEnabled, {
     maxItems: settings.shelfMaxItems,

@@ -23,14 +23,14 @@ const AGE_REFRESH_MS = 30_000;
  * Sessions still working get a two-line row with the latest reply; finished ones fold to one line.
  */
 export function AgentSessionsPanel({
-  sessions,
+  sessions: listed,
   hostDisplay,
   showElapsed = true,
   showModel = true,
   showActivity = true,
   unseen,
   reveal,
-  showUsage = false,
+  showUsage: usageOn = false,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
@@ -41,12 +41,16 @@ export function AgentSessionsPanel({
   showActivity?: boolean;
   /** Finished sessions not looked at yet; they stand out until clicked. */
   unseen?: UnseenSessions;
-  /** The session an alert opened the page for, scrolled into view; a new object for each alert. */
+  /** The session an alert opened the page for; the page then shows it alone, like a card. */
   reveal?: AlertedSession | null;
   /** Claude's usage limits above the list. */
   showUsage?: boolean;
 }) {
   const t = useTranslation();
+  // An alert's session alone, kept current from the list; the list may leave it out (only
+  // running sessions listed), and then it shows as the alert saw it.
+  const sessions = reveal ? [listed.find((session) => sessionKey(session) === reveal.key) ?? reveal.session] : listed;
+  const showUsage = usageOn && !reveal;
   const [now, setNow] = useState(() => Date.now());
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
@@ -56,20 +60,6 @@ export function AgentSessionsPanel({
     const timer = window.setInterval(() => setNow(Date.now()), AGE_REFRESH_MS);
     return () => window.clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (!reveal) return;
-    // Scrolls the list only, not the island around it as scrollIntoView could.
-    const item = [...document.querySelectorAll<HTMLElement>(".agent-sessions__list > li")].find(
-      (row) => row.dataset.sessionKey === reveal.key,
-    );
-    const listElement = item?.parentElement;
-    if (!item || !listElement) return;
-    const row = item.getBoundingClientRect();
-    const box = listElement.getBoundingClientRect();
-    if (row.top < box.top) listElement.scrollTop -= box.top - row.top;
-    else if (row.bottom > box.bottom) listElement.scrollTop += row.bottom - box.bottom;
-  }, [reveal]);
 
   useEffect(() => {
     if (!notFoundId) return;
