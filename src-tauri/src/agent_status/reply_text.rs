@@ -37,10 +37,11 @@ fn has_question(line: &str) -> bool {
         '?' => index > 0 && chars[index + 1..].iter().find(|next| !CLOSERS.contains(next)).is_none_or(|next| next.is_whitespace() || !next.is_ascii()),
         _ => false,
     });
-    // Chinese questions written without a question mark: "……可以吗。"
-    asks || line
-        .split(['。', '！', '!', '；'])
-        .any(|sentence| sentence.trim().trim_end_matches(CLOSERS).ends_with('吗'))
+    // Chinese questions written without a question mark: "……可以吗。", and offers that wait for a
+    // yes: "你同意的话我来加。", "要的话我先认领。"
+    asks || line.split(['。', '！', '!', '；']).any(|sentence| {
+        sentence.trim().trim_end_matches(CLOSERS).ends_with('吗') || sentence.contains("同意的话") || sentence.contains("要的话")
+    })
 }
 
 fn plain_line(line: &str) -> Option<String> {
@@ -153,6 +154,8 @@ mod tests {
         assert!(asks("要我开工吗？卡片最多几行你也可以另外指定。"));
         assert!(asks("**你选哪个？**"));
         assert!(asks("这样可以吗。"));
+        assert!(asks("你同意的话我来加。"));
+        assert!(asks("要的话，我先在 roadmap 上认领。"));
         // Done, or a question only earlier on.
         assert!(!asks("要不要改？\n\n已经改好并合入 main。"));
         assert!(!asks("已合入 main（`a87dd0e`）。"));
