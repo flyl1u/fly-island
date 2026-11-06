@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import { getMediaState, type MediaState } from "./api";
 import { MusicSourceList } from "./MusicSourceList";
+import "./MusicSourceSettingsSection.css";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
 
 // Often enough for the playing dots to follow a source that starts or stops.
@@ -40,17 +42,15 @@ export function MusicSourceSettingsSection() {
   const { musicSourcePriority, reorderMusicSource, removeMusicSource } = useMusicSourcePriority(liveSessions);
 
   return (
-    <section className="settings-section settings-section--music-sources">
-      <div className="settings-section__header">
-        <span>{t.music.settingsTitle}</span>
+    <SettingsGroup title={t.music.settingsTitle} footer={t.music.settingsHint}>
+      <div className="music-source-settings">
+        <MusicSourceList
+          sourcePriority={musicSourcePriority}
+          liveSessions={liveSessions}
+          onReorderSource={reorderMusicSource}
+          onRemoveSource={removeMusicSource}
+        />
       </div>
-      <p className="settings-section__hint">{t.music.settingsHint}</p>
-      <MusicSourceList
-        sourcePriority={musicSourcePriority}
-        liveSessions={liveSessions}
-        onReorderSource={reorderMusicSource}
-        onRemoveSource={removeMusicSource}
-      />
-    </section>
+    </SettingsGroup>
   );
 }

@@ -11,6 +11,9 @@ import { useClipboardSettings } from "../../features/clipboard/useClipboardSetti
 import { PluginShortcutSection } from "../../features/plugins/PluginShortcutSection";
 import { TranslationShortcutRows } from "../../features/translation/TranslationShortcutRows";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import { findShortcutOwner, type ShortcutOwner } from "./shortcutConflicts";
 import "./ShortcutsSettingsPage.css";
@@ -108,12 +111,11 @@ export function ShortcutsSettingsPage({
 export function ShortcutsLinkSection({ onOpen }: { onOpen: () => void }) {
   const t = useTranslation();
   return (
-    <section className="settings-section shortcuts-link">
-      <div className="settings-section__header"><span>{t.settings.categories.shortcuts}</span></div>
-      <div className="shortcuts-link__row">
-        <p className="settings-section__hint">{t.settings.shortcuts.editHint}</p>
-        <button type="button" className="shortcuts-link__button" onClick={onOpen}>{t.settings.shortcuts.openPage}</button>
-      </div>
-    </section>
+    <SettingsGroup title={t.settings.categories.shortcuts}>
+      <SettingsRow
+        title={t.settings.shortcuts.editHint}
+        control={<SettingsLinkButton onClick={onOpen}>{t.settings.shortcuts.openPage}</SettingsLinkButton>}
+      />
+    </SettingsGroup>
   );
 }

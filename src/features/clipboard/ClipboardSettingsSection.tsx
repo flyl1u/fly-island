@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
-import { NumberControl } from "../../components/controls/NumberControl";
-import { ToggleControl } from "../../components/controls/ToggleControl";
 import type { ClipboardHistorySettings } from "./api";
-import "./ClipboardSettingsSection.css";
 
 /**
  * The clipboard history options below the module switch (which is `enabled`, set by the
@@ -18,27 +18,20 @@ export function ClipboardSettingsSection({ clipboardSettings, onClipboardSetting
   const t = useTranslation();
 
   return (
-    <section className="settings-section settings-section--clipboard">
-      <div className="settings-section__header">
-        <span>{t.settings.clipboard.title}</span>
-      </div>
-      <ToggleControl
-        label={t.settings.clipboard.captureImages}
+    <SettingsGroup title={t.settings.clipboard.title}>
+      <SettingsToggleRow
+        title={t.settings.clipboard.captureImages}
         checked={clipboardSettings.captureImages}
-        onChange={(captureImages) =>
-          onClipboardSettingsChange({ ...clipboardSettings, captureImages })
-        }
+        onChange={(captureImages) => onClipboardSettingsChange({ ...clipboardSettings, captureImages })}
       />
-      <NumberControl
-        label={t.settings.clipboard.maxItems}
+      <SettingsNumberRow
+        title={t.settings.clipboard.maxItems}
         value={clipboardSettings.maxItems}
         min={5}
         max={200}
-        onChange={(maxItems) =>
-          onClipboardSettingsChange({ ...clipboardSettings, maxItems })
-        }
+        onChange={(maxItems) => onClipboardSettingsChange({ ...clipboardSettings, maxItems })}
       />
       {children}
-    </section>
+    </SettingsGroup>
   );
 }

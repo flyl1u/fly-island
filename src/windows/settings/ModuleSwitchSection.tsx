@@ -1,7 +1,8 @@
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 
-/** The on/off switch at the top of a module's settings page. */
+/** A module page's on/off switch: the page's first card, one row, no group title of its own. */
 export function ModuleSwitchSection({
   label,
   checked,
@@ -14,12 +15,8 @@ export function ModuleSwitchSection({
   const t = useTranslation();
 
   return (
-    <section className="settings-section settings-section--module">
-      <div className="settings-section__header">
-        <span>{t.settings.modules.title}</span>
-      </div>
-      <ToggleControl label={label} checked={checked} onChange={onChange} />
-      <p className="settings-section__hint">{t.settings.modules.hint}</p>
-    </section>
+    <SettingsGroup>
+      <SettingsToggleRow title={label} description={t.settings.modules.hint} checked={checked} onChange={onChange} />
+    </SettingsGroup>
   );
 }

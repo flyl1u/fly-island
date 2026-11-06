@@ -293,9 +293,9 @@ if (!automated) {
     });
     check(element(".settings-sidebar__item[data-category='todos']").getAttribute("aria-current") === "page", "A save path request from the island opens the todos page");
     check(document.querySelector(".editor-panel .save-path-panel--attention"), "A save path request from the island highlights the save path");
-    await click(".save-path-button");
+    await click(".save-path-panel .settings-link-button");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_500)); });
-    check(document.querySelector(".save-path-button--saved"), "The saved confirmation stays long enough to notice");
+    check(document.querySelector(".save-path-panel .save-path-saved"), "The saved confirmation stays long enough to notice");
 
     await openPage("mail");
     const rows = () => [...document.querySelectorAll<HTMLElement>(".mail-settings__account")];

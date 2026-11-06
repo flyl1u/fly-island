@@ -1,5 +1,7 @@
 export type SettingsFileShelfText = {
   title: string;
+  /** The group for when files leave the shelf. */
+  cleanupTitle: string;
   expandOnDrop: string;
   expandOnDropHint: string;
   autoCleanup: string;
@@ -17,6 +19,7 @@ export type SettingsFileShelfText = {
 
 export const zhCN: SettingsFileShelfText = {
   title: "文件中转",
+  cleanupTitle: "清理",
   expandOnDrop: "拖入文件时自动展开",
   expandOnDropHint: "关闭后，只能把文件拖到已经打开的文件中转页里。",
   autoCleanup: "自动清理",
@@ -34,6 +37,7 @@ export const zhCN: SettingsFileShelfText = {
 
 export const en: SettingsFileShelfText = {
   title: "File shelf",
+  cleanupTitle: "Cleanup",
   expandOnDrop: "Open when files are dragged in",
   expandOnDropHint: "When off, files can only be dropped on the shelf page while it is open.",
   autoCleanup: "Auto clean up",
