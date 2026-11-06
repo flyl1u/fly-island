@@ -137,6 +137,32 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
 CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBKEY`、`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，按上面的顺序跑 `prepare-release-config` → `tauri build --config` → `make-latest-json` → `gh release`。
 
+## 撤回有问题的版本
+
+已经装上的版本没法从远处卸载，能做的是让还没更新的人不再收到它，再尽快发一个修好的版本。客户端只会升级、不会降级，所以"退回上一版"对已更新的人无效，修复只能靠更高的版本号。
+
+**测试版（beta）有问题**：把 beta 通道的清单换回上一个好的版本。
+
+```powershell
+$repo = "TixXin/fly-island"
+# 取上一个好版本 Release 里的 latest.json，覆盖到 beta-channel 上
+gh release download v0.3.1-beta.2 --repo $repo --pattern latest.json --dir $env:TEMP\rollback --clobber
+gh release upload beta-channel "$env:TEMP\rollback\latest.json" --repo $repo --clobber
+```
+
+有问题的那个 Release 可以留着（已经在下载的人不会中途 404），也可以在说明里标注"请勿安装"。之后发下一个 beta（比如 `-beta.4`）修复，`pnpm release` 会再刷新 beta 通道。
+
+**正式版有问题**：把 GitHub 的 Latest 指回上一个好版本，稳定版用户检查更新就会拿到它的清单（版本不比自己新，所以不会再提示）。
+
+```powershell
+gh release edit v0.3.0 --repo TixXin/fly-island --latest
+gh release edit v0.3.2 --repo TixXin/fly-island --prerelease --latest=false   # 有问题的那个
+```
+
+把有问题的版本改成 Pre-release，是为了它不会被 GitHub 重新当成 Latest。修好后照常 `pnpm release` 一个更高的版本，它会重新成为 Latest。
+
+**不要做的事**：不要删除已发布 Release 里的安装包或换成别的文件（正在下载的人会校验失败，签名也对不上）；不要删除 `beta-channel` 这个 Release，它是 beta 通道唯一的清单位置。
+
 ## 常见问题
 
 - **构建提示缺少私钥**：只有发布构建需要签名。普通 `pnpm tauri build` 不会产出签名包，也不会要求私钥；要出正式包请走 `pnpm release` 并配好环境变量。

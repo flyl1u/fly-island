@@ -5,9 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Pull requests only need their newest push checked. Every commit on main gets its own run that
+# is never cancelled, so a failure is pinned to the commit that caused it.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}-${{ github.event_name == 'push' && github.sha || 'pr' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
