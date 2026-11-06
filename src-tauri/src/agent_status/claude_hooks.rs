@@ -8,10 +8,25 @@ use super::{
     FOCUSD_AGENT_HOOK_SIGNATURE,
 };
 
+/// Where the approval hook posts (`agent_approval`), and the token it shows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ApprovalHook {
+    pub url: String,
+    pub token: String,
+}
+
+/// The island waits up to 120 s for the user (`agent_approval::WAIT_LIMIT`); the hook waits
+/// longer, so the island hands the request back before Claude Code gives up on it.
+pub(super) const APPROVAL_HOOK_TIMEOUT_SECONDS: i64 = 150;
+
+/// Marks the approval hook as FocuSD's: an HTTP hook has no script path to carry the signature.
+const APPROVAL_HOOK_MARKER_HEADER: &str = "X-FocuSD-Hook";
+
 pub(super) fn install_claude_code_status_hooks(
     config_path: &Path,
     running_script_path: &Path,
     status_script_path: &Path,
+    approval: Option<&ApprovalHook>,
 ) -> Result<(), String> {
     let mut config = match fs::read_to_string(config_path) {
         Ok(content) if !content.trim().is_empty() => serde_json::from_str::<Value>(&content)
@@ -33,9 +48,10 @@ pub(super) fn install_claude_code_status_hooks(
         .as_object_mut()
         .ok_or_else(|| "Failed to prepare Claude Code hooks object.".to_string())?;
 
-    for (event_name, entry) in claude_code_hook_entries(running_script_path, status_script_path) {
-        install_claude_code_hook_event(hooks, event_name, entry);
-    }
+    install_claude_code_hook_events(
+        hooks,
+        claude_code_installed_entries(running_script_path, status_script_path, approval),
+    );
 
     let json = serde_json::to_string_pretty(&config)
         .map_err(|error| format!("Failed to serialize Claude Code settings.json: {error}"))?;
@@ -100,12 +116,59 @@ pub(super) fn claude_code_hook_entries(
     ]
 }
 
-pub(super) fn install_claude_code_hook_event(
+/// What Install/Repair writes: the status hooks, and the approval hook when the island's endpoint
+/// runs. Both go under `PermissionRequest`, as two entries; Claude Code runs them side by side.
+pub(super) fn claude_code_installed_entries(
+    running_script_path: &Path,
+    status_script_path: &Path,
+    approval: Option<&ApprovalHook>,
+) -> Vec<(&'static str, Value)> {
+    let mut entries = claude_code_hook_entries(running_script_path, status_script_path);
+    if let Some(approval) = approval {
+        entries.push(("PermissionRequest", claude_code_approval_hook_entry(approval)));
+    }
+    entries
+}
+
+/// The HTTP hook that holds a permission request for the island's card (roadmap B6 2.2).
+pub(super) fn claude_code_approval_hook_entry(approval: &ApprovalHook) -> Value {
+    json!({
+        "hooks": [
+            {
+                "type": "http",
+                "url": approval.url,
+                "headers": {
+                    "Authorization": format!("Bearer {}", approval.token),
+                    APPROVAL_HOOK_MARKER_HEADER: format!("{FOCUSD_AGENT_HOOK_SIGNATURE}approval"),
+                },
+                "timeout": APPROVAL_HOOK_TIMEOUT_SECONDS
+            }
+        ]
+    })
+}
+
+/// Adds `entries` under their events, after dropping the FocuSD hooks already there. Each event
+/// is cleared once, so an event with two entries (PermissionRequest) keeps both.
+pub(super) fn install_claude_code_hook_events(
     hooks: &mut Map<String, Value>,
-    event_name: &str,
-    entry: Value,
+    entries: Vec<(&'static str, Value)>,
 ) {
-    let mut entries = hooks
+    let mut cleared: Vec<&str> = Vec::new();
+    for (event_name, entry) in entries {
+        if !cleared.contains(&event_name) {
+            cleared.push(event_name);
+            let kept = unmanaged_entries(hooks, event_name);
+            hooks.insert(event_name.to_string(), Value::Array(kept));
+        }
+        if let Some(Value::Array(list)) = hooks.get_mut(event_name) {
+            list.push(entry);
+        }
+    }
+}
+
+/// The user's own entries of `event_name`, taken out of `hooks`.
+fn unmanaged_entries(hooks: &mut Map<String, Value>, event_name: &str) -> Vec<Value> {
+    hooks
         .remove(event_name)
         .and_then(|value| match value {
             Value::Array(entries) => Some(entries),
@@ -114,10 +177,7 @@ pub(super) fn install_claude_code_hook_event(
         .unwrap_or_default()
         .into_iter()
         .filter_map(remove_managed_claude_code_hooks)
-        .collect::<Vec<_>>();
-
-    entries.push(entry);
-    hooks.insert(event_name.to_string(), Value::Array(entries));
+        .collect()
 }
 
 pub(super) fn remove_managed_claude_code_hooks(mut entry: Value) -> Option<Value> {
@@ -244,9 +304,7 @@ mod tests {
         let running = Path::new(r"C:\focusd-agent-running.cmd");
         let status = Path::new(r"C:\focusd-agent-status.ps1");
         let mut hooks = Map::new();
-        for (event_name, entry) in claude_code_hook_entries(running, status) {
-            install_claude_code_hook_event(&mut hooks, event_name, entry);
-        }
+        install_claude_code_hook_events(&mut hooks, claude_code_hook_entries(running, status));
 
         let last_arg = |event: &str| {
             hooks[event][0]["hooks"][0]["args"]
@@ -274,5 +332,37 @@ mod tests {
             .is_some_and(|path| path.ends_with("focusd-agent-session.ps1")));
         assert_eq!(last_arg("PermissionRequest"), Some(json!("notification")));
         assert!(hooks["PermissionRequest"][0].get("matcher").is_none());
+    }
+
+    #[test]
+    fn approval_hook_sits_beside_the_status_hook_and_repair_replaces_it() {
+        let running = Path::new(r"C:\focusd-agent-running.cmd");
+        let status = Path::new(r"C:\focusd-agent-status.ps1");
+        let approval = |port: u16| ApprovalHook {
+            url: format!("http://127.0.0.1:{port}/claude/permission-request"),
+            token: "t".to_string(),
+        };
+        let mine = json!({ "hooks": [{ "type": "command", "command": "my-own-hook" }] });
+        let mut hooks = Map::new();
+        hooks.insert("PermissionRequest".to_string(), json!([mine]));
+
+        install_claude_code_hook_events(&mut hooks, claude_code_installed_entries(running, status, Some(&approval(47830))));
+        // The endpoint moved to another port: Install/Repair writes the new address once.
+        install_claude_code_hook_events(&mut hooks, claude_code_installed_entries(running, status, Some(&approval(51000))));
+
+        let entries = hooks["PermissionRequest"].as_array().unwrap();
+        assert_eq!(entries.len(), 3, "the user's hook, the status hook and the approval hook");
+        assert_eq!(entries[0], mine);
+        assert_eq!(entries[1]["hooks"][0]["type"], json!("command"));
+        let hook = &entries[2]["hooks"][0];
+        assert_eq!(hook["type"], json!("http"));
+        assert_eq!(hook["url"], json!("http://127.0.0.1:51000/claude/permission-request"));
+        assert_eq!(hook["headers"]["Authorization"], json!("Bearer t"));
+        assert_eq!(hook["timeout"], json!(APPROVAL_HOOK_TIMEOUT_SECONDS));
+        assert!(value_contains_focusd_hook_signature(hook));
+
+        // Without the endpoint only the status hooks are written, and an old approval hook goes.
+        install_claude_code_hook_events(&mut hooks, claude_code_installed_entries(running, status, None));
+        assert_eq!(hooks["PermissionRequest"].as_array().unwrap().len(), 2);
     }
 }

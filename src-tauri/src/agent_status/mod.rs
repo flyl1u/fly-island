@@ -72,6 +72,10 @@ pub(super) const AGENT_STATUS_SCRIPT: &str =
 /// SessionStart / SessionEnd: records the session's process and terminal (session_records.rs).
 pub(super) const AGENT_SESSION_SCRIPT: &str =
     include_str!("hooks/focusd-agent-session.ps1");
+/// Codex PermissionRequest: forwards the request to the island's approval endpoint (agent_approval).
+pub(super) const AGENT_APPROVAL_SCRIPT_FILE_NAME: &str = "focusd-agent-approval.ps1";
+pub(super) const AGENT_APPROVAL_SCRIPT: &str =
+    include_str!("hooks/focusd-agent-approval.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -229,6 +233,7 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         &claude_config_path,
         &running_script_path,
         &status_script_path,
+        approval_hook().as_ref(),
     )?;
 
     Ok(AgentHooksInstallResult {
@@ -344,6 +349,7 @@ fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
         read(&home_dir.join(".claude").join("settings.json")).as_deref(),
         &running_script_path,
         &status_script_path,
+        approval_hook().as_ref(),
     );
     let hooks_installed =
         codex != HookInstallState::NotInstalled || claude_code != HookInstallState::NotInstalled;
@@ -358,6 +364,10 @@ fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
     ) || script_outdated(
         read(&app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME)).as_deref(),
         AGENT_SESSION_SCRIPT,
+        hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_APPROVAL_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_APPROVAL_SCRIPT,
         hooks_installed,
     );
 
@@ -381,7 +391,21 @@ pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
     write_text_file(
         &app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME),
         &normalize_windows_line_endings(AGENT_SESSION_SCRIPT),
+    )?;
+    write_text_file(
+        &app_dir.join(AGENT_APPROVAL_SCRIPT_FILE_NAME),
+        &normalize_windows_line_endings(AGENT_APPROVAL_SCRIPT),
     )
+}
+
+/// Where Claude Code's approval hook posts; None when the endpoint did not start, and then only
+/// the status hooks are installed.
+fn approval_hook() -> Option<claude_hooks::ApprovalHook> {
+    use crate::agent_approval::{endpoint, hook_url, Agent};
+    Some(claude_hooks::ApprovalHook {
+        url: hook_url(Agent::ClaudeCode)?,
+        token: endpoint()?.token,
+    })
 }
 
 pub(super) fn write_text_file(path: &Path, content: &str) -> Result<(), String> {

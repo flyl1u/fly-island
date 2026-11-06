@@ -77,7 +77,7 @@
 
 - 新开一个只听 `127.0.0.1` 的端点，专门接 Agent 钩子，不复用插件的本地接口（那个由内置插件开关控制，用户可能关掉）。端口固定一个默认值，被占用时换一个，安装钩子时把实际地址写进配置，岛屿启动时发现端口变了就提示「安装/修复」。
 - 鉴权：安装钩子时生成一个随机令牌，写进 Claude Code 配置的 `headers`；岛屿只接受带这个令牌的请求。令牌和端口一样保存在应用数据目录。
-- 安装：在现有的「安装/修复」里，为 Claude Code 增加 `PermissionRequest`（HTTP）和 `PreToolUse` 只匹配 `AskUserQuestion`（HTTP）两项；现有的 PowerShell 状态钩子保留。Codex 只加 `PermissionRequest`。是否启用「在岛上审批」是一个开关，关闭时这两项不安装。
+- 安装：在现有的「安装/修复」里，为 Claude Code 增加 `PermissionRequest`（HTTP）和 `PreToolUse` 只匹配 `AskUserQuestion`（HTTP）两项；现有的 PowerShell 状态钩子保留。Codex 只加 `PermissionRequest`。是否启用「在岛上审批」是一个开关（默认关）。实现时改为：钩子总是随「安装/修复」装上，开关只决定端点是否挂起请求，关着时端点立即返回空决定，终端照常审批；这样开关切换不用重装钩子，也不用重启 Agent。Codex 没有 HTTP 钩子，用 `focusd-agent-approval.ps1` 转发，它每次运行时读 `agent-approval.json`，端口变了也不用重装。
 - 等待中的请求在 Rust 侧按会话排队，前端只收事件、发决定（Tauri 命令）。岛屿退出时所有等待的请求立即返回空决定。
 
 ### 2. 岛上的卡片

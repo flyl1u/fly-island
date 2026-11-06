@@ -3,8 +3,8 @@
 use std::{fs, path::Path};
 
 use super::{
-    write_text_file, AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME,
-    FOCUSD_AGENT_HOOK_SIGNATURE,
+    claude_hooks::APPROVAL_HOOK_TIMEOUT_SECONDS, write_text_file, AGENT_APPROVAL_SCRIPT_FILE_NAME,
+    AGENT_RUNNING_NOTIFICATION_ARG, AGENT_SESSION_SCRIPT_FILE_NAME, FOCUSD_AGENT_HOOK_SIGNATURE,
 };
 
 pub(super) const FOCUSD_AGENT_HOOK_BLOCK_BEGIN: &str = "# BEGIN FocuSD Agent Status Hooks";
@@ -40,6 +40,11 @@ pub(super) fn build_codex_hook_block(
     let session_end_command = agent_status_command(&session_script_path, "codex", "end");
     // Makes no decision, so Codex goes on to its normal approval prompt.
     let permission_command = agent_running_command_with(running_script_path, "codex", AGENT_RUNNING_NOTIFICATION_ARG);
+    // Holds the request for the island's card (roadmap B6 2.2): Codex has no HTTP hooks, so a
+    // script forwards it. It reads the endpoint's address itself and answers nothing (back to the
+    // terminal prompt) while the island is closed or approving there is off.
+    let approval_script_path = status_script_path.with_file_name(AGENT_APPROVAL_SCRIPT_FILE_NAME);
+    let approval_command = agent_status_command(&approval_script_path, "codex", "permission");
 
     format!(
         r#"{begin}
@@ -81,6 +86,12 @@ command = {permission_command}
 command_windows = {permission_command}
 timeout = 2
 
+[[hooks.PermissionRequest.hooks]]
+type = "command"
+command = {approval_command}
+command_windows = {approval_command}
+timeout = {approval_timeout}
+
 {end}"#,
         begin = FOCUSD_AGENT_HOOK_BLOCK_BEGIN,
         end = FOCUSD_AGENT_HOOK_BLOCK_END,
@@ -89,6 +100,8 @@ timeout = 2
         session_start_command = toml_basic_string(&session_start_command),
         session_end_command = toml_basic_string(&session_end_command),
         permission_command = toml_basic_string(&permission_command),
+        approval_command = toml_basic_string(&approval_command),
+        approval_timeout = APPROVAL_HOOK_TIMEOUT_SECONDS,
     )
 }
 

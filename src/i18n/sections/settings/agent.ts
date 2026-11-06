@@ -50,6 +50,12 @@ export type SettingsAgentText = {
     seconds: string;
     secondsValue: (seconds: number) => string;
   };
+  /** Approving agents' permission requests on the island (roadmap B6 phase 2). */
+  approval: {
+    title: string;
+    onIsland: string;
+    hint: string;
+  };
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -106,6 +112,11 @@ export const zhCN: SettingsAgentText = {
     seconds: "停留时间",
     secondsValue: (seconds) => `${seconds} 秒`,
   },
+  approval: {
+    title: "在岛上审批",
+    onIsland: "在岛上允许或拒绝 Agent 的操作",
+    hint: "Claude Code 或 Codex 要运行命令、改文件时，岛上弹出卡片，可以允许、拒绝或交回终端（快捷键 Ctrl+Alt+Y / N / T）。卡片显示期间终端里不出审批框；2 分钟没处理、会话窗口已在前台或游戏模式勿扰时自动交回终端。需要先点下方的“安装/修复”。Codex 还要在它的 /hooks 里信任新钩子。auto 模式自己批准的操作不会弹出。",
+  },
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -161,6 +172,11 @@ export const en: SettingsAgentText = {
     waiting: "When it waits for your approval or answer",
     seconds: "Stays open for",
     secondsValue: (seconds) => `${seconds} s`,
+  },
+  approval: {
+    title: "Approve on the island",
+    onIsland: "Allow or deny agent actions on the island",
+    hint: "When Claude Code or Codex wants to run a command or change a file, a card on the island lets you allow, deny or hand it back to the terminal (Ctrl+Alt+Y / N / T). The terminal shows no prompt while the card is up; after 2 minutes, or while the session's window is in front or game mode keeps the island quiet, it goes back to the terminal. Click Install/repair below first, and trust the new hook in Codex's /hooks. Actions auto mode approves by itself don't show up.",
   },
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",

@@ -23,7 +23,6 @@ impl Agent {
         }
     }
 
-    #[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
     pub(super) fn path(self) -> &'static str {
         match self {
             Self::ClaudeCode => "/claude/permission-request",

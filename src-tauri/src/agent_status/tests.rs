@@ -479,7 +479,7 @@ fn a_session_keeps_the_folder_it_started_in() {
 
 #[test]
 fn hooks_state_matches_what_the_installers_write() {
-    use super::claude_hooks::{claude_code_hook_entries, install_claude_code_hook_event};
+    use super::claude_hooks::{claude_code_hook_entries, install_claude_code_hook_events};
     use super::codex_hooks::build_codex_hook_block;
     use super::hooks_state::{
         claude_code_hooks_state, codex_hooks_state, script_outdated, HookInstallState,
@@ -522,27 +522,24 @@ fn hooks_state_matches_what_the_installers_write() {
     // installed before waiting states) it is outdated.
     let settings = |skip: Option<&str>| {
         let mut hooks = serde_json::Map::new();
-        for (event_name, entry) in claude_code_hook_entries(running, status) {
-            if Some(event_name) != skip {
-                install_claude_code_hook_event(&mut hooks, event_name, entry);
-            }
-        }
+        let entries = claude_code_hook_entries(running, status).into_iter().filter(|(event_name, _)| Some(*event_name) != skip).collect();
+        install_claude_code_hook_events(&mut hooks, entries);
         json!({ "model": "opus", "hooks": hooks }).to_string()
     };
     assert_eq!(
-        claude_code_hooks_state(Some(&settings(None)), running, status),
+        claude_code_hooks_state(Some(&settings(None)), running, status, None),
         HookInstallState::Current
     );
     assert_eq!(
-        claude_code_hooks_state(Some(&settings(Some("Notification"))), running, status),
+        claude_code_hooks_state(Some(&settings(Some("Notification"))), running, status, None),
         HookInstallState::Outdated
     );
     assert_eq!(
-        claude_code_hooks_state(Some(r#"{"hooks":{"Stop":[]}}"#), running, status),
+        claude_code_hooks_state(Some(r#"{"hooks":{"Stop":[]}}"#), running, status, None),
         HookInstallState::NotInstalled
     );
     assert_eq!(
-        claude_code_hooks_state(Some("not json"), running, status),
+        claude_code_hooks_state(Some("not json"), running, status, None),
         HookInstallState::NotInstalled
     );
 

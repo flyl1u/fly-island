@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type { AgentSessionSummary } from "../../features/agent-status/api";
 import { useAgentApprovals } from "../../features/agent-status/approvals/useAgentApprovals";
+import { useAgentApprovalSettings } from "../../features/agent-status/approvals/useAgentApprovalSettings";
 import { alertKindsOf, useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
 import { useAgentSounds } from "../../features/agent-status/sounds/useAgentSounds";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -25,7 +26,8 @@ type IslandAgentAlertsOptions = {
 export function useIslandAgentAlerts({ sessions, settings, enabled, mode, page, openIslandPage, collapseIsland }: IslandAgentAlertsOptions) {
   const isOpenOnAgents = mode === "expanded" && page === "agents";
   const onOpen = () => openIslandPage("agents");
-  const approvals = useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose: collapseIsland });
+  const [approvalSettings] = useAgentApprovalSettings();
+  const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, isOpenOnAgents, onOpen, onClose: collapseIsland });
   const waiting = approvals.current !== null;
   const waitingRef = useRef(waiting);
   useLayoutEffect(() => {

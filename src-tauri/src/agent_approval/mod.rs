@@ -25,7 +25,7 @@ pub(crate) use queue::ApprovalRequest;
 use queue::CloseReason;
 use server::{ApprovalEvent, Shared};
 
-// Mirrored in src/features/agent-approval/api.ts.
+// Mirrored in src/features/agent-status/approvals/api.ts.
 const REQUESTED_EVENT: &str = "agent-approval-requested";
 const CLOSED_EVENT: &str = "agent-approval-closed";
 /// After this the request goes back to the terminal; the installed hooks wait longer (150 s).
@@ -33,16 +33,13 @@ const WAIT_LIMIT: Duration = Duration::from_secs(120);
 
 struct Service {
     shared: Arc<Shared>,
-    #[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
     port: u16,
-    #[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
     token: String,
 }
 
 static SERVICE: OnceLock<Service> = OnceLock::new();
 
 /// Where the installed hooks send their requests.
-#[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
 pub(crate) struct ApprovalEndpoint {
     pub port: u16,
     pub token: String,
@@ -92,13 +89,11 @@ pub fn shutdown() {
 }
 
 /// The endpoint's port and token, for installing the hooks; None if it did not start.
-#[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
 pub(crate) fn endpoint() -> Option<ApprovalEndpoint> {
     SERVICE.get().map(|service| ApprovalEndpoint { port: service.port, token: service.token.clone() })
 }
 
 /// The URL `agent`'s hook posts to.
-#[expect(dead_code, reason = "the hook installer (task 2.2) reads the address; remove when it does")]
 pub(crate) fn hook_url(agent: Agent) -> Option<String> {
     endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, agent.path()))
 }

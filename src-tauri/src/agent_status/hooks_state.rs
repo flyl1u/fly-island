@@ -7,7 +7,7 @@ use std::path::Path;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::claude_hooks::claude_code_hook_entries;
+use super::claude_hooks::{claude_code_installed_entries, ApprovalHook};
 use super::codex_hooks::build_codex_hook_block;
 use super::{normalize_windows_line_endings, FOCUSD_AGENT_HOOK_SIGNATURE};
 
@@ -30,11 +30,13 @@ pub struct AgentHooksState {
     pub(super) scripts_outdated: bool,
 }
 
-/// Claude Code `settings.json`: current when every hook Install/Repair writes is there as is.
+/// Claude Code `settings.json`: current when every hook Install/Repair writes is there as is,
+/// including the approval hook with the endpoint's present address (`approval`).
 pub(super) fn claude_code_hooks_state(
     settings_json: Option<&str>,
     running_script_path: &Path,
     status_script_path: &Path,
+    approval: Option<&ApprovalHook>,
 ) -> HookInstallState {
     let Some(config) = settings_json.and_then(|text| serde_json::from_str::<Value>(text).ok())
     else {
@@ -45,7 +47,7 @@ pub(super) fn claude_code_hooks_state(
         return HookInstallState::NotInstalled;
     }
 
-    let all_current = claude_code_hook_entries(running_script_path, status_script_path)
+    let all_current = claude_code_installed_entries(running_script_path, status_script_path, approval)
         .iter()
         .all(|(event_name, expected)| {
             hooks[*event_name]
