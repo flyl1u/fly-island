@@ -41,6 +41,13 @@ export type SettingsPluginsText = {
   invalid: string;
   log: string;
   noLog: string;
+  /** The plugin's last host API calls on its own page. */
+  calls: {
+    title: string;
+    hint: string;
+    none: string;
+    outcome: Record<"ok" | "denied" | "unknown" | "error", string>;
+  };
   status: Record<"stopped" | "starting" | "running" | "restarting" | "crashed" | "idle", string>;
   /** How a plugin runs: on demand, its own memory (P9). */
   run: {
@@ -229,6 +236,12 @@ export const zhCN: SettingsPluginsText = {
   invalid: "无法加载",
   log: "日志",
   noLog: "暂无日志",
+  calls: {
+    title: "调用记录",
+    hint: "插件最近 200 次调用了岛屿的哪些接口、结果如何，最新的在最上面。只记接口名称，不记读写的内容；岛屿重启后清空。",
+    none: "还没有调用",
+    outcome: { ok: "成功", denied: "没有权限", unknown: "没有这个接口", error: "出错" },
+  },
   status: {
     stopped: "未运行",
     starting: "启动中",
@@ -427,6 +440,12 @@ export const en: SettingsPluginsText = {
   invalid: "Cannot load",
   log: "Log",
   noLog: "No log yet",
+  calls: {
+    title: "Calls",
+    hint: "The island APIs the plugin called in its last 200 calls and how each ended, newest first. Only the API names are kept, not what was read or written; cleared when the island restarts.",
+    none: "No calls yet",
+    outcome: { ok: "ok", denied: "no permission", unknown: "no such API", error: "error" },
+  },
   status: {
     stopped: "Not running",
     starting: "Starting",

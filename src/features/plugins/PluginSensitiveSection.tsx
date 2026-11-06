@@ -1,6 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { promptedPermissions, type PluginInfo, type PromptedPermission } from "./api";
+import type { PluginInfo } from "./api";
+import { promptedPermissions, type PromptedPermission } from "./promptedPermissions";
 
 /** The plugin's sensitive permissions (and links, for onUri), what the user answered, and revoking the answer. */
 export function PluginSensitiveSection({

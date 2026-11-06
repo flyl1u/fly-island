@@ -13,7 +13,7 @@ use super::{
     manifest::{parse_manifest, runtime_requirement, LocalizedText, PluginCommand, PluginRuntime, MANIFEST_FILE_NAME},
     market,
     permissions::missing_permissions,
-    runtime::{self, Resources, RuntimeStatus},
+    runtime::{self, CallRecord, Resources, RuntimeStatus},
     sensitive::SensitiveChoice,
     settings::{self, InfoItem, SettingSpec},
     store::PluginsState,
@@ -49,6 +49,8 @@ pub struct PluginInfo {
     status: RuntimeStatus,
     error: Option<String>,
     log: Vec<String>,
+    /// Its last host API calls, newest first: method and outcome only.
+    calls: Vec<CallRecord>,
     /// Declared settings and their current values (defaults filled in).
     settings_schema: Vec<SettingSpec>,
     settings: Map<String, Value>,
@@ -231,6 +233,7 @@ pub(super) fn snapshot() -> Result<PluginsSnapshot, String> {
                 status: runtime.status,
                 error: runtime.error,
                 log: runtime.log.into_iter().collect(),
+                calls: runtime.calls.into_iter().rev().collect(),
                 settings_schema: Vec::new(),
                 settings: Map::new(),
                 info: runtime.info,

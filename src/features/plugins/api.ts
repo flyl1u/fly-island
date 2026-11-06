@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import type { PluginSensitiveChoice, PromptedPermission } from "./promptedPermissions";
 
 // 与 src-tauri/src/plugin_host/permissions.rs 中的 PERMISSIONS 对应。
 export const PLUGIN_PERMISSIONS = [
@@ -69,6 +70,16 @@ export type PluginInfoItem = {
   secret: boolean;
 };
 
+// 与 src-tauri/src/plugin_host/runtime/calls.rs 中的 CallRecord 对应。
+export type PluginCallRecord = {
+  method: string;
+  outcome: "ok" | "denied" | "unknown" | "error";
+  status: number | null;
+  count: number;
+  /** ms since 1970 */
+  at: number;
+};
+
 // 与 src-tauri/src/plugin_host/mod.rs 中的 PluginInfo、PluginsSnapshot 对应。
 export type PluginInfo = {
   id: string;
@@ -85,6 +96,8 @@ export type PluginInfo = {
   permissions: string[];
   /** Asked for while the plugin runs (permissions.request); the answers are in `sensitive`. */
   optionalPermissions: string[];
+  /** Its last host API calls, newest first (method and outcome only). */
+  calls: PluginCallRecord[];
   commands: PluginCommand[];
   runtime: PluginRuntimeRequirement;
   hasProcess: boolean;
@@ -130,27 +143,6 @@ export type PluginInfo = {
   /** The memory limit in MB that applies to the plugin; one of PLUGIN_MEMORY_LIMITS_MB. */
   memoryLimitMb: number;
 };
-
-// 与 src-tauri/src/plugin_host/sensitive.rs 中的 SENSITIVE_PERMISSIONS、SensitiveChoice 对应。
-export const SENSITIVE_PERMISSIONS = ["clipboard:read", "messages:read", "media:read", "shelf:read", "shelf:write"] as const;
-export type SensitivePermission = (typeof SENSITIVE_PERMISSIONS)[number];
-export type PluginSensitiveChoice = "allowed" | "denied";
-export const isSensitivePermission = (name: string): name is SensitivePermission =>
-  (SENSITIVE_PERMISSIONS as readonly string[]).includes(name);
-// 与 src-tauri/src/plugin_host/uri.rs 中的 URI_PERMISSION 对应：插件第一次收到 focusd:// 链接前，岛上像敏感权限一样询问。
-export const PLUGIN_URI_PERMISSION = "uri";
-/** What the island asks the user about: a sensitive permission, an optional permission, or opening links (onUri). */
-export type PromptedPermission = PluginPermission | typeof PLUGIN_URI_PERMISSION;
-const isPluginPermission = (name: string): name is PluginPermission => (PLUGIN_PERMISSIONS as readonly string[]).includes(name);
-/** The plugin's permissions the island asks about: sensitive ones, optional ones (permissions.request), and links when it lists onUri. */
-export function promptedPermissions(plugin: Pick<PluginInfo, "permissions" | "activationEvents"> & { optionalPermissions?: string[] }): PromptedPermission[] {
-  const prompted: PromptedPermission[] = plugin.permissions.filter(isSensitivePermission);
-  for (const name of plugin.optionalPermissions ?? []) {
-    if (isPluginPermission(name) && !prompted.includes(name)) prompted.push(name);
-  }
-  if (plugin.activationEvents.includes("onUri")) prompted.push(PLUGIN_URI_PERMISSION);
-  return prompted;
-}
 
 export type PluginsSnapshot = {
   allowThirdParty: boolean;

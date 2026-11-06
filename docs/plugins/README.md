@@ -272,6 +272,10 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 - SDK：Node `plugin.permissions.request("clipboard:read")`、`plugin.permissions.has(name)`；PowerShell `Request-FocusdPermission 'clipboard:read'`；模拟宿主的 `deny` 选项同样决定可选权限的回答。
 - 第 1 版清单里的 `optionalPermissions` 会被忽略。
 
+### 调用记录
+
+插件设置页的「调用记录」列出插件最近 200 次请求了哪个方法、结果如何（成功、没有权限、没有这个方法、出错和状态码），最新的在最上面；同一方法连续得到同样的结果合成一行并计数。只记方法名，不记参数和返回内容，岛屿重启后清空。用户可以用它看插件实际在做什么，插件不需要配合。
+
 ## 通信协议
 
 使用 JSON-RPC 2.0，每行一条 JSON 消息，编码为 UTF-8。每条消息不超过 1 MB。

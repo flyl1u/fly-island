@@ -17,8 +17,8 @@ import {
   setPluginsAllowed,
   uninstallPlugin,
   type PluginsSnapshot,
-  type PromptedPermission,
 } from "./api";
+import type { PromptedPermission } from "./promptedPermissions";
 
 // Status and log lines change in the background; refreshed while the page is open.
 const REFRESH_MS = 2000;

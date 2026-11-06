@@ -3,7 +3,9 @@ import { ArrowLeft, Eraser, Play } from "lucide-react";
 import { SelectControl } from "../../components/controls/SelectControl";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
-import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo, type PromptedPermission } from "./api";
+import { PLUGIN_MEMORY_LIMITS_MB, type PluginInfo } from "./api";
+import type { PromptedPermission } from "./promptedPermissions";
+import { PluginCallLog } from "./PluginCallLog";
 import { PluginInfoList } from "./PluginInfoList";
 import { PluginSensitiveSection } from "./PluginSensitiveSection";
 import { PluginSettingField } from "./PluginSettingField";
@@ -193,6 +195,7 @@ export function PluginDetailPage({
               <pre>{plugin.log.length > 0 ? plugin.log.join("\n") : t.settings.plugins.noLog}</pre>
             </details>
           ) : null}
+          {plugin.hasProcess && !plugin.builtin ? <PluginCallLog calls={plugin.calls ?? []} /> : null}
         </section>
       ) : null}
     </>

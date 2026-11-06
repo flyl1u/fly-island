@@ -7,6 +7,7 @@
 ## 可选权限
 
 - 清单 `optionalPermissions`：用到时再申请的权限。方法 `permissions.request { permissions }` 在岛上询问用户，返回 `{ granted, denied }`；能力 `permissions`；`initialize.optionalPermissions`。索引条目增加可选字段 `optionalPermissions`。SDK：Node `plugin.permissions.request` / `has`，PowerShell `Request-FocusdPermission`，模拟宿主支持。见 [可选权限](README.md#可选权限第-2-版)。
+- 插件设置页新增「调用记录」：最近 200 次请求的方法名和结果，不含数据。插件不需要改动。见 [调用记录](README.md#调用记录)。
 
 ## 页面与快捷键
 

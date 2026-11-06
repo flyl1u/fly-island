@@ -21,10 +21,12 @@ use std::{
 };
 use tauri::AppHandle;
 
+mod calls;
 mod dispatch;
 mod outbox;
 mod trace;
 
+pub use calls::CallRecord;
 pub use trace::TraceEntry;
 
 use super::{rpc, settings::InfoItem};
@@ -79,6 +81,8 @@ pub(super) struct RuntimeInfo {
     pub log_seq: u64,
     /// Raw JSON-RPC lines of a development plugin (dev.rs).
     pub trace: VecDeque<TraceEntry>,
+    /// The last host API calls and how they ended (calls.rs), for every plugin.
+    pub calls: VecDeque<CallRecord>,
 }
 
 /// Mirrored by `PluginResources` in src/features/plugins/api.ts.
@@ -538,12 +542,14 @@ fn handle_line(context: &Arc<Context>, line: &str) {
             if context.in_flight.fetch_add(1, Ordering::SeqCst) >= MAX_IN_FLIGHT {
                 context.in_flight.fetch_sub(1, Ordering::SeqCst);
                 let busy = rpc::error_line(&id, rpc::HOST_ERROR, "Too many requests at once.", Some(json!({ "status": 429 })));
+                calls::record(context, &method, &busy);
                 let _ = write_line(context, &busy);
                 return;
             }
             let worker = Arc::clone(context);
             let spawned = thread::Builder::new().name("plugin-request".into()).spawn(move || {
                 let answer = answer_request(&worker, &id, &method, params);
+                calls::record(&worker, &method, &answer);
                 worker.in_flight.fetch_sub(1, Ordering::SeqCst);
                 let _ = write_line(&worker, &answer);
             });
