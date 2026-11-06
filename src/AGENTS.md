@@ -8,7 +8,7 @@
 src/
 ├── main.tsx                 # 唯一入口：按 ?window= 分发到 windows/ 下的根组件
 ├── windows/                 # 每个 Tauri 窗口一个目录，只负责组合与窗口级行为
-│   ├── island/              # 主窗口：IslandApp、IslandShell、展开后的页面面板（IslandPages）、窗口尺寸/拖拽/贴边 hook、自动化 hook
+│   ├── island/              # 主窗口：IslandApp（只做组装）、IslandShell、展开后的页面面板（IslandPages）、按职责的接线 hook（useIslandNotices / Todos / Tucking / Shelf / Hover、useAgentIndicator；新功能的接线加在这里，不加进 IslandApp）、窗口尺寸/拖拽/贴边 hook、自动化 hook
 │   ├── settings/            # 设置窗口
 │   └── translation/         # 快捷翻译窗口
 ├── features/                # 业务领域，每个领域自包含

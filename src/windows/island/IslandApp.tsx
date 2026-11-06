@@ -1,50 +1,36 @@
 import { useCallback, useMemo } from "react";
-import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
-import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
-import { useMail } from "../../features/messages/mail/MailPanel";
-import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
-import { useDeviceUse } from "../../features/device-use/useDeviceUse";
-import { useLevelPopup } from "../../features/system-levels/useLevelPopup";
-import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
+// First: the message panels it loads bring CSS that must come before the page panels' and the shell's.
+import { useIslandNotices } from "./useIslandNotices";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
 // The page panels; before IslandShell so their CSS keeps its place in the cascade.
 import { IslandPages } from "./IslandPages";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
-import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { openSettingsWindow } from "../settings/api";
 import { useQuickTranslation } from "../../features/translation/useQuickTranslation";
-import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from "../../features/agent-status/status";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
 import { useMediaState } from "../../features/media/useMediaState";
 import type { TodoItem } from "../../features/todos/types";
-import { useTodos } from "../../features/todos/useTodos";
-import { useFileShelf } from "../../features/file-shelf/useFileShelf";
-import { useLocalApiBridge } from "../../features/local-api/useLocalApiBridge";
-import { useBackgroundUpdateCheck } from "../../features/updater/useBackgroundUpdateCheck";
 import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
-import { useHoverExpand } from "./useHoverExpand";
-import { useHoverFocus } from "./useHoverFocus";
 import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
-import { usePanelPreview } from "./usePanelPreview";
 import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
-import { useFileShelfDrop } from "./useFileShelfDrop";
+import { useAgentIndicator } from "./useAgentIndicator";
 import { useIslandNavigation } from "./useIslandNavigation";
-import { useTuckPeek } from "./useTuckPeek";
-import { useTuckedHoverOpen } from "./useTuckedHoverOpen";
+import { useIslandTodos } from "./useIslandTodos";
+import { useIslandTucking } from "./useIslandTucking";
+import { useIslandShelf } from "./useIslandShelf";
+import { useIslandHover } from "./useIslandHover";
 import { useIslandTranslation } from "./useIslandTranslation";
-import { usePluginHostEvents } from "./usePluginHostEvents";
-import { usePluginKeybindings } from "./usePluginKeybindings";
 import { usePluginPages } from "./usePluginPages";
 import { useMessageView } from "./useMessageView";
 import { PluginPageButtons } from "./PluginPageButtons";
@@ -55,43 +41,21 @@ import "./IslandApp.css";
 // Stands in for the todo list while todos are switched off, so the collapsed island shows none.
 const NO_TODOS: TodoItem[] = [];
 
+/**
+ * The island window: puts the feature hooks together and hands their state to the shell and the
+ * page panels. Each concern's wiring lives in its own use* hook next to this file; add new wiring
+ * there rather than here, so parallel changes do not all meet in this file.
+ */
 export function IslandApp() {
   const t = useTranslation();
-  const {
-    mode,
-    isTucked,
-    isPeeking,
-    peekRetractDelayMs,
-    page,
-    setPage,
-    collapseIsland,
-    tuckIsland,
-    revealIsland,
-    minimizeToEdge,
-    idleTuck,
-    peekIsland,
-    endPeek,
-    resumePeek,
-    retractsAfterPeek,
-    openIslandPage,
-    toggleClipboardHistory,
-  } = useIslandNavigation();
+  const navigation = useIslandNavigation();
+  const { mode, isTucked, page, setPage, collapseIsland, tuckIsland, revealIsland, minimizeToEdge, openIslandPage, toggleClipboardHistory } = navigation;
   const pluginPages = usePluginPages(page);
   const [settings, setSettings] = useIslandSettings();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
-  // A tucked island still takes message previews when it will slide out to show them.
-  const canPreviewMessages = !game.quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
-  const qqNotifications = useQQNotifications(canPreviewMessages);
-  const wechatReminders = useWeChatReminders(canPreviewMessages);
-  const qqMail = useMail(canPreviewMessages);
-  const pluginNotifications = usePluginNotifications(canPreviewMessages);
-  const deviceUse = useDeviceUse(settings.deviceUseIndicator);
-  const levelPopup = useLevelPopup(settings.levelPopup, !game.quiet && mode === "collapsed" && !isTucked);
-  const permissionPrompts = usePluginPermissionPrompts();
-  const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
-  );
+  const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
+  const { qqNotifications, wechatReminders, qqMail, pluginNotifications, permissionPrompts, hasMessagePreview } = notices;
   const media = useMediaState(settings.musicEnabled);
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentActivity } =
     useIslandAgents(settings);
@@ -104,25 +68,7 @@ export function IslandApp() {
     agentsOn: settings.agentStatusEnabled,
     onOpenAgents: openAgentsPage,
   });
-  const openSavePathSettings = useCallback(() => {
-    openSettingsWindow("savePath");
-  }, []);
-
-  const { todos, activeTodoId, todoPageMode, apiHandlers, notebookProps } = useTodos({
-    carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
-    onStartTodo: collapseIsland,
-    onMissingSaveDirectory: openSavePathSettings,
-  });
-  useLocalApiBridge(apiHandlers);
-  useBackgroundUpdateCheck();
-  usePluginHostEvents({
-    date: notebookProps.currentDate,
-    todosVersion: [todos, notebookProps.scheduledTodos, activeTodoId],
-    note: notebookProps.dailyNote,
-    agentStatus,
-    mode,
-  });
-  usePluginKeybindings({ mode, page, hasActiveTodo: activeTodoId !== null });
+  const { todos, activeTodoId, todoPageMode, notebookProps } = useIslandTodos({ settings, mode, page, agentStatus, collapseIsland });
 
   const translationPeek = useQuickTranslation(settings.translationEnabled);
   const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
@@ -135,17 +81,13 @@ export function IslandApp() {
       collapsedSlots,
       hasMessagePreview || translationPeek !== null,
     );
-  // A showing preview holds the idle timer, which then restarts in full once it ends.
-  const tuckWhenIdle = useCallback(
-    () => idleTuck(settings.autoTuckRetract ? settings.autoTuckRetractDelayMs : null),
-    [idleTuck, settings.autoTuckRetract, settings.autoTuckRetractDelayMs],
-  );
-  useIdleTuck(settings.autoTuck && !hasMessagePreview && !translationPeek, settings.autoTuckSeconds, isTucked, `${mode}:${page}`, tuckWhenIdle);
-  useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
-  // A plugin waits for this answer, so it is shown even when tucked away.
-  useRevealOnMessage(permissionPrompts.current !== null, isTucked, revealIsland);
-  useRevealOnMessage(Boolean(translationPeek), isTucked && settings.revealOnMessage, revealIsland);
-  useTuckPeek(isPeeking, endPeek, peekRetractDelayMs ?? undefined);
+  useIslandTucking({
+    settings,
+    navigation,
+    hasMessagePreview,
+    hasPermissionPrompt: permissionPrompts.current !== null,
+    hasTranslationPeek: Boolean(translationPeek),
+  });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
@@ -195,26 +137,7 @@ export function IslandApp() {
     [collapsedIslandWidth, expandedIslandHeight, mode, settings],
   );
 
-  const fileShelf = useFileShelf(settings.shelfEnabled, {
-    maxItems: settings.shelfMaxItems,
-    maxAgeDays: settings.shelfAutoCleanupDays,
-    removeMissing: settings.shelfRemoveMissing,
-    removeAfterDragOut: settings.shelfRemoveAfterDragOut,
-  });
-  const isShelfDropping = useFileShelfDrop({
-    enabled: settings.shelfEnabled,
-    expandOnDrop: settings.shelfExpandOnDrop,
-    mode,
-    page,
-    isTucked,
-    isPeeking,
-    shelf: fileShelf,
-    openIslandPage,
-    setPage,
-    collapseIsland,
-    tuckIsland,
-    minimizeToEdge,
-  });
+  const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
 
   const {
     isPositionDetached,
@@ -232,33 +155,14 @@ export function IslandApp() {
     onCollapse: collapseIsland,
   });
 
-  // While the island names a running agent, opening it shows the Agent page.
-  const openCurrentPage = useCallback(
-    () => openEnabledPage(agentSession ? "agents" : page),
-    [agentSession, openEnabledPage, page],
-  );
-  useHoverExpand({
-    enabled: settings.expandTrigger === "hover" && !game.quiet,
-    delayMs: settings.hoverExpandDelayMs,
-    paused: hasMessagePreview,
-    collapseDelayMs: settings.hoverCollapseDelayMs,
-    mode,
-    // A peeking island opens on a click only; hovering it just keeps it out.
-    isTucked: isTucked || isPeeking,
-    onExpand: openCurrentPage,
-    onCollapse: collapseIsland,
+  const hoverTucked = useIslandHover({
+    settings,
+    navigation,
+    quiet: game.quiet,
+    hasMessagePreview,
+    namesAgent: Boolean(agentSession),
+    openEnabledPage,
   });
-  const hoverTucked = useTuckedHoverOpen({
-    opensPanel: settings.tuckedHoverAction === "expand" && !game.quiet,
-    delayMs: settings.hoverExpandDelayMs,
-    isPeeking: isPeeking && mode === "collapsed",
-    onPeek: peekIsland,
-    onOpen: openCurrentPage,
-    retractsAfterPeek,
-    resumePeek,
-  });
-  useHoverFocus(mode, game.quiet);
-  usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
   useIslandKeyboard(
     clipboardHistory.settings.enabled && clipboardHistory.settings.shortcutEnabled,
@@ -274,13 +178,7 @@ export function IslandApp() {
     settings.pagePreviousShortcut,
   );
 
-  // Agents switched off in Settings → AI Agent neither light the island nor name it.
-  const shownAgentStatus = useMemo(
-    () => withoutHiddenProviders(agentStatus, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex }),
-    [agentStatus, settings.agentShowClaudeCode, settings.agentShowCodex],
-  );
-  const agentVisualState = useMemo(() => (settings.agentStatusEnabled ? getAgentVisualState(shownAgentStatus, activeAgentSessionCount) : "idle"), [shownAgentStatus, activeAgentSessionCount, settings.agentStatusEnabled]);
-  const agentStatusLabel = useMemo(() => getAgentStatusLabel(shownAgentStatus, t, activeAgentSessionCount), [shownAgentStatus, activeAgentSessionCount, t]);
+  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
 
   const { openTranslator, openTranslationPeek } = useIslandTranslation(
     settings.translationEnabled,
@@ -316,8 +214,8 @@ export function IslandApp() {
         agentStatusLabel={agentStatusLabel}
         features={features}
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
-        deviceUse={deviceUse}
-        levelPopup={levelPopup}
+        deviceUse={notices.deviceUse}
+        levelPopup={notices.levelPopup}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
