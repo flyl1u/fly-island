@@ -159,6 +159,25 @@
 }
 
 /* Files waiting on the shelf; opens the shelf page. */
+/* A newer version is out: same compact button as the new-mail badge, with the update dot's colour. */
+.island-update-badge {
+  color: #ffd166;
+  animation: island-update-appear 180ms ease-out;
+}
+
+.island-update-badge__dot {
+  background: #ffd166;
+}
+
+@keyframes island-update-appear {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island-update-badge { animation: none; }
+}
+
 .island-shelf-count {
   flex: 0 0 auto;
   height: 22px;

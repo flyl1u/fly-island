@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Bot, Inbox } from "lucide-react";
+import { Bot, CircleArrowUp, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -14,7 +14,9 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { PluginNotificationActions } from "../../features/plugins/PluginNotificationActions";
 import type { PluginNotificationsController } from "../../features/plugins/usePluginNotifications";
+import { useUpdateReminder } from "../../features/updater/useBackgroundUpdateCheck";
 import { useTranslation } from "../../i18n";
+import { openSettingsWindow } from "../settings/api";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
@@ -88,6 +90,8 @@ export function IslandCollapsedBar({
   pluginStatusChip,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  // A newer version found by the background check, unless the user skipped it.
+  const updateVersion = useUpdateReminder();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
     useWindowDragGesture(isTucked, onWindowDragStart);
   const isMusicPlaying = mediaState.playbackStatus === "playing";
@@ -188,6 +192,21 @@ export function IslandCollapsedBar({
         <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} title={t.messages.openNewMail} onClick={() => onOpenMessages("qqMail")}>
           <MessageSourceIcon source="qqMail" size={16} />
           <span className="island-message-button__dot" aria-hidden="true" />
+        </button>
+      )}
+      {updateVersion && (
+        <button
+          className="island-message-button island-message-button--compact island-update-badge"
+          type="button"
+          aria-label={t.settings.project.update.islandReminder(updateVersion)}
+          title={t.settings.project.update.islandReminder(updateVersion)}
+          onClick={(event) => {
+            event.stopPropagation();
+            openSettingsWindow("updates");
+          }}
+        >
+          <CircleArrowUp size={15} strokeWidth={2.1} aria-hidden="true" />
+          <span className="island-message-button__dot island-update-badge__dot" aria-hidden="true" />
         </button>
       )}
       {showCollapsedText && !preview && !translationPeek && pluginStatusChip}
