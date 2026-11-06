@@ -26,8 +26,10 @@ jobs:
           node-version: 26
           cache: pnpm
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Same version as rust-toolchain.toml; change both together.
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.99.1
           components: clippy
 
       - uses: Swatinem/rust-cache@v2
