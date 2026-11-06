@@ -25,6 +25,8 @@
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期的 Claude Code 实测已完成（钩子等待时终端不显示审批框，结论见任务清单的「实测记录」），Codex（0.4）待补测；第 1 期的自动弹出提醒和音效（1.1–1.4、1.10）已完成，市场音效包（1.11）待做 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 进行中 | fly-island-fe · lane 4 · 2026-11-06 20:20 | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`），Codex 待做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
+| B8 | 用量环可选「直接向 Anthropic 查询用量」（默认关）：只读 Claude Code 凭据里的 token（不刷新、不写），经代理请求 `api.anthropic.com/api/oauth/usage`，不直连；设置代理和刷新间隔（5–120 分钟），8 种错误提示，失败时退回 claude-hud 快照；Agent 页顶部和用量环共用 | 进行中 | fly-island-pr3 · lane 7 · 2026-11-07 00:45 | 移植自 TixXin/fly-island#3 的 `claude_usage/`。接口未公开，可能随时失效 |
+| B9 | 回复末尾状态标记：可选开关（默认关），往 `~/.claude/CLAUDE.md` 追加一段带起止标记的提示，让 Claude 在回复最后一行标出「等你回复 / 等后台任务 / 做完了」；Stop 钩子读这个符号，把「完成」细分出「等你回复」 | 待做 | | 来自 TixXin/fly-island#3 作者的建议 3。会话环的黄色和 B6 的完成提醒（可分成「Claude 问了你问题」和「做完了」）都会用到。提示词要自己写，不能照抄 claude-sessions（AGPL-3.0）；写用户全局指令，必须用户手动打开 |
 
 ## 第三优先：竞品都有、我们还缺的
 
