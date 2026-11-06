@@ -134,6 +134,19 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
    只出包不上传用 `pnpm release --no-upload`；安装包走镜像分发用 `pnpm release --base-url "https://..."`。
 
 5. 发布后已装「带更新功能」版本的用户点「检查更新」就能收到。更早的版本（v0.2.11 及以前）没有这段逻辑，需要手动下载安装一次。
+6. 发布后检查：
+
+   - 两个通道的清单都是新版本：
+
+     ```powershell
+     curl.exe -sL https://github.com/TixXin/fly-island/releases/latest/download/latest.json
+     curl.exe -sL https://github.com/TixXin/fly-island/releases/download/beta-channel/latest.json
+     ```
+
+     正式版两个都应是新版本；beta 版只有第二个是，第一个仍是上一个正式版。
+   - 运行 `pnpm build:exe` 更新本机的 release 程序，并按 `AGENTS.md`「本机更新与桌面快捷方式」核对桌面快捷方式。
+
+版本号和发布说明的提交照常在 lane 里 land 到 `main`，再在同一个 lane（停在 land 后的提交、工作区干净）里运行 `pnpm release`，不要在主工作区里发布。
 
 CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBKEY`、`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，按上面的顺序跑 `prepare-release-config` → `tauri build --config` → `make-latest-json` → `gh release`。
 
