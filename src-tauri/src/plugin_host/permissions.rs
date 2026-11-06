@@ -23,7 +23,7 @@ pub(super) const PERMISSIONS: [&str; 14] = [
 /// `island.notify` in notify.rs, `secrets.*` in storage.rs, `clipboard.*` in
 /// clipboard_history, `messages.*` / `media.*` in feeds.rs, `shelf.*` in file_shelf; the rest are
 /// answered by the island window, see src/features/todos/apiCommands.ts.
-pub(super) const METHODS: [(&str, &str); 22] = [
+pub(super) const METHODS: [(&str, &str); 27] = [
     ("todos.list", "todos:read"),
     ("todos.days", "todos:read"),
     ("todos.add", "todos:write"),
@@ -40,9 +40,14 @@ pub(super) const METHODS: [(&str, &str); 22] = [
     ("clipboard.history", "clipboard:read"),
     ("messages.list", "messages:read"),
     ("media.nowPlaying", "media:read"),
+    ("media.cover", "media:read"),
     ("media.playPause", "media:control"),
     ("media.next", "media:control"),
     ("media.previous", "media:control"),
+    ("media.seek", "media:control"),
+    ("media.setVolume", "media:control"),
+    ("media.toggleShuffle", "media:control"),
+    ("media.cycleRepeat", "media:control"),
     ("shelf.list", "shelf:read"),
     ("shelf.add", "shelf:write"),
     ("shelf.remove", "shelf:write"),

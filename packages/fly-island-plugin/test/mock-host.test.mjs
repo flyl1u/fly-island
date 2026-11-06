@@ -26,7 +26,7 @@ plugin.onCommand("todos", async () => {
   report("todos", (await plugin.todos.list()).todos);
 });
 plugin.onCommand("denied", () => attempt("denied", () => plugin.clipboard.history()));
-plugin.onCommand("missing", () => attempt("missing", () => plugin.media.next()));
+plugin.onCommand("missing", () => attempt("missing", () => plugin.shelf.add(["x"])));
 plugin.onCommand("view", async () => {
   await plugin.views.update("board", { items: [{ id: "a", title: "A" }, { id: "b", title: "B" }] });
   report("patch", await plugin.views.patch("board", [{ id: "b", title: "B2" }, { id: "c", title: "C" }]));
@@ -49,6 +49,13 @@ plugin.views.onAction("board", (params) => report("action", params));
 plugin.views.onMessage("page", async (message) => report("posted", await plugin.views.postMessage("page", { echo: message })));
 plugin.onCommand("notify", async () => {
   for (let index = 0; index < 7; index += 1) await attempt("notify", () => plugin.notify("Hi " + index));
+});
+plugin.onCommand("media", async () => {
+  report("cover", await plugin.media.cover());
+  report("seek", (await plugin.media.seek(42000)).positionMs);
+  report("volume", (await plugin.media.setVolume(0.3)).volume);
+  report("repeat", (await plugin.media.cycleRepeat()).repeat);
+  await attempt("badVolume", () => plugin.media.setVolume(2));
 });
 plugin.onCommand("history", async () => {
   report("past", await plugin.todos.list("2000-01-02"));
@@ -74,7 +81,7 @@ const manifest = {
   version: "1.0.0",
   apiVersion: 2,
   runtime: { type: "process", command: "main.mjs" },
-  permissions: ["todos:read", "todos:write", "notes:read", "clipboard:read", "island:notify"],
+  permissions: ["todos:read", "todos:write", "notes:read", "clipboard:read", "island:notify", "media:control"],
   optionalPermissions: ["media:read", "shelf:read"],
   contributes: {
     views: [{ id: "board", title: { "zh-CN": "看板", en: "Board" }, template: "list" }],
@@ -87,7 +94,7 @@ const logged = async (host, name) => JSON.parse((await host.waitForLog(`${name} 
 
 test("the mock host runs a plugin like the island does", async () => {
   const dir = makePlugin(manifest);
-  const host = startMockHost(dir, { deny: ["clipboard:read", "shelf:read"], settings: { extra: true }, activationEvent: "onCommand:todos", archives: [{ date: "2000-01-02", todos: [{ id: "x", title: "Old", completed: true }], dailyNote: "back then" }] });
+  const host = startMockHost(dir, { deny: ["clipboard:read", "shelf:read"], settings: { extra: true }, activationEvent: "onCommand:todos", cover: "data:image/png;base64,AA", archives: [{ date: "2000-01-02", todos: [{ id: "x", title: "Old", completed: true }], dailyNote: "back then" }] });
   try {
     const ready = await logged(host, "ready");
     assert.equal(ready.pluginId, "me.mock");
@@ -129,6 +136,13 @@ test("the mock host runs a plugin like the island does", async () => {
     assert.deepEqual(host.openedViews, ["board"]);
     host.viewAction("board", "check", { itemId: "a", checked: true });
     assert.deepEqual(await logged(host, "action"), { viewId: "board", actionId: "check", itemId: "a", checked: true });
+
+    host.command("media");
+    assert.deepEqual(await logged(host, "cover"), { cover: "data:image/png;base64,AA" });
+    assert.equal(await logged(host, "seek"), 42000);
+    assert.equal(await logged(host, "volume"), 0.3);
+    assert.equal(await logged(host, "repeat"), "none");
+    assert.deepEqual(await logged(host, "badVolume"), { code: -32000, status: 400 });
 
     host.command("history");
     assert.deepEqual((await logged(host, "past")).todos.map((todo) => todo.id), ["x"]);

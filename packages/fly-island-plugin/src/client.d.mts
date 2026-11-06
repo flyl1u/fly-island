@@ -147,6 +147,26 @@ export interface CreatePluginOptions {
 type Off = () => void;
 type Handler<T> = (value: T) => unknown;
 
+/** media.nowPlaying and the result of every media control method. */
+export interface NowPlaying {
+  available: boolean;
+  status: string;
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  sourceApp: string | null;
+  positionMs: number;
+  durationMs: number;
+  canSeek: boolean;
+  canNext: boolean;
+  canPrevious: boolean;
+  /** null when the player does not say or cannot shuffle. */
+  shuffle: boolean | null;
+  repeat: "none" | "track" | "list" | "unknown";
+  /** The system volume, 0-1; null when Windows cannot say. */
+  volume: number | null;
+}
+
 export interface Plugin {
   call<T = unknown>(method: HostMethod | (string & {}), params?: unknown): Promise<T>;
   log(message: unknown): void;
@@ -229,10 +249,19 @@ export interface Plugin {
   clipboard: { history(limit?: number): Promise<{ items: { id: string; text: string; truncated: boolean; copiedAt: number; favorite: boolean }[] }> };
   messages: { list(): Promise<{ items: { source: string; id: string; sender: string; preview: string; receivedAt: number; unread?: number }[] }> };
   media: {
-    nowPlaying(): Promise<Record<string, unknown>>;
-    playPause(): Promise<Record<string, unknown>>;
-    next(): Promise<Record<string, unknown>>;
-    previous(): Promise<Record<string, unknown>>;
+    nowPlaying(): Promise<NowPlaying>;
+    playPause(): Promise<NowPlaying>;
+    next(): Promise<NowPlaying>;
+    previous(): Promise<NowPlaying>;
+    /** The cover as a data: URL, or null (none, or larger than 1 MB). Needs media:read. */
+    cover(): Promise<{ cover: string | null }>;
+    /** Needs media:control, like the rest below; fails when canSeek is false. */
+    seek(positionMs: number): Promise<NowPlaying>;
+    /** Sets the system volume (0-1) of the default output. */
+    setVolume(level: number): Promise<NowPlaying>;
+    toggleShuffle(): Promise<NowPlaying>;
+    /** none, then list, then track. */
+    cycleRepeat(): Promise<NowPlaying>;
   };
   shelf: {
     list(): Promise<{ items: Record<string, unknown>[] }>;

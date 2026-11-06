@@ -270,11 +270,16 @@
       "permission": "media:read",
       "since": 2,
       "params": null,
-      "result": "{ available, status, title, artist, album, sourceApp, positionMs, durationMs } (no cover image)"
+      "result": "{ available, status, title, artist, album, sourceApp, positionMs, durationMs, canSeek, canNext, canPrevious, shuffle (true | false | null), repeat ('none' | 'track' | 'list' | 'unknown'), volume (system volume 0-1, or null) }. No cover image: see media.cover."
     },
+    { "name": "media.cover", "permission": "media:read", "since": 2, "params": null, "result": "{ cover }: the cover of what plays as a data: URL, or null (none, or larger than 1 MB)." },
     { "name": "media.playPause", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
     { "name": "media.next", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
     { "name": "media.previous", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
+    { "name": "media.seek", "permission": "media:control", "since": 2, "params": { "positionMs": "whole number from 0" }, "result": "Same as media.nowPlaying, after the command. Fails when the player cannot seek (canSeek false)." },
+    { "name": "media.setVolume", "permission": "media:control", "since": 2, "params": { "level": "0-1" }, "result": "Same as media.nowPlaying. Sets the system volume of the default output, like the island's own slider." },
+    { "name": "media.toggleShuffle", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying, after the command." },
+    { "name": "media.cycleRepeat", "permission": "media:control", "since": 2, "params": null, "result": "Same as media.nowPlaying: none, then list, then track." },
     {
       "name": "shelf.list",
       "permission": "shelf:read",

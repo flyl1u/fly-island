@@ -61,7 +61,9 @@ export class MockHost extends EventEmitter {
     this.data = {
       clipboard: options.clipboard ?? [],
       messages: options.messages ?? [],
-      media: options.media ?? { available: false, status: "stopped", title: "", artist: "", album: "", sourceApp: "", positionMs: 0, durationMs: 0 },
+      media: options.media ?? { available: false, status: "stopped", title: "", artist: "", album: "", sourceApp: "", positionMs: 0, durationMs: 0, canSeek: false, canNext: false, canPrevious: false, shuffle: null, repeat: "unknown", volume: null },
+      /** media.cover's answer: a data: URL or null. */
+      cover: options.cover ?? null,
       shelf: options.shelf ?? [],
     };
     this.muted = Boolean(options.muted);

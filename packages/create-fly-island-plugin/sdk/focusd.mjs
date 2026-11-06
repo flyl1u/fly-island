@@ -204,6 +204,13 @@ export function createPlugin(options = {}) {
       playPause: () => call("media.playPause"),
       next: () => call("media.next"),
       previous: () => call("media.previous"),
+      /** { cover }: the cover as a data: URL, or null. */
+      cover: () => call("media.cover"),
+      seek: (positionMs) => call("media.seek", { positionMs }),
+      /** The system volume, 0-1. */
+      setVolume: (level) => call("media.setVolume", { level }),
+      toggleShuffle: () => call("media.toggleShuffle"),
+      cycleRepeat: () => call("media.cycleRepeat"),
     },
     shelf: {
       list: () => call("shelf.list"),

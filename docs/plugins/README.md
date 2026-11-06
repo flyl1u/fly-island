@@ -235,8 +235,8 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 | `secrets` | 2 | `secrets.get`、`secrets.set`、`secrets.delete` | |
 | `clipboard:read`（敏感） | 2 | `clipboard.history` | `clipboard.changed` |
 | `messages:read`（敏感） | 2 | `messages.list` | `messages.received` |
-| `media:read`（敏感） | 2 | `media.nowPlaying` | `media.changed` |
-| `media:control` | 2 | `media.playPause`、`media.next`、`media.previous` | |
+| `media:read`（敏感） | 2 | `media.nowPlaying`、`media.cover` | `media.changed` |
+| `media:control` | 2 | `media.playPause`、`media.next`、`media.previous`、`media.seek`、`media.setVolume`、`media.toggleShuffle`、`media.cycleRepeat` | |
 | `shelf:read`（敏感） | 2 | `shelf.list` | `shelf.changed` |
 | `shelf:write`（敏感） | 2 | `shelf.add`、`shelf.remove` | |
 
@@ -352,8 +352,11 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `status.update` | 2 | — | `{ itemId, text, tooltip?, tone? }` | `{}` |
 | `clipboard.history` | 2 | `clipboard:read` | `{ limit? }`（1–50，默认 20） | `{ items: [{ id, text, truncated, copiedAt, favorite }] }`：只有文字，没有图片，最新的在前；`text` 最长 4000 个字符，被截断时 `truncated` 为 `true`。剪贴板历史关闭时返回状态 409 |
 | `messages.list` | 2 | `messages:read` | — | `{ items: [{ source, id, sender, preview, receivedAt, unread? }] }`，最新的在前，只包含用户打开了的来源。`source` 为 `qq`、`wechat` 或 `qqMail`；微信只知道托盘图标在闪，所以 `sender`、`preview` 为 `null`；QQ 邮箱的 `preview` 是主题，从不包含正文、邮箱地址或授权码 |
-| `media.nowPlaying` | 2 | `media:read` | — | `{ available, status, title, artist, album, sourceApp, positionMs, durationMs }`，不含封面图片；`status` 为 `playing`、`paused` 或 `unavailable` |
-| `media.playPause`、`media.next`、`media.previous` | 2 | `media:control` | — | 执行后的 `media.nowPlaying` 结果 |
+| `media.nowPlaying` | 2 | `media:read` | — | `{ available, status, title, artist, album, sourceApp, positionMs, durationMs, canSeek, canNext, canPrevious, shuffle, repeat, volume }`，不含封面图片；`status` 为 `playing`、`paused` 或 `unavailable`；`shuffle` 为 `true` / `false`，播放器不支持时为 `null`；`repeat` 为 `none`、`track`、`list` 或 `unknown`；`volume` 是系统音量 0–1，读不到时为 `null` |
+| `media.cover` | 2 | `media:read` | — | `{ cover }`：封面的 `data:` URL，没有封面或超过 1 MB 时为 `null` |
+| `media.playPause`、`media.next`、`media.previous`、`media.toggleShuffle`、`media.cycleRepeat` | 2 | `media:control` | — | 执行后的 `media.nowPlaying` 结果。循环模式按「不循环 → 列表 → 单曲」切换 |
+| `media.seek` | 2 | `media:control` | `{ positionMs }` | 执行后的结果；播放器不支持（`canSeek` 为 false）时出错 |
+| `media.setVolume` | 2 | `media:control` | `{ level }`（0–1） | 执行后的结果。改的是默认输出设备的系统音量，和岛屿自己的音量条一样 |
 | `shelf.list` | 2 | `shelf:read` | — | `{ items: [{ id, path, name, isDir, size, addedAt, pinned, missing, unreachable }] }`：只有路径等信息，不读取文件内容 |
 | `shelf.add` | 2 | `shelf:write` | `{ paths }`（1–20 个已存在的文件或文件夹的绝对路径，其他的会被跳过） | 同 `shelf.list` |
 | `shelf.remove` | 2 | `shelf:write` | `{ ids }`（1–20 个） | 同 `shelf.list`；只把条目移出列表，不删除文件 |

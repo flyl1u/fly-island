@@ -74,10 +74,15 @@
 | `secrets.delete` | `secrets` | 2 | `key`：as above | { deleted } |
 | `clipboard.history` | `clipboard:read` | 2 | `limit?`：1-50, default 20 | { items: [{ id, text (max 4000 chars), truncated, copiedAt, favorite }] }: text items only, newest first. Status 409 while clipboard history is off. |
 | `messages.list` | `messages:read` | 2 | 无 | { items: [{ source: qq \| wechat \| qqMail, id, sender, preview, receivedAt, unread? }] }, newest first, from the sources the user switched on. WeChat entries have sender and preview null (only the tray flash is known); qqMail preview is the subject, never the body. |
-| `media.nowPlaying` | `media:read` | 2 | 无 | { available, status, title, artist, album, sourceApp, positionMs, durationMs } (no cover image) |
+| `media.nowPlaying` | `media:read` | 2 | 无 | { available, status, title, artist, album, sourceApp, positionMs, durationMs, canSeek, canNext, canPrevious, shuffle (true \| false \| null), repeat ('none' \| 'track' \| 'list' \| 'unknown'), volume (system volume 0-1, or null) }. No cover image: see media.cover. |
+| `media.cover` | `media:read` | 2 | 无 | { cover }: the cover of what plays as a data: URL, or null (none, or larger than 1 MB). |
 | `media.playPause` | `media:control` | 2 | 无 | Same as media.nowPlaying, after the command. |
 | `media.next` | `media:control` | 2 | 无 | Same as media.nowPlaying, after the command. |
 | `media.previous` | `media:control` | 2 | 无 | Same as media.nowPlaying, after the command. |
+| `media.seek` | `media:control` | 2 | `positionMs`：whole number from 0 | Same as media.nowPlaying, after the command. Fails when the player cannot seek (canSeek false). |
+| `media.setVolume` | `media:control` | 2 | `level`：0-1 | Same as media.nowPlaying. Sets the system volume of the default output, like the island's own slider. |
+| `media.toggleShuffle` | `media:control` | 2 | 无 | Same as media.nowPlaying, after the command. |
+| `media.cycleRepeat` | `media:control` | 2 | 无 | Same as media.nowPlaying: none, then list, then track. |
 | `shelf.list` | `shelf:read` | 2 | 无 | { items: [{ id, path, name, isDir, size, addedAt, pinned, missing, unreachable }] }: paths only, never file contents. |
 | `shelf.add` | `shelf:write` | 2 | `paths`：[string] (1-20 absolute paths of existing files or folders; others are skipped) | Same as shelf.list, afterwards. |
 | `shelf.remove` | `shelf:write` | 2 | `ids`：[string] (1-20); only takes entries off the shelf, never deletes files | Same as shelf.list, afterwards. |

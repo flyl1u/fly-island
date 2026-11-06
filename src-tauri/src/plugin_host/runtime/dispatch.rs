@@ -99,7 +99,10 @@ pub(super) fn answer_request(context: &Context, id: &Value, method: &str, params
         "clipboard.history" => clipboard_history::plugin_history(&params),
         "messages.list" => feeds::messages_list(),
         "media.nowPlaying" => media_control::plugin_now_playing(),
-        "media.playPause" | "media.next" | "media.previous" => media_control::plugin_media_command(name),
+        "media.cover" => media_control::plugin_cover(),
+        "media.playPause" | "media.next" | "media.previous" | "media.seek" | "media.setVolume" | "media.toggleShuffle" | "media.cycleRepeat" => {
+            media_control::plugin_media_command(name, &params)
+        }
         "shelf.list" => file_shelf::plugin_shelf_list(),
         "shelf.add" => file_shelf::plugin_shelf_add(&context.app, &params),
         "shelf.remove" => file_shelf::plugin_shelf_remove(&context.app, &params),

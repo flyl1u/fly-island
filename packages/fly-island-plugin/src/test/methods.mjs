@@ -294,6 +294,28 @@ function dataMethod(host, method, params) {
     case "media.next":
     case "media.previous":
       return data.media;
+    case "media.cover":
+      return { cover: data.cover };
+    case "media.seek": {
+      const position = params?.positionMs;
+      if (!Number.isInteger(position) || position < 0) fail(400, "Expected { positionMs }, a whole number of milliseconds from 0.");
+      data.media = { ...data.media, positionMs: position };
+      return data.media;
+    }
+    case "media.setVolume": {
+      const level = params?.level;
+      if (typeof level !== "number" || level < 0 || level > 1) fail(400, "Expected { level } from 0 to 1.");
+      data.media = { ...data.media, volume: level };
+      return data.media;
+    }
+    case "media.toggleShuffle":
+      data.media = { ...data.media, shuffle: !data.media.shuffle };
+      return data.media;
+    case "media.cycleRepeat": {
+      const next = { none: "list", list: "track" };
+      data.media = { ...data.media, repeat: next[data.media.repeat] ?? "none" };
+      return data.media;
+    }
     case "shelf.list":
       return { items: data.shelf };
     case "shelf.add":

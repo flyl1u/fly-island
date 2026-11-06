@@ -4,6 +4,11 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 媒体控制
+
+- `media.nowPlaying`（以及每个媒体控制方法的结果）多了 `canSeek`、`canNext`、`canPrevious`、`shuffle`、`repeat`、`volume`。
+- 新方法：`media.cover`（`media:read`，封面的 data: URL，超过 1 MB 为 null）；`media.seek { positionMs }`、`media.setVolume { level }`（系统音量 0–1）、`media.toggleShuffle`、`media.cycleRepeat`（都要 `media:control`）。SDK：Node `plugin.media.cover / seek / setVolume / toggleShuffle / cycleRepeat`；模拟宿主支持，封面用 `startMockHost(dir, { cover })` 提供。
+
 ## 文件中转和系统事件
 
 - 事件 `shelf.changed { count }`（`shelf:read`）：文件中转变了。
