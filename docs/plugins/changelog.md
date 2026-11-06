@@ -4,6 +4,16 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## npm 包 0.3.0（2026-11-06）
+
+`fly-island-plugin` 和 `create-fly-island-plugin` 0.3.0 带上下面这些新接口（从「更多右键菜单」到「打开自己的页面」）：
+
+- Node SDK：`plugin.openView`、`plugin.setSettings`、`plugin.todos.list(date)` / `plugin.todos.days(from, to)` / `plugin.note.get(date)`、`plugin.media.cover / seek / setVolume / toggleShuffle / cycleRepeat`；事件类型加上 `shelf.changed` 和 `system.*`；清单校验认识新的右键菜单 `clipboard/context`、`shelf/context`、`message/context`。
+- 模拟宿主：`openedViews`、`settings.set`，`startMockHost(dir, { archives, cover })`，媒体控制方法。
+- 脚手架建的插件依赖 `fly-island-plugin` ^0.3.0。
+
+这些接口要配合包含它们的岛屿版本使用；在旧版岛屿上调用会得到「未知方法」，可以先用 `initialize.capabilities`（`openView`）或 `plugin.hasCapability` 判断。
+
 ## 更多右键菜单
 
 - `contributes.menus` 新增 `clipboard/context`（剪贴板历史的文字条目）、`shelf/context`（文件中转条目）、`message/context`（QQ 通知和邮件）。用户在这些条目上右键选了插件的命令，插件收到 `command { id, args: { item } }`，`item` 和 `clipboard.history` / `shelf.list` / `messages.list` 里的一项相同。用户亲手选的这一条不需要对应的读取权限。

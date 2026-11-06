@@ -1,6 +1,6 @@
 {
   "name": "fly-island-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SDK, CLI (validate, pack, dev, test) and mock host for FocuSD Island plugins",
   "keywords": ["focusd", "fly-island", "plugin", "sdk"],
   "license": "MIT",
