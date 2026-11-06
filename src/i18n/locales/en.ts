@@ -323,6 +323,7 @@ const en: Translations = {
     },
 
     behavior: {
+      detachedSettings: "Open settings in a separate window",
       title: "Startup & tuck",
     },
 

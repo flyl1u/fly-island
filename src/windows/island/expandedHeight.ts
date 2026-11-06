@@ -36,7 +36,7 @@ export function getExpandedIslandHeight({
     TODO_SCROLL_START_ROWS,
   );
 
-  return page === "todo"
+  return page === "settings" ? 480 : page === "todo"
     ? isTodoArchivePage
       ? TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT
       : BASE_EXPANDED_ISLAND_HEIGHT +

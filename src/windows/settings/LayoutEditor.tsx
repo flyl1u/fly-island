@@ -1,3 +1,4 @@
+import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useTranslation, type LocaleCode } from "../../i18n";
 import { LocaleControl } from "../../i18n/LocaleControl";
 import { AgentHooksSettingsSection } from "../../features/agent-status/AgentHooksSettingsSection";
@@ -21,6 +22,8 @@ import { SettingsSidebar } from "./SettingsSidebar";
 import "./LayoutEditor.css";
 
 export function LayoutEditor({
+  detachedSettings,
+  onDetachedSettingsChange,
   category,
   locale,
   settings,
@@ -53,6 +56,8 @@ export function LayoutEditor({
   onInstallAgentHooks,
   onClipboardShortcutFocusHandled,
 }: {
+  detachedSettings: boolean;
+  onDetachedSettingsChange: (detached: boolean) => void;
   category: SettingsCategory;
   locale: LocaleCode;
   settings: IslandSettings;
@@ -108,6 +113,10 @@ export function LayoutEditor({
                 value={locale}
                 onChange={onLocaleChange}
               />
+            </section>
+            <section className="settings-section">
+              <ToggleControl label={t.settings.behavior.detachedSettings}
+                checked={detachedSettings} onChange={onDetachedSettingsChange} />
             </section>
             <BehaviorSettingsSection
               settings={settings}

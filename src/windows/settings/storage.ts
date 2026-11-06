@@ -1,5 +1,18 @@
 import { readString, writeString, removeItem } from "../../lib/storage.ts";
+export const DETACHED_SETTINGS_STORAGE_KEY = "focusd-island-detached-settings";
+export const SETTINGS_PRESENTATION_CHANGED = "settings-presentation-changed";
+
+export function loadDetachedSettings(): boolean {
+  return readString(DETACHED_SETTINGS_STORAGE_KEY) === "true";
+}
+
+export function saveDetachedSettings(detached: boolean): boolean {
+  if (!writeString(DETACHED_SETTINGS_STORAGE_KEY, String(detached))) return false;
+  window.dispatchEvent(new Event(SETTINGS_PRESENTATION_CHANGED));
+  return true;
+}
 // Main island -> settings window request to reveal a section; survives the window being created.
+export const SETTINGS_FOCUS_CHANGED = "settings-focus-changed";
 export const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 
 export type SettingsFocusSection = "savePath";
@@ -36,4 +49,5 @@ export function requestSettingsFocus(section: SettingsFocusSection) {
     SETTINGS_FOCUS_STORAGE_KEY,
     JSON.stringify({ section, requestedAt: Date.now() }),
   );
+  window.dispatchEvent(new Event(SETTINGS_FOCUS_CHANGED));
 }

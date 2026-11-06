@@ -99,10 +99,11 @@ export function IslandHeader({
           }}
         />
         <button
-          className="dot-button dot-button--layout"
+          className={`dot-button dot-button--layout${page === "settings" ? " dot-button--active" : ""}`}
           type="button"
           title={t.settings.title}
           aria-label={t.settings.title}
+          aria-pressed={page === "settings"}
           onClick={(event) => {
             event.stopPropagation();
             onOpenSettings();

@@ -7,7 +7,8 @@ import type { MessageSource } from "../../features/messages/messagePreview";
 import { useIdleTuck } from "./useIslandAutomation";
 import { useTranslation } from "../../i18n";
 import { TodoNotebook } from "../../features/todos/TodoNotebook";
-import { openSettingsWindow } from "../settings/api";
+import { SettingsPanel } from "../settings/SettingsPanel";
+import { useSettingsNavigation } from "./useSettingsNavigation";
 import { toggleTranslationWindow } from "../translation/api";
 import { getAgentStatusLabel, getAgentVisualState } from "../../features/agent-status/status";
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
@@ -58,9 +59,11 @@ export function IslandApp() {
   const agentStatus = useAgentStatus();
   const [settings, setSettings] = useIslandSettings();
 
+  const { openSettings, changePresentation } = useSettingsNavigation(openIslandPage, setPage);
+
   const openSavePathSettings = useCallback(() => {
-    openSettingsWindow("savePath");
-  }, []);
+    openSettings("savePath");
+  }, [openSettings]);
 
   const { todos, activeTodoId, todoPageMode, notebookProps } = useTodos({
     carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
@@ -178,11 +181,16 @@ export function IslandApp() {
         onResetPosition={resetIslandPosition}
         onMinimize={minimizeIsland}
         onOpenTranslator={openTranslator}
-        onOpenSettings={openSettingsWindow}
+        onOpenSettings={openSettings}
         onTuck={tuckIsland}
         onReveal={revealIsland}
         onPageChange={setPage}
       >
+        {page === "settings" && (
+          <SettingsPanel settings={settings} onSettingsChange={setSettings}
+            qqNotifications={qqNotifications} wechatReminders={wechatReminders}
+            detached={false} onDetachedChange={(value) => void changePresentation(value)} />
+        )}
         {page === "qq" && (
           <div className="message-panel">
             <MessagesPanel qqMail={qqMail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} source={messageSource} onSourceChange={openMessages} />

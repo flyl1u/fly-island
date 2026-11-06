@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { requestSettingsFocus, type SettingsFocusSection } from "./storage";
 
 export function openSettingsWindow(section?: SettingsFocusSection) {
@@ -6,9 +7,15 @@ export function openSettingsWindow(section?: SettingsFocusSection) {
     requestSettingsFocus(section);
   }
 
-  void invoke("open_settings_window").catch((error) => {
-    console.error("Failed to open settings window", error);
-  });
+  return invoke<void>("open_settings_window");
+}
+
+export function dockSettingsWindow() {
+  return invoke<void>("dock_settings_window");
+}
+
+export function listenSettingsOpenRequested(handler: () => void) {
+  return listen("settings-open-requested", handler);
 }
 
 export function readLaunchAtStartup() {
