@@ -5,34 +5,47 @@
 
   <p>English · <a href="README.md">中文</a></p>
 
-  <p>A Windows desktop productivity app that brings tasks, clipboard history, music, AI status, quick translation, and notifications to the top of your screen, and can be extended with plugins.</p>
+  <p>A desktop island for Windows: tasks, clipboard, messages, translation, music and AI status on one small island at the top of your screen.</p>
 
   <p>
-    <a href="https://github.com/TixXin/fly-island/releases/latest">Download Release</a>
+    <a href="https://github.com/TixXin/fly-island/releases/latest">Download</a>
     ·
-    <a href="https://github.com/TixXin/fly-island/issues">Report an Issue</a>
+    <a href="https://github.com/TixXin/fly-island/issues">Report an issue</a>
   </p>
 
   <p>
     <img alt="Version" src="https://img.shields.io/github/v/release/TixXin/fly-island?label=version">
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
-    <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
   </p>
 </div>
 
 > [!NOTE]
-> This repository is an independently maintained version of [flyl1u/fly-island](https://github.com/flyl1u/fly-island). It branched from upstream 0.2.14 and has its own release line from 0.3.0 onward.
->
-> - Installers and in-app updates come from this repository's [Releases](https://github.com/TixXin/fly-island/releases/latest) and are signed with this repository's own key.
-> - You can install it over the upstream version; tasks, notes, and settings are kept. The two versions cannot be installed side by side.
-> - Please report problems with this version in [this repository's Issues](https://github.com/TixXin/fly-island/issues).
+> This repository is an independently maintained version of [flyl1u/fly-island](https://github.com/flyl1u/fly-island). It branched from upstream 0.2.14 and has its own release line and update channel from 0.3.0 on. You can install it over the upstream version; your data and settings are kept.
 
 ## What is this?
 
-Fly Island is a Windows desktop productivity app. Its floating island brings together tasks and daily notes, clipboard history, music controls, AI coding assistant status, quick translation, and message notifications, and a plugin market adds more.
+Fly Island is a lightweight, borderless, always-on-top floating island. It sits at the top of the screen, expands when you need it and tucks away when you are done, so the things you use all day are one glance away instead of one window switch away.
 
-It runs as a lightweight, borderless, always-on-top floating island. Expand it when you need information, then return to the compact state and keep working.
+## Features
+
+- **Tasks and notes**: today's tasks, the one you are focused on, a daily note and past archives.
+- **Clipboard and file shelf**: text and image clipboard history; drop files on the island and drag them into another app later.
+- **Messages**: QQ and WeChat alerts and several mailboxes, with mail you can read and answer on the island.
+- **Quick translation**: one shortcut away, with a choice of LLM translation services.
+- **AI agents**: the state of your Claude Code and Codex sessions; click one to jump to its window.
+- **Music**: control what is playing, with a live audio waveform.
+- **Plugins**: extend the island from the plugin market; sensitive data needs your permission.
+
+The look, size, tucking, shortcuts and every feature can be adjusted in the Settings window, and the app updates itself. Your data stays on your computer.
+
+## Getting started
+
+1. Download and install from [Releases](https://github.com/TixXin/fly-island/releases/latest). The installers are not code-signed; if SmartScreen warns, choose "More info → Run anyway".
+2. Move the pointer onto the island at the top of the screen to expand it; the gear button or the tray icon opens Settings.
+3. Mail, translation and AI agents need a one-time setup in Settings. See [mail](docs/mail.md), [AI agents](docs/agent-status-hooks.md), [QQ](docs/qq-notification-compatibility.md) and [WeChat](docs/wechat-reminder-compatibility.md) (in Chinese).
+
+To write your own plugin, see the [plugin docs](docs/plugins/README.md).
 
 ## Origins
 
@@ -44,81 +57,20 @@ In the words of the upstream author, [flyl1u](https://github.com/flyl1u):
 >
 > Apple's Dynamic Island was an inspiration: it gathers delivery updates, timers, media controls, and other information into one small surface. FocuSD follows the same idea for focused study and deep work. The name stands for **Focu Study and DeepWork**, and the app is built with the lightweight Tauri framework.
 
-## Features
+## Build from source
 
-Fly Island brings frequent actions from separate windows into one compact island:
-
-- **Tasks, daily notes, and archives**: manage today's tasks, mark them complete, set the active task, write a daily note, and browse saved days as cards or a timeline. Optionally carry unfinished tasks forward and save a day as Markdown.
-- **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, remove entries, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut.
-- **File shelf**: drop files on the island to keep them at hand, then drag them out to Explorer, WeChat, QQ, or any app, or copy and paste them. Only paths are stored, never copies; select several, search, pin, and clean up automatically.
-- **Music and system audio**: control the Windows media session with previous, play/pause, and next actions; a live waveform reflects audio activity.
-- **AI status light and Agent page**: lifecycle hooks show whether Codex or Claude Code is running, complete, or needs attention. The Agent page lists recent sessions, the island shows how many are running, and sessions waiting for permission are marked. Each session shows the program it runs in (Orca, Windows Terminal, VS Code, Codex, ...) with that program's own icon; clicking it brings that window forward, and in Orca also switches to its terminal tab.
-- **Quick translation**: a translation page on the island, opened with a global shortcut. Auto-detect Chinese/English or choose a direction, fill in the clipboard, translate automatically, or translate the selected text. Works with DeepSeek, SiliconFlow, Qwen (DashScope), Kimi, Volcengine Ark, OpenAI, and any OpenAI-compatible endpoint.
-- **QQ, WeChat, and Mail**: switch between QQ, WeChat, and Mail from one row of brand tabs, with source actions alongside them. Review the latest 20 QQ notifications or emails, open email bodies and save attachments inside the island, and write or reply to mail.
-- **Plugins**: install, update, and uninstall plugins from a market with a signed index. Plugins can show their own pages and status text on the island, send notifications, and add global shortcuts and todo context-menu commands. Reading the clipboard, messages, media, the file shelf, or todos each needs its own permission.
-- **Shortcuts and game mode**: every shortcut is on one settings page, can be changed, and conflicts are reported; Alt+number switches expanded pages. The island tucks away while a full-screen game runs on its screen.
-- **Island appearance and startup**: choose classic or liquid-glass styling and system or pixel fonts; adjust size, opacity, colors, and top spacing; tuck the island to the screen edge when idle; save up to six custom style presets, hide the island title, or enable launch at startup.
-- **In-app updates**: a separate Updates page in Settings. The island checks shortly after launch and every 6 hours, and a dot on its settings button tells you when a new version is out. Read what's new, skip a version, or switch to the beta channel to try new features early; only people who pick it get betas.
-
-Tasks, clipboard history, and app preferences stay on the device. WeChat reminders do not read chat text, sender names, or exact unread counts. QQ notifications stay in memory for the current run; Mail syncs only headers in the background and reads bodies on demand into memory. It only downloads an attachment, into your Downloads folder, when you click Save, does not load remote images, and changes read status only when you click Mark as read, and sends mail only when you click Send.
-
-## Getting started
-
-Expand the island to switch between tasks, music, clipboard, files, messages, translation, and agents. Open the separate settings window from the gear button at the top right or from **Settings** in the tray menu; changes apply to the island immediately. On first run the island uses the classic look on a black fill, expands on hover, tucks to the screen edge after 30 idle seconds, hides the island title, and displays task text in white.
-
-### Feature setup
-
-- **QQ and WeChat reminders** are enabled by default. QQ needs Windows notification access, and QQ must be signed in with system notifications enabled. WeChat must be running and issue a taskbar-attention request. Pause either source on its own page under **Settings → Messages** or from the message panel. See the [QQ notification guide (Chinese)](docs/qq-notification-compatibility.md) and [WeChat reminder guide (Chinese)](docs/wechat-reminder-compatibility.md).
-
-- **Mail** connects up to five QQ Mail, 163, 126 and other IMAP mailboxes, shown in the message panel one tab each. Enable IMAP in your mailbox settings, generate an authorization code, then add the address and that code (not your login password) under **Settings → Messages → Mail**. The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect to delete the code. Initial sync does not replay old mail. See the [mail setup guide (Chinese)](docs/mail.md).
-
-- **Quick translation** opens with **Ctrl+Shift+F** by default. Pick a translation service and enter its API key; keys are stored per service in Windows Credential Manager. Text is sent to the selected service when you request a translation.
-
-- **AI status light and Agent page**: open **Settings → AI Agent** and choose **Install/repair**. Restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. In Orca, sessions started or resumed after the repair switch to their terminal tab when clicked. How the session source is shown (icon, name, both, or hidden) is set on the same page. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
-
-- **Clipboard history** captures text and, when enabled, images. Search, favorite, annotate, and copy entries from the clipboard panel. Configure capture settings, history limit, and global shortcut (**Ctrl+Shift+W** by default) in Settings.
-
-- **File shelf**: drop files on the island to add them, and press and drag an entry to take it out (a copy; hold Shift to move). Cleanup, missing files, and double-click behavior are under **Settings → File shelf**. See the [file shelf guide (Chinese)](docs/file-shelf.md).
-
-- **Updates**: check for and install new versions, turn automatic checks off, or pick the stable or beta channel under **Settings → Updates**. Switching from beta back to stable never downgrades; updates resume once stable catches up. See the [in-app update guide (Chinese)](docs/updater.md).
-
-- **Plugins**: browse and install plugins in **Settings → Plugin market**; manage, order, and grant permissions to installed plugins in **Settings → Plugins**. To write your own, see the [plugin docs](docs/plugins/README.md).
-
-### Tech stack
-
-- Tauri 2 for the Windows desktop shell and native capabilities
-- React 19 + TypeScript for the interface and interactions
-- Rust for windows, shortcuts, clipboard, media, and file capabilities
-- pnpm for dependency management and project scripts
-
-## Development and build
-
-### Build from source
-
-You need Windows 10/11, Node.js, pnpm, Rust, Visual Studio C++ Build Tools, and WebView2 Runtime.
+You need Windows 10/11, Node.js, pnpm, Rust, Visual Studio C++ Build Tools and WebView2 Runtime.
 
 ```powershell
 git clone https://github.com/TixXin/fly-island.git
 cd fly-island
 pnpm install
-pnpm tauri dev
+pnpm tauri dev      # development
+pnpm tauri build    # installers
 ```
 
-### Build a release
-
-```powershell
-pnpm tauri build
-```
-
-The generated installers are placed in:
-
-- `src-tauri/target/release/bundle/nsis/fly-island_VERSION_x64-setup.exe`
-- `src-tauri/target/release/bundle/msi/fly-island_VERSION_x64_en-US.msi`
-
-You can also download the latest Windows x64 installers from [GitHub Releases](https://github.com/TixXin/fly-island/releases/latest). In-app updates, signing, and the `latest.json` release flow are described in [docs/updater.md (Chinese)](docs/updater.md).
+Built with Tauri 2, React 19 + TypeScript and Rust. Releases and in-app updates are described in [docs/updater.md](docs/updater.md) (in Chinese).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). It is based on [flyl1u/fly-island](https://github.com/flyl1u/fly-island) and keeps the upstream copyright notice.
-
-Third-party dependencies and bundled assets retain their respective licenses. See the [font notices](src/assets/fonts/README.md) for bundled fonts.
+[MIT](LICENSE), based on [flyl1u/fly-island](https://github.com/flyl1u/fly-island) and keeping the upstream copyright notice. Third-party dependencies and bundled assets keep their own licenses; see the [font notices](src/assets/fonts/README.md) for bundled fonts.
