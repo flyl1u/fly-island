@@ -15,9 +15,9 @@ use std::{
 };
 
 use super::{
-    decision::{hook_response, Agent, Decision, HookInput},
+    decision::{hook_response, question_response, route, Decision, HookInput, Kind},
     http::{check_access, read_request, write_response, HttpError},
-    queue::{ApprovalRequest, CloseReason, Queue},
+    queue::{ApprovalRequest, CloseReason, Outcome, Queue},
 };
 
 /// How long a request may take to arrive in full.
@@ -56,8 +56,8 @@ impl Shared {
         self.enabled.store(enabled, Ordering::Relaxed);
     }
 
-    pub fn decide(&self, id: u64, decision: Decision, message: Option<String>) -> Result<(), String> {
-        self.queue().decide(id, decision, message)?;
+    pub fn decide(&self, id: u64, outcome: Outcome) -> Result<(), String> {
+        self.queue().decide(id, outcome)?;
         self.changed.notify_all();
         Ok(())
     }
@@ -132,17 +132,25 @@ fn answer(shared: &Shared, stream: &TcpStream, port: u16) -> Result<Option<Strin
     if request.method != "POST" {
         return Err(HttpError { status: 405, message: "Only POST is accepted." });
     }
-    let agent = Agent::from_path(&request.path).ok_or(HttpError { status: 404, message: "Unknown path." })?;
+    let (agent, kind) = route(&request.path).ok_or(HttpError { status: 404, message: "Unknown path." })?;
     check_access(&request, &shared.token, port)?;
     let input = HookInput::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
 
-    let hand_back = !shared.enabled.load(Ordering::Relaxed) || input.is_question() || shared.queue().is_shutting_down();
+    // A question comes through PermissionRequest too, after its PreToolUse hook gave it back
+    // (or when that hook is not installed): let the terminal ask at once. And the PreToolUse path
+    // only takes AskUserQuestion, whatever matcher the hook was installed with.
+    let question_elsewhere = match kind {
+        Kind::Permission => input.is_question(),
+        Kind::Question => !input.is_question(),
+    };
+    let hand_back = !shared.enabled.load(Ordering::Relaxed) || question_elsewhere || shared.queue().is_shutting_down();
     if hand_back {
-        return Ok(Some(hook_response(None, None, None)));
+        return Ok(Some("{}".to_string()));
     }
 
     let suggestions = input.permission_suggestions.clone();
-    let (request, shown) = shared.queue().push(agent, input, unix_millis());
+    let tool_input = input.tool_input.clone();
+    let (request, shown) = shared.queue().push(agent, kind, input, unix_millis());
     if shown {
         (shared.notify)(ApprovalEvent::Requested(request.clone()));
     }
@@ -158,12 +166,20 @@ fn answer(shared: &Shared, stream: &TcpStream, port: u16) -> Result<Option<Strin
         return Ok(None);
     }
     let decision = outcome.as_ref().map(|outcome| outcome.decision);
-    let message = outcome.as_ref().and_then(|outcome| outcome.message.as_deref());
-    Ok(Some(hook_response(decision, message, suggestions.as_ref())))
+    Ok(Some(match kind {
+        Kind::Permission => {
+            let message = outcome.as_ref().and_then(|outcome| outcome.message.as_deref());
+            hook_response(decision, message, suggestions.as_ref())
+        }
+        Kind::Question => {
+            let answers = outcome.as_ref().filter(|_| decision == Some(Decision::Answer)).and_then(|outcome| outcome.answers.as_ref());
+            question_response(answers, &tool_input)
+        }
+    }))
 }
 
 /// Waits for the user's choice, the deadline, a hang-up or the island quitting.
-fn wait(shared: &Shared, stream: &TcpStream, id: u64, deadline: Instant) -> (Option<super::queue::Outcome>, CloseReason) {
+fn wait(shared: &Shared, stream: &TcpStream, id: u64, deadline: Instant) -> (Option<Outcome>, CloseReason) {
     loop {
         {
             let queue = shared.queue();

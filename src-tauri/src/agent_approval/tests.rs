@@ -9,12 +9,34 @@ use std::{
 use serde_json::{json, Value};
 
 use super::config::{is_valid_token, load_config};
-use super::decision::{hook_response, Agent, Decision, HookInput};
+use super::decision::{hook_response, question_response, route, Agent, Answers, Decision, HookInput, Kind};
 use super::http::{check_access, read_request, HttpRequest};
-use super::queue::{CloseReason, Queue};
+use super::queue::{CloseReason, Outcome, Queue};
 use super::server::{listen, ApprovalEvent, Shared};
 
 const TOKEN: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+fn out(decision: Decision, message: Option<String>) -> Outcome {
+    Outcome { decision, message, answers: None }
+}
+
+fn answered(pairs: &[(&str, &str)]) -> Outcome {
+    let answers: Answers = pairs.iter().map(|(question, answer)| (question.to_string(), answer.to_string())).collect();
+    Outcome { decision: Decision::Answer, message: None, answers: Some(answers) }
+}
+
+fn questions() -> Value {
+    json!({ "questions": [{ "question": "接下来做什么？", "header": "下一步", "multiSelect": false,
+        "options": [{ "label": "修 bug", "description": "" }, { "label": "写文档", "description": "" }] }] })
+}
+
+fn question_body(session: &str) -> String {
+    json!({
+        "session_id": session, "cwd": "E:\\p", "hook_event_name": "PreToolUse",
+        "tool_name": "AskUserQuestion", "tool_input": questions(),
+    })
+    .to_string()
+}
 
 fn hook_body(session: &str, tool: &str) -> String {
     json!({
@@ -159,29 +181,29 @@ fn hook_input_needs_a_session_and_a_tool() {
     assert!(HookInput::parse(b"{\"tool_name\":\"Bash\"}").is_err());
     assert!(HookInput::parse(b"not json").is_err());
     assert!(HookInput::parse(hook_body("s", "AskUserQuestion").as_bytes()).unwrap().is_question());
-    assert_eq!(Agent::from_path("/codex/permission-request"), Some(Agent::Codex));
-    assert_eq!(Agent::from_path("/"), None);
+    assert_eq!(route("/codex/permission-request"), Some((Agent::Codex, Kind::Permission)));
+    assert_eq!(route("/"), None);
 }
 
 #[test]
 fn a_session_shows_one_request_at_a_time() {
     let input = |session: &str| HookInput::parse(hook_body(session, "Bash").as_bytes()).unwrap();
     let mut queue = Queue::default();
-    let (a1, shown) = queue.push(Agent::ClaudeCode, input("a"), 1);
+    let (a1, shown) = queue.push(Agent::ClaudeCode, Kind::Permission, input("a"), 1);
     assert!(shown);
-    let (a2, shown) = queue.push(Agent::ClaudeCode, input("a"), 2);
+    let (a2, shown) = queue.push(Agent::ClaudeCode, Kind::Permission, input("a"), 2);
     assert!(!shown);
-    let (b1, shown) = queue.push(Agent::ClaudeCode, input("b"), 3);
+    let (b1, shown) = queue.push(Agent::ClaudeCode, Kind::Permission, input("b"), 3);
     assert!(shown);
     // The same session id from another agent is another session.
-    assert!(queue.push(Agent::Codex, input("a"), 4).1);
+    assert!(queue.push(Agent::Codex, Kind::Permission, input("a"), 4).1);
     assert_eq!(queue.shown().iter().map(|request| request.id).collect::<Vec<_>>(), vec![a1.id, b1.id, 4]);
-    assert!(queue.decide(a2.id, Decision::Allow, None).is_err());
-    queue.decide(a1.id, Decision::Allow, None).unwrap();
+    assert!(queue.decide(a2.id, out(Decision::Allow, None)).is_err());
+    queue.decide(a1.id, out(Decision::Allow, None)).unwrap();
     assert_eq!(queue.outcome(a1.id).unwrap().decision, Decision::Allow);
     assert_eq!(queue.remove(a1.id).map(|next| next.id), Some(a2.id));
     assert_eq!(queue.remove(b1.id), None);
-    assert!(queue.decide(a1.id, Decision::Allow, None).is_err());
+    assert!(queue.decide(a1.id, out(Decision::Allow, None)).is_err());
 }
 
 #[test]
@@ -204,7 +226,7 @@ fn a_decision_on_the_island_answers_the_waiting_hook() {
     server.wait_for(|server| server.requested().len() == 1);
     let id = server.requested()[0].0;
     assert_eq!(server.shared.pending().len(), 1);
-    server.shared.decide(id, Decision::Allow, None).unwrap();
+    server.shared.decide(id, out(Decision::Allow, None)).unwrap();
     let (status, body) = waiting.join().unwrap();
     assert_eq!((status, decision_of(&body)["behavior"].clone()), (200, json!("allow")));
     assert_eq!(server.closed(), vec![(id, CloseReason::Decided)]);
@@ -217,7 +239,7 @@ fn handing_back_or_waiting_too_long_returns_an_empty_answer() {
     let waiting = server.post_later("s1");
     server.wait_for(|server| server.requested().len() == 1);
     let first = server.requested()[0].0;
-    server.shared.decide(first, Decision::Terminal, None).unwrap();
+    server.shared.decide(first, out(Decision::Terminal, None)).unwrap();
     assert_eq!(waiting.join().unwrap(), (200, "{}".to_string()));
     // Nobody answers this one.
     assert_eq!(server.post("s1", "Bash"), (200, "{}".to_string()));
@@ -236,11 +258,11 @@ fn the_next_request_of_a_session_shows_when_the_first_closes() {
     thread::sleep(Duration::from_millis(300));
     assert_eq!(server.requested().len(), 1, "the second waits behind the first");
     let first_id = server.requested()[0].0;
-    server.shared.decide(first_id, Decision::Deny, Some("不行".into())).unwrap();
+    server.shared.decide(first_id, out(Decision::Deny, Some("不行".into()))).unwrap();
     assert_eq!(decision_of(&first.join().unwrap().1)["message"], "不行");
     server.wait_for(|server| server.requested().len() == 2);
     let second_id = server.requested()[1].0;
-    server.shared.decide(second_id, Decision::Allow, None).unwrap();
+    server.shared.decide(second_id, out(Decision::Allow, None)).unwrap();
     assert_eq!(decision_of(&second.join().unwrap().1)["behavior"], "allow");
 }
 
@@ -287,4 +309,71 @@ fn quitting_hands_every_waiting_request_back() {
     assert!(server.closed().iter().all(|(_, reason)| *reason == CloseReason::Shutdown));
     // And new ones go straight back.
     assert_eq!(server.post("s3", "Bash"), (200, "{}".to_string()));
+}
+
+#[test]
+fn answers_go_back_in_the_tools_input() {
+    assert_eq!(question_response(None, &questions()), "{}");
+    assert_eq!(question_response(Some(&Answers::new()), &questions()), "{}");
+    let answers: Answers = [("接下来做什么？".to_string(), "随便写点什么".to_string())].into();
+    let output: Value = serde_json::from_str(&question_response(Some(&answers), &questions())).unwrap();
+    let output = &output["hookSpecificOutput"];
+    assert_eq!((output["hookEventName"].as_str(), output["permissionDecision"].as_str()), (Some("PreToolUse"), Some("allow")));
+    assert_eq!(output["updatedInput"]["questions"], questions()["questions"]);
+    assert_eq!(output["updatedInput"]["answers"]["接下来做什么？"], "随便写点什么");
+    assert_eq!(route("/claude/ask-user-question"), Some((Agent::ClaudeCode, Kind::Question)));
+}
+
+#[test]
+fn a_question_takes_answers_or_a_hand_back_and_an_approval_does_not_take_answers() {
+    let mut queue = Queue::default();
+    let (question, _) = queue.push(Agent::ClaudeCode, Kind::Question, HookInput::parse(question_body("q").as_bytes()).unwrap(), 1);
+    let (approval, _) = queue.push(Agent::ClaudeCode, Kind::Permission, HookInput::parse(hook_body("p", "Bash").as_bytes()).unwrap(), 2);
+    for decision in [Decision::Allow, Decision::Deny, Decision::AllowAlways] {
+        assert!(queue.decide(question.id, out(decision, None)).is_err());
+    }
+    assert!(queue.decide(question.id, out(Decision::Answer, None)).is_err(), "answering needs answers");
+    assert!(queue.decide(approval.id, answered(&[("x", "y")])).is_err());
+    queue.decide(question.id, answered(&[("接下来做什么？", "修 bug")])).unwrap();
+    assert_eq!(queue.shown()[0].kind, Kind::Question);
+}
+
+#[test]
+fn a_question_answered_on_the_island_reaches_claude_code() {
+    let server = TestServer::start(Duration::from_secs(30));
+    let request = raw_request(server.port, "/claude/ask-user-question", TOKEN, "", &question_body("s1"));
+    let port = server.port;
+    let waiting = thread::spawn(move || send(port, &request));
+    server.wait_for(|server| server.requested().len() == 1);
+    let shown = server.shared.pending()[0].clone();
+    assert_eq!((shown.kind, shown.tool_name.as_str()), (Kind::Question, "AskUserQuestion"));
+    server.shared.decide(shown.id, answered(&[("接下来做什么？", "写文档")])).unwrap();
+    let (status, body) = waiting.join().unwrap();
+    let output: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(status, 200);
+    assert_eq!(output["hookSpecificOutput"]["updatedInput"]["answers"]["接下来做什么？"], "写文档");
+    assert_eq!(server.closed()[0].1, CloseReason::Decided);
+}
+
+#[test]
+fn questions_handed_back_or_off_the_path_go_to_the_terminal() {
+    let server = TestServer::start(Duration::from_millis(400));
+    let question = |body: &str| send(server.port, &raw_request(server.port, "/claude/ask-user-question", TOKEN, "", body));
+    // Only AskUserQuestion is held there, whatever the hook's matcher.
+    assert_eq!(question(&hook_body("s1", "Bash")), (200, "{}".to_string()));
+    // Nobody answers: back to the terminal.
+    assert_eq!(question(&question_body("s1")), (200, "{}".to_string()));
+    assert_eq!(server.closed()[0].1, CloseReason::Timeout);
+    // Handed back on the island.
+    let request = raw_request(server.port, "/claude/ask-user-question", TOKEN, "", &question_body("s2"));
+    let port = server.port;
+    let waiting = thread::spawn(move || send(port, &request));
+    server.wait_for(|server| server.requested().len() == 2);
+    let id = server.requested()[1].0;
+    server.shared.decide(id, out(Decision::Terminal, None)).unwrap();
+    assert_eq!(waiting.join().unwrap(), (200, "{}".to_string()));
+    // Off: no card.
+    server.shared.set_enabled(false);
+    assert_eq!(question(&question_body("s3")), (200, "{}".to_string()));
+    assert_eq!(server.requested().len(), 2);
 }

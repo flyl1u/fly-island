@@ -1,4 +1,5 @@
-//! Approving agent tool calls on the island (B6 phase 2). Claude Code's `PermissionRequest` HTTP
+//! Approving agent tool calls on the island (B6 phase 2), and answering Claude Code's
+//! AskUserQuestion there (phase 3, `PreToolUse` hook at `/claude/ask-user-question`). Claude Code's `PermissionRequest` HTTP
 //! hook, and Codex's through a forwarding command hook, post to an endpoint on 127.0.0.1 and wait;
 //! the island shows a card and answers with the user's choice. While the hook waits the terminal
 //! shows no prompt, so every way out (a limit, "handle in terminal", the island quitting) gives
@@ -20,9 +21,9 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager};
 
 pub(crate) use decision::Agent;
-use decision::Decision;
+use decision::{Answers, Decision};
 pub(crate) use queue::ApprovalRequest;
-use queue::CloseReason;
+use queue::{CloseReason, Outcome};
 use server::{ApprovalEvent, Shared};
 
 // Mirrored in src/features/agent-status/approvals/api.ts.
@@ -93,9 +94,15 @@ pub(crate) fn endpoint() -> Option<ApprovalEndpoint> {
     SERVICE.get().map(|service| ApprovalEndpoint { port: service.port, token: service.token.clone() })
 }
 
-/// The URL `agent`'s hook posts to.
+/// The URL `agent`'s approval hook (`PermissionRequest`) posts to.
 pub(crate) fn hook_url(agent: Agent) -> Option<String> {
     endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, agent.path()))
+}
+
+/// The URL Claude Code's `PreToolUse` hook for `AskUserQuestion` posts to (phase 3).
+#[expect(dead_code, reason = "the hook installer (task 3.1) reads it; remove when it does")]
+pub(crate) fn question_hook_url() -> Option<String> {
+    endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, decision::QUESTION_PATH))
 }
 
 fn service() -> Result<&'static Service, String> {
@@ -109,11 +116,18 @@ pub fn set_agent_approval_enabled(enabled: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// Answers a shown request: `allow`, `deny` (with an optional `message` for the agent),
-/// `allowAlways` (for this session, Claude Code) or `terminal` (ask there instead).
+/// Answers a shown request. Approvals: `allow`, `deny` (with an optional `message` for the
+/// agent), `allowAlways` (for this session, Claude Code) or `terminal` (ask there instead).
+/// Questions: `answer` with `answers` (question text -> an option's label, several joined by
+/// ", ", or free text), or `terminal`.
 #[tauri::command]
-pub fn agent_approval_decide(id: u64, decision: Decision, message: Option<String>) -> Result<(), String> {
-    service()?.shared.decide(id, decision, message)
+pub fn agent_approval_decide(
+    id: u64,
+    decision: Decision,
+    message: Option<String>,
+    answers: Option<Answers>,
+) -> Result<(), String> {
+    service()?.shared.decide(id, Outcome { decision, message, answers })
 }
 
 /// The requests shown now, one per session, for a window that (re)loads while they wait.

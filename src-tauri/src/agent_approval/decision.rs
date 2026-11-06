@@ -1,4 +1,5 @@
-//! What a `PermissionRequest` hook sends, and what it gets back for each choice on the island.
+//! What the hooks send, and what they get back for each choice on the island: `PermissionRequest`
+//! for approvals, and Claude Code's `PreToolUse` on `AskUserQuestion` for questions (phase 3).
 //! The answer format is Claude Code's (docs/architecture/agent-island-interaction-tasks.md,
 //! 实测记录); Codex's command hook forwards the same input and passes the answer back.
 
@@ -13,16 +14,29 @@ pub enum Agent {
     Codex,
 }
 
-impl Agent {
-    /// The endpoint path for each agent's hook.
-    pub(super) fn from_path(path: &str) -> Option<Self> {
-        match path {
-            "/claude/permission-request" => Some(Self::ClaudeCode),
-            "/codex/permission-request" => Some(Self::Codex),
-            _ => None,
-        }
-    }
+/// What the island is asked for: an approval, or answers to a question.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Kind {
+    Permission,
+    Question,
+}
 
+/// Where Claude Code's `PreToolUse` hook for `AskUserQuestion` posts.
+pub(super) const QUESTION_PATH: &str = "/claude/ask-user-question";
+
+/// The agent and the kind of request an endpoint path takes.
+pub(super) fn route(path: &str) -> Option<(Agent, Kind)> {
+    match path {
+        "/claude/permission-request" => Some((Agent::ClaudeCode, Kind::Permission)),
+        "/codex/permission-request" => Some((Agent::Codex, Kind::Permission)),
+        QUESTION_PATH => Some((Agent::ClaudeCode, Kind::Question)),
+        _ => None,
+    }
+}
+
+impl Agent {
+    /// The path of each agent's approval hook.
     pub(super) fn path(self) -> &'static str {
         match self {
             Self::ClaudeCode => "/claude/permission-request",
@@ -55,8 +69,8 @@ impl HookInput {
         })
     }
 
-    /// Questions are answered in the terminal until the island can ask them (phase 3); after its
-    /// PreToolUse hook, AskUserQuestion comes through PermissionRequest a second time.
+    /// Claude Code's AskUserQuestion, answered through its PreToolUse hook. Handed back there, or
+    /// with no such hook, it then comes through PermissionRequest, which lets the terminal ask.
     pub(super) fn is_question(&self) -> bool {
         self.tool_name == "AskUserQuestion"
     }
@@ -72,14 +86,29 @@ pub enum Decision {
     AllowAlways,
     /// Hand it back: the agent shows its own approval prompt in the terminal.
     Terminal,
+    /// Answers to a question, given with the decision.
+    Answer,
 }
+
+impl Decision {
+    /// Whether a request of `kind` takes this decision: questions are answered or handed back.
+    pub(super) fn fits(self, kind: Kind) -> bool {
+        match kind {
+            Kind::Permission => self != Self::Answer,
+            Kind::Question => matches!(self, Self::Answer | Self::Terminal),
+        }
+    }
+}
+
+/// A question's answers by question text: an option's label, several joined by ", ", or free text.
+pub type Answers = std::collections::BTreeMap<String, String>;
 
 const DEFAULT_DENY_MESSAGE: &str = "Denied in FocuSD Island";
 
 /// The hook's answer. `{}` gives the decision back to the agent, which then asks in the terminal.
 pub(super) fn hook_response(decision: Option<Decision>, message: Option<&str>, suggestions: Option<&Value>) -> String {
     let decision = match decision {
-        None | Some(Decision::Terminal) => return "{}".to_string(),
+        None | Some(Decision::Terminal | Decision::Answer) => return "{}".to_string(),
         Some(Decision::Allow) => json!({ "behavior": "allow" }),
         Some(Decision::AllowAlways) => match suggestions.and_then(session_only) {
             Some(rules) => json!({ "behavior": "allow", "updatedPermissions": rules }),
@@ -91,6 +120,24 @@ pub(super) fn hook_response(decision: Option<Decision>, message: Option<&str>, s
         }),
     };
     json!({ "hookSpecificOutput": { "hookEventName": "PermissionRequest", "decision": decision } }).to_string()
+}
+
+/// The `PreToolUse` hook's answer to a question: the tool runs with `answers` added to its input,
+/// and the terminal shows no prompt. Without answers, `{}` lets the terminal ask as usual.
+pub(super) fn question_response(answers: Option<&Answers>, tool_input: &Value) -> String {
+    let Some(answers) = answers.filter(|answers| !answers.is_empty()) else {
+        return "{}".to_string();
+    };
+    let mut input = tool_input.as_object().cloned().unwrap_or_default();
+    input.insert("answers".into(), json!(answers));
+    json!({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "updatedInput": input,
+        }
+    })
+    .to_string()
 }
 
 /// The suggested rules, each kept for this session only rather than written to a settings file.

@@ -5,7 +5,7 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use super::decision::{Agent, Decision, HookInput};
+use super::decision::{Agent, Answers, Decision, HookInput, Kind};
 
 /// A request as the island's card shows it (event `agent-approval-requested`).
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -13,6 +13,8 @@ use super::decision::{Agent, Decision, HookInput};
 pub struct ApprovalRequest {
     pub id: u64,
     pub agent: Agent,
+    /// An approval, or a question (Claude Code's AskUserQuestion; `tool_input.questions`).
+    pub kind: Kind,
     pub session_id: String,
     pub cwd: Option<String>,
     pub tool_name: String,
@@ -26,7 +28,7 @@ pub struct ApprovalRequest {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum CloseReason {
-    /// Allowed or denied on the island.
+    /// Allowed, denied or answered on the island.
     Decided,
     /// Waited past the limit: handed back to the terminal.
     Timeout,
@@ -43,6 +45,8 @@ pub(crate) enum CloseReason {
 pub(super) struct Outcome {
     pub decision: Decision,
     pub message: Option<String>,
+    /// For `Decision::Answer`.
+    pub answers: Option<Answers>,
 }
 
 struct Entry {
@@ -59,11 +63,12 @@ pub(super) struct Queue {
 
 impl Queue {
     /// Queues a request. Returns it, and whether it is the first of its session (shown now).
-    pub fn push(&mut self, agent: Agent, input: HookInput, received_at: i64) -> (ApprovalRequest, bool) {
+    pub fn push(&mut self, agent: Agent, kind: Kind, input: HookInput, received_at: i64) -> (ApprovalRequest, bool) {
         self.last_id += 1;
         let request = ApprovalRequest {
             id: self.last_id,
             agent,
+            kind,
             session_id: input.session_id,
             cwd: input.cwd,
             tool_name: input.tool_name,
@@ -76,8 +81,9 @@ impl Queue {
         (request, shown)
     }
 
-    /// Records the user's choice for a shown request.
-    pub fn decide(&mut self, id: u64, decision: Decision, message: Option<String>) -> Result<(), String> {
+    /// Records the user's choice for a shown request. A question takes answers or a hand-back;
+    /// an approval takes anything but answers.
+    pub fn decide(&mut self, id: u64, outcome: Outcome) -> Result<(), String> {
         let shown = self.shown_ids();
         let entry = self
             .entries
@@ -87,7 +93,13 @@ impl Queue {
         if !shown.contains(&id) {
             return Err("This approval request is still queued behind another one.".to_string());
         }
-        entry.outcome.get_or_insert(Outcome { decision, message });
+        if !outcome.decision.fits(entry.request.kind) {
+            return Err(format!("A {:?} request cannot take {:?}.", entry.request.kind, outcome.decision));
+        }
+        if outcome.decision == Decision::Answer && outcome.answers.as_ref().is_none_or(Answers::is_empty) {
+            return Err("Answering needs at least one answer.".to_string());
+        }
+        entry.outcome.get_or_insert(outcome);
         Ok(())
     }
 
