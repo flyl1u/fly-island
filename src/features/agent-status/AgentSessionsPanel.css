@@ -119,7 +119,9 @@
   white-space: nowrap;
 }
 
-.agent-session--compact .agent-session__title {
+/* Finished sessions recede; a working one stays bright even before its first reply. */
+.agent-session--completed .agent-session__title,
+.agent-session--failed .agent-session__title {
   color: rgba(241, 240, 246, 0.6);
   font-weight: 700;
 }
@@ -128,7 +130,8 @@
   color: rgba(241, 240, 246, 0.56);
 }
 
-.agent-session--compact .agent-session__project {
+.agent-session--completed .agent-session__project,
+.agent-session--failed .agent-session__project {
   color: inherit;
 }
 

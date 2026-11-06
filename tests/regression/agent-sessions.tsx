@@ -117,6 +117,11 @@ async function runChecks() {
     check(first.querySelector(".agent-session__elapsed")?.textContent !== before, "进行中的会话时长每秒更新");
     await render("both", { showElapsed: false, showModel: false });
     check(!document.querySelector(".agent-session__elapsed") && !document.querySelector(".agent-session__model"), "可以关掉运行时长和模型");
+    await act(async () => {
+      const turnJustStarted = [{ ...SESSIONS[0], lastMessage: null }, ...SESSIONS.slice(1)];
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={turnJustStarted} hostDisplay="both" /></I18nProvider></StrictMode>);
+    });
+    check(rows()[0].classList.contains("agent-session--compact") && rows()[0].querySelector(".agent-session__model") && rows()[0].getBoundingClientRect().height < 40, "刚开始一轮、还没有回复的会话不留空白第二行");
     await render("both");
     await render("both");
 

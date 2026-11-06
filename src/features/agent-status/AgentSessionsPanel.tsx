@@ -74,7 +74,9 @@ export function AgentSessionsPanel({
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
           const model = modelLabel(session.model, session.effort);
           const minutes = minutesAgo(session.updatedAt, now);
+          // A working session with no reply yet (a turn just started) has nothing for a second line.
           const active = isActivePhase(session.phase);
+          const full = active && Boolean(session.lastMessage);
           const phaseLabel = getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
           const showPhase = session.phase !== "running" && session.phase !== "completed";
@@ -91,7 +93,7 @@ export function AgentSessionsPanel({
           return (
             <li key={`${session.provider}:${session.sessionId}`}>
               <button
-                className={`agent-session agent-session--${session.phase} agent-session--${active ? "full" : "compact"}`}
+                className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}`}
                 type="button"
                 title={t.agent.sessions.focus(title)}
                 onClick={() => focus(session)}
@@ -117,7 +119,7 @@ export function AgentSessionsPanel({
                     )}
                     {active && <span className="agent-session__dot" title={phaseLabel} aria-hidden="true" />}
                   </span>
-                  {active && session.lastMessage && <span className="agent-session__message">{session.lastMessage}</span>}
+                  {full && <span className="agent-session__message">{session.lastMessage}</span>}
                 </span>
               </button>
             </li>
