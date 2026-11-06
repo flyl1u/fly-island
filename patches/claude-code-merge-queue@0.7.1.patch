@@ -28,7 +28,7 @@ index 558e886b00a53edf989b804182f90ef4431d0912..c4ae450181d317b787fdfc051442c664
          process.exit(0);
      }
 diff --git a/dist/land.js b/dist/land.js
-index 76a40f553c9746841bca0e0d8d316af81a3f4443..d42e7644017ff9e3d2d95f2ea06f9d39388b4174 100644
+index 76a40f553c9746841bca0e0d8d316af81a3f4443..b5ba05cfe59db9136cdf39607c3042747f015dbd 100644
 --- a/dist/land.js
 +++ b/dist/land.js
 @@ -75,7 +75,7 @@ function refreshLaneDepsAfterRebase(root, preRebaseHead) {
@@ -40,11 +40,23 @@ index 76a40f553c9746841bca0e0d8d316af81a3f4443..d42e7644017ff9e3d2d95f2ea06f9d39
      if (result.status !== 0) {
          console.error(red(`land: "${pm} install" failed (exit ${result.status ?? 1}) — the checks below may fail on stale dependencies.`));
      }
-@@ -94,6 +94,8 @@ function fireOnLand(command, info) {
-             shell: true,
+@@ -90,10 +90,18 @@ function refreshLaneDepsAfterRebase(root, preRebaseHead) {
+  */
+ function fireOnLand(command, info) {
+     try {
+-        const child = spawn(command, {
+-            shell: true,
++        // On Windows a detached process has no console. Through a shell, cmd.exe starts
++        // the hook's console program, which then opens a visible console window of its
++        // own (windowsHide only reaches cmd.exe). A hook that is a plain `node <args>`
++        // command without quotes is therefore started directly, keeping it console-less;
++        // whatever it starts itself must pass windowsHide.
++        const parts = command.trim().split(/\s+/);
++        const direct = process.platform === "win32" && parts[0] === "node" && !/["'&|<>^%]/.test(command);
++        const child = spawn(direct ? process.execPath : command, direct ? parts.slice(1) : [], {
++            shell: !direct,
              detached: true,
              stdio: "ignore",
-+            // On Windows a detached child gets a console window of its own.
 +            windowsHide: true,
              env: {
                  ...process.env,
