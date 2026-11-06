@@ -1,42 +1,43 @@
-/* Read-only key list and the link that feature pages show in place of their recorders. */
-.shortcut-reference {
-  display: grid;
-  gap: var(--space-sm);
-  margin: 0;
+/*
+ * The Shortcuts page's groups hold the recorder rows of several features (.shortcut-row and
+ * .shortcut-control, ClipboardSettingsSection.css). In a card they read like the other rows: the
+ * name in row type, the keys only on the recorder (not repeated under the name).
+ */
+.settings-group__card > .shortcut-row,
+.settings-group__card > .shortcut-control {
+  padding: 10px 16px;
 }
 
-.shortcut-reference__row {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-xl);
+.settings-group__card .shortcut-control__meta {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
-.shortcut-reference dt {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.settings-group__card .shortcut-control__meta strong {
+  display: none;
 }
 
-.shortcut-reference dd {
-  margin: 0;
+.settings-group__card .shortcut-record-button {
+  font-weight: 500;
 }
 
-.shortcut-reference kbd {
+/* A fixed key, listed for reference. */
+.shortcut-keycap {
   display: inline-block;
-  padding: 4px 9px;
-  color: rgba(248, 246, 240, 0.9);
+  padding: 3px 9px;
+  color: var(--color-text);
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
-  border-radius: var(--radius-md);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
   font: inherit;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 500;
   white-space: nowrap;
 }
 
+.shortcut-empty {
+  color: var(--color-text-muted);
+}

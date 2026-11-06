@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Keyboard, X } from "lucide-react";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useLocale, useTranslation } from "../../i18n";
 import { buildShortcutFromEvent } from "../clipboard/shortcut";
 import { listPlugins, setPluginKeybinding, type PluginsSnapshot } from "./api";
@@ -70,9 +72,8 @@ export function PluginShortcutSection({ takenBy }: { takenBy: (shortcut: string,
   };
 
   return (
-    <section className="settings-section">
-      <div className="settings-section__header"><span>{text.pluginTitle}</span></div>
-      <p className="settings-section__hint">{rows.length === 0 ? text.pluginNone : text.pluginHint}</p>
+    <SettingsGroup title={text.pluginTitle} footer={rows.length === 0 ? undefined : text.pluginHint}>
+      {rows.length === 0 && <SettingsRow title={<span className="shortcut-empty">{text.pluginNone}</span>} />}
       {rows.map((row) => {
         const conflicts = snapshot.plugins.find((plugin) => plugin.id === row.pluginId)?.keybindingConflicts ?? [];
         const error = errors[row.key] || (row.shortcut && conflicts.includes(row.shortcut) ? text.pluginInUse : "");
@@ -111,6 +112,6 @@ export function PluginShortcutSection({ takenBy }: { takenBy: (shortcut: string,
           </div>
         );
       })}
-    </section>
+    </SettingsGroup>
   );
 }

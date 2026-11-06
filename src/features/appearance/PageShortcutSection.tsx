@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Keyboard } from "lucide-react";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import { buildShortcutFromEvent } from "../clipboard/shortcut.ts";
 import "../clipboard/ClipboardSettingsSection.css";
@@ -14,7 +15,6 @@ import {
   DEFAULT_PAGE_PREVIOUS_SHORTCUT,
 } from "./pageShortcuts.ts";
 import type { IslandSettings } from "./types";
-import "./PageShortcutSection.css";
 
 type Recording = "digit" | "next" | "previous";
 
@@ -71,11 +71,10 @@ export function PageShortcutSection({
   ];
 
   return (
-    <section className="settings-section settings-section--page-shortcuts">
-      <div className="settings-section__header">
-        <span>{t.settings.pageShortcuts.title}</span>
-      </div>
-      <p className="page-shortcut-hint">{t.settings.pageShortcuts.hint}</p>
+    <SettingsGroup
+      title={t.settings.pageShortcuts.title}
+      footer={conflict ? <span className="shortcut-control__error" role="alert">{conflict}</span> : t.settings.pageShortcuts.hint}
+    >
       {rows.map(([field, label, display, value, fallback]) => (
         <div className="shortcut-control" key={field}>
           <div className="shortcut-control__meta">
@@ -101,7 +100,6 @@ export function PageShortcutSection({
           </div>
         </div>
       ))}
-      {conflict && <p className="shortcut-control__error" role="alert">{conflict}</p>}
-    </section>
+    </SettingsGroup>
   );
 }

@@ -18,19 +18,14 @@ import { useTranslation } from "../../i18n";
 import { findShortcutOwner, type ShortcutOwner } from "./shortcutConflicts";
 import "./ShortcutsSettingsPage.css";
 
+/** Keys that cannot be changed, listed for reference: one row each, the keys as a keycap. */
 function ReferenceSection({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <section className="settings-section">
-      <div className="settings-section__header"><span>{title}</span></div>
-      <dl className="shortcut-reference">
-        {rows.map(([label, keys]) => (
-          <div className="shortcut-reference__row" key={label}>
-            <dt>{label}</dt>
-            <dd><kbd>{keys}</kbd></dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+    <SettingsGroup title={title}>
+      {rows.map(([label, keys]) => (
+        <SettingsRow key={label} title={label} control={<kbd className="shortcut-keycap">{keys}</kbd>} />
+      ))}
+    </SettingsGroup>
   );
 }
 
@@ -71,13 +66,13 @@ export function ShortcutsSettingsPage({
 
   return (
     <>
-      <section className="settings-section settings-section--global-shortcuts">
-        <div className="settings-section__header"><span>{t.settings.shortcuts.globalTitle}</span></div>
-        {hasGlobal && <p className="settings-section__hint">{t.settings.shortcuts.globalHint}</p>}
+      <SettingsGroup
+        title={t.settings.shortcuts.globalTitle}
+        footer={hasGlobal ? [t.settings.shortcuts.globalHint, settings.translationEnabled ? t.settings.translation.selectionShortcutHint : ""].filter(Boolean).join(" ") : undefined}
+      >
         {settings.translationEnabled && (
           <TranslationShortcutRows settings={translationSettings} onSettingsChange={setTranslationSettings} takenBy={takenBy} />
         )}
-        {settings.translationEnabled && <p className="settings-section__hint">{t.settings.translation.selectionShortcutHint}</p>}
         {clipboardSettings.enabled && (
           <ClipboardShortcutRows
             clipboardSettings={clipboardSettings}
@@ -85,8 +80,8 @@ export function ShortcutsSettingsPage({
             takenBy={(shortcut) => takenBy(shortcut, "clipboard")}
           />
         )}
-        {!hasGlobal && <p className="settings-section__hint">{t.settings.shortcuts.noGlobal}</p>}
-      </section>
+        {!hasGlobal && <SettingsRow title={<span className="shortcut-empty">{t.settings.shortcuts.noGlobal}</span>} />}
+      </SettingsGroup>
       <PluginShortcutSection takenBy={takenBy} />
       <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} takenBy={takenBy} />
       <ReferenceSection

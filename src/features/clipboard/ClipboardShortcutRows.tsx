@@ -2,7 +2,7 @@ import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "r
 import { Keyboard } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { getClipboardShortcutError, listenClipboardShortcutStatus, type ClipboardHistorySettings } from "./api";
 import { buildShortcutFromEvent, DEFAULT_CLIPBOARD_SHORTCUT, normalizeClipboardShortcut } from "./shortcut";
 import "./ClipboardSettingsSection.css";
@@ -56,8 +56,8 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
 
   return (
     <>
-      <ToggleControl
-        label={t.settings.clipboard.shortcutEnabled}
+      <SettingsToggleRow
+        title={t.settings.clipboard.shortcutEnabled}
         checked={clipboardSettings.shortcutEnabled}
         onChange={(shortcutEnabled) => onClipboardSettingsChange({ ...clipboardSettings, shortcutEnabled })}
       />
