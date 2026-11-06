@@ -8,6 +8,8 @@ import { CollapsedMessageContent } from "../../features/messages/CollapsedMessag
 import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 // After CollapsedMessageContent, matching the original stylesheet order.
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
+import type { DeviceUse } from "../../features/device-use/api";
+import { DeviceUseIndicator } from "../../features/device-use/DeviceUseIndicator";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
@@ -46,6 +48,8 @@ type IslandCollapsedBarProps = {
   showMusic: boolean;
   /** Files on the shelf, or null when the count is not shown. */
   shelfCount: number | null;
+  /** Apps using the camera and microphone; their icons show while any do. */
+  deviceUse: DeviceUse;
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
@@ -78,6 +82,7 @@ export function IslandCollapsedBar({
   mediaState,
   showMusic,
   shelfCount,
+  deviceUse,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -207,6 +212,7 @@ export function IslandCollapsedBar({
         </button>
       )}
       {showCollapsedText && !preview && !translationPeek && pluginStatusChip}
+      <DeviceUseIndicator deviceUse={deviceUse} />
       {shelfCount !== null && shelfCount > 0 && (
         <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
           <Inbox size={13} strokeWidth={2.3} aria-hidden="true" />

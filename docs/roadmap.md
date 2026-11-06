@@ -35,7 +35,6 @@
 | C3 | 蓝牙耳机电量；充电、耳机插拔提醒 | 待做 | | |
 | C4 | 音乐页同步歌词 | 待做 | | 4 款以上竞品都有 |
 | C5 | 日历和下一个会议 | 待做 | | 可以做成插件 |
-| C6 | 摄像头、麦克风正在使用的提示 | 待做 | | 隐私相关 |
 
 竞品对比来源：[NotchPixel 对比 13 款](https://notchpixel.com/guides/dynamic-island-for-windows)、[Notchify 对比](https://notchify.app/en/compare/)、[Pillar](https://github.com/warpirate/pillar-dynamic-island-for-windows)。
 
@@ -56,6 +55,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| C6 | 摄像头、麦克风正在使用的提示：读 Windows 的 `CapabilityAccessManager\ConsentStore`（任务栏隐私图标读的同一处），每 2 秒一次；折叠岛上显示绿色摄像头、橙色麦克风，点击打开系统隐私设置；设置 → 通用 → 隐私提示可关 | 提交 `feat(island): show when an app uses the camera or the microphone` |
 | B1 | Agent 页上跑完或出错、还没看过的会话保持高亮（标题亮色、状态灯发光），在 Agent 页点过或它的窗口到了前台才变灰；新命令 `agent_sessions_in_front`（按会话进程链判断窗口是否在前台），B6 的智能抑制可以直接用 | 提交 `feat(agent-status): finished sessions stay bright until looked at` |
 | B3 | 运行中的会话卡片标出不是默认的权限模式（跳过确认、自动、自动改文件、计划；Codex 按 approval / sandbox 策略）和正在跑的子 Agent 数（后台子 Agent 不计）。压缩上下文拆成 B3b | 提交 `feat(agent-status): mark the permission mode and running subagents on session cards` |
 | B5 | 关掉「显示 Claude Code / Codex 会话」后，被关掉的 Agent 也不再点亮折叠岛、不出现在状态文字里（会话标题早已跟随开关） | 提交 `fix(agent-status): agents switched off in settings no longer light the island` |

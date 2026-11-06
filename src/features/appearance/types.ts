@@ -107,6 +107,8 @@ export type IslandSettings = {
   shelfDoubleClick: ShelfDoubleClick;
   /** The collapsed island shows how many files are on the shelf. */
   shelfShowCount: boolean;
+  /** The collapsed island shows a camera or microphone icon while an app uses them. */
+  deviceUseIndicator: boolean;
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;

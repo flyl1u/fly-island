@@ -1,6 +1,7 @@
 mod agent_status;
 mod clipboard_history;
 mod dev_lane;
+mod device_use;
 mod file_shelf;
 mod island;
 mod local_api;
@@ -127,6 +128,7 @@ pub fn run() {
             todos;
             system;
             agent_status;
+            device_use;
             media_control;
             clipboard_history;
             translation;

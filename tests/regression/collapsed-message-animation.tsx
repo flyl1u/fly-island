@@ -15,6 +15,7 @@ import type { MailSnapshot } from "../../src/features/messages/mail/api";
 import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
+import type { DeviceUse } from "../../src/features/device-use/api";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -68,6 +69,7 @@ let changeFont: (pixel: boolean) => void;
 let changeAgent: (session: AgentSession | null) => void;
 let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
+let changeDeviceUse: (deviceUse: DeviceUse) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -81,6 +83,8 @@ function Fixture() {
   const [agent, setAgent] = useState<AgentSession | null>(null);
   const [agentCount, setAgentCount] = useState(0);
   const [agentsEnabled, setAgentsEnabled] = useState(true);
+  const [deviceUse, setDeviceUse] = useState<DeviceUse>({ camera: [], microphone: [] });
+  changeDeviceUse = setDeviceUse;
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
@@ -89,7 +93,7 @@ function Fixture() {
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
+    <IslandShell deviceUse={deviceUse} qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} pluginNotifications={{ notification: null, dismiss: () => {}, runAction: () => {} }}
       mode={mode} page="todo" isTucked={tucked} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
@@ -245,6 +249,20 @@ async function runChecks() {
     check(cursorOf(".island--collapsed") === "default" && cursorOf(".island__open-button") === "default",
       `收起的岛屿用普通鼠标样式（${cursorOf(".island--collapsed")} / ${cursorOf(".island__open-button")}）`);
     check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
+    const islandWidth = document.querySelector(".island")!.getBoundingClientRect().width;
+    const deviceButtons = () => [...document.querySelectorAll<HTMLButtonElement>(".device-use__button")];
+    check(deviceButtons().length === 0, "没有程序用摄像头和麦克风时不显示图标");
+    await act(async () => changeDeviceUse({ camera: ["Zoom"], microphone: ["Teams", "Zoom"] }));
+    const [camera, microphone] = deviceButtons();
+    check(camera?.classList.contains("device-use__button--camera") && microphone?.classList.contains("device-use__button--microphone")
+      && getComputedStyle(camera).color === "rgb(53, 233, 133)" && getComputedStyle(microphone).color === "rgb(255, 159, 67)", "摄像头绿色、麦克风橙色，摄像头在前");
+    check(microphone?.getAttribute("aria-label") === "Teams、Zoom 正在使用麦克风，点击打开隐私设置", "无障碍标签列出正在使用的程序");
+    check(document.querySelector(".island")!.getBoundingClientRect().width === islandWidth, "图标不会撑宽岛屿");
+    openedPage = null;
+    await act(async () => camera.click());
+    check(commands.includes("open_device_privacy_settings") && openedPage === null, "点击图标打开系统隐私设置，不展开岛屿");
+    await act(async () => changeDeviceUse({ camera: [], microphone: [] }));
+    check(deviceButtons().length === 0, "程序用完后图标消失");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

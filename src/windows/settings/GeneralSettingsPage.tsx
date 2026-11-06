@@ -2,13 +2,14 @@ import type { LocaleCode } from "../../i18n";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
 import { GameModeSettingsSection } from "../../features/appearance/GameModeSettingsSection";
+import { DeviceUseSettingsSection } from "../../features/device-use/DeviceUseSettingsSection";
 import { PositionSettingsSection } from "../../features/appearance/PositionSettingsSection";
 import { SettingsBackupSection } from "../../features/settings-backup/SettingsBackupSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
-/** Settings → General: system, opening, tucking to the edge, sliding back out, games, position and backup. */
+/** Settings → General: system, opening, tucking to the edge, sliding back out, games, privacy indicator, position and backup. */
 export function GeneralSettingsPage({
   locale,
   settings,
@@ -34,6 +35,7 @@ export function GeneralSettingsPage({
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <GameModeSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      <DeviceUseSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <PositionSettingsSection
         settings={settings}
         onSettingsChange={onSettingsChange}

@@ -14,6 +14,7 @@ src/
 ├── features/                # 业务领域，每个领域自包含
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出
 │   ├── media/               # 媒体控制、波形
+│   ├── device-use/          # 摄像头、麦克风使用提示：折叠岛上的图标、设置项
 │   ├── clipboard/           # 剪贴板历史、快捷键
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
 │   ├── local-api/           # 本地接口的前端一侧：转发请求的分发与桥接 hook（待办部分在 todos/apiCommands.ts；开关与设置在内置插件页）

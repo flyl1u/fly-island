@@ -3,6 +3,7 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginNotifications } from "../../features/plugins/usePluginNotifications";
+import { useDeviceUse } from "../../features/device-use/useDeviceUse";
 import { usePluginPermissionPrompts } from "../../features/plugins/usePluginPermissionPrompts";
 import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionPrompt";
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
@@ -92,6 +93,7 @@ export function IslandApp() {
   const wechatReminders = useWeChatReminders(canPreviewMessages);
   const qqMail = useMail(canPreviewMessages);
   const pluginNotifications = usePluginNotifications(canPreviewMessages);
+  const deviceUse = useDeviceUse(settings.deviceUseIndicator);
   const permissionPrompts = usePluginPermissionPrompts();
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview || pluginNotifications.notification,
@@ -332,6 +334,7 @@ export function IslandApp() {
         agentStatusLabel={agentStatusLabel}
         features={features}
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
+        deviceUse={deviceUse}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}

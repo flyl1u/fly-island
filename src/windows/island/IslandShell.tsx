@@ -1,3 +1,4 @@
+import type { DeviceUse } from "../../features/device-use/api";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
@@ -45,6 +46,7 @@ type IslandShellProps = {
   features: IslandFeatures;
   /** Files on the shelf for the collapsed bar, or null when it does not show them. */
   shelfCount: number | null;
+  deviceUse: DeviceUse;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -93,6 +95,7 @@ export function IslandShell({
   agentStatusLabel,
   features,
   shelfCount,
+  deviceUse,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -199,6 +202,7 @@ export function IslandShell({
           mediaState={mediaState}
           showMusic={features.music}
           shelfCount={shelfCount}
+          deviceUse={deviceUse}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
