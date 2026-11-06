@@ -1,17 +1,17 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldQuestion } from "lucide-react";
 import { useTranslation } from "../../../i18n";
 import { AgentProviderIcon } from "../AgentProviderIcon";
 import { focusAgentWindow, type AgentSessionSummary } from "../api";
 import { sessionProject } from "../sessionList";
 import { AGENT_PROVIDER_LABELS } from "../status";
-import { APPROVAL_HOTKEYS, listenAgentApprovalHotkey, setAgentApprovalHotkeys, type AgentApprovalDecision } from "./api";
+import { APPROVAL_HOTKEYS, type AgentApprovalDecision } from "./api";
 import type { AgentApprovals } from "./useAgentApprovals";
+import { useApprovalCard } from "./useApprovalCard";
 import { alwaysAllowRule, approvalPreview } from "./preview";
 import "./AgentApprovalCard.css";
 
-/** A card that appears under a click or key press about to land is not answered by it. */
-export const APPROVAL_ARM_MS = 500;
+export { APPROVAL_ARM_MS } from "./useApprovalCard";
 
 /**
  * A permission request an agent waits on: what it wants to run, and deny / allow / always /
@@ -21,45 +21,13 @@ export function AgentApprovalCard({ approvals, sessions }: { approvals: AgentApp
   const t = useTranslation();
   const request = approvals.current;
   const [expanded, setExpanded] = useState(false);
-  const [armed, setArmed] = useState(false);
-  const cardRef = useRef<HTMLElement>(null);
-  const { measure } = approvals;
   const id = request?.id;
+  // Keys answer the card only once it is armed, and only while it shows.
+  const { armed, cardRef, actRef } = useApprovalCard(approvals, APPROVAL_HOTKEYS);
 
   useEffect(() => {
     setExpanded(false);
-    setArmed(false);
-    const timer = window.setTimeout(() => setArmed(true), APPROVAL_ARM_MS);
-    return () => window.clearTimeout(timer);
   }, [id]);
-
-  // Keys answer the card only once it is armed, and only while it shows.
-  const actRef = useRef<(action: AgentApprovalDecision) => void>(() => {});
-  useEffect(() => {
-    if (!armed || !id) return;
-    const failed = (error: unknown) => console.error("Failed to set the approval shortcuts", error);
-    let stop: (() => void) | undefined;
-    let cancelled = false;
-    void listenAgentApprovalHotkey((action) => actRef.current(action))
-      .then((unlisten) => (cancelled ? unlisten() : (stop = unlisten)))
-      .catch(failed);
-    void setAgentApprovalHotkeys(APPROVAL_HOTKEYS).catch(failed);
-    return () => {
-      cancelled = true;
-      stop?.();
-      void setAgentApprovalHotkeys([]).catch(failed);
-    };
-  }, [armed, id]);
-
-  useLayoutEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    const report = () => measure(card.offsetHeight);
-    report();
-    const observer = new ResizeObserver(report);
-    observer.observe(card);
-    return () => observer.disconnect();
-  }, [measure, id]);
 
   if (!request) return null;
   const labels = t.agent.approval;
