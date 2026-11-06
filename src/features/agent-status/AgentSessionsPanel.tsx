@@ -108,6 +108,11 @@ export function AgentSessionsPanel({
                     {active && showModel && model && <span className="agent-session__model">{model}</span>}
                     <AgentProviderIcon provider={session.provider} size={14} />
                     {session.host && hostDisplay !== "off" && <SessionHostLabel host={session.host} display={hostDisplay} />}
+                    {/* With icons only, an unknown host still takes an icon's room so the provider icons
+                        stay in one column; names differ in width, so there is no column to keep. */}
+                    {!session.host && hostDisplay === "icon" && (
+                      <span className="agent-session__host agent-session__host--unknown" aria-hidden="true" />
+                    )}
                     {notFoundId === session.sessionId ? (
                       <span className="agent-session__not-found" role="status">{isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
                     ) : (

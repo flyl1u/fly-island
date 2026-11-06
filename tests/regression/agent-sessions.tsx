@@ -105,6 +105,13 @@ async function runChecks() {
     check(!third.querySelector(".agent-session__host"), "不知道来源时不显示");
     await render("icon");
     check(first.querySelector(".agent-session__host img") && !first.querySelector(".agent-session__host-name") && first.querySelector(".agent-session__host")?.getAttribute("title") === "Orca", "只显示图标时悬停可看名称");
+    check(third.querySelector(".agent-session__host--unknown"), "只显示图标时，不知道来源也留出图标位");
+    await render("icon", { showElapsed: false });
+    const iconRight = (row: HTMLElement) => row.querySelector(".agent-provider-icon")!.getBoundingClientRect().right;
+    check(meta(first) === "刚刚" && meta(third) === "1 小时前" && Math.abs(iconRight(first) - iconRight(third)) < 0.5, "时间长短不同、有无来源时，右侧图标仍在同一列");
+    // The fixture is the island's content box; the island's edge is its 20px side padding further out.
+    const dotGap = first.querySelector(".agent-session__dot")!.getBoundingClientRect().left - (fixture.getBoundingClientRect().left - 20);
+    check(dotGap > 8 && dotGap < 16, "列表两侧只留很窄的边距（距岛屿边缘约 12px）");
     await render("name");
     check(first.querySelector(".agent-session__host-name")?.textContent === "Orca" && !first.querySelector(".agent-session__host-icon"), "只显示名称");
     await render("off");

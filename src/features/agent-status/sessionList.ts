@@ -50,11 +50,21 @@ export function durationParts(ms: number) {
   return { hours: Math.floor(total / 3600), minutes: Math.floor((total % 3600) / 60), seconds: total % 60 };
 }
 
-/** The last folder of a session's working directory. */
+/**
+ * The last folder of a session's working directory, or the project a worktree belongs to:
+ * `<project>-lanes/<N>`, `<project>-lane-<N>` and `<project>/.claude/worktrees/<name>`.
+ */
 export function sessionProject(cwd: string | null) {
   if (!cwd) return null;
   const parts = cwd.replace(/[\\/]+$/, "").split(/[\\/]/);
-  return parts[parts.length - 1] || null;
+  const last = parts[parts.length - 1] || null;
+  if (!last) return null;
+  const parent = parts[parts.length - 2] ?? "";
+  if (/^\d+$/.test(last) && /.-lanes$/.test(parent)) return parent.slice(0, -"-lanes".length);
+  const lane = /^(.+)-lane-\d+$/.exec(last);
+  if (lane) return lane[1];
+  if (parent === "worktrees" && parts[parts.length - 3] === ".claude" && parts[parts.length - 4]) return parts[parts.length - 4];
+  return last;
 }
 
 /** Whole minutes since `updatedAt`, never negative. */

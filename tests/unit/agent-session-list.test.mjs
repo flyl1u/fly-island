@@ -47,6 +47,12 @@ test("labels for the session rows", () => {
   assert.equal(sessionProject("E:\\Projects\\fly-island\\"), "fly-island");
   assert.equal(sessionProject("/home/me/repo"), "repo");
   assert.equal(sessionProject(null), null);
+  // A worktree shows the project it belongs to, not its own folder.
+  assert.equal(sessionProject("E:\\Projects\\fly-island-lanes\\3"), "fly-island");
+  assert.equal(sessionProject("E:\\Projects\\fly-island-lane-2"), "fly-island");
+  assert.equal(sessionProject("/home/me/repo/.claude/worktrees/fix-tabs"), "repo");
+  assert.equal(sessionProject("E:\\Projects\\-lanes\\3"), "3");
+  assert.equal(sessionProject("E:\\Projects\\build\\3"), "3");
   assert.equal(modelLabel("Opus 5.5", "medium"), "Opus 5.5 · Medium");
   assert.equal(modelLabel("gpt-6-astra", null), "gpt-6-astra");
   assert.equal(modelLabel(null, null), null);
