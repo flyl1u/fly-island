@@ -39,6 +39,13 @@ pub(super) const DEFAULT_MEMORY_LIMIT_MB: u32 = 512;
 pub(super) fn memory_limit_mb(chosen: Option<u32>) -> u32 {
     chosen.filter(|mb| MEMORY_LIMIT_CHOICES_MB.contains(mb)).unwrap_or(DEFAULT_MEMORY_LIMIT_MB)
 }
+
+/// The memory the limit applies to: the plugin's processes minus the idle size of the runtime it
+/// runs on (PowerShell, Node.js), the same "plugin" share its card shows. Every script plugin pays
+/// that runtime share, so counting it would make the card and the limit disagree.
+pub(super) fn plugin_own_bytes(total_bytes: u64, runtime_bytes: Option<u64>) -> u64 {
+    total_bytes.saturating_sub(runtime_bytes.unwrap_or(0))
+}
 const HIGH_CPU_PERCENT: f32 = 25.0;
 /// A minute of TICKs above HIGH_CPU_PERCENT.
 const HIGH_CPU_SAMPLES: u32 = 12;
@@ -272,10 +279,11 @@ fn tick() {
                     info.resources = Some(resources);
                 }
                 let limit_mb = limits.get(id).copied().unwrap_or(DEFAULT_MEMORY_LIMIT_MB);
-                if usage.memory_bytes > u64::from(limit_mb) * 1024 * 1024 {
+                let own_bytes = plugin_own_bytes(usage.memory_bytes, runtime_bytes);
+                if own_bytes > u64::from(limit_mb) * 1024 * 1024 {
                     supervisor.fail(format!(
                         "The plugin used {} MB of memory, more than the {limit_mb} MB allowed, and was stopped. The limit can be raised on the plugin's settings page.",
-                        usage.memory_bytes / (1024 * 1024),
+                        own_bytes / (1024 * 1024),
                     ));
                     continue;
                 }

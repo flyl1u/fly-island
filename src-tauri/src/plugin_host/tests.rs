@@ -764,7 +764,7 @@ mod lifecycle_tests {
     use serde_json::{json, Value};
     use std::time::Duration;
 
-    use super::super::lifecycle::{cpu_percent, is_idle, memory_limit_mb, IDLE_AFTER};
+    use super::super::lifecycle::{cpu_percent, is_idle, memory_limit_mb, plugin_own_bytes, IDLE_AFTER};
     use super::super::runtime::IdleState;
     use super::parse;
 
@@ -847,6 +847,17 @@ mod lifecycle_tests {
         // A hand-edited plugins.json cannot lift the limit to any size.
         assert_eq!(memory_limit_mb(Some(100_000)), 512);
         assert_eq!(memory_limit_mb(Some(0)), 512);
+    }
+
+    #[test]
+    fn the_memory_limit_counts_only_the_plugins_own_share() {
+        const MB: u64 = 1024 * 1024;
+        // 65 MB in total, of which PowerShell itself takes 62.7 MB: the plugin uses about 2.3 MB.
+        assert_eq!(plugin_own_bytes(65 * MB, Some(62 * MB + 700 * 1024)), 2 * MB + 324 * 1024);
+        // Unknown runtime size (a plugin's own executable): everything counts.
+        assert_eq!(plugin_own_bytes(65 * MB, None), 65 * MB);
+        // A runtime measured above a plugin that just started never wraps around.
+        assert_eq!(plugin_own_bytes(60 * MB, Some(62 * MB)), 0);
     }
 }
 
