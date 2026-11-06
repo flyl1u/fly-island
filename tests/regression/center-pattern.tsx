@@ -11,6 +11,7 @@ import { PetSprite } from "../../src/features/center-pattern/PetSprite";
 import { ISLAND_CURSOR_MOVED_EVENT } from "../../src/features/center-pattern/api";
 import { CENTER_PATTERNS, type CenterPatternId, type PetMood } from "../../src/features/center-pattern/patterns";
 import type { AgentActivity } from "../../src/features/center-pattern";
+import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { useCollapsedSlots } from "../../src/windows/island/useCollapsedSlots";
 import "../../src/windows/island/IslandCollapsedBar.css";
 
@@ -64,9 +65,14 @@ const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
 
+// Stable, so the slots are not rebuilt on every render.
+const NO_SESSIONS: AgentSessionSummary[] = [];
+const NO_UNSEEN: ReadonlySet<string> = new Set();
+const NO_OP = () => {};
+
 /** The collapsed bar's center slot as useCollapsedSlots fills it from the plugin's settings. */
 function Slot({ agents = [], paused = false }: { agents?: AgentActivity[]; paused?: boolean }) {
-  const slots = useCollapsedSlots({ paused, agents });
+  const slots = useCollapsedSlots({ paused, agents, sessions: NO_SESSIONS, unseen: NO_UNSEEN, agentsOn: false, onOpenAgents: NO_OP });
   return <div className="cp-island cp-slot">
     {slots.center ? <span className="island__center-slot">{slots.center}</span> : null}
     {slots.agentIcon ? <span className="cp-agent-icon">{slots.agentIcon}</span> : null}

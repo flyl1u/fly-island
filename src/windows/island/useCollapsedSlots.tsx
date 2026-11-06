@@ -15,20 +15,39 @@ import {
 import { ClaudeUsageGauge } from "../../features/claude-usage/ClaudeUsageGauge";
 import { CLAUDE_USAGE_GAUGE_WIDTH } from "../../features/claude-usage/usageRing";
 import { useBuiltinPlugin } from "../../features/plugins/useBuiltinPlugin";
+import type { AgentSessionSummary } from "../../features/agent-status/api";
+import { SessionRing } from "../../features/session-ring/SessionRing";
+import { sessionRingCounts } from "../../features/session-ring/ringCounts";
 import { listenIslandHover } from "./api";
 import type { CollapsedSlots } from "./types";
 
 const EMPTY: CollapsedSlots = {};
 const CLAUDE_USAGE_PLUGIN_ID = "focusd.claude-usage";
+const SESSION_RING_PLUGIN_ID = "focusd.session-ring";
+
+type CollapsedSlotsOptions = {
+  /** Stops the center animations while the bar is not on screen. */
+  paused: boolean;
+  /** Agent activity the pet acts out. */
+  agents: readonly AgentActivity[];
+  /** The island's agent sessions and the finished ones not yet seen, for the session ring. */
+  sessions: readonly AgentSessionSummary[];
+  unseen: ReadonlySet<string>;
+  /** The AI Agent switch: the session ring takes the blue session count's place, so only while on. */
+  agentsOn: boolean;
+  /** Opens the Agent page (what the blue session count does). */
+  onOpenAgents: () => void;
+};
 
 /**
  * The one place built-in plugins plug into the collapsed bar. Each plugin reads its own state
  * with useBuiltinPlugin(id) and fills a slot only while it is on. Slots left empty change
  * nothing on the bar. Keep the result stable (useMemo): the collapsed width is worked out from it.
  */
-export function useCollapsedSlots({ paused, agents }: { paused: boolean; agents: readonly AgentActivity[] }): CollapsedSlots {
+export function useCollapsedSlots({ paused, agents, sessions, unseen, agentsOn, onOpenAgents }: CollapsedSlotsOptions): CollapsedSlots {
   const center = useBuiltinPlugin(CENTER_PATTERN_PLUGIN_ID);
   const usage = useBuiltinPlugin(CLAUDE_USAGE_PLUGIN_ID);
+  const sessionRing = useBuiltinPlugin(SESSION_RING_PLUGIN_ID);
   const mood = usePetMood(agents, center.enabled);
   const choice = useMemo(() => centerPatternChoice(center.settings), [center.settings]);
   // Read here, not in the slot, so the pet is ready whenever the slot or the title shows it.
@@ -45,12 +64,21 @@ export function useCollapsedSlots({ paused, agents }: { paused: boolean; agents:
       // While the bar names an agent the center is hidden, so the pet stands in for its icon.
       if (pet) slots.agentIcon = <PetSprite src={pet} mood={mood} paused={still} height={AGENT_ICON_PET_HEIGHT} />;
     }
+    if (sessionRing.enabled && agentsOn) {
+      // Sessions are re-read every second, so their time is close enough to now.
+      const now = Date.now();
+      const counts = sessionRingCounts(sessions, unseen, now);
+      // Nothing to show: the blue count stays (it is empty too when no session runs).
+      if (counts.total > 0) {
+        slots.agentCount = <SessionRing sessions={sessions} unseen={unseen} counts={counts} now={now} onOpen={onOpenAgents} />;
+      }
+    }
     if (usage.enabled) {
       slots.gauges = <UsageGaugeSlot />;
       slots.sideWidth = CLAUDE_USAGE_GAUGE_WIDTH;
     }
     return Object.keys(slots).length === 0 ? EMPTY : slots;
-  }, [center.enabled, usage.enabled, choice, sheet, mood, still]);
+  }, [center.enabled, usage.enabled, sessionRing.enabled, agentsOn, sessions, unseen, onOpenAgents, choice, sheet, mood, still]);
 }
 
 /** Follows the native island hover here, so the slots above stay the same object. */

@@ -107,7 +107,15 @@ export function IslandApp() {
   } = useMediaState(settings.musicEnabled);
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentSession, agentActivity } =
     useIslandAgents(settings);
-  const collapsedSlots = useCollapsedSlots({ paused: mode !== "collapsed" || isTucked || game.quiet, agents: agentActivity });
+  const openAgentsPage = useCallback(() => openIslandPage("agents"), [openIslandPage]);
+  const collapsedSlots = useCollapsedSlots({
+    paused: mode !== "collapsed" || isTucked || game.quiet,
+    agents: agentActivity,
+    sessions: agentSessions,
+    unseen: unseenAgentSessions.keys,
+    agentsOn: settings.agentStatusEnabled,
+    onOpenAgents: openAgentsPage,
+  });
   const openSavePathSettings = useCallback(() => {
     openSettingsWindow("savePath");
   }, []);

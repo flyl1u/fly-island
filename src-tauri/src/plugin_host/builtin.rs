@@ -2,7 +2,7 @@
 //! listed, switched on, granted permissions and configured like any plugin
 //! (runtime type "builtin"). They need no download and no "allow third-party
 //! plugins", and cannot be uninstalled. Today: the local API and the collapsed
-//! island's center pattern and Claude usage ring.
+//! island's center pattern, Claude usage ring and agent session ring.
 //!
 //! A built-in plugin whose work happens in the island window (a collapsed-bar
 //! ring, say) needs only an entry in BUILTINS with `native` false: it starts and
@@ -102,12 +102,26 @@ const CLAUDE_USAGE_MANIFEST: &str = r#"{
   "runtime": { "type": "builtin" }
 }"#;
 
+const SESSION_RING_MANIFEST: &str = r#"{
+  "id": "focusd.session-ring",
+  "name": { "zh-CN": "Agent 会话环", "en": "Agent session ring" },
+  "description": {
+    "zh-CN": "在收起条上用一个分段小环代替蓝色会话数：等你确认、等你回复、运行、刚完成各有颜色，中间是会话数，悬停列出等你处理的会话，点击打开 Agent 页。数据就是 Agent 页的会话列表（Claude Code 和 Codex），需要开启 AI Agent。",
+    "en": "Replaces the blue session count on the collapsed bar with a small segmented ring: needs you, your turn, running and just done each have a colour, the count sits in the middle, hovering lists the sessions waiting on you and a click opens the Agent page. Uses the Agent page's sessions (Claude Code and Codex); needs AI Agent switched on."
+  },
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "ShengLin1001",
+  "runtime": { "type": "builtin" }
+}"#;
+
 /// Every built-in plugin: its id, its manifest (whose "id" must match), and
 /// whether it has work in this process (`native`, see `start` and `stop`).
 pub(super) const BUILTINS: &[(&str, &str, bool)] = &[
     (LOCAL_API_ID, LOCAL_API_MANIFEST, true),
     ("focusd.center-pattern", CENTER_PATTERN_MANIFEST, false),
     ("focusd.claude-usage", CLAUDE_USAGE_MANIFEST, false),
+    ("focusd.session-ring", SESSION_RING_MANIFEST, false),
 ];
 
 /// Every built-in plugin's id and manifest.
