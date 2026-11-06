@@ -23,10 +23,12 @@ export function MusicWaveButton({
   ]
     .filter(Boolean)
     .join(" ");
-  const shouldAnimate = isAvailable || isPlaying;
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Only playing music moves the bars. A paused player used to keep them breathing, which
+  // repainted the collapsed island several times a second for nothing.
+  const shouldAnimate = isPlaying && !prefersReducedMotion;
 
   useEffect(() => {
     if (!shouldAnimate) {
@@ -34,25 +36,17 @@ export function MusicWaveButton({
       return;
     }
 
-    const interval = window.setInterval(
-      () => {
-        setPhase(performance.now() / (isPlaying ? 260 : 900));
-      },
-      prefersReducedMotion ? 420 : isPlaying ? 72 : 180,
-    );
-
+    // 10 frames a second; the bars' 100ms CSS transition fills in between.
+    const interval = window.setInterval(() => setPhase(performance.now() / 260), 100);
     return () => window.clearInterval(interval);
-  }, [isPlaying, prefersReducedMotion, shouldAnimate]);
+  }, [shouldAnimate]);
 
   const liftedPeak = isPlaying
     ? clamp(Math.log1p(clamp(audioPeak, 0, 1) * 150) / Math.log1p(150), 0, 1)
     : 0;
   const barScales = [0.34, 0.72, 0.48, 0.86, 0.42].map((bar, index) => {
     const floor = isAvailable ? 0.22 : 0.12;
-    const breath =
-      shouldAnimate && !prefersReducedMotion
-        ? 0.07 + Math.sin(phase + index * 0.82) * 0.045
-        : 0;
+    const breath = shouldAnimate ? 0.07 + Math.sin(phase + index * 0.82) * 0.045 : 0;
     const movement =
       liftedPeak *
       (0.26 + bar * 1.02) *

@@ -164,7 +164,14 @@ export function useMediaState(enabled = true) {
     [mediaState.playbackStatus, refreshMediaState],
   );
 
-  useAudioLevel(setMediaState, mediaPlaybackIntent, enabled);
+  // The fast meter only runs while something plays: each read starts a COM thread natively. The
+  // 1.5s state poll below also reads the peak, so sound from a player without a media session
+  // still switches it on.
+  useAudioLevel(
+    setMediaState,
+    mediaPlaybackIntent,
+    enabled && (mediaState.playbackStatus === "playing" || mediaState.audioActive),
+  );
 
   useEffect(() => {
     if (!enabled) {
