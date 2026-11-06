@@ -191,7 +191,6 @@ export function IslandApp() {
     onOpen: () => openIslandPage("agents"),
     onClose: collapseIsland,
   });
-
   const expandedIslandHeight = getExpandedIslandHeight({
     page,
     todoPageMode,
@@ -201,8 +200,9 @@ export function IslandApp() {
     isReadingMail: qqMail.wantsTallPanel,
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
-    agentVisibleRows: alertedSession ? 1 : settings.agentVisibleRows,
-    agentShowUsage: !alertedSession && settings.agentShowUsage,
+    agentVisibleRows: settings.agentVisibleRows,
+    agentShowUsage: settings.agentShowUsage,
+    agentAlertRowHeight: alertedSession?.rowHeight,
     pluginTemplate: pluginPages.entry?.template,
     pluginListRows: pluginPages.rows,
     pluginWebviewHeight: pluginPages.entry?.height,

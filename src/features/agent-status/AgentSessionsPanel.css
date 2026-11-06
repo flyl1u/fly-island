@@ -272,6 +272,11 @@
   -webkit-line-clamp: 1;
 }
 
+/* A finished session's reply on an alert's card: its summary, so a line more. */
+.agent-session__message--card {
+  -webkit-line-clamp: 3;
+}
+
 /* "你：…" and the tool line read as one two-line paragraph with the reply, so the prompt cancels
    the gap below it: a row with both stays as tall as one with a two-line reply (78px). */
 .agent-session__prompt {

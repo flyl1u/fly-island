@@ -9,6 +9,7 @@ mod host_icon;
 mod markers;
 mod notifications;
 mod orca;
+mod reply_text;
 mod focus;
 mod focus_log;
 mod session_host;

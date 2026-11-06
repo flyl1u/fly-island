@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
@@ -20,7 +20,8 @@ const AGE_REFRESH_MS = 30_000;
 
 /**
  * The island's Agent page: recent sessions; clicking one brings its editor or terminal forward.
- * Sessions still working get a two-line row with the latest reply; finished ones fold to one line.
+ * Sessions still working get a two-line row with the latest reply; finished ones fold to one line,
+ * except on an alert's card, where a finished or failed session shows up to three lines of it.
  */
 export function AgentSessionsPanel({
   sessions: listed,
@@ -55,6 +56,20 @@ export function AgentSessionsPanel({
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
   const list = useScrollFade<HTMLUListElement>(sessions);
+  const cardRef = useRef<HTMLLIElement>(null);
+  const measure = reveal?.measure;
+  const cardKey = reveal?.key;
+
+  // The island fits the card: report its row's height now and whenever it changes (a new reply).
+  useLayoutEffect(() => {
+    const row = cardRef.current;
+    if (!measure || !row) return;
+    const report = () => measure(row.offsetHeight);
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, [measure, cardKey]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), AGE_REFRESH_MS);
@@ -110,7 +125,9 @@ export function AgentSessionsPanel({
           const minutes = minutesAgo(session.updatedAt, now);
           // A working session with nothing to say yet (a turn just started) has no second line.
           const active = isActivePhase(session.phase);
-          const full = active && Boolean(session.lastMessage || (showActivity && (session.lastPrompt || session.currentTool)));
+          // On an alert's card a finished or failed session shows its last reply (its summary).
+          const cardReply = reveal && !active ? session.lastMessage : null;
+          const full = Boolean(cardReply) || (active && Boolean(session.lastMessage || (showActivity && (session.lastPrompt || session.currentTool))));
           const phaseLabel = getAgentPhaseLabel(session.phase, t);
           // Running and done are told apart by the dot; the other states need words.
           const showPhase = session.phase !== "running" && session.phase !== "completed";
@@ -126,7 +143,7 @@ export function AgentSessionsPanel({
             .filter(Boolean)
             .flatMap((part, index) => (index === 0 ? [part] : [" · ", part]));
           return (
-            <li key={`${session.provider}:${session.sessionId}`} data-session-key={sessionKey(session)}>
+            <li key={`${session.provider}:${session.sessionId}`} ref={reveal ? cardRef : undefined} data-session-key={sessionKey(session)}>
               <button
                 className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
                 type="button"
@@ -159,7 +176,11 @@ export function AgentSessionsPanel({
                     {/* Last on the line, so the provider icons line up however long the status is. */}
                     <AgentProviderIcon provider={session.provider} size={14} />
                   </span>
-                  {full && <SessionBody session={session} showActivity={showActivity} />}
+                  {cardReply ? (
+                    <span className="agent-session__message agent-session__message--card">{cardReply}</span>
+                  ) : (
+                    full && <SessionBody session={session} showActivity={showActivity} />
+                  )}
                 </span>
               </button>
             </li>

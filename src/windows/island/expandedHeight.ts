@@ -1,6 +1,6 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentPageExpandedHeight, getClipboardExpandedHeight, getPluginPageExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getPluginPageExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { PluginViewTemplate } from "../../features/plugin-views/api";
 import { isPluginPage } from "./features";
 import type { IslandPage } from "./types";
@@ -22,6 +22,8 @@ type ExpandedHeightInput = {
   agentVisibleRows: number;
   /** The usage line sits above the Agent page's rows. */
   agentShowUsage: boolean;
+  /** An alert's one-session card instead: the height its row measured, without the usage line. */
+  agentAlertRowHeight?: number;
   /** The template of the open plugin page; null when it is not known (yet). */
   pluginTemplate?: PluginViewTemplate | null;
   /** Rows the open plugin list shows (items, group titles, search box). */
@@ -47,6 +49,7 @@ export function getExpandedIslandHeight({
   clipboardVisibleRows,
   agentVisibleRows,
   agentShowUsage,
+  agentAlertRowHeight,
   pluginTemplate,
   pluginListRows,
   pluginWebviewHeight,
@@ -80,7 +83,9 @@ export function getExpandedIslandHeight({
       : page === "translation"
         ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"
-        ? getAgentPageExpandedHeight(agentVisibleRows, agentShowUsage)
+        ? agentAlertRowHeight !== undefined
+          ? getAgentAlertExpandedHeight(agentAlertRowHeight)
+          : getAgentPageExpandedHeight(agentVisibleRows, agentShowUsage)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

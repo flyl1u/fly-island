@@ -10,11 +10,13 @@ use serde_json::Value;
 
 use super::session_host::SessionHost;
 use super::session_mode::{claude_permission_mode, claude_subagent_calls, claude_tool_results, codex_permission_mode};
+use super::reply_text::plain_reply;
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
 
-/// The latest reply shown under each session.
-pub(super) const LAST_MESSAGE_MAX_CHARS: usize = 120;
+/// The latest reply shown under each session: two lines on the Agent page, up to three on an
+/// alert's card (about 36 CJK or 70 Latin characters a line).
+pub(super) const LAST_MESSAGE_MAX_CHARS: usize = 200;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -179,7 +181,7 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
             }
             if result.last_message.is_none() {
                 result.last_message = text_blocks(&message["content"])
-                    .and_then(|text| shorten(&text, LAST_MESSAGE_MAX_CHARS));
+                    .and_then(|text| shorten(&plain_reply(&text), LAST_MESSAGE_MAX_CHARS));
             }
             // Only tools called after the newest prompt belong to the current turn.
             if result.current_tool.is_none() && result.last_prompt.is_none() {
@@ -295,7 +297,7 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
                 "task_complete" => payload["last_agent_message"].as_str(),
                 _ => None,
             };
-            result.last_message = text.and_then(|text| shorten(text, LAST_MESSAGE_MAX_CHARS));
+            result.last_message = text.and_then(|text| shorten(&plain_reply(text), LAST_MESSAGE_MAX_CHARS));
         }
         if result.turn_started_at.is_none() && matches!(payload_kind, "user_message" | "task_started") {
             result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);

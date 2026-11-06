@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { detectAlerts, phasesOf, type AgentAlertKind, type AgentAlertKinds, type SessionPhases } from "./alerts";
 import { agentSessionsInFront, type AgentSessionSummary } from "./api";
 import { sessionKey } from "./unseen";
@@ -13,7 +13,18 @@ const HOVER_RETRY_MS = 1000;
  * the session as the alert saw it, for when the page's own list leaves it out (only running
  * sessions listed).
  */
-export type AlertedSession = { key: string; kind: AgentAlertKind; session: AgentSessionSummary };
+export type AlertedSession = {
+  key: string;
+  kind: AgentAlertKind;
+  session: AgentSessionSummary;
+  /** The card's row height as the page measured it; the island's height follows it. */
+  rowHeight: number;
+  /** For the page to report the row's height when it renders or changes. */
+  measure: (rowHeight: number) => void;
+};
+
+/** A row with a two-line reply (AgentSessionsPanel.css), until the card has measured its own. */
+const DEFAULT_ROW_HEIGHT = 78;
 
 type AgentAlertOptions = {
   sessions: AgentSessionSummary[];
@@ -38,7 +49,8 @@ type AgentAlertOptions = {
  * Agent button, say), which brings back the whole list.
  */
 export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose }: AgentAlertOptions) {
-  const [alerted, setAlerted] = useState<AlertedSession | null>(null);
+  const [alerted, setAlerted] = useState<Pick<AlertedSession, "key" | "kind" | "session"> | null>(null);
+  const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
   const phasesRef = useRef<SessionPhases | null>(null);
   const openedByAlertRef = useRef(false);
   const closeTimerRef = useRef<number | undefined>(undefined);
@@ -116,5 +128,8 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
       });
   }, [sessions, started, completed, failed, waiting]);
 
-  return alerted;
+  return useMemo(
+    () => (alerted ? { ...alerted, rowHeight, measure: setRowHeight } : null),
+    [alerted, rowHeight],
+  );
 }

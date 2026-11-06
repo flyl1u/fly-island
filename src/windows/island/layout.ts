@@ -100,6 +100,11 @@ export function getAgentPageExpandedHeight(rows: number, showUsage = false) {
   return AGENT_PAGE_CHROME_HEIGHT + (showUsage ? AGENT_USAGE_HEIGHT : 0) + rows * AGENT_ROW_PITCH - AGENT_ROW_GAP;
 }
 
+/** Expanded height around an alert's one-session card, whose row measured `rowHeight`. */
+export function getAgentAlertExpandedHeight(rowHeight: number) {
+  return AGENT_PAGE_CHROME_HEIGHT + rowHeight;
+}
+
 /** Expanded height that fits exactly `rows` clipboard history rows. */
 export function getClipboardExpandedHeight(rows: number) {
   return CLIPBOARD_CHROME_HEIGHT + rows * CLIPBOARD_ROW_PITCH - CLIPBOARD_ROW_GAP;

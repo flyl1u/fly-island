@@ -11,6 +11,7 @@ import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSession
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const DURATION_MS = 300;
+const SUMMARY = "修好了，已合入 main。完成提醒现在显示最后的回复，Markdown 符号已经去掉，卡片最多三行，高度按内容。";
 let inFront: string[] = [];
 mockIPC((command) => (command === "agent_sessions_in_front" ? inFront : null));
 // The island holds the focus while the cursor rests on it; headless pages report focus on their own.
@@ -147,14 +148,24 @@ try {
 
   // The panel: an alert shows its session alone and leaves the usage line out.
   const panel = createRoot(document.getElementById("panel")!);
-  const listed = [session("a", "completed"), session("b", "running"), session("c", "completed")];
+  const listed = [session("a", "completed"), session("b", "running"), { ...session("c", "completed"), lastMessage: SUMMARY }];
+  let measured = 0;
+  const card = (id: string, alerted: AgentSessionSummary): AlertedSession => ({
+    key: `claudeCode:${id}`, kind: "completed", session: alerted, rowHeight: 78, measure: (height) => { measured = height; },
+  });
   const rows = () => [...document.querySelectorAll("#panel .agent-sessions__list > li")].map((row) => (row as HTMLElement).dataset.sessionKey);
   await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" showUsage />));
   check(rows().length === 3, "平时 Agent 页列出全部会话");
-  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" showUsage reveal={{ key: "claudeCode:c", kind: "completed", session: listed[2] }} />));
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" showUsage reveal={card("c", listed[2])} />));
   check(rows().join() === "claudeCode:c" && !document.querySelector("#panel .agent-usage"), "弹出提醒时只显示触发的那一个会话，不显示用量");
+  const reply = document.querySelector<HTMLElement>("#panel .agent-session__message--card");
+  check(reply?.textContent === SUMMARY && getComputedStyle(reply).getPropertyValue("-webkit-line-clamp") === "3", "完成的会话在卡片上显示最后的回复，最多 3 行");
+  const row = document.querySelector<HTMLElement>("#panel .agent-sessions__list > li")!;
+  check(measured > 36 && measured === row.offsetHeight, `卡片把这一行的实际高度交给岛屿（${measured}px）`);
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" />));
+  check(!document.querySelector("#panel .agent-session--completed .agent-session__message"), "平时 Agent 页里结束的会话仍折叠成一行");
   const gone = session("d", "completed");
-  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" reveal={{ key: "claudeCode:d", kind: "completed", session: gone }} />));
+  await act(async () => panel.render(<AgentSessionsPanel sessions={listed} hostDisplay="off" reveal={card("d", gone)} />));
   check(rows().join() === "claudeCode:d", "列表里没有这个会话（只列运行中的）时，按提醒时的样子显示它");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;

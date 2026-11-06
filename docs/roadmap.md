@@ -23,7 +23,6 @@
 |---|---|---|---|---|
 | B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 已完成 | fly-island-lanes/4 | 并入 B6 第 1 期，见任务清单 1.5–1.9 |
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | 分期认领，见任务清单 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期先实测钩子等待时终端审批框的行为；第 1 期的自动弹出提醒已完成，音效（1.1–1.4）等用户确认风格 |
-| B6c | 完成 / 出错的弹出卡片显示 AI 最后的回复（去掉 Markdown 符号，最多 3 行，卡片高度按实际内容）；Agent 页列表里结束的会话仍折叠成一行 | 进行中 | fly-island-c6 · lane 6 · 2026-11-06 21:30 | 用户反馈：完成提醒没有显示最后的总结 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 进行中 | fly-island-fe · lane 4 · 2026-11-06 20:20 | Claude 部分已完成（提交 `feat(agent-status): Claude usage limits at the top of the Agent page`），Codex 待做。第一步读 claude-hud 写的用量快照（`externalUsagePath` / `externalUsageWritePath`，订阅账号来自 Claude Code 的 `rate_limits`，经 magpie 时来自网关）；Codex 额度第二步从 rollout 读。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
 
@@ -57,6 +56,7 @@
 |---|---|---|
 | C2 | 音量、亮度弹出提示：后台线程每 0.1 秒读默认输出的音量和静音、每 0.4 秒读笔记本屏幕亮度（WMI，外接显示器读不到），变化时收起的小岛显示图标、进度条和百分比 1.5 秒；设置 → 通用 → 音量与亮度可关，关掉后不再读取 | 提交 `feat(island): show the volume or brightness when it changes` |
 | B6b | 会话开始也弹出提醒：默认每一轮开始都弹，设置里可改成只在新会话开始时弹或不弹 | 提交 `feat(agent-status): alerts when a session starts` |
+| B6c | 完成 / 出错的弹出卡片显示 AI 最后的回复：Rust 读回复时按行去掉 Markdown 符号，上限从 120 字提到 200 字；卡片最多 3 行，岛屿高度按卡片这一行的实际高度。Agent 页列表里结束的会话仍折叠成一行 | 提交 `feat(agent-status): alert cards show the session's last reply` |
 | B6a | 自动弹出提醒只显示触发的那一个会话（面板一行高、不显示用量），不再展开整个 Agent 页列表；点岛上别处、切页或收起后回到完整列表 | 提交 `fix(agent-status): an alert shows only its own session` |
 | C6 | 摄像头、麦克风正在使用的提示：读 Windows 的 `CapabilityAccessManager\ConsentStore`（任务栏隐私图标读的同一处），每 2 秒一次；折叠岛上显示绿色摄像头、橙色麦克风，点击打开系统隐私设置；设置 → 通用 → 隐私提示可关 | 提交 `feat(island): show when an app uses the camera or the microphone` |
 | B1 | Agent 页上跑完或出错、还没看过的会话保持高亮（标题亮色、状态灯发光），在 Agent 页点过或它的窗口到了前台才变灰；新命令 `agent_sessions_in_front`（按会话进程链判断窗口是否在前台），B6 的智能抑制可以直接用 | 提交 `feat(agent-status): finished sessions stay bright until looked at` |
