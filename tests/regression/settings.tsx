@@ -74,7 +74,7 @@ mockIPC((command, payload) => {
     case "plugin:app|version": return "0.0.0-test";
     case "get_cached_plugin_market": return null;
     case "get_plugin_market": return {
-      indexUrl: "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json",
+      indexUrl: "https://raw.githubusercontent.com/TixXin/focusd-plugins/main/index.json",
       nodeAvailable: false,
       trustedPublishers: [],
       officialPublisher: "TixXin",

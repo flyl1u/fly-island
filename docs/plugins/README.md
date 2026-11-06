@@ -496,36 +496,47 @@ plugin.onCommand("sync-now", async () => {
 
 ### 放进插件市场
 
-市场列表来自 [`TixXin/fly-island`](https://github.com/TixXin/fly-island) 仓库 `main` 分支上的 `plugins/index.json`（`dev` 分支与 `main` 保持同一个提交，给读 `dev` 的旧版本岛屿用）。索引必须由私钥签名，私钥不在仓库里。自己改 `index.json`、签名文件或 zip，岛屿都不会接受。
+市场列表来自 [`TixXin/focusd-plugins`](https://github.com/TixXin/focusd-plugins) 仓库根目录的 `index.json`。插件包放在**你自己仓库的 GitHub Release** 里，市场仓库只记录插件在哪里；它的 CI 每小时检查一次新版本，校验后重建索引并签名。完整步骤见那里的 [CONTRIBUTING.md](https://github.com/TixXin/focusd-plugins/blob/main/CONTRIBUTING.md)，简要来说：
 
-插件作者提交源码，持有私钥的人打包并签名：
+1. 用 `npx fly-island-plugin validate` 检查，`npx fly-island-plugin pack` 打包，得到 `<id>-<version>.zip`。
+2. 在自己的仓库发布 GitHub Release：标签是清单的 `version`（可以带 `v`），附件是这个 zip，文件名不能改。
+3. 向 `focusd-plugins` 开 pull request，只新增 `plugins/<插件 id>.json`（见下文）。PR 会自动检查所有权、下载并校验插件包；维护者阅读源码后合并，一小时内插件出现在 **设置 → 插件市场**。
+4. 以后发新版本只要在自己的仓库发新的 Release。申请新权限、第一次加入自定义网页界面或换了运行时的版本不会自动上架，要等维护者审核。
 
-1. 把插件放在 `plugins/examples/<插件 id>/`。文件夹名必须等于清单里的 `id`，里面要有 `focusd-plugin.json` 和要运行的程序。
-2. 新增 `plugins/market/<插件 id>.json`，写明市场上显示的发布者信息（见下文「发布者与分类」）。
-3. 向该仓库的 `main` 分支提 pull request，**只包含插件源码和 `plugins/market/<插件 id>.json`**。不要提交 `plugins/index.json`、`plugins/index.json.sig` 或 `plugins/packages/` 里的 zip，这些由打包脚本生成。
-4. 审核通过后，维护者在本机运行 `pnpm plugins:index`（需要签名私钥，见下文）。脚本会把插件打成 `plugins/packages/<id>-<version>.zip`，重写 `plugins/index.json`（含 SHA-256、文件大小和 `plugins/market/` 里的信息），并用私钥写 `plugins/index.json.sig` 和 `plugins/revoked.json.sig`。文本文件打包时统一成 LF，时间戳固定，所以同一份源码每次得到同一个哈希。
-5. 维护者把生成的索引、签名、zip 和源码一起提交并推送。用户在 **设置 → 插件市场** 点 **刷新** 就能看到。装好后插件默认是关闭的，到 **设置 → 插件扩展** 里启用并授权。
+装好后插件默认是关闭的，到 **设置 → 插件扩展** 里启用并授权。
 
 ### 发布者与分类
 
-`plugins/market/<插件 id>.json`：
+`plugins/<插件 id>.json`（在 `focusd-plugins` 里）：
 
 ```json
 {
-  "publisher": "your-github-name",
-  "repo": "your-github-name/your-plugin",
-  "categories": ["productivity", "developer"],
-  "preRelease": false
+  "id": "com.example.clock",
+  "repo": "example/focusd-clock",
+  "publisher": "example",
+  "categories": ["productivity", "developer"]
 }
 ```
 
-- `publisher`：GitHub 用户名或组织名，市场上显示为发布者。不写时按官方发布者 `TixXin` 处理，市场上显示“官方”。
-- `repo`：`owner/name`，详情里的“仓库”按钮打开它。
-- `categories`：只能取 `productivity`、`todos`、`developer`、`media`、`messages`、`information`、`utilities`，脚本会拒绝其他值。
-- `preRelease`：为 `true` 的条目是预发布版本，版本号用 semver 预发布后缀（例如 `1.3.0-beta.1`），可以和同一插件的正式版条目同时写进索引。插件市场只列正式版；已安装的插件在设置页打开「接收这个插件的预发布版本」后，更新会安装比正式版新的预发布版本，卡片上也会提示有预发布版本可选。正式版发布后（例如 `1.3.0` 高于 `1.3.0-beta.2`），装着预发布版本的用户会更新到正式版。关掉开关不会退回旧版本。只有预发布版本、没有正式版的插件不出现在市场里。
-- **说明和版本历史**：插件文件夹里的 `README.md` 和 `CHANGELOG.md` 会写进索引（各最多 16 KB），在插件市场的详情里显示。支持标题、段落、列表、引用、代码块、粗体、斜体和 http(s) 链接；HTML 和图片不显示（图片只显示替代文字）。`CHANGELOG.md` 建议每个版本一节、最新的在最前（`## 1.2.0`）。不想把它们打进插件包，就写进 `.focusdignore`。
+- `publisher`：`repo` 的所有者（GitHub 用户或组织），市场上显示为发布者；你必须是它本人，或该组织的公开成员。官方发布者 `TixXin` 显示为“官方”，含 `focusd` 的 id 只留给官方插件。
+- `repo`：`owner/name`，必须公开；详情里的“仓库”按钮打开它。
+- `categories`：只能取 `productivity`、`todos`、`developer`、`media`、`messages`、`information`、`utilities`。
+- `preRelease`：为 `true` 时也收录标成 Pre-release 的 Release，版本号用 semver 预发布后缀（例如 `1.3.0-beta.1`）。插件市场只列正式版；已安装的插件在设置页打开「接收这个插件的预发布版本」后，更新会安装比正式版新的预发布版本，卡片上也会提示有预发布版本可选。正式版发布后（例如 `1.3.0` 高于 `1.3.0-beta.2`），装着预发布版本的用户会更新到正式版。关掉开关不会退回旧版本。
+- `tagPrefix`：一个仓库放多个插件时的标签前缀，例如 `clock-`（标签 `clock-v1.2.0`）。
+- `path`：插件在仓库里的文件夹，例如 `plugins/clock`，默认仓库根目录。
+- **说明和版本历史**：插件的 `README.md` 和 `CHANGELOG.md` 会写进索引（各最多 16 KB），在插件市场的详情里显示。先在插件包里找；包里没有（写进了 `.focusdignore`）时，读仓库里 Release 标签处 `path` 文件夹中的同名文件。它们跟着版本走，改了要发新版本才会更新。支持标题、段落、列表、引用、代码块、粗体、斜体和 http(s) 链接；HTML 和图片不显示（图片只显示替代文字）。`CHANGELOG.md` 建议每个版本一节、最新的在最前（`## 1.2.0`）。
 
 用户第一次安装非官方发布者的插件时，按钮显示 **信任并安装**，点了就把这个发布者记进信任列表（存在 `plugins.json` 的 `trustedPublishers`），可以在 **设置 → 插件扩展 → 更新** 里取消信任。
+
+### 官方插件
+
+本仓库 `plugins/examples/` 里的示例插件是官方插件，发布方式不同：
+
+1. 修改插件并提高 `version`，在本机运行 `pnpm plugins:index`（需要旧签名私钥，见下文）。脚本把插件打成 `plugins/packages/<id>-<version>.zip`，重写并签名本仓库的 `plugins/index.json` 和 `plugins/revoked.json`。文本文件打包时统一成 LF，时间戳固定，所以同一份源码每次得到同一个哈希。
+2. 提交并 land。
+3. 在 `focusd-plugins` 里把 `plugins/<id>.json` 的 `package` 改成新 zip 的地址（`https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/<id>-<version>.zip`），合并后 CI 更新市场索引。
+
+本仓库的 `plugins/index.json` 只给切换到 `focusd-plugins` 之前发布的岛屿（它们读 `main`，更早的读 `dev`，`dev` 与 `main` 保持同一个提交），只含官方插件。
 
 ### 更新
 
@@ -533,7 +544,7 @@ plugin.onCommand("sync-now", async () => {
 
 ### 下架
 
-`plugins/revoked.json` 列出被撤销的版本：
+`focusd-plugins` 根目录的 `revoked.json` 列出被撤销的版本（本仓库的 `plugins/revoked.json` 是给旧版岛屿的副本，要同步修改）：
 
 ```json
 {
@@ -552,25 +563,22 @@ plugin.onCommand("sync-now", async () => {
 - `versions`：`"*"` 表示所有版本，或者列出具体版本。
 - `action`：`disable` 停止并禁用插件；`uninstall` 停止并删除插件目录（`plugins-data/<id>/` 保留）。
 - 岛屿每次刷新市场时读取它，名单保存在 `plugins.json` 的 `revoked` 里，离线时也有效。下载到的名单只会往保存的名单里**加**条目，不会删：旧的缓存副本或者暂时读不到 `revoked.json`，都不会让已下架的版本重新可用。误下架的插件请发一个新版本。市场也不会把已安装的插件换成更旧的版本。被撤销的版本不能启用，也不能从市场安装；插件卡片显示原因。手动放进插件目录的同 id 同版本也会被拦截，开发模式加载的插件除外。
-- 它和 `index.json` 一样要签名，`pnpm plugins:index` 会重写 `revoked.json.sig`。没有这个文件时视为没有撤销任何版本；有文件但签名不对时，整个市场刷新失败。
-
-如果你自己持有签名私钥，可以跳过 pull request，直接做第 1、3、4 步。没有私钥时不要运行 `pnpm plugins:index`，它签不了名。
+- 它和 `index.json` 一样要签名（`focusd-plugins` 的 CI 合并后重新签名）。没有这个文件时视为没有撤销任何版本；有文件但签名不对时，整个市场刷新失败。
 
 ### 签名
 
 岛屿只接受签名有效的索引。索引里有每个插件包的 SHA-256，所以给索引签名，也就间接保护了插件包：即使有人能修改仓库或 CDN 上的文件，没有私钥也无法让岛屿安装被改过的插件。
 
 - **算法**：Ed25519。签名对象是 LF 换行的 `index.json`（`revoked.json` 同理）。签名文件的格式为 `{ "keyId", "signature" }`，或者这种对象的数组（多把密钥各签一份，例如换密钥的过渡期）；数组中任一由可信公钥做出的有效签名即可通过。
-- **公钥**：放在 `plugins/signing-keys.json` 中，编译时嵌入岛屿。如果要换密钥，需要把新公钥加进这个文件，并发布一个新版本的岛屿。
-- **私钥**：只有一份，由 `pnpm plugins:keygen` 生成（只需要运行一次），保存在 `~/.tauri/fly-island/plugin-index-signing.key`，用 Windows DPAPI 加密，只有生成它的 Windows 账户能解开。也可以用环境变量 `FOCUSD_PLUGIN_SIGNING_KEY`（PEM 文本）提供私钥，比如在 CI 里。
+- **公钥**：放在 `plugins/signing-keys.json` 中，编译时嵌入岛屿；`focusd-plugins` 的 `keys/trusted.json` 与它一致。如果要换密钥，需要先把新公钥加进这个文件并发布一个新版本的岛屿。
+- **私钥**：有两把。`focusd-plugins` 的市场索引由 CI 签名（密钥 `e862885af5bba3dc`，存在该仓库 `release` 环境的 secret 里，只有 `main` 分支能用）。本仓库给旧版岛屿的 `plugins/index.json` 用较早的密钥签名：由 `pnpm plugins:keygen` 生成，保存在 `~/.tauri/fly-island/plugin-index-signing.key`，用 Windows DPAPI 加密，只有生成它的 Windows 账户能解开；也可以用环境变量 `FOCUSD_PLUGIN_SIGNING_KEY`（PEM 文本）提供。
 - **备份私钥**：私钥丢失后，已经安装的岛屿不会接受用新密钥签名的索引，只能随新版岛屿换密钥。DPAPI 加密的文件换了电脑或账户就解不开，所以备份时要另外导出一份明文 PEM，放在安全的地方。
-- **下载方式**：岛屿先通过 GitHub API 查出 `main` 分支最新的提交号，再按提交号下载 `index.json`、`revoked.json` 和它们的签名。这样两个文件一定来自同一次提交，也不会读到 CDN 的旧缓存。GitHub API 不可用时，退回按分支名下载；这时如果刚好赶上 CDN 缓存，可能短暂出现"签名不匹配"，稍等几分钟再刷新即可。
+- **下载方式**：岛屿先通过 GitHub API 查出 `focusd-plugins` 的 `main` 分支最新的提交号，再按提交号下载 `index.json`、`revoked.json` 和它们的签名。这样两个文件一定来自同一次提交，也不会读到 CDN 的旧缓存。GitHub API 不可用时，退回按分支名下载；这时如果刚好赶上 CDN 缓存，可能短暂出现"签名不匹配"，稍等几分钟再刷新即可。
 
 规则：
 
-- 已发布的版本**不能修改**，因为用户安装时校验的就是那个哈希值。修改插件后必须提高 `version`，否则脚本会报错。旧版本的 zip 保留在仓库里。
-- 打包时文本文件的换行统一为 LF，所以 Windows 和其他系统打出的包完全相同。
-- `pnpm test` 会检查 `index.json` 和 zip 是否与源码一致。
+- 已发布的版本**不能修改**，因为用户安装时校验的就是那个哈希值。同一个版本号的包变了，市场 CI 会拒绝，官方插件的 `pnpm plugins:index` 也会报错；请发新版本号。
+- 本仓库的 `pnpm test` 会检查 `plugins/index.json` 和 zip 是否与示例插件的源码一致。
 
 应用安装插件时会依次检查：
 

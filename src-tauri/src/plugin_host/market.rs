@@ -1,4 +1,4 @@
-//! Plugin market: the index (plugins/index.json in the GitHub repo), package
+//! Plugin market: the index (index.json in TixXin/focusd-plugins), package
 //! download with size and SHA-256 checks, safe unzip and the folder swap that
 //! installs or updates a plugin. Packages are built by scripts/plugins/build-plugin-index.mjs.
 
@@ -19,13 +19,14 @@ use super::revocations::{parse_revoked, Revocation};
 use super::signature::{verify_file, verify_index, TRUSTED_KEYS};
 use crate::system::updater::get_updater_proxy;
 
-/// The fork's main branch. Builds before this change read dev, which is pushed
-/// to the same commit as main so they keep working. See MARKET_BASE_URL in
-/// scripts/plugins/build-plugin-index.mjs.
-const MARKET_REPO: &str = "TixXin/fly-island";
+/// The index repository: index.json, revoked.json and their signatures at its
+/// root, rebuilt and signed by its CI (key e862885af5bba3dc). Builds before
+/// this change read plugins/ in TixXin/fly-island (main, or dev before that),
+/// which `pnpm plugins:index` keeps signed with the older key for them.
+const MARKET_REPO: &str = "TixXin/focusd-plugins";
 const MARKET_BRANCH: &str = "main";
 /// Shown on the settings page; the index itself is read at the branch's newest commit.
-pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/index.json";
+pub(super) const INDEX_URL: &str = "https://raw.githubusercontent.com/TixXin/focusd-plugins/main/index.json";
 const INDEX_VERSION: u32 = 1;
 /// The island's own publisher, shown as "official".
 pub(super) const OFFICIAL_PUBLISHER: &str = "TixXin";
@@ -300,7 +301,7 @@ async fn finish_download(
 pub(super) async fn fetch_market() -> Result<MarketData, String> {
     let client = client()?;
     let reference = market_commit(&client).await.unwrap_or_else(|| MARKET_BRANCH.to_string());
-    let base = format!("https://raw.githubusercontent.com/{MARKET_REPO}/{reference}/plugins");
+    let base = format!("https://raw.githubusercontent.com/{MARKET_REPO}/{reference}");
     let index = spawn_download(&client, format!("{base}/index.json"));
     let index_signature = spawn_download(&client, format!("{base}/index.json.sig"));
     let revoked = spawn_download(&client, format!("{base}/revoked.json"));

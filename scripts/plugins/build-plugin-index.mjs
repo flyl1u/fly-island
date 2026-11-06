@@ -1,6 +1,9 @@
 // Packs every plugin under plugins/examples into plugins/packages/<id>-<version>.zip
-// and writes plugins/index.json, the plugin market index the app downloads, and
-// its signature plugins/index.json.sig (see scripts/plugins/plugin-signing.mjs). Market
+// and writes plugins/index.json and its signature plugins/index.json.sig (see
+// scripts/plugins/plugin-signing.mjs). Since the market moved to TixXin/focusd-plugins,
+// this index is only read by islands released before the move, which trust only
+// the older key; the official plugins' submissions in focusd-plugins point their
+// "package" at the zips written here. Market
 // details that are not in the manifest (publisher, repository, categories) come
 // from plugins/market/<id>.json, as they will in the index repository. It also
 // signs plugins/revoked.json, the list of versions taken off the market.
@@ -14,7 +17,7 @@ import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 export { createZip, listFiles, readPackedFile, sha256 };
 
-/** Where the app downloads the index and packages from: the fork's main branch (dev is kept at the same commit for older builds). */
+/** Where the official packages (and, for islands before focusd-plugins, the index) are downloaded from: the fork's main branch (dev is kept at the same commit for older builds). */
 export const MARKET_BASE_URL = "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins";
 export const INDEX_VERSION = 1;
 const SOURCE_DIRS = ["plugins/examples"];

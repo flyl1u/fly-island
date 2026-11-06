@@ -186,6 +186,8 @@
 >
 > 2026-11-05 起 fork 独立维护，上游 PR #36 已关闭，市场改用 `main` 分支：`MARKET_BRANCH`、`INDEX_URL` 和 `MARKET_BASE_URL` 都指向 `main`，`index.json` 里的下载地址也随之改为 `main`。已安装的旧版本仍按 `dev` 读取索引，所以每次推送都把 `dev` 推到与 `main` 相同的提交（`git push origin main main:dev`）；旧版本读到的索引里指向 `main` 的下载地址同样有效。各插件清单里的 `homepage` 仍写 `tree/dev`：它们打在已发布的包里，不能修改，`dev` 与 `main` 同步时这些链接照常可用。细节见 [docs/plugins/README.md](../plugins/README.md#签名)。
 
+> 2026-11-06 起岛屿读独立的索引仓库 [`TixXin/focusd-plugins`](https://github.com/TixXin/focusd-plugins)（根目录的 `index.json` / `revoked.json`，由它的 CI 每小时重建并用密钥 `e862885af5bba3dc` 签名；第三方插件包放在作者自己仓库的 GitHub Release）。`market.rs` 的 `MARKET_REPO` / `INDEX_URL` 指向它。双写兼容：切换前发布的岛屿只信任旧密钥，继续读本仓库 `plugins/index.json`（`main` / `dev`），由 `pnpm plugins:index` 用旧密钥签名，只含官方插件；官方插件的包仍放在本仓库 `plugins/packages/`，`focusd-plugins` 里的提交用 `package` 指向它们。下架要两边的 `revoked.json` 都改。
+
 参考 Obsidian / Zed，第一版不建服务器：
 
 1. 建一个索引仓库（例如 `focusd-plugins`），其中 `index.json` 每项包含 `id`、仓库地址、版本、下载地址、`sha256`、所需权限和 `minAppVersion`。
