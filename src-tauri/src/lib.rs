@@ -1,3 +1,4 @@
+mod agent_approval;
 mod agent_status;
 mod clipboard_history;
 mod dev_lane;
@@ -84,6 +85,9 @@ pub fn run() {
             if let Err(error) = todos::init(app.handle()) {
                 eprintln!("failed to initialize the todo store: {error}");
             }
+            if let Err(error) = agent_approval::init(app.handle()) {
+                eprintln!("failed to start the agent approval endpoint: {error}");
+            }
             if let Err(error) = local_api::init(app.handle()) {
                 eprintln!("failed to initialize the local API: {error}");
             }
@@ -132,6 +136,7 @@ pub fn run() {
             system;
             system_levels;
             agent_status;
+            agent_approval;
             device_use;
             media_control;
             lyrics;
@@ -139,7 +144,15 @@ pub fn run() {
             translation;
             settings_window
         ))
-        .run(context);
+        .build(context)
+        .map(|app| {
+            app.run(|_, event| {
+                // Hooks still waiting go back to the terminal rather than hit their timeout.
+                if let tauri::RunEvent::Exit = event {
+                    agent_approval::shutdown();
+                }
+            })
+        });
     if let Err(error) = result {
         eprintln!("error while running FocuSD Island: {error}");
         std::process::exit(1);
