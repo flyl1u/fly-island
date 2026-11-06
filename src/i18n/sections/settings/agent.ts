@@ -4,16 +4,9 @@ export type SettingsAgentText = {
   installing: string;
   installed: string;
   currentStatus: string;
-  clearStatusFor: (provider: string) => string;
   clearing: string;
   clearStatus: string;
   scriptsDir: string;
-  legendTitle: string;
-  legend: {
-    idle: string;
-    running: string;
-    attention: string;
-  };
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
@@ -27,6 +20,8 @@ export type SettingsAgentText = {
   sessionHoursOption: (hours: number) => string;
   sessionHoursHint: string;
   sessionCardSection: string;
+  /** The group with a switch per agent kind. */
+  agentsSection: string;
   showClaudeCode: string;
   showCodex: string;
   showAgentsHint: string;
@@ -73,16 +68,9 @@ export const zhCN: SettingsAgentText = {
   installing: "安装中",
   installed: "已安装",
   currentStatus: "当前状态",
-  clearStatusFor: (provider) => `清除 ${provider} 状态`,
   clearing: "清除中",
   clearStatus: "清除状态",
   scriptsDir: "脚本目录",
-  legendTitle: "状态灯颜色",
-  legend: {
-    idle: "绿色：空闲或已完成",
-    running: "蓝色：有 Agent 正在运行",
-    attention: "黄色：运行失败或可能已中断，可在上方清除状态",
-  },
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
   sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code 和 Codex 的会话记录，不需要安装钩子。",
@@ -96,6 +84,7 @@ export const zhCN: SettingsAgentText = {
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
   sessionHoursHint: "最后一次活动在这段时间内的会话才会列出。",
   sessionCardSection: "会话卡片",
+  agentsSection: "显示哪些 Agent",
   showClaudeCode: "显示 Claude Code 会话",
   showCodex: "显示 Codex 会话",
   showAgentsHint: "关掉的 Agent 不出现在 Agent 页，也不算进岛上的运行数量。",
@@ -140,16 +129,9 @@ export const en: SettingsAgentText = {
   installing: "Installing",
   installed: "Installed",
   currentStatus: "Status",
-  clearStatusFor: (provider) => `Clear ${provider} status`,
   clearing: "Clearing",
   clearStatus: "Clear status",
   scriptsDir: "Scripts folder",
-  legendTitle: "Light colors",
-  legend: {
-    idle: "Green: idle or finished",
-    running: "Blue: an agent is running",
-    attention: "Yellow: failed or possibly interrupted; clear it above",
-  },
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
   sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the Claude Code and Codex session files, so no hooks are needed.",
@@ -163,6 +145,7 @@ export const en: SettingsAgentText = {
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
   sessionHoursHint: "Only sessions active within this time are listed.",
   sessionCardSection: "Session cards",
+  agentsSection: "Agents shown",
   showClaudeCode: "Show Claude Code sessions",
   showCodex: "Show Codex sessions",
   showAgentsHint: "Agents switched off are left out of the Agent page and the island's running count.",

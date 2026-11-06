@@ -1,4 +1,5 @@
-import { ToggleControl } from "../../components/controls/ToggleControl";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
 import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentApprovalSettings } from "../../features/agent-status/approvals/AgentApprovalSettings";
@@ -8,8 +9,6 @@ import { useAgentStatusSettings } from "../../features/agent-status/useAgentStat
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
-// The label-beside-dropdown row is shared with the file shelf page.
-import "./ShelfSettingsPage.css";
 
 export function AgentSettingsPage({
   settings,
@@ -29,22 +28,20 @@ export function AgentSettingsPage({
         checked={settings.agentStatusEnabled}
         onChange={(agentStatusEnabled) => onSettingsChange({ ...settings, agentStatusEnabled })}
       />
-      <section className="settings-section settings-section--agent-title">
-        <div className="settings-section__header">
-          <span>{t.settings.agent.sessionTitleSection}</span>
-        </div>
-        <ToggleControl
-          label={t.settings.agent.sessionTitle}
+      {/* Installing the hooks comes first: most of what follows needs them. */}
+      <AgentHooksSettingsSection {...agentStatus} />
+      <SettingsGroup title={t.settings.agent.sessionTitleSection}>
+        <SettingsToggleRow
+          title={t.settings.agent.sessionTitle}
+          description={t.settings.agent.sessionTitleHint}
           checked={settings.agentTitleEnabled}
           onChange={(agentTitleEnabled) => onSettingsChange({ ...settings, agentTitleEnabled })}
         />
-        <p className="settings-section__hint">{t.settings.agent.sessionTitleHint}</p>
-      </section>
+      </SettingsGroup>
       <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentAlertSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentApprovalSettings />
       <AgentReplyMarkerSettings />
-      <AgentHooksSettingsSection {...agentStatus} />
     </>
   );
 }

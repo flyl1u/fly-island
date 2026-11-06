@@ -1,261 +1,35 @@
-.agent-hooks-button {
-  height: 28px;
+/* An agent's state on the right of its row; one stuck on an error or a stall stands out. */
+.agent-hooks-value {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.agent-hooks-value--attention {
+  color: var(--color-warning);
+}
+
+/* Under the card: what the last install said, or that the hooks need installing again. */
+.agent-hooks-message {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  padding: 0 10px;
-  color: var(--color-surface-dark);
-  background: var(--color-sky);
-  border: 0;
-  border-radius: var(--radius-pill);
-  outline: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
-  transition:
-    background 140ms ease,
-    color 140ms ease,
-    opacity 140ms ease,
-    transform 140ms ease;
-}
-
-.agent-hooks-button:hover:not(:disabled) {
-  background: #c0e8f5;
-}
-
-.agent-hooks-button:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.agent-hooks-button--installed {
-  color: var(--color-white);
-  background: var(--color-success);
-}
-
-.agent-hooks-button--installed:hover:not(:disabled) {
-  background: #37a06f;
-}
-
-/* Installed hooks are from an older version: draw the eye to Install/Repair. */
-.agent-hooks-button--attention {
-  background: var(--color-warning);
-}
-
-.agent-hooks-button--attention:hover:not(:disabled) {
-  background: #ffdd8c;
-}
-
-.agent-hooks-notice {
-  display: flex;
   align-items: flex-start;
   gap: 6px;
-  margin: 0;
-  padding: 7px 10px;
-  color: #ffe7ad;
-  background: rgba(255, 209, 102, 0.09);
-  border: 1px solid rgba(255, 209, 102, 0.28);
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
-.agent-hooks-notice svg {
-  flex: 0 0 auto;
+.agent-hooks-message svg {
+  flex: none;
   margin-top: 2px;
+}
+
+.agent-hooks-message code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+}
+
+.agent-hooks-message--attention {
   color: var(--color-warning);
 }
 
-.agent-hooks-button:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-.agent-hooks-status {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-  padding: 8px 10px;
-  color: rgba(248, 246, 240, 0.68);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--color-white-a10);
-  border-radius: var(--radius-md);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.agent-hooks-status span {
-  color: rgba(248, 246, 240, 0.52);
-}
-
-.agent-hooks-status strong {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text-strong);
-  font-size: 11px;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-hooks-status--ok {
-  border-color: rgba(102, 255, 184, 0.2);
-}
-
-.agent-hooks-status--error {
-  color: #ffd8df;
-  border-color: rgba(255, 77, 94, 0.28);
-  background: rgba(255, 77, 94, 0.09);
-}
-
-.agent-status-panel {
-  display: grid;
-  gap: 7px;
-  padding: 8px 10px;
-  color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--color-white-a10);
-  border-radius: var(--radius-md);
-}
-
-.agent-status-panel--idle {
-  border-color: rgba(53, 233, 133, 0.2);
-}
-
-.agent-status-panel--running {
-  border-color: rgba(61, 139, 255, 0.28);
-}
-
-.agent-status-panel--attention {
-  border-color: rgba(255, 209, 102, 0.34);
-  background: rgba(255, 209, 102, 0.08);
-}
-
-.agent-status-panel__summary,
-.agent-status-row {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.agent-status-panel__summary span,
-.agent-status-row span {
-  color: rgba(248, 246, 240, 0.52);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.agent-status-panel__summary strong {
-  min-width: 0;
-  overflow: hidden;
-  color: rgba(248, 246, 240, 0.9);
-  font-size: 11px;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-status-panel__rows {
-  display: grid;
-  gap: var(--space-xs);
-}
-
-.agent-status-row {
-  min-height: 26px;
-}
-
-.agent-status-row > span:first-child {
-  flex: 1;
-}
-
-.agent-status-row strong {
-  color: rgba(248, 246, 240, 0.84);
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.agent-status-row--attention strong {
-  color: var(--color-warning);
-}
-
-.agent-status-clear-button {
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  flex: 0 0 auto;
-  padding: 0 8px;
-  color: var(--color-surface-dark);
-  background: var(--color-warning);
-  border: 0;
-  border-radius: var(--radius-pill);
-  outline: none;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 800;
-  transition:
-    background 140ms ease,
-    opacity 140ms ease,
-    transform 140ms ease;
-}
-
-.agent-status-clear-button:hover:not(:disabled) {
-  background: #ffe08f;
-}
-
-.agent-status-clear-button:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.agent-status-clear-button:focus-visible {
-  outline: 2px solid rgba(255, 209, 102, 0.82);
-  outline-offset: 2px;
-}
-
-/* Same colors as the island's status light (IslandCollapsedBar.css, IslandHeader.css). */
-.agent-status-legend {
-  display: grid;
-  gap: 6px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.agent-status-legend__title {
-  color: var(--color-text);
-  font-weight: 800;
-}
-
-.agent-status-legend__item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.agent-status-legend__dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-pill);
-}
-
-.agent-status-legend__dot--idle {
-  background: var(--color-agent-idle);
-  box-shadow: 0 0 8px rgba(53, 233, 133, 0.6);
-}
-
-.agent-status-legend__dot--running {
-  background: var(--color-agent-running);
-  box-shadow: 0 0 8px rgba(61, 139, 255, 0.6);
-}
-
-.agent-status-legend__dot--attention {
-  background: var(--color-warning);
-  box-shadow: 0 0 8px rgba(255, 209, 102, 0.6);
+.agent-hooks-message--error {
+  color: #ff9aa9;
 }
