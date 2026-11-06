@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { detectAlerts, phasesOf, type AgentAlertKind, type SessionPhases } from "./alerts";
+import { detectAlerts, phasesOf, type AgentAlertKind, type AgentAlertKinds, type SessionPhases } from "./alerts";
 import { agentSessionsInFront, type AgentSessionSummary } from "./api";
 import { sessionKey } from "./unseen";
+
+export { alertKindsOf } from "./alerts";
 
 /** While the cursor rests on the island (it holds the focus then), closing waits this long more. */
 const HOVER_RETRY_MS = 1000;
@@ -15,7 +17,7 @@ export type AlertedSession = { key: string; kind: AgentAlertKind; session: Agent
 
 type AgentAlertOptions = {
   sessions: AgentSessionSummary[];
-  kinds: Record<AgentAlertKind, boolean>;
+  kinds: AgentAlertKinds;
   /** How long a panel opened for an alert stays before it closes by itself. */
   durationMs: number;
   /** False while game mode keeps the island quiet. */
@@ -78,10 +80,10 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
     if (collapsedNow || leftAgentPage) setAlerted(null);
   }, [isCollapsed, leftAgentPage]);
 
-  const { completed, failed, waiting } = kinds;
+  const { started, completed, failed, waiting } = kinds;
   useEffect(() => {
-    const alerts = detectAlerts(phasesRef.current, sessions, { completed, failed, waiting });
-    phasesRef.current = phasesOf(sessions);
+    const alerts = detectAlerts(phasesRef.current, sessions, { started, completed, failed, waiting });
+    phasesRef.current = phasesOf(sessions, phasesRef.current);
     if (alerts.length === 0 || !latest.current.canAlert) return;
 
     const close = () => {
@@ -112,7 +114,7 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = window.setTimeout(close, current.durationMs);
       });
-  }, [sessions, completed, failed, waiting]);
+  }, [sessions, started, completed, failed, waiting]);
 
   return alerted;
 }

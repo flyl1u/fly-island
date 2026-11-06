@@ -42,6 +42,8 @@ export type SettingsAgentText = {
   alerts: {
     title: string;
     hint: string;
+    started: string;
+    startedOptions: Record<"everyTurn" | "newSession" | "off", string>;
     completed: string;
     failed: string;
     waiting: string;
@@ -96,6 +98,8 @@ export const zhCN: SettingsAgentText = {
   alerts: {
     title: "弹出提醒",
     hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
+    started: "会话开始时",
+    startedOptions: { everyTurn: "每一轮开始", newSession: "只在新会话开始", off: "不弹" },
     completed: "会话完成时",
     failed: "会话出错时",
     waiting: "等待你确认或回答时",
@@ -150,6 +154,8 @@ export const en: SettingsAgentText = {
   alerts: {
     title: "Pop-up alerts",
     hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",
+    started: "When a session starts",
+    startedOptions: { everyTurn: "Every turn", newSession: "New sessions only", off: "Off" },
     completed: "When a session finishes",
     failed: "When a session fails",
     waiting: "When it waits for your approval or answer",

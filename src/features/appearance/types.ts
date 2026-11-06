@@ -12,6 +12,8 @@ export type MinimizeAction = "tray" | "tuck";
 export type TuckedHoverAction = "reveal" | "expand";
 /** How the Agent page shows the program a session runs in. */
 export type AgentHostDisplay = "both" | "icon" | "name" | "off";
+/** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
+export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
 
@@ -53,6 +55,8 @@ export type IslandSettings = {
   agentAlertCompleted: boolean;
   agentAlertFailed: boolean;
   agentAlertWaiting: boolean;
+  /** Open it when a session starts working: every turn, only a new session's first, or never. */
+  agentAlertStarted: AgentAlertStarted;
   /** How long a page opened for an alert stays, in seconds; one of AGENT_ALERT_SECONDS. */
   agentAlertSeconds: number;
   taskTextColor: string;

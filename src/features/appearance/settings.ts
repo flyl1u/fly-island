@@ -79,6 +79,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentAlertCompleted: true,
   agentAlertFailed: true,
   agentAlertWaiting: true,
+  agentAlertStarted: "everyTurn",
   agentAlertSeconds: 5,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
@@ -266,6 +267,7 @@ export function normalizeSettings(
     agentAlertCompleted: settings?.agentAlertCompleted !== false,
     agentAlertFailed: settings?.agentAlertFailed !== false,
     agentAlertWaiting: settings?.agentAlertWaiting !== false,
+    agentAlertStarted: settings?.agentAlertStarted === "newSession" || settings?.agentAlertStarted === "off" ? settings.agentAlertStarted : "everyTurn",
     agentAlertSeconds: (AGENT_ALERT_SECONDS as readonly unknown[]).includes(settings?.agentAlertSeconds)
       ? (settings?.agentAlertSeconds as number)
       : DEFAULT_SETTINGS.agentAlertSeconds,

@@ -5,6 +5,7 @@ import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
+import type { AgentAlertStarted } from "../../src/features/appearance/types";
 import { useAgentAlerts, type AlertedSession } from "../../src/features/agent-status/useAgentAlerts";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
 
@@ -27,18 +28,22 @@ let alerted: AlertedSession | null = null;
 let setSessions: (sessions: AgentSessionSummary[]) => void;
 let setIsland: (island: Island) => void;
 let setCanAlert: (value: boolean) => void;
+let setStarted: (value: AgentAlertStarted) => void;
 
 function Harness() {
   const [sessions, changeSessions] = useState<AgentSessionSummary[]>([session("a", "running"), session("b", "running")]);
   const [state, changeIsland] = useState<Island>(island);
   const [canAlert, changeCanAlert] = useState(true);
+  // Off for the checks below, whose sessions run again between them; checked on its own at the end.
+  const [started, changeStarted] = useState<AgentAlertStarted>("off");
+  setStarted = changeStarted;
   setSessions = changeSessions;
   setIsland = changeIsland;
   setCanAlert = changeCanAlert;
   island = state;
   alerted = useAgentAlerts({
     sessions,
-    kinds: { completed: true, failed: true, waiting: true },
+    kinds: { started, completed: true, failed: true, waiting: true },
     durationMs: DURATION_MS,
     canAlert,
     isOpenOnAgents: state.mode === "expanded" && state.page === "agents",
@@ -123,6 +128,22 @@ try {
   await act(async () => setSessions([session("a", "completed"), session("b", "running")]));
   await wait(DURATION_MS + 100);
   check(island.mode === "collapsed" && latestAlert() === null, "提醒自动收起后，下次打开 Agent 页是完整列表");
+
+  await act(async () => setStarted("everyTurn"));
+  await act(async () => setSessions([session("a", "running"), session("b", "running")]));
+  await wait(50);
+  check(island.mode === "expanded" && latestAlert()?.key === "claudeCode:a" && latestAlert()?.kind === "started", "会话开始新一轮时弹出，只显示这个会话");
+  await wait(DURATION_MS + 100);
+  await act(async () => setSessions([session("a", "completed"), session("b", "running")]));
+  await wait(DURATION_MS + 100);
+  await act(async () => setStarted("newSession"));
+  await act(async () => setSessions([session("a", "running"), session("b", "running")]));
+  await wait(50);
+  check(island.mode === "collapsed", "设为只在新会话时，已有会话的新一轮不弹");
+  await act(async () => setSessions([session("a", "running"), session("b", "running"), session("n", "running")]));
+  await wait(50);
+  check(island.mode === "expanded" && latestAlert()?.key === "claudeCode:n" && latestAlert()?.kind === "started", "新会话开始时弹出");
+  await wait(DURATION_MS + 100);
 
   // The panel: an alert shows its session alone and leaves the usage line out.
   const panel = createRoot(document.getElementById("panel")!);
