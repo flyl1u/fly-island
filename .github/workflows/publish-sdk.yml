@@ -1,0 +1,61 @@
+# Publishes the plugin SDK packages (packages/fly-island-plugin and
+# packages/create-fly-island-plugin) to npm when a tag like sdk-v0.2.1 is
+# pushed. It uses npm Trusted Publishing (OIDC): no npm token is stored
+# anywhere; npmjs.com trusts this workflow file in this repository. Setup and
+# the release steps: docs/plugins/sdk-release.md.
+name: Publish SDK
+
+on:
+  push:
+    tags: ["sdk-v*"]
+
+permissions:
+  contents: read
+  # Lets npm verify this run (Trusted Publishing) and record provenance.
+  id-token: write
+
+concurrency:
+  group: publish-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Optional approval gate: add required reviewers to this environment in the repository settings.
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          # npm 11.5 or newer can publish with Trusted Publishing.
+          node-version: 26
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check the tag, versions and generated files
+        run: node scripts/plugins/check-sdk-release.mjs "${GITHUB_REF_NAME}"
+
+      - name: Test the SDK packages
+        run: |
+          pnpm --filter fly-island-plugin test
+          pnpm --filter create-fly-island-plugin test
+
+      - name: Publish
+        run: |
+          for dir in packages/fly-island-plugin packages/create-fly-island-plugin; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on npm; skipped."
+            else
+              (cd "$dir" && npm publish --access public --provenance)
+            fi
+          done

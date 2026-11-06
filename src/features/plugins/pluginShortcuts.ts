@@ -22,10 +22,10 @@ export function effectiveShortcut(defaultShortcut: string | null, user: string |
   return user === "" ? null : user;
 }
 
-/** Every command of the plugins that are on, in plugin order. */
+/** Every command of the plugins that are on, in plugin order. Built-in plugins are left out: only plugin processes register shortcuts. */
 export function pluginShortcutRows(plugins: readonly PluginInfo[]): PluginShortcutRow[] {
   return plugins
-    .filter((plugin) => (plugin.enabled || plugin.dev) && !plugin.invalidReason && plugin.hasProcess && plugin.name)
+    .filter((plugin) => (plugin.enabled || plugin.dev) && !plugin.builtin && !plugin.invalidReason && plugin.hasProcess && plugin.name)
     .flatMap((plugin) =>
       plugin.commands.map((command) => {
         const defaultShortcut = command.keybinding ?? null;

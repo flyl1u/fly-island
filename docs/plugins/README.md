@@ -459,7 +459,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 
 ## SDK
 
-SDK 的源码在 [`packages/`](../../packages/)：npm 包 `fly-island-plugin`（Node.js SDK、命令行工具和模拟宿主）、脚手架 `create-fly-island-plugin` 和 PowerShell 模块 `FlyIsland.Plugin`。供直接复制的单文件版本在 [`plugins/sdk/`](../../plugins/sdk/)，由 `pnpm sdk:build` 从源码生成（`pnpm test` 检查是否最新），不要手改。
+SDK 的源码在 [`packages/`](../../packages/)：npm 包 `fly-island-plugin`（Node.js SDK、命令行工具和模拟宿主）、脚手架 `create-fly-island-plugin` 和 PowerShell 模块 `FlyIsland.Plugin`。供直接复制的单文件版本在 [`plugins/sdk/`](../../plugins/sdk/)，由 `pnpm sdk:build` 从源码生成（`pnpm test` 检查是否最新），不要手改。两个 npm 包推送 `sdk-v<版本>` 标签后由 CI 发布，见 [发布插件 SDK](sdk-release.md)。
 
 ### PowerShell（不需要用户安装任何东西）
 

@@ -40,6 +40,7 @@ test("plugins that are off, broken or without a process have no rows", () => {
     plugin("a.off", { enabled: false }),
     plugin("a.broken", { invalidReason: "bad manifest" }),
     plugin("a.static", { hasProcess: false }),
+    plugin("a.builtin", { builtin: true }),
     plugin("a.dev", { enabled: false, dev: true }),
   ]);
   assert.deepEqual([...new Set(rows.map((row) => row.pluginId))], ["a.dev"]);

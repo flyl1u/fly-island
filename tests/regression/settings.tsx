@@ -35,6 +35,7 @@ let revision = 0;
 const commands: string[] = [];
 const revokedPermissions: string[] = [];
 const marketInstalls: Record<string, unknown>[] = [];
+const keybindingCalls: Record<string, unknown>[] = [];
 const mailCalls: { command: string; args: Record<string, unknown> }[] = [];
 const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot => ({
   revision: ++revision, email, configured: true, enabled: true, syncing: false, status: "connected",
@@ -46,6 +47,11 @@ mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   if (command === "revoke_plugin_sensitive_permission") revokedPermissions.push(String(args.permission));
   if (command === "install_market_plugin") marketInstalls.push(args);
+  // Answers with the plugin list, like the island does after saving the shortcut.
+  if (command === "set_plugin_keybinding") {
+    keybindingCalls.push(args);
+    command = "list_plugins";
+  }
   switch (command) {
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
@@ -95,7 +101,7 @@ mockIPC((command, payload) => {
       pluginsDir: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\plugins",
       plugins: [
         { ...base, id: "focusd.local-api", builtin: true, invalidReason: null, name: { "zh-CN": "本地接口", en: "Local API" }, description: { "zh-CN": "让脚本通过 HTTP 读写待办。", en: "Lets scripts read and change todos over HTTP." }, version: "1.0.0", author: "FocuSD", homepage: "", permissions: ["todos:read", "todos:write"], commands: [{ id: "reset-token", title: { "zh-CN": "重新生成令牌", en: "Regenerate token" } }], runtime: "builtin", hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: [], settingsSchema: [{ key: "allowWrite", type: "boolean", title: { "zh-CN": "允许修改", en: "Allow changes" }, default: false }], settings: { allowWrite: false }, info: [{ label: { "zh-CN": "地址", en: "Address" }, value: "http://127.0.0.1:39271/v1", copy: true, secret: false }, { label: { "zh-CN": "访问令牌", en: "Access token" }, value: "0".repeat(64), copy: true, secret: true }] },
-        { ...base, activation: "onDemand", activationEvents: ["onCommand:sync-now", "onUri"], sensitive: { uri: "allowed" }, preReleaseAvailable: "1.1.0-beta.1", startupMs: 120, resources: { memoryBytes: 24 * 1024 * 1024, runtimeBytes: 20 * 1024 * 1024, processes: [{ name: "node.exe", memoryBytes: 24 * 1024 * 1024, workingSetBytes: 31 * 1024 * 1024 }], cpuPercent: 0.4, highCpu: false }, id: "dev.example.todo-sync", builtin: false, invalidReason: null, name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: { "zh-CN": "每 5 分钟把待办数量写进日志，同步完成后可以在岛上提醒，也可以读取剪贴板里的待办文本并自动拆成多条待办。这段描述故意写长，用来检查两行截断。", en: "Logs the todo count every 5 minutes, can notify on the island after a sync, and can read todo text from the clipboard and split it into several todos. Long on purpose to check the two-line clamp." }, version: "1.0.0", author: "FocuSD", homepage: "https://github.com/flyl1u/fly-island", permissions: ["todos:read", "todos:write", "notes:write", "island:notify", "clipboard:read"], commands: [{ id: "sync-now", title: { "zh-CN": "立即同步", en: "Sync now" } }], runtime: "node", hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: ["started", "3 open todos"], settingsSchema: [{ key: "interval", type: "number", title: { "zh-CN": "同步间隔（分钟）", en: "Sync every (minutes)" }, min: 1, max: 60, default: 5 }, { key: "notify", type: "boolean", title: { "zh-CN": "同步后提醒", en: "Notify after sync" } }], settings: { interval: 5, notify: false }, info: [{ label: { "zh-CN": "上次同步", en: "Last sync" }, value: "10:30", copy: false, secret: false }, { label: { "zh-CN": "令牌", en: "Token" }, value: "abc123", copy: true, secret: true }] },
+        { ...base, activation: "onDemand", activationEvents: ["onCommand:sync-now", "onUri"], sensitive: { uri: "allowed" }, preReleaseAvailable: "1.1.0-beta.1", startupMs: 120, resources: { memoryBytes: 24 * 1024 * 1024, runtimeBytes: 20 * 1024 * 1024, processes: [{ name: "node.exe", memoryBytes: 24 * 1024 * 1024, workingSetBytes: 31 * 1024 * 1024 }], cpuPercent: 0.4, highCpu: false }, id: "dev.example.todo-sync", builtin: false, invalidReason: null, name: { "zh-CN": "待办同步示例", en: "Todo sync example" }, description: { "zh-CN": "每 5 分钟把待办数量写进日志，同步完成后可以在岛上提醒，也可以读取剪贴板里的待办文本并自动拆成多条待办。这段描述故意写长，用来检查两行截断。", en: "Logs the todo count every 5 minutes, can notify on the island after a sync, and can read todo text from the clipboard and split it into several todos. Long on purpose to check the two-line clamp." }, version: "1.0.0", author: "FocuSD", homepage: "https://github.com/flyl1u/fly-island", permissions: ["todos:read", "todos:write", "notes:write", "island:notify", "clipboard:read"], commands: [{ id: "sync-now", title: { "zh-CN": "立即同步", en: "Sync now" }, keybinding: "Ctrl+Alt+S" }], runtime: "node", hasProcess: true, enabled: true, needsApproval: false, status: "running", error: null, log: ["started", "3 open todos"], settingsSchema: [{ key: "interval", type: "number", title: { "zh-CN": "同步间隔（分钟）", en: "Sync every (minutes)" }, min: 1, max: 60, default: 5 }, { key: "notify", type: "boolean", title: { "zh-CN": "同步后提醒", en: "Notify after sync" } }], settings: { interval: 5, notify: false }, info: [{ label: { "zh-CN": "上次同步", en: "Last sync" }, value: "10:30", copy: false, secret: false }, { label: { "zh-CN": "令牌", en: "Token" }, value: "abc123", copy: true, secret: true }] },
         { ...base, id: "broken.plugin", builtin: false, invalidReason: "focusd-plugin.json is not valid: expected value at line 1 column 1", name: null, description: null, version: "", author: "", homepage: "", permissions: [], commands: [], runtime: "none", hasProcess: false, enabled: false, needsApproval: false, status: "stopped", error: null, log: [], settingsSchema: [], settings: {}, info: [] },
       ],
       };
@@ -233,6 +239,18 @@ if (!automated) {
       && document.body.textContent?.includes(managedName),
       "An installed plugin shows Installed with Manage, which opens it on the plugins page");
     await act(async () => { [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表")?.click(); });
+
+    await openPage("shortcuts");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    const pluginRows = [...document.querySelectorAll<HTMLElement>(".shortcut-row")].filter((row) => row.textContent?.includes(" · "));
+    const syncRow = pluginRows.find((row) => row.textContent?.includes("立即同步 · 待办同步示例"));
+    const tokenRow = pluginRows.find((row) => row.textContent?.includes("重新生成令牌 · 本地接口"));
+    check(syncRow?.querySelector(".shortcut-control__meta strong")?.textContent === "Ctrl+Alt+S" && !tokenRow,
+      "Settings > Shortcuts lists the commands of third-party plugins that are on, with the manifest's shortcut; built-in ones are left out");
+    await act(async () => { syncRow?.querySelector<HTMLButtonElement>("button[aria-label^='关闭这个快捷键']")?.click(); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    check(keybindingCalls.length === 1 && keybindingCalls[0].id === "dev.example.todo-sync" && keybindingCalls[0].command === "sync-now" && keybindingCalls[0].keybinding === "",
+      "Turning a plugin shortcut off saves an empty shortcut for that command");
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
