@@ -8,7 +8,7 @@ import "./LyricsView.css";
 const TICK_MS = 200;
 
 /**
- * Three lines of synced lyrics in place of the waveform: the one being sung, bright, between
+ * Three lines of synced lyrics above the waveform: the one being sung, bright, between
  * the one before and the one after. `offsetMs` moves the lyrics later (positive) or earlier.
  */
 export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]; mediaState: MediaState; offsetMs: number }) {

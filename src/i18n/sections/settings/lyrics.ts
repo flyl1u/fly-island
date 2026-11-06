@@ -14,7 +14,7 @@ export type SettingsLyricsText = {
 
 export const zhCN: SettingsLyricsText = {
   title: "歌词",
-  hint: "找到带时间轴的歌词时，音乐页用滚动歌词代替波形。先找本地文件夹，再查在线歌词库。",
+  hint: "找到带时间轴的歌词时，音乐页在波形上方显示滚动歌词。先找本地文件夹，再查在线歌词库。",
   folder: "本地歌词文件夹",
   folderHint: "放 .lrc 文件，文件名写成「歌手 - 歌名」「歌名 - 歌手」或「歌名」。只找这一层，不找子文件夹。",
   folderPlaceholder: "例如 D:\\Music\\Lyrics",
@@ -28,7 +28,7 @@ export const zhCN: SettingsLyricsText = {
 
 export const en: SettingsLyricsText = {
   title: "Lyrics",
-  hint: "When synced lyrics are found, the music page scrolls them in place of the waveform. Your folder is searched first, then the online lyrics library.",
+  hint: "When synced lyrics are found, the music page scrolls them above the waveform. Your folder is searched first, then the online lyrics library.",
   folder: "Lyrics folder",
   folderHint: "Holds .lrc files named \"Artist - Title\", \"Title - Artist\" or \"Title\". Subfolders are not searched.",
   folderPlaceholder: "For example D:\\Music\\Lyrics",

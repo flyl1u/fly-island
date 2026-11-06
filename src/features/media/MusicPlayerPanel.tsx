@@ -82,7 +82,7 @@ export function MusicPlayerPanel({
             )}
           </div>
         </div>
-        <div className="music-player__stack">
+        <div className={lyrics ? "music-player__stack music-player__stack--lyrics" : "music-player__stack"}>
           <div className="music-player__head-aside">{settingsButton}</div>
 
           {commandError && (
@@ -91,14 +91,12 @@ export function MusicPlayerPanel({
             </p>
           )}
 
-          {lyrics ? (
-            <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs} />
-          ) : (
-            <MediaWaveform
-              playing={isPlaying || mediaState.audioActive}
-              audioPeak={mediaState.audioPeak}
-            />
-          )}
+          {/* With lyrics, the waveform shrinks to a strip under them rather than going away. */}
+          {lyrics && <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs} />}
+          <MediaWaveform
+            playing={isPlaying || mediaState.audioActive}
+            audioPeak={mediaState.audioPeak}
+          />
 
           <div className="music-player__controls">
             <button

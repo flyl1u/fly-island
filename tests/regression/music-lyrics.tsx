@@ -1,6 +1,6 @@
 // pnpm dev, then open /tests/regression/music-lyrics.html. Renders the music page with get_lyrics
-// mocked: synced lyrics take the waveform's place and follow the position and the offset, and
-// the waveform stays when there are none or no source is set.
+// mocked: synced lyrics show above a slimmer waveform and follow the position and the offset, and
+// the waveform keeps its full size when there are none or no source is set.
 import "../../src/styles/tokens.css";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -62,7 +62,8 @@ const lines = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__li
 
 try {
   await render(track("晴天", 6000));
-  check(view() && !document.querySelector(".media-waveform"), "找到歌词时用歌词代替波形");
+  const wave = () => document.querySelector<HTMLElement>(".media-waveform")!;
+  check(view() && wave() && view()!.getBoundingClientRect().bottom <= wave().getBoundingClientRect().top, "找到歌词时歌词在上、波形在下，两者都显示");
   check(lines().join("|") === "故事的小黄花|从出生那年就飘着|童年的荡秋千 随记忆一直晃到现在 这一句特别特别长长到一行放不下需要省略号来收尾才行", "当前句在中间，上一句和下一句在两边");
   const query = queries[queries.length - 1];
   check(query.title === "晴天" && query.artist === "周杰伦" && query.album === "叶惠美" && query.durationMs === 269_000 && query.online === true, "按歌名、歌手、专辑和时长查找");
@@ -72,7 +73,9 @@ try {
   await render(track("晴天", 10_000));
   const long = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
   check(long.scrollWidth > long.clientWidth && fixture.scrollWidth <= fixture.clientWidth, "长句单行省略，不撑宽面板");
-  check(Math.abs(view()!.getBoundingClientRect().height - 76) < 1, "歌词区和波形一样高，不改变页面高度");
+  const controls = document.querySelector<HTMLElement>(".music-player__controls")!.getBoundingClientRect();
+  check(Math.abs(wave().getBoundingClientRect().height - 34) < 1 && controls.bottom <= document.querySelector(".music-player")!.getBoundingClientRect().bottom && wave().getBoundingClientRect().bottom <= controls.top,
+    "有歌词时波形缩成细条，播放按钮仍完整放在面板里");
 
   await render(track("晴天", 13_500));
   check(lines()[1] === "♪", "间奏的空行显示音符");
@@ -87,7 +90,7 @@ try {
 
   const before = queries.length;
   await render(track("七里香", 6000));
-  check(!view() && document.querySelector(".media-waveform") && queries.length === before + 1, "找不到歌词时仍显示波形");
+  check(!view() && Math.abs(wave().getBoundingClientRect().height - 76) < 1 && queries.length === before + 1, "找不到歌词时波形恢复原来的大小");
   await render(track("稻香", 6000), { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 });
   check(!view() && queries.length === before + 1, "没设歌词文件夹也没开在线查找时不去查");
 

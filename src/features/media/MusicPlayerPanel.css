@@ -182,6 +182,17 @@
   flex-basis: 76px;
 }
 
+/* Lyrics above, the waveform as a thin strip under them, then the controls. */
+.music-player__stack--lyrics {
+  gap: 8px;
+}
+
+.music-player__stack--lyrics .media-waveform {
+  height: 34px;
+  flex-basis: 34px;
+  margin-bottom: 4px;
+}
+
 .music-player__meta {
   min-width: 0;
   display: flex;
