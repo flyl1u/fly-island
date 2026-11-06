@@ -39,3 +39,4 @@ src-tauri/tauri.release.conf.json
 *.sln
 *.sw?
 /demo.mp4
+*.vsix

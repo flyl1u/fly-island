@@ -2,6 +2,7 @@
 
 mod claude_hooks;
 mod codex_hooks;
+mod editor_terminal;
 mod external;
 mod hooks_state;
 mod host_icon;

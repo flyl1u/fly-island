@@ -1,0 +1,26 @@
+{
+  "name": "focusd-island",
+  "displayName": "FocuSD Island",
+  "description": "Lets FocuSD Island switch to the terminal running a Claude Code or Codex session when you click it on the island.",
+  "version": "0.1.0",
+  "publisher": "tixxin",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TixXin/fly-island.git",
+    "directory": "packages/vscode-extension"
+  },
+  "homepage": "https://github.com/TixXin/fly-island/blob/main/docs/agent-status-hooks.md",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude code", "codex", "terminal", "focusd"],
+  "extensionKind": ["ui", "workspace"],
+  "activationEvents": ["onUri"],
+  "main": "./extension.js",
+  "scripts": {
+    "package": "pnpm dlx @vscode/vsce package --no-dependencies"
+  }
+}

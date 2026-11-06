@@ -990,6 +990,36 @@ fn tab_selection_gives_up_on_a_window_that_does_not_exist() {
 }
 
 #[test]
+fn editor_terminals_are_asked_for_through_the_extension_link() {
+    use super::editor_terminal::{editor_of_app, extension_installed, focus_link, show_session_terminal, EditorTerminal};
+
+    assert_eq!(editor_of_app("code"), Some(("vscode", ".vscode")));
+    assert_eq!(editor_of_app("cursor"), Some(("cursor", ".cursor")));
+    assert_eq!(editor_of_app("windowsterminal"), None);
+    assert_eq!(
+        focus_link("vscode", &[120, 88], Some("✳ 修复 a&b")),
+        "vscode://tixxin.focusd-island/focus?pids=120,88&title=%E2%9C%B3%20%E4%BF%AE%E5%A4%8D%20a%26b"
+    );
+    assert_eq!(focus_link("cursor", &[], None), "cursor://tixxin.focusd-island/focus?pids=");
+
+    let home = std::env::temp_dir().join(format!("focusd-editor-ext-{}", std::process::id()));
+    let extensions = home.join(".vscode").join("extensions");
+    fs::create_dir_all(extensions.join("tixxin.focusd-island-tools-1.0.0")).unwrap();
+    assert!(!extension_installed(&extensions));
+    assert_eq!(show_session_terminal(&home, "code", &[1], None), Some(EditorTerminal::NoExtension));
+    assert_eq!(show_session_terminal(&home, "windowsterminal", &[1], None), None);
+    fs::create_dir_all(extensions.join("tixxin.focusd-island-0.1.0")).unwrap();
+    assert!(extension_installed(&extensions));
+    // Nothing to identify the terminal by: no link is opened.
+    assert_eq!(show_session_terminal(&home, "code", &[], Some("")), Some(EditorTerminal::Failed));
+    // Uninstalled but not yet removed by the editor.
+    fs::write(extensions.join(".obsolete"), r#"{"tixxin.focusd-island-0.1.0":true}"#).unwrap();
+    assert!(!extension_installed(&extensions));
+    assert!(!extension_installed(&home.join("missing")));
+    fs::remove_dir_all(&home).unwrap();
+}
+
+#[test]
 fn focus_attempts_log_their_steps_without_titles() {
     use super::focus_log::Attempt;
 

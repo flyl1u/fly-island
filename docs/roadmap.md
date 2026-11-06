@@ -13,7 +13,7 @@
 
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
-| A2 | VS Code 精确跳到终端：做一个小扩展，注册 `vscode://` 链接，按进程号找到终端并 `terminal.show()`；没装扩展时只调窗口。Cursor、Windsurf 等同样适用 | 待用户确认 | | VS Code 没有从外部选中终端的接口，做法参考 [agents-deck #17](https://github.com/brushknight/agents-deck/issues/17)。发布到扩展市场属于对外发布，开始前要先问用户 |
+| A2 | VS Code 精确跳到终端：做一个小扩展，注册 `vscode://` 链接，按进程号找到终端并 `terminal.show()`；没装扩展时只调窗口。Cursor、Windsurf 等同样适用 | 进行中 | fly-island-7e | 扩展（`packages/vscode-extension/`，ID `tixxin.focusd-island`）和岛屿这边已完成，提交 `feat(agent-status): show the session's terminal in VS Code through an extension`。还差：用户在 VS Code 市场建发布者 `tixxin` 并发布、在 Open VSX 建同名命名空间并发布（Cursor、Windsurf 从 Open VSX 装）；设置的 AI Agent 页提示安装扩展。做法参考 [agents-deck #17](https://github.com/brushknight/agents-deck/issues/17) |
 | A7 | 核实 Codex 钩子的 `session_id` 和 rollout 里 `session_meta` 的 id 是同一个 | 待做 | | 文档没有明说，不一致的话 Codex 的会话记录对不上会话列表。需要在装了 Codex 的电脑上跑一次 |
 | A8 | Codex 的 SessionStart 记录会让每个会话的第一轮晚约 1 秒（查进程要 1 秒，Codex 钩子还不支持后台运行） | 待做 | | Codex 支持 `async` 后改成后台运行；或改为钩子只记环境变量、由岛屿去查进程 |
 | A6 | 收集一次真实 VS Code 环境下的 `agent-focus.log`，确认那位用户的问题是不是 `ddfcd05` 修好的那两种原因 | 待做 | | 需要那位用户更新后提供日志 |

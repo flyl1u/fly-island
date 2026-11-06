@@ -1,9 +1,11 @@
 //! Clicking a session on the Agent page: find the window that shows it and bring it forward, and
-//! in Orca or Windows Terminal switch to its tab. The order tried is in docs/agent-status-hooks.md,
-//! "Switching to a Session's Window". Every attempt is written to agent-focus.log (focus_log.rs).
+//! in Orca, Windows Terminal or VS Code switch to its tab or terminal. The order tried is in
+//! docs/agent-status-hooks.md, "Switching to a Session's Window". Every attempt is written to
+//! agent-focus.log (focus_log.rs).
 
 use std::path::Path;
 
+use super::editor_terminal::{self, EditorTerminal};
 use super::focus_log::Attempt;
 use super::orca;
 use super::session_memory::{self, SeenSession};
@@ -168,6 +170,16 @@ pub(super) fn focus_session(
     if let Some(title) = title.filter(|_| focused.app == WINDOWS_TERMINAL_APP) {
         let selected = window_focus::select_terminal_tab(&focused, title);
         log.note(if selected { "wt-tab=selected" } else { "wt-tab=none" });
+    }
+    // The link goes to the editor window used last, so only once the session's window is in front.
+    if let (true, Ok(home_dir)) = (focused.in_front, windows_home_dir()) {
+        let shown = editor_terminal::show_session_terminal(&home_dir, &focused.app, &chain, title);
+        match shown {
+            Some(EditorTerminal::Sent) => log.note("editor-terminal=sent"),
+            Some(EditorTerminal::NoExtension) => log.note("editor-terminal=no-extension"),
+            Some(EditorTerminal::Failed) => log.note("editor-terminal=failed"),
+            None => {}
+        }
     }
     log.finish(app_dir, if focused.in_front { "focused" } else { "found, flashed (Windows kept it behind)" });
     true
