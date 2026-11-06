@@ -10,7 +10,7 @@ use std::{
 };
 use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindow};
 
-use super::state::{IslandPosition, IslandWindowState};
+use super::state::{IslandPosition, IslandWindowState, MonitorFollow};
 
 pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
 pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
@@ -73,7 +73,13 @@ pub(crate) fn apply_stage_geometry(
         .custom_position
         .and_then(|position| monitor_for_island_position(window, position).ok().flatten());
     let has_custom_monitor = custom_monitor.is_some();
+    // The monitor the island followed the pointer or the foreground window to (follow.rs).
+    let followed_monitor = match state.monitor_follow {
+        MonitorFollow::Primary => None,
+        _ => state.followed_monitor.and_then(|point| monitor_at(window, point).ok().flatten()),
+    };
     let monitor = custom_monitor
+        .or(followed_monitor)
         .or_else(|| primary_monitor.or(current_monitor))
         .ok_or_else(|| "No monitor is available for island positioning.".to_string())?;
 
@@ -202,6 +208,20 @@ pub(super) fn monitor_for_island_position(
             && island_center_y >= monitor_position.y as f64
             && island_center_y < (monitor_position.y + monitor_size.height as i32) as f64
     }))
+}
+
+/// The monitor holding the physical point `(x, y)`.
+pub(super) fn monitor_at(window: &WebviewWindow, (x, y): (i32, i32)) -> Result<Option<Monitor>, String> {
+    let monitors = window.available_monitors().map_err(|error| error.to_string())?;
+    Ok(monitors.into_iter().find(|monitor| {
+        let (position, size) = (monitor.position(), monitor.size());
+        contains((position.x, position.y, size.width as i32, size.height as i32), (x, y))
+    }))
+}
+
+/// Whether the rectangle `(left, top, width, height)` holds the point.
+pub(super) fn contains((left, top, width, height): (i32, i32, i32, i32), (x, y): (i32, i32)) -> bool {
+    x >= left && x < left + width && y >= top && y < top + height
 }
 
 // A top-docked taskbar shrinks the monitor work area instead of the monitor itself,

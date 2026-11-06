@@ -60,6 +60,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
   expandedScale: 1,
   marginY: 0,
+  islandMonitor: "primary",
   topFilletRadius: 12,
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   islandCornerShape: "squircle",
@@ -223,16 +224,9 @@ export function normalizeSettings(
       100,
     ),
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
-    collapsedScale: clamp(
-      Number(collapsedScale),
-      0.75,
-      1.4,
-    ),
-    expandedScale: clamp(
-      Number(expandedScale),
-      0.75,
-      1.4,
-    ),
+    collapsedScale: clamp(Number(collapsedScale), 0.75, 1.4),
+    expandedScale: clamp(Number(expandedScale), 0.75, 1.4),
+    islandMonitor: settings?.islandMonitor === "cursor" || settings?.islandMonitor === "foreground" ? settings.islandMonitor : "primary",
     marginY: clamp(
       Number(hasPreviousDefaultMargin ? DEFAULT_SETTINGS.marginY : marginY),
       0,

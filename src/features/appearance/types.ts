@@ -4,6 +4,8 @@ export type AppearanceMode = "classic" | "liquidGlass";
 export type IslandFont = "system" | "pixel";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
 export type IslandCornerShape = "squircle" | "round";
+/** Which monitor the island sits on: the primary one, or it follows the pointer or the foreground window there. */
+export type IslandMonitor = "primary" | "cursor" | "foreground";
 /** How the collapsed island opens: a click, or resting the pointer on it. */
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
@@ -26,6 +28,7 @@ export type IslandSettings = {
   collapsedScale: number;
   expandedScale: number;
   marginY: number;
+  islandMonitor: IslandMonitor;
   /** Radius (px) of the concave corners drawn while the island is flush with the screen top. */
   topFilletRadius: number;
   /** Bottom corner radius (px) of the expanded island; the collapsed, detached and inner panel radii follow it. */

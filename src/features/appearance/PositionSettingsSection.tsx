@@ -1,10 +1,11 @@
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
 import { DEFAULT_SETTINGS } from "./settings";
-import type { IslandSettings } from "./types";
+import type { IslandMonitor, IslandSettings } from "./types";
 
 /** Where the island sits: its top margin, how to drag it, and a way back to the default. */
 export function PositionSettingsSection({
@@ -17,9 +18,21 @@ export function PositionSettingsSection({
   onResetPosition: () => void;
 }) {
   const t = useTranslation();
+  const monitorOptions = (["primary", "cursor", "foreground"] as const).map((value) => ({ value, label: t.settings.position.monitorOptions[value] }));
 
   return (
-    <SettingsGroup title={t.settings.position.title} footer={t.settings.position.moveHint}>
+    <SettingsGroup title={t.settings.position.title} footer={`${t.settings.position.monitorHint} ${t.settings.position.moveHint}`}>
+      <SettingsRow
+        title={t.settings.position.monitor}
+        control={
+          <SettingsSelect<IslandMonitor>
+            value={settings.islandMonitor}
+            options={monitorOptions}
+            ariaLabel={t.settings.position.monitor}
+            onChange={(islandMonitor) => onSettingsChange({ ...settings, islandMonitor })}
+          />
+        }
+      />
       <SettingsSliderRow
         title={t.settings.layout.marginY}
         value={settings.marginY}

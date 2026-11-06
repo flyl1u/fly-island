@@ -42,6 +42,27 @@ impl IslandMode {
     }
 }
 
+/// Which monitor the island sits on (roadmap C1): the primary one, or the one the pointer or the
+/// foreground window is on, moving there when that changes (follow.rs).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum MonitorFollow {
+    Primary,
+    Cursor,
+    Foreground,
+}
+
+impl MonitorFollow {
+    /// `primary`, `cursor` or `foreground`; anything else is not a choice the settings offer.
+    pub(super) fn from_value(value: &str) -> Option<Self> {
+        match value {
+            "primary" => Some(Self::Primary),
+            "cursor" => Some(Self::Cursor),
+            "foreground" => Some(Self::Foreground),
+            _ => None,
+        }
+    }
+}
+
 /// The island's corner shape from the appearance settings, as CSS draws it with `corner-shape`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CornerShape {
@@ -88,6 +109,10 @@ pub(crate) struct IslandWindowState {
     /// radii keep their default ratios to it, matching IslandShell.css.
     pub(super) corner_radius: f64,
     pub(super) corner_shape: CornerShape,
+    pub(super) monitor_follow: MonitorFollow,
+    /// A physical point on the monitor the island followed the pointer or the foreground window
+    /// to; `None` on the primary monitor. A dragged position (`custom_position`) comes first.
+    pub(super) followed_monitor: Option<(i32, i32)>,
 }
 
 impl IslandWindowState {
@@ -142,6 +167,8 @@ impl Default for IslandWindowState {
             corner_radius: EXPANDED_RADIUS,
             // The front end's default; it reports the setting with the first interaction sync.
             corner_shape: CornerShape::Squircle,
+            monitor_follow: MonitorFollow::Primary,
+            followed_monitor: None,
         }
     }
 }

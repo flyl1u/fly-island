@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
-import type { IslandCornerShape } from "../../features/appearance/types";
+import type { IslandCornerShape, IslandMonitor } from "../../features/appearance/types";
 import type { IslandPosition } from "./storage";
 import type { IslandMode, NativeGlassState } from "./types";
 
@@ -62,6 +62,8 @@ export type IslandInteraction = {
   cornerRadius: number;
   /** The native hit test follows the island's corner shape. */
   cornerShape: IslandCornerShape;
+  /** Which monitor the island sits on; Rust moves it there (src-tauri/src/island/follow.rs). */
+  monitorFollow: IslandMonitor;
 };
 
 export function setIslandLayout(layout: IslandLayout) {
@@ -129,4 +131,12 @@ export function resetIslandPosition() {
 
 export function listenIslandPositionChanged(handler: EventCallback<IslandPosition>) {
   return listen<IslandPosition>(ISLAND_POSITION_CHANGED_EVENT, handler);
+}
+
+// Mirrors ISLAND_POSITION_CLEARED_EVENT in src-tauri/src/island/follow.rs: following another
+// monitor replaced the dragged position.
+export const ISLAND_POSITION_CLEARED_EVENT = "island-position-cleared";
+
+export function listenIslandPositionCleared(handler: EventCallback<null>) {
+  return listen<null>(ISLAND_POSITION_CLEARED_EVENT, handler);
 }

@@ -89,6 +89,11 @@ test("session starts alert every turn unless new sessions only or off was chosen
 });
 
 test("the island corner shape is squircle unless round was chosen, older settings included", () => {
+  assert.equal(DEFAULT_SETTINGS.islandMonitor, "primary");
+  assert.equal(normalizeSettings({}).islandMonitor, "primary");
+  assert.equal(normalizeSettings({ islandMonitor: "cursor" }).islandMonitor, "cursor");
+  assert.equal(normalizeSettings({ islandMonitor: "foreground" }).islandMonitor, "foreground");
+  assert.equal(normalizeSettings({ islandMonitor: "all" }).islandMonitor, "primary");
   assert.equal(DEFAULT_SETTINGS.islandCornerShape, "squircle");
   assert.equal(normalizeSettings({}).islandCornerShape, "squircle");
   assert.equal(normalizeSettings({ islandCornerShape: "round" }).islandCornerShape, "round");

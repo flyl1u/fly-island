@@ -120,6 +120,7 @@ pub fn run() {
                 ) {
                     eprintln!("failed to size and position island window: {error}");
                 }
+                island::start_monitor_follow_loop(window.clone());
                 island::start_cursor_passthrough_loop(window);
             }
             system::fullscreen::start(app.handle());

@@ -251,3 +251,27 @@ fn an_update_heading_where_the_slide_ends_lets_it_finish() {
     assert!(!continues_slide(running, 8, (900, 12), false));
     assert!(!continues_slide(None, 7, (900, 12), false));
 }
+
+#[test]
+fn the_island_follows_only_when_asked_and_only_while_collapsed() {
+    use super::follow::may_move;
+    use super::geometry::contains;
+    assert_eq!(MonitorFollow::from_value("cursor"), Some(MonitorFollow::Cursor));
+    assert_eq!(MonitorFollow::from_value("foreground"), Some(MonitorFollow::Foreground));
+    assert_eq!(MonitorFollow::from_value("primary"), Some(MonitorFollow::Primary));
+    assert_eq!(MonitorFollow::from_value("all"), None);
+    assert_eq!(IslandWindowState::default().monitor_follow, MonitorFollow::Primary);
+
+    // A second monitor left of the primary one, with negative coordinates.
+    let left = (-1920, 0, 1920, 1080);
+    assert!(contains(left, (-1, 0)) && contains(left, (-1920, 1079)));
+    assert!(!contains(left, (0, 0)) && !contains(left, (-100, 1080)));
+
+    let mut collapsed = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    assert!(may_move(collapsed));
+    collapsed.is_tucked = true;
+    assert!(may_move(collapsed), "a tucked island follows too");
+    collapsed.is_dragging = true;
+    assert!(!may_move(collapsed));
+    assert!(!may_move(state(IslandMode::Expanded, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT)), "an open panel stays under the pointer");
+}

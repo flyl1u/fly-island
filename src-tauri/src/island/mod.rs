@@ -2,6 +2,7 @@
 //! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
 
 pub(crate) mod focus;
+mod follow;
 mod geometry;
 mod glass;
 pub(crate) mod passthrough;
@@ -26,9 +27,10 @@ use geometry::{
 };
 use glass::{apply_glass_material, parse_hex_color};
 use crate::win32;
-use state::{mutate_window_state, read_window_state, window_state, CornerShape, IslandMode};
+use state::{mutate_window_state, read_window_state, window_state, CornerShape, IslandMode, MonitorFollow};
 
 pub(crate) use geometry::apply_stage_geometry;
+pub(crate) use follow::start_monitor_follow_loop;
 pub(crate) use passthrough::start_cursor_passthrough_loop;
 pub(crate) use state::{record_dragged_position, IslandPosition, IslandWindowState};
 
@@ -75,6 +77,7 @@ pub fn set_island_interaction(
     glass_tint: Option<String>,
     corner_radius: Option<f64>,
     corner_shape: Option<String>,
+    monitor_follow: Option<String>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -120,6 +123,9 @@ pub fn set_island_interaction(
         }
         if let Some(corner_shape) = corner_shape.as_deref().and_then(CornerShape::from_value) {
             state.corner_shape = corner_shape;
+        }
+        if let Some(monitor_follow) = monitor_follow.as_deref().and_then(MonitorFollow::from_value) {
+            state.monitor_follow = monitor_follow;
         }
         *state
     });
