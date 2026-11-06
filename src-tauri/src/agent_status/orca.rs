@@ -6,10 +6,12 @@
 
 use std::{
     fs,
+    io::Read,
     os::windows::process::CommandExt,
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    time::{Duration, SystemTime},
+    thread,
+    time::{Duration, Instant, SystemTime},
 };
 
 use serde_json::Value;
@@ -20,6 +22,10 @@ use crate::system::CREATE_NO_WINDOW;
 pub(super) const AGENT_TERMINALS_DIR_NAME: &str = "agent-terminals";
 /// Executable name (lowercase, without `.exe`) of the Orca app.
 pub(super) const ORCA_APP: &str = "orca";
+/// The variable Orca sets in every terminal it runs.
+const TERMINAL_HANDLE_VARIABLE: &str = "ORCA_TERMINAL_HANDLE";
+/// `orca terminal list` takes about a second; give up well before the user wonders.
+const LIST_TIMEOUT: Duration = Duration::from_secs(6);
 /// Records older than this belong to terminals long gone; they are deleted when read.
 const RECORD_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
@@ -69,6 +75,71 @@ pub(super) fn terminal_handle_for(app_dir: &Path, session_id: &str) -> Option<St
         }
     }
     best.map(|(_, handle)| handle)
+}
+
+/// The Orca terminal a running process is in, from its own `ORCA_TERMINAL_HANDLE`. This finds
+/// sessions started before the SessionStart hook was installed, without a resume.
+pub(super) fn terminal_handle_of_process(process_id: u32) -> Option<String> {
+    crate::win32::process_env::environment_variable(process_id, TERMINAL_HANDLE_VARIABLE)
+        .filter(|handle| is_terminal_handle(handle))
+}
+
+fn same_folder(a: &str, b: &str) -> bool {
+    let normalize = |path: &str| path.replace('/', "\\").trim_end_matches('\\').to_lowercase();
+    !a.is_empty() && normalize(a) == normalize(b)
+}
+
+/// The only live Orca terminal running `agent` ("codex", "claude") in folder `cwd`, from the JSON
+/// of `orca terminal list --json`. `None` when there is none or more than one: guessing between
+/// several would switch to the wrong tab.
+pub(super) fn only_agent_terminal(list_json: &str, agent: &str, cwd: &str) -> Option<String> {
+    let list: Value = serde_json::from_str(list_json).ok()?;
+    let mut matches = list["result"]["terminals"]
+        .as_array()?
+        .iter()
+        .filter(|terminal| terminal["agentIdentity"] == agent && terminal["orphaned"] != true)
+        .filter(|terminal| terminal["worktreePath"].as_str().is_some_and(|path| same_folder(path, cwd)))
+        .filter_map(|terminal| terminal["handle"].as_str().filter(|handle| is_terminal_handle(handle)));
+    let first = matches.next()?;
+    matches.next().is_none().then(|| first.to_string())
+}
+
+/// Asks Orca for its terminals and returns the only one running `agent` in `cwd` (see
+/// `only_agent_terminal`). Blocks for up to LIST_TIMEOUT.
+pub(super) fn find_agent_terminal(orca_exe: &Path, agent: &str, cwd: &str) -> Option<String> {
+    let cli = cli_path(orca_exe);
+    if !cli.is_file() {
+        return None;
+    }
+    let mut child = Command::new(cli)
+        .args(["terminal", "list", "--json"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    // Read on another thread: a long list would fill the pipe and stall the CLI.
+    let mut stdout = child.stdout.take()?;
+    let reader = thread::spawn(move || {
+        let mut text = String::new();
+        let _ = stdout.read_to_string(&mut text);
+        text
+    });
+    let started = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if started.elapsed() < LIST_TIMEOUT => thread::sleep(Duration::from_millis(50)),
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+        }
+    }
+    let text = reader.join().ok()?;
+    only_agent_terminal(&text, agent, cwd)
 }
 
 /// The Orca CLI that ships with the Orca app at `orca_exe` (`resources\bin\orca.exe`).

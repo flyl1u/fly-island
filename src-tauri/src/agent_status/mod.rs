@@ -275,10 +275,22 @@ pub async fn focus_agent_window(
             }
             _ => Vec::new(),
         };
-        let orca_handle = session_id
-            .as_deref()
-            .zip(app_dir.as_deref())
-            .and_then(|(id, app_dir)| orca::terminal_handle_for(app_dir, id));
+        // The Orca tab: from the running session's own environment, else the SessionStart
+        // record, else (Codex, which has neither) the only Codex terminal in its folder.
+        let orca_handle = chain
+            .first()
+            .and_then(|&pid| orca::terminal_handle_of_process(pid))
+            .or_else(|| {
+                session_id
+                    .as_deref()
+                    .zip(app_dir.as_deref())
+                    .and_then(|(id, app_dir)| orca::terminal_handle_for(app_dir, id))
+            })
+            .or_else(|| {
+                let cwd = cwd.as_deref().filter(|_| provider == "codex")?;
+                let orca_exe = window_focus::open_app_exe(orca::ORCA_APP)?;
+                orca::find_agent_terminal(Path::new(&orca_exe), "codex", cwd)
+            });
         let Some(focused) = window_focus::focus_session_window(
             &window_focus::SessionHints {
                 folder: folder.as_deref(),

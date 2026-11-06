@@ -701,6 +701,27 @@ fn the_ancestor_chain_stops_at_reused_ids_and_cycles() {
 }
 
 #[test]
+fn an_agent_terminal_is_only_picked_when_it_is_the_only_one_in_its_folder() {
+    use super::orca::only_agent_terminal;
+
+    let list = |terminals: serde_json::Value| json!({ "ok": true, "result": { "terminals": terminals } }).to_string();
+    let terminal = |handle: &str, agent: &str, path: &str| json!({ "handle": handle, "agentIdentity": agent, "worktreePath": path, "orphaned": false });
+    let one = list(json!([
+        terminal("term_aa", "claude", "E:/Projects/fly-island"),
+        terminal("term_bb", "codex", "E:/Projects/fly-island"),
+        terminal("term_cc", "codex", "E:/Projects/Other"),
+    ]));
+    assert_eq!(only_agent_terminal(&one, "codex", r"E:\Projects\fly-island\").as_deref(), Some("term_bb"));
+    assert_eq!(only_agent_terminal(&one, "codex", r"E:\Projects\Missing"), None);
+    let two = list(json!([
+        terminal("term_bb", "codex", "E:/Projects/fly-island"),
+        terminal("term_dd", "codex", "e:/projects/FLY-ISLAND"),
+    ]));
+    assert_eq!(only_agent_terminal(&two, "codex", r"E:\Projects\fly-island"), None);
+    assert_eq!(only_agent_terminal("not json", "codex", "E:"), None);
+}
+
+#[test]
 fn orca_terminal_records_name_their_session() {
     use super::orca::{cli_path, is_terminal_handle, record_session_id, terminal_handle_for, AGENT_TERMINALS_DIR_NAME};
 

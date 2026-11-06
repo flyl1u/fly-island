@@ -144,6 +144,21 @@ pub(super) fn window_of_process_chain(
     })
 }
 
+/// The executable of a visible window of `app` (lowercase, no ".exe"), if that program is open.
+pub(super) fn open_app_exe(app: &str) -> Option<String> {
+    let mut found = None;
+    let _ = win32::window::for_each_top_level_window(|window| {
+        if found.is_some() || !win32::window::is_visible(window) || win32::window::has_owner(window) {
+            return;
+        }
+        let process_id = win32::process::window_process_id(window);
+        if let Some(path) = win32::process::image_path(process_id).filter(|path| app_name(path) == app) {
+            found = Some(path);
+        }
+    });
+    found
+}
+
 /// The window brought to the front: the process that owns it and its executable name.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct FocusedWindow {
