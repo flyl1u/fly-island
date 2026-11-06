@@ -13,10 +13,10 @@ use super::{
     manifest::{launch_command, PluginRuntime},
     permissions::missing_permissions,
     revocations,
-    runtime::{LaunchSpec, RuntimeStatus, Supervisor},
-    settings,
+    runtime::{LaunchSpec, RuntimeInfo, RuntimeStatus, Supervisor},
+    settings::{self, InfoItem},
     store::{save_state, PluginsState},
-    InstalledPlugin, PluginHost,
+    views, InstalledPlugin, PluginHost,
 };
 use crate::agent_status;
 
@@ -39,33 +39,54 @@ fn sync_builtins(host: &PluginHost) {
     for id in stopping {
         running.remove(&id);
         let result = builtin::stop(&id);
-        let mut runtimes = lock(&host.runtimes);
-        let entry = runtimes.entry(id).or_default();
-        entry.status = RuntimeStatus::Stopped;
-        entry.error = result.err();
-        entry.info.clear();
+        record_builtin_stop(lock(&host.runtimes).entry(id.clone()).or_default(), result);
+        // The island window re-reads the plugin (useBuiltinPlugin).
+        views::runtime_changed(&host.app, &id, RuntimeStatus::Stopped);
     }
     for (id, settings) in wanted {
         if running.contains(&id) {
             continue;
         }
         let started = builtin::start(&id, &settings);
+        if started.is_ok() {
+            running.insert(id.clone());
+        }
         let mut runtimes = lock(&host.runtimes);
         let entry = runtimes.entry(id.clone()).or_default();
-        match started {
-            Ok(info) => {
-                running.insert(id);
-                entry.status = RuntimeStatus::Running;
-                entry.error = None;
-                entry.info = info;
-            }
-            Err(error) => {
-                entry.status = RuntimeStatus::Crashed;
-                entry.error = Some(error);
-                entry.info.clear();
-            }
+        let changed = record_builtin_start(entry, started);
+        let status = entry.status;
+        drop(runtimes);
+        if changed {
+            views::runtime_changed(&host.app, &id, status);
         }
     }
+}
+
+/// Records a built-in plugin's start in its runtime entry. True when its status
+/// changed and the island window should hear of it: a start that keeps failing
+/// is retried every sync and is not announced again each time.
+pub(super) fn record_builtin_start(entry: &mut RuntimeInfo, started: Result<Vec<InfoItem>, String>) -> bool {
+    let before = entry.status;
+    match started {
+        Ok(info) => {
+            entry.status = RuntimeStatus::Running;
+            entry.error = None;
+            entry.info = info;
+        }
+        Err(error) => {
+            entry.status = RuntimeStatus::Crashed;
+            entry.error = Some(error);
+            entry.info.clear();
+        }
+    }
+    entry.status != before
+}
+
+/// Records a built-in plugin's stop in its runtime entry.
+pub(super) fn record_builtin_stop(entry: &mut RuntimeInfo, stopped: Result<(), String>) {
+    entry.status = RuntimeStatus::Stopped;
+    entry.error = stopped.err();
+    entry.info.clear();
 }
 
 /// Starts plugins that should run and stops the rest. A plugin may run when

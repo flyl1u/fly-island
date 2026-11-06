@@ -2,6 +2,12 @@
 //! listed, switched on, granted permissions and configured like any plugin
 //! (runtime type "builtin"). They need no download and no "allow third-party
 //! plugins", and cannot be uninstalled. Today: the local API.
+//!
+//! A built-in plugin whose work happens in the island window (a collapsed-bar
+//! ring, say) needs only an entry in BUILTINS with `native` false: it starts and
+//! stops as a no-op, and the window follows it with `useBuiltinPlugin(id)`, which
+//! re-reads the plugin on the `plugin-view-changed` reset sent when it starts,
+//! stops or its settings change (grants.rs, commands.rs).
 
 use serde_json::{Map, Value};
 
@@ -40,13 +46,27 @@ const LOCAL_API_MANIFEST: &str = r#"{
   }
 }"#;
 
+/// Every built-in plugin: its id, its manifest (whose "id" must match), and
+/// whether it has work in this process (`native`, see `start` and `stop`).
+pub(super) const BUILTINS: &[(&str, &str, bool)] = &[(LOCAL_API_ID, LOCAL_API_MANIFEST, true)];
+
 /// Every built-in plugin's id and manifest.
 pub(super) fn manifests(app_version: &str) -> Vec<(&'static str, Result<PluginManifest, String>)> {
-    vec![(LOCAL_API_ID, parse_builtin_manifest(LOCAL_API_MANIFEST, LOCAL_API_ID, app_version))]
+    BUILTINS.iter().map(|&(id, text, _)| (id, parse_builtin_manifest(text, id, app_version))).collect()
 }
 
 pub(super) fn is_builtin(id: &str) -> bool {
-    id == LOCAL_API_ID
+    BUILTINS.iter().any(|&(builtin, _, _)| builtin == id)
+}
+
+/// Whether built-in plugin `id` has work in this process; an error for an id
+/// that is not in `builtins`.
+pub(super) fn has_native_work(builtins: &[(&str, &str, bool)], id: &str) -> Result<bool, String> {
+    builtins
+        .iter()
+        .find(|&&(builtin, _, _)| builtin == id)
+        .map(|&(_, _, native)| native)
+        .ok_or_else(|| format!("Unknown built-in plugin {id}."))
 }
 
 fn allow_write(settings: &Map<String, Value>) -> bool {
@@ -61,15 +81,22 @@ fn local_api_info(status: local_api::LocalApiStatus) -> Vec<InfoItem> {
     ]
 }
 
-/// Starts a built-in plugin; returns the info for its page.
+/// Starts a built-in plugin; returns the info for its page. Plugins that live in
+/// the island window have nothing to start here.
 pub(super) fn start(id: &str, settings: &Map<String, Value>) -> Result<Vec<InfoItem>, String> {
+    if !has_native_work(BUILTINS, id)? {
+        return Ok(Vec::new());
+    }
     match id {
         LOCAL_API_ID => local_api::start(allow_write(settings)).map(local_api_info),
-        _ => Err(format!("Unknown built-in plugin {id}.")),
+        _ => Err(format!("Built-in plugin {id} is marked native but has no start.")),
     }
 }
 
 pub(super) fn stop(id: &str) -> Result<(), String> {
+    if !has_native_work(BUILTINS, id)? {
+        return Ok(());
+    }
     match id {
         LOCAL_API_ID => local_api::stop(),
         _ => Ok(()),

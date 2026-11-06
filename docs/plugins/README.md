@@ -32,6 +32,8 @@
 
 内置插件的清单写在 `src-tauri/src/plugin_host/builtin.rs` 中，`runtime.type` 为 `builtin`。插件目录里的第三方插件不能使用这个类型，也不能使用内置插件的 id。
 
+只在岛屿窗口里工作的内置插件（例如收起条上的小环）只需在 `BUILTINS` 表里加一行"id + 清单"：后端启动和停止时什么都不做；前端用 `useBuiltinPlugin(id)`（`src/features/plugins/useBuiltinPlugin.ts`）读到 `{ enabled, settings }`，插件启停或改设置时自动更新（宿主发出 `plugin-view-changed` 的 `reset` 事件），再在 `src/windows/island/useCollapsedSlots.tsx` 里填收起条槽位。
+
 ## 目录结构
 
 ```text

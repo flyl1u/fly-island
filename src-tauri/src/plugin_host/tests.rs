@@ -453,7 +453,9 @@ mod settings_tests {
 mod builtin_tests {
     use std::path::PathBuf;
 
-    use super::super::builtin::{manifests, LOCAL_API_ALLOW_WRITE, LOCAL_API_ID};
+    use super::super::builtin::{has_native_work, is_builtin, manifests, BUILTINS, LOCAL_API_ALLOW_WRITE, LOCAL_API_ID};
+    use super::super::grants::{record_builtin_start, record_builtin_stop};
+    use super::super::runtime::{RuntimeInfo, RuntimeStatus};
     use super::super::manifest::{parse_manifest, PluginRuntime};
     use super::super::store::PluginsState;
     use super::super::registry::migrate_local_api;
@@ -473,6 +475,42 @@ mod builtin_tests {
         assert_eq!(manifest.id, LOCAL_API_ID);
         assert_eq!(manifest.runtime, PluginRuntime::Builtin);
         assert!(manifest.permissions.contains(&"agent-status:write".to_string()));
+    }
+
+    #[test]
+    fn every_built_in_manifest_is_valid_and_named_by_its_id() {
+        for plugin in installed() {
+            let manifest = plugin.manifest.as_ref().unwrap_or_else(|error| panic!("{}: {error}", plugin.folder));
+            assert_eq!(manifest.id, plugin.folder);
+            assert_eq!(manifest.runtime, PluginRuntime::Builtin);
+            assert!(is_builtin(&plugin.folder));
+        }
+        assert!(!is_builtin("dev.example.plugin"));
+    }
+
+    #[test]
+    fn only_native_built_in_plugins_do_work_in_this_process() {
+        assert_eq!(has_native_work(BUILTINS, LOCAL_API_ID), Ok(true));
+        let table = [("focusd.native", "", true), ("focusd.window-only", "", false)];
+        assert_eq!(has_native_work(&table, "focusd.window-only"), Ok(false));
+        assert!(has_native_work(&table, "focusd.unknown").expect_err("unknown").contains("focusd.unknown"));
+    }
+
+    #[test]
+    fn built_in_status_changes_are_announced_once() {
+        let mut entry = RuntimeInfo::default();
+        assert!(record_builtin_start(&mut entry, Ok(Vec::new())));
+        assert_eq!(entry.status, RuntimeStatus::Running);
+
+        record_builtin_stop(&mut entry, Err("port busy".into()));
+        assert_eq!((entry.status, entry.error.as_deref()), (RuntimeStatus::Stopped, Some("port busy")));
+
+        assert!(record_builtin_start(&mut entry, Err("port busy".into())));
+        assert_eq!(entry.status, RuntimeStatus::Crashed);
+        // Retried on every sync; the window already knows it failed.
+        assert!(!record_builtin_start(&mut entry, Err("port busy".into())));
+        assert!(record_builtin_start(&mut entry, Ok(Vec::new())));
+        assert_eq!((entry.status, entry.error.as_deref()), (RuntimeStatus::Running, None));
     }
 
     #[test]

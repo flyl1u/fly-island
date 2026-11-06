@@ -286,6 +286,7 @@ pub fn set_plugin_setting(id: String, key: String, value: Value) -> Result<Plugi
     let resolved = store_settings(&id, &values)?;
     if lock(&host.builtins_running).contains(&id) {
         builtin::settings_changed(&id, &resolved)?;
+        views::runtime_changed(&host.app, &id, runtime::RuntimeStatus::Running);
     } else if let Some(supervisor) = lock(&host.supervisors).get(&id) {
         supervisor.update_settings(resolved);
     }
