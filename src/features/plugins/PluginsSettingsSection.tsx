@@ -12,7 +12,7 @@ import "./PluginsSettingsSection.css";
  * The plugins page: the third-party switch, the plugins folder and each installed
  * plugin; or one plugin's own page once its Settings is opened. The market is its own page.
  */
-export function PluginsSettingsSection() {
+export function PluginsSettingsSection({ initialOpenId = null }: { initialOpenId?: string | null } = {}) {
   const t = useTranslation();
   const {
     snapshot,
@@ -34,7 +34,8 @@ export function PluginsSettingsSection() {
     untrustPublisher,
     checkUpdates,
   } = usePlugins();
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Opened from the market's Manage button: that plugin's own page.
+  const [openId, setOpenId] = useState<string | null>(initialOpenId);
   const allowed = snapshot?.allowThirdParty ?? false;
   const openPlugin = snapshot?.plugins.find((plugin) => plugin.id === openId);
 

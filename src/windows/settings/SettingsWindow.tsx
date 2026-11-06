@@ -119,12 +119,22 @@ export function SettingsWindow() {
   }, []);
 
   const openShortcuts = () => setCategory("shortcuts");
+  // The market's Manage opens that plugin on the plugins page; any other way there shows the list.
+  const [managedPluginId, setManagedPluginId] = useState<string | null>(null);
+  const changeCategory = (next: typeof category) => {
+    setManagedPluginId(null);
+    setCategory(next);
+  };
+  const managePlugin = (id: string) => {
+    setManagedPluginId(id);
+    setCategory("plugins");
+  };
 
   return (
     <main className={`settings-stage stage--font-${settings.fontFamily}`}>
       <LayoutEditor
         category={category}
-        onCategoryChange={setCategory}
+        onCategoryChange={changeCategory}
         titleAction={category === "appearance" && <ResetAppearanceButton onReset={resetAppearance} />}
       >
         {category === "general" && (
@@ -160,12 +170,12 @@ export function SettingsWindow() {
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "plugins" && (
           <>
-            <PluginsSettingsSection />
+            <PluginsSettingsSection key={managedPluginId ?? "list"} initialOpenId={managedPluginId} />
             <PluginIslandPagesSection />
             <PluginDevSection />
           </>
         )}
-        {category === "market" && <PluginMarketSection />}
+        {category === "market" && <PluginMarketSection onManage={managePlugin} />}
         {category === "updates" && <UpdateSettingsSection />}
         {category === "about" && <ProjectSettingsSection onOpenUpdates={() => setCategory("updates")} />}
       </LayoutEditor>

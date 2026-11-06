@@ -1,18 +1,25 @@
 import { useMemo, useState } from "react";
 import { RefreshCcw } from "lucide-react";
 import { useLocale, useTranslation } from "../../i18n";
-import { MARKET_CATEGORIES, type MarketCategory, type PluginsSnapshot } from "./api";
+import { MARKET_CATEGORIES, type MarketCategory, type MarketPlugin, type PluginsSnapshot } from "./api";
 import { filterMarketPlugins, usedCategories } from "./marketFilter";
+import { groupMarketPlugins } from "./marketGroups";
 import { MarketPluginItem } from "./MarketPluginItem";
 import { usePluginMarket } from "./usePluginMarket";
 import "./PluginMarketSection.css";
 
-/** Plugins from the market index: search, categories, and each with Install, Update or its state. */
-export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: PluginsSnapshot) => void } = {}) {
+const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+
+/**
+ * Plugins from the market index: a status line with Refresh, search and
+ * categories, then the plugins that can be installed and below them the
+ * installed ones. `onManage` opens an installed plugin on the plugins page.
+ */
+export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (snapshot: PluginsSnapshot) => void; onManage?: (id: string) => void } = {}) {
   const t = useTranslation();
   const text = t.settings.plugins.market;
   const { locale } = useLocale();
-  const { market, loading, loadError, installError, installingId, refresh, install } = usePluginMarket(onInstalled);
+  const { market, loadedAt, loading, loadError, installError, installingId, refresh, install } = usePluginMarket(onInstalled);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<MarketCategory | "">("");
   const failedPlugin = installError && market?.plugins.find((plugin) => plugin.id === installError.id);
@@ -21,14 +28,43 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
     () => (market ? filterMarketPlugins(market.plugins, { query, category }, market.officialPublisher) : []),
     [market, query, category],
   );
+  const groups = useMemo(() => groupMarketPlugins(shown), [shown]);
   const hasPlugins = Boolean(market && market.plugins.length > 0);
+  const status = loading
+    ? text.refreshing
+    : market
+      ? loadedAt !== null
+        ? text.status(market.plugins.length, time(loadedAt))
+        : text.statusCount(market.plugins.length)
+      : "";
+  const renderGroup = (title: string, plugins: MarketPlugin[]) =>
+    plugins.length > 0 ? (
+      <div className="plugin-market__group" role="group" aria-label={title}>
+        <h3 className="plugin-market__group-title">{title}</h3>
+        {market
+          ? plugins.map((plugin) => (
+              <MarketPluginItem
+                key={plugin.id}
+                plugin={plugin}
+                market={market}
+                installingId={installingId}
+                onInstall={(id, trust, acceptKeyChange) => void install(id, trust, acceptKeyChange)}
+                onManage={onManage}
+              />
+            ))
+          : null}
+      </div>
+    ) : null;
   // Search and categories stay in place while the list loads; only an index that is known to be empty hides them.
   const showFilters = hasPlugins || (market === null && !loadError);
 
   return (
     <section className="settings-section plugins-panel">
-      <div className="settings-section__header plugin-market__header">
-        <span>{text.title}</span>
+      {/* The page title already says Plugin market: this line says what was loaded and when. */}
+      <div className="plugin-market__header">
+        <span className="plugin-market__status" aria-live="polite">
+          {status}
+        </span>
         <button className="plugin-card__button" type="button" disabled={loading} onClick={() => void refresh()}>
           <RefreshCcw className={loading ? "plugin-market__spin" : undefined} size={12} strokeWidth={2.4} />
           <span>{text.refresh}</span>
@@ -85,17 +121,8 @@ export function PluginMarketSection({ onInstalled }: { onInstalled?: (snapshot: 
           </>
         ) : null}
         {hasPlugins && shown.length === 0 ? <p className="settings-section__hint">{text.noMatches}</p> : null}
-        {market
-          ? shown.map((plugin) => (
-              <MarketPluginItem
-                key={plugin.id}
-                plugin={plugin}
-                market={market}
-                installingId={installingId}
-                onInstall={(id, trust, acceptKeyChange) => void install(id, trust, acceptKeyChange)}
-              />
-            ))
-          : null}
+        {renderGroup(text.groupInstallable(groups.installable.length), groups.installable)}
+        {renderGroup(text.groupInstalled(groups.installed.length), groups.installed)}
       </div>
     </section>
   );

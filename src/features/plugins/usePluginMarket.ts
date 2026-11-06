@@ -14,6 +14,8 @@ import {
  * while a fresh copy loads in the background.
  */
 let lastMarket: MarketSnapshot | null = null;
+/** When this window last read the index online (ms); null while only the island's cached copy is shown. */
+let lastLoadedAt: number | null = null;
 
 /**
  * The plugin market index, fetched when the page opens and on Refresh, and
@@ -24,6 +26,7 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
   useEffect(() => {
     lastMarket = market;
   }, [market]);
+  const [loadedAt, setLoadedAt] = useState<number | null>(lastLoadedAt);
   const [loading, setLoading] = useState(false);
   // Kept apart so a failed install does not read as the list failing to load.
   const [loadError, setLoadError] = useState("");
@@ -37,6 +40,8 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
     setLoading(true);
     try {
       setMarket(await getPluginMarket());
+      lastLoadedAt = Date.now();
+      setLoadedAt(lastLoadedAt);
     } catch (nextError) {
       setLoadError(String(nextError));
     } finally {
@@ -83,5 +88,5 @@ export function usePluginMarket(onInstalled?: (snapshot: PluginsSnapshot) => voi
     [market, onInstalled],
   );
 
-  return { market, loading, loadError, installError, installingId, refresh, install };
+  return { market, loadedAt, loading, loadError, installError, installingId, refresh, install };
 }

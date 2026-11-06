@@ -208,12 +208,31 @@ if (!automated) {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true,
       "Confirming installs the update and accepts the new key");
-    const verifiedBadges = [...document.querySelectorAll<HTMLElement>(".plugin-market__verified")];
-    check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证 · plugins.example.com"
+    const verifiedBadges = [...document.querySelectorAll<HTMLElement>(".plugin-market__badge:not(.plugin-market__badge--official)")];
+    check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证" && verifiedBadges[0].title.includes("已验证 · plugins.example.com")
       && verifiedBadges[0].closest(".plugin-market__item")?.textContent?.includes("新插件"),
-      "A verified publisher is marked with its domain; the official one keeps its own label");
+      "A verified publisher gets a small mark with its domain in the hover; the official one keeps its own label");
     const verifiedItem = verifiedBadges[0]?.closest<HTMLElement>(".plugin-market__item");
     check(verifiedItem && verifiedItem.scrollWidth <= verifiedItem.clientWidth, "The verified mark does not make the market overflow");
+    const groupTitles = [...document.querySelectorAll<HTMLElement>(".plugin-market__group-title")].map((title) => title.textContent ?? "");
+    check(groupTitles.length === 2 && groupTitles[0].startsWith("可安装") && groupTitles[1].startsWith("已安装"),
+      "Plugins that can be installed come first, the installed ones below");
+    check(document.querySelector(".plugin-market__status")?.textContent?.startsWith("共 ") && !document.querySelector(".plugin-market__header > span:only-child"),
+      "A status line with the plugin count takes the place of a second Plugin market title");
+    const officialBadges = document.querySelectorAll(".plugin-market__badge--official");
+    check(officialBadges.length > 0 && [...document.querySelectorAll(".plugin-market__meta")].every((meta) => !meta.textContent?.includes("· 官方")),
+      "Official plugins carry one small mark instead of a publisher line");
+    check([...document.querySelectorAll<HTMLElement>(".plugin-market__icon")].every((icon) => icon.textContent?.length === 1),
+      "Every market card has a one-letter icon");
+    const installedItem = document.querySelector<HTMLElement>(".plugin-market__installed")?.closest<HTMLElement>(".plugin-market__item");
+    const manage = [...(installedItem?.querySelectorAll<HTMLButtonElement>(".plugin-market__action button") ?? [])].find((button) => button.textContent === "管理");
+    const managedName = installedItem?.querySelector(".plugin-market__title strong")?.textContent ?? "";
+    await act(async () => { manage?.click(); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    check(Boolean(manage) && [...document.querySelectorAll("button")].some((button) => button.textContent === "返回插件列表")
+      && document.body.textContent?.includes(managedName),
+      "An installed plugin shows Installed with Manage, which opens it on the plugins page");
+    await act(async () => { [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表")?.click(); });
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");

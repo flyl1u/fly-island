@@ -1,3 +1,4 @@
+/* The status line ("N plugins · index updated at") with Refresh, in place of a second title. */
 .plugin-market__header {
   display: flex;
   align-items: center;
@@ -5,24 +6,92 @@
   gap: 8px;
 }
 
+.plugin-market__status {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-market__group {
+  display: grid;
+  gap: var(--space-md, 8px);
+}
+
+.plugin-market__group-title {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+/* Icon | name, facts and description (clicking opens the details) | action. */
 .plugin-market__item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
   align-items: start;
-  gap: 10px;
+  gap: 4px 10px;
   padding: 12px;
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-md);
 }
 
-.plugin-market__text {
+.plugin-market__item:hover,
+.plugin-market__item--open {
+  border-color: var(--color-white-a16, rgba(255, 255, 255, 0.16));
+}
+
+.plugin-market__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--color-text-strong);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.plugin-market__icon--productivity { background: rgba(116, 214, 255, 0.22); }
+.plugin-market__icon--todos { background: rgba(47, 140, 97, 0.38); }
+.plugin-market__icon--developer { background: rgba(160, 132, 255, 0.3); }
+.plugin-market__icon--media { background: rgba(255, 138, 101, 0.3); }
+.plugin-market__icon--messages { background: rgba(255, 209, 102, 0.26); }
+.plugin-market__icon--information { background: rgba(110, 168, 255, 0.28); }
+.plugin-market__icon--utilities { background: rgba(248, 246, 240, 0.16); }
+
+.plugin-market__summary {
   display: grid;
   gap: 4px;
   min-width: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
-.plugin-market__text strong {
+.plugin-market__summary:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.plugin-market__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.plugin-market__title strong {
+  min-width: 0;
   overflow: hidden;
   color: var(--color-text-strong);
   font-size: 13px;
@@ -30,18 +99,39 @@
   white-space: nowrap;
 }
 
-.plugin-market__text span,
-.plugin-market__text p {
+.plugin-market__version,
+.plugin-market__meta span,
+.plugin-market__description,
+.plugin-market__notes p,
+.plugin-market__details p {
   margin: 0;
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.5;
 }
 
-.plugin-market__action {
-  display: grid;
-  justify-items: end;
-  gap: 6px;
+.plugin-market__version {
+  flex: none;
+  font-size: 11px;
+}
+
+/* Official / Verified: one small mark next to the name instead of a publisher line on every card. */
+.plugin-market__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  color: var(--color-text);
+  background: var(--color-white-a08);
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.plugin-market__badge--official {
+  color: var(--color-accent, #74d6ff);
+  background: rgba(116, 214, 255, 0.12);
 }
 
 .plugin-market__meta {
@@ -51,28 +141,55 @@
   gap: 4px 8px;
 }
 
-.plugin-market__publisher {
+.plugin-market__meta .plugin-market__permissions {
   display: inline-flex;
   align-items: center;
   gap: 3px;
 }
 
-.plugin-market__publisher--official {
-  color: var(--color-text);
+.plugin-market__meta .plugin-market__permissions--sensitive {
+  color: var(--color-warning);
 }
 
-.plugin-market__verified {
-  display: inline-flex;
-  gap: 3px;
-  align-items: center;
+.plugin-market__notes {
+  display: grid;
+  grid-column: 2 / -1;
+  gap: 4px;
   min-width: 0;
-  overflow: hidden;
-  color: var(--color-text);
-  text-overflow: ellipsis;
+}
+
+.plugin-market__notes:empty {
+  display: none;
+}
+
+.plugin-market__details {
+  display: grid;
+  gap: 4px;
+}
+
+.plugin-market__action {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.plugin-market__installed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.plugin-market__text .plugin-market__tag {
+.plugin-market__update {
+  color: var(--color-text-strong);
+  background: rgba(116, 214, 255, 0.18);
+  border-color: rgba(116, 214, 255, 0.45);
+}
+
+.plugin-market__meta .plugin-market__tag {
   padding: 0 6px;
   color: var(--color-text);
   background: var(--color-white-a08);
@@ -80,14 +197,14 @@
   font-size: 11px;
 }
 
-/* Custom UI is worth a second look before installing. */
-.plugin-market__text .plugin-market__tag--signed {
+.plugin-market__meta .plugin-market__tag--signed {
   display: inline-flex;
   gap: 3px;
   align-items: center;
 }
 
-.plugin-market__text .plugin-market__tag--custom {
+/* Custom UI is worth a second look before installing. */
+.plugin-market__meta .plugin-market__tag--custom {
   color: var(--color-warning);
   background: rgba(255, 209, 102, 0.12);
 }

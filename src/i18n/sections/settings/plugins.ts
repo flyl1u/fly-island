@@ -152,6 +152,17 @@ export type SettingsPluginsText = {
     changelog: string;
     customUi: string;
     customUiHint: string;
+    /** The status line above the list and the two groups. */
+    status: (count: number, time: string) => string;
+    statusCount: (count: number) => string;
+    refreshing: string;
+    groupInstallable: (count: number) => string;
+    groupInstalled: (count: number) => string;
+    manage: string;
+    manageHint: string;
+    verified: string;
+    noPermissions: string;
+    runtime: Record<"node" | "powershell" | "exe", string>;
   };
   /** Plugin updates and trusted publishers on the plugins page (P11). */
   updates: {
@@ -360,6 +371,16 @@ export const zhCN: SettingsPluginsText = {
     changelog: "版本历史",
     customUi: "自定义界面",
     customUiHint: "这个插件在岛上显示自己写的网页。网页只能和插件自己通信，不能联网，也调用不了岛屿的功能。",
+    status: (count: number, time: string) => `共 ${count} 个插件 · 索引更新于 ${time}`,
+    statusCount: (count: number) => `共 ${count} 个插件`,
+    refreshing: "正在刷新插件列表…",
+    groupInstallable: (count: number) => `可安装（${count}）`,
+    groupInstalled: (count: number) => `已安装（${count}）`,
+    manage: "管理",
+    manageHint: "在「插件扩展」里打开这个插件的设置",
+    verified: "已验证",
+    noPermissions: "无需权限",
+    runtime: { node: "Node.js", powershell: "PowerShell", exe: "程序" },
   },
   updates: {
     title: "更新",
@@ -567,6 +588,16 @@ export const en: SettingsPluginsText = {
     changelog: "Version history",
     customUi: "Custom UI",
     customUiHint: "This plugin shows its own web page on the island. The page can only talk to the plugin, cannot go online and cannot use the island's features.",
+    status: (count: number, time: string) => `${count} ${count === 1 ? "plugin" : "plugins"} · index updated ${time}`,
+    statusCount: (count: number) => `${count} ${count === 1 ? "plugin" : "plugins"}`,
+    refreshing: "Refreshing the plugin list…",
+    groupInstallable: (count: number) => `Available (${count})`,
+    groupInstalled: (count: number) => `Installed (${count})`,
+    manage: "Manage",
+    manageHint: "Open this plugin's settings under Plugins",
+    verified: "Verified",
+    noPermissions: "No permissions",
+    runtime: { node: "Node.js", powershell: "PowerShell", exe: "Program" },
   },
   updates: {
     title: "Updates",
