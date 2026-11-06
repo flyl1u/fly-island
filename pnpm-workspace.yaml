@@ -5,5 +5,14 @@ packages:
 allowBuilds:
   esbuild: true
 
+# Lift build-tool dependencies out of versions with security advisories
+# (Dependabot alerts). Each one only matches the vulnerable range, so it
+# stops doing anything once the packages that pull them in move on.
+overrides:
+  source-map-js@<1.2.2: ^1.2.2
+  baseline-browser-mapping@>=2.0.0 <2.11.0: ^2.11.0
+  browserslist@<4.28.7: ^4.28.7
+  postcss@<8.5.23: ^8.5.23
+
 patchedDependencies:
   claude-code-merge-queue@0.7.1: patches/claude-code-merge-queue@0.7.1.patch

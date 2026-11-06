@@ -38,7 +38,9 @@ sha2 = "0.10"
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
+# No `zip`: it only unpacks v1-style .zip updates, and releases ship the bare
+# installer (createUpdaterArtifacts: true). Leaves out its old zip 4.x crate.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 tiny_http = "0.12"
 webview2-com = "0.38"
 window-vibrancy = "0.6"
