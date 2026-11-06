@@ -20,6 +20,7 @@ import { getAgentStatusLabel, getAgentVisualState, withoutHiddenProviders } from
 import { useAgentStatus } from "../../features/agent-status/useAgentStatus";
 import { useAgentSession } from "../../features/agent-status/useAgentSession";
 import { useIslandAgentSessions } from "../../features/agent-status/useIslandAgentSessions";
+import { useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
 import { AgentSessionsPanel } from "../../features/agent-status/AgentSessionsPanel";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
@@ -199,6 +200,16 @@ export function IslandApp() {
     openIslandPage,
     pluginPages: pluginPages.pageIds,
   });
+  const alertedSession = useAgentAlerts({
+    sessions: agentSessions,
+    kinds: { completed: settings.agentAlertCompleted, failed: settings.agentAlertFailed, waiting: settings.agentAlertWaiting },
+    durationMs: settings.agentAlertSeconds * 1000,
+    canAlert: features.agents && !game.quiet,
+    isOpenOnAgents: mode === "expanded" && page === "agents",
+    isCollapsed: mode === "collapsed",
+    onOpen: () => openIslandPage("agents"),
+    onClose: collapseIsland,
+  });
 
   const fileShelf = useFileShelf(settings.shelfEnabled, {
     maxItems: settings.shelfMaxItems,
@@ -365,7 +376,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} />}
+        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

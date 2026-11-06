@@ -1,5 +1,6 @@
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
+import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentHooksSettingsSection } from "../../features/agent-status/AgentHooksSettingsSection";
 import { useAgentStatusSettings } from "../../features/agent-status/useAgentStatusSettings";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -38,6 +39,7 @@ export function AgentSettingsPage({
         <p className="settings-section__hint">{t.settings.agent.sessionTitleHint}</p>
       </section>
       <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
+      <AgentAlertSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentHooksSettingsSection {...agentStatus} />
     </>
   );

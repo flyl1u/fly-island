@@ -6,6 +6,8 @@ import type { AgentHostDisplay, IslandPreset, IslandSettings, LegacyIslandSettin
 export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon", "name", "off"];
 /** Choices for how far back the Agent page lists sessions, in hours. */
 export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
+/** How long a page opened for an agent alert stays, in seconds. */
+export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;
@@ -72,6 +74,10 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowElapsed: false,
   agentShowModel: true,
   agentShowActivity: true,
+  agentAlertCompleted: true,
+  agentAlertFailed: true,
+  agentAlertWaiting: true,
+  agentAlertSeconds: 5,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,
@@ -250,6 +256,12 @@ export function normalizeSettings(
     agentShowElapsed: settings?.agentShowElapsed === true,
     agentShowModel: settings?.agentShowModel !== false,
     agentShowActivity: settings?.agentShowActivity !== false,
+    agentAlertCompleted: settings?.agentAlertCompleted !== false,
+    agentAlertFailed: settings?.agentAlertFailed !== false,
+    agentAlertWaiting: settings?.agentAlertWaiting !== false,
+    agentAlertSeconds: (AGENT_ALERT_SECONDS as readonly unknown[]).includes(settings?.agentAlertSeconds)
+      ? (settings?.agentAlertSeconds as number)
+      : DEFAULT_SETTINGS.agentAlertSeconds,
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

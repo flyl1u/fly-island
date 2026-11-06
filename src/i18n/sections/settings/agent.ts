@@ -37,6 +37,15 @@ export type SettingsAgentText = {
   showModel: string;
   showActivity: string;
   showActivityHint: string;
+  alerts: {
+    title: string;
+    hint: string;
+    completed: string;
+    failed: string;
+    waiting: string;
+    seconds: string;
+    secondsValue: (seconds: number) => string;
+  };
   hooksOutdated: string;
   hooksMissing: string;
 };
@@ -80,6 +89,15 @@ export const zhCN: SettingsAgentText = {
   showModel: "显示模型和推理强度",
   showActivity: "显示最近提问和正在用的工具",
   showActivityHint: "进行中的会话在回复上方显示你最近一次的提问，运行时显示它正在调用的工具（如 Bash 命令、正在改的文件）。",
+  alerts: {
+    title: "弹出提醒",
+    hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
+    completed: "会话完成时",
+    failed: "会话出错时",
+    waiting: "等待你确认或回答时",
+    seconds: "停留时间",
+    secondsValue: (seconds) => `${seconds} 秒`,
+  },
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
 };
@@ -123,6 +141,15 @@ export const en: SettingsAgentText = {
   showModel: "Show the model and effort",
   showActivity: "Show the latest prompt and the tool in use",
   showActivityHint: "Sessions in progress show your latest prompt above the reply and, while running, the tool they are calling (a Bash command, the file being edited).",
+  alerts: {
+    title: "Pop-up alerts",
+    hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",
+    completed: "When a session finishes",
+    failed: "When a session fails",
+    waiting: "When it waits for your approval or answer",
+    seconds: "Stays open for",
+    secondsValue: (seconds) => `${seconds} s`,
+  },
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
 };

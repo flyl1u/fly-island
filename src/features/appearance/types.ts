@@ -44,6 +44,12 @@ export type IslandSettings = {
   agentShowModel: boolean;
   /** The latest prompt and the tool in use on working session rows. */
   agentShowActivity: boolean;
+  /** Open the Agent page when a session finishes, fails or waits for the user. */
+  agentAlertCompleted: boolean;
+  agentAlertFailed: boolean;
+  agentAlertWaiting: boolean;
+  /** How long a page opened for an alert stays, in seconds; one of AGENT_ALERT_SECONDS. */
+  agentAlertSeconds: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

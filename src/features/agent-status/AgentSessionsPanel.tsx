@@ -11,6 +11,7 @@ import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import { useScrollFade } from "./useScrollFade";
 import { sessionKey } from "./unseen";
 import type { UnseenSessions } from "./useUnseenSessions";
+import type { AlertedSession } from "./useAgentAlerts";
 import "./AgentSessionsPanel.css";
 
 const NOT_FOUND_NOTICE_MS = 3000;
@@ -27,6 +28,7 @@ export function AgentSessionsPanel({
   showModel = true,
   showActivity = true,
   unseen,
+  reveal,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
@@ -37,6 +39,8 @@ export function AgentSessionsPanel({
   showActivity?: boolean;
   /** Finished sessions not looked at yet; they stand out until clicked. */
   unseen?: UnseenSessions;
+  /** The session an alert opened the page for, scrolled into view; a new object for each alert. */
+  reveal?: AlertedSession | null;
 }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
@@ -48,6 +52,20 @@ export function AgentSessionsPanel({
     const timer = window.setInterval(() => setNow(Date.now()), AGE_REFRESH_MS);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!reveal) return;
+    // Scrolls the list only, not the island around it as scrollIntoView could.
+    const item = [...document.querySelectorAll<HTMLElement>(".agent-sessions__list > li")].find(
+      (row) => row.dataset.sessionKey === reveal.key,
+    );
+    const listElement = item?.parentElement;
+    if (!item || !listElement) return;
+    const row = item.getBoundingClientRect();
+    const box = listElement.getBoundingClientRect();
+    if (row.top < box.top) listElement.scrollTop -= box.top - row.top;
+    else if (row.bottom > box.bottom) listElement.scrollTop += row.bottom - box.bottom;
+  }, [reveal]);
 
   useEffect(() => {
     if (!notFoundId) return;
@@ -112,7 +130,7 @@ export function AgentSessionsPanel({
             .filter(Boolean)
             .flatMap((part, index) => (index === 0 ? [part] : [" · ", part]));
           return (
-            <li key={`${session.provider}:${session.sessionId}`}>
+            <li key={`${session.provider}:${session.sessionId}`} data-session-key={sessionKey(session)}>
               <button
                 className={`agent-session agent-session--${session.phase} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
                 type="button"

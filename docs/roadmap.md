@@ -21,8 +21,8 @@
 
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
-| B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 待做 | | 同上。并入 B6 第 1 期 |
-| B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 待做 | | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期先实测钩子等待时终端审批框的行为；第 1 期（音效 + 自动弹出提醒）不依赖实测，可以先做 |
+| B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 已完成 | fly-island-lanes/4 | 并入 B6 第 1 期，见任务清单 1.5–1.9 |
+| B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 进行中 | fly-island-lanes/4 | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期先实测钩子等待时终端审批框的行为；第 1 期的自动弹出提醒已完成，音效（1.1–1.4）等用户确认风格 |
 | B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 待做 | | 先调研数据来源。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
 
