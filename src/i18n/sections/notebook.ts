@@ -1,7 +1,6 @@
 export type NotebookText = {
   sectionLabel: string;
   backToToday: string;
-  saveToday: string;
   saveTodayMarkdown: string;
   reviewSaved: string;
   tasksTab: string;
@@ -33,7 +32,6 @@ export type NotebookText = {
 export const zhCN: NotebookText = {
   sectionLabel: "任务清单",
   backToToday: "Back to today's todo list",
-  saveToday: "Save today's todo list",
   saveTodayMarkdown: "Save today's todo list as markdown",
   reviewSaved: "Review saved todo lists",
   tasksTab: "Tasks",
@@ -67,7 +65,6 @@ export const zhCN: NotebookText = {
 export const en: NotebookText = {
   sectionLabel: "Tasks",
   backToToday: "Back to today's todo list",
-  saveToday: "Save today's todo list",
   saveTodayMarkdown: "Save today's todo list as markdown",
   reviewSaved: "Review saved todo lists",
   tasksTab: "Tasks",

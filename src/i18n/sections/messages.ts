@@ -10,7 +10,6 @@ export type MessagesText = {
   newMessage: string;
   newMail: string;
   wechatPreview: string;
-  openNewMail: string;
   newMailLabel: string;
   sourceLabels: {
     qq: string;
@@ -38,7 +37,6 @@ export const zhCN: MessagesText = {
   newMessage: "收到一条新消息",
   newMail: "收到一封新邮件",
   wechatPreview: "你收到了一条消息",
-  openNewMail: "查看新邮件",
   newMailLabel: "邮箱有新邮件，查看邮件",
   sourceLabels: {
     qq: "QQ",
@@ -66,7 +64,6 @@ export const en: MessagesText = {
   newMessage: "New message",
   newMail: "New email",
   wechatPreview: "You received a message",
-  openNewMail: "View new email",
   newMailLabel: "New email, view mail",
   sourceLabels: {
     qq: "QQ",

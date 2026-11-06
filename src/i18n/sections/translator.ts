@@ -36,7 +36,6 @@ export type TranslatorText = {
   english: string;
   bilingual: string;
   source: string;
-  limit: string;
   placeholder: string;
   paste: string;
   result: string;
@@ -95,7 +94,6 @@ export const zhCN: TranslatorText = {
   english: "English",
   bilingual: "中英互译",
   source: "原文",
-  limit: "最多 5,000 字",
   placeholder: "输入文本，或按 Tab 粘贴最新复制内容",
   paste: "粘贴最新剪贴板内容",
   result: "译文",
@@ -154,7 +152,6 @@ export const en: TranslatorText = {
   english: "English",
   bilingual: "Chinese / English",
   source: "Source",
-  limit: "Up to 5,000 characters",
   placeholder: "Enter text, or press Tab to paste the latest clipboard text",
   paste: "Paste latest clipboard text",
   result: "Translation",

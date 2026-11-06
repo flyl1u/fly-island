@@ -25,7 +25,6 @@ export type AgentText = {
     duration: (parts: { hours: number; minutes: number; seconds: number }) => string;
     elapsedRunning: (duration: string) => string;
     elapsedDone: (duration: string) => string;
-    elapsedHint: string;
   };
 };
 
@@ -57,7 +56,6 @@ export const zhCN: AgentText = {
       hours > 0 ? `${hours} 小时 ${minutes} 分` : minutes > 0 ? `${minutes} 分 ${seconds} 秒` : `${seconds} 秒`,
     elapsedRunning: (duration) => `已运行 ${duration}`,
     elapsedDone: (duration) => `用时 ${duration}`,
-    elapsedHint: "从最近一次提问开始算",
   },
 };
 
@@ -89,6 +87,5 @@ export const en: AgentText = {
       hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
     elapsedRunning: (duration) => `running ${duration}`,
     elapsedDone: (duration) => `took ${duration}`,
-    elapsedHint: "Counted from the latest prompt",
   },
 };

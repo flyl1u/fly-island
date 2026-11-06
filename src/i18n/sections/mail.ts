@@ -8,7 +8,6 @@ export type MailText = {
   helpFailed: string;
   reader: string;
   back: string;
-  webHint: string;
   openWeb: string;
   markRead: string;
   compose: string;
@@ -24,7 +23,6 @@ export type MailText = {
   sending: string;
   attachments: (count: number) => string;
   saveAttachment: string;
-  saveAttachmentHint: string;
   attachmentSaved: string;
   body: string;
   loading: string;
@@ -32,8 +30,6 @@ export type MailText = {
   emptyText: string;
   notice: string;
   remoteImages: string;
-  remoteImagesOn: string;
-  remoteImagesOff: string;
   loadRemoteImages: string;
   remoteImagesBlocked: (count: number) => string;
   receive: string;
@@ -83,7 +79,6 @@ export type MailText = {
     authRequired: string;
     error: string;
   };
-  lastSynced: (time: string) => string;
   readMessage: (subject: string, unread: boolean) => string;
 };
 
@@ -97,7 +92,6 @@ export const zhCN: MailText = {
   helpFailed: "无法打开邮箱帮助，请在邮箱设置中查找 IMAP 和授权码。",
   reader: "邮件阅读",
   back: "返回列表",
-  webHint: "附件和回复请在网页中处理",
   openWeb: "在网页打开",
   markRead: "标为已读",
   compose: "写邮件",
@@ -113,7 +107,6 @@ export const zhCN: MailText = {
   sending: "发送中",
   attachments: (count: number) => `附件（${count}）`,
   saveAttachment: "保存",
-  saveAttachmentHint: "保存到下载文件夹，并在资源管理器中显示",
   attachmentSaved: "已保存",
   body: "邮件正文",
   loading: "正在加载正文",
@@ -121,8 +114,6 @@ export const zhCN: MailText = {
   emptyText: "这封邮件没有文字正文。",
   notice: "仅预览，不自动标为已读 · 附件请在网页查看",
   remoteImages: "远程图片",
-  remoteImagesOn: "已允许加载远程图片，点击关闭",
-  remoteImagesOff: "远程图片已阻止，点击显示",
   loadRemoteImages: "显示图片",
   remoteImagesBlocked: (count: number) => `已阻止 ${count} 张远程图片`,
   receive: "接收邮箱",
@@ -172,7 +163,6 @@ export const zhCN: MailText = {
     authRequired: "需要重新授权",
     error: "同步失败",
   },
-  lastSynced: (time) => `刷新邮件 · 上次同步 ${time}`,
   readMessage: (subject, unread) => `阅读邮件：${subject}${unread ? "，未读" : ""}`,
 };
 
@@ -186,7 +176,6 @@ export const en: MailText = {
   helpFailed: "Could not open mail help. Find IMAP and authorization codes in your mailbox settings.",
   reader: "Mail reader",
   back: "Back to list",
-  webHint: "Open the website for attachments and replies",
   openWeb: "Open in browser",
   markRead: "Mark as read",
   compose: "Write mail",
@@ -202,7 +191,6 @@ export const en: MailText = {
   sending: "Sending",
   attachments: (count: number) => `Attachments (${count})`,
   saveAttachment: "Save",
-  saveAttachmentHint: "Save to the Downloads folder and show it in Explorer",
   attachmentSaved: "Saved",
   body: "Email body",
   loading: "Loading email",
@@ -210,8 +198,6 @@ export const en: MailText = {
   emptyText: "This email has no text body.",
   notice: "Preview only, stays unread · View attachments in your browser",
   remoteImages: "Remote images",
-  remoteImagesOn: "Remote images allowed, click to block",
-  remoteImagesOff: "Remote images blocked, click to show",
   loadRemoteImages: "Show images",
   remoteImagesBlocked: (count: number) => `${count} remote image${count === 1 ? "" : "s"} blocked`,
   receive: "Receive mail",
@@ -261,6 +247,5 @@ export const en: MailText = {
     authRequired: "Authorization required",
     error: "Sync failed",
   },
-  lastSynced: (time) => `Refresh mail · Last synced ${time}`,
   readMessage: (subject, unread) => `Read email: ${subject}${unread ? ", unread" : ""}`,
 };

@@ -18,20 +18,16 @@ export type ClipboardText = {
   copy: string;
   copied: string;
   favorite: string;
-  unfavorite: string;
   favoriteItem: string;
   unfavoriteItem: string;
   delete: string;
-  confirmDelete: string;
   deleteItem: string;
   notePlaceholder: string;
   noteInputLabel: string;
   saveNote: string;
-  cancelEdit: string;
   cancelEditNote: string;
   editNote: (note: string) => string;
   editNoteLabel: string;
-  addNote: string;
   addNoteLabel: string;
   noteFallback: string;
 };
@@ -56,20 +52,16 @@ export const zhCN: ClipboardText = {
   copy: "复制",
   copied: "已复制",
   favorite: "收藏",
-  unfavorite: "取消收藏",
   favoriteItem: "收藏剪贴记录",
   unfavoriteItem: "取消收藏剪贴记录",
   delete: "删除",
-  confirmDelete: "确认删除",
   deleteItem: "删除剪贴记录",
   notePlaceholder: "备注这是什么",
   noteInputLabel: "剪贴记录备注",
   saveNote: "保存备注",
-  cancelEdit: "取消编辑",
   cancelEditNote: "取消编辑备注",
   editNote: (note) => `编辑备注：${note}`,
   editNoteLabel: "添加剪贴记录备注",
-  addNote: "添加备注",
   addNoteLabel: "添加剪贴记录备注",
   noteFallback: "备注",
 };
@@ -94,20 +86,16 @@ export const en: ClipboardText = {
   copy: "Copy",
   copied: "Copied",
   favorite: "Star",
-  unfavorite: "Unstar",
   favoriteItem: "Star entry",
   unfavoriteItem: "Unstar entry",
   delete: "Delete",
-  confirmDelete: "Confirm delete",
   deleteItem: "Delete entry",
   notePlaceholder: "Note what this is",
   noteInputLabel: "Clipboard entry note",
   saveNote: "Save note",
-  cancelEdit: "Cancel",
   cancelEditNote: "Cancel editing note",
   editNote: (note) => `Edit note: ${note}`,
   editNoteLabel: "Add note to clipboard entry",
-  addNote: "Add note",
   addNoteLabel: "Add note to clipboard entry",
   noteFallback: "Note",
 };

@@ -4,18 +4,14 @@ export type FileShelfText = {
   confirmClear: string;
   empty: string;
   dropHint: string;
-  dragHint: string;
   folder: string;
   missing: string;
-  missingHint: string;
   copyItem: string;
   copied: string;
   reveal: string;
   removeItem: string;
   alreadyOnShelf: string;
-  dragHintReveal: string;
   unreachable: string;
-  unreachableHint: string;
   pin: string;
   unpin: string;
   searchPlaceholder: string;
@@ -34,18 +30,14 @@ export const zhCN: FileShelfText = {
   confirmClear: "确认清空（不会删除文件）",
   empty: "把文件拖到岛上，就会暂存在这里",
   dropHint: "松开鼠标，加入文件中转",
-  dragHint: "拖出到其他应用，双击打开，按住 Ctrl 或 Shift 点击可多选",
   folder: "文件夹",
   missing: "已失效",
-  missingHint: "原文件已被移动、改名或删除",
   copyItem: "复制文件，可直接粘贴",
   copied: "已复制",
   reveal: "在文件夹中显示",
   removeItem: "从文件中转移除（不会删除文件）",
   alreadyOnShelf: "已在列表中",
-  dragHintReveal: "拖出到其他应用，双击在文件夹中显示，按住 Ctrl 或 Shift 点击可多选",
   unreachable: "无法访问",
-  unreachableHint: "所在的磁盘或网络位置暂时无法访问",
   pin: "置顶（不会被自动清理）",
   unpin: "取消置顶",
   searchPlaceholder: "搜索文件名或路径",
@@ -64,18 +56,14 @@ export const en: FileShelfText = {
   confirmClear: "Confirm clear (files are kept)",
   empty: "Drop files on the island to keep them here",
   dropHint: "Release to add to the shelf",
-  dragHint: "Drag out to another app, double-click to open, Ctrl- or Shift-click to select several",
   folder: "Folder",
   missing: "Missing",
-  missingHint: "The original was moved, renamed or deleted",
   copyItem: "Copy the file to paste elsewhere",
   copied: "Copied",
   reveal: "Show in folder",
   removeItem: "Remove from shelf (the file is kept)",
   alreadyOnShelf: "Already on the shelf",
-  dragHintReveal: "Drag out to another app, double-click to show in folder, Ctrl- or Shift-click to select several",
   unreachable: "Unavailable",
-  unreachableHint: "Its drive or network location is not responding",
   pin: "Pin (kept by auto cleanup)",
   unpin: "Unpin",
   searchPlaceholder: "Search name or path",

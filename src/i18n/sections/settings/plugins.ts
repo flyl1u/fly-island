@@ -53,10 +53,6 @@ export type SettingsPluginsText = {
   run: {
     onDemand: string;
     memory: (megabytes: string) => string;
-    memoryTotal: (total: string, runtime: string, runtimeMegabytes: string) => string;
-    processLine: (name: string, commitMegabytes: string, workingSetMegabytes: string) => string;
-    runtimeHelp: (runtime: string, megabytes: string) => string;
-    memoryHelp: string;
     highCpu: string;
     keepAlive: (reason: string) => string;
   };
@@ -72,7 +68,6 @@ export type SettingsPluginsText = {
     reload: string;
     unload: string;
     noPlugins: string;
-    inspect: string;
     trace: (id: string) => string;
     traceEmpty: string;
     event: string;
@@ -129,29 +124,22 @@ export type SettingsPluginsText = {
     category: Record<"productivity" | "todos" | "developer" | "media" | "messages" | "information" | "utilities", string>;
     official: string;
     /** Verified publishers (plugin-author-signing.md §4). */
-    verifiedGithub: string;
-    verifiedDomain: (domain: string) => string;
-    verifiedHint: string;
     publisher: (name: string) => string;
     trustAndInstall: string;
     trustHint: (publisher: string) => string;
     /** Author signatures (docs/architecture/plugin-author-signing.md). */
     signed: string;
-    signedHint: (keyId: string) => string;
     keyChanged: (keyId: string) => string;
     signatureDropped: string;
     updateAnyway: string;
     confirmKeyChange: string;
     cancel: string;
     revoked: string;
-    details: string;
-    hideDetails: string;
     repository: string;
     reportIssue: string;
     readme: string;
     changelog: string;
     customUi: string;
-    customUiHint: string;
     /** The status line above the list and the two groups. */
     status: (count: number, time: string) => string;
     statusCount: (count: number) => string;
@@ -159,7 +147,6 @@ export type SettingsPluginsText = {
     groupInstallable: (count: number) => string;
     groupInstalled: (count: number) => string;
     manage: string;
-    manageHint: string;
     verified: string;
     noPermissions: string;
     runtime: Record<"node" | "powershell" | "exe", string>;
@@ -268,10 +255,6 @@ export const zhCN: SettingsPluginsText = {
   run: {
     onDemand: "按需启动：用到时才运行，空闲 1 分钟后自动停止。",
     memory: (megabytes: string) => `内存 ${megabytes} MB`,
-    memoryTotal: (total, runtime, runtimeMegabytes) => `进程合计 ${total} MB，其中 ${runtime} 本身占 ${runtimeMegabytes} MB，没有算进上面的插件内存。`,
-    processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}：已提交 ${commitMegabytes} MB，工作集 ${workingSetMegabytes} MB`,
-    runtimeHelp: (runtime, megabytes) => `${runtime} ${megabytes} MB 是什么都不做的 ${runtime} 本身的占用，每个用 ${runtime} 运行的插件都有这一份；插件自己的代码只占剩下的部分。`,
-    memoryHelp: "内存按「已提交」计算：只属于这个插件的进程、不和别的程序共享的内存，对应任务管理器「详细信息」里的「提交大小」。任务管理器默认的「内存」列是私有工作集，数字会不一样。",
     highCpu: "这个插件过去 1 分钟一直占用较多 CPU。",
     keepAlive: (reason: string) => `插件申请常驻：${reason}`,
   },
@@ -286,7 +269,6 @@ export const zhCN: SettingsPluginsText = {
     reload: "重新加载",
     unload: "移除",
     noPlugins: "还没有加载开发中的插件。",
-    inspect: "查看收发记录",
     trace: (id: string) => `${id} 的 JSON-RPC 收发记录（最近 200 行）`,
     traceEmpty: "还没有收发记录。插件运行后会显示在这里。",
     event: "事件",
@@ -349,13 +331,9 @@ export const zhCN: SettingsPluginsText = {
       utilities: "工具",
     },
     official: "官方",
-    verifiedGithub: "已验证 · GitHub 组织",
-    verifiedDomain: (domain: string) => `已验证 · ${domain}`,
-    verifiedHint: "插件市场核实过这个发布者：它是在 GitHub 上验证了域名的组织，或者在自己的域名上声明了这个 GitHub 账号。这只说明发布者是谁，不代表插件安全。",
     publisher: (name: string) => `发布者 ${name}`,
     trustAndInstall: "信任并安装",
     signed: "作者已签名",
-    signedHint: (keyId: string) => `作者用密钥 ${keyId} 签了名。岛屿会记下这把密钥，换了密钥的更新要你确认。`,
     keyChanged: (keyId: string) => `这个版本的签名密钥变了（现在是 ${keyId}），和已安装的版本不同。可能是作者换了密钥，也可能是插件仓库被人盗用。确认是作者本人发布的再更新。`,
     signatureDropped: "这个版本没有作者签名，而已安装的版本有。可能是作者停用了签名，也可能是插件仓库被人盗用。确认是作者本人发布的再更新。",
     updateAnyway: "仍然更新",
@@ -363,21 +341,17 @@ export const zhCN: SettingsPluginsText = {
     cancel: "取消",
     trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件扩展 → 更新 中取消。`,
     revoked: "已下架",
-    details: "详情",
-    hideDetails: "收起",
     repository: "源码仓库",
     reportIssue: "报告问题",
     readme: "插件说明",
     changelog: "版本历史",
     customUi: "自定义界面",
-    customUiHint: "这个插件在岛上显示自己写的网页。网页只能和插件自己通信，不能联网，也调用不了岛屿的功能。",
     status: (count: number, time: string) => `共 ${count} 个插件 · 索引更新于 ${time}`,
     statusCount: (count: number) => `共 ${count} 个插件`,
     refreshing: "正在刷新插件列表…",
     groupInstallable: (count: number) => `可安装（${count}）`,
     groupInstalled: (count: number) => `已安装（${count}）`,
     manage: "管理",
-    manageHint: "在「插件扩展」里打开这个插件的设置",
     verified: "已验证",
     noPermissions: "无需权限",
     runtime: { node: "Node.js", powershell: "PowerShell", exe: "程序" },
@@ -485,10 +459,6 @@ export const en: SettingsPluginsText = {
   run: {
     onDemand: "Starts on demand: runs only when needed and stops after a minute with nothing to do.",
     memory: (megabytes: string) => `Memory ${megabytes} MB`,
-    memoryTotal: (total, runtime, runtimeMegabytes) => `Processes total ${total} MB, of which ${runtime} itself takes ${runtimeMegabytes} MB, left out of the plugin memory above.`,
-    processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}: ${commitMegabytes} MB committed, ${workingSetMegabytes} MB working set`,
-    runtimeHelp: (runtime, megabytes) => `${runtime} ${megabytes} MB is what an idle ${runtime} takes by itself; every plugin that runs on ${runtime} has this share, and the plugin's own code uses the rest.`,
-    memoryHelp: "Memory is the committed (private) memory of the plugin's processes, not shared with other programs: the Commit size column in Task Manager's Details tab. Task Manager's default Memory column is the private working set, so its numbers differ.",
     highCpu: "This plugin has used a lot of CPU for the last minute.",
     keepAlive: (reason: string) => `Keeps running: ${reason}`,
   },
@@ -503,7 +473,6 @@ export const en: SettingsPluginsText = {
     reload: "Reload",
     unload: "Remove",
     noPlugins: "No plugins in development loaded yet.",
-    inspect: "Show its messages",
     trace: (id: string) => `JSON-RPC messages of ${id} (last 200 lines)`,
     traceEmpty: "No messages yet. They show up here once the plugin runs.",
     event: "Event",
@@ -566,13 +535,9 @@ export const en: SettingsPluginsText = {
       utilities: "Utilities",
     },
     official: "Official",
-    verifiedGithub: "Verified · GitHub organization",
-    verifiedDomain: (domain: string) => `Verified · ${domain}`,
-    verifiedHint: "The plugin market checked this publisher: a GitHub organization with a verified domain, or a domain that names this GitHub account. It says who publishes the plugin, not that the plugin is safe.",
     publisher: (name: string) => `Published by ${name}`,
     trustAndInstall: "Trust and install",
     signed: "Signed by author",
-    signedHint: (keyId: string) => `The author signed it with key ${keyId}. The island remembers the key; updates on another key need your confirmation.`,
     keyChanged: (keyId: string) => `This version is signed with a different key (${keyId}) than the installed one. The author may have changed keys, or the plugin's repository may have been taken over. Update only if you are sure the author published it.`,
     signatureDropped: "This version has no author signature, but the installed one had. The author may have stopped signing, or the plugin's repository may have been taken over. Update only if you are sure the author published it.",
     updateAnyway: "Update anyway",
@@ -580,21 +545,17 @@ export const en: SettingsPluginsText = {
     cancel: "Cancel",
     trustHint: (publisher: string) => `This is the first plugin from ${publisher}. Trust the publisher to install it. Plugins run as you and can reach your files and saved passwords, so only trust publishers you know. Its plugins can then be installed and updated automatically. You can undo this under Plugins > Updates.`,
     revoked: "Taken down",
-    details: "Details",
-    hideDetails: "Less",
     repository: "Source code",
     reportIssue: "Report a problem",
     readme: "About this plugin",
     changelog: "Version history",
     customUi: "Custom UI",
-    customUiHint: "This plugin shows its own web page on the island. The page can only talk to the plugin, cannot go online and cannot use the island's features.",
     status: (count: number, time: string) => `${count} ${count === 1 ? "plugin" : "plugins"} · index updated ${time}`,
     statusCount: (count: number) => `${count} ${count === 1 ? "plugin" : "plugins"}`,
     refreshing: "Refreshing the plugin list…",
     groupInstallable: (count: number) => `Available (${count})`,
     groupInstalled: (count: number) => `Installed (${count})`,
     manage: "Manage",
-    manageHint: "Open this plugin's settings under Plugins",
     verified: "Verified",
     noPermissions: "No permissions",
     runtime: { node: "Node.js", powershell: "PowerShell", exe: "Program" },

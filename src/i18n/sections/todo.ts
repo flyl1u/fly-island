@@ -10,7 +10,6 @@ export type TodoText = {
   stop: string;
   delete: string;
   deleteTask: (taskTitle: string) => string;
-  reorder: string;
   reorderTask: (taskTitle: string) => string;
   /** The right-click menu plugins add commands to. */
   pluginMenu: string;
@@ -27,7 +26,6 @@ export const zhCN: TodoText = {
   stop: "结束",
   delete: "删除",
   deleteTask: (taskTitle) => `删除：${taskTitle}`,
-  reorder: "拖动排序",
   reorderTask: (taskTitle) => `拖动排序：${taskTitle}`,
   pluginMenu: "插件操作",
 };
@@ -43,7 +41,6 @@ export const en: TodoText = {
   stop: "Stop",
   delete: "Delete",
   deleteTask: (taskTitle) => `Delete: ${taskTitle}`,
-  reorder: "Drag to reorder",
   reorderTask: (taskTitle) => `Reorder: ${taskTitle}`,
   pluginMenu: "Plugin actions",
 };
