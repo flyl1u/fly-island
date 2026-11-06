@@ -40,6 +40,20 @@ export type AgentText = {
     /** Read out after the line when the snapshot is old. */
     stale: string;
   };
+  /** The card for a permission request an agent waits on (roadmap B6 phase 2). */
+  approval: {
+    label: (tool: string) => string;
+    more: (count: number) => string;
+    expand: string;
+    collapse: string;
+    deny: string;
+    allow: string;
+    allowAlways: string;
+    /** The tooltip of "always allow", with the rule it adds for this session. */
+    allowAlwaysHint: (rule: string) => string;
+    terminal: string;
+    terminalHint: string;
+  };
 };
 
 export const zhCN: AgentText = {
@@ -82,6 +96,18 @@ export const zhCN: AgentText = {
       days > 0 ? `${days} 天 ${hours} 小时后重置` : hours > 0 ? `${hours} 小时 ${minutes} 分后重置` : `${minutes} 分后重置`,
     stale: "可能已过时",
   },
+  approval: {
+    label: (tool) => `请求使用 ${tool}`,
+    more: (count) => `还有 ${count} 个`,
+    expand: "展开完整内容",
+    collapse: "收起",
+    deny: "拒绝",
+    allow: "允许",
+    allowAlways: "始终允许",
+    allowAlwaysHint: (rule) => `本次会话内不再询问：${rule}`,
+    terminal: "到终端",
+    terminalHint: "交回终端处理，并切换到它的窗口",
+  },
 };
 
 export const en: AgentText = {
@@ -122,5 +148,17 @@ export const en: AgentText = {
     sevenDay: "7d",
     resetsIn: ({ days, hours, minutes }) => (days > 0 ? `resets in ${days}d${hours}h` : hours > 0 ? `resets in ${hours}h${minutes}m` : `resets in ${minutes}m`),
     stale: "may be stale",
+  },
+  approval: {
+    label: (tool) => `Wants to use ${tool}`,
+    more: (count) => `${count} more`,
+    expand: "Show all of it",
+    collapse: "Show less",
+    deny: "Deny",
+    allow: "Allow",
+    allowAlways: "Always",
+    allowAlwaysHint: (rule) => `Don't ask again this session: ${rule}`,
+    terminal: "Terminal",
+    terminalHint: "Hand it back to the terminal and switch to its window",
   },
 };

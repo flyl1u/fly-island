@@ -179,7 +179,7 @@ export function IslandApp() {
     openIslandPage,
     pluginPages: pluginPages.pageIds,
   });
-  const alertedSession = useIslandAgentAlerts({
+  const { alertedSession, approvals: agentApprovals, agentCardHeight } = useIslandAgentAlerts({
     sessions: agentSessions,
     settings,
     enabled: features.agents && !game.quiet,
@@ -199,7 +199,7 @@ export function IslandApp() {
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
     agentShowUsage: settings.agentShowUsage,
-    agentAlertRowHeight: alertedSession?.rowHeight,
+    agentAlertRowHeight: agentCardHeight,
     pluginTemplate: pluginPages.entry?.template,
     pluginListRows: pluginPages.rows,
     pluginWebviewHeight: pluginPages.entry?.height,
@@ -377,7 +377,7 @@ export function IslandApp() {
             onClear={() => void clearClipboardHistoryItems()}
           />
         )}
-        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} showUsage={settings.agentShowUsage} />}
+        {page === "agents" && <AgentSessionsPanel sessions={listedAgentSessions} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} reveal={alertedSession} showUsage={settings.agentShowUsage} approvals={agentApprovals} />}
         {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
         {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
         {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}

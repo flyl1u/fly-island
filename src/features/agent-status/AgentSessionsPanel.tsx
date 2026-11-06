@@ -13,6 +13,8 @@ import { useScrollFade } from "./useScrollFade";
 import { sessionKey } from "./unseen";
 import type { UnseenSessions } from "./useUnseenSessions";
 import type { AlertedSession } from "./useAgentAlerts";
+import { AgentApprovalCard } from "./approvals/AgentApprovalCard";
+import type { AgentApprovals } from "./approvals/useAgentApprovals";
 import "./AgentSessionsPanel.css";
 
 const NOT_FOUND_NOTICE_MS = 3000;
@@ -32,6 +34,7 @@ export function AgentSessionsPanel({
   unseen,
   reveal,
   showUsage: usageOn = false,
+  approvals,
 }: {
   sessions: AgentSessionSummary[];
   /** How the program a session runs in is shown; "off" hides it. */
@@ -46,6 +49,8 @@ export function AgentSessionsPanel({
   reveal?: AlertedSession | null;
   /** Claude's usage limits above the list. */
   showUsage?: boolean;
+  /** Permission requests agents wait on; the page shows the first one alone. */
+  approvals?: AgentApprovals;
 }) {
   const t = useTranslation();
   // An alert's session alone, kept current from the list; the list may leave it out (only
@@ -94,6 +99,15 @@ export function AgentSessionsPanel({
         setNotFoundId(session.sessionId);
       });
   };
+
+  // A request an agent is waiting on comes before everything else on the page.
+  if (approvals?.current) {
+    return (
+      <section className="agent-sessions" aria-label={t.agent.sessions.title}>
+        <AgentApprovalCard approvals={approvals} sessions={listed} />
+      </section>
+    );
+  }
 
   if (sessions.length === 0) {
     return (

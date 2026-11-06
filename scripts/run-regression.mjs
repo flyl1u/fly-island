@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
   "agent-alerts.html",
+  "agent-approvals.html",
   "agent-sessions.html?test=1",
   "collapsed-message-animation.html?test=1",
   "i18n.html?test=1",
