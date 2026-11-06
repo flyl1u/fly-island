@@ -11,9 +11,7 @@ export const SETTINGS_CATEGORIES = [
   "shelf",
   "agents",
   "sounds",
-  "qq",
-  "wechat",
-  "mail",
+  "messages",
   "plugins",
   "market",
   "about",
@@ -21,18 +19,30 @@ export const SETTINGS_CATEGORIES = [
 
 export type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number];
 
-export type SettingsGroup = "basics" | "features" | "messages" | "extensions";
+export type SettingsGroup = "basics" | "features" | "extensions";
 
 /**
- * Sidebar sections: app-wide settings, one page per module, one page per message
- * source, then installed plugins and the market. A null label leaves About on its own at the end.
+ * Sidebar sections: app-wide settings, one page per module (QQ, WeChat and Mail share
+ * Messages), then installed plugins and the market. A null label leaves About on its own at the end.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance", "shortcuts", "updates"] },
-  { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents", "sounds"] },
-  { label: "messages", categories: ["qq", "wechat", "mail"] },
+  { label: "features", categories: ["todos", "music", "translation", "clipboard", "shelf", "agents", "sounds", "messages"] },
   { label: "extensions", categories: ["plugins", "market"] },
   { label: null, categories: ["about"] },
 ];
 
 export const DEFAULT_SETTINGS_CATEGORY: SettingsCategory = "general";
+
+/** Pages that were merged into another, by their old name: what the island or a link still asks for. */
+const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
+  qq: "messages",
+  wechat: "messages",
+  mail: "messages",
+};
+
+/** The page a category name opens, old names included; null when there is no such page. */
+export function settingsCategoryFor(name: string): SettingsCategory | null {
+  if ((SETTINGS_CATEGORIES as readonly string[]).includes(name)) return name as SettingsCategory;
+  return MERGED_CATEGORIES[name] ?? null;
+}

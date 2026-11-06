@@ -3,15 +3,15 @@ export type SettingsCategoriesText = {
   groups: {
     basics: string;
     features: string;
-    messages: string;
     extensions: string;
   };
   general: string;
   appearance: string;
   shortcuts: string;
   updates: string;
-  qq: string;
-  wechat: string;
+  /** QQ, WeChat and Mail on one page. */
+  messages: string;
+  /** Mail's group on the Messages page. */
   mail: string;
   todos: string;
   music: string;
@@ -30,15 +30,13 @@ export const zhCN: SettingsCategoriesText = {
   groups: {
     basics: "基础",
     features: "功能",
-    messages: "消息",
     extensions: "扩展",
   },
   general: "通用",
   appearance: "外观",
   shortcuts: "快捷键",
   updates: "更新",
-  qq: "QQ 通知",
-  wechat: "微信提醒",
+  messages: "消息",
   mail: "邮箱",
   todos: "待办",
   music: "音乐",
@@ -57,15 +55,13 @@ export const en: SettingsCategoriesText = {
   groups: {
     basics: "Basics",
     features: "Features",
-    messages: "Messages",
     extensions: "Extensions",
   },
   general: "General",
   appearance: "Appearance",
   shortcuts: "Shortcuts",
   updates: "Updates",
-  qq: "QQ notifications",
-  wechat: "WeChat reminders",
+  messages: "Messages",
   mail: "Mail",
   todos: "Todos",
   music: "Music",

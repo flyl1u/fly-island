@@ -10,6 +10,7 @@ import "../../src/styles/base.css";
 import { SettingsWindow } from "../../src/windows/settings/SettingsWindow";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 import type { MailSnapshot } from "../../src/features/messages/mail/api";
+import { settingsCategoryFor } from "../../src/windows/settings/categories";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 
 const query = new URLSearchParams(location.search);
@@ -155,7 +156,8 @@ const categories = () =>
 
 if (!automated) {
   mount();
-  const page = query.get("page");
+  // Old names of merged pages (qq, wechat, mail) open the page they became.
+  const page = settingsCategoryFor(query.get("page") ?? "");
   const openRequestedPage = () => {
     const item = document.querySelector<HTMLButtonElement>(`.settings-sidebar__item[data-category='${page}']`);
     if (item) item.click();
@@ -297,7 +299,7 @@ if (!automated) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_500)); });
     check(document.querySelector(".save-path-panel .save-path-saved"), "The saved confirmation stays long enough to notice");
 
-    await openPage("mail");
+    await openPage("messages");
     const rows = () => [...document.querySelectorAll<HTMLElement>(".mail-settings__account")];
     check(rows().length === 2 && rows()[0].textContent?.includes("demo@qq.com"), "The mail page lists every mailbox");
     const rowButton = (row: number, text: string) => [...rows()[row].querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent?.includes(text));

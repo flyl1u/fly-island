@@ -63,15 +63,7 @@
 }
 
 /* Buttons keep some weight, but stay below the page title. */
-.settings-stage :is(
-    .agent-hooks-button,
-    .preset-save-button,
-    .shortcut-record-button,
-    .mail-settings__button,
-    .save-path-button,
-    .translation-settings__button,
-    .shortcuts-link__button
-  ) {
+.settings-stage .shortcut-record-button {
   font-weight: 600;
 }
 
