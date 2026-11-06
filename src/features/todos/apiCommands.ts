@@ -1,4 +1,5 @@
-import type { ScheduledTodo, TodoItem } from "./types";
+import { daysBetween, listDay, noteOfDay } from "./todoHistory.ts";
+import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 
 /**
  * Todo and daily-note calls from the local API (see docs/local-api.md). Pure: each
@@ -15,6 +16,7 @@ export type TodoApiState = {
   scheduledTodos: ScheduledTodo[];
   activeTodoId: string | null;
   dailyNote: string;
+  archives: TodoArchive[];
 };
 
 export type TodoApiChange = {
@@ -28,6 +30,7 @@ export type TodoApiOutcome = { result: TodoApiResult; change?: TodoApiChange };
 
 export const TODO_API_METHODS = [
   "todos.list",
+  "todos.days",
   "todos.add",
   "todos.update",
   "todos.remove",
@@ -67,7 +70,12 @@ export function runTodoApiCall(
   const input = asRecord(params);
 
   switch (method) {
-    case "todos.list":
+    case "todos.days":
+      return { result: daysBetween(input.from, input.to, state) };
+
+    case "todos.list": {
+      const day = listDay(input.date, state);
+      if (day) return { result: day };
       return {
         result: ok({
           date: state.date,
@@ -76,6 +84,7 @@ export function runTodoApiCall(
           activeTodoId: state.activeTodoId,
         }),
       };
+    }
 
     case "todos.add": {
       const title = readTitle(input.title);
@@ -132,7 +141,7 @@ export function runTodoApiCall(
     }
 
     case "note.get":
-      return { result: ok({ date: state.date, note: state.dailyNote }) };
+      return { result: noteOfDay(input.date, state) ?? ok({ date: state.date, note: state.dailyNote }) };
 
     case "note.set": {
       const hasNote = typeof input.note === "string";

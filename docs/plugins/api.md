@@ -59,11 +59,12 @@
 | `permissions.request` | 无 | 2 | `permissions`：[name]: 1-14 names from the manifest's optionalPermissions (or permissions) | { granted: [name], denied: [name] }. The island asks the user about each optional permission not answered yet (allow, allow once, deny; at most 30 s each, no answer is a denial that is asked again next time). A remembered deny is not asked again until the user revokes it in the plugin's settings. A name the manifest does not list is status 400. |
 | `host.keepAlive` | 无 | 2 | `reason`：string (1-100 chars) shown on the plugin page; null lets the plugin stop when idle again | {}. Only matters for on-demand plugins (activationEvents), which otherwise stop after 60 s with nothing to do. |
 | `island.openView` | 无 | 2 | `viewId`：one of the plugin's contributes.views | {}. Shows the island and opens that page. Only within 15 s of the user using the plugin (a command or its shortcut, an island.notify button, a focusd:// link, an action, form or webview message on one of its pages), else status 403; a view the plugin does not declare is status 404. |
-| `todos.list` | `todos:read` | 1 | 无 | { date, todos, scheduled, activeTodoId } |
+| `todos.list` | `todos:read` | 1 | `date?`：YYYY-MM-DD (since 2); missing means today | { date, todos, scheduled, activeTodoId }. A past date reads that day's archive ({ ..., archived: true }; status 404 when nothing was archived for it); a later date gives the todos scheduled for it in 'scheduled'. |
+| `todos.days` | `todos:read` | 2 | `from`：YYYY-MM-DD<br>`to`：YYYY-MM-DD | { days: [{ date, total, completed, hasNote, archived }] }: today and every archived day from 'from' to 'to' (inclusive), oldest first. |
 | `todos.add` | `todos:write` | 1 | `title`：string<br>`date?`：YYYY-MM-DD; later than today goes to the 'later' list | The new todo. |
 | `todos.update` | `todos:write` | 1 | `id`：string<br>`title?`：string<br>`completed?`：boolean | The changed todo. |
 | `todos.remove` | `todos:write` | 1 | `id`：string | { id } |
-| `note.get` | `notes:read` | 1 | 无 | { date, note } |
+| `note.get` | `notes:read` | 1 | `date?`：YYYY-MM-DD (since 2); missing means today | { date, note }. A past date reads that day's archived note ({ ..., archived: true }; status 404 when nothing was archived); a later date is status 400. |
 | `note.set` | `notes:write` | 1 | `note | append`：string | { date, note } |
 | `agentStatus.report` | `agent-status:write` | 1 | `source`：string<br>`phase`：string<br>`name?`：string<br>`title?`：string<br>`taskId?`：string | The saved status; id is '<plugin id>/<source>'. |
 | `agentStatus.clear` | `agent-status:write` | 1 | `source?`：string; omitted clears every source of the plugin | { cleared } |

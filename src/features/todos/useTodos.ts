@@ -33,7 +33,7 @@ export function useTodos({
   const { scheduledTodos, scheduleTodo, deleteScheduledTodo } =
     useScheduledTodos(currentTodoDate, setTodos);
   const apiHandlers = useTodoApiHandlers({
-    date: currentTodoDate, todos, scheduledTodos, activeTodoId, dailyNote,
+    date: currentTodoDate, todos, scheduledTodos, activeTodoId, dailyNote, archives,
     setTodos, setDailyNote, scheduleTodo,
   });
   // Day the next added todo is for; null is the list's own day.

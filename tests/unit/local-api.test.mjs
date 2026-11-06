@@ -10,6 +10,7 @@ const state = (overrides = {}) => ({
   scheduledTodos: [],
   activeTodoId: "a",
   dailyNote: "line one",
+  archives: [],
   ...overrides,
 });
 const create = { id: "new-id", now: 42 };
@@ -90,4 +91,27 @@ test("dispatch finds handlers by own name and turns throws into 500", async () =
   assert.deepEqual(await dispatchLocalApiRequest(handlers, "broken", null), { ok: false, status: 500, error: "boom" });
   assert.equal((await dispatchLocalApiRequest(handlers, "toString", null)).status, 404);
   assert.equal((await dispatchLocalApiRequest(handlers, "missing", null)).status, 404);
+});
+
+test("other days come from the archives and the scheduled list, like src-tauri/src/todos/history.rs", () => {
+  const history = state({
+    scheduledTodos: [{ id: "s", title: "Later", date: "2026-11-20", createdAt: 1 }],
+    archives: [
+      { date: "2026-11-02", todos: [todo("x", "Old", true)], dailyNote: "那天", savedAt: 0, savedToDisk: false },
+      { date: "2026-11-01", todos: [], dailyNote: " ", savedAt: 0, savedToDisk: false },
+    ],
+  });
+  assert.equal(run("todos.list", { date: "2026-11-04" }, history).result.data.todos.length, 2);
+  assert.deepEqual(run("todos.list", { date: "2026-11-02" }, history).result.data, { date: "2026-11-02", todos: [todo("x", "Old", true)], scheduled: [], activeTodoId: null, archived: true });
+  assert.equal(run("todos.list", { date: "2026-11-20" }, history).result.data.scheduled[0].id, "s");
+  assert.equal(run("todos.list", { date: "2026-11-03" }, history).result.status, 404);
+  assert.equal(run("todos.list", { date: "11/02" }, history).result.status, 400);
+  assert.equal(run("note.get", { date: "2026-11-02" }, history).result.data.note, "那天");
+  assert.equal(run("note.get", { date: "2026-11-20" }, history).result.status, 400);
+  assert.deepEqual(run("todos.days", { from: "2026-11-01", to: "2026-11-30" }, history).result.data.days, [
+    { date: "2026-11-01", total: 0, completed: 0, hasNote: false, archived: true },
+    { date: "2026-11-02", total: 1, completed: 1, hasNote: true, archived: true },
+    { date: "2026-11-04", total: 2, completed: 1, hasNote: true, archived: false },
+  ]);
+  assert.equal(run("todos.days", { from: "2026-11-09", to: "2026-11-01" }, history).result.status, 400);
 });

@@ -180,13 +180,16 @@ export function createPlugin(options = {}) {
       delete: async (key) => Boolean((await call("secrets.delete", { key }))?.deleted),
     },
     todos: {
-      list: () => call("todos.list"),
+      /** Today's todos, or another day's: a past day from its archive, a later one from the scheduled list. */
+      list: (date) => call("todos.list", date ? { date } : undefined),
+      /** { days: [{ date, total, completed, hasNote, archived }] } for today and each archived day from `from` to `to`. */
+      days: (from, to) => call("todos.days", { from, to }),
       add: (title, date) => call("todos.add", date ? { title, date } : { title }),
       update: (id, changes) => call("todos.update", { ...changes, id }),
       remove: (id) => call("todos.remove", { id }),
     },
     note: {
-      get: () => call("note.get"),
+      get: (date) => call("note.get", date ? { date } : undefined),
       set: (note) => call("note.set", { note }),
       append: (text) => call("note.set", { append: text }),
     },

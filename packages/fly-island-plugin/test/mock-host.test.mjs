@@ -50,6 +50,12 @@ plugin.views.onMessage("page", async (message) => report("posted", await plugin.
 plugin.onCommand("notify", async () => {
   for (let index = 0; index < 7; index += 1) await attempt("notify", () => plugin.notify("Hi " + index));
 });
+plugin.onCommand("history", async () => {
+  report("past", await plugin.todos.list("2000-01-02"));
+  report("pastNote", await plugin.note.get("2000-01-02"));
+  report("days", await plugin.todos.days("2000-01-01", "2000-01-31"));
+  await attempt("noArchive", () => plugin.todos.list("2000-01-03"));
+});
 plugin.onShutdown(() => plugin.log("bye"));
 `;
 
@@ -68,7 +74,7 @@ const manifest = {
   version: "1.0.0",
   apiVersion: 2,
   runtime: { type: "process", command: "main.mjs" },
-  permissions: ["todos:read", "todos:write", "clipboard:read", "island:notify"],
+  permissions: ["todos:read", "todos:write", "notes:read", "clipboard:read", "island:notify"],
   optionalPermissions: ["media:read", "shelf:read"],
   contributes: {
     views: [{ id: "board", title: { "zh-CN": "看板", en: "Board" }, template: "list" }],
@@ -81,7 +87,7 @@ const logged = async (host, name) => JSON.parse((await host.waitForLog(`${name} 
 
 test("the mock host runs a plugin like the island does", async () => {
   const dir = makePlugin(manifest);
-  const host = startMockHost(dir, { deny: ["clipboard:read", "shelf:read"], settings: { extra: true }, activationEvent: "onCommand:todos" });
+  const host = startMockHost(dir, { deny: ["clipboard:read", "shelf:read"], settings: { extra: true }, activationEvent: "onCommand:todos", archives: [{ date: "2000-01-02", todos: [{ id: "x", title: "Old", completed: true }], dailyNote: "back then" }] });
   try {
     const ready = await logged(host, "ready");
     assert.equal(ready.pluginId, "me.mock");
@@ -123,6 +129,12 @@ test("the mock host runs a plugin like the island does", async () => {
     assert.deepEqual(host.openedViews, ["board"]);
     host.viewAction("board", "check", { itemId: "a", checked: true });
     assert.deepEqual(await logged(host, "action"), { viewId: "board", actionId: "check", itemId: "a", checked: true });
+
+    host.command("history");
+    assert.deepEqual((await logged(host, "past")).todos.map((todo) => todo.id), ["x"]);
+    assert.equal((await logged(host, "pastNote")).note, "back then");
+    assert.deepEqual((await logged(host, "days")).days, [{ date: "2000-01-02", total: 1, completed: 1, hasNote: true, archived: true }]);
+    assert.deepEqual(await logged(host, "noArchive"), { code: -32000, status: 404 });
 
     host.command("notify");
     await host.waitFor((state) => state.logs.filter((line) => line.startsWith("notify ")).length === 7);

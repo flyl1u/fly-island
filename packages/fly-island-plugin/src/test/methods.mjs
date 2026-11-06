@@ -55,7 +55,10 @@ function todosMethod(host, method, params) {
   const find = (id) => state.todos.find((todo) => todo.id === id) ?? state.scheduled.find((todo) => todo.id === id) ?? fail(404, "Todo not found.");
   switch (method) {
     case "todos.list":
+      if (params?.date !== undefined && params.date !== state.date) return dayOf(host, params.date, "todos");
       return structuredClone(state);
+    case "todos.days":
+      return daysOf(host, params);
     case "todos.add": {
       const todo = { id: `mock-${host.nextTodoId++}`, title: text(params?.title, 500, "title"), completed: false };
       const date = params?.date;
@@ -230,10 +233,38 @@ function secretMethod(host, method, params) {
   return {};
 }
 
+const isDate = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+/** Another day, like src-tauri/src/todos/history.rs: an archive (host.archives) or the scheduled list. */
+function dayOf(host, date, what) {
+  if (!isDate(date)) fail(400, "\"date\" must look like YYYY-MM-DD.");
+  const state = host.todos;
+  if (date > state.date) {
+    if (what === "note") fail(400, "A note exists only for today and archived days.");
+    return { date, todos: [], scheduled: structuredClone(state.scheduled.filter((todo) => todo.date === date)), activeTodoId: null };
+  }
+  const archive = host.archives.find((item) => item.date === date) ?? fail(404, `Nothing was archived for ${date}.`);
+  return what === "note"
+    ? { date, note: archive.dailyNote, archived: true }
+    : { date, todos: structuredClone(archive.todos), scheduled: [], activeTodoId: null, archived: true };
+}
+
+function daysOf(host, params) {
+  const { from, to } = params ?? {};
+  if (!isDate(from) || !isDate(to)) fail(400, "Send { from, to } as YYYY-MM-DD dates.");
+  if (from > to) fail(400, "\"from\" must not be after \"to\".");
+  const inRange = (date) => from <= date && date <= to;
+  const summary = (date, todos, note, archived) => ({ date, total: todos.length, completed: todos.filter((todo) => todo.completed).length, hasNote: note.trim() !== "", archived });
+  const days = host.archives.filter((item) => inRange(item.date) && item.date !== host.todos.date).map((item) => summary(item.date, item.todos, item.dailyNote, true));
+  if (inRange(host.todos.date)) days.push(summary(host.todos.date, host.todos.todos, host.note, false));
+  return { days: days.sort((left, right) => left.date.localeCompare(right.date)) };
+}
+
 function dataMethod(host, method, params) {
   const data = host.data;
   switch (method) {
     case "note.get":
+      if (params?.date !== undefined && params.date !== host.todos.date) return dayOf(host, params.date, "note");
       return { date: host.todos.date, note: host.note };
     case "note.set":
       host.note = typeof params?.append === "string" ? `${host.note}${host.note ? "\n" : ""}${params.append}` : String(params?.note ?? "");

@@ -8,8 +8,10 @@
 //! - migration.rs: the one-time move out of localStorage, and re-imports
 //! - service.rs: where the todos live now, and saving changes
 //! - calls.rs: todo and note calls of plugins and the local API
+//! - history.rs: those calls for other days (archives, scheduled todos)
 
 mod calls;
+mod history;
 mod migration;
 mod model;
 mod service;

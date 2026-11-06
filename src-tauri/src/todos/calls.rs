@@ -5,6 +5,7 @@
 
 use serde_json::{json, Number, Value};
 
+use super::history;
 use super::model::{is_date, ScheduledTodo, TodoItem, TodosData};
 
 const MAX_TITLE_LENGTH: usize = 500;
@@ -20,7 +21,7 @@ pub(crate) type CallError = (u16, String);
 
 /// The methods answered here; anything else is not a todo call.
 pub(crate) fn is_todo_call(method: &str) -> bool {
-    matches!(method, "todos.list" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set")
+    matches!(method, "todos.list" | "todos.days" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set")
 }
 
 fn bad(message: impl Into<String>) -> CallError {
@@ -45,6 +46,11 @@ pub(crate) fn run(method: &str, params: &Value, data: &TodosData, id: &str, now:
     let target_id = input.get("id").and_then(Value::as_str);
 
     match method {
+        "todos.list" if input.contains_key("date") => match history::list(&input, data)? {
+            Some(day) => unchanged(day),
+            None => run("todos.list", &Value::Null, data, id, now),
+        },
+        "todos.days" => unchanged(history::days(&input, data)?),
         "todos.list" => unchanged(json!({
             "date": data.date,
             "todos": data.todos,
@@ -106,7 +112,10 @@ pub(crate) fn run(method: &str, params: &Value, data: &TodosData, id: &str, now:
             }
             changed(json!({ "id": target }), next)
         }
-        "note.get" => unchanged(json!({ "date": data.date, "note": data.daily_note })),
+        "note.get" => match history::note(&input, data)? {
+            Some(day) => unchanged(day),
+            None => unchanged(json!({ "date": data.date, "note": data.daily_note })),
+        },
         "note.set" => {
             let note = input.get("note").and_then(Value::as_str);
             let append = input.get("append").and_then(Value::as_str);

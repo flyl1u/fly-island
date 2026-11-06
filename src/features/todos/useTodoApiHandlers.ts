@@ -16,6 +16,7 @@ export function useTodoApiHandlers({
   scheduledTodos,
   activeTodoId,
   dailyNote,
+  archives,
   setTodos,
   setDailyNote,
   scheduleTodo,
@@ -25,8 +26,8 @@ export function useTodoApiHandlers({
   scheduleTodo: (title: string, date: string) => ScheduledTodo;
 }): TodoApiHandlers {
   const state = useMemo(
-    () => ({ date, todos, scheduledTodos, activeTodoId, dailyNote }),
-    [activeTodoId, dailyNote, date, scheduledTodos, todos],
+    () => ({ date, todos, scheduledTodos, activeTodoId, dailyNote, archives }),
+    [activeTodoId, archives, dailyNote, date, scheduledTodos, todos],
   );
   const stateRef = useRef(state);
 

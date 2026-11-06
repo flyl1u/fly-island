@@ -225,7 +225,7 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 | 权限 | 版本 | 允许的方法 | 允许订阅的事件 |
 |---|---|---|---|
-| `todos:read` | 1 | `todos.list` | `todos.changed` |
+| `todos:read` | 1 | `todos.list`、`todos.days`（第 2 版） | `todos.changed` |
 | `todos:write` | 1 | `todos.add`、`todos.update`、`todos.remove` | |
 | `notes:read` | 1 | `note.get` | `note.changed` |
 | `notes:write` | 1 | `note.set` | |
@@ -334,11 +334,12 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `storage.set` | 2 | — | `{ key, value }`，`value` 是任意 JSON | `{}`。单个值序列化后不超过 64 KB，整个插件不超过 1 MB，超过返回状态 413 |
 | `storage.delete` | 2 | — | `{ key }` | `{ deleted }` |
 | `storage.keys` | 2 | — | — | `{ keys }` |
-| `todos.list` | 1 | `todos:read` | — | `{ date, todos, scheduled, activeTodoId }` |
+| `todos.list` | 1 | `todos:read` | `{ date? }`（第 2 版） | `{ date, todos, scheduled, activeTodoId }`。不带 `date` 是今天；过去的日期读那天的归档（多一个 `archived: true`，没有归档时状态 404）；以后的日期在 `scheduled` 里给出排到那天的待办 |
+| `todos.days` | 2 | `todos:read` | `{ from, to }` | `{ days: [{ date, total, completed, hasNote, archived }] }`：从 `from` 到 `to`（含）里的今天和每个归档的日子，按日期从早到晚。适合周报、完成率统计 |
 | `todos.add` | 1 | `todos:write` | `{ title, date? }` | 新增的待办；`date` 晚于今天时加入"以后"列表 |
 | `todos.update` | 1 | `todos:write` | `{ id, title?, completed? }` | 修改后的待办 |
 | `todos.remove` | 1 | `todos:write` | `{ id }` | `{ id }` |
-| `note.get` | 1 | `notes:read` | — | `{ date, note }` |
+| `note.get` | 1 | `notes:read` | `{ date? }`（第 2 版） | `{ date, note }`。过去的日期读那天归档的笔记（`archived: true`，没有归档时 404）；以后的日期 400 |
 | `note.set` | 1 | `notes:write` | `{ note }` 或 `{ append }` | `{ date, note }` |
 | `agentStatus.report` | 1 | `agent-status:write` | `{ source, phase, name?, title?, taskId? }` | 保存后的状态，`id` 为 `<插件 id>/<source>` |
 | `agentStatus.clear` | 1 | `agent-status:write` | `{ source? }` | `{ cleared }`；省略 `source` 时清除这个插件的全部来源 |

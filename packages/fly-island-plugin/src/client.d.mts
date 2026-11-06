@@ -208,13 +208,17 @@ export interface Plugin {
     delete(key: string): Promise<boolean>;
   };
   todos: {
-    list(): Promise<TodosState>;
+    /** Today, or another day (YYYY-MM-DD): a past day from its archive (archived: true, status 404 if none), a later day from the scheduled list. Since API version 2. */
+    list(date?: string): Promise<TodosState & { archived?: true }>;
+    /** Today and each archived day from `from` to `to`, oldest first. Since API version 2. */
+    days(from: string, to: string): Promise<{ days: { date: string; total: number; completed: number; hasNote: boolean; archived: boolean }[] }>;
     add(title: string, date?: string): Promise<Todo>;
     update(id: string, changes: { title?: string; completed?: boolean }): Promise<Todo>;
     remove(id: string): Promise<{ id: string }>;
   };
   note: {
-    get(): Promise<{ date: string; note: string }>;
+    /** Today, or an archived day (YYYY-MM-DD; a later day is status 400). */
+    get(date?: string): Promise<{ date: string; note: string; archived?: true }>;
     set(note: string): Promise<{ date: string; note: string }>;
     append(text: string): Promise<{ date: string; note: string }>;
   };

@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 读取以前的待办和笔记
+
+- `todos.list` 和 `note.get` 接受 `{ date }`：过去的日子读归档（结果带 `archived: true`，没有归档为 404），以后的日子给出排到那天的待办。新方法 `todos.days { from, to }`（`todos:read`）按天给出待办数、完成数和有没有笔记。SDK：Node `plugin.todos.list(date)`、`plugin.note.get(date)`、`plugin.todos.days(from, to)`；模拟宿主用 `startMockHost(dir, { archives })` 提供归档。
+
 ## 打开自己的页面
 
 - 方法 `island.openView { viewId }`，能力 `openView`：用户刚用过插件（命令、提示按钮、链接、页面操作）后 15 秒内，插件可以展开岛屿并打开自己的页面，比如登录回调回来后显示结果。SDK：Node `plugin.openView(viewId)`，PowerShell `Open-FocusdView`；模拟宿主记在 `openedViews`。

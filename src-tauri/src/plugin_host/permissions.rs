@@ -23,8 +23,9 @@ pub(super) const PERMISSIONS: [&str; 14] = [
 /// `island.notify` in notify.rs, `secrets.*` in storage.rs, `clipboard.*` in
 /// clipboard_history, `messages.*` / `media.*` in feeds.rs, `shelf.*` in file_shelf; the rest are
 /// answered by the island window, see src/features/todos/apiCommands.ts.
-pub(super) const METHODS: [(&str, &str); 21] = [
+pub(super) const METHODS: [(&str, &str); 22] = [
     ("todos.list", "todos:read"),
+    ("todos.days", "todos:read"),
     ("todos.add", "todos:write"),
     ("todos.update", "todos:write"),
     ("todos.remove", "todos:write"),

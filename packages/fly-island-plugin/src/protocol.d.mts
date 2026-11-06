@@ -7,7 +7,7 @@ export type Permission = "todos:read" | "todos:write" | "notes:read" | "notes:wr
 /** Confirmed by the user on the island the first time they are used. */
 export type SensitivePermission = "clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write";
 /** Requests a plugin sends to the island. */
-export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.subscribe" | "events.unsubscribe" | "view.update" | "webview.postMessage" | "view.patch" | "status.update" | "storage.get" | "storage.set" | "storage.delete" | "storage.keys" | "permissions.request" | "host.keepAlive" | "island.openView" | "todos.list" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set" | "agentStatus.report" | "agentStatus.clear" | "island.notify" | "secrets.get" | "secrets.set" | "secrets.delete" | "clipboard.history" | "messages.list" | "media.nowPlaying" | "media.playPause" | "media.next" | "media.previous" | "shelf.list" | "shelf.add" | "shelf.remove";
+export type HostMethod = "host.info" | "settings.get" | "ui.setInfo" | "events.subscribe" | "events.unsubscribe" | "view.update" | "webview.postMessage" | "view.patch" | "status.update" | "storage.get" | "storage.set" | "storage.delete" | "storage.keys" | "permissions.request" | "host.keepAlive" | "island.openView" | "todos.list" | "todos.days" | "todos.add" | "todos.update" | "todos.remove" | "note.get" | "note.set" | "agentStatus.report" | "agentStatus.clear" | "island.notify" | "secrets.get" | "secrets.set" | "secrets.delete" | "clipboard.history" | "messages.list" | "media.nowPlaying" | "media.playPause" | "media.next" | "media.previous" | "shelf.list" | "shelf.add" | "shelf.remove";
 /** Events for events.subscribe. */
 export type PluginEventName = "todos.changed" | "note.changed" | "agentStatus.changed" | "island.expanded" | "island.collapsed" | "app.locale.changed" | "clipboard.changed" | "messages.received" | "media.changed";
 /** Notifications the island sends to the plugin. */
@@ -32,6 +32,7 @@ export interface MethodPermissions {
   "host.keepAlive": null;
   "island.openView": null;
   "todos.list": "todos:read";
+  "todos.days": "todos:read";
   "todos.add": "todos:write";
   "todos.update": "todos:write";
   "todos.remove": "todos:write";

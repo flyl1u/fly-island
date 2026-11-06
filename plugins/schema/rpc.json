@@ -157,8 +157,15 @@
       "name": "todos.list",
       "permission": "todos:read",
       "since": 1,
-      "params": null,
-      "result": "{ date, todos, scheduled, activeTodoId }"
+      "params": { "date?": "YYYY-MM-DD (since 2); missing means today" },
+      "result": "{ date, todos, scheduled, activeTodoId }. A past date reads that day's archive ({ ..., archived: true }; status 404 when nothing was archived for it); a later date gives the todos scheduled for it in 'scheduled'."
+    },
+    {
+      "name": "todos.days",
+      "permission": "todos:read",
+      "since": 2,
+      "params": { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" },
+      "result": "{ days: [{ date, total, completed, hasNote, archived }] }: today and every archived day from 'from' to 'to' (inclusive), oldest first."
     },
     {
       "name": "todos.add",
@@ -185,8 +192,8 @@
       "name": "note.get",
       "permission": "notes:read",
       "since": 1,
-      "params": null,
-      "result": "{ date, note }"
+      "params": { "date?": "YYYY-MM-DD (since 2); missing means today" },
+      "result": "{ date, note }. A past date reads that day's archived note ({ ..., archived: true }; status 404 when nothing was archived); a later date is status 400."
     },
     {
       "name": "note.set",

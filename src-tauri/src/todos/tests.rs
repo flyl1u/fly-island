@@ -366,6 +366,44 @@ mod call_tests {
     }
 
     #[test]
+    fn other_days_come_from_the_archives_and_the_scheduled_list() {
+        let mut history = data();
+        history.archives = serde_json::from_value(json!([
+            { "date": "2026-11-03", "todos": [{ "id": "x", "title": "old", "completed": true, "createdAt": 0 }], "dailyNote": "那天", "savedAt": 0, "savedToDisk": false },
+            { "date": "2026-11-01", "todos": [], "dailyNote": " ", "savedAt": 0, "savedToDisk": false }
+        ]))
+        .expect("archives");
+        let ask = |method: &str, params: Value| run(method, &params, &history, "", 0).map(|outcome| (outcome.result, outcome.next));
+
+        let (today, next) = ask("todos.list", json!({ "date": "2026-11-05" })).expect("today");
+        assert_eq!((today["todos"].as_array().map(Vec::len), next), (Some(2), None));
+        let (past, _) = ask("todos.list", json!({ "date": "2026-11-03" })).expect("past");
+        assert_eq!((past["todos"][0]["id"].clone(), past["archived"].clone()), (json!("x"), json!(true)));
+        let (later, _) = ask("todos.list", json!({ "date": "2026-11-20" })).expect("later");
+        assert_eq!((later["todos"].clone(), later["scheduled"][0]["id"].clone()), (json!([]), json!("s")));
+        assert_eq!(ask("todos.list", json!({ "date": "2026-11-02" })).expect_err("none").0, 404);
+        assert_eq!(ask("todos.list", json!({ "date": "11/03" })).expect_err("bad").0, 400);
+
+        assert_eq!(ask("note.get", json!({ "date": "2026-11-03" })).expect("note").0["note"], json!("那天"));
+        assert_eq!(ask("note.get", json!({})).expect("today").0, json!({ "date": "2026-11-05", "note": "" }));
+        assert_eq!(ask("note.get", json!({ "date": "2026-11-20" })).expect_err("later").0, 400);
+
+        let (days, _) = ask("todos.days", json!({ "from": "2026-11-01", "to": "2026-11-30" })).expect("days");
+        assert_eq!(
+            days["days"],
+            json!([
+                { "date": "2026-11-01", "total": 0, "completed": 0, "hasNote": false, "archived": true },
+                { "date": "2026-11-03", "total": 1, "completed": 1, "hasNote": true, "archived": true },
+                { "date": "2026-11-05", "total": 2, "completed": 0, "hasNote": false, "archived": false }
+            ])
+        );
+        let (narrow, _) = ask("todos.days", json!({ "from": "2026-11-02", "to": "2026-11-04" })).expect("narrow");
+        assert_eq!(narrow["days"].as_array().map(Vec::len), Some(1));
+        assert_eq!(ask("todos.days", json!({ "from": "2026-11-09", "to": "2026-11-01" })).expect_err("order").0, 400);
+        assert_eq!(ask("todos.days", json!({ "from": "2026-11-01" })).expect_err("missing").0, 400);
+    }
+
+    #[test]
     fn notes_are_replaced_or_appended_line_by_line() {
         let note = |params: Value| call("note.set", params).map(|(result, next)| (result["note"].clone(), next.expect("next").daily_note));
         assert_eq!(note(json!({ "note": "a\nb" })).expect("set").1, "a\nb");

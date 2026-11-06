@@ -55,6 +55,8 @@ export class MockHost extends EventEmitter {
     this.dataDir = options.dataDir ?? mkdtempSync(path.join(os.tmpdir(), "fly-island-mock-"));
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.todos = options.todos ? structuredClone(options.todos) : emptyTodos();
+    /** Archived days for todos.list / note.get / todos.days with a date: [{ date, todos, dailyNote }]. */
+    this.archives = structuredClone(options.archives ?? []);
     this.note = options.note ?? "";
     this.data = {
       clipboard: options.clipboard ?? [],
