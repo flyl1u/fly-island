@@ -38,7 +38,7 @@ export type SettingsPluginsText = {
   run: {
     onDemand: string;
     memory: (megabytes: string) => string;
-    memorySplit: (total: string, runtime: string, runtimeMegabytes: string, pluginMegabytes: string) => string;
+    memoryTotal: (total: string, runtime: string, runtimeMegabytes: string) => string;
     cpu: (percent: string) => string;
     cpuIdle: string;
     processLine: (name: string, commitMegabytes: string, workingSetMegabytes: string) => string;
@@ -216,7 +216,7 @@ export const zhCN: SettingsPluginsText = {
   run: {
     onDemand: "按需启动：用到时才运行，空闲 1 分钟后自动停止。",
     memory: (megabytes: string) => `内存 ${megabytes} MB`,
-    memorySplit: (total, runtime, runtimeMegabytes, pluginMegabytes) => `内存 ${total} MB（${runtime} ${runtimeMegabytes} MB + 插件 ${pluginMegabytes} MB）`,
+    memoryTotal: (total, runtime, runtimeMegabytes) => `进程合计 ${total} MB，其中 ${runtime} 本身占 ${runtimeMegabytes} MB，没有算进上面的插件内存。`,
     cpu: (percent: string) => `CPU ${percent}%`,
     cpuIdle: "CPU 空闲",
     processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}：已提交 ${commitMegabytes} MB，工作集 ${workingSetMegabytes} MB`,
@@ -399,7 +399,7 @@ export const en: SettingsPluginsText = {
   run: {
     onDemand: "Starts on demand: runs only when needed and stops after a minute with nothing to do.",
     memory: (megabytes: string) => `Memory ${megabytes} MB`,
-    memorySplit: (total, runtime, runtimeMegabytes, pluginMegabytes) => `Memory ${total} MB (${runtime} ${runtimeMegabytes} MB + plugin ${pluginMegabytes} MB)`,
+    memoryTotal: (total, runtime, runtimeMegabytes) => `Processes total ${total} MB, of which ${runtime} itself takes ${runtimeMegabytes} MB, left out of the plugin memory above.`,
     cpu: (percent: string) => `CPU ${percent}%`,
     cpuIdle: "CPU idle",
     processLine: (name, commitMegabytes, workingSetMegabytes) => `${name}: ${commitMegabytes} MB committed, ${workingSetMegabytes} MB working set`,

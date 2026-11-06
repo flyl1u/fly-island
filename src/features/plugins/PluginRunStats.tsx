@@ -9,7 +9,8 @@ export function PluginRunStats({ plugin }: { plugin: PluginInfo }) {
   const resources = plugin.resources;
   const split = resources ? memorySplit(resources) : null;
   const facts = [
-    split ? (split.runtime ? labels.memorySplit(split.total, split.runtime.name, split.runtime.megabytes, split.runtime.plugin) : labels.memory(split.total)) : null,
+    // The card shows only the plugin's own share; the runtime's fixed share is in the hover detail.
+    split ? labels.memory(split.runtime ? split.runtime.plugin : split.total) : null,
     resources ? (isIdleCpu(resources.cpuPercent) ? labels.cpuIdle : labels.cpu(resources.cpuPercent.toFixed(1))) : null,
     plugin.startupMs !== null ? labels.startup(plugin.startupMs) : null,
   ].filter((fact): fact is string => fact !== null);
@@ -17,6 +18,7 @@ export function PluginRunStats({ plugin }: { plugin: PluginInfo }) {
   const detail = resources
     ? [
         ...resources.processes.map((process) => labels.processLine(process.name || "?", megabytes(process.memoryBytes), megabytes(process.workingSetBytes))),
+        split?.runtime ? labels.memoryTotal(split.total, split.runtime.name, split.runtime.megabytes) : null,
         split?.runtime ? labels.runtimeHelp(split.runtime.name, split.runtime.megabytes) : null,
         labels.memoryHelp,
       ].filter((line): line is string => line !== null).join("\n")
