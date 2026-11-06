@@ -2,6 +2,7 @@
 
 use std::{thread, time::Duration};
 use tauri::{Emitter, WebviewWindow};
+use windows::Win32::Foundation::HWND;
 
 use super::{
     geometry::STAGE_WINDOW_WIDTH,
@@ -24,9 +25,13 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
         let mut ignoring_cursor = false;
         let mut was_inside = false;
         let mut was_move_armed = false;
+        // Asked once: every `window.hwnd()` is a round trip to the main event loop, which at
+        // this loop's 83 Hz kept the main thread busy even with the cursor nowhere near. The
+        // handle stays the same for the window's life.
+        let hwnd = window.hwnd().ok();
 
         loop {
-            let is_inside = cursor_is_inside_island(&window);
+            let is_inside = hwnd.is_none_or(cursor_is_inside_island);
             let should_ignore = !is_inside;
 
             if should_ignore != ignoring_cursor
@@ -52,11 +57,7 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
     });
 }
 
-pub(super) fn cursor_is_inside_island(window: &WebviewWindow) -> bool {
-    let hwnd = match window.hwnd() {
-        Ok(hwnd) => hwnd,
-        Err(_) => return true,
-    };
+pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {
     let Some(window_rect) = win32::window::window_rect(hwnd) else {
         return true;
     };
