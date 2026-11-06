@@ -6,10 +6,11 @@ import type { PetMood } from "./patterns";
 export function usePetMood(agents: readonly AgentActivity[], enabled: boolean): PetMood {
   const [now, setNow] = useState(() => Date.now());
 
-  // New data is the moment phases changed, so measure the wave from here.
+  // New data is the moment phases changed, so measure the wave from here. Not while off: the
+  // agents change every poll, and each change would re-render the caller for nothing.
   useEffect(() => {
-    setNow(Date.now());
-  }, [agents]);
+    if (enabled) setNow(Date.now());
+  }, [agents, enabled]);
 
   useEffect(() => {
     if (!enabled) return;
