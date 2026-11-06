@@ -99,6 +99,8 @@ Each session on the Agent page can show where it runs, as the program's own icon
 
 **Running time** counts from the newest typed prompt: Claude Code's last real `user` record, Codex's last `user_message` / `task_started` (`turnStartedAt` in each summary). A session in progress shows "已运行 3 分 20 秒", ticking every second in its own leaf component; a finished one shows "用时 …" up to its last write. When a long turn pushes the prompt out of the 256 KiB tail read, the start found earlier is kept; if it was never seen, no time is shown.
 
+**Permission mode and subagents** (`session_mode.rs`, `permissionMode` and `subagents` in each summary). Claude Code writes `permissionMode` on each typed prompt (`bypassPermissions`, `auto`, `acceptEdits`, `plan`, `default`); the newest one in the tail is used, and the one found earlier is kept when a long turn pushes the prompt out. Codex's `turn_context` gives `approval_policy` and `sandbox_policy`: `never` with `danger-full-access` counts as bypass, `never` otherwise as auto. A session in progress gets a badge for any mode but the default ("跳过确认" in orange, "自动", "自动改文件", "计划"). Subagents are the `Agent` (formerly `Task`) calls of the current turn with no `tool_result` yet, shown as "2 个子 Agent" while the turn runs; a subagent started in the background answers at once, so it is not counted. Compacting the context is not in the transcript until it is done, so it is not shown; it needs the `PreCompact` / `PostCompact` hooks.
+
 ## Switching to a Session's Window
 
 Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cwd`, `title`, and the optional `sessionId`). It tries, in order:

@@ -24,7 +24,7 @@
 | B1 | 「已完成但还没看」状态：跑完后高亮，点开看过才变灰 | 待做 | | 参考 [Session Drawer](https://github.com/msziva/session-drawer) |
 | B2 | 会话完成或要确认时在岛上提醒：每个会话只留最新一条；所在窗口已在前台就不提醒 | 待做 | | 同上。并入 B6 第 1 期 |
 | B6 | Agent 岛上交互：音效、完成 / 审批 / 提问时自动弹出卡片、在岛上直接审批（Claude Code 和 Codex）和回答提问（仅 Claude Code） | 待做 | | 方案和分期见 [agent-island-interaction.md](architecture/agent-island-interaction.md)，逐项进度见 [任务清单](architecture/agent-island-interaction-tasks.md)。第 0 期先实测钩子等待时终端审批框的行为；第 1 期（音效 + 自动弹出提醒）不依赖实测，可以先做 |
-| B3 | 卡片显示权限模式（auto / bypass 标记）、正在压缩上下文、子 Agent 数量 | 待做 | | 钩子输入里有 `permission_mode`；事件有 `PreCompact` / `PostCompact`、`SubagentStart` / `SubagentStop` |
+| B3b | 卡片显示「正在压缩上下文」 | 待做 | | 会话记录里要等压缩完才有记录，只能靠 `PreCompact` / `PostCompact` 钩子；适合和 B6 的钩子通道一起做 |
 | B4 | Claude 5 小时 / 7 天用量和 Codex 额度 | 待做 | | 先调研数据来源。参考 [ClaudeBar](https://github.com/tddworks/ClaudeBar) |
 
 ## 第三优先：竞品都有、我们还缺的
@@ -57,6 +57,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| B3 | 运行中的会话卡片标出不是默认的权限模式（跳过确认、自动、自动改文件、计划；Codex 按 approval / sandbox 策略）和正在跑的子 Agent 数（后台子 Agent 不计）。压缩上下文拆成 B3b | 提交 `feat(agent-status): mark the permission mode and running subagents on session cards` |
 | B5 | 关掉「显示 Claude Code / Codex 会话」后，被关掉的 Agent 也不再点亮折叠岛、不出现在状态文字里（会话标题早已跟随开关） | 提交 `fix(agent-status): agents switched off in settings no longer light the island` |
 | A2 | VS Code 精确跳到终端：扩展 `packages/vscode-extension/`（ID `tixxin.focusd-island`）按进程号或标题切到会话的终端，岛屿在编辑器装了扩展时才打开链接。用处窄，不上架扩展市场、不发 Release，需要时自己打包 .vsix 安装 | `a407cb2` |
 | A3 | Windows Terminal 跳到标签：调出窗口后用 UI Automation 读标签名，只有恰好一个标签是会话标题时选中它（标题被截断时按开头匹配），标签在同一进程的另一个窗口里时调出那个窗口；日志写 `wt-tab=selected/none`。没有用 `WT_SESSION`：UIA 拿不到标签的会话 ID | 提交 `feat(agent-status): switch to the session's Windows Terminal tab` |

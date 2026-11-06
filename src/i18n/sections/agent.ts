@@ -26,6 +26,9 @@ export type AgentText = {
     duration: (parts: { hours: number; minutes: number; seconds: number }) => string;
     elapsedRunning: (duration: string) => string;
     elapsedDone: (duration: string) => string;
+    /** Badges for the modes in which a session acts without asking; the default mode has none. */
+    permissionModes: Record<"auto" | "bypass" | "acceptEdits" | "plan", string>;
+    subagents: (count: number) => string;
   };
 };
 
@@ -58,6 +61,8 @@ export const zhCN: AgentText = {
       hours > 0 ? `${hours} 小时 ${minutes} 分` : minutes > 0 ? `${minutes} 分 ${seconds} 秒` : `${seconds} 秒`,
     elapsedRunning: (duration) => `已运行 ${duration}`,
     elapsedDone: (duration) => `用时 ${duration}`,
+    permissionModes: { auto: "自动", bypass: "跳过确认", acceptEdits: "自动改文件", plan: "计划" },
+    subagents: (count) => `${count} 个子 Agent`,
   },
 };
 
@@ -90,5 +95,7 @@ export const en: AgentText = {
       hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
     elapsedRunning: (duration) => `running ${duration}`,
     elapsedDone: (duration) => `took ${duration}`,
+    permissionModes: { auto: "Auto", bypass: "Bypass", acceptEdits: "Accept edits", plan: "Plan" },
+    subagents: (count) => (count === 1 ? "1 subagent" : `${count} subagents`),
   },
 };

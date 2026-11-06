@@ -247,6 +247,43 @@ fn claude_session_tail_gives_state_model_and_latest_reply() {
 }
 
 #[test]
+fn session_tails_give_the_permission_mode_and_running_subagents() {
+    use super::sessions::{parse_claude_tail, parse_codex_tail};
+
+    let line = |value: serde_json::Value| value.to_string();
+    let prompt = line(json!({ "type": "user", "permissionMode": "bypassPermissions", "message": { "role": "user", "content": "重构设置页" } }));
+    let calls = line(json!({ "type": "assistant", "message": { "model": "claude-opus-5-5", "content": [
+        { "type": "tool_use", "id": "a1", "name": "Agent", "input": { "description": "查样式" } },
+        { "type": "tool_use", "id": "a2", "name": "Task", "input": { "description": "查文案" } },
+        { "type": "tool_use", "id": "b1", "name": "Bash", "input": { "command": "ls" } },
+    ] } }));
+    let one_answered = line(json!({ "type": "user", "message": { "role": "user", "content": [
+        { "type": "tool_result", "tool_use_id": "a1", "content": "done" },
+        { "type": "tool_result", "tool_use_id": "b1", "content": "ok" },
+    ] } }));
+    let parsed = parse_claude_tail(&[prompt.clone(), calls.clone(), one_answered.clone()].join("\n"));
+    assert_eq!(parsed.permission_mode, Some("bypass"));
+    assert_eq!(parsed.subagents, 1);
+    // Subagents of an earlier turn do not count once a new prompt is sent.
+    let next = line(json!({ "type": "user", "permissionMode": "default", "message": { "role": "user", "content": "继续" } }));
+    let parsed = parse_claude_tail(&[prompt, calls, one_answered, next].join("\n"));
+    assert_eq!((parsed.permission_mode, parsed.subagents), (Some("default"), 0));
+    // A finished turn has no running subagents.
+    let done = line(json!({ "type": "assistant", "message": { "model": "claude-opus-5-5", "stop_reason": "end_turn", "content": [
+        { "type": "tool_use", "id": "a3", "name": "Agent", "input": {} },
+    ] } }));
+    assert_eq!(parse_claude_tail(&done).subagents, 0);
+    assert_eq!(parse_claude_tail(&done).permission_mode, None);
+
+    let context = |approval: &str, sandbox: &str| {
+        line(json!({ "type": "turn_context", "payload": { "model": "gpt-5", "approval_policy": approval, "sandbox_policy": { "type": sandbox } } }))
+    };
+    assert_eq!(parse_codex_tail(&context("never", "danger-full-access")).permission_mode, Some("bypass"));
+    assert_eq!(parse_codex_tail(&context("never", "workspace-write")).permission_mode, Some("auto"));
+    assert_eq!(parse_codex_tail(&context("on-request", "workspace-write")).permission_mode, Some("default"));
+}
+
+#[test]
 fn codex_session_tail_and_meta() {
     use super::sessions::{codex_user_prompt, parse_codex_meta, parse_codex_tail, TurnState};
 

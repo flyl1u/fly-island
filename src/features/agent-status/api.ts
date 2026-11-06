@@ -62,7 +62,14 @@ export type AgentSessionSummary = {
   lastPrompt?: string | null;
   /** The tool the current turn called last; null once the turn is over. */
   currentTool?: AgentToolCall | null;
+  /** How freely the session may act; null when not known. Missing from older builds. */
+  permissionMode?: AgentPermissionMode | null;
+  /** Subagents the current turn started that are still running (Claude Code only). */
+  subagents?: number;
 };
+
+/** Mirrors session_mode.rs: Claude Code's permission mode, or Codex's approval and sandbox policy. */
+export type AgentPermissionMode = "default" | "auto" | "bypass" | "acceptEdits" | "plan";
 
 /** Mirrors ToolCall in src-tauri/src/agent_status/tool_call.rs. */
 export type AgentToolCall = {

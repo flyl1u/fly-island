@@ -3,10 +3,13 @@
 //! Pure parsing only; reading and caching the files is in session_scan.rs. Both formats are
 //! undocumented, so anything unexpected is skipped rather than reported.
 
+use std::collections::HashSet;
+
 use serde::Serialize;
 use serde_json::Value;
 
 use super::session_host::SessionHost;
+use super::session_mode::{claude_permission_mode, claude_subagent_calls, claude_tool_results, codex_permission_mode};
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
 
@@ -38,6 +41,10 @@ pub struct AgentSessionSummary {
     pub(super) last_prompt: Option<String>,
     /// The tool the current turn called last; `None` once the turn is over.
     pub(super) current_tool: Option<ToolCall>,
+    /// "default", "auto", "bypass", "acceptEdits" or "plan" (session_mode.rs); `None` when unknown.
+    pub(super) permission_mode: Option<&'static str>,
+    /// Subagents the current turn started that have not answered yet (Claude Code only).
+    pub(super) subagents: u32,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -65,6 +72,9 @@ pub(super) struct SessionTail {
     pub(super) last_prompt: Option<String>,
     /// The newest tool call after the newest prompt, while the turn is still working.
     pub(super) current_tool: Option<ToolCall>,
+    pub(super) permission_mode: Option<&'static str>,
+    /// Subagents started after the newest prompt with no result yet, while the turn is working.
+    pub(super) subagents: u32,
 }
 
 impl SessionTail {
@@ -72,6 +82,7 @@ impl SessionTail {
     fn settle(mut self) -> Self {
         if self.state != TurnState::Working {
             self.current_tool = None;
+            self.subagents = 0;
         }
         self
     }
@@ -132,12 +143,17 @@ pub(super) fn session_phase(state: TurnState, idle_ms: i64, stale_after_ms: i64)
 /// Reads a Claude Code transcript excerpt from its end.
 pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
     let mut result = SessionTail::default();
+    // Read from the end, so a subagent's result comes before the call that started it.
+    let mut answered = HashSet::new();
     for record in tail
         .lines()
         .rev()
         .filter_map(|line| serde_json::from_str::<Value>(line).ok())
     {
         let kind = record["type"].as_str().unwrap_or_default();
+        if result.permission_mode.is_none() {
+            result.permission_mode = record["permissionMode"].as_str().map(claude_permission_mode);
+        }
         if result.title.is_none() && kind == "ai-title" {
             result.title = record["aiTitle"].as_str().and_then(display_title);
         }
@@ -169,6 +185,13 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
             if result.current_tool.is_none() && result.last_prompt.is_none() {
                 result.current_tool = claude_tool_call(&message["content"]);
             }
+            if result.last_prompt.is_none() {
+                let running = claude_subagent_calls(&message["content"]).filter(|id| !answered.contains(*id)).count();
+                result.subagents += u32::try_from(running).unwrap_or(0);
+            }
+        }
+        if kind == "user" && result.last_prompt.is_none() {
+            answered.extend(claude_tool_results(&message["content"]).map(str::to_string));
         }
         if result.state == TurnState::Unknown {
             result.state = claude_turn_state(kind, &record);
@@ -251,6 +274,9 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
             }
             if result.cwd.is_none() {
                 result.cwd = string_field(payload, "cwd");
+            }
+            if result.permission_mode.is_none() {
+                result.permission_mode = codex_permission_mode(payload);
             }
         }
         // Only tools called after the newest prompt belong to the current turn.

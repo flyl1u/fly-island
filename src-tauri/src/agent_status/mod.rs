@@ -13,6 +13,7 @@ mod focus;
 mod focus_log;
 mod session_host;
 mod session_memory;
+mod session_mode;
 mod session_process;
 mod session_records;
 mod snapshot;

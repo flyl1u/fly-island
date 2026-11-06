@@ -86,6 +86,7 @@ export function AgentSessionsPanel({
           const project = sessionProject(session.cwd);
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
           const model = modelLabel(session.model, session.effort);
+          const mode = session.permissionMode && session.permissionMode !== "default" ? t.agent.sessions.permissionModes[session.permissionMode] : null;
           const minutes = minutesAgo(session.updatedAt, now);
           // A working session with nothing to say yet (a turn just started) has no second line.
           const active = isActivePhase(session.phase);
@@ -99,6 +100,7 @@ export function AgentSessionsPanel({
           const status = [
             showPhase && phaseLabel,
             elapsed && <SessionElapsed key="elapsed" session={session} />,
+            active && session.subagents ? t.agent.sessions.subagents(session.subagents) : null,
             showAge && (minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)),
           ]
             .filter(Boolean)
@@ -118,6 +120,11 @@ export function AgentSessionsPanel({
                       {title}
                     </span>
                     {active && showModel && model && <span className="agent-session__model">{model}</span>}
+                    {active && mode && (
+                      <span className={`agent-session__mode agent-session__mode--${session.permissionMode}`}>
+                        {mode}
+                      </span>
+                    )}
                     {notFoundId === session.sessionId ? (
                       <span className="agent-session__not-found" role="status">{isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
                     ) : (

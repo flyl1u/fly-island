@@ -176,6 +176,23 @@
   white-space: nowrap;
 }
 
+/* Modes that act without asking; skipping every check is marked in the waiting orange. */
+.agent-session__mode {
+  flex: none;
+  padding: 2px 7px;
+  color: rgba(var(--agent-ink), 0.66);
+  background: rgba(var(--agent-ink), 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.agent-session__mode--bypass {
+  color: rgb(255, 159, 67);
+  background: rgba(255, 159, 67, 0.16);
+}
+
 .agent-session__meta,
 .agent-session__not-found {
   flex: none;
