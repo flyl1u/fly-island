@@ -209,3 +209,9 @@
   color: var(--color-white) !important;
   background: var(--color-danger) !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .clipboard-copy-button--copied {
+    animation: none;
+  }
+}

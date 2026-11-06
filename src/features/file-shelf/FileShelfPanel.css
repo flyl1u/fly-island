@@ -96,3 +96,9 @@
     opacity: 1;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-drop-overlay {
+    animation: none;
+  }
+}

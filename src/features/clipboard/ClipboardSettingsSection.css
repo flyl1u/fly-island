@@ -102,3 +102,9 @@
   align-items: center;
   gap: 6px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-record-button--recording {
+    animation: none;
+  }
+}

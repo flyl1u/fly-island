@@ -238,3 +238,9 @@
   font-weight: 600;
   color: rgba(255, 170, 170, 0.85);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .music-control-button__track-change {
+    animation: none;
+  }
+}

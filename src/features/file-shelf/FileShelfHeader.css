@@ -179,3 +179,10 @@
   outline: 2px solid rgba(190, 240, 225, 0.76);
   outline-offset: 1px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Still goes away after the same time, just without fading. */
+  .shelf-panel__notice {
+    animation-timing-function: step-end;
+  }
+}

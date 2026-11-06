@@ -175,3 +175,9 @@
   outline: 2px solid rgba(190, 240, 225, 0.76);
   outline-offset: 2px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-copy-button--copied {
+    animation: none;
+  }
+}

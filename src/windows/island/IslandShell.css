@@ -351,3 +351,10 @@
   min-height: 0;
   flex: 1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .island--appearance-liquidGlass.island--expanded .island__glass::after,
+  .island--appearance-liquidGlass.island--collapsed .island__glass::after {
+    animation: none;
+  }
+}

@@ -46,7 +46,6 @@
 | # | 任务 | 状态 | 负责 | 备注 |
 |---|---|---|---|---|
 | D1 | 测出空闲时的内存和 CPU 写进 README；确认 Agent 页每秒轮询不费电 | 已完成 | fly-island-fe · lane 4 | `cef6251`、`376c9cb`，数据见 [idle-usage.md](investigations/idle-usage.md)：收起闲着约单核 10%、330 MB；Agent 页每秒刷新 0.1% |
-| D2 | 无障碍检查：键盘操作、读屏提示（`aria`）、减少动效 | 进行中 | fly-island-fe · lane 4 · 2026-11-07 01:45 | |
 | D3 | 代码签名：Microsoft Store 或 Azure Trusted Signing | 待用户确认 | | 涉及费用 |
 | D4 | 对比上游 0.2.15～0.2.19，列出值得移植的修复 | 待做 | | |
 | D5 | 用装了旧版本的电脑完整走一遍应用内自动更新 | 待做 | | 需要用户操作 |
@@ -56,6 +55,7 @@
 
 | # | 任务 | 提交 |
 |---|---|---|
+| D2 | 无障碍检查，结果见 [accessibility.md](investigations/accessibility.md)：控件名字齐全（设置窗口 162 个 Tab 停留点都有名字）；外观页滑块和待办保存按钮补了键盘焦点样式；减少动效时所有过渡归零，动画在各自文件里停掉或改成不动的形式，`reduced-motion.test.mjs` 防止新动画漏掉。岛屿本体的逐个 Tab 检查没做 | 提交 `fix(a11y): focus rings and calmer motion when Windows asks for less` |
 | D7 | 拆分 `scripts/file-size-allowlist.json` 里登记的超长文件：登记表已清空，所有文件都在行数上限内（`pnpm check:size` 通过）；最后几步是 QQ 邮箱、QQ 通知、剪贴板历史拆成目录模块 | `c5dbfd6`、`f2027f6`、`a9ed0ba` |
 | D6 | 待办重新导入前的备份 `todos.before-reimport-*.json` 每次启动只留最近 3 个。原文备份 `todos-migration-backup*.json` 不删：岛屿靠它们的 `sourceHash` 认出另一个构建的旧副本（`e52809b`），删了会重新出现切换构建覆盖待办的问题，而且它们很小 | 提交 `fix(todos): keep only the newest three reimport copies` |
 | B10 | magpie 网关用户的用量：Claude Code 的 `ANTHROPIC_BASE_URL` 指向本机时，岛屿带着 Claude Code 给网关的令牌请求 magpie 的 `GET /v1/magpie/quotas`（每分钟至多一次，只请求本机），不需要 claude-hud 和中间脚本；有数据时优先于 claude-hud 快照，卡片注明「来自 magpie」。`?kept=1` 在实际网关上返回空列表，所以没用。窗口按显示名（"5 hours"、"7 days"、"7 days · 模型"）对应，magpie 改措辞会对不上；分不出 Max / Ultra | 提交 `feat(agent-status): read Claude usage from a local magpie gateway` |

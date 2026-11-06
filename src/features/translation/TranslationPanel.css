@@ -202,3 +202,9 @@
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .translation-panel__spinner {
+    animation: none;
+  }
+}

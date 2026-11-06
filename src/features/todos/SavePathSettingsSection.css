@@ -79,6 +79,11 @@
     box-shadow 140ms ease;
 }
 
+.save-path-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .save-path-button:hover {
   background: #b4e3ce;
 }
@@ -92,4 +97,10 @@
 
 .save-path-button--saved:hover {
   background: #37a06f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-path-button--saved {
+    animation: none;
+  }
 }

@@ -38,3 +38,16 @@ input,
 .stage select {
   font: inherit;
 }
+
+/* Windows' "Animation effects" switch reaches the WebView as this query. Transitions
+   only ever smooth a change, so they all go; animations are handled where they are
+   defined, because some of them carry meaning (a notice that disappears on its own). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
