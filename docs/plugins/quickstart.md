@@ -117,7 +117,11 @@ test("the list shows the saved items", async () => {
 ```sh
 npx fly-island-plugin validate   # 检查清单和文件夹
 npx fly-island-plugin pack       # 写出 .package/<id>-<version>.zip
+npx fly-island-plugin keygen     # 只需一次：生成你的签名密钥，打印要登记到市场的公钥
+npx fly-island-plugin pack --sign  # 同时写出 <id>-<version>.zip.sig，和 zip 一起附到 Release
 ```
+
+签名是可选的，但只有签了名的插件会在用户的岛屿上自动更新，见 [作者签名](README.md#作者签名)。
 
 `validate` 检查：清单符合 [`manifest.schema.json`](../../plugins/schema/manifest.schema.json)；入口文件存在、在插件文件夹内、没有被 `.focusdignore` 排除；激活事件、菜单指向的命令和页面存在；没有 `experimentalApis`；包不超过 20 MB。它还会扫描代码里出现的方法名和事件名，提示“申请了但似乎没用到”和“用到了但没申请”的权限。
 

@@ -528,11 +528,21 @@ plugin.onCommand("sync-now", async () => {
 
 用户第一次安装非官方发布者的插件时，按钮显示 **信任并安装**，点了就把这个发布者记进信任列表（存在 `plugins.json` 的 `trustedPublishers`），可以在 **设置 → 插件扩展 → 更新** 里取消信任。
 
+### 作者签名
+
+可选。签了名，用户的岛屿才会**自动更新**你的插件；岛屿还会记下第一次看到的密钥，之后换了密钥的版本要用户确认才装。这样即使你的 GitHub 账号或仓库被盗，攻击者发的新版本也不会悄悄装到用户电脑上。设计见 [plugin-author-signing.md](../architecture/plugin-author-signing.md)。
+
+1. 只需一次：`npx fly-island-plugin keygen` 生成签名密钥。私钥存在 `~/.fly-island-plugin/signing.key`（Windows 上用 DPAPI 加密，只有当前 Windows 账户能解开），也可以用环境变量 `FLY_ISLAND_PLUGIN_SIGNING_KEY`（PEM 文本）提供。它打印的 `{ keyId, publicKey }` 写进 `focusd-plugins` 里你的提交 `plugins/<插件 id>.json` 的 `"signingKeys": [ ... ]`。
+2. 每次发版：`npx fly-island-plugin pack --sign`，把 `<id>-<version>.zip` 和 `<id>-<version>.zip.sig` 一起附到 Release。已经打好的包可以用 `npx fly-island-plugin sign <zip>` 补签。
+3. 登记了 `signingKeys` 之后，没有签名或签名不对的版本不会上架，维护者也不能放行。
+
+签名对象是 `focusd-plugin-package/1`、插件 id、版本和 zip 的 SHA-256 四行文本（Ed25519），所以签名不能挪到别的插件或别的版本上。**备份私钥**：丢了只能换新密钥，而换密钥后的第一个版本要每个用户手动确认。最安全的做法是在自己电脑上签名再上传，不要把私钥放进仓库的 CI。
+
 ### 官方插件
 
 本仓库 `plugins/examples/` 里的示例插件是官方插件，发布方式不同：
 
-1. 修改插件并提高 `version`，在本机运行 `pnpm plugins:index`（需要旧签名私钥，见下文）。脚本把插件打成 `plugins/packages/<id>-<version>.zip`，重写并签名本仓库的 `plugins/index.json` 和 `plugins/revoked.json`。文本文件打包时统一成 LF，时间戳固定，所以同一份源码每次得到同一个哈希。
+1. 修改插件并提高 `version`，在本机运行 `pnpm plugins:index`（需要旧签名私钥，见下文；以及官方作者密钥 `~/.tauri/fly-island/plugin-author-signing.key`，公钥在 `plugins/author-key.json`）。脚本把插件打成 `plugins/packages/<id>-<version>.zip` 并写出作者签名 `<zip>.sig`，重写并签名本仓库的 `plugins/index.json` 和 `plugins/revoked.json`。文本文件打包时统一成 LF，时间戳固定，所以同一份源码每次得到同一个哈希。
 2. 提交并 land。
 3. 在 `focusd-plugins` 里把 `plugins/<id>.json` 的 `package` 改成新 zip 的地址（`https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/<id>-<version>.zip`），合并后 CI 更新市场索引。
 

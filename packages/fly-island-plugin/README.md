@@ -8,7 +8,14 @@ npx fly-island-plugin validate          # check focusd-plugin.json and the folde
 npx fly-island-plugin dev               # load the folder into the running island, restart on changes, print the log
 npx fly-island-plugin test              # test/*.test.mjs, or a smoke test under the mock host
 npx fly-island-plugin pack              # .package/<id>-<version>.zip, byte-for-byte reproducible
+npx fly-island-plugin keygen            # once: your signing key; prints the public key for the market submission
+npx fly-island-plugin pack --sign       # also <id>-<version>.zip.sig, to attach to the release
 ```
+
+Signing is optional, but only signed plugins update by themselves on users' islands, and the island keeps
+updates on the key it first saw. Keep the key (`~/.fly-island-plugin/signing.key`, or
+`FLY_ISLAND_PLUGIN_SIGNING_KEY` with the PEM text) backed up: a version signed with another key needs every
+user's confirmation.
 
 ## SDK
 

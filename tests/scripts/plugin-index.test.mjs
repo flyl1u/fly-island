@@ -67,6 +67,19 @@ test("plugins/index.json and plugins/packages match the plugin sources (run pnpm
   }
 });
 
+test("every official package is signed by the official author key (run pnpm plugins:index)", async () => {
+  const { verifyPackage } = await import("../../packages/fly-island-plugin/src/sign.mjs");
+  const key = JSON.parse(readFileSync(path.join(root, "plugins/author-key.json"), "utf8"));
+  const zips = readdirSync(path.join(root, "plugins/packages")).filter((name) => name.endsWith(".zip"));
+  assert.ok(zips.length > 0);
+  for (const name of zips) {
+    const file = path.join(root, "plugins/packages", name);
+    const [id, version] = name.slice(0, -".zip".length).split(/-(?=\d+\.\d+\.\d+)/);
+    const signature = JSON.parse(readFileSync(`${file}.sig`, "utf8"));
+    assert.equal(verifyPackage(id, version, sha256(readFileSync(file)), signature, [key]), key.keyId, name);
+  }
+});
+
 test("market updates are offered only for newer versions", async () => {
   const { isNewerVersion } = await import("../../src/features/plugins/version.ts");
   assert.equal(isNewerVersion("1.0.1", "1.0.0"), true);

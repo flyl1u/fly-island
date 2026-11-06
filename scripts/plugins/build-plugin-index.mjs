@@ -3,16 +3,20 @@
 // scripts/plugins/plugin-signing.mjs). Since the market moved to TixXin/focusd-plugins,
 // this index is only read by islands released before the move, which trust only
 // the older key; the official plugins' submissions in focusd-plugins point their
-// "package" at the zips written here. Market
+// "package" at the zips written here. Each zip also gets <zip>.sig, the official
+// author signature (docs/architecture/plugin-author-signing.md), made with the key
+// whose public half is plugins/author-key.json. Market
 // details that are not in the manifest (publisher, repository, categories) come
 // from plugins/market/<id>.json, as they will in the index repository. It also
 // signs plugins/revoked.json, the list of versions taken off the market.
 // Usage: pnpm plugins:index. Design: docs/architecture/plugins.md (P4),
 // docs/architecture/plugin-platform.md (P11).
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createZip, listFiles, packFolder, readPackedFile, sha256 } from "../../packages/fly-island-plugin/src/pack.mjs";
+import { loadSigningKey, publicKeyOf, writePackageSignature } from "../../packages/fly-island-plugin/src/sign.mjs";
 import { loadPrivateKey, signIndex } from "./plugin-signing.mjs";
 
 export { createZip, listFiles, readPackedFile, sha256 };
@@ -27,6 +31,10 @@ const SIGNATURE_PATH = "plugins/index.json.sig";
 export const REVOKED_PATH = "plugins/revoked.json";
 const MARKET_DIR = "plugins/market";
 const MANIFEST = "focusd-plugin.json";
+/** The official author key's public half ({ keyId, publicKey }), listed in the official submissions in TixXin/focusd-plugins. */
+export const AUTHOR_KEY_PATH = "plugins/author-key.json";
+/** Where the official author key is kept (DPAPI-protected, like the index key); FOCUSD_PLUGIN_AUTHOR_KEY (PEM) overrides it. */
+export const AUTHOR_KEY_FILE = path.join(homedir(), ".tauri", "fly-island", "plugin-author-signing.key");
 /** The island's own publisher (OFFICIAL_PUBLISHER in src-tauri/src/plugin_host/market.rs). */
 export const OFFICIAL_PUBLISHER = "TixXin";
 /** Categories the market page offers (MARKET_CATEGORIES in src/features/plugins/api.ts). */
@@ -106,7 +114,28 @@ export function indexEntry(manifest, fileName, zip, details = {}) {
 /** Packs one plugin folder: its manifest, package file name and zip bytes. */
 export const packPlugin = packFolder;
 
-/** Writes the index and its signature (see scripts/plugins/plugin-signing.mjs). */
+/** The official author key, checked against plugins/author-key.json so a wrong key is not used. */
+export function loadAuthorKey(root, env = process.env) {
+  const key = loadSigningKey({ file: AUTHOR_KEY_FILE, env, envName: "FOCUSD_PLUGIN_AUTHOR_KEY" });
+  const expected = JSON.parse(readFileSync(path.join(root, AUTHOR_KEY_PATH), "utf8"));
+  if (publicKeyOf(key).keyId !== expected.keyId) throw new Error(`The official author key is not ${expected.keyId} (${AUTHOR_KEY_PATH}).`);
+  return key;
+}
+
+/** Writes <zip>.sig for every package that has none; the key is loaded only when one is missing. */
+export function signPackages(root, loadKey = () => loadAuthorKey(root)) {
+  const packagesDir = path.join(root, PACKAGES_DIR);
+  let key = null;
+  for (const name of readdirSync(packagesDir).filter((file) => file.endsWith(".zip")).sort()) {
+    const file = path.join(packagesDir, name);
+    if (existsSync(`${file}.sig`)) continue;
+    const [id, version] = name.slice(0, -".zip".length).split(/-(?=\d+\.\d+\.\d+)/);
+    key ??= loadKey();
+    writePackageSignature(file, id, version, readFileSync(file), key);
+  }
+}
+
+/** Writes the index and its signature (see scripts/plugins/plugin-signing.mjs), and signs new packages. */
 export function buildIndex(root, privateKey = loadPrivateKey()) {
   const packagesDir = path.join(root, PACKAGES_DIR);
   mkdirSync(packagesDir, { recursive: true });
@@ -132,6 +161,7 @@ export function buildIndex(root, privateKey = loadPrivateKey()) {
   writeFileSync(path.join(root, INDEX_PATH), text);
   writeFileSync(path.join(root, SIGNATURE_PATH), `${JSON.stringify(signIndex(text, privateKey), null, 2)}\n`);
   signRevoked(root, privateKey);
+  signPackages(root);
   return index;
 }
 

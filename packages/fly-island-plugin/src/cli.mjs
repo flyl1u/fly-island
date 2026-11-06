@@ -5,6 +5,7 @@ import path from "node:path";
 import { runDev } from "./dev.mjs";
 import { createZip, packageFiles, sha256 } from "./pack.mjs";
 import { runTests } from "./run-tests.mjs";
+import { DEFAULT_KEY_FILE, generateSigningKey, loadSigningKey, parsePackageName, writePackageSignature } from "./sign.mjs";
 import { report, validatePlugin } from "./validate.mjs";
 
 export { report };
@@ -18,6 +19,13 @@ Commands:
   validate   Check focusd-plugin.json and the folder like the island and the market do
   pack       Write <id>-<version>.zip (the same bytes every time) to .package/
              --out <folder>   write it somewhere else
+             --sign           also write <id>-<version>.zip.sig with your signing key
+  keygen     Create your signing key (once) and print the public key to list in the
+             market submission ("signingKeys"). Back the key up: updates signed by a
+             new key need every user's confirmation.
+  sign <zip> Write <zip>.sig for a package made by pack (named <id>-<version>.zip)
+             --key <file>     the key file (default ~/.fly-island-plugin/signing.key;
+                              or set FLY_ISLAND_PLUGIN_SIGNING_KEY to the PEM text)
   dev        Load the folder into the running island in development mode, restart
              the plugin when a file changes and print its log (needs the island's
              local API and Settings > Plugins > Developer > development mode)
@@ -54,8 +62,8 @@ export function parseArgs(argv) {
   return { command, dir: path.resolve(positional[0] ?? "."), options };
 }
 
-/** Validates and writes the package; returns { file, zip, manifest } or null when invalid. */
-export function pack(dir, outDir = path.join(dir, PACKAGE_OUT_DIR), out = console) {
+/** Validates and writes the package (and its signature with `signWith`); returns { file, zip, manifest } or null when invalid. */
+export function pack(dir, outDir = path.join(dir, PACKAGE_OUT_DIR), out = console, signWith = null) {
   const result = validatePlugin(dir);
   if (!report(result, out)) return null;
   const zip = createZip(packageFiles(dir));
@@ -63,7 +71,33 @@ export function pack(dir, outDir = path.join(dir, PACKAGE_OUT_DIR), out = consol
   const file = path.join(outDir, `${result.manifest.id}-${result.manifest.version}.zip`);
   writeFileSync(file, zip);
   out.log(`wrote ${path.relative(process.cwd(), file) || file} (${zip.length} bytes, sha256 ${sha256(zip)})`);
+  if (signWith) {
+    const { keyId } = writePackageSignature(file, result.manifest.id, result.manifest.version, zip, signWith);
+    out.log(`signed it with key ${keyId}: attach ${path.basename(file)}.sig to the release too`);
+  }
   return { file, zip, manifest: result.manifest };
+}
+
+const keyFile = (options) => (typeof options.key === "string" ? path.resolve(options.key) : DEFAULT_KEY_FILE);
+
+function keygen(options) {
+  const file = keyFile(options);
+  const key = generateSigningKey(file);
+  console.log(`Saved your signing key to ${file}${process.platform === "win32" ? " (encrypted for this Windows user)" : ""}.
+Back it up somewhere safe. Add this to "signingKeys" in your market submission:
+${JSON.stringify(key, null, 2)}`);
+  return 0;
+}
+
+function signZip(zipFile, options) {
+  const name = parsePackageName(zipFile);
+  if (!name) {
+    console.error(`${zipFile} is not named <id>-<version>.zip; sign the file that pack wrote.`);
+    return 1;
+  }
+  const { keyId } = writePackageSignature(zipFile, name.id, name.version, readFileSync(zipFile), loadSigningKey({ file: keyFile(options) }));
+  console.log(`wrote ${zipFile}.sig (key ${keyId})`);
+  return 0;
 }
 
 function publish(dir) {
@@ -89,8 +123,14 @@ export async function main(argv = process.argv.slice(2)) {
   switch (command) {
     case "validate":
       return report(validatePlugin(dir)) ? 0 : 1;
-    case "pack":
-      return pack(dir, typeof options.out === "string" ? path.resolve(options.out) : undefined) ? 0 : 1;
+    case "pack": {
+      const signWith = options.sign ? loadSigningKey({ file: keyFile(options) }) : null;
+      return pack(dir, typeof options.out === "string" ? path.resolve(options.out) : undefined, console, signWith) ? 0 : 1;
+    }
+    case "keygen":
+      return keygen(options);
+    case "sign":
+      return signZip(dir, options);
     case "dev":
       return runDev(dir, { config: typeof options.config === "string" ? options.config : undefined });
     case "test":
