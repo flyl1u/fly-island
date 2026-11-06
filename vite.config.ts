@@ -12,7 +12,9 @@ export default defineConfig(async () => ({
   //
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  // 2. tauri expects a fixed port, fail if that port is not available.
+  //    1420 is the main workspace's `pnpm tauri dev`; `pnpm dev:lane` and the
+  //    regression runner pass their own `--port`, so they never take it.
   server: {
     port: 1420,
     strictPort: true,
