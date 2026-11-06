@@ -10,7 +10,7 @@ import {
   MIN_HOVER_COLLAPSE_DELAY_MS,
   MIN_HOVER_EXPAND_DELAY_MS,
 } from "./settings";
-import type { ExpandTrigger, IslandSettings, MinimizeAction } from "./types";
+import type { ExpandTrigger, IslandSettings, MinimizeAction, TuckedHoverAction } from "./types";
 import "./AppearanceModeControl.css";
 
 export function ExpandSettingsSection({
@@ -24,6 +24,10 @@ export function ExpandSettingsSection({
   const triggers: [ExpandTrigger, string][] = [
     ["click", t.settings.expand.click],
     ["hover", t.settings.expand.hover],
+  ];
+  const tuckedHoverActions: [TuckedHoverAction, string][] = [
+    ["reveal", t.settings.expand.tuckedHoverReveal],
+    ["expand", t.settings.expand.tuckedHoverExpand],
   ];
   const minimizeActions: [MinimizeAction, string][] = [
     ["tray", t.settings.layout.minimizeToTray],
@@ -83,6 +87,22 @@ export function ExpandSettingsSection({
               type="button"
               aria-pressed={settings.minimizeAction === minimizeAction}
               onClick={() => onSettingsChange({ ...settings, minimizeAction })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="appearance-mode-control">
+        <span>{t.settings.expand.tuckedHover}</span>
+        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.expand.tuckedHover}>
+          {tuckedHoverActions.map(([tuckedHoverAction, label]) => (
+            <button
+              key={tuckedHoverAction}
+              className={settings.tuckedHoverAction === tuckedHoverAction ? "appearance-mode-control--active" : ""}
+              type="button"
+              aria-pressed={settings.tuckedHoverAction === tuckedHoverAction}
+              onClick={() => onSettingsChange({ ...settings, tuckedHoverAction })}
             >
               {label}
             </button>

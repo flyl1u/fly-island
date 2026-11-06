@@ -23,6 +23,7 @@ export const PAGES = [
   "notification-startup.html",
   "plugin-views.html?test=1",
   "settings.html?test=1",
+  "tucked-hover.html",
 ];
 
 const PAGE_TIMEOUT_MS = 120_000;

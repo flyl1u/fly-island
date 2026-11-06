@@ -49,6 +49,7 @@ import { useIslandFeatures } from "./useIslandFeatures";
 import { useFileShelfDrop } from "./useFileShelfDrop";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
+import { useTuckedHoverOpen } from "./useTuckedHoverOpen";
 import { useIslandTranslation } from "./useIslandTranslation";
 import { usePluginHostEvents } from "./usePluginHostEvents";
 import { usePluginKeybindings } from "./usePluginKeybindings";
@@ -76,6 +77,8 @@ export function IslandApp() {
     idleTuck,
     peekIsland,
     endPeek,
+    resumePeek,
+    retractsAfterPeek,
     openIslandPage,
     toggleClipboardHistory,
   } = useIslandNavigation();
@@ -254,6 +257,14 @@ export function IslandApp() {
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
+  const hoverTucked = useTuckedHoverOpen({
+    opensPanel: settings.tuckedHoverAction === "expand" && !game.quiet,
+    delayMs: settings.hoverExpandDelayMs,
+    onPeek: peekIsland,
+    onOpen: openCurrentPage,
+    retractsAfterPeek,
+    resumePeek,
+  });
   useHoverFocus(mode, game.quiet);
   usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
 
@@ -325,7 +336,7 @@ export function IslandApp() {
         onOpenTranslationPeek={openTranslationPeek}
         onOpenSettings={openSettingsWindow}
         onTuck={tuckIsland}
-        onReveal={peekIsland}
+        onReveal={hoverTucked}
         onPageChange={setPage}
         pageDigitModifiers={settings.pageDigitModifiers}
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}

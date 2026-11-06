@@ -264,6 +264,16 @@ if (!automated) {
     check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
     check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
 
+    await openPage("general");
+    const tuckedHover = [...document.querySelectorAll<HTMLElement>(".appearance-mode-control")].find((row) => row.querySelector("span")?.textContent === "收起时鼠标移上去");
+    const tuckedHoverButton = (label: string) => [...(tuckedHover?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find((button) => button.textContent === label);
+    check(tuckedHoverButton("只露出岛屿")?.getAttribute("aria-pressed") === "true", "Hovering a tucked island only slides it out by default");
+    await act(async () => { tuckedHoverButton("展开面板")?.click(); });
+    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { tuckedHoverAction?: string }).tuckedHoverAction === "expand"
+      && tuckedHoverButton("展开面板")?.getAttribute("aria-pressed") === "true",
+      "Choosing to open the panel from a tucked island is saved");
+    check(tuckedHover && tuckedHover.scrollWidth <= tuckedHover.clientWidth, "The tucked-hover choice fits its row");
+
     const agentPolls = () => commands.filter(command => command === "get_agent_status").length;
     const pollsAway = agentPolls();
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_200)); });

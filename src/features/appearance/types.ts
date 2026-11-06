@@ -6,6 +6,8 @@ export type IslandFont = "system" | "pixel";
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
 export type MinimizeAction = "tray" | "tuck";
+/** What resting the pointer on an island tucked to the edge does: slide it out, or open its panel too. */
+export type TuckedHoverAction = "reveal" | "expand";
 /** How the Agent page shows the program a session runs in. */
 export type AgentHostDisplay = "both" | "icon" | "name" | "off";
 /** What double-clicking a file shelf entry does. */
@@ -57,6 +59,7 @@ export type IslandSettings = {
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;
+  tuckedHoverAction: TuckedHoverAction;
   /** Modifiers held with 1–9 to open that page, left to right. The digits themselves stay fixed. */
   pageDigitModifiers: string;
   /** Shortcut for the next visible page while the island is expanded and focused. */

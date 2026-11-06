@@ -19,9 +19,12 @@ export function useIslandNavigation() {
     setIsPeekTuck(false);
   }, []);
 
+  // Keeps a peek: a panel opened from a peeking island closes, and the island slides
+  // back once the cursor leaves (useTuckPeek).
   const collapseIsland = useCallback(() => {
-    setIslandMode("collapsed");
-  }, [setIslandMode]);
+    setMode("collapsed");
+    setIsTucked(false);
+  }, []);
 
   const tuckIsland = useCallback(() => {
     setIslandMode("collapsed");
@@ -57,7 +60,13 @@ export function useIslandNavigation() {
   }, []);
 
   const endPeek = useCallback(() => {
+    setMode("collapsed");
     setIsTucked(true);
+  }, []);
+
+  /** After opening a page from a peeking island: it still slides back once the cursor leaves. */
+  const resumePeek = useCallback(() => {
+    setIsPeekTuck(true);
   }, []);
 
   const openIslandPage = useCallback((nextPage: IslandPage) => {
@@ -92,6 +101,8 @@ export function useIslandNavigation() {
     mode,
     isTucked,
     isPeeking: isPeekTuck && !isTucked,
+    /** Tucked such that hovering only peeks it out (minimized, or idle-tucked with retract). */
+    retractsAfterPeek: isPeekTuck,
     peekRetractDelayMs,
     page,
     setPage,
@@ -102,6 +113,7 @@ export function useIslandNavigation() {
     idleTuck,
     peekIsland,
     endPeek,
+    resumePeek,
     openIslandPage,
     toggleClipboardHistory,
   };

@@ -83,6 +83,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   minimizeAction: "tuck",
+  tuckedHoverAction: "reveal",
   pageDigitModifiers: DEFAULT_PAGE_DIGIT_MODIFIERS,
   pageNextShortcut: DEFAULT_PAGE_NEXT_SHORTCUT,
   pagePreviousShortcut: DEFAULT_PAGE_PREVIOUS_SHORTCUT,
@@ -289,6 +290,7 @@ export function normalizeSettings(
       ? clamp(Math.round(settings.hoverCollapseDelayMs), MIN_HOVER_COLLAPSE_DELAY_MS, MAX_HOVER_COLLAPSE_DELAY_MS)
       : LEGACY_FALLBACKS.hoverCollapseDelayMs,
     minimizeAction: settings?.minimizeAction === "tuck" ? "tuck" : "tray",
+    tuckedHoverAction: settings?.tuckedHoverAction === "expand" ? "expand" : "reveal",
     pageDigitModifiers: normalizePageDigitModifiers(settings?.pageDigitModifiers),
     pageNextShortcut: normalizePageCycleShortcut(settings?.pageNextShortcut, DEFAULT_PAGE_NEXT_SHORTCUT),
     pagePreviousShortcut: normalizePageCycleShortcut(settings?.pagePreviousShortcut, DEFAULT_PAGE_PREVIOUS_SHORTCUT),
