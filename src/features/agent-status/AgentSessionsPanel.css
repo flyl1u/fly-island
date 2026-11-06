@@ -92,7 +92,10 @@
   border: 0;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 140ms ease;
+  /* The outline fades with the background, or it would blink on and off by itself. */
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
 }
 
 /* As tall as its reply: one line or two, never a blank line below a short one. */
@@ -106,9 +109,12 @@
   padding-block: 0;
 }
 
+/* Lights up only once the cursor rests on a row: one that just passes over it, on the way to the
+   header buttons, would otherwise flash the row on and off. Leaving fades out at once. */
 .agent-session:hover {
   background: rgba(var(--agent-ink), 0.07);
   box-shadow: inset 0 0 0 1px rgba(var(--agent-ink), 0.09);
+  transition-delay: 80ms;
 }
 
 .agent-session:focus-visible {
