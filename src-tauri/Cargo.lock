@@ -1400,6 +1400,7 @@ dependencies = [
  "base64 0.22.1",
  "clipboard-win",
  "ed25519-dalek",
+ "flate2",
  "getrandom 0.3.4",
  "image",
  "imap",

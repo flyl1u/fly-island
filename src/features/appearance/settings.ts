@@ -1,4 +1,5 @@
 import { clamp } from "../../utils/number.ts";
+import { DEFAULT_LYRICS_SETTINGS, normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_PAGE_DIGIT_MODIFIERS, DEFAULT_PAGE_NEXT_SHORTCUT, DEFAULT_PAGE_PREVIOUS_SHORTCUT, normalizePageCycleShortcut, normalizePageDigitModifiers } from "./pageShortcuts.ts";
 import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
 import type { AgentHostDisplay, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
@@ -127,9 +128,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   deviceUseIndicator: true,
   levelPopup: true,
   deviceAlerts: true,
-  lyricsFolder: "",
-  lyricsOnline: false,
-  lyricsOffsetMs: 0,
+  ...DEFAULT_LYRICS_SETTINGS,
   mailEnabled: true,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
@@ -358,11 +357,7 @@ export function normalizeSettings(
     deviceUseIndicator: settings?.deviceUseIndicator !== false,
     levelPopup: settings?.levelPopup !== false,
     deviceAlerts: settings?.deviceAlerts !== false,
-    lyricsFolder: typeof settings?.lyricsFolder === "string" ? settings.lyricsFolder.trim() : "",
-    lyricsOnline: settings?.lyricsOnline === true,
-    lyricsOffsetMs: typeof settings?.lyricsOffsetMs === "number" && Number.isFinite(settings.lyricsOffsetMs)
-      ? Math.round(Math.min(3000, Math.max(-3000, settings.lyricsOffsetMs)) / 100) * 100
-      : 0,
+    ...normalizeLyricsSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     gameAutoTuck: settings?.gameAutoTuck === true,

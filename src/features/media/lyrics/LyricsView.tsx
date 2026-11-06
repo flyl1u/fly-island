@@ -9,7 +9,8 @@ const TICK_MS = 200;
 
 /**
  * Three lines of synced lyrics above the waveform: the one being sung, bright, between
- * the one before and the one after. `offsetMs` moves the lyrics later (positive) or earlier.
+ * the one before and the one after. A line with a translation shows it under itself in place
+ * of the next line. `offsetMs` moves the lyrics later (positive) or earlier.
  */
 export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]; mediaState: MediaState; offsetMs: number }) {
   const t = useTranslation();
@@ -33,7 +34,11 @@ export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]
     <div className="lyrics-view" aria-label={t.music.lyricsLabel}>
       <span className="lyrics-view__line lyrics-view__line--side" aria-hidden="true">{text(index - 1)}</span>
       <span className="lyrics-view__line lyrics-view__line--current" key={index} aria-live="off">{current}</span>
-      <span className="lyrics-view__line lyrics-view__line--side" aria-hidden="true">{text(index + 1)}</span>
+      {index >= 0 && lines[index].translation ? (
+        <span className="lyrics-view__line lyrics-view__line--translation">{lines[index].translation}</span>
+      ) : (
+        <span className="lyrics-view__line lyrics-view__line--side" aria-hidden="true">{text(index + 1)}</span>
+      )}
     </div>
   );
 }

@@ -27,6 +27,12 @@
   font-weight: 400;
 }
 
+.lyrics-view__line--translation {
+  color: rgba(232, 237, 239, 0.72);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .lyrics-view__line--current {
   color: var(--text-1);
   font-size: 15px;
@@ -45,4 +51,37 @@
   .lyrics-view__line--current {
     animation: none;
   }
+}
+
+/* This song's offset, beside the music page's settings button. */
+.lyrics-offset {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+  color: rgba(232, 237, 239, 0.7);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lyrics-offset button {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lyrics-offset button:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.lyrics-offset__value:disabled {
+  cursor: default;
+  background: transparent;
 }

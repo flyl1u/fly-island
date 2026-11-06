@@ -45,6 +45,15 @@ export function LyricsSettingsSection({
         checked={settings.lyricsOnline}
         onChange={(lyricsOnline) => onSettingsChange({ ...settings, lyricsOnline })}
       />
+      {settings.lyricsOnline && (
+        <SettingsToggleRow
+          indent
+          title={text.chinese}
+          description={text.chineseHint}
+          checked={settings.lyricsChinese}
+          onChange={(lyricsChinese) => onSettingsChange({ ...settings, lyricsChinese })}
+        />
+      )}
       <SettingsSliderRow
         title={text.offset}
         description={text.offsetHint}

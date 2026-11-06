@@ -1,5 +1,5 @@
 /** One timed line of lyrics. */
-export type LyricLine = { timeMs: number; text: string };
+export type LyricLine = { timeMs: number; text: string; translation?: string };
 
 const TIME_TAG = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
 const OFFSET_TAG = /^\[offset:\s*([+-]?\d+)\s*\]/i;
@@ -65,4 +65,13 @@ export function playbackPosition(
 /** Identifies a track for looking its lyrics up once. */
 export function trackKey(state: { title: string | null; artist: string | null; durationMs: number }) {
   return state.title ? `${state.title}\u001f${state.artist ?? ""}\u001f${Math.round(state.durationMs / 2000)}` : null;
+}
+
+/** `lines` with the line of `translation` that starts at the same time (within 50 ms) attached. */
+export function withTranslations(lines: LyricLine[], translation: LyricLine[]): LyricLine[] {
+  if (translation.length === 0) return lines;
+  return lines.map((line) => {
+    const match = translation.find((other) => Math.abs(other.timeMs - line.timeMs) < 50 && other.text);
+    return match && line.text ? { ...line, translation: match.text } : line;
+  });
 }

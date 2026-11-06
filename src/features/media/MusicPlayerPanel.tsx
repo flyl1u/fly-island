@@ -4,6 +4,9 @@ import type { MediaState } from "./api";
 import { MediaWaveform } from "./MediaWaveform";
 import { LyricsView } from "./lyrics/LyricsView";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
+import { LyricsOffsetControl } from "./lyrics/LyricsOffsetControl";
+import { trackKey } from "./lyrics/lrc";
+import { useSongOffset } from "./lyrics/useSongOffset";
 import "./MusicPlayerPanel.css";
 
 const NO_LYRICS = { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 };
@@ -33,6 +36,7 @@ export function MusicPlayerPanel({
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
   const lyrics = useLyrics(mediaState, lyricsSettings);
+  const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? trackKey(mediaState) : null);
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
   const nextDisabled = mediaState.available && !mediaState.canNext;
@@ -83,7 +87,10 @@ export function MusicPlayerPanel({
           </div>
         </div>
         <div className={lyrics ? "music-player__stack music-player__stack--lyrics" : "music-player__stack"}>
-          <div className="music-player__head-aside">{settingsButton}</div>
+          <div className="music-player__head-aside">
+            {lyrics && <LyricsOffsetControl offsetMs={songOffsetMs} onChange={setSongOffsetMs} />}
+            {settingsButton}
+          </div>
 
           {commandError && (
             <p className="music-player__error" role="alert">
@@ -92,7 +99,7 @@ export function MusicPlayerPanel({
           )}
 
           {/* With lyrics, the waveform shrinks to a strip under them rather than going away. */}
-          {lyrics && <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs} />}
+          {lyrics && <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs + songOffsetMs} />}
           <MediaWaveform
             playing={isPlaying || mediaState.audioActive}
             audioPeak={mediaState.audioPeak}

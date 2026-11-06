@@ -24,6 +24,7 @@ mockIPC((command, payload) => {
   if (command !== "get_lyrics") return null;
   const query = (payload as { query: Record<string, unknown> }).query;
   queries.push(query);
+  if (query.title === "Yesterday") return { source: "kugou", lrc: ["[00:01.00]Oh I believe", "[00:05.00]in yesterday"].join("\n"), translation: "[00:01.00]哦 我相信" };
   return query.title === "晴天" ? { source: "lrclib", lrc: LRC } : null;
 });
 
@@ -93,6 +94,23 @@ try {
   check(!view() && Math.abs(wave().getBoundingClientRect().height - 76) < 1 && queries.length === before + 1, "找不到歌词时波形恢复原来的大小");
   await render(track("稻香", 6000), { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 });
   check(!view() && queries.length === before + 1, "没设歌词文件夹也没开在线查找时不去查");
+
+  // A translation shows under its line; this song's own offset sits by the settings button.
+  localStorage.removeItem("focusd-island-lyrics-offsets");
+  await render(track("Yesterday", 2000), { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  const yesterday = queries[queries.length - 1];
+  check(yesterday.chinese === true && yesterday.trackId === null, "打开中文来源时一起查酷狗和网易云");
+  check(lines().join("|") === "|Oh I believe|哦 我相信" && document.querySelector(".lyrics-view__line--translation"), "有翻译时，当前句下面显示翻译");
+  const offsetButtons = [...document.querySelectorAll<HTMLButtonElement>(".lyrics-offset button")];
+  check(offsetButtons.length === 3 && offsetButtons[1].textContent === "0s" && offsetButtons[1].disabled, "音乐页右上角有这首歌的提前、推后按钮");
+  await act(async () => offsetButtons[2].click());
+  await act(async () => offsetButtons[2].click());
+  await act(async () => offsetButtons[2].click());
+  check(offsetButtons[1].textContent === "+1.5s" && lines()[1] === "♪", "推后 1.5 秒后，2 秒时还没到第一句");
+  check(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}")[Object.keys(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}"))[0]] === 1500, "这首歌的调整按歌存下来");
+  await act(async () => offsetButtons[1].click());
+  check(offsetButtons[1].textContent === "0s" && lines()[1] === "Oh I believe", "点中间的数字恢复为 0");
+  localStorage.removeItem("focusd-island-lyrics-offsets");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

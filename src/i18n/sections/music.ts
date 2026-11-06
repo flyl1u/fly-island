@@ -3,6 +3,7 @@ export type MusicText = {
   controlFailed: string;
   noMedia: string;
   lyricsLabel: string;
+  lyricsOffset: { label: string; earlier: string; later: string; reset: (seconds: number) => string };
   unknownArtist: string;
   previous: string;
   previousTrack: string;
@@ -29,6 +30,12 @@ export const zhCN: MusicText = {
   controlFailed: "控制失败",
   noMedia: "暂无媒体",
   lyricsLabel: "歌词",
+  lyricsOffset: {
+    label: "这首歌的歌词快慢",
+    earlier: "歌词提前 0.5 秒",
+    later: "歌词推后 0.5 秒",
+    reset: (seconds) => (seconds === 0 ? "没有调整" : `已${seconds > 0 ? "推后" : "提前"} ${Math.abs(seconds)} 秒，点击恢复`),
+  },
   unknownArtist: "未知艺术家",
   previous: "上一首",
   previousTrack: "上一首",
@@ -55,6 +62,12 @@ export const en: MusicText = {
   controlFailed: "Control failed",
   noMedia: "No media",
   lyricsLabel: "Lyrics",
+  lyricsOffset: {
+    label: "Lyrics timing for this song",
+    earlier: "Lyrics 0.5 s earlier",
+    later: "Lyrics 0.5 s later",
+    reset: (seconds) => (seconds === 0 ? "Not moved" : `Moved ${Math.abs(seconds)} s ${seconds > 0 ? "later" : "earlier"}; click to reset`),
+  },
   unknownArtist: "Unknown artist",
   previous: "Previous",
   previousTrack: "Previous track",

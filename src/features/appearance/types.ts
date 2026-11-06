@@ -131,6 +131,8 @@ export type IslandSettings = {
   lyricsFolder: string;
   /** Lyrics not in the folder are looked up on LRCLIB. */
   lyricsOnline: boolean;
+  /** With online lyrics, also ask Kugou and NetEase (unofficial sources). */
+  lyricsChinese: boolean;
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;

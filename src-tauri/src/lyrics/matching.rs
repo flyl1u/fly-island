@@ -63,6 +63,15 @@ pub(super) fn same_artist(a: &str, b: &str) -> bool {
     a.is_empty() || b.is_empty() || a.iter().any(|name| b.contains(name))
 }
 
+/// Whether a search result is the playing track: the same cleaned title and a shared artist,
+/// both compared in simplified Chinese, and a close length (0 when not known).
+pub(super) fn same_track(playing: (&str, &str, i64), found: (&str, &str, i64)) -> bool {
+    let simple = |text: &str| crate::win32::chinese::to_simplified(text).unwrap_or_else(|| text.to_string());
+    clean_title(&simple(found.0)) == clean_title(&simple(playing.0))
+        && same_artist(&simple(found.1), &simple(playing.1))
+        && close_duration(playing.2, found.2)
+}
+
 /// Whether a found track lasting `found_ms` can be the playing one lasting `playing_ms`. A
 /// duration that is not known (0) does not rule anything out.
 pub(super) fn close_duration(playing_ms: i64, found_ms: i64) -> bool {

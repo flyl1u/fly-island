@@ -1,12 +1,18 @@
 //! Synced lyrics for the music page. Windows' media session gives the playing track's title,
 //! artist, album and duration but no lyrics, so they are looked up: first in a folder of .lrc
-//! files the user keeps (local.rs), then, only when the user turned it on, on LRCLIB
-//! (lrclib.rs). Online answers, and "not found", are cached in `lyrics-cache/` in the app data
-//! folder, so a track is asked for once. The text is returned as LRC; the island parses it.
+//! files the user keeps (local.rs), then, only when the user turned online lyrics on, on LRCLIB
+//! (lrclib.rs) and, when the user also turned Chinese sources on, on Kugou (kugou.rs) and
+//! NetEase (netease.rs), which are unofficial. Online answers, and "not found", are cached in
+//! `lyrics-cache/` in the app data folder, so a track is asked for once. The text is returned as
+//! LRC, with the translation as a second LRC when the source has one; the island parses both.
 
+mod found;
+mod krc;
+mod kugou;
 mod local;
 mod lrclib;
 mod matching;
+mod netease;
 
 use std::{
     fs,
@@ -17,11 +23,12 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
+use found::FoundLyrics;
 use matching::{cache_key, named_in_simplified, stable_hash, traditional_chars};
 use crate::win32::chinese::to_simplified;
 
 const CACHE_DIR_NAME: &str = "lyrics-cache";
-/// A track LRCLIB had no lyrics for is asked about again after a week.
+/// A track no source had lyrics for is asked about again after a week.
 const MISSING_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 /// Past this many cached tracks, the oldest are removed.
 const MAX_CACHED: usize = 2000;
@@ -42,24 +49,48 @@ pub struct LyricsQuery {
     /// Whether LRCLIB may be asked.
     #[serde(default)]
     online: bool,
+    /// Whether Kugou and NetEase may be asked too (only with `online`).
+    #[serde(default)]
+    chinese: bool,
+    /// The song id a player plugin gives, such as `NCM-487885426` (MediaState::track_id).
+    #[serde(default)]
+    track_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
-    /// "local" or "lrclib".
+    /// "local", "lrclib", "kugou" or "netease".
     source: &'static str,
     /// Synced lyrics in LRC format.
     lrc: String,
+    /// The translation of the same lines, in LRC, when the source has one.
+    translation: Option<String>,
 }
 
-/// One cached answer from LRCLIB: lyrics, or `None` when it had none.
+/// One cached online answer: lyrics, or no `lrc` when no source had any. Entries written before
+/// Chinese sources existed have neither `source` nor `translation` and came from LRCLIB.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CacheEntry {
     key: String,
     lrc: Option<String>,
+    #[serde(default)]
+    source: Option<String>,
+    #[serde(default)]
+    translation: Option<String>,
     fetched_at: u64,
+}
+
+/// An online answer: the source and its lyrics.
+type Answer = (&'static str, FoundLyrics);
+
+fn source_name(name: &str) -> &'static str {
+    match name {
+        "kugou" => "kugou",
+        "netease" => "netease",
+        _ => "lrclib",
+    }
 }
 
 fn now_secs() -> u64 {
@@ -70,25 +101,34 @@ fn cache_path(dir: &Path, key: &str) -> PathBuf {
     dir.join(format!("{:016x}.json", stable_hash(key)))
 }
 
-/// The cached answer for `key`: `Some(Some(lrc))`, `Some(None)` for a recent "not found", or
+/// The cached answer for `key`: `Some(Some(..))`, `Some(None)` for a recent "not found", or
 /// `None` when nothing usable is cached.
-fn read_cache(dir: &Path, key: &str, now: u64) -> Option<Option<String>> {
+fn read_cache(dir: &Path, key: &str, now: u64) -> Option<Option<Answer>> {
     let entry: CacheEntry = serde_json::from_str(&fs::read_to_string(cache_path(dir, key)).ok()?).ok()?;
     if entry.key != key {
         return None;
     }
     match entry.lrc {
-        Some(lrc) => Some(Some(lrc)),
+        Some(lrc) => {
+            let source = source_name(entry.source.as_deref().unwrap_or_default());
+            Some(Some((source, FoundLyrics { lrc, translation: entry.translation })))
+        }
         None if now.saturating_sub(entry.fetched_at) < MISSING_TTL.as_secs() => Some(None),
         None => None,
     }
 }
 
-fn write_cache(dir: &Path, key: &str, lrc: Option<&str>, now: u64) {
+fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
     if fs::create_dir_all(dir).is_err() {
         return;
     }
-    let entry = CacheEntry { key: key.to_string(), lrc: lrc.map(str::to_string), fetched_at: now };
+    let entry = CacheEntry {
+        key: key.to_string(),
+        lrc: answer.map(|(_, found)| found.lrc.clone()),
+        source: answer.map(|(source, _)| (*source).to_string()),
+        translation: answer.and_then(|(_, found)| found.translation.clone()),
+        fetched_at: now,
+    };
     if let Ok(text) = serde_json::to_string(&entry) {
         let _ = fs::write(cache_path(dir, key), text);
     }
@@ -113,19 +153,61 @@ fn prune_cache(dir: &Path, keep: usize) {
     }
 }
 
-/// Lyrics as shown: a track named in simplified Chinese gets simplified lyrics, since many
-/// Chinese lyrics on LRCLIB were uploaded in traditional characters.
-fn for_display(source: &'static str, lrc: String, title: &str, artist: &str) -> Lyrics {
-    let lrc = if named_in_simplified(title, artist) && traditional_chars(&lrc) > 2 {
-        to_simplified(&lrc).unwrap_or(lrc)
-    } else {
-        lrc
+/// Lyrics as shown: a track named in simplified Chinese gets simplified lyrics and translation,
+/// since many Chinese lyrics on LRCLIB were uploaded in traditional characters.
+fn for_display(source: &'static str, found: FoundLyrics, title: &str, artist: &str) -> Lyrics {
+    let simplify = |text: String| {
+        if named_in_simplified(title, artist) && traditional_chars(&text) > 2 {
+            to_simplified(&text).unwrap_or(text)
+        } else {
+            text
+        }
     };
-    Lyrics { source, lrc }
+    Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify) }
 }
 
-/// Synced lyrics for the playing track, or null when none were found. Errors only when LRCLIB
-/// could not be reached; that answer is not cached, so the next track change asks again.
+/// The online sources to ask, in order. A song named in Chinese asks Kugou and NetEase first,
+/// as LRCLIB has few Chinese songs; a NetEase song the player named asks NetEase first.
+fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+    if !query.chinese {
+        return vec!["lrclib"];
+    }
+    let chinese_named = format!("{}{}", query.title, query.artist).chars().any(|c| ('\u{4E00}'..='\u{9FFF}').contains(&c));
+    match (netease::track_id(query.track_id.as_deref()).is_some(), chinese_named) {
+        (true, _) => vec!["netease", "kugou", "lrclib"],
+        (false, true) => vec!["kugou", "netease", "lrclib"],
+        (false, false) => vec!["lrclib", "kugou", "netease"],
+    }
+}
+
+/// The first source that has lyrics. `Err` only when every source asked failed to answer.
+async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
+    let (title, artist) = (query.title.as_str(), query.artist.as_str());
+    let mut errors = Vec::new();
+    let mut answered = false;
+    for source in source_order(query) {
+        let result = match source {
+            "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
+            "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
+            _ => lrclib::fetch(title, artist, &query.album, query.duration_ms)
+                .await
+                .map(|lrc| lrc.map(|lrc| FoundLyrics { lrc, translation: None })),
+        };
+        match result {
+            Ok(Some(found)) => return Ok(Some((source, found))),
+            Ok(None) => answered = true,
+            Err(error) => errors.push(error),
+        }
+    }
+    if answered {
+        Ok(None)
+    } else {
+        Err(errors.join("; "))
+    }
+}
+
+/// Synced lyrics for the playing track, or null when none were found. Errors only when no
+/// source could be reached; that answer is not cached, so the next track change asks again.
 #[tauri::command]
 pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyrics>, String> {
     if query.title.trim().is_empty() {
@@ -138,20 +220,27 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
             .await
             .map_err(|error| format!("Failed to join the lyrics folder search: {error}"))?;
         if let Some(lrc) = found {
-            return Ok(Some(for_display("local", lrc, &query.title, &query.artist)));
+            return Ok(Some(for_display("local", FoundLyrics { lrc, translation: None }, &query.title, &query.artist)));
         }
     }
     if !query.online {
         return Ok(None);
     }
     let cache_dir = app.path().app_data_dir().map_err(|error| error.to_string())?.join(CACHE_DIR_NAME);
-    let key = cache_key(&query.title, &query.artist, query.duration_ms);
-    if let Some(cached) = read_cache(&cache_dir, &key, now_secs()) {
-        return Ok(cached.map(|lrc| for_display("lrclib", lrc, &query.title, &query.artist)));
+    // A miss with LRCLIB alone says nothing about the Chinese sources.
+    let mut key = cache_key(&query.title, &query.artist, query.duration_ms);
+    if query.chinese {
+        key.push_str("\u{1f}cn");
     }
-    let fetched = lrclib::fetch(&query.title, &query.artist, &query.album, query.duration_ms).await?;
-    write_cache(&cache_dir, &key, fetched.as_deref(), now_secs());
-    Ok(fetched.map(|lrc| for_display("lrclib", lrc, &query.title, &query.artist)))
+    let answer = match read_cache(&cache_dir, &key, now_secs()) {
+        Some(cached) => cached,
+        None => {
+            let fetched = fetch_online(&query).await?;
+            write_cache(&cache_dir, &key, fetched.as_ref(), now_secs());
+            fetched
+        }
+    };
+    Ok(answer.map(|(source, found)| for_display(source, found, &query.title, &query.artist)))
 }
 
 /// This module's Tauri commands, chained into `lib.rs`'s `generate_handler!`.
@@ -168,25 +257,52 @@ pub(crate) use tauri_commands;
 mod tests {
     use super::*;
 
+    fn found(lrc: &str, translation: Option<&str>) -> FoundLyrics {
+        FoundLyrics { lrc: lrc.into(), translation: translation.map(Into::into) }
+    }
+
     #[test]
-    fn the_cache_keeps_lyrics_and_recent_misses() {
+    fn the_cache_keeps_lyrics_with_their_source_and_recent_misses() {
         let dir = std::env::temp_dir().join(format!("focusd-lyrics-cache-{}", std::process::id()));
         let now = 1_800_000_000;
         assert_eq!(read_cache(&dir, "a", now), None);
-        write_cache(&dir, "a", Some("[00:01.00]x"), now);
+        write_cache(&dir, "a", Some(&("kugou", found("[00:01.00]x", Some("[00:01.00]译")))), now);
         write_cache(&dir, "b", None, now);
-        assert_eq!(read_cache(&dir, "a", now + 999_999_999), Some(Some("[00:01.00]x".into())));
+        assert_eq!(read_cache(&dir, "a", now + 999_999_999), Some(Some(("kugou", found("[00:01.00]x", Some("[00:01.00]译"))))));
         assert_eq!(read_cache(&dir, "b", now + 60), Some(None));
         // A miss is asked about again after a week.
         assert_eq!(read_cache(&dir, "b", now + MISSING_TTL.as_secs()), None);
+        // Entries from before Chinese sources came from LRCLIB.
+        fs::write(cache_path(&dir, "old"), r#"{"key":"old","lrc":"[00:01.00]y","fetchedAt":1}"#).unwrap();
+        assert_eq!(read_cache(&dir, "old", now), Some(Some(("lrclib", found("[00:01.00]y", None)))));
         fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn traditional_lyrics_are_shown_simplified_for_a_track_named_in_simplified() {
-        let lrc = "[00:31.50] 劃一根火柴 將慵倦的夜點亮".to_string();
-        assert_eq!(for_display("lrclib", lrc.clone(), "余香", "张小九").lrc, "[00:31.50] 划一根火柴 将慵倦的夜点亮");
-        assert_eq!(for_display("lrclib", lrc.clone(), "餘香", "張小九").lrc, lrc);
+        let lrc = "[00:31.50] 劃一根火柴 將慵倦的夜點亮";
+        let shown = for_display("lrclib", found(lrc, Some("[00:31.50] 劃一根火柴 將慵倦的夜點亮")), "余香", "张小九");
+        assert_eq!(shown.lrc, "[00:31.50] 划一根火柴 将慵倦的夜点亮");
+        assert_eq!(shown.translation.as_deref(), Some("[00:31.50] 划一根火柴 将慵倦的夜点亮"));
+        assert_eq!(for_display("lrclib", found(lrc, None), "餘香", "張小九").lrc, lrc);
+    }
+
+    #[test]
+    fn chinese_songs_ask_the_chinese_sources_first() {
+        let query = |title: &str, chinese: bool, track_id: Option<&str>| LyricsQuery {
+            title: title.into(),
+            artist: String::new(),
+            album: String::new(),
+            duration_ms: 0,
+            folder: String::new(),
+            online: true,
+            chinese,
+            track_id: track_id.map(Into::into),
+        };
+        assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
+        assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "lrclib"]);
+        assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease"]);
+        assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "lrclib"]);
     }
 
     #[test]

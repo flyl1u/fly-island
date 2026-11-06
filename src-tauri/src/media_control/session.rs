@@ -337,7 +337,7 @@ pub(super) fn read_media_state_from_manager(
         .unwrap_or(1.0);
 
     let (position_ms, duration_ms) = read_timeline(&session, is_playing, playback_rate);
-    let (title, artist, album, thumbnail) = read_metadata(&session, source_app.as_deref());
+    let Metadata { title, artist, album, thumbnail, track_id } = read_metadata(&session, source_app.as_deref());
 
     Ok(MediaState {
         available: true,
@@ -348,6 +348,7 @@ pub(super) fn read_media_state_from_manager(
         artist,
         album,
         thumbnail,
+        track_id,
         position_ms,
         duration_ms,
         can_seek,
@@ -394,6 +395,7 @@ impl MediaState {
             artist: None,
             album: None,
             thumbnail: None,
+            track_id: None,
             position_ms: 0,
             duration_ms: 0,
             can_seek: false,
@@ -451,20 +453,34 @@ pub(super) fn read_timeline(
     (elapsed, duration)
 }
 
-pub(super) fn read_metadata(
-    session: &MediaSession,
-    source_app: Option<&str>,
-) -> (
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-) {
+/// What the media session says about the playing track.
+#[derive(Default)]
+pub(super) struct Metadata {
+    pub(super) title: Option<String>,
+    pub(super) artist: Option<String>,
+    pub(super) album: Option<String>,
+    pub(super) thumbnail: Option<String>,
+    /// A song id a player plugin put among the genres (`player_track_id`).
+    pub(super) track_id: Option<String>,
+}
+
+/// The song id a player plugin puts among the genres: `NCM-<id>` from NetEase Cloud Music's
+/// InfLink plugin, `QQ-<id>` from QQ Music's; players without one leave genres to genres.
+pub(super) fn player_track_id(genres: impl IntoIterator<Item = String>) -> Option<String> {
+    genres.into_iter().map(|genre| genre.trim().to_string()).find(|genre| {
+        genre
+            .strip_prefix("NCM-")
+            .or_else(|| genre.strip_prefix("QQ-"))
+            .is_some_and(|id| !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric()))
+    })
+}
+
+pub(super) fn read_metadata(session: &MediaSession, source_app: Option<&str>) -> Metadata {
     let Ok(operation) = session.TryGetMediaPropertiesAsync() else {
-        return (None, None, None, None);
+        return Metadata::default();
     };
     let Ok(properties) = pollster::block_on(operation) else {
-        return (None, None, None, None);
+        return Metadata::default();
     };
 
     let title = non_empty(properties.Title().ok().map(|value| value.to_string()));
@@ -474,7 +490,12 @@ pub(super) fn read_metadata(
         properties.Thumbnail().ok()
     });
 
-    (title, artist, album, thumbnail)
+    let track_id = properties
+        .Genres()
+        .ok()
+        .and_then(|genres| player_track_id(genres.into_iter().map(|genre| genre.to_string())));
+
+    Metadata { title, artist, album, thumbnail, track_id }
 }
 
 pub(super) fn cached_thumbnail(
@@ -628,4 +649,18 @@ pub(super) fn current_unix_millis() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::player_track_id;
+
+    #[test]
+    fn a_player_plugin_names_the_song_among_the_genres() {
+        let genres = |list: &[&str]| list.iter().map(|genre| genre.to_string()).collect::<Vec<_>>();
+        assert_eq!(player_track_id(genres(&["流行", "NCM-487885426"])).as_deref(), Some("NCM-487885426"));
+        assert_eq!(player_track_id(genres(&["QQ-002Abc"])).as_deref(), Some("QQ-002Abc"));
+        assert_eq!(player_track_id(genres(&["Pop", "NCM-", "NCM-12 34"])), None);
+        assert_eq!(player_track_id(Vec::new()), None);
+    }
 }
