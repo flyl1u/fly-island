@@ -18,8 +18,6 @@ export function AppearanceSettingsPage({
 }) {
   return (
     <>
-      {/* Presets come first: pick a starting point, then fine-tune below. */}
-      <PresetSettingsSection {...presets} />
       <StyleSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <LayoutSettingsSection
@@ -28,6 +26,8 @@ export function AppearanceSettingsPage({
         onPreviewIsland={(expanded) => requestPanelPreview(expanded ? "expanded" : "collapsed")}
       />
       <DisplaySettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      {/* Last: saving the look you just tuned, or going back to one saved before. */}
+      <PresetSettingsSection {...presets} />
     </>
   );
 }

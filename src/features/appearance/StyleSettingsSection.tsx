@@ -1,8 +1,14 @@
+import { SettingsChoice } from "../../components/settings/SettingsChoice";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { SliderControl } from "../../components/controls/SliderControl";
-import { AppearanceModeControl } from "./AppearanceModeControl";
-import type { IslandSettings } from "./types";
+import { DEFAULT_SETTINGS } from "./settings";
+import type { AppearanceMode, IslandFont, IslandSettings } from "./types";
 
+const percent = (value: number) => `${Math.round(value)}%`;
+
+/** Appearance → Style: classic or liquid glass, the font, and how see-through the island is. */
 export function StyleSettingsSection({
   settings,
   onSettingsChange,
@@ -11,56 +17,65 @@ export function StyleSettingsSection({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const t = useTranslation();
+  const text = t.settings.appearance;
+  const modes = [
+    { value: "classic", label: text.classic },
+    { value: "liquidGlass", label: text.liquidGlass },
+  ] as const;
+  const fonts = [
+    { value: "system", label: text.systemFont },
+    { value: "pixel", label: text.pixelFont },
+  ] as const;
 
   return (
-    <section className="settings-section settings-section--style">
-      <div className="settings-section__header">
-        <span>{t.settings.appearance.styleTitle}</span>
-      </div>
-      <AppearanceModeControl
-        value={settings.appearanceMode}
-        onChange={(appearanceMode) =>
-          onSettingsChange({ ...settings, appearanceMode })
+    <SettingsGroup title={text.styleTitle}>
+      <SettingsRow
+        title={text.title}
+        control={
+          <SettingsChoice<AppearanceMode>
+            value={settings.appearanceMode}
+            options={modes}
+            ariaLabel={text.title}
+            onChange={(appearanceMode) => onSettingsChange({ ...settings, appearanceMode })}
+          />
         }
       />
-      <div className="appearance-mode-control">
-        <span>{t.settings.appearance.font}</span>
-        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.appearance.fontLabel}>
-          {([["system", t.settings.appearance.systemFont], ["pixel", t.settings.appearance.pixelFont]] as const).map(([fontFamily, label]) => (
-            <button
-              key={fontFamily}
-              className={settings.fontFamily === fontFamily ? "appearance-mode-control--active" : ""}
-              type="button"
-              aria-pressed={settings.fontFamily === fontFamily}
-              onClick={() => onSettingsChange({ ...settings, fontFamily })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
       {settings.appearanceMode === "liquidGlass" && (
-        <SliderControl
-          label={t.settings.appearance.glassStrength}
+        <SettingsSliderRow
+          title={text.glassStrength}
           value={settings.glassIntensity}
           min={25}
           max={100}
           step={1}
-          suffix="%"
-          onChange={(glassIntensity) =>
-            onSettingsChange({ ...settings, glassIntensity })
-          }
+          format={percent}
+          defaultValue={DEFAULT_SETTINGS.glassIntensity}
+          resetLabel={t.settings.layout.resetToDefault}
+          indent
+          onChange={(glassIntensity) => onSettingsChange({ ...settings, glassIntensity })}
         />
       )}
-      <SliderControl
-        label={t.settings.layout.opacity}
+      <SettingsRow
+        title={text.font}
+        control={
+          <SettingsChoice<IslandFont>
+            value={settings.fontFamily}
+            options={fonts}
+            ariaLabel={text.fontLabel}
+            onChange={(fontFamily) => onSettingsChange({ ...settings, fontFamily })}
+          />
+        }
+      />
+      <SettingsSliderRow
+        title={t.settings.layout.opacity}
         value={settings.opacity}
         min={50}
         max={100}
         step={1}
-        suffix="%"
+        format={percent}
+        defaultValue={DEFAULT_SETTINGS.opacity}
+        resetLabel={t.settings.layout.resetToDefault}
         onChange={(opacity) => onSettingsChange({ ...settings, opacity })}
       />
-    </section>
+    </SettingsGroup>
   );
 }

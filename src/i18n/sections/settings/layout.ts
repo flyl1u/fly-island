@@ -4,6 +4,9 @@ export type SettingsLayoutText = {
   showCollapsedText: string;
   showIdleTodoCount: string;
   title: string;
+  /** Appearance page groups: the island's scale and panel height, then its corners. */
+  sizeTitle: string;
+  cornersTitle: string;
   opacity: string;
   marginY: string;
   topFilletRadius: string;
@@ -36,6 +39,8 @@ export const zhCN: SettingsLayoutText = {
   showCollapsedText: "显示折叠岛屿文字",
   showIdleTodoCount: "空闲时显示剩余待办数",
   title: "尺寸与位置",
+  sizeTitle: "尺寸",
+  cornersTitle: "圆角",
   opacity: "不透明度",
   marginY: "顶部距离",
   topFilletRadius: "贴顶圆角",
@@ -67,6 +72,8 @@ export const en: SettingsLayoutText = {
   showCollapsedText: "Show collapsed island text",
   showIdleTodoCount: "Show todo count when idle",
   title: "Size & position",
+  sizeTitle: "Size",
+  cornersTitle: "Corners",
   opacity: "Opacity",
   marginY: "Top margin",
   topFilletRadius: "Top-edge corner radius",

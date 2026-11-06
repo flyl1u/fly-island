@@ -3,7 +3,9 @@ import { TranslationSettingsSection } from "../../features/translation/Translati
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 import { ShortcutsLinkSection } from "./ShortcutsSettingsPage";
-import "../../features/appearance/AppearanceModeControl.css";
+import { SettingsChoice } from "../../components/settings/SettingsChoice";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 
 export function TranslationSettingsPage({
   settings,
@@ -15,10 +17,10 @@ export function TranslationSettingsPage({
   onOpenShortcuts: () => void;
 }) {
   const t = useTranslation();
-  const targets: [TranslationTarget, string][] = [
-    ["window", t.settings.translation.targetWindow],
-    ["island", t.settings.translation.targetIsland],
-  ];
+  const targets = [
+    { value: "window", label: t.settings.translation.targetWindow },
+    { value: "island", label: t.settings.translation.targetIsland },
+  ] as const;
 
   return (
     <>
@@ -28,26 +30,19 @@ export function TranslationSettingsPage({
         onChange={(translationEnabled) => onSettingsChange({ ...settings, translationEnabled })}
       />
       {settings.translationEnabled && (
-        <section className="settings-section settings-section--translation-target">
-          <div className="settings-section__header"><span>{t.settings.translation.targetTitle}</span></div>
-          <div className="appearance-mode-control">
-            <span>{t.settings.translation.target}</span>
-            <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.translation.target}>
-              {targets.map(([translationTarget, label]) => (
-                <button
-                  key={translationTarget}
-                  className={settings.translationTarget === translationTarget ? "appearance-mode-control--active" : ""}
-                  type="button"
-                  aria-pressed={settings.translationTarget === translationTarget}
-                  onClick={() => onSettingsChange({ ...settings, translationTarget })}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="settings-section__hint">{t.settings.translation.targetHint}</p>
-        </section>
+        <SettingsGroup title={t.settings.translation.targetTitle} footer={t.settings.translation.targetHint}>
+          <SettingsRow
+            title={t.settings.translation.target}
+            control={
+              <SettingsChoice<TranslationTarget>
+                value={settings.translationTarget}
+                options={targets}
+                ariaLabel={t.settings.translation.target}
+                onChange={(translationTarget) => onSettingsChange({ ...settings, translationTarget })}
+              />
+            }
+          />
+        </SettingsGroup>
       )}
       {settings.translationEnabled && <TranslationSettingsSection />}
       {settings.translationEnabled && <ShortcutsLinkSection onOpen={onOpenShortcuts} />}

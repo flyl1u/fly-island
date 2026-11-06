@@ -1,7 +1,9 @@
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
-import { ToggleControl } from "../../components/controls/ToggleControl";
 import type { IslandSettings } from "./types";
 
+/** Appearance → Display: what the collapsed island shows besides its status light. */
 export function DisplaySettingsSection({
   settings,
   onSettingsChange,
@@ -12,22 +14,17 @@ export function DisplaySettingsSection({
   const t = useTranslation();
 
   return (
-    <section className="settings-section settings-section--display">
-      <div className="settings-section__header">
-        <span>{t.settings.layout.displayTitle}</span>
-      </div>
-      <ToggleControl
-        label={t.settings.layout.showCollapsedText}
+    <SettingsGroup title={t.settings.layout.displayTitle}>
+      <SettingsToggleRow
+        title={t.settings.layout.showCollapsedText}
         checked={settings.showCollapsedText}
-        onChange={(showCollapsedText) =>
-          onSettingsChange({ ...settings, showCollapsedText })
-        }
+        onChange={(showCollapsedText) => onSettingsChange({ ...settings, showCollapsedText })}
       />
-      <ToggleControl
-        label={t.settings.layout.showTitle}
+      <SettingsToggleRow
+        title={t.settings.layout.showTitle}
         checked={settings.showTitle}
         onChange={(showTitle) => onSettingsChange({ ...settings, showTitle })}
       />
-    </section>
+    </SettingsGroup>
   );
 }
