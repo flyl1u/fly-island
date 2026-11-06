@@ -14,6 +14,7 @@
 │  lib.rs 组装：插件 / setup / 托盘 / generate_handler!                                  │
 │  领域模块：island · agent_status · system · clipboard_history · file_shelf · media_control │
 │           pets（只读的 Codex Pets 宠物包）                                               │
+│           claude_usage（可选：只读 Claude Code 凭据，经代理问 oauth/usage，不直连）      │
 │           local_api（127.0.0.1 HTTP，内置插件 focusd.local-api，请求经事件转给 main 窗口） │
 │           plugin_host（插件子进程，stdio JSON-RPC，按权限经 local_api 调用 main 窗口）     │
 │           mail · qq_notifications · wechat_reminders · translation · settings_window │
@@ -31,6 +32,7 @@
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
 | 待办、以后的待办、每日笔记、归档、正在进行的待办、待办日期（2026-11 起；更早的版本存在 `localStorage`，首次启动时迁移） | 应用数据目录（`todos.json`；迁移时的原文备份 `todos-migration-backup.json` / `todos-migration-backup-<毫秒>.json`；旧版本改过数据后重新导入前的备份 `todos.before-reimport-<毫秒>.json`；这些备份都不会自动删除） | `todos`（Rust）、`features/todos/todoStore.ts` |
 | AI 代理状态与运行标记、hook 脚本 | 应用数据目录（`agent-status.json`、`agent-*-running*.flag`、`focusd-agent-*.{cmd,ps1}`；`agent-sessions/<会话 ID>.json` 是 SessionStart / SessionEnd 钩子（`focusd-agent-session.ps1`）记下的会话进程、启动时间、终端和结束原因，优先于 Claude Code 未公开的 `~/.claude/sessions`；`agent-codex-notification.json` 是 Codex PermissionRequest 钩子的输入，用于判断 Codex 会话是否在等待确认；`agent-sessions-seen.json` 记下见过的会话的进程、启动时间、所在程序和 Orca 终端，保留两天，用于 `/clear`、结束后的会话找回窗口；`agent-focus.log` 是点击会话切换窗口的排查日志（只有步骤和程序名）；`agent-terminals/<Orca 终端 handle>.json` 为 Claude Code SessionStart hook 的输入，只在 Orca 终端里写，用来从会话切到它的 Orca 标签；`agent-claudeCode-notification.json` 为 Claude Code 最近一次"等待授权 / 等待输入"通知的 hook 输入，只用于判断会话是否在等你，清除状态时删除；旧版保存的 `agent-*-hook-input.json` 在安装/修复时删除） | `agent_status`（会话列表在 `sessions.rs`、`session_scan.rs`，等待判断在 `notifications.rs`，标题与提问文字处理在 `title.rs`） |
+| Claude 用量（5 小时 / 7 天），用量环打开「直接向 Anthropic 查询」时（默认关）：只读 Claude Code 的 access token，不刷新、不写凭据；令牌不进日志、前端和事件；结果只在内存中，与 claude-hud 快照合并后由 `get_agent_usage` 返回（新增字段 `source`：`hud` / `api`，`error`：`{ kind, message }`） | 只读 `%CLAUDE_CONFIG_DIR%` 或 `~/.claude/.credentials.json`；代理来自插件设置、`HTTPS_PROXY` 或注册表 `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings` 的 `ProxyEnable` / `ProxyServer` | `claude_usage`、`agent_status/usage.rs` |
 | 文件中转列表（只存路径，不复制文件） | 应用数据目录（`file-shelf.json`） | `file_shelf` |
 | 折叠态中心图案用的宠物包（petdex 格式 `pet.json` + `spritesheet.webp/png`；只读，应用从不写入） | 应用数据目录 `pets/<id>/`（同名优先）和 `~/.codex/pets/<id>/` | `pets` |
 | 设置窗口上次关闭时的大小与位置（位置已不在任何屏幕上时忽略） | 应用数据目录（`settings-window.json`） | `settings_window/bounds.rs` |

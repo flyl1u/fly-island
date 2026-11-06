@@ -1191,3 +1191,52 @@ fn usage_comes_from_the_claude_hud_snapshot() {
     fs::write(hud.join("config.json"), json!({ "display": { "externalUsagePath": read_path, "externalUsageWritePath": "~/hud-usage.json" } }).to_string()).unwrap();
     assert_eq!(snapshot_path(&claude, &home), Some(read_path));
 }
+
+#[test]
+fn direct_usage_replaces_an_older_hud_snapshot_and_keeps_its_error() {
+    use super::usage::{merge, parse_snapshot, UsageSource};
+    use crate::claude_usage::{ClaudeUsage, UsageError, UsageErrorKind, UsageWindow};
+    let parse_timestamp = super::sessions::parse_timestamp_ms;
+    let hud_at = parse_timestamp("2026-11-06T12:00:00Z").unwrap();
+    let hud = || {
+        parse_snapshot(&json!({
+            "updated_at": "2026-11-06T12:00:00Z",
+            "five_hour": { "used_percentage": 27 },
+            "model_scoped": [{ "display_name": "Fable", "utilization": 5 }],
+            "balance_label": "Ultra 20x"
+        }).to_string())
+    };
+    let api = |at: i64, error: Option<UsageErrorKind>| ClaudeUsage {
+        five_hour: Some(UsageWindow { percent: 63.5, resets_at: Some("2026-11-06T15:00:00.123456+00:00".into()) }),
+        seven_day: None,
+        updated_at: Some(at as u64),
+        error: error.map(|kind| UsageError { kind, message: "m".into() }),
+    };
+
+    // Off: claude-hud alone, as before.
+    assert_eq!(merge(hud(), None), hud());
+    assert_eq!(merge(None, None), None);
+
+    let newer = merge(hud(), Some(api(hud_at + 1, None))).unwrap();
+    assert_eq!(newer.source, UsageSource::Api);
+    assert_eq!(newer.updated_at, Some(hud_at + 1));
+    let five = newer.five_hour.as_ref().unwrap();
+    assert_eq!((five.used, five.resets_at), (63.5, parse_timestamp("2026-11-06T15:00:00.123Z")));
+    assert!(newer.models.is_empty());
+    assert_eq!(newer.plan.as_deref(), Some("Ultra 20x"));
+
+    // An older direct answer leaves the snapshot, but its error still shows.
+    let older = merge(hud(), Some(api(hud_at - 1, Some(UsageErrorKind::LoginRequired)))).unwrap();
+    assert_eq!(older.source, UsageSource::Hud);
+    assert_eq!(older.five_hour.map(|w| w.used), Some(27.0));
+    assert_eq!(older.error.map(|e| e.kind), Some(UsageErrorKind::LoginRequired));
+
+    // No snapshot and no answer yet: an empty usage that names the failure.
+    let failed = merge(None, Some(ClaudeUsage { error: Some(UsageError { kind: UsageErrorKind::NoProxy, message: "m".into() }), ..ClaudeUsage::default() })).unwrap();
+    assert_eq!((failed.five_hour, failed.seven_day, failed.source), (None, None, UsageSource::Hud));
+    assert_eq!(failed.error.map(|e| e.kind), Some(UsageErrorKind::NoProxy));
+
+    let shape = serde_json::to_value(merge(None, Some(api(7, Some(UsageErrorKind::NoProxy))))).unwrap();
+    assert_eq!(shape["source"], "api");
+    assert_eq!(shape["error"], json!({ "kind": "noProxy", "message": "m" }));
+}

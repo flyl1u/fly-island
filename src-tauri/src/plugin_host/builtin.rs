@@ -14,7 +14,7 @@ use serde_json::{Map, Value};
 
 use super::manifest::{parse_builtin_manifest, LocalizedText, PluginManifest};
 use super::settings::InfoItem;
-use crate::local_api;
+use crate::{claude_usage, local_api};
 
 pub(super) const LOCAL_API_ID: &str = "focusd.local-api";
 pub(super) const LOCAL_API_ALLOW_WRITE: &str = "allowWrite";
@@ -89,17 +89,52 @@ const CENTER_PATTERN_MANIFEST: &str = r#"{
   }
 }"#;
 
+pub(super) const CLAUDE_USAGE_ID: &str = "focusd.claude-usage";
+pub(super) const CLAUDE_USAGE_ASK_ANTHROPIC: &str = "askAnthropic";
+
 const CLAUDE_USAGE_MANIFEST: &str = r#"{
   "id": "focusd.claude-usage",
   "name": { "zh-CN": "Claude 用量环", "en": "Claude usage ring" },
   "description": {
-    "zh-CN": "在收起条上用同心双环显示 Claude 订阅用量：外环 5 小时，内环 7 天，悬停显示详情。数据和 Agent 页顶部的用量相同，来自 claude-hud 写出的用量快照；不联网、不读取登录凭据。没有 claude-hud 时只显示灰色底轨。",
-    "en": "Shows Claude subscription usage as two rings on the collapsed bar: 5 hours outside, 7 days inside, with details on hover. Same numbers as the usage line on the Agent page, from the usage snapshot claude-hud writes; no network access and no login credentials. Without claude-hud it shows grey tracks only."
+    "zh-CN": "在收起条上用同心双环显示 Claude 订阅用量：外环 5 小时，内环 7 天，悬停显示详情。默认读 claude-hud 写出的用量快照（和 Agent 页顶部相同），不联网、不读取登录凭据；没有快照时只显示灰色底轨。没装 claude-hud 时，可以打开下面的「直接向 Anthropic 查询」。",
+    "en": "Shows Claude subscription usage as two rings on the collapsed bar: 5 hours outside, 7 days inside, with details on hover. By default it reads the usage snapshot claude-hud writes (as the Agent page does), with no network access and no login credentials; without a snapshot it shows grey tracks only. Without claude-hud, switch on \"Ask Anthropic directly\" below."
   },
   "version": "1.0.0",
   "apiVersion": 1,
   "author": "ShengLin1001",
-  "runtime": { "type": "builtin" }
+  "runtime": { "type": "builtin" },
+  "contributes": {
+    "settings": [
+      {
+        "key": "askAnthropic",
+        "type": "boolean",
+        "title": { "zh-CN": "直接向 Anthropic 查询", "en": "Ask Anthropic directly" },
+        "description": {
+          "zh-CN": "打开后，岛屿会读取本机 Claude Code 保存的登录令牌（~/.claude/.credentials.json，只读，不刷新、不改写，也不会发给 Anthropic 以外的地方），按下面的间隔经代理请求 api.anthropic.com 的用量接口。这个接口没有公开文档，可能随时失效，失效时退回 claude-hud 的快照。Agent 页顶部的用量也会用这份数据。",
+          "en": "When on, the island reads the login token Claude Code saved on this computer (~/.claude/.credentials.json; read only, never renewed or rewritten, sent nowhere but Anthropic) and asks api.anthropic.com's usage endpoint through a proxy at the interval below. The endpoint is undocumented and may stop working at any time; the island then falls back to claude-hud's snapshot. The Agent page's usage line uses these numbers too."
+        },
+        "default": false
+      },
+      {
+        "key": "proxy",
+        "type": "string",
+        "title": { "zh-CN": "代理地址", "en": "Proxy" },
+        "description": {
+          "zh-CN": "http:// 或 https:// 代理，例如 http://127.0.0.1:7890。留空时依次用 HTTPS_PROXY 环境变量和 Windows 的系统代理；都没有就不请求，不会绕过代理直连。",
+          "en": "An http:// or https:// proxy, such as http://127.0.0.1:7890. Empty uses the HTTPS_PROXY environment variable, then the Windows proxy; without either nothing is sent, never directly."
+        },
+        "default": ""
+      },
+      {
+        "key": "intervalMinutes",
+        "type": "number",
+        "title": { "zh-CN": "刷新间隔（分钟）", "en": "Refresh every (minutes)" },
+        "min": 5,
+        "max": 120,
+        "default": 5
+      }
+    ]
+  }
 }"#;
 
 const SESSION_RING_MANIFEST: &str = r#"{
@@ -120,7 +155,7 @@ const SESSION_RING_MANIFEST: &str = r#"{
 pub(super) const BUILTINS: &[(&str, &str, bool)] = &[
     (LOCAL_API_ID, LOCAL_API_MANIFEST, true),
     ("focusd.center-pattern", CENTER_PATTERN_MANIFEST, false),
-    ("focusd.claude-usage", CLAUDE_USAGE_MANIFEST, false),
+    (CLAUDE_USAGE_ID, CLAUDE_USAGE_MANIFEST, true),
     ("focusd.session-ring", SESSION_RING_MANIFEST, false),
 ];
 
@@ -147,6 +182,34 @@ fn allow_write(settings: &Map<String, Value>) -> bool {
     settings.get(LOCAL_API_ALLOW_WRITE).and_then(Value::as_bool).unwrap_or(false)
 }
 
+/// The usage ring's direct-request settings; None while "ask Anthropic directly" is off.
+pub(super) fn claude_usage_config(settings: &Map<String, Value>) -> Option<claude_usage::UsageConfig> {
+    if !settings.get(CLAUDE_USAGE_ASK_ANTHROPIC).and_then(Value::as_bool).unwrap_or(false) {
+        return None;
+    }
+    let proxy = settings
+        .get("proxy")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|proxy| !proxy.is_empty())
+        .map(str::to_string);
+    Some(claude_usage::UsageConfig {
+        proxy,
+        interval_minutes: settings.get("intervalMinutes").and_then(Value::as_u64).unwrap_or(5),
+    })
+}
+
+/// Starts or stops the direct requests to match the settings; the ring itself lives in the window.
+fn apply_claude_usage(settings: &Map<String, Value>) -> Result<(), String> {
+    match claude_usage_config(settings) {
+        Some(config) => claude_usage::start(config),
+        None => {
+            claude_usage::stop();
+            Ok(())
+        }
+    }
+}
+
 fn local_api_info(status: local_api::LocalApiStatus) -> Vec<InfoItem> {
     vec![
         InfoItem::new(LocalizedText::new("地址", "Address"), status.url, true, false),
@@ -163,6 +226,7 @@ pub(super) fn start(id: &str, settings: &Map<String, Value>) -> Result<Vec<InfoI
     }
     match id {
         LOCAL_API_ID => local_api::start(allow_write(settings)).map(local_api_info),
+        CLAUDE_USAGE_ID => apply_claude_usage(settings).map(|()| Vec::new()),
         _ => Err(format!("Built-in plugin {id} is marked native but has no start.")),
     }
 }
@@ -173,6 +237,10 @@ pub(super) fn stop(id: &str) -> Result<(), String> {
     }
     match id {
         LOCAL_API_ID => local_api::stop(),
+        CLAUDE_USAGE_ID => {
+            claude_usage::stop();
+            Ok(())
+        }
         _ => Ok(()),
     }
 }
@@ -180,6 +248,7 @@ pub(super) fn stop(id: &str) -> Result<(), String> {
 pub(super) fn settings_changed(id: &str, settings: &Map<String, Value>) -> Result<(), String> {
     match id {
         LOCAL_API_ID => local_api::set_allow_write(allow_write(settings)),
+        CLAUDE_USAGE_ID => apply_claude_usage(settings),
         _ => Ok(()),
     }
 }

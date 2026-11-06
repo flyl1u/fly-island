@@ -131,9 +131,31 @@ export type AgentUsage = {
   sevenDay: UsageWindow | null;
   models: UsageWindow[];
   plan: string | null;
+  /** Where the windows come from. Missing from builds before direct asking. */
+  source?: "hud" | "api";
+  /** Why the last direct request to Anthropic failed; null when it is off or worked. */
+  error?: AgentUsageError | null;
 };
 
-/** Claude usage limits from claude-hud's usage snapshot; null when there is none. */
+/** Mirrors UsageErrorKind in src-tauri/src/claude_usage/mod.rs. */
+export type AgentUsageErrorKind =
+  | "noCredentials"
+  | "tokenExpired"
+  | "loginRequired"
+  | "forbidden"
+  | "rateLimited"
+  | "noProxy"
+  | "network"
+  | "http"
+  | "invalidResponse";
+
+/** Mirrors UsageError in src-tauri/src/claude_usage/mod.rs. */
+export type AgentUsageError = { kind: AgentUsageErrorKind; message: string };
+
+/**
+ * Claude usage limits from claude-hud's usage snapshot, or from Anthropic when the usage ring
+ * asks it directly; null when there is neither.
+ */
 export function getAgentUsage() {
   return invoke<AgentUsage | null>("get_agent_usage");
 }

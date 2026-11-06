@@ -6,8 +6,8 @@
 use windows::{
     core::{HSTRING, PWSTR},
     Win32::System::Registry::{
-        RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, KEY_ENUMERATE_SUB_KEYS, RRF_RT_REG_QWORD,
-        RRF_RT_REG_SZ,
+        RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, KEY_ENUMERATE_SUB_KEYS, RRF_RT_REG_DWORD,
+        RRF_RT_REG_QWORD, RRF_RT_REG_SZ,
     },
 };
 
@@ -44,6 +44,20 @@ pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<Strin
         .position(|unit| *unit == 0)
         .unwrap_or(data.len());
     Some(String::from_utf16_lossy(&data[..length]))
+}
+
+/// Reads a `REG_DWORD` value under `root\subkey`; `None` when it is missing or of another type.
+pub(crate) fn read_u32(root: HKEY, subkey: &str, value: &str) -> Option<u32> {
+    let subkey = HSTRING::from(subkey);
+    let value = HSTRING::from(value);
+    let mut data = 0u32;
+    let mut bytes = std::mem::size_of::<u32>() as u32;
+    // SAFETY: `subkey` and `value` are NUL-terminated wide strings that outlive the call; `data`
+    // is a writable u32 of exactly `bytes` bytes, and RRF_RT_REG_DWORD writes exactly 4 bytes.
+    let result = unsafe {
+        RegGetValueW(root, &subkey, &value, RRF_RT_REG_DWORD, None, Some((&raw mut data).cast()), Some(&mut bytes))
+    };
+    result.is_ok().then_some(data)
 }
 
 /// Reads a `REG_QWORD` value under `root\subkey`; `None` when it is missing or of another type.

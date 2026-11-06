@@ -46,7 +46,10 @@ function resetText(limit: UsageWindow, now: number, text: ClaudeUsageText) {
   return parts ? text.resetsIn(parts) : text.resettingSoon;
 }
 
-/** The hover card: each window with its ring colour, then how old the snapshot is. */
+/**
+ * The hover card: each window with its ring colour, why asking Anthropic failed (the numbers stay
+ * coloured while fresh), then how old the numbers are and where they come from.
+ */
 export function usageCardLines(usage: AgentUsage | null, now: number, text: ClaudeUsageText): HoverCardLine[] {
   if (!usage) return [{ text: text.noData, muted: true }];
   const stale = isUsageStale(usage, now);
@@ -60,10 +63,12 @@ export function usageCardLines(usage: AgentUsage | null, now: number, text: Clau
       lines.push({ text: text.window(label, percent, resetText(limit, now, text)), color: usageColor(limit.used, stale) });
     }
   }
-  if (lines.length === 0) lines.push({ text: text.noData, muted: true });
-  if (usage.updatedAt !== null) {
+  const hasNumbers = lines.length > 0;
+  if (!hasNumbers) lines.push({ text: text.noData, muted: true });
+  if (usage.error) lines.push({ text: text.errors[usage.error.kind] });
+  if (usage.updatedAt !== null && hasNumbers) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    lines.push({ text: text.updated(text.updatedAgo(minutes)), muted: true });
+    lines.push({ text: text.updated(text.updatedAgo(minutes), usage.source === "api" ? text.fromApi : text.fromHud), muted: true });
   }
   return lines;
 }

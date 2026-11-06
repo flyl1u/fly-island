@@ -3,6 +3,8 @@
 //! needs no network access or credentials of its own: claude-hud writes it from the
 //! `rate_limits` Claude Code passes to status lines (`display.externalUsageWritePath`), or reads
 //! one a script keeps up to date (`display.externalUsagePath`, e.g. from an API gateway).
+//! When the usage ring's optional "ask Anthropic directly" is on, `merge` lays the
+//! `claude_usage` poller's newer numbers and its last error over the snapshot.
 
 use std::{
     env, fs,
@@ -14,6 +16,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::sessions::parse_timestamp_ms;
+use crate::claude_usage::{ClaudeUsage, UsageError};
 
 /// A snapshot is a few hundred bytes; anything far larger is not one.
 const MAX_SNAPSHOT_BYTES: u64 = 64 * 1024;
@@ -39,6 +42,19 @@ pub struct AgentUsage {
     pub(super) models: Vec<UsageWindow>,
     /// The plan or balance claude-hud shows after the windows ("Max 20x").
     pub(super) plan: Option<String>,
+    /// Where the windows come from.
+    pub(super) source: UsageSource,
+    /// Why the last direct request to Anthropic failed; None when it is off or worked.
+    pub(super) error: Option<UsageError>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum UsageSource {
+    /// claude-hud's usage snapshot.
+    Hud,
+    /// The `claude_usage` poller (Anthropic's OAuth usage endpoint).
+    Api,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`
@@ -104,6 +120,8 @@ pub(super) fn parse_snapshot(text: &str) -> Option<AgentUsage> {
         seven_day: window(&snapshot["seven_day"], "", "used_percentage"),
         models,
         plan: snapshot["balance_label"].as_str().map(str::trim).filter(|plan| !plan.is_empty()).map(str::to_string),
+        source: UsageSource::Hud,
+        error: None,
     };
     (usage.five_hour.is_some() || usage.seven_day.is_some() || !usage.models.is_empty()).then_some(usage)
 }
@@ -118,4 +136,37 @@ pub(super) fn read_usage(home_dir: &Path) -> Option<AgentUsage> {
     let mut text = String::new();
     fs::File::open(path).ok()?.take(MAX_SNAPSHOT_BYTES).read_to_string(&mut text).ok()?;
     parse_snapshot(&text)
+}
+
+/// The usage to show: claude-hud's snapshot, or the direct answer when `api` (the
+/// poller, None while it is off) has numbers at least as new. The poller's last
+/// error is kept either way, so a refused login is never hidden. While the poller
+/// runs this is never None, so the window can say why there are no numbers yet.
+pub(super) fn merge(hud: Option<AgentUsage>, api: Option<ClaudeUsage>) -> Option<AgentUsage> {
+    let Some(api) = api else { return hud };
+    let window = |limit: Option<crate::claude_usage::UsageWindow>| {
+        limit.map(|limit| UsageWindow {
+            name: String::new(),
+            used: limit.percent.clamp(0.0, 100.0),
+            resets_at: limit.resets_at.as_deref().and_then(parse_timestamp_ms),
+        })
+    };
+    let api_at = api.updated_at.and_then(|ms| i64::try_from(ms).ok());
+    let api_newer = api_at.is_some_and(|api_at| {
+        hud.as_ref().is_none_or(|hud| hud.updated_at.is_none_or(|hud_at| api_at >= hud_at))
+    });
+    let mut usage = match hud {
+        // claude-hud's per-model windows belong to its older snapshot, so only its plan stays.
+        Some(hud) if api_newer => AgentUsage { models: Vec::new(), ..hud },
+        Some(hud) => hud,
+        None => AgentUsage { updated_at: None, five_hour: None, seven_day: None, models: Vec::new(), plan: None, source: UsageSource::Hud, error: None },
+    };
+    if api_newer {
+        usage.updated_at = api_at;
+        usage.five_hour = window(api.five_hour);
+        usage.seven_day = window(api.seven_day);
+        usage.source = UsageSource::Api;
+    }
+    usage.error = api.error;
+    Some(usage)
 }

@@ -65,3 +65,18 @@ test("card handles missing reset times, past resets and missing snapshots", () =
   assert.deepEqual(texts(usageCardLines(null, NOW, en)), [en.noData]);
   assert.deepEqual(texts(usageCardLines(usage({ fiveHour: null, sevenDay: null, updatedAt: null }), NOW, en)), [en.noData]);
 });
+
+test("asking Anthropic directly: its numbers name the source, its failures add a line", () => {
+  assert.deepEqual(texts(usageCardLines(usage({ source: "api" }), NOW, zhCN)).slice(2), ["1 分钟前更新 · 来自 Anthropic"]);
+  // A failure keeps the fresh numbers coloured and says why.
+  const failed = usageCardLines(usage({ source: "hud", error: { kind: "loginRequired", message: "" } }), NOW, zhCN);
+  assert.deepEqual(texts(failed).slice(2), ["需要在 Claude Code 里重新登录", "1 分钟前更新 · 来自 claude-hud"]);
+  assert.equal(failed[0].color, USAGE_COLORS.normal);
+  // No numbers at all: the reason, without an age.
+  const empty = usage({ fiveHour: null, sevenDay: null, updatedAt: null, error: { kind: "noProxy", message: "" } });
+  assert.deepEqual(texts(usageCardLines(empty, NOW, en)), [en.noData, en.errors.noProxy]);
+  // Every error kind has text in both languages.
+  for (const kind of ["noCredentials", "tokenExpired", "loginRequired", "forbidden", "rateLimited", "noProxy", "network", "http", "invalidResponse"]) {
+    assert.ok(zhCN.errors[kind] && en.errors[kind], kind);
+  }
+});

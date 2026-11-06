@@ -44,7 +44,12 @@ const snapshot = (overrides: Partial<AgentUsage> = {}): AgentUsage => ({
 });
 let current: AgentUsage | null = snapshot();
 let reads = 0;
+let refreshes = 0;
 mockIPC((command) => {
+  if (command === "refresh_claude_usage") {
+    refreshes += 1;
+    return;
+  }
   if (command === "get_qq_mail_state") return [{
     revision: 0, email: "", configured: false, enabled: false, syncing: false,
     status: "disabled", unreadCount: 0, items: [], lastSyncedAt: null, error: null,
@@ -120,18 +125,25 @@ async function runChecks() {
     await leave();
     check(!card(), "移开后卡片消失");
 
+    await push(snapshot({ source: "api", error: { kind: "loginRequired", message: "HTTP 401" } }));
+    check(arcColors().join() === [USAGE_COLORS.normal, USAGE_COLORS.warn].join(), "直接查询失败但数据仍新鲜时，环不变灰");
+    await hover();
+    const failedLines = [...card()!.querySelectorAll(".island-hover-card__line")].map((line) => line.textContent);
+    check(failedLines[2] === "需要在 Claude Code 里重新登录" && failedLines[3] === "2 分钟前更新 · 来自 Anthropic", `卡片写出失败原因和来源：${failedLines.join(" / ")}`);
+    await leave();
+
     await push(snapshot({ updatedAt: Date.now() - 20 * MINUTE }));
     check(arcColors().every((color) => color === USAGE_COLORS.stale), "超过 15 分钟的数据整体变灰");
     await push(null);
     check(button().querySelectorAll(".mini-ring__arc").length === 0 && button().querySelectorAll(".mini-ring__track").length === 2, "没有 claude-hud 快照时只显示灰色底轨");
     await hover();
-    check(card()?.textContent === "暂无 Claude 用量（需要 claude-hud 写出用量快照）", "卡片说明需要 claude-hud");
+    check(card()?.textContent === "暂无 Claude 用量（需要 claude-hud 的用量快照，或在插件设置里打开「直接向 Anthropic 查询」）", "卡片说明数据从哪来");
     await leave();
 
-    const before = reads;
+    const before = { reads, refreshes };
     await act(async () => button().click());
     await wait(20);
-    check(reads === before + 1, "点击环重新读取用量快照");
+    check(refreshes === before.refreshes + 1 && reads === before.reads + 1, "点击环先请求刷新，再重新读取用量");
     await act(async () => button().focus({ focusVisible: true } as FocusOptions));
     if (button().matches(":focus-visible")) check(card(), "键盘聚焦时也显示卡片");
     await act(async () => button().blur());

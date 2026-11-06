@@ -304,11 +304,12 @@ pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::Sessio
         .map_err(|error| format!("Failed to join the window check: {error}"))
 }
 
-/// Claude usage limits from claude-hud's usage snapshot (usage.rs); null when there is none.
+/// Claude usage limits from claude-hud's usage snapshot, or from asking Anthropic directly
+/// when the usage ring has that on (usage.rs); null when there is neither.
 #[tauri::command]
 pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
     let home_dir = windows_home_dir()?;
-    tauri::async_runtime::spawn_blocking(move || usage::read_usage(&home_dir))
+    tauri::async_runtime::spawn_blocking(move || usage::merge(usage::read_usage(&home_dir), crate::claude_usage::current()))
         .await
         .map_err(|error| format!("Failed to join the usage task: {error}"))
 }

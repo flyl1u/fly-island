@@ -37,7 +37,8 @@ export function AgentUsageBar() {
     };
   }, []);
 
-  if (!usage) return null;
+  // No numbers yet (asking Anthropic directly before its first answer, or after a failure).
+  if (!usage || (!usage.fiveHour && !usage.sevenDay && usage.models.length === 0)) return null;
   const windows: [string, UsageWindow][] = [
     ...(usage.fiveHour ? [[t.agent.usage.fiveHour, usage.fiveHour] as [string, UsageWindow]] : []),
     ...(usage.sevenDay ? [[t.agent.usage.sevenDay, usage.sevenDay] as [string, UsageWindow]] : []),

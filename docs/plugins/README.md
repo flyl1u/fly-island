@@ -32,7 +32,7 @@
 
 - [本地接口](../local-api.md)（`focusd.local-api`）；
 - 中心图案（`focusd.center-pattern`，默认关闭）：折叠岛没有摘要文字时，在中间显示眼睛、小鸟、光点、小猫或一只 Codex Pets 宠物，宠物随 Agent 会话的状态变换动作。
-- Claude 用量环（`focusd.claude-usage`，默认关闭）：收起条上的同心双环，外环 5 小时、内环 7 天，悬停显示详情卡片。数据与 Agent 页顶部的用量相同，读 claude-hud 写出的用量快照（`get_agent_usage`），不联网、不读登录凭据；没有快照时只显示灰色底轨。只在岛屿窗口工作，没有原生部分。
+- Claude 用量环（`focusd.claude-usage`，默认关闭）：收起条上的同心双环，外环 5 小时、内环 7 天，悬停显示详情卡片。数据与 Agent 页顶部的用量相同，默认读 claude-hud 写出的用量快照（`get_agent_usage`），不联网、不读登录凭据。设置「直接向 Anthropic 查询」（默认关）打开后，原生端（`src-tauri/src/claude_usage/`）只读 Claude Code 的 `~/.claude/.credentials.json` 里的 access token（不刷新、不改写，不进日志、前端和事件），经 http(s) 代理请求 `api.anthropic.com/api/oauth/usage`：代理依次取插件设置、`HTTPS_PROXY`、Windows 系统代理，都没有就不请求，**从不直连**；不跟随重定向；间隔 5–120 分钟（设置「刷新间隔」），失败时加倍退避，429 遵守 `Retry-After`。`get_agent_usage` 在两份数据中取较新的，并带上最近一次失败的原因。这个接口没有公开文档，可能随时失效。
 - Agent 会话环（`focusd.session-ring`，默认关闭）：AI Agent 开启时，在收起条上用分段小环代替蓝色会话数，按状态着色（等你确认、等你回复、运行、可能已停、刚完成），中间是会话数，悬停列出等你处理的会话，点击打开 Agent 页。数据就是 Agent 页的会话列表（Claude Code 和 Codex），只在岛屿窗口工作，没有原生部分。
 
 内置插件的清单写在 `src-tauri/src/plugin_host/builtin.rs` 中，`runtime.type` 为 `builtin`。插件目录里的第三方插件不能使用这个类型，也不能使用内置插件的 id。

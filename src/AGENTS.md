@@ -25,7 +25,7 @@ src/
 │   ├── plugin-views/        # 插件在岛上的页面与折叠条状态：模板（list / detail / form / status）、插件数据的规范化、页面顺序与隐藏
 │   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/ 子目录
 │   ├── agent-status/        # AI 代理状态；sounds/ 为 Agent 音效：内置音效播放、设置 → 声音页、导入音效包
-│   ├── claude-usage/        # 收起条上的 Claude 用量双环（内置插件 focusd.claude-usage）：读 agent-status 的用量快照，阈值配色与悬停卡片文案（usageRing.ts）
+│   ├── claude-usage/        # 收起条上的 Claude 用量双环（内置插件 focusd.claude-usage）：读 agent-status 的用量（claude-hud 快照或直接查询的结果），阈值配色与悬停卡片文案（usageRing.ts），刷新命令封装（api.ts）
 │   ├── session-ring/        # 收起条上的 Agent 会话环（内置插件 focusd.session-ring）：按状态分段计数与悬停卡片文案（ringCounts.ts），数据来自 agent-status 的会话列表
 │   ├── appearance/          # 外观设置、布局编辑器、预设
 │   ├── translation/         # 快捷翻译：服务与模型设置、凭据、快捷键的类型化封装，请求与自动翻译 hook，岛内翻译页
