@@ -7,6 +7,7 @@ import * as mail from "../sections/mail.ts";
 import * as translator from "../sections/translator.ts";
 import * as island from "../sections/island.ts";
 import * as agent from "../sections/agent.ts";
+import * as claudeUsage from "../sections/claudeUsage.ts";
 import * as notebook from "../sections/notebook.ts";
 import * as archive from "../sections/archive.ts";
 import * as music from "../sections/music.ts";
@@ -30,6 +31,7 @@ const zhCN: Translations = {
   island: island.zhCN,
 
   agent: agent.zhCN,
+  claudeUsage: claudeUsage.zhCN,
 
   // These panels shipped in English in the original Chinese-first build.
   // zh-CN keeps that exact wording so existing users see no change; the en

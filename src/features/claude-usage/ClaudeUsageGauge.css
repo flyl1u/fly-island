@@ -1,0 +1,16 @@
+.claude-usage-gauge {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.claude-usage-gauge:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

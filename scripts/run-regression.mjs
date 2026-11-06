@@ -20,6 +20,7 @@ export const PAGES = [
   "agent-approvals.html",
   "agent-sessions.html?test=1",
   "center-pattern.html?test=1",
+  "claude-usage.html?test=1",
   "collapsed-message-animation.html?test=1",
   "collapsed-slots.html?test=1",
   "i18n.html?test=1",

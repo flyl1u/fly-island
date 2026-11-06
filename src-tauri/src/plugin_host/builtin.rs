@@ -2,7 +2,7 @@
 //! listed, switched on, granted permissions and configured like any plugin
 //! (runtime type "builtin"). They need no download and no "allow third-party
 //! plugins", and cannot be uninstalled. Today: the local API and the collapsed
-//! island's center pattern.
+//! island's center pattern and Claude usage ring.
 //!
 //! A built-in plugin whose work happens in the island window (a collapsed-bar
 //! ring, say) needs only an entry in BUILTINS with `native` false: it starts and
@@ -89,11 +89,25 @@ const CENTER_PATTERN_MANIFEST: &str = r#"{
   }
 }"#;
 
+const CLAUDE_USAGE_MANIFEST: &str = r#"{
+  "id": "focusd.claude-usage",
+  "name": { "zh-CN": "Claude 用量环", "en": "Claude usage ring" },
+  "description": {
+    "zh-CN": "在收起条上用同心双环显示 Claude 订阅用量：外环 5 小时，内环 7 天，悬停显示详情。数据和 Agent 页顶部的用量相同，来自 claude-hud 写出的用量快照；不联网、不读取登录凭据。没有 claude-hud 时只显示灰色底轨。",
+    "en": "Shows Claude subscription usage as two rings on the collapsed bar: 5 hours outside, 7 days inside, with details on hover. Same numbers as the usage line on the Agent page, from the usage snapshot claude-hud writes; no network access and no login credentials. Without claude-hud it shows grey tracks only."
+  },
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "ShengLin1001",
+  "runtime": { "type": "builtin" }
+}"#;
+
 /// Every built-in plugin: its id, its manifest (whose "id" must match), and
 /// whether it has work in this process (`native`, see `start` and `stop`).
 pub(super) const BUILTINS: &[(&str, &str, bool)] = &[
     (LOCAL_API_ID, LOCAL_API_MANIFEST, true),
     ("focusd.center-pattern", CENTER_PATTERN_MANIFEST, false),
+    ("focusd.claude-usage", CLAUDE_USAGE_MANIFEST, false),
 ];
 
 /// Every built-in plugin's id and manifest.
