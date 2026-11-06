@@ -11,7 +11,7 @@ overrides:
   postcss@<8.5.23: ^8.5.23
 
 patchedDependencies:
-  claude-code-merge-queue@0.7.1: 8283ed33229820522dacd3d910bb227ba0da44b4fe64027a1664a4311e1a7b20
+  claude-code-merge-queue@0.7.1: d21655aedabe271aab830f2b96493a1d04372c9e672783558366e721ffd3f596
 
 importers:
 
@@ -53,7 +53,7 @@ importers:
         version: 4.7.0(vite@7.3.7)
       claude-code-merge-queue:
         specifier: 0.7.1
-        version: 0.7.1(patch_hash=8283ed33229820522dacd3d910bb227ba0da44b4fe64027a1664a4311e1a7b20)
+        version: 0.7.1(patch_hash=d21655aedabe271aab830f2b96493a1d04372c9e672783558366e721ffd3f596)
       eslint:
         specifier: ^10.14.0
         version: 10.14.0
@@ -1795,7 +1795,7 @@ snapshots:
 
   caniuse-lite@1.0.30001820: {}
 
-  claude-code-merge-queue@0.7.1(patch_hash=8283ed33229820522dacd3d910bb227ba0da44b4fe64027a1664a4311e1a7b20): {}
+  claude-code-merge-queue@0.7.1(patch_hash=d21655aedabe271aab830f2b96493a1d04372c9e672783558366e721ffd3f596): {}
 
   convert-source-map@2.0.0: {}
 

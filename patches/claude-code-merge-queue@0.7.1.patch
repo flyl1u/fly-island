@@ -1,5 +1,5 @@
 diff --git a/dist/hooks/worktree-create.js b/dist/hooks/worktree-create.js
-index 558e886b00a53edf989b804182f90ef4431d0912..c2aecb37da6df87f966cf9843f77e8ccddf2f52d 100644
+index 558e886b00a53edf989b804182f90ef4431d0912..c4ae450181d317b787fdfc051442c664130585ee 100644
 --- a/dist/hooks/worktree-create.js
 +++ b/dist/hooks/worktree-create.js
 @@ -30,6 +30,7 @@ import { fileURLToPath } from "node:url";
@@ -28,7 +28,7 @@ index 558e886b00a53edf989b804182f90ef4431d0912..c2aecb37da6df87f966cf9843f77e8cc
          process.exit(0);
      }
 diff --git a/dist/land.js b/dist/land.js
-index 76a40f553c9746841bca0e0d8d316af81a3f4443..d0a75d1f5384e428c7dd356c1fb9ce4c7db79220 100644
+index 76a40f553c9746841bca0e0d8d316af81a3f4443..d42e7644017ff9e3d2d95f2ea06f9d39388b4174 100644
 --- a/dist/land.js
 +++ b/dist/land.js
 @@ -75,7 +75,7 @@ function refreshLaneDepsAfterRebase(root, preRebaseHead) {
@@ -40,9 +40,18 @@ index 76a40f553c9746841bca0e0d8d316af81a3f4443..d0a75d1f5384e428c7dd356c1fb9ce4c
      if (result.status !== 0) {
          console.error(red(`land: "${pm} install" failed (exit ${result.status ?? 1}) — the checks below may fail on stale dependencies.`));
      }
+@@ -94,6 +94,8 @@ function fireOnLand(command, info) {
+             shell: true,
+             detached: true,
+             stdio: "ignore",
++            // On Windows a detached child gets a console window of its own.
++            windowsHide: true,
+             env: {
+                 ...process.env,
+                 CCMQ_LANDED_SHA: info.landedCommit ?? "",
 diff --git a/dist/lib/lane-owner.js b/dist/lib/lane-owner.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..c634b3e6238c945cfec3ec3da98a29864a0c8cdd
+index 0000000000000000000000000000000000000000..8db3e15f158aebe9fef1c5e05293cacd439e66c8
 --- /dev/null
 +++ b/dist/lib/lane-owner.js
 @@ -0,0 +1,81 @@
@@ -128,7 +137,7 @@ index 0000000000000000000000000000000000000000..c634b3e6238c945cfec3ec3da98a2986
 +    return Boolean(readOwners()[key(wt)]);
 +}
 diff --git a/dist/lib/lane-port.js b/dist/lib/lane-port.js
-index b85b163ac4f821d428a9cb7de9e3f9f8f0cbcc1d..c937783995e033dfa70084476b97623ec4c8a6dc 100644
+index b85b163ac4f821d428a9cb7de9e3f9f8f0cbcc1d..b7a629db55729b8818fdf9f7a06612d9977b39fa 100644
 --- a/dist/lib/lane-port.js
 +++ b/dist/lib/lane-port.js
 @@ -12,7 +12,8 @@
@@ -142,7 +151,7 @@ index b85b163ac4f821d428a9cb7de9e3f9f8f0cbcc1d..c937783995e033dfa70084476b97623e
      if (idx === -1)
          return null;
 diff --git a/dist/lib/prune-lanes.js b/dist/lib/prune-lanes.js
-index 0ba4d716ec85fa3a8571c3d2b85f6f8250807523..f89e46b93eff017792abda4b7e512105ac5bd8c2 100644
+index 0ba4d716ec85fa3a8571c3d2b85f6f8250807523..e74b32cf2c4bb3d1bebe2d01f339345844a87a67 100644
 --- a/dist/lib/prune-lanes.js
 +++ b/dist/lib/prune-lanes.js
 @@ -41,8 +41,17 @@
