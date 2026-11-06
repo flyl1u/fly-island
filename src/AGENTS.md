@@ -1,6 +1,6 @@
 # 前端规则（src/）
 
-适用于 `src/` 下的所有文件，在根目录 [AGENTS.md](../AGENTS.md) 的基础上补充前端细则。各文件从旧位置迁到新位置的映射见 [docs/architecture/overview.md](../docs/architecture/overview.md)。
+适用于 `src/` 下的所有文件，在根目录 [AGENTS.md](../AGENTS.md) 的基础上补充前端细则。各文件从旧位置迁到新位置的映射见 [docs/architecture/migration-map.md](../docs/architecture/migration-map.md)。
 
 ## 目标结构
 

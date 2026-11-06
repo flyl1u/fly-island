@@ -2,7 +2,7 @@
 
 > 状态：**P5、P6、P7、P9、P10 已完成**（2026-11-05，见各节末尾的「完成记录」；P6 的单独发版和真实数据升级验证还要人工完成）；P10 的 npm 包已发布 0.1.0（2026-11-05），PowerShell Gallery 还没发；P8 第一轮技术验证不通过，换成不经过 Tauri 的独立 WebView2 后第二轮验证通过并已实现（见 [p8-webview-validation.md](p8-webview-validation.md)），2026-11-06 人工验收通过；P11 完成了岛屿端（多签名、黑名单、发布者信任、后台检查与自动更新、市场搜索与分类），独立索引仓库 [TixXin/focusd-plugins](https://github.com/TixXin/focusd-plugins) 和 CI 签名已建好，岛屿还没改读新仓库。
 > 现状见 [插件开发文档](../plugins/README.md) 和 [与 VS Code 的对比](../plugins/vscode.md)；第 1 版的设计与路线图（P1–P4）见 [plugins.md](plugins.md)。本文接着它的 P5。
-> 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[overview.md](overview.md#对外契约清单)）。
+> 编码规则仍以 [AGENTS.md](../../AGENTS.md)、[src/AGENTS.md](../../src/AGENTS.md)、[src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) 为准；每个阶段都要登记新增的对外契约（[contracts.md](contracts.md)）。
 
 ## 0. 摘要
 
@@ -140,7 +140,7 @@ VS Code 在 `package.json` 的 `contributes` 里静态声明能力，包括：`c
 
 ### 3.3 对外契约
 
-新增的清单字段、JSON-RPC 方法和通知、`plugins.json` 字段、索引格式都属于对外契约，登记到 [overview.md](overview.md#对外契约清单) 和 [docs/plugins/README.md](../plugins/README.md)。
+新增的清单字段、JSON-RPC 方法和通知、`plugins.json` 字段、索引格式都属于对外契约，登记到 [contracts.md](contracts.md) 和 [docs/plugins/README.md](../plugins/README.md)。
 
 ### 3.4 代码规模
 

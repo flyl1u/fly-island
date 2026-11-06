@@ -45,7 +45,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；plugins/ 插件索引、签名与 SDK 生成；根目录放开发流程脚本：合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）、行数检查、浏览器回归页运行器（run-regression.mjs）、dev 前停止运行中的岛屿
 ├── .githooks/           # pre-push：合并队列的推送保护与检查；commit-msg：拒绝 Claude 署名行（core.hooksPath 指向这里）
 ├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，plugins/ 插件开发，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
-├── DESIGN.md            # 已确认的界面设计约定
+├── DESIGN.md            # 已确认的界面设计约定：全局方向；各区域的约定在 docs/design/
 └── README*.md           # 中英文项目说明
 ```
 
@@ -95,7 +95,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 
 下列标识会被已安装用户的数据、配置或外部程序引用。纯重构提交中**一律不得改变**：
 
-- `localStorage` key（`focusd-island-*`，完整清单见架构文档）及其存储的数据格式
+- `localStorage` key（`focusd-island-*`，完整清单见 [contracts.md](docs/architecture/contracts.md)）及其存储的数据格式
 - Tauri 命令名（即 Rust 函数名）、参数名，以及事件名
 - 窗口 label（`main` / `translation` / `settings`）和 `?window=` 参数值
 - 应用标识 `com.focusd.island`、开机自启注册表值 `FocuSD Island`、凭据管理器条目、应用数据目录下的文件名（如 `agent-status.json`）
@@ -112,7 +112,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 - 每个提交都能独立验证，提交信息使用 `refactor(<范围>): ...` 前缀。"分开提交"约束的是一个提交里不能混杂两类改动，不是要求提交越小越好：同一类改动若属于同一个步骤，放在一个提交里。
 - 跨多个提交的大型重构，先在 `docs/architecture/` 写分步计划，按计划顺序推进，完成一步后勾选并更新基线数据。
 - 重构提交中不升级依赖、不整仓格式化。引入格式化工具的那个专门提交除外。
-- 目录或模块结构变化后，同步更新对应 `AGENTS.md` 中的目录地图和 `docs/architecture/overview.md`。
+- 目录或模块结构变化后，同步更新对应 `AGENTS.md` 中的目录地图和 `docs/architecture/overview.md`（迁移对照在 `migration-map.md`）。
 
 ## 通用开发约定
 
@@ -171,7 +171,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 
 - 源码保持项目当前编码风格；中文文档使用 UTF-8。
 - README 包含中英文说明，更新时不要破坏现有的双语结构。
-- 界面方向的决定记录在 `DESIGN.md`；功能专题文档放在 `docs/`；架构变化更新 `docs/architecture/overview.md`。
+- 界面方向的决定记录在 `DESIGN.md`（全局方向）和 `docs/design/<区域>.md`（各区域，改哪块只改那一份）；功能专题文档放在 `docs/`；架构变化更新 `docs/architecture/overview.md`，数据存放位置写进 `data-storage.md`，对外契约（localStorage key、事件、命令、文件格式）写进 `contracts.md`。
 - **任务**一项一个文件：`docs/tasks/<编号>.md`（头部 `status`、`owner`、`lane`、`claimed`、`scope`、`depends`，正文是说明、备注和「交接」）。不再往 `docs/roadmap.md` 写表格，`pnpm check:tasks` 会拦。命令见 `docs/roadmap.md`。
 - **认领以 `origin/main` 为准，不等其他会话回消息**：
   1. 开工前 `pnpm tasks` 看板，挑没人认领的（「进行中」且没有 ⚠ 失效标记的跳过）。

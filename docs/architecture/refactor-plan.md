@@ -7,7 +7,7 @@
 - 按阶段顺序推进。同一阶段内的步骤之间没有依赖时可以调整顺序，但每一步单独提交。
 - 搬迁和改写分开提交，提交信息使用 `refactor(<范围>): ...`。
 - 每一步完成后：运行该步对应的验证，勾选本文的复选框，并在"进度记录"中追加一行（提交号、行数变化、验证结果）。
-- 如果实际代码与映射表不一致，先更新 [overview.md](overview.md) 中的映射，再动手迁移。
+- 如果实际代码与映射表不一致，先更新 [migration-map.md](migration-map.md) 中的映射，再动手迁移。
 - 重构期间如需修复 bug 或开发新功能，单独提交，并且写在目标位置。
 
 ## 基线（2026-11-03，提交 `f8e847d`）
@@ -129,7 +129,7 @@
 
 ## Phase 5：Rust 拆分（每个模块单独提交）
 
-每一步都要：按 [overview.md](overview.md#迁移映射rust) 拆成目录模块；测试移到 `tests.rs`；命令名保持不变；更新 `generate_handler!` 中的路径。
+每一步都要：按 [migration-map.md](migration-map.md#迁移映射rust) 拆成目录模块；测试移到 `tests.rs`；命令名保持不变；更新 `generate_handler!` 中的路径。
 
 `lib.rs`、`qq_mail.rs`、`media_control.rs` 在 0.6 中没有格式化。搬迁提交保持原格式；搬迁完成、相关文件已不在白名单中之后，紧接着单独提交一次 `cargo fmt`（`refactor(<范围>): apply cargo fmt`），格式化后仍须满足行数上限。`lib.rs` 在 5.3 完成后格式化，5.1、5.2 拆出的新文件在各自步骤后格式化。
 

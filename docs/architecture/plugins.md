@@ -174,7 +174,7 @@
 
 ## 9. 安装、存储与生命周期
 
-- 插件目录：`%APPDATA%\com.focusd.island\plugins\<id>\`；私有数据：`plugins-data\<id>\`；启用状态与授权记录：`plugins.json`。这些都是新增契约，落地时登记到 [overview.md](overview.md#对外契约清单)。
+- 插件目录：`%APPDATA%\com.focusd.island\plugins\<id>\`；私有数据：`plugins-data\<id>\`；启用状态与授权记录：`plugins.json`。这些都是新增契约，落地时登记到 [contracts.md](contracts.md)。
 - **受限模式**：第三方插件默认不运行，用户在设置中开启"允许第三方插件"后才运行。内置插件不受影响。
 - 安装时展示权限清单让用户确认；升级时如果权限变多，需要重新确认。
 - 进程管理：插件崩溃后按退避策略重启（例如 1s、5s、30s，连续失败三次后停用并提示）；每个请求设置超时；停用或卸载时结束进程（使用 Job Object，确保子进程一并退出）。
