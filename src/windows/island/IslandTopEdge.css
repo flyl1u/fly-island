@@ -21,6 +21,13 @@
   --island-top-fillet-rim-glow: transparent;
   --island-top-fillet-rim-glow-width: 0px;
   /*
+   * Where the fillet rim hands over to the island's side rim. They are drawn two ways (a radial
+   * gradient and an inset shadow) that round to device pixels differently, so a hard switch at
+   * the bottom of the fillet showed a knot and a 1px jog. Below this point down the fillet, the
+   * ring fades out while the side rim fades in; both run near-vertical there.
+   */
+  --island-top-fillet-handover: 35%;
+  /*
    * Classic draws its rim with an all-round inset shadow. The opaque fill layer
    * repaints the 1px top edge, and the 1px sides beside the fillets, so
    * the outline follows the fillet rim instead. Glass is translucent, so it hides
@@ -55,6 +62,8 @@
   --island-top-fillet-rim-glow-width: 1.5px;
   /* A colour, not a size: a zero-sized mask layer makes Chromium drop the whole mask. */
   --island-top-fillet-cover: transparent;
+  /* The refraction clip cuts the glass side rim off sharply, so its ring must not fade. */
+  --island-top-fillet-handover: 100%;
   --island-top-fillet-sheen: rgba(255, 255, 255, calc(0.13 * var(--glass-refraction-opacity)));
   --island-top-fillet-tint-left: rgba(116, 214, 255, calc(0.1 * var(--glass-refraction-opacity)));
   --island-top-fillet-tint-right: rgba(255, 156, 224, calc(0.08 * var(--glass-refraction-opacity)));
@@ -109,9 +118,9 @@
       right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
       calc(100% - 2 * var(--island-top-fillet)) 1px no-repeat,
-    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+    linear-gradient(var(--island-top-fillet-cover) var(--island-top-fillet-handover), transparent) left var(--island-top-fillet) top 0 /
       1px var(--island-top-fillet) no-repeat,
-    linear-gradient(var(--island-top-fillet-cover) 0 0) right var(--island-top-fillet) top 0 /
+    linear-gradient(var(--island-top-fillet-cover) var(--island-top-fillet-handover), transparent) right var(--island-top-fillet) top 0 /
       1px var(--island-top-fillet) no-repeat;
   mask:
     radial-gradient(
@@ -128,9 +137,9 @@
       right top / var(--island-top-fillet) var(--island-top-fillet) no-repeat,
     linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
       calc(100% - 2 * var(--island-top-fillet)) 1px no-repeat,
-    linear-gradient(var(--island-top-fillet-cover) 0 0) left var(--island-top-fillet) top 0 /
+    linear-gradient(var(--island-top-fillet-cover) var(--island-top-fillet-handover), transparent) left var(--island-top-fillet) top 0 /
       1px var(--island-top-fillet) no-repeat,
-    linear-gradient(var(--island-top-fillet-cover) 0 0) right var(--island-top-fillet) top 0 /
+    linear-gradient(var(--island-top-fillet-cover) var(--island-top-fillet-handover), transparent) right var(--island-top-fillet) top 0 /
       1px var(--island-top-fillet) no-repeat;
 }
 
@@ -153,32 +162,32 @@
       left top / var(--island-top-fillet) 100% no-repeat,
     radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       right top / var(--island-top-fillet) 100% no-repeat,
-    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
-    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+    linear-gradient(var(--color-black) var(--island-top-fillet-handover), transparent) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) var(--island-top-fillet-handover), transparent) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
   mask:
     radial-gradient(circle var(--island-top-fillet) at 0 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       left top / var(--island-top-fillet) 100% no-repeat,
     radial-gradient(circle var(--island-top-fillet) at 100% 100%, transparent var(--fillet-edge), var(--color-black) var(--island-top-fillet))
       right top / var(--island-top-fillet) 100% no-repeat,
-    linear-gradient(var(--color-black) 0 0) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
-    linear-gradient(var(--color-black) 0 0) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
+    linear-gradient(var(--color-black) var(--island-top-fillet-handover), transparent) left var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat,
+    linear-gradient(var(--color-black) var(--island-top-fillet-handover), transparent) right var(--island-top-fillet) top 0 / var(--fillet-strip) 100% no-repeat;
   background:
     radial-gradient(
         circle at 0 100%,
-        transparent calc(var(--rim-from) - 0.5px),
-        var(--island-top-fillet-rim) var(--rim-from),
-        var(--island-top-fillet-rim) var(--rim-to),
-        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.5px),
-        transparent calc(var(--rim-to) + 0.5px + var(--island-top-fillet-rim-glow-width))
+        transparent calc(var(--rim-from) - 0.25px),
+        var(--island-top-fillet-rim) calc(var(--rim-from) + 0.25px),
+        var(--island-top-fillet-rim) calc(var(--rim-to) - 0.25px),
+        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.25px),
+        transparent calc(var(--rim-to) + 0.25px + var(--island-top-fillet-rim-glow-width))
       )
       left top / var(--island-top-fillet-box) 100% no-repeat,
     radial-gradient(
         circle at 100% 100%,
-        transparent calc(var(--rim-from) - 0.5px),
-        var(--island-top-fillet-rim) var(--rim-from),
-        var(--island-top-fillet-rim) var(--rim-to),
-        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.5px),
-        transparent calc(var(--rim-to) + 0.5px + var(--island-top-fillet-rim-glow-width))
+        transparent calc(var(--rim-from) - 0.25px),
+        var(--island-top-fillet-rim) calc(var(--rim-from) + 0.25px),
+        var(--island-top-fillet-rim) calc(var(--rim-to) - 0.25px),
+        var(--island-top-fillet-rim-glow) calc(var(--rim-to) + 0.25px),
+        transparent calc(var(--rim-to) + 0.25px + var(--island-top-fillet-rim-glow-width))
       )
       right top / var(--island-top-fillet-box) 100% no-repeat,
     linear-gradient(180deg, var(--island-top-fillet-sheen), transparent 8px)
