@@ -6,9 +6,9 @@ export type SettingsCategoriesText = {
     clear: string;
     empty: string;
   };
-  /** The AI Agent pages fold under one item; what its chevron says. */
-  expand: string;
-  collapse: string;
+  /** Each group's pages fold under its row; what the row says to a screen reader. */
+  expand: (group: string) => string;
+  collapse: (group: string) => string;
   /** Words that also find a page in the sidebar search, besides its name. */
   keywords: Record<
     | "general" | "appearance" | "shortcuts" | "todos" | "calendar" | "music" | "translation" | "clipboard"
@@ -52,8 +52,8 @@ export const zhCN: SettingsCategoriesText = {
     clear: "清除搜索",
     empty: "没有匹配的页面",
   },
-  expand: "展开 AI Agent",
-  collapse: "折叠 AI Agent",
+  expand: (group) => `展开「${group}」`,
+  collapse: (group) => `折叠「${group}」`,
   keywords: {
     general: "开机 自启 语言 展开 悬停 收起 贴边 隐藏 全屏 游戏 勿扰 位置 显示器 屏幕 音量 亮度 耳机 蓝牙 电量 电源 摄像头 麦克风 备份 恢复",
     appearance: "颜色 背景 透明 不透明度 液态玻璃 字体 像素 圆角 尺寸 大小 缩放 预设 样式 预览 亮点",
@@ -106,8 +106,8 @@ export const en: SettingsCategoriesText = {
     clear: "Clear search",
     empty: "No matching page",
   },
-  expand: "Expand AI Agent",
-  collapse: "Collapse AI Agent",
+  expand: (group) => `Expand ${group}`,
+  collapse: (group) => `Collapse ${group}`,
   keywords: {
     general: "startup launch language expand hover collapse tuck hide fullscreen game quiet position display monitor volume brightness headphones bluetooth battery charger camera microphone backup restore",
     appearance: "colour color background opacity transparency glass font pixel corner size scale preset style preview pulse",

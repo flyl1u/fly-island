@@ -47,9 +47,6 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
   updates: "about",
 };
 
-/** The group whose pages fold under one sidebar item. */
-export const FOLDING_GROUP: SettingsGroup = "agents";
-
 /**
  * Pages the sidebar search finds, in sidebar order: every word of the query appears in the
  * page's text (its name, its group's name and its keywords, from `describe`), ignoring case.

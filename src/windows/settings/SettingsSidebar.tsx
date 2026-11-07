@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Bot, CalendarDays, ChevronRight, ClipboardList, Inbox, Info, Keyboard, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, Search, ShieldCheck, SlidersHorizontal, Volume2, X, type LucideIcon } from "lucide-react";
+import { Bell, Blocks, Bot, CalendarDays, ChevronRight, ClipboardList, Inbox, Info, Keyboard, Languages, LayoutGrid, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, Search, Settings2, ShieldCheck, SlidersHorizontal, Volume2, X, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { FOLDING_GROUP, SETTINGS_GROUPS, searchCategories, type SettingsCategory } from "./categories";
+import { SETTINGS_GROUPS, searchCategories, type SettingsCategory, type SettingsGroup } from "./categories";
 import "./SettingsSidebar.css";
 
 const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
@@ -25,9 +25,17 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   about: Info,
 };
 
+/** Each group is a row its pages fold under. */
+const GROUP_ICONS: Record<SettingsGroup, LucideIcon> = {
+  basics: Settings2,
+  features: LayoutGrid,
+  agents: Bot,
+  extensions: Blocks,
+};
+
 /**
- * The settings window's page list: a search box, the labelled groups, the AI Agent pages folded
- * under one item, and About pinned to the bottom. Searching matches page names, group names and
+ * The settings window's page list: a search box, each group as a row its pages fold under (all
+ * open at first), and About pinned to the bottom. Searching matches page names, group names and
  * each page's keywords, shows only the matches (folded pages too), and Enter opens the first.
  */
 export function SettingsSidebar({
@@ -40,10 +48,13 @@ export function SettingsSidebar({
   const t = useTranslation();
   const text = t.settings.categories;
   const [query, setQuery] = useState("");
-  // Starts open only when the window opens on one of its pages, so the list fits the window.
-  const [folded, setFolded] = useState(
-    () => !SETTINGS_GROUPS.some((group) => group.label === FOLDING_GROUP && group.categories.includes(category)),
-  );
+  // Every group starts open; folding lasts while the window is open.
+  const [folded, setFolded] = useState<ReadonlySet<SettingsGroup>>(() => new Set());
+  const toggle = (group: SettingsGroup) => {
+    const next = new Set(folded);
+    if (!next.delete(group)) next.add(group);
+    setFolded(next);
+  };
   const groupOf = (item: SettingsCategory) => SETTINGS_GROUPS.find((group) => group.categories.includes(item))?.label;
   const describe = (item: SettingsCategory) => {
     const group = groupOf(item);
@@ -108,31 +119,26 @@ export function SettingsSidebar({
       <div className="settings-sidebar__list" ref={listRef}>
         {groups.map((group) => {
           const items = group.categories.filter(shown);
-          if (items.length === 0) return null;
-          const label = group.label ? text.groups[group.label] : undefined;
-          if (group.label !== FOLDING_GROUP) {
-            return (
-              <section className="settings-sidebar__group" key={group.categories[0]} aria-label={label}>
-                <h2 className="settings-sidebar__group-label">{label}</h2>
-                <ul>{items.map((entry) => item(entry))}</ul>
-              </section>
-            );
-          }
+          const name = group.label;
+          if (items.length === 0 || name === null) return null;
+          const label = text.groups[name];
+          const GroupIcon = GROUP_ICONS[name];
           // Folded, only the open page stays listed, so the sidebar still shows where you are.
-          const open = searching || !folded;
+          const open = searching || !folded.has(name);
           const children = open ? items : items.filter((entry) => entry === category);
           const holdsActive = items.includes(category);
           return (
-            <section className="settings-sidebar__group settings-sidebar__group--folder" key={group.categories[0]} aria-label={label}>
+            <section className="settings-sidebar__group" key={name} aria-label={label}>
               <button
                 className={`settings-sidebar__folder${holdsActive ? " settings-sidebar__folder--holds-active" : ""}`}
                 type="button"
+                data-group={name}
                 aria-expanded={open}
-                aria-label={open ? text.collapse : text.expand}
+                aria-label={open ? text.collapse(label) : text.expand(label)}
                 disabled={searching}
-                onClick={() => setFolded(!folded)}
+                onClick={() => toggle(name)}
               >
-                <Bot size={16} strokeWidth={2} aria-hidden="true" />
+                <GroupIcon size={16} strokeWidth={2} aria-hidden="true" />
                 <span>{label}</span>
                 <ChevronRight className="settings-sidebar__chevron" size={14} strokeWidth={2} aria-hidden="true" />
               </button>
