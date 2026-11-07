@@ -20,12 +20,14 @@ localStorage.setItem(AGENT_APPROVAL_STORAGE_KEY, JSON.stringify({ onIsland: true
 // The island holds the focus while the cursor rests on it; headless pages report focus on their own.
 Object.defineProperty(document, "hasFocus", { value: () => false });
 const decisions: string[] = [];
+let watchingOutside = false;
 mockIPC(
   (command, args) => {
     const payload = args as Record<string, unknown>;
     if (command === "agent_sessions_in_front") return [];
     if (command === "agent_approval_pending") return [];
     if (command === "agent_approval_decide") decisions.push(`${String(payload.id)}:${String(payload.decision)}`);
+    if (command === "set_island_outside_click_watch") watchingOutside = Boolean(payload.watch);
     return null;
   },
   { shouldMockEvents: true },
@@ -90,8 +92,17 @@ try {
   await act(async () => { createRoot(document.getElementById("fixture")!).render(<StrictMode><Harness /></StrictMode>); });
   await wait(50);
 
+  // An alert on its own: a click outside the island closes it.
+  await act(async () => setSessions([session("completed")]));
+  await wait(80);
+  check(island.mode === "expanded" && watchingOutside, "会话完成弹出提醒时，开始留意岛屿外的点击");
+  await act(async () => { await emit("island-outside-click", null); });
+  await wait(50);
+  check(island.mode === "collapsed" && !watchingOutside, "点了岛屿外面，提醒收起，停止留意");
+
   await waitThenCard(1);
   check(island.mode === "expanded" && island.page === "agents" && decide, "会话等待确认时弹出 Agent 页，审批卡片出现");
+  check(!watchingOutside, "有审批卡片时不因为点外面就关（请求还在等）");
   await wait(600);
   await act(async () => decide?.("allow"));
   await wait(50);

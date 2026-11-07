@@ -11,6 +11,7 @@ import { playAgentSound } from "../../features/agent-status/sounds/player";
 import { useAgentSoundSettings } from "../../features/agent-status/sounds/useAgentSoundSettings";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode, IslandPage } from "./types";
+import { useOutsideClick } from "./useOutsideClick";
 
 type IslandAgentAlertsOptions = {
   sessions: AgentSessionSummary[];
@@ -101,6 +102,9 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
     onRemind: remind,
     looked: (session) => !unseen.has(sessionKey(session)),
   });
+  // A click elsewhere on the screen closes an alert's one-session view (roadmap B6.5.3), like a
+  // popover. Not a card's: a request waits on it, and closing would leave it hanging.
+  useOutsideClick(alertedSession !== null && !waiting && isOpenOnAgents, collapseIsland);
   const agentCardHeight = approvals.current ? approvals.cardHeight : alertedSession?.rowHeight;
   return { alertedSession, approvals, agentCardHeight };
 }

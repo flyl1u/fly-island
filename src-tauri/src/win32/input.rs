@@ -2,7 +2,7 @@
 
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     keybd_event, GetAsyncKeyState, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL,
-    VK_LBUTTON,
+    VK_LBUTTON, VK_RBUTTON,
 };
 
 /// Whether either Ctrl key is physically held right now.
@@ -13,6 +13,11 @@ pub(crate) fn is_control_key_down() -> bool {
 /// Whether the left mouse button is physically held right now.
 pub(crate) fn is_left_button_down() -> bool {
     is_key_down(VK_LBUTTON)
+}
+
+/// Whether the left or right mouse button is physically held right now.
+pub(crate) fn is_any_button_down() -> bool {
+    is_key_down(VK_LBUTTON) || is_key_down(VK_RBUTTON)
 }
 
 /// Synthesizes a key press for `key`, as if typed on the keyboard.

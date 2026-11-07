@@ -140,3 +140,16 @@ export const ISLAND_POSITION_CLEARED_EVENT = "island-position-cleared";
 export function listenIslandPositionCleared(handler: EventCallback<null>) {
   return listen<null>(ISLAND_POSITION_CLEARED_EVENT, handler);
 }
+
+// Mirrors OUTSIDE_CLICK_EVENT in src-tauri/src/island/outside_click.rs: a mouse press outside the
+// island window while watching for one.
+export const OUTSIDE_CLICK_EVENT = "island-outside-click";
+
+/** Starts or stops looking for mouse presses outside the island window (only while an alert shows). */
+export function setIslandOutsideClickWatch(watch: boolean) {
+  return invoke<void>("set_island_outside_click_watch", { watch });
+}
+
+export function listenIslandOutsideClick(handler: () => void) {
+  return listen<null>(OUTSIDE_CLICK_EVENT, () => handler());
+}
