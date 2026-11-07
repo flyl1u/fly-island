@@ -339,7 +339,7 @@ if (!automated) {
 
     // AI Agent has its own group: sessions, alerts, sounds, approvals and the hooks each on a page.
     const agentGroup = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__group")].find((group) => group.getAttribute("aria-label") === "AI Agent");
-    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|远程电脑|提醒|声音|审批|连接", "AI Agent is its own sidebar group with sessions, remote computers, alerts, sounds, approvals and connection");
+    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|提醒|声音|审批|连接|SSH 远程", "AI Agent is its own sidebar group with sessions, alerts, sounds, approvals, connection and SSH remote");
     await openPage("agentConnect");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     check(agentPolls() > pollsAway, "The connection page reads the agents' state");
