@@ -134,9 +134,11 @@ async function runChecks() {
     const firstRow = rows()[0].getBoundingClientRect();
     const firstRemove = removeButtons[0].getBoundingClientRect();
     const providerIcon = rows()[0].querySelector(".agent-session__heading > :last-child")!.getBoundingClientRect();
-    check(removeButtons.length === 3 && getComputedStyle(removeButtons[0]).opacity === "0"
-      && firstRemove.left >= providerIcon.right && firstRemove.right <= firstRow.right && firstRemove.width <= 20,
-      "归档按钮在提供方图标右边、行内，平时看不见，不压住图标");
+    const archiveIcon = removeButtons[0].querySelector("svg")!.getBoundingClientRect();
+    check(removeButtons.length === 3 && getComputedStyle(removeButtons[0]).opacity === "1"
+      && firstRemove.left >= providerIcon.right && firstRemove.right <= firstRow.right && firstRemove.width <= 20
+      && Math.abs(fixture.getBoundingClientRect().right + 20 - archiveIcon.right - 20) < 1,
+      "归档按钮一直显示在提供方图标右边，图标离岛屿边缘 20px，和顶部按钮对齐");
     check(removeButtons[0].getAttribute("aria-label") === "归档「设置界面完善思路」", "归档按钮的读屏文字说明归档哪个会话");
     const focusesBefore = focusCalls.length;
     removeButtons[2].click();

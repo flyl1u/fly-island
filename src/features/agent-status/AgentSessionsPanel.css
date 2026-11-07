@@ -123,40 +123,39 @@
   transition-delay: 80ms;
 }
 
-/* The archive button takes room the row keeps right of the provider icon, on the title line,
-   and shows (grey) while the cursor is on the row or the button has the keyboard focus. */
+/* The archive button is always there, right of the provider icon on the title line, so each row
+   ends on it and its icon lines up with the header's buttons, 20px from the island's edge: faint
+   at rest, grey while the cursor is on the row, bright under the cursor. */
 .agent-sessions__list > li {
   position: relative;
 }
 
 .agent-sessions__list--archivable .agent-session {
-  padding-right: 30px;
+  padding-right: 28px;
 }
 
 .agent-session__archive {
   position: absolute;
   top: 8px;
-  right: 6px;
+  /* The 14px icon sits 3px inside the 20px button; this puts the icon's edge on the 20px line. */
+  right: 3px;
   width: 20px;
   height: 20px;
   display: grid;
   place-items: center;
   padding: 0;
-  color: var(--text-3);
+  color: rgba(var(--agent-ink), 0.26);
   background: transparent;
   border: 0;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  opacity: 0;
   transition:
-    opacity 140ms ease,
     color 140ms ease,
     background 140ms ease;
 }
 
-.agent-sessions__list > li:hover .agent-session__archive,
-.agent-session__archive:focus-visible {
-  opacity: 1;
+.agent-sessions__list > li:hover .agent-session__archive {
+  color: var(--text-3);
 }
 
 .agent-session__archive:hover,
