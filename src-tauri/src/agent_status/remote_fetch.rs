@@ -7,6 +7,8 @@
 
 use std::{collections::HashMap, io::Write, process::Command, process::Stdio};
 
+use super::remote_hosts::SshTarget;
+
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
@@ -98,22 +100,24 @@ pub(super) fn script(window_minutes: i64, known: &HashMap<String, RemoteFile>) -
         .replace("__KNOWN__", &known)
 }
 
-/// Runs the script on `alias` (a Host from ~/.ssh/config) and returns its output.
-pub(super) fn run_ssh(alias: &str, script: &str) -> Result<Vec<u8>, String> {
+/// Runs the script on `target` (a Host from ~/.ssh/config, or a computer added in the island) and
+/// returns its output.
+pub(super) fn run_ssh(target: &SshTarget, script: &str) -> Result<Vec<u8>, String> {
     let mut command = Command::new("ssh");
+    command.args([
+        "-o", "BatchMode=yes",
+        "-o", "ConnectTimeout=10",
+        "-o", "ServerAliveInterval=5",
+        "-o", "ServerAliveCountMax=3",
+        // The user's tunnels (RemoteForward and the like) must not be opened again, or fail.
+        "-o", "ClearAllForwardings=yes",
+        "-T",
+    ]);
+    if let Some(port) = target.port {
+        command.arg("-p").arg(port.to_string());
+    }
     command
-        .args([
-            "-o", "BatchMode=yes",
-            "-o", "ConnectTimeout=10",
-            "-o", "ServerAliveInterval=5",
-            "-o", "ServerAliveCountMax=3",
-            // The user's tunnels (RemoteForward and the like) must not be opened again, or fail.
-            "-o", "ClearAllForwardings=yes",
-            "-T",
-            "--",
-            alias,
-            "sh -s",
-        ])
+        .args(["--", target.destination.as_str(), "sh -s"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());

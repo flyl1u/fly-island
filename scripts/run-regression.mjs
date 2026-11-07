@@ -37,6 +37,7 @@ export const PAGES = [
   "plugin-views.html?test=1",
   "settings.html?test=1",
   "settings-sidebar.html",
+  "agent-remote.html",
   "tucked-hover.html",
 ];
 

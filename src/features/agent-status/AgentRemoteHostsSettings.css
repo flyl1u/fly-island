@@ -1,0 +1,142 @@
+/* Settings → AI Agent → Remote computers: the intro card, host rows and the add-host form. */
+.agent-remote__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xl);
+  padding: var(--space-xl) 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.agent-remote__intro > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-accent);
+}
+
+.agent-remote__intro p {
+  margin: 0;
+}
+
+.agent-remote__intro p + p {
+  margin-top: var(--space-xs);
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.agent-remote__origin {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+.agent-remote__state::before {
+  content: " · ";
+}
+
+.agent-remote__error {
+  color: #ff8a9a;
+}
+
+.agent-remote__remove {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-text-subtle);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.agent-remote__remove:hover {
+  color: #ff8a9a;
+  background: var(--color-white-a08);
+}
+
+.agent-remote__remove:focus-visible,
+.agent-remote__add:focus-visible,
+.agent-remote__submit:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.agent-remote__add {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0 16px;
+  color: var(--color-accent);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-remote__add:hover {
+  background: var(--color-white-a04);
+}
+
+.agent-remote__adding {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl) 16px;
+}
+
+.agent-remote__form {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+/* Address and port share a line, then user and name: the port is short. */
+.agent-remote__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-lg) var(--space-xl);
+}
+
+.agent-remote__field {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.agent-remote__buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.agent-remote__submit {
+  min-width: 64px;
+  height: 30px;
+  padding: 0 14px;
+  color: var(--color-ink);
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.agent-remote__submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.agent-remote__hint {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+}

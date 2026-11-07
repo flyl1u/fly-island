@@ -318,6 +318,38 @@ pub async fn set_agent_remote_hosts(app: AppHandle, hosts: Vec<String>) -> Resul
     Ok(saved)
 }
 
+/// The computers added in the island (not from ~/.ssh/config), by name.
+#[tauri::command]
+pub async fn get_agent_custom_hosts(app: AppHandle) -> Result<Vec<remote_hosts::CustomHost>, String> {
+    Ok(remote_hosts::custom(&remote_app_dir(&app)?))
+}
+
+/// Adds a computer in the island (or replaces the one of that name) and switches it on.
+#[tauri::command]
+pub async fn add_agent_remote_host(app: AppHandle, host: remote_hosts::CustomHost) -> Result<Vec<remote_hosts::CustomHost>, String> {
+    let added = remote_hosts::add_custom(&remote_app_dir(&app)?, &host)?;
+    remote_sessions::refresh_soon();
+    Ok(added)
+}
+
+/// Removes a computer added in the island.
+#[tauri::command]
+pub async fn remove_agent_remote_host(app: AppHandle, name: String) -> Result<Vec<remote_hosts::CustomHost>, String> {
+    remote_hosts::remove_custom(&remote_app_dir(&app)?, &name)
+}
+
+/// Reads every chosen computer again at the next listing instead of waiting out its interval.
+#[tauri::command]
+pub async fn refresh_agent_remote_hosts() {
+    remote_sessions::refresh_soon();
+}
+
+fn remote_app_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))
+}
+
 /// Brings the editor or terminal window of an agent session to the front: the window of the
 /// session's own process chain when it is running, else one matched by folder (`cwd`) and title.
 /// In Orca, also switches to the session's terminal tab. Returns false when no window matched.
@@ -507,6 +539,10 @@ macro_rules! tauri_commands {
             crate::agent_status::list_ssh_hosts,
             crate::agent_status::get_agent_remote_hosts,
             crate::agent_status::set_agent_remote_hosts,
+            crate::agent_status::get_agent_custom_hosts,
+            crate::agent_status::add_agent_remote_host,
+            crate::agent_status::remove_agent_remote_host,
+            crate::agent_status::refresh_agent_remote_hosts,
             crate::agent_status::get_agent_usage,
             crate::agent_status::get_codex_usage,
             crate::agent_status::reply_marker::get_reply_marker_state,

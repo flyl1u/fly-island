@@ -14,7 +14,7 @@ use std::{
 use serde::Serialize;
 
 use super::remote_fetch::{self, RemoteFile, Reply, TAIL_BYTES};
-use super::remote_hosts;
+use super::remote_hosts::{self, SshTarget};
 use super::session_host::SessionHost;
 use super::session_scan;
 use super::sessions::AgentSessionSummary;
@@ -35,6 +35,8 @@ struct HostState {
     attempted_at: i64,
     fetched_at: Option<i64>,
     error: Option<String>,
+    /// Sessions the last listing found in the host's mirror.
+    sessions: usize,
 }
 
 struct MirroredFile {
@@ -53,25 +55,28 @@ pub struct RemoteHostStatus {
     fetched_at: Option<i64>,
     error: Option<String>,
     fetching: bool,
+    /// Sessions of the listing window found there, once it has been read.
+    sessions: usize,
 }
 
 /// The chosen hosts' sessions from their mirrors, starting a background fetch for each host that
 /// is due. `window_ms` is how far back a session may have changed, as for local sessions.
 pub(super) fn sessions(app_dir: &Path, window_ms: i64) -> Vec<AgentSessionSummary> {
-    let hosts = remote_hosts::read(app_dir);
+    let targets = remote_hosts::chosen_targets(app_dir);
+    let hosts: Vec<String> = targets.iter().map(|(host, _)| host.clone()).collect();
     let now = current_unix_millis();
     {
         let mut states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
         let states = states.get_or_insert_with(HashMap::new);
         states.retain(|host, _| hosts.contains(host));
-        for host in &hosts {
+        for (host, target) in targets {
             let state = states.entry(host.clone()).or_default();
             let wait = if state.error.is_some() { RETRY_AFTER_ERROR_MS } else { REFRESH_MS };
             if !state.in_flight && now - state.attempted_at >= wait {
                 state.in_flight = true;
                 state.attempted_at = now;
-                let (host, app_dir) = (host.clone(), app_dir.to_path_buf());
-                std::thread::spawn(move || fetch(&host, &app_dir, window_ms));
+                let app_dir = app_dir.to_path_buf();
+                std::thread::spawn(move || fetch(&host, &target, &app_dir, window_ms));
             }
         }
     }
@@ -80,18 +85,26 @@ pub(super) fn sessions(app_dir: &Path, window_ms: i64) -> Vec<AgentSessionSummar
         let states = states.as_ref();
         hosts.iter().map(|host| (host.clone(), states.and_then(|states| states.get(host)?.registry.clone()))).collect()
     };
-    hosts
-        .iter()
-        .flat_map(|host| {
-            let registry = registries.get(host).cloned().flatten();
-            let mut found = session_scan::list_mirrored_sessions(&mirror_root(app_dir, host), window_ms, registry);
-            for session in &mut found {
-                session.host = Some(SessionHost { name: host.clone(), exe: None, kind: "remote" });
-                session.remote_host = Some(host.clone());
+    let mut all = Vec::new();
+    let mut counts = Vec::new();
+    for host in &hosts {
+        let registry = registries.get(host).cloned().flatten();
+        let mut found = session_scan::list_mirrored_sessions(&mirror_root(app_dir, host), window_ms, registry);
+        for session in &mut found {
+            session.host = Some(SessionHost { name: host.clone(), exe: None, kind: "remote" });
+            session.remote_host = Some(host.clone());
+        }
+        counts.push((host, found.len()));
+        all.extend(found);
+    }
+    if let Some(states) = HOSTS.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
+        for (host, count) in counts {
+            if let Some(state) = states.get_mut(host) {
+                state.sessions = count;
             }
-            found
-        })
-        .collect()
+        }
+    }
+    all
 }
 
 pub(super) fn statuses(app_dir: &Path) -> Vec<RemoteHostStatus> {
@@ -104,6 +117,7 @@ pub(super) fn statuses(app_dir: &Path) -> Vec<RemoteHostStatus> {
                 fetched_at: state.and_then(|state| state.fetched_at),
                 error: state.and_then(|state| state.error.clone()),
                 fetching: state.is_some_and(|state| state.in_flight),
+                sessions: state.map_or(0, |state| state.sessions),
                 host,
             }
         })
@@ -123,7 +137,7 @@ fn mirror_root(app_dir: &Path, host: &str) -> PathBuf {
     app_dir.join(MIRROR_DIR).join(host)
 }
 
-fn fetch(host: &str, app_dir: &Path, window_ms: i64) {
+fn fetch(host: &str, target: &SshTarget, app_dir: &Path, window_ms: i64) {
     let known: HashMap<String, RemoteFile> = {
         let states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
         states
@@ -133,7 +147,7 @@ fn fetch(host: &str, app_dir: &Path, window_ms: i64) {
             .unwrap_or_default()
     };
     let script = remote_fetch::script(window_ms / 60_000, &known);
-    let result = remote_fetch::run_ssh(host, &script)
+    let result = remote_fetch::run_ssh(target, &script)
         .and_then(|bytes| remote_fetch::parse_reply(&bytes))
         .map(|replies| apply(&mirror_root(app_dir, host), host, replies));
 

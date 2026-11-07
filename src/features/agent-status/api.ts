@@ -160,7 +160,36 @@ export type RemoteHostStatus = {
   fetchedAt: number | null;
   error: string | null;
   fetching: boolean;
+  /** Sessions of the listing window found there. Missing from older builds. */
+  sessions?: number;
 };
+
+/** Mirrors CustomHost in src-tauri/src/agent_status/remote_hosts.rs: a computer added in the island. */
+export type CustomRemoteHost = {
+  name: string;
+  user?: string | null;
+  host: string;
+  port?: number | null;
+};
+
+/** The computers added in the island, next to ~/.ssh/config. */
+export function getAgentCustomHosts() {
+  return invoke<CustomRemoteHost[]>("get_agent_custom_hosts");
+}
+
+/** Adds (or replaces by name) a computer and switches it on; returns the added computers. */
+export function addAgentRemoteHost(host: CustomRemoteHost) {
+  return invoke<CustomRemoteHost[]>("add_agent_remote_host", { host });
+}
+
+export function removeAgentRemoteHost(name: string) {
+  return invoke<CustomRemoteHost[]>("remove_agent_remote_host", { name });
+}
+
+/** Reads every chosen computer again at the next listing. */
+export function refreshAgentRemoteHosts() {
+  return invoke<void>("refresh_agent_remote_hosts");
+}
 
 /** The Host aliases in ~/.ssh/config. */
 export function listSshHosts() {

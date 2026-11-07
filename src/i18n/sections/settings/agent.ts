@@ -20,13 +20,30 @@ export type SettingsAgentText = {
   sessionHoursOption: (hours: number) => string;
   sessionHoursHint: string;
   sessionCardSection: string;
-  /** Computers whose sessions are read over SSH (AgentRemoteHostsSettings). */
-  remoteSection: string;
-  remoteHint: string;
-  remoteNoHosts: string;
+  /** Settings → AI Agent → Remote computers (AgentRemoteHostsSettings): read over SSH. */
+  remoteIntro: string;
+  remoteRequirements: string;
+  remoteHostsSection: string;
+  remoteHostsFooter: string;
+  remoteRefresh: string;
+  remoteEmpty: string;
+  remoteEmptyHint: string;
+  remoteFromConfig: string;
   remoteFetching: string;
-  remoteFetchedAt: (time: string) => string;
+  remoteFetchedAt: (time: string, sessions: number) => string;
   remoteFailed: (reason: string) => string;
+  remoteRemove: (name: string) => string;
+  remoteAdd: string;
+  remoteAddHint: string;
+  remoteName: string;
+  remoteNamePlaceholder: string;
+  remoteUser: string;
+  remoteUserPlaceholder: string;
+  remoteHost: string;
+  remoteHostPlaceholder: string;
+  remotePort: string;
+  remoteSave: string;
+  remoteCancel: string;
   /** The group with a switch per agent kind. */
   agentsSection: string;
   showClaudeCode: string;
@@ -141,12 +158,29 @@ export const zhCN: SettingsAgentText = {
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
   sessionHoursHint: "最后一次活动在这段时间内的会话才会列出。",
   sessionCardSection: "会话卡片",
-  remoteSection: "远程服务器",
-  remoteHint: "列出 ~/.ssh/config 里的 Host。打开后，岛每 20 秒用 ssh 读取那台机器上最近的 Claude Code 和 Codex 会话记录，显示在 Agent 页上。只用密钥登录（BatchMode），不会弹出密码框，所以先确认终端里 ssh <别名> 能直接登录。远程会话没有钩子，看不到「等你确认」，也不能切到它的窗口。",
-  remoteNoHosts: "~/.ssh/config 里没有可用的 Host",
+  remoteIntro: "在 Agent 页列出其他电脑上的 Claude Code 和 Codex 会话：打开的主机，岛屿每 20 秒用 ssh 读一次它最近的会话记录，服务器上不用安装任何东西。",
+  remoteRequirements: "只能用密钥登录，不会弹出密码框，先确认终端里 ssh 能直接登上去。远程会话没有钩子，不会显示「等你处理」，也不能在岛上审批或切到它的窗口。",
+  remoteHostsSection: "主机",
+  remoteHostsFooter: "~/.ssh/config 里的 Host 和在这里添加的主机都列在上面，最多同时打开 8 台。",
+  remoteRefresh: "立即刷新",
+  remoteEmpty: "还没有主机",
+  remoteEmptyHint: "在下面添加一台，或者在 ~/.ssh/config 里写好 Host 再回到这一页。",
+  remoteFromConfig: "来自 ~/.ssh/config",
   remoteFetching: "正在读取…",
-  remoteFetchedAt: (time) => `${time} 读取`,
+  remoteFetchedAt: (time, sessions) => `${time} 读取 · ${sessions} 个会话`,
   remoteFailed: (reason) => `读取失败：${reason}`,
+  remoteRemove: (name) => `删除「${name}」`,
+  remoteAdd: "添加主机",
+  remoteAddHint: "存在岛屿自己的配置里，不会改 ~/.ssh/config。需要跳板机、指定密钥这类设置时，写进 ~/.ssh/config 更合适。",
+  remoteName: "名称",
+  remoteNamePlaceholder: "不填时用主机地址",
+  remoteUser: "用户名",
+  remoteUserPlaceholder: "不填时用本机用户名",
+  remoteHost: "主机地址",
+  remoteHostPlaceholder: "例如 192.168.1.20 或 dev.example.com",
+  remotePort: "端口",
+  remoteSave: "添加",
+  remoteCancel: "取消",
   agentsSection: "显示哪些 Agent",
   showClaudeCode: "显示 Claude Code 会话",
   showCodex: "显示 Codex 会话",
@@ -254,12 +288,29 @@ export const en: SettingsAgentText = {
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
   sessionHoursHint: "Only sessions active within this time are listed.",
   sessionCardSection: "Session cards",
-  remoteSection: "Remote computers",
-  remoteHint: "Lists the Hosts in ~/.ssh/config. When one is on, the island reads that computer's recent Claude Code and Codex sessions over ssh every 20 seconds and lists them on the Agent page. Key login only (BatchMode): no password prompt, so check that ssh <alias> logs in by itself in a terminal first. Remote sessions have no hooks, so they never show as waiting on you, and their windows cannot be brought up.",
-  remoteNoHosts: "No usable Host in ~/.ssh/config",
+  remoteIntro: "Lists Claude Code and Codex sessions on other computers on the Agent page: for each host that is on, the island reads its recent sessions over ssh every 20 seconds. Nothing is installed on the server.",
+  remoteRequirements: "Key login only, with no password prompt: check that ssh logs in by itself in a terminal first. Remote sessions have no hooks, so they never show as waiting on you, cannot be approved on the island, and their windows cannot be brought up.",
+  remoteHostsSection: "Hosts",
+  remoteHostsFooter: "The Hosts in ~/.ssh/config and the ones added here are listed above; at most 8 can be on.",
+  remoteRefresh: "Refresh now",
+  remoteEmpty: "No hosts yet",
+  remoteEmptyHint: "Add one below, or write a Host in ~/.ssh/config and come back to this page.",
+  remoteFromConfig: "From ~/.ssh/config",
   remoteFetching: "Reading…",
-  remoteFetchedAt: (time) => `Read at ${time}`,
+  remoteFetchedAt: (time, sessions) => `Read at ${time} · ${sessions === 1 ? "1 session" : `${sessions} sessions`}`,
   remoteFailed: (reason) => `Failed: ${reason}`,
+  remoteRemove: (name) => `Remove ${name}`,
+  remoteAdd: "Add host",
+  remoteAddHint: "Kept in the island's own settings; ~/.ssh/config is not changed. For jump hosts or a particular key, ~/.ssh/config is the better place.",
+  remoteName: "Name",
+  remoteNamePlaceholder: "The address when left empty",
+  remoteUser: "User",
+  remoteUserPlaceholder: "Your local user name when left empty",
+  remoteHost: "Address",
+  remoteHostPlaceholder: "e.g. 192.168.1.20 or dev.example.com",
+  remotePort: "Port",
+  remoteSave: "Add",
+  remoteCancel: "Cancel",
   agentsSection: "Agents shown",
   showClaudeCode: "Show Claude Code sessions",
   showCodex: "Show Codex sessions",
