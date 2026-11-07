@@ -21,6 +21,9 @@ export type SettingsAgentText = {
   archiveMotion: string;
   archiveMotionHint: string;
   archiveMotionOptions: { slide: string; dissolve: string };
+  cardEffects: string;
+  cardEffectsHint: string;
+  cardEffectsOptions: { off: string; sparkle: string; gradient: string };
   hostDisplayHint: string;
   sessionHours: string;
   sessionHoursOption: (hours: number) => string;
@@ -165,6 +168,9 @@ export const zhCN: SettingsAgentText = {
   archiveMotion: "归档动画",
   archiveMotionHint: "滑出：会话向右滑出再收起。粒子消散：会话从左到右化成状态颜色的粒子散开再收起。系统要求减少动画时直接移除。",
   archiveMotionOptions: { slide: "滑出", dissolve: "粒子消散" },
+  cardEffects: "卡片光效",
+  cardEffectsHint: "只在「卡片」和「紧凑」显示方式下生效。粒子流苏：边框按状态颜色发光，进行中和等你处理的会呼吸，左侧飘着一条粒子流苏。渐变带：从右端铺开一层状态颜色的渐变，进行中和等你处理的更亮。",
+  cardEffectsOptions: { off: "关", sparkle: "粒子流苏", gradient: "渐变带" },
   hostDisplayHint: "会话在哪个程序里运行，比如 Orca、Windows Terminal、VS Code、Codex。正在运行的 Claude Code 会话会自动识别；岛屿启动前就结束的会话没有来源。",
   sessionHours: "列出多久内的会话",
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
@@ -301,6 +307,9 @@ export const en: SettingsAgentText = {
   archiveMotion: "Archive animation",
   archiveMotionHint: "Slide: the session slides out to the right, then folds away. Dissolve: it turns into dust in its state's colour from left to right, then folds away. When Windows asks for less motion it goes at once.",
   archiveMotionOptions: { slide: "Slide", dissolve: "Dissolve" },
+  cardEffects: "Card light effects",
+  cardEffectsHint: "Only in the Cards and Compact layouts. Sparkle band: cards glow in their state's colour, breathing while working or waiting on you, with a drifting band of sparks on the left. Gradient: a wash in that colour from the right end, brighter while working or waiting on you.",
+  cardEffectsOptions: { off: "Off", sparkle: "Sparkle band", gradient: "Gradient" },
   hostDisplayHint: "The program a session runs in, such as Orca, Windows Terminal, VS Code or Codex. Running Claude Code sessions are recognized automatically; sessions that ended before the island started have no source.",
   sessionHours: "List sessions from the last",
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),

@@ -91,6 +91,10 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(DEFAULT_SETTINGS.agentArchiveMotion, "slide");
   assert.equal(normalizeSettings({ agentArchiveMotion: "dissolve" }).agentArchiveMotion, "dissolve");
   assert.equal(normalizeSettings({ agentArchiveMotion: "explode" }).agentArchiveMotion, "slide");
+  // Card light effects are off unless chosen.
+  assert.equal(DEFAULT_SETTINGS.agentCardEffects, "off");
+  assert.equal(normalizeSettings({ agentCardEffects: "sparkle" }).agentCardEffects, "sparkle");
+  assert.equal(normalizeSettings({ agentCardEffects: "rainbow" }).agentCardEffects, "off");
 
   assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
   // Settings saved before this was a setting keep the old three rows.

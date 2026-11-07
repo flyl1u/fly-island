@@ -1,5 +1,5 @@
 import { useTranslation } from "../../i18n";
-import type { AgentHostDisplay } from "../appearance/types";
+import type { AgentCardEffects, AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import type { AgentSessionSummary } from "./api";
 import { formatTokens, isActivePhase, minutesAgo, sessionProject } from "./sessionList";
@@ -8,6 +8,7 @@ import { SessionHostLabel } from "./SessionHostLabel";
 import { sessionLight, type SessionLight } from "./sessionLight";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import "./AgentSessionCard.css";
+import "./AgentCardEffects.css";
 
 /** Lights whose frame and state are drawn in their colour: working, or waiting on the user. */
 const LIVELY: ReadonlySet<SessionLight> = new Set(["needs", "yourTurn", "working", "failed"]);
@@ -31,6 +32,7 @@ export function AgentSessionCard({
   looked,
   notFound,
   cardReply,
+  effects = "off",
   onOpen,
 }: {
   session: AgentSessionSummary;
@@ -49,6 +51,8 @@ export function AgentSessionCard({
   notFound: string | null;
   /** On an alert's card, a finished or failed session's last reply, below the lines. */
   cardReply: string | null;
+  /** The sparkle band with a glowing frame, or a gradient wash (AgentCardEffects.css). */
+  effects?: AgentCardEffects;
   onOpen: () => void;
 }) {
   const t = useTranslation();
@@ -95,10 +99,12 @@ export function AgentSessionCard({
     unseen && "agent-card--unseen",
     looked && "agent-card--looked",
     cardReply && "agent-card--reply",
+    effects !== "off" && `agent-card--${effects}`,
   ].filter(Boolean).join(" ");
 
   return (
     <button className={className} type="button" onClick={onOpen}>
+      {effects === "sparkle" && <span className="agent-card__band" aria-hidden="true" />}
       <span className="agent-card__heading">
         {compact && <span className="agent-card__bar" aria-hidden="true" />}
         <span className="agent-card__title">

@@ -1,13 +1,13 @@
 // pnpm dev, then open /tests/agent-sessions.html?test=1 (without ?test=1 the page is for visual QA;
 // add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does,
-// &view=cards or &view=compact for the other layouts).
+// &view=cards or &view=compact for the other layouts, &effects=sparkle or gradient on them).
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import { I18nProvider } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
-import type { AgentHostDisplay, AgentSessionView } from "../../src/features/appearance/types";
+import type { AgentCardEffects, AgentHostDisplay, AgentSessionView } from "../../src/features/appearance/types";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
 
@@ -68,7 +68,7 @@ const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
 const render = async (hostDisplay: AgentHostDisplay, cards: { showElapsed?: boolean; showModel?: boolean } = {}) => {
   await act(async () => {
-    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} view={(params.get("view") as AgentSessionView | null) ?? "list"} {...cards} /></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} view={(params.get("view") as AgentSessionView | null) ?? "list"} cardEffects={(params.get("effects") as AgentCardEffects | null) ?? "off"} {...cards} /></I18nProvider></StrictMode>);
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
@@ -378,6 +378,9 @@ async function runChecks() {
     check(document.querySelector(".agent-dissolving > .agent-dissolve__dust") && dissolved.length === 0, "选了粒子消散时，归档的卡片先化成粒子，还没从列表移除");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 800)); });
     check(dissolved.join() === "a", "粒子散完、收起后才移除这个会话");
+    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} view="cards" cardEffects="sparkle" hostDisplay="both" /></I18nProvider></StrictMode>));
+    check(document.querySelectorAll(".agent-card--sparkle > .agent-card__band").length === 3
+      && [...document.querySelectorAll<HTMLElement>(".agent-card--sparkle")].every((card) => card.offsetHeight === 62),"粒子流苏给每张卡片加一条流苏，不改变卡片高度");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

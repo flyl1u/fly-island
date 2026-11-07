@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentHostDisplay: "both",
   agentSessionView: "list",
   agentArchiveMotion: "slide",
+  agentCardEffects: "off",
   agentSessionHours: 2,
   agentShowClaudeCode: true,
   agentShowCodex: true,

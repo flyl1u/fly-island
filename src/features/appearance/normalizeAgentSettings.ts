@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { DEFAULT_SETTINGS, LEGACY_FALLBACKS } from "./settingsDefaults.ts";
 import {
-  AGENT_ALERT_SECONDS, AGENT_HOST_DISPLAYS, AGENT_QUOTA_ALERT_PERCENTS, AGENT_REMIND_SECONDS, AGENT_ARCHIVE_MOTIONS, AGENT_SESSION_HOURS, AGENT_SESSION_VIEWS, MAX_AGENT_VISIBLE_ROWS,
+  AGENT_ALERT_SECONDS, AGENT_HOST_DISPLAYS, AGENT_QUOTA_ALERT_PERCENTS, AGENT_REMIND_SECONDS, AGENT_ARCHIVE_MOTIONS, AGENT_CARD_EFFECTS, AGENT_SESSION_HOURS, AGENT_SESSION_VIEWS, MAX_AGENT_VISIBLE_ROWS,
   MIN_AGENT_VISIBLE_ROWS, oneOf,
 } from "./settingsLimits.ts";
 import type { AgentHostDisplay, IslandSettings, LegacyIslandSettings } from "./types";
@@ -18,6 +18,7 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
       : DEFAULT_SETTINGS.agentHostDisplay,
     agentSessionView: oneOf(AGENT_SESSION_VIEWS, settings?.agentSessionView, DEFAULT_SETTINGS.agentSessionView),
     agentArchiveMotion: oneOf(AGENT_ARCHIVE_MOTIONS, settings?.agentArchiveMotion, DEFAULT_SETTINGS.agentArchiveMotion),
+    agentCardEffects: oneOf(AGENT_CARD_EFFECTS, settings?.agentCardEffects, DEFAULT_SETTINGS.agentCardEffects),
     agentSessionHours: oneOf(AGENT_SESSION_HOURS, settings?.agentSessionHours, DEFAULT_SETTINGS.agentSessionHours),
     agentShowClaudeCode: settings?.agentShowClaudeCode !== false,
     agentShowCodex: settings?.agentShowCodex !== false,

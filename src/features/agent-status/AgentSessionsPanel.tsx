@@ -3,7 +3,7 @@ import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
-import type { AgentArchiveMotion, AgentHostDisplay, AgentSessionView } from "../appearance/types";
+import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionView } from "../appearance/types";
 import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentUsageBar } from "./AgentUsageBar";
@@ -39,6 +39,7 @@ export function AgentSessionsPanel({
   sessions: listed,
   view = "list",
   archiveMotion = "slide",
+  cardEffects = "off",
   hostDisplay,
   showElapsed = true,
   showModel = true,
@@ -55,6 +56,8 @@ export function AgentSessionsPanel({
   view?: AgentSessionView;
   /** How an archived session leaves: sliding out, or dissolving into dust (useArchiveMotion). */
   archiveMotion?: AgentArchiveMotion;
+  /** Light effects on cards and compact rows (AgentCardEffects.css); the list layout has none. */
+  cardEffects?: AgentCardEffects;
   /** How the program a session runs in is shown; "off" hides it. */
   hostDisplay: AgentHostDisplay;
   showElapsed?: boolean;
@@ -203,6 +206,7 @@ export function AgentSessionsPanel({
                   looked={Boolean(unseen && !unseen.keys.has(key) && asksUser(session))}
                   notFound={notFound}
                   cardReply={reveal && !isActivePhase(session.phase) ? session.lastMessage : null}
+                  effects={cardEffects}
                   onOpen={() => focus(session)}
                 />
                 {archive}
