@@ -44,6 +44,8 @@ type AgentAlertOptions = {
   remindAfterMs?: number;
   /** Hears about the sessions a reminder is for (whose windows are not in front), e.g. to play a sound. */
   onRemind?: (sessions: AgentSessionSummary[]) => void;
+  /** Sessions the user has already looked at; no reminder about them (roadmap B15). */
+  looked?: (session: AgentSessionSummary) => boolean;
 };
 
 /**
@@ -55,16 +57,16 @@ type AgentAlertOptions = {
  * Agent button, say), which brings back the whole list. With `remindAfterMs`, a session still
  * waiting on the user that long after it started waiting pops up once more.
  */
-export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, remindAfterMs = 0, onRemind }: AgentAlertOptions) {
+export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, remindAfterMs = 0, onRemind, looked }: AgentAlertOptions) {
   const [alerted, setAlerted] = useState<Pick<AlertedSession, "key" | "kind" | "session"> | null>(null);
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
   const phasesRef = useRef<SessionPhases | null>(null);
   const openedByAlertRef = useRef(false);
   const closeTimerRef = useRef<number | undefined>(undefined);
   // Read inside timers and the in-front check, which outlive a render.
-  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind });
+  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind, looked });
   useLayoutEffect(() => {
-    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind };
+    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind, looked };
   });
 
   useEffect(() => {
@@ -152,7 +154,7 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
   useEffect(() => {
     if (remindAfterMs <= 0 || !waiting) return;
     const check = () => {
-      const due = takeDueReminders(remindersRef.current, sessionsRef.current, Date.now(), remindAfterMs);
+      const due = takeDueReminders(remindersRef.current, sessionsRef.current, Date.now(), remindAfterMs, latest.current.looked);
       if (due.length > 0 && latest.current.canAlert) {
         popUpRef.current(due.map((session) => ({ kind: "waiting", session })), (shown) => latest.current.onRemind?.(shown.map((alert) => alert.session)));
       }

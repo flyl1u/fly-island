@@ -24,14 +24,19 @@ export const SESSION_RING_STATES: readonly { key: SessionRingState; color: strin
 
 /**
  * Where a session sits on the ring, from its light (agent-status/sessionLight.ts): waiting on the
- * user mid-turn is red, and so is a failed turn while unseen or recent; a finished turn that asks
- * something is yellow however old; running is green, silent mid-turn dim green; a finished turn
- * that asks nothing is grey while unseen or for 10 minutes after, then leaves the ring.
+ * user mid-turn is red, and so is a failed turn; a finished turn that asks something is yellow;
+ * running is green, silent mid-turn dim green. Once the user has looked at a session that waits
+ * or failed (clicked it, or had its window in front), it stops asking (roadmap B15) and counts as
+ * done: grey for 10 minutes after its last write, then it leaves the ring, like a finished turn.
  */
 export function sessionRingState(session: AgentSessionSummary, unseen: ReadonlySet<string>, now: number): SessionRingState | null {
-  const recent = unseen.has(sessionKey(session)) || now - session.updatedAt <= DONE_WINDOW_MS;
-  switch (sessionLight(session)) {
+  const notSeen = unseen.has(sessionKey(session));
+  const recent = notSeen || now - session.updatedAt <= DONE_WINDOW_MS;
+  const light = sessionLight(session);
+  if (!notSeen && (light === "needs" || light === "yourTurn" || light === "failed")) return recent ? "done" : null;
+  switch (light) {
     case "needs":
+    case "failed":
       return "needs";
     case "yourTurn":
       return "yourturn";
@@ -39,8 +44,6 @@ export function sessionRingState(session: AgentSessionSummary, unseen: ReadonlyS
       return "working";
     case "stale":
       return "stale";
-    case "failed":
-      return recent ? "needs" : null;
     case "done":
       return recent ? "done" : null;
   }

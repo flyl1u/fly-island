@@ -111,6 +111,12 @@ async function runChecks() {
     // The fly-island session has a window, so clicking it leaves no "not found" note behind.
     first.click();
     check(seenKeys.join() === "a", "点开会话就算看过");
+    // Looked at (roadmap B15): the waiting row keeps its words but loses its orange alarm.
+    const lookedSessions = rows();
+    check(lookedSessions[1].classList.contains("agent-session--looked") && meta(lookedSessions[1])?.startsWith("等待确认")
+      && getComputedStyle(lookedSessions[1].querySelector(".agent-session__dot")!).boxShadow === "none"
+      && !lookedSessions[2].classList.contains("agent-session--looked"),
+      "看过的等待确认会话仍写状态，但状态灯不再亮");
     const removedIds: string[] = [];
     let undone = 0;
     const renderRemoval = async (removed: AgentSessionSummary | null) => {

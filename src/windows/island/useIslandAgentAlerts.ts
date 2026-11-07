@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type { AgentSessionSummary } from "../../features/agent-status/api";
+import { sessionKey } from "../../features/agent-status/unseen";
 import { useAgentApprovals } from "../../features/agent-status/approvals/useAgentApprovals";
 import { useAgentApprovalSettings } from "../../features/agent-status/approvals/useAgentApprovalSettings";
 import { alertKindsOf, useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
@@ -12,6 +13,8 @@ import type { IslandMode, IslandPage } from "./types";
 
 type IslandAgentAlertsOptions = {
   sessions: AgentSessionSummary[];
+  /** Sessions the user has not looked at; only these are reminded about again. */
+  unseen: ReadonlySet<string>;
   settings: IslandSettings;
   /** False while the Agent page is off or game mode keeps the island quiet. */
   enabled: boolean;
@@ -26,7 +29,7 @@ type IslandAgentAlertsOptions = {
  * and permission requests waiting on the user. A request's card outranks an alert, so the island
  * fits the card and an alert's timer does not close it under a request still waiting.
  */
-export function useIslandAgentAlerts({ sessions, settings, enabled, mode, page, openIslandPage, collapseIsland }: IslandAgentAlertsOptions) {
+export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode, page, openIslandPage, collapseIsland }: IslandAgentAlertsOptions) {
   const isOpenOnAgents = mode === "expanded" && page === "agents";
   const onOpen = () => openIslandPage("agents");
   const [approvalSettings] = useAgentApprovalSettings();
@@ -57,6 +60,7 @@ export function useIslandAgentAlerts({ sessions, settings, enabled, mode, page, 
     },
     remindAfterMs: settings.agentRemindSeconds * 1000,
     onRemind: remind,
+    looked: (session) => !unseen.has(sessionKey(session)),
   });
   const agentCardHeight = approvals.current ? approvals.cardHeight : alertedSession?.rowHeight;
   return { alertedSession, approvals, agentCardHeight };

@@ -107,14 +107,17 @@ export function trackWaiting(state: WaitingReminders, sessions: AgentSessionSumm
   }
 }
 
-/** The sessions due a reminder: waiting on the user for `delayMs` or more and not reminded yet in this wait. */
-export function takeDueReminders(state: WaitingReminders, sessions: AgentSessionSummary[], now: number, delayMs: number) {
+/**
+ * The sessions due a reminder: waiting on the user for `delayMs` or more and not reminded yet in
+ * this wait. `looked` ones (the user already saw them, roadmap B15) are not reminded about.
+ */
+export function takeDueReminders(state: WaitingReminders, sessions: AgentSessionSummary[], now: number, delayMs: number, looked: (session: AgentSessionSummary) => boolean = () => false) {
   trackWaiting(state, sessions, now);
   const due: AgentSessionSummary[] = [];
   for (const session of sessions) {
     const key = sessionKey(session);
     const since = state.since.get(key);
-    if (since !== undefined && now - since >= delayMs && !state.reminded.has(key)) {
+    if (since !== undefined && now - since >= delayMs && !state.reminded.has(key) && !looked(session)) {
       state.reminded.add(key);
       due.push(session);
     }

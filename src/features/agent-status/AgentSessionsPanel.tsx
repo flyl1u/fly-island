@@ -12,7 +12,7 @@ import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
 import { AGENT_PROVIDER_LABELS, getAgentPhaseLabel } from "./status";
 import { useScrollFade } from "./useScrollFade";
-import { sessionKey } from "./unseen";
+import { asksUser, sessionKey } from "./unseen";
 import { sessionLight } from "./sessionLight";
 import type { UnseenSessions } from "./useUnseenSessions";
 import type { SessionRemoval } from "./useHiddenSessions";
@@ -190,7 +190,7 @@ export function AgentSessionsPanel({
           return (
             <li key={`${session.provider}:${session.sessionId}`} ref={reveal ? cardRef : undefined} data-session-key={sessionKey(session)}>
               <button
-                className={`agent-session agent-session--${session.phase} agent-session--light-${light} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : ""}`}
+                className={`agent-session agent-session--${session.phase} agent-session--light-${light} agent-session--${full ? "full" : "compact"}${unseen?.keys.has(sessionKey(session)) ? " agent-session--unseen" : unseen && asksUser(session) ? " agent-session--looked" : ""}`}
                 type="button"
                 onClick={() => focus(session)}
               >

@@ -334,6 +334,16 @@
   color: var(--color-warning);
 }
 
+/* Waiting on you or failed, and already looked at (roadmap B15): the words stay, the alarm goes. */
+.agent-session--looked .agent-session__dot {
+  background: var(--color-light-done);
+  box-shadow: none;
+}
+
+.agent-session--looked .agent-session__meta {
+  color: var(--text-3);
+}
+
 /* Finished but not looked at yet: bright until clicked or its window comes to the front. */
 .agent-session--unseen .agent-session__title {
   color: var(--text-1);

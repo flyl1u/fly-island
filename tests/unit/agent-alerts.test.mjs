@@ -121,6 +121,11 @@ test("reminders: once per wait, after the delay, for sessions still waiting on t
   assert.equal(state.since.size, 0);
   assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 600_000, 60_000)), []);
   assert.deepEqual(ids(takeDueReminders(state, [session("w", "waiting")], 660_000, 60_000)), ["w"]);
+  // A session the user already looked at is not reminded about (roadmap B15).
+  const fresh = { since: new Map(), reminded: new Set() };
+  const looked = (one) => one.sessionId === "w";
+  takeDueReminders(fresh, [session("w", "waiting"), session("v", "waiting")], 0, 60_000, looked);
+  assert.deepEqual(ids(takeDueReminders(fresh, [session("w", "waiting"), session("v", "waiting")], 61_000, 60_000, looked)), ["v"]);
 
   assert.equal(reminderSound({ ...session("a", "waiting"), currentTool: { name: "AskUserQuestion", detail: null } }), "question");
   assert.equal(reminderSound({ ...session("a", "completed"), replyMarker: "yourTurn" }), "question");

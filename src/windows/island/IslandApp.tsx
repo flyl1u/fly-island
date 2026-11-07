@@ -115,6 +115,7 @@ export function IslandApp() {
   });
   const { alertedSession, approvals: agentApprovals, agentCardHeight } = useIslandAgentAlerts({
     sessions: agentSessions,
+    unseen: unseenAgentSessions.keys,
     settings,
     enabled: features.agents && !game.quiet,
     mode,

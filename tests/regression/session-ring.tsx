@@ -47,7 +47,8 @@ const BUSY = [
   session("e5", "completed", "已看过", 2),
   session("f6", "completed", "很久以前", 60),
 ];
-const UNSEEN: ReadonlySet<string> = new Set(["claudeCode:b2"]);
+// Sessions waiting on you count as asking only until looked at (roadmap B15).
+const UNSEEN: ReadonlySet<string> = new Set(["claudeCode:a1", "claudeCode:b2"]);
 const QUIET = [session("f6", "completed", "很久以前", 60)];
 // What the mocked host answers; each scenario sets these, then mounts a fresh island.
 let pluginOn = true;

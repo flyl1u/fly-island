@@ -36,11 +36,16 @@ const color = (key) => SESSION_RING_STATES.find((state) => state.key === key).co
 test("phases map to ring states; finished ones by whether the reply asks, then how recent they are", () => {
   const unseen = new Set(["claudeCode:a"]);
   const old = { updatedAt: NOW - 60 * MINUTE };
-  assert.equal(sessionRingState(session("a", "waiting"), NONE, NOW), "needs");
+  assert.equal(sessionRingState(session("a", "waiting"), unseen, NOW), "needs");
   assert.equal(sessionRingState(session("a", "running"), NONE, NOW), "working");
   assert.equal(sessionRingState(session("a", "stale"), NONE, NOW), "stale");
-  // A reply ending in a question is yellow, seen or not, however old.
-  assert.equal(sessionRingState(session("a", "completed", { replyAsks: true, ...old }), NONE, NOW), "yourturn");
+  // A reply ending in a question is yellow until looked at, however old.
+  assert.equal(sessionRingState(session("a", "completed", { replyAsks: true, ...old }), unseen, NOW), "yourturn");
+  // Looked at (roadmap B15): waiting, asking and failed stop asking and count as done, then leave.
+  assert.equal(sessionRingState(session("a", "waiting"), NONE, NOW), "done");
+  assert.equal(sessionRingState(session("a", "completed", { replyAsks: true }), NONE, NOW), "done");
+  assert.equal(sessionRingState(session("a", "completed", { replyAsks: true, ...old }), NONE, NOW), null);
+  assert.equal(sessionRingState(session("a", "failed"), NONE, NOW), "done");
   // Not seen yet no longer means it asks: grey while unseen, however old.
   assert.equal(sessionRingState(session("a", "completed", old), unseen, NOW), "done");
   assert.equal(sessionRingState(session("a", "completed", { updatedAt: NOW - DONE_WINDOW_MS }), NONE, NOW), "done");
@@ -54,8 +59,8 @@ test("the reply status marker decides a finished turn instead of whether it was 
   const seen = NONE;
   const unseen = new Set(["claudeCode:a"]);
   const old = { updatedAt: NOW - 60 * MINUTE };
-  // Waiting for a reply stays yellow, seen or not, however old.
-  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "yourTurn", ...old }), seen, NOW), "yourturn");
+  // Waiting for a reply stays yellow until looked at, however old.
+  assert.equal(sessionRingState(session("a", "completed", { replyMarker: "yourTurn", ...old }), unseen, NOW), "yourturn");
   // Done is grey even before it is seen, and drops off once old and seen.
   assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done" }), unseen, NOW), "done");
   assert.equal(sessionRingState(session("a", "completed", { replyMarker: "done", ...old }), unseen, NOW), "done");
@@ -76,7 +81,7 @@ test("counts, segments in ring order and the summary list only states that have 
     session("r2", "running"),
     session("old", "completed", { updatedAt: NOW - 60 * MINUTE }),
   ];
-  const counts = sessionRingCounts(sessions, NONE, NOW);
+  const counts = sessionRingCounts(sessions, new Set(["claudeCode:w1"]), NOW);
   assert.deepEqual(counts, { needs: 1, yourturn: 0, working: 2, stale: 0, done: 0, total: 3 });
   assert.deepEqual(sessionRingSegments(counts), [
     { value: 1, color: color("needs") },
@@ -95,7 +100,7 @@ test("card names up to three sessions waiting on you, those needing you first", 
     session("n2", "waiting", { title: null, cwd: null }),
     session("y3", "completed", { replyAsks: true }),
   ];
-  const unseen = new Set(["claudeCode:y1", "claudeCode:y2", "claudeCode:y3"]);
+  const unseen = new Set(["claudeCode:y1", "claudeCode:n1", "claudeCode:y2", "claudeCode:n2", "claudeCode:y3"]);
   const lines = sessionRingCardLines(sessions, unseen, NOW, zhCN);
   assert.deepEqual(lines, [
     "等你确认 2 · 等你回复 3",
