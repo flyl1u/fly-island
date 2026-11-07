@@ -5,12 +5,13 @@ import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import {
   AGENT_HOST_DISPLAYS,
+  AGENT_ARCHIVE_MOTIONS,
   AGENT_SESSION_HOURS,
   AGENT_SESSION_VIEWS,
   MAX_AGENT_VISIBLE_ROWS,
   MIN_AGENT_VISIBLE_ROWS,
 } from "../appearance/settings";
-import type { AgentHostDisplay, AgentSessionView, IslandSettings } from "../appearance/types";
+import type { AgentArchiveMotion, AgentHostDisplay, AgentSessionView, IslandSettings } from "../appearance/types";
 import { useTranslation } from "../../i18n";
 
 /** Settings → AI Agent: which sessions the island's Agent page lists, and what each card shows. */
@@ -65,6 +66,18 @@ export function AgentSessionListSettings({
               options={AGENT_SESSION_VIEWS.map((value) => ({ value, label: text.sessionViewOptions[value] }))}
               ariaLabel={text.sessionView}
               onChange={(agentSessionView) => update({ agentSessionView })}
+            />
+          }
+        />
+        <SettingsRow
+          title={text.archiveMotion}
+          description={text.archiveMotionHint}
+          control={
+            <SettingsSelect<AgentArchiveMotion>
+              value={settings.agentArchiveMotion}
+              options={AGENT_ARCHIVE_MOTIONS.map((value) => ({ value, label: text.archiveMotionOptions[value] }))}
+              ariaLabel={text.archiveMotion}
+              onChange={(agentArchiveMotion) => update({ agentArchiveMotion })}
             />
           }
         />

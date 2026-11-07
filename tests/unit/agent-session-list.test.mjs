@@ -87,6 +87,10 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(DEFAULT_SETTINGS.agentSessionView, "list");
   assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "cards");
   assert.equal(normalizeSettings({ agentSessionView: "tiles" }).agentSessionView, "list");
+  // Archiving slides out unless the dust is chosen.
+  assert.equal(DEFAULT_SETTINGS.agentArchiveMotion, "slide");
+  assert.equal(normalizeSettings({ agentArchiveMotion: "dissolve" }).agentArchiveMotion, "dissolve");
+  assert.equal(normalizeSettings({ agentArchiveMotion: "explode" }).agentArchiveMotion, "slide");
 
   assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
   // Settings saved before this was a setting keep the old three rows.

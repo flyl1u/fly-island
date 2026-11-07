@@ -3,7 +3,7 @@ import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
-import type { AgentHostDisplay, AgentSessionView } from "../appearance/types";
+import type { AgentArchiveMotion, AgentHostDisplay, AgentSessionView } from "../appearance/types";
 import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentUsageBar } from "./AgentUsageBar";
@@ -38,6 +38,7 @@ const AGE_REFRESH_MS = 30_000;
 export function AgentSessionsPanel({
   sessions: listed,
   view = "list",
+  archiveMotion = "slide",
   hostDisplay,
   showElapsed = true,
   showModel = true,
@@ -52,6 +53,8 @@ export function AgentSessionsPanel({
   sessions: AgentSessionSummary[];
   /** Flat rows (the default), cards framed in their light, or one-line rows (AgentSessionCard). */
   view?: AgentSessionView;
+  /** How an archived session leaves: sliding out, or dissolving into dust (useArchiveMotion). */
+  archiveMotion?: AgentArchiveMotion;
   /** How the program a session runs in is shown; "off" hides it. */
   hostDisplay: AgentHostDisplay;
   showElapsed?: boolean;
@@ -81,7 +84,7 @@ export function AgentSessionsPanel({
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
   const list = useScrollFade<HTMLUListElement>(sessions);
-  const motion = useArchiveMotion(list.element, removal);
+  const motion = useArchiveMotion(list.element, removal, archiveMotion);
   const cardRef = useRef<HTMLLIElement>(null);
   const measure = reveal?.measure;
   const cardKey = reveal?.key;

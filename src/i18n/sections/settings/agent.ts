@@ -18,6 +18,9 @@ export type SettingsAgentText = {
   sessionView: string;
   sessionViewHint: string;
   sessionViewOptions: { list: string; cards: string; compact: string };
+  archiveMotion: string;
+  archiveMotionHint: string;
+  archiveMotionOptions: { slide: string; dissolve: string };
   hostDisplayHint: string;
   sessionHours: string;
   sessionHoursOption: (hours: number) => string;
@@ -159,6 +162,9 @@ export const zhCN: SettingsAgentText = {
   sessionView: "显示方式",
   sessionViewHint: "卡片：每个会话一张按状态颜色描边的卡片，第二行写它在做什么和上下文大小。紧凑：每个会话一行，只有状态色条、标题、状态和时间。",
   sessionViewOptions: { list: "列表", cards: "卡片", compact: "紧凑" },
+  archiveMotion: "归档动画",
+  archiveMotionHint: "滑出：会话向右滑出再收起。粒子消散：会话从左到右化成状态颜色的粒子散开再收起。系统要求减少动画时直接移除。",
+  archiveMotionOptions: { slide: "滑出", dissolve: "粒子消散" },
   hostDisplayHint: "会话在哪个程序里运行，比如 Orca、Windows Terminal、VS Code、Codex。正在运行的 Claude Code 会话会自动识别；岛屿启动前就结束的会话没有来源。",
   sessionHours: "列出多久内的会话",
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
@@ -292,6 +298,9 @@ export const en: SettingsAgentText = {
   sessionView: "Layout",
   sessionViewHint: "Cards: one card per session, framed in its state's colour, with what it is doing and its context size on the second line. Compact: one line per session with only the state bar, title, state and time.",
   sessionViewOptions: { list: "List", cards: "Cards", compact: "Compact" },
+  archiveMotion: "Archive animation",
+  archiveMotionHint: "Slide: the session slides out to the right, then folds away. Dissolve: it turns into dust in its state's colour from left to right, then folds away. When Windows asks for less motion it goes at once.",
+  archiveMotionOptions: { slide: "Slide", dissolve: "Dissolve" },
   hostDisplayHint: "The program a session runs in, such as Orca, Windows Terminal, VS Code or Codex. Running Claude Code sessions are recognized automatically; sessions that ended before the island started have no source.",
   sessionHours: "List sessions from the last",
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),

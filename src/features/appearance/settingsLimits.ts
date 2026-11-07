@@ -1,8 +1,9 @@
 // The ranges and choices island settings are kept within, and the fallbacks they rest on.
-import type { AgentHostDisplay, AgentSessionView } from "./types";
+import type { AgentArchiveMotion, AgentHostDisplay, AgentSessionView } from "./types";
 
 export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon", "name", "off"];
 export const AGENT_SESSION_VIEWS: readonly AgentSessionView[] = ["list", "cards", "compact"];
+export const AGENT_ARCHIVE_MOTIONS: readonly AgentArchiveMotion[] = ["slide", "dissolve"];
 /** Choices for how far back the Agent page lists sessions, in hours. */
 export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 /** How long a page opened for an agent alert stays, in seconds. */

@@ -120,7 +120,7 @@ export function IslandPages({
           onClear={() => void clearClipboardHistoryItems()}
         />
       )}
-      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} view={settings.agentSessionView} hostDisplay={settings.agentHostDisplay}showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} usages={agentUsages} approvals={agentApprovals} />}
+      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} view={settings.agentSessionView} archiveMotion={settings.agentArchiveMotion}hostDisplay={settings.agentHostDisplay}showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} usages={agentUsages} approvals={agentApprovals} />}
       {pluginPages.entry && <PluginViewPage entry={pluginPages.entry} isOpen={mode === "expanded"} onRowsChange={pluginPages.setRows} />}
       {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
       {page === "calendar" && (

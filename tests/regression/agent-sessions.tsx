@@ -371,6 +371,13 @@ async function runChecks() {
     cards = await renderView("compact");
     check(cards.length === 3 && cards.every((card) => card.offsetHeight === 34 && !card.querySelector(".agent-card__status-line") && card.querySelector(".agent-card__bar")) && fits(),
       "紧凑视图每个会话一行 34px，只有色条、标题、状态和时间");
+    const dissolved: string[] = [];
+    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} view="cards" archiveMotion="dissolve" hostDisplay="both"
+      removal={{ remove: (session) => dissolved.push(session.sessionId), removed: null, undo: () => undefined }} /></I18nProvider></StrictMode>));
+    await act(async () => document.querySelector<HTMLButtonElement>(".agent-session__archive")!.click());
+    check(document.querySelector(".agent-dissolving > .agent-dissolve__dust") && dissolved.length === 0, "选了粒子消散时，归档的卡片先化成粒子，还没从列表移除");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 800)); });
+    check(dissolved.join() === "a", "粒子散完、收起后才移除这个会话");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

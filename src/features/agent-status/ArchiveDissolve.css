@@ -1,0 +1,57 @@
+/* The "dissolve" archive animation (useArchiveMotion.ts, Settings → AI Agent → Sessions): the row
+   turns into a front of drifting dust in its light's colour from left to right (DISSOLVE_MS), then
+   folds away. After PR #5's card dissolve; works on flat rows, cards and compact rows alike. */
+.agent-dissolving > :not(.agent-dissolve__dust) {
+  -webkit-mask-image: linear-gradient(90deg, transparent 40%, #000 60%);
+  mask-image: linear-gradient(90deg, transparent 40%, #000 60%);
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  animation: agent-dissolve-sweep 480ms linear forwards;
+}
+
+.agent-dissolve__dust {
+  --hot: color-mix(in srgb, var(--dust-color, rgb(var(--agent-ink))) 45%, rgb(var(--agent-ink)));
+  --halo: color-mix(in srgb, var(--dust-color, rgb(var(--agent-ink))) 80%, transparent);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 5px 7px, var(--hot) 0 1.2px, var(--halo) 1.8px, transparent 3px) 0 0 / 11px 13px,
+    radial-gradient(circle at 2px 3px, var(--hot) 0 0.9px, var(--halo) 1.3px, transparent 2.2px) 0 0 / 7px 9px,
+    radial-gradient(circle at 9px 5px, var(--halo) 0 1px, transparent 2px) 0 0 / 13px 10px,
+    radial-gradient(circle at 4px 1px, var(--hot) 0 0.7px, transparent 1.6px) 0 0 / 17px 5px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 28%, #000 38%, #000 50%, transparent 60%);
+  mask-image: linear-gradient(90deg, transparent 28%, #000 38%, #000 50%, transparent 60%);
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  animation:
+    agent-dissolve-sweep 480ms linear forwards,
+    agent-dissolve-drift 480ms ease-out forwards;
+}
+
+@keyframes agent-dissolve-sweep {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+
+  to {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+
+@keyframes agent-dissolve-drift {
+  to {
+    opacity: 0;
+    transform: translate3d(14px, -6px, 0);
+  }
+}
+
+/* useArchiveMotion removes the row at once then; nothing here should move either. */
+@media (prefers-reduced-motion: reduce) {
+  .agent-dissolving > :not(.agent-dissolve__dust),
+  .agent-dissolve__dust {
+    animation: none;
+  }
+}
