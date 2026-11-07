@@ -348,8 +348,10 @@ async function runChecks() {
     check(rows()[0].querySelector(".agent-session__host")?.textContent === "dev-box" && rows()[0].querySelector("svg.agent-session__host-icon"), "远程会话显示主机名和服务器图标");
     const remoteFocuses = focusCalls.length;
     await act(async () => rows()[0].click());
-    check(focusCalls.length === remoteFocuses && rows()[0].querySelector(".agent-session__not-found")?.textContent === "在 dev-box 上运行，这里没有它的窗口",
-      "点远程会话不去找本地窗口，只说明它在哪台机器上");
+    const remoteCall = focusCalls[remoteFocuses];
+    check(focusCalls.length === remoteFocuses + 1 && remoteCall?.sessionId === "" && remoteCall?.cwd === "/srv/app" && remoteCall?.title === "服务器上的会话",
+      "点远程会话按标题和文件夹找连着服务器的本地窗口，不带会话 ID");
+    check(rows()[0].querySelector(".agent-session__not-found")?.textContent === "没找到连着 dev-box 的终端或编辑器窗口", "找不到时说明没有连着那台机器的窗口");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

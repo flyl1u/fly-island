@@ -107,12 +107,10 @@ export function AgentSessionsPanel({
   const focus = (session: AgentSessionSummary) => {
     setNotFoundId(null);
     unseen?.markSeen(session);
-    // A session on another computer has no window here; the row says where it runs instead.
-    if (session.remoteHost) {
-      setNotFoundId(session.sessionId);
-      return;
-    }
-    void focusAgentWindow(session.provider, session.cwd, session.title, session.sessionId)
+    // A session on another computer runs in a terminal tab or editor window connected to it
+    // (a WezTerm SSH tab, VS Code Remote): found by title and folder only, as its process and
+    // session id mean nothing here.
+    void focusAgentWindow(session.provider, session.cwd, session.title, session.remoteHost ? "" : session.sessionId)
       .then((found) => {
         if (!found) setNotFoundId(session.sessionId);
       })
