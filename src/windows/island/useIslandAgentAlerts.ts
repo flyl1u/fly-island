@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import type { AgentSessionSummary } from "../../features/agent-status/api";
 import { sessionKey } from "../../features/agent-status/unseen";
 import { useAgentApprovals } from "../../features/agent-status/approvals/useAgentApprovals";
@@ -32,7 +32,15 @@ type IslandAgentAlertsOptions = {
  */
 export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode, page, openIslandPage, collapseIsland }: IslandAgentAlertsOptions) {
   const isOpenOnAgents = mode === "expanded" && page === "agents";
-  const onOpen = () => openIslandPage("agents");
+  // Whether an alert or a card opened the Agent page and the user has not taken it over since.
+  // The alert and the card each track their own opening and miss the other's: an alert opens the
+  // page, a card comes onto it and so thinks the user opened it, and a press on the card tells the
+  // alert the user took over; neither then closed the page. Closing is decided here instead.
+  const autoOpenedRef = useRef(false);
+  const onOpen = () => {
+    autoOpenedRef.current = true;
+    openIslandPage("agents");
+  };
   const [approvalSettings] = useAgentApprovalSettings();
   const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, whenInFront: approvalSettings.whenInFront, isOpenOnAgents, onOpen, onClose: collapseIsland });
   const waiting = approvals.current !== null;
@@ -40,6 +48,34 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
   useLayoutEffect(() => {
     waitingRef.current = waiting;
   }, [waiting]);
+
+  // A press anywhere but on a card is the user taking the island over.
+  useEffect(() => {
+    const takeOver = (event: PointerEvent) => {
+      if (!(event.target instanceof Element && event.target.closest(".agent-approval"))) autoOpenedRef.current = false;
+    };
+    window.addEventListener("pointerdown", takeOver, true);
+    return () => window.removeEventListener("pointerdown", takeOver, true);
+  }, []);
+
+  // Leaving the Agent page or collapsing ends it too.
+  const wasOpenOnAgentsRef = useRef(isOpenOnAgents);
+  useEffect(() => {
+    if (wasOpenOnAgentsRef.current && !isOpenOnAgents) autoOpenedRef.current = false;
+    wasOpenOnAgentsRef.current = isOpenOnAgents;
+  }, [isOpenOnAgents]);
+
+  // The last card went (answered on the island or in the terminal, Esc, timed out): a page that
+  // opened by itself closes again.
+  const wasWaitingRef = useRef(waiting);
+  useEffect(() => {
+    const ended = wasWaitingRef.current && !waiting;
+    wasWaitingRef.current = waiting;
+    if (ended && autoOpenedRef.current && isOpenOnAgents) {
+      autoOpenedRef.current = false;
+      collapseIsland();
+    }
+  }, [waiting, isOpenOnAgents, collapseIsland]);
 
   useAgentSounds(sessions, enabled, unseen);
   // Not muted by game mode: the user is not looking at the agents then either.
