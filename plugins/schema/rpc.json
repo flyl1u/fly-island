@@ -314,7 +314,7 @@
     {
       "name": "initialize",
       "since": 1,
-      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished or onUri), appVersion, pluginId, dataDir, permissions (those usable now: the manifest's permissions plus the optional ones the user allowed), optionalPermissions (since 2), settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) }"
+      "params": "{ apiVersion, capabilities (since 2), activationEvent (since 2: onStartup, onCommand:<id>, onView:<id>, onEvent:<name>, onSchedule:<minutes>, onStartupFinished, onUri, or onSettingsChanged when the user changed the settings of an on-demand plugin that was not running), appVersion, pluginId, dataDir, permissions (those usable now: the manifest's permissions plus the optional ones the user allowed), optionalPermissions (since 2), settings, experimentalApis (only for a development-mode plugin whose manifest lists experimentalApis: those the island has) }"
     },
     { "name": "command", "since": 1, "params": "{ id, args? }: a button on the plugin page or the command's keybinding (since 2) sends { id }; an entry of the todo right-click menu (contributes.menus \"todo/context\", since 2) sends { id, args: { todoId } }; of the clipboard, file shelf or message right-click menu (\"clipboard/context\", \"shelf/context\", \"message/context\") sends { id, args: { item } }, the entry as clipboard.history, shelf.list or messages.list show it" },
     { "name": "settings.changed", "since": 1, "params": "{ settings }" },

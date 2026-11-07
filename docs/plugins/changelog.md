@@ -4,6 +4,11 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 按需启动的两处修正
+
+- `onStartupFinished` 的插件如果是岛屿启动后才启用、安装或授权的，现在会立即启动；以前要等岛屿下次重启。
+- 用户改了待命插件的设置时，岛屿启动它，`initialize.activationEvent` 为 `onSettingsChanged`。以前插件要等下一个激活事件才看到新设置。
+
 ## 折叠条上的列和小环
 
 - `status.update` 多了可选的 `cells`（最多 4 列 `{ label, value, tone? }`，代替文字显示）和 `ring`（0–1 的小进度环），能力 `statusCells`。`text` 仍然必填，旧版岛屿只显示文字。SDK：Node `plugin.status.update(id, text, { cells, ring })`，PowerShell `Update-FocusdStatus -Cells -Ring`；模拟宿主会校验并记在 `statuses` 里。见 [README](README.md)「折叠条上的列和小环」。

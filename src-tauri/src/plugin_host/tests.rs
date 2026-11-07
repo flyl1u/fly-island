@@ -863,7 +863,7 @@ mod lifecycle_tests {
     use serde_json::{json, Value};
     use std::time::Duration;
 
-    use super::super::lifecycle::{cpu_percent, is_idle, memory_limit_mb, plugin_own_bytes, IDLE_AFTER};
+    use super::super::lifecycle::{cpu_percent, is_idle, memory_limit_mb, newly_started_after_startup, plugin_own_bytes, IDLE_AFTER};
     use super::super::runtime::IdleState;
     use super::parse;
 
@@ -881,6 +881,18 @@ mod lifecycle_tests {
 
     fn labels(value: Value) -> Result<Vec<String>, String> {
         parse(value).map(|manifest| manifest.activation.events.iter().map(|event| event.label()).collect())
+    }
+
+    #[test]
+    fn startup_finished_plugins_enabled_later_start_at_once() {
+        let activation = |events: Value| parse(manifest(events)).expect("manifest").activation;
+        let before = std::collections::HashMap::from([("old".to_string(), activation(json!(["onStartupFinished"])))]);
+        let mut next = before.clone();
+        next.insert("new".into(), activation(json!(["onStartupFinished"])));
+        next.insert("lazy".into(), activation(json!(["onCommand:go"])));
+        next.insert("eager".into(), activation(json!(["onStartup", "onStartupFinished"])));
+        assert_eq!(newly_started_after_startup(&before, &next, true), vec!["new".to_string()]);
+        assert!(newly_started_after_startup(&before, &next, false).is_empty(), "the startup check wakes them itself");
     }
 
     #[test]

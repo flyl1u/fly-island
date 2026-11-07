@@ -512,7 +512,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | 激活事件 | 什么时候启动 |
 |---|---|
 | `onStartup` | 岛屿启动时，并且一直运行（等于不写这个字段）。审核时要说明为什么需要常驻 |
-| `onStartupFinished` | 岛屿启动 10 秒后 |
+| `onStartupFinished` | 岛屿启动 10 秒后；之后才启用、安装或授权的插件，在那一刻立即启动 |
 | `onCommand:<id>` | 用户点了这个命令的按钮、按了它的快捷键，或在待办右键菜单里选了它 |
 | `onView:<id>` | 用户打开了这个岛上页面 |
 | `onEvent:<事件名>` | 发生了这个事件（需要事件对应的权限；敏感权限会先在岛上询问）。插件会直接收到这次的 `event` 通知，不用先订阅 |
@@ -522,6 +522,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 - `contributes.commands` 和 `contributes.views` 会自动加上对应的 `onCommand:<id>` / `onView:<id>`，不用重复写。所以 `"activationEvents": []` 表示"只在用户用到命令或页面时启动"。
 - 启动时，触发这次启动的命令、事件或页面消息会等 `initialize` 发出之后再送达，最多等 10 秒。`initialize.activationEvent` 告诉插件这次是因为什么启动的（常驻插件为 `onStartup`）。
 - **空闲停止**：按需启动的插件 60 秒内没有收到消息、没有发出请求、没有打开的岛上页面时，岛屿发送 `shutdown` 让它退出，之后有激活事件时再启动。插件订阅了不在 `activationEvents` 里的事件时，会一直运行，以免错过事件。
+- **改设置也会启动**：用户在设置页改了一个待命插件的设置时，岛屿启动它（`initialize.activationEvent` 为 `onSettingsChanged`，新设置在 `initialize.settings` 里），让它按新设置行事，比如申请 `host.keepAlive`；不用在 `activationEvents` 里写。没事做的话它照常在 60 秒后停下。
 - 需要一直运行时调用 `host.keepAlive { reason }`，插件卡片会显示原因；`{ reason: null }` 取消。插件重启后要重新申请。
 - 插件被停止时，它的 `storage` 不受影响，但订阅、岛上页面的模型和折叠条状态文字都会清空，下次启动后要重新设置。
 

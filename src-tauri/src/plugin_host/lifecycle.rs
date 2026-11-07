@@ -65,7 +65,13 @@ struct State {
     /// When each `onSchedule` plugin last ran.
     scheduled: HashMap<String, Instant>,
     cpu: HashMap<String, CpuSample>,
+    /// STARTUP_FINISHED_AFTER has passed: `onStartupFinished` plugins that become
+    /// runnable later (enabled, installed, allowed) start at once.
+    startup_finished: bool,
 }
+
+/// `initialize.activationEvent` of an on-demand plugin started because the user changed its settings.
+const SETTINGS_CHANGED: &str = "onSettingsChanged";
 
 fn state() -> &'static Mutex<State> {
     static STATE: OnceLock<Mutex<State>> = OnceLock::new();
@@ -81,7 +87,36 @@ pub(super) fn set_runnable(runnable: HashMap<String, Activation>) {
     for id in runnable.keys() {
         state.scheduled.entry(id.clone()).or_insert_with(Instant::now);
     }
+    for id in newly_started_after_startup(&state.runnable, &runnable, state.startup_finished) {
+        state.active.entry(id).or_insert_with(|| ActivationEvent::StartupFinished.label());
+    }
     state.runnable = runnable;
+}
+
+/// The `onStartupFinished` plugins in `next` but not in `before`, once the island's startup is
+/// over: the moment they waited for has passed, so they start now instead of never.
+pub(super) fn newly_started_after_startup(before: &HashMap<String, Activation>, next: &HashMap<String, Activation>, startup_finished: bool) -> Vec<String> {
+    if !startup_finished {
+        return Vec::new();
+    }
+    next.iter()
+        .filter(|(id, activation)| !before.contains_key(*id) && !activation.is_eager() && activation.on_startup_finished())
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+/// The user changed the settings of an on-demand plugin that is not running: start it, so it
+/// can act on them (it reads them from `initialize`) instead of waiting for its next event.
+pub(super) fn wake_for_settings(id: &str) {
+    if !is_runnable(id) {
+        return;
+    }
+    let id = id.to_string();
+    let _ = thread::Builder::new().name("plugin-settings-wake".into()).spawn(move || {
+        if let Err(error) = activate(&id, SETTINGS_CHANGED.into()) {
+            eprintln!("could not start plugin {id} for its new settings: {error}");
+        }
+    });
 }
 
 /// Why the plugin's process should run now (`initialize.activationEvent`), or
@@ -211,6 +246,7 @@ pub(super) fn start() {
             thread::sleep(TICK);
             if !startup_finished && started.elapsed() >= STARTUP_FINISHED_AFTER {
                 startup_finished = true;
+                lock(state()).startup_finished = true;
                 wake_where(|activation| activation.on_startup_finished(), |_| ActivationEvent::StartupFinished.label(), false);
             }
             tick();
