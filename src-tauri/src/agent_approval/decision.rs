@@ -24,6 +24,9 @@ pub enum Kind {
 
 /// Where Claude Code's `PreToolUse` hook for `AskUserQuestion` posts.
 pub(super) const QUESTION_PATH: &str = "/claude/ask-user-question";
+/// Where Claude Code's activity hook posts (`PostToolUse`, `Stop`, ...): the session moved on,
+/// so an approval it asked for was answered elsewhere (B6.2.7).
+pub(super) const ACTIVITY_PATH: &str = "/claude/activity";
 
 /// The agent and the kind of request an endpoint path takes.
 pub(super) fn route(path: &str) -> Option<(Agent, Kind)> {
@@ -54,18 +57,21 @@ pub(super) struct HookInput {
     pub tool_input: Value,
     /// Claude Code's "always allow" rules for this call, passed back for "allow always".
     pub permission_suggestions: Option<Value>,
+    /// The subagent that asked, when it was not the main agent.
+    pub agent_id: Option<String>,
 }
 
 impl HookInput {
     pub(super) fn parse(body: &[u8]) -> Result<Self, &'static str> {
         let input: Value = serde_json::from_slice(body).map_err(|_| "The body is not JSON.")?;
-        let text = |key: &str| input[key].as_str().filter(|value| !value.is_empty()).map(str::to_string);
+        let text = |key: &str| text_field(&input, key);
         Ok(Self {
             session_id: text("session_id").ok_or("No session_id.")?,
             cwd: text("cwd"),
             tool_name: text("tool_name").ok_or("No tool_name.")?,
             tool_input: input["tool_input"].clone(),
             permission_suggestions: Some(input["permission_suggestions"].clone()).filter(|value| !value.is_null()),
+            agent_id: text("agent_id"),
         })
     }
 
@@ -73,6 +79,51 @@ impl HookInput {
     /// with no such hook, it then comes through PermissionRequest, which lets the terminal ask.
     pub(super) fn is_question(&self) -> bool {
         self.tool_name == "AskUserQuestion"
+    }
+}
+
+fn text_field(input: &Value, key: &str) -> Option<String> {
+    input[key].as_str().filter(|value| !value.is_empty()).map(str::to_string)
+}
+
+/// What a Claude Code session did after asking, which means its request was answered without the
+/// island: in the terminal, which can show its own prompt while the hook waits and then leaves the
+/// hook's connection open (found on Claude Code 2.1.x; the hooks used to block the prompt).
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct Activity {
+    pub session_id: String,
+    /// The subagent the event is about; None for the main agent.
+    pub agent_id: Option<String>,
+    pub settled: Settled,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(super) enum Settled {
+    /// One tool call ran, failed or was denied (`PostToolUse`, `PostToolUseFailure`,
+    /// `PermissionDenied`): the request for that call is over.
+    ToolCall { tool_name: String, tool_input: Value },
+    /// The agent's turn ended or a new prompt came in (`Stop`, `SubagentStop`, `UserPromptSubmit`):
+    /// nothing of that agent waits any more.
+    Turn,
+}
+
+impl Activity {
+    /// None for events that say nothing about a waiting request.
+    pub(super) fn parse(body: &[u8]) -> Result<Option<Self>, &'static str> {
+        let input: Value = serde_json::from_slice(body).map_err(|_| "The body is not JSON.")?;
+        let session_id = text_field(&input, "session_id").ok_or("No session_id.")?;
+        let agent_id = text_field(&input, "agent_id");
+        let settled = match input["hook_event_name"].as_str().unwrap_or_default() {
+            "PostToolUse" | "PostToolUseFailure" | "PermissionDenied" => Settled::ToolCall {
+                tool_name: text_field(&input, "tool_name").ok_or("No tool_name.")?,
+                tool_input: input["tool_input"].clone(),
+            },
+            "Stop" | "UserPromptSubmit" => return Ok(Some(Self { session_id, agent_id: None, settled: Settled::Turn })),
+            // Without its agent_id a SubagentStop cannot say whose requests ended.
+            "SubagentStop" if agent_id.is_some() => Settled::Turn,
+            _ => return Ok(None),
+        };
+        Ok(Some(Self { session_id, agent_id, settled }))
     }
 }
 

@@ -31,7 +31,9 @@ It then updates:
 %USERPROFILE%\.claude\settings.json
 ```
 
-The operation is repeatable. Running **安装/修复** again rewrites FocuSD's managed hooks to the current app-data script path and removes older FocuSD hook entries that referenced development paths such as `D:\FocuSD\scripts`.
+The operation is repeatable. Running **安装/修复** again rewrites FocuSD's managed hooks to the current app-data script path and removes older FocuSD hook entries that referenced development paths such as `D:\FocuSD\scripts`. FocuSD hooks under events it no longer writes are removed too, and an event left with no hooks is dropped.
+
+While the approval endpoint runs (approving on the island), Claude Code also gets the approval hooks: an HTTP `PermissionRequest` hook, a `PreToolUse` hook for `AskUserQuestion`, and an activity hook on `PostToolUse`, `PostToolUseFailure`, `PermissionDenied`, `Stop`, `SubagentStop` and `UserPromptSubmit`. The activity hook runs `curl.exe` (part of Windows 10 and 11) in the background (`"async": true`) to post the hook's input to `/claude/activity`; it never delays Claude Code, and with the island closed it gives up after a second. It lets the island close a card whose request was already answered in the terminal (docs/architecture/agent-island-interaction.md, 第 2 条). Installs from before 2026-11-07 lack it and show as needing repair.
 
 ## Runtime Contract
 

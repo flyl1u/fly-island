@@ -14,8 +14,14 @@ pub(crate) struct ApprovalHook {
     pub url: String,
     /// Where the AskUserQuestion hook posts (roadmap B6 phase 3); None installs no question hook.
     pub question_url: Option<String>,
+    /// Where the activity hook posts (B6.2.7); None installs none.
+    pub activity_url: Option<String>,
     pub token: String,
 }
+
+/// After these the session has moved on, so a card still waiting for it was answered in the
+/// terminal (`agent_approval::decision::Activity`).
+const ACTIVITY_EVENTS: [&str; 6] = ["PostToolUse", "PostToolUseFailure", "PermissionDenied", "Stop", "SubagentStop", "UserPromptSubmit"];
 
 /// The island waits up to 120 s for the user (`agent_approval::WAIT_LIMIT`); the hook waits
 /// longer, so the island hands the request back before Claude Code gives up on it.
@@ -148,8 +154,43 @@ pub(super) fn claude_code_installed_entries(
             }
             entries.push(("PreToolUse", question));
         }
+        if let Some(activity_url) = &approval.activity_url {
+            for event_name in ACTIVITY_EVENTS {
+                entries.push((event_name, claude_code_activity_hook_entry(activity_url, &approval.token)));
+            }
+        }
     }
     entries
+}
+
+/// Tells the island the session moved on (B6.2.7). A command hook in the background rather than
+/// an HTTP hook: it runs after every tool call, and with the island closed Windows takes about 2 s
+/// to refuse a local connection, which Claude Code would otherwise wait for. curl.exe ships with
+/// Windows 10 and 11; it sends the hook's stdin as the body and prints nothing.
+fn claude_code_activity_hook_entry(url: &str, token: &str) -> Value {
+    let args = [
+        "-s",
+        "-o",
+        "NUL",
+        "--connect-timeout",
+        "1",
+        "-m",
+        "5",
+        "-H",
+        &format!("Authorization: Bearer {token}"),
+        "-H",
+        "Content-Type: application/json",
+        "-H",
+        &format!("{APPROVAL_HOOK_MARKER_HEADER}: {FOCUSD_AGENT_HOOK_SIGNATURE}activity"),
+        "--data-binary",
+        "@-",
+        url,
+    ];
+    let mut entry = claude_code_hook_entry("curl.exe", args.iter().map(|arg| arg.to_string()).collect(), 10);
+    if let Some(hook) = entry["hooks"][0].as_object_mut() {
+        hook.insert("async".to_string(), Value::Bool(true));
+    }
+    entry
 }
 
 /// An HTTP hook that holds a request for the island's card (roadmap B6 phases 2 and 3).
@@ -184,6 +225,18 @@ pub(super) fn install_claude_code_hook_events(
         }
         if let Some(Value::Array(list)) = hooks.get_mut(event_name) {
             list.push(entry);
+        }
+    }
+    // FocuSD hooks under events this install no longer writes (the approval and activity hooks
+    // when the endpoint is not running): dropped, and the event too when nothing is left.
+    let others: Vec<String> = hooks.keys().filter(|name| !cleared.contains(&name.as_str())).cloned().collect();
+    for event_name in others {
+        if !matches!(hooks.get(&event_name), Some(Value::Array(list)) if list.iter().any(value_contains_focusd_hook_signature)) {
+            continue;
+        }
+        let kept = unmanaged_entries(hooks, &event_name);
+        if !kept.is_empty() {
+            hooks.insert(event_name, Value::Array(kept));
         }
     }
 }
@@ -363,6 +416,7 @@ mod tests {
         let approval = |port: u16| ApprovalHook {
             url: format!("http://127.0.0.1:{port}/claude/permission-request"),
             question_url: Some(format!("http://127.0.0.1:{port}/claude/ask-user-question")),
+            activity_url: Some(format!("http://127.0.0.1:{port}/claude/activity")),
             token: "t".to_string(),
         };
         let mine = json!({ "hooks": [{ "type": "command", "command": "my-own-hook" }] });
@@ -394,9 +448,21 @@ mod tests {
         assert_eq!(question["timeout"], json!(APPROVAL_HOOK_TIMEOUT_SECONDS));
         assert!(value_contains_focusd_hook_signature(question));
 
+        // The activity hook: in the background, posting stdin to the new address, after each status hook.
+        for event in ACTIVITY_EVENTS {
+            let activity = &hooks[event].as_array().unwrap().last().unwrap()["hooks"][0];
+            assert_eq!((activity["command"].as_str(), activity["async"].as_bool()), (Some("curl.exe"), Some(true)), "{event}");
+            assert_eq!(activity["args"].as_array().unwrap().last(), Some(&json!("http://127.0.0.1:51000/claude/activity")));
+            assert!(activity["args"].as_array().unwrap().contains(&json!("@-")) && value_contains_focusd_hook_signature(activity));
+        }
+        assert_eq!(hooks["Stop"].as_array().unwrap().len(), 2, "the status hook and one activity hook");
+        assert_eq!(hooks["PostToolUse"].as_array().unwrap().len(), 1);
+
         // Without the endpoint only the status hooks are written, and the old approval hooks go.
         install_claude_code_hook_events(&mut hooks, claude_code_installed_entries(running, status, None));
         assert_eq!(hooks["PermissionRequest"].as_array().unwrap().len(), 2);
         assert_eq!(hooks["PreToolUse"].as_array().unwrap().len(), 1);
+        assert_eq!(hooks["Stop"].as_array().unwrap().len(), 1);
+        assert!(hooks.get("PostToolUse").is_none() && hooks.get("PermissionDenied").is_none(), "emptied events are dropped");
     }
 }

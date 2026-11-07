@@ -5,7 +5,7 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use super::decision::{Agent, Answers, Decision, HookInput, Kind};
+use super::decision::{Activity, Agent, Answers, Decision, HookInput, Kind, Settled};
 
 /// A request as the island's card shows it (event `agent-approval-requested`).
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -22,6 +22,9 @@ pub struct ApprovalRequest {
     pub permission_suggestions: Option<Value>,
     /// Unix milliseconds.
     pub received_at: i64,
+    /// The subagent that asked; None for the main agent. Not shown, only matched (B6.2.7).
+    #[serde(skip)]
+    pub agent_id: Option<String>,
 }
 
 /// Why a card went away (event `agent-approval-closed`).
@@ -38,6 +41,8 @@ pub(crate) enum CloseReason {
     HandedBack,
     /// The island quit: handed back to the terminal.
     Shutdown,
+    /// The session went on without the island (the user answered in the terminal).
+    AnsweredElsewhere,
 }
 
 /// The user's answer, waiting for the request's thread to pick it up.
@@ -52,6 +57,8 @@ pub(super) struct Outcome {
 struct Entry {
     request: ApprovalRequest,
     outcome: Option<Outcome>,
+    /// Answered without the island; the request's thread closes the card.
+    elsewhere: bool,
 }
 
 #[derive(Default)]
@@ -75,10 +82,51 @@ impl Queue {
             tool_input: input.tool_input,
             permission_suggestions: input.permission_suggestions,
             received_at,
+            agent_id: input.agent_id,
         };
         let shown = !self.entries.iter().any(|entry| same_session(&entry.request, &request));
-        self.entries.push(Entry { request: request.clone(), outcome: None });
+        self.entries.push(Entry { request: request.clone(), outcome: None, elsewhere: false });
         (request, shown)
+    }
+
+    /// `agent`'s session did `activity`, so what it waited for was answered elsewhere. A finished
+    /// turn settles all of that agent's requests; a tool call settles the oldest request for the
+    /// same call, or, when none has exactly that input, the only request for that tool. Returns
+    /// the ids settled now; the island answers them with `{}`, which the agent no longer reads.
+    pub fn settle_elsewhere(&mut self, agent: Agent, activity: &Activity) -> Vec<u64> {
+        let open = |entry: &&mut Entry| {
+            let request = &entry.request;
+            entry.outcome.is_none()
+                && !entry.elsewhere
+                && request.agent == agent
+                && request.session_id == activity.session_id
+                && request.agent_id == activity.agent_id
+        };
+        let mut settled: Vec<u64> = Vec::new();
+        match &activity.settled {
+            Settled::Turn => {
+                for entry in self.entries.iter_mut().filter(|entry| open(entry)) {
+                    entry.elsewhere = true;
+                    settled.push(entry.request.id);
+                }
+            }
+            Settled::ToolCall { tool_name, tool_input } => {
+                let same_tool: Vec<&mut Entry> =
+                    self.entries.iter_mut().filter(|entry| open(entry) && entry.request.tool_name == *tool_name).collect();
+                let exact = same_tool.iter().position(|entry| entry.request.tool_input == *tool_input);
+                let index = exact.or((same_tool.len() == 1).then_some(0));
+                if let Some(entry) = index.and_then(|index| same_tool.into_iter().nth(index)) {
+                    entry.elsewhere = true;
+                    settled.push(entry.request.id);
+                }
+            }
+        }
+        settled
+    }
+
+    /// Whether `id` was answered without the island.
+    pub fn answered_elsewhere(&self, id: u64) -> bool {
+        self.entries.iter().any(|entry| entry.request.id == id && entry.elsewhere)
     }
 
     /// Records the user's choice for a shown request. A question takes answers or a hand-back;

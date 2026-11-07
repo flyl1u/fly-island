@@ -494,10 +494,11 @@ pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
 /// Where Claude Code's approval hook posts; None when the endpoint did not start, and then only
 /// the status hooks are installed.
 fn approval_hook() -> Option<claude_hooks::ApprovalHook> {
-    use crate::agent_approval::{endpoint, hook_url, question_hook_url, Agent};
+    use crate::agent_approval::{activity_hook_url, endpoint, hook_url, question_hook_url, Agent};
     Some(claude_hooks::ApprovalHook {
         url: hook_url(Agent::ClaudeCode)?,
         question_url: question_hook_url(),
+        activity_url: activity_hook_url(),
         token: endpoint()?.token,
     })
 }

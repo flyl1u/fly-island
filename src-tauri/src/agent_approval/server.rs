@@ -15,7 +15,7 @@ use std::{
 };
 
 use super::{
-    decision::{hook_response, question_response, route, Decision, HookInput, Kind},
+    decision::{hook_response, question_response, route, Activity, Agent, Decision, HookInput, Kind, ACTIVITY_PATH},
     http::{check_access, read_request, write_response, HttpError},
     queue::{ApprovalRequest, CloseReason, Outcome, Queue},
 };
@@ -64,6 +64,15 @@ impl Shared {
 
     pub fn pending(&self) -> Vec<ApprovalRequest> {
         self.queue().shown()
+    }
+
+    /// The session moved on without the island: its waiting threads close their cards.
+    pub fn settle_elsewhere(&self, agent: Agent, activity: &Activity) -> Vec<u64> {
+        let settled = self.queue().settle_elsewhere(agent, activity);
+        if !settled.is_empty() {
+            self.changed.notify_all();
+        }
+        settled
     }
 
     /// Hands every waiting request back to the terminal, waiting a moment for the answers to go out.
@@ -132,8 +141,19 @@ fn answer(shared: &Shared, stream: &TcpStream, port: u16) -> Result<Option<Strin
     if request.method != "POST" {
         return Err(HttpError { status: 405, message: "Only POST is accepted." });
     }
-    let (agent, kind) = route(&request.path).ok_or(HttpError { status: 404, message: "Unknown path." })?;
+    let route = route(&request.path);
+    if route.is_none() && request.path != ACTIVITY_PATH {
+        return Err(HttpError { status: 404, message: "Unknown path." });
+    }
     check_access(&request, &shared.token, port)?;
+    let Some((agent, kind)) = route else {
+        // ACTIVITY_PATH: answered at once; the hook runs in the background and reads nothing back.
+        let activity = Activity::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
+        if let Some(activity) = activity {
+            shared.settle_elsewhere(Agent::ClaudeCode, &activity);
+        }
+        return Ok(Some("{}".to_string()));
+    };
     let input = HookInput::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
 
     // A question comes through PermissionRequest too, after its PreToolUse hook gave it back
@@ -186,6 +206,9 @@ fn wait(shared: &Shared, stream: &TcpStream, id: u64, deadline: Instant) -> (Opt
             if let Some(outcome) = queue.outcome(id) {
                 let reason = if outcome.decision == Decision::Terminal { CloseReason::HandedBack } else { CloseReason::Decided };
                 return (Some(outcome), reason);
+            }
+            if queue.answered_elsewhere(id) {
+                return (None, CloseReason::AnsweredElsewhere);
             }
             if queue.is_shutting_down() {
                 return (None, CloseReason::Shutdown);

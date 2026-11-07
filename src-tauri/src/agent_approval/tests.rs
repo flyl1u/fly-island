@@ -9,7 +9,7 @@ use std::{
 use serde_json::{json, Value};
 
 use super::config::{is_valid_token, load_config};
-use super::decision::{hook_response, question_response, route, Agent, Answers, Decision, HookInput, Kind};
+use super::decision::{hook_response, question_response, route, Activity, Agent, Answers, Decision, HookInput, Kind, Settled};
 use super::http::{check_access, read_request, HttpRequest};
 use super::queue::{CloseReason, Outcome, Queue};
 use super::server::{listen, ApprovalEvent, Shared};
@@ -376,4 +376,106 @@ fn questions_handed_back_or_off_the_path_go_to_the_terminal() {
     server.shared.set_enabled(false);
     assert_eq!(question(&question_body("s3")), (200, "{}".to_string()));
     assert_eq!(server.requested().len(), 2);
+}
+
+fn activity_body(session: &str, event: &str, tool: &str, command: &str, agent_id: Option<&str>) -> String {
+    let mut body = json!({ "session_id": session, "hook_event_name": event, "tool_name": tool, "tool_input": { "command": command } });
+    if let Some(agent_id) = agent_id {
+        body["agent_id"] = json!(agent_id);
+    }
+    body.to_string()
+}
+
+fn activity(session: &str, event: &str, tool: &str, command: &str, agent_id: Option<&str>) -> Activity {
+    Activity::parse(activity_body(session, event, tool, command, agent_id).as_bytes()).unwrap().unwrap()
+}
+
+/// A permission request of session `session` for the Bash `command`, from subagent `agent_id`.
+fn bash_input(session: &str, command: &str, agent_id: Option<&str>) -> HookInput {
+    let mut body: Value = serde_json::from_str(&hook_body(session, "Bash")).unwrap();
+    body["tool_input"] = json!({ "command": command });
+    if let Some(agent_id) = agent_id {
+        body["agent_id"] = json!(agent_id);
+    }
+    HookInput::parse(body.to_string().as_bytes()).unwrap()
+}
+
+#[test]
+fn activity_says_which_requests_it_settles() {
+    assert!(Activity::parse(b"not json").is_err());
+    assert!(Activity::parse(br#"{ "hook_event_name": "Stop" }"#).is_err(), "no session");
+    assert_eq!(Activity::parse(activity_body("s", "PreToolUse", "Bash", "x", None).as_bytes()).unwrap(), None);
+    assert_eq!(Activity::parse(br#"{ "session_id": "s", "hook_event_name": "SubagentStop" }"#).unwrap(), None, "whose turn?");
+    let done = activity("s", "PostToolUse", "Bash", "x", Some("a1"));
+    assert_eq!(done.agent_id.as_deref(), Some("a1"));
+    assert_eq!(done.settled, Settled::ToolCall { tool_name: "Bash".into(), tool_input: json!({ "command": "x" }) });
+    for event in ["PostToolUseFailure", "PermissionDenied"] {
+        assert!(matches!(activity("s", event, "Bash", "x", None).settled, Settled::ToolCall { .. }), "{event}");
+    }
+    // Stop and a new prompt belong to the main agent whatever else the input says.
+    assert_eq!(activity("s", "Stop", "", "", Some("a1")).agent_id, None);
+    assert_eq!(activity("s", "UserPromptSubmit", "", "", None).settled, Settled::Turn);
+    assert_eq!(activity("s", "SubagentStop", "", "", Some("a1")).agent_id.as_deref(), Some("a1"));
+}
+
+#[test]
+fn a_session_that_moved_on_settles_only_its_own_requests() {
+    let mut queue = Queue::default();
+    let (one, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("s", "one", None), 1);
+    let (two, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("s", "two", None), 2);
+    let (sub, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("s", "one", Some("a1")), 3);
+    let (other, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("t", "one", None), 4);
+    let (codex, _) = queue.push(Agent::Codex, Kind::Permission, bash_input("s", "one", None), 5);
+
+    // The call that ran: exactly that request, not the subagent's twin, another session's or Codex's.
+    assert_eq!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "PostToolUse", "Bash", "one", None)), vec![one.id]);
+    assert!(queue.answered_elsewhere(one.id) && !queue.answered_elsewhere(sub.id));
+    // Settled once: the next event finds the only Bash request left, by its tool alone.
+    assert_eq!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "PostToolUse", "Bash", "changed", None)), vec![two.id]);
+    // Another tool settles nothing.
+    assert!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "PostToolUse", "Write", "one", None)).is_empty());
+    // A decision on the island wins over a later activity.
+    queue.decide(other.id, out(Decision::Allow, None)).unwrap();
+    assert!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("t", "Stop", "", "", None)).is_empty());
+    // The main agent's turn ending leaves the subagent's request; the subagent's ending settles it.
+    assert!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "Stop", "", "", None)).is_empty());
+    assert_eq!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "SubagentStop", "", "", Some("a1"))), vec![sub.id]);
+    assert!(!queue.answered_elsewhere(codex.id));
+}
+
+#[test]
+fn ambiguous_tool_calls_settle_nothing_but_a_finished_turn_settles_all() {
+    let mut queue = Queue::default();
+    let (a, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("s", "a", None), 1);
+    let (b, _) = queue.push(Agent::ClaudeCode, Kind::Permission, bash_input("s", "b", None), 2);
+    assert!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "PostToolUse", "Bash", "c", None)).is_empty());
+    assert_eq!(queue.settle_elsewhere(Agent::ClaudeCode, &activity("s", "UserPromptSubmit", "", "", None)), vec![a.id, b.id]);
+}
+
+#[test]
+fn an_answer_in_the_terminal_takes_the_card_away_and_shows_the_next() {
+    let server = TestServer::start(Duration::from_secs(30));
+    let first = server.post_later("s1");
+    server.wait_for(|server| server.requested().len() == 1);
+    let second = server.post_later("s1");
+    thread::sleep(Duration::from_millis(300));
+    let post = |token: &str, body: &str| send(server.port, &raw_request(server.port, "/claude/activity", token, "", body));
+
+    assert_eq!(post("wrong", &activity_body("s1", "PostToolUse", "Bash", "cmd /c echo hi", None)).0, 401);
+    assert_eq!(post(TOKEN, "{}").0, 400);
+    // Other events, and other sessions, change nothing.
+    assert_eq!(post(TOKEN, &activity_body("s1", "PreToolUse", "Bash", "cmd /c echo hi", None)), (200, "{}".into()));
+    assert_eq!(post(TOKEN, &activity_body("s2", "PostToolUse", "Bash", "cmd /c echo hi", None)), (200, "{}".into()));
+    thread::sleep(Duration::from_millis(300));
+    assert!(server.closed().is_empty());
+
+    // The user allowed the first call in the terminal and it ran.
+    assert_eq!(post(TOKEN, &activity_body("s1", "PostToolUse", "Bash", "cmd /c echo hi", None)).0, 200);
+    assert_eq!(first.join().unwrap(), (200, "{}".into()), "the open hook connection gets an empty answer");
+    server.wait_for(|server| server.requested().len() == 2);
+    assert_eq!(server.closed()[0], (server.requested()[0].0, CloseReason::AnsweredElsewhere));
+    // The turn ended while the second still showed.
+    post(TOKEN, &activity_body("s1", "Stop", "", "", None));
+    assert_eq!(second.join().unwrap(), (200, "{}".into()));
+    assert!(server.shared.pending().is_empty());
 }

@@ -29,7 +29,8 @@ export type AgentApprovalRequest = {
  * Why a card went away: decided on the island, waited past the limit (back to the terminal),
  * the agent hung up (Esc in the terminal), handed back to the terminal, or the island quit.
  */
-export type AgentApprovalCloseReason = "decided" | "timeout" | "disconnected" | "handedBack" | "shutdown";
+/** answeredElsewhere: the session went on without the island (answered in the terminal). */
+export type AgentApprovalCloseReason = "decided" | "timeout" | "disconnected" | "handedBack" | "shutdown" | "answeredElsewhere";
 
 export type AgentApprovalClosed = { id: number; reason: AgentApprovalCloseReason };
 

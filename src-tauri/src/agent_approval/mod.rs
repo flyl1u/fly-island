@@ -3,7 +3,10 @@
 //! hook, and Codex's through a forwarding command hook, post to an endpoint on 127.0.0.1 and wait;
 //! the island shows a card and answers with the user's choice. While the hook waits the terminal
 //! shows no prompt, so every way out (a limit, "handle in terminal", the island quitting) gives
-//! the decision back to the agent, which then asks in the terminal as usual.
+//! the decision back to the agent, which then asks in the terminal as usual. Newer Claude Code
+//! versions show their own prompt while the hook waits and leave the hook's connection open once
+//! the user answers there; an activity hook (`PostToolUse`, `Stop`, ...) tells the island, which
+//! then closes the card (B6.2.7).
 //! Test results behind this: docs/architecture/agent-island-interaction-tasks.md, 实测记录.
 
 mod config;
@@ -102,6 +105,12 @@ pub(crate) fn hook_url(agent: Agent) -> Option<String> {
 /// The URL Claude Code's `PreToolUse` hook for `AskUserQuestion` posts to (phase 3).
 pub(crate) fn question_hook_url() -> Option<String> {
     endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, decision::QUESTION_PATH))
+}
+
+/// The URL Claude Code's activity hook posts to: tool calls done and turns ended, which close the
+/// cards of requests answered in the terminal (B6.2.7).
+pub(crate) fn activity_hook_url() -> Option<String> {
+    endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, decision::ACTIVITY_PATH))
 }
 
 fn service() -> Result<&'static Service, String> {

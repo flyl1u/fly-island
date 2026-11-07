@@ -133,6 +133,16 @@ try {
   await wait(50);
   check(current() === null && island.mode === "collapsed", "Agent 那边断开（按了 Esc）时撤掉卡片");
 
+  await send(request("e1", "s1"));
+  await send(request("e2", "s2"));
+  await wait(50);
+  await close("e1", "answeredElsewhere");
+  await wait(50);
+  check(current() === "e2" && !decisions.some((decision) => decision.startsWith("e1:")), "终端里已经答了的请求撤掉卡片，不再发决定，下一个顶上");
+  await close("e2", "answeredElsewhere");
+  await wait(50);
+  check(current() === null && island.mode === "collapsed", "全在终端答完后，由卡片打开的岛屿收起");
+
   await send(request("t1", "s1"));
   await wait(APPROVAL_ARM_MS + 50);
   await click(button("到终端"));
