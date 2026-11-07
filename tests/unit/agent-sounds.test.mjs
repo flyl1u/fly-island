@@ -67,6 +67,17 @@ test("a CESP-style list maps categories, and approval doubles as question", () =
   });
 });
 
+test("context, usage and reset categories land on their own events; unknown ones are left out", () => {
+  const names = ["06-resource-limit", "08-usage-warning", "09-usage-reset", "10-reset-card", "11-user-spam"];
+  const categories = ["resource.limit", "usage.warning", "usage.reset", "reset.card", "user.spam"];
+  const files = names.map((name) => `rec/${name}.wav`);
+  const manifest = { path: "rec/manifest.json", text: JSON.stringify(names.map((name, at) => ({ file: `${name}.wav`, cesp_category: categories[at] }))) };
+  const expected = { compact: "rec/06-resource-limit.wav", quotaLow: "rec/08-usage-warning.wav", quotaReset: "rec/09-usage-reset.wav" };
+  assert.deepEqual(planSoundPack("rec", files, [manifest]).sounds, expected);
+  // The same folder without its manifest: the file names alone give the same events.
+  assert.deepEqual(planSoundPack("rec", files, []).sounds, expected);
+});
+
 test("without a manifest, file names give the events; a folder without sounds is refused", () => {
   const plan = planSoundPack("p", ["p/Task_Complete.mp3", "p/error.ogg", "p/readme.txt"], []);
   assert.deepEqual(plan.sounds, { complete: "p/Task_Complete.mp3", error: "p/error.ogg" });

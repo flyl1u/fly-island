@@ -15,8 +15,11 @@ const CESP_EVENTS: Record<string, AgentSoundEvent> = {
   "input.required": "approval",
   "input.question": "question",
   "task.acknowledge": "ack",
-  "resource.limit": "quotaLow",
+  // The context window filling up, not the subscription's usage.
+  "resource.limit": "compact",
   "idle.reminder": "idle",
+  "usage.warning": "quotaLow",
+  "usage.reset": "quotaReset",
 };
 
 /** Words in a file name that give away its event, checked in this order. */
@@ -27,10 +30,11 @@ const NAME_HINTS: [AgentSoundEvent, string[]][] = [
   ["question", ["question", "ask"]],
   ["approval", ["input-required", "approval", "permission"]],
   ["ack", ["task-acknowledge", "acknowledge", "ack"]],
-  ["compact", ["compact", "context"]],
+  ["compact", ["resource-limit", "compact", "context"]],
   ["idle", ["idle"]],
-  ["quotaReset", ["quota-reset", "reset"]],
-  ["quotaLow", ["resource-limit", "quota", "limit"]],
+  // Not plain "reset": other packs have sounds such as "reset-card".
+  ["quotaReset", ["usage-reset", "quota-reset"]],
+  ["quotaLow", ["usage-warning", "quota-low", "quota"]],
 ];
 
 export type SoundPackPlan = {

@@ -216,6 +216,22 @@ pub async fn remove_sound_pack(app: AppHandle, id: String) -> Result<(), String>
     fs::remove_dir_all(&dir).map_err(|error| format!("无法删除音效包：{error}"))
 }
 
+/// Opens a pack's folder in File Explorer: the imported copy, or the plugin's own folder. Takes
+/// only the id, so nothing but a listed pack's folder can be opened.
+#[tauri::command]
+pub async fn open_sound_pack_folder(app: AppHandle, id: String) -> Result<(), String> {
+    let dir = if id.starts_with(PLUGIN_PACK_PREFIX) {
+        find_plugin_pack(&id).ok_or("找不到这个音效包，插件可能已关闭或卸载。")?.1
+    } else if is_valid_id(&id) {
+        let dir = packs_dir(&app)?.join(&id);
+        read_pack(&dir).ok_or("找不到这个音效包。")?;
+        dir
+    } else {
+        return Err("音效包 id 无效。".into());
+    };
+    tauri_plugin_opener::open_path(&dir, None::<&str>).map_err(|error| format!("无法打开文件夹：{error}"))
+}
+
 /// One sound file of an imported pack, as raw bytes. Only files the pack's manifest lists are served.
 #[tauri::command]
 pub async fn read_sound_pack_file(app: AppHandle, id: String, file: String) -> Result<Response, String> {

@@ -28,6 +28,7 @@ export type SettingsSoundsText = {
   importing: string;
   imported: (name: string) => string;
   removePack: string;
+  openFolder: string;
   /** On a pack an installed plugin brings; it is removed on the plugin page. */
   fromPlugin: string;
   confirmRemove: (name: string) => string;
@@ -73,6 +74,7 @@ export const zhCN: SettingsSoundsText = {
   importing: "正在导入…",
   imported: (name) => `已导入「${name}」。`,
   removePack: "删除",
+  openFolder: "打开文件夹",
   fromPlugin: "来自插件，在插件页关闭或卸载",
   confirmRemove: (name) => `删除音效包「${name}」？`,
   noSounds: "这个文件夹里没有认得出的音效。音效包需要 focusd-sound-pack.json，或者文件名里带事件名（如 task-complete.wav）。",
@@ -117,6 +119,7 @@ export const en: SettingsSoundsText = {
   importing: "Importing…",
   imported: (name) => `Imported "${name}".`,
   removePack: "Remove",
+  openFolder: "Open folder",
   fromPlugin: "From a plugin; switch it off or uninstall it on the Plugins page",
   confirmRemove: (name) => `Remove the sound pack "${name}"?`,
   noSounds: "No sounds found in this folder. A pack needs a focusd-sound-pack.json, or event names in its file names (such as task-complete.wav).",

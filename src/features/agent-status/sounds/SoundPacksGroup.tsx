@@ -4,7 +4,7 @@ import { SettingsGroup } from "../../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../../components/settings/SettingsRow";
 import { useLocale, useTranslation } from "../../../i18n";
-import { importSoundPack, removeSoundPack, soundPackName, type SoundPack, type SoundPackImport } from "./api";
+import { importSoundPack, openSoundPackFolder, removeSoundPack, soundPackName, type SoundPack, type SoundPackImport } from "./api";
 import { AGENT_SOUND_EVENTS } from "./events";
 import { planSoundPack } from "./packManifest";
 import "./SoundPacksGroup.css";
@@ -68,6 +68,10 @@ export function SoundPacksGroup({
       .catch((error: unknown) => setStatus({ kind: "error", text: String(error) }));
   };
 
+  const openFolder = (pack: SoundPack) => {
+    void openSoundPackFolder(pack.id).catch((error: unknown) => setStatus({ kind: "error", text: String(error) }));
+  };
+
   const footer = (
     <>
       <p>{text.packsFooter}</p>
@@ -85,7 +89,13 @@ export function SoundPacksGroup({
           title={soundPackName(pack, locale)}
           description={[text.packMeta(pack.author, pack.license, Object.keys(pack.sounds).length), pack.fromPlugin && text.fromPlugin].filter(Boolean).join(" · ")}
           control={
-            pack.fromPlugin ? undefined : <SettingsLinkButton tone="danger" onClick={() => remove(pack)}>{text.removePack}</SettingsLinkButton>
+            <span className="sound-packs__actions">
+              <SettingsLinkButton onClick={() => openFolder(pack)}>
+                <FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />
+                {text.openFolder}
+              </SettingsLinkButton>
+              {!pack.fromPlugin && <SettingsLinkButton tone="danger" onClick={() => remove(pack)}>{text.removePack}</SettingsLinkButton>}
+            </span>
           }
         />
       ))}

@@ -551,6 +551,7 @@ macro_rules! tauri_commands {
             crate::agent_status::sound_packs::import_sound_pack,
             crate::agent_status::sound_packs::remove_sound_pack,
             crate::agent_status::sound_packs::read_sound_pack_file,
+            crate::agent_status::sound_packs::open_sound_pack_folder,
             crate::agent_status::approval_hotkeys::set_agent_approval_hotkeys,
         ] $($rest)*)
     };

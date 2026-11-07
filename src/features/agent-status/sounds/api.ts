@@ -40,6 +40,11 @@ export function removeSoundPack(id: string) {
   return invoke<void>("remove_sound_pack", { id });
 }
 
+/** Opens the pack's folder in File Explorer (an imported pack's copy, or the plugin's folder). */
+export function openSoundPackFolder(id: string) {
+  return invoke<void>("open_sound_pack_folder", { id });
+}
+
 /** The raw bytes of one file in an imported pack. */
 export function readSoundPackFile(id: string, file: string) {
   return invoke<ArrayBuffer>("read_sound_pack_file", { id, file });
