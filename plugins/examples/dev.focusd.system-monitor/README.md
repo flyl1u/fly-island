@@ -32,7 +32,14 @@
 
 自定义界面页面（`webview`）和收起条上的列（`status.update` 的 `cells`，能力 `statusCells`；旧版岛屿只显示文字）。
 
+## 作者
+
+ShengLin1001 在 [TixXin/fly-island#7](https://github.com/TixXin/fly-island/pull/7) 里把系统监控做成了岛屿的内置功能，监控页的版式、样式和收起条的设计都来自那里。TixXin 把它改成了市场插件：读取部分用 PowerShell 重写，收起条改用插件接口 `status.update` 的列。
+
 ## English
+
+Designed by ShengLin1001 as a built-in feature in TixXin/fly-island#7; turned into a market plugin by TixXin (data reading rewritten in PowerShell, the bar drawn through `status.update` cells).
+
 
 Adds a System page: CPU load with a minute of history, one bar per logical core and the CPU temperature; GPU load, temperature, memory and power (NVIDIA only); memory; download and upload speed; the battery; and the five programs using the most CPU or memory. Tick the plugin's settings to show CPU load, memory, CPU or GPU temperature as small columns on the collapsed bar; they turn yellow and red as they climb.
 
