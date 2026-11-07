@@ -91,7 +91,12 @@ export type AgentSessionSummary = {
   remoteHost?: string;
   /** Compacting its context now (Claude Code PreCompact / PostCompact hooks). Missing from older builds. */
   compacting?: boolean;
+  /** The agent's own task list while some of it is left (TodoProgress in todo_list.rs). Missing from older builds. */
+  todos?: AgentTodoProgress | null;
 };
+
+/** Mirrors TodoProgress in src-tauri/src/agent_status/todo_list.rs. */
+export type AgentTodoProgress = { done: number; total: number; current: string | null };
 
 /** Mirrors ReplyMarker::name in src-tauri/src/agent_status/reply_marker.rs. */
 export type ReplyMarker = "yourTurn" | "background" | "done";

@@ -30,6 +30,7 @@ mod tests;
 mod session_scan;
 mod sessions;
 mod title;
+mod todo_list;
 mod tool_call;
 mod usage;
 mod wezterm;

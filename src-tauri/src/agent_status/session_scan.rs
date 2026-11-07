@@ -323,6 +323,7 @@ fn summary_from(
         background_tasks: parsed.background_tasks,
         // Set by `list_sessions`.
         compacting: false,
+        todos: parsed.todos,
     }
 }
 

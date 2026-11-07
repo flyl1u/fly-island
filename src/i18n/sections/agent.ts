@@ -29,6 +29,10 @@ export type AgentText = {
     /** Badges for the modes in which a session acts without asking; the default mode has none. */
     permissionModes: Record<"auto" | "bypass" | "acceptEdits" | "plan", string>;
     subagents: (count: number) => string;
+    /** The agent's own task list (roadmap B6.5.4): steps done of all, and the step running. */
+    todos: (done: number, total: number) => string;
+    todosCurrent: (step: string) => string;
+    backgroundTasks: (count: number) => string;
     remove: (title: string) => string;
     remoteOnly: (host: string) => string;
     removed: string;
@@ -109,6 +113,9 @@ export const zhCN: AgentText = {
     elapsedDone: (duration) => `用时 ${duration}`,
     permissionModes: { auto: "自动", bypass: "跳过确认", acceptEdits: "自动改文件", plan: "计划" },
     subagents: (count) => `${count} 个子 Agent`,
+    todos: (done, total) => `${done}/${total} 步`,
+    todosCurrent: (step) => `正在：${step}`,
+    backgroundTasks: (count) => `${count} 个后台任务`,
     remove: (title) => `归档「${title}」`,
     remoteOnly: (host) => `在 ${host} 上运行，这里没有它的窗口`,
     removed: "已归档",
@@ -181,6 +188,9 @@ export const en: AgentText = {
     elapsedDone: (duration) => `took ${duration}`,
     permissionModes: { auto: "Auto", bypass: "Bypass", acceptEdits: "Accept edits", plan: "Plan" },
     subagents: (count) => (count === 1 ? "1 subagent" : `${count} subagents`),
+    todos: (done, total) => `${done}/${total} steps`,
+    todosCurrent: (step) => `Now: ${step}`,
+    backgroundTasks: (count) => (count === 1 ? "1 background task" : `${count} background tasks`),
     remove: (title) => `Archive "${title}"`,
     remoteOnly: (host) => `Runs on ${host}; no window here`,
     removed: "Archived",

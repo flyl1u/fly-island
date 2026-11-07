@@ -184,6 +184,12 @@ export function AgentSessionsPanel({
             showPhase && phaseLabel,
             elapsed && <SessionElapsed key="elapsed" session={session} />,
             active && session.subagents ? t.agent.sessions.subagents(session.subagents) : null,
+            session.todos && (
+              <span key="todos" className="agent-session__todos" title={session.todos.current ? t.agent.sessions.todosCurrent(session.todos.current) : undefined}>
+                {t.agent.sessions.todos(session.todos.done, session.todos.total)}
+              </span>
+            ),
+            session.backgroundTasks ? t.agent.sessions.backgroundTasks(session.backgroundTasks) : null,
             showAge && (minutes === 0 ? t.agent.sessions.justNow : t.agent.sessions.minutesAgo(minutes)),
           ]
             .filter(Boolean)

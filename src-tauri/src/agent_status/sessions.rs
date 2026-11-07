@@ -14,6 +14,7 @@ use super::reply_marker::split_reply;
 use super::background_tasks::{ended_tasks, started_tasks};
 use super::reply_text::{asks_user, plain_reply};
 use super::title::{display_title, prompt_title, shorten, user_prompt_in_record};
+use super::todo_list::{claude_todo_list, codex_plan, unfinished, TodoProgress};
 use super::tool_call::{claude_tool_call, codex_tool_call, ToolCall};
 
 /// The latest reply shown under each session: two lines on the Agent page, up to three on an
@@ -60,6 +61,8 @@ pub struct AgentSessionSummary {
     pub(super) background_tasks: u32,
     /// Compacting its context now (PreCompact seen, PostCompact not yet; notifications.rs).
     pub(super) compacting: bool,
+    /// The agent's own task list while some of it is left (todo_list.rs).
+    pub(super) todos: Option<TodoProgress>,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.
@@ -101,6 +104,10 @@ pub(super) struct SessionTail {
     pub(super) subagents: u32,
     /// Background tasks started after the newest prompt that have not ended, however the turn ended.
     pub(super) background_tasks: u32,
+    /// The newest task list in the excerpt, whichever turn wrote it; `None` once it is all done.
+    pub(super) todos: Option<TodoProgress>,
+    /// Whether a task list was found yet (reading from the end, the first one found is the newest).
+    todos_seen: bool,
 }
 
 impl SessionTail {
@@ -221,6 +228,12 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
             if result.current_tool.is_none() && result.last_prompt.is_none() {
                 result.current_tool = claude_tool_call(&message["content"]);
             }
+            if !result.todos_seen {
+                if let Some(list) = claude_todo_list(&message["content"]) {
+                    result.todos_seen = true;
+                    result.todos = unfinished(Some(list));
+                }
+            }
             if result.last_prompt.is_none() {
                 let running = claude_subagent_calls(&message["content"]).filter(|id| !answered.contains(*id)).count();
                 result.subagents += u32::try_from(running).unwrap_or(0);
@@ -322,6 +335,12 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
         // Only tools called after the newest prompt belong to the current turn.
         if kind == "response_item" && result.current_tool.is_none() && result.last_prompt.is_none() {
             result.current_tool = codex_tool_call(payload);
+        }
+        if kind == "response_item" && !result.todos_seen {
+            if let Some(plan) = codex_plan(payload) {
+                result.todos_seen = true;
+                result.todos = unfinished(Some(plan));
+            }
         }
         if kind != "event_msg" {
             continue;

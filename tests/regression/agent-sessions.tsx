@@ -325,6 +325,17 @@ async function runChecks() {
     });
     const compacting = rows()[0];
     check(meta(compacting)?.startsWith("正在压缩上下文") && dot(compacting) === "rgb(52, 199, 89)", `压缩上下文时写明，状态灯仍是绿色：${meta(compacting)}`);
+    await act(async () => {
+      const planned = { ...SESSIONS[0], sessionId: "f", subagents: 0, backgroundTasks: 2, todos: { done: 2, total: 5, current: "正在写解析" } };
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[planned]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    const planned = rows()[0];
+    const todos = planned.querySelector<HTMLElement>(".agent-session__todos");
+    check(
+      todos?.textContent === "2/5 步" && todos.title === "正在：正在写解析" && meta(planned)?.includes("2 个后台任务") && planned.getBoundingClientRect().height < 90,
+      `状态行显示任务清单进度和后台任务数，鼠标停上去看正在做的一步，行高不变：${meta(planned)}`,
+    );
     // Last: it swaps the list for one remote row, which the checks above would not find.
     const remote: AgentSessionSummary = {
       ...sessions[0], sessionId: "local-api/r-1", provider: "codex", cwd: "/srv/app", title: "服务器上的会话",
