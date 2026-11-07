@@ -77,6 +77,8 @@ type IslandShellProps = {
   overlay?: ReactNode;
   /** Buttons for plugin pages in the expanded header. */
   pluginPageButtons?: ReactNode;
+  /** Buttons of the open page, first among the window actions. */
+  pageActions?: ReactNode;
   /** A plugin's status text on the collapsed bar. */
   pluginStatusChip?: ReactNode;
   /** Built-in plugins' slots on the collapsed bar. */
@@ -128,6 +130,7 @@ export function IslandShell({
   pageDigitModifiers,
   overlay,
   pluginPageButtons,
+  pageActions,
   pluginStatusChip,
   collapsedSlots,
   children,
@@ -259,6 +262,7 @@ export function IslandShell({
             onMinimize={onMinimize}
             pageDigitModifiers={pageDigitModifiers}
             pluginPageButtons={pluginPageButtons}
+            pageActions={pageActions}
           />
           <div ref={contentRef} className="island__content">{children}</div>
         </div>

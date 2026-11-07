@@ -27,6 +27,7 @@ import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
 import { useQuotaAlert } from "../../features/agent-status/useQuotaAlert";
+import { AgentArrangeButton } from "../../features/agent-status/AgentArrangeButton";
 import { useAgentIndicator } from "./useAgentIndicator";
 import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
@@ -251,6 +252,9 @@ export function IslandApp() {
         overlay={<PluginPermissionPrompt prompts={permissionPrompts} />}
         pluginStatusChip={<PluginStatusSlot views={pluginPages.views} onOpen={openEnabledPage} />}
         collapsedSlots={collapsedSlots}
+        pageActions={page === "agents" && (
+          <AgentArrangeButton sort={settings.agentSessionSort} group={settings.agentSessionGroup} onChange={(patch) => setSettings({ ...settings, ...patch })} />
+        )}
         pluginPageButtons={<PluginPageButtons views={pluginPages.views} page={page} features={features} modifiers={settings.pageDigitModifiers} onOpen={setPage} />}
       >
         <IslandPages

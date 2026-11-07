@@ -3,13 +3,13 @@ import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
-import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionView } from "../appearance/types";
+import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionGroup, AgentSessionSort, AgentSessionView } from "../appearance/types";
 import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentUsageBar } from "./AgentUsageBar";
 import type { AgentUsages } from "./usage";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
-import { groupByComputer, isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { arrangeSessions, isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
 import { shownEffort } from "./effortLabels";
 import { useEffortLabels } from "./useEffortLabels";
 import { SessionBody } from "./SessionBody";
@@ -38,6 +38,8 @@ const AGE_REFRESH_MS = 30_000;
 export function AgentSessionsPanel({
   sessions: listed,
   view = "list",
+  sort = "status",
+  group = "computer",
   archiveMotion = "slide",
   cardEffects = "off",
   hostDisplay,
@@ -54,6 +56,9 @@ export function AgentSessionsPanel({
   sessions: AgentSessionSummary[];
   /** Flat rows (the default), cards framed in their light, or one-line rows (AgentSessionCard). */
   view?: AgentSessionView;
+  /** The order and the headings (sessionList.ts arrangeSessions). */
+  sort?: AgentSessionSort;
+  group?: AgentSessionGroup;
   /** How an archived session leaves: sliding out, or dissolving into dust (useArchiveMotion). */
   archiveMotion?: AgentArchiveMotion;
   /** Light effects on cards and compact rows (AgentCardEffects.css); the list layout has none. */
@@ -168,11 +173,13 @@ export function AgentSessionsPanel({
         data-fade-bottom={list.fade.bottom || undefined}
         onScroll={list.onScroll}
       >
-        {groupByComputer(sessions).flatMap(({ host, sessions: members }, _, groups) => [
-          // Headings only once another computer is listed (never on an alert's card).
-          !reveal && (groups.length > 1 || host !== null) ? (
-            <li key={`computer:${host ?? ""}`} className="agent-sessions__computer" aria-hidden="true">
-              {host ?? t.agent.sessions.thisComputer}
+        {arrangeSessions(sessions, sort, group).flatMap(({ key: groupKey, host, project, sessions: members }, _, groups) => [
+          // By computer, headings only once another computer is listed; never on an alert's card.
+          !reveal && (group === "project" || (group === "computer" && (groups.length > 1 || host !== null))) ? (
+            <li key={`group:${groupKey}`} className="agent-sessions__computer" aria-hidden="true">
+              {group === "project"
+                ? [project ?? t.agent.sessions.noProject, host].filter(Boolean).join(" · ")
+                : host ?? t.agent.sessions.thisComputer}
             </li>
           ) : null,
           ...members.map((session) => {

@@ -87,6 +87,10 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(DEFAULT_SETTINGS.agentSessionView, "list");
   assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "cards");
   assert.equal(normalizeSettings({ agentSessionView: "tiles" }).agentSessionView, "list");
+  assert.equal(DEFAULT_SETTINGS.agentSessionSort, "status");
+  assert.equal(normalizeSettings({ agentSessionSort: "firstSeen" }).agentSessionSort, "firstSeen");
+  assert.equal(normalizeSettings({ agentSessionGroup: "project" }).agentSessionGroup, "project");
+  assert.equal(normalizeSettings({ agentSessionGroup: "tree" }).agentSessionGroup, "computer");
   // Archiving slides out unless the dust is chosen.
   assert.equal(DEFAULT_SETTINGS.agentArchiveMotion, "slide");
   assert.equal(normalizeSettings({ agentArchiveMotion: "dissolve" }).agentArchiveMotion, "dissolve");
@@ -125,15 +129,33 @@ test("plugins rename an agent's effort for display only", () => {
   assert.equal(modelLabel("Opus 5.5", shownEffort("claudeCode", "medium", labels)), "Opus 5.5 · Xhigh");
 });
 
-test("sessions group by computer: this one first, then remote hosts as met", async () => {
-  const { groupByComputer } = await import("../../src/features/agent-status/sessionList.ts");
-  const s = (id, remoteHost) => ({ sessionId: id, ...(remoteHost ? { remoteHost } : {}) });
-  const groups = groupByComputer([s("a", "zcm6"), s("b"), s("c", "nc-e"), s("d", "zcm6")]);
-  assert.deepEqual(groups.map((group) => [group.host, group.sessions.map((session) => session.sessionId)]), [
-    [null, ["b"]],
-    ["zcm6", ["a", "d"]],
-    ["nc-e", ["c"]],
+test("sessions arrange by light or time, under computer, project or no headings", async () => {
+  const { arrangeSessions } = await import("../../src/features/agent-status/sessionList.ts");
+  const s = (id, updatedAt, phase = "completed", extra = {}) => ({ provider: "claudeCode", sessionId: id, phase, updatedAt, cwd: null, ...extra });
+  const ids = (groups) => groups.map((group) => [group.host, group.project, group.sessions.map((session) => session.sessionId)]);
+  const sessions = [
+    s("done", 50),
+    s("asks", 10, "completed", { replyAsks: true }),
+    s("waits", 20, "waiting", { remoteHost: "zcm6", cwd: "/home/u/fly-island" }),
+    s("runs", 40, "running", { cwd: "E:/fly-island-lanes/3" }),
+    s("old", 30, "running", { remoteHost: "nc-e" }),
+  ];
+  assert.deepEqual(ids(arrangeSessions(sessions, "status", "computer")), [
+    [null, null, ["asks", "runs", "done"]],
+    ["zcm6", null, ["waits"]],
+    ["nc-e", null, ["old"]],
   ]);
-  assert.deepEqual(groupByComputer([s("x", "zcm6")]).map((group) => group.host), ["zcm6"]);
-  assert.deepEqual(groupByComputer([]), []);
+  assert.deepEqual(ids(arrangeSessions(sessions, "recent", "none")), [[null, null, ["done", "runs", "old", "waits", "asks"]]]);
+  assert.deepEqual(ids(arrangeSessions(sessions, "status", "project")), [
+    ["zcm6", "fly-island", ["waits"]],
+    [null, null, ["asks", "done"]],
+    [null, "fly-island", ["runs"]],
+    ["nc-e", null, ["old"]],
+  ]);
+  assert.deepEqual(ids(arrangeSessions([s("x", 1, "running", { remoteHost: "zcm6" })], "status", "computer")), [["zcm6", null, ["x"]]]);
+  assert.deepEqual(arrangeSessions([], "status", "computer"), []);
+  // First seen keeps the order a session had when the island first listed it, however it writes after.
+  const first = [s("a", 100), s("b", 200)];
+  assert.deepEqual(ids(arrangeSessions(first, "firstSeen", "none"))[0][2], ["b", "a"]);
+  assert.deepEqual(ids(arrangeSessions([s("a", 900), s("b", 200), s("c", 300)], "firstSeen", "none"))[0][2], ["c", "b", "a"]);
 });

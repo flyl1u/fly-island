@@ -68,7 +68,7 @@ const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
 const render = async (hostDisplay: AgentHostDisplay, cards: { showElapsed?: boolean; showModel?: boolean } = {}) => {
   await act(async () => {
-    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} view={(params.get("view") as AgentSessionView | null) ?? "list"} cardEffects={(params.get("effects") as AgentCardEffects | null) ?? "off"} {...cards} /></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay={hostDisplay} view={(params.get("view") as AgentSessionView | null) ?? "list"} cardEffects={(params.get("effects") as AgentCardEffects | null) ?? "off"} {...cards} /></I18nProvider></StrictMode>);
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
@@ -108,7 +108,7 @@ async function runChecks() {
     const dimTitle = titleTone(third);
     const seenKeys: string[] = [];
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" unseen={{ keys: new Set(["claudeCode:c"]), markSeen: (session) => seenKeys.push(session.sessionId) }} /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" unseen={{ keys: new Set(["claudeCode:c"]), markSeen: (session) => seenKeys.push(session.sessionId) }} /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     check(third.classList.contains("agent-session--unseen") && titleTone(third) === titleTone(first) && titleTone(third) !== dimTitle && !first.classList.contains("agent-session--unseen"), "跑完还没看的会话标题保持亮色，看过的才变灰");
@@ -125,7 +125,7 @@ async function runChecks() {
     let undone = 0;
     const renderRemoval = async (removed: AgentSessionSummary | null) => {
       await act(async () => {
-        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both"
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both"
           removal={{ remove: (session) => removedIds.push(session.sessionId), removed, undo: () => { undone += 1; } }} /></I18nProvider></StrictMode>);
         await new Promise((resolve) => setTimeout(resolve, 20));
       });
@@ -214,7 +214,7 @@ async function runChecks() {
     check(!document.querySelector(".agent-session__elapsed") && !document.querySelector(".agent-session__model"), "可以关掉运行时长和模型");
     await act(async () => {
       const turnJustStarted = [{ ...SESSIONS[0], lastMessage: null }, ...SESSIONS.slice(1)];
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={turnJustStarted} hostDisplay="both" /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={turnJustStarted} hostDisplay="both" /></I18nProvider></StrictMode>);
     });
     check(rows()[0].classList.contains("agent-session--compact") && rows()[0].querySelector(".agent-session__model") && rows()[0].getBoundingClientRect().height < 40, "刚开始一轮、还没有回复的会话不留空白第二行");
     await render("both");
@@ -232,7 +232,7 @@ async function runChecks() {
     ];
     const renderActivity = async (showActivity: boolean) => {
       await act(async () => {
-        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={withActivity} hostDisplay="both" showActivity={showActivity} /></I18nProvider></StrictMode>);
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={withActivity} hostDisplay="both" showActivity={showActivity} /></I18nProvider></StrictMode>);
       });
     };
     await renderActivity(true);
@@ -250,7 +250,7 @@ async function runChecks() {
     check(!document.querySelector(".agent-usage"), "没打开用量时不显示用量行");
     fixture.style.height = `${getAgentPageExpandedHeight(3, true) - ISLAND_CHROME_HEIGHT}px`;
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
     const usage = document.querySelector<HTMLElement>(".agent-usage");
@@ -288,7 +288,7 @@ async function runChecks() {
     };
     fixture.style.height = `${getAgentPageExpandedHeight(3, 2) - ISLAND_CHROME_HEIGHT}px`;
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage usages={usages} /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage usages={usages} /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
     const lines = [...document.querySelectorAll<HTMLElement>(".agent-usage")];
@@ -296,7 +296,7 @@ async function runChecks() {
     const twoLineList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
     check(twoLineList.scrollHeight <= twoLineList.clientHeight + 1, "两行用量时，设为 3 条仍放下 3 个会话");
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay="both" showUsage usages={{ ...usages, claude: null }} /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage usages={{ ...usages, claude: null }} /></I18nProvider></StrictMode>);
     });
     check(document.querySelectorAll(".agent-usage").length === 1 && document.querySelector(".agent-usage")?.getAttribute("aria-label") === "Codex 用量", "只有 Codex 有额度时只显示 Codex 一行");
     sizeFor(3);
@@ -314,21 +314,21 @@ async function runChecks() {
 
     // A finished reply that asks something: yellow and named, without the reply status marker.
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[2], sessionId: "d", replyAsks: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={[{ ...SESSIONS[2], sessionId: "d", replyAsks: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     const asking = rows()[0];
     check(asking.classList.contains("agent-session--light-yourTurn") && dot(asking) === "rgb(255, 214, 10)" && meta(asking)?.startsWith("等你回复"),
       `回复以问句结尾的会话显示黄色状态灯和「等你回复」：${meta(asking)}`);
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[0], sessionId: "e", compacting: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={[{ ...SESSIONS[0], sessionId: "e", compacting: true }]} hostDisplay="both" /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     const compacting = rows()[0];
     check(meta(compacting)?.startsWith("正在压缩上下文") && dot(compacting) === "rgb(52, 199, 89)", `压缩上下文时写明，状态灯仍是绿色：${meta(compacting)}`);
     await act(async () => {
       const planned = { ...SESSIONS[0], sessionId: "f", subagents: 0, backgroundTasks: 2, todos: { done: 2, total: 5, current: "正在写解析" } };
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[planned]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={[planned]} hostDisplay="both" /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     const planned = rows()[0];
@@ -343,7 +343,7 @@ async function runChecks() {
       host: { name: "dev-box", exe: null, kind: "remote" }, remoteHost: "dev-box",
     };
     await act(async () => {
-      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[remote]} hostDisplay="both" /></I18nProvider></StrictMode>);
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={[remote]} hostDisplay="both" /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     check(rows()[0].querySelector(".agent-session__host")?.textContent === "dev-box" && rows()[0].querySelector("svg.agent-session__host-icon"), "远程会话显示主机名和服务器图标");
@@ -357,7 +357,7 @@ async function runChecks() {
     const renderView = async (view: AgentSessionView) => {
       fixture.style.height = `${getAgentPageExpandedHeight(3, 0, view) - ISLAND_CHROME_HEIGHT}px`;
       await act(async () => {
-        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[0], contextTokens: 86_400 }, ...SESSIONS.slice(1)]} view={view} hostDisplay="both"
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={[{ ...SESSIONS[0], contextTokens: 86_400 }, ...SESSIONS.slice(1)]} view={view} hostDisplay="both"
           removal={{ remove: () => undefined, removed: null, undo: () => undefined }} /></I18nProvider></StrictMode>);
         await new Promise((resolve) => setTimeout(resolve, 20));
       });
@@ -372,13 +372,13 @@ async function runChecks() {
     check(cards.length === 3 && cards.every((card) => card.offsetHeight === 34 && !card.querySelector(".agent-card__status-line") && card.querySelector(".agent-card__bar")) && fits(),
       "紧凑视图每个会话一行 34px，只有色条、标题、状态和时间");
     const dissolved: string[] = [];
-    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} view="cards" archiveMotion="dissolve" hostDisplay="both"
+    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} view="cards" archiveMotion="dissolve" hostDisplay="both"
       removal={{ remove: (session) => dissolved.push(session.sessionId), removed: null, undo: () => undefined }} /></I18nProvider></StrictMode>));
     await act(async () => document.querySelector<HTMLButtonElement>(".agent-session__archive")!.click());
     check(document.querySelector(".agent-dissolving > .agent-dissolve__dust") && dissolved.length === 0, "选了粒子消散时，归档的卡片先化成粒子，还没从列表移除");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 800)); });
     check(dissolved.join() === "a", "粒子散完、收起后才移除这个会话");
-    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} view="cards" cardEffects="sparkle" hostDisplay="both" /></I18nProvider></StrictMode>));
+    await act(async () => root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} view="cards" cardEffects="sparkle" hostDisplay="both" /></I18nProvider></StrictMode>));
     check(document.querySelectorAll(".agent-card--sparkle > .agent-card__band").length === 3
       && [...document.querySelectorAll<HTMLElement>(".agent-card--sparkle")].every((card) => card.offsetHeight === 62),"粒子流苏给每张卡片加一条流苏，不改变卡片高度");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;

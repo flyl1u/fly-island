@@ -1,4 +1,7 @@
+import type { AgentSessionGroup, AgentSessionSort } from "../appearance/types";
 import type { AgentSessionSummary } from "./api";
+import { sessionLight, type SessionLight } from "./sessionLight.ts";
+import { sessionKey } from "./unseen.ts";
 
 /** Fields the Agent page shows; `updatedAt` is left out because it only feeds the age label. */
 const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt", "permissionMode", "subagents", "replyMarker", "replyAsks", "backgroundTasks", "compacting", "closed", "contextTokens"] as const;
@@ -80,17 +83,42 @@ export function modelLabel(model: string | null, effort: string | null) {
   return [model, effortLabel].filter(Boolean).join(" · ") || null;
 }
 
+const LIGHT_ORDER: Record<SessionLight, number> = { needs: 0, failed: 0, yourTurn: 1, working: 2, stale: 3, done: 4 };
+
+// shortcut: kept in memory, so after a restart the sessions listed then count as first seen at
+// their last write; keep it in storage as unseen.ts does if that matters.
+const firstSeenAt = new Map<string, number>();
+
+/** When the island first listed the session: its last write then, which for a new one is its start. */
+function firstSeen(session: AgentSessionSummary) {
+  const key = sessionKey(session);
+  const seen = firstSeenAt.get(key) ?? session.updatedAt;
+  firstSeenAt.set(key, seen);
+  return seen;
+}
+
 /**
- * Sessions by computer: this one first, then each remote host in the order its first session
- * comes; the order within a computer is kept.
+ * Sessions as the Agent page lists them: in the order `sort` asks (the lights red, orange, green,
+ * grey, newest first within each; newest first; or first seen last), under one heading per computer (this one
+ * first, then each remote host as met), per project and computer (as met, so the project with the
+ * most urgent session comes first), or under none.
  */
-export function groupByComputer(sessions: AgentSessionSummary[]) {
-  const groups = new Map<string | null, AgentSessionSummary[]>([[null, []]]);
-  for (const session of sessions) {
-    const host = session.remoteHost ?? null;
-    groups.set(host, [...(groups.get(host) ?? []), session]);
+export function arrangeSessions(sessions: AgentSessionSummary[], sort: AgentSessionSort, group: AgentSessionGroup) {
+  const rank = (session: AgentSessionSummary) => (sort === "status" ? LIGHT_ORDER[sessionLight(session)] : 0);
+  const time = sort === "firstSeen" ? firstSeen : (session: AgentSessionSummary) => session.updatedAt;
+  const sorted = [...sessions].sort((a, b) => rank(a) - rank(b) || time(b) - time(a));
+  const groups = new Map<string, { key: string; host: string | null; project: string | null; sessions: AgentSessionSummary[] }>();
+  const local = JSON.stringify([null, null]);
+  if (group === "computer") groups.set(local, { key: local, host: null, project: null, sessions: [] });
+  for (const session of sorted) {
+    const host = group === "none" ? null : session.remoteHost ?? null;
+    const project = group === "project" ? sessionProject(session.cwd) : null;
+    const key = JSON.stringify([host, project]);
+    const found = groups.get(key) ?? { key, host, project, sessions: [] };
+    found.sessions.push(session);
+    groups.set(key, found);
   }
-  return [...groups].filter(([, members]) => members.length > 0).map(([host, members]) => ({ host, sessions: members }));
+  return [...groups.values()].filter((found) => found.sessions.length > 0);
 }
 
 /** A context size as the cards show it: "860", "8.6k", "128k", "1.2M". */

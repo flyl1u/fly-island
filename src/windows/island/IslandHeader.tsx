@@ -31,6 +31,8 @@ type IslandHeaderProps = {
   pageDigitModifiers: string;
   /** Buttons for plugin pages, after the built-in page dots. */
   pluginPageButtons?: ReactNode;
+  /** Buttons of the open page, first among the window actions. */
+  pageActions?: ReactNode;
 };
 
 /** Header of the expanded island: agent status, page dots, collapse target and window actions. */
@@ -53,6 +55,7 @@ export function IslandHeader({
   onMinimize,
   pageDigitModifiers,
   pluginPageButtons,
+  pageActions,
 }: IslandHeaderProps) {
   const t = useTranslation();
   const updateVersion = useUpdateReminder();
@@ -177,6 +180,7 @@ export function IslandHeader({
       />
 
       <div className="window-actions">
+        {pageActions}
         <button
           className="icon-button island-settings-button"
           type="button"

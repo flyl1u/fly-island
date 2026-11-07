@@ -17,6 +17,13 @@ export type TuckedHoverAction = "reveal" | "expand";
 export type AgentHostDisplay = "both" | "icon" | "name" | "off";
 /** How the Agent page shows sessions: flat rows, two-line cards framed in their light, or one-line rows. */
 export type AgentSessionView = "list" | "cards" | "compact";
+/**
+ * Agent page order: what needs the user first (red, orange, green, grey), the newest write first,
+ * or the session the island saw first last (an order that stays put while sessions write).
+ */
+export type AgentSessionSort = "status" | "recent" | "firstSeen";
+/** Agent page headings: one per computer, one per project (its computer named on the heading), or none. */
+export type AgentSessionGroup = "computer" | "project" | "none";
 /** How an archived session leaves the Agent page: sliding out, or dissolving into dust in its light's colour. */
 export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
@@ -49,6 +56,8 @@ export type IslandSettings = CalendarSettingValues & {
   agentVisibleRows: number;
   agentHostDisplay: AgentHostDisplay;
   agentSessionView: AgentSessionView;
+  agentSessionSort: AgentSessionSort;
+  agentSessionGroup: AgentSessionGroup;
   agentArchiveMotion: AgentArchiveMotion;
   agentCardEffects: AgentCardEffects;
   /** How far back (hours) the Agent page lists sessions; one of AGENT_SESSION_HOURS. */

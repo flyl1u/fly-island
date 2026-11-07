@@ -1,8 +1,10 @@
 // The ranges and choices island settings are kept within, and the fallbacks they rest on.
-import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionView } from "./types";
+import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionGroup, AgentSessionSort, AgentSessionView } from "./types";
 
 export const AGENT_HOST_DISPLAYS: readonly AgentHostDisplay[] = ["both", "icon", "name", "off"];
 export const AGENT_SESSION_VIEWS: readonly AgentSessionView[] = ["list", "cards", "compact"];
+export const AGENT_SESSION_SORTS: readonly AgentSessionSort[] = ["status", "recent", "firstSeen"];
+export const AGENT_SESSION_GROUPS: readonly AgentSessionGroup[] = ["computer", "project", "none"];
 export const AGENT_ARCHIVE_MOTIONS: readonly AgentArchiveMotion[] = ["slide", "dissolve"];
 export const AGENT_CARD_EFFECTS: readonly AgentCardEffects[] = ["off", "sparkle", "gradient"];
 /** Choices for how far back the Agent page lists sessions, in hours. */

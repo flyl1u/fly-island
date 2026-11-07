@@ -29,6 +29,8 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
   agentHostDisplay: "both",
   agentSessionView: "list",
+  agentSessionSort: "status",
+  agentSessionGroup: "computer",
   agentArchiveMotion: "slide",
   agentCardEffects: "off",
   agentSessionHours: 2,
