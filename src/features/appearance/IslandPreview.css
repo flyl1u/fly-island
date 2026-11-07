@@ -98,42 +98,107 @@
   font-variant-numeric: tabular-nums;
 }
 
-.island-preview__notebook {
+/*
+ * The Agent page, drawn small: rows straight on the island with no panel, text in the island's
+ * ink at its text levels, a dot in the session light's colour (AgentSessionsPanel.css).
+ */
+.island-preview__sessions {
   width: 100%;
+  min-width: 0;
   display: grid;
-  gap: 6px;
-  padding: 10px 10px 10px 30px;
-  border-radius: max(6px, calc(var(--preview-radius) - 10px));
-  background:
-    linear-gradient(90deg, transparent 0 20px, rgba(244, 113, 130, 0.52) 21px, transparent 22px),
-    var(--preview-todo-background);
-  color: #24201b;
-  font-size: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 400;
 }
 
-.island-preview__todo {
+.island-preview__session {
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 7px;
-  overflow: hidden;
-  border: 1px solid rgba(31, 27, 22, 0.1);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.48);
+  gap: 8px;
+  padding: 5px 4px;
   white-space: nowrap;
 }
 
-.island-preview__todo--active {
-  background: rgba(168, 216, 234, 0.42);
-  border-color: rgba(64, 125, 147, 0.28);
+.island-preview__session:has(.island-preview__session-main) {
+  align-items: flex-start;
 }
 
-.island-preview__check {
-  width: 11px;
-  height: 11px;
+.island-preview__session-dot {
+  width: 6px;
+  height: 6px;
   flex: none;
-  border: 1.5px solid rgba(31, 27, 22, 0.4);
-  border-radius: 3px;
+  border-radius: 50%;
+  background: var(--color-light-done);
+}
+
+.island-preview__session:has(.island-preview__session-main) > .island-preview__session-dot {
+  margin-top: 5px;
+}
+
+.island-preview__session--working .island-preview__session-dot {
+  background: var(--color-light-working);
+  box-shadow: 0 0 6px rgba(52, 199, 89, 0.72);
+}
+
+.island-preview__session--your-turn .island-preview__session-dot {
+  background: var(--color-light-your-turn);
+  box-shadow: 0 0 6px rgba(255, 214, 10, 0.6);
+}
+
+.island-preview__session-main {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.island-preview__session-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.island-preview__session-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(var(--preview-ink), 0.96);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.island-preview__session-project {
+  color: rgba(var(--preview-ink), 0.68);
+  font-weight: 400;
+}
+
+.island-preview__session-model {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(var(--preview-ink), 0.1);
+  color: rgba(var(--preview-ink), 0.68);
+  font-size: 10px;
+}
+
+.island-preview__session-line,
+.island-preview__session-age {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(var(--preview-ink), 0.68);
+}
+
+.island-preview__session-line--status {
+  color: var(--color-light-your-turn);
+}
+
+.island-preview__session-age {
+  flex: none;
+  color: rgba(var(--preview-ink), 0.54);
 }
 
 .island-preview--font-pixel .island-preview__island {
