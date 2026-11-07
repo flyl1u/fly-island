@@ -1,0 +1,356 @@
+/* The island gives every page its colors as --focusd-* variables; the chart colors are the
+   monitor's own so CPU, GPU, memory and the two directions stay apart. */
+:root {
+  --cpu: #4da3ff;
+  --gpu: #34c759;
+  --memory: #bf5af2;
+  --down: #64d2ff;
+  --up: #ff9f0a;
+  --card: color-mix(in srgb, var(--focusd-text) 4.5%, transparent);
+  --line: color-mix(in srgb, var(--focusd-text) 9%, transparent);
+  --track: color-mix(in srgb, var(--focusd-text) 8%, transparent);
+  --radius: var(--focusd-radius, 10px);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  color: var(--focusd-text);
+  font-family: var(--focusd-font);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.waiting {
+  height: 100%;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  color: var(--focusd-text-muted);
+  font-size: 13px;
+}
+
+.monitor {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px 4px;
+  overflow-y: auto;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.card,
+.row,
+.net,
+.processes {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 12px 10px;
+}
+
+.card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.card__label,
+.row__label {
+  color: var(--focusd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.card__value {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.card--cpu .card__value {
+  color: var(--cpu);
+}
+
+.card--gpu .card__value {
+  color: var(--gpu);
+}
+
+.card__extra {
+  margin-left: auto;
+  color: var(--focusd-text-muted);
+  font-size: 12px;
+}
+
+.card__foot {
+  height: 16px;
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+  color: var(--focusd-text-muted);
+  font-size: 11.5px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.card__foot span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spark {
+  --spark: var(--cpu);
+  display: block;
+  width: 100%;
+  height: 28px;
+  overflow: visible;
+}
+
+.spark--gpu {
+  --spark: var(--gpu);
+}
+
+.spark--down {
+  --spark: var(--down);
+}
+
+.spark--up {
+  --spark: var(--up);
+}
+
+.spark__line {
+  fill: none;
+  stroke: var(--spark);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark__fill {
+  fill: color-mix(in srgb, var(--spark) 18%, transparent);
+}
+
+/* One bar per logical core. */
+.cores {
+  height: 16px;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.cores__core {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--track);
+  border-radius: 2px;
+}
+
+.cores__core > span {
+  width: 100%;
+  background: var(--cpu);
+  border-radius: 2px;
+  transition: height 600ms ease;
+}
+
+.row {
+  height: 36px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.row__value {
+  flex: none;
+  color: var(--focusd-text-muted);
+}
+
+.meter {
+  --meter: var(--memory);
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  background: var(--track);
+  border-radius: 3px;
+}
+
+.meter--warm {
+  --meter: var(--focusd-warning, #ff9f0a);
+}
+
+.meter--hot {
+  --meter: var(--focusd-danger, #ff453a);
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  background: var(--meter);
+  border-radius: inherit;
+  transition: width 600ms ease;
+}
+
+.net {
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.net__item {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.net__arrow {
+  font-weight: 700;
+}
+
+.net__item--down .net__arrow {
+  color: var(--down);
+}
+
+.net__item--up .net__arrow {
+  color: var(--up);
+}
+
+.net__rate {
+  flex: none;
+  width: 72px;
+}
+
+.net__item .spark {
+  min-width: 0;
+  flex: 1;
+  height: 22px;
+}
+
+.net__battery {
+  flex: none;
+  color: var(--focusd-text-muted);
+}
+
+.processes {
+  flex: none;
+  padding: 6px 12px 8px;
+}
+
+.processes__head {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--focusd-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  padding: 2px;
+  background: var(--track);
+  border-radius: 999px;
+}
+
+.toggle button {
+  height: 20px;
+  padding: 0 10px;
+  color: var(--focusd-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.toggle button[aria-pressed="true"] {
+  color: var(--focusd-text);
+  background: color-mix(in srgb, var(--focusd-text) 14%, transparent);
+}
+
+.processes__list {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.processes__list li {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.processes__name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.processes__count {
+  flex: none;
+  color: var(--focusd-text-muted);
+  font-size: 11.5px;
+}
+
+.processes__cpu,
+.processes__memory {
+  flex: none;
+  color: var(--focusd-text-muted);
+  text-align: right;
+}
+
+.processes__cpu {
+  width: 52px;
+}
+
+.processes__memory {
+  width: 68px;
+}
+
+.processes__sorted {
+  color: var(--focusd-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cores__core > span,
+  .meter > span {
+    transition: none;
+  }
+}

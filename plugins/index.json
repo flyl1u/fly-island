@@ -96,6 +96,33 @@
       }
     },
     {
+      "id": "dev.focusd.system-monitor",
+      "name": {
+        "zh-CN": "系统监控",
+        "en": "System monitor"
+      },
+      "description": {
+        "zh-CN": "岛上多一个监控页：CPU 和每个核心、GPU（NVIDIA）、内存、上下行网速、电池，以及最占 CPU 和内存的程序；收起条上可以放 CPU、内存和温度。只在页面打开或收起条显示时读取，不需要管理员权限，不联网。用 Windows 自带的 PowerShell 运行。",
+        "en": "Adds a monitor page: CPU and each core, the GPU (NVIDIA), memory, network speed, the battery and the programs using the most CPU and memory; CPU, memory and temperatures can also show on the collapsed bar. Reads only while the page is open or the bar shows figures, needs no administrator rights and never goes online. Runs on the PowerShell built into Windows."
+      },
+      "version": "1.0.0",
+      "apiVersion": 2,
+      "author": "TixXin",
+      "homepage": "https://github.com/TixXin/fly-island/tree/main/plugins/examples/dev.focusd.system-monitor",
+      "permissions": [],
+      "runtime": "powershell",
+      "webview": true,
+      "publisher": "TixXin",
+      "categories": [],
+      "readme": "# 系统监控\n\n岛上多一个「系统监控」页，收起条上也可以放几个数字。\n\n## 怎么用\n\n- 安装并启用后，岛上会多一个「系统监控」页面：CPU 总占用和一分钟曲线、每个逻辑核心一根小柱、CPU 温度；GPU 占用、温度、显存和功耗（只支持 NVIDIA）；内存；上下行网速和曲线；电池；最占 CPU 或内存的 5 个程序（同一程序的进程合在一起）。\n- 在插件设置里勾选「收起条显示 CPU 占用 / 内存占用 / CPU 温度 / GPU 温度」，收起条上就会出现对应的几列，数值偏高时变黄、变红，点击打开监控页。默认都不勾。\n\n## 开销\n\n- 只在需要时读取：监控页打开时每秒一次（程序列表每 3 秒），收起条有勾选项时每 2 秒一次，都没有时不读。\n- 没勾收起条项目时，插件在空闲 60 秒后停下，打开页面时再启动；勾了就一直运行（插件卡片上会写原因）。\n- 运行时是一个 Windows 自带的 PowerShell 进程，常驻内存约 60–120 MB（大部分是 PowerShell 本身）。\n\n## 数据来源\n\n都不需要管理员权限，也不联网：\n\n- CPU、每个核心、内存：Windows 性能计数器。\n- 网速：网卡的收发字节数。\n- 程序：`Get-Process`，两次读取之间的 CPU 时间。\n- CPU 温度：WMI 的 ACPI 温度区（`Win32_PerfFormattedData_Counters_ThermalZoneInformation`），取最热的一个。很多台式机主板不提供，会显示 -；这个温度通常是主板测的，比 CPU 核心温度低。\n- GPU：`nvidia-smi`，至多每 2 秒一次。没有 NVIDIA 显卡时显示 —。\n- 电池：`Win32_Battery`，每 10 秒一次。\n\n## 权限\n\n不需要任何权限。\n\n## 示例演示了什么\n\n自定义界面页面（`webview`）和收起条上的列（`status.update` 的 `cells`，能力 `statusCells`；旧版岛屿只显示文字）。\n\n## English\n\nAdds a System page: CPU load with a minute of history, one bar per logical core and the CPU temperature; GPU load, temperature, memory and power (NVIDIA only); memory; download and upload speed; the battery; and the five programs using the most CPU or memory. Tick the plugin's settings to show CPU load, memory, CPU or GPU temperature as small columns on the collapsed bar; they turn yellow and red as they climb.\n\nIt reads only while the page is open (every second) or the bar shows figures (every 2 s), needs no administrator rights and never goes online. The CPU temperature is the hottest ACPI thermal zone, which many desktops do not have.",
+      "changelog": "# 更新记录\n\n## 1.0.0\n\n- 第一个版本：监控页（CPU、每个核心、GPU、内存、网速、电池、最忙的程序），收起条上可选的 CPU、内存和温度。",
+      "download": {
+        "url": "https://raw.githubusercontent.com/TixXin/fly-island/main/plugins/packages/dev.focusd.system-monitor-1.0.0.zip",
+        "sha256": "f4e1c6bf65c6ea67347b4942641b1c903ec3217e9d2f023e01e04fc4871eb722",
+        "size": 16524
+      }
+    },
+    {
       "id": "dev.focusd.todo-digest",
       "name": {
         "zh-CN": "待办摘要（示例）",

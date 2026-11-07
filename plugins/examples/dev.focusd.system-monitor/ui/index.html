@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>System monitor</title>
+    <link rel="stylesheet" href="monitor.css" />
+  </head>
+  <body>
+    <main class="monitor" id="monitor" hidden>
+      <div class="cards">
+        <section class="card card--cpu">
+          <div class="card__head">
+            <span class="card__label">CPU</span>
+            <strong class="card__value" id="cpu">-</strong>
+            <span class="card__extra" id="cpu-temperature"></span>
+          </div>
+          <svg class="spark spark--cpu" id="cpu-spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="cores" id="cores" aria-hidden="true"></div>
+        </section>
+        <section class="card card--gpu">
+          <div class="card__head">
+            <span class="card__label">GPU</span>
+            <strong class="card__value" id="gpu">-</strong>
+            <span class="card__extra" id="gpu-temperature"></span>
+          </div>
+          <svg class="spark spark--gpu" id="gpu-spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="card__foot" id="gpu-foot"></div>
+        </section>
+      </div>
+
+      <section class="row">
+        <span class="row__label" id="memory-label"></span>
+        <span class="meter" id="memory-meter"><span></span></span>
+        <span class="row__value" id="memory"></span>
+      </section>
+
+      <section class="net">
+        <div class="net__item net__item--down">
+          <span class="net__arrow" id="down-label">&#8595;</span>
+          <span class="net__rate" id="download">-</span>
+          <svg class="spark spark--down" id="down-spark" viewBox="0 0 120 22" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+        <div class="net__item net__item--up">
+          <span class="net__arrow" id="up-label">&#8593;</span>
+          <span class="net__rate" id="upload">-</span>
+          <svg class="spark spark--up" id="up-spark" viewBox="0 0 120 22" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+        <span class="net__battery" id="battery" hidden></span>
+      </section>
+
+      <section class="processes">
+        <div class="processes__head">
+          <span id="processes-label"></span>
+          <div class="toggle" role="group" id="sort">
+            <button type="button" data-sort="cpu" aria-pressed="true">CPU</button>
+            <button type="button" data-sort="memory" aria-pressed="false" id="sort-memory"></button>
+          </div>
+        </div>
+        <ol class="processes__list" id="processes"></ol>
+      </section>
+    </main>
+    <p class="waiting" id="waiting"></p>
+    <script src="monitor.js"></script>
+  </body>
+</html>
