@@ -20,7 +20,7 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentShowClaudeCode: settings?.agentShowClaudeCode !== false,
     agentShowCodex: settings?.agentShowCodex !== false,
     agentHideFinished: settings?.agentHideFinished === true,
-    agentHideClosed: settings?.agentHideClosed === true,
+    agentHideClosed: settings?.agentHideClosed !== false,
     agentShowElapsed: settings?.agentShowElapsed === true,
     agentShowModel: settings?.agentShowModel !== false,
     agentShowActivity: settings?.agentShowActivity !== false,

@@ -92,6 +92,11 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(DEFAULT_SETTINGS.agentShowElapsed, false);
   assert.equal(normalizeSettings({}).agentShowElapsed, false);
   assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, true);
+  // Sessions that have quit are hidden unless turned off; the window stays 2 hours.
+  assert.equal(DEFAULT_SETTINGS.agentHideClosed, true);
+  assert.equal(normalizeSettings({}).agentHideClosed, true);
+  assert.equal(normalizeSettings({ agentHideClosed: false }).agentHideClosed, false);
+  assert.equal(DEFAULT_SETTINGS.agentSessionHours, 2);
 });
 
 test("plugins rename an agent's effort for display only", () => {
