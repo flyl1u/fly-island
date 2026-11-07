@@ -35,6 +35,7 @@ export const PAGES = [
   "plugin-menus.html",
   "plugin-views.html?test=1",
   "settings.html?test=1",
+  "settings-sidebar.html",
   "tucked-hover.html",
 ];
 

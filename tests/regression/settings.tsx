@@ -174,6 +174,8 @@ if (!automated) {
   try {
     await act(async () => { mount(); });
     check(categories().length > 0, "The sidebar lists the settings pages");
+    // The AI Agent pages start folded (settings-sidebar.html checks that); open them for the tour.
+    await click(".settings-sidebar__folder");
 
     for (const category of categories()) {
       await openPage(category);
