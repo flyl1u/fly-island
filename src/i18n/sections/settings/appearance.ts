@@ -13,12 +13,14 @@ export type SettingsAppearanceText = {
     label: string;
     collapsed: string;
     expanded: string;
-    task: string;
-    /** The expanded island shows the Agent page: one session running, one asking, one done. */
+    /**
+     * Sample Agent sessions: one waiting for approval (also the collapsed bar's title), one
+     * asking, one done. Their states and times come from the Agent page's own strings.
+     */
     sessions: {
-      running: { project: string; title: string; reply: string };
-      yourTurn: { project: string; title: string; status: string };
-      done: { project: string; title: string; age: string };
+      needs: { project: string; title: string };
+      yourTurn: { project: string; title: string };
+      done: { project: string; title: string };
     };
   };
 };
@@ -37,11 +39,10 @@ export const zhCN: SettingsAppearanceText = {
     label: "按当前设置画出的岛屿",
     collapsed: "折叠",
     expanded: "展开",
-    task: "写周报",
     sessions: {
-      running: { project: "fly-island", title: "设置页切换动画", reply: "侧栏高亮条已经加上动画，接着跑检查" },
-      yourTurn: { project: "notes", title: "整理周报大纲", status: "等你回复 · 1 分钟前" },
-      done: { project: "api-server", title: "修复登录超时", age: "12 分钟前" },
+      needs: { project: "fly-island", title: "设置页切换动画" },
+      yourTurn: { project: "notes", title: "整理周报大纲" },
+      done: { project: "api-server", title: "修复登录超时" },
     },
   },
 };
@@ -60,11 +61,10 @@ export const en: SettingsAppearanceText = {
     label: "The island with the current settings",
     collapsed: "Collapsed",
     expanded: "Expanded",
-    task: "Weekly report",
     sessions: {
-      running: { project: "fly-island", title: "Settings page transition", reply: "Animated the sidebar bar, running the checks next" },
-      yourTurn: { project: "notes", title: "Weekly report outline", status: "Your turn · 1 min ago" },
-      done: { project: "api-server", title: "Fix the login timeout", age: "12 min ago" },
+      needs: { project: "fly-island", title: "Settings page transition" },
+      yourTurn: { project: "notes", title: "Weekly report outline" },
+      done: { project: "api-server", title: "Fix the login timeout" },
     },
   },
 };

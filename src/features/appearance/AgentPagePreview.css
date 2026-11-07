@@ -1,0 +1,203 @@
+/*
+ * The expanded island's Agent page at about 0.7 of its real size (IslandHeader.css,
+ * AgentUsageBar.css, AgentSessionsPanel.css), in the island's ink at its text levels.
+ */
+.agent-page-preview {
+  --ink-1: rgba(var(--preview-ink), 0.96);
+  --ink-2: rgba(var(--preview-ink), 0.68);
+  --ink-3: rgba(var(--preview-ink), 0.54);
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 9px;
+  color: var(--ink-1);
+  font-size: 9px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.agent-page-preview__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+}
+
+.agent-page-preview__light {
+  flex: none;
+  color: var(--color-agent-running);
+}
+
+.agent-page-preview__dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-2);
+}
+
+.agent-page-preview__page {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.agent-page-preview__page--todo { background: var(--color-accent); }
+.agent-page-preview__page--music { background: #b69cff; }
+.agent-page-preview__page--calendar { background: #ff9a76; }
+.agent-page-preview__page--clipboard { background: #f4a7c4; }
+.agent-page-preview__page--shelf { background: #6ee7c8; }
+
+.agent-page-preview__buttons {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.agent-page-preview__button {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--preview-ink), 0.08);
+  color: var(--ink-2);
+}
+
+.agent-page-preview__provider {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 2px;
+}
+
+.agent-page-preview__usage {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-3);
+  font-size: 8.5px;
+}
+
+.agent-page-preview__usage b {
+  font-weight: 600;
+}
+
+.agent-page-preview__usage-low {
+  color: var(--color-agent-idle);
+}
+
+.agent-page-preview__usage-mid {
+  color: var(--color-agent-waiting);
+}
+
+.agent-page-preview__usage-rule {
+  width: 1px;
+  height: 8px;
+  background: rgba(var(--preview-ink), 0.2);
+}
+
+.agent-page-preview__usage-reset {
+  margin-left: 3px;
+}
+
+.agent-page-preview__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 11px;
+}
+
+.agent-page-preview__row {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.agent-page-preview__dot {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--color-light-done);
+}
+
+.agent-page-preview__row--needs .agent-page-preview__dot {
+  background: var(--color-light-needs);
+  box-shadow: 0 0 5px rgba(255, 69, 58, 0.72);
+}
+
+.agent-page-preview__row--your-turn .agent-page-preview__dot {
+  background: var(--color-light-your-turn);
+  box-shadow: 0 0 5px rgba(255, 214, 10, 0.6);
+}
+
+.agent-page-preview__main {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.agent-page-preview__heading {
+  min-width: 0;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.agent-page-preview__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-1);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Finished sessions recede by colour alone, as on the island. */
+.agent-page-preview__row--done .agent-page-preview__title {
+  color: var(--ink-2);
+}
+
+.agent-page-preview__model {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(var(--preview-ink), 0.1);
+  color: var(--ink-2);
+  font-size: 8px;
+}
+
+.agent-page-preview__status {
+  flex: none;
+  color: var(--ink-3);
+  font-size: 8.5px;
+}
+
+.agent-page-preview__row--needs .agent-page-preview__status {
+  color: var(--color-light-needs);
+}
+
+.agent-page-preview__row--your-turn .agent-page-preview__status {
+  color: var(--color-light-your-turn);
+}
+
+.agent-page-preview__archive {
+  flex: none;
+  color: rgba(var(--preview-ink), 0.26);
+}
+
+.agent-page-preview__tool {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-3);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 9px;
+}
+
+.agent-page-preview__tool-name {
+  color: var(--color-agent-running);
+}
