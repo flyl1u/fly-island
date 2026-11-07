@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { ExternalLink, Lock, Settings2, Trash2 } from "lucide-react";
 import { ToggleControl } from "../../components/controls/ToggleControl";
 import { useLocale, useTranslation } from "../../i18n";
@@ -39,7 +39,13 @@ function PermissionSummary({ permissions, optional }: { permissions: string[]; o
   );
 }
 
-/** One installed plugin: name, status and switch on one row, then notes and actions; the rest is on its own page. */
+/** Clicks on these inside a card do their own thing rather than open the plugin's page. */
+const OWN_CLICK = "button, a, input, label, summary, details";
+
+/**
+ * One installed plugin: name, status and switch on one row, a two-line description, notes, then
+ * permissions and actions. Clicking anywhere else on the card opens the plugin's own page.
+ */
 export function PluginCard({
   plugin,
   allowed,
@@ -70,9 +76,13 @@ export function PluginCard({
   const description = plugin.description?.[locale];
   const invalid = Boolean(plugin.invalidReason);
   const canUninstall = !plugin.builtin && !plugin.dev;
+  const openFromCard = (event: MouseEvent<HTMLElement>) => {
+    if (invalid || (event.target as Element).closest(OWN_CLICK)) return;
+    onOpenDetail();
+  };
 
   return (
-    <article className="plugin-card">
+    <article className={invalid ? "plugin-card" : "plugin-card plugin-card--openable"} onClick={openFromCard}>
       <header className="plugin-card__header">
         <div className="plugin-card__title">
           <div className="plugin-card__name">
@@ -151,21 +161,27 @@ export function PluginCard({
             </button>
           )}
           {!invalid && plugin.homepage.startsWith("https://") ? (
-            <button className="plugin-card__button" type="button" onClick={() => void openPluginHomepage(plugin.homepage)}>
+            <button
+              className="plugin-card__button plugin-card__button--icon"
+              type="button"
+              aria-label={t.settings.plugins.homepage}
+              onClick={() => void openPluginHomepage(plugin.homepage)}
+            >
               <ExternalLink size={12} strokeWidth={2.4} />
-              <span>{t.settings.plugins.homepage}</span>
             </button>
           ) : null}
           {canUninstall ? (
             <button
-              className={`plugin-card__button ${confirmingUninstall ? "plugin-card__button--danger" : "plugin-card__button--quiet"}`}
+              className={`plugin-card__button ${confirmingUninstall ? "plugin-card__button--danger" : "plugin-card__button--quiet plugin-card__button--icon"}`}
               type="button"
+              aria-label={confirmingUninstall ? undefined : t.settings.plugins.uninstall}
               disabled={busy}
               onBlur={() => setConfirmingUninstall(false)}
               onClick={() => (confirmingUninstall ? onUninstall() : setConfirmingUninstall(true))}
             >
               <Trash2 size={12} strokeWidth={2.4} />
-              <span>{confirmingUninstall ? t.settings.plugins.confirmUninstall : t.settings.plugins.uninstall}</span>
+              {/* An icon until pressed; the second press needs the words. */}
+              {confirmingUninstall ? <span>{t.settings.plugins.confirmUninstall}</span> : null}
             </button>
           ) : null}
         </div>

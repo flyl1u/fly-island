@@ -12,8 +12,9 @@ const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digi
 
 /**
  * Plugins from the market index: a status line with Refresh, search and
- * categories, then the plugins that can be installed and below them the
- * installed ones. `onManage` opens an installed plugin on the plugins page.
+ * categories on one row, then updates and the plugins that can be installed, two
+ * cards a row; current installed ones only on request. `onManage` opens an
+ * installed plugin on the plugins page.
  */
 export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (snapshot: PluginsSnapshot) => void; onManage?: (id: string) => void } = {}) {
   const t = useTranslation();
@@ -22,6 +23,7 @@ export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (
   const { market, loadedAt, loading, loadError, installError, installingId, refresh, install } = usePluginMarket(onInstalled);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<MarketCategory | "">("");
+  const [showInstalled, setShowInstalled] = useState(false);
   const failedPlugin = installError && market?.plugins.find((plugin) => plugin.id === installError.id);
   const categories = useMemo(() => (market ? usedCategories(market.plugins, MARKET_CATEGORIES) : []), [market]);
   const shown = useMemo(
@@ -41,18 +43,20 @@ export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (
     plugins.length > 0 ? (
       <div className="plugin-market__group" role="group" aria-label={title}>
         <h3 className="plugin-market__group-title">{title}</h3>
-        {market
-          ? plugins.map((plugin) => (
-              <MarketPluginItem
-                key={plugin.id}
-                plugin={plugin}
-                market={market}
-                installingId={installingId}
-                onInstall={(id, trust, acceptKeyChange) => void install(id, trust, acceptKeyChange)}
-                onManage={onManage}
-              />
-            ))
-          : null}
+        <div className="plugin-market__grid">
+          {market
+            ? plugins.map((plugin) => (
+                <MarketPluginItem
+                  key={plugin.id}
+                  plugin={plugin}
+                  market={market}
+                  installingId={installingId}
+                  onInstall={(id, trust, acceptKeyChange) => void install(id, trust, acceptKeyChange)}
+                  onManage={onManage}
+                />
+              ))
+            : null}
+        </div>
       </div>
     ) : null;
   // Search and categories stay in place while the list loads; only an index that is known to be empty hides them.
@@ -60,17 +64,15 @@ export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (
 
   return (
     <section className="settings-section settings-section--list plugins-panel">
-      {/* The Market tab already says where you are: this line says what was loaded and when. */}
+      {/* The page title already says where you are: this line says what was loaded and when. */}
       <div className="plugin-market__header">
         <span className="plugin-market__status" aria-live="polite">
           {status}
         </span>
-        <button className="plugin-card__button" type="button" disabled={loading} onClick={() => void refresh()}>
+        <button className="plugin-card__button plugin-market__refresh" type="button" aria-label={text.refresh} disabled={loading} onClick={() => void refresh()}>
           <RefreshCcw className={loading ? "plugin-market__spin" : undefined} size={12} strokeWidth={2.4} />
-          <span>{text.refresh}</span>
         </button>
       </div>
-      <p className="settings-section__hint">{text.hint}</p>
       {loadError ? (
         <div className="plugin-market__failure" role="alert">
           <p className="plugin-card__error">{text.loadFailed}</p>
@@ -121,9 +123,16 @@ export function PluginMarketSection({ onInstalled, onManage }: { onInstalled?: (
           </>
         ) : null}
         {hasPlugins && shown.length === 0 ? <p className="settings-section__hint">{text.noMatches}</p> : null}
+        {renderGroup(text.groupUpdates(groups.updates.length), groups.updates)}
         {renderGroup(text.groupInstallable(groups.installable.length), groups.installable)}
-        {renderGroup(text.groupInstalled(groups.installed.length), groups.installed)}
+        {groups.installed.length > 0 ? (
+          <button className="plugin-market__toggle" type="button" aria-expanded={showInstalled} onClick={() => setShowInstalled(!showInstalled)}>
+            {showInstalled ? text.hideInstalled : text.showInstalled(groups.installed.length)}
+          </button>
+        ) : null}
+        {showInstalled ? renderGroup(text.groupInstalled(groups.installed.length), groups.installed) : null}
       </div>
+      <p className="settings-section__hint">{text.hint}</p>
     </section>
   );
 }

@@ -28,10 +28,18 @@
   letter-spacing: 0.04em;
 }
 
-/* Icon | name, facts and description (clicking opens the details) | action. */
+/* Two cards a row where they fit; an open card takes the whole row for its details. */
+.plugin-market__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+/* Icon | name, facts and description (clicking opens the details); notes, then the action on the right, below. */
 .plugin-market__item {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr);
   align-items: start;
   gap: 4px 10px;
   padding: 12px;
@@ -43,6 +51,10 @@
 .plugin-market__item:hover,
 .plugin-market__item--open {
   border-color: var(--color-white-a16, rgba(255, 255, 255, 0.16));
+}
+
+.plugin-market__item--open {
+  grid-column: 1 / -1;
 }
 
 .plugin-market__icon {
@@ -153,7 +165,7 @@
 
 .plugin-market__notes {
   display: grid;
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   gap: 4px;
   min-width: 0;
 }
@@ -168,8 +180,13 @@
 }
 
 .plugin-market__action {
-  display: grid;
-  justify-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  /* Last in the card, under any notes. */
+  order: 1;
+  align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 
@@ -261,9 +278,45 @@
   }
 }
 
+/* Search and categories on one row, wrapping when the window is narrow. */
 .plugin-market__filters {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+}
+
+.plugin-market__filters > input {
+  flex: 1 1 160px;
+  max-width: 240px;
+}
+
+.plugin-market__refresh {
+  flex: none;
+  width: 26px;
+  justify-content: center;
+  padding: 0;
+}
+
+.plugin-market__toggle {
+  justify-self: start;
+  padding: 0;
+  color: var(--color-accent, #74d6ff);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.plugin-market__toggle:hover {
+  text-decoration: underline;
+}
+
+.plugin-market__toggle:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .plugin-market__categories {

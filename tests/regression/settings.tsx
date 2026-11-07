@@ -151,6 +151,11 @@ const type = async (input: HTMLInputElement, value: string) => {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
   await act(async () => { setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true })); });
 };
+/** The texts of the elements a selector finds, joined by "|". */
+const texts = (selector: string) => [...document.querySelectorAll(selector)].map((found) => found.textContent ?? "").join("|");
+const backButton = () => [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表");
+const onPluginPage = () => Boolean(backButton());
+const backToList = () => act(async () => { backButton()?.click(); });
 const openPage = (category: string) => click(`.settings-sidebar__item[data-category='${category}']`);
 const categories = () =>
   [...document.querySelectorAll<HTMLElement>(".settings-sidebar__item")].map(item => item.dataset.category!);
@@ -184,26 +189,29 @@ if (!automated) {
     }
 
     await openPage("plugins");
+    check(/^第三方（\d+）\|内置（\d+）$/.test(texts(".plugins-list__title")), "Installed plugins are grouped, third-party first, then built-in");
+    await act(async () => { document.querySelector<HTMLElement>(".plugins-list__grid .plugin-card--openable .plugin-card__title")?.click(); });
+    check(onPluginPage(), "Clicking a plugin's card opens its page");
+    await backToList();
     const runLine = [...document.querySelectorAll<HTMLElement>(".plugin-card__hint")].find((hint) => hint.textContent?.startsWith("内存"));
-    check(runLine?.textContent === "内存 4.0 MB",
-      "A plugin's card shows only the plugin's own memory, without the runtime");
+    check(runLine?.textContent === "内存 4.0 MB", "A plugin's card shows only the plugin's own memory, without the runtime");
     check(runLine && !runLine.hasAttribute("title"), "The run line has no hover tooltip");
-    check([...document.querySelectorAll(".plugin-card__hint")].some((hint) => hint.textContent === "有预发布版本 v1.1.0-beta.1，可在插件设置里选择接收。"),
-      "A plugin with a pre-release in the market says so on its card");
+    check([...document.querySelectorAll(".plugin-card__hint")].some((hint) => hint.textContent === "有预发布版本 v1.1.0-beta.1，可在插件设置里选择接收。"), "A plugin with a pre-release in the market says so on its card");
     const syncCard = [...document.querySelectorAll<HTMLElement>(".plugin-card")].find((card) => card.textContent?.includes("待办同步示例"));
     await act(async () => { [...(syncCard?.querySelectorAll<HTMLButtonElement>(".plugin-card__button") ?? [])].find((button) => button.textContent === "设置")?.click(); });
     const sensitiveRows = [...document.querySelectorAll<HTMLElement>(".plugin-detail__sensitive li")];
     const linkRow = sensitiveRows.find((row) => row.textContent?.includes("focusd:// 链接"));
-    check(sensitiveRows.length === 2 && linkRow?.querySelector("em")?.textContent === "已允许",
-      "A plugin that lists onUri shows the remembered answer for links next to its sensitive permissions");
+    check(sensitiveRows.length === 2 && linkRow?.querySelector("em")?.textContent === "已允许", "A plugin that lists onUri shows the remembered answer for links next to its sensitive permissions");
     await act(async () => { linkRow?.querySelector("button")?.click(); });
-    check(revokedPermissions.includes("uri"),
-      "Revoking the link answer forgets it like a sensitive permission");
-    await act(async () => { [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表")?.click(); });
+    check(revokedPermissions.includes("uri"), "Revoking the link answer forgets it like a sensitive permission");
+    await backToList();
 
     // The market has its own page.
     await openPage("market");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    const groupTitles = () => texts(".plugin-market__group-title");
+    check(groupTitles() === "可更新（1）|可安装（1）", "Updates come first, then plugins that can be installed");
+    check(document.querySelector(".plugin-market__header button")?.getAttribute("aria-label") === "刷新", "Refresh is a small icon button next to the status line");
     const marketItem = [...document.querySelectorAll<HTMLElement>(".plugin-market__item")].find((item) => item.textContent?.includes("待办同步示例"));
     const detailsButton = [...(marketItem?.querySelectorAll<HTMLButtonElement>("button[aria-expanded]") ?? [])][0];
     await act(async () => { detailsButton?.click(); });
@@ -216,18 +224,14 @@ if (!automated) {
       && marketItem.querySelector(".plugin-market__history h4")?.textContent === "1.1.0",
       "The market details show the plugin's version history");
     const tags = [...(marketItem?.querySelectorAll<HTMLElement>(".plugin-market__tag--signed") ?? [])];
-    check(tags.length === 1 && tags[0].textContent === "作者已签名",
-      "A plugin signed by its author is tagged in the market");
-    check(marketItem?.querySelector(".plugin-card__hint--warn")?.textContent?.includes("签名密钥变了"),
-      "An update on another author key says so");
+    check(tags.length === 1 && tags[0].textContent === "作者已签名", "A plugin signed by its author is tagged in the market");
+    check(marketItem?.querySelector(".plugin-card__hint--warn")?.textContent?.includes("签名密钥变了"), "An update on another author key says so");
     const marketButton = (label: string) => [...(marketItem?.querySelectorAll<HTMLButtonElement>(".plugin-market__action button") ?? [])].find((item) => item.textContent === label);
     await act(async () => { marketButton("仍然更新")?.click(); });
-    check(marketInstalls.length === 0 && marketButton("确认更新") && marketButton("取消"),
-      "Updating on another author key first asks to confirm");
+    check(marketInstalls.length === 0 && marketButton("确认更新") && marketButton("取消"), "Updating on another author key first asks to confirm");
     await act(async () => { marketButton("确认更新")?.click(); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
-    check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true,
-      "Confirming installs the update and accepts the new key");
+    check(marketInstalls.length === 1 && marketInstalls[0].id === "dev.example.todo-sync" && marketInstalls[0].acceptKeyChange === true, "Confirming installs the update and accepts the new key");
     const verifiedBadges = [...document.querySelectorAll<HTMLElement>(".plugin-market__badge:not(.plugin-market__badge--official)")];
     check(verifiedBadges.length === 1 && verifiedBadges[0].textContent === "已验证"
       && verifiedBadges[0].closest(".plugin-market__item")?.textContent?.includes("新插件"),
@@ -235,33 +239,33 @@ if (!automated) {
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
     const verifiedItem = verifiedBadges[0]?.closest<HTMLElement>(".plugin-market__item");
     check(verifiedItem && verifiedItem.scrollWidth <= verifiedItem.clientWidth, "The verified mark does not make the market overflow");
-    const groupTitles = [...document.querySelectorAll<HTMLElement>(".plugin-market__group-title")].map((title) => title.textContent ?? "");
-    check(groupTitles.length === 2 && groupTitles[0].startsWith("可安装") && groupTitles[1].startsWith("已安装"),
-      "Plugins that can be installed come first, the installed ones below");
-    check(document.querySelector(".plugin-market__status")?.textContent?.startsWith("共 ") && !document.querySelector(".plugin-market__header > span:only-child"),
-      "A status line with the plugin count takes the place of a second Plugin market title");
+    // The update above was installed, so the plugin is current now and hidden with the other installed ones.
+    check(groupTitles() === "可安装（1）", "Current installed plugins are hidden at first");
+    const showInstalled = document.querySelector<HTMLButtonElement>(".plugin-market__toggle");
+    check(showInstalled?.textContent?.startsWith("显示已安装的插件（"), "A link offers the installed plugins with their count");
+    await act(async () => { showInstalled?.click(); });
+    check(groupTitles() === "可安装（1）|已安装（1）" && showInstalled?.textContent === "隐藏已安装的插件"
+      && document.querySelectorAll(".plugin-market__grid").length === 2, "Showing them adds the installed group last, cards in a grid");
+    check(document.querySelector(".plugin-market__status")?.textContent?.startsWith("共 ") && !document.querySelector(".plugin-market__header > span:only-child"), "A status line with the plugin count takes the place of a second Plugin market title");
     const officialBadges = document.querySelectorAll(".plugin-market__badge--official");
-    check(officialBadges.length > 0 && [...document.querySelectorAll(".plugin-market__meta")].every((meta) => !meta.textContent?.includes("· 官方")),
-      "Official plugins carry one small mark instead of a publisher line");
-    check([...document.querySelectorAll<HTMLElement>(".plugin-market__icon")].every((icon) => icon.textContent?.length === 1),
-      "Every market card has a one-letter icon");
+    check(officialBadges.length > 0 && [...document.querySelectorAll(".plugin-market__meta")].every((meta) => !meta.textContent?.includes("· 官方")), "Official plugins carry one small mark instead of a publisher line");
+    check([...document.querySelectorAll<HTMLElement>(".plugin-market__icon")].every((icon) => icon.textContent?.length === 1), "Every market card has a one-letter icon");
     const installedItem = document.querySelector<HTMLElement>(".plugin-market__installed")?.closest<HTMLElement>(".plugin-market__item");
     const manage = [...(installedItem?.querySelectorAll<HTMLButtonElement>(".plugin-market__action button") ?? [])].find((button) => button.textContent === "管理");
     const managedName = installedItem?.querySelector(".plugin-market__title strong")?.textContent ?? "";
     await act(async () => { manage?.click(); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
-    check(Boolean(manage) && [...document.querySelectorAll("button")].some((button) => button.textContent === "返回插件列表")
+    check(Boolean(manage) && onPluginPage()
       && document.body.textContent?.includes(managedName),
       "An installed plugin shows Installed with Manage, which opens it on the plugins page");
-    await act(async () => { [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表")?.click(); });
+    await backToList();
 
     await openPage("shortcuts");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
     const pluginRows = [...document.querySelectorAll<HTMLElement>(".shortcut-row")].filter((row) => row.textContent?.includes(" · "));
     const syncRow = pluginRows.find((row) => row.textContent?.includes("立即同步 · 待办同步示例"));
     const tokenRow = pluginRows.find((row) => row.textContent?.includes("重新生成令牌 · 本地接口"));
-    check(syncRow?.querySelector(".shortcut-control__meta strong")?.textContent === "Ctrl+Alt+S" && !tokenRow,
-      "Settings > Shortcuts lists the commands of third-party plugins that are on, with the manifest's shortcut; built-in ones are left out");
+    check(syncRow?.querySelector(".shortcut-control__meta strong")?.textContent === "Ctrl+Alt+S" && !tokenRow, "Settings > Shortcuts lists the commands of third-party plugins that are on, with the manifest's shortcut; built-in ones are left out");
     await act(async () => { syncRow?.querySelector<HTMLButtonElement>("button[aria-label^='关闭这个快捷键']")?.click(); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
     check(keybindingCalls.length === 1 && keybindingCalls[0].id === "dev.example.todo-sync" && keybindingCalls[0].command === "sync-now" && keybindingCalls[0].keybinding === "",

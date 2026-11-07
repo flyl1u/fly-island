@@ -5,6 +5,9 @@ export type SettingsPluginsText = {
   openFolder: string;
   reload: string;
   empty: string;
+  /** The installed list's two groups, with how many each holds. */
+  groupBuiltin: (count: number) => string;
+  groupThirdParty: (count: number) => string;
   enable: string;
   by: (author: string) => string;
   homepage: string;
@@ -148,6 +151,10 @@ export type SettingsPluginsText = {
     refreshing: string;
     groupInstallable: (count: number) => string;
     groupInstalled: (count: number) => string;
+    groupUpdates: (count: number) => string;
+    /** Installed plugins without an update are hidden until asked for. */
+    showInstalled: (count: number) => string;
+    hideInstalled: string;
     manage: string;
     verified: string;
     noPermissions: string;
@@ -181,6 +188,8 @@ export const zhCN: SettingsPluginsText = {
   openFolder: "打开",
   reload: "重新加载",
   empty: "还没有安装插件。把插件文件夹放进插件目录，再点“重新加载”。",
+  groupBuiltin: (count: number) => `内置（${count}）`,
+  groupThirdParty: (count: number) => `第三方（${count}）`,
   enable: "启用",
   by: (author: string) => `作者：${author}`,
   homepage: "主页",
@@ -349,7 +358,7 @@ export const zhCN: SettingsPluginsText = {
     updateAnyway: "仍然更新",
     confirmKeyChange: "确认更新",
     cancel: "取消",
-    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件 → 已安装 → 更新 中取消。`,
+    trustHint: (publisher: string) => `第一次安装 ${publisher} 发布的插件，需要先信任这个发布者。插件以你的身份运行，能访问你能访问的文件和保存的密码，只信任你了解的发布者。信任后它的插件可以安装和自动更新，可在 插件 → 更新 中取消。`,
     revoked: "已下架",
     repository: "源码仓库",
     reportIssue: "报告问题",
@@ -361,6 +370,9 @@ export const zhCN: SettingsPluginsText = {
     refreshing: "正在刷新插件列表…",
     groupInstallable: (count: number) => `可安装（${count}）`,
     groupInstalled: (count: number) => `已安装（${count}）`,
+    groupUpdates: (count: number) => `可更新（${count}）`,
+    showInstalled: (count: number) => `显示已安装的插件（${count}）`,
+    hideInstalled: "隐藏已安装的插件",
     manage: "管理",
     verified: "已验证",
     noPermissions: "无需权限",
@@ -393,6 +405,8 @@ export const en: SettingsPluginsText = {
   openFolder: "Open",
   reload: "Reload",
   empty: "No plugins installed. Put a plugin folder in the plugins folder, then click Reload.",
+  groupBuiltin: (count: number) => `Built in (${count})`,
+  groupThirdParty: (count: number) => `Third-party (${count})`,
   enable: "Enabled",
   by: (author: string) => `by ${author}`,
   homepage: "Homepage",
@@ -573,6 +587,9 @@ export const en: SettingsPluginsText = {
     refreshing: "Refreshing the plugin list…",
     groupInstallable: (count: number) => `Available (${count})`,
     groupInstalled: (count: number) => `Installed (${count})`,
+    groupUpdates: (count: number) => `Updates (${count})`,
+    showInstalled: (count: number) => `Show installed plugins (${count})`,
+    hideInstalled: "Hide installed plugins",
     manage: "Manage",
     verified: "Verified",
     noPermissions: "No permissions",

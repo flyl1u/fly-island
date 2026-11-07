@@ -1,10 +1,21 @@
+/* Cards in a row are as tall as the tallest; the footer stays at the bottom. */
 .plugin-card {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  min-width: 0;
   padding: 12px 14px;
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-md);
+}
+
+.plugin-card--openable {
+  cursor: pointer;
+}
+
+.plugin-card--openable:hover {
+  border-color: var(--color-white-a16, rgba(255, 255, 255, 0.16));
 }
 
 .plugin-card__header {
@@ -114,6 +125,7 @@
 }
 
 .plugin-card__footer {
+  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -125,7 +137,7 @@
 .plugin-card__permissions,
 .plugin-card__permissions-none {
   min-width: 0;
-  flex: 1 1 240px;
+  flex: 1 1 auto;
   font-size: 12px;
 }
 
@@ -227,6 +239,12 @@
 
 .plugin-card__button:hover {
   background: var(--color-white-a10);
+}
+
+.plugin-card__button--icon {
+  width: 26px;
+  justify-content: center;
+  padding: 0;
 }
 
 .plugin-card__button--quiet {

@@ -9,13 +9,15 @@ export const hasUpdate = (plugin: Pick<MarketPlugin, "installedVersion" | "versi
   plugin.installedVersion !== null && isNewerVersion(plugin.version, plugin.installedVersion);
 
 /**
- * The market page's two groups: plugins that can be installed, then those that
- * are installed, the ones with an update first. Order inside a group is kept.
+ * The market page's groups: installed plugins with an update, plugins that can be installed,
+ * and the installed ones that are current (hidden until asked for). Order inside a group is kept.
  */
 export function groupMarketPlugins<T extends Pick<MarketPlugin, "installedVersion" | "version">>(plugins: readonly T[]) {
-  const installable = plugins.filter((plugin) => plugin.installedVersion === null);
-  const installed = plugins.filter((plugin) => plugin.installedVersion !== null);
-  return { installable, installed: [...installed.filter(hasUpdate), ...installed.filter((plugin) => !hasUpdate(plugin))] };
+  return {
+    updates: plugins.filter(hasUpdate),
+    installable: plugins.filter((plugin) => plugin.installedVersion === null),
+    installed: plugins.filter((plugin) => plugin.installedVersion !== null && !hasUpdate(plugin)),
+  };
 }
 
 /** The letter on a plugin's generated icon: the first letter or character of its name, upper case. */

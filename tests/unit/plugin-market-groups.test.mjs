@@ -4,15 +4,16 @@ import { groupMarketPlugins, pluginIconTone, pluginInitial } from "../../src/fea
 
 const plugin = (id, installedVersion = null, version = "1.0.0") => ({ id, installedVersion, version, categories: [] });
 
-test("installable plugins come first; installed ones list updates first", () => {
-  const { installable, installed } = groupMarketPlugins([
+test("updates, installable and current installed plugins are grouped apart", () => {
+  const { updates, installable, installed } = groupMarketPlugins([
     plugin("a.current", "1.0.0"),
     plugin("a.new"),
     plugin("a.update", "1.0.0", "1.1.0"),
     plugin("b.new"),
   ]);
   assert.deepEqual(installable.map((item) => item.id), ["a.new", "b.new"]);
-  assert.deepEqual(installed.map((item) => item.id), ["a.update", "a.current"]);
+  assert.deepEqual(updates.map((item) => item.id), ["a.update"]);
+  assert.deepEqual(installed.map((item) => item.id), ["a.current"]);
 });
 
 test("the icon letter is the first letter of the name", () => {
