@@ -154,7 +154,8 @@ pub fn run() {
             translation;
             settings_window;
             phone_push;
-            pets
+            pets;
+            tray
         ))
         .build(context)
         .map(|app| {

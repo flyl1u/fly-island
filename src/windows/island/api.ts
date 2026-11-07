@@ -153,3 +153,8 @@ export function setIslandOutsideClickWatch(watch: boolean) {
 export function listenIslandOutsideClick(handler: () => void) {
   return listen<null>(OUTSIDE_CLICK_EVENT, () => handler());
 }
+
+/** The tray menu (src-tauri/src/tray.rs) follows the island's language. */
+export function setTrayLanguage(locale: string) {
+  return invoke<void>("set_tray_language", { locale });
+}

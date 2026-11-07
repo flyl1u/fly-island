@@ -8,7 +8,7 @@
 src-tauri/src/
 ├── main.rs                  # 只调用 focusd_island_lib::run()
 ├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、collect_commands!（汇总各模块的 tauri_commands!）
-├── tray.rs                  # 托盘菜单与事件
+├── tray.rs                  # 托盘菜单与事件：文字跟随岛屿语言（命令 set_tray_language），显示 / 隐藏合成一项，按岛屿当前是否可见显示
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
 ├── agent_approval/          # 在岛上审批（B6 第 2 期）：127.0.0.1 上的审批端点（标准库 TcpListener，挂起时能发现 Agent 断开）、按会话排队、等待上限、agent-approval.json
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装；hooks/ 为编入二进制的 hook 脚本；sound_packs.rs 为导入的音效包（应用数据目录的 sound-packs/）
