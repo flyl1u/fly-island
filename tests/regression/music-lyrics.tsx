@@ -34,6 +34,7 @@ const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
 const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0 };
+let settingsOpened = 0;
 
 function track(title: string, positionMs: number, playing = false): MediaState {
   return {
@@ -46,7 +47,7 @@ async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | un
   await act(async () => {
     root.render(
       <StrictMode><I18nProvider>
-        <MusicPlayerPanel mediaState={mediaState} isTrackChanging={false} commandError={null} onOpenSettings={() => {}}
+        <MusicPlayerPanel mediaState={mediaState} isTrackChanging={false} commandError={null} onOpenSettings={() => { settingsOpened += 1; }}
           onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} lyricsSettings={lyricsSettings} />
       </I18nProvider></StrictMode>,
     );
@@ -93,8 +94,18 @@ try {
   const before = queries.length;
   await render(track("七里香", 6000));
   check(!view() && Math.abs(wave().getBoundingClientRect().height - 76) < 1 && queries.length === before + 1, "找不到歌词时波形恢复原来的大小");
+  const hint = () => document.querySelector<HTMLButtonElement>(".music-player__lyrics-hint");
+  const panel = document.querySelector(".music-player")!.getBoundingClientRect();
+  check(hint()?.textContent === "没找到歌词 · 试试酷狗和网易云" && hint()!.getBoundingClientRect().left >= panel.left && hint()!.getBoundingClientRect().right <= panel.right,
+    "中文歌只查了 LRCLIB 没找到时，右上角提示可以开启酷狗和网易云");
+  settingsOpened = 0;
+  await act(async () => hint()!.click());
+  check(settingsOpened === 1, "点提示打开音乐设置");
   await render(track("稻香", 6000), { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 });
   check(!view() && queries.length === before + 1, "没设歌词文件夹也没开在线查找时不去查");
+  check(!hint(), "没开在线查找时不提示");
+  await render(track("七里香", 6000), { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  check(!view() && !hint(), "已经开着酷狗和网易云还找不到时不提示");
 
   // A translation shows under its line; this song's own offset sits by the settings button.
   localStorage.removeItem("focusd-island-lyrics-offsets");

@@ -6,6 +6,7 @@ import { LyricsView } from "./lyrics/LyricsView";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
 import { LyricsOffsetControl } from "./lyrics/LyricsOffsetControl";
 import { trackKey } from "./lyrics/lrc";
+import { suggestsChineseSources } from "./lyrics/chineseHint";
 import { useSongOffset } from "./lyrics/useSongOffset";
 import "./MusicPlayerPanel.css";
 
@@ -35,7 +36,8 @@ export function MusicPlayerPanel({
   const t = useTranslation();
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
-  const lyrics = useLyrics(mediaState, lyricsSettings);
+  const { lines: lyrics, notFound } = useLyrics(mediaState, lyricsSettings);
+  const chineseHint = suggestsChineseSources(mediaState, lyricsSettings, notFound);
   const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? trackKey(mediaState) : null);
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
@@ -89,6 +91,11 @@ export function MusicPlayerPanel({
         <div className={lyrics ? "music-player__stack music-player__stack--lyrics" : "music-player__stack"}>
           <div className="music-player__head-aside">
             {lyrics && <LyricsOffsetControl offsetMs={songOffsetMs} onChange={setSongOffsetMs} />}
+            {chineseHint && (
+              <button className="music-player__lyrics-hint" type="button" aria-label={t.music.lyricsChineseHint.label} onClick={onOpenSettings}>
+                {t.music.lyricsChineseHint.text}
+              </button>
+            )}
             {settingsButton}
           </div>
 

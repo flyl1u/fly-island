@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { lineIndexAt, parseLrc, playbackPosition, trackKey, wordFill } from "../../src/features/media/lyrics/lrc.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
+import { suggestsChineseSources } from "../../src/features/media/lyrics/chineseHint.ts";
 
 test("LRC lines are parsed, sorted and shifted by the offset tag", () => {
   const lines = parseLrc(
@@ -67,4 +68,16 @@ test("enhanced LRC word times become the line's words", () => {
   assert.equal(parse("[00:01.00]a <b> c")[0].text, "a <b> c");
   assert.deepEqual(wordFill({ startMs: 1000, endMs: 1400, text: "x" }, 1100), { delayMs: -100, durationMs: 400 });
   assert.deepEqual(wordFill({ startMs: 2000, endMs: 2000, text: "x" }, 1000), { delayMs: 1000, durationMs: 1 });
+});
+
+test("a Chinese song with no lyrics from LRCLIB suggests Kugou and NetEase", () => {
+  const song = { title: "不找了", artist: "隔壁老樊" };
+  const lrclibOnly = { lyricsOnline: true, lyricsChinese: false };
+  assert.equal(suggestsChineseSources(song, lrclibOnly, true), true);
+  // Found or still looking, already asking them, offline on purpose, or not a Chinese name: no hint.
+  assert.equal(suggestsChineseSources(song, lrclibOnly, false), false);
+  assert.equal(suggestsChineseSources(song, { lyricsOnline: true, lyricsChinese: true }, true), false);
+  assert.equal(suggestsChineseSources(song, { lyricsOnline: false }, true), false);
+  assert.equal(suggestsChineseSources({ title: "Yesterday", artist: "The Beatles" }, lrclibOnly, true), false);
+  assert.equal(suggestsChineseSources({ title: "Song", artist: "周杰伦" }, lrclibOnly, true), true);
 });

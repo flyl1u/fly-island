@@ -177,6 +177,34 @@
   align-items: center;
 }
 
+/* No lyrics for a Chinese song with only LRCLIB asked: a quiet link to the setting. */
+.music-player__lyrics-hint {
+  min-width: 0;
+  height: 24px;
+  margin-right: 6px;
+  padding: 0 10px;
+  overflow: hidden;
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.music-player__lyrics-hint:hover {
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.music-player__lyrics-hint:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .music-player__stack .media-waveform {
   height: 76px;
   flex-basis: 76px;

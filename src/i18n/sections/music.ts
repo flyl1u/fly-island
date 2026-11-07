@@ -3,6 +3,8 @@ export type MusicText = {
   controlFailed: string;
   noMedia: string;
   lyricsLabel: string;
+  /** No lyrics for a Chinese song while only LRCLIB is asked; opens Settings → Music. */
+  lyricsChineseHint: { text: string; label: string };
   lyricsOffset: { label: string; earlier: string; later: string; reset: (seconds: number) => string };
   unknownArtist: string;
   previous: string;
@@ -30,6 +32,7 @@ export const zhCN: MusicText = {
   controlFailed: "控制失败",
   noMedia: "暂无媒体",
   lyricsLabel: "歌词",
+  lyricsChineseHint: { text: "没找到歌词 · 试试酷狗和网易云", label: "这首歌没找到歌词。打开设置，开启「也查酷狗和网易云」" },
   lyricsOffset: {
     label: "这首歌的歌词快慢",
     earlier: "歌词提前 0.5 秒",
@@ -62,6 +65,7 @@ export const en: MusicText = {
   controlFailed: "Control failed",
   noMedia: "No media",
   lyricsLabel: "Lyrics",
+  lyricsChineseHint: { text: "No lyrics · try Kugou and NetEase", label: "No lyrics found for this song. Open settings to also ask Kugou and NetEase" },
   lyricsOffset: {
     label: "Lyrics timing for this song",
     earlier: "Lyrics 0.5 s earlier",
