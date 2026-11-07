@@ -11,7 +11,7 @@ import {
 
 const session = (sessionId, updatedAt, provider = "claudeCode") => ({ provider, sessionId, updatedAt });
 
-test("a removed session stays hidden until it writes to its file again", () => {
+test("a removed session with no known turn stays hidden until its file changes", () => {
   const hidden = hideSession({}, session("a", 1000));
   assert.equal(isHidden(session("a", 1000), hidden), true);
   assert.equal(isHidden(session("a", 1000, "codex"), hidden), false);
@@ -20,6 +20,32 @@ test("a removed session stays hidden until it writes to its file again", () => {
   assert.deepEqual(forgetReturned(hidden, [session("a", 1500)]), {});
   // Nothing came back: the same object, so nothing is saved again.
   assert.equal(forgetReturned(hidden, [session("a", 1000), session("b", 9000)]), hidden);
+});
+
+test("a removed session with a known turn comes back only when a new turn starts", () => {
+  const asking = { provider: "claudeCode", sessionId: "q", updatedAt: 5000, turnStartedAt: 4000 };
+  const hidden = hideSession({}, asking);
+  assert.equal(hidden["claudeCode:q"], 4000);
+  // An idle summary written later in the same turn keeps it hidden.
+  assert.equal(isHidden({ ...asking, updatedAt: 9000 }, hidden), true);
+  assert.equal(forgetReturned(hidden, [{ ...asking, updatedAt: 9000 }]), hidden);
+  // A new prompt is a new turn.
+  assert.equal(isHidden({ ...asking, updatedAt: 9500, turnStartedAt: 9400 }, hidden), false);
+  // An entry saved before (the last write) still hides the same turn.
+  assert.equal(isHidden({ ...asking, updatedAt: 9000 }, { "claudeCode:q": 5000 }), true);
+});
+
+test("looked-at turns are kept across restarts, newest first when trimmed", async () => {
+  const { markSeen, normalizeSeen, MAX_SEEN } = await import("../../src/features/agent-status/unseen.ts");
+  assert.deepEqual(normalizeSeen({ "claudeCode:a": 5, "codex:b": "x" }), { "claudeCode:a": 5 });
+  assert.deepEqual(normalizeSeen(null), {});
+  let turns = { since: 0, seen: {} };
+  for (let index = 0; index < MAX_SEEN + 2; index += 1) {
+    turns = markSeen(turns, [{ provider: "claudeCode", sessionId: String(index), phase: "completed", updatedAt: 10, turnStartedAt: 5 }]);
+  }
+  assert.equal(Object.keys(turns.seen).length, MAX_SEEN);
+  assert.equal("claudeCode:0" in turns.seen, false);
+  assert.equal(`claudeCode:${MAX_SEEN + 1}` in turns.seen, true);
 });
 
 test("undo puts a session back, and the list keeps only the newest removals", () => {

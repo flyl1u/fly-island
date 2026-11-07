@@ -30,7 +30,8 @@
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-agent-approval`（`{ onIsland }`：Agent 的权限请求在岛上审批，默认关；开着时岛屿让审批端点挂起请求） | `features/agent-status/approvals/storage.ts` |
-| `focusd-island-agent-hidden-sessions`（`{ "<provider>:<sessionId>": updatedAt }`：在 Agent 页手动移除的会话，只隐藏不删记录；会话之后再写文件就自动回来，最多 200 条） | `features/agent-status/hiddenSessions.ts` |
+| `focusd-island-agent-hidden-sessions`（`{ "<provider>:<sessionId>": updatedAt }`：在 Agent 页手动移除的会话，只隐藏不删记录；值是移除时那一轮的开始时间（以前存的是最后写入时间），开始新一轮才自动回来，最多 200 条） | `features/agent-status/hiddenSessions.ts` |
+| `focusd-island-agent-seen-turns`（`{ "<provider>:<sessionId>": 轮次 }`：在 Agent 页看过的会话，轮次是这一轮的开始时间，卡在半路时是最后写入时间；重启岛屿后看过的不再提醒，最多 300 条） | `features/agent-status/unseen.ts` |
 | `focusd-island-agent-session-filters`（`[{ kind: "folder" | "prompt", value }]`，最多 50 条：按所在目录（含子目录，不分大小写和斜杠方向）或标题 / 最近提示词包含的文字隐藏会话，B6.4.3；读取时丢掉格式不对、为空和重复的条目；设置备份包含它） | `features/agent-status/sessionFilters.ts` |
 | 设置备份文件（`fly-island-settings-<日期时间>.json`，写到「下载」文件夹；`{ app: "fly-island", version: 1, exportedAt, keys }`，`keys` 只含 `features/settings-backup/backup.ts` 的 `BACKUP_KEYS`：不含待办、窗口位置、凭据和一次性请求；恢复时只写这些 key，未知 key 和非字符串值丢弃） | `features/settings-backup/` |
 | `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |

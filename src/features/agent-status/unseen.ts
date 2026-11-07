@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../../lib/storage.ts";
 import type { AgentSessionSummary } from "./api";
 import { sessionLight } from "./sessionLight.ts";
 
@@ -45,9 +46,37 @@ export function isUnseen(session: AgentSessionSummary, turns: SeenTurns) {
   return recent && turns.seen[sessionKey(session)] !== turnOf(session);
 }
 
+export const SEEN_TURNS_STORAGE_KEY = "focusd-island-agent-seen-turns";
+/** Older entries are dropped past this many. */
+export const MAX_SEEN = 300;
+
+/**
+ * The turns looked at, as saved, so a restart of the island does not ask again about sessions
+ * already looked at (a session waiting on you counts as unseen whenever it began).
+ */
+export function normalizeSeen(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const entries = Object.entries(value as Record<string, unknown>).filter(
+    (entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1]),
+  );
+  return Object.fromEntries(entries.slice(-MAX_SEEN));
+}
+
+export function loadSeenTurns(): SeenTurns {
+  return { since: Date.now(), seen: normalizeSeen(readJson(SEEN_TURNS_STORAGE_KEY)) };
+}
+
+export function saveSeen(seen: Record<string, number>) {
+  writeJson(SEEN_TURNS_STORAGE_KEY, normalizeSeen(seen));
+}
+
 /** `turns` with the current turn of each of `sessions` seen; the same object when nothing changed. */
 export function markSeen(turns: SeenTurns, sessions: AgentSessionSummary[]): SeenTurns {
   const changed = sessions.filter((session) => turns.seen[sessionKey(session)] !== turnOf(session));
   if (changed.length === 0) return turns;
-  return { ...turns, seen: { ...turns.seen, ...Object.fromEntries(changed.map((session) => [sessionKey(session), turnOf(session)])) } };
+  // Re-added at the end, so the newest stay when the oldest are dropped.
+  const keys = new Set(changed.map(sessionKey));
+  const kept = Object.entries(turns.seen).filter(([key]) => !keys.has(key));
+  const added = changed.map((session) => [sessionKey(session), turnOf(session)] as const);
+  return { ...turns, seen: Object.fromEntries([...kept, ...added].slice(-MAX_SEEN)) };
 }
