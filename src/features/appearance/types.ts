@@ -48,6 +48,8 @@ export type IslandSettings = CalendarSettingValues & {
   agentShowCodex: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
+  /** Leave sessions whose agent has quit off the Agent page. */
+  agentHideClosed: boolean;
   /** Show how long a session's current (or last) turn has run. */
   agentShowElapsed: boolean;
   agentShowModel: boolean;

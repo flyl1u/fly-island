@@ -63,6 +63,9 @@ pub struct AgentSessionSummary {
     pub(super) compacting: bool,
     /// The agent's own task list while some of it is left (todo_list.rs).
     pub(super) todos: Option<TodoProgress>,
+    /// The agent has quit: SessionEnd ran, its process is gone, or Claude Code no longer lists it
+    /// as running. Set by `list_sessions`; false while that is unknown.
+    pub(super) closed: bool,
     /// The SSH host the session runs on, for sessions read from another computer
     /// (remote_sessions.rs); left out for local ones.
     #[serde(skip_serializing_if = "Option::is_none")]

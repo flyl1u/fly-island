@@ -2,7 +2,8 @@
 //! `BatchMode`), as excerpts: the first lines (first prompt, starting folder, Codex's session
 //! meta) and the last `TAIL_BYTES` (state, model, latest reply), the same parts the local scan
 //! reads. Files the island already has unchanged are only named, and a file whose head it has
-//! gets only its tail.
+//! gets only its tail. Claude Code's registry of running sessions (`~/.claude/sessions`) comes
+//! along as the ids whose process is alive, so a session quit there leaves the list here too.
 
 use std::{collections::HashMap, io::Write, process::Command, process::Stdio};
 
@@ -20,7 +21,8 @@ const HEAD_MAX_BYTES: u64 = 1024 * 1024;
 
 /// Runs on the remote shell (`sh -s`). `__WINDOW__` is minutes, `__KNOWN__` lines of
 /// `<size> <mtime> <path>` the island has. Prints, per file, `S <path>` (unchanged) or
-/// `F <size> <mtime> <head bytes> <tail bytes> <path>` followed by those bytes, then `E`.
+/// `F <size> <mtime> <head bytes> <tail bytes> <path>` followed by those bytes; then, when the
+/// registry exists, `R` and `L <session id>` per running session; then `E`.
 const SCRIPT: &str = r#"W=__WINDOW__
 T=__TAIL__
 cd "$HOME" || exit 3
@@ -46,6 +48,20 @@ send() {
   find .codex/sessions -mindepth 4 -maxdepth 4 -type f -name '*.jsonl' -mmin -"$W" 2>/dev/null
   [ -f .codex/session_index.jsonl ] && echo .codex/session_index.jsonl
 } | while IFS= read -r f; do send "$f"; done
+if [ -d .claude/sessions ]; then
+  echo R
+  mid=$(cat /etc/machine-id 2>/dev/null)
+  for f in .claude/sessions/*.json; do
+    [ -f "$f" ] || continue
+    id=$(sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p' "$f")
+    [ -n "$id" ] || continue
+    # A home shared by several machines (login nodes) lists their sessions too; those cannot be
+    # checked from here, so they count as running.
+    if grep -q '"pidDomain":"linux:' "$f" && ! grep -qF "linux:$mid:" "$f"; then echo "L $id"; continue; fi
+    p=$(sed -n 's/.*"pid":\([0-9]*\).*/\1/p' "$f")
+    [ -n "$p" ] && kill -0 "$p" 2>/dev/null && echo "L $id"
+  done
+fi
 echo E
 "#;
 
@@ -62,6 +78,9 @@ pub(super) struct RemoteFile {
 pub(super) enum Reply {
     Same(String),
     Changed { path: String, file: RemoteFile, head: Vec<u8>, tail: Vec<u8> },
+    /// The host keeps Claude Code's registry; the `Running` replies after it are all it lists.
+    Registry,
+    Running(String),
 }
 
 /// The script for one fetch: files changed in the last `window_minutes`, minus what `known` has.
@@ -133,6 +152,14 @@ pub(super) fn parse_reply(bytes: &[u8]) -> Result<Vec<Reply>, String> {
             replies.push(Reply::Same(path.to_string()));
             continue;
         }
+        if line == "R" {
+            replies.push(Reply::Registry);
+            continue;
+        }
+        if let Some(id) = line.strip_prefix("L ") {
+            replies.push(Reply::Running(id.to_string()));
+            continue;
+        }
         let fields = line.strip_prefix("F ").ok_or_else(|| format!("Unexpected line in the reply: {line}"))?;
         let mut parts = fields.splitn(5, ' ');
         let mut number = || parts.next().and_then(|part| part.parse::<u64>().ok()).ok_or("Malformed file line");
@@ -159,8 +186,9 @@ mod tests {
     fn reads_same_and_changed_files_up_to_the_end_marker() {
         let mut bytes = b"S .claude/projects/p/a.jsonl\nF 5 1700000000 0 5 .claude/projects/p/b c.jsonl\nhello".to_vec();
         bytes.extend_from_slice(b"F 900000 1700000001 3 4 .codex/sessions/2026/11/06/r.jsonl\nh\n\ntail");
-        bytes.extend_from_slice(b"E\n");
+        bytes.extend_from_slice(b"R\nL 35065fcf-59fe\nE\n");
         let replies = parse_reply(&bytes).unwrap();
+        assert_eq!(replies[3..], [Reply::Registry, Reply::Running("35065fcf-59fe".into())]);
         assert_eq!(replies[0], Reply::Same(".claude/projects/p/a.jsonl".into()));
         assert_eq!(
             replies[1],

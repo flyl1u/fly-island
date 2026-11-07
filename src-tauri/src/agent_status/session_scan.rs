@@ -2,7 +2,7 @@
 //! re-reading a session file only when its size or modification time changed.
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, File},
     io::{BufRead, BufReader, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
@@ -46,13 +46,29 @@ pub(super) fn list_sessions(
     waiting: &WaitingNotifications,
     window_ms: i64,
 ) -> Vec<AgentSessionSummary> {
+    scan(home_dir, app_dir, waiting, window_ms, None)
+}
+
+/// The sessions of a mirrored home (remote_sessions.rs). `registry`: the ids the other computer's
+/// `~/.claude/sessions` lists as running, or `None` when it keeps no registry.
+pub(super) fn list_mirrored_sessions(home_dir: &Path, window_ms: i64, registry: Option<HashSet<String>>) -> Vec<AgentSessionSummary> {
+    scan(home_dir, None, &WaitingNotifications::new(), window_ms, registry)
+}
+
+fn scan(
+    home_dir: &Path,
+    app_dir: Option<&Path>,
+    waiting: &WaitingNotifications,
+    window_ms: i64,
+    registry: Option<HashSet<String>>,
+) -> Vec<AgentSessionSummary> {
     let now = current_unix_millis();
     let mut cache = SESSION_CACHE.lock().unwrap_or_else(PoisonError::into_inner);
     let mut sessions = Vec::new();
 
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
     // Claude Code's registry of live sessions, read once and only if some session needs it.
-    let mut live_claude: Option<HashMap<String, u32>> = None;
+    let mut live_claude = registry;
     let compacting = app_dir.map(|dir| compacting_sessions(dir, now)).unwrap_or_default();
     for (provider, path, modified) in recent_session_files(home_dir, now, window_ms) {
         // The phase is worked out here, because a working session turns stale, or stops
@@ -62,9 +78,9 @@ pub(super) fn list_sessions(
         {
             let asked_user = is_waiting(waiting, &summary.session_id, summary.updated_at);
             let mid_turn = matches!(state, TurnState::Working | TurnState::AwaitingUser);
-            let ended = mid_turn
-                && has_ended(app_dir, &summary.session_id)
-                    .unwrap_or_else(|| left_claude_registry(home_dir, &summary, now, &mut live_claude));
+            summary.closed = has_ended(app_dir, &summary.session_id)
+                .unwrap_or_else(|| left_claude_registry(home_dir, &summary, now, &mut live_claude));
+            let ended = mid_turn && summary.closed;
             // Compacting writes nothing to the transcript until it is done, for up to minutes;
             // the session works meanwhile, whether the turn or `/compact` started it.
             summary.compacting = compacting.contains_key(&summary.session_id) && !ended;
@@ -114,14 +130,14 @@ fn left_claude_registry(
     home_dir: &Path,
     summary: &AgentSessionSummary,
     now: i64,
-    live: &mut Option<HashMap<String, u32>>,
+    live: &mut Option<HashSet<String>>,
 ) -> bool {
     summary.provider == "claudeCode"
         && now - summary.updated_at > REGISTRY_GRACE_MS
-        && home_dir.join(".claude").join("sessions").is_dir()
+        && (live.is_some() || home_dir.join(".claude").join("sessions").is_dir())
         && !live
-            .get_or_insert_with(|| running_sessions(home_dir))
-            .contains_key(&summary.session_id)
+            .get_or_insert_with(|| running_sessions(home_dir).into_keys().collect())
+            .contains(&summary.session_id)
 }
 
 type SessionFile = (&'static str, PathBuf, i64);
@@ -326,6 +342,7 @@ fn summary_from(
         // Set by `list_sessions`.
         compacting: false,
         todos: parsed.todos,
+        closed: false,
         remote_host: None,
     }
 }

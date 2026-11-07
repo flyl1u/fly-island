@@ -34,6 +34,8 @@ export type SettingsAgentText = {
   showAgentsHint: string;
   hideFinished: string;
   hideFinishedHint: string;
+  hideClosed: string;
+  hideClosedHint: string;
   showElapsed: string;
   showElapsedHint: string;
   showModel: string;
@@ -125,6 +127,8 @@ export const zhCN: SettingsAgentText = {
   showAgentsHint: "关掉的 Agent 不出现在 Agent 页，也不算进岛上的运行数量。",
   hideFinished: "只显示进行中的会话",
   hideFinishedHint: "隐藏已完成和失败的会话，只留正在运行、等待确认和可能中断的。",
+  hideClosed: "隐藏已退出的会话",
+  hideClosedHint: "Claude Code 或 Codex 已经退出的会话不再列出，SessionEnd hook 没触发也算：按进程是否还在判断，远程电脑上的 Claude Code 会话同样适用。",
   showElapsed: "显示运行时长",
   showElapsedHint: "进行中的会话显示\"已运行多久\"，每秒更新；结束的显示这一轮\"用时多久\"。从最近一次提问开始算。",
   showModel: "显示模型和推理强度",
@@ -211,6 +215,8 @@ export const en: SettingsAgentText = {
   showAgentsHint: "Agents switched off are left out of the Agent page and the island's running count.",
   hideFinished: "Only sessions in progress",
   hideFinishedHint: "Hide finished and failed sessions; keep running, waiting and possibly stalled ones.",
+  hideClosed: "Hide sessions that have quit",
+  hideClosedHint: "Sessions whose Claude Code or Codex has quit are no longer listed, even when the SessionEnd hook did not run: told by whether the process still runs, for Claude Code sessions on remote computers too.",
   showElapsed: "Show how long it has run",
   showElapsedHint: "A session in progress shows how long it has been running, updated every second; a finished one shows how long its last turn took. Counted from the latest prompt.",
   showModel: "Show the model and effort",

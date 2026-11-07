@@ -93,6 +93,8 @@ export type AgentSessionSummary = {
   compacting?: boolean;
   /** The agent's own task list while some of it is left (TodoProgress in todo_list.rs). Missing from older builds. */
   todos?: AgentTodoProgress | null;
+  /** The agent has quit (SessionEnd, its process gone, or no longer in Claude Code's registry). Missing from older builds. */
+  closed?: boolean;
 };
 
 /** Mirrors TodoProgress in src-tauri/src/agent_status/todo_list.rs. */

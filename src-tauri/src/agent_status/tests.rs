@@ -833,6 +833,19 @@ fn a_claude_session_gone_from_its_registry_is_no_longer_running() {
         phases(),
         [("closed".to_string(), "completed"), ("fresh".to_string(), "running"), ("live".to_string(), "running")]
     );
+    let closed = |sessions: Vec<super::sessions::AgentSessionSummary>| {
+        let mut closed: Vec<String> = sessions.into_iter().filter(|session| session.closed).map(|session| session.session_id).collect();
+        closed.sort();
+        closed
+    };
+    assert_eq!(closed(list_sessions(&home, None, &WaitingNotifications::new(), ACTIVE_WINDOW_MS)), ["closed"]);
+
+    // A mirrored home is judged by the registry its computer sent, not by local processes.
+    fs::remove_file(registry.join(format!("{pid}.json"))).unwrap();
+    fs::remove_dir(&registry).unwrap();
+    let mirrored = |registry| super::session_scan::list_mirrored_sessions(&home, ACTIVE_WINDOW_MS, registry);
+    assert_eq!(closed(mirrored(Some(["closed".to_string()].into()))), ["live"]);
+    assert!(closed(mirrored(None)).is_empty());
 }
 
 #[test]

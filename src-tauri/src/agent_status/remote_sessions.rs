@@ -4,7 +4,7 @@
 //! every REFRESH_MS while sessions are being listed, so listing never waits for the network.
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, File},
     path::{Component, Path, PathBuf},
     sync::{Mutex, PoisonError},
@@ -29,6 +29,8 @@ const RETRY_AFTER_ERROR_MS: i64 = 60_000;
 #[derive(Default)]
 struct HostState {
     files: HashMap<String, MirroredFile>,
+    /// The sessions the host's Claude Code registry lists as running; `None` without a registry.
+    registry: Option<HashSet<String>>,
     in_flight: bool,
     attempted_at: i64,
     fetched_at: Option<i64>,
@@ -73,11 +75,16 @@ pub(super) fn sessions(app_dir: &Path, window_ms: i64) -> Vec<AgentSessionSummar
             }
         }
     }
-    let no_waiting = HashMap::new();
+    let registries: HashMap<String, Option<HashSet<String>>> = {
+        let states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
+        let states = states.as_ref();
+        hosts.iter().map(|host| (host.clone(), states.and_then(|states| states.get(host)?.registry.clone()))).collect()
+    };
     hosts
         .iter()
         .flat_map(|host| {
-            let mut found = session_scan::list_sessions(&mirror_root(app_dir, host), None, &no_waiting, window_ms);
+            let registry = registries.get(host).cloned().flatten();
+            let mut found = session_scan::list_mirrored_sessions(&mirror_root(app_dir, host), window_ms, registry);
             for session in &mut found {
                 session.host = Some(SessionHost { name: host.clone(), exe: None, kind: "remote" });
                 session.remote_host = Some(host.clone());
@@ -134,8 +141,9 @@ fn fetch(host: &str, app_dir: &Path, window_ms: i64) {
     if let Some(state) = states.as_mut().and_then(|states| states.get_mut(host)) {
         state.in_flight = false;
         match result {
-            Ok(files) => {
+            Ok((files, registry)) => {
                 state.files = files;
+                state.registry = registry;
                 state.fetched_at = Some(current_unix_millis());
                 state.error = None;
             }
@@ -145,8 +153,8 @@ fn fetch(host: &str, app_dir: &Path, window_ms: i64) {
 }
 
 /// Writes the changed files into the mirror and removes those the host no longer lists; returns
-/// what the mirror now holds.
-fn apply(root: &Path, host: &str, replies: Vec<Reply>) -> HashMap<String, MirroredFile> {
+/// what the mirror now holds, and the host's registry of running sessions.
+fn apply(root: &Path, host: &str, replies: Vec<Reply>) -> (HashMap<String, MirroredFile>, Option<HashSet<String>>) {
     let mut previous = {
         let mut states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
         states
@@ -156,8 +164,15 @@ fn apply(root: &Path, host: &str, replies: Vec<Reply>) -> HashMap<String, Mirror
             .unwrap_or_default()
     };
     let mut files = HashMap::new();
+    let mut registry: Option<HashSet<String>> = None;
     for reply in replies {
         match reply {
+            Reply::Registry => registry = Some(HashSet::new()),
+            Reply::Running(id) => {
+                if let Some(registry) = &mut registry {
+                    registry.insert(id);
+                }
+            }
             Reply::Same(path) => {
                 if let Some(file) = previous.remove(&path) {
                     files.insert(path, file);
@@ -186,7 +201,7 @@ fn apply(root: &Path, host: &str, replies: Vec<Reply>) -> HashMap<String, Mirror
             let _ = fs::remove_file(target);
         }
     }
-    files
+    (files, registry)
 }
 
 /// Where a remote path goes in the mirror; `None` for anything but session files and the Codex
@@ -259,7 +274,8 @@ mod tests {
             head: Vec::new(),
             tail: b"{}\n".to_vec(),
         };
-        let files = apply(&root, "test-host-a", vec![changed]);
+        let (files, registry) = apply(&root, "test-host-a", vec![changed, Reply::Registry, Reply::Running("a".into())]);
+        assert_eq!(registry, Some(HashSet::from(["a".to_string()])));
         let target = root.join(&path);
         assert_eq!(fs::read(&target).unwrap(), b"{}\n");
         let modified = fs::metadata(&target).unwrap().modified().unwrap();
@@ -271,7 +287,8 @@ mod tests {
             "test-host-a".into(),
             HostState { files, ..HostState::default() },
         );
-        assert!(apply(&root, "test-host-a", Vec::new()).is_empty());
+        let (files, registry) = apply(&root, "test-host-a", Vec::new());
+        assert!(files.is_empty() && registry.is_none());
         assert!(!target.exists());
         let _ = fs::remove_dir_all(&root);
     }
