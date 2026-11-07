@@ -32,7 +32,7 @@ mod tests {
         height: 420.0,
     };
     const WANTED: Size = Size {
-        width: 820.0,
+        width: 1080.0,
         height: 860.0,
     };
 
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn shortens_on_a_scaled_laptop_screen() {
-        assert_eq!(fit(WANTED, MIN, size(1536.0, 824.0)), size(820.0, 728.0));
+        assert_eq!(fit(WANTED, MIN, size(1536.0, 824.0)), size(1080.0, 728.0));
     }
 
     #[test]
