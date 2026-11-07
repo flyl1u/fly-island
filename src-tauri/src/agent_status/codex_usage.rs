@@ -27,7 +27,7 @@ const MAX_FILES: usize = 20;
 const DAY_MINUTES: i64 = 24 * 60;
 
 /// Codex's folder: `CODEX_HOME` when set, else `~/.codex`.
-fn codex_home(home_dir: &Path) -> PathBuf {
+pub(super) fn codex_home(home_dir: &Path) -> PathBuf {
     env::var_os("CODEX_HOME")
         .map(PathBuf::from)
         .filter(|dir| dir.is_absolute())
@@ -43,7 +43,7 @@ fn dir_paths(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// The newest rollout files: `sessions/<year>/<month>/<day>/rollout-*.jsonl`, by change time.
-fn newest_rollouts(codex_home: &Path) -> Vec<PathBuf> {
+pub(super) fn newest_rollouts(codex_home: &Path) -> Vec<PathBuf> {
     let mut days = Vec::new();
     for year in dir_paths(&codex_home.join("sessions")) {
         for month in dir_paths(&year) {

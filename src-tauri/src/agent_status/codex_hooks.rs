@@ -14,10 +14,11 @@ pub(super) fn install_codex_status_hooks(
     config_path: &Path,
     running_script_path: &Path,
     status_script_path: &Path,
+    async_session_start: bool,
 ) -> Result<(), String> {
     let content = fs::read_to_string(config_path).unwrap_or_default();
     let content = remove_managed_codex_hook_block(&content);
-    let block = build_codex_hook_block(running_script_path, status_script_path);
+    let block = build_codex_hook_block(running_script_path, status_script_path, async_session_start);
     let mut next_content = content.trim_end().to_string();
     if !next_content.is_empty() {
         next_content.push_str("\n\n");
@@ -30,11 +31,14 @@ pub(super) fn install_codex_status_hooks(
 pub(super) fn build_codex_hook_block(
     running_script_path: &Path,
     status_script_path: &Path,
+    async_session_start: bool,
 ) -> String {
     let submit_command = agent_running_command(running_script_path, "codex");
     let stop_command = agent_status_command(status_script_path, "codex", "completed");
-    // Codex hooks cannot run in the background yet, so the start record delays the first turn by
-    // about a second, once per session.
+    // Looking up the agent's process takes about a second. Codex 0.148 and later run the start
+    // record in the background (`async_session_start`, codex_version.rs); older ones would skip
+    // an `async` hook, so there it delays the first turn, once per session.
+    let session_start_async = if async_session_start { "\nasync = true" } else { "" };
     let session_script_path = status_script_path.with_file_name(AGENT_SESSION_SCRIPT_FILE_NAME);
     let session_start_command = agent_status_command(&session_script_path, "codex", "start");
     let session_end_command = agent_status_command(&session_script_path, "codex", "end");
@@ -70,7 +74,7 @@ statusMessage = "Updating FocuSD agent status"
 type = "command"
 command = {session_start_command}
 command_windows = {session_start_command}
-timeout = 15
+timeout = 15{session_start_async}
 
 [[hooks.SessionEnd]]
 [[hooks.SessionEnd.hooks]]
@@ -248,7 +252,12 @@ mod tests {
         let block = build_codex_hook_block(
             Path::new(r"C:\a b\focusd-agent-running.cmd"),
             Path::new(r"C:\a b\focusd-agent-status.ps1"),
+            false,
         );
+        assert!(!block.contains("async"));
+        let background = build_codex_hook_block(Path::new(r"C:\r.cmd"), Path::new(r"C:\s.ps1"), true);
+        assert!(background.contains("timeout = 15\nasync = true\n"));
+        assert_eq!(background.matches("async = true").count(), 1, "only SessionStart runs in the background");
 
         assert!(block.contains(
             r#"command = "cmd.exe /d /s /c \"\"C:\\a b\\focusd-agent-running.cmd\" codex\"""#

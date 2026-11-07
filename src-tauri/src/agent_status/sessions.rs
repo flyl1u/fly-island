@@ -354,13 +354,20 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
     result.settle()
 }
 
-/// `(session id, cwd)` from a Codex rollout's first line.
+/// `(session id, cwd)` from a Codex rollout's first line; `None` for a subagent's or Codex's own
+/// internal thread. Those have rollouts of their own (their `id` is the thread, not the session
+/// the hooks report), so listing them would add sessions no hook ever updates. A user's session
+/// has a plain `source` ("cli", "vscode", "exec", ...) or `{"custom": ...}`.
 pub(super) fn parse_codex_meta(first_line: &str) -> Option<(String, Option<String>)> {
     let record = serde_json::from_str::<Value>(first_line).ok()?;
     if record["type"] != "session_meta" {
         return None;
     }
     let payload = &record["payload"];
+    let source = &payload["source"];
+    if source.get("subagent").is_some() || source.get("internal").is_some() {
+        return None;
+    }
     let id = string_field(payload, "id").or_else(|| string_field(payload, "session_id"))?;
     Some((id, string_field(payload, "cwd")))
 }

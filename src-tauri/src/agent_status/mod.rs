@@ -9,6 +9,7 @@ mod external;
 mod hooks_state;
 mod host_icon;
 mod codex_usage;
+mod codex_version;
 mod magpie;
 mod markers;
 mod notifications;
@@ -232,6 +233,7 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         &codex_config_path,
         &running_script_path,
         &status_script_path,
+        codex_version::codex_runs_async_hooks(&home_dir) == Some(true),
     )?;
     install_claude_code_status_hooks(
         &claude_config_path,
@@ -364,6 +366,7 @@ fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
         read(&home_dir.join(".codex").join("config.toml")).as_deref(),
         &running_script_path,
         &status_script_path,
+        codex_version::codex_runs_async_hooks(&home_dir),
     );
     let claude_code = claude_code_hooks_state(
         read(&home_dir.join(".claude").join("settings.json")).as_deref(),

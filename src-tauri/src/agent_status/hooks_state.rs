@@ -61,17 +61,28 @@ pub(super) fn claude_code_hooks_state(
     }
 }
 
-/// Codex `config.toml`: current when it holds the managed block Install/Repair writes.
+/// Codex `config.toml`: current when it holds the managed block Install/Repair writes. That block
+/// runs SessionStart in the background when Codex can (`runs_async`, codex_version.rs); while the
+/// version is unknown either form counts, so a missing rollout does not ask for a repair.
 pub(super) fn codex_hooks_state(
     config_toml: Option<&str>,
     running_script_path: &Path,
     status_script_path: &Path,
+    runs_async: Option<bool>,
 ) -> HookInstallState {
     let Some(config) = config_toml else {
         return HookInstallState::NotInstalled;
     };
-    let expected = build_codex_hook_block(running_script_path, status_script_path);
-    if normalize_windows_line_endings(config).contains(&normalize_windows_line_endings(&expected)) {
+    let config = normalize_windows_line_endings(config);
+    let holds = |async_start: bool| {
+        let expected = build_codex_hook_block(running_script_path, status_script_path, async_start);
+        config.contains(&normalize_windows_line_endings(&expected))
+    };
+    let current = match runs_async {
+        Some(async_start) => holds(async_start),
+        None => holds(false) || holds(true),
+    };
+    if current {
         HookInstallState::Current
     } else if config.contains(FOCUSD_AGENT_HOOK_SIGNATURE) {
         HookInstallState::Outdated

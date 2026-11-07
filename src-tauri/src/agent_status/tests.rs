@@ -9,6 +9,22 @@ use serde_json::json;
 use super::notifications::WaitingNotifications;
 use super::title::*;
 
+#[test]
+fn codex_runs_async_hooks_from_0_148() {
+    use super::codex_version::{rollout_cli_version, runs_async_hooks};
+
+    let meta = json!({"type": "session_meta", "payload": {"id": "01a1", "cli_version": "0.148.0"}}).to_string();
+    assert_eq!(rollout_cli_version(&meta).as_deref(), Some("0.148.0"));
+    assert_eq!(rollout_cli_version(r#"{"type":"turn_context","payload":{"cli_version":"1.0.0"}}"#), None);
+    assert_eq!(rollout_cli_version(r#"{"type":"session_meta","payload":{"id":"x"}}"#), None);
+
+    assert_eq!(runs_async_hooks("0.147.0"), Some(false));
+    assert_eq!(runs_async_hooks("0.148.0"), Some(true));
+    assert_eq!(runs_async_hooks("0.149.0-alpha.2"), Some(true));
+    assert_eq!(runs_async_hooks("1.0.0"), Some(true));
+    assert_eq!(runs_async_hooks("dev"), None);
+}
+
 fn first_prompt(transcript: &str) -> Option<String> {
     transcript.lines().find_map(user_prompt_in_record)
 }
@@ -336,6 +352,16 @@ fn codex_session_tail_and_meta() {
         Some(("01a1".to_string(), Some(r"E:\p".to_string())))
     );
     assert_eq!(parse_codex_meta("{\"type\":\"turn_context\"}"), None);
+    // A spawned subagent and Codex's own review thread are not sessions of their own.
+    let thread = |source: serde_json::Value| {
+        json!({"type": "session_meta", "payload": {"id": "02b2", "session_id": "01a1", "cwd": "E:\\p", "source": source}})
+            .to_string()
+    };
+    let spawned = json!({"subagent": {"thread_spawn": {"parent_thread_id": "01a1", "depth": 1}}});
+    assert_eq!(parse_codex_meta(&thread(spawned)), None);
+    assert_eq!(parse_codex_meta(&thread(json!({"subagent": "review"}))), None);
+    assert_eq!(parse_codex_meta(&thread(json!({"internal": "guardian"}))), None);
+    assert_eq!(parse_codex_meta(&thread(json!("cli"))).map(|meta| meta.0).as_deref(), Some("02b2"));
     assert_eq!(
         codex_user_prompt(&event(
             json!({"type": "user_message", "message": "# 恢复发布机环境"})
@@ -573,31 +599,40 @@ fn hooks_state_matches_what_the_installers_write() {
     // or one pointing elsewhere is outdated.
     let current = format!(
         "model = \"x\"\r\n\r\n{}",
-        build_codex_hook_block(running, status)
+        build_codex_hook_block(running, status, false)
     );
     assert_eq!(
-        codex_hooks_state(Some(&current), running, status),
+        codex_hooks_state(Some(&current), running, status, None),
         HookInstallState::Current
     );
     let old = current.replace(" codex\\\"", " codex capture\\\"");
     assert_ne!(old, current);
     assert_eq!(
-        codex_hooks_state(Some(&old), running, status),
+        codex_hooks_state(Some(&old), running, status, None),
         HookInstallState::Outdated
     );
     let elsewhere = Path::new(r"D:\FocuSD\scripts\focusd-agent-running.cmd");
     assert_eq!(
-        codex_hooks_state(Some(&current), elsewhere, status),
+        codex_hooks_state(Some(&current), elsewhere, status, None),
         HookInstallState::Outdated
     );
     assert_eq!(
-        codex_hooks_state(Some("model = \"x\""), running, status),
+        codex_hooks_state(Some("model = \"x\""), running, status, None),
         HookInstallState::NotInstalled
     );
     assert_eq!(
-        codex_hooks_state(None, running, status),
+        codex_hooks_state(None, running, status, None),
         HookInstallState::NotInstalled
     );
+    // Once a rollout shows a Codex that runs hooks in the background, the waiting block asks for
+    // a repair, and the other way round; an unknown version accepts both.
+    let background = format!("model = \"x\"\n\n{}", build_codex_hook_block(running, status, true));
+    let state = |config: &str, runs_async| codex_hooks_state(Some(config), running, status, runs_async);
+    assert_eq!(state(&current, Some(false)), HookInstallState::Current);
+    assert_eq!(state(&current, Some(true)), HookInstallState::Outdated);
+    assert_eq!(state(&background, Some(true)), HookInstallState::Current);
+    assert_eq!(state(&background, Some(false)), HookInstallState::Outdated);
+    assert_eq!(state(&background, None), HookInstallState::Current);
 
     // Claude Code: every installed entry has to be there; without the Notification hook (as
     // installed before waiting states) it is outdated.
