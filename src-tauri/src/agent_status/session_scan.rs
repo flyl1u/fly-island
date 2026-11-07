@@ -11,7 +11,7 @@ use std::{
 };
 
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
-use super::notifications::{compacting_sessions, is_waiting, WaitingNotifications};
+use super::notifications::{compacting_sessions, is_waiting, SavedNotifications, WaitingNotifications};
 use super::session_host::codex_host;
 use super::session_process::running_sessions;
 use super::session_records;
@@ -46,19 +46,27 @@ pub(super) fn list_sessions(
     waiting: &WaitingNotifications,
     window_ms: i64,
 ) -> Vec<AgentSessionSummary> {
-    scan(home_dir, app_dir, waiting, window_ms, None)
+    let compacting = app_dir.map(|dir| compacting_sessions(dir, current_unix_millis())).unwrap_or_default();
+    scan(home_dir, app_dir, waiting, &compacting, window_ms, None)
 }
 
 /// The sessions of a mirrored home (remote_sessions.rs). `registry`: the ids the other computer's
-/// `~/.claude/sessions` lists as running, or `None` when it keeps no registry.
-pub(super) fn list_mirrored_sessions(home_dir: &Path, window_ms: i64, registry: Option<HashSet<String>>) -> Vec<AgentSessionSummary> {
-    scan(home_dir, None, &WaitingNotifications::new(), window_ms, registry)
+/// `~/.claude/sessions` lists as running, or `None` when it keeps no registry. `saved`: what its
+/// hooks reported (remote_setup.rs).
+pub(super) fn list_mirrored_sessions(
+    home_dir: &Path,
+    saved: &SavedNotifications,
+    window_ms: i64,
+    registry: Option<HashSet<String>>,
+) -> Vec<AgentSessionSummary> {
+    scan(home_dir, None, &saved.waiting, &saved.compacting, window_ms, registry)
 }
 
 fn scan(
     home_dir: &Path,
     app_dir: Option<&Path>,
     waiting: &WaitingNotifications,
+    compacting: &HashMap<String, i64>,
     window_ms: i64,
     registry: Option<HashSet<String>>,
 ) -> Vec<AgentSessionSummary> {
@@ -69,7 +77,6 @@ fn scan(
     let codex_index = read_tail(&home_dir.join(".codex").join("session_index.jsonl"));
     // Claude Code's registry of live sessions, read once and only if some session needs it.
     let mut live_claude = registry;
-    let compacting = app_dir.map(|dir| compacting_sessions(dir, now)).unwrap_or_default();
     for (provider, path, modified) in recent_session_files(home_dir, now, window_ms) {
         // The phase is worked out here, because a working session turns stale, or stops
         // waiting, without its file changing.

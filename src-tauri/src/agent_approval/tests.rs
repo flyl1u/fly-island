@@ -154,6 +154,13 @@ fn only_local_agents_with_the_token_get_in() {
     assert_eq!(check_access(&request(&[("host", "127.0.0.1:47830")]), TOKEN, 47830).unwrap_err().status, 401);
     assert_eq!(check_access(&request(&[("host", "127.0.0.1:47830"), ("authorization", "Bearer wrong")]), TOKEN, 47830).unwrap_err().status, 401);
     assert_eq!(check_access(&request(&[("host", "evil.example:47830"), ("authorization", &bearer)]), TOKEN, 47830).unwrap_err().status, 403);
+    // A remote computer's hooks carry its own token, which only goes with its name.
+    let remote = format!("Bearer {}", super::config::remote_token(TOKEN, "zcm6"));
+    let from = |host: &str, auth: &str| check_access(&request(&[("host", "127.0.0.1:47830"), ("x-focusd-remote", host), ("authorization", auth)]), TOKEN, 47830);
+    assert_eq!(from("zcm6", &remote).unwrap(), Some("zcm6".to_string()));
+    assert_eq!(from("nc-e", &remote).unwrap_err().status, 401);
+    assert_eq!(from("zcm6", &bearer).unwrap_err().status, 401);
+    assert_eq!(check_access(&request(&[("host", "127.0.0.1:47830"), ("authorization", &bearer)]), TOKEN, 47830).unwrap(), None);
     let from_page = request(&[("host", "127.0.0.1:47830"), ("authorization", &bearer), ("origin", "https://evil.example")]);
     assert_eq!(check_access(&from_page, TOKEN, 47830).unwrap_err().status, 403);
 }

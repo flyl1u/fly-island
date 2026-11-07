@@ -41,6 +41,8 @@ export type SettingsAgentText = {
   remoteFetching: string;
   remoteFetchedAt: (time: string, sessions: number) => string;
   remoteFailed: (reason: string) => string;
+  /** Sessions come, but approvals from there cannot reach the island's cards. */
+  remoteApprovalFailed: (reason: string) => string;
   remoteRemove: (name: string) => string;
   remoteAdd: string;
   remoteAddHint: string;
@@ -140,9 +142,11 @@ export type SettingsAgentText = {
     toggle: string;
     hint: (path: string) => string;
     outdated: string;
+    preview: string;
   };
   hooksOutdated: string;
   hooksMissing: string;
+  remoteResult: (host: string, error: string | null) => string;
 };
 
 export const zhCN: SettingsAgentText = {
@@ -176,7 +180,7 @@ export const zhCN: SettingsAgentText = {
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
   sessionHoursHint: "最后一次活动在这段时间内的会话才会列出。",
   sessionCardSection: "会话卡片",
-  remoteIntro: "在 Agent 页列出其他电脑上的 Claude Code 和 Codex 会话：打开的主机，岛屿每 20 秒用 ssh 读一次它最近的会话记录，服务器上不用安装任何东西。",
+  remoteIntro: "在 Agent 页列出其他电脑上的 Claude Code 和 Codex 会话：打开的主机，岛屿和它保持一条 ssh 连接，每 3 秒读一次它最近的会话记录，服务器上不用安装任何东西。",
   remoteRequirements: "只能用密钥登录，不会弹出密码框，先确认终端里 ssh 能直接登上去。远程会话没有钩子，不会显示「等你处理」，也不能在岛上审批或切到它的窗口。",
   remoteHostsSection: "主机",
   remoteHostsFooter: "~/.ssh/config 里的 Host 和在这里添加的主机都列在上面，最多同时打开 8 台。",
@@ -187,6 +191,7 @@ export const zhCN: SettingsAgentText = {
   remoteFetching: "正在读取…",
   remoteFetchedAt: (time, sessions) => `${time} 读取 · ${sessions} 个会话`,
   remoteFailed: (reason) => `读取失败：${reason}`,
+  remoteApprovalFailed: (reason) => `审批卡片收不到这台电脑的请求，会在它的终端里确认：${reason}`,
   remoteRemove: (name) => `删除「${name}」`,
   remoteAdd: "添加主机",
   remoteAddHint: "存在岛屿自己的配置里，不会改 ~/.ssh/config。需要跳板机、指定密钥这类设置时，写进 ~/.ssh/config 更合适。",
@@ -277,11 +282,13 @@ export const zhCN: SettingsAgentText = {
   replyMarker: {
     title: "回复状态标记",
     toggle: "让 Claude 在回复末尾标出在等什么（推荐打开）",
-    hint: (path) => `打开后，会在你的全局 Claude 指令 ${path} 末尾加一段说明，让 Claude Code 每次回复的最后一行写一个符号：↩ 等你回复、⋯ 在等它自己启动的后台任务、✓ 做完了。岛屿据此区分“等你回复”和“做完了”：Agent 页、会话环，以及提醒和音效（等你回复按“等你确认或回答”弹出、用提问音效；等后台任务时不弹不响）。这一行会出现在终端的回复里。只对之后开始的回复生效；关掉时只删除这段说明，文件里别的内容不动。`,
-    outdated: "CLAUDE.md 里的说明是旧版本，关掉再打开即可更新。",
+    hint: (path) => `打开后，会新建 Claude Code 的用户级规则文件 ${path}（每个会话都会读它，不改你的 CLAUDE.md），让 Claude Code 每次回复的最后一行写一个符号：↩ 等你回复、⋯ 在等它自己启动的后台任务、✓ 做完了。岛屿据此区分“等你回复”和“做完了”：Agent 页、会话环，以及提醒和音效（等你回复按“等你确认或回答”弹出、用提问音效；等后台任务时不弹不响）。这一行会出现在终端的回复里。SSH 远程页里打开的电脑也会写同一个文件。只对之后开始的会话生效；关掉时删除这个文件。`,
+    outdated: "说明是旧版本，或者还在旧位置 CLAUDE.md 里；关掉再打开即可更新并移到规则文件。",
+    preview: "查看将写入的内容",
   },
   hooksOutdated: "已安装的钩子是旧版本，“等待确认”状态等新功能不会生效。请点“安装/修复”，然后重启 Codex 和 Claude Code。",
   hooksMissing: "还没有安装钩子。点“安装/修复”后重启 Codex 和 Claude Code，状态灯和会话标题才会工作。",
+  remoteResult: (host, error) => (error ? `SSH 远程 ${host}：失败，${error}` : `SSH 远程 ${host}：已完成`),
 };
 
 export const en: SettingsAgentText = {
@@ -315,7 +322,7 @@ export const en: SettingsAgentText = {
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
   sessionHoursHint: "Only sessions active within this time are listed.",
   sessionCardSection: "Session cards",
-  remoteIntro: "Lists Claude Code and Codex sessions on other computers on the Agent page: for each host that is on, the island reads its recent sessions over ssh every 20 seconds. Nothing is installed on the server.",
+  remoteIntro: "Lists Claude Code and Codex sessions on other computers on the Agent page: for each host that is on, the island keeps an ssh connection open and reads its recent sessions every 3 seconds. Nothing is installed on the server.",
   remoteRequirements: "Key login only, with no password prompt: check that ssh logs in by itself in a terminal first. Remote sessions have no hooks, so they never show as waiting on you, cannot be approved on the island, and their windows cannot be brought up.",
   remoteHostsSection: "Hosts",
   remoteHostsFooter: "The Hosts in ~/.ssh/config and the ones added here are listed above; at most 8 can be on.",
@@ -326,6 +333,7 @@ export const en: SettingsAgentText = {
   remoteFetching: "Reading…",
   remoteFetchedAt: (time, sessions) => `Read at ${time} · ${sessions === 1 ? "1 session" : `${sessions} sessions`}`,
   remoteFailed: (reason) => `Failed: ${reason}`,
+  remoteApprovalFailed: (reason) => `Approvals from here cannot reach the island's cards and are asked in its terminal: ${reason}`,
   remoteRemove: (name) => `Remove ${name}`,
   remoteAdd: "Add host",
   remoteAddHint: "Kept in the island's own settings; ~/.ssh/config is not changed. For jump hosts or a particular key, ~/.ssh/config is the better place.",
@@ -416,9 +424,11 @@ export const en: SettingsAgentText = {
   replyMarker: {
     title: "Reply status marker",
     toggle: "Have Claude mark what it waits for at the end of each reply (recommended)",
-    hint: (path) => `When on, a short instruction goes at the end of your global Claude instructions, ${path}, asking Claude Code to end every reply with one symbol on its own line: ↩ your turn, ⋯ waiting on a background task it started, ✓ done. The island uses it to tell "your turn" from "done": on the Agent page, the session ring, and in alerts and sounds (your turn pops up as waiting for you, with the question sound; waiting on a background task neither pops up nor sounds). The line shows in the terminal's replies. It applies to replies from then on; switching off removes only that instruction and leaves the rest of the file alone.`,
-    outdated: "The instruction in CLAUDE.md is an older version; switch off and on again to update it.",
+    hint: (path) => `When on, the island creates a Claude Code user rule, ${path}, which every session reads (your CLAUDE.md stays untouched), asking Claude Code to end every reply with one symbol on its own line: ↩ your turn, ⋯ waiting on a background task it started, ✓ done. The island uses it to tell "your turn" from "done": on the Agent page, the session ring, and in alerts and sounds (your turn pops up as waiting for you, with the question sound; waiting on a background task neither pops up nor sounds). The line shows in the terminal's replies. Computers switched on under SSH remote get the same file. It applies to sessions started from then on; switching off deletes the file.`,
+    outdated: "The instruction is an older version, or still in CLAUDE.md where older versions put it; switch off and on again to update it and move it to the rules file.",
+    preview: "See what will be written",
   },
   hooksOutdated: "The installed hooks are from an older version, so newer features such as the waiting-for-you state won't work. Click Install/repair, then restart Codex and Claude Code.",
   hooksMissing: "No hooks installed yet. Click Install/repair, then restart Codex and Claude Code, for the status light and session titles to work.",
+  remoteResult: (host, error) => (error ? `SSH remote ${host}: failed, ${error}` : `SSH remote ${host}: done`),
 };

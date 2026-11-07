@@ -59,6 +59,8 @@ pub(super) struct HookInput {
     pub permission_suggestions: Option<Value>,
     /// The subagent that asked, when it was not the main agent.
     pub agent_id: Option<String>,
+    /// The SSH remote computer it came from (http.rs `check_access`); None for this one.
+    pub remote_host: Option<String>,
 }
 
 impl HookInput {
@@ -72,6 +74,7 @@ impl HookInput {
             tool_input: input["tool_input"].clone(),
             permission_suggestions: Some(input["permission_suggestions"].clone()).filter(|value| !value.is_null()),
             agent_id: text("agent_id"),
+            remote_host: None,
         })
     }
 

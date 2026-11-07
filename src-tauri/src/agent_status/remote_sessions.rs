@@ -1,7 +1,8 @@
 //! Agent sessions on other computers, read over SSH (remote_fetch.rs) into a mirror in the app
 //! data folder (`remote-sessions/<host>/` laid out like a home folder, file times kept) that the
 //! local scan reads like the user's own home. Each host is fetched in the background at most
-//! every REFRESH_MS while sessions are being listed, so listing never waits for the network.
+//! every REFRESH_MS while sessions are being listed, so listing never waits for the network, over
+//! a connection kept open between fetches (remote_fetch.rs).
 
 use std::{
     collections::{HashMap, HashSet},
@@ -13,15 +14,17 @@ use std::{
 
 use serde::Serialize;
 
-use super::remote_fetch::{self, RemoteFile, Reply, TAIL_BYTES};
+use super::remote_fetch::{write_island_config, Connection, RemoteFile, Reply, TAIL_BYTES};
+use super::notifications::saved_notifications;
 use super::remote_hosts::{self, SshTarget};
+use super::remote_setup::REMOTE_NOTIFICATIONS_DIR;
 use super::session_host::SessionHost;
 use super::session_scan;
 use super::sessions::AgentSessionSummary;
 use super::snapshot::current_unix_millis;
 
 pub(super) const MIRROR_DIR: &str = "remote-sessions";
-const REFRESH_MS: i64 = 20_000;
+const REFRESH_MS: i64 = 3_000;
 /// After a failure (offline, key refused) the host is tried less often.
 const RETRY_AFTER_ERROR_MS: i64 = 60_000;
 
@@ -35,6 +38,8 @@ struct HostState {
     attempted_at: i64,
     fetched_at: Option<i64>,
     error: Option<String>,
+    /// Why the host's approvals cannot reach the island's cards (no reverse forward).
+    approval_error: Option<String>,
     /// Sessions the last listing found in the host's mirror.
     sessions: usize,
 }
@@ -46,6 +51,10 @@ struct MirroredFile {
 }
 
 static HOSTS: Mutex<Option<HashMap<String, HostState>>> = Mutex::new(None);
+/// Each host's open connection, between fetches; a fetch holds it meanwhile.
+// shortcut: a connection stays open while the island lists no sessions (the Agent status switched
+// off); close idle ones if the remote shells left waiting ever matter.
+static CONNECTIONS: Mutex<Option<HashMap<String, Connection>>> = Mutex::new(None);
 
 /// How reading a host went, for the settings page.
 #[derive(Debug, Clone, Serialize)]
@@ -57,6 +66,9 @@ pub struct RemoteHostStatus {
     fetching: bool,
     /// Sessions of the listing window found there, once it has been read.
     sessions: usize,
+    /// Why approvals from there cannot reach the island's cards; None when they can, or before
+    /// the first connection.
+    approval_error: Option<String>,
 }
 
 /// The chosen hosts' sessions from their mirrors, starting a background fetch for each host that
@@ -69,6 +81,9 @@ pub(super) fn sessions(app_dir: &Path, window_ms: i64) -> Vec<AgentSessionSummar
         let mut states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
         let states = states.get_or_insert_with(HashMap::new);
         states.retain(|host, _| hosts.contains(host));
+        if let Some(connections) = CONNECTIONS.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
+            connections.retain(|host, _| hosts.contains(host));
+        }
         for (host, target) in targets {
             let state = states.entry(host.clone()).or_default();
             let wait = if state.error.is_some() { RETRY_AFTER_ERROR_MS } else { REFRESH_MS };
@@ -89,7 +104,9 @@ pub(super) fn sessions(app_dir: &Path, window_ms: i64) -> Vec<AgentSessionSummar
     let mut counts = Vec::new();
     for host in &hosts {
         let registry = registries.get(host).cloned().flatten();
-        let mut found = session_scan::list_mirrored_sessions(&mirror_root(app_dir, host), window_ms, registry);
+        let root = mirror_root(app_dir, host);
+        let saved = saved_notifications(&root.join(REMOTE_NOTIFICATIONS_DIR), now, false);
+        let mut found = session_scan::list_mirrored_sessions(&root, &saved, window_ms, registry);
         for session in &mut found {
             session.host = Some(SessionHost { name: host.clone(), exe: None, kind: "remote" });
             session.remote_host = Some(host.clone());
@@ -118,14 +135,17 @@ pub(super) fn statuses(app_dir: &Path) -> Vec<RemoteHostStatus> {
                 error: state.and_then(|state| state.error.clone()),
                 fetching: state.is_some_and(|state| state.in_flight),
                 sessions: state.map_or(0, |state| state.sessions),
+                approval_error: state.and_then(|state| state.approval_error.clone()),
                 host,
             }
         })
         .collect()
 }
 
-/// Lets the next listing fetch every host at once (after the hosts were changed).
+/// Lets the next listing fetch every host at once, over new connections (after the hosts were
+/// changed, so a computer added in the island may now point elsewhere).
 pub(super) fn refresh_soon() {
+    CONNECTIONS.lock().unwrap_or_else(PoisonError::into_inner).take();
     if let Some(states) = HOSTS.lock().unwrap_or_else(PoisonError::into_inner).as_mut() {
         for state in states.values_mut() {
             state.attempted_at = 0;
@@ -146,10 +166,19 @@ fn fetch(host: &str, target: &SshTarget, app_dir: &Path, window_ms: i64) {
             .map(|state| state.files.iter().map(|(path, file)| (path.clone(), file.remote.clone())).collect())
             .unwrap_or_default()
     };
-    let script = remote_fetch::script(window_ms / 60_000, &known);
-    let result = remote_fetch::run_ssh(target, &script)
-        .and_then(|bytes| remote_fetch::parse_reply(&bytes))
-        .map(|replies| apply(&mirror_root(app_dir, host), host, replies));
+    let open = CONNECTIONS.lock().unwrap_or_else(PoisonError::into_inner).as_mut().and_then(|connections| connections.remove(host));
+    // Kept from when the connection opened unless it says otherwise now.
+    let reused = open.is_some();
+    let mut approval_error = None;
+    let result = open.map_or_else(|| open_connection(host, target, app_dir, &mut approval_error), Ok).and_then(|mut connection| {
+        let replies = connection.fetch(window_ms / 60_000, &known)?;
+        Ok((connection, replies))
+    });
+    let result = result.map(|(connection, replies)| {
+        approval_error = approval_error.take().or_else(|| connection.forward_error());
+        CONNECTIONS.lock().unwrap_or_else(PoisonError::into_inner).get_or_insert_with(HashMap::new).insert(host.to_string(), connection);
+        apply(&mirror_root(app_dir, host), host, replies)
+    });
 
     let mut states = HOSTS.lock().unwrap_or_else(PoisonError::into_inner);
     if let Some(state) = states.as_mut().and_then(|states| states.get_mut(host)) {
@@ -160,8 +189,28 @@ fn fetch(host: &str, target: &SshTarget, app_dir: &Path, window_ms: i64) {
                 state.registry = registry;
                 state.fetched_at = Some(current_unix_millis());
                 state.error = None;
+                if !reused || approval_error.is_some() {
+                    state.approval_error = approval_error;
+                }
             }
             Err(error) => state.error = Some(error),
+        }
+    }
+}
+
+/// Opens a connection through the island's ssh config, which forwards the approval endpoint's
+/// port back here; when that config cannot be made, through the user's own with no forward, and
+/// `approval_error` says why.
+fn open_connection(host: &str, target: &SshTarget, app_dir: &Path, approval_error: &mut Option<String>) -> Result<Connection, String> {
+    let Some(port) = crate::agent_approval::endpoint().map(|endpoint| endpoint.port) else {
+        *approval_error = Some("The approval endpoint is not running".into());
+        return Connection::open(target, None, None);
+    };
+    match write_island_config(app_dir, host, target, Some(port)) {
+        Ok(config) => Connection::open(target, Some(&config), Some(port)),
+        Err(error) => {
+            *approval_error = Some(error);
+            Connection::open(target, None, None)
         }
     }
 }
@@ -224,6 +273,8 @@ fn mirror_path(root: &Path, remote: &str) -> Option<PathBuf> {
     let path = Path::new(remote);
     let plain = path.components().all(|component| matches!(component, Component::Normal(_)));
     let allowed = remote == ".codex/session_index.jsonl"
+        || (remote.strip_prefix(REMOTE_NOTIFICATIONS_DIR).and_then(|name| name.strip_prefix('/'))
+            .is_some_and(|name| !name.contains('/') && name.ends_with(".json")))
         || ((remote.starts_with(".claude/projects/") || remote.starts_with(".codex/sessions/"))
             && remote.ends_with(".jsonl"));
     (plain && allowed).then(|| root.join(path))
@@ -265,6 +316,9 @@ mod tests {
         assert_eq!(mirror_path(root, ".claude/projects/p/a.jsonl"), Some(root.join(".claude/projects/p/a.jsonl")));
         assert!(mirror_path(root, ".codex/sessions/2026/11/06/r.jsonl").is_some());
         assert!(mirror_path(root, ".codex/session_index.jsonl").is_some());
+        assert!(mirror_path(root, ".focusd-island/agent-notifications/focusd-agent-12-34.json").is_some());
+        assert_eq!(mirror_path(root, ".focusd-island/agent-notifications/x/y.json"), None);
+        assert_eq!(mirror_path(root, ".focusd-island/other.json"), None);
         assert_eq!(mirror_path(root, ".claude/projects/../../evil.jsonl"), None);
         assert_eq!(mirror_path(root, "/etc/passwd"), None);
         assert_eq!(mirror_path(root, ".claude/settings.json"), None);

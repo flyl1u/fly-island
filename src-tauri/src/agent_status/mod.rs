@@ -19,6 +19,7 @@ mod reply_text;
 mod remote_fetch;
 mod remote_hosts;
 mod remote_sessions;
+mod remote_setup;
 mod focus;
 mod focus_log;
 mod session_host;
@@ -95,6 +96,8 @@ pub struct AgentHooksInstallResult {
     pub(super) codex_config_path: String,
     pub(super) claude_config_path: String,
     pub(super) installed_at: i64,
+    /// Install/Repair on each chosen SSH remote computer.
+    pub(super) remotes: Vec<remote_setup::RemoteResult>,
 }
 
 #[tauri::command]
@@ -182,6 +185,14 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
         }
     }
 
+    // Its saved notifications too, one file each (notifications.rs).
+    let prefix = format!("{provider}-");
+    for entry in fs::read_dir(app_dir.join(notifications::NOTIFICATIONS_DIR)).into_iter().flatten().flatten() {
+        if entry.file_name().to_string_lossy().starts_with(&prefix) {
+            fs::remove_file(entry.path()).ok();
+        }
+    }
+
     persisted.updated_at = now;
     let content = serde_json::to_string_pretty(&persisted)
         .map_err(|error| format!("Failed to serialize agent status: {error}"))?;
@@ -216,8 +227,15 @@ pub(crate) fn clear_external_owner(owner: &str) {
     external::clear(owner, None);
 }
 
+/// In the background: the remote computers are reached over SSH.
 #[tauri::command]
-pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult, String> {
+pub async fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult, String> {
+    tauri::async_runtime::spawn_blocking(move || install_agent_status_hooks_now(&app))
+        .await
+        .map_err(|error| format!("Failed to join the agent hooks task: {error}"))?
+}
+
+fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallResult, String> {
     crate::dev_lane::refuse_in_preview("install the AI agents' status hooks")?;
     let app_dir = app
         .path()
@@ -256,6 +274,7 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         codex_config_path: codex_config_path.to_string_lossy().to_string(),
         claude_config_path: claude_config_path.to_string_lossy().to_string(),
         installed_at: current_unix_millis(),
+        remotes: remote_setup::install_hooks(&app_dir),
     })
 }
 
@@ -503,7 +522,17 @@ fn approval_hook() -> Option<claude_hooks::ApprovalHook> {
     })
 }
 
+/// Refuses a symlink: replacing the link would cut it off from the file it points to, and
+/// writing through it would change a file kept elsewhere (a dotfiles or instructions repository),
+/// which is the user's to change.
 pub(super) fn write_text_file(path: &Path, content: &str) -> Result<(), String> {
+    if let Ok(target) = fs::read_link(path) {
+        return Err(format!(
+            "{} is a symlink to {}; the island does not change it. Change that file yourself",
+            path.display(),
+            target.display()
+        ));
+    }
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Failed to create {}: {error}", parent.display()))?;

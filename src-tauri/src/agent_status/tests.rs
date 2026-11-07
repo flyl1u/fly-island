@@ -843,7 +843,7 @@ fn a_claude_session_gone_from_its_registry_is_no_longer_running() {
     // A mirrored home is judged by the registry its computer sent, not by local processes.
     fs::remove_file(registry.join(format!("{pid}.json"))).unwrap();
     fs::remove_dir(&registry).unwrap();
-    let mirrored = |registry| super::session_scan::list_mirrored_sessions(&home, ACTIVE_WINDOW_MS, registry);
+    let mirrored = |registry| super::session_scan::list_mirrored_sessions(&home, &Default::default(), ACTIVE_WINDOW_MS, registry);
     assert_eq!(closed(mirrored(Some(["closed".to_string()].into()))), ["live"]);
     assert!(closed(mirrored(None)).is_empty());
 }
@@ -1557,4 +1557,65 @@ fn context_tokens_come_from_the_newest_model_call() {
     ]
     .concat();
     assert_eq!(parse_codex_tail(&codex).context_tokens, Some(24_800));
+}
+#[test]
+fn a_symlinked_file_is_not_written() {
+    let dir = std::env::temp_dir().join(format!("focusd-symlink-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let target = dir.join("target.md");
+    let link = dir.join("link.md");
+    std::fs::write(&target, "old").unwrap();
+    // Creating symlinks needs Developer Mode or an elevated process on Windows.
+    if std::os::windows::fs::symlink_file(&target, &link).is_err() {
+        let _ = std::fs::remove_file(&target);
+        let _ = std::fs::remove_dir(&dir);
+        return;
+    }
+    assert!(super::write_text_file(&link, "new").unwrap_err().contains("is a symlink"));
+    assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), "old");
+    let _ = std::fs::remove_file(&link);
+    let _ = std::fs::remove_file(&target);
+    let _ = std::fs::remove_dir(&dir);
+}
+
+#[test]
+fn each_saved_notification_is_a_file_and_the_newest_of_a_session_decides() {
+    use super::notifications::saved_notifications;
+    use super::snapshot::current_unix_millis;
+
+    let (_home, app) = temp_dirs();
+    let dir = app.join(super::notifications::NOTIFICATIONS_DIR);
+    fs::create_dir_all(&dir).unwrap();
+    let save = |name: &str, text: &str| {
+        fs::write(dir.join(name), text).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    };
+    save("claudeCode-1.json", r#"{"hook_event_name":"PermissionRequest","session_id":"s1"}"#);
+    save("claudeCode-2.json", r#"{"hook_event_name":"PermissionRequest","session_id":"s2"}"#);
+    save("claudeCode-3.json", r#"{"hook_event_name":"PreCompact","session_id":"s3"}"#);
+    save("claudeCode-4.json", r#"{"hook_event_name":"PreCompact","session_id":"s4"}"#);
+    save("claudeCode-5.json", r#"{"hook_event_name":"PostCompact","session_id":"s4"}"#);
+    // A later event of s1 that is not a wait: s1 has moved on.
+    save("claudeCode-6.json", r#"{"hook_event_name":"Notification","notification_type":"idle_prompt","session_id":"s1"}"#);
+    save("claudeCode-7.json", "not json");
+    let now = current_unix_millis();
+
+    // Two sessions waiting at once are both seen; read only, nothing is deleted.
+    let saved = saved_notifications(&dir, now, false);
+    assert_eq!(saved.waiting.keys().collect::<Vec<_>>(), vec!["s2"]);
+    assert_eq!(saved.compacting.keys().collect::<Vec<_>>(), vec!["s3"]);
+    assert_eq!(saved.sessions.len(), 4);
+    assert_eq!(fs::read_dir(&dir).unwrap().count(), 7);
+
+    // Pruning drops the files a newer one of the same session replaced, and keeps what decides.
+    assert_eq!(saved_notifications(&dir, now, true), saved);
+    let mut left: Vec<String> = fs::read_dir(&dir).unwrap().map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned()).collect();
+    left.sort();
+    assert_eq!(left, ["claudeCode-2.json", "claudeCode-3.json", "claudeCode-5.json", "claudeCode-6.json", "claudeCode-7.json"]);
+
+    // Past a day every file goes, and a compaction past its limit no longer counts.
+    assert!(saved_notifications(&dir, now + 11 * 60 * 1000, false).compacting.is_empty());
+    assert_eq!(saved_notifications(&dir, now + 25 * 60 * 60 * 1000, true), Default::default());
+    assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
 }

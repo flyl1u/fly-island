@@ -23,6 +23,8 @@ export type AgentApprovalRequest = {
   permissionSuggestions: unknown[] | null;
   /** Unix milliseconds. */
   receivedAt: number;
+  /** The SSH remote computer the session runs on (through the island's reverse forward). */
+  remoteHost?: string;
 };
 
 /**

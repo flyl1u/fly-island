@@ -4,6 +4,7 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import type { AgentHooksInstallResult, AgentHooksState, AgentStatusSnapshot } from "./api";
+import { RemoteResultLines } from "./RemoteResultLines";
 import { getAgentHooksNotice, getAgentPhaseLabel, getAgentStatusLabel, isAgentAttentionPhase, listAgentStatuses, type AgentHooksInstallState } from "./status";
 import "./AgentHooksSettingsSection.css";
 
@@ -40,6 +41,7 @@ export function AgentHooksSettingsSection({ agentStatus, clearingAgentProvider, 
     ) : agentHooksInstallState === "installed" && agentHooksInstallResult ? (
       <span className="agent-hooks-message">
         {text.scriptsDir} <code>{agentHooksInstallResult.scriptsDir}</code>
+        <RemoteResultLines results={agentHooksInstallResult.remotes} />
       </span>
     ) : undefined;
 

@@ -145,7 +145,7 @@ fn answer(shared: &Shared, stream: &TcpStream, port: u16) -> Result<Option<Strin
     if route.is_none() && request.path != ACTIVITY_PATH {
         return Err(HttpError { status: 404, message: "Unknown path." });
     }
-    check_access(&request, &shared.token, port)?;
+    let remote_host = check_access(&request, &shared.token, port)?;
     let Some((agent, kind)) = route else {
         // ACTIVITY_PATH: answered at once; the hook runs in the background and reads nothing back.
         let activity = Activity::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
@@ -154,7 +154,8 @@ fn answer(shared: &Shared, stream: &TcpStream, port: u16) -> Result<Option<Strin
         }
         return Ok(Some("{}".to_string()));
     };
-    let input = HookInput::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
+    let mut input = HookInput::parse(&request.body).map_err(|message| HttpError { status: 400, message })?;
+    input.remote_host = remote_host;
 
     // A question comes through PermissionRequest too, after its PreToolUse hook gave it back
     // (or when that hook is not installed): let the terminal ask at once. And the PreToolUse path

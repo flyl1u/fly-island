@@ -4,6 +4,11 @@
 
 use std::io::{BufRead, Read, Write};
 
+use super::config::remote_token;
+
+/// Names the SSH remote computer a request came from, through the island's reverse forward.
+pub(super) const REMOTE_HEADER: &str = "x-focusd-remote";
+
 /// A hook's input: a command with its full output, or a file being written, can be large.
 pub(super) const MAX_BODY_BYTES: usize = 4 * 1024 * 1024;
 const MAX_LINE_BYTES: usize = 8 * 1024;
@@ -146,9 +151,11 @@ pub(super) fn write_response(writer: &mut impl Write, status: u16, body: &str) -
     writer.flush()
 }
 
-/// Whether the request may reach the endpoint: from this machine's agents, not from a web page
-/// (no Origin, and a Host naming this port, which DNS rebinding cannot fake), with the token.
-pub(super) fn check_access(request: &HttpRequest, token: &str, port: u16) -> Result<(), HttpError> {
+/// Whether the request may reach the endpoint: from this machine's agents, or a remote
+/// computer's through the forward on the same port, not from a web page (no Origin, and a Host
+/// naming this port, which DNS rebinding cannot fake), with the token; a remote one carries that
+/// computer's own. Returns the remote computer.
+pub(super) fn check_access(request: &HttpRequest, token: &str, port: u16) -> Result<Option<String>, HttpError> {
     if request.header("origin").is_some() {
         return Err(error(403, "Requests from web pages are not accepted."));
     }
@@ -158,11 +165,13 @@ pub(super) fn check_access(request: &HttpRequest, token: &str, port: u16) -> Res
     if !host_ok {
         return Err(error(403, "Unexpected Host."));
     }
+    let remote = request.header(REMOTE_HEADER).filter(|host| !host.is_empty()).map(str::to_string);
+    let expected = remote.as_deref().map_or_else(|| token.to_string(), |host| remote_token(token, host));
     let presented = request.header("authorization").and_then(|value| value.strip_prefix("Bearer ")).unwrap_or_default();
-    if !same_secret(presented.trim().as_bytes(), token.as_bytes()) {
+    if !same_secret(presented.trim().as_bytes(), expected.as_bytes()) {
         return Err(error(401, "Missing or wrong token."));
     }
-    Ok(())
+    Ok(remote)
 }
 
 /// Compares in time that does not depend on where the first difference is.

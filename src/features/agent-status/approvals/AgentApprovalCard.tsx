@@ -40,7 +40,8 @@ export function AgentApprovalCard({ approvals, sessions }: { approvals: AgentApp
 
   const toTerminal = () => {
     approvals.decide("terminal");
-    void focusAgentWindow(request.agent, cwd, session?.title ?? null, request.sessionId).catch((error: unknown) =>
+    // A remote session has no window here by its id; one connected to that computer may be found by folder and title.
+    void focusAgentWindow(request.agent, cwd, session?.title ?? null, request.remoteHost ? "" : request.sessionId).catch((error: unknown) =>
       console.error("Failed to focus the agent window", error),
     );
   };
@@ -55,6 +56,7 @@ export function AgentApprovalCard({ approvals, sessions }: { approvals: AgentApp
       <header className="agent-approval__heading">
         <ShieldQuestion className="agent-approval__icon" size={14} strokeWidth={2.3} aria-hidden="true" />
         <span className="agent-approval__title">
+          {request.remoteHost ? <span className="agent-approval__project">{request.remoteHost} · </span> : null}
           {project && project !== title ? <span className="agent-approval__project">{project} · </span> : null}
           {title}
         </span>

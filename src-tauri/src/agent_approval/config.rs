@@ -3,6 +3,7 @@
 //! across restarts; the port only changes when the saved one is taken.
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{fs, path::Path};
 
 pub(super) const CONFIG_FILE_NAME: &str = "agent-approval.json";
@@ -60,6 +61,12 @@ fn generate_token() -> Result<String, String> {
     let mut bytes = [0u8; TOKEN_BYTES];
     getrandom::fill(&mut bytes).map_err(|error| format!("Could not create an access token: {error}"))?;
     Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
+/// The token an SSH remote computer's hooks carry (remote_setup.rs), told from the island's own
+/// by its `X-FocuSD-Remote` host: one leaked from a shared server names only that server.
+pub(super) fn remote_token(token: &str, host: &str) -> String {
+    Sha256::digest(format!("focusd-remote:{host}:{token}")).iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 pub(super) fn is_valid_token(token: &str) -> bool {

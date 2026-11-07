@@ -39,7 +39,12 @@ export type AgentHooksInstallResult = {
   codexConfigPath: string;
   claudeConfigPath: string;
   installedAt: number;
+  /** Install/Repair on each SSH remote computer switched on (remote_setup.rs). */
+  remotes: RemoteResult[];
 };
+
+/** Mirrors RemoteResult in src-tauri/src/agent_status/remote_setup.rs; `error` null means done. */
+export type RemoteResult = { host: string; error: string | null };
 
 /** Mirrors HookInstallState / AgentHooksState in src-tauri/src/agent_status/hooks_state.rs. */
 export type HookInstallState = "notInstalled" | "outdated" | "current";
@@ -107,12 +112,16 @@ export type ReplyMarker = "yourTurn" | "background" | "done";
 
 /** Mirrors ReplyMarkerState in src-tauri/src/agent_status/reply_marker.rs. */
 export type ReplyMarkerState = {
-  /** The island's block is in the user's global CLAUDE.md. */
+  /** The island's rules file is there (or an older island's block is in CLAUDE.md). */
   installed: boolean;
-  /** It is an older wording; switching on again replaces it. */
+  /** An older wording, or the block still in CLAUDE.md; switching on again replaces it. */
   outdated: boolean;
-  /** That CLAUDE.md. */
+  /** The rules file, ~/.claude/rules/focusd-island-reply-marker.md. */
   path: string;
+  /** What switching on writes there. */
+  content: string;
+  /** What switching it did on each SSH remote computer; empty when only read. */
+  remotes: RemoteResult[];
 };
 
 export function getReplyMarkerState() {
@@ -164,6 +173,8 @@ export type RemoteHostStatus = {
   fetching: boolean;
   /** Sessions of the listing window found there. Missing from older builds. */
   sessions?: number;
+  /** Why its approvals cannot reach the island's cards (no reverse forward); null when they can. */
+  approvalError?: string | null;
 };
 
 /** Mirrors CustomHost in src-tauri/src/agent_status/remote_hosts.rs: a computer added in the island. */

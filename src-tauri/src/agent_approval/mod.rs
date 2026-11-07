@@ -97,6 +97,11 @@ pub(crate) fn endpoint() -> Option<ApprovalEndpoint> {
     SERVICE.get().map(|service| ApprovalEndpoint { port: service.port, token: service.token.clone() })
 }
 
+/// The token the hooks on the SSH remote computer `host` carry; None if the endpoint did not start.
+pub(crate) fn remote_hook_token(host: &str) -> Option<String> {
+    SERVICE.get().map(|service| config::remote_token(&service.token, host))
+}
+
 /// The URL `agent`'s approval hook (`PermissionRequest`) posts to.
 pub(crate) fn hook_url(agent: Agent) -> Option<String> {
     endpoint().map(|endpoint| format!("http://127.0.0.1:{}{}", endpoint.port, agent.path()))

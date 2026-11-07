@@ -61,8 +61,8 @@ pub(super) fn split_reply(text: &str) -> (Option<ReplyMarker>, &str) {
 }
 
 /// Opens the block; the version lets a newer island replace an older wording.
-const BLOCK_START: &str = "<!-- focusd-island: reply marker v1 -->";
-const BLOCK_START_PREFIX: &str = "<!-- focusd-island: reply marker";
+const BLOCK_START: &str = "<!-- focusd-island: reply marker v2 -->";
+pub(super) const BLOCK_START_PREFIX: &str = "<!-- focusd-island: reply marker";
 const BLOCK_END: &str = "<!-- /focusd-island: reply marker -->";
 
 /// The instruction, in the island's own words.
@@ -75,9 +75,9 @@ End every reply with one extra line that holds only one of these characters, so 
 - `⋯` you are waiting for a background task you started yourself (a background command, a subagent) and will continue on your own
 - `✓` the work is finished and nothing is needed from the user
 
-Write the character alone on the last line, without backticks, and nothing after it. To stop, switch off \"Reply status marker\" in FocuSD Island's Settings → AI Agent, which removes this block.";
+Write the character alone on the last line, without backticks, and nothing after it. To stop, switch off \"Reply status marker\" in FocuSD Island's Settings → AI Agent, which deletes this file.";
 
-fn block() -> String {
+pub(super) fn block() -> String {
     format!("{BLOCK_START}\n{BLOCK_BODY}\n{BLOCK_END}")
 }
 
@@ -92,39 +92,40 @@ fn find_block(text: &str) -> Option<(usize, usize)> {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReplyMarkerState {
-    /// The island's block is in the file.
+    /// The island's rules file is there, or an older island's block is in `CLAUDE.md`.
     pub(super) installed: bool,
-    /// The block is an older wording; switching off and on again, or on again, replaces it.
+    /// An older wording, or the block still in `CLAUDE.md`; switching on again replaces it.
     pub(super) outdated: bool,
-    /// The `CLAUDE.md` it lives in.
+    /// The rules file it lives in.
     pub(super) path: String,
+    /// What switching it on writes there, shown before the user does.
+    pub(super) content: String,
+    /// What switching it on or off did on each chosen SSH remote computer; empty when only read.
+    pub(super) remotes: Vec<super::remote_setup::RemoteResult>,
 }
 
-pub(super) fn state_of(text: &str, path: &Path) -> ReplyMarkerState {
-    let found = find_block(text);
+/// The state from the rules file's text and `CLAUDE.md`'s, where islands before v2 put the block.
+pub(super) fn state_of(rules: &str, claude_md: &str, path: &Path) -> ReplyMarkerState {
+    let found = find_block(rules);
+    let legacy = find_block(claude_md).is_some();
     ReplyMarkerState {
-        installed: found.is_some(),
+        installed: found.is_some() || legacy,
         // Compared with LF endings: a CRLF file holds the block with CRLF.
-        outdated: found.is_some_and(|(start, end)| text[start..end].replace("\r\n", "\n") != block()),
+        outdated: legacy || found.is_some_and(|(start, end)| rules[start..end].replace("\r\n", "\n") != block()),
         path: path.display().to_string(),
+        content: block(),
+        remotes: Vec::new(),
     }
 }
 
-/// `text` with the island's block, current wording, replacing an older one in place
-/// or added at the end after a blank line. Line endings follow the file's.
-pub(super) fn with_block(text: &str) -> String {
-    let crlf = text.contains("\r\n");
-    let block = if crlf { block().replace('\n', "\r\n") } else { block() };
-    let newline = if crlf { "\r\n" } else { "\n" };
-    if let Some((start, end)) = find_block(text) {
-        return format!("{}{block}{}", &text[..start], &text[end..]);
-    }
-    let body = text.trim_end();
-    if body.is_empty() {
-        format!("{block}{newline}")
-    } else {
-        format!("{body}{newline}{newline}{block}{newline}")
-    }
+/// The whole rules file the island writes.
+pub(super) fn rules_file() -> String {
+    format!("{}\n", block())
+}
+
+/// Whether `text` is the island's rules file, so switching off may delete it.
+pub(super) fn is_rules_file(text: &str) -> bool {
+    text.contains(BLOCK_START_PREFIX)
 }
 
 /// `text` without the island's block and the blank lines it added; anything else stays.
@@ -142,18 +143,21 @@ pub(super) fn without_block(text: &str) -> String {
     }
 }
 
-/// The user's global `CLAUDE.md`: in `CLAUDE_CONFIG_DIR` when set, else `~/.claude`.
-fn claude_md_path() -> Result<PathBuf, String> {
-    let dir = env::var_os("CLAUDE_CONFIG_DIR")
+/// Under the Claude config folder. Claude Code reads every `rules/*.md` there into each session,
+/// as it reads `CLAUDE.md`, so the island never edits the user's own instructions.
+pub(super) const RULES_FILE: &str = "rules/focusd-island-reply-marker.md";
+
+/// The Claude config folder: `CLAUDE_CONFIG_DIR` when set, else `~/.claude`.
+fn claude_dir() -> Result<PathBuf, String> {
+    env::var_os("CLAUDE_CONFIG_DIR")
         .map(PathBuf::from)
         .filter(|dir| dir.is_absolute())
         .map(Ok)
-        .unwrap_or_else(|| crate::system::windows_home_dir().map(|home| home.join(".claude")))?;
-    Ok(dir.join("CLAUDE.md"))
+        .unwrap_or_else(|| crate::system::windows_home_dir().map(|home| home.join(".claude")))
 }
 
 /// The file's text; empty when it does not exist yet.
-fn read_claude_md(path: &Path) -> Result<String, String> {
+fn read_text(path: &Path) -> Result<String, String> {
     match fs::read_to_string(path) {
         Ok(text) => Ok(text),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
@@ -161,29 +165,45 @@ fn read_claude_md(path: &Path) -> Result<String, String> {
     }
 }
 
-/// Whether the block is in the user's `CLAUDE.md`.
+/// Whether the rules file is there.
 #[tauri::command]
 pub async fn get_reply_marker_state() -> Result<ReplyMarkerState, String> {
     tauri::async_runtime::spawn_blocking(|| {
-        let path = claude_md_path()?;
-        Ok(state_of(&read_claude_md(&path)?, &path))
+        let dir = claude_dir()?;
+        let path = dir.join(RULES_FILE);
+        Ok(state_of(&read_text(&path)?, &read_text(&dir.join("CLAUDE.md"))?, &path))
     })
     .await
     .map_err(|error| format!("Failed to join the CLAUDE.md task: {error}"))?
 }
 
-/// Adds (or updates) the block, or removes it. A file that would only have held the
-/// block is not created when switching off.
+/// Writes the rules file, or deletes it (only when it is the island's). Either way an older
+/// island's block comes out of `CLAUDE.md`, and nothing else there changes.
 #[tauri::command]
-pub async fn set_reply_marker(enabled: bool) -> Result<ReplyMarkerState, String> {
+pub async fn set_reply_marker(app: tauri::AppHandle, enabled: bool) -> Result<ReplyMarkerState, String> {
+    use tauri::Manager;
+    let app_dir = app.path().app_data_dir().ok();
     tauri::async_runtime::spawn_blocking(move || {
-        let path = claude_md_path()?;
-        let text = read_claude_md(&path)?;
-        let next = if enabled { with_block(&text) } else { without_block(&text) };
-        if next != text {
-            super::write_text_file(&path, &next)?;
+        let dir = claude_dir()?;
+        let path = dir.join(RULES_FILE);
+        let rules = read_text(&path)?;
+        if enabled && rules != rules_file() {
+            super::write_text_file(&path, &rules_file())?;
         }
-        Ok(state_of(&next, &path))
+        if !enabled && is_rules_file(&rules) {
+            fs::remove_file(&path).map_err(|error| format!("Failed to delete {}: {error}", path.display()))?;
+        }
+        let claude_md_path = dir.join("CLAUDE.md");
+        let claude_md = read_text(&claude_md_path)?;
+        let cleaned = without_block(&claude_md);
+        if cleaned != claude_md {
+            super::write_text_file(&claude_md_path, &cleaned)?;
+        }
+        let mut state = state_of(&read_text(&path)?, &cleaned, &path);
+        if let Some(app_dir) = app_dir {
+            state.remotes = super::remote_setup::set_reply_marker(&app_dir, enabled);
+        }
+        Ok(state)
     })
     .await
     .map_err(|error| format!("Failed to join the CLAUDE.md task: {error}"))?
@@ -206,25 +226,21 @@ mod tests {
     }
 
     #[test]
-    fn the_block_goes_in_once_is_updated_in_place_and_comes_out_cleanly() {
-        let path = Path::new("C:/Users/me/.claude/CLAUDE.md");
+    fn the_rules_file_holds_the_block_and_an_old_block_comes_out_of_claude_md_cleanly() {
+        let path = Path::new("C:/Users/me/.claude/rules/focusd-island-reply-marker.md");
         let user = "# Global rules\r\n\r\n- reply in Chinese\r\n";
-        let on = with_block(user);
-        assert!(on.starts_with("# Global rules\r\n\r\n- reply in Chinese\r\n\r\n<!-- focusd-island"));
-        assert!(!on.replace("\r\n", "").contains('\n'), "a CRLF file keeps CRLF");
-        assert_eq!(with_block(&on), on);
-        assert_eq!(state_of(&on, path), ReplyMarkerState { installed: true, outdated: false, path: path.display().to_string() });
-        assert_eq!(without_block(&on), user);
+        let state = state_of(&rules_file(), user, path);
+        assert!(state.installed && !state.outdated);
+        assert_eq!(state.content, block());
+        assert!(is_rules_file(&rules_file()) && !is_rules_file(user));
+        assert!(!state_of("", user, path).installed);
 
-        let old = format!("{user}\r\n<!-- focusd-island: reply marker v0 -->\r\nold words\r\n{BLOCK_END}\r\n\r\n## After\r\n");
-        assert!(state_of(&old, path).outdated);
-        let updated = with_block(&old);
-        assert!(!updated.contains("old words") && updated.ends_with("## After\r\n"));
-        assert_eq!(without_block(&updated), format!("{user}\r\n## After\r\n"));
-
-        assert_eq!(with_block(""), format!("{}\n", block()));
-        assert_eq!(without_block(&with_block("")), "");
+        // An island before v2 put the block into CLAUDE.md: it counts as on, and needs moving.
+        let legacy = format!("{user}\r\n<!-- focusd-island: reply marker v1 -->\r\nold words\r\n{BLOCK_END}\r\n\r\n## After\r\n");
+        let state = state_of("", &legacy, path);
+        assert!(state.installed && state.outdated);
+        assert_eq!(without_block(&legacy), format!("{user}\r\n## After\r\n"));
         assert_eq!(without_block(user), user);
-        assert!(!state_of(user, path).installed);
+        assert!(state_of("<!-- focusd-island: reply marker v1 -->\nx\n<!-- /focusd-island: reply marker -->\n", "", path).outdated);
     }
 }

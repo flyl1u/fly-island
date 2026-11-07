@@ -72,6 +72,7 @@ function HostRow({ entry, onToggle, onRemove }: { entry: RemoteHostEntry; onTogg
         <>
           <span className="agent-remote__origin">{origin}</span>
           {state ? <span className={status?.error ? "agent-remote__state agent-remote__error" : "agent-remote__state"}>{state}</span> : null}
+          {status?.approvalError && !status.error ? <span className="agent-remote__state agent-remote__error">{text.remoteApprovalFailed(status.approvalError)}</span> : null}
         </>
       }
       control={

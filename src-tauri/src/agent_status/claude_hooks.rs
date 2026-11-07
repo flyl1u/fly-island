@@ -21,14 +21,14 @@ pub(crate) struct ApprovalHook {
 
 /// After these the session has moved on, so a card still waiting for it was answered in the
 /// terminal (`agent_approval::decision::Activity`).
-const ACTIVITY_EVENTS: [&str; 6] = ["PostToolUse", "PostToolUseFailure", "PermissionDenied", "Stop", "SubagentStop", "UserPromptSubmit"];
+pub(super) const ACTIVITY_EVENTS: [&str; 6] = ["PostToolUse", "PostToolUseFailure", "PermissionDenied", "Stop", "SubagentStop", "UserPromptSubmit"];
 
 /// The island waits up to 120 s for the user (`agent_approval::WAIT_LIMIT`); the hook waits
 /// longer, so the island hands the request back before Claude Code gives up on it.
 pub(super) const APPROVAL_HOOK_TIMEOUT_SECONDS: i64 = 150;
 
 /// Marks the approval hook as FocuSD's: an HTTP hook has no script path to carry the signature.
-const APPROVAL_HOOK_MARKER_HEADER: &str = "X-FocuSD-Hook";
+pub(super) const APPROVAL_HOOK_MARKER_HEADER: &str = "X-FocuSD-Hook";
 
 pub(super) fn install_claude_code_status_hooks(
     config_path: &Path,

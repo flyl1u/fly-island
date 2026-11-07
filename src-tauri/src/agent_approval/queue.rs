@@ -25,6 +25,9 @@ pub struct ApprovalRequest {
     /// The subagent that asked; None for the main agent. Not shown, only matched (B6.2.7).
     #[serde(skip)]
     pub agent_id: Option<String>,
+    /// The SSH remote computer the session runs on; left out for this one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remote_host: Option<String>,
 }
 
 /// Why a card went away (event `agent-approval-closed`).
@@ -83,6 +86,7 @@ impl Queue {
             permission_suggestions: input.permission_suggestions,
             received_at,
             agent_id: input.agent_id,
+            remote_host: input.remote_host,
         };
         let shown = !self.entries.iter().any(|entry| same_session(&entry.request, &request));
         self.entries.push(Entry { request: request.clone(), outcome: None, elsewhere: false });
