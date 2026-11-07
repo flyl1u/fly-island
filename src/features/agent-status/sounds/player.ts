@@ -1,8 +1,12 @@
 import ack from "../../../assets/sounds/thumb-piano/ack.wav";
 import approval from "../../../assets/sounds/thumb-piano/approval.wav";
 import complete from "../../../assets/sounds/thumb-piano/complete.wav";
+import compact from "../../../assets/sounds/thumb-piano/compact.wav";
 import error from "../../../assets/sounds/thumb-piano/error.wav";
+import idle from "../../../assets/sounds/thumb-piano/idle.wav";
 import question from "../../../assets/sounds/thumb-piano/question.wav";
+import quotaLow from "../../../assets/sounds/thumb-piano/quotaLow.wav";
+import quotaReset from "../../../assets/sounds/thumb-piano/quotaReset.wav";
 import start from "../../../assets/sounds/thumb-piano/start.wav";
 import { listSoundPacks, readSoundPackFile, type SoundPack } from "./api";
 import type { AgentSoundEvent } from "./events";
@@ -10,7 +14,9 @@ import { isQuietTime } from "./quietHours";
 import { BUILTIN_PACK, type AgentSoundSettings } from "./storage";
 
 /** The island's own sounds ("thumb piano"), synthesized for fly-island; see assets/sounds/README.md. */
-const BUILTIN_SOUNDS: Record<AgentSoundEvent, string> = { start, complete, error, approval, question, ack };
+const BUILTIN_SOUNDS: Record<AgentSoundEvent, string> = {
+  start, complete, error, approval, question, ack, compact, idle, quotaLow, quotaReset,
+};
 
 let packs: Promise<SoundPack[]> | null = null;
 const packUrls = new Map<string, Promise<string | null>>();

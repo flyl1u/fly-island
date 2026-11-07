@@ -23,7 +23,8 @@ export const DEFAULT_AGENT_SOUND_SETTINGS: AgentSoundSettings = {
   volume: 70,
   pack: BUILTIN_PACK,
   // Starting a session and sending a prompt happen at the keyboard; a sound there is opt-in.
-  events: { start: false, complete: true, error: true, approval: true, question: true, ack: false },
+  // A finished session left unread is highlighted on the Agent page already; its sound is opt-in too.
+  events: { start: false, complete: true, error: true, approval: true, question: true, ack: false, compact: true, idle: false, quotaLow: true, quotaReset: true },
   quietWhenInFront: true,
   quietHours: { enabled: false, start: "22:00", end: "08:00" },
 };

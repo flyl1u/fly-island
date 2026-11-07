@@ -3,7 +3,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
-import { AGENT_ALERT_SECONDS, AGENT_REMIND_SECONDS } from "../appearance/settings";
+import { AGENT_ALERT_SECONDS, AGENT_QUOTA_ALERT_PERCENTS, AGENT_REMIND_SECONDS } from "../appearance/settings";
 import type { AgentAlertStarted, IslandSettings } from "../appearance/types";
 
 /** Settings → AI Agent: which session events open the Agent page, and for how long. */
@@ -19,6 +19,7 @@ export function AgentAlertSettings({
   const anyOn = settings.agentAlertStarted !== "off" || settings.agentAlertCompleted || settings.agentAlertFailed || settings.agentAlertWaiting;
   const secondsOptions = AGENT_ALERT_SECONDS.map((seconds) => ({ value: String(seconds), label: text.secondsValue(seconds) }));
   const remindOptions = AGENT_REMIND_SECONDS.map((seconds) => ({ value: String(seconds), label: text.remindValue(seconds) }));
+  const quotaOptions = AGENT_QUOTA_ALERT_PERCENTS.map((percent) => ({ value: String(percent), label: text.quotaValue(percent) }));
   const startedOptions = (["everyTurn", "newSession", "off"] as const).map((value) => ({ value, label: text.startedOptions[value] }));
 
   return (
@@ -52,6 +53,18 @@ export function AgentAlertSettings({
       )}
       <SettingsToggleRow title={text.completed} checked={settings.agentAlertCompleted} onChange={(agentAlertCompleted) => update({ agentAlertCompleted })} />
       <SettingsToggleRow title={text.failed} checked={settings.agentAlertFailed} onChange={(agentAlertFailed) => update({ agentAlertFailed })} />
+      <SettingsRow
+        title={text.quota}
+        description={text.quotaDescription}
+        control={
+          <SettingsSelect
+            value={String(settings.agentQuotaAlertPercent)}
+            options={quotaOptions}
+            ariaLabel={text.quota}
+            onChange={(value) => update({ agentQuotaAlertPercent: Number(value) })}
+          />
+        }
+      />
       {anyOn && (
         <SettingsRow
           title={text.seconds}

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Bot, CircleArrowUp, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
+import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
+import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MediaState } from "../../features/media/api";
@@ -61,6 +63,8 @@ type IslandCollapsedBarProps = {
   levelPopup: LevelChange | null;
   /** Headphones connecting, a battery running low or the charger; it comes before the level popup. */
   deviceAlert: DeviceAlert | null;
+  /** Claude's or Codex's usage reaching the alert level, or resetting; shown like a device alert, after it. */
+  quotaAlert?: QuotaAlert | null;
   /** A meeting about to start; it takes the summary's place, after alerts and translation. */
   meeting: CollapsedMeeting | null;
   agentVisualState: AgentVisualState;
@@ -102,6 +106,7 @@ export function IslandCollapsedBar({
   deviceUse,
   levelPopup,
   deviceAlert,
+  quotaAlert = null,
   meeting,
   agentVisualState,
   onOpenPage,
@@ -184,6 +189,8 @@ export function IslandCollapsedBar({
         <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
           {deviceAlert ? (
             <DeviceAlertPopup alert={deviceAlert} />
+          ) : quotaAlert ? (
+            <QuotaAlertPopup alert={quotaAlert} />
           ) : levelPopup ? (
             <LevelPopup change={levelPopup} />
           ) : translationPeek ? (
@@ -221,7 +228,7 @@ export function IslandCollapsedBar({
         </CollapsedMessageContent>
         {showCenter && <span className="island__center-slot">{slots.center}</span>}
       </button>
-      {showMeeting && !preview && !deviceAlert && !levelPopup && !translationPeek && meeting?.upcoming.event.meetingLink && (
+      {showMeeting && !preview && !deviceAlert && !quotaAlert && !levelPopup && !translationPeek && meeting?.upcoming.event.meetingLink && (
         <button
           className="island-meeting-join"
           type="button"
@@ -256,7 +263,7 @@ export function IslandCollapsedBar({
           <span className="island-message-button__dot island-update-badge__dot" aria-hidden="true" />
         </button>
       )}
-      {showCollapsedText && !preview && !translationPeek && !levelPopup && !deviceAlert && pluginStatusChip}
+      {showCollapsedText && !preview && !translationPeek && !levelPopup && !deviceAlert && !quotaAlert && pluginStatusChip}
       <DeviceUseIndicator deviceUse={deviceUse} />
       {shelfCount !== null && shelfCount > 0 && (
         <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>

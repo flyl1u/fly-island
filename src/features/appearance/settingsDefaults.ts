@@ -43,6 +43,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentAlertStarted: "everyTurn",
   agentAlertSeconds: 5,
   agentRemindSeconds: 60,
+  agentQuotaAlertPercent: 80,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
   pulseBrightness: 100,

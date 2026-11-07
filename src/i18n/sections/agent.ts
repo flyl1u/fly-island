@@ -69,6 +69,13 @@ export type AgentText = {
     other: string;
     submit: string;
   };
+  /** The collapsed island's line when a usage limit runs low or resets (roadmap B6.5.2). */
+  quota: {
+    low: (agent: string, window: string, used: number) => string;
+    reset: (agent: string, window: string) => string;
+    fiveHour: string;
+    sevenDay: string;
+  };
 };
 
 export const zhCN: AgentText = {
@@ -135,6 +142,12 @@ export const zhCN: AgentText = {
     other: "其他回答…",
     submit: "提交",
   },
+  quota: {
+    low: (agent, window, used) => `${agent} ${window}额度已用 ${used}%`,
+    reset: (agent, window) => `${agent} ${window}额度已刷新`,
+    fiveHour: "5 小时",
+    sevenDay: "7 天",
+  },
 };
 
 export const en: AgentText = {
@@ -199,5 +212,11 @@ export const en: AgentText = {
     label: "Asks you",
     other: "Something else…",
     submit: "Submit",
+  },
+  quota: {
+    low: (agent, window, used) => `${agent} ${window} usage at ${used}%`,
+    reset: (agent, window) => `${agent} ${window} usage reset`,
+    fiveHour: "5-hour",
+    sevenDay: "7-day",
   },
 };

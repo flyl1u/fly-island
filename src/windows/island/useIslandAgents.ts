@@ -26,8 +26,9 @@ export function useIslandAgents(settings: IslandSettings) {
     [sessions.agentSessions, others],
   );
 
-  // Read with the page closed too: the page is sized for the usage lines it will show.
-  const agentUsages = useAgentUsages(settings.agentStatusEnabled && settings.agentShowUsage);
+  // Read with the page closed too: the page is sized for the usage lines it will show, and the
+  // usage alert (agentQuotaAlertPercent) watches them.
+  const agentUsages = useAgentUsages(settings.agentStatusEnabled && (settings.agentShowUsage || settings.agentQuotaAlertPercent > 0));
 
   return { agentStatus, ...sessions, agentSession, agentActivity, agentUsages };
 }

@@ -1,5 +1,5 @@
 /** Mirrors AgentSoundEvent in features/agent-status/sounds/events.ts (i18n does not import features). */
-type SoundEvent = "start" | "complete" | "error" | "approval" | "question" | "ack";
+type SoundEvent = "start" | "complete" | "error" | "approval" | "question" | "ack" | "compact" | "idle" | "quotaLow" | "quotaReset";
 
 export type SettingsSoundsText = {
   title: string;
@@ -48,6 +48,10 @@ export const zhCN: SettingsSoundsText = {
     approval: { title: "需要审批", hint: "等你允许它执行操作" },
     question: { title: "需要回答", hint: "Claude 向你提了一个问题" },
     ack: { title: "发出消息", hint: "你给会话发了新的提问" },
+    compact: { title: "上下文快满", hint: "Claude Code 开始压缩上下文" },
+    idle: { title: "闲置等你", hint: "会话完成 5 分钟后你还没看过" },
+    quotaLow: { title: "额度快用完", hint: "Claude 或 Codex 的用量到了提醒线" },
+    quotaReset: { title: "额度已刷新", hint: "到过提醒线的额度重置了" },
   },
   preview: "试听",
   quietTitle: "什么时候不响",
@@ -87,6 +91,10 @@ export const en: SettingsSoundsText = {
     approval: { title: "Needs approval", hint: "Waiting for you to allow an action" },
     question: { title: "Needs an answer", hint: "Claude asked you a question" },
     ack: { title: "Prompt sent", hint: "You sent a session a new prompt" },
+    compact: { title: "Context nearly full", hint: "Claude Code starts compacting its context" },
+    idle: { title: "Waiting for you", hint: "A session finished 5 minutes ago and you haven't looked" },
+    quotaLow: { title: "Usage running low", hint: "Claude's or Codex's usage reached your alert level" },
+    quotaReset: { title: "Usage reset", hint: "A limit that reached your alert level has reset" },
   },
   preview: "Play",
   quietTitle: "When to stay quiet",

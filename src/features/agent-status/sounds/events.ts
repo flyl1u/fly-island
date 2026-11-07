@@ -2,7 +2,7 @@ import type { AgentSessionSummary } from "../api";
 import { replyEnding } from "../sessionLight.ts";
 
 /** The agent moments that can make a sound, in the order the Sounds page lists them. */
-export const AGENT_SOUND_EVENTS = ["start", "complete", "error", "approval", "question", "ack"] as const;
+export const AGENT_SOUND_EVENTS = ["start", "complete", "error", "approval", "question", "ack", "compact", "idle", "quotaLow", "quotaReset"] as const;
 
 export type AgentSoundEvent = (typeof AGENT_SOUND_EVENTS)[number];
 

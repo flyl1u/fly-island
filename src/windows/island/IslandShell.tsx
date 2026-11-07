@@ -4,6 +4,7 @@ import type { LevelChange } from "../../features/system-levels/api";
 import type { DeviceAlert } from "../../features/device-events/api";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
+import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
@@ -52,6 +53,8 @@ type IslandShellProps = {
   deviceUse: DeviceUse;
   levelPopup?: LevelChange | null;
   deviceAlert?: DeviceAlert | null;
+  /** Claude's or Codex's usage reaching the alert level, or resetting. */
+  quotaAlert?: QuotaAlert | null;
   /** A meeting about to start (calendar), and whether to name it. */
   meeting?: CollapsedMeeting | null;
   onOpenPage: (page: IslandPage) => void;
@@ -107,6 +110,7 @@ export function IslandShell({
   deviceUse,
   levelPopup = null,
   deviceAlert = null,
+  quotaAlert = null,
   meeting = null,
   onOpenPage,
   onWindowDragStart,
@@ -219,6 +223,7 @@ export function IslandShell({
           deviceUse={deviceUse}
           levelPopup={levelPopup}
           deviceAlert={deviceAlert}
+          quotaAlert={quotaAlert}
           meeting={meeting}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}

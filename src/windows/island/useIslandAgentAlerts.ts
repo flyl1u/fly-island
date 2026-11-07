@@ -40,7 +40,7 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
     waitingRef.current = waiting;
   }, [waiting]);
 
-  useAgentSounds(sessions, enabled);
+  useAgentSounds(sessions, enabled, unseen);
   const [soundSettings] = useAgentSoundSettings();
   // A reminder sounds like the wait it is about, if that sound is on.
   const remind = (reminded: AgentSessionSummary[]) => {

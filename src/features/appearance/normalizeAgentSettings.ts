@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { DEFAULT_SETTINGS, LEGACY_FALLBACKS } from "./settingsDefaults.ts";
 import {
-  AGENT_ALERT_SECONDS, AGENT_HOST_DISPLAYS, AGENT_REMIND_SECONDS, AGENT_SESSION_HOURS, MAX_AGENT_VISIBLE_ROWS,
+  AGENT_ALERT_SECONDS, AGENT_HOST_DISPLAYS, AGENT_QUOTA_ALERT_PERCENTS, AGENT_REMIND_SECONDS, AGENT_SESSION_HOURS, MAX_AGENT_VISIBLE_ROWS,
   MIN_AGENT_VISIBLE_ROWS, oneOf,
 } from "./settingsLimits.ts";
 import type { AgentHostDisplay, IslandSettings, LegacyIslandSettings } from "./types";
@@ -30,5 +30,6 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
     agentAlertStarted: settings?.agentAlertStarted === "newSession" || settings?.agentAlertStarted === "off" ? settings.agentAlertStarted : "everyTurn",
     agentAlertSeconds: oneOf(AGENT_ALERT_SECONDS, settings?.agentAlertSeconds, DEFAULT_SETTINGS.agentAlertSeconds),
     agentRemindSeconds: oneOf(AGENT_REMIND_SECONDS, settings?.agentRemindSeconds, DEFAULT_SETTINGS.agentRemindSeconds),
+    agentQuotaAlertPercent: oneOf(AGENT_QUOTA_ALERT_PERCENTS, settings?.agentQuotaAlertPercent, DEFAULT_SETTINGS.agentQuotaAlertPercent),
   } satisfies Partial<IslandSettings>;
 }

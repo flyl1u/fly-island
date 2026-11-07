@@ -26,6 +26,7 @@ import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
+import { useQuotaAlert } from "../../features/agent-status/useQuotaAlert";
 import { useAgentIndicator } from "./useAgentIndicator";
 import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
@@ -62,6 +63,10 @@ export function IslandApp() {
   const media = useMediaState(settings.musicEnabled);
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentActivity, agentUsages } =
     useIslandAgents(settings);
+  const quotaAlert = useQuotaAlert(agentUsages, settings.agentStatusEnabled ? settings.agentQuotaAlertPercent : 0, {
+    quiet: game.quiet,
+    canPopUp: !game.quiet && mode === "collapsed" && !isTucked,
+  });
   const openAgentsPage = useCallback(() => openIslandPage("agents"), [openIslandPage]);
   const collapsedSlots = useCollapsedSlots({
     paused: mode !== "collapsed" || isTucked || game.quiet,
@@ -224,6 +229,7 @@ export function IslandApp() {
         deviceUse={notices.deviceUse}
         levelPopup={notices.levelPopup}
         deviceAlert={notices.deviceAlert}
+        quotaAlert={quotaAlert}
         meeting={calendar.upcoming && settings.calendarEnabled ? { upcoming: calendar.upcoming, showTitle: settings.calendarShowTitle } : null}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}

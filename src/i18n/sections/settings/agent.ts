@@ -48,6 +48,10 @@ export type SettingsAgentText = {
     remind: string;
     remindDescription: string;
     remindValue: (seconds: number) => string;
+    /** Claude's or Codex's usage reaching a level (roadmap B6.5.2). */
+    quota: string;
+    quotaDescription: string;
+    quotaValue: (percent: number) => string;
   };
   /** Approving agents' permission requests on the island (roadmap B6 phase 2). */
   approval: {
@@ -128,6 +132,9 @@ export const zhCN: SettingsAgentText = {
     remind: "没处理时再提醒",
     remindDescription: "等你确认或回答的会话过了这么久还在等，再弹一次并再响一次；每次等待只补一次",
     remindValue: (seconds) => (seconds === 0 ? "不再提醒" : seconds < 60 ? `${seconds} 秒后` : `${seconds / 60} 分钟后`),
+    quota: "额度提醒",
+    quotaDescription: "Claude 或 Codex 的 5 小时、7 天用量到这条线时，在收起的岛屿上提醒一次；额度刷新后再提醒一次",
+    quotaValue: (percent) => (percent === 0 ? "不提醒" : `用到 ${percent}%`),
   },
   approval: {
     title: "在岛上审批",
@@ -205,6 +212,9 @@ export const en: SettingsAgentText = {
     remind: "Remind again",
     remindDescription: "If a session is still waiting for your approval or answer this long, pop up and sound once more; once per wait",
     remindValue: (seconds) => (seconds === 0 ? "Never" : seconds < 60 ? `after ${seconds} s` : `after ${seconds / 60} min`),
+    quota: "Usage alert",
+    quotaDescription: "When Claude's or Codex's 5-hour or 7-day usage reaches this level, say so once on the collapsed island, and again when it resets",
+    quotaValue: (percent) => (percent === 0 ? "Off" : `at ${percent}%`),
   },
   approval: {
     title: "Approve on the island",

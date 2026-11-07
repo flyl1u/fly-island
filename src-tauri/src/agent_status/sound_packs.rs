@@ -15,7 +15,9 @@ use tauri::{ipc::Response, AppHandle, Manager};
 const PACKS_DIR: &str = "sound-packs";
 const MANIFEST: &str = "pack.json";
 /// Mirrors AGENT_SOUND_EVENTS in src/features/agent-status/sounds/events.ts.
-const EVENTS: [&str; 6] = ["start", "complete", "error", "approval", "question", "ack"];
+const EVENTS: [&str; 10] = [
+    "start", "complete", "error", "approval", "question", "ack", "compact", "idle", "quotaLow", "quotaReset",
+];
 const EXTENSIONS: [&str; 5] = ["wav", "mp3", "ogg", "m4a", "flac"];
 /// Short notification sounds; anything larger is not one.
 const MAX_FILE_BYTES: usize = 4 * 1024 * 1024;
@@ -218,7 +220,7 @@ mod tests {
             files: vec![
                 file("complete", "02-Task-Complete.WAV", 10),
                 file("complete", "other.wav", 10),
-                file("idle", "07-idle.wav", 10),
+                file("lunch", "07-lunch.wav", 10),
                 file("question", "ask.mp3", 10),
             ],
         };
@@ -235,6 +237,6 @@ mod tests {
         let pack = |files| SoundPackImport { name: "p".into(), author: String::new(), license: String::new(), files };
         assert!(plan_import(pack(vec![file("start", "a.exe", 10)]), "p-1".into()).is_err());
         assert!(plan_import(pack(vec![file("start", "a.wav", MAX_FILE_BYTES + 1)]), "p-1".into()).is_err());
-        assert!(plan_import(pack(vec![file("idle", "a.wav", 10)]), "p-1".into()).is_err());
+        assert!(plan_import(pack(vec![file("lunch", "a.wav", 10)]), "p-1".into()).is_err());
     }
 }

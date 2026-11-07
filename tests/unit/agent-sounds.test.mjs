@@ -59,7 +59,12 @@ test("a CESP-style list maps categories, and approval doubles as question", () =
     ]),
   }]);
   assert.equal(plan.name, "rec");
-  assert.deepEqual(plan.sounds, { start: "rec/01-session-start.wav", approval: "rec/04-input-required.wav", question: "rec/04-input-required.wav" });
+  assert.deepEqual(plan.sounds, {
+    start: "rec/01-session-start.wav",
+    approval: "rec/04-input-required.wav",
+    question: "rec/04-input-required.wav",
+    idle: "rec/07-idle-reminder.wav",
+  });
 });
 
 test("without a manifest, file names give the events; a folder without sounds is refused", () => {

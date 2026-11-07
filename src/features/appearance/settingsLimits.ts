@@ -8,6 +8,8 @@ export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
 /** Reminding again about a session still waiting on the user: after this many seconds; 0 is off. */
 export const AGENT_REMIND_SECONDS = [0, 30, 60, 120, 300] as const;
+/** Usage level (percent) that pops up an alert; 0 is off. */
+export const AGENT_QUOTA_ALERT_PERCENTS = [0, 70, 80, 90] as const;
 
 export const MAX_CUSTOM_SETTING_PRESETS = 6;
 export const MIN_TOP_FILLET_RADIUS = 0;

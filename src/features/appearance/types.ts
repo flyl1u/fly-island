@@ -65,6 +65,8 @@ export type IslandSettings = CalendarSettingValues & {
   agentAlertSeconds: number;
   /** A session still waiting on the user pops up once more after this many seconds; 0: never. */
   agentRemindSeconds: number;
+  /** Claude's or Codex's usage reaching this percent pops up once, and again when it resets; 0: never. */
+  agentQuotaAlertPercent: number;
   taskTextColor: string;
   pulseColor: string;
   pulseBrightness: number;

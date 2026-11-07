@@ -15,6 +15,8 @@ const CESP_EVENTS: Record<string, AgentSoundEvent> = {
   "input.required": "approval",
   "input.question": "question",
   "task.acknowledge": "ack",
+  "resource.limit": "quotaLow",
+  "idle.reminder": "idle",
 };
 
 /** Words in a file name that give away its event, checked in this order. */
@@ -25,6 +27,10 @@ const NAME_HINTS: [AgentSoundEvent, string[]][] = [
   ["question", ["question", "ask"]],
   ["approval", ["input-required", "approval", "permission"]],
   ["ack", ["task-acknowledge", "acknowledge", "ack"]],
+  ["compact", ["compact", "context"]],
+  ["idle", ["idle"]],
+  ["quotaReset", ["quota-reset", "reset"]],
+  ["quotaLow", ["resource-limit", "quota", "limit"]],
 ];
 
 export type SoundPackPlan = {
