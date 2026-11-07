@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
-  agentHostDisplay: "both",
+  agentHostDisplay: "icon",
   agentSessionView: "list",
   agentSessionSort: "status",
   agentSessionGroup: "computer",
