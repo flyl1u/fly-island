@@ -11,6 +11,7 @@ use super::orca;
 use super::session_memory::{self, SeenSession};
 use super::session_process::{ancestor_chain, session_process_chain};
 use super::session_records::{self, SessionRecord};
+use super::wezterm::{self, WEZTERM_APP};
 use super::window_focus::{self, app_name, SessionHints};
 use crate::system::windows_home_dir;
 use crate::win32;
@@ -157,7 +158,17 @@ pub(super) fn focus_session(
     }
     let (folder, ancestors) = cwd.map(folder_names).unwrap_or_default();
     let hints = SessionHints { folder: folder.as_deref(), ancestors: &ancestors, title, is_codex };
-    let Some(focused) = window_focus::focus_session_window(&hints, &chain, prefer_app.as_deref()) else {
+    let mut wezterm_tab = false;
+    let focused = window_focus::focus_session_window(&hints, &chain, prefer_app.as_deref()).or_else(|| {
+        // No process chain and no window titled so: the session may sit in a background WezTerm
+        // tab. Bring that tab forward, after which its window carries the title.
+        wezterm_tab = wezterm::activate_tab_titled(None, title?);
+        wezterm_tab.then(|| window_focus::focus_session_window(&hints, &chain, Some(WEZTERM_APP)))?
+    });
+    if wezterm_tab {
+        log.note("wezterm-tab=selected");
+    }
+    let Some(focused) = focused else {
         log.finish(app_dir, "not found");
         return false;
     };
@@ -166,6 +177,11 @@ pub(super) fn focus_session(
         let switched = win32::process::image_path(focused.process_id)
             .is_some_and(|orca_exe| orca::switch_terminal(Path::new(&orca_exe), &handle));
         log.note(if switched { "switch=sent" } else { "switch=failed" });
+    }
+    if let Some(title) = title.filter(|_| focused.app == WEZTERM_APP && !wezterm_tab) {
+        let exe = win32::process::image_path(focused.process_id);
+        let selected = wezterm::activate_tab_titled(exe.as_deref().map(Path::new), title);
+        log.note(if selected { "wezterm-tab=selected" } else { "wezterm-tab=none" });
     }
     if let Some(title) = title.filter(|_| focused.app == WINDOWS_TERMINAL_APP) {
         let selected = window_focus::select_terminal_tab(&focused, title);

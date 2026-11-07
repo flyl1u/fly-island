@@ -32,6 +32,7 @@ mod sessions;
 mod title;
 mod tool_call;
 mod usage;
+mod wezterm;
 mod window_focus;
 
 use serde::Serialize;
