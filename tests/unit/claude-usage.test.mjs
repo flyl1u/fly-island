@@ -52,6 +52,17 @@ test("card lists both windows with countdowns, then the snapshot's age", () => {
   assert.deepEqual(texts(usageCardLines(usage(), NOW, en)), ["5h 42% · resets in 2h 13m", "7d 17% · resets in 3d 4h", "updated 1 min ago · via claude-hud"]);
 });
 
+test("remaining fills the rings with what is left and says so, colour still by what is used", () => {
+  const u = usage({ fiveHour: { name: "", used: 92, resetsAt: NOW + (2 * 60 + 13) * MINUTE } });
+  const [outer, inner] = usageRings(u, NOW, true);
+  assert.ok(Math.abs(outer.value - 0.08) < 1e-9);
+  assert.equal(outer.color, USAGE_COLORS.danger);
+  assert.equal(inner.value, 0.83);
+  assert.deepEqual(texts(usageCardLines(u, NOW, zhCN, true)).slice(0, 2), ["5 小时 剩余 8% · 2 小时 13 分后重置", "7 天 剩余 83% · 3 天 4 小时后重置"]);
+  assert.deepEqual(texts(usageCardLines(u, NOW, en, true)).slice(0, 1), ["5h 8% left · resets in 2h 13m"]);
+  assert.deepEqual(usageRings(usage({ fiveHour: { name: "", used: 104, resetsAt: null } }), NOW, true)[0].value, 0);
+});
+
 test("card handles missing reset times, past resets and missing snapshots", () => {
   const lines = usageCardLines(usage({
     fiveHour: { name: "", used: 99.6, resetsAt: NOW + 5 * MINUTE },

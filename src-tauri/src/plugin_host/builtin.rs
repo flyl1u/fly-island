@@ -106,6 +106,16 @@ const CLAUDE_USAGE_MANIFEST: &str = r#"{
   "contributes": {
     "settings": [
       {
+        "key": "show",
+        "type": "select",
+        "title": { "zh-CN": "环和悬停卡片显示", "en": "Rings and card show" },
+        "default": "used",
+        "options": [
+          { "value": "used", "title": { "zh-CN": "已用", "en": "Used" } },
+          { "value": "remaining", "title": { "zh-CN": "剩余", "en": "Left" } }
+        ]
+      },
+      {
         "key": "askAnthropic",
         "type": "boolean",
         "title": { "zh-CN": "直接向 Anthropic 查询", "en": "Ask Anthropic directly" },

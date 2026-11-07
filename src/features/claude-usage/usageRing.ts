@@ -32,11 +32,21 @@ export function usageColor(percent: number, stale: boolean) {
   return USAGE_COLORS.normal;
 }
 
-/** Outer ring 5 hours, inner 7 days; a missing window is a bare track. */
-export function usageRings(usage: AgentUsage | null, now: number): MiniRingTrack[] {
+/** The percent the ring and card show: what is used, or with `remaining` what is left. */
+export function shownPercent(used: number, remaining: boolean) {
+  return remaining ? Math.max(0, 100 - used) : used;
+}
+
+/**
+ * Outer ring 5 hours, inner 7 days; a missing window is a bare track. With `remaining` the rings
+ * fill with what is left; the colour still warns by what is used.
+ */
+export function usageRings(usage: AgentUsage | null, now: number, remaining = false): MiniRingTrack[] {
   const stale = isUsageStale(usage, now);
   return [usage?.fiveHour ?? null, usage?.sevenDay ?? null].map((limit) =>
-    limit ? { value: limit.used / 100, color: usageColor(limit.used, stale) } : { value: 0, color: USAGE_COLORS.stale },
+    limit
+      ? { value: shownPercent(limit.used, remaining) / 100, color: usageColor(limit.used, stale) }
+      : { value: 0, color: USAGE_COLORS.stale },
   );
 }
 
@@ -50,7 +60,7 @@ function resetText(limit: UsageWindow, now: number, text: ClaudeUsageText) {
  * The hover card: each window with its ring colour, why asking Anthropic failed (the numbers stay
  * coloured while fresh), then how old the numbers are and where they come from.
  */
-export function usageCardLines(usage: AgentUsage | null, now: number, text: ClaudeUsageText): HoverCardLine[] {
+export function usageCardLines(usage: AgentUsage | null, now: number, text: ClaudeUsageText, remaining = false): HoverCardLine[] {
   if (!usage) return [{ text: text.noData, muted: true }];
   const stale = isUsageStale(usage, now);
   const lines: HoverCardLine[] = [];
@@ -59,8 +69,9 @@ export function usageCardLines(usage: AgentUsage | null, now: number, text: Clau
     [text.sevenDay, usage.sevenDay],
   ] as const) {
     if (limit) {
-      const percent = Math.round(limit.used);
-      lines.push({ text: text.window(label, percent, resetText(limit, now, text)), color: usageColor(limit.used, stale) });
+      const percent = Math.round(shownPercent(limit.used, remaining));
+      const format = remaining ? text.windowLeft : text.window;
+      lines.push({ text: format(label, percent, resetText(limit, now, text)), color: usageColor(limit.used, stale) });
     }
   }
   const hasNumbers = lines.length > 0;

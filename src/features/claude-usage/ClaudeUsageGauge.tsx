@@ -9,17 +9,19 @@ import "./ClaudeUsageGauge.css";
 type ClaudeUsageGaugeProps = {
   /** False once the cursor has left the island, which closes the card. */
   islandHovered?: boolean;
+  /** Shows what is left instead of what is used (the plugin's "show" setting). */
+  showRemaining?: boolean;
 };
 
 /**
  * The usage ring on the collapsed bar: 5 hours outside, 7 days inside. Resting on it shows the
  * details under the island; a click re-reads claude-hud's snapshot.
  */
-export function ClaudeUsageGauge({ islandHovered = true }: ClaudeUsageGaugeProps) {
+export function ClaudeUsageGauge({ islandHovered = true, showRemaining = false }: ClaudeUsageGaugeProps) {
   const t = useTranslation();
   const { usage, now, refresh } = useClaudeUsage();
-  const rings = useMemo(() => usageRings(usage, now), [usage, now]);
-  const lines = useMemo(() => usageCardLines(usage, now, t.claudeUsage), [usage, now, t]);
+  const rings = useMemo(() => usageRings(usage, now, showRemaining), [usage, now, showRemaining]);
+  const lines = useMemo(() => usageCardLines(usage, now, t.claudeUsage, showRemaining), [usage, now, t, showRemaining]);
   const label = t.claudeUsage.ringLabel(lines.map((line) => line.text).join("; "));
 
   return (

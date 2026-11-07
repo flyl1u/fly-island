@@ -7,6 +7,8 @@ export type ClaudeUsageText = {
   sevenDay: string;
   /** "5 小时 42% · 2 小时 13 分后重置"; `reset` is null when the snapshot gave no reset time. */
   window: (label: string, percent: number, reset: string | null) => string;
+  /** The same with what is left: "5 小时 剩余 58% · 2 小时 13 分后重置". */
+  windowLeft: (label: string, percent: number, reset: string | null) => string;
   resetsIn: (parts: ResetParts) => string;
   resettingSoon: string;
   updatedAgo: (minutes: number) => string;
@@ -27,6 +29,7 @@ export const zhCN: ClaudeUsageText = {
   fiveHour: "5 小时",
   sevenDay: "7 天",
   window: (label, percent, reset) => (reset ? `${label} ${percent}% · ${reset}` : `${label} ${percent}%`),
+  windowLeft: (label, percent, reset) => (reset ? `${label} 剩余 ${percent}% · ${reset}` : `${label} 剩余 ${percent}%`),
   resetsIn: ({ days, hours, minutes }) =>
     days > 0 ? `${days} 天 ${hours} 小时后重置` : hours > 0 ? `${hours} 小时 ${minutes} 分后重置` : `${minutes} 分后重置`,
   resettingSoon: "即将重置",
@@ -55,6 +58,7 @@ export const en: ClaudeUsageText = {
   fiveHour: "5h",
   sevenDay: "7d",
   window: (label, percent, reset) => (reset ? `${label} ${percent}% · ${reset}` : `${label} ${percent}%`),
+  windowLeft: (label, percent, reset) => (reset ? `${label} ${percent}% left · ${reset}` : `${label} ${percent}% left`),
   resetsIn: ({ days, hours, minutes }) =>
     days > 0 ? `resets in ${days}d ${hours}h` : hours > 0 ? `resets in ${hours}h ${minutes}m` : `resets in ${minutes}m`,
   resettingSoon: "resetting soon",

@@ -48,6 +48,7 @@ export function useCollapsedSlots({ paused, agents, sessions, unseen, agentsOn, 
   const center = useBuiltinPlugin(CENTER_PATTERN_PLUGIN_ID);
   const usage = useBuiltinPlugin(CLAUDE_USAGE_PLUGIN_ID);
   const sessionRing = useBuiltinPlugin(SESSION_RING_PLUGIN_ID);
+  const showRemaining = usage.settings.show === "remaining";
   const mood = usePetMood(agents, center.enabled);
   const choice = useMemo(() => centerPatternChoice(center.settings), [center.settings]);
   // Read here, not in the slot, so the pet is ready whenever the slot or the title shows it.
@@ -74,15 +75,15 @@ export function useCollapsedSlots({ paused, agents, sessions, unseen, agentsOn, 
       }
     }
     if (usage.enabled) {
-      slots.gauges = <UsageGaugeSlot />;
+      slots.gauges = <UsageGaugeSlot showRemaining={showRemaining} />;
       slots.sideWidth = CLAUDE_USAGE_GAUGE_WIDTH;
     }
     return Object.keys(slots).length === 0 ? EMPTY : slots;
-  }, [center.enabled, usage.enabled, sessionRing.enabled, agentsOn, sessions, unseen, onOpenAgents, choice, sheet, mood, still]);
+  }, [center.enabled, usage.enabled, showRemaining, sessionRing.enabled, agentsOn, sessions, unseen, onOpenAgents, choice, sheet, mood, still]);
 }
 
 /** Follows the native island hover here, so the slots above stay the same object. */
-function UsageGaugeSlot() {
+function UsageGaugeSlot({ showRemaining }: { showRemaining: boolean }) {
   const [hovered, setHovered] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -98,5 +99,5 @@ function UsageGaugeSlot() {
       unlisten?.();
     };
   }, []);
-  return <ClaudeUsageGauge islandHovered={hovered} />;
+  return <ClaudeUsageGauge islandHovered={hovered} showRemaining={showRemaining} />;
 }
