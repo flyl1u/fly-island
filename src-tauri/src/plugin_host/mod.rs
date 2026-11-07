@@ -33,6 +33,7 @@ mod baseline;
 mod builtin;
 mod commands;
 mod dev;
+mod effort_labels;
 mod events;
 mod feeds;
 mod grants;
@@ -68,6 +69,7 @@ pub(crate) use uri::{find_link, open as open_link};
 // The Tauri commands of development mode and updates (the macro needs its
 // generated items re-exported too).
 pub use dev::*;
+pub use effort_labels::*;
 pub use updates::*;
 pub use webviews::*;
 pub(crate) use dev::answer_local_api as answer_dev_api;
@@ -221,6 +223,7 @@ macro_rules! tauri_commands {
             crate::plugin_host::set_plugin_keybinding,
             crate::plugin_host::set_plugin_publisher_trusted,
             crate::plugin_host::check_plugin_updates,
+            crate::plugin_host::list_agent_effort_labels,
         ] $($rest)*)
     };
 }

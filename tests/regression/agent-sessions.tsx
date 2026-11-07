@@ -26,6 +26,8 @@ mockIPC((command, payload) => {
     // Only the fly-island session has a window to switch to.
     return args.cwd === "E:\\Projects\\fly-island";
   }
+  // A plugin renames Claude Code's efforts; Codex's are left alone.
+  if (command === "list_agent_effort_labels") return { claudeCode: { medium: "xhigh", high: "max" } };
   if (command === "get_agent_host_icon") {
     return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
   }
@@ -84,7 +86,8 @@ async function runChecks() {
     check(rows().length === 3, "列出全部会话");
     const [first, second, third] = rows();
     check(first.textContent?.includes("fly-island · 设置界面完善思路") && first.querySelector(".agent-provider-icon--claudeCode"), "每行显示图标、项目名和标题");
-    check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Medium", "显示模型和推理强度");
+    check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Xhigh", "显示模型和推理强度，插件改写的强度照改写后的显示");
+    check(second.querySelector(".agent-session__model")?.textContent === "gpt-6-astra · High", "插件只改了 Claude Code 的强度时，Codex 照原样显示");
     check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
     const meta = (row: HTMLElement) => row.querySelector(".agent-session__meta")?.textContent;
     const dot = (row: HTMLElement) => getComputedStyle(row.querySelector(".agent-session__dot")!).backgroundColor;

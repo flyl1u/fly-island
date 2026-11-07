@@ -14,6 +14,10 @@
 
 这些接口要配合包含它们的岛屿版本使用；在旧版岛屿上调用会得到「未知方法」，可以先用 `initialize.capabilities`（`openView`）或 `plugin.hasCapability` 判断。
 
+## Agent 页的强度名称
+
+清单的 `contributes.agentEffortLabels` 改写 Agent 页显示的推理强度（只改显示），`runtime: none` 的插件就能用，见 [README](README.md)「Agent 页的强度名称」。旧版岛屿会忽略这个字段。
+
 ## 更多右键菜单
 
 - `contributes.menus` 新增 `clipboard/context`（剪贴板历史的文字条目）、`shelf/context`（文件中转条目）、`message/context`（QQ 通知和邮件）。用户在这些条目上右键选了插件的命令，插件收到 `command { id, args: { item } }`，`item` 和 `clipboard.history` / `shelf.list` / `messages.list` 里的一项相同。用户亲手选的这一条不需要对应的读取权限。

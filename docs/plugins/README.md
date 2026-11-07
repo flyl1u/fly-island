@@ -187,6 +187,27 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 **折叠条状态**：`status.update { itemId, text, tooltip?, tone? }`，`text` 最多 24 个字符，空字符串表示清除。状态文字显示在折叠条右侧的小标签里，和待办摘要、Agent 标题同时显示，不替换它们；有消息预览或快捷翻译时先让位。点击标签会打开这个插件的第一个页面。
 
+### Agent 页的强度名称
+
+`contributes.agentEffortLabels` 改写 Agent 页会话行里推理强度的显示，按 Agent 分开写；只改显示，会话本身的强度不变：
+
+```json
+{
+  "id": "local.effort-labels",
+  "name": { "zh-CN": "强度显示", "en": "Effort labels" },
+  "version": "1.0.0",
+  "apiVersion": 2,
+  "runtime": { "type": "none" },
+  "contributes": {
+    "agentEffortLabels": { "claudeCode": { "medium": "xhigh", "high": "max" } }
+  }
+}
+```
+
+- Agent 可写 `claudeCode`、`codex`；每个最多 8 项，左边是 Agent 报告的强度（不分大小写），右边是要显示的文字，两边都是 1–16 个字符。
+- 不需要进程，`runtime` 写 `none` 即可，也不需要任何权限。插件开着时生效，关掉立刻恢复（Agent 页每 5 秒重读一次）。
+- 显示时首字母照常大写（`xhigh` 显示为 `Xhigh`）。几个插件改写同一个强度时，按插件 id 排序取第一个。
+
 ### 设置页
 
 插件不能自带界面代码。插件卡片上有一个"设置"按钮，点开后是这个插件自己的设置页，页面由岛屿统一绘制，包括四部分：

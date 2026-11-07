@@ -7,6 +7,8 @@ import { AgentUsageBar } from "./AgentUsageBar";
 import type { AgentUsages } from "./usage";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
+import { shownEffort } from "./effortLabels";
+import { useEffortLabels } from "./useEffortLabels";
 import { SessionBody } from "./SessionBody";
 import { SessionElapsed } from "./SessionElapsed";
 import { SessionHostLabel } from "./SessionHostLabel";
@@ -69,6 +71,7 @@ export function AgentSessionsPanel({
   const sessions = reveal ? [listed.find((session) => sessionKey(session) === reveal.key) ?? reveal.session] : listed;
   const showUsage = usageOn && !reveal;
   const [now, setNow] = useState(() => Date.now());
+  const effortLabels = useEffortLabels();
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
   const list = useScrollFade<HTMLUListElement>(sessions);
@@ -162,7 +165,7 @@ export function AgentSessionsPanel({
         {sessions.map((session) => {
           const project = sessionProject(session.cwd);
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
-          const model = modelLabel(session.model, session.effort);
+          const model = modelLabel(session.model, shownEffort(session.provider, session.effort, effortLabels));
           const mode = session.permissionMode && session.permissionMode !== "default" ? t.agent.sessions.permissionModes[session.permissionMode] : null;
           const minutes = minutesAgo(session.updatedAt, now);
           // A working session with nothing to say yet (a turn just started) has no second line.

@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { AgentEffortLabels } from "./effortLabels";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
 export type AgentProvider = "codex" | "claudeCode";
@@ -226,4 +227,9 @@ export function clearAgentProviderStatus(provider: string) {
 
 export function installAgentStatusHooks() {
   return invoke<AgentHooksInstallResult>("install_agent_status_hooks");
+}
+
+/** The effort labels of the plugins switched on (contributes.agentEffortLabels, plugin_host/effort_labels.rs). */
+export function listAgentEffortLabels() {
+  return invoke<AgentEffortLabels>("list_agent_effort_labels");
 }

@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::activation::{self, Activation};
+use super::effort_labels::{self, EffortLabels};
 use super::menus::{self, PluginMenus};
 use super::view_specs::{self, StatusItemSpec, ViewSpec};
 use super::permissions::is_known_permission;
@@ -138,6 +139,9 @@ pub(super) struct PluginContributions {
     pub views_raw: serde_json::Value,
     #[serde(default, rename = "statusItems", skip_serializing)]
     pub status_items_raw: serde_json::Value,
+    /// How the Agent page names a session's effort, per agent; see effort_labels.rs.
+    #[serde(default, rename = "agentEffortLabels", skip_serializing_if = "EffortLabels::is_empty")]
+    pub agent_effort_labels: EffortLabels,
     /// Pages on the expanded island (API version 2); see view_specs.rs.
     #[serde(skip)]
     pub views: Vec<ViewSpec>,
@@ -277,6 +281,7 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     let contributes = &mut manifest.contributes;
     let command_ids: Vec<&str> = contributes.commands.iter().map(PluginCommand::id).collect();
     menus::check(&mut contributes.menus, &command_ids, api_version)?;
+    effort_labels::check(&mut contributes.agent_effort_labels)?;
     (contributes.views, contributes.status_items) = view_specs::check(&contributes.views_raw, &contributes.status_items_raw, api_version)?;
     manifest.activation = activation::read(
         &manifest.activation_raw,

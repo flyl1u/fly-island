@@ -186,11 +186,26 @@
               "priority": { "type": "integer", "minimum": -100, "maximum": 100, "default": 0 }
             }
           }
+        },
+        "agentEffortLabels": {
+          "description": "How the Agent page names a session's reasoning effort, per agent: effort as the agent reports it (any case) -> the text shown instead. Display only; the island's first letter is still capitalised. Needs no process, so a plugin with runtime \"none\" can carry just this. With several plugins switched on, the first by id wins for each effort.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "claudeCode": { "$ref": "#/$defs/effortLabels" },
+            "codex": { "$ref": "#/$defs/effortLabels" }
+          }
         }
       }
     }
   },
   "$defs": {
+    "effortLabels": {
+      "type": "object",
+      "maxProperties": 8,
+      "propertyNames": { "minLength": 1, "maxLength": 16 },
+      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 16 }
+    },
     "localizedText": {
       "type": "object",
       "required": ["zh-CN", "en"],

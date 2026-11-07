@@ -8,6 +8,7 @@ import {
   sessionProject,
 } from "../../src/features/agent-status/sessionList.ts";
 import { resolveIslandPage } from "../../src/windows/island/features.ts";
+import { shownEffort } from "../../src/features/agent-status/effortLabels.ts";
 
 const session = (overrides = {}) => ({
   provider: "claudeCode",
@@ -91,4 +92,14 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(DEFAULT_SETTINGS.agentShowElapsed, false);
   assert.equal(normalizeSettings({}).agentShowElapsed, false);
   assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, true);
+});
+
+test("plugins rename an agent's effort for display only", () => {
+  const labels = { claudeCode: { medium: "xhigh", high: "max" } };
+  assert.equal(shownEffort("claudeCode", "medium", labels), "xhigh");
+  assert.equal(shownEffort("claudeCode", "High", labels), "max");
+  assert.equal(shownEffort("claudeCode", "low", labels), "low");
+  assert.equal(shownEffort("codex", "medium", labels), "medium");
+  assert.equal(shownEffort("claudeCode", null, labels), null);
+  assert.equal(modelLabel("Opus 5.5", shownEffort("claudeCode", "medium", labels)), "Opus 5.5 · Xhigh");
 });
