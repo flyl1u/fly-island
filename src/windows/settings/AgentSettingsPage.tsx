@@ -2,6 +2,8 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
 import { AgentSessionFilterSettings } from "../../features/agent-status/AgentSessionFilterSettings";
+import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
+import "../../features/agent-status/AgentHooksSettingsSection.css";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
@@ -13,9 +15,12 @@ import { ModuleSwitchSection } from "./ModuleSwitchSection";
 export function AgentSettingsPage({
   settings,
   onSettingsChange,
+  onOpenConnect,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  /** Opens the Connection page, where the hooks are installed. */
+  onOpenConnect: () => void;
 }) {
   const t = useTranslation();
 
@@ -26,6 +31,8 @@ export function AgentSettingsPage({
         checked={settings.agentStatusEnabled}
         onChange={(agentStatusEnabled) => onSettingsChange({ ...settings, agentStatusEnabled })}
       />
+      {/* The hooks live on the Connection page; most of what follows needs them. */}
+      <AgentHooksNotice onOpenConnect={onOpenConnect} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow
           title={t.settings.agent.sessionTitle}

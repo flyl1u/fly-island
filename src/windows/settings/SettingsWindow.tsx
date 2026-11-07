@@ -174,7 +174,7 @@ export function SettingsWindow() {
         {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "calendar" && <CalendarSettingsPage settings={settings} onSettingsChange={setSettings} />}
-        {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
         {category === "agentAlerts" && <AgentAlertsSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "sounds" && <SoundSettingsSection />}
         {category === "agentApprovals" && <AgentApprovalSettings />}

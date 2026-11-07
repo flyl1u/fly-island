@@ -123,6 +123,7 @@ mockIPC((command, payload) => {
       { at: Date.now() - 2000, outgoing: true, text: JSON.stringify({ jsonrpc: "2.0", method: "initialize", params: { apiVersion: 2, pluginId: "me.very-long-plugin-id-to-check-wrapping", settings: { repo: "a/b" } } }) },
       { at: Date.now() - 1000, outgoing: false, text: '{"jsonrpc":"2.0","id":1,"method":"view.update","params":{"viewId":"main","model":{"items":[]}}}' },
     ];
+    case "get_agent_hooks_state": return { codex: "notInstalled", claudeCode: "notInstalled", scriptsOutdated: false };
     case "list_sound_packs": return [{ id: "chimes-1", name: "Chimes", author: "Ann", license: "CC0-1.0", sounds: { complete: "complete.wav", error: "error.wav" } }];
     default: return null;
   }
@@ -351,6 +352,12 @@ if (!automated) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
 
+    await openPage("agents");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    const hooksLink = [...document.querySelectorAll<HTMLButtonElement>(".editor-panel .settings-link-button")].find((button) => button.textContent === "安装/修复");
+    check(hooksLink, "Without hooks, the sessions page says so with a way to install them");
+    await act(async () => { hooksLink!.click(); });
+    check(element(".settings-sidebar__item[data-category='agentConnect']").getAttribute("aria-current") === "page", "The hooks notice on the sessions page opens the connection page");
     await openPage("agents");
     const filterGroup = () => [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("隐藏会话"))!;
     localStorage.removeItem("focusd-island-agent-session-filters");
