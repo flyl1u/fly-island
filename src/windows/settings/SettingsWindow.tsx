@@ -4,6 +4,9 @@ import { AppearanceSettingsPage } from "./AppearanceSettingsPage";
 import { DEFAULT_SETTINGS_CATEGORY, type SettingsCategory } from "./categories";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import { AgentSettingsPage } from "./AgentSettingsPage";
+import { AgentAlertsSettingsPage } from "./AgentAlertsSettingsPage";
+import { AgentConnectSettingsPage } from "./AgentConnectSettingsPage";
+import { AgentApprovalSettings } from "../../features/agent-status/approvals/AgentApprovalSettings";
 import { SoundSettingsSection } from "../../features/agent-status/sounds/SoundSettingsSection";
 import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
@@ -172,7 +175,10 @@ export function SettingsWindow() {
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "calendar" && <CalendarSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} />}
+        {category === "agentAlerts" && <AgentAlertsSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "sounds" && <SoundSettingsSection />}
+        {category === "agentApprovals" && <AgentApprovalSettings />}
+        {category === "agentConnect" && <AgentConnectSettingsPage />}
         {category === "plugins" && (
           <PluginsSettingsPage tab={pluginsTab} managedPluginId={managedPluginId} onTabChange={changePluginsTab} onManage={managePlugin} />
         )}

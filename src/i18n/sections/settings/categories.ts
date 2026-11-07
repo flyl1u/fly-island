@@ -3,6 +3,7 @@ export type SettingsCategoriesText = {
   groups: {
     basics: string;
     features: string;
+    agents: string;
     extensions: string;
   };
   general: string;
@@ -18,8 +19,12 @@ export type SettingsCategoriesText = {
   translation: string;
   shelf: string;
   calendar: string;
+  /** The AI Agent group's pages. */
   agents: string;
+  agentAlerts: string;
   sounds: string;
+  agentApprovals: string;
+  agentConnect: string;
   plugins: string;
   about: string;
 };
@@ -29,6 +34,7 @@ export const zhCN: SettingsCategoriesText = {
   groups: {
     basics: "基础",
     features: "功能",
+    agents: "AI Agent",
     extensions: "扩展",
   },
   general: "通用",
@@ -42,8 +48,11 @@ export const zhCN: SettingsCategoriesText = {
   translation: "翻译",
   shelf: "文件中转",
   calendar: "日历",
-  agents: "AI Agent",
+  agents: "会话",
+  agentAlerts: "提醒",
   sounds: "声音",
+  agentApprovals: "审批",
+  agentConnect: "连接",
   plugins: "插件",
   about: "关于",
 };
@@ -53,6 +62,7 @@ export const en: SettingsCategoriesText = {
   groups: {
     basics: "Basics",
     features: "Features",
+    agents: "AI Agent",
     extensions: "Extensions",
   },
   general: "General",
@@ -66,8 +76,11 @@ export const en: SettingsCategoriesText = {
   translation: "Translation",
   shelf: "File shelf",
   calendar: "Calendar",
-  agents: "AI Agent",
+  agents: "Sessions",
+  agentAlerts: "Alerts",
   sounds: "Sounds",
+  agentApprovals: "Approvals",
+  agentConnect: "Connection",
   plugins: "Plugins",
   about: "About",
 };

@@ -334,7 +334,14 @@ if (!automated) {
     check(saved.accounts?.some((account) => account.email === "new@example.edu.cn" && account.host === "imap.example.edu.cn"),
       "The typed server is saved with the mailbox");
 
-    await openPage("agents");
+    // AI Agent has its own group: sessions, alerts, sounds, approvals and the hooks each on a page.
+    const agentGroup = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__group")].find((group) => group.getAttribute("aria-label") === "AI Agent");
+    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|提醒|声音|审批|连接",
+      "AI Agent is its own sidebar group with sessions, alerts, sounds, approvals and connection");
+    await openPage("agentConnect");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    check(agentPolls() > pollsAway, "The connection page reads the agents' state");
+    await openPage("agentAlerts");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     const markerGroup = [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("回复状态标记"));
     const markerSwitch = markerGroup?.querySelector<HTMLInputElement>("[role='switch']");
@@ -344,6 +351,7 @@ if (!automated) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
 
+    await openPage("agents");
     const filterGroup = () => [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("隐藏会话"))!;
     localStorage.removeItem("focusd-island-agent-session-filters");
     const filterInput = filterGroup().querySelector<HTMLInputElement>(".session-filter__form input")!;
