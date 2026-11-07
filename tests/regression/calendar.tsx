@@ -41,7 +41,8 @@ mockIPC((command, payload) => {
   }
   if (command === "add_calendar_source") {
     if (args.secret === "wrong") throw "日历账号或密码不对。";
-    const added = { id: "cal-2", kind: String(args.kind), name: String(args.name), url: "", host: "calendar.google.com", username: "" };
+    const host = String(args.kind) === "ics" ? new URL(String(args.secret).replace("webcal://", "https://")).host : new URL(String(args.url)).host;
+    const added = { id: `cal-${sources.length + 2}`, kind: String(args.kind), name: String(args.name), url: String(args.url), host, username: String(args.username) };
     sources = [...sources, added];
     return added;
   }
@@ -87,6 +88,22 @@ try {
   check(refreshed >= 1, "打开日历页时重新读取日历");
   check(document.querySelector(".calendar-panel__status")?.textContent === "1 个日历没读到，到设置里看看", "有日历读不到时在顶部提示");
 
+  let added = 0;
+  const empty = { ...SNAPSHOT, events: [], problems: [], sourceCount: 0 };
+  await act(async () => {
+    panel.render(<StrictMode><I18nProvider><CalendarPanel snapshot={empty} now={now} onRefresh={() => (added += 1)} onOpenSettings={() => (settingsOpened += 1)} /></I18nProvider></StrictMode>);
+    await wait();
+  });
+  const emptyButtons = [...document.querySelectorAll<HTMLButtonElement>(".calendar-empty__actions button")];
+  check(document.querySelector(".calendar-empty strong")?.textContent === "还没有日历" && emptyButtons.map((button) => button.textContent).join("|") === "订阅中国节假日|添加工作日历",
+    "没加日历时，日历页说明怎么加，并能一键订阅节假日");
+  const before = added;
+  await act(async () => { emptyButtons[0].click(); await wait(); await wait(); });
+  check(calls.some((call) => call.command === "add_calendar_source" && call.payload.secret === "https://calendars.icloud.com/holidays/cn_zh.ics") && added > before, "点订阅节假日后重新读取日历");
+  await act(async () => { emptyButtons[1].click(); await wait(); });
+  check(settingsOpened >= 1, "点添加工作日历打开设置");
+  sources = sources.filter((source) => source.host !== "calendars.icloud.com");
+
   const line = createRoot(document.getElementById("line")!);
   const upcoming = { event: EVENTS[2], minutes: 8 };
   await act(async () => { line.render(<I18nProvider><MeetingLine meeting={upcoming} showTitle /></I18nProvider>); await wait(); });
@@ -99,17 +116,38 @@ try {
   await act(async () => { settings.render(<I18nProvider><CalendarSourcesSection /></I18nProvider>); await wait(); });
   check(document.querySelector(".settings-row__title")?.textContent === "飞书" && document.body.textContent?.includes("u_abc · caldav.feishu.cn"), "列出已添加的日历，只显示账号和网站");
   const addButton = () => document.querySelector<HTMLButtonElement>(".calendar-form__add")!;
-  check(addButton().disabled, "没填完时不能添加");
-  const icsChoice = [...document.querySelectorAll<HTMLButtonElement>(".settings-choice__option")].find((button) => button.textContent?.includes("ICS"))!;
-  await act(async () => { icsChoice.click(); await wait(); });
   const inputs = () => [...document.querySelectorAll<HTMLInputElement>(".calendar-form__field input")];
-  check(inputs().length === 2 && inputs()[1].type === "password", "订阅链接方式只要名称和链接，链接像密码一样遮住");
-  await act(async () => { setInput(inputs()[0], "Google"); setInput(inputs()[1], "wrong"); await wait(); });
-  await act(async () => { addButton().click(); await wait(); });
-  check(document.querySelector(".calendar-form__error")?.textContent === "日历账号或密码不对。" && inputs()[1].value === "wrong", "读不到时说明原因，填的内容保留");
-  await act(async () => { setInput(inputs()[1], "webcal://calendar.google.com/x.ics"); await wait(); });
+  const labels = () => [...document.querySelectorAll(".calendar-form__field span")].map((label) => label.textContent).join("|");
+  const steps = () => document.querySelector(".calendar-form__steps")?.textContent ?? "";
+  const pick = async (label: string) => {
+    await act(async () => { document.querySelector<HTMLButtonElement>(".calendar-form .select-control__trigger, .settings-row .select-control__trigger")!.click(); await wait(); });
+    const option = [...document.querySelectorAll<HTMLElement>(".select-control__option")].find((item) => item.textContent?.startsWith(label))!;
+    await act(async () => { option.click(); await wait(); });
+  };
+  check(labels() === "账号|密码|名称（可不填）" && steps().includes("CalDAV 同步") && addButton().disabled, "默认选飞书：服务器自动填好，只要账号和密码，并写出在飞书里怎么拿");
+  await act(async () => { setInput(inputs()[0], "u_new"); setInput(inputs()[1], "pw"); await wait(); });
   await act(async () => { addButton().click(); await wait(); await wait(); });
-  check(!document.querySelector(".calendar-form__error") && document.body.textContent?.includes("订阅链接 · calendar.google.com") && inputs()[1].value === "", "添加成功后出现在列表里，表单清空");
+  const feishu = calls.filter((call) => call.command === "add_calendar_source").pop()!.payload;
+  check(feishu.kind === "caldav" && feishu.url === "https://caldav.feishu.cn" && feishu.name === "飞书" && feishu.secret === "pw", "选飞书时自动用飞书的服务器，名称不填就叫飞书");
+  await pick("企业微信");
+  check(labels() === "服务器地址|账号|密码|名称（可不填）", "企业微信的服务器要从企业微信里复制，所以多一个服务器地址");
+  await pick("Google");
+  check(labels() === "订阅链接|名称（可不填）" && inputs()[0].type === "password" && steps().includes("iCal"), "Google 日历只要订阅链接，链接像密码一样遮住");
+  await act(async () => { setInput(inputs()[0], "wrong"); await wait(); });
+  await act(async () => { addButton().click(); await wait(); });
+  check(document.querySelector(".calendar-form__error")?.textContent === "日历账号或密码不对。" && inputs()[0].value === "wrong", "读不到时说明原因，填的内容保留");
+  await act(async () => { setInput(inputs()[0], "webcal://calendar.google.com/x.ics"); await wait(); });
+  await act(async () => { addButton().click(); await wait(); await wait(); });
+  check(!document.querySelector(".calendar-form__error") && document.body.textContent?.includes("订阅 · calendar.google.com") && inputs()[0].value === "", "添加成功后出现在列表里，表单清空");
+  await pick("其他");
+  await act(async () => { setInput(inputs()[0], "https://dav.example.com"); await wait(); });
+  check(labels() === "地址或链接|账号|密码|名称（可不填）", "其他：粘贴服务器地址时要账号和密码");
+  await act(async () => { setInput(inputs()[0], "https://example.com/team.ics"); await wait(); });
+  check(labels() === "地址或链接|名称（可不填）", "其他：粘贴 .ics 链接时就不要账号密码");
+  const holidays = [...document.querySelectorAll<HTMLButtonElement>(".settings-link-button")].find((button) => button.textContent === "订阅中国节假日")!;
+  await act(async () => { holidays.click(); await wait(); await wait(); });
+  const subscribed = calls.filter((call) => call.command === "add_calendar_source").pop()!.payload;
+  check(subscribed.secret === "https://calendars.icloud.com/holidays/cn_zh.ics" && subscribed.name === "中国节假日", "一键订阅中国节假日，不用账号");
   const removeButton = document.querySelector<HTMLButtonElement>(".calendar-source__remove")!;
   check(removeButton.getAttribute("aria-label") === "删除日历「飞书」", "删除按钮的读屏文字说明删哪个日历");
   await act(async () => { removeButton.click(); await wait(); await wait(); });

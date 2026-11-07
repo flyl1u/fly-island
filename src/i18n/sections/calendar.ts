@@ -15,6 +15,12 @@ export type CalendarText = {
   meeting: string;
   inMinutes: (minutes: number) => string;
   started: string;
+  /** The page before any calendar is added. */
+  emptyTitle: string;
+  emptyHint: string;
+  addHolidays: string;
+  addWork: string;
+  adding: string;
 };
 
 export const zhCN: CalendarText = {
@@ -33,6 +39,11 @@ export const zhCN: CalendarText = {
   meeting: "会议",
   inMinutes: (minutes) => `${minutes} 分钟后`,
   started: "已开始",
+  emptyTitle: "还没有日历",
+  emptyHint: "订阅中国节假日不用账号，点一下就有；飞书、钉钉、企业微信等工作日历在设置里添加。也可以直接写以时间开头的待办，例如「15:00 周会」。",
+  addHolidays: "订阅中国节假日",
+  addWork: "添加工作日历",
+  adding: "正在订阅…",
 };
 
 export const en: CalendarText = {
@@ -51,4 +62,9 @@ export const en: CalendarText = {
   meeting: "Meeting",
   inMinutes: (minutes) => (minutes === 1 ? "in 1 min" : `in ${minutes} min`),
   started: "started",
+  emptyTitle: "No calendar yet",
+  emptyHint: "China's holidays need no account, one click; add a work calendar such as Feishu or DingTalk in Settings. Or write a todo that starts with a time, such as \"15:00 Weekly sync\".",
+  addHolidays: "Subscribe to China's holidays",
+  addWork: "Add a work calendar",
+  adding: "Subscribing…",
 };

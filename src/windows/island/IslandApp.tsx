@@ -5,6 +5,7 @@ import { PluginPermissionPrompt } from "../../features/plugins/PluginPermissionP
 import { PluginContextMenus } from "../../features/plugins/PluginContextMenu";
 // The page panels; before IslandShell so their CSS keeps its place in the cascade.
 import { useCalendar } from "../../features/calendar/useCalendar";
+import { todoEvents } from "../../features/calendar/todoEvents";
 import { IslandPages } from "./IslandPages";
 import { PluginStatusSlot } from "../../features/plugin-views/PluginStatusSlot";
 import { useTranslation } from "../../i18n";
@@ -94,7 +95,9 @@ export function IslandApp() {
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
 
   const clipboard = useClipboardHistory(toggleClipboardHistory);
-  const calendar = useCalendar(settings.calendarEnabled, settings.calendarRemindMinutes);
+  // Todos starting with a time ("15:00 周会") count down like meetings, with no calendar needed.
+  const timedTodos = useMemo(() => (settings.todoEnabled ? todoEvents(todos, Date.now(), t.island.todoList) : []), [settings.todoEnabled, t, todos]);
+  const calendar = useCalendar(settings.calendarEnabled, settings.calendarRemindMinutes, timedTodos);
   const { clipboardHistory } = clipboard;
 
   const { features, openEnabledPage } = useIslandFeatures({
@@ -109,7 +112,6 @@ export function IslandApp() {
     setMessageSource,
     openIslandPage,
     pluginPages: pluginPages.pageIds,
-    calendarAvailable: calendar.snapshot.sourceCount > 0,
   });
   const { alertedSession, approvals: agentApprovals, agentCardHeight } = useIslandAgentAlerts({
     sessions: agentSessions,

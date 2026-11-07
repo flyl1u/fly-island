@@ -23,6 +23,14 @@
   padding: 12px 16px 14px;
 }
 
+.calendar-form__steps {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2, rgba(255, 255, 255, 0.68));
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .calendar-form__field {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);

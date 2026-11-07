@@ -4,7 +4,7 @@ import type { BuiltinPage, IslandPage, PluginPageId } from "./types";
 /** Which modules are switched on; an off module is hidden on the island. */
 export type IslandFeatures = {
   todo: boolean;
-  /** The calendar switch with at least one calendar added. */
+  /** The calendar switch; with no calendar added the page guides the user to add one. */
   calendar?: boolean;
   music: boolean;
   clipboard: boolean;

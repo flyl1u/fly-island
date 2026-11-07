@@ -1,23 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { getErrorMessage } from "../../utils/error";
-import { addCalendarSource, listCalendarSources, removeCalendarSource, type CalendarSource, type CalendarSourceKind } from "./api";
+import { addCalendarSource, listCalendarSources, removeCalendarSource, type CalendarSource } from "./api";
+import { CALENDAR_PRESETS, guessKind, needsServer, presetOf, type CalendarService } from "./presets";
+import { addChinaHolidays, hasChinaHolidays } from "./holidays";
 import "./CalendarSourcesSection.css";
 
-const EMPTY_FORM = { kind: "caldav" as CalendarSourceKind, name: "", url: "", username: "", secret: "" };
+const EMPTY_FORM = { name: "", address: "", username: "", password: "" };
 
 /**
- * Settings → Calendar: the calendars added, with a delete button each, and the form to add one:
- * a CalDAV account (Feishu, DingTalk, WeCom, iCloud) or an ICS subscription link (Google,
- * Outlook). Adding reads the calendar once, so a wrong address or password is said at once.
+ * Settings → Calendar: the calendars added, with a delete button each, a one-click subscription
+ * to China's holidays, and the form to add one. The user picks a service (Feishu, DingTalk, ...)
+ * and gets its steps; the server is filled in where it is fixed, so mostly only an account and
+ * password are asked. Adding reads the calendar once, so a wrong address or password is said at once.
  */
 export function CalendarSourcesSection() {
   const text = useTranslation().settings.calendar;
   const [sources, setSources] = useState<CalendarSource[]>([]);
+  const [service, setService] = useState<CalendarService>("feishu");
   const [form, setForm] = useState(EMPTY_FORM);
   const [state, setState] = useState<{ busy: boolean; error: string }>({ busy: false, error: "" });
 
@@ -34,17 +39,33 @@ export function CalendarSourcesSection() {
     void reload();
   }, [reload]);
 
-  const add = async () => {
+  const preset = presetOf(service);
+  // "Other" takes either a server or a subscription link, told apart by what is pasted.
+  const kind = service === "other" ? guessKind(form.address) : preset.kind;
+  const askServer = needsServer(preset, kind);
+  const run = async (action: () => Promise<unknown>, after?: () => void) => {
     setState({ busy: true, error: "" });
     try {
-      await addCalendarSource(form);
-      setForm({ ...EMPTY_FORM, kind: form.kind });
+      await action();
+      after?.();
       setState({ busy: false, error: "" });
       await reload();
     } catch (error) {
       setState({ busy: false, error: getErrorMessage(error) });
     }
   };
+  const add = () =>
+    run(
+      () =>
+        addCalendarSource({
+          kind,
+          name: form.name.trim() || text.services[service],
+          url: kind === "caldav" ? (askServer ? form.address : preset.server) : "",
+          username: form.username,
+          secret: kind === "ics" ? form.address : form.password,
+        }),
+      () => setForm(EMPTY_FORM),
+    );
   const remove = async (id: string) => {
     try {
       await removeCalendarSource(id);
@@ -66,11 +87,21 @@ export function CalendarSourcesSection() {
       />
     </label>
   );
-  const ready = form.secret.trim() !== "" && (form.kind === "ics" || (form.url.trim() !== "" && form.username.trim() !== ""));
+  const ready =
+    kind === "ics" ? form.address.trim() !== "" : form.username.trim() !== "" && form.password.trim() !== "" && (!askServer || form.address.trim() !== "");
+  const holidaysAdded = hasChinaHolidays(sources);
 
   return (
     <>
-      <SettingsGroup title={text.sources} footer={sources.length === 0 ? text.noSources : undefined}>
+      <SettingsGroup
+        title={text.sources}
+        action={
+          <SettingsLinkButton disabled={holidaysAdded || state.busy} onClick={() => void run(() => addChinaHolidays(text.holidaysName))}>
+            {holidaysAdded ? text.holidaysAdded : text.addHolidays}
+          </SettingsLinkButton>
+        }
+        footer={sources.length === 0 ? text.noSources : undefined}
+      >
         {sources.map((source) => (
           <SettingsRow
             key={source.id}
@@ -84,32 +115,37 @@ export function CalendarSourcesSection() {
           />
         ))}
       </SettingsGroup>
-      <SettingsGroup title={text.add} footer={form.kind === "caldav" ? text.caldavHint : text.icsHint}>
+      <SettingsGroup title={text.add}>
         <SettingsRow
-          title={text.kind}
+          title={text.service}
           control={
-            <SettingsChoice
-              value={form.kind}
-              ariaLabel={text.kind}
-              options={[
-                { value: "caldav", label: text.caldav },
-                { value: "ics", label: text.ics },
-              ]}
-              onChange={(kind) => setForm({ ...form, kind })}
+            <SettingsSelect
+              value={service}
+              ariaLabel={text.service}
+              options={CALENDAR_PRESETS.map((option) => ({ value: option.service, label: text.services[option.service] }))}
+              onChange={(next) => {
+                setService(next);
+                setState({ busy: false, error: "" });
+              }}
             />
           }
         />
         <div className="calendar-form">
-          {field("name", text.name, text.namePlaceholder)}
-          {form.kind === "caldav" ? (
+          <ol className="calendar-form__steps">
+            {text.steps[service].map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          {kind === "ics" || service === "other"
+            ? field("address", service === "other" ? text.addressOrLink : text.link, service === "other" ? text.addressOrLinkPlaceholder : "https://…", kind === "ics" && service !== "other" ? "password" : "text")
+            : askServer && field("address", text.server, "https://…")}
+          {kind === "caldav" && (
             <>
-              {field("url", text.server, "https://caldav.feishu.cn")}
               {field("username", text.username, "")}
-              {field("secret", text.password, "", "password")}
+              {field("password", text.password, "", "password")}
             </>
-          ) : (
-            field("secret", text.link, "https://… 或 webcal://…", "password")
           )}
+          {field("name", text.name, text.services[service])}
           {state.error && (
             <p className="calendar-form__error" role="alert">
               {state.error}

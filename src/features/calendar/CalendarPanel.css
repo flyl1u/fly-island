@@ -150,3 +150,77 @@
 .calendar-event__join:hover {
   background: rgb(255, 138, 101);
 }
+
+.calendar-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.calendar-empty__icon {
+  color: #ff9a76;
+}
+
+.calendar-empty strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.calendar-empty__hint {
+  max-width: 340px;
+  color: rgba(var(--calendar-ink), 0.56);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.calendar-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.calendar-empty__actions button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calendar-empty__primary {
+  color: #fff;
+  background: rgba(255, 138, 101, 0.85);
+}
+
+.calendar-empty__primary:hover:not(:disabled) {
+  background: rgb(255, 138, 101);
+}
+
+.calendar-empty__primary:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.calendar-empty__secondary {
+  color: rgba(var(--calendar-ink), 0.86);
+  background: rgba(var(--calendar-ink), 0.1);
+}
+
+.calendar-empty__secondary:hover {
+  background: rgba(var(--calendar-ink), 0.16);
+}
+
+.calendar-empty__error {
+  color: #ff8a8a;
+  font-size: 12px;
+}

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getCalendarEvents, type CalendarSnapshot } from "./api";
+import { getCalendarEvents, type CalendarEvent, type CalendarSnapshot } from "./api";
 import { nextChangeAt, upcomingMeeting, type UpcomingMeeting } from "./upcoming";
 
 /** How often the island asks; the native side reads the calendars again only every 15 minutes. */
 const POLL_MS = 60_000;
+
+const NO_EVENTS: readonly CalendarEvent[] = [];
 
 export const EMPTY_CALENDAR: CalendarSnapshot = { events: [], problems: [], fetchedAt: 0, sourceCount: 0 };
 
@@ -22,9 +24,16 @@ export type CalendarState = {
   refresh: () => void;
 };
 
-/** Today's and tomorrow's events while the calendar module is on, and the next meeting. */
-export function useCalendar(enabled: boolean, remindMinutes: number): CalendarState {
-  const [snapshot, setSnapshot] = useState<CalendarSnapshot>(EMPTY_CALENDAR);
+/**
+ * Today's and tomorrow's events while the calendar module is on, and the next meeting.
+ * `extra` are events from elsewhere (todos that start with a time, todoEvents.ts), merged in.
+ */
+export function useCalendar(enabled: boolean, remindMinutes: number, extra: readonly CalendarEvent[] = NO_EVENTS): CalendarState {
+  const [read, setSnapshot] = useState<CalendarSnapshot>(EMPTY_CALENDAR);
+  const snapshot = useMemo(
+    () => (enabled && extra.length > 0 ? { ...read, events: [...read.events, ...extra].sort((a, b) => a.startMs - b.startMs) } : read),
+    [enabled, extra, read],
+  );
   const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async (refresh: boolean) => {

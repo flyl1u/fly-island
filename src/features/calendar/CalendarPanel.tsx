@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { RefreshCcw, Settings, Video } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { openMeetingLink, type CalendarEvent, type CalendarSnapshot } from "./api";
+import { CalendarEmpty } from "./CalendarEmpty";
 import { clockTime, sameDay } from "./upcoming";
 import "./CalendarPanel.css";
 
@@ -12,7 +13,7 @@ function join(link: string) {
 /**
  * The island's calendar page: today's and tomorrow's events, each with its time, title and
  * place; a meeting with a join link gets a "Join" button until it ends. Opening the page reads
- * the calendars again.
+ * the calendars again. With no calendar added, it shows how to add one (CalendarEmpty.tsx).
  */
 export function CalendarPanel({
   snapshot,
@@ -30,6 +31,14 @@ export function CalendarPanel({
   useEffect(() => {
     onRefresh();
   }, [onRefresh]);
+
+  if (snapshot.sourceCount === 0 && snapshot.events.length === 0) {
+    return (
+      <section className="calendar-panel" aria-label={text.title}>
+        <CalendarEmpty onAdded={onRefresh} onOpenSettings={onOpenSettings} />
+      </section>
+    );
+  }
 
   const tomorrow = now + 86_400_000;
   const days = [
