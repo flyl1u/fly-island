@@ -1,6 +1,8 @@
 /*
- * The expanded island's Agent page at about 0.7 of its real size (IslandHeader.css,
- * AgentUsageBar.css, AgentSessionsPanel.css), in the island's ink at its text levels.
+ * The expanded island's Agent page in the island's real proportions (IslandHeader.css,
+ * AgentUsageBar.css, AgentSessionsPanel.css): every size is its real pixel value times --u, one
+ * real pixel at the preview's width (IslandPreview.css), so the drawing grows with the pane
+ * instead of leaving small text in a wide island. Text in the island's ink at its text levels.
  */
 .agent-page-preview {
   --ink-1: rgba(var(--preview-ink), 0.96);
@@ -9,35 +11,40 @@
   width: 100%;
   min-width: 0;
   display: grid;
-  gap: 9px;
+  gap: calc(10 * var(--u));
   color: var(--ink-1);
-  font-size: 9px;
+  font-size: calc(12 * var(--u));
   font-weight: 400;
   white-space: nowrap;
+}
+
+.agent-page-preview svg {
+  flex: none;
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
 }
 
 .agent-page-preview__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 24px;
+  gap: calc(12 * var(--u));
+  height: calc(34 * var(--u));
 }
 
 .agent-page-preview__light {
-  flex: none;
   color: var(--color-agent-running);
 }
 
 .agent-page-preview__dots {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: calc(9 * var(--u));
   color: var(--ink-2);
 }
 
 .agent-page-preview__page {
-  width: 7px;
-  height: 7px;
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
   border-radius: 50%;
 }
 
@@ -49,13 +56,13 @@
 
 .agent-page-preview__buttons {
   display: flex;
-  gap: 4px;
+  gap: calc(8 * var(--u));
   margin-left: auto;
 }
 
 .agent-page-preview__button {
-  width: 20px;
-  height: 20px;
+  width: calc(34 * var(--u));
+  height: calc(34 * var(--u));
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -64,18 +71,18 @@
 }
 
 .agent-page-preview__provider {
-  width: 9px;
-  height: 9px;
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
   flex: none;
-  border-radius: 2px;
+  border-radius: calc(3 * var(--u));
 }
 
 .agent-page-preview__usage {
+  height: calc(22 * var(--u));
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: calc(8 * var(--u));
   color: var(--ink-3);
-  font-size: 8.5px;
 }
 
 .agent-page-preview__usage b {
@@ -92,59 +99,60 @@
 
 .agent-page-preview__usage-rule {
   width: 1px;
-  height: 8px;
+  height: calc(11 * var(--u));
   background: rgba(var(--preview-ink), 0.2);
 }
 
 .agent-page-preview__usage-reset {
-  margin-left: 3px;
+  margin-left: calc(4 * var(--u));
 }
 
 .agent-page-preview__list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 11px;
+  gap: calc(2 * var(--u));
 }
 
 .agent-page-preview__row {
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 7px;
+  gap: calc(10 * var(--u));
+  padding: calc(8 * var(--u)) 0;
 }
 
 .agent-page-preview__dot {
-  width: 5px;
-  height: 5px;
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
   flex: none;
-  margin-top: 4px;
+  margin-top: calc(6.5 * var(--u));
   border-radius: 50%;
   background: var(--color-light-done);
 }
 
 .agent-page-preview__row--needs .agent-page-preview__dot {
   background: var(--color-light-needs);
-  box-shadow: 0 0 5px rgba(255, 69, 58, 0.72);
+  box-shadow: 0 0 calc(8 * var(--u)) rgba(255, 69, 58, 0.72);
 }
 
 .agent-page-preview__row--your-turn .agent-page-preview__dot {
   background: var(--color-light-your-turn);
-  box-shadow: 0 0 5px rgba(255, 214, 10, 0.6);
+  box-shadow: 0 0 calc(8 * var(--u)) rgba(255, 214, 10, 0.6);
 }
 
 .agent-page-preview__main {
   min-width: 0;
   flex: 1;
   display: grid;
-  gap: 3px;
+  gap: calc(4 * var(--u));
 }
 
 .agent-page-preview__heading {
   min-width: 0;
-  height: 13px;
+  height: calc(20 * var(--u));
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: calc(6 * var(--u));
 }
 
 .agent-page-preview__title {
@@ -153,7 +161,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ink-1);
-  font-size: 10px;
+  font-size: calc(14 * var(--u));
   font-weight: 600;
 }
 
@@ -164,17 +172,17 @@
 
 .agent-page-preview__model {
   flex: none;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: calc(2 * var(--u)) calc(7 * var(--u));
+  border-radius: calc(5 * var(--u));
   background: rgba(var(--preview-ink), 0.1);
   color: var(--ink-2);
-  font-size: 8px;
+  font-size: calc(11 * var(--u));
 }
 
 .agent-page-preview__status {
   flex: none;
   color: var(--ink-3);
-  font-size: 8.5px;
+  font-size: calc(12 * var(--u));
 }
 
 .agent-page-preview__row--needs .agent-page-preview__status {
@@ -185,8 +193,9 @@
   color: var(--color-light-your-turn);
 }
 
-.agent-page-preview__archive {
-  flex: none;
+.agent-page-preview .agent-page-preview__archive {
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
   color: rgba(var(--preview-ink), 0.26);
 }
 
@@ -195,7 +204,7 @@
   text-overflow: ellipsis;
   color: var(--ink-3);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 9px;
+  font-size: calc(13 * var(--u));
 }
 
 .agent-page-preview__tool-name {

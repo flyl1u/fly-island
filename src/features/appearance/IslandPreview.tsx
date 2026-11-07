@@ -21,6 +21,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     "--preview-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius": `${settings.islandCornerRadius}px`,
+    "--preview-radius-px": settings.islandCornerRadius,
     "--preview-corner-shape": settings.islandCornerShape,
     "--preview-pulse": settings.pulseColor,
     "--preview-pulse-glow": hexToRgba(settings.pulseColor, 0.72),
