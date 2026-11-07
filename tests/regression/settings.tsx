@@ -344,9 +344,10 @@ if (!automated) {
     await openPage("agentConnect");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     check(agentPolls() > pollsAway, "The connection page reads the agents' state");
-    await openPage("agentAlerts");
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
-    const markerGroup = [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("回复状态标记"));
+    const connectGroups = [...document.querySelectorAll<HTMLElement>(".settings-group")];
+    const markerGroup = connectGroups.find((group) => group.textContent?.includes("回复状态标记"));
+    check(markerGroup && connectGroups[connectGroups.indexOf(markerGroup) - 1]?.textContent?.includes("安装/修复") && markerGroup.textContent!.includes("推荐打开"),
+      "The reply status marker follows the hooks on the connection page and is marked as recommended");
     const markerSwitch = markerGroup?.querySelector<HTMLInputElement>("[role='switch']");
     check(markerSwitch && !markerSwitch.checked && markerGroup!.textContent!.includes("C:\\Users\\demo\\.claude\\CLAUDE.md"),
       "The reply status marker is off by default and names the CLAUDE.md it would change");

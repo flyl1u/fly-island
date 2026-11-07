@@ -156,7 +156,7 @@ export const zhCN: SettingsAgentText = {
   },
   replyMarker: {
     title: "回复状态标记",
-    toggle: "让 Claude 在回复末尾标出在等什么",
+    toggle: "让 Claude 在回复末尾标出在等什么（推荐打开）",
     hint: (path) => `打开后，会在你的全局 Claude 指令 ${path} 末尾加一段说明，让 Claude Code 每次回复的最后一行写一个符号：↩ 等你回复、⋯ 在等它自己启动的后台任务、✓ 做完了。岛屿据此区分“等你回复”和“做完了”：Agent 页、会话环，以及提醒和音效（等你回复按“等你确认或回答”弹出、用提问音效；等后台任务时不弹不响）。这一行会出现在终端的回复里。只对之后开始的回复生效；关掉时只删除这段说明，文件里别的内容不动。`,
     outdated: "CLAUDE.md 里的说明是旧版本，关掉再打开即可更新。",
   },
@@ -236,7 +236,7 @@ export const en: SettingsAgentText = {
   },
   replyMarker: {
     title: "Reply status marker",
-    toggle: "Have Claude mark what it waits for at the end of each reply",
+    toggle: "Have Claude mark what it waits for at the end of each reply (recommended)",
     hint: (path) => `When on, a short instruction goes at the end of your global Claude instructions, ${path}, asking Claude Code to end every reply with one symbol on its own line: ↩ your turn, ⋯ waiting on a background task it started, ✓ done. The island uses it to tell "your turn" from "done": on the Agent page, the session ring, and in alerts and sounds (your turn pops up as waiting for you, with the question sound; waiting on a background task neither pops up nor sounds). The line shows in the terminal's replies. It applies to replies from then on; switching off removes only that instruction and leaves the rest of the file alone.`,
     outdated: "The instruction in CLAUDE.md is an older version; switch off and on again to update it.",
   },
