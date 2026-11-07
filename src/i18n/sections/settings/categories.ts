@@ -13,7 +13,7 @@ export type SettingsCategoriesText = {
   keywords: Record<
     | "general" | "appearance" | "shortcuts" | "todos" | "calendar" | "music" | "translation" | "clipboard"
     | "shelf" | "messages" | "agents" | "agentAlerts" | "sounds" | "agentApprovals" | "agentConnect"
-    | "plugins" | "about",
+    | "plugins" | "market" | "about",
     string
   >;
   groups: {
@@ -42,6 +42,7 @@ export type SettingsCategoriesText = {
   agentApprovals: string;
   agentConnect: string;
   plugins: string;
+  market: string;
   about: string;
 };
 
@@ -70,7 +71,8 @@ export const zhCN: SettingsCategoriesText = {
     sounds: "音效 声音包 提示音",
     agentApprovals: "批准 允许 拒绝 权限 提问 回答",
     agentConnect: "钩子 hook 安装 修复",
-    plugins: "扩展 市场 插件目录 开发者 更新",
+    plugins: "扩展 已安装 插件目录 开发者 更新 岛屿页面",
+    market: "扩展 插件 下载 安装 搜索",
     about: "版本 更新 检查更新 测试版 通道 重置 退出 反馈 Star",
   },
   groups: {
@@ -96,6 +98,7 @@ export const zhCN: SettingsCategoriesText = {
   agentApprovals: "审批",
   agentConnect: "连接",
   plugins: "插件",
+  market: "插件市场",
   about: "关于",
 };
 
@@ -124,7 +127,8 @@ export const en: SettingsCategoriesText = {
     sounds: "sound pack",
     agentApprovals: "approve allow deny permission questions answer",
     agentConnect: "hooks install repair",
-    plugins: "extensions market folder developer updates",
+    plugins: "extensions installed folder developer updates island pages",
+    market: "extensions plugins download install browse",
     about: "version updates check beta channel reset quit feedback star",
   },
   groups: {
@@ -150,5 +154,6 @@ export const en: SettingsCategoriesText = {
   agentApprovals: "Approvals",
   agentConnect: "Connection",
   plugins: "Plugins",
+  market: "Plugin market",
   about: "About",
 };

@@ -16,6 +16,7 @@ export const SETTINGS_CATEGORIES = [
   "agentApprovals",
   "agentConnect",
   "plugins",
+  "market",
   "about",
 ] as const;
 
@@ -25,13 +26,13 @@ export type SettingsGroup = "basics" | "features" | "agents" | "extensions";
 
 /**
  * Sidebar sections: app-wide settings, one page per module (QQ, WeChat and Mail share
- * Messages), the AI Agent pages (sessions, alerts, sounds, approvals, connection), then plugins (installed and the market on one page). A null label leaves About on its own at the end.
+ * Messages), the AI Agent pages (sessions, alerts, sounds, approvals, connection), then plugins (installed, and the market on its own page). A null label leaves About on its own at the end.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance", "shortcuts"] },
   { label: "features", categories: ["todos", "calendar", "music", "translation", "clipboard", "shelf", "messages"] },
   { label: "agents", categories: ["agents", "agentAlerts", "sounds", "agentApprovals", "agentConnect"] },
-  { label: "extensions", categories: ["plugins"] },
+  { label: "extensions", categories: ["plugins", "market"] },
   { label: null, categories: ["about"] },
 ];
 
@@ -42,8 +43,6 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
   qq: "messages",
   wechat: "messages",
   mail: "messages",
-  // Opens the Plugins page; SettingsWindow shows its Market tab for this name.
-  market: "plugins",
   updates: "about",
 };
 

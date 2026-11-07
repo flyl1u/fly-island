@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Blocks, Bot, CalendarDays, ChevronRight, ClipboardList, Inbox, Info, Keyboard, Languages, LayoutGrid, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, Search, Settings2, ShieldCheck, SlidersHorizontal, Volume2, X, type LucideIcon } from "lucide-react";
+import { Bell, Blocks, Bot, CalendarDays, ChevronRight, ClipboardList, Inbox, Info, Keyboard, Languages, LayoutGrid, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, Search, Settings2, ShieldCheck, Store, SlidersHorizontal, Volume2, X, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { SETTINGS_GROUPS, searchCategories, type SettingsCategory, type SettingsGroup } from "./categories";
 import "./SettingsSidebar.css";
@@ -22,6 +22,7 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   agentApprovals: ShieldCheck,
   agentConnect: Plug,
   plugins: Puzzle,
+  market: Store,
   about: Info,
 };
 

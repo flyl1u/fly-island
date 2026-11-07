@@ -166,8 +166,6 @@ if (!automated) {
       return;
     }
     item.click();
-    // ?page=market opens the Plugins page on its Market tab.
-    if (query.get("page") === "market") setTimeout(() => document.querySelectorAll<HTMLButtonElement>(".plugins-page__tabs button")[1]?.click(), 50);
   };
   if (page) openRequestedPage();
 } else {
@@ -203,8 +201,8 @@ if (!automated) {
       "Revoking the link answer forgets it like a sensitive permission");
     await act(async () => { [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "返回插件列表")?.click(); });
 
-    // The market is a tab of the Plugins page.
-    await act(async () => { [...document.querySelectorAll<HTMLButtonElement>(".plugins-page__tabs button")].find((button) => button.textContent === "市场")!.click(); });
+    // The market has its own page.
+    await openPage("market");
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
     const marketItem = [...document.querySelectorAll<HTMLElement>(".plugin-market__item")].find((item) => item.textContent?.includes("待办同步示例"));
     const detailsButton = [...(marketItem?.querySelectorAll<HTMLButtonElement>("button[aria-expanded]") ?? [])][0];

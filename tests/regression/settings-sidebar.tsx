@@ -62,7 +62,7 @@ try {
   check(groupRows().map((row) => row.dataset.group).join() === "basics,features,agents,extensions"
     && groupRows().every((row) => row.getAttribute("aria-expanded") === "true"),
     "Every group is a row that folds, and all start unfolded");
-  check(listed().length === 17, "Every page is listed at first");
+  check(listed().length === 18, "Every page is listed at first");
   check(host.querySelector(".settings-sidebar__footer [data-category='about']"), "About is pinned below the page list");
   check(element(".settings-sidebar__item--active").dataset.category === "general", "The open page is marked");
 
@@ -87,7 +87,7 @@ try {
   check(search().value === "" && group("features").getAttribute("aria-expanded") === "false", "Escape clears the search; folded groups stay folded");
   await act(async () => { group("features").click(); });
   await act(async () => { group("basics").click(); });
-  check(listed().length === 17, "Unfolding shows the pages again");
+  check(listed().length === 18, "Unfolding shows the pages again");
 
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {

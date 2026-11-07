@@ -58,7 +58,6 @@ export type SettingsPluginsText = {
   };
   /** Settings > Plugins > Developer: development mode (P10). */
   /** The switch at the top of the Plugins page. */
-  tabs: { label: string; installed: string; market: string };
   dev: {
     title: string;
     badge: string;
@@ -261,7 +260,6 @@ export const zhCN: SettingsPluginsText = {
     highCpu: "这个插件过去 1 分钟一直占用较多 CPU。",
     keepAlive: (reason: string) => `插件申请常驻：${reason}`,
   },
-  tabs: { label: "插件页面", installed: "已安装", market: "市场" },
   dev: {
     title: "开发者",
     badge: "开发中",
@@ -474,7 +472,6 @@ export const en: SettingsPluginsText = {
     highCpu: "This plugin has used a lot of CPU for the last minute.",
     keepAlive: (reason: string) => `Keeps running: ${reason}`,
   },
-  tabs: { label: "Plugin pages", installed: "Installed", market: "Market" },
   dev: {
     title: "Developer",
     badge: "In development",
