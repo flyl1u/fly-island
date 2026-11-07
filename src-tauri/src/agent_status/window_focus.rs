@@ -29,6 +29,7 @@ const TERMINALS: &[&str] = &[
     "warp",
     "tabby",
     "conemu64",
+    "mintty",
     "powershell",
     "pwsh",
     "cmd",

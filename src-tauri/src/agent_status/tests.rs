@@ -1037,6 +1037,25 @@ fn codex_rollouts_name_where_they_started() {
 }
 
 #[test]
+fn a_session_with_a_broken_parent_chain_finds_its_host_in_its_environment() {
+    use super::session_host::host_from_env;
+    let env = |pairs: &'static [(&'static str, &'static str)]| {
+        move |name: &str| pairs.iter().find(|(key, _)| *key == name).map(|(_, value)| value.to_string())
+    };
+    let open = |app: &str| Some(format!("C:/apps/{app}.exe"));
+    let wezterm = env(&[("TERM_PROGRAM", "WezTerm"), ("WEZTERM_EXECUTABLE", "D:/WezTerm/wezterm-gui.exe")]);
+    assert_eq!(host_from_env(wezterm, open).as_deref(), Some("D:/WezTerm/wezterm-gui.exe"));
+    // VS Code started from a WezTerm shell still has WezTerm's variables; TERM_PROGRAM decides.
+    let vscode = env(&[("TERM_PROGRAM", "vscode"), ("WEZTERM_EXECUTABLE", "D:/WezTerm/wezterm-gui.exe"), ("VSCODE_GIT_ASKPASS_NODE", "D:/VS Code/Code.exe")]);
+    assert_eq!(host_from_env(vscode, open).as_deref(), Some("D:/VS Code/Code.exe"));
+    assert_eq!(host_from_env(env(&[("TERM_PROGRAM", "vscode")]), open).as_deref(), Some("C:/apps/code.exe"));
+    assert_eq!(host_from_env(env(&[("TERM_PROGRAM", "mintty")]), open).as_deref(), Some("C:/apps/mintty.exe"));
+    assert_eq!(host_from_env(env(&[("WT_SESSION", "1b2c")]), open).as_deref(), Some("C:/apps/windowsterminal.exe"));
+    assert_eq!(host_from_env(env(&[("TERM_PROGRAM", "")]), open), None);
+    assert_eq!(host_from_env(env(&[]), |_| None), None);
+}
+
+#[test]
 fn host_icons_are_only_read_from_existing_executables() {
     use super::host_icon::{icon_data_url, is_icon_source};
 

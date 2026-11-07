@@ -41,6 +41,7 @@ const KNOWN_HOSTS: &[(&str, &str, &str)] = &[
     ("tabby", "Tabby", "terminal"),
     ("hyper", "Hyper", "terminal"),
     ("conemu64", "ConEmu", "terminal"),
+    ("mintty", "Git Bash", "terminal"),
     ("powershell", "Windows PowerShell", "terminal"),
     ("pwsh", "PowerShell", "terminal"),
     ("cmd", "cmd", "terminal"),
@@ -98,6 +99,26 @@ pub(super) fn host_of_chain(chain: &[u32], windows: &HashMap<u32, String>) -> Op
     })
 }
 
+/// The host named by the environment the session inherited from its terminal or editor, for when
+/// the parent chain breaks: Git Bash's fork and exec (as when Happy starts the session) leave a
+/// parent process that has already exited. `var` reads the session's variable, `open` gives the
+/// executable of an open window of an app.
+pub(super) fn host_from_env(
+    var: impl Fn(&str) -> Option<String>,
+    open: impl Fn(&str) -> Option<String>,
+) -> Option<String> {
+    let var = |name: &str| var(name).filter(|value| !value.is_empty());
+    // TERM_PROGRAM is the innermost terminal's; the others leak into programs started from it.
+    match var("TERM_PROGRAM").map(|program| program.to_lowercase()).as_deref() {
+        Some("wezterm") => var("WEZTERM_EXECUTABLE").or_else(|| open("wezterm-gui")),
+        // VS Code and editors built on it point Git's askpass at their own executable.
+        Some("vscode") => var("VSCODE_GIT_ASKPASS_NODE").or_else(|| open("code")),
+        Some("mintty") => open("mintty"),
+        _ if var("WT_SESSION").is_some() => open("windowsterminal"),
+        _ => None,
+    }
+}
+
 /// A session without a host is looked at again after this long (its window may not exist yet).
 const HOST_RETRY_MS: i64 = 30_000;
 
@@ -135,7 +156,10 @@ pub(super) fn attach_hosts(home_dir: &Path, app_dir: Option<&Path>, sessions: &m
             let seen = SeenSession {
                 pid,
                 started: win32::process_times::start_time(pid),
-                host_exe: host_of_chain(&chain, &windows),
+                host_exe: host_of_chain(&chain, &windows).or_else(|| {
+                    let var = |name: &str| win32::process_env::environment_variable(pid, name);
+                    host_from_env(var, |app| windows.values().find(|exe| app_name(exe) == app).cloned())
+                }),
                 orca_handle: orca::terminal_handle_of_process(pid).or(recorded_tab),
                 seen_at: now,
             };
