@@ -116,6 +116,24 @@ export interface StatusModel {
 
 export type ViewModel = ListModel | DetailModel | FormModel | StatusModel;
 
+/** One label-over-value column on the collapsed bar (capability `statusCells`). */
+export interface StatusCell {
+  /** At most 6 characters, e.g. "CPU". */
+  label: string;
+  /** At most 8 characters, e.g. "23%". */
+  value: string;
+  tone?: Tone;
+}
+
+export interface StatusOptions {
+  tooltip?: string;
+  tone?: Tone;
+  /** At most 4 columns, drawn instead of the text (capability `statusCells`); older islands show the text. */
+  cells?: StatusCell[];
+  /** 0 to 1: a small progress ring in the item's tone before the text or cells (capability `statusCells`). */
+  ring?: number;
+}
+
 /** What `views.patch` changes in a list page. */
 export interface ViewPatch {
   /** Replace the items with these ids. */
@@ -216,7 +234,8 @@ export interface Plugin {
     onMessage(viewId: string, handler: Handler<unknown>): Off;
   };
   status: {
-    update(itemId: string, text: string, options?: { tooltip?: string; tone?: Tone }): Promise<unknown>;
+    /** `text` (max 24 characters) is always needed: screen readers and older islands use it. */
+    update(itemId: string, text: string, options?: StatusOptions): Promise<unknown>;
     clear(itemId: string): Promise<unknown>;
   };
   storage: {

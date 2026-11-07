@@ -2,7 +2,7 @@
 
 /** Plugin API versions the island supports: 1 to 2. */
 export type ApiVersion = 1 | 2;
-export type Capability = "events" | "notifications" | "storage" | "secrets" | "views" | "status" | "webview" | "permissions" | "openView";
+export type Capability = "events" | "notifications" | "storage" | "secrets" | "views" | "status" | "webview" | "permissions" | "openView" | "statusCells";
 export type Permission = "todos:read" | "todos:write" | "notes:read" | "notes:write" | "agent-status:read" | "agent-status:write" | "island:notify" | "secrets" | "clipboard:read" | "messages:read" | "media:read" | "media:control" | "shelf:read" | "shelf:write";
 /** Confirmed by the user on the island the first time they are used. */
 export type SensitivePermission = "clipboard:read" | "messages:read" | "media:read" | "shelf:read" | "shelf:write";

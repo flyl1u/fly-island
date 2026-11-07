@@ -1,5 +1,5 @@
 // pnpm dev, then open /tests/regression/collapsed-slots.html (demo) or ?test=1 (checks).
-import { act, StrictMode, useState, type CSSProperties } from "react";
+import { act, StrictMode, useState, type CSSProperties, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
@@ -8,6 +8,8 @@ import "../../src/windows/island/IslandApp";
 import { IslandShell } from "../../src/windows/island/IslandShell";
 import type { CollapsedSlots } from "../../src/windows/island/types";
 import { MiniRing } from "../../src/components/MiniRing";
+import { PluginStatusChip } from "../../src/features/plugin-views/PluginStatusChip";
+import type { PluginStatusEntry } from "../../src/features/plugin-views/api";
 import { useQQNotifications } from "../../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatReminders";
 import { useMail } from "../../src/features/messages/mail/MailPanel";
@@ -36,12 +38,14 @@ mockIPC((command) => {
   }];
 }, { shouldMockEvents: true });
 
-type State = { slots?: CollapsedSlots; task: string | null; agents: boolean; count: number; agentTitle?: string };
+type State = { slots?: CollapsedSlots; task: string | null; agents: boolean; count: number; agentTitle?: string; chip?: ReactNode };
+const STATUS: PluginStatusEntry = { pluginId: "dev.test.monitor", itemId: "bar", priority: 0, text: "CPU 23% · 内存 61%", tooltip: null, tone: "neutral" };
 const usageRing = <MiniRing rings={[{ value: 0.62, color: "#7ccfff" }, { value: 0.28, color: "#b9a6ff" }]} ariaLabel="5 小时 62%，7 天 28%" title="5 小时 62%，7 天 28%" />;
 const sessionRing = <MiniRing segments={[{ value: 0.5, color: "#5ad19a" }, { value: 0.25, color: "#f5c46b" }, { value: 0.25, color: "#ff8a80" }]} size={22} label="4" ariaLabel="4 个会话" title="4 个会话：2 运行，1 等待，1 出错" />;
 const DEMO: State = {
   slots: { center: <span style={{ color: "var(--text-2)", fontSize: 13 }}>· · ·</span>, gauges: usageRing, agentCount: sessionRing },
   task: null, agents: true, count: 4,
+  chip: <PluginStatusChip status={{ ...STATUS, ring: 0.23, cells: [{ label: "CPU", value: "23%", tone: "neutral" }, { label: "GPU", value: "81°", tone: "warning" }] }} onOpen={() => {}} />,
 };
 let change: (next: Partial<State>) => void;
 let openedPage: string | null = null;
@@ -59,7 +63,7 @@ function Fixture() {
       appearanceMode="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
       mediaState={UNAVAILABLE_MEDIA}
       features={{ todo: true, music: false, clipboard: true, shelf: true, qq: false, wechat: false, qqMail: false, agents: state.agents, translation: false }}
-      shelfCount={null} collapsedSlots={state.slots}
+      shelfCount={null} collapsedSlots={state.slots} pluginStatusChip={state.chip}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={() => {}}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => {}}
       onResetPosition={() => {}} minimizesToTray onMinimize={() => {}} onOpenSettings={() => {}} onOpenTranslator={() => {}} translationPeek={null} onOpenTranslationPeek={() => {}} onTuck={() => {}} onReveal={() => {}} pageDigitModifiers="Alt">
@@ -141,6 +145,20 @@ async function runChecks() {
     await set({ slots: {} });
     check(bar().querySelector(".island__agent-session .agent-provider-icon"), "图标槽位为空时照旧显示 Agent 图标");
     await set({ agentTitle: undefined });
+
+    // Plugin status (status.update): text, or label-over-value cells, with an optional ring.
+    const chip = () => bar().querySelector<HTMLElement>(".plugin-status-chip")!;
+    await set({ task: "剩余3个待办", slots: {}, chip: <PluginStatusChip status={STATUS} onOpen={() => {}} /> });
+    check(chip().textContent === STATUS.text && !chip().querySelector(".mini-ring, .plugin-status-chip__cell"), "插件状态只有文字时照旧显示文字");
+    const cells = [{ label: "CPU", value: "23%", tone: "neutral" }, { label: "内存", value: "61%", tone: "warning" }, { label: "CPU", value: "71°", tone: "neutral" }, { label: "GPU", value: "88°", tone: "danger" }] as const;
+    await set({ chip: <PluginStatusChip status={{ ...STATUS, cells: [...cells], ring: 0.23 }} onOpen={() => {}} /> });
+    const columns = [...chip().querySelectorAll<HTMLElement>(".plugin-status-chip__cell")];
+    check(columns.length === 4 && columns[1].textContent === "内存61%" && columns[3].classList.contains("plugin-status-chip__cell--danger"), "插件状态的列按顺序显示标签、数值和色调");
+    check(chip().getAttribute("aria-label") === STATUS.text && chip().querySelector(".mini-ring__arc"), "有列时文字作读屏名称，前面画进度环");
+    check(getComputedStyle(columns[3].querySelector(".plugin-status-chip__value")!).color !== getComputedStyle(columns[0].querySelector(".plugin-status-chip__value")!).color, "danger 列的数值换色");
+    const barBox = bar().getBoundingClientRect();
+    check(chip().getBoundingClientRect().right <= barBox.right && bar().scrollWidth <= bar().clientWidth + 1, "四列加进度环不撑出收起条");
+    await set({ chip: undefined, task: null });
 
     await act(async () => createRoot(rings).render(<>
       <MiniRing rings={[{ value: 0.5, color: "red" }, { value: 0, color: "blue" }]} ariaLabel="两圈" title="两圈提示" />

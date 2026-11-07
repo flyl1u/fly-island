@@ -90,8 +90,16 @@ function viewMethod(host, method, params) {
   if (method === "status.update") {
     if (!items.includes(params?.itemId)) fail(404, `Unknown status item "${params?.itemId}".`);
     if (typeof params.text !== "string" || [...params.text].length > 24) fail(400, '"text" must be a string of at most 24 characters.');
+    const cells = params.cells ?? undefined;
+    if (cells !== undefined && (!Array.isArray(cells) || cells.length > 4)) fail(400, '"cells" must be a list of at most 4 cells.');
+    for (const cell of cells ?? []) {
+      if (typeof cell?.label !== "string" || [...cell.label.trim()].length > 6) fail(400, 'Each cell needs "label" as a string of at most 6 characters.');
+      if (typeof cell.value !== "string" || [...cell.value.trim()].length > 8) fail(400, 'Each cell needs "value" as a string of at most 8 characters.');
+    }
+    const ring = params.ring ?? undefined;
+    if (ring !== undefined && (typeof ring !== "number" || !(ring >= 0 && ring <= 1))) fail(400, '"ring" must be a number from 0 to 1.');
     if (params.text === "") host.statuses.delete(params.itemId);
-    else host.statuses.set(params.itemId, { text: params.text, tooltip: params.tooltip, tone: params.tone });
+    else host.statuses.set(params.itemId, { text: params.text, tooltip: params.tooltip, tone: params.tone, cells, ring });
     return {};
   }
   if (!views.includes(params?.viewId)) fail(404, `Unknown view "${params?.viewId}".`);

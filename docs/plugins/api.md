@@ -17,6 +17,7 @@
 | `webview` | 2 | contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification. |
 | `permissions` | 2 | manifest optionalPermissions and permissions.request; initialize.optionalPermissions. |
 | `openView` | 2 | island.openView: a plugin opens its own page right after the user used it. |
+| `statusCells` | 2 | status.update draws 'cells' (label-over-value columns) and a 'ring' (0-1). Islands without it ignore both and show the text. |
 
 ## 权限
 
@@ -52,7 +53,7 @@
 | `view.update` | 无 | 2 | `viewId`：one of the plugin's contributes.views<br>`model`：object for the view's template (see docs/plugins/README.md); max 256 KB as JSON, else status 413 | {}. The island shows at most 10 changes a second per view (later ones are merged) and only while the page is on screen. |
 | `webview.postMessage` | 无 | 2 | `viewId`：one of the plugin's views with template webview<br>`message`：any JSON value; max 256 KB | { shown }: false when the page is not on screen (the message is dropped). Messages sent before the page's script runs are lost too, so wait for the page to post that it is ready. |
 | `view.patch` | 无 | 2 | `viewId`：string<br>`items?`：[{ id, ... }]: replace the items with these ids in model.items and model.groups[].items<br>`remove?`：[id]: delete the items with these ids<br>`add?`：[{ item: { id, ... }, before?: id, group?: number }]: insert before the item `before`, else at the end of model.groups[group].items, else at the end of model.items; an id already in the view is status 400 | { missing: [id] }: ids not found (an add whose `before` is missing goes at the end). At least one of items, remove and add. Status 409 before the first view.update. |
-| `status.update` | 无 | 2 | `itemId`：one of the plugin's contributes.statusItems<br>`text`：string, max 24 characters; empty clears the item<br>`tooltip?`：string, max 200<br>`tone?`：neutral \| accent \| warning \| danger | {} |
+| `status.update` | 无 | 2 | `itemId`：one of the plugin's contributes.statusItems<br>`text`：string, max 24 characters; empty clears the item<br>`tooltip?`：string, max 200<br>`tone?`：neutral \| accent \| warning \| danger<br>`cells?`：[{ label: string max 6, value: string max 8, tone?: as above }], at most 4; drawn instead of the text (capability statusCells)<br>`ring?`：number 0-1: a small progress ring in the item's tone before the text or cells (capability statusCells) | {} |
 | `storage.get` | 无 | 2 | `key`：string (1-128 chars) | { value }: null when the key is not set |
 | `storage.set` | 无 | 2 | `key`：string (1-128 chars)<br>`value`：any JSON (max 64 KB as JSON; the plugin's whole storage max 1 MB, else status 413) | {} |
 | `storage.delete` | 无 | 2 | `key`：string | { deleted } |

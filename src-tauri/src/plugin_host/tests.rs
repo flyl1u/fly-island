@@ -777,7 +777,7 @@ fn view_icons_match_the_manifest_schema() {
 mod view_tests {
     use serde_json::json;
 
-    use super::super::views::{is_action_id, parse_status, patch_items, patch_model, MAX_STATUS_CHARS};
+    use super::super::views::{is_action_id, parse_status, patch_items, patch_model, MAX_STATUS_CELLS, MAX_STATUS_CHARS};
 
     #[test]
     fn patches_replace_items_by_id_in_the_list_and_its_groups() {
@@ -833,6 +833,23 @@ mod view_tests {
         assert!(parse_status(&json!({ "text": "x".repeat(MAX_STATUS_CHARS + 1) })).is_err());
         assert!(parse_status(&json!({ "text": "x", "tone": "loud" })).is_err());
         assert!(parse_status(&json!({ "text": 5 })).is_err());
+    }
+
+    #[test]
+    fn status_cells_and_rings_are_checked() {
+        let params = json!({ "text": "CPU 23%", "ring": 0.23, "cells": [{ "label": "CPU", "value": " 23% " }, { "label": "GPU", "value": "81°", "tone": "danger" }] });
+        let status = serde_json::to_value(parse_status(&params).expect("ok").expect("text")).expect("json");
+        assert_eq!(status["ring"], json!(0.23));
+        assert_eq!(status["cells"], json!([{ "label": "CPU", "value": "23%", "tone": "neutral" }, { "label": "GPU", "value": "81°", "tone": "danger" }]));
+        let cell = json!({ "label": "CPU", "value": "1" });
+        assert!(parse_status(&json!({ "text": "x", "cells": vec![cell.clone(); MAX_STATUS_CELLS] })).is_ok());
+        assert!(parse_status(&json!({ "text": "x", "cells": vec![cell; MAX_STATUS_CELLS + 1] })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "cells": [{ "label": "toolong", "value": "1" }] })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "cells": [{ "label": "CPU", "value": "123456789" }] })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "cells": [{ "label": "CPU" }] })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "cells": [{ "label": "CPU", "value": "1", "tone": "loud" }] })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "ring": 1.5 })).is_err());
+        assert!(parse_status(&json!({ "text": "x", "ring": "half" })).is_err());
     }
 
     #[test]

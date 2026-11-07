@@ -1,6 +1,9 @@
 /* A plugin's short status text on the collapsed bar, like the shelf count beside it. */
 .plugin-status-chip {
+  display: inline-flex;
   flex: 0 1 auto;
+  align-items: center;
+  gap: 5px;
   min-width: 0;
   max-width: 96px;
   height: 22px;
@@ -15,9 +18,63 @@
   font-variant-numeric: tabular-nums;
   line-height: 22px;
   white-space: nowrap;
-  text-overflow: ellipsis;
   cursor: pointer;
   transition: background 140ms ease, color 140ms ease;
+}
+
+.plugin-status-chip__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plugin-status-chip--ring {
+  padding-left: 4px;
+}
+
+.plugin-status-chip__ring {
+  flex: 0 0 auto;
+}
+
+/* Label-over-value columns (status.update cells), like the built-in gauges: no pill behind them. */
+.plugin-status-chip--cells {
+  gap: 4px;
+  max-width: 132px;
+  padding: 0 2px;
+  background: transparent;
+  line-height: 1;
+}
+
+.plugin-status-chip__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 26px;
+}
+
+.plugin-status-chip__label {
+  color: var(--text-3);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.plugin-status-chip__value {
+  margin-top: 2px;
+  color: var(--text-1);
+  font-size: 11px;
+}
+
+.plugin-status-chip__cell--accent .plugin-status-chip__value {
+  color: rgba(190, 232, 255, 0.95);
+}
+
+.plugin-status-chip__cell--warning .plugin-status-chip__value {
+  color: var(--color-warning);
+}
+
+.plugin-status-chip__cell--danger .plugin-status-chip__value {
+  color: var(--color-danger);
 }
 
 .plugin-status-chip:disabled {
@@ -39,6 +96,17 @@
   background: rgba(199, 80, 101, 0.2);
 }
 
+.plugin-status-chip--cells.plugin-status-chip--accent,
+.plugin-status-chip--cells.plugin-status-chip--warning,
+.plugin-status-chip--cells.plugin-status-chip--danger {
+  background: transparent;
+}
+
 .plugin-status-chip:hover:not(:disabled) {
   background: var(--color-white-a18);
+}
+
+.plugin-status-chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 2px;
 }

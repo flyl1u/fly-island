@@ -38,6 +38,11 @@ export function hidePluginWebview(id: string, viewId: string) {
   return invoke<void>("hide_plugin_webview", { id, viewId });
 }
 
+export type PluginStatusTone = "neutral" | "accent" | "warning" | "danger";
+
+// 与 src-tauri/src/plugin_host/views.rs 中的 StatusCell 对应。
+export type PluginStatusCell = { label: string; value: string; tone: PluginStatusTone };
+
 // 与 src-tauri/src/plugin_host/views.rs 中的 PluginStatusEntry 对应。
 export type PluginStatusEntry = {
   pluginId: string;
@@ -45,7 +50,11 @@ export type PluginStatusEntry = {
   priority: number;
   text: string;
   tooltip: string | null;
-  tone: "neutral" | "accent" | "warning" | "danger";
+  tone: PluginStatusTone;
+  /** Drawn instead of the text when present. */
+  cells?: PluginStatusCell[];
+  /** 0-1: a small progress ring before the text or cells. */
+  ring?: number;
 };
 
 // 与 src-tauri/src/plugin_host/views.rs 中的 PluginViewsSnapshot 对应。

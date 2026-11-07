@@ -37,15 +37,34 @@ pub(super) const MAX_STATUS_CHARS: usize = 24;
 const MAX_TOOLTIP_CHARS: usize = 200;
 const MAX_QUERY_CHARS: usize = 200;
 const TONES: [&str; 4] = ["neutral", "accent", "warning", "danger"];
+/// `status.update { cells }`: at most this many label-over-value columns.
+pub(super) const MAX_STATUS_CELLS: usize = 4;
+const MAX_CELL_LABEL_CHARS: usize = 6;
+const MAX_CELL_VALUE_CHARS: usize = 8;
 
 /// A plugin and one of its views or status items ("view:<id>" / "status:<id>").
 type Slot = (String, String);
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusText {
     text: String,
     tooltip: Option<String>,
+    tone: &'static str,
+    /// Drawn instead of the text when set. The text still names the item for screen readers,
+    /// and islands without the `statusCells` capability show only the text.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    cells: Vec<StatusCell>,
+    /// A small progress ring (0-1) in the item's tone, before the text or cells.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ring: Option<f64>,
+}
+
+/// One label-over-value column of a status item.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct StatusCell {
+    label: String,
+    value: String,
     tone: &'static str,
 }
 
@@ -141,7 +160,7 @@ pub(super) fn answer(app: &AppHandle, plugin_id: &str, method: &str, params: &Va
     }
 }
 
-/// `{ text, tooltip?, tone? }`; an empty text clears the item.
+/// `{ text, tooltip?, tone?, cells?, ring? }`; an empty text clears the item.
 pub(super) fn parse_status(params: &Value) -> Result<Option<StatusText>, (u16, String)> {
     let text = params.get("text").and_then(Value::as_str).ok_or_else(|| bad("Expected \"text\" as a string."))?.trim();
     if text.chars().count() > MAX_STATUS_CHARS {
@@ -152,14 +171,43 @@ pub(super) fn parse_status(params: &Value) -> Result<Option<StatusText>, (u16, S
         Some(Value::String(tooltip)) if tooltip.chars().count() <= MAX_TOOLTIP_CHARS => Some(tooltip.clone()),
         Some(_) => return Err(bad(format!("\"tooltip\" must be a string of at most {MAX_TOOLTIP_CHARS} characters."))),
     };
-    let tone = match params.get("tone") {
-        None | Some(Value::Null) => "neutral",
+    let tone = parse_tone(params.get("tone"), "tone")?;
+    let cells = match params.get("cells") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(cells)) if cells.len() <= MAX_STATUS_CELLS => cells.iter().map(parse_cell).collect::<Result<_, _>>()?,
+        Some(_) => return Err(bad(format!("\"cells\" must be a list of at most {MAX_STATUS_CELLS} cells."))),
+    };
+    let ring = match params.get("ring") {
+        None | Some(Value::Null) => None,
+        Some(value) => match value.as_f64() {
+            Some(ring) if (0.0..=1.0).contains(&ring) => Some(ring),
+            _ => return Err(bad("\"ring\" must be a number from 0 to 1.")),
+        },
+    };
+    Ok((!text.is_empty()).then(|| StatusText { text: text.to_string(), tooltip, tone, cells, ring }))
+}
+
+fn parse_tone(value: Option<&Value>, field: &str) -> Result<&'static str, (u16, String)> {
+    match value {
+        None | Some(Value::Null) => Ok("neutral"),
         Some(value) => value
             .as_str()
             .and_then(|tone| TONES.iter().copied().find(|known| *known == tone))
-            .ok_or_else(|| bad(format!("\"tone\" must be one of {}.", TONES.join(", "))))?,
+            .ok_or_else(|| bad(format!("\"{field}\" must be one of {}.", TONES.join(", ")))),
+    }
+}
+
+/// `{ label, value, tone? }`: a short label over a short value.
+fn parse_cell(cell: &Value) -> Result<StatusCell, (u16, String)> {
+    let field = |name: &str, max: usize| match cell.get(name).and_then(Value::as_str).map(str::trim) {
+        Some(text) if text.chars().count() <= max => Ok(text.to_string()),
+        _ => Err(bad(format!("Each cell needs \"{name}\" as a string of at most {max} characters."))),
     };
-    Ok((!text.is_empty()).then(|| StatusText { text: text.to_string(), tooltip, tone }))
+    Ok(StatusCell {
+        label: field("label", MAX_CELL_LABEL_CHARS)?,
+        value: field("value", MAX_CELL_VALUE_CHARS)?,
+        tone: parse_tone(cell.get("tone"), "cells[].tone")?,
+    })
 }
 
 /// `view.patch { items?, remove?, add? }`: `items` replace the items with the

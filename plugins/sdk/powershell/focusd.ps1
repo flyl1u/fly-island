@@ -169,10 +169,14 @@ function Send-FocusdWebviewMessage([string]$ViewId, $Message) {
 }
 
 # Sets the collapsed-bar text (max 24 characters) of one of the plugin's statusItems.
-function Update-FocusdStatus([string]$ItemId, [string]$Text, [string]$Tooltip = $null, [string]$Tone = $null) {
+# -Cells: up to 4 @{ label = 'CPU'; value = '23%'; tone = 'warning' } columns drawn instead of
+# the text, -Ring: a 0-1 progress ring; both need the statusCells capability (older islands show the text).
+function Update-FocusdStatus([string]$ItemId, [string]$Text, [string]$Tooltip = $null, [string]$Tone = $null, [object[]]$Cells = $null, [Nullable[double]]$Ring = $null) {
     $params = @{ itemId = $ItemId; text = $Text }
     if ($Tooltip) { $params.tooltip = $Tooltip }
     if ($Tone) { $params.tone = $Tone }
+    if ($null -ne $Cells -and $Cells.Count -gt 0) { $params.cells = @($Cells) }
+    if ($null -ne $Ring) { $params.ring = $Ring }
     [void](Invoke-FocusdMethod 'status.update' $params)
 }
 

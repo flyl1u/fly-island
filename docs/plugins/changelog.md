@@ -4,6 +4,10 @@
 
 下面几批改动都还没有随正式版岛屿发布（2026-11-05 时最新的正式版是 0.2.14），发布时补上版本号。
 
+## 折叠条上的列和小环
+
+- `status.update` 多了可选的 `cells`（最多 4 列 `{ label, value, tone? }`，代替文字显示）和 `ring`（0–1 的小进度环），能力 `statusCells`。`text` 仍然必填，旧版岛屿只显示文字。SDK：Node `plugin.status.update(id, text, { cells, ring })`，PowerShell `Update-FocusdStatus -Cells -Ring`；模拟宿主会校验并记在 `statuses` 里。见 [README](README.md)「折叠条上的列和小环」。
+
 ## npm 包 0.3.0（2026-11-06）
 
 `fly-island-plugin` 和 `create-fly-island-plugin` 0.3.0 带上下面这些新接口（从「更多右键菜单」到「打开自己的页面」）：

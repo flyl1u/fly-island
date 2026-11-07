@@ -50,7 +50,7 @@ export class MockHost {
   readonly requests: RecordedRequest[];
   readonly logs: string[];
   readonly views: Map<string, ViewModel>;
-  readonly statuses: Map<string, { text: string; tooltip?: string; tone?: string }>;
+  readonly statuses: Map<string, { text: string; tooltip?: string; tone?: string; cells?: { label: string; value: string; tone?: string }[]; ring?: number }>;
   /** Webview pages on screen (viewVisible opens and closes them). */
   readonly openWebviews: Set<string>;
   /** Messages the plugin sent to open webview pages. */

@@ -187,6 +187,21 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 
 **折叠条状态**：`status.update { itemId, text, tooltip?, tone? }`，`text` 最多 24 个字符，空字符串表示清除。状态文字显示在折叠条右侧的小标签里，和待办摘要、Agent 标题同时显示，不替换它们；有消息预览或快捷翻译时先让位。点击标签会打开这个插件的第一个页面。
 
+**折叠条上的列和小环**（能力 `statusCells`）：`status.update` 还可以带
+
+- `cells`：最多 4 列 `[{ label, value, tone? }]`，`label` 最多 6 个字符，`value` 最多 8 个字符，`tone` 同上。有 `cells` 时折叠条画成「上面小字标签、下面数值」的几列，代替文字，比如 `CPU 23%`、`GPU 81°`；`tone` 为 `warning` / `danger` 的列，数值变成黄色 / 红色。
+- `ring`：0–1 的小进度环，按这一项的 `tone` 着色，画在文字或列的前面，比如番茄钟的剩余时间。
+
+`text` 仍然必填：读屏用它念出这一项，没有 `statusCells` 能力的旧版岛屿只显示文字，会忽略 `cells` 和 `ring`。所以不用先判断能力，照常发就行。
+
+```js
+await plugin.status.update("bar", "CPU 23% · GPU 81°", {
+  cells: [{ label: "CPU", value: "23%" }, { label: "GPU", value: "81°", tone: "warning" }],
+});
+```
+
+PowerShell：`Update-FocusdStatus 'bar' 'CPU 23%' -Cells @(@{ label = 'CPU'; value = '23%' }) -Ring 0.23`。
+
 ### Agent 页的强度名称
 
 `contributes.agentEffortLabels` 改写 Agent 页会话行里推理强度的显示，按 Agent 分开写；只改显示，会话本身的强度不变：
@@ -348,6 +363,7 @@ QQ 邮箱授权码、翻译服务密钥这类凭据，任何权限都拿不到�
 | `secrets` | `secrets.get` / `set` / `delete` |
 | `views` | `contributes.views` 页面；`view.update` / `view.patch` 和 `view.*` 通知 |
 | `status` | `contributes.statusItems` 折叠条状态；`status.update` |
+| `statusCells` | `status.update` 的 `cells`（列）和 `ring`（小环） |
 
 - **第 1 版插件的行为不变**：`events.*`、`storage.*`、`view.*`、`status.update` 对它们仍然返回"方法不存在"；清单里的 `keybinding`、`when`、`menus`、`views`、`statusItems` 被忽略（写成什么样都不影响加载）。新权限（`island:notify`、`secrets` 等）在第 1 版清单里也能申请，申请了就能调用对应方法。
 - 兼容规则：同一版本内只做新增（新方法、新的可选参数和结果字段、新事件）。插件要忽略不认识的字段和通知。

@@ -10,7 +10,8 @@
     { "name": "status", "since": 2, "meaning": "contributes.statusItems on the collapsed bar; status.update." },
     { "name": "webview", "since": 2, "meaning": "contributes.views with template 'webview' (the plugin's own HTML page); webview.postMessage and the 'webview.message' notification." },
     { "name": "permissions", "since": 2, "meaning": "manifest optionalPermissions and permissions.request; initialize.optionalPermissions." },
-    { "name": "openView", "since": 2, "meaning": "island.openView: a plugin opens its own page right after the user used it." }
+    { "name": "openView", "since": 2, "meaning": "island.openView: a plugin opens its own page right after the user used it." },
+    { "name": "statusCells", "since": 2, "meaning": "status.update draws 'cells' (label-over-value columns) and a 'ring' (0-1). Islands without it ignore both and show the text." }
   ],
   "permissions": [
     { "name": "todos:read", "since": 1 },
@@ -114,7 +115,7 @@
       "name": "status.update",
       "permission": null,
       "since": 2,
-      "params": { "itemId": "one of the plugin's contributes.statusItems", "text": "string, max 24 characters; empty clears the item", "tooltip?": "string, max 200", "tone?": "neutral | accent | warning | danger" },
+      "params": { "itemId": "one of the plugin's contributes.statusItems", "text": "string, max 24 characters; empty clears the item", "tooltip?": "string, max 200", "tone?": "neutral | accent | warning | danger", "cells?": "[{ label: string max 6, value: string max 8, tone?: as above }], at most 4; drawn instead of the text (capability statusCells)", "ring?": "number 0-1: a small progress ring in the item's tone before the text or cells (capability statusCells)" },
       "result": "{}"
     },
     {
