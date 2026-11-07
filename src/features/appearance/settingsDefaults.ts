@@ -1,0 +1,103 @@
+// First-launch settings, and what older versions showed for fields they did not have yet.
+import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
+import { DEFAULT_CALENDAR_SETTINGS } from "../calendar/calendarSettings.ts";
+import { DEFAULT_PAGE_DIGIT_MODIFIERS, DEFAULT_PAGE_NEXT_SHORTCUT, DEFAULT_PAGE_PREVIOUS_SHORTCUT } from "./pageShortcuts.ts";
+import {
+  DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
+  DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
+} from "./settingsLimits.ts";
+import type { IslandSettings } from "./types";
+
+// First-launch settings. A saved setting that lacks a newer field keeps the
+// fallback in normalizeSettings, which for behavior switches is what older
+// versions did, so upgrading never flips them.
+export const DEFAULT_SETTINGS: IslandSettings = {
+  topEdgeLayoutVersion: 1,
+  appearanceMode: "classic",
+  fontFamily: "system",
+  glassIntensity: 72,
+  opacity: 100,
+  collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
+  expandedScale: 1,
+  marginY: 0,
+  islandMonitor: "primary",
+  topFilletRadius: 12,
+  islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
+  islandCornerShape: "squircle",
+  maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
+  clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
+  agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
+  agentHostDisplay: "both",
+  agentSessionHours: 2,
+  agentShowClaudeCode: true,
+  agentShowCodex: true,
+  agentHideFinished: false,
+  // Off unless asked for: the age alone keeps finished rows short.
+  agentShowElapsed: false,
+  agentShowModel: true,
+  agentShowActivity: true,
+  agentShowUsage: true,
+  agentAlertCompleted: true,
+  agentAlertFailed: true,
+  agentAlertWaiting: true,
+  agentAlertStarted: "everyTurn",
+  agentAlertSeconds: 5,
+  agentRemindSeconds: 60,
+  taskTextColor: DEFAULT_TASK_TEXT_COLOR,
+  pulseColor: "#3ae489",
+  pulseBrightness: 100,
+  islandBackgroundColor: "#030303",
+  todoBackgroundColor: "#ffffff",
+  showTitle: false,
+  showCollapsedText: true,
+  showIdleTodoCount: true,
+  carryOverIncompleteTodos: false,
+  enableTodoReorder: false,
+  rotateTodos: false,
+  todoRotationSeconds: 5,
+  autoTuck: true,
+  autoTuckSeconds: 30,
+  autoTuckRetract: true,
+  autoTuckRetractDelayMs: DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS,
+  revealOnMessage: true,
+  expandTrigger: "hover",
+  hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
+  hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
+  minimizeAction: "tuck",
+  tuckedHoverAction: "reveal",
+  pageDigitModifiers: DEFAULT_PAGE_DIGIT_MODIFIERS,
+  pageNextShortcut: DEFAULT_PAGE_NEXT_SHORTCUT,
+  pagePreviousShortcut: DEFAULT_PAGE_PREVIOUS_SHORTCUT,
+  todoEnabled: true,
+  musicEnabled: true,
+  agentStatusEnabled: true,
+  agentTitleEnabled: true,
+  shelfEnabled: true,
+  translationEnabled: true,
+  translationTarget: "island",
+  shelfExpandOnDrop: true,
+  shelfAutoCleanupDays: 0,
+  shelfRemoveMissing: true,
+  shelfRemoveAfterDragOut: true,
+  shelfMaxItems: DEFAULT_SHELF_ITEMS,
+  shelfDoubleClick: "open",
+  shelfShowCount: true,
+  deviceUseIndicator: true,
+  levelPopup: true,
+  deviceAlerts: true,
+  ...DEFAULT_LYRICS_SETTINGS,
+  ...DEFAULT_CALENDAR_SETTINGS,
+  mailEnabled: true,
+  gameDoNotDisturb: true,
+  gameAutoTuck: false,
+};
+// What versions before these fields existed showed. A saved setting without the
+// field loads as this, not as the first-launch default, so an upgrade keeps the look.
+export const LEGACY_FALLBACKS = {
+  topFilletRadius: 8,
+  islandCornerRadius: 30,
+  clipboardVisibleRows: 3,
+  agentVisibleRows: 3,
+  hoverExpandDelayMs: 300,
+  hoverCollapseDelayMs: 400,
+} as const satisfies Partial<IslandSettings>;
