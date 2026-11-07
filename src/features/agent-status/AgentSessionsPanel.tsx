@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Archive } from "lucide-react";
+import { ArchivedNotice } from "./ArchivedNotice";
+import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
 import type { AgentHostDisplay } from "../appearance/types";
 import { AgentProviderIcon } from "./AgentProviderIcon";
@@ -75,6 +77,7 @@ export function AgentSessionsPanel({
   const [notFoundId, setNotFoundId] = useState<string | null>(null);
   // Fade out an end of the list that has more sessions past it, rather than cutting a row in half.
   const list = useScrollFade<HTMLUListElement>(sessions);
+  const motion = useArchiveMotion(list.element, removal);
   const cardRef = useRef<HTMLLIElement>(null);
   const measure = reveal?.measure;
   const cardKey = reveal?.key;
@@ -132,12 +135,7 @@ export function AgentSessionsPanel({
     );
   }
 
-  const removedNotice = removal?.removed && !reveal && (
-    <div className="agent-sessions__removed" role="status">
-      <span>{t.agent.sessions.removed}</span>
-      <button type="button" onClick={removal.undo}>{t.agent.sessions.undo}</button>
-    </div>
-  );
+  const removedNotice = removal && !reveal && <ArchivedNotice removed={removal.removed} onUndo={motion.undo} />;
 
   if (sessions.length === 0) {
     return (
@@ -157,7 +155,7 @@ export function AgentSessionsPanel({
       {showUsage && <AgentUsageBar usages={usages} />}
       <ul
         ref={list.ref}
-        className="agent-sessions__list"
+        className={`agent-sessions__list${removal && !reveal ? " agent-sessions__list--archivable" : ""}`}
         data-fade-top={list.fade.top || undefined}
         data-fade-bottom={list.fade.bottom || undefined}
         onScroll={list.onScroll}
@@ -231,16 +229,18 @@ export function AgentSessionsPanel({
                   )}
                 </span>
               </button>
-              {/* Over the row's right end, shown only while the cursor is there: some sessions
-                  never report that they ended and would otherwise stay listed as running. */}
+              {/* In the room the row keeps right of the provider icon, grey, shown while the cursor
+                  is on the row: some sessions never report that they ended and would otherwise
+                  stay listed as running. A session that writes again comes back by itself. */}
               {removal && !reveal && (
                 <button
-                  className="agent-session__remove"
+                  className="agent-session__archive"
                   type="button"
                   aria-label={t.agent.sessions.remove(title)}
-                  onClick={() => removal.remove(session)}
+                  title={t.agent.sessions.remove(title)}
+                  onClick={() => motion.archive(session)}
                 >
-                  <X size={14} strokeWidth={2.4} aria-hidden="true" />
+                  <Archive size={14} strokeWidth={2} aria-hidden="true" />
                 </button>
               )}
             </li>

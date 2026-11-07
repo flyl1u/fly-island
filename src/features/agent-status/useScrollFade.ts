@@ -29,5 +29,5 @@ export function useScrollFade<T extends HTMLElement>(contentKey: unknown) {
 
   useEffect(update, [update, contentKey]);
 
-  return { ref: setElement, fade, onScroll: update };
+  return { ref: setElement, element, fade, onScroll: update };
 }

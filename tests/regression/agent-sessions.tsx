@@ -130,20 +130,32 @@ async function runChecks() {
       });
     };
     await renderRemoval(null);
-    const removeButtons = [...document.querySelectorAll<HTMLButtonElement>(".agent-session__remove")];
+    const removeButtons = [...document.querySelectorAll<HTMLButtonElement>(".agent-session__archive")];
     const firstRow = rows()[0].getBoundingClientRect();
     const firstRemove = removeButtons[0].getBoundingClientRect();
+    const providerIcon = rows()[0].querySelector(".agent-session__heading > :last-child")!.getBoundingClientRect();
     check(removeButtons.length === 3 && getComputedStyle(removeButtons[0]).opacity === "0"
-      && Math.abs(firstRemove.right - firstRow.right) < 1 && firstRemove.width < 50, "每行右端有一个平时看不见的移除按钮");
-    check(removeButtons[0].getAttribute("aria-label") === "从列表移除「设置界面完善思路」", "移除按钮的读屏文字说明移除哪个会话");
+      && firstRemove.left >= providerIcon.right && firstRemove.right <= firstRow.right && firstRemove.width <= 20,
+      "归档按钮在提供方图标右边、行内，平时看不见，不压住图标");
+    check(removeButtons[0].getAttribute("aria-label") === "归档「设置界面完善思路」", "归档按钮的读屏文字说明归档哪个会话");
     const focusesBefore = focusCalls.length;
     removeButtons[2].click();
-    check(removedIds.join() === "c" && focusCalls.length === focusesBefore, "点 × 只移除这个会话，不去切换窗口");
+    check(removedIds.length === 0, "点归档后，行先播完移出动画才离开列表");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 400)); });
+    check(removedIds.join() === "c" && focusCalls.length === focusesBefore, "动画播完只归档这个会话，不去切换窗口");
     await renderRemoval(sessions[2]);
-    const notice = document.querySelector<HTMLElement>(".agent-sessions__removed");
-    check(notice?.textContent?.startsWith("已从列表移除") && notice.getAttribute("role") === "status", "移除后显示「已从列表移除 · 撤销」");
+    const notice = document.querySelector<HTMLElement>(".agent-archived");
+    const panelBox = document.querySelector<HTMLElement>(".agent-sessions")!.getBoundingClientRect();
+    check(notice?.textContent?.includes("已归档") && notice.getAttribute("role") === "status"
+      && getComputedStyle(notice).position === "absolute" && notice.getBoundingClientRect().left - panelBox.left < 12
+      && notice.getBoundingClientRect().width < panelBox.width / 2,
+      "归档后左下角浮出「已归档 · 撤销」小胶囊，不占列表的位置");
     notice!.querySelector("button")!.click();
     check(undone === 1, "点撤销把会话放回去");
+    await renderRemoval(null);
+    check(document.querySelector(".agent-archived--leaving"), "撤销或到时后胶囊先播移出动画");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 400)); });
+    check(!document.querySelector(".agent-archived"), "移出动画播完胶囊消失");
     await render("both");
     const panel = document.querySelector<HTMLElement>(".agent-sessions")!;
     check(panel.scrollWidth <= panel.clientWidth, "面板没有横向溢出");
@@ -183,7 +195,8 @@ async function runChecks() {
     check(meta(first) === "2 个子 Agent · 刚刚" && meta(third) === "1 小时" && Math.abs(iconRight(first) - iconRight(third)) < 0.5 && Math.abs(iconRight(first) - iconRight(second)) < 0.5, "时间长短不同、有无来源时，右侧图标仍在同一列");
     // The fixture is the island's content box; the island's edge is its 20px side padding further out.
     const dotGap = first.querySelector(".agent-session__dot")!.getBoundingClientRect().left - (fixture.getBoundingClientRect().left - 20);
-    check(dotGap > 8 && dotGap < 16, "列表两侧只留很窄的边距（距岛屿边缘约 12px）");
+    const iconGap = fixture.getBoundingClientRect().right + 20 - iconRight(first);
+    check(Math.abs(dotGap - 20) < 1 && Math.abs(iconGap - 20) < 1, "圆点和右侧图标都距岛屿边缘 20px，和顶部栏对齐");
     await render("name");
     check(first.querySelector(".agent-session__host-name")?.textContent === "Orca" && !first.querySelector(".agent-session__host-icon"), "只显示名称");
     await render("off");

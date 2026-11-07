@@ -3,15 +3,16 @@
    two-line reply, 78px) are fixed because getAgentPageExpandedHeight (windows/island/layout.ts)
    sizes the island by them for the rows set in Settings. */
 .agent-sessions {
+  position: relative;
   /* Runs on through the island's 20px bottom padding, so a list longer than the page scrolls
      out under the island's edge instead of stopping short above an empty band. */
   height: calc(100% + 20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Reaches into the island's 20px side padding, so the rows' text sits about 12px from its
-     edges and the hovered row's highlight about 6px. */
-  margin-inline: -14px;
+  /* Reaches 6px into the island's 20px side padding, just room for the hovered row's highlight,
+     so the dots, the usage line and the rows' right ends line up with the header above. */
+  margin-inline: -6px;
   padding: 4px 0 0;
   /* With no panel of its own, the text follows the island background: light on dark, dark on
      light (stageStyle.ts sets --island-ink-rgb). */
@@ -122,79 +123,53 @@
   transition-delay: 80ms;
 }
 
-/* The x sits over the row's right end and shows only while the cursor is on it (or it has the
-   keyboard focus); the row stays lit meanwhile. */
+/* The archive button takes room the row keeps right of the provider icon, on the title line,
+   and shows (grey) while the cursor is on the row or the button has the keyboard focus. */
 .agent-sessions__list > li {
   position: relative;
 }
 
-.agent-session__remove {
+.agent-sessions__list--archivable .agent-session {
+  padding-right: 30px;
+}
+
+.agent-session__archive {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 40px;
+  top: 8px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   padding: 0;
-  color: rgba(var(--agent-ink), 0.8);
+  color: var(--text-3);
   background: transparent;
   border: 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition:
+    opacity 140ms ease,
+    color 140ms ease,
+    background 140ms ease;
 }
 
-.agent-session__remove svg {
-  width: 22px;
-  height: 22px;
-  padding: 4px;
-  box-sizing: border-box;
-  border-radius: var(--radius-pill);
-  background: rgba(var(--agent-ink), 0.14);
-}
-
-.agent-session__remove:hover,
-.agent-session__remove:focus-visible {
+.agent-sessions__list > li:hover .agent-session__archive,
+.agent-session__archive:focus-visible {
   opacity: 1;
+}
+
+.agent-session__archive:hover,
+.agent-session__archive:focus-visible {
+  color: var(--text-1);
+  background: rgba(var(--agent-ink), 0.12);
   outline: none;
 }
 
-.agent-session__remove:hover svg,
-.agent-session__remove:focus-visible svg {
-  color: #fff;
-  background: rgba(235, 87, 87, 0.9);
-}
-
-.agent-sessions__list > li:has(.agent-session__remove:hover) .agent-session {
+/* The row stays lit while the cursor is on its archive button. */
+.agent-sessions__list > li:has(.agent-session__archive:hover) .agent-session {
   background: rgba(var(--agent-ink), 0.07);
   box-shadow: inset 0 0 0 1px rgba(var(--agent-ink), 0.09);
-}
-
-.agent-sessions__removed {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 2px 6px 24px;
-  padding: 6px 10px;
-  color: var(--text-2);
-  background: rgba(var(--agent-ink), 0.08);
-  border-radius: var(--radius-md);
-  font-size: 12px;
-}
-
-.agent-sessions__removed button {
-  padding: 2px 8px;
-  color: var(--text-1);
-  background: rgba(var(--agent-ink), 0.12);
-  border: 0;
-  border-radius: var(--radius-pill);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .agent-session:focus-visible {
