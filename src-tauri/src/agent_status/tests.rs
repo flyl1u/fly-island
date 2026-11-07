@@ -1518,3 +1518,24 @@ fn codex_usage_comes_from_the_newest_token_count_with_a_window() {
     assert_eq!(parse_rollout(&empty), None);
     assert_eq!(parse_rollout("not json\n"), None);
 }
+
+#[test]
+fn context_tokens_come_from_the_newest_model_call() {
+    use super::sessions::{parse_claude_tail, parse_codex_tail};
+    let claude = [
+        line(json!({"type": "assistant", "message": {"model": "claude-opus-5-5", "content": [], "usage": {"input_tokens": 1, "output_tokens": 2}}})),
+        line(json!({"type": "assistant", "message": {"model": "claude-opus-5-5", "content": [], "usage": {"input_tokens": 10, "cache_creation_input_tokens": 200, "cache_read_input_tokens": 8000, "output_tokens": 400}}})),
+        line(json!({"type": "assistant", "message": {"model": "<synthetic>", "content": [], "usage": {"input_tokens": 0, "output_tokens": 0}}})),
+    ]
+    .concat();
+    assert_eq!(parse_claude_tail(&claude).context_tokens, Some(8610));
+    assert_eq!(parse_claude_tail(&line(json!({"type": "user", "message": {"content": "hi"}}))).context_tokens, None);
+
+    let codex = [
+        line(json!({"type": "event_msg", "payload": {"type": "token_count", "info": {"last_token_usage": {"total_tokens": 900}}}})),
+        line(json!({"type": "event_msg", "payload": {"type": "token_count", "info": {"last_token_usage": {"total_tokens": 24_800}}}})),
+        line(json!({"type": "event_msg", "payload": {"type": "token_count", "info": null}})),
+    ]
+    .concat();
+    assert_eq!(parse_codex_tail(&codex).context_tokens, Some(24_800));
+}

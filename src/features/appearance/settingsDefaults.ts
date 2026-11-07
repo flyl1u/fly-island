@@ -28,6 +28,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
   agentHostDisplay: "both",
+  agentSessionView: "list",
   agentSessionHours: 2,
   agentShowClaudeCode: true,
   agentShowCodex: true,

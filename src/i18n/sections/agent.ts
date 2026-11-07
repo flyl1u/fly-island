@@ -33,6 +33,8 @@ export type AgentText = {
     todos: (done: number, total: number) => string;
     todosCurrent: (step: string) => string;
     backgroundTasks: (count: number) => string;
+    /** The context size a card shows at its right end (formatTokens). */
+    contextTokens: (size: string) => string;
     remove: (title: string) => string;
     remoteOnly: (host: string) => string;
     /** The Agent page's heading over this computer's sessions, when others are listed too. */
@@ -120,6 +122,7 @@ export const zhCN: AgentText = {
     todos: (done, total) => `${done}/${total} 步`,
     todosCurrent: (step) => `正在：${step}`,
     backgroundTasks: (count) => `${count} 个后台任务`,
+    contextTokens: (size) => `${size} tokens`,
     remove: (title) => `归档「${title}」`,
     remoteOnly: (host) => `没找到连着 ${host} 的终端或编辑器窗口`,
     thisComputer: "本机",
@@ -201,6 +204,7 @@ export const en: AgentText = {
     todos: (done, total) => `${done}/${total} steps`,
     todosCurrent: (step) => `Now: ${step}`,
     backgroundTasks: (count) => (count === 1 ? "1 background task" : `${count} background tasks`),
+    contextTokens: (size) => `${size} tokens`,
     remove: (title) => `Archive "${title}"`,
     remoteOnly: (host) => `No terminal or editor window connected to ${host}`,
     thisComputer: "This computer",

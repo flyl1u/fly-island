@@ -79,6 +79,14 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(getAgentPageExpandedHeight(4) - getAgentPageExpandedHeight(3), 80);
   // The tallest choice still fits the native window (656px).
   assert.ok(getAgentPageExpandedHeight(MAX_AGENT_VISIBLE_ROWS) <= 656);
+  // Cards (62px, 6px apart) and compact rows (34px, 4px apart) size the page by their own rows.
+  assert.equal(getAgentPageExpandedHeight(4, 0, "cards") - getAgentPageExpandedHeight(3, 0, "cards"), 68);
+  assert.equal(getAgentPageExpandedHeight(4, 0, "compact") - getAgentPageExpandedHeight(3, 0, "compact"), 38);
+  assert.equal(getAgentPageExpandedHeight(1, 0, "cards"), getAgentPageExpandedHeight(0, 0, "cards") + 62 + 6 - 6 + 6);
+  // Flat rows stay the default view; an unknown saved one falls back to it.
+  assert.equal(DEFAULT_SETTINGS.agentSessionView, "list");
+  assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "cards");
+  assert.equal(normalizeSettings({ agentSessionView: "tiles" }).agentSessionView, "list");
 
   assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
   // Settings saved before this was a setting keep the old three rows.

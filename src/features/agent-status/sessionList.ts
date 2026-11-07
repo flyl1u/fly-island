@@ -1,7 +1,7 @@
 import type { AgentSessionSummary } from "./api";
 
 /** Fields the Agent page shows; `updatedAt` is left out because it only feeds the age label. */
-const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt", "permissionMode", "subagents", "replyMarker", "replyAsks", "backgroundTasks", "compacting", "closed"] as const;
+const SHOWN_FIELDS = ["provider", "sessionId", "cwd", "title", "model", "effort", "phase", "lastMessage", "turnStartedAt", "lastPrompt", "permissionMode", "subagents", "replyMarker", "replyAsks", "backgroundTasks", "compacting", "closed", "contextTokens"] as const;
 
 export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSummary[]) {
   return (
@@ -91,4 +91,12 @@ export function groupByComputer(sessions: AgentSessionSummary[]) {
     groups.set(host, [...(groups.get(host) ?? []), session]);
   }
   return [...groups].filter(([, members]) => members.length > 0).map(([host, members]) => ({ host, sessions: members }));
+}
+
+/** A context size as the cards show it: "860", "8.6k", "128k", "1.2M". */
+export function formatTokens(tokens: number) {
+  if (tokens < 1000) return String(Math.round(tokens));
+  if (tokens < 100_000) return `${(tokens / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  if (tokens < 1_000_000) return `${Math.round(tokens / 1000)}k`;
+  return `${(tokens / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
 }

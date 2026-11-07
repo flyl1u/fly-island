@@ -1,12 +1,13 @@
 // pnpm dev, then open /tests/agent-sessions.html?test=1 (without ?test=1 the page is for visual QA;
-// add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does).
+// add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does,
+// &view=cards or &view=compact for the other layouts).
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import { I18nProvider } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
-import type { AgentHostDisplay } from "../../src/features/appearance/types";
+import type { AgentHostDisplay, AgentSessionView } from "../../src/features/appearance/types";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
 
@@ -62,12 +63,12 @@ const SESSIONS: AgentSessionSummary[] = [
   },
 ];
 
-sizeFor(Number(params.get("rows")) || 3);
+fixture.style.height = `${getAgentPageExpandedHeight(Number(params.get("rows")) || 3, 0, (params.get("view") as AgentSessionView | null) ?? "list") - ISLAND_CHROME_HEIGHT}px`;
 const root = createRoot(fixture);
 const sessions = params.has("empty") ? [] : SESSIONS;
 const render = async (hostDisplay: AgentHostDisplay, cards: { showElapsed?: boolean; showModel?: boolean } = {}) => {
   await act(async () => {
-    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} {...cards} /></I18nProvider></StrictMode>);
+    root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={sessions} hostDisplay={hostDisplay} view={(params.get("view") as AgentSessionView | null) ?? "list"} {...cards} /></I18nProvider></StrictMode>);
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
@@ -352,6 +353,24 @@ async function runChecks() {
     check(focusCalls.length === remoteFocuses + 1 && remoteCall?.sessionId === "" && remoteCall?.cwd === "/srv/app" && remoteCall?.title === "服务器上的会话",
       "点远程会话按标题和文件夹找连着服务器的本地窗口，不带会话 ID");
     check(rows()[0].querySelector(".agent-session__not-found")?.textContent === "没找到连着 dev-box 的终端或编辑器窗口", "找不到时说明没有连着那台机器的窗口");
+    // The card and compact layouts (Settings), each sized by its own row height.
+    const renderView = async (view: AgentSessionView) => {
+      fixture.style.height = `${getAgentPageExpandedHeight(3, 0, view) - ISLAND_CHROME_HEIGHT}px`;
+      await act(async () => {
+        root.render(<StrictMode><I18nProvider><AgentSessionsPanel sessions={[{ ...SESSIONS[0], contextTokens: 86_400 }, ...SESSIONS.slice(1)]} view={view} hostDisplay="both"
+          removal={{ remove: () => undefined, removed: null, undo: () => undefined }} /></I18nProvider></StrictMode>);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      return [...document.querySelectorAll<HTMLButtonElement>(".agent-card")];
+    };
+    const fits = () => { const list = document.querySelector<HTMLElement>(".agent-sessions__list")!; return list.scrollHeight <= list.clientHeight + 1; };
+    let cards = await renderView("cards");
+    check(cards.length === 3 && cards.every((card) => card.offsetHeight === 62) && fits(), "卡片视图每个会话一张 62px 的卡片，三张正好放下");
+    check(cards[0].querySelector(".agent-card__tokens")?.textContent === "86.4k tokens" && !cards[2].querySelector(".agent-card__tokens"), "卡片右下写上下文大小，不知道时不写");
+    check(cards.every((card) => card.parentElement?.querySelector(".agent-session__archive")), "卡片视图照样能归档");
+    cards = await renderView("compact");
+    check(cards.length === 3 && cards.every((card) => card.offsetHeight === 34 && !card.querySelector(".agent-card__status-line") && card.querySelector(".agent-card__bar")) && fits(),
+      "紧凑视图每个会话一行 34px，只有色条、标题、状态和时间");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

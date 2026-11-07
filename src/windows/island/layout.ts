@@ -1,4 +1,5 @@
 import type { TodoItem } from "../../features/todos/types";
+import type { AgentSessionView } from "../../features/appearance/types";
 import { clamp } from "../../utils/number.ts";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "../../utils/text.ts";
 
@@ -94,16 +95,24 @@ export function getTodoVisualRows(todoList: TodoItem[]) {
 // the bottom padding (20) the list runs on through, then the list's top padding (4) and room
 // below the last row (8). Keep in step with AgentSessionsPanel.css.
 const AGENT_PAGE_CHROME_HEIGHT = 78;
-// The tallest session row (78, a two-line reply in AgentSessionsPanel.css) plus the gap below
-// it; shorter replies and folded rows leave room for more sessions.
-const AGENT_ROW_PITCH = 80;
-const AGENT_ROW_GAP = 2;
+// Each view's row and the gap below it: the tallest flat row (78, a two-line reply in
+// AgentSessionsPanel.css; shorter replies and folded rows leave room for more sessions), a card
+// (62) or a compact row (34) in AgentSessionCard.css. Keep in step with those files.
+const AGENT_ROWS: Record<AgentSessionView, { height: number; gap: number }> = {
+  list: { height: 78, gap: 2 },
+  cards: { height: 62, gap: 6 },
+  compact: { height: 34, gap: 4 },
+};
 // A usage line above the list (one per agent that reports usage): 22 plus 6 below it (AgentUsageBar.css).
 const AGENT_USAGE_HEIGHT = 28;
 
-/** Expanded height that fits exactly `rows` Agent session rows below `usageLines` usage lines (true: one). */
-export function getAgentPageExpandedHeight(rows: number, usageLines: number | boolean = 0) {
-  return AGENT_PAGE_CHROME_HEIGHT + Number(usageLines) * AGENT_USAGE_HEIGHT + rows * AGENT_ROW_PITCH - AGENT_ROW_GAP;
+/**
+ * Expanded height that fits exactly `rows` Agent sessions, shown as `view`, below `usageLines`
+ * usage lines (true: one).
+ */
+export function getAgentPageExpandedHeight(rows: number, usageLines: number | boolean = 0, view: AgentSessionView = "list") {
+  const { height, gap } = AGENT_ROWS[view];
+  return AGENT_PAGE_CHROME_HEIGHT + Number(usageLines) * AGENT_USAGE_HEIGHT + rows * (height + gap) - gap;
 }
 
 /** Expanded height around an alert's one-session card, whose row measured `rowHeight`. */

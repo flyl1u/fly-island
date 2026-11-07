@@ -6,10 +6,11 @@ import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import {
   AGENT_HOST_DISPLAYS,
   AGENT_SESSION_HOURS,
+  AGENT_SESSION_VIEWS,
   MAX_AGENT_VISIBLE_ROWS,
   MIN_AGENT_VISIBLE_ROWS,
 } from "../appearance/settings";
-import type { AgentHostDisplay, IslandSettings } from "../appearance/types";
+import type { AgentHostDisplay, AgentSessionView, IslandSettings } from "../appearance/types";
 import { useTranslation } from "../../i18n";
 
 /** Settings → AI Agent: which sessions the island's Agent page lists, and what each card shows. */
@@ -55,6 +56,18 @@ export function AgentSessionListSettings({
         {toggle("agentShowUsage", text.showUsage, text.showUsageHint)}
       </SettingsGroup>
       <SettingsGroup title={text.sessionCardSection}>
+        <SettingsRow
+          title={text.sessionView}
+          description={text.sessionViewHint}
+          control={
+            <SettingsSelect<AgentSessionView>
+              value={settings.agentSessionView}
+              options={AGENT_SESSION_VIEWS.map((value) => ({ value, label: text.sessionViewOptions[value] }))}
+              ariaLabel={text.sessionView}
+              onChange={(agentSessionView) => update({ agentSessionView })}
+            />
+          }
+        />
         <SettingsRow
           title={text.hostDisplay}
           description={text.hostDisplayHint}

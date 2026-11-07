@@ -140,6 +140,7 @@ export function IslandApp() {
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
+    agentSessionView: settings.agentSessionView,
     agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
     agentAlertRowHeight: agentCardHeight,
     pluginTemplate: pluginPages.entry?.template,

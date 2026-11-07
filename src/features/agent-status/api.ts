@@ -91,6 +91,8 @@ export type AgentSessionSummary = {
   remoteHost?: string;
   /** Compacting its context now (Claude Code PreCompact / PostCompact hooks). Missing from older builds. */
   compacting?: boolean;
+  /** Tokens in the context at the newest model call (context_tokens in sessions.rs); missing when unknown or from older builds. */
+  contextTokens?: number | null;
   /** The agent's own task list while some of it is left (TodoProgress in todo_list.rs). Missing from older builds. */
   todos?: AgentTodoProgress | null;
   /** The agent has quit (SessionEnd, its process gone, or no longer in Claude Code's registry). Missing from older builds. */

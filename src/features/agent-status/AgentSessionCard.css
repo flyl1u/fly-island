@@ -1,0 +1,260 @@
+/* The card and compact views of the Agent page (AgentSessionCard.tsx). A card is 62px tall and a
+   compact row 34px, fixed because getAgentPageExpandedHeight (windows/island/layout.ts) sizes the
+   island by them; only an alert's card grows, by the reply it shows. The frame takes the light's
+   colour (sessionLight.ts) and the radius of the island's inner panels, which follows Settings. */
+
+/* Cards have frames of their own, so they sit inside the header's line instead of reaching into
+   the island's padding like the flat rows' highlight. */
+.agent-sessions__list--cards,
+.agent-sessions__list--compact {
+  padding-inline: 6px;
+}
+
+.agent-sessions__list--cards {
+  gap: 6px;
+}
+
+.agent-sessions__list--compact {
+  gap: 4px;
+}
+
+.agent-card {
+  --card-color: var(--color-light-done);
+  width: 100%;
+  height: 62px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  color: inherit;
+  text-align: left;
+  background: rgba(var(--agent-ink), 0.05);
+  border: 1px solid rgba(var(--agent-ink), 0.12);
+  border-radius: var(--island-panel-radius, 10px);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.agent-card--compact {
+  height: 34px;
+  padding: 0 10px;
+}
+
+.agent-card--reply {
+  height: auto;
+  padding-block: 10px;
+}
+
+/* Room on the right for the archive button, which the panel lays over the card. */
+.agent-sessions__list--archivable .agent-card {
+  padding-right: 34px;
+}
+
+.agent-sessions__list--cards .agent-session__archive,
+.agent-sessions__list--compact .agent-session__archive {
+  top: 50%;
+  right: 13px;
+  transform: translateY(-50%);
+}
+
+.agent-card--light-working { --card-color: var(--color-light-working); }
+.agent-card--light-stale { --card-color: rgba(52, 199, 89, 0.45); }
+.agent-card--light-needs,
+.agent-card--light-failed { --card-color: var(--color-light-needs); }
+.agent-card--light-yourTurn { --card-color: var(--color-light-your-turn); }
+
+/* Working or waiting on the user: framed in its colour, mixed with the ink so it reads on a light
+   island too. */
+.agent-card--lively {
+  border-color: color-mix(in srgb, var(--card-color) 65%, rgba(var(--agent-ink), 0.2));
+}
+
+.agent-card--light-stale {
+  border-color: color-mix(in srgb, var(--color-light-working) 30%, transparent);
+}
+
+/* Finished but not looked at yet: a brighter frame until clicked. */
+.agent-card--unseen {
+  border-color: rgba(var(--agent-ink), 0.32);
+}
+
+/* Lights up only once the cursor rests on a card, not on the way to the header buttons. */
+.agent-card:hover,
+.agent-sessions__list > li:has(.agent-session__archive:hover) .agent-card {
+  background: rgba(var(--agent-ink), 0.1);
+  transition-delay: 80ms;
+}
+
+.agent-card:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: -2px;
+}
+
+.agent-card__heading,
+.agent-card__status-line {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-card__heading {
+  height: 20px;
+}
+
+.agent-card__bar {
+  flex: none;
+  width: 3px;
+  height: 16px;
+  border-radius: 1.5px;
+  background: var(--card-color);
+}
+
+.agent-card--looked .agent-card__bar {
+  background: var(--color-light-done);
+}
+
+.agent-card__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-1);
+  /* Semibold, not heavier: 800 picks Segoe UI Black for Latin text. */
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-card--compact .agent-card__title {
+  font-size: 13px;
+}
+
+/* Finished sessions recede by colour alone; one not looked at yet stays bright. */
+.agent-card--completed:not(.agent-card--unseen) .agent-card__title,
+.agent-card--failed:not(.agent-card--unseen) .agent-card__title {
+  color: var(--text-2);
+}
+
+.agent-card__meta,
+.agent-card__not-found {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agent-card__not-found {
+  color: var(--color-warning);
+}
+
+.agent-card__model,
+.agent-card__mode {
+  padding: 1px 6px;
+  color: var(--text-2);
+  background: rgba(var(--agent-ink), 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.agent-card__model {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Skipping every check is marked in the waiting orange. */
+.agent-card__mode--bypass {
+  color: rgb(255, 159, 67);
+  background: rgba(255, 159, 67, 0.16);
+}
+
+.agent-card__status-line {
+  height: 18px;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.agent-card__status {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.agent-card__status > * + *::before {
+  content: "·";
+  margin: 0 6px;
+  color: var(--text-3);
+}
+
+.agent-card__state,
+.agent-card__fixed {
+  flex: none;
+  color: var(--text-2);
+}
+
+.agent-card__state {
+  font-weight: 500;
+}
+
+/* Mixed with the ink so the yellow and green still read on a light island. */
+.agent-card--lively .agent-card__state {
+  color: color-mix(in srgb, var(--card-color) 80%, rgb(var(--agent-ink)));
+  font-weight: 600;
+}
+
+.agent-card__doing,
+.agent-card__tool {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-card__tool {
+  display: flex;
+  gap: 6px;
+}
+
+.agent-card__tool-name {
+  flex: none;
+  color: var(--color-agent-running);
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.agent-card__tool-detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  text-overflow: ellipsis;
+}
+
+.agent-card__tokens {
+  flex: none;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A finished or failed session's reply on an alert's card: its summary, up to three lines. */
+.agent-card__reply {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: 13px;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

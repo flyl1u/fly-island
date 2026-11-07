@@ -2,6 +2,7 @@ import { messagePanelHeight, type MessageView } from "../../features/messages/Me
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
 import { BASE_EXPANDED_ISLAND_HEIGHT, CALENDAR_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getPluginPageExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { PluginViewTemplate } from "../../features/plugin-views/api";
+import type { AgentSessionView } from "../../features/appearance/types";
 import { isPluginPage } from "./features";
 import type { IslandPage } from "./types";
 
@@ -20,6 +21,8 @@ type ExpandedHeightInput = {
   maxPanelHeight: number;
   clipboardVisibleRows: number;
   agentVisibleRows: number;
+  /** How the Agent page shows sessions (Settings); each view has its own row height. */
+  agentSessionView?: AgentSessionView;
   /** How many usage lines (Claude, Codex) sit above the Agent page's rows. */
   agentUsageLines: number;
   /** An alert's one-session card instead: the height its row measured, without the usage line. */
@@ -48,6 +51,7 @@ export function getExpandedIslandHeight({
   maxPanelHeight,
   clipboardVisibleRows,
   agentVisibleRows,
+  agentSessionView = "list",
   agentUsageLines,
   agentAlertRowHeight,
   pluginTemplate,
@@ -87,7 +91,7 @@ export function getExpandedIslandHeight({
       : page === "agents"
         ? agentAlertRowHeight !== undefined
           ? getAgentAlertExpandedHeight(agentAlertRowHeight)
-          : getAgentPageExpandedHeight(agentVisibleRows, agentUsageLines)
+          : getAgentPageExpandedHeight(agentVisibleRows, agentUsageLines, agentSessionView)
       : page === "clipboard"
         ? getClipboardExpandedHeight(clipboardVisibleRows)
         : Math.min(messagePanelHeight(messageSource, isReadingMail), maxPanelHeight);

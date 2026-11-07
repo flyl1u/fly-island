@@ -15,6 +15,8 @@ export type MinimizeAction = "tray" | "tuck";
 export type TuckedHoverAction = "reveal" | "expand";
 /** How the Agent page shows the program a session runs in. */
 export type AgentHostDisplay = "both" | "icon" | "name" | "off";
+/** How the Agent page shows sessions: flat rows, two-line cards framed in their light, or one-line rows. */
+export type AgentSessionView = "list" | "cards" | "compact";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
@@ -42,6 +44,7 @@ export type IslandSettings = CalendarSettingValues & {
   /** Agent sessions the expanded Agent page shows before it scrolls. */
   agentVisibleRows: number;
   agentHostDisplay: AgentHostDisplay;
+  agentSessionView: AgentSessionView;
   /** How far back (hours) the Agent page lists sessions; one of AGENT_SESSION_HOURS. */
   agentSessionHours: number;
   agentShowClaudeCode: boolean;

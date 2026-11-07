@@ -343,6 +343,7 @@ fn summary_from(
         compacting: false,
         todos: parsed.todos,
         closed: false,
+        context_tokens: parsed.context_tokens,
         remote_host: None,
     }
 }

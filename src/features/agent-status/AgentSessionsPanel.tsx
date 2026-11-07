@@ -3,7 +3,8 @@ import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
-import type { AgentHostDisplay } from "../appearance/types";
+import type { AgentHostDisplay, AgentSessionView } from "../appearance/types";
+import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentUsageBar } from "./AgentUsageBar";
 import type { AgentUsages } from "./usage";
@@ -36,6 +37,7 @@ const AGE_REFRESH_MS = 30_000;
  */
 export function AgentSessionsPanel({
   sessions: listed,
+  view = "list",
   hostDisplay,
   showElapsed = true,
   showModel = true,
@@ -48,6 +50,8 @@ export function AgentSessionsPanel({
   approvals,
 }: {
   sessions: AgentSessionSummary[];
+  /** Flat rows (the default), cards framed in their light, or one-line rows (AgentSessionCard). */
+  view?: AgentSessionView;
   /** How the program a session runs in is shown; "off" hides it. */
   hostDisplay: AgentHostDisplay;
   showElapsed?: boolean;
@@ -153,7 +157,7 @@ export function AgentSessionsPanel({
       {showUsage && <AgentUsageBar usages={usages} />}
       <ul
         ref={list.ref}
-        className={`agent-sessions__list${removal && !reveal ? " agent-sessions__list--archivable" : ""}`}
+        className={`agent-sessions__list${view === "list" ? "" : ` agent-sessions__list--${view}`}${removal && !reveal ? " agent-sessions__list--archivable" : ""}`}
         data-fade-top={list.fade.top || undefined}
         data-fade-bottom={list.fade.bottom || undefined}
         onScroll={list.onScroll}
@@ -170,6 +174,38 @@ export function AgentSessionsPanel({
           const title = session.title ?? project ?? AGENT_PROVIDER_LABELS[session.provider];
           const model = modelLabel(session.model, shownEffort(session.provider, session.effort, effortLabels));
           const mode = session.permissionMode && session.permissionMode !== "default" ? t.agent.sessions.permissionModes[session.permissionMode] : null;
+          const key = sessionKey(session);
+          const notFound = notFoundId === session.sessionId
+            ? session.remoteHost ? t.agent.sessions.remoteOnly(session.remoteHost) : isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded
+            : null;
+          // Right of the provider icon, grey, shown while the cursor is on the row: some sessions
+          // never report that they ended. A session that writes again comes back by itself.
+          const archive = removal && !reveal && (
+            <button className="agent-session__archive" type="button" aria-label={t.agent.sessions.remove(title)} title={t.agent.sessions.remove(title)} onClick={() => motion.archive(session)}>
+              <Archive size={14} strokeWidth={2} aria-hidden="true" />
+            </button>
+          );
+          if (view !== "list") {
+            return (
+              <li key={`${session.provider}:${session.sessionId}`} ref={reveal ? cardRef : undefined} data-session-key={key}>
+                <AgentSessionCard
+                  session={session}
+                  now={now}
+                  compact={view === "compact"}
+                  hostDisplay={hostDisplay}
+                  showElapsed={showElapsed}
+                  showActivity={showActivity}
+                  model={showModel ? model : null}
+                  unseen={Boolean(unseen?.keys.has(key))}
+                  looked={Boolean(unseen && !unseen.keys.has(key) && asksUser(session))}
+                  notFound={notFound}
+                  cardReply={reveal && !isActivePhase(session.phase) ? session.lastMessage : null}
+                  onOpen={() => focus(session)}
+                />
+                {archive}
+              </li>
+            );
+          }
           const minutes = minutesAgo(session.updatedAt, now);
           // A working session with nothing to say yet (a turn just started) has no second line.
           const active = isActivePhase(session.phase);
@@ -219,8 +255,8 @@ export function AgentSessionsPanel({
                         {mode}
                       </span>
                     )}
-                    {notFoundId === session.sessionId ? (
-                      <span className="agent-session__not-found" role="status">{session.remoteHost ? t.agent.sessions.remoteOnly(session.remoteHost) : isActivePhase(session.phase) ? t.agent.sessions.notFound : t.agent.sessions.notFoundEnded}</span>
+                    {notFound ? (
+                      <span className="agent-session__not-found" role="status">{notFound}</span>
                     ) : (
                       <span className="agent-session__meta">{status}</span>
                     )}
@@ -240,20 +276,7 @@ export function AgentSessionsPanel({
                   )}
                 </span>
               </button>
-              {/* In the room the row keeps right of the provider icon, grey, shown while the cursor
-                  is on the row: some sessions never report that they ended and would otherwise
-                  stay listed as running. A session that writes again comes back by itself. */}
-              {removal && !reveal && (
-                <button
-                  className="agent-session__archive"
-                  type="button"
-                  aria-label={t.agent.sessions.remove(title)}
-                  title={t.agent.sessions.remove(title)}
-                  onClick={() => motion.archive(session)}
-                >
-                  <Archive size={14} strokeWidth={2} aria-hidden="true" />
-                </button>
-              )}
+              {archive}
             </li>
           );
           }),
