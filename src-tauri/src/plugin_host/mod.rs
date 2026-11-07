@@ -55,6 +55,7 @@ mod runtime;
 mod sensitive;
 mod settings;
 mod signature;
+mod sound_contrib;
 mod storage;
 mod system_events;
 mod store;
@@ -73,6 +74,7 @@ pub use effort_labels::*;
 pub use updates::*;
 pub use webviews::*;
 pub(crate) use dev::answer_local_api as answer_dev_api;
+pub(crate) use sound_contrib::{plugin_sound_packs, PluginSoundPack};
 
 use std::{
     collections::{HashMap, HashSet},

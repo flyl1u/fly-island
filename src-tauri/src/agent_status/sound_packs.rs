@@ -12,10 +12,12 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{ipc::Response, AppHandle, Manager};
 
+use crate::plugin_host::{plugin_sound_packs, PluginSoundPack};
+
 const PACKS_DIR: &str = "sound-packs";
 const MANIFEST: &str = "pack.json";
 /// Mirrors AGENT_SOUND_EVENTS in src/features/agent-status/sounds/events.ts.
-const EVENTS: [&str; 10] = [
+pub(crate) const SOUND_EVENTS: [&str; 10] = [
     "start", "complete", "error", "approval", "question", "ack", "compact", "idle", "quotaLow", "quotaReset",
 ];
 const EXTENSIONS: [&str; 5] = ["wav", "mp3", "ogg", "m4a", "flac"];
@@ -33,6 +35,34 @@ pub struct SoundPack {
     pub license: String,
     /// Event to the file name inside the pack's folder.
     pub sounds: BTreeMap<String, String>,
+    /// A pack from an installed plugin (id `plugin:<plugin id>`): removed by uninstalling the
+    /// plugin, and named in both languages (`name` is the Chinese one).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name_en: Option<String>,
+    #[serde(default)]
+    pub from_plugin: bool,
+}
+
+/// How a plugin's pack is named among the sound packs.
+const PLUGIN_PACK_PREFIX: &str = "plugin:";
+
+fn plugin_pack(pack: PluginSoundPack) -> (SoundPack, PathBuf) {
+    let sound_pack = SoundPack {
+        id: format!("{PLUGIN_PACK_PREFIX}{}", pack.id),
+        name: clean_text(&pack.name_zh),
+        author: clean_text(&pack.author),
+        license: clean_text(&pack.license),
+        sounds: pack.files,
+        name_en: Some(clean_text(&pack.name_en)),
+        from_plugin: true,
+    };
+    (sound_pack, pack.dir)
+}
+
+/// A plugin's pack by its sound pack id, with the plugin's folder.
+fn find_plugin_pack(id: &str) -> Option<(SoundPack, PathBuf)> {
+    let plugin_id = id.strip_prefix(PLUGIN_PACK_PREFIX)?;
+    plugin_sound_packs().into_iter().find(|pack| pack.id == plugin_id).map(plugin_pack)
 }
 
 /// Mirrors SoundPackImport in src/features/agent-status/sounds/api.ts.
@@ -100,7 +130,7 @@ pub(crate) fn plan_import(pack: SoundPackImport, id: String) -> Result<(SoundPac
     let mut sounds = BTreeMap::new();
     let mut files = Vec::new();
     for file in pack.files {
-        if !EVENTS.contains(&file.event.as_str()) || sounds.contains_key(&file.event) {
+        if !SOUND_EVENTS.contains(&file.event.as_str()) || sounds.contains_key(&file.event) {
             continue;
         }
         let extension = sound_extension(&file.name).ok_or_else(|| format!("不支持的音效格式：{}", file.name))?;
@@ -121,6 +151,8 @@ pub(crate) fn plan_import(pack: SoundPackImport, id: String) -> Result<(SoundPac
         author: clean_text(&pack.author),
         license: clean_text(&pack.license),
         sounds,
+        name_en: None,
+        from_plugin: false,
     };
     Ok((pack, files))
 }
@@ -131,12 +163,14 @@ fn read_pack(dir: &Path) -> Option<SoundPack> {
     (pack.id == folder_id && is_valid_id(&pack.id)).then_some(pack)
 }
 
-/// The imported sound packs, by name.
+/// The imported sound packs and those of switched-on plugins, by name.
 #[tauri::command]
 pub async fn list_sound_packs(app: AppHandle) -> Result<Vec<SoundPack>, String> {
     let dir = packs_dir(&app)?;
-    let Ok(entries) = fs::read_dir(&dir) else { return Ok(Vec::new()) };
-    let mut packs: Vec<SoundPack> = entries.flatten().filter_map(|entry| read_pack(&entry.path())).collect();
+    let mut packs: Vec<SoundPack> = fs::read_dir(&dir)
+        .map(|entries| entries.flatten().filter_map(|entry| read_pack(&entry.path())).collect())
+        .unwrap_or_default();
+    packs.extend(plugin_sound_packs().into_iter().map(|pack| plugin_pack(pack).0));
     packs.sort_by_key(|pack| pack.name.to_lowercase());
     Ok(packs)
 }
@@ -169,6 +203,9 @@ pub async fn import_sound_pack(app: AppHandle, pack: SoundPackImport) -> Result<
 /// Deletes an imported sound pack.
 #[tauri::command]
 pub async fn remove_sound_pack(app: AppHandle, id: String) -> Result<(), String> {
+    if id.starts_with(PLUGIN_PACK_PREFIX) {
+        return Err("这个音效包来自插件，请在插件页关闭或卸载它。".into());
+    }
     if !is_valid_id(&id) {
         return Err("音效包 id 无效。".into());
     }
@@ -182,17 +219,23 @@ pub async fn remove_sound_pack(app: AppHandle, id: String) -> Result<(), String>
 /// One sound file of an imported pack, as raw bytes. Only files the pack's manifest lists are served.
 #[tauri::command]
 pub async fn read_sound_pack_file(app: AppHandle, id: String, file: String) -> Result<Response, String> {
-    if !is_valid_id(&id) {
+    let (pack, dir) = if id.starts_with(PLUGIN_PACK_PREFIX) {
+        find_plugin_pack(&id).ok_or("找不到这个音效包，插件可能已关闭或卸载。")?
+    } else if is_valid_id(&id) {
+        let dir = packs_dir(&app)?.join(&id);
+        (read_pack(&dir).ok_or("找不到这个音效包。")?, dir)
+    } else {
         return Err("音效包 id 无效。".into());
-    }
-    let dir = packs_dir(&app)?.join(&id);
-    let pack = read_pack(&dir).ok_or("找不到这个音效包。")?;
+    };
+    // Plugin paths were checked to stay inside the plugin folder when its manifest was read.
     if !pack.sounds.values().any(|listed| listed == &file) {
         return Err("音效包里没有这个文件。".into());
     }
-    fs::read(dir.join(&file))
-        .map(Response::new)
-        .map_err(|error| format!("无法读取音效 {file}：{error}"))
+    let bytes = fs::read(dir.join(&file)).map_err(|error| format!("无法读取音效 {file}：{error}"))?;
+    if bytes.len() > MAX_FILE_BYTES {
+        return Err(format!("音效文件太大：{file}（最大 4 MB）"));
+    }
+    Ok(Response::new(bytes))
 }
 
 #[cfg(test)]

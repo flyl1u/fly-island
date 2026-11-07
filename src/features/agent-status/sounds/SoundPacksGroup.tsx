@@ -3,8 +3,8 @@ import { FolderOpen } from "lucide-react";
 import { SettingsGroup } from "../../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../../components/settings/SettingsRow";
-import { useTranslation } from "../../../i18n";
-import { importSoundPack, removeSoundPack, type SoundPack, type SoundPackImport } from "./api";
+import { useLocale, useTranslation } from "../../../i18n";
+import { importSoundPack, removeSoundPack, soundPackName, type SoundPack, type SoundPackImport } from "./api";
 import { AGENT_SOUND_EVENTS } from "./events";
 import { planSoundPack } from "./packManifest";
 import "./SoundPacksGroup.css";
@@ -24,6 +24,7 @@ export function SoundPacksGroup({
   onChanged: (imported?: SoundPack) => void;
 }) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const text = t.settings.sounds;
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -81,9 +82,11 @@ export function SoundPacksGroup({
       {packs.map((pack) => (
         <SettingsRow
           key={pack.id}
-          title={pack.name}
-          description={text.packMeta(pack.author, pack.license, Object.keys(pack.sounds).length)}
-          control={<SettingsLinkButton tone="danger" onClick={() => remove(pack)}>{text.removePack}</SettingsLinkButton>}
+          title={soundPackName(pack, locale)}
+          description={[text.packMeta(pack.author, pack.license, Object.keys(pack.sounds).length), pack.fromPlugin && text.fromPlugin].filter(Boolean).join(" · ")}
+          control={
+            pack.fromPlugin ? undefined : <SettingsLinkButton tone="danger" onClick={() => remove(pack)}>{text.removePack}</SettingsLinkButton>
+          }
         />
       ))}
       <SettingsRow

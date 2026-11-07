@@ -2,7 +2,7 @@ import type { MarketPlugin } from "./api.ts";
 import { isNewerVersion } from "./version.ts";
 
 /** Categories with their own icon colour (MARKET_CATEGORIES in api.ts); others get one from their id. */
-const TONES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities"] as const;
+const TONES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities", "sounds"] as const;
 export type MarketIconTone = (typeof TONES)[number];
 
 export const hasUpdate = (plugin: Pick<MarketPlugin, "installedVersion" | "version">) =>

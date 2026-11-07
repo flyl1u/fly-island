@@ -155,7 +155,7 @@ export type PluginsSnapshot = {
 };
 
 // 与 scripts/plugins/build-plugin-index.mjs 中的 CATEGORIES 对应。
-export const MARKET_CATEGORIES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities"] as const;
+export const MARKET_CATEGORIES = ["productivity", "todos", "developer", "media", "messages", "information", "utilities", "sounds"] as const;
 export type MarketCategory = (typeof MARKET_CATEGORIES)[number];
 
 // 与 src-tauri/src/plugin_host/market.rs 中的 MarketEntry，以及 plugin_host/commands.rs 中的 MarketPlugin、MarketSnapshot 对应。

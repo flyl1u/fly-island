@@ -208,6 +208,27 @@ plugins/<插件 id>/        # 文件夹名必须等于插件 id
 - 不需要进程，`runtime` 写 `none` 即可，也不需要任何权限。插件开着时生效，关掉立刻恢复（Agent 页每 5 秒重读一次）。
 - 显示时首字母照常大写（`xhigh` 显示为 `Xhigh`）。几个插件改写同一个强度时，按插件 id 排序取第一个。
 
+### 音效包
+
+`contributes.sounds` 让插件成为一个音效包，安装并开启后出现在 设置 → 声音 的「使用的音效」里，关掉或卸载就消失：
+
+```json
+{
+  "runtime": { "type": "none" },
+  "contributes": {
+    "sounds": {
+      "license": "CC0-1.0",
+      "files": { "complete": "sounds/complete.wav", "approval": "sounds/approval.wav" }
+    }
+  }
+}
+```
+
+- 事件可写 `start`、`complete`、`error`、`approval`、`question`、`ack`、`compact`、`idle`、`quotaLow`、`quotaReset`；岛屿不认识的事件会被忽略，没写的事件用内置音效。
+- 文件必须在插件文件夹里，格式 `.wav`、`.mp3`、`.ogg`、`.m4a`、`.flac`，每个最大 4 MB。
+- `license` 必填。插件市场只收允许再分发的许可（CC0、MIT 等）；MIT 的包要附上许可证原文。别人软件里的音效不要上架。
+- 市场分类写 `sounds`。
+
 ### 设置页
 
 插件不能自带界面代码。插件卡片上有一个"设置"按钮，点开后是这个插件自己的设置页，页面由岛屿统一绘制，包括四部分：

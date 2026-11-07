@@ -30,7 +30,8 @@ export function MarketPluginDetails({ plugin }: { plugin: MarketPlugin }) {
           {t.settings.plugins.optionalPermission}: {names(plugin.optionalPermissions)}
         </p>
       ) : null}
-      {plugin.runtime ? <p>{plugin.runtime === "node" ? t.settings.plugins.runtimeNode : t.settings.plugins.runtimeBuiltIn}</p> : null}
+      {/* "none" runs nothing (a sound pack, say): there is nothing to say about installing it. */}
+      {plugin.runtime && plugin.runtime !== "none" ? <p>{plugin.runtime === "node" ? t.settings.plugins.runtimeNode : t.settings.plugins.runtimeBuiltIn}</p> : null}
       {plugin.readme ? (
         <section className="plugin-market__doc" aria-label={text.readme}>
           <Markdown text={plugin.readme} onOpenLink={openLink} />

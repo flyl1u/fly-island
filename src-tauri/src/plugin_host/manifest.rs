@@ -12,6 +12,7 @@ use super::menus::{self, PluginMenus};
 use super::view_specs::{self, StatusItemSpec, ViewSpec};
 use super::permissions::is_known_permission;
 use super::settings::{validate_specs, SettingSpec};
+use super::sound_contrib::{self, SoundContribution};
 use crate::clipboard_history::parse_shortcut_binding;
 
 pub(super) const MANIFEST_FILE_NAME: &str = "focusd-plugin.json";
@@ -44,6 +45,10 @@ impl LocalizedText {
 
     pub(super) fn en(&self) -> &str {
         &self.en
+    }
+
+    pub(super) fn zh_cn(&self) -> &str {
+        &self.zh_cn
     }
 
     pub(super) fn is_filled(&self) -> bool {
@@ -142,6 +147,9 @@ pub(super) struct PluginContributions {
     /// How the Agent page names a session's effort, per agent; see effort_labels.rs.
     #[serde(default, rename = "agentEffortLabels", skip_serializing_if = "EffortLabels::is_empty")]
     pub agent_effort_labels: EffortLabels,
+    /// A sound pack for agent events; see sound_contrib.rs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sounds: Option<SoundContribution>,
     /// Pages on the expanded island (API version 2); see view_specs.rs.
     #[serde(skip)]
     pub views: Vec<ViewSpec>,
@@ -282,6 +290,7 @@ fn parse_any_manifest(text: &str, folder_name: &str, app_version: &str) -> Resul
     let command_ids: Vec<&str> = contributes.commands.iter().map(PluginCommand::id).collect();
     menus::check(&mut contributes.menus, &command_ids, api_version)?;
     effort_labels::check(&mut contributes.agent_effort_labels)?;
+    sound_contrib::check(&mut contributes.sounds)?;
     (contributes.views, contributes.status_items) = view_specs::check(&contributes.views_raw, &contributes.status_items_raw, api_version)?;
     manifest.activation = activation::read(
         &manifest.activation_raw,

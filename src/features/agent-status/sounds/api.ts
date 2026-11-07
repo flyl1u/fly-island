@@ -9,7 +9,16 @@ export type SoundPack = {
   license: string;
   /** Event to the file name inside the pack's folder. */
   sounds: Partial<Record<AgentSoundEvent, string>>;
+  /** A pack an installed plugin brings (id `plugin:<plugin id>`): removed on the plugin page. */
+  fromPlugin?: boolean;
+  /** A plugin pack's English name; `name` is its Chinese one. */
+  nameEn?: string;
 };
+
+/** A pack's name in the island's language. */
+export function soundPackName(pack: SoundPack, locale: string) {
+  return locale === "en" && pack.nameEn ? pack.nameEn : pack.name;
+}
 
 /** Mirrors SoundPackImport in src-tauri/src/agent_status/sound_packs.rs. */
 export type SoundPackImport = {

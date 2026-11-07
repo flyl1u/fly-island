@@ -52,7 +52,13 @@ async function soundUrl(packId: string, event: AgentSoundEvent): Promise<string>
     console.error("Failed to list the sound packs", reason);
     return [];
   });
-  const pack = (await packs).find((candidate) => candidate.id === packId);
+  let pack = (await packs).find((candidate) => candidate.id === packId);
+  // Chosen after this window listed the packs (imported, or a plugin installed since): look again.
+  if (!pack) {
+    forgetSoundPacks();
+    packs = listSoundPacks().catch(() => []);
+    pack = (await packs).find((candidate) => candidate.id === packId);
+  }
   return (pack && (await packFileUrl(pack, event))) ?? BUILTIN_SOUNDS[event];
 }
 

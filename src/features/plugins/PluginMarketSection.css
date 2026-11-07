@@ -75,6 +75,7 @@
 .plugin-market__icon--messages { background: rgba(255, 209, 102, 0.26); }
 .plugin-market__icon--information { background: rgba(110, 168, 255, 0.28); }
 .plugin-market__icon--utilities { background: rgba(248, 246, 240, 0.16); }
+.plugin-market__icon--sounds { background: rgba(255, 159, 67, 0.22); }
 
 .plugin-market__summary {
   display: grid;

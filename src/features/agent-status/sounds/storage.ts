@@ -42,7 +42,7 @@ export function normalizeAgentSoundSettings(value: unknown): AgentSoundSettings 
   return {
     enabled: bool(raw.enabled, fallback.enabled),
     volume: typeof raw.volume === "number" && Number.isFinite(raw.volume) ? Math.min(100, Math.max(0, Math.round(raw.volume))) : fallback.volume,
-    pack: typeof raw.pack === "string" && /^[a-z0-9-]{1,64}$/.test(raw.pack) ? raw.pack : fallback.pack,
+    pack: typeof raw.pack === "string" && /^(plugin:[a-z0-9.-]{3,64}|[a-z0-9-]{1,64})$/.test(raw.pack) ? raw.pack : fallback.pack,
     events: Object.fromEntries(AGENT_SOUND_EVENTS.map((event) => [event, bool(rawEvents[event], fallback.events[event])])) as Record<AgentSoundEvent, boolean>,
     quietWhenInFront: bool(raw.quietWhenInFront, fallback.quietWhenInFront),
     quietHours: {

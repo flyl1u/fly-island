@@ -126,7 +126,7 @@ export type SettingsPluginsText = {
     search: string;
     noMatches: string;
     allCategories: string;
-    category: Record<"productivity" | "todos" | "developer" | "media" | "messages" | "information" | "utilities", string>;
+    category: Record<"productivity" | "todos" | "developer" | "media" | "messages" | "information" | "utilities" | "sounds", string>;
     official: string;
     /** Verified publishers (plugin-author-signing.md §4). */
     publisher: (name: string) => string;
@@ -348,6 +348,7 @@ export const zhCN: SettingsPluginsText = {
       messages: "消息",
       information: "资讯",
       utilities: "工具",
+      sounds: "音效包",
     },
     official: "官方",
     publisher: (name: string) => `发布者 ${name}`,
@@ -565,6 +566,7 @@ export const en: SettingsPluginsText = {
       messages: "Messages",
       information: "Information",
       utilities: "Utilities",
+      sounds: "Sound packs",
     },
     official: "Official",
     publisher: (name: string) => `Published by ${name}`,

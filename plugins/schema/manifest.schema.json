@@ -187,6 +187,21 @@
             }
           }
         },
+        "sounds": {
+          "description": "A sound pack for agent events. Needs no process: a plugin with runtime \"none\" can carry just this. Shown on Settings > Sounds while the plugin is switched on. The market only lists packs whose licence allows sharing them (CC0, MIT and the like; MIT packs ship the licence text).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["license", "files"],
+          "properties": {
+            "license": { "type": "string", "minLength": 1, "maxLength": 120, "description": "SPDX id or short name, such as \"CC0-1.0\"." },
+            "files": {
+              "description": "Agent event -> a .wav, .mp3, .ogg, .m4a or .flac file inside the plugin folder (at most 4 MB). Events the island does not know are ignored.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": { "type": "string", "pattern": "^[^/\\\\:.][^:]*\\.(wav|mp3|ogg|m4a|flac)$" }
+            }
+          }
+        },
         "agentEffortLabels": {
           "description": "How the Agent page names a session's reasoning effort, per agent: effort as the agent reports it (any case) -> the text shown instead. Display only; the island's first letter is still capitalised. Needs no process, so a plugin with runtime \"none\" can carry just this. With several plugins switched on, the first by id wins for each effort.",
           "type": "object",
