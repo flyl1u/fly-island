@@ -5,7 +5,7 @@
     "zh-CN": "在岛上列出 fly-island 仓库 docs/tasks 里的任务：等你确认的、认领已失效的、进行中的（谁、哪条 lane）和待做的；有等你确认的事时，收起条上显示数量。点一条用默认程序打开任务文件。数据来自仓库里的 pnpm tasks --json，需要 Node。只给开发这个仓库时用，用 pnpm tasks:plugin 安装。",
     "en": "Lists the tasks in the fly-island repo's docs/tasks on an island page: waiting for you, stale claims, in progress (who, which lane) and to do; the collapsed bar shows how many wait for you. Click one to open its file. Reads pnpm tasks --json from the repo, so it needs Node. For developing this repo only; install with pnpm tasks:plugin."
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "apiVersion": 2,
   "author": "TixXin",
   "runtime": { "type": "process", "command": "main.ps1" },

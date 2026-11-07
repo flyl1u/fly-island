@@ -54,7 +54,7 @@ function Send-Model([bool]$Loading = $false) {
     $active = @($script:Tasks | Where-Object { $_.status -eq (Text '\u8fdb\u884c\u4e2d') -and -not $_.stale })
     $todo = @($script:Tasks | Where-Object { $_.status -eq (Text '\u5f85\u505a') })
 
-    $status = if ($waiting.Count -gt 0) { "$(Text '\u5f85\u786e\u8ba4') $($waiting.Count)" } else { '' }
+    $status = if ($waiting.Count -gt 0) { "$(Text '\u4efb\u52a1\u5f85\u5b9a') $($waiting.Count)" } else { '' }
     if ($status -ne $script:ShownStatus) {
         $script:ShownStatus = $status
         [void](Invoke-FocusdMethod 'status.update' @{ itemId = 'waiting'; text = $status; tone = 'warning'; tooltip = (Text '\u6709\u4efb\u52a1\u7b49\u4f60\u786e\u8ba4') })
