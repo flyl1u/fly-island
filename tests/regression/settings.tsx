@@ -27,7 +27,7 @@ window.addEventListener("beforeunload", restore);
 
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "zh-CN");
 // The checks below expect a customized look plus a General page choice that a reset must keep.
-if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: true }));
+if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false }));
 else localStorage.removeItem("focusd-island-settings");
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
@@ -281,7 +281,7 @@ if (!automated) {
     await click(".appearance-reset");
     await click(".appearance-reset--danger");
     check(storedSettings().opacity === DEFAULT_SETTINGS.opacity, "Confirming resets the appearance");
-    check(storedSettings().carryOverIncompleteTodos === true, "Resetting the appearance keeps todo settings");
+    check(storedSettings().carryOverIncompleteTodos === false, "Resetting the appearance keeps todo settings");
     check(!document.querySelector(".island-preview__island--glass"), "The island preview starts classic");
     const glassButton = [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === "液态玻璃");
     await act(async () => { glassButton!.click(); });
@@ -378,7 +378,7 @@ if (!automated) {
     await act(async () => { aboutLink("重置")!.click(); });
     check(aboutLink("确认重置") && aboutLink("取消"), "Reset all settings asks first");
     // The appearance reset above kept the todo setting, so it is the one that shows a full reset.
-    check(storedSettings().carryOverIncompleteTodos === true, "Asking changes nothing yet");
+    check(storedSettings().carryOverIncompleteTodos === false, "Asking changes nothing yet");
     await act(async () => { aboutLink("确认重置")!.click(); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(storedSettings().carryOverIncompleteTodos === DEFAULT_SETTINGS.carryOverIncompleteTodos && !aboutLink("确认重置"),

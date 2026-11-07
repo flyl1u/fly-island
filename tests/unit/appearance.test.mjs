@@ -160,7 +160,7 @@ test("normalizing saved settings keeps the first-launch defaults", () => {
 
 test("first launch uses the maintainer's layout, while saved settings missing a field keep older behavior", () => {
   assert.equal(DEFAULT_SETTINGS.appearanceMode, "classic");
-  assert.equal(DEFAULT_SETTINGS.islandBackgroundColor, "#030303");
+  assert.equal(DEFAULT_SETTINGS.islandBackgroundColor, "#000000");
   assert.equal(DEFAULT_SETTINGS.islandCornerRadius, 16);
   assert.equal(DEFAULT_SETTINGS.collapsedScale, 1);
   assert.equal(DEFAULT_SETTINGS.expandedScale, 1);
