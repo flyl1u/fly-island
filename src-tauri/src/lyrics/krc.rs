@@ -10,6 +10,8 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use flate2::read::ZlibDecoder;
 use serde_json::Value;
 
+use super::found::word_tag;
+
 const KEY: [u8; 16] = [0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69];
 /// Decrypted lyrics are a few KiB; anything far larger is not lyrics.
 const MAX_TEXT_BYTES: u64 = 1024 * 1024;
@@ -24,11 +26,40 @@ pub(super) fn decrypt(content: &str) -> Option<String> {
     Some(text.trim_start_matches('\u{feff}').to_string())
 }
 
-/// One line of KRC: when it starts (ms) and its words joined.
+/// One line of KRC: when it starts (ms), its words joined, and each word's timing.
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct KrcLine {
     pub(super) start_ms: u64,
     pub(super) text: String,
+    pub(super) words: Vec<KrcWord>,
+}
+
+/// A word (or syllable) of a KRC line: when it starts after the line does, and for how long.
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct KrcWord {
+    pub(super) offset_ms: u64,
+    pub(super) duration_ms: u64,
+    pub(super) text: String,
+}
+
+impl KrcLine {
+    /// The line's text with a word time before each word and one after the last
+    /// (enhanced LRC: `<00:17.51>Oh <00:17.80>I <00:19.75>`); the plain text when no word has text.
+    pub(super) fn timed_text(&self) -> String {
+        if self.words.iter().all(|word| word.text.trim().is_empty()) {
+            return self.text.clone();
+        }
+        let mut timed = String::new();
+        let mut end = self.start_ms;
+        for word in &self.words {
+            let start = self.start_ms + word.offset_ms;
+            timed.push_str(&word_tag(start));
+            timed.push_str(&word.text);
+            end = end.max(start + word.duration_ms);
+        }
+        timed.push_str(&word_tag(end));
+        timed.trim().to_string()
+    }
 }
 
 /// The timed lines of KRC text, in order.
@@ -38,7 +69,7 @@ pub(super) fn lines(krc: &str) -> Vec<KrcLine> {
             let rest = line.trim().strip_prefix('[')?;
             let (timing, words) = rest.split_once(']')?;
             let start_ms = timing.split_once(',')?.0.parse().ok()?;
-            Some(KrcLine { start_ms, text: words_of(words) })
+            Some(KrcLine { start_ms, text: words_of(words), words: timed_words(words) })
         })
         .collect()
 }
@@ -58,6 +89,23 @@ fn words_of(words: &str) -> String {
     }
     text.push_str(rest);
     text.trim().to_string()
+}
+
+/// `<0,150,0>张<150,250,0>小` -> 张 at 0 for 150 ms, 小 at 150 for 250 ms. Text before the first
+/// tag, or after a broken one, is dropped here (it still shows in the plain text).
+fn timed_words(words: &str) -> Vec<KrcWord> {
+    words
+        .split('<')
+        .skip(1)
+        .filter_map(|piece| {
+            let (timing, text) = piece.split_once('>')?;
+            let mut numbers = timing.split(',').map(|number| number.trim().parse::<u64>());
+            let (Some(Ok(offset_ms)), Some(Ok(duration_ms))) = (numbers.next(), numbers.next()) else {
+                return None;
+            };
+            Some(KrcWord { offset_ms, duration_ms, text: text.to_string() })
+        })
+        .collect()
 }
 
 /// The translation of each timed line, in order, from the `[language:...]` header; `None`
@@ -96,10 +144,12 @@ mod tests {
         );
         let text = decrypt(&encrypt(&krc)).unwrap();
         assert!(text.starts_with("[ar:"));
-        assert_eq!(
-            lines(&text),
-            [KrcLine { start_ms: 17_518, text: "Oh I believe".into() }, KrcLine { start_ms: 22_474, text: String::new() }]
-        );
+        let parsed = lines(&text);
+        assert_eq!(parsed.iter().map(|line| (line.start_ms, line.text.as_str())).collect::<Vec<_>>(), [(17_518, "Oh I believe"), (22_474, "")]);
+        assert_eq!(parsed[0].words[1], KrcWord { offset_ms: 285, duration_ms: 407, text: "I ".into() });
+        // Absolute word times, and the end of the last word.
+        assert_eq!(parsed[0].timed_text(), "<00:17.51>Oh <00:17.80>I <00:18.21>believe<00:19.75>");
+        assert_eq!(parsed[1].timed_text(), "");
         assert_eq!(translations(&text), Some(vec!["哦 我相信昨天".to_string(), String::new()]));
         assert_eq!(translations("[language:eyJjb250ZW50IjpbXSwidmVyc2lvbiI6MX0=]"), None);
         assert_eq!(decrypt("bm90IGtyYw=="), None);

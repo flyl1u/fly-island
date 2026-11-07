@@ -73,7 +73,7 @@ pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64) -> Result
     let Some(text) = download["content"].as_str().and_then(krc::decrypt) else {
         return Ok(None);
     };
-    let lines: Vec<(u64, String)> = krc::lines(&text).into_iter().map(|line| (line.start_ms, line.text)).collect();
+    let lines: Vec<(u64, String)> = krc::lines(&text).iter().map(|line| (line.start_ms, line.timed_text())).collect();
     Ok(from_lines(&lines, krc::translations(&text).as_deref(), title))
 }
 

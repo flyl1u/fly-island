@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { lineIndexAt, parseLrc, playbackPosition, trackKey } from "../../src/features/media/lyrics/lrc.ts";
+import { lineIndexAt, parseLrc, playbackPosition, trackKey, wordFill } from "../../src/features/media/lyrics/lrc.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 
 test("LRC lines are parsed, sorted and shifted by the offset tag", () => {
@@ -45,4 +45,26 @@ test("lyrics settings start offline and keep the offset in range", () => {
   assert.equal(normalizeSettings({ lyricsOffsetMs: 9000 }).lyricsOffsetMs, 3000);
   assert.equal(normalizeSettings({ lyricsOffsetMs: -1234 }).lyricsOffsetMs, -1200);
   assert.equal(normalizeSettings({ lyricsFolder: " D:\\Lyrics " }).lyricsFolder, "D:\\Lyrics");
+});
+
+test("enhanced LRC word times become the line's words", () => {
+  const parse = parseLrc;
+  const [line] = parse("[00:17.51]<00:17.51>Oh <00:17.80>I <00:18.21>believe<00:19.75>");
+  assert.equal(line.text, "Oh I believe");
+  assert.deepEqual(line.words, [
+    { startMs: 17_510, endMs: 17_800, text: "Oh " },
+    { startMs: 17_800, endMs: 18_210, text: "I " },
+    { startMs: 18_210, endMs: 19_750, text: "believe" },
+  ]);
+  // Text before the first word time starts with the line; plain lines have no words.
+  assert.deepEqual(parse("[00:01.00]啊 <00:01.50>哦<00:02.00>")[0].words?.map((word) => [word.startMs, word.text]), [[1000, "啊 "], [1500, "哦"]]);
+  assert.equal(parse("[00:01.00]plain")[0].words, undefined);
+  assert.equal(parse("[00:01.00]<00:01.00><00:02.00>")[0].words, undefined);
+  // The offset tag moves the words too; a repeated line keeps its words' spacing.
+  const repeated = parse("[offset:+100]\n[00:01.00][00:10.00]<00:01.00>a<00:01.50>b<00:02.00>");
+  assert.deepEqual(repeated.map((l) => l.words?.map((word) => word.startMs)), [[900, 1400], [9900, 10_400]]);
+  // Angle brackets that are not times stay text.
+  assert.equal(parse("[00:01.00]a <b> c")[0].text, "a <b> c");
+  assert.deepEqual(wordFill({ startMs: 1000, endMs: 1400, text: "x" }, 1100), { delayMs: -100, durationMs: 400 });
+  assert.deepEqual(wordFill({ startMs: 2000, endMs: 2000, text: "x" }, 1000), { delayMs: 1000, durationMs: 1 });
 });

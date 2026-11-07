@@ -35,17 +35,43 @@ pub(super) fn is_credit(text: &str, title: &str) -> bool {
     !title.is_empty() && text.split_once(" - ").is_some_and(|(left, right)| clean_title(left) == title || clean_title(right) == title)
 }
 
+/// An enhanced-LRC word time, `<mm:ss.xx>`.
+pub(super) fn word_tag(ms: u64) -> String {
+    format!("<{:02}:{:02}.{:02}>", ms / 60_000, ms / 1000 % 60, ms % 1000 / 10)
+}
+
+/// `text` without enhanced-LRC word times.
+pub(super) fn plain_text(text: &str) -> String {
+    let mut plain = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find('<') {
+        let tag = rest[start + 1..].find('>').map(|end| &rest[start + 1..start + 1 + end]);
+        match tag.filter(|tag| !tag.is_empty() && tag.chars().all(|c| c.is_ascii_digit() || c == ':' || c == '.')) {
+            Some(tag) => {
+                plain.push_str(&rest[..start]);
+                rest = &rest[start + tag.len() + 2..];
+            }
+            None => {
+                plain.push_str(&rest[..=start]);
+                rest = &rest[start + 1..];
+            }
+        }
+    }
+    plain.push_str(rest);
+    plain
+}
+
 fn timestamp(ms: u64) -> String {
     format!("[{:02}:{:02}.{:02}]", ms / 60_000, ms / 1000 % 60, ms % 1000 / 10)
 }
 
-/// LRC from timed lines (ms, text), credits dropped; translations, when given, follow the lines
+/// LRC from timed lines (ms, text, which may carry word times), credits dropped; translations, when given, follow the lines
 /// by position. `None` when no sung line is left.
 pub(super) fn from_lines(lines: &[(u64, String)], translations: Option<&[String]>, title: &str) -> Option<FoundLyrics> {
     let mut lrc = String::new();
     let mut translated = String::new();
     for (index, (ms, text)) in lines.iter().enumerate() {
-        if is_credit(text, title) {
+        if is_credit(&plain_text(text), title) {
             continue;
         }
         lrc.push_str(&format!("{}{text}\n", timestamp(*ms)));
@@ -53,7 +79,7 @@ pub(super) fn from_lines(lines: &[(u64, String)], translations: Option<&[String]
             translated.push_str(&format!("{}{line}\n", timestamp(*ms)));
         }
     }
-    let sung = lrc.lines().any(|line| line.len() > 10);
+    let sung = lrc.lines().any(|line| plain_text(line).len() > 10);
     sung.then(|| FoundLyrics { lrc, translation: (!translated.is_empty()).then_some(translated) })
 }
 
@@ -107,6 +133,11 @@ mod tests {
         assert_eq!(found.lrc, "[00:31.44]Oh I believe\n[01:15.00]\n");
         assert_eq!(found.translation.as_deref(), Some("[00:31.44]哦 我相信\n"));
         assert_eq!(from_lines(&lines[..2], None, "余香"), None);
+        // Word times survive, and do not hide a credit.
+        let timed = [(500, "<00:00.50>作词：<00:01.00>卡夫<00:02.00>".to_string()), (3000, "<00:03.00>划一根<00:04.00>".to_string())];
+        assert_eq!(from_lines(&timed, None, "余香").unwrap().lrc, "[00:03.00]<00:03.00>划一根<00:04.00>
+");
+        assert_eq!(plain_text("<00:03.00>a<b> <x>c<00:04.00>"), "a<b> <x>c");
         assert_eq!(lrc_lines("[00:31.440]划一根\n[01:02.5]x\nno tag"), [(31_440, "划一根".to_string()), (62_500, "x".to_string())]);
     }
 }

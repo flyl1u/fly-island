@@ -25,6 +25,7 @@ mockIPC((command, payload) => {
   const query = (payload as { query: Record<string, unknown> }).query;
   queries.push(query);
   if (query.title === "Yesterday") return { source: "kugou", lrc: ["[00:01.00]Oh I believe", "[00:05.00]in yesterday"].join("\n"), translation: "[00:01.00]哦 我相信" };
+  if (query.title === "Believe") return { source: "kugou", lrc: "[00:01.00]<00:01.00>Oh <00:01.30>I <00:01.70>believe<00:03.00>\n[00:04.00]in yesterday" };
   return query.title === "晴天" ? { source: "lrclib", lrc: LRC } : null;
 });
 
@@ -111,6 +112,22 @@ try {
   await act(async () => offsetButtons[1].click());
   check(offsetButtons[1].textContent === "0s" && lines()[1] === "Oh I believe", "点中间的数字恢复为 0");
   localStorage.removeItem("focusd-island-lyrics-offsets");
+
+  // Word-timed lines (Kugou KRC, enhanced LRC) fill word by word.
+  await render(track("Believe", 1500));
+  const words = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__word")];
+  const fillX = (word: HTMLElement) => getComputedStyle(word).backgroundPosition.split(" ")[0];
+  check(words().map((word) => word.textContent).join("|") === "Oh |I |believe" && lines()[1] === "Oh I believe" && lines()[2] === "in yesterday",
+    "逐字时间的歌词按字分开，整句文字不变");
+  check(parseFloat(fillX(words()[0])) === 0 && fillX(words()[2]) === "100%" && fillX(words()[1]) !== fillX(words()[0]) && fillX(words()[1]) !== "100%",
+    "唱过的字亮、正在唱的字亮到一半、没唱的字暗");
+  check(words().every((word) => getComputedStyle(word).animationPlayState === "paused"), "暂停时逐字填充也停住");
+  await render(track("Believe", 1500, true));
+  check(words().every((word) => getComputedStyle(word).animationPlayState === "running"), "播放时逐字填充往前走");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 600)); });
+  check(fillX(words()[2]) !== "100%", "到点后下一个字开始变亮");
+  await render(track("Believe", 4500));
+  check(words().length === 0 && lines()[1] === "in yesterday", "没有逐字时间的句子照常整句显示");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

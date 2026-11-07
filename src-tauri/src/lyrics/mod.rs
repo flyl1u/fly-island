@@ -79,6 +79,9 @@ struct CacheEntry {
     source: Option<String>,
     #[serde(default)]
     translation: Option<String>,
+    /// Written by a version that keeps Kugou's word times; older Kugou entries are fetched again.
+    #[serde(default)]
+    word_times: bool,
     fetched_at: u64,
 }
 
@@ -109,6 +112,7 @@ fn read_cache(dir: &Path, key: &str, now: u64) -> Option<Option<Answer>> {
         return None;
     }
     match entry.lrc {
+        Some(_) if entry.source.as_deref() == Some("kugou") && !entry.word_times => None,
         Some(lrc) => {
             let source = source_name(entry.source.as_deref().unwrap_or_default());
             Some(Some((source, FoundLyrics { lrc, translation: entry.translation })))
@@ -127,6 +131,7 @@ fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
         lrc: answer.map(|(_, found)| found.lrc.clone()),
         source: answer.map(|(source, _)| (*source).to_string()),
         translation: answer.and_then(|(_, found)| found.translation.clone()),
+        word_times: true,
         fetched_at: now,
     };
     if let Ok(text) = serde_json::to_string(&entry) {
@@ -275,6 +280,9 @@ mod tests {
         // Entries from before Chinese sources came from LRCLIB.
         fs::write(cache_path(&dir, "old"), r#"{"key":"old","lrc":"[00:01.00]y","fetchedAt":1}"#).unwrap();
         assert_eq!(read_cache(&dir, "old", now), Some(Some(("lrclib", found("[00:01.00]y", None)))));
+        // Kugou lyrics cached before word times were kept are fetched again.
+        fs::write(cache_path(&dir, "k"), r#"{"key":"k","lrc":"[00:01.00]z","source":"kugou","fetchedAt":1}"#).unwrap();
+        assert_eq!(read_cache(&dir, "k", now), None);
         fs::remove_dir_all(&dir).unwrap();
     }
 
