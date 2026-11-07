@@ -53,6 +53,8 @@ export type SettingsAgentText = {
   approval: {
     title: string;
     onIsland: string;
+    whenInFront: string;
+    whenInFrontHint: string;
     hint: string;
   };
   /** Rules hiding agent sessions by folder or prompt text (roadmap B6.4.3). */
@@ -130,7 +132,9 @@ export const zhCN: SettingsAgentText = {
   approval: {
     title: "在岛上审批",
     onIsland: "在岛上允许或拒绝 Agent 的操作",
-    hint: "Claude Code 或 Codex 要运行命令、改文件时，岛上弹出卡片，可以允许、拒绝或交回终端（快捷键 Ctrl+Alt+Y / N / T）。卡片显示期间终端里不出审批框；2 分钟没处理、会话窗口已在前台或游戏模式勿扰时自动交回终端。需要先点下方的“安装/修复”。Codex 还要在它的 /hooks 里信任新钩子。auto 模式自己批准的操作不会弹出。",
+    whenInFront: "终端在前台时也在岛上弹出",
+    whenInFrontHint: "关闭时，会话所在的终端或编辑器窗口在前台，就直接在终端里审批。",
+    hint: "Claude Code 或 Codex 要运行命令、改文件时，岛上弹出卡片，可以允许、拒绝或交回终端（快捷键 Ctrl+Alt+Y / N / T）。卡片显示期间终端里不出审批框；2 分钟没处理、游戏模式勿扰时自动交回终端。需要先点下方的“安装/修复”。Codex 还要在它的 /hooks 里信任新钩子。auto 模式自己批准的操作不会弹出。",
   },
   filters: {
     title: "隐藏会话",
@@ -205,7 +209,9 @@ export const en: SettingsAgentText = {
   approval: {
     title: "Approve on the island",
     onIsland: "Allow or deny agent actions on the island",
-    hint: "When Claude Code or Codex wants to run a command or change a file, a card on the island lets you allow, deny or hand it back to the terminal (Ctrl+Alt+Y / N / T). The terminal shows no prompt while the card is up; after 2 minutes, or while the session's window is in front or game mode keeps the island quiet, it goes back to the terminal. Click Install/repair below first, and trust the new hook in Codex's /hooks. Actions auto mode approves by itself don't show up.",
+    whenInFront: "Also while the terminal is in front",
+    whenInFrontHint: "Off, a request from a session whose terminal or editor window is in front is approved in that terminal.",
+    hint: "When Claude Code or Codex wants to run a command or change a file, a card on the island lets you allow, deny or hand it back to the terminal (Ctrl+Alt+Y / N / T). The terminal shows no prompt while the card is up; after 2 minutes, or while game mode keeps the island quiet, it goes back to the terminal. Click Install/repair below first, and trust the new hook in Codex's /hooks. Actions auto mode approves by itself don't show up.",
   },
   filters: {
     title: "Hide sessions",

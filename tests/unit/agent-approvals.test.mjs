@@ -40,3 +40,10 @@ test("always allow uses the first addRules suggestion", () => {
   assert.equal(alwaysAllowRule(undefined), null);
   assert.equal(alwaysAllowRule([{ type: "setMode", mode: "plan" }]), null);
 });
+
+test("approval settings: both switches off by default, old saved settings keep working", async () => {
+  const { normalizeAgentApprovalSettings } = await import("../../src/features/agent-status/approvals/storage.ts");
+  assert.deepEqual(normalizeAgentApprovalSettings(null), { onIsland: false, whenInFront: false });
+  assert.deepEqual(normalizeAgentApprovalSettings({ onIsland: true }), { onIsland: true, whenInFront: false });
+  assert.deepEqual(normalizeAgentApprovalSettings({ onIsland: true, whenInFront: true }), { onIsland: true, whenInFront: true });
+});

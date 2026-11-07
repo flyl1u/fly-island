@@ -59,16 +59,20 @@ let island: Island = { mode: "collapsed", page: "todo" };
 let approvals: AgentApprovals | null = null;
 let setIsland: (island: Island) => void;
 let setEnabled: (value: boolean) => void;
+let setWhenInFront: (value: boolean) => void;
 
 function Harness() {
   const [state, changeIsland] = useState<Island>(island);
   const [enabled, changeEnabled] = useState(true);
+  const [whenInFront, changeWhenInFront] = useState(false);
   setIsland = changeIsland;
   setEnabled = changeEnabled;
+  setWhenInFront = changeWhenInFront;
   island = state;
   const isOpenOnAgents = state.mode === "expanded" && state.page === "agents";
   approvals = useAgentApprovals({
     enabled,
+    whenInFront,
     isOpenOnAgents,
     onOpen: () => changeIsland({ mode: "expanded", page: "agents" }),
     onClose: () => changeIsland((current) => ({ ...current, mode: "collapsed" })),
@@ -149,6 +153,13 @@ try {
   await send(request("f1", "s1"));
   await wait(50);
   check(last(decisions) === "f1:terminal" && island.mode === "collapsed", "会话窗口已在前台时直接交回终端，不弹");
+  await act(async () => setWhenInFront(true));
+  await send(request("f2", "s1"));
+  await wait(50);
+  check(current() === "f2" && island.page === "agents", "设置了「终端在前台时也弹出」时，前台会话的请求也弹卡片");
+  await close("f2", "disconnected");
+  await wait(50);
+  await act(async () => setWhenInFront(false));
   inFront = [];
 
   await act(async () => setEnabled(false));

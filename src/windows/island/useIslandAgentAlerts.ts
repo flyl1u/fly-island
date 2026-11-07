@@ -33,7 +33,7 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
   const isOpenOnAgents = mode === "expanded" && page === "agents";
   const onOpen = () => openIslandPage("agents");
   const [approvalSettings] = useAgentApprovalSettings();
-  const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, isOpenOnAgents, onOpen, onClose: collapseIsland });
+  const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, whenInFront: approvalSettings.whenInFront, isOpenOnAgents, onOpen, onClose: collapseIsland });
   const waiting = approvals.current !== null;
   const waitingRef = useRef(waiting);
   useLayoutEffect(() => {

@@ -29,6 +29,8 @@ export type AgentApprovals = {
 type AgentApprovalOptions = {
   /** False while the Agent page is off or game mode keeps the island quiet: requests go straight back to the terminal. */
   enabled: boolean;
+  /** Hold requests whose session's window is in front too, instead of handing them back. */
+  whenInFront?: boolean;
   isOpenOnAgents: boolean;
   onOpen: () => void;
   onClose: () => void;
@@ -49,16 +51,17 @@ function report(error: unknown) {
 /**
  * Permission requests agents' hooks hold open for the island (roadmap B6 phase 2). The agent's
  * terminal shows no prompt of its own meanwhile, so a request the user cannot see here goes back
- * at once: while the island is quiet, or when the session's own window is already in front.
+ * at once: while the island is quiet, or when the session's own window is already in front (unless
+ * whenInFront, set in Settings).
  * The first request opens the Agent page; once the last one is gone a page it opened closes again.
  */
-export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: AgentApprovalOptions): AgentApprovals {
+export function useAgentApprovals({ enabled, whenInFront = false, isOpenOnAgents, onOpen, onClose }: AgentApprovalOptions): AgentApprovals {
   const [queue, setQueue] = useState<AgentApprovalRequest[]>([]);
   const [cardHeight, setCardHeight] = useState(DEFAULT_CARD_HEIGHT);
   const openedRef = useRef(false);
-  const latest = useRef({ enabled, isOpenOnAgents, onOpen, onClose });
+  const latest = useRef({ enabled, whenInFront, isOpenOnAgents, onOpen, onClose });
   useLayoutEffect(() => {
-    latest.current = { enabled, isOpenOnAgents, onOpen, onClose };
+    latest.current = { enabled, whenInFront, isOpenOnAgents, onOpen, onClose };
   });
 
   const drop = useCallback((id: number) => setQueue((items) => items.filter((item) => item.id !== id)), []);
@@ -69,11 +72,13 @@ export function useAgentApprovals({ enabled, isOpenOnAgents, onOpen, onClose }: 
     };
     const admit = (request: AgentApprovalRequest) => {
       if (!latest.current.enabled) return handBack(request);
+      const queue = () => setQueue((items) => (items.some((item) => item.id === request.id) ? items : [...items, request]));
+      if (latest.current.whenInFront) return queue();
       void agentSessionsInFront([{ provider: request.agent, sessionId: request.sessionId }])
         .catch(() => [] as string[])
         .then((inFront) => {
           if (inFront.includes(request.sessionId) || !latest.current.enabled) handBack(request);
-          else setQueue((items) => (items.some((item) => item.id === request.id) ? items : [...items, request]));
+          else queue();
         });
     };
 

@@ -10,7 +10,15 @@ export function AgentApprovalSettings() {
 
   return (
     <SettingsGroup title={text.title} footer={text.hint}>
-      <SettingsToggleRow title={text.onIsland} checked={settings.onIsland} onChange={(onIsland) => setSettings({ onIsland })} />
+      <SettingsToggleRow title={text.onIsland} checked={settings.onIsland} onChange={(onIsland) => setSettings({ ...settings, onIsland })} />
+      {settings.onIsland && (
+        <SettingsToggleRow
+          title={text.whenInFront}
+          description={text.whenInFrontHint}
+          checked={settings.whenInFront}
+          onChange={(whenInFront) => setSettings({ ...settings, whenInFront })}
+        />
+      )}
     </SettingsGroup>
   );
 }
