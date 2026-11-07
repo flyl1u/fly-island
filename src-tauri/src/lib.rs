@@ -14,6 +14,7 @@ mod media_control;
 mod messenger_activation;
 mod notification_diagnostics;
 mod pets;
+mod phone_push;
 mod plugin_host;
 mod mail;
 mod qq_notifications;
@@ -152,6 +153,7 @@ pub fn run() {
             clipboard_history;
             translation;
             settings_window;
+            phone_push;
             pets
         ))
         .build(context)

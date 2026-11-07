@@ -62,6 +62,32 @@ export type SettingsAgentText = {
     quotaDescription: string;
     quotaValue: (percent: number) => string;
   };
+  /** Pushing agent events to the phone with Bark (roadmap B6.5.5). */
+  push: {
+    title: string;
+    enabled: string;
+    enabledHint: string;
+    server: string;
+    serverHint: string;
+    key: string;
+    keyHint: string;
+    keyIsSaved: string;
+    keyPlaceholder: string;
+    saveKey: string;
+    clearKey: string;
+    keySaved: string;
+    keyCleared: string;
+    events: Record<"waiting" | "completed" | "failed", string>;
+    away: string;
+    awayHint: string;
+    awayValue: (minutes: number) => string;
+    test: string;
+    testAction: string;
+    testTitle: string;
+    testBody: string;
+    testSent: string;
+    hint: string;
+  };
   /** Approving agents' permission requests on the island (roadmap B6 phase 2). */
   approval: {
     title: string;
@@ -153,6 +179,31 @@ export const zhCN: SettingsAgentText = {
     quotaDescription: "Claude 或 Codex 的 5 小时、7 天用量到这条线时，在收起的岛屿上提醒一次；额度刷新后再提醒一次",
     quotaValue: (percent) => (percent === 0 ? "不提醒" : `用到 ${percent}%`),
   },
+  push: {
+    title: "手机推送",
+    enabled: "用 Bark 推送到手机",
+    enabledHint: "Agent 等你、完成或出错时推到 iPhone 上的 Bark",
+    server: "服务器地址",
+    serverHint: "留空用 Bark 官方服务器；自建 bark-server 时填它的地址",
+    key: "设备 Key",
+    keyHint: "在 Bark 里复制推送地址粘贴进来，或只粘贴其中那串字母数字",
+    keyIsSaved: "已保存在 Windows 凭据管理器里",
+    keyPlaceholder: "https://api.day.app/xxxxxxxx",
+    saveKey: "保存",
+    clearKey: "清除",
+    keySaved: "设备 Key 已保存。",
+    keyCleared: "设备 Key 已清除。",
+    events: { waiting: "等你确认或回答时", completed: "完成一轮时", failed: "出错时" },
+    away: "什么时候推",
+    awayHint: "离开电脑一段时间（没有键盘鼠标操作，或已锁屏）才推，坐在电脑前时不打扰手机",
+    awayValue: (minutes) => (minutes === 0 ? "总是推送" : `离开 ${minutes} 分钟后`),
+    test: "发送测试",
+    testAction: "发送",
+    testTitle: "FocuSD Island",
+    testBody: "Bark 推送已接通",
+    testSent: "已发送，看看手机。",
+    hint: "推送只包含会话名称和发生了什么，不包含命令、回复或代码。官方服务器由 Bark 运营；在意的话可以自建 bark-server。",
+  },
   approval: {
     title: "在岛上审批",
     onIsland: "在岛上允许或拒绝 Agent 的操作",
@@ -240,6 +291,31 @@ export const en: SettingsAgentText = {
     quota: "Usage alert",
     quotaDescription: "When Claude's or Codex's 5-hour or 7-day usage reaches this level, say so once on the collapsed island, and again when it resets",
     quotaValue: (percent) => (percent === 0 ? "Off" : `at ${percent}%`),
+  },
+  push: {
+    title: "Phone push",
+    enabled: "Push to your phone with Bark",
+    enabledHint: "When an agent needs you, finishes or fails, push it to Bark on your iPhone",
+    server: "Server",
+    serverHint: "Leave empty for Bark's own server; for a self-hosted bark-server, enter its address",
+    key: "Device key",
+    keyHint: "Copy the push URL in Bark and paste it here, or just the letters and digits in it",
+    keyIsSaved: "Saved in Windows Credential Manager",
+    keyPlaceholder: "https://api.day.app/xxxxxxxx",
+    saveKey: "Save",
+    clearKey: "Clear",
+    keySaved: "Device key saved.",
+    keyCleared: "Device key cleared.",
+    events: { waiting: "When it waits for you", completed: "When a turn finishes", failed: "When it fails" },
+    away: "When to push",
+    awayHint: "Only once you have been away (no keyboard or mouse, or locked) for a while, so the phone stays quiet while you sit at the computer",
+    awayValue: (minutes) => (minutes === 0 ? "Always" : `After ${minutes} min away`),
+    test: "Send a test",
+    testAction: "Send",
+    testTitle: "FocuSD Island",
+    testBody: "Bark push is set up",
+    testSent: "Sent; check your phone.",
+    hint: "A push only says which session and what happened, never commands, replies or code. Bark's own server is run by Bark; host bark-server yourself if that matters to you.",
   },
   approval: {
     title: "Approve on the island",

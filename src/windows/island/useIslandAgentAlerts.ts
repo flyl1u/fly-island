@@ -5,6 +5,7 @@ import { useAgentApprovals } from "../../features/agent-status/approvals/useAgen
 import { useAgentApprovalSettings } from "../../features/agent-status/approvals/useAgentApprovalSettings";
 import { alertKindsOf, useAgentAlerts } from "../../features/agent-status/useAgentAlerts";
 import { useAgentSounds } from "../../features/agent-status/sounds/useAgentSounds";
+import { useAgentPush } from "../../features/agent-status/push/useAgentPush";
 import { reminderSound } from "../../features/agent-status/sounds/events";
 import { playAgentSound } from "../../features/agent-status/sounds/player";
 import { useAgentSoundSettings } from "../../features/agent-status/sounds/useAgentSoundSettings";
@@ -41,6 +42,8 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
   }, [waiting]);
 
   useAgentSounds(sessions, enabled, unseen);
+  // Not muted by game mode: the user is not looking at the agents then either.
+  useAgentPush(sessions, settings.agentStatusEnabled);
   const [soundSettings] = useAgentSoundSettings();
   // A reminder sounds like the wait it is about, if that sound is on.
   const remind = (reminded: AgentSessionSummary[]) => {

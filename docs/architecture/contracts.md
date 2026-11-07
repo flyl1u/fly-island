@@ -30,6 +30,7 @@
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-agent-approval`（`{ onIsland, whenInFront }`：Agent 的权限请求在岛上审批，默认关；`whenInFront` 为会话窗口在前台时也弹卡片，默认关，旧数据缺这个字段按关处理；开着时岛屿让审批端点挂起请求） | `features/agent-status/approvals/storage.ts` |
+| `focusd-island-agent-push`（`{ enabled, server, events: { waiting, completed, failed }, awayMinutes }`：用 Bark 推送到手机，默认关；`server` 空为 Bark 官方服务器；`awayMinutes` 为 0 / 2 / 5 / 10，默认 5。设备 Key 不在这里，在凭据 `com.focusd.island.bark`） | `features/agent-status/push/storage.ts` |
 | `focusd-island-agent-hidden-sessions`（`{ "<provider>:<sessionId>": updatedAt }`：在 Agent 页手动移除的会话，只隐藏不删记录；值是移除时那一轮的开始时间（以前存的是最后写入时间），开始新一轮才自动回来，最多 200 条） | `features/agent-status/hiddenSessions.ts` |
 | `focusd-island-agent-seen-turns`（`{ "<provider>:<sessionId>": 轮次 }`：在 Agent 页看过的会话，轮次是这一轮的开始时间，卡在半路时是最后写入时间；重启岛屿后看过的不再提醒，最多 300 条） | `features/agent-status/unseen.ts` |
 | `focusd-island-agent-session-filters`（`[{ kind: "folder" | "prompt", value }]`，最多 50 条：按所在目录（含子目录，不分大小写和斜杠方向）或标题 / 最近提示词包含的文字隐藏会话，B6.4.3；读取时丢掉格式不对、为空和重复的条目；设置备份包含它） | `features/agent-status/sessionFilters.ts` |
@@ -74,7 +75,7 @@
 
 - 窗口 label：`main`、`translation`、`settings`；前端分发参数为 `?window=translation`、`?window=settings`。
 - Tauri 命令：以 `lib.rs` 中 `generate_handler!` 列表为准，命令名即 Rust 函数名。
-- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`、`com.focusd.island.calendar`（2026-11-07 起，账户名为日历 id，存 ICS 订阅链接或 CalDAV 密码）。
+- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`、`com.focusd.island.calendar`（2026-11-07 起，账户名为日历 id，存 ICS 订阅链接或 CalDAV 密码）、`com.focusd.island.bark`（2026-11-07 起，账户名 `device-key`，存 Bark 设备 Key，`phone_push/mod.rs`）。
 - 注册表值：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `FocuSD Island`。
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。

@@ -82,6 +82,8 @@ export type AgentText = {
     fiveHour: string;
     sevenDay: string;
   };
+  /** The body of a phone push (roadmap B6.5.5); the title is the session's name. */
+  push: Record<"waiting" | "completed" | "failed", (agent: string) => string>;
 };
 
 export const zhCN: AgentText = {
@@ -158,6 +160,11 @@ export const zhCN: AgentText = {
     fiveHour: "5 小时",
     sevenDay: "7 天",
   },
+  push: {
+    waiting: (agent) => `${agent} 在等你确认或回答`,
+    completed: (agent) => `${agent} 完成了这一轮`,
+    failed: (agent) => `${agent} 出错了`,
+  },
 };
 
 export const en: AgentText = {
@@ -232,5 +239,10 @@ export const en: AgentText = {
     reset: (agent, window) => `${agent} ${window} usage reset`,
     fiveHour: "5-hour",
     sevenDay: "7-day",
+  },
+  push: {
+    waiting: (agent) => `${agent} is waiting for your approval or answer`,
+    completed: (agent) => `${agent} finished its turn`,
+    failed: (agent) => `${agent} failed`,
   },
 };
