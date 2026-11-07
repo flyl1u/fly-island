@@ -12,7 +12,7 @@ export type SettingsCategoriesText = {
   /** Words that also find a page in the sidebar search, besides its name. */
   keywords: Record<
     | "general" | "appearance" | "shortcuts" | "todos" | "calendar" | "music" | "translation" | "clipboard"
-    | "shelf" | "messages" | "agents" | "agentAlerts" | "sounds" | "agentApprovals" | "agentConnect"
+    | "shelf" | "messages" | "agents" | "agentRemote" | "agentAlerts" | "sounds" | "agentApprovals" | "agentConnect"
     | "plugins" | "market" | "about",
     string
   >;
@@ -37,6 +37,8 @@ export type SettingsCategoriesText = {
   calendar: string;
   /** The AI Agent group's pages. */
   agents: string;
+  /** Sessions on other computers, read over SSH. */
+  agentRemote: string;
   agentAlerts: string;
   sounds: string;
   agentApprovals: string;
@@ -67,6 +69,7 @@ export const zhCN: SettingsCategoriesText = {
     shelf: "文件 拖放 拖拽 清理",
     messages: "QQ 微信 邮箱 邮件 通知 IMAP 授权码",
     agents: "Claude Code Codex 会话列表 标题 用量 隐藏会话",
+    agentRemote: "SSH 远程 服务器 主机 其他电脑",
     agentAlerts: "弹出 提醒 通知 回复状态标记",
     sounds: "音效 声音包 提示音",
     agentApprovals: "批准 允许 拒绝 权限 提问 回答",
@@ -93,6 +96,7 @@ export const zhCN: SettingsCategoriesText = {
   shelf: "文件中转",
   calendar: "日历",
   agents: "会话",
+  agentRemote: "远程电脑",
   agentAlerts: "提醒",
   sounds: "声音",
   agentApprovals: "审批",
@@ -123,6 +127,7 @@ export const en: SettingsCategoriesText = {
     shelf: "files drag drop cleanup",
     messages: "qq wechat mail email notifications imap",
     agents: "claude code codex sessions list title usage hide",
+    agentRemote: "ssh remote server host other computers",
     agentAlerts: "pop-up alerts notifications reply status marker",
     sounds: "sound pack",
     agentApprovals: "approve allow deny permission questions answer",
@@ -149,6 +154,7 @@ export const en: SettingsCategoriesText = {
   shelf: "File shelf",
   calendar: "Calendar",
   agents: "Sessions",
+  agentRemote: "Remote computers",
   agentAlerts: "Alerts",
   sounds: "Sounds",
   agentApprovals: "Approvals",

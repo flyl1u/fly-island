@@ -6,6 +6,7 @@ import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import { AgentSettingsPage } from "./AgentSettingsPage";
 import { AgentAlertsSettingsPage } from "./AgentAlertsSettingsPage";
 import { AgentConnectSettingsPage } from "./AgentConnectSettingsPage";
+import { AgentRemoteHostsSettings } from "../../features/agent-status/AgentRemoteHostsSettings";
 import { AgentApprovalSettings } from "../../features/agent-status/approvals/AgentApprovalSettings";
 import { SoundSettingsSection } from "../../features/agent-status/sounds/SoundSettingsSection";
 import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
@@ -170,6 +171,7 @@ export function SettingsWindow() {
         {category === "shelf" && <ShelfSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "calendar" && <CalendarSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
+        {category === "agentRemote" && <AgentRemoteHostsSettings />}
         {category === "agentAlerts" && <AgentAlertsSettingsPage settings={settings} onSettingsChange={setSettings} />}
         {category === "sounds" && <SoundSettingsSection />}
         {category === "agentApprovals" && <AgentApprovalSettings />}
