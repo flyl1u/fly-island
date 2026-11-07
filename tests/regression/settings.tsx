@@ -44,9 +44,8 @@ const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot
 });
 let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
 let replyMarkerOn = false;
-const REPLY_MARKER_PATH = "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md";
-const REPLY_MARKER_CONTENT = "<!-- focusd-island: reply marker v2 -->\n## Reply status marker";
-const replyMarkerState = () => ({ installed: replyMarkerOn, outdated: false, path: REPLY_MARKER_PATH, content: REPLY_MARKER_CONTENT, remotes: [] });
+const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md", content: "<!-- focusd-island: reply marker v2 -->\n## Reply status marker" };
+const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER, remotes: [] });
 const replyMarkerCalls: boolean[] = [];
 mockIPC((command, payload) => {
   commands.push(command);
@@ -59,11 +58,8 @@ mockIPC((command, payload) => {
     command = "list_plugins";
   }
   switch (command) {
-    case "get_reply_marker_state": return replyMarkerState();
-    case "set_reply_marker":
-      replyMarkerCalls.push(Boolean(args.enabled));
-      replyMarkerOn = Boolean(args.enabled);
-      return replyMarkerState();
+    case "get_reply_marker_state": return replyMarker();
+    case "set_reply_marker": replyMarkerCalls.push(replyMarkerOn = Boolean(args.enabled)); return replyMarker();
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
@@ -351,10 +347,8 @@ if (!automated) {
     check(markerGroup && connectGroups[connectGroups.indexOf(markerGroup) - 1]?.textContent?.includes("安装/修复") && markerGroup.textContent!.includes("推荐打开"),
       "The reply status marker follows the hooks on the connection page and is marked as recommended");
     const markerSwitch = markerGroup?.querySelector<HTMLInputElement>("[role='switch']");
-    check(markerSwitch && !markerSwitch.checked && markerGroup!.textContent!.includes(REPLY_MARKER_PATH),
-      "The reply status marker is off by default and names the rules file it would write");
-    check(markerGroup!.querySelector("pre")?.textContent === REPLY_MARKER_CONTENT,
-      "The reply status marker shows the text it would write before it is switched on");
+    check(markerSwitch && !markerSwitch.checked && markerGroup!.textContent!.includes(REPLY_MARKER.path) && markerGroup!.querySelector("pre")?.textContent === REPLY_MARKER.content,
+      "The reply status marker is off by default and shows the rules file and the text it would write");
     await act(async () => { markerSwitch!.click(); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
