@@ -87,7 +87,7 @@ export type AgentSessionSummary = {
    * turn with one running goes on by itself. Missing from older builds.
    */
   backgroundTasks?: number;
-  /** Set for a session reported from another computer (remoteSessions.ts); it has no window here. */
+  /** Set for a session on another computer (reported, remoteSessions.ts, or read over SSH); it has no window here. */
   remoteHost?: string;
   /** Compacting its context now (Claude Code PreCompact / PostCompact hooks). Missing from older builds. */
   compacting?: boolean;
@@ -149,6 +149,29 @@ export function getAgentHostIcon(path: string) {
 /** Claude Code and Codex sessions active in the last two hours, running ones first. */
 export function listAgentSessions(windowHours?: number) {
   return invoke<AgentSessionSummary[]>("list_agent_sessions", { windowHours });
+}
+
+/** Mirrors RemoteHostStatus in src-tauri/src/agent_status/remote_sessions.rs. */
+export type RemoteHostStatus = {
+  host: string;
+  /** When the last read succeeded, Unix milliseconds. */
+  fetchedAt: number | null;
+  error: string | null;
+  fetching: boolean;
+};
+
+/** The Host aliases in ~/.ssh/config. */
+export function listSshHosts() {
+  return invoke<string[]>("list_ssh_hosts");
+}
+
+/** The computers whose sessions are read over SSH, with how the last read went. */
+export function getAgentRemoteHosts() {
+  return invoke<RemoteHostStatus[]>("get_agent_remote_hosts");
+}
+
+export function setAgentRemoteHosts(hosts: string[]) {
+  return invoke<string[]>("set_agent_remote_hosts", { hosts });
 }
 
 /**

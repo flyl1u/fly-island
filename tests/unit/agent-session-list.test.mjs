@@ -103,3 +103,16 @@ test("plugins rename an agent's effort for display only", () => {
   assert.equal(shownEffort("claudeCode", null, labels), null);
   assert.equal(modelLabel("Opus 5.5", shownEffort("claudeCode", "medium", labels)), "Opus 5.5 · Xhigh");
 });
+
+test("sessions group by computer: this one first, then remote hosts as met", async () => {
+  const { groupByComputer } = await import("../../src/features/agent-status/sessionList.ts");
+  const s = (id, remoteHost) => ({ sessionId: id, ...(remoteHost ? { remoteHost } : {}) });
+  const groups = groupByComputer([s("a", "zcm6"), s("b"), s("c", "nc-e"), s("d", "zcm6")]);
+  assert.deepEqual(groups.map((group) => [group.host, group.sessions.map((session) => session.sessionId)]), [
+    [null, ["b"]],
+    ["zcm6", ["a", "d"]],
+    ["nc-e", ["c"]],
+  ]);
+  assert.deepEqual(groupByComputer([s("x", "zcm6")]).map((group) => group.host), ["zcm6"]);
+  assert.deepEqual(groupByComputer([]), []);
+});

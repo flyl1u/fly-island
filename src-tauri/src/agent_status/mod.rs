@@ -16,6 +16,9 @@ mod notifications;
 mod orca;
 pub(crate) mod reply_marker;
 mod reply_text;
+mod remote_fetch;
+mod remote_hosts;
+mod remote_sessions;
 mod focus;
 mod focus_log;
 mod session_host;
@@ -275,11 +278,44 @@ pub async fn list_agent_sessions(
         windows_home_dir().map(|home_dir| {
             let mut sessions = session_scan::list_sessions(&home_dir, Some(&app_dir), &waiting, window_ms);
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
+            sessions.extend(remote_sessions::sessions(&app_dir, window_ms));
+            let is_active = |phase: &str| matches!(phase, "running" | "waiting");
+            sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
             sessions
         })
     })
     .await
     .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
+}
+
+/// The Host aliases in ~/.ssh/config, offered as remote computers in Settings → AI Agent.
+#[tauri::command]
+pub async fn list_ssh_hosts() -> Result<Vec<String>, String> {
+    let home_dir = windows_home_dir()?;
+    let config = std::fs::read_to_string(home_dir.join(".ssh").join("config")).unwrap_or_default();
+    Ok(remote_hosts::ssh_config_hosts(&config))
+}
+
+/// The computers whose sessions are read over SSH, and how the last read of each went.
+#[tauri::command]
+pub async fn get_agent_remote_hosts(app: AppHandle) -> Result<Vec<remote_sessions::RemoteHostStatus>, String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    Ok(remote_sessions::statuses(&app_dir))
+}
+
+/// Chooses the computers whose sessions are read over SSH (Host aliases from ~/.ssh/config).
+#[tauri::command]
+pub async fn set_agent_remote_hosts(app: AppHandle, hosts: Vec<String>) -> Result<Vec<String>, String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    let saved = remote_hosts::write(&app_dir, &hosts)?;
+    remote_sessions::refresh_soon();
+    Ok(saved)
 }
 
 /// Brings the editor or terminal window of an agent session to the front: the window of the
@@ -468,6 +504,9 @@ macro_rules! tauri_commands {
             crate::agent_status::agent_sessions_in_front,
             crate::agent_status::get_agent_host_icon,
             crate::agent_status::list_agent_sessions,
+            crate::agent_status::list_ssh_hosts,
+            crate::agent_status::get_agent_remote_hosts,
+            crate::agent_status::set_agent_remote_hosts,
             crate::agent_status::get_agent_usage,
             crate::agent_status::get_codex_usage,
             crate::agent_status::reply_marker::get_reply_marker_state,

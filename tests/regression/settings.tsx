@@ -123,6 +123,7 @@ mockIPC((command, payload) => {
       { at: Date.now() - 2000, outgoing: true, text: JSON.stringify({ jsonrpc: "2.0", method: "initialize", params: { apiVersion: 2, pluginId: "me.very-long-plugin-id-to-check-wrapping", settings: { repo: "a/b" } } }) },
       { at: Date.now() - 1000, outgoing: false, text: '{"jsonrpc":"2.0","id":1,"method":"view.update","params":{"viewId":"main","model":{"items":[]}}}' },
     ];
+    case "list_ssh_hosts": return ["devbox", "nas"]; case "get_agent_remote_hosts": return [{ host: "devbox", fetchedAt: 0, error: null, fetching: false }];
     case "get_agent_hooks_state": return { codex: "notInstalled", claudeCode: "notInstalled", scriptsOutdated: false };
     case "list_sound_packs": return [{ id: "chimes-1", name: "Chimes", author: "Ann", license: "CC0-1.0", sounds: { complete: "complete.wav", error: "error.wav" } }];
     default: return null;
@@ -322,8 +323,7 @@ if (!automated) {
       "Re-authorizing fixes the address and hides the server field");
     await act(async () => { [...document.querySelectorAll<HTMLButtonElement>(".mail-settings__form button")].find((button) => button.textContent === "取消")!.click(); });
     await act(async () => { rowButton(0, "断开")!.click(); });
-    check(!mailCalls.some((call) => call.command === "disconnect_qq_mail") && document.querySelector(".mail-settings__confirm"),
-      "The first disconnect click only asks for confirmation");
+    check(!mailCalls.some((call) => call.command === "disconnect_qq_mail") && document.querySelector(".mail-settings__confirm"), "The first disconnect click only asks for confirmation");
     await act(async () => { rowButton(0, "确认断开")!.click(); });
     check(mailCalls.some((call) => call.command === "disconnect_qq_mail" && call.args.email === "demo@qq.com") && rows().length === 1,
       "Confirming disconnects and removes the mailbox");
@@ -339,8 +339,7 @@ if (!automated) {
 
     // AI Agent has its own group: sessions, alerts, sounds, approvals and the hooks each on a page.
     const agentGroup = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__group")].find((group) => group.getAttribute("aria-label") === "AI Agent");
-    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|提醒|声音|审批|连接",
-      "AI Agent is its own sidebar group with sessions, alerts, sounds, approvals and connection");
+    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|提醒|声音|审批|连接", "AI Agent is its own sidebar group with sessions, alerts, sounds, approvals and connection");
     await openPage("agentConnect");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     check(agentPolls() > pollsAway, "The connection page reads the agents' state");
@@ -357,6 +356,7 @@ if (!automated) {
 
     await openPage("agents");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    check(/devbox.*nas/s.test(element(".editor-panel").textContent ?? ""), "The sessions page lists the SSH hosts to read sessions from");
     const hooksLink = [...document.querySelectorAll<HTMLButtonElement>(".editor-panel .settings-link-button")].find((button) => button.textContent === "安装/修复");
     check(hooksLink, "Without hooks, the sessions page says so with a way to install them");
     await act(async () => { hooksLink!.click(); });

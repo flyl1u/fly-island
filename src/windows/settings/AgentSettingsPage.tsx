@@ -2,6 +2,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
 import { AgentSessionFilterSettings } from "../../features/agent-status/AgentSessionFilterSettings";
+import { AgentRemoteHostsSettings } from "../../features/agent-status/AgentRemoteHostsSettings";
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
 import "../../features/agent-status/AgentHooksSettingsSection.css";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -43,6 +44,7 @@ export function AgentSettingsPage({
       </SettingsGroup>
       <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
       <AgentSessionFilterSettings />
+      <AgentRemoteHostsSettings />
     </>
   );
 }

@@ -125,6 +125,12 @@ Clicking a session on the Agent page calls `focus_agent_window` (`provider`, `cw
 
 ## Sessions on Other Computers
 
+### Read over SSH (no setup on the server)
+
+Settings → AI Agent → **Remote computers** lists the `Host` aliases in `~/.ssh/config`. For each one switched on, the island runs `ssh -o BatchMode=yes -o ClearAllForwardings=yes <alias> sh -s` about every 20 seconds while sessions are listed (every minute after a failure) and reads that computer's Claude Code transcripts and Codex rollouts of the session window: for each file the first 40 lines (first prompt, starting folder, Codex's session meta) and the last 256 KiB, the same parts the local scan reads; unchanged files are only named, and a file whose head the island has gets only its tail. They go into `%APPDATA%\com.focusd.island\remote-sessions\<alias>\`, laid out like a home folder with the remote modification times, and the local scan reads that folder, so titles, models, effort and states work as for local sessions. `BatchMode` means key login only: a host that would ask for a password fails at once (its error shows on the settings row). `ClearAllForwardings` keeps the host's own `LocalForward` / `RemoteForward` lines from being opened a second time. The server needs only `sh`, `find`, GNU `stat`, `head`, `tail` and `grep`. Without hooks there, a remote session never shows as waiting on you, and one quit mid-turn shows as running until it turns stale.
+
+### Reported by the server
+
 Claude Code or Codex running on another computer (an SSH server, a dev container, VS Code Remote) writes its session files and runs its hooks there, so the island cannot see it, and `127.0.0.1` in a hook there means that computer. Such a session can still be listed: a hook there reports it over the local API (below), through an SSH tunnel back to this computer, or a plugin reports it with `agentStatus.report`. A report that names the machine (`host`) and the agent (`agent`: `claudeCode` or `codex`) is listed on the Agent page with the local sessions, the machine's name in place of the program; clicking it says where it runs instead of looking for a window. Other reports only light the island, as before. Reports are kept in memory (gone after a restart), at most 16 sources at once.
 
 1. Turn on the built-in **Local API** plugin and its "allow changes" switch. `%APPDATA%\com.focusd.island\local-api.json` has the `port` (usually 39271) and the `token`.

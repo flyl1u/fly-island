@@ -63,6 +63,10 @@ pub struct AgentSessionSummary {
     pub(super) compacting: bool,
     /// The agent's own task list while some of it is left (todo_list.rs).
     pub(super) todos: Option<TodoProgress>,
+    /// The SSH host the session runs on, for sessions read from another computer
+    /// (remote_sessions.rs); left out for local ones.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) remote_host: Option<String>,
 }
 
 /// Where the newest turn of a session stands, before the age of the file is considered.

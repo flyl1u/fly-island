@@ -20,6 +20,13 @@ export type SettingsAgentText = {
   sessionHoursOption: (hours: number) => string;
   sessionHoursHint: string;
   sessionCardSection: string;
+  /** Computers whose sessions are read over SSH (AgentRemoteHostsSettings). */
+  remoteSection: string;
+  remoteHint: string;
+  remoteNoHosts: string;
+  remoteFetching: string;
+  remoteFetchedAt: (time: string) => string;
+  remoteFailed: (reason: string) => string;
   /** The group with a switch per agent kind. */
   agentsSection: string;
   showClaudeCode: string;
@@ -106,6 +113,12 @@ export const zhCN: SettingsAgentText = {
   sessionHoursOption: (hours) => `最近 ${hours} 小时`,
   sessionHoursHint: "最后一次活动在这段时间内的会话才会列出。",
   sessionCardSection: "会话卡片",
+  remoteSection: "远程服务器",
+  remoteHint: "列出 ~/.ssh/config 里的 Host。打开后，岛每 20 秒用 ssh 读取那台机器上最近的 Claude Code 和 Codex 会话记录，显示在 Agent 页上。只用密钥登录（BatchMode），不会弹出密码框，所以先确认终端里 ssh <别名> 能直接登录。远程会话没有钩子，看不到「等你确认」，也不能切到它的窗口。",
+  remoteNoHosts: "~/.ssh/config 里没有可用的 Host",
+  remoteFetching: "正在读取…",
+  remoteFetchedAt: (time) => `${time} 读取`,
+  remoteFailed: (reason) => `读取失败：${reason}`,
   agentsSection: "显示哪些 Agent",
   showClaudeCode: "显示 Claude Code 会话",
   showCodex: "显示 Codex 会话",
@@ -186,6 +199,12 @@ export const en: SettingsAgentText = {
   sessionHoursOption: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
   sessionHoursHint: "Only sessions active within this time are listed.",
   sessionCardSection: "Session cards",
+  remoteSection: "Remote computers",
+  remoteHint: "Lists the Hosts in ~/.ssh/config. When one is on, the island reads that computer's recent Claude Code and Codex sessions over ssh every 20 seconds and lists them on the Agent page. Key login only (BatchMode): no password prompt, so check that ssh <alias> logs in by itself in a terminal first. Remote sessions have no hooks, so they never show as waiting on you, and their windows cannot be brought up.",
+  remoteNoHosts: "No usable Host in ~/.ssh/config",
+  remoteFetching: "Reading…",
+  remoteFetchedAt: (time) => `Read at ${time}`,
+  remoteFailed: (reason) => `Failed: ${reason}`,
   agentsSection: "Agents shown",
   showClaudeCode: "Show Claude Code sessions",
   showCodex: "Show Codex sessions",

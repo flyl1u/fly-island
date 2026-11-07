@@ -86,7 +86,7 @@ pub(super) fn list_sessions(
             sessions.push(summary);
         }
     }
-    cache.forget_missing(&sessions);
+    cache.forget_missing(home_dir, &sessions);
 
     let is_active = |phase: &str| matches!(phase, "running" | "waiting");
     sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
@@ -281,13 +281,15 @@ impl SessionCache {
         Some((summary, state))
     }
 
-    /// Drops files that left the two-hour window so the cache does not grow for ever.
-    fn forget_missing(&mut self, listed: &[AgentSessionSummary]) {
+    /// Drops files under `home_dir` that left the two-hour window so the cache does not grow for
+    /// ever. Files of other homes (remote mirrors, remote_sessions.rs) are left to their own scans.
+    fn forget_missing(&mut self, home_dir: &Path, listed: &[AgentSessionSummary]) {
         if let Some(sessions) = &mut self.sessions {
-            sessions.retain(|_, cached| {
-                listed
-                    .iter()
-                    .any(|session| session.session_id == cached.summary.session_id)
+            sessions.retain(|path, cached| {
+                !path.starts_with(home_dir)
+                    || listed
+                        .iter()
+                        .any(|session| session.session_id == cached.summary.session_id)
             });
         }
     }
@@ -324,6 +326,7 @@ fn summary_from(
         // Set by `list_sessions`.
         compacting: false,
         todos: parsed.todos,
+        remote_host: None,
     }
 }
 

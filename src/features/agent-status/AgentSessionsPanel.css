@@ -43,6 +43,15 @@
   font-weight: 600;
 }
 
+/* Which computer the sessions below run on, once another one is listed. */
+.agent-sessions__computer {
+  padding: 6px 10px 2px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .agent-sessions__list {
   flex: 1;
   min-height: 0;

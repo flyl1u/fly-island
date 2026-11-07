@@ -79,3 +79,16 @@ export function modelLabel(model: string | null, effort: string | null) {
   const effortLabel = effort ? effort.charAt(0).toUpperCase() + effort.slice(1) : null;
   return [model, effortLabel].filter(Boolean).join(" · ") || null;
 }
+
+/**
+ * Sessions by computer: this one first, then each remote host in the order its first session
+ * comes; the order within a computer is kept.
+ */
+export function groupByComputer(sessions: AgentSessionSummary[]) {
+  const groups = new Map<string | null, AgentSessionSummary[]>([[null, []]]);
+  for (const session of sessions) {
+    const host = session.remoteHost ?? null;
+    groups.set(host, [...(groups.get(host) ?? []), session]);
+  }
+  return [...groups].filter(([, members]) => members.length > 0).map(([host, members]) => ({ host, sessions: members }));
+}
