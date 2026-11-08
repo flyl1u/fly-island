@@ -35,6 +35,7 @@
 | `focusd-island-agent-seen-turns`（`{ "<provider>:<sessionId>": 轮次 }`：在 Agent 页看过的会话，轮次是这一轮的开始时间，卡在半路时是最后写入时间；重启岛屿后看过的不再提醒，最多 300 条） | `features/agent-status/unseen.ts` |
 | `focusd-island-agent-session-filters`（`[{ kind: "folder" | "prompt", value }]`，最多 50 条：按所在目录（含子目录，不分大小写和斜杠方向）或标题 / 最近提示词包含的文字隐藏会话，B6.4.3；读取时丢掉格式不对、为空和重复的条目；设置备份包含它） | `features/agent-status/sessionFilters.ts` |
 | 设置备份文件（`fly-island-settings-<日期时间>.json`，写到「下载」文件夹；`{ app: "fly-island", version: 1, exportedAt, keys }`，`keys` 只含 `features/settings-backup/backup.ts` 的 `BACKUP_KEYS`：不含待办、窗口位置、凭据和一次性请求；恢复时只写这些 key，未知 key 和非字符串值丢弃） | `features/settings-backup/` |
+| 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，和设置备份共用命令 `save_settings_backup`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-translation-handoff`（主窗口 → 翻译窗口：选中文字的快捷翻译结果 `{ source, output, requestedAt, openRequestedAt }`；点击岛上那一行后 5 秒内打开才会带入，结果超过 60 秒忽略） | `features/translation/storage.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-update-preferences`（`{ autoCheck, skippedVersion, lastCheckedAt }`：后台自动检查开关、跳过的版本、上次检查成功的时间；设置窗口写，主窗口通过 `storage` 事件跟随） | `features/updater/storage.ts` |

@@ -22,6 +22,16 @@ test("a backup holds the set settings keys and nothing else", () => {
   }
 });
 
+test("a backup carries the AI Agent approval and phone push choices and lyrics offsets", () => {
+  for (const key of ["focusd-island-agent-approval", "focusd-island-agent-push", "focusd-island-lyrics-offsets"]) {
+    assert.ok(BACKUP_KEYS.includes(key), key);
+  }
+  // What sessions were looked at or removed is per-computer state, not a preference.
+  for (const key of ["focusd-island-agent-seen-turns", "focusd-island-agent-hidden-sessions"]) {
+    assert.ok(!BACKUP_KEYS.includes(key), key);
+  }
+});
+
 test("backup files are named by local date and time", () => {
   assert.equal(backupFileName(new Date(2026, 10, 6, 9, 5)), "fly-island-settings-2026-11-06-0905.json");
 });

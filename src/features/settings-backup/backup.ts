@@ -23,6 +23,10 @@ export const BACKUP_KEYS = [
   // Imported sound packs themselves stay in the app data folder; only the choices travel.
   "focusd-island-agent-sounds",
   "focusd-island-agent-session-filters",
+  "focusd-island-agent-approval",
+  // The Bark device key stays in Windows Credential Manager; only server, events and delay travel.
+  "focusd-island-agent-push",
+  "focusd-island-lyrics-offsets",
 ] as const;
 
 export type BackupKey = (typeof BACKUP_KEYS)[number];

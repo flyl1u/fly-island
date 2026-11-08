@@ -38,7 +38,7 @@
   gap: var(--space-sm);
 }
 
-.preset-delete-button {
+.preset-icon-button {
   display: grid;
   width: 28px;
   height: 28px;
@@ -51,9 +51,46 @@
   cursor: pointer;
 }
 
-.preset-delete-button:hover,
-.preset-delete-button:focus-visible {
+.preset-icon-button:hover,
+.preset-icon-button:focus-visible {
   color: var(--color-text);
   background: var(--color-white-a08);
   outline: none;
+}
+
+/* The theme file picker is opened by the "Import…" link; the input itself stays out of sight. */
+.preset-file-input {
+  display: none;
+}
+
+/* What the last export or import did, under the group's footnote. */
+.preset-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.preset-status--error {
+  color: var(--color-warning);
+}
+
+.preset-status-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: var(--color-accent);
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.preset-status-link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }

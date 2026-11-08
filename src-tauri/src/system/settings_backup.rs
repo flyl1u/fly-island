@@ -1,5 +1,6 @@
-//! Settings backups: the settings window builds the JSON (only it can read localStorage) and
-//! this writes it to the Downloads folder. Restoring reads the file in the window itself.
+//! Settings backups and appearance theme files: the settings window builds the JSON (only it can
+//! read localStorage) and this writes it to the Downloads folder. Restoring and importing read
+//! the file in the window itself.
 
 use std::{
     fs::{self, OpenOptions},
@@ -14,19 +15,23 @@ const MAX_BACKUP_BYTES: usize = 2 * 1024 * 1024;
 /// Tried names per save: `name.json`, `name (2).json`, ... up to this many.
 const MAX_NAME_TRIES: u32 = 50;
 
-/// Whether `file_name` is one the settings window builds: `fly-island-settings-<date-time>.json`.
+/// Whether `file_name` is one the settings window builds: `fly-island-settings-<date-time>.json`
+/// for a backup, `fly-island-theme-<date-time>.json` for a theme.
 pub(crate) fn is_backup_file_name(file_name: &str) -> bool {
     file_name
         .strip_prefix("fly-island-settings-")
+        .or_else(|| file_name.strip_prefix("fly-island-theme-"))
         .and_then(|rest| rest.strip_suffix(".json"))
         .is_some_and(|stamp| !stamp.is_empty() && stamp.chars().all(|c| c.is_ascii_digit() || c == '-'))
 }
 
-/// Whether `content` is a settings backup: JSON naming this app as its source.
+/// Whether `content` is a settings backup or a theme: JSON naming this app as its source.
 pub(crate) fn is_backup_content(content: &str) -> bool {
     content.len() <= MAX_BACKUP_BYTES
-        && serde_json::from_str::<serde_json::Value>(content)
-            .is_ok_and(|value| value["app"] == "fly-island" && value["keys"].is_object())
+        && serde_json::from_str::<serde_json::Value>(content).is_ok_and(|value| {
+            value["app"] == "fly-island"
+                && (value["keys"].is_object() || (value["kind"] == "theme" && value["appearance"].is_object()))
+        })
 }
 
 /// `dir/file_name`, or `dir/<stem> (2).json` and so on when it exists; never overwrites.
@@ -84,6 +89,10 @@ mod tests {
         assert!(is_backup_content(r#"{"app":"fly-island","version":1,"keys":{}}"#));
         assert!(!is_backup_content(r#"{"app":"other","keys":{}}"#));
         assert!(!is_backup_content("not json"));
+        assert!(is_backup_file_name("fly-island-theme-2026-11-08-0905.json"));
+        assert!(!is_backup_file_name("fly-island-theme-dark.json"));
+        assert!(is_backup_content(r#"{"app":"fly-island","kind":"theme","version":1,"appearance":{}}"#));
+        assert!(!is_backup_content(r#"{"app":"fly-island","kind":"theme","appearance":"x"}"#));
     }
 
     #[test]
