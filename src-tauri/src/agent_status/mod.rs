@@ -236,7 +236,6 @@ pub async fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInst
 }
 
 fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallResult, String> {
-    crate::dev_lane::refuse_in_preview("install the AI agents' status hooks")?;
     let app_dir = app
         .path()
         .app_data_dir()

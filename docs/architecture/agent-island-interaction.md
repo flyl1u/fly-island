@@ -4,7 +4,7 @@
 >
 > 我们借鉴的是功能和交互逻辑。界面、文案、图标和音效都自己做，不照搬。
 
-逐项进度见 [任务清单](agent-island-interaction-tasks.md)，开发时实时更新。
+实测记录见 [agent-island-interaction-tasks.md](agent-island-interaction-tasks.md)。
 
 ## 一、参考软件有哪些能力
 

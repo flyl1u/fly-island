@@ -1,32 +1,6 @@
-# Agent 岛上交互：任务清单
+# Agent 岛上交互：实测记录
 
-方案见 [agent-island-interaction.md](agent-island-interaction.md)，总任务是 [B6](../tasks/B6.md)。
-
-- 每一项是 `docs/tasks/B6.<期>.<序号>.md`，认领、完成、交接和其他任务一样用 `pnpm tasks`（见 AGENTS.md「任务」）。
-- 实测得出的结论写进下面的「实测记录」，并同步修改方案文档里受影响的部分。
-- 新发现的问题用 `pnpm tasks add B6.<期>.<序号> --section "B6 Agent 岛上交互 · 第 N 期：…"` 加到对应一期。
-
-状态：`待做` / `进行中` / `已完成` / `不做` / `待用户确认`
-
-## 第 0 期：实测钩子行为
-
-任务是 `docs/tasks/B6.0.*.md`，用 `pnpm tasks` 查看、`pnpm task:claim B6.0.<序号>` 认领。
-
-## 第 1 期：音效与自动弹出提醒
-
-任务是 `docs/tasks/B6.1.*.md`，用 `pnpm tasks` 查看、`pnpm task:claim B6.1.<序号>` 认领。
-
-## 第 2 期：在岛上审批
-
-任务是 `docs/tasks/B6.2.*.md`，用 `pnpm tasks` 查看、`pnpm task:claim B6.2.<序号>` 认领。
-
-## 第 3 期：在岛上回答提问（仅 Claude Code）
-
-任务是 `docs/tasks/B6.3.*.md`，用 `pnpm tasks` 查看、`pnpm task:claim B6.3.<序号>` 认领。
-
-## 第 4 期：其余
-
-任务是 `docs/tasks/B6.4.*.md`，用 `pnpm tasks` 查看、`pnpm task:claim B6.4.<序号>` 认领。
+方案见 [agent-island-interaction.md](agent-island-interaction.md)。实测得出的结论写进下面的「实测记录」，并同步修改方案文档里受影响的部分。
 
 ## 音效
 

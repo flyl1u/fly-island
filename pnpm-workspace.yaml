@@ -14,6 +14,3 @@ overrides:
   browserslist@<4.28.7: ^4.28.7
   postcss@<8.5.23: ^8.5.23
   minimatch@>=7.0.0 <11.0.1: ^11.0.5
-
-patchedDependencies:
-  claude-code-merge-queue@0.7.1: patches/claude-code-merge-queue@0.7.1.patch

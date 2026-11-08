@@ -20,7 +20,7 @@ npm 包 `fly-island-plugin`（SDK、命令行工具、模拟宿主）和 `create
 
 ## 发布一个版本
 
-1. 在 lane 里把 `packages/fly-island-plugin/package.json` 和 `packages/create-fly-island-plugin/package.json` 改成同一个新版本号，运行 `pnpm sdk:build`，在 [更新日志](changelog.md) 写上这次的变化，提交后 `pnpm mq:land`。
+1. 把 `packages/fly-island-plugin/package.json` 和 `packages/create-fly-island-plugin/package.json` 改成同一个新版本号，运行 `pnpm sdk:build`，在 [更新日志](changelog.md) 写上这次的变化，提交并合入 `main`。
 2. 给合入后的提交打标签并推送：
 
    ```sh

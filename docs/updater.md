@@ -144,9 +144,8 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
      ```
 
      正式版两个都应是新版本；beta 版只有第二个是，第一个仍是上一个正式版。
-   - 运行 `pnpm build:exe` 更新本机的 release 程序，并按 `AGENTS.md`「本机更新与桌面快捷方式」核对桌面快捷方式。
 
-版本号和发布说明的提交照常在 lane 里 land 到 `main`，再在同一个 lane（停在 land 后的提交、工作区干净）里运行 `pnpm release`，不要在主工作区里发布。
+版本号和发布说明的提交先合入 `main`，再在停在这个提交、工作区干净的 `main` 上运行 `pnpm release`。
 
 CI 也可以复用同样的步骤：在仓库 Secrets 里存 `TAURI_UPDATER_PUBKEY`、`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`，按上面的顺序跑 `prepare-release-config` → `tauri build --config` → `make-latest-json` → `gh release`。
 

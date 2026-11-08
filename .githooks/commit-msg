@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-# No Claude attribution in this repo's commits (AGENTS.md); land-check.mjs
-# checks the whole landing too, for commits made without this hook (cherry-pick).
-if grep -qiE '^(Co-Authored-By: Claude|🤖 Generated with \[Claude Code\])' "$1"; then
-  echo "commit-msg: remove the Claude attribution line; this repo's commits carry none (AGENTS.md)." >&2
-  exit 1
-fi

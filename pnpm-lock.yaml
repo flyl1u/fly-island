@@ -11,9 +11,6 @@ overrides:
   postcss@<8.5.23: ^8.5.23
   minimatch@>=7.0.0 <11.0.1: ^11.0.5
 
-patchedDependencies:
-  claude-code-merge-queue@0.7.1: 58c5cb0d28488888835c16cc64393b5163a3fc011f6ec87f0d7caf5a9cd0da51
-
 importers:
 
   .:
@@ -52,9 +49,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.6.0
         version: 4.7.0(vite@7.3.7)
-      claude-code-merge-queue:
-        specifier: 0.7.1
-        version: 0.7.1(patch_hash=58c5cb0d28488888835c16cc64393b5163a3fc011f6ec87f0d7caf5a9cd0da51)
       eslint:
         specifier: ^10.14.0
         version: 10.14.0
@@ -775,11 +769,6 @@ packages:
 
   caniuse-lite@1.0.30001820:
     resolution: {integrity: sha512-gfWD6MxqVCqAOwmODfZf7DchWvlrA+SRdNX7ceLfg3xRqe5ssjjpF7EgslC/0tiLiNTajdaNN/q8c/5u/7Gz8w==}
-
-  claude-code-merge-queue@0.7.1:
-    resolution: {integrity: sha512-p+12twnwIWV/S4uipPw8f0cDDoDEf6AwDSmjgRJ8tgM6wYzW9m+0G+vOdjvV5w7PJpAPw2WH38rWOupRyvOD4w==}
-    engines: {node: '>=18'}
-    hasBin: true
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -1800,8 +1789,6 @@ snapshots:
       qified: 0.10.1
 
   caniuse-lite@1.0.30001820: {}
-
-  claude-code-merge-queue@0.7.1(patch_hash=58c5cb0d28488888835c16cc64393b5163a3fc011f6ec87f0d7caf5a9cd0da51): {}
 
   convert-source-map@2.0.0: {}
 
