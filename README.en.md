@@ -11,6 +11,8 @@
     <a href="https://github.com/TixXin/fly-island/releases/latest">Download</a>
     ·
     <a href="https://github.com/TixXin/fly-island/issues">Report an issue</a>
+    ·
+    <a href="#community">Community</a>
   </p>
 
   <p>
@@ -60,6 +62,16 @@ In the words of the upstream author, [flyl1u](https://github.com/flyl1u):
 > Switching between all those windows reduces efficiency and makes it easier to lose focus. I wanted to bring these frequent actions into one lightweight place.
 >
 > Apple's Dynamic Island was an inspiration: it gathers delivery updates, timers, media controls, and other information into one small surface. FocuSD follows the same idea for focused study and deep work. The name stands for **Focu Study and DeepWork**, and the app is built with the lightweight Tauri framework.
+
+## Community
+
+Join the **fly-island user group on WeChat** to discuss the app, report problems, and share suggestions. Scan the QR code below with WeChat to join.
+
+<p align="center">
+  <img src="docs/assets/wechat-community.jpg" alt="QR code for the fly-island WeChat user group" width="360">
+</p>
+
+The QR code expires; the current image says it is **valid before November 11**. If it has expired, please [open an issue](https://github.com/flyl1u/fly-island/issues) to request an update.
 
 ## Build from source
 

@@ -11,6 +11,8 @@
     <a href="https://github.com/TixXin/fly-island/releases/latest">下载</a>
     ·
     <a href="https://github.com/TixXin/fly-island/issues">反馈问题</a>
+    ·
+    <a href="#用户交流群">用户交流群</a>
   </p>
 
   <p>
@@ -60,6 +62,16 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 > 在这些界面之间来回切换，不仅会降低效率，也容易让人分心，因此我开始思考：能不能把这些高频功能集成到一个足够轻量的地方？
 >
 > 我想到了iPhone的灵动岛，它把消息通知、计时器、媒体控制等信息集中到一个小岛上，缩短了我们获取信息的路程。于是，FocuSD 诞生了。这个名字寓意 **Focu Study and DeepWork**，专注学习和深度工作，项目使用更轻量的 Tauri 架构开发，不过目前已改名为fly-island
+
+## 用户交流群
+
+欢迎加入 **fly-island 用户交流群**，交流使用体验、反馈问题和分享建议。使用微信扫描下方二维码即可入群。
+
+<p align="center">
+  <img src="docs/assets/wechat-community.jpg" alt="fly-island 微信用户交流群二维码" width="360">
+</p>
+
+二维码有有效期，当前图片标注为 **11 月 11 日前有效**；若已失效，可通过 [Issue](https://github.com/flyl1u/fly-island/issues) 反馈以便更新。
 
 ## 从源码构建
 
