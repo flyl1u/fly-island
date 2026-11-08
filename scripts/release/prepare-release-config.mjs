@@ -1,7 +1,7 @@
 // Writes the release-only Tauri config overlay that turns on updater signing.
 //
-// The base src-tauri/tauri.conf.json carries the fork's public key (so every
-// build can update) and leaves updater artifacts off, so a normal
+// The base src-tauri/tauri.conf.json leaves the public key empty (a local build
+// cannot update in-app) and updater artifacts off, so a normal
 // `pnpm tauri build` works on any machine without the private key. The field
 // cannot be omitted: tauri-plugin-updater declares `pubkey` as mandatory, and a
 // build without it aborts at startup with "missing field `pubkey`". Release

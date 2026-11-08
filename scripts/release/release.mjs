@@ -30,7 +30,7 @@ const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 const MSI_DIR = "src-tauri/target/release/bundle/msi";
 const MSI_OVERLAY = "src-tauri/target/release/msi-version.conf.json";
 const BETA_CHANNEL_DIR = "src-tauri/target/release/beta-channel";
-const REPO = "TixXin/fly-island";
+const REPO = "flyl1u/fly-island";
 
 const args = process.argv.slice(2);
 const baseFlag = args.indexOf("--base-url");

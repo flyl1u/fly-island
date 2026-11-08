@@ -12,7 +12,7 @@ use crate::system::updater::get_updater_proxy;
 
 const BASE: &str = "https://lrclib.net/api";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
-const USER_AGENT: &str = concat!("FocuSD-Island/", env!("CARGO_PKG_VERSION"), " (https://github.com/TixXin/fly-island)");
+const USER_AGENT: &str = concat!("FocuSD-Island/", env!("CARGO_PKG_VERSION"), " (https://github.com/flyl1u/fly-island)");
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

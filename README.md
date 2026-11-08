@@ -8,22 +8,19 @@
   <p>Windows 上的桌面灵动岛：待办、剪贴板、消息、翻译、音乐和 AI 状态，都在屏幕顶部的一座小岛上。</p>
 
   <p>
-    <a href="https://github.com/TixXin/fly-island/releases/latest">下载</a>
+    <a href="https://github.com/flyl1u/fly-island/releases/latest">下载</a>
     ·
-    <a href="https://github.com/TixXin/fly-island/issues">反馈问题</a>
+    <a href="https://github.com/flyl1u/fly-island/issues">反馈问题</a>
     ·
     <a href="#用户交流群">用户交流群</a>
   </p>
 
   <p>
-    <img alt="Version" src="https://img.shields.io/github/v/release/TixXin/fly-island?label=version">
+    <img alt="Version" src="https://img.shields.io/github/v/release/flyl1u/fly-island?label=version">
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
   </p>
 </div>
-
-> [!NOTE]
-> 本仓库是 [flyl1u/fly-island](https://github.com/flyl1u/fly-island) 的独立维护版本，从上游 0.2.14 分出，0.3.0 起有自己的版本线和更新渠道。可以直接覆盖安装上游版本，数据和设置都会保留。
 
 ## 这是什么
 
@@ -47,7 +44,7 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 
 ## 上手
 
-1. 从 [Releases](https://github.com/TixXin/fly-island/releases/latest) 下载安装包并安装（安装包没有代码签名，SmartScreen 提示时点「更多信息 → 仍要运行」）。
+1. 从 [Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载安装包并安装（安装包没有代码签名，SmartScreen 提示时点「更多信息 → 仍要运行」）。
 2. 鼠标移到屏幕顶部的岛上即可展开，点齿轮或托盘图标打开设置。
 3. 邮箱、翻译和 AI Agent 需要先在设置里配置一次，具体见各自的说明：[邮箱](docs/mail.md)、[AI Agent](docs/agent-status-hooks.md)、[QQ 通知](docs/qq-notification-compatibility.md)、[微信提醒](docs/wechat-reminder-compatibility.md)。
 
@@ -55,7 +52,7 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 
 ## 项目起源
 
-以下是上游作者 [flyl1u](https://github.com/flyl1u) 写下的初衷：
+以下是作者 [flyl1u](https://github.com/flyl1u) 写下的初衷：
 
 > 日常工作或学习过程中，我经常需要在某软件写下 Todo List，为了隔绝噪音，我会打开音乐软件并把音量调到合适的临界点，工作和学习又经常需要借助翻译网站，同时还会反复复制和粘贴代码，与此同时难以避免的是接收不同群聊、好友发送的消息
 >
@@ -78,7 +75,7 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 需要 Windows 10/11、Node.js、pnpm、Rust、Visual Studio C++ Build Tools 和 WebView2 Runtime。
 
 ```powershell
-git clone https://github.com/TixXin/fly-island.git
+git clone https://github.com/flyl1u/fly-island.git
 cd fly-island
 pnpm install
 pnpm tauri dev      # 开发模式
@@ -89,4 +86,4 @@ pnpm tauri build    # 打包安装程序
 
 ## 开源协议
 
-[MIT](LICENSE)，基于 [flyl1u/fly-island](https://github.com/flyl1u/fly-island) 开发并保留上游的版权声明。第三方依赖和内置资源遵循各自的许可证，内置字体见[字体说明](src/assets/fonts/README.md)。
+[MIT](LICENSE)。第三方依赖和内置资源遵循各自的许可证，内置字体见[字体说明](src/assets/fonts/README.md)。

@@ -1,12 +1,12 @@
 // Builds the updater manifest that the app downloads from
-// https://github.com/TixXin/fly-island/releases/latest/download/latest.json
+// https://github.com/flyl1u/fly-island/releases/latest/download/latest.json
 //
 // Usage: node scripts/release/make-latest-json.mjs [--notes-file docs/releases/vX.Y.Z.md]
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { msiNames } from "./msi-version.mjs";
 
-const REPO = "TixXin/fly-island";
+const REPO = "flyl1u/fly-island";
 const CONFIG = "src-tauri/tauri.conf.json";
 const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
 const MSI_DIR = "src-tauri/target/release/bundle/msi";
