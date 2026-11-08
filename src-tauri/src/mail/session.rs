@@ -137,9 +137,13 @@ pub(super) fn wait_for_mail<T: Read + Write + SetReadTimeout>(
     let result = if let Some(work) = queued_work(receiver) {
         work
     } else {
+        // No keepalive: on the timeout this returns TimedOut and the caller decides
+        // whether to IDLE again, as imap 2's wait_with_timeout did.
         match session
             .idle()
-            .and_then(|idle| idle.wait_with_timeout(timeout))
+            .timeout(timeout)
+            .keepalive(false)
+            .wait_while(imap::extensions::idle::stop_on_any)
         {
             Ok(WaitOutcome::MailboxChanged) => MailWake::Changed,
             Ok(WaitOutcome::TimedOut) => MailWake::TimedOut,
@@ -294,12 +298,12 @@ fn header_message(message: &Fetch, validity: u32) -> Option<MailMessage> {
 }
 
 fn drain_mail_updates<T: Read + Write>(
-    session: &Session<T>,
+    session: &mut Session<T>,
     exists: u32,
     unread: &mut Option<usize>,
     needs_refresh: &mut bool,
 ) {
-    for response in session.unsolicited_responses.try_iter() {
+    for response in session.take_all_unsolicited() {
         match response {
             UnsolicitedResponse::Status {
                 mailbox,
@@ -334,13 +338,16 @@ pub(super) fn fetch_inbox_cached<T: Read + Write>(
         .filter(|value| *value > 0)
         .ok_or_else(MailFailure::network)?;
     // STATUS returns the total without enumerating every unread UID in a large inbox.
-    for _ in session.unsolicited_responses.try_iter() {}
-    session
-        .status("INBOX", "(UNSEEN)")
-        .map_err(|_| MailFailure::network())?;
-    // imap 2.4 forwards STATUS attributes to this channel rather than returning
-    // them in Mailbox.unseen (which has different semantics for EXAMINE).
-    let mut unread_count = None;
+    session.take_all_unsolicited().for_each(drop);
+    // STATUS's own Mailbox.unseen is the unread total (EXAMINE's means something else).
+    // imap 3 matches the mailbox name exactly: a server answering for "inbox" gets
+    // MissingStatusResponse, and its answer waits among the unsolicited responses,
+    // which drain_mail_updates reads.
+    let mut unread_count = match session.status("INBOX", "(UNSEEN)") {
+        Ok(status) => status.unseen.map(|count| count as usize),
+        Err(imap::Error::MissingStatusResponse) => None,
+        Err(_) => return Err(MailFailure::network()),
+    };
     let mut needs_refresh = false;
     drain_mail_updates(
         session,

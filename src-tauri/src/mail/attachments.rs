@@ -1,10 +1,14 @@
 //! A mail's attachments: listed with the body, and saved one at a time into the
 //! user's Downloads folder under a safe, unused file name.
 
-use imap::{types::Fetch, Session};
+use imap::{
+    types::{Fetch, Fetches},
+    Session,
+};
 use imap_proto::types::{BodyContentCommon, BodyStructure, MessageSection, SectionPath};
 use serde::Serialize;
 use std::{
+    borrow::Cow,
     fs::OpenOptions,
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -31,8 +35,8 @@ pub struct AttachmentInfo {
     pub mime: String,
 }
 
-fn param<'a>(params: Option<&'a Vec<(&'a str, &'a str)>>, key: &str) -> Option<&'a str> {
-    params?.iter().find(|(name, _)| name.eq_ignore_ascii_case(key)).map(|(_, value)| *value)
+fn param<'a>(params: Option<&'a Vec<(Cow<'_, str>, Cow<'_, str>)>>, key: &str) -> Option<&'a str> {
+    params?.iter().find(|(name, _)| name.eq_ignore_ascii_case(key)).map(|(_, value)| value.as_ref())
 }
 
 /// `filename*=UTF-8''%E6%8A%A5...` (RFC 2231) into text; other charsets are read as UTF-8.
@@ -146,7 +150,7 @@ pub(super) fn write_unused(dir: &Path, name: &str, bytes: &[u8]) -> Result<PathB
     Err("下载文件夹里同名文件太多，请清理后重试。".into())
 }
 
-fn responses(messages: &[Fetch], uid: u32) -> impl Iterator<Item = &Fetch> {
+fn responses(messages: &Fetches, uid: u32) -> impl Iterator<Item = &Fetch<'_>> {
     messages.iter().filter(move |message| message.uid.is_none_or(|found| found == uid))
 }
 

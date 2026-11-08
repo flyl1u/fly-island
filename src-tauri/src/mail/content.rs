@@ -1,7 +1,10 @@
 //! Message body fetching: text part selection and inline cid images.
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use imap::{types::Fetch, Session};
+use imap::{
+    types::{Fetch, Fetches},
+    Session,
+};
 use imap_proto::types::{
     BodyContentCommon, BodyStructure, ContentEncoding, MessageSection, SectionPath,
 };
@@ -148,6 +151,7 @@ fn collect_inline_images(
         {
             let Some(id) = other
                 .id
+                .as_deref()
                 .map(|id| id.trim_matches(|character| character == '<' || character == '>'))
             else {
                 return;
@@ -208,8 +212,8 @@ pub(super) fn replace_cid_references(html: &str, replacements: &[(String, String
 // UID FETCH 只查这一封邮件，但服务器可以把分段拆成多条 FETCH 响应发回来，而且续包不一定
 // 重复 UID（QQ 实测就只给第一条带 UID）。按 uid 相等过滤会把续包整批丢掉，只剩下第一批分段，
 // 所以这里只把带 UID 的响应排在前面，其余响应照样参与合并。
-fn responses_for_message(messages: &[Fetch], uid: u32) -> Vec<&Fetch> {
-    let (mut mine, others): (Vec<&Fetch>, Vec<&Fetch>) =
+fn responses_for_message(messages: &Fetches, uid: u32) -> Vec<&Fetch<'_>> {
+    let (mut mine, others): (Vec<&Fetch<'_>>, Vec<&Fetch<'_>>) =
         messages.iter().partition(|item| item.uid == Some(uid));
     mine.extend(others);
     mine

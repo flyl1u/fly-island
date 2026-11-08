@@ -306,6 +306,13 @@ fn empty_mailbox_is_a_successful_zero_unread_snapshot() {
 }
 
 #[test]
+fn unread_count_is_read_when_the_server_names_the_inbox_in_lower_case() {
+    let (client, _) = client("* OK ready\r\na1 OK login\r\n* 0 EXISTS\r\n* OK [UIDVALIDITY 1] valid\r\n* OK [UIDNEXT 1] next\r\na2 OK [READ-ONLY] examined\r\n* STATUS inbox (UNSEEN 3)\r\na3 OK status\r\n".into());
+    let mut session = client.login("user@example.com", "test-secret").unwrap();
+    assert_eq!(fetch_inbox(&mut session).unwrap().unread_count, 3);
+}
+
+#[test]
 fn a_reused_session_detects_new_mail_without_another_login() {
     let header = "From: sender@example.com\r\nSubject: New arrival\r\n\r\n";
     let script = format!(
