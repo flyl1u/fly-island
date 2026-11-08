@@ -73,7 +73,7 @@ export function PluginShortcutSection({ takenBy }: { takenBy: (shortcut: string,
 
   return (
     <SettingsGroup title={text.pluginTitle} footer={rows.length === 0 ? undefined : text.pluginHint}>
-      {rows.length === 0 && <SettingsRow title={<span className="shortcut-empty">{text.pluginNone}</span>} />}
+      {rows.length === 0 && <SettingsRow searchable={false} title={<span className="shortcut-empty">{text.pluginNone}</span>} />}
       {rows.map((row) => {
         const conflicts = snapshot.plugins.find((plugin) => plugin.id === row.pluginId)?.keybindingConflicts ?? [];
         const error = errors[row.key] || (row.shortcut && conflicts.includes(row.shortcut) ? text.pluginInUse : "");

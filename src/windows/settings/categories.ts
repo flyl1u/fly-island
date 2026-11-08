@@ -1,3 +1,5 @@
+import { normalizeSearchText, searchWords } from "./settingsSearch.ts";
+
 /** Pages of the settings window, in sidebar order. */
 export const SETTINGS_CATEGORIES = [
   "general",
@@ -49,13 +51,14 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
 
 /**
  * Pages the sidebar search finds, in sidebar order: every word of the query appears in the
- * page's text (its name, its group's name and its keywords, from `describe`), ignoring case.
+ * page's text (its name, its group's name and its keywords, from `describe`), ignoring case,
+ * spaces and punctuation (settingsSearch.ts `normalizeSearchText`).
  */
 export function searchCategories(query: string, describe: (category: SettingsCategory) => string): SettingsCategory[] {
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = searchWords(query);
   if (words.length === 0) return [...SETTINGS_CATEGORIES];
   return SETTINGS_CATEGORIES.filter((category) => {
-    const text = describe(category).toLowerCase();
+    const text = normalizeSearchText(describe(category));
     return words.every((word) => text.includes(word));
   });
 }

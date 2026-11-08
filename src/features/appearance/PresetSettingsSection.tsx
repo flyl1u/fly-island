@@ -139,10 +139,10 @@ export function PresetSettingsSection({
   return (
     <SettingsGroup title={text.title} action={actions} footer={footer}>
       {presets.length === 0 ? (
-        <SettingsRow title={<span className="preset-empty">{text.empty}</span>} />
+        <SettingsRow searchable={false} title={<span className="preset-empty">{text.empty}</span>} />
       ) : (
         presets.map((preset) => (
-          <SettingsRow
+          <SettingsRow searchable={false}
             key={preset.id}
             title={name(preset)}
             control={

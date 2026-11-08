@@ -12,6 +12,7 @@ export function SettingsRow({
   control,
   labelFor,
   indent = false,
+  searchable = true,
   children,
 }: {
   title: ReactNode;
@@ -20,10 +21,15 @@ export function SettingsRow({
   /** Id of the input the title names; clicking the title then focuses or toggles it. */
   labelFor?: string;
   indent?: boolean;
+  /**
+   * False for a row that is data rather than a setting (a plugin, a host, a saved preset, an
+   * empty list's note): the settings search index (`pnpm settings:index`) leaves it out.
+   */
+  searchable?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div className={indent ? "settings-row settings-row--indent" : "settings-row"}>
+    <div className={indent ? "settings-row settings-row--indent" : "settings-row"} data-search={searchable ? undefined : "off"}>
       <div className="settings-row__main">
         <div className="settings-row__text">
           {labelFor ? (

@@ -82,9 +82,9 @@ export function SoundPacksGroup({
 
   return (
     <SettingsGroup title={text.packsTitle} footer={footer}>
-      {packs.length === 0 && <SettingsRow title={<span className="sound-packs__empty">{text.packsEmpty}</span>} />}
+      {packs.length === 0 && <SettingsRow searchable={false} title={<span className="sound-packs__empty">{text.packsEmpty}</span>} />}
       {packs.map((pack) => (
-        <SettingsRow
+        <SettingsRow searchable={false}
           key={pack.id}
           title={soundPackName(pack, locale)}
           description={[text.packMeta(pack.author, pack.license, Object.keys(pack.sounds).length), pack.fromPlugin && text.fromPlugin].filter(Boolean).join(" · ")}

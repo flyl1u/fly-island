@@ -80,7 +80,7 @@ export function ShortcutsSettingsPage({
             takenBy={(shortcut) => takenBy(shortcut, "clipboard")}
           />
         )}
-        {!hasGlobal && <SettingsRow title={<span className="shortcut-empty">{t.settings.shortcuts.noGlobal}</span>} />}
+        {!hasGlobal && <SettingsRow searchable={false} title={<span className="shortcut-empty">{t.settings.shortcuts.noGlobal}</span>} />}
       </SettingsGroup>
       <PluginShortcutSection takenBy={takenBy} />
       <PageShortcutSection settings={settings} onSettingsChange={onSettingsChange} takenBy={takenBy} />
@@ -107,7 +107,7 @@ export function ShortcutsLinkSection({ onOpen }: { onOpen: () => void }) {
   const t = useTranslation();
   return (
     <SettingsGroup title={t.settings.categories.shortcuts}>
-      <SettingsRow
+      <SettingsRow searchable={false}
         title={t.settings.shortcuts.editHint}
         control={<SettingsLinkButton onClick={onOpen}>{t.settings.shortcuts.openPage}</SettingsLinkButton>}
       />

@@ -118,7 +118,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
   - 只使用可擦除的 TS 语法，不用 `enum`、`namespace`、构造函数参数属性。
 - `tests/unit/updater-controller.test.mjs` 和 `tests/unit/island-automation.test.mjs` 用 `vm` 加载源码，并按 import 路径注入 mock。修改这些被测模块的 import 时，必须同步更新测试里的 mock 表。
 - 移动被测模块时，同步更新 `tests/` 中的导入路径，并确认测试通过。
-- 浏览器回归页 `tests/regression/*.html` 用于检查界面和数据兼容性：`pnpm test:regression` 自动跑全部页面（新增页面时把它和启动检查的查询参数加进 `scripts/run-regression.mjs` 的 `PAGES`，结果写成 `<html data-test-result>` 或 `#results` 中的 PASS / FAIL 行）；也可以在 `pnpm dev` 启动后打开 `/tests/regression/<name>.html` 手动查看。设置窗口在 Tauri 之外打开会是空白，看设置页用 `settings.html`（`?page=<分类>` 直接打开某一页）。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
+- 浏览器回归页 `tests/regression/*.html` 用于检查界面和数据兼容性：`pnpm test:regression` 自动跑全部页面（新增页面时把它和启动检查的查询参数加进 `scripts/run-regression.mjs` 的 `PAGES`，结果写成 `<html data-test-result>` 或 `#results` 中的 PASS / FAIL 行）；也可以在 `pnpm dev` 启动后打开 `/tests/regression/<name>.html` 手动查看。设置窗口在 Tauri 之外打开会是空白，看设置页用 `settings.html`（`?page=<分类>` 直接打开某一页）。设置页的 mock 在 `tests/regression/settingsMocks.ts`，`settings.html` 和 `settings-search.html` 共用。设置窗口的搜索按设置行查找，行来自 `src/windows/settings/searchIndex.json`：新增、删除或改名设置项（`SettingsRow` 及开关、滑块、数字行）后运行 `pnpm settings:index` 重新生成并一起提交；不是设置的行（插件、主机、预设这类数据，空列表的说明）给 `SettingsRow` 传 `searchable={false}`。回归页不经过 `main.tsx`，新增回归页时要自己导入 `src/styles/tokens.css`，否则组件样式中的变量无法解析。回归页的 `.tsx` 由 `tsconfig.tests.json` 做严格类型检查（`pnpm check` 中的 `check:tests-types`），修改组件属性或 `api.ts` 类型时要同步更新回归页中的 mock。
 
 ## 新增 Tauri 命令清单
 

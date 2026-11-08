@@ -35,7 +35,7 @@ export function AgentRemoteHostsSettings() {
         action={remote.entries.some((entry) => entry.status) ? <SettingsLinkButton onClick={remote.refresh}>{text.remoteRefresh}</SettingsLinkButton> : undefined}
         footer={remote.error ? <span className="agent-remote__error">{remote.error}</span> : text.remoteHostsFooter}
       >
-        {remote.loaded && remote.entries.length === 0 ? <SettingsRow title={text.remoteEmpty} description={text.remoteEmptyHint} /> : null}
+        {remote.loaded && remote.entries.length === 0 ? <SettingsRow searchable={false} title={text.remoteEmpty} description={text.remoteEmptyHint} /> : null}
         {remote.entries.map((entry) => (
           <HostRow key={entry.name} entry={entry} onToggle={(on) => remote.toggle(entry.name, on)} onRemove={() => remote.remove(entry.name)} />
         ))}
@@ -65,7 +65,7 @@ function HostRow({ entry, onToggle, onRemove }: { entry: RemoteHostEntry; onTogg
   else if (status?.fetchedAt != null) state = text.remoteFetchedAt(new Date(status.fetchedAt).toLocaleTimeString(), status.sessions ?? 0);
   else if (status) state = text.remoteFetching;
   return (
-    <SettingsRow
+    <SettingsRow searchable={false}
       title={entry.name}
       labelFor={id}
       description={

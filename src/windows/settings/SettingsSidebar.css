@@ -206,6 +206,54 @@
   left: -9px;
 }
 
+/* While searching: the settings found on a page, under it, smaller and without icons. */
+.settings-sidebar .settings-sidebar__hits {
+  /* Takes the sidebar's width rather than its titles' (they end in "…"); without this a long
+     title widens the whole list, the lists being grids. */
+  contain: inline-size;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 1px 0 3px 25px;
+  padding: 0;
+  list-style: none;
+}
+
+/* A flex row whose text can shrink, as the page items do, so a long title ends in "…" instead of
+   widening the sidebar. */
+.settings-sidebar__hit {
+  width: 100%;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-sidebar__hit > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-sidebar__hit:hover,
+.settings-sidebar__hit:focus-visible {
+  color: var(--color-white);
+  background: var(--color-white-a06);
+}
+
+.settings-sidebar__hit:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--color-focus-ring);
+}
+
 .settings-sidebar__empty {
   margin: 8px 10px;
   color: var(--color-text-muted);

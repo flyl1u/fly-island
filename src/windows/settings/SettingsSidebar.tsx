@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Blocks, Bot, CalendarDays, ChevronRight, ClipboardList, Inbox, Info, Keyboard, Languages, LayoutGrid, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, Search, Server, Settings2, ShieldCheck, Store, SlidersHorizontal, Volume2, X, type LucideIcon } from "lucide-react";
-import { useTranslation } from "../../i18n";
+import { LOCALE_CODES, useLocale, useTranslation } from "../../i18n";
 import { SETTINGS_GROUPS, searchCategories, type SettingsCategory, type SettingsGroup } from "./categories";
+import searchIndex from "./searchIndex.json";
+import { isTitleHit, MAX_HITS_PER_PAGE, searchSettingsRows, type SettingsRowHit, type SettingsSearchEntry } from "./settingsSearch";
 import "./SettingsSidebar.css";
 
 const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
@@ -27,6 +29,9 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   about: Info,
 };
 
+/** Every setting row of every page, both languages (`pnpm settings:index` writes the file). */
+const SEARCH_ENTRIES = searchIndex.entries as SettingsSearchEntry[];
+
 /** Each group is a row its pages fold under. */
 const GROUP_ICONS: Record<SettingsGroup, LucideIcon> = {
   basics: Settings2,
@@ -38,16 +43,23 @@ const GROUP_ICONS: Record<SettingsGroup, LucideIcon> = {
 /**
  * The settings window's page list: a search box, each group as a row its pages fold under (all
  * open at first), and About pinned to the bottom. Searching matches page names, group names and
- * each page's keywords, shows only the matches (folded pages too), and Enter opens the first.
+ * each page's keywords, and the settings on each page (titles, descriptions and choices, in
+ * either language, settingsSearch.ts). It shows only the pages it found, folded ones too, with
+ * the settings it found under each; clicking one opens its page at that row. Enter opens the
+ * best: a setting whose title holds the query, else the first page, else the best setting.
  */
 export function SettingsSidebar({
   category,
   onCategoryChange,
+  onRowOpen,
 }: {
   category: SettingsCategory;
   onCategoryChange: (category: SettingsCategory) => void;
+  /** Opens `page` and shows the row titled `title` there; without it, search lists pages only. */
+  onRowOpen?: (page: SettingsCategory, title: string) => void;
 }) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const text = t.settings.categories;
   const [query, setQuery] = useState("");
   // Every group starts open; folding lasts while the window is open.
@@ -69,7 +81,32 @@ export function SettingsSidebar({
   }, [category, folded]);
   const searching = query.trim() !== "";
   const matches = searchCategories(query, describe);
-  const shown = (item: SettingsCategory) => matches.includes(item);
+  const hits = onRowOpen && searching ? searchSettingsRows(query, SEARCH_ENTRIES, locale, LOCALE_CODES, describe) : [];
+  const shown = (item: SettingsCategory) => matches.includes(item) || hits.some((hit) => hit.page === item);
+  const openHit = (hit: SettingsRowHit) => onRowOpen?.(hit.page, hit.text.title);
+  const openBest = () => {
+    if (isTitleHit(hits[0], query)) openHit(hits[0]);
+    else if (matches.length > 0) onCategoryChange(matches[0]);
+    else if (hits.length > 0) openHit(hits[0]);
+  };
+  const pageHits = (page: SettingsCategory) => {
+    const found = hits.filter((hit) => hit.page === page).slice(0, MAX_HITS_PER_PAGE);
+    if (found.length === 0) return null;
+    return (
+      <ul className="settings-sidebar__hits">
+        {found.map((hit) => {
+          const path = [text[page], hit.text.group, hit.text.title].filter(Boolean).join(" › ");
+          return (
+            <li key={`${hit.text.group}/${hit.text.title}`}>
+              <button className="settings-sidebar__hit" type="button" title={path} data-page={page} onClick={() => openHit(hit)}>
+                <span>{hit.text.title}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   const item = (entry: SettingsCategory, nested = false) => {
     const Icon = CATEGORY_ICONS[entry];
@@ -86,6 +123,7 @@ export function SettingsSidebar({
           <Icon size={16} strokeWidth={2} aria-hidden="true" />
           <span>{text[entry]}</span>
         </button>
+        {searching && pageHits(entry)}
       </li>
     );
   };
@@ -105,7 +143,7 @@ export function SettingsSidebar({
           spellCheck={false}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && searching && matches.length > 0) onCategoryChange(matches[0]);
+            if (event.key === "Enter" && searching) openBest();
             if (event.key === "Escape" && query) {
               event.preventDefault();
               setQuery("");
@@ -148,7 +186,7 @@ export function SettingsSidebar({
             </section>
           );
         })}
-        {searching && matches.length === 0 && <p className="settings-sidebar__empty">{text.search.empty}</p>}
+        {searching && matches.length === 0 && hits.length === 0 && <p className="settings-sidebar__empty">{text.search.empty}</p>}
       </div>
       {footer.length > 0 && (
         <div className="settings-sidebar__footer">

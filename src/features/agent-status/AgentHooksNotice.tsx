@@ -31,7 +31,7 @@ export function AgentHooksNotice({ onOpenConnect }: { onOpenConnect: () => void 
   if (!notice) return null;
   return (
     <SettingsGroup>
-      <SettingsRow
+      <SettingsRow searchable={false}
         title={
           <span className="agent-hooks-message agent-hooks-message--attention">
             <CircleAlert size={13} strokeWidth={2.4} aria-hidden="true" />

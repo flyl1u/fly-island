@@ -1,0 +1,1728 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "系统",
+        "title": "开机自启动"
+      },
+      "en": {
+        "group": "System",
+        "title": "Launch at startup"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "系统",
+        "title": "界面语言"
+      },
+      "en": {
+        "group": "System",
+        "title": "Interface language"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "系统",
+        "title": "最小化按钮",
+        "description": "点岛上的最小化按钮时，隐藏到托盘还是贴到屏幕顶部。",
+        "options": [
+          "托盘",
+          "贴边隐藏"
+        ]
+      },
+      "en": {
+        "group": "System",
+        "title": "Minimize button",
+        "description": "Whether the island's minimize button hides it in the tray or tucks it to the top edge.",
+        "options": [
+          "Tray",
+          "Tuck to edge"
+        ]
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "展开",
+        "title": "展开方式",
+        "options": [
+          "点击",
+          "鼠标悬停"
+        ]
+      },
+      "en": {
+        "group": "Opening",
+        "title": "Open the island by",
+        "options": [
+          "Click",
+          "Hover"
+        ]
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "展开",
+        "title": "悬停多久后展开"
+      },
+      "en": {
+        "group": "Opening",
+        "title": "Hover time before opening"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "展开",
+        "title": "鼠标移开后收起前等待"
+      },
+      "en": {
+        "group": "Opening",
+        "title": "Wait before closing after leaving"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "贴边隐藏",
+        "title": "闲置时贴边隐藏",
+        "description": "一段时间没有操作后，岛屿贴到屏幕顶部，只露出一条边。"
+      },
+      "en": {
+        "group": "Tuck to edge",
+        "title": "Tuck to the edge when idle",
+        "description": "After a while without use, the island slides up to the top of the screen and shows only an edge."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "贴边隐藏",
+        "title": "闲置多久后隐藏"
+      },
+      "en": {
+        "group": "Tuck to edge",
+        "title": "Idle time"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "贴边隐藏",
+        "title": "鼠标移开后再次隐藏"
+      },
+      "en": {
+        "group": "Tuck to edge",
+        "title": "Tuck again when the pointer leaves"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "贴边隐藏",
+        "title": "再次隐藏前等待"
+      },
+      "en": {
+        "group": "Tuck to edge",
+        "title": "Wait before tucking again"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "露出",
+        "title": "鼠标移到隐藏的岛上",
+        "options": [
+          "只露出岛屿",
+          "展开面板"
+        ]
+      },
+      "en": {
+        "group": "Sliding out",
+        "title": "Pointer on a tucked island",
+        "options": [
+          "Slides it out",
+          "Opens the panel"
+        ]
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "露出",
+        "title": "有新消息时露出"
+      },
+      "en": {
+        "group": "Sliding out",
+        "title": "Slide out for new messages"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "游戏模式",
+        "title": "游戏勿扰",
+        "description": "不悬停展开，不抢键盘焦点，不弹消息预览，已展开的面板会收起。消息照常接收。"
+      },
+      "en": {
+        "group": "Game mode",
+        "title": "Do not disturb in games",
+        "description": "No opening on hover, no taking the keyboard focus, no message pop-ups, and an open panel closes. Messages still arrive."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "游戏模式",
+        "title": "游戏时贴边隐藏",
+        "description": "全屏程序占住岛所在的屏幕时贴到顶部，退出后自动露出。"
+      },
+      "en": {
+        "group": "Game mode",
+        "title": "Tuck away during games",
+        "description": "Tucks to the top edge while a full-screen app fills the island's screen, and slides back out afterwards."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "音量与亮度",
+        "title": "调节时在小岛上显示",
+        "description": "用键盘、任务栏或其他程序调音量或屏幕亮度时，收起的小岛显示当前大小，1.5 秒后恢复。亮度只支持笔记本自带的屏幕。"
+      },
+      "en": {
+        "group": "Volume and brightness",
+        "title": "Show changes on the island",
+        "description": "When the volume or screen brightness changes, from the keyboard, the taskbar or another app, the collapsed island shows the new level for 1.5 seconds. Brightness works for a laptop's built-in screen only."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "耳机与充电",
+        "title": "在小岛上提示",
+        "description": "耳机或蓝牙音频设备连接、断开时，收起的小岛显示 3 秒，蓝牙设备带电量；蓝牙设备电量降到 20% 和 10% 时各提醒一次；笔记本插上或拔掉电源时也会提示。蓝牙电量要设备自己报告给 Windows 才有。"
+      },
+      "en": {
+        "group": "Headphones and charging",
+        "title": "Show on the island",
+        "description": "When headphones or Bluetooth audio connect or disconnect, the collapsed island says so for 3 seconds, with the battery level of Bluetooth devices. A Bluetooth device warns once at 20% and again at 10%, and a laptop says when its charger is plugged in or pulled out. Bluetooth battery levels show only for devices that report them to Windows."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "隐私提示",
+        "title": "摄像头和麦克风使用提示",
+        "description": "有程序在用摄像头或麦克风时，在小岛上显示绿色摄像头或橙色麦克风图标，点击打开系统的隐私设置。"
+      },
+      "en": {
+        "group": "Privacy",
+        "title": "Camera and microphone in use",
+        "description": "While an app uses the camera or the microphone, the island shows a green camera or an orange microphone; click it to open Windows' privacy settings."
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "位置",
+        "title": "显示在"
+      },
+      "en": {
+        "group": "Position",
+        "title": "Show on"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "位置",
+        "title": "顶部距离"
+      },
+      "en": {
+        "group": "Position",
+        "title": "Top margin"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "位置",
+        "title": "回到默认位置"
+      },
+      "en": {
+        "group": "Position",
+        "title": "Back to the default position"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "备份与恢复",
+        "title": "导出设置"
+      },
+      "en": {
+        "group": "Backup and restore",
+        "title": "Export settings"
+      }
+    },
+    {
+      "page": "general",
+      "zh-CN": {
+        "group": "备份与恢复",
+        "title": "从文件恢复"
+      },
+      "en": {
+        "group": "Backup and restore",
+        "title": "Restore from file"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "风格",
+        "title": "外观模式",
+        "options": [
+          "经典",
+          "液态玻璃"
+        ]
+      },
+      "en": {
+        "group": "Style",
+        "title": "Appearance",
+        "options": [
+          "Classic",
+          "Liquid glass"
+        ]
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "风格",
+        "title": "字体",
+        "options": [
+          "默认字体",
+          "像素字体"
+        ]
+      },
+      "en": {
+        "group": "Style",
+        "title": "Font",
+        "options": [
+          "System",
+          "Pixel"
+        ]
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "风格",
+        "title": "不透明度"
+      },
+      "en": {
+        "group": "Style",
+        "title": "Opacity"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "颜色",
+        "title": "岛屿背景"
+      },
+      "en": {
+        "group": "Colors",
+        "title": "Island background"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "颜色",
+        "title": "任务/待办字样"
+      },
+      "en": {
+        "group": "Colors",
+        "title": "Task text"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "颜色",
+        "title": "亮点颜色"
+      },
+      "en": {
+        "group": "Colors",
+        "title": "Accent"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "颜色",
+        "title": "待办纸张"
+      },
+      "en": {
+        "group": "Colors",
+        "title": "Task paper"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "颜色",
+        "title": "亮点亮度"
+      },
+      "en": {
+        "group": "Colors",
+        "title": "Accent brightness"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "尺寸",
+        "title": "折叠岛屿大小"
+      },
+      "en": {
+        "group": "Size",
+        "title": "Collapsed island scale"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "尺寸",
+        "title": "展开面板大小"
+      },
+      "en": {
+        "group": "Size",
+        "title": "Expanded panel scale"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "尺寸",
+        "title": "最大面板高度"
+      },
+      "en": {
+        "group": "Size",
+        "title": "Max panel height"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "圆角",
+        "title": "圆角样式",
+        "options": [
+          "方圆",
+          "圆角"
+        ]
+      },
+      "en": {
+        "group": "Corners",
+        "title": "Corner style",
+        "options": [
+          "Squircle",
+          "Round"
+        ]
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "圆角",
+        "title": "岛屿圆角"
+      },
+      "en": {
+        "group": "Corners",
+        "title": "Island corner radius"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "圆角",
+        "title": "贴顶圆角"
+      },
+      "en": {
+        "group": "Corners",
+        "title": "Top-edge corner radius"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "显示内容",
+        "title": "显示折叠岛屿文字"
+      },
+      "en": {
+        "group": "Display",
+        "title": "Show collapsed island text"
+      }
+    },
+    {
+      "page": "appearance",
+      "zh-CN": {
+        "group": "显示内容",
+        "title": "显示岛屿名称"
+      },
+      "en": {
+        "group": "Display",
+        "title": "Show island name"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "全局快捷键",
+        "title": "启用展开快捷键"
+      },
+      "en": {
+        "group": "Global shortcuts",
+        "title": "Enable expand shortcut"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "岛上操作",
+        "title": "收起展开的岛"
+      },
+      "en": {
+        "group": "On the island",
+        "title": "Collapse the expanded island"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "岛上操作",
+        "title": "移动岛屿"
+      },
+      "en": {
+        "group": "On the island",
+        "title": "Move the island"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "翻译输入框",
+        "title": "翻译"
+      },
+      "en": {
+        "group": "Translation input",
+        "title": "Translate"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "翻译输入框",
+        "title": "换行"
+      },
+      "en": {
+        "group": "Translation input",
+        "title": "New line"
+      }
+    },
+    {
+      "page": "shortcuts",
+      "zh-CN": {
+        "group": "翻译输入框",
+        "title": "填入剪贴板（独立窗口）"
+      },
+      "en": {
+        "group": "Translation input",
+        "title": "Fill from the clipboard (window only)"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "",
+        "title": "启用待办",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable todos",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "任务",
+        "title": "空闲时显示剩余待办数"
+      },
+      "en": {
+        "group": "Tasks",
+        "title": "Show todo count when idle"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "任务",
+        "title": "自动将未完成任务写入下一天"
+      },
+      "en": {
+        "group": "Tasks",
+        "title": "Carry unfinished tasks to next day"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "任务",
+        "title": "允许拖动调整任务顺序"
+      },
+      "en": {
+        "group": "Tasks",
+        "title": "Drag to reorder tasks"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "任务",
+        "title": "多任务流动"
+      },
+      "en": {
+        "group": "Tasks",
+        "title": "Rotate through pending tasks"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "任务",
+        "title": "每个任务停留时间（秒）"
+      },
+      "en": {
+        "group": "Tasks",
+        "title": "Time per task (seconds)"
+      }
+    },
+    {
+      "page": "todos",
+      "zh-CN": {
+        "group": "待办清单保存路径",
+        "title": "文件夹"
+      },
+      "en": {
+        "group": "Task list save path",
+        "title": "Folder"
+      }
+    },
+    {
+      "page": "calendar",
+      "zh-CN": {
+        "group": "",
+        "title": "启用日历",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable the calendar",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "calendar",
+      "zh-CN": {
+        "group": "小岛显示",
+        "title": "会前倒计时",
+        "description": "会议开始前这么久，收起的小岛显示「标题 · 10 分钟后」，有会议链接时旁边有「加入」按钮。开始后再留 5 分钟。今天的待办以时间开头（例如「15:00 周会」「9:30-10:00 站会」）也会这样倒计时，不用添加日历。"
+      },
+      "en": {
+        "group": "On the island",
+        "title": "Countdown before a meeting",
+        "description": "This long before a meeting starts, the collapsed island shows \"Title · in 10 min\", with a Join button when it has a meeting link. It stays for 5 minutes after the start. Today's todos that start with a time (\"15:00 Weekly sync\", \"9:30-10:00 Standup\") count down the same way, with no calendar added."
+      }
+    },
+    {
+      "page": "calendar",
+      "zh-CN": {
+        "group": "小岛显示",
+        "title": "显示会议标题",
+        "description": "关掉后只显示「会议 · 10 分钟后」，共享屏幕时不会露出会议内容。"
+      },
+      "en": {
+        "group": "On the island",
+        "title": "Show the meeting's title",
+        "description": "Off shows only \"Meeting · in 10 min\", so a shared screen does not reveal what the meeting is about."
+      }
+    },
+    {
+      "page": "calendar",
+      "zh-CN": {
+        "group": "添加日历",
+        "title": "用的是"
+      },
+      "en": {
+        "group": "Add a calendar",
+        "title": "Service"
+      }
+    },
+    {
+      "page": "music",
+      "zh-CN": {
+        "group": "",
+        "title": "启用音乐控制",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable music controls",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "music",
+      "zh-CN": {
+        "group": "歌词",
+        "title": "本地歌词文件夹",
+        "description": "放 .lrc 文件，文件名写成「歌手 - 歌名」「歌名 - 歌手」或「歌名」。只找这一层，不找子文件夹。"
+      },
+      "en": {
+        "group": "Lyrics",
+        "title": "Lyrics folder",
+        "description": "Holds .lrc files named \"Artist - Title\", \"Title - Artist\" or \"Title\". Subfolders are not searched."
+      }
+    },
+    {
+      "page": "music",
+      "zh-CN": {
+        "group": "歌词",
+        "title": "在线查找歌词",
+        "description": "本地找不到时查 LRCLIB（lrclib.net，免费开源的歌词库），会把歌名、歌手、专辑和时长发过去。每首歌只查一次，结果存在本机。中文歌收录较少。"
+      },
+      "en": {
+        "group": "Lyrics",
+        "title": "Find lyrics online",
+        "description": "When the folder has none, asks LRCLIB (lrclib.net, a free and open lyrics library), sending the title, artist, album and length. Each song is asked about once and the answer is kept on this computer."
+      }
+    },
+    {
+      "page": "music",
+      "zh-CN": {
+        "group": "歌词",
+        "title": "也查酷狗和网易云",
+        "description": "中文歌收录多，有翻译。这两个是非官方接口，可能随时失效；会把歌名、歌手和时长发给它们。装了网易云的 InfLink 插件时按歌曲直接查，更准。"
+      },
+      "en": {
+        "group": "Lyrics",
+        "title": "Also ask Kugou and NetEase",
+        "description": "Many more Chinese songs, with translations. These are unofficial interfaces that may stop working at any time; the title, artist and length are sent to them. With NetEase's InfLink plugin the song is looked up by its id, which is more exact."
+      }
+    },
+    {
+      "page": "music",
+      "zh-CN": {
+        "group": "歌词",
+        "title": "歌词提前或推后",
+        "description": "歌词比歌声快就往右调，慢就往左调。"
+      },
+      "en": {
+        "group": "Lyrics",
+        "title": "Lyrics earlier or later",
+        "description": "Move right if the lyrics run ahead of the singing, left if they lag."
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "",
+        "title": "启用快捷翻译",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable quick translation",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "打开位置",
+        "title": "翻译打开在",
+        "options": [
+          "独立窗口",
+          "岛内页面"
+        ]
+      },
+      "en": {
+        "group": "Where it opens",
+        "title": "Open translation in",
+        "options": [
+          "Its own window",
+          "An island page"
+        ]
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "翻译服务",
+        "title": "翻译服务"
+      },
+      "en": {
+        "group": "Translation service",
+        "title": "Service"
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "翻译服务",
+        "title": "模型"
+      },
+      "en": {
+        "group": "Translation service",
+        "title": "Model"
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "翻译服务",
+        "title": "API 密钥"
+      },
+      "en": {
+        "group": "Translation service",
+        "title": "API key"
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "翻译方式",
+        "title": "打开时填入剪贴板",
+        "description": "原文为空时，用最新一条文字剪贴板填上。已有内容不会被覆盖。"
+      },
+      "en": {
+        "group": "How to translate",
+        "title": "Fill from the clipboard on open",
+        "description": "When the source is empty, fill it from the latest clipboard text. Existing text is left as it is."
+      }
+    },
+    {
+      "page": "translation",
+      "zh-CN": {
+        "group": "翻译方式",
+        "title": "停稳后自动翻译",
+        "description": "原文停止输入约半秒后自动翻译。未配置密钥时不发送。"
+      },
+      "en": {
+        "group": "How to translate",
+        "title": "Translate after you pause",
+        "description": "Translate about half a second after the source stops changing. Nothing is sent without an API key."
+      }
+    },
+    {
+      "page": "clipboard",
+      "zh-CN": {
+        "group": "",
+        "title": "启用剪贴板历史",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable clipboard history",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "clipboard",
+      "zh-CN": {
+        "group": "剪贴板历史",
+        "title": "记录图片"
+      },
+      "en": {
+        "group": "Clipboard history",
+        "title": "Record images"
+      }
+    },
+    {
+      "page": "clipboard",
+      "zh-CN": {
+        "group": "剪贴板历史",
+        "title": "最大历史条数"
+      },
+      "en": {
+        "group": "Clipboard history",
+        "title": "Max entries"
+      }
+    },
+    {
+      "page": "clipboard",
+      "zh-CN": {
+        "group": "剪贴板历史",
+        "title": "展开后显示条数"
+      },
+      "en": {
+        "group": "Clipboard history",
+        "title": "Entries shown when open"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "",
+        "title": "启用文件中转",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable the file shelf",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "文件中转",
+        "title": "拖入文件时自动展开"
+      },
+      "en": {
+        "group": "File shelf",
+        "title": "Open when files are dragged in"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "文件中转",
+        "title": "双击文件"
+      },
+      "en": {
+        "group": "File shelf",
+        "title": "Double-click a file"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "文件中转",
+        "title": "折叠时显示文件数量"
+      },
+      "en": {
+        "group": "File shelf",
+        "title": "Show the file count when collapsed"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "清理",
+        "title": "自动清理"
+      },
+      "en": {
+        "group": "Cleanup",
+        "title": "Auto clean up"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "清理",
+        "title": "自动移除已失效的文件"
+      },
+      "en": {
+        "group": "Cleanup",
+        "title": "Remove files that were moved or deleted"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "清理",
+        "title": "拖出后从列表移除"
+      },
+      "en": {
+        "group": "Cleanup",
+        "title": "Remove after dragging out"
+      }
+    },
+    {
+      "page": "shelf",
+      "zh-CN": {
+        "group": "清理",
+        "title": "最多保留条数"
+      },
+      "en": {
+        "group": "Cleanup",
+        "title": "Maximum entries"
+      }
+    },
+    {
+      "page": "messages",
+      "zh-CN": {
+        "group": "QQ 通知",
+        "title": "接收 QQ 消息"
+      },
+      "en": {
+        "group": "QQ notifications",
+        "title": "Receive QQ messages"
+      }
+    },
+    {
+      "page": "messages",
+      "zh-CN": {
+        "group": "微信提醒",
+        "title": "接收微信提醒"
+      },
+      "en": {
+        "group": "WeChat reminders",
+        "title": "Receive WeChat reminders"
+      }
+    },
+    {
+      "page": "messages",
+      "zh-CN": {
+        "group": "邮箱",
+        "title": "启用邮箱",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "Mail",
+        "title": "Enable mail",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "",
+        "title": "启用 AI Agent 状态灯",
+        "description": "关闭后，岛上不再显示这个功能的入口，后台也停止运行；已有数据会保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Enable the AI Agent status light",
+        "description": "When off, the island hides this module and stops its background work. Your data is kept."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "小岛显示",
+        "title": "运行时在小岛显示会话标题",
+        "description": "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code 和 Codex 的会话记录，不需要安装钩子。"
+      },
+      "en": {
+        "group": "On the island",
+        "title": "Show the session title while running",
+        "description": "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the Claude Code and Codex session files, so no hooks are needed."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话列表",
+        "title": "展开后显示条数",
+        "description": "岛屿展开后的 Agent 页一次显示的会话数，更多的会话可以滚动查看。"
+      },
+      "en": {
+        "group": "Session list",
+        "title": "Entries shown when open",
+        "description": "How many sessions the island's Agent page shows at once; scroll for the rest."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话列表",
+        "title": "列出多久内的会话",
+        "description": "最后一次活动在这段时间内的会话才会列出。"
+      },
+      "en": {
+        "group": "Session list",
+        "title": "List sessions from the last",
+        "description": "Only sessions active within this time are listed."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话列表",
+        "title": "只显示进行中的会话",
+        "description": "隐藏已完成和失败的会话，只留正在运行、等待确认和可能中断的。"
+      },
+      "en": {
+        "group": "Session list",
+        "title": "Only sessions in progress",
+        "description": "Hide finished and failed sessions; keep running, waiting and possibly stalled ones."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话列表",
+        "title": "隐藏已退出的会话",
+        "description": "Claude Code 或 Codex 已经退出的会话不再列出，SessionEnd hook 没触发也算：按进程是否还在判断，远程电脑上的 Claude Code 会话同样适用。"
+      },
+      "en": {
+        "group": "Session list",
+        "title": "Hide sessions that have quit",
+        "description": "Sessions whose Claude Code or Codex has quit are no longer listed, even when the SessionEnd hook did not run: told by whether the process still runs, for Claude Code sessions on remote computers too."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话列表",
+        "title": "在顶部显示 Claude 用量",
+        "description": "5 小时、7 天和各模型的用量，以及最紧的那个何时重置。读的是 claude-hud 状态栏保存的用量文件（它的 externalUsagePath 或 externalUsageWritePath 设置）；没有时不显示。"
+      },
+      "en": {
+        "group": "Session list",
+        "title": "Show Claude usage at the top",
+        "description": "The 5-hour, 7-day and per-model usage, and when the fullest resets. Read from the usage file the claude-hud status line keeps (its externalUsagePath or externalUsageWritePath setting); hidden without one."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "显示方式",
+        "description": "卡片：每个会话一张按状态颜色描边的卡片，第二行写它在做什么和上下文大小。紧凑：每个会话一行，只有状态色条、标题、状态和时间。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Layout",
+        "description": "Cards: one card per session, framed in its state's colour, with what it is doing and its context size on the second line. Compact: one line per session with only the state bar, title, state and time."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "归档动画",
+        "description": "滑出：会话向右滑出再收起。粒子消散：会话从左到右化成状态颜色的粒子散开再收起。系统要求减少动画时直接移除。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Archive animation",
+        "description": "Slide: the session slides out to the right, then folds away. Dissolve: it turns into dust in its state's colour from left to right, then folds away. When Windows asks for less motion it goes at once."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "卡片光效",
+        "description": "只在「卡片」和「紧凑」显示方式下生效。粒子流苏：边框按状态颜色发光，进行中和等你处理的会呼吸，左侧飘着一条粒子流苏。渐变带：从右端铺开一层状态颜色的渐变，进行中和等你处理的更亮。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Card light effects",
+        "description": "Only in the Cards and Compact layouts. Sparkle band: cards glow in their state's colour, breathing while working or waiting on you, with a drifting band of sparks on the left. Gradient: a wash in that colour from the right end, brighter while working or waiting on you."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "会话来源",
+        "description": "会话在哪个程序里运行，比如 Orca、Windows Terminal、VS Code、Codex。正在运行的 Claude Code 会话会自动识别；岛屿启动前就结束的会话没有来源。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Session source",
+        "description": "The program a session runs in, such as Orca, Windows Terminal, VS Code or Codex. Running Claude Code sessions are recognized automatically; sessions that ended before the island started have no source."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "显示模型和推理强度"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Show the model and effort"
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "显示最近提问和正在用的工具",
+        "description": "进行中的会话在回复上方显示你最近一次的提问，运行时显示它正在调用的工具（如 Bash 命令、正在改的文件）。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Show the latest prompt and the tool in use",
+        "description": "Sessions in progress show your latest prompt above the reply and, while running, the tool they are calling (a Bash command, the file being edited)."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "会话卡片",
+        "title": "显示运行时长",
+        "description": "进行中的会话显示\"已运行多久\"，每秒更新；结束的显示这一轮\"用时多久\"。从最近一次提问开始算。"
+      },
+      "en": {
+        "group": "Session cards",
+        "title": "Show how long it has run",
+        "description": "A session in progress shows how long it has been running, updated every second; a finished one shows how long its last turn took. Counted from the latest prompt."
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "显示哪些 Agent",
+        "title": "显示 Claude Code 会话"
+      },
+      "en": {
+        "group": "Agents shown",
+        "title": "Show Claude Code sessions"
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "显示哪些 Agent",
+        "title": "显示 Codex 会话"
+      },
+      "en": {
+        "group": "Agents shown",
+        "title": "Show Codex sessions"
+      }
+    },
+    {
+      "page": "agents",
+      "zh-CN": {
+        "group": "隐藏会话",
+        "title": "添加规则"
+      },
+      "en": {
+        "group": "Hide sessions",
+        "title": "Add a rule"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "会话开始时"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "When a session starts"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "等待你确认或回答时"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "When it waits for your approval or answer"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "没处理时再提醒",
+        "description": "等你确认或回答的会话过了这么久还在等，再弹一次并再响一次；每次等待只补一次"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "Remind again",
+        "description": "If a session is still waiting for your approval or answer this long, pop up and sound once more; once per wait"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "会话完成时"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "When a session finishes"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "会话出错时"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "When a session fails"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "额度提醒",
+        "description": "Claude 或 Codex 的 5 小时、7 天用量到这条线时，在收起的岛屿上提醒一次；额度刷新后再提醒一次"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "Usage alert",
+        "description": "When Claude's or Codex's 5-hour or 7-day usage reaches this level, say so once on the collapsed island, and again when it resets"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "弹出提醒",
+        "title": "停留时间"
+      },
+      "en": {
+        "group": "Pop-up alerts",
+        "title": "Stays open for"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "用 Bark 推送到手机",
+        "description": "Agent 等你、完成或出错时推到 iPhone 上的 Bark"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "Push to your phone with Bark",
+        "description": "When an agent needs you, finishes or fails, push it to Bark on your iPhone"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "服务器地址",
+        "description": "留空用 Bark 官方服务器；自建 bark-server 时填它的地址"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "Server",
+        "description": "Leave empty for Bark's own server; for a self-hosted bark-server, enter its address"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "设备 Key",
+        "description": "在 Bark 里复制推送地址粘贴进来，或只粘贴其中那串字母数字"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "Device key",
+        "description": "Copy the push URL in Bark and paste it here, or just the letters and digits in it"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "等你确认或回答时"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "When it waits for you"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "完成一轮时"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "When a turn finishes"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "出错时"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "When it fails"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "什么时候推",
+        "description": "离开电脑一段时间（没有键盘鼠标操作，或已锁屏）才推，坐在电脑前时不打扰手机"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "When to push",
+        "description": "Only once you have been away (no keyboard or mouse, or locked) for a while, so the phone stays quiet while you sit at the computer"
+      }
+    },
+    {
+      "page": "agentAlerts",
+      "zh-CN": {
+        "group": "手机推送",
+        "title": "发送测试"
+      },
+      "en": {
+        "group": "Phone push",
+        "title": "Send a test"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "音效",
+        "title": "AI Agent 音效",
+        "description": "Agent 开始、完成、出错或等你处理时播放提示音。"
+      },
+      "en": {
+        "group": "Sounds",
+        "title": "AI agent sounds",
+        "description": "Plays a sound when an agent starts, finishes, fails or needs you."
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "音效",
+        "title": "音量"
+      },
+      "en": {
+        "group": "Sounds",
+        "title": "Volume"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "音效",
+        "title": "使用的音效"
+      },
+      "en": {
+        "group": "Sounds",
+        "title": "Sounds to use"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "会话开始",
+        "description": "新的 Claude Code 或 Codex 会话"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Session starts",
+        "description": "A new Claude Code or Codex session"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "任务完成",
+        "description": "Agent 完成了这一轮回复"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Task done",
+        "description": "The agent finished its turn"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "任务出错",
+        "description": "这一轮失败或接口出错"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Task failed",
+        "description": "The turn failed or the API returned an error"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "需要审批",
+        "description": "等你允许它执行操作"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Needs approval",
+        "description": "Waiting for you to allow an action"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "需要回答",
+        "description": "Claude 向你提了一个问题"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Needs an answer",
+        "description": "Claude asked you a question"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "发出消息",
+        "description": "你给会话发了新的提问"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Prompt sent",
+        "description": "You sent a session a new prompt"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "上下文快满",
+        "description": "Claude Code 开始压缩上下文"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Context nearly full",
+        "description": "Claude Code starts compacting its context"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "闲置等你",
+        "description": "会话完成 5 分钟后你还没看过"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Waiting for you",
+        "description": "A session finished 5 minutes ago and you haven't looked"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "额度快用完",
+        "description": "Claude 或 Codex 的用量到了提醒线"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Usage running low",
+        "description": "Claude's or Codex's usage reached your alert level"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "事件",
+        "title": "额度已刷新",
+        "description": "到过提醒线的额度重置了"
+      },
+      "en": {
+        "group": "Events",
+        "title": "Usage reset",
+        "description": "A limit that reached your alert level has reset"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "什么时候不响",
+        "title": "会话的窗口在前台时不响",
+        "description": "你已经在看这个终端或编辑器时不再提醒。会话开始和发出消息不受影响。"
+      },
+      "en": {
+        "group": "When to stay quiet",
+        "title": "Quiet while the session's window is in front",
+        "description": "No sound when you are already looking at that terminal or editor. Session starts and sent prompts still play."
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "什么时候不响",
+        "title": "静音时段",
+        "description": "这段时间里不播放任何音效；结束时间早于开始时间就跨过午夜。"
+      },
+      "en": {
+        "group": "When to stay quiet",
+        "title": "Quiet hours",
+        "description": "No sounds at all in this time; an end before the start runs past midnight."
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "什么时候不响",
+        "title": "时段"
+      },
+      "en": {
+        "group": "When to stay quiet",
+        "title": "Hours"
+      }
+    },
+    {
+      "page": "sounds",
+      "zh-CN": {
+        "group": "音效包",
+        "title": "导入音效包"
+      },
+      "en": {
+        "group": "Sound packs",
+        "title": "Import a sound pack"
+      }
+    },
+    {
+      "page": "agentApprovals",
+      "zh-CN": {
+        "group": "在岛上审批",
+        "title": "在岛上允许或拒绝 Agent 的操作"
+      },
+      "en": {
+        "group": "Approve on the island",
+        "title": "Allow or deny agent actions on the island"
+      }
+    },
+    {
+      "page": "agentApprovals",
+      "zh-CN": {
+        "group": "在岛上审批",
+        "title": "终端在前台时也在岛上弹出",
+        "description": "关闭时，会话所在的终端或编辑器窗口在前台，就直接在终端里审批。"
+      },
+      "en": {
+        "group": "Approve on the island",
+        "title": "Also while the terminal is in front",
+        "description": "Off, a request from a session whose terminal or editor window is in front is approved in that terminal."
+      }
+    },
+    {
+      "page": "agentConnect",
+      "zh-CN": {
+        "group": "AI Agent 状态灯",
+        "title": "当前状态"
+      },
+      "en": {
+        "group": "AI Agent status light",
+        "title": "Status"
+      }
+    },
+    {
+      "page": "agentConnect",
+      "zh-CN": {
+        "group": "AI Agent 状态灯",
+        "title": "Codex"
+      },
+      "en": {
+        "group": "AI Agent status light",
+        "title": "Codex"
+      }
+    },
+    {
+      "page": "agentConnect",
+      "zh-CN": {
+        "group": "AI Agent 状态灯",
+        "title": "Claude Code"
+      },
+      "en": {
+        "group": "AI Agent status light",
+        "title": "Claude Code"
+      }
+    },
+    {
+      "page": "agentConnect",
+      "zh-CN": {
+        "group": "回复状态标记",
+        "title": "让 Claude 在回复末尾标出在等什么（推荐打开）"
+      },
+      "en": {
+        "group": "Reply status marker",
+        "title": "Have Claude mark what it waits for at the end of each reply (recommended)"
+      }
+    },
+    {
+      "page": "plugins",
+      "zh-CN": {
+        "group": "",
+        "title": "允许运行第三方插件"
+      },
+      "en": {
+        "group": "",
+        "title": "Allow third-party plugins"
+      }
+    },
+    {
+      "page": "plugins",
+      "zh-CN": {
+        "group": "",
+        "title": "插件目录",
+        "description": "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\plugins"
+      },
+      "en": {
+        "group": "",
+        "title": "Plugins folder",
+        "description": "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\plugins"
+      }
+    },
+    {
+      "page": "about",
+      "zh-CN": {
+        "group": "",
+        "title": "重置所有设置",
+        "description": "外观、行为和各功能的设置恢复默认。待办、笔记、邮箱、插件、密钥、样式预设和界面语言都保留。"
+      },
+      "en": {
+        "group": "",
+        "title": "Reset all settings",
+        "description": "Appearance, behaviour and every feature's settings go back to their defaults. Todos, notes, mailboxes, plugins, keys, style presets and the interface language are kept."
+      }
+    },
+    {
+      "page": "about",
+      "zh-CN": {
+        "group": "",
+        "title": "退出岛屿",
+        "description": "和托盘菜单里的「退出」一样；要再打开，从开始菜单或桌面快捷方式启动。"
+      },
+      "en": {
+        "group": "",
+        "title": "Quit the island",
+        "description": "Same as Quit in the tray menu; start it again from the Start menu or a desktop shortcut."
+      }
+    }
+  ]
+}

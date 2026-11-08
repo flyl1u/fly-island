@@ -26,7 +26,7 @@ export function AgentSessionFilterSettings() {
   return (
     <SettingsGroup title={text.title} footer={text.hint}>
       {filters.map((filter, index) => (
-        <SettingsRow
+        <SettingsRow searchable={false}
           key={`${filter.kind}:${filter.value}`}
           title={<span className="session-filter__value">{filter.value}</span>}
           description={text.kinds[filter.kind]}

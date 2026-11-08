@@ -37,6 +37,7 @@ export const PAGES = [
   "plugin-views.html?test=1",
   "settings.html?test=1",
   "settings-sidebar.html",
+  "settings-search.html",
   "agent-remote.html",
   "tucked-hover.html",
 ];
@@ -152,7 +153,7 @@ const READ_STATE = `(() => {
   });
 })()`;
 
-async function runPage(session, url) {
+export async function runPage(session, url) {
   session.errors.length = 0;
   await session.send("Page.navigate", { url });
   const deadline = Date.now() + PAGE_TIMEOUT_MS;
@@ -167,20 +168,20 @@ async function runPage(session, url) {
   return { outcome: "timed out", state, errors: [...session.errors] };
 }
 
-async function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const filters = process.argv.slice(2);
-  const pages = PAGES.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
-  if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
+/**
+ * Starts this checkout's Vite on a free port and a headless browser, and runs `use` with a
+ * DevTools session and the regression pages' base URL; stops both afterwards. `firstPage` is
+ * fetched first, to know Vite answers.
+ */
+export async function withRegressionBrowser(root, firstPage, use) {
   const vitePort = Number(process.env.REGRESSION_PORT ?? await freePort());
   const debugPort = await freePort();
   const base = `http://localhost:${vitePort}/tests/regression/`;
   const profile = mkdtempSync(path.join(tmpdir(), "fly-regression-"));
   const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], { cwd: root, stdio: "ignore" });
   let browser;
-  let failed = 0;
   try {
-    await waitForHttp(`${base}${pages[0].split("?")[0]}`, 30_000);
+    await waitForHttp(`${base}${firstPage.split("?")[0]}`, 30_000);
     // Something else answering on the port (Vite could not take it) is not this checkout's code.
     if (vite.exitCode !== null) throw new Error(`Vite exited (port ${vitePort} taken?); not testing whatever answers there.`);
     // Pages that do not pick a language follow the browser's, and their checks are written
@@ -188,19 +189,9 @@ async function main() {
     const language = process.env.REGRESSION_LANG ?? "zh-CN";
     browser = spawn(findBrowser(), ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
     const session = await connect(debugPort);
-    for (const page of pages) {
-      const started = Date.now();
-      const { outcome, state, errors } = await runPage(session, base + page);
-      const seconds = ((Date.now() - started) / 1000).toFixed(1);
-      console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
-      if (outcome !== "passed") {
-        failed += 1;
-        const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
-        for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
-        for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
-      }
-    }
+    const result = await use({ session, base });
     session.close();
+    return result;
   } finally {
     browser?.kill();
     vite.kill();
@@ -213,6 +204,28 @@ async function main() {
       console.warn(`Could not remove ${profile}: ${error instanceof Error ? error.message : error}`);
     }
   }
+}
+
+async function main() {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const filters = process.argv.slice(2);
+  const pages = PAGES.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
+  if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
+  let failed = 0;
+  await withRegressionBrowser(root, pages[0], async ({ session, base }) => {
+    for (const page of pages) {
+      const started = Date.now();
+      const { outcome, state, errors } = await runPage(session, base + page);
+      const seconds = ((Date.now() - started) / 1000).toFixed(1);
+      console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
+      if (outcome !== "passed") {
+        failed += 1;
+        const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
+        for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
+        for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
+      }
+    }
+  });
   console.log(failed === 0 ? `All ${pages.length} regression pages passed.` : `${failed} of ${pages.length} regression pages did not pass.`);
   return failed === 0 ? 0 : 1;
 }

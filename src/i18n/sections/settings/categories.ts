@@ -53,7 +53,7 @@ export const zhCN: SettingsCategoriesText = {
   search: {
     placeholder: "搜索设置",
     clear: "清除搜索",
-    empty: "没有匹配的页面",
+    empty: "没有匹配的设置",
   },
   expand: (group) => `展开「${group}」`,
   collapse: (group) => `折叠「${group}」`,
@@ -111,7 +111,7 @@ export const en: SettingsCategoriesText = {
   search: {
     placeholder: "Search settings",
     clear: "Clear search",
-    empty: "No matching page",
+    empty: "No matching settings",
   },
   expand: (group) => `Expand ${group}`,
   collapse: (group) => `Collapse ${group}`,

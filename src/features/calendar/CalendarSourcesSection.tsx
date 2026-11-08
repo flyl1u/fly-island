@@ -103,7 +103,7 @@ export function CalendarSourcesSection() {
         footer={sources.length === 0 ? text.noSources : undefined}
       >
         {sources.map((source) => (
-          <SettingsRow
+          <SettingsRow searchable={false}
             key={source.id}
             title={source.name}
             description={source.kind === "ics" ? text.icsFrom(source.host) : `${source.username} · ${source.host}`}
