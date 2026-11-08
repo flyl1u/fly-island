@@ -27,9 +27,17 @@ const MAX_PASSES = 40;
 /** Attribution lines this repo's commits must not carry (AGENTS.md; .githooks/commit-msg). */
 const ATTRIBUTION = /^(Co-Authored-By: Claude|🤖 Generated with \[Claude Code\])/im;
 
-/** Subjects of the commits whose messages carry an attribution line. */
-export function attributedCommits(commits) {
-  return commits.filter(({ body }) => ATTRIBUTION.test(body)).map(({ subject }) => subject);
+/**
+ * Subjects of the commits whose messages carry an attribution line. Only commits authored by
+ * `ownEmail` (this clone's user.email) count: a contributor's merged pull request keeps its own
+ * messages. With no email known, every commit counts.
+ */
+export function attributedCommits(commits, ownEmail = "") {
+  const own = ownEmail.trim().toLowerCase();
+  return commits
+    .filter(({ author = "" }) => !own || author.trim().toLowerCase() === own)
+    .filter(({ body }) => ATTRIBUTION.test(body))
+    .map(({ subject }) => subject);
 }
 
 export function needsRust(files) {
@@ -97,19 +105,28 @@ function run(command, env = {}) {
 /** The commits being landed, or [] when unknown. */
 function landingCommits() {
   try {
-    return git(["log", "origin/main..HEAD", "--format=%s%x1f%B%x1e"])
+    return git(["log", "origin/main..HEAD", "--format=%ae%x1f%s%x1f%B%x1e"])
       .split("").map((entry) => entry.trim()).filter(Boolean)
       .map((entry) => {
-        const [subject, body] = entry.split("");
-        return { subject, body };
+        const [author, subject, body] = entry.split("");
+        return { author, subject, body };
       });
   } catch {
     return [];
   }
 }
 
+/** This clone's commit email, so only its own commits are held to the attribution rule. */
+function ownEmail() {
+  try {
+    return git(["config", "user.email"]).trim();
+  } catch {
+    return "";
+  }
+}
+
 function main() {
-  const attributed = attributedCommits(landingCommits());
+  const attributed = attributedCommits(landingCommits(), ownEmail());
   if (attributed.length) {
     console.error(`[land-check] remove the Claude attribution lines from: ${attributed.join("; ")}`);
     return 1;

@@ -43,7 +43,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ├── packages/            # 插件开发者工具（pnpm workspace）：fly-island-plugin（Node SDK、CLI、模拟宿主）、create-fly-island-plugin（脚手架）、powershell/FlyIsland.Plugin；vscode-extension（切到会话终端的 VS Code 扩展，不在 workspace 里，`pnpm dlx @vscode/vsce package --no-dependencies` 打包）；不进入岛屿的发布产物
 ├── plugins/             # 插件市场：examples/ 示例插件源码（PowerShell，含 lib/focusd.ps1），schema/ 协议描述，sdk/ 单文件 SDK（pnpm sdk:build 从 packages/ 生成），packages/ 打包好的 zip，index.json 与 index.json.sig 给切换前的旧版岛屿的市场索引（pnpm plugins:index 生成；新版岛屿读 TixXin/focusd-plugins），signing-keys.json 可信公钥（编译进岛屿）；不进入发布产物
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；plugins/ 插件索引、签名与 SDK 生成；根目录放开发流程脚本：合并队列的检查（land-check.mjs）与 dev 同步（land-sync-dev.mjs）、行数检查、浏览器回归页运行器（run-regression.mjs）、dev 前停止运行中的岛屿
-├── .githooks/           # pre-push：合并队列的推送保护与检查；commit-msg：拒绝 Claude 署名行（core.hooksPath 指向这里）
+├── .githooks/           # pre-push：合并队列的推送保护与检查；commit-msg：拒绝 Claude 署名行（只管本仓库自己的提交，合入的外部 PR 可以带；core.hooksPath 指向这里）
 ├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，plugins/ 插件开发，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
 ├── DESIGN.md            # 已确认的界面设计约定：全局方向；各区域的约定在 docs/design/
 └── README*.md           # 中英文项目说明

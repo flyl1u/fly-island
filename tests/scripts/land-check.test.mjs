@@ -31,6 +31,17 @@ test("commits carrying a Claude attribution line are caught", () => {
   assert.deepEqual(attributedCommits(commits), ["feat: a", "docs: c"]);
 });
 
+test("only this repo's own commits are held to it; a contributor's may carry the line", () => {
+  const line = "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>";
+  const commits = [
+    { subject: "feat: mine", author: "Me@Example.com", body: `feat: mine${line}` },
+    { subject: "feat: theirs", author: "louis@example.com", body: `feat: theirs${line}` },
+  ];
+  assert.deepEqual(attributedCommits(commits, "me@example.com"), ["feat: mine"]);
+  // Without a configured email every commit is checked.
+  assert.deepEqual(attributedCommits(commits, ""), ["feat: mine", "feat: theirs"]);
+});
+
 test("cargo test runs only when a landing touches what the Rust side reads", () => {
   assert.equal(needsRust(["src/App.tsx", "docs/plugins/README.md"]), false);
   assert.equal(needsRust(["src-tauri/src/lib.rs"]), true);
