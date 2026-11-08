@@ -14,7 +14,7 @@ use std::{
 
 use serde::Serialize;
 
-use super::remote_fetch::{write_island_config, Connection, RemoteFile, Reply, TAIL_BYTES};
+use super::remote_fetch::{write_island_config, Connection, Forward, RemoteFile, Reply, TAIL_BYTES};
 use super::notifications::saved_notifications;
 use super::remote_hosts::{self, SshTarget};
 use super::remote_setup::REMOTE_NOTIFICATIONS_DIR;
@@ -199,15 +199,22 @@ fn fetch(host: &str, target: &SshTarget, app_dir: &Path, window_ms: i64) {
 }
 
 /// Opens a connection through the island's ssh config, which forwards the approval endpoint's
-/// port back here; when that config cannot be made, through the user's own with no forward, and
-/// `approval_error` says why.
+/// port back here; when that config cannot be made, or connecting through it fails, through the
+/// user's own with no forward, and `approval_error` says why. The island's config is rebuilt from
+/// `ssh -G` and can miss what the user's works with (a value with a space, a rewritten
+/// ProxyJump), and the sessions must still come.
 fn open_connection(host: &str, target: &SshTarget, app_dir: &Path, approval_error: &mut Option<String>) -> Result<Connection, String> {
-    let Some(port) = crate::agent_approval::endpoint().map(|endpoint| endpoint.port) else {
+    let endpoint = crate::agent_approval::endpoint()
+        .map(|endpoint| endpoint.port)
+        .zip(crate::agent_approval::remote_hook_token(host));
+    let Some((port, token)) = endpoint else {
         *approval_error = Some("The approval endpoint is not running".into());
         return Connection::open(target, None, None);
     };
-    match write_island_config(app_dir, host, target, Some(port)) {
-        Ok(config) => Connection::open(target, Some(&config), Some(port)),
+    let island = write_island_config(app_dir, host, target, Some(port))
+        .and_then(|config| Connection::open(target, Some(&config), Some(Forward { port, token })));
+    match island {
+        Ok(connection) => Ok(connection),
         Err(error) => {
             *approval_error = Some(error);
             Connection::open(target, None, None)

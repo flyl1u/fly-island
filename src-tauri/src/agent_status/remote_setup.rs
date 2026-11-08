@@ -47,10 +47,11 @@ pub struct RemoteResult {
 fn remote_hook_entries() -> Vec<(&'static str, Value)> {
     // `$$` (the hook's own shell) tells apart hooks running at once. The file name carries the
     // hook signature (`focusd-agent-`), so Install/Repair finds and replaces its own entries.
+    // The input carries tool arguments, so the files are the user's alone.
     let hook = json!({
         "type": "command",
         "command": format!(
-            "d=\"$HOME/{REMOTE_NOTIFICATIONS_DIR}\"; mkdir -p \"$d\" && f=\"$d/focusd-agent-$$-$(date +%s%N)\" && cat > \"$f.tmp\" && mv \"$f.tmp\" \"$f.json\""
+            "umask 077; d=\"$HOME/{REMOTE_NOTIFICATIONS_DIR}\"; mkdir -p \"$d\" && f=\"$d/focusd-agent-$$-$(date +%s%N)\" && cat > \"$f.tmp\" && mv \"$f.tmp\" \"$f.json\""
         ),
         "timeout": 5
     });
@@ -62,13 +63,14 @@ fn remote_hook_entries() -> Vec<(&'static str, Value)> {
     ]
 }
 
-/// What a remote computer's approval hooks post to (paths on the endpoint), and the token they carry.
+/// What a remote computer's approval hooks post to (paths on the endpoint). Their token is not
+/// here: the hooks read it from the port file (remote_fetch.rs `APPROVAL_PORT_FILE`), which only
+/// the user can read, so `~/.claude/settings.json` never holds it.
 pub(super) struct RemoteApproval {
     pub(super) host: String,
     pub(super) path: String,
     pub(super) question_path: String,
     pub(super) activity_path: String,
-    pub(super) token: String,
 }
 
 /// `claude/permission-request` from `http://127.0.0.1:47830/claude/permission-request`.
@@ -84,7 +86,6 @@ impl RemoteApproval {
             path: path_of(agent_approval::hook_url(Agent::ClaudeCode))?,
             question_path: path_of(agent_approval::question_hook_url())?,
             activity_path: path_of(agent_approval::activity_hook_url())?,
-            token: agent_approval::remote_hook_token(host)?,
         })
     }
 
@@ -97,10 +98,9 @@ impl RemoteApproval {
     fn curl(&self, path: &str, marker: &str, wait: &str) -> String {
         let header = |text: String| format!(" -H '{text}'");
         format!(
-            "read N P H 2>/dev/null < \"$HOME/{APPROVAL_PORT_FILE}\" && [ \"$H\" = \"$(uname -n)\" ] && \
-             curl -s --noproxy '*' {wait} -H \"Host: 127.0.0.1:$P\"{}{}{}{} --data-binary @- \"http://127.0.0.1:$N/{path}\" || exit 1",
+            "read N P H K 2>/dev/null < \"$HOME/{APPROVAL_PORT_FILE}\" && [ \"$H\" = \"$(uname -n)\" ] && [ -n \"$K\" ] && \
+             curl -s --noproxy '*' {wait} -H \"Host: 127.0.0.1:$P\" -H \"Authorization: Bearer $K\"{}{}{} --data-binary @- \"http://127.0.0.1:$N/{path}\" || exit 1",
             header("Content-Type: application/json".into()),
-            header(format!("Authorization: Bearer {}", self.token)),
             header(format!("X-FocuSD-Remote: {}", self.host)),
             header(format!("{APPROVAL_HOOK_MARKER_HEADER}: {FOCUSD_AGENT_HOOK_SIGNATURE}{marker}")),
         )
@@ -147,6 +147,7 @@ pub(super) fn with_remote_hooks(text: &str, approval: Option<&RemoteApproval>) -
 
 /// The script that replaces `~/<path>` with `text`, refusing a symlink as write_text_file does
 /// here. It writes a full copy first, so a dropped connection never leaves the file cut short.
+/// A file it creates is the user's alone; an existing one keeps its permissions.
 pub(super) fn write_script(path: &str, text: &str) -> Result<String, String> {
     if text.lines().any(|line| line == END_OF_TEXT) {
         return Err(format!("~/{path} holds the line {END_OF_TEXT}"));
@@ -154,7 +155,7 @@ pub(super) fn write_script(path: &str, text: &str) -> Result<String, String> {
     // The heredoc ends the text with one newline.
     let body = text.strip_suffix('\n').unwrap_or(text);
     Ok(format!(
-        "set -e\nf=\"$HOME/{path}\"\nif [ -L \"$f\" ]; then echo \"~/{path} is a symlink to $(readlink \"$f\"); the island does not change it\" >&2; exit 4; fi\nmkdir -p \"$(dirname \"$f\")\"\n\
+        "set -e\numask 077\nf=\"$HOME/{path}\"\nif [ -L \"$f\" ]; then echo \"~/{path} is a symlink to $(readlink \"$f\"); the island does not change it\" >&2; exit 4; fi\nmkdir -p \"$(dirname \"$f\")\"\n\
          cat > \"$f.focusd-tmp\" <<'{END_OF_TEXT}'\n{body}\n{END_OF_TEXT}\n\
          cat \"$f.focusd-tmp\" > \"$f\"\nrm -f \"$f.focusd-tmp\"\n"
     ))
@@ -247,7 +248,7 @@ mod tests {
     #[test]
     #[ignore]
     fn a_forwarded_approval_hook_reaches_the_island_and_the_port_file_goes_with_the_connection() {
-        use super::super::remote_fetch::{write_island_config, Connection};
+        use super::super::remote_fetch::{write_island_config, Connection, Forward};
         use std::io::{Read, Write};
         let Ok(host) = std::env::var("FOCUSD_SSH_TEST_HOST") else { return };
         let target = SshTarget { destination: host, port: None };
@@ -270,7 +271,6 @@ mod tests {
             path: "claude/permission-request".into(),
             question_path: String::new(),
             activity_path: String::new(),
-            token: "ab12".into(),
         };
         let hook = format!("printf '{{}}' | ( {} ); echo \" exit=$?\"\n", approval.curl(&approval.path, "approval", "-f -m 20"));
         let port_file = format!("cat \"$HOME/{APPROVAL_PORT_FILE}\" 2>/dev/null; echo end\n");
@@ -278,17 +278,21 @@ mod tests {
 
         let app_dir = std::env::temp_dir().join(format!("focusd-ssh-config-{}", std::process::id()));
         let config = write_island_config(&app_dir, "test", &target, Some(47_839)).unwrap();
-        let mut connection = Connection::open(&target, Some(&config), Some(47_839)).unwrap();
+        let forward = Forward { port: 47_839, token: "ab12".into() };
+        let mut connection = Connection::open(&target, Some(&config), Some(forward)).unwrap();
         // The first request may go before ssh has said which port it got.
         connection.fetch(1, &std::collections::HashMap::new()).unwrap();
         std::thread::sleep(std::time::Duration::from_secs(1));
         connection.fetch(1, &std::collections::HashMap::new()).unwrap();
         let written = run(&port_file);
         println!("port file: {written:?}");
-        assert!(written.ends_with(" 47839") || written.contains(" 47839 "), "{written}");
+        assert!(written.contains(" 47839 ") && written.ends_with(" ab12"), "{written}");
+        let mode = run(&format!("stat -c %a \"$HOME/{APPROVAL_PORT_FILE}\"\n"));
+        assert_eq!(mode, "600", "only the user may read the token");
         assert_eq!(run(&hook), "{\"ok\":\"yes\"} exit=0");
         let request = seen.join().unwrap();
         assert!(request.contains("Host: 127.0.0.1:47839\r\n") && request.contains("X-FocuSD-Remote: test\r\n"), "{request}");
+        assert!(request.contains("Authorization: Bearer ab12\r\n"), "{request}");
 
         drop(connection);
         std::thread::sleep(std::time::Duration::from_secs(2));
@@ -304,7 +308,6 @@ mod tests {
             path: "claude/permission-request".into(),
             question_path: "claude/ask-user-question".into(),
             activity_path: "claude/activity".into(),
-            token: "ab12".into(),
         };
         let with = with_remote_hooks("{}", Some(&approval)).unwrap();
         assert_eq!(with_remote_hooks(&with, Some(&approval)).unwrap(), with);
@@ -312,8 +315,10 @@ mod tests {
         let permission = config["hooks"]["PermissionRequest"].as_array().unwrap();
         assert_eq!(permission.len(), 2);
         let curl = permission[1]["hooks"][0]["command"].as_str().unwrap();
-        assert!(curl.starts_with("read N P H 2>/dev/null < \"$HOME/.focusd-island/approval-port\" && [ \"$H\" = \"$(uname -n)\" ] && curl -s --noproxy '*' -f -m 145 -H \"Host: 127.0.0.1:$P\" "));
-        assert!(curl.contains("-H 'Authorization: Bearer ab12' -H 'X-FocuSD-Remote: zcm6'"));
+        assert!(curl.starts_with("read N P H K 2>/dev/null < \"$HOME/.focusd-island/approval-port\" && [ \"$H\" = \"$(uname -n)\" ] && [ -n \"$K\" ] && curl -s --noproxy '*' -f -m 145 -H \"Host: 127.0.0.1:$P\" -H \"Authorization: Bearer $K\" "));
+        // The token comes from the port file, which only the user can read; settings.json may be
+        // readable by others on a shared server.
+        assert!(curl.contains("-H 'X-FocuSD-Remote: zcm6'"));
         assert!(curl.ends_with("--data-binary @- \"http://127.0.0.1:$N/claude/permission-request\" || exit 1"));
         assert_eq!(path_of(Some("http://127.0.0.1:47830/claude/activity".into())).as_deref(), Some("claude/activity"));
         assert_eq!(config["hooks"]["PreToolUse"][0]["matcher"], "AskUserQuestion");
@@ -329,6 +334,7 @@ mod tests {
         let script = write_script(".claude/CLAUDE.md", "# Rules\n\n$HOME and `ticks` stay\n").unwrap();
         assert!(script.contains("<<'FOCUSD_ISLAND_END_OF_TEXT'\n# Rules\n\n$HOME and `ticks` stay\nFOCUSD_ISLAND_END_OF_TEXT\n"));
         assert!(script.contains("cat \"$f.focusd-tmp\" > \"$f\""));
+        assert!(script.starts_with("set -e\numask 077\n"));
         assert!(write_script(".claude/CLAUDE.md", "a\nFOCUSD_ISLAND_END_OF_TEXT\nb").is_err());
     }
 }

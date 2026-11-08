@@ -43,10 +43,14 @@ const HEAD_MAX_BYTES: u64 = 1024 * 1024;
 /// `S <path>` (unchanged) or `F <size> <mtime> <head bytes> <tail bytes> <path>` followed by those
 /// bytes; then, when the registry exists, `R` and `L <session id>` per running session; then `E`.
 /// Its errors go nowhere: over days they would fill the stderr pipe and stall the connection.
-/// A request's first line may add the forward's port there and the endpoint's port here: they go
-/// into the port file with this node's name, and the file goes when the script ends (the island
-/// closed stdin, or the connection dropped), unless another connection has written its own since.
+/// A request's first line may add the forward's port there, the endpoint's port here and the
+/// host's approval token: they go into the port file with this node's name, and the file goes
+/// when the script ends (the island closed stdin, or the connection dropped), unless another
+/// connection has written its own since. Everything it writes is the user's alone (`umask 077`):
+/// the port file holds the token, and the hooks read it from there rather than from
+/// `~/.claude/settings.json`, which other users of a shared server may be able to read.
 const SCRIPT: &str = r#"exec 2>/dev/null
+umask 077
 T=__TAIL__
 cd "$HOME" || exit 3
 PF=__PORT_FILE__
@@ -92,9 +96,9 @@ fi
 echo E
 }
 echo FOCUSD_READY
-while read -r W N P; do
-  if [ -n "$P" ]; then
-    MINE="$N $P $NODE"
+while read -r W N P K; do
+  if [ -n "$K" ]; then
+    MINE="$N $P $NODE $K"
     if [ "$(cat "$PF" 2>/dev/null)" != "$MINE" ]; then
       mkdir -p "$(dirname "$PF")" && printf '%s\n' "$MINE" > "$PF.$$" && mv -f "$PF.$$" "$PF"
     fi
@@ -110,8 +114,8 @@ done
 /// Ends a request's list of known files.
 const END_OF_KNOWN: &str = "FOCUSD_KNOWN";
 const READY: &[u8] = b"FOCUSD_READY";
-/// Under the remote home: `<forward port there> <endpoint port here> <node name>` while a
-/// connection with the forward is open.
+/// Under the remote home, readable only by its owner: `<forward port there> <endpoint port here>
+/// <node name> <approval token>` while a connection with the forward is open.
 pub(super) const APPROVAL_PORT_FILE: &str = ".focusd-island/approval-port";
 
 /// A file as the remote computer last reported it.
@@ -141,11 +145,11 @@ fn session_script() -> String {
 }
 
 /// One request: files changed in the last `window_minutes`, minus what `known` has, and the
-/// forward's port there with the endpoint's here when there is one. A path with a line break
-/// would end the list early; session files never have one.
-pub(super) fn request(window_minutes: i64, known: &HashMap<String, RemoteFile>, forward: Option<(u16, u16)>) -> String {
+/// forward's port there with the endpoint's here and the host's token when there is one. A path
+/// with a line break would end the list early; session files never have one.
+pub(super) fn request(window_minutes: i64, known: &HashMap<String, RemoteFile>, forward: Option<(u16, &Forward)>) -> String {
     let mut request = match forward {
-        Some((there, here)) => format!("{} {there} {here}\n", window_minutes.max(1)),
+        Some((there, forward)) => format!("{} {there} {} {}\n", window_minutes.max(1), forward.port, forward.token),
         None => format!("{}\n", window_minutes.max(1)),
     };
     for (path, file) in known.iter().filter(|(path, _)| !path.contains('\n')) {
@@ -168,6 +172,13 @@ fn allocated_port(said: &str) -> Option<u16> {
         .find_map(|line| line.split_once("Allocated port ")?.1.split(' ').next()?.parse().ok())
 }
 
+/// The approval endpoint a connection's reverse forward leads to, and the token that host's hooks
+/// carry (agent_approval `remote_hook_token`, hex).
+pub(super) struct Forward {
+    pub(super) port: u16,
+    pub(super) token: String,
+}
+
 /// A standing connection to one host running the fetch script, one request at a time. Dropping
 /// it ends ssh; should the island itself die, its closed stdin ends the remote loop.
 pub(super) struct Connection {
@@ -178,14 +189,14 @@ pub(super) struct Connection {
     stderr: Arc<Mutex<String>>,
     /// The endpoint port the island config forwards to, and the port sshd picked for it there
     /// once ssh has said so.
-    forward_to: Option<u16>,
+    forward_to: Option<Forward>,
     forward: Option<u16>,
 }
 
 impl Connection {
     /// Connects with `config` (`island_config`, forwarding to `forward_to`), or with the user's
     /// own ssh config and every forward cleared when there is none.
-    pub(super) fn open(target: &SshTarget, config: Option<&Path>, forward_to: Option<u16>) -> Result<Self, String> {
+    pub(super) fn open(target: &SshTarget, config: Option<&Path>, forward_to: Option<Forward>) -> Result<Self, String> {
         let mut child = ssh_command(target, config).spawn().map_err(|error| format!("Failed to start ssh: {error}"))?;
         let (Some(stdin), Some(stdout), Some(stderr)) = (child.stdin.take(), child.stdout.take(), child.stderr.take()) else {
             let _ = child.kill();
@@ -205,7 +216,7 @@ impl Connection {
                 }
             }
         });
-        let forward_to = config.and(forward_to);
+        let forward_to = forward_to.filter(|_| config.is_some());
         let mut connection = Self { child, stdin, stdout: BufReader::new(stdout), stderr: said, forward_to, forward: None };
         if connection.stdin.write_all(session_script().as_bytes()).and_then(|()| connection.stdin.flush()).is_err() {
             return Err(connection.failure("Failed to send the script to ssh".into()));
@@ -225,7 +236,7 @@ impl Connection {
         if self.forward.is_none() && self.forward_to.is_some() {
             self.forward = allocated_port(&self.stderr.lock().unwrap_or_else(PoisonError::into_inner));
         }
-        let request = request(window_minutes, known, self.forward.zip(self.forward_to));
+        let request = request(window_minutes, known, self.forward.zip(self.forward_to.as_ref()));
         if self.stdin.write_all(request.as_bytes()).and_then(|()| self.stdin.flush()).is_err() {
             return Err(self.failure("The connection closed".into()));
         }
@@ -467,7 +478,8 @@ mod tests {
         let app_dir = std::env::temp_dir().join(format!("focusd-ssh-config-{}", std::process::id()));
         // Forwarding a port nothing listens on here: Claude Code there would get "refused".
         let config = write_island_config(&app_dir, "test", &target, Some(47_839)).unwrap();
-        let mut connection = Connection::open(&target, Some(&config), Some(47_839)).unwrap();
+        let forward = Forward { port: 47_839, token: "ab12".into() };
+        let mut connection = Connection::open(&target, Some(&config), Some(forward)).unwrap();
         let first = connection.fetch(24 * 60, &HashMap::new()).unwrap();
         let opened = started.elapsed();
         let known: HashMap<String, RemoteFile> = first
@@ -501,7 +513,8 @@ mod tests {
     fn a_request_lists_the_window_and_known_files() {
         let known = HashMap::from([(".claude/projects/p/a.jsonl".to_string(), RemoteFile { size: 7, mtime: 9 })]);
         assert_eq!(request(120, &known, None), "120\n7 9 .claude/projects/p/a.jsonl\nFOCUSD_KNOWN\n");
-        assert_eq!(request(0, &HashMap::new(), Some((43_495, 47_830))), "1 43495 47830\nFOCUSD_KNOWN\n");
+        let forward = Forward { port: 47_830, token: "ab12".into() };
+        assert_eq!(request(0, &HashMap::new(), Some((43_495, &forward))), "1 43495 47830 ab12\nFOCUSD_KNOWN\n");
         let said = "Warning: Permanently added 'ln2'\nAllocated port 43495 for remote forward to 127.0.0.1:47830\n";
         assert_eq!(allocated_port(said), Some(43_495));
         assert_eq!(allocated_port("Allocated port x for remote forward\n"), None);
