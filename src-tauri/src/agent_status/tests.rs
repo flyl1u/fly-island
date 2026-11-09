@@ -161,6 +161,7 @@ fn session_windows_are_matched_by_folder_and_title() {
         window("✳ 插件市场功能", "windowsterminal"),
         window("PS E:\\Projects\\MioPicFlow>", "windowsterminal"),
         window("Codex", "codex"),
+        window("ChatGPT", "chatgpt"),
     ];
     let find = |folder: Option<&str>, title: Option<&str>, is_codex: bool| {
         best_window(
@@ -191,6 +192,10 @@ fn session_windows_are_matched_by_folder_and_title() {
     assert_eq!(find(Some("elsewhere"), None, true), Some(5));
     assert_eq!(find(Some("elsewhere"), None, false), None);
     assert_eq!(find(None, Some("x"), false), None);
+    // The desktop app's executable is ChatGPT.exe now; without the old Codex.exe window it is the one.
+    let without_old_app: Vec<WindowCandidate> = windows.iter().filter(|w| w.app != "codex").cloned().collect();
+    let hints = SessionHints { folder: Some("elsewhere"), ancestors: &[], title: None, is_codex: true };
+    assert_eq!(best_window(&without_old_app, &hints), Some(5));
 
     assert_eq!(
         app_name(r"C:\Program Files\Microsoft VS Code\Code.exe"),
@@ -1562,4 +1567,41 @@ fn each_saved_notification_is_a_file_and_the_newest_of_a_session_decides() {
     assert!(saved_notifications(&dir, now + 11 * 60 * 1000, false).compacting.is_empty());
     assert_eq!(saved_notifications(&dir, now + 25 * 60 * 60 * 1000, true), Default::default());
     assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
+}
+
+#[test]
+fn codex_sessions_without_a_hook_record_find_their_app_or_process() {
+    use super::codex_process::{only_process_in, rollout_path, same_folder, started_in_desktop_app};
+
+    let (home, _) = temp_dirs();
+    let desktop_id = "01a1c097-c52e-7320-bf1a-404d0556f500";
+    let cli_id = "01a1c076-add8-7892-a4bb-57570dfef8e6";
+    let day = home.join(".codex").join("sessions").join("2026").join("11").join("09");
+    let older_day = home.join(".codex").join("sessions").join("2026").join("10").join("31");
+    fs::create_dir_all(&day).unwrap();
+    fs::create_dir_all(&older_day).unwrap();
+    let meta = |id: &str, originator: &str| {
+        json!({"type": "session_meta", "payload": {"id": id, "cwd": r"D:\a", "originator": originator}}).to_string() + "\n"
+    };
+    fs::write(day.join(format!("rollout-2026-11-09T05-55-34-{desktop_id}.jsonl")), meta(desktop_id, "Codex Desktop")).unwrap();
+    fs::write(older_day.join(format!("rollout-2026-10-31T01-00-00-{cli_id}.jsonl")), meta(cli_id, "codex_cli_rs")).unwrap();
+
+    assert!(rollout_path(&home, desktop_id).is_some());
+    assert!(rollout_path(&home, cli_id).is_some_and(|path| path.starts_with(&older_day)));
+    assert_eq!(rollout_path(&home, "missing"), None);
+    assert_eq!(rollout_path(&home, "../escape"), None);
+    assert!(started_in_desktop_app(&home, desktop_id));
+    assert!(!started_in_desktop_app(&home, cli_id));
+    assert!(!started_in_desktop_app(&home, "missing"));
+
+    // Working folders read from a process keep a trailing separator and may differ in case.
+    assert!(same_folder(r"D:\Projects\App\", r"d:\projects\app"));
+    assert!(same_folder("D:/Projects/app", r"D:\Projects\app"));
+    assert!(!same_folder(r"D:\Projects\app2", r"D:\Projects\app"));
+    assert!(!same_folder("", ""));
+    let processes = vec![(10, r"D:\a\".to_string()), (11, r"D:\b\".to_string()), (12, r"D:\b".to_string())];
+    assert_eq!(only_process_in(&processes, r"D:\A"), Some(10));
+    // Two Codex CLIs in one folder: neither is guessed.
+    assert_eq!(only_process_in(&processes, r"D:\b"), None);
+    assert_eq!(only_process_in(&processes, r"D:\c"), None);
 }

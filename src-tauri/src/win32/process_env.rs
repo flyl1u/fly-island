@@ -1,7 +1,9 @@
-//! Reading one environment variable of another process (the island's own user), such as the
-//! `ORCA_TERMINAL_HANDLE` Orca gives every program in a terminal tab. Windows has no API for
+//! Reading one environment variable, or the working folder, of another process (the island's
+//! own user), such as the `ORCA_TERMINAL_HANDLE` Orca gives every program in a terminal tab, or
+//! the folder a Codex CLI runs in. Windows has no API for
 //! this, so it follows the documented-in-practice x64 layout: the PEB's ProcessParameters
-//! (offset 0x20), whose Environment pointer is at 0x80 and EnvironmentSize at 0x3F0.
+//! (offset 0x20), whose CurrentDirectory is at 0x38, Environment pointer at 0x80 and
+//! EnvironmentSize at 0x3F0.
 //! Anything that does not read back cleanly gives `None`.
 
 use std::{ffi::c_void, mem::size_of};
@@ -17,6 +19,8 @@ use windows::{
 use super::process::ProcessHandle;
 
 const PEB_PROCESS_PARAMETERS: usize = 0x20;
+/// CurrentDirectory (a CURDIR, whose DosPath UNICODE_STRING comes first).
+const PARAMETERS_CURRENT_DIRECTORY: usize = 0x38;
 const PARAMETERS_ENVIRONMENT: usize = 0x80;
 const PARAMETERS_ENVIRONMENT_SIZE: usize = 0x3F0;
 /// Environment blocks are a few KB; a larger size means the layout did not match.
@@ -37,6 +41,36 @@ struct BasicInformation {
 /// The value of `name` (matched case-insensitively, like Windows does) in the environment of
 /// `process_id`; `None` when it is unset or the process cannot be read.
 pub(crate) fn environment_variable(process_id: u32, name: &str) -> Option<String> {
+    let (process, parameters) = open_parameters(process_id)?;
+    let environment = read_usize(&process, parameters + PARAMETERS_ENVIRONMENT)?;
+    let size = read_usize(&process, parameters + PARAMETERS_ENVIRONMENT_SIZE)?;
+    if environment == 0 || size == 0 || size > MAX_ENVIRONMENT_BYTES || size % 2 != 0 {
+        return None;
+    }
+    let mut block = vec![0u16; size / 2];
+    read_into(&process, environment, block.as_mut_ptr() as *mut c_void, size)?;
+    find_variable(&block, name)
+}
+
+/// The working folder of `process_id` (`D:\Projects\app\`, with the trailing separator
+/// Windows keeps), from the process parameters' CurrentDirectory.DosPath; `None` when unreadable.
+pub(crate) fn current_directory(process_id: u32) -> Option<String> {
+    let (process, parameters) = open_parameters(process_id)?;
+    // UNICODE_STRING: Length (bytes) at +0, then, aligned, the Buffer pointer at +8.
+    let mut length = 0u16;
+    read_into(&process, parameters + PARAMETERS_CURRENT_DIRECTORY, &mut length as *mut u16 as *mut c_void, size_of::<u16>())?;
+    let buffer = read_usize(&process, parameters + PARAMETERS_CURRENT_DIRECTORY + 8)?;
+    let length = usize::from(length);
+    if buffer == 0 || length == 0 || length % 2 != 0 {
+        return None;
+    }
+    let mut path = vec![0u16; length / 2];
+    read_into(&process, buffer, path.as_mut_ptr() as *mut c_void, length)?;
+    Some(String::from_utf16_lossy(&path))
+}
+
+/// The opened process and the address of its RTL_USER_PROCESS_PARAMETERS.
+fn open_parameters(process_id: u32) -> Option<(ProcessHandle, usize)> {
     if cfg!(not(target_pointer_width = "64")) {
         return None;
     }
@@ -61,16 +95,8 @@ pub(crate) fn environment_variable(process_id: u32, name: &str) -> Option<String
     if status.is_err() || info.peb_base_address == 0 {
         return None;
     }
-
     let parameters = read_usize(&process, info.peb_base_address + PEB_PROCESS_PARAMETERS)?;
-    let environment = read_usize(&process, parameters + PARAMETERS_ENVIRONMENT)?;
-    let size = read_usize(&process, parameters + PARAMETERS_ENVIRONMENT_SIZE)?;
-    if environment == 0 || size == 0 || size > MAX_ENVIRONMENT_BYTES || size % 2 != 0 {
-        return None;
-    }
-    let mut block = vec![0u16; size / 2];
-    read_into(&process, environment, block.as_mut_ptr() as *mut c_void, size)?;
-    find_variable(&block, name)
+    (parameters != 0).then_some((process, parameters))
 }
 
 /// `NAME=value` entries of a UTF-16 environment block, separated by NULs.
@@ -113,6 +139,15 @@ mod tests {
         assert_eq!(environment_variable(std::process::id(), "path"), expected);
         assert_eq!(environment_variable(std::process::id(), "FOCUSD_SURELY_UNSET_VARIABLE"), None);
         assert_eq!(environment_variable(u32::MAX, "PATH"), None);
+    }
+
+    #[test]
+    fn reads_the_working_folder_of_the_current_process_the_same_as_std() {
+        let expected = std::env::current_dir().ok().map(|dir| dir.to_string_lossy().trim_end_matches('\\').to_lowercase());
+        let actual = current_directory(std::process::id()).map(|dir| dir.trim_end_matches('\\').to_lowercase());
+        assert!(expected.is_some());
+        assert_eq!(actual, expected);
+        assert_eq!(current_directory(u32::MAX), None);
     }
 
     #[test]

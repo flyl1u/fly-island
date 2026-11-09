@@ -5,6 +5,7 @@
 
 use std::path::Path;
 
+use super::codex_process;
 use super::editor_terminal::{self, EditorTerminal};
 use super::focus_log::Attempt;
 use super::orca;
@@ -40,11 +41,13 @@ pub(super) fn still_running(seen: &SeenSession, started_now: Option<u64>) -> boo
 }
 
 /// The session's process and its ancestors: from its SessionStart record (Claude Code and Codex),
-/// else Claude Code's registry, else the process remembered for it. A session cleared or resumed
-/// under a new id keeps running in the recorded process.
+/// else Claude Code's registry or, for Codex, the only Codex CLI working in the session's folder
+/// (`cwd`), else the process remembered for it. A session cleared or resumed under a new id keeps
+/// running in the recorded process.
 fn process_chain(
     is_codex: bool,
     session_id: Option<&str>,
+    cwd: Option<&str>,
     record: Option<&SessionRecord>,
     seen: Option<&SeenSession>,
     log: &mut Attempt,
@@ -64,6 +67,12 @@ fn process_chain(
             log.note(format!("process=registry({})", chain.len()));
             return chain;
         }
+    }
+    // Codex keeps no registry; its hooks may never have run (not trusted yet, or sandboxed).
+    if let Some(pid) = cwd.filter(|_| is_codex).and_then(codex_process::cli_process_in) {
+        let chain = ancestor_chain(pid, &win32::process_tree::parent_process_ids(), win32::process_times::start_time);
+        log.note(format!("process=codex-folder({})", chain.len()));
+        return chain;
     }
     match seen {
         Some(seen) if still_running(seen, win32::process_times::start_time(seen.pid)) => {
@@ -130,6 +139,23 @@ fn orca_handle(lookup: &Lookup, chain: &[u32], seen: Option<&SeenSession>, log: 
     found("orca-folder", by_folder, log)
 }
 
+/// For a Codex session with no process to follow that was started in the desktop app: the app's
+/// executable name while one of its windows is open. Otherwise an editor showing the same folder
+/// would win the title and folder match over the app that really shows the session.
+fn codex_desktop_app(lookup: &Lookup, chain: &[u32]) -> Option<String> {
+    if !lookup.is_codex || !chain.is_empty() {
+        return None;
+    }
+    let home_dir = windows_home_dir().ok()?;
+    if !codex_process::started_in_desktop_app(&home_dir, lookup.session_id?) {
+        return None;
+    }
+    codex_process::CODEX_DESKTOP_APPS
+        .iter()
+        .find(|app| window_focus::open_app_exe(app).is_some())
+        .map(|app| app.to_string())
+}
+
 /// Finds and brings forward the window of a session; false when no window could be found.
 pub(super) fn focus_session(
     app_dir: Option<&Path>,
@@ -146,13 +172,17 @@ pub(super) fn focus_session(
     if record.is_some() {
         log.note("record=yes");
     }
-    let chain = process_chain(is_codex, session_id, record.as_ref(), seen.as_ref(), &mut log);
+    let chain = process_chain(is_codex, session_id, cwd, record.as_ref(), seen.as_ref(), &mut log);
     let lookup = Lookup { app_dir, record: record.as_ref(), is_codex, session_id, cwd, title };
     let handle = orca_handle(&lookup, &chain, seen.as_ref(), &mut log);
 
     // With no process to follow, the program the session was last seen in is the best guess.
     let remembered_app = seen.as_ref().and_then(|seen| seen.host_exe.as_deref()).map(app_name);
-    let prefer_app = if handle.is_some() { Some(orca::ORCA_APP.to_string()) } else { remembered_app };
+    let prefer_app = if handle.is_some() {
+        Some(orca::ORCA_APP.to_string())
+    } else {
+        remembered_app.or_else(|| codex_desktop_app(&lookup, &chain))
+    };
     if let Some(app) = &prefer_app {
         log.note(format!("prefer={app}"));
     }
@@ -227,7 +257,8 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
             let mut log = Attempt::new(&session.provider, Some(id));
             let seen = session_memory::get(app_dir, id);
             let record = app_dir.and_then(|dir| session_records::read(dir, id));
-            process_chain(session.provider == "codex", Some(id), record.as_ref(), seen.as_ref(), &mut log).contains(&front)
+            let is_codex = session.provider == "codex";
+            process_chain(is_codex, Some(id), None, record.as_ref(), seen.as_ref(), &mut log).contains(&front)
         })
         .map(|session| session.session_id.clone())
         .collect()
