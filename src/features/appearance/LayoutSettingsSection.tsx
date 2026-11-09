@@ -1,114 +1,99 @@
+import { SettingsChoice } from "../../components/settings/SettingsChoice";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { SliderControl } from "../../components/controls/SliderControl";
-import { ToggleControl } from "../../components/controls/ToggleControl";
-import { AppearanceModeControl } from "./AppearanceModeControl";
-import { LIQUID_GLASS_ENABLED } from "./settings";
-import type { IslandSettings } from "./types";
+import { DEFAULT_SETTINGS, MAX_ISLAND_CORNER_RADIUS, MAX_MAX_PANEL_HEIGHT, MIN_ISLAND_CORNER_RADIUS, MIN_MAX_PANEL_HEIGHT } from "./settings";
+import type { IslandCornerShape, IslandSettings } from "./types";
 
+const scale = (value: number) => `${value.toFixed(2)}x`;
+const pixels = (value: number) => `${Math.round(value)} px`;
+
+/** Appearance → Size, then Corners: the island's scale and panel height, and its corner shape and radii. */
 export function LayoutSettingsSection({
   settings,
   onSettingsChange,
+  onPreviewIsland,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  /** Called while a slider moves with the island state it changes: expanded or not. */
+  onPreviewIsland?: (expanded: boolean) => void;
 }) {
   const t = useTranslation();
+  const text = t.settings.layout;
+  const change = (next: IslandSettings, previewExpanded?: boolean) => {
+    onSettingsChange(next);
+    if (previewExpanded !== undefined) {
+      onPreviewIsland?.(previewExpanded);
+    }
+  };
+  const shapes = [
+    { value: "squircle", label: text.cornerShapeSquircle },
+    { value: "round", label: text.cornerShapeRound },
+  ] as const;
 
   return (
-    <section className="settings-section settings-section--layout">
-      <div className="settings-section__header">
-        <span>{t.settings.layout.title}</span>
-      </div>
-      <AppearanceModeControl
-        value={settings.appearanceMode}
-        onChange={(appearanceMode) =>
-          onSettingsChange({ ...settings, appearanceMode })
-        }
-      />
-      <div className="appearance-mode-control">
-        <span>{t.settings.appearance.font}</span>
-        <div className="appearance-mode-control__segments" role="group" aria-label={t.settings.appearance.fontLabel}>
-          {([["system", t.settings.appearance.systemFont], ["pixel", t.settings.appearance.pixelFont]] as const).map(([fontFamily, label]) => (
-            <button
-              key={fontFamily}
-              className={settings.fontFamily === fontFamily ? "appearance-mode-control--active" : ""}
-              type="button"
-              aria-pressed={settings.fontFamily === fontFamily}
-              onClick={() => onSettingsChange({ ...settings, fontFamily })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {LIQUID_GLASS_ENABLED && settings.appearanceMode === "liquidGlass" && (
-        <SliderControl
-          label={t.settings.appearance.glassStrength}
-          value={settings.glassIntensity}
-          min={25}
-          max={100}
+    <>
+      <SettingsGroup title={text.sizeTitle}>
+        <SettingsSliderRow
+          title={text.collapsedScale}
+          value={settings.collapsedScale}
+          min={0.75}
+          max={1.4}
+          step={0.01}
+          format={scale}
+          defaultValue={DEFAULT_SETTINGS.collapsedScale}
+          resetLabel={text.resetToDefault}
+          onChange={(collapsedScale) => change({ ...settings, collapsedScale }, false)}
+        />
+        <SettingsSliderRow
+          title={text.expandedScale}
+          value={settings.expandedScale}
+          min={0.75}
+          max={1.4}
+          step={0.01}
+          format={scale}
+          defaultValue={DEFAULT_SETTINGS.expandedScale}
+          resetLabel={text.resetToDefault}
+          onChange={(expandedScale) => change({ ...settings, expandedScale }, true)}
+        />
+        <SettingsSliderRow
+          title={text.maxPanelHeight}
+          value={settings.maxPanelHeight}
+          min={MIN_MAX_PANEL_HEIGHT}
+          max={MAX_MAX_PANEL_HEIGHT}
           step={1}
-          suffix="%"
-          onChange={(glassIntensity) =>
-            onSettingsChange({ ...settings, glassIntensity })
+          format={pixels}
+          defaultValue={DEFAULT_SETTINGS.maxPanelHeight}
+          resetLabel={text.resetToDefault}
+          onChange={(maxPanelHeight) => change({ ...settings, maxPanelHeight }, true)}
+        />
+      </SettingsGroup>
+      <SettingsGroup title={text.cornersTitle}>
+        <SettingsRow
+          title={text.islandCornerShape}
+          control={
+            <SettingsChoice<IslandCornerShape>
+              value={settings.islandCornerShape}
+              options={shapes}
+              ariaLabel={text.islandCornerShape}
+              onChange={(islandCornerShape) => change({ ...settings, islandCornerShape }, true)}
+            />
           }
         />
-      )}
-      <SliderControl
-        label={t.settings.layout.opacity}
-        value={settings.opacity}
-        min={50}
-        max={100}
-        step={1}
-        suffix="%"
-        onChange={(opacity) => onSettingsChange({ ...settings, opacity })}
-      />
-      <SliderControl
-        label={t.settings.layout.collapsedScale}
-        value={settings.collapsedScale}
-        min={0.75}
-        max={1.4}
-        step={0.01}
-        suffix="x"
-        onChange={(collapsedScale) => onSettingsChange({ ...settings, collapsedScale })}
-      />
-      <SliderControl
-        label={t.settings.layout.expandedScale}
-        value={settings.expandedScale}
-        min={0.75}
-        max={1.4}
-        step={0.01}
-        suffix="x"
-        onChange={(expandedScale) => onSettingsChange({ ...settings, expandedScale })}
-      />
-      <SliderControl
-        label={t.settings.layout.marginY}
-        value={settings.marginY}
-        min={0}
-        max={160}
-        step={1}
-        suffix="px"
-        onChange={(marginY) => onSettingsChange({ ...settings, marginY })}
-      />
-      <ToggleControl
-        label={t.settings.layout.showCollapsedText}
-        checked={settings.showCollapsedText}
-        onChange={(showCollapsedText) =>
-          onSettingsChange({ ...settings, showCollapsedText })
-        }
-      />
-      <ToggleControl
-        label={t.settings.layout.showIdleTodoCount}
-        checked={settings.showIdleTodoCount}
-        onChange={(showIdleTodoCount) =>
-          onSettingsChange({ ...settings, showIdleTodoCount })
-        }
-      />
-      <ToggleControl
-        label={t.settings.layout.showTitle}
-        checked={settings.showTitle}
-        onChange={(showTitle) => onSettingsChange({ ...settings, showTitle })}
-      />
-    </section>
+        <SettingsSliderRow
+          title={text.islandCornerRadius}
+          value={settings.islandCornerRadius}
+          min={MIN_ISLAND_CORNER_RADIUS}
+          max={MAX_ISLAND_CORNER_RADIUS}
+          step={1}
+          format={pixels}
+          defaultValue={DEFAULT_SETTINGS.islandCornerRadius}
+          resetLabel={text.resetToDefault}
+          onChange={(islandCornerRadius) => change({ ...settings, islandCornerRadius }, true)}
+        />
+      </SettingsGroup>
+    </>
   );
 }

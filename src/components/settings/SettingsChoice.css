@@ -1,0 +1,39 @@
+.settings-choice {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-white-a06);
+  border-radius: var(--radius-md);
+}
+
+.settings-choice__option {
+  height: 28px;
+  padding: 0 12px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.settings-choice__option:hover {
+  color: var(--color-text);
+}
+
+.settings-choice__option--active {
+  color: var(--color-text);
+  background: var(--color-white-a12);
+  font-weight: 500;
+}
+
+.settings-choice__option:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}

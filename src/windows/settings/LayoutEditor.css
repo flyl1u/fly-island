@@ -1,7 +1,7 @@
 .settings-layout {
   height: 100%;
   display: grid;
-  grid-template-columns: 148px minmax(0, 1fr);
+  grid-template-columns: 172px minmax(0, 1fr);
   min-height: 0;
 }
 
@@ -37,39 +37,56 @@
   display: none;
 }
 
+.settings-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
 .settings-page__title {
   min-height: 28px;
   display: flex;
   align-items: center;
   margin: 0;
   color: var(--color-text);
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
+/* Each section is a card; the card, not bold type, shows what belongs together. */
 .settings-section {
   position: relative;
   display: grid;
   gap: var(--space-lg);
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
+  padding: var(--space-2xl) 16px;
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a06);
+  border-radius: var(--radius-lg);
   box-shadow: none;
 }
 
+/* Sections that are themselves a list of cards (plugins, market, About links) skip the outer card. */
+.settings-section--list {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+/* Section titles are quiet labels above the rows, a step below the page title. */
 .settings-section__header {
-  min-height: 28px;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-lg);
   padding-bottom: 0;
-  color: var(--color-text-strong);
+  color: var(--color-text-muted);
   border-bottom: 0;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
@@ -82,21 +99,52 @@
   border-radius: 0;
 }
 
-/* Each page starts right under its title; later sections are divided by a rule. */
-.settings-section + .settings-section {
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-white-a10);
-}
-
 .settings-section--attention {
-  margin-right: -10px;
-  margin-left: -10px;
-  padding: 12px 10px 10px;
   background: rgba(255, 209, 102, 0.08);
   border: 1px solid rgba(255, 209, 102, 0.42);
   border-radius: var(--radius-lg);
   box-shadow:
     0 0 0 4px rgba(255, 209, 102, 0.12),
     inset 0 1px 0 var(--color-white-a08);
+}
+
+.settings-section__hint {
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/*
+ * The panel is keyed by page, so it remounts on every switch: the new page's title and
+ * cards rise in a few pixels and fade in, one after another, instead of jumping in.
+ * `backwards` fill so nothing stays on a compositing layer once it has played.
+ */
+.editor-panel > * {
+  animation: settings-page-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.editor-panel > :nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.editor-panel > :nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.editor-panel > :nth-child(n + 4) {
+  animation-delay: 90ms;
+}
+
+@keyframes settings-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-panel > * {
+    animation: none;
+  }
 }

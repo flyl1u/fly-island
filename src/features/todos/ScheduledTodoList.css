@@ -1,0 +1,76 @@
+.todo-notebook--upcoming {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.scheduled-list {
+  gap: 10px;
+}
+
+.scheduled-list__group {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.scheduled-list__date {
+  color: #7453d6;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.scheduled-list__item {
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 3px 4px 3px 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(35, 31, 26, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.scheduled-list__item > span {
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.scheduled-list__item > button {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--color-ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.scheduled-list__item > button:hover {
+  color: #c05065;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.scheduled-list__item > button:focus-visible {
+  outline: 2px solid rgba(116, 83, 214, 0.58);
+  outline-offset: 1px;
+}
+
+/* Doubled class: TodoNotebook.css, which sets the base toggle, loads after this file. */
+.todo-page-toggle.todo-page-toggle--count {
+  width: auto;
+  align-items: center;
+  min-width: 25px;
+  display: inline-flex;
+  gap: 3px;
+  padding: 0 7px;
+}
+
+.todo-page-toggle__count {
+  margin-left: 1px;
+  font-size: 10px;
+  font-weight: 600;
+}

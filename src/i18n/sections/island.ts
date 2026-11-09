@@ -1,0 +1,65 @@
+export type IslandText = {
+  appName: string;
+  focusing: (taskTitle: string) => string;
+  pendingTodos: (count: number) => string;
+  agentSession: (provider: string, title: string) => string;
+  openMusic: string;
+  collapse: string;
+  collapseIsland: string;
+  minimizeToTray: string;
+  tuckToTop: string;
+  resetPosition: string;
+  resetPositionLabel: string;
+  editor: string;
+  todoList: string;
+  music: string;
+  clipboardHistory: string;
+  shelf: string;
+  calendar: string;
+  shelfCount: (count: number) => string;
+  layoutEditor: string;
+};
+
+export const zhCN: IslandText = {
+  appName: "fly-island",
+  focusing: (taskTitle) => `正在专注：${taskTitle}`,
+  pendingTodos: (count) => `剩余${count}个待办`,
+  agentSession: (provider, title) => `${provider} 正在处理：${title}`,
+  openMusic: "打开音乐控制",
+  collapse: "收起",
+  collapseIsland: "收起岛屿",
+  minimizeToTray: "最小化到托盘",
+  tuckToTop: "收起到屏幕顶部",
+  resetPosition: "复位",
+  resetPositionLabel: "回到主屏顶部居中",
+  editor: "岛屿编辑",
+  todoList: "任务清单",
+  music: "Music",
+  clipboardHistory: "剪贴板历史",
+  shelf: "文件中转",
+  calendar: "日历",
+  shelfCount: (count) => `文件中转里有 ${count} 个文件`,
+  layoutEditor: "布局编辑",
+};
+
+export const en: IslandText = {
+  appName: "fly-island",
+  focusing: (taskTitle) => `Focusing: ${taskTitle}`,
+  pendingTodos: (count) => (count === 1 ? "1 todo left" : `${count} todos left`),
+  agentSession: (provider, title) => `${provider} is working on: ${title}`,
+  openMusic: "Open music controls",
+  collapse: "Collapse",
+  collapseIsland: "Collapse island",
+  minimizeToTray: "Minimize to tray",
+  tuckToTop: "Tuck to top edge",
+  resetPosition: "Reset",
+  resetPositionLabel: "Reset island to the top center of the primary screen",
+  editor: "Island editor",
+  todoList: "Tasks",
+  music: "Music",
+  clipboardHistory: "Clipboard history",
+  shelf: "File shelf",
+  calendar: "Calendar",
+  shelfCount: (count) => (count === 1 ? "1 file on the shelf" : `${count} files on the shelf`),
+  layoutEditor: "Layout editor",
+};

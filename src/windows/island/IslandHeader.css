@@ -32,7 +32,8 @@
 
 .island__header {
   display: grid;
-  grid-template-columns: auto 96px minmax(0, 1fr) auto;
+  /* The dots stay 96px wide unless plugin page buttons need more. */
+  grid-template-columns: auto minmax(96px, auto) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-md);
   min-height: 34px;
@@ -43,7 +44,7 @@
   align-items: center;
   gap: 9px;
   min-width: 0;
-  color: rgba(248, 246, 240, 0.92);
+  color: var(--text-1);
   font-size: 15px;
   font-weight: 700;
   line-height: 1;
@@ -55,7 +56,7 @@
 }
 
 .island--todo .island__title {
-  color: rgba(248, 246, 240, 0.92);
+  color: var(--text-1);
 }
 
 .island--todo .island__title svg {
@@ -67,7 +68,7 @@
   align-items: center;
   justify-self: start;
   gap: 9px;
-  width: 96px;
+  min-width: 96px;
   height: 34px;
   padding-left: 4px;
 }
@@ -79,7 +80,7 @@
   padding: 0;
   background: transparent;
   border: 0;
-  cursor: pointer;
+  cursor: default;
   outline: none;
 }
 
@@ -103,6 +104,11 @@
 }
 
 .dot-button:hover,
+.dot-button--calendar {
+  background: #ff9a76;
+  box-shadow: 0 0 12px rgba(255, 154, 118, 0.46);
+}
+
 .dot-button--active {
   transform: scale(1.18);
   opacity: 1;
@@ -111,11 +117,6 @@
 .dot-button:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.8);
   outline-offset: 4px;
-}
-
-.dot-button--layout {
-  background: #858585;
-  box-shadow: 0 0 10px rgba(133, 133, 133, 0.36);
 }
 
 .dot-button--todo {
@@ -129,8 +130,14 @@
 }
 
 .dot-button--clipboard {
-  background: var(--color-warning);
-  box-shadow: 0 0 12px rgba(255, 209, 102, 0.48);
+  /* Pink, not yellow: yellow means "needs attention" (agent status). */
+  background: #f4a7c4;
+  box-shadow: 0 0 12px rgba(244, 167, 196, 0.48);
+}
+
+.dot-button--shelf {
+  background: #6ee7c8;
+  box-shadow: 0 0 12px rgba(110, 231, 200, 0.46);
 }
 
 .dot-button--active {
@@ -148,7 +155,13 @@
 .dot-button--clipboard.dot-button--active {
   box-shadow:
     0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(255, 209, 102, 0.56);
+    0 0 14px rgba(244, 167, 196, 0.56);
+}
+
+.dot-button--shelf.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(110, 231, 200, 0.54);
 }
 
 .window-actions {
@@ -156,4 +169,44 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
+}
+
+/* The status light opens the Agent page; a ring marks it while that page is open. */
+.island__agent-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.island__agent-button:hover,
+.island__agent-button--active {
+  background: var(--color-white-a10);
+}
+
+.island__agent-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 1px;
+}
+
+/* Translation opened as an island page: the header button shows it is the open page. */
+.icon-button.island-translate-button--active {
+  color: #fff;
+  background: var(--color-white-a16);
+}
+
+.island-settings-button {
+  position: relative;
+}
+
+.icon-button.island-settings-button--active {
+  color: #fff;
+  background: var(--color-white-a16);
 }

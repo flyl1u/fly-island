@@ -1,0 +1,32 @@
+/* A usage alert on the collapsed island, laid out like the device alert line beside it. */
+.agent-quota-alert {
+  min-width: 0;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(var(--island-ink-rgb, 241, 240, 246), 0.92);
+}
+
+.agent-quota-alert__icon {
+  flex: none;
+}
+
+.agent-quota-alert--low .agent-quota-alert__icon {
+  color: #ff9f0a;
+}
+
+/* The session ring's "running" green. */
+.agent-quota-alert--reset .agent-quota-alert__icon {
+  color: #34c759;
+}
+
+.agent-quota-alert__text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

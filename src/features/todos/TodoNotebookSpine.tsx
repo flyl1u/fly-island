@@ -18,7 +18,8 @@ export function TodoNotebookSpine({
 }) {
   const t = useTranslation();
   const isTodayMode = pageMode === "today";
-  const isDailyMode = pageMode === "daily";
+  // The daily note and the upcoming list belong to today's group of pages.
+  const isDailyMode = pageMode === "daily" || pageMode === "upcoming";
 
   return (
     <div className="todo-notebook__spine">
@@ -31,7 +32,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.backToToday}
         aria-label={t.notebook.backToToday}
         onClick={onShowToday}
       />
@@ -48,7 +48,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.saveToday}
         aria-label={t.notebook.saveTodayMarkdown}
         onClick={onSaveToday}
       >
@@ -67,7 +66,6 @@ export function TodoNotebookSpine({
           .filter(Boolean)
           .join(" ")}
         type="button"
-        title={t.notebook.reviewSaved}
         aria-label={t.notebook.reviewSaved}
         onClick={onShowArchive}
       />

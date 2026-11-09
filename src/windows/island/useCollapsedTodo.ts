@@ -4,17 +4,22 @@ import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
-import { getCollapsedIslandWidth } from "./layout";
+import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
+
+// Stands in for the agent icon (16px plus gap) when sizing the island for a session title.
+const AGENT_ICON_TEXT = "MM";
 
 /**
  * What the collapsed island shows for todos: the active (or rotating) todo
- * title, otherwise the pending count, and the width that text needs.
+ * title, otherwise the pending count, and the width that text needs. A running
+ * agent's session title (`agentTitle`) takes the place of both when given.
  */
 export function useCollapsedTodo(
   todos: TodoItem[],
   activeTodoId: string | null,
   settings: IslandSettings,
   isRotationPaused: boolean,
+  agentTitle: string | null = null,
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
@@ -34,20 +39,25 @@ export function useCollapsedTodo(
     );
     return activeTodo?.title ?? null;
   }, [displayedTodoId, todos]);
-  const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle
-    ? todos.filter((todo) => !todo.completed).length
+  // "0 todos left" is not worth a hint; with nothing pending the bar shows what it
+  // would without a todo count.
+  const pendingTodoCount = pendingTodoIds.length;
+  const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
+    ? pendingTodoCount
     : null;
-  const collapsedIslandWidth = useMemo(
-    () =>
-      getCollapsedIslandWidth(
-        settings.showCollapsedText
-          ? collapsedTaskTitle ?? (collapsedTodoCount !== null
-            ? t.island.pendingTodos(collapsedTodoCount)
-            : settings.showTitle ? "fly-island" : "")
-          : "",
-      ),
-    [collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t],
-  );
+  const collapsedIslandWidth = useMemo(() => {
+    const text = settings.showCollapsedText
+      ? (agentTitle !== null ? AGENT_ICON_TEXT + agentTitle : null) ??
+        collapsedTaskTitle ?? (collapsedTodoCount !== null
+        ? t.island.pendingTodos(collapsedTodoCount)
+        : settings.showTitle ? "fly-island" : "")
+      : "";
+    return alignCollapsedIslandWidth(
+      getCollapsedIslandWidth(text),
+      window.innerWidth,
+      window.devicePixelRatio,
+    );
+  }, [agentTitle, collapsedTaskTitle, collapsedTodoCount, settings.showCollapsedText, settings.showTitle, t]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth };
 }

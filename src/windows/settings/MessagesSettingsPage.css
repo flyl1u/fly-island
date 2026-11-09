@@ -1,0 +1,10 @@
+.messages-settings__error {
+  color: #ff9aa9;
+  overflow-wrap: anywhere;
+}
+
+/* The mailbox list and the connect form keep their own layout, inset like a row. */
+.messages-settings__mailboxes,
+.messages-settings__connect {
+  padding: 8px 16px 12px;
+}

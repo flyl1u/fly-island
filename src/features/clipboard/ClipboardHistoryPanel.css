@@ -5,13 +5,14 @@
   gap: var(--space-lg);
   overflow: hidden;
   padding: 16px 18px 18px;
-  color: rgba(241, 240, 246, 0.92);
+  color: var(--text-1);
   background:
     radial-gradient(circle at 88% 12%, rgba(182, 169, 211, 0.12), transparent 32%),
     linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
     rgba(20, 20, 25, 0.88);
   background-size: auto;
-  border-radius: 22px;
+  border-radius: var(--island-panel-radius, 10px);
+  corner-shape: var(--island-corner-shape, round);
   box-shadow:
     0 16px 32px rgba(0, 0, 0, 0.24),
     inset 0 0 0 1px var(--color-white-a09);
@@ -46,12 +47,12 @@
   min-height: 118px;
   display: grid;
   place-items: center;
-  color: rgba(225, 223, 233, 0.42);
+  color: var(--text-3);
   background: transparent;
   border: 1px dashed rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-lg);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .clipboard-item__main:focus-visible,

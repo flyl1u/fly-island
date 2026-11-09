@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { hexToRgba } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
+import { inkOn } from "../../utils/color";
 import type { IslandMode } from "./types";
 
 /** CSS custom properties for the island stage, derived from the appearance settings and current size. */
@@ -14,15 +15,23 @@ export function getIslandStageStyle(
   const glassMaskOpacity = settings.opacity / 100;
 
   return ({
-    "--island-opacity": settings.opacity / 100,
+    // Classic opacity fades the fill only, so text and icons on it stay solid.
+    "--island-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
+    "--island-fill-alpha": settings.opacity / 100,
     "--island-scale": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
+    // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
+    "--island-corner-radius-size": settings.islandCornerRadius,
+    // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
+    "--island-corner-shape": settings.islandCornerShape,
     "--task-text-color": settings.taskTextColor,
     "--island-pulse-color": settings.pulseColor,
     "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),
     "--island-pulse-brightness": `${settings.pulseBrightness}%`,
     "--island-background-color": settings.islandBackgroundColor,
+    // Text drawn straight on the island (the Agent page) flips to dark on a light background.
+    "--island-ink-rgb": inkOn(settings.islandBackgroundColor),
     "--glass-intensity": glassStrength,
     "--glass-mask-opacity": glassMaskOpacity,
     "--glass-soft-alpha": 0.045 + glassStrength * 0.045,

@@ -1,0 +1,9 @@
+# Written with LF by tools (the Tauri CLI syncs Cargo.toml features; pnpm sdk:build
+# writes the generated SDK files). Checking them out with LF too keeps a build or
+# a regeneration from leaving them modified under core.autocrlf.
+src-tauri/Cargo.toml text eol=lf
+packages/fly-island-plugin/schema/*.json text eol=lf
+packages/fly-island-plugin/src/protocol.d.mts text eol=lf
+packages/create-fly-island-plugin/sdk/* text eol=lf
+plugins/sdk/** text eol=lf
+docs/plugins/api.md text eol=lf

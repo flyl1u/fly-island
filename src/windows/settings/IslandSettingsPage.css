@@ -1,0 +1,33 @@
+/* Settings as a page of the island: the same pages, fitted to the island's width. */
+.island-settings {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--color-page-text);
+  border-radius: var(--radius-md);
+}
+
+.island-settings select {
+  font: inherit;
+}
+
+.island-settings .settings-layout {
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+
+.island-settings .settings-sidebar {
+  padding: 10px 6px 6px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.island-settings .settings-sidebar__item {
+  gap: 7px;
+  padding-inline: 7px;
+}
+
+.island-settings .editor-panel {
+  height: 100%;
+  min-height: 0;
+  padding: 12px 14px 16px;
+  background: transparent;
+}

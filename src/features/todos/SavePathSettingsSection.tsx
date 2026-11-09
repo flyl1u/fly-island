@@ -1,9 +1,14 @@
 import { useEffect, useRef } from "react";
-import { Check, Save } from "lucide-react";
+import { Check } from "lucide-react";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsInput } from "../../components/settings/SettingsInput";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import type { SavePathState } from "./types";
 import "./SavePathSettingsSection.css";
 
+/** Todos → Saving: the folder daily Markdown files go to; Save keeps a typed path. */
 export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, highlightSavePath, onSaveDirectoryDraftChange, onSaveDirectory }: {
   saveDirectoryDraft: string;
   savePathState: SavePathState;
@@ -12,81 +17,49 @@ export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, hig
   onSaveDirectory: () => void;
 }) {
   const t = useTranslation();
-  const savePathPanelRef = useRef<HTMLElement | null>(null);
-  const savePathInputRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // Opened from the island to set a folder: bring the field into view and focus it.
   useEffect(() => {
-    if (!highlightSavePath) {
-      return;
-    }
-
+    if (!highlightSavePath) return;
     const frame = window.requestAnimationFrame(() => {
-      const editorPanel = savePathPanelRef.current?.closest(".editor-panel");
-
-      if (editorPanel instanceof HTMLElement && savePathPanelRef.current) {
-        editorPanel.scrollTo({
-          top: savePathPanelRef.current.offsetTop - 12,
-          behavior: "smooth",
-        });
-      }
-
-      savePathInputRef.current?.focus({ preventScroll: true });
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      inputRef.current?.focus({ preventScroll: true });
     });
-
     return () => window.cancelAnimationFrame(frame);
   }, [highlightSavePath]);
 
+  const saved = savePathState === "saved";
   return (
-    <section
-      className={[
-        "settings-section",
-        "settings-section--storage",
-        "save-path-panel",
-        highlightSavePath ? "save-path-panel--attention" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      ref={savePathPanelRef}
-    >
-      <div className="settings-section__header save-path-panel__header">
-        <span>{t.settings.save.title}</span>
-      </div>
-      <div className="save-path-row">
-        <label className="save-path-field">
-          <span>{t.settings.save.folder}</span>
-          <input
-            ref={savePathInputRef}
+    <div ref={panelRef} className={highlightSavePath ? "save-path-panel save-path-panel--attention" : "save-path-panel"}>
+      <SettingsGroup title={t.settings.save.title}>
+        <SettingsRow
+          title={t.settings.save.folder}
+          control={
+            saved ? (
+              <span className="save-path-saved">
+                <Check size={14} strokeWidth={2.6} aria-hidden="true" />
+                {t.settings.save.saved}
+              </span>
+            ) : (
+              <SettingsLinkButton onClick={onSaveDirectory}>{t.settings.save.save}</SettingsLinkButton>
+            )
+          }
+        >
+          <SettingsInput
+            ref={inputRef}
+            monospace
             value={saveDirectoryDraft}
             placeholder={t.settings.save.folderPlaceholder}
             aria-label={t.settings.save.folderLabel}
-            onChange={(event) =>
-              onSaveDirectoryDraftChange(event.currentTarget.value)
-            }
+            onChange={(event) => onSaveDirectoryDraftChange(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onSaveDirectory();
+            }}
           />
-        </label>
-        <button
-          className={[
-            "save-path-button",
-            savePathState === "saved" ? "save-path-button--saved" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          type="button"
-          onClick={onSaveDirectory}
-        >
-          {savePathState === "saved" ? (
-            <>
-              <Check className="save-check-icon" size={15} strokeWidth={2.6} />
-              <span>{t.settings.save.saved}</span>
-            </>
-          ) : (
-            <>
-              <Save size={14} strokeWidth={2.2} />
-              <span>{t.settings.save.save}</span>
-            </>
-          )}
-        </button>
-      </div>
-    </section>
+        </SettingsRow>
+      </SettingsGroup>
+    </div>
   );
 }

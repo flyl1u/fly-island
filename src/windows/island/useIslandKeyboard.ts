@@ -26,10 +26,5 @@ export function useIslandKeyboard(
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    clipboardShortcut,
-    clipboardShortcutEnabled,
-    onCollapse,
-    onToggleClipboardHistory,
-  ]);
+  }, [clipboardShortcut, clipboardShortcutEnabled, onCollapse, onToggleClipboardHistory]);
 }

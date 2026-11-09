@@ -6,10 +6,24 @@
   --color-text: #f8f6f0;
   --color-text-strong: rgba(248, 246, 240, 0.88);
   --color-text-muted: rgba(248, 246, 240, 0.72);
+  --color-text-subtle: rgba(248, 246, 240, 0.52);
   --color-page-text: #f7f5ef;
   --color-surface-dark: #111112;
 
+  /* Island text: one hue (--color-text), four alphas. Contrast on the island #030303 /
+     an inner panel #1e1e22: 1 = 17.5 / 14.2, 2 = 8.7 / 7.8, 3 = 5.7 / 5.4, placeholder = 3.8 / 3.8.
+     The first three are for reading (>= 4.5:1); placeholder only for input hints. */
+  --text-1: rgba(248, 246, 240, 0.96);
+  --text-2: rgba(248, 246, 240, 0.68);
+  --text-3: rgba(248, 246, 240, 0.54);
+  --text-placeholder: rgba(248, 246, 240, 0.42);
+
+  /* One type family; weights 400 and 600, 700 only at 15px and up. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+
   /* Translucent white overlays and borders */
+  --color-white-a04: rgba(255, 255, 255, 0.04);
+  --color-white-a06: rgba(255, 255, 255, 0.06);
   --color-white-a08: rgba(255, 255, 255, 0.08);
   --color-white-a09: rgba(255, 255, 255, 0.09);
   --color-white-a10: rgba(255, 255, 255, 0.1);
@@ -28,7 +42,13 @@
   --color-danger: #c75065;
   --color-warning: #ffd166;
   --color-agent-idle: #35e985;
-  --color-agent-running: #ff4d5e;
+  --color-agent-running: #3d8bff;
+  --color-agent-waiting: #ff9f43;
+  /* A session's light (agent-status/sessionLight.ts); the session ring draws the same colours. */
+  --color-light-needs: #ff453a;
+  --color-light-your-turn: #ffd60a;
+  --color-light-working: #34c759;
+  --color-light-done: #8e8e93;
   --color-focus-ring: rgba(143, 216, 255, 0.88);
   --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
 
@@ -36,6 +56,7 @@
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
+  --radius-xl: 12px;
   --radius-pill: 999px;
   --radius-circle: 50%;
 

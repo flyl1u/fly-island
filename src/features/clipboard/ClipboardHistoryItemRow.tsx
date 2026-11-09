@@ -37,11 +37,10 @@ export function ClipboardHistoryItemRow({
   const t = useTranslation();
 
   return (
-    <article className="clipboard-item" role="listitem" ref={elementRef}>
+    <article className="clipboard-item" role="listitem" ref={elementRef} data-clipboard-id={item.kind === "text" ? item.id : undefined}>
       <button
         className="clipboard-item__main"
         type="button"
-        title={t.clipboard.copyBack}
         onClick={() => onCopy(item.id)}
       >
         {item.kind === "image" ? (
@@ -87,7 +86,6 @@ export function ClipboardHistoryItemRow({
             />
             <button
               type="submit"
-              title={t.clipboard.saveNote}
               aria-label={t.clipboard.saveNote}
               disabled={isSavingNote}
             >
@@ -95,7 +93,6 @@ export function ClipboardHistoryItemRow({
             </button>
             <button
               type="button"
-              title={t.clipboard.cancelEdit}
               aria-label={t.clipboard.cancelEditNote}
               disabled={isSavingNote}
               onClick={onCancelEditNote}
@@ -107,7 +104,6 @@ export function ClipboardHistoryItemRow({
           <button
             className={item.note ? "clipboard-note clipboard-note--filled" : "clipboard-note"}
             type="button"
-            title={item.note ? t.clipboard.editNote(item.note) : t.clipboard.addNote}
             aria-label={
               item.note ? t.clipboard.editNote(item.note) : t.clipboard.addNoteLabel
             }
@@ -127,7 +123,6 @@ export function ClipboardHistoryItemRow({
             .filter(Boolean)
             .join(" ")}
           type="button"
-          title={item.favorite ? t.clipboard.unfavorite : t.clipboard.favorite}
           aria-label={
             item.favorite
               ? t.clipboard.unfavoriteItem
@@ -150,11 +145,6 @@ export function ClipboardHistoryItemRow({
             .filter(Boolean)
             .join(" ")}
           type="button"
-          title={
-            isConfirmingDelete
-              ? t.clipboard.confirmDelete
-              : t.clipboard.delete
-          }
           aria-label={t.clipboard.deleteItem}
           onClick={() => onDelete(item.id)}
           data-clipboard-confirm-control="true"
@@ -173,7 +163,6 @@ export function ClipboardHistoryItemRow({
             .filter(Boolean)
             .join(" ")}
           type="button"
-          title={isCopied ? t.clipboard.copied : t.clipboard.copy}
           aria-label={t.clipboard.copyBack}
           onClick={() => onCopy(item.id)}
         >

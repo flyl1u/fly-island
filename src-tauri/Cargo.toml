@@ -1,6 +1,6 @@
 [package]
 name = "focusd-island"
-version = "0.2.21"
+version = "3.0.0"
 description = "A compact floating island shell for Windows."
 authors = ["you"]
 edition = "2021"
@@ -20,9 +20,12 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 arboard = "3"
 base64 = "0.22"
-image = { version = "0.25", default-features = false, features = ["png"] }
-imap = "2.4"
-imap-proto = "0.10"
+flate2 = "1"
+clipboard-win = "5"
+getrandom = "0.3"
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
+imap = "3.0.0-alpha.15"
+imap-proto = "0.16"
 keyring = { version = "4.2", default-features = false, features = ["v1", "windows-native-keyring-store"] }
 mailparse = "0.17"
 native-tls = "0.2"
@@ -34,10 +37,18 @@ sha2 = "0.10"
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
+# No `zip`: it only unpacks v1-style .zip updates, and releases ship the bare
+# installer (createUpdaterArtifacts: true). Leaves out its old zip 4.x crate.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 window-vibrancy = "0.6"
-windows = { version = "0.61", features = ["ApplicationModel", "Foundation", "Foundation_Collections", "Media", "Media_Control", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_DataExchange", "Win32_System_LibraryLoader", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+windows = { version = "0.61", features = ["ApplicationModel", "Foundation", "Foundation_Collections", "Media", "Media_Control", "Storage_Streams", "UI_Notifications_Management", "Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_DataExchange", "Win32_System_Diagnostics_ToolHelp", "Win32_System_LibraryLoader", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Variant", "Win32_System_WinRT", "Win32_UI_Accessibility", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Wdk_System_Threading"] }
 windows-future = { version = "0.2", features = ["std"] }
+
+[lints.clippy]
+# Phase 6.3 起为 deny：unsafe 块必须有 SAFETY 注释，生产代码不用 unwrap / expect（测试放行见 clippy.toml）。
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
 
 [dev-dependencies]
 windows = { version = "0.61", features = ["ApplicationModel", "UI_Notifications_Management", "Win32_System_WinRT", "Win32_UI_Accessibility"] }

@@ -47,7 +47,6 @@ export function ClipboardFilters({
         {query && (
           <button
             type="button"
-            title={t.clipboard.clearSearch}
             aria-label={t.clipboard.clearSearch}
             onClick={() => onQueryChange("")}
           >

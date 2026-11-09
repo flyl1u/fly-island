@@ -89,3 +89,10 @@
     transform: scale(1.08);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-spine-button--saving,
+  .todo-spine-button--saved {
+    animation: none;
+  }
+}

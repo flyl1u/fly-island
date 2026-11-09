@@ -35,6 +35,7 @@ export function isSameMediaState(a: MediaState, b: MediaState): boolean {
     a.artist !== b.artist ||
     a.album !== b.album ||
     a.thumbnail !== b.thumbnail ||
+    a.trackId !== b.trackId ||
     a.positionMs !== b.positionMs ||
     a.durationMs !== b.durationMs ||
     a.canSeek !== b.canSeek ||

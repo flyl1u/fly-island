@@ -1,0 +1,68 @@
+/* One line above the session list, aligned with the rows' text. Its height is part of the Agent
+   page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts): keep the two in step. */
+.agent-usage {
+  flex: none;
+  height: 22px;
+  margin: 0 6px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agent-usage--stale {
+  opacity: 0.6;
+}
+
+.agent-usage__window {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.agent-usage__value {
+  font-weight: 600;
+}
+
+.agent-usage__value--low {
+  color: var(--color-agent-idle);
+}
+
+.agent-usage__value--medium {
+  color: var(--color-agent-waiting);
+}
+
+.agent-usage__value--high {
+  color: var(--color-warning);
+}
+
+.agent-usage__divider {
+  width: 1px;
+  height: 11px;
+  flex: none;
+  background: rgba(var(--agent-ink), 0.18);
+}
+
+.agent-usage__reset {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* The hover card's wrapper takes the line's place in the page's column. */
+.island-hover-card__anchor.agent-usage__hover {
+  display: flex;
+  min-width: 0;
+}
+
+.agent-usage__hover > .agent-usage {
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -1,0 +1,108 @@
+/* Sits above the waveform, which shrinks to a strip (MusicPlayerPanel.css), so the page keeps its height. */
+.lyrics-view {
+  height: 62px;
+  flex: 0 0 62px;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: 0;
+  text-align: center;
+}
+
+/* An empty line still holds its row, so the lines never shift into another one's place. */
+.lyrics-view__line {
+  min-height: 1.35em;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-view__line--side {
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.lyrics-view__line--translation {
+  color: rgba(232, 237, 239, 0.72);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lyrics-view__line--current {
+  color: var(--text-1);
+  font-size: 15px;
+  font-weight: 700;
+  animation: lyrics-line-in 220ms ease-out;
+}
+
+/* Each word of a line timed word by word: the bright half of a double-width gradient slides
+   in behind the text over the word's time (LyricsView sets the delay and duration). */
+.lyrics-view__word {
+  color: transparent;
+  background: linear-gradient(90deg, var(--text-1) 50%, var(--text-3) 50%) 100% 0 / 200% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: lyrics-word-fill linear both;
+}
+
+@keyframes lyrics-word-fill {
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes lyrics-line-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-view__line--current {
+    animation: none;
+  }
+
+  /* The word still lights when it is sung, all at once instead of filling. */
+  .lyrics-view__word {
+    animation-timing-function: step-start;
+  }
+}
+
+/* This song's offset, beside the music page's settings button. */
+.lyrics-offset {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+  color: rgba(232, 237, 239, 0.7);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lyrics-offset button {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lyrics-offset button:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.lyrics-offset__value:disabled {
+  cursor: default;
+  background: transparent;
+}

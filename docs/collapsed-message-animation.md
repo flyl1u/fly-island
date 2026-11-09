@@ -13,12 +13,12 @@
 ## 验证
 
 ```powershell
-node --test tests/message-preview.test.mjs tests/qq-notification-timing.test.mjs
+node --test tests/unit/message-preview.test.mjs tests/unit/qq-notification-timing.test.mjs
 pnpm build
 pnpm dev
 ```
 
-打开 `http://localhost:1420/tests/collapsed-message-animation.html?test=1`，运行真实 `IslandShell`、通知 Hook 和 Tauri 官方 IPC mock 的回归检查。覆盖三种来源、自动恢复、交错消息、动画打断、窄宽度、长内容、标题/像素字体、点击入口、展开/边缘收起/托盘隐藏与减少动态效果。检查应连续通过 3 次。
+打开 `http://localhost:1420/tests/regression/collapsed-message-animation.html?test=1`，运行真实 `IslandShell`、通知 Hook 和 Tauri 官方 IPC mock 的回归检查。覆盖三种来源、自动恢复、交错消息、动画打断、窄宽度、长内容、标题/像素字体、点击入口、展开/边缘收起/托盘隐藏与减少动态效果。检查应连续通过 3 次。
 
 不带 `test` 参数可手动操作；`state=wechat`、`state=qq`、`state=qqMail` 可直达对应预览。测试页恢复自身修改过的存储偏好，不读取本机消息或调用原生应用。
 

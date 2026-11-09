@@ -1,5 +1,5 @@
-import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { TodoItem } from "./types";
+import { withoutUpdateTodo } from "./updateTodo.ts";
 
 export function getTodoSignature(date: string, todos: TodoItem[], dailyNote: string) {
   return JSON.stringify({

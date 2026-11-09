@@ -1,0 +1,45 @@
+.settings-input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+}
+
+.settings-input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.settings-input:hover {
+  background: var(--color-white-a08);
+}
+
+.settings-input:focus-visible {
+  border-color: var(--color-focus-ring);
+}
+
+.settings-input--mono {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+/* A short number as a row's control, at the right end of the title line. */
+.settings-input--number {
+  width: 88px;
+  text-align: right;
+}
+
+.settings-number__unit {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.settings-input:disabled {
+  opacity: 0.5;
+}

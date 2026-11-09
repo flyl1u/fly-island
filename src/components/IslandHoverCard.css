@@ -1,0 +1,61 @@
+.island-hover-card__anchor {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/* Same surface as the island; never under the cursor's reach, so clicks fall through it. */
+.island-hover-card {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  gap: 2px;
+  max-width: 280px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: var(--island-background-color, #2f2f37);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: island-hover-card-in 140ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.island-hover-card__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.island-hover-card__line > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island-hover-card__line--muted {
+  color: var(--text-3);
+}
+
+.island-hover-card__dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+@keyframes island-hover-card-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island-hover-card {
+    animation: none;
+  }
+}

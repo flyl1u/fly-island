@@ -1,4 +1,3 @@
-import { readString, writeString } from "../../lib/storage.ts";
 import type { Translations } from "../../i18n";
 import { createTodoId } from "../todos/index.ts";
 import { DEFAULT_SETTINGS, getDefaultSettingPresets, mergeWithDefaultSettingPresets, normalizeSettings } from "./settings.ts";
@@ -10,10 +9,10 @@ export const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
 export const SETTINGS_PRESETS_STORAGE_KEY = "focusd-island-setting-presets";
 
 export function loadSettings(): IslandSettings {
-  const stored = readString(STORAGE_KEY);
+  const stored = window.localStorage.getItem(STORAGE_KEY);
 
   if (!stored) {
-    writeString(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
+    window.localStorage.setItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
     return DEFAULT_SETTINGS;
   }
 
@@ -24,11 +23,11 @@ export function loadSettings(): IslandSettings {
     const normalized = normalizeSettings(parsed);
 
     if (
-      readString(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY) !== "1"
+      window.localStorage.getItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY) !== "1"
     ) {
       const migrated = { ...normalized, showCollapsedText: true };
-      writeString(STORAGE_KEY, JSON.stringify(migrated));
-      writeString(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      window.localStorage.setItem(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
       return migrated;
     }
 
@@ -39,7 +38,7 @@ export function loadSettings(): IslandSettings {
 }
 
 export function loadSettingPresets(t: Translations): IslandPreset[] {
-  const stored = readString(SETTINGS_PRESETS_STORAGE_KEY);
+  const stored = window.localStorage.getItem(SETTINGS_PRESETS_STORAGE_KEY);
 
   if (!stored) {
     return getDefaultSettingPresets();
@@ -75,11 +74,11 @@ export function loadSettingPresets(t: Translations): IslandPreset[] {
 }
 
 export function saveSettings(settings: IslandSettings) {
-  writeString(STORAGE_KEY, JSON.stringify(settings));
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
 export function saveSettingPresets(presets: IslandPreset[]) {
-  writeString(
+  window.localStorage.setItem(
     SETTINGS_PRESETS_STORAGE_KEY,
     JSON.stringify(presets),
   );

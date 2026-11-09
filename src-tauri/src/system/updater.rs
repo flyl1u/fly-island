@@ -68,9 +68,9 @@ pub fn get_updater_proxy() -> Option<String> {
     Some(normalize_proxy(&server))
 }
 
-/// Whether this build carries an updater public key. Only release builds do:
-/// the key is injected at build time, so a plain `tauri build` (and dev runs)
-/// cannot check for updates and the settings panel hides the action.
+/// Whether this build carries an updater public key. tauri.conf.json ships the
+/// fork's key, so every build can update; a build whose config clears it (for
+/// example another fork's) cannot, and the settings panel hides the action.
 #[tauri::command]
 pub fn updater_configured(app: AppHandle) -> bool {
     app.config()
@@ -85,15 +85,6 @@ pub fn updater_configured(app: AppHandle) -> bool {
 #[cfg(test)]
 mod tests {
     use serde_json::{json, Value};
-
-    #[test]
-    fn preview_updater_config_is_valid_without_a_release_key() {
-        let config: serde_json::Value =
-            serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
-        let updater: tauri_plugin_updater::Config =
-            serde_json::from_value(config["plugins"]["updater"].clone()).unwrap();
-        assert!(updater.pubkey.is_empty());
-    }
 
     // tauri-plugin-updater declares `pubkey` as a mandatory config field with no
     // serde default, so dropping the key aborts startup with "missing field

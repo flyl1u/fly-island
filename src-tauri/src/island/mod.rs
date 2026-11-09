@@ -1,28 +1,37 @@
 //! Main island window: Tauri commands, window access, and the submodules for state,
-//! stage geometry, liquid glass and cursor passthrough.
+//! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
 
+pub(crate) mod focus;
+mod follow;
 mod geometry;
 mod glass;
-mod passthrough;
+pub(crate) mod outside_click;
+pub(crate) mod passthrough;
 mod state;
+pub(crate) mod top_edge;
 
 #[cfg(test)]
 mod tests;
 
 use serde::Deserialize;
-use std::{sync::atomic::Ordering, thread, time::Duration};
+use std::{
+    sync::{atomic::Ordering, PoisonError},
+    thread,
+    time::Duration,
+};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 
 use geometry::{
     monitor_for_island_position, COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT,
-    EXPANDED_ISLAND_HEIGHT_RANGE, MIN_COLLAPSED_ISLAND_WIDTH, MIN_EXPANDED_ISLAND_HEIGHT,
-    POSITION_ANIMATION_GENERATION,
+    EXPANDED_ISLAND_HEIGHT_RANGE, MAX_CORNER_RADIUS, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
+    MIN_EXPANDED_ISLAND_HEIGHT, POSITION_ANIMATION_GENERATION,
 };
 use glass::{apply_glass_material, parse_hex_color};
-use state::{mutate_window_state, read_window_state, window_state, IslandMode};
+use crate::win32;
+use state::{mutate_window_state, read_window_state, window_state, CornerShape, IslandMode, MonitorFollow};
 
 pub(crate) use geometry::apply_stage_geometry;
+pub(crate) use follow::start_monitor_follow_loop;
 pub(crate) use passthrough::start_cursor_passthrough_loop;
 pub(crate) use state::{record_dragged_position, IslandPosition, IslandWindowState};
 
@@ -49,6 +58,10 @@ pub fn set_island_layout(app: AppHandle, layout: IslandLayout) -> Result<(), Str
 }
 
 #[tauri::command]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "each argument is a named field of the set_island_interaction IPC contract"
+)]
 pub fn set_island_interaction(
     app: AppHandle,
     mode: String,
@@ -63,6 +76,9 @@ pub fn set_island_interaction(
     glass_enabled: Option<bool>,
     glass_intensity: Option<f64>,
     glass_tint: Option<String>,
+    corner_radius: Option<f64>,
+    corner_shape: Option<String>,
+    monitor_follow: Option<String>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -103,6 +119,15 @@ pub fn set_island_interaction(
         if let Some(glass_tint) = glass_tint.as_deref().and_then(parse_hex_color) {
             state.glass_tint = glass_tint;
         }
+        if let Some(corner_radius) = corner_radius {
+            state.corner_radius = corner_radius.clamp(MIN_CORNER_RADIUS, MAX_CORNER_RADIUS);
+        }
+        if let Some(corner_shape) = corner_shape.as_deref().and_then(CornerShape::from_value) {
+            state.corner_shape = corner_shape;
+        }
+        if let Some(monitor_follow) = monitor_follow.as_deref().and_then(MonitorFollow::from_value) {
+            state.monitor_follow = monitor_follow;
+        }
         *state
     });
     apply_stage_geometry(
@@ -118,10 +143,15 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     let window = main_window(&app)?;
     let current_state = read_window_state();
 
-    if !matches!(current_state.mode, IslandMode::Collapsed)
-        || current_state.is_tucked
-        || current_state.is_dragging
-    {
+    if !matches!(current_state.mode, IslandMode::Collapsed) {
+        return Ok(());
+    }
+
+    drag_island(window, current_state)
+}
+
+fn drag_island(window: WebviewWindow, current_state: IslandWindowState) -> Result<(), String> {
+    if current_state.is_tucked || current_state.is_dragging {
         return Ok(());
     }
 
@@ -135,6 +165,7 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
         state.is_dragging = true;
         *state
     });
+    top_edge::set_attached(&window, false);
 
     if let Err(error) = window.start_dragging() {
         mutate_window_state(|state| {
@@ -146,17 +177,22 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     }
 
     thread::spawn(move || {
-        while unsafe { GetAsyncKeyState(VK_LBUTTON.0 as i32) } < 0 {
+        while win32::input::is_left_button_down() {
             thread::sleep(Duration::from_millis(8));
         }
         thread::sleep(Duration::from_millis(8));
 
-        let final_position = window.outer_position().ok().map(|position| IslandPosition {
-            x: position.x,
-            y: position.y,
+        let final_position = window.outer_position().ok().map(|position| {
+            top_edge::snap_to_top(
+                &window,
+                IslandPosition {
+                    x: position.x,
+                    y: position.y,
+                },
+            )
         });
         let did_finish_drag = {
-            let mut state = window_state().lock().expect("window state poisoned");
+            let mut state = window_state().lock().unwrap_or_else(PoisonError::into_inner);
             if !state.is_dragging {
                 false
             } else {
@@ -220,3 +256,28 @@ pub(crate) fn hide_island(app: &AppHandle) {
         let _ = window.hide();
     }
 }
+
+#[tauri::command]
+pub fn get_island_top_attachment() -> bool {
+    top_edge::is_attached()
+}
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::island::set_island_layout,
+            crate::island::set_island_interaction,
+            crate::island::start_island_drag,
+            crate::island::reset_island_position,
+            crate::island::get_island_top_attachment,
+            crate::island::show_ready_island,
+            crate::island::minimize_island,
+            crate::island::focus::take_island_hover_focus,
+            crate::island::focus::release_island_hover_focus,
+            crate::island::outside_click::set_island_outside_click_watch,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

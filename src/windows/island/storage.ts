@@ -1,4 +1,3 @@
-import { readString, writeString, removeItem } from "../../lib/storage.ts";
 export type IslandPosition = {
   x: number;
   y: number;
@@ -7,7 +6,7 @@ export type IslandPosition = {
 export const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
 
 export function loadIslandPosition(): IslandPosition | null {
-  const stored = readString(ISLAND_POSITION_STORAGE_KEY);
+  const stored = window.localStorage.getItem(ISLAND_POSITION_STORAGE_KEY);
 
   if (!stored) {
     return null;
@@ -31,12 +30,12 @@ export function loadIslandPosition(): IslandPosition | null {
 }
 
 export function saveIslandPosition(position: IslandPosition) {
-  writeString(
+  window.localStorage.setItem(
     ISLAND_POSITION_STORAGE_KEY,
     JSON.stringify(position),
   );
 }
 
 export function clearIslandPosition() {
-  removeItem(ISLAND_POSITION_STORAGE_KEY);
+  window.localStorage.removeItem(ISLAND_POSITION_STORAGE_KEY);
 }

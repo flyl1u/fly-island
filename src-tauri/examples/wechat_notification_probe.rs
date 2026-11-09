@@ -47,8 +47,11 @@ fn run() -> Result<bool, String> {
             .ok_or("--watch-seconds must be between 0 and 60")?,
         _ => return Err("Usage: wechat_notification_probe [--watch-seconds 0..60]".into()),
     };
+    // SAFETY: RoInitialize takes no pointers; a success is paired with the
+    // RoUninitialize below on this thread.
     unsafe { RoInitialize(RO_INIT_MULTITHREADED) }.map_err(|error| error.to_string())?;
     let result = observe(seconds);
+    // SAFETY: pairs the successful RoInitialize above, on the same thread.
     unsafe { RoUninitialize() };
     result
 }

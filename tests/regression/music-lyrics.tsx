@@ -1,0 +1,148 @@
+// pnpm dev, then open /tests/regression/music-lyrics.html. Renders the music page with get_lyrics
+// mocked: synced lyrics show above a slimmer waveform and follow the position and the offset, and
+// the waveform keeps its full size when there are none or no source is set.
+import "../../src/styles/tokens.css";
+import { act, StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { mockIPC } from "@tauri-apps/api/mocks";
+import { I18nProvider } from "../../src/i18n";
+import type { MediaState } from "../../src/features/media/api";
+import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
+import { MusicPlayerPanel } from "../../src/features/media/MusicPlayerPanel";
+
+Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
+const LRC = [
+  "[ar:周杰伦]",
+  "[00:01.00]故事的小黄花",
+  "[00:05.00]从出生那年就飘着",
+  "[00:09.00]童年的荡秋千 随记忆一直晃到现在 这一句特别特别长长到一行放不下需要省略号来收尾才行",
+  "[00:13.00]",
+  "[00:15.00]刮风这天",
+].join("\n");
+const queries: Array<Record<string, unknown>> = [];
+mockIPC((command, payload) => {
+  if (command !== "get_lyrics") return null;
+  const query = (payload as { query: Record<string, unknown> }).query;
+  queries.push(query);
+  if (query.title === "Yesterday") return { source: "kugou", lrc: ["[00:01.00]Oh I believe", "[00:05.00]in yesterday"].join("\n"), translation: "[00:01.00]哦 我相信" };
+  if (query.title === "Believe") return { source: "kugou", lrc: "[00:01.00]<00:01.00>Oh <00:01.30>I <00:01.70>believe<00:03.00>\n[00:04.00]in yesterday" };
+  return query.title === "晴天" ? { source: "lrclib", lrc: LRC } : null;
+});
+
+const fixture = document.getElementById("fixture")!;
+const results = document.getElementById("results")!;
+const messages: string[] = [];
+const root = createRoot(fixture);
+const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0 };
+let settingsOpened = 0;
+
+function track(title: string, positionMs: number, playing = false): MediaState {
+  return {
+    ...DEFAULT_MEDIA_STATE, available: true, title, artist: "周杰伦", album: "叶惠美",
+    durationMs: 269_000, positionMs, updatedAt: Date.now(), playbackStatus: playing ? "playing" : "paused",
+  };
+}
+
+async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | undefined = ONLINE) {
+  await act(async () => {
+    root.render(
+      <StrictMode><I18nProvider>
+        <MusicPlayerPanel mediaState={mediaState} isTrackChanging={false} commandError={null} onOpenSettings={() => { settingsOpened += 1; }}
+          onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} lyricsSettings={lyricsSettings} />
+      </I18nProvider></StrictMode>,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 60));
+  });
+}
+
+function check(condition: unknown, label: string) {
+  if (!condition) throw new Error(label);
+  messages.push(`PASS ${label}`);
+}
+
+const view = () => document.querySelector<HTMLElement>(".lyrics-view");
+const lines = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__line")].map((line) => line.textContent);
+
+try {
+  await render(track("晴天", 6000));
+  const wave = () => document.querySelector<HTMLElement>(".media-waveform")!;
+  check(view() && wave() && view()!.getBoundingClientRect().bottom <= wave().getBoundingClientRect().top, "找到歌词时歌词在上、波形在下，两者都显示");
+  check(lines().join("|") === "故事的小黄花|从出生那年就飘着|童年的荡秋千 随记忆一直晃到现在 这一句特别特别长长到一行放不下需要省略号来收尾才行", "当前句在中间，上一句和下一句在两边");
+  const query = queries[queries.length - 1];
+  check(query.title === "晴天" && query.artist === "周杰伦" && query.album === "叶惠美" && query.durationMs === 269_000 && query.online === true, "按歌名、歌手、专辑和时长查找");
+  const current = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
+  check(getComputedStyle(current).fontSize === "15px" && getComputedStyle(document.querySelector(".lyrics-view__line--side")!).fontSize === "12px", "当前句更大更亮");
+
+  await render(track("晴天", 10_000));
+  const long = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
+  check(long.scrollWidth > long.clientWidth && fixture.scrollWidth <= fixture.clientWidth, "长句单行省略，不撑宽面板");
+  const controls = document.querySelector<HTMLElement>(".music-player__controls")!.getBoundingClientRect();
+  check(Math.abs(wave().getBoundingClientRect().height - 34) < 1 && controls.bottom <= document.querySelector(".music-player")!.getBoundingClientRect().bottom && wave().getBoundingClientRect().bottom <= controls.top,
+    "有歌词时波形缩成细条，播放按钮仍完整放在面板里");
+
+  await render(track("晴天", 13_500));
+  check(lines()[1] === "♪", "间奏的空行显示音符");
+  await render(track("晴天", 500));
+  check(lines().join("|") === "|♪|故事的小黄花", "前奏时中间显示音符，第一句在下面等着");
+
+  await render(track("晴天", 6000), { ...ONLINE, lyricsOffsetMs: 2000 });
+  check(lines()[1] === "故事的小黄花", "推后 2 秒时仍显示上一句");
+  await render(track("晴天", 4500, true));
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 900)); });
+  check(lines()[1] === "从出生那年就飘着", "播放时在两次读取之间按时间往下走");
+
+  const before = queries.length;
+  await render(track("七里香", 6000));
+  check(!view() && Math.abs(wave().getBoundingClientRect().height - 76) < 1 && queries.length === before + 1, "找不到歌词时波形恢复原来的大小");
+  const hint = () => document.querySelector<HTMLButtonElement>(".music-player__lyrics-hint");
+  const panel = document.querySelector(".music-player")!.getBoundingClientRect();
+  check(hint()?.textContent === "没找到歌词 · 试试酷狗和网易云" && hint()!.getBoundingClientRect().left >= panel.left && hint()!.getBoundingClientRect().right <= panel.right,
+    "中文歌只查了 LRCLIB 没找到时，右上角提示可以开启酷狗和网易云");
+  settingsOpened = 0;
+  await act(async () => hint()!.click());
+  check(settingsOpened === 1, "点提示打开音乐设置");
+  await render(track("稻香", 6000), { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 });
+  check(!view() && queries.length === before + 1, "没设歌词文件夹也没开在线查找时不去查");
+  check(!hint(), "没开在线查找时不提示");
+  await render(track("七里香", 6000), { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  check(!view() && !hint(), "已经开着酷狗和网易云还找不到时不提示");
+
+  // A translation shows under its line; this song's own offset sits by the settings button.
+  localStorage.removeItem("focusd-island-lyrics-offsets");
+  await render(track("Yesterday", 2000), { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  const yesterday = queries[queries.length - 1];
+  check(yesterday.chinese === true && yesterday.trackId === null, "打开中文来源时一起查酷狗和网易云");
+  check(lines().join("|") === "|Oh I believe|哦 我相信" && document.querySelector(".lyrics-view__line--translation"), "有翻译时，当前句下面显示翻译");
+  const offsetButtons = [...document.querySelectorAll<HTMLButtonElement>(".lyrics-offset button")];
+  check(offsetButtons.length === 3 && offsetButtons[1].textContent === "0s" && offsetButtons[1].disabled, "音乐页右上角有这首歌的提前、推后按钮");
+  await act(async () => offsetButtons[2].click());
+  await act(async () => offsetButtons[2].click());
+  await act(async () => offsetButtons[2].click());
+  check(offsetButtons[1].textContent === "+1.5s" && lines()[1] === "♪", "推后 1.5 秒后，2 秒时还没到第一句");
+  check(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}")[Object.keys(JSON.parse(localStorage.getItem("focusd-island-lyrics-offsets") ?? "{}"))[0]] === 1500, "这首歌的调整按歌存下来");
+  await act(async () => offsetButtons[1].click());
+  check(offsetButtons[1].textContent === "0s" && lines()[1] === "Oh I believe", "点中间的数字恢复为 0");
+  localStorage.removeItem("focusd-island-lyrics-offsets");
+
+  // Word-timed lines (Kugou KRC, enhanced LRC) fill word by word.
+  await render(track("Believe", 1500));
+  const words = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__word")];
+  const fillX = (word: HTMLElement) => getComputedStyle(word).backgroundPosition.split(" ")[0];
+  check(words().map((word) => word.textContent).join("|") === "Oh |I |believe" && lines()[1] === "Oh I believe" && lines()[2] === "in yesterday",
+    "逐字时间的歌词按字分开，整句文字不变");
+  check(parseFloat(fillX(words()[0])) === 0 && fillX(words()[2]) === "100%" && fillX(words()[1]) !== fillX(words()[0]) && fillX(words()[1]) !== "100%",
+    "唱过的字亮、正在唱的字亮到一半、没唱的字暗");
+  check(words().every((word) => getComputedStyle(word).animationPlayState === "paused"), "暂停时逐字填充也停住");
+  await render(track("Believe", 1500, true));
+  check(words().every((word) => getComputedStyle(word).animationPlayState === "running"), "播放时逐字填充往前走");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 600)); });
+  check(fillX(words()[2]) !== "100%", "到点后下一个字开始变亮");
+  await render(track("Believe", 4500));
+  check(words().length === 0 && lines()[1] === "in yesterday", "没有逐字时间的句子照常整句显示");
+
+  results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
+  results.dataset.result = "passed";
+} catch (error) {
+  results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`;
+  results.dataset.result = "failed";
+}

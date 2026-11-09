@@ -3,6 +3,34 @@
   gap: var(--space-md);
 }
 
+.update-panel__channel {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 200px);
+  align-items: center;
+  gap: var(--space-xl);
+  padding: 0 2px;
+}
+
+.update-panel__channel-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.update-panel__channel-copy strong {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.update-panel__channel-copy small {
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .update-panel__button {
   width: 100%;
   font: inherit;

@@ -74,3 +74,10 @@ export function useIdleTuck(
     };
   }, [enabled, isTucked, onTuck, seconds, view]);
 }
+
+/** Slides a tucked island back into view when a message preview starts showing on it. */
+export function useRevealOnMessage(hasPreview: boolean, isTucked: boolean, onReveal: () => void) {
+  useEffect(() => {
+    if (hasPreview && isTucked) onReveal();
+  }, [hasPreview, isTucked, onReveal]);
+}

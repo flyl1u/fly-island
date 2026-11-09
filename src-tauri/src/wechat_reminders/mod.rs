@@ -13,20 +13,10 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
-use windows::{
-    core::{BOOL, PWSTR},
-    Win32::{
-        Foundation::{CloseHandle, FILETIME, HWND, LPARAM},
-        System::Threading::{
-            GetProcessTimes, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
-            PROCESS_QUERY_LIMITED_INFORMATION,
-        },
-        UI::WindowsAndMessaging::{
-            EnumWindows, GetWindowPlacement, GetWindowTextW, GetWindowThreadProcessId, IsIconic,
-            IsWindowVisible, WINDOWPLACEMENT,
-        },
-    },
-};
+use windows::Win32::Foundation::HWND;
+
+
+use crate::win32;
 
 static SERVICE: OnceLock<Arc<ReminderService>> = OnceLock::new();
 
@@ -129,7 +119,7 @@ fn publish(service: &ReminderService, snapshot: ReminderSnapshot) {
         .is_some_and(|window| window.is_visible().unwrap_or(false));
     let payload = serde_json::json!({"snapshot": snapshot, "windowVisible": visible});
     let _ = service.app.emit_to(
-        "settings",
+        crate::settings_window::WINDOW_LABEL,
         "wechat-reminder-changed",
         payload.clone(),
     );
@@ -302,60 +292,29 @@ fn preferred_window(windows: &[WeChatWindow]) -> Option<&WeChatWindow> {
         .min_by_key(|window| (!window.visible, window.started_at))
 }
 
-unsafe extern "system" fn find_wechat_window(window: HWND, context: LPARAM) -> BOOL {
-    let search = &mut *(context.0 as *mut WindowSearch);
-    let mut process_id = 0;
-    GetWindowThreadProcessId(window, Some(&mut process_id));
-    let Ok(process) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) else {
-        return true.into();
+fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
+    let process_id = win32::process::window_process_id(window);
+    let Some(path) = win32::process::image_path(process_id) else {
+        return;
     };
-    let mut path = [0u16; 32768];
-    let mut length = path.len() as u32;
-    let matches = QueryFullProcessImageNameW(
-        process,
-        PROCESS_NAME_WIN32,
-        PWSTR(path.as_mut_ptr()),
-        &mut length,
-    )
-    .is_ok()
-        && String::from_utf16_lossy(&path[..length as usize])
-            .eq_ignore_ascii_case(&search.executable);
-    let mut started = FILETIME::default();
-    let mut exited = FILETIME::default();
-    let mut kernel = FILETIME::default();
-    let mut user = FILETIME::default();
-    let started_at = if matches
-        && GetProcessTimes(process, &mut started, &mut exited, &mut kernel, &mut user).is_ok()
-    {
-        ((started.dwHighDateTime as u64) << 32) | started.dwLowDateTime as u64
-    } else {
-        u64::MAX
-    };
-    let _ = CloseHandle(process);
-    if !matches {
-        return true.into();
+    if !path.eq_ignore_ascii_case(&search.executable) {
+        return;
     }
+    let started_at = win32::process_times::start_time(process_id).unwrap_or(u64::MAX);
     search.running = true;
-    let mut title = [0u16; 32];
-    let length = GetWindowTextW(window, &mut title) as usize;
-    let title = String::from_utf16_lossy(&title[..length]);
+    let title = win32::window::window_text(window, 32);
     if !["微信", "WeChat", "Weixin"].contains(&title.as_str()) {
-        return true.into();
+        return;
     }
-    let mut placement = WINDOWPLACEMENT {
-        length: std::mem::size_of::<WINDOWPLACEMENT>() as u32,
-        ..Default::default()
-    };
-    let main_sized = GetWindowPlacement(window, &mut placement).is_ok()
-        && placement.rcNormalPosition.right - placement.rcNormalPosition.left >= 500
-        && placement.rcNormalPosition.bottom - placement.rcNormalPosition.top >= 300;
+    let main_sized = win32::window::normal_position(window).is_some_and(|position| {
+        position.right - position.left >= 500 && position.bottom - position.top >= 300
+    });
     search.found.push(WeChatWindow {
         handle: window,
         started_at,
         main_sized,
-        visible: IsWindowVisible(window).as_bool(),
+        visible: win32::window::is_visible(window),
     });
-    true.into()
 }
 
 fn existing_wechat_windows(executable: &std::path::Path) -> Result<WindowSearch, String> {
@@ -364,13 +323,8 @@ fn existing_wechat_windows(executable: &std::path::Path) -> Result<WindowSearch,
         found: Vec::new(),
         running: false,
     };
-    unsafe {
-        EnumWindows(
-            Some(find_wechat_window),
-            LPARAM((&mut search as *mut WindowSearch) as isize),
-        )
+    win32::window::for_each_top_level_window(|window| find_wechat_window(&mut search, window))
         .map_err(|error| format!("无法查找已运行的微信窗口：{error}"))?;
-    }
     Ok(search)
 }
 
@@ -381,10 +335,7 @@ fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String
     }
     let original = preferred_window(&search.found)
         .ok_or("微信已在运行，但未定位到主窗口，请先从系统托盘打开并登录微信。")?;
-    let mut expected_process = 0;
-    unsafe {
-        GetWindowThreadProcessId(original.handle, Some(&mut expected_process));
-    }
+    let expected_process = win32::process::window_process_id(original.handle);
     // The registered handler restores Qt's own UI state. Showing its HWND directly can leave it blank.
     tauri_plugin_opener::open_url("weixin://", None::<&str>).map_err(|error| {
         format!("无法通过微信注册入口唤回客户端，请从系统托盘打开微信：{error}")
@@ -393,13 +344,10 @@ fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String
         thread::sleep(Duration::from_millis(50));
         let current = existing_wechat_windows(executable)?;
         if let Some(window) = preferred_window(&current.found) {
-            let mut process_id = 0;
-            unsafe {
-                GetWindowThreadProcessId(window.handle, Some(&mut process_id));
-            }
+            let process_id = win32::process::window_process_id(window.handle);
             if process_id == expected_process
                 && window.visible
-                && !unsafe { IsIconic(window.handle) }.as_bool()
+                && !win32::window::is_minimized(window.handle)
             {
                 return Ok(true);
             }
@@ -407,3 +355,16 @@ fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String
     }
     Err("微信未能恢复原来的主窗口，请双击系统托盘中的微信图标。".into())
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::wechat_reminders::get_wechat_reminder_state,
+            crate::wechat_reminders::set_wechat_reminders_enabled,
+            crate::wechat_reminders::open_wechat,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

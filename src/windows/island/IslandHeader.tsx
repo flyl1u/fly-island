@@ -1,12 +1,15 @@
-import { Bell, CircleDot, Languages, Minus, RotateCcw } from "lucide-react";
+import type { ReactNode } from "react";
+import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
+import { isPageEnabled, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 import "./IslandHeader.css";
 
 type IslandHeaderProps = {
   page: IslandPage;
+  features: IslandFeatures;
   showTitle: boolean;
   isDetached: boolean;
   agentVisualState: AgentVisualState;
@@ -17,14 +20,19 @@ type IslandHeaderProps = {
   onCollapse: () => void;
   onOpenSettings: () => void;
   onOpenMessages: (source: MessageSource) => void;
-  onOpenTranslator: () => void;
+  onOpenTranslator: (() => void) | null;
   onResetPosition: () => void;
+  /** False when minimizing tucks the island to the top edge instead. */
+  minimizesToTray: boolean;
   onMinimize: () => void;
+  /** Buttons of the open page, first among the window actions. */
+  pageActions?: ReactNode;
 };
 
 /** Header of the expanded island: agent status, page dots, collapse target and window actions. */
 export function IslandHeader({
   page,
+  features,
   showTitle,
   isDetached,
   agentVisualState,
@@ -37,7 +45,9 @@ export function IslandHeader({
   onOpenMessages,
   onOpenTranslator,
   onResetPosition,
+  minimizesToTray,
   onMinimize,
+  pageActions,
 }: IslandHeaderProps) {
   const t = useTranslation();
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
@@ -49,12 +59,29 @@ export function IslandHeader({
   return (
     <header className="island__header">
       <div className="island__title">
-        <CircleDot
-          className={agentStatusIconClassName}
-          size={16}
-          strokeWidth={2.2}
-          aria-label={agentStatusLabel}
-        />
+        {features.agents ? (
+          // The status light doubles as the way into the Agent page.
+          <button
+            className={`island__agent-button${page === "agents" ? " island__agent-button--active" : ""}`}
+            type="button"
+            aria-label={`${agentStatusLabel} · ${t.agent.sessions.open}`}
+            aria-pressed={page === "agents"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("agents");
+            }}
+          >
+            <CircleDot className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+          </button>
+        ) : (
+          <CircleDot
+            className={agentStatusIconClassName}
+            size={16}
+            strokeWidth={1.5}
+            absoluteStrokeWidth
+            aria-label={agentStatusLabel}
+          />
+        )}
         {showTitle && <span>fly-island</span>}
       </div>
 
@@ -62,53 +89,58 @@ export function IslandHeader({
         className="editor-dots"
         aria-label={t.island.editor}
       >
-        <button
-          className={`dot-button dot-button--todo ${
-            page === "todo" ? "dot-button--active" : ""
-          }`}
-          type="button"
-          title={t.island.todoList}
-          aria-label={t.island.todoList}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPageChange("todo");
-          }}
-        />
-        <button
-          className={`dot-button dot-button--music ${
-            page === "music" ? "dot-button--active" : ""
-          }`}
-          type="button"
-          title={t.island.music}
-          aria-label={t.island.music}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPageChange("music");
-          }}
-        />
-        <button
-          className={`dot-button dot-button--clipboard ${
-            page === "clipboard" ? "dot-button--active" : ""
-          }`}
-          type="button"
-          title={t.island.clipboardHistory}
-          aria-label={t.island.clipboardHistory}
-          onClick={(event) => {
-            event.stopPropagation();
-            onPageChange("clipboard");
-          }}
-        />
-        <button
-          className={`dot-button dot-button--layout${page === "settings" ? " dot-button--active" : ""}`}
-          type="button"
-          title={t.settings.title}
-          aria-label={t.settings.title}
-          aria-pressed={page === "settings"}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenSettings();
-          }}
-        />
+        {features.todo && (
+          <button
+            className={`dot-button dot-button--todo ${
+              page === "todo" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            aria-label={t.island.todoList}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("todo");
+            }}
+          />
+        )}
+        {features.music && (
+          <button
+            className={`dot-button dot-button--music ${
+              page === "music" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            aria-label={t.island.music}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("music");
+            }}
+          />
+        )}
+        {features.clipboard && (
+          <button
+            className={`dot-button dot-button--clipboard ${
+              page === "clipboard" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            aria-label={t.island.clipboardHistory}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("clipboard");
+            }}
+          />
+        )}
+        {features.shelf && (
+          <button
+            className={`dot-button dot-button--shelf ${
+              page === "shelf" ? "dot-button--active" : ""
+            }`}
+            type="button"
+            aria-label={t.island.shelf}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPageChange("shelf");
+            }}
+          />
+        )}
       </div>
 
       <button
@@ -120,47 +152,60 @@ export function IslandHeader({
       />
 
       <div className="window-actions">
-        <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={t.messages.label(messageBadgeLabel)} aria-pressed={page === "qq"} title={t.messages.title} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
-          <Bell size={17} strokeWidth={1.8} />
-          {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
-        </button>
+        {pageActions}
         <button
-          className="icon-button island-translate-button"
+          className={`icon-button island-settings-button${page === "settings" ? " island-settings-button--active" : ""}`}
           type="button"
-          title={`${t.translator.title} (Alt+C)`}
-          aria-label={t.translator.title}
+          aria-label={t.settings.title}
+          aria-pressed={page === "settings"}
           onClick={(event) => {
             event.stopPropagation();
-            onOpenTranslator();
+            onOpenSettings();
           }}
         >
-          <Languages size={18} strokeWidth={1.9} aria-hidden="true" />
+          <Settings size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
         </button>
+        {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={t.messages.label(messageBadgeLabel)} aria-pressed={page === "qq"} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
+          <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth />
+          {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
+        </button>}
+        {onOpenTranslator && (
+          <button
+            className={`icon-button island-translate-button${page === "translation" ? " island-translate-button--active" : ""}`}
+            type="button"
+            aria-label={features.translation ? t.translator.title : t.translator.title}
+            aria-pressed={features.translation ? page === "translation" : undefined}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenTranslator();
+            }}
+          >
+            <Languages size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+          </button>
+        )}
         <button
           className={`icon-button island-reset-button${
             isDetached ? " island-reset-button--available" : ""
           }`}
           type="button"
-          title={t.island.resetPositionLabel}
           aria-label={t.island.resetPositionLabel}
           onClick={(event) => {
             event.stopPropagation();
             onResetPosition();
           }}
         >
-          <RotateCcw size={16} strokeWidth={2} aria-hidden="true" />
+          <RotateCcw size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
         </button>
         <button
           className="icon-button"
           type="button"
-          title={t.island.minimizeToTray}
-          aria-label={t.island.minimizeToTray}
+          aria-label={minimizesToTray ? t.island.minimizeToTray : t.island.tuckToTop}
           onClick={(event) => {
             event.stopPropagation();
             onMinimize();
           }}
         >
-          <Minus size={18} strokeWidth={2.2} />
+          <Minus size={16} strokeWidth={1.5} absoluteStrokeWidth />
         </button>
       </div>
     </header>

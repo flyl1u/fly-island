@@ -29,8 +29,8 @@
   transform: scaleY(var(--wave-scale, 0.35));
   transform-origin: 50% 50%;
   transition:
-    opacity 90ms linear,
-    transform 90ms linear;
+    opacity 100ms linear,
+    transform 100ms linear;
 }
 
 .island--appearance-liquidGlass .music-wave-button {
@@ -74,5 +74,5 @@
 }
 
 .music-wave-button--idle {
-  color: rgba(248, 246, 240, 0.5);
+  color: var(--text-3);
 }

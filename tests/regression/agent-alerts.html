@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" />
+  <title>Agent 弹出提醒检查</title>
+  <style>
+    html body { margin: 0; background: #1d2230; font: 14px "Segoe UI", "Microsoft YaHei", sans-serif; }
+    #results { max-width: 760px; margin: 24px auto; padding: 0 24px; color: #dfe6f3; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+  </style>
+  <div id="fixture"></div>
+  <!-- An Agent list for presses inside the panel, and the panel itself for the one-session view. -->
+  <ul class="agent-sessions__list" id="list"><li><button id="row" type="button">row</button></li></ul>
+  <div id="panel"></div>
+  <pre id="results" role="status">准备 Agent 弹出提醒检查…</pre>
+  <script type="module" src="./agent-alerts.tsx"></script>
+</html>

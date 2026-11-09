@@ -1,3 +1,8 @@
+use super::history::{NotificationBuffer, MAX_ITEMS};
+use super::launcher::{
+    activate_existing_qq, existing_qq_windows, preferred_qq_window, qq_executable, QQWindow,
+};
+use super::listener::{read_notifications, registration_error, should_repair_registration};
 use super::*;
 use crate::messenger_activation::is_interactive_window;
 use std::{thread, time::Duration};
@@ -85,9 +90,12 @@ fn foreground_main_is_preferred_over_a_larger_preloaded_window() {
 fn window_activation_reuses_the_existing_qq_process() {
     let executable = qq_executable().unwrap();
     let before = existing_qq_windows(&executable).unwrap();
+    // SAFETY: GetForegroundWindow takes no arguments.
     let original = preferred_qq_window(&before.windows, unsafe { GetForegroundWindow() })
         .expect("QQ main window is required");
     let mut expected_process = 0;
+    // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
+    // valid local.
     unsafe {
         GetWindowThreadProcessId(original.handle, Some(&mut expected_process));
     }
@@ -102,20 +110,25 @@ fn window_activation_reuses_the_existing_qq_process() {
             "{result:?}"
         );
         let after = existing_qq_windows(&executable).unwrap();
+        // SAFETY: GetForegroundWindow takes no arguments.
         let window = preferred_qq_window(&after.windows, unsafe { GetForegroundWindow() })
             .expect("The existing main window must be visible");
         let mut process_id = 0;
+        // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
+        // valid local.
         unsafe {
             GetWindowThreadProcessId(window.handle, Some(&mut process_id));
         }
         assert_eq!(process_id, expected_process);
         assert!(window.visible);
+        // SAFETY: IsIconic takes the HWND by value and returns false for invalid windows.
         assert!(!unsafe { IsIconic(window.handle) }.as_bool());
         assert!(is_interactive_window(window.handle));
         // A background test runner may be denied focus. That must never launch another QQ.
         if let Err(error) = result {
             assert!(error.contains("未能切换到前台"), "{error}");
             assert_ne!(
+                // SAFETY: GetForegroundWindow takes no arguments.
                 unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() },
                 window.handle
             );
@@ -151,6 +164,10 @@ fn restored_qq_has_a_taskbar_button() {
         }
         true.into()
     }
+    // SAFETY: COM is initialized for this test thread and uninitialized below; the
+    // automation interfaces are used only inside that window. EnumChildWindows gets
+    // a pointer to `roots`, which outlives the synchronous call and is only read
+    // back as that Vec by collect_taskbar_children.
     unsafe {
         CoInitializeEx(None, COINIT_MULTITHREADED).ok().unwrap();
         let result = (|| -> windows::core::Result<usize> {

@@ -1,41 +1,63 @@
-import { clamp } from "../../utils/number.ts";
-import { HEX_COLOR_PATTERN, getColorSetting } from "../../utils/color.ts";
+import { HEX_COLOR_PATTERN } from "../../utils/color.ts";
+import { normalizeAgentSettings } from "./normalizeAgentSettings.ts";
+import { normalizeBehaviorSettings } from "./normalizeBehaviorSettings.ts";
+import { normalizeLayoutSettings } from "./normalizeLayoutSettings.ts";
+import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
+import { MAX_CUSTOM_SETTING_PRESETS } from "./settingsLimits.ts";
 import type { AppearanceMode, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
 
-export const LIQUID_GLASS_ENABLED = true;
-export const MAX_CUSTOM_SETTING_PRESETS = 6;
-export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
-export const DEFAULT_SETTINGS: IslandSettings = {
-  topEdgeLayoutVersion: 1,
-  appearanceMode: "classic",
-  fontFamily: "system",
-  glassIntensity: 72,
-  opacity: 95,
-  collapsedScale: 0.89,
-  expandedScale: 0.91,
-  marginY: 0,
-  taskTextColor: DEFAULT_TASK_TEXT_COLOR,
-  pulseColor: "#3ae489",
-  pulseBrightness: 100,
-  islandBackgroundColor: "#2F2F37",
-  todoBackgroundColor: "#ffffff",
-  showTitle: false,
-  showCollapsedText: true,
-  showIdleTodoCount: true,
-  carryOverIncompleteTodos: false,
-  enableTodoReorder: false,
-  rotateTodos: false,
-  todoRotationSeconds: 5,
-  autoTuck: false,
-  autoTuckSeconds: 30,
-};
-export const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
-export const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
+// Island settings (focusd-island-settings): limits in settingsLimits.ts, first-launch values in
+// settingsDefaults.ts, and reading saved ones in normalize*Settings.ts by area. New settings go in
+// those files; this one keeps the entry points other code imports.
+export * from "./settingsLimits.ts";
 
-// Resolve availability without changing the saved appearance preference.
+/** Liquid glass is paused for now: the island draws classic and the option is hidden. */
+export const LIQUID_GLASS_ENABLED = false;
+
+/** The look actually drawn. A saved liquid glass preference is kept for when glass returns. */
 export function getEffectiveAppearanceMode(mode: AppearanceMode): AppearanceMode {
   return mode === "liquidGlass" && !LIQUID_GLASS_ENABLED ? "classic" : mode;
 }
+export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
+
+/**
+ * Settings that belong to the appearance page. Resetting the appearance or applying a
+ * preset changes only these, so todo and tuck behavior chosen on the general page survive.
+ * The top margin (general page) and the idle todo count (todos page) are not among them,
+ * so presets saved with those values no longer move the island or change the count.
+ */
+export const APPEARANCE_SETTING_KEYS = [
+  "appearanceMode",
+  "fontFamily",
+  "glassIntensity",
+  "opacity",
+  "collapsedScale",
+  "expandedScale",
+  "islandCornerRadius",
+  "islandCornerShape",
+  "maxPanelHeight",
+  "taskTextColor",
+  "pulseColor",
+  "pulseBrightness",
+  "islandBackgroundColor",
+  "todoBackgroundColor",
+  "showTitle",
+  "showCollapsedText",
+] as const satisfies readonly (keyof IslandSettings)[];
+
+type AppearanceSettings = Pick<IslandSettings, (typeof APPEARANCE_SETTING_KEYS)[number]>;
+
+/** `settings` with its appearance fields taken from `source`. */
+export function withAppearanceFrom(settings: IslandSettings, source: IslandSettings): IslandSettings {
+  const appearance = Object.fromEntries(
+    APPEARANCE_SETTING_KEYS.map((key) => [key, source[key]]),
+  ) as AppearanceSettings;
+
+  return { ...settings, ...appearance };
+}
+
+export const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
+export const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
 
 export function hexToRgba(hex: string, alpha: number) {
   const normalized = HEX_COLOR_PATTERN.test(hex)
@@ -51,97 +73,10 @@ export function hexToRgba(hex: string, alpha: number) {
 export function normalizeSettings(
   settings: LegacyIslandSettings | null | undefined,
 ): IslandSettings {
-  const taskTextColor = getColorSetting(
-    settings?.taskTextColor ?? settings?.pendingTodoColor,
-    getColorSetting(settings?.taskTitleColor, DEFAULT_SETTINGS.taskTextColor),
-  );
-  const hasPreviousDefaultScales =
-    settings?.collapsedScale === 0.81 && settings.expandedScale === 0.88;
-  const collapsedScale = hasPreviousDefaultScales
-    ? 0.82
-    : settings?.collapsedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.collapsedScale;
-  const expandedScale = hasPreviousDefaultScales
-    ? DEFAULT_SETTINGS.expandedScale
-    : settings?.expandedScale ?? settings?.sizeScale ?? DEFAULT_SETTINGS.expandedScale;
-  const marginY = settings?.marginY ?? settings?.margin ?? DEFAULT_SETTINGS.marginY;
-  const hasPreviousDefaultMargin =
-    settings?.topEdgeLayoutVersion !== 1 && (marginY === 31 || marginY === 12);
-
   return {
-    topEdgeLayoutVersion: 1,
-    fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
-    appearanceMode:
-      settings?.appearanceMode === "classic" ||
-      settings?.appearanceMode === "liquidGlass"
-        ? settings.appearanceMode
-        : "classic",
-    glassIntensity: clamp(
-      Number(settings?.glassIntensity ?? DEFAULT_SETTINGS.glassIntensity),
-      25,
-      100,
-    ),
-    opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
-    collapsedScale: clamp(
-      Number(collapsedScale),
-      0.75,
-      1.4,
-    ),
-    expandedScale: clamp(
-      Number(expandedScale),
-      0.75,
-      1.4,
-    ),
-    marginY: clamp(
-      Number(hasPreviousDefaultMargin ? DEFAULT_SETTINGS.marginY : marginY),
-      0,
-      160,
-    ),
-    taskTextColor,
-    pulseColor: getColorSetting(
-      settings?.pulseColor,
-      DEFAULT_SETTINGS.pulseColor,
-    ),
-    pulseBrightness: clamp(
-      Number(settings?.pulseBrightness ?? DEFAULT_SETTINGS.pulseBrightness),
-      50,
-      160,
-    ),
-    islandBackgroundColor: getColorSetting(
-      settings?.islandBackgroundColor,
-      DEFAULT_SETTINGS.islandBackgroundColor,
-    ),
-    todoBackgroundColor: getColorSetting(
-      settings?.todoBackgroundColor,
-      DEFAULT_SETTINGS.todoBackgroundColor,
-    ),
-    showTitle:
-      typeof settings?.showTitle === "boolean"
-        ? settings.showTitle
-        : DEFAULT_SETTINGS.showTitle,
-    showCollapsedText:
-      typeof settings?.showCollapsedText === "boolean"
-        ? settings.showCollapsedText
-        : DEFAULT_SETTINGS.showCollapsedText,
-    showIdleTodoCount:
-      typeof settings?.showIdleTodoCount === "boolean"
-        ? settings.showIdleTodoCount
-        : DEFAULT_SETTINGS.showIdleTodoCount,
-    carryOverIncompleteTodos:
-      typeof settings?.carryOverIncompleteTodos === "boolean"
-        ? settings.carryOverIncompleteTodos
-        : DEFAULT_SETTINGS.carryOverIncompleteTodos,
-    enableTodoReorder:
-      typeof settings?.enableTodoReorder === "boolean"
-        ? settings.enableTodoReorder
-        : DEFAULT_SETTINGS.enableTodoReorder,
-    rotateTodos: settings?.rotateTodos === true,
-    todoRotationSeconds: typeof settings?.todoRotationSeconds === "number" && Number.isFinite(settings.todoRotationSeconds)
-      ? clamp(Math.round(settings.todoRotationSeconds), 1, 3_600)
-      : DEFAULT_SETTINGS.todoRotationSeconds,
-    autoTuck: settings?.autoTuck === true,
-    autoTuckSeconds: typeof settings?.autoTuckSeconds === "number" && Number.isFinite(settings.autoTuckSeconds)
-      ? clamp(Math.round(settings.autoTuckSeconds), 1, 3_600)
-      : DEFAULT_SETTINGS.autoTuckSeconds,
+    ...normalizeLayoutSettings(settings),
+    ...normalizeAgentSettings(settings),
+    ...normalizeBehaviorSettings(settings),
   };
 }
 

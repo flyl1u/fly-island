@@ -28,6 +28,8 @@ pub(crate) struct MediaState {
     pub(super) artist: Option<String>,
     pub(super) album: Option<String>,
     pub(super) thumbnail: Option<String>,
+    /// A song id a player plugin gives (`NCM-<id>`, `QQ-<id>`); the lyrics use it to skip a search.
+    pub(super) track_id: Option<String>,
     pub(super) position_ms: i64,
     pub(super) duration_ms: i64,
     pub(super) can_seek: bool,

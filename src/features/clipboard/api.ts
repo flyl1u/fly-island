@@ -40,9 +40,15 @@ export type ClipboardHistorySnapshot = {
 // 与 clipboard_history/mod.rs 中的 HISTORY_CHANGED_EVENT、clipboard_history/hotkey.rs 中的 HOTKEY_EVENT 一致。
 export const CLIPBOARD_HISTORY_CHANGED_EVENT = "clipboard-history-changed";
 export const CLIPBOARD_HISTORY_SHORTCUT_EVENT = "clipboard-history-shortcut";
+// 与 clipboard_history/hotkey.rs 中的 HOTKEY_STATUS_EVENT 一致；载荷为注册错误，成功或关闭时为 null。
+export const CLIPBOARD_SHORTCUT_STATUS_EVENT = "clipboard-history-shortcut-status";
 
 export function getClipboardHistory() {
   return invoke<ClipboardHistorySnapshot>("get_clipboard_history");
+}
+
+export function getClipboardShortcutError() {
+  return invoke<string | null>("get_clipboard_shortcut_error");
 }
 
 export function setClipboardHistorySettings(settings: ClipboardHistorySettings) {
@@ -76,4 +82,8 @@ export function listenClipboardHistoryChanged(handler: () => void) {
 
 export function listenClipboardHistoryShortcut(handler: () => void) {
   return listen(CLIPBOARD_HISTORY_SHORTCUT_EVENT, handler);
+}
+
+export function listenClipboardShortcutStatus(handler: (error: string | null) => void) {
+  return listen<string | null>(CLIPBOARD_SHORTCUT_STATUS_EVENT, (event) => handler(event.payload));
 }

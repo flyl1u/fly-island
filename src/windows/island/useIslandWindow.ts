@@ -1,11 +1,13 @@
+import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { DEFAULT_SETTINGS, getEffectiveAppearanceMode } from "../../features/appearance/settings";
+import { DEFAULT_SETTINGS } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
 import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
 import { useIslandPosition } from "./useIslandPosition";
 import { useNativeLayout } from "./useNativeLayout";
+import { useSettingsPositionReset } from "./useSettingsPositionReset";
 import type { IslandMode, NativeGlassState } from "./types";
 
 type IslandWindowOptions = {
@@ -58,6 +60,9 @@ export function useIslandWindow({
           glassEnabled: getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass",
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
+          cornerRadius: nextSettings.islandCornerRadius,
+          cornerShape: nextSettings.islandCornerShape,
+          monitorFollow: nextSettings.islandMonitor,
         });
         setNativeGlassState(glassState);
       } catch (error) {
@@ -107,6 +112,7 @@ export function useIslandWindow({
       console.error("Failed to reset island position", error);
     }
   }, [islandPositionRef, setIsPositionDetached, setSettings, settings, syncNativeLayout]);
+  useSettingsPositionReset(resetIslandPosition);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -139,6 +145,9 @@ export function useIslandWindow({
     settings.islandBackgroundColor,
     settings.collapsedScale,
     settings.expandedScale,
+    settings.islandCornerRadius,
+    settings.islandCornerShape,
+    settings.islandMonitor,
     showReadyIsland,
     syncNativeInteraction,
   ]);
