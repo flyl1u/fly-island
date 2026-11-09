@@ -37,7 +37,7 @@ During everyday work and study, I often write Todo Lists in Obsidian, open music
 
 Switching between all those windows reduces efficiency and makes it easier to lose focus. I wanted to bring these frequent actions into one lightweight place.
 
-Apple's Dynamic Island was an inspiration: it gathers delivery updates, timers, media controls, and other information into one small surface. FocuSD follows the same idea for focused study and deep work. The name stands for **Focu Study and DeepWork**, and the app is built with the lightweight Tauri framework.
+I thought of the iPhone's Dynamic Island, which gathers notifications, timers, media controls, and other information into a small island, shortening the path for us to get information. Thus, fly-island was born.
 
 ## Features
 
