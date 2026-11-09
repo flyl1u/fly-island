@@ -16,12 +16,10 @@ export type SettingsCategoriesText = {
   music: string;
   clipboard: string;
   translation: string;
+  /** The file shelf's group on the Clipboard page. */
   shelf: string;
   /** The AI Agent group's pages. */
   agents: string;
-  agentAlerts: string;
-  sounds: string;
-  agentApprovals: string;
   agentConnect: string;
   about: string;
 };
@@ -40,13 +38,10 @@ export const zhCN: SettingsCategoriesText = {
   mail: "邮箱",
   todos: "待办",
   music: "音乐",
-  clipboard: "剪贴板",
+  clipboard: "剪贴板与文件",
   translation: "翻译",
   shelf: "文件中转",
-  agents: "会话",
-  agentAlerts: "提醒",
-  sounds: "声音",
-  agentApprovals: "审批",
+  agents: "会话与提醒",
   agentConnect: "连接",
   about: "关于",
 };
@@ -65,13 +60,10 @@ export const en: SettingsCategoriesText = {
   mail: "Mail",
   todos: "Todos",
   music: "Music",
-  clipboard: "Clipboard",
+  clipboard: "Clipboard & files",
   translation: "Translation",
   shelf: "File shelf",
-  agents: "Sessions",
-  agentAlerts: "Alerts",
-  sounds: "Sounds",
-  agentApprovals: "Approvals",
+  agents: "Sessions & alerts",
   agentConnect: "Connection",
   about: "About",
 };

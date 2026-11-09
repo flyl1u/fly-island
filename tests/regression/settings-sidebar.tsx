@@ -53,7 +53,7 @@ try {
   const headings = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__heading")].map((heading) => heading.textContent);
   check(headings().join("|") === "基础|功能|AI Agent", "Pages sit under fixed group headings that do not fold");
   check(!host.querySelector("input, button[aria-expanded]"), "No search box and nothing to fold");
-  check(listed().join() === "general,appearance,todos,music,translation,clipboard,shelf,messages,agents,agentAlerts,sounds,agentApprovals,agentConnect,about",
+  check(listed().join() === "general,appearance,todos,music,translation,clipboard,messages,agents,agentConnect,about",
     "Every page is listed once, in sidebar order");
   check(host.querySelector(".settings-sidebar__footer [data-category='about']"), "About is pinned below the page list");
   check(element(".settings-sidebar__item--active").dataset.category === "general", "The open page is marked");

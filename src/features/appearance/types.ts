@@ -152,14 +152,6 @@ export type IslandSettings = {
   gameAutoTuck: boolean;
 };
 
-export type IslandPreset = {
-  id: string;
-  name: string;
-  settings: IslandSettings;
-  createdAt: number;
-  isDefault?: boolean;
-};
-
 export type LegacyIslandSettings = Partial<IslandSettings> & {
   margin?: number;
   sizeScale?: number;

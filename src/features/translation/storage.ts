@@ -53,8 +53,9 @@ export function normalizeTranslationSettings(stored: unknown): TranslationSettin
     provider: isTranslationProvider(value.provider) ? value.provider : LEGACY_TRANSLATION_PROVIDER,
     customBaseUrl: typeof value.customBaseUrl === "string" ? value.customBaseUrl : "",
     models: normalizeModels(value.models),
-    pasteClipboardOnOpen: value.pasteClipboardOnOpen !== false,
-    autoTranslate: value.autoTranslate === true,
+    // No longer settings: pasting the clipboard on open and translating as you type keep their defaults.
+    pasteClipboardOnOpen: DEFAULT_SETTINGS.pasteClipboardOnOpen,
+    autoTranslate: DEFAULT_SETTINGS.autoTranslate,
   };
 }
 

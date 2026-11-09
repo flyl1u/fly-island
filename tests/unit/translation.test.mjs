@@ -35,9 +35,9 @@ test("provider, custom base URL and per-provider models are kept when valid", ()
   assert.deepEqual(normalizeTranslationSettings({ models: "x" }).models, {});
 });
 
-test("clipboard fill stays on and auto-translate stays off unless switched", () => {
+test("clipboard fill stays on and auto-translate off: they are no longer settings", () => {
   const settings = normalizeTranslationSettings({ pasteClipboardOnOpen: false, autoTranslate: true });
-  assert.equal(settings.pasteClipboardOnOpen, false);
-  assert.equal(settings.autoTranslate, true);
+  assert.equal(settings.pasteClipboardOnOpen, true);
+  assert.equal(settings.autoTranslate, false);
   assert.equal(normalizeTranslationSettings({ autoTranslate: "yes" }).autoTranslate, false);
 });

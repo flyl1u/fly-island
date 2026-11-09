@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
@@ -7,13 +6,11 @@ import type { ClipboardHistorySettings } from "./api";
 
 /**
  * The clipboard history options below the module switch (which is `enabled`, set by the
- * page). `children` are further rows from outside this feature, such as the row count.
- * Its shortcut is set on the Shortcuts page.
+ * page). Its shortcut is the next group on the page.
  */
-export function ClipboardSettingsSection({ clipboardSettings, onClipboardSettingsChange, children }: {
+export function ClipboardSettingsSection({ clipboardSettings, onClipboardSettingsChange }: {
   clipboardSettings: ClipboardHistorySettings;
   onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
-  children?: ReactNode;
 }) {
   const t = useTranslation();
 
@@ -31,7 +28,6 @@ export function ClipboardSettingsSection({ clipboardSettings, onClipboardSetting
         max={200}
         onChange={(maxItems) => onClipboardSettingsChange({ ...clipboardSettings, maxItems })}
       />
-      {children}
     </SettingsGroup>
   );
 }

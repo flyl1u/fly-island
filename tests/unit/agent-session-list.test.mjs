@@ -72,7 +72,7 @@ test("the Agent page follows the AI Agent switch", () => {
 
 test("the Agent page fits the session rows set in Settings", async () => {
   const { getAgentPageExpandedHeight } = await import("../../src/windows/island/layout.ts");
-  const { normalizeSettings, DEFAULT_SETTINGS, MIN_AGENT_VISIBLE_ROWS, MAX_AGENT_VISIBLE_ROWS } = await import("../../src/features/appearance/settings.ts");
+  const { normalizeSettings, DEFAULT_SETTINGS, MAX_AGENT_VISIBLE_ROWS } = await import("../../src/features/appearance/settings.ts");
   // Flat rows: three full rows take far less room than the old cards (429px).
   assert.equal(getAgentPageExpandedHeight(3), 316);
   // Each extra session adds one full row and its gap.
@@ -83,39 +83,21 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(getAgentPageExpandedHeight(4, 0, "cards") - getAgentPageExpandedHeight(3, 0, "cards"), 68);
   assert.equal(getAgentPageExpandedHeight(4, 0, "compact") - getAgentPageExpandedHeight(3, 0, "compact"), 38);
   assert.equal(getAgentPageExpandedHeight(1, 0, "cards"), getAgentPageExpandedHeight(0, 0, "cards") + 62 + 6 - 6 + 6);
-  // Flat rows stay the default view; an unknown saved one falls back to it.
+  // Flat rows are the view; the view, archive motion and card effects are no longer settings,
+  // so whatever an older version saved loads as the default.
   assert.equal(DEFAULT_SETTINGS.agentSessionView, "list");
-  assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "cards");
-  assert.equal(normalizeSettings({ agentSessionView: "tiles" }).agentSessionView, "list");
+  assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "list");
   assert.equal(DEFAULT_SETTINGS.agentSessionSort, "status");
   assert.equal(normalizeSettings({ agentSessionSort: "firstSeen" }).agentSessionSort, "firstSeen");
   assert.equal(normalizeSettings({ agentSessionGroup: "project" }).agentSessionGroup, "project");
   assert.equal(normalizeSettings({ agentSessionGroup: "tree" }).agentSessionGroup, "computer");
-  // Archiving slides out unless the dust is chosen.
-  assert.equal(DEFAULT_SETTINGS.agentArchiveMotion, "slide");
-  assert.equal(normalizeSettings({ agentArchiveMotion: "dissolve" }).agentArchiveMotion, "dissolve");
-  assert.equal(normalizeSettings({ agentArchiveMotion: "explode" }).agentArchiveMotion, "slide");
-  // Card light effects are off unless chosen.
-  assert.equal(DEFAULT_SETTINGS.agentCardEffects, "off");
-  assert.equal(normalizeSettings({ agentCardEffects: "sparkle" }).agentCardEffects, "sparkle");
-  assert.equal(normalizeSettings({ agentCardEffects: "rainbow" }).agentCardEffects, "off");
-
+  assert.equal(normalizeSettings({ agentArchiveMotion: "dissolve" }).agentArchiveMotion, "slide");
+  assert.equal(normalizeSettings({ agentCardEffects: "sparkle" }).agentCardEffects, "off");
+  assert.equal(normalizeSettings({ agentVisibleRows: 5 }).agentVisibleRows, DEFAULT_SETTINGS.agentVisibleRows);
   assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
-  // Settings saved before this was a setting keep the old three rows.
-  assert.equal(normalizeSettings({}).agentVisibleRows, 3);
-  assert.equal(normalizeSettings({ agentVisibleRows: 99 }).agentVisibleRows, MAX_AGENT_VISIBLE_ROWS);
-  assert.equal(normalizeSettings({ agentVisibleRows: 0 }).agentVisibleRows, MIN_AGENT_VISIBLE_ROWS);
-  assert.equal(normalizeSettings({ agentVisibleRows: 3.6 }).agentVisibleRows, 4);
-  assert.equal(normalizeSettings({ agentVisibleRows: "4" }).agentVisibleRows, 3);
-
-  // Running time is off unless turned on.
-  assert.equal(DEFAULT_SETTINGS.agentShowElapsed, false);
-  assert.equal(normalizeSettings({}).agentShowElapsed, false);
-  assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, true);
-  // Sessions that have quit are hidden unless turned off; the window stays 2 hours.
-  assert.equal(DEFAULT_SETTINGS.agentHideClosed, true);
-  assert.equal(normalizeSettings({}).agentHideClosed, true);
-  assert.equal(normalizeSettings({ agentHideClosed: false }).agentHideClosed, false);
+  // Rows, running time and hiding quit sessions are no longer settings: always the default.
+  assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, false);
+  assert.equal(normalizeSettings({ agentHideClosed: false }).agentHideClosed, true);
   assert.equal(DEFAULT_SETTINGS.agentSessionHours, 2);
 });
 

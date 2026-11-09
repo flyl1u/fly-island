@@ -88,12 +88,3 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   gameDoNotDisturb: true,
   gameAutoTuck: false,
 };
-// What versions before these fields existed showed. A saved setting without the
-// field loads as this, not as the first-launch default, so an upgrade keeps the look.
-export const LEGACY_FALLBACKS = {
-  islandCornerRadius: 30,
-  clipboardVisibleRows: 3,
-  agentVisibleRows: 3,
-  hoverExpandDelayMs: 300,
-  hoverCollapseDelayMs: 400,
-} as const satisfies Partial<IslandSettings>;

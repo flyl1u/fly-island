@@ -1,5 +1,5 @@
 import { readJson, writeJson } from "../../../lib/storage.ts";
-import { AGENT_SOUND_EVENTS, type AgentSoundEvent } from "./events.ts";
+import type { AgentSoundEvent } from "./events.ts";
 
 export const AGENT_SOUNDS_STORAGE_KEY = "focusd-island-agent-sounds";
 
@@ -29,28 +29,14 @@ export const DEFAULT_AGENT_SOUND_SETTINGS: AgentSoundSettings = {
   quietHours: { enabled: false, start: "22:00", end: "08:00" },
 };
 
-const CLOCK = /^\d{1,2}:\d{2}$/;
-
+/**
+ * Saved sound settings. Only the on/off switch is still a setting; the volume, pack, events and
+ * quiet times always load as their defaults, whatever an older version saved.
+ */
 export function normalizeAgentSoundSettings(value: unknown): AgentSoundSettings {
   const fallback = DEFAULT_AGENT_SOUND_SETTINGS;
-  if (!value || typeof value !== "object") return fallback;
-  const raw = value as Record<string, unknown>;
-  const bool = (input: unknown, otherwise: boolean) => (typeof input === "boolean" ? input : otherwise);
-  const rawEvents = raw.events && typeof raw.events === "object" ? (raw.events as Record<string, unknown>) : {};
-  const rawQuiet = raw.quietHours && typeof raw.quietHours === "object" ? (raw.quietHours as Record<string, unknown>) : {};
-  const clock = (input: unknown, otherwise: string) => (typeof input === "string" && CLOCK.test(input) ? input : otherwise);
-  return {
-    enabled: bool(raw.enabled, fallback.enabled),
-    volume: typeof raw.volume === "number" && Number.isFinite(raw.volume) ? Math.min(100, Math.max(0, Math.round(raw.volume))) : fallback.volume,
-    pack: typeof raw.pack === "string" && /^(plugin:[a-z0-9.-]{3,64}|[a-z0-9-]{1,64})$/.test(raw.pack) ? raw.pack : fallback.pack,
-    events: Object.fromEntries(AGENT_SOUND_EVENTS.map((event) => [event, bool(rawEvents[event], fallback.events[event])])) as Record<AgentSoundEvent, boolean>,
-    quietWhenInFront: bool(raw.quietWhenInFront, fallback.quietWhenInFront),
-    quietHours: {
-      enabled: bool(rawQuiet.enabled, fallback.quietHours.enabled),
-      start: clock(rawQuiet.start, fallback.quietHours.start),
-      end: clock(rawQuiet.end, fallback.quietHours.end),
-    },
-  };
+  const enabled = value && typeof value === "object" ? (value as Record<string, unknown>).enabled : undefined;
+  return { ...fallback, enabled: typeof enabled === "boolean" ? enabled : fallback.enabled };
 }
 
 export function loadAgentSoundSettings(): AgentSoundSettings {

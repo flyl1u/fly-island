@@ -18,13 +18,7 @@ export type MusicText = {
   repeatAll: string;
   repeatOff: string;
   seek: string;
-  settingsTitle: string;
-  settingsHint: string;
   openSettings: string;
-  closeSettings: string;
-  reorderSource: string;
-  removeSource: string;
-  noSources: string;
 };
 
 export const zhCN: MusicText = {
@@ -51,13 +45,7 @@ export const zhCN: MusicText = {
   repeatAll: "列表循环",
   repeatOff: "关闭循环",
   seek: "调整进度",
-  settingsTitle: "来源优先级",
-  settingsHint: "拖动排序，悬浮岛会优先跟随靠前且正在播放的来源。",
   openSettings: "来源设置",
-  closeSettings: "返回播放器",
-  reorderSource: "调整来源顺序",
-  removeSource: "移除来源",
-  noSources: "尚未检测到音频来源。",
 };
 
 export const en: MusicText = {
@@ -84,11 +72,5 @@ export const en: MusicText = {
   repeatAll: "Repeat all",
   repeatOff: "Repeat off",
   seek: "Seek",
-  settingsTitle: "Source priority",
-  settingsHint: "Drag to reorder. The island follows the highest source that is playing.",
   openSettings: "Source settings",
-  closeSettings: "Back to player",
-  reorderSource: "Reorder source",
-  removeSource: "Remove source",
-  noSources: "No audio sources detected yet.",
 };
