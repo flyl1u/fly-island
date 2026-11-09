@@ -1,5 +1,6 @@
-//! The icon an executable shows in Explorer, as RGBA pixels, for labelling where an agent
-//! session runs (Orca, Windows Terminal, VS Code, ...).
+//! Icons as RGBA pixels: the icon an executable shows in Explorer, for labelling where an
+//! agent session runs (Orca, Windows Terminal, VS Code, ...), and the shell icon of a file or
+//! file type, for the file shelf.
 
 use std::{ffi::c_void, mem::size_of};
 
@@ -10,12 +11,19 @@ use windows::{
             CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, GetObjectW, BITMAP, BITMAPINFO,
             BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HBITMAP, HGDIOBJ,
         },
+        Storage::FileSystem::{FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_NORMAL},
         UI::{
-            Shell::ExtractIconExW,
+            Controls::{IImageList, ILD_TRANSPARENT},
+            Shell::{
+                ExtractIconExW, SHGetFileInfoW, SHGetImageList, SHFILEINFOW, SHGFI_SYSICONINDEX,
+                SHGFI_USEFILEATTRIBUTES, SHIL_EXTRALARGE,
+            },
             WindowsAndMessaging::{DestroyIcon, GetIconInfo, HICON, ICONINFO},
         },
     },
 };
+
+use super::com::ComApartment;
 
 /// An icon's pixels, rows top to bottom, 4 bytes (R, G, B, A) each.
 pub(crate) struct IconPixels {
@@ -62,6 +70,55 @@ pub(crate) fn exe_icon(path: &str) -> Option<IconPixels> {
     icon_pixels(&IconHandle(large))
 }
 
+/// Where [`shell_icon`] takes an icon from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ShellIconSource {
+    /// The file or folder itself: its own icon (an executable's, a shortcut's target's).
+    /// Reads the disk.
+    Item,
+    /// Only the name's file type, as if a file of that name existed. Never touches the disk.
+    FileType,
+    /// The plain folder icon. Never touches the disk.
+    Folder,
+}
+
+/// The extra-large (48 px at 100% scaling) Explorer icon for `path`, or `None` when the shell
+/// has none for it.
+pub(crate) fn shell_icon(path: &str, source: ShellIconSource) -> Option<IconPixels> {
+    // The shell's image lists want COM; a thread that already has it keeps its own.
+    let _com = ComApartment::multithreaded().ok();
+    let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
+    let (attributes, flags) = match source {
+        ShellIconSource::Item => (FILE_ATTRIBUTE_NORMAL, SHGFI_SYSICONINDEX),
+        ShellIconSource::FileType => (FILE_ATTRIBUTE_NORMAL, SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES),
+        ShellIconSource::Folder => (FILE_ATTRIBUTE_DIRECTORY, SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES),
+    };
+    let mut info = SHFILEINFOW::default();
+    // SAFETY: `wide` is a NUL-terminated UTF-16 path that outlives the call; `info` is a
+    // valid SHFILEINFOW of the size passed. SHGFI_SYSICONINDEX returns no icon handle to free.
+    let found = unsafe {
+        SHGetFileInfoW(
+            PCWSTR(wide.as_ptr()),
+            attributes,
+            Some(&mut info),
+            size_of::<SHFILEINFOW>() as u32,
+            flags,
+        )
+    };
+    if found == 0 {
+        return None;
+    }
+    // SAFETY: SHGetImageList takes no pointers here and returns an owned interface.
+    let list: IImageList = unsafe { SHGetImageList(SHIL_EXTRALARGE as i32) }.ok()?;
+    // SAFETY: `list` is a live image list and `info.iIcon` an index the shell just gave for it;
+    // the returned icon is owned by the caller and destroyed by IconHandle.
+    let icon = unsafe { list.GetIcon(info.iIcon, ILD_TRANSPARENT.0) }.ok()?;
+    if icon.is_invalid() {
+        return None;
+    }
+    icon_pixels(&IconHandle(icon))
+}
+
 fn icon_pixels(icon: &IconHandle) -> Option<IconPixels> {
     let mut info = ICONINFO::default();
     // SAFETY: the icon handle is live and `info` is a valid ICONINFO to fill.
@@ -69,7 +126,7 @@ fn icon_pixels(icon: &IconHandle) -> Option<IconPixels> {
     let color = BitmapHandle(info.hbmColor);
     let mask = BitmapHandle(info.hbmMask);
     if color.0.is_invalid() {
-        // A monochrome icon; agent hosts never use one.
+        // A monochrome icon; agent hosts and file types do not use one.
         return None;
     }
 
@@ -155,5 +212,19 @@ mod tests {
         assert_eq!(icon.rgba.len(), (icon.width * icon.height * 4) as usize);
         assert!(icon.rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] > 0));
         assert!(exe_icon(r"C:\does\not\exist.exe").is_none());
+    }
+
+    #[test]
+    fn file_types_and_folders_have_shell_icons_without_the_file_existing() {
+        for (path, source) in [
+            (r"C:\does\not\exist\report.txt", ShellIconSource::FileType),
+            (r"C:\does\not\exist\folder", ShellIconSource::Folder),
+        ] {
+            let icon = shell_icon(path, source).expect("the shell has an icon for the type");
+            assert_eq!(icon.width, icon.height);
+            assert!(icon.rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] > 0));
+        }
+        let explorer = std::env::var("WINDIR").map(|dir| format!(r"{dir}\explorer.exe")).unwrap_or_default();
+        assert!(shell_icon(&explorer, ShellIconSource::Item).is_some());
     }
 }

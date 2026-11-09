@@ -1,22 +1,38 @@
-export type FileKind = "folder" | "image" | "video" | "audio" | "archive" | "text" | "file";
+export type FileKind =
+  | "folder" | "image" | "video" | "audio" | "archive" | "document" | "sheet" | "slides" | "code" | "app" | "file";
 
 const EXTENSION_KINDS: Record<Exclude<FileKind, "folder" | "file">, string[]> = {
-  image: ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico", "heic", "tif", "tiff"],
+  image: ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico", "heic", "tif", "tiff", "psd"],
   video: ["mp4", "mov", "mkv", "avi", "webm", "wmv", "flv"],
   audio: ["mp3", "wav", "flac", "aac", "m4a", "ogg", "wma"],
-  archive: ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"],
-  text: ["txt", "md", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "json", "log", "rtf"],
+  archive: ["zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso"],
+  document: ["txt", "md", "pdf", "doc", "docx", "rtf", "log", "epub"],
+  sheet: ["xls", "xlsx", "csv", "tsv", "numbers"],
+  slides: ["ppt", "pptx", "key"],
+  code: ["js", "mjs", "ts", "tsx", "jsx", "py", "rs", "go", "java", "c", "cpp", "h", "cs", "html", "css", "json", "xml", "yml", "yaml", "toml", "sh", "ps1", "bat", "cmd", "sql"],
+  app: ["exe", "msi", "lnk", "appx", "msix"],
 };
 
-/** Picks the icon family for a shelf entry from its name. */
+/** The extension of `name` in lowercase, or null for a folder or a name without one. */
+function extensionOf(name: string, isDir: boolean) {
+  const dot = name.lastIndexOf(".");
+  return isDir || dot <= 0 || dot === name.length - 1 ? null : name.slice(dot + 1).toLowerCase();
+}
+
+/** Picks the icon family (and its colour) for a shelf entry from its name. */
 export function getFileKind(name: string, isDir: boolean): FileKind {
   if (isDir) return "folder";
-  const dot = name.lastIndexOf(".");
-  if (dot <= 0) return "file";
-  const extension = name.slice(dot + 1).toLowerCase();
+  const extension = extensionOf(name, false);
+  if (!extension) return "file";
   const match = (Object.keys(EXTENSION_KINDS) as (keyof typeof EXTENSION_KINDS)[])
     .find((kind) => EXTENSION_KINDS[kind].includes(extension));
   return match ?? "file";
+}
+
+/** "PDF", "DOCX": the type shown before the size; null when there is no short extension. */
+export function getTypeLabel(name: string, isDir: boolean) {
+  const extension = extensionOf(name, isDir);
+  return extension && extension.length <= 5 ? extension.toUpperCase() : null;
 }
 
 /** Same rule as path_key in src-tauri/src/file_shelf/store.rs: case and slash style do not matter. */

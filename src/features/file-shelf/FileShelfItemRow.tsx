@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type P
 import { Check, Copy, FolderOpen, Pin, PinOff, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { FileShelfItem } from "./api";
-import { formatFileSize } from "./fileShelf";
+import { formatFileSize, getTypeLabel } from "./fileShelf";
 import { FileShelfItemIcon } from "./FileShelfItemIcon";
 import type { SelectMode } from "./selection";
 import "./FileShelfItemRow.css";
@@ -99,7 +99,7 @@ export function FileShelfItemRow({
         <span className="shelf-item__body">
           <span className="shelf-item__name">{item.name}</span>
           <span className="shelf-item__meta">
-            {status ?? (item.isDir ? t.fileShelf.folder : formatFileSize(item.size))}
+            {status ?? (item.isDir ? t.fileShelf.folder : [getTypeLabel(item.name, false), formatFileSize(item.size)].filter(Boolean).join(" · "))}
           </span>
         </span>
       </button>

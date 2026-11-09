@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { File, FileArchive, FileAudio, FileImage, FileText, FileVideo, Folder, type LucideIcon } from "lucide-react";
-import { getFileShelfThumbnail } from "./api";
+import {
+  AppWindow, File, FileArchive, FileAudio, FileCode, FileImage, FileSpreadsheet, FileText, FileVideo, Folder, Presentation,
+  type LucideIcon,
+} from "lucide-react";
+import { getFileShelfIcon, getFileShelfThumbnail } from "./api";
 import { getFileKind, type FileKind } from "./fileShelf";
 
 const KIND_ICONS: Record<FileKind, LucideIcon> = {
@@ -9,11 +12,20 @@ const KIND_ICONS: Record<FileKind, LucideIcon> = {
   video: FileVideo,
   audio: FileAudio,
   archive: FileArchive,
-  text: FileText,
+  document: FileText,
+  sheet: FileSpreadsheet,
+  slides: Presentation,
+  code: FileCode,
+  app: AppWindow,
   file: File,
 };
 
-/** The entry's file-type icon, replaced by a preview once one loads for an image. */
+type Picture = { kind: "thumbnail" | "system"; url: string };
+
+/**
+ * The entry's icon: a preview for an image, else the icon Explorer shows for it, else (outside
+ * Windows, or while either loads) a type icon on a tile in the type's colour.
+ */
 export function FileShelfItemIcon({
   id,
   name,
@@ -23,34 +35,40 @@ export function FileShelfItemIcon({
   id: string;
   name: string;
   isDir: boolean;
-  /** False for missing or unreachable entries, which are not previewed. */
+  /** False for missing or unreachable entries: no preview, and only their type's icon. */
   available: boolean;
 }) {
   const kind = getFileKind(name, isDir);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [picture, setPicture] = useState<Picture | null>(null);
   const Icon = KIND_ICONS[kind];
 
   useEffect(() => {
-    if (kind !== "image" || !available) {
-      setThumbnail(null);
-      return;
-    }
     let didCancel = false;
-    void getFileShelfThumbnail(id)
-      .then((url) => {
-        if (!didCancel) setThumbnail(url);
-      })
-      .catch(() => {
-        // A preview is optional; the icon stays.
-      });
+    const show = (next: Picture | null) => {
+      if (!didCancel && next) setPicture(next);
+    };
+    const systemIcon = (): Promise<Picture | null> =>
+      getFileShelfIcon(id, available).then((url) => (url ? { kind: "system", url } : null));
+    const load: Promise<Picture | null> = kind === "image" && available
+      ? getFileShelfThumbnail(id).then((url) => (url ? { kind: "thumbnail", url } : systemIcon()))
+      : systemIcon();
+    // Either is optional; the type icon stays.
+    load.then(show, () => undefined);
     return () => {
       didCancel = true;
     };
   }, [available, id, kind]);
 
+  const className = [
+    "shelf-item__icon",
+    `shelf-item__icon--${kind}`,
+    picture?.kind === "thumbnail" ? "shelf-item__icon--thumbnail" : "",
+    picture?.kind === "system" ? "shelf-item__icon--system" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <span className={`shelf-item__icon${thumbnail ? " shelf-item__icon--thumbnail" : ""}`} aria-hidden="true">
-      {thumbnail ? <img src={thumbnail} alt="" draggable={false} /> : <Icon size={20} strokeWidth={1.9} />}
+    <span className={className} aria-hidden="true">
+      {picture ? <img src={picture.url} alt="" draggable={false} /> : <Icon size={19} strokeWidth={1.9} />}
     </span>
   );
 }

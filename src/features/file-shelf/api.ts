@@ -58,6 +58,11 @@ export function getFileShelfThumbnail(id: string) {
   return invoke<string | null>("get_file_shelf_thumbnail", { id });
 }
 
+/** Explorer's icon for the entry as a PNG data URL; `available` false uses only its type's icon. */
+export function getFileShelfIcon(id: string, available: boolean) {
+  return invoke<string | null>("get_file_shelf_icon", { id, available });
+}
+
 export function clearFileShelf() {
   return invoke<FileShelfSnapshot>("clear_file_shelf");
 }

@@ -24,6 +24,7 @@ export const PAGES = [
   "agent-approvals.html",
   "agent-sessions.html?test=1",
   "collapsed-message-animation.html?test=1",
+  "file-shelf.html",
   "i18n.html?test=1",
   "mail-reader.html?run=1",
   "music-lyrics.html",
