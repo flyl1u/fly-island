@@ -2,6 +2,7 @@
 //! so they can be dragged out, copied, opened or shown in Explorer later.
 
 mod availability;
+mod icon;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -22,6 +23,7 @@ use tauri::{AppHandle, Manager, WebviewWindow};
 use crate::win32;
 use availability::{Availability, Presence};
 use store::*;
+use icon::FileIcons;
 use thumbnail::Thumbnails;
 
 
@@ -72,6 +74,7 @@ struct FileShelfService {
     options: Mutex<FileShelfOptions>,
     availability: Availability,
     thumbnails: Thumbnails,
+    icons: FileIcons,
 }
 
 impl FileShelfService {
@@ -118,6 +121,15 @@ impl FileShelfService {
             .iter()
             .find(|item| item.id == id)
             .map(|item| item.path.clone())
+            .ok_or_else(|| "This item is no longer on the shelf.".to_string())
+    }
+
+    /// The path of `id` and whether it is a folder.
+    fn kind_of(&self, id: &str) -> Result<(String, bool), String> {
+        self.items()
+            .iter()
+            .find(|item| item.id == id)
+            .map(|item| (item.path.clone(), item.is_dir))
             .ok_or_else(|| "This item is no longer on the shelf.".to_string())
     }
 
@@ -170,6 +182,7 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         options: Mutex::new(FileShelfOptions::default()),
         availability: Availability::default(),
         thumbnails: Thumbnails::default(),
+        icons: FileIcons::default(),
     });
     Ok(())
 }
@@ -267,6 +280,18 @@ pub async fn get_file_shelf_thumbnail(id: String) -> Result<Option<String>, Stri
     .map_err(|error| format!("Failed to preview {error}"))?
 }
 
+/// Explorer's icon for the entry, as a PNG data URL. `available` is false for an entry the
+/// island marks missing or unreachable, so only its type's icon is used.
+#[tauri::command]
+pub async fn get_file_shelf_icon(id: String, available: bool) -> Result<Option<String>, String> {
+    let (path, is_dir) = service()?.kind_of(&id)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        service().map(|service| service.icons.icon(&path, is_dir, available))
+    })
+    .await
+    .map_err(|error| format!("Failed to get the icon {error}"))?
+}
+
 #[tauri::command]
 pub async fn clear_file_shelf() -> Result<FileShelfSnapshot, String> {
     service()?.update(|_| Vec::new())
@@ -342,6 +367,7 @@ macro_rules! tauri_commands {
             crate::file_shelf::remove_file_shelf_items,
             crate::file_shelf::toggle_file_shelf_pin,
             crate::file_shelf::get_file_shelf_thumbnail,
+            crate::file_shelf::get_file_shelf_icon,
             crate::file_shelf::clear_file_shelf,
             crate::file_shelf::copy_file_shelf_items,
             crate::file_shelf::open_file_shelf_item,

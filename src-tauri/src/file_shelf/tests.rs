@@ -179,3 +179,14 @@ fn saved_items_load_back_unchanged() {
 fn path_keys_ignore_case_and_slash_style() {
     assert_eq!(path_key(r"C:\Users\Me\File.TXT"), path_key("c:/users/me/file.txt"));
 }
+
+#[test]
+fn entries_share_their_type_icon_and_programs_keep_their_own() {
+    use super::icon::{icon_key, IconKey};
+    assert_eq!(icon_key(r"D:\Docs\Report.PDF", false), IconKey::FileType("pdf".into()));
+    assert_eq!(icon_key(r"E:\Other\notes.pdf", false), icon_key(r"D:\a.pdf", false));
+    assert_eq!(icon_key(r"D:\Docs\Makefile", false), IconKey::FileType(String::new()));
+    assert_eq!(icon_key(r"D:\Docs\Archive.zip", true), IconKey::Folder);
+    assert_eq!(icon_key(r"C:\Tools\App.EXE", false), IconKey::Item(r"c:\tools\app.exe".into()));
+    assert_eq!(icon_key(r"C:\Desk\Game.lnk", false), IconKey::Item(r"c:\desk\game.lnk".into()));
+}

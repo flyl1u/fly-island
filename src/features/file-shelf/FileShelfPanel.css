@@ -49,8 +49,11 @@
 .shelf-empty {
   flex: 1;
   min-height: 118px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 0 var(--space-lg);
   color: var(--text-3);
   text-align: center;
@@ -64,10 +67,49 @@
     border-color 140ms ease;
 }
 
-.shelf-panel--dropping .shelf-empty {
+.shelf-empty__icon {
+  margin-bottom: 2px;
+  color: rgba(110, 231, 200, 0.7);
+}
+
+.shelf-empty__title {
+  color: var(--text-2);
+}
+
+.shelf-empty__note {
+  max-width: 300px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.shelf-panel--dropping .shelf-empty,
+.shelf-panel--dropping .shelf-empty__title {
   color: rgba(214, 248, 238, 0.92);
-  background: rgba(110, 231, 200, 0.08);
-  border-color: rgba(110, 231, 200, 0.6);
+}
+
+.shelf-panel--dropping .shelf-empty,
+.shelf-drop-overlay {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(110, 231, 200, 0.2), transparent 62%),
+    rgba(110, 231, 200, 0.06);
+  border-color: rgba(110, 231, 200, 0.62);
+  box-shadow: inset 0 0 24px rgba(110, 231, 200, 0.12);
+}
+
+/* The arrow bobs toward the list while files hover over the island. */
+.shelf-panel--dropping .shelf-empty__icon,
+.shelf-drop-overlay__icon {
+  display: inline-grid;
+  color: rgba(110, 231, 200, 0.95);
+  animation: shelfDropBob 900ms ease-in-out infinite alternate;
+}
+
+@keyframes shelfDropBob {
+  to {
+    transform: translateY(4px);
+  }
 }
 
 .shelf-drop-overlay {
@@ -79,8 +121,8 @@
   justify-content: center;
   gap: var(--space-md);
   color: rgba(214, 248, 238, 0.94);
-  background: rgba(110, 231, 200, 0.1);
   border: 1.5px dashed rgba(110, 231, 200, 0.62);
+  backdrop-filter: blur(2px);
   border-radius: var(--radius-lg);
   font-size: 13px;
   font-weight: 600;
@@ -98,7 +140,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shelf-drop-overlay {
+  .shelf-drop-overlay,
+  .shelf-panel--dropping .shelf-empty__icon,
+  .shelf-drop-overlay__icon {
     animation: none;
   }
 }

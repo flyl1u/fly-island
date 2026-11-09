@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownToLine } from "lucide-react";
+import { ArrowDownToLine, Inbox } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { FileShelfHeader } from "./FileShelfHeader";
 import { FileShelfItemRow } from "./FileShelfItemRow";
@@ -57,7 +57,11 @@ export function FileShelfPanel({
       />
       {error && <p className="shelf-panel__error" role="alert">{error}</p>}
       {items.length === 0 ? (
-        <div className="shelf-empty">{isDropTarget ? t.fileShelf.dropHint : t.fileShelf.empty}</div>
+        <div className="shelf-empty">
+          {isDropTarget ? <ArrowDownToLine className="shelf-empty__icon" size={24} strokeWidth={2} /> : <Inbox className="shelf-empty__icon" size={24} strokeWidth={1.8} />}
+          <span className="shelf-empty__title">{isDropTarget ? t.fileShelf.dropHint : t.fileShelf.empty}</span>
+          {!isDropTarget && <span className="shelf-empty__note">{t.fileShelf.emptyNote}</span>}
+        </div>
       ) : visible.length === 0 ? (
         <div className="shelf-empty">{t.fileShelf.emptySearch}</div>
       ) : (
@@ -89,7 +93,9 @@ export function FileShelfPanel({
       )}
       {isDropTarget && items.length > 0 && (
         <div className="shelf-drop-overlay" aria-hidden="true">
-          <ArrowDownToLine size={22} strokeWidth={2.2} />
+          <span className="shelf-drop-overlay__icon">
+            <ArrowDownToLine size={22} strokeWidth={2.2} />
+          </span>
           <span>{t.fileShelf.dropHint}</span>
         </div>
       )}

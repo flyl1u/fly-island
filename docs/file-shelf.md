@@ -35,13 +35,13 @@
 ## 限制
 
 - 只能放文件和文件夹。从浏览器拖来的文字、网页图片等没有文件路径的内容，系统不会把它交给岛，所以拖进来没有反应。
-- 图片（PNG、JPEG、GIF、WebP、BMP，40 MB 以内）显示缩略图，其他文件显示类型图标。
+- 图片（PNG、JPEG、GIF、WebP、BMP，40 MB 以内）显示缩略图，其他文件显示资源管理器里的图标（48px 系统图标，命令 `get_file_shelf_icon`）。同类型文件共用一个图标，只按扩展名向系统要，不读文件本身，所以断开的网络盘也不会卡住；程序、快捷方式（exe、lnk、ico、url 等）用文件自己的图标，只在文件可访问时读取。拿不到系统图标时（或在 Windows 之外）显示按类型着色的 lucide 图标。
 
 ## 实现
 
 | 部分 | 位置 |
 |---|---|
-| 列表、清理规则、命令 | `src-tauri/src/file_shelf/`（`mod.rs` 命令，`store.rs` 读写与规则，`availability.rs` 按卷检查是否可访问，`thumbnail.rs` 缩略图） |
+| 列表、清理规则、命令 | `src-tauri/src/file_shelf/`（`mod.rs` 命令，`store.rs` 读写与规则，`availability.rs` 按卷检查是否可访问，`thumbnail.rs` 缩略图，`icon.rs` 系统图标；取图标的 Win32 调用在 `win32/icon.rs`） |
 | 拖出 | `src-tauri/src/win32/ole.rs`：`SHDoDragDrop` + 资源管理器自己的数据对象。允许复制、移动、链接，首选复制。只允许复制时资源管理器会拒绝投放，这是没有直接用 `drag` crate 的原因 |
 | 复制到剪贴板 | `clipboard-win` 写入文件列表（CF_HDROP），与资源管理器的复制相同 |
 | 拖入 | Tauri 的 `onDragDropEvent`，`src/windows/island/useFileShelfDrop.ts` |

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatFileSize, getFileKind } from "../../src/features/file-shelf/fileShelf.ts";
+import { formatFileSize, getFileKind, getTypeLabel } from "../../src/features/file-shelf/fileShelf.ts";
 
 test("shelf icons follow the file extension, case-insensitively", () => {
   assert.equal(getFileKind("Photos", true), "folder");
@@ -8,8 +8,16 @@ test("shelf icons follow the file extension, case-insensitively", () => {
   assert.equal(getFileKind("clip.mp4", false), "video");
   assert.equal(getFileKind("song.flac", false), "audio");
   assert.equal(getFileKind("backup.7z", false), "archive");
-  assert.equal(getFileKind("report.docx", false), "text");
-  assert.equal(getFileKind("setup.exe", false), "file");
+  assert.equal(getFileKind("report.docx", false), "document");
+  assert.equal(getFileKind("budget.xlsx", false), "sheet");
+  assert.equal(getFileKind("deck.PPTX", false), "slides");
+  assert.equal(getFileKind("main.rs", false), "code");
+  assert.equal(getFileKind("setup.exe", false), "app");
+  assert.equal(getFileKind("odd.", false), "file");
+  assert.equal(getTypeLabel("report.pdf", false), "PDF");
+  assert.equal(getTypeLabel("Photos.2024", true), null);
+  assert.equal(getTypeLabel("Makefile", false), null);
+  assert.equal(getTypeLabel("archive.longext", false), null);
   assert.equal(getFileKind("Makefile", false), "file");
   assert.equal(getFileKind(".gitignore", false), "file");
 });

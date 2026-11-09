@@ -1,7 +1,7 @@
 //! Small previews for image files on the shelf, decoded from the file itself.
 
 use base64::{engine::general_purpose, Engine as _};
-use image::{ImageFormat, ImageReader};
+use image::{DynamicImage, ImageFormat, ImageReader};
 use std::{
     collections::HashMap,
     fs,
@@ -67,9 +67,13 @@ impl Thumbnails {
 
 fn render(path: &str) -> Option<String> {
     let image = ImageReader::open(path).ok()?.with_guessed_format().ok()?.decode().ok()?;
-    let thumbnail = image.thumbnail(THUMBNAIL_SIDE, THUMBNAIL_SIDE);
+    png_data_url(&image.thumbnail(THUMBNAIL_SIDE, THUMBNAIL_SIDE))
+}
+
+/// `image` as a PNG data URL.
+pub(super) fn png_data_url(image: &DynamicImage) -> Option<String> {
     let mut bytes = Cursor::new(Vec::new());
-    thumbnail.write_to(&mut bytes, ImageFormat::Png).ok()?;
+    image.write_to(&mut bytes, ImageFormat::Png).ok()?;
     Some(format!(
         "data:image/png;base64,{}",
         general_purpose::STANDARD.encode(bytes.into_inner())

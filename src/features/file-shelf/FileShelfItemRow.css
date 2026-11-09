@@ -1,28 +1,28 @@
+/* Rows sit flat on the panel; hover, selection and a fresh drop give them a surface. */
 .shelf-item {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-md);
-  padding: 7px 8px;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.052), rgba(110, 231, 200, 0.018));
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  padding: 6px 8px 6px 6px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
   transition:
     background 150ms ease,
     border-color 150ms ease;
 }
 
 .shelf-item:hover {
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.082), rgba(110, 231, 200, 0.04));
-  border-color: rgba(214, 240, 232, 0.15);
+  background: rgba(255, 255, 255, 0.055);
+  border-color: var(--color-white-a08);
 }
 
 .shelf-item__main {
   min-width: 0;
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-lg);
   padding: 0;
@@ -35,15 +35,50 @@
   user-select: none;
 }
 
+.shelf-item__main:active {
+  cursor: grabbing;
+}
+
+/* A type icon on a tile in the type's colour, until Explorer's own icon loads. */
 .shelf-item__icon {
-  width: 38px;
-  height: 38px;
+  --shelf-kind: 190, 205, 215;
+  width: 40px;
+  height: 40px;
   display: inline-grid;
   place-items: center;
-  color: rgba(204, 244, 232, 0.82);
-  background: linear-gradient(145deg, var(--color-white-a10), rgba(110, 231, 200, 0.05));
-  border: 1px solid rgba(255, 255, 255, 0.095);
-  border-radius: 7px;
+  color: rgb(var(--shelf-kind));
+  background: rgba(var(--shelf-kind), 0.12);
+  border: 1px solid rgba(var(--shelf-kind), 0.2);
+  border-radius: 9px;
+  transition: transform 160ms ease;
+}
+
+.shelf-item:hover .shelf-item__icon {
+  transform: translateY(-1px);
+}
+
+.shelf-item__icon--folder { --shelf-kind: 246, 200, 95; }
+.shelf-item__icon--image { --shelf-kind: 110, 231, 200; }
+.shelf-item__icon--video { --shelf-kind: 240, 128, 160; }
+.shelf-item__icon--audio { --shelf-kind: 196, 160, 255; }
+.shelf-item__icon--archive { --shelf-kind: 230, 170, 110; }
+.shelf-item__icon--document { --shelf-kind: 120, 178, 255; }
+.shelf-item__icon--sheet { --shelf-kind: 108, 210, 130; }
+.shelf-item__icon--slides { --shelf-kind: 255, 150, 100; }
+.shelf-item__icon--code { --shelf-kind: 150, 220, 240; }
+.shelf-item__icon--app { --shelf-kind: 170, 186, 255; }
+
+/* Explorer's icon brings its own shape and colour: no tile behind it. */
+.shelf-item__icon--system {
+  background: transparent;
+  border-color: transparent;
+}
+
+.shelf-item__icon--system img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .shelf-item__body {
@@ -73,9 +108,18 @@
   animation: shelfItemArrive 1200ms ease both;
 }
 
+/* A fresh drop slides in from above and glows mint for a moment. */
 @keyframes shelfItemArrive {
-  0%,
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+    background: rgba(110, 231, 200, 0.16);
+    border-color: rgba(110, 231, 200, 0.6);
+  }
+  20%,
   45% {
+    opacity: 1;
+    transform: none;
     background: rgba(110, 231, 200, 0.16);
     border-color: rgba(110, 231, 200, 0.6);
   }
@@ -88,12 +132,13 @@
 }
 
 .shelf-item--pinned .shelf-item__icon {
-  box-shadow: inset 0 0 0 1px rgba(110, 231, 200, 0.45);
+  box-shadow: 0 0 0 1.5px rgba(110, 231, 200, 0.55);
 }
 
 .shelf-item__icon--thumbnail {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.055);
+  border-color: var(--color-white-a10);
 }
 
 .shelf-item__icon--thumbnail img {
@@ -137,16 +182,34 @@
   color: rgba(255, 170, 180, 0.72);
 }
 
+/* The row's buttons stay out of the way until it is pointed at, focused or selected. */
 .shelf-item__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-sm);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.shelf-item:hover .shelf-item__actions,
+.shelf-item:focus-within .shelf-item__actions,
+.shelf-item--selected .shelf-item__actions {
+  opacity: 1;
+}
+
+/* A pinned entry keeps its pin showing. */
+.shelf-item--pinned .shelf-item__actions {
+  opacity: 1;
+}
+
+.shelf-item--pinned:not(:hover, :focus-within, .shelf-item--selected) .shelf-item__actions button:not(.shelf-pin-button--active) {
+  opacity: 0;
 }
 
 .shelf-item__actions button {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: inline-grid;
   place-items: center;
   padding: 0;
