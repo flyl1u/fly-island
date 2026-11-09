@@ -1,7 +1,5 @@
 import { ClipboardSettingsSection } from "../../features/clipboard/ClipboardSettingsSection";
 import { useClipboardSettings } from "../../features/clipboard/useClipboardSettings";
-import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
-import { MAX_CLIPBOARD_VISIBLE_ROWS, MIN_CLIPBOARD_VISIBLE_ROWS } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
@@ -9,7 +7,9 @@ import { ClipboardShortcutRows } from "../../features/clipboard/ClipboardShortcu
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { findShortcutOwner } from "./shortcutConflicts";
+import { ShelfSettingsGroup } from "./ShelfSettingsGroup";
 
+/** Settings → Clipboard & files: clipboard history (switch, images, length, shortcut), then the file shelf. */
 export function ClipboardSettingsPage({
   settings,
   onSettingsChange,
@@ -40,15 +40,7 @@ export function ClipboardSettingsPage({
         <ClipboardSettingsSection
           clipboardSettings={clipboardSettings}
           onClipboardSettingsChange={updateClipboardSettings}
-        >
-          <SettingsNumberRow
-            title={t.settings.clipboard.visibleRows}
-            value={settings.clipboardVisibleRows}
-            min={MIN_CLIPBOARD_VISIBLE_ROWS}
-            max={MAX_CLIPBOARD_VISIBLE_ROWS}
-            onChange={(clipboardVisibleRows) => onSettingsChange({ ...settings, clipboardVisibleRows })}
-          />
-        </ClipboardSettingsSection>
+        />
       )}
       {clipboardSettings.enabled && (
         <SettingsGroup title={t.settings.categories.shortcuts} footer={t.settings.shortcuts.globalHint}>
@@ -59,6 +51,7 @@ export function ClipboardSettingsPage({
           />
         </SettingsGroup>
       )}
+      <ShelfSettingsGroup settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );
 }

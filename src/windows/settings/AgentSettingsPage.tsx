@@ -1,16 +1,15 @@
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { AgentSessionListSettings } from "../../features/agent-status/AgentSessionListSettings";
-import { AgentSessionFilterSettings } from "../../features/agent-status/AgentSessionFilterSettings";
+import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
-import "../../features/agent-status/AgentHooksSettingsSection.css";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 
 /**
- * Settings → AI Agent → Sessions: the module switch, the title on the collapsed island, and what
- * the Agent page lists. Alerts, sounds, approvals and the hooks have their own pages in the group.
+ * Settings → AI Agent → Sessions & alerts: the module switch, the title on the collapsed island,
+ * pop-ups, sounds and approving on the island. The hooks are on the Connection page; what the
+ * Agent page lists and how its cards look keep their defaults.
  */
 export function AgentSettingsPage({
   settings,
@@ -41,8 +40,7 @@ export function AgentSettingsPage({
           onChange={(agentTitleEnabled) => onSettingsChange({ ...settings, agentTitleEnabled })}
         />
       </SettingsGroup>
-      <AgentSessionListSettings settings={settings} onSettingsChange={onSettingsChange} />
-      <AgentSessionFilterSettings />
+      <AgentAlertSettings settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );
 }

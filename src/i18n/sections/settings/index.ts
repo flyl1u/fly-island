@@ -7,7 +7,6 @@ import type { SettingsBehaviorText } from "./behavior";
 import type { SettingsTranslationText } from "./translation";
 import type { SettingsPositionText } from "./position";
 import type { SettingsExpandText } from "./expand";
-import type { SettingsGameModeText } from "./gameMode";
 import type { SettingsLyricsText } from "./lyrics";
 import type { SettingsShortcutsText } from "./shortcuts";
 import type { SettingsProjectText } from "./project";
@@ -18,7 +17,6 @@ import type { SettingsTodoText } from "./todo";
 import type { SettingsAgentText } from "./agent";
 import type { SettingsClipboardText } from "./clipboard";
 import type { SettingsColorsText } from "./colors";
-import type { SettingsPresetsText } from "./presets";
 import type { SettingsSaveText } from "./save";
 import type { SettingsSoundsText } from "./sounds";
 import * as fileShelf from "./fileShelf.ts";
@@ -30,7 +28,6 @@ import * as behavior from "./behavior.ts";
 import * as translation from "./translation.ts";
 import * as position from "./position.ts";
 import * as expand from "./expand.ts";
-import * as gameMode from "./gameMode.ts";
 import * as lyrics from "./lyrics.ts";
 import * as shortcuts from "./shortcuts.ts";
 import * as project from "./project.ts";
@@ -41,7 +38,6 @@ import * as todo from "./todo.ts";
 import * as agent from "./agent.ts";
 import * as clipboard from "./clipboard.ts";
 import * as colors from "./colors.ts";
-import * as presets from "./presets.ts";
 import * as save from "./save.ts";
 import * as sounds from "./sounds.ts";
 
@@ -63,7 +59,6 @@ export type SettingsText = {
 
   expand: SettingsExpandText;
 
-  gameMode: SettingsGameModeText;
   lyrics: SettingsLyricsText;
 
   shortcuts: SettingsShortcutsText;
@@ -85,7 +80,6 @@ export type SettingsText = {
 
   colors: SettingsColorsText;
 
-  presets: SettingsPresetsText;
 
   save: SettingsSaveText;
   sounds: SettingsSoundsText;
@@ -109,7 +103,6 @@ export const zhCN: SettingsText = {
 
   expand: expand.zhCN,
 
-  gameMode: gameMode.zhCN,
   lyrics: lyrics.zhCN,
 
   shortcuts: shortcuts.zhCN,
@@ -131,7 +124,6 @@ export const zhCN: SettingsText = {
 
   colors: colors.zhCN,
 
-  presets: presets.zhCN,
 
   save: save.zhCN,
   sounds: sounds.zhCN,
@@ -155,7 +147,6 @@ export const en: SettingsText = {
 
   expand: expand.en,
 
-  gameMode: gameMode.en,
   lyrics: lyrics.en,
 
   shortcuts: shortcuts.en,
@@ -177,7 +168,6 @@ export const en: SettingsText = {
 
   colors: colors.en,
 
-  presets: presets.en,
 
   save: save.en,
   sounds: sounds.en,

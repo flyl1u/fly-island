@@ -39,13 +39,13 @@ test("a track is looked up once, whatever small differences in its reported leng
   assert.equal(trackKey({ title: null, artist: null, durationMs: 0 }), null);
 });
 
-test("lyrics settings start offline and keep the offset in range", () => {
+test("lyrics settings start offline; the folder and global offset are no longer read back", () => {
   const settings = normalizeSettings({});
   assert.equal(settings.lyricsOnline, false);
   assert.equal(settings.lyricsFolder, "");
-  assert.equal(normalizeSettings({ lyricsOffsetMs: 9000 }).lyricsOffsetMs, 3000);
-  assert.equal(normalizeSettings({ lyricsOffsetMs: -1234 }).lyricsOffsetMs, -1200);
-  assert.equal(normalizeSettings({ lyricsFolder: " D:\\Lyrics " }).lyricsFolder, "D:\\Lyrics");
+  assert.equal(normalizeSettings({ lyricsOnline: true, lyricsChinese: true }).lyricsChinese, true);
+  assert.equal(normalizeSettings({ lyricsOffsetMs: -1200 }).lyricsOffsetMs, 0);
+  assert.equal(normalizeSettings({ lyricsFolder: " D:\\Lyrics " }).lyricsFolder, "");
 });
 
 test("enhanced LRC word times become the line's words", () => {

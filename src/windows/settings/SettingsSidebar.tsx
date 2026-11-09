@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Bell, ClipboardList, Inbox, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, ShieldCheck, SlidersHorizontal, Volume2, type LucideIcon } from "lucide-react";
+import { ClipboardList, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { SETTINGS_GROUPS, type SettingsCategory } from "./categories";
 import "./SettingsSidebar.css";
@@ -12,11 +12,7 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   music: Music,
   clipboard: ClipboardList,
   translation: Languages,
-  shelf: Inbox,
   agents: MessagesSquare,
-  agentAlerts: Bell,
-  sounds: Volume2,
-  agentApprovals: ShieldCheck,
   agentConnect: Plug,
   about: Info,
 };

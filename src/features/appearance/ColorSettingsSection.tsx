@@ -1,14 +1,12 @@
 import { SettingsColor } from "../../components/settings/SettingsColor";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
-import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { DEFAULT_SETTINGS } from "./settings";
 import type { IslandSettings } from "./types";
 
-type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor" | "todoBackgroundColor";
+type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor";
 
-/** Appearance → Colours: one row per colour, then how bright the status light glows. */
+/** Appearance → Colours: the island, its text and its status light. */
 export function ColorSettingsSection({
   settings,
   onSettingsChange,
@@ -22,7 +20,6 @@ export function ColorSettingsSection({
     ["islandBackgroundColor", text.islandBackground],
     ["taskTextColor", text.taskText],
     ["pulseColor", text.pulse],
-    ["todoBackgroundColor", text.todoPaper],
   ];
 
   return (
@@ -36,17 +33,6 @@ export function ColorSettingsSection({
           }
         />
       ))}
-      <SettingsSliderRow
-        title={text.pulseBrightness}
-        value={settings.pulseBrightness}
-        min={50}
-        max={160}
-        step={1}
-        format={(value) => `${Math.round(value)}%`}
-        defaultValue={DEFAULT_SETTINGS.pulseBrightness}
-        resetLabel={t.settings.layout.resetToDefault}
-        onChange={(pulseBrightness) => onSettingsChange({ ...settings, pulseBrightness })}
-      />
     </SettingsGroup>
   );
 }

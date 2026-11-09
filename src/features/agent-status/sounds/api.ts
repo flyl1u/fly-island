@@ -15,34 +15,8 @@ export type SoundPack = {
   nameEn?: string;
 };
 
-/** A pack's name in the island's language. */
-export function soundPackName(pack: SoundPack, locale: string) {
-  return locale === "en" && pack.nameEn ? pack.nameEn : pack.name;
-}
-
-/** Mirrors SoundPackImport in src-tauri/src/agent_status/sound_packs.rs. */
-export type SoundPackImport = {
-  name: string;
-  author: string;
-  license: string;
-  files: { event: AgentSoundEvent; name: string; bytes: number[] }[];
-};
-
 export function listSoundPacks() {
   return invoke<SoundPack[]>("list_sound_packs");
-}
-
-export function importSoundPack(pack: SoundPackImport) {
-  return invoke<SoundPack>("import_sound_pack", { pack });
-}
-
-export function removeSoundPack(id: string) {
-  return invoke<void>("remove_sound_pack", { id });
-}
-
-/** Opens the pack's folder in File Explorer (an imported pack's copy, or the plugin's folder). */
-export function openSoundPackFolder(id: string) {
-  return invoke<void>("open_sound_pack_folder", { id });
 }
 
 /** The raw bytes of one file in an imported pack. */

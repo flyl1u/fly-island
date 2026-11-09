@@ -8,13 +8,16 @@ import type { AppearanceMode, IslandFont, IslandSettings } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
 
-/** Appearance → Style: classic or liquid glass, the font, and how see-through the island is. */
+/** Appearance → Style: classic or liquid glass, the font, how see-through and how big the island is. */
 export function StyleSettingsSection({
   settings,
   onSettingsChange,
+  onPreviewIsland,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
+  /** Called while the size slider moves, so the island shows the size being set. */
+  onPreviewIsland?: () => void;
 }) {
   const t = useTranslation();
   const text = t.settings.appearance;
@@ -75,6 +78,20 @@ export function StyleSettingsSection({
         defaultValue={DEFAULT_SETTINGS.opacity}
         resetLabel={t.settings.layout.resetToDefault}
         onChange={(opacity) => onSettingsChange({ ...settings, opacity })}
+      />
+      <SettingsSliderRow
+        title={t.settings.layout.collapsedScale}
+        value={settings.collapsedScale}
+        min={0.75}
+        max={1.4}
+        step={0.01}
+        format={(value) => `${value.toFixed(2)}x`}
+        defaultValue={DEFAULT_SETTINGS.collapsedScale}
+        resetLabel={t.settings.layout.resetToDefault}
+        onChange={(collapsedScale) => {
+          onSettingsChange({ ...settings, collapsedScale });
+          onPreviewIsland?.();
+        }}
       />
     </SettingsGroup>
   );

@@ -4,14 +4,13 @@ import { SettingsInput } from "../../components/settings/SettingsInput";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
-import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { deleteTranslationSecret, hasTranslationSecret, saveTranslationSecret } from "./api";
 import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS } from "./providers";
 import { useTranslationSettings } from "./useTranslationSettings";
 import "./TranslationSettingsSection.css";
 
-/** Service, model, key and behavior of quick translation; its shortcuts are on the Shortcuts page. */
+/** Service, model and key of quick translation; its shortcut is the next group on the page. */
 export function TranslationSettingsSection() {
   const t = useTranslation();
   const [settings, setSettings] = useTranslationSettings();
@@ -91,10 +90,6 @@ export function TranslationSettingsSection() {
         >
           <SettingsInput type="password" autoComplete="off" aria-label={t.translator.secret} value={secretDraft} onChange={(event) => setSecretDraft(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") void saveSecret(); }} placeholder={hasSecret ? t.translator.replaceSecret : t.translator.enterSecret} />
         </SettingsRow>
-      </SettingsGroup>
-      <SettingsGroup title={t.settings.translation.behaviorTitle}>
-        <SettingsToggleRow title={t.settings.translation.pasteOnOpen} description={t.settings.translation.pasteOnOpenHint} checked={settings.pasteClipboardOnOpen} onChange={(pasteClipboardOnOpen) => setSettings((current) => ({ ...current, pasteClipboardOnOpen }))} />
-        <SettingsToggleRow title={t.settings.translation.autoTranslate} description={t.settings.translation.autoTranslateHint} checked={settings.autoTranslate} onChange={(autoTranslate) => setSettings((current) => ({ ...current, autoTranslate }))} />
       </SettingsGroup>
     </>
   );

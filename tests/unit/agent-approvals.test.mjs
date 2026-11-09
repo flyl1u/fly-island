@@ -41,9 +41,10 @@ test("always allow uses the first addRules suggestion", () => {
   assert.equal(alwaysAllowRule([{ type: "setMode", mode: "plan" }]), null);
 });
 
-test("approval settings: both switches off by default, old saved settings keep working", async () => {
+test("approval settings: off by default; only approving on the island is read back", async () => {
   const { normalizeAgentApprovalSettings } = await import("../../src/features/agent-status/approvals/storage.ts");
   assert.deepEqual(normalizeAgentApprovalSettings(null), { onIsland: false, whenInFront: false });
   assert.deepEqual(normalizeAgentApprovalSettings({ onIsland: true }), { onIsland: true, whenInFront: false });
-  assert.deepEqual(normalizeAgentApprovalSettings({ onIsland: true, whenInFront: true }), { onIsland: true, whenInFront: true });
+  // whenInFront is no longer a setting: a saved true goes back to the default.
+  assert.deepEqual(normalizeAgentApprovalSettings({ onIsland: true, whenInFront: true }), { onIsland: true, whenInFront: false });
 });

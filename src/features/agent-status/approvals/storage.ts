@@ -17,7 +17,8 @@ export const DEFAULT_AGENT_APPROVAL_SETTINGS: AgentApprovalSettings = { onIsland
 
 export function normalizeAgentApprovalSettings(value: unknown): AgentApprovalSettings {
   const saved = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  return { onIsland: saved.onIsland === true, whenInFront: saved.whenInFront === true };
+  // whenInFront is no longer a setting: it stays at its default (off) whatever was saved.
+  return { onIsland: saved.onIsland === true, whenInFront: DEFAULT_AGENT_APPROVAL_SETTINGS.whenInFront };
 }
 
 export function loadAgentApprovalSettings(): AgentApprovalSettings {

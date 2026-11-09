@@ -3,8 +3,7 @@ import { normalizeAgentSettings } from "./normalizeAgentSettings.ts";
 import { normalizeBehaviorSettings } from "./normalizeBehaviorSettings.ts";
 import { normalizeLayoutSettings } from "./normalizeLayoutSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { MAX_CUSTOM_SETTING_PRESETS } from "./settingsLimits.ts";
-import type { AppearanceMode, IslandPreset, IslandSettings, LegacyIslandSettings } from "./types";
+import type { AppearanceMode, IslandSettings, LegacyIslandSettings } from "./types";
 
 // Island settings (focusd-island-settings): limits in settingsLimits.ts, first-launch values in
 // settingsDefaults.ts, and reading saved ones in normalize*Settings.ts by area. New settings go in
@@ -56,9 +55,6 @@ export function withAppearanceFrom(settings: IslandSettings, source: IslandSetti
   return { ...settings, ...appearance };
 }
 
-export const LEGACY_DEFAULT_PRESET_IDS = new Set(["default-white", "default-khaki"]);
-export const LEGACY_DEFAULT_PRESET_NAMES = new Set(["白色", "卡其"]);
-
 export function hexToRgba(hex: string, alpha: number) {
   const normalized = HEX_COLOR_PATTERN.test(hex)
     ? hex.slice(1)
@@ -70,37 +66,20 @@ export function hexToRgba(hex: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
+/**
+ * Saved settings read back. Only what Settings can still change is read; everything else (the
+ * options removed to keep Settings short) always loads as its default, whatever an older
+ * version saved, so nobody is left with a value they can no longer change back.
+ */
 export function normalizeSettings(
   settings: LegacyIslandSettings | null | undefined,
 ): IslandSettings {
   return {
+    ...DEFAULT_SETTINGS,
     ...normalizeLayoutSettings(settings),
     ...normalizeAgentSettings(settings),
     ...normalizeBehaviorSettings(settings),
   };
-}
-
-export function getDefaultSettingPresets(): IslandPreset[] {
-  return [];
-}
-
-export function mergeWithDefaultSettingPresets(presets: IslandPreset[]) {
-  const defaultPresets = getDefaultSettingPresets();
-  const customPresets = presets
-    .filter(
-      (preset) =>
-        !preset.isDefault &&
-        !LEGACY_DEFAULT_PRESET_IDS.has(preset.id) &&
-        !LEGACY_DEFAULT_PRESET_NAMES.has(preset.name.trim()),
-    )
-    .map((preset) => ({ ...preset, isDefault: false }))
-    .slice(0, MAX_CUSTOM_SETTING_PRESETS);
-
-  return [...defaultPresets, ...customPresets];
-}
-
-export function isDefaultSettingPreset(presetId: string) {
-  return LEGACY_DEFAULT_PRESET_IDS.has(presetId);
 }
 
 export function isSameSettings(a: IslandSettings, b: IslandSettings) {

@@ -30,6 +30,9 @@ if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ o
 else localStorage.removeItem("focusd-island-settings");
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+// Other pages in the same run leave their own agent settings behind; start from the defaults.
+localStorage.removeItem("focusd-island-agent-approval");
+localStorage.removeItem("focusd-island-agent-sounds");
 
 
 const root = createRoot(document.getElementById("root")!);
@@ -83,7 +86,12 @@ if (!automated) {
       check(element(".settings-page__title").textContent === item.textContent, `${category}: the page title matches the sidebar`);
       check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
+      // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
+      const rowCount = panel.querySelectorAll(".settings-row").length;
+      check(category === "messages" || rowCount <= 8, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
+    check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
+      && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
 
 
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
@@ -102,14 +110,9 @@ if (!automated) {
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
 
     await openPage("general");
-    const tuckedHover = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "鼠标移到隐藏的岛上");
-    const tuckedHoverButton = (label: string) => [...(tuckedHover?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find((button) => button.textContent === label);
-    check(tuckedHoverButton("只露出岛屿")?.getAttribute("aria-pressed") === "true", "Hovering a tucked island only slides it out by default");
-    await act(async () => { tuckedHoverButton("展开面板")?.click(); });
-    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { tuckedHoverAction?: string }).tuckedHoverAction === "expand"
-      && tuckedHoverButton("展开面板")?.getAttribute("aria-pressed") === "true",
-      "Choosing to open the panel from a tucked island is saved");
-    check(tuckedHover && tuckedHover.scrollWidth <= tuckedHover.clientWidth, "The tucked-hover choice fits its row");
+    const generalTitles = [...document.querySelectorAll<HTMLElement>(".editor-panel .settings-row__title")].map((title) => title.textContent);
+    check(generalTitles.includes("展开方式") && generalTitles.includes("闲置时贴边隐藏") && !generalTitles.includes("鼠标移到隐藏的岛上") && !generalTitles.includes("显示在"),
+      "General keeps opening and tucking; hover timings, the monitor and game mode are gone");
     const detachedRow = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "独立设置窗口");
     const detachedSwitch = detachedRow?.querySelector<HTMLInputElement>("[role='switch']");
     check(detachedSwitch && !detachedSwitch.checked, "Settings start embedded in the island; General offers a separate window");
@@ -160,9 +163,9 @@ if (!automated) {
     check(saved.accounts?.some((account) => account.email === "new@example.edu.cn" && account.host === "imap.example.edu.cn"),
       "The typed server is saved with the mailbox");
 
-    // AI Agent has its own group: sessions, alerts, sounds, approvals and the hooks each on a page.
+    // AI Agent has its own group: sessions and alerts on one page, the hooks on the other.
     const agentGroup = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__group")].find((group) => group.getAttribute("aria-label") === "AI Agent");
-    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话|提醒|声音|审批|连接", "AI Agent is its own sidebar group with sessions, alerts, sounds, approvals and connection");
+    check([...(agentGroup?.querySelectorAll(".settings-sidebar__item") ?? [])].map((item) => item.textContent).join("|") === "会话与提醒|连接", "AI Agent is its own sidebar group with two pages: sessions and alerts, connection");
     await openPage("agentConnect");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     check(agentPolls() > pollsAway, "The connection page reads the agents' state");
@@ -183,16 +186,14 @@ if (!automated) {
     await act(async () => { hooksLink!.click(); });
     check(element(".settings-sidebar__item[data-category='agentConnect']").getAttribute("aria-current") === "page", "The hooks notice on the sessions page opens the connection page");
     await openPage("agents");
-    const filterGroup = () => [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.textContent?.includes("隐藏会话"))!;
-    localStorage.removeItem("focusd-island-agent-session-filters");
-    const filterInput = filterGroup().querySelector<HTMLInputElement>(".session-filter__form input")!;
-    await type(filterInput, "E:\\Projects\\scratch");
-    await act(async () => { filterGroup().querySelector<HTMLFormElement>(".session-filter__form")!.requestSubmit(); });
-    const savedFilters = JSON.parse(localStorage.getItem("focusd-island-agent-session-filters") ?? "[]") as { kind: string; value: string }[];
-    check(savedFilters.length === 1 && savedFilters[0].kind === "folder" && savedFilters[0].value === "E:\\Projects\\scratch" && filterInput.value === ""
-      && filterGroup().querySelector(".session-filter__value")?.textContent === "E:\\Projects\\scratch", "Adding a hide-sessions rule saves and lists it");
-    await act(async () => { filterGroup().querySelector<HTMLButtonElement>(".session-filter__remove")!.click(); });
-    check(localStorage.getItem("focusd-island-agent-session-filters") === "[]" && !filterGroup().querySelector(".session-filter__value"), "Removing the rule clears it");
+    const agentRow = (title: string) => [...document.querySelectorAll<HTMLElement>(".editor-panel .settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === title);
+    check(!document.querySelector(".session-filter__form"), "Hide-session rules are no longer offered");
+    const soundSwitch = agentRow("AI Agent 音效")?.querySelector<HTMLInputElement>("[role='switch']");
+    check(soundSwitch?.checked, "Agent sounds are a single switch on the sessions page, on by default");
+    await act(async () => { soundSwitch!.click(); });
+    check((JSON.parse(localStorage.getItem("focusd-island-agent-sounds") ?? "{}") as { enabled?: boolean }).enabled === false, "Switching agent sounds off is saved");
+    const approvalSwitch = agentRow("在岛上允许或拒绝 Agent 的操作")?.querySelector<HTMLInputElement>("[role='switch']");
+    check(approvalSwitch && !approvalSwitch.checked, "Approving on the island sits on the sessions page, off by default");
 
     await openPage("about");
     const aboutLink = (label: string) =>

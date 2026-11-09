@@ -1,9 +1,9 @@
 import type { IslandSettings } from "../../features/appearance/types";
-import { MusicSourceSettingsSection } from "../../features/media/MusicSourceSettingsSection";
 import { LyricsSettingsSection } from "../../features/media/lyrics/LyricsSettingsSection";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 
+/** Settings → Music: the module switch and where lyrics come from. */
 export function MusicSettingsPage({
   settings,
   onSettingsChange,
@@ -20,7 +20,6 @@ export function MusicSettingsPage({
         checked={settings.musicEnabled}
         onChange={(musicEnabled) => onSettingsChange({ ...settings, musicEnabled })}
       />
-      {settings.musicEnabled && <MusicSourceSettingsSection />}
       {settings.musicEnabled && <LyricsSettingsSection settings={settings} onSettingsChange={onSettingsChange} />}
     </>
   );
