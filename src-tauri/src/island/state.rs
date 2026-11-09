@@ -1,7 +1,7 @@
 //! Native-side island window state shared by the commands, geometry and cursor passthrough.
 
 use serde::{Deserialize, Serialize};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock, PoisonError};
 use tauri::PhysicalPosition;
 
 use super::geometry::{
@@ -42,6 +42,54 @@ impl IslandMode {
     }
 }
 
+/// Which monitor the island sits on (roadmap C1): the primary one, or the one the pointer or the
+/// foreground window is on, moving there when that changes (follow.rs).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum MonitorFollow {
+    Primary,
+    Cursor,
+    Foreground,
+}
+
+impl MonitorFollow {
+    /// `primary`, `cursor` or `foreground`; anything else is not a choice the settings offer.
+    pub(super) fn from_value(value: &str) -> Option<Self> {
+        match value {
+            "primary" => Some(Self::Primary),
+            "cursor" => Some(Self::Cursor),
+            "foreground" => Some(Self::Foreground),
+            _ => None,
+        }
+    }
+}
+
+/// The island's corner shape from the appearance settings, as CSS draws it with `corner-shape`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CornerShape {
+    Round,
+    /// `corner-shape: squircle`, the superellipse |x|^4 + |y|^4 = r^4.
+    Squircle,
+}
+
+impl CornerShape {
+    /// `round` or `squircle`; anything else is not a shape the island draws.
+    pub(super) fn from_value(value: &str) -> Option<Self> {
+        match value {
+            "round" => Some(Self::Round),
+            "squircle" => Some(Self::Squircle),
+            _ => None,
+        }
+    }
+
+    /// Whether a point `(dx, dy)` from the corner's centre lies inside a corner of `radius`.
+    pub(super) fn contains(self, dx: f64, dy: f64, radius: f64) -> bool {
+        match self {
+            Self::Round => dx * dx + dy * dy <= radius * radius,
+            Self::Squircle => dx.powi(4) + dy.powi(4) <= radius.powi(4),
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct IslandWindowState {
     pub(super) mode: IslandMode,
@@ -53,28 +101,37 @@ pub(crate) struct IslandWindowState {
     pub(super) expanded_height: f64,
     pub(super) custom_position: Option<IslandPosition>,
     pub(super) is_dragging: bool,
+    pub(super) top_attached: bool,
     pub(super) glass_enabled: bool,
     pub(super) glass_intensity: f64,
     pub(super) glass_tint: (u8, u8, u8),
+    /// Expanded bottom corner radius from the appearance settings. The other corner
+    /// radii keep their default ratios to it, matching IslandShell.css.
+    pub(super) corner_radius: f64,
+    pub(super) corner_shape: CornerShape,
+    pub(super) monitor_follow: MonitorFollow,
+    /// A physical point on the monitor the island followed the pointer or the foreground window
+    /// to; `None` on the primary monitor. A dragged position (`custom_position`) comes first.
+    pub(super) followed_monitor: Option<(i32, i32)>,
 }
 
 impl IslandWindowState {
-    pub(super) fn top_corner_radius(self) -> f64 {
-        if self.custom_position.is_none() && self.margin_y <= 0.0 {
-            return 0.0;
-        }
-        match self.mode {
-            IslandMode::Collapsed => COLLAPSED_ISLAND_HEIGHT / 2.0,
-            IslandMode::Expanded => 22.0,
-        }
+    /// How much the corner radius setting enlarges or shrinks the default radii.
+    fn corner_radius_factor(self) -> f64 {
+        self.corner_radius / EXPANDED_RADIUS
     }
 
     pub(super) fn bottom_corner_radius(self) -> f64 {
-        if matches!(self.mode, IslandMode::Collapsed) && self.top_corner_radius() > 0.0 {
-            COLLAPSED_ISLAND_HEIGHT / 2.0
-        } else {
-            self.mode.corner_radius()
-        }
+        self.mode.corner_radius() * self.corner_radius_factor()
+    }
+
+    pub(super) fn top_corner_radius(self) -> f64 {
+        let radius = match (self.top_attached, self.mode) {
+            (true, _) => 0.0,
+            (false, IslandMode::Collapsed) => 14.0,
+            (false, IslandMode::Expanded) => 22.0,
+        };
+        radius * self.corner_radius_factor()
     }
 
     pub(super) fn active_scale(self) -> f64 {
@@ -103,9 +160,15 @@ impl Default for IslandWindowState {
             expanded_height: DEFAULT_EXPANDED_ISLAND_HEIGHT,
             custom_position: None,
             is_dragging: false,
+            top_attached: true,
             glass_enabled: false,
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
+            corner_radius: EXPANDED_RADIUS,
+            // The front end's default; it reports the setting with the first interaction sync.
+            corner_shape: CornerShape::Squircle,
+            monitor_follow: MonitorFollow::Primary,
+            followed_monitor: None,
         }
     }
 }
@@ -117,12 +180,19 @@ pub(super) fn window_state() -> &'static Mutex<IslandWindowState> {
 pub(super) fn mutate_window_state(
     update: impl FnOnce(&mut IslandWindowState) -> IslandWindowState,
 ) -> IslandWindowState {
-    let mut state = window_state().lock().expect("window state poisoned");
+    // The state is plain Copy values. A panic in another update leaves at worst a
+    // partly applied update, which is better to keep using than to turn into a
+    // panic in every later window call.
+    let mut state = window_state()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
     update(&mut state)
 }
 
 pub(super) fn read_window_state() -> IslandWindowState {
-    *window_state().lock().expect("window state poisoned")
+    *window_state()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
 }
 
 pub(crate) fn record_dragged_position(position: PhysicalPosition<i32>) {

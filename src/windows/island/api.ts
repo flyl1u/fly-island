@@ -1,7 +1,32 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type EventCallback } from "@tauri-apps/api/event";
+import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
+import type { IslandCornerShape, IslandMonitor } from "../../features/appearance/types";
 import type { IslandPosition } from "./storage";
 import type { IslandMode, NativeGlassState } from "./types";
+
+// Mirrors TOP_ATTACHMENT_CHANGED_EVENT in src-tauri/src/island/top_edge.rs.
+export const TOP_ATTACHMENT_CHANGED_EVENT = "island-top-attachment-changed";
+
+/** Whether the island currently sits flush with the top edge of its monitor. */
+export function getIslandTopAttachment(): Promise<boolean> {
+  return invoke<boolean>("get_island_top_attachment");
+}
+
+export function listenIslandTopAttachment(
+  handler: (attached: boolean) => void,
+): Promise<UnlistenFn> {
+  return listen<boolean>(TOP_ATTACHMENT_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
+
+// Mirrors ISLAND_HOVER_CHANGED_EVENT in src-tauri/src/island/passthrough.rs.
+export const ISLAND_HOVER_CHANGED_EVENT = "island-hover-changed";
+
+/** Calls `handler` whenever the cursor enters (`true`) or leaves (`false`) the island shape. */
+export function listenIslandHover(
+  handler: (inside: boolean) => void,
+): Promise<UnlistenFn> {
+  return listen<boolean>(ISLAND_HOVER_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
 
 // 与 src-tauri/src/island/mod.rs 中 start_island_drag 推送的事件名一致。
 export const ISLAND_POSITION_CHANGED_EVENT = "island-position-changed";
@@ -23,6 +48,12 @@ export type IslandInteraction = {
   glassEnabled: boolean;
   glassIntensity: number;
   glassTint: string;
+  /** Expanded bottom corner radius; the native hit test scales its other corners from it. */
+  cornerRadius: number;
+  /** The native hit test follows the island's corner shape. */
+  cornerShape: IslandCornerShape;
+  /** Which monitor the island sits on; Rust moves it there (src-tauri/src/island/follow.rs). */
+  monitorFollow: IslandMonitor;
 };
 
 export function setIslandLayout(layout: IslandLayout) {
@@ -41,6 +72,40 @@ export function minimizeIsland() {
   return invoke("minimize_island");
 }
 
+/**
+ * Focuses the island and remembers the window it took the focus from
+ * (src-tauri/src/island/focus.rs). Resolves `false` when it did nothing because a
+ * mouse button is held; ask again once it is released.
+ */
+export function takeIslandHoverFocus() {
+  return invoke<boolean>("take_island_hover_focus");
+}
+
+/** Hands the focus back to that window unless the user has since clicked elsewhere; `false` as above. */
+export function releaseIslandHoverFocus() {
+  return invoke<boolean>("release_island_hover_focus");
+}
+
+// Mirrors FOREGROUND_FULLSCREEN_CHANGED_EVENT in src-tauri/src/system/fullscreen.rs.
+export const FOREGROUND_FULLSCREEN_CHANGED_EVENT = "foreground-fullscreen-changed";
+
+/** Mirrors ForegroundFullscreen in src-tauri/src/system/fullscreen.rs. */
+export type ForegroundFullscreen = {
+  /** A full-screen app (game, full-screen video, slides) is in the foreground. */
+  active: boolean;
+  /** It fills the monitor the island is on. */
+  onIslandMonitor: boolean;
+};
+
+/** The full-screen state at the last native check (every 800 ms). */
+export function getForegroundFullscreen() {
+  return invoke<ForegroundFullscreen>("get_foreground_fullscreen");
+}
+
+export function listenForegroundFullscreen(handler: (state: ForegroundFullscreen) => void): Promise<UnlistenFn> {
+  return listen<ForegroundFullscreen>(FOREGROUND_FULLSCREEN_CHANGED_EVENT, ({ payload }) => handler(payload));
+}
+
 export function startIslandDrag() {
   return invoke("start_island_drag");
 }
@@ -52,3 +117,25 @@ export function resetIslandPosition() {
 export function listenIslandPositionChanged(handler: EventCallback<IslandPosition>) {
   return listen<IslandPosition>(ISLAND_POSITION_CHANGED_EVENT, handler);
 }
+
+// Mirrors ISLAND_POSITION_CLEARED_EVENT in src-tauri/src/island/follow.rs: following another
+// monitor replaced the dragged position.
+export const ISLAND_POSITION_CLEARED_EVENT = "island-position-cleared";
+
+export function listenIslandPositionCleared(handler: EventCallback<null>) {
+  return listen<null>(ISLAND_POSITION_CLEARED_EVENT, handler);
+}
+
+// Mirrors OUTSIDE_CLICK_EVENT in src-tauri/src/island/outside_click.rs: a mouse press outside the
+// island window while watching for one.
+export const OUTSIDE_CLICK_EVENT = "island-outside-click";
+
+/** Starts or stops looking for mouse presses outside the island window (only while an alert shows). */
+export function setIslandOutsideClickWatch(watch: boolean) {
+  return invoke<void>("set_island_outside_click_watch", { watch });
+}
+
+export function listenIslandOutsideClick(handler: () => void) {
+  return listen<null>(OUTSIDE_CLICK_EVENT, () => handler());
+}
+

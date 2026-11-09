@@ -1,4 +1,4 @@
-export const DEFAULT_CLIPBOARD_SHORTCUT = "Ctrl+X";
+export const DEFAULT_CLIPBOARD_SHORTCUT = "Ctrl+Shift+W";
 
 export type ShortcutKeyboardEvent = Pick<
   KeyboardEvent,

@@ -32,7 +32,7 @@
 }
 
 .island__summary-row--animated {
-  animation: islandSummaryEnter var(--summary-enter-duration) var(--summary-spring) both;
+  animation: islandSummaryEnter var(--summary-enter-duration) var(--summary-spring) backwards;
 }
 
 .island__summary-row--animated:not(.island-message-preview) {
@@ -48,24 +48,23 @@
   --summary-travel: 3px;
   gap: 7px;
   color: #f5f5f7;
-  font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: -.15px;
-  font-synthesis: weight;
   -webkit-font-smoothing: antialiased;
   -webkit-text-stroke: 0;
 }
 
 .island__summary-row--animated.island-message-preview > .message-brand-icon {
   transform-origin: center;
-  animation: islandMessageIconEnter 560ms var(--summary-spring) both;
+  animation: islandMessageIconEnter 560ms var(--summary-spring) backwards;
 }
 
 .island__summary-row--animated > .island-message-preview__text,
 .island__summary-row--animated > .island-message-preview__body {
-  animation: islandMessageTextEnter 460ms cubic-bezier(.2, .75, .25, 1) 100ms both;
+  animation: islandMessageTextEnter 460ms cubic-bezier(.2, .75, .25, 1) 100ms backwards;
 }
 
 .island-message-preview__text {
@@ -88,12 +87,12 @@
   flex: 0 1 auto;
   max-width: 42%;
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .island-message-preview__separator {
   flex: 0 0 auto;
-  color: rgba(248, 246, 240, .4);
+  color: var(--text-3);
 }
 
 .island-message-preview__body {

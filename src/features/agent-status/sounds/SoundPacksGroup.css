@@ -1,0 +1,17 @@
+.sound-packs__input {
+  display: none;
+}
+
+.sound-packs__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sound-packs__empty {
+  color: var(--color-text-subtle);
+}
+
+.sound-packs__error {
+  color: var(--color-warning);
+}

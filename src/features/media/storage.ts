@@ -1,4 +1,3 @@
-import { readString, writeString } from "../../lib/storage.ts";
 export type KnownMediaSource = {
   id: string;
   label: string;
@@ -8,7 +7,7 @@ export const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
 
 export function loadMusicSourcePriority(): KnownMediaSource[] {
   try {
-    const stored = readString(
+    const stored = window.localStorage.getItem(
       MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
     );
 
@@ -45,7 +44,7 @@ export function loadMusicSourcePriority(): KnownMediaSource[] {
 
 export function saveMusicSourcePriority(priority: KnownMediaSource[]) {
   try {
-    writeString(
+    window.localStorage.setItem(
       MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
       JSON.stringify(priority),
     );

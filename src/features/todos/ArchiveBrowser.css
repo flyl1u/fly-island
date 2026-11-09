@@ -94,7 +94,7 @@
   z-index: 1;
   color: #6da3df;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.16em;
   line-height: 1;
 }
@@ -104,14 +104,9 @@
   z-index: 1;
   display: grid;
   gap: 2px;
-  font-family:
-    "Aptos Display",
-    "Avenir Next",
-    "Segoe UI Variable",
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -139,7 +134,7 @@
   border-top: 1px solid rgba(115, 140, 161, 0.16);
   color: rgba(37, 39, 44, 0.72);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.25;
 }
 
@@ -222,7 +217,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 8px 16px rgba(72, 56, 43, 0.12);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   transform: rotate(-0.45deg);
   transition:
     border-color 140ms ease,

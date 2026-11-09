@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "fly-island",
-  "version": "0.2.21",
+  "version": "3.0.0",
   "identifier": "com.focusd.island",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "node scripts/stop-running-island.mjs && pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
@@ -42,18 +42,17 @@
       },
       {
         "label": "settings",
-        "title": "fly-island 设置",
-        "url": "index.html?window=settings",
         "create": false,
-        "width": 720,
-        "height": 640,
+        "title": "fly-island",
+        "url": "index.html?window=settings",
+        "width": 1080,
+        "height": 860,
         "minWidth": 580,
         "minHeight": 420,
-        "decorations": true,
-        "transparent": false,
+        "center": true,
         "resizable": true,
-        "visible": true,
-        "center": true
+        "theme": "Dark",
+        "backgroundColor": "#17191d"
       }
     ],
     "security": {

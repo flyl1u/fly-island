@@ -18,26 +18,24 @@ use windows::{
         MediaPlaybackAutoRepeatMode as RepeatMode,
     },
     Storage::Streams::{DataReader, IInputStream, IRandomAccessStreamReference},
-    Win32::{
-        System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED},
-        UI::Input::KeyboardAndMouse::{
-            keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY,
-        },
-    },
+    Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY,
 };
 
 use super::audio::{read_master_volume, read_system_audio_peak, AUDIO_ACTIVE_THRESHOLD};
 use super::service::*;
+use crate::win32;
 
 pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
 pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
+/// Cache key (source app, title and artist) and the data URL decoded for it.
+pub(super) type CachedThumbnail = (String, Option<String>);
+
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
 /// source app, title and artist, which is stable while a track is playing.
-pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<(String, Option<String>)>>> =
-    OnceLock::new();
+pub(super) static THUMBNAIL_CACHE: OnceLock<Mutex<Option<CachedThumbnail>>> = OnceLock::new();
 
 pub(super) fn on_media_thread<T, F>(operation: F) -> Result<T, String>
 where
@@ -45,14 +43,10 @@ where
     F: FnOnce() -> Result<T, String> + Send + 'static,
 {
     thread::spawn(move || {
-        let initialize_result = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
-        initialize_result
-            .ok()
+        let _apartment = win32::com::ComApartment::multithreaded()
             .map_err(|error| media_error("Failed to initialize the media COM thread", error))?;
 
-        let result = operation();
-        unsafe { CoUninitialize() };
-        result
+        operation()
     })
     .join()
     .map_err(|_| "The Windows media control thread panicked.".to_string())?
@@ -257,11 +251,9 @@ pub(super) fn run_session_command(
 }
 
 pub(super) fn send_media_key(key: VIRTUAL_KEY) {
-    let key_code = key.0 as u8;
-
-    unsafe { keybd_event(key_code, 0, KEYBD_EVENT_FLAGS(0), 0) };
+    win32::input::send_key_down(key);
     thread::sleep(Duration::from_millis(80));
-    unsafe { keybd_event(key_code, 0, KEYEVENTF_KEYUP, 0) };
+    win32::input::send_key_up(key);
 }
 
 pub(super) fn read_media_state(target: Option<&str>) -> Result<MediaState, String> {
@@ -345,7 +337,7 @@ pub(super) fn read_media_state_from_manager(
         .unwrap_or(1.0);
 
     let (position_ms, duration_ms) = read_timeline(&session, is_playing, playback_rate);
-    let (title, artist, album, thumbnail) = read_metadata(&session, source_app.as_deref());
+    let Metadata { title, artist, album, thumbnail, track_id } = read_metadata(&session, source_app.as_deref());
 
     Ok(MediaState {
         available: true,
@@ -356,6 +348,7 @@ pub(super) fn read_media_state_from_manager(
         artist,
         album,
         thumbnail,
+        track_id,
         position_ms,
         duration_ms,
         can_seek,
@@ -402,6 +395,7 @@ impl MediaState {
             artist: None,
             album: None,
             thumbnail: None,
+            track_id: None,
             position_ms: 0,
             duration_ms: 0,
             can_seek: false,
@@ -459,20 +453,34 @@ pub(super) fn read_timeline(
     (elapsed, duration)
 }
 
-pub(super) fn read_metadata(
-    session: &MediaSession,
-    source_app: Option<&str>,
-) -> (
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-) {
+/// What the media session says about the playing track.
+#[derive(Default)]
+pub(super) struct Metadata {
+    pub(super) title: Option<String>,
+    pub(super) artist: Option<String>,
+    pub(super) album: Option<String>,
+    pub(super) thumbnail: Option<String>,
+    /// A song id a player plugin put among the genres (`player_track_id`).
+    pub(super) track_id: Option<String>,
+}
+
+/// The song id a player plugin puts among the genres: `NCM-<id>` from NetEase Cloud Music's
+/// InfLink plugin, `QQ-<id>` from QQ Music's; players without one leave genres to genres.
+pub(super) fn player_track_id(genres: impl IntoIterator<Item = String>) -> Option<String> {
+    genres.into_iter().map(|genre| genre.trim().to_string()).find(|genre| {
+        genre
+            .strip_prefix("NCM-")
+            .or_else(|| genre.strip_prefix("QQ-"))
+            .is_some_and(|id| !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric()))
+    })
+}
+
+pub(super) fn read_metadata(session: &MediaSession, source_app: Option<&str>) -> Metadata {
     let Ok(operation) = session.TryGetMediaPropertiesAsync() else {
-        return (None, None, None, None);
+        return Metadata::default();
     };
     let Ok(properties) = pollster::block_on(operation) else {
-        return (None, None, None, None);
+        return Metadata::default();
     };
 
     let title = non_empty(properties.Title().ok().map(|value| value.to_string()));
@@ -482,7 +490,12 @@ pub(super) fn read_metadata(
         properties.Thumbnail().ok()
     });
 
-    (title, artist, album, thumbnail)
+    let track_id = properties
+        .Genres()
+        .ok()
+        .and_then(|genres| player_track_id(genres.into_iter().map(|genre| genre.to_string())));
+
+    Metadata { title, artist, album, thumbnail, track_id }
 }
 
 pub(super) fn cached_thumbnail(
@@ -636,4 +649,18 @@ pub(super) fn current_unix_millis() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::player_track_id;
+
+    #[test]
+    fn a_player_plugin_names_the_song_among_the_genres() {
+        let genres = |list: &[&str]| list.iter().map(|genre| genre.to_string()).collect::<Vec<_>>();
+        assert_eq!(player_track_id(genres(&["流行", "NCM-487885426"])).as_deref(), Some("NCM-487885426"));
+        assert_eq!(player_track_id(genres(&["QQ-002Abc"])).as_deref(), Some("QQ-002Abc"));
+        assert_eq!(player_track_id(genres(&["Pop", "NCM-", "NCM-12 34"])), None);
+        assert_eq!(player_track_id(Vec::new()), None);
+    }
 }

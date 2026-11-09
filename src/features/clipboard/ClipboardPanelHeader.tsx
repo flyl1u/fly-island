@@ -52,7 +52,6 @@ export function ClipboardPanelHeader({
             .join(" ")}
           type="button"
           disabled={itemCount === 0}
-          title={isConfirmingClear ? t.clipboard.confirmClear : t.clipboard.clear}
           aria-label={
             isConfirmingClear ? t.clipboard.confirmClear : t.clipboard.clearHistory
           }

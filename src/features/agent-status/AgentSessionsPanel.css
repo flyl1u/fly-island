@@ -1,0 +1,423 @@
+/* Rows sit straight on the island, with no panel or boxes of their own; they are told apart by
+   size and brightness, and only the hovered one lights up. The padding and the tallest row (a
+   two-line reply, 78px) are fixed because getAgentPageExpandedHeight (windows/island/layout.ts)
+   sizes the island by them for the rows set in Settings. */
+.agent-sessions {
+  position: relative;
+  /* Runs on through the island's 20px bottom padding, so a list longer than the page scrolls
+     out under the island's edge instead of stopping short above an empty band. */
+  height: calc(100% + 20px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Reaches 6px into the island's 20px side padding, just room for the hovered row's highlight,
+     so the dots, the usage line and the rows' right ends line up with the header above. */
+  margin-inline: -6px;
+  padding: 4px 0 0;
+  /* With no panel of its own, the text follows the island background: light on dark, dark on
+     light (stageStyle.ts sets --island-ink-rgb). */
+  --agent-ink: var(--island-ink-rgb, 241, 240, 246);
+  /* The island's four text levels (tokens.css), in that ink. */
+  --text-1: rgba(var(--agent-ink), 0.96);
+  --text-2: rgba(var(--agent-ink), 0.68);
+  --text-3: rgba(var(--agent-ink), 0.54);
+  --text-placeholder: rgba(var(--agent-ink), 0.42);
+  color: var(--text-1);
+}
+
+.agent-sessions__empty {
+  flex: 1;
+  min-height: 118px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  padding: 0 var(--space-lg);
+  color: var(--text-3);
+  text-align: center;
+  font-size: 12px;
+}
+
+.agent-sessions__empty strong {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Which computer the sessions below run on, once another one is listed. */
+.agent-sessions__computer {
+  padding: 6px 10px 2px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.agent-sessions__list {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  /* One column no wider than the list, or a long title or reply widens every row. */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+  /* Still scrolls with the wheel; a bar would be the only box on the page. */
+  scrollbar-width: none;
+  /* An end with more sessions past it fades out (useScrollFade sets the data attributes), so a
+     cut-off row trails away instead of stopping at a hard edge. A mask, not an overlay, so it
+     works over any island background. */
+  --agent-fade-top: 0px;
+  --agent-fade-bottom: 0px;
+}
+
+.agent-sessions__list:is([data-fade-top], [data-fade-bottom]) {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 var(--agent-fade-top),
+    #000 calc(100% - var(--agent-fade-bottom)),
+    transparent
+  );
+}
+
+.agent-sessions__list[data-fade-top] {
+  --agent-fade-top: 20px;
+}
+
+.agent-sessions__list[data-fade-bottom] {
+  --agent-fade-bottom: 32px;
+}
+
+.agent-sessions__list::-webkit-scrollbar {
+  display: none;
+}
+
+.agent-session {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  padding: 8px 6px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  /* The outline fades with the background, or it would blink on and off by itself. */
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+/* As tall as its reply: one line or two, never a blank line below a short one. */
+.agent-session--full {
+  align-items: flex-start;
+}
+
+.agent-session--compact {
+  height: 36px;
+  align-items: center;
+  padding-block: 0;
+}
+
+/* Lights up only once the cursor rests on a row: one that just passes over it, on the way to the
+   header buttons, would otherwise flash the row on and off. Leaving fades out at once. */
+.agent-session:hover {
+  background: rgba(var(--agent-ink), 0.07);
+  box-shadow: inset 0 0 0 1px rgba(var(--agent-ink), 0.09);
+  transition-delay: 80ms;
+}
+
+/* The archive button is always there, right of the provider icon on the title line, so each row
+   ends on it and its icon lines up with the header's buttons, 20px from the island's edge: faint
+   at rest, grey while the cursor is on the row, bright under the cursor. */
+.agent-sessions__list > li {
+  position: relative;
+}
+
+.agent-sessions__list--archivable .agent-session {
+  padding-right: 28px;
+}
+
+.agent-session__archive {
+  position: absolute;
+  top: 8px;
+  /* The 14px icon sits 3px inside the 20px button; this puts the icon's edge on the 20px line. */
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(var(--agent-ink), 0.26);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.agent-sessions__list > li:hover .agent-session__archive {
+  color: var(--text-3);
+}
+
+.agent-session__archive:hover,
+.agent-session__archive:focus-visible {
+  color: var(--text-1);
+  background: rgba(var(--agent-ink), 0.12);
+  outline: none;
+}
+
+/* The row stays lit while the cursor is on its archive button. */
+.agent-sessions__list > li:has(.agent-session__archive:hover) .agent-session {
+  background: rgba(var(--agent-ink), 0.07);
+  box-shadow: inset 0 0 0 1px rgba(var(--agent-ink), 0.09);
+}
+
+.agent-session:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: -2px;
+}
+
+.agent-session__main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-session__heading {
+  min-width: 0;
+  height: 20px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-session__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-1);
+  /* Semibold, not heavier: 800 picks Segoe UI Black for Latin text. Chinese falls back to
+     Microsoft YaHei, which is bold at any weight above regular. */
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Finished sessions recede by colour alone; a working one stays bright even before its first reply. */
+.agent-session--completed .agent-session__title,
+.agent-session--failed .agent-session__title {
+  color: var(--text-2);
+}
+
+.agent-session__project {
+  color: inherit;
+}
+
+.agent-session__model {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  padding: 2px 7px;
+  color: var(--text-2);
+  background: rgba(var(--agent-ink), 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Modes that act without asking; skipping every check is marked in the waiting orange. */
+.agent-session__mode {
+  flex: none;
+  padding: 2px 7px;
+  color: var(--text-2);
+  background: rgba(var(--agent-ink), 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.agent-session__mode--bypass {
+  color: rgb(255, 159, 67);
+  background: rgba(255, 159, 67, 0.16);
+}
+
+.agent-session__meta,
+.agent-session__not-found {
+  flex: none;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agent-session__dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-light-done);
+}
+
+/* Every row leads with its status dot, centred on the title line. */
+.agent-session--full > .agent-session__dot {
+  margin-top: 6.5px;
+}
+
+/*
+ * The dot shows the session's light (sessionLight.ts) in the session ring's colours: red stuck on
+ * you mid-turn (or failed), yellow your turn after it asked, green running, dim green silent
+ * mid-turn, grey done.
+ */
+.agent-session--light-working .agent-session__dot {
+  background: var(--color-light-working);
+  box-shadow: 0 0 8px rgba(52, 199, 89, 0.72);
+}
+
+.agent-session--light-stale .agent-session__dot {
+  background: rgba(52, 199, 89, 0.45);
+}
+
+.agent-session--light-needs .agent-session__dot,
+.agent-session--light-failed .agent-session__dot {
+  background: var(--color-light-needs);
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.72);
+}
+
+.agent-session--light-yourTurn .agent-session__dot {
+  background: var(--color-light-your-turn);
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.6);
+}
+
+.agent-session--light-needs .agent-session__meta,
+.agent-session--light-failed .agent-session__meta {
+  color: var(--color-light-needs);
+}
+
+.agent-session--light-yourTurn .agent-session__meta {
+  color: var(--color-light-your-turn);
+}
+
+.agent-session--light-stale .agent-session__meta {
+  color: var(--color-warning);
+}
+
+/* Waiting on you or failed, and already looked at (roadmap B15): the words stay, the alarm goes. */
+.agent-session--looked .agent-session__dot {
+  background: var(--color-light-done);
+  box-shadow: none;
+}
+
+.agent-session--looked .agent-session__meta {
+  color: var(--text-3);
+}
+
+/* Finished but not looked at yet: bright until clicked or its window comes to the front. */
+.agent-session--unseen .agent-session__title {
+  color: var(--text-1);
+}
+
+.agent-session--unseen.agent-session--light-done .agent-session__dot {
+  background: rgba(var(--agent-ink), 0.85);
+  box-shadow: 0 0 6px rgba(var(--agent-ink), 0.6);
+}
+
+.agent-session__message {
+  display: -webkit-box;
+  overflow: hidden;
+  /* The reply is what a working row is about, so it reads almost as bright as the title. */
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Under the prompt there is room for one line of the reply. */
+.agent-session__message--one-line {
+  -webkit-line-clamp: 1;
+}
+
+/* A finished session's reply on an alert's card: its summary, so a line more. */
+.agent-session__message--card {
+  -webkit-line-clamp: 3;
+}
+
+/* "你：…" and the tool line read as one two-line paragraph with the reply, so the prompt cancels
+   the gap below it: a row with both stays as tall as one with a two-line reply (78px). */
+.agent-session__prompt {
+  margin-bottom: -4px;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 13px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-session__tool {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 19px;
+  white-space: nowrap;
+}
+
+.agent-session__tool-name {
+  flex: none;
+  color: var(--color-agent-running);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-weight: 400;
+}
+
+.agent-session__tool-detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  text-overflow: ellipsis;
+}
+
+.agent-session__host {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.agent-session__host-icon {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+
+.agent-session__host--unknown {
+  width: 13px;
+  height: 13px;
+}
+
+.agent-session__not-found {
+  color: var(--color-warning);
+}

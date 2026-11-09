@@ -4,14 +4,19 @@ import { AUDIO_ACTIVE_THRESHOLD } from "./mediaState";
 
 export type MediaPlaybackIntent = { status: MediaPlaybackStatus; expiresAt: number };
 
-/** Polls the output audio level every 500ms and folds it into the media state for the waveform. */
+/** Polls the output audio level every 500ms while `enabled` and folds it into the media state for the waveform. */
 export function useAudioLevel(
   setMediaState: Dispatch<SetStateAction<MediaState>>,
   mediaPlaybackIntent: RefObject<MediaPlaybackIntent | null>,
+  enabled = true,
 ) {
   const isRefreshingAudioLevel = useRef(false);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let didCancel = false;
 
     const refreshAudioLevel = async () => {
@@ -89,5 +94,5 @@ export function useAudioLevel(
       didCancel = true;
       window.clearInterval(interval);
     };
-  }, [mediaPlaybackIntent, setMediaState]);
+  }, [enabled, mediaPlaybackIntent, setMediaState]);
 }

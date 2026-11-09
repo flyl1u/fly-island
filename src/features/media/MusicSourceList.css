@@ -1,0 +1,124 @@
+.music-source-empty {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 72px;
+  padding: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.music-source-list {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  overflow-y: auto;
+}
+
+.music-source-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 7px 10px 7px 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--color-white-a08);
+  touch-action: none;
+}
+
+.music-source-item--dragging {
+  opacity: 0.6;
+}
+
+.music-source-item--drag-over {
+  border-color: rgba(232, 242, 248, 0.5);
+  background: var(--color-white-a09);
+}
+
+.music-source-drag {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: grab;
+  touch-action: none;
+}
+
+.music-source-drag:hover {
+  color: var(--text-1);
+}
+
+.music-source-drag:active {
+  cursor: grabbing;
+}
+
+.music-source-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-circle);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.music-source-dot--live {
+  background: rgba(232, 237, 239, 0.5);
+}
+
+.music-source-dot--playing {
+  background: #6ee7a8;
+  box-shadow: 0 0 6px rgba(110, 231, 168, 0.7);
+}
+
+.music-source-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-source-remove {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.music-source-remove:hover {
+  color: #ffd0d0;
+  background: rgba(255, 120, 120, 0.14);
+}
+
+.music-source-drag:focus-visible,
+.music-source-remove:focus-visible {
+  outline: 2px solid rgba(232, 242, 248, 0.6);
+  outline-offset: 2px;
+}

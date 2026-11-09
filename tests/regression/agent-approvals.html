@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" />
+  <title>Agent 岛上审批检查</title>
+  <style>
+    html body { margin: 0; background: #1d2230; font: 14px "Segoe UI", "Microsoft YaHei", sans-serif; }
+    /* About the expanded island's width, with its side padding, so the card wraps as it would there. */
+    #fixture { width: 380px; margin: 24px auto 0; padding: 4px 20px; color: #f1f0f6; background: #111318; border-radius: 22px; }
+    #results { max-width: 760px; margin: 24px auto; padding: 0 24px; color: #dfe6f3; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+  </style>
+  <div id="fixture"></div>
+  <input id="typing" placeholder="岛上的输入框" />
+  <pre id="results" role="status">准备 Agent 岛上审批检查…</pre>
+  <script type="module" src="./agent-approvals.tsx"></script>
+</html>

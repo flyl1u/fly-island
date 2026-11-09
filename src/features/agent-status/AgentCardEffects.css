@@ -1,0 +1,141 @@
+/* Light effects on the card and compact layouts (AgentSessionCard.tsx), chosen in Settings → AI
+   Agent → Sessions and off by default: the sparkle band with a glowing frame that breathes while
+   the session is lively, or a gradient wash from the right end. After PR #5. Transforms and
+   opacity only for what moves, so it stays on the compositor. */
+.agent-card--sparkle,
+.agent-card--gradient {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Sparkle: every card glows in its colour, and a lively one's frame breathes. */
+.agent-card--sparkle {
+  --glow: color-mix(in srgb, var(--card-color) 70%, transparent);
+  border-color: color-mix(in srgb, var(--card-color) 55%, transparent);
+  box-shadow: 0 0 12px -6px var(--glow);
+}
+
+.agent-card--sparkle.agent-card--lively {
+  animation: agent-card-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes agent-card-breathe {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--card-color) 50%, transparent);
+    box-shadow: 0 0 8px -5px var(--glow);
+  }
+
+  50% {
+    border-color: color-mix(in srgb, var(--card-color) 95%, transparent);
+    box-shadow: 0 0 18px -4px var(--glow);
+  }
+}
+
+/* The band: sparks of three sizes in the card's colour stream out of a soft glow at the left edge
+   in two layers at different speeds and twinkle, fading out towards the card's middle. */
+.agent-card__band {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(ellipse 38% 110% at 0% 50%, color-mix(in srgb, var(--card-color) 20%, transparent), transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.8) 14%, rgba(0, 0, 0, 0.38) 34%, rgba(0, 0, 0, 0.1) 52%, transparent 66%);
+  mask-image: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.8) 14%, rgba(0, 0, 0, 0.38) 34%, rgba(0, 0, 0, 0.1) 52%, transparent 66%);
+}
+
+/* Finished or looked-at cards keep a quieter band. */
+.agent-card:not(.agent-card--lively) .agent-card__band {
+  opacity: 0.6;
+}
+
+.agent-card__band::before,
+.agent-card__band::after {
+  /* The core leans to the ink: near white on a dark island, darker on a light one. */
+  --hot: color-mix(in srgb, var(--card-color) 40%, rgb(var(--agent-ink)));
+  --halo: color-mix(in srgb, var(--card-color) 75%, transparent);
+  --mist: color-mix(in srgb, var(--card-color) 22%, transparent);
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -240px;
+  width: calc(100% + 240px);
+  background:
+    radial-gradient(circle at 52px 30px, var(--hot) 0 1.1px, var(--halo) 1.8px, var(--mist) 3.2px, transparent 5px) 0 0 / 80px 41px,
+    radial-gradient(circle at 7px 9px, var(--hot) 0 0.8px, var(--halo) 1.3px, transparent 3px) 0 0 / 48px 31px,
+    radial-gradient(circle at 31px 17px, var(--hot) 0 0.6px, var(--halo) 1px, transparent 2.2px) 0 0 / 40px 23px,
+    radial-gradient(circle at 44px 21px, var(--hot) 0 0.6px, transparent 1.6px) 0 0 / 60px 37px,
+    radial-gradient(circle at 13px 5px, var(--halo) 0 0.7px, transparent 1.6px) 0 0 / 24px 13px;
+  animation:
+    agent-band-drift-a 16s linear infinite,
+    agent-band-twinkle 2.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.agent-card__band::after {
+  left: -180px;
+  width: calc(100% + 180px);
+  background:
+    radial-gradient(circle at 41px 26px, var(--hot) 0 1px, var(--halo) 1.7px, var(--mist) 3px, transparent 4.6px) 0 0 / 90px 43px,
+    radial-gradient(circle at 22px 14px, var(--hot) 0 0.8px, var(--halo) 1.3px, transparent 3px) 0 0 / 36px 27px,
+    radial-gradient(circle at 9px 4px, var(--hot) 0 0.6px, var(--halo) 1px, transparent 2.2px) 0 0 / 45px 19px,
+    radial-gradient(circle at 5px 33px, var(--hot) 0 0.6px, transparent 1.6px) 0 0 / 60px 37px,
+    radial-gradient(circle at 18px 9px, var(--halo) 0 0.7px, transparent 1.6px) 0 0 / 20px 11px;
+  animation:
+    agent-band-drift-b 9s linear infinite,
+    agent-band-twinkle 2.6s ease-in-out -1.3s infinite;
+}
+
+/* Neighbouring cards do not move in step. */
+.agent-sessions__list > li:nth-child(3n + 2) .agent-card__band::before { animation-delay: -5s, -0.8s; }
+.agent-sessions__list > li:nth-child(3n) .agent-card__band::before { animation-delay: -11s, -1.9s; }
+.agent-sessions__list > li:nth-child(3n + 2) .agent-card__band::after { animation-delay: -3s, -2.1s; }
+.agent-sessions__list > li:nth-child(3n) .agent-card__band::after { animation-delay: -6s, -0.4s; }
+
+@keyframes agent-band-drift-a {
+  to { transform: translate3d(240px, 0, 0); }
+}
+
+@keyframes agent-band-drift-b {
+  to { transform: translate3d(180px, 0, 0); }
+}
+
+@keyframes agent-band-twinkle {
+  0%,
+  100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Gradient: a wash in the card's colour from the right end, brighter while lively. */
+.agent-card--gradient::before {
+  --wash: color-mix(in srgb, var(--card-color) 8%, transparent);
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 30%, var(--wash) 100%);
+}
+
+.agent-card--gradient.agent-card--lively::before {
+  --wash: color-mix(in srgb, var(--card-color) 26%, transparent);
+}
+
+/* Windows asked for less motion: the glow, band and wash stay, still. */
+@media (prefers-reduced-motion: reduce) {
+  .agent-card--sparkle.agent-card--lively,
+  .agent-card__band::before,
+  .agent-card__band::after {
+    animation: none;
+  }
+
+  .agent-card__band::before,
+  .agent-card__band::after {
+    opacity: 0.8;
+  }
+}

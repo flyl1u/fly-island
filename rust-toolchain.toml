@@ -1,0 +1,7 @@
+# One compiler for `pnpm tauri dev`, lanes and CI, so a lint CI finds is found locally too
+# and switching between them never rebuilds everything. CI pins the same version in
+# .github/workflows/ci.yml; change both together.
+[toolchain]
+channel = "1.99.1"
+components = ["clippy"]
+profile = "minimal"

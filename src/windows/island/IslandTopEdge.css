@@ -1,0 +1,80 @@
+/*
+ * Top-edge attachment. Rust reports it on the root element as
+ * data-island-top-edge (see topEdge.ts). Before the first report, and in the
+ * browser preview, the docked class from App stands in. Every "attached" rule
+ * below uses the same pair of selectors for that reason.
+ */
+
+/* A dragged island dropped flush with the top gets the docked flat top. */
+:root[data-island-top-edge="attached"] .island--detached.island--collapsed {
+  border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
+}
+
+:root[data-island-top-edge="attached"] .island--detached.island--expanded {
+  border-radius: 0 0 var(--island-radius) var(--island-radius);
+}
+
+/* The screen edge replaces the lit top rim. */
+:root[data-island-top-edge="attached"] .island__glass-refraction,
+:root:not([data-island-top-edge]) .island--docked .island__glass-refraction {
+  --refraction-band: 0px;
+  /*
+   * Clip rather than mask: a masked refraction changes how the screen-blended
+   * .island__glass::after composites over it in Chromium, which shows as a
+   * lighter block. The clip drops the top glow along the screen edge.
+   */
+  clip-path: polygon(
+    5px 4px,
+    calc(100% - 5px) 4px,
+    calc(100% - 5px) var(--refraction-band),
+    100% var(--refraction-band),
+    100% 100%,
+    0 100%,
+    0 var(--refraction-band),
+    5px var(--refraction-band)
+  );
+}
+
+/* Same shadows as App.css without the inset top highlight. */
+:root[data-island-top-edge="attached"] .island--appearance-liquidGlass.island--expanded,
+:root:not([data-island-top-edge]) .island--docked.island--appearance-liquidGlass.island--expanded {
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, var(--glass-shadow-alpha)),
+    inset 0 -1px 0 rgba(8, 18, 28, 0.16),
+    inset 1px 0 0 rgba(130, 224, 255, var(--glass-cyan-alpha)),
+    inset -1px 0 0 rgba(255, 158, 230, var(--glass-magenta-alpha));
+}
+
+:root[data-island-top-edge="attached"]
+  .island--appearance-liquidGlass.island--collapsed:not(:focus-within),
+:root:not([data-island-top-edge])
+  .island--docked.island--appearance-liquidGlass.island--collapsed:not(:focus-within) {
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 rgba(8, 22, 32, 0.18),
+    inset 1px 0 0 rgba(116, 214, 255, 0.14),
+    inset -1px 0 0 rgba(255, 156, 224, 0.08);
+}
+
+/*
+ * Focus inside the collapsed island (left after clicking one of its buttons) lights its
+ * edges with an inner glow. Attached, the glow rises from the bottom edge only, so it
+ * does not run up the sides into the screen edge.
+ */
+:root[data-island-top-edge="attached"] .island--collapsed:focus-within,
+:root:not([data-island-top-edge]) .island--docked.island--collapsed:focus-within {
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -14px 14px -10px var(--color-white-a08),
+    0 5px 16px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-island-top-edge="attached"] .island--appearance-liquidGlass.island--collapsed:focus-within,
+:root:not([data-island-top-edge]) .island--docked.island--appearance-liquidGlass.island--collapsed:focus-within {
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -14px 14px -10px var(--color-white-a10),
+    inset 1px 0 0 rgba(116, 214, 255, 0.24),
+    inset -1px 0 0 rgba(255, 156, 224, 0.16);
+}

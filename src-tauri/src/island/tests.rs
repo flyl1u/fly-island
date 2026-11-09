@@ -46,7 +46,7 @@ fn notch_has_flat_top_and_rounded_bottom_at_all_scales() {
             let width = width * scale;
             let height = height * scale;
             let radius = mode.corner_radius() * scale;
-            let contains = |x, y| point_in_notch(x, y, 80.0, 0.0, width, height, radius, 0.0);
+            let contains = |x, y| point_in_notch(x, y, 80.0, 0.0, width, height, radius, 0.0, CornerShape::Round);
 
             assert!(contains(80.0, 0.0));
             assert!(contains(80.0 + width, 0.0));
@@ -84,6 +84,7 @@ fn compact_messages_and_mail_reader_keep_the_correct_cursor_boundary() {
                     panel_height * scale,
                     EXPANDED_RADIUS * scale,
                     0.0,
+                    CornerShape::Round,
                 )
             };
             assert!(contains(panel_height * scale));
@@ -108,7 +109,7 @@ fn detached_island_rounds_top_corners() {
     for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
         let mut detached = state(mode, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
         assert_eq!(detached.top_corner_radius(), 0.0);
-        detached.custom_position = Some(IslandPosition { x: 420, y: 0 });
+        detached.top_attached = false;
         assert!(detached.top_corner_radius() > 0.0);
         let (width, height) =
             mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
@@ -120,52 +121,18 @@ fn detached_island_rounds_top_corners() {
                 0.0,
                 width,
                 height,
-                detached.bottom_corner_radius(),
+                mode.corner_radius(),
                 detached.top_corner_radius(),
+                CornerShape::Round,
             )
         };
         assert!(!contains(80.0, 0.0));
         assert!(!contains(80.0 + width, 0.0));
         assert!(contains(80.0 + width / 2.0, 0.0));
         assert!(!contains(79.0, 0.0));
-        detached.custom_position = None;
+        detached.top_attached = true;
         assert_eq!(detached.top_corner_radius(), 0.0);
-        detached.margin_y = 12.0;
-        assert!(detached.top_corner_radius() > 0.0);
     }
-}
-
-#[test]
-fn detached_collapsed_capsule_has_symmetric_visible_and_clickable_ends() {
-    let mut capsule = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
-    capsule.custom_position = Some(IslandPosition { x: 420, y: 180 });
-    assert_eq!(capsule.top_corner_radius(), COLLAPSED_ISLAND_HEIGHT / 2.0);
-    assert_eq!(capsule.bottom_corner_radius(), capsule.top_corner_radius());
-
-    for scale in [0.75, DEFAULT_COLLAPSED_SCALE, 1.0, 1.4, 2.1] {
-        for width in [MIN_COLLAPSED_ISLAND_WIDTH, COLLAPSED_ISLAND_WIDTH] {
-            let width = width * scale;
-            let height = COLLAPSED_ISLAND_HEIGHT * scale;
-            let radius = height / 2.0;
-            let contains = |x, y| point_in_notch(x, y, 0.0, 0.0, width, height, radius, radius);
-            for x in [radius / 2.0, radius, width / 2.0, width - radius, width - radius / 2.0] {
-                for y in [0.0, radius / 4.0, radius / 2.0, radius] {
-                    assert_eq!(contains(x, y), contains(x, height - y));
-                    assert_eq!(contains(x, y), contains(width - x, y));
-                }
-            }
-            assert!(contains(0.0, radius));
-            assert!(contains(width, radius));
-            assert!(!contains(0.0, radius - 0.1));
-            assert!(!contains(0.0, radius + 0.1));
-            assert!(!contains(width, radius - 0.1));
-            assert!(!contains(width, radius + 0.1));
-        }
-    }
-
-    capsule.custom_position = None;
-    assert_eq!(capsule.top_corner_radius(), 0.0);
-    assert_eq!(capsule.bottom_corner_radius(), COLLAPSED_RADIUS);
 }
 
 #[test]
@@ -182,6 +149,7 @@ fn docked_island_does_not_capture_cursor_outside_its_sides() {
                 COLLAPSED_ISLAND_HEIGHT * scale,
                 COLLAPSED_RADIUS * scale,
                 0.0,
+                CornerShape::Round,
             )
         };
         assert!(contains(80.0, 0.0));
@@ -229,4 +197,81 @@ fn hex_tint_parser_rejects_invalid_values() {
     assert_eq!(parse_hex_color("#101013"), Some((16, 16, 19)));
     assert_eq!(parse_hex_color("101013"), None);
     assert_eq!(parse_hex_color("#xyzxyz"), None);
+}
+
+#[test]
+fn corner_radius_setting_scales_every_hit_test_radius() {
+    let mut expanded = state(IslandMode::Expanded, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    let mut collapsed = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    expanded.top_attached = false;
+    collapsed.top_attached = false;
+    assert_eq!(expanded.bottom_corner_radius(), EXPANDED_RADIUS);
+    assert_eq!(collapsed.bottom_corner_radius(), COLLAPSED_RADIUS);
+    assert_eq!(expanded.top_corner_radius(), 22.0);
+    assert_eq!(collapsed.top_corner_radius(), 14.0);
+
+    expanded.corner_radius = 20.0;
+    collapsed.corner_radius = 20.0;
+    assert_eq!(expanded.bottom_corner_radius(), 20.0);
+    assert!((collapsed.bottom_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((expanded.top_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((collapsed.top_corner_radius() - 14.0 * 20.0 / 30.0).abs() < 1e-9);
+}
+
+#[test]
+fn squircle_corners_take_the_area_css_draws_beyond_a_circle() {
+    // A 100 x 60 island at the top edge with 30px bottom corners. The point sits on the
+    // bottom-left corner's diagonal, 1.1 r from the corner's centre: past the circle (r),
+    // inside the squircle, which meets the diagonal at 2^(-1/4) r per axis, about 1.19 r.
+    let r = 30.0;
+    let along_axis = 1.1 * r * std::f64::consts::FRAC_1_SQRT_2;
+    let (x, y) = (r - along_axis, 60.0 - r + along_axis);
+    let contains = |shape| point_in_notch(x, y, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape);
+    assert!(!contains(CornerShape::Round));
+    assert!(contains(CornerShape::Squircle));
+    // The very corner stays outside both.
+    for shape in [CornerShape::Round, CornerShape::Squircle] {
+        assert!(!point_in_notch(0.5, 59.5, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape));
+        assert!(point_in_notch(50.0, 59.5, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape));
+    }
+    assert_eq!(CornerShape::from_value("squircle"), Some(CornerShape::Squircle));
+    assert_eq!(CornerShape::from_value("round"), Some(CornerShape::Round));
+    assert_eq!(CornerShape::from_value("bevel"), None);
+}
+
+#[test]
+fn an_update_heading_where_the_slide_ends_lets_it_finish() {
+    let running = Some((7, (900, 12)));
+    // Opening the panel mid-slide: same place, no animation of its own.
+    assert!(continues_slide(running, 7, (900, 12), false));
+    // Anything else takes over: another place, an animated tuck, or a slide another
+    // update (a drag, a reset) already stopped.
+    assert!(!continues_slide(running, 7, (900, -24), false));
+    assert!(!continues_slide(running, 7, (900, 12), true));
+    assert!(!continues_slide(running, 8, (900, 12), false));
+    assert!(!continues_slide(None, 7, (900, 12), false));
+}
+
+#[test]
+fn the_island_follows_only_when_asked_and_only_while_collapsed() {
+    use super::follow::may_move;
+    use super::geometry::contains;
+    assert_eq!(MonitorFollow::from_value("cursor"), Some(MonitorFollow::Cursor));
+    assert_eq!(MonitorFollow::from_value("foreground"), Some(MonitorFollow::Foreground));
+    assert_eq!(MonitorFollow::from_value("primary"), Some(MonitorFollow::Primary));
+    assert_eq!(MonitorFollow::from_value("all"), None);
+    assert_eq!(IslandWindowState::default().monitor_follow, MonitorFollow::Primary);
+
+    // A second monitor left of the primary one, with negative coordinates.
+    let left = (-1920, 0, 1920, 1080);
+    assert!(contains(left, (-1, 0)) && contains(left, (-1920, 1079)));
+    assert!(!contains(left, (0, 0)) && !contains(left, (-100, 1080)));
+
+    let mut collapsed = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    assert!(may_move(collapsed));
+    collapsed.is_tucked = true;
+    assert!(may_move(collapsed), "a tucked island follows too");
+    collapsed.is_dragging = true;
+    assert!(!may_move(collapsed));
+    assert!(!may_move(state(IslandMode::Expanded, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT)), "an open panel stays under the pointer");
 }

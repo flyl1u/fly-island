@@ -1,0 +1,138 @@
+/* A permission request on the Agent page. Like the session rows it sits straight on the island,
+   colored by --agent-ink (AgentSessionsPanel.css); only the command gets a box, so it reads as
+   the thing being approved. The island's height follows the card (useAgentApprovals measures it). */
+.agent-approval {
+  display: grid;
+  gap: 7px;
+  padding: 6px 6px 2px;
+}
+
+.agent-approval__heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.agent-approval__icon {
+  flex: 0 0 auto;
+  color: var(--color-agent-waiting);
+}
+
+/* Semibold like the session titles: 800 picks Segoe UI Black for Latin text. */
+.agent-approval__title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(var(--agent-ink), 0.95);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.agent-approval__project {
+  color: rgba(var(--agent-ink), 0.55);
+  font-weight: 700;
+}
+
+.agent-approval__meta {
+  flex: 1 0 auto;
+  color: var(--color-agent-waiting);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.agent-approval__note {
+  margin: 0;
+  overflow: hidden;
+  color: rgba(var(--agent-ink), 0.62);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Two lines of the command; pressing it shows all of it, scrolling past about ten lines. */
+.agent-approval__preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  padding: 6px 8px;
+  color: rgba(var(--agent-ink), 0.9);
+  text-align: left;
+  background: rgba(var(--agent-ink), 0.07);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.agent-approval__preview--expanded {
+  display: block;
+  max-height: 172px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.agent-approval__preview:focus-visible {
+  outline: 1px solid rgba(var(--agent-ink), 0.4);
+}
+
+.agent-approval__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.agent-approval__button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 11px;
+  color: rgba(var(--agent-ink), 0.86);
+  background: rgba(var(--agent-ink), 0.1);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Out of the way of the decisions, on the far side. */
+.agent-approval__button--terminal {
+  margin-right: auto;
+  color: rgba(var(--agent-ink), 0.6);
+  background: transparent;
+}
+
+.agent-approval__button:hover:not(:disabled),
+.agent-approval__button:focus-visible {
+  color: rgba(var(--agent-ink), 1);
+  background: rgba(var(--agent-ink), 0.2);
+  outline: none;
+}
+
+/* Only "allow" stands out, filled so it reads the same on a dark island and a light one; "deny"
+   stays plain like the rest (the warning yellow is unreadable on a light island). */
+.agent-approval__button--allow,
+.agent-approval__button--allow:focus-visible {
+  color: #fff;
+  background: rgb(31, 158, 122);
+}
+
+.agent-approval__button--allow:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(26, 176, 134);
+}
+
+/* Not answerable for its first half second; dimmed only a little, so it does not flash. */
+.agent-approval__button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}

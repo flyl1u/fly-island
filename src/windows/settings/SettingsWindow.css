@@ -8,41 +8,26 @@
   font: inherit;
 }
 
+/* Pages stop at a readable width in a wide window; the rest stays empty on the right. */
 .settings-stage .editor-panel {
+  grid-template-columns: minmax(0, 860px);
   height: 100%;
   min-height: 0;
   padding: 16px 24px 24px;
   border-radius: 0;
   background: transparent;
+  gap: var(--space-xl);
 }
 
-.settings-panel {
-  height: 100%;
-  min-height: 0;
+.settings-stage .preset-name-input {
+  font-weight: 400;
 }
 
-.island--settings .settings-layout {
-  grid-template-columns: 104px minmax(0, 1fr);
-  gap: 8px;
+.settings-stage .select-control__trigger {
+  font-weight: 500;
 }
 
-.island--settings .settings-sidebar {
-  padding: 8px 0;
-}
-
-.island--settings .settings-sidebar__item {
-  gap: 6px;
-  padding: 0 8px;
-}
-
-.island--settings .editor-panel {
-  min-width: 0;
-  padding: 12px;
-}
-
-.island--settings .settings-section--attention {
-  margin-right: -4px;
-  margin-left: -4px;
-  padding-right: 4px;
-  padding-left: 4px;
+/* Buttons keep some weight, but stay below the page title. */
+.settings-stage .shortcut-record-button {
+  font-weight: 600;
 }

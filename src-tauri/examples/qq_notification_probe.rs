@@ -44,9 +44,12 @@ fn main() -> ExitCode {
 
 fn run() -> Result<bool, String> {
     let watch_seconds = parse_watch_seconds()?;
+    // SAFETY: RoInitialize takes no pointers; a success is paired with the
+    // RoUninitialize below on this thread.
     unsafe { RoInitialize(RO_INIT_MULTITHREADED) }
         .map_err(|error| describe_error("initialize_winrt", error))?;
     let result = observe(watch_seconds);
+    // SAFETY: pairs the successful RoInitialize above, on the same thread.
     unsafe { RoUninitialize() };
     result
 }

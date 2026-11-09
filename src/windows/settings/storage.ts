@@ -1,32 +1,37 @@
-import { readString, writeString, removeItem } from "../../lib/storage.ts";
+import { readString, writeJson, writeString } from "../../lib/storage.ts";
+
+// Whether settings open in their own window instead of as a page of the island.
 export const DETACHED_SETTINGS_STORAGE_KEY = "focusd-island-detached-settings";
-export const SETTINGS_PRESENTATION_CHANGED = "settings-presentation-changed";
 
 export function loadDetachedSettings(): boolean {
   return readString(DETACHED_SETTINGS_STORAGE_KEY) === "true";
 }
 
+/** Told within the window that saved the choice; other windows get a storage event. */
+export const DETACHED_SETTINGS_CHANGED_EVENT = "focusd-detached-settings-changed";
+
+/** Returns false when the choice could not be stored. */
 export function saveDetachedSettings(detached: boolean): boolean {
   if (!writeString(DETACHED_SETTINGS_STORAGE_KEY, String(detached))) return false;
-  window.dispatchEvent(new Event(SETTINGS_PRESENTATION_CHANGED));
+  window.dispatchEvent(new Event(DETACHED_SETTINGS_CHANGED_EVENT));
   return true;
 }
+
 // Main island -> settings window request to reveal a section; survives the window being created.
-export const SETTINGS_FOCUS_CHANGED = "settings-focus-changed";
 export const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 
-export type SettingsFocusSection = "savePath";
+export type SettingsFocusSection = "savePath" | "translation" | "music" | "mail" | "updates";
 
 export const FOCUS_REQUEST_MAX_AGE_MS = 10_000;
 
 export function takeFocusRequest(): SettingsFocusSection | null {
-  const stored = readString(SETTINGS_FOCUS_STORAGE_KEY);
+  const stored = window.localStorage.getItem(SETTINGS_FOCUS_STORAGE_KEY);
 
   if (stored === null) {
     return null;
   }
 
-  removeItem(SETTINGS_FOCUS_STORAGE_KEY);
+  window.localStorage.removeItem(SETTINGS_FOCUS_STORAGE_KEY);
 
   try {
     const request = JSON.parse(stored) as {
@@ -34,7 +39,7 @@ export function takeFocusRequest(): SettingsFocusSection | null {
       requestedAt?: unknown;
     };
 
-    return request.section === "savePath" &&
+    return (request.section === "savePath" || request.section === "translation" || request.section === "music" || request.section === "mail" || request.section === "updates") &&
       typeof request.requestedAt === "number" &&
       Date.now() - request.requestedAt < FOCUS_REQUEST_MAX_AGE_MS
       ? request.section
@@ -45,9 +50,66 @@ export function takeFocusRequest(): SettingsFocusSection | null {
 }
 
 export function requestSettingsFocus(section: SettingsFocusSection) {
-  writeString(
+  window.localStorage.setItem(
     SETTINGS_FOCUS_STORAGE_KEY,
     JSON.stringify({ section, requestedAt: Date.now() }),
   );
-  window.dispatchEvent(new Event(SETTINGS_FOCUS_CHANGED));
+}
+
+// Settings window -> island: put the island back at the top center of the primary
+// screen, as its own reset button does. The time makes every request a change that
+// fires a storage event, and lets a leftover from an earlier session be ignored.
+export const ISLAND_POSITION_RESET_STORAGE_KEY = "focusd-island-position-reset";
+
+const POSITION_RESET_MAX_AGE_MS = 5_000;
+
+export function requestIslandPositionReset() {
+  writeJson(ISLAND_POSITION_RESET_STORAGE_KEY, { requestedAt: Date.now() });
+}
+
+/** Whether a stored reset request is fresh and well formed. */
+export function isFreshPositionReset(stored: string | null, now = Date.now()) {
+  if (stored === null) {
+    return false;
+  }
+
+  try {
+    const request = JSON.parse(stored) as { requestedAt?: unknown };
+    return typeof request.requestedAt === "number" && now - request.requestedAt < POSITION_RESET_MAX_AGE_MS;
+  } catch {
+    return false;
+  }
+}
+
+// Settings window -> island: show the island expanded or collapsed while a size slider
+// moves, so the change is visible. Each request carries a fresh time, which also makes
+// every write a change that fires a storage event in the island window.
+export const PANEL_PREVIEW_STORAGE_KEY = "focusd-island-panel-preview";
+
+export type PanelPreviewMode = "expanded" | "collapsed";
+
+// Requests older than this are leftovers from an earlier session, not a slider moving now.
+const PANEL_PREVIEW_MAX_AGE_MS = 2_000;
+
+export function requestPanelPreview(mode: PanelPreviewMode) {
+  writeJson(PANEL_PREVIEW_STORAGE_KEY, { mode, requestedAt: Date.now() });
+}
+
+/** The mode a stored preview request asks for, or null if it is malformed or stale. */
+export function parsePanelPreview(stored: string | null, now = Date.now()): PanelPreviewMode | null {
+  if (stored === null) {
+    return null;
+  }
+
+  try {
+    const request = JSON.parse(stored) as { mode?: unknown; requestedAt?: unknown };
+
+    return (request.mode === "expanded" || request.mode === "collapsed") &&
+      typeof request.requestedAt === "number" &&
+      now - request.requestedAt < PANEL_PREVIEW_MAX_AGE_MS
+      ? request.mode
+      : null;
+  } catch {
+    return null;
+  }
 }

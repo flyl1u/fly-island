@@ -20,6 +20,8 @@ export type MediaState = {
   artist: string | null;
   album: string | null;
   thumbnail: string | null;
+  /** A song id a player plugin gives (`NCM-<id>`, `QQ-<id>`); missing from older builds. */
+  trackId?: string | null;
   positionMs: number;
   durationMs: number;
   canSeek: boolean;

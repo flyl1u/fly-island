@@ -1,0 +1,23 @@
+/* The exact text the switch writes, readable before switching it on. */
+.agent-reply-marker__preview {
+  padding: var(--space-lg) 16px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.agent-reply-marker__preview > summary {
+  cursor: pointer;
+}
+
+.agent-reply-marker__preview > pre {
+  margin: var(--space-md) 0 0;
+  padding: var(--space-md) var(--space-lg);
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-white-a04);
+  border-radius: var(--radius-md);
+  font-size: 11.5px;
+  line-height: 1.5;
+}

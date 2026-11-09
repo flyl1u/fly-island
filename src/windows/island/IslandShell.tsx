@@ -1,22 +1,26 @@
+import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
 import { useState, type ReactNode } from "react";
+import type { AgentSession } from "../../features/agent-status/session";
+import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { AppearanceMode } from "../../features/appearance/types";
-import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
-import type { QQMailController } from "../../features/messages/qq-mail/QQMail";
+import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
+import type { IslandFeatures } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
+import { usePageFadeIn } from "./usePageFadeIn";
 import "./IslandShell.css";
 
 type IslandShellProps = {
-  qqMail: QQMailController;
+  qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   onOpenMessages: (source: MessageSource) => void;
@@ -30,19 +34,34 @@ type IslandShellProps = {
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
+  /** Running agent session shown in place of the todo, or null. */
+  agentSession: AgentSession | null;
+  /** Agent sessions still working, shown in place of the tuck dot while the AI Agent switch is on. */
+  activeAgentSessionCount: number;
   mediaState: MediaState;
   agentVisualState: AgentVisualState;
   agentStatusLabel: string;
+  /** Modules switched on; the header and collapsed bar hide the rest. */
+  features: IslandFeatures;
+  /** Files on the shelf for the collapsed bar, or null when it does not show them. */
+  shelfCount: number | null;
+  /** Claude's or Codex's usage reaching the alert level, or resetting. */
+  quotaAlert?: QuotaAlert | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
   onResetPosition: () => void;
+  minimizesToTray: boolean;
   onMinimize: () => void;
-  onOpenTranslator: () => void;
+  /** Null while translation is switched off, which hides its button. */
+  onOpenTranslator: (() => void) | null;
+  /** One line from the selection shortcut, shown on the collapsed island, or null. */
   onOpenSettings: () => void;
   onTuck: () => void;
   onReveal: () => void;
   onPageChange: (page: IslandPage) => void;
+  /** Buttons of the open page, first among the window actions. */
+  pageActions?: ReactNode;
   children: ReactNode;
 };
 
@@ -61,19 +80,26 @@ export function IslandShell({
   showCollapsedText,
   collapsedTaskTitle,
   collapsedTodoCount,
+  agentSession,
+  activeAgentSessionCount,
   mediaState,
   agentVisualState,
   agentStatusLabel,
+  features,
+  shelfCount,
+  quotaAlert = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
   onResetPosition,
+  minimizesToTray,
   onMinimize,
   onOpenTranslator,
   onOpenSettings,
   onTuck,
   onReveal,
   onPageChange,
+  pageActions,
   children,
 }: IslandShellProps) {
   const t = useTranslation();
@@ -82,6 +108,7 @@ export function IslandShell({
   const isLiquidGlass = effectiveAppearanceMode === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
+  const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const qqPreview = qqNotifications.preview;
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
@@ -100,13 +127,16 @@ export function IslandShell({
     `island--appearance-${effectiveAppearanceMode}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
+    isTucked ? "island--tucked" : "",
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]
     .filter(Boolean)
     .join(" ");
   const collapsedLabel = showCollapsedText
-    ? collapsedTaskTitle
+    ? agentSession
+      ? t.island.agentSession(agentSession.label, agentSession.title)
+      : collapsedTaskTitle
       ? t.messages.collapsedTask(collapsedTaskTitle)
       : collapsedTodoCount !== null
         ? t.island.pendingTodos(collapsedTodoCount)
@@ -119,7 +149,7 @@ export function IslandShell({
       aria-label={collapsedLabel}
       onClick={(event) => {
         if (!isExpanded && event.target === event.currentTarget) {
-          onOpenPage(page);
+          onOpenPage(agentSession ? "agents" : page);
         }
       }}
       onPointerMove={handleGlassPointerMove}
@@ -150,9 +180,13 @@ export function IslandShell({
           collapsedLabel={collapsedLabel}
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
+          agentSession={agentSession}
+          agentSessionCount={features.agents ? activeAgentSessionCount : null}
           mediaState={mediaState}
+          showMusic={features.music}
+          shelfCount={shelfCount}
+          quotaAlert={quotaAlert}
           agentVisualState={agentVisualState}
-          agentStatusLabel={agentStatusLabel}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
           onWindowDragStart={onWindowDragStart}
@@ -167,6 +201,7 @@ export function IslandShell({
         >
           <IslandHeader
             page={page}
+            features={features}
             showTitle={showTitle}
             isDetached={isDetached}
             agentVisualState={agentVisualState}
@@ -179,9 +214,11 @@ export function IslandShell({
             onOpenMessages={onOpenMessages}
             onOpenTranslator={onOpenTranslator}
             onResetPosition={onResetPosition}
+            minimizesToTray={minimizesToTray}
             onMinimize={onMinimize}
+            pageActions={pageActions}
           />
-          <div className="island__content">{children}</div>
+          <div ref={contentRef} className="island__content">{children}</div>
         </div>
       </div>
     </section>

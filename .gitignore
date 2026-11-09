@@ -13,10 +13,20 @@ dist-ssr
 src-tauri/target
 src-tauri/gen
 src-tauri/tauri.release.conf.json
+
+# Output of `tsc -b` (tsconfig.node.json is composite). A stray vite.config.js would
+# win over vite.config.ts, so keep these out of the tree.
+*.tsbuildinfo
+/vite.config.js
+/vite.config.d.ts
+
 *.key
 *.key.pub
 *.dpapi
 *.local
+
+# Local Claude Code skills. This machine only; not part of the repo.
+.claude/
 
 # Editor directories and files
 .vscode/*
@@ -29,3 +39,4 @@ src-tauri/tauri.release.conf.json
 *.sln
 *.sw?
 /demo.mp4
+*.vsix

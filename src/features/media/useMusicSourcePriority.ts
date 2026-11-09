@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MediaState } from "./api";
-import { loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
+import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
 
 /** The user's preferred media source order; newly seen sessions are appended and the order is persisted. */
 export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
@@ -63,6 +63,18 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
   useEffect(() => {
     saveMusicSourcePriority(musicSourcePriority);
   }, [musicSourcePriority]);
+
+  // The island and Settings > Music both edit the order. Saving a value that came
+  // from the other window writes the same string, which fires no further event.
+  useEffect(() => {
+    const syncFromOtherWindow = (event: StorageEvent) => {
+      if (event.key === MUSIC_SOURCE_PRIORITY_STORAGE_KEY) {
+        setMusicSourcePriority(loadMusicSourcePriority());
+      }
+    };
+    window.addEventListener("storage", syncFromOtherWindow);
+    return () => window.removeEventListener("storage", syncFromOtherWindow);
+  }, []);
 
   return { musicSourcePriority, reorderMusicSource, removeMusicSource };
 }

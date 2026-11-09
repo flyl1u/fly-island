@@ -2,13 +2,13 @@
 
 use std::collections::HashMap;
 
-use super::*;
+use super::QQNotification;
 
 pub(super) const MAX_ITEMS: usize = 20;
 
 #[derive(Default)]
 pub(super) struct NotificationBuffer {
-    pub(super) baseline: Option<HashMap<String, QQNotification>>,
+    baseline: Option<HashMap<String, QQNotification>>,
     pub(super) items: Vec<QQNotification>,
 }
 

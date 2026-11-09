@@ -1,0 +1,45 @@
+.appearance-reset {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 10px;
+  color: var(--color-text-muted);
+  background: var(--color-white-a08);
+  border: 0;
+  border-radius: var(--radius-pill);
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.appearance-reset:hover {
+  color: var(--color-text);
+  background: var(--color-white-a12);
+}
+
+.appearance-reset:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.appearance-reset--danger,
+.appearance-reset--danger:hover {
+  color: var(--color-white);
+  background: var(--color-danger);
+}
+
+.appearance-reset--danger:hover {
+  filter: brightness(1.1);
+}
+
+.appearance-reset__confirm {
+  display: inline-flex;
+  gap: var(--space-sm);
+}

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { loadCurrentTodoDate, loadDailyNote, saveCurrentTodoDate, saveDailyNote } from "./storage";
-import { withoutUpdateTodo } from "./updateTodo";
 import type { ArchiveLayout, TodoItem, TodoPageMode } from "./types";
 import { useTodoArchives } from "./useTodoArchives";
 import { useTodoList } from "./useTodoList";
+import { useScheduledTodos } from "./useScheduledTodos";
 import { useTodoRollover } from "./useTodoRollover";
 import { useTodoSaving } from "./useTodoSaving";
 
@@ -23,11 +23,28 @@ export function useTodos({
 }: TodosOptions) {
   const list = useTodoList(onStartTodo);
   const { todos, setTodos, setDraftTodo, activeTodoId, setActiveTodoId } = list;
-  const persistedTodos = useMemo(() => withoutUpdateTodo(todos), [todos]);
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
   const [currentTodoDate, setCurrentTodoDate] =
     useState<string>(loadCurrentTodoDate);
   const { archives, upsertArchive } = useTodoArchives();
+  const { scheduledTodos, scheduleTodo, deleteScheduledTodo } =
+    useScheduledTodos(currentTodoDate, setTodos);
+  // Day the next added todo is for; null is the list's own day.
+  const [draftDate, setDraftDate] = useState<string | null>(null);
+  const draftTodo = list.draftTodo;
+  const addListTodo = list.addTodo;
+
+  const addTodo = useCallback(() => {
+    const title = draftTodo.trim();
+
+    if (draftDate && draftDate > currentTodoDate && title) {
+      scheduleTodo(title, draftDate);
+      setDraftTodo("");
+    } else {
+      addListTodo();
+    }
+    setDraftDate(null);
+  }, [addListTodo, currentTodoDate, draftDate, draftTodo, scheduleTodo, setDraftTodo]);
   const [todoPageMode, setTodoPageMode] = useState<TodoPageMode>("today");
   const [archiveLayout, setArchiveLayout] = useState<ArchiveLayout>("cards");
   const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(
@@ -38,7 +55,7 @@ export function useTodos({
   const { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos } =
     useTodoSaving({
       currentTodoDate,
-      todos: persistedTodos,
+      todos,
       dailyNote,
       upsertArchive,
       onMissingSaveDirectory,
@@ -61,6 +78,11 @@ export function useTodos({
     setSelectedArchiveDate(null);
     setDraftTodo("");
   }, [setDraftTodo]);
+
+  const showUpcoming = useCallback(() => {
+    setTodoPageMode("upcoming");
+    setSelectedArchiveDate(null);
+  }, []);
 
   const selectArchive = useCallback(
     (date: string) => {
@@ -90,7 +112,7 @@ export function useTodos({
 
   useTodoRollover({
     currentTodoDate,
-    todos: persistedTodos,
+    todos,
     dailyNote,
     carryOverIncompleteTodos,
     saveDirectory,
@@ -122,8 +144,13 @@ export function useTodos({
       archiveLayout,
       selectedArchive,
       saveState,
+      draftDate,
+      scheduledTodos,
       onDraftChange: setDraftTodo,
-      onAddTodo: list.addTodo,
+      onDraftDateChange: setDraftDate,
+      onAddTodo: addTodo,
+      onShowUpcoming: showUpcoming,
+      onDeleteScheduledTodo: deleteScheduledTodo,
       onToggleTodo: list.toggleTodo,
       onUpdateTodo: list.updateTodoTitle,
       onStartTodo: list.startTodo,

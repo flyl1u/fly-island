@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createTodoId, loadActiveTodoId, loadTodos, saveActiveTodoId, saveTodos } from "./storage";
 import { dismissUpdatePrompt } from "../updater/updaterController";
-import { UPDATE_TODO_ID, withoutUpdateTodo } from "./updateTodo";
+import { UPDATE_TODO_ID } from "./updateTodo";
 import { useUpdateTodo } from "./useUpdateTodo";
 import type { TodoItem } from "./types";
 
@@ -107,7 +107,7 @@ export function useTodoList(onStartTodo: () => void) {
   }, []);
 
   useEffect(() => {
-    saveTodos(withoutUpdateTodo(todos));
+    saveTodos(todos);
   }, [todos]);
 
   useEffect(() => {

@@ -1,0 +1,102 @@
+/* A question from Claude Code on the Agent page. It shares the permission card's heading and
+   buttons (AgentApprovalCard.css); the options are pills that light up when picked. */
+.agent-question__item {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.agent-question__text {
+  padding: 0;
+  color: rgba(var(--agent-ink), 0.92);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.agent-question__header {
+  margin-right: 6px;
+  padding: 1px 6px;
+  color: rgba(var(--agent-ink), 0.66);
+  background: rgba(var(--agent-ink), 0.1);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.agent-question__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-question__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0 10px;
+  overflow: hidden;
+  color: rgba(var(--agent-ink), 0.86);
+  background: rgba(var(--agent-ink), 0.1);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.agent-question__option:hover:not(:disabled),
+.agent-question__option:focus-visible {
+  color: rgba(var(--agent-ink), 1);
+  background: rgba(var(--agent-ink), 0.2);
+  outline: none;
+}
+
+/* Filled like "allow", so a pick reads the same on a dark island and a light one. */
+.agent-question__option--chosen,
+.agent-question__option--chosen:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(31, 158, 122);
+}
+
+.agent-question__option:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.agent-question__key {
+  color: rgba(var(--agent-ink), 0.5);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+}
+
+.agent-question__option--chosen .agent-question__key {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.agent-question__other {
+  height: 26px;
+  padding: 0 9px;
+  color: rgba(var(--agent-ink), 0.92);
+  background: rgba(var(--agent-ink), 0.07);
+  border: 1px solid rgba(var(--agent-ink), 0.12);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 11px;
+}
+
+.agent-question__other::placeholder {
+  color: rgba(var(--agent-ink), 0.45);
+}
+
+.agent-question__other:focus {
+  border-color: rgba(var(--agent-ink), 0.35);
+  outline: none;
+}

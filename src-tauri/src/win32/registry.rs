@@ -43,6 +43,18 @@ pub(crate) fn read_string(root: HKEY, subkey: &str, value: &str) -> Option<Strin
     Some(String::from_utf16_lossy(&data[..length]))
 }
 
+
+
+/// The executable in an uninstall entry's `DisplayIcon` value, which may be quoted and end
+/// with an icon index: `"C:\App\App.exe",0` → `C:\App\App.exe`.
+pub(crate) fn display_icon_path(icon: &str) -> &str {
+    icon.rsplit_once(',')
+        .filter(|(_, index)| index.trim().parse::<i32>().is_ok())
+        .map_or(icon, |(path, _)| path)
+        .trim()
+        .trim_matches('"')
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,5 +76,12 @@ mod tests {
             read_string(HKEY_LOCAL_MACHINE, CURRENT_VERSION, "NoSuchValue"),
             None
         );
+    }
+
+    #[test]
+    fn display_icons_give_the_executable_path() {
+        assert_eq!(display_icon_path(r#""D:\Apps\Weixin\Weixin.exe",0"#), r"D:\Apps\Weixin\Weixin.exe");
+        assert_eq!(display_icon_path(r"D:\Apps\QQ\QQ.exe, -1"), r"D:\Apps\QQ\QQ.exe");
+        assert_eq!(display_icon_path(r"D:\Apps,Tools\QQ.exe"), r"D:\Apps,Tools\QQ.exe");
     }
 }

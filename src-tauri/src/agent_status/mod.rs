@@ -1,9 +1,39 @@
 //! AI agent status: the snapshot shown on the island and the Codex / Claude Code hooks that write it.
 
+pub(crate) mod approval_hotkeys;
+mod background_tasks;
 mod claude_hooks;
 mod codex_hooks;
+mod editor_terminal;
+mod hooks_state;
+mod host_icon;
+mod codex_usage;
+mod codex_version;
+mod magpie;
 mod markers;
+mod notifications;
+mod orca;
+pub(crate) mod reply_marker;
+mod reply_text;
+mod focus;
+mod focus_log;
+mod session_host;
+mod session_memory;
+mod session_mode;
+mod session_process;
+mod session_records;
 mod snapshot;
+pub(crate) mod sound_packs;
+#[cfg(test)]
+mod tests;
+mod session_scan;
+mod sessions;
+mod title;
+mod todo_list;
+mod tool_call;
+mod usage;
+mod wezterm;
+mod window_focus;
 
 use serde::Serialize;
 use std::{fs, path::Path};
@@ -13,10 +43,14 @@ use crate::system::windows_home_dir;
 
 use claude_hooks::install_claude_code_status_hooks;
 use codex_hooks::install_codex_status_hooks;
+use hooks_state::{
+    claude_code_hooks_state, codex_hooks_state, script_outdated, AgentHooksState, HookInstallState,
+};
 use markers::{
-    apply_agent_running_markers, remove_agent_marker_files, CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
-    CLAUDE_CODE_RUNNING_MARKER_FILE_NAME, CODEX_RUNNING_HOLD_FILE_NAME,
-    CODEX_RUNNING_MARKER_FILE_NAME,
+    apply_agent_running_markers, remove_agent_marker_files, remove_legacy_hook_inputs,
+    CLAUDE_CODE_RUNNING_HOLD_FILE_NAME, CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
+    CLAUDE_CODE_SAVED_INPUT_FILE_NAMES, CODEX_RUNNING_HOLD_FILE_NAME,
+    CODEX_RUNNING_MARKER_FILE_NAME, CODEX_SAVED_INPUT_FILE_NAMES,
 };
 use snapshot::{
     agent_status_snapshot_from_persisted, current_unix_millis, default_agent_phase,
@@ -28,12 +62,25 @@ pub(super) const AGENT_STATUS_FILE_NAME: &str = "agent-status.json";
 
 pub(super) const AGENT_RUNNING_SCRIPT_FILE_NAME: &str = "focusd-agent-running.cmd";
 pub(super) const AGENT_STATUS_SCRIPT_FILE_NAME: &str = "focusd-agent-status.ps1";
+pub(super) const AGENT_SESSION_SCRIPT_FILE_NAME: &str = "focusd-agent-session.ps1";
 
 pub(super) const FOCUSD_AGENT_HOOK_SIGNATURE: &str = "focusd-agent-";
+/// Second argument of the running script for the Notification and PermissionRequest hooks (Claude
+/// Code and Codex): save the hook input instead of marking the session as running (see
+/// focusd-agent-running.cmd). Installs from before the session script also pass `session` from
+/// SessionStart, which the script still handles.
+pub(super) const AGENT_RUNNING_NOTIFICATION_ARG: &str = "notification";
 pub(super) const AGENT_RUNNING_SCRIPT: &str =
-    include_str!("../../../scripts/focusd-agent-running.cmd");
+    include_str!("hooks/focusd-agent-running.cmd");
 pub(super) const AGENT_STATUS_SCRIPT: &str =
-    include_str!("../../../scripts/focusd-agent-status.ps1");
+    include_str!("hooks/focusd-agent-status.ps1");
+/// SessionStart / SessionEnd: records the session's process and terminal (session_records.rs).
+pub(super) const AGENT_SESSION_SCRIPT: &str =
+    include_str!("hooks/focusd-agent-session.ps1");
+/// Codex PermissionRequest: forwards the request to the island's approval endpoint (agent_approval).
+pub(super) const AGENT_APPROVAL_SCRIPT_FILE_NAME: &str = "focusd-agent-approval.ps1";
+pub(super) const AGENT_APPROVAL_SCRIPT: &str =
+    include_str!("hooks/focusd-agent-approval.ps1");
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +123,9 @@ fn read_agent_status(app: AppHandle) -> Result<AgentStatusSnapshot, String> {
 
 #[tauri::command]
 pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatusSnapshot, String> {
+    if provider != "codex" && provider != "claudeCode" {
+        return Err("Unsupported agent provider.".to_string());
+    }
     let app_dir = app
         .path()
         .app_data_dir()
@@ -105,6 +155,7 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CODEX_RUNNING_MARKER_FILE_NAME,
                 CODEX_RUNNING_HOLD_FILE_NAME,
+                CODEX_SAVED_INPUT_FILE_NAMES,
             );
         }
         "claudeCode" => {
@@ -113,10 +164,19 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
                 &app_dir,
                 CLAUDE_CODE_RUNNING_MARKER_FILE_NAME,
                 CLAUDE_CODE_RUNNING_HOLD_FILE_NAME,
+                CLAUDE_CODE_SAVED_INPUT_FILE_NAMES,
             );
         }
         _ => {
             return Err("Unsupported agent provider.".to_string());
+        }
+    }
+
+    // Its saved notifications too, one file each (notifications.rs).
+    let prefix = format!("{provider}-");
+    for entry in fs::read_dir(app_dir.join(notifications::NOTIFICATIONS_DIR)).into_iter().flatten().flatten() {
+        if entry.file_name().to_string_lossy().starts_with(&prefix) {
+            fs::remove_file(entry.path()).ok();
         }
     }
 
@@ -131,8 +191,15 @@ pub fn clear_agent_status(app: AppHandle, provider: String) -> Result<AgentStatu
     ))
 }
 
+/// In the background: the remote computers are reached over SSH.
 #[tauri::command]
-pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult, String> {
+pub async fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallResult, String> {
+    tauri::async_runtime::spawn_blocking(move || install_agent_status_hooks_now(&app))
+        .await
+        .map_err(|error| format!("Failed to join the agent hooks task: {error}"))?
+}
+
+fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallResult, String> {
     let app_dir = app
         .path()
         .app_data_dir()
@@ -152,11 +219,13 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
         &codex_config_path,
         &running_script_path,
         &status_script_path,
+        codex_version::codex_runs_async_hooks(&home_dir) == Some(true),
     )?;
     install_claude_code_status_hooks(
         &claude_config_path,
         &running_script_path,
         &status_script_path,
+        approval_hook().as_ref(),
     )?;
 
     Ok(AgentHooksInstallResult {
@@ -171,7 +240,155 @@ pub fn install_agent_status_hooks(app: AppHandle) -> Result<AgentHooksInstallRes
     })
 }
 
+/// Claude Code and Codex sessions active in the last two hours, running and waiting ones first.
+#[tauri::command]
+/// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
+pub async fn list_agent_sessions(
+    app: AppHandle,
+    window_hours: Option<u32>,
+) -> Result<Vec<sessions::AgentSessionSummary>, String> {
+    let window_ms = window_hours
+        .map(|hours| i64::from(hours.clamp(1, 24)) * 60 * 60 * 1000)
+        .unwrap_or(session_scan::ACTIVE_WINDOW_MS);
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let waiting = notifications::waiting_notifications(&app_dir);
+        windows_home_dir().map(|home_dir| {
+            let mut sessions = session_scan::list_sessions(&home_dir, Some(&app_dir), &waiting, window_ms);
+            session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
+            let is_active = |phase: &str| matches!(phase, "running" | "waiting");
+            sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
+            sessions
+        })
+    })
+    .await
+    .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
+}
+
+/// Brings the editor or terminal window of an agent session to the front: the window of the
+/// session's own process chain when it is running, else one matched by folder (`cwd`) and title.
+/// In Orca, also switches to the session's terminal tab. Returns false when no window matched.
+/// `session_id` is optional so older callers keep working.
+#[tauri::command]
+pub async fn focus_agent_window(
+    app: AppHandle,
+    provider: String,
+    cwd: Option<String>,
+    title: Option<String>,
+    session_id: Option<String>,
+) -> Result<bool, String> {
+    let app_dir = app.path().app_data_dir().ok();
+    tauri::async_runtime::spawn_blocking(move || {
+        focus::focus_session(app_dir.as_deref(), &provider, cwd.as_deref(), title.as_deref(), session_id.as_deref())
+    })
+    .await
+    .map_err(|error| format!("Failed to join the window focus task: {error}"))
+}
+
+/// Which of `sessions` have their window in front (focus.rs); the Agent page counts those as
+/// seen. Returns their session ids.
+#[tauri::command]
+pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::SessionRef>) -> Result<Vec<String>, String> {
+    let app_dir = app.path().app_data_dir().ok();
+    tauri::async_runtime::spawn_blocking(move || focus::sessions_in_front(app_dir.as_deref(), &sessions))
+        .await
+        .map_err(|error| format!("Failed to join the window check: {error}"))
+}
+
+/// Claude usage limits from a local magpie gateway (magpie.rs), else claude-hud's usage
+/// snapshot (usage.rs); null when there is neither.
+#[tauri::command]
+pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
+    let home_dir = windows_home_dir()?;
+    // magpie answers live and needs no claude-hud, so it wins over the snapshot.
+    let magpie = magpie::read_usage(&usage::claude_dir(&home_dir)).await;
+    tauri::async_runtime::spawn_blocking(move || {
+        magpie.or_else(|| usage::read_usage(&home_dir))
+    })
+        .await
+        .map_err(|error| format!("Failed to join the usage task: {error}"))
+}
+
+/// Codex's usage limits from its rollout files (codex_usage.rs); null when none reports them.
+#[tauri::command]
+pub async fn get_codex_usage() -> Result<Option<usage::AgentUsage>, String> {
+    let home_dir = windows_home_dir()?;
+    tauri::async_runtime::spawn_blocking(move || codex_usage::read_usage(&home_dir))
+        .await
+        .map_err(|error| format!("Failed to join the Codex usage task: {error}"))
+}
+
+/// The icon of a session host (`host.exe` of a listed session) as a PNG data URL; null when the
+/// path is not an existing .exe or it has no icon.
+#[tauri::command]
+pub async fn get_agent_host_icon(path: String) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || host_icon::icon_data_url(&path))
+        .await
+        .map_err(|error| format!("Failed to join the host icon task: {error}"))
+}
+
+/// Compares the installed hooks with what Install/Repair would write. Only reads files.
+#[tauri::command]
+pub async fn get_agent_hooks_state(app: AppHandle) -> Result<AgentHooksState, String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?;
+    tauri::async_runtime::spawn_blocking(move || read_agent_hooks_state(&app_dir))
+        .await
+        .map_err(|error| format!("Failed to join the agent hooks task: {error}"))?
+}
+
+fn read_agent_hooks_state(app_dir: &Path) -> Result<AgentHooksState, String> {
+    let home_dir = windows_home_dir()?;
+    let read = |path: &Path| fs::read_to_string(path).ok();
+    // Install/Repair always points the hooks at the scripts in the app data folder.
+    let running_script_path = app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME);
+    let status_script_path = app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME);
+    let codex = codex_hooks_state(
+        read(&home_dir.join(".codex").join("config.toml")).as_deref(),
+        &running_script_path,
+        &status_script_path,
+        codex_version::codex_runs_async_hooks(&home_dir),
+    );
+    let claude_code = claude_code_hooks_state(
+        read(&home_dir.join(".claude").join("settings.json")).as_deref(),
+        &running_script_path,
+        &status_script_path,
+        approval_hook().as_ref(),
+    );
+    let hooks_installed =
+        codex != HookInstallState::NotInstalled || claude_code != HookInstallState::NotInstalled;
+    let scripts_outdated = script_outdated(
+        read(&app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_RUNNING_SCRIPT,
+        hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_STATUS_SCRIPT,
+        hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_SESSION_SCRIPT,
+        hooks_installed,
+    ) || script_outdated(
+        read(&app_dir.join(AGENT_APPROVAL_SCRIPT_FILE_NAME)).as_deref(),
+        AGENT_APPROVAL_SCRIPT,
+        hooks_installed,
+    );
+
+    Ok(AgentHooksState {
+        codex,
+        claude_code,
+        scripts_outdated,
+    })
+}
+
 pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
+    remove_legacy_hook_inputs(app_dir);
     write_text_file(
         &app_dir.join(AGENT_RUNNING_SCRIPT_FILE_NAME),
         &normalize_windows_line_endings(AGENT_RUNNING_SCRIPT),
@@ -179,10 +396,40 @@ pub(super) fn install_agent_hook_scripts(app_dir: &Path) -> Result<(), String> {
     write_text_file(
         &app_dir.join(AGENT_STATUS_SCRIPT_FILE_NAME),
         &normalize_windows_line_endings(AGENT_STATUS_SCRIPT),
+    )?;
+    write_text_file(
+        &app_dir.join(AGENT_SESSION_SCRIPT_FILE_NAME),
+        &normalize_windows_line_endings(AGENT_SESSION_SCRIPT),
+    )?;
+    write_text_file(
+        &app_dir.join(AGENT_APPROVAL_SCRIPT_FILE_NAME),
+        &normalize_windows_line_endings(AGENT_APPROVAL_SCRIPT),
     )
 }
 
+/// Where Claude Code's approval hook posts; None when the endpoint did not start, and then only
+/// the status hooks are installed.
+fn approval_hook() -> Option<claude_hooks::ApprovalHook> {
+    use crate::agent_approval::{activity_hook_url, endpoint, hook_url, question_hook_url, Agent};
+    Some(claude_hooks::ApprovalHook {
+        url: hook_url(Agent::ClaudeCode)?,
+        question_url: question_hook_url(),
+        activity_url: activity_hook_url(),
+        token: endpoint()?.token,
+    })
+}
+
+/// Refuses a symlink: replacing the link would cut it off from the file it points to, and
+/// writing through it would change a file kept elsewhere (a dotfiles or instructions repository),
+/// which is the user's to change.
 pub(super) fn write_text_file(path: &Path, content: &str) -> Result<(), String> {
+    if let Ok(target) = fs::read_link(path) {
+        return Err(format!(
+            "{} is a symlink to {}; the island does not change it. Change that file yourself",
+            path.display(),
+            target.display()
+        ));
+    }
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Failed to create {}: {error}", parent.display()))?;
@@ -202,3 +449,31 @@ pub(super) fn write_text_file(path: &Path, content: &str) -> Result<(), String> 
 pub(super) fn normalize_windows_line_endings(content: &str) -> String {
     content.replace("\r\n", "\n").replace('\n', "\r\n")
 }
+
+/// This module's Tauri commands. `lib.rs` chains every module's list into one
+/// `generate_handler!`, so adding a command only touches this file.
+macro_rules! tauri_commands {
+    ($next:ident [$($done:tt)*] $($rest:tt)*) => {
+        $next!([$($done)*
+            crate::agent_status::get_agent_status,
+            crate::agent_status::clear_agent_status,
+            crate::agent_status::install_agent_status_hooks,
+            crate::agent_status::get_agent_hooks_state,
+            crate::agent_status::focus_agent_window,
+            crate::agent_status::agent_sessions_in_front,
+            crate::agent_status::get_agent_host_icon,
+            crate::agent_status::list_agent_sessions,
+            crate::agent_status::get_agent_usage,
+            crate::agent_status::get_codex_usage,
+            crate::agent_status::reply_marker::get_reply_marker_state,
+            crate::agent_status::reply_marker::set_reply_marker,
+            crate::agent_status::sound_packs::list_sound_packs,
+            crate::agent_status::sound_packs::import_sound_pack,
+            crate::agent_status::sound_packs::remove_sound_pack,
+            crate::agent_status::sound_packs::read_sound_pack_file,
+            crate::agent_status::sound_packs::open_sound_pack_folder,
+            crate::agent_status::approval_hotkeys::set_agent_approval_hotkeys,
+        ] $($rest)*)
+    };
+}
+pub(crate) use tauri_commands;

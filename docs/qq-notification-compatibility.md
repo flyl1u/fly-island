@@ -29,13 +29,13 @@ QQ 消息上岛首版使用 Windows 系统通知作为来源。只有同一台�
 检查状态（只读）：
 
 ```powershell
-powershell -NoProfile -File scripts/repair-qq-notification-registration.ps1
+powershell -NoProfile -File src-tauri/src/qq_notifications/repair-qq-notification-registration.ps1
 ```
 
 自动修复未完成时，也可在确认安装正常后手动执行修复：
 
 ```powershell
-powershell -NoProfile -File scripts/repair-qq-notification-registration.ps1 -Repair
+powershell -NoProfile -File src-tauri/src/qq_notifications/repair-qq-notification-registration.ps1 -Repair
 ```
 
 脚本确认开始菜单中的 QQ 标识和腾讯签名，备份 QQ 通知设置，再用一条静默、明确标注「不是聊天消息」的本机测试通知初始化 Windows 发送者记录。结束后仅移除这一条测试通知。已有正常注册时直接返回，不做修改。
@@ -46,11 +46,11 @@ powershell -NoProfile -File scripts/repair-qq-notification-registration.ps1 -Rep
 
 ## 运行诊断
 
-全新应用数据和安装包内程序的真实消息验收，见 [首次使用消息接收验收](notification-first-run-verification.md)。其中区分了本机已通过的项目、公开安装包状态和仍需全新 Windows 账户验证的条件。
+全新应用数据和安装包内程序的真实消息验收，见 [首次使用消息接收验收](investigations/notification-first-run-verification.md)。其中区分了本机已通过的项目、公开安装包状态和仍需全新 Windows 账户验证的条件。
 
 ### 默认开启与首次授权回归检查
 
-运行 `pnpm dev` 后，在浏览器打开 `http://127.0.0.1:1420/tests/notification-startup.html`。页面使用真实 React Hook 和 Tauri 官方 IPC mock，覆盖首次默认开启、StrictMode 去重、授权请求不重复、关闭后重启、旧偏好兼容、独立开关、拒绝/关闭授权后的处理和手动重试。检查结束恢复本次测试涉及的 localStorage 值，不读取本机消息或修改 Windows 设置。
+运行 `pnpm dev` 后，在浏览器打开 `http://127.0.0.1:1420/tests/regression/notification-startup.html`。页面使用真实 React Hook 和 Tauri 官方 IPC mock，覆盖首次默认开启、StrictMode 去重、授权请求不重复、关闭后重启、旧偏好兼容、独立开关、拒绝/关闭授权后的处理和手动重试。检查结束恢复本次测试涉及的 localStorage 值，不读取本机消息或修改 Windows 设置。
 
 2026-10-19：该页面的 12 项检查通过，330px 宽控件检查未发现溢出；Rust 测试通过 27 项、2 项需要真实会话的测试未运行，Node 预览测试通过 5 项。本机内嵌脚本同等的编码调用返回 `AlreadyEnabled`、`Modified: false`，确认健康通道直接返回。本次没有人为破坏通知注册或重置系统权限，缺失记录自动恢复和首次系统授权弹窗仍需在新用户环境验收，不能将 IPC mock 当作真实 Windows 授权验证。
 
@@ -103,7 +103,7 @@ cargo run --manifest-path src-tauri/Cargo.toml --example qq_notification_probe -
 验证命令：
 
 ```powershell
-node --test tests/qq-notification-timing.test.mjs
+node --test tests/unit/qq-notification-timing.test.mjs
 cargo test --manifest-path src-tauri/Cargo.toml --lib qq_notifications::tests
 # 需要本机 QQ 有一条仍在通知中心的真实通知，或在测试的 60 秒内接收一条：
 cargo test --manifest-path src-tauri/Cargo.toml --lib qq_notifications::tests::reads_a_real_qq_system_notification -- --ignored --exact

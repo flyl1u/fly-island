@@ -1,6 +1,6 @@
 # 界面设计约定
 
-更新：2026-10-23
+更新：2026-11-06
 
 ## 已确认的方向
 
@@ -14,7 +14,7 @@
 ## 品牌与组件
 
 - 复用已有品牌图标、系统字体、深色表面、lucide 动作图标、圆角及浅绿提醒色，不另建视觉主题。（用户确认）
-- 主要样板为 `src/Messages.tsx`、`src/WeChatReminders.tsx` 和 `src/QQMail.tsx`；样式复用 `src/QQNotifications.css`，新增语义样式放在对应模块。（Agent 推断）
+- 主要样板为 `src/features/messages/Messages.tsx`、`wechat/WeChatReminders.tsx` 和 `mail/MailPanel.tsx`；样式复用 `qq-notifications/QQNotifications.css`，新增语义样式放在对应模块。（Agent 推断）
 - 长主题和发件人不能挤压时间；列表文本截断，阅读页完整换行。（Agent 推断）
 - 处理过程中保留返回动作，失败时原地给出重试入口。（Agent 推断）
 
@@ -24,14 +24,13 @@
 - HTML 保留可读排版并清理主动内容，远程图片不加载；附件和回复保留网页入口。（用户确认）
 - 正文与提醒状态仅保存在内存，现有偏好存储键保持兼容。（Agent 推断）
 
-## 翻译界面
+## 各部分的约定
 
-- 快捷翻译参考 `https://island.flyliu.org/` 展示的翻译 UI。（用户确认：本次请求）
-- 使用炭灰表面、紧凑标题和语言方向栏，原文与译文以细分隔线组织；浅绿色突出译文及翻译主动作，沿用系统字体和 lucide 图标。（Agent 推断，依据参考界面）
-- 默认窄窗口上下排列，宽度达到 760px 时并排；长文本分别滚动和换行，设置区域可滚动。（Agent 推断）
-- 空态提供剪贴板入口，加载显示处理中，复制后原位显示“已复制”；保留全局快捷键和 Windows 凭据管理器的密钥设置。（Agent 推断）
+按界面区域分文件放在 `docs/design/`，改哪块就只改那一份（多个会话并行时不在同一个文件上冲突）：
 
-## 折叠待办状态
-
-- 没有已开始的任务时，默认显示“剩余 x 个待办”；设置中可单独关闭，开始任务后显示任务标题。（用户确认：本次请求）
-- 数量只包含当前待办中的未完成项，包括 0；总文字开关仍控制全部折叠文字，消息预览继续优先显示。（Agent 推断）
+- [翻译界面](docs/design/translation.md)
+- [灵动岛：顶边贴合与视觉规范](docs/design/island.md)
+- [设置](docs/design/settings.md)
+- [AI Agent：会话标题与 Agent 页](docs/design/agent.md)
+- [待办](docs/design/todos.md)
+- [文件中转](docs/design/file-shelf.md)

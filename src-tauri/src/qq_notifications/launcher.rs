@@ -1,27 +1,16 @@
 //! Finds and activates the running QQ window, or starts QQ.
 
 use crate::messenger_activation::{activate_existing_window, is_interactive_window};
-use crate::win32::{process, registry};
+use crate::win32::{self, process, registry};
 use std::{
     path::{Path, PathBuf},
     thread,
     time::{Duration, Instant},
 };
-use windows::{
-    core::BOOL,
-    Win32::{
-        Foundation::{HWND, LPARAM, WPARAM},
-        System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
-        UI::{
-            Shell::{Shell_NotifyIconGetRect, NOTIFYICONIDENTIFIER},
-            WindowsAndMessaging::{
-                AllowSetForegroundWindow, EnumWindows, GetClassNameW, GetForegroundWindow,
-                GetWindow, GetWindowPlacement, GetWindowTextW, IsWindowVisible,
-                SendMessageTimeoutW, GW_OWNER, SMTO_ABORTIFHUNG, SMTO_BLOCK, SMTO_ERRORONEXIT,
-                WINDOWPLACEMENT, WM_APP, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WM_LBUTTONUP,
-            },
-        },
-    },
+use windows::Win32::{
+    Foundation::HWND,
+    System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
+    UI::WindowsAndMessaging::{WM_APP, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WM_LBUTTONUP},
 };
 
 pub(super) fn qq_executable() -> Result<PathBuf, String> {
@@ -31,13 +20,7 @@ pub(super) fn qq_executable() -> Result<PathBuf, String> {
             "Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\QQ",
         ] {
             if let Some(icon) = registry::read_string(root, key, "DisplayIcon") {
-                let executable = icon
-                    .rsplit_once(',')
-                    .filter(|(_, index)| index.trim().parse::<i32>().is_ok())
-                    .map_or(icon.as_str(), |(path, _)| path)
-                    .trim()
-                    .trim_matches('"');
-                let path = PathBuf::from(executable);
+                let path = PathBuf::from(registry::display_icon_path(&icon));
                 if path.is_absolute()
                     && path.is_file()
                     && path
@@ -49,14 +32,17 @@ pub(super) fn qq_executable() -> Result<PathBuf, String> {
             }
         }
     }
-    Err("未找到 QQ 安装路径，请确认已安装 Windows 版 QQ。".into())
+    // Portable copies and copies moved to another folder have no uninstall entry.
+    process::running_executable(&["QQ.exe"])
+        .map(PathBuf::from)
+        .ok_or_else(|| "未找到 QQ 安装路径。请先打开 QQ，再试一次。".into())
 }
 
 pub(super) struct QQWindowSearch<'a> {
-    pub(super) executable: &'a Path,
+    executable: &'a Path,
     pub(super) windows: Vec<QQWindow>,
-    pub(super) tray_windows: Vec<(HWND, u32)>,
-    pub(super) running: bool,
+    tray_windows: Vec<(HWND, u32)>,
+    running: bool,
 }
 
 pub(super) struct QQWindow {
@@ -76,46 +62,39 @@ pub(super) fn preferred_qq_window(windows: &[QQWindow], foreground: HWND) -> Opt
     })
 }
 
-unsafe extern "system" fn find_qq_window(window: HWND, context: LPARAM) -> BOOL {
-    let search = &mut *(context.0 as *mut QQWindowSearch<'_>);
+fn find_qq_window(search: &mut QQWindowSearch<'_>, window: HWND) {
     let process_id = process::window_process_id(window);
     if let Some(path) = process::image_path(process_id) {
         if !path.eq_ignore_ascii_case(&search.executable.to_string_lossy()) {
-            return true.into();
+            return;
         }
         search.running = true;
-        let mut title = [0u16; 32];
-        let length = GetWindowTextW(window, &mut title) as usize;
-        let mut class = [0u16; 256];
-        let class_length = GetClassNameW(window, &mut class) as usize;
-        let class = String::from_utf16_lossy(&class[..class_length]);
+        let title = win32::window::window_text(window, 32);
+        let class = win32::window::class_name(window);
         if class == "Electron_NotifyIconHostWindow" {
             search.tray_windows.push((window, process_id));
-            return true.into();
+            return;
         }
-        let mut placement = WINDOWPLACEMENT {
-            length: std::mem::size_of::<WINDOWPLACEMENT>() as u32,
-            ..Default::default()
+        if title != "QQ" || !["Chrome_WidgetWin_1", "TXGuiFoundation"].contains(&class.as_str()) {
+            return;
+        }
+        if win32::window::has_owner(window) {
+            return;
+        }
+        let Some(normal_position) = win32::window::normal_position(window) else {
+            return;
         };
-        if String::from_utf16_lossy(&title[..length]) != "QQ"
-            || !["Chrome_WidgetWin_1", "TXGuiFoundation"].contains(&class.as_str())
-            || GetWindow(window, GW_OWNER).is_ok_and(|owner| !owner.is_invalid())
-            || GetWindowPlacement(window, &mut placement).is_err()
-        {
-            return true.into();
-        }
-        let width = placement.rcNormalPosition.right - placement.rcNormalPosition.left;
-        let height = placement.rcNormalPosition.bottom - placement.rcNormalPosition.top;
+        let width = normal_position.right - normal_position.left;
+        let height = normal_position.bottom - normal_position.top;
         if width >= 500 && height >= 300 {
             search.windows.push(QQWindow {
                 handle: window,
                 process_id,
-                visible: IsWindowVisible(window).as_bool(),
+                visible: win32::window::is_visible(window),
                 area: i64::from(width) * i64::from(height),
             });
         }
     }
-    true.into()
 }
 
 pub(super) fn existing_qq_windows(executable: &Path) -> Result<QQWindowSearch<'_>, String> {
@@ -125,19 +104,14 @@ pub(super) fn existing_qq_windows(executable: &Path) -> Result<QQWindowSearch<'_
         tray_windows: Vec::new(),
         running: false,
     };
-    unsafe {
-        EnumWindows(
-            Some(find_qq_window),
-            LPARAM((&mut search as *mut QQWindowSearch<'_>) as isize),
-        )
+    win32::window::for_each_top_level_window(|window| find_qq_window(&mut search, window))
         .map_err(|error| format!("无法查找已运行的 QQ 窗口：{error}"))?;
-    }
     Ok(search)
 }
 
 pub(super) fn activate_existing_qq(executable: &Path) -> Result<(), String> {
     let search = existing_qq_windows(executable)?;
-    let original = preferred_qq_window(&search.windows, unsafe { GetForegroundWindow() })
+    let original = preferred_qq_window(&search.windows, win32::window::foreground_window())
         .ok_or_else(|| {
             if search.running {
                 "QQ 已在运行，但未找到可用的主窗口，请从系统托盘打开 QQ。"
@@ -147,9 +121,7 @@ pub(super) fn activate_existing_qq(executable: &Path) -> Result<(), String> {
             .to_string()
         })?;
     let expected_process = original.process_id;
-    unsafe {
-        let _ = AllowSetForegroundWindow(expected_process);
-    }
+    win32::window::allow_set_foreground_window(expected_process);
     let mut trays = search
         .tray_windows
         .iter()
@@ -169,43 +141,27 @@ pub(super) fn activate_existing_qq(executable: &Path) -> Result<(), String> {
         if Instant::now() >= lookup_deadline {
             return Err("查询 QQ 托盘图标超时，请从系统托盘打开 QQ。".into());
         }
-        let identifier = NOTIFYICONIDENTIFIER {
-            cbSize: std::mem::size_of::<NOTIFYICONIDENTIFIER>() as u32,
-            hWnd: tray.0,
-            uID: id,
-            ..Default::default()
-        };
-        if unsafe { Shell_NotifyIconGetRect(&identifier) }.is_ok() {
-            if icon_id.replace(id).is_some() {
-                return Err(
-                    "QQ 有多个托盘图标，无法确认主入口，请双击系统托盘中的 QQ 图标。".into(),
-                );
-            }
+        if win32::window::notify_icon_exists(tray.0, id) && icon_id.replace(id).is_some() {
+            return Err("QQ 有多个托盘图标，无法确认主入口，请双击系统托盘中的 QQ 图标。".into());
         }
     }
     let icon_id = icon_id.ok_or("QQ 托盘图标尚未就绪，请从系统托盘打开 QQ。")?;
-    unsafe {
-        for message in [WM_LBUTTONDOWN, WM_LBUTTONUP, WM_LBUTTONDBLCLK, WM_LBUTTONUP] {
-            if SendMessageTimeoutW(
-                tray.0,
-                WM_APP + 1,
-                WPARAM(icon_id as usize),
-                LPARAM(message as isize),
-                SMTO_ABORTIFHUNG | SMTO_BLOCK | SMTO_ERRORONEXIT,
-                1_000,
-                None,
-            )
-            .0 == 0
-            {
-                return Err("QQ 没有响应托盘唤回请求，请从系统托盘打开。".into());
-            }
+    for message in [WM_LBUTTONDOWN, WM_LBUTTONUP, WM_LBUTTONDBLCLK, WM_LBUTTONUP] {
+        if !win32::window::send_message_with_timeout(
+            tray.0,
+            WM_APP + 1,
+            icon_id as usize,
+            message as isize,
+            1_000,
+        ) {
+            return Err("QQ 没有响应托盘唤回请求，请从系统托盘打开。".into());
         }
     }
     let deadline = Instant::now() + Duration::from_secs(3);
     while Instant::now() < deadline {
         let current = existing_qq_windows(executable)?;
         if let Some(window) =
-            preferred_qq_window(&current.windows, unsafe { GetForegroundWindow() })
+            preferred_qq_window(&current.windows, win32::window::foreground_window())
         {
             if window.process_id == expected_process && is_interactive_window(window.handle) {
                 return activate_existing_window(window.handle, "QQ");

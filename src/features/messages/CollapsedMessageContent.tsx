@@ -16,7 +16,7 @@ type ContentTransition = {
 function MessageContent({ preview }: { preview: MessagePreview }) {
   const t = useTranslation();
   return <>
-    <MessageSourceIcon source={preview.source} size={18} />
+    <MessageSourceIcon source={preview.source} size={16} />
     {preview.source === "qq" ? (
       <span className="island-message-preview__text">
         <strong className="island-message-preview__sender">{preview.title.trim() || "QQ"}</strong>

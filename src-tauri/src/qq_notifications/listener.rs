@@ -11,7 +11,6 @@ use std::{
 };
 use windows::{
     core::{HRESULT, HSTRING},
-    Win32::System::WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED},
     UI::Notifications::{
         KnownNotificationBindings,
         Management::{UserNotificationListener, UserNotificationListenerAccessStatus},
@@ -19,16 +18,18 @@ use windows::{
     },
 };
 
-use super::*;
+use super::history::NotificationBuffer;
+use super::{publish, NotificationService, NotificationStatus, QQNotification};
+use crate::win32;
 
-pub(super) const QQ_APP_ID: &str = "QQ";
+const QQ_APP_ID: &str = "QQ";
 
-pub(super) const REGISTRATION_REPAIR: &str =
-    include_str!("../../../scripts/repair-qq-notification-registration.ps1");
+const REGISTRATION_REPAIR: &str =
+    include_str!("repair-qq-notification-registration.ps1");
 
-pub(super) const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
+const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
 
-pub(super) const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
+const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
 
 pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receiver<()>) {
     let mut repair_generation = None;
@@ -111,9 +112,8 @@ pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receive
     }
 }
 
-pub(super) fn qq_notification_setting() -> windows::core::Result<NotificationSetting> {
-    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }?;
-    let _apartment = WinRT;
+fn qq_notification_setting() -> windows::core::Result<NotificationSetting> {
+    let _apartment = win32::com::WinRtApartment::multithreaded()?;
     ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(QQ_APP_ID))?.Setting()
 }
 
@@ -146,10 +146,7 @@ pub(super) fn registration_error(
     }
 }
 
-pub(super) fn repair_registration(
-    service: &NotificationService,
-    generation: u64,
-) -> Result<(), String> {
+fn repair_registration(service: &NotificationService, generation: u64) -> Result<(), String> {
     // Embed the existing guarded repair so installed builds do not depend on the repository.
     let script = format!("& {{\n{REGISTRATION_REPAIR}\n}} -Repair");
     let bytes: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
@@ -203,18 +200,9 @@ pub(super) fn repair_registration(
     }
 }
 
-pub(super) struct WinRT;
-
-impl Drop for WinRT {
-    fn drop(&mut self) {
-        unsafe { RoUninitialize() };
-    }
-}
-
 pub(super) fn read_notifications() -> Result<(NotificationStatus, Vec<QQNotification>), String> {
-    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }
+    let _apartment = win32::com::WinRtApartment::multithreaded()
         .map_err(|error| format!("无法初始化 Windows 通知：{error}"))?;
-    let _apartment = WinRT;
     let listener = UserNotificationListener::Current()
         .map_err(|error| format!("Windows 通知监听不可用：{error}"))?;
     let access = listener
@@ -244,7 +232,7 @@ pub(super) fn read_notifications() -> Result<(NotificationStatus, Vec<QQNotifica
     Ok((NotificationStatus::Listening, items))
 }
 
-pub(super) fn read_qq_notification(
+fn read_qq_notification(
     notification: &UserNotification,
 ) -> windows::core::Result<Option<QQNotification>> {
     if notification.AppInfo()?.AppUserModelId()? != QQ_APP_ID {

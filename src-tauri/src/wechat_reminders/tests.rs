@@ -1,4 +1,5 @@
 use super::*;
+use windows::Win32::UI::WindowsAndMessaging::{GetWindowThreadProcessId, IsIconic};
 
 #[test]
 fn visible_main_is_preferred_and_login_windows_are_not_restored() {
@@ -34,6 +35,8 @@ fn window_activation_reuses_the_existing_wechat_process() {
     let before = existing_wechat_windows(&executable).unwrap();
     let original = preferred_window(&before.found).expect("WeChat main window is required");
     let mut expected_process = 0;
+    // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
+    // valid local.
     unsafe {
         GetWindowThreadProcessId(original.handle, Some(&mut expected_process));
     }
@@ -44,10 +47,13 @@ fn window_activation_reuses_the_existing_wechat_process() {
         let window =
             preferred_window(&after.found).expect("The existing main window must be visible");
         let mut process_id = 0;
+        // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
+        // valid local.
         unsafe {
             GetWindowThreadProcessId(window.handle, Some(&mut process_id));
         }
         assert_eq!(process_id, expected_process);
+        // SAFETY: IsIconic takes the HWND by value and returns false for invalid windows.
         assert!(!unsafe { IsIconic(window.handle) }.as_bool());
     }
 }

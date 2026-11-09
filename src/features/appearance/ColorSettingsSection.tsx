@@ -1,9 +1,14 @@
+import { SettingsColor } from "../../components/settings/SettingsColor";
+import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { ColorControl } from "../../components/controls/ColorControl";
-import { SliderControl } from "../../components/controls/SliderControl";
+import { DEFAULT_SETTINGS } from "./settings";
 import type { IslandSettings } from "./types";
-import "./ColorSettingsSection.css";
 
+type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor" | "todoBackgroundColor";
+
+/** Appearance → Colours: one row per colour, then how bright the status light glows. */
 export function ColorSettingsSection({
   settings,
   onSettingsChange,
@@ -12,53 +17,36 @@ export function ColorSettingsSection({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const t = useTranslation();
+  const text = t.settings.colors;
+  const colors: readonly [ColorKey, string][] = [
+    ["islandBackgroundColor", text.islandBackground],
+    ["taskTextColor", text.taskText],
+    ["pulseColor", text.pulse],
+    ["todoBackgroundColor", text.todoPaper],
+  ];
 
   return (
-    <section className="settings-section settings-section--colors">
-      <div className="settings-section__header">
-        <span>{t.settings.colors.title}</span>
-      </div>
-      <div className="color-grid">
-        <ColorControl
-          label={t.settings.colors.taskText}
-          value={settings.taskTextColor}
-          onChange={(taskTextColor) =>
-            onSettingsChange({ ...settings, taskTextColor })
+    <SettingsGroup title={text.title}>
+      {colors.map(([key, label]) => (
+        <SettingsRow
+          key={key}
+          title={label}
+          control={
+            <SettingsColor value={settings[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />
           }
         />
-        <ColorControl
-          label={t.settings.colors.pulse}
-          value={settings.pulseColor}
-          onChange={(pulseColor) =>
-            onSettingsChange({ ...settings, pulseColor })
-          }
-        />
-        <ColorControl
-          label={t.settings.colors.islandBackground}
-          value={settings.islandBackgroundColor}
-          onChange={(islandBackgroundColor) =>
-            onSettingsChange({ ...settings, islandBackgroundColor })
-          }
-        />
-        <ColorControl
-          label={t.settings.colors.todoPaper}
-          value={settings.todoBackgroundColor}
-          onChange={(todoBackgroundColor) =>
-            onSettingsChange({ ...settings, todoBackgroundColor })
-          }
-        />
-      </div>
-      <SliderControl
-        label={t.settings.colors.pulseBrightness}
+      ))}
+      <SettingsSliderRow
+        title={text.pulseBrightness}
         value={settings.pulseBrightness}
         min={50}
         max={160}
         step={1}
-        suffix="%"
-        onChange={(pulseBrightness) =>
-          onSettingsChange({ ...settings, pulseBrightness })
-        }
+        format={(value) => `${Math.round(value)}%`}
+        defaultValue={DEFAULT_SETTINGS.pulseBrightness}
+        resetLabel={t.settings.layout.resetToDefault}
+        onChange={(pulseBrightness) => onSettingsChange({ ...settings, pulseBrightness })}
       />
-    </section>
+    </SettingsGroup>
   );
 }

@@ -1,13 +1,16 @@
 //! Stage window size and placement: which monitor, where on it, and the tuck animation.
 
 use std::{
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Mutex, PoisonError,
+    },
     thread,
     time::{Duration, Instant},
 };
 use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindow};
 
-use super::state::{IslandPosition, IslandWindowState};
+use super::state::{IslandPosition, IslandWindowState, MonitorFollow};
 
 pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
 pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
@@ -21,33 +24,44 @@ pub(super) const COLLAPSED_RADIUS: f64 = 22.0;
 pub(super) const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 pub(super) const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
-pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 240.0;
+// Up to 656px: six clipboard rows (MAX_CLIPBOARD_VISIBLE_ROWS in
+// src/features/appearance/settings.ts); the panel height setting stops at 546.
+pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 350.0;
 pub(super) const EXPANDED_RADIUS: f64 = 30.0;
+// Range of the expanded bottom radius setting; matches MIN / MAX_ISLAND_CORNER_RADIUS in
+// src/features/appearance/settings.ts.
+pub(super) const MIN_CORNER_RADIUS: f64 = 16.0;
+pub(super) const MAX_CORNER_RADIUS: f64 = 40.0;
 pub(super) const STAGE_WINDOW_PADDING_Y: f64 = 24.0;
 pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);
 
 pub(super) static POSITION_ANIMATION_GENERATION: AtomicU64 = AtomicU64::new(0);
+/// The slide in progress: its generation and where it ends.
+static RUNNING_SLIDE: Mutex<Option<(u64, (i32, i32))>> = Mutex::new(None);
+
+/// Whether an update that does not animate should leave the running slide alone:
+/// it ends where the update would put the window anyway. Jumping there instead cut
+/// the slide-out short when the panel opened from a tucked island mid-slide.
+pub(super) fn continues_slide(running: Option<(u64, (i32, i32))>, current_generation: u64, target: (i32, i32), animate: bool) -> bool {
+    !animate && running == Some((current_generation, target))
+}
+// A shorter stage waits for the island's 560ms height transition (.island in
+// src/windows/island/IslandShell.css) to finish; shrinking at once would cut off the
+// bottom of the island while it is still animating down from a taller page.
+const STAGE_SHRINK_DELAY: Duration = Duration::from_millis(600);
+static STAGE_SHRINK_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 pub(crate) fn apply_stage_geometry(
     window: &WebviewWindow,
     state: IslandWindowState,
     animate_position: bool,
 ) -> Result<(), String> {
-    let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     // Keep room for the closing animation at every supported panel scale.
     let stage_height = STAGE_WINDOW_HEIGHT
         .max((state.expanded_height * state.expanded_scale).ceil() + STAGE_WINDOW_PADDING_Y);
 
-    let stage_size = LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height);
-    let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
-    if window.inner_size().map_err(|error| error.to_string())?
-        != stage_size.to_physical::<u32>(scale_factor)
-    {
-        window
-            .set_size(Size::Logical(stage_size))
-            .map_err(|error| error.to_string())?;
-    }
+    resize_stage(window, LogicalSize::new(STAGE_WINDOW_WIDTH, stage_height))?;
 
     let current_monitor = window
         .current_monitor()
@@ -59,7 +73,13 @@ pub(crate) fn apply_stage_geometry(
         .custom_position
         .and_then(|position| monitor_for_island_position(window, position).ok().flatten());
     let has_custom_monitor = custom_monitor.is_some();
+    // The monitor the island followed the pointer or the foreground window to (follow.rs).
+    let followed_monitor = match state.monitor_follow {
+        MonitorFollow::Primary => None,
+        _ => state.followed_monitor.and_then(|point| monitor_at(window, point).ok().flatten()),
+    };
     let monitor = custom_monitor
+        .or(followed_monitor)
         .or_else(|| primary_monitor.or(current_monitor))
         .ok_or_else(|| "No monitor is available for island positioning.".to_string())?;
 
@@ -73,7 +93,7 @@ pub(crate) fn apply_stage_geometry(
             * scale)
             .round() as i32;
     let top_inset = work_area_top_inset(monitor_position.y, monitor.work_area().position.y);
-    let centered_x = monitor_position.x + ((monitor_size.width as i32 - physical_width) / 2);
+    let centered_x = monitor_position.x + (monitor_size.width as i32 - physical_width) / 2;
     let normal_y = monitor_position.y + top_inset + physical_top_offset;
     let tucked_y = monitor_position.y + top_inset + tucked_top_offset;
     let mut positioned_state = state;
@@ -81,7 +101,13 @@ pub(crate) fn apply_stage_geometry(
         positioned_state.custom_position = None;
     }
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
+    super::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
 
+    let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+    if continues_slide(running, POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst), (x, y), animate_position) {
+        return Ok(());
+    }
+    let generation = POSITION_ANIMATION_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     let target = PhysicalPosition::new(x, y);
     let start = window.outer_position().map_err(|error| error.to_string())?;
     if start == target {
@@ -93,6 +119,7 @@ pub(crate) fn apply_stage_geometry(
             .map_err(|error| error.to_string());
     }
 
+    *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner) = Some((generation, (x, y)));
     let window = window.clone();
     thread::spawn(move || {
         let started_at = Instant::now();
@@ -112,6 +139,38 @@ pub(crate) fn apply_stage_geometry(
                 break;
             }
             thread::sleep(Duration::from_millis(8));
+        }
+        let mut running = RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+        if running.is_some_and(|(owner, _)| owner == generation) {
+            *running = None;
+        }
+    });
+    Ok(())
+}
+
+/// Grows the stage at once, so a taller page has room from the first frame, and
+/// shrinks it only after the height transition; a newer resize cancels a pending one.
+fn resize_stage(window: &WebviewWindow, stage_size: LogicalSize<f64>) -> Result<(), String> {
+    let generation = STAGE_SHRINK_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let scale_factor = window.scale_factor().map_err(|error| error.to_string())?;
+    let current = window.inner_size().map_err(|error| error.to_string())?;
+    let target = stage_size.to_physical::<u32>(scale_factor);
+    if current == target {
+        return Ok(());
+    }
+    if target.height >= current.height {
+        return window
+            .set_size(Size::Logical(stage_size))
+            .map_err(|error| error.to_string());
+    }
+
+    let window = window.clone();
+    thread::spawn(move || {
+        thread::sleep(STAGE_SHRINK_DELAY);
+        if STAGE_SHRINK_GENERATION.load(Ordering::SeqCst) == generation {
+            if let Err(error) = window.set_size(Size::Logical(stage_size)) {
+                eprintln!("Failed to shrink island stage: {error}");
+            }
         }
     });
     Ok(())
@@ -149,6 +208,20 @@ pub(super) fn monitor_for_island_position(
             && island_center_y >= monitor_position.y as f64
             && island_center_y < (monitor_position.y + monitor_size.height as i32) as f64
     }))
+}
+
+/// The monitor holding the physical point `(x, y)`.
+pub(super) fn monitor_at(window: &WebviewWindow, (x, y): (i32, i32)) -> Result<Option<Monitor>, String> {
+    let monitors = window.available_monitors().map_err(|error| error.to_string())?;
+    Ok(monitors.into_iter().find(|monitor| {
+        let (position, size) = (monitor.position(), monitor.size());
+        contains((position.x, position.y, size.width as i32, size.height as i32), (x, y))
+    }))
+}
+
+/// Whether the rectangle `(left, top, width, height)` holds the point.
+pub(super) fn contains((left, top, width, height): (i32, i32, i32, i32), (x, y): (i32, i32)) -> bool {
+    x >= left && x < left + width && y >= top && y < top + height
 }
 
 // A top-docked taskbar shrinks the monitor work area instead of the monitor itself,

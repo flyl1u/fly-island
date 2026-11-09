@@ -1,7 +1,0 @@
-{
-  "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "settings-title",
-  "description": "Allow the settings window to translate its native title",
-  "windows": ["settings"],
-  "permissions": ["core:window:allow-set-title"]
-}

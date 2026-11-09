@@ -1,0 +1,81 @@
+/* Floats over the Agent page's bottom left; .agent-sessions runs 20px under the island's edge. */
+.agent-archived {
+  position: absolute;
+  left: 6px;
+  bottom: 28px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 4px 0 11px;
+  color: var(--text-2);
+  background: rgba(30, 31, 36, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
+  white-space: nowrap;
+  animation: agent-archived-in 240ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.agent-archived--leaving {
+  animation: agent-archived-out 200ms ease-in both;
+}
+
+.agent-archived > svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.agent-archived button {
+  height: 20px;
+  padding: 0 9px;
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.agent-archived button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.agent-archived button:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 1px;
+}
+
+@keyframes agent-archived-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes agent-archived-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-14px) scale(0.96);
+  }
+}
+
+/* Still ends with animationend, which removes the pill, but without moving. */
+@media (prefers-reduced-motion: reduce) {
+  .agent-archived,
+  .agent-archived--leaving {
+    animation-duration: 1ms;
+  }
+}

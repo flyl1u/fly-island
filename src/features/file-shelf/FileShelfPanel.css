@@ -1,0 +1,104 @@
+/* Flex, not grid: the list or the empty drop area takes all the height left, with or
+   without the error line above it. */
+.shelf-panel {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  overflow: hidden;
+  padding: 16px 18px 18px;
+  color: var(--text-1);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(110, 231, 200, 0.1), transparent 32%),
+    linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
+    rgba(20, 20, 25, 0.88);
+  border-radius: var(--island-panel-radius, 10px);
+  corner-shape: var(--island-corner-shape, round);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px var(--color-white-a09);
+}
+
+.shelf-panel__error {
+  flex: none;
+  margin: 0;
+  color: rgba(255, 178, 188, 0.86);
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.shelf-list {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-md);
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(190, 228, 216, 0.28) transparent;
+  scrollbar-width: thin;
+  transition: opacity 140ms ease;
+}
+
+.shelf-panel--dropping .shelf-list {
+  opacity: 0.32;
+}
+
+.shelf-empty {
+  flex: 1;
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-lg);
+  color: var(--text-3);
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.shelf-panel--dropping .shelf-empty {
+  color: rgba(214, 248, 238, 0.92);
+  background: rgba(110, 231, 200, 0.08);
+  border-color: rgba(110, 231, 200, 0.6);
+}
+
+.shelf-drop-overlay {
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  color: rgba(214, 248, 238, 0.94);
+  background: rgba(110, 231, 200, 0.1);
+  border: 1.5px dashed rgba(110, 231, 200, 0.62);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  animation: shelfOverlayIn 140ms ease both;
+}
+
+@keyframes shelfOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-drop-overlay {
+    animation: none;
+  }
+}

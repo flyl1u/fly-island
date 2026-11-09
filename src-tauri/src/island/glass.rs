@@ -2,9 +2,9 @@
 
 use std::sync::OnceLock;
 use tauri::WebviewWindow;
-use windows::Win32::Graphics::Gdi::SetWindowRgn;
 
 use super::state::IslandWindowState;
+use crate::win32;
 
 pub(super) static NATIVE_GLASS_INITIALIZED: OnceLock<()> = OnceLock::new();
 
@@ -23,7 +23,7 @@ pub(super) fn parse_hex_color(value: &str) -> Option<(u8, u8, u8)> {
 
 pub(super) fn clear_window_glass_region(window: &WebviewWindow) -> Result<(), String> {
     let hwnd = window.hwnd().map_err(|error| error.to_string())?;
-    if unsafe { SetWindowRgn(hwnd, None, true) } == 0 {
+    if !win32::window::clear_window_region(hwnd) {
         return Err("Failed to clear the liquid glass window region.".to_string());
     }
     Ok(())

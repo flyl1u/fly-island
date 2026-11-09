@@ -1,0 +1,148 @@
+.island-preview {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-lg);
+}
+
+/* A stand-in wallpaper with colour behind the island, so opacity and glass are visible. */
+.island-preview__desktop {
+  position: relative;
+  /* Sizes the expanded island's drawing (its --u), so the pane's height follows its width. */
+  container-type: inline-size;
+  min-height: 196px;
+  padding-bottom: 44px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 22% 30%, rgba(255, 170, 92, 0.85), transparent 46%),
+    radial-gradient(circle at 78% 62%, rgba(84, 156, 255, 0.85), transparent 50%),
+    radial-gradient(circle at 46% 96%, rgba(196, 98, 255, 0.7), transparent 52%),
+    #2b3445;
+}
+
+.island-preview__island {
+  --preview-radius-collapsed: calc(var(--preview-radius) * 22 / 30);
+  display: flex;
+  align-items: center;
+  background: var(--preview-fill);
+  border-radius: 0 0 var(--preview-radius-collapsed) var(--preview-radius-collapsed);
+  corner-shape: var(--preview-corner-shape, round);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  color: rgb(var(--preview-ink));
+  transform-origin: top center;
+}
+
+.island-preview__island--glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, calc(0.04 + var(--preview-glass) * 0.1)), transparent),
+    var(--preview-fill);
+  border: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
+  border-top: 0;
+  backdrop-filter: blur(calc(10px + var(--preview-glass) * 9px)) saturate(1.4);
+}
+
+.island-preview__island--collapsed {
+  min-width: 150px;
+  height: 34px;
+  gap: 8px;
+  padding: 0 14px;
+  transform: scale(var(--preview-collapsed-scale));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/*
+ * Drawn in the real island's proportions: --u is one pixel of the 660px-wide island at 92% of
+ * the pane, and the padding, corners and everything inside (AgentPagePreview.css) are real
+ * pixel values times --u, so a wider pane draws a bigger island rather than a sparser one.
+ */
+.island-preview__island--expanded {
+  --u: calc(92cqw / 660);
+  --preview-radius-expanded: calc(var(--preview-radius-px) * var(--u));
+  width: calc(660 * var(--u));
+  padding: calc(12 * var(--u)) calc(20 * var(--u)) calc(16 * var(--u));
+  border-radius: 0 0 var(--preview-radius-expanded) var(--preview-radius-expanded);
+  transform: scale(var(--preview-expanded-scale));
+}
+
+/* Away from the top edge (Position → distance from the top) the island is rounded all round. */
+.island-preview__island--detached {
+  margin-top: 10px;
+}
+
+.island-preview__island--glass.island-preview__island--detached {
+  border-top: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
+}
+
+.island-preview__island--detached.island-preview__island--collapsed {
+  border-radius: var(--preview-radius-collapsed);
+}
+
+.island-preview__island--detached.island-preview__island--expanded {
+  border-radius: var(--preview-radius-expanded);
+}
+
+.island-preview__pulse {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--preview-pulse);
+  box-shadow: 0 0 8px var(--preview-pulse-glow);
+  filter: brightness(var(--preview-pulse-brightness));
+}
+
+.island-preview__task {
+  flex: 1;
+  color: var(--preview-text);
+  white-space: nowrap;
+}
+
+.island-preview__provider {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 3px;
+}
+
+/* The session ring (built-in plugin) with the number of sessions, at the bar's right end. */
+.island-preview__ring {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  border: 2px solid rgba(61, 139, 255, 0.35);
+  border-radius: 50%;
+  color: var(--color-agent-running);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.island-preview--font-pixel .island-preview__island {
+  font-family: "Fusion Pixel", "Microsoft YaHei", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+}
+
+.island-preview__caption {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.36);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+}
+
+@media (max-width: 620px) {
+  .island-preview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

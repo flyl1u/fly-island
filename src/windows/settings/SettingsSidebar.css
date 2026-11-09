@@ -1,51 +1,52 @@
+/* Darker than the pages, with a clear edge, so the list reads as its own column. */
 .settings-sidebar {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-xl);
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
-  padding: 16px var(--space-lg);
-  background: rgba(255, 255, 255, 0.035);
+  padding: 14px var(--space-md) var(--space-md);
+  background: #111317;
   border-right: 1px solid var(--color-white-a08);
-}
-
-.settings-sidebar__header {
-  min-height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding-left: var(--space-md);
-  color: var(--color-text-strong);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1;
 }
 
 .settings-sidebar__list {
   display: grid;
   align-content: start;
-  gap: var(--space-xs);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-color: rgba(116, 214, 255, 0.38) transparent;
+  scrollbar-width: thin;
+}
+
+/* Rows sit close together and groups well apart, so the groups are what the eye sees first. */
+.settings-sidebar__group + .settings-sidebar__group {
+  margin-top: 12px;
+}
+
+.settings-sidebar ul {
+  display: grid;
+  gap: 1px;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
   list-style: none;
 }
 
+
 .settings-sidebar__item {
+  position: relative;
   width: 100%;
-  min-height: 34px;
+  min-height: 29px;
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: 0 var(--space-md);
-  color: var(--color-text-muted);
+  gap: 9px;
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.72);
   background: transparent;
   border: 0;
   border-radius: var(--radius-md);
   outline: none;
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   text-align: left;
   cursor: pointer;
   transition:
@@ -55,6 +56,7 @@
 
 .settings-sidebar__item > span {
   min-width: 0;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -62,24 +64,71 @@
 
 .settings-sidebar__item > svg {
   flex: none;
+  opacity: 0.8;
 }
 
 .settings-sidebar__item:hover {
-  color: var(--color-text);
-  background: var(--color-white-a08);
+  color: var(--color-white);
+  background: var(--color-white-a06);
 }
 
+/* The open page: tinted with the accent, with a bar on its left edge. */
 .settings-sidebar__item--active,
 .settings-sidebar__item--active:hover {
   color: var(--color-white);
-  background: var(--color-white-a12);
+  background: rgba(116, 214, 255, 0.14);
+  font-weight: 600;
+}
+
+.settings-sidebar__item--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  animation: settings-sidebar-bar-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The bar grows from its middle when a page is picked, in step with the page fading in. */
+@keyframes settings-sidebar-bar-in {
+  from {
+    transform: scaleY(0.3);
+    opacity: 0;
+  }
 }
 
 .settings-sidebar__item--active > svg {
   color: var(--color-accent);
+  opacity: 1;
+}
+
+/* Each group's name, above its pages. */
+.settings-sidebar__heading {
+  margin: 0 0 2px;
+  padding: 0 10px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+/* About stays at the bottom, below a rule, whatever the window's height. */
+.settings-sidebar__footer {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-white-a08);
 }
 
 .settings-sidebar__item:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-sidebar__item--active::before {
+    animation: none;
+  }
 }
