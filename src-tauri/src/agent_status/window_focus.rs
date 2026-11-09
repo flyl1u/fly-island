@@ -8,6 +8,7 @@ use std::path::Path;
 
 use windows::Win32::Foundation::HWND;
 
+use super::codex_process::CODEX_DESKTOP_APPS;
 use super::title::only_tab_titled;
 use crate::win32;
 
@@ -34,8 +35,6 @@ const TERMINALS: &[&str] = &[
     "pwsh",
     "cmd",
 ];
-/// Codex's own desktop app, the last resort for Codex sessions started there.
-const CODEX_APPS: &[&str] = &["codex"];
 
 /// Window titles are rarely longer; longer ones are cut, which only loses their end.
 const WINDOW_TITLE_UNITS: usize = 512;
@@ -93,7 +92,8 @@ pub(super) fn best_window(candidates: &[WindowCandidate], hints: &SessionHints) 
             _ if is_editor && has_folder(segment_names_folder) => 3,
             _ if is_terminal && has_folder(path_names_folder) => 2,
             _ if is_editor && has_ancestor() => 2,
-            _ if hints.is_codex && CODEX_APPS.contains(&candidate.app.as_str()) => 1,
+            // Codex's own desktop app, the last resort for Codex sessions started there.
+            _ if hints.is_codex && CODEX_DESKTOP_APPS.contains(&candidate.app.as_str()) => 1,
             _ => 0,
         }
     };

@@ -4,6 +4,7 @@ pub(crate) mod approval_hotkeys;
 mod background_tasks;
 mod claude_hooks;
 mod codex_hooks;
+mod codex_process;
 mod editor_terminal;
 mod hooks_state;
 mod host_icon;
