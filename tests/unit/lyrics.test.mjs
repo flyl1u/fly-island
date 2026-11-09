@@ -81,3 +81,12 @@ test("a Chinese song with no lyrics from LRCLIB suggests Kugou and NetEase", () 
   assert.equal(suggestsChineseSources({ title: "Yesterday", artist: "The Beatles" }, lrclibOnly, true), false);
   assert.equal(suggestsChineseSources({ title: "Song", artist: "周杰伦" }, lrclibOnly, true), true);
 });
+
+test("track times read m:ss, and h:mm:ss past an hour", async () => {
+  const { formatTrackTime } = await import("../../src/features/media/trackTime.ts");
+  assert.equal(formatTrackTime(0), "0:00");
+  assert.equal(formatTrackTime(6_900), "0:06");
+  assert.equal(formatTrackTime(269_000), "4:29");
+  assert.equal(formatTrackTime(3_725_000), "1:02:05");
+  assert.equal(formatTrackTime(-500), "0:00");
+});

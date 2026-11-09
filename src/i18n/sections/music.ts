@@ -13,11 +13,7 @@ export type MusicText = {
   pause: string;
   next: string;
   nextTrack: string;
-  shuffle: string;
-  repeatOne: string;
-  repeatAll: string;
-  repeatOff: string;
-  seek: string;
+  progress: string;
   openSettings: string;
 };
 
@@ -40,12 +36,8 @@ export const zhCN: MusicText = {
   pause: "暂停",
   next: "下一首",
   nextTrack: "下一首",
-  shuffle: "随机播放",
-  repeatOne: "单曲循环",
-  repeatAll: "列表循环",
-  repeatOff: "关闭循环",
-  seek: "调整进度",
-  openSettings: "来源设置",
+  progress: "播放进度",
+  openSettings: "音乐设置",
 };
 
 export const en: MusicText = {
@@ -67,10 +59,6 @@ export const en: MusicText = {
   pause: "Pause",
   next: "Next",
   nextTrack: "Next track",
-  shuffle: "Shuffle",
-  repeatOne: "Repeat one",
-  repeatAll: "Repeat all",
-  repeatOff: "Repeat off",
-  seek: "Seek",
-  openSettings: "Source settings",
+  progress: "Playback progress",
+  openSettings: "Music settings",
 };
