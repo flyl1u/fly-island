@@ -1,6 +1,7 @@
 // pnpm dev, then open /tests/regression/music-lyrics.html. Renders the music page with get_lyrics
-// mocked: synced lyrics show above a slimmer waveform and follow the position and the offset, and
-// the waveform keeps its full size when there are none or no source is set.
+// mocked at the page's real size (234px tall): synced lyrics fill the stage over a faint waveform and
+// follow the position and the offset, the waveform fills the stage when there are none, and the
+// progress bar shows the elapsed time and the length above the controls.
 import "../../src/styles/tokens.css";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -19,6 +20,8 @@ const LRC = [
   "[00:13.00]",
   "[00:15.00]刮风这天",
 ].join("\n");
+// A plain gradient cover, so the page shows the artwork and the tint it gives the card.
+const COVER = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f2a65a"/><stop offset="1" stop-color="#6a4c93"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>')}`;
 const queries: Array<Record<string, unknown>> = [];
 mockIPC((command, payload) => {
   if (command !== "get_lyrics") return null;
@@ -38,7 +41,7 @@ let settingsOpened = 0;
 
 function track(title: string, positionMs: number, playing = false): MediaState {
   return {
-    ...DEFAULT_MEDIA_STATE, available: true, title, artist: "周杰伦", album: "叶惠美",
+    ...DEFAULT_MEDIA_STATE, available: true, title, artist: "周杰伦", album: "叶惠美", thumbnail: COVER,
     durationMs: 269_000, positionMs, updatedAt: Date.now(), playbackStatus: playing ? "playing" : "paused",
   };
 }
@@ -66,7 +69,11 @@ const lines = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__li
 try {
   await render(track("晴天", 6000));
   const wave = () => document.querySelector<HTMLElement>(".media-waveform")!;
-  check(view() && wave() && view()!.getBoundingClientRect().bottom <= wave().getBoundingClientRect().top, "找到歌词时歌词在上、波形在下，两者都显示");
+  check(view() && wave() && wave().closest(".music-player__stage--lyrics") && getComputedStyle(wave()).position === "absolute" && Number(getComputedStyle(wave()).opacity) < 0.5,
+    "找到歌词时歌词占据中间，波形淡淡地垫在歌词后面");
+  const times = () => [...document.querySelectorAll<HTMLElement>(".music-progress__time")].map((time) => time.textContent);
+  check(times().join("|") === "0:06|4:29" && document.querySelector<HTMLElement>(".music-progress")!.style.getPropertyValue("--music-progress") === "2.23%",
+    "进度条显示已播放时间和总时长，填充比例跟随进度");
   check(lines().join("|") === "故事的小黄花|从出生那年就飘着|童年的荡秋千 随记忆一直晃到现在 这一句特别特别长长到一行放不下需要省略号来收尾才行", "当前句在中间，上一句和下一句在两边");
   const query = queries[queries.length - 1];
   check(query.title === "晴天" && query.artist === "周杰伦" && query.album === "叶惠美" && query.durationMs === 269_000 && query.online === true, "按歌名、歌手、专辑和时长查找");
@@ -77,8 +84,13 @@ try {
   const long = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
   check(long.scrollWidth > long.clientWidth && fixture.scrollWidth <= fixture.clientWidth, "长句单行省略，不撑宽面板");
   const controls = document.querySelector<HTMLElement>(".music-player__controls")!.getBoundingClientRect();
-  check(Math.abs(wave().getBoundingClientRect().height - 34) < 1 && controls.bottom <= document.querySelector(".music-player")!.getBoundingClientRect().bottom && wave().getBoundingClientRect().bottom <= controls.top,
-    "有歌词时波形缩成细条，播放按钮仍完整放在面板里");
+  const progress = document.querySelector<HTMLElement>(".music-progress")!.getBoundingClientRect();
+  const card = document.querySelector(".music-player")!.getBoundingClientRect();
+  check(view()!.getBoundingClientRect().bottom <= progress.top && progress.bottom <= controls.top && controls.bottom <= card.bottom && card.height <= 234.5,
+    "歌词、进度条、播放按钮从上到下排好，都完整放在 234px 高的面板里");
+  const art = document.querySelector<HTMLElement>(".music-player__artwork")!.getBoundingClientRect();
+  check(art.right <= document.querySelector<HTMLElement>(".music-player__main")!.getBoundingClientRect().left && art.top >= card.top && art.bottom <= card.bottom,
+    "封面在左侧，歌曲信息和控制在右侧");
 
   await render(track("晴天", 13_500));
   check(lines()[1] === "♪", "间奏的空行显示音符");
@@ -93,7 +105,7 @@ try {
 
   const before = queries.length;
   await render(track("七里香", 6000));
-  check(!view() && Math.abs(wave().getBoundingClientRect().height - 76) < 1 && queries.length === before + 1, "找不到歌词时波形恢复原来的大小");
+  check(!view() && Math.abs(wave().getBoundingClientRect().height - 54) < 1 && getComputedStyle(wave()).position !== "absolute" && queries.length === before + 1, "找不到歌词时波形占满中间");
   const hint = () => document.querySelector<HTMLButtonElement>(".music-player__lyrics-hint");
   const panel = document.querySelector(".music-player")!.getBoundingClientRect();
   check(hint()?.textContent === "没找到歌词 · 试试酷狗和网易云" && hint()!.getBoundingClientRect().left >= panel.left && hint()!.getBoundingClientRect().right <= panel.right,
@@ -139,6 +151,11 @@ try {
   check(fillX(words()[2]) !== "100%", "到点后下一个字开始变亮");
   await render(track("Believe", 4500));
   check(words().length === 0 && lines()[1] === "in yesterday", "没有逐字时间的句子照常整句显示");
+
+  await render({ ...track("电台", 0), durationMs: 0 });
+  check(!document.querySelector(".music-progress"), "播放器不报告时长时不显示进度条");
+  // Leave the page on a playing song with lyrics, for a look by eye.
+  await render(track("晴天", 6000, true));
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

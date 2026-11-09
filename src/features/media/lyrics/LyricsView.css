@@ -1,4 +1,4 @@
-/* Sits above the waveform, which shrinks to a strip (MusicPlayerPanel.css), so the page keeps its height. */
+/* Fills the music page's stage, over a faint waveform (MusicPlayerPanel.css), so the page keeps its height. */
 .lyrics-view {
   height: 62px;
   flex: 0 0 62px;

@@ -1,0 +1,29 @@
+.music-progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.music-progress__track {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  background: var(--color-white-a10);
+  border-radius: var(--radius-pill);
+}
+
+.music-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--music-progress, 0%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.62), var(--color-white));
+  border-radius: inherit;
+  transition: width 480ms linear;
+}
