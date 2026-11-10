@@ -222,11 +222,11 @@ fn corner_radius_setting_scales_every_hit_test_radius() {
 #[test]
 fn squircle_corners_take_the_area_css_draws_beyond_a_circle() {
     // A 100 x 60 island at the top edge with 30px bottom corners. The point sits on the
-    // bottom-left corner's diagonal, 1.04 r from the corner's centre: past the circle (r),
-    // inside the squircle, which meets the diagonal at 2^(1/2 - 1/n) r, about 1.067 r for
-    // n = 2^1.3.
+    // bottom-left corner's diagonal, 1.08 r from the corner's centre: past the circle (r),
+    // inside the squircle, which meets the diagonal at 2^(1/2 - 1/n) r, about 1.125 r for
+    // n = 2^1.6.
     let r = 30.0;
-    let along_axis = 1.04 * r * std::f64::consts::FRAC_1_SQRT_2;
+    let along_axis = 1.08 * r * std::f64::consts::FRAC_1_SQRT_2;
     let (x, y) = (r - along_axis, 60.0 - r + along_axis);
     let contains = |shape| point_in_notch(x, y, 0.0, 0.0, 100.0, 60.0, r, 0.0, shape);
     assert!(!contains(CornerShape::Round));

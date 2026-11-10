@@ -24,14 +24,14 @@ pub(super) const COLLAPSED_RADIUS: f64 = 22.0;
 pub(super) const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 pub(super) const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
-// Up to 656px: six clipboard rows (MAX_CLIPBOARD_VISIBLE_ROWS in
-// src/features/appearance/settings.ts); the panel height setting stops at 546.
+// Up to 656px, the tallest page the native window takes (five Agent sessions);
+// the panel height setting stops at 546.
 pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 350.0;
 pub(super) const EXPANDED_RADIUS: f64 = 30.0;
-// Range of the expanded bottom radius setting; matches MIN / MAX_ISLAND_CORNER_RADIUS in
-// src/features/appearance/settings.ts.
+// Range accepted for the expanded bottom radius; the island sends DEFAULT_ISLAND_CORNER_RADIUS
+// (src/features/appearance/settingsLimits.ts).
 pub(super) const MIN_CORNER_RADIUS: f64 = 16.0;
-pub(super) const MAX_CORNER_RADIUS: f64 = 40.0;
+pub(super) const MAX_CORNER_RADIUS: f64 = 48.0;
 pub(super) const STAGE_WINDOW_PADDING_Y: f64 = 24.0;
 pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);

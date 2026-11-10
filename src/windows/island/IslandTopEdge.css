@@ -5,11 +5,6 @@
  * below uses the same pair of selectors for that reason.
  */
 
-.island {
-  /* Radius of the concave shoulders that flare the flat top into the screen edge. */
-  --island-shoulder: 8px;
-}
-
 /* A dragged island dropped flush with the top gets the docked flat top. */
 :root[data-island-top-edge="attached"] .island--detached.island--collapsed {
   border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
@@ -20,50 +15,8 @@
 }
 
 /*
- * Shoulders. Attached, the island does not end in two sharp corners against the screen edge:
- * a small concave curve on each side carries the edge of the screen down into the island's
- * sides, as a notch does. The layer spans the island's full height plus one shoulder on each
- * side and paints the island's own background, so the collapsed bar's shading and a custom
- * colour line up at the seam; the mask keeps only the two cut-out corners outside the island.
- * They sit outside the native hit area, so a click there reaches the desktop.
- */
-.island::before {
-  content: "";
-  position: absolute;
-  inset: 0 calc(-1 * var(--island-shoulder));
-  z-index: -1;
-  background: inherit;
-  opacity: 0;
-  pointer-events: none;
-  --island-shoulder-edge: calc(var(--island-shoulder) - 0.6px);
-  -webkit-mask:
-    radial-gradient(circle var(--island-shoulder) at 0 100%, transparent var(--island-shoulder-edge), #000 var(--island-shoulder))
-      left top / var(--island-shoulder) var(--island-shoulder) no-repeat,
-    radial-gradient(circle var(--island-shoulder) at 100% 100%, transparent var(--island-shoulder-edge), #000 var(--island-shoulder))
-      right top / var(--island-shoulder) var(--island-shoulder) no-repeat;
-  mask:
-    radial-gradient(circle var(--island-shoulder) at 0 100%, transparent var(--island-shoulder-edge), #000 var(--island-shoulder))
-      left top / var(--island-shoulder) var(--island-shoulder) no-repeat,
-    radial-gradient(circle var(--island-shoulder) at 100% 100%, transparent var(--island-shoulder-edge), #000 var(--island-shoulder))
-      right top / var(--island-shoulder) var(--island-shoulder) no-repeat;
-  /* Fades with the 560ms corner-radius morph on .island. */
-  transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-:root[data-island-top-edge="attached"] .island::before,
-:root:not([data-island-top-edge]) .island--docked::before {
-  opacity: 1;
-}
-
-/* Liquid glass blurs what is behind the island; a flat shoulder beside it would not match. */
-.island--appearance-liquidGlass::before {
-  display: none;
-}
-
-/*
- * The rim would otherwise run up each side into the screen edge and along it, and meet the
- * shoulders in a knot. Attached, it fades out over the top of the island instead: the screen
- * edge is the island's top rim.
+ * The rim would otherwise run up each side into the screen edge and along it. Attached, it
+ * fades out over the top of the island instead: the screen edge is the island's top rim.
  */
 :root[data-island-top-edge="attached"] .island::after,
 :root:not([data-island-top-edge]) .island--docked::after {
@@ -103,9 +56,9 @@
 }
 
 :root[data-island-top-edge="attached"]
-  .island--appearance-liquidGlass.island--collapsed:not(:focus-within),
+  .island--appearance-liquidGlass.island--collapsed:not(:has(:focus-visible)),
 :root:not([data-island-top-edge])
-  .island--docked.island--appearance-liquidGlass.island--collapsed:not(:focus-within) {
+  .island--docked.island--appearance-liquidGlass.island--collapsed:not(:has(:focus-visible)) {
   box-shadow:
     0 12px 34px rgba(0, 0, 0, 0.18),
     inset 0 -1px 0 rgba(8, 22, 32, 0.18),
@@ -114,20 +67,20 @@
 }
 
 /*
- * Focus inside the collapsed island (left after clicking one of its buttons) lights its
+ * Keyboard focus inside the collapsed island lights its
  * edges with an inner glow. Attached, the glow rises from the bottom edge only, so it
  * does not run up the sides into the screen edge.
  */
-:root[data-island-top-edge="attached"] .island--collapsed:focus-within,
-:root:not([data-island-top-edge]) .island--docked.island--collapsed:focus-within {
+:root[data-island-top-edge="attached"] .island--collapsed:has(:focus-visible),
+:root:not([data-island-top-edge]) .island--docked.island--collapsed:has(:focus-visible) {
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.26),
     inset 0 -14px 14px -10px var(--color-white-a08),
     0 5px 16px rgba(0, 0, 0, 0.12);
 }
 
-:root[data-island-top-edge="attached"] .island--appearance-liquidGlass.island--collapsed:focus-within,
-:root:not([data-island-top-edge]) .island--docked.island--appearance-liquidGlass.island--collapsed:focus-within {
+:root[data-island-top-edge="attached"] .island--appearance-liquidGlass.island--collapsed:has(:focus-visible),
+:root:not([data-island-top-edge]) .island--docked.island--appearance-liquidGlass.island--collapsed:has(:focus-visible) {
   box-shadow:
     0 8px 26px rgba(0, 0, 0, 0.2),
     inset 0 -1px 0 rgba(255, 255, 255, 0.38),
