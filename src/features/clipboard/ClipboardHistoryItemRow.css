@@ -8,7 +8,7 @@
   align-items: center;
   gap: var(--space-md);
   padding: 6px 8px;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.052), rgba(210, 205, 228, 0.018));
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.052), rgba(248, 246, 240, 0.018));
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: var(--radius-md);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
@@ -18,8 +18,8 @@
 }
 
 .clipboard-item:hover {
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.082), rgba(182, 169, 211, 0.035));
-  border-color: rgba(222, 218, 238, 0.15);
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.035));
+  border-color: rgba(248, 246, 240, 0.15);
 }
 
 .clipboard-item__main {
@@ -45,7 +45,7 @@
   place-items: center;
   overflow: hidden;
   color: var(--text-2);
-  background: linear-gradient(145deg, var(--color-white-a10), rgba(182, 169, 211, 0.035));
+  background: linear-gradient(145deg, var(--color-white-a10), rgba(255, 255, 255, 0.035));
   border: 1px solid rgba(255, 255, 255, 0.095);
   border-radius: 7px;
 }
@@ -111,9 +111,9 @@
 }
 
 .clipboard-note--filled {
-  color: rgba(218, 211, 238, 0.72);
-  background: rgba(182, 169, 211, 0.075);
-  border-color: rgba(204, 195, 228, 0.2);
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(248, 246, 240, 0.2);
   border-style: solid;
 }
 
@@ -137,7 +137,7 @@
   padding: 0 7px;
   color: var(--text-1);
   background: rgba(6, 7, 10, 0.32);
-  border: 1px solid rgba(204, 195, 228, 0.28);
+  border: 1px solid rgba(248, 246, 240, 0.28);
   border-radius: 7px;
   outline: none;
   font: inherit;
@@ -161,7 +161,7 @@
 
 .clipboard-note-editor button[type="submit"] {
   color: var(--text-1);
-  background: rgba(182, 169, 211, 0.18);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .clipboard-note-editor button:disabled,
@@ -204,15 +204,15 @@
 }
 
 .clipboard-favorite-button--active {
-  color: rgba(226, 218, 246, 0.94) !important;
-  background: rgba(182, 169, 211, 0.14) !important;
+  color: var(--text-1) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
 }
 
 .clipboard-copy-button--copied {
   color: var(--color-white) !important;
-  background: rgba(182, 169, 211, 0.26) !important;
+  background: rgba(255, 255, 255, 0.26) !important;
   animation: saveButtonPop 760ms ease both;
-  box-shadow: 0 0 0 3px rgba(182, 169, 211, 0.11);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.11);
 }
 
 .clipboard-delete-button--confirming {

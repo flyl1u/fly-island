@@ -7,7 +7,6 @@
   padding: 16px 18px 18px;
   color: var(--text-1);
   background:
-    radial-gradient(circle at 88% 12%, rgba(182, 169, 211, 0.12), transparent 32%),
     linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
     rgba(20, 20, 25, 0.88);
   background-size: auto;
@@ -25,7 +24,7 @@
   gap: var(--space-sm);
   overflow-y: auto;
   padding-right: 4px;
-  scrollbar-color: rgba(204, 195, 228, 0.28) transparent;
+  scrollbar-color: rgba(248, 246, 240, 0.28) transparent;
   scrollbar-width: thin;
 }
 
@@ -39,7 +38,7 @@
 }
 
 .clipboard-list::-webkit-scrollbar-thumb {
-  background: rgba(204, 195, 228, 0.28);
+  background: rgba(248, 246, 240, 0.28);
   border-radius: var(--radius-pill);
 }
 
@@ -62,6 +61,6 @@
 .clipboard-clear-button:focus-visible,
 .clipboard-segments button:focus-visible,
 .clipboard-search button:focus-visible {
-  outline: 2px solid rgba(210, 202, 232, 0.76);
+  outline: 2px solid rgba(248, 246, 240, 0.76);
   outline-offset: 2px;
 }
