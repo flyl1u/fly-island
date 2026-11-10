@@ -31,6 +31,10 @@ export type AgentCardEffects = "off" | "sparkle" | "gradient";
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
+/** What the collapsed island can show in its text: a running agent, the lyric line, a todo. */
+export type CollapsedItem = "agent" | "lyrics" | "todo";
+/** The page dots in the expanded island's header, which the user can drag into any order. */
+export type PageDot = "todo" | "music" | "clipboard" | "shelf";
 
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;
@@ -146,6 +150,12 @@ export type IslandSettings = {
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;
+  /** Which of the agent, the lyric line and a todo the collapsed island shows first when several could. */
+  collapsedPriority: CollapsedItem[];
+  /** The playing song's cover on the collapsed island. */
+  collapsedShowCover: boolean;
+  /** Order of the page dots in the expanded island's header. */
+  pageOrder: PageDot[];
   /** While a full-screen app (game, video, slides) is in front: no hover opening or focus, no message pop-ups. */
   gameDoNotDisturb: boolean;
   /** While a full-screen app is in front, the island tucks to the top edge and comes back after. */

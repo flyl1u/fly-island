@@ -35,7 +35,12 @@ localStorage.setItem("focusd-island-current-date", date);
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
-localStorage.setItem("focusd-island-settings", JSON.stringify({ lyricsOnline: query.get("lyrics") !== "0" }));
+// ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it.
+localStorage.setItem("focusd-island-settings", JSON.stringify({
+  lyricsOnline: query.get("lyrics") !== "0",
+  collapsedShowCover: query.get("cover") === "1",
+  ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
+}));
 if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
@@ -142,6 +147,26 @@ if (!automated) {
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
     check(Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius) > collapsedRadius, "展开后的圆角比收起时更大");
+    // The page dots can be dragged into another order, which is saved; the drag opens no page.
+    const dotOrder = () => [...document.querySelectorAll<HTMLElement>(".editor-dots .dot-button")].map((dot) => dot.dataset.reorderId);
+    const pageBefore = island().className;
+    const drag = async (from: string, to: string) => {
+      const source = document.querySelector<HTMLElement>(from)!;
+      const target = document.querySelector<HTMLElement>(to)!.getBoundingClientRect();
+      const start = source.getBoundingClientRect();
+      const fire = (type: string, x: number) => source.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 7, button: 0, clientX: x, clientY: start.top + start.height / 2 }));
+      await act(async () => { fire("pointerdown", start.left + 2); });
+      await act(async () => { fire("pointermove", start.left + 10); });
+      await act(async () => { fire("pointermove", target.left + target.width / 2); });
+      await act(async () => { fire("pointerup", target.left + target.width / 2); source.click(); });
+    };
+    await drag(".dot-button--todo", ".dot-button--clipboard");
+    const savedOrder = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageOrder as string[] | undefined;
+    check(dotOrder().join() === "music,clipboard,todo,shelf" && savedOrder?.join() === "music,clipboard,todo,shelf" && island().className === pageBefore,
+      `拖动页面圆点可以调整顺序并保存，拖完不切页（${dotOrder().join()}）`);
+    await drag(".dot-button--todo", ".dot-button--music");
+    check(dotOrder()[0] === "todo", "圆点可以拖回原来的位置");
+
     const pages: Array<[string, string]> = [
       [".dot-button--todo", "待办"],
       [".dot-button--music", "音乐"],
@@ -172,6 +197,15 @@ if (!automated) {
     await click(".settings-sidebar__item[data-category='messages']");
     const tall = island().getBoundingClientRect().height;
     check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
+    // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
+    await click(".settings-sidebar__item[data-category='appearance']");
+    const priority = () => [...document.querySelectorAll<HTMLElement>(".collapsed-priority__item")].map((item) => item.dataset.reorderId);
+    check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");
+    await act(async () => {
+      document.querySelector<HTMLElement>(".collapsed-priority__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    });
+    const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
+    check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

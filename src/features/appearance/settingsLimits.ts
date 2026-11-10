@@ -1,5 +1,5 @@
 // The ranges and choices island settings are kept within, and the fallbacks they rest on.
-import type { AgentSessionGroup, AgentSessionSort } from "./types";
+import type { AgentSessionGroup, AgentSessionSort, CollapsedItem, PageDot } from "./types";
 
 export const AGENT_SESSION_SORTS: readonly AgentSessionSort[] = ["status", "recent", "firstSeen"];
 export const AGENT_SESSION_GROUPS: readonly AgentSessionGroup[] = ["computer", "project", "none"];
@@ -29,6 +29,11 @@ export const DEFAULT_SHELF_ITEMS = 100;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
+
+/** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
+export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
+/** The header's page dots in their default order. */
+export const PAGE_DOTS: readonly PageDot[] = ["todo", "music", "clipboard", "shelf"];
 
 /** `value` when it is one of `allowed`, else `fallback`: a saved choice from an older or newer build. */
 export function oneOf<T>(allowed: readonly T[], value: unknown, fallback: T): T {

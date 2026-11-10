@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { AppearanceMode } from "../../features/appearance/types";
+import type { AppearanceMode, CollapsedItem, PageDot } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -17,6 +17,7 @@ import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
 import { usePageFadeIn } from "./usePageFadeIn";
+import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import "./IslandShell.css";
 
 type IslandShellProps = {
@@ -34,6 +35,15 @@ type IslandShellProps = {
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
+  /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
+  collapsedItem: CollapsedItem | null;
+  /** The playing song's cover for the collapsed island, or null when it is not shown. */
+  collapsedCover: string | null;
+  /** Where the collapsed island's lyric line comes from. */
+  lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
+  /** Order of the header's page dots, and saving a new one after a drag. */
+  pageOrder: PageDot[];
+  onPageOrderChange: (order: PageDot[]) => void;
   /** Running agent session shown in place of the todo, or null. */
   agentSession: AgentSession | null;
   /** Agent sessions still working, shown in place of the tuck dot while the AI Agent switch is on. */
@@ -80,6 +90,11 @@ export function IslandShell({
   showCollapsedText,
   collapsedTaskTitle,
   collapsedTodoCount,
+  collapsedItem,
+  collapsedCover,
+  lyricsSettings,
+  pageOrder,
+  onPageOrderChange,
   agentSession,
   activeAgentSessionCount,
   mediaState,
@@ -180,6 +195,9 @@ export function IslandShell({
           collapsedLabel={collapsedLabel}
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
+          collapsedItem={collapsedItem}
+          collapsedCover={collapsedCover}
+          lyricsSettings={lyricsSettings}
           agentSession={agentSession}
           agentSessionCount={features.agents ? activeAgentSessionCount : null}
           mediaState={mediaState}
@@ -202,6 +220,8 @@ export function IslandShell({
           <IslandHeader
             page={page}
             features={features}
+            pageOrder={pageOrder}
+            onPageOrderChange={onPageOrderChange}
             showTitle={showTitle}
             isDetached={isDetached}
             agentVisualState={agentVisualState}
