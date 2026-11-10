@@ -2,15 +2,18 @@
 //! Codex writes anyway: every `token_count` event carries the account's
 //! `rate_limits`, two windows told apart by length (300 minutes is the 5-hour
 //! window, 10080 the weekly one) in the `primary` / `secondary` slots, either
-//! of which can be null. The newest event that has a window wins. Nothing is
-//! asked over the network and no Codex login is read.
+//! of which can be null. A free plan has one 30-day window (43200) instead,
+//! shown under its own name rather than as the weekly one. The newest event that
+//! has a window wins, by its own time across the recent rollouts: switching
+//! accounts leaves older files (another plan's windows) changed later than the
+//! last event in them. Nothing is asked over the network and no Codex login is read.
 
 use std::{
     env,
     fs::{self, File},
     io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
-    time::SystemTime,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use serde_json::Value;
@@ -23,8 +26,10 @@ const TAIL_BYTES: u64 = 256 * 1024;
 /// Day folders and files looked at, newest first, before giving up.
 const MAX_DAYS: usize = 7;
 const MAX_FILES: usize = 20;
-/// A window up to a day long is the short (5-hour, 300-minute) one; longer is the weekly (10080).
+/// A window up to a day long is the short (5-hour, 300-minute) one; up to about a week, the weekly
+/// one (10080); a longer one (a free plan's 30 days) is listed by its length in days.
 const DAY_MINUTES: i64 = 24 * 60;
+const WEEK_MINUTES_AT_MOST: i64 = 8 * DAY_MINUTES;
 
 /// Codex's folder: `CODEX_HOME` when set, else `~/.codex`.
 pub(super) fn codex_home(home_dir: &Path) -> PathBuf {
@@ -44,6 +49,11 @@ fn dir_paths(dir: &Path) -> Vec<PathBuf> {
 
 /// The newest rollout files: `sessions/<year>/<month>/<day>/rollout-*.jsonl`, by change time.
 pub(super) fn newest_rollouts(codex_home: &Path) -> Vec<PathBuf> {
+    rollouts_by_change(codex_home).into_iter().map(|(_, path)| path).collect()
+}
+
+/// The newest rollout files with when each last changed, newest first.
+fn rollouts_by_change(codex_home: &Path) -> Vec<(SystemTime, PathBuf)> {
     let mut days = Vec::new();
     for year in dir_paths(&codex_home.join("sessions")) {
         for month in dir_paths(&year) {
@@ -59,7 +69,8 @@ pub(super) fn newest_rollouts(codex_home: &Path) -> Vec<PathBuf> {
         .filter_map(|path| Some((fs::metadata(&path).ok()?.modified().ok()?, path)))
         .collect();
     files.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
-    files.into_iter().take(MAX_FILES).map(|(_, path)| path).collect()
+    files.truncate(MAX_FILES);
+    files
 }
 
 fn read_tail(path: &Path) -> Option<String> {
@@ -118,19 +129,48 @@ pub(super) fn parse_rollout(text: &str) -> Option<AgentUsage> {
             source: UsageSource::Codex,
         };
         // The window's length says which it is; without one, the slot does.
-        for (slot, fallback_five_hours) in [("primary", true), ("secondary", false)] {
+        for (slot, fallback_minutes) in [("primary", 300), ("secondary", 10080)] {
             let Some((minutes, limit)) = window(&limits[slot], at_ms) else { continue };
-            let five_hours = minutes.map_or(fallback_five_hours, |minutes| minutes <= DAY_MINUTES);
-            let target = if five_hours { &mut usage.five_hour } else { &mut usage.seven_day };
-            target.get_or_insert(limit);
+            let minutes = minutes.unwrap_or(fallback_minutes);
+            if minutes <= DAY_MINUTES {
+                usage.five_hour.get_or_insert(limit);
+            } else if minutes <= WEEK_MINUTES_AT_MOST {
+                usage.seven_day.get_or_insert(limit);
+            } else {
+                let days = (minutes + DAY_MINUTES / 2) / DAY_MINUTES;
+                usage.models.push(UsageWindow { name: format!("{days}d"), ..limit });
+            }
         }
-        (usage.five_hour.is_some() || usage.seven_day.is_some()).then_some(usage)
+        (usage.five_hour.is_some() || usage.seven_day.is_some() || !usage.models.is_empty()).then_some(usage)
     })
 }
 
 /// Codex's latest usage limits; `None` without Codex or without a rollout that reports them.
 pub(super) fn read_usage(home_dir: &Path) -> Option<AgentUsage> {
-    newest_rollouts(&codex_home(home_dir))
-        .iter()
-        .find_map(|path| read_tail(path).as_deref().and_then(parse_rollout))
+    newest_usage(
+        rollouts_by_change(&codex_home(home_dir))
+            .into_iter()
+            .map(|(changed, path)| (millis(changed), read_tail(&path).as_deref().and_then(parse_rollout))),
+    )
+}
+
+fn millis(time: SystemTime) -> i64 {
+    time.duration_since(UNIX_EPOCH).map_or(0, |since| since.as_millis() as i64)
+}
+
+/// Of rollouts (when each last changed, newest first, and its usage), the usage written last.
+/// A file's events are no newer than the file, so the search stops at one older than the best.
+pub(super) fn newest_usage(rollouts: impl Iterator<Item = (i64, Option<AgentUsage>)>) -> Option<AgentUsage> {
+    let mut best: Option<AgentUsage> = None;
+    for (changed_ms, usage) in rollouts {
+        let best_ms = best.as_ref().map(|usage| usage.updated_at.unwrap_or(i64::MAX));
+        if best_ms.is_some_and(|best_ms| changed_ms < best_ms) {
+            break;
+        }
+        let Some(usage) = usage else { continue };
+        if best_ms.is_none_or(|best_ms| usage.updated_at.unwrap_or(i64::MIN) > best_ms) {
+            best = Some(usage);
+        }
+    }
+    best
 }
