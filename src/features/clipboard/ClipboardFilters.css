@@ -38,9 +38,9 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: rgba(204, 195, 228, 0.82);
+  background: rgba(248, 246, 240, 0.82);
   border-radius: var(--radius-pill);
-  box-shadow: 0 0 8px rgba(182, 169, 211, 0.2);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 .clipboard-search {
@@ -58,8 +58,8 @@
 }
 
 .clipboard-search:focus-within {
-  border-color: rgba(204, 195, 228, 0.38);
-  box-shadow: 0 0 0 3px rgba(182, 169, 211, 0.08);
+  border-color: rgba(248, 246, 240, 0.38);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .clipboard-search input {
