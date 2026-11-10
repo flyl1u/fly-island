@@ -1485,6 +1485,39 @@ fn codex_usage_comes_from_the_newest_token_count_with_a_window() {
     assert_eq!(parse_rollout(&mixed).unwrap().updated_at, Some(at_ms));
     assert_eq!(parse_rollout(&empty), None);
     assert_eq!(parse_rollout("not json\n"), None);
+
+    // A free plan's one 30-day window is listed by its length, not as the weekly one.
+    let free = count(at, json!({
+        "limit_id": "codex",
+        "primary": { "used_percent": 54.0, "window_minutes": 43200, "resets_at": 1_796_741_799 },
+        "secondary": null,
+        "plan_type": "free"
+    }));
+    let usage = parse_rollout(&free).unwrap();
+    assert_eq!((usage.five_hour, usage.seven_day), (None, None));
+    assert_eq!(usage.models.iter().map(|w| (w.name.as_str(), w.used)).collect::<Vec<_>>(), [("30d", 54.0)]);
+}
+
+#[test]
+fn codex_usage_is_the_newest_event_across_rollouts_not_the_newest_file() {
+    use super::codex_usage::newest_usage;
+    use super::usage::{AgentUsage, UsageSource};
+    let usage = |updated_at: i64, plan: &str| AgentUsage {
+        updated_at: Some(updated_at),
+        five_hour: None,
+        seven_day: None,
+        models: Vec::new(),
+        plan: Some(plan.to_string()),
+        source: UsageSource::Codex,
+    };
+    // After switching accounts an older session's file changed last (it was touched again), but
+    // its last token count is the old plan's; the session written after it has the current one.
+    let rollouts = [(500, Some(usage(100, "Free"))), (400, Some(usage(390, "Plus"))), (300, Some(usage(290, "Plus"))), (50, None)];
+    assert_eq!(newest_usage(rollouts.into_iter()).and_then(|u| u.plan).as_deref(), Some("Plus"));
+    // A file older than the best event found is not read on.
+    let rollouts = [(500, Some(usage(450, "Plus"))), (400, Some(usage(9_999, "Never")))];
+    assert_eq!(newest_usage(rollouts.into_iter()).map(|u| u.updated_at), Some(Some(450)));
+    assert_eq!(newest_usage([(1, None)].into_iter()), None);
 }
 
 #[test]
