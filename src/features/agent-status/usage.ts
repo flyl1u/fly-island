@@ -66,7 +66,38 @@ export function hasUsageNumbers(usage: AgentUsage | null): boolean {
   return Boolean(usage && (usage.fiveHour || usage.sevenDay || usage.models.length > 0));
 }
 
-/** How many usage lines the Agent page shows, for its height. */
+/**
+ * The windows an agent's quota rings show: the 5-hour one outside, the 7-day one inside. A plan
+ * with neither but one long window (Codex Free's 30 days, listed by its length as "30d") shows
+ * that one inside. Per-model windows (Claude's) only appear in the ring's card. Null: no rings.
+ */
+export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | null; inner: UsageWindow | null } | null {
+  if (!usage) return null;
+  const outer = usage.fiveHour;
+  const inner = usage.sevenDay ?? (outer ? null : usage.models.find((window) => /^\d+d$/.test(window.name)) ?? null);
+  return outer || inner ? { outer, inner } : null;
+}
+
+/** How many usage rows the Agent page shows, for its height: one row holds both agents' rings. */
 export function usageLineCount(usages: AgentUsages): number {
-  return Number(hasUsageNumbers(usages.claude)) + Number(hasUsageNumbers(usages.codex));
+  return quotaRings(usages.claude) || quotaRings(usages.codex) ? 1 : 0;
+}
+
+type UsageText = Translations["agent"]["usage"];
+
+/** One window as the rings' card and screen readers give it: "5 小时 已用 4% · 2 小时 49 分后重置". */
+export function windowSummary(label: string, window: UsageWindow, now: number, text: UsageText) {
+  const reset = untilReset(window.resetsAt, now);
+  return [text.used(label, Math.round(window.used)), reset && text.resetsIn(reset)].filter(Boolean).join(" · ");
+}
+
+/** The label of a window: 5 hours, 7 days, or its own name ("30d", a model). */
+export function windowLabel(usage: AgentUsage, window: UsageWindow, text: UsageText) {
+  return window === usage.fiveHour ? text.fiveHour : window === usage.sevenDay ? text.sevenDay : window.name;
+}
+
+/** Every window of an agent, rings first, as the lines of its card. */
+export function quotaSummaries(usage: AgentUsage, now: number, text: UsageText) {
+  const windows = [usage.fiveHour, usage.sevenDay, ...usage.models].filter((window): window is UsageWindow => window !== null);
+  return windows.map((window) => windowSummary(windowLabel(usage, window, text), window, now, text));
 }

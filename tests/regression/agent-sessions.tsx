@@ -10,6 +10,7 @@ import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSession
 import type { AgentCardEffects, AgentHostDisplay, AgentSessionView } from "../../src/features/appearance/types";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
+import { usageLineCount } from "../../src/features/agent-status/usage";
 
 // Island padding, header and gap above the page content; see AGENT_PAGE_CHROME_HEIGHT in layout.ts.
 const ISLAND_CHROME_HEIGHT = 86;
@@ -247,58 +248,60 @@ async function runChecks() {
     await renderActivity(false);
     check(!document.querySelector(".agent-session__prompt") && !document.querySelector(".agent-session__tool") && rows()[0].querySelector(".agent-session__message"), "关掉后只显示回复");
 
-    check(!document.querySelector(".agent-usage"), "没打开用量时不显示用量行");
+    check(!document.querySelector(".agent-quota"), "没打开用量时不显示额度环");
     fixture.style.height = `${getAgentPageExpandedHeight(3, true) - ISLAND_CHROME_HEIGHT}px`;
     await act(async () => {
       root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
-    const usage = document.querySelector<HTMLElement>(".agent-usage");
-    const values = [...document.querySelectorAll<HTMLElement>(".agent-usage__value")];
-    check(usage?.textContent?.includes("5 小时27%") && usage.textContent.includes("7 天62%") && usage.textContent.includes("Fable100%"), "顶部显示 5 小时、7 天和各模型的用量");
-    check(values.map((value) => value.className.replace("agent-usage__value agent-usage__value--", "")).join() === "low,medium,high", "用量按多少分绿、橙、红");
-    check(usage?.textContent?.includes("1 天 10 小时后重置"), "显示最紧的那个窗口何时重置");
-    const usageList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
-    check(usageList.scrollHeight <= usageList.clientHeight + 1, "加上用量行后，设为 3 条时仍放下 3 个会话");
-    check(usage!.getBoundingClientRect().width > usageList.getBoundingClientRect().width - 20, "悬停卡片的外壳不改变用量行的宽度");
-    // The pointer in the middle of the line, right where a centred card would sit under it.
-    const line = usage!.getBoundingClientRect();
-    const clear = (pointer: number) => {
-      const box = document.querySelector<HTMLElement>(".island-hover-card")!.getBoundingClientRect();
-      return box.right <= pointer - 8 || box.left >= pointer + 22;
-    };
-    let pointer = line.left + line.width / 2;
-    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, clientX: pointer, clientY: line.top + 10 })); });
+    const claudeRings = document.querySelector<HTMLElement>(".agent-quota__agent--claudeCode");
+    const claudeLabel = claudeRings?.getAttribute("aria-label") ?? "";
+    check(claudeRings?.getAttribute("role") === "img" && claudeRings.tabIndex === 0 && claudeLabel.startsWith("Claude 用量")
+      && claudeLabel.includes("5 小时 已用 27%") && claudeLabel.includes("7 天 已用 62%") && claudeLabel.includes("后重置"), `额度环是带读屏名称的图像，读出两个窗口的用量和重置时间：${claudeLabel}`);
+    const fills = [...(claudeRings?.querySelectorAll<SVGCircleElement>(".quota-rings__fill") ?? [])];
+    check(fills.length === 2 && fills[0].getAttribute("r") === "10" && fills[0].getAttribute("stroke-dasharray") === "27 100"
+      && fills[1].getAttribute("r") === "5.5" && fills[1].getAttribute("stroke-dasharray") === "62 100", "外圈是 5 小时（27%），内圈是 7 天（62%）");
+    check(claudeRings?.querySelector(".agent-quota__values")?.textContent === "27%62%" && !document.querySelector(".agent-quota__agent--codex"), "环旁边写出两个百分比；Codex 没有数据时不画它的环");
+    const ringsSize = claudeRings!.querySelector("svg")!.getBoundingClientRect();
+    check(ringsSize.width === 22 && ringsSize.height === 22, "额度环 22px");
+    const listFits = () => { const list = document.querySelector<HTMLElement>(".agent-sessions__list")!; return list.scrollHeight <= list.clientHeight + 1; };
+    check(listFits(), "加上额度环那一行后，设为 3 条时仍放下 3 个会话");
+    await act(async () => { claudeRings!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, clientX: ringsSize.left + 10, clientY: ringsSize.top + 10 })); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 260)); });
     const usageCard = document.querySelector<HTMLElement>(".island-hover-card");
-    check(usageCard?.textContent?.includes("· 来自 claude-hud") && usageCard.getBoundingClientRect().top >= usage!.getBoundingClientRect().bottom
-      && usageCard.getBoundingClientRect().top < usage!.getBoundingClientRect().bottom + 20, `悬停用量行时，行下方的卡片写出更新时间和来源：${usageCard?.textContent}`);
-    check(clear(pointer), "卡片避开鼠标指针");
-    pointer = line.left + 20;
-    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: pointer, clientY: line.top + 10 })); });
-    check(clear(pointer), "鼠标沿着用量行移动时，卡片继续避开指针");
-    await act(async () => { usage!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
+    check(Boolean(usageCard?.textContent?.includes("Fable 已用 100%") && usageCard.textContent.includes("外圈 5 小时 · 内圈 7 天") && usageCard.textContent.includes("来自 claude-hud"))
+      && usageCard!.getBoundingClientRect().top >= ringsSize.bottom, `悬停额度环时，下方的卡片写出各窗口、图例和来源：${usageCard?.textContent}`);
+    await act(async () => { claudeRings!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
 
-    // Codex reporting limits too: a second line, and the page sized for both.
+    // Codex reporting limits too: its rings beside Claude's in the same row, and the page sized for one row.
     const readAt = Date.now();
     const usages = {
       claude: { updatedAt: readAt, plan: null, fiveHour: { name: "", used: 27, resetsAt: null }, sevenDay: null, models: [] },
       codex: { updatedAt: readAt, plan: "Plus", source: "codex" as const, fiveHour: { name: "", used: 9, resetsAt: null }, sevenDay: { name: "", used: 91, resetsAt: readAt + 2 * 86_400_000 }, models: [] },
       readAt,
     };
-    fixture.style.height = `${getAgentPageExpandedHeight(3, 2) - ISLAND_CHROME_HEIGHT}px`;
+    fixture.style.height = `${getAgentPageExpandedHeight(3, usageLineCount(usages)) - ISLAND_CHROME_HEIGHT}px`;
     await act(async () => {
       root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage usages={usages} /></I18nProvider></StrictMode>);
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
-    const lines = [...document.querySelectorAll<HTMLElement>(".agent-usage")];
-    check(lines.length === 2 && lines[1].getAttribute("aria-label") === "Codex 用量" && lines[1].textContent?.includes("7 天91%"), "Codex 也报告额度时，Claude 下面多一行 Codex 用量");
-    const twoLineList = document.querySelector<HTMLElement>(".agent-sessions__list")!;
-    check(twoLineList.scrollHeight <= twoLineList.clientHeight + 1, "两行用量时，设为 3 条仍放下 3 个会话");
+    const pair = [...document.querySelectorAll<HTMLElement>(".agent-quota__agent")];
+    check(usageLineCount(usages) === 1 && document.querySelectorAll(".agent-quota").length === 1 && pair.length === 2
+      && pair[0].getBoundingClientRect().top === pair[1].getBoundingClientRect().top, "两个 agent 的额度环在同一行");
+    check(pair[1].getAttribute("aria-label") === "Codex 用量；5 小时 已用 9%；7 天 已用 91% · 2 天 0 小时后重置", `Codex 的环读出用量和重置时间：${pair[1].getAttribute("aria-label")}`);
+    check(pair[0].querySelectorAll(".quota-rings__fill").length === 1 && pair[0].querySelector(".agent-quota__values")?.textContent === "27%–", "没有 7 天窗口时内圈只留底色");
+    const stroke = (element: HTMLElement) => getComputedStyle(element.querySelector(".quota-rings__fill")!).stroke;
+    const [[cr, , cb], [xr, , xb]] = pair.map((element) => (stroke(element).match(/[\d.]+/g) ?? []).map(Number));
+    check(cr > cb && xb > xr, `Claude 的环是橙色，Codex 的是蓝色：${stroke(pair[0])} / ${stroke(pair[1])}`);
+    check(listFits(), "两个 agent 的额度环时，设为 3 条仍放下 3 个会话");
     await act(async () => {
       root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage usages={{ ...usages, claude: null }} /></I18nProvider></StrictMode>);
     });
-    check(document.querySelectorAll(".agent-usage").length === 1 && document.querySelector(".agent-usage")?.getAttribute("aria-label") === "Codex 用量", "只有 Codex 有额度时只显示 Codex 一行");
+    check(document.querySelectorAll(".agent-quota__agent").length === 1 && Boolean(document.querySelector(".agent-quota__agent--codex")), "只有 Codex 有额度时只画 Codex 的环");
+    await act(async () => {
+      root.render(<StrictMode><I18nProvider><AgentSessionsPanel sort="recent" sessions={sessions} hostDisplay="both" showUsage usages={{ ...usages, claude: null, codex: null }} /></I18nProvider></StrictMode>);
+    });
+    check(!document.querySelector(".agent-quota"), "都没有数据时不显示额度环那一行");
     sizeFor(3);
     await render("both");
 

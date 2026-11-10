@@ -1,6 +1,6 @@
 /*
  * The expanded island's Agent page in the island's real proportions (IslandHeader.css,
- * AgentUsageBar.css, AgentSessionsPanel.css): every size is its real pixel value times --u, one
+ * AgentQuotaRings.css, AgentSessionsPanel.css): every size is its real pixel value times --u, one
  * real pixel at the preview's width (IslandPreview.css), so the drawing grows with the pane
  * instead of leaving small text in a wide island. Text in the island's ink at its text levels.
  */
@@ -81,30 +81,34 @@
   height: calc(22 * var(--u));
   display: flex;
   align-items: center;
-  gap: calc(8 * var(--u));
+  gap: calc(14 * var(--u));
   color: var(--ink-3);
 }
 
-.agent-page-preview__usage b {
+.agent-page-preview__quota {
+  --quota-color: color-mix(in srgb, var(--quota-base) 75%, rgb(var(--preview-ink)));
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+}
+
+.agent-page-preview__quota--claude {
+  --quota-base: #d97757;
+}
+
+.agent-page-preview__quota--codex {
+  --quota-base: #4f8ff7;
+}
+
+.agent-page-preview__quota .quota-rings {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+  margin-right: calc(2 * var(--u));
+}
+
+.agent-page-preview__quota b {
+  color: var(--quota-color);
   font-weight: 600;
-}
-
-.agent-page-preview__usage-low {
-  color: var(--color-agent-idle);
-}
-
-.agent-page-preview__usage-mid {
-  color: var(--color-agent-waiting);
-}
-
-.agent-page-preview__usage-rule {
-  width: 1px;
-  height: calc(11 * var(--u));
-  background: rgba(var(--preview-ink), 0.2);
-}
-
-.agent-page-preview__usage-reset {
-  margin-left: calc(4 * var(--u));
 }
 
 .agent-page-preview__list {

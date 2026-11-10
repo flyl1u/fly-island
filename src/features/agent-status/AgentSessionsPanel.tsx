@@ -6,7 +6,7 @@ import { useTranslation } from "../../i18n";
 import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionGroup, AgentSessionSort, AgentSessionView } from "../appearance/types";
 import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
-import { AgentUsageBar } from "./AgentUsageBar";
+import { AgentQuotaRings } from "./AgentQuotaRings";
 import type { AgentUsages } from "./usage";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { arrangeSessions, isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
@@ -75,9 +75,9 @@ export function AgentSessionsPanel({
   removal?: SessionRemoval;
   /** The session an alert opened the page for; the page then shows it alone, like a card. */
   reveal?: AlertedSession | null;
-  /** Claude's and Codex's usage limits above the list. */
+  /** Claude's and Codex's usage limits above the list, as quota rings. */
   showUsage?: boolean;
-  /** Those limits as the island read them; without them the usage lines read their own. */
+  /** Those limits as the island read them; without them the rings read their own. */
   usages?: AgentUsages;
   /** Permission requests agents wait on; the page shows the first one alone. */
   approvals?: AgentApprovals;
@@ -153,7 +153,7 @@ export function AgentSessionsPanel({
   if (sessions.length === 0) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-        {showUsage && <AgentUsageBar usages={usages} />}
+        {showUsage && <AgentQuotaRings usages={usages} />}
         <div className="agent-sessions__empty">
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
@@ -165,7 +165,7 @@ export function AgentSessionsPanel({
 
   return (
     <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-      {showUsage && <AgentUsageBar usages={usages} />}
+      {showUsage && <AgentQuotaRings usages={usages} />}
       <ul
         ref={list.ref}
         className={`agent-sessions__list${view === "list" ? "" : ` agent-sessions__list--${view}`}${removal && !reveal ? " agent-sessions__list--archivable" : ""}`}
