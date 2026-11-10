@@ -35,11 +35,13 @@ localStorage.setItem("focusd-island-current-date", date);
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
-// ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it.
+// ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
+// ?layout=music,text,mail,shelf,agents arranges it.
 localStorage.setItem("focusd-island-settings", JSON.stringify({
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
+  ...(query.get("layout") ? { collapsedLayout: query.get("layout")!.split(",") } : {}),
 }));
 if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
 
@@ -167,6 +169,12 @@ if (!automated) {
     await drag(".dot-button--todo", ".dot-button--music");
     check(dotOrder()[0] === "todo", "圆点可以拖回原来的位置");
 
+    // The shelf's three files make one row of tiles, and the page is only as tall as that row.
+    await click(".dot-button--shelf");
+    const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
+    check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && island().offsetHeight === 315,
+      `文件中转是一排图块，页面高度跟着排数走（${island().offsetHeight}px）`);
+
     const pages: Array<[string, string]> = [
       [".dot-button--todo", "待办"],
       [".dot-button--music", "音乐"],
@@ -206,6 +214,17 @@ if (!automated) {
     });
     const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
+    // Appearance → On the island: the music waveform moved left of the text sits on the
+    // collapsed island's left.
+    const barOrder = () => [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")].map((element) => element.classList[0]).join();
+    for (let step = 0; step < 3; step++) {
+      await act(async () => {
+        document.querySelector<HTMLElement>(".collapsed-layout__slot--music")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      });
+    }
+    const savedLayout = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
+    check(savedLayout?.join() === "music,text,mail,shelf,agents" && barOrder().startsWith("music-wave-button,island__open-button"),
+      `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { AppearanceMode, CollapsedItem, PageDot } from "../../features/appearance/types";
+import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageDot } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -37,6 +37,7 @@ type IslandShellProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
+  collapsedLayout: readonly CollapsedSlot[];
   /** The playing song's cover for the collapsed island, or null when it is not shown. */
   collapsedCover: string | null;
   /** Where the collapsed island's lyric line comes from. */
@@ -91,6 +92,7 @@ export function IslandShell({
   collapsedTaskTitle,
   collapsedTodoCount,
   collapsedItem,
+  collapsedLayout,
   collapsedCover,
   lyricsSettings,
   pageOrder,
@@ -196,6 +198,7 @@ export function IslandShell({
           collapsedTaskTitle={collapsedTaskTitle}
           collapsedTodoCount={collapsedTodoCount}
           collapsedItem={collapsedItem}
+          collapsedLayout={collapsedLayout}
           collapsedCover={collapsedCover}
           lyricsSettings={lyricsSettings}
           agentSession={agentSession}

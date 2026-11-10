@@ -1,5 +1,5 @@
-/* Flex, not grid: the list or the empty drop area takes all the height left, with or
-   without the error line above it. */
+/* Flex, not grid: the tiles or the empty drop area take all the height left, with or
+   without the error line above them. A quiet surface: the files are what has colour. */
 .shelf-panel {
   position: relative;
   height: 100%;
@@ -7,17 +7,12 @@
   flex-direction: column;
   gap: var(--space-lg);
   overflow: hidden;
-  padding: 16px 18px 18px;
+  padding: 14px 14px 10px;
   color: var(--text-1);
-  background:
-    radial-gradient(circle at 88% 12%, rgba(110, 231, 200, 0.1), transparent 32%),
-    linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
-    rgba(20, 20, 25, 0.88);
+  background: rgba(255, 255, 255, 0.035);
   border-radius: var(--island-panel-radius, 10px);
   corner-shape: var(--island-corner-shape, round);
-  box-shadow:
-    0 16px 32px rgba(0, 0, 0, 0.24),
-    inset 0 0 0 1px var(--color-white-a09);
+  box-shadow: inset 0 0 0 1px var(--color-white-a06);
 }
 
 .shelf-panel__error {
@@ -29,14 +24,16 @@
   overflow-wrap: anywhere;
 }
 
+/* Files stand on the shelf as tiles, four to a row. */
 .shelf-list {
   flex: 1;
   min-height: 0;
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   align-content: start;
-  gap: var(--space-md);
+  gap: 8px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 2px 4px 2px 0;
   scrollbar-color: rgba(190, 228, 216, 0.28) transparent;
   scrollbar-width: thin;
   transition: opacity 140ms ease;
@@ -44,6 +41,18 @@
 
 .shelf-panel--dropping .shelf-list {
   opacity: 0.32;
+}
+
+.shelf-panel__footer {
+  flex: none;
+  margin: -4px 0 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shelf-empty {

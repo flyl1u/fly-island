@@ -24,7 +24,7 @@ export function pickCollapsedItem(order: readonly CollapsedItem[], has: Record<C
  * line while a song plays (`lyricsPlaying`), or for todos the active (or rotating) todo title,
  * otherwise the pending count; whichever comes first in Settings → Appearance → Collapsed island
  * of those that have something to show (`collapsedItem`). Also the width that needs, with room
- * for the song's cover when `coverShown`.
+ * for the song's cover beside the lyric line when `coverWanted`.
  */
 export function useCollapsedTodo(
   todos: TodoItem[],
@@ -32,7 +32,7 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverShown = false }: { lyricsPlaying?: boolean; coverShown?: boolean } = {},
+  { lyricsPlaying = false, coverWanted = false }: { lyricsPlaying?: boolean; coverWanted?: boolean } = {},
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
@@ -70,11 +70,11 @@ export function useCollapsedTodo(
       : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     return alignCollapsedIslandWidth(
-      getCollapsedIslandWidth(text, coverShown ? COVER_WIDTH : 0),
+      getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH : 0),
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverShown, settings.showCollapsedText, settings.showTitle, t]);
+  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.showCollapsedText, settings.showTitle, t]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth };
 }

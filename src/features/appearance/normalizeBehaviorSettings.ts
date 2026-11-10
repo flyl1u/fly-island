@@ -2,7 +2,7 @@
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
-import { COLLAPSED_ITEMS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
+import { COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
@@ -26,6 +26,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     mailEnabled: settings?.mailEnabled !== false,
     collapsedPriority: normalizeOrder(settings?.collapsedPriority, COLLAPSED_ITEMS),
     collapsedShowCover: settings?.collapsedShowCover === true,
+    collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),
     pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),
   } satisfies Partial<IslandSettings>;
 }

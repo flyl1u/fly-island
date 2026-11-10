@@ -12,7 +12,7 @@ type Press = { id: string; x: number; y: number; pointerId: number; dragging: bo
  * reaching the page. Each item carries `data-reorder-id` inside `containerRef`; while one is
  * dragged it swaps places as the pointer crosses its neighbours, and `onReorder` gets every new
  * order. A press that moved less than a few pixels stays a click; after a drag, `wasDragged()`
- * is true until the next press, so the item's click handler can ignore that click.
+ * is true until that click has passed, so the item's click handler can ignore it.
  */
 export function usePointerReorder<T extends string>(
   items: readonly T[],
@@ -63,6 +63,8 @@ export function usePointerReorder<T extends string>(
       if (press.current?.pointerId !== event.pointerId) return;
       press.current = null;
       setDraggingId(null);
+      // The click that ends a drag comes in the same task as this; a click after that is a click.
+      if (dragged.current) window.setTimeout(() => { dragged.current = false; }, 0);
     },
     onPointerCancel() {
       press.current = null;

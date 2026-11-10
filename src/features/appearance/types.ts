@@ -33,6 +33,13 @@ export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 export type ShelfDoubleClick = "open" | "reveal";
 /** What the collapsed island can show in its text: a running agent, the lyric line, a todo. */
 export type CollapsedItem = "agent" | "lyrics" | "todo";
+/**
+ * What sits on the collapsed island, in the order the user arranged it (Appearance → Collapsed
+ * island): the text (pulse, cover and the agent, lyric or todo line) and the status icons —
+ * the new-mail badge, files on the shelf, the music waveform, running Agent sessions (or the tuck
+ * dot). Icons before the text sit on its left.
+ */
+export type CollapsedSlot = "text" | "mail" | "shelf" | "music" | "agents";
 /** The page dots in the expanded island's header, which the user can drag into any order. */
 export type PageDot = "todo" | "music" | "clipboard" | "shelf";
 
@@ -154,6 +161,8 @@ export type IslandSettings = {
   collapsedPriority: CollapsedItem[];
   /** The playing song's cover on the collapsed island. */
   collapsedShowCover: boolean;
+  /** Where the text and each status icon sit on the collapsed island, left to right. */
+  collapsedLayout: CollapsedSlot[];
   /** Order of the page dots in the expanded island's header. */
   pageOrder: PageDot[];
   /** While a full-screen app (game, video, slides) is in front: no hover opening or focus, no message pop-ups. */

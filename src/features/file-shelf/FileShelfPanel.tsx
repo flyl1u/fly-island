@@ -91,6 +91,7 @@ export function FileShelfPanel({
           ))}
         </div>
       )}
+      {items.length > 0 && <p className="shelf-panel__footer">{t.fileShelf.footerHint(revealOnDoubleClick)}</p>}
       {isDropTarget && items.length > 0 && (
         <div className="shelf-drop-overlay" aria-hidden="true">
           <span className="shelf-drop-overlay__icon">

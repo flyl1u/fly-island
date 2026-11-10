@@ -5,6 +5,8 @@ export type FileShelfText = {
   empty: string;
   /** Under the empty message: the shelf keeps references, not copies. */
   emptyNote: string;
+  /** Under the tiles: how to take files back out. */
+  footerHint: (reveal: boolean) => string;
   dropHint: string;
   folder: string;
   missing: string;
@@ -32,6 +34,7 @@ export const zhCN: FileShelfText = {
   confirmClear: "确认清空（不会删除文件）",
   empty: "把文件拖到岛上，就会暂存在这里",
   emptyNote: "只记住位置，不复制文件；移除也不会删掉原文件",
+  footerHint: (reveal) => `拖到别的窗口就是复制，按住 Shift 是移动 · 双击${reveal ? "在文件夹中显示" : "打开"}`,
   dropHint: "松开鼠标，加入文件中转",
   folder: "文件夹",
   missing: "已失效",
@@ -59,6 +62,7 @@ export const en: FileShelfText = {
   confirmClear: "Confirm clear (files are kept)",
   empty: "Drop files on the island to keep them here",
   emptyNote: "Only the location is kept, never a copy; removing leaves the file alone",
+  footerHint: (reveal) => `Drag into another window to copy, hold Shift to move · Double-click to ${reveal ? "show in folder" : "open"}`,
   dropHint: "Release to add to the shelf",
   folder: "Folder",
   missing: "Missing",
