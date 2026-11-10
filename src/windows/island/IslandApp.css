@@ -92,7 +92,6 @@
 }
 
 .todo-notebook,
-.music-player,
 .editor-panel {
   height: 100%;
   border-radius: var(--island-panel-radius, 10px);
@@ -100,7 +99,6 @@
   border: 0;
 }
 
-.island--appearance-liquidGlass .music-player,
 .island--appearance-liquidGlass .clipboard-panel,
 .island--appearance-liquidGlass .editor-panel {
   background:
@@ -120,44 +118,6 @@
   -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
 }
 
-.island--appearance-liquidGlass .music-player {
-  background:
-    radial-gradient(ellipse at 24% 72%, rgba(116, 214, 255, 0.1), transparent 42%),
-    radial-gradient(ellipse at 76% 24%, rgba(182, 156, 255, 0.09), transparent 44%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(222, 243, 255, 0.025)),
-    rgba(12, 21, 29, 0.16);
-  border-color: var(--color-white-a16);
-}
-
-.island--appearance-liquidGlass .music-player::before,
-.island--appearance-liquidGlass .music-player::after {
-  content: "";
-  position: absolute;
-  right: -8%;
-  left: -8%;
-  height: 68px;
-  pointer-events: none;
-}
-
-.island--appearance-liquidGlass .music-player::before {
-  top: 38%;
-  background: linear-gradient(90deg, transparent, rgba(116, 214, 255, 0.08) 26%, var(--color-white-a10) 52%, rgba(182, 156, 255, 0.08) 74%, transparent);
-  border-top: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: var(--radius-circle);
-  filter: blur(6px);
-  transform: rotate(-5deg) skewX(-18deg);
-}
-
-.island--appearance-liquidGlass .music-player::after {
-  top: 54%;
-  background: linear-gradient(90deg, transparent, rgba(190, 239, 255, 0.08) 30%, rgba(116, 214, 255, 0.08) 62%, transparent);
-  border-bottom: 1px solid rgba(190, 239, 255, 0.1);
-  border-radius: var(--radius-circle);
-  filter: blur(10px);
-  transform: rotate(4deg) skewX(14deg);
-}
-
-.island--appearance-liquidGlass.island--glass-css-fallback .music-player,
 .island--appearance-liquidGlass.island--glass-css-fallback .clipboard-panel,
 .island--appearance-liquidGlass.island--glass-css-fallback .editor-panel {
   background:

@@ -9,7 +9,7 @@ import "./MusicProgress.css";
 const TICK_MS = 500;
 
 /**
- * Elapsed time, a thin bar and the track length. It ticks on its own between Windows' readings,
+ * A thin bar with the elapsed time under its left end and the time left under its right end. It ticks on its own between Windows' readings,
  * so only this leaf re-renders while a song plays. Hidden when the player reports no length.
  */
 export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
@@ -31,7 +31,6 @@ export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
 
   return (
     <div className="music-progress" style={style}>
-      <span className="music-progress__time">{formatTrackTime(position)}</span>
       <div
         className="music-progress__track"
         role="progressbar"
@@ -42,7 +41,8 @@ export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
       >
         <span className="music-progress__fill" />
       </div>
-      <span className="music-progress__time">{formatTrackTime(mediaState.durationMs)}</span>
+      <span className="music-progress__time">{formatTrackTime(position)}</span>
+      <span className="music-progress__time music-progress__time--left">−{formatTrackTime(mediaState.durationMs - position)}</span>
     </div>
   );
 }

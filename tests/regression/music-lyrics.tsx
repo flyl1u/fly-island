@@ -1,7 +1,7 @@
 // pnpm dev, then open /tests/regression/music-lyrics.html. Renders the music page with get_lyrics
-// mocked at the page's real size (234px tall): synced lyrics fill the stage over a faint waveform and
-// follow the position and the offset, the waveform fills the stage when there are none, and the
-// progress bar shows the elapsed time and the length above the controls.
+// mocked at the page's real size (520 x 234, on the island's black): with lyrics a compact head and
+// three lines that follow the position and the offset; without them a large cover; the progress bar
+// with elapsed and remaining time above the transport; the page with nothing playing.
 import "../../src/styles/tokens.css";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -66,31 +66,37 @@ function check(condition: unknown, label: string) {
 const view = () => document.querySelector<HTMLElement>(".lyrics-view");
 const lines = () => [...document.querySelectorAll<HTMLElement>(".lyrics-view__line")].map((line) => line.textContent);
 
+const settle = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
+// Layout size: a paused cover is drawn a little smaller (scale), which getBoundingClientRect includes.
+const artSize = () => document.querySelector<HTMLElement>(".music-player__artwork")!.offsetWidth;
+const box = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
+
 try {
   await render(track("晴天", 6000));
-  const wave = () => document.querySelector<HTMLElement>(".media-waveform")!;
-  check(view() && wave() && wave().closest(".music-player__stage--lyrics") && getComputedStyle(wave()).position === "absolute" && Number(getComputedStyle(wave()).opacity) < 0.5,
-    "找到歌词时歌词占据中间，波形淡淡地垫在歌词后面");
+  await settle(450);
+  check(view() && document.querySelector(".music-player--lyrics") && artSize() === 52,
+    "找到歌词时封面缩小到歌名旁边，歌词占据中间");
   const times = () => [...document.querySelectorAll<HTMLElement>(".music-progress__time")].map((time) => time.textContent);
-  check(times().join("|") === "0:06|4:29" && document.querySelector<HTMLElement>(".music-progress")!.style.getPropertyValue("--music-progress") === "2.23%",
-    "进度条显示已播放时间和总时长，填充比例跟随进度");
+  check(times().join("|") === "0:06|−4:23" && document.querySelector<HTMLElement>(".music-progress")!.style.getPropertyValue("--music-progress") === "2.23%",
+    "进度条下面左边是已播放时间、右边是剩余时间，填充比例跟随进度");
   check(lines().join("|") === "故事的小黄花|从出生那年就飘着|童年的荡秋千 随记忆一直晃到现在 这一句特别特别长长到一行放不下需要省略号来收尾才行", "当前句在中间，上一句和下一句在两边");
   const query = queries[queries.length - 1];
   check(query.title === "晴天" && query.artist === "周杰伦" && query.album === "叶惠美" && query.durationMs === 269_000 && query.online === true, "按歌名、歌手、专辑和时长查找");
   const current = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
-  check(getComputedStyle(current).fontSize === "15px" && getComputedStyle(document.querySelector(".lyrics-view__line--side")!).fontSize === "12px", "当前句更大更亮");
+  check(getComputedStyle(current).fontSize === "18px" && getComputedStyle(document.querySelector(".lyrics-view__line--side")!).fontSize === "13px", "当前句更大更亮");
+  check(getComputedStyle(document.querySelector(".lyrics-view__line--side")!).textAlign !== "center" && box(".lyrics-view").left === box(".music-player__cover").left,
+    "歌词靠左，和封面左边对齐");
+  const fill = () => getComputedStyle(document.querySelector(".music-progress__fill")!).backgroundColor;
+  check(fill() !== "rgb(236, 236, 242)", "进度条用封面的颜色");
 
   await render(track("晴天", 10_000));
   const long = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
-  check(long.scrollWidth > long.clientWidth && fixture.scrollWidth <= fixture.clientWidth, "长句单行省略，不撑宽面板");
-  const controls = document.querySelector<HTMLElement>(".music-player__controls")!.getBoundingClientRect();
-  const progress = document.querySelector<HTMLElement>(".music-progress")!.getBoundingClientRect();
-  const card = document.querySelector(".music-player")!.getBoundingClientRect();
-  check(view()!.getBoundingClientRect().bottom <= progress.top && progress.bottom <= controls.top && controls.bottom <= card.bottom && card.height <= 234.5,
-    "歌词、进度条、播放按钮从上到下排好，都完整放在 234px 高的面板里");
-  const art = document.querySelector<HTMLElement>(".music-player__artwork")!.getBoundingClientRect();
-  check(art.right <= document.querySelector<HTMLElement>(".music-player__main")!.getBoundingClientRect().left && art.top >= card.top && art.bottom <= card.bottom,
-    "封面在左侧，歌曲信息和控制在右侧");
+  check(long.scrollWidth > long.clientWidth && fixture.scrollWidth <= fixture.clientWidth, "长句单行省略，不撑宽页面");
+  const card = box(".music-player");
+  check(box(".music-player__head").bottom <= box(".music-player__lyrics").top && box(".music-player__lyrics").bottom <= box(".music-progress").top &&
+    box(".music-progress").bottom <= box(".music-player__controls").top && box(".music-player__controls").bottom <= card.bottom + 0.5 && card.height <= 234.5,
+    "歌名、歌词、进度条、播放按钮从上到下排好，都完整放在 234px 高的页面里");
+  check(box(".music-player__artwork").right <= box(".music-player__meta").left, "封面在左，歌名和歌手在右");
 
   await render(track("晴天", 13_500));
   check(lines()[1] === "♪", "间奏的空行显示音符");
@@ -105,11 +111,13 @@ try {
 
   const before = queries.length;
   await render(track("七里香", 6000));
-  check(!view() && Math.abs(wave().getBoundingClientRect().height - 54) < 1 && getComputedStyle(wave()).position !== "absolute" && queries.length === before + 1, "找不到歌词时波形占满中间");
+  await settle(450);
+  check(!view() && !document.querySelector(".music-player--lyrics") && artSize() === 112 && queries.length === before + 1,
+    "找不到歌词时封面变大，占据歌词的位置");
   const hint = () => document.querySelector<HTMLButtonElement>(".music-player__lyrics-hint");
-  const panel = document.querySelector(".music-player")!.getBoundingClientRect();
+  const panel = box(".music-player");
   check(hint()?.textContent === "没找到歌词 · 试试酷狗和网易云" && hint()!.getBoundingClientRect().left >= panel.left && hint()!.getBoundingClientRect().right <= panel.right,
-    "中文歌只查了 LRCLIB 没找到时，右上角提示可以开启酷狗和网易云");
+    "中文歌只查了 LRCLIB 没找到时，歌手下面提示可以开启酷狗和网易云");
   settingsOpened = 0;
   await act(async () => hint()!.click());
   check(settingsOpened === 1, "点提示打开音乐设置");
@@ -154,6 +162,20 @@ try {
 
   await render({ ...track("电台", 0), durationMs: 0 });
   check(!document.querySelector(".music-progress"), "播放器不报告时长时不显示进度条");
+
+  // A title too long for the page: two lines at most next to the large cover, one with lyrics.
+  const longTitle = "This Is a Very Long Song Title That Keeps Going (Live at the Royal Albert Hall, 2019 Remaster)";
+  await render({ ...track(longTitle, 6000), artist: "The Extraordinarily Long-Named Orchestra and Friends" }, { ...ONLINE, lyricsOnline: false });
+  const title = document.querySelector<HTMLElement>(".music-player__track")!;
+  check(title.getBoundingClientRect().height <= parseFloat(getComputedStyle(title).lineHeight) * 2 + 1 && title.scrollHeight > title.clientHeight &&
+    fixture.scrollWidth <= fixture.clientWidth, "很长的歌名最多两行，不撑宽页面");
+
+  // Nothing playing: a page of its own, not an empty player.
+  await render({ ...DEFAULT_MEDIA_STATE, updatedAt: Date.now() });
+  check(document.querySelector(".music-player__idle")?.textContent?.includes("没有在播放") && !document.querySelector(".music-progress") && !document.querySelector(".music-player__head"),
+    "没有在播放时显示专门的空状态");
+  check(document.querySelector<HTMLButtonElement>(".music-control-button--primary") && !document.querySelector<HTMLButtonElement>(".music-control-button--primary")!.disabled,
+    "空状态下仍能按播放键");
   // Leave the page on a playing song with lyrics, for a look by eye.
   await render(track("晴天", 6000, true));
 

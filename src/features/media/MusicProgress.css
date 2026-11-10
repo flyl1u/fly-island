@@ -1,29 +1,35 @@
+/* The bar across the full width, the two times under its ends (elapsed, then the time left). */
 .music-progress {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 7px;
+  flex: 0 0 auto;
   min-width: 0;
   color: var(--text-3);
-  font-size: 10.5px;
-  font-weight: 600;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .music-progress__track {
   position: relative;
+  grid-column: 1 / -1;
   height: 4px;
   overflow: hidden;
-  background: var(--color-white-a10);
+  background: var(--color-white-a12);
   border-radius: var(--radius-pill);
 }
 
+/* In the song's accent (MusicPlayerPanel sets --music-tint from the cover). */
 .music-progress__fill {
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--music-progress, 0%);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.62), var(--color-white));
+  background: rgb(var(--music-tint, 236, 236, 242));
   border-radius: inherit;
-  transition: width 480ms linear;
+  transition: width 480ms linear, background-color 400ms ease;
+}
+
+.music-progress__time--left {
+  justify-self: end;
 }

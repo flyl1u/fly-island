@@ -1,7 +1,9 @@
 export type MusicText = {
   playerLabel: string;
   controlFailed: string;
-  noMedia: string;
+  /** The music page with nothing playing: a title and what to do. */
+  nothingPlaying: string;
+  nothingPlayingHint: string;
   lyricsLabel: string;
   /** No lyrics for a Chinese song while only LRCLIB is asked; opens Settings → Music. */
   lyricsChineseHint: { text: string; label: string };
@@ -20,7 +22,8 @@ export type MusicText = {
 export const zhCN: MusicText = {
   playerLabel: "音乐播放器",
   controlFailed: "控制失败",
-  noMedia: "暂无媒体",
+  nothingPlaying: "没有在播放",
+  nothingPlayingHint: "在任意播放器里放一首歌，这里会显示封面、歌词和播放控制。",
   lyricsLabel: "歌词",
   lyricsChineseHint: { text: "没找到歌词 · 试试酷狗和网易云", label: "这首歌没找到歌词。打开设置，开启「也查酷狗和网易云」" },
   lyricsOffset: {
@@ -37,13 +40,14 @@ export const zhCN: MusicText = {
   next: "下一首",
   nextTrack: "下一首",
   progress: "播放进度",
-  openSettings: "音乐设置",
+  openSettings: "歌词设置",
 };
 
 export const en: MusicText = {
   playerLabel: "Music player",
   controlFailed: "Control failed",
-  noMedia: "No media",
+  nothingPlaying: "Nothing playing",
+  nothingPlayingHint: "Play a song in any player and its cover, lyrics and controls show up here.",
   lyricsLabel: "Lyrics",
   lyricsChineseHint: { text: "No lyrics · try Kugou and NetEase", label: "No lyrics found for this song. Open settings to also ask Kugou and NetEase" },
   lyricsOffset: {
@@ -60,5 +64,5 @@ export const en: MusicText = {
   next: "Next",
   nextTrack: "Next track",
   progress: "Playback progress",
-  openSettings: "Music settings",
+  openSettings: "Lyrics settings",
 };
