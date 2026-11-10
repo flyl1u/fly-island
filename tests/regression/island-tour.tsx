@@ -207,10 +207,10 @@ if (!automated) {
     check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");
-    const priority = () => [...document.querySelectorAll<HTMLElement>(".collapsed-priority__item")].map((item) => item.dataset.reorderId);
+    const priority = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((item) => item.dataset.reorderId);
     check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");
     await act(async () => {
-      document.querySelector<HTMLElement>(".collapsed-priority__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+      document.querySelector<HTMLElement>(".reorder-list__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     });
     const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");

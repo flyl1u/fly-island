@@ -1,12 +1,12 @@
-/* The collapsed island's priority list: rows like .settings-row, dragged by the pointer anywhere. */
-.collapsed-priority {
+/* A short list put in order by dragging a row (or the arrow keys on its handle): rows like .settings-row. */
+.reorder-list {
   display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.collapsed-priority__item {
+.reorder-list__item {
   position: relative;
   min-height: 46px;
   display: flex;
@@ -20,7 +20,7 @@
   transition: background 140ms ease, box-shadow 140ms ease;
 }
 
-.collapsed-priority__item + .collapsed-priority__item::before {
+.reorder-list__item + .reorder-list__item::before {
   content: "";
   position: absolute;
   top: 0;
@@ -30,19 +30,19 @@
   background: var(--color-white-a08);
 }
 
-.collapsed-priority__item--dragging {
+.reorder-list__item--dragging {
   z-index: 1;
   cursor: grabbing;
   background: var(--color-white-a08);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
 }
 
-.collapsed-priority__item--dragging::before,
-.collapsed-priority__item--dragging + .collapsed-priority__item::before {
+.reorder-list__item--dragging::before,
+.reorder-list__item--dragging + .reorder-list__item::before {
   opacity: 0;
 }
 
-.collapsed-priority__rank {
+.reorder-list__rank {
   width: 16px;
   flex: none;
   color: var(--color-text-subtle);
@@ -51,25 +51,25 @@
   text-align: center;
 }
 
-.collapsed-priority__icon {
+.reorder-list__icon {
   flex: none;
   color: var(--color-text-muted);
 }
 
-.collapsed-priority__text {
+.reorder-list__text {
   min-width: 0;
   flex: 1;
   display: grid;
   gap: 2px;
 }
 
-.collapsed-priority__name {
+.reorder-list__name {
   color: var(--color-text);
   font-size: 14px;
   line-height: 1.35;
 }
 
-.collapsed-priority__hint {
+.reorder-list__hint {
   overflow: hidden;
   color: var(--color-text-subtle);
   font-size: 12px;
@@ -78,7 +78,7 @@
   white-space: nowrap;
 }
 
-.collapsed-priority__handle {
+.reorder-list__handle {
   width: 28px;
   height: 28px;
   flex: none;
@@ -92,26 +92,26 @@
   cursor: inherit;
 }
 
-.collapsed-priority__handle:focus-visible {
+.reorder-list__handle:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 1px;
 }
 
 /* A step smaller on the island's own settings page, like its other rows. */
-.island-settings .collapsed-priority__item {
+.island-settings .reorder-list__item {
   min-height: 40px;
   padding: 6px 6px 6px 12px;
 }
 
-.island-settings .collapsed-priority__item + .collapsed-priority__item::before {
+.island-settings .reorder-list__item + .reorder-list__item::before {
   right: 12px;
   left: 12px;
 }
 
-.island-settings .collapsed-priority__name {
+.island-settings .reorder-list__name {
   font-size: 13px;
 }
 
-.island-settings .collapsed-priority__hint {
+.island-settings .reorder-list__hint {
   font-size: 11.5px;
 }
