@@ -166,6 +166,12 @@ if (!automated) {
       });
       check(tight.length === 0, `${name}页：没有内容挤到岛的边缘${tight.length ? `（${tight[0].className}）` : ""}`);
     }
+    // Settings is open last: the island's height follows the settings page shown, within its cap.
+    await click(".settings-sidebar__item[data-category='todos']");
+    const short = island().getBoundingClientRect().height;
+    await click(".settings-sidebar__item[data-category='messages']");
+    const tall = island().getBoundingClientRect().height;
+    check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

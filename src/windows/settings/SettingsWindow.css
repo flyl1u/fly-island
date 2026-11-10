@@ -8,12 +8,13 @@
   font: inherit;
 }
 
-/* Pages stop at a readable width in a wide window; the rest stays empty on the right. */
+/* Pages stop at a readable width (rows read as label + control, not a stretched line); a wider
+   window leaves the rest empty on the right. */
 .settings-stage .editor-panel {
-  grid-template-columns: minmax(0, 860px);
+  grid-template-columns: minmax(0, 600px);
   height: 100%;
   min-height: 0;
-  padding: 16px 24px 24px;
+  padding: 14px 20px 20px;
   border-radius: 0;
   background: transparent;
   gap: var(--space-xl);

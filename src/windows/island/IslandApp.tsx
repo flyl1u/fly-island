@@ -32,6 +32,7 @@ import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
 import { useIslandTranslation } from "./useIslandTranslation";
 import { useMessageView } from "./useMessageView";
+import { useSettingsPageHeight } from "./useSettingsPageHeight";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -50,6 +51,7 @@ export function IslandApp() {
   const [settings, setSettings] = useIslandSettings();
   const detachedSettings = useSettingsPresentation();
   const { openSettings, changePresentation } = useSettingsNavigation(openIslandPage, setPage);
+  const { settingsContentHeight, reportSettingsHeight } = useSettingsPageHeight();
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
@@ -117,6 +119,7 @@ export function IslandApp() {
     agentSessionView: settings.agentSessionView,
     agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
     agentAlertRowHeight: agentCardHeight,
+    settingsContentHeight,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
@@ -215,6 +218,7 @@ export function IslandApp() {
           onSettingsChange={setSettings}
           detachedSettings={detachedSettings}
           onDetachedSettingsChange={(value) => void changePresentation(value)}
+          onSettingsHeight={reportSettingsHeight}
           features={features}
           qqMail={qqMail}
           qqNotifications={qqNotifications}

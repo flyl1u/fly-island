@@ -17,7 +17,11 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   about: Info,
 };
 
-/** The settings page list: each group under its name, and About pinned to the bottom. */
+/**
+ * The settings page list: icon and name per page, the groups set apart by a gap rather than
+ * headings (with nine pages, headings were more to read than the list itself), About pinned to
+ * the bottom.
+ */
 export function SettingsSidebar({
   category,
   onCategoryChange,
@@ -44,7 +48,7 @@ export function SettingsSidebar({
           data-category={entry}
           onClick={() => onCategoryChange(entry)}
         >
-          <Icon size={16} strokeWidth={2} aria-hidden="true" />
+          <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           <span>{text[entry]}</span>
         </button>
       </li>
@@ -61,7 +65,6 @@ export function SettingsSidebar({
           const label = text.groups[group.label];
           return (
             <section className="settings-sidebar__group" key={group.label} aria-label={label}>
-              <h2 className="settings-sidebar__heading">{label}</h2>
               <ul>{group.categories.map(item)}</ul>
             </section>
           );

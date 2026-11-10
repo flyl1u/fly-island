@@ -3,12 +3,14 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
-  padding: 14px var(--space-md) var(--space-md);
+  padding: 12px var(--space-md) var(--space-md);
   background: #111317;
   border-right: 1px solid var(--color-white-a08);
 }
 
 .settings-sidebar__list {
+  /* Positioned so the island can measure its content (useSettingsContentHeight). */
+  position: relative;
   display: grid;
   align-content: start;
   min-height: 0;
@@ -17,9 +19,9 @@
   scrollbar-width: thin;
 }
 
-/* Rows sit close together and groups well apart, so the groups are what the eye sees first. */
+/* Rows sit close together and groups apart: the gap, not a heading, shows the groups. */
 .settings-sidebar__group + .settings-sidebar__group {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .settings-sidebar ul {
@@ -34,7 +36,7 @@
 .settings-sidebar__item {
   position: relative;
   width: 100%;
-  min-height: 29px;
+  min-height: 30px;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -103,16 +105,6 @@
 .settings-sidebar__item--active > svg {
   color: var(--color-accent);
   opacity: 1;
-}
-
-/* Each group's name, above its pages. */
-.settings-sidebar__heading {
-  margin: 0 0 2px;
-  padding: 0 10px;
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 22px;
 }
 
 /* About stays at the bottom, below a rule, whatever the window's height. */
