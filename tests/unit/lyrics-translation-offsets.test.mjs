@@ -28,7 +28,7 @@ test("per-song offsets are kept in range, and 0 or the oldest drop out", () => {
   assert.deepEqual(normalizeSongOffsets([1]), {});
 });
 
-test("Chinese lyric sources stay off until turned on", () => {
-  assert.equal(normalizeSettings({}).lyricsChinese, false);
-  assert.equal(normalizeSettings({ lyricsChinese: true }).lyricsChinese, true);
+test("Chinese lyric sources are on unless turned off", () => {
+  assert.equal(normalizeSettings({}).lyricsChinese, true);
+  assert.equal(normalizeSettings({ lyricsChinese: false }).lyricsChinese, false);
 });

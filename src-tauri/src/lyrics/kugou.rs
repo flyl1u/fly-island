@@ -74,7 +74,7 @@ pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64) -> Result
         return Ok(None);
     };
     let lines: Vec<(u64, String)> = krc::lines(&text).iter().map(|line| (line.start_ms, line.timed_text())).collect();
-    Ok(from_lines(&lines, krc::translations(&text).as_deref(), title))
+    Ok(from_lines(&lines, krc::translations(&text).as_deref(), title).map(|found| found.with_duration(length)))
 }
 
 #[cfg(test)]

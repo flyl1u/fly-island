@@ -48,7 +48,7 @@ export function MusicPlayerPanel({
   const t = useTranslation();
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
-  const { lines: lyrics, notFound } = useLyrics(mediaState, lyricsSettings);
+  const { lines: lyrics, notFound, durationMs: lyricsDurationMs } = useLyrics(mediaState, lyricsSettings);
   const chineseHint = suggestsChineseSources(mediaState, lyricsSettings, notFound);
   const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? trackKey(mediaState) : null);
   const tint = useArtworkTint(mediaState.thumbnail);
@@ -111,7 +111,8 @@ export function MusicPlayerPanel({
 
       {commandError && <p className="music-player__error" role="alert">{t.music.controlFailed}</p>}
 
-      {hasTrack && <MusicProgress mediaState={mediaState} />}
+      {/* A player that reports no length (NetEase Cloud Music) borrows the lyrics source's. */}
+      {hasTrack && <MusicProgress mediaState={mediaState} durationMs={mediaState.durationMs > 0 ? mediaState.durationMs : lyricsDurationMs} />}
 
       <div className="music-player__controls">
         <button className="music-control-button" type="button" aria-label={t.music.previousTrack} disabled={prevDisabled} onClick={onPrevious}>

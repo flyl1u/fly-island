@@ -66,6 +66,8 @@ pub struct Lyrics {
     lrc: String,
     /// The translation of the same lines, in LRC, when the source has one.
     translation: Option<String>,
+    /// The song's length as the source lists it, when known.
+    duration_ms: Option<i64>,
 }
 
 /// One cached online answer: lyrics, or no `lrc` when no source had any. Entries written before
@@ -82,6 +84,12 @@ struct CacheEntry {
     /// Written by a version that keeps Kugou's word times; older Kugou entries are fetched again.
     #[serde(default)]
     word_times: bool,
+    /// The source's length for the song, when it listed one.
+    #[serde(default)]
+    duration_ms: Option<i64>,
+    /// Written by a version that keeps the length; older entries with lyrics are fetched again.
+    #[serde(default)]
+    durations: bool,
     fetched_at: u64,
 }
 
@@ -113,9 +121,10 @@ fn read_cache(dir: &Path, key: &str, now: u64) -> Option<Option<Answer>> {
     }
     match entry.lrc {
         Some(_) if entry.source.as_deref() == Some("kugou") && !entry.word_times => None,
+        Some(_) if !entry.durations => None,
         Some(lrc) => {
             let source = source_name(entry.source.as_deref().unwrap_or_default());
-            Some(Some((source, FoundLyrics { lrc, translation: entry.translation })))
+            Some(Some((source, FoundLyrics { lrc, translation: entry.translation, duration_ms: entry.duration_ms })))
         }
         None if now.saturating_sub(entry.fetched_at) < MISSING_TTL.as_secs() => Some(None),
         None => None,
@@ -132,6 +141,8 @@ fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
         source: answer.map(|(source, _)| (*source).to_string()),
         translation: answer.and_then(|(_, found)| found.translation.clone()),
         word_times: true,
+        duration_ms: answer.and_then(|(_, found)| found.duration_ms),
+        durations: true,
         fetched_at: now,
     };
     if let Ok(text) = serde_json::to_string(&entry) {
@@ -168,7 +179,7 @@ fn for_display(source: &'static str, found: FoundLyrics, title: &str, artist: &s
             text
         }
     };
-    Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify) }
+    Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify), duration_ms: found.duration_ms }
 }
 
 /// The online sources to ask, in order. A song named in Chinese asks Kugou and NetEase first,
@@ -194,9 +205,7 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
         let result = match source {
             "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
             "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
-            _ => lrclib::fetch(title, artist, &query.album, query.duration_ms)
-                .await
-                .map(|lrc| lrc.map(|lrc| FoundLyrics { lrc, translation: None })),
+            _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
         };
         match result {
             Ok(Some(found)) => return Ok(Some((source, found))),
@@ -225,7 +234,7 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
             .await
             .map_err(|error| format!("Failed to join the lyrics folder search: {error}"))?;
         if let Some(lrc) = found {
-            return Ok(Some(for_display("local", FoundLyrics { lrc, translation: None }, &query.title, &query.artist)));
+            return Ok(Some(for_display("local", FoundLyrics { lrc, translation: None, duration_ms: None }, &query.title, &query.artist)));
         }
     }
     if !query.online {
@@ -263,7 +272,7 @@ mod tests {
     use super::*;
 
     fn found(lrc: &str, translation: Option<&str>) -> FoundLyrics {
-        FoundLyrics { lrc: lrc.into(), translation: translation.map(Into::into) }
+        FoundLyrics { lrc: lrc.into(), translation: translation.map(Into::into), duration_ms: None }
     }
 
     #[test]
@@ -277,9 +286,15 @@ mod tests {
         assert_eq!(read_cache(&dir, "b", now + 60), Some(None));
         // A miss is asked about again after a week.
         assert_eq!(read_cache(&dir, "b", now + MISSING_TTL.as_secs()), None);
-        // Entries from before Chinese sources came from LRCLIB.
-        fs::write(cache_path(&dir, "old"), r#"{"key":"old","lrc":"[00:01.00]y","fetchedAt":1}"#).unwrap();
+        // Entries without a source came from LRCLIB.
+        fs::write(cache_path(&dir, "old"), r#"{"key":"old","lrc":"[00:01.00]y","durations":true,"fetchedAt":1}"#).unwrap();
         assert_eq!(read_cache(&dir, "old", now), Some(Some(("lrclib", found("[00:01.00]y", None)))));
+        // The song's length is kept; lyrics cached before lengths were are fetched again.
+        let timed = FoundLyrics { duration_ms: Some(246_000), ..found("[00:01.00]t", None) };
+        write_cache(&dir, "t", Some(&("netease", timed.clone())), now);
+        assert_eq!(read_cache(&dir, "t", now), Some(Some(("netease", timed))));
+        fs::write(cache_path(&dir, "untimed"), r#"{"key":"untimed","lrc":"[00:01.00]u","source":"netease","fetchedAt":1}"#).unwrap();
+        assert_eq!(read_cache(&dir, "untimed", now), None);
         // Kugou lyrics cached before word times were kept are fetched again.
         fs::write(cache_path(&dir, "k"), r#"{"key":"k","lrc":"[00:01.00]z","source":"kugou","fetchedAt":1}"#).unwrap();
         assert_eq!(read_cache(&dir, "k", now), None);

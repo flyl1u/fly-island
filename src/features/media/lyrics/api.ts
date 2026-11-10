@@ -6,6 +6,8 @@ export type Lyrics = {
   lrc: string;
   /** The translation of the same lines, in LRC, when the source has one. */
   translation?: string | null;
+  /** The song's length as the source lists it, when known. */
+  durationMs?: number | null;
 };
 
 export type LyricsQuery = {

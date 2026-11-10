@@ -6,11 +6,14 @@ export type LyricsSettingValues = {
   lyricsOffsetMs: number;
 };
 
-/** No folder, nothing asked online until the user turns it on, no offset. */
+/**
+ * No folder, no offset; lyrics are looked up online, Kugou and NetEase included, unless the user
+ * turns that off (on by default since 2026-11-10: lyrics are what makes the music page).
+ */
 export const DEFAULT_LYRICS_SETTINGS: LyricsSettingValues = {
   lyricsFolder: "",
-  lyricsOnline: false,
-  lyricsChinese: false,
+  lyricsOnline: true,
+  lyricsChinese: true,
   lyricsOffsetMs: 0,
 };
 
@@ -22,7 +25,7 @@ export const DEFAULT_LYRICS_SETTINGS: LyricsSettingValues = {
 export function normalizeLyricsSettings(saved: Partial<Record<keyof LyricsSettingValues, unknown>> | null | undefined): LyricsSettingValues {
   return {
     ...DEFAULT_LYRICS_SETTINGS,
-    lyricsOnline: saved?.lyricsOnline === true,
-    lyricsChinese: saved?.lyricsChinese === true,
+    lyricsOnline: saved?.lyricsOnline !== false,
+    lyricsChinese: saved?.lyricsChinese !== false,
   };
 }

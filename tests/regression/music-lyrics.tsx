@@ -28,6 +28,8 @@ mockIPC((command, payload) => {
   const query = (payload as { query: Record<string, unknown> }).query;
   queries.push(query);
   if (query.title === "Yesterday") return { source: "kugou", lrc: ["[00:01.00]Oh I believe", "[00:05.00]in yesterday"].join("\n"), translation: "[00:01.00]哦 我相信" };
+  // NetEase Cloud Music reports no length; the lyrics source lists one.
+  if (query.title === "玻璃") return { source: "netease", lrc: "[00:01.00]把手机放在耳边", durationMs: 240_000 };
   if (query.title === "Believe") return { source: "kugou", lrc: "[00:01.00]<00:01.00>Oh <00:01.30>I <00:01.70>believe<00:03.00>\n[00:04.00]in yesterday" };
   return query.title === "晴天" ? { source: "lrclib", lrc: LRC } : null;
 });
@@ -84,8 +86,10 @@ try {
   check(query.title === "晴天" && query.artist === "周杰伦" && query.album === "叶惠美" && query.durationMs === 269_000 && query.online === true, "按歌名、歌手、专辑和时长查找");
   const current = document.querySelector<HTMLElement>(".lyrics-view__line--current")!;
   check(getComputedStyle(current).fontSize === "18px" && getComputedStyle(document.querySelector(".lyrics-view__line--side")!).fontSize === "13px", "当前句更大更亮");
-  check(getComputedStyle(document.querySelector(".lyrics-view__line--side")!).textAlign !== "center" && box(".lyrics-view").left === box(".music-player__cover").left,
-    "歌词靠左，和封面左边对齐");
+  const lyricsBox = box(".lyrics-view");
+  const page = box(".music-player");
+  check(getComputedStyle(current).textAlign === "center" && Math.abs((lyricsBox.left + lyricsBox.right) / 2 - (page.left + page.right) / 2) < 1,
+    "歌词居中，和进度条、播放控制在同一条中线上");
   const fill = () => getComputedStyle(document.querySelector(".music-progress__fill")!).backgroundColor;
   check(fill() !== "rgb(236, 236, 242)", "进度条用封面的颜色");
 
@@ -161,7 +165,10 @@ try {
   check(words().length === 0 && lines()[1] === "in yesterday", "没有逐字时间的句子照常整句显示");
 
   await render({ ...track("电台", 0), durationMs: 0 });
-  check(!document.querySelector(".music-progress"), "播放器不报告时长时不显示进度条");
+  check(!document.querySelector(".music-progress"), "播放器和歌词都不知道时长时不显示进度条");
+  await render({ ...track("玻璃", 60_000), durationMs: 0 }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  await settle(60);
+  check(times().join("|") === "1:00|−3:00", "播放器不报告时长时，用歌词来源给的时长显示进度条");
 
   // A title too long for the page: two lines at most next to the large cover, one with lyrics.
   const longTitle = "This Is a Very Long Song Title That Keeps Going (Live at the Royal Albert Hall, 2019 Remaster)";
