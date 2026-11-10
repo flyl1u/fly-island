@@ -3,6 +3,7 @@ import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import { useTranslation } from "../../i18n";
 import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
+import { cornerShapeCss } from "./cornerShape";
 import { getEffectiveAppearanceMode, hexToRgba } from "./settings";
 import type { IslandSettings } from "./types";
 import "./IslandPreview.css";
@@ -22,7 +23,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius": `${settings.islandCornerRadius}px`,
     "--preview-radius-px": settings.islandCornerRadius,
-    "--preview-corner-shape": settings.islandCornerShape,
+    "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--preview-pulse": settings.pulseColor,
     "--preview-pulse-glow": hexToRgba(settings.pulseColor, 0.72),
     "--preview-pulse-brightness": `${settings.pulseBrightness}%`,

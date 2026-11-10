@@ -14,16 +14,16 @@
    * settings (stageStyle.ts) with the ratios of the original 30 / 22 / 14 px design.
    * Rust scales its hit-test corners the same way (island/state.rs).
    */
-  --island-radius: calc(var(--island-corner-radius-size, 30) * 1px);
+  --island-radius: calc(var(--island-corner-radius-size, 32) * 1px);
   --island-radius-collapsed: calc(var(--island-radius) * 22 / 30);
-  --island-radius-expanded-top: calc(var(--island-radius) * 22 / 30);
-  --island-radius-collapsed-top: calc(var(--island-radius) * 14 / 30);
   /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
+  /* The 1px rim of the expanded island (.island::after); the collapsed bar has none. */
+  --island-rim: transparent;
   /*
-   * Squircle (default) or round, from the appearance settings (stageStyle.ts). Every layer that
-   * inherits the island's radius, and the inner panels, take the same shape so the rims, glass and
-   * panels stay concentric; Rust hit-tests the same curve (island/passthrough.rs).
+   * The soft squircle (default) or round, from the appearance settings (stageStyle.ts). Every layer
+   * that inherits the island's radius, and the inner panels, take the same shape so the rims, glass
+   * and panels stay concentric; Rust hit-tests the same curve (island/passthrough.rs).
    */
   corner-shape: var(--island-corner-shape, round);
   position: relative;
@@ -33,7 +33,6 @@
      The opacity setting fades only this fill (stageStyle.ts), never the text on it. */
   background: var(--island-fill, var(--island-background-color));
   border: 0;
-  box-shadow: inset 0 0 0 1px var(--color-white-a08);
   overflow: visible;
   /* transform, not zoom: Rust's hit test (island/passthrough.rs) assumes a box of base size x
      scale, centred at the top. The transition runs on --island-scale, not on transform: a
@@ -56,6 +55,22 @@
   overflow: hidden;
   border-radius: inherit;
   corner-shape: var(--island-corner-shape, round);
+}
+
+/*
+ * The expanded island's rim: a hairline that keeps a black island apart from a dark window
+ * behind it. Its own layer rather than an inset shadow on .island, so the attached island can
+ * fade it out towards the screen edge (IslandTopEdge.css).
+ */
+.island::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
+  box-shadow: inset 0 0 0 1px var(--island-rim);
+  pointer-events: none;
 }
 
 .island--music {
@@ -267,18 +282,49 @@
 }
 
 .island--expanded {
+  --island-rim: var(--color-white-a08);
   width: 560px;
   height: var(--expanded-island-height, 306px);
   border-radius: 0 0 var(--island-radius) var(--island-radius);
   cursor: default;
 }
 
+/* Liquid glass draws its own rim (the refraction border). */
+.island--appearance-liquidGlass.island--expanded {
+  --island-rim: transparent;
+}
+
+/* Away from the top edge the island floats: a full pill collapsed, evenly rounded expanded. */
 .island--detached.island--collapsed {
-  border-radius: var(--island-radius-collapsed-top) var(--island-radius-collapsed-top) var(--island-radius-collapsed) var(--island-radius-collapsed);
+  border-radius: var(--island-radius-collapsed);
 }
 
 .island--detached.island--expanded {
-  border-radius: var(--island-radius-expanded-top) var(--island-radius-expanded-top) var(--island-radius) var(--island-radius);
+  border-radius: var(--island-radius);
+}
+
+/*
+ * Tucked, only the island's bottom rim shows at the screen edge. A short grab line on it says
+ * there is something to pull down; it fades with the bar's contents.
+ */
+.island__surface::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 36px;
+  height: 3px;
+  margin-left: -18px;
+  border-radius: var(--radius-pill);
+  background: rgb(var(--island-ink-rgb, 248, 246, 240));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.island--tucked .island__surface::after {
+  opacity: 0.34;
+  transition-delay: 200ms;
 }
 
 .island__collapsed,
