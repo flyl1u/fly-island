@@ -24,7 +24,8 @@
   color: var(--text-3);
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;

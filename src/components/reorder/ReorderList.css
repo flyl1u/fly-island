@@ -16,7 +16,8 @@
   cursor: grab;
   touch-action: none;
   user-select: none;
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   transition: background 140ms ease, box-shadow 140ms ease;
 }
 
@@ -88,7 +89,8 @@
   color: var(--color-text-subtle);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
   cursor: inherit;
 }
 

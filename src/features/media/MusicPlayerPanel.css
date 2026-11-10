@@ -61,7 +61,7 @@
   overflow: hidden;
   color: var(--text-3);
   background: linear-gradient(150deg, #2c2c33, #19191d);
-  border-radius: 16px;
+  border-radius: var(--corner-2xl);
   corner-shape: var(--island-corner-shape, round);
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.45),
@@ -81,7 +81,8 @@
 
 .music-player--lyrics .music-player__artwork {
   --art: 52px;
-  border-radius: 12px;
+  border-radius: var(--corner-xl);
+  corner-shape: var(--corner-shape);
 }
 
 .music-player__artwork img {
@@ -218,7 +219,7 @@
   margin-bottom: 6px;
   color: var(--text-2);
   background: linear-gradient(150deg, #2c2c33, #19191d);
-  border-radius: 14px;
+  border-radius: var(--corner-xl);
   corner-shape: var(--island-corner-shape, round);
   box-shadow: inset 0 0 0 1px var(--color-white-a08);
 }

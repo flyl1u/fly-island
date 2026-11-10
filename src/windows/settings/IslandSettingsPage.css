@@ -86,7 +86,8 @@
 }
 
 .island-settings .settings-group__card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
 }
 
 .island-settings .settings-group__card > * + *::before {

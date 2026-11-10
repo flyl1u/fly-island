@@ -67,7 +67,8 @@
   color: var(--text-3);
   text-align: center;
   border: 1px dashed rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-lg);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
   font-size: 13px;
   font-weight: 600;
   transition:
@@ -132,7 +133,8 @@
   color: rgba(214, 248, 238, 0.94);
   border: 1.5px dashed rgba(110, 231, 200, 0.62);
   backdrop-filter: blur(2px);
-  border-radius: var(--radius-lg);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
   font-size: 13px;
   font-weight: 600;
   pointer-events: none;

@@ -81,7 +81,8 @@
 .qq-panel__actions .icon-button {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   color: var(--text-3);
   background: transparent;
 }
@@ -112,7 +113,8 @@
   min-height: 36px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, .045);
-  border-radius: 12px;
+  border-radius: var(--corner-xl);
+  corner-shape: var(--corner-shape);
   font-size: 12px;
   cursor: pointer;
 }
@@ -263,7 +265,8 @@
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
   cursor: pointer;
   transition: background 140ms ease;
 }

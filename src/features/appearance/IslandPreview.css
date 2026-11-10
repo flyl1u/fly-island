@@ -16,7 +16,8 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  border-radius: 12px;
+  border-radius: var(--corner-xl);
+  corner-shape: var(--corner-shape);
   background:
     radial-gradient(circle at 22% 30%, rgba(255, 170, 92, 0.85), transparent 46%),
     radial-gradient(circle at 78% 62%, rgba(84, 156, 255, 0.85), transparent 50%),
