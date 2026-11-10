@@ -169,7 +169,8 @@ if (!automated) {
     await drag(".dot-button--todo", ".dot-button--music");
     check(dotOrder()[0] === "todo", "圆点可以拖回原来的位置");
 
-    // The shelf's three files make one row of tiles, and the page is only as tall as that row.
+    // The shelf's three files make one row of tiles with an open slot, and the page is only as
+    // tall as that row (getShelfExpandedHeight).
     await click(".dot-button--shelf");
     // The open page's dot widens into a capsule with the page's name; the other dots stay dots
     // and carry their name for the hover tip.
@@ -178,8 +179,10 @@ if (!automated) {
       && [...document.querySelectorAll<HTMLElement>(".dot-button:not(.dot-button--active)")].every((dot) => dot.offsetWidth <= 12 && dot.dataset.tip),
       "打开的页面圆点显示页面名，其他圆点悬停时显示名字");
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
-    check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && island().offsetHeight === 315,
-      `文件中转是一排图块，页面高度跟着排数走（${island().offsetHeight}px）`);
+    const list = document.querySelector<HTMLElement>(".shelf-list")!;
+    check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && document.querySelector(".shelf-slot")
+      && island().offsetHeight === 296 && list.scrollHeight <= list.clientHeight,
+      `文件中转是一排图块，页面高度正好放下这一排（${island().offsetHeight}px）`);
 
     const pages: Array<[string, string]> = [
       [".dot-button--todo", "待办"],

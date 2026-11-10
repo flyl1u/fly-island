@@ -35,6 +35,48 @@ export function getTypeLabel(name: string, isDir: boolean) {
   return extension && extension.length <= 5 ? extension.toUpperCase() : null;
 }
 
+/**
+ * A name cut where it may be shortened: the stem truncates, the extension (".docx") stays, so a
+ * long name still says what kind of file it is. Folders and names without a short extension
+ * keep everything in the stem.
+ */
+export function splitFileName(name: string, isDir: boolean) {
+  const extension = extensionOf(name, isDir);
+  if (!extension || extension.length > 5) return { stem: name, extension: "" };
+  return { stem: name.slice(0, name.length - extension.length - 1), extension: `.${extension}` };
+}
+
+/**
+ * The stem to show so that it and the extension fit `maxWidth`: all of it when it fits, else its
+ * start and end around an ellipsis ("IMG_2026…3522"), as Finder shortens names: screenshots and
+ * versions often differ only at the end. `measure` gives a text's width in the same units.
+ */
+export function fitFileStem(stem: string, extension: string, maxWidth: number, measure: (text: string) => number) {
+  if (measure(stem + extension) <= maxWidth) return stem;
+  const chars = Array.from(stem);
+  const shorten = (kept: number) => {
+    const head = Math.ceil(kept * 0.6);
+    return `${chars.slice(0, head).join("")}…${chars.slice(chars.length - (kept - head)).join("")}`;
+  };
+  let low = 0;
+  let high = chars.length - 1;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (measure(shorten(middle) + extension) <= maxWidth) low = middle;
+    else high = middle - 1;
+  }
+  return shorten(low);
+}
+
+/** Up to this many entries sit as large tiles in one row; more switch to compact rows. */
+export const SHELF_TILE_LIMIT = 4;
+
+/** How the shelf lays out `count` entries: nothing, one row of tiles, or two columns of rows. */
+export function getShelfLayout(count: number): "empty" | "tiles" | "rows" {
+  if (count <= 0) return "empty";
+  return count <= SHELF_TILE_LIMIT ? "tiles" : "rows";
+}
+
 /** Same rule as path_key in src-tauri/src/file_shelf/store.rs: case and slash style do not matter. */
 export function pathKey(path: string) {
   return path.replace(/\//g, "\\").toLowerCase();
