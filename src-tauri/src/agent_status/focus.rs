@@ -1,11 +1,13 @@
 //! Clicking a session on the Agent page: find the window that shows it and bring it forward, and
-//! in Orca, Windows Terminal or VS Code switch to its tab or terminal. The order tried is in
+//! in Orca, Windows Terminal or VS Code switch to its tab or terminal; in Claude desktop, the Codex
+//! app and the agents' editor extensions open its conversation (conversation_link.rs). The order tried is in
 //! docs/agent-status-hooks.md, "Switching to a Session's Window". Every attempt is written to
 //! agent-focus.log (focus_log.rs).
 
 use std::path::Path;
 
 use super::codex_process;
+use super::conversation_link;
 use super::editor_terminal::{self, EditorTerminal};
 use super::focus_log::Attempt;
 use super::orca;
@@ -213,12 +215,23 @@ pub(super) fn focus_session(
         let selected = wezterm::activate_tab_titled(exe.as_deref().map(Path::new), title);
         log.note(if selected { "wezterm-tab=selected" } else { "wezterm-tab=none" });
     }
-    if let Some(title) = title.filter(|_| focused.app == WINDOWS_TERMINAL_APP) {
-        let selected = window_focus::select_terminal_tab(&focused, title);
+    if focused.app == WINDOWS_TERMINAL_APP && (title.is_some() || folder.is_some()) {
+        let selected = window_focus::select_terminal_tab(&focused, title, folder.as_deref());
         log.note(if selected { "wt-tab=selected" } else { "wt-tab=none" });
     }
+    // The app's own link to the conversation; it also brings the app's window forward.
+    let link = session_id
+        .zip(windows_home_dir().ok())
+        .and_then(|(id, home_dir)| conversation_link::conversation_link(&home_dir, &focused.app, provider, id));
+    let mut in_extension = false;
+    if let Some(link) = link {
+        let opened = tauri_plugin_opener::open_url(&link, None::<&str>).is_ok();
+        in_extension = opened && conversation_link::is_extension_link(&link);
+        log.note(if opened { "conversation=sent" } else { "conversation=failed" });
+    }
     // The link goes to the editor window used last, so only once the session's window is in front.
-    if let (true, Ok(home_dir)) = (focused.in_front, windows_home_dir()) {
+    // A session in an editor extension has no terminal to show.
+    if let (true, false, Ok(home_dir)) = (focused.in_front, in_extension, windows_home_dir()) {
         let shown = editor_terminal::show_session_terminal(&home_dir, &focused.app, &chain, title);
         match shown {
             Some(EditorTerminal::Sent) => log.note("editor-terminal=sent"),

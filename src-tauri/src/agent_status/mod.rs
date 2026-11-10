@@ -10,6 +10,7 @@ mod hooks_state;
 mod host_icon;
 mod codex_usage;
 mod codex_version;
+mod conversation_link;
 mod magpie;
 mod markers;
 mod notifications;

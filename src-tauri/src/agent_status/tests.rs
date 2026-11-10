@@ -1680,3 +1680,85 @@ fn a_paginated_codex_thread_is_listed_once() {
     assert_eq!(sessions[0].session_id, "t1");
     assert_eq!(sessions[0].last_message.as_deref(), Some("最新一页"));
 }
+
+#[test]
+fn claude_desktop_opens_its_own_session_for_a_claude_code_id() {
+    use super::conversation_link::desktop_session_id;
+
+    let (_home, app) = temp_dirs();
+    let org = app.join("claude-code-sessions").join("acct").join("org");
+    fs::create_dir_all(&org).unwrap();
+    let write = |name: &str, value: serde_json::Value| fs::write(org.join(name), value.to_string()).unwrap();
+    write("local_aaa-1.json", json!({"sessionId": "local_aaa-1", "cliSessionId": "cli-1", "lastActivityAt": 10, "isArchived": false}));
+    // Resumed under a new Claude Code id: found by its latest one, the newer of two wins.
+    write("local_bbb-2.json", json!({"sessionId": "local_bbb-2", "cliSessionId": "cli-0", "lastAssistantCliSessionId": "cli-1", "lastActivityAt": 20}));
+    write("local_ccc-3.json", json!({"sessionId": "local_ccc-3", "cliSessionId": "cli-3", "isArchived": true}));
+    write("local_bad.json", json!({"sessionId": "../evil", "cliSessionId": "cli-4"}));
+    write("scheduled-tasks.json", json!({"cliSessionId": "cli-5", "sessionId": "local_x"}));
+    assert_eq!(desktop_session_id(&app, "cli-1").as_deref(), Some("local_bbb-2"));
+    // Archived sessions, ids the app would refuse and other files give nothing.
+    assert_eq!(desktop_session_id(&app, "cli-3"), None);
+    assert_eq!(desktop_session_id(&app, "cli-4"), None);
+    assert_eq!(desktop_session_id(&app, "cli-5"), None);
+    assert_eq!(desktop_session_id(&app, "missing"), None);
+}
+
+#[test]
+fn conversation_links_per_host() {
+    use super::conversation_link::{claude_entrypoint, conversation_link, is_extension_link};
+
+    let (home, _app) = temp_dirs();
+    let id = "01a1c03c-38e7-7780-ad77-9ca7b8e40a07";
+    assert_eq!(conversation_link(&home, "chatgpt", "codex", id).as_deref(), Some("codex://threads/01a1c03c-38e7-7780-ad77-9ca7b8e40a07"));
+    // Not a Codex session, or not an id: no link.
+    assert_eq!(conversation_link(&home, "chatgpt", "claudeCode", id), None);
+    assert_eq!(conversation_link(&home, "chatgpt", "codex", "a/../b"), None);
+    assert_eq!(conversation_link(&home, "windowsterminal", "codex", id), None);
+
+    // Claude Code in the VS Code extension: linked only with the extension installed.
+    let project = home.join(".claude").join("projects").join("E--p");
+    fs::write(
+        project.join("vs.jsonl"),
+        [line(json!({"type": "user", "entrypoint": "cli"})), line(json!({"type": "assistant", "entrypoint": "claude-vscode"}))].concat(),
+    )
+    .unwrap();
+    fs::write(project.join("term.jsonl"), line(json!({"type": "user", "entrypoint": "cli"}))).unwrap();
+    assert_eq!(claude_entrypoint(&home.join(".claude"), "vs").as_deref(), Some("claude-vscode"));
+    assert_eq!(conversation_link(&home, "code", "claudeCode", "vs"), None);
+    fs::create_dir_all(home.join(".vscode").join("extensions").join("anthropic.claude-code-2.1.318-win32-x64")).unwrap();
+    let link = conversation_link(&home, "code", "claudeCode", "vs").unwrap();
+    assert_eq!(link, "vscode://anthropic.claude-code/open?session=vs");
+    assert!(is_extension_link(&link));
+    // In the editor's terminal: its tab is shown instead.
+    assert_eq!(conversation_link(&home, "code", "claudeCode", "term"), None);
+
+    // Codex in its editor extension, found by a page of the thread.
+    let day = home.join(".codex").join("sessions").join("2026").join("11").join("10");
+    fs::create_dir_all(&day).unwrap();
+    fs::write(
+        day.join(format!("rollout-2026-11-10T05-50-43-{id}_01a1c5b9.jsonl")),
+        line(json!({"type": "session_meta", "payload": {"id": id, "originator": "codex_vscode"}})),
+    )
+    .unwrap();
+    assert_eq!(conversation_link(&home, "cursor", "codex", id), None);
+    fs::create_dir_all(home.join(".cursor").join("extensions").join("openai.chatgpt-26.1021.22027-win32-x64")).unwrap();
+    assert_eq!(
+        conversation_link(&home, "cursor", "codex", id).as_deref(),
+        Some("cursor://openai.chatgpt/local/01a1c03c-38e7-7780-ad77-9ca7b8e40a07")
+    );
+    assert!(!is_extension_link("codex://threads/x"));
+}
+
+#[test]
+fn a_terminal_tab_is_found_by_title_then_by_folder() {
+    use super::title::terminal_tab_for;
+    let tabs = ["PowerShell".to_string(), "✳ 修复登录".to_string(), r"D:\FocuSD - codex".to_string(), r"D:\other".to_string()];
+    assert_eq!(terminal_tab_for(&tabs, Some("修复登录"), Some("other")), Some(1));
+    assert_eq!(terminal_tab_for(&tabs, Some("没有这个标题"), Some("FocuSD")), Some(2));
+    assert_eq!(terminal_tab_for(&tabs, None, Some("focusd")), Some(2));
+    // A short name, or one several tabs carry, picks nothing.
+    assert_eq!(terminal_tab_for(&tabs, None, Some("D:")), None);
+    let twice = ["a - FocuSD".to_string(), "b - FocuSD".to_string()];
+    assert_eq!(terminal_tab_for(&twice, None, Some("FocuSD")), None);
+    assert_eq!(terminal_tab_for(&tabs, None, None), None);
+}

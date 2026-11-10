@@ -9,7 +9,7 @@ use std::path::Path;
 use windows::Win32::Foundation::HWND;
 
 use super::codex_process::CODEX_DESKTOP_APPS;
-use super::title::only_tab_titled;
+use super::title::terminal_tab_for;
 use crate::win32;
 
 /// Editors whose window title names the open folder. Lowercase executable names without `.exe`.
@@ -249,11 +249,11 @@ pub(super) fn focus_session_window(
     })
 }
 
-/// Selects the Windows Terminal tab showing the session titled `title`: in the window already
-/// brought forward, else in another window of the same Windows Terminal process, which is then
-/// brought forward instead. Only a tab that alone carries the title is selected.
-pub(super) fn select_terminal_tab(focused: &FocusedWindow, title: &str) -> bool {
-    let choose = |tabs: &[String]| only_tab_titled(tabs, title);
+/// Selects the Windows Terminal tab showing the session (title.rs `terminal_tab_for`): in the
+/// window already brought forward, else in another window of the same Windows Terminal process,
+/// which is then brought forward instead.
+pub(super) fn select_terminal_tab(focused: &FocusedWindow, title: Option<&str>, folder: Option<&str>) -> bool {
+    let choose = |tabs: &[String]| terminal_tab_for(tabs, title, folder);
     if win32::uia_tabs::select_tab(focused.window, choose) {
         return true;
     }

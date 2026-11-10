@@ -31,15 +31,20 @@ pub(super) fn editor_of_app(app: &str) -> Option<(&'static str, &'static str)> {
         .map(|&(_, scheme, folder)| (scheme, folder))
 }
 
-/// Whether the extension is installed in `extensions_dir`: a `tixxin.focusd-island-<version>`
-/// folder that is not listed in `.obsolete`, where the editor keeps uninstalled extensions until it
-/// restarts.
+/// Whether the island's extension is installed in `extensions_dir`.
 pub(super) fn extension_installed(extensions_dir: &Path) -> bool {
+    extension_installed_with(extensions_dir, EXTENSION_ID)
+}
+
+/// Whether the extension `<publisher>.<name>` is installed in `extensions_dir`: a
+/// `<publisher>.<name>-<version>` folder that is not listed in `.obsolete`, where the editor keeps
+/// uninstalled extensions until it restarts.
+pub(super) fn extension_installed_with(extensions_dir: &Path, extension_id: &str) -> bool {
     let obsolete = fs::read_to_string(extensions_dir.join(".obsolete"))
         .ok()
         .and_then(|text| serde_json::from_str::<Value>(&text).ok())
         .unwrap_or(Value::Null);
-    let prefix = format!("{EXTENSION_ID}-");
+    let prefix = format!("{}-", extension_id.to_lowercase());
     let Ok(entries) = fs::read_dir(extensions_dir) else {
         return false;
     };
