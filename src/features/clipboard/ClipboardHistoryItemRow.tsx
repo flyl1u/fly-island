@@ -48,12 +48,12 @@ export function ClipboardHistoryItemRow({
             {item.image?.thumbnailDataUrl ? (
               <img src={item.image.thumbnailDataUrl} alt="" />
             ) : (
-              <ImageIcon size={20} strokeWidth={2.1} />
+              <ImageIcon size={15} strokeWidth={2} />
             )}
           </span>
         ) : (
           <span className="clipboard-item__text-icon">
-            <ClipboardList size={17} strokeWidth={2.1} />
+            <ClipboardList size={14} strokeWidth={2} />
           </span>
         )}
         <span className="clipboard-item__body">

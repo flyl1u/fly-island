@@ -97,7 +97,7 @@ test("pages and message sources that are switched off fall back to ones still on
   assert.equal(resolveMessageSource("qqMail", none), "qqMail");
 });
 
-test("the clipboard page fits whole rows and six rows stay within the native height limit", () => {
-  assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 70);
-  assert.equal(getClipboardExpandedHeight(6), 656);
+test("the clipboard page fits whole rows and stays short by default", () => {
+  assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 50);
+  assert.equal(getClipboardExpandedHeight(4), 438);
 });
