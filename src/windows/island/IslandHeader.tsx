@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
+import { usePointerReorder } from "../../components/reorder/usePointerReorder";
+import type { PageDot } from "../../features/appearance/types";
 import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
@@ -10,6 +12,9 @@ import "./IslandHeader.css";
 type IslandHeaderProps = {
   page: IslandPage;
   features: IslandFeatures;
+  /** Order of the page dots; a drag saves a new one. */
+  pageOrder: PageDot[];
+  onPageOrderChange: (order: PageDot[]) => void;
   showTitle: boolean;
   isDetached: boolean;
   agentVisualState: AgentVisualState;
@@ -33,6 +38,8 @@ type IslandHeaderProps = {
 export function IslandHeader({
   page,
   features,
+  pageOrder,
+  onPageOrderChange,
   showTitle,
   isDetached,
   agentVisualState,
@@ -51,6 +58,15 @@ export function IslandHeader({
 }: IslandHeaderProps) {
   const t = useTranslation();
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
+  // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
+  const dots = pageOrder.filter((dot) => features[dot]);
+  const dotLabels = { todo: t.island.todoList, music: t.island.music, clipboard: t.island.clipboardHistory, shelf: t.island.shelf };
+  const reorderDots = useCallback(
+    (next: PageDot[]) => onPageOrderChange([...next, ...pageOrder.filter((dot) => !next.includes(dot))]),
+    [onPageOrderChange, pageOrder],
+  );
+  const { containerRef: dotsRef, itemProps: dotProps, draggingId: draggingDot, wasDragged: wasDotDragged } =
+    usePointerReorder(dots, reorderDots, "x");
   const agentStatusIconClassName = [
     "island__agent-status-icon",
     `island__agent-status-icon--${agentVisualState}`,
@@ -88,59 +104,27 @@ export function IslandHeader({
       <div
         className="editor-dots"
         aria-label={t.island.editor}
+        ref={(node) => { dotsRef.current = node; }}
       >
-        {features.todo && (
+        {dots.map((dot) => (
           <button
-            className={`dot-button dot-button--todo ${
-              page === "todo" ? "dot-button--active" : ""
-            }`}
+            key={dot}
+            className={[
+              "dot-button",
+              `dot-button--${dot}`,
+              page === dot ? "dot-button--active" : "",
+              draggingDot === dot ? "dot-button--dragging" : "",
+            ].filter(Boolean).join(" ")}
             type="button"
-            aria-label={t.island.todoList}
+            aria-label={dotLabels[dot]}
+            {...dotProps(dot)}
             onClick={(event) => {
               event.stopPropagation();
-              onPageChange("todo");
+              // The click that ends dragging a dot to a new place does not open its page.
+              if (!wasDotDragged()) onPageChange(dot);
             }}
           />
-        )}
-        {features.music && (
-          <button
-            className={`dot-button dot-button--music ${
-              page === "music" ? "dot-button--active" : ""
-            }`}
-            type="button"
-            aria-label={t.island.music}
-            onClick={(event) => {
-              event.stopPropagation();
-              onPageChange("music");
-            }}
-          />
-        )}
-        {features.clipboard && (
-          <button
-            className={`dot-button dot-button--clipboard ${
-              page === "clipboard" ? "dot-button--active" : ""
-            }`}
-            type="button"
-            aria-label={t.island.clipboardHistory}
-            onClick={(event) => {
-              event.stopPropagation();
-              onPageChange("clipboard");
-            }}
-          />
-        )}
-        {features.shelf && (
-          <button
-            className={`dot-button dot-button--shelf ${
-              page === "shelf" ? "dot-button--active" : ""
-            }`}
-            type="button"
-            aria-label={t.island.shelf}
-            onClick={(event) => {
-              event.stopPropagation();
-              onPageChange("shelf");
-            }}
-          />
-        )}
+        ))}
       </div>
 
       <button

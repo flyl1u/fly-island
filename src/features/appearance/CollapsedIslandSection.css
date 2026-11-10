@@ -1,0 +1,117 @@
+/* The collapsed island's priority list: rows like .settings-row, dragged by the pointer anywhere. */
+.collapsed-priority {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collapsed-priority__item {
+  position: relative;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-md) 8px var(--space-md) 14px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  border-radius: var(--radius-md, 10px);
+  transition: background 140ms ease, box-shadow 140ms ease;
+}
+
+.collapsed-priority__item + .collapsed-priority__item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 14px;
+  left: 14px;
+  height: 1px;
+  background: var(--color-white-a08);
+}
+
+.collapsed-priority__item--dragging {
+  z-index: 1;
+  cursor: grabbing;
+  background: var(--color-white-a08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+}
+
+.collapsed-priority__item--dragging::before,
+.collapsed-priority__item--dragging + .collapsed-priority__item::before {
+  opacity: 0;
+}
+
+.collapsed-priority__rank {
+  width: 16px;
+  flex: none;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.collapsed-priority__icon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.collapsed-priority__text {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.collapsed-priority__name {
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.collapsed-priority__hint {
+  overflow: hidden;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-priority__handle {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--color-text-subtle);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm, 6px);
+  cursor: inherit;
+}
+
+.collapsed-priority__handle:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+/* A step smaller on the island's own settings page, like its other rows. */
+.island-settings .collapsed-priority__item {
+  min-height: 40px;
+  padding: 6px 6px 6px 12px;
+}
+
+.island-settings .collapsed-priority__item + .collapsed-priority__item::before {
+  right: 12px;
+  left: 12px;
+}
+
+.island-settings .collapsed-priority__name {
+  font-size: 13px;
+}
+
+.island-settings .collapsed-priority__hint {
+  font-size: 11.5px;
+}

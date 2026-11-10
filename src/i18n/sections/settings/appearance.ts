@@ -23,6 +23,16 @@ export type SettingsAppearanceText = {
       done: { project: string; title: string };
     };
   };
+  /** The "Collapsed island" group: what its text shows first, and the song's cover. */
+  collapsedIsland: {
+    title: string;
+    priorityFooter: string;
+    items: Record<"agent" | "lyrics" | "todo", { name: string; hint: string }>;
+    /** The drag handle of one item; arrow keys on it move the item too. */
+    moveLabel: (name: string) => string;
+    showCover: string;
+    showCoverHint: string;
+  };
 };
 
 export const zhCN: SettingsAppearanceText = {
@@ -45,6 +55,18 @@ export const zhCN: SettingsAppearanceText = {
       done: { project: "api-server", title: "修复登录超时" },
     },
   },
+  collapsedIsland: {
+    title: "收起的岛",
+    priorityFooter: "几样同时有内容时，收起的岛显示排在最前面的那一样。拖动调整顺序。",
+    items: {
+      agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
+      lyrics: { name: "歌词", hint: "播放时的当前一句，没有歌词时显示歌名" },
+      todo: { name: "待办", hint: "进行中的待办或剩余数量" },
+    },
+    moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
+    showCover: "显示歌曲封面",
+    showCoverHint: "播放音乐时，在收起的岛上显示这首歌的封面。",
+  },
 };
 
 export const en: SettingsAppearanceText = {
@@ -66,5 +88,17 @@ export const en: SettingsAppearanceText = {
       yourTurn: { project: "notes", title: "Weekly report outline" },
       done: { project: "api-server", title: "Fix the login timeout" },
     },
+  },
+  collapsedIsland: {
+    title: "Collapsed island",
+    priorityFooter: "When several have something to show, the collapsed island shows the first. Drag to reorder.",
+    items: {
+      agent: { name: "AI Agent task", hint: "The running session's title" },
+      lyrics: { name: "Lyrics", hint: "The current line while a song plays, or its title" },
+      todo: { name: "Todos", hint: "The todo in progress, or how many are left" },
+    },
+    moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
+    showCover: "Show the song's cover",
+    showCoverHint: "While music plays, the collapsed island shows the song's cover.",
   },
 };

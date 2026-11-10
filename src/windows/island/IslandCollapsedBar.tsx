@@ -4,7 +4,10 @@ import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
+import type { CollapsedItem } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
+import { CollapsedLyric } from "../../features/media/CollapsedLyric";
+import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import { CollapsedMessageContent } from "../../features/messages/CollapsedMessageContent";
 import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 // After CollapsedMessageContent, matching the original stylesheet order.
@@ -31,6 +34,11 @@ type IslandCollapsedBarProps = {
   collapsedLabel: string;
   collapsedTaskTitle: string | null;
   collapsedTodoCount: number | null;
+  /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
+  collapsedItem: CollapsedItem | null;
+  /** The playing song's cover, or null when it is not shown. */
+  collapsedCover: string | null;
+  lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
   agentSession: AgentSession | null;
   /**
    * Agent sessions still working, shown where the tuck dot was; null while the AI Agent switch
@@ -66,6 +74,9 @@ export function IslandCollapsedBar({
   collapsedLabel,
   collapsedTaskTitle,
   collapsedTodoCount,
+  collapsedItem,
+  collapsedCover,
+  lyricsSettings,
   agentSession,
   agentSessionCount,
   mediaState,
@@ -86,8 +97,10 @@ export function IslandCollapsedBar({
     "island__pulse",
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
-  // While the island names a running agent, opening it shows the Agent page.
-  const openTarget: IslandPage = agentSession ? "agents" : page;
+  // Opening the island shows the page of what it names: the Agent page for a running agent,
+  // the music page for a lyric line.
+  const shownAgent = collapsedItem === "agent" ? agentSession : null;
+  const openTarget: IslandPage = shownAgent ? "agents" : collapsedItem === "lyrics" ? "music" : page;
 
   return (
     <div
@@ -132,6 +145,7 @@ export function IslandCollapsedBar({
         }}
       >
         <span className={pulseClassName} />
+        {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
         <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
           {quotaAlert ? (
             <QuotaAlertPopup alert={quotaAlert} />
@@ -139,24 +153,27 @@ export function IslandCollapsedBar({
           {showCollapsedText && showTitle && (
             <span className="island__brand">fly-island</span>
           )}
-          {showCollapsedText && agentSession && (
-            <span className="island__agent-session" key={`${agentSession.label}:${agentSession.title}`}>
+          {showCollapsedText && shownAgent && (
+            <span className="island__agent-session" key={`${shownAgent.label}:${shownAgent.title}`}>
               {showTitle && <span className="island__agent-session-separator">·</span>}
-              {agentSession.provider ? (
-                <AgentProviderIcon provider={agentSession.provider} size={16} />
+              {shownAgent.provider ? (
+                <AgentProviderIcon provider={shownAgent.provider} size={16} />
               ) : (
                 <Bot className="island__agent-session-bot" size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
               )}
-              <span className="island__agent-session-title">{agentSession.title}</span>
+              <span className="island__agent-session-title">{shownAgent.title}</span>
             </span>
           )}
-          {showCollapsedText && !agentSession && collapsedTaskTitle && (
+          {showCollapsedText && collapsedItem === "lyrics" && (
+            <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
+          )}
+          {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
             <span className="island__active-task" key={collapsedTaskTitle}>
               {showTitle ? "· " : ""}
               {collapsedTaskTitle}
             </span>
           )}
-          {showCollapsedText && !agentSession && !collapsedTaskTitle && collapsedTodoCount !== null && (
+          {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (
             <span className="island__todo-count">
               {showTitle ? "· " : ""}
               {t.island.pendingTodos(collapsedTodoCount)}

@@ -119,6 +119,17 @@
   outline-offset: 4px;
 }
 
+/* A dot being dragged to another place in the row lifts a little; the others make way. */
+.dot-button--dragging {
+  z-index: 1;
+  cursor: grabbing;
+  transform: scale(1.45);
+}
+
+.dot-button {
+  touch-action: none;
+}
+
 .dot-button--todo {
   background: var(--color-accent);
   box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);

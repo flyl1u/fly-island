@@ -1,7 +1,8 @@
 // Reading saved settings, part 3 (normalizeSettings in settings.ts): behaviour and modules.
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
+import { normalizeOrder } from "../../utils/order.ts";
+import { COLLAPSED_ITEMS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
@@ -23,5 +24,8 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     shelfAutoCleanupDays: oneOf(SHELF_CLEANUP_DAYS, settings?.shelfAutoCleanupDays, DEFAULT_SETTINGS.shelfAutoCleanupDays),
     ...normalizeLyricsSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
+    collapsedPriority: normalizeOrder(settings?.collapsedPriority, COLLAPSED_ITEMS),
+    collapsedShowCover: settings?.collapsedShowCover === true,
+    pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),
   } satisfies Partial<IslandSettings>;
 }

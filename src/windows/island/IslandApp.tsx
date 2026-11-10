@@ -65,13 +65,16 @@ export function IslandApp() {
   });
   const { todos, activeTodoId, todoPageMode, notebookProps } = useIslandTodos({ settings, collapseIsland });
 
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedIslandWidth } =
+  const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
+  const collapsedCover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
+      { lyricsPlaying: songPlaying, coverShown: Boolean(collapsedCover) },
     );
   useIslandTucking({
     settings,
@@ -188,6 +191,11 @@ export function IslandApp() {
         showCollapsedText={settings.showCollapsedText}
         collapsedTaskTitle={collapsedTaskTitle}
         collapsedTodoCount={collapsedTodoCount}
+        collapsedItem={collapsedItem}
+        collapsedCover={collapsedCover}
+        lyricsSettings={settings}
+        pageOrder={settings.pageOrder}
+        onPageOrderChange={(pageOrder) => setSettings({ ...settings, pageOrder })}
         agentSession={agentSession}
         activeAgentSessionCount={activeAgentSessionCount}
         mediaState={media.mediaState}
