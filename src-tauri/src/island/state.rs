@@ -63,11 +63,15 @@ impl MonitorFollow {
     }
 }
 
+/// Exponent of the squircle corner: CSS superellipse(k) draws |x|^(2^k) + |y|^(2^k) = 1.
+const SQUIRCLE_EXPONENT: f64 = 2.462_288_826_689_833; // 2^1.3
+
 /// The island's corner shape from the appearance settings, as CSS draws it with `corner-shape`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CornerShape {
     Round,
-    /// `corner-shape: squircle`, the superellipse |x|^4 + |y|^4 = r^4.
+    /// The island's soft squircle, CSS `corner-shape: superellipse(1.3)` (ISLAND_SQUIRCLE in
+    /// src/features/appearance/cornerShape.ts): |x|^n + |y|^n = r^n with n = 2^1.3.
     Squircle,
 }
 
@@ -85,7 +89,10 @@ impl CornerShape {
     pub(super) fn contains(self, dx: f64, dy: f64, radius: f64) -> bool {
         match self {
             Self::Round => dx * dx + dy * dy <= radius * radius,
-            Self::Squircle => dx.powi(4) + dy.powi(4) <= radius.powi(4),
+            Self::Squircle => {
+                dx.abs().powf(SQUIRCLE_EXPONENT) + dy.abs().powf(SQUIRCLE_EXPONENT)
+                    <= radius.powf(SQUIRCLE_EXPONENT)
+            }
         }
     }
 }
@@ -125,13 +132,14 @@ impl IslandWindowState {
         self.mode.corner_radius() * self.corner_radius_factor()
     }
 
+    /// Flat at the top edge; away from it the island floats, rounded evenly all round
+    /// (`.island--detached` in IslandShell.css).
     pub(super) fn top_corner_radius(self) -> f64 {
-        let radius = match (self.top_attached, self.mode) {
-            (true, _) => 0.0,
-            (false, IslandMode::Collapsed) => 14.0,
-            (false, IslandMode::Expanded) => 22.0,
-        };
-        radius * self.corner_radius_factor()
+        if self.top_attached {
+            0.0
+        } else {
+            self.bottom_corner_radius()
+        }
     }
 
     pub(super) fn active_scale(self) -> f64 {

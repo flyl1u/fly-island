@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
 import { inkOn } from "../../utils/color";
@@ -24,7 +25,7 @@ export function getIslandStageStyle(
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
     "--island-corner-radius-size": settings.islandCornerRadius,
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
-    "--island-corner-shape": settings.islandCornerShape,
+    "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--task-text-color": settings.taskTextColor,
     "--island-pulse-color": settings.pulseColor,
     "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),

@@ -8,8 +8,11 @@ export const AGENT_SESSION_HOURS = [1, 2, 6, 24] as const;
 /** How long a page opened for an agent alert stays, in seconds. */
 export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
 
-// Bottom corner radius of the expanded island; every other island radius scales from it.
-export const DEFAULT_ISLAND_CORNER_RADIUS = 16;
+// Bottom corner radius of the expanded island; every other island radius scales from it
+// (IslandShell.css). Large on purpose: with the soft squircle (cornerShape.ts) this is what makes
+// the island read as an island rather than a box. The collapsed bar's corners come out at 23px
+// of its 38px height.
+export const DEFAULT_ISLAND_CORNER_RADIUS = 32;
 export const DEFAULT_HOVER_EXPAND_DELAY_MS = 0;
 export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 0;
 export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;

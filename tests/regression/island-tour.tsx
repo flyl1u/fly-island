@@ -1,0 +1,175 @@
+// pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
+// behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
+// nolyrics|none picks what the player reports, ?empty=1 empties every list, ?lang=en switches the
+// interface, ?detached=1 floats the island below the top edge. With ?test=1 it opens each page and
+// checks that nothing sticks out of the island's rounded shape.
+import { act, StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
+import "../../src/styles/tokens.css";
+import "../../src/styles/base.css";
+import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
+import { IslandApp } from "../../src/windows/island/IslandApp";
+import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
+import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
+
+const query = new URLSearchParams(location.search);
+const automated = query.has("test");
+const empty = query.has("empty");
+const media = (query.get("media") ?? "playing") as TourMedia;
+Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
+
+// The tour writes the island's own keys; whatever the browser profile had comes back on leaving.
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const restore = () => {
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const [key, value] of original) localStorage.setItem(key, value);
+};
+window.addEventListener("beforeunload", restore);
+for (const key of original.keys()) localStorage.removeItem(key);
+
+const today = new Date();
+const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
+localStorage.setItem("focusd-island-current-date", date);
+localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
+localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
+
+let revision = 0;
+mockIPC((command, payload) => {
+  const args = (payload ?? {}) as Record<string, unknown>;
+  switch (command) {
+    case "get_launch_at_startup": return false;
+    case "get_default_todo_save_directory": return "D:\\Notes";
+    case "get_clipboard_history": return empty ? { ...TOUR_CLIPBOARD, items: [] } : TOUR_CLIPBOARD;
+    case "get_file_shelf": return { items: empty ? [] : TOUR_SHELF };
+    case "list_agent_sessions": return empty ? [] : TOUR_SESSIONS;
+    case "agent_sessions_in_front": return [];
+    case "agent_approval_pending": return [];
+    case "list_plugin_views": return { views: [], status: [] };
+    case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: empty ? "idle" : "running", updatedAt: Date.now() }, updatedAt: Date.now(), statusPath: "" };
+    case "get_media_state":
+    case "media_play_pause":
+    case "media_next":
+    case "media_previous": return tourMediaState(empty ? "none" : media);
+    case "get_audio_level": return { active: media !== "paused" && media !== "none" && !empty, peak: 0.4 + Math.random() * 0.4, updatedAt: Date.now() };
+    case "get_lyrics": return (args.query as { title?: string } | undefined)?.title === "晴天" ? { source: "lrclib", lrc: TOUR_LRC } : null;
+    case "get_foreground_fullscreen": return { active: false, onIslandMonitor: false };
+    case "set_island_interaction": return "disabled";
+    case "get_island_top_attachment": return !query.has("detached");
+    case "set_qq_notifications_enabled":
+    case "get_qq_notification_state": return { revision: ++revision, enabled: true, status: "listening", items: empty ? [] : TOUR_QQ_ITEMS, error: null };
+    case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: false, lastAttentionAt: null, error: null };
+    case "get_qq_mail_state": return empty ? [] : TOUR_MAIL;
+    case "has_translation_secret": return false;
+    case "set_translation_shortcut": return args.shortcut;
+    case "read_translation_clipboard": return "";
+    case "updater_configured": return false;
+    case "get_agent_hooks_state": return { claudeCode: "installed", codex: "installed" };
+    case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
+    case "plugin:window|is_visible": return true;
+    default: return null;
+  }
+}, { shouldMockEvents: true });
+mockWindows("main");
+// As main.tsx does: the attached / detached look follows the (mocked) native answer.
+trackIslandTopEdge();
+
+const root = createRoot(document.getElementById("root")!);
+const mount = () => root.render(<StrictMode><I18nProvider><IslandApp /></I18nProvider></StrictMode>);
+
+const results = document.getElementById("results")!;
+const messages: string[] = [];
+const check = (condition: unknown, message: string) => {
+  if (!condition) throw new Error(message);
+  messages.push(`PASS ${message}`);
+};
+const settle = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
+const click = async (selector: string) => {
+  const element = document.querySelector<HTMLElement>(selector);
+  if (!element) throw new Error(`Missing ${selector}`);
+  await act(async () => { element.click(); });
+  // The island's height and radius animate for 560ms; measure once they have settled.
+  await settle(700);
+};
+
+/** Elements of the open page that reach outside the island's box, or past its rounded bottom corners. */
+function strays() {
+  const island = document.querySelector<HTMLElement>(".island")!;
+  const box = island.getBoundingClientRect();
+  const radius = Number.parseFloat(getComputedStyle(island).borderBottomLeftRadius) || 0;
+  const out: string[] = [];
+  for (const element of document.querySelectorAll<HTMLElement>(".island__content > *, .island__content > * > *")) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    const name = element.className.toString().split(" ")[0] || element.tagName;
+    if (rect.left < box.left - 0.5 || rect.right > box.right + 0.5 || rect.bottom > box.bottom + 0.5) out.push(`${name} outside`);
+    // A box whose bottom corner sits inside the island's corner square must itself be rounded enough.
+    const inCornerX = Math.min(rect.left - box.left, box.right - rect.right);
+    const inCornerY = box.bottom - rect.bottom;
+    if (inCornerX < radius && inCornerY < radius) {
+      // Squircle |x|^4 + |y|^4 <= r^4, measured from the island corner's centre.
+      const dx = radius - inCornerX;
+      const dy = radius - inCornerY;
+      const own = Number.parseFloat(getComputedStyle(element).borderBottomLeftRadius) || 0;
+      // The element's own corner pulls its outermost point in by about 0.16 of its radius on each axis.
+      const pull = own * 0.16;
+      if ((dx - pull) ** 4 + (dy - pull) ** 4 > radius ** 4 && getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)") out.push(`${name} past the corner`);
+    }
+  }
+  return out;
+}
+
+if (!automated) {
+  mount();
+  results.remove();
+} else {
+  try {
+    await act(async () => { mount(); });
+    await settle(300);
+    const island = () => document.querySelector<HTMLElement>(".island")!;
+    const collapsed = island().getBoundingClientRect();
+    const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
+    check(collapsed.height === 38 && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
+      "收起的岛贴着顶边：上边是平的，下面两个角是大圆角");
+    const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
+    const barItems = [...bar.querySelectorAll<HTMLElement>("button, .island__pulse")].map((item) => item.getBoundingClientRect()).filter((rect) => rect.width > 0);
+    check(barItems.every((rect) => rect.left >= collapsed.left + 10 && rect.right <= collapsed.right - 10), "收起的岛上的内容离两侧圆角有距离");
+
+    await click(".island__open-button");
+    check(island().classList.contains("island--expanded"), "点击后展开");
+    check(Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius) > collapsedRadius, "展开后的圆角比收起时更大");
+    const pages: Array<[string, string]> = [
+      [".dot-button--todo", "待办"],
+      [".dot-button--music", "音乐"],
+      [".dot-button--clipboard", "剪贴板"],
+      [".dot-button--shelf", "文件中转"],
+      [".island__agent-button", "AI Agent"],
+      [".island-message-button", "消息"],
+      [".island-translate-button", "翻译"],
+      [".island-settings-button", "设置"],
+    ];
+    for (const [selector, name] of pages) {
+      await click(selector);
+      const found = strays();
+      check(found.length === 0, `${name}页：内容都在岛的圆角形状里${found.length ? `（${found.join("、")}）` : ""}`);
+      // Pages may reach a little into the island's 20px side padding (the Agent list does, for
+      // its hover highlight), never closer than 8px to the island's edge.
+      const edge = island().getBoundingClientRect();
+      const tight = [...document.querySelectorAll<HTMLElement>(".island__content *")].filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && getComputedStyle(element).visibility !== "hidden" &&
+          (rect.left < edge.left + 8 || rect.right > edge.right - 8) && !element.closest("[aria-hidden='true']");
+      });
+      check(tight.length === 0, `${name}页：没有内容挤到岛的边缘${tight.length ? `（${tight[0].className}）` : ""}`);
+    }
+    results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
+    results.dataset.result = "passed";
+  } catch (error) {
+    results.textContent = `${messages.join("\n")}\nFAIL ${String(error)}`;
+    results.dataset.result = "failed";
+  } finally {
+    restore();
+  }
+}

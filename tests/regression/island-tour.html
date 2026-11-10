@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>灵动岛全览</title>
+    <style>
+      /* A fake desktop behind the island: a light window on the left, a dark one on the right. */
+      html body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(90deg, #f3f4f6 0 50%, #1c2230 50% 100%) top / 100% 46px no-repeat,
+          linear-gradient(90deg, #ffffff 0 50%, #10141d 50% 100%);
+      }
+      #results { position: fixed; bottom: 8px; left: 12px; max-height: 40vh; overflow: auto; margin: 0; padding: 8px 12px; font: 12px/1.6 monospace; color: #d3eddf; background: rgba(10, 14, 20, 0.86); border-radius: 8px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <pre id="results" role="status">准备检查…</pre>
+    <script type="module" src="./island-tour.tsx"></script>
+  </body>
+</html>
