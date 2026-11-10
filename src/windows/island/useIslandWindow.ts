@@ -121,16 +121,30 @@ export function useIslandWindow({
     return () => query.removeEventListener("change", updateReducedMotion);
   }, []);
 
+  // One native call at a time, and only the latest state once it returns. An Agent page that
+  // opens measures its card row several times in a few frames; sending each height as its own
+  // window resize queued them up on the native side and stalled the expansion.
+  const interactionQueue = useRef<{ running: boolean; next: (() => Promise<void>) | null }>({ running: false, next: null });
   useEffect(() => {
-    void syncNativeInteraction(
+    const queue = interactionQueue.current;
+    queue.next = () => syncNativeInteraction(
       mode,
       settings,
       expandedIslandHeight,
       collapsedIslandWidth,
       isTucked,
-    ).finally(() => {
+    );
+    if (queue.running) return;
+    queue.running = true;
+    void (async () => {
+      while (queue.next) {
+        const send = queue.next;
+        queue.next = null;
+        await send();
+      }
+      queue.running = false;
       void showReadyIsland();
-    });
+    })();
     // Lists exactly the settings fields syncNativeInteraction sends, so unrelated
     // settings changes do not cost a native round trip (expansion performance).
     // eslint-disable-next-line react-hooks/exhaustive-deps
