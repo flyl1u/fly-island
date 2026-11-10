@@ -13,9 +13,9 @@ const SEARCH: &str = "http://music.163.com/api/search/get/web";
 const LYRIC: &str = "https://music.163.com/api/song/lyric";
 const REFERER: &str = "https://music.163.com/";
 
-/// The id of the search result that is the playing track; the closest length wins, or the first
-/// result when the playing length is not known.
-pub(super) fn best_song(search: &Value, title: &str, artist: &str, duration_ms: i64) -> Option<u64> {
+/// The id and length of the search result that is the playing track; the closest length wins,
+/// or the first result when the playing length is not known.
+pub(super) fn best_song(search: &Value, title: &str, artist: &str, duration_ms: i64) -> Option<(u64, i64)> {
     search["result"]["songs"]
         .as_array()?
         .iter()
@@ -28,7 +28,7 @@ pub(super) fn best_song(search: &Value, title: &str, artist: &str, duration_ms: 
         .filter_map(|(id, length)| Some((id?, length)))
         .enumerate()
         .min_by_key(|(index, (_, length))| if duration_ms > 0 { (duration_ms - length).abs() } else { *index as i64 })
-        .map(|(_, (id, _))| id)
+        .map(|(_, found)| found)
 }
 
 /// The song id the player gave (`NCM-<id>`), if any.
@@ -65,21 +65,21 @@ pub(super) fn lyrics_of(answer: &Value, title: &str) -> Option<FoundLyrics> {
 /// Synced lyrics, with a translation when NetEase has one. `Ok(None)` when it has none.
 pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64, player_id: Option<&str>) -> Result<Option<FoundLyrics>, String> {
     let client = browser_client()?;
-    let id = match track_id(player_id) {
-        Some(id) => id,
+    let (id, length) = match track_id(player_id) {
+        Some(id) => (id, 0),
         None => {
             let keyword = format!("{title} {artist}").trim().to_string();
             let query = [("s", keyword), ("type", "1".into()), ("offset", "0".into()), ("limit", "20".into())];
             let search = get_json(&client, SEARCH, &query).await?;
-            let Some(id) = best_song(&search, title, artist, duration_ms) else {
+            let Some(found) = best_song(&search, title, artist, duration_ms) else {
                 return Ok(None);
             };
-            id
+            found
         }
     };
     let query = [("id", id.to_string()), ("lv", "-1".into()), ("kv", "-1".into()), ("tv", "-1".into())];
     let answer = get_json(&client, LYRIC, &query).await?;
-    Ok(lyrics_of(&answer, title))
+    Ok(lyrics_of(&answer, title).map(|found| found.with_duration(length)))
 }
 
 #[cfg(test)]
@@ -94,8 +94,8 @@ mod tests {
             { "id": 2, "name": "余香", "artists": [{ "name": "张小九" }, { "name": "远Z" }], "duration": 228_816 },
             { "id": 3, "name": "余香", "artists": [{ "name": "张小九" }], "duration": 246_019 },
         ] } });
-        assert_eq!(best_song(&search, "余香", "张小九", 246_000), Some(3));
-        assert_eq!(best_song(&search, "余香", "张小九", 0), Some(2));
+        assert_eq!(best_song(&search, "余香", "张小九", 246_000), Some((3, 246_019)));
+        assert_eq!(best_song(&search, "余香", "张小九", 0), Some((2, 228_816)));
         assert_eq!(best_song(&search, "七里香", "周杰伦", 0), None);
         assert_eq!(track_id(Some("NCM-487885426")), Some(487_885_426));
         assert_eq!(track_id(Some("QQ-123")), None);

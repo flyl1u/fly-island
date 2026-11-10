@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use serde::Deserialize;
 
+use super::found::FoundLyrics;
 use super::matching::{clean_title, close_duration, named_in_simplified, same_artist, traditional_chars};
 use crate::system::updater::get_updater_proxy;
 
@@ -27,10 +28,10 @@ pub(super) struct Record {
     synced_lyrics: Option<String>,
 }
 
-/// The synced lyrics of the search result that is the playing track: same cleaned title, a
-/// shared artist and a close duration. A track named in simplified Chinese prefers lyrics
-/// written in simplified characters; then the closest duration wins. `None` when none is.
-pub(super) fn best_match(records: &[Record], title: &str, artist: &str, duration_ms: i64) -> Option<String> {
+/// The synced lyrics and length of the search result that is the playing track: same cleaned
+/// title, a shared artist and a close duration. A track named in simplified Chinese prefers
+/// lyrics written in simplified characters; then the closest duration wins. `None` when none is.
+pub(super) fn best_match(records: &[Record], title: &str, artist: &str, duration_ms: i64) -> Option<(String, i64)> {
     let simplified = named_in_simplified(title, artist);
     let title = clean_title(title);
     records
@@ -42,7 +43,7 @@ pub(super) fn best_match(records: &[Record], title: &str, artist: &str, duration
             let traditional = simplified && is_traditional(record.synced_lyrics.as_deref().unwrap_or_default());
             (traditional, (duration_ms - (record.duration * 1000.0) as i64).abs())
         })
-        .and_then(|record| record.synced_lyrics.clone())
+        .and_then(|record| Some((record.synced_lyrics.clone()?, (record.duration * 1000.0) as i64)))
 }
 
 /// Lyrics with more than a couple of traditional characters are taken as written in traditional.
@@ -75,7 +76,7 @@ async fn get_json<T: for<'de> Deserialize<'de>>(client: &reqwest::Client, path: 
 
 /// Synced lyrics for the track: an exact lookup when the duration is known, then a search.
 /// `Ok(None)` when LRCLIB has none; `Err` when it could not be asked.
-pub(super) async fn fetch(title: &str, artist: &str, album: &str, duration_ms: i64) -> Result<Option<String>, String> {
+pub(super) async fn fetch(title: &str, artist: &str, album: &str, duration_ms: i64) -> Result<Option<FoundLyrics>, String> {
     let client = client()?;
     let mut exact = None;
     if duration_ms > 0 && !artist.is_empty() {
@@ -89,7 +90,7 @@ pub(super) async fn fetch(title: &str, artist: &str, album: &str, duration_ms: i
         exact = record.and_then(|record| record.synced_lyrics).filter(|lyrics| !lyrics.trim().is_empty());
         // Traditional lyrics for a track named in simplified: a search may find a simplified copy.
         if exact.as_deref().is_some_and(|lyrics| !named_in_simplified(title, artist) || !is_traditional(lyrics)) {
-            return Ok(exact);
+            return Ok(exact.map(|lrc| plain(lrc, duration_ms)));
         }
     }
     let mut query = vec![("track_name", clean_title(title))];
@@ -99,9 +100,15 @@ pub(super) async fn fetch(title: &str, artist: &str, album: &str, duration_ms: i
     let records: Vec<Record> = get_json(&client, "search", &query).await?.unwrap_or_default();
     let found = best_match(&records, title, artist, duration_ms);
     Ok(match (found, exact) {
-        (Some(found), Some(exact)) if is_traditional(&found) => Some(exact),
-        (found, exact) => found.or(exact),
+        (Some((found, _)), Some(exact)) if is_traditional(&found) => Some(plain(exact, duration_ms)),
+        (Some((found, length)), _) => Some(plain(found, length)),
+        (None, exact) => exact.map(|lrc| plain(lrc, duration_ms)),
     })
+}
+
+/// LRCLIB's lyrics, which never come with a translation.
+fn plain(lrc: String, duration_ms: i64) -> FoundLyrics {
+    FoundLyrics { lrc, translation: None, duration_ms: None }.with_duration(duration_ms)
 }
 
 #[cfg(test)]
@@ -121,7 +128,7 @@ mod tests {
             record("晴天", "周杰伦", 269.5, Some("[00:01.00]closest")),
             record("晴天", "周杰伦", 269.0, None),
         ];
-        assert_eq!(best_match(&records, "晴天", "周杰伦", 269_000).as_deref(), Some("[00:01.00]closest"));
+        assert_eq!(best_match(&records, "晴天", "周杰伦", 269_000), Some(("[00:01.00]closest".to_string(), 269_500)));
         assert_eq!(best_match(&records, "七里香", "周杰伦", 269_000), None);
         assert_eq!(best_match(&records, "晴天", "周杰伦", 200_000), None);
     }
@@ -132,10 +139,10 @@ mod tests {
             record("余香", "张小九", 230.0, Some("[00:31.50]劃一根火柴 將慵倦的夜點亮 吐出一縷煙 飄向")),
             record("余香", "张小九", 232.0, Some("[00:31.50]划一根火柴 将慵倦的夜点亮 吐出一缕烟 飘向")),
         ];
-        assert!(best_match(&records, "余香", "张小九", 0).is_some_and(|lyrics| lyrics.contains("划一根")));
-        assert!(best_match(&records, "余香", "张小九", 230_000).is_some_and(|lyrics| lyrics.contains("划一根")));
+        assert!(best_match(&records, "余香", "张小九", 0).is_some_and(|(lyrics, _)| lyrics.contains("划一根")));
+        assert!(best_match(&records, "余香", "张小九", 230_000).is_some_and(|(lyrics, _)| lyrics.contains("划一根")));
         // Only traditional lyrics exist: they are still used.
-        assert!(best_match(&records[..1], "余香", "张小九", 0).is_some_and(|lyrics| lyrics.contains("劃")));
+        assert!(best_match(&records[..1], "余香", "张小九", 0).is_some_and(|(lyrics, _)| lyrics.contains("劃")));
     }
 
     #[test]

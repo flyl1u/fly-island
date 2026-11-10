@@ -12,6 +12,16 @@ use crate::system::updater::get_updater_proxy;
 pub(super) struct FoundLyrics {
     pub(super) lrc: String,
     pub(super) translation: Option<String>,
+    /// The song's length as the source lists it, when known. Players that report no length
+    /// (NetEase Cloud Music) get their progress bar from it.
+    pub(super) duration_ms: Option<i64>,
+}
+
+impl FoundLyrics {
+    /// The same lyrics with the source's length for the song; a length of 0 says nothing.
+    pub(super) fn with_duration(self, duration_ms: i64) -> Self {
+        Self { duration_ms: (duration_ms > 0).then_some(duration_ms), ..self }
+    }
 }
 
 /// Words that start a credit line, before a colon: "作词：卡夫", "Composer: ...".
@@ -80,7 +90,7 @@ pub(super) fn from_lines(lines: &[(u64, String)], translations: Option<&[String]
         }
     }
     let sung = lrc.lines().any(|line| plain_text(line).len() > 10);
-    sung.then(|| FoundLyrics { lrc, translation: (!translated.is_empty()).then_some(translated) })
+    sung.then(|| FoundLyrics { lrc, translation: (!translated.is_empty()).then_some(translated), duration_ms: None })
 }
 
 /// Timed lines of an LRC text (the first time tag of each line), for sources that send LRC.

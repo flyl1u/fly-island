@@ -39,9 +39,10 @@ test("a track is looked up once, whatever small differences in its reported leng
   assert.equal(trackKey({ title: null, artist: null, durationMs: 0 }), null);
 });
 
-test("lyrics settings start offline; the folder and global offset are no longer read back", () => {
+test("lyrics are looked up online unless turned off; the folder and global offset are no longer read back", () => {
   const settings = normalizeSettings({});
-  assert.equal(settings.lyricsOnline, false);
+  assert.equal(settings.lyricsOnline, true);
+  assert.equal(normalizeSettings({ lyricsOnline: false }).lyricsOnline, false);
   assert.equal(settings.lyricsFolder, "");
   assert.equal(normalizeSettings({ lyricsOnline: true, lyricsChinese: true }).lyricsChinese, true);
   assert.equal(normalizeSettings({ lyricsOffsetMs: -1200 }).lyricsOffsetMs, 0);

@@ -10,9 +10,10 @@ const TICK_MS = 500;
 
 /**
  * A thin bar with the elapsed time under its left end and the time left under its right end. It ticks on its own between Windows' readings,
- * so only this leaf re-renders while a song plays. Hidden when the player reports no length.
+ * so only this leaf re-renders while a song plays. `durationMs` is the player's length, or the
+ * lyrics source's when the player reports none; hidden when neither is known.
  */
-export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
+export function MusicProgress({ mediaState, durationMs }: { mediaState: MediaState; durationMs: number }) {
   const t = useTranslation();
   const [now, setNow] = useState(() => Date.now());
   const playing = mediaState.playbackStatus === "playing";
@@ -24,9 +25,9 @@ export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
     return () => window.clearInterval(timer);
   }, [playing, mediaState.updatedAt]);
 
-  if (mediaState.durationMs <= 0) return null;
-  const position = playbackPosition(mediaState, now);
-  const ratio = Math.min(1, Math.max(0, position / mediaState.durationMs));
+  if (durationMs <= 0) return null;
+  const position = Math.min(durationMs, playbackPosition(mediaState, now));
+  const ratio = Math.min(1, Math.max(0, position / durationMs));
   const style = { "--music-progress": `${(ratio * 100).toFixed(2)}%` } as CSSProperties;
 
   return (
@@ -36,13 +37,13 @@ export function MusicProgress({ mediaState }: { mediaState: MediaState }) {
         role="progressbar"
         aria-label={t.music.progress}
         aria-valuemin={0}
-        aria-valuemax={Math.round(mediaState.durationMs / 1000)}
+        aria-valuemax={Math.round(durationMs / 1000)}
         aria-valuenow={Math.round(position / 1000)}
       >
         <span className="music-progress__fill" />
       </div>
       <span className="music-progress__time">{formatTrackTime(position)}</span>
-      <span className="music-progress__time music-progress__time--left">−{formatTrackTime(mediaState.durationMs - position)}</span>
+      <span className="music-progress__time music-progress__time--left">−{formatTrackTime(durationMs - position)}</span>
     </div>
   );
 }
