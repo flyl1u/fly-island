@@ -72,6 +72,12 @@ export type AgentText = {
     fromCodex: string;
     /** "3 分钟前更新 · 来自 claude-hud", on the line's hover card. */
     updated: (ago: string, source: string) => string;
+    /** One window on the quota rings' card: "5 小时 已用 4%". */
+    used: (window: string, percent: number) => string;
+    /** Which ring is which, first on the card. */
+    ringsLegend: string;
+    /** The rings' accessible name: the agent's usage, then each window's summary. */
+    rings: (label: string, windows: string[]) => string;
   };
   /** The card for a permission request an agent waits on (roadmap B6 phase 2). */
   approval: {
@@ -168,6 +174,9 @@ export const zhCN: AgentText = {
     fromMagpie: "来自 magpie",
     fromCodex: "来自 Codex 会话记录",
     updated: (ago, source) => `${ago} · ${source}`,
+    used: (window, percent) => `${window} 已用 ${percent}%`,
+    ringsLegend: "外圈 5 小时 · 内圈 7 天",
+    rings: (label, windows) => [label, ...windows].join("；"),
   },
   approval: {
     label: (tool) => `请求使用 ${tool}`,
@@ -262,6 +271,9 @@ export const en: AgentText = {
     fromMagpie: "from magpie",
     fromCodex: "from Codex's session logs",
     updated: (ago, source) => `${ago} · ${source}`,
+    used: (window, percent) => `${window} ${percent}% used`,
+    ringsLegend: "Outer ring 5h · inner ring 7d",
+    rings: (label, windows) => [label, ...windows].join("; "),
   },
   approval: {
     label: (tool) => `Wants to use ${tool}`,

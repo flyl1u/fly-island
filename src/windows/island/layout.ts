@@ -101,7 +101,7 @@ const AGENT_ROWS: Record<AgentSessionView, { height: number; gap: number }> = {
   cards: { height: 62, gap: 6 },
   compact: { height: 34, gap: 4 },
 };
-// A usage line above the list (one per agent that reports usage): 22 plus 6 below it (AgentUsageBar.css).
+// The usage row above the list (both agents' quota rings): 22 plus 6 below it (AgentQuotaRings.css).
 const AGENT_USAGE_HEIGHT = 28;
 
 /**

@@ -1,0 +1,84 @@
+/* One row above the session list with each agent's quota rings. Its height is part of the Agent
+   page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts, AGENT_USAGE_HEIGHT:
+   22 plus 6 below): keep the two in step. */
+.agent-quota {
+  flex: none;
+  height: 22px;
+  margin: 0 6px 6px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.agent-quota__agent {
+  /* The agent's colour (Anthropic's clay, Codex's blue) pulled a quarter of the way toward the
+     text colour: lighter on a dark island (clay becomes about #e5a385), deeper on a light one. */
+  --quota-color: color-mix(in srgb, var(--quota-base) 75%, rgb(var(--agent-ink, 241, 240, 246)));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  border-radius: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  outline: none;
+}
+
+.agent-quota__agent--claudeCode {
+  --quota-base: #d97757;
+}
+
+.agent-quota__agent--codex {
+  --quota-base: #4f8ff7;
+}
+
+.agent-quota__agent--stale {
+  opacity: 0.6;
+}
+
+.agent-quota__agent:focus-visible {
+  box-shadow: 0 0 0 2px rgba(var(--agent-ink, 241, 240, 246), 0.35);
+}
+
+.agent-quota__values {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.agent-quota__values b {
+  color: var(--quota-color);
+  font-weight: 600;
+}
+
+.quota-rings {
+  flex: none;
+  display: block;
+  overflow: visible;
+}
+
+.quota-rings__track,
+.quota-rings__fill {
+  fill: none;
+  stroke-width: 3;
+}
+
+.quota-rings__track {
+  stroke: var(--quota-color);
+  stroke-opacity: 0.2;
+}
+
+.quota-rings__fill {
+  stroke: var(--quota-color);
+  stroke-linecap: round;
+}
+
+/* The hover card's wrapper sits in the row like the rings it wraps. */
+.island-hover-card__anchor.agent-quota__hover {
+  display: inline-flex;
+  flex: none;
+}
