@@ -22,7 +22,7 @@
   min-height: 0;
   display: grid;
   align-content: start;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-color: rgba(204, 195, 228, 0.28) transparent;

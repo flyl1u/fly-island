@@ -18,7 +18,8 @@ export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;
 // Tallest panel before the todo list and other long pages scroll. The default is the
 // height the todo page reached before this was a setting (six rows).
 export const DEFAULT_MAX_PANEL_HEIGHT = 490;
-export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 6;
+// Rows the clipboard page shows before it scrolls: a short page, the rest a scroll away.
+export const DEFAULT_CLIPBOARD_VISIBLE_ROWS = 4;
 export const DEFAULT_AGENT_VISIBLE_ROWS = 2;
 export const MIN_AGENT_VISIBLE_ROWS = 2;
 // Five sessions is the tallest Agent page the native window accepts (627px of 656px).

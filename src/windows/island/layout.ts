@@ -13,9 +13,9 @@ export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
 // then the panel's padding, title, tabs, search and their gaps (158).
 const CLIPBOARD_CHROME_HEIGHT = 244;
-// One history row (62) plus the gap below it.
-const CLIPBOARD_ROW_PITCH = 70;
-const CLIPBOARD_ROW_GAP = 8;
+// One history row (44, ClipboardHistoryItemRow.css) plus the gap below it.
+const CLIPBOARD_ROW_PITCH = 50;
+const CLIPBOARD_ROW_GAP = 6;
 export const TODO_ROW_HEIGHT = 46;
 export const TODO_GROW_START_ROWS = 2;
 /** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
