@@ -11,6 +11,7 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
+import { collapsedOpenPage } from "./collapsedOpenPage";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -166,7 +167,7 @@ export function IslandShell({
       aria-label={collapsedLabel}
       onClick={(event) => {
         if (!isExpanded && event.target === event.currentTarget) {
-          onOpenPage(agentSession ? "agents" : page);
+          onOpenPage(collapsedOpenPage(collapsedItem, Boolean(agentSession), page));
         }
       }}
       onPointerMove={handleGlassPointerMove}

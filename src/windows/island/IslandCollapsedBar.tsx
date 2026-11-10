@@ -18,6 +18,7 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
+import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
@@ -101,10 +102,8 @@ export function IslandCollapsedBar({
     "island__pulse",
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
-  // Opening the island shows the page of what it names: the Agent page for a running agent,
-  // the music page for a lyric line.
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
-  const openTarget: IslandPage = shownAgent ? "agents" : collapsedItem === "lyrics" ? "music" : page;
+  const openTarget = collapsedOpenPage(collapsedItem, Boolean(shownAgent), page);
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
