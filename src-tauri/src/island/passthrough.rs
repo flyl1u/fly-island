@@ -103,7 +103,13 @@ pub(super) fn point_in_notch(
         return false;
     }
 
-    let top_radius = top_radius.min(width / 2.0).min(height / 2.0);
+    // As CSS does, corners that would overlap shrink in proportion: a floating collapsed bar
+    // shorter than its two radii becomes a pill.
+    let (radius, top_radius) = {
+        let fit = (height / (radius + top_radius)).min(1.0);
+        (radius * fit, top_radius * fit)
+    };
+    let top_radius = top_radius.min(width / 2.0);
     if y < top + top_radius && (x < left + top_radius || x > right - top_radius) {
         let dx = x - x.clamp(left + top_radius, right - top_radius);
         let dy = y - (top + top_radius);

@@ -14,7 +14,7 @@
    * settings (stageStyle.ts) with the ratios of the original 30 / 22 / 14 px design.
    * Rust scales its hit-test corners the same way (island/state.rs).
    */
-  --island-radius: calc(var(--island-corner-radius-size, 32) * 1px);
+  --island-radius: calc(var(--island-corner-radius-size, 42) * 1px);
   --island-radius-collapsed: calc(var(--island-radius) * 22 / 30);
   /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
@@ -212,7 +212,8 @@
   box-shadow: none;
 }
 
-.island--collapsed:focus-within {
+/* Lit only for keyboard focus: a mouse click on one of its buttons should not leave a white line. */
+.island--collapsed:has(:focus-visible) {
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.26),
     inset 0 0 18px var(--color-white-a08),
@@ -232,7 +233,7 @@
     inset -1px 0 0 rgba(255, 156, 224, 0.08);
 }
 
-.island--appearance-liquidGlass.island--collapsed:focus-within {
+.island--appearance-liquidGlass.island--collapsed:has(:focus-visible) {
   box-shadow:
     0 8px 26px rgba(0, 0, 0, 0.2),
     inset 0 -1px 0 rgba(255, 255, 255, 0.38),
@@ -301,30 +302,6 @@
 
 .island--detached.island--expanded {
   border-radius: var(--island-radius);
-}
-
-/*
- * Tucked, only the island's bottom rim shows at the screen edge. A short grab line on it says
- * there is something to pull down; it fades with the bar's contents.
- */
-.island__surface::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 4px;
-  width: 36px;
-  height: 3px;
-  margin-left: -18px;
-  border-radius: var(--radius-pill);
-  background: rgb(var(--island-ink-rgb, 248, 246, 240));
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 160ms ease;
-}
-
-.island--tucked .island__surface::after {
-  opacity: 0.34;
-  transition-delay: 200ms;
 }
 
 .island__collapsed,

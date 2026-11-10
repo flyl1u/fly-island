@@ -111,13 +111,13 @@ function strays() {
     const inCornerX = Math.min(rect.left - box.left, box.right - rect.right);
     const inCornerY = box.bottom - rect.bottom;
     if (inCornerX < radius && inCornerY < radius) {
-      // Squircle |x|^4 + |y|^4 <= r^4, measured from the island corner's centre.
+      // The island's corner, |x|^n + |y|^n <= r^n with n = 2^1.6 (about 3), from the corner's centre.
       const dx = radius - inCornerX;
       const dy = radius - inCornerY;
       const own = Number.parseFloat(getComputedStyle(element).borderBottomLeftRadius) || 0;
       // The element's own corner pulls its outermost point in by about 0.16 of its radius on each axis.
       const pull = own * 0.16;
-      if ((dx - pull) ** 4 + (dy - pull) ** 4 > radius ** 4 && getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)") out.push(`${name} past the corner`);
+      if ((dx - pull) ** 3 + (dy - pull) ** 3 > radius ** 3 && getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)") out.push(`${name} past the corner`);
     }
   }
   return out;

@@ -64,14 +64,14 @@ impl MonitorFollow {
 }
 
 /// Exponent of the squircle corner: CSS superellipse(k) draws |x|^(2^k) + |y|^(2^k) = 1.
-const SQUIRCLE_EXPONENT: f64 = 2.462_288_826_689_833; // 2^1.3
+const SQUIRCLE_EXPONENT: f64 = 3.031_433_133_020_796; // 2^1.6
 
 /// The island's corner shape from the appearance settings, as CSS draws it with `corner-shape`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum CornerShape {
     Round,
-    /// The island's soft squircle, CSS `corner-shape: superellipse(1.3)` (ISLAND_SQUIRCLE in
-    /// src/features/appearance/cornerShape.ts): |x|^n + |y|^n = r^n with n = 2^1.3.
+    /// Apple's continuous corner, CSS `corner-shape: superellipse(1.6)` (ISLAND_SQUIRCLE in
+    /// src/features/appearance/cornerShape.ts): |x|^n + |y|^n = r^n with n = 2^1.6.
     Squircle,
 }
 
