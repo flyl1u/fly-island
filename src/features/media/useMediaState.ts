@@ -3,6 +3,7 @@ import { getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackS
 import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from "./mediaState";
 import { advanceClock, clockPosition, hasTimeline, NO_CLOCK, type TrackClock } from "./trackClock";
 import { useAudioLevel } from "./useAudioLevel";
+import { pickMediaSource } from "./pickMediaSource";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
 
 /**
@@ -199,27 +200,10 @@ export function useMediaState(enabled = true) {
     return () => window.clearInterval(interval);
   }, [enabled, refreshMediaState]);
 
-  const effectiveMediaTarget = useMemo(() => {
-    if (mediaState.sessions.length === 0) {
-      return null;
-    }
-
-    const present = new Map(
-      mediaState.sessions.map((session) => [session.id, session]),
-    );
-
-    for (const source of musicSourcePriority) {
-      if (present.get(source.id)?.playing) {
-        return source.id;
-      }
-    }
-    for (const source of musicSourcePriority) {
-      if (present.has(source.id)) {
-        return source.id;
-      }
-    }
-    return null;
-  }, [musicSourcePriority, mediaState.sessions]);
+  const effectiveMediaTarget = useMemo(
+    () => pickMediaSource(mediaState.sessions, musicSourcePriority),
+    [musicSourcePriority, mediaState.sessions],
+  );
 
   useEffect(() => {
     if (!enabled || mediaTargetRef.current === effectiveMediaTarget) {

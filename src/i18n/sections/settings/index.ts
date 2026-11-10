@@ -8,6 +8,7 @@ import type { SettingsTranslationText } from "./translation";
 import type { SettingsPositionText } from "./position";
 import type { SettingsExpandText } from "./expand";
 import type { SettingsLyricsText } from "./lyrics";
+import type { SettingsMusicSourcesText } from "./musicSources";
 import type { SettingsShortcutsText } from "./shortcuts";
 import type { SettingsProjectText } from "./project";
 import type { SettingsLanguageText } from "./language";
@@ -29,6 +30,7 @@ import * as translation from "./translation.ts";
 import * as position from "./position.ts";
 import * as expand from "./expand.ts";
 import * as lyrics from "./lyrics.ts";
+import * as musicSources from "./musicSources.ts";
 import * as shortcuts from "./shortcuts.ts";
 import * as project from "./project.ts";
 import * as language from "./language.ts";
@@ -60,6 +62,8 @@ export type SettingsText = {
   expand: SettingsExpandText;
 
   lyrics: SettingsLyricsText;
+
+  musicSources: SettingsMusicSourcesText;
 
   shortcuts: SettingsShortcutsText;
 
@@ -104,6 +108,7 @@ export const zhCN: SettingsText = {
   expand: expand.zhCN,
 
   lyrics: lyrics.zhCN,
+  musicSources: musicSources.zhCN,
 
   shortcuts: shortcuts.zhCN,
 
@@ -148,6 +153,7 @@ export const en: SettingsText = {
   expand: expand.en,
 
   lyrics: lyrics.en,
+  musicSources: musicSources.en,
 
   shortcuts: shortcuts.en,
 
