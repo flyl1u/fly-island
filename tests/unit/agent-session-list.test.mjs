@@ -6,6 +6,7 @@ import {
   modelLabel,
   sameAgentSessions,
   sessionProject,
+  uniqueSessions,
 } from "../../src/features/agent-status/sessionList.ts";
 import { resolveIslandPage } from "../../src/windows/island/features.ts";
 import { shownEffort } from "../../src/features/agent-status/effortLabels.ts";
@@ -140,4 +141,13 @@ test("sessions arrange by light or time, under computer, project or no headings"
   const first = [s("a", 100), s("b", 200)];
   assert.deepEqual(ids(arrangeSessions(first, "firstSeen", "none"))[0][2], ["b", "a"]);
   assert.deepEqual(ids(arrangeSessions([s("a", 900), s("b", 200), s("c", 300)], "firstSeen", "none"))[0][2], ["c", "b", "a"]);
+});
+
+test("a session listed twice (a Codex thread over several rollout pages) keeps only its newest entry", () => {
+  const older = session({ provider: "codex", sessionId: "t1", lastMessage: "第一页", updatedAt: 1_000 });
+  const newer = session({ provider: "codex", sessionId: "t1", lastMessage: "最新一页", updatedAt: 2_000 });
+  const other = session({ sessionId: "t1" });
+  assert.deepEqual(uniqueSessions([older, other, newer]), [other, newer]);
+  const distinct = [newer, other];
+  assert.equal(uniqueSessions(distinct), distinct);
 });

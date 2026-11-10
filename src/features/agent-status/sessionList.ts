@@ -24,6 +24,22 @@ export function sameAgentSessions(a: AgentSessionSummary[], b: AgentSessionSumma
   );
 }
 
+/**
+ * One entry per session, the one written last kept: the Agent page keys its rows by
+ * `provider:sessionId`, and two rows with one key make React duplicate rows on every poll.
+ * The native list already keeps one per session; this guards the page against any source that
+ * does not (a Codex thread split over several rollout files did).
+ */
+export function uniqueSessions(sessions: AgentSessionSummary[]) {
+  const newest = new Map<string, AgentSessionSummary>();
+  for (const session of sessions) {
+    const key = sessionKey(session);
+    const kept = newest.get(key);
+    if (!kept || session.updatedAt > kept.updatedAt) newest.set(key, session);
+  }
+  return newest.size === sessions.length ? sessions : sessions.filter((session) => newest.get(sessionKey(session)) === session);
+}
+
 /** Sessions still working: running, waiting for the user, or silent mid-turn for a while (stale). */
 export function countActiveSessions(sessions: AgentSessionSummary[]) {
   return sessions.filter((session) => isActivePhase(session.phase)).length;

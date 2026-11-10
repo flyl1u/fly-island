@@ -36,3 +36,24 @@ test("one usage line per agent that reports numbers, and the card names the sour
   assert.deepEqual(usageSourceLines(usage({ source: "codex" }), 60_000, zhCN).map((line) => line.text), ["1 分钟前更新 · 来自 Codex 会话记录"]);
   assert.deepEqual(usageSourceLines(usage(), 0, zhCN).map((line) => line.text), ["刚刚更新 · 来自 claude-hud"]);
 });
+
+test("a window past its reset time is not shown with the figure from before the reset", async () => {
+  const { withoutPastWindows } = await import("../../src/features/agent-status/usage.ts");
+  const now = 1_800_000_000_000;
+  const usage = {
+    updatedAt: now - 3 * 3_600_000,
+    fiveHour: { name: "", used: 22, resetsAt: now - 60_000 },
+    sevenDay: { name: "", used: 3, resetsAt: now + 86_400_000 },
+    models: [{ name: "30d", used: 54, resetsAt: now - 1 }],
+    plan: "Plus",
+    source: "codex",
+  };
+  const shown = withoutPastWindows(usage, now);
+  assert.equal(shown.fiveHour, null);
+  assert.deepEqual(shown.sevenDay, usage.sevenDay);
+  assert.deepEqual(shown.models, []);
+  // Nothing past: the same object, so the island does not re-render for it.
+  const current = { ...usage, fiveHour: { name: "", used: 4, resetsAt: now + 1 }, models: [] };
+  assert.equal(withoutPastWindows(current, now), current);
+  assert.equal(withoutPastWindows(null, now), null);
+});
