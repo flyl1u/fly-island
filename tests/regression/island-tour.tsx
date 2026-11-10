@@ -171,6 +171,12 @@ if (!automated) {
 
     // The shelf's three files make one row of tiles, and the page is only as tall as that row.
     await click(".dot-button--shelf");
+    // The open page's dot widens into a capsule with the page's name; the other dots stay dots
+    // and carry their name for the hover tip.
+    const activeDot = document.querySelector<HTMLElement>(".dot-button--active");
+    check(activeDot?.classList.contains("dot-button--shelf") && activeDot.textContent === "文件" && activeDot.offsetWidth > 24
+      && [...document.querySelectorAll<HTMLElement>(".dot-button:not(.dot-button--active)")].every((dot) => dot.offsetWidth <= 12 && dot.dataset.tip),
+      "打开的页面圆点显示页面名，其他圆点悬停时显示名字");
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && island().offsetHeight === 315,
       `文件中转是一排图块，页面高度跟着排数走（${island().offsetHeight}px）`);

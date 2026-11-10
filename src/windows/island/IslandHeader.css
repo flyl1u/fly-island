@@ -31,6 +31,9 @@
 }
 
 .island__header {
+  /* Above the page, so the dots' name tips are not hidden under it. */
+  position: relative;
+  z-index: 2;
   display: grid;
   /* The dots stay 96px wide unless plugin page buttons need more. */
   grid-template-columns: auto minmax(96px, auto) minmax(0, 1fr) auto;
@@ -89,90 +92,132 @@
   outline-offset: -5px;
 }
 
+/* Page dots. The open page's dot widens into a capsule that names it (11px, dark ink on the
+   page's colour); the other dots stay 12px and name themselves in a tip on hover. A first-time
+   user sees which page is open and what the dots are without learning anything. */
 .dot-button {
-  width: 12px;
+  --dot-color: var(--color-accent);
+  --dot-glow: 116, 214, 255;
+  position: relative;
+  min-width: 12px;
   height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
+  color: rgba(4, 8, 12, 0.88);
+  background: var(--dot-color);
   border: 0;
   border-radius: var(--radius-pill);
+  box-shadow: 0 0 12px rgba(var(--dot-glow), 0.46);
   outline: none;
   cursor: pointer;
+  touch-action: none;
   transition:
+    height 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    padding 220ms cubic-bezier(0.32, 0.72, 0, 1),
     transform 140ms ease,
     opacity 140ms ease,
+    filter 140ms ease,
     box-shadow 140ms ease;
 }
 
-.dot-button:hover,
-.dot-button--calendar {
-  background: #ff9a76;
-  box-shadow: 0 0 12px rgba(255, 154, 118, 0.46);
+.dot-button__label {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    max-width 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 160ms ease;
 }
 
 .dot-button--active {
-  transform: scale(1.18);
+  height: 20px;
+  padding: 0 8px;
+  box-shadow: 0 0 14px rgba(var(--dot-glow), 0.4);
+}
+
+.dot-button--active .dot-button__label {
+  max-width: 88px;
   opacity: 1;
+}
+
+.dot-button:not(.dot-button--active):hover {
+  filter: brightness(1.12);
+  transform: scale(1.18);
 }
 
 .dot-button:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.8);
-  outline-offset: 4px;
+  outline-offset: 3px;
 }
 
 /* A dot being dragged to another place in the row lifts a little; the others make way. */
 .dot-button--dragging {
   z-index: 1;
   cursor: grabbing;
-  transform: scale(1.45);
-}
-
-.dot-button {
-  touch-action: none;
+  transform: scale(1.2);
 }
 
 .dot-button--todo {
-  background: var(--color-accent);
-  box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
+  --dot-color: var(--color-accent);
+  --dot-glow: 116, 214, 255;
 }
 
 .dot-button--music {
-  background: #b69cff;
-  box-shadow: 0 0 12px rgba(182, 156, 255, 0.46);
+  --dot-color: #b69cff;
+  --dot-glow: 182, 156, 255;
 }
 
 .dot-button--clipboard {
   /* Pink, not yellow: yellow means "needs attention" (agent status). */
-  background: #f4a7c4;
-  box-shadow: 0 0 12px rgba(244, 167, 196, 0.48);
+  --dot-color: #f4a7c4;
+  --dot-glow: 244, 167, 196;
 }
 
 .dot-button--shelf {
-  background: #6ee7c8;
-  box-shadow: 0 0 12px rgba(110, 231, 200, 0.46);
+  --dot-color: #6ee7c8;
+  --dot-glow: 110, 231, 200;
 }
 
-.dot-button--active {
-  box-shadow:
-    0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(116, 214, 255, 0.42);
+/* The name tip under a dot (and under the status light) after a short hover. */
+.dot-button:not(.dot-button--active, .dot-button--dragging)::after,
+.island__agent-button::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  padding: 4px 8px;
+  color: var(--text-1);
+  background: rgba(38, 38, 42, 0.97);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 0;
+  transition: opacity 120ms ease, top 120ms ease;
 }
 
-.dot-button--music.dot-button--active {
-  box-shadow:
-    0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(182, 156, 255, 0.54);
+.dot-button:not(.dot-button--active, .dot-button--dragging):hover::after,
+.island__agent-button:hover::after {
+  top: calc(100% + 9px);
+  opacity: 1;
+  transition-delay: 280ms;
 }
 
-.dot-button--clipboard.dot-button--active {
-  box-shadow:
-    0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(244, 167, 196, 0.56);
-}
-
-.dot-button--shelf.dot-button--active {
-  box-shadow:
-    0 0 0 3px var(--color-white-a18),
-    0 0 14px rgba(110, 231, 200, 0.54);
+/* The hovered dot is scaled; its tip is drawn back to the normal size. */
+.dot-button:not(.dot-button--active):hover::after {
+  scale: 0.85;
 }
 
 .window-actions {
@@ -184,6 +229,7 @@
 
 /* The status light opens the Agent page; a ring marks it while that page is open. */
 .island__agent-button {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 24px;

@@ -80,6 +80,7 @@ export function IslandHeader({
           <button
             className={`island__agent-button${page === "agents" ? " island__agent-button--active" : ""}`}
             type="button"
+            data-tip={t.island.agentPage}
             aria-label={`${agentStatusLabel} · ${t.agent.sessions.open}`}
             aria-pressed={page === "agents"}
             onClick={(event) => {
@@ -117,13 +118,18 @@ export function IslandHeader({
             ].filter(Boolean).join(" ")}
             type="button"
             aria-label={dotLabels[dot]}
+            aria-current={page === dot ? "page" : undefined}
+            data-tip={t.island.pageNames[dot]}
             {...dotProps(dot)}
             onClick={(event) => {
               event.stopPropagation();
               // The click that ends dragging a dot to a new place does not open its page.
               if (!wasDotDragged()) onPageChange(dot);
             }}
-          />
+          >
+            {/* The open page's dot widens into a capsule with its name, so the dots explain themselves. */}
+            <span className="dot-button__label" aria-hidden="true">{t.island.pageNames[dot]}</span>
+          </button>
         ))}
       </div>
 
