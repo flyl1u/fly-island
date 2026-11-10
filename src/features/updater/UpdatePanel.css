@@ -1,47 +1,47 @@
+/* The first row of About: a check button that fills the row, and the channel at its right end. */
 .update-panel {
   display: grid;
-  gap: var(--space-md);
 }
 
-.update-panel__channel {
+.update-panel__row {
   min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 200px);
+  display: flex;
   align-items: center;
-  gap: var(--space-xl);
-  padding: 0 2px;
+  transition: background 140ms ease;
 }
 
-.update-panel__channel-copy {
-  display: grid;
-  gap: 2px;
+.update-panel__row:has(.update-panel__button:not(:disabled):hover) {
+  background: var(--color-white-a06);
+}
+
+.update-panel .update-panel__button,
+.update-panel .update-panel__button:hover {
+  flex: 1;
   min-width: 0;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.update-panel__channel-copy strong {
-  color: var(--color-text);
-  font-weight: 800;
-}
-
-.update-panel__channel-copy small {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.update-panel__button {
-  width: 100%;
+  padding: 12px 16px;
+  color: var(--color-text-strong);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.update-panel .update-panel__button:focus-visible {
+  outline-offset: -2px;
 }
 
 .update-panel__button:disabled {
   cursor: default;
 }
 
+.update-panel__channel {
+  flex: none;
+  padding-right: 10px;
+}
+
+/* Busy states turn the icon; hovering never does. */
 .update-panel--checking .project-link__icon,
 .update-panel--downloading .project-link__icon,
 .update-panel--installing .project-link__icon {
@@ -61,7 +61,7 @@
 
 .update-panel__track {
   height: 4px;
-  margin: 0 12px;
+  margin: 0 16px 12px 46px;
   overflow: hidden;
   background: var(--color-white-a12);
   border-radius: var(--radius-pill);

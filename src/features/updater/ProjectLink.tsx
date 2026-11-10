@@ -4,7 +4,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "../../i18n";
 
-/** A settings card that opens a project page. In the app, the system browser opens it. */
+/** A settings row that opens a project page. In the app, the system browser opens it. */
 export function ProjectLink({
   href,
   title,
@@ -16,7 +16,7 @@ export function ProjectLink({
   title: string;
   hint: string;
   icon: ReactNode;
-  tone?: "star" | "release";
+  tone?: "star";
 }) {
   const t = useTranslation();
   const [failed, setFailed] = useState(false);
