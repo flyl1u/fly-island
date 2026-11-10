@@ -33,6 +33,8 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.
 localStorage.removeItem("focusd-island-agent-approval");
 localStorage.removeItem("focusd-island-agent-sounds");
+// The player order as the old Music page saved it.
+localStorage.setItem("focusd-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
 
 
 const root = createRoot(document.getElementById("root")!);
@@ -194,6 +196,20 @@ if (!automated) {
     check((JSON.parse(localStorage.getItem("focusd-island-agent-sounds") ?? "{}") as { enabled?: boolean }).enabled === false, "Switching agent sounds off is saved");
     const approvalSwitch = agentRow("在岛上允许或拒绝 Agent 的操作")?.querySelector<HTMLInputElement>("[role='switch']");
     check(approvalSwitch && !approvalSwitch.checked, "Approving on the island sits on the sessions page, off by default");
+
+    // Settings → Music → Player order: the saved order, new players added after it, each one's
+    // state, and moving a row saves the old format.
+    await openPage("music"); await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    const players = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((row) => row.querySelector(".reorder-list__name")?.textContent);
+    const hints = [...document.querySelectorAll<HTMLElement>(".reorder-list__hint")].map((hint) => hint.textContent);
+    check(players().join() === "Spotify,QQ音乐,网易云音乐" && hints.join() === "没有打开,已打开,正在播放",
+      `The Music page lists the saved player order, then newly seen players, with their state (${players().join()} / ${hints.join()})`);
+    await act(async () => {
+      document.querySelectorAll<HTMLElement>(".reorder-list__handle")[2].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+    });
+    const savedPlayers = JSON.parse(localStorage.getItem("focusd-island-music-sources") ?? "[]") as { id: string; label: string }[];
+    check(players().join() === "Spotify,网易云音乐,QQ音乐" && savedPlayers.map((source) => source.id).join() === "Spotify.exe,cloudmusic.exe,QQMusic"
+      && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
 
     await openPage("about");
     const aboutLink = (label: string) =>

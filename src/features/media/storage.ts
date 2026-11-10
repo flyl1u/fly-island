@@ -4,6 +4,11 @@ export type KnownMediaSource = {
 };
 
 export const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
+/**
+ * Fired on this window after the order is saved: the storage event only reaches other windows,
+ * and Settings may be open inside the island.
+ */
+export const MUSIC_SOURCE_PRIORITY_SAVED_EVENT = "focusd-island-music-sources-saved";
 
 export function loadMusicSourcePriority(): KnownMediaSource[] {
   try {
@@ -48,6 +53,7 @@ export function saveMusicSourcePriority(priority: KnownMediaSource[]) {
       MUSIC_SOURCE_PRIORITY_STORAGE_KEY,
       JSON.stringify(priority),
     );
+    window.dispatchEvent(new Event(MUSIC_SOURCE_PRIORITY_SAVED_EVENT));
   } catch {
     // Ignore storage write failures (private mode, quota, etc.).
   }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MediaState } from "./api";
-import { MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
+import { MUSIC_SOURCE_PRIORITY_SAVED_EVENT, MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
 
 /** The user's preferred media source order; newly seen sessions are appended and the order is persisted. */
 export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
@@ -39,6 +39,15 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     [],
   );
 
+  /** Puts the known sources in the order of `ids` (Settings → Music); ids it does not know are ignored. */
+  const setMusicSourceOrder = useCallback((ids: string[]) => {
+    setMusicSourcePriority((current) => {
+      const byId = new Map(current.map((source) => [source.id, source]));
+      const next = ids.flatMap((id) => byId.get(id) ?? []);
+      return next.length === current.length ? next : current;
+    });
+  }, []);
+
   const removeMusicSource = useCallback((sourceId: string) => {
     setMusicSourcePriority((current) =>
       current.filter((source) => source.id !== sourceId),
@@ -64,17 +73,24 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     saveMusicSourcePriority(musicSourcePriority);
   }, [musicSourcePriority]);
 
-  // The island and Settings > Music both edit the order. Saving a value that came
-  // from the other window writes the same string, which fires no further event.
+  // The island and Settings > Music both edit the order, in two windows or (Settings inside the
+  // island) in one. A saved order that matches this copy changes nothing, so the two copies do
+  // not keep saving to each other.
   useEffect(() => {
+    const sync = () => {
+      const stored = loadMusicSourcePriority();
+      setMusicSourcePriority((current) => (JSON.stringify(current) === JSON.stringify(stored) ? current : stored));
+    };
     const syncFromOtherWindow = (event: StorageEvent) => {
-      if (event.key === MUSIC_SOURCE_PRIORITY_STORAGE_KEY) {
-        setMusicSourcePriority(loadMusicSourcePriority());
-      }
+      if (event.key === MUSIC_SOURCE_PRIORITY_STORAGE_KEY) sync();
     };
     window.addEventListener("storage", syncFromOtherWindow);
-    return () => window.removeEventListener("storage", syncFromOtherWindow);
+    window.addEventListener(MUSIC_SOURCE_PRIORITY_SAVED_EVENT, sync);
+    return () => {
+      window.removeEventListener("storage", syncFromOtherWindow);
+      window.removeEventListener(MUSIC_SOURCE_PRIORITY_SAVED_EVENT, sync);
+    };
   }, []);
 
-  return { musicSourcePriority, reorderMusicSource, removeMusicSource };
+  return { musicSourcePriority, reorderMusicSource, removeMusicSource, setMusicSourceOrder };
 }

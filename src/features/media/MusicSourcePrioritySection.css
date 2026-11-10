@@ -1,0 +1,26 @@
+/* Settings → Music → Player order: a dot before each player says whether it is playing now. */
+.music-sources__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  margin: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white-a16);
+}
+
+.music-sources__dot--open {
+  background: var(--color-text-muted);
+}
+
+.music-sources__dot--playing {
+  background: var(--color-agent-idle);
+  box-shadow: 0 0 8px rgba(53, 233, 133, 0.55);
+}
+
+.music-sources__empty {
+  margin: 0;
+  padding: 14px;
+  color: var(--color-text-subtle);
+  font-size: 13px;
+  line-height: 1.45;
+}

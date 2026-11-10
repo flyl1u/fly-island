@@ -21,6 +21,8 @@ mockIPC((command, payload) => {
   switch (command) {
     case "get_reply_marker_state": return replyMarker();
     case "set_reply_marker": replyMarkerCalls.push(replyMarkerOn = Boolean(args.enabled)); return replyMarker();
+    // Two players open, NetEase playing; Spotify is in the saved order but not open.
+    case "get_media_state": return { sessions: [{ id: "QQMusic", label: "QQ音乐", playing: false }, { id: "cloudmusic.exe", label: "网易云音乐", playing: true }] };
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
