@@ -80,8 +80,9 @@
   overflow: hidden;
   color: #231f1a;
   background: var(--color-sky);
-  border-radius: 7px 7px 4px 4px;
-  box-shadow: 0 2px 0 rgba(31, 27, 22, 0.1);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
+  box-shadow: inset 0 -1px 0 rgba(31, 27, 22, 0.1);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -187,7 +188,8 @@
   color: #c05065;
   background: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(35, 31, 26, 0.12);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
 }
 
 .todo-form--dated {
@@ -229,6 +231,8 @@
   grid-auto-rows: max-content;
   gap: var(--space-md);
   overflow-y: auto;
+  /* Room for the scrollbar without making the rows narrower than the add field above them. */
+  margin-right: -4px;
   padding-right: 4px;
 }
 
@@ -257,7 +261,8 @@
   color: var(--color-ink);
   background: var(--color-white);
   border: 1px solid rgba(35, 31, 26, 0.1);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   outline: none;
   font-family: var(--font-ui);
   font-size: 14px;
@@ -290,7 +295,8 @@
   place-items: center;
   color: rgba(31, 27, 22, 0.46);
   border: 1px dashed rgba(31, 27, 22, 0.18);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   font-size: 13px;
   font-weight: 600;
 }

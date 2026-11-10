@@ -27,6 +27,7 @@
   width: var(--music-progress, 0%);
   background: rgb(var(--music-tint, 236, 236, 242));
   border-radius: inherit;
+  corner-shape: inherit;
   transition: width 480ms linear, background-color 400ms ease;
 }
 

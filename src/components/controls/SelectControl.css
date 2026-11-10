@@ -16,7 +16,8 @@
   color: var(--color-text);
   background: var(--color-white-a08);
   border: 1px solid var(--color-white-a10);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   outline: none;
   font-size: 12px;
   font-weight: 800;
@@ -73,7 +74,8 @@
   list-style: none;
   background: #26262d;
   border: 1px solid var(--color-white-a12);
-  border-radius: var(--radius-lg);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -88,7 +90,8 @@
   gap: var(--space-md);
   padding: 0 9px;
   color: rgba(248, 246, 240, 0.82);
-  border-radius: 6px;
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;

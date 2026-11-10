@@ -44,7 +44,8 @@
   color: rgba(255, 255, 255, 0.72);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   outline: none;
   font: inherit;
   font-size: 13px;

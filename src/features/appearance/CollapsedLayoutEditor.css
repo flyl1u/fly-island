@@ -31,7 +31,8 @@
   color: inherit;
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   font: inherit;
   font-size: 11px;
   font-weight: 600;

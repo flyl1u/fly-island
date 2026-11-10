@@ -6,7 +6,8 @@
   color: var(--color-accent);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
   font: inherit;
   font-size: 13px;
   font-weight: 500;

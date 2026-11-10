@@ -17,7 +17,7 @@
   height: 22px;
   flex: none;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--corner-sm);
   corner-shape: var(--island-corner-shape, round);
   box-shadow: inset 0 0 0 1px var(--color-white-a08);
 }

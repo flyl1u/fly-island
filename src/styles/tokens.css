@@ -60,6 +60,28 @@
   --radius-pill: 999px;
   --radius-circle: 50%;
 
+  /*
+   * Continuous (Apple-style) corners for the boxes inside the island, the same curve as the
+   * island itself (features/appearance/cornerShape.ts): corner-shape superellipse(1.6) over a
+   * radius 1.4x the Apple radius. Use them in pairs:
+   *   border-radius: var(--corner-md); corner-shape: var(--corner-shape);
+   * The names are the Apple radius (xs 4, sm 6, md 8, lg 10, xl 12, 2xl 16); --corner-scale turns
+   * them into the CSS radius. Where corner-shape is not supported, the same names fall back to a
+   * plain round corner of the Apple radius, so sizes and nesting stay the same.
+   * Nesting: a box inside another takes the outer radius minus the gap between them (inner =
+   * outer - padding, in CSS radius), never less than --corner-xs; panels inside the island do
+   * so with --island-panel-radius (IslandShell.css).
+   * Capsules (--radius-pill) and circles stay round: a superellipse would square their ends.
+   */
+  --corner-shape: round;
+  --corner-scale: 1;
+  --corner-xs: calc(4px * var(--corner-scale));
+  --corner-sm: calc(6px * var(--corner-scale));
+  --corner-md: calc(8px * var(--corner-scale));
+  --corner-lg: calc(10px * var(--corner-scale));
+  --corner-xl: calc(12px * var(--corner-scale));
+  --corner-2xl: calc(16px * var(--corner-scale));
+
   /* Spacing (gaps) */
   --space-xs: 4px;
   --space-sm: 6px;
@@ -67,4 +89,12 @@
   --space-lg: 10px;
   --space-xl: 12px;
   --space-2xl: 14px;
+}
+
+/* Where the browser draws superellipse corners, the continuous scale uses them. */
+@supports (corner-shape: superellipse(1.6)) {
+  :root {
+    --corner-shape: superellipse(1.6);
+    --corner-scale: 1.4;
+  }
 }

@@ -6,7 +6,7 @@
   display: flex;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--corner-xl);
   corner-shape: var(--island-corner-shape, round);
   transition:
     background 150ms ease,
@@ -50,7 +50,7 @@
   color: rgb(var(--shelf-kind));
   background: rgba(var(--shelf-kind), 0.12);
   border: 1px solid rgba(var(--shelf-kind), 0.2);
-  border-radius: 12px;
+  border-radius: var(--corner-xl);
   corner-shape: var(--island-corner-shape, round);
   transition: transform 180ms ease;
 }

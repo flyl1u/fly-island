@@ -18,6 +18,8 @@
   --island-radius-collapsed: calc(var(--island-radius) * 22 / 30);
   /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
+  /* A box inside a panel with the usual 16px padding (inner = outer - padding). */
+  --island-card-radius: max(var(--corner-xs), calc(var(--island-panel-radius) - 16px));
   /* The 1px rim of the expanded island (.island::after); the collapsed bar has none. */
   --island-rim: transparent;
   /*
@@ -386,5 +388,13 @@
   .island--appearance-liquidGlass.island--expanded .island__glass::after,
   .island--appearance-liquidGlass.island--collapsed .island__glass::after {
     animation: none;
+  }
+}
+
+/* Without corner-shape the 1.4x radius would draw a much rounder corner than Apple's: fall back
+   to a round corner of the Apple radius (42 / 1.4 = 30), which the native hit test still covers. */
+@supports not (corner-shape: superellipse(1.6)) {
+  .island {
+    --island-radius: calc(var(--island-corner-radius-size, 42) * 1px / 1.4);
   }
 }

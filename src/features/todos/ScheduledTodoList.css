@@ -26,7 +26,8 @@
   padding: 3px 4px 3px 10px;
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(35, 31, 26, 0.1);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
 }
 
 .scheduled-list__item > span {

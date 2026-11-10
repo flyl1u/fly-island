@@ -30,7 +30,8 @@
   min-width: 0;
   background: var(--color-white-a04);
   border: 1px solid var(--color-white-a06);
-  border-radius: var(--radius-xl);
+  border-radius: var(--corner-xl);
+  corner-shape: var(--corner-shape);
 }
 
 /* Hairlines between rows, inset from the card's sides. */

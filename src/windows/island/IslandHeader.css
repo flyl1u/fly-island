@@ -196,7 +196,8 @@
   color: var(--text-1);
   background: rgba(38, 38, 42, 0.97);
   border: 1px solid var(--color-white-a10);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
   white-space: nowrap;
   font-size: 11px;

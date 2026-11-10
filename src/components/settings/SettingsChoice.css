@@ -3,7 +3,8 @@
   gap: 2px;
   padding: 2px;
   background: var(--color-white-a06);
-  border-radius: var(--radius-md);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
 }
 
 .settings-choice__option {
@@ -12,7 +13,8 @@
   color: var(--color-text-muted);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
   font: inherit;
   font-size: 13px;
   font-weight: 400;

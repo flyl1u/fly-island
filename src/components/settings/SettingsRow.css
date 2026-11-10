@@ -51,7 +51,8 @@ label.settings-row__title {
 
 /* The row a settings search opened: a short wash of the accent colour, then gone. */
 .settings-row--found {
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
   animation: settings-row-found 1.8s ease-out;
 }
 

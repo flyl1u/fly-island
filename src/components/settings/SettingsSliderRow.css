@@ -19,7 +19,8 @@
   color: var(--color-text-subtle);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
   cursor: pointer;
 }
 
