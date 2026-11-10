@@ -8,6 +8,8 @@ export type FileShelfText = {
   /** Under the tiles: how to take files back out. */
   footerHint: (reveal: boolean) => string;
   dropHint: string;
+  /** The open place after a few tiles, where more files can be dropped. */
+  moreSlot: string;
   folder: string;
   missing: string;
   copyItem: string;
@@ -36,6 +38,7 @@ export const zhCN: FileShelfText = {
   emptyNote: "只记住位置，不复制文件；移除也不会删掉原文件",
   footerHint: (reveal) => `拖到别的窗口就是复制，按住 Shift 是移动 · 双击${reveal ? "在文件夹中显示" : "打开"}`,
   dropHint: "松开鼠标，加入文件中转",
+  moreSlot: "还能再放",
   folder: "文件夹",
   missing: "已失效",
   copyItem: "复制文件，可直接粘贴",
@@ -64,6 +67,7 @@ export const en: FileShelfText = {
   emptyNote: "Only the location is kept, never a copy; removing leaves the file alone",
   footerHint: (reveal) => `Drag into another window to copy, hold Shift to move · Double-click to ${reveal ? "show in folder" : "open"}`,
   dropHint: "Release to add to the shelf",
+  moreSlot: "Room for more",
   folder: "Folder",
   missing: "Missing",
   copyItem: "Copy the file to paste elsewhere",

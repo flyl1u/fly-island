@@ -2,22 +2,27 @@ import { messagePanelHeight, type MessageView } from "../../features/messages/Me
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
 import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { AgentSessionView } from "../../features/appearance/types";
+import { getShelfLayout } from "../../features/file-shelf/fileShelf";
 import type { IslandPage } from "./types";
 
-// The shelf page fits its rows of tiles, one or two, and scrolls past two: the island's padding,
-// header and gap, the panel's padding, title, footer hint and the list's padding (175) around
-// rows of tiles (140 with a two-line name, FileShelfItemRow.css) 8px apart, four to a row
-// (FileShelfPanel.css). Keep in step with those files.
-const SHELF_CHROME_HEIGHT = 175;
-const SHELF_TILE_HEIGHT = 140;
-const SHELF_TILE_GAP = 8;
-const SHELF_TILES_PER_ROW = 4;
-const SHELF_MAX_ROWS = 2;
+// The shelf page fits what it holds (FileShelfPanel.css, FileShelfItem.css): the island's padding,
+// header and gap (86) around the panel's padding and title line (66); then one 118px row of tiles
+// for up to four files, or rows of 44px 6px apart in two columns, five rows at most before it
+// scrolls; and the hint line under them (26). Empty, the 118px tray and no hint. Keep in step.
+const SHELF_ISLAND_CHROME = 86;
+const SHELF_PANEL_CHROME = 66;
+const SHELF_TILE_ROW = 118;
+const SHELF_ROW_PITCH = 50;
+const SHELF_MAX_ROWS = 5;
+const SHELF_HINT = 26;
 
 /** The island's height around the shelf page holding `items` entries. */
 export function getShelfExpandedHeight(items: number) {
-  const rows = Math.min(SHELF_MAX_ROWS, Math.max(1, Math.ceil(items / SHELF_TILES_PER_ROW)));
-  return SHELF_CHROME_HEIGHT + rows * SHELF_TILE_HEIGHT + (rows - 1) * SHELF_TILE_GAP;
+  const layout = getShelfLayout(items);
+  const list = layout === "rows"
+    ? Math.min(SHELF_MAX_ROWS, Math.ceil(items / 2)) * SHELF_ROW_PITCH - 6
+    : SHELF_TILE_ROW;
+  return SHELF_ISLAND_CHROME + SHELF_PANEL_CHROME + list + (layout === "empty" ? 0 : SHELF_HINT);
 }
 // Header, direction bar, a few lines of source, the result and the action row.
 const TRANSLATION_EXPANDED_ISLAND_HEIGHT = 420;

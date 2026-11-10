@@ -1,0 +1,101 @@
+/* The empty shelf: a dashed tray as tall as a row of tiles, three files fanned over it. */
+.shelf-empty {
+  flex: 1;
+  min-height: 118px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 16px 24px;
+  border: 1px dashed rgba(248, 246, 240, 0.14);
+  border-radius: var(--island-card-radius, var(--corner-sm));
+  corner-shape: var(--corner-shape);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.shelf-empty__art {
+  position: relative;
+  flex: none;
+  width: 88px;
+  height: 56px;
+}
+
+.shelf-empty__file {
+  position: absolute;
+  top: 6px;
+  left: 28px;
+  width: 32px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  background: #2a2a30;
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  transition: rotate 260ms cubic-bezier(0.32, 0.72, 0, 1), translate 260ms cubic-bezier(0.32, 0.72, 0, 1), color 160ms ease, background 160ms ease;
+}
+
+.shelf-empty__file--left {
+  rotate: -16deg;
+  translate: -22px 5px;
+  color: #ffb37f;
+}
+
+.shelf-empty__file--right {
+  rotate: 14deg;
+  translate: 22px 5px;
+  color: #7fb2ff;
+}
+
+.shelf-empty__file--front {
+  z-index: 1;
+  background: #33333a;
+}
+
+.shelf-empty__copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.shelf-empty__title {
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.shelf-empty__note {
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* Files over the island: the tray turns mint, the files spread and an arrow takes the middle. */
+.shelf-empty--dropping {
+  background: rgba(110, 231, 200, 0.07);
+  border: 1.5px dashed rgba(110, 231, 200, 0.62);
+}
+
+.shelf-empty--dropping .shelf-empty__file--left {
+  rotate: -24deg;
+  translate: -30px 9px;
+}
+
+.shelf-empty--dropping .shelf-empty__file--right {
+  rotate: 22deg;
+  translate: 30px 9px;
+}
+
+.shelf-empty--dropping .shelf-empty__file--front {
+  color: #06261d;
+  background: #6ee7c8;
+  border-color: transparent;
+}
+
+.shelf-empty--dropping .shelf-empty__title {
+  color: rgba(214, 255, 243, 0.96);
+}

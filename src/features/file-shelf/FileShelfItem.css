@@ -1,0 +1,399 @@
+/*
+ * A file on the shelf. Tiles (a few files) are 118px tall and rows (many) 44px; the page height
+ * counts on both (FileShelfPanel.css). Both sit 16px inside the panel, so their corners follow
+ * it (--island-card-radius: panel radius minus that padding).
+ */
+.shelf-item {
+  position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a06);
+  border-radius: var(--island-card-radius, var(--corner-sm));
+  corner-shape: var(--corner-shape);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.shelf-item:hover {
+  background: var(--color-white-a08);
+  border-color: var(--color-white-a10);
+}
+
+.shelf-item--selected,
+.shelf-item--selected:hover {
+  background: rgba(110, 231, 200, 0.1);
+  border-color: rgba(110, 231, 200, 0.42);
+}
+
+.shelf-item__main {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
+  font: inherit;
+  text-align: inherit;
+  outline: none;
+  cursor: grab;
+}
+
+.shelf-item__main:active {
+  cursor: grabbing;
+}
+
+.shelf-item__main:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Tiles: the picture over the name, centred. */
+.shelf-item--tile {
+  height: 118px;
+}
+
+.shelf-item--tile .shelf-item__main {
+  display: grid;
+  grid-template-rows: 48px auto;
+  justify-items: center;
+  align-content: start;
+  gap: 10px;
+  padding: 16px 10px 0;
+}
+
+.shelf-item--tile .shelf-item__body {
+  width: 100%;
+  justify-items: center;
+}
+
+/* Rows: a small picture, then the name over its size. */
+.shelf-item--row .shelf-item__main {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 8px;
+  text-align: left;
+}
+
+.shelf-item__figure {
+  position: relative;
+  display: grid;
+  place-items: center;
+  transition: translate 160ms cubic-bezier(0.32, 0.72, 0, 1), filter 160ms ease;
+}
+
+.shelf-item--tile .shelf-item__figure {
+  width: 48px;
+  height: 48px;
+}
+
+.shelf-item--row .shelf-item__figure {
+  width: 28px;
+  height: 28px;
+}
+
+/* Lifts a little under the pointer: it can be picked up. */
+.shelf-item:hover .shelf-item__figure {
+  translate: 0 -2px;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
+}
+
+.shelf-item--row:hover .shelf-item__figure {
+  translate: 0 -1px;
+}
+
+.shelf-item__body {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+/* The stem shortens with an ellipsis; the extension always shows. */
+.shelf-item__name {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  color: var(--text-1);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.shelf-item__stem {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shelf-item__extension {
+  flex: none;
+  color: var(--text-2);
+}
+
+.shelf-item__meta {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shelf-item--row .shelf-item__name {
+  font-size: 12.5px;
+}
+
+/* The picture: a preview, Explorer's icon, or a type icon on a tinted square. */
+.shelf-item__icon {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--text-2);
+  background: var(--color-white-a06);
+  border-radius: var(--corner-md);
+  corner-shape: var(--corner-shape);
+}
+
+.shelf-item--row .shelf-item__icon {
+  border-radius: var(--corner-sm);
+}
+
+.shelf-item--row .shelf-item__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shelf-item__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+
+.shelf-item__icon--system img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.shelf-item--row .shelf-item__icon--system img {
+  width: 26px;
+  height: 26px;
+}
+
+.shelf-item__icon--thumbnail {
+  box-shadow: inset 0 0 0 1px var(--color-white-a10);
+}
+
+.shelf-item__icon--folder { color: #f6c35b; background: rgba(246, 195, 91, 0.14); }
+.shelf-item__icon--document { color: #7fb2ff; background: rgba(127, 178, 255, 0.14); }
+.shelf-item__icon--sheet { color: #5fd38d; background: rgba(95, 211, 141, 0.14); }
+.shelf-item__icon--slides { color: #ff9f5a; background: rgba(255, 159, 90, 0.14); }
+.shelf-item__icon--archive { color: #e9b44c; background: rgba(233, 180, 76, 0.14); }
+.shelf-item__icon--audio { color: #c3a2ff; background: rgba(195, 162, 255, 0.14); }
+.shelf-item__icon--video { color: #ff8fb8; background: rgba(255, 143, 184, 0.14); }
+.shelf-item__icon--image { color: #ffb37f; background: rgba(255, 179, 127, 0.14); }
+.shelf-item__icon--code { color: #5fd8e0; background: rgba(95, 216, 224, 0.14); }
+.shelf-item__icon--app { color: #9aa8ff; background: rgba(154, 168, 255, 0.14); }
+
+/* Explorer's own icon needs no square behind it. */
+.shelf-item__icon.shelf-item__icon--system {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Pinned: a small mint pin on the picture's corner. */
+.shelf-item__pin-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  color: #06261d;
+  background: #6ee7c8;
+  border-radius: var(--radius-circle);
+  box-shadow: 0 0 0 2px rgba(20, 20, 25, 0.95);
+}
+
+.shelf-item--row .shelf-item__pin-badge {
+  right: -5px;
+  bottom: -4px;
+  width: 13px;
+  height: 13px;
+}
+
+/*
+ * Actions: on hover, focus or selection. On a tile they take the place of the size line, under
+ * the name; on a row they take room at its right end and the name shortens to make way.
+ */
+.shelf-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.shelf-item--tile .shelf-item__actions {
+  position: absolute;
+  right: 0;
+  bottom: 6px;
+  left: 0;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.shelf-item--tile .shelf-item__meta {
+  transition: opacity 140ms ease;
+}
+
+.shelf-item--tile:is(:hover, :focus-within, .shelf-item--selected) .shelf-item__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shelf-item--tile:is(:hover, :focus-within, .shelf-item--selected) .shelf-item__meta {
+  opacity: 0;
+}
+
+.shelf-item--row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.shelf-item--row .shelf-item__actions {
+  display: none;
+  padding-right: 6px;
+}
+
+.shelf-item--row:is(:hover, :focus-within, .shelf-item--selected) .shelf-item__actions {
+  display: flex;
+}
+
+.shelf-item__actions button {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text-2);
+  background: rgba(30, 30, 35, 0.86);
+  border: 0;
+  border-radius: var(--radius-pill);
+  outline: none;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.shelf-item--tile .shelf-item__actions button {
+  width: 22px;
+  height: 22px;
+}
+
+.shelf-item--row .shelf-item__actions button {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+}
+
+.shelf-item--tile .shelf-item__actions button {
+  background: transparent;
+}
+
+.shelf-item__actions button:hover {
+  color: var(--text-1);
+  background: var(--color-white-a16);
+}
+
+.shelf-item__actions button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.shelf-item__actions .shelf-remove-button:hover {
+  color: var(--color-white);
+  background: rgba(199, 80, 101, 0.82);
+}
+
+.shelf-item__actions .shelf-pin-button--active {
+  color: #6ee7c8;
+}
+
+.shelf-item__actions .shelf-copy-button--copied {
+  color: #06261d;
+  background: #6ee7c8;
+}
+
+/* Gone or out of reach: still listed, quieter. Missing is crossed out; unreachable may come back. */
+.shelf-item--missing .shelf-item__figure,
+.shelf-item--unreachable .shelf-item__figure {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.shelf-item--missing .shelf-item__stem {
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+
+.shelf-item--unreachable .shelf-item__meta {
+  color: #f2c27b;
+}
+
+.shelf-item--missing .shelf-item__main,
+.shelf-item--unreachable .shelf-item__main {
+  cursor: default;
+}
+
+/* Just dropped: it settles into place with a short mint glow. Removed: it fades and shrinks. */
+.shelf-item--recent {
+  animation: shelf-item-arrive 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.shelf-item--leaving {
+  pointer-events: none;
+  animation: shelf-item-leave 180ms ease-in forwards;
+}
+
+@keyframes shelf-item-arrive {
+  0% {
+    opacity: 0;
+    scale: 0.9;
+    box-shadow: 0 0 0 0 rgba(110, 231, 200, 0);
+  }
+  45% {
+    opacity: 1;
+    scale: 1;
+    box-shadow: 0 0 0 3px rgba(110, 231, 200, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(110, 231, 200, 0);
+  }
+}
+
+@keyframes shelf-item-leave {
+  to {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-item--recent,
+  .shelf-item--leaving {
+    animation: none;
+  }
+
+  .shelf-item:hover .shelf-item__figure {
+    translate: none;
+  }
+}

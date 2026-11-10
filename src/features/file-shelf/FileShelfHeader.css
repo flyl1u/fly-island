@@ -1,14 +1,14 @@
+/* The shelf's title line: same build as the clipboard page's, so the pages read as one family. */
 .shelf-panel__header {
-  flex: none;
   min-height: 30px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xl);
+  gap: var(--space-md);
 }
 
 .shelf-panel__title {
   min-width: 0;
+  flex: 1;
   display: inline-flex;
   align-items: center;
   gap: var(--space-md);
@@ -19,99 +19,52 @@
 }
 
 .shelf-panel__title svg {
-  color: rgba(204, 244, 232, 0.8);
+  flex: none;
+  color: var(--text-2);
 }
 
 .shelf-panel__title strong {
-  color: rgba(205, 229, 222, 0.68);
+  color: var(--text-3);
   font-size: 11px;
   font-weight: 600;
-}
-
-.shelf-clear-button {
-  width: 28px;
-  height: 28px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
-  color: var(--text-2);
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid var(--color-white-a08);
-  border-radius: var(--corner-sm);
-  corner-shape: var(--corner-shape);
-  outline: none;
-  cursor: pointer;
-  transition:
-    background 140ms ease,
-    opacity 140ms ease,
-    transform 140ms ease;
-}
-
-.shelf-clear-button:hover:not(:disabled) {
-  color: var(--color-white);
-  background: rgba(255, 255, 255, 0.11);
-  transform: translateY(-1px);
-}
-
-.shelf-clear-button--confirming,
-.shelf-clear-button--confirming:hover:not(:disabled) {
-  color: var(--color-white);
-  background: var(--color-danger);
-}
-
-.shelf-clear-button:disabled {
-  cursor: default;
-  opacity: 0.38;
-}
-
-.shelf-clear-button:focus-visible {
-  outline: 2px solid rgba(190, 240, 225, 0.76);
-  outline-offset: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .shelf-panel__notice {
-  color: rgba(190, 240, 225, 0.86);
+  color: rgba(160, 240, 218, 0.92);
   font-size: 11px;
   font-style: normal;
   font-weight: 600;
-  animation: shelfNoticeFade 1200ms ease both;
+  animation: shelf-notice 2.4s ease forwards;
 }
 
-@keyframes shelfNoticeFade {
-  0%,
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+@keyframes shelf-notice {
+  0% { opacity: 0; }
+  12%,
+  78% { opacity: 1; }
+  100% { opacity: 0; }
 }
-
-/* Covers the whole panel while files are dragged over a non-empty shelf; the list
-   stays in place underneath so nothing jumps. */
 
 .shelf-search {
-  flex: 1;
-  min-width: 0;
-  max-width: 220px;
-  height: 28px;
-  display: inline-flex;
+  width: 200px;
+  height: 30px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
+  gap: var(--space-sm);
+  padding: 0 6px 0 10px;
   color: var(--text-3);
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--color-white-a04);
   border: 1px solid var(--color-white-a08);
-  border-radius: var(--corner-sm);
+  border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
 }
 
 .shelf-search:focus-within {
-  border-color: rgba(110, 231, 200, 0.5);
+  border-color: rgba(248, 246, 240, 0.28);
 }
 
 .shelf-search input {
-  flex: 1;
   min-width: 0;
   padding: 0;
   color: var(--text-1);
@@ -120,7 +73,10 @@
   outline: none;
   font: inherit;
   font-size: 12px;
-  font-weight: 600;
+}
+
+.shelf-search input::placeholder {
+  color: var(--text-placeholder);
 }
 
 .shelf-search input::-webkit-search-cancel-button {
@@ -128,35 +84,61 @@
 }
 
 .shelf-search button,
-.shelf-selection-bar button {
+.shelf-selection-bar button,
+.shelf-clear-button {
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: inherit;
+  color: var(--text-2);
   background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
 }
 
 .shelf-search button {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
-/* Acts on two or more selected entries. */
-.shelf-selection-bar {
+.shelf-clear-button {
   flex: none;
-  min-height: 28px;
+  width: 30px;
+  height: 30px;
+}
+
+.shelf-search button:hover,
+.shelf-selection-bar button:hover,
+.shelf-clear-button:hover {
+  color: var(--text-1);
+  background: var(--color-white-a10);
+}
+
+.shelf-clear-button--confirming,
+.shelf-clear-button--confirming:hover {
+  color: var(--color-white);
+  background: var(--color-danger);
+}
+
+.shelf-search button:focus-visible,
+.shelf-selection-bar button:focus-visible,
+.shelf-clear-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Two or more entries chosen: what acts on all of them, in one quiet line. */
+.shelf-selection-bar {
+  min-height: 30px;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 0 4px 0 10px;
-  color: rgba(214, 248, 238, 0.92);
+  gap: var(--space-xs);
+  padding: 0 4px 0 12px;
+  color: var(--text-1);
   background: rgba(110, 231, 200, 0.1);
-  border: 1px solid rgba(110, 231, 200, 0.28);
-  border-radius: var(--corner-sm);
+  border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   font-size: 12px;
   font-weight: 600;
@@ -167,25 +149,12 @@
 }
 
 .shelf-selection-bar button {
-  width: 24px;
-  height: 24px;
-}
-
-.shelf-selection-bar button:hover,
-.shelf-search button:hover {
-  color: var(--color-white);
-  background: var(--color-white-a16);
-}
-
-.shelf-search button:focus-visible,
-.shelf-selection-bar button:focus-visible {
-  outline: 2px solid rgba(190, 240, 225, 0.76);
-  outline-offset: 1px;
+  width: 26px;
+  height: 26px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Still goes away after the same time, just without fading. */
   .shelf-panel__notice {
-    animation-timing-function: step-end;
+    animation: none;
   }
 }
