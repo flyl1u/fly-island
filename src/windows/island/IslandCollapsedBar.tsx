@@ -1,10 +1,11 @@
+import { Fragment, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { CollapsedItem } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { CollapsedLyric } from "../../features/media/CollapsedLyric";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
@@ -36,6 +37,8 @@ type IslandCollapsedBarProps = {
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
+  /** Where the text and each status icon sit, left to right (Settings → Appearance). */
+  collapsedLayout: readonly CollapsedSlot[];
   /** The playing song's cover, or null when it is not shown. */
   collapsedCover: string | null;
   lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
@@ -75,6 +78,7 @@ export function IslandCollapsedBar({
   collapsedTaskTitle,
   collapsedTodoCount,
   collapsedItem,
+  collapsedLayout,
   collapsedCover,
   lyricsSettings,
   agentSession,
@@ -102,6 +106,125 @@ export function IslandCollapsedBar({
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
   const openTarget: IslandPage = shownAgent ? "agents" : collapsedItem === "lyrics" ? "music" : page;
 
+  // The text and the status icons, placed in the order Settings → Appearance arranged.
+  const slots: Record<CollapsedSlot, ReactNode> = {
+    text: (
+        <button
+          className="island__open-button"
+          type="button"
+          aria-label={preview
+            ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
+            : t.messages.expand(collapsedLabel)}
+          aria-expanded={preview ? undefined : isExpanded}
+          aria-controls={preview ? undefined : "island-panel"}
+          onPointerDown={prepareWindowDrag}
+          onPointerMove={handleWindowDragMove}
+          onPointerUp={cancelWindowDrag}
+          onPointerCancel={cancelWindowDrag}
+          onClick={(event) => {
+            if (event.detail === 0 || !didDragRef.current) {
+              if (preview) {
+                const source = preview.source;
+                if (source === "qqMail" && qqMail.preview) {
+                  onOpenMessages("qqMail");
+                  void qqMail.readMail(qqMail.preview, qqMail.previewAccount);
+                  return;
+                }
+                const open = source === "qq" ? qqNotifications.openQQ : wechatReminders.openWeChat;
+                void open().then((opened) => {
+                  if (opened === false) onOpenMessages(source);
+                });
+              } else {
+                onOpenPage(openTarget);
+              }
+            }
+          }}
+        >
+          <span className={pulseClassName} />
+          {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
+          <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
+            {quotaAlert ? (
+              <QuotaAlertPopup alert={quotaAlert} />
+            ) : <>
+            {showCollapsedText && showTitle && (
+              <span className="island__brand">fly-island</span>
+            )}
+            {showCollapsedText && shownAgent && (
+              <span className="island__agent-session" key={`${shownAgent.label}:${shownAgent.title}`}>
+                {showTitle && <span className="island__agent-session-separator">·</span>}
+                {shownAgent.provider ? (
+                  <AgentProviderIcon provider={shownAgent.provider} size={16} />
+                ) : (
+                  <Bot className="island__agent-session-bot" size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+                )}
+                <span className="island__agent-session-title">{shownAgent.title}</span>
+              </span>
+            )}
+            {showCollapsedText && collapsedItem === "lyrics" && (
+              <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
+            )}
+            {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
+              <span className="island__active-task" key={collapsedTaskTitle}>
+                {showTitle ? "· " : ""}
+                {collapsedTaskTitle}
+              </span>
+            )}
+            {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (
+              <span className="island__todo-count">
+                {showTitle ? "· " : ""}
+                {t.island.pendingTodos(collapsedTodoCount)}
+              </span>
+            )}
+            </>}
+          </CollapsedMessageContent>
+        </button>
+    ),
+    mail: qqMail.preview !== null && (
+      <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} onClick={() => onOpenMessages("qqMail")}>
+        <MessageSourceIcon source="qqMail" size={16} />
+        <span className="island-message-button__dot" aria-hidden="true" />
+      </button>
+      ),
+    shelf: shelfCount !== null && shelfCount > 0 && (
+      <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
+        <Inbox size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+        <span>{shelfCount}</span>
+      </button>
+      ),
+    music: showMusic && (
+      <MusicWaveButton
+        isAvailable={mediaState.available || mediaState.audioActive}
+        isPlaying={isMusicPlaying}
+        audioPeak={mediaState.audioPeak}
+        label={t.island.openMusic}
+        onClick={() => onOpenPage("music")}
+      />
+      ),
+    agents: agentSessionCount === null ? (
+      <button
+        className="island__quiet-button"
+        type="button"
+        aria-label={t.island.collapseIsland}
+        onClick={(event) => {
+          event.stopPropagation();
+          onTuck();
+        }}
+      />
+      ) : agentSessionCount > 0 ? (
+      <button
+        className="island-agent-count"
+        type="button"
+        aria-label={t.agent.sessions.activeCount(agentSessionCount)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenPage("agents");
+        }}
+      >
+        {agentSessionCount}
+      </button>
+      ) : null,
+  };
+
   return (
     <div
       className="island__collapsed"
@@ -113,119 +236,7 @@ export function IslandCollapsedBar({
         }
       }}
     >
-      <button
-        className="island__open-button"
-        type="button"
-        aria-label={preview
-          ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
-          : t.messages.expand(collapsedLabel)}
-        aria-expanded={preview ? undefined : isExpanded}
-        aria-controls={preview ? undefined : "island-panel"}
-        onPointerDown={prepareWindowDrag}
-        onPointerMove={handleWindowDragMove}
-        onPointerUp={cancelWindowDrag}
-        onPointerCancel={cancelWindowDrag}
-        onClick={(event) => {
-          if (event.detail === 0 || !didDragRef.current) {
-            if (preview) {
-              const source = preview.source;
-              if (source === "qqMail" && qqMail.preview) {
-                onOpenMessages("qqMail");
-                void qqMail.readMail(qqMail.preview, qqMail.previewAccount);
-                return;
-              }
-              const open = source === "qq" ? qqNotifications.openQQ : wechatReminders.openWeChat;
-              void open().then((opened) => {
-                if (opened === false) onOpenMessages(source);
-              });
-            } else {
-              onOpenPage(openTarget);
-            }
-          }
-        }}
-      >
-        <span className={pulseClassName} />
-        {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
-        <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-          {quotaAlert ? (
-            <QuotaAlertPopup alert={quotaAlert} />
-          ) : <>
-          {showCollapsedText && showTitle && (
-            <span className="island__brand">fly-island</span>
-          )}
-          {showCollapsedText && shownAgent && (
-            <span className="island__agent-session" key={`${shownAgent.label}:${shownAgent.title}`}>
-              {showTitle && <span className="island__agent-session-separator">·</span>}
-              {shownAgent.provider ? (
-                <AgentProviderIcon provider={shownAgent.provider} size={16} />
-              ) : (
-                <Bot className="island__agent-session-bot" size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-              )}
-              <span className="island__agent-session-title">{shownAgent.title}</span>
-            </span>
-          )}
-          {showCollapsedText && collapsedItem === "lyrics" && (
-            <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
-          )}
-          {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
-            <span className="island__active-task" key={collapsedTaskTitle}>
-              {showTitle ? "· " : ""}
-              {collapsedTaskTitle}
-            </span>
-          )}
-          {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (
-            <span className="island__todo-count">
-              {showTitle ? "· " : ""}
-              {t.island.pendingTodos(collapsedTodoCount)}
-            </span>
-          )}
-          </>}
-        </CollapsedMessageContent>
-      </button>
-      {qqMail.preview !== null && (
-        <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} onClick={() => onOpenMessages("qqMail")}>
-          <MessageSourceIcon source="qqMail" size={16} />
-          <span className="island-message-button__dot" aria-hidden="true" />
-        </button>
-      )}
-      {shelfCount !== null && shelfCount > 0 && (
-        <button className="island-shelf-count" type="button" aria-label={t.island.shelfCount(shelfCount)} onClick={() => onOpenPage("shelf")}>
-          <Inbox size={14} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-          <span>{shelfCount}</span>
-        </button>
-      )}
-      {showMusic && (
-        <MusicWaveButton
-          isAvailable={mediaState.available || mediaState.audioActive}
-          isPlaying={isMusicPlaying}
-          audioPeak={mediaState.audioPeak}
-          label={t.island.openMusic}
-          onClick={() => onOpenPage("music")}
-        />
-      )}
-      {agentSessionCount === null ? (
-        <button
-          className="island__quiet-button"
-          type="button"
-          aria-label={t.island.collapseIsland}
-          onClick={(event) => {
-            event.stopPropagation();
-            onTuck();
-          }}
-        />
-      ) : agentSessionCount > 0 ? (
-        <button
-          className="island-agent-count"
-          type="button"
-          aria-label={t.agent.sessions.activeCount(agentSessionCount)}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenPage("agents");
-          }}
-        >
-          {agentSessionCount}
-        </button>
-      ) : null}
+      {collapsedLayout.map((slot) => <Fragment key={slot}>{slots[slot]}</Fragment>)}
     </div>
   );
 }

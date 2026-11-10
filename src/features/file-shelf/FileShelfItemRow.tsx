@@ -114,14 +114,14 @@ export function FileShelfItemRow({
                 void onCopy(item.id).then((ok) => setCopied(ok));
               }}
             >
-              {copied ? <Check size={14} strokeWidth={2.6} /> : <Copy size={14} strokeWidth={2.2} />}
+              {copied ? <Check size={12} strokeWidth={2.6} /> : <Copy size={12} strokeWidth={2.2} />}
             </button>
             <button
               type="button"
               aria-label={t.fileShelf.reveal}
               onClick={() => onReveal(item.id)}
             >
-              <FolderOpen size={14} strokeWidth={2.2} />
+              <FolderOpen size={12} strokeWidth={2.2} />
             </button>
           </>
         )}
@@ -132,14 +132,14 @@ export function FileShelfItemRow({
           aria-pressed={item.pinned}
           onClick={() => onTogglePin(item.id)}
         >
-          {item.pinned ? <PinOff size={14} strokeWidth={2.2} /> : <Pin size={14} strokeWidth={2.2} />}
+          {item.pinned ? <PinOff size={12} strokeWidth={2.2} /> : <Pin size={12} strokeWidth={2.2} />}
         </button>
         <button
           type="button"
           aria-label={t.fileShelf.removeItem}
           onClick={() => onRemove(item.id)}
         >
-          <X size={14} strokeWidth={2.4} />
+          <X size={12} strokeWidth={2.4} />
         </button>
       </div>
     </article>

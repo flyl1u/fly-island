@@ -4,8 +4,21 @@ import { BASE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE
 import type { AgentSessionView } from "../../features/appearance/types";
 import type { IslandPage } from "./types";
 
-// Tall enough for about four shelf rows before the list scrolls.
-const SHELF_EXPANDED_ISLAND_HEIGHT = 430;
+// The shelf page fits its rows of tiles, one or two, and scrolls past two: the island's padding,
+// header and gap, the panel's padding, title, footer hint and the list's padding (175) around
+// rows of tiles (140 with a two-line name, FileShelfItemRow.css) 8px apart, four to a row
+// (FileShelfPanel.css). Keep in step with those files.
+const SHELF_CHROME_HEIGHT = 175;
+const SHELF_TILE_HEIGHT = 140;
+const SHELF_TILE_GAP = 8;
+const SHELF_TILES_PER_ROW = 4;
+const SHELF_MAX_ROWS = 2;
+
+/** The island's height around the shelf page holding `items` entries. */
+export function getShelfExpandedHeight(items: number) {
+  const rows = Math.min(SHELF_MAX_ROWS, Math.max(1, Math.ceil(items / SHELF_TILES_PER_ROW)));
+  return SHELF_CHROME_HEIGHT + rows * SHELF_TILE_HEIGHT + (rows - 1) * SHELF_TILE_GAP;
+}
 // Header, direction bar, a few lines of source, the result and the action row.
 const TRANSLATION_EXPANDED_ISLAND_HEIGHT = 420;
 // Settings fit their open page (useSettingsPageHeight): the island's padding, header and gap
@@ -40,6 +53,8 @@ type ExpandedHeightInput = {
   agentAlertRowHeight?: number;
   /** The height the open settings page needs, or null before it is measured. */
   settingsContentHeight?: number | null;
+  /** Entries on the file shelf; its page fits their rows of tiles. */
+  shelfItems?: number;
 };
 
 /**
@@ -62,6 +77,7 @@ export function getExpandedIslandHeight({
   agentUsageLines,
   agentAlertRowHeight,
   settingsContentHeight = null,
+  shelfItems = 0,
 }: ExpandedHeightInput) {
   // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =
@@ -87,7 +103,7 @@ export function getExpandedIslandHeight({
     : page === "music"
       ? MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "shelf"
-        ? Math.min(SHELF_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
+        ? Math.min(getShelfExpandedHeight(shelfItems), maxPanelHeight)
       : page === "translation"
         ? Math.min(TRANSLATION_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
       : page === "agents"

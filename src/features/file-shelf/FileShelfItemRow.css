@@ -1,33 +1,33 @@
-/* Rows sit flat on the panel; hover, selection and a fresh drop give them a surface. */
+/* A tile on the shelf: the icon large, the name under it in up to two lines, the type and size
+   below. A faint surface marks each place; hover, selection and a fresh drop light it. */
 .shelf-item {
+  position: relative;
   min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-md);
-  padding: 6px 8px 6px 6px;
-  background: transparent;
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  corner-shape: var(--island-corner-shape, round);
   transition:
     background 150ms ease,
     border-color 150ms ease;
 }
 
 .shelf-item:hover {
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.065);
   border-color: var(--color-white-a08);
 }
 
 .shelf-item__main {
   min-width: 0;
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-lg);
-  padding: 0;
+  gap: 8px;
+  padding: 22px 8px 12px;
   color: inherit;
-  text-align: left;
+  text-align: center;
   background: transparent;
   border: 0;
   outline: none;
@@ -42,19 +42,21 @@
 /* A type icon on a tile in the type's colour, until Explorer's own icon loads. */
 .shelf-item__icon {
   --shelf-kind: 190, 205, 215;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
+  flex: none;
   display: inline-grid;
   place-items: center;
   color: rgb(var(--shelf-kind));
   background: rgba(var(--shelf-kind), 0.12);
   border: 1px solid rgba(var(--shelf-kind), 0.2);
-  border-radius: 9px;
-  transition: transform 160ms ease;
+  border-radius: 12px;
+  corner-shape: var(--island-corner-shape, round);
+  transition: transform 180ms ease;
 }
 
 .shelf-item:hover .shelf-item__icon {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .shelf-item__icon--folder { --shelf-kind: 246, 200, 95; }
@@ -75,33 +77,40 @@
 }
 
 .shelf-item__icon--system img {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .shelf-item__body {
+  width: 100%;
   min-width: 0;
   display: grid;
   gap: 3px;
 }
 
+/* Up to two lines; the tiles in a row share the tallest one's height. */
 .shelf-item__name {
-  min-width: 0;
+  display: -webkit-box;
   overflow: hidden;
   color: var(--text-1);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .shelf-item__meta {
+  overflow: hidden;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shelf-item--recent {
@@ -131,8 +140,8 @@
   border-color: rgba(110, 231, 200, 0.42);
 }
 
-.shelf-item--pinned .shelf-item__icon {
-  box-shadow: 0 0 0 1.5px rgba(110, 231, 200, 0.55);
+.shelf-item--pinned {
+  border-color: rgba(110, 231, 200, 0.22);
 }
 
 .shelf-item__icon--thumbnail {
@@ -182,14 +191,33 @@
   color: rgba(255, 170, 180, 0.72);
 }
 
-/* The row's buttons stay out of the way until it is pointed at, focused or selected. */
+/* The tile's buttons float over its top edge, out of the way until it is pointed at, focused
+   or selected. */
 .shelf-item__actions {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  left: 5px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-sm);
+  gap: 3px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 140ms ease;
+}
+
+.shelf-item:hover .shelf-item__actions button,
+.shelf-item:focus-within .shelf-item__actions button,
+.shelf-item--selected .shelf-item__actions button,
+.shelf-item--pinned .shelf-pin-button {
+  pointer-events: auto;
+}
+
+/* The pin sits at the other corner, where a pinned tile keeps it showing. */
+.shelf-pin-button {
+  order: -1;
+  margin-right: auto;
 }
 
 .shelf-item:hover .shelf-item__actions,
@@ -208,14 +236,15 @@
 }
 
 .shelf-item__actions button {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   display: inline-grid;
   place-items: center;
   padding: 0;
   color: var(--text-2);
-  background: var(--color-white-a08);
-  border: 0;
+  background: rgba(30, 30, 34, 0.86);
+  border: 1px solid var(--color-white-a08);
+  backdrop-filter: blur(6px);
   border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
@@ -223,7 +252,7 @@
 
 .shelf-item__actions button:hover {
   color: var(--color-white);
-  background: var(--color-white-a16);
+  background: rgba(62, 62, 68, 0.95);
 }
 
 .shelf-copy-button--copied {

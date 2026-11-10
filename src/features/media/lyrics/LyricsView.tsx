@@ -1,11 +1,9 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { useTranslation } from "../../../i18n";
 import type { MediaState } from "../api";
-import { lineIndexAt, playbackPosition, wordFill, type LyricLine, type LyricWord } from "./lrc";
+import { wordFill, type LyricLine, type LyricWord } from "./lrc";
+import { useLyricClock } from "./useLyricClock";
 import "./LyricsView.css";
-
-/** How often the line is checked while playing. */
-const TICK_MS = 200;
 
 /**
  * A line timed word by word: each word fills from dim to bright as it is sung. The timings are
@@ -32,18 +30,7 @@ function SungWords({ words, positionMs, playing }: { words: LyricWord[]; positio
  */
 export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]; mediaState: MediaState; offsetMs: number }) {
   const t = useTranslation();
-  const [now, setNow] = useState(() => Date.now());
-  const playing = mediaState.playbackStatus === "playing";
-
-  useEffect(() => {
-    setNow(Date.now());
-    if (!playing) return;
-    const timer = window.setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => window.clearInterval(timer);
-  }, [playing, mediaState.updatedAt]);
-
-  const position = playbackPosition(mediaState, now) - offsetMs;
-  const index = lineIndexAt(lines, position);
+  const { index, position, playing } = useLyricClock(lines, mediaState, offsetMs);
   const words = index >= 0 ? lines[index].words : undefined;
   const text = (at: number) => (at >= 0 && at < lines.length ? lines[at].text : "");
   // Before the first line (the intro) and in breaks, a note holds the middle row, so the first

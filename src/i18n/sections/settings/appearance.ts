@@ -32,6 +32,14 @@ export type SettingsAppearanceText = {
     moveLabel: (name: string) => string;
     showCover: string;
     showCoverHint: string;
+    layout: {
+      title: string;
+      footer: string;
+      reset: string;
+      slots: Record<"text" | "mail" | "shelf" | "music" | "agents", string>;
+      textSample: string;
+      moveLabel: (name: string) => string;
+    };
   };
 };
 
@@ -65,7 +73,15 @@ export const zhCN: SettingsAppearanceText = {
     },
     moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
     showCover: "显示歌曲封面",
-    showCoverHint: "播放音乐时，在收起的岛上显示这首歌的封面。",
+    showCoverHint: "收起的岛显示歌词时，在歌词前显示这首歌的封面；排在歌词前面的内容显示时，封面也一起让开。",
+    layout: {
+      title: "岛上的排列",
+      footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧。灰色的是还没打开的功能，位置会保留。",
+      reset: "恢复默认",
+      slots: { text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数" },
+      textSample: "收起时的文字",
+      moveLabel: (name) => `移动"${name}"，可以拖动或按左右方向键`,
+    },
   },
 };
 
@@ -99,6 +115,14 @@ export const en: SettingsAppearanceText = {
     },
     moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
     showCover: "Show the song's cover",
-    showCoverHint: "While music plays, the collapsed island shows the song's cover.",
+    showCoverHint: "Beside the lyric line on the collapsed island; when something ranked above lyrics shows, the cover gives way too.",
+    layout: {
+      title: "On the island",
+      footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Grey ones are switched off and keep their place.",
+      reset: "Reset",
+      slots: { text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions" },
+      textSample: "Collapsed text",
+      moveLabel: (name) => `Move "${name}": drag, or press the left and right arrow keys`,
+    },
   },
 };

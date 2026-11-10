@@ -68,7 +68,7 @@ export function FileShelfItemIcon({
 
   return (
     <span className={className} aria-hidden="true">
-      {picture ? <img src={picture.url} alt="" draggable={false} /> : <Icon size={19} strokeWidth={1.9} />}
+      {picture ? <img src={picture.url} alt="" draggable={false} /> : <Icon size={22} strokeWidth={1.8} />}
     </span>
   );
 }

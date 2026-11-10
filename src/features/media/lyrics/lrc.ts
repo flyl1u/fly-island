@@ -92,6 +92,12 @@ export function lineIndexAt(lines: LyricLine[], positionMs: number) {
   return found;
 }
 
+/** Milliseconds from `positionMs` until the next line after it starts, or null past the last line. */
+export function msUntilNextLine(lines: LyricLine[], positionMs: number) {
+  const next = lines[lineIndexAt(lines, positionMs) + 1];
+  return next ? next.timeMs - positionMs : null;
+}
+
 /** Where playback is now: the position Windows gave at `updatedAt`, moved on while playing. */
 export function playbackPosition(
   state: { positionMs: number; durationMs: number; updatedAt: number; playbackStatus: string },

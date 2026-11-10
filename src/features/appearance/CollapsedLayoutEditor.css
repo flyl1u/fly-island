@@ -1,0 +1,114 @@
+/* Appearance → On the island: a collapsed island drawn at its real size to arrange by hand. */
+.collapsed-layout {
+  display: grid;
+  place-items: center;
+  padding: 22px 12px 18px;
+}
+
+.collapsed-layout__island {
+  width: min(340px, 100%);
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--color-white);
+  background: #050505;
+  border-radius: 0 0 22px 22px;
+  corner-shape: superellipse(1.6);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--color-white-a08);
+}
+
+.collapsed-layout__slot {
+  height: 28px;
+  min-width: 28px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: background 140ms ease, opacity 140ms ease, transform 140ms ease;
+}
+
+.collapsed-layout__slot:hover {
+  background: var(--color-white-a08);
+}
+
+.collapsed-layout__slot:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 1px;
+}
+
+.collapsed-layout__slot--dragging {
+  z-index: 1;
+  cursor: grabbing;
+  background: rgba(255, 255, 255, 0.16);
+  transform: scale(1.08);
+}
+
+/* A switched-off feature keeps its place, greyed. */
+.collapsed-layout__slot--off {
+  opacity: 0.32;
+}
+
+/* The text takes what is left, like the open button on the island. */
+.collapsed-layout__slot--text {
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 10px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.collapsed-layout__pulse {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-agent-idle);
+  box-shadow: 0 0 10px rgba(53, 233, 133, 0.6);
+}
+
+.collapsed-layout__slot--shelf {
+  color: rgba(190, 240, 225, 0.88);
+}
+
+.collapsed-layout__slot--music {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* The running-session count: a blue pill, as on the island. */
+.collapsed-layout__slot--agents:not(.collapsed-layout__slot--tuck) {
+  min-width: 20px;
+  height: 20px;
+  margin: 0 4px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(61, 139, 255, 0.32);
+  box-shadow: 0 0 10px rgba(61, 139, 255, 0.36);
+}
+
+/* With the AI Agent switch off it is the tuck dot. */
+.collapsed-layout__slot--tuck::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(186, 186, 186, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}

@@ -79,8 +79,10 @@ try {
   check(getComputedStyle(actions("pdf")).opacity === "1" && getComputedStyle(pin).opacity === "1" && getComputedStyle(pdfCopy).opacity === "0", "置顶的条目一直显示置顶按钮，其余按钮隐藏");
   const name = row("long").querySelector<HTMLElement>(".shelf-item__name")!;
   const list = document.querySelector<HTMLElement>(".shelf-list")!;
-  check(name.scrollWidth > name.clientWidth && list.scrollWidth <= list.clientWidth && actions("long").getBoundingClientRect().right <= row("long").getBoundingClientRect().right,
-    "长文件名单行省略，不撑宽面板，按钮仍在行内");
+  const lineHeight = parseFloat(getComputedStyle(name).lineHeight);
+  check(name.scrollHeight > name.clientHeight && name.clientHeight <= lineHeight * 2 + 1 && list.scrollWidth <= list.clientWidth
+    && actions("long").getBoundingClientRect().right <= row("long").getBoundingClientRect().right,
+    "长文件名最多两行再省略，不撑宽面板，按钮仍在图块内");
 
   await render(ITEMS, true);
   const overlay = document.querySelector<HTMLElement>(".shelf-drop-overlay");

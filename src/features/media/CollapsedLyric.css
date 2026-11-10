@@ -1,4 +1,4 @@
-/* The lyric line on the collapsed island: the todo text's look, each new line rising in. */
+/* The lyric line on the collapsed island: the todo text's look; a new line replaces the last at once. */
 .collapsed-lyric {
   min-width: 0;
   flex: 1;
@@ -9,7 +9,6 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
-  animation: collapsed-lyric-in 260ms ease-out backwards;
 }
 
 /* The song's cover beside it, when Appearance → Collapsed island asks for it. */
@@ -21,15 +20,4 @@
   border-radius: 6px;
   corner-shape: var(--island-corner-shape, round);
   box-shadow: inset 0 0 0 1px var(--color-white-a08);
-}
-
-@keyframes collapsed-lyric-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .collapsed-lyric {
-    animation: none;
-  }
 }

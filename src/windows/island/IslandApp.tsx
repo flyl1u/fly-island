@@ -66,7 +66,7 @@ export function IslandApp() {
   const { todos, activeTodoId, todoPageMode, notebookProps } = useIslandTodos({ settings, collapseIsland });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
-  const collapsedCover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
+  const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
   const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
@@ -74,8 +74,10 @@ export function IslandApp() {
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
-      { lyricsPlaying: songPlaying, coverShown: Boolean(collapsedCover) },
+      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover) },
     );
+  // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
+  const collapsedCover = collapsedItem === "lyrics" ? cover : null;
   useIslandTucking({
     settings,
     navigation,
@@ -109,6 +111,7 @@ export function IslandApp() {
     openIslandPage,
     collapseIsland,
   });
+  const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
   const expandedIslandHeight = getExpandedIslandHeight({
     page,
     todoPageMode,
@@ -123,13 +126,13 @@ export function IslandApp() {
     agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,
+    shelfItems: fileShelf.items.length,
   });
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
     [collapsedIslandWidth, expandedIslandHeight, mode, settings],
   );
 
-  const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
 
   const {
     isPositionDetached,
@@ -192,6 +195,7 @@ export function IslandApp() {
         collapsedTaskTitle={collapsedTaskTitle}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
+        collapsedLayout={settings.collapsedLayout}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}

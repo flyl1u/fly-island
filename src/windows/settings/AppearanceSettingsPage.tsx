@@ -1,4 +1,5 @@
 import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslandSection";
+import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { StyleSettingsSection } from "../../features/appearance/StyleSettingsSection";
@@ -24,6 +25,7 @@ export function AppearanceSettingsPage({
         onSettingsChange={onSettingsChange}
         onPreviewIsland={() => requestPanelPreview("collapsed")}
       />
+      <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
       <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />
       <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
     </>

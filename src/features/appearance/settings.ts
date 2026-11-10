@@ -85,7 +85,7 @@ export function normalizeSettings(
 export function isSameSettings(a: IslandSettings, b: IslandSettings) {
   return (Object.keys(a) as (keyof IslandSettings)[]).every((key) => {
     const [left, right] = [a[key], b[key]];
-    // The orders (collapsedPriority, pageOrder) are arrays, read back as new ones each time.
+    // The orders (collapsedPriority, collapsedLayout, pageOrder) are arrays, read back as new ones each time.
     return left === right || (Array.isArray(left) && Array.isArray(right) && left.join() === right.join());
   });
 }

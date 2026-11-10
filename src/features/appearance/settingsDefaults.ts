@@ -3,7 +3,7 @@ import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
 import {
   DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
-  COLLAPSED_ITEMS, PAGE_DOTS,
+  COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS,
 } from "./settingsLimits.ts";
 import type { IslandSettings } from "./types";
 
@@ -76,6 +76,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentTitleEnabled: true,
   collapsedPriority: [...COLLAPSED_ITEMS],
   collapsedShowCover: false,
+  collapsedLayout: [...COLLAPSED_SLOTS],
   pageOrder: [...PAGE_DOTS],
   shelfEnabled: true,
   translationEnabled: true,

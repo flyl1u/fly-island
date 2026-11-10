@@ -1,5 +1,5 @@
 // The ranges and choices island settings are kept within, and the fallbacks they rest on.
-import type { AgentSessionGroup, AgentSessionSort, CollapsedItem, PageDot } from "./types";
+import type { AgentSessionGroup, AgentSessionSort, CollapsedItem, CollapsedSlot, PageDot } from "./types";
 
 export const AGENT_SESSION_SORTS: readonly AgentSessionSort[] = ["status", "recent", "firstSeen"];
 export const AGENT_SESSION_GROUPS: readonly AgentSessionGroup[] = ["computer", "project", "none"];
@@ -32,6 +32,8 @@ export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 
 /** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
 export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
+/** The collapsed island's layout as it always was: the text, then the icons on its right. */
+export const COLLAPSED_SLOTS: readonly CollapsedSlot[] = ["text", "mail", "shelf", "music", "agents"];
 /** The header's page dots in their default order. */
 export const PAGE_DOTS: readonly PageDot[] = ["todo", "music", "clipboard", "shelf"];
 
