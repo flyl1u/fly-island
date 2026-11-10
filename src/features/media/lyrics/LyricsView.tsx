@@ -26,7 +26,7 @@ function SungWords({ words, positionMs, playing }: { words: LyricWord[]; positio
 }
 
 /**
- * Three lines of synced lyrics above the waveform: the one being sung, bright, between
+ * Three lines of synced lyrics: the one being sung, large and bright, between
  * the one before and the one after. A line with a translation shows it under itself in place
  * of the next line. `offsetMs` moves the lyrics later (positive) or earlier.
  */

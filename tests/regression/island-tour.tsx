@@ -1,6 +1,6 @@
 // pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
 // behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
-// nolyrics|none picks what the player reports, ?empty=1 empties every list, ?lang=en switches the
+// nolyrics|none picks what the player reports (?lyrics=0 turns online lyrics off), ?empty=1 empties every list, ?lang=en switches the
 // interface, ?detached=1 floats the island below the top edge. With ?test=1 it opens each page and
 // checks that nothing sticks out of the island's rounded shape.
 import { act, StrictMode } from "react";
@@ -34,6 +34,8 @@ localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh
 localStorage.setItem("focusd-island-current-date", date);
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+// Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
+localStorage.setItem("focusd-island-settings", JSON.stringify({ lyricsOnline: query.get("lyrics") !== "0" }));
 if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
