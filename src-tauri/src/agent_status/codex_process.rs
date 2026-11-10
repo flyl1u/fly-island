@@ -42,6 +42,8 @@ pub(super) fn rollout_path(home_dir: &Path, session_id: &str) -> Option<PathBuf>
         return None;
     }
     let suffix = format!("-{session_id}.jsonl");
+    // A long thread continues in pages: `rollout-<time>-<thread>_<page>.jsonl`.
+    let page = format!("-{session_id}_");
     sorted_dirs_newest_first(&home_dir.join(".codex").join("sessions"))
         .iter()
         .flat_map(|year| sorted_dirs_newest_first(year))
@@ -49,7 +51,10 @@ pub(super) fn rollout_path(home_dir: &Path, session_id: &str) -> Option<PathBuf>
         .take(MAX_DAY_DIRS)
         .find_map(|day| {
             fs::read_dir(day).ok()?.flatten().map(|entry| entry.path()).find(|path| {
-                path.file_name().is_some_and(|name| name.to_string_lossy().ends_with(&suffix))
+                path.file_name().is_some_and(|name| {
+                    let name = name.to_string_lossy();
+                    name.ends_with(&suffix) || (name.contains(&page) && name.ends_with(".jsonl"))
+                })
             })
         })
 }

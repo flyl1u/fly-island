@@ -185,3 +185,16 @@ pub(super) fn only_tab_titled(tabs: &[String], title: &str) -> Option<usize> {
     let (index, _) = matches.next()?;
     matches.next().is_none().then_some(index)
 }
+
+/// The terminal tab showing a session: the only one carrying its title, else (Codex sets no tab
+/// title; a shell prompt often shows the folder) the only one naming its folder. Folder names
+/// under 3 characters never match, nor does a name several tabs carry.
+pub(super) fn terminal_tab_for(tabs: &[String], title: Option<&str>, folder: Option<&str>) -> Option<usize> {
+    if let Some(index) = title.and_then(|title| only_tab_titled(tabs, title)) {
+        return Some(index);
+    }
+    let folder = folder.map(str::to_lowercase).filter(|folder| folder.chars().count() >= 3)?;
+    let mut matches = tabs.iter().enumerate().filter(|(_, tab)| tab.to_lowercase().contains(&folder));
+    let (index, _) = matches.next()?;
+    matches.next().is_none().then_some(index)
+}
