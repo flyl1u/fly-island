@@ -156,6 +156,11 @@
   opacity: 0.35;
 }
 
+/* A finished task cannot be started; its button keeps its column so the delete buttons line up. */
+.todo-item--done .todo-start {
+  visibility: hidden;
+}
+
 .todo-delete {
   width: 28px;
   height: 27px;

@@ -193,6 +193,13 @@
   background: var(--color-white-a16);
 }
 
+/* At rest a row shows only what it holds (a note, a star); the rest of its actions appear on
+   hover or when a key reaches the row. Clicking the row copies it anyway. */
+.clipboard-item:not(:hover, :focus-within) .clipboard-note:not(.clipboard-note--filled),
+.clipboard-item:not(:hover, :focus-within) .clipboard-item__actions button:not(.clipboard-favorite-button--active, .clipboard-delete-button--confirming, .clipboard-copy-button--copied) {
+  opacity: 0;
+}
+
 .clipboard-favorite-button--active {
   color: rgba(226, 218, 246, 0.94) !important;
   background: rgba(182, 169, 211, 0.14) !important;

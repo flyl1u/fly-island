@@ -183,19 +183,20 @@ export function IslandHeader({
             <Languages size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           </button>
         )}
-        <button
-          className={`icon-button island-reset-button${
-            isDetached ? " island-reset-button--available" : ""
-          }`}
-          type="button"
-          aria-label={t.island.resetPositionLabel}
-          onClick={(event) => {
-            event.stopPropagation();
-            onResetPosition();
-          }}
-        >
-          <RotateCcw size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-        </button>
+        {/* Only once the island has been moved: at its default place the button would do nothing. */}
+        {isDetached && (
+          <button
+            className="icon-button island-reset-button island-reset-button--available"
+            type="button"
+            aria-label={t.island.resetPositionLabel}
+            onClick={(event) => {
+              event.stopPropagation();
+              onResetPosition();
+            }}
+          >
+            <RotateCcw size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+          </button>
+        )}
         <button
           className="icon-button"
           type="button"
