@@ -1,13 +1,13 @@
 import { useSyncExternalStore } from "react";
-import { CircleHelp, Star, Tag } from "lucide-react";
+import { CircleHelp, History, Star, UserRound } from "lucide-react";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
 import { ProjectLink } from "./ProjectLink";
-import { PROJECT_ISSUES_URL, PROJECT_RELEASES_URL, PROJECT_REPO_URL } from "./projectLinks";
+import { PROJECT_AUTHOR_URL, PROJECT_HISTORY_URL, PROJECT_ISSUES_URL, PROJECT_REPO_URL } from "./projectLinks";
+import { UpdatePanel } from "./UpdatePanel";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import "./ProjectSettingsSection.css";
-import "./UpdatePanel.css";
 
 /** Settings → About, first: the island's mark, name, version and what it does. */
 export function ProjectIdentitySection() {
@@ -30,32 +30,24 @@ export function ProjectIdentitySection() {
   );
 }
 
-/** Settings → About → Links: releases, reporting a problem, and starring the project. */
+/**
+ * Settings → About → one group of four rows (five with the author): the latest version with
+ * its update states and channel, past versions, reporting a problem, starring the project,
+ * and the author's site.
+ */
 export function ProjectLinksSection() {
-  const t = useTranslation();
+  const text = useTranslation().settings.project;
+  const icon = (Icon: typeof Star) => (
+    <Icon className="project-link__icon" size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+  );
 
   return (
-    <SettingsGroup title={t.settings.project.linksTitle}>
-      <ProjectLink
-        href={PROJECT_RELEASES_URL}
-        tone="release"
-        title={t.settings.project.releases}
-        hint={t.settings.project.releasesHint}
-        icon={<Tag className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-      />
-      <ProjectLink
-        href={PROJECT_ISSUES_URL}
-        title={t.settings.project.issues}
-        hint={t.settings.project.issuesHint}
-        icon={<CircleHelp className="project-link__icon" size={18} strokeWidth={1.8} aria-hidden="true" />}
-      />
-      <ProjectLink
-        href={PROJECT_REPO_URL}
-        tone="star"
-        title={t.settings.project.star}
-        hint={t.settings.project.starHint}
-        icon={<Star className="project-link__icon" size={19} strokeWidth={1.8} aria-hidden="true" />}
-      />
+    <SettingsGroup>
+      <UpdatePanel />
+      <ProjectLink href={PROJECT_HISTORY_URL} title={text.releases} hint={text.releasesHint} icon={icon(History)} />
+      <ProjectLink href={PROJECT_ISSUES_URL} title={text.issues} hint={text.issuesHint} icon={icon(CircleHelp)} />
+      <ProjectLink href={PROJECT_REPO_URL} tone="star" title={text.star} hint={text.starHint} icon={icon(Star)} />
+      <ProjectLink href={PROJECT_AUTHOR_URL} title={text.author} hint={text.authorHint} icon={icon(UserRound)} />
     </SettingsGroup>
   );
 }

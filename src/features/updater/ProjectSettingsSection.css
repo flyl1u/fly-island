@@ -1,4 +1,4 @@
-/* 「关于」页和「更新」页的 UpdatePanel 共用这里的 project-link 卡片样式，两处都导入本文件。 */
+/* 「关于」页的身份卡与 project-link 行；UpdatePanel 的第一行也用 project-link 的样式。 */
 .about-identity {
   display: flex;
   align-items: flex-start;
@@ -92,32 +92,26 @@
   transform: rotate(-12deg) scale(1.1);
 }
 
-.project-link--release .project-link__icon {
-  transition: transform 180ms ease, color 140ms ease;
-}
-
-.project-link--release:is(:hover, :focus-visible) .project-link__icon {
-  color: var(--color-sky);
-  transform: rotate(-30deg);
-}
-
+/* Same type as a settings row: a regular-weight title and a grey consequence line. */
 .project-link__copy {
   display: grid;
   flex: 1;
-  gap: var(--space-xs);
+  gap: 3px;
   min-width: 0;
   overflow-wrap: anywhere;
-  line-height: 1.45;
 }
 
 .project-link__copy strong {
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .project-link__copy > span {
-  color: rgba(248, 246, 240, 0.62);
-  font-size: 11px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .project-link-error {
@@ -133,10 +127,6 @@
   padding: 16px;
 }
 
-.settings-group__card > .about-update {
-  padding: 12px 16px;
-}
-
 .settings-group__card > .project-link {
   padding: 12px 16px;
   background: transparent;
@@ -146,6 +136,18 @@
 
 .settings-group__card > .project-link:hover {
   background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+}
+
+/* The card does not clip (the channel menu opens past it), so the end rows round their own hover. */
+.settings-group__card > .project-link:first-child,
+.settings-group__card > .update-panel:first-child .update-panel__row {
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.settings-group__card > .project-link:last-child {
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
 }
 
 .settings-group__card > .project-link:focus-visible {

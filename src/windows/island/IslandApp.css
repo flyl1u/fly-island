@@ -190,13 +190,11 @@
   .todo-drag-handle,
   .project-link,
   .project-link--star .project-link__icon,
-  .project-link--release .project-link__icon,
   .save-path-button {
     transition: none;
   }
 
-  .project-link--star:is(:hover, :focus-visible) .project-link__icon,
-  .project-link--release:is(:hover, :focus-visible) .project-link__icon {
+  .project-link--star:is(:hover, :focus-visible) .project-link__icon {
     transform: none;
   }
 

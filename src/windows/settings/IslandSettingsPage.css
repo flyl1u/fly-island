@@ -110,11 +110,13 @@
 }
 
 .island-settings .settings-row__title,
+.island-settings .project-link__copy strong,
 .island-settings .shortcut-control__meta {
   font-size: 13px;
 }
 
 .island-settings .settings-row__description,
+.island-settings .project-link__copy > span,
 .island-settings .settings-group__footer {
   font-size: 11.5px;
   line-height: 1.45;

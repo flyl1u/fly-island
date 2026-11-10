@@ -3,8 +3,6 @@ export type SettingsProjectText = {
   appName: string;
   versionChip: (version: string) => string;
   description: string;
-  versionTitle: string;
-  linksTitle: string;
   /** The last card of About: resetting every setting, and quitting the island. */
   quit: string;
   quitHint: string;
@@ -15,6 +13,8 @@ export type SettingsProjectText = {
   issuesHint: string;
   star: string;
   starHint: string;
+  author: string;
+  authorHint: string;
   latestRelease: string;
   latestReleaseHint: string;
   openFailed: string;
@@ -53,17 +53,17 @@ export const zhCN: SettingsProjectText = {
   appName: "fly-island",
   versionChip: (version) => `v${version}`,
   description: "在屏幕顶部集中待办、剪贴板、音乐、快捷翻译、AI 状态和消息提醒。",
-  versionTitle: "版本",
-  linksTitle: "链接",
   quit: "退出岛屿",
   quitHint: "和托盘菜单里的「退出」一样；要再打开，从开始菜单或桌面快捷方式启动。",
   quitAction: "退出",
-  releases: "版本发布",
-  releasesHint: "查看更新说明，或手动下载安装包",
+  releases: "历史版本",
+  releasesHint: "点击之后可以查看岛屿的历史版本和更新历史",
   issues: "反馈问题",
   issuesHint: "到 GitHub 提一个 Issue",
   star: "觉得小岛还不错？",
   starHint: "去 GitHub 给小岛一颗 Star",
+  author: "关于作者",
+  authorHint: "去作者的个人网站 flyliu.org 看看",
   latestRelease: "查看最新版本",
   latestReleaseHint: "看看小岛又长了什么新本领",
   openFailed: "暂时没能打开浏览器，请再试一次。",
@@ -101,17 +101,17 @@ export const en: SettingsProjectText = {
   appName: "fly-island",
   versionChip: (version) => `v${version}`,
   description: "Todos, clipboard, music, quick translation, AI status, and message alerts, gathered at the top of the screen.",
-  versionTitle: "Version",
-  linksTitle: "Links",
   quit: "Quit the island",
   quitHint: "Same as Quit in the tray menu; start it again from the Start menu or a desktop shortcut.",
   quitAction: "Quit",
-  releases: "Releases",
-  releasesHint: "Read the notes, or download a build by hand",
+  releases: "History",
+  releasesHint: "See the island's past versions and update history",
   issues: "Report a problem",
   issuesHint: "Open an issue on GitHub",
   star: "Enjoying your little island?",
   starHint: "Give it a Star on GitHub",
+  author: "About the author",
+  authorHint: "Visit the author's site, flyliu.org",
   latestRelease: "View latest release",
   latestReleaseHint: "See what washed ashore in the latest update",
   openFailed: "Couldn't open your browser. Please try again.",

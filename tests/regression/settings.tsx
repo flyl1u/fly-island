@@ -212,6 +212,19 @@ if (!automated) {
       && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
 
     await openPage("about");
+    // About: one group holds the latest version (with its update states) and the links; no
+    // separate Version group nests a box in a box.
+    const aboutCards = [...document.querySelectorAll<HTMLElement>(".settings-group__card")];
+    const linkCard = aboutCards.find((card) => card.querySelector(".project-link"));
+    const linkTitles = [...(linkCard?.querySelectorAll<HTMLElement>(".project-link__copy strong") ?? [])].map((title) => title.textContent);
+    check(linkTitles.join() === "查看最新版本,历史版本,反馈问题,觉得小岛还不错？,关于作者",
+      `About lists the update row and the links in one group (${linkTitles.join()})`);
+    check(![...document.querySelectorAll(".settings-group__title")].some((title) => title.textContent === "版本"), "About has no separate Version group");
+    const authorLink = [...(linkCard?.querySelectorAll<HTMLAnchorElement>("a.project-link") ?? [])].find((link) => link.textContent?.includes("关于作者"));
+    check(authorLink?.href === "https://flyliu.org/", "About the author opens flyliu.org");
+    const historyLink = [...(linkCard?.querySelectorAll<HTMLAnchorElement>("a.project-link") ?? [])].find((link) => link.textContent?.includes("历史版本"));
+    check(historyLink?.href.endsWith("/releases") === true && historyLink.textContent?.includes("点击之后可以查看岛屿的历史版本和更新历史") === true,
+      "History opens every release with its description");
     const aboutLink = (label: string) =>
       [...document.querySelectorAll<HTMLButtonElement>(".settings-link-button")].find((button) => button.textContent === label);
     await act(async () => { aboutLink("退出")!.click(); });
