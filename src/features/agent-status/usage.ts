@@ -40,6 +40,22 @@ export function usageSourceLines(usage: AgentUsage, now: number, text: Translati
   return lines;
 }
 
+/**
+ * `usage` without the windows whose reset time has passed: the snapshot still carries the
+ * figure from before the reset (Codex writes a new one only when it is used again), and that
+ * figure is no longer true. Usage elsewhere (another computer, the web) may have started the new
+ * window, so its figure is unknown rather than 0: nothing is shown for it.
+ */
+export function withoutPastWindows(usage: AgentUsage | null, now: number): AgentUsage | null {
+  if (!usage) return null;
+  const live = (window: UsageWindow | null) => (window && window.resetsAt !== null && window.resetsAt <= now ? null : window);
+  const models = usage.models.filter((window) => live(window));
+  const fiveHour = live(usage.fiveHour);
+  const sevenDay = live(usage.sevenDay);
+  if (fiveHour === usage.fiveHour && sevenDay === usage.sevenDay && models.length === usage.models.length) return usage;
+  return { ...usage, fiveHour, sevenDay, models };
+}
+
 /** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
 export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; readAt: number };
 

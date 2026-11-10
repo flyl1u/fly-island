@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAgentUsage, getCodexUsage } from "./api";
-import { EMPTY_USAGES, type AgentUsages } from "./usage";
+import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 
 /** claude-hud refreshes its snapshot about once a minute; reading local files is cheap. */
 const REFRESH_MS = 30_000;
@@ -24,7 +24,9 @@ export function useAgentUsages(enabled: boolean): AgentUsages {
         return null;
       };
       void Promise.all([getAgentUsage().catch(log("Claude")), getCodexUsage().catch(log("Codex"))]).then(([claude, codex]) => {
-        if (!cancelled) setUsages({ claude: claude ?? null, codex: codex ?? null, readAt: Date.now() });
+        if (cancelled) return;
+        const now = Date.now();
+        setUsages({ claude: withoutPastWindows(claude ?? null, now), codex: withoutPastWindows(codex ?? null, now), readAt: now });
       });
     };
     refresh();

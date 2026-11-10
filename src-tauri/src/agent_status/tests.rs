@@ -1485,6 +1485,14 @@ fn codex_usage_comes_from_the_newest_token_count_with_a_window() {
     assert_eq!(parse_rollout(&mixed).unwrap().updated_at, Some(at_ms));
     assert_eq!(parse_rollout(&empty), None);
     assert_eq!(parse_rollout("not json\n"), None);
+    // Another bucket's windows, written later, are not the account's 5-hour and weekly limits.
+    let other = count("2026-11-07T05:00:00Z", json!({
+        "limit_id": "codex_other",
+        "primary": { "used_percent": 88.0, "window_minutes": 300 },
+        "secondary": { "used_percent": 77.0, "window_minutes": 10080 }
+    }));
+    let usage = parse_rollout(&[full.clone(), other].concat()).unwrap();
+    assert_eq!((usage.updated_at, usage.five_hour.unwrap().used), (Some(at_ms), 9.0));
 
     // A free plan's one 30-day window is listed by its length, not as the weekly one.
     let free = count(at, json!({
@@ -1637,4 +1645,38 @@ fn codex_sessions_without_a_hook_record_find_their_app_or_process() {
     // Two Codex CLIs in one folder: neither is guessed.
     assert_eq!(only_process_in(&processes, r"D:\b"), None);
     assert_eq!(only_process_in(&processes, r"D:\c"), None);
+}
+
+#[test]
+fn a_paginated_codex_thread_is_listed_once() {
+    use super::session_scan::{list_sessions, ACTIVE_WINDOW_MS};
+    use std::time::{Duration, SystemTime};
+
+    let (home, _app) = temp_dirs();
+    let day = home.join(".codex").join("sessions").join("2026").join("11").join("10");
+    fs::create_dir_all(&day).unwrap();
+    // Codex writes a long thread as pages: every page starts with the thread's own id.
+    let page = |name: &str, reply: &str, age: Duration| {
+        let path = day.join(name);
+        fs::write(
+            &path,
+            [
+                line(json!({"type": "session_meta", "payload": {"id": "t1", "cwd": r"D:\p", "source": "vscode", "history_mode": "paginated"}})),
+                line(json!({"type": "event_msg", "payload": {"type": "user_message", "message": "继续"}})),
+                line(json!({"type": "event_msg", "payload": {"type": "task_complete", "last_agent_message": reply, "error": null}})),
+            ]
+            .concat(),
+        )
+        .unwrap();
+        let file = fs::File::options().write(true).open(&path).unwrap();
+        file.set_modified(SystemTime::now() - age).unwrap();
+    };
+    page("rollout-2026-11-10T01-00-00-t1.jsonl", "第一页", Duration::from_secs(600));
+    page("rollout-2026-11-10T02-00-00-t1_p2.jsonl", "第二页", Duration::from_secs(300));
+    page("rollout-2026-11-10T03-00-00-t1_p3.jsonl", "最新一页", Duration::from_secs(5));
+
+    let sessions = list_sessions(&home, None, &WaitingNotifications::new(), ACTIVE_WINDOW_MS);
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].session_id, "t1");
+    assert_eq!(sessions[0].last_message.as_deref(), Some("最新一页"));
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { listAgentSessions, type AgentSessionSummary } from "./api";
-import { sameAgentSessions } from "./sessionList";
+import { sameAgentSessions, uniqueSessions } from "./sessionList";
 
 const NO_SESSIONS: AgentSessionSummary[] = [];
 
@@ -22,7 +22,7 @@ export function useAgentSessions(enabled: boolean, intervalMs: number, windowHou
       if (isLoading.current) return;
       isLoading.current = true;
       try {
-        const next = await listAgentSessions(windowHours);
+        const next = uniqueSessions(await listAgentSessions(windowHours));
         if (!cancelled) setSessions((current) => (sameAgentSessions(current, next) ? current : next));
       } catch (error) {
         console.error("Failed to list agent sessions", error);

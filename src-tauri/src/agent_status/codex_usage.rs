@@ -119,6 +119,11 @@ pub(super) fn parse_rollout(text: &str) -> Option<AgentUsage> {
             return None;
         }
         let limits = &payload["rate_limits"];
+        // The account's own limits are `limit_id: "codex"` (older Codex writes none); other ids are
+        // separate buckets (a model's or a feature's), not the 5-hour and weekly windows.
+        if limits["limit_id"].as_str().is_some_and(|id| id != "codex") {
+            return None;
+        }
         let at_ms = record["timestamp"].as_str().and_then(parse_timestamp_ms);
         let mut usage = AgentUsage {
             updated_at: at_ms,

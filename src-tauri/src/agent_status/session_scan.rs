@@ -98,11 +98,23 @@ fn scan(
         }
     }
     cache.forget_missing(home_dir, &sessions);
+    keep_newest_per_session(&mut sessions);
 
     let is_active = |phase: &str| matches!(phase, "running" | "waiting");
     sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
     sessions.truncate(MAX_SESSIONS);
     sessions
+}
+
+/// One entry per session: Codex writes a long thread as several rollout files ("pages", named
+/// `rollout-<time>-<thread>_<page>.jsonl`, `history_mode: "paginated"`), each starting with the
+/// thread's own id, and a resumed or forked thread can do the same. The page written last is the
+/// live one. Listing every page gave the Agent page rows with one React key, which React then
+/// kept duplicating on every poll.
+pub(super) fn keep_newest_per_session(sessions: &mut Vec<AgentSessionSummary>) {
+    sessions.sort_by_key(|session| -session.updated_at);
+    let mut seen = HashSet::new();
+    sessions.retain(|session| seen.insert((session.provider, session.session_id.clone())));
 }
 
 /// Whether the session's agent has quit, from its SessionStart / SessionEnd record: SessionEnd
