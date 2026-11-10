@@ -38,6 +38,8 @@ type IslandPagesProps = {
   /** Whether settings open in their own window (then this page is not used). */
   detachedSettings: boolean;
   onDetachedSettingsChange: (detached: boolean) => void;
+  /** The height the open settings page needs (useSettingsPageHeight). */
+  onSettingsHeight: (height: number) => void;
   features: ReturnType<typeof useIslandFeatures>["features"];
   qqMail: ReturnType<typeof useMail>;
   qqNotifications: ReturnType<typeof useQQNotifications>;
@@ -65,6 +67,7 @@ export function IslandPages({
   onSettingsChange,
   detachedSettings,
   onDetachedSettingsChange,
+  onSettingsHeight,
   features,
   qqMail,
   qqNotifications,
@@ -103,6 +106,7 @@ export function IslandPages({
             wechatReminders={wechatReminders}
             detached={detachedSettings}
             onDetachedChange={onDetachedSettingsChange}
+            onContentHeight={onSettingsHeight}
           />
         </div>
       )}

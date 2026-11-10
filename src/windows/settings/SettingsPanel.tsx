@@ -31,6 +31,7 @@ export function SettingsPanel({
   wechatReminders,
   detached,
   onDetachedChange,
+  onContentHeight,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings | ((current: IslandSettings) => IslandSettings)) => void;
@@ -39,6 +40,8 @@ export function SettingsPanel({
   /** Whether settings open in their own window (General → Separate settings window). */
   detached: boolean;
   onDetachedChange: (detached: boolean) => void;
+  /** As a page of the island: told the height the open page needs, to size the island to it. */
+  onContentHeight?: (height: number) => void;
 }) {
   const { locale, setLocale } = useLocale();
   const setSettings = onSettingsChange;
@@ -78,6 +81,7 @@ export function SettingsPanel({
     <LayoutEditor
       category={category}
       onCategoryChange={setCategory}
+      onContentHeight={onContentHeight}
       titleAction={category === "appearance" && <ResetAppearanceButton onReset={resetAppearance} />}
     >
       {category === "general" && (

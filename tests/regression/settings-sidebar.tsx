@@ -1,5 +1,5 @@
 // pnpm dev, then open /tests/regression/settings-sidebar.html. The settings page list on its own:
-// groups under fixed headings and About at the bottom. ?page=<category> starts there.
+// groups set apart by space (named for screen readers) and About at the bottom. ?page=<category> starts there.
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "../../src/styles/tokens.css";
@@ -50,8 +50,9 @@ try {
   await mount(settingsCategoryFor(new URLSearchParams(location.search).get("page") ?? "") ?? "general");
   if (new URLSearchParams(location.search).has("page")) throw "manual";
 
-  const headings = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__heading")].map((heading) => heading.textContent);
-  check(headings().join("|") === "基础|功能|AI Agent", "Pages sit under fixed group headings that do not fold");
+  const groups = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__group")].map((group) => group.getAttribute("aria-label"));
+  check(groups().join("|") === "基础|功能|AI Agent" && !host.querySelector(".settings-sidebar__heading"),
+    "Pages sit in three named groups, set apart by space rather than visible headings");
   check(!host.querySelector("input, button[aria-expanded]"), "No search box and nothing to fold");
   check(listed().join() === "general,appearance,todos,music,translation,clipboard,messages,agents,agentConnect,about",
     "Every page is listed once, in sidebar order");

@@ -1,14 +1,14 @@
 .settings-row {
   min-width: 0;
-  min-height: 50px;
+  min-height: 46px;
   display: grid;
   align-content: center;
   gap: var(--space-lg);
-  padding: var(--space-xl) 16px;
+  padding: var(--space-lg) 14px;
 }
 
 .settings-row--indent {
-  padding-left: 36px;
+  padding-left: 32px;
 }
 
 .settings-row__main {

@@ -8,8 +8,19 @@ import type { IslandPage } from "./types";
 const SHELF_EXPANDED_ISLAND_HEIGHT = 430;
 // Header, direction bar, a few lines of source, the result and the action row.
 const TRANSLATION_EXPANDED_ISLAND_HEIGHT = 420;
-// Settings use about the tallest island the window allows, whatever the panel height limit.
-const SETTINGS_EXPANDED_ISLAND_HEIGHT = 540;
+// Settings fit their open page (useSettingsPageHeight): the island's padding, header and gap
+// around it, between a floor that keeps short pages from looking cramped and about the tallest
+// island the window allows, past which the page scrolls. The fallback before the first measure.
+const SETTINGS_CHROME_HEIGHT = 86;
+const MIN_SETTINGS_EXPANDED_ISLAND_HEIGHT = 340;
+const MAX_SETTINGS_EXPANDED_ISLAND_HEIGHT = 560;
+const DEFAULT_SETTINGS_EXPANDED_ISLAND_HEIGHT = 440;
+
+/** The island's height around a settings page whose content measured `contentHeight` (null: not yet). */
+export function getSettingsExpandedHeight(contentHeight: number | null) {
+  if (contentHeight === null) return DEFAULT_SETTINGS_EXPANDED_ISLAND_HEIGHT;
+  return Math.min(MAX_SETTINGS_EXPANDED_ISLAND_HEIGHT, Math.max(MIN_SETTINGS_EXPANDED_ISLAND_HEIGHT, contentHeight + SETTINGS_CHROME_HEIGHT));
+}
 
 type ExpandedHeightInput = {
   page: IslandPage;
@@ -27,6 +38,8 @@ type ExpandedHeightInput = {
   agentUsageLines: number;
   /** An alert's one-session card instead: the height its row measured, without the usage line. */
   agentAlertRowHeight?: number;
+  /** The height the open settings page needs, or null before it is measured. */
+  settingsContentHeight?: number | null;
 };
 
 /**
@@ -48,6 +61,7 @@ export function getExpandedIslandHeight({
   agentSessionView = "list",
   agentUsageLines,
   agentAlertRowHeight,
+  settingsContentHeight = null,
 }: ExpandedHeightInput) {
   // The upcoming list scrolls inside the archive's fixed height.
   const isTodoArchivePage =
@@ -64,7 +78,7 @@ export function getExpandedIslandHeight({
   );
 
   return page === "settings"
-    ? SETTINGS_EXPANDED_ISLAND_HEIGHT
+    ? getSettingsExpandedHeight(settingsContentHeight)
     : page === "todo"
     ? isTodoArchivePage
       ? TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT

@@ -1,10 +1,15 @@
-/* Settings as a page of the island: the same pages, fitted to the island's width. */
+/*
+ * Settings as a page of the island: the same pages, made compact to suit it. The island's height
+ * follows the open page (useSettingsPageHeight), so there is no empty band under a short page.
+ */
 .island-settings {
   height: 100%;
   min-height: 0;
   overflow: hidden;
   color: var(--color-page-text);
-  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--island-panel-radius, 12px);
+  corner-shape: var(--island-corner-shape, round);
 }
 
 .island-settings select {
@@ -12,22 +17,105 @@
 }
 
 .island-settings .settings-layout {
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 128px minmax(0, 1fr);
 }
 
+/* A slim list: smaller rows and type; a long English name wraps rather than being cut off. */
 .island-settings .settings-sidebar {
-  padding: 10px 6px 6px;
-  background: rgba(0, 0, 0, 0.22);
+  padding: 8px 6px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.island-settings .settings-sidebar__group + .settings-sidebar__group {
+  margin-top: 8px;
 }
 
 .island-settings .settings-sidebar__item {
+  min-height: 27px;
   gap: 7px;
-  padding-inline: 7px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.island-settings .settings-sidebar__item > span {
+  white-space: normal;
+}
+
+.island-settings .settings-sidebar__item > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.island-settings .settings-sidebar__item--active::before {
+  top: 6px;
+  bottom: 6px;
+}
+
+.island-settings .settings-sidebar__footer {
+  margin-top: 6px;
+  padding-top: 6px;
 }
 
 .island-settings .editor-panel {
   height: 100%;
   min-height: 0;
-  padding: 12px 14px 16px;
+  gap: 8px;
+  padding: 10px 12px 12px;
   background: transparent;
+}
+
+.island-settings .settings-page__title {
+  min-height: 24px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Groups, rows and their type a step smaller than in the window. */
+.island-settings .settings-group {
+  gap: 6px;
+}
+
+.island-settings .settings-group + .settings-group {
+  margin-top: 4px;
+}
+
+.island-settings .settings-group__title {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.island-settings .settings-group__card {
+  border-radius: var(--radius-lg);
+}
+
+.island-settings .settings-group__card > * + *::before {
+  right: 12px;
+  left: 12px;
+}
+
+.island-settings .settings-row,
+.island-settings .shortcut-row {
+  min-height: 40px;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.island-settings .settings-row--indent {
+  padding-left: 28px;
+}
+
+.island-settings .settings-row__main {
+  gap: 12px;
+}
+
+.island-settings .settings-row__title,
+.island-settings .shortcut-control__meta {
+  font-size: 13px;
+}
+
+.island-settings .settings-row__description,
+.island-settings .settings-group__footer {
+  font-size: 11.5px;
+  line-height: 1.45;
 }

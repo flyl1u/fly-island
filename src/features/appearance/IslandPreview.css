@@ -47,6 +47,8 @@
 
 .island-preview__island--collapsed {
   min-width: 150px;
+  /* In a narrow pane (the island's own settings page) the title is cut short, not the island. */
+  max-width: calc(100% - 16px);
   height: 34px;
   gap: 8px;
   padding: 0 14px;
@@ -98,7 +100,10 @@
 
 .island-preview__task {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
   color: var(--preview-text);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

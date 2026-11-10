@@ -28,12 +28,12 @@ mod tests {
     use super::{fit, Size};
 
     const MIN: Size = Size {
-        width: 580.0,
+        width: 560.0,
         height: 420.0,
     };
     const WANTED: Size = Size {
-        width: 1080.0,
-        height: 860.0,
+        width: 800.0,
+        height: 660.0,
     };
 
     fn size(width: f64, height: f64) -> Size {
@@ -48,12 +48,12 @@ mod tests {
 
     #[test]
     fn shortens_on_a_scaled_laptop_screen() {
-        assert_eq!(fit(WANTED, MIN, size(1536.0, 824.0)), size(1080.0, 728.0));
+        assert_eq!(fit(WANTED, MIN, size(1366.0, 680.0)), size(800.0, 584.0));
     }
 
     #[test]
     fn shrinks_to_a_small_screen() {
-        assert_eq!(fit(WANTED, MIN, size(853.0, 680.0)), size(757.0, 584.0));
+        assert_eq!(fit(WANTED, MIN, size(853.0, 600.0)), size(757.0, 504.0));
     }
 
     #[test]
