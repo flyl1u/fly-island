@@ -75,7 +75,7 @@
 }
 
 .translation-panel__source textarea:focus {
-  border-color: rgba(184, 226, 204, 0.6);
+  border-color: var(--color-white-a18);
 }
 
 .translation-panel__source .translation-panel__icon {
@@ -100,7 +100,7 @@
 }
 
 .translation-panel__result--filled {
-  color: #b8e2cc;
+  color: var(--color-text);
 }
 
 .translation-panel__empty {
@@ -142,7 +142,7 @@
 
 .translation-panel__setup {
   padding: 0;
-  color: #b8e2cc;
+  color: var(--color-text);
   background: none;
   border: 0;
   cursor: pointer;
@@ -181,7 +181,7 @@
   flex: 0 0 auto;
   padding: 0 14px;
   color: #101013;
-  background: #b8e2cc;
+  background: rgba(240, 240, 243, 0.92);
   border: 0;
   border-radius: var(--radius-pill);
   cursor: pointer;
@@ -191,7 +191,7 @@
 }
 
 .translation-panel__primary:hover:not(:disabled) {
-  background: #d2eddf;
+  background: #ffffff;
 }
 
 .translation-panel__primary:disabled {
@@ -201,7 +201,7 @@
 
 .translation-panel button:focus-visible,
 .translation-panel select:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
+  outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: 2px;
 }
 

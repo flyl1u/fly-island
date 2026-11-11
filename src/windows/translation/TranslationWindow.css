@@ -11,7 +11,8 @@
   --translation-text: #f0f0f3;
   --translation-muted: #b0afb9;
   --translation-border: rgba(255, 255, 255, 0.1);
-  --translation-accent: #b9dfcd;
+  --translation-accent: #f0f0f3;
+  --translation-focus: rgba(255, 255, 255, 0.5);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -42,7 +43,7 @@
 .translation-window select:focus-visible,
 .translation-window input:focus-visible,
 .translation-window textarea:focus-visible {
-  outline: 2px solid var(--translation-accent);
+  outline: 2px solid var(--translation-focus);
   outline-offset: 2px;
 }
 
@@ -272,7 +273,7 @@
   gap: var(--space-md);
   min-height: 34px;
   padding: 7px 14px;
-  color: #202b25;
+  color: #18181c;
   background: var(--translation-accent);
   border: 0;
   border-radius: var(--radius-md);
@@ -280,7 +281,7 @@
   font-weight: 600;
   transition: background 160ms ease;
 }
-.translation-window__primary:not(:disabled):hover { background: #d2eddf; }
+.translation-window__primary:not(:disabled):hover { background: #ffffff; }
 .translation-window__translate { min-width: 82px; }
 
 .translation-window__content,
