@@ -52,15 +52,21 @@ test("settings are clamped and legacy fields are migrated", () => {
   assert.equal(normalizeSettings({ collapsedScale: 0.81, expandedScale: 0.88 }).collapsedScale, 0.82);
 });
 
-test("the expanded size is one of three, and an older saved scale lands on the nearest", () => {
+test("the expanded size is a scale from 0.85 to 1.2; the three sizes of 3.0.0 keep their value", () => {
   assert.equal(DEFAULT_SETTINGS.expandedScale, 1);
   assert.equal(normalizeSettings({}).expandedScale, 1);
+  // Small, medium and large as 3.0.0 stored them.
   assert.equal(normalizeSettings({ expandedScale: 0.9 }).expandedScale, 0.9);
+  assert.equal(normalizeSettings({ expandedScale: 1 }).expandedScale, 1);
   assert.equal(normalizeSettings({ expandedScale: 1.1 }).expandedScale, 1.1);
-  assert.equal(normalizeSettings({ expandedScale: 0.75 }).expandedScale, 0.9);
-  assert.equal(normalizeSettings({ expandedScale: 0.97 }).expandedScale, 1);
-  assert.equal(normalizeSettings({ expandedScale: 1.3 }).expandedScale, 1.1);
+  // Anything on the slider, to the hundredth.
+  assert.equal(normalizeSettings({ expandedScale: 0.97 }).expandedScale, 0.97);
+  assert.equal(normalizeSettings({ expandedScale: 1.0449 }).expandedScale, 1.04);
+  // Older scales (0.75–1.4) come within the range; a non-number is the default.
+  assert.equal(normalizeSettings({ expandedScale: 0.75 }).expandedScale, 0.85);
+  assert.equal(normalizeSettings({ expandedScale: 1.3 }).expandedScale, 1.2);
   assert.equal(normalizeSettings({ expandedScale: "big" }).expandedScale, 1);
+  assert.equal(normalizeSettings({ expandedScale: null }).expandedScale, 1);
 });
 
 test("options no longer in Settings load as their defaults, whatever was saved", () => {

@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { EXPANDED_SCALES, nearestExpandedSize } from "./settingsLimits.ts";
+import { normalizeExpandedScale } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 /** The look that can still be set: style, font, opacity, the two sizes and the three colours. */
@@ -31,8 +31,8 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     ),
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
     collapsedScale: clamp(Number(collapsedScale), 0.75, 1.4),
-    // One of three sizes; a scale saved by an older version lands on the nearest.
-    expandedScale: EXPANDED_SCALES[nearestExpandedSize(Number(settings?.expandedScale ?? DEFAULT_SETTINGS.expandedScale))],
+    // On the slider's range; the three sizes of 3.0.0 keep their value.
+    expandedScale: normalizeExpandedScale(settings?.expandedScale ?? DEFAULT_SETTINGS.expandedScale),
     taskTextColor,
     pulseColor: getColorSetting(
       settings?.pulseColor,

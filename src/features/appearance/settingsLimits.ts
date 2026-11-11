@@ -31,18 +31,22 @@ export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 
 /**
- * The expanded island's sizes (Appearance → "Expanded size"), as the scale stored in
- * `expandedScale`. Width and height grow together; the native window (src-tauri/src/island/)
- * accepts 0.75–1.4 and makes room for the scaled height.
+ * The expanded island's size (Appearance → "Expanded size"): a slider over this range in steps
+ * of 0.01, stored as the scale in `expandedScale`. Width and height grow together; the native
+ * window (src-tauri/src/island/) accepts 0.75–1.4 and makes room for the scaled height, and the
+ * 820px-wide window holds the widest island (560 x 1.2 = 672px).
  */
-export const EXPANDED_SCALES = { small: 0.9, medium: 1, large: 1.1 } as const;
-export type ExpandedSize = keyof typeof EXPANDED_SCALES;
+export const MIN_EXPANDED_SCALE = 0.85;
+export const MAX_EXPANDED_SCALE = 1.2;
 
-/** The size closest to a saved scale: older versions stored any value from 0.75 to 1.4. */
-export function nearestExpandedSize(scale: number): ExpandedSize {
-  const sizes = Object.keys(EXPANDED_SCALES) as ExpandedSize[];
-  if (!Number.isFinite(scale)) return "medium";
-  return sizes.reduce((best, size) => (Math.abs(EXPANDED_SCALES[size] - scale) < Math.abs(EXPANDED_SCALES[best] - scale) ? size : best), "medium");
+/**
+ * A saved scale on the slider: the small / medium / large sizes of 3.0.0 (0.9 / 1 / 1.1) stay as
+ * they are, anything older (0.75–1.4) comes within the range, and a non-number falls back to 1.
+ */
+export function normalizeExpandedScale(value: unknown) {
+  const scale = Number(value);
+  if (value === null || value === undefined || value === "" || !Number.isFinite(scale)) return 1;
+  return Math.round(Math.min(MAX_EXPANDED_SCALE, Math.max(MIN_EXPANDED_SCALE, scale)) * 100) / 100;
 }
 
 /** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */

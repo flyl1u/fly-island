@@ -99,15 +99,29 @@ if (!automated) {
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
-    // Expanded size: small / medium / large, stored as the scale, and the island opens to show it.
-    const sizeGroup = element("[role='group'][aria-label='展开后的大小']");
-    check([...sizeGroup.querySelectorAll("button")].map((button) => button.textContent).join() === "小,中,大"
-      && sizeGroup.querySelector("[aria-pressed='true']")?.textContent === "中", "The expanded size offers small, medium and large, medium by default");
-    await act(async () => { sizeGroup.querySelectorAll<HTMLButtonElement>("button")[2].click(); });
+    // Expanded size: a slider from 0.85x to 1.2x, stored as the scale once the thumb is let go,
+    // and the island opens to show it.
+    const sizeLabel = [...document.querySelectorAll<HTMLLabelElement>("label")].find((label) => label.textContent === "展开后的大小");
+    const sizeSlider = element<HTMLInputElement>(`#${CSS.escape(sizeLabel?.htmlFor ?? "missing")}`);
+    const storedScale = () => (JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale;
+    check(sizeSlider.type === "range" && sizeSlider.min === "0.85" && sizeSlider.max === "1.2" && sizeSlider.step === "0.01" && sizeSlider.value === "1",
+      "The expanded size is a slider from 0.85 to 1.2 in steps of 0.01, at 1 by default");
+    localStorage.removeItem("focusd-island-panel-preview");
+    const setRange = (input: HTMLInputElement, value: string) => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    await act(async () => { setRange(sizeSlider, "1.05"); });
+    await act(async () => { setRange(sizeSlider, "1.12"); });
+    const sizeRow = sizeSlider.closest(".settings-row") ?? document.body;
+    check(storedScale() !== 1.12 && !localStorage.getItem("focusd-island-panel-preview") && sizeRow.querySelector(".settings-slider__value")?.textContent === "1.12x",
+      "Dragging the expanded size shows the value but neither stores it nor resizes the island yet");
+    await act(async () => { window.dispatchEvent(new PointerEvent("pointerup")); });
     const preview = JSON.parse(localStorage.getItem("focusd-island-panel-preview") ?? "{}") as { mode?: string };
-    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale === 1.1 && preview.mode === "expanded",
-      "Choosing large stores 1.1 and opens the island to show it");
-    await act(async () => { sizeGroup.querySelectorAll<HTMLButtonElement>("button")[1].click(); });
+    check(storedScale() === 1.12 && preview.mode === "expanded", "Letting go stores 1.12 and opens the island to show it");
+    await act(async () => { setRange(sizeSlider, "1"); });
+    await act(async () => { sizeSlider.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true })); });
+    check(storedScale() === 1, "A key press on the slider stores its value at once");
     await click(".appearance-reset");
     check(storedSettings().opacity === 60, "The first reset click only asks for confirmation");
     await click(".appearance-reset__confirm .appearance-reset:not(.appearance-reset--danger)");

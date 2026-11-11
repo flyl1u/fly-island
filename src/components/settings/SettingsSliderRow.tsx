@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useState, type CSSProperties, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { SettingsRow } from "./SettingsRow";
 import "./SettingsSliderRow.css";
@@ -18,6 +18,7 @@ export function SettingsSliderRow({
   defaultValue,
   resetLabel,
   indent,
+  commitOnRelease = false,
   onChange,
 }: {
   title: ReactNode;
@@ -31,11 +32,34 @@ export function SettingsSliderRow({
   /** Accessible name of the reset button; needed when `defaultValue` is given. */
   resetLabel?: string;
   indent?: boolean;
+  /**
+   * Report the value once the thumb is let go (pointer up, key up, focus leaving) instead of on
+   * every step; the pill and the track follow the drag meanwhile. For a value that resizes the
+   * island, where each step would be a resize.
+   */
+  commitOnRelease?: boolean;
   onChange: (value: number) => void;
 }) {
   const id = useId();
-  const fill = max > min ? ((value - min) / (max - min)) * 100 : 0;
-  const canReset = defaultValue !== undefined && value !== defaultValue;
+  const [draft, setDraft] = useState<number | null>(null);
+  const shown = draft ?? value;
+  const fill = max > min ? ((shown - min) / (max - min)) * 100 : 0;
+  const canReset = defaultValue !== undefined && shown !== defaultValue;
+  const commit = () => {
+    if (draft === null) return;
+    setDraft(null);
+    if (draft !== value) onChange(draft);
+  };
+  // The thumb can be let go anywhere on screen, not only over the slider.
+  useEffect(() => {
+    if (draft === null) return;
+    window.addEventListener("pointerup", commit);
+    window.addEventListener("pointercancel", commit);
+    return () => {
+      window.removeEventListener("pointerup", commit);
+      window.removeEventListener("pointercancel", commit);
+    };
+  });
 
   return (
     <SettingsRow
@@ -50,12 +74,15 @@ export function SettingsSliderRow({
               className="settings-slider__reset"
               type="button"
               aria-label={resetLabel}
-              onClick={() => onChange(defaultValue)}
+              onClick={() => {
+                setDraft(null);
+                onChange(defaultValue);
+              }}
             >
               <RotateCcw size={13} strokeWidth={2.2} aria-hidden="true" />
             </button>
           ) : null}
-          <output className="settings-slider__value" htmlFor={id}>{format(value)}</output>
+          <output className="settings-slider__value" htmlFor={id}>{format(shown)}</output>
         </>
       }
     >
@@ -66,9 +93,15 @@ export function SettingsSliderRow({
         min={min}
         max={max}
         step={step}
-        value={value}
+        value={shown}
         style={{ "--settings-slider-fill": `${fill}%` } as CSSProperties}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
+        onChange={(event) => {
+          const next = Number(event.currentTarget.value);
+          if (commitOnRelease) setDraft(next);
+          else onChange(next);
+        }}
+        onKeyUp={commitOnRelease ? commit : undefined}
+        onBlur={commitOnRelease ? commit : undefined}
       />
     </SettingsRow>
   );
