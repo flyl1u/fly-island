@@ -15,7 +15,7 @@ export type IslandText = {
   music: string;
   clipboardHistory: string;
   shelf: string;
-  /** Short page names on the header dots: the open page's dot shows its name, the others on hover. */
+  /** Short page names in the tips above the header dots. */
   pageNames: { todo: string; music: string; clipboard: string; shelf: string };
   /** The tip on the status light, which opens the Agent page. */
   agentPage: string;

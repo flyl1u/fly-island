@@ -172,12 +172,12 @@ if (!automated) {
     // The shelf's three files make one row of tiles with an open slot, and the page is only as
     // tall as that row (getShelfExpandedHeight).
     await click(".dot-button--shelf");
-    // The open page's dot widens into a capsule with the page's name; the other dots stay dots
-    // and carry their name for the hover tip.
-    const activeDot = document.querySelector<HTMLElement>(".dot-button--active");
-    check(activeDot?.classList.contains("dot-button--shelf") && activeDot.textContent === "文件" && activeDot.offsetWidth > 24
-      && [...document.querySelectorAll<HTMLElement>(".dot-button:not(.dot-button--active)")].every((dot) => dot.offsetWidth <= 12 && dot.dataset.tip),
-      "打开的页面圆点显示页面名，其他圆点悬停时显示名字");
+    // The dots stay plain dots; each names its page in a tip above it on hover, with no delay.
+    const dots = [...document.querySelectorAll<HTMLElement>(".dot-button")];
+    check(dots.every((dot) => dot.offsetWidth === 12 && !dot.textContent && dot.dataset.tip
+      && getComputedStyle(dot, "::after").content.includes(dot.dataset.tip) && parseFloat(getComputedStyle(dot, "::after").bottom) > 12
+      && getComputedStyle(dot, "::after").transitionDelay === "0s"),
+      "页面圆点保持圆点，悬停时上方立刻显示页面名");
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
     check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && document.querySelector(".shelf-slot")

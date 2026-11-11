@@ -126,10 +126,7 @@ export function IslandHeader({
               // The click that ends dragging a dot to a new place does not open its page.
               if (!wasDotDragged()) onPageChange(dot);
             }}
-          >
-            {/* The open page's dot widens into a capsule with its name, so the dots explain themselves. */}
-            <span className="dot-button__label" aria-hidden="true">{t.island.pageNames[dot]}</span>
-          </button>
+          />
         ))}
       </div>
 
