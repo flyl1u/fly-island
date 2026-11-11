@@ -28,6 +28,15 @@ test("shortcuts are built from key events in a fixed modifier order", () => {
   assert.equal(buildShortcutFromEvent(key("Control", { ctrlKey: true })), null, "a lone modifier is not a shortcut");
 });
 
+test("shortcuts name the physical key, whatever Shift, the layout or an input method made of it", () => {
+  assert.equal(buildShortcutFromEvent({ ...key("!", { ctrlKey: true, shiftKey: true }), code: "Digit1" }), "Ctrl+Shift+1");
+  assert.equal(buildShortcutFromEvent({ ...key("Process", { ctrlKey: true, altKey: true }), code: "KeyT" }), "Ctrl+Alt+T");
+  assert.equal(buildShortcutFromEvent({ ...key("?", { ctrlKey: true, shiftKey: true }), code: "Slash" }), "Ctrl+Shift+/");
+  assert.equal(buildShortcutFromEvent({ ...key(" ", { altKey: true }), code: "Space" }), "Alt+Space");
+  assert.equal(buildShortcutFromEvent({ ...key("F5", { ctrlKey: true }), code: "F5" }), "Ctrl+F5");
+  assert.equal(buildShortcutFromEvent({ ...key("Process", { ctrlKey: true }), code: "" }), null, "an unknown key records nothing");
+});
+
 test("stored shortcuts are normalized, falling back to the default", () => {
   assert.equal(normalizeClipboardShortcut(" shift + control + v "), "Ctrl+Shift+V");
   assert.equal(normalizeClipboardShortcut("cmd+option+Space"), "Alt+Win+Space");

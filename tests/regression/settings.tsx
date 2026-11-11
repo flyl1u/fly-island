@@ -10,7 +10,7 @@ import { SettingsWindow } from "../../src/windows/settings/SettingsWindow";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 import { settingsCategoryFor } from "../../src/windows/settings/categories";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
-import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls } from "./settingsMocks";
+import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcutCalls } from "./settingsMocks";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -257,6 +257,33 @@ if (!automated) {
     const savedPlayers = JSON.parse(localStorage.getItem("focusd-island-music-sources") ?? "[]") as { id: string; label: string }[];
     check(players().join() === "Spotify,网易云音乐,QQ音乐" && savedPlayers.map((source) => source.id).join() === "Spotify.exe,cloudmusic.exe,QQMusic"
       && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
+
+    // Shortcuts: the recorder reads the physical key (Shift+1 gives "!" and Chinese input
+    // gives "Process"), and another part of the page saving later keeps the new keys.
+    const record = async (init: KeyboardEventInit) => {
+      const button = element<HTMLButtonElement>(".editor-panel .shortcut-record-button");
+      await act(async () => { button.focus(); button.click(); });
+      await act(async () => { button.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init })); });
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+    };
+    const storedShortcut = () => (JSON.parse(localStorage.getItem("focusd-island-translation-settings") ?? "{}") as { shortcut?: string }).shortcut;
+    await openPage("translation");
+    await record({ key: "!", code: "Digit1", ctrlKey: true, shiftKey: true });
+    check(translationShortcutCalls.at(-1) === "Ctrl+Shift+1" && storedShortcut() === "Ctrl+Shift+1",
+      "Recording Ctrl+Shift+1 registers and saves Ctrl+Shift+1, not the shifted symbol");
+    await record({ key: "Process", code: "KeyJ", ctrlKey: true, altKey: true });
+    check(storedShortcut() === "Ctrl+Alt+J", "Keys pressed with Chinese input on record by their physical key");
+    await type(element<HTMLInputElement>(".editor-panel input[placeholder*='模型']"), "demo-model");
+    check(storedShortcut() === "Ctrl+Alt+J" && element(".editor-panel .shortcut-record-button").textContent === "Ctrl+Alt+J",
+      "Editing the model afterwards keeps the new translation shortcut");
+    await openPage("clipboard");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+    await record({ key: "?", code: "Slash", ctrlKey: true, shiftKey: true });
+    const clipboardSaved = commands.lastIndexOf("set_clipboard_history_settings") >= 0;
+    check(clipboardSaved && element(".editor-panel .shortcut-record-button").textContent === "Ctrl+Shift+/",
+      "Recording Ctrl+Shift+/ for clipboard history saves it");
+    await record({ key: "J", code: "KeyJ", ctrlKey: true, altKey: true });
+    check(element(".shortcut-control__error").textContent?.includes("Ctrl+Alt+J"), "Keys translation already uses are refused for clipboard history");
 
     await openPage("about");
     // About: one group holds the latest version (with its update states) and the links; no
