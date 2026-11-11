@@ -45,7 +45,15 @@ export function MusicSourcePrioritySection() {
   const { musicSourcePriority, setMusicSourceOrder } = useMusicSourcePriority(live);
 
   return (
-    <SettingsGroup title={text.title} footer={musicSourcePriority.length > 1 ? text.footer : undefined}>
+    <SettingsGroup
+      title={text.title}
+      footer={(
+        <>
+          {musicSourcePriority.length > 1 && <p>{text.footer}</p>}
+          <p>{text.coverHint}</p>
+        </>
+      )}
+    >
       {musicSourcePriority.length === 0 ? (
         <p className="music-sources__empty">{text.empty}</p>
       ) : (

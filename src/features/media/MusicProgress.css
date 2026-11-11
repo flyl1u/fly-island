@@ -20,15 +20,15 @@
   border-radius: var(--radius-pill);
 }
 
-/* In the song's accent (MusicPlayerPanel sets --music-tint from the cover). */
+/* The island's ordinary foreground, like the controls below it: a cover's colour here read as a stray green or red. */
 .music-progress__fill {
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--music-progress, 0%);
-  background: rgb(var(--music-tint, 236, 236, 242));
+  background: var(--text-2);
   border-radius: inherit;
   corner-shape: inherit;
-  transition: width 480ms linear, background-color 400ms ease;
+  transition: width 480ms linear;
 }
 
 .music-progress__time--left {
