@@ -99,6 +99,15 @@ if (!automated) {
     const storedSettings = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { opacity?: number; carryOverIncompleteTodos?: boolean };
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
+    // Expanded size: small / medium / large, stored as the scale, and the island opens to show it.
+    const sizeGroup = element("[role='group'][aria-label='展开后的大小']");
+    check([...sizeGroup.querySelectorAll("button")].map((button) => button.textContent).join() === "小,中,大"
+      && sizeGroup.querySelector("[aria-pressed='true']")?.textContent === "中", "The expanded size offers small, medium and large, medium by default");
+    await act(async () => { sizeGroup.querySelectorAll<HTMLButtonElement>("button")[2].click(); });
+    const preview = JSON.parse(localStorage.getItem("focusd-island-panel-preview") ?? "{}") as { mode?: string };
+    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale === 1.1 && preview.mode === "expanded",
+      "Choosing large stores 1.1 and opens the island to show it");
+    await act(async () => { sizeGroup.querySelectorAll<HTMLButtonElement>("button")[1].click(); });
     await click(".appearance-reset");
     check(storedSettings().opacity === 60, "The first reset click only asks for confirmation");
     await click(".appearance-reset__confirm .appearance-reset:not(.appearance-reset--danger)");

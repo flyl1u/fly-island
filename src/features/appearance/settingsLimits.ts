@@ -30,6 +30,21 @@ export const DEFAULT_SHELF_ITEMS = 100;
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 
+/**
+ * The expanded island's sizes (Appearance → "Expanded size"), as the scale stored in
+ * `expandedScale`. Width and height grow together; the native window (src-tauri/src/island/)
+ * accepts 0.75–1.4 and makes room for the scaled height.
+ */
+export const EXPANDED_SCALES = { small: 0.9, medium: 1, large: 1.1 } as const;
+export type ExpandedSize = keyof typeof EXPANDED_SCALES;
+
+/** The size closest to a saved scale: older versions stored any value from 0.75 to 1.4. */
+export function nearestExpandedSize(scale: number): ExpandedSize {
+  const sizes = Object.keys(EXPANDED_SCALES) as ExpandedSize[];
+  if (!Number.isFinite(scale)) return "medium";
+  return sizes.reduce((best, size) => (Math.abs(EXPANDED_SCALES[size] - scale) < Math.abs(EXPANDED_SCALES[best] - scale) ? size : best), "medium");
+}
+
 /** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
 export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
 /** The collapsed island's layout as it always was: the text, then the icons on its right. */

@@ -1,5 +1,8 @@
 export type SettingsLayoutText = {
   collapsedScale: string;
+  /** Small / medium / large for the expanded island (width and height together). */
+  expandedScale: string;
+  expandedSizes: { small: string; medium: string; large: string };
   title: string;
   opacity: string;
   launchAtStartup: string;
@@ -9,7 +12,9 @@ export type SettingsLayoutText = {
 };
 
 export const zhCN: SettingsLayoutText = {
-  collapsedScale: "岛屿大小",
+  collapsedScale: "收起时的大小",
+  expandedScale: "展开后的大小",
+  expandedSizes: { small: "小", medium: "中", large: "大" },
   title: "尺寸与位置",
   opacity: "不透明度",
   launchAtStartup: "开机自启动",
@@ -19,7 +24,9 @@ export const zhCN: SettingsLayoutText = {
 };
 
 export const en: SettingsLayoutText = {
-  collapsedScale: "Island size",
+  collapsedScale: "Collapsed size",
+  expandedScale: "Expanded size",
+  expandedSizes: { small: "Small", medium: "Medium", large: "Large" },
   title: "Size & position",
   opacity: "Opacity",
   launchAtStartup: "Launch at startup",

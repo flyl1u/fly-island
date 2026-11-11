@@ -23,7 +23,7 @@ export function AppearanceSettingsPage({
       <StyleSettingsSection
         settings={settings}
         onSettingsChange={onSettingsChange}
-        onPreviewIsland={() => requestPanelPreview("collapsed")}
+        onPreviewIsland={requestPanelPreview}
       />
       <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
       <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />
