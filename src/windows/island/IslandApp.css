@@ -100,6 +100,12 @@
   border: 0;
 }
 
+/* The todo paper is a flat sheet, not a second island: a smaller corner than the concentric panel radius. */
+.todo-notebook {
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+}
+
 .island--appearance-liquidGlass .clipboard-panel,
 .island--appearance-liquidGlass .editor-panel {
   background:
