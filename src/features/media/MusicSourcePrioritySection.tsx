@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Info } from "lucide-react";
 import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
@@ -50,7 +51,10 @@ export function MusicSourcePrioritySection() {
       footer={(
         <>
           {musicSourcePriority.length > 1 && <p>{text.footer}</p>}
-          <p>{text.coverHint}</p>
+          <p className="music-sources__cover-hint">
+            <Info size={14} strokeWidth={1.8} aria-hidden="true" />
+            <span>{text.coverHint}</span>
+          </p>
         </>
       )}
     >

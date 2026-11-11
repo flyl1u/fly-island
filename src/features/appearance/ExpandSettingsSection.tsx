@@ -8,8 +8,8 @@ import type { ExpandTrigger, IslandSettings } from "./types";
 
 /**
  * Settings → General → Island: how the island opens, whether it tucks to the top edge when idle,
- * and a way back to its default position. Timings, the monitor, the margin and game mode keep
- * their defaults (settingsDefaults.ts).
+ * game mode, and a way back to its default position. Timings, the monitor, the margin and
+ * tucking while full screen keep their defaults (settingsDefaults.ts).
  */
 export function ExpandSettingsSection({
   settings,
@@ -46,6 +46,12 @@ export function ExpandSettingsSection({
         description={t.settings.layout.autoTuckHint}
         checked={settings.autoTuck}
         onChange={(autoTuck) => update({ autoTuck })}
+      />
+      <SettingsToggleRow
+        title={t.settings.layout.gameQuiet}
+        description={t.settings.layout.gameQuietHint}
+        checked={settings.gameDoNotDisturb}
+        onChange={(gameDoNotDisturb) => update({ gameDoNotDisturb })}
       />
       <SettingsRow
         title={t.settings.position.resetRow}

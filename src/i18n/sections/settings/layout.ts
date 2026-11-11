@@ -7,6 +7,9 @@ export type SettingsLayoutText = {
   launchAtStartup: string;
   autoTuck: string;
   autoTuckHint: string;
+  /** Game mode: quiet while a full-screen app (usually a game) is in front. */
+  gameQuiet: string;
+  gameQuietHint: string;
   resetToDefault: string;
 };
 
@@ -18,6 +21,8 @@ export const zhCN: SettingsLayoutText = {
   launchAtStartup: "开机自启动",
   autoTuck: "闲置时贴边隐藏",
   autoTuckHint: "一段时间没有操作后，岛屿贴到屏幕顶部，只露出一条边。",
+  gameQuiet: "游戏模式",
+  gameQuietHint: "全屏游戏、视频或演示在前台时，岛屿不悬停展开、不抢焦点、不弹消息。",
   resetToDefault: "恢复默认值",
 };
 
@@ -29,5 +34,7 @@ export const en: SettingsLayoutText = {
   launchAtStartup: "Launch at startup",
   autoTuck: "Tuck to the edge when idle",
   autoTuckHint: "After a while without use, the island slides up to the top of the screen and shows only an edge.",
+  gameQuiet: "Game mode",
+  gameQuietHint: "While a full-screen game, video or slideshow is in front, the island doesn't open on hover, take the focus or pop up messages.",
   resetToDefault: "Reset to default",
 };
