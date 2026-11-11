@@ -1,5 +1,5 @@
-// node scripts/measure-island-motion.mjs [runs] [--trace] [--frames] [--scale=1.1] — how smoothly
-// the island opens and closes.
+// node scripts/measure-island-motion.mjs [runs] [--trace] [--profile] [--gpu] [--frames] [--scale=1.1] — how
+// smoothly the island opens, closes and switches pages.
 //
 // Builds the island tour (tests/regression/island-tour.html: the real island with its native
 // commands mocked) for production, as the app ships (no StrictMode double renders, no React dev
@@ -11,7 +11,11 @@
 // intervals (median, 95th percentile, longest), frames over 25ms (dropped), and main-thread time.
 // Headless Chrome paints in software, so absolute numbers are worse than in WebView2; compare runs
 // of this script with each other, before and after a change. --trace also records a Chrome trace
-// and lists where the main thread and the raster threads spent their time, per open or close.
+// and lists where the main thread, the raster threads and the GPU process spent their time.
+// Page switches ("switch") click from each page's dot to the next one with the island open.
+// --profile builds without minifying and lists the script functions that took the most time.
+// --gpu draws on the graphics card (Direct3D, as WebView2 does) instead of in software, so the
+// trace shows the GPU process's raster and draw time.
 import { createReadStream, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
@@ -23,6 +27,8 @@ import { withRegressionBrowser } from "./run-regression.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RUNS = Number(process.argv.slice(2).find((arg) => /^\d+$/.test(arg)) ?? 4);
 const TRACE = process.argv.includes("--trace");
+const PROFILE = process.argv.includes("--profile");
+if (process.argv.includes("--gpu")) process.env.REGRESSION_GPU = "1";
 const PAGES = ["todo", "agents", "music", "clipboard", "shelf"];
 const RECORD_MS = 700;
 const CPU_SLOWDOWN = 4;
@@ -78,7 +84,7 @@ const outDir = mkdtempSync(path.join(tmpdir(), "fly-motion-"));
 await build({
   root,
   logLevel: "warn",
-  build: { outDir, emptyOutDir: true, rollupOptions: { input: path.join(root, "tests/regression/island-tour.html") } },
+  build: { outDir, emptyOutDir: true, minify: !PROFILE, rollupOptions: { input: path.join(root, "tests/regression/island-tour.html") } },
 });
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2" };
 const server = createServer((request, response) => {
@@ -136,10 +142,15 @@ await withRegressionBrowser(root, "island-tour.html", async ({ session }) => {
   if (TRACE) {
     await session.send("Tracing.start", {
       transferMode: "ReportEvents",
-      traceConfig: { includedCategories: ["devtools.timeline", "disabled-by-default-devtools.timeline", "blink", "cc"] },
+      traceConfig: { includedCategories: ["devtools.timeline", "disabled-by-default-devtools.timeline", "blink", "cc", "gpu", "viz"] },
     });
   }
-  const results = { open: {}, close: {} };
+  if (PROFILE) {
+    await session.send("Profiler.enable");
+    await session.send("Profiler.setSamplingInterval", { interval: 200 });
+    await session.send("Profiler.start");
+  }
+  const results = { open: {}, close: {}, switch: {} };
   for (const page of PAGES) {
     // Leave the island on this page, closed, so opening it shows the page.
     await evaluate(`document.querySelector(".island__open-button")?.click()`);
@@ -157,7 +168,33 @@ await withRegressionBrowser(root, "island-tour.html", async ({ session }) => {
       await sleep(500);
     }
   }
+  // Page switches: open on each page, then click the next page's dot.
+  await evaluate(`document.querySelector(".island__open-button")?.click()`);
+  await sleep(1200);
+  for (let run = 0; run < RUNS; run++) {
+    for (let index = 0; index < PAGES.length; index++) {
+      const next = PAGES[(index + 1) % PAGES.length];
+      results.switch[next] ??= [];
+      results.switch[next].push(await measure(next === "agents" ? ".island__agent-button" : `.dot-button--${next}`));
+      await sleep(500);
+    }
+  }
+  await evaluate(`document.querySelector(".island__collapse-target")?.click()`);
+  await sleep(800);
   await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  if (PROFILE) {
+    // Self time per function across every open, close and switch (the waits between them included).
+    const { profile } = await session.send("Profiler.stop");
+    const self = new Map();
+    const byId = new Map(profile.nodes.map((node) => [node.id, node]));
+    profile.samples.forEach((id, index) => {
+      const { callFrame } = byId.get(id);
+      const key = `${callFrame.functionName || "(anonymous)"} ${callFrame.url.split("/").pop()}:${callFrame.lineNumber + 1}`;
+      self.set(key, (self.get(key) ?? 0) + (profile.timeDeltas[index + 1] ?? 0) / 1000);
+    });
+    console.log("Script self time, ms in total:");
+    console.table([...self.entries()].filter(([key]) => !/^\((idle|program|garbage collector)\)/.test(key)).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([name, ms]) => ({ name, ms: +ms.toFixed(1) })));
+  }
   if (TRACE) {
     await session.send("Tracing.end");
     await traceDone;
@@ -167,17 +204,18 @@ await withRegressionBrowser(root, "island-tour.html", async ({ session }) => {
     for (const event of traceEvents) {
       if (event.ph !== "X" || !event.dur) continue;
       const thread = threads.get(`${event.pid}:${event.tid}`) ?? "";
-      if (!/CrRendererMain|Raster|Compositor/.test(thread)) continue;
+      // The renderer's main and raster threads, and the GPU process, where drawing ends up.
+      if (!/CrRendererMain|Raster|Compositor|CrGpuMain|Viz/.test(thread)) continue;
       const key = `${thread.replace(/\d+$/, "")} · ${event.name}`;
       totals.set(key, (totals.get(key) ?? 0) + event.dur / 1000);
     }
-    const cycles = PAGES.length * (RUNS * 2 + 3);
-    console.log("Trace, ms per open or close:");
-    console.table([...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 18).map(([name, ms]) => ({ name, ms: +(ms / cycles).toFixed(1) })));
+    const cycles = PAGES.length * (RUNS * 3 + 3) + 2;
+    console.log("Trace, ms per open, close or switch:");
+    console.table([...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([name, ms]) => ({ name, ms: +(ms / cycles).toFixed(1) })));
   }
 
   const rows = [];
-  for (const phase of ["open", "close"]) {
+  for (const phase of ["open", "close", "switch"]) {
     for (const page of PAGES) rows.push({ phase, page, ...summarise(results[phase][page]) });
     rows.push({ phase, page: "ALL", ...summarise(PAGES.flatMap((page) => results[phase][page])) });
   }

@@ -36,7 +36,7 @@ localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TOD
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
 // ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
-// ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.9|1.1 sets the expanded size.
+// ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
 localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   lyricsOnline: query.get("lyrics") !== "0",
@@ -109,6 +109,9 @@ function strays() {
   const island = document.querySelector<HTMLElement>(".island")!;
   const box = island.getBoundingClientRect();
   const radius = Number.parseFloat(getComputedStyle(island).borderBottomLeftRadius) || 0;
+  // The page panel is scaled (the expanded size); the island's own box and radius are not.
+  const panel = document.querySelector<HTMLElement>(".island__expanded")!;
+  const scale = panel.getBoundingClientRect().width / panel.offsetWidth || 1;
   const out: string[] = [];
   for (const element of document.querySelectorAll<HTMLElement>(".island__content > *, .island__content > * > *")) {
     const rect = element.getBoundingClientRect();
@@ -122,7 +125,7 @@ function strays() {
       // The island's corner, |x|^n + |y|^n <= r^n with n = 2^1.6 (about 3), from the corner's centre.
       const dx = radius - inCornerX;
       const dy = radius - inCornerY;
-      const own = Number.parseFloat(getComputedStyle(element).borderBottomLeftRadius) || 0;
+      const own = (Number.parseFloat(getComputedStyle(element).borderBottomLeftRadius) || 0) * scale;
       // The element's own corner pulls its outermost point in by about 0.16 of its radius on each axis.
       const pull = own * 0.16;
       if ((dx - pull) ** 3 + (dy - pull) ** 3 > radius ** 3 && getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)") out.push(`${name} past the corner`);
@@ -139,6 +142,7 @@ if (!automated) {
     await act(async () => { mount(); });
     await settle(300);
     const island = () => document.querySelector<HTMLElement>(".island")!;
+    const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     const collapsed = island().getBoundingClientRect();
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
     check(collapsed.height === 38 && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
@@ -182,8 +186,8 @@ if (!automated) {
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
     check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && document.querySelector(".shelf-slot")
-      && island().offsetHeight === 262 && list.scrollHeight <= list.clientHeight,
-      `文件中转是一排图块，页面高度正好放下这一排（${island().offsetHeight}px）`);
+      && panel().offsetHeight === 262 && list.scrollHeight <= list.clientHeight,
+      `文件中转是一排图块，页面高度正好放下这一排（${panel().offsetHeight}px）`);
 
     const pages: Array<[string, string]> = [
       [".dot-button--todo", "待办"],
@@ -211,10 +215,11 @@ if (!automated) {
     }
     // Settings is open last: the island's height follows the settings page shown, within its cap.
     await click(".settings-sidebar__item[data-category='todos']");
-    // Layout heights (offsetHeight), so the check holds at every expanded size (a scale).
-    const short = island().offsetHeight;
+    // The page panel's own height (it is scaled, the shape around it is not), so the check holds
+    // at every expanded size.
+    const short = panel().offsetHeight;
     await click(".settings-sidebar__item[data-category='messages']");
-    const tall = island().offsetHeight;
+    const tall = panel().offsetHeight;
     check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");

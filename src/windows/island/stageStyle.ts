@@ -3,12 +3,10 @@ import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba } from "../../features/appearance/settings";
 import type { IslandSettings } from "../../features/appearance/types";
 import { inkOn } from "../../utils/color";
-import type { IslandMode } from "./types";
 
 /** CSS custom properties for the island stage, derived from the appearance settings and current size. */
 export function getIslandStageStyle(
   settings: IslandSettings,
-  mode: IslandMode,
   collapsedIslandWidth: number,
   expandedIslandHeight: number,
 ) {
@@ -19,8 +17,9 @@ export function getIslandStageStyle(
     // Classic opacity fades the fill only, so text and icons on it stay solid.
     "--island-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
     "--island-fill-alpha": settings.opacity / 100,
-    // The scale .island moves to (IslandShell.css animates its own --island-scale towards it).
-    "--island-scale-target": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
+    // The collapsed bar's and the page panel's scales (IslandShell.css); neither animates.
+    "--island-collapsed-scale-target": settings.collapsedScale,
+    "--island-expanded-scale-target": settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.

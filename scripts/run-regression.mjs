@@ -186,7 +186,10 @@ export async function withRegressionBrowser(root, firstPage, use) {
     // Pages that do not pick a language follow the browser's, and their checks are written
     // against the Chinese interface; an English CI runner would otherwise fail them.
     const language = process.env.REGRESSION_LANG ?? "zh-CN";
-    browser = spawn(findBrowser(), ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
+    // REGRESSION_GPU=1 draws on the graphics card through Direct3D, as WebView2 does
+    // (scripts/measure-island-motion.mjs --gpu); otherwise in software, the same on every machine.
+    const graphics = process.env.REGRESSION_GPU ? ["--use-angle=d3d11", "--enable-gpu-rasterization", "--ignore-gpu-blocklist"] : ["--disable-gpu"];
+    browser = spawn(findBrowser(), ["--headless=new", ...graphics, "--no-first-run", "--no-default-browser-check", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `--lang=${language}`, `--accept-lang=${language}`, "--window-size=1280,900", "about:blank"], { stdio: "ignore" });
     const session = await connect(debugPort);
     const result = await use({ session, base });
     session.close();

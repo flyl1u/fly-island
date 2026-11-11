@@ -22,7 +22,8 @@
 }
 
 .stage {
-  --island-scale-target: 1;
+  --island-collapsed-scale-target: 1;
+  --island-expanded-scale-target: 1;
   --collapsed-island-width: 340px;
   --task-text-color: #ffffff;
   --island-pulse-color: #3ae489;
