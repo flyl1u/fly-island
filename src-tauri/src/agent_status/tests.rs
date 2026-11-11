@@ -1099,6 +1099,46 @@ fn the_turn_starts_at_the_newest_typed_prompt() {
 }
 
 #[test]
+fn only_a_typed_prompt_counts_as_the_users() {
+    use super::sessions::{parse_claude_tail, parse_codex_tail};
+    let prompt = |at: &str, origin: Option<&str>, text: &str| {
+        let mut record = json!({"type": "user", "timestamp": at, "message": {"role": "user", "content": text}});
+        if let Some(origin) = origin {
+            record["turnOrigin"] = json!(origin);
+        }
+        line(record)
+    };
+    let typed_then_automatic = [
+        prompt("2026-11-06T07:00:00Z", Some("human"), "fix it"),
+        prompt("2026-11-06T07:05:00Z", Some("task_notification"), "<task-notification>done</task-notification>"),
+        prompt("2026-11-06T07:06:00Z", Some("host_synthetic"), "a side session reported"),
+    ]
+    .concat();
+    let parsed = parse_claude_tail(&typed_then_automatic);
+    assert_eq!(parsed.owner_prompt_at, Some(1_793_948_400_000));
+    assert_eq!(parsed.turn_started_at, Some(1_793_948_400_000 + 360_000));
+
+    // A side session started by another session: nobody typed into it.
+    let side = [prompt("2026-11-06T07:00:00Z", Some("host_synthetic"), "Background: ...")].concat();
+    assert_eq!(parse_claude_tail(&side).owner_prompt_at, None);
+
+    // Older versions without `turnOrigin`: told by the automatic notes' tags.
+    let old = [
+        prompt("2026-11-06T07:00:00Z", None, "fix it"),
+        prompt("2026-11-06T07:05:00Z", None, "<task-notification>done</task-notification>"),
+    ]
+    .concat();
+    assert_eq!(parse_claude_tail(&old).owner_prompt_at, Some(1_793_948_400_000));
+
+    let codex = [
+        line(json!({"type": "event_msg", "timestamp": "2026-11-06T07:00:00Z", "payload": {"type": "user_message", "message": "go"}})),
+        line(json!({"type": "event_msg", "timestamp": "2026-11-06T07:05:00Z", "payload": {"type": "task_started"}})),
+    ]
+    .concat();
+    assert_eq!(parse_codex_tail(&codex).owner_prompt_at, Some(1_793_948_400_000));
+}
+
+#[test]
 fn a_working_turn_shows_its_prompt_and_latest_tool() {
     use super::sessions::{parse_claude_tail, parse_codex_tail};
 

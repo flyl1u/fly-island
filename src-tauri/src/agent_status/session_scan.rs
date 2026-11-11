@@ -251,6 +251,7 @@ impl SessionCache {
 
         // A long turn can push its prompt out of the tail read; keep the start and prompt found before.
         let known_turn_start = sessions.get(path).and_then(|cached| cached.summary.turn_started_at);
+        let known_owner_prompt = sessions.get(path).and_then(|cached| cached.summary.owner_prompt_at);
         let known_prompt = sessions.get(path).and_then(|cached| cached.summary.last_prompt.clone());
         // Claude Code notes the mode only on typed prompts, which a long turn pushes out too.
         let known_mode = sessions.get(path).and_then(|cached| cached.summary.permission_mode);
@@ -287,8 +288,10 @@ impl SessionCache {
 
         let state = parsed.state;
         let turn_started_at = parsed.turn_started_at.or(known_turn_start);
+        let owner_prompt_at = parsed.owner_prompt_at.or(known_owner_prompt);
         let mut summary = summary_from(provider, session_id, cwd, title, parsed, modified);
         summary.turn_started_at = turn_started_at;
+        summary.owner_prompt_at = owner_prompt_at;
         summary.last_prompt = summary.last_prompt.take().or(known_prompt);
         summary.permission_mode = summary.permission_mode.or(known_mode);
         summary.host = host;
@@ -341,6 +344,7 @@ fn summary_from(
         updated_at,
         host: None,
         turn_started_at: None,
+        owner_prompt_at: None,
         last_prompt: parsed.last_prompt,
         current_tool: parsed.current_tool,
         permission_mode: parsed.permission_mode,

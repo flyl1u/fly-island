@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { agentSessionsInFront, type AgentSessionSummary } from "../api";
 import { sessionKey } from "../unseen";
-import { COMPLETE_SETTLE_MS, settledCompletions } from "./completion";
+import { announceTiming, emptyAnnounced, isUsersTurn, settledFinishes, settledWaits } from "../announce";
 import { soundFor, type AgentSoundEvent } from "./events";
 import { compactStarted, emptyIdleSessions, takeIdleSessions } from "./idle";
 import { playAgentSound } from "./player";
@@ -18,17 +18,18 @@ type Seen = { phase: AgentSessionSummary["phase"]; compacting: boolean };
 type Change = { event: AgentSoundEvent; session: AgentSessionSummary };
 
 /**
- * Plays a sound when an agent session starts, finishes, fails, waits for approval or asks a
- * question, gets a new prompt or starts compacting its context, and when a finished session has
- * sat unread (`unseen`) for a while; on its own and apart from the pop-up alerts. One sound per
- * poll at most. `canPlay` is false while game mode keeps the island quiet.
+ * Plays a sound when the user's own task finishes or fails, an agent waits for approval or asks a
+ * question, and (when switched on) when a session starts, gets a new prompt, starts compacting or
+ * has sat finished and unread (`unseen`) for a while; on its own and apart from the pop-up alerts.
+ * A finished turn sounds only once it stays finished, once per typed prompt; a wait only once it
+ * lasts, and a session's approvals at most once every two minutes (announce.ts). One sound at a
+ * time at most. `canPlay` is false while game mode keeps the island quiet.
  */
 export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean, unseen: ReadonlySet<string> = new Set()) {
   const [settings] = useAgentSoundSettings();
   const seenRef = useRef<Map<string, Seen> | null>(null);
   const idleRef = useRef(emptyIdleSessions());
-  /** The prompt (`turnStartedAt`) whose completion last sounded, by session. */
-  const soundedRef = useRef(new Map<string, number>());
+  const announcedRef = useRef(emptyAnnounced());
   const timersRef = useRef(new Set<number>());
   const latest = useRef({ settings, canPlay, sessions, unseen });
   useLayoutEffect(() => {
@@ -46,16 +47,31 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
       if (event) return [{ event, session }];
       return compactStarted(before?.compacting, session) ? [{ event: "compact", session }] : [];
     });
-    playOne(changes.filter((change) => change.event !== "complete"), latest.current);
-    const finished = changes.filter((change) => change.event === "complete").map((change) => change.session);
-    if (finished.length === 0) return;
-    // A finished turn sounds only once it has stayed finished, once per prompt.
-    const timer = window.setTimeout(() => {
-      timersRef.current.delete(timer);
-      const settled = settledCompletions(finished, latest.current.sessions, soundedRef.current);
-      playOne(settled.map((session) => ({ event: "complete", session })), latest.current);
-    }, COMPLETE_SETTLE_MS);
-    timersRef.current.add(timer);
+    const later = (ms: number, play: () => void) => {
+      const timer = window.setTimeout(() => {
+        timersRef.current.delete(timer);
+        play();
+      }, ms);
+      timersRef.current.add(timer);
+    };
+    // A turn that ended done or with "your turn"; a wait mid-turn on an approval or a question.
+    const finished = changes.filter((change) => (change.event === "complete" || change.event === "question") && change.session.phase === "completed");
+    const waits = changes.filter((change) => (change.event === "approval" || change.event === "question") && change.session.phase === "waiting");
+    const now = changes.filter((change) => !finished.includes(change) && !waits.includes(change));
+    // A failed turn sounds at once, but only when it was the user's own task.
+    playOne(now.filter((change) => change.event !== "error" || isUsersTurn(change.session)), latest.current);
+    if (finished.length > 0) {
+      later(announceTiming.completeMs, () => {
+        const settled = settledFinishes(finished.map((change) => change.session), latest.current.sessions, announcedRef.current);
+        playOne(finished.filter((change) => settled.includes(change.session)), latest.current);
+      });
+    }
+    if (waits.length > 0) {
+      later(announceTiming.waitMs, () => {
+        const settled = settledWaits(waits.map((change) => change.session), latest.current.sessions, announcedRef.current, Date.now());
+        playOne(waits.filter((change) => settled.includes(change.session)), latest.current);
+      });
+    }
   }, [sessions]);
 
   useEffect(() => {

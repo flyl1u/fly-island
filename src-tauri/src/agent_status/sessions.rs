@@ -48,6 +48,11 @@ pub struct AgentSessionSummary {
     /// When the newest prompt was sent, Unix milliseconds; how long the current (or last) turn
     /// has run is counted from here. `None` when the prompt is not in the excerpt read.
     pub(super) turn_started_at: Option<i64>,
+    /// When the user last typed a prompt themself, Unix milliseconds: not a background task's
+    /// note, another session's message or a resumed turn, which Claude Code also writes as
+    /// prompts. Sounds and pop-ups announce only the end of the user's own tasks. `None` when no
+    /// typed prompt is in the excerpt read (and none was found before).
+    pub(super) owner_prompt_at: Option<i64>,
     /// That newest prompt, shortened like a title.
     pub(super) last_prompt: Option<String>,
     /// The tool the current turn called last; `None` once the turn is over.
@@ -106,6 +111,8 @@ pub(super) struct SessionTail {
     pub(super) state: TurnState,
     /// Timestamp of the newest prompt, Unix milliseconds.
     pub(super) turn_started_at: Option<i64>,
+    /// Timestamp of the newest prompt the user typed (`typed_by_user`), Unix milliseconds.
+    pub(super) owner_prompt_at: Option<i64>,
     pub(super) last_prompt: Option<String>,
     /// The newest tool call after the newest prompt, while the turn is still working.
     pub(super) current_tool: Option<ToolCall>,
@@ -269,8 +276,38 @@ pub(super) fn parse_claude_tail(tail: &str) -> SessionTail {
                 result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
             }
         }
+        if result.owner_prompt_at.is_none()
+            && kind == "user"
+            && typed_by_user(&record)
+            && user_prompt_in_record(&record.to_string()).is_some()
+        {
+            result.owner_prompt_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+        }
     }
     result.settle()
+}
+
+/// Notes Claude Code writes as prompts on its own, by their opening tag, for versions that do not
+/// mark a prompt's `turnOrigin` yet.
+const AUTOMATIC_PROMPT_TAGS: [&str; 3] =
+    ["<task-notification>", "<side-sessions-event>", "<ci-monitor-event>"];
+
+/// Whether a user record is a prompt the user typed. Claude Code marks each prompt's
+/// `turnOrigin`: "human" for typed ones; "task_notification", "host_synthetic", "sdk" or
+/// "auto_continuation" for the turns it starts by itself (a background task ended, another
+/// session reported or started this one, the app resumed a turn).
+fn typed_by_user(record: &Value) -> bool {
+    if let Some(origin) = record["turnOrigin"].as_str() {
+        return origin == "human";
+    }
+    let content = &record["message"]["content"];
+    let first_block = || {
+        content
+            .as_array()
+            .and_then(|blocks| blocks.iter().find_map(|block| block["text"].as_str()))
+    };
+    let text = content.as_str().or_else(first_block).unwrap_or_default().trim_start();
+    !AUTOMATIC_PROMPT_TAGS.iter().any(|tag| text.starts_with(tag))
 }
 
 fn claude_turn_state(kind: &str, record: &Value) -> TurnState {
@@ -378,6 +415,10 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
         }
         if result.turn_started_at.is_none() && matches!(payload_kind, "user_message" | "task_started") {
             result.turn_started_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+        }
+        // Codex writes a user message only for what the user typed.
+        if result.owner_prompt_at.is_none() && payload_kind == "user_message" {
+            result.owner_prompt_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
         }
         if result.state == TurnState::Unknown {
             result.state = match payload_kind {

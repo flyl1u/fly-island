@@ -8,6 +8,10 @@ import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import type { AgentAlertStarted } from "../../src/features/appearance/types";
 import { useAgentAlerts, type AlertedSession } from "../../src/features/agent-status/useAgentAlerts";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
+import { announceTiming } from "../../src/features/agent-status/announce";
+
+// The checks below look at what pops up, not the waits before it (announce.ts, unit-tested).
+Object.assign(announceTiming, { completeMs: 0, waitMs: 0, approvalRepeatMs: 0 });
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const DURATION_MS = 300;

@@ -12,6 +12,16 @@ export function replyEnding(session: Pick<AgentSessionSummary, "replyMarker" | "
 }
 
 /**
+ * How a finished turn ended for sounds and pop-ups: like `replyEnding`, but a reply that merely
+ * ends in a question mark is not "your turn". Only the marker (or a question tool, mid-turn) says
+ * the agent waits on an answer; a closing "要不要我顺便…？" is an offer, not a question to answer.
+ */
+export function announcedEnding(session: Pick<AgentSessionSummary, "replyMarker" | "backgroundTasks">): ReplyMarker | null {
+  if (session.replyMarker) return session.replyMarker;
+  return session.backgroundTasks ? "background" : null;
+}
+
+/**
  * A session's light, the one judgement every place showing agent state uses (roadmap B11,
  * docs/architecture/agent-session-states.md):
  * - `needs`: stuck mid-turn on the user (a question, an approval or a plan to confirm);

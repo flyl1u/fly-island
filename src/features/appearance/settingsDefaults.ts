@@ -45,9 +45,11 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentAlertCompleted: true,
   agentAlertFailed: true,
   agentAlertWaiting: true,
-  agentAlertStarted: "everyTurn",
+  // Only a finished task, an approval or a question pops up (docs/design/agent.md): a start is
+  // the user's own doing, and a wait already announced is not announced again.
+  agentAlertStarted: "off",
   agentAlertSeconds: 5,
-  agentRemindSeconds: 60,
+  agentRemindSeconds: 0,
   agentQuotaAlertPercent: 80,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
   pulseColor: "#3ae489",
