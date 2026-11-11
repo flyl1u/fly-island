@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const SCAN_ROOTS = ["src", "src-tauri/src", "src-tauri/examples", "scripts", "tests", "packages"];
+export const SCAN_ROOTS = ["src", "src-tauri/src", "src-tauri/examples", "scripts", "tests", "packages", "web-demo"];
 export const INLINE_TEST_LIMIT = 150;
 
 const LINE_LIMITS = {

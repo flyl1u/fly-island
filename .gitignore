@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-web-demo
 src-tauri/target
 src-tauri/gen
 src-tauri/tauri.release.conf.json
