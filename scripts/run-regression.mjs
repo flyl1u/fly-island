@@ -35,6 +35,7 @@ export const PAGES = [
   "notification-startup.html",
   "settings.html?test=1",
   "settings-sidebar.html",
+  "todo-edit.html",
   "tucked-hover.html",
 ];
 
