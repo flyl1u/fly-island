@@ -400,6 +400,13 @@
     transform 420ms var(--island-spring-open) 80ms;
 }
 
+/* Translation simply appears open: the tall page used to drop down from the bar, which read as
+   a rush downwards (2026-11-11, owner). Closing it still animates. */
+.island--translation.island--expanded,
+.island--translation.island--expanded .island__expanded {
+  transition: none;
+}
+
 .island__content {
   min-height: 0;
   flex: 1;
