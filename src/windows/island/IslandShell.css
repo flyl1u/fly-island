@@ -24,11 +24,11 @@
   --glass-page-accent: 116, 214, 255;
   /*
    * Island corner radii, all scaled from the expanded bottom radius in the appearance
-   * settings (stageStyle.ts) with the ratios of the original 30 / 22 / 14 px design.
+   * settings (stageStyle.ts) with the ratios of the 30 / 12 / 14 px design (collapsed 12, 2026-11-11).
    * Rust scales its hit-test corners the same way (island/state.rs).
    */
   --island-radius: calc(var(--island-corner-radius-size, 42) * 1px);
-  --island-radius-collapsed: calc(var(--island-radius) * 22 / 30);
+  --island-radius-collapsed: calc(var(--island-radius) * 12 / 30);
   /* Inner panels sit 20px inside the expanded island, so this keeps their corners concentric. */
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
   /* A box inside a panel with the usual 16px padding (inner = outer - padding). */

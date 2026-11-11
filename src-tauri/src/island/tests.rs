@@ -214,9 +214,9 @@ fn corner_radius_setting_scales_every_hit_test_radius() {
     expanded.corner_radius = 20.0;
     collapsed.corner_radius = 20.0;
     assert_eq!(expanded.bottom_corner_radius(), 20.0);
-    assert!((collapsed.bottom_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((collapsed.bottom_corner_radius() - COLLAPSED_RADIUS * 20.0 / 30.0).abs() < 1e-9);
     assert_eq!(expanded.top_corner_radius(), 20.0);
-    assert!((collapsed.top_corner_radius() - 22.0 * 20.0 / 30.0).abs() < 1e-9);
+    assert!((collapsed.top_corner_radius() - COLLAPSED_RADIUS * 20.0 / 30.0).abs() < 1e-9);
 }
 
 #[test]
