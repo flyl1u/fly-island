@@ -4,7 +4,7 @@ import { useCallback, useRef, type PointerEvent as ReactPointerEvent } from "rea
  * Starts a native window drag once the primary pointer moves 3px from where
  * it was pressed; `didDragRef` lets the following click be ignored.
  */
-export function useWindowDragGesture(isTucked: boolean, onWindowDragStart: () => void) {
+export function useWindowDragGesture(disabled: boolean, onWindowDragStart: () => void) {
   const didDragRef = useRef(false);
   const windowDragRef = useRef<{
     pointerId: number;
@@ -15,7 +15,8 @@ export function useWindowDragGesture(isTucked: boolean, onWindowDragStart: () =>
   const prepareWindowDrag = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       didDragRef.current = false;
-      if (event.button !== 0 || isTucked) {
+      windowDragRef.current = null;
+      if (event.button !== 0 || disabled) {
         return;
       }
 
@@ -36,12 +37,16 @@ export function useWindowDragGesture(isTucked: boolean, onWindowDragStart: () =>
       };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [isTucked],
+    [disabled],
   );
 
   const handleWindowDragMove = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       const drag = windowDragRef.current;
+      if (disabled) {
+        windowDragRef.current = null;
+        return;
+      }
       if (!drag || drag.pointerId !== event.pointerId || event.buttons !== 1) {
         return;
       }
@@ -60,7 +65,7 @@ export function useWindowDragGesture(isTucked: boolean, onWindowDragStart: () =>
       event.preventDefault();
       onWindowDragStart();
     },
-    [onWindowDragStart],
+    [disabled, onWindowDragStart],
   );
 
   const cancelWindowDrag = useCallback(() => {

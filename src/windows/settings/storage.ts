@@ -4,7 +4,7 @@ import { readString, writeJson, writeString } from "../../lib/storage.ts";
 export const DETACHED_SETTINGS_STORAGE_KEY = "focusd-island-detached-settings";
 
 export function loadDetachedSettings(): boolean {
-  return readString(DETACHED_SETTINGS_STORAGE_KEY) === "true";
+  return readString(DETACHED_SETTINGS_STORAGE_KEY) !== "false";
 }
 
 /** Told within the window that saved the choice; other windows get a storage event. */

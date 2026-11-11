@@ -59,12 +59,11 @@
 }
 
 /*
- * Drawn in the real island's proportions: --u is one pixel of the 660px-wide island at 92% of
- * the pane, and the padding, corners and everything inside (AgentPagePreview.css) are real
- * pixel values times --u, so a wider pane draws a bigger island rather than a sparser one.
+ * Keep room for the largest scale: at that size the drawing fills 92% of the pane. Padding,
+ * corners and everything inside (AgentPagePreview.css) follow the real island's proportions.
  */
 .island-preview__island--expanded {
-  --u: calc(92cqw / 660);
+  --u: calc(92cqw / var(--preview-expanded-max-scale) / 660);
   --preview-radius-expanded: calc(var(--preview-radius-px) * var(--u));
   width: calc(660 * var(--u));
   padding: calc(12 * var(--u)) calc(20 * var(--u)) calc(16 * var(--u));

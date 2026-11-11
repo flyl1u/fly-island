@@ -191,6 +191,7 @@ export function IslandApp() {
         appearanceMode={settings.appearanceMode}
         nativeGlassState={nativeGlassState}
         isTucked={isTucked}
+        positionLocked={settings.positionLocked}
         isDetached={isPositionDetached || settings.marginY > 0}
         showTitle={settings.showTitle}
         showCollapsedText={settings.showCollapsedText}

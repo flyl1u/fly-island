@@ -44,6 +44,7 @@ export type IslandInteraction = {
   collapsedWidth: number;
   customPosition: IslandPosition | null;
   isTucked: boolean;
+  positionLocked: boolean;
   animatePosition: boolean;
   glassEnabled: boolean;
   glassIntensity: number;

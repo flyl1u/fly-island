@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslandSection";
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
@@ -17,13 +18,15 @@ export function AppearanceSettingsPage({
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
+  const [expandedScalePreview, setExpandedScalePreview] = useState<number | null>(null);
   return (
     <>
-      <IslandPreview settings={settings} />
+      <IslandPreview settings={expandedScalePreview === null ? settings : { ...settings, expandedScale: expandedScalePreview }} />
       <StyleSettingsSection
         settings={settings}
         onSettingsChange={onSettingsChange}
         onPreviewIsland={requestPanelPreview}
+        onExpandedScalePreview={setExpandedScalePreview}
       />
       <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
       <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />

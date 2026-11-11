@@ -33,6 +33,7 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.
 localStorage.removeItem("focusd-island-agent-approval");
 localStorage.removeItem("focusd-island-agent-sounds");
+localStorage.removeItem("focusd-island-detached-settings");
 // The player order as the old Music page saved it.
 localStorage.setItem("focusd-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
 
@@ -104,6 +105,9 @@ if (!automated) {
     const sizeLabel = [...document.querySelectorAll<HTMLLabelElement>("label")].find((label) => label.textContent === "展开后的大小");
     const sizeSlider = element<HTMLInputElement>(`#${CSS.escape(sizeLabel?.htmlFor ?? "missing")}`);
     const storedScale = () => (JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale;
+    const previewIsland = element<HTMLElement>(".island-preview__island--expanded");
+    const previewWidth = () => previewIsland.getBoundingClientRect().width;
+    const originalPreviewWidth = previewWidth();
     check(sizeSlider.type === "range" && sizeSlider.min === "0.85" && sizeSlider.max === "1.2" && sizeSlider.step === "0.01" && sizeSlider.value === "1",
       "The expanded size is a slider from 0.85 to 1.2 in steps of 0.01, at 1 by default");
     localStorage.removeItem("focusd-island-panel-preview");
@@ -116,12 +120,23 @@ if (!automated) {
     const sizeRow = sizeSlider.closest(".settings-row") ?? document.body;
     check(storedScale() !== 1.12 && !localStorage.getItem("focusd-island-panel-preview") && sizeRow.querySelector(".settings-slider__value")?.textContent === "1.12x",
       "Dragging the expanded size shows the value but neither stores it nor resizes the island yet");
+    check(Math.abs(previewWidth() / originalPreviewWidth - 1.12) < 0.01,
+      "The drawing above the slider follows the unsaved size in real time");
     await act(async () => { window.dispatchEvent(new PointerEvent("pointerup")); });
     const preview = JSON.parse(localStorage.getItem("focusd-island-panel-preview") ?? "{}") as { mode?: string };
     check(storedScale() === 1.12 && preview.mode === "expanded", "Letting go stores 1.12 and opens the island to show it");
     await act(async () => { setRange(sizeSlider, "1"); });
     await act(async () => { sizeSlider.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true })); });
     check(storedScale() === 1, "A key press on the slider stores its value at once");
+    check(Math.abs(previewWidth() - originalPreviewWidth) < 1, "Committing the original size clears the temporary preview");
+    await act(async () => { setRange(sizeSlider, "1.2"); });
+    const previewBox = previewIsland.parentElement!.getBoundingClientRect();
+    const largest = previewIsland.getBoundingClientRect();
+    check(largest.left >= previewBox.left && largest.right <= previewBox.right && largest.bottom <= previewBox.bottom,
+      "The largest size stays fully visible inside the preview");
+    await act(async () => { sizeRow.querySelector<HTMLButtonElement>(".settings-slider__reset")!.click(); });
+    check(sizeSlider.value === "1" && Math.abs(previewWidth() - originalPreviewWidth) < 1,
+      "Reset clears the unsaved size as well as the slider");
     await click(".appearance-reset");
     check(storedSettings().opacity === 60, "The first reset click only asks for confirmation");
     await click(".appearance-reset__confirm .appearance-reset:not(.appearance-reset--danger)");
@@ -140,14 +155,23 @@ if (!automated) {
       "General keeps opening and tucking; hover timings, the monitor and game mode are gone");
     const detachedRow = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "独立设置窗口");
     const detachedSwitch = detachedRow?.querySelector<HTMLInputElement>("[role='switch']");
-    check(detachedSwitch && !detachedSwitch.checked, "Settings start embedded in the island; General offers a separate window");
-    await act(async () => { detachedSwitch!.click(); });
-    check(localStorage.getItem("focusd-island-detached-settings") === "true" && detachedSwitch!.checked && !commands.includes("dock_settings_window"),
-      "Choosing the separate window is saved on its own");
+    check(detachedSwitch?.checked && !commands.includes("dock_settings_window"), "Settings start in a separate window by default");
     await act(async () => { detachedSwitch!.click(); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(localStorage.getItem("focusd-island-detached-settings") === "false" && commands.includes("dock_settings_window"),
       "Switching it off from the window moves settings back into the island");
+    await act(async () => { detachedSwitch!.click(); });
+    check(localStorage.getItem("focusd-island-detached-settings") === "true" && detachedSwitch!.checked,
+      "Choosing the separate window is saved on its own");
+    const lockRow = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "锁定小岛位置");
+    const lockSwitch = lockRow?.querySelector<HTMLInputElement>("[role='switch']");
+    check(lockSwitch && !lockSwitch.checked, "The island position is unlocked by default");
+    await act(async () => { lockSwitch!.click(); });
+    await openPage("appearance");
+    await openPage("general");
+    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { positionLocked?: boolean }).positionLocked === true
+      && [...document.querySelectorAll<HTMLElement>(".settings-row")].find((row) => row.textContent?.includes("锁定小岛位置"))?.querySelector<HTMLInputElement>("[role='switch']")?.checked,
+      "Locking the position is saved and stays on after changing pages");
 
     const agentPolls = () => commands.filter(command => command === "get_agent_status").length;
     const pollsAway = agentPolls();

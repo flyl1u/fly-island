@@ -31,6 +31,7 @@ type IslandCollapsedBarProps = {
   page: IslandPage;
   isExpanded: boolean;
   isTucked: boolean;
+  positionLocked: boolean;
   showTitle: boolean;
   showCollapsedText: boolean;
   collapsedLabel: string;
@@ -73,6 +74,7 @@ export function IslandCollapsedBar({
   page,
   isExpanded,
   isTucked,
+  positionLocked,
   showTitle,
   showCollapsedText,
   collapsedLabel,
@@ -96,7 +98,7 @@ export function IslandCollapsedBar({
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
-    useWindowDragGesture(isTucked, onWindowDragStart);
+    useWindowDragGesture(isTucked || positionLocked, onWindowDragStart);
   const isMusicPlaying = mediaState.playbackStatus === "playing";
   const pulseClassName = [
     "island__pulse",
