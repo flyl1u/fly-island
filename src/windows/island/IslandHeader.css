@@ -92,104 +92,105 @@
   outline-offset: -5px;
 }
 
-/* Page dots. The open page's dot widens into a capsule that names it (11px, dark ink on the
-   page's colour); the other dots stay 12px and name themselves in a tip on hover. A first-time
-   user sees which page is open and what the dots are without learning anything. */
 .dot-button {
-  --dot-color: var(--color-accent);
-  --dot-glow: 116, 214, 255;
   position: relative;
-  min-width: 12px;
+  width: 12px;
   height: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   padding: 0;
-  color: rgba(4, 8, 12, 0.88);
-  background: var(--dot-color);
   border: 0;
   border-radius: var(--radius-pill);
-  box-shadow: 0 0 12px rgba(var(--dot-glow), 0.46);
   outline: none;
   cursor: pointer;
-  touch-action: none;
   transition:
-    height 220ms cubic-bezier(0.32, 0.72, 0, 1),
-    padding 220ms cubic-bezier(0.32, 0.72, 0, 1),
     transform 140ms ease,
     opacity 140ms ease,
-    filter 140ms ease,
     box-shadow 140ms ease;
 }
 
-.dot-button__label {
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  transition:
-    max-width 220ms cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 160ms ease;
+.dot-button--calendar {
+  background: #ff9a76;
+  box-shadow: 0 0 12px rgba(255, 154, 118, 0.46);
+}
+
+/* A hovered dot keeps its own colour (its tip names it) and only brightens. */
+.dot-button:hover {
+  filter: brightness(1.15);
 }
 
 .dot-button--active {
-  height: 20px;
-  padding: 0 8px;
-  box-shadow: 0 0 14px rgba(var(--dot-glow), 0.4);
-}
-
-.dot-button--active .dot-button__label {
-  max-width: 88px;
-  opacity: 1;
-}
-
-.dot-button:not(.dot-button--active):hover {
-  filter: brightness(1.12);
   transform: scale(1.18);
+  opacity: 1;
 }
 
 .dot-button:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.8);
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
 /* A dot being dragged to another place in the row lifts a little; the others make way. */
 .dot-button--dragging {
   z-index: 1;
   cursor: grabbing;
-  transform: scale(1.2);
+  transform: scale(1.45);
+}
+
+.dot-button {
+  touch-action: none;
 }
 
 .dot-button--todo {
-  --dot-color: var(--color-accent);
-  --dot-glow: 116, 214, 255;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px rgba(116, 214, 255, 0.48);
 }
 
 .dot-button--music {
-  --dot-color: #b69cff;
-  --dot-glow: 182, 156, 255;
+  background: #b69cff;
+  box-shadow: 0 0 12px rgba(182, 156, 255, 0.46);
 }
 
 .dot-button--clipboard {
   /* Pink, not yellow: yellow means "needs attention" (agent status). */
-  --dot-color: #f4a7c4;
-  --dot-glow: 244, 167, 196;
+  background: #f4a7c4;
+  box-shadow: 0 0 12px rgba(244, 167, 196, 0.48);
 }
 
 .dot-button--shelf {
-  --dot-color: #6ee7c8;
-  --dot-glow: 110, 231, 200;
+  background: #6ee7c8;
+  box-shadow: 0 0 12px rgba(110, 231, 200, 0.46);
 }
 
-/* The name tip under a dot (and under the status light) after a short hover. */
-.dot-button:not(.dot-button--active, .dot-button--dragging)::after,
+.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(116, 214, 255, 0.42);
+}
+
+.dot-button--music.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(182, 156, 255, 0.54);
+}
+
+.dot-button--clipboard.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(244, 167, 196, 0.56);
+}
+
+.dot-button--shelf.dot-button--active {
+  box-shadow:
+    0 0 0 3px var(--color-white-a18),
+    0 0 14px rgba(110, 231, 200, 0.54);
+}
+
+/* Each dot names its page in a tip above it the moment the pointer is on it: the dots stay plain,
+   and a first-time user learns them by pointing. The status light, at the island's rounded
+   corner where a tip above would be cut off, shows its tip below. */
+.dot-button:not(.dot-button--dragging)::after,
 .island__agent-button::after {
   content: attr(data-tip);
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 5px);
   left: 50%;
   z-index: 5;
   padding: 4px 8px;
@@ -206,18 +207,20 @@
   opacity: 0;
   pointer-events: none;
   translate: -50% 0;
-  transition: opacity 120ms ease, top 120ms ease;
 }
 
-.dot-button:not(.dot-button--active, .dot-button--dragging):hover::after,
+.island__agent-button::after {
+  top: calc(100% + 5px);
+  bottom: auto;
+}
+
+.dot-button:not(.dot-button--dragging):hover::after,
 .island__agent-button:hover::after {
-  top: calc(100% + 9px);
   opacity: 1;
-  transition-delay: 280ms;
 }
 
-/* The hovered dot is scaled; its tip is drawn back to the normal size. */
-.dot-button:not(.dot-button--active):hover::after {
+/* The active or hovered dot is scaled; its tip is drawn back to the normal size. */
+.dot-button--active::after {
   scale: 0.85;
 }
 
