@@ -146,7 +146,7 @@ if (!automated) {
     const collapsed = island().getBoundingClientRect();
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
     check(collapsed.height === 38 && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
-      "收起的岛贴着顶边：上边是平的，下面两个角是大圆角");
+      `收起的岛贴着顶边：上边是平的，下面两个角是大圆角（${collapsed.height}px / ${collapsedRadius}px / ${getComputedStyle(island()).borderTopLeftRadius}）`);
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
     const barItems = [...bar.querySelectorAll<HTMLElement>("button, .island__pulse")].map((item) => item.getBoundingClientRect()).filter((rect) => rect.width > 0);
     check(barItems.every((rect) => rect.left >= collapsed.left + 10 && rect.right <= collapsed.right - 10), "收起的岛上的内容离两侧圆角有距离");
@@ -177,12 +177,27 @@ if (!automated) {
     // The shelf's three files make one row of tiles with an open slot, and the page is only as
     // tall as that row (getShelfExpandedHeight).
     await click(".dot-button--shelf");
-    // The dots stay plain dots; each names its page in a tip above it on hover, with no delay.
+    // Short capsules have a stable hit area; only the coloured shape rises and grows.
     const dots = [...document.querySelectorAll<HTMLElement>(".dot-button")];
-    check(dots.every((dot) => dot.offsetWidth === 12 && !dot.textContent && dot.dataset.tip
-      && getComputedStyle(dot, "::after").content.includes(dot.dataset.tip) && parseFloat(getComputedStyle(dot, "::after").bottom) > 12
+    check(dots.every((dot) => dot.offsetWidth === 24 && dot.offsetHeight === 34 && !dot.textContent && dot.dataset.tip
+      && getComputedStyle(dot, "::before").width === "18px" && getComputedStyle(dot, "::before").height === "12px"
+      && getComputedStyle(dot, "::after").content.includes(dot.dataset.tip)
       && getComputedStyle(dot, "::after").transitionDelay === "0s"),
-      "页面圆点保持圆点，悬停时上方立刻显示页面名");
+      "页面入口是短胶囊，点击区域固定，上方的页面名没有显示延迟");
+    const dotBox = dots[1].getBoundingClientRect();
+    await act(async () => { dots[1].focus(); });
+    await settle(240);
+    const dock = new DOMMatrixReadOnly(getComputedStyle(dots[1], "::before").transform);
+    const tip = getComputedStyle(dots[1], "::after");
+    const tipHeight = [tip.height, tip.paddingTop, tip.paddingBottom, tip.borderTopWidth, tip.borderBottomWidth]
+      .reduce((sum, value) => sum + parseFloat(value), 0);
+    const panelScale = panel().getBoundingClientRect().width / panel().offsetWidth;
+    const tipTop = dotBox.bottom - (parseFloat(tip.bottom) + tipHeight) * panelScale;
+    check(dock.a > 1.3 && dock.f < -2 && getComputedStyle(dots[1]).transform === "none"
+      && dots[1].getBoundingClientRect().width === dotBox.width && tip.opacity === "1"
+      && tipTop >= island().getBoundingClientRect().top,
+      `键盘聚焦也会放大上浮并显示名称，命中区域不动，名称不会被屏幕顶边裁切（${dock.a}, ${dock.f}, ${tipTop.toFixed(1)}px）`);
+    dots[1].blur();
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
     check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && document.querySelector(".shelf-slot")

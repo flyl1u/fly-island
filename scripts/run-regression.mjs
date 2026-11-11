@@ -133,6 +133,8 @@ async function connect(port) {
   });
   await send("Runtime.enable");
   await send("Page.enable");
+  // Headless windows have no OS focus; emulate it so keyboard focus styles can be checked.
+  await send("Emulation.setFocusEmulationEnabled", { enabled: true });
   // Windows Server (the CI runner) has animations off, which Chrome reports as
   // prefers-reduced-motion: reduce and the island then swaps messages without a
   // transition. Pages that test reduced motion stub matchMedia themselves, so the
