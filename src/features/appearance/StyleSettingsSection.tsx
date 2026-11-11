@@ -3,10 +3,11 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { DEFAULT_SETTINGS, EXPANDED_SCALES, LIQUID_GLASS_ENABLED, nearestExpandedSize, type ExpandedSize } from "./settings";
+import { DEFAULT_SETTINGS, LIQUID_GLASS_ENABLED, MAX_EXPANDED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
 import type { AppearanceMode, IslandFont, IslandSettings } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
+const times = (value: number) => `${value.toFixed(2)}x`;
 
 /** Appearance → Style: classic or liquid glass, the font, how see-through, and how big the island is collapsed and opened. */
 export function StyleSettingsSection({
@@ -29,7 +30,7 @@ export function StyleSettingsSection({
     { value: "system", label: text.systemFont },
     { value: "pixel", label: text.pixelFont },
   ] as const;
-  const sizes = (Object.keys(EXPANDED_SCALES) as ExpandedSize[]).map((size) => ({ value: size, label: t.settings.layout.expandedSizes[size] }));
+
 
   return (
     <SettingsGroup title={text.styleTitle}>
@@ -86,7 +87,7 @@ export function StyleSettingsSection({
         min={0.75}
         max={1.4}
         step={0.01}
-        format={(value) => `${value.toFixed(2)}x`}
+        format={times}
         defaultValue={DEFAULT_SETTINGS.collapsedScale}
         resetLabel={t.settings.layout.resetToDefault}
         onChange={(collapsedScale) => {
@@ -94,19 +95,22 @@ export function StyleSettingsSection({
           onPreviewIsland?.("collapsed");
         }}
       />
-      <SettingsRow
+      {/* Applied when the thumb is let go: the island (which may hold this very slider) resizes
+          once, with its spring, rather than on every step of the drag. */}
+      <SettingsSliderRow
         title={t.settings.layout.expandedScale}
-        control={
-          <SettingsChoice<ExpandedSize>
-            value={nearestExpandedSize(settings.expandedScale)}
-            options={sizes}
-            ariaLabel={t.settings.layout.expandedScale}
-            onChange={(size) => {
-              onSettingsChange({ ...settings, expandedScale: EXPANDED_SCALES[size] });
-              onPreviewIsland?.("expanded");
-            }}
-          />
-        }
+        value={settings.expandedScale}
+        min={MIN_EXPANDED_SCALE}
+        max={MAX_EXPANDED_SCALE}
+        step={0.01}
+        format={times}
+        defaultValue={DEFAULT_SETTINGS.expandedScale}
+        resetLabel={t.settings.layout.resetToDefault}
+        commitOnRelease
+        onChange={(expandedScale) => {
+          onSettingsChange({ ...settings, expandedScale });
+          onPreviewIsland?.("expanded");
+        }}
       />
     </SettingsGroup>
   );
