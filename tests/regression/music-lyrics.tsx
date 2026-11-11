@@ -73,7 +73,11 @@ const settle = (ms: number) => act(async () => { await new Promise((resolve) => 
 const artSize = () => document.querySelector<HTMLElement>(".music-player__artwork")!.offsetWidth;
 const box = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
 
-try {
+// ?view=idle shows the page with nothing playing, for a look by eye.
+if (new URLSearchParams(location.search).get("view") === "idle") {
+  await render({ ...DEFAULT_MEDIA_STATE, updatedAt: Date.now() });
+  results.remove();
+} else try {
   await render(track("晴天", 6000));
   await settle(450);
   check(view() && document.querySelector(".music-player--lyrics") && artSize() === 52,
@@ -179,10 +183,11 @@ try {
 
   // Nothing playing: a page of its own, not an empty player.
   await render({ ...DEFAULT_MEDIA_STATE, updatedAt: Date.now() });
-  check(document.querySelector(".music-player__idle")?.textContent?.includes("没有在播放") && !document.querySelector(".music-progress") && !document.querySelector(".music-player__head"),
-    "没有在播放时显示专门的空状态");
-  check(document.querySelector<HTMLButtonElement>(".music-control-button--primary") && !document.querySelector<HTMLButtonElement>(".music-control-button--primary")!.disabled,
-    "空状态下仍能按播放键");
+  check(document.querySelector(".music-idle__title")?.textContent === "没有在播放" && document.querySelector(".music-idle__record")
+    && !document.querySelector(".music-progress, .music-player__head, .music-player__controls, .music-player__artwork"),
+    "没有在播放时是一张静止的唱片和一句说明，没有空的封面、进度条和播放键");
+  check(document.querySelector<HTMLButtonElement>(".music-idle__resume")?.textContent === "继续播放" && fixture.scrollWidth <= fixture.clientWidth,
+    "空状态只留一个“继续播放”，不撑宽页面");
   // Leave the page on a playing song with lyrics, for a look by eye.
   await render(track("晴天", 6000, true));
 

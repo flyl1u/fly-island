@@ -3,6 +3,7 @@ import { MicVocal, Music2, Pause, Play, RefreshCcw, SkipBack, SkipForward } from
 import { useTranslation } from "../../i18n";
 import type { MediaState } from "./api";
 import { MusicEqualizer } from "./MusicEqualizer";
+import { MusicIdle } from "./MusicIdle";
 import { MusicProgress } from "./MusicProgress";
 import { useArtworkTint } from "./useArtworkTint";
 import { LyricsView } from "./lyrics/LyricsView";
@@ -33,7 +34,8 @@ type MusicPlayerPanelProps = {
  * own. The song's cover, title and artist sit at the top; under them the lyrics, when there are
  * any, then a progress bar with elapsed and remaining time and the transport. Without lyrics the
  * cover grows and takes their room. The cover's colours glow softly beneath it, and its accent
- * tints the progress fill and the equalizer. Nothing playing shows its own quiet page.
+ * tints the progress fill and the equalizer. Nothing playing shows its own quiet page (MusicIdle),
+ * not an empty player.
  */
 export function MusicPlayerPanel({
   mediaState,
@@ -95,11 +97,7 @@ export function MusicPlayerPanel({
           </div>
         </header>
       ) : (
-        <div className="music-player__idle">
-          <span className="music-player__idle-icon" aria-hidden="true"><Music2 size={22} strokeWidth={1.5} absoluteStrokeWidth /></span>
-          <span className="music-player__idle-title">{t.music.nothingPlaying}</span>
-          <span className="music-player__idle-hint">{t.music.nothingPlayingHint}</span>
-        </div>
+        <MusicIdle onResume={onPlayPause} />
       )}
 
       {lyrics && (
@@ -114,29 +112,31 @@ export function MusicPlayerPanel({
       {/* A player that reports no length (NetEase Cloud Music) borrows the lyrics source's. */}
       {hasTrack && <MusicProgress mediaState={mediaState} durationMs={mediaState.durationMs > 0 ? mediaState.durationMs : lyricsDurationMs} />}
 
-      <div className="music-player__controls">
-        <button className="music-control-button" type="button" aria-label={t.music.previousTrack} disabled={prevDisabled} onClick={onPrevious}>
-          <SkipBack size={22} strokeWidth={1.5} fill="currentColor" />
-        </button>
-        <button
-          className="music-control-button music-control-button--primary"
-          type="button"
-          aria-label={isPlaying ? t.music.pause : t.music.play}
-          aria-busy={isTrackChanging}
-          onClick={onPlayPause}
-        >
-          {isTrackChanging ? (
-            <RefreshCcw className="music-control-button__track-change" size={22} strokeWidth={2} />
-          ) : isPlaying ? (
-            <Pause size={26} strokeWidth={1.5} fill="currentColor" />
-          ) : (
-            <Play size={26} strokeWidth={1.5} fill="currentColor" className="music-control-button__play-icon" />
-          )}
-        </button>
-        <button className="music-control-button" type="button" aria-label={t.music.nextTrack} disabled={nextDisabled} onClick={onNext}>
-          <SkipForward size={22} strokeWidth={1.5} fill="currentColor" />
-        </button>
-      </div>
+      {hasTrack && (
+        <div className="music-player__controls">
+          <button className="music-control-button" type="button" aria-label={t.music.previousTrack} disabled={prevDisabled} onClick={onPrevious}>
+            <SkipBack size={22} strokeWidth={1.5} fill="currentColor" />
+          </button>
+          <button
+            className="music-control-button music-control-button--primary"
+            type="button"
+            aria-label={isPlaying ? t.music.pause : t.music.play}
+            aria-busy={isTrackChanging}
+            onClick={onPlayPause}
+          >
+            {isTrackChanging ? (
+              <RefreshCcw className="music-control-button__track-change" size={22} strokeWidth={2} />
+            ) : isPlaying ? (
+              <Pause size={26} strokeWidth={1.5} fill="currentColor" />
+            ) : (
+              <Play size={26} strokeWidth={1.5} fill="currentColor" className="music-control-button__play-icon" />
+            )}
+          </button>
+          <button className="music-control-button" type="button" aria-label={t.music.nextTrack} disabled={nextDisabled} onClick={onNext}>
+            <SkipForward size={22} strokeWidth={1.5} fill="currentColor" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }
