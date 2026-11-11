@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 // 与 src-tauri/src/media_control/service.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
 export type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
@@ -56,4 +57,16 @@ export function sendMediaCommand(command: MediaCommand, target: string | undefin
 
 export function getAudioLevel() {
   return invoke<AudioLevel>("get_audio_level");
+}
+
+/** Moves playback to `positionMs` from the track's start; fails when the player does not allow it (`canSeek`). */
+export function seekMedia(positionMs: number, target: string | undefined) {
+  return invoke<MediaState>("media_seek", { positionMs: Math.max(0, Math.round(positionMs)), target });
+}
+
+// 与 media_control/watcher.rs 中的 MEDIA_CHANGED_EVENT 一致；无载荷，收到后重新读取状态。
+export const MEDIA_SESSION_CHANGED_EVENT = "media-session-changed";
+
+export function listenMediaSessionChanged(handler: () => void) {
+  return listen(MEDIA_SESSION_CHANGED_EVENT, handler);
 }

@@ -1,7 +1,7 @@
 // pnpm dev, then open /tests/regression/music-lyrics.html. Renders the music page with get_lyrics
 // mocked at the page's real size (520 x 234, on the island's black): with lyrics a compact head and
 // three lines that follow the position and the offset; without them a large cover; the progress bar
-// with elapsed and remaining time above the transport; the page with nothing playing.
+// with elapsed and remaining time above the transport, read-only or dragged to seek; the page with nothing playing.
 import "../../src/styles/tokens.css";
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -40,6 +40,7 @@ const messages: string[] = [];
 const root = createRoot(fixture);
 const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0 };
 let settingsOpened = 0;
+const seeks: number[] = [];
 
 function track(title: string, positionMs: number, playing = false): MediaState {
   return {
@@ -53,7 +54,7 @@ async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | un
     root.render(
       <StrictMode><I18nProvider>
         <MusicPlayerPanel mediaState={mediaState} isTrackChanging={false} commandError={null} onOpenSettings={() => { settingsOpened += 1; }}
-          onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} lyricsSettings={lyricsSettings} />
+          onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} onSeek={(positionMs) => seeks.push(positionMs)} lyricsSettings={lyricsSettings} />
       </I18nProvider></StrictMode>,
     );
     await new Promise((resolve) => setTimeout(resolve, 60));
@@ -167,6 +168,31 @@ if (new URLSearchParams(location.search).get("view") === "idle") {
   check(fillX(words()[2]) !== "100%", "到点后下一个字开始变亮");
   await render(track("Believe", 4500));
   check(words().length === 0 && lines()[1] === "in yesterday", "没有逐字时间的句子照常整句显示");
+
+  // Seeking: only when the player takes it (canSeek) and reports its own length.
+  const hit = () => document.querySelector<HTMLElement>(".music-progress__hit")!;
+  await render(track("晴天", 6000));
+  check(hit().getAttribute("role") === "progressbar" && getComputedStyle(hit()).cursor !== "pointer" && !document.querySelector(".music-progress__knob"),
+    "播放器不让跳转时进度条只读：没有手形光标和拖动圆点");
+  await render({ ...track("晴天", 6000), canSeek: true });
+  check(hit().getAttribute("role") === "slider" && getComputedStyle(hit()).cursor === "pointer" && document.querySelector(".music-progress__knob"),
+    "播放器能跳转时进度条可以点、可以拖");
+  const bar = hit().getBoundingClientRect();
+  const pointer = (type: string, ratio: number) => act(async () => {
+    hit().dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 7, clientX: bar.left + bar.width * ratio, clientY: bar.top + bar.height / 2 }));
+  });
+  seeks.length = 0;
+  await pointer("pointerdown", 0.5);
+  await pointer("pointermove", 0.75);
+  check(times()[0] === "3:21" && document.querySelector(".music-progress--dragging") && document.querySelector(".music-progress--snap") && seeks.length === 0,
+    "拖动时时间和填充跟着指针走，松手前不发跳转");
+  await pointer("pointerup", 0.75);
+  check(seeks.length === 1 && Math.abs(seeks[0] - 201_750) < 300 && !document.querySelector(".music-progress--dragging"), "松手时跳到指针所在的位置");
+  await act(async () => { hit().dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })); });
+  check(seeks[1] === 11_000, "键盘方向键前后跳 5 秒");
+  await render({ ...track("玻璃", 6000), durationMs: 0, canSeek: true }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  await settle(60);
+  check(hit().getAttribute("role") === "progressbar", "时长借自歌词来源时不让跳转（播放器自己的时间线不可信）");
 
   await render({ ...track("电台", 0), durationMs: 0 });
   check(!document.querySelector(".music-progress"), "播放器和歌词都不知道时长时不显示进度条");

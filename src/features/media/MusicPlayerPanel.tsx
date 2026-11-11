@@ -25,6 +25,8 @@ type MusicPlayerPanelProps = {
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  /** Moves playback, from the progress bar; without it the bar is read-only. */
+  onSeek?: (positionMs: number) => void;
   /** Where lyrics come from and how far they are moved; without it there are none. */
   lyricsSettings?: LyricsSettings & { lyricsOffsetMs: number };
 };
@@ -45,6 +47,7 @@ export function MusicPlayerPanel({
   onPlayPause,
   onNext,
   onPrevious,
+  onSeek,
   lyricsSettings = NO_LYRICS,
 }: MusicPlayerPanelProps) {
   const t = useTranslation();
@@ -110,7 +113,7 @@ export function MusicPlayerPanel({
       {commandError && <p className="music-player__error" role="alert">{t.music.controlFailed}</p>}
 
       {/* A player that reports no length (NetEase Cloud Music) borrows the lyrics source's. */}
-      {hasTrack && <MusicProgress mediaState={mediaState} durationMs={mediaState.durationMs > 0 ? mediaState.durationMs : lyricsDurationMs} />}
+      {hasTrack && <MusicProgress mediaState={mediaState} durationMs={mediaState.durationMs > 0 ? mediaState.durationMs : lyricsDurationMs} onSeek={onSeek} />}
 
       {hasTrack && (
         <div className="music-player__controls">
