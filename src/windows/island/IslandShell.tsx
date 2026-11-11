@@ -17,6 +17,7 @@ import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
 import { useGlassPointer } from "./useGlassPointer";
 import { useIslandPreparing } from "./useIslandPreparing";
+import { useMotionLayer } from "./useMotionLayer";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import "./IslandShell.css";
@@ -28,6 +29,8 @@ type IslandShellProps = {
   onOpenMessages: (source: MessageSource) => void;
   mode: IslandMode;
   page: IslandPage;
+  /** The open page's height (unscaled); a change resizes the shape around the panel. */
+  expandedHeight: number;
   appearanceMode: AppearanceMode;
   nativeGlassState: NativeGlassState;
   isTucked: boolean;
@@ -84,6 +87,7 @@ export function IslandShell({
   onOpenMessages,
   mode,
   page,
+  expandedHeight,
   appearanceMode,
   nativeGlassState,
   isTucked,
@@ -127,6 +131,7 @@ export function IslandShell({
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
   const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
+  const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
   const qqPreview = qqNotifications.preview;
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
@@ -216,6 +221,7 @@ export function IslandShell({
         />
 
         <div
+          ref={panelRef}
           id="island-panel"
           className="island__expanded"
           aria-hidden={!isExpanded}

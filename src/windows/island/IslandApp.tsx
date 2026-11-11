@@ -56,7 +56,8 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   const { qqNotifications, wechatReminders, qqMail, hasMessagePreview } = notices;
-  const media = useMediaState(settings.musicEnabled);
+  // The output level shows only on the collapsed island (its waveform).
+  const media = useMediaState(settings.musicEnabled, mode === "collapsed");
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages } =
     useIslandAgents(settings);
   const quotaAlert = useQuotaAlert(agentUsages, settings.agentStatusEnabled ? settings.agentQuotaAlertPercent : 0, {
@@ -129,8 +130,8 @@ export function IslandApp() {
     shelfItems: fileShelf.items.length,
   });
   const stageStyle = useMemo(
-    () => getIslandStageStyle(settings, mode, collapsedIslandWidth, expandedIslandHeight),
-    [collapsedIslandWidth, expandedIslandHeight, mode, settings],
+    () => getIslandStageStyle(settings, collapsedIslandWidth, expandedIslandHeight),
+    [collapsedIslandWidth, expandedIslandHeight, settings],
   );
 
 
@@ -186,6 +187,7 @@ export function IslandApp() {
         onOpenMessages={openMessages}
         mode={mode}
         page={page}
+        expandedHeight={expandedIslandHeight}
         appearanceMode={settings.appearanceMode}
         nativeGlassState={nativeGlassState}
         isTucked={isTucked}

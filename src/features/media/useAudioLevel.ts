@@ -1,5 +1,6 @@
 import { useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { getAudioLevel, type MediaPlaybackStatus, type MediaState } from "./api";
+import { isIslandMoving } from "../../lib/islandMotion";
 import { AUDIO_ACTIVE_THRESHOLD } from "./mediaState";
 
 export type MediaPlaybackIntent = { status: MediaPlaybackStatus; expiresAt: number };
@@ -84,10 +85,12 @@ export function useAudioLevel(
       }
     };
 
-    void refreshAudioLevel();
+    // Not while the island changes shape (a poll re-renders it), the first read included: the
+    // level switches on as the island closes.
+    if (!isIslandMoving()) void refreshAudioLevel();
 
     const interval = window.setInterval(() => {
-      void refreshAudioLevel();
+      if (!isIslandMoving()) void refreshAudioLevel();
     }, 500);
 
     return () => {

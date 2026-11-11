@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isIslandMoving } from "../../lib/islandMotion";
 import { getAgentStatus, type AgentStatusSnapshot } from "./api";
 import { DEFAULT_AGENT_STATUS, listAgentStatuses } from "./status";
 
@@ -51,7 +52,8 @@ export function useAgentStatus(enabled = true) {
     void refreshAgentStatus();
 
     const interval = window.setInterval(() => {
-      void refreshAgentStatus();
+      // A change waits out the island's motion (islandMotion.ts): it re-renders the whole island.
+      if (!isIslandMoving()) void refreshAgentStatus();
     }, 200);
 
     return () => window.clearInterval(interval);

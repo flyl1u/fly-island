@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isIslandMoving } from "../../lib/islandMotion";
 import { listAgentSessions, type AgentSessionSummary } from "./api";
 import { sameAgentSessions, uniqueSessions } from "./sessionList";
 
@@ -31,7 +32,10 @@ export function useAgentSessions(enabled: boolean, intervalMs: number, windowHou
       }
     };
     void refresh();
-    const timer = window.setInterval(() => void refresh(), intervalMs);
+    // A change waits out the island's motion (islandMotion.ts): it re-renders the whole island.
+    const timer = window.setInterval(() => {
+      if (!isIslandMoving()) void refresh();
+    }, intervalMs);
     return () => {
       cancelled = true;
       window.clearInterval(timer);

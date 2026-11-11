@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./api";
+import { isIslandMoving } from "../../lib/islandMotion";
 import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from "./mediaState";
 import { advanceClock, clockPosition, hasTimeline, NO_CLOCK, type TrackClock } from "./trackClock";
 import { useAudioLevel } from "./useAudioLevel";
@@ -9,8 +10,10 @@ import { useMusicSourcePriority } from "./useMusicSourcePriority";
 /**
  * Media session state, playback commands and the source the island currently controls.
  * With `enabled` false (music switched off) nothing is polled and the state stays empty.
+ * `showsLevel` says whether the output level is on screen (the collapsed island's waveform);
+ * while it is not, the level is neither polled nor folded in, so it re-renders nothing.
  */
-export function useMediaState(enabled = true) {
+export function useMediaState(enabled = true, showsLevel = true) {
   const [mediaState, setMediaState] =
     useState<MediaState>(DEFAULT_MEDIA_STATE);
   const [isMediaTrackChanging, setIsMediaTrackChanging] = useState(false);
@@ -18,6 +21,10 @@ export function useMediaState(enabled = true) {
     null,
   );
   const mediaTargetRef = useRef<string | null>(null);
+  const showsLevelRef = useRef(showsLevel);
+  useEffect(() => {
+    showsLevelRef.current = showsLevel;
+  }, [showsLevel]);
   const isRefreshingMediaState = useRef(false);
   const isRunningMediaCommand = useRef(false);
   const trackClock = useRef<TrackClock>(NO_CLOCK);
@@ -65,7 +72,8 @@ export function useMediaState(enabled = true) {
         );
         const audioActive = playbackStatus !== "paused" &&
           (nextMediaState.audioActive || nextPeak > AUDIO_ACTIVE_THRESHOLD);
-        const audioPeak = audioActive ? nextPeak : 0;
+        // Off screen, the peak stays as it was: a new one each poll re-rendered the open island.
+        const audioPeak = !audioActive ? 0 : showsLevelRef.current ? nextPeak : currentState.audioPeak;
 
         const merged: MediaState = {
           ...nextMediaState,
@@ -182,7 +190,7 @@ export function useMediaState(enabled = true) {
   useAudioLevel(
     setMediaState,
     mediaPlaybackIntent,
-    enabled && (mediaState.playbackStatus === "playing" || mediaState.audioActive),
+    enabled && showsLevel && (mediaState.playbackStatus === "playing" || mediaState.audioActive),
   );
 
   useEffect(() => {
@@ -194,7 +202,7 @@ export function useMediaState(enabled = true) {
     void refreshMediaState();
 
     const interval = window.setInterval(() => {
-      void refreshMediaState();
+      if (!isIslandMoving()) void refreshMediaState();
     }, 1500);
 
     return () => window.clearInterval(interval);

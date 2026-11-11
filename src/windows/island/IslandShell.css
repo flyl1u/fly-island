@@ -1,14 +1,3 @@
-/* Registered so a scale change transitions the number itself (see .island below). Not inherited:
-   only .island reads it, and an inherited number that changes every frame restyled every element
-   of the open page on every frame (measured: style 59 -> 323ms and 8-9 dropped frames per open
-   at an expanded size other than 1, scripts/measure-island-motion.mjs). The stage sets the target,
-   --island-scale-target (stageStyle.ts). */
-@property --island-scale {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-
 .island {
   /*
    * The island's motion: springs, sampled with linear() from a damped spring (from rest, so a late
@@ -22,7 +11,14 @@
   --island-spring-close: linear(0, 0.067, 0.2057, 0.3589, 0.5005, 0.6204, 0.7168, 0.7917, 0.8486, 0.8909, 0.922, 0.9446, 0.9609, 0.9725, 0.9808, 0.9866, 0.9908, 0.9942, 0.9972, 1);
   --island-motion: var(--island-spring-close);
   --island-motion-duration: 380ms;
-  --island-scale: var(--island-scale-target, 1);
+  /*
+   * The two sizes (Appearance), from the stage (stageStyle.ts). Nothing animates a scale: the
+   * shape below takes its scaled size in px, and the collapsed bar and the page panel each keep
+   * their own fixed scale (.island__collapsed, .island__expanded). An animated scale re-rendered
+   * the whole island, page included, on every frame of every open and close.
+   */
+  --island-collapsed-scale: var(--island-collapsed-scale-target, 1);
+  --island-expanded-scale: var(--island-expanded-scale-target, 1);
   --glass-pointer-x: 50%;
   --glass-pointer-y: 18%;
   --glass-page-accent: 116, 214, 255;
@@ -37,6 +33,9 @@
   --island-panel-radius: max(8px, calc(var(--island-radius) - 20px));
   /* A box inside a panel with the usual 16px padding (inner = outer - padding). */
   --island-card-radius: max(var(--corner-xs), calc(var(--island-panel-radius) - 16px));
+  /* The shape's own corners, at the scale of its state (the panels inside are scaled already). */
+  --island-shape-radius: calc(var(--island-radius) * var(--island-expanded-scale));
+  --island-shape-radius-collapsed: calc(var(--island-radius-collapsed) * var(--island-collapsed-scale));
   /* The 1px rim of the expanded island (.island::after); the collapsed bar has none. */
   --island-rim: transparent;
   /*
@@ -53,19 +52,16 @@
   background: var(--island-fill, var(--island-background-color));
   border: 0;
   overflow: visible;
-  /* transform, not zoom: Rust's hit test (island/passthrough.rs) assumes a box of base size x
-     scale, centred at the top. The transition runs on --island-scale, not on transform: a
-     transform transition runs on the compositor, which resamples the island's first raster and
-     blurs every word while the island opens or closes (roadmap F14). Interpolating the number
-     re-renders the text at each frame's scale; the island relays out every frame anyway, as its
-     width and height animate. No will-change, for the same reason. */
-  transform: scale(var(--island-scale));
-  transform-origin: top center;
+  /*
+   * Only the shape moves: its width, height and corners, already scaled (Rust's hit test,
+   * island/passthrough.rs, assumes a box of base size x scale, centred at the top). Its children
+   * keep their size, so a frame lays out the shape alone and paints a rounded rectangle, while the
+   * page panel rides on a layer of its own (useMotionLayer.ts) and is not drawn again.
+   */
   transition:
     width var(--island-motion-duration) var(--island-motion),
     height var(--island-motion-duration) var(--island-motion),
-    border-radius var(--island-motion-duration) var(--island-motion),
-    --island-scale var(--island-motion-duration) var(--island-motion);
+    border-radius var(--island-motion-duration) var(--island-motion);
 }
 
 .island__surface {
@@ -219,9 +215,9 @@
 }
 
 .island--collapsed {
-  width: var(--collapsed-island-width);
-  height: 38px;
-  border-radius: 0 0 var(--island-radius-collapsed) var(--island-radius-collapsed);
+  width: calc(var(--collapsed-island-width) * var(--island-collapsed-scale));
+  height: calc(38px * var(--island-collapsed-scale));
+  border-radius: 0 0 var(--island-shape-radius-collapsed) var(--island-shape-radius-collapsed);
   /* The island is a surface, not a link: only its small buttons show the hand. */
   cursor: default;
   background:
@@ -305,9 +301,9 @@
   --island-motion: var(--island-spring-open);
   --island-motion-duration: 560ms;
   --island-rim: var(--color-white-a08);
-  width: 560px;
-  height: var(--expanded-island-height, 306px);
-  border-radius: 0 0 var(--island-radius) var(--island-radius);
+  width: calc(560px * var(--island-expanded-scale));
+  height: calc(var(--expanded-island-height, 306px) * var(--island-expanded-scale));
+  border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
   cursor: default;
 }
 
@@ -318,24 +314,28 @@
 
 /* Away from the top edge the island floats: a full pill collapsed, evenly rounded expanded. */
 .island--detached.island--collapsed {
-  border-radius: var(--island-radius-collapsed);
+  border-radius: var(--island-shape-radius-collapsed);
 }
 
 .island--detached.island--expanded {
-  border-radius: var(--island-radius);
+  border-radius: var(--island-shape-radius);
 }
 
+/*
+ * The collapsed bar and the page panel, each at its own fixed scale. The 6px slide is a translate
+ * in front of that scale: it moves the layer without drawing it again, and as the scale itself
+ * never animates the text is drawn at its final size and stays sharp.
+ */
 .island__collapsed,
 .island__expanded {
   position: absolute;
   top: 0;
   left: 50%;
   z-index: 2;
-  /* The 6px slide moves `top`, not a transform, and nothing is promoted ahead (no will-change):
-     a layer of its own would be resampled mid-slide and lose ClearType, blurring the text. */
+  transform-origin: top center;
   transition:
     opacity 120ms ease,
-    top 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .island__collapsed {
@@ -347,6 +347,7 @@
   gap: var(--space-md);
   padding: 0 18px;
   opacity: 1;
+  transform: scale(var(--island-collapsed-scale));
   transition-delay: 140ms, 0s;
 }
 
@@ -361,7 +362,7 @@
 .island--expanded .island__collapsed {
   pointer-events: none;
   opacity: 0;
-  top: -6px;
+  transform: translateY(-6px) scale(var(--island-collapsed-scale));
   transition-delay: 0s;
 }
 
@@ -375,7 +376,7 @@
   padding: 18px 20px 20px;
   pointer-events: none;
   opacity: 0;
-  top: -6px;
+  transform: translateY(-6px) scale(var(--island-expanded-scale));
 }
 
 .island--preparing.island--collapsed .island__surface {
@@ -390,13 +391,13 @@
 .island--expanded .island__expanded {
   pointer-events: auto;
   opacity: 1;
-  top: 0;
+  transform: scale(var(--island-expanded-scale));
   /* The page fades in once the island has some size (120ms in, a fifth of the way), and the
-     6px drop rides the same spring. Height follows the shell (.island) between pages. */
+     6px drop rides the same spring. Between pages the panel takes its new height at once (laid
+     out once, not on every frame); the shape's own height transition uncovers or trims it. */
   transition:
     opacity 240ms ease-out 120ms,
-    top 420ms var(--island-spring-open) 80ms,
-    height 560ms var(--island-spring-open);
+    transform 420ms var(--island-spring-open) 80ms;
 }
 
 .island__content {
