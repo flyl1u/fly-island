@@ -8,8 +8,8 @@ export class Interrupted extends Error {}
 /** The tour's clock: waits only run while the demo is on screen and not interrupted. */
 export type Clock = { token: number; current: () => number; held: () => boolean };
 
-const MOVE_MS = 560;
-const SETTLE_MS = 160;
+const MOVE_MS = 380;
+const SETTLE_MS = 70;
 
 type Target = string | (() => Element | null | undefined);
 
@@ -59,7 +59,7 @@ export function createActor(cursor: HTMLElement, clock: Clock) {
     ripple.className = "demo-cursor__ripple";
     cursor.append(ripple);
     setTimeout(() => ripple.remove(), 600);
-    await wait(130);
+    await wait(90);
     delete cursor.dataset.pressed;
   };
 
@@ -87,7 +87,7 @@ export function createActor(cursor: HTMLElement, clock: Clock) {
       set.call(field, "");
       field.dispatchEvent(new Event("input", { bubbles: true }));
       for (const character of text) {
-        await wait(55 + Math.random() * 60);
+        await wait(30 + Math.random() * 40);
         set.call(field, field.value + character);
         field.dispatchEvent(new Event("input", { bubbles: true }));
       }
@@ -97,7 +97,7 @@ export function createActor(cursor: HTMLElement, clock: Clock) {
     async key(target: Target, key: string) {
       const field = await find(target, 0);
       if (!field) return;
-      await wait(260);
+      await wait(160);
       field.dispatchEvent(new KeyboardEvent("keydown", { key, code: key, bubbles: true, cancelable: true }));
       if (key === "Enter") field.closest("form")?.requestSubmit();
     },

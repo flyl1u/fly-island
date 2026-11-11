@@ -11,7 +11,8 @@ export const PAGE_BUTTONS: Record<IslandPage, string> = {
   clipboard: ".dot-button--clipboard",
   shelf: ".dot-button--shelf",
   qq: ".island-message-button",
-  translation: ".island-translate-button",
+  // A page capsule since the translate button became one; the header button before that.
+  translation: ".dot-button--translation, .island-translate-button",
   agents: ".island__agent-button",
   settings: ".island-settings-button",
 };
@@ -26,11 +27,11 @@ const isOn = (page: IslandPage) => isExpanded() && Boolean(island()?.classList.c
 export async function enter(actor: Actor, page: IslandPage) {
   if (!isExpanded()) {
     await actor.click(".island__open-button");
-    await actor.wait(700);
+    await actor.wait(500);
   }
   if (!isOn(page)) {
     await actor.click(PAGE_BUTTONS[page]);
-    await actor.wait(650);
+    await actor.wait(450);
   }
 }
 
@@ -47,16 +48,16 @@ export const segments: Segment[] = [
       if (old) {
         await actor.click(() => todoRow(data.tour.todo)?.querySelector(".todo-delete"));
         if (todoRow(data.tour.todo)) await actor.click(() => todoRow(data.tour.todo)?.querySelector(".todo-delete"));
-        await actor.wait(500);
+        await actor.wait(350);
       }
       await actor.type(".todo-form input", data.tour.todo);
       await actor.key(".todo-form input", "Enter");
-      await actor.wait(900);
+      await actor.wait(650);
       // Starting a task tucks the island away with the task shown on it.
       await actor.click(() => todoRow(data.tour.todo)?.querySelector(".todo-start"));
-      await actor.wait(500);
+      await actor.wait(350);
       await actor.rest();
-      await actor.wait(2400);
+      await actor.wait(1700);
     },
   },
   {
@@ -64,13 +65,13 @@ export const segments: Segment[] = [
     async run(actor, data) {
       await enter(actor, "clipboard");
       await actor.type(".clipboard-search input", data.tour.search);
-      await actor.wait(1500);
+      await actor.wait(1050);
       await actor.click(".clipboard-search button");
-      await actor.wait(500);
+      await actor.wait(350);
       await actor.click(".clipboard-item:nth-child(3) .clipboard-favorite-button");
-      await actor.wait(700);
+      await actor.wait(500);
       await actor.click(".clipboard-item:nth-child(1) .clipboard-copy-button");
-      await actor.wait(1500);
+      await actor.wait(1050);
     },
   },
   {
@@ -78,29 +79,29 @@ export const segments: Segment[] = [
     async run(actor) {
       await enter(actor, "music");
       await actor.rest();
-      await actor.wait(1800);
+      await actor.wait(1250);
       await actor.click(".music-control-button--primary");
-      await actor.wait(1100);
+      await actor.wait(750);
       await actor.click(".music-player__controls .music-control-button:last-child");
       await actor.rest();
-      await actor.wait(2600);
+      await actor.wait(1800);
     },
   },
   {
     page: "qq",
     async run(actor) {
       await enter(actor, "qq");
-      await actor.wait(1500);
+      await actor.wait(1050);
       await actor.click(".message-sources button:last-child");
-      await actor.wait(800);
+      await actor.wait(550);
       if (await actor.click(".qq-mail-item button")) {
         await actor.rest();
-        await actor.wait(3000);
+        await actor.wait(2100);
         await actor.click(".qq-mail-back");
-        await actor.wait(700);
+        await actor.wait(500);
       }
       await actor.click(".message-sources button:first-child");
-      await actor.wait(900);
+      await actor.wait(650);
     },
   },
   {
@@ -110,7 +111,7 @@ export const segments: Segment[] = [
       await actor.type(".island__content textarea", data.tour.translate);
       await actor.key(".island__content textarea", "Enter");
       await actor.rest();
-      await actor.wait(2600);
+      await actor.wait(1800);
     },
   },
   {
@@ -118,11 +119,11 @@ export const segments: Segment[] = [
     async run(actor) {
       await enter(actor, "agents");
       await actor.rest();
-      await actor.wait(3400);
+      await actor.wait(2400);
       // The middle of the top bar tucks the island away, as on the desktop.
       await actor.click(".island__collapse-target");
       await actor.rest();
-      await actor.wait(2600);
+      await actor.wait(1800);
     },
   },
 ];

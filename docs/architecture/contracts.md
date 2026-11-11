@@ -48,6 +48,7 @@
 | `island-cursor-moved`（载荷 `{ x, y }`：光标在主窗口 CSS 像素中的位置，窗口外也有；只在 `set_island_cursor_tracking(true)` 后、光标移动时发，约 28 次/秒，供中心图案的眼睛跟随） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
 | `media-session-changed`（无载荷：某个媒体会话的时间线、播放状态或歌曲变了，或会话增减；主窗口收到后立即重读 `get_media_state`。2026-11-11 起） | `media_control/watcher.rs` | 广播 |
+| `media-session-changed`（无载荷：某个媒体会话的时间线、播放状态或歌曲变了，或会话增减；主窗口收到后立即重读 `get_media_state`。2026-11-11 起） | `media_control/watcher.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `clipboard-history-shortcut-status`（载荷为字符串或 `null`：剪贴板快捷键注册失败的原因，成功或关闭时为 `null`；最近一次结果也可用 `get_clipboard_shortcut_error` 读取） | `clipboard_history/hotkey.rs` | 广播 |
