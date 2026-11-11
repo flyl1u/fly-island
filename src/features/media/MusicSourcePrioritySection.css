@@ -24,3 +24,24 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+/* Why a cover may be missing: an info row that reads before the plain footer text, without shouting. */
+.settings-group__footer .music-sources__cover-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 8px 10px;
+  color: var(--color-text-muted);
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a08);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+}
+
+.music-sources__cover-hint svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-text);
+  opacity: 0.8;
+}

@@ -14,6 +14,8 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
         ? settings.carryOverIncompleteTodos
         : DEFAULT_SETTINGS.carryOverIncompleteTodos,
     autoTuck: settings?.autoTuck === true,
+    // Game mode: on unless turned off. Tucking while full screen stays at its default (off).
+    gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     // Module switches: anything but an explicit false keeps the module on.
     todoEnabled: settings?.todoEnabled !== false,

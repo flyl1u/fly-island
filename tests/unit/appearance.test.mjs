@@ -100,7 +100,6 @@ test("options no longer in Settings load as their defaults, whatever was saved",
     shelfMaxItems: 20,
     shelfDoubleClick: "reveal",
     shelfShowCount: false,
-    gameDoNotDisturb: false,
     gameAutoTuck: true,
     agentVisibleRows: 5,
     agentHostDisplay: "both",
@@ -126,6 +125,9 @@ test("the options still in Settings are read back and fall back for older settin
   assert.equal(normalizeSettings({ expandTrigger: "hover" }).expandTrigger, "hover");
   assert.equal(normalizeSettings({ expandTrigger: "doubleClick" }).expandTrigger, "click");
   assert.equal(normalizeSettings({ autoTuck: true }).autoTuck, true);
+  assert.equal(older.gameDoNotDisturb, true);
+  assert.equal(normalizeSettings({ gameDoNotDisturb: false }).gameDoNotDisturb, false);
+  assert.equal(normalizeSettings({ gameDoNotDisturb: "no" }).gameDoNotDisturb, true);
   assert.equal(normalizeSettings({ carryOverIncompleteTodos: false }).carryOverIncompleteTodos, false);
   assert.equal(normalizeSettings({ agentAlertWaiting: false, agentAlertCompleted: false }).agentAlertCompleted, false);
   assert.equal(normalizeSettings({ shelfAutoCleanupDays: 7 }).shelfAutoCleanupDays, 7);
