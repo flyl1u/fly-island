@@ -65,7 +65,7 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
   <img src="docs/assets/wechat-community.jpg" alt="fly-island 微信用户交流群二维码" width="360">
 </p>
 
-二维码有有效期，当前图片标注为 **11 月 11 日前有效**；若已失效，可通过 [Issue](https://github.com/flyl1u/fly-island/issues) 反馈以便更新。
+二维码有有效期，当前图片标注为 **11 月 18 日前有效**；若已失效，可通过 [Issue](https://github.com/flyl1u/fly-island/issues) 反馈以便更新。
 
 ## 从源码构建
 
