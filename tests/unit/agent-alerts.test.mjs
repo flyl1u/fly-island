@@ -90,7 +90,7 @@ test("the reply status marker decides how a finished turn alerts", () => {
   assert.deepEqual(noWaiting.map(({ session }) => session.sessionId), ["c"]);
 });
 
-test("without a marker, a finished reply that asks something alerts as waiting", () => {
+test("without a marker, a finished reply that ends in a question mark alerts as completed", () => {
   const before = [session("a", "running"), session("b", "running"), session("c", "running")];
   const after = [
     { ...session("a", "completed"), replyAsks: true },
@@ -99,7 +99,8 @@ test("without a marker, a finished reply that asks something alerts as waiting",
     { ...session("c", "completed"), replyAsks: true, replyMarker: "done" },
   ];
   const alerts = detectAlerts(phasesOf(before), after, ALL);
-  assert.deepEqual(alerts.map(({ kind, session }) => `${kind}:${session.sessionId}`), ["waiting:a", "completed:b", "completed:c"]);
+  // "要不要我顺便…？" is an offer; only the marker (or a question tool) asks for an answer.
+  assert.deepEqual(alerts.map(({ kind, session }) => `${kind}:${session.sessionId}`), ["completed:a", "completed:b", "completed:c"]);
 });
 
 test("reminders: once per wait, after the delay, for sessions still waiting on the user", async () => {
@@ -130,4 +131,11 @@ test("reminders: once per wait, after the delay, for sessions still waiting on t
   assert.equal(reminderSound({ ...session("a", "waiting"), currentTool: { name: "AskUserQuestion", detail: null } }), "question");
   assert.equal(reminderSound({ ...session("a", "completed"), replyMarker: "yourTurn" }), "question");
   assert.equal(reminderSound({ ...session("a", "waiting"), currentTool: { name: "Bash", detail: "ls" } }), "approval");
+});
+
+test("by default only finished tasks, waits and questions pop up, and no reminder follows", async () => {
+  const { DEFAULT_SETTINGS } = await import("../../src/features/appearance/settingsDefaults.ts");
+  assert.equal(DEFAULT_SETTINGS.agentAlertStarted, "off");
+  assert.equal(DEFAULT_SETTINGS.agentRemindSeconds, 0);
+  assert.equal(DEFAULT_SETTINGS.agentAlertCompleted && DEFAULT_SETTINGS.agentAlertWaiting, true);
 });

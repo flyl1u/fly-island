@@ -1,5 +1,6 @@
 import type { AgentSessionSummary } from "../api";
-import { replyEnding } from "../sessionLight.ts";
+import { QUESTION_TOOL } from "../announce.ts";
+import { announcedEnding } from "../sessionLight.ts";
 
 /** The agent moments that can make a sound, in the order the Sounds page lists them. */
 export const AGENT_SOUND_EVENTS = ["start", "complete", "error", "approval", "question", "ack", "compact", "idle", "quotaLow", "quotaReset"] as const;
@@ -12,20 +13,19 @@ export function isAgentSoundEvent(value: unknown): value is AgentSoundEvent {
 
 type Phase = AgentSessionSummary["phase"];
 
-/** Claude Code's tool for multiple-choice questions to the user. */
-const QUESTION_TOOL = "AskUserQuestion";
-
 /**
  * The sound a session's change from `before` to `after` calls for. A session seen for the
  * first time only sounds when it starts running (a new session) or already waits for the user;
  * one that shows up finished is an old session coming into the listed time window. A finished
- * turn whose reply asks the user something (the "your turn" marker of roadmap B9, or a reply
- * ending in a question) sounds as a question; one waiting for its own background task makes no sound yet.
+ * turn whose reply status marker (roadmap B9) says "your turn" sounds as a question; a reply that
+ * merely ends in a question mark does not (`announcedEnding`). One waiting for its own background
+ * task makes no sound yet. Whether the sound then plays is decided by `announce.ts`: a finished
+ * turn or a wait has to last, and only the user's own tasks are announced.
  */
 export function soundFor(
   before: Phase | undefined,
   after: Phase,
-  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "replyAsks" | "backgroundTasks">,
+  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "backgroundTasks">,
 ): AgentSoundEvent | null {
   if (after === "waiting" && before !== "waiting") {
     return session.currentTool?.name === QUESTION_TOOL ? "question" : "approval";
@@ -33,7 +33,7 @@ export function soundFor(
   if (before === undefined) return after === "running" ? "start" : null;
   if (after === "failed" && before !== "failed") return "error";
   if (after === "completed" && (before === "running" || before === "waiting" || before === "stale")) {
-    const ending = replyEnding(session);
+    const ending = announcedEnding(session);
     return ending === "yourTurn" ? "question" : ending === "background" ? null : "complete";
   }
   // A finished session running again means the user just sent it a new prompt.

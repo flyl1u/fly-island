@@ -14,6 +14,10 @@ import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
 import type { IslandSettings } from "../../src/features/appearance/types";
 import { useIslandAgentAlerts } from "../../src/windows/island/useIslandAgentAlerts";
 import type { IslandPage } from "../../src/windows/island/types";
+import { announceTiming } from "../../src/features/agent-status/announce";
+
+// The checks below look at what pops up, not the waits before it (announce.ts, unit-tested).
+Object.assign(announceTiming, { completeMs: 0, waitMs: 0, approvalRepeatMs: 0 });
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 localStorage.setItem(AGENT_APPROVAL_STORAGE_KEY, JSON.stringify({ onIsland: true, whenInFront: false }));

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { detectAlerts, phasesOf, takeDueReminders, trackWaiting, type AgentAlert, type AgentAlertKind, type AgentAlertKinds, type SessionPhases, type WaitingReminders } from "./alerts";
+import { announceTiming, emptyAnnounced, isUsersTurn, settledFinishes, settledWaits } from "./announce";
 import { agentSessionsInFront, type AgentSessionSummary } from "./api";
 import { sessionKey } from "./unseen";
 
@@ -51,7 +52,8 @@ type AgentAlertOptions = {
 /**
  * Opens the Agent page when a session finishes, fails or waits for the user, unless its window
  * is already in front or the user has the island open. The panel closes again after
- * `durationMs`, unless the user pressed inside it; resting the cursor on it holds it open.
+ * `durationMs`, unless the user pressed inside it; resting the cursor on it holds it open. Only the
+ * user's own finished tasks, lasting waits and real questions pop up (announce.ts).
  * Returns the session the page shows alone while the alert lasts: until the island collapses,
  * leaves the Agent page, or the user presses anywhere but the session's row (the page header's
  * Agent button, say), which brings back the whole list. With `remindAfterMs`, a session still
@@ -135,19 +137,49 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
       });
   });
 
+  // Like the sounds (announce.ts): a finished turn pops up once it stays finished, once per typed
+  // prompt; a wait once it lasts, a session's approvals at most every two minutes; a failure only
+  // when it was the user's own task. A start pops up at once, when switched on.
   const { started, completed, failed, waiting } = kinds;
-  useEffect(() => {
-    const alerts = detectAlerts(phasesRef.current, sessions, { started, completed, failed, waiting });
-    phasesRef.current = phasesOf(sessions, phasesRef.current);
-    if (alerts.length > 0 && latest.current.canAlert) popUpRef.current(alerts);
-  }, [sessions, started, completed, failed, waiting]);
-
-  // A session still waiting on the user a while later pops up once more (roadmap B6.4.1).
-  const remindersRef = useRef<WaitingReminders>({ since: new Map(), reminded: new Set() });
   const sessionsRef = useRef(sessions);
   useLayoutEffect(() => {
     sessionsRef.current = sessions;
   });
+  const announcedRef = useRef(emptyAnnounced());
+  const timersRef = useRef(new Set<number>());
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, []);
+  useEffect(() => {
+    const alerts = detectAlerts(phasesRef.current, sessions, { started, completed, failed, waiting });
+    phasesRef.current = phasesOf(sessions, phasesRef.current);
+    if (alerts.length === 0 || !latest.current.canAlert) return;
+    const later = (ms: number, settle: (pending: AgentAlert[]) => AgentAlert[], pending: AgentAlert[]) => {
+      if (pending.length === 0) return;
+      const timer = window.setTimeout(() => {
+        timersRef.current.delete(timer);
+        const settled = settle(pending);
+        if (settled.length > 0 && latest.current.canAlert) popUpRef.current(settled);
+      }, ms);
+      timersRef.current.add(timer);
+    };
+    const finished = alerts.filter((alert) => alert.session.phase === "completed");
+    const waits = alerts.filter((alert) => alert.session.phase === "waiting");
+    const now = alerts.filter((alert) => alert.kind === "started" || (alert.kind === "failed" && isUsersTurn(alert.session)));
+    if (now.length > 0) popUpRef.current(now);
+    later(announceTiming.completeMs, (pending) => {
+      const settled = settledFinishes(pending.map((alert) => alert.session), sessionsRef.current, announcedRef.current);
+      return pending.filter((alert) => settled.includes(alert.session));
+    }, finished);
+    later(announceTiming.waitMs, (pending) => {
+      const settled = settledWaits(pending.map((alert) => alert.session), sessionsRef.current, announcedRef.current, Date.now());
+      return pending.filter((alert) => settled.includes(alert.session));
+    }, waits);
+  }, [sessions, started, completed, failed, waiting]);
+
+  // A session still waiting on the user a while later pops up once more (roadmap B6.4.1).
+  const remindersRef = useRef<WaitingReminders>({ since: new Map(), reminded: new Set() });
   useEffect(() => {
     if (remindAfterMs > 0) trackWaiting(remindersRef.current, sessions, Date.now());
   }, [sessions, remindAfterMs]);

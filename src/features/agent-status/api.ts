@@ -64,6 +64,11 @@ export type AgentSessionSummary = {
   host: SessionHost | null;
   /** When the newest prompt was sent (Unix ms): the current or last turn runs from here. */
   turnStartedAt: number | null;
+  /**
+   * When the user last typed a prompt (Unix ms), not one Claude Code wrote by itself (a background
+   * task's note, another session's message); null when none is known. Missing from older builds.
+   */
+  ownerPromptAt?: number | null;
   /** That newest prompt, shortened like a title. Missing from builds before it was sent. */
   lastPrompt?: string | null;
   /** The tool the current turn called last; null once the turn is over. */
