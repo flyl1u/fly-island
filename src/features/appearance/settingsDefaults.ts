@@ -63,6 +63,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoRotationSeconds: 5,
   autoTuck: true,
   autoTuckSeconds: 30,
+  autoCollapseSeconds: 30,
   autoTuckRetract: true,
   autoTuckRetractDelayMs: DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS,
   revealOnMessage: true,
