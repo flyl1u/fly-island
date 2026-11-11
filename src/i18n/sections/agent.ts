@@ -72,8 +72,10 @@ export type AgentText = {
     fromCodex: string;
     /** "3 分钟前更新 · 来自 claude-hud", on the line's hover card. */
     updated: (ago: string, source: string) => string;
-    /** One window on the quota rings' card: "5 小时 已用 4%". */
-    used: (window: string, percent: number) => string;
+    /** Claude desktop's usage history as the source of the numbers. */
+    fromClaudeDesktop: string;
+    /** One window on the quota rings' card: "5 小时 剩余 96%（已用 4%）". */
+    left: (window: string, left: number, used: number) => string;
     /** Which ring is which, first on the card. */
     ringsLegend: string;
     /** The rings' accessible name: the agent's usage, then each window's summary. */
@@ -174,8 +176,9 @@ export const zhCN: AgentText = {
     fromMagpie: "来自 magpie",
     fromCodex: "来自 Codex 会话记录",
     updated: (ago, source) => `${ago} · ${source}`,
-    used: (window, percent) => `${window} 已用 ${percent}%`,
-    ringsLegend: "外圈 5 小时 · 内圈 7 天",
+    fromClaudeDesktop: "来自 Claude 桌面版",
+    left: (window, left, used) => `${window} 剩余 ${left}%（已用 ${used}%）`,
+    ringsLegend: "外圈 5 小时 · 内圈 7 天 · 显示剩余额度",
     rings: (label, windows) => [label, ...windows].join("；"),
   },
   approval: {
@@ -271,8 +274,9 @@ export const en: AgentText = {
     fromMagpie: "from magpie",
     fromCodex: "from Codex's session logs",
     updated: (ago, source) => `${ago} · ${source}`,
-    used: (window, percent) => `${window} ${percent}% used`,
-    ringsLegend: "Outer ring 5h · inner ring 7d",
+    fromClaudeDesktop: "from the Claude desktop app",
+    left: (window, left, used) => `${window} ${left}% left (${used}% used)`,
+    ringsLegend: "Outer ring 5h · inner ring 7d · showing what is left",
     rings: (label, windows) => [label, ...windows].join("; "),
   },
   approval: {

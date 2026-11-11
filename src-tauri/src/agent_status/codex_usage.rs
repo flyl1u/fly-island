@@ -47,7 +47,8 @@ fn dir_paths(dir: &Path) -> Vec<PathBuf> {
     paths
 }
 
-/// The newest rollout files: `sessions/<year>/<month>/<day>/rollout-*.jsonl`, by change time.
+/// The newest rollout files: `sessions/<year>/<month>/<day>/rollout-*.jsonl` (a long thread's
+/// pages, `-<thread>_<page>.jsonl`, too) and `archived_sessions/rollout-*.jsonl`, by change time.
 pub(super) fn newest_rollouts(codex_home: &Path) -> Vec<PathBuf> {
     rollouts_by_change(codex_home).into_iter().map(|(_, path)| path).collect()
 }
@@ -68,6 +69,14 @@ fn rollouts_by_change(codex_home: &Path) -> Vec<(SystemTime, PathBuf)> {
         .filter(|path| path.extension().is_some_and(|extension| extension == "jsonl"))
         .filter_map(|path| Some((fs::metadata(&path).ok()?.modified().ok()?, path)))
         .collect();
+    // A session archived from the app moves to `archived_sessions/` (flat; older ones compressed
+    // as `.jsonl.zst`, which are left alone), and may hold the newest event.
+    files.extend(
+        dir_paths(&codex_home.join("archived_sessions"))
+            .into_iter()
+            .filter(|path| path.extension().is_some_and(|extension| extension == "jsonl"))
+            .filter_map(|path| Some((fs::metadata(&path).ok()?.modified().ok()?, path))),
+    );
     files.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
     files.truncate(MAX_FILES);
     files

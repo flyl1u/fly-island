@@ -1762,3 +1762,33 @@ fn a_terminal_tab_is_found_by_title_then_by_folder() {
     assert_eq!(terminal_tab_for(&twice, None, Some("FocuSD")), None);
     assert_eq!(terminal_tab_for(&tabs, None, None), None);
 }
+
+#[test]
+fn claude_usage_from_the_desktop_apps_history() {
+    use super::claude_desktop_usage::parse_history;
+    use super::usage::UsageSource;
+    let now = 1_794_364_000_000_i64;
+    let minute = 60_000;
+    let history = json!({"version": 2, "samples": [
+        {"t": now - 40 * minute, "org": "o", "u": {"fh": 92, "sd": 2}},
+        {"t": now - 13 * minute, "org": "o", "u": {"fh": 0, "sd": 3, "so": 1, "xu": 50}},
+    ]})
+    .to_string();
+    let usage = parse_history(&history, now).unwrap();
+    assert_eq!((usage.source, usage.updated_at), (UsageSource::ClaudeDesktop, Some(now - 13 * minute)));
+    assert_eq!((usage.five_hour.unwrap().used, usage.seven_day.unwrap().used), (0.0, 3.0));
+    assert_eq!(usage.models.iter().map(|w| (w.name.as_str(), w.used)).collect::<Vec<_>>(), [("Opus", 1.0)]);
+
+    // Six hours on, the 5-hour figure may belong to a window that has reset: left out.
+    let later = parse_history(&history, now + 6 * 60 * minute).unwrap();
+    assert_eq!((later.five_hour, later.seven_day.map(|w| w.used)), (None, Some(3.0)));
+    // Eight days on, nothing is current.
+    assert_eq!(parse_history(&history, now + 8 * 24 * 60 * minute), None);
+
+    // Version 1 kept the figures beside the time; unknown windows are null.
+    let v1 = json!({"version": 1, "samples": [{"t": now, "fh": 41, "sd": null}]}).to_string();
+    let usage = parse_history(&v1, now).unwrap();
+    assert_eq!((usage.five_hour.map(|w| w.used), usage.seven_day), (Some(41.0), None));
+    assert_eq!(parse_history(r#"{"version": 2, "samples": []}"#, now), None);
+    assert_eq!(parse_history("not json", now), None);
+}

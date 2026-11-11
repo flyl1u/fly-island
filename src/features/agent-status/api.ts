@@ -190,10 +190,10 @@ export type AgentUsage = {
   models: UsageWindow[];
   plan: string | null;
   /** Where the windows come from. */
-  source?: "hud" | "magpie" | "codex";
+  source?: "hud" | "magpie" | "codex" | "claudeDesktop";
 };
 
-/** Claude usage limits from a local magpie gateway or claude-hud's usage snapshot; null when there is neither. */
+/** Claude usage limits from a local magpie gateway, claude-hud's usage snapshot or the Claude desktop app's usage history; null when there is none. */
 export function getAgentUsage() {
   return invoke<AgentUsage | null>("get_agent_usage");
 }

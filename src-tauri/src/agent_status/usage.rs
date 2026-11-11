@@ -52,6 +52,8 @@ pub enum UsageSource {
     Magpie,
     /// Codex's rollout files (codex_usage.rs).
     Codex,
+    /// The usage history the Claude desktop app keeps (claude_desktop_usage.rs).
+    ClaudeDesktop,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`
