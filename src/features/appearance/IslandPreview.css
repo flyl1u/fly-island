@@ -5,10 +5,7 @@
   gap: var(--space-lg);
 }
 
-/*
- * A dark desktop behind the island (the owner's screenshot of code and browser windows, its own
- * mock island and dock cropped off), so the preview sits where the island really does.
- */
+/* A stand-in wallpaper with colour behind the island, so opacity and glass are visible. */
 .island-preview__desktop {
   position: relative;
   /* Sizes the expanded island's drawing (its --u), so the pane's height follows its width. */
@@ -21,8 +18,11 @@
   align-items: flex-start;
   border-radius: var(--corner-xl);
   corner-shape: var(--corner-shape);
-  background: #121218 url("../../assets/appearance/preview-desktop.webp") center top / cover no-repeat;
-  box-shadow: inset 0 0 0 1px var(--color-white-a06);
+  background:
+    radial-gradient(circle at 22% 30%, rgba(255, 170, 92, 0.85), transparent 46%),
+    radial-gradient(circle at 78% 62%, rgba(84, 156, 255, 0.85), transparent 50%),
+    radial-gradient(circle at 46% 96%, rgba(196, 98, 255, 0.7), transparent 52%),
+    #2b3445;
 }
 
 .island-preview__island {
