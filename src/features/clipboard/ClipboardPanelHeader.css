@@ -95,8 +95,7 @@
   width: 28px;
   padding: 0;
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid var(--color-white-a08);
+  background: transparent;
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
   box-shadow: none;

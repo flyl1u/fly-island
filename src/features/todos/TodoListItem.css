@@ -6,8 +6,9 @@
   align-items: start;
   gap: var(--space-md);
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.48);
-  border: 1px solid rgba(31, 27, 22, 0.1);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom-color: var(--color-white-a08);
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
   transition:
@@ -16,9 +17,13 @@
     transform 140ms ease;
 }
 
+.todo-item:hover {
+  background: var(--color-white-a04);
+}
+
 .todo-item--active {
-  background: rgba(168, 216, 234, 0.42);
-  border-color: rgba(64, 125, 147, 0.28);
+  background: var(--color-white-a08);
+  border-bottom-color: var(--color-accent);
 }
 
 .todo-item--reorderable {
@@ -31,8 +36,7 @@
 }
 
 .todo-item--drag-over {
-  border-color: rgba(116, 83, 214, 0.5);
-  box-shadow: inset 3px 0 0 rgba(116, 83, 214, 0.58);
+  border-color: var(--color-focus-ring-soft);
 }
 
 .todo-item--readonly {
@@ -48,8 +52,8 @@
   place-items: center;
   padding: 0;
   color: var(--color-white);
-  background: rgba(255, 255, 255, 0.78);
-  border: 2px solid rgba(31, 27, 22, 0.3);
+  background: transparent;
+  border: 2px solid var(--text-placeholder);
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
   outline: none;
@@ -65,13 +69,17 @@
   cursor: default;
 }
 
+.todo-check:hover:not(:disabled) {
+  border-color: var(--text-1);
+}
+
 .todo-check:focus-visible,
 .todo-start:focus-visible,
 .todo-delete:focus-visible,
 .todo-drag-handle:focus-visible,
 .todo-title--editable:focus-visible,
 .todo-title-input:focus-visible {
-  outline: 2px solid rgba(116, 83, 214, 0.58);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -81,14 +89,14 @@
   width: 100%;
   padding: 0;
   overflow: visible;
-  color: var(--color-ink);
+  color: var(--text-1);
   text-align: left;
   background: transparent;
   border: 0;
   outline: none;
   font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.35;
   /* Centred on the 22px buttons beside a one-line title. */
   padding-top: 1px;
@@ -101,20 +109,25 @@
   cursor: text;
 }
 
+.todo-item--done .todo-title {
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+
 .todo-title-input {
   width: 100%;
   min-width: 0;
   min-height: 22px;
   padding: 0 6px;
-  color: var(--color-ink);
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(64, 125, 147, 0.32);
+  color: var(--text-1);
+  background: var(--color-white-a08);
+  border: 1px solid var(--color-focus-ring-soft);
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
   outline: none;
   font-family: var(--font-ui);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 20px;
 }
 
@@ -127,8 +140,8 @@
   justify-content: center;
   gap: 5px;
   padding: 0 10px;
-  color: var(--color-white);
-  background: var(--color-ink);
+  color: var(--text-2);
+  background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
@@ -143,15 +156,17 @@
 }
 
 .todo-start:hover {
-  background: #4a3d2b;
+  color: var(--text-1);
+  background: var(--color-white-a10);
 }
 
 .todo-start--active {
-  background: #c74444;
+  color: var(--color-white);
+  background: var(--color-danger);
 }
 
 .todo-start--active:hover {
-  background: #a83232;
+  background: var(--color-danger);
 }
 
 .todo-start:active {
@@ -175,8 +190,8 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(31, 27, 22, 0.54);
-  background: rgba(31, 27, 22, 0.06);
+  color: var(--text-3);
+  background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
@@ -188,8 +203,8 @@
 }
 
 .todo-delete:hover {
-  color: #7d2335;
-  background: rgba(192, 80, 101, 0.14);
+  color: var(--color-danger);
+  background: var(--color-white-a08);
 }
 
 .todo-delete:active {
@@ -203,7 +218,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: rgba(31, 27, 22, 0.42);
+  color: var(--text-3);
   background: transparent;
   border: 0;
   border-radius: var(--corner-xs);
@@ -218,8 +233,8 @@
 }
 
 .todo-drag-handle:hover {
-  color: rgba(31, 27, 22, 0.78);
-  background: rgba(31, 27, 22, 0.07);
+  color: var(--text-1);
+  background: var(--color-white-a08);
 }
 
 .todo-drag-handle:active {

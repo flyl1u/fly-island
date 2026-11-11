@@ -16,7 +16,7 @@ export function ClipboardFilters({
   const t = useTranslation();
 
   return (
-    <>
+    <div className="clipboard-filters">
       <div className="clipboard-segments" aria-label={t.clipboard.segments}>
         <button
           className={view === "all" ? "clipboard-segment--active" : ""}
@@ -54,6 +54,6 @@ export function ClipboardFilters({
           </button>
         )}
       </label>
-    </>
+    </div>
   );
 }

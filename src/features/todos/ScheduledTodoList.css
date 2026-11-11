@@ -12,7 +12,7 @@
 }
 
 .scheduled-list__date {
-  color: #7453d6;
+  color: var(--todo-scheduled-color);
   font-size: 11px;
   font-weight: 600;
 }
@@ -24,15 +24,15 @@
   align-items: center;
   gap: var(--space-md);
   padding: 3px 4px 3px 10px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(35, 31, 26, 0.1);
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a08);
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
 }
 
 .scheduled-list__item > span {
   overflow-wrap: anywhere;
-  color: var(--color-ink);
+  color: var(--text-1);
   font-size: 13px;
   font-weight: 600;
 }
@@ -43,7 +43,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: var(--color-ink-muted);
+  color: var(--text-3);
   background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
@@ -51,12 +51,12 @@
 }
 
 .scheduled-list__item > button:hover {
-  color: #c05065;
-  background: rgba(255, 255, 255, 0.8);
+  color: var(--color-danger);
+  background: var(--color-white-a08);
 }
 
 .scheduled-list__item > button:focus-visible {
-  outline: 2px solid rgba(116, 83, 214, 0.58);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 1px;
 }
 

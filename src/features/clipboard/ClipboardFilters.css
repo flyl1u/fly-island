@@ -1,11 +1,18 @@
-.clipboard-segments {
-  min-height: 28px;
+.clipboard-filters {
+  min-width: 0;
   display: flex;
+  align-items: center;
+  gap: var(--space-2xl);
+}
+
+.clipboard-segments {
+  min-height: 32px;
+  display: flex;
+  flex: 0 0 auto;
   gap: 18px;
   padding: 0;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: 0;
 }
 
@@ -13,7 +20,7 @@
   position: relative;
   min-width: 0;
   width: auto;
-  height: 28px;
+  height: 32px;
   padding: 0 1px;
   color: var(--text-3);
   background: transparent;
@@ -35,32 +42,31 @@
   content: "";
   position: absolute;
   right: 0;
-  bottom: -1px;
+  bottom: 0;
   left: 0;
   height: 2px;
   background: rgba(248, 246, 240, 0.82);
   border-radius: var(--radius-pill);
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 .clipboard-search {
-  min-height: 36px;
+  min-width: 0;
+  min-height: 32px;
   display: grid;
+  flex: 1;
   grid-template-columns: 18px minmax(0, 1fr) 24px;
   align-items: center;
   gap: var(--space-md);
   padding: 0 9px;
   color: var(--text-3);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: var(--color-white-a06);
+  border: 1px solid transparent;
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .clipboard-search:focus-within {
-  border-color: rgba(248, 246, 240, 0.38);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  border-color: var(--color-focus-ring-soft);
 }
 
 .clipboard-search input {
