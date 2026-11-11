@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { agentSessionsInFront, type AgentSessionSummary } from "../api";
 import { sessionKey } from "../unseen";
+import { COMPLETE_SETTLE_MS, settledCompletions } from "./completion";
 import { soundFor, type AgentSoundEvent } from "./events";
 import { compactStarted, emptyIdleSessions, takeIdleSessions } from "./idle";
 import { playAgentSound } from "./player";
@@ -26,6 +27,9 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
   const [settings] = useAgentSoundSettings();
   const seenRef = useRef<Map<string, Seen> | null>(null);
   const idleRef = useRef(emptyIdleSessions());
+  /** The prompt (`turnStartedAt`) whose completion last sounded, by session. */
+  const soundedRef = useRef(new Map<string, number>());
+  const timersRef = useRef(new Set<number>());
   const latest = useRef({ settings, canPlay, sessions, unseen });
   useLayoutEffect(() => {
     latest.current = { settings, canPlay, sessions, unseen };
@@ -42,8 +46,22 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
       if (event) return [{ event, session }];
       return compactStarted(before?.compacting, session) ? [{ event: "compact", session }] : [];
     });
-    playOne(changes, latest.current);
+    playOne(changes.filter((change) => change.event !== "complete"), latest.current);
+    const finished = changes.filter((change) => change.event === "complete").map((change) => change.session);
+    if (finished.length === 0) return;
+    // A finished turn sounds only once it has stayed finished, once per prompt.
+    const timer = window.setTimeout(() => {
+      timersRef.current.delete(timer);
+      const settled = settledCompletions(finished, latest.current.sessions, soundedRef.current);
+      playOne(settled.map((session) => ({ event: "complete", session })), latest.current);
+    }, COMPLETE_SETTLE_MS);
+    timersRef.current.add(timer);
   }, [sessions]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, []);
 
   useEffect(() => {
     const check = () => {

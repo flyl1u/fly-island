@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { soundFor } from "../../src/features/agent-status/sounds/events.ts";
+import { settledCompletions } from "../../src/features/agent-status/sounds/completion.ts";
 import { isQuietTime, parseClock } from "../../src/features/agent-status/sounds/quietHours.ts";
 import { DEFAULT_AGENT_SOUND_SETTINGS, normalizeAgentSoundSettings } from "../../src/features/agent-status/sounds/storage.ts";
 
@@ -44,4 +45,20 @@ test("a finished turn sounds by its reply status marker", () => {
   // Without a marker, a reply that asks something sounds as a question.
   assert.equal(soundFor("running", "completed", { currentTool: null, replyAsks: true }), "question");
   assert.equal(soundFor("running", "completed", { currentTool: null, replyMarker: "done", replyAsks: true }), "complete");
+});
+
+test("a finished turn sounds once it stays finished, once per prompt", () => {
+  const turn = (phase, turnStartedAt = 100) => ({ provider: "claudeCode", sessionId: "s1", phase, turnStartedAt });
+  const sounded = new Map();
+  assert.deepEqual(settledCompletions([turn("completed")], [turn("running")], sounded), [], "running again: a step, not the end");
+  assert.equal(settledCompletions([turn("completed")], [turn("completed")], sounded).length, 1);
+  assert.deepEqual(settledCompletions([turn("completed")], [turn("completed")], sounded), [], "the agent carried on by itself: same prompt stays quiet");
+  assert.equal(settledCompletions([turn("completed", 200)], [turn("completed", 200)], sounded).length, 1, "a new prompt sounds again");
+  assert.equal(settledCompletions([turn("completed", null)], [turn("completed", null)], sounded).length, 1);
+});
+
+test("compacting and quota changes are quiet by default", () => {
+  const { events } = DEFAULT_AGENT_SOUND_SETTINGS;
+  assert.equal(events.compact || events.quotaLow || events.quotaReset, false);
+  assert.equal(events.complete && events.approval && events.question, true);
 });
