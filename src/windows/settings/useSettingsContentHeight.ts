@@ -30,12 +30,10 @@ export function useSettingsContentHeight(
     const nav = layout.querySelector<HTMLElement>(".settings-sidebar");
     if (!page || !nav) return;
     const list = nav.querySelector<HTMLElement>(".settings-sidebar__list");
-    const footer = nav.querySelector<HTMLElement>(".settings-sidebar__footer");
     const measure = () => {
       // The list fills the column it is given, so its own height says nothing; its content does.
       const navStyle = getComputedStyle(nav);
-      const footerHeight = footer ? footer.offsetHeight + (Number.parseFloat(getComputedStyle(footer).marginTop) || 0) : 0;
-      const navHeight = (list ? contentHeight(list) : 0) + footerHeight +
+      const navHeight = (list ? contentHeight(list) : 0) +
         (Number.parseFloat(navStyle.paddingTop) || 0) + (Number.parseFloat(navStyle.paddingBottom) || 0);
       const height = Math.ceil(Math.max(contentHeight(page), navHeight));
       if (height !== reported.current) {

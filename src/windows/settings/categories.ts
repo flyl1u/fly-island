@@ -19,7 +19,7 @@ export type SettingsGroup = "basics" | "features" | "agents";
 /**
  * Sidebar sections: app-wide settings, one page per module (QQ, WeChat and Mail share Messages,
  * the file shelf shares Clipboard), the two AI Agent pages (sessions and alerts, connection). A
- * null label leaves About on its own at the end.
+ * null label sets About apart as the last group of the list, right below Connection.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance"] },

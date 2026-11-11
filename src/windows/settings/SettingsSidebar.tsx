@@ -19,8 +19,8 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
 
 /**
  * The settings page list: icon and name per page, the groups set apart by a gap rather than
- * headings (with nine pages, headings were more to read than the list itself), About pinned to
- * the bottom.
+ * headings (with nine pages, headings were more to read than the list itself), About last, right
+ * after the AI Agent pages.
  */
 export function SettingsSidebar({
   category,
@@ -55,26 +55,19 @@ export function SettingsSidebar({
     );
   };
 
-  const footer = SETTINGS_GROUPS.filter((group) => group.label === null).flatMap((group) => group.categories);
-
   return (
     <nav className="settings-sidebar" aria-label={text.label}>
       <div className="settings-sidebar__list" ref={listRef}>
-        {SETTINGS_GROUPS.map((group) => {
-          if (group.label === null) return null;
-          const label = text.groups[group.label];
-          return (
-            <section className="settings-sidebar__group" key={group.label} aria-label={label}>
-              <ul>{group.categories.map(item)}</ul>
-            </section>
-          );
-        })}
+        {SETTINGS_GROUPS.map((group) => (
+          <section
+            className="settings-sidebar__group"
+            key={group.label ?? group.categories.join()}
+            aria-label={group.label ? text.groups[group.label] : undefined}
+          >
+            <ul>{group.categories.map(item)}</ul>
+          </section>
+        ))}
       </div>
-      {footer.length > 0 && (
-        <div className="settings-sidebar__footer">
-          <ul>{footer.map(item)}</ul>
-        </div>
-      )}
     </nav>
   );
 }
