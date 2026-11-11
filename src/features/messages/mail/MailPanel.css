@@ -19,6 +19,8 @@
 .qq-mail-badge { animation: qq-mail-appear 180ms ease-out; }
 .qq-mail-spinning { animation: qq-mail-spin 1s linear infinite; }
 .qq-mail-back { border: 0; background: transparent; padding-left: 2px; }
+/* 阅读页右上的动作挨在一起靠右，不随顶栏两端对齐分散开 */
+.qq-mail-reader__actions { margin-left: auto; gap: 4px; }
 .qq-mail-reader { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 8px 16px; scrollbar-width: thin; scrollbar-color: var(--color-white-a16) transparent; overscroll-behavior: contain; animation: qq-mail-appear 180ms ease-out; }
 .qq-mail-reader:focus { outline: none; }
 .qq-mail-reader__subject { margin: 2px 0 10px; color: var(--color-page-text); font-size: 18px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
@@ -45,13 +47,16 @@
 .qq-mail-body a:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 3px; }
 .qq-mail-body blockquote { margin: 12px 0; padding: 4px 12px; color: var(--text-3); border-left: 2px solid rgba(255, 255, 255, .15); }
 .qq-mail-body pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: rgba(255, 255, 255, .04); border-radius: var(--corner-md); corner-shape: var(--corner-shape); }
-.qq-mail-body img { max-width: 100%; height: auto; border-radius: var(--corner-sm); corner-shape: var(--corner-shape); }
+/* 和网页邮箱一样：宽高属性（含从内联样式抄来的）照用，按比例缩到正文宽度内；小图标、占位图保持原来的小尺寸 */
+.qq-mail-body img { max-width: 100%; vertical-align: middle; }
+/* 只写了高度的图片按它的高度画；其余按比例跟宽度走（有宽高属性时比例来自属性，缩小也不变形） */
+.qq-mail-body img:not([height]), .qq-mail-body img[width] { height: auto; }
+.qq-mail-body img:not([width]):not([height]) { border-radius: var(--corner-sm); corner-shape: var(--corner-shape); }
 .qq-mail-body img[width="0"], .qq-mail-body img[height="0"] { display: none; }
 .qq-mail-body table { display: block; width: 100% !important; max-width: 100%; overflow-x: auto; border-collapse: collapse; scrollbar-width: thin; }
 .qq-mail-body th, .qq-mail-body td { padding: 1px 2px; border: 0; }
 .qq-mail-body table[data-mail-table="data"] th, .qq-mail-body table[data-mail-table="data"] td { padding: 7px 10px; border: 1px solid var(--color-white-a10); min-width: 60px; }
 .qq-mail-body table[data-mail-table="data"] th { font-weight: 600; text-align: left; color: var(--color-page-text); }
-.qq-mail-remote { display: flex; align-items: center; justify-content: space-between; gap: var(--space-lg); margin: 0 0 14px; padding: 8px 10px; font-size: 12px; line-height: 1.6; color: var(--text-2); border: 1px solid var(--color-white-a10); border-radius: var(--corner-lg); corner-shape: var(--corner-shape); background: rgba(255, 255, 255, .04); }
 .qq-mail-body hr { border: 0; border-top: 1px solid var(--color-white-a10); margin: 16px 0; }
 @keyframes qq-mail-spin { to { transform: rotate(360deg); } }
 @keyframes qq-mail-appear { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
