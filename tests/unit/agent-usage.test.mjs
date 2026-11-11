@@ -18,8 +18,8 @@ test("the reset time shown is the fullest window's", () => {
   assert.equal(tightestWindow(usage)?.name, "Fable");
   assert.equal(tightestWindow({ ...usage, models: [] })?.used, 47);
   assert.equal(tightestWindow({ updatedAt: 0, fiveHour: null, sevenDay: null, models: [], plan: null }), null);
-  assert.equal(isStale(usage, 16 * 60_000), true);
-  assert.equal(isStale(usage, 10 * 60_000), false);
+  assert.equal(isStale(usage, 46 * 60_000), true);
+  assert.equal(isStale(usage, 30 * 60_000), false);
   assert.equal(isStale({ ...usage, updatedAt: null }, 10 ** 12), false);
 });
 
@@ -38,6 +38,7 @@ test("one usage line per agent that reports numbers, and the card names the sour
   assert.equal(hasUsageNumbers(usage({ fiveHour: null, models: [window("Fable", 1)] })), true);
   assert.deepEqual(usageSourceLines(usage({ source: "codex" }), 60_000, zhCN).map((line) => line.text), ["1 分钟前更新 · 来自 Codex 会话记录"]);
   assert.deepEqual(usageSourceLines(usage(), 0, zhCN).map((line) => line.text), ["刚刚更新 · 来自 claude-hud"]);
+  assert.deepEqual(usageSourceLines(usage({ source: "claudeDesktop" }), 0, zhCN).map((line) => line.text), ["刚刚更新 · 来自 Claude 桌面版"]);
 });
 
 test("a window past its reset time is not shown with the figure from before the reset", async () => {
@@ -68,8 +69,9 @@ test("quota rings: 5 hours outside, 7 days inside, a lone long window inside, pe
   const week = window("", 7, null);
   const usage = { updatedAt: 0, fiveHour: five, sevenDay: week, models: [window("Fable", 100)], plan: null };
   assert.deepEqual(quotaRings(usage), { outer: five, inner: week });
-  assert.deepEqual(quotaSummaries(usage, 1_000, agentZh.usage), ["5 小时 已用 4% · 2 小时 49 分后重置", "7 天 已用 7%", "Fable 已用 100%"]);
-  assert.deepEqual(quotaSummaries(usage, 1_000, agentEn.usage).slice(0, 2), ["5h 4% used · resets in 2h49m", "7d 7% used"]);
+  // What is left first, as Codex shows it, then what is used, as Claude shows it.
+  assert.deepEqual(quotaSummaries(usage, 1_000, agentZh.usage), ["5 小时 剩余 96%（已用 4%） · 2 小时 49 分后重置", "7 天 剩余 93%（已用 7%）", "Fable 剩余 0%（已用 100%）"]);
+  assert.deepEqual(quotaSummaries(usage, 1_000, agentEn.usage).slice(0, 2), ["5h 96% left (4% used) · resets in 2h49m", "7d 93% left (7% used)"]);
   // Codex Free has only a 30-day window: drawn inside, the outer ring left empty.
   const free = window("30d", 54);
   assert.deepEqual(quotaRings({ ...usage, fiveHour: null, sevenDay: null, models: [free] }), { outer: null, inner: free });

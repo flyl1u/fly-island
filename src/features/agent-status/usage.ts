@@ -2,8 +2,11 @@ import type { AgentUsage, UsageWindow } from "./api";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
 import type { Translations } from "../../i18n/types";
 
-/** A snapshot older than this no longer reads as current. */
-export const USAGE_STALE_MS = 15 * 60_000;
+/**
+ * A snapshot older than this no longer reads as current. The Claude desktop app samples about
+ * every 15 minutes while it is open, so a shorter time would dim its numbers between samples.
+ */
+export const USAGE_STALE_MS = 45 * 60_000;
 
 export type UsageLevel = "low" | "medium" | "high";
 
@@ -34,7 +37,7 @@ export function usageSourceLines(usage: AgentUsage, now: number, text: Translati
   const lines: HoverCardLine[] = [];
   if (usage.updatedAt !== null) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud }[usage.source ?? "hud"];
+    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud, claudeDesktop: text.fromClaudeDesktop }[usage.source ?? "hud"];
     lines.push({ text: text.updated(text.updatedAgo(minutes), source), muted: true });
   }
   return lines;
@@ -85,10 +88,15 @@ export function usageLineCount(usages: AgentUsages): number {
 
 type UsageText = Translations["agent"]["usage"];
 
-/** One window as the rings' card and screen readers give it: "5 小时 已用 4% · 2 小时 49 分后重置". */
+/** Percent of a window still left, as Codex shows it ("93% left"), whole. */
+export function percentLeft(window: UsageWindow) {
+  return Math.round(100 - window.used);
+}
+
+/** One window as the rings' card and screen readers give it: "5 小时 剩余 96%（已用 4%）· 2 小时 49 分后重置". */
 export function windowSummary(label: string, window: UsageWindow, now: number, text: UsageText) {
   const reset = untilReset(window.resetsAt, now);
-  return [text.used(label, Math.round(window.used)), reset && text.resetsIn(reset)].filter(Boolean).join(" · ");
+  return [text.left(label, percentLeft(window), Math.round(window.used)), reset && text.resetsIn(reset)].filter(Boolean).join(" · ");
 }
 
 /** The label of a window: 5 hours, 7 days, or its own name ("30d", a model). */

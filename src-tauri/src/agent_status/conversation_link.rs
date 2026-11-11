@@ -75,7 +75,7 @@ pub(super) fn is_extension_link(link: &str) -> bool {
 
 /// Folders Claude desktop may keep its data in: `%APPDATA%\Claude` for the installer build;
 /// the Store build's `%LOCALAPPDATA%\Claude-Data\<package>` or its virtualized `%APPDATA%`.
-fn claude_desktop_roots() -> Vec<PathBuf> {
+pub(super) fn claude_desktop_roots() -> Vec<PathBuf> {
     let mut roots = Vec::new();
     if let Some(roaming) = env::var_os("APPDATA").map(PathBuf::from) {
         roots.push(roaming.join("Claude"));

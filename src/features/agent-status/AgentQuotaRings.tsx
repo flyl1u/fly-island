@@ -1,7 +1,7 @@
 import { useTranslation } from "../../i18n";
 import { IslandHoverCard, type HoverCardLine } from "../../components/IslandHoverCard";
 import type { AgentProvider, AgentUsage } from "./api";
-import { isStale, quotaRings, quotaSummaries, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
+import { isStale, percentLeft, quotaRings, quotaSummaries, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
 import { useAgentUsages } from "./useAgentUsages";
 import "./AgentQuotaRings.css";
 
@@ -10,7 +10,8 @@ export const QUOTA_COLORS: Record<AgentProvider, string> = { claudeCode: "#e5a38
 
 /**
  * The Agent page's top row: Claude's, then Codex's quota rings, the 5-hour window outside and the
- * 7-day one inside, filled by the share used, with the two percentages beside them. Resting on or
+ * 7-day one inside. Like Codex's own usage page they show what is left: a full ring is a window
+ * not touched yet, and the percentages beside them are the share left. Resting on or
  * focusing an agent's rings shows every window with its reset time. An agent without numbers has
  * no rings; with neither, there is no row. `usages` comes from the island, which sizes the page
  * for the row; without it the rings read their own.
@@ -47,8 +48,8 @@ function AgentQuota({ provider, usage, now }: { provider: AgentProvider; usage: 
     <IslandHoverCard lines={lines} alignTo=":scope" anchorClassName="agent-quota__hover">
       <QuotaRingPair
         provider={provider}
-        outer={rings.outer?.used ?? null}
-        inner={rings.inner?.used ?? null}
+        outer={rings.outer ? percentLeft(rings.outer) : null}
+        inner={rings.inner ? percentLeft(rings.inner) : null}
         stale={stale}
         label={text.rings(label, ringWindows)}
       />
@@ -69,14 +70,14 @@ export function QuotaRingPair({
   label,
 }: {
   provider: AgentProvider;
-  /** Percent used of the 5-hour window (outer ring) and the 7-day one (inner); null: not known. */
+  /** Percent left of the 5-hour window (outer ring) and the 7-day one (inner); null: not known. */
   outer: number | null;
   inner: number | null;
   size?: number;
   stale?: boolean;
   label?: string;
 }) {
-  const percent = (used: number | null) => (used === null ? "–" : `${Math.round(used)}%`);
+  const percent = (left: number | null) => (left === null ? "–" : `${Math.round(left)}%`);
   return (
     <span
       className={`agent-quota__agent agent-quota__agent--${provider}${stale ? " agent-quota__agent--stale" : ""}`}
@@ -98,15 +99,15 @@ export function QuotaRingPair({
 export function QuotaRings({ outer, inner, size = 22 }: { outer: number | null; inner: number | null; size?: number }) {
   return (
     <svg className="quota-rings" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <Ring radius={10} used={outer} />
-      <Ring radius={5.5} used={inner} />
+      <Ring radius={10} left={outer} />
+      <Ring radius={5.5} left={inner} />
     </svg>
   );
 }
 
-function Ring({ radius, used }: { radius: number; used: number | null }) {
-  // A sliver still shows that something is used; a full ring is drawn whole.
-  const shown = used === null || used <= 0 ? 0 : Math.min(100, Math.max(used, 3));
+function Ring({ radius, left }: { radius: number; left: number | null }) {
+  // A sliver still shows that something is left; a full ring is drawn whole.
+  const shown = left === null || left <= 0 ? 0 : Math.min(100, Math.max(left, 3));
   return (
     <>
       <circle className="quota-rings__track" cx={12} cy={12} r={radius} />

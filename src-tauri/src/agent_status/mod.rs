@@ -9,6 +9,7 @@ mod editor_terminal;
 mod hooks_state;
 mod host_icon;
 mod codex_usage;
+mod claude_desktop_usage;
 mod codex_version;
 mod conversation_link;
 mod magpie;
@@ -300,15 +301,19 @@ pub async fn agent_sessions_in_front(app: AppHandle, sessions: Vec<focus::Sessio
         .map_err(|error| format!("Failed to join the window check: {error}"))
 }
 
-/// Claude usage limits from a local magpie gateway (magpie.rs), else claude-hud's usage
-/// snapshot (usage.rs); null when there is neither.
+/// Claude usage limits from a local magpie gateway (magpie.rs), else the newer of claude-hud's
+/// usage snapshot (usage.rs) and the Claude desktop app's usage history
+/// (claude_desktop_usage.rs); null when there is none.
 #[tauri::command]
 pub async fn get_agent_usage() -> Result<Option<usage::AgentUsage>, String> {
     let home_dir = windows_home_dir()?;
     // magpie answers live and needs no claude-hud, so it wins over the snapshot.
     let magpie = magpie::read_usage(&usage::claude_dir(&home_dir)).await;
     tauri::async_runtime::spawn_blocking(move || {
-        magpie.or_else(|| usage::read_usage(&home_dir))
+        magpie.or_else(|| {
+            let desktop = claude_desktop_usage::read_usage(snapshot::current_unix_millis());
+            [usage::read_usage(&home_dir), desktop].into_iter().flatten().max_by_key(|usage| usage.updated_at)
+        })
     })
         .await
         .map_err(|error| format!("Failed to join the usage task: {error}"))

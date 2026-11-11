@@ -257,11 +257,11 @@ async function runChecks() {
     const claudeRings = document.querySelector<HTMLElement>(".agent-quota__agent--claudeCode");
     const claudeLabel = claudeRings?.getAttribute("aria-label") ?? "";
     check(claudeRings?.getAttribute("role") === "img" && claudeRings.tabIndex === 0 && claudeLabel.startsWith("Claude 用量")
-      && claudeLabel.includes("5 小时 已用 27%") && claudeLabel.includes("7 天 已用 62%") && claudeLabel.includes("后重置"), `额度环是带读屏名称的图像，读出两个窗口的用量和重置时间：${claudeLabel}`);
+      && claudeLabel.includes("5 小时 剩余 73%（已用 27%）") && claudeLabel.includes("7 天 剩余 38%（已用 62%）") && claudeLabel.includes("后重置"), `额度环是带读屏名称的图像，读出两个窗口的剩余、已用和重置时间：${claudeLabel}`);
     const fills = [...(claudeRings?.querySelectorAll<SVGCircleElement>(".quota-rings__fill") ?? [])];
-    check(fills.length === 2 && fills[0].getAttribute("r") === "10" && fills[0].getAttribute("stroke-dasharray") === "27 100"
-      && fills[1].getAttribute("r") === "5.5" && fills[1].getAttribute("stroke-dasharray") === "62 100", "外圈是 5 小时（27%），内圈是 7 天（62%）");
-    check(claudeRings?.querySelector(".agent-quota__values")?.textContent === "27%62%" && !document.querySelector(".agent-quota__agent--codex"), "环旁边写出两个百分比；Codex 没有数据时不画它的环");
+    check(fills.length === 2 && fills[0].getAttribute("r") === "10" && fills[0].getAttribute("stroke-dasharray") === "73 100"
+      && fills[1].getAttribute("r") === "5.5" && fills[1].getAttribute("stroke-dasharray") === "38 100", "外圈是 5 小时（剩 73%），内圈是 7 天（剩 38%），和 Codex 一样画剩余");
+    check(claudeRings?.querySelector(".agent-quota__values")?.textContent === "73%38%" && !document.querySelector(".agent-quota__agent--codex"), "环旁边写出两个剩余百分比；Codex 没有数据时不画它的环");
     const ringsSize = claudeRings!.querySelector("svg")!.getBoundingClientRect();
     check(ringsSize.width === 22 && ringsSize.height === 22, "额度环 22px");
     const listFits = () => { const list = document.querySelector<HTMLElement>(".agent-sessions__list")!; return list.scrollHeight <= list.clientHeight + 1; };
@@ -269,7 +269,7 @@ async function runChecks() {
     await act(async () => { claudeRings!.parentElement!.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, clientX: ringsSize.left + 10, clientY: ringsSize.top + 10 })); });
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 260)); });
     const usageCard = document.querySelector<HTMLElement>(".island-hover-card");
-    check(Boolean(usageCard?.textContent?.includes("Fable 已用 100%") && usageCard.textContent.includes("外圈 5 小时 · 内圈 7 天") && usageCard.textContent.includes("来自 claude-hud"))
+    check(Boolean(usageCard?.textContent?.includes("Fable 剩余 0%（已用 100%）") && usageCard.textContent.includes("外圈 5 小时 · 内圈 7 天") && usageCard.textContent.includes("来自 claude-hud"))
       && usageCard!.getBoundingClientRect().top >= ringsSize.bottom, `悬停额度环时，下方的卡片写出各窗口、图例和来源：${usageCard?.textContent}`);
     await act(async () => { claudeRings!.parentElement!.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body })); });
 
@@ -288,8 +288,8 @@ async function runChecks() {
     const pair = [...document.querySelectorAll<HTMLElement>(".agent-quota__agent")];
     check(usageLineCount(usages) === 1 && document.querySelectorAll(".agent-quota").length === 1 && pair.length === 2
       && pair[0].getBoundingClientRect().top === pair[1].getBoundingClientRect().top, "两个 agent 的额度环在同一行");
-    check(pair[1].getAttribute("aria-label") === "Codex 用量；5 小时 已用 9%；7 天 已用 91% · 2 天 0 小时后重置", `Codex 的环读出用量和重置时间：${pair[1].getAttribute("aria-label")}`);
-    check(pair[0].querySelectorAll(".quota-rings__fill").length === 1 && pair[0].querySelector(".agent-quota__values")?.textContent === "27%–", "没有 7 天窗口时内圈只留底色");
+    check(pair[1].getAttribute("aria-label") === "Codex 用量；5 小时 剩余 91%（已用 9%）；7 天 剩余 9%（已用 91%） · 2 天 0 小时后重置", `Codex 的环读出剩余、已用和重置时间：${pair[1].getAttribute("aria-label")}`);
+    check(pair[0].querySelectorAll(".quota-rings__fill").length === 1 && pair[0].querySelector(".agent-quota__values")?.textContent === "73%–", "没有 7 天窗口时内圈只留底色");
     const stroke = (element: HTMLElement) => getComputedStyle(element.querySelector(".quota-rings__fill")!).stroke;
     const [[cr, , cb], [xr, , xb]] = pair.map((element) => (stroke(element).match(/[\d.]+/g) ?? []).map(Number));
     check(cr > cb && xb > xr, `Claude 的环是橙色，Codex 的是蓝色：${stroke(pair[0])} / ${stroke(pair[1])}`);

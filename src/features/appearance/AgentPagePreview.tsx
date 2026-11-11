@@ -8,10 +8,10 @@ import "./AgentPagePreview.css";
 /** Product names, the same in every language. */
 const SAMPLE_MODEL = "Opus 5.5 · Xhigh";
 const SAMPLE_TOOL = "PowerShell";
-/** Percent used of the 5-hour (outer ring) and 7-day (inner) windows. */
+/** Percent left of the 5-hour (outer ring) and 7-day (inner) windows. */
 const SAMPLE_QUOTAS = [
-  { agent: "claude", outer: 4, inner: 59 },
-  { agent: "codex", outer: 22, inner: 7 },
+  { agent: "claude", outer: 84, inner: 41 },
+  { agent: "codex", outer: 93, inner: 92 },
 ] as const;
 const SAMPLE_TOOL_DETAIL = "pnpm verify";
 const PAGE_DOTS = ["todo", "music", "calendar", "clipboard", "shelf"] as const;
