@@ -23,7 +23,7 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
   pointer-events: none;
   transform: translate(70vw, 300px);
-  transition: transform 560ms cubic-bezier(0.45, 0, 0.2, 1), opacity 240ms ease;
+  transition: transform 380ms cubic-bezier(0.3, 0, 0.15, 1), opacity 200ms ease;
 }
 
 .demo-cursor[data-visible="true"] {
@@ -70,3 +70,6 @@ html .translation-panel__primary:hover:not(:disabled) { background: #fff; }
 html .translation-panel__result--filled,
 html .translation-panel__setup { color: var(--color-text); }
 html .translation-panel__source textarea:focus { border-color: rgba(255, 255, 255, 0.18); }
+
+/* No green on the website: the file shelf's capsule shows in amber here. */
+html .dot-button--shelf { --dot-color: #f2c46d; --dot-glow: rgba(242, 196, 109, 0.46); }
