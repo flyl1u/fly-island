@@ -1,40 +1,42 @@
-/* The shelf's title line: same build as the clipboard page's, so the pages read as one family. */
-.shelf-panel__header {
-  min-height: 30px;
+/* The line under the shelf's files (FileShelfBar.tsx): 28px, counted by getShelfExpandedHeight. */
+.shelf-bar {
+  flex: none;
+  height: 28px;
   display: flex;
   align-items: center;
   gap: var(--space-md);
 }
 
-.shelf-panel__title {
+.shelf-bar__message {
   min-width: 0;
   flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-md);
-  color: var(--text-1);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
+  display: grid;
 }
 
-.shelf-panel__title svg {
-  flex: none;
-  color: var(--text-2);
+.shelf-bar__message > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.shelf-panel__title strong {
+.shelf-bar__hint {
   color: var(--text-3);
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 
-.shelf-panel__notice {
+.shelf-bar__hint--yielding {
+  animation: shelf-hint-yield 2.4s ease forwards;
+}
+
+.shelf-bar__notice {
   color: rgba(160, 240, 218, 0.92);
-  font-size: 11px;
   font-style: normal;
   font-weight: 600;
+  opacity: 0;
   animation: shelf-notice 2.4s ease forwards;
 }
 
@@ -45,9 +47,16 @@
   100% { opacity: 0; }
 }
 
+@keyframes shelf-hint-yield {
+  0%,
+  88% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 .shelf-search {
-  width: 200px;
-  height: 30px;
+  flex: none;
+  width: 168px;
+  height: 28px;
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
   align-items: center;
@@ -105,8 +114,8 @@
 
 .shelf-clear-button {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 
 .shelf-search button:hover,
@@ -131,7 +140,8 @@
 
 /* Two or more entries chosen: what acts on all of them, in one quiet line. */
 .shelf-selection-bar {
-  min-height: 30px;
+  flex: none;
+  height: 28px;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
@@ -153,8 +163,10 @@
   height: 26px;
 }
 
+/* Less motion: the notice and the hint swap without fading, at the same moments. */
 @media (prefers-reduced-motion: reduce) {
-  .shelf-panel__notice {
-    animation: none;
+  .shelf-bar__notice,
+  .shelf-bar__hint--yielding {
+    animation-timing-function: steps(1, end);
   }
 }

@@ -5,24 +5,26 @@ import type { AgentSessionView } from "../../features/appearance/types";
 import { getShelfLayout } from "../../features/file-shelf/fileShelf";
 import type { IslandPage } from "./types";
 
-// The shelf page fits what it holds (FileShelfPanel.css, FileShelfItem.css): the island's padding,
-// header and gap (86) around the panel's padding and title line (66); then one 118px row of tiles
-// for up to four files, or rows of 44px 6px apart in two columns, five rows at most before it
-// scrolls; and the hint line under them (26). Empty, the 118px tray and no hint. Keep in step.
+// The shelf page fits what it holds (FileShelfPanel.css, FileShelfItem.css, FileShelfBar.css):
+// the island's padding, header and gap (86) around the panel's padding (22); then one 118px row
+// of tiles for up to four files, or rows of 44px 6px apart in two columns, five rows at most
+// before it scrolls; and the 8px gap and 28px line under them. Empty, a 136px space for the
+// fanned files and their two lines. Keep in step.
 const SHELF_ISLAND_CHROME = 86;
-const SHELF_PANEL_CHROME = 66;
+const SHELF_PANEL_PADDING = 22;
 const SHELF_TILE_ROW = 118;
 const SHELF_ROW_PITCH = 50;
 const SHELF_MAX_ROWS = 5;
-const SHELF_HINT = 26;
+const SHELF_BAR = 36;
+const SHELF_EMPTY = 136;
 
 /** The island's height around the shelf page holding `items` entries. */
 export function getShelfExpandedHeight(items: number) {
   const layout = getShelfLayout(items);
-  const list = layout === "rows"
-    ? Math.min(SHELF_MAX_ROWS, Math.ceil(items / 2)) * SHELF_ROW_PITCH - 6
-    : SHELF_TILE_ROW;
-  return SHELF_ISLAND_CHROME + SHELF_PANEL_CHROME + list + (layout === "empty" ? 0 : SHELF_HINT);
+  const content = layout === "empty"
+    ? SHELF_EMPTY
+    : (layout === "rows" ? Math.min(SHELF_MAX_ROWS, Math.ceil(items / 2)) * SHELF_ROW_PITCH - 6 : SHELF_TILE_ROW) + SHELF_BAR;
+  return SHELF_ISLAND_CHROME + SHELF_PANEL_PADDING + content;
 }
 // Header, direction bar, a few lines of source, the result and the action row.
 const TRANSLATION_EXPANDED_ISLAND_HEIGHT = 420;

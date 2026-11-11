@@ -181,7 +181,7 @@ if (!automated) {
     const tiles = [...document.querySelectorAll<HTMLElement>(".shelf-item")].map((tile) => tile.getBoundingClientRect());
     const list = document.querySelector<HTMLElement>(".shelf-list")!;
     check(tiles.length === 3 && tiles.every((tile) => Math.abs(tile.top - tiles[0].top) < 1) && document.querySelector(".shelf-slot")
-      && island().offsetHeight === 296 && list.scrollHeight <= list.clientHeight,
+      && island().offsetHeight === 262 && list.scrollHeight <= list.clientHeight,
       `文件中转是一排图块，页面高度正好放下这一排（${island().offsetHeight}px）`);
 
     const pages: Array<[string, string]> = [

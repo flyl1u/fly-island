@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
-import { Check, Copy, Inbox, Search, Trash2, X } from "lucide-react";
+import { Check, Copy, Search, Trash2, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import "./FileShelfHeader.css";
+import "./FileShelfBar.css";
 
 // A first click on Clear arms it; it disarms again if not confirmed in time.
 const CLEAR_CONFIRM_MS = 3_000;
 const STROKE = { strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 
 /**
- * Title and count, search once there are many files, and Clear. With two or more files chosen
- * the line becomes the bar acting on them, so the page keeps its height.
+ * The line under the files: search once there are many, how to use them (or a short notice),
+ * and Clear. The page has no title row: the dot in the island's header already says which page
+ * this is. With two or more files chosen the line becomes the bar acting on them, so the page
+ * keeps its height.
  */
-export function FileShelfHeader({
-  count,
+export function FileShelfBar({
   showSearch,
+  hint,
   noticeKey,
   query,
   selectedCount,
@@ -23,8 +25,8 @@ export function FileShelfHeader({
   onRemoveSelected,
   onClearSelection,
 }: {
-  count: number;
   showSearch: boolean;
+  hint: string;
   /** Changes each time a drop added only files already on the shelf; null hides the notice. */
   noticeKey: number | null;
   query: string;
@@ -62,17 +64,7 @@ export function FileShelfHeader({
   }
 
   return (
-    <header className="shelf-panel__header">
-      <div className="shelf-panel__title">
-        <Inbox size={16} {...STROKE} aria-hidden="true" />
-        <span>{t.fileShelf.title}</span>
-        {count > 0 && <strong>{count}</strong>}
-        {noticeKey !== null && (
-          <em key={noticeKey} className="shelf-panel__notice" role="status">
-            {t.fileShelf.alreadyOnShelf}
-          </em>
-        )}
-      </div>
+    <div className="shelf-bar">
       {showSearch && (
         <label className="shelf-search">
           <Search size={14} {...STROKE} aria-hidden="true" />
@@ -96,24 +88,31 @@ export function FileShelfHeader({
           )}
         </label>
       )}
-      {count > 0 && (
-        <button
-          className={`shelf-clear-button${confirmingClear ? " shelf-clear-button--confirming" : ""}`}
-          type="button"
-          aria-label={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
-          title={confirmingClear ? t.fileShelf.confirmClear : undefined}
-          onClick={() => {
-            if (confirmingClear) {
-              setConfirmingClear(false);
-              onClear();
-            } else {
-              setConfirmingClear(true);
-            }
-          }}
-        >
-          {confirmingClear ? <Check size={14} {...STROKE} /> : <Trash2 size={14} {...STROKE} />}
-        </button>
-      )}
-    </header>
+      {/* A notice takes the hint's place for a moment, then the hint comes back. */}
+      <span className="shelf-bar__message">
+        <p key={noticeKey ?? "hint"} className={`shelf-bar__hint${noticeKey !== null ? " shelf-bar__hint--yielding" : ""}`} title={hint}>{hint}</p>
+        {noticeKey !== null && (
+          <em key={noticeKey} className="shelf-bar__notice" role="status">
+            {t.fileShelf.alreadyOnShelf}
+          </em>
+        )}
+      </span>
+      <button
+        className={`shelf-clear-button${confirmingClear ? " shelf-clear-button--confirming" : ""}`}
+        type="button"
+        aria-label={confirmingClear ? t.fileShelf.confirmClear : t.fileShelf.clear}
+        title={confirmingClear ? t.fileShelf.confirmClear : undefined}
+        onClick={() => {
+          if (confirmingClear) {
+            setConfirmingClear(false);
+            onClear();
+          } else {
+            setConfirmingClear(true);
+          }
+        }}
+      >
+        {confirmingClear ? <Check size={14} {...STROKE} /> : <Trash2 size={14} {...STROKE} />}
+      </button>
+    </div>
   );
 }
