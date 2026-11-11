@@ -114,11 +114,17 @@
   text-decoration: line-through;
 }
 
+/* Grows to the title's lines (TodoTitleEditor); the text sits where the title's did, the box
+   reaching 5px past it on each side. */
 .todo-title-input {
-  width: 100%;
+  display: block;
+  width: calc(100% + 10px);
   min-width: 0;
   min-height: 22px;
-  padding: 0 6px;
+  margin: 0 -5px;
+  padding: 0 4px;
+  overflow: hidden;
+  resize: none;
   color: var(--text-1);
   background: var(--color-white-a08);
   border: 1px solid var(--color-focus-ring-soft);
@@ -128,7 +134,9 @@
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 400;
-  line-height: 20px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .todo-start {

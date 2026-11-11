@@ -5,6 +5,7 @@ import { getTodoTitleLineCount } from "../../utils/text";
 import type { TodoItem } from "./types";
 import { isUpdateTodo } from "./updateTodo";
 import { UpdateTodoAction } from "./UpdateTodoAction";
+import { TodoTitleEditor } from "./TodoTitleEditor";
 import "./TodoListItem.css";
 
 export function TodoListItem({
@@ -86,22 +87,12 @@ export function TodoListItem({
         {todo.completed && <Check size={14} strokeWidth={2.5} />}
       </button>
       {isTodayMode && isEditing ? (
-        <input
-          className="todo-title-input"
+        <TodoTitleEditor
           value={titleDraft}
-          aria-label={t.todo.editTitle}
-          autoFocus
-          onChange={(event) => onTitleDraftChange(event.currentTarget.value)}
-          onBlur={onCommitEdit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              onCommitEdit();
-            }
-
-            if (event.key === "Escape") {
-              onCancelEdit();
-            }
-          }}
+          label={t.todo.editTitle}
+          onChange={onTitleDraftChange}
+          onCommit={onCommitEdit}
+          onCancel={onCancelEdit}
         />
       ) : isTodayMode ? (
         <button
