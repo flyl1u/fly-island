@@ -5,9 +5,9 @@ import "./FileShelfEmpty.css";
 const STROKE = { strokeWidth: 1.5, absoluteStrokeWidth: true } as const;
 
 /**
- * The empty shelf: a tray with three files fanned over it, what the shelf is for and that it only
- * remembers where files are. While files are dragged over the island the tray opens up and the
- * files make room for an arrow: the whole page is the place to let go.
+ * The empty shelf: three files fanned out, what the shelf is for and that it only remembers where
+ * files are, straight on the panel. While files are dragged over the island the files make room
+ * for an arrow: the whole page is the place to let go.
  */
 export function FileShelfEmpty({ isDropTarget }: { isDropTarget: boolean }) {
   const t = useTranslation();

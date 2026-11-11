@@ -2,8 +2,8 @@
 // icon and preview commands mocked. ?n=0|1|3|12 shows that many files (long names, mixed types,
 // a pinned, a missing and an unreachable one), &drop=1 with files dragged over it, &lang=en in
 // English; without ?n it runs the checks: tiles up to four files and rows past that, names that
-// keep their extension, Explorer icons and previews, actions on hover, pinning, the drop zone and
-// the empty tray.
+// keep their extension, Explorer icons and previews, actions on hover, pinning, no title row and
+// no frames inside the panel, the drop zone and the empty state.
 import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import { act, StrictMode } from "react";
@@ -66,7 +66,7 @@ const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
 // The page's height in the island (getShelfExpandedHeight) less the island's own chrome.
-const fixtureHeight = (count: number) => (count === 0 ? 184 : count <= 4 ? 210 : 26 + 30 + 10 + 10 + 16 + Math.min(5, Math.ceil(count / 2)) * 50 - 6);
+const fixtureHeight = (count: number) => (count === 0 ? 158 : (count <= 4 ? 118 : Math.min(5, Math.ceil(count / 2)) * 50 - 6) + 58);
 
 async function render(items: FileShelfItem[], isDropTarget = false) {
   fixture.style.height = `${fixtureHeight(items.length)}px`;
@@ -109,6 +109,11 @@ if (viewCount !== null) {
     check(item("pdf").querySelector(".shelf-item__pin-badge") && !item("photo").querySelector(".shelf-item__pin-badge"), "置顶的文件图标角上有小图钉");
     check(getComputedStyle(actions("photo")).opacity === "0", "没指向的图块不显示操作按钮");
     check(!document.querySelector(".shelf-search"), "文件少时不显示搜索框");
+    // No title row and nothing framed inside the panel: files, the slot and the line sit on it.
+    const framed = [...document.querySelectorAll<HTMLElement>(".shelf-item, .shelf-slot")]
+      .filter((element) => getComputedStyle(element).borderStyle !== "none" || getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)");
+    check(!document.querySelector(".shelf-panel__header, .shelf-panel__title") && framed.length === 0 && document.querySelector(".shelf-bar .shelf-clear-button"),
+      "没有标题行，面板里没有套框，清空按钮在底下那一行");
 
     // Twelve files: two columns of rows; long names keep the extension and stay in their row.
     await render(ALL);
@@ -130,14 +135,16 @@ if (viewCount !== null) {
     // Files dragged over: the shelf steps back under one drop zone.
     await render(ALL.slice(0, 3), true);
     const overlay = document.querySelector<HTMLElement>(".shelf-drop-overlay");
-    check(overlay && document.querySelector(".shelf-panel--dropping") && overlay.textContent === "松开鼠标，加入文件中转", "拖入时列表退后，盖上投放区");
+    check(overlay && document.querySelector(".shelf-panel--dropping") && overlay.textContent === "松开鼠标，加入文件中转" && getComputedStyle(overlay).borderStyle === "none",
+      "拖入时列表退后，面板边缘亮起，中间说松开鼠标");
 
     // Empty: the tray, what it is for, and that only the location is kept.
     await render([]);
     check(document.querySelector(".shelf-empty__title")?.textContent === "把文件拖到岛上，就会暂存在这里"
-      && document.querySelector(".shelf-empty__note")?.textContent?.includes("不复制文件") && !document.querySelector(".shelf-panel__footer"), "空的时候是一个托盘，说明只记位置、不复制文件");
+      && document.querySelector(".shelf-empty__note")?.textContent?.includes("不复制文件") && !document.querySelector(".shelf-bar")
+      && getComputedStyle(document.querySelector(".shelf-empty")!).borderStyle === "none", "空的时候直接在面板上说明只记位置、不复制文件，没有虚线框");
     await render([], true);
-    check(document.querySelector(".shelf-empty--dropping") && document.querySelector(".shelf-empty__title")?.textContent === "松开鼠标，加入文件中转", "空的时候拖入，整个托盘变成投放区");
+    check(document.querySelector(".shelf-empty--dropping") && document.querySelector(".shelf-panel--dropping") && document.querySelector(".shelf-empty__title")?.textContent === "松开鼠标，加入文件中转", "空的时候拖入，面板边缘亮起，整页是投放区");
     await render(ALL.slice(0, 3));
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;

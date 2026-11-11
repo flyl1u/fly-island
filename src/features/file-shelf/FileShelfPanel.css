@@ -1,7 +1,8 @@
 /*
  * The file shelf page. Heights here are counted by getShelfExpandedHeight
- * (windows/island/expandedHeight.ts): padding 14 + 12, the 30px title line, 10px gaps, a tile
- * row of 118px (FileShelfItem.css) or rows of 44px 6px apart, and the 16px hint line.
+ * (windows/island/expandedHeight.ts): padding 12 + 10, a tile row of 118px (FileShelfItem.css)
+ * or rows of 44px 6px apart, an 8px gap and the 28px line under them (FileShelfBar.css).
+ * Nothing inside draws its own frame: files, the open slot and the empty state sit on the panel.
  */
 .shelf-panel {
   position: relative;
@@ -9,9 +10,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  --shelf-item-radius: max(var(--corner-xs), calc(var(--island-panel-radius, 22px) - 12px));
+  gap: var(--space-md);
   overflow: hidden;
-  padding: 14px 16px 12px;
+  padding: 12px 12px 10px;
   color: var(--text-1);
   background:
     linear-gradient(145deg, var(--color-white-a09), rgba(255, 255, 255, 0.018)),
@@ -19,6 +21,7 @@
   border-radius: var(--island-panel-radius, 10px);
   corner-shape: var(--island-corner-shape, round);
   box-shadow: inset 0 0 0 1px var(--color-white-a09);
+  transition: box-shadow 160ms ease;
 }
 
 .shelf-panel__error {
@@ -42,29 +45,24 @@
 /* A few files: one row of large tiles, then an open slot. */
 .shelf-list--tiles {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-md);
+  gap: var(--space-xs);
 }
 
 /* Many files: two columns of compact rows. */
 .shelf-list--rows {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 44px;
-  gap: 6px 8px;
-  padding-right: 2px;
+  gap: 6px 4px;
 }
 
-/* The open place on the shelf: a dashed outline the size of a tile. */
+/* The open place on the shelf: no frame, just a quiet plus where the next file goes. */
 .shelf-slot {
   height: 118px;
-  box-sizing: border-box;
   display: grid;
   place-content: center;
   justify-items: center;
   gap: var(--space-sm);
-  color: var(--text-3);
-  border: 1px dashed rgba(248, 246, 240, 0.14);
-  border-radius: var(--island-card-radius, var(--corner-lg));
-  corner-shape: var(--corner-shape);
+  color: rgba(248, 246, 240, 0.3);
   font-size: 11px;
   font-weight: 600;
 }
@@ -78,39 +76,29 @@
   font-size: 12px;
 }
 
-.shelf-panel__footer {
-  margin: 0;
-  overflow: hidden;
-  color: var(--text-3);
-  font-size: 11px;
-  line-height: 16px;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Files over the island: the panel's own edge turns mint, the files step back and the middle
+   says where to let go. No frame of its own: the panel is the drop zone. */
+.shelf-panel--dropping {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(110, 231, 200, 0.7),
+    inset 0 0 36px rgba(110, 231, 200, 0.12);
 }
 
-/* Files over the island: the shelf steps back and one mint drop zone covers the page. */
 .shelf-panel--dropping .shelf-list,
-.shelf-panel--dropping .shelf-panel__footer {
-  opacity: 0.14;
+.shelf-panel--dropping .shelf-bar {
+  opacity: 0.12;
   filter: saturate(0.4) blur(1px);
 }
 
 .shelf-drop-overlay {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   z-index: 2;
   display: grid;
   place-content: center;
   justify-items: center;
   gap: var(--space-md);
   color: rgba(214, 255, 243, 0.96);
-  background:
-    radial-gradient(ellipse at 50% 45%, rgba(110, 231, 200, 0.18), rgba(110, 231, 200, 0.04) 70%),
-    rgba(20, 22, 24, 0.55);
-  border: 1.5px dashed rgba(110, 231, 200, 0.62);
-  border-radius: max(var(--corner-xs), calc(var(--island-panel-radius, 22px) - 8px));
-  corner-shape: var(--island-corner-shape, round);
   font-size: 13px;
   font-weight: 600;
   pointer-events: none;

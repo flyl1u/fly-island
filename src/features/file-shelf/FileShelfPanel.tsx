@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownToLine, Plus } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { FileShelfEmpty } from "./FileShelfEmpty";
-import { FileShelfHeader } from "./FileShelfHeader";
+import { FileShelfBar } from "./FileShelfBar";
 import { FileShelfItem } from "./FileShelfItem";
 import { getShelfLayout, SHELF_TILE_LIMIT } from "./fileShelf";
 import { EMPTY_SELECTION, filterShelfItems, keepVisible, selectEntry, targetIds } from "./selection";
@@ -18,8 +18,9 @@ function prefersReducedMotion() {
 
 /**
  * The file shelf page. A few files sit as large tiles in one row, with an open slot inviting
- * more; past four they become two columns of compact rows. Dragging files over the island
- * turns the page into one drop zone.
+ * more; past four they become two columns of compact rows. No title row and no boxes inside the
+ * panel: the files sit on it directly, with one line under them. Dragging files over the island
+ * lights the panel's own edge and turns the page into one drop zone.
  */
 export function FileShelfPanel({
   shelf,
@@ -78,18 +79,6 @@ export function FileShelfPanel({
 
   return (
     <section className={className} aria-label={t.fileShelf.title}>
-      <FileShelfHeader
-        count={items.length}
-        showSearch={layout === "rows" || query !== ""}
-        noticeKey={recentDrop?.allExisting ? recentDrop.key : null}
-        query={query}
-        selectedCount={selection.ids.length}
-        onQueryChange={setQuery}
-        onClear={() => void shelf.clear()}
-        onCopySelected={() => void shelf.copy(selection.ids)}
-        onRemoveSelected={() => void shelf.remove(selection.ids)}
-        onClearSelection={() => setSelection(EMPTY_SELECTION)}
-      />
       {error && <p className="shelf-panel__error" role="alert">{error}</p>}
       {layout === "empty" ? (
         <FileShelfEmpty isDropTarget={isDropTarget} />
@@ -131,7 +120,20 @@ export function FileShelfPanel({
           )}
         </div>
       )}
-      {layout !== "empty" && <p className="shelf-panel__footer">{t.fileShelf.footerHint(revealOnDoubleClick)}</p>}
+      {layout !== "empty" && (
+        <FileShelfBar
+          showSearch={layout === "rows" || query !== ""}
+          hint={t.fileShelf.footerHint(revealOnDoubleClick)}
+          noticeKey={recentDrop?.allExisting ? recentDrop.key : null}
+          query={query}
+          selectedCount={selection.ids.length}
+          onQueryChange={setQuery}
+          onClear={() => void shelf.clear()}
+          onCopySelected={() => void shelf.copy(selection.ids)}
+          onRemoveSelected={() => void shelf.remove(selection.ids)}
+          onClearSelection={() => setSelection(EMPTY_SELECTION)}
+        />
+      )}
       {isDropTarget && layout !== "empty" && (
         <div className="shelf-drop-overlay" aria-hidden="true">
           <span className="shelf-drop-overlay__icon">

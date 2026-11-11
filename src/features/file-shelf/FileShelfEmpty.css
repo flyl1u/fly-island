@@ -1,17 +1,12 @@
-/* The empty shelf: a dashed tray as tall as a row of tiles, three files fanned over it. */
+/* The empty shelf: three files fanned out and two lines, straight on the panel, no frame. */
 .shelf-empty {
   flex: 1;
-  min-height: 118px;
-  box-sizing: border-box;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 22px;
-  padding: 16px 24px;
-  border: 1px dashed rgba(248, 246, 240, 0.14);
-  border-radius: var(--island-card-radius, var(--corner-sm));
-  corner-shape: var(--corner-shape);
-  transition: border-color 160ms ease, background 160ms ease;
+  padding: 0 24px;
 }
 
 .shelf-empty__art {
@@ -74,12 +69,8 @@
   line-height: 1.45;
 }
 
-/* Files over the island: the tray turns mint, the files spread and an arrow takes the middle. */
-.shelf-empty--dropping {
-  background: rgba(110, 231, 200, 0.07);
-  border: 1.5px dashed rgba(110, 231, 200, 0.62);
-}
-
+/* Files over the island: the panel's edge turns mint (FileShelfPanel.css), the files spread and
+   an arrow takes the middle. */
 .shelf-empty--dropping .shelf-empty__file--left {
   rotate: -24deg;
   translate: -30px 9px;

@@ -1,28 +1,26 @@
 /*
  * A file on the shelf. Tiles (a few files) are 118px tall and rows (many) 44px; the page height
- * counts on both (FileShelfPanel.css). Both sit 16px inside the panel, so their corners follow
- * it (--island-card-radius: panel radius minus that padding).
+ * counts on both (FileShelfPanel.css). At rest a file is only its picture and name on the panel,
+ * like an icon on the desktop: no card. Under the pointer or chosen, a soft highlight appears
+ * whose corners follow the panel's (--shelf-item-radius: panel radius minus its 12px padding).
  */
 .shelf-item {
   position: relative;
   min-width: 0;
   box-sizing: border-box;
-  background: var(--color-white-a04);
-  border: 1px solid var(--color-white-a06);
-  border-radius: var(--island-card-radius, var(--corner-sm));
+  background: transparent;
+  border-radius: var(--shelf-item-radius, var(--corner-sm));
   corner-shape: var(--corner-shape);
-  transition: background 140ms ease, border-color 140ms ease;
+  transition: background 140ms ease;
 }
 
 .shelf-item:hover {
-  background: var(--color-white-a08);
-  border-color: var(--color-white-a10);
+  background: var(--color-white-a06);
 }
 
 .shelf-item--selected,
 .shelf-item--selected:hover {
-  background: rgba(110, 231, 200, 0.1);
-  border-color: rgba(110, 231, 200, 0.42);
+  background: rgba(110, 231, 200, 0.12);
 }
 
 .shelf-item__main {
