@@ -102,7 +102,7 @@
 
 /* The todo paper is a flat sheet, not a second island: a smaller corner than the concentric panel radius. */
 .todo-notebook {
-  border-radius: var(--corner-lg);
+  border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
 }
 

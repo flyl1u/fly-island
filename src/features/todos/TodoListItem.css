@@ -8,7 +8,7 @@
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.48);
   border: 1px solid rgba(31, 27, 22, 0.1);
-  border-radius: var(--corner-sm);
+  border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
   transition:
     background 140ms ease,
