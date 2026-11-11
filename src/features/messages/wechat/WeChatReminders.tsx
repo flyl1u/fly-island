@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../i18n";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Power } from "lucide-react";
+import { Power } from "lucide-react";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import "./WeChatReminders.css";
 import type { WeChatRemindersController } from "./useWeChatReminders";
@@ -22,6 +22,11 @@ export function WeChatReminderControls({ controller, compact = false }: { contro
   </div>;
 }
 
+/**
+ * WeChat hands over no message content, only that something is waiting, so the tab is one
+ * centred target: the WeChat icon, the reminder state and "click to open WeChat". Clicking
+ * anywhere on it brings WeChat forward; there is no separate open button in the header.
+ */
 export function WeChatReminderPanel({ controller, navigation }: { controller: WeChatRemindersController; navigation: ReactNode }) {
   const { snapshot, busy, actionError, openWeChat } = controller;
   const t = useTranslation();
@@ -31,12 +36,21 @@ export function WeChatReminderPanel({ controller, navigation }: { controller: We
     <section className="qq-panel" aria-label={t.messages.wechatReminders}>
       <header className="qq-panel__header">
         {navigation}
-        <div className="qq-panel__toolbar"><WeChatReminderControls controller={controller} compact /><button className="icon-button" type="button" aria-label={t.wechat.open} disabled={busy} onClick={() => void openWeChat()}><ArrowUpRight size={16} strokeWidth={1.8} /></button></div>
+        <div className="qq-panel__toolbar"><WeChatReminderControls controller={controller} compact /></div>
       </header>
       {(actionError || snapshot.error) && <p className="qq-panel__error" role="alert">{actionError || snapshot.error}</p>}
-      <div className={`qq-panel__empty${pending ? " wechat-reminder-state--pending" : ""}`} role="status">
-        <span className="message-empty-icon"><MessageSourceIcon source="wechat" size={28} /></span>
-        <span>{label}</span>
+      <div className="qq-panel__empty">
+        <button
+          className={`wechat-launch${pending ? " wechat-launch--pending" : ""}`}
+          type="button"
+          aria-label={`${label}，${t.wechat.clickToOpen}`}
+          disabled={busy}
+          onClick={() => void openWeChat()}
+        >
+          <span className="wechat-launch__icon"><MessageSourceIcon source="wechat" size={30} /></span>
+          <span className="wechat-launch__state" role="status">{label}</span>
+          <span className="wechat-launch__hint">{t.wechat.clickToOpen}</span>
+        </button>
       </div>
     </section>
   );
