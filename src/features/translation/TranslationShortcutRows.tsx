@@ -1,6 +1,6 @@
-import { useEffect, useState, type Dispatch, type KeyboardEvent, type SetStateAction } from "react";
-import { Keyboard } from "lucide-react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
+import { ShortcutRecordButton } from "../../components/controls/ShortcutRecordButton";
 import { useTranslation } from "../../i18n";
 import { buildShortcutFromEvent } from "../clipboard/shortcut";
 import { setTranslationShortcut } from "./api";
@@ -19,20 +19,25 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
   takenBy: (shortcut: string) => string | null;
 }) {
   const t = useTranslation();
-  const [recording, setRecording] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let didCancel = false;
     void setTranslationShortcut(settings.shortcut)
       .then(() => { if (!didCancel) setError(""); })
-      .catch((failure) => { if (!didCancel) setError(String(failure)); });
+      .catch((failure) => {
+        console.warn("Translation shortcut not registered:", failure);
+        if (!didCancel) setError(t.settings.shortcuts.registerFailed(settings.shortcut));
+      });
     return () => { didCancel = true; };
     // Checks the saved keys once when the row opens; recording reports its own result.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Registers new keys and saves them; refused keys keep the old ones and say why. */
+  /**
+   * Registers new keys and saves them. Keys Windows refuses keep the old ones, which
+   * the native side registers again, and the row says so.
+   */
   const apply = (shortcut: string) => {
     const owner = takenBy(shortcut);
     if (owner) { setError(t.settings.shortcuts.taken(shortcut, owner)); return; }
@@ -41,18 +46,10 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
         onSettingsChange((current) => ({ ...current, shortcut: registered }));
         setError("");
       })
-      .catch((failure) => setError(String(failure)));
-  };
-
-  const record = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (!recording) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.key === "Escape") { setRecording(false); return; }
-    const shortcut = buildShortcutFromEvent(event.nativeEvent);
-    if (!shortcut) return;
-    setRecording(false);
-    apply(shortcut);
+      .catch((failure) => {
+        console.warn("Translation shortcut not registered:", failure);
+        setError(t.settings.shortcuts.registerFailed(shortcut, settings.shortcut));
+      });
   };
 
   const fallback = DEFAULT_SETTINGS.shortcut;
@@ -65,16 +62,12 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
         </div>
         <div className="shortcut-control__actions">
           <ShortcutResetButton label={t.settings.shortcuts.reset(fallback)} isDefault={settings.shortcut === fallback} onReset={() => apply(fallback)} />
-          <button
-            className={`shortcut-record-button${recording ? " shortcut-record-button--recording" : ""}`}
-            type="button"
-            onClick={() => setRecording(true)}
-            onKeyDown={record}
-            onBlur={() => setRecording(false)}
-          >
-            <Keyboard size={14} strokeWidth={2.3} />
-            <span>{recording ? t.translator.pressShortcut : settings.shortcut}</span>
-          </button>
+          <ShortcutRecordButton
+            shortcut={settings.shortcut}
+            pressKeysLabel={t.translator.pressShortcut}
+            toShortcut={buildShortcutFromEvent}
+            onRecord={apply}
+          />
         </div>
       </div>
       {error && <p className="shortcut-control__error" role="alert">{error}</p>}

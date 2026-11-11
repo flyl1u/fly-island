@@ -16,6 +16,8 @@ export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-isl
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
+// Kept like the native store, so a page opened again reads back what was saved.
+let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
@@ -27,9 +29,10 @@ mockIPC((command, payload) => {
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
-    case "get_clipboard_history":
+    case "get_clipboard_history": return { settings: clipboardSettings, items: [] };
     case "set_clipboard_history_settings":
-      return { settings: { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true, ...(args.settings as object | undefined) }, items: [] };
+      clipboardSettings = { ...clipboardSettings, ...(args.settings as object | undefined) };
+      return { settings: clipboardSettings, items: [] };
     case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\agent-status.json" };
     case "get_qq_mail_state": return mailboxes;
     case "connect_qq_mail":
@@ -47,7 +50,11 @@ mockIPC((command, payload) => {
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", pending: false, lastAttentionAt: null, error: null };
     case "has_translation_secret": return args.provider === "deepseek";
-    case "set_translation_shortcut": translationShortcutCalls.push(String(args.shortcut)); return args.shortcut;
+    case "set_translation_shortcut":
+      translationShortcutCalls.push(String(args.shortcut));
+      // Taken by another program, as Windows would answer.
+      if (args.shortcut === "Ctrl+Alt+Q") throw "快捷键 Ctrl+Alt+Q 已被占用或无法注册：热键已被注册。";
+      return args.shortcut;
     case "updater_configured": return true;
     case "get_updater_proxy": return null;
     case "plugin:app|version": return "0.0.0-test";
