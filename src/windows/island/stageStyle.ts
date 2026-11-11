@@ -19,7 +19,8 @@ export function getIslandStageStyle(
     // Classic opacity fades the fill only, so text and icons on it stay solid.
     "--island-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
     "--island-fill-alpha": settings.opacity / 100,
-    "--island-scale": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
+    // The scale .island moves to (IslandShell.css animates its own --island-scale towards it).
+    "--island-scale-target": mode === "collapsed" ? settings.collapsedScale : settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
