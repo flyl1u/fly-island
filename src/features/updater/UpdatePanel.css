@@ -1,4 +1,4 @@
-/* The first row of About: a check button that fills the row, and the channel at its right end. */
+/* The first row of About: a check button that fills the row. */
 .update-panel {
   display: grid;
 }
@@ -34,11 +34,6 @@
 
 .update-panel__button:disabled {
   cursor: default;
-}
-
-.update-panel__channel {
-  flex: none;
-  padding-right: 10px;
 }
 
 /* Busy states turn the icon; hovering never does. */

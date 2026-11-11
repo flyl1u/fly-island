@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { normalizeUpdateChannel } from "../../src/features/updater/storage.ts";
 
 const transpile = (path) => ts.transpileModule(
   readFileSync(new URL(path, import.meta.url), "utf8"),
@@ -24,13 +23,11 @@ async function controller({
   download = async () => {},
   install = async () => {},
   version = "0.2.11",
-  storedChannel = null,
   windowKind = null,
 } = {}) {
   const exports = {};
   const calls = [];
   const emitted = [];
-  let channel = storedChannel;
   const mocks = {
     "@tauri-apps/api/app": { getVersion: async () => version },
     "@tauri-apps/api/core": {
@@ -52,12 +49,6 @@ async function controller({
       emit: async (name, payload) => emitted.push({ name, payload }),
       emitTo: async (target, name, payload) => emitted.push({ target, name, payload }),
     },
-    "./storage": {
-      loadUpdateChannel: (current) => normalizeUpdateChannel(channel, current),
-      saveUpdateChannel: (next) => {
-        channel = next;
-      },
-    },
   };
   const api = {};
   runInNewContext(apiSource, { exports: api, require: (name) => mocks[name] });
@@ -76,20 +67,14 @@ async function controller({
   return Object.assign(exports, { calls, emitted });
 }
 
-test("a pre-release build defaults to the beta channel, others to stable", () => {
-  assert.equal(normalizeUpdateChannel(null, "0.3.1-beta.1"), "beta");
-  assert.equal(normalizeUpdateChannel(null, "0.3.1"), "stable");
-  assert.equal(normalizeUpdateChannel("beta", "0.3.1"), "beta");
-  assert.equal(normalizeUpdateChannel("nightly", "0.3.1"), "stable");
-});
-
-test("startup checks the stored channel and downloads without installing", async () => {
+test("startup checks the stable channel and downloads without installing", async () => {
   const seen = [];
   const updater = await controller({
-    storedChannel: "beta",
+    // A pre-release build (someone who picked beta before the choice was removed) checks stable too.
+    version: "0.3.0-beta.1",
     check: async (args) => {
       seen.push(args.channel);
-      return { version: "0.3.0-beta.2", body: null };
+      return { version: "0.3.0", body: null };
     },
     download: async (send) => {
       send({ event: "Started", data: { contentLength: 10 } });
@@ -97,10 +82,10 @@ test("startup checks the stored channel and downloads without installing", async
       send({ event: "Finished" });
     },
   });
-  assert.deepEqual(seen, ["beta"]);
+  assert.deepEqual(seen, ["stable"]);
   const state = updater.getUpdateState();
   assert.equal(state.stage, "ready");
-  assert.equal(state.nextVersion, "0.3.0-beta.2");
+  assert.equal(state.nextVersion, "0.3.0");
   assert.equal(state.downloaded, 10);
   assert.ok(!updater.calls.includes("updater_install"), "nothing installs until the user agrees");
 });
@@ -130,19 +115,6 @@ test("no update leaves the island on latest; an unconfigured build never checks"
   const disabled = await controller({ configured: false });
   assert.equal(disabled.getUpdateState().stage, "disabled");
   assert.ok(!disabled.calls.includes("updater_check"));
-});
-
-test("switching channel saves it and checks again", async () => {
-  const seen = [];
-  const updater = await controller({
-    check: async (args) => {
-      seen.push(args.channel);
-      return null;
-    },
-  });
-  await updater.setUpdateChannel("beta");
-  assert.deepEqual(seen, ["stable", "beta"]);
-  assert.equal(updater.getUpdateState().channel, "beta");
 });
 
 test("the settings window forwards actions to the main window instead of checking", async () => {

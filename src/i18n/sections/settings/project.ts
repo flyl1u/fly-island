@@ -47,11 +47,6 @@ export type SettingsProjectText = {
     error: string;
     errorDetail: (reason: string) => string;
     unavailable: string;
-    channel: string;
-    channelStable: string;
-    channelBeta: string;
-    channelStableHint: string;
-    channelBetaHint: string;
   };
 };
 
@@ -101,11 +96,6 @@ export const zhCN: SettingsProjectText = {
     error: "检查更新失败，请稍后再试。",
     errorDetail: (reason) => `原因：${reason}`,
     unavailable: "这里不能应用内更新，请到 Release 页手动下载。",
-    channel: "更新通道",
-    channelStable: "稳定版",
-    channelBeta: "测试版（beta）",
-    channelStableHint: "只接收正式版本",
-    channelBetaHint: "提前体验新功能，也会收到正式版本；可能不太稳定",
   },
 };
 
@@ -155,10 +145,5 @@ export const en: SettingsProjectText = {
     error: "Couldn't check for updates. Please try again later.",
     errorDetail: (reason) => `Reason: ${reason}`,
     unavailable: "In-app updates aren't available here. Grab new versions from the release page.",
-    channel: "Update channel",
-    channelStable: "Stable",
-    channelBeta: "Beta",
-    channelStableHint: "Only final releases",
-    channelBetaHint: "Try new features early, and still get final releases; may be less stable",
   },
 };

@@ -1,23 +1,21 @@
 import { useSyncExternalStore } from "react";
 import { Download, RefreshCcw } from "lucide-react";
-import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { useTranslation } from "../../i18n";
 import { ProjectLink } from "./ProjectLink";
 import { PROJECT_RELEASES_URL } from "./projectLinks";
-import type { UpdateChannel } from "./storage";
-import { checkForUpdate, getUpdateState, installUpdate, setUpdateChannel, subscribeToUpdate } from "./updaterController";
+import { checkForUpdate, getUpdateState, installUpdate, subscribeToUpdate } from "./updaterController";
 // The project-link row styles live with the About section.
 import "./ProjectSettingsSection.css";
 import "./UpdatePanel.css";
 
 /**
  * Settings → About, first row: check for the latest version, then download, install and
- * restart in place. The channel (stable or beta) sits at the row's right end.
+ * restart in place. Only stable releases are offered (the beta channel choice is gone).
  */
 export function UpdatePanel() {
   const t = useTranslation();
   const text = t.settings.project.update;
-  const { stage, version, channel, nextVersion, downloaded, total, detail } = useSyncExternalStore(
+  const { stage, version, nextVersion, downloaded, total, detail } = useSyncExternalStore(
     subscribeToUpdate,
     getUpdateState,
   );
@@ -84,18 +82,6 @@ export function UpdatePanel() {
             )}
           </span>
         </button>
-        <div className="update-panel__channel" title={channel === "beta" ? text.channelBetaHint : text.channelStableHint}>
-          <SettingsSelect<UpdateChannel>
-            value={channel}
-            options={[
-              { value: "stable", label: text.channelStable },
-              { value: "beta", label: text.channelBeta },
-            ]}
-            ariaLabel={text.channel}
-            disabled={busy || stage === "done"}
-            onChange={(next) => void setUpdateChannel(next)}
-          />
-        </div>
       </div>
       {percent !== null && (stage === "downloading" || stage === "installing") && (
         <div
