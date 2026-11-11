@@ -69,7 +69,7 @@ export const zhCN: SettingsAppearanceText = {
     items: {
       agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
       lyrics: { name: "歌词", hint: "播放时的当前一句，没有歌词时显示歌名" },
-      todo: { name: "待办", hint: "进行中的待办或剩余数量" },
+      todo: { name: "待办", hint: "开始做的待办；没开始时，剩余数量排在最后" },
     },
     moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
     showCover: "显示歌曲封面",
@@ -111,7 +111,7 @@ export const en: SettingsAppearanceText = {
     items: {
       agent: { name: "AI Agent task", hint: "The running session's title" },
       lyrics: { name: "Lyrics", hint: "The current line while a song plays, or its title" },
-      todo: { name: "Todos", hint: "The todo in progress, or how many are left" },
+      todo: { name: "Todos", hint: "The todo you started; until then, the count left comes last" },
     },
     moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
     showCover: "Show the song's cover",
