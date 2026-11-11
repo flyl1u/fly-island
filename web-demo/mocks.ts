@@ -119,6 +119,7 @@ export function installDemoMocks(data: DemoContent) {
       case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
       case "get_media_state": return media();
       case "media_play_pause": position = elapsed(); since = Date.now(); playing = !playing; return media();
+      case "media_seek": position = Math.max(0, Number(args.positionMs) || 0); since = Date.now(); return media();
       case "media_next": return switchSong(1);
       case "media_previous": return switchSong(-1);
       case "get_audio_level": return { active: playing, peak: playing ? 0.4 + Math.random() * 0.4 : 0, updatedAt: Date.now() };

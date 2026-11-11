@@ -8,6 +8,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 
 use super::audio::{read_system_audio_peak, set_master_volume, AUDIO_ACTIVE_THRESHOLD};
 use super::session::*;
+use super::timeline;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -126,22 +127,44 @@ pub(crate) fn seek(position_ms: i64, target: Option<String>) -> Result<MediaStat
                 .ok_or_else(|| "No media is currently playing.".to_string())?,
         };
 
-        let start_ms = session
-            .GetTimelineProperties()
-            .ok()
+        let can_seek = session
+            .GetPlaybackInfo()
+            .and_then(|info| info.Controls())
+            .and_then(|controls| controls.IsPlaybackPositionEnabled())
+            .unwrap_or(false);
+        if !can_seek {
+            return Err("This player does not allow seeking from outside.".to_string());
+        }
+
+        let timeline = session.GetTimelineProperties().ok();
+        let start_ms = timeline
+            .as_ref()
             .and_then(|timeline| timeline.StartTime().ok())
             .map(ticks_to_ms)
             .unwrap_or(0);
-        let ticks = (start_ms + position_ms.max(0)).saturating_mul(10_000);
+        let end_ms = timeline
+            .as_ref()
+            .and_then(|timeline| timeline.EndTime().ok())
+            .map(ticks_to_ms)
+            .unwrap_or(0);
+        let elapsed_ms = if end_ms > start_ms {
+            position_ms.clamp(0, end_ms - start_ms)
+        } else {
+            position_ms.max(0)
+        };
+        let ticks = (start_ms + elapsed_ms).saturating_mul(10_000);
         let operation = session
             .TryChangePlaybackPositionAsync(ticks)
             .map_err(|error| media_error("Failed to request the seek", error))?;
-        if pollster::block_on(operation).unwrap_or(false) {
-            thread::sleep(Duration::from_millis(40));
-            read_media_state_from_manager(&manager, target.as_deref())
-        } else {
-            Err("The media source did not accept the seek.".to_string())
+        if !pollster::block_on(operation).unwrap_or(false) {
+            return Err("The media source did not accept the seek.".to_string());
         }
+        // Players that push no new timeline after a seek would otherwise snap back to the old one.
+        if let Some(id) = session_id(&session) {
+            timeline::seeked(&id, elapsed_ms, current_unix_millis());
+        }
+        thread::sleep(Duration::from_millis(40));
+        read_media_state_from_manager(&manager, target.as_deref())
     })
 }
 

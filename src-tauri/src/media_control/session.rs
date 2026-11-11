@@ -23,6 +23,7 @@ use windows::{
 
 use super::audio::{read_master_volume, read_system_audio_peak, AUDIO_ACTIVE_THRESHOLD};
 use super::service::*;
+use super::timeline::{self, TimelineSample};
 use crate::win32;
 
 pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
@@ -336,7 +337,8 @@ pub(super) fn read_media_state_from_manager(
         .and_then(|value| value.Value().ok())
         .unwrap_or(1.0);
 
-    let (position_ms, duration_ms) = read_timeline(&session, is_playing, playback_rate);
+    let now_ms = current_unix_millis();
+    let (position_ms, duration_ms) = read_timeline(&session, is_playing, playback_rate, now_ms);
     let Metadata { title, artist, album, thumbnail, track_id } = read_metadata(&session, source_app.as_deref());
 
     Ok(MediaState {
@@ -362,7 +364,8 @@ pub(super) fn read_media_state_from_manager(
         source_app,
         active_session_id: session_id(&session),
         sessions,
-        updated_at: current_unix_millis(),
+        // The time the position is for, not when the metadata read finished.
+        updated_at: now_ms,
     })
 }
 
@@ -414,43 +417,28 @@ impl MediaState {
     }
 }
 
+/// The elapsed time and length of the session's track at `now_ms` (see `timeline`).
 pub(super) fn read_timeline(
     session: &MediaSession,
     is_playing: bool,
     playback_rate: f64,
+    now_ms: i64,
 ) -> (i64, i64) {
     let Ok(timeline) = session.GetTimelineProperties() else {
         return (0, 0);
     };
 
-    let start = timeline.StartTime().map(ticks_to_ms).unwrap_or(0);
-    let end = timeline.EndTime().map(ticks_to_ms).unwrap_or(0);
-    let position = timeline.Position().map(ticks_to_ms).unwrap_or(0);
-
-    let duration = (end - start).max(0);
-    let mut elapsed = (position - start).clamp(0, duration);
-
-    // `Position` is the position sampled at `LastUpdatedTime`. While playing,
-    // extrapolate forward so the progress bar keeps advancing for players that
-    // only report the timeline once per track; never extrapolate while paused.
-    if is_playing && duration > 0 {
-        if let Ok(last_updated) = timeline.LastUpdatedTime() {
-            let now_ticks =
-                current_unix_millis().saturating_mul(10_000) + WINDOWS_EPOCH_OFFSET_TICKS;
-            let since_update_ms = (now_ticks - last_updated.UniversalTime) / 10_000;
-            if since_update_ms > 0 {
-                let rate = if playback_rate > 0.0 {
-                    playback_rate
-                } else {
-                    1.0
-                };
-                let projected = elapsed + (since_update_ms as f64 * rate).round() as i64;
-                elapsed = projected.clamp(0, duration);
-            }
-        }
-    }
-
-    (elapsed, duration)
+    let sample = TimelineSample {
+        start_ms: timeline.StartTime().map(ticks_to_ms).unwrap_or(0),
+        end_ms: timeline.EndTime().map(ticks_to_ms).unwrap_or(0),
+        position_ms: timeline.Position().map(ticks_to_ms).unwrap_or(0),
+        updated_ms: timeline
+            .LastUpdatedTime()
+            .ok()
+            .map(|time| (time.UniversalTime - WINDOWS_EPOCH_OFFSET_TICKS) / 10_000),
+    };
+    let key = session_id(session).unwrap_or_default();
+    timeline::observe(&key, sample, is_playing, playback_rate, now_ms)
 }
 
 /// What the media session says about the playing track.

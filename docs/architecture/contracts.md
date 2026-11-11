@@ -35,7 +35,7 @@
 | `focusd-island-agent-session-filters`（2026-11-09 起不再读写：隐藏会话规则已去掉，旧规则不再生效；格式曾为 `[{ kind: "folder" | "prompt", value }]`） | — |
 | 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，命令 `save_theme_file`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
-| `focusd-island-update-channel`（`"stable"` / `"beta"`；没有时 beta 版本按 `beta`、其他版本按 `stable`） | `features/updater/storage.ts` |
+| `focusd-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
 ## 事件
 
@@ -47,6 +47,7 @@
 | `island-hover-changed`（载荷为 `bool`：光标是否在岛屿形状内，供悬停展开使用） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `island-cursor-moved`（载荷 `{ x, y }`：光标在主窗口 CSS 像素中的位置，窗口外也有；只在 `set_island_cursor_tracking(true)` 后、光标移动时发，约 28 次/秒，供中心图案的眼睛跟随） | `island/passthrough.rs` | 广播（通过主窗口对象调用 `emit`） |
 | `foreground-fullscreen-changed`（载荷为 `{ active, onIslandMonitor }`：前台是否有全屏程序、是否占住岛所在的显示器，供游戏模式使用） | `system/fullscreen.rs` | 广播 |
+| `media-session-changed`（无载荷：某个媒体会话的时间线、播放状态或歌曲变了，或会话增减；主窗口收到后立即重读 `get_media_state`。2026-11-11 起） | `media_control/watcher.rs` | 广播 |
 | `clipboard-history-changed` | `clipboard_history/service.rs`（常量在 `mod.rs`） | 广播 |
 | `clipboard-history-shortcut` | `clipboard_history/service.rs`（常量在 `hotkey.rs`） | 广播 |
 | `clipboard-history-shortcut-status`（载荷为字符串或 `null`：剪贴板快捷键注册失败的原因，成功或关闭时为 `null`；最近一次结果也可用 `get_clipboard_shortcut_error` 读取） | `clipboard_history/hotkey.rs` | 广播 |
@@ -56,7 +57,7 @@
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
-| `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss` / `channel`） | `features/updater/updaterController.ts` | 广播 / `main` |
+| `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss`；3.0.2 及更早还有 `channel`） | `features/updater/updaterController.ts` | 广播 / `main` |
 | `agent-approval-requested`（载荷 `{ id, agent, kind, sessionId, cwd, toolName, toolInput, permissionSuggestions, receivedAt }`：一个会话等你在岛上审批的工具调用（`kind: "permission"`），或要你回答的 AskUserQuestion（`kind: "question"`，`toolInput.questions`），同一会话同时只发一条） | `agent_approval/mod.rs` | 广播 |
 | `agent-approval-closed`（载荷 `{ id, reason }`，`reason` 为 `decided` / `timeout` / `disconnected` / `handedBack` / `shutdown`） | `agent_approval/mod.rs` | 广播 |
 
@@ -71,6 +72,7 @@
 - 在岛上审批（2026-11-06 起）：端点路径 `POST /claude/permission-request`、`POST /codex/permission-request`，以及 Claude Code `PreToolUse` 钩子的 `POST /claude/ask-user-question`（只接 AskUserQuestion，回答以 `updatedInput.answers` 返回），以及 Claude Code 动静钩子的 `POST /claude/activity`（2026-11-07 起；请求体是 `PostToolUse` / `PostToolUseFailure` / `PermissionDenied` / `Stop` / `SubagentStop` / `UserPromptSubmit` 的钩子输入，总是回 `{}`，用来撤掉已在终端答过的卡片，事件 `agent-approval-closed` 的 `reason` 为 `answeredElsewhere`）（`Authorization: Bearer <令牌>`，`Host` 须为本机端口，带 `Origin` 的请求拒绝），返回 Claude Code `PermissionRequest` 钩子的格式，空对象 `{}` 表示交还终端；`agent-approval.json` 字段 `port`、`token`；Tauri 命令 `set_agent_approval_enabled`、`agent_approval_decide`（`decision` 为 `allow` / `deny` / `allowAlways` / `terminal`；提问为 `answer` 加 `answers`（问题原文 → 回答）或 `terminal`）、`agent_approval_pending`；事件见上表。
 - 歌词缓存（2026-11-06 起）：应用数据目录下的 `lyrics-cache/<FNV-1a 哈希>.json`（`{ key, lrc, source?, translation?, wordTimes?, durationMs?, durations?, fetchedAt }`；`lrc` 可带增强 LRC 的逐字时间 `<mm:ss.xx>`（酷狗 KRC 转来）；`wordTimes` 为 true 的条目由保留逐字时间的版本写入，没有它的酷狗旧条目会重新下载；`durations` 为 true 的条目由记录歌曲时长的版本写入（`durationMs` 是来源给的时长，可为空），没有它的旧条目会重新查一次（2026-11-10）；`lrc` 为 null 表示所有在线来源都没有，7 天后重查；`source` 为 `lrclib` / `kugou` / `netease`，没有时是 LRCLIB 的旧条目；开着中文来源时 key 末尾多 `cn`；最多 2000 个文件）。设置项 `lyricsFolder`、`lyricsOnline`（2026-11-10 起默认开，保存过 false 的仍为关）、`lyricsChinese`（也查酷狗和网易云，同样默认开）、`lyricsOffsetMs`。每首歌自己的偏移存在 localStorage `focusd-island-lyrics-offsets`（`{ <歌名歌手时长/2 秒>: 毫秒 }`，±10 秒，最多 500 首）。媒体状态多了 `trackId`：播放器插件写进流派的歌曲 ID（`NCM-<id>`、`QQ-<id>`），`get_lyrics` 的查询多了 `chinese`、`trackId`，返回值多了 `translation`，2026-11-10 起还有可选的 `durationMs`（来源给的歌曲时长，播放器不报告时长时用于进度条）。
 - 岛屿设置 `focusd-island-settings` 2026-11-10 新增三个字段：`collapsedPriority`（`["agent","lyrics","todo"]` 的某种顺序，收起的岛先显示哪一样）、`collapsedShowCover`（布尔，默认 false）、`pageOrder`（`["todo","music","clipboard","shelf"]` 的某种顺序，展开岛顶栏的页面圆点）；同日又加 `collapsedLayout`（`["text","mail","shelf","music","agents"]` 的某种顺序，收起的岛上文字和状态图标从左到右的位置，`text` 之前的图标在文字左边）。读取时去掉未知和重复项，缺的按默认顺序补在末尾。
+- 岛屿设置 `focusd-island-settings` 的 `pageOrder` 2026-11-11 起多一个可选项 `"translation"`（翻译的页面胶囊），默认顺序 `["todo","music","clipboard","shelf","translation"]`；旧数据缺它时按上面的规则补在末尾，旧版本读到它会当未知项丢掉。
 - 岛屿设置 `focusd-island-settings` 2026-11-11 新增 `autoCollapseSeconds`（3 / 5 / 10 / 30 / 0，0 表示从不；展开的岛闲置多少秒后自动收起）。不在这几个值里、或旧数据没有这个字段时：`autoTuck` 为 true 读成 30，否则读成 0。
 - 岛屿设置 `focusd-island-settings` 的 `expandedScale`（展开后的大小）2026-11-10 重新可以设置；2026-11-11 起是 0.85–1.2 之间的任意值（滑块，步长 0.01）。3.0.0 存的 0.9 / 1 / 1.1（小 / 中 / 大）原样保留；更早版本存的任意数（原范围 0.75–1.4）读取时限制到 0.85–1.2 并取到百分位，非数字按 1。字段名和类型不变。
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。

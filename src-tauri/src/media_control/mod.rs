@@ -3,10 +3,16 @@
 mod audio;
 mod service;
 mod session;
-
+mod timeline;
+mod watcher;
 
 #[tauri::command]
-pub async fn get_media_state(target: Option<String>) -> Result<service::MediaState, String> {
+pub async fn get_media_state(
+    app: tauri::AppHandle,
+    target: Option<String>,
+) -> Result<service::MediaState, String> {
+    // Reading the state is what keeps the session event watcher alive.
+    watcher::keep_alive(&app);
     tauri::async_runtime::spawn_blocking(move || service::get_state(target))
         .await
         .map_err(|error| format!("Failed to join the media state task: {error}"))?

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getMediaState, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./api";
+import { getMediaState, listenMediaSessionChanged, seekMedia, sendMediaCommand, type MediaCommand, type MediaPlaybackStatus, type MediaState } from "./api";
 import { isIslandMoving } from "../../lib/islandMotion";
 import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from "./mediaState";
+import { isSameTrack, keptAnchor, steadyAnchor } from "./positionAnchor";
+import { playbackPosition } from "./lyrics/lrc";
 import { advanceClock, clockPosition, hasTimeline, NO_CLOCK, type TrackClock } from "./trackClock";
 import { useAudioLevel } from "./useAudioLevel";
 import { pickMediaSource } from "./pickMediaSource";
@@ -26,6 +28,11 @@ export function useMediaState(enabled = true, showsLevel = true) {
     showsLevelRef.current = showsLevel;
   }, [showsLevel]);
   const isRefreshingMediaState = useRef(false);
+  // A change event that came while a read was under way: read again once it is done.
+  const refreshAgain = useRef(false);
+  // Bumped when a seek starts and ends: a reading begun before then has the old position.
+  const seekGeneration = useRef(0);
+  const isSeeking = useRef(false);
   const isRunningMediaCommand = useRef(false);
   const trackClock = useRef<TrackClock>(NO_CLOCK);
   const mediaPlaybackIntent = useRef<{
@@ -37,10 +44,12 @@ export function useMediaState(enabled = true, showsLevel = true) {
 
   const refreshMediaState = useCallback(async () => {
     if (isRefreshingMediaState.current) {
+      refreshAgain.current = true;
       return;
     }
 
     isRefreshingMediaState.current = true;
+    const generation = seekGeneration.current;
 
     try {
       const nextMediaState = await getMediaState(
@@ -49,8 +58,9 @@ export function useMediaState(enabled = true, showsLevel = true) {
 
       const now = Date.now();
       const intent = mediaPlaybackIntent.current;
+      const intentActive = Boolean(intent && now < intent.expiresAt);
       const playbackStatus =
-        intent && now < intent.expiresAt
+        intent && intentActive
           ? intent.status
           : nextMediaState.playbackStatus;
 
@@ -75,13 +85,19 @@ export function useMediaState(enabled = true, showsLevel = true) {
         // Off screen, the peak stays as it was: a new one each poll re-rendered the open island.
         const audioPeak = !audioActive ? 0 : showsLevelRef.current ? nextPeak : currentState.audioPeak;
 
-        const merged: MediaState = {
+        const reading: MediaState = {
           ...nextMediaState,
           ...timeline,
           audioActive,
           audioPeak,
           playbackStatus,
         };
+        // Until the player catches up with a seek or a play / pause from here, its readings are behind.
+        const behind = intentActive || isSeeking.current || generation !== seekGeneration.current;
+        const anchor = behind && isSameTrack(currentState, reading)
+          ? keptAnchor(currentState)
+          : steadyAnchor(currentState, reading);
+        const merged: MediaState = { ...reading, ...anchor };
 
         if (isSameMediaState(currentState, merged)) {
           return currentState;
@@ -94,6 +110,33 @@ export function useMediaState(enabled = true, showsLevel = true) {
       setMediaState(DEFAULT_MEDIA_STATE);
     } finally {
       isRefreshingMediaState.current = false;
+      if (refreshAgain.current) {
+        refreshAgain.current = false;
+        void refreshMediaState();
+      }
+    }
+  }, []);
+
+  /** Moves playback to `positionMs`, shown at once; the player's reading follows. */
+  const seekTo = useCallback(async (positionMs: number) => {
+    isSeeking.current = true;
+    seekGeneration.current += 1;
+    setMediaState((currentState) => ({ ...currentState, positionMs, updatedAt: Date.now() }));
+    setMediaCommandError(null);
+    try {
+      const nextMediaState = await seekMedia(positionMs, mediaTargetRef.current ?? undefined);
+      setMediaState((currentState) => ({
+        ...nextMediaState,
+        audioActive: currentState.audioActive,
+        audioPeak: currentState.audioPeak,
+        playbackStatus: currentState.playbackStatus,
+      }));
+    } catch (error) {
+      console.error("Failed to seek", error);
+      setMediaCommandError(String(error));
+    } finally {
+      isSeeking.current = false;
+      seekGeneration.current += 1;
     }
   }, []);
 
@@ -130,6 +173,8 @@ export function useMediaState(enabled = true, showsLevel = true) {
             audioPeak:
               intendedStatus === "paused" ? 0 : currentState.audioPeak,
             playbackStatus: intendedStatus,
+            // Paused where playback is now, not where the last reading had it.
+            positionMs: playbackPosition(currentState, Date.now()),
             updatedAt: Date.now(),
           }));
         }
@@ -151,9 +196,12 @@ export function useMediaState(enabled = true, showsLevel = true) {
         }
 
         setMediaState((currentState) => {
+          // A play / pause keeps the position it was shown at until the player's readings catch up.
+          const anchor = isPlayPause && isSameTrack(currentState, nextMediaState) ? keptAnchor(currentState) : {};
           if (intendedStatus === "paused") {
             return {
               ...nextMediaState,
+              ...anchor,
               audioActive: false,
               audioPeak: 0,
               playbackStatus: intendedStatus,
@@ -162,6 +210,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
 
           return {
             ...nextMediaState,
+            ...anchor,
             audioActive:
               nextMediaState.audioActive || currentState.audioActive,
             audioPeak: Math.max(
@@ -205,7 +254,18 @@ export function useMediaState(enabled = true, showsLevel = true) {
       if (!isIslandMoving()) void refreshMediaState();
     }, 1500);
 
-    return () => window.clearInterval(interval);
+    // A seek, pause or new track in the player is read at once rather than at the next poll.
+    let stopListening: (() => void) | null = null;
+    let disposed = false;
+    listenMediaSessionChanged(() => void refreshMediaState())
+      .then((unlisten) => (disposed ? unlisten() : (stopListening = unlisten)))
+      .catch((error) => console.error("Cannot listen for media session changes", error));
+
+    return () => {
+      disposed = true;
+      stopListening?.();
+      window.clearInterval(interval);
+    };
   }, [enabled, refreshMediaState]);
 
   const effectiveMediaTarget = useMemo(
@@ -228,6 +288,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
     mediaCommandError,
     musicSourcePriority,
     runMediaCommand,
+    seekTo,
     reorderMusicSource,
     removeMusicSource,
   };

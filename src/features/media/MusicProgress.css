@@ -11,13 +11,23 @@
   line-height: 1;
 }
 
-.music-progress__track {
+/* A taller strip than the bar to aim at, without taking more room. */
+.music-progress__hit {
   position: relative;
   grid-column: 1 / -1;
+  margin: -6px 0;
+  padding: 6px 0;
+  outline: none;
+  touch-action: none;
+}
+
+.music-progress__track {
+  position: relative;
   height: 4px;
   overflow: hidden;
   background: var(--color-white-a12);
   border-radius: var(--radius-pill);
+  transition: height 160ms ease, margin 160ms ease;
 }
 
 /* The island's ordinary foreground, like the controls below it: a cover's colour here read as a stray green or red. */
@@ -31,6 +41,62 @@
   transition: width 480ms linear;
 }
 
+.music-progress--snap .music-progress__fill,
+.music-progress--snap .music-progress__knob {
+  transition: none;
+}
+
+/* Only a player that takes seeks gets the pointer, the thicker bar and the knob. */
+.music-progress--seekable .music-progress__hit {
+  cursor: pointer;
+}
+
+.music-progress__knob {
+  position: absolute;
+  top: 50%;
+  left: var(--music-progress, 0%);
+  width: 10px;
+  height: 10px;
+  background: var(--text-1);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4);
+  transition: left 480ms linear, opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.music-progress--seekable .music-progress__hit:hover .music-progress__track,
+.music-progress--seekable .music-progress__hit:focus-visible .music-progress__track,
+.music-progress--dragging .music-progress__track {
+  height: 6px;
+  margin: -1px 0;
+}
+
+.music-progress--seekable .music-progress__hit:hover .music-progress__fill,
+.music-progress--seekable .music-progress__hit:focus-visible .music-progress__fill,
+.music-progress--dragging .music-progress__fill {
+  background: var(--text-1);
+}
+
+.music-progress--seekable .music-progress__hit:hover .music-progress__knob,
+.music-progress--seekable .music-progress__hit:focus-visible .music-progress__knob,
+.music-progress--dragging .music-progress__knob {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.music-progress--dragging .music-progress__time {
+  color: var(--text-2);
+}
+
 .music-progress__time--left {
   justify-self: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-progress__fill,
+  .music-progress__knob,
+  .music-progress__track {
+    transition: none;
+  }
 }
