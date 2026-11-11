@@ -74,6 +74,7 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
               disabled={!clipboardSettings.shortcutEnabled}
               toShortcut={buildShortcutFromEvent}
               onRecord={apply}
+              onInterrupted={() => setConflict(t.settings.shortcuts.takenElsewhere)}
             />
           </div>
         </div>

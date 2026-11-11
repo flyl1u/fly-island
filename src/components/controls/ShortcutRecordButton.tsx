@@ -15,21 +15,26 @@ const BLUR_GRACE_MS = 250;
  * still showing. A key whose press another program's global hotkey swallowed only
  * arrives as a release, so a release with modifiers held records it too.
  *
- * Escape, a click elsewhere, or the window losing the focus stops recording.
+ * Escape, a click elsewhere, or the window losing the focus stops recording. Losing it
+ * while a modifier is held means another program's global hotkey took the keys and
+ * brought up its own window (NetEase Cloud Music answers Ctrl+Alt+M that way): the
+ * key never arrives here, so `onInterrupted` lets the row say so.
  */
-export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toShortcut, onRecord }: {
+export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toShortcut, onRecord, onInterrupted }: {
   shortcut: string;
   pressKeysLabel: string;
   disabled?: boolean;
   /** The shortcut a key event names, or null while only modifiers are held. */
   toShortcut: (keys: ShortcutKeys) => string | null;
   onRecord: (shortcut: string) => void;
+  /** Recording stopped because another program took the keys being pressed. */
+  onInterrupted?: () => void;
 }) {
   const [recording, setRecording] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const latest = useRef({ toShortcut, onRecord });
+  const latest = useRef({ toShortcut, onRecord, onInterrupted });
   useEffect(() => {
-    latest.current = { toShortcut, onRecord };
+    latest.current = { toShortcut, onRecord, onInterrupted };
   });
 
   useEffect(() => {
@@ -40,6 +45,11 @@ export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toSho
     // when a swallowed key went down, in case some are released before that key.
     let lastModifiers = { ctrlKey: false, altKey: false, shiftKey: false, metaKey: false };
     const pressedCodes = new Set<string>();
+    // Whether Ctrl, Alt or Win was down at the latest key event: a combination in progress.
+    let combining = false;
+    const noteKeys = (event: KeyboardEvent) => {
+      combining = event.ctrlKey || event.altKey || event.metaKey;
+    };
     let blurTimer: number | undefined;
     const finish = (next: string) => {
       setRecording(false);
@@ -52,6 +62,7 @@ export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toSho
     };
     const keyDown = (event: KeyboardEvent) => {
       swallow(event);
+      noteKeys(event);
       const { ctrlKey, altKey, shiftKey, metaKey } = event;
       if (event.key === "Escape" && !ctrlKey && !altKey && !shiftKey && !metaKey) {
         setRecording(false);
@@ -67,6 +78,7 @@ export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toSho
     };
     const keyUp = (event: KeyboardEvent) => {
       swallow(event);
+      noteKeys(event);
       if (isModifier(event.key)) return;
       if (pressedCodes.delete(event.code)) return;
       const held = {
@@ -85,7 +97,11 @@ export function ShortcutRecordButton({ shortcut, pressKeysLabel, disabled, toSho
     };
     const blur = () => {
       window.clearTimeout(blurTimer);
-      blurTimer = window.setTimeout(() => setRecording(false), BLUR_GRACE_MS);
+      const interrupted = combining;
+      blurTimer = window.setTimeout(() => {
+        setRecording(false);
+        if (interrupted) latest.current.onInterrupted?.();
+      }, BLUR_GRACE_MS);
     };
     const focus = () => window.clearTimeout(blurTimer);
     window.addEventListener("keydown", keyDown, true);
