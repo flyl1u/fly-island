@@ -41,7 +41,7 @@ export type CollapsedItem = "agent" | "lyrics" | "todo";
  */
 export type CollapsedSlot = "text" | "mail" | "shelf" | "music" | "agents";
 /** The page dots in the expanded island's header, which the user can drag into any order. */
-export type PageDot = "todo" | "music" | "clipboard" | "shelf";
+export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
 
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;

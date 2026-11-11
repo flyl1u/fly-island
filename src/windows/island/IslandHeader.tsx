@@ -1,7 +1,7 @@
 import { useCallback, type ReactNode } from "react";
 import { usePointerReorder } from "../../components/reorder/usePointerReorder";
 import type { PageDot } from "../../features/appearance/types";
-import { Bell, CircleDot, Languages, Minus, RotateCcw, Settings } from "lucide-react";
+import { Bell, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
@@ -25,6 +25,7 @@ type IslandHeaderProps = {
   onCollapse: () => void;
   onOpenSettings: () => void;
   onOpenMessages: (source: MessageSource) => void;
+  /** Opens translation (its island page or its own window); null when translation is off. */
   onOpenTranslator: (() => void) | null;
   onResetPosition: () => void;
   /** False when minimizing tucks the island to the top edge instead. */
@@ -34,7 +35,10 @@ type IslandHeaderProps = {
   pageActions?: ReactNode;
 };
 
-/** Header of the expanded island: agent status, page dots, collapse target and window actions. */
+/**
+ * Header of the expanded island: agent status, page dots (translation among them), collapse
+ * target and window actions.
+ */
 export function IslandHeader({
   page,
   features,
@@ -59,8 +63,15 @@ export function IslandHeader({
   const t = useTranslation();
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
-  const dots = pageOrder.filter((dot) => features[dot]);
-  const dotLabels = { todo: t.island.todoList, music: t.island.music, clipboard: t.island.clipboardHistory, shelf: t.island.shelf };
+  // Translation has one while it is on, also when it opens in its own window.
+  const dots = pageOrder.filter((dot) => (dot === "translation" ? onOpenTranslator !== null : features[dot]));
+  const dotLabels = {
+    todo: t.island.todoList,
+    music: t.island.music,
+    clipboard: t.island.clipboardHistory,
+    shelf: t.island.shelf,
+    translation: t.translator.title,
+  };
   const reorderDots = useCallback(
     (next: PageDot[]) => onPageOrderChange([...next, ...pageOrder.filter((dot) => !next.includes(dot))]),
     [onPageOrderChange, pageOrder],
@@ -124,7 +135,9 @@ export function IslandHeader({
             onClick={(event) => {
               event.stopPropagation();
               // The click that ends dragging a dot to a new place does not open its page.
-              if (!wasDotDragged()) onPageChange(dot);
+              if (wasDotDragged()) return;
+              if (dot === "translation") onOpenTranslator?.();
+              else onPageChange(dot);
             }}
           />
         ))}
@@ -156,20 +169,6 @@ export function IslandHeader({
           <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth />
           {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
         </button>}
-        {onOpenTranslator && (
-          <button
-            className={`icon-button island-translate-button${page === "translation" ? " island-translate-button--active" : ""}`}
-            type="button"
-            aria-label={features.translation ? t.translator.title : t.translator.title}
-            aria-pressed={features.translation ? page === "translation" : undefined}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenTranslator();
-            }}
-          >
-            <Languages size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-          </button>
-        )}
         {/* Only once the island has been moved: at its default place the button would do nothing. */}
         {isDetached && (
           <button

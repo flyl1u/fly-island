@@ -174,10 +174,16 @@ if (!automated) {
     };
     await drag(".dot-button--todo", ".dot-button--clipboard");
     const savedOrder = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageOrder as string[] | undefined;
-    check(dotOrder().join() === "music,clipboard,todo,shelf" && savedOrder?.join() === "music,clipboard,todo,shelf" && island().className === pageBefore,
+    check(dotOrder().join() === "music,clipboard,todo,shelf,translation" && savedOrder?.join() === "music,clipboard,todo,shelf,translation" && island().className === pageBefore,
       `拖动页面圆点可以调整顺序并保存，拖完不切页（${dotOrder().join()}）`);
     await drag(".dot-button--todo", ".dot-button--music");
     check(dotOrder()[0] === "todo", "圆点可以拖回原来的位置");
+    // Translation is one of the page capsules on the left; the header's old button is gone.
+    await click(".dot-button--translation");
+    check(!document.querySelector(".island-translate-button")
+      && document.querySelector(".dot-button--translation")?.getAttribute("aria-current") === "page"
+      && document.querySelector(".island__expanded .translation-panel") !== null,
+      "翻译是左侧的页面胶囊，点它打开岛内翻译页，顶栏右边不再有翻译按钮");
 
     // The shelf's three files make one row of tiles with an open slot, and the page is only as
     // tall as that row (getShelfExpandedHeight).
@@ -216,7 +222,7 @@ if (!automated) {
       [".dot-button--shelf", "文件中转"],
       [".island__agent-button", "AI Agent"],
       [".island-message-button", "消息"],
-      [".island-translate-button", "翻译"],
+      [".dot-button--translation", "翻译"],
       [".island-settings-button", "设置"],
     ];
     for (const [selector, name] of pages) {
