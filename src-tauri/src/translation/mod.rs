@@ -209,7 +209,7 @@ pub async fn translate_text(
         "zh-en" => "en",
         "en-zh" => "zh",
         // By the language most of the text is in, not by any Chinese at all.
-        "auto" => direction::auto_target(&text),
+        "auto" => direction::auto_target(text),
         _ => return Err("不支持的翻译方向。".to_string()),
     };
     let provider = find_provider(provider.as_deref())?;
