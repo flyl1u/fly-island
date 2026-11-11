@@ -292,6 +292,16 @@ if (!automated) {
     check(storedShortcut() === "Ctrl+Alt+J" && recordButtonText() === "Ctrl+Alt+J"
       && element(".shortcut-control__error").textContent === "Ctrl+Alt+Q 没能设为全局快捷键，可能已被其他程序占用，请换一个。现在仍是 Ctrl+Alt+J。",
       "Keys Windows refuses keep the old shortcut and say so in the interface language");
+    // Another program's hotkey (NetEase Cloud Music's Ctrl+Alt+M) brings up its window mid-combination.
+    await act(async () => { element<HTMLButtonElement>(".editor-panel .shortcut-record-button").click(); });
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Alt", code: "AltLeft", ctrlKey: true, altKey: true, bubbles: true, cancelable: true }));
+      window.dispatchEvent(new Event("blur"));
+      await new Promise(resolve => setTimeout(resolve, 300));
+    });
+    check(storedShortcut() === "Ctrl+Alt+J" && recordButtonText() === "Ctrl+Alt+J"
+      && element(".shortcut-control__error").textContent?.startsWith("这个组合已被其他程序占用"),
+      "Another program taking the keys mid-combination stops recording and says so");
     await type(element<HTMLInputElement>(".editor-panel input[placeholder*='模型']"), "demo-model");
     check(storedShortcut() === "Ctrl+Alt+J" && recordButtonText() === "Ctrl+Alt+J",
       "Editing the model afterwards keeps the new translation shortcut");

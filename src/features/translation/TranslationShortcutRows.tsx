@@ -67,6 +67,7 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
             pressKeysLabel={t.translator.pressShortcut}
             toShortcut={buildShortcutFromEvent}
             onRecord={apply}
+            onInterrupted={() => setError(t.settings.shortcuts.takenElsewhere)}
           />
         </div>
       </div>
