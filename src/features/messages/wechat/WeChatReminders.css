@@ -61,16 +61,78 @@
   background: #a9e6ca;
 }
 
-.wechat-reminder-state--pending {
+/* WeChat's tab: one centred target that opens WeChat (WeChat gives no message content). */
+.wechat-launch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 160px;
+  padding: 18px 24px 16px;
+  color: var(--text-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+  font: inherit;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.wechat-launch__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 2px;
+  background: var(--color-white-a06);
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 140ms ease;
+}
+
+.wechat-launch__state {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wechat-launch__hint {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.wechat-launch--pending {
   color: var(--text-1);
 }
 
-.wechat-reminder-state--pending .message-empty-icon {
-  color: #c6ebd9;
+.wechat-launch:hover:not(:disabled) {
+  color: var(--text-1);
+  background: var(--color-white-a04);
+}
+
+.wechat-launch:hover:not(:disabled) .wechat-launch__icon {
+  background: var(--color-white-a10);
+  transform: scale(1.06);
+}
+
+.wechat-launch:active:not(:disabled) .wechat-launch__icon {
+  transform: scale(0.96);
+}
+
+.wechat-launch:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.wechat-launch:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .message-sources button {
+  .message-sources button,
+  .wechat-launch,
+  .wechat-launch__icon {
     transition: none;
   }
 }

@@ -81,9 +81,13 @@ try {
     check(!document.querySelector('.wechat-reminder-card, .message-overview') && !document.querySelector('button[aria-label="消息总览"]'), "微信没有被抽成独立卡片或总览");
     check(document.querySelector<HTMLElement>('.message-fixture')?.style.height === "350px", "列表恢复截图中的固定面板高度");
     await click("微信提醒");
-    check(view! === "wechat" && document.querySelector('.wechat-reminder-state--pending') && document.querySelector('.qq-panel__header button[aria-label="打开微信"]'), "微信标签沿用同一行导航和图标工具栏");
-    await click("打开微信");
-    check(calls.some(call => call.command === "open_wechat"), "微信标签沿用已有唤回命令");
+    const launch = document.querySelector<HTMLButtonElement>('.qq-panel__empty button.wechat-launch');
+    check(view! === "wechat" && launch?.classList.contains("wechat-launch--pending") && launch.textContent?.includes("有新提醒") && launch.textContent.includes("点击打开微信"),
+      "微信标签中间是可点击的图标、\"有新提醒\"和\"点击打开微信\"");
+    check(!document.querySelector('.qq-panel__header button[aria-label="打开微信"]') && document.querySelectorAll('.qq-panel__header .qq-panel__toolbar button').length === 1,
+      "微信标签顶栏只剩接收开关，没有右上角的打开箭头");
+    await act(async () => { launch!.click(); });
+    check(calls.some(call => call.command === "open_wechat"), "点击微信图标调用已有的唤回命令");
     await click("接收微信提醒");
     check(document.querySelector('.qq-panel__empty')?.textContent?.includes("已暂停") && document.querySelector('button[aria-label="接收微信提醒"]')?.getAttribute("aria-checked") === "false", "暂停微信提醒后保持正确状态");
     await click("接收微信提醒");
