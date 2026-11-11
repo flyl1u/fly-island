@@ -7,7 +7,12 @@ export const MIN_COLLAPSED_ISLAND_WIDTH = 280;
 export const MAX_COLLAPSED_ISLAND_WIDTH = 340;
 export const MIN_COLLAPSED_TEXT_UNITS = 2;
 export const MAX_COLLAPSED_TEXT_UNITS = 12;
-export const BASE_EXPANDED_ISLAND_HEIGHT = 306;
+// The todo page with two rows: the island's padding, header and gap (86), the notebook's padding
+// (24), its tab row (22), the add field (32), two gaps (16) and two rows (70), and 8 to spare
+// (TodoNotebook.css, TodoListItem.css). Keep in step.
+export const BASE_EXPANDED_ISLAND_HEIGHT = 258;
+/** The daily note: a row taller than the list, for a few lines of writing. */
+export const DAILY_NOTE_EXPANDED_ISLAND_HEIGHT = 296;
 export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
@@ -16,7 +21,8 @@ const CLIPBOARD_CHROME_HEIGHT = 244;
 // One history row (44, ClipboardHistoryItemRow.css) plus the gap below it.
 const CLIPBOARD_ROW_PITCH = 50;
 const CLIPBOARD_ROW_GAP = 6;
-export const TODO_ROW_HEIGHT = 46;
+// One single-line row (32) and the gap below it (6).
+export const TODO_ROW_HEIGHT = 38;
 export const TODO_GROW_START_ROWS = 2;
 /** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
 export function getCollapsedIslandWidth(text: string, extraWidth = 0) {

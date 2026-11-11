@@ -1,10 +1,11 @@
 .todo-item {
-  min-height: max(38px, calc(var(--todo-title-min-height, 19px) + 16px));
+  /* One line: the 22px buttons and 5px above and below (TODO_ROW_HEIGHT, windows/island/layout.ts). */
+  min-height: max(32px, calc(var(--todo-title-min-height, 19px) + 10px));
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto 28px;
   align-items: start;
   gap: var(--space-md);
-  padding: 7px 8px;
+  padding: 4px 8px;
   background: rgba(255, 255, 255, 0.48);
   border: 1px solid rgba(31, 27, 22, 0.1);
   border-radius: var(--corner-md);
@@ -39,8 +40,9 @@
 }
 
 .todo-check {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
   align-self: start;
   display: inline-grid;
   place-items: center;
@@ -88,6 +90,8 @@
   font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
+  /* Centred on the 22px buttons beside a one-line title. */
+  padding-top: 1px;
   overflow-wrap: anywhere;
   white-space: normal;
   word-break: break-word;
@@ -100,8 +104,8 @@
 .todo-title-input {
   width: 100%;
   min-width: 0;
-  min-height: 27px;
-  padding: 2px 7px;
+  min-height: 22px;
+  padding: 0 6px;
   color: var(--color-ink);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(64, 125, 147, 0.32);
@@ -111,12 +115,12 @@
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 20px;
 }
 
 .todo-start {
-  min-width: 70px;
-  height: 27px;
+  min-width: 64px;
+  height: 22px;
   align-self: start;
   display: inline-flex;
   align-items: center;
@@ -166,7 +170,7 @@
 
 .todo-delete {
   width: 28px;
-  height: 27px;
+  height: 22px;
   align-self: start;
   display: inline-grid;
   place-items: center;
@@ -194,7 +198,7 @@
 
 .todo-drag-handle {
   width: 24px;
-  height: 27px;
+  height: 22px;
   align-self: start;
   display: inline-grid;
   place-items: center;
