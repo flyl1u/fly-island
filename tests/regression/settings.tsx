@@ -262,30 +262,53 @@ if (!automated) {
 
     // Shortcuts: the recorder reads the physical key (Shift+1 gives "!" and Chinese input
     // gives "Process"), and another part of the page saving later keeps the new keys.
-    const record = async (init: KeyboardEventInit) => {
+    // In the app, clicking into a window that was not active makes WebView2 put the focus
+    // back where it was before (wry's WM_SETFOCUS handler), so the keys arrive somewhere
+    // other than the record button: they go to the focused sidebar item here.
+    const record = async (init: KeyboardEventInit, { focusMoves = true, releaseOnly = false } = {}) => {
       const button = element<HTMLButtonElement>(".editor-panel .shortcut-record-button");
       await act(async () => { button.focus(); button.click(); });
-      await act(async () => { button.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init })); });
+      if (focusMoves) await act(async () => { element<HTMLButtonElement>(".settings-sidebar__item[data-category='general']").focus(); });
+      const target = document.activeElement ?? document.body;
+      const press = (type: string) => target.dispatchEvent(new KeyboardEvent(type, { bubbles: true, cancelable: true, ...init }));
+      // A combination another program holds as its global hotkey: Windows keeps the press, only the release arrives.
+      await act(async () => { if (!releaseOnly) press("keydown"); press("keyup"); });
       await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     };
+    const recordButtonText = () => element(".editor-panel .shortcut-record-button").textContent;
     const storedShortcut = () => (JSON.parse(localStorage.getItem("focusd-island-translation-settings") ?? "{}") as { shortcut?: string }).shortcut;
     await openPage("translation");
-    await record({ key: "!", code: "Digit1", ctrlKey: true, shiftKey: true });
+    await record({ key: "!", code: "Digit1", ctrlKey: true, shiftKey: true }, { focusMoves: false });
     check(translationShortcutCalls[translationShortcutCalls.length - 1] === "Ctrl+Shift+1" && storedShortcut() === "Ctrl+Shift+1",
       "Recording Ctrl+Shift+1 registers and saves Ctrl+Shift+1, not the shifted symbol");
+    await record({ key: "k", code: "KeyK", ctrlKey: true, altKey: true });
+    check(storedShortcut() === "Ctrl+Alt+K" && recordButtonText() === "Ctrl+Alt+K",
+      `A shortcut recorded after the focus left the record button is registered, saved and shown (${recordButtonText()})`);
+    await record({ key: "u", code: "KeyU", ctrlKey: true, shiftKey: true }, { releaseOnly: true });
+    check(storedShortcut() === "Ctrl+Shift+U", "A combination whose key press another program swallowed records from its release");
     await record({ key: "Process", code: "KeyJ", ctrlKey: true, altKey: true });
     check(storedShortcut() === "Ctrl+Alt+J", "Keys pressed with Chinese input on record by their physical key");
+    await record({ key: "q", code: "KeyQ", ctrlKey: true, altKey: true });
+    check(storedShortcut() === "Ctrl+Alt+J" && recordButtonText() === "Ctrl+Alt+J"
+      && element(".shortcut-control__error").textContent === "Ctrl+Alt+Q 没能设为全局快捷键，可能已被其他程序占用，请换一个。现在仍是 Ctrl+Alt+J。",
+      "Keys Windows refuses keep the old shortcut and say so in the interface language");
     await type(element<HTMLInputElement>(".editor-panel input[placeholder*='模型']"), "demo-model");
-    check(storedShortcut() === "Ctrl+Alt+J" && element(".editor-panel .shortcut-record-button").textContent === "Ctrl+Alt+J",
+    check(storedShortcut() === "Ctrl+Alt+J" && recordButtonText() === "Ctrl+Alt+J",
       "Editing the model afterwards keeps the new translation shortcut");
     await openPage("clipboard");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     await record({ key: "?", code: "Slash", ctrlKey: true, shiftKey: true });
     const clipboardSaved = commands.lastIndexOf("set_clipboard_history_settings") >= 0;
-    check(clipboardSaved && element(".editor-panel .shortcut-record-button").textContent === "Ctrl+Shift+/",
+    check(clipboardSaved && recordButtonText() === "Ctrl+Shift+/",
       "Recording Ctrl+Shift+/ for clipboard history saves it");
     await record({ key: "J", code: "KeyJ", ctrlKey: true, altKey: true });
     check(element(".shortcut-control__error").textContent?.includes("Ctrl+Alt+J"), "Keys translation already uses are refused for clipboard history");
+    // Reopening the pages reads the keys back from where they are kept.
+    await openPage("translation");
+    check(recordButtonText() === "Ctrl+Alt+J", "The translation page shows the recorded shortcut when opened again");
+    await openPage("clipboard");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+    check(recordButtonText() === "Ctrl+Shift+/", `The clipboard page shows the recorded shortcut when opened again (${recordButtonText()})`);
 
     await openPage("about");
     // About: one group holds the latest version (with its update states) and the links; no

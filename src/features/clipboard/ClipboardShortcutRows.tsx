@@ -1,7 +1,7 @@
-import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Keyboard } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "../../i18n";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
+import { ShortcutRecordButton } from "../../components/controls/ShortcutRecordButton";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { getClipboardShortcutError, listenClipboardShortcutStatus, type ClipboardHistorySettings } from "./api";
 import { buildShortcutFromEvent, DEFAULT_CLIPBOARD_SHORTCUT, normalizeClipboardShortcut } from "./shortcut";
@@ -18,7 +18,6 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
   takenBy: (shortcut: string) => string | null;
 }) {
   const t = useTranslation();
-  const [isRecording, setIsRecording] = useState(false);
   const [registerError, setRegisterError] = useState("");
   const [conflict, setConflict] = useState("");
   const shortcut = normalizeClipboardShortcut(clipboardSettings.shortcut);
@@ -34,17 +33,6 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
     return () => { didCancel = true; unlisten?.(); };
   }, []);
 
-  const record = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (!isRecording) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.key === "Escape") { setIsRecording(false); return; }
-    const next = buildShortcutFromEvent(event.nativeEvent);
-    if (!next) return;
-    setIsRecording(false);
-    apply(next);
-  };
-
   /** Saves new keys for the service to register; keys another row uses are refused. */
   const apply = (next: string) => {
     const owner = takenBy(next);
@@ -52,7 +40,13 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
     if (!owner) onClipboardSettingsChange({ ...clipboardSettings, shortcut: next });
   };
 
-  const error = clipboardSettings.shortcutEnabled ? conflict || registerError : "";
+  // The service's own text is Chinese only; the details go to the console.
+  useEffect(() => {
+    if (registerError) console.warn("Clipboard history shortcut not registered:", registerError);
+  }, [registerError]);
+  const error = clipboardSettings.shortcutEnabled
+    ? conflict || (registerError ? t.settings.shortcuts.registerFailed(shortcut) : "")
+    : "";
 
   return (
     <>
@@ -74,17 +68,13 @@ export function ClipboardShortcutRows({ clipboardSettings, onClipboardSettingsCh
               disabled={!clipboardSettings.shortcutEnabled}
               onReset={() => apply(DEFAULT_CLIPBOARD_SHORTCUT)}
             />
-            <button
-              className={`shortcut-record-button${isRecording ? " shortcut-record-button--recording" : ""}`}
-              type="button"
+            <ShortcutRecordButton
+              shortcut={shortcut}
+              pressKeysLabel={t.settings.clipboard.pressKeys}
               disabled={!clipboardSettings.shortcutEnabled}
-              onClick={() => setIsRecording(true)}
-              onKeyDown={record}
-              onBlur={() => setIsRecording(false)}
-            >
-              <Keyboard size={14} strokeWidth={2.3} />
-              <span>{isRecording ? t.settings.clipboard.pressKeys : shortcut}</span>
-            </button>
+              toShortcut={buildShortcutFromEvent}
+              onRecord={apply}
+            />
           </div>
         </div>
         {error && <p className="shortcut-control__error" role="alert">{error}</p>}
