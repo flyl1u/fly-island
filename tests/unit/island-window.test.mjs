@@ -38,12 +38,12 @@ test("plugin slots widen the collapsed island by the width they need, up to the 
 });
 
 test("the todo list scrolls after as many rows as fit under the max panel height", () => {
-  // 490px is the default and keeps the six rows the todo page always had.
-  assert.equal(getTodoScrollStartRows(490), 6);
-  assert.equal(getTodoScrollStartRows(306), 2);
-  assert.equal(getTodoScrollStartRows(351), 2);
-  assert.equal(getTodoScrollStartRows(352), 3);
-  assert.equal(getTodoScrollStartRows(546), 7);
+  // 490px is the default: eight of the compact 38px rows fit under it (six of the old 46px ones did).
+  assert.equal(getTodoScrollStartRows(490), 8);
+  assert.equal(getTodoScrollStartRows(306), 3);
+  assert.equal(getTodoScrollStartRows(333), 3);
+  assert.equal(getTodoScrollStartRows(334), 4);
+  assert.equal(getTodoScrollStartRows(546), 9);
 });
 
 test("the collapsed width is nudged so the centred island starts on a whole device pixel", () => {

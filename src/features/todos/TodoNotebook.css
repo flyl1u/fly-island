@@ -2,9 +2,9 @@
   position: relative;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: var(--space-lg);
+  gap: var(--space-md);
   overflow: hidden;
-  padding: 18px 18px 16px 56px;
+  padding: 12px 14px 12px 56px;
   color: var(--color-ink);
   background:
     linear-gradient(90deg, transparent 0 38px, rgba(244, 113, 130, 0.52) 39px, transparent 40px),
@@ -12,7 +12,7 @@
     var(--todo-background-color);
   background-size:
     100% 100%,
-    100% 34px,
+    100% 30px,
     100% 100%;
   box-shadow:
     0 16px 32px rgba(0, 0, 0, 0.22),
@@ -51,7 +51,7 @@
 }
 
 .todo-notebook__topline {
-  min-height: 25px;
+  min-height: 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -76,7 +76,7 @@
   gap: 7px;
   min-width: 0;
   max-width: 168px;
-  padding: 6px 10px;
+  padding: 4px 9px;
   overflow: hidden;
   color: #231f1a;
   background: var(--color-sky);
@@ -116,8 +116,8 @@
 }
 
 .todo-page-toggle {
-  width: 25px;
-  height: 25px;
+  width: 22px;
+  height: 22px;
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
@@ -179,7 +179,7 @@
 }
 
 .todo-form {
-  min-height: 36px;
+  min-height: 32px;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
@@ -229,7 +229,7 @@
   display: grid;
   align-content: start;
   grid-auto-rows: max-content;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   overflow-y: auto;
   /* Room for the scrollbar without making the rows narrower than the add field above them. */
   margin-right: -4px;
@@ -290,7 +290,7 @@
 }
 
 .todo-empty {
-  min-height: 74px;
+  min-height: 64px;
   display: grid;
   place-items: center;
   color: rgba(31, 27, 22, 0.46);
