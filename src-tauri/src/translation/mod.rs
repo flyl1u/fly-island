@@ -1,3 +1,4 @@
+mod direction;
 mod provider;
 
 use crate::clipboard_history::{parse_shortcut_binding, ShortcutBinding};
@@ -202,16 +203,8 @@ pub async fn translate_text(
     let target = match direction.as_str() {
         "zh-en" => "en",
         "en-zh" => "zh",
-        "auto" => {
-            if text
-                .chars()
-                .any(|ch| ('\u{4e00}'..='\u{9fff}').contains(&ch))
-            {
-                "en"
-            } else {
-                "zh"
-            }
-        }
+        // By the language most of the text is in, not by any Chinese at all.
+        "auto" => direction::auto_target(&text),
         _ => return Err("不支持的翻译方向。".to_string()),
     };
     let provider = find_provider(provider.as_deref())?;
