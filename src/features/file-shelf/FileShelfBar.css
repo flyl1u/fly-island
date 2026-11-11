@@ -33,7 +33,7 @@
 }
 
 .shelf-bar__notice {
-  color: rgba(160, 240, 218, 0.92);
+  color: var(--text-1);
   font-style: normal;
   font-weight: 600;
   opacity: 0;
@@ -147,7 +147,7 @@
   gap: var(--space-xs);
   padding: 0 4px 0 12px;
   color: var(--text-1);
-  background: rgba(110, 231, 200, 0.1);
+  background: var(--color-white-a08);
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   font-size: 12px;

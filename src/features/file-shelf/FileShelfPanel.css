@@ -76,12 +76,12 @@
   font-size: 12px;
 }
 
-/* Files over the island: the panel's own edge turns mint, the files step back and the middle
+/* Files over the island: the panel's own edge lights up white, the files step back and the middle
    says where to let go. No frame of its own: the panel is the drop zone. */
 .shelf-panel--dropping {
   box-shadow:
-    inset 0 0 0 1.5px rgba(110, 231, 200, 0.7),
-    inset 0 0 36px rgba(110, 231, 200, 0.12);
+    inset 0 0 0 1.5px rgba(248, 246, 240, 0.5),
+    inset 0 0 36px rgba(248, 246, 240, 0.07);
 }
 
 .shelf-panel--dropping .shelf-list,
@@ -98,7 +98,7 @@
   place-content: center;
   justify-items: center;
   gap: var(--space-md);
-  color: rgba(214, 255, 243, 0.96);
+  color: var(--text-1);
   font-size: 13px;
   font-weight: 600;
   pointer-events: none;
@@ -110,10 +110,10 @@
   height: 40px;
   display: grid;
   place-items: center;
-  color: #06261d;
-  background: #6ee7c8;
+  color: #141418;
+  background: var(--text-1);
   border-radius: var(--radius-circle);
-  box-shadow: 0 0 0 6px rgba(110, 231, 200, 0.14), 0 8px 22px rgba(110, 231, 200, 0.28);
+  box-shadow: 0 0 0 6px var(--color-white-a08), 0 8px 22px rgba(0, 0, 0, 0.36);
   animation: shelf-drop-bob 1.4s ease-in-out infinite;
 }
 
