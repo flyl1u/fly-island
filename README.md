@@ -5,12 +5,14 @@
 
   <p><a href="README.en.md">English</a> · 中文</p>
 
-  <p>Windows 上的桌面灵动岛：待办、剪贴板、消息、翻译、音乐和 AI 状态，都在屏幕顶部的一座小岛上。</p>
+  <p>一款 Windows 桌面效率工具，在屏幕顶部集中管理待办、剪贴板、音乐、AI 状态、快捷翻译和消息提醒。</p>
 
   <p>
-    <a href="https://github.com/flyl1u/fly-island/releases/latest">下载</a>
+    <a href="https://island.flyliu.org/">在线预览</a>
     ·
-    <a href="https://github.com/flyl1u/fly-island/issues">反馈问题</a>
+    <a href="https://github.com/flyl1u/fly-island/releases/latest">下载 Release</a>
+    ·
+    <a href="https://github.com/flyl1u/fly-island/issues">反馈 Issue</a>
     ·
     <a href="#用户交流群">用户交流群</a>
   </p>
@@ -19,43 +21,62 @@
     <img alt="Version" src="https://img.shields.io/github/v/release/flyl1u/fly-island?label=version">
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
+    <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
   </p>
 </div>
 
 ## 这是什么
 
-Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在屏幕顶部，需要时展开，用完自动收回。常用的东西都放在岛上，不用为了看一眼信息来回切窗口。
+一款 Windows 优先的灵动岛。集成微信、QQ、邮箱通知，剪贴板历史、快捷翻译、Codex状态灯、媒体控制、每日待办等功能
+
+fly-island 以轻量、无边框、始终置顶的悬浮岛形式运行，它会在需要时展开，用完后回到紧凑状态，减少为了获取一条信息而切换窗口的次数。
+
+## 为什么做它
+
+日常工作或学习过程中，我经常需要在某软件写下 Todo List，为了隔绝噪音，我会打开音乐软件并把音量调到合适的临界点，工作和学习又经常需要借助翻译网站，同时还会反复复制和粘贴代码，与此同时难以避免的是接收不同群聊、好友发送的消息
+
+在这些界面之间来回切换，不仅会降低效率，也容易让人分心，因此我开始思考：能不能把这些高频功能集成到一个足够轻量的地方？
+
+我想到了iPhone的灵动岛，它把消息通知、计时器、媒体控制等信息集中到一个小岛上，缩短了我们获取信息的路程。于是，fly-island 诞生了
 
 ## 功能
 
-- **待办与笔记**：每天的任务、当前专注的事项、每日笔记和历史归档。
-- **剪贴板与文件中转**：图文剪贴板历史；把文件先拖到岛上暂存，再拖去别的程序。
-- **消息**：QQ、微信提醒和多个邮箱，邮件可以直接在岛上阅读，带附件和网页正文。
-- **快捷翻译**：一个快捷键打开，支持多家大模型翻译服务。
-- **AI Agent**：显示 Claude Code 和 Codex 会话的运行状态，可以直接在岛上审批权限请求，点一下切到对应窗口。
-- **音乐**：控制正在播放的媒体，显示音频波形和同步歌词。
+fly-island 想解决的核心问题，是工作和学习过程中频繁的窗口切换。
 
-岛屿的外观、大小、收起方式、快捷键和每个功能都可以在设置里调整（默认在岛上打开，也可以改成独立窗口），支持应用内自动更新。数据都保存在本机。
+fly-island 把分散在不同窗口中的高频操作放到一个可折叠、可展开的悬浮岛里：
 
-## 占用
+- **图文剪贴板历史**：记录复制过的文本和图片，搜索内容或备注、收藏常用项、添加备注、删除记录，并一键复制回剪贴板。历史数量、图片记录和全局唤出快捷键均可设置。
+- **QQ、微信与 QQ 邮箱**：在同一行品牌导航中切换 QQ、微信和邮箱，工具按钮共用顶部一行；QQ 通知和邮箱各保留最近 20 项，邮件支持在岛内打开正文并返回列表。
+- **快捷翻译**：用全局快捷键打开独立翻译窗口，自动判断中英方向或手动指定；可从剪贴板填入原文并复制译文。
+- **AI 状态灯**：通过 Codex 和 Claude Code 生命周期钩子显示任务运行、完成或需要关注的状态，可在设置中安装或修复钩子。
+- **待办、每日笔记与归档**：管理当天任务、标记完成、设置当前任务；记录每日笔记并浏览历史归档。可选择自动结转未完成任务，将任务和笔记保存为 Markdown。
+- **音乐与系统音频**：通过 Windows 媒体会话切换上一首、播放/暂停和下一首，并用动态波形显示音频活动。
+- **外观与启动设置**：切换经典或液态玻璃外观、系统或像素字体，调整大小、透明度、颜色和顶部距离；保存最多 6 个自定义样式预设、控制标题显示和开机自启动。
 
-收起、闲着、不放音乐时（默认设置）：CPU 约占单核的 10%（20 核电脑上约占总量的 0.5%），内存约 330 MB，其中大部分是 Windows 自带的 WebView2（Edge 内核）。Agent 页每秒刷新一次会话列表，实测只占单核的 0.1%。测量方法和数据见 [idle-usage.md](docs/investigations/idle-usage.md)。
+待办、剪贴板和应用设置保存在本机。微信提醒只表示微信请求了任务栏关注，不读取聊天正文、发送人或准确未读数。QQ 通知只保留在本次运行的内存中；QQ 邮箱后台仅同步邮件头，正文按需读取且只保留在内存，不下载附件、不加载远程图片，也不会改变邮件已读状态。
 
-## 上手
+## 使用说明
 
-1. 从 [Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载安装包并安装（安装包没有代码签名，SmartScreen 提示时点「更多信息 → 仍要运行」）。
-2. 鼠标移到屏幕顶部的岛上即可展开，点齿轮或托盘图标打开设置。
-3. 邮箱、翻译和 AI Agent 需要先在设置里配置一次，具体见各自的说明：[邮箱](docs/mail.md)、[AI Agent](docs/agent-status-hooks.md)、[QQ 通知](docs/qq-notification-compatibility.md)、[微信提醒](docs/wechat-reminder-compatibility.md)。
+展开岛屿即可切换待办、音乐、剪贴板和消息页面；设置按钮打开带分类侧栏的独立窗口。新用户默认使用经典外观，岛屿名称隐藏，任务文字为白色；设置中的样式预设可保存和恢复个性化布局。
 
-## 项目起源
+### 功能设置
 
-以下是作者 [flyl1u](https://github.com/flyl1u) 写下的初衷：
+- **QQ 和微信提醒**：首次默认开启。QQ 需要 Windows 通知访问权限，且 QQ 已登录并启用系统通知；微信需要电脑版保持登录并发出任务栏提醒。两个来源可分别在「设置 → 通知」或消息页面关闭。参见 [QQ 通知说明](docs/qq-notification-compatibility.md)和[微信提醒说明](docs/wechat-reminder-compatibility.md)。
 
-> 日常工作或学习过程中，我经常需要在某软件写下 Todo List，为了隔绝噪音，我会打开音乐软件并把音量调到合适的临界点，工作和学习又经常需要借助翻译网站，同时还会反复复制和粘贴代码，与此同时难以避免的是接收不同群聊、好友发送的消息
->
-> 在这些界面之间来回切换，不仅会降低效率，也容易让人分心，因此我开始思考：能不能把这些高频功能集成到一个足够轻量的地方？
->
-> 我想到了iPhone的灵动岛，它把消息通知、计时器、媒体控制等信息集中到一个小岛上，缩短了我们获取信息的路程。于是，fly-island 诞生了
+- **QQ 邮箱**：在邮箱设置中开启 IMAP 并生成授权码，然后在消息页面填写 `@qq.com` 地址和授权码（不是 QQ 登录密码）。凭据保存在 Windows 凭据管理器。支持手动刷新、暂停接收和断开连接；首次同步不提醒历史邮件。详见 [QQ 邮箱接入说明](docs/mail.md)。
+
+- **快捷翻译**：默认按 `Alt+C` 打开翻译窗口。首次使用时配置 DeepSeek API 密钥，密钥保存在 Windows 凭据管理器。提交翻译时，原文会发送到 DeepSeek API；可选择自动识别、中译英或英译中。按 `Tab` 可填入最新剪贴板文本。
+
+- **AI 状态灯**：在「设置 → AI Agent 状态灯」选择「安装/修复」，然后重启 Codex 或运行 Claude Code 的终端。Codex 首次使用钩子时按提示信任配置。详见 [AI Agent 状态灯说明](docs/agent-status-hooks.md)。
+
+- **剪贴板历史**：可在设置中关闭记录、调整图片捕获和历史数量，并录制唤出快捷键。历史记录保存在本机应用数据目录。
+
+### 技术栈
+
+- Tauri 2：Windows 桌面应用外壳和原生能力
+- React 19 + TypeScript：前端界面和交互
+- Rust：窗口、快捷键、剪贴板、媒体和文件等桌面能力
+- pnpm：依赖安装与项目脚本
 
 ## 用户交流群
 
@@ -67,7 +88,9 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 
 二维码有有效期，当前图片标注为 **11 月 18 日前有效**；若已失效，可通过 [Issue](https://github.com/flyl1u/fly-island/issues) 反馈以便更新。
 
-## 从源码构建
+## 开发与构建
+
+### 从源码构建
 
 需要 Windows 10/11、Node.js、pnpm、Rust、Visual Studio C++ Build Tools 和 WebView2 Runtime。
 
@@ -75,12 +98,46 @@ Fly Island 是一座轻量、无边框、始终置顶的悬浮岛。平时收在
 git clone https://github.com/flyl1u/fly-island.git
 cd fly-island
 pnpm install
-pnpm tauri dev      # 开发模式
-pnpm tauri build    # 打包安装程序
+pnpm tauri dev
 ```
 
-技术栈：Tauri 2、React 19 + TypeScript、Rust。发布与应用内更新见 [docs/updater.md](docs/updater.md)。
+运行统一检查：
+
+```powershell
+pnpm check
+```
+
+### 构建 Release
+
+```powershell
+pnpm tauri build
+```
+
+构建完成后，安装包位于：
+
+- `src-tauri/target/release/bundle/nsis/fly-island_版本号_x64-setup.exe`
+- `src-tauri/target/release/bundle/msi/fly-island_版本号_x64_en-US.msi`
+
+也可以直接从 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest) 下载 Windows x64 安装包。
+
+应用内更新（检查更新、签名与 `latest.json` 发布流程）见 [docs/updater.md](docs/updater.md)。
+
+## 贡献致谢
+
+感谢 [@TixXin](https://github.com/TixXin) 在 [PR #36](https://github.com/flyl1u/fly-island/pull/36) 中提出的模块化架构方案与实现。本地重构在当前主线上适配并复用了其中部分代码，来源与验证记录见[改造说明](docs/architecture/refactor-plan.md)。
 
 ## 开源协议
 
-[MIT](LICENSE)。第三方依赖和内置资源遵循各自的许可证，内置字体见[字体说明](src/assets/fonts/README.md)。
+本项目采用 [MIT 协议](LICENSE)。
+
+第三方依赖和内置资源仍遵循各自的许可证。内置字体的许可信息见[字体说明](src/assets/fonts/README.md)。
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
+  </picture>
+</a>
