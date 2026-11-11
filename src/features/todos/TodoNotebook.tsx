@@ -1,10 +1,9 @@
 import { useTranslation } from "../../i18n";
 import { ArchiveBrowser } from "./ArchiveBrowser";
 import { ScheduledTodoList } from "./ScheduledTodoList";
-import { TodoNotebookSpine } from "./TodoNotebookSpine";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
-import type { ArchiveLayout, SaveState, ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
+import type { ArchiveLayout, ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
 import "./TodoNotebook.css";
 
 export function TodoNotebook({
@@ -17,7 +16,6 @@ export function TodoNotebook({
   archives,
   archiveLayout,
   selectedArchive,
-  saveState,
   enableTodoReorder,
   scrollStartRows,
   draftDate,
@@ -32,8 +30,6 @@ export function TodoNotebook({
   onStartTodo,
   onDeleteTodo,
   onReorderTodo,
-  onSaveToday,
-  onShowArchive,
   onShowDaily,
   onShowToday,
   onDailyNoteChange,
@@ -49,7 +45,6 @@ export function TodoNotebook({
   archives: TodoArchive[];
   archiveLayout: ArchiveLayout;
   selectedArchive: TodoArchive | null;
-  saveState: SaveState;
   enableTodoReorder: boolean;
   /** Rows shown before the list scrolls; the island grows to fit this many. */
   scrollStartRows: number;
@@ -66,8 +61,6 @@ export function TodoNotebook({
   onStartTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
   onReorderTodo: (sourceId: string, targetId: string) => void;
-  onSaveToday: () => void;
-  onShowArchive: () => void;
   onShowDaily: () => void;
   onShowToday: () => void;
   onDailyNoteChange: (value: string) => void;
@@ -97,14 +90,6 @@ export function TodoNotebook({
 
   return (
     <section className={notebookClassName} aria-label={t.notebook.sectionLabel}>
-      <TodoNotebookSpine
-        pageMode={pageMode}
-        saveState={saveState}
-        onShowToday={onShowToday}
-        onSaveToday={onSaveToday}
-        onShowArchive={onShowArchive}
-      />
-
       <TodoNotebookTopline
         isDailyMode={isDailyMode}
         isTodayMode={isTodayMode}

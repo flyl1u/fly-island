@@ -9,8 +9,8 @@
   align-items: center;
   gap: 4px;
   padding: 0 7px;
-  color: var(--color-ink-muted);
-  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-2);
+  background: transparent;
   border: 0;
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
@@ -22,18 +22,18 @@
 }
 
 .todo-date-picker__button:hover:not(:disabled) {
-  color: var(--color-ink);
-  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-1);
+  background: var(--color-white-a08);
 }
 
 .todo-date-picker__button--later {
-  color: #fff;
-  background: #7453d6;
+  color: var(--todo-scheduled-color);
+  background: var(--color-white-a10);
 }
 
 .todo-date-picker__button--later:hover:not(:disabled) {
-  color: #fff;
-  background: #6342c4;
+  color: var(--todo-scheduled-color);
+  background: var(--color-white-a16);
 }
 
 .todo-date-picker__button:disabled {
@@ -42,12 +42,13 @@
 }
 
 .todo-date-picker__button:focus-visible {
-  outline: 2px solid rgba(116, 83, 214, 0.58);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
 /* Kept under the button so the native calendar opens next to it. */
 .todo-date-picker__input {
+  color-scheme: dark;
   position: absolute;
   inset: 0;
   width: 100%;

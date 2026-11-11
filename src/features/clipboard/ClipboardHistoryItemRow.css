@@ -4,23 +4,18 @@
   height: 44px;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(72px, 120px) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 100px) auto;
   align-items: center;
   gap: var(--space-md);
   padding: 6px 8px;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.052), rgba(248, 246, 240, 0.018));
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: var(--corner-md);
-  corner-shape: var(--corner-shape);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-  transition:
-    background 150ms ease,
-    border-color 150ms ease;
+  background: transparent;
+  border-bottom: 1px solid var(--color-white-a08);
+  transition: background 150ms ease;
 }
 
-.clipboard-item:hover {
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.035));
-  border-color: rgba(248, 246, 240, 0.15);
+.clipboard-item:hover,
+.clipboard-item:focus-within {
+  background: var(--color-white-a04);
 }
 
 .clipboard-item__main {
@@ -46,14 +41,12 @@
   place-items: center;
   overflow: hidden;
   color: var(--text-2);
-  background: linear-gradient(145deg, var(--color-white-a10), rgba(255, 255, 255, 0.035));
-  border: 1px solid rgba(255, 255, 255, 0.095);
-  border-radius: var(--corner-sm);
-  corner-shape: var(--corner-shape);
 }
 
 .clipboard-item__thumb {
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--color-white-a04);
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
 }
 
 .clipboard-item__thumb img {
@@ -97,7 +90,7 @@
   padding: 0 8px;
   color: var(--text-3);
   background: transparent;
-  border: 1px dashed var(--color-white-a16);
+  border: 0;
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
   outline: none;
@@ -115,14 +108,11 @@
 
 .clipboard-note--filled {
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.075);
-  border-color: rgba(248, 246, 240, 0.2);
-  border-style: solid;
 }
 
 .clipboard-note:hover {
   color: var(--color-white);
-  background: var(--color-white-a10);
+  background: var(--color-white-a06);
 }
 
 .clipboard-note-editor {
@@ -156,7 +146,7 @@
   place-items: center;
   padding: 0;
   color: var(--text-2);
-  background: var(--color-white-a09);
+  background: transparent;
   border: 0;
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
@@ -188,8 +178,8 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  color: var(--text-2);
-  background: var(--color-white-a08);
+  color: var(--text-3);
+  background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
@@ -208,21 +198,23 @@
   opacity: 0;
 }
 
-.clipboard-favorite-button--active {
-  color: var(--text-1) !important;
-  background: rgba(255, 255, 255, 0.14) !important;
+.clipboard-item__actions .clipboard-favorite-button--active {
+  color: var(--text-1);
 }
 
-.clipboard-copy-button--copied {
-  color: var(--color-white) !important;
-  background: rgba(255, 255, 255, 0.26) !important;
+.clipboard-item__actions .clipboard-copy-button--copied {
+  color: var(--color-white);
+  background: var(--color-white-a16);
   animation: saveButtonPop 760ms ease both;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.11);
 }
 
-.clipboard-delete-button--confirming {
-  color: var(--color-white) !important;
-  background: var(--color-danger) !important;
+.clipboard-item__actions .clipboard-delete-button--confirming {
+  color: var(--color-white);
+  background: var(--color-danger);
+}
+
+.clipboard-item:has(.clipboard-note-editor) {
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 200px) auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

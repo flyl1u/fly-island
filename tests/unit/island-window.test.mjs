@@ -99,5 +99,5 @@ test("pages and message sources that are switched off fall back to ones still on
 
 test("the clipboard page fits whole rows and stays short by default", () => {
   assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 50);
-  assert.equal(getClipboardExpandedHeight(4), 438);
+  assert.equal(getClipboardExpandedHeight(4), 396);
 });

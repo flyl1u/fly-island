@@ -92,7 +92,6 @@
   outline-offset: 3px;
 }
 
-.todo-notebook,
 .editor-panel {
   height: 100%;
   border-radius: var(--island-panel-radius, 10px);
@@ -100,13 +99,6 @@
   border: 0;
 }
 
-/* The todo paper is a flat sheet, not a second island: a smaller corner than the concentric panel radius. */
-.todo-notebook {
-  border-radius: var(--corner-md);
-  corner-shape: var(--corner-shape);
-}
-
-.island--appearance-liquidGlass .clipboard-panel,
 .island--appearance-liquidGlass .editor-panel {
   background:
     radial-gradient(
@@ -125,7 +117,6 @@
   -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
 }
 
-.island--appearance-liquidGlass.island--glass-css-fallback .clipboard-panel,
 .island--appearance-liquidGlass.island--glass-css-fallback .editor-panel {
   background:
     radial-gradient(circle at 82% 12%, rgba(var(--glass-page-accent), 0.13), transparent 34%),
