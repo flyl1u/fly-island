@@ -69,7 +69,7 @@
   line-height: 1.45;
 }
 
-/* Files over the island: the panel's edge turns mint (FileShelfPanel.css), the files spread and
+/* Files over the island: the panel's edge lights up white (FileShelfPanel.css), the files spread and
    an arrow takes the middle. */
 .shelf-empty--dropping .shelf-empty__file--left {
   rotate: -24deg;
@@ -82,11 +82,11 @@
 }
 
 .shelf-empty--dropping .shelf-empty__file--front {
-  color: #06261d;
-  background: #6ee7c8;
+  color: #141418;
+  background: var(--text-1);
   border-color: transparent;
 }
 
 .shelf-empty--dropping .shelf-empty__title {
-  color: rgba(214, 255, 243, 0.96);
+  color: var(--text-1);
 }

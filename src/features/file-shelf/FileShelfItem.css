@@ -20,7 +20,7 @@
 
 .shelf-item--selected,
 .shelf-item--selected:hover {
-  background: rgba(110, 231, 200, 0.12);
+  background: var(--color-white-a10);
 }
 
 .shelf-item__main {
@@ -209,7 +209,7 @@
   border-radius: 0;
 }
 
-/* Pinned: a small mint pin on the picture's corner. */
+/* Pinned: a small white pin on the picture's corner. */
 .shelf-item__pin-badge {
   position: absolute;
   right: -4px;
@@ -218,8 +218,8 @@
   height: 15px;
   display: grid;
   place-items: center;
-  color: #06261d;
-  background: #6ee7c8;
+  color: #141418;
+  background: var(--text-1);
   border-radius: var(--radius-circle);
   box-shadow: 0 0 0 2px rgba(20, 20, 25, 0.95);
 }
@@ -323,12 +323,12 @@
 }
 
 .shelf-item__actions .shelf-pin-button--active {
-  color: #6ee7c8;
+  color: var(--text-1);
 }
 
 .shelf-item__actions .shelf-copy-button--copied {
-  color: #06261d;
-  background: #6ee7c8;
+  color: #141418;
+  background: var(--text-1);
 }
 
 /* Gone or out of reach: still listed, quieter. Missing is crossed out; unreachable may come back. */
@@ -352,7 +352,7 @@
   cursor: default;
 }
 
-/* Just dropped: it settles into place with a short mint glow. Removed: it fades and shrinks. */
+/* Just dropped: it settles into place with a short white glow. Removed: it fades and shrinks. */
 .shelf-item--recent {
   animation: shelf-item-arrive 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
@@ -366,15 +366,15 @@
   0% {
     opacity: 0;
     scale: 0.9;
-    box-shadow: 0 0 0 0 rgba(110, 231, 200, 0);
+    box-shadow: 0 0 0 0 rgba(248, 246, 240, 0);
   }
   45% {
     opacity: 1;
     scale: 1;
-    box-shadow: 0 0 0 3px rgba(110, 231, 200, 0.4);
+    box-shadow: 0 0 0 3px rgba(248, 246, 240, 0.3);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(110, 231, 200, 0);
+    box-shadow: 0 0 0 0 rgba(248, 246, 240, 0);
   }
 }
 

@@ -97,7 +97,8 @@
 }
 
 .island--shelf {
-  --glass-page-accent: 110, 231, 200;
+  /* Neutral like the panel inside it: the files' own colours lead. */
+  --glass-page-accent: 248, 246, 240;
 }
 
 .island__glass {
