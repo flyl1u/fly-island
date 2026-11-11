@@ -15,6 +15,13 @@ export type SettingsProjectText = {
   starHint: string;
   author: string;
   authorHint: string;
+  /** The row that opens the author's two payment codes in place. */
+  support: string;
+  supportHint: string;
+  supportWechat: string;
+  supportAlipay: string;
+  supportCodeAlt: (app: string) => string;
+  supportThanks: string;
   latestRelease: string;
   latestReleaseHint: string;
   openFailed: string;
@@ -64,6 +71,12 @@ export const zhCN: SettingsProjectText = {
   starHint: "去 GitHub 给小岛一颗 Star",
   author: "关于作者",
   authorHint: "去作者的个人网站 flyliu.org 看看",
+  support: "打赏作者",
+  supportHint: "觉得好用的话，请作者喝杯咖啡",
+  supportWechat: "微信",
+  supportAlipay: "支付宝",
+  supportCodeAlt: (app) => `${app}收款码`,
+  supportThanks: "用手机扫一扫，金额随意，谢谢你的支持！",
   latestRelease: "查看最新版本",
   latestReleaseHint: "看看小岛又长了什么新本领",
   openFailed: "暂时没能打开浏览器，请再试一次。",
@@ -112,6 +125,12 @@ export const en: SettingsProjectText = {
   starHint: "Give it a Star on GitHub",
   author: "About the author",
   authorHint: "Visit the author's site, flyliu.org",
+  support: "Support the author",
+  supportHint: "Buy the author a coffee if you like it",
+  supportWechat: "WeChat Pay",
+  supportAlipay: "Alipay",
+  supportCodeAlt: (app) => `${app} payment code`,
+  supportThanks: "Scan with your phone. Any amount helps — thank you!",
   latestRelease: "View latest release",
   latestReleaseHint: "See what washed ashore in the latest update",
   openFailed: "Couldn't open your browser. Please try again.",

@@ -1,0 +1,111 @@
+/* 「关于」页的打赏行：和 project-link 一样的一行，点开后在行下方露出两张收款码。 */
+.support-author__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  min-width: 0;
+  padding: 12px 16px;
+  color: var(--color-text-strong);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.support-author__toggle:hover {
+  background: var(--color-white-a06);
+}
+
+.support-author__toggle:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* The card does not clip, so as its last row the closed toggle rounds its own hover. */
+.settings-group__card > .support-author:last-child:not(.support-author--open) .support-author__toggle {
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.settings-group__card > .support-author:last-child {
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.support-author__icon {
+  color: #e8b77a;
+}
+
+.support-author__chevron {
+  transition: transform 160ms ease;
+}
+
+.support-author--open .support-author__chevron {
+  transform: rotate(180deg);
+}
+
+.support-author__panel {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  padding: 4px 16px 16px;
+  animation: support-author-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes support-author-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Side by side when there is room; one above the other in a narrow island. */
+.support-author__codes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xl);
+}
+
+.support-author__code {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+/* A white tile keeps the code's quiet zone, so a phone reads it on the dark page. */
+.support-author__code img {
+  display: block;
+  width: 172px;
+  height: 172px;
+  padding: 8px;
+  background: #fff;
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+  user-select: none;
+}
+
+.support-author__code figcaption {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.support-author__thanks {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-author__panel {
+    animation: none;
+  }
+}

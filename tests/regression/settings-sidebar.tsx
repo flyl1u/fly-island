@@ -50,13 +50,17 @@ try {
   await mount(settingsCategoryFor(new URLSearchParams(location.search).get("page") ?? "") ?? "general");
   if (new URLSearchParams(location.search).has("page")) throw "manual";
 
-  const groups = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__group")].map((group) => group.getAttribute("aria-label"));
+  const groups = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__group")].map((group) => group.getAttribute("aria-label")).filter(Boolean);
   check(groups().join("|") === "基础|功能|AI Agent" && !host.querySelector(".settings-sidebar__heading"),
-    "Pages sit in three named groups, set apart by space rather than visible headings");
+    "Pages sit in three named groups (About on its own after them), set apart by space rather than visible headings");
   check(!host.querySelector("input, button[aria-expanded]"), "No search box and nothing to fold");
   check(listed().join() === "general,appearance,todos,music,translation,clipboard,messages,agents,agentConnect,about",
     "Every page is listed once, in sidebar order");
-  check(host.querySelector(".settings-sidebar__footer [data-category='about']"), "About is pinned below the page list");
+  const listGroups = [...host.querySelectorAll<HTMLElement>(".settings-sidebar__list .settings-sidebar__group")];
+  const lastGroup = listGroups[listGroups.length - 1];
+  check(!host.querySelector(".settings-sidebar__footer") && lastGroup?.querySelector("[data-category='about']")
+    && lastGroup.previousElementSibling?.querySelector("li:last-child [data-category='agentConnect']"),
+    "About is the last item of the list, right below Connection, not pinned to a footer");
   check(element(".settings-sidebar__item--active").dataset.category === "general", "The open page is marked");
   await act(async () => { element<HTMLButtonElement>("[data-category='clipboard']").click(); });
   check(opened[opened.length - 1] === "clipboard" && element(".settings-sidebar__item--active").dataset.category === "clipboard"

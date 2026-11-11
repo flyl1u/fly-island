@@ -4,6 +4,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
 import { ProjectLink } from "./ProjectLink";
+import { SupportAuthor } from "./SupportAuthor";
 import { PROJECT_AUTHOR_URL, PROJECT_HISTORY_URL, PROJECT_ISSUES_URL, PROJECT_REPO_URL } from "./projectLinks";
 import { UpdatePanel } from "./UpdatePanel";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
@@ -31,9 +32,9 @@ export function ProjectIdentitySection() {
 }
 
 /**
- * Settings → About → one group of four rows (five with the author): the latest version with
- * its update states and channel, past versions, reporting a problem, starring the project,
- * and the author's site.
+ * Settings → About → one group of six rows: the latest version with its update states and
+ * channel, past versions, reporting a problem, starring the project, the author's site, and
+ * tipping the author.
  */
 export function ProjectLinksSection() {
   const text = useTranslation().settings.project;
@@ -48,6 +49,7 @@ export function ProjectLinksSection() {
       <ProjectLink href={PROJECT_ISSUES_URL} title={text.issues} hint={text.issuesHint} icon={icon(CircleHelp)} />
       <ProjectLink href={PROJECT_REPO_URL} tone="star" title={text.star} hint={text.starHint} icon={icon(Star)} />
       <ProjectLink href={PROJECT_AUTHOR_URL} title={text.author} hint={text.authorHint} icon={icon(UserRound)} />
+      <SupportAuthor />
     </SettingsGroup>
   );
 }
