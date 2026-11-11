@@ -114,6 +114,11 @@ pub fn toggle_translation_window(app: AppHandle) -> Result<(), String> {
             .map_err(|error| error.to_string())?;
         HAS_POSITIONED_WINDOW.store(true, Ordering::Relaxed);
     }
+    // Appears in place, without the system's zoom-in: the owner found any motion here
+    // distracting. Best effort; the window opens either way.
+    if let Ok(hwnd) = window.hwnd() {
+        let _ = win32::window::disable_show_animation(hwnd);
+    }
     window.show().map_err(|error| error.to_string())?;
     window.set_focus().map_err(|error| error.to_string())?;
     let _ = app.emit("translation-window-opened", ());

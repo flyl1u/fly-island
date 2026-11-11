@@ -5,7 +5,10 @@ use windows::{
     core::BOOL,
     Win32::{
         Foundation::{HWND, LPARAM, POINT, RECT, WPARAM},
-        Graphics::Gdi::{MonitorFromWindow, SetWindowRgn, MONITOR_DEFAULTTONEAREST},
+        Graphics::{
+            Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED},
+            Gdi::{MonitorFromWindow, SetWindowRgn, MONITOR_DEFAULTTONEAREST},
+        },
         System::Threading::{AttachThreadInput, GetCurrentThreadId},
         UI::{
             Input::KeyboardAndMouse::IsWindowEnabled,
@@ -300,6 +303,23 @@ pub(crate) fn flash(window: HWND) {
     let _ = unsafe { FlashWindowEx(&info) };
 }
 
+/// Turns off the animation Windows plays when `window` is shown or hidden, so it
+/// appears in place at once. Returns whether DWM accepted it.
+pub(crate) fn disable_show_animation(window: HWND) -> bool {
+    let disabled = BOOL::from(true);
+    // SAFETY: the attribute takes a BOOL; the pointer and size describe `disabled`,
+    // which lives until the call returns. An invalid HWND only makes it fail.
+    unsafe {
+        DwmSetWindowAttribute(
+            window,
+            DWMWA_TRANSITIONS_FORCEDISABLED,
+            (&disabled as *const BOOL).cast(),
+            std::mem::size_of::<BOOL>() as u32,
+        )
+    }
+    .is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -315,6 +335,7 @@ mod tests {
         assert_eq!(normal_position(HWND::default()).map(|_| ()), None);
         assert!(!is_visible(HWND::default()));
         assert!(!notify_icon_exists(HWND::default(), 1));
+        assert!(!disable_show_animation(HWND::default()));
     }
 
     #[test]
