@@ -112,8 +112,11 @@ async function connect(port) {
   let id = 0;
   const pending = new Map();
   const errors = [];
+  // Other DevTools events, for scripts that ask (measure-island-motion.mjs reads a trace).
+  const listeners = new Map();
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
+    for (const listener of listeners.get(message.method) ?? []) listener(message.params);
     if (message.id && pending.has(message.id)) {
       pending.get(message.id)(message.result ?? {});
       pending.delete(message.id);
@@ -136,7 +139,8 @@ async function connect(port) {
   await send("Emulation.setEmulatedMedia", {
     features: [{ name: "prefers-reduced-motion", value: process.env.REGRESSION_REDUCED_MOTION ?? "no-preference" }],
   });
-  return { send, errors, close: () => socket.close() };
+  const on = (method, listener) => listeners.set(method, [...(listeners.get(method) ?? []), listener]);
+  return { send, on, errors, close: () => socket.close() };
 }
 
 const READ_STATE = `(() => {

@@ -1,11 +1,28 @@
-/* Registered so a scale change transitions the number itself (see .island below). */
+/* Registered so a scale change transitions the number itself (see .island below). Not inherited:
+   only .island reads it, and an inherited number that changes every frame restyled every element
+   of the open page on every frame (measured: style 59 -> 323ms and 8-9 dropped frames per open
+   at an expanded size other than 1, scripts/measure-island-motion.mjs). The stage sets the target,
+   --island-scale-target (stageStyle.ts). */
 @property --island-scale {
   syntax: "<number>";
-  inherits: true;
+  inherits: false;
   initial-value: 1;
 }
 
 .island {
+  /*
+   * The island's motion: springs, sampled with linear() from a damped spring (from rest, so a late
+   * first frame never shows as a jump). Opening (560ms) settles with a 0.8% overshoot, like the
+   * island catching itself; closing (380ms) is critically damped, quicker and without a bounce.
+   * Each state names the motion that brings the island into it (.island--expanded below).
+   * The native stage shrinks 600ms after a resize (STAGE_SHRINK_DELAY in island/geometry.rs),
+   * after either has finished.
+   */
+  --island-spring-open: linear(0, 0.0335, 0.1145, 0.2201, 0.3345, 0.4474, 0.5522, 0.6455, 0.7259, 0.7931, 0.8479, 0.8917, 0.9257, 0.9516, 0.9708, 0.9846, 0.9941, 1.0005, 1.0044, 1.0066, 1.0076, 1.0077, 1.0073, 1.0066, 1.0055, 1.0043, 1.003, 1.0015, 1);
+  --island-spring-close: linear(0, 0.067, 0.2057, 0.3589, 0.5005, 0.6204, 0.7168, 0.7917, 0.8486, 0.8909, 0.922, 0.9446, 0.9609, 0.9725, 0.9808, 0.9866, 0.9908, 0.9942, 0.9972, 1);
+  --island-motion: var(--island-spring-close);
+  --island-motion-duration: 380ms;
+  --island-scale: var(--island-scale-target, 1);
   --glass-pointer-x: 50%;
   --glass-pointer-y: 18%;
   --glass-page-accent: 116, 214, 255;
@@ -45,10 +62,10 @@
   transform: scale(var(--island-scale));
   transform-origin: top center;
   transition:
-    width 560ms cubic-bezier(0.16, 1, 0.3, 1),
-    height 560ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-radius 560ms cubic-bezier(0.16, 1, 0.3, 1),
-    --island-scale 560ms cubic-bezier(0.16, 1, 0.3, 1);
+    width var(--island-motion-duration) var(--island-motion),
+    height var(--island-motion-duration) var(--island-motion),
+    border-radius var(--island-motion-duration) var(--island-motion),
+    --island-scale var(--island-motion-duration) var(--island-motion);
 }
 
 .island__surface {
@@ -285,6 +302,8 @@
 }
 
 .island--expanded {
+  --island-motion: var(--island-spring-open);
+  --island-motion-duration: 560ms;
   --island-rim: var(--color-white-a08);
   width: 560px;
   height: var(--expanded-island-height, 306px);
@@ -372,11 +391,12 @@
   pointer-events: auto;
   opacity: 1;
   top: 0;
-  /* Height follows the shell (.island) when switching between pages of different heights. */
+  /* The page fades in once the island has some size (120ms in, a fifth of the way), and the
+     6px drop rides the same spring. Height follows the shell (.island) between pages. */
   transition:
-    opacity 260ms ease 160ms,
-    top 280ms cubic-bezier(0.16, 1, 0.3, 1) 140ms,
-    height 560ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 240ms ease-out 120ms,
+    top 420ms var(--island-spring-open) 80ms,
+    height 560ms var(--island-spring-open);
 }
 
 .island__content {
