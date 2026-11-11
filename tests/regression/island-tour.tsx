@@ -36,8 +36,9 @@ localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TOD
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
 // ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
-// ?layout=music,text,mail,shelf,agents arranges it.
+// ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.9|1.1 sets the expanded size.
 localStorage.setItem("focusd-island-settings", JSON.stringify({
+  ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
@@ -210,9 +211,10 @@ if (!automated) {
     }
     // Settings is open last: the island's height follows the settings page shown, within its cap.
     await click(".settings-sidebar__item[data-category='todos']");
-    const short = island().getBoundingClientRect().height;
+    // Layout heights (offsetHeight), so the check holds at every expanded size (a scale).
+    const short = island().offsetHeight;
     await click(".settings-sidebar__item[data-category='messages']");
-    const tall = island().getBoundingClientRect().height;
+    const tall = island().offsetHeight;
     check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");

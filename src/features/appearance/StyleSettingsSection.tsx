@@ -3,12 +3,12 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { DEFAULT_SETTINGS, LIQUID_GLASS_ENABLED } from "./settings";
+import { DEFAULT_SETTINGS, EXPANDED_SCALES, LIQUID_GLASS_ENABLED, nearestExpandedSize, type ExpandedSize } from "./settings";
 import type { AppearanceMode, IslandFont, IslandSettings } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
 
-/** Appearance → Style: classic or liquid glass, the font, how see-through and how big the island is. */
+/** Appearance → Style: classic or liquid glass, the font, how see-through, and how big the island is collapsed and opened. */
 export function StyleSettingsSection({
   settings,
   onSettingsChange,
@@ -16,8 +16,8 @@ export function StyleSettingsSection({
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
-  /** Called while the size slider moves, so the island shows the size being set. */
-  onPreviewIsland?: () => void;
+  /** Called while a size changes, so the island shows that size (collapsed or opened). */
+  onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
 }) {
   const t = useTranslation();
   const text = t.settings.appearance;
@@ -29,6 +29,7 @@ export function StyleSettingsSection({
     { value: "system", label: text.systemFont },
     { value: "pixel", label: text.pixelFont },
   ] as const;
+  const sizes = (Object.keys(EXPANDED_SCALES) as ExpandedSize[]).map((size) => ({ value: size, label: t.settings.layout.expandedSizes[size] }));
 
   return (
     <SettingsGroup title={text.styleTitle}>
@@ -90,8 +91,22 @@ export function StyleSettingsSection({
         resetLabel={t.settings.layout.resetToDefault}
         onChange={(collapsedScale) => {
           onSettingsChange({ ...settings, collapsedScale });
-          onPreviewIsland?.();
+          onPreviewIsland?.("collapsed");
         }}
+      />
+      <SettingsRow
+        title={t.settings.layout.expandedScale}
+        control={
+          <SettingsChoice<ExpandedSize>
+            value={nearestExpandedSize(settings.expandedScale)}
+            options={sizes}
+            ariaLabel={t.settings.layout.expandedScale}
+            onChange={(size) => {
+              onSettingsChange({ ...settings, expandedScale: EXPANDED_SCALES[size] });
+              onPreviewIsland?.("expanded");
+            }}
+          />
+        }
       />
     </SettingsGroup>
   );

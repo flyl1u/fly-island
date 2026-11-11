@@ -27,6 +27,8 @@ export const PAGES = [
   "file-shelf.html",
   "i18n.html?test=1",
   "island-tour.html?test=1",
+  // The large expanded size: every page still inside the (scaled) island.
+  "island-tour.html?test=1&scale=1.1",
   "mail-reader.html?run=1",
   "music-lyrics.html",
   "notification-startup.html",

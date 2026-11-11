@@ -52,11 +52,21 @@ test("settings are clamped and legacy fields are migrated", () => {
   assert.equal(normalizeSettings({ collapsedScale: 0.81, expandedScale: 0.88 }).collapsedScale, 0.82);
 });
 
+test("the expanded size is one of three, and an older saved scale lands on the nearest", () => {
+  assert.equal(DEFAULT_SETTINGS.expandedScale, 1);
+  assert.equal(normalizeSettings({}).expandedScale, 1);
+  assert.equal(normalizeSettings({ expandedScale: 0.9 }).expandedScale, 0.9);
+  assert.equal(normalizeSettings({ expandedScale: 1.1 }).expandedScale, 1.1);
+  assert.equal(normalizeSettings({ expandedScale: 0.75 }).expandedScale, 0.9);
+  assert.equal(normalizeSettings({ expandedScale: 0.97 }).expandedScale, 1);
+  assert.equal(normalizeSettings({ expandedScale: 1.3 }).expandedScale, 1.1);
+  assert.equal(normalizeSettings({ expandedScale: "big" }).expandedScale, 1);
+});
+
 test("options no longer in Settings load as their defaults, whatever was saved", () => {
   const saved = {
     marginY: 48,
     islandMonitor: "cursor",
-    expandedScale: 1.3,
     islandCornerRadius: 30,
     islandCornerShape: "round",
     maxPanelHeight: 320,
