@@ -24,9 +24,10 @@ test("the collapsed island's order, cover and the page dots load with defaults",
   const settings = normalizeSettings({});
   assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo"]);
   assert.equal(settings.collapsedShowCover, false);
-  assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf"]);
+  assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation"]);
   const saved = normalizeSettings({ collapsedPriority: ["todo"], collapsedShowCover: true, pageOrder: ["shelf", "todo"] });
   assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics"]);
   assert.equal(saved.collapsedShowCover, true);
-  assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard"]);
+  // Orders saved before translation had a capsule get it at the end.
+  assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);
 });

@@ -148,6 +148,11 @@
   --dot-glow: rgba(110, 231, 200, 0.46);
 }
 
+.dot-button--translation {
+  --dot-color: #ff9a76;
+  --dot-glow: rgba(255, 154, 118, 0.46);
+}
+
 .dot-button--active::before {
   transform: scale(1.1);
   box-shadow: 0 0 0 2px var(--color-white-a18), 0 0 14px var(--dot-glow);
@@ -251,12 +256,6 @@
 .island__agent-button:focus-visible {
   outline: 2px solid var(--color-focus-ring-soft);
   outline-offset: 1px;
-}
-
-/* Translation opened as an island page: the header button shows it is the open page. */
-.icon-button.island-translate-button--active {
-  color: #fff;
-  background: var(--color-white-a16);
 }
 
 .island-settings-button {

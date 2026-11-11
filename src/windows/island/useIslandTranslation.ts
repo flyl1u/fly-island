@@ -10,7 +10,7 @@ function reportOpenFailure(error: unknown) {
 
 /**
  * Where translation opens from the island: its own window, or the island's translation
- * page when `inIsland` is on. Covers the header button and the global shortcut.
+ * page when `inIsland` is on. Covers the header's translation capsule and the global shortcut.
  */
 export function useIslandTranslation(
   enabled: boolean,

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Archive, Bell, CircleDot, Languages, ListChecks, Minus, RotateCcw, Settings } from "lucide-react";
+import { Archive, Bell, CircleDot, ListChecks, Minus, RotateCcw, Settings } from "lucide-react";
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import { useTranslation } from "../../i18n";
 import { QuotaRings } from "../agent-status/AgentQuotaRings";
@@ -15,7 +15,7 @@ const SAMPLE_QUOTAS = [
 ] as const;
 const SAMPLE_TOOL_DETAIL = "pnpm verify";
 const PAGE_DOTS = ["todo", "music", "calendar", "clipboard", "shelf"] as const;
-const HEADER_BUTTONS = [Settings, Bell, Languages, RotateCcw, Minus];
+const HEADER_BUTTONS = [Settings, Bell, RotateCcw, Minus];
 
 function ClaudeIcon() {
   return <img className="agent-page-preview__provider" src={claudeCodeIcon} alt="" draggable={false} />;
