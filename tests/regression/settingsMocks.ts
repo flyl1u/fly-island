@@ -15,6 +15,7 @@ let replyMarkerOn = false;
 export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md", content: "<!-- focusd-island: reply marker v2 -->\n## Reply status marker" };
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
+export const translationShortcutCalls: string[] = [];
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
@@ -46,7 +47,7 @@ mockIPC((command, payload) => {
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", items: [], error: null };
     case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled", pending: false, lastAttentionAt: null, error: null };
     case "has_translation_secret": return args.provider === "deepseek";
-    case "set_translation_shortcut": return args.shortcut;
+    case "set_translation_shortcut": translationShortcutCalls.push(String(args.shortcut)); return args.shortcut;
     case "updater_configured": return true;
     case "get_updater_proxy": return null;
     case "plugin:app|version": return "0.0.0-test";

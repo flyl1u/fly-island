@@ -222,6 +222,19 @@ fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
         "ARROWDOWN" | "DOWN" => Some(("Down".to_string(), 0x28)),
         "ARROWLEFT" | "LEFT" => Some(("Left".to_string(), 0x25)),
         "ARROWRIGHT" | "RIGHT" => Some(("Right".to_string(), 0x27)),
+        // Punctuation as the settings recorder names it (the US layout, unshifted);
+        // the codes are the VK_OEM_* keys in the same physical places.
+        ";" => Some((upper, 0xBA)),
+        "=" => Some((upper, 0xBB)),
+        "," => Some((upper, 0xBC)),
+        "-" => Some((upper, 0xBD)),
+        "." => Some((upper, 0xBE)),
+        "/" => Some((upper, 0xBF)),
+        "`" => Some((upper, 0xC0)),
+        "[" => Some((upper, 0xDB)),
+        "\\" => Some((upper, 0xDC)),
+        "]" => Some((upper, 0xDD)),
+        "'" => Some((upper, 0xDE)),
         _ => None,
     }
 }
@@ -238,6 +251,17 @@ mod tests {
         assert_eq!(binding.key_code, 0x20);
         // What the settings recorder produced before the space key fix.
         assert!(parse_shortcut_binding("Ctrl+ ").is_none());
+    }
+
+    #[test]
+    fn punctuation_keys_from_the_recorder_register() {
+        for (shortcut, code) in [("Ctrl+Shift+/", 0xBF), ("Alt+;", 0xBA), ("Ctrl+Alt+\\", 0xDC), ("Ctrl+-", 0xBD)] {
+            let binding = parse_shortcut_binding(shortcut).expect("punctuation is valid");
+            assert_eq!(binding.label, shortcut);
+            assert_eq!(binding.key_code, code);
+        }
+        // Shifted symbols are what the recorder produced before it read the physical key.
+        assert!(parse_shortcut_binding("Ctrl+Shift+!").is_none());
     }
 
     #[test]

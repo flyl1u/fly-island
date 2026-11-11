@@ -3,7 +3,36 @@ export const DEFAULT_CLIPBOARD_SHORTCUT = "Ctrl+Shift+W";
 export type ShortcutKeyboardEvent = Pick<
   KeyboardEvent,
   "altKey" | "ctrlKey" | "key" | "metaKey" | "shiftKey"
->;
+> & { code?: string };
+
+/** Punctuation keys by their physical position, named as the US layout prints them unshifted. */
+const PUNCTUATION_CODES: Record<string, string> = {
+  Minus: "-",
+  Equal: "=",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Backslash: "\\",
+  Semicolon: ";",
+  Quote: "'",
+  Backquote: "`",
+  Comma: ",",
+  Period: ".",
+  Slash: "/",
+};
+
+/**
+ * The key a shortcut names, read from the physical key when the event says which one:
+ * `key` changes with Shift ("!" for Shift+1), the layout, and an input method
+ * ("Process" while Chinese input is on), none of which a global hotkey sees.
+ */
+function shortcutKeyName(event: ShortcutKeyboardEvent) {
+  const code = event.code ?? "";
+  const letterOrDigit = /^(?:Key([A-Z])|Digit([0-9])|Numpad([0-9]))$/.exec(code);
+  if (letterOrDigit) return letterOrDigit[1] ?? letterOrDigit[2] ?? letterOrDigit[3];
+  if (code in PUNCTUATION_CODES) return PUNCTUATION_CODES[code];
+  if (code === "Space") return " ";
+  return event.key;
+}
 
 export const MODIFIER_KEY_NAMES = new Set([
   "Alt",
@@ -66,7 +95,12 @@ export function buildShortcutFromEvent(event: ShortcutKeyboardEvent) {
     return null;
   }
 
-  parts.push(normalizeShortcutKeyLabel(event.key));
+  const key = shortcutKeyName(event);
+  if (key === "Process" || key === "Unidentified" || key === "Dead") {
+    return null;
+  }
+
+  parts.push(normalizeShortcutKeyLabel(key));
   return parts.join("+");
 }
 
