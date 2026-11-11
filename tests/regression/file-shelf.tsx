@@ -11,7 +11,8 @@ import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import type { FileShelfItem } from "../../src/features/file-shelf/api";
-import type { FileShelfController } from "../../src/features/file-shelf/useFileShelf";
+import { useFileShelf, type FileShelfController } from "../../src/features/file-shelf/useFileShelf";
+import { normalizeSettings } from "../../src/features/appearance/settings";
 import { FileShelfPanel } from "../../src/features/file-shelf/FileShelfPanel";
 
 const query = new URLSearchParams(location.search);
@@ -28,6 +29,7 @@ const PHOTO_2 = svg(`<rect width="48" height="48" fill="#2f6f73"/><path d="M0 34
 const SYSTEM_ICONS: Record<string, string> = { app: APP_ICON, folder: FOLDER_ICON, music: APP_ICON.replace("%233a7bd5", "%23d55a8a") };
 const PREVIEWS: Record<string, string> = { photo: PHOTO, shot: PHOTO_2 };
 const iconRequests: Array<{ id: string; available: boolean }> = [];
+const dragRequests: Array<{ ids: string[]; removeAfter: boolean }> = [];
 mockIPC((command, payload) => {
   const args = payload as { id: string; available?: boolean };
   if (command === "get_file_shelf_icon") {
@@ -35,6 +37,11 @@ mockIPC((command, payload) => {
     return SYSTEM_ICONS[args.id] ?? null;
   }
   if (command === "get_file_shelf_thumbnail") return PREVIEWS[args.id] ?? null;
+  if (command === "set_file_shelf_options") return { items: ALL.slice(0, 3) };
+  if (command === "start_file_shelf_drag") {
+    dragRequests.push(payload as { ids: string[]; removeAfter: boolean });
+    return { items: ALL.slice(0, 3) };
+  }
   return null;
 });
 
@@ -65,6 +72,17 @@ const fixture = document.getElementById("fixture")!;
 const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
+let liveShelf: FileShelfController | undefined;
+function ShelfDragHarness() {
+  // A previous version enabled removal without leaving a switch to turn it back off.
+  const settings = normalizeSettings({ shelfRemoveAfterDragOut: true });
+  const shelf = useFileShelf(true, {
+    maxItems: settings.shelfMaxItems, maxAgeDays: 0, removeMissing: true,
+    removeAfterDragOut: settings.shelfRemoveAfterDragOut,
+  });
+  liveShelf = shelf;
+  return <FileShelfPanel shelf={shelf} isDropTarget={false} revealOnDoubleClick={false} />;
+}
 // The page's height in the island (getShelfExpandedHeight) less the island's own chrome.
 const fixtureHeight = (count: number) => (count === 0 ? 158 : (count <= 4 ? 118 : Math.min(5, Math.ceil(count / 2)) * 50 - 6) + 58);
 
@@ -146,6 +164,17 @@ if (viewCount !== null) {
     await render([], true);
     check(document.querySelector(".shelf-empty--dropping") && document.querySelector(".shelf-panel--dropping") && document.querySelector(".shelf-empty__title")?.textContent === "松开鼠标，加入文件中转", "空的时候拖入，面板边缘亮起，整页是投放区");
     await render(ALL.slice(0, 3));
+
+    // Exercise the actual hook and tile pointer gesture; native OLE is the mocked boundary.
+    await act(async () => { root.render(<I18nProvider><ShelfDragHarness /></I18nProvider>); });
+    const file = item("photo").querySelector<HTMLElement>(".shelf-item__main")!;
+    await act(async () => {
+      file.dispatchEvent(new PointerEvent("pointerdown", { button: 0, buttons: 1, clientX: 20, clientY: 20, bubbles: true }));
+      file.dispatchEvent(new PointerEvent("pointermove", { button: 0, buttons: 1, clientX: 30, clientY: 20, bubbles: true }));
+    });
+    check(dragRequests.length === 1 && dragRequests[0].ids.join() === "photo" && dragRequests[0].removeAfter === false
+      && liveShelf?.items.length === 3 && document.querySelector('[data-shelf-id="photo"]'),
+      "从图块拖出时请求保留条目，拖出结束后文件仍在列表中，旧版设置也不会启用移除");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

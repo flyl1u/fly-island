@@ -137,6 +137,13 @@ test("the options still in Settings are read back and fall back for older settin
   }
 });
 
+test("dragging files out keeps shelf entries, including settings saved by older versions", () => {
+  assert.equal(DEFAULT_SETTINGS.shelfRemoveAfterDragOut, false);
+  for (const saved of [undefined, {}, { shelfRemoveAfterDragOut: true }, { shelfRemoveAfterDragOut: false }]) {
+    assert.equal(normalizeSettings(saved).shelfRemoveAfterDragOut, false);
+  }
+});
+
 test("normalizing saved settings keeps the first-launch defaults", () => {
   assert.deepEqual(normalizeSettings(DEFAULT_SETTINGS), DEFAULT_SETTINGS);
   assert.equal(isSameSettings(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS }), true);

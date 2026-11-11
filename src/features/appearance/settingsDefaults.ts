@@ -84,7 +84,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   shelfExpandOnDrop: true,
   shelfAutoCleanupDays: 0,
   shelfRemoveMissing: true,
-  shelfRemoveAfterDragOut: true,
+  shelfRemoveAfterDragOut: false,
   shelfMaxItems: DEFAULT_SHELF_ITEMS,
   shelfDoubleClick: "open",
   shelfShowCount: true,
