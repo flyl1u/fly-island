@@ -107,11 +107,10 @@ try {
     await act(async () => { pending.resolve({ id: "7:20", attachments: [], contentType: "text/html", content: '<h2>下周安排</h2><p>保留正文</p><script>window.readerPwned=true</script><img src="https://tracking.example.com/pixel" onerror="alert(1)"><iframe src="https://tracking.example.com/"></iframe><form><input></form><style>body{display:none}</style><a href="javascript:alert(1)">危险链接</a><a href="https://example.com/report">查看周报</a><table><tr><td>会议</td><td>周二</td></tr></table>' }); await pending.promise; });
     const body = document.querySelector(".qq-mail-body")!;
     check(body.textContent?.includes("保留正文") && !body.querySelector("script,iframe,form,input,style,svg"), "HTML 正文保留排版并去除脚本和嵌入内容");
-    check(!body.querySelector("img") && document.querySelector(".qq-mail-remote")?.textContent?.includes("已阻止 1 张远程图片"), "远程图片默认不加载并提示被拦数量");
-    await click("显示图片");
     const remoteImage = body.querySelector("img");
-    check(remoteImage?.getAttribute("src") === "https://tracking.example.com/pixel" && remoteImage.getAttribute("referrerpolicy") === "no-referrer" && !remoteImage.hasAttribute("onerror"), "允许后远程图片保留但禁止外发 referrer 并剔除事件属性");
-    check(!document.querySelector(".qq-mail-remote") && localStorage.getItem("focusd-island-qq-mail-remote-images") === "true", "放行后隐藏提示并记住开关选择");
+    check(remoteImage?.getAttribute("src") === "https://tracking.example.com/pixel" && remoteImage.getAttribute("referrerpolicy") === "no-referrer" && !remoteImage.hasAttribute("onerror"), "远程图片直接显示，但禁止外发 referrer 并剔除事件属性");
+    const readerActions = document.querySelector(".qq-mail-reader__actions");
+    check(!document.querySelector(".qq-mail-remote") && !document.querySelector('.qq-panel__header [aria-label="远程图片"]') && readerActions?.textContent?.includes("在网页打开"), "阅读页没有远程图片开关，右上动作在同一组里");
     check(!body.querySelector('a[href^="javascript"]'), "邮件不能执行危险链接");
     check(!Reflect.get(window, "readerPwned"), "邮件脚本没有执行");
     await act(async () => { body.querySelector<HTMLAnchorElement>('a[href="https://example.com/report"]')!.click(); });
@@ -172,13 +171,15 @@ try {
     await act(async () => { snapshot = { ...snapshot, revision: ++revision, configured: false, status: "disconnected", enabled: false, items: [], unreadCount: null }; await emit("qq-mail-changed", { snapshot, newestId: null, windowVisible: true }); });
     await act(async () => { late.resolve({ id: "7:20", attachments: [], contentType: "text/plain", content: "断开后的敏感正文" }); await late.promise; });
     check(!mail!.selectedMail && !mail!.content && !document.body.textContent?.includes("断开后的敏感正文"), "断开连接后清空正文并忽略在途结果");
-    const sanitized = sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p><img src="https://cdn.example.com/a.png" onerror="alert(1)" width="40"><img src="cid:inline@example"><img src="data:image/png;base64,iVBORw0KGgo=">', { allowRemoteImages: true });
+    const sanitized = sanitizeMailHtml('<svg><a href="javascript:alert(1)">x</a></svg><p style="background:url(https://tracking.example.com)">safe</p><img src="https://cdn.example.com/a.png" onerror="alert(1)" width="40"><table><tr><td colspan="2">x</td></tr></table><img src="cid:inline@example"><img src="data:image/png;base64,iVBORw0KGgo=">');
     check(!/style=|javascript:|<svg/i.test(sanitized), "清理器剔除脚本、SVG 与内联样式");
-    check(/src="https:\/\/cdn\.example\.com\/a\.png"/.test(sanitized) && /referrerpolicy="no-referrer"/.test(sanitized), "允许后远程图片保留并禁止外发 referrer");
+    check(/src="https:\/\/cdn\.example\.com\/a\.png"/.test(sanitized) && /referrerpolicy="no-referrer"/.test(sanitized), "远程图片直接显示并禁止外发 referrer");
+    check(/width="40"/.test(sanitized) && /colspan="2"/.test(sanitized), "图片宽度和表格跨列属性保留");
     check(!/cid:|onerror/i.test(sanitized), "cid 引用和事件属性不会被保留");
     check(/src="data:image\/png;base64,iVBORw0KGgo="/.test(sanitized), "内嵌图片的 data URI 保留");
-    const blocked = sanitizeMailHtml('<p>正文</p><img src="https://cdn.example.com/a.png"><img src="data:image/png;base64,iVBORw0KGgo=">');
-    check(!/cdn\.example\.com/.test(blocked) && /data:image\/png/.test(blocked) && /正文/.test(blocked), "默认拦下远程图片但保留正文和内嵌图片");
+    const sized = sanitizeMailHtml('<img src="//cdn.example.com/icon.png" style="width: 24px; height:24.4px; position:fixed"><img src="http://cdn.example.com/b.png" style="width:100%">');
+    check(/src="https:\/\/cdn\.example\.com\/icon\.png"/.test(sanitized + sized) && /width="24"/.test(sized) && /height="24"/.test(sized) && /width="100%"/.test(sized) && /src="http:\/\/cdn\.example\.com\/b\.png"/.test(sized) && !/style=|fixed/.test(sized),
+      "内联样式里的图片宽高抄成属性，协议相对地址补成 https，http 图片保留");
     const tables = sanitizeMailHtml('<table><thead><tr><th>项目</th><th>进度</th></tr></thead><tbody><tr><td>前端</td><td>80%</td></tr></tbody></table><table><tr><td>图表</td></tr><tr><td>布局</td><td>格</td></tr></table>');
     check(tables.split('data-mail-table="data"').length === 2 && /<table data-mail-table="data">/.test(tables), "只有首行表头的数据表保留网格，图表与布局表不画灰格子");
     document.documentElement.dataset.testResult = "passed";

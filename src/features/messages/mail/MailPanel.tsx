@@ -1,24 +1,42 @@
 import { useTranslation } from "../../../i18n";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, Image, ImageOff, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { ArrowLeft, ArrowUpRight, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
-import { loadRemoteImagePreference, saveRemoteImagePreference } from "./storage";
 import { MailAccountTabs } from "./MailAccountTabs";
 import { MailAttachments } from "./MailAttachments";
 import "./MailPanel.css";
 import type { MailController } from "./useMail";
 
-// 图片保留 src：https 远程图（发件人 CDN）和 data:image/* 内嵌图都要显示；
-// 统一关闭 referrer 并延迟加载，避免把当前页地址带给发件人。
-// 远程图默认不加载，避免一打开邮件就把时间和 IP 暴露给发件人，由阅读页的开关放行。
-let allowRemoteImages = false;
+// 图片和网页邮箱一样直接显示：https / http 远程图（发件人 CDN）和 data:image/* 内嵌图（cid 已由原生端换成
+// data URI）。统一关闭 referrer 并延迟加载，不把当前页地址带给发件人。
+// 内联样式整体不保留（会带进定位、背景追踪图等），只把图片自己的宽高抄成属性，否则写在 style 里的
+// 24px 小图标会按原图尺寸铺满正文。
+const CSS_LENGTH = /^\s*(\d+(?:\.\d+)?)(px|%)?\s*$/i;
+function styleLength(style: string, property: "width" | "height") {
+  const match = new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;!]+)`, "i").exec(style);
+  const length = match ? CSS_LENGTH.exec(match[1]) : null;
+  if (!length) return null;
+  return length[2] === "%" ? `${length[1]}%` : String(Math.round(Number(length[1])));
+}
+DOMPurify.addHook("uponSanitizeElement", (node) => {
+  if (node.nodeName !== "IMG" || !(node instanceof Element)) return;
+  const src = node.getAttribute("src");
+  // 协议相对地址（//cdn...）过不了地址白名单，补成 https
+  if (src?.startsWith("//")) node.setAttribute("src", `https:${src}`);
+  const style = node.getAttribute("style");
+  if (!style) return;
+  for (const property of ["width", "height"] as const) {
+    const length = styleLength(style, property);
+    if (length !== null) node.setAttribute(property, length);
+  }
+});
 DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   if (node.nodeName !== "IMG") return;
   const src = node.getAttribute("src");
-  // 没有可用地址的图片（cid 未内联、http 混合内容、被拦下的远程图）直接去掉，避免留下裂图占位
-  if (!src || (!allowRemoteImages && /^https?:/i.test(src))) { node.remove(); return; }
+  // 没有可用地址的图片（cid 未内联、不认识的协议）直接去掉，避免留下裂图占位
+  if (!src) { node.remove(); return; }
   node.setAttribute("loading", "lazy");
   node.setAttribute("decoding", "async");
   node.setAttribute("referrerpolicy", "no-referrer");
@@ -38,27 +56,17 @@ function markDataTables(html: string) {
   return template.innerHTML;
 }
 
-export function sanitizeMailHtml(content: string, options?: { allowRemoteImages?: boolean }) {
-  allowRemoteImages = options?.allowRemoteImages ?? false;
-  try {
-    return markDataTables(DOMPurify.sanitize(content, {
-      ALLOWED_TAGS: ["p", "br", "div", "span", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "blockquote", "pre", "code", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "hr", "img"],
-      ALLOWED_ATTR: ["href", "title", "colspan", "rowspan", "src", "alt", "width", "height"],
-      ALLOWED_URI_REGEXP: /^(?:https?:|data:image\/)/i,
-      ALLOW_DATA_ATTR: false,
-      ALLOW_ARIA_ATTR: false,
-    }));
-  } finally {
-    allowRemoteImages = false;
-  }
-}
-
-// 统计正文里有多少张远程图被拦下，用于提示条；template 里的图片不会发起请求。
-export function countRemoteImages(content: string) {
-  const template = document.createElement("template");
-  template.innerHTML = content;
-  return Array.from(template.content.querySelectorAll("img"))
-    .filter((image) => /^https?:/i.test(image.getAttribute("src") ?? "")).length;
+export function sanitizeMailHtml(content: string) {
+  return markDataTables(DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ["p", "br", "div", "span", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "blockquote", "pre", "code", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "hr", "img"],
+    ALLOWED_ATTR: ["href", "title", "colspan", "rowspan", "src", "alt", "width", "height"],
+    ALLOWED_URI_REGEXP: /^(?:https?:|data:image\/)/i,
+    // 自定义地址白名单会套用到所有非"地址安全"的属性上：不登记的话 width="24"、colspan="2" 这些数字
+    // 都过不了白名单被删掉，图片只能按原图尺寸铺开。
+    ADD_URI_SAFE_ATTR: ["width", "height", "colspan", "rowspan"],
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+  }));
 }
 
 export { useMail } from "./useMail";
@@ -85,10 +93,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
   const { selectedMail, content, reading, readError, readMail, closeReader, openLink, readerAccount, markRead } = controller;
   // The open mail as listed now, so the button goes once it is marked read here or elsewhere.
   const readerStillUnread = Boolean(selectedMail && mailboxes.find((mailbox) => mailbox.email === readerAccount)?.items.find((item) => item.id === selectedMail.id)?.unread);
-  const [remoteImages, setRemoteImages] = useState(loadRemoteImagePreference);
-  const html = useMemo(() => content?.contentType === "text/html" ? sanitizeMailHtml(content.content, { allowRemoteImages: remoteImages }) : "", [content, remoteImages]);
-  const blockedImages = useMemo(() => content?.contentType === "text/html" && !remoteImages ? countRemoteImages(content.content) : 0, [content, remoteImages]);
-  const toggleRemoteImages = () => setRemoteImages((previous) => { saveRemoteImagePreference(!previous); return !previous; });
+  const html = useMemo(() => content?.contentType === "text/html" ? sanitizeMailHtml(content.content) : "", [content]);
   const readerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -118,15 +123,15 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
     <section className="qq-panel qq-mail-panel" aria-label={t.mail.reader}>
       <header className="qq-panel__header">
         <button className="message-action qq-mail-back" type="button" onClick={onBack ?? closeReader}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.back}</button>
-        {content?.contentType === "text/html" && <button className="icon-button" type="button" aria-label={t.mail.remoteImages} aria-pressed={remoteImages} onClick={toggleRemoteImages}>{remoteImages ? <Image size={15} strokeWidth={1.8} /> : <ImageOff size={15} strokeWidth={1.8} />}</button>}
+        <div className="qq-panel__toolbar qq-mail-reader__actions">
         {readerStillUnread ? <button className="message-action" type="button" disabled={busy} onClick={() => { if (readerAccount && selectedMail) void markRead(readerAccount, selectedMail.id); }}><MailCheck size={14} strokeWidth={1.8} />{t.mail.markRead}</button> : null}
         <button className="message-action" type="button" onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
+        </div>
       </header>
       {actionError && <p className="qq-panel__error" role="alert">{actionError}</p>}
       <div className="qq-mail-reader" ref={readerRef} tabIndex={-1} aria-label={t.mail.body} aria-busy={reading}>
         <h2 className="qq-mail-reader__subject">{selectedMail.subject}</h2>
         <div className="qq-mail-reader__meta"><span>{selectedMail.sender}</span>{selectedMail.receivedAt !== null && <time dateTime={new Date(selectedMail.receivedAt).toISOString()}>{formatMailTime(selectedMail.receivedAt, t.localeTag)}</time>}</div>
-        {blockedImages > 0 && <div className="qq-mail-remote"><span>{t.mail.remoteImagesBlocked(blockedImages)}</span><button className="message-action" type="button" onClick={toggleRemoteImages}>{t.mail.loadRemoteImages}</button></div>}
         {reading ? <div className="qq-mail-reader__state" role="status"><LoaderCircle size={19} className="qq-mail-spinning" />{t.mail.loading}</div>
           : readError ? <div className="qq-mail-reader__state"><p className="qq-panel__error" role="alert">{readError}</p><button className="message-action" type="button" onClick={() => void readMail(selectedMail)}><RefreshCw size={14} />{t.common.retry}</button></div>
           : content?.contentType === "text/html" ? <div className="qq-mail-body" ref={bodyRef} onClick={(event) => {

@@ -879,3 +879,35 @@ fn crashes_long_ago_do_not_count_toward_the_limit() {
     // Ten minutes after the first crash it has left the window.
     assert!(policy.allow_restart(start + Duration::from_secs(10 * 60 + 1)));
 }
+
+#[test]
+fn inline_images_labelled_octet_stream_are_inlined_by_file_name() {
+    let body = r#"<p>两张图</p><img src="cid:img1@qq"><img src="cid:img2@qq">"#;
+    let mime = "Content-Type: text/html; charset=utf-8\r\n\r\n";
+    let first = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4";
+    let second = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR5";
+    // 第二张图被标成 application/octet-stream，只能靠文件名认出是 JPEG
+    let structure = format!(
+        "((\"TEXT\" \"HTML\" (\"CHARSET\" \"UTF-8\") NIL NIL \"8BIT\" {} 1)(\"IMAGE\" \"PNG\" (\"NAME\" \"img1.png\") \"<img1@qq>\" NIL \"BASE64\" {})(\"APPLICATION\" \"OCTET-STREAM\" (\"NAME\" \"Photo.JPG\") \"<img2@qq>\" NIL \"BASE64\" {}) \"RELATED\")",
+        body.len(),
+        first.len(),
+        second.len()
+    );
+    let script = format!(
+        "* OK ready\r\na1 OK login\r\n* 1 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\na2 OK [READ-ONLY] examined\r\n* 1 FETCH (UID 9 BODYSTRUCTURE {structure})\r\na3 OK structure\r\n* 1 FETCH (UID 9 BODY[1.MIME] {{{}}}\r\n{mime} BODY[1] {{{}}}\r\n{body})\r\na4 OK body\r\n* 1 FETCH (UID 9 BODY[2] {{{}}}\r\n{first} BODY[3] {{{}}}\r\n{second})\r\na5 OK images\r\n",
+        mime.len(),
+        body.len(),
+        first.len(),
+        second.len()
+    );
+    let (client, _) = client(script);
+    let mut session = client.login("user@qq.com", "test-secret").unwrap();
+    let content = fetch_content(&mut session, "7:9").unwrap();
+    assert!(content
+        .content
+        .contains(&format!("data:image/png;base64,{first}")));
+    assert!(content
+        .content
+        .contains(&format!("data:image/jpeg;base64,{second}")));
+    assert!(!content.content.contains("cid:"));
+}

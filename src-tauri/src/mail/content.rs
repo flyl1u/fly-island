@@ -16,11 +16,11 @@ pub(super) const MAX_BODY_BYTES: u32 = 512 * 1024;
 
 const MAX_MIME_BYTES: usize = 65_536;
 
-const MAX_INLINE_IMAGES: usize = 8;
+const MAX_INLINE_IMAGES: usize = 16;
 
-const MAX_INLINE_IMAGE_BYTES: u32 = 512 * 1024;
+const MAX_INLINE_IMAGE_BYTES: u32 = 1024 * 1024;
 
-const MAX_INLINE_TOTAL_BYTES: u32 = 1_536 * 1024;
+const MAX_INLINE_TOTAL_BYTES: u32 = 4 * 1024 * 1024;
 
 pub(super) fn parse_message_id(message_id: &str) -> Result<(u32, u32), String> {
     let parsed = message_id.split_once(':').and_then(|(validity, uid)| {
@@ -136,6 +136,38 @@ pub(super) fn cid_references(html: &str) -> Vec<String> {
     ids
 }
 
+// 内嵌图的 MIME：大多是 image/*；也有客户端把它标成 application/octet-stream，这时按文件名后缀认图片，
+// 否则正文里被 cid 引用的图会整张不显示。
+pub(super) fn inline_image_mime(common: &BodyContentCommon<'_>) -> Option<String> {
+    if common.ty.ty.eq_ignore_ascii_case("image") {
+        return Some(format!("image/{}", common.ty.subtype.to_ascii_lowercase()));
+    }
+    if !common.ty.ty.eq_ignore_ascii_case("application")
+        || !common.ty.subtype.eq_ignore_ascii_case("octet-stream")
+    {
+        return None;
+    }
+    let disposition_params = common
+        .disposition
+        .as_ref()
+        .and_then(|disposition| disposition.params.as_ref());
+    let name = common
+        .ty
+        .params
+        .iter()
+        .chain(disposition_params)
+        .flatten()
+        .find(|(key, _)| key.eq_ignore_ascii_case("name") || key.eq_ignore_ascii_case("filename"))
+        .map(|(_, value)| value.to_ascii_lowercase())?;
+    let extension = name.rsplit_once('.')?.1;
+    let subtype = match extension {
+        "jpg" | "jpeg" => "jpeg",
+        "png" | "gif" | "webp" | "bmp" => extension,
+        _ => return None,
+    };
+    Some(format!("image/{subtype}"))
+}
+
 fn collect_inline_images(
     body: &BodyStructure<'_>,
     path: Vec<u32>,
@@ -146,9 +178,10 @@ fn collect_inline_images(
         return;
     }
     match body {
-        BodyStructure::Basic { common, other, .. }
-            if common.ty.ty.eq_ignore_ascii_case("image") =>
-        {
+        BodyStructure::Basic { common, other, .. } => {
+            let Some(mime) = inline_image_mime(common) else {
+                return;
+            };
             let Some(id) = other
                 .id
                 .as_deref()
@@ -165,7 +198,7 @@ fn collect_inline_images(
             out.push(InlineImage {
                 path: if path.is_empty() { vec![1] } else { path },
                 content_id: matched.clone(),
-                mime: format!("image/{}", common.ty.subtype.to_ascii_lowercase()),
+                mime,
                 octets: other.octets,
                 base64: matches!(other.transfer_encoding, ContentEncoding::Base64),
                 quoted_printable: matches!(

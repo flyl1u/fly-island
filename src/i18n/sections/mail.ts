@@ -18,9 +18,6 @@ export type MailText = {
   emptyHtml: string;
   emptyText: string;
   notice: string;
-  remoteImages: string;
-  loadRemoteImages: string;
-  remoteImagesBlocked: (count: number) => string;
   receive: string;
   pause: string;
   resume: string;
@@ -91,9 +88,6 @@ export const zhCN: MailText = {
   emptyHtml: "这封邮件没有可显示的文字，请在网页中查看。",
   emptyText: "这封邮件没有文字正文。",
   notice: "仅预览，不自动标为已读 · 附件请在网页查看",
-  remoteImages: "远程图片",
-  loadRemoteImages: "显示图片",
-  remoteImagesBlocked: (count: number) => `已阻止 ${count} 张远程图片`,
   receive: "接收邮箱",
   pause: "暂停接收邮件",
   resume: "接收邮件",
@@ -164,9 +158,6 @@ export const en: MailText = {
   emptyHtml: "No text to display. View this email in your browser.",
   emptyText: "This email has no text body.",
   notice: "Preview only, stays unread · View attachments in your browser",
-  remoteImages: "Remote images",
-  loadRemoteImages: "Show images",
-  remoteImagesBlocked: (count: number) => `${count} remote image${count === 1 ? "" : "s"} blocked`,
   receive: "Receive mail",
   pause: "Pause mail notifications",
   resume: "Receive mail notifications",
