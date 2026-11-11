@@ -1,0 +1,72 @@
+/* The demo page is transparent: the website draws the desktop behind it. It declares the website's
+   dark colour scheme too, or the browser paints the iframe opaque. */
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  overflow: hidden;
+  background: transparent;
+}
+
+/* The pretend mouse. Its tip is the element's top-left corner; moves are eased by the transition. */
+.demo-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  width: 22px;
+  height: 22px;
+  margin: -3px 0 0 -4px;
+  opacity: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  transform: translate(70vw, 300px);
+  transition: transform 560ms cubic-bezier(0.45, 0, 0.2, 1), opacity 240ms ease;
+}
+
+.demo-cursor[data-visible="true"] {
+  opacity: 1;
+}
+
+.demo-cursor svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  transform-origin: 4px 3px;
+  transition: transform 110ms ease;
+}
+
+.demo-cursor[data-pressed="true"] svg {
+  transform: scale(0.84);
+}
+
+.demo-cursor__ripple {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: demo-cursor-ripple 520ms ease-out forwards;
+}
+
+@keyframes demo-cursor-ripple {
+  from { opacity: 1; transform: scale(0.3); }
+  to { opacity: 0; transform: scale(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-cursor { display: none; }
+}
+
+/* The website uses no green: the translation page's accent is shown in neutral white until the
+   island itself drops it (docs/design/translation.md). */
+html .translation-panel__primary { color: #101013; background: rgba(240, 240, 243, 0.92); }
+html .translation-panel__primary:hover:not(:disabled) { background: #fff; }
+html .translation-panel__result--filled,
+html .translation-panel__setup { color: var(--color-text); }
+html .translation-panel__source textarea:focus { border-color: rgba(255, 255, 255, 0.18); }

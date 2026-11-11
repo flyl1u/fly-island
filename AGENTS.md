@@ -39,6 +39,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 │   ├── examples/        # 手动运行的 QQ / 微信探测程序，不进入发布产物
 │   ├── capabilities/    # Tauri 权限能力配置
 │   └── tauri.conf.json  # 窗口、更新、打包配置
+├── web-demo/            # 官网的小岛实时演示：真实 IslandApp + 演示数据 mock + 模拟鼠标；`pnpm build:web-demo` 构建，官网仓库的 scripts/sync-island-demo.mjs 同步过去
 ├── tests/               # unit/ 前端单元测试、scripts/ 脚本测试（node:test，*.test.mjs）；regression/ 浏览器回归页（*.html + *.tsx）
 ├── scripts/             # release/ 发布、签名与 latest.json 生成；根目录放开发流程脚本：行数检查、浏览器回归页运行器（run-regression.mjs）、dev 前停止运行中的岛屿
 ├── docs/                # 专题文档（功能说明放在根目录）；architecture/ 架构，investigations/ 排查与验收记录，releases/ 发布说明，reviews/ 评审记录，assets/ 演示视频与图片
@@ -56,6 +57,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 前端开发服务器 | `pnpm dev` |
 | 桌面开发模式 | `pnpm tauri dev` |
 | 类型检查并构建前端 | `pnpm build` |
+| 构建官网实时演示 | `pnpm build:web-demo`（写到 `dist-web-demo/`；岛的界面或 Tauri 命令变了之后，到官网仓库运行 `node scripts/sync-island-demo.mjs`） |
 | 前端单元测试 | `pnpm test`（即 `node --test "tests/**/*.test.mjs"`） |
 | 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
 | 文件行数检查 | `pnpm check:size` |
