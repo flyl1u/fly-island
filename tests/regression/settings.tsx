@@ -90,8 +90,10 @@ if (!automated) {
       check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
+      // General has one more for the auto-collapse delay the owner asked for (2026-11-11).
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      check(category === "messages" || rowCount <= 8, `${category}: the page keeps to a handful of rows (${rowCount})`);
+      const maxRows = category === "general" ? 9 : 8;
+      check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
       && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");

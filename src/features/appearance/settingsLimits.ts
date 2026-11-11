@@ -26,6 +26,11 @@ export const MIN_AGENT_VISIBLE_ROWS = 2;
 export const MAX_AGENT_VISIBLE_ROWS = 5;
 // File shelf cap; matches MAX_ITEMS in src-tauri/src/file_shelf/store.rs.
 export const DEFAULT_SHELF_ITEMS = 100;
+/**
+ * Choices for how long an open panel waits without use before it closes, in seconds; 0 never.
+ * 30 is the tuck delay it always closed after (autoTuckSeconds).
+ */
+export const AUTO_COLLAPSE_SECONDS = [3, 5, 10, 30, 0] as const;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
