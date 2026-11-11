@@ -32,8 +32,8 @@ export function ProjectIdentitySection() {
 }
 
 /**
- * Settings → About → one group of six rows: the latest version with its update states and
- * channel, past versions, reporting a problem, starring the project, the author's site, and
+ * Settings → About → one group of six rows: the latest version with its update states,
+ * past versions, reporting a problem, starring the project, the author's site, and
  * tipping the author.
  */
 export function ProjectLinksSection() {

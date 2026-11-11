@@ -139,7 +139,7 @@
   background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
 }
 
-/* The card does not clip (the channel menu opens past it), so the end rows round their own hover. */
+/* The card does not clip, so the end rows round their own hover. */
 .settings-group__card > .project-link:first-child,
 .settings-group__card > .update-panel:first-child .update-panel__row {
   border-top-left-radius: inherit;

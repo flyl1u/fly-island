@@ -1,11 +1,8 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { emit, emitTo, listen } from "@tauri-apps/api/event";
-import type { UpdateChannel } from "./storage";
 import type { UpdateState } from "./updaterController";
 
-export type UpdateRequest =
-  | { action: "snapshot" | "check" | "install" | "dismiss" }
-  | { action: "channel"; channel: UpdateChannel };
+export type UpdateRequest = { action: "snapshot" | "check" | "install" | "dismiss" };
 const UPDATE_STATE_EVENT = "focusd-update-state";
 const UPDATE_REQUEST_EVENT = "focusd-update-request";
 
@@ -42,9 +39,13 @@ export type DownloadEvent =
   | { event: "Progress"; data: { chunkLength: number } }
   | { event: "Finished" };
 
-/** Checks the channel's manifest; the update found is kept natively for download and install. */
-export function checkUpdate(channel: UpdateChannel, proxy: string | null) {
-  return invoke<UpdateInfo | null>("updater_check", { channel, proxy });
+/**
+ * Checks the stable manifest; the update found is kept natively for download and install.
+ * The native command still takes a channel: beta was a choice in settings until 3.0.2,
+ * and a beta picked then is ignored, so everyone gets stable updates.
+ */
+export function checkUpdate(proxy: string | null) {
+  return invoke<UpdateInfo | null>("updater_check", { channel: "stable", proxy });
 }
 
 function eventChannel(onEvent: (event: DownloadEvent) => void) {

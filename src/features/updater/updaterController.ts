@@ -12,7 +12,6 @@ import {
   requestUpdateAction,
   type DownloadEvent,
 } from "./api";
-import { loadUpdateChannel, saveUpdateChannel, type UpdateChannel } from "./storage";
 
 export type UpdateStage =
   | "idle"
@@ -29,7 +28,6 @@ export type UpdateStage =
 export type UpdateState = {
   stage: UpdateStage;
   version: string;
-  channel: UpdateChannel;
   nextVersion: string;
   downloaded: number;
   total: number;
@@ -46,7 +44,6 @@ const remoteSettings = windowKind === "settings";
 const initialState: UpdateState = {
   stage: "idle",
   version: "",
-  channel: "stable",
   nextVersion: "",
   downloaded: 0,
   total: 0,
@@ -121,7 +118,6 @@ async function initialize() {
     if (request.action === "check") void checkForUpdate();
     else if (request.action === "install") void installUpdate();
     else if (request.action === "dismiss") dismissUpdatePrompt();
-    else if (request.action === "channel") void setUpdateChannel(request.channel);
     else void publishUpdateState(state).catch((error) => console.error("Failed to share update state", error));
   });
 
@@ -133,7 +129,6 @@ async function initialize() {
 
   setState({
     version,
-    channel: loadUpdateChannel(version),
     stage: configured ? state.stage : "disabled",
   });
 
@@ -143,7 +138,7 @@ async function initialize() {
 async function findUpdate() {
   setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", dismissed: false, stage: "checking" });
   try {
-    const found = await checkUpdate(state.channel, proxy);
+    const found = await checkUpdate(proxy);
     if (!found) {
       setState({ stage: "latest" });
       return false;
@@ -190,15 +185,6 @@ export function dismissUpdatePrompt() {
     return;
   }
   if (!state.dismissed) setState({ dismissed: true });
-}
-
-/** Switches the update channel and checks it right away. Ignored mid-download. */
-export async function setUpdateChannel(channel: UpdateChannel) {
-  if (remoteSettings) return requestUpdateAction({ action: "channel", channel });
-  if (busy(state.stage) || channel === state.channel) return;
-  saveUpdateChannel(channel);
-  setState({ channel });
-  if (state.stage !== "disabled") await checkForUpdate();
 }
 
 export async function installUpdate() {
