@@ -108,6 +108,7 @@ pub(crate) struct IslandWindowState {
     pub(super) expanded_height: f64,
     pub(super) custom_position: Option<IslandPosition>,
     pub(super) is_dragging: bool,
+    pub(super) position_locked: bool,
     pub(super) top_attached: bool,
     pub(super) glass_enabled: bool,
     pub(super) glass_intensity: f64,
@@ -123,6 +124,13 @@ pub(crate) struct IslandWindowState {
 }
 
 impl IslandWindowState {
+    pub(super) fn can_start_drag(self) -> bool {
+        matches!(self.mode, IslandMode::Collapsed)
+            && !self.is_tucked
+            && !self.is_dragging
+            && !self.position_locked
+    }
+
     /// How much the corner radius setting enlarges or shrinks the default radii.
     fn corner_radius_factor(self) -> f64 {
         self.corner_radius / EXPANDED_RADIUS
@@ -168,6 +176,7 @@ impl Default for IslandWindowState {
             expanded_height: DEFAULT_EXPANDED_ISLAND_HEIGHT,
             custom_position: None,
             is_dragging: false,
+            position_locked: false,
             top_attached: true,
             glass_enabled: false,
             glass_intensity: 72.0,

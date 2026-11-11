@@ -31,7 +31,7 @@ export function useIslandWindow({
   onCollapse,
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
-  const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition();
+  const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition(settings.positionLocked);
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
@@ -56,6 +56,7 @@ export function useIslandWindow({
           collapsedWidth: nextCollapsedWidth,
           customPosition: islandPositionRef.current,
           isTucked: nextIsTucked,
+          positionLocked: nextSettings.positionLocked,
           animatePosition: !reducedMotion,
           glassEnabled: getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass",
           glassIntensity: nextSettings.glassIntensity,
@@ -162,6 +163,7 @@ export function useIslandWindow({
     settings.islandCornerRadius,
     settings.islandCornerShape,
     settings.islandMonitor,
+    settings.positionLocked,
     showReadyIsland,
     syncNativeInteraction,
   ]);

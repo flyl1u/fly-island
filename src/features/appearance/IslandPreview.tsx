@@ -4,7 +4,7 @@ import { useTranslation } from "../../i18n";
 import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
 import { cornerShapeCss } from "./cornerShape";
-import { getEffectiveAppearanceMode, hexToRgba } from "./settings";
+import { getEffectiveAppearanceMode, hexToRgba, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import "./IslandPreview.css";
 
@@ -31,6 +31,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     "--preview-ink": inkOn(settings.islandBackgroundColor),
     "--preview-collapsed-scale": settings.collapsedScale,
     "--preview-expanded-scale": settings.expandedScale,
+    "--preview-expanded-max-scale": MAX_EXPANDED_SCALE,
   } as CSSProperties;
   const islandClass = [
     "island-preview__island",

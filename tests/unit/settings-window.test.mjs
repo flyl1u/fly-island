@@ -1,6 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isFreshPositionReset, parsePanelPreview } from "../../src/windows/settings/storage.ts";
+import { DETACHED_SETTINGS_STORAGE_KEY, isFreshPositionReset, loadDetachedSettings, parsePanelPreview } from "../../src/windows/settings/storage.ts";
+
+test("settings default to a separate window and keep an explicit embedded preference", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const values = new Map();
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { localStorage: { getItem: key => values.get(key) ?? null } } });
+  try {
+    assert.equal(loadDetachedSettings(), true);
+    values.set(DETACHED_SETTINGS_STORAGE_KEY, "false");
+    assert.equal(loadDetachedSettings(), false);
+    values.set(DETACHED_SETTINGS_STORAGE_KEY, "true");
+    assert.equal(loadDetachedSettings(), true);
+    values.set(DETACHED_SETTINGS_STORAGE_KEY, "broken");
+    assert.equal(loadDetachedSettings(), true);
+    Object.defineProperty(globalThis, "window", { configurable: true, get: () => { throw new Error("Storage unavailable"); } });
+    assert.equal(loadDetachedSettings(), true);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    else delete globalThis.window;
+  }
+});
 
 test("panel preview requests are read only while fresh and well formed", () => {
   const now = 10_000;

@@ -29,7 +29,7 @@ export function ExpandSettingsSection({
   ];
 
   return (
-    <SettingsGroup title={expand.title} footer={t.settings.position.moveHint}>
+    <SettingsGroup title={expand.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>
       <SettingsRow
         title={expand.trigger}
         control={
@@ -50,6 +50,12 @@ export function ExpandSettingsSection({
       <SettingsRow
         title={t.settings.position.resetRow}
         control={<SettingsLinkButton onClick={onResetPosition}>{t.settings.position.reset}</SettingsLinkButton>}
+      />
+      <SettingsToggleRow
+        title={t.settings.position.lock}
+        description={t.settings.position.lockHint}
+        checked={settings.positionLocked}
+        onChange={(positionLocked) => update({ positionLocked })}
       />
     </SettingsGroup>
   );

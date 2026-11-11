@@ -14,11 +14,13 @@ export function StyleSettingsSection({
   settings,
   onSettingsChange,
   onPreviewIsland,
+  onExpandedScalePreview,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
   /** Called while a size changes, so the island shows that size (collapsed or opened). */
   onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
+  onExpandedScalePreview?: (value: number | null) => void;
 }) {
   const t = useTranslation();
   const text = t.settings.appearance;
@@ -107,6 +109,7 @@ export function StyleSettingsSection({
         defaultValue={DEFAULT_SETTINGS.expandedScale}
         resetLabel={t.settings.layout.resetToDefault}
         commitOnRelease
+        onPreviewChange={onExpandedScalePreview}
         onChange={(expandedScale) => {
           onSettingsChange({ ...settings, expandedScale });
           onPreviewIsland?.("expanded");

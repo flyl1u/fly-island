@@ -19,6 +19,7 @@ export function SettingsSliderRow({
   resetLabel,
   indent,
   commitOnRelease = false,
+  onPreviewChange,
   onChange,
 }: {
   title: ReactNode;
@@ -38,6 +39,8 @@ export function SettingsSliderRow({
    * island, where each step would be a resize.
    */
   commitOnRelease?: boolean;
+  /** Unsaved value for a live preview; null when the edit is committed or reset. */
+  onPreviewChange?: (value: number | null) => void;
   onChange: (value: number) => void;
 }) {
   const id = useId();
@@ -48,6 +51,7 @@ export function SettingsSliderRow({
   const commit = () => {
     if (draft === null) return;
     setDraft(null);
+    onPreviewChange?.(null);
     if (draft !== value) onChange(draft);
   };
   // The thumb can be let go anywhere on screen, not only over the slider.
@@ -76,6 +80,7 @@ export function SettingsSliderRow({
               aria-label={resetLabel}
               onClick={() => {
                 setDraft(null);
+                onPreviewChange?.(null);
                 onChange(defaultValue);
               }}
             >
@@ -97,7 +102,10 @@ export function SettingsSliderRow({
         style={{ "--settings-slider-fill": `${fill}%` } as CSSProperties}
         onChange={(event) => {
           const next = Number(event.currentTarget.value);
-          if (commitOnRelease) setDraft(next);
+          if (commitOnRelease) {
+            setDraft(next);
+            onPreviewChange?.(next);
+          }
           else onChange(next);
         }}
         onKeyUp={commitOnRelease ? commit : undefined}

@@ -34,6 +34,7 @@ type IslandShellProps = {
   appearanceMode: AppearanceMode;
   nativeGlassState: NativeGlassState;
   isTucked: boolean;
+  positionLocked: boolean;
   isDetached: boolean;
   showTitle: boolean;
   showCollapsedText: boolean;
@@ -91,6 +92,7 @@ export function IslandShell({
   appearanceMode,
   nativeGlassState,
   isTucked,
+  positionLocked,
   isDetached,
   showTitle,
   showCollapsedText,
@@ -198,6 +200,7 @@ export function IslandShell({
           page={page}
           isExpanded={isExpanded}
           isTucked={isTucked}
+          positionLocked={positionLocked}
           showTitle={showTitle}
           showCollapsedText={showCollapsedText}
           collapsedLabel={collapsedLabel}

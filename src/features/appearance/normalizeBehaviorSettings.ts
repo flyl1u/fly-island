@@ -8,6 +8,7 @@ import type { IslandSettings, LegacyIslandSettings } from "./types";
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
 export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null | undefined) {
   return {
+    positionLocked: settings?.positionLocked === true,
     carryOverIncompleteTodos:
       typeof settings?.carryOverIncompleteTodos === "boolean"
         ? settings.carryOverIncompleteTodos

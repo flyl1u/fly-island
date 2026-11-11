@@ -79,6 +79,7 @@ pub fn set_island_interaction(
     corner_radius: Option<f64>,
     corner_shape: Option<String>,
     monitor_follow: Option<String>,
+    position_locked: Option<bool>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -94,6 +95,7 @@ pub fn set_island_interaction(
     let state = mutate_window_state(|state| {
         state.mode = mode;
         state.is_tucked = is_tucked.unwrap_or(false);
+        state.position_locked = position_locked.unwrap_or(false);
         state.collapsed_scale = collapsed_scale.clamp(0.75, 1.4);
         state.expanded_scale = expanded_scale.clamp(0.75, 1.4);
         if let Some(margin_y) = margin_y {
@@ -143,7 +145,7 @@ pub fn start_island_drag(app: AppHandle) -> Result<(), String> {
     let window = main_window(&app)?;
     let current_state = read_window_state();
 
-    if !matches!(current_state.mode, IslandMode::Collapsed) {
+    if !current_state.can_start_drag() {
         return Ok(());
     }
 

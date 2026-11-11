@@ -32,6 +32,8 @@ const today = new Date();
 const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
 localStorage.setItem("focusd-island-current-date", date);
+// This tour exercises the embedded settings page even though new users get a separate window.
+localStorage.setItem("focusd-island-detached-settings", "false");
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
@@ -47,6 +49,8 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
 if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
+let windowDrags = 0;
+let interaction: Record<string, unknown> = {};
 mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
@@ -66,7 +70,8 @@ mockIPC((command, payload) => {
     case "get_audio_level": return { active: media !== "paused" && media !== "none" && !empty, peak: 0.4 + Math.random() * 0.4, updatedAt: Date.now() };
     case "get_lyrics": return (args.query as { title?: string } | undefined)?.title === "晴天" ? { source: "lrclib", lrc: TOUR_LRC } : null;
     case "get_foreground_fullscreen": return { active: false, onIslandMonitor: false };
-    case "set_island_interaction": return "disabled";
+    case "set_island_interaction": interaction = args; return "disabled";
+    case "start_island_drag": windowDrags++; return null;
     case "get_island_top_attachment": return !query.has("detached");
     case "set_qq_notifications_enabled":
     case "get_qq_notification_state": return { revision: ++revision, enabled: true, status: "listening", items: empty ? [] : TOUR_QQ_ITEMS, error: null };
@@ -256,6 +261,35 @@ if (!automated) {
     const savedLayout = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
     check(savedLayout?.join() === "music,text,mail,shelf,agents" && barOrder().startsWith("music-wave-button,island__open-button"),
       `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
+    await click(".settings-sidebar__item[data-category='general']");
+    const lockSwitch = () => [...document.querySelectorAll<HTMLElement>(".settings-row")]
+      .find((row) => row.querySelector(".settings-row__title")?.textContent === "锁定小岛位置")!.querySelector<HTMLInputElement>("[role='switch']")!;
+    await act(async () => { lockSwitch().click(); });
+    check(interaction.positionLocked === true, "锁定位置同步到原生窗口");
+    await click(".island__collapse-target");
+    const dragIsland = async (ctrlKey = false) => {
+      const button = document.querySelector<HTMLElement>(".island__open-button")!;
+      // Synthetic pointers do not have OS capture; the real hook still handles the events.
+      button.setPointerCapture = () => {};
+      button.hasPointerCapture = () => false;
+      await act(async () => {
+        button.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 9, button: 0, buttons: 1, clientX: 20, ctrlKey }));
+        button.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 9, button: 0, buttons: 1, clientX: 40, ctrlKey }));
+        button.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 9, button: 0 }));
+      });
+    };
+    await dragIsland();
+    await dragIsland(true);
+    check(windowDrags === 0 && !island().classList.contains("island--detached"), "锁定后普通拖动和 Ctrl 拖动都不会移动或改变小岛的贴顶状态");
+    await click(".island__open-button");
+    check(island().classList.contains("island--expanded"), "锁定位置仍可点击展开小岛");
+    await click(".island-settings-button");
+    await click(".settings-sidebar__item[data-category='general']");
+    await act(async () => { lockSwitch().click(); });
+    check(interaction.positionLocked === false, "解除锁定同步到原生窗口");
+    await click(".island__collapse-target");
+    await dragIsland();
+    check(windowDrags === 1, "解除锁定后可以再次拖动小岛");
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

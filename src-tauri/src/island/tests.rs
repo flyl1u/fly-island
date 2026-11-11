@@ -16,6 +16,25 @@ fn state(mode: IslandMode, scale: f64, expanded_height: f64) -> IslandWindowStat
 }
 
 #[test]
+fn window_drag_requires_an_unlocked_collapsed_island() {
+    let mut island = IslandWindowState::default();
+    assert!(island.can_start_drag());
+    island.position_locked = true;
+    assert!(!island.can_start_drag());
+    island.mode = IslandMode::Expanded;
+    assert!(!island.can_start_drag());
+    island.position_locked = false;
+    assert!(!island.can_start_drag());
+    island.mode = IslandMode::Collapsed;
+    assert!(island.can_start_drag());
+    island.is_tucked = true;
+    assert!(!island.can_start_drag());
+    island.is_tucked = false;
+    island.is_dragging = true;
+    assert!(!island.can_start_drag());
+}
+
+#[test]
 fn top_docked_taskbar_pushes_island_below_the_work_area() {
     assert_eq!(work_area_top_inset(0, 48), 48);
     assert_eq!(work_area_top_inset(0, 0), 0);
