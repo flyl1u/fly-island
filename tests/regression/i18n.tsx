@@ -119,9 +119,10 @@ else {
     await click(".dot-button--todo");
     check(document.querySelector(".todo-title")?.textContent?.includes("保留用户任务 Привет"), "User task content stays as written");
     check(document.querySelectorAll(".todo-spine-button").length === 0, "The obsolete today, save and archive buttons are removed");
-    await click("button[aria-label='Open daily note']");
+    await click(".todo-view-switch__segment[data-view='daily']");
     check(document.querySelector(".daily-note")?.getAttribute("aria-label") === TRANSLATIONS.en.notebook.dailyNoteLabel, "Daily notes follow the selected language");
-    await click("button[aria-label='Back to tasks']");
+    check(document.querySelector(".todo-view-switch__segment--active")?.textContent === "Notes", "The todo view switch is translated");
+    await click(".todo-view-switch__segment[data-view='today']");
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips on the island");
     await click("button.island-message-button[aria-label^='Messages']");
     check(document.querySelector(".qq-panel__empty")?.textContent?.includes("No messages"), "QQ panel uses English copy");

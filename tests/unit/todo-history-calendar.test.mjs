@@ -1,29 +1,51 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { groupTodoHistory, hasOpenTodoTitled } from "../../src/features/todos/history.ts";
-import { collectCalendarTodos, getMonthGrid, monthOf, shiftMonth } from "../../src/features/todos/calendar.ts";
+import { dayHeading, groupTodoHistory, hasOpenTodoTitled, relativeDay, splitRecentHistory } from "../../src/features/todos/history.ts";
+import { collectCalendarTodos, dayDots, getMonthGrid, monthOf, shiftMonth } from "../../src/features/todos/calendar.ts";
+import { en, zhCN } from "../../src/i18n/sections/notebook.ts";
 
 const todo = (id, title, completed = false, extra = {}) => ({ id, title, completed, createdAt: 0, ...extra });
 const archive = (date, todos) => ({ date, todos, dailyNote: "", savedAt: 0, savedToDisk: false });
 
-test("history lists past days with todos, newest first, without today or empty days", () => {
+test("history starts with today's list, then past days with todos, newest first", () => {
   const days = groupTodoHistory(
     [
       archive("2026-11-08", [todo("a", "A", true), todo("b", "B")]),
-      archive("2026-11-11", [todo("c", "today")]),
+      archive("2026-11-11", [todo("c", "saved today")]),
       archive("2026-11-10", [todo("d", "D")]),
       archive("2026-11-09", []),
       archive("2026-11-10", [todo("e", "stale duplicate")]),
       archive("2026-11-07", [todo("u", "update", false, { kind: "update" })]),
     ],
     "2026-11-11",
+    [todo("t", "Today", true)],
   );
-  assert.deepEqual(days.map((day) => day.date), ["2026-11-10", "2026-11-08"]);
-  assert.deepEqual(days[0].todos.map((item) => item.id), ["d"]);
-  assert.equal(days[1].doneCount, 1);
+  assert.deepEqual(days.map((day) => day.date), ["2026-11-11", "2026-11-10", "2026-11-08"]);
+  assert.deepEqual(days[0].todos.map((item) => item.id), ["t"]);
+  assert.deepEqual(days[1].todos.map((item) => item.id), ["d"]);
+  assert.equal(days[2].doneCount, 1);
+  assert.deepEqual(groupTodoHistory([], "2026-11-11", []), []);
 });
 
-test("an unfinished todo counts as already restored when today has it open", () => {
+test("the last seven days stay open and older ones fold", () => {
+  const days = ["2026-11-11", "2026-11-05", "2026-11-04", "2026-10-01"].map((date) => ({ date, todos: [], doneCount: 0 }));
+  const { recent, older } = splitRecentHistory(days, "2026-11-11");
+  assert.deepEqual(recent.map((day) => day.date), ["2026-11-11", "2026-11-05"]);
+  assert.deepEqual(older.map((day) => day.date), ["2026-11-04", "2026-10-01"]);
+});
+
+test("day headings read today, yesterday, tomorrow or a short date", () => {
+  assert.equal(relativeDay("2026-11-01", "2026-11-01"), "today");
+  assert.equal(relativeDay("2026-10-31", "2026-11-01"), "yesterday");
+  assert.equal(relativeDay("2026-11-02", "2026-11-01"), "tomorrow");
+  assert.equal(relativeDay("2026-11-05", "2026-11-01"), null);
+  assert.equal(dayHeading("2026-11-10", "2026-11-11", zhCN), "昨天");
+  assert.equal(dayHeading("2026-11-09", "2026-11-11", zhCN), "11月9日 周一");
+  assert.equal(dayHeading("2026-11-09", "2026-11-11", en), "Mon, Nov 9");
+  assert.equal(dayHeading("2026-11-11", "2026-11-11", en), "Today");
+});
+
+test("an unfinished todo counts as already moved when today has it open", () => {
   const today = [todo("x", "Write report "), todo("y", "Done thing", true)];
   assert.equal(hasOpenTodoTitled(today, "Write report"), true);
   assert.equal(hasOpenTodoTitled(today, "Done thing"), false);
@@ -35,15 +57,24 @@ test("month helpers cross years", () => {
   assert.equal(shiftMonth("2026-01", -1), "2025-12");
 });
 
-test("month grid is six weeks starting on the chosen weekday", () => {
-  // 2026-11-01 is a Sunday.
-  const monday = getMonthGrid("2026-11", 1);
-  assert.equal(monday.length, 42);
-  assert.equal(monday[0], "2026-10-26");
-  assert.equal(monday[6], "2026-11-01");
-  const sunday = getMonthGrid("2026-11", 0);
-  assert.equal(sunday[0], "2026-11-01");
-  assert.equal(sunday[41], "2026-12-12");
+test("month grid is the whole Monday-first weeks covering the month", () => {
+  // 2026-11-01 is a Sunday: six weeks from Oct 26 to Dec 6.
+  const november = getMonthGrid("2026-11");
+  assert.equal(november.length, 42);
+  assert.equal(november[0], "2026-10-26");
+  assert.equal(november[6], "2026-11-01");
+  assert.equal(november[41], "2026-12-06");
+  // February 2027 starts on a Monday and has 28 days: exactly four weeks.
+  const february = getMonthGrid("2027-02");
+  assert.deepEqual([february.length, february[0], february[27]], [28, "2027-02-01", "2027-02-28"]);
+  assert.equal(getMonthGrid("2026-12").length, 35);
+});
+
+test("day dots: up to three, open ones first", () => {
+  const item = (completed, scheduled = false) => ({ id: "x", title: "x", completed, scheduled });
+  assert.deepEqual(dayDots([]), []);
+  assert.deepEqual(dayDots([item(true), item(false)]), ["open", "done"]);
+  assert.deepEqual(dayDots([item(false, true), item(true), item(true), item(true)]), ["open", "done", "done"]);
 });
 
 test("calendar collects archived, current and scheduled todos by day", () => {

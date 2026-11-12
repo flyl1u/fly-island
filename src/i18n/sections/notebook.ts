@@ -25,14 +25,20 @@ export type NotebookText = {
   noScheduled: string;
   deleteScheduled: (title: string) => string;
   historyTab: string;
-  openHistory: string;
   noHistory: string;
-  historyDays: (count: number) => string;
+  noHistoryHint: string;
+  dayToday: string;
+  dayYesterday: string;
+  dayTomorrow: string;
+  /** A day as a short heading: 11月9日 周一 / Mon, Nov 9. */
+  formatDay: (date: Date) => string;
+  moveToToday: string;
+  olderDays: (count: number) => string;
+  addTodo: string;
   doneOf: (done: number, total: number) => string;
   restoreTodo: (title: string) => string;
   alreadyToday: string;
   calendarTab: string;
-  openCalendar: string;
   previousMonth: string;
   nextMonth: string;
   thisMonth: string;
@@ -67,14 +73,19 @@ export const zhCN: NotebookText = {
   noScheduled: "以后还没有安排",
   deleteScheduled: (title) => `删除已安排的待办：${title}`,
   historyTab: "历史",
-  openHistory: "查看以前的待办",
-  noHistory: "还没有以前的待办",
-  historyDays: (count) => `${count} 天`,
-  doneOf: (done, total) => `完成 ${done}/${total}`,
+  noHistory: "还没有历史记录",
+  noHistoryHint: "每天结束时，当天的待办会自动收进这里",
+  dayToday: "今天",
+  dayYesterday: "昨天",
+  dayTomorrow: "明天",
+  formatDay: (date) => `${date.getMonth() + 1}月${date.getDate()}日 ${"周日周一周二周三周四周五周六".slice(date.getDay() * 2, date.getDay() * 2 + 2)}`,
+  moveToToday: "移到今天",
+  olderDays: (count) => `更早 · ${count} 天`,
+  addTodo: "添加待办",
+  doneOf: (done, total) => `${done}/${total} 已完成`,
   restoreTodo: (title) => `把“${title}”加到今天`,
   alreadyToday: "已在今天的列表里",
   calendarTab: "日历",
-  openCalendar: "打开日历",
   previousMonth: "上个月",
   nextMonth: "下个月",
   thisMonth: "回到本月",
@@ -88,7 +99,7 @@ export const en: NotebookText = {
   saveTodayMarkdown: "Save today's todo list as markdown",
   reviewSaved: "Review saved todo lists",
   tasksTab: "Tasks",
-  dailyTab: "DAILY",
+  dailyTab: "Notes",
   reviewTab: "Review",
   openDailyNote: "Open daily note",
   backToTasks: "Back to tasks",
@@ -109,14 +120,19 @@ export const en: NotebookText = {
   noScheduled: "Nothing scheduled for later",
   deleteScheduled: (title) => `Delete scheduled task: ${title}`,
   historyTab: "History",
-  openHistory: "Show past todos",
-  noHistory: "No past todos yet",
-  historyDays: (count) => `${count} ${count === 1 ? "day" : "days"}`,
+  noHistory: "No history yet",
+  noHistoryHint: "Each day's todos land here when the day ends",
+  dayToday: "Today",
+  dayYesterday: "Yesterday",
+  dayTomorrow: "Tomorrow",
+  formatDay: (date) => new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(date),
+  moveToToday: "Move to today",
+  olderDays: (count) => `Earlier · ${count} ${count === 1 ? "day" : "days"}`,
+  addTodo: "Add todo",
   doneOf: (done, total) => `${done}/${total} done`,
   restoreTodo: (title) => `Add "${title}" to today`,
   alreadyToday: "Already on today's list",
   calendarTab: "Calendar",
-  openCalendar: "Open calendar",
   previousMonth: "Previous month",
   nextMonth: "Next month",
   thisMonth: "Back to this month",

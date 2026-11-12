@@ -1,6 +1,6 @@
 import { messagePanelHeight, type MessageView } from "../../features/messages/Messages";
 import type { TodoItem, TodoPageMode } from "../../features/todos/types";
-import { BASE_EXPANDED_ISLAND_HEIGHT, DAILY_NOTE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
+import { BASE_EXPANDED_ISLAND_HEIGHT, DAILY_NOTE_EXPANDED_ISLAND_HEIGHT, MUSIC_EXPANDED_ISLAND_HEIGHT, TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT, TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT, TODO_GROW_START_ROWS, TODO_ROW_HEIGHT, getAgentAlertExpandedHeight, getAgentPageExpandedHeight, getClipboardExpandedHeight, getTodoScrollStartRows, getTodoVisualRows } from "./layout";
 import type { AgentSessionView } from "../../features/appearance/types";
 import { getShelfLayout } from "../../features/file-shelf/fileShelf";
 import type { IslandPage } from "./types";
@@ -86,14 +86,14 @@ export function getExpandedIslandHeight({
   settingsContentHeight = null,
   shelfItems = 0,
 }: ExpandedHeightInput) {
-  // The upcoming list, the history and the calendar scroll inside the archive's fixed height.
+  // The upcoming list and the history scroll inside the archive's fixed height; the calendar has its own.
   const isTodoArchivePage =
     page === "todo" &&
     (todoPageMode === "archive" || todoPageMode === "review" || todoPageMode === "upcoming" ||
-      todoPageMode === "history" || todoPageMode === "calendar");
+      todoPageMode === "history");
   const visibleTodoRows = Math.min(
     Math.max(
-      todoPageMode === "daily" || isTodoArchivePage
+      todoPageMode === "daily" || isTodoArchivePage || todoPageMode === "calendar"
         ? TODO_GROW_START_ROWS
         : getTodoVisualRows(todos),
       1,
@@ -104,7 +104,9 @@ export function getExpandedIslandHeight({
   return page === "settings"
     ? getSettingsExpandedHeight(settingsContentHeight)
     : page === "todo"
-    ? isTodoArchivePage
+    ? todoPageMode === "calendar"
+      ? Math.min(TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT, maxPanelHeight)
+      : isTodoArchivePage
       ? TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT
       : todoPageMode === "daily"
         ? DAILY_NOTE_EXPANDED_ISLAND_HEIGHT
