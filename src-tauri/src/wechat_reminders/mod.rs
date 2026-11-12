@@ -1,24 +1,55 @@
-//! WeChat reminders: watches WeChat's tray flash and restores its window on request.
+//! WeChat reminders and optional chat previews from its accessible conversation list.
 
+mod accessibility;
+mod conversations;
+mod preview_reader;
+mod qt_accessibility_pattern;
 mod source;
 
 #[cfg(test)]
 mod tests;
 
+use crate::win32;
+use conversations::ChatPreview;
+use preview_reader::PreviewReader;
 use serde::Serialize;
 use source::{installed_executable, ReminderListener, ReminderSignal};
 use std::{
-    sync::{mpsc, Arc, Mutex, OnceLock},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        mpsc, Arc, Mutex, OnceLock,
+    },
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
 use windows::Win32::Foundation::HWND;
 
-
-use crate::win32;
-
 static SERVICE: OnceLock<Arc<ReminderService>> = OnceLock::new();
+const MAIN_WINDOW_LABEL: &str = "main";
+const REMINDER_EVENT: &str = "wechat-reminder-changed";
+const MAX_PREVIEWS: usize = 20;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+enum PreviewStatus {
+    #[default]
+    Off,
+    Waiting,
+    Ready,
+    Tray,
+    Unsupported,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MessagePreview {
+    id: String,
+    received_at: u64,
+    #[serde(flatten)]
+    chat: ChatPreview,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -29,6 +60,9 @@ pub struct ReminderSnapshot {
     pending: bool,
     last_attention_at: Option<u64>,
     error: Option<String>,
+    preview_enabled: bool,
+    preview_status: PreviewStatus,
+    messages: Vec<MessagePreview>,
 }
 
 impl Default for ReminderSnapshot {
@@ -40,6 +74,9 @@ impl Default for ReminderSnapshot {
             pending: false,
             last_attention_at: None,
             error: None,
+            preview_enabled: false,
+            preview_status: PreviewStatus::Off,
+            messages: Vec::new(),
         }
     }
 }
@@ -60,8 +97,62 @@ impl ReminderState {
             revision: self.snapshot.revision + 1,
             enabled,
             status: if enabled { "waiting" } else { "disabled" }.into(),
+            preview_enabled: self.snapshot.preview_enabled,
+            preview_status: if enabled && self.snapshot.preview_enabled {
+                PreviewStatus::Waiting
+            } else {
+                PreviewStatus::Off
+            },
             ..Default::default()
         };
+        true
+    }
+
+    fn set_preview_enabled(&mut self, enabled: bool) -> bool {
+        if self.snapshot.preview_enabled == enabled {
+            return false;
+        }
+        self.generation += 1;
+        self.snapshot.revision += 1;
+        self.snapshot.preview_enabled = enabled;
+        self.snapshot.preview_status = if enabled && self.snapshot.enabled {
+            PreviewStatus::Waiting
+        } else {
+            PreviewStatus::Off
+        };
+        self.snapshot.messages.clear();
+        true
+    }
+
+    fn receive_previews(&mut self, generation: u64, chats: Vec<ChatPreview>, now: u64) -> bool {
+        if chats.is_empty() {
+            return self.apply(generation, ReminderSignal::Attention, now);
+        }
+        if !self.snapshot.enabled || !self.snapshot.preview_enabled || self.generation != generation
+        {
+            return false;
+        }
+        let received_at = now.max(
+            self.snapshot
+                .last_attention_at
+                .unwrap_or_default()
+                .saturating_add(1),
+        );
+        let current = chats
+            .into_iter()
+            .enumerate()
+            .map(|(index, chat)| MessagePreview {
+                id: format!("{received_at}-{index}"),
+                received_at,
+                chat,
+            });
+        self.snapshot.messages = current
+            .chain(self.snapshot.messages.drain(..))
+            .take(MAX_PREVIEWS)
+            .collect();
+        self.snapshot.pending = true;
+        self.snapshot.last_attention_at = Some(received_at);
+        self.snapshot.revision += 1;
         true
     }
 
@@ -86,6 +177,8 @@ struct ReminderService {
     app: AppHandle,
     state: Mutex<ReminderState>,
     wake: mpsc::SyncSender<()>,
+    stopping: AtomicBool,
+    done: Mutex<mpsc::Receiver<()>>,
 }
 
 pub fn init(app: &AppHandle) -> Result<(), String> {
@@ -93,19 +186,36 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         return Ok(());
     }
     let (wake, receiver) = mpsc::sync_channel(1);
+    let (done, finished) = mpsc::channel();
     let service = Arc::new(ReminderService {
         app: app.clone(),
         state: Mutex::new(ReminderState::default()),
         wake,
+        stopping: AtomicBool::new(false),
+        done: Mutex::new(finished),
     });
     let worker = service.clone();
     thread::Builder::new()
         .name("wechat-reminders".into())
-        .spawn(move || monitor(worker, receiver))
+        .spawn(move || {
+            monitor(worker, receiver);
+            let _ = done.send(());
+        })
         .map_err(|error| format!("无法启动微信提醒监听：{error}"))?;
     SERVICE
         .set(service)
         .map_err(|_| "微信提醒服务已启动。".to_string())
+}
+
+pub(crate) fn shutdown() {
+    if let Some(service) = SERVICE.get() {
+        service.stopping.store(true, Ordering::Release);
+        let _ = service.wake.try_send(());
+        if let Ok(done) = service.done.lock() {
+            // A hard kill or blocked provider leaves the recovery marker for the next launch.
+            let _ = done.recv_timeout(Duration::from_secs(2));
+        }
+    }
 }
 
 fn service() -> Result<&'static Arc<ReminderService>, String> {
@@ -115,27 +225,34 @@ fn service() -> Result<&'static Arc<ReminderService>, String> {
 fn publish(service: &ReminderService, snapshot: ReminderSnapshot) {
     let visible = service
         .app
-        .get_webview_window("main")
+        .get_webview_window(MAIN_WINDOW_LABEL)
         .is_some_and(|window| window.is_visible().unwrap_or(false));
-    let payload = serde_json::json!({"snapshot": snapshot, "windowVisible": visible});
+    let mut preferences = snapshot.clone();
+    preferences.messages.clear();
     let _ = service.app.emit_to(
         crate::settings_window::WINDOW_LABEL,
-        "wechat-reminder-changed",
-        payload.clone(),
+        REMINDER_EVENT,
+        serde_json::json!({"snapshot": preferences, "windowVisible": visible}),
     );
-    let _ = service
-        .app
-        .emit_to("main", "wechat-reminder-changed", payload);
+    let _ = service.app.emit_to(
+        MAIN_WINDOW_LABEL,
+        REMINDER_EVENT,
+        serde_json::json!({"snapshot": snapshot, "windowVisible": visible}),
+    );
 }
 
 #[tauri::command]
-pub fn get_wechat_reminder_state() -> Result<ReminderSnapshot, String> {
-    Ok(service()?
+pub fn get_wechat_reminder_state(window: tauri::WebviewWindow) -> Result<ReminderSnapshot, String> {
+    let mut snapshot = service()?
         .state
         .lock()
         .map_err(|_| "微信提醒状态不可用。")?
         .snapshot
-        .clone())
+        .clone();
+    if window.label() != MAIN_WINDOW_LABEL {
+        snapshot.messages.clear();
+    }
+    Ok(snapshot)
 }
 
 pub(crate) fn diagnostic_state() -> Result<serde_json::Value, String> {
@@ -153,11 +270,28 @@ pub(crate) fn diagnostic_state() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-pub fn set_wechat_reminders_enabled(enabled: bool) -> Result<ReminderSnapshot, String> {
+pub fn set_wechat_reminders_enabled(
+    enabled: bool,
+    preview_enabled: Option<bool>,
+) -> Result<ReminderSnapshot, String> {
+    configure(|state| {
+        let changed = state.set_enabled(enabled);
+        preview_enabled.map_or(changed, |enabled| {
+            state.set_preview_enabled(enabled) || changed
+        })
+    })
+}
+
+#[tauri::command]
+pub fn set_wechat_message_preview_enabled(enabled: bool) -> Result<ReminderSnapshot, String> {
+    configure(|state| state.set_preview_enabled(enabled))
+}
+
+fn configure(change: impl FnOnce(&mut ReminderState) -> bool) -> Result<ReminderSnapshot, String> {
     let service = service()?;
     let (snapshot, changed) = {
         let mut state = service.state.lock().map_err(|_| "微信提醒状态不可用。")?;
-        let changed = state.set_enabled(enabled);
+        let changed = change(&mut state);
         (state.snapshot.clone(), changed)
     };
     if changed {
@@ -167,16 +301,23 @@ pub fn set_wechat_reminders_enabled(enabled: bool) -> Result<ReminderSnapshot, S
     Ok(snapshot)
 }
 
-fn signal(service: &ReminderService, generation: u64, event: ReminderSignal) {
-    let now = SystemTime::now()
+fn now_ms() -> u64 {
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .as_millis() as u64;
+        .as_millis() as u64
+}
+
+fn signal(service: &ReminderService, generation: u64, event: ReminderSignal) {
+    update(service, |state| state.apply(generation, event, now_ms()));
+}
+
+fn update(service: &ReminderService, change: impl FnOnce(&mut ReminderState) -> bool) {
     let snapshot = {
         let Ok(mut state) = service.state.lock() else {
             return;
         };
-        if !state.apply(generation, event, now) {
+        if !change(&mut state) {
             return;
         }
         state.snapshot.clone()
@@ -209,9 +350,24 @@ fn connection(service: &ReminderService, generation: u64, error: Option<String>)
 }
 
 fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
-    loop {
-        let (enabled, generation) = match service.state.lock() {
-            Ok(state) => (state.snapshot.enabled, state.generation),
+    let marker = service
+        .app
+        .path()
+        .app_data_dir()
+        .ok()
+        .map(|path| path.join("wechat-accessibility.json"));
+    if let Some(marker) = marker.as_deref().filter(|path| path.is_file()) {
+        if let Ok(executable) = installed_executable() {
+            accessibility::recover(&executable, marker);
+        }
+    }
+    while !service.stopping.load(Ordering::Acquire) {
+        let (enabled, generation, preview_enabled) = match service.state.lock() {
+            Ok(state) => (
+                state.snapshot.enabled,
+                state.generation,
+                state.snapshot.preview_enabled,
+            ),
             Err(_) => return,
         };
         if !enabled {
@@ -220,25 +376,62 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
             }
             continue;
         }
-        let callback_service = service.clone();
+        let (send_signal, signals) = mpsc::channel();
         let listener = installed_executable().and_then(|executable| {
-            ReminderListener::new(executable, move |event| {
-                signal(&callback_service, generation, event)
-            })
+            let listener = ReminderListener::new(executable.clone(), move |event| {
+                if matches!(event, ReminderSignal::Attention | ReminderSignal::Activated) {
+                    let _ = send_signal.send(event);
+                }
+            })?;
+            Ok((executable, listener))
         });
         match listener {
-            Ok(listener) => {
+            Ok((executable, listener)) => {
                 connection(&service, generation, None);
-                loop {
-                    if !service
-                        .state
-                        .lock()
-                        .is_ok_and(|state| state.snapshot.enabled && state.generation == generation)
-                    {
-                        break;
-                    }
+                let still_listening = || {
+                    !service.stopping.load(Ordering::Acquire)
+                        && service.state.lock().is_ok_and(|state| {
+                            state.snapshot.enabled && state.generation == generation
+                        })
+                };
+                let mut reader = preview_enabled.then(|| PreviewReader::new(Instant::now()));
+                while still_listening() {
                     listener.poll();
                     let _ = listener.stats();
+                    for event in signals.try_iter() {
+                        match (&mut reader, event) {
+                            (Some(reader), ReminderSignal::Attention) => {
+                                reader.attention(Instant::now())
+                            }
+                            (Some(reader), ReminderSignal::Activated) => {
+                                reader.activated();
+                                signal(&service, generation, event);
+                            }
+                            _ => signal(&service, generation, event),
+                        }
+                    }
+                    if let Some(reader) = &mut reader {
+                        let previews = reader.tick(
+                            Instant::now(),
+                            &executable,
+                            marker.as_deref(),
+                            still_listening,
+                        );
+                        update(&service, |state| {
+                            if state.generation != generation {
+                                return false;
+                            }
+                            let status_changed = state.snapshot.preview_status != reader.status;
+                            if status_changed {
+                                state.snapshot.preview_status = reader.status;
+                                state.snapshot.revision += 1;
+                            }
+                            let received = previews.is_some_and(|chats| {
+                                state.receive_previews(generation, chats, now_ms())
+                            });
+                            status_changed || received
+                        });
+                    }
                     if receiver.recv_timeout(Duration::from_millis(50))
                         == Err(mpsc::RecvTimeoutError::Disconnected)
                     {
@@ -363,6 +556,7 @@ macro_rules! tauri_commands {
         $next!([$($done)*
             crate::wechat_reminders::get_wechat_reminder_state,
             crate::wechat_reminders::set_wechat_reminders_enabled,
+            crate::wechat_reminders::set_wechat_message_preview_enabled,
             crate::wechat_reminders::open_wechat,
         ] $($rest)*)
     };

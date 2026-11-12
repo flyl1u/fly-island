@@ -7,12 +7,14 @@ import { QQNotificationControls, useQQNotifications, type QQNotificationsControl
 import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../../src/features/messages/wechat/WeChatReminders";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested"];
+const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested", "focusd-island-wechat-message-preview-enabled"];
 const original = keys.map((key) => localStorage.getItem(key));
 const messages: string[] = [];
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let permission = "allowed";
 let revision = 0;
+let wechatEnabled = false;
+let previewEnabled = false;
 let qq: QQNotificationsController;
 let wechat: WeChatRemindersController;
 let root: Root | undefined;
@@ -26,9 +28,15 @@ mockIPC((command, payload) => {
     status: !args.enabled ? "disabled" : permission === "allowed" ? "listening" : permission === "denied" ? "permissionDenied" : "permissionRequired",
     items: [], error: null,
   };
-  if (command === "set_wechat_reminders_enabled") return {
-    revision: ++revision, enabled: args.enabled, status: args.enabled ? "listening" : "disabled",
+  if (command === "set_wechat_reminders_enabled") {
+    wechatEnabled = Boolean(args.enabled);
+    if (args.previewEnabled !== undefined) previewEnabled = Boolean(args.previewEnabled);
+  }
+  if (command === "set_wechat_message_preview_enabled") previewEnabled = Boolean(args.enabled);
+  if (command === "set_wechat_reminders_enabled" || command === "set_wechat_message_preview_enabled") return {
+    revision: ++revision, enabled: wechatEnabled, status: wechatEnabled ? "listening" : "disabled",
     pending: false, lastAttentionAt: null, error: null,
+    previewEnabled, previewStatus: previewEnabled && wechatEnabled ? "ready" : "off", messages: [],
   };
 }, { shouldMockEvents: true });
 
@@ -61,8 +69,12 @@ try {
   reset("allowed");
   await mount();
   check(qq!.snapshot.enabled && wechat!.snapshot.enabled, "首次启动 QQ 与微信均默认开启");
+  check(!wechat!.snapshot.previewEnabled, "微信摘要默认关闭");
+  await act(async () => { await wechat!.setPreviewEnabled(true); });
+  check(wechat!.snapshot.previewEnabled && localStorage.getItem(keys[3]) === "true", "微信摘要独立开启并保存");
   check(requests() === 1, "StrictMode 初始化只请求一次通知访问");
   await mount();
+  check(wechat!.snapshot.previewEnabled, "重启后恢复微信摘要偏好");
   check(requests() === 1, "后续启动不会重复发起授权请求");
 
   await act(async () => { await qq!.setEnabled(false); await wechat!.setEnabled(false); });

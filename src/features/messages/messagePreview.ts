@@ -12,7 +12,7 @@ export type MessagePreview = {
 export const MESSAGE_SOURCE_LABELS: Record<MessageSource, string> = zhCN.messages.sourceLabels;
 
 export function messagePreviewText(preview: MessagePreview, copy: Translations["messages"] = zhCN.messages): string {
-  if (preview.source === "wechat") return copy.wechatPreview;
+  if (preview.source === "wechat" && !preview.title.trim()) return copy.wechatPreview;
   if (preview.source === "qqMail") return preview.body.trim() || copy.newMail;
   return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
 }

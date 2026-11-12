@@ -15,7 +15,7 @@ export function SettingsWindow() {
   const t = useTranslation();
   const [settings, setSettings] = useIslandSettings();
   const qqNotifications = useQQNotifications(false);
-  const wechatReminders = useWeChatReminders(false);
+  const wechatReminders = useWeChatReminders(false, { restore: false });
   const detached = useSettingsPresentation();
 
   // The window opens hidden and is shown once the page has rendered, so it never shows

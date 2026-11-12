@@ -53,6 +53,7 @@ mockIPC((command, payload) => {
   };
   if (command === "set_wechat_reminders_enabled") return {
     revision: ++revision, enabled: args.enabled, status: "listening", pending: false, lastAttentionAt: null, error: null,
+    previewEnabled: false, previewStatus: "off", messages: [],
   };
   if (command === "get_qq_mail_state") return [mail];
   if (command === "read_qq_mail") return { id: args.messageId, content: "本周项目进度已更新", contentType: "text/plain" };
@@ -111,7 +112,11 @@ async function notify(source: MessageSource, long = false, visible = true) {
   const receivedAt = Date.now();
   await update(async () => {
     if (source === "wechat") await emit("wechat-reminder-changed", {
-      snapshot: { revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: revision, error: null }, windowVisible: visible,
+      snapshot: {
+        revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: revision, error: null,
+        previewEnabled: long, previewStatus: long ? "ready" : "off",
+        messages: long ? [{ id: `wx-${revision}`, receivedAt: revision, contact: "项目群", body: "小林: 下午开会吗？" }] : [],
+      }, windowVisible: visible,
     });
     if (source === "qq") await emit("qq-notifications-changed", {
       snapshot: { revision: ++revision, enabled: true, status: "listening", items: [{ id: `qq-${revision}`, title: long ? "这是一位名字特别特别长的好友" : "小林", body: long ? "明天下午三点一起讨论新项目的设计方案，记得带上之前整理的资料。" : "下午一起开会吗？", createdAt: receivedAt }], error: null }, newestId: `qq-${revision}`, windowVisible: visible,
@@ -163,7 +168,7 @@ async function runChecks() {
     await act(async () => changeCount(2));
     check(incoming() === sameRow && summary().children.length === 1, "无关状态更新不重播消息动画");
     await notify("wechat");
-    check(incoming().textContent === "你收到了一条消息" && incoming().querySelector(".message-brand-icon--wechat"), "微信仅显示图标和简洁提醒");
+    check(incoming().textContent === "你收到了一条消息" && incoming().querySelector(".message-brand-icon--wechat"), "读不到微信摘要时显示普通提醒");
     const enteringWeChat = incoming();
     const entrance = enteringWeChat.firstElementChild!.getAnimations()[0];
     await notify("qqMail");
@@ -202,7 +207,9 @@ async function runChecks() {
     check(!summary().querySelector(".island-message-preview"), "托盘隐藏时只更新收件状态");
     window.matchMedia = (query) => query === "(prefers-reduced-motion: reduce)"
       ? { ...matchMedia(query), matches: true } : matchMedia(query);
-    await notify("wechat");
+    await notify("wechat", true);
+    check(incoming().querySelector(".island-message-preview__sender")?.textContent === "项目群" &&
+      incoming().querySelector(".island-message-preview__body")?.textContent === "小林: 下午开会吗？", "折叠岛显示微信会话名和消息摘要");
     check(summary().children.length === 1 && !summary().querySelector(".island__summary-layer--incoming"), "减少动态效果时新消息直接可读且无离场残留");
     await act(async () => button().click());
     check(commands.includes("open_wechat") && !summary().querySelector(".island-message-preview"), "减少动态效果时点击微信并立即恢复专注任务");

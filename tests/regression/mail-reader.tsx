@@ -15,6 +15,7 @@ Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
 const state = params.get("state") ?? "qq";
 const now = Date.now();
+const wechatMessage = { id: "wechat-1", receivedAt: now - 120_000, contact: "项目群", body: "小林: 下午开会吗？" };
 const keys = ["focusd-island-qq-mail-settings", "focusd-island-qq-mail-remote-images", "focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested"];
 const original = keys.map(key => localStorage.getItem(key));
 keys.forEach(key => localStorage.removeItem(key));
@@ -45,7 +46,14 @@ mockIPC((command, payload) => {
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
     case "request_qq_notification_access": return "allowed";
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: "listening", error: null, items: state === "empty" || state === "disconnected" ? [] : [{ id: "qq:1", title: "设计讨论组", body: "新版界面已准备好，方便时看一下。", createdAt: now - 30_000 }] };
-    case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: args.enabled, status: !args.enabled ? "disabled" : state === "wechatError" ? "error" : "listening", pending: Boolean(args.enabled) && state !== "empty" && state !== "disconnected", lastAttentionAt: !args.enabled || state === "empty" || state === "disconnected" ? null : now - 120_000, error: args.enabled && state === "wechatError" ? "微信提醒连接失败，正在重试。" : null };
+    case "set_wechat_reminders_enabled": return {
+      revision: ++revision, enabled: args.enabled, status: !args.enabled ? "disabled" : state === "wechatError" ? "error" : "listening",
+      pending: Boolean(args.enabled) && state !== "empty" && state !== "disconnected",
+      lastAttentionAt: !args.enabled || state === "empty" || state === "disconnected" ? null : wechatMessage.receivedAt,
+      error: args.enabled && state === "wechatError" ? "微信提醒连接失败，正在重试。" : null,
+      previewEnabled: state === "wechatPreview", previewStatus: state === "wechatPreview" ? "ready" : "off",
+      messages: state === "wechatPreview" && args.enabled ? [wechatMessage] : [],
+    };
     default: return null;
   }
 }, { shouldMockEvents: true });
@@ -54,7 +62,7 @@ function Fixture() {
   mail = useMail(false);
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false);
-  [view, setView] = useState<MessageView>(["reader", "html", "loading", "error", "auth", "mail", "disconnected"].includes(state) ? "qqMail" : ["wechat", "wechatError"].includes(state) ? "wechat" : "qq");
+  [view, setView] = useState<MessageView>(["reader", "html", "loading", "error", "auth", "mail", "disconnected"].includes(state) ? "qqMail" : ["wechat", "wechatError", "wechatPreview"].includes(state) ? "wechat" : "qq");
   const height = messagePanelHeight(view, mail.wantsTallPanel);
   return <section className="message-fixture" style={{ height }}><header className="fixture-heading">fly-island<span>消息</span></header><div className="message-panel"><MessagesPanel source={view} enabledSources={{ qq: true, wechat: true, qqMail: true }} onSourceChange={next => { mail.closeReader(); setView(next); }} onOpenMailSettings={() => calls.push({ command: "open_mail_settings", args: {} })} qqMail={mail} qqNotifications={qqNotifications} wechatReminders={wechatReminders} /></div></section>;
 }
@@ -91,6 +99,18 @@ try {
     await click("接收微信提醒");
     check(document.querySelector('.qq-panel__empty')?.textContent?.includes("已暂停") && document.querySelector('button[aria-label="接收微信提醒"]')?.getAttribute("aria-checked") === "false", "暂停微信提醒后保持正确状态");
     await click("接收微信提醒");
+    await act(async () => {
+      await emit("wechat-reminder-changed", { snapshot: {
+        revision: ++revision, enabled: true, status: "listening", pending: true,
+        lastAttentionAt: wechatMessage.receivedAt, error: null,
+        previewEnabled: true, previewStatus: "ready", messages: [wechatMessage],
+      }, windowVisible: true });
+    });
+    const preview = document.querySelector('[aria-label="微信消息摘要"] [role="listitem"]');
+    check(preview?.querySelector("strong")?.textContent === wechatMessage.contact &&
+      preview.querySelector("p")?.textContent === wechatMessage.body, "微信面板显示会话名、消息摘要和时间");
+    await click("项目群的消息，点击打开微信");
+    check(calls.filter(call => call.command === "open_wechat").length === 2, "点击摘要打开微信");
     await click("QQ 通知");
     check(view! === "qq" && document.querySelector('[aria-label="QQ 最近通知"]'), "切回 QQ 显示自己的通知列表");
     await click("邮箱");

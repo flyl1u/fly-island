@@ -131,7 +131,8 @@ export function installDemoMocks(data: DemoContent) {
       case "set_qq_notifications_enabled":
       case "request_qq_notification_access": return command === "request_qq_notification_access" ? "allowed" : qq();
       case "clear_qq_notifications": qqItems = []; return qq();
-      case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: now - 120_000, error: null };
+      case "get_wechat_reminder_state":
+      case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: now - 120_000, error: null, previewEnabled: false, previewStatus: "off", messages: [] };
       case "get_qq_mail_state": return mail();
       case "read_qq_mail": return { id: String(args.messageId), attachments: [], contentType: "text/plain", content: data.mail.body };
       case "mark_qq_mail_read": mailUnread = false; return mail()[0];

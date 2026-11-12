@@ -57,6 +57,10 @@ pub(crate) fn window_process_id(window: HWND) -> u32 {
 /// process cannot be opened for limited queries or its path cannot be read.
 pub(crate) fn image_path(process_id: u32) -> Option<String> {
     let process = open_for_limited_query(process_id)?;
+    image_path_of(&process)
+}
+
+pub(super) fn image_path_of(process: &ProcessHandle) -> Option<String> {
     let mut path = [0u16; MAX_IMAGE_PATH_UNITS];
     let mut length = path.len() as u32;
     // SAFETY: `process.0` is a live handle opened with
