@@ -86,11 +86,10 @@ export function getExpandedIslandHeight({
   settingsContentHeight = null,
   shelfItems = 0,
 }: ExpandedHeightInput) {
-  // The upcoming list and the history scroll inside the archive's fixed height; the calendar has its own.
+  // The upcoming list and calendar each scroll inside their fixed height.
   const isTodoArchivePage =
     page === "todo" &&
-    (todoPageMode === "archive" || todoPageMode === "review" || todoPageMode === "upcoming" ||
-      todoPageMode === "history");
+    todoPageMode === "upcoming";
   const visibleTodoRows = Math.min(
     Math.max(
       todoPageMode === "daily" || isTodoArchivePage || todoPageMode === "calendar"

@@ -1,5 +1,4 @@
-export type TodoPageMode = "today" | "daily" | "archive" | "review" | "upcoming" | "history" | "calendar";
-export type ArchiveLayout = "cards" | "timeline";
+export type TodoPageMode = "today" | "daily" | "upcoming" | "calendar";
 
 export type TodoItem = {
   id: string;

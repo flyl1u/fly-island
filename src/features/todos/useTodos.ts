@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createTodoId, loadCurrentTodoDate, loadDailyNote, saveCurrentTodoDate, saveDailyNote } from "./storage";
-import type { ArchiveLayout, TodoItem, TodoPageMode } from "./types";
+import type { TodoItem, TodoPageMode } from "./types";
 import { useTodoArchives } from "./useTodoArchives";
 import { useTodoList } from "./useTodoList";
 import { useScheduledTodos } from "./useScheduledTodos";
@@ -46,12 +46,6 @@ export function useTodos({
     setDraftDate(null);
   }, [addListTodo, currentTodoDate, draftDate, draftTodo, scheduleTodo, setDraftTodo]);
   const [todoPageMode, setTodoPageMode] = useState<TodoPageMode>("today");
-  const [archiveLayout, setArchiveLayout] = useState<ArchiveLayout>("cards");
-  const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(
-    null,
-  );
-  const selectedArchive =
-    archives.find((archive) => archive.date === selectedArchiveDate) ?? null;
   const { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos } =
     useTodoSaving({
       currentTodoDate,
@@ -61,33 +55,20 @@ export function useTodos({
       onMissingSaveDirectory,
     });
 
-  const showArchive = useCallback(() => {
-    setTodoPageMode("archive");
-    setSelectedArchiveDate(null);
-    setDraftTodo("");
-  }, [setDraftTodo]);
-
   const showToday = useCallback(() => {
     setTodoPageMode("today");
-    setSelectedArchiveDate(null);
     setDraftTodo("");
   }, [setDraftTodo]);
 
   const showDaily = useCallback(() => {
     setTodoPageMode("daily");
-    setSelectedArchiveDate(null);
     setDraftTodo("");
   }, [setDraftTodo]);
 
-  const showUpcoming = useCallback(() => {
-    setTodoPageMode("upcoming");
-    setSelectedArchiveDate(null);
-  }, []);
-
-  const showHistory = useCallback(() => setTodoPageMode("history"), []);
+  const showUpcoming = useCallback(() => setTodoPageMode("upcoming"), []);
   const showCalendar = useCallback(() => setTodoPageMode("calendar"), []);
 
-  // From the history and the calendar: today's list gets it at the top, a later day schedules it.
+  // From the calendar: today's list gets it at the top, a later day schedules it.
   const addTodoForDay = useCallback(
     (title: string, date: string) => {
       const trimmed = title.trim();
@@ -101,20 +82,6 @@ export function useTodos({
     [currentTodoDate, scheduleTodo, setTodos],
   );
 
-  const selectArchive = useCallback(
-    (date: string) => {
-      if (date === currentTodoDate) {
-        showToday();
-        return;
-      }
-
-      setSelectedArchiveDate(date);
-      setTodoPageMode("review");
-      setDraftTodo("");
-    },
-    [currentTodoDate, setDraftTodo, showToday],
-  );
-
   const startDay = useCallback(
     (nextDate: string, carriedTodos: TodoItem[]) => {
       setTodos(carriedTodos);
@@ -122,7 +89,6 @@ export function useTodos({
       setActiveTodoId(null);
       setCurrentTodoDate(nextDate);
       setTodoPageMode("today");
-      setSelectedArchiveDate(null);
     },
     [setActiveTodoId, setTodos],
   );
@@ -158,8 +124,6 @@ export function useTodos({
       currentDate: currentTodoDate,
       pageMode: todoPageMode,
       archives,
-      archiveLayout,
-      selectedArchive,
       saveState,
       draftDate,
       scheduledTodos,
@@ -167,7 +131,6 @@ export function useTodos({
       onDraftDateChange: setDraftDate,
       onAddTodo: addTodo,
       onShowUpcoming: showUpcoming,
-      onShowHistory: showHistory,
       onShowCalendar: showCalendar,
       onAddTodoForDay: addTodoForDay,
       onDeleteScheduledTodo: deleteScheduledTodo,
@@ -177,12 +140,9 @@ export function useTodos({
       onDeleteTodo: list.deleteTodo,
       onReorderTodo: list.reorderTodo,
       onSaveToday: saveTodayTodos,
-      onShowArchive: showArchive,
       onShowDaily: showDaily,
       onShowToday: showToday,
       onDailyNoteChange: setDailyNote,
-      onArchiveLayoutChange: setArchiveLayout,
-      onSelectArchive: selectArchive,
     },
   };
 }

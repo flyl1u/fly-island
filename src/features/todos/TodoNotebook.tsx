@@ -1,14 +1,12 @@
 import { useMemo } from "react";
 import { useTranslation } from "../../i18n";
-import { ArchiveBrowser } from "./ArchiveBrowser";
 import { collectCalendarTodos } from "./calendar";
-import { groupTodoHistory } from "./history";
 import { TodoCalendar } from "./TodoCalendar";
-import { TodoHistoryList } from "./TodoHistoryList";
 import { ScheduledTodoList } from "./ScheduledTodoList";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
-import type { ArchiveLayout, ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
+import type { ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
+import { withoutUpdateTodo } from "./updateTodo";
 import "./TodoNotebook.css";
 
 export function TodoNotebook({
@@ -19,8 +17,6 @@ export function TodoNotebook({
   currentDate,
   pageMode,
   archives,
-  archiveLayout,
-  selectedArchive,
   enableTodoReorder,
   scrollStartRows,
   draftDate,
@@ -29,7 +25,6 @@ export function TodoNotebook({
   onDraftDateChange,
   onAddTodo,
   onShowUpcoming,
-  onShowHistory,
   onShowCalendar,
   onAddTodoForDay,
   onDeleteScheduledTodo,
@@ -41,8 +36,6 @@ export function TodoNotebook({
   onShowDaily,
   onShowToday,
   onDailyNoteChange,
-  onArchiveLayoutChange,
-  onSelectArchive,
 }: {
   todos: TodoItem[];
   dailyNote: string;
@@ -51,8 +44,6 @@ export function TodoNotebook({
   currentDate: string;
   pageMode: TodoPageMode;
   archives: TodoArchive[];
-  archiveLayout: ArchiveLayout;
-  selectedArchive: TodoArchive | null;
   enableTodoReorder: boolean;
   /** Rows shown before the list scrolls; the island grows to fit this many. */
   scrollStartRows: number;
@@ -63,7 +54,6 @@ export function TodoNotebook({
   onDraftDateChange: (date: string | null) => void;
   onAddTodo: () => void;
   onShowUpcoming: () => void;
-  onShowHistory: () => void;
   onShowCalendar: () => void;
   /** Adds to today's list, or schedules for a later day. */
   onAddTodoForDay: (title: string, date: string) => void;
@@ -76,58 +66,30 @@ export function TodoNotebook({
   onShowDaily: () => void;
   onShowToday: () => void;
   onDailyNoteChange: (value: string) => void;
-  onArchiveLayoutChange: (layout: ArchiveLayout) => void;
-  onSelectArchive: (date: string) => void;
 }) {
   const t = useTranslation();
-  const displayedTodos =
-    pageMode === "review" ? selectedArchive?.todos ?? [] : todos;
-  const isTodayMode = pageMode === "today";
-  const isDailyMode = pageMode === "daily";
-  const isArchiveMode = pageMode === "archive";
-  const isReviewMode = pageMode === "review";
-  const isUpcomingMode = pageMode === "upcoming";
-  const isHistoryMode = pageMode === "history";
-  const isCalendarMode = pageMode === "calendar";
-  const historyDays = useMemo(() => groupTodoHistory(archives, currentDate, todos), [archives, currentDate, todos]);
   const calendarTodos = useMemo(
-    () => (isCalendarMode ? collectCalendarTodos({ archives, todos, currentDate, scheduledTodos }) : null),
-    [archives, currentDate, isCalendarMode, scheduledTodos, todos],
+    () => pageMode === "calendar" ? collectCalendarTodos({ archives, todos, currentDate, scheduledTodos }) : null,
+    [archives, currentDate, pageMode, scheduledTodos, todos],
   );
-  const openCount = displayedTodos.filter((todo) => !todo.completed).length;
-  const showTasks = !isDailyMode && !isArchiveMode && !isUpcomingMode && !isHistoryMode && !isCalendarMode;
-  const notebookClassName = [
-    "todo-notebook",
-    isDailyMode ? "todo-notebook--daily" : "",
-    isArchiveMode ? "todo-notebook--archive" : "",
-    isReviewMode ? "todo-notebook--review" : "",
-    isUpcomingMode ? "todo-notebook--upcoming" : "",
-    isHistoryMode ? "todo-notebook--history" : "",
-    isCalendarMode ? "todo-notebook--calendar" : "",
-    isArchiveMode ? `todo-notebook--archive-${archiveLayout}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const tasks = withoutUpdateTodo(todos);
+  const completed = tasks.filter((todo) => todo.completed).length;
 
   return (
-    <section className={notebookClassName} aria-label={t.notebook.sectionLabel}>
+    <section className={`todo-notebook todo-notebook--${pageMode}`} aria-label={t.notebook.sectionLabel}>
       <TodoNotebookTopline
         pageMode={pageMode}
-        selectedArchive={selectedArchive}
         scheduledCount={scheduledTodos.length}
-        archiveLayout={archiveLayout}
-        openCount={openCount}
-        onSelectView={(view) => ({ today: onShowToday, daily: onShowDaily, history: onShowHistory, calendar: onShowCalendar })[view]()}
+        completed={completed}
+        total={tasks.length}
+        onSelectView={(view) => ({ today: onShowToday, daily: onShowDaily, calendar: onShowCalendar })[view]()}
         onShowToday={onShowToday}
         onShowUpcoming={onShowUpcoming}
-        onArchiveLayoutChange={onArchiveLayoutChange}
       />
 
-      {showTasks && (
+      {pageMode === "today" && (
         <TodoNotebookTasks
-          displayedTodos={displayedTodos}
-          isTodayMode={isTodayMode}
-          isReviewMode={isReviewMode}
+          displayedTodos={todos}
           draft={draft}
           draftDate={draftDate}
           currentDate={currentDate}
@@ -145,13 +107,7 @@ export function TodoNotebook({
         />
       )}
 
-      {isArchiveMode ? (
-        <ArchiveBrowser
-          archives={archives}
-          layout={archiveLayout}
-          onSelectArchive={onSelectArchive}
-        />
-      ) : isDailyMode ? (
+      {pageMode === "daily" ? (
         <textarea
           className="daily-note"
           value={dailyNote}
@@ -160,10 +116,8 @@ export function TodoNotebook({
           spellCheck={false}
           onChange={(event) => onDailyNoteChange(event.currentTarget.value)}
         />
-      ) : isUpcomingMode ? (
+      ) : pageMode === "upcoming" ? (
         <ScheduledTodoList todos={scheduledTodos} onDelete={onDeleteScheduledTodo} />
-      ) : isHistoryMode ? (
-        <TodoHistoryList days={historyDays} today={currentDate} todayTodos={todos} onRestore={(title) => onAddTodoForDay(title, currentDate)} />
       ) : calendarTodos ? (
         <TodoCalendar
           today={currentDate}
