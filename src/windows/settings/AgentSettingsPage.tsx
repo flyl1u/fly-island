@@ -32,6 +32,9 @@ export function AgentSettingsPage({
       />
       {/* The hooks live on the Connection page; most of what follows needs them. */}
       <AgentHooksNotice onOpenConnect={onOpenConnect} />
+      <SettingsGroup title={t.settings.agent.sources.title}>
+        <SettingsToggleRow title={t.settings.agent.sources.dsh} description={t.settings.agent.sources.dshHint} checked={settings.agentShowDsh} onChange={(agentShowDsh) => onSettingsChange({ ...settings, agentShowDsh })} />
+      </SettingsGroup>
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow
           title={t.settings.agent.sessionTitle}

@@ -1,5 +1,5 @@
 import type { Translations } from "../../i18n";
-import type { AgentHooksState, AgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
+import type { AgentHooksState, AgentProvider, HookAgentProvider, AgentStatusSnapshot, AgentTaskPhase, AgentTaskStatus } from "./api";
 import type { SessionFilter } from "./sessionList";
 
 export type AgentVisualState = "idle" | "running" | "attention";
@@ -16,10 +16,11 @@ export const DEFAULT_AGENT_STATUS: AgentStatusSnapshot = {
   statusPath: "",
   others: [],
 };
-export const AGENT_PROVIDERS: AgentProvider[] = ["codex", "claudeCode"];
+export const AGENT_PROVIDERS: HookAgentProvider[] = ["codex", "claudeCode"];
 export const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   codex: "Codex",
   claudeCode: "Claude Code",
+  dsh: "DeepSeek Harness",
 };
 /** One row of agent status: a built-in provider or a source reported by a plugin or the local API. */
 export type AgentStatusEntry = {

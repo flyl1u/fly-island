@@ -2,8 +2,8 @@
 import type { AgentUsage } from "./api";
 import { isStale, type AgentUsages } from "./usage.ts";
 
-export type QuotaAgent = "claude" | "codex";
-export type QuotaWindow = "fiveHour" | "sevenDay";
+export type QuotaAgent = "claude" | "codex" | "dsh";
+export type QuotaWindow = "fiveHour" | "sevenDay" | "balance";
 
 /** Usage reached the alert level (`low`), or a limit that had reached it reset (`reset`). */
 export type QuotaAlert = { kind: "low" | "reset"; agent: QuotaAgent; window: QuotaWindow; used: number; resetsAt: number | null };
@@ -21,7 +21,7 @@ export function emptyQuotaState(): QuotaState {
  */
 const RESET_DROP = 30;
 
-const WINDOWS: QuotaWindow[] = ["fiveHour", "sevenDay"];
+const WINDOWS = ["fiveHour", "sevenDay"] as const;
 
 /**
  * The alerts for usage as just read, against `percent` (0: off), updating `state`. A limit at or
@@ -48,6 +48,20 @@ export function takeQuotaAlerts(state: QuotaState, usages: AgentUsages, percent:
         state.reached.delete(key);
         alerts.push({ kind: "reset", ...base });
       }
+    }
+  }
+  const dsh = usages.dsh;
+  if (dsh && !isStale(dsh, now)) {
+    const key = "dsh:balance";
+    const firstLook = !state.seen.has(key);
+    state.seen.add(key);
+    const wasEmpty = state.reached.has(key);
+    const empty = !dsh.available;
+    if (!dsh.available) state.reached.add(key);
+    else state.reached.delete(key);
+    // No percentage alert for a wallet without a limit; only actual exhaustion and recovery.
+    if (!firstLook && wasEmpty !== empty) {
+      alerts.push({ kind: dsh.available ? "reset" : "low", agent: "dsh", window: "balance", used: dsh.available ? 0 : 100, resetsAt: null });
     }
   }
   return alerts;

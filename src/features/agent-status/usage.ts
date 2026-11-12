@@ -1,4 +1,4 @@
-import type { AgentUsage, UsageWindow } from "./api";
+import type { AgentUsage, DshUsage, UsageWindow } from "./api";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
 import type { Translations } from "../../i18n/types";
 
@@ -28,7 +28,7 @@ export function tightestWindow(usage: AgentUsage): UsageWindow | null {
   return windows.reduce<UsageWindow | null>((tightest, window) => (tightest === null || window.used > tightest.used ? window : tightest), null);
 }
 
-export function isStale(usage: AgentUsage, now: number) {
+export function isStale(usage: Pick<AgentUsage, "updatedAt">, now: number) {
   return usage.updatedAt !== null && now - usage.updatedAt > USAGE_STALE_MS;
 }
 
@@ -60,9 +60,9 @@ export function withoutPastWindows(usage: AgentUsage | null, now: number): Agent
 }
 
 /** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
-export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; readAt: number };
+export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; dsh?: DshUsage | null; readAt: number };
 
-export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, readAt: 0 };
+export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, dsh: null, readAt: 0 };
 
 /** Has a window to show. */
 export function hasUsageNumbers(usage: AgentUsage | null): boolean {
@@ -83,7 +83,7 @@ export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | nul
 
 /** How many usage rows the Agent page shows, for its height: one row holds both agents' rings. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

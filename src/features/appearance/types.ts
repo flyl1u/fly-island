@@ -76,6 +76,7 @@ export type IslandSettings = {
   agentSessionHours: number;
   agentShowClaudeCode: boolean;
   agentShowCodex: boolean;
+  agentShowDsh: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Leave sessions whose agent has quit off the Agent page. */

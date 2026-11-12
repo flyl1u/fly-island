@@ -22,6 +22,8 @@
 
 各项数据存在哪里见 [data-storage.md](data-storage.md)。
 
+Agent 的 DSH 桌面端来源由 `agent_status/dsh_sessions.rs`（只读本地检查点、宿主聚焦）、`dsh_credentials.rs`（受限凭据读取）和 `dsh_usage.rs`（官方余额只读查询与内存缓存）承担；从现有会话命令和聚焦命令接入，余额有独立的 `get_dsh_usage` 命令。前端仍在 `features/agent-status/`，余额展示在 `DshQuotaRing.tsx`，纯逻辑在 `dshUsage.ts`。详见 [DSH 接入说明](../deepseek-harness.md)。
+
 微信摘要开启时，微信提醒服务通过 `win32/caption_close.rs` 将微信关闭按钮的点击转为最小化，通过 `win32/taskbar.rs` 控制最小化窗口的任务栏按钮。
 
 ## 目标结构

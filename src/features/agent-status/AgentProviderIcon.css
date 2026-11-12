@@ -5,3 +5,13 @@
   object-fit: contain;
   border-radius: 4px;
 }
+
+.agent-provider-icon--dsh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #277e78;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
+}

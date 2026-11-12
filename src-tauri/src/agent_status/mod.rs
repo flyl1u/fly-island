@@ -9,6 +9,9 @@ mod editor_terminal;
 mod hooks_state;
 mod host_icon;
 mod codex_usage;
+mod dsh_credentials;
+mod dsh_sessions;
+pub(crate) mod dsh_usage;
 mod claude_desktop_usage;
 mod codex_version;
 mod conversation_link;
@@ -262,8 +265,10 @@ pub async fn list_agent_sessions(
         windows_home_dir().map(|home_dir| {
             let mut sessions = session_scan::list_sessions(&home_dir, Some(&app_dir), &waiting, window_ms);
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
+            sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
+            sessions.truncate(12);
             sessions
         })
     })
@@ -472,6 +477,7 @@ macro_rules! tauri_commands {
             crate::agent_status::list_agent_sessions,
             crate::agent_status::get_agent_usage,
             crate::agent_status::get_codex_usage,
+            crate::agent_status::dsh_usage::get_dsh_usage,
             crate::agent_status::reply_marker::get_reply_marker_state,
             crate::agent_status::reply_marker::set_reply_marker,
             crate::agent_status::sound_packs::list_sound_packs,

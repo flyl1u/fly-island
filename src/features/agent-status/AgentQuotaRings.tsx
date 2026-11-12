@@ -3,10 +3,12 @@ import { IslandHoverCard, type HoverCardLine } from "../../components/IslandHove
 import type { AgentProvider, AgentUsage } from "./api";
 import { isStale, percentLeft, quotaRings, quotaSummaries, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
 import { useAgentUsages } from "./useAgentUsages";
+import { DshQuotaRing } from "./DshQuotaRing";
+import { QuotaRings } from "./QuotaRings";
 import "./AgentQuotaRings.css";
 
 /** Each agent's ring colour, for the dot on its card: Claude's clay, Codex's blue. */
-export const QUOTA_COLORS: Record<AgentProvider, string> = { claudeCode: "#e5a385", codex: "#6ea8fe" };
+export const QUOTA_COLORS: Record<AgentProvider, string> = { claudeCode: "#e5a385", codex: "#6ea8fe", dsh: "#71c8bc" };
 
 /**
  * The Agent page's top row: Claude's, then Codex's quota rings, the 5-hour window outside and the
@@ -21,10 +23,11 @@ export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
   const usages = given ?? own;
   const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex]];
   const shown = agents.filter((entry): entry is [AgentProvider, AgentUsage] => quotaRings(entry[1]) !== null);
-  if (shown.length === 0) return null;
+  if (shown.length === 0 && !usages.dsh?.wallets.length) return null;
   return (
     <div className="agent-quota">
       {shown.map(([provider, usage]) => <AgentQuota key={provider} provider={provider} usage={usage} now={usages.readAt} />)}
+      {usages.dsh && <DshQuotaRing usage={usages.dsh} now={usages.readAt} />}
     </div>
   );
 }
@@ -95,33 +98,4 @@ export function QuotaRingPair({
   );
 }
 
-/** Two concentric rings in the current `--quota-color`, drawn on a 24-unit grid so they stay crisp from 14 to 28 px. */
-export function QuotaRings({ outer, inner, size = 22 }: { outer: number | null; inner: number | null; size?: number }) {
-  return (
-    <svg className="quota-rings" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <Ring radius={10} left={outer} />
-      <Ring radius={5.5} left={inner} />
-    </svg>
-  );
-}
-
-function Ring({ radius, left }: { radius: number; left: number | null }) {
-  // A sliver still shows that something is left; a full ring is drawn whole.
-  const shown = left === null || left <= 0 ? 0 : Math.min(100, Math.max(left, 3));
-  return (
-    <>
-      <circle className="quota-rings__track" cx={12} cy={12} r={radius} />
-      {shown > 0 && (
-        <circle
-          className="quota-rings__fill"
-          cx={12}
-          cy={12}
-          r={radius}
-          pathLength={100}
-          strokeDasharray={shown >= 100 ? undefined : `${shown} 100`}
-          transform="rotate(-90 12 12)"
-        />
-      )}
-    </>
-  );
-}
+export { QuotaRings } from "./QuotaRings";

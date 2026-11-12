@@ -45,11 +45,11 @@ export function countActiveSessions(sessions: AgentSessionSummary[]) {
   return sessions.filter((session) => isActivePhase(session.phase)).length;
 }
 
-export type SessionFilter = { claudeCode: boolean; codex: boolean };
+export type SessionFilter = { claudeCode: boolean; codex: boolean; dsh?: boolean };
 
 /** Sessions of the agents the user wants to see. */
 export function filterSessions(sessions: AgentSessionSummary[], filter: SessionFilter) {
-  const shown = sessions.filter((session) => (session.provider === "codex" ? filter.codex : filter.claudeCode));
+  const shown = sessions.filter((session) => filter[session.provider] !== false);
   return shown.length === sessions.length ? sessions : shown;
 }
 

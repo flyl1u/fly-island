@@ -252,6 +252,10 @@ if (!automated) {
     check(element(".settings-sidebar__item[data-category='agentConnect']").getAttribute("aria-current") === "page", "The hooks notice on the sessions page opens the connection page");
     await openPage("agents");
     const agentRow = (title: string) => [...document.querySelectorAll<HTMLElement>(".editor-panel .settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === title);
+    const dshSwitch = agentRow("DeepSeek Harness（DSH）")?.querySelector<HTMLInputElement>("[role='switch']");
+    check(dshSwitch?.checked, "DSH source is enabled by default");
+    await act(async () => { dshSwitch!.click(); });
+    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { agentShowDsh?: boolean }).agentShowDsh === false, "Switching DSH off persists the source preference");
     check(!document.querySelector(".session-filter__form"), "Hide-session rules are no longer offered");
     const soundSwitch = agentRow("AI Agent 音效")?.querySelector<HTMLInputElement>("[role='switch']");
     check(soundSwitch?.checked, "Agent sounds are a single switch on the sessions page, on by default");

@@ -132,7 +132,7 @@ test("the options still in Settings are read back and fall back for older settin
   assert.equal(normalizeSettings({ agentAlertWaiting: false, agentAlertCompleted: false }).agentAlertCompleted, false);
   assert.equal(normalizeSettings({ shelfAutoCleanupDays: 7 }).shelfAutoCleanupDays, 7);
   assert.equal(normalizeSettings({ shelfAutoCleanupDays: 3 }).shelfAutoCleanupDays, 0);
-  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "agentTitleEnabled", "mailEnabled", "shelfEnabled", "translationEnabled"]) {
+  for (const key of ["todoEnabled", "musicEnabled", "agentStatusEnabled", "agentTitleEnabled", "agentShowDsh", "mailEnabled", "shelfEnabled", "translationEnabled"]) {
     assert.equal(older[key], true, key);
     assert.equal(normalizeSettings({ [key]: false })[key], false, key);
     assert.equal(normalizeSettings({ [key]: "no" })[key], true, key);
