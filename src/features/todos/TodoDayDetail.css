@@ -1,0 +1,77 @@
+.todo-day-detail {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  container: todo-day-detail / inline-size;
+}
+
+.todo-day-detail__header {
+  min-height: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  justify-content: space-between;
+  gap: 2px var(--space-md);
+  padding: 2px var(--space-xs) var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-white-a08);
+}
+
+.todo-day-detail__title {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.todo-day-detail__date,
+.todo-day-detail__summary {
+  color: var(--text-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.todo-day-detail__summary {
+  padding-top: 3px;
+}
+
+.todo-day-detail__date {
+  display: block;
+}
+
+.todo-day-detail__body {
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--color-white-a18) transparent;
+  scrollbar-width: thin;
+  animation: todo-day-appear 140ms ease-out;
+}
+
+.todo-day-detail__body:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.todo-day-detail__empty {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+@keyframes todo-day-appear {
+  from { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-day-detail__body {
+    animation: none;
+  }
+}

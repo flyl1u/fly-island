@@ -15,10 +15,10 @@ export const BASE_EXPANDED_ISLAND_HEIGHT = 258;
 export const DAILY_NOTE_EXPANDED_ISLAND_HEIGHT = 296;
 export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
 /**
- * The todo calendar, up to the panel height limit: island chrome (86), the notebook's padding (24),
- * its view switch and gap (30), then a six-week month (TodoCalendar.css, 266) and two list rows.
+ * The todo calendar fits a six-week month beside the day's list. Allow for the island chrome,
+ * notebook padding and view switch above the calendar grid and its month controls.
  */
-export const TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT = 490;
+export const TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT = 384;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
 // then the panel's padding (34), title (30), tabs with search (32), and two gaps (20).

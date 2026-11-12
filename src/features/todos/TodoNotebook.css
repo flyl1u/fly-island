@@ -17,8 +17,34 @@
   padding: 22px 0 16px;
 }
 
-.todo-notebook--daily {
+.todo-notebook--daily,
+.todo-notebook--history,
+.todo-notebook--calendar {
   grid-template-rows: auto minmax(0, 1fr);
+}
+
+.todo-date-overview {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(118px, 31%, 158px) minmax(0, 1fr);
+  gap: var(--space-xl);
+}
+
+.todo-date-overview.todo-calendar {
+  grid-template-columns: clamp(186px, 42%, 218px) minmax(0, 1fr);
+}
+
+.todo-date-overview__sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: var(--color-white-a04);
+  border: 1px solid var(--color-white-a08);
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
 }
 
 .todo-notebook--review {
