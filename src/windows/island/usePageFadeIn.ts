@@ -19,8 +19,6 @@ export function usePageFadeIn<T extends HTMLElement>(page: IslandPage, mode: Isl
     const content = contentRef.current;
     if (
       previousPage === page ||
-      // Translation appears in place, without motion (IslandShell.css).
-      page === "translation" ||
       mode !== "expanded" ||
       !content ||
       typeof content.animate !== "function" ||
