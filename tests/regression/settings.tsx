@@ -101,6 +101,12 @@ if (!automated) {
           `general: the collapse and tuck delays are two number fields at 30 s (${timers.map((input) => input.value).join(", ")})`);
         check(labels.length === 2 && labels.every(Boolean) && labels[0] !== labels[1], `general: the two delays have different labels (${labels.join(" / ")})`);
       }
+      if (category === "messages") {
+        const notice = panel.querySelector(".messages-settings__wechat-risk");
+        const toggle = notice?.closest(".settings-row")?.querySelector<HTMLInputElement>("input[role=switch]");
+        check(notice?.textContent?.includes("账号限制") && toggle?.checked === false,
+          "WeChat's account risk is visible before previews are enabled");
+      }
       check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"

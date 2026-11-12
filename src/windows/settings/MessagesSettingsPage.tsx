@@ -48,7 +48,9 @@ export function MessagesSettingsPage({
         {wechat.enabled && (
           <SettingsToggleRow
             title={t.wechat.showPreview}
-            description={t.wechat.previewHint}
+            description={
+              <>{t.wechat.previewHint}<span className="messages-settings__wechat-risk">{t.wechat.previewRisk}</span></>
+            }
             checked={wechat.previewEnabled}
             onChange={(enabled) => void setPreviewEnabled(enabled)}
           />

@@ -3,6 +3,12 @@
   overflow-wrap: anywhere;
 }
 
+.messages-settings__wechat-risk {
+  display: block;
+  margin-top: var(--space-sm);
+  color: var(--color-warning);
+}
+
 /* The mailbox list and the connect form keep their own layout, inset like a row. */
 .messages-settings__mailboxes,
 .messages-settings__connect {

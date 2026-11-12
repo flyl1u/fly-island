@@ -17,6 +17,7 @@ const HSHELL_RUDEAPPACTIVATED: u32 = HSHELL_WINDOWACTIVATED | 0x8000;
 pub enum ReminderSignal {
     Attention,
     Activated,
+    ActivatedElsewhere,
     Redraw,
     WindowCreated,
 }
@@ -85,7 +86,7 @@ pub fn installed_executable() -> Result<PathBuf, String> {
         .ok_or_else(|| "未找到微信安装路径。打开微信后会自动连接。".into())
 }
 
-fn normalized_path(path: &str) -> String {
+pub(super) fn normalized_path(path: &str) -> String {
     path.trim_start_matches(r"\\?\")
         .replace('/', "\\")
         .to_lowercase()
@@ -134,6 +135,9 @@ impl WindowMessages for ReminderWindow {
                     (context.callback)(signal);
                 }
                 Err(()) => context.stats.metadata_errors += 1,
+                Ok(false) if signal == ReminderSignal::Activated => {
+                    (context.callback)(ReminderSignal::ActivatedElsewhere);
+                }
                 Ok(false) => {}
             }
         });

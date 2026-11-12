@@ -2,7 +2,7 @@ import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import type { MessagePreview } from "../messagePreview";
-import { getWeChatReminderState, launchWeChat, listenWeChatReminderChanged, setWeChatMessagePreviewEnabled, setWeChatRemindersEnabled, type ReminderSnapshot } from "./api";
+import { getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged, setWeChatMessagePreviewEnabled, setWeChatRemindersEnabled, type ReminderSnapshot } from "./api";
 import { isWeChatMessagePreviewEnabled, isWeChatRemindersEnabled, saveWeChatMessagePreviewEnabled, saveWeChatRemindersEnabled } from "./storage";
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
@@ -48,7 +48,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
           || payload.snapshot.status !== "listening" || !payload.windowVisible || !canPreviewRef.current) {
           setPreviewReceivedAt(null);
         } else if (newlyPending) {
-          setPreviewReceivedAt(Date.now());
+          setPreviewReceivedAt((previous) => Math.max(Date.now(), (previous ?? 0) + 1));
         }
       });
       if (cancelled) { unlisten(); return; }
@@ -104,15 +104,20 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     if (!enabled) setPreviewReceivedAt(null);
   }), [acceptSnapshot, run]);
 
-  const openWeChat = useCallback(() => run(async () => {
-    await launchWeChat();
+  const openWeChat = useCallback((messageId?: string) => run(async () => {
+    if (messageId) {
+      if (!await launchWeChatConversation(messageId)) setActionError(t.wechat.jumpUnavailable);
+    } else {
+      await launchWeChat();
+    }
     setPreviewReceivedAt(null);
-  }), [run]);
+  }), [run, t.wechat.jumpUnavailable]);
 
   const latest = snapshot.messages[0];
   const message = latest?.receivedAt === snapshot.lastAttentionAt ? latest : undefined;
   const preview: MessagePreview | null = canPreview && snapshot.pending && previewReceivedAt !== null ? {
     source: "wechat", title: message?.contact ?? "", body: message?.body ?? "", receivedAt: previewReceivedAt,
+    wechatMessageId: message?.id,
   } : null;
   return { snapshot, busy, actionError, setEnabled, setPreviewEnabled, openWeChat, preview };
 }

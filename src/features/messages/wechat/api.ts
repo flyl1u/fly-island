@@ -44,6 +44,10 @@ export function launchWeChat() {
   return invoke("open_wechat");
 }
 
+export function launchWeChatConversation(messageId: string) {
+  return invoke<boolean>("open_wechat_conversation", { messageId });
+}
+
 export function listenWeChatReminderChanged(handler: EventCallback<ReminderEvent>) {
   return listen<ReminderEvent>(WECHAT_REMINDER_CHANGED_EVENT, handler);
 }

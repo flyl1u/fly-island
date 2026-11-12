@@ -81,6 +81,7 @@ fn run() -> Result<bool, String> {
         let index = match signal {
             ReminderSignal::Attention => 0,
             ReminderSignal::Activated => 1,
+            ReminderSignal::ActivatedElsewhere => return,
             ReminderSignal::Redraw => 2,
             ReminderSignal::WindowCreated => 3,
         };

@@ -30,6 +30,12 @@ pub(super) struct AccessibilityFlag {
 }
 
 impl AccessibilityFlag {
+    /// A restarted accessibility provider can clear the byte while the same WeChat stays open.
+    pub(super) fn reenable_if_cleared(&self) -> bool {
+        self.module.read(self.location.check) == Some(self.location.code)
+            && self.module.set_data_byte(self.location.flag, 0, 1)
+    }
+
     pub(super) fn activate(
         executable: &Path,
         pid: u32,

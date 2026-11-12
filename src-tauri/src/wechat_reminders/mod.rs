@@ -11,9 +11,9 @@ mod tests;
 
 use crate::win32;
 use conversations::ChatPreview;
-use preview_reader::PreviewReader;
+use preview_reader::{PreviewReader, ReadOutcome};
 use serde::Serialize;
-use source::{installed_executable, ReminderListener, ReminderSignal};
+use source::{installed_executable, normalized_path, ReminderListener, ReminderSignal};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -29,6 +29,7 @@ static SERVICE: OnceLock<Arc<ReminderService>> = OnceLock::new();
 const MAIN_WINDOW_LABEL: &str = "main";
 const REMINDER_EVENT: &str = "wechat-reminder-changed";
 const MAX_PREVIEWS: usize = 20;
+const FLASH_QUIET_MS: u64 = 4_000;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,6 +50,14 @@ struct MessagePreview {
     received_at: u64,
     #[serde(flatten)]
     chat: ChatPreview,
+    #[serde(skip)]
+    process: ProcessIdentity,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ProcessIdentity {
+    pid: u32,
+    started_at: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -85,6 +94,7 @@ impl Default for ReminderSnapshot {
 struct ReminderState {
     snapshot: ReminderSnapshot,
     generation: u64,
+    last_signal_at: Option<u64>,
 }
 
 impl ReminderState {
@@ -93,6 +103,7 @@ impl ReminderState {
             return false;
         }
         self.generation += 1;
+        self.last_signal_at = None;
         self.snapshot = ReminderSnapshot {
             revision: self.snapshot.revision + 1,
             enabled,
@@ -124,10 +135,13 @@ impl ReminderState {
         true
     }
 
-    fn receive_previews(&mut self, generation: u64, chats: Vec<ChatPreview>, now: u64) -> bool {
-        if chats.is_empty() {
-            return self.apply(generation, ReminderSignal::Attention, now);
-        }
+    fn receive_previews(
+        &mut self,
+        generation: u64,
+        process: ProcessIdentity,
+        chats: Vec<ChatPreview>,
+        now: u64,
+    ) -> bool {
         if !self.snapshot.enabled || !self.snapshot.preview_enabled || self.generation != generation
         {
             return false;
@@ -145,12 +159,14 @@ impl ReminderState {
                 id: format!("{received_at}-{index}"),
                 received_at,
                 chat,
+                process,
             });
         self.snapshot.messages = current
             .chain(self.snapshot.messages.drain(..))
             .take(MAX_PREVIEWS)
             .collect();
         self.snapshot.pending = true;
+        self.last_signal_at = Some(now);
         self.snapshot.last_attention_at = Some(received_at);
         self.snapshot.revision += 1;
         true
@@ -161,11 +177,31 @@ impl ReminderState {
             return false;
         }
         match signal {
-            ReminderSignal::Attention if !self.snapshot.pending => {
+            ReminderSignal::Attention => {
+                let repeated = self
+                    .last_signal_at
+                    .replace(now)
+                    .is_some_and(|last| now.saturating_sub(last) < FLASH_QUIET_MS);
+                if self.snapshot.pending && repeated {
+                    return false;
+                }
                 self.snapshot.pending = true;
-                self.snapshot.last_attention_at = Some(now);
+                self.snapshot.last_attention_at = Some(
+                    now.max(
+                        self.snapshot
+                            .last_attention_at
+                            .unwrap_or_default()
+                            .saturating_add(1),
+                    ),
+                );
             }
-            ReminderSignal::Activated if self.snapshot.pending => self.snapshot.pending = false,
+            ReminderSignal::Activated => {
+                self.last_signal_at = None;
+                if !self.snapshot.pending {
+                    return false;
+                }
+                self.snapshot.pending = false;
+            }
             _ => return false,
         }
         self.snapshot.revision += 1;
@@ -379,7 +415,12 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
         let (send_signal, signals) = mpsc::channel();
         let listener = installed_executable().and_then(|executable| {
             let listener = ReminderListener::new(executable.clone(), move |event| {
-                if matches!(event, ReminderSignal::Attention | ReminderSignal::Activated) {
+                if matches!(
+                    event,
+                    ReminderSignal::Attention
+                        | ReminderSignal::Activated
+                        | ReminderSignal::ActivatedElsewhere
+                ) {
                     let _ = send_signal.send(event);
                 }
             })?;
@@ -404,8 +445,11 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
                                 reader.attention(Instant::now())
                             }
                             (Some(reader), ReminderSignal::Activated) => {
-                                reader.activated();
+                                reader.focus(true, Instant::now());
                                 signal(&service, generation, event);
+                            }
+                            (Some(reader), ReminderSignal::ActivatedElsewhere) => {
+                                reader.focus(false, Instant::now())
                             }
                             _ => signal(&service, generation, event),
                         }
@@ -426,9 +470,15 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
                                 state.snapshot.preview_status = reader.status;
                                 state.snapshot.revision += 1;
                             }
-                            let received = previews.is_some_and(|chats| {
-                                state.receive_previews(generation, chats, now_ms())
-                            });
+                            let received = match previews {
+                                Some(ReadOutcome::Plain) => {
+                                    state.apply(generation, ReminderSignal::Attention, now_ms())
+                                }
+                                Some(ReadOutcome::Messages(process, chats)) => {
+                                    state.receive_previews(generation, process, chats, now_ms())
+                                }
+                                None => false,
+                            };
                             status_changed || received
                         });
                     }
@@ -455,7 +505,7 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
 pub async fn open_wechat() -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(|| {
         let executable = installed_executable()?;
-        if activate_existing_wechat(&executable)? {
+        if restore_wechat(&executable, None)?.is_some() {
             return Ok(());
         }
         Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into())
@@ -464,9 +514,59 @@ pub async fn open_wechat() -> Result<(), String> {
     .map_err(|error| format!("打开微信的线程失败：{error}"))?
 }
 
+#[tauri::command]
+pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let service = service()?;
+        let conversation = {
+            let state = service.state.lock().map_err(|_| "微信提醒状态不可用。")?;
+            state
+                .snapshot
+                .messages
+                .iter()
+                .find(|message| message.id == message_id)
+                .map(|message| (state.generation, message.process, message.chat.key.clone()))
+        };
+        let executable = installed_executable()?;
+        let process = conversation.as_ref().map(|(_, process, _)| *process);
+        let Some(window) = restore_wechat(&executable, process)? else {
+            if process.is_some() && restore_wechat(&executable, None)?.is_some() {
+                return Ok(false);
+            }
+            return Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into());
+        };
+        let Some((generation, process, key)) = conversation else {
+            return Ok(false);
+        };
+        let still_allowed = || {
+            service.state.lock().is_ok_and(|state| {
+                state.generation == generation
+                    && state.snapshot.enabled
+                    && state.snapshot.preview_enabled
+            })
+        };
+        let id = format!("{}{key}", conversations::SESSION_PREFIX);
+        for _ in 0..5 {
+            if !still_allowed()
+                || win32::process::window_process_id(window) != process.pid
+                || win32::process_times::start_time(process.pid) != Some(process.started_at)
+            {
+                break;
+            }
+            if win32::uia_list::click_list_row(window, &id, still_allowed) {
+                return Ok(true);
+            }
+            thread::sleep(Duration::from_millis(180));
+        }
+        Ok(false)
+    })
+    .await
+    .map_err(|error| format!("打开微信会话的线程失败：{error}"))?
+}
+
 struct WeChatWindow {
     handle: HWND,
-    started_at: u64,
+    process: ProcessIdentity,
     main_sized: bool,
     visible: bool,
 }
@@ -482,7 +582,7 @@ fn preferred_window(windows: &[WeChatWindow]) -> Option<&WeChatWindow> {
     windows
         .iter()
         .filter(|window| window.main_sized)
-        .min_by_key(|window| (!window.visible, window.started_at))
+        .min_by_key(|window| (!window.visible, window.process.started_at))
 }
 
 fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
@@ -490,7 +590,7 @@ fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
     let Some(path) = win32::process::image_path(process_id) else {
         return;
     };
-    if !path.eq_ignore_ascii_case(&search.executable) {
+    if normalized_path(&path) != search.executable {
         return;
     }
     let started_at = win32::process_times::start_time(process_id).unwrap_or(u64::MAX);
@@ -504,7 +604,10 @@ fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
     });
     search.found.push(WeChatWindow {
         handle: window,
-        started_at,
+        process: ProcessIdentity {
+            pid: process_id,
+            started_at,
+        },
         main_sized,
         visible: win32::window::is_visible(window),
     });
@@ -512,7 +615,7 @@ fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
 
 fn existing_wechat_windows(executable: &std::path::Path) -> Result<WindowSearch, String> {
     let mut search = WindowSearch {
-        executable: executable.to_string_lossy().into_owned(),
+        executable: normalized_path(&executable.to_string_lossy()),
         found: Vec::new(),
         running: false,
     };
@@ -521,14 +624,36 @@ fn existing_wechat_windows(executable: &std::path::Path) -> Result<WindowSearch,
     Ok(search)
 }
 
-fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String> {
+fn restore_wechat(
+    executable: &std::path::Path,
+    requested: Option<ProcessIdentity>,
+) -> Result<Option<HWND>, String> {
     let search = existing_wechat_windows(executable)?;
     if !search.running {
-        return Ok(false);
+        return Ok(None);
     }
-    let original = preferred_window(&search.found)
-        .ok_or("微信已在运行，但未定位到主窗口，请先从系统托盘打开并登录微信。")?;
-    let expected_process = win32::process::window_process_id(original.handle);
+    let original = if let Some(process) = requested {
+        let Some(window) = search
+            .found
+            .iter()
+            .find(|window| window.main_sized && window.process == process)
+        else {
+            return Ok(None);
+        };
+        window
+    } else {
+        preferred_window(&search.found)
+            .ok_or("微信已在运行，但未定位到主窗口，请先从系统托盘打开并登录微信。")?
+    };
+    let foreground = win32::window::foreground_window();
+    if foreground == original.handle
+        && original.visible
+        && !win32::window::is_minimized(original.handle)
+    {
+        return Ok(Some(original.handle));
+    }
+    let expected = original.process;
+    win32::window::allow_set_foreground_window(expected.pid);
     // The registered handler restores Qt's own UI state. Showing its HWND directly can leave it blank.
     tauri_plugin_opener::open_url("weixin://", None::<&str>).map_err(|error| {
         format!("无法通过微信注册入口唤回客户端，请从系统托盘打开微信：{error}")
@@ -536,14 +661,16 @@ fn activate_existing_wechat(executable: &std::path::Path) -> Result<bool, String
     for _ in 0..40 {
         thread::sleep(Duration::from_millis(50));
         let current = existing_wechat_windows(executable)?;
-        if let Some(window) = preferred_window(&current.found) {
-            let process_id = win32::process::window_process_id(window.handle);
-            if process_id == expected_process
+        if let Some(window) = current.found.iter().find(|window| {
+            window.main_sized
+                && window.process == expected
                 && window.visible
                 && !win32::window::is_minimized(window.handle)
-            {
-                return Ok(true);
+        }) {
+            if requested.is_some() && win32::window::foreground_window() == foreground {
+                let _ = win32::window::bring_to_foreground(window.handle);
             }
+            return Ok(Some(window.handle));
         }
     }
     Err("微信未能恢复原来的主窗口，请双击系统托盘中的微信图标。".into())
@@ -558,6 +685,7 @@ macro_rules! tauri_commands {
             crate::wechat_reminders::set_wechat_reminders_enabled,
             crate::wechat_reminders::set_wechat_message_preview_enabled,
             crate::wechat_reminders::open_wechat,
+            crate::wechat_reminders::open_wechat_conversation,
         ] $($rest)*)
     };
 }
