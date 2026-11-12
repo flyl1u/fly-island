@@ -22,16 +22,14 @@ export function WeChatReminderControls({ controller, compact = false }: { contro
   </div>;
 }
 
-/**
- * WeChat hands over no message content, only that something is waiting, so the tab is one
- * centred target: the WeChat icon, the reminder state and "click to open WeChat". Clicking
- * anywhere on it brings WeChat forward; there is no separate open button in the header.
- */
+/** Chat previews when available, with the centered launcher for basic reminders. */
 export function WeChatReminderPanel({ controller, navigation }: { controller: WeChatRemindersController; navigation: ReactNode }) {
   const { snapshot, busy, actionError, openWeChat } = controller;
   const t = useTranslation();
   const pending = snapshot.enabled && snapshot.status === "listening" && snapshot.pending;
   const label = snapshot.status === "listening" ? pending ? t.messages.newReminder : t.wechat.noReminders : t.wechat.status[snapshot.status];
+  const messages = snapshot.messages;
+  const plain = pending && messages[0]?.receivedAt !== snapshot.lastAttentionAt;
   return (
     <section className="qq-panel" aria-label={t.messages.wechatReminders}>
       <header className="qq-panel__header">
@@ -39,7 +37,31 @@ export function WeChatReminderPanel({ controller, navigation }: { controller: We
         <div className="qq-panel__toolbar"><WeChatReminderControls controller={controller} compact /></div>
       </header>
       {(actionError || snapshot.error) && <p className="qq-panel__error" role="alert">{actionError || snapshot.error}</p>}
-      <div className="qq-panel__empty">
+      {messages.length > 0 ? (
+        <div className="qq-panel__list" role="list" aria-label={t.wechat.messageList} aria-busy={busy}>
+          {plain && (
+            <article className="qq-panel__item" role="listitem">
+              <button type="button" aria-label={t.wechat.open} disabled={busy} onClick={() => void openWeChat()}>
+                <div className="qq-panel__item-heading"><strong>{t.messages.newReminder}</strong></div>
+              </button>
+            </article>
+          )}
+          {messages.map(({ id, receivedAt, contact, body }) => {
+            const date = new Date(receivedAt);
+            return (
+              <article className="qq-panel__item" key={id} role="listitem" data-message-id={id}>
+                <button type="button" aria-label={t.wechat.openFrom(contact)} disabled={busy} onClick={() => void openWeChat()}>
+                  <div className="qq-panel__item-heading">
+                    <strong>{contact}</strong>
+                    <time dateTime={date.toISOString()}>{date.toLocaleTimeString(t.localeTag, { hour: "2-digit", minute: "2-digit" })}</time>
+                  </div>
+                  <p>{body}</p>
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      ) : <div className="qq-panel__empty">
         <button
           className={`wechat-launch${pending ? " wechat-launch--pending" : ""}`}
           type="button"
@@ -51,7 +73,7 @@ export function WeChatReminderPanel({ controller, navigation }: { controller: We
           <span className="wechat-launch__state" role="status">{label}</span>
           <span className="wechat-launch__hint">{t.wechat.clickToOpen}</span>
         </button>
-      </div>
+      </div>}
     </section>
   );
 }

@@ -12,7 +12,7 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   const wechatReminders = useWeChatReminders(canPreviewMessages);
   const qqMail = useMail(canPreviewMessages);
   const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.previewReceivedAt !== null || qqMail.preview,
+    qqNotifications.preview || wechatReminders.preview || qqMail.preview,
   );
   return { qqNotifications, wechatReminders, qqMail, hasMessagePreview };
 }

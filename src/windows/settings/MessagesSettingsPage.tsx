@@ -31,16 +31,28 @@ export function MessagesSettingsPage({
 }) {
   const t = useTranslation();
   const labels = t.settings.messageSources;
+  const { snapshot: wechat, actionError, setEnabled, setPreviewEnabled } = wechatReminders;
+  const wechatHint = wechat.previewEnabled && wechat.enabled
+    ? t.wechat.previewStatus[wechat.previewStatus] || labels.wechatHint
+    : labels.wechatHint;
 
   return (
     <>
       <QQGroup controller={qqNotifications} title={labels.qqTitle} hint={labels.qqHint} />
-      <SettingsGroup title={labels.wechatTitle} footer={<Problem error={wechatReminders.actionError || wechatReminders.snapshot.error} hint={labels.wechatHint} />}>
+      <SettingsGroup title={labels.wechatTitle} footer={<Problem error={actionError || wechat.error} hint={wechatHint} />}>
         <SettingsToggleRow
           title={t.wechat.receive}
-          checked={wechatReminders.snapshot.enabled}
-          onChange={(enabled) => void wechatReminders.setEnabled(enabled)}
+          checked={wechat.enabled}
+          onChange={(enabled) => void setEnabled(enabled)}
         />
+        {wechat.enabled && (
+          <SettingsToggleRow
+            title={t.wechat.showPreview}
+            description={t.wechat.previewHint}
+            checked={wechat.previewEnabled}
+            onChange={(enabled) => void setPreviewEnabled(enabled)}
+          />
+        )}
       </SettingsGroup>
       <MailGroups settings={settings} onSettingsChange={onSettingsChange} />
     </>

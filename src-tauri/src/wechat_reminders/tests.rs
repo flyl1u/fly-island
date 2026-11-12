@@ -96,6 +96,34 @@ fn redraws_and_window_creation_are_not_messages() {
 }
 
 #[test]
+fn previews_keep_the_newest_twenty_and_do_not_replay_after_switching_off() {
+    let mut state = ReminderState::default();
+    state.set_enabled(true);
+    assert!(!state.receive_previews(state.generation, vec![preview("off")], 1000));
+    state.set_preview_enabled(true);
+    let generation = state.generation;
+    assert!(state.receive_previews(generation, vec![preview("first"); MAX_PREVIEWS], 2000));
+    assert!(state.receive_previews(generation, vec![preview("latest")], 2000));
+    assert_eq!(state.snapshot.messages.len(), MAX_PREVIEWS);
+    assert_eq!(state.snapshot.messages[0].chat.body, "latest");
+    assert_eq!(state.snapshot.last_attention_at, Some(2001));
+    assert!(!state.receive_previews(generation, Vec::new(), 2100));
+    state.set_preview_enabled(false);
+    assert!(state.snapshot.messages.is_empty());
+    assert!(!state.receive_previews(generation, vec![preview("stale")], 3000));
+    assert!(state.apply(state.generation, ReminderSignal::Activated, 3100));
+    assert!(state.apply(state.generation, ReminderSignal::Attention, 3200));
+    assert!(state.snapshot.pending);
+}
+
+fn preview(body: &str) -> ChatPreview {
+    ChatPreview {
+        contact: "test".into(),
+        body: body.into(),
+    }
+}
+
+#[test]
 fn opening_wechat_prefers_main_window_over_an_older_login_window() {
     let windows = [
         WeChatWindow {

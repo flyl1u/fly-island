@@ -118,6 +118,7 @@ pub fn run() {
                 // Hooks still waiting go back to the terminal rather than hit their timeout.
                 if let tauri::RunEvent::Exit = event {
                     agent_approval::shutdown();
+                    wechat_reminders::shutdown();
                 }
             })
         });

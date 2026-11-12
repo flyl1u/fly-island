@@ -5,12 +5,16 @@
 
 use windows::Win32::{Foundation::FILETIME, System::Threading::GetProcessTimes};
 
-use super::process::open_for_limited_query;
+use super::process::{open_for_limited_query, ProcessHandle};
 
 /// Start time of `process_id` in 100 ns ticks since 1601-01-01 (UTC); `None`
 /// when the process cannot be opened or its times cannot be read.
 pub(crate) fn start_time(process_id: u32) -> Option<u64> {
     let process = open_for_limited_query(process_id)?;
+    start_time_of(&process)
+}
+
+pub(super) fn start_time_of(process: &ProcessHandle) -> Option<u64> {
     let mut started = FILETIME::default();
     let mut exited = FILETIME::default();
     let mut kernel = FILETIME::default();

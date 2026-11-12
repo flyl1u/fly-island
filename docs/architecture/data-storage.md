@@ -17,6 +17,7 @@
 | QQ 邮箱授权码、翻译 API 密钥 | Windows 凭据管理器（`com.focusd.island.qq-mail`、`com.focusd.island.translation`；翻译密钥按服务分条目，用户名为服务 id，DeepSeek 沿用 `deepseek`） | `qq_mail`、`translation` |
 | 待办 Markdown 导出 | 用户选择的目录（经过校验） | `system` |
 | 开机自启 | `HKCU\...\Run` 下的值 `FocuSD Island` | `system` |
-| 剪贴板历史、通知、邮件正文 | 仅保存在内存中 | 各服务模块 |
+| 剪贴板历史、通知、微信消息摘要、邮件正文 | 仅保存在内存中 | 各服务模块 |
+| 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
 
 总览见 [overview.md](overview.md)。
