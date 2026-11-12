@@ -401,11 +401,11 @@
     transform 420ms var(--island-spring-open) 80ms;
 }
 
-/* Translation simply appears open: the tall page used to drop down from the bar, which read as
-   a rush downwards (2026-11-11, owner). Closing it still animates. */
-.island--translation.island--expanded,
-.island--translation.island--expanded .island__expanded {
-  transition: none;
+/* Translation opens on the same spring as the other pages, but its panel only fades in: on the
+   tallest page the 6px drop on top of the growing shape read as a rush downwards (2026-11-11,
+   owner). */
+.island--translation .island__expanded {
+  transform: scale(var(--island-expanded-scale));
 }
 
 .island__content {
