@@ -1,0 +1,42 @@
+.todo-duration-picker {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: var(--space-sm);
+  color: var(--text-2);
+  background: var(--color-white-a04);
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+}
+
+.todo-duration-picker__options,
+.todo-duration-picker__custom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.todo-duration-picker button,
+.todo-duration-picker input {
+  min-height: 26px;
+  padding: 3px 8px;
+  color: var(--text-1);
+  background: var(--color-white-a08);
+  border: 1px solid transparent;
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+  font: inherit;
+  font-size: 12px;
+}
+
+.todo-duration-picker button { cursor: pointer; }
+.todo-duration-picker button:hover { background: var(--color-white-a12); }
+.todo-duration-picker button[aria-pressed="true"] { border-color: var(--color-accent); }
+.todo-duration-picker button:disabled { opacity: 0.4; cursor: default; }
+.todo-duration-picker .todo-duration-picker__cancel { margin-left: auto; background: transparent; color: var(--text-3); }
+.todo-duration-picker button:focus-visible,
+.todo-duration-picker input:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
+.todo-duration-picker__custom { margin-top: var(--space-sm); font-size: 12px; }
+.todo-duration-picker__custom label { display: flex; align-items: center; gap: var(--space-sm); }
+.todo-duration-picker__custom input { width: 64px; }
+.todo-duration-picker__custom [role="status"] { color: var(--color-warning); }

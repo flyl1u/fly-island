@@ -1,6 +1,7 @@
 import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
-import { readString, removeItem, writeString } from "../../lib/storage.ts";
+import { readJson, readString, removeItem, writeJson, writeString } from "../../lib/storage.ts";
+import { normalizeTodoDuration, normalizeTodoTimer, type TodoDuration, type TodoTimer } from "./timer.ts";
 import {
   createTodoId,
   normalizeTodo,
@@ -16,6 +17,8 @@ export { createTodoId, normalizeTodo };
 export const SCHEDULED_TODOS_STORAGE_KEY = "focusd-island-scheduled-todos";
 export const TODOS_STORAGE_KEY = "focusd-island-todos";
 export const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";
+export const TODO_TIMER_STORAGE_KEY = "focusd-island-todo-timer";
+export const TODO_DURATION_STORAGE_KEY = "focusd-island-todo-duration";
 export const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
 export const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";
 export const DAILY_NOTE_STORAGE_KEY = "focusd-island-daily-note";
@@ -38,6 +41,22 @@ export function loadTodos(): TodoItem[] {
 
 export function loadActiveTodoId() {
   return readString(ACTIVE_TODO_STORAGE_KEY);
+}
+
+export function loadTodoTimer() {
+  return normalizeTodoTimer(readJson(TODO_TIMER_STORAGE_KEY));
+}
+
+export function saveTodoTimer(timer: TodoTimer | null) {
+  return timer ? writeJson(TODO_TIMER_STORAGE_KEY, timer) : removeItem(TODO_TIMER_STORAGE_KEY);
+}
+
+export function loadTodoDuration() {
+  return normalizeTodoDuration(readJson(TODO_DURATION_STORAGE_KEY));
+}
+
+export function saveTodoDuration(duration: TodoDuration) {
+  return writeJson(TODO_DURATION_STORAGE_KEY, duration);
 }
 
 export function loadCurrentTodoDate() {

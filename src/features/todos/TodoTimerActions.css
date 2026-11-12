@@ -1,0 +1,34 @@
+.todo-timer-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  min-width: 0;
+  color: var(--color-warning);
+  font-size: 12px;
+  animation: todoTimerArrival 600ms ease-out;
+}
+
+.todo-timer-actions [role="status"] { margin-right: auto; }
+.todo-timer-actions button {
+  padding: 4px 8px;
+  color: var(--text-1);
+  background: var(--color-white-a08);
+  border: 0;
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+  font: inherit;
+  cursor: pointer;
+}
+.todo-timer-actions button:hover { background: var(--color-white-a12); }
+.todo-timer-actions button:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
+
+@keyframes todoTimerArrival {
+  from { opacity: 0.4; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-timer-actions { animation: none; }
+}

@@ -2,6 +2,7 @@ import { isUpdateTodo } from "../../features/todos/updateTodo";
 import { useMemo } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
+import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
 import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
 import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
@@ -29,20 +30,21 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false }: { lyricsPlaying?: boolean; coverWanted?: boolean } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null } = {},
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
   );
-  const displayedTodoId = useTodoRotation(
+  const rotatingTodoId = useTodoRotation(
     pendingTodoIds,
     activeTodoId,
-    settings.rotateTodos,
+    settings.rotateTodos && !timer,
     settings.todoRotationSeconds,
     isRotationPaused,
   );
+  const displayedTodoId = timer ? activeTodoId : rotatingTodoId;
   const collapsedTaskTitle = useMemo(() => {
     const activeTodo = todos.find(
       (todo) => todo.id === displayedTodoId && !todo.completed,
@@ -55,13 +57,15 @@ export function useCollapsedTodo(
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
     ? pendingTodoCount
     : null;
-  const collapsedItem = pickCollapsedItem(settings.collapsedPriority, {
+  const collapsedItem = timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
   }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
   const collapsedIslandWidth = useMemo(() => {
-    const todoText = collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
+    // A fixed width for the whole round; ticking digits never resize the native window.
+    const todoText = timer ? (timer.notified ? t.todo.timeUp : formatTodoCountdown(timer.durationMinutes * 60))
+      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
       : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
@@ -71,7 +75,7 @@ export function useCollapsedTodo(
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.showCollapsedText, settings.showTitle, t]);
+  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.showCollapsedText, settings.showTitle, t, timer]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth };
 }
