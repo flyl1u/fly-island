@@ -23,15 +23,20 @@ export function shiftMonth(month: string, delta: number) {
   return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/**
- * Six weeks of dates covering `month`, starting on Monday (`weekStart` 1) or
- * Sunday (0), so the grid keeps one height for every month.
- */
-export function getMonthGrid(month: string, weekStart: 0 | 1): string[] {
+/** The whole weeks, Monday first, that cover `month`: four to six rows of dates. */
+export function getMonthGrid(month: string): string[] {
   const first = `${month}-01`;
-  const weekday = new Date(`${first}T00:00:00`).getDay();
-  const start = addDays(first, -((weekday - weekStart + 7) % 7));
-  return Array.from({ length: 42 }, (_, index) => addDays(start, index));
+  const offset = (new Date(`${first}T00:00:00`).getDay() + 6) % 7;
+  const [year, monthIndex] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, monthIndex, 0).getDate();
+  const start = addDays(first, -offset);
+  return Array.from({ length: Math.ceil((offset + daysInMonth) / 7) * 7 }, (_, index) => addDays(start, index));
+}
+
+/** Up to three dots for a day: accent for open or scheduled todos, grey for done ones, open first. */
+export function dayDots(items: CalendarTodo[]): ("open" | "done")[] {
+  const open = items.filter((item) => !item.completed).length;
+  return Array.from({ length: Math.min(items.length, 3) }, (_, index) => (index < open ? "open" : "done"));
 }
 
 /**

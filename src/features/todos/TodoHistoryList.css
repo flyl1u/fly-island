@@ -1,57 +1,108 @@
-/* Builds on the scheduled list's rows (ScheduledTodoList.css): a done mark in front, an add-to-today button behind. */
 .todo-notebook--history,
 .todo-notebook--calendar {
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-.todo-history__date {
+.todo-history {
+  min-height: 0;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  gap: var(--space-lg);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.todo-history__day {
+  display: grid;
+  gap: 2px;
+}
+
+.todo-history__header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  color: var(--text-2);
-  font-size: 11px;
-  font-weight: 600;
+  padding: 0 6px 2px 8px;
 }
 
-.todo-history__date > span:last-child {
-  flex: 0 0 auto;
-  color: var(--text-3);
-  font-weight: 500;
-}
-
-.scheduled-list__item.todo-history__item {
-  grid-template-columns: 14px minmax(0, 1fr) 26px;
-  padding-left: 8px;
-  border-radius: var(--corner-xs);
-}
-
-.todo-history__mark {
-  width: 14px;
-  height: 14px;
-  display: inline-grid;
-  place-items: center;
-  color: var(--color-black);
-  border: 1.5px solid var(--text-3);
-  border-radius: var(--corner-xs);
-}
-
-.todo-history__item--done .todo-history__mark {
-  background: var(--text-2);
-  border-color: transparent;
-}
-
-.scheduled-list__item.todo-history__item--done > span:nth-child(2) {
-  color: var(--text-3);
-  font-weight: 500;
-  text-decoration: line-through;
-}
-
-.scheduled-list__item.todo-history__item > button:hover:not(:disabled) {
+.todo-history__heading {
   color: var(--text-1);
+  font-size: 12px;
+  font-weight: 650;
 }
 
-.scheduled-list__item.todo-history__item > button:disabled {
-  cursor: default;
-  opacity: 0.6;
+.todo-history__summary {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.todo-history__bar {
+  width: 36px;
+  height: 3px;
+  overflow: hidden;
+  background: var(--color-white-a10);
+  border-radius: var(--radius-pill);
+}
+
+.todo-history__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+}
+
+.todo-history__older {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  color: var(--text-2);
+  background: var(--color-white-a04);
+  border: 0;
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todo-history__older:hover {
+  color: var(--text-1);
+  background: var(--color-white-a08);
+}
+
+.todo-history__older svg {
+  transition: transform 180ms ease;
+}
+
+.todo-history__older--open svg {
+  transform: rotate(180deg);
+}
+
+.todo-history__older:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.todo-history-empty {
+  align-self: center;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  color: var(--text-3);
+  font-size: 12px;
+  text-align: center;
+}
+
+.todo-history-empty strong {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 600;
 }

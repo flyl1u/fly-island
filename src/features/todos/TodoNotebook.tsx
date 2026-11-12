@@ -89,7 +89,7 @@ export function TodoNotebook({
   const isUpcomingMode = pageMode === "upcoming";
   const isHistoryMode = pageMode === "history";
   const isCalendarMode = pageMode === "calendar";
-  const historyDays = useMemo(() => groupTodoHistory(archives, currentDate), [archives, currentDate]);
+  const historyDays = useMemo(() => groupTodoHistory(archives, currentDate, todos), [archives, currentDate, todos]);
   const calendarTodos = useMemo(
     () => (isCalendarMode ? collectCalendarTodos({ archives, todos, currentDate, scheduledTodos }) : null),
     [archives, currentDate, isCalendarMode, scheduledTodos, todos],
@@ -112,22 +112,14 @@ export function TodoNotebook({
   return (
     <section className={notebookClassName} aria-label={t.notebook.sectionLabel}>
       <TodoNotebookTopline
-        isDailyMode={isDailyMode}
-        isTodayMode={isTodayMode}
-        isArchiveMode={isArchiveMode}
-        isReviewMode={isReviewMode}
-        isUpcomingMode={isUpcomingMode}
         pageMode={pageMode}
-        historyDayCount={historyDays.length}
         selectedArchive={selectedArchive}
         scheduledCount={scheduledTodos.length}
         archiveLayout={archiveLayout}
         openCount={openCount}
+        onSelectView={(view) => ({ today: onShowToday, daily: onShowDaily, history: onShowHistory, calendar: onShowCalendar })[view]()}
         onShowToday={onShowToday}
         onShowUpcoming={onShowUpcoming}
-        onShowDaily={onShowDaily}
-        onShowHistory={onShowHistory}
-        onShowCalendar={onShowCalendar}
         onArchiveLayoutChange={onArchiveLayoutChange}
       />
 
@@ -171,7 +163,7 @@ export function TodoNotebook({
       ) : isUpcomingMode ? (
         <ScheduledTodoList todos={scheduledTodos} onDelete={onDeleteScheduledTodo} />
       ) : isHistoryMode ? (
-        <TodoHistoryList days={historyDays} todayTodos={todos} onRestore={(title) => onAddTodoForDay(title, currentDate)} />
+        <TodoHistoryList days={historyDays} today={currentDate} todayTodos={todos} onRestore={(title) => onAddTodoForDay(title, currentDate)} />
       ) : calendarTodos ? (
         <TodoCalendar
           today={currentDate}
