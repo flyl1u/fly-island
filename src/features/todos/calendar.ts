@@ -1,0 +1,70 @@
+import { addDays } from "./schedule.ts";
+import { withoutUpdateTodo } from "./updateTodo.ts";
+import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
+
+/** A todo as the calendar shows it on its day. */
+export type CalendarTodo = {
+  id: string;
+  title: string;
+  completed: boolean;
+  /** Planned for a later day and not yet on a list; it can be removed from there. */
+  scheduled: boolean;
+};
+
+/** The month a date falls in, "YYYY-MM". */
+export function monthOf(date: string) {
+  return date.slice(0, 7);
+}
+
+/** The month `delta` months after `month` ("YYYY-MM"). */
+export function shiftMonth(month: string, delta: number) {
+  const [year, monthIndex] = month.split("-").map(Number);
+  const next = new Date(year, monthIndex - 1 + delta, 1);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Six weeks of dates covering `month`, starting on Monday (`weekStart` 1) or
+ * Sunday (0), so the grid keeps one height for every month.
+ */
+export function getMonthGrid(month: string, weekStart: 0 | 1): string[] {
+  const first = `${month}-01`;
+  const weekday = new Date(`${first}T00:00:00`).getDay();
+  const start = addDays(first, -((weekday - weekStart + 7) % 7));
+  return Array.from({ length: 42 }, (_, index) => addDays(start, index));
+}
+
+/**
+ * Every known todo by its day: archived lists for past days, the open list for
+ * `currentDate`, and scheduled todos on the day they are planned for.
+ */
+export function collectCalendarTodos({
+  archives,
+  todos,
+  currentDate,
+  scheduledTodos,
+}: {
+  archives: TodoArchive[];
+  todos: TodoItem[];
+  currentDate: string;
+  scheduledTodos: ScheduledTodo[];
+}): Map<string, CalendarTodo[]> {
+  const days = new Map<string, CalendarTodo[]>();
+  const add = (date: string, items: CalendarTodo[]) => {
+    if (items.length > 0) days.set(date, [...(days.get(date) ?? []), ...items]);
+  };
+  const fromList = (items: TodoItem[]) =>
+    withoutUpdateTodo(items).map(({ id, title, completed }) => ({ id, title, completed, scheduled: false }));
+
+  const seenArchiveDates = new Set<string>();
+  for (const archive of archives) {
+    if (archive.date === currentDate || seenArchiveDates.has(archive.date)) continue;
+    seenArchiveDates.add(archive.date);
+    add(archive.date, fromList(archive.todos));
+  }
+  add(currentDate, fromList(todos));
+  for (const todo of scheduledTodos) {
+    add(todo.date, [{ id: todo.id, title: todo.title, completed: false, scheduled: true }]);
+  }
+  return days;
+}

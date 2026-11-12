@@ -1,6 +1,28 @@
-import { CalendarClock, ClipboardList, Columns2, NotebookPen } from "lucide-react";
+import { CalendarClock, CalendarDays, ClipboardList, Columns2, History, NotebookPen, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import type { ArchiveLayout, TodoArchive } from "./types";
+import type { ArchiveLayout, TodoArchive, TodoPageMode } from "./types";
+
+/** Opens one of the todo pages; while that page is open it shows the list icon and goes back. */
+function PageToggle({ active, icon: Icon, openLabel, backLabel, onOpen, onBack }: {
+  active: boolean;
+  icon: LucideIcon;
+  openLabel: string;
+  backLabel: string;
+  onOpen: () => void;
+  onBack: () => void;
+}) {
+  const Shown = active ? ClipboardList : Icon;
+  return (
+    <button
+      className={`todo-page-toggle${active ? " todo-page-toggle--active" : ""}`}
+      type="button"
+      aria-label={active ? backLabel : openLabel}
+      onClick={active ? onBack : onOpen}
+    >
+      <Shown size={14} strokeWidth={2.2} />
+    </button>
+  );
+}
 
 export function TodoNotebookTopline({
   isDailyMode,
@@ -8,6 +30,8 @@ export function TodoNotebookTopline({
   isArchiveMode,
   isReviewMode,
   isUpcomingMode,
+  pageMode,
+  historyDayCount,
   selectedArchive,
   scheduledCount,
   archiveLayout,
@@ -15,6 +39,8 @@ export function TodoNotebookTopline({
   onShowToday,
   onShowUpcoming,
   onShowDaily,
+  onShowHistory,
+  onShowCalendar,
   onArchiveLayoutChange,
 }: {
   isDailyMode: boolean;
@@ -22,6 +48,8 @@ export function TodoNotebookTopline({
   isArchiveMode: boolean;
   isReviewMode: boolean;
   isUpcomingMode: boolean;
+  pageMode: TodoPageMode;
+  historyDayCount: number;
   selectedArchive: TodoArchive | null;
   scheduledCount: number;
   archiveLayout: ArchiveLayout;
@@ -29,9 +57,14 @@ export function TodoNotebookTopline({
   onShowToday: () => void;
   onShowUpcoming: () => void;
   onShowDaily: () => void;
+  onShowHistory: () => void;
+  onShowCalendar: () => void;
   onArchiveLayoutChange: (layout: ArchiveLayout) => void;
 }) {
   const t = useTranslation();
+  const isHistoryMode = pageMode === "history";
+  const isCalendarMode = pageMode === "calendar";
+  const TabIcon = isDailyMode ? NotebookPen : isHistoryMode ? History : isCalendarMode ? CalendarDays : ClipboardList;
   const archiveTitle =
     archiveLayout === "cards"
       ? t.notebook.notebookCards
@@ -41,16 +74,16 @@ export function TodoNotebookTopline({
     <div className="todo-notebook__topline">
       <div className="todo-notebook__title-group">
         <span className="todo-notebook__tab">
-          {isDailyMode ? (
-            <NotebookPen size={15} strokeWidth={2.1} />
-          ) : (
-            <ClipboardList size={15} strokeWidth={2.1} />
-          )}
+          <TabIcon size={15} strokeWidth={2.1} />
           {isReviewMode
             ? selectedArchive?.date ?? t.notebook.reviewTab
             : isDailyMode
               ? t.notebook.dailyTab
-              : isUpcomingMode ? t.notebook.upcomingTab : t.notebook.tasksTab}
+              : isHistoryMode
+                ? t.notebook.historyTab
+                : isCalendarMode
+                  ? t.notebook.calendarTab
+                  : isUpcomingMode ? t.notebook.upcomingTab : t.notebook.tasksTab}
         </span>
         {(isUpcomingMode || (isTodayMode && scheduledCount > 0)) && (
           <button
@@ -63,26 +96,12 @@ export function TodoNotebookTopline({
             <span className="todo-page-toggle__count">{scheduledCount}</span>
           </button>
         )}
-        {(isTodayMode || isDailyMode) && (
-          <button
-            className={[
-              "todo-page-toggle",
-              isDailyMode ? "todo-page-toggle--active" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            type="button"
-            aria-label={
-              isDailyMode ? t.notebook.backToTasks : t.notebook.openDailyNote
-            }
-            onClick={isDailyMode ? onShowToday : onShowDaily}
-          >
-            {isDailyMode ? (
-              <ClipboardList size={14} strokeWidth={2.2} />
-            ) : (
-              <NotebookPen size={14} strokeWidth={2.2} />
-            )}
-          </button>
+        {(isTodayMode || isDailyMode || isHistoryMode || isCalendarMode) && (
+          <>
+            <PageToggle active={isDailyMode} icon={NotebookPen} openLabel={t.notebook.openDailyNote} backLabel={t.notebook.backToTasks} onOpen={onShowDaily} onBack={onShowToday} />
+            <PageToggle active={isHistoryMode} icon={History} openLabel={t.notebook.openHistory} backLabel={t.notebook.backToTasks} onOpen={onShowHistory} onBack={onShowToday} />
+            <PageToggle active={isCalendarMode} icon={CalendarDays} openLabel={t.notebook.openCalendar} backLabel={t.notebook.backToTasks} onOpen={onShowCalendar} onBack={onShowToday} />
+          </>
         )}
       </div>
       {isArchiveMode ? (
@@ -104,9 +123,13 @@ export function TodoNotebookTopline({
             <Columns2 size={14} strokeWidth={2.1} />
           </button>
         </div>
-      ) : (
+      ) : isCalendarMode ? null : (
         <span className="todo-notebook__open-count">
-          {isUpcomingMode ? t.notebook.scheduledCount(scheduledCount) : t.notebook.openCount(openCount)}
+          {isUpcomingMode
+            ? t.notebook.scheduledCount(scheduledCount)
+            : isHistoryMode
+              ? t.notebook.historyDays(historyDayCount)
+              : t.notebook.openCount(openCount)}
         </span>
       )}
     </div>

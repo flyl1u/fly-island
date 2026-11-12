@@ -36,6 +36,7 @@ export const PAGES = [
   "settings.html?test=1",
   "settings-sidebar.html",
   "todo-edit.html",
+  "todo-history-calendar.html",
   "tucked-hover.html",
 ];
 
