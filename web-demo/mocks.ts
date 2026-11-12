@@ -52,6 +52,29 @@ export function installDemoMocks(data: DemoContent) {
 
   let qqItems = data.qq.map((item, index) => ({ id: `q${index}`, ...item, createdAt: now - [90_000, 600_000, 1_500_000][index] }));
   const qq = () => ({ revision: ++revision, enabled: true, status: "listening", error: null, items: qqItems });
+  let wechatEnabled = true;
+  let wechatPreviewEnabled = true;
+  let wechatHideMinimizedTaskbar = false;
+  let wechatPending = true;
+  const wechatDelays = [45_000, 300_000, 900_000, 1_800_000, 3_600_000];
+  let wechatMessages = data.wechat.map((item, index) => ({
+    id: `wx${index + 1}`,
+    contact: item.contact,
+    body: item.body,
+    receivedAt: now - (wechatDelays[index] ?? (index + 1) * 600_000),
+  }));
+  const wechat = () => ({
+    revision: ++revision,
+    enabled: wechatEnabled,
+    status: wechatEnabled ? ("listening" as const) : ("disabled" as const),
+    pending: wechatPending,
+    lastAttentionAt: wechatMessages[0]?.receivedAt ?? null,
+    error: null,
+    previewEnabled: wechatPreviewEnabled,
+    previewStatus: wechatPreviewEnabled ? ("ready" as const) : ("off" as const),
+    hideMinimizedTaskbar: wechatHideMinimizedTaskbar,
+    messages: wechatMessages,
+  });
   let mailUnread = true;
   const mail = () => [{
     revision: ++revision, email: "demo@qq.com", configured: true, enabled: true, syncing: false, status: "connected",
@@ -131,8 +154,29 @@ export function installDemoMocks(data: DemoContent) {
       case "set_qq_notifications_enabled":
       case "request_qq_notification_access": return command === "request_qq_notification_access" ? "allowed" : qq();
       case "clear_qq_notifications": qqItems = []; return qq();
+      case "open_wechat_conversation":
+      case "launch_wechat_conversation":
+        wechatPending = false;
+        return true;
+      case "open_wechat":
+      case "launch_wechat":
+        wechatPending = false;
+        return wechat();
+      case "clear_wechat_reminders":
+      case "clear_wechat_messages":
+      case "clear_wechat_notifications":
+        wechatMessages = [];
+        wechatPending = false;
+        return wechat();
       case "get_wechat_reminder_state":
-      case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: now - 120_000, error: null, previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [] };
+      case "set_wechat_reminders_enabled":
+      case "set_wechat_message_preview_enabled":
+      case "set_wechat_minimized_taskbar_hidden":
+        if (typeof args.enabled === "boolean") wechatEnabled = args.enabled;
+        if (typeof args.previewEnabled === "boolean") wechatPreviewEnabled = args.previewEnabled;
+        if (typeof args.hideMinimizedTaskbar === "boolean") wechatHideMinimizedTaskbar = args.hideMinimizedTaskbar;
+        if (typeof args.hidden === "boolean") wechatHideMinimizedTaskbar = args.hidden;
+        return wechat();
       case "get_qq_mail_state": return mail();
       case "read_qq_mail": return { id: String(args.messageId), attachments: [], contentType: "text/plain", content: data.mail.body };
       case "mark_qq_mail_read": mailUnread = false; return mail()[0];
