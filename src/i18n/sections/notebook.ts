@@ -25,6 +25,8 @@ export type NotebookText = {
   noScheduled: string;
   deleteScheduled: (title: string) => string;
   historyTab: string;
+  historyMonth: string;
+  historyDates: string;
   noHistory: string;
   noHistoryHint: string;
   dayToday: string;
@@ -33,7 +35,6 @@ export type NotebookText = {
   /** A day as a short heading: 11月9日 周一 / Mon, Nov 9. */
   formatDay: (date: Date) => string;
   moveToToday: string;
-  olderDays: (count: number) => string;
   addTodo: string;
   doneOf: (done: number, total: number) => string;
   restoreTodo: (title: string) => string;
@@ -41,10 +42,14 @@ export type NotebookText = {
   calendarTab: string;
   previousMonth: string;
   nextMonth: string;
-  thisMonth: string;
+  calendarGoToToday: string;
+  taskCount: (count: number) => string;
   dayTodos: (date: string, count: number) => string;
   noTodosOnDay: string;
 };
+
+const zhTaskCount = (count: number) => `${count} 项待办`;
+const enTaskCount = (count: number) => `${count} ${count === 1 ? "task" : "tasks"}`;
 
 export const zhCN: NotebookText = {
   sectionLabel: "任务清单",
@@ -73,6 +78,8 @@ export const zhCN: NotebookText = {
   noScheduled: "以后还没有安排",
   deleteScheduled: (title) => `删除已安排的待办：${title}`,
   historyTab: "历史",
+  historyMonth: "历史月份",
+  historyDates: "待办日期目录",
   noHistory: "还没有历史记录",
   noHistoryHint: "每天结束时，当天的待办会自动收进这里",
   dayToday: "今天",
@@ -80,7 +87,6 @@ export const zhCN: NotebookText = {
   dayTomorrow: "明天",
   formatDay: (date) => `${date.getMonth() + 1}月${date.getDate()}日 ${"周日周一周二周三周四周五周六".slice(date.getDay() * 2, date.getDay() * 2 + 2)}`,
   moveToToday: "移到今天",
-  olderDays: (count) => `更早 · ${count} 天`,
   addTodo: "添加待办",
   doneOf: (done, total) => `${done}/${total} 已完成`,
   restoreTodo: (title) => `把“${title}”加到今天`,
@@ -88,8 +94,9 @@ export const zhCN: NotebookText = {
   calendarTab: "日历",
   previousMonth: "上个月",
   nextMonth: "下个月",
-  thisMonth: "回到本月",
-  dayTodos: (date, count) => (count > 0 ? `${date}，${count} 项待办` : date),
+  calendarGoToToday: "回到今天",
+  taskCount: zhTaskCount,
+  dayTodos: (date, count) => (count > 0 ? `${date}，${zhTaskCount(count)}` : date),
   noTodosOnDay: "这天没有待办",
 };
 
@@ -120,6 +127,8 @@ export const en: NotebookText = {
   noScheduled: "Nothing scheduled for later",
   deleteScheduled: (title) => `Delete scheduled task: ${title}`,
   historyTab: "History",
+  historyMonth: "History month",
+  historyDates: "Dates with tasks",
   noHistory: "No history yet",
   noHistoryHint: "Each day's todos land here when the day ends",
   dayToday: "Today",
@@ -127,7 +136,6 @@ export const en: NotebookText = {
   dayTomorrow: "Tomorrow",
   formatDay: (date) => new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(date),
   moveToToday: "Move to today",
-  olderDays: (count) => `Earlier · ${count} ${count === 1 ? "day" : "days"}`,
   addTodo: "Add todo",
   doneOf: (done, total) => `${done}/${total} done`,
   restoreTodo: (title) => `Add "${title}" to today`,
@@ -135,7 +143,8 @@ export const en: NotebookText = {
   calendarTab: "Calendar",
   previousMonth: "Previous month",
   nextMonth: "Next month",
-  thisMonth: "Back to this month",
-  dayTodos: (date, count) => (count > 0 ? `${date}, ${count} ${count === 1 ? "task" : "tasks"}` : date),
+  calendarGoToToday: "Back to today",
+  taskCount: enTaskCount,
+  dayTodos: (date, count) => (count > 0 ? `${date}, ${enTaskCount(count)}` : date),
   noTodosOnDay: "No tasks on this day",
 };

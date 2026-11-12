@@ -1,3 +1,4 @@
+import { monthOf } from "./calendar.ts";
 import { addDays } from "./schedule.ts";
 import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { TodoArchive, TodoItem } from "./types";
@@ -8,9 +9,6 @@ export type TodoHistoryDay = {
   todos: TodoItem[];
   doneCount: number;
 };
-
-/** Days shown open in the history; earlier ones fold behind one row. */
-export const RECENT_HISTORY_DAYS = 7;
 
 function toDay(date: string, items: TodoItem[]): TodoHistoryDay | null {
   const todos = withoutUpdateTodo(items);
@@ -34,13 +32,16 @@ export function groupTodoHistory(archives: TodoArchive[], today: string, todayTo
   return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/** The last `count` days counting today stay open; the rest go behind "Earlier". */
-export function splitRecentHistory(days: TodoHistoryDay[], today: string, count = RECENT_HISTORY_DAYS) {
-  const cutoff = addDays(today, -count);
-  return {
-    recent: days.filter((day) => day.date > cutoff),
-    older: days.filter((day) => day.date <= cutoff),
-  };
+/** Groups the history's newest-first days without changing their order. */
+export function groupHistoryByMonth(days: TodoHistoryDay[]) {
+  const months = new Map<string, TodoHistoryDay[]>();
+  for (const day of days) {
+    const month = monthOf(day.date);
+    const entries = months.get(month);
+    if (entries) entries.push(day);
+    else months.set(month, [day]);
+  }
+  return months;
 }
 
 /** "today", "yesterday" or "tomorrow" relative to `today`, or null for any other day. */
@@ -65,5 +66,6 @@ export function dayHeading(date: string, today: string, text: DayHeadingText) {
   if (relative === "today") return text.dayToday;
   if (relative === "yesterday") return text.dayYesterday;
   if (relative === "tomorrow") return text.dayTomorrow;
-  return text.formatDay(new Date(`${date}T00:00:00`));
+  const parsed = new Date(`${date}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? date : text.formatDay(parsed);
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayHeading, groupTodoHistory, hasOpenTodoTitled, relativeDay, splitRecentHistory } from "../../src/features/todos/history.ts";
+import { dayHeading, groupHistoryByMonth, groupTodoHistory, hasOpenTodoTitled, relativeDay } from "../../src/features/todos/history.ts";
 import { collectCalendarTodos, dayDots, getMonthGrid, monthOf, shiftMonth } from "../../src/features/todos/calendar.ts";
 import { en, zhCN } from "../../src/i18n/sections/notebook.ts";
 
@@ -27,11 +27,13 @@ test("history starts with today's list, then past days with todos, newest first"
   assert.deepEqual(groupTodoHistory([], "2026-11-11", []), []);
 });
 
-test("the last seven days stay open and older ones fold", () => {
-  const days = ["2026-11-11", "2026-11-05", "2026-11-04", "2026-10-01"].map((date) => ({ date, todos: [], doneCount: 0 }));
-  const { recent, older } = splitRecentHistory(days, "2026-11-11");
-  assert.deepEqual(recent.map((day) => day.date), ["2026-11-11", "2026-11-05"]);
-  assert.deepEqual(older.map((day) => day.date), ["2026-11-04", "2026-10-01"]);
+test("the history index preserves newest-first order across months and years", () => {
+  const days = ["2026-11-11", "2026-11-05", "2026-10-01", "2025-11-04"].map((date) => ({ date, todos: [], doneCount: 0 }));
+  const months = groupHistoryByMonth(days);
+  assert.deepEqual([...months.keys()], ["2026-11", "2026-10", "2025-11"]);
+  assert.deepEqual(months.get("2026-11"), days.slice(0, 2));
+  assert.deepEqual(months.get("2025-11"), [days[3]]);
+  assert.equal(groupHistoryByMonth([]).size, 0);
 });
 
 test("day headings read today, yesterday, tomorrow or a short date", () => {
@@ -43,6 +45,7 @@ test("day headings read today, yesterday, tomorrow or a short date", () => {
   assert.equal(dayHeading("2026-11-09", "2026-11-11", zhCN), "11月9日 周一");
   assert.equal(dayHeading("2026-11-09", "2026-11-11", en), "Mon, Nov 9");
   assert.equal(dayHeading("2026-11-11", "2026-11-11", en), "Today");
+  assert.equal(dayHeading("legacy-date", "2026-11-11", en), "legacy-date");
 });
 
 test("an unfinished todo counts as already moved when today has it open", () => {

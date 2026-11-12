@@ -97,14 +97,8 @@
   outline-offset: 1px;
 }
 
-/* The lists these rows live in scroll with the todo list's thin bar. */
-.todo-history::-webkit-scrollbar,
-.todo-calendar__list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.todo-history::-webkit-scrollbar-thumb,
-.todo-calendar__list::-webkit-scrollbar-thumb {
-  background: var(--color-white-a18);
-  border-radius: var(--radius-pill);
+@container todo-day-detail (max-width: 235px) {
+  .todo-day-row__button-label {
+    display: none;
+  }
 }

@@ -3,10 +3,11 @@ import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { dayDots, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
 import { dayHeading } from "./history";
+import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
 
-/** A month of days marked with their todos; the chosen day's list sits below, and today or a later day takes new todos. */
+/** A compact month beside the chosen day's list; today or a later day can take new todos. */
 export function TodoCalendar({
   today,
   dayTodos,
@@ -24,7 +25,7 @@ export function TodoCalendar({
   const [draft, setDraft] = useState("");
   const grid = useMemo(() => getMonthGrid(month), [month]);
   const formats = useMemo(() => ({
-    month: new Intl.DateTimeFormat(t.localeTag, { year: "numeric", month: "long" }),
+    month: new Intl.DateTimeFormat(t.localeTag, { year: "numeric", month: "short" }),
     weekday: new Intl.DateTimeFormat(t.localeTag, { weekday: "narrow" }),
   }), [t.localeTag]);
   const toDate = (date: string) => new Date(`${date}T00:00:00`);
@@ -33,9 +34,10 @@ export function TodoCalendar({
   const canAdd = selected >= today;
 
   const select = (date: string) => {
+    setMonth(monthOf(date));
+    if (date === selected) return;
     setSelected(date);
     setDraft("");
-    if (monthOf(date) !== month) setMonth(monthOf(date));
   };
   const add = () => {
     if (!draft.trim()) return;
@@ -44,59 +46,62 @@ export function TodoCalendar({
   };
 
   return (
-    <div className="todo-calendar">
-      <div className="todo-calendar__nav">
-        <button type="button" aria-label={t.notebook.previousMonth} onClick={() => setMonth(shiftMonth(month, -1))}>
-          <ChevronLeft size={15} strokeWidth={2.2} />
-        </button>
-        <span className="todo-calendar__title" aria-live="polite">{formats.month.format(toDate(`${month}-01`))}</span>
-        <button type="button" aria-label={t.notebook.nextMonth} onClick={() => setMonth(shiftMonth(month, 1))}>
-          <ChevronRight size={15} strokeWidth={2.2} />
-        </button>
-        <button
-          className="todo-calendar__today"
-          type="button"
-          aria-label={t.notebook.thisMonth}
-          disabled={month === monthOf(today) && selected === today}
-          onClick={() => select(today)}
-        >
-          {t.notebook.dateToday}
-        </button>
-      </div>
-      <div className="todo-calendar__grid">
-        {grid.slice(0, 7).map((date) => (
-          <span key={`w${date}`} className="todo-calendar__weekday" aria-hidden="true">{formats.weekday.format(toDate(date))}</span>
-        ))}
-        {grid.map((date) => {
-          const items = dayTodos.get(date) ?? [];
-          const className = [
-            "todo-calendar__day",
-            monthOf(date) !== month ? "todo-calendar__day--outside" : "",
-            date === today ? "todo-calendar__day--today" : "",
-            date === selected ? "todo-calendar__day--selected" : "",
-          ].filter(Boolean).join(" ");
-          return (
-            <button
-              key={date}
-              className={className}
-              type="button"
-              aria-pressed={date === selected}
-              aria-current={date === today ? "date" : undefined}
-              aria-label={t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length)}
-              data-date={date}
-              onClick={() => select(date)}
-            >
-              <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-              <span className="todo-calendar__dots" aria-hidden="true">
-                {dayDots(items).map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="todo-calendar__day-head">
-        <span className="todo-calendar__day-title">{selectedLabel}</span>
-        {canAdd && (
+    <div className="todo-date-overview todo-calendar">
+      <nav className="todo-date-overview__sidebar" aria-label={t.notebook.pickDate}>
+        <div className="todo-calendar__nav">
+          <button type="button" aria-label={t.notebook.previousMonth} onClick={() => setMonth(shiftMonth(month, -1))}>
+            <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+          <span className="todo-calendar__title" aria-live="polite">{formats.month.format(toDate(`${month}-01`))}</span>
+          <button type="button" aria-label={t.notebook.nextMonth} onClick={() => setMonth(shiftMonth(month, 1))}>
+            <ChevronRight size={15} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+          <button
+            className="todo-calendar__today"
+            type="button"
+            aria-label={t.notebook.calendarGoToToday}
+            disabled={month === monthOf(today) && selected === today}
+            onClick={() => select(today)}
+          >
+            {t.notebook.dateToday}
+          </button>
+        </div>
+        <div className="todo-calendar__grid">
+          {grid.slice(0, 7).map((date) => (
+            <span key={`w${date}`} className="todo-calendar__weekday" aria-hidden="true">{formats.weekday.format(toDate(date))}</span>
+          ))}
+          {grid.map((date) => {
+            const items = dayTodos.get(date) ?? [];
+            const className = [
+              "todo-calendar__day",
+              monthOf(date) !== month ? "todo-calendar__day--outside" : "",
+              date === today ? "todo-calendar__day--today" : "",
+            ].filter(Boolean).join(" ");
+            return (
+              <button
+                key={date}
+                className={className}
+                type="button"
+                aria-pressed={date === selected}
+                aria-current={date === today ? "date" : undefined}
+                aria-label={t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length)}
+                data-date={date}
+                onClick={() => select(date)}
+              >
+                <span className="todo-calendar__number">{Number(date.slice(8))}</span>
+                <span className="todo-calendar__dots" aria-hidden="true">
+                  {dayDots(items).map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+      <TodoDayDetail
+        date={selected}
+        today={today}
+        summary={selectedTodos.length > 0 ? t.notebook.taskCount(selectedTodos.length) : undefined}
+        composer={canAdd && (
           <label className="todo-calendar__add">
             <Plus size={13} strokeWidth={2.4} aria-hidden="true" />
             <input
@@ -114,9 +119,7 @@ export function TodoCalendar({
             />
           </label>
         )}
-      </div>
-      <div className="todo-calendar__list" role="list" aria-label={selectedLabel}>
-        {selectedTodos.length === 0 && <div className="todo-calendar__empty">{t.notebook.noTodosOnDay}</div>}
+      >
         {selectedTodos.map((todo) => (
           <TodoDayRow
             key={todo.id}
@@ -130,12 +133,12 @@ export function TodoCalendar({
                 aria-label={t.notebook.deleteScheduled(todo.title)}
                 onClick={() => onDeleteScheduled(todo.id)}
               >
-                <Trash2 size={12} strokeWidth={2.2} />
+                <Trash2 size={12} strokeWidth={2.2} aria-hidden="true" />
               </button>
             )}
           />
         ))}
-      </div>
+      </TodoDayDetail>
     </div>
   );
 }
