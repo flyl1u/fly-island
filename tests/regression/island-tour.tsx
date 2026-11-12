@@ -41,6 +41,8 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
 localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
+  // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
+  pageButtonStyle: "capsule",
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
@@ -160,7 +162,7 @@ if (!automated) {
     check(island().classList.contains("island--expanded"), "点击后展开");
     check(Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius) > collapsedRadius, "展开后的圆角比收起时更大");
     // The page dots can be dragged into another order, which is saved; the drag opens no page.
-    const dotOrder = () => [...document.querySelectorAll<HTMLElement>(".editor-dots .dot-button")].map((dot) => dot.dataset.reorderId);
+    const dotOrder = () => [...document.querySelectorAll<HTMLElement>(".editor-dots .dot-button[data-reorder-id]")].map((dot) => dot.dataset.reorderId);
     const pageBefore = island().className;
     const drag = async (from: string, to: string) => {
       const source = document.querySelector<HTMLElement>(from)!;
@@ -221,7 +223,7 @@ if (!automated) {
       [".dot-button--clipboard", "剪贴板"],
       [".dot-button--shelf", "文件中转"],
       [".island__agent-button", "AI Agent"],
-      [".island-message-button", "消息"],
+      [".dot-button--messages", "消息"],
       [".dot-button--translation", "翻译"],
       [".island-settings-button", "设置"],
     ];
@@ -250,11 +252,11 @@ if (!automated) {
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
-    check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 5, "页面按钮默认显示胶囊");
+    check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 6, "已保存为胶囊的页面按钮保持胶囊（含消息）");
     await click('[aria-label="页面按钮"] button:last-child');
     const savedStyle = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageButtonStyle;
-    check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 6 &&
-      document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "六个入口切换为图标，外观预览和保存同步");
+    check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 7 &&
+      document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
     await click('[aria-label="页面按钮"] button:first-child');
     const priority = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((item) => item.dataset.reorderId);
     check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");

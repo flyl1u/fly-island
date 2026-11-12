@@ -87,7 +87,7 @@ const deferred = () => {
 try {
   await act(async () => { root.render(<StrictMode><Fixture /></StrictMode>); });
   if (params.get("run") === "1") {
-    check(view! === "qq" && document.querySelector('.message-sources')?.textContent?.replace(/\d/g, "") === "QQ微信邮箱", "恢复 QQ、微信、邮箱三项品牌导航");
+    check(view! === "qq" && document.querySelector('.message-sources')?.textContent?.replace(/\d/g, "") === "微信QQ邮箱", "恢复微信、QQ、邮箱三项品牌导航");
     check(!document.querySelector('.wechat-reminder-card, .message-overview') && !document.querySelector('button[aria-label="消息总览"]'), "微信没有被抽成独立卡片或总览");
     check(document.querySelector<HTMLElement>('.message-fixture')?.style.height === "350px", "列表恢复截图中的固定面板高度");
     await click("微信提醒");

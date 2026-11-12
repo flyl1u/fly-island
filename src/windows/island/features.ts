@@ -17,7 +17,7 @@ export type IslandFeatures = {
 };
 
 const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
-const SOURCE_ORDER: MessageSource[] = ["qq", "wechat", "qqMail"];
+const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
   if (page === "settings") return true;

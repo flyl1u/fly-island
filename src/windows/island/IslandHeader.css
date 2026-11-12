@@ -149,6 +149,21 @@
   --dot-glow: rgba(255, 154, 118, 0.46);
 }
 
+.dot-button--messages {
+  --dot-color: #e58ee2;
+  --dot-glow: rgba(229, 142, 226, 0.44);
+}
+
+.dot-button--messages .island-message-button__dot {
+  top: 6px;
+  right: 2px;
+}
+
+.dot-button--capsule.dot-button--messages .island-message-button__dot {
+  top: 8px;
+  right: 0;
+}
+
 .dot-button--capsule.dot-button--active::before {
   transform: scale(1.1);
   box-shadow: 0 0 0 2px var(--color-white-a18), 0 0 14px var(--dot-glow);
