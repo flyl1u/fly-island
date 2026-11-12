@@ -1,4 +1,4 @@
-export type TodoPageMode = "today" | "daily" | "archive" | "review" | "upcoming";
+export type TodoPageMode = "today" | "daily" | "archive" | "review" | "upcoming" | "history" | "calendar";
 export type ArchiveLayout = "cards" | "timeline";
 
 export type TodoItem = {

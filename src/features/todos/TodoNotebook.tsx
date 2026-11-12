@@ -1,5 +1,10 @@
+import { useMemo } from "react";
 import { useTranslation } from "../../i18n";
 import { ArchiveBrowser } from "./ArchiveBrowser";
+import { collectCalendarTodos } from "./calendar";
+import { groupTodoHistory } from "./history";
+import { TodoCalendar } from "./TodoCalendar";
+import { TodoHistoryList } from "./TodoHistoryList";
 import { ScheduledTodoList } from "./ScheduledTodoList";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
@@ -24,6 +29,9 @@ export function TodoNotebook({
   onDraftDateChange,
   onAddTodo,
   onShowUpcoming,
+  onShowHistory,
+  onShowCalendar,
+  onAddTodoForDay,
   onDeleteScheduledTodo,
   onToggleTodo,
   onUpdateTodo,
@@ -55,6 +63,10 @@ export function TodoNotebook({
   onDraftDateChange: (date: string | null) => void;
   onAddTodo: () => void;
   onShowUpcoming: () => void;
+  onShowHistory: () => void;
+  onShowCalendar: () => void;
+  /** Adds to today's list, or schedules for a later day. */
+  onAddTodoForDay: (title: string, date: string) => void;
   onDeleteScheduledTodo: (id: string) => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
@@ -75,14 +87,23 @@ export function TodoNotebook({
   const isArchiveMode = pageMode === "archive";
   const isReviewMode = pageMode === "review";
   const isUpcomingMode = pageMode === "upcoming";
+  const isHistoryMode = pageMode === "history";
+  const isCalendarMode = pageMode === "calendar";
+  const historyDays = useMemo(() => groupTodoHistory(archives, currentDate), [archives, currentDate]);
+  const calendarTodos = useMemo(
+    () => (isCalendarMode ? collectCalendarTodos({ archives, todos, currentDate, scheduledTodos }) : null),
+    [archives, currentDate, isCalendarMode, scheduledTodos, todos],
+  );
   const openCount = displayedTodos.filter((todo) => !todo.completed).length;
-  const showTasks = !isDailyMode && !isArchiveMode && !isUpcomingMode;
+  const showTasks = !isDailyMode && !isArchiveMode && !isUpcomingMode && !isHistoryMode && !isCalendarMode;
   const notebookClassName = [
     "todo-notebook",
     isDailyMode ? "todo-notebook--daily" : "",
     isArchiveMode ? "todo-notebook--archive" : "",
     isReviewMode ? "todo-notebook--review" : "",
     isUpcomingMode ? "todo-notebook--upcoming" : "",
+    isHistoryMode ? "todo-notebook--history" : "",
+    isCalendarMode ? "todo-notebook--calendar" : "",
     isArchiveMode ? `todo-notebook--archive-${archiveLayout}` : "",
   ]
     .filter(Boolean)
@@ -96,6 +117,8 @@ export function TodoNotebook({
         isArchiveMode={isArchiveMode}
         isReviewMode={isReviewMode}
         isUpcomingMode={isUpcomingMode}
+        pageMode={pageMode}
+        historyDayCount={historyDays.length}
         selectedArchive={selectedArchive}
         scheduledCount={scheduledTodos.length}
         archiveLayout={archiveLayout}
@@ -103,6 +126,8 @@ export function TodoNotebook({
         onShowToday={onShowToday}
         onShowUpcoming={onShowUpcoming}
         onShowDaily={onShowDaily}
+        onShowHistory={onShowHistory}
+        onShowCalendar={onShowCalendar}
         onArchiveLayoutChange={onArchiveLayoutChange}
       />
 
@@ -145,6 +170,15 @@ export function TodoNotebook({
         />
       ) : isUpcomingMode ? (
         <ScheduledTodoList todos={scheduledTodos} onDelete={onDeleteScheduledTodo} />
+      ) : isHistoryMode ? (
+        <TodoHistoryList days={historyDays} todayTodos={todos} onRestore={(title) => onAddTodoForDay(title, currentDate)} />
+      ) : calendarTodos ? (
+        <TodoCalendar
+          today={currentDate}
+          dayTodos={calendarTodos}
+          onAddTodoForDay={onAddTodoForDay}
+          onDeleteScheduled={onDeleteScheduledTodo}
+        />
       ) : null}
     </section>
   );
