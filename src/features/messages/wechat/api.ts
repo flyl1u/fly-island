@@ -20,6 +20,7 @@ export type ReminderSnapshot = {
   error: string | null;
   previewEnabled: boolean;
   previewStatus: WeChatPreviewStatus;
+  hideMinimizedTaskbar: boolean;
   messages: WeChatMessage[];
 };
 
@@ -32,12 +33,16 @@ export function getWeChatReminderState() {
   return invoke<ReminderSnapshot>("get_wechat_reminder_state");
 }
 
-export function setWeChatRemindersEnabled(enabled: boolean, previewEnabled?: boolean) {
-  return invoke<ReminderSnapshot>("set_wechat_reminders_enabled", { enabled, previewEnabled });
+export function setWeChatRemindersEnabled(enabled: boolean, previewEnabled?: boolean, hideMinimizedTaskbar?: boolean) {
+  return invoke<ReminderSnapshot>("set_wechat_reminders_enabled", { enabled, previewEnabled, hideMinimizedTaskbar });
 }
 
 export function setWeChatMessagePreviewEnabled(enabled: boolean) {
   return invoke<ReminderSnapshot>("set_wechat_message_preview_enabled", { enabled });
+}
+
+export function setWeChatMinimizedTaskbarHidden(hidden: boolean) {
+  return invoke<ReminderSnapshot>("set_wechat_minimized_taskbar_hidden", { hidden });
 }
 
 export function launchWeChat() {

@@ -7,7 +7,7 @@ import { QQNotificationControls, useQQNotifications, type QQNotificationsControl
 import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../../src/features/messages/wechat/WeChatReminders";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested", "focusd-island-wechat-message-preview-enabled"];
+const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested", "focusd-island-wechat-message-preview-enabled", "focusd-island-wechat-hide-minimized-taskbar"];
 const original = keys.map((key) => localStorage.getItem(key));
 const messages: string[] = [];
 const calls: { command: string; args: Record<string, unknown> }[] = [];
@@ -15,6 +15,7 @@ let permission = "allowed";
 let revision = 0;
 let wechatEnabled = false;
 let previewEnabled = false;
+let hideMinimizedTaskbar = false;
 let qq: QQNotificationsController;
 let wechat: WeChatRemindersController;
 let root: Root | undefined;
@@ -31,12 +32,14 @@ mockIPC((command, payload) => {
   if (command === "set_wechat_reminders_enabled") {
     wechatEnabled = Boolean(args.enabled);
     if (args.previewEnabled !== undefined) previewEnabled = Boolean(args.previewEnabled);
+    if (args.hideMinimizedTaskbar !== undefined) hideMinimizedTaskbar = Boolean(args.hideMinimizedTaskbar);
   }
   if (command === "set_wechat_message_preview_enabled") previewEnabled = Boolean(args.enabled);
-  if (command === "set_wechat_reminders_enabled" || command === "set_wechat_message_preview_enabled") return {
+  if (command === "set_wechat_minimized_taskbar_hidden") hideMinimizedTaskbar = Boolean(args.hidden);
+  if (["set_wechat_reminders_enabled", "set_wechat_message_preview_enabled", "set_wechat_minimized_taskbar_hidden"].includes(command)) return {
     revision: ++revision, enabled: wechatEnabled, status: wechatEnabled ? "listening" : "disabled",
     pending: false, lastAttentionAt: null, error: null,
-    previewEnabled, previewStatus: previewEnabled && wechatEnabled ? "ready" : "off", messages: [],
+    previewEnabled, previewStatus: previewEnabled && wechatEnabled ? "ready" : "off", hideMinimizedTaskbar, messages: [],
   };
 }, { shouldMockEvents: true });
 
@@ -70,11 +73,14 @@ try {
   await mount();
   check(qq!.snapshot.enabled && wechat!.snapshot.enabled, "首次启动 QQ 与微信均默认开启");
   check(!wechat!.snapshot.previewEnabled, "微信摘要默认关闭");
+  check(!wechat!.snapshot.hideMinimizedTaskbar, "最小化后默认保留微信任务栏图标");
   await act(async () => { await wechat!.setPreviewEnabled(true); });
   check(wechat!.snapshot.previewEnabled && localStorage.getItem(keys[3]) === "true", "微信摘要独立开启并保存");
   check(requests() === 1, "StrictMode 初始化只请求一次通知访问");
+  await act(async () => { await wechat!.setHideMinimizedTaskbar(true); });
+  check(wechat!.snapshot.hideMinimizedTaskbar && localStorage.getItem(keys[4]) === "true", "最小化时隐藏图标的偏好持久化");
   await mount();
-  check(wechat!.snapshot.previewEnabled, "重启后恢复微信摘要偏好");
+  check(wechat!.snapshot.previewEnabled && wechat!.snapshot.hideMinimizedTaskbar, "重启后恢复微信摘要和最小化偏好");
   check(requests() === 1, "后续启动不会重复发起授权请求");
 
   await act(async () => { await qq!.setEnabled(false); await wechat!.setEnabled(false); });

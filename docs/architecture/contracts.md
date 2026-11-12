@@ -29,6 +29,7 @@
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
+| `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-translation-settings` | `features/translation/storage.ts` |
 | `focusd-island-agent-approval`（`{ onIsland, whenInFront }`：Agent 的权限请求在岛上审批，默认关；`whenInFront` 为会话窗口在前台时也弹卡片，2026-11-09 起不再是设置项，读取时总按默认（关）；开着时岛屿让审批端点挂起请求） | `features/agent-status/approvals/storage.ts` |
 | `focusd-island-agent-hidden-sessions`（`{ "<provider>:<sessionId>": updatedAt }`：在 Agent 页手动移除的会话，只隐藏不删记录；值是移除时那一轮的开始时间（以前存的是最后写入时间），开始新一轮才自动回来，最多 200 条） | `features/agent-status/hiddenSessions.ts` |
@@ -65,7 +66,7 @@
 ## 其他
 
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
-- 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_reminders_enabled` 可接收可选的 `previewEnabled`，省略时保留当前摘要偏好。原事件的快照新增 `previewEnabled`、`previewStatus`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
+- 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
 - `open_wechat_conversation(messageId)` 用内存中的摘要 ID 定位微信会话。返回 `true` 表示已点击对应会话，`false` 表示已打开微信主窗口。微信的会话标识和进程身份保存在原生内存中。
 - 应用数据目录的 `wechat-accessibility.json` 记录 `{ pid, started_at }`，用于重新校验进程并恢复岛屿临时开启的微信辅助功能标志。
 

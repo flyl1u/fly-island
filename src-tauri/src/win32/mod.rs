@@ -2,6 +2,7 @@
 //! module; callers elsewhere use the safe functions it exposes.
 
 pub(crate) mod audio;
+pub(crate) mod caption_close;
 pub(crate) mod chinese;
 pub(crate) mod clipboard;
 pub(crate) mod com;
@@ -19,6 +20,7 @@ pub(crate) mod process_times;
 pub(crate) mod process_tree;
 pub(crate) mod registry;
 pub(crate) mod shell_hook;
+pub(crate) mod taskbar;
 pub(crate) mod uia_list;
 pub(crate) mod uia_tabs;
 pub(crate) mod window;

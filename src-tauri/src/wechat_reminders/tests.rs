@@ -111,6 +111,21 @@ fn redraws_and_window_creation_are_not_messages() {
 }
 
 #[test]
+fn changing_taskbar_preference_keeps_the_reader_and_survives_disabling_reminders() {
+    let mut state = ReminderState::default();
+    assert!(!state.snapshot.hide_minimized_taskbar);
+    state.set_enabled(true);
+    state.set_preview_enabled(true);
+    let generation = state.generation;
+    assert!(state.set_hide_minimized_taskbar(true));
+    assert!(!state.set_hide_minimized_taskbar(true));
+    assert_eq!(state.generation, generation);
+    state.set_enabled(false);
+    state.set_enabled(true);
+    assert!(state.snapshot.hide_minimized_taskbar);
+}
+
+#[test]
 fn previews_keep_the_newest_twenty_and_do_not_replay_after_switching_off() {
     let mut state = ReminderState::default();
     state.set_enabled(true);

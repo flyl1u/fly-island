@@ -18,6 +18,7 @@
 | 待办 Markdown 导出 | 用户选择的目录（经过校验） | `system` |
 | 开机自启 | `HKCU\...\Run` 下的值 `FocuSD Island` | `system` |
 | 剪贴板历史、通知、微信消息摘要、邮件正文 | 仅保存在内存中 | 各服务模块 |
+| 微信摘要和最小化时隐藏任务栏图标的偏好 | WebView2 的 `localStorage`，见 [对外契约](contracts.md) | `features/messages/wechat/storage.ts` |
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
 
 总览见 [overview.md](overview.md)。

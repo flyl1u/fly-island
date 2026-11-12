@@ -2,13 +2,19 @@ import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import type { MessagePreview } from "../messagePreview";
-import { getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged, setWeChatMessagePreviewEnabled, setWeChatRemindersEnabled, type ReminderSnapshot } from "./api";
-import { isWeChatMessagePreviewEnabled, isWeChatRemindersEnabled, saveWeChatMessagePreviewEnabled, saveWeChatRemindersEnabled } from "./storage";
+import {
+  getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged,
+  setWeChatMessagePreviewEnabled, setWeChatMinimizedTaskbarHidden, setWeChatRemindersEnabled, type ReminderSnapshot,
+} from "./api";
+import {
+  isWeChatMessagePreviewEnabled, isWeChatMinimizedTaskbarHidden, isWeChatRemindersEnabled,
+  saveWeChatMessagePreviewEnabled, saveWeChatMinimizedTaskbarHidden, saveWeChatRemindersEnabled,
+} from "./storage";
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
   revision: 0, enabled: false, status: "disabled", pending: false,
   lastAttentionAt: null, error: null,
-  previewEnabled: false, previewStatus: "off", messages: [],
+  previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [],
 };
 
 export function useWeChatReminders(canPreview: boolean, { restore = true } = {}) {
@@ -53,7 +59,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
       });
       if (cancelled) { unlisten(); return; }
       const next = restore
-        ? await setWeChatRemindersEnabled(isWeChatRemindersEnabled(), isWeChatMessagePreviewEnabled())
+        ? await setWeChatRemindersEnabled(isWeChatRemindersEnabled(), isWeChatMessagePreviewEnabled(), isWeChatMinimizedTaskbarHidden())
         : await getWeChatReminderState();
       if (!cancelled) acceptSnapshot(next);
     })().catch((error: unknown) => {
@@ -104,6 +110,11 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     if (!enabled) setPreviewReceivedAt(null);
   }), [acceptSnapshot, run]);
 
+  const setHideMinimizedTaskbar = useCallback((hidden: boolean) => run(async () => {
+    acceptSnapshot(await setWeChatMinimizedTaskbarHidden(hidden));
+    saveWeChatMinimizedTaskbarHidden(hidden);
+  }), [acceptSnapshot, run]);
+
   const openWeChat = useCallback((messageId?: string) => run(async () => {
     if (messageId) {
       if (!await launchWeChatConversation(messageId)) setActionError(t.wechat.jumpUnavailable);
@@ -119,7 +130,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     source: "wechat", title: message?.contact ?? "", body: message?.body ?? "", receivedAt: previewReceivedAt,
     wechatMessageId: message?.id,
   } : null;
-  return { snapshot, busy, actionError, setEnabled, setPreviewEnabled, openWeChat, preview };
+  return { snapshot, busy, actionError, setEnabled, setPreviewEnabled, setHideMinimizedTaskbar, openWeChat, preview };
 }
 
 export type WeChatRemindersController = ReturnType<typeof useWeChatReminders>;

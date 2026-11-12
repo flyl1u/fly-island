@@ -26,6 +26,16 @@ pub(super) struct Conversation {
     time: String,
 }
 
+impl Conversation {
+    fn can_preview(&self) -> bool {
+        !self.preview.body.is_empty() && (!self.muted || self.mentioned)
+    }
+
+    pub(super) fn matches_selected_preview(&self, preview: &ChatPreview) -> bool {
+        self.selected && self.can_preview() && self.preview == *preview
+    }
+}
+
 const MUTED: &[&str] = &["消息免打扰", "免打扰", "静音", "Muted", "Do Not Disturb"];
 const PINNED: &[&str] = &["已置顶", "置顶聊天", "Pinned"];
 const LABELS: &[&str] = &[
@@ -43,7 +53,7 @@ pub(super) fn read(window: HWND) -> Option<Vec<Conversation>> {
     (!conversations.is_empty()).then_some(conversations)
 }
 
-fn parse_row(
+pub(super) fn parse_row(
     ListRow {
         key,
         name,
@@ -169,6 +179,34 @@ pub(super) enum ReadTrigger {
     Poll,
 }
 
+fn promoted_to_top<'a>(before: &[Conversation], after: &'a [Conversation]) -> Option<&'a str> {
+    let was_top = &before.iter().find(|row| !row.pinned)?.preview.key;
+    let mut unpinned = after.iter().filter(|row| !row.pinned);
+    let top = &unpinned.next()?.preview.key;
+    (top != was_top && &unpinned.next()?.preview.key == was_top).then_some(top)
+}
+
+fn selected_changed(row: &Conversation, old: &Conversation, promoted: Option<&str>) -> bool {
+    row.selected
+        && old.selected
+        && (old.preview.body != row.preview.body
+            || old.time != row.time
+            || promoted == Some(row.preview.key.as_str()))
+}
+
+/// An open chat can update while its unread count stays at zero.
+pub(super) fn selected_change(
+    before: &[Conversation],
+    after: &[Conversation],
+) -> Option<ChatPreview> {
+    let promoted = promoted_to_top(before, after);
+    let current = after.iter().find(|row| row.selected && row.can_preview())?;
+    let old = before
+        .iter()
+        .find(|row| row.preview.key == current.preview.key)?;
+    selected_changed(current, old, promoted).then(|| current.preview.clone())
+}
+
 pub(super) fn new_previews(
     before: &[Conversation],
     after: &[Conversation],
@@ -179,31 +217,21 @@ pub(super) fn new_previews(
         .iter()
         .map(|row| (row.preview.key.as_str(), row))
         .collect();
-    let top = |rows: &[Conversation]| {
-        rows.iter()
-            .find(|row| !row.pinned)
-            .map(|row| row.preview.key.clone())
-    };
-    let now_top = top(after);
-    let was_top = top(before);
+    let promoted = promoted_to_top(before, after);
     after
         .iter()
         .filter(|row| {
-            if row.preview.body.is_empty() || row.muted && !row.mentioned {
+            if !row.can_preview() {
                 return false;
             }
             let key = row.preview.key.as_str();
             let old = previous.get(key).copied();
-            let moved_to_top = now_top.as_deref() == Some(key)
-                && was_top.as_deref() != Some(key)
-                && after
-                    .iter()
-                    .find(|other| !other.pinned && other.preview.key != key)
-                    .is_some_and(|other| Some(other.preview.key.as_str()) == was_top.as_deref());
             let changed_unread = row.unread > old.map_or(0, |row| row.unread)
                 || row.mentioned && old.is_none_or(|old| !old.mentioned);
             if changed_unread
-                && (old.is_some() || moved_to_top || matches!(trigger, ReadTrigger::Flash { .. }))
+                && (old.is_some()
+                    || promoted == Some(key)
+                    || matches!(trigger, ReadTrigger::Flash { .. }))
             {
                 return true;
             }
@@ -214,13 +242,7 @@ pub(super) fn new_previews(
                 ReadTrigger::Flash {
                     allow_selected: true
                 }
-            ) && row.selected
-                && old.is_some_and(|old| {
-                    old.selected
-                        && (old.preview.body != row.preview.body
-                            || old.time != row.time
-                            || moved_to_top)
-                })
+            ) && old.is_some_and(|old| selected_changed(row, old, promoted))
         })
         .take(limit)
         .map(|row| row.preview.clone())

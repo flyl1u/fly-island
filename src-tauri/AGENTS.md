@@ -29,7 +29,7 @@ src-tauri/src/
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
                              # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry、
                              # notification_state（前台是否有全屏程序）、known_folder（下载文件夹等已知文件夹）、
-                             # icon、chinese、process_env / process_tree / process_memory、uia_tabs / uia_list
+                             # icon、chinese、process_env / process_tree / process_memory、uia_tabs / uia_list、caption_close、taskbar
 ```
 
 ## lib.rs 与模块组织
