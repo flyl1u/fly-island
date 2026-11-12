@@ -21,6 +21,8 @@ pub(super) struct Conversation {
     unread: u32,
     muted: bool,
     mentioned: bool,
+    /// A mention of the user, not one of everyone: only this lets a muted chat through.
+    mentions_me: bool,
     selected: bool,
     pinned: bool,
     time: String,
@@ -28,7 +30,7 @@ pub(super) struct Conversation {
 
 impl Conversation {
     fn can_preview(&self) -> bool {
-        !self.preview.body.is_empty() && (!self.muted || self.mentioned)
+        !self.preview.body.is_empty() && (!self.muted || self.mentions_me)
     }
 
     pub(super) fn matches_selected_preview(&self, preview: &ChatPreview) -> bool {
@@ -46,6 +48,7 @@ const LABELS: &[&str] = &[
     "New messages",
 ];
 const MENTIONS: &[&str] = &["有人@我", "@我", "@所有人", "Mentioned you", "@You", "@All"];
+const MENTIONS_ALL: &[&str] = &["@所有人", "@All"];
 
 pub(super) fn read(window: HWND) -> Option<Vec<Conversation>> {
     let rows = named_list_rows(window, SESSION_PREFIX)?;
@@ -71,6 +74,7 @@ pub(super) fn parse_row(
         unread: 0,
         muted: false,
         mentioned: false,
+        mentions_me: false,
         selected,
         pinned: false,
         time: String::new(),
@@ -92,12 +96,16 @@ pub(super) fn parse_row(
                 continue;
             } else if MENTIONS.contains(&line) {
                 row.mentioned = true;
+                row.mentions_me |= !MENTIONS_ALL.contains(&line);
             } else {
-                row.mentioned |= MENTIONS.iter().any(|mark| {
+                for mark in MENTIONS.iter().filter(|mark| {
                     line.strip_prefix('[')
-                        .and_then(|line| line.strip_prefix(mark))
+                        .and_then(|line| line.strip_prefix(**mark))
                         .is_some_and(|tail| tail.starts_with(']'))
-                });
+                }) {
+                    row.mentioned = true;
+                    row.mentions_me |= !MENTIONS_ALL.contains(mark);
+                }
                 if summary.is_none() || contact != "服务号" {
                     summary = Some(line);
                 }
@@ -227,7 +235,8 @@ pub(super) fn new_previews(
             let key = row.preview.key.as_str();
             let old = previous.get(key).copied();
             let changed_unread = row.unread > old.map_or(0, |row| row.unread)
-                || row.mentioned && old.is_none_or(|old| !old.mentioned);
+                || row.mentioned && old.is_none_or(|old| !old.mentioned)
+                || row.mentions_me && old.is_none_or(|old| !old.mentions_me);
             if changed_unread
                 && (old.is_some()
                     || promoted == Some(key)
@@ -247,6 +256,32 @@ pub(super) fn new_previews(
         .take(limit)
         .map(|row| row.preview.clone())
         .collect()
+}
+
+/// True when only muted chats that did not mention the user changed. A flash that only they
+/// explain is not worth a plain "new reminder".
+pub(super) fn only_muted_changed(before: &[Conversation], after: &[Conversation]) -> bool {
+    let previous: HashMap<_, _> = before
+        .iter()
+        .map(|row| (row.preview.key.as_str(), row))
+        .collect();
+    let mut muted_changed = false;
+    for row in after {
+        let changed = previous.get(row.preview.key.as_str()).is_none_or(|old| {
+            old.preview.body != row.preview.body
+                || old.time != row.time
+                || old.unread != row.unread
+        });
+        if !changed {
+            continue;
+        }
+        if row.muted && !row.mentions_me {
+            muted_changed = true;
+        } else {
+            return false;
+        }
+    }
+    muted_changed
 }
 
 #[cfg(test)]
@@ -305,6 +340,25 @@ mod tests {
             2
         );
         assert!(new_previews(&mention, &mention, ReadTrigger::Poll, 20).is_empty());
+    }
+
+    #[test]
+    fn muted_chats_pass_only_a_mention_of_me_and_explain_their_own_flashes() {
+        let rows = |dm: &str, group: &str| {
+            [
+                row("dm", &format!("小林\n{dm}\n8:15")),
+                row("g", &format!("大群\n{group}\n8:16\n消息免打扰")),
+            ]
+        };
+        let before = rows("上午好", "张三: 早");
+        let everyone = rows("上午好", "[@所有人] 群主: 通知");
+        assert!(new_previews(&before, &everyone, ReadTrigger::Poll, 20).is_empty());
+        assert!(only_muted_changed(&before, &everyone));
+        let me = rows("上午好", "[有人@我] 李四: 看下");
+        assert_eq!(new_previews(&everyone, &me, ReadTrigger::Poll, 20).len(), 1);
+        assert!(!only_muted_changed(&everyone, &me));
+        assert!(!only_muted_changed(&everyone, &rows("[1条]\n在吗", "王五: 好")));
+        assert!(!only_muted_changed(&before, &before));
     }
 
     #[test]
