@@ -4,7 +4,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
 import { DEFAULT_SETTINGS, LIQUID_GLASS_ENABLED, MAX_EXPANDED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
-import type { AppearanceMode, IslandFont, IslandSettings } from "./types";
+import type { AppearanceMode, IslandFont, IslandSettings, PageButtonStyle } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
 const times = (value: number) => `${value.toFixed(2)}x`;
@@ -69,6 +69,20 @@ export function StyleSettingsSection({
             options={fonts}
             ariaLabel={text.fontLabel}
             onChange={(fontFamily) => onSettingsChange({ ...settings, fontFamily })}
+          />
+        }
+      />
+      <SettingsRow
+        title={text.pageButtons}
+        control={
+          <SettingsChoice<PageButtonStyle>
+            value={settings.pageButtonStyle}
+            options={[
+              { value: "capsule", label: text.capsules },
+              { value: "icon", label: text.icons },
+            ]}
+            ariaLabel={text.pageButtons}
+            onChange={(pageButtonStyle) => onSettingsChange({ ...settings, pageButtonStyle })}
           />
         }
       />

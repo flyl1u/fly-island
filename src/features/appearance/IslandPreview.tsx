@@ -56,7 +56,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
       </div>
       <div className="island-preview__desktop">
         <div className={`${islandClass} island-preview__island--expanded`}>
-          <AgentPagePreview />
+          <AgentPagePreview pageOrder={settings.pageOrder} pageButtonStyle={settings.pageButtonStyle} />
         </div>
         <figcaption className="island-preview__caption">{text.expanded}</figcaption>
       </div>

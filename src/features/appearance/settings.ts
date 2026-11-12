@@ -28,6 +28,7 @@ export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 export const APPEARANCE_SETTING_KEYS = [
   "appearanceMode",
   "fontFamily",
+  "pageButtonStyle",
   "glassIntensity",
   "opacity",
   "collapsedScale",

@@ -63,6 +63,8 @@
 
 ## 其他
 
+- 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
+
 - 窗口 label：`main`、`translation`、`settings`；前端分发参数为 `?window=translation`、`?window=settings`。
 - Tauri 命令：以 `lib.rs` 中 `generate_handler!` 列表为准，命令名即 Rust 函数名。
 - 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`。

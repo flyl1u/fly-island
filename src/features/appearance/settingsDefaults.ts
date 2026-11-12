@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
   appearanceMode: "classic",
   fontFamily: "system",
+  pageButtonStyle: "capsule",
   glassIntensity: 72,
   opacity: 100,
   collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.

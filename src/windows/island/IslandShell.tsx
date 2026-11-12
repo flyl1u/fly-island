@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageDot } from "../../features/appearance/types";
+import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageButtonStyle, PageDot } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -49,6 +49,7 @@ type IslandShellProps = {
   lyricsSettings: LyricsSettings & { lyricsOffsetMs: number };
   /** Order of the header's page dots, and saving a new one after a drag. */
   pageOrder: PageDot[];
+  pageButtonStyle: PageButtonStyle;
   onPageOrderChange: (order: PageDot[]) => void;
   /** Running agent session shown in place of the todo, or null. */
   agentSession: AgentSession | null;
@@ -103,6 +104,7 @@ export function IslandShell({
   collapsedCover,
   lyricsSettings,
   pageOrder,
+  pageButtonStyle,
   onPageOrderChange,
   agentSession,
   activeAgentSessionCount,
@@ -234,6 +236,7 @@ export function IslandShell({
             page={page}
             features={features}
             pageOrder={pageOrder}
+            pageButtonStyle={pageButtonStyle}
             onPageOrderChange={onPageOrderChange}
             showTitle={showTitle}
             isDetached={isDetached}
