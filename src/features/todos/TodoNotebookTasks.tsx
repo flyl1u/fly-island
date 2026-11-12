@@ -7,8 +7,6 @@ import { useTodoNotebookEditing } from "./useTodoNotebookEditing";
 
 export function TodoNotebookTasks({
   displayedTodos,
-  isTodayMode,
-  isReviewMode,
   draft,
   draftDate,
   currentDate,
@@ -25,8 +23,6 @@ export function TodoNotebookTasks({
   onReorderTodo,
 }: {
   displayedTodos: TodoItem[];
-  isTodayMode: boolean;
-  isReviewMode: boolean;
   draft: string;
   draftDate: string | null;
   currentDate: string;
@@ -43,17 +39,14 @@ export function TodoNotebookTasks({
   onReorderTodo: (sourceId: string, targetId: string) => void;
 }) {
   const t = useTranslation();
-  const canReorderTodos = isTodayMode && enableTodoReorder;
+  const canReorderTodos = enableTodoReorder;
   const listClassName = [
     "todo-list",
     displayedTodos.length > scrollStartRows ? "todo-list--scroll" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  const inputPlaceholder =
-    isTodayMode
-      ? t.notebook.addTaskFor(draftDate && draftDate > currentDate ? draftDate : currentDate)
-      : t.notebook.reviewTodos;
+  const inputPlaceholder = t.notebook.addTaskFor(draftDate && draftDate > currentDate ? draftDate : currentDate);
   const {
     editingTodoId,
     todoTitleDraft,
@@ -68,7 +61,7 @@ export function TodoNotebookTasks({
     finishTodoDrag,
     cancelTodoDrag,
   } = useTodoNotebookEditing(
-    isTodayMode,
+    true,
     canReorderTodos,
     onUpdateTodo,
     onReorderTodo,
@@ -77,40 +70,33 @@ export function TodoNotebookTasks({
   return (
     <>
       <form
-        className={`todo-form${isTodayMode ? " todo-form--dated" : ""}`}
+        className="todo-form todo-form--dated"
         onSubmit={(event) => {
           event.preventDefault();
-          if (isTodayMode) {
-            onAddTodo();
-          }
+          onAddTodo();
         }}
       >
         <Plus size={16} strokeWidth={2.2} aria-hidden="true" />
         <input
           value={draft}
-          disabled={!isTodayMode}
           placeholder={inputPlaceholder}
           aria-label={t.notebook.addTaskHint}
           onChange={(event) => onDraftChange(event.currentTarget.value)}
         />
-        {isTodayMode && (
-          <TodoDatePicker value={draftDate} today={currentDate} disabled={false} onChange={onDraftDateChange} />
-        )}
+        <TodoDatePicker value={draftDate} today={currentDate} disabled={false} onChange={onDraftDateChange} />
       </form>
       <div className={listClassName} role="list">
         {displayedTodos.length === 0 ? (
           <div className="todo-empty">
-            {isReviewMode ? t.todo.emptyReview : t.todo.empty}
+            {t.todo.empty}
           </div>
         ) : (
           displayedTodos.map((todo) => (
             <TodoListItem
               key={todo.id}
               todo={todo}
-              isTodayMode={isTodayMode}
-              isActive={
-                isTodayMode && todo.id === activeTodoId && !todo.completed
-              }
+              isTodayMode
+              isActive={todo.id === activeTodoId && !todo.completed}
               canReorder={canReorderTodos}
               isDragging={draggedTodoId === todo.id}
               isDragOver={dragOverTodoId === todo.id}

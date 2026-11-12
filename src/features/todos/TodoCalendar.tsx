@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CornerUpLeft, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
-import { dayDots, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
-import { dayHeading } from "./history";
+import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
@@ -32,6 +31,7 @@ export function TodoCalendar({
   const selectedTodos = dayTodos.get(selected) ?? [];
   const selectedLabel = dayHeading(selected, today, t.notebook);
   const canAdd = selected >= today;
+  const openToday = new Set(dayTodos.get(today)?.filter((todo) => !todo.completed).map((todo) => todo.title.trim()));
 
   const select = (date: string) => {
     setMonth(monthOf(date));
@@ -100,7 +100,9 @@ export function TodoCalendar({
       <TodoDayDetail
         date={selected}
         today={today}
-        summary={selectedTodos.length > 0 ? t.notebook.taskCount(selectedTodos.length) : undefined}
+        summary={selectedTodos.length > 0 ? t.notebook.doneOf(
+          selectedTodos.filter((todo) => todo.completed).length, selectedTodos.length,
+        ) : undefined}
         composer={canAdd && (
           <label className="todo-calendar__add">
             <Plus size={13} strokeWidth={2.4} aria-hidden="true" />
@@ -120,24 +122,38 @@ export function TodoCalendar({
           </label>
         )}
       >
-        {selectedTodos.map((todo) => (
-          <TodoDayRow
-            key={todo.id}
-            title={todo.title}
-            completed={todo.completed}
-            scheduled={todo.scheduled}
-            action={todo.scheduled && (
-              <button
-                className="todo-day-row__button todo-day-row__button--danger"
-                type="button"
-                aria-label={t.notebook.deleteScheduled(todo.title)}
-                onClick={() => onDeleteScheduled(todo.id)}
-              >
-                <Trash2 size={12} strokeWidth={2.2} aria-hidden="true" />
-              </button>
-            )}
-          />
-        ))}
+        {selectedTodos.map((todo) => {
+          const moved = openToday.has(todo.title.trim());
+          return (
+            <TodoDayRow
+              key={todo.id}
+              title={todo.title}
+              completed={todo.completed}
+              scheduled={todo.scheduled}
+              action={todo.scheduled ? (
+                <button
+                  className="todo-day-row__button todo-day-row__button--danger"
+                  type="button"
+                  aria-label={t.notebook.deleteScheduled(todo.title)}
+                  onClick={() => onDeleteScheduled(todo.id)}
+                >
+                  <Trash2 size={12} strokeWidth={2.2} aria-hidden="true" />
+                </button>
+              ) : !canAdd && !todo.completed && (
+                <button
+                  className="todo-day-row__button"
+                  type="button"
+                  disabled={moved}
+                  aria-label={moved ? t.notebook.alreadyToday : t.notebook.restoreTodo(todo.title)}
+                  title={moved ? t.notebook.alreadyToday : t.notebook.moveToToday}
+                  onClick={() => onAddTodoForDay(todo.title, today)}
+                >
+                  {moved ? <Check size={12} strokeWidth={2.4} aria-hidden="true" /> : <CornerUpLeft size={12} strokeWidth={2.4} aria-hidden="true" />}
+                </button>
+              )}
+            />
+          );
+        })}
       </TodoDayDetail>
     </div>
   );

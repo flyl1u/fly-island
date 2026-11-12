@@ -16,6 +16,24 @@ export function monthOf(date: string) {
   return date.slice(0, 7);
 }
 
+export function relativeDay(date: string, today: string): "today" | "yesterday" | "tomorrow" | null {
+  if (date === today) return "today";
+  if (date === addDays(today, -1)) return "yesterday";
+  if (date === addDays(today, 1)) return "tomorrow";
+  return null;
+}
+
+type DayHeadingText = { dayToday: string; dayYesterday: string; dayTomorrow: string; formatDay: (date: Date) => string };
+
+export function dayHeading(date: string, today: string, text: DayHeadingText) {
+  const relative = relativeDay(date, today);
+  if (relative === "today") return text.dayToday;
+  if (relative === "yesterday") return text.dayYesterday;
+  if (relative === "tomorrow") return text.dayTomorrow;
+  const parsed = new Date(`${date}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? date : text.formatDay(parsed);
+}
+
 /** The month `delta` months after `month` ("YYYY-MM"). */
 export function shiftMonth(month: string, delta: number) {
   const [year, monthIndex] = month.split("-").map(Number);

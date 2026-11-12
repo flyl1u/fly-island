@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import "./TodoDayRow.css";
 
-/** One todo in the history or the calendar's day list: a done mark, the title and an action that shows on hover. */
+/** One todo on the selected calendar day, with its completion mark and contextual action. */
 export function TodoDayRow({
   title,
   completed,

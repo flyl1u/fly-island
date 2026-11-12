@@ -1,37 +1,28 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { CalendarDays, ClipboardList, History, NotebookPen, type LucideIcon } from "lucide-react";
+import { CalendarDays, ClipboardList, NotebookPen, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { TodoPageMode } from "./types";
 import "./TodoViewSwitch.css";
 
-export type TodoView = "today" | "daily" | "history" | "calendar";
-
-/** The segment a page belongs to: the upcoming list hangs off Todos, archived days off History. */
-export function todoViewOf(pageMode: TodoPageMode): TodoView {
-  if (pageMode === "daily" || pageMode === "calendar") return pageMode;
-  if (pageMode === "history" || pageMode === "archive" || pageMode === "review") return "history";
-  return "today";
-}
+export type TodoView = Exclude<TodoPageMode, "upcoming">;
 
 const ICONS: Record<TodoView, LucideIcon> = {
   today: ClipboardList,
   daily: NotebookPen,
-  history: History,
   calendar: CalendarDays,
 };
-const VIEWS: TodoView[] = ["today", "daily", "history", "calendar"];
+const VIEWS: TodoView[] = ["today", "daily", "calendar"];
 
 /**
- * Todos / Notes / History / Calendar as one segmented control. Only the active segment shows
+ * Todos / Notes / Calendar as one segmented control. Only the active segment shows
  * its label, so the control stays narrow; a pill slides under it.
  */
 export function TodoViewSwitch({ pageMode, onSelect }: { pageMode: TodoPageMode; onSelect: (view: TodoView) => void }) {
   const t = useTranslation();
-  const active = todoViewOf(pageMode);
+  const active = pageMode === "upcoming" ? "today" : pageMode;
   const labels: Record<TodoView, string> = {
     today: t.notebook.tasksTab,
     daily: t.notebook.dailyTab,
-    history: t.notebook.historyTab,
     calendar: t.notebook.calendarTab,
   };
   const activeLabel = labels[active];

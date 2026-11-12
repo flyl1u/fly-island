@@ -1,9 +1,9 @@
 import { useId, useMemo, type ReactNode } from "react";
 import { useTranslation } from "../../i18n";
-import { dayHeading, relativeDay } from "./history";
+import { dayHeading, relativeDay } from "./calendar";
 import "./TodoDayDetail.css";
 
-/** The dated list shown beside either date navigator. */
+/** The dated list shown beside the calendar. */
 export function TodoDayDetail({
   date,
   today,

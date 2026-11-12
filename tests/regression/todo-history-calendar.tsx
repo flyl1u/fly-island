@@ -1,6 +1,5 @@
-// pnpm dev, then open /tests/regression/todo-history-calendar.html. The notebook's tabs and both
-// side-by-side date browsers use the real useTodos hook on seeded localStorage, with the space
-// each view gets in the island. Check month/day selection, restore, scheduling and scroll bounds.
+// The notebook's tabs and calendar use the real useTodos hook on seeded localStorage.
+// Check progress, archived dates, scheduling and scroll bounds in the island's available space.
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -113,10 +112,15 @@ try {
 
   // The view switch.
   const segments = $$(".todo-view-switch__segment");
-  check(segments.map((element) => element.getAttribute("aria-label")).join("/") === "待办/笔记/历史/日历", "一个分段控件，四段依次是待办 / 笔记 / 历史 / 日历");
+  check(segments.map((element) => element.getAttribute("aria-label")).join("/") === "待办/笔记/日历", "分段控件依次是待办 / 笔记 / 日历");
   check(segment("today").textContent === "待办" && segments.slice(1).every((element) => element.textContent === ""), "只有当前一段显示文字，其余只有图标");
   check($(".todo-page-toggle:not(.todo-page-toggle--count)") === null, "旧的笔记 / 历史 / 日历单独按钮已去掉");
   check($(".todo-date-picker") !== null && $(".todo-page-toggle--count") !== null, "待办页右上有已安排数量，输入框旁有日期按钮");
+  const progress = $<HTMLProgressElement>(".todo-notebook progress")!;
+  check(progress.value === 1 && progress.max === 4, "进度条显示完成数和总数");
+  await click(button("完成：核对这周的录屏素材"));
+  check(progress.value === 2 && progress.max === 4, "勾选待办时更新进度");
+  await click(button("标记未完成：核对这周的录屏素材"));
   await frame();
   check(pillMatches("today") && $(".todo-view-switch--ready"), "高亮块对齐当前一段");
 
@@ -124,53 +128,6 @@ try {
   check($(".daily-note") !== null && segment("daily").getAttribute("aria-selected") === "true" && segment("daily").textContent === "笔记", "切到笔记");
   check($(".todo-date-picker") === null && $(".todo-page-toggle--count") === null, "笔记页不显示只属于待办的控件");
   check(pillMatches("daily"), "高亮块滑到笔记");
-
-  // History.
-  await click(segment("history"));
-  const monthPicker = $<HTMLSelectElement>(".todo-history__month select")!;
-  const chooseMonth = (month: string) => act(async () => {
-    monthPicker.value = month;
-    monthPicker.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  const historyDate = (date: string) => $(`.todo-history__date[data-date="${date}"]`);
-  const indexedDates = () => $$(".todo-history__date").map((element) => element.dataset.date);
-  check(sideBySide() && detail().dataset.date === today && historyDate(today)?.getAttribute("aria-pressed") === "true",
-    "历史左侧是日期目录，右侧默认选中最新的日期");
-  check(indexedDates().join() === [today, yesterday, older].filter((date) => monthOf(date) === monthOf(today)).join(),
-    "目录只列所选月有记录的日期，最新的在前");
-  check($$(".todo-day-detail").length === 1 && dayList().textContent!.includes("核对这周的录屏素材") && !dayList().textContent!.includes("写周报"),
-    "右侧只渲染选中日期的待办");
-  check($(".todo-day-row__action") === null, "今天的待办没有移到今天按钮");
-
-  await chooseMonth(monthOf(lastYear));
-  check(detail().dataset.date === lastYear && dayList().textContent!.includes("去年的记录"), "用月份选择器直接跳到跨年的记录");
-  await chooseMonth(oldMonth);
-  check(indexedDates().join() === [old, oldEarlier].join() && detail().dataset.date === old, "切到另一个月自动选中该月最新日期");
-  const longList = dayList();
-  longList.scrollTop = longList.scrollHeight;
-  check(longList.scrollTop > 0 && fits(), "长清单在右侧独立滚动");
-  await click(historyDate(oldEarlier));
-  check(detail().dataset.date === oldEarlier && dayList().textContent!.includes("讨论拍摄提纲"), "点目录日期就切换右侧内容");
-  await click(historyDate(old));
-  check(dayList().scrollTop === 0, "切回长清单时从开头阅读");
-
-  await chooseMonth(monthOf(yesterday));
-  await click(historyDate(yesterday));
-  check($(".todo-day-detail__title")?.textContent === "昨天" && $(".todo-day-detail__summary")?.textContent === "1/2 已完成",
-    "历史详情显示日期标题和完成情况");
-  check($(".todo-day-row--done")!.textContent === "回邮件", "完成项打勾、变灰");
-  const moveButton = button("把“写周报”加到今天")!;
-  check(moveButton.textContent === "移到今天" && getComputedStyle(moveButton.parentElement!).opacity === "0", `"移到今天"平时隐藏，悬停才出现`);
-  await click(moveButton);
-  const moved = button("已在今天的列表里");
-  check(moved?.disabled === true && getComputedStyle(moved.parentElement!).opacity === "1", "移到今天后变成\"已在今天的列表里\"，不会重复添加");
-  check(detail().dataset.date === yesterday, "恢复待办后停留在当前历史日期");
-  await chooseMonth(monthOf(today));
-  await click(historyDate(today));
-  check(dayList().textContent!.includes("写周报"), "切回今天可以看到刚恢复的待办");
-
-  await click(segment("today"));
-  check(todayTitles().includes("写周报") && todayTitles().includes("核对这周的录屏素材"), "点待办回到今天的列表");
 
   // Calendar.
   await click(segment("calendar"));
@@ -180,16 +137,22 @@ try {
   const day = (date: string) => $<HTMLButtonElement>(`.todo-calendar__day[data-date="${date}"]`);
   const todayNumber = day(today)!.querySelector(".todo-calendar__number")!;
   check(getComputedStyle(todayNumber).backgroundColor === "rgb(116, 214, 255)" && day(today)!.getAttribute("aria-current") === "date", "今天是实心的强调色圆");
-  check(sideBySide() && detail().dataset.date === today && $(".todo-day-detail__title")?.textContent === "今天" && dayList().textContent!.includes("写周报"),
+  check(sideBySide() && detail().dataset.date === today && $(".todo-day-detail__title")?.textContent === "今天" && dayList().textContent!.includes("核对这周的录屏素材"),
     "日历在左侧，今天的待办默认显示在右侧");
   if (!day(yesterday)) await click(button("上个月"));
   check(day(yesterday)?.querySelectorAll(".todo-calendar__dot").length === 2 && day(yesterday)?.querySelector(".todo-calendar__dot--open"),
     "有待办的日子带圆点，没完成的是强调色");
+  await click(day(yesterday));
+  check(detail().dataset.date === yesterday && $(".todo-day-detail__summary")?.textContent === "1/2 已完成" &&
+    $(".todo-day-row--done")?.textContent === "回邮件", "日历保留归档日期的清单和完成情况");
+  await click(button("把“写周报”加到今天"));
+  check(button("已在今天的列表里")?.disabled && detail().dataset.date === yesterday, "在日历中将旧待办加到今天，不会重复添加");
   if (!day(older)) await click(button("上个月"));
   check(day(older)?.querySelector(".todo-calendar__dot--done") && !day(older)?.querySelector(".todo-calendar__dot--open"), "全部完成的是灰点");
   const goToday = button("回到今天")!;
   if (!goToday.disabled) await click(goToday);
   check($(".todo-calendar__add input") !== null, "今天可以直接添加待办");
+  check(dayList().textContent!.includes("写周报"), "回到今天可以看到恢复的待办");
   check(fits(), "日历页放得进岛里");
 
   if (!day(later)) await click(button("下个月"));
@@ -218,6 +181,16 @@ try {
   await click(goToday);
   check(day(today)?.getAttribute("aria-pressed") === "true" && goToday.disabled, "今天按钮回到本月并选中今天");
 
+  for (let step = 0; step < 5 && !day(old); step += 1) await click(button("上个月"));
+  await click(day(old));
+  const longList = dayList();
+  longList.scrollTop = longList.scrollHeight;
+  check(longList.scrollTop > 0 && fits(), "跨月归档的长清单在日历右侧独立滚动");
+  await click(day(oldEarlier));
+  await click(day(old));
+  check(dayList().scrollTop === 0, "切回长清单时从开头阅读");
+  await click(goToday);
+
   // A six-week month stays fully visible without taking height from the day list.
   for (let step = 0; step < 12 && $$(".todo-calendar__day").length !== 42; step += 1) await click(button("下个月"));
   const grid = $(".todo-calendar__grid")!;
@@ -228,6 +201,8 @@ try {
   check(sideBySide() && fits() && detail().scrollWidth <= detail().clientWidth + 1, "窄面板的日历和待办不会横向溢出");
   fixture.style.removeProperty("width");
   if (!goToday.disabled) await click(goToday);
+  await click(segment("today"));
+  check(todayTitles().includes("写周报") && $<HTMLProgressElement>(".todo-notebook progress")?.max === 5, "回到待办页时总数包含恢复的待办");
 
   const archived = JSON.parse(localStorage.getItem("focusd-island-archives") ?? "[]") as typeof archives;
   check(archived.length === archives.length && archived.every((entry, index) => entry.date === archives[index].date &&

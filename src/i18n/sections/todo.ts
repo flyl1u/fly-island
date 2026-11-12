@@ -1,6 +1,5 @@
 export type TodoText = {
   empty: string;
-  emptyReview: string;
   complete: string;
   markIncomplete: string;
   /** Screen-reader label pairing an action with the task it targets. */
@@ -15,7 +14,6 @@ export type TodoText = {
 
 export const zhCN: TodoText = {
   empty: "今天还很轻",
-  emptyReview: "Nothing was written here",
   complete: "完成",
   markIncomplete: "标记未完成",
   actionOnTask: (action, taskTitle) => `${action}：${taskTitle}`,
@@ -29,7 +27,6 @@ export const zhCN: TodoText = {
 
 export const en: TodoText = {
   empty: "A light day so far",
-  emptyReview: "Nothing was written here",
   complete: "Complete",
   markIncomplete: "Mark incomplete",
   actionOnTask: (action, taskTitle) => `${action}: ${taskTitle}`,

@@ -1,40 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayHeading, groupHistoryByMonth, groupTodoHistory, hasOpenTodoTitled, relativeDay } from "../../src/features/todos/history.ts";
-import { collectCalendarTodos, dayDots, getMonthGrid, monthOf, shiftMonth } from "../../src/features/todos/calendar.ts";
+import { collectCalendarTodos, dayDots, dayHeading, getMonthGrid, monthOf, relativeDay, shiftMonth } from "../../src/features/todos/calendar.ts";
 import { en, zhCN } from "../../src/i18n/sections/notebook.ts";
 
 const todo = (id, title, completed = false, extra = {}) => ({ id, title, completed, createdAt: 0, ...extra });
 const archive = (date, todos) => ({ date, todos, dailyNote: "", savedAt: 0, savedToDisk: false });
-
-test("history starts with today's list, then past days with todos, newest first", () => {
-  const days = groupTodoHistory(
-    [
-      archive("2026-11-08", [todo("a", "A", true), todo("b", "B")]),
-      archive("2026-11-11", [todo("c", "saved today")]),
-      archive("2026-11-10", [todo("d", "D")]),
-      archive("2026-11-09", []),
-      archive("2026-11-10", [todo("e", "stale duplicate")]),
-      archive("2026-11-07", [todo("u", "update", false, { kind: "update" })]),
-    ],
-    "2026-11-11",
-    [todo("t", "Today", true)],
-  );
-  assert.deepEqual(days.map((day) => day.date), ["2026-11-11", "2026-11-10", "2026-11-08"]);
-  assert.deepEqual(days[0].todos.map((item) => item.id), ["t"]);
-  assert.deepEqual(days[1].todos.map((item) => item.id), ["d"]);
-  assert.equal(days[2].doneCount, 1);
-  assert.deepEqual(groupTodoHistory([], "2026-11-11", []), []);
-});
-
-test("the history index preserves newest-first order across months and years", () => {
-  const days = ["2026-11-11", "2026-11-05", "2026-10-01", "2025-11-04"].map((date) => ({ date, todos: [], doneCount: 0 }));
-  const months = groupHistoryByMonth(days);
-  assert.deepEqual([...months.keys()], ["2026-11", "2026-10", "2025-11"]);
-  assert.deepEqual(months.get("2026-11"), days.slice(0, 2));
-  assert.deepEqual(months.get("2025-11"), [days[3]]);
-  assert.equal(groupHistoryByMonth([]).size, 0);
-});
 
 test("day headings read today, yesterday, tomorrow or a short date", () => {
   assert.equal(relativeDay("2026-11-01", "2026-11-01"), "today");
@@ -46,12 +16,6 @@ test("day headings read today, yesterday, tomorrow or a short date", () => {
   assert.equal(dayHeading("2026-11-09", "2026-11-11", en), "Mon, Nov 9");
   assert.equal(dayHeading("2026-11-11", "2026-11-11", en), "Today");
   assert.equal(dayHeading("legacy-date", "2026-11-11", en), "legacy-date");
-});
-
-test("an unfinished todo counts as already moved when today has it open", () => {
-  const today = [todo("x", "Write report "), todo("y", "Done thing", true)];
-  assert.equal(hasOpenTodoTitled(today, "Write report"), true);
-  assert.equal(hasOpenTodoTitled(today, "Done thing"), false);
 });
 
 test("month helpers cross years", () => {
@@ -82,7 +46,11 @@ test("day dots: up to three, open ones first", () => {
 
 test("calendar collects archived, current and scheduled todos by day", () => {
   const days = collectCalendarTodos({
-    archives: [archive("2026-11-10", [todo("a", "A", true)]), archive("2026-11-11", [todo("old", "saved today")])],
+    archives: [
+      archive("2026-11-10", [todo("a", "A", true)]),
+      archive("2026-11-11", [todo("old", "saved today")]),
+      archive("2026-11-10", [todo("duplicate", "Older archive")]),
+    ],
     todos: [todo("t", "Today"), todo("u", "update", false, { kind: "update" })],
     currentDate: "2026-11-11",
     scheduledTodos: [{ id: "s", title: "Later", date: "2026-11-20", createdAt: 0 }],
