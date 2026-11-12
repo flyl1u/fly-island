@@ -3,14 +3,14 @@ import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
-import { SettingsSelect } from "../../components/settings/SettingsSelect";
+import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { AUTO_COLLAPSE_SECONDS } from "./settingsLimits";
+import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
 import type { ExpandTrigger, IslandSettings } from "./types";
 
 /**
- * Settings → General → Island: how the island opens, how long an open panel stays without use,
- * whether it tucks to the top edge when idle,
+ * Settings → General → Island: how the island opens, (A) how long the open island stays after the
+ * cursor leaves, whether and (B) how soon the collapsed island tucks into a line at the top edge,
  * game mode, and a way back to its default position. Timings, the monitor, the margin and
  * tucking while full screen keep their defaults (settingsDefaults.ts).
  */
@@ -30,10 +30,6 @@ export function ExpandSettingsSection({
     { value: "click", label: expand.click },
     { value: "hover", label: expand.hover },
   ];
-  const collapseOptions = AUTO_COLLAPSE_SECONDS.map((seconds) => ({
-    value: String(seconds),
-    label: seconds === 0 ? expand.never : expand.seconds(seconds),
-  }));
 
   return (
     <SettingsGroup title={expand.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>
@@ -48,17 +44,14 @@ export function ExpandSettingsSection({
           />
         }
       />
-      <SettingsRow
+      <SettingsNumberRow
         title={expand.autoCollapse}
         description={expand.autoCollapseHint}
-        control={
-          <SettingsSelect
-            value={String(settings.autoCollapseSeconds)}
-            options={collapseOptions}
-            ariaLabel={expand.autoCollapse}
-            onChange={(seconds) => update({ autoCollapseSeconds: Number(seconds) })}
-          />
-        }
+        value={settings.autoCollapseSeconds}
+        min={AUTO_COLLAPSE_SECONDS.min}
+        max={AUTO_COLLAPSE_SECONDS.max}
+        unit={expand.secondsUnit}
+        onChange={(autoCollapseSeconds) => update({ autoCollapseSeconds })}
       />
       <SettingsToggleRow
         title={t.settings.layout.autoTuck}
@@ -66,6 +59,18 @@ export function ExpandSettingsSection({
         checked={settings.autoTuck}
         onChange={(autoTuck) => update({ autoTuck })}
       />
+      {settings.autoTuck ? (
+        <SettingsNumberRow
+          title={expand.tuckDelay}
+          description={expand.tuckDelayHint}
+          value={settings.tuckDelaySeconds}
+          min={TUCK_DELAY_SECONDS.min}
+          max={TUCK_DELAY_SECONDS.max}
+          unit={expand.secondsUnit}
+          indent
+          onChange={(tuckDelaySeconds) => update({ tuckDelaySeconds })}
+        />
+      ) : null}
       <SettingsToggleRow
         title={t.settings.layout.gameQuiet}
         description={t.settings.layout.gameQuietHint}
