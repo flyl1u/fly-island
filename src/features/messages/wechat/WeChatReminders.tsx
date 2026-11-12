@@ -50,7 +50,7 @@ export function WeChatReminderPanel({ controller, navigation }: { controller: We
             const date = new Date(receivedAt);
             return (
               <article className="qq-panel__item" key={id} role="listitem" data-message-id={id}>
-                <button type="button" aria-label={t.wechat.openFrom(contact)} disabled={busy} onClick={() => void openWeChat()}>
+                <button type="button" aria-label={t.wechat.openFrom(contact)} disabled={busy} onClick={() => void openWeChat(id)}>
                   <div className="qq-panel__item-heading">
                     <strong>{contact}</strong>
                     <time dateTime={date.toISOString()}>{date.toLocaleTimeString(t.localeTag, { hour: "2-digit", minute: "2-digit" })}</time>

@@ -21,6 +21,7 @@ const original = keys.map(key => localStorage.getItem(key));
 keys.forEach(key => localStorage.removeItem(key));
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let revision = 0;
+let canOpenChat = true;
 let mail: MailController;
 let view: MessageView;
 let setView: (source: MessageView) => void;
@@ -45,6 +46,7 @@ mockIPC((command, payload) => {
     case "mark_qq_mail_read": snapshot = { ...snapshot, revision: ++revision, unreadCount: Math.max(0, (snapshot.unreadCount ?? 0) - 1), items: snapshot.items.map(item => item.id === args.messageId ? { ...item, unread: false } : item) }; return snapshot;
     case "set_qq_mail_enabled": snapshot = { ...snapshot, revision: ++revision, enabled: Boolean(args.enabled), status: args.enabled ? "connected" : "paused" }; return snapshot;
     case "request_qq_notification_access": return "allowed";
+    case "open_wechat_conversation": return canOpenChat;
     case "set_qq_notifications_enabled": return { revision: ++revision, enabled: args.enabled, status: "listening", error: null, items: state === "empty" || state === "disconnected" ? [] : [{ id: "qq:1", title: "设计讨论组", body: "新版界面已准备好，方便时看一下。", createdAt: now - 30_000 }] };
     case "set_wechat_reminders_enabled": return {
       revision: ++revision, enabled: args.enabled, status: !args.enabled ? "disabled" : state === "wechatError" ? "error" : "listening",
@@ -109,8 +111,12 @@ try {
     const preview = document.querySelector('[aria-label="微信消息摘要"] [role="listitem"]');
     check(preview?.querySelector("strong")?.textContent === wechatMessage.contact &&
       preview.querySelector("p")?.textContent === wechatMessage.body, "微信面板显示会话名、消息摘要和时间");
-    await click("项目群的消息，点击打开微信");
-    check(calls.filter(call => call.command === "open_wechat").length === 2, "点击摘要打开微信");
+    await click("打开微信中的「项目群」会话");
+    check(calls.some(call => call.command === "open_wechat_conversation" && call.args.messageId === wechatMessage.id),
+      "点击摘要使用对应会话的消息 ID");
+    canOpenChat = false;
+    await click("打开微信中的「项目群」会话");
+    check(document.querySelector(".qq-panel__error")?.textContent?.includes("未能定位该会话"), "会话无法定位时提示已打开微信");
     await click("QQ 通知");
     check(view! === "qq" && document.querySelector('[aria-label="QQ 最近通知"]'), "切回 QQ 显示自己的通知列表");
     await click("邮箱");

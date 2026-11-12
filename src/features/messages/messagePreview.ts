@@ -7,6 +7,7 @@ export type MessagePreview = {
   title: string;
   body: string;
   receivedAt: number;
+  wechatMessageId?: string;
 };
 
 export const MESSAGE_SOURCE_LABELS: Record<MessageSource, string> = zhCN.messages.sourceLabels;

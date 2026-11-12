@@ -40,6 +40,7 @@ window.addEventListener("beforeunload", restoreStorage);
 
 let revision = 0;
 const commands: string[] = [];
+let openedChatId: unknown;
 let mail: MailSnapshot = {
   revision: 0, email: "island-test@qq.com", configured: true, enabled: true, syncing: false,
   status: "connected", unreadCount: 0, items: [], lastSyncedAt: null, error: null,
@@ -55,6 +56,10 @@ mockIPC((command, payload) => {
     revision: ++revision, enabled: args.enabled, status: "listening", pending: false, lastAttentionAt: null, error: null,
     previewEnabled: false, previewStatus: "off", messages: [],
   };
+  if (command === "open_wechat_conversation") {
+    openedChatId = args.messageId;
+    return true;
+  }
   if (command === "get_qq_mail_state") return [mail];
   if (command === "read_qq_mail") return { id: args.messageId, content: "本周项目进度已更新", contentType: "text/plain" };
 }, { shouldMockEvents: true });
@@ -212,7 +217,11 @@ async function runChecks() {
       incoming().querySelector(".island-message-preview__body")?.textContent === "小林: 下午开会吗？", "折叠岛显示微信会话名和消息摘要");
     check(summary().children.length === 1 && !summary().querySelector(".island__summary-layer--incoming"), "减少动态效果时新消息直接可读且无离场残留");
     await act(async () => button().click());
-    check(commands.includes("open_wechat") && !summary().querySelector(".island-message-preview"), "减少动态效果时点击微信并立即恢复专注任务");
+    check(commands.includes("open_wechat_conversation") && openedChatId === `wx-${revision}` &&
+      !summary().querySelector(".island-message-preview"), "点击折叠岛微信摘要跳到对应会话并结束预览");
+    await notify("wechat");
+    await act(async () => button().click());
+    check(commands.includes("open_wechat"), "点击普通提醒打开微信主窗口");
     window.matchMedia = matchMedia;
     await act(async () => button().click());
     check(openedPage === "todo", "恢复后点击原文字仍打开待办");

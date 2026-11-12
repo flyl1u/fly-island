@@ -4,71 +4,84 @@ use serde::Serialize;
 use std::collections::HashMap;
 use windows::Win32::Foundation::HWND;
 
-use crate::win32::uia_list::named_list_rows;
+use crate::win32::uia_list::{named_list_rows, ListRow};
+
+pub(super) const SESSION_PREFIX: &str = "session_item_";
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub(super) struct ChatPreview {
+    #[serde(skip)]
+    pub(super) key: String,
     pub(super) contact: String,
     pub(super) body: String,
 }
 
 pub(super) struct Conversation {
-    key: String,
     preview: ChatPreview,
     unread: u32,
     muted: bool,
     mentioned: bool,
+    selected: bool,
+    pinned: bool,
+    time: String,
 }
 
 const MUTED: &[&str] = &["消息免打扰", "免打扰", "静音", "Muted", "Do Not Disturb"];
+const PINNED: &[&str] = &["已置顶", "置顶聊天", "Pinned"];
 const LABELS: &[&str] = &[
-    "已置顶",
-    "置顶聊天",
     "折叠的聊天",
     "有新消息",
     "以下为新消息",
     "服务号",
-    "Pinned",
     "New messages",
 ];
 const MENTIONS: &[&str] = &["有人@我", "@我", "@所有人", "Mentioned you", "@You", "@All"];
 
 pub(super) fn read(window: HWND) -> Option<Vec<Conversation>> {
-    let rows = named_list_rows(window, "session_item_")?;
-    let conversations: Vec<_> = rows
-        .into_iter()
-        .filter_map(|(key, name)| parse_row(key, &name))
-        .collect();
+    let rows = named_list_rows(window, SESSION_PREFIX)?;
+    let conversations: Vec<_> = rows.into_iter().filter_map(parse_row).collect();
     (!conversations.is_empty()).then_some(conversations)
 }
 
-fn parse_row(key: String, name: &str) -> Option<Conversation> {
+fn parse_row(
+    ListRow {
+        key,
+        name,
+        selected,
+    }: ListRow,
+) -> Option<Conversation> {
     let mut lines = name.lines().map(str::trim).filter(|line| !line.is_empty());
     let contact = lines.next()?;
     let mut row = Conversation {
-        key,
         preview: ChatPreview {
+            key,
             contact: contact.chars().take(128).collect(),
             body: String::new(),
         },
         unread: 0,
         muted: false,
         mentioned: false,
+        selected,
+        pinned: false,
+        time: String::new(),
     };
-    let mut after_time = false;
+    let labels: Vec<_> = lines.collect();
+    let last_time = labels.iter().rposition(|line| is_time_label(line));
     let mut summary = None;
-    for line in lines {
+    for (index, line) in labels.into_iter().enumerate() {
         if MUTED.contains(&line) {
             row.muted = true;
-        } else if !after_time {
+        } else if PINNED.contains(&line) {
+            row.pinned = true;
+        } else if Some(index) == last_time {
+            row.time = line.to_owned();
+        } else if last_time.is_none_or(|time| index < time) {
             if let Some(count) = unread_count(line) {
                 row.unread = count;
             } else if LABELS.contains(&line) {
                 continue;
             } else if MENTIONS.contains(&line) {
                 row.mentioned = true;
-            } else if is_time_label(line) {
-                after_time = true;
             } else {
                 row.mentioned |= MENTIONS.iter().any(|mark| {
                     line.strip_prefix('[')
@@ -150,22 +163,64 @@ fn is_time_label(line: &str) -> bool {
     })
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum ReadTrigger {
+    Flash { allow_selected: bool },
+    Poll,
+}
+
 pub(super) fn new_previews(
     before: &[Conversation],
     after: &[Conversation],
+    trigger: ReadTrigger,
     limit: usize,
 ) -> Vec<ChatPreview> {
-    let previous: HashMap<_, _> = before.iter().map(|row| (row.key.as_str(), row)).collect();
+    let previous: HashMap<_, _> = before
+        .iter()
+        .map(|row| (row.preview.key.as_str(), row))
+        .collect();
+    let top = |rows: &[Conversation]| {
+        rows.iter()
+            .find(|row| !row.pinned)
+            .map(|row| row.preview.key.clone())
+    };
+    let now_top = top(after);
+    let was_top = top(before);
     after
         .iter()
         .filter(|row| {
             if row.preview.body.is_empty() || row.muted && !row.mentioned {
                 return false;
             }
-            // A different preview without new unread evidence can be the user's own reply.
-            let old = previous.get(row.key.as_str());
-            row.unread > old.map_or(0, |row| row.unread)
-                || row.mentioned && old.is_none_or(|old| !old.mentioned)
+            let key = row.preview.key.as_str();
+            let old = previous.get(key).copied();
+            let moved_to_top = now_top.as_deref() == Some(key)
+                && was_top.as_deref() != Some(key)
+                && after
+                    .iter()
+                    .find(|other| !other.pinned && other.preview.key != key)
+                    .is_some_and(|other| Some(other.preview.key.as_str()) == was_top.as_deref());
+            let changed_unread = row.unread > old.map_or(0, |row| row.unread)
+                || row.mentioned && old.is_none_or(|old| !old.mentioned);
+            if changed_unread
+                && (old.is_some() || moved_to_top || matches!(trigger, ReadTrigger::Flash { .. }))
+            {
+                return true;
+            }
+            // WeChat keeps the selected chat's unread count at zero. A real flash can identify it
+            // while the user has been away, but a background poll cannot distinguish a synced reply.
+            matches!(
+                trigger,
+                ReadTrigger::Flash {
+                    allow_selected: true
+                }
+            ) && row.selected
+                && old.is_some_and(|old| {
+                    old.selected
+                        && (old.preview.body != row.preview.body
+                            || old.time != row.time
+                            || moved_to_top)
+                })
         })
         .take(limit)
         .map(|row| row.preview.clone())
@@ -177,7 +232,12 @@ mod tests {
     use super::*;
 
     fn row(key: &str, name: &str) -> Conversation {
-        parse_row(key.into(), name).unwrap()
+        parse_row(ListRow {
+            key: key.into(),
+            name: name.into(),
+            selected: false,
+        })
+        .unwrap()
     }
 
     #[test]
@@ -210,7 +270,7 @@ mod tests {
             row("1", "小林\n[2条]\n我晚点回复\n8:18"),
             row("2", "项目群\n[2条]\n李四: 有事@我\n8:19\n消息免打扰"),
         ];
-        assert!(new_previews(&before, &after, 20).is_empty());
+        assert!(new_previews(&before, &after, ReadTrigger::Poll, 20).is_empty());
         let mention = [
             row("1", "小林\n[3条]\n我晚点回复\n8:19"),
             row(
@@ -218,7 +278,62 @@ mod tests {
                 "项目群\n[2条]\n[有人@我] 李四: 请查收\n8:19\n消息免打扰",
             ),
         ];
-        assert_eq!(new_previews(&after, &mention, 20).len(), 2);
-        assert!(new_previews(&mention, &mention, 20).is_empty());
+        assert_eq!(
+            new_previews(&after, &mention, ReadTrigger::Poll, 20).len(),
+            2
+        );
+        assert!(new_previews(&mention, &mention, ReadTrigger::Poll, 20).is_empty());
+    }
+
+    #[test]
+    fn selected_chat_needs_a_flash_and_no_visit_to_count_without_unread() {
+        let selected = |name: &str| Conversation {
+            selected: true,
+            ..row("open", name)
+        };
+        let before = [
+            row("other", "其他会话\n上一次\n12:00"),
+            selected("当前会话\n好的\n12:05"),
+        ];
+        let after = [
+            selected("当前会话\n好的\n12:05"),
+            row("other", "其他会话\n上一次\n12:00"),
+        ];
+        assert_eq!(
+            new_previews(
+                &before,
+                &after,
+                ReadTrigger::Flash {
+                    allow_selected: true
+                },
+                20
+            )[0]
+            .key,
+            "open"
+        );
+        assert!(new_previews(
+            &before,
+            &after,
+            ReadTrigger::Flash {
+                allow_selected: false
+            },
+            20
+        )
+        .is_empty());
+        assert!(new_previews(&before, &after, ReadTrigger::Poll, 20).is_empty());
+        assert_eq!(selected("当前会话\n12:06\n12:07").preview.body, "12:06");
+    }
+
+    #[test]
+    fn a_poll_notices_a_new_top_chat_without_replaying_other_old_unread_rows() {
+        let before = [row("known", "现有会话\n上一次\n12:00")];
+        let after = [
+            row("new", "新会话\n[1条]\n收到\n12:05"),
+            row("known", "现有会话\n上一次\n12:00"),
+            row("older", "旧会话\n[3条]\n内容\n昨天"),
+        ];
+        let previews = new_previews(&before, &after, ReadTrigger::Poll, 20);
+        assert_eq!(previews.len(), 1);
+        assert_eq!(previews[0].key, "new");
     }
 }
