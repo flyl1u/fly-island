@@ -23,6 +23,13 @@ export const demoData = {
       { title: "小林", body: "收到，文件我放到共享盘了。" },
       { title: "设计组", body: "新图标已经上传，大家看看。" },
     ],
+    wechat: [
+      { contact: "项目协作组", body: "下午两点的方案评审改在三号会议室，记得带电脑。" },
+      { contact: "家里人", body: "今晚做糖醋排骨，下班顺路买瓶生抽回来。" },
+      { contact: "前端交流群", body: "新版组件库的文档和演示链接更新在群公告了。" },
+      { contact: "快递驿站", body: "您的包裹已放入南门自提柜，取件码 5-2-401。" },
+      { contact: "物业服务处", body: "明天上午十点对园区绿化进行修剪，请留意避让。" },
+    ],
     mail: {
       sender: "GitHub",
       subject: "[fly-island] Release v3.0.2 is ready",
@@ -59,6 +66,13 @@ export const demoData = {
       { title: "Product team", body: "Review at ten tomorrow. Bring the new prototype." },
       { title: "Lin", body: "Got it, the files are on the shared drive." },
       { title: "Design", body: "The new icons are up, take a look." },
+    ],
+    wechat: [
+      { contact: "Project Team", body: "The 2 PM review is moved to Room 3. Please bring your laptop." },
+      { contact: "Family", body: "Making ribs tonight. Could you pick up some soy sauce on your way home?" },
+      { contact: "Dev Community", body: "Updated the component library docs and demo links in the group notice." },
+      { contact: "Parcel Locker", body: "Your package is ready in locker 5-2-401 at the south gate." },
+      { contact: "Property Service", body: "Grounds maintenance tomorrow from 10 AM. Please watch your step." },
     ],
     mail: {
       sender: "GitHub",
