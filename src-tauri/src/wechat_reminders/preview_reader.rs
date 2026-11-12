@@ -99,6 +99,7 @@ impl ReadSchedule {
         now: Instant,
     ) -> Option<Vec<ChatPreview>> {
         let mut previews = Vec::new();
+        let mut muted_only = false;
         if let Some((before, after)) = self
             .baseline
             .as_deref()
@@ -131,6 +132,13 @@ impl ReadSchedule {
                 }
                 _ => {}
             }
+            muted_only = previews.is_empty()
+                && matches!(trigger, ReadTrigger::Flash { .. })
+                && conversations::only_muted_changed(before, after);
+        }
+        if muted_only {
+            // The flash came from a muted chat: no plain reminder for it.
+            self.flash = None;
         }
         if let Some(flash) = self.flash.as_mut() {
             if previews.is_empty() && self.baseline.is_some() && flash.remaining > 1 {
@@ -507,6 +515,26 @@ mod tests {
             schedule.next(last_read + UNAVAILABLE_POLL),
             Some(ReadTrigger::Poll)
         ));
+    }
+
+    #[test]
+    fn a_flash_explained_by_a_muted_chat_gives_no_plain_reminder() {
+        let muted = |body: &str| {
+            vec![conversations::parse_row(ListRow {
+                key: "group".into(),
+                name: format!("大群\n{body}\n12:30\n消息免打扰"),
+                selected: false,
+            })
+            .unwrap()]
+        };
+        let now = Instant::now();
+        let mut schedule = ReadSchedule::new(now);
+        schedule.sampled(ReadTrigger::Poll, Some(muted("张三: 早")), now);
+        schedule.attention(now);
+        let due = now + SETTLE;
+        let trigger = schedule.next(due).unwrap();
+        assert!(schedule.sampled(trigger, Some(muted("李四: 好")), due).is_none());
+        assert!(schedule.flash.is_none());
     }
 
     #[test]
