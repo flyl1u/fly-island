@@ -3,7 +3,7 @@
 use windows::{
     core::Interface,
     Win32::{
-        Foundation::{HWND, POINT},
+        Foundation::{HWND, POINT, RECT},
         System::{
             Com::{CoCreateInstance, CLSCTX_INPROC_SERVER},
             Variant::VARIANT,
@@ -12,8 +12,9 @@ use windows::{
             CUIAutomation8, IUIAutomation, IUIAutomation2, IUIAutomationElement,
             IUIAutomationElementArray, IUIAutomationScrollItemPattern,
             PropertyConditionFlags_MatchSubstring, TreeScope_Descendants,
-            UIA_AutomationIdPropertyId, UIA_ControlTypePropertyId, UIA_ListItemControlTypeId,
-            UIA_NamePropertyId, UIA_ScrollItemPatternId, UIA_SelectionItemIsSelectedPropertyId,
+            UIA_AutomationIdPropertyId, UIA_ButtonControlTypeId, UIA_ClassNamePropertyId,
+            UIA_ControlTypePropertyId, UIA_ListItemControlTypeId, UIA_NamePropertyId,
+            UIA_ScrollItemPatternId, UIA_SelectionItemIsSelectedPropertyId,
         },
     },
 };
@@ -28,12 +29,12 @@ pub(crate) struct ListRow {
     pub(crate) selected: bool,
 }
 
-struct ListAutomation {
+struct Automation {
     client: IUIAutomation,
     _apartment: ComApartment,
 }
 
-impl ListAutomation {
+impl Automation {
     fn new() -> Option<Self> {
         let apartment = ComApartment::multithreaded().ok()?;
         // SAFETY: COM is initialized on this thread, and the owned client is dropped before the apartment.
@@ -53,7 +54,7 @@ impl ListAutomation {
 }
 
 pub(crate) fn named_list_rows(window: HWND, prefix: &str) -> Option<Vec<ListRow>> {
-    let automation = ListAutomation::new()?;
+    let automation = Automation::new()?;
     let client = &automation.client;
     // SAFETY: the guard keeps the UIA client and its interfaces on the initialized thread.
     // The HWND is passed by value, and UIA handles invalid or recently closed windows.
@@ -156,12 +157,12 @@ pub(crate) fn click_list_row(
     if window::foreground_window() != window || !still_allowed() {
         return false;
     }
-    let Some(automation) = ListAutomation::new() else {
+    let Some(automation) = Automation::new() else {
         return false;
     };
     let find = || -> windows::core::Result<Option<POINT>> {
         let client = &automation.client;
-        // SAFETY: COM is initialized by ListAutomation and all UIA references remain on this thread.
+        // SAFETY: COM is initialized by Automation and all UIA references remain on this thread.
         // The only raw output pointer is the address of a writable POINT.
         unsafe {
             let root = client.ElementFromHandle(window)?;
@@ -209,6 +210,49 @@ pub(crate) fn click_list_row(
         .is_some_and(|point| still_allowed() && input::click_in_foreground(window, point))
 }
 
+/// Locate a unique, named button in the upper-right corner of a window's caption.
+pub(crate) fn caption_button_rect(window: HWND, class: &str, names: &[&str]) -> Option<RECT> {
+    let automation = Automation::new()?;
+    let client = &automation.client;
+    // SAFETY: Automation keeps COM initialized while the client and elements are used here.
+    unsafe {
+        let root = client.ElementFromHandle(window).ok()?;
+        let frame = root.CurrentBoundingRectangle().ok()?;
+        let button = client
+            .CreatePropertyCondition(
+                UIA_ControlTypePropertyId,
+                &VARIANT::from(UIA_ButtonControlTypeId.0),
+            )
+            .ok()?;
+        let class = client
+            .CreatePropertyCondition(UIA_ClassNamePropertyId, &VARIANT::from(class))
+            .ok()?;
+        let condition = client.CreateAndCondition(&button, &class).ok()?;
+        let elements = root.FindAll(TreeScope_Descendants, &condition).ok()?;
+        let mut candidates = (0..elements.Length().ok()?.min(MAX_ROWS)).filter_map(|index| {
+            let element = elements.GetElement(index).ok()?;
+            let name = element.CurrentName().ok()?.to_string();
+            if !names.contains(&name.as_str()) || element.CurrentIsOffscreen().ok()?.as_bool() {
+                return None;
+            }
+            let rect = element.CurrentBoundingRectangle().ok()?;
+            is_caption_rect(frame, rect).then_some(rect)
+        });
+        let rect = candidates.next()?;
+        candidates.next().is_none().then_some(rect)
+    }
+}
+
+fn is_caption_rect(frame: RECT, rect: RECT) -> bool {
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    // Qt and the UIA window proxy can round scaled coordinates to different pixels.
+    width > 0
+        && height > 0
+        && (-2..width).contains(&(frame.right - rect.right))
+        && (-2..height).contains(&(rect.top - frame.top))
+}
+
 fn point_hits_row(client: &IUIAutomation, point: POINT, row: &IUIAutomationElement) -> bool {
     // SAFETY: the client and row are live on the initialized thread, and POINT is passed by value.
     unsafe {
@@ -229,5 +273,43 @@ fn point_hits_row(client: &IUIAutomation, point: POINT, row: &IUIAutomationEleme
             hit = parent;
         }
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn caption_bounds_allow_fractional_dpi_rounding() {
+        let frame = RECT {
+            left: 238,
+            top: 199,
+            right: 2117,
+            bottom: 1499,
+        };
+        let close = RECT {
+            left: 2052,
+            top: 199,
+            right: 2118,
+            bottom: 247,
+        };
+        assert!(is_caption_rect(frame, close));
+        assert!(!is_caption_rect(
+            frame,
+            RECT {
+                top: 400,
+                bottom: 448,
+                ..close
+            }
+        ));
+        assert!(!is_caption_rect(
+            frame,
+            RECT {
+                left: 1952,
+                right: 2018,
+                ..close
+            }
+        ));
     }
 }

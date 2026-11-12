@@ -54,7 +54,7 @@ mockIPC((command, payload) => {
   };
   if (command === "set_wechat_reminders_enabled") return {
     revision: ++revision, enabled: args.enabled, status: "listening", pending: false, lastAttentionAt: null, error: null,
-    previewEnabled: false, previewStatus: "off", messages: [],
+    previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [],
   };
   if (command === "open_wechat_conversation") {
     openedChatId = args.messageId;
@@ -119,7 +119,7 @@ async function notify(source: MessageSource, long = false, visible = true) {
     if (source === "wechat") await emit("wechat-reminder-changed", {
       snapshot: {
         revision: ++revision, enabled: true, status: "listening", pending: true, lastAttentionAt: revision, error: null,
-        previewEnabled: long, previewStatus: long ? "ready" : "off",
+        previewEnabled: long, previewStatus: long ? "ready" : "off", hideMinimizedTaskbar: false,
         messages: long ? [{ id: `wx-${revision}`, receivedAt: revision, contact: "项目群", body: "小林: 下午开会吗？" }] : [],
       }, windowVisible: visible,
     });

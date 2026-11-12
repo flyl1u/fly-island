@@ -31,7 +31,7 @@ export function MessagesSettingsPage({
 }) {
   const t = useTranslation();
   const labels = t.settings.messageSources;
-  const { snapshot: wechat, actionError, setEnabled, setPreviewEnabled } = wechatReminders;
+  const { snapshot: wechat, actionError, setEnabled, setPreviewEnabled, setHideMinimizedTaskbar } = wechatReminders;
   const wechatHint = wechat.previewEnabled && wechat.enabled
     ? t.wechat.previewStatus[wechat.previewStatus] || labels.wechatHint
     : labels.wechatHint;
@@ -53,6 +53,14 @@ export function MessagesSettingsPage({
             }
             checked={wechat.previewEnabled}
             onChange={(enabled) => void setPreviewEnabled(enabled)}
+          />
+        )}
+        {wechat.enabled && wechat.previewEnabled && (
+          <SettingsToggleRow
+            title={t.wechat.hideMinimizedTaskbar}
+            description={t.wechat.hideMinimizedTaskbarHint}
+            checked={wechat.hideMinimizedTaskbar}
+            onChange={(hidden) => void setHideMinimizedTaskbar(hidden)}
           />
         )}
       </SettingsGroup>

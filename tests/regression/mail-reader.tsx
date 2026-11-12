@@ -53,7 +53,7 @@ mockIPC((command, payload) => {
       pending: Boolean(args.enabled) && state !== "empty" && state !== "disconnected",
       lastAttentionAt: !args.enabled || state === "empty" || state === "disconnected" ? null : wechatMessage.receivedAt,
       error: args.enabled && state === "wechatError" ? "微信提醒连接失败，正在重试。" : null,
-      previewEnabled: state === "wechatPreview", previewStatus: state === "wechatPreview" ? "ready" : "off",
+      previewEnabled: state === "wechatPreview", previewStatus: state === "wechatPreview" ? "ready" : "off", hideMinimizedTaskbar: false,
       messages: state === "wechatPreview" && args.enabled ? [wechatMessage] : [],
     };
     default: return null;
@@ -105,7 +105,7 @@ try {
       await emit("wechat-reminder-changed", { snapshot: {
         revision: ++revision, enabled: true, status: "listening", pending: true,
         lastAttentionAt: wechatMessage.receivedAt, error: null,
-        previewEnabled: true, previewStatus: "ready", messages: [wechatMessage],
+        previewEnabled: true, previewStatus: "ready", hideMinimizedTaskbar: false, messages: [wechatMessage],
       }, windowVisible: true });
     });
     const preview = document.querySelector('[aria-label="微信消息摘要"] [role="listitem"]');

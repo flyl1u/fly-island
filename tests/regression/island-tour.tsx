@@ -75,7 +75,7 @@ mockIPC((command, payload) => {
     case "get_island_top_attachment": return !query.has("detached");
     case "set_qq_notifications_enabled":
     case "get_qq_notification_state": return { revision: ++revision, enabled: true, status: "listening", items: empty ? [] : TOUR_QQ_ITEMS, error: null };
-    case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: false, lastAttentionAt: null, error: null, previewEnabled: false, previewStatus: "off", messages: [] };
+    case "set_wechat_reminders_enabled": return { revision: ++revision, enabled: true, status: "listening", pending: false, lastAttentionAt: null, error: null, previewEnabled: false, previewStatus: "off", hideMinimizedTaskbar: false, messages: [] };
     case "get_qq_mail_state": return empty ? [] : TOUR_MAIL;
     case "has_translation_secret": return false;
     case "set_translation_shortcut": return args.shortcut;

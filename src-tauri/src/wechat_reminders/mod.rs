@@ -71,6 +71,7 @@ pub struct ReminderSnapshot {
     error: Option<String>,
     preview_enabled: bool,
     preview_status: PreviewStatus,
+    hide_minimized_taskbar: bool,
     messages: Vec<MessagePreview>,
 }
 
@@ -85,6 +86,7 @@ impl Default for ReminderSnapshot {
             error: None,
             preview_enabled: false,
             preview_status: PreviewStatus::Off,
+            hide_minimized_taskbar: false,
             messages: Vec::new(),
         }
     }
@@ -109,6 +111,7 @@ impl ReminderState {
             enabled,
             status: if enabled { "waiting" } else { "disabled" }.into(),
             preview_enabled: self.snapshot.preview_enabled,
+            hide_minimized_taskbar: self.snapshot.hide_minimized_taskbar,
             preview_status: if enabled && self.snapshot.preview_enabled {
                 PreviewStatus::Waiting
             } else {
@@ -132,6 +135,15 @@ impl ReminderState {
             PreviewStatus::Off
         };
         self.snapshot.messages.clear();
+        true
+    }
+
+    fn set_hide_minimized_taskbar(&mut self, hidden: bool) -> bool {
+        if self.snapshot.hide_minimized_taskbar == hidden {
+            return false;
+        }
+        self.snapshot.hide_minimized_taskbar = hidden;
+        self.snapshot.revision += 1;
         true
     }
 
@@ -309,18 +321,26 @@ pub(crate) fn diagnostic_state() -> Result<serde_json::Value, String> {
 pub fn set_wechat_reminders_enabled(
     enabled: bool,
     preview_enabled: Option<bool>,
+    hide_minimized_taskbar: Option<bool>,
 ) -> Result<ReminderSnapshot, String> {
     configure(|state| {
-        let changed = state.set_enabled(enabled);
-        preview_enabled.map_or(changed, |enabled| {
-            state.set_preview_enabled(enabled) || changed
-        })
+        let enabled_changed = state.set_enabled(enabled);
+        let preview_changed =
+            preview_enabled.is_some_and(|enabled| state.set_preview_enabled(enabled));
+        let taskbar_changed =
+            hide_minimized_taskbar.is_some_and(|hidden| state.set_hide_minimized_taskbar(hidden));
+        enabled_changed || preview_changed || taskbar_changed
     })
 }
 
 #[tauri::command]
 pub fn set_wechat_message_preview_enabled(enabled: bool) -> Result<ReminderSnapshot, String> {
     configure(|state| state.set_preview_enabled(enabled))
+}
+
+#[tauri::command]
+pub fn set_wechat_minimized_taskbar_hidden(hidden: bool) -> Result<ReminderSnapshot, String> {
+    configure(|state| state.set_hide_minimized_taskbar(hidden))
 }
 
 fn configure(change: impl FnOnce(&mut ReminderState) -> bool) -> Result<ReminderSnapshot, String> {
@@ -455,10 +475,14 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
                         }
                     }
                     if let Some(reader) = &mut reader {
+                        let hide_minimized_taskbar = service.state.lock().is_ok_and(|state| {
+                            state.generation == generation && state.snapshot.hide_minimized_taskbar
+                        });
                         let previews = reader.tick(
                             Instant::now(),
                             &executable,
                             marker.as_deref(),
+                            hide_minimized_taskbar,
                             still_listening,
                         );
                         update(&service, |state| {
@@ -684,6 +708,7 @@ macro_rules! tauri_commands {
             crate::wechat_reminders::get_wechat_reminder_state,
             crate::wechat_reminders::set_wechat_reminders_enabled,
             crate::wechat_reminders::set_wechat_message_preview_enabled,
+            crate::wechat_reminders::set_wechat_minimized_taskbar_hidden,
             crate::wechat_reminders::open_wechat,
             crate::wechat_reminders::open_wechat_conversation,
         ] $($rest)*)
