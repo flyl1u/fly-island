@@ -26,7 +26,7 @@ window.addEventListener("beforeunload", restore);
 
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "zh-CN");
 // The checks below expect a customized look plus a General page choice that a reset must keep.
-if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false }));
+if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
 else localStorage.removeItem("focusd-island-settings");
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
@@ -90,9 +90,17 @@ if (!automated) {
       check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
-      // General has one more for the auto-collapse delay the owner asked for (2026-11-11).
+      // General has two more for the two island timers the owner asked for (2026-11-11): collapsing
+      // the open island and tucking the collapsed one.
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      const maxRows = category === "general" ? 9 : 8;
+      const maxRows = category === "general" ? 10 : 8;
+      if (category === "general") {
+        const timers = [...panel.querySelectorAll<HTMLInputElement>("input[type='number']")];
+        const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
+        check(timers.length === 2 && timers.every((input) => input.value === "30"),
+          `general: the collapse and tuck delays are two number fields at 30 s (${timers.map((input) => input.value).join(", ")})`);
+        check(labels.length === 2 && labels.every(Boolean) && labels[0] !== labels[1], `general: the two delays have different labels (${labels.join(" / ")})`);
+      }
       check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"

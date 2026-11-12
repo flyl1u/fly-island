@@ -110,8 +110,12 @@ export type IslandSettings = {
   rotateTodos: boolean;
   todoRotationSeconds: number;
   autoTuck: boolean;
-  autoTuckSeconds: number;
-  /** Seconds without use before an open panel closes by itself; 0 never (AUTO_COLLAPSE_SECONDS). */
+  /**
+   * (B) Seconds the collapsed island idles before it tucks into a line (TUCK_DELAY_SECONDS).
+   * Replaces `autoTuckSeconds`, which older versions saved and is no longer read.
+   */
+  tuckDelaySeconds: number;
+  /** (A) Seconds after the cursor leaves the open island before it collapses; 0 never (AUTO_COLLAPSE_SECONDS). */
   autoCollapseSeconds: number;
   /** An island tucked after idling slides back once the cursor that brought it out leaves. */
   autoTuckRetract: boolean;

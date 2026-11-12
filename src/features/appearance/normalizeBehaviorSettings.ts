@@ -2,7 +2,7 @@
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
-import { AUTO_COLLAPSE_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
+import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
@@ -17,7 +17,8 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     autoTuck,
     // Saved before this was a setting: an open panel closed only when the island tucked after
     // idling, so it keeps closing after that delay, or never with tucking off.
-    autoCollapseSeconds: oneOf(AUTO_COLLAPSE_SECONDS, settings?.autoCollapseSeconds, autoTuck ? DEFAULT_SETTINGS.autoCollapseSeconds : 0),
+    autoCollapseSeconds: wholeSeconds(settings?.autoCollapseSeconds, AUTO_COLLAPSE_SECONDS, autoTuck ? AUTO_COLLAPSE_SECONDS.default : 0),
+    tuckDelaySeconds: wholeSeconds(settings?.tuckDelaySeconds, TUCK_DELAY_SECONDS, TUCK_DELAY_SECONDS.default),
     // Game mode: on unless turned off. Tucking while full screen stays at its default (off).
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
@@ -36,4 +37,10 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),
     pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),
   } satisfies Partial<IslandSettings>;
+}
+
+/** A typed-in number of seconds, rounded and kept within its range; anything else falls back. */
+function wholeSeconds(value: unknown, range: { min: number; max: number }, fallback: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(range.max, Math.max(range.min, Math.round(value)));
 }
