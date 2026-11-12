@@ -1,17 +1,23 @@
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
-import { Check, GripVertical, Play, Trash2 } from "lucide-react";
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { Check, GripVertical, Play, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { getTodoTitleLineCount } from "../../utils/text";
 import type { TodoItem } from "./types";
 import { isUpdateTodo } from "./updateTodo";
 import { UpdateTodoAction } from "./UpdateTodoAction";
 import { TodoTitleEditor } from "./TodoTitleEditor";
+import { TodoCountdown } from "./TodoCountdown";
+import { TodoDurationPicker } from "./TodoDurationPicker";
+import { TodoTimerActions } from "./TodoTimerActions";
+import type { TodoDuration, TodoTimer } from "./timer";
 import "./TodoListItem.css";
 
 export function TodoListItem({
   todo,
   isTodayMode,
   isActive,
+  timer = null,
+  lastDuration = null,
   canReorder,
   isDragging,
   isDragOver,
@@ -32,6 +38,8 @@ export function TodoListItem({
   todo: TodoItem;
   isTodayMode: boolean;
   isActive: boolean;
+  timer?: TodoTimer | null;
+  lastDuration?: TodoDuration;
   canReorder: boolean;
   isDragging: boolean;
   isDragOver: boolean;
@@ -42,7 +50,7 @@ export function TodoListItem({
   onCancelEdit: () => void;
   onStartEdit: (todo: TodoItem) => void;
   onToggle: (id: string) => void;
-  onStart: (id: string) => void;
+  onStart: (id: string, duration?: TodoDuration) => void;
   onDelete: (id: string) => void;
   onDragStart: (event: ReactPointerEvent<HTMLButtonElement>, todoId: string) => void;
   onDragMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
@@ -51,6 +59,9 @@ export function TodoListItem({
 }) {
   const t = useTranslation();
   const titleLineCount = getTodoTitleLineCount(todo.title);
+  const [choosingDuration, setChoosingDuration] = useState(false);
+  const startButton = useRef<HTMLButtonElement>(null);
+  const activeTimer = isActive ? timer : null;
 
   return (
     <div
@@ -108,6 +119,7 @@ export function TodoListItem({
       {isTodayMode && (
         <>
           {isUpdateTodo(todo) ? <UpdateTodoAction /> : <button
+            ref={startButton}
             className={["todo-start", isActive ? "todo-start--active" : ""]
               .filter(Boolean)
               .join(" ")}
@@ -117,10 +129,14 @@ export function TodoListItem({
               todo.title,
             )}
             disabled={todo.completed}
-            onClick={() => onStart(todo.id)}
+            aria-expanded={!isActive ? choosingDuration : undefined}
+            onClick={() => {
+              if (isActive) onStart(todo.id);
+              else setChoosingDuration((current) => !current);
+            }}
           >
-            <Play size={13} strokeWidth={2.4} />
-            <span>{isActive ? t.todo.stop : t.todo.start}</span>
+            {isActive ? <Square size={11} strokeWidth={2.4} /> : <Play size={13} strokeWidth={2.4} />}
+            {activeTimer ? <TodoCountdown endsAt={activeTimer.endsAt} /> : <span>{isActive ? t.todo.stop : t.todo.start}</span>}
           </button>}
           <button
             className="todo-delete"
@@ -143,6 +159,17 @@ export function TodoListItem({
             >
               <GripVertical size={15} strokeWidth={2.4} />
             </button>
+          )}
+          {choosingDuration && !isActive && !todo.completed && (
+            <TodoDurationPicker lastDuration={lastDuration} onCancel={() => {
+              setChoosingDuration(false);
+              startButton.current?.focus();
+            }}
+              onStart={(duration) => { setChoosingDuration(false); onStart(todo.id, duration); }} />
+          )}
+          {activeTimer?.notified && (
+            <TodoTimerActions onComplete={() => onToggle(todo.id)}
+              onRepeat={() => onStart(todo.id, activeTimer.durationMinutes)} />
           )}
         </>
       )}

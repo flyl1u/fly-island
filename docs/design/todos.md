@@ -18,6 +18,16 @@
 
 - 待办页的标签、日期和辅助阅读文案跟随界面语言。（Agent 推断）
 
+## 开始与倒计时（issue #52）
+
+- 点“开始”在当前待办下方展开紧凑时长选择：15 分钟、30 分钟、1 小时、自定义、不限时；预设直接开始，自定义输入 1–240 的整数分钟后点“开始”。上次时长作为高亮，自定义保留原分钟数；首次高亮“不限时”。Esc 或“取消”关闭，不改变进行中任务。（用户需求；直接选择与默认值为 Agent 推断）
+- 开始后沿用原有收起岛屿和单个进行中待办的逻辑。不限时仍显示任务标题，没有新增正计时。限时任务的开始按钮位置只显示停止图标和 `mm:ss`（超过一小时仍按分钟，如 `240:00`）；按钮和勾选框分别用于结束本轮和完成任务。（用户需求）
+- 时长选项和到时操作使用原有深色、强调色、连续圆角与键盘焦点样式；选项窄时换行，列表按实际行高增加岛屿高度，到最大面板高度后滚动。每秒数字只在倒计时叶子组件内刷新。（Agent 推断）
+- 时间到保留任务未完成状态，显示“时间到 / 完成 / 再来一轮”。完成会勾选任务；再来一轮直接按本轮时长重新开始并收起岛屿。结束、完成、删除和开始另一项都会取消旧倒计时；不操作不会重复响。（用户需求）
+- 到时操作区短暂淡入，上线后保持静止；减少动态效果时不播放动画。到时展开、贴边和托盘隐藏的约定见 [island.md](island.md)。（Agent 推断）
+
+English: Start opens inline choices for 15 min, 30 min, 1 hour, Custom (whole minutes, 1–240), and No limit. The previous choice is highlighted. Timed tasks show a single `mm:ss` clock and a stop icon; untimed tasks keep the existing active-task behavior. At expiry, “Time’s up”, “Complete”, and “Another round” remain available. Another round reuses the same duration. Stopping, completing, deleting, or starting another task cancels the old round. Controls wrap within the island and grow its panel up to the configured height limit.
+
 ## 尺寸
 
 - 待办页更紧凑（2026-11-11，用户要求"todo页面可以缩小一点"）：一行待办 32px（原 38px），行距 6px；勾选框 20px，开始 / 删除 / 拖动按钮 22px 高；输入框 32px（原 36px）；本子上下内边距 12px（原 18 / 16），页签行 22px，块间距 8px。两行时展开岛高 258px（原 306px），每多一行加 38px（原 46px），所以默认 490px 的最大面板高度下能放 8 行才开始滚动（原 6 行）。笔记页给一行的余量，296px；归档、复盘、已安排的固定高度不变。高度常量在 `windows/island/layout.ts`，和 `TodoNotebook.css`、`TodoListItem.css` 保持一致。（Agent 推断：具体数值）

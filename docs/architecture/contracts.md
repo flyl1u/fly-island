@@ -11,6 +11,8 @@
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |
+| `focusd-island-todo-timer`（单轮待办倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；`notified` 在首次到时提醒前写为 true，旧记录缺此字段按 false；结束、完成、删除或切换待办时清除） | `features/todos/storage.ts` |
+| `focusd-island-todo-duration`（上次选择的整数分钟数 1–240，JSON `null` 表示不限时；没有或损坏时按不限时） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |

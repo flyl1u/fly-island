@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandCornerShape, IslandMonitor } from "../../features/appearance/types";
 import type { IslandPosition } from "./storage";
@@ -71,6 +72,11 @@ export function showReadyIsland() {
 
 export function minimizeIsland() {
   return invoke("minimize_island");
+}
+
+/** Query only: a timer must never show a window the user hid to the tray. */
+export function isIslandVisible(): Promise<boolean> {
+  return getCurrentWindow().isVisible();
 }
 
 /**
