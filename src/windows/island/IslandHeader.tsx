@@ -152,6 +152,28 @@ export function IslandHeader({
             </button>
           );
         })}
+        {/* Messages sit with the page buttons, after the draggable ones; they are not reordered. */}
+        {isPageEnabled("qq", features) && (
+          <button
+            className={[
+              "dot-button",
+              "dot-button--messages",
+              showIcons ? "dot-button--icon" : "dot-button--capsule",
+              page === "qq" ? "dot-button--active" : "",
+            ].filter(Boolean).join(" ")}
+            type="button"
+            aria-label={t.messages.label(messageBadgeLabel)}
+            aria-pressed={page === "qq"}
+            data-tip={t.messages.title}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenMessages(wechatPending ? "wechat" : "qq");
+            }}
+          >
+            {showIcons && <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+            {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
+          </button>
+        )}
       </div>
 
       <button
@@ -176,10 +198,6 @@ export function IslandHeader({
         >
           <Settings size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
         </button>
-        {isPageEnabled("qq", features) && <button className={`icon-button island-message-button${page === "qq" ? " island-message-button--active" : ""}`} type="button" aria-label={t.messages.label(messageBadgeLabel)} aria-pressed={page === "qq"} onClick={() => onOpenMessages(wechatPending ? "wechat" : "qq")}>
-          <Bell size={16} strokeWidth={1.5} absoluteStrokeWidth />
-          {(qqNotificationCount > 0 || wechatPending) && <span className="island-message-button__dot" aria-hidden="true" />}
-        </button>}
         {/* Only once the island has been moved: at its default place the button would do nothing. */}
         {isDetached && (
           <button

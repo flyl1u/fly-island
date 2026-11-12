@@ -31,3 +31,9 @@ test("the collapsed island's order, cover and the page dots load with defaults",
   // Orders saved before translation had a capsule get it at the end.
   assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);
 });
+
+test("page buttons default to icons; a saved capsule choice is kept", () => {
+  assert.equal(normalizeSettings({}).pageButtonStyle, "icon");
+  assert.equal(normalizeSettings({ pageButtonStyle: "capsule" }).pageButtonStyle, "capsule");
+  assert.equal(normalizeSettings({ pageButtonStyle: "icon" }).pageButtonStyle, "icon");
+});
