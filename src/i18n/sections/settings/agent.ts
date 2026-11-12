@@ -10,6 +10,7 @@ export type SettingsAgentText = {
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
+  sources: { title: string; dsh: string; dshHint: string };
   alerts: {
     title: string;
     hint: string;
@@ -47,7 +48,8 @@ export const zhCN: SettingsAgentText = {
   scriptsDir: "脚本目录",
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
-  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code 和 Codex 的会话记录，不需要安装钩子。",
+  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex 和 DSH 的本地会话记录，不需要安装钩子。",
+  sources: { title: "会话来源", dsh: "DeepSeek Harness（DSH）", dshHint: "读取桌面端本地会话缓存；余额使用 DSH 已保存的凭据查询官方接口，每 5 分钟刷新。关闭后隐藏 DSH 会话、余额并停止查询。点击会话打开 DSH 主窗口；审批仍在 DSH 里处理。" },
   alerts: {
     title: "弹出提醒",
     hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
@@ -82,7 +84,8 @@ export const en: SettingsAgentText = {
   scriptsDir: "Scripts folder",
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
-  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from the Claude Code and Codex session files, so no hooks are needed.",
+  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from local Claude Code, Codex and DSH session records, so no hooks are needed.",
+  sources: { title: "Session sources", dsh: "DeepSeek Harness (DSH)", dshHint: "Reads the desktop's local session cache. Uses DSH's saved credential for an official balance query every 5 minutes. Switching off hides DSH sessions and balance and stops queries. A session opens the DSH main window; approvals stay in DSH." },
   alerts: {
     title: "Pop-up alerts",
     hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",

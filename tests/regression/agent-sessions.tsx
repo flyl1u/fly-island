@@ -1,6 +1,5 @@
-// pnpm dev, then open /tests/agent-sessions.html?test=1 (without ?test=1 the page is for visual QA;
-// add &empty=1 to see the empty state, &rows=N to size it for N rows like the island does,
-// &view=cards or &view=compact for the other layouts, &effects=sparkle or gradient on them).
+// pnpm dev: /tests/regression/agent-sessions.html?test=1 runs checks; without it this is visual QA.
+// Options: &empty=1, &rows=N, &view=cards|compact, &effects=sparkle|gradient.
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -22,6 +21,7 @@ const params = new URLSearchParams(location.search);
 const now = Date.now();
 const focusCalls: Array<Record<string, unknown>> = [];
 mockIPC((command, payload) => {
+  if (command === "get_dsh_usage") return null;
   if (command === "focus_agent_window") {
     const args = (payload ?? {}) as Record<string, unknown>;
     focusCalls.push(args);

@@ -67,6 +67,8 @@
 
 ## 其他
 
+- DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`focusd-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
+
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
 - `open_wechat_conversation(messageId)` 用内存中的摘要 ID 定位微信会话。返回 `true` 表示已点击对应会话，`false` 表示已打开微信主窗口。微信的会话标识和进程身份保存在原生内存中。

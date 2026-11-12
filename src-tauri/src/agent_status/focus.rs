@@ -166,6 +166,9 @@ pub(super) fn focus_session(
     title: Option<&str>,
     session_id: Option<&str>,
 ) -> bool {
+    if provider == "dsh" {
+        return super::dsh_sessions::focus_desktop();
+    }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());
     let mut log = Attempt::new(provider, session_id);
@@ -266,6 +269,11 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
         .iter()
         .filter(|session| {
             let id = session.session_id.as_str();
+            if session.provider == "dsh" {
+                let is_desktop = win32::process::image_path(front)
+                    .is_some_and(|exe| super::dsh_sessions::DESKTOP_APPS.contains(&app_name(&exe).as_str()));
+                return is_desktop && windows_home_dir().is_ok_and(|home| super::dsh_sessions::session_in_front(&home, id));
+            }
             // Only to satisfy process_chain; never written to agent-focus.log.
             let mut log = Attempt::new(&session.provider, Some(id));
             let seen = session_memory::get(app_dir, id);

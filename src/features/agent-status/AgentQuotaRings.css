@@ -36,6 +36,22 @@
   --quota-base: #4f8ff7;
 }
 
+.agent-quota__agent--dsh {
+  --quota-base: #43b4a5;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.agent-quota__agent--dsh .agent-quota__values {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.agent-quota__agent--dsh b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .agent-quota__agent--stale {
   opacity: 0.6;
 }

@@ -23,3 +23,5 @@
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
 
 总览见 [overview.md](overview.md)。
+
+DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-desktop/harness` 的 `storages/session_projcache/sessions/*.json`、对应 `sessions/*/session-*/session.v{3,4}.jsonl.zstd` 的存在性，以及 `profiles/web/desktop-storage.json` 的当前会话。新版共享安装回退到 `~/.dsh`（须存在 `profiles/desktop`）。`dsh_credentials.rs` 只在请求内存中读取该根目录的 `.credentials.yaml`；`dsh_usage.rs` 向固定官方 HTTPS 接口读余额，结果缓存 5 分钟，只在内存保存。不增加持久化余额或会话副本，设置只增加原有 key 下的 `agentShowDsh`。完整来源与限制见 [DSH 接入说明](../deepseek-harness.md)。

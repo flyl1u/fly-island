@@ -60,6 +60,15 @@ export type AgentText = {
   usage: {
     label: string;
     codexLabel: string;
+    dshLabel: string;
+    dshWallet: (currency: string, total: string, toppedUp: string, granted: string) => string;
+    dshWalletTotal: (currency: string, total: string) => string;
+    dshWalletParts: (toppedUp: string, granted: string) => string;
+    dshAvailable: string;
+    dshEmpty: string;
+    dshLegend: string[];
+    fromDshApi: string;
+    fromDshAccount: string;
     fiveHour: string;
     sevenDay: string;
     /** Compact time left: "1d10h", "3h20m", "42m". */
@@ -103,6 +112,8 @@ export type AgentText = {
   };
   /** The collapsed island's line when a usage limit runs low or resets (roadmap B6.5.2). */
   quota: {
+    dshEmpty: string;
+    dshRestored: string;
     low: (agent: string, window: string, used: number) => string;
     reset: (agent: string, window: string) => string;
     fiveHour: string;
@@ -166,6 +177,15 @@ export const zhCN: AgentText = {
   usage: {
     label: "Claude 用量",
     codexLabel: "Codex 用量",
+    dshLabel: "DSH 余额",
+    dshWallet: (currency, total, toppedUp, granted) => `${currency} 余额 ${total}（充值 ${toppedUp} · 赠送 ${granted}）`,
+    dshWalletTotal: (currency, total) => `${currency} 余额 ${total}`,
+    dshWalletParts: (toppedUp, granted) => `充值 ${toppedUp} · 赠送 ${granted}`,
+    dshAvailable: "余额可用",
+    dshEmpty: "余额不足",
+    dshLegend: ["外圈：余额可用", "内圈：有赠送余额", "实心表示可用，不代表百分比。", "余额不是订阅额度，没有重置窗口。"],
+    fromDshApi: "DeepSeek API 余额接口",
+    fromDshAccount: "DSH 账户余额接口",
     fiveHour: "5 小时",
     sevenDay: "7 天",
     resetsIn: ({ days, hours, minutes }) =>
@@ -199,6 +219,8 @@ export const zhCN: AgentText = {
     submit: "提交",
   },
   quota: {
+    dshEmpty: "DSH 余额不足",
+    dshRestored: "DSH 余额已恢复可用",
     low: (agent, window, used) => `${agent} ${window}额度已用 ${used}%`,
     reset: (agent, window) => `${agent} ${window}额度已刷新`,
     fiveHour: "5 小时",
@@ -265,6 +287,15 @@ export const en: AgentText = {
   usage: {
     label: "Claude usage",
     codexLabel: "Codex usage",
+    dshLabel: "DSH balance",
+    dshWallet: (currency, total, toppedUp, granted) => `${currency} balance ${total} (topped up ${toppedUp} · bonus ${granted})`,
+    dshWalletTotal: (currency, total) => `${currency} balance ${total}`,
+    dshWalletParts: (toppedUp, granted) => `Topped up ${toppedUp} · Bonus ${granted}`,
+    dshAvailable: "Balance available",
+    dshEmpty: "Insufficient balance",
+    dshLegend: ["Outer: usable balance", "Inner: bonus present", "Filled = available; no percentage.", "Prepaid, no subscription window."],
+    fromDshApi: "DeepSeek API balance endpoint",
+    fromDshAccount: "DSH account balance endpoint",
     fiveHour: "5h",
     sevenDay: "7d",
     resetsIn: ({ days, hours, minutes }) => (days > 0 ? `resets in ${days}d${hours}h` : hours > 0 ? `resets in ${hours}h${minutes}m` : `resets in ${minutes}m`),
@@ -297,6 +328,8 @@ export const en: AgentText = {
     submit: "Submit",
   },
   quota: {
+    dshEmpty: "DSH balance exhausted",
+    dshRestored: "DSH balance available again",
     low: (agent, window, used) => `${agent} ${window} usage at ${used}%`,
     reset: (agent, window) => `${agent} ${window} usage reset`,
     fiveHour: "5-hour",

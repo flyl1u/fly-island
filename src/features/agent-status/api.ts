@@ -2,7 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AgentEffortLabels } from "./effortLabels";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
-export type AgentProvider = "codex" | "claudeCode";
+export type AgentProvider = "codex" | "claudeCode" | "dsh";
+/** Only these providers install lifecycle hooks and write agent-status.json. */
+export type HookAgentProvider = Exclude<AgentProvider, "dsh">;
 /** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */
 export type AgentTaskPhase = "idle" | "running" | "waiting" | "completed" | "failed" | "stale";
 
@@ -26,7 +28,7 @@ export type ExternalAgentStatus = AgentTaskStatus & {
   cwd?: string;
 };
 
-export type AgentStatusSnapshot = Record<AgentProvider, AgentTaskStatus> & {
+export type AgentStatusSnapshot = Record<HookAgentProvider, AgentTaskStatus> & {
   updatedAt: number;
   statusPath: string;
   /** Missing in snapshots from builds before plugins could report agents. */
@@ -44,7 +46,7 @@ export type AgentHooksInstallResult = {
 /** Mirrors HookInstallState / AgentHooksState in src-tauri/src/agent_status/hooks_state.rs. */
 export type HookInstallState = "notInstalled" | "outdated" | "current";
 
-export type AgentHooksState = Record<AgentProvider, HookInstallState> & {
+export type AgentHooksState = Record<HookAgentProvider, HookInstallState> & {
   scriptsOutdated: boolean;
 };
 
@@ -206,6 +208,19 @@ export function getAgentUsage() {
 /** Codex's usage limits from its rollout files; null when none reports them. */
 export function getCodexUsage() {
   return invoke<AgentUsage | null>("get_codex_usage");
+}
+
+/** Mirrors DshUsage / DshWallet in src-tauri/src/agent_status/dsh_usage.rs. Wallets have no percentage denominator. */
+export type DshUsage = {
+  updatedAt: number;
+  available: boolean;
+  wallets: { currency: "CNY" | "USD"; total: string; granted: string; toppedUp: string }[];
+  source: "dshApi" | "dshAccount";
+};
+
+/** Read-only official wallet query using DSH's saved credential, cached in native memory. */
+export function getDshUsage() {
+  return invoke<DshUsage | null>("get_dsh_usage");
 }
 
 export function getAgentHooksState() {

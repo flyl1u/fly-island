@@ -60,6 +60,8 @@ const KNOWN_HOSTS: &[(&str, &str, &str)] = &[
     ("codex", "Codex", "app"),
     // The Codex desktop app moved into the ChatGPT package; its executable is ChatGPT.exe.
     ("chatgpt", "Codex", "app"),
+    ("deepseek harness", "DeepSeek Harness", "app"),
+    ("dsh-desktop", "DeepSeek Harness", "app"),
 ];
 
 /// The host for an executable path: its known name, else the file name as is.
