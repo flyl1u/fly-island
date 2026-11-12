@@ -202,6 +202,7 @@ export function IslandApp() {
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
         pageOrder={settings.pageOrder}
+        pageButtonStyle={settings.pageButtonStyle}
         onPageOrderChange={(pageOrder) => setSettings({ ...settings, pageOrder })}
         agentSession={agentSession}
         activeAgentSessionCount={activeAgentSessionCount}

@@ -249,6 +249,13 @@ if (!automated) {
     check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");
+    const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
+    check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 5, "页面按钮默认显示胶囊");
+    await click('[aria-label="页面按钮"] button:last-child');
+    const savedStyle = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageButtonStyle;
+    check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 6 &&
+      document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "六个入口切换为图标，外观预览和保存同步");
+    await click('[aria-label="页面按钮"] button:first-child');
     const priority = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((item) => item.dataset.reorderId);
     check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");
     await act(async () => {

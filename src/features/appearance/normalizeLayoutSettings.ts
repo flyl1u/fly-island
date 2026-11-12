@@ -19,6 +19,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
   return {
     topEdgeLayoutVersion: 1,
     fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
+    pageButtonStyle: settings?.pageButtonStyle === "icon" ? "icon" : DEFAULT_SETTINGS.pageButtonStyle,
     appearanceMode:
       settings?.appearanceMode === "classic" ||
       settings?.appearanceMode === "liquidGlass"

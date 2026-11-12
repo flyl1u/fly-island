@@ -8,6 +8,9 @@ export type SettingsAppearanceText = {
   liquidGlass: string;
   glassStrength: string;
   styleTitle: string;
+  pageButtons: string;
+  capsules: string;
+  icons: string;
   /** The island preview at the top of the page: sample content and the two captions. */
   preview: {
     label: string;
@@ -53,6 +56,9 @@ export const zhCN: SettingsAppearanceText = {
   liquidGlass: "液态玻璃",
   glassStrength: "玻璃强度",
   styleTitle: "风格",
+  pageButtons: "页面按钮",
+  capsules: "胶囊",
+  icons: "图标",
   preview: {
     label: "按当前设置画出的岛屿",
     collapsed: "折叠",
@@ -95,6 +101,9 @@ export const en: SettingsAppearanceText = {
   liquidGlass: "Liquid glass",
   glassStrength: "Glass strength",
   styleTitle: "Style",
+  pageButtons: "Page buttons",
+  capsules: "Capsules",
+  icons: "Icons",
   preview: {
     label: "The island with the current settings",
     collapsed: "Collapsed",

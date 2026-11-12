@@ -93,7 +93,7 @@ if (!automated) {
       // General has two more for the two island timers the owner asked for (2026-11-11): collapsing
       // the open island and tucking the collapsed one.
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      const maxRows = category === "general" ? 10 : 8;
+      const maxRows = category === "general" ? 10 : category === "appearance" ? 9 : 8;
       if (category === "general") {
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[type='number']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");

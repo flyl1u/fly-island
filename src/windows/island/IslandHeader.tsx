@@ -1,7 +1,8 @@
 import { useCallback, type ReactNode } from "react";
 import { usePointerReorder } from "../../components/reorder/usePointerReorder";
-import type { PageDot } from "../../features/appearance/types";
-import { Bell, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
+import { PAGE_ICONS } from "../../features/appearance/pageIcons";
+import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
+import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
@@ -14,6 +15,7 @@ type IslandHeaderProps = {
   features: IslandFeatures;
   /** Order of the page dots; a drag saves a new one. */
   pageOrder: PageDot[];
+  pageButtonStyle: PageButtonStyle;
   onPageOrderChange: (order: PageDot[]) => void;
   showTitle: boolean;
   isDetached: boolean;
@@ -43,6 +45,7 @@ export function IslandHeader({
   page,
   features,
   pageOrder,
+  pageButtonStyle,
   onPageOrderChange,
   showTitle,
   isDetached,
@@ -61,6 +64,8 @@ export function IslandHeader({
   pageActions,
 }: IslandHeaderProps) {
   const t = useTranslation();
+  const showIcons = pageButtonStyle === "icon";
+  const AgentIcon = showIcons ? Bot : CircleDot;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
   // Translation has one while it is on, also when it opens in its own window.
@@ -99,7 +104,7 @@ export function IslandHeader({
               onPageChange("agents");
             }}
           >
-            <CircleDot className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+            <AgentIcon className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
           </button>
         ) : (
           <CircleDot
@@ -118,29 +123,35 @@ export function IslandHeader({
         aria-label={t.island.editor}
         ref={(node) => { dotsRef.current = node; }}
       >
-        {dots.map((dot) => (
-          <button
-            key={dot}
-            className={[
-              "dot-button",
-              `dot-button--${dot}`,
-              page === dot ? "dot-button--active" : "",
-              draggingDot === dot ? "dot-button--dragging" : "",
-            ].filter(Boolean).join(" ")}
-            type="button"
-            aria-label={dotLabels[dot]}
-            aria-current={page === dot ? "page" : undefined}
-            data-tip={t.island.pageNames[dot]}
-            {...dotProps(dot)}
-            onClick={(event) => {
-              event.stopPropagation();
-              // The click that ends dragging a dot to a new place does not open its page.
-              if (wasDotDragged()) return;
-              if (dot === "translation") onOpenTranslator?.();
-              else onPageChange(dot);
-            }}
-          />
-        ))}
+        {dots.map((dot) => {
+          const Icon = PAGE_ICONS[dot];
+          return (
+            <button
+              key={dot}
+              className={[
+                "dot-button",
+                `dot-button--${dot}`,
+                showIcons ? "dot-button--icon" : "dot-button--capsule",
+                page === dot ? "dot-button--active" : "",
+                draggingDot === dot ? "dot-button--dragging" : "",
+              ].filter(Boolean).join(" ")}
+              type="button"
+              aria-label={dotLabels[dot]}
+              aria-current={page === dot ? "page" : undefined}
+              data-tip={t.island.pageNames[dot]}
+              {...dotProps(dot)}
+              onClick={(event) => {
+                event.stopPropagation();
+                // The click that ends dragging a dot to a new place does not open its page.
+                if (wasDotDragged()) return;
+                if (dot === "translation") onOpenTranslator?.();
+                else onPageChange(dot);
+              }}
+            >
+              {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+            </button>
+          );
+        })}
       </div>
 
       <button

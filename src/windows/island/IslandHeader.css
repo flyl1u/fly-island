@@ -105,7 +105,7 @@
 }
 
 /* The hit area stays still while the short capsule rises, so hovering its edge never flickers. */
-.dot-button::before {
+.dot-button--capsule::before {
   content: "";
   position: absolute;
   top: 11px;
@@ -120,11 +120,6 @@
     transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1.25),
     filter 140ms ease,
     box-shadow 160ms ease;
-}
-
-.dot-button--calendar {
-  --dot-color: #ff9a76;
-  --dot-glow: rgba(255, 154, 118, 0.46);
 }
 
 .dot-button--todo {
@@ -154,18 +149,18 @@
   --dot-glow: rgba(255, 154, 118, 0.46);
 }
 
-.dot-button--active::before {
+.dot-button--capsule.dot-button--active::before {
   transform: scale(1.1);
   box-shadow: 0 0 0 2px var(--color-white-a18), 0 0 14px var(--dot-glow);
 }
 
 /* Like a small Dock: the pointed-at entry rises most; its immediate neighbours follow softly. */
-.editor-dots:not(:has(.dot-button--dragging)) .dot-button:has(+ .dot-button:hover)::before,
-.editor-dots:not(:has(.dot-button--dragging)) .dot-button:hover + .dot-button::before {
+.editor-dots:not(:has(.dot-button--dragging)) .dot-button--capsule:has(+ .dot-button:hover)::before,
+.editor-dots:not(:has(.dot-button--dragging)) .dot-button:hover + .dot-button--capsule::before {
   transform: translateY(-1px) scale(1.12);
 }
 
-.dot-button:not(.dot-button--dragging):is(:hover, :focus-visible)::before {
+.dot-button--capsule:not(.dot-button--dragging):is(:hover, :focus-visible)::before {
   transform: translateY(-3px) scale(1.4);
   filter: brightness(1.12);
 }
@@ -180,8 +175,43 @@
   cursor: grabbing;
 }
 
-.dot-button--dragging::before {
+.dot-button--capsule.dot-button--dragging::before {
   transform: translateY(-3px) scale(1.4);
+}
+
+.dot-button--icon {
+  --page-icon-color: color-mix(in srgb, var(--dot-color) 55%, rgb(var(--island-ink-rgb)));
+  display: grid;
+  place-items: center;
+  color: var(--page-icon-color);
+}
+
+.dot-button--icon::before {
+  content: "";
+  position: absolute;
+  inset: 5px 0;
+  border-radius: var(--corner-sm);
+  corner-shape: var(--corner-shape);
+  transition: background 140ms ease;
+}
+
+.dot-button--icon svg {
+  position: relative;
+  pointer-events: none;
+  transition: transform 160ms ease;
+}
+
+.dot-button--icon:is(:hover, :focus-visible, .dot-button--dragging)::before {
+  background: var(--color-white-a10);
+}
+
+.dot-button--icon.dot-button--active::before {
+  background: color-mix(in srgb, var(--page-icon-color) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--page-icon-color) 34%, transparent);
+}
+
+.dot-button--icon:is(:hover, .dot-button--dragging) svg {
+  transform: translateY(-1px);
 }
 
 /* Names stay separate from the scaled capsule and appear immediately, within the top edge. */

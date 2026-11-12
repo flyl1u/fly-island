@@ -2,6 +2,7 @@ export type TranslationTarget = "window" | "island";
 
 export type AppearanceMode = "classic" | "liquidGlass";
 export type IslandFont = "system" | "pixel";
+export type PageButtonStyle = "capsule" | "icon";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
 export type IslandCornerShape = "squircle" | "round";
 /** Which monitor the island sits on: the primary one, or it follows the pointer or the foreground window there. */
@@ -47,6 +48,7 @@ export type IslandSettings = {
   topEdgeLayoutVersion: 1;
   appearanceMode: AppearanceMode;
   fontFamily: IslandFont;
+  pageButtonStyle: PageButtonStyle;
   glassIntensity: number;
   opacity: number;
   collapsedScale: number;
