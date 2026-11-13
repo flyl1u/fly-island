@@ -149,6 +149,8 @@ fn rows_from(elements: &IUIAutomationElementArray, prefix: &str, cached: bool) -
 }
 
 /// Clicks an unambiguous row by automation ID. Qt selection alone does not open its conversation.
+/// A row that is already selected counts as open and is left alone: WeChat closes the open
+/// conversation when its selected row is clicked again.
 pub(crate) fn click_list_row(
     window: HWND,
     automation_id: &str,
@@ -160,7 +162,11 @@ pub(crate) fn click_list_row(
     let Some(automation) = Automation::new() else {
         return false;
     };
-    let find = || -> windows::core::Result<Option<POINT>> {
+    enum Target {
+        Selected,
+        Click(POINT),
+    }
+    let find = || -> windows::core::Result<Option<Target>> {
         let client = &automation.client;
         // SAFETY: COM is initialized by Automation and all UIA references remain on this thread.
         // The only raw output pointer is the address of a writable POINT.
@@ -183,6 +189,16 @@ pub(crate) fn click_list_row(
                     row.GetCurrentPatternAs(UIA_ScrollItemPatternId)?;
                 scroll.ScrollIntoView()?;
             }
+            // A selected row inside a hidden page (another tab) stays offscreen; that page is not open.
+            if !row.CurrentIsOffscreen()?.as_bool()
+                && row
+                    .GetCurrentPropertyValue(UIA_SelectionItemIsSelectedPropertyId)
+                    .ok()
+                    .and_then(|value| bool::try_from(&value).ok())
+                    .unwrap_or(false)
+            {
+                return Ok(Some(Target::Selected));
+            }
             let mut point = POINT::default();
             if !row
                 .GetClickablePoint(&mut point)
@@ -199,15 +215,16 @@ pub(crate) fn click_list_row(
                 point.y = bounds.top.midpoint(bounds.bottom);
             }
             if point_hits_row(client, point, &row) {
-                return Ok(Some(point));
+                return Ok(Some(Target::Click(point)));
             }
             Ok(None)
         }
     };
-    find()
-        .ok()
-        .flatten()
-        .is_some_and(|point| still_allowed() && input::click_in_foreground(window, point))
+    match find().ok().flatten() {
+        Some(Target::Selected) => still_allowed(),
+        Some(Target::Click(point)) => still_allowed() && input::click_in_foreground(window, point),
+        None => false,
+    }
 }
 
 /// Locate a unique, named button in the upper-right corner of a window's caption.
