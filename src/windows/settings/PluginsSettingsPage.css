@@ -1,0 +1,19 @@
+.settings-stage .editor-panel:has(> .plugins-settings) {
+  grid-template-rows: auto 1fr;
+}
+
+.plugins-settings {
+  min-height: 200px;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-xl);
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.plugins-settings__empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

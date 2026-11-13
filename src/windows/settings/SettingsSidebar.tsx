@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowUpRight, ClipboardList, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ClipboardList, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { PROJECT_AUTHOR_URL } from "../../features/updater/projectLinks";
@@ -18,13 +18,14 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   translation: Languages,
   agents: MessagesSquare,
   agentConnect: Plug,
+  plugins: Puzzle,
   about: Info,
 };
 
 /**
  * The settings page list: icon and name per page, the groups set apart by a gap rather than
- * headings (with nine pages, headings were more to read than the list itself), About last, right
- * after the AI Agent pages, and under it a link to the author's site rather than a page.
+ * headings. Plugins and About follow the AI Agent pages, and under About is a link to the
+ * author's site rather than a page.
  */
 export function SettingsSidebar({
   category,
