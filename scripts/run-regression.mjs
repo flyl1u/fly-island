@@ -36,6 +36,7 @@ export const PAGES = [
   "notification-startup.html",
   "settings.html?test=1",
   "settings-sidebar.html",
+  "settings-sync.html",
   "todo-edit.html",
   "todo-reorder.html",
   "todo-history-calendar.html",
