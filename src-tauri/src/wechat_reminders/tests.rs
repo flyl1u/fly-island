@@ -1,5 +1,5 @@
+use super::source::WeChatWindow;
 use super::*;
-use windows::Win32::UI::WindowsAndMessaging::{GetWindowThreadProcessId, IsIconic};
 
 #[test]
 fn visible_main_is_preferred_and_login_windows_are_not_restored() {
@@ -34,30 +34,19 @@ fn visible_main_is_preferred_and_login_windows_are_not_restored() {
 #[test]
 #[ignore = "Activates the registered weixin protocol and verifies the original main process"]
 fn window_activation_reuses_the_existing_wechat_process() {
-    let executable = installed_executable().unwrap();
-    let before = existing_wechat_windows(&executable).unwrap();
+    resolve_executable().unwrap();
+    let before = existing_wechat_windows().unwrap();
     let original = preferred_window(&before.found).expect("WeChat main window is required");
-    let mut expected_process = 0;
-    // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
-    // valid local.
-    unsafe {
-        GetWindowThreadProcessId(original.handle, Some(&mut expected_process));
-    }
+    let expected_process = win32::process::window_process_id(original.handle);
     assert_ne!(expected_process, 0);
     for _ in 0..2 {
-        assert!(restore_wechat(&executable, None).unwrap().is_some());
-        let after = existing_wechat_windows(&executable).unwrap();
+        assert!(restore_wechat(None).unwrap().is_some());
+        let after = existing_wechat_windows().unwrap();
         let window =
             preferred_window(&after.found).expect("The existing main window must be visible");
-        let mut process_id = 0;
-        // SAFETY: GetWindowThreadProcessId accepts any HWND and writes the id into a
-        // valid local.
-        unsafe {
-            GetWindowThreadProcessId(window.handle, Some(&mut process_id));
-        }
+        let process_id = win32::process::window_process_id(window.handle);
         assert_eq!(process_id, expected_process);
-        // SAFETY: IsIconic takes the HWND by value and returns false for invalid windows.
-        assert!(!unsafe { IsIconic(window.handle) }.as_bool());
+        assert!(!win32::window::is_minimized(window.handle));
     }
 }
 
@@ -207,7 +196,7 @@ fn opening_wechat_reuses_the_older_main_window_instead_of_a_new_instance() {
 #[test]
 #[ignore = "Requires a running WeChat desktop session; reads window metadata only"]
 fn finds_existing_wechat_main_window_without_launching() {
-    let search = existing_wechat_windows(&installed_executable().unwrap()).unwrap();
+    let search = existing_wechat_windows().unwrap();
     let selected = preferred_window(&search.found).expect("An existing WeChat window is required");
     assert!(
         selected.main_sized,

@@ -28,7 +28,7 @@ use windows::Win32::{
 };
 
 use super::{
-    process::{image_path_of, ProcessHandle},
+    process::{image_path_of, same_path, ProcessHandle},
     process_times::start_time_of,
 };
 
@@ -144,16 +144,6 @@ impl RemoteModule {
             .then(|| self.base.checked_add(offset))
             .flatten()
     }
-}
-
-fn same_path(left: &Path, right: &Path) -> bool {
-    let normalized = |path: &Path| {
-        path.to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .replace('/', "\\")
-            .to_lowercase()
-    };
-    normalized(left) == normalized(right)
 }
 
 fn find_module(pid: u32, name: &str) -> Option<(PathBuf, usize, usize)> {

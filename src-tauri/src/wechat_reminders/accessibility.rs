@@ -95,7 +95,7 @@ fn restore(module: &RemoteModule, location: &FlagLocation) -> bool {
     }
 }
 
-pub(super) fn recover(executable: &Path, marker: &Path) {
+pub(super) fn recover(marker: &Path) {
     let Ok(bytes) = fs::read(marker) else { return };
     let recovered = serde_json::from_slice::<Recovery>(&bytes)
         .ok()
@@ -103,7 +103,10 @@ pub(super) fn recover(executable: &Path, marker: &Path) {
             if start_time(record.pid) != Some(record.started_at) {
                 return true; // The original process has exited.
             }
-            let Some(module) = RemoteModule::open(record.pid, executable, "Weixin.dll") else {
+            let Some(executable) = super::source::executable_for_process(record.pid) else {
+                return false;
+            };
+            let Some(module) = RemoteModule::open(record.pid, &executable, "Weixin.dll") else {
                 return false;
             };
             module.started_at == record.started_at
@@ -157,15 +160,15 @@ fn write_marker(path: &Path, record: &Recovery) -> std::io::Result<()> {
 mod tests {
     use super::*;
     use crate::wechat_reminders::{
-        existing_wechat_windows, installed_executable, preferred_window,
+        existing_wechat_windows, preferred_window, resolve_executable,
     };
     use crate::win32::process::window_process_id;
 
     #[test]
     #[ignore = "Requires a running Weixin 4.x process; only verifies the DLL mapping and flag"]
     fn installed_module_matches_the_read_only_signature() {
-        let executable = installed_executable().unwrap();
-        let search = existing_wechat_windows(&executable).unwrap();
+        let executable = resolve_executable().unwrap();
+        let search = existing_wechat_windows().unwrap();
         let window = preferred_window(&search.found).expect("WeChat main window");
         let pid = window_process_id(window.handle);
         let module = RemoteModule::open(pid, &executable, "Weixin.dll").expect("mapped Weixin.dll");
