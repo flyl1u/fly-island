@@ -116,6 +116,8 @@ export type AgentText = {
   quota: {
     dshEmpty: string;
     dshRestored: string;
+    workbuddyEmpty: string;
+    workbuddyRestored: string;
     low: (agent: string, window: string, used: number) => string;
     reset: (agent: string, window: string) => string;
     fiveHour: string;
@@ -231,6 +233,8 @@ export const zhCN: AgentText = {
   quota: {
     dshEmpty: "DSH 余额不足",
     dshRestored: "DSH 余额已恢复可用",
+    workbuddyEmpty: "WorkBuddy 积分已用完",
+    workbuddyRestored: "WorkBuddy 积分已恢复",
     low: (agent, window, used) => `${agent} ${window}额度已用 ${used}%`,
     reset: (agent, window) => `${agent} ${window}额度已刷新`,
     fiveHour: "5 小时",
@@ -348,6 +352,8 @@ export const en: AgentText = {
   quota: {
     dshEmpty: "DSH balance exhausted",
     dshRestored: "DSH balance available again",
+    workbuddyEmpty: "WorkBuddy credits used up",
+    workbuddyRestored: "WorkBuddy credits available again",
     low: (agent, window, used) => `${agent} ${window} usage at ${used}%`,
     reset: (agent, window) => `${agent} ${window} usage reset`,
     fiveHour: "5-hour",

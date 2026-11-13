@@ -83,6 +83,7 @@ export type IslandSettings = {
   agentShowClaudeCode: boolean;
   agentShowCodex: boolean;
   agentShowDsh: boolean;
+  agentShowWorkbuddy: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Show how long a session's current (or last) turn has run. */

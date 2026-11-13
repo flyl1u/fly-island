@@ -1,8 +1,8 @@
-// When Claude's or Codex's usage limits call for a pop-up (roadmap B6.5.2). Pure.
+// When an agent's usage limits or balance call for a pop-up (roadmap B6.5.2). Pure.
 import type { AgentUsage } from "./api";
 import { isStale, type AgentUsages } from "./usage.ts";
 
-export type QuotaAgent = "claude" | "codex" | "dsh";
+export type QuotaAgent = "claude" | "codex" | "dsh" | "workbuddy";
 export type QuotaWindow = "fiveHour" | "sevenDay" | "balance";
 
 /** Usage reached the alert level (`low`), or a limit that had reached it reset (`reset`). */
@@ -50,18 +50,21 @@ export function takeQuotaAlerts(state: QuotaState, usages: AgentUsages, percent:
       }
     }
   }
-  const dsh = usages.dsh;
-  if (dsh && !isStale(dsh, now)) {
-    const key = "dsh:balance";
+  // Prepaid balances have no limit to measure against; only running out and coming back alert.
+  const balances: [QuotaAgent, boolean | null][] = [
+    ["dsh", usages.dsh && !isStale(usages.dsh, now) ? !usages.dsh.available : null],
+    ["workbuddy", usages.workbuddy && !isStale(usages.workbuddy, now) ? usages.workbuddy.remaining <= 0 : null],
+  ];
+  for (const [agent, empty] of balances) {
+    if (empty === null) continue;
+    const key = `${agent}:balance`;
     const firstLook = !state.seen.has(key);
     state.seen.add(key);
     const wasEmpty = state.reached.has(key);
-    const empty = !dsh.available;
-    if (!dsh.available) state.reached.add(key);
+    if (empty) state.reached.add(key);
     else state.reached.delete(key);
-    // No percentage alert for a wallet without a limit; only actual exhaustion and recovery.
     if (!firstLook && wasEmpty !== empty) {
-      alerts.push({ kind: dsh.available ? "reset" : "low", agent: "dsh", window: "balance", used: dsh.available ? 0 : 100, resetsAt: null });
+      alerts.push({ kind: empty ? "low" : "reset", agent, window: "balance", used: empty ? 100 : 0, resetsAt: null });
     }
   }
   return alerts;

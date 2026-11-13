@@ -42,6 +42,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowClaudeCode: true,
   agentShowCodex: true,
   agentShowDsh: true,
+  agentShowWorkbuddy: true,
   agentHideFinished: false,
   // Off unless asked for: the age alone keeps finished rows short.
   agentShowElapsed: false,

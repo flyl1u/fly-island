@@ -7,7 +7,7 @@ import { useUnseenSessions } from "./useUnseenSessions";
 
 type AgentSessionSettings = Pick<
   IslandSettings,
-  "agentStatusEnabled" | "agentSessionHours" | "agentShowClaudeCode" | "agentShowCodex" | "agentShowDsh" | "agentHideFinished"
+  "agentStatusEnabled" | "agentSessionHours" | "agentShowClaudeCode" | "agentShowCodex" | "agentShowDsh" | "agentShowWorkbuddy" | "agentHideFinished"
 >;
 
 /**
@@ -20,8 +20,8 @@ export function useIslandAgentSessions(settings: AgentSessionSettings) {
   const allAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
   // Hidden agents are left out of the page, the count, the collapsed title, alerts and sounds.
   const shownAgentSessions = useMemo(
-    () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex, dsh: settings.agentShowDsh }),
-    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex, settings.agentShowDsh],
+    () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex, dsh: settings.agentShowDsh, workbuddy: settings.agentShowWorkbuddy }),
+    [allAgentSessions, settings.agentShowClaudeCode, settings.agentShowCodex, settings.agentShowDsh, settings.agentShowWorkbuddy],
   );
   // Sessions removed from the Agent page leave the count and the collapsed island too.
   const { visible: agentSessions, removal: agentRemoval } = useHiddenSessions(shownAgentSessions);

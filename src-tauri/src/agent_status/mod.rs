@@ -42,6 +42,7 @@ mod usage;
 mod wezterm;
 mod window_focus;
 pub(crate) mod workbuddy_connection;
+mod workbuddy_sessions;
 mod workbuddy_usage;
 
 use serde::Serialize;
@@ -249,7 +250,7 @@ fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallRe
     })
 }
 
-/// Claude Code and Codex sessions active in the last two hours, running and waiting ones first.
+/// Claude Code, Codex, DSH and WorkBuddy sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
 /// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
 pub async fn list_agent_sessions(
@@ -269,6 +270,7 @@ pub async fn list_agent_sessions(
             let mut sessions = session_scan::list_sessions(&home_dir, Some(&app_dir), &waiting, window_ms);
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
+            sessions.extend(workbuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
             sessions.truncate(12);

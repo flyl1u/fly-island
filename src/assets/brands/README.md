@@ -15,5 +15,6 @@
 | `claude-code.png` | [Claude](https://claude.ai/) | [官网 Apple Touch 图标](https://claude.ai/apple-touch-icon.png) |
 | `codex.webp` | [ChatGPT / Codex](https://chatgpt.com/) | [官网 Apple Touch 图标](https://cdn.oaistatic.com/assets/apple-touch-icon-mz9nytnj.webp) |
 | `deepseek.png` | [DeepSeek](https://www.deepseek.com/) | [官网 favicon](https://www.deepseek.com/favicon.ico)（225×225 PNG 转 180×180；浅色圆角底由界面 CSS 提供） |
+| `workbuddy.png` | [WorkBuddy](https://www.workbuddy.cn/) | 2026-11-13 取自本机安装的 WorkBuddy 5.9.3 的应用磁贴图标（`Assets/Square44x44Logo.targetsize-256_altform-unplated.png`，256×256 缩小到 64×64） |
 
-QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有。图标随应用打包，不在运行时请求远程图片。
+QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有，WorkBuddy 标识归腾讯所有。图标随应用打包，不在运行时请求远程图片。

@@ -1,6 +1,7 @@
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import codexIcon from "../../assets/brands/codex.webp";
 import deepseekIcon from "../../assets/brands/deepseek.png";
+import workbuddyIcon from "../../assets/brands/workbuddy.png";
 import type { AgentProvider } from "./api";
 import "./AgentProviderIcon.css";
 
@@ -9,6 +10,7 @@ const PROVIDER_ICONS: Record<AgentProvider, string> = {
   claudeCode: claudeCodeIcon,
   codex: codexIcon,
   dsh: deepseekIcon,
+  workbuddy: workbuddyIcon,
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {
