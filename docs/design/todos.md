@@ -1,6 +1,6 @@
 # 待办
 
-- 自定义分钟输入使用 26px 高的深色胶囊步进器，范围 1–240，按钮每次增减 5 分钟，直接输入允许任意整数；回车或失焦提交输入，保留确认开始的流程。（用户要求 2026-11-12）
+- 时长卡片的分钟数用 hero 版步进器：28px 大号数字、两侧圆形 −/+，无外框，范围 1–240，按钮每次增减 5 分钟，直接输入允许任意整数。（用户要求 2026-11-12，hero 样式为 Agent 设计）
 
 全局方向见 [DESIGN.md](../../DESIGN.md)。
 
@@ -25,13 +25,13 @@
 - 设置 → 待办增加“番茄钟”（`todoTimerEnabled`，默认关闭）。下述时长选择、倒计时和到时提醒仅在开启时启用；关闭时点开始直接开始/停止。关闭立即清除本轮倒计时，保留进行中任务，重新开启不恢复旧轮次。
 - “拖动调整顺序”（`enableTodoReorder`）默认开启，右侧手柄拖动后自动保存。无 `todoReorderVersion: 1` 的旧设置一律迁移为开启；带标记才尊重已保存的开关值。
 
-- 点“开始”在当前待办下方展开紧凑时长选择：15 分钟、30 分钟、1 小时、自定义、不限时；预设直接开始，自定义输入 1–240 的整数分钟后点“开始”。上次时长作为高亮，自定义保留原分钟数；首次高亮“不限时”。Esc 或“取消”关闭，不改变进行中任务。（用户需求；直接选择与默认值为 Agent 推断）
+- 开始按钮是分成两半的胶囊：“开始”一键按上次时长开始，右半边显示时长（`25分` / `不限`）并展开时长卡片。多数轮次重复上次时长，所以开始不再强制先选。卡片：大号分钟数 + 步进器、预计结束时间、常用时长 15/25/45/60/90（只选不开始，双击开始）、底部“不限时”与强调色“开始 N 分钟”。首次默认 25 分钟。Esc 或 × 关闭，不改变进行中任务。（用户要求重构“用起来很不舒服”的旧选择器 2026-11-12，设计为 Agent 构思）
 - 开始后沿用原有收起岛屿和单个进行中待办的逻辑。不限时仍显示任务标题，没有新增正计时。限时任务的开始按钮位置只显示停止图标和 `mm:ss`（超过一小时仍按分钟，如 `240:00`）；按钮和勾选框分别用于结束本轮和完成任务。（用户需求）
 - 时长选项和到时操作使用原有深色、强调色、连续圆角与键盘焦点样式；选项窄时换行，列表按实际行高增加岛屿高度，到最大面板高度后滚动。每秒数字只在倒计时叶子组件内刷新。（Agent 推断）
 - 时间到保留任务未完成状态，显示“时间到 / 完成 / 再来一轮”。完成会勾选任务；再来一轮直接按本轮时长重新开始并收起岛屿。结束、完成、删除和开始另一项都会取消旧倒计时；不操作不会重复响。（用户需求）
 - 到时操作区短暂淡入，上线后保持静止；减少动态效果时不播放动画。到时展开、贴边和托盘隐藏的约定见 [island.md](island.md)。（Agent 推断）
 
-English: Start opens inline choices for 15 min, 30 min, 1 hour, Custom (whole minutes, 1–240), and No limit. The previous choice is highlighted. Timed tasks show a single `mm:ss` clock and a stop icon; untimed tasks keep the existing active-task behavior. At expiry, “Time’s up”, “Complete”, and “Another round” remain available. Another round reuses the same duration. Stopping, completing, deleting, or starting another task cancels the old round. Controls wrap within the island and grow its panel up to the configured height limit.
+English: Start is a split pill: the left half starts the last duration at once (25 min the first time) and the right half opens a card with large minutes, −/+ in steps of 5 (1–240), the end time, presets 15/25/45/60/90, No limit, and Start N min. Timed tasks show a single `mm:ss` clock and a stop icon; untimed tasks keep the existing active-task behavior. At expiry, “Time’s up”, “Complete”, and “Another round” remain available. Another round reuses the same duration. Stopping, completing, deleting, or starting another task cancels the old round. Controls wrap within the island and grow its panel up to the configured height limit.
 
 ## 尺寸
 

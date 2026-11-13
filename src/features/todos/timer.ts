@@ -13,6 +13,8 @@ export type TodoTimer = {
 
 export const MIN_TODO_MINUTES = 1;
 export const MAX_TODO_MINUTES = 240;
+/** Before any choice: a classic focus round. */
+export const DEFAULT_TODO_MINUTES = 25;
 
 export function isTodoDuration(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value)

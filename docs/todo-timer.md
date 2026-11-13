@@ -8,8 +8,8 @@
 
 English: Focus timer is off by default in Settings → Todos. When disabled, Start/Stop works immediately with no picker, countdown, expiry actions or sound. Turning it off cancels the round while keeping the active todo and previous duration; turning it on does not restore the cancelled round.
 
-1. 点待办“开始”，在行内选择 **15 分钟 / 30 分钟 / 1 小时 / 自定义 / 不限时**。预设直接开始；自定义填写 **1–240 的整数分钟**，再点开始。Esc 或取消关闭选择器。
-2. 上次选项会高亮。开始后岛屿收起；限时任务在列表按钮与折叠文字位置显示 `mm:ss`，超过一小时仍按分钟显示（如 `240:00`）。限时期间暂停待办轮播。不限时保留原来的进行中标题，不显示正计时。
+1. 开始按钮是一个分成两半的胶囊：左边“开始”一键按上次时长开始（首次 25 分钟），右边显示当前时长（如 `25分`），点它在行内展开时长卡片。卡片中间是大号分钟数和 −/+（每次 5 分钟，可直接输入 **1–240 的整数分钟**），下面显示预计结束时间和常用时长 **15 / 25 / 45 / 60 / 90**；点常用时长只改时间，双击直接开始。底部左边“不限时”，右边“开始 N 分钟”。Esc 或右上角 × 关闭卡片。
+2. 上次时长显示在开始按钮旁，卡片里选中同一项。开始后岛屿收起；限时任务在列表按钮与折叠文字位置显示 `mm:ss`，超过一小时仍按分钟显示（如 `240:00`）。限时期间暂停待办轮播。不限时保留原来的进行中标题，不显示正计时。
 3. 时间到响一次短提示音，任务保持未完成。可见岛屿打开今日待办，显示 **时间到 / 完成 / 再来一轮**。完成勾选任务；再来一轮按本轮时长重新开始。也可以用原有结束按钮取消本轮。
 4. 结束、完成、删除或开始另一项都会取消旧倒计时。用户不操作也不会一直响。时长选择和到时操作随内容增高，到面板高度上限后在列表内滚动。
 
@@ -24,7 +24,7 @@ English: Focus timer is off by default in Settings → Todos. When disabled, Sta
 ## 恢复与存储
 
 - `focusd-island-todo-timer`：`{ todoId, endsAt, durationMinutes, notified }`。结束时间是 Unix 毫秒时间，按当前时间计算，睡眠或重启后不从完整时长重来。若关闭期间已过期，恢复为时间到并补一次提醒；已经提醒过的轮次重启不重复响。
-- `focusd-island-todo-duration`：上次时长，1–240 的整数分钟；JSON `null` 为不限时，缺失或无效时按不限时。
+- `focusd-island-todo-duration`：上次时长，1–240 的整数分钟；JSON `null` 为不限时，缺失时按 25 分钟，无效时按不限时。
 - 已有待办、进行中 ID、归档和日期 key 的格式不变。损坏或与当前未完成待办不匹配的倒计时会安全丢弃；存储不可用时本轮仍在内存中运行，无法保证关闭后的恢复。
 - 跨日归档保留正在计时或待处理时间到的任务及其 ID（即使关闭“结转未完成待办”）；其他任务仍遵循原有结转设置。完成或结束后恢复普通归档行为。
 - 声音复用 `src/assets/sounds/thumb-piano/complete.wav` 和现有 HTMLAudio 播放方式，不受 AI Agent 声音开关控制，没有循环播放。折叠文字隐藏设置和消息预览照旧生效。
@@ -33,7 +33,7 @@ English: Focus timer is off by default in Settings → Todos. When disabled, Sta
 
 ## English
 
-Start opens inline choices: **15 min / 30 min / 1 hour / Custom / No limit**. Presets start immediately. Custom accepts whole minutes from **1 to 240**, then Start confirms. The previous choice is highlighted; Escape or Cancel closes the picker.
+Start is a split pill: the left half starts the last duration at once (25 min the first time); the right half shows that duration (for example `25m`) and opens an inline card. The card has large minutes with −/+ (steps of 5, typed values 1–240), the expected end time, and presets **15 / 25 / 45 / 60 / 90**. A preset only sets the time; a double-click starts it. The bottom row has **No limit** and **Start N min**. Escape or × closes the card.
 
 Starting keeps the existing single active todo and collapses the island. A timed task shows a single `mm:ss` clock in its row and in the collapsed text slot. Minutes may exceed 59. Todo rotation pauses for a timed round. No limit keeps the original active-task title, without adding an elapsed-time clock.
 

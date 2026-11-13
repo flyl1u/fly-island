@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { Check, GripVertical, Play, Square, Trash2 } from "lucide-react";
+import { Check, GripVertical, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { getTodoTitleLineCount } from "../../utils/text";
 import type { TodoItem } from "./types";
 import { isUpdateTodo } from "./updateTodo";
 import { UpdateTodoAction } from "./UpdateTodoAction";
 import { TodoTitleEditor } from "./TodoTitleEditor";
-import { TodoCountdown } from "./TodoCountdown";
 import { TodoDurationPicker } from "./TodoDurationPicker";
+import { TodoStartControl } from "./TodoStartControl";
 import { TodoTimerActions } from "./TodoTimerActions";
 import type { TodoDuration, TodoTimer } from "./timer";
 import "./TodoListItem.css";
@@ -123,26 +123,17 @@ export function TodoListItem({
       )}
       {isTodayMode && (
         <>
-          {isUpdateTodo(todo) ? <UpdateTodoAction /> : <button
-            ref={startButton}
-            className={["todo-start", isActive ? "todo-start--active" : ""]
-              .filter(Boolean)
-              .join(" ")}
-            type="button"
-            aria-label={t.todo.actionOnTask(
-              isActive ? t.todo.stop : t.todo.start,
-              todo.title,
-            )}
-            disabled={todo.completed}
-            aria-expanded={!isActive ? choosingDuration : undefined}
-            onClick={() => {
-              if (isActive || !todoTimerEnabled) onStart(todo.id);
-              else setChoosingDuration((current) => !current);
-            }}
-          >
-            {isActive ? <Square size={11} strokeWidth={2.4} /> : <Play size={13} strokeWidth={2.4} />}
-            {activeTimer ? <TodoCountdown endsAt={activeTimer.endsAt} /> : <span>{isActive ? t.todo.stop : t.todo.start}</span>}
-          </button>}
+          {isUpdateTodo(todo) ? <UpdateTodoAction /> : <TodoStartControl
+            todo={todo}
+            isActive={isActive}
+            activeTimer={activeTimer}
+            timerEnabled={todoTimerEnabled}
+            lastDuration={lastDuration}
+            choosing={choosingDuration}
+            startRef={startButton}
+            onStart={onStart}
+            onToggleChooser={() => setChoosingDuration((current) => !current)}
+          />}
           <button
             className="todo-delete"
             type="button"

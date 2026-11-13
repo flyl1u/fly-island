@@ -1,7 +1,7 @@
 import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 import { readJson, readString, removeItem, writeJson, writeString } from "../../lib/storage.ts";
-import { normalizeTodoDuration, normalizeTodoTimer, type TodoDuration, type TodoTimer } from "./timer.ts";
+import { DEFAULT_TODO_MINUTES, normalizeTodoDuration, normalizeTodoTimer, type TodoDuration, type TodoTimer } from "./timer.ts";
 import {
   createTodoId,
   normalizeTodo,
@@ -52,6 +52,8 @@ export function saveTodoTimer(timer: TodoTimer | null) {
 }
 
 export function loadTodoDuration() {
+  // Nothing saved yet: 25 minutes. A saved null is a chosen "no limit" and stays.
+  if (readString(TODO_DURATION_STORAGE_KEY) === null) return DEFAULT_TODO_MINUTES;
   return normalizeTodoDuration(readJson(TODO_DURATION_STORAGE_KEY));
 }
 

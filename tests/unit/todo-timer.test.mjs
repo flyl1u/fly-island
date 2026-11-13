@@ -103,7 +103,7 @@ test("timer storage restores deadlines and one-shot notification without changin
   const todos = [item("t1")];
   withStorage([[ACTIVE_TODO_STORAGE_KEY, "t1"], ["focusd-island-todos", JSON.stringify(todos)]], (values) => {
     assert.equal(loadTodoTimer(), null);
-    assert.equal(loadTodoDuration(), null);
+    assert.equal(loadTodoDuration(), 25, "nothing saved yet starts at 25 minutes");
     const timer = createTodoTimer("t1", 7, NOW);
     assert.equal(saveTodoTimer(timer), true);
     assert.equal(saveTodoDuration(7), true);
@@ -115,6 +115,7 @@ test("timer storage restores deadlines and one-shot notification without changin
     assert.equal(loadActiveTodoId(), "t1");
     saveTodoDuration(null);
     assert.equal(values.get(TODO_DURATION_STORAGE_KEY), "null");
+    assert.equal(loadTodoDuration(), null, "a chosen no-limit stays no-limit");
     saveTodoTimer(null);
     assert.equal(values.has(TODO_TIMER_STORAGE_KEY), false);
   });
@@ -128,7 +129,7 @@ test("broken JSON and blocked storage fall back safely, and failed writes report
     storage.setItem = () => { throw new Error("full"); };
     storage.removeItem = () => { throw new Error("blocked"); };
     assert.equal(loadTodoTimer(), null);
-    assert.equal(loadTodoDuration(), null);
+    assert.equal(loadTodoDuration(), 25);
     assert.equal(saveTodoTimer(createTodoTimer("t1", 15, NOW)), false);
     assert.equal(saveTodoTimer(null), false);
     assert.equal(saveTodoDuration(15), false);

@@ -12,7 +12,7 @@ type NumberStepperProps = {
   min: number;
   max: number;
   step?: number;
-  variant?: "settings" | "island";
+  variant?: "settings" | "island" | "hero";
   autoFocus?: boolean;
   onChange: (value: number) => void;
 };

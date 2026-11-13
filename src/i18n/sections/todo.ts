@@ -10,10 +10,12 @@ export type TodoText = {
   chooseDuration: string;
   countdown: string;
   minutes: (count: number) => string;
-  oneHour: string;
-  customDuration: string;
-  customMinutes: string;
-  durationRange: string;
+  minutesUnit: string;
+  presets: string;
+  durationShort: (minutes: number | null) => string;
+  changeDuration: (current: string) => string;
+  startFor: (minutes: number) => string;
+  endsAt: (time: string) => string;
   unlimited: string;
   cancelTimer: string;
   remainingTime: (time: string) => string;
@@ -35,10 +37,12 @@ export const zhCN: TodoText = {
   chooseDuration: "选择待办时长",
   countdown: "待办倒计时",
   minutes: (count) => `${count} 分钟`,
-  oneHour: "1 小时",
-  customDuration: "自定义",
-  customMinutes: "分钟（1–240）",
-  durationRange: "请输入 1–240 的整数分钟",
+  minutesUnit: "分钟",
+  presets: "常用时长",
+  durationShort: (minutes) => (minutes === null ? "不限" : `${minutes}分`),
+  changeDuration: (current) => `更改时长，当前 ${current}`,
+  startFor: (minutes) => `开始 ${minutes} 分钟`,
+  endsAt: (time) => `${time} 结束`,
   unlimited: "不限时",
   cancelTimer: "取消",
   remainingTime: (time) => `剩余 ${time}`,
@@ -60,10 +64,12 @@ export const en: TodoText = {
   chooseDuration: "Choose task duration",
   countdown: "Task countdown",
   minutes: (count) => `${count} min`,
-  oneHour: "1 hour",
-  customDuration: "Custom",
-  customMinutes: "Minutes (1–240)",
-  durationRange: "Enter a whole number from 1 to 240",
+  minutesUnit: "min",
+  presets: "Common durations",
+  durationShort: (minutes) => (minutes === null ? "No limit" : `${minutes}m`),
+  changeDuration: (current) => `Change duration, now ${current}`,
+  startFor: (minutes) => `Start ${minutes} min`,
+  endsAt: (time) => `Ends at ${time}`,
   unlimited: "No limit",
   cancelTimer: "Cancel",
   remainingTime: (time) => `${time} remaining`,
