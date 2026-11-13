@@ -125,6 +125,7 @@ export function IslandApp() {
     clipboardVisibleRows: settings.clipboardVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
     agentSessionView: settings.agentSessionView,
+    fontScale: settings.islandFontPercent / 100,
     agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,

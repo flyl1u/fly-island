@@ -10,7 +10,7 @@
   corner-shape: var(--corner-shape);
   outline: none;
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 .settings-input::placeholder {
@@ -27,7 +27,7 @@
 
 .settings-input--mono {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .settings-number { display: inline-flex; align-items: center; gap: var(--space-sm); }
@@ -35,7 +35,7 @@
 .settings-number__unit {
   font-weight: 400;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 .settings-input:disabled {

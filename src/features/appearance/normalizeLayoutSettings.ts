@@ -2,8 +2,14 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { normalizeExpandedScale } from "./settingsLimits.ts";
+import { COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, normalizeExpandedScale } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
+
+function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return limits.default;
+  const step = limits.step ?? 1;
+  return clamp(Math.round(value / step) * step, limits.min, limits.max);
+}
 
 /** The look that can still be set: style, font, opacity, the two sizes and the three colours. */
 export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | undefined) {
@@ -19,6 +25,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
   return {
     topEdgeLayoutVersion: 1,
     fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
+    islandFontPercent: normalizeSize(settings?.islandFontPercent, ISLAND_FONT_PERCENT),
     pageButtonStyle: settings?.pageButtonStyle === "capsule" ? "capsule" : DEFAULT_SETTINGS.pageButtonStyle,
     appearanceMode:
       settings?.appearanceMode === "classic" ||
@@ -31,7 +38,10 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
       100,
     ),
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
-    collapsedScale: clamp(Number(collapsedScale), 0.75, 1.4),
+    collapsedScale: clamp(Number(collapsedScale), MIN_COLLAPSED_SCALE, MAX_COLLAPSED_SCALE),
+    collapsedAutoWidth: settings?.collapsedAutoWidth !== false,
+    collapsedWidth: normalizeSize(settings?.collapsedWidth, COLLAPSED_WIDTH),
+    collapsedHeight: normalizeSize(settings?.collapsedHeight, COLLAPSED_HEIGHT),
     // On the slider's range; the three sizes of 3.0.0 keep their value.
     expandedScale: normalizeExpandedScale(settings?.expandedScale ?? DEFAULT_SETTINGS.expandedScale),
     taskTextColor,

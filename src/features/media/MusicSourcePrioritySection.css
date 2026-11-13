@@ -21,7 +21,7 @@
   margin: 0;
   padding: 14px;
   color: var(--color-text-subtle);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   line-height: 1.45;
 }
 

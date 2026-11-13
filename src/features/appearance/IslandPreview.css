@@ -26,11 +26,9 @@
 }
 
 .island-preview__island {
-  --preview-radius-collapsed: calc(var(--preview-radius) * 12 / 30);
   display: flex;
   align-items: center;
   background: var(--preview-fill);
-  border-radius: 0 0 var(--preview-radius-collapsed) var(--preview-radius-collapsed);
   corner-shape: var(--preview-corner-shape, round);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
   color: rgb(var(--preview-ink));
@@ -47,14 +45,16 @@
 }
 
 .island-preview__island--collapsed {
-  min-width: 150px;
-  /* In a narrow pane (the island's own settings page) the title is cut short, not the island. */
-  max-width: calc(100% - 16px);
-  height: 34px;
-  gap: 8px;
-  padding: 0 14px;
+  /* Keep room for the widest notch at the largest overall scale. */
+  --c: min(1px, calc(92cqw / var(--preview-collapsed-limit)));
+  --preview-radius-collapsed: calc(var(--preview-radius-px) * 12 / 30 * var(--c));
+  width: calc(var(--preview-collapsed-width) * var(--c));
+  height: calc(var(--preview-collapsed-height) * var(--c));
+  gap: calc(8 * var(--c));
+  padding: 0 calc(18 * var(--c));
+  border-radius: 0 0 var(--preview-radius-collapsed) var(--preview-radius-collapsed);
   transform: scale(var(--preview-collapsed-scale));
-  font-size: 13px;
+  font-size: calc(13 * var(--c) * var(--preview-font-scale));
   font-weight: 600;
 }
 
@@ -89,8 +89,8 @@
 }
 
 .island-preview__pulse {
-  width: 8px;
-  height: 8px;
+  width: calc(9 * var(--c));
+  height: calc(9 * var(--c));
   flex: none;
   border-radius: 50%;
   background: var(--preview-pulse);
@@ -108,24 +108,24 @@
 }
 
 .island-preview__provider {
-  width: 14px;
-  height: 14px;
+  width: calc(16 * var(--c));
+  height: calc(16 * var(--c));
   flex: none;
   border-radius: 3px;
 }
 
 /* The session ring (built-in plugin) with the number of sessions, at the bar's right end. */
 .island-preview__ring {
-  width: 20px;
-  height: 20px;
+  width: calc(20 * var(--c));
+  height: calc(20 * var(--c));
   flex: none;
   display: grid;
   place-items: center;
   margin-left: auto;
-  border: 2px solid rgba(61, 139, 255, 0.35);
+  border: max(1px, calc(2 * var(--c))) solid rgba(61, 139, 255, 0.35);
   border-radius: 50%;
   color: var(--color-agent-running);
-  font-size: 10px;
+  font-size: calc(11 * var(--c) * var(--preview-font-scale));
   font-variant-numeric: tabular-nums;
 }
 
@@ -133,6 +133,10 @@
   font-family: "Fusion Pixel", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   -webkit-font-smoothing: none;
+}
+
+.island-preview--font-pixel .island-preview__island--collapsed {
+  font-size: calc(14 * var(--c) * var(--preview-font-scale));
 }
 
 .island-preview__caption {

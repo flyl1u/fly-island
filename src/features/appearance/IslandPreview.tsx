@@ -4,7 +4,7 @@ import { useTranslation } from "../../i18n";
 import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
 import { cornerShapeCss } from "./cornerShape";
-import { getEffectiveAppearanceMode, hexToRgba, MAX_EXPANDED_SCALE } from "./settings";
+import { COLLAPSED_WIDTH, getEffectiveAppearanceMode, hexToRgba, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import "./IslandPreview.css";
 
@@ -21,7 +21,6 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const style = {
     "--preview-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
     "--preview-glass": settings.glassIntensity / 100,
-    "--preview-radius": `${settings.islandCornerRadius}px`,
     "--preview-radius-px": settings.islandCornerRadius,
     "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--preview-pulse": settings.pulseColor,
@@ -30,8 +29,12 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     "--preview-text": settings.taskTextColor,
     "--preview-ink": inkOn(settings.islandBackgroundColor),
     "--preview-collapsed-scale": settings.collapsedScale,
+    "--preview-collapsed-width": settings.collapsedAutoWidth ? COLLAPSED_WIDTH.default : settings.collapsedWidth,
+    "--preview-collapsed-height": settings.collapsedHeight,
+    "--preview-collapsed-limit": COLLAPSED_WIDTH.max * MAX_COLLAPSED_SCALE,
     "--preview-expanded-scale": settings.expandedScale,
     "--preview-expanded-max-scale": MAX_EXPANDED_SCALE,
+    "--preview-font-scale": settings.islandFontPercent / 100,
   } as CSSProperties;
   const islandClass = [
     "island-preview__island",

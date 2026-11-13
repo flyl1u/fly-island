@@ -12,9 +12,9 @@
 .agent-question__text {
   padding: 0;
   color: rgba(var(--agent-ink), 0.92);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
-  line-height: 17px;
+  line-height: calc(17px * var(--island-font-scale, 1));
 }
 
 .agent-question__header {
@@ -23,7 +23,7 @@
   color: rgba(var(--agent-ink), 0.66);
   background: rgba(var(--agent-ink), 0.1);
   border-radius: 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 
@@ -45,7 +45,7 @@
   background: rgba(var(--agent-ink), 0.1);
   border: 0;
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -74,7 +74,7 @@
 .agent-question__key {
   color: rgba(var(--agent-ink), 0.5);
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 10px;
+  font-size: calc(10px * var(--island-font-scale, 1));
 }
 
 .agent-question__option--chosen .agent-question__key {
@@ -89,7 +89,7 @@
   border: 1px solid rgba(var(--agent-ink), 0.12);
   border-radius: var(--radius-md);
   font: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
 }
 
 .agent-question__other::placeholder {

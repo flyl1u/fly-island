@@ -217,7 +217,7 @@
 
 .island--collapsed {
   width: calc(var(--collapsed-island-width) * var(--island-collapsed-scale));
-  height: calc(38px * var(--island-collapsed-scale));
+  height: calc(var(--collapsed-island-height, 38px) * var(--island-collapsed-scale));
   border-radius: 0 0 var(--island-shape-radius-collapsed) var(--island-shape-radius-collapsed);
   /* The island is a surface, not a link: only its small buttons show the hand. */
   cursor: default;
@@ -341,7 +341,7 @@
 
 .island__collapsed {
   width: var(--collapsed-island-width);
-  height: 38px;
+  height: var(--collapsed-island-height, 38px);
   margin-left: calc(var(--collapsed-island-width) / -2);
   display: flex;
   align-items: center;

@@ -39,7 +39,7 @@
   place-items: center;
   color: var(--text-3);
   background: transparent;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 

@@ -16,7 +16,7 @@
 .stage--font-pixel .island__active-task,
 .stage--font-pixel .island__agent-session,
 .stage--font-pixel .island__todo-count {
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 400;
   -webkit-text-stroke: 0.3px currentColor;
 }
@@ -25,6 +25,8 @@
   --island-collapsed-scale-target: 1;
   --island-expanded-scale-target: 1;
   --collapsed-island-width: 340px;
+  --collapsed-island-height: 38px;
+  font-size: calc(16px * var(--island-font-scale, 1));
   --task-text-color: #ffffff;
   --island-pulse-color: #3ae489;
   --island-pulse-glow-color: rgba(58, 228, 137, 0.72);

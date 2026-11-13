@@ -16,8 +16,8 @@ const LYRICS_WIDTH_TEXT = "♪".repeat(24);
 // The song's cover (22px) and the gap after it.
 const COVER_WIDTH = 30;
 // A countdown pill beside the todo title: gap, padding and about 7px a digit (12px a CJK glyph).
-function timerPillWidth(text: string) {
-  return 20 + [...text].reduce((width, char) => width + (/[\u2E80-\uFFFF]/.test(char) ? 12 : 7), 0);
+function timerPillWidth(text: string, fontScale: number) {
+  return 20 + fontScale * [...text].reduce((width, char) => width + (/[\u2E80-\uFFFF]/.test(char) ? 12 : 7), 0);
 }
 
 /**
@@ -67,6 +67,8 @@ export function useCollapsedTodo(
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
   }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
   const collapsedIslandWidth = useMemo(() => {
+    if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
+    const fontScale = settings.islandFontPercent / 100;
     // A fixed width for the whole round; ticking digits never resize the native window.
     const timerText = timer ? (timer.notified ? t.todo.timeUp : formatTodoCountdown(timer.durationMinutes * 60)) : null;
     const todoText = collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
@@ -76,11 +78,12 @@ export function useCollapsedTodo(
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : timerText && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(timerText) : 0),
+        : timerText && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(timerText, fontScale) : 0, fontScale),
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.showCollapsedText, settings.showTitle, t, timer]);
+  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
+    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth };
 }

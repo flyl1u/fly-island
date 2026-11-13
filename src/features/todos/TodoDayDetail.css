@@ -22,7 +22,7 @@
 .todo-day-detail__title {
   margin: 0;
   color: var(--text-1);
-  font-size: 16px;
+  font-size: calc(16px * var(--island-font-scale, 1));
   font-weight: 700;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -31,7 +31,7 @@
 .todo-day-detail__date,
 .todo-day-detail__summary {
   color: var(--text-2);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
 }
@@ -63,7 +63,7 @@
   margin: 0;
   padding: var(--space-sm) var(--space-md);
   color: var(--text-3);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 @keyframes todo-day-appear {

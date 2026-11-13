@@ -48,7 +48,7 @@
   corner-shape: var(--corner-shape);
   outline: none;
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 400;
   text-align: left;
   cursor: pointer;

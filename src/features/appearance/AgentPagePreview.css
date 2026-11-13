@@ -13,7 +13,7 @@
   display: grid;
   gap: calc(10 * var(--u));
   color: var(--ink-1);
-  font-size: calc(12 * var(--u));
+  font-size: calc(12 * var(--u) * var(--preview-font-scale));
   font-weight: 400;
   white-space: nowrap;
 }
@@ -164,7 +164,7 @@
 
 .agent-page-preview__heading {
   min-width: 0;
-  height: calc(20 * var(--u));
+  min-height: calc(20 * var(--u));
   display: flex;
   align-items: center;
   gap: calc(6 * var(--u));
@@ -176,7 +176,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ink-1);
-  font-size: calc(14 * var(--u));
+  font-size: calc(14 * var(--u) * var(--preview-font-scale));
   font-weight: 600;
 }
 
@@ -191,13 +191,13 @@
   border-radius: calc(5 * var(--u));
   background: rgba(var(--preview-ink), 0.1);
   color: var(--ink-2);
-  font-size: calc(11 * var(--u));
+  font-size: calc(11 * var(--u) * var(--preview-font-scale));
 }
 
 .agent-page-preview__status {
   flex: none;
   color: var(--ink-3);
-  font-size: calc(12 * var(--u));
+  font-size: calc(12 * var(--u) * var(--preview-font-scale));
 }
 
 .agent-page-preview__row--needs .agent-page-preview__status {
@@ -219,7 +219,7 @@
   text-overflow: ellipsis;
   color: var(--ink-3);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: calc(13 * var(--u));
+  font-size: calc(13 * var(--u) * var(--preview-font-scale));
 }
 
 .agent-page-preview__tool-name {

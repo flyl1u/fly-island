@@ -9,5 +9,5 @@
   align-items: center;
   gap: 4px;
   color: var(--color-agent-idle);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }

@@ -19,9 +19,9 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
   color: var(--text-1);
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 400;
-  line-height: 18px;
+  line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
   animation: island-hover-card-in 140ms cubic-bezier(0.23, 1, 0.32, 1) both;

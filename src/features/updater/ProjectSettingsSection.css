@@ -30,7 +30,7 @@
 .about-identity__name {
   margin: 0;
   color: var(--color-text);
-  font-size: 15px;
+  font-size: calc(15px * var(--island-font-scale, 1));
   font-weight: 800;
   line-height: 1.2;
 }
@@ -40,7 +40,7 @@
   color: var(--color-text-muted);
   background: var(--color-white-a08);
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 700;
   line-height: 1.6;
 }
@@ -48,7 +48,7 @@
 .about-identity__description {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 
@@ -104,21 +104,21 @@
 
 .project-link__copy strong {
   color: var(--color-text);
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 400;
   line-height: 1.35;
 }
 
 .project-link__copy > span {
   color: var(--color-text-subtle);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 
 .project-link-error {
   margin: 0;
   color: #ffd8df;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 

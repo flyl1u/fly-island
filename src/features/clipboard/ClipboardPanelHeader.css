@@ -12,7 +12,7 @@
   align-items: center;
   gap: var(--space-md);
   color: var(--text-1);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1;
 }
@@ -31,7 +31,7 @@
   background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 
@@ -44,7 +44,7 @@
   color: var(--text-2);
   background: transparent;
   border-radius: 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-style: normal;
   font-weight: 600;
 }
@@ -65,7 +65,7 @@
   justify-content: center;
   border: 0;
   outline: none;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
   transition:
     background 140ms ease,

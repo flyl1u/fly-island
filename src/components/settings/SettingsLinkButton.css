@@ -9,7 +9,7 @@
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;

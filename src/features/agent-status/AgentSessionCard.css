@@ -123,14 +123,14 @@
   overflow: hidden;
   color: var(--text-1);
   /* Semibold, not heavier: 800 picks Segoe UI Black for Latin text. */
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .agent-card--compact .agent-card__title {
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 /* Finished sessions recede by colour alone; one not looked at yet stays bright. */
@@ -146,7 +146,7 @@
   align-items: center;
   gap: 6px;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -161,7 +161,7 @@
   color: var(--text-2);
   background: rgba(var(--agent-ink), 0.1);
   border-radius: 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
 }
 
 .agent-card__model {
@@ -179,7 +179,7 @@
 .agent-card__status-line {
   height: 18px;
   gap: 12px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--island-font-scale, 1));
   line-height: 18px;
 }
 
@@ -252,8 +252,8 @@
   display: -webkit-box;
   overflow: hidden;
   color: var(--text-1);
-  font-size: 13px;
-  line-height: 19px;
+  font-size: calc(13px * var(--island-font-scale, 1));
+  line-height: calc(19px * var(--island-font-scale, 1));
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;

@@ -17,6 +17,8 @@ const query = new URLSearchParams(location.search);
 const automated = query.has("test");
 const empty = query.has("empty");
 const media = (query.get("media") ?? "playing") as TourMedia;
+const customNotch = query.has("notch");
+const fontPercent = Number(query.get("font")) || 100;
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
 
 // The tour writes the island's own keys; whatever the browser profile had comes back on leaving.
@@ -41,6 +43,8 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
 localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
+  ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
+  islandFontPercent: fontPercent,
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
   pageButtonStyle: "capsule",
   lyricsOnline: query.get("lyrics") !== "0",
@@ -153,9 +157,16 @@ if (!automated) {
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     const collapsed = island().getBoundingClientRect();
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
-    check(collapsed.height === 38 && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
+    const expectedHeight = customNotch ? 32 : 38;
+    check(collapsed.height === expectedHeight && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
       `收起的岛贴着顶边：上边是平的，下面两个角是大圆角（${collapsed.height}px / ${collapsedRadius}px / ${getComputedStyle(island()).borderTopLeftRadius}）`);
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
+    if (customNotch) {
+      const title = bar.querySelector<HTMLElement>(".island__agent-session, .island__active-task, .island__todo-count, .collapsed-lyric")!;
+      check(collapsed.width === 240 && interaction.collapsedWidth === 240 && interaction.collapsedHeight === expectedHeight &&
+        Math.abs(parseFloat(getComputedStyle(title).fontSize) - 13 * fontPercent / 100) < 0.01,
+      "自定义刘海尺寸同时传给原生窗口，文字使用独立字号");
+    }
     const barItems = [...bar.querySelectorAll<HTMLElement>("button, .island__pulse")].map((item) => item.getBoundingClientRect()).filter((rect) => rect.width > 0);
     check(barItems.every((rect) => rect.left >= collapsed.left + 10 && rect.right <= collapsed.right - 10), "收起的岛上的内容离两侧圆角有距离");
 
@@ -249,7 +260,8 @@ if (!automated) {
     const short = panel().offsetHeight;
     await click(".settings-sidebar__item[data-category='messages']");
     const tall = panel().offsetHeight;
-    check(short >= 340 && short < tall && tall <= 560, `设置页的高度跟着打开的那一页走（待办 ${short}px，消息 ${tall}px）`);
+    check(short >= 340 && short <= tall && tall <= 560 && (short < tall || short === 560),
+      `设置页按内容定高，到 560px 上限后滚动（待办 ${short}px，消息 ${tall}px）`);
     // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;

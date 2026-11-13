@@ -22,8 +22,9 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 use geometry::{
-    monitor_for_island_position, COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT,
-    EXPANDED_ISLAND_HEIGHT_RANGE, MAX_CORNER_RADIUS, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
+    monitor_for_island_position, DEFAULT_EXPANDED_ISLAND_HEIGHT, EXPANDED_ISLAND_HEIGHT_RANGE,
+    MAX_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_WIDTH, MAX_CORNER_RADIUS,
+    MIN_COLLAPSED_ISLAND_HEIGHT, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
     MIN_EXPANDED_ISLAND_HEIGHT, POSITION_ANIMATION_GENERATION,
 };
 use glass::{apply_glass_material, parse_hex_color};
@@ -70,6 +71,7 @@ pub fn set_island_interaction(
     margin_y: Option<f64>,
     expanded_height: Option<f64>,
     collapsed_width: Option<f64>,
+    collapsed_height: Option<f64>,
     custom_position: Option<IslandPosition>,
     is_tucked: Option<bool>,
     animate_position: Option<bool>,
@@ -84,9 +86,14 @@ pub fn set_island_interaction(
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
     let previous_state = read_window_state();
+    let collapsed_scale = collapsed_scale.clamp(0.75, 1.4);
+    let collapsed_height = collapsed_height.filter(|height| height.is_finite())
+        .map(|height| height.clamp(MIN_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_HEIGHT))
+        .unwrap_or(previous_state.collapsed_height);
+    let position_state = IslandWindowState { collapsed_scale, collapsed_height, ..previous_state };
     let restored_custom_position = previous_state.custom_position.or_else(|| {
         custom_position.filter(|position| {
-            monitor_for_island_position(&window, *position)
+            monitor_for_island_position(&window, *position, position_state)
                 .ok()
                 .flatten()
                 .is_some()
@@ -96,7 +103,8 @@ pub fn set_island_interaction(
         state.mode = mode;
         state.is_tucked = is_tucked.unwrap_or(false);
         state.position_locked = position_locked.unwrap_or(false);
-        state.collapsed_scale = collapsed_scale.clamp(0.75, 1.4);
+        state.collapsed_scale = collapsed_scale;
+        state.collapsed_height = collapsed_height;
         state.expanded_scale = expanded_scale.clamp(0.75, 1.4);
         if let Some(margin_y) = margin_y {
             state.margin_y = margin_y.clamp(0.0, 160.0);
@@ -107,9 +115,9 @@ pub fn set_island_interaction(
                 DEFAULT_EXPANDED_ISLAND_HEIGHT + EXPANDED_ISLAND_HEIGHT_RANGE,
             );
         }
-        if let Some(collapsed_width) = collapsed_width {
+        if let Some(collapsed_width) = collapsed_width.filter(|width| width.is_finite()) {
             state.collapsed_width =
-                collapsed_width.clamp(MIN_COLLAPSED_ISLAND_WIDTH, COLLAPSED_ISLAND_WIDTH);
+                collapsed_width.clamp(MIN_COLLAPSED_ISLAND_WIDTH, MAX_COLLAPSED_ISLAND_WIDTH);
         }
         if state.custom_position.is_none() {
             state.custom_position = restored_custom_position;

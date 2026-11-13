@@ -2,7 +2,7 @@
 .agent-reply-marker__preview {
   padding: var(--space-lg) 16px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .agent-reply-marker__preview > summary {
@@ -18,6 +18,6 @@
   word-break: break-word;
   background: var(--color-white-a04);
   border-radius: var(--radius-md);
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--island-font-scale, 1));
   line-height: 1.5;
 }

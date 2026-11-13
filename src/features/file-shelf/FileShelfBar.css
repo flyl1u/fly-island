@@ -18,7 +18,7 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   line-height: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -81,7 +81,7 @@
   border: 0;
   outline: none;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .shelf-search input::placeholder {
@@ -150,7 +150,7 @@
   background: var(--color-white-a08);
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 

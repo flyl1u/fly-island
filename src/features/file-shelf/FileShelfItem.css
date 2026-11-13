@@ -116,7 +116,7 @@
   max-width: 100%;
   display: flex;
   color: var(--text-1);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 16px;
   white-space: nowrap;
@@ -136,7 +136,7 @@
 .shelf-item__meta {
   overflow: hidden;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   line-height: 14px;
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
@@ -144,7 +144,7 @@
 }
 
 .shelf-item--row .shelf-item__name {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--island-font-scale, 1));
 }
 
 /* The picture: a preview, Explorer's icon, or a type icon on a tinted square. */

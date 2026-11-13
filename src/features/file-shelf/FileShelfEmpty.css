@@ -58,14 +58,14 @@
 
 .shelf-empty__title {
   color: var(--text-1);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.35;
 }
 
 .shelf-empty__note {
   color: var(--text-3);
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--island-font-scale, 1));
   line-height: 1.45;
 }
 

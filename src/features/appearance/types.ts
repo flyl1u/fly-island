@@ -48,10 +48,14 @@ export type IslandSettings = {
   topEdgeLayoutVersion: 1;
   appearanceMode: AppearanceMode;
   fontFamily: IslandFont;
+  islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;
   glassIntensity: number;
   opacity: number;
   collapsedScale: number;
+  collapsedAutoWidth: boolean;
+  collapsedWidth: number;
+  collapsedHeight: number;
   expandedScale: number;
   marginY: number;
   /** Prevent moving the island by dragging; explicit position reset still works. */

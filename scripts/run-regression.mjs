@@ -31,6 +31,7 @@ export const PAGES = [
   // Both ends of the expanded size slider: every page still inside the (scaled) island.
   "island-tour.html?test=1&scale=0.85",
   "island-tour.html?test=1&scale=1.2",
+  "island-tour.html?test=1&scale=1.2&notch=1&font=120",
   "mail-reader.html?run=1",
   "music-lyrics.html",
   "notification-startup.html",

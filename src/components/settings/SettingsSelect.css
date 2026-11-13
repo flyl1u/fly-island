@@ -11,7 +11,7 @@
   color: var(--color-text-muted);
   background: transparent;
   border-color: transparent;
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 400;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .settings-select .select-control__option {
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 400;
 }
 

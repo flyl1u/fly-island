@@ -47,7 +47,7 @@
   gap: 9px;
   min-width: 0;
   color: var(--text-1);
-  font-size: 15px;
+  font-size: calc(15px * var(--island-font-scale, 1));
   font-weight: 700;
   line-height: 1;
 }
@@ -234,7 +234,7 @@
 .island__agent-button::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% - 4px);
+  bottom: calc(100% - 4px - max(0px, 13.2px * (var(--island-font-scale, 1) - 1)));
   left: 50%;
   z-index: 5;
   padding: 3px 7px;
@@ -245,7 +245,7 @@
   corner-shape: var(--corner-shape);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
   white-space: nowrap;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   opacity: 0;

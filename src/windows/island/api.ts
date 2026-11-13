@@ -43,6 +43,7 @@ export type IslandInteraction = {
   marginY: number;
   expandedHeight: number;
   collapsedWidth: number;
+  collapsedHeight: number;
   customPosition: IslandPosition | null;
   isTucked: boolean;
   positionLocked: boolean;

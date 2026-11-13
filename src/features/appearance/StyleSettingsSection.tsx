@@ -3,7 +3,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { DEFAULT_SETTINGS, LIQUID_GLASS_ENABLED, MAX_EXPANDED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
+import { DEFAULT_SETTINGS, ISLAND_FONT_PERCENT, LIQUID_GLASS_ENABLED, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE, MIN_COLLAPSED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
 import type { AppearanceMode, IslandFont, IslandSettings, PageButtonStyle } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
@@ -15,12 +15,14 @@ export function StyleSettingsSection({
   onSettingsChange,
   onPreviewIsland,
   onExpandedScalePreview,
+  onFontSizePreview,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
   /** Called while a size changes, so the island shows that size (collapsed or opened). */
   onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
   onExpandedScalePreview?: (value: number | null) => void;
+  onFontSizePreview?: (value: number | null) => void;
 }) {
   const t = useTranslation();
   const text = t.settings.appearance;
@@ -32,7 +34,6 @@ export function StyleSettingsSection({
     { value: "system", label: text.systemFont },
     { value: "pixel", label: text.pixelFont },
   ] as const;
-
 
   return (
     <SettingsGroup title={text.styleTitle}>
@@ -72,6 +73,19 @@ export function StyleSettingsSection({
           />
         }
       />
+      <SettingsSliderRow
+        title={text.fontSize}
+        value={settings.islandFontPercent}
+        min={ISLAND_FONT_PERCENT.min}
+        max={ISLAND_FONT_PERCENT.max}
+        step={ISLAND_FONT_PERCENT.step}
+        format={percent}
+        defaultValue={ISLAND_FONT_PERCENT.default}
+        resetLabel={t.settings.layout.resetToDefault}
+        commitOnRelease
+        onPreviewChange={onFontSizePreview}
+        onChange={(islandFontPercent) => onSettingsChange({ ...settings, islandFontPercent })}
+      />
       <SettingsRow
         title={text.pageButtons}
         control={
@@ -100,8 +114,8 @@ export function StyleSettingsSection({
       <SettingsSliderRow
         title={t.settings.layout.collapsedScale}
         value={settings.collapsedScale}
-        min={0.75}
-        max={1.4}
+        min={MIN_COLLAPSED_SCALE}
+        max={MAX_COLLAPSED_SCALE}
         step={0.01}
         format={times}
         defaultValue={DEFAULT_SETTINGS.collapsedScale}
