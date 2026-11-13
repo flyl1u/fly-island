@@ -88,7 +88,7 @@ test("the Agent page fits the session rows set in Settings", async () => {
   // so whatever an older version saved loads as the default.
   assert.equal(DEFAULT_SETTINGS.agentSessionView, "list");
   assert.equal(normalizeSettings({ agentSessionView: "cards" }).agentSessionView, "list");
-  assert.equal(DEFAULT_SETTINGS.agentSessionSort, "status");
+  assert.equal(DEFAULT_SETTINGS.agentSessionSort, "recent");
   assert.equal(normalizeSettings({ agentSessionSort: "firstSeen" }).agentSessionSort, "firstSeen");
   assert.equal(normalizeSettings({ agentSessionGroup: "project" }).agentSessionGroup, "project");
   assert.equal(normalizeSettings({ agentSessionGroup: "tree" }).agentSessionGroup, "computer");
