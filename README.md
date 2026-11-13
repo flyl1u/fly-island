@@ -24,6 +24,14 @@
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
     <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
   </p>
+
+  <a href="https://island.flyliu.org/">
+    <img src="docs/assets/promo-preview.webp" alt="fly-island 宣传片：微信消息弹到岛上、在岛上批准 Claude Code 权限、查看 Claude 与 Codex 额度、文件中转、待办、音乐与翻译" width="860">
+  </a>
+
+  <p><sub>点击画面打开在线预览，不用安装就能试</sub></p>
+
+  <p>如果它帮你少切了几次窗口，欢迎点个 ⭐ <b>Star</b>，让更多人看到它。</p>
 </div>
 
 ## 这是什么
@@ -142,6 +150,8 @@ Copyright (C) 2026 flyl1u and contributors。3.0.8 及以前的版本以 MIT 协
 第三方依赖和内置资源仍遵循各自的许可证。内置字体的许可信息见[字体说明](src/assets/fonts/README.md)。随安装包附带的网易云进度插件 BetterNCM 与 InfLink-rs 采用 GPL-3.0，原样附带，许可证与源码链接见[插件说明](src-tauri/resources/media-plugins/README.md)。
 
 ## Star History
+
+觉得 fly-island 好用的话，[点个 Star](https://github.com/flyl1u/fly-island/stargazers) 就是对作者最大的鼓励。
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
   <picture>
