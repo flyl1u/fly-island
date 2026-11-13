@@ -10,7 +10,7 @@ export type SettingsAgentText = {
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
-  sources: { title: string; dsh: string; dshHint: string };
+  sources: { title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string };
   alerts: {
     title: string;
     hint: string;
@@ -49,7 +49,14 @@ export const zhCN: SettingsAgentText = {
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
   sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex 和 DSH 的本地会话记录，不需要安装钩子。",
-  sources: { title: "会话来源", dsh: "DeepSeek Harness（DSH）", dshHint: "读取桌面端本地会话缓存；余额使用 DSH 已保存的凭据查询官方接口，每 5 分钟刷新。关闭后隐藏 DSH 会话、余额并停止查询。点击会话打开 DSH 主窗口；审批仍在 DSH 里处理。" },
+  sources: {
+    title: "会话来源",
+    claudeCode: "Claude Code",
+    claudeCodeHint: "关闭后隐藏 Claude Code 的会话、标题、提醒和用量环，并停止读取用量；已安装的钩子保留在连接页。",
+    codex: "Codex",
+    codexHint: "关闭后隐藏 Codex 的会话、标题、提醒和用量环，并停止读取用量；已安装的钩子保留在连接页。",
+    dsh: "DeepSeek Harness（DSH）",
+    dshHint: "读取桌面端本地会话缓存；余额使用 DSH 已保存的凭据查询官方接口，每 5 分钟刷新。关闭后隐藏 DSH 会话、余额并停止查询。点击会话打开 DSH 主窗口；审批仍在 DSH 里处理。" },
   alerts: {
     title: "弹出提醒",
     hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
@@ -85,7 +92,14 @@ export const en: SettingsAgentText = {
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
   sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from local Claude Code, Codex and DSH session records, so no hooks are needed.",
-  sources: { title: "Session sources", dsh: "DeepSeek Harness (DSH)", dshHint: "Reads the desktop's local session cache. Uses DSH's saved credential for an official balance query every 5 minutes. Switching off hides DSH sessions and balance and stops queries. A session opens the DSH main window; approvals stay in DSH." },
+  sources: {
+    title: "Session sources",
+    claudeCode: "Claude Code",
+    claudeCodeHint: "Switching off hides Claude Code sessions, titles, alerts and usage rings and stops reading its usage; installed hooks stay on the Connection page.",
+    codex: "Codex",
+    codexHint: "Switching off hides Codex sessions, titles, alerts and usage rings and stops reading its usage; installed hooks stay on the Connection page.",
+    dsh: "DeepSeek Harness (DSH)",
+    dshHint: "Reads the desktop's local session cache. Uses DSH's saved credential for an official balance query every 5 minutes. Switching off hides DSH sessions and balance and stops queries. A session opens the DSH main window; approvals stay in DSH." },
   alerts: {
     title: "Pop-up alerts",
     hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",

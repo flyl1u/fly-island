@@ -14,5 +14,6 @@
 | --- | --- | --- |
 | `claude-code.png` | [Claude](https://claude.ai/) | [官网 Apple Touch 图标](https://claude.ai/apple-touch-icon.png) |
 | `codex.webp` | [ChatGPT / Codex](https://chatgpt.com/) | [官网 Apple Touch 图标](https://cdn.oaistatic.com/assets/apple-touch-icon-mz9nytnj.webp) |
+| `deepseek.png` | [DeepSeek](https://www.deepseek.com/) | [官网 favicon](https://www.deepseek.com/favicon.ico)（225×225 PNG 转 180×180；浅色圆角底由界面 CSS 提供） |
 
-QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有。图标随应用打包，不在运行时请求远程图片。
+QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有。图标随应用打包，不在运行时请求远程图片。
