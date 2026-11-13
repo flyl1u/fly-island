@@ -75,6 +75,19 @@ try {
   await frame();
   await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); });
   check(order() === "b,c,a" && moves.length === 0, "Esc 丢弃预览");
+  // 往下拖时被拖行会被摘下再插回 DOM，指针捕获丢失；之后的事件落在别处也要能跟手和松手。
+  const away = async (type: string, y: number) => act(async () => {
+    document.body.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, button: 0, clientX: 450, clientY: y }));
+  });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 220)); });
+  const startY = row("b").getBoundingClientRect().top + 4;
+  await pointer("b", "pointerdown", startY);
+  const bottom = row("a").getBoundingClientRect().bottom - 2;
+  await away("pointermove", bottom);
+  await frame();
+  check(order() === "c,a,b", "指针离开手柄后仍实时换位");
+  await away("pointerup", bottom);
+  check(JSON.stringify(moves[moves.length - 1]) === '["b",2]' && !row("b").classList.contains("todo-item--dragging"), "指针离开手柄后松手仍能落位，不会卡住");
   results.textContent = messages.join("\n");
   results.dataset.result = "passed";
 } catch (error) {

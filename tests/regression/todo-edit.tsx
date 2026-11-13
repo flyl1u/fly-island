@@ -45,9 +45,6 @@ function Harness() {
         onStart={noop}
         onDelete={noop}
         onDragStart={noop}
-        onDragMove={noop}
-        onDragEnd={noop}
-        onDragCancel={noop}
       />
     </div>
   );
