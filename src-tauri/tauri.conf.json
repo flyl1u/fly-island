@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "fly-island",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "identifier": "com.focusd.island",
   "build": {
     "beforeDevCommand": "node scripts/stop-running-island.mjs && pnpm dev",
@@ -75,6 +75,13 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": {
+      "resources/media-plugins/BetterNCMII.dll": "media-plugins/BetterNCMII.dll",
+      "resources/media-plugins/BetterNCMII86.dll": "media-plugins/BetterNCMII86.dll",
+      "resources/media-plugins/InfLink-rs.plugin": "media-plugins/InfLink-rs.plugin",
+      "resources/media-plugins/LICENSE-GPL-3.0.txt": "media-plugins/LICENSE-GPL-3.0.txt",
+      "resources/media-plugins/README.md": "media-plugins/README.md"
+    },
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",

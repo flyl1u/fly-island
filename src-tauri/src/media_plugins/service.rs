@@ -18,9 +18,10 @@ pub(super) async fn install(app: &tauri::AppHandle, data: &Path) -> Result<Opera
     if loader_present { ensure_closed()?; }
     let loader = if status.arch == Some("x86") { &manifest::X86 } else { &manifest::X64 };
     let downloads = data.join("media-plugins/download");
+    let bundled = tauri::Manager::path(app).resource_dir().ok().map(|dir| dir.join("media-plugins"));
     progress(app, "downloading");
-    let source = download::fetch(&downloads, loader).await?;
-    let plugin = download::fetch(&downloads, &manifest::PLUGIN).await?;
+    let source = download::fetch(&downloads, bundled.as_deref(), loader).await?;
+    let plugin = download::fetch(&downloads, bundled.as_deref(), &manifest::PLUGIN).await?;
     progress(app, "verifying");
     if !download::verify(&source, loader) || !download::verify(&plugin, &manifest::PLUGIN) {
         return Err(PluginError::new("HashMismatch", "Cached download changed"));
