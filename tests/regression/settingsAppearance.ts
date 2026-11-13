@@ -24,12 +24,14 @@ const storedColors = () => {
 export function prepareColorRegression() {
   localStorage.setItem("focusd-island-color-refresh-v1", "1");
   localStorage.removeItem("focusd-island-color-backup");
+  localStorage.removeItem("focusd-island-color-presets");
 }
 
 async function checkColorInputs(check: (condition: unknown, message: string) => void) {
   check(!document.querySelector(".appearance-color-restore"), "Without a backup, the restore icon is absent");
   const group = element(".settings-color").closest(".settings-group")!;
-  const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")];
+  // The 2026-11-13 requested presets row follows the three color input rows.
+  const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")].filter((row) => row.querySelector(".settings-color"));
   check(rows.length === 3 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("input[type=color]")),
     "The Colors card has three rows, each with a hex value and a swatch");
   const swatch = element<HTMLInputElement>(".settings-color__swatch");
@@ -81,6 +83,54 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   await type(swatches[2], "#abcdef");
   check(!localStorage.getItem("focusd-island-color-backup") && !document.querySelector(".appearance-color-restore"),
     "Manual hex and picker edits do not create or overwrite a backup");
+}
+
+async function checkColorPresets(check: (condition: unknown, message: string) => void) {
+  const saved = () => JSON.parse(localStorage.getItem("focusd-island-color-presets") ?? "[]") as { id: string; islandBackgroundColor: string }[];
+  const chips = () => [...document.querySelectorAll<HTMLButtonElement>(".appearance-preset__apply")];
+  const plus = () => element<HTMLButtonElement>(".appearance-presets__add");
+  const setBackground = async (value: string) => {
+    await click(".appearance-hex");
+    const input = element<HTMLInputElement>("input.appearance-hex");
+    await type(input, value);
+    await act(async () => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  };
+  const expected = storedColors();
+  const retired = localStorage.getItem("focusd-island-setting-presets");
+  check(plus().closest(".settings-row")?.querySelector(".settings-row__title")?.textContent === "预设", "Presets are the last row of the Colors card");
+  await click(".appearance-presets__add");
+  check(saved().length === 1 && chips().length === 1 && chips()[0].getAttribute("aria-label")?.includes(expected.islandBackgroundColor)
+    && chips()[0].getAttribute("aria-label")?.includes(expected.taskTextColor) && chips()[0].getAttribute("aria-label")?.includes(expected.pulseColor),
+    "Plus saves a color chip whose accessible label reads all three colors");
+  await click(".appearance-presets__add");
+  check(saved().length === 1, "Saving identical colors does not duplicate the preset");
+  const backupBeforeEdit = localStorage.getItem("focusd-island-color-backup");
+  await setBackground("556677");
+  check(localStorage.getItem("focusd-island-color-backup") === backupBeforeEdit, "A manual color edit preserves the existing backup");
+  const beforeApply = storedColors();
+  await click(".appearance-preset__apply");
+  check(JSON.stringify(storedColors()) === JSON.stringify(expected)
+    && JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup")!)) === JSON.stringify(beforeApply),
+    "Applying a color preset backs up the current colors before saving the preset colors");
+  await click(".appearance-color-restore");
+  check(JSON.stringify(storedColors()) === JSON.stringify(beforeApply), "Restore undoes applying a preset");
+  for (let index = 0; index < 7; index++) {
+    await setBackground(`10203${index}`);
+    await click(".appearance-presets__add");
+  }
+  check(saved().length === 8 && chips().length === 8 && plus().disabled, "Eight presets disable Plus");
+  const row = plus().closest(".settings-row")!;
+  check(row.scrollWidth <= row.clientWidth, "Eight color chips and Plus stay inside the row");
+  const firstId = saved()[0].id;
+  const remove = element<HTMLButtonElement>(".appearance-preset__delete");
+  await act(async () => { remove.focus(); });
+  check(getComputedStyle(remove).opacity === "1" && !!remove.getAttribute("aria-label"), "Keyboard focus reveals the accessible delete icon");
+  await click(".appearance-preset__delete");
+  check(saved().length === 7 && !saved().some((preset) => preset.id === firstId) && !plus().disabled, "Deleting a preset saves the deletion and enables Plus");
+  await openPage("general");
+  await openPage("appearance");
+  check(chips().length === 7, "Reopening Appearance reads the saved presets");
+  check(localStorage.getItem("focusd-island-setting-presets") === retired, "Color presets leave the retired appearance preset key untouched");
 }
 
 export async function checkAppearance(check: (condition: unknown, message: string) => void) {
@@ -177,6 +227,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       "Restore swaps current and backed-up colors and persists both");
     await click(".appearance-color-restore");
     check(JSON.stringify(storedColors()) === JSON.stringify(colorsAfterReset), "A second restore swaps the colors back");
+    await checkColorPresets(check);
     check(!document.querySelector(".island-preview__island--glass") && ![...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].some((button) => button.textContent === "液态玻璃"),
       "Liquid glass is paused: the preview stays classic and the choice is not offered");
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");

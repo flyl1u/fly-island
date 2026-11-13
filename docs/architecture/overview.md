@@ -32,6 +32,8 @@ WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官�
 
 前端和 Rust 的目标目录树，以及各目录的职责，分别见 [src/AGENTS.md](../../src/AGENTS.md#目标结构) 和 [src-tauri/AGENTS.md](../../src-tauri/AGENTS.md#目标结构)。本文只记录迁移映射。
 
+外观颜色逻辑位于 `features/appearance/`：`HexColorInput` / `hexColor.ts` 处理输入，`colorPalette.ts` 校验三色，`colorRefresh.ts` 编排一次性刷新，`colorPresets.ts` 处理预设去重与上限，`ColorPresetRow` 呈现芯片；所有备份、迁移标记和预设读写仍收口在同目录 `storage.ts`，复用 `lib/storage.ts` 的安全读写。
+
 ### 前端依赖方向
 
 ```text
