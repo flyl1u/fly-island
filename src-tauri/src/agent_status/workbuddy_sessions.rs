@@ -14,6 +14,7 @@ use std::{
 };
 
 use serde_json::Value;
+use windows::Win32::System::Registry::HKEY_CLASSES_ROOT;
 
 use super::{
     markers::AGENT_RUNNING_STALE_AFTER_MS,
@@ -270,8 +271,52 @@ pub(super) fn list_sessions(home: &Path, now: i64, window_ms: i64) -> Vec<AgentS
 
 /// Brings WorkBuddy's main window forward. WorkBuddy offers no outside route to one
 /// conversation, so the window shows whichever it last had open.
-pub(super) fn focus_desktop() -> bool {
-    window_focus::focus_session_window(&SessionHints::default(), &[], Some(DESKTOP_APP)).is_some()
+/// Opens the conversation in WorkBuddy and brings its window forward; true when either worked.
+/// The app's task notifications open a conversation through `workbuddy://chat/<session id>`
+/// (its main process hands the link from a second instance's command line to its router), so
+/// the island sends the same link, but only when that scheme belongs to WorkBuddy: the overseas
+/// build registers `workbuddy-ai://`, and an unclaimed scheme makes Windows offer to find an app.
+pub(super) fn focus_desktop(session_id: Option<&str>) -> bool {
+    let handler = win32::registry::read_string(HKEY_CLASSES_ROOT, LINK_HANDLER_KEY, "");
+    let link = session_id.and_then(conversation_link).filter(|_| opens_links(handler.as_deref()));
+    let opened = link.is_some_and(|link| tauri_plugin_opener::open_url(&link, None::<&str>).is_ok());
+    let focused = window_focus::focus_session_window(&SessionHints::default(), &[], Some(DESKTOP_APP)).is_some();
+    opened || focused
+}
+
+const LINK_HANDLER_KEY: &str = r"workbuddy\shell\open\command";
+
+/// WorkBuddy's link to one conversation. Only ids of the characters its session ids use (a
+/// UUID), so nothing else can reach the command line the link is handed to.
+pub(super) fn conversation_link(session_id: &str) -> Option<String> {
+    let valid = !session_id.is_empty()
+        && session_id.len() <= 64
+        && session_id.chars().all(|char| char.is_ascii_alphanumeric() || char == '-' || char == '_');
+    valid.then(|| format!("workbuddy://chat/{session_id}"))
+}
+
+/// Whether the registered `workbuddy:` handler is WorkBuddy itself (`"D:\workbuddy\WorkBuddy.exe" "%1"`).
+pub(super) fn opens_links(handler: Option<&str>) -> bool {
+    handler.is_some_and(|command| command.to_ascii_lowercase().contains("workbuddy.exe"))
+}
+
+/// The conversation most recently written: with WorkBuddy in front, the one the user is in.
+/// WorkBuddy does not say which conversation its window shows; the one just written is the
+/// best guess, so it counts as looked at like a session whose terminal is in front.
+pub(super) fn newest_session_id(home: &Path) -> Option<String> {
+    let root = data_root(home);
+    fs::read_dir(root.join("projects"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .flat_map(|project| fs::read_dir(project.path()).into_iter().flatten().flatten())
+        .filter(|entry| entry.path().extension().is_some_and(|extension| extension == "jsonl"))
+        .filter_map(|entry| {
+            let modified = entry.metadata().ok()?.modified().ok().and_then(system_time_to_unix_millis)?;
+            Some((modified, entry.path().file_stem()?.to_str()?.to_string()))
+        })
+        .max_by_key(|(modified, _)| *modified)
+        .map(|(_, id)| id)
 }
 
 #[cfg(test)]

@@ -170,7 +170,7 @@ pub(super) fn focus_session(
         return super::dsh_sessions::focus_desktop(session_id);
     }
     if provider == "workbuddy" {
-        return super::workbuddy_sessions::focus_desktop();
+        return super::workbuddy_sessions::focus_desktop(session_id);
     }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());
@@ -265,16 +265,23 @@ pub struct SessionRef {
 pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef]) -> Vec<String> {
     let front = win32::process::window_process_id(win32::window::foreground_window());
     let front_app = win32::process::image_path(front).map(|path| app_name(&path));
-    if front == 0 || front_app.is_none_or(|app| window_focus::NOT_SESSION_HOSTS.contains(&app.as_str())) {
+    if front == 0 || front_app.as_deref().is_none_or(|app| window_focus::NOT_SESSION_HOSTS.contains(&app)) {
         return Vec::new();
     }
+    let workbuddy_in_front = front_app.as_deref() == Some(super::workbuddy_sessions::DESKTOP_APP);
+    let newest_workbuddy = std::cell::OnceCell::new();
     sessions
         .iter()
         .filter(|session| {
             let id = session.session_id.as_str();
-            // WorkBuddy does not say which conversation its window shows, so none counts as seen.
+            // WorkBuddy does not say which conversation its window shows: with it in front, the
+            // conversation written last counts as the one looked at.
             if session.provider == "workbuddy" {
-                return false;
+                return workbuddy_in_front
+                    && newest_workbuddy
+                        .get_or_init(|| windows_home_dir().ok().and_then(|home| super::workbuddy_sessions::newest_session_id(&home)))
+                        .as_deref()
+                        == Some(id);
             }
             if session.provider == "dsh" {
                 let is_desktop = win32::process::image_path(front)
