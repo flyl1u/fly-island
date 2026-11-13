@@ -15,6 +15,7 @@ import { TranslationSettingsPage } from "./TranslationSettingsPage";
 import { AboutSettingsPage } from "./AboutSettingsPage";
 import { DEFAULT_SETTINGS, withAppearanceFrom } from "../../features/appearance/settings";
 import { ResetAppearanceButton } from "../../features/appearance/ResetAppearanceButton";
+import { withColorBackup } from "../../features/appearance/storage";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
@@ -75,8 +76,8 @@ export function SettingsPanel({
   }, [focusRequestedSection]);
 
   const resetAppearance = useCallback(() => {
-    setSettings((current) => withAppearanceFrom(current, DEFAULT_SETTINGS));
-  }, [setSettings]);
+    setSettings(withColorBackup(settings, withAppearanceFrom(settings, DEFAULT_SETTINGS)));
+  }, [settings, setSettings]);
 
   return (
     <LayoutEditor
