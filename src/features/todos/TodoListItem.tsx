@@ -31,9 +31,6 @@ export function TodoListItem({
   onStart,
   onDelete,
   onDragStart,
-  onDragMove,
-  onDragEnd,
-  onDragCancel,
 }: {
   todo: TodoItem;
   isTodayMode: boolean;
@@ -54,9 +51,6 @@ export function TodoListItem({
   onStart: (id: string, duration?: TodoDuration) => void;
   onDelete: (id: string) => void;
   onDragStart: (event: ReactPointerEvent<HTMLButtonElement>, todoId: string) => void;
-  onDragMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onDragEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onDragCancel: () => void;
 }) {
   const t = useTranslation();
   const titleLineCount = getTodoTitleLineCount(todo.title);
@@ -142,9 +136,6 @@ export function TodoListItem({
               aria-label={t.todo.reorderTask(todo.title)}
               disabled={isEditing}
               onPointerDown={(event) => onDragStart(event, todo.id)}
-              onPointerMove={onDragMove}
-              onPointerUp={onDragEnd}
-              onPointerCancel={onDragCancel}
             >
               <GripVertical size={15} strokeWidth={2.4} />
             </button>

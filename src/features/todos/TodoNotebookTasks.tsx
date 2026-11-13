@@ -69,8 +69,7 @@ export function TodoNotebookTasks({
     startTodoTitleEdit, commitTodoTitleEdit, cancelTodoTitleEdit,
   } = useTodoNotebookEditing(true, onUpdateTodo);
   const {
-    previewOrder, draggedTodoId, startTodoDrag, moveTodoDrag,
-    finishTodoDrag, cancelTodoDrag,
+    previewOrder, draggedTodoId, startTodoDrag,
   } = useTodoDrag(listRef, displayedTodos, canReorderTodos, editingTodoId, onReorderTodo);
   const orderedTodos = previewOrder
     ? previewOrder.flatMap((id) => displayedTodos.filter((todo) => todo.id === id))
@@ -124,9 +123,6 @@ export function TodoNotebookTasks({
               onStart={onStartTodo}
               onDelete={onDeleteTodo}
               onDragStart={startTodoDrag}
-              onDragMove={moveTodoDrag}
-              onDragEnd={finishTodoDrag}
-              onDragCancel={cancelTodoDrag}
             />
           ))
         )}

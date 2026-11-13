@@ -47,9 +47,51 @@ export function useTodoDrag(listRef: RefObject<HTMLDivElement | null>, todos: To
     frame.current = requestAnimationFrame(tick);
   }
 
+  function move(event: PointerEvent) {
+    const current = press.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    current.currentY = event.clientY;
+    if (!current.active) {
+      if (Math.hypot(event.clientX - current.x, event.clientY - current.y) < 4) return;
+      current.active = true;
+      setDraggedTodoId(current.id);
+      setPreviewOrder(current.order);
+      frame.current = requestAnimationFrame(tick);
+    }
+    event.preventDefault();
+  }
+
+  function finish(event: PointerEvent) {
+    if (event.pointerId !== press.current?.pointerId) return;
+    if (press.current.active) { press.current.currentY = event.clientY; update(press.current); }
+    end(true);
+  }
+
+  function cancel(event: PointerEvent) {
+    if (event.pointerId === press.current?.pointerId) end(false);
+  }
+
+  // 拖动中的移动和松手在 window 上监听，不靠手柄的指针捕获：往下拖时 React 会把被拖的行
+  // 摘下再插回 DOM，捕获随之丢失，松手事件送不到手柄，行就悬在半空。
+  const latest = useRef({ move, finish, cancel });
+  useLayoutEffect(() => { latest.current = { move, finish, cancel }; });
+  const listeners = useRef({
+    move: (event: PointerEvent) => latest.current.move(event),
+    finish: (event: PointerEvent) => latest.current.finish(event),
+    cancel: (event: PointerEvent) => latest.current.cancel(event),
+  });
+
+  function listen(on: boolean) {
+    const method = on ? window.addEventListener : window.removeEventListener;
+    method("pointermove", listeners.current.move, true);
+    method("pointerup", listeners.current.finish, true);
+    method("pointercancel", listeners.current.cancel, true);
+  }
+
   function end(commit: boolean) {
     const current = press.current;
     if (!current) return;
+    listen(false);
     cancelAnimationFrame(frame.current);
     if (current.active) {
       follow(current);
@@ -85,6 +127,7 @@ export function useTodoDrag(listRef: RefObject<HTMLDivElement | null>, todos: To
     return () => window.removeEventListener("keydown", escape);
   });
   useEffect(() => () => {
+    listen(false);
     cancelAnimationFrame(frame.current);
     const current = press.current;
     if (current?.handle.hasPointerCapture(current.pointerId)) current.handle.releasePointerCapture(current.pointerId);
@@ -105,25 +148,7 @@ export function useTodoDrag(listRef: RefObject<HTMLDivElement | null>, todos: To
         active: false, original, order: original, scroll: todoScrollContainer(row) };
       // 使用指针捕获，避免窗口的原生文件拖放接管 HTML5 拖动。
       try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* 合成事件没有原生指针。 */ }
+      listen(true);
     },
-    moveTodoDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-      const current = press.current;
-      if (!current || current.pointerId !== event.pointerId) return;
-      current.currentY = event.clientY;
-      if (!current.active) {
-        if (Math.hypot(event.clientX - current.x, event.clientY - current.y) < 4) return;
-        current.active = true;
-        setDraggedTodoId(current.id);
-        setPreviewOrder(current.order);
-        frame.current = requestAnimationFrame(tick);
-      }
-      event.preventDefault();
-    },
-    finishTodoDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-      if (event.pointerId !== press.current?.pointerId) return;
-      if (press.current.active) { press.current.currentY = event.clientY; update(press.current); }
-      end(true);
-    },
-    cancelTodoDrag() { end(false); },
   };
 }
