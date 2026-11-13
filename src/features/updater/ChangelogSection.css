@@ -1,0 +1,40 @@
+/* 关于 → 更新日志：每个版本一段，版本号做小标题，下面是发布说明里的条目。 */
+.changelog-entry {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-lg) 14px;
+}
+
+.changelog-entry + .changelog-entry {
+  border-top: 1px solid var(--color-white-a08);
+}
+
+.changelog-entry__version {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.changelog-entry__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.changelog-entry__item { overflow-wrap: anywhere; }
+.changelog-entry__item--depth-1 { margin-left: 16px; list-style-type: circle; }
+.changelog-entry__item--depth-2 { margin-left: 32px; list-style-type: square; }
+.changelog-entry__item strong { color: var(--color-text); font-weight: 600; }
+
+.changelog-entry__item code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--color-white-a08);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+}
