@@ -5,7 +5,7 @@
 
   <p><a href="README.en.md">English</a> · 中文</p>
 
-  <p>一款 Windows 桌面效率工具，在屏幕顶部集中管理待办、剪贴板、音乐、AI 状态、快捷翻译和消息提醒。</p>
+  <p>Windows 超轻量的灵动岛，微信、QQ、邮箱消息展示、Agent多session、额度环显示、音乐播放器、待办、剪贴板。文件中转等各种常见功能，需要时展开，用完收起。</p>
 
   <p>
     <a href="https://island.flyliu.org/">在线预览</a>
