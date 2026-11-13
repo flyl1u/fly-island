@@ -5,7 +5,7 @@
 
   <p>English · <a href="README.md">中文</a></p>
 
-  <p>A Windows desktop productivity app that brings tasks, clipboard history, music, AI status, quick translation, and notifications to the top of your screen.</p>
+  <p>An ultra-lightweight Dynamic Island for Windows: WeChat, QQ, and email message display, Agent multi-session, quota ring display, music player, to-dos, clipboard, file transfer, and various other common features. Expand when needed, collapse when done.</p>
 
   <p>
     <a href="https://island.flyliu.org/">Live Preview</a>
