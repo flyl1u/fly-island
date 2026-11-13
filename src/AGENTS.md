@@ -29,6 +29,8 @@ src/
 └── assets/                  # 品牌图标、字体及其许可证
 ```
 
+外观颜色模块位于 `features/appearance/`：`HexColorInput` / `hexColor.ts`（色值编辑）、`colorPalette.ts`（三色校验）、`colorRefresh.ts`（一次性刷新）、`colorPresets.ts` / `ColorPresetRow`（颜色预设逻辑与界面）；新颜色 key 的安全读写集中在同目录 `storage.ts`。
+
 单个 feature 目录的标准组成（按需创建，不需要的文件不建）：
 
 ```text

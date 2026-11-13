@@ -7,6 +7,7 @@ import { HexColorInput } from "./HexColorInput";
 import { Undo2 } from "lucide-react";
 import { loadColorBackup, swapColorBackup } from "./storage";
 import "./ColorSettingsSection.css";
+import { ColorPresetRow } from "./ColorPresetRow";
 
 type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor";
 
@@ -48,6 +49,7 @@ export function ColorSettingsSection({
           }
         />
       ))}
+      <ColorPresetRow settings={settings} onSettingsChange={onSettingsChange} />
     </SettingsGroup>
   );
 }
