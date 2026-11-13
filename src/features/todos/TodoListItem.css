@@ -13,8 +13,7 @@
   corner-shape: var(--corner-shape);
   transition:
     background 140ms ease,
-    border-color 140ms ease,
-    transform 140ms ease;
+    border-color 140ms ease;
 }
 
 .todo-item:hover {
@@ -31,13 +30,15 @@
 }
 
 .todo-item--dragging {
-  opacity: 0.5;
-  transform: scale(0.985);
+  position: relative;
+  z-index: 2;
+  background: var(--color-surface-dark);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-black) 32%, transparent);
+  transform: scale(1.02);
+  cursor: grabbing;
 }
 
-.todo-item--drag-over {
-  border-color: var(--color-focus-ring-soft);
-}
+.todo-item--dragging .todo-drag-handle { cursor: grabbing; }
 
 .todo-item--readonly {
   grid-template-columns: 22px minmax(0, 1fr);

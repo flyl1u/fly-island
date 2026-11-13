@@ -73,7 +73,7 @@ export function TodoNotebook({
   onUpdateTodo: (id: string, title: string) => void;
   onStartTodo: (id: string, duration?: TodoDuration) => void;
   onDeleteTodo: (id: string) => void;
-  onReorderTodo: (sourceId: string, targetId: string) => void;
+  onReorderTodo: (sourceId: string, index: number) => void;
   onShowDaily: () => void;
   onShowToday: () => void;
   onDailyNoteChange: (value: string) => void;

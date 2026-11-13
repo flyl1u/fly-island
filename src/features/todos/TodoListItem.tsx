@@ -21,7 +21,6 @@ export function TodoListItem({
   todoTimerEnabled = false,
   canReorder,
   isDragging,
-  isDragOver,
   isEditing,
   titleDraft,
   onTitleDraftChange,
@@ -45,7 +44,6 @@ export function TodoListItem({
   todoTimerEnabled?: boolean;
   canReorder: boolean;
   isDragging: boolean;
-  isDragOver: boolean;
   isEditing: boolean;
   titleDraft: string;
   onTitleDraftChange: (value: string) => void;
@@ -73,7 +71,6 @@ export function TodoListItem({
         isActive ? "todo-item--active" : "",
         canReorder ? "todo-item--reorderable" : "",
         isDragging ? "todo-item--dragging" : "",
-        isDragOver ? "todo-item--drag-over" : "",
         !isTodayMode ? "todo-item--readonly" : "",
       ]
         .filter(Boolean)

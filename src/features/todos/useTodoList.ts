@@ -1,3 +1,4 @@
+import { moveItem } from "../../utils/order.ts";
 import { useCallback, useEffect, useState } from "react";
 import { createTodoId, loadActiveTodoId, loadTodos, saveActiveTodoId, saveTodos } from "./storage";
 import { dismissUpdatePrompt } from "../updater/updaterController";
@@ -6,7 +7,6 @@ import { useUpdateTodo } from "./useUpdateTodo";
 import { useTodoTimer } from "./useTodoTimer";
 import type { TodoDuration } from "./timer";
 import type { TodoItem } from "./types";
-
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
 export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false) {
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
@@ -19,7 +19,6 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
-
     if (!title) {
       return;
     }
@@ -113,6 +112,13 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     });
   }, []);
 
+  const moveTodoToIndex = useCallback((id: string, index: number) => {
+    setTodos((items) => {
+      const item = items.find((todo) => todo.id === id);
+      return item ? moveItem(items, item, index) : items;
+    });
+  }, []);
+
   useEffect(() => {
     saveTodos(todos);
   }, [todos]);
@@ -146,5 +152,6 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     startTodo,
     deleteTodo,
     reorderTodo,
+    moveTodoToIndex,
   };
 }

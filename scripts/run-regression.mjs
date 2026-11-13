@@ -37,6 +37,7 @@ export const PAGES = [
   "settings.html?test=1",
   "settings-sidebar.html",
   "todo-edit.html",
+  "todo-reorder.html",
   "todo-history-calendar.html",
   "todo-timer.html",
   "todo-timer.html?scale=0.85",

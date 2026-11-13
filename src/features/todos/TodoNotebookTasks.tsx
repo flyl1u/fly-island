@@ -1,3 +1,5 @@
+import { useTodoDrag } from "./useTodoDrag";
+import { useTodoReorderMotion } from "./useTodoReorderMotion";
 import { Plus } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { TodoDatePicker } from "./TodoDatePicker";
@@ -48,7 +50,7 @@ export function TodoNotebookTasks({
   onUpdateTodo: (id: string, title: string) => void;
   onStartTodo: (id: string, duration?: TodoDuration) => void;
   onDeleteTodo: (id: string) => void;
-  onReorderTodo: (sourceId: string, targetId: string) => void;
+  onReorderTodo: (sourceId: string, index: number) => void;
 }) {
   const t = useTranslation();
   const listRef = useTodoListHeight(displayedTodos, onListHeightChange);
@@ -64,21 +66,17 @@ export function TodoNotebookTasks({
     editingTodoId,
     todoTitleDraft,
     setTodoTitleDraft,
-    draggedTodoId,
-    dragOverTodoId,
-    startTodoTitleEdit,
-    commitTodoTitleEdit,
-    cancelTodoTitleEdit,
-    startTodoDrag,
-    moveTodoDrag,
-    finishTodoDrag,
-    cancelTodoDrag,
-  } = useTodoNotebookEditing(
-    true,
-    canReorderTodos,
-    onUpdateTodo,
-    onReorderTodo,
-  );
+    startTodoTitleEdit, commitTodoTitleEdit, cancelTodoTitleEdit,
+  } = useTodoNotebookEditing(true, onUpdateTodo);
+  const {
+    previewOrder, draggedTodoId, startTodoDrag, moveTodoDrag,
+    finishTodoDrag, cancelTodoDrag,
+  } = useTodoDrag(listRef, displayedTodos, canReorderTodos, editingTodoId, onReorderTodo);
+  const orderedTodos = previewOrder
+    ? previewOrder.flatMap((id) => displayedTodos.filter((todo) => todo.id === id))
+    : displayedTodos;
+  useTodoReorderMotion(listRef, orderedTodos, draggedTodoId);
+
 
   return (
     <>
@@ -104,7 +102,7 @@ export function TodoNotebookTasks({
             {t.todo.empty}
           </div>
         ) : (
-          displayedTodos.map((todo) => (
+          orderedTodos.map((todo) => (
             <TodoListItem
               key={todo.id}
               todo={todo}
@@ -116,7 +114,6 @@ export function TodoNotebookTasks({
               todoTimerEnabled={todoTimerEnabled}
               canReorder={canReorderTodos}
               isDragging={draggedTodoId === todo.id}
-              isDragOver={dragOverTodoId === todo.id}
               isEditing={editingTodoId === todo.id}
               titleDraft={todoTitleDraft}
               onTitleDraftChange={setTodoTitleDraft}
