@@ -44,7 +44,7 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   agentStatusEnabled: false, musicEnabled: false, shelfEnabled: false,
   rotateTodos: true, todoRotationSeconds: 3, autoCollapseSeconds: 0,
   autoTuck: false, expandedScale: Number(query.get("scale") ?? 1),
-  carryOverIncompleteTodos: false,
+  carryOverIncompleteTodos: false, todoTimerEnabled: true,
 }));
 localStorage.setItem("focusd-island-save-directory", "");
 
@@ -121,6 +121,52 @@ const layoutSettled = async () => {
 };
 
 try {
+  await mount();
+  await open();
+  check(document.querySelectorAll(".todo-drag-handle").length === 2, "Default settings expose both reorder handles");
+  const settleDeadline = performance.now() + 5000;
+  while (performance.now() < settleDeadline && document.querySelector(".island")!.getAnimations().some((a) => a.playState === "running")) {
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
+  }
+  const pointer = async (type: string, target: HTMLElement, x: number, y: number) => act(async () => {
+    target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: x, clientY: y }));
+  });
+  const handle = document.querySelector<HTMLElement>('[data-todo-id="t1"] .todo-drag-handle')!;
+  // Synthetic pointers have no native active-pointer record; keep real hit testing and handlers.
+  handle.setPointerCapture = () => {};
+  const target = document.querySelector<HTMLElement>('[data-todo-id="t2"]')!.getBoundingClientRect();
+  await pointer("pointerdown", handle, 0, 0);
+  await pointer("pointermove", handle, target.x + 30, target.y + 10);
+  await pointer("pointerup", handle, target.x + 30, target.y + 10);
+  const order = () => [...document.querySelectorAll<HTMLElement>("[data-todo-id]")].map((node) => node.dataset.todoId).join();
+  check(order() === "t2,t1" && JSON.parse(localStorage.getItem("focusd-island-todos")!)[0].id === "t2", "Dragging reorders DOM and persisted todos");
+  check(!document.querySelector(".todo-title-input, .todo-duration-picker") && !localStorage.getItem("focusd-island-active-todo"), "Dragging never edits or starts a todo");
+  await mount();
+  await open();
+  check(order() === "t2,t1", "Reordered todos survive remount");
+  const settings = (patch: object) => act(async () => {
+    localStorage.setItem("focusd-island-settings", JSON.stringify({ ...JSON.parse(localStorage.getItem("focusd-island-settings")!), ...patch }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-settings" }));
+  });
+  await settings({ enableTodoReorder: false, todoReorderVersion: 1, todoTimerEnabled: false });
+  check(!document.querySelector(".todo-drag-handle"), "Storage sync hides handles when disabled");
+  await start("t1");
+  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("focusd-island-active-todo") === "t1", "Disabled timer starts immediately without picker");
+  await open();
+  await start("t1");
+  check(!localStorage.getItem("focusd-island-active-todo"), "Disabled timer stops immediately");
+  await settings({ todoTimerEnabled: true, enableTodoReorder: true });
+  await start("t1");
+  await preset(1);
+  await settings({ todoTimerEnabled: false });
+  check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t1" && !document.querySelector(".todo-countdown"), "Disabling cancels timer and preserves active todo");
+  await advance(900_000);
+  check(sounds === 0 && !document.querySelector(".todo-timer-actions"), "Disabled deadline cannot notify");
+  await settings({ todoTimerEnabled: true });
+  check(!stored(), "Re-enabling never restores cancelled timer");
+  await open();
+  await start("t1");
+  localStorage.removeItem(TODO_DURATION_STORAGE_KEY);
   await mount();
   await open();
   await start("t1");

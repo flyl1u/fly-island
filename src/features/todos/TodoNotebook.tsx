@@ -17,6 +17,7 @@ export function TodoNotebook({
   activeTodoId,
   timer,
   lastDuration,
+  todoTimerEnabled = false,
   onListHeightChange,
   currentDate,
   pageMode,
@@ -47,6 +48,7 @@ export function TodoNotebook({
   activeTodoId: string | null;
   timer?: TodoTimer | null;
   lastDuration?: TodoDuration;
+  todoTimerEnabled?: boolean;
   onListHeightChange?: (height: number) => void;
   currentDate: string;
   pageMode: TodoPageMode;
@@ -103,6 +105,7 @@ export function TodoNotebook({
           activeTodoId={activeTodoId}
           timer={timer}
           lastDuration={lastDuration}
+          todoTimerEnabled={todoTimerEnabled}
           onListHeightChange={onListHeightChange}
           enableTodoReorder={enableTodoReorder}
           scrollStartRows={scrollStartRows}

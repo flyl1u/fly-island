@@ -4,6 +4,10 @@
 
 ## 使用
 
+先在“设置 → 待办”开启“番茄钟”（`todoTimerEnabled`，默认关闭）。关闭时开始/停止直接生效，不显示时长选择、倒计时或时间到操作，也不播放提示音；折叠岛显示原有任务标题。运行中关闭会清除 `focusd-island-todo-timer`，保留任务进行中状态和上次时长；重新开启不会恢复已取消的轮次。设置通过现有跨窗口 storage 同步立即生效。旧设置缺字段或字段不是 boolean 时按关闭处理。
+
+English: Focus timer is off by default in Settings → Todos. When disabled, Start/Stop works immediately with no picker, countdown, expiry actions or sound. Turning it off cancels the round while keeping the active todo and previous duration; turning it on does not restore the cancelled round.
+
 1. 点待办“开始”，在行内选择 **15 分钟 / 30 分钟 / 1 小时 / 自定义 / 不限时**。预设直接开始；自定义填写 **1–240 的整数分钟**，再点开始。Esc 或取消关闭选择器。
 2. 上次选项会高亮。开始后岛屿收起；限时任务在列表按钮与折叠文字位置显示 `mm:ss`，超过一小时仍按分钟显示（如 `240:00`）。限时期间暂停待办轮播。不限时保留原来的进行中标题，不显示正计时。
 3. 时间到响一次短提示音，任务保持未完成。可见岛屿打开今日待办，显示 **时间到 / 完成 / 再来一轮**。完成勾选任务；再来一轮按本轮时长重新开始。也可以用原有结束按钮取消本轮。

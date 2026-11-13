@@ -9,6 +9,7 @@ import { useTodoSaving } from "./useTodoSaving";
 
 type TodosOptions = {
   carryOverIncompleteTodos: boolean;
+  todoTimerEnabled?: boolean;
   /** Called after a todo becomes the active one shown on the collapsed island. */
   onStartTodo: () => void;
   onTimerExpired?: () => void;
@@ -19,6 +20,7 @@ type TodosOptions = {
 /** The todo notebook: today's list and daily note, archives, markdown saving and the daily rollover. */
 export function useTodos({
   carryOverIncompleteTodos,
+  todoTimerEnabled = false,
   onStartTodo,
   onTimerExpired,
   onMissingSaveDirectory,
@@ -28,7 +30,7 @@ export function useTodos({
     setTodoPageMode("today");
     onTimerExpired?.();
   }, [onTimerExpired]);
-  const list = useTodoList(onStartTodo, handleTimerExpired);
+  const list = useTodoList(onStartTodo, handleTimerExpired, todoTimerEnabled);
   const { todos, setTodos, setDraftTodo, activeTodoId, setActiveTodoId } = list;
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
   const [currentTodoDate, setCurrentTodoDate] =
@@ -131,6 +133,7 @@ export function useTodos({
       activeTodoId,
       timer: list.timer,
       lastDuration: list.lastDuration,
+      todoTimerEnabled,
       currentDate: currentTodoDate,
       pageMode: todoPageMode,
       archives,

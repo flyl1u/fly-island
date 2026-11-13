@@ -14,6 +14,12 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
       typeof settings?.carryOverIncompleteTodos === "boolean"
         ? settings.carryOverIncompleteTodos
         : DEFAULT_SETTINGS.carryOverIncompleteTodos,
+    todoTimerEnabled: typeof settings?.todoTimerEnabled === "boolean"
+      ? settings.todoTimerEnabled : DEFAULT_SETTINGS.todoTimerEnabled,
+    // Unversioned false was written by the removed setting, rather than chosen by users.
+    todoReorderVersion: 1,
+    enableTodoReorder: settings?.todoReorderVersion === 1
+      && typeof settings.enableTodoReorder === "boolean" ? settings.enableTodoReorder : true,
     autoTuck,
     // Saved before this was a setting: an open panel closed only when the island tucked after
     // idling, so it keeps closing after that delay, or never with tucking off.

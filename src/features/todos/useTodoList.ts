@@ -8,14 +8,14 @@ import type { TodoDuration } from "./timer";
 import type { TodoItem } from "./types";
 
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
-export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void) {
+export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false) {
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   useUpdateTodo(todos, setTodos);
   const [draftTodo, setDraftTodo] = useState("");
   const [activeTodoId, setActiveTodoId] = useState<string | null>(
     loadActiveTodoId,
   );
-  const { timer, lastDuration, startTimer, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired);
+  const { timer, lastDuration, startTimer, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired, todoTimerEnabled);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();

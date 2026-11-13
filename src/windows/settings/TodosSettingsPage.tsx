@@ -31,6 +31,18 @@ export function TodosSettingsPage({
           checked={settings.carryOverIncompleteTodos}
           onChange={(carryOverIncompleteTodos) => onSettingsChange({ ...settings, carryOverIncompleteTodos })}
         />
+        <SettingsToggleRow
+          title={t.settings.todo.focusTimer}
+          description={t.settings.todo.focusTimerDescription}
+          checked={settings.todoTimerEnabled}
+          onChange={(todoTimerEnabled) => onSettingsChange({ ...settings, todoTimerEnabled })}
+        />
+        <SettingsToggleRow
+          title={t.settings.todo.dragToReorder}
+          description={t.settings.todo.dragToReorderDescription}
+          checked={settings.enableTodoReorder}
+          onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
+        />
       </SettingsGroup>
       <SavePathSettingsSection
         saveDirectoryDraft={saveDirectory.saveDirectoryDraft}
