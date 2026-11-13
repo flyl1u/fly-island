@@ -8,14 +8,16 @@ export function normalizeAgentSettings(settings: LegacyIslandSettings | null | u
   const agentShowClaudeCode = settings?.agentShowClaudeCode !== false;
   const agentShowCodex = settings?.agentShowCodex !== false;
   const agentShowDsh = settings?.agentShowDsh !== false;
+  const agentShowWorkbuddy = settings?.agentShowWorkbuddy !== false;
   const quotaSources = settings?.agentQuotaSources;
   return {
     agentShowClaudeCode,
     agentShowCodex,
     agentShowDsh,
+    agentShowWorkbuddy,
     agentQuotaSources: Array.isArray(quotaSources)
       ? AGENT_QUOTA_SOURCES.filter((source) => quotaSources.includes(source))
-      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: true })[source]),
+      : AGENT_QUOTA_SOURCES.filter((source) => ({ claudeCode: agentShowClaudeCode, codex: agentShowCodex, dsh: agentShowDsh, workbuddy: agentShowWorkbuddy })[source]),
     agentSessionSort: oneOf(AGENT_SESSION_SORTS, settings?.agentSessionSort, DEFAULT_SETTINGS.agentSessionSort),
     agentSessionGroup: oneOf(AGENT_SESSION_GROUPS, settings?.agentSessionGroup, DEFAULT_SETTINGS.agentSessionGroup),
     agentAlertCompleted: settings?.agentAlertCompleted !== false,

@@ -29,6 +29,7 @@ export function useIslandAgents(settings: IslandSettings) {
     claudeCode: watchesQuota && settings.agentShowClaudeCode,
     codex: watchesQuota && settings.agentShowCodex,
     dsh: watchesQuota && settings.agentShowDsh,
+    workbuddy: watchesQuota && settings.agentShowWorkbuddy,
   };
   // Read once for both rings and alerts. Either setting can need the data independently.
   const usages = useAgentUsages(settings.agentStatusEnabled, {
@@ -36,18 +37,20 @@ export function useIslandAgents(settings: IslandSettings) {
     codex: shown.includes("codex") || alertSources.codex,
     dsh: shown.includes("dsh") || alertSources.dsh,
   });
-  const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && shown.includes("workbuddy"));
+  const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && (shown.includes("workbuddy") || alertSources.workbuddy));
+  const workbuddyUsage = workbuddy.status === "connected" ? workbuddy.usage : null;
   const agentUsages = useMemo(() => filterQuotaUsages({
     ...usages,
-    workbuddy: workbuddy.status === "connected" ? workbuddy.usage : null,
-  }, shown), [usages, workbuddy, shown]);
-  const { claudeCode, codex, dsh } = alertSources;
+    workbuddy: workbuddyUsage,
+  }, shown), [usages, workbuddyUsage, shown]);
+  const { claudeCode, codex, dsh, workbuddy: watchesWorkbuddy } = alertSources;
   const alertUsages = useMemo(() => ({
     claude: claudeCode ? usages.claude : null,
     codex: codex ? usages.codex : null,
     dsh: dsh ? usages.dsh : null,
+    workbuddy: watchesWorkbuddy ? workbuddyUsage : null,
     readAt: usages.readAt,
-  }), [usages.claude, usages.codex, usages.dsh, usages.readAt, claudeCode, codex, dsh]);
+  }), [usages.claude, usages.codex, usages.dsh, usages.readAt, claudeCode, codex, dsh, workbuddyUsage, watchesWorkbuddy]);
 
   return { agentStatus, ...sessions, agentSession, agentUsages, alertUsages };
 }

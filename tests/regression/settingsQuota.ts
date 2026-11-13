@@ -11,18 +11,28 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
   const settings = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}");
   check(settings.agentQuotaSources.length === 0 && settings.agentShowDsh === true, "Clearing all rings persists independently of DSH sessions");
 
-  await openPage("agentConnect");
+  // WorkBuddy's sign-in sits under its session source, and only while that source is on.
   const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((item) => item.textContent === label);
-  await act(async () => button("登录 WorkBuddy")?.click());
-  check(commands.includes("open_workbuddy_login"), "WorkBuddy sign-in opens from the Connection page");
+  const status = () => document.querySelector(".workbuddy-sign-in__status")?.textContent;
+  check(status() === "未登录 WorkBuddy" && button("去登录"), `The WorkBuddy source shows it is not signed in (${status()})`);
+  await act(async () => button("去登录")?.click());
+  check(commands.includes("open_workbuddy_login"), "Sign in opens WorkBuddy's sign-in window");
   await act(async () => setMockWorkbuddy({ status: "loginRequired" }));
-  const status = document.querySelector(".workbuddy-connection__status")?.textContent;
-  check(status?.includes("已过期") && button("登录 WorkBuddy"), `Expired WorkBuddy sign-in shows a sign-in action (${status})`);
+  check(status()?.includes("已过期") && button("去登录"), `An expired WorkBuddy sign-in offers to sign in again (${status()})`);
   await act(async () => setMockWorkbuddy({ status: "unavailable" }));
   await act(async () => button("重试")?.click());
-  check(button("刷新积分") && button("断开连接"), "Retry can recover WorkBuddy credit display");
-  await act(async () => button("断开连接")?.click());
-  check(button("登录 WorkBuddy") && !button("断开连接"), "Disconnect returns the WorkBuddy section to signed out");
+  check(status() === "已登录 WorkBuddy" && button("退出登录"), "Retry recovers the WorkBuddy credits");
+  await act(async () => button("退出登录")?.click());
+  check(button("去登录") && !button("退出登录"), "Signing out returns WorkBuddy to signed out");
+  const source = [...document.querySelectorAll(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "WorkBuddy");
+  await act(async () => source?.querySelector<HTMLInputElement>("input[role=switch]")?.click());
+  check(!document.querySelector(".workbuddy-sign-in__status") && JSON.parse(localStorage.getItem("focusd-island-settings")!).agentShowWorkbuddy === false,
+    "Switching the WorkBuddy source off hides its sign-in and saves the choice");
+  await act(async () => source?.querySelector<HTMLInputElement>("input[role=switch]")?.click());
+
+  await openPage("agentConnect");
+  check(!document.querySelector(".workbuddy-sign-in__status") && !document.querySelector(".editor-panel")?.textContent?.includes("WorkBuddy"),
+    "The Connection page no longer has a WorkBuddy section");
 
   await openPage("agents");
   const revisited = [...document.querySelectorAll<HTMLInputElement>(".agent-quota-settings input")];

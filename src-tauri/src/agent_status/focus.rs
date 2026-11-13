@@ -169,6 +169,9 @@ pub(super) fn focus_session(
     if provider == "dsh" {
         return super::dsh_sessions::focus_desktop(session_id);
     }
+    if provider == "workbuddy" {
+        return super::workbuddy_sessions::focus_desktop();
+    }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());
     let mut log = Attempt::new(provider, session_id);
@@ -269,6 +272,10 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
         .iter()
         .filter(|session| {
             let id = session.session_id.as_str();
+            // WorkBuddy does not say which conversation its window shows, so none counts as seen.
+            if session.provider == "workbuddy" {
+                return false;
+            }
             if session.provider == "dsh" {
                 let is_desktop = win32::process::image_path(front)
                     .is_some_and(|exe| super::dsh_sessions::DESKTOP_APPS.contains(&app_name(&exe).as_str()));

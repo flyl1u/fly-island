@@ -14,6 +14,8 @@ export function SessionHostLabel({ host, display }: { host: SessionHost; display
   const Fallback = FALLBACK_ICONS[host.kind];
   const t = useTranslation();
   const dsh = dshHostLabel(host.name, t.agent.dshHosts);
+  // Without the program's own icon, the desktop apps fall back to their brand tile.
+  const brand = dsh ? "dsh" : host.name === "WorkBuddy" ? "workbuddy" : null;
 
   return (
     <span className={`agent-session__host${dsh ? " agent-session__host--dsh" : ""}`} title={dsh && display !== "icon" ? host.name : undefined}>
@@ -21,7 +23,7 @@ export function SessionHostLabel({ host, display }: { host: SessionHost; display
         (icon ? (
           <img className="agent-session__host-icon" src={icon} alt="" width={13} height={13} />
         ) : (
-          dsh ? <AgentProviderIcon provider="dsh" size={13} /> : <Fallback className="agent-session__host-icon" size={13} strokeWidth={2} aria-hidden="true" />
+          brand ? <AgentProviderIcon provider={brand} size={13} /> : <Fallback className="agent-session__host-icon" size={13} strokeWidth={2} aria-hidden="true" />
         ))}
       {display !== "icon" && <span className="agent-session__host-name">{dsh ?? host.name}</span>}
     </span>

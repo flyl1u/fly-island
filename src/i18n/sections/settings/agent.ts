@@ -12,11 +12,11 @@ export type SettingsAgentText = {
   sessionTitleSection: string;
   sessionTitle: string;
   sessionTitleHint: string;
-  sources: { title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string };
+  sources: { title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string; workbuddy: string; workbuddyHint: string };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
   workbuddy: {
     signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
-    signIn: string; retry: string; refresh: string; disconnect: string; disconnectAction: string; busy: string; actionFailed: string;
+    signIn: string; retry: string; signOut: string; busy: string; actionFailed: string;
   };
   alerts: {
     title: string;
@@ -55,7 +55,7 @@ export const zhCN: SettingsAgentText = {
   scriptsDir: "脚本目录",
   sessionTitleSection: "小岛显示",
   sessionTitle: "运行时在小岛显示会话标题",
-  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex 和 DSH 的本地会话记录，不需要安装钩子。",
+  sessionTitleHint: "显示 Agent 图标和会话标题，结束 3 秒后恢复待办。标题直接读取 Claude Code、Codex、DSH 和 WorkBuddy 的本地会话记录，不需要安装钩子。",
   sources: {
     title: "会话来源",
     claudeCode: "Claude Code",
@@ -63,19 +63,19 @@ export const zhCN: SettingsAgentText = {
     codex: "Codex",
     codexHint: "关闭后隐藏 Codex 的会话、标题和提醒。",
     dsh: "DeepSeek Harness（DSH）",
-    dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。" },
+    dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。",
+    workbuddy: "WorkBuddy",
+    workbuddyHint: "读取桌面端的会话记录。点击会话可打开 WorkBuddy。" },
   quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
   workbuddy: {
-    signedOut: "登录国内个人账号后可显示积分余额。",
-    loginRequired: "登录已过期，请重新登录。",
-    ready: "已保存登录态。",
-    connected: "已连接。",
-    unavailable: "暂时无法读取积分，请重试。",
-    signIn: "登录 WorkBuddy",
+    signedOut: "未登录 WorkBuddy",
+    loginRequired: "WorkBuddy 登录已过期",
+    ready: "已登录 WorkBuddy",
+    connected: "已登录 WorkBuddy",
+    unavailable: "暂时读不到 WorkBuddy 积分",
+    signIn: "去登录",
     retry: "重试",
-    refresh: "刷新积分",
-    disconnect: "清除岛屿中的 WorkBuddy 登录态",
-    disconnectAction: "断开连接",
+    signOut: "退出登录",
     busy: "处理中…",
     actionFailed: "操作未完成，请重试。",
   },
@@ -113,7 +113,7 @@ export const en: SettingsAgentText = {
   scriptsDir: "Scripts folder",
   sessionTitleSection: "On the island",
   sessionTitle: "Show the session title while running",
-  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from local Claude Code, Codex and DSH session records, so no hooks are needed.",
+  sessionTitleHint: "Shows the agent icon and session title, then the todo again 3 seconds after it finishes. Titles are read from local Claude Code, Codex, DSH and WorkBuddy session records, so no hooks are needed.",
   sources: {
     title: "Session sources",
     claudeCode: "Claude Code",
@@ -121,19 +121,19 @@ export const en: SettingsAgentText = {
     codex: "Codex",
     codexHint: "Switching off hides Codex sessions, titles and alerts.",
     dsh: "DeepSeek Harness (DSH)",
-    dshHint: "Reads local desktop sessions. Select a session to open the DSH window." },
+    dshHint: "Reads local desktop sessions. Select a session to open the DSH window.",
+    workbuddy: "WorkBuddy",
+    workbuddyHint: "Reads local desktop sessions. Select a session to open WorkBuddy." },
   quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
   workbuddy: {
-    signedOut: "Sign in with a personal account on the China site to see your credits.",
-    loginRequired: "Your session has expired. Sign in again.",
-    ready: "Sign-in saved.",
-    connected: "Connected.",
-    unavailable: "Credits are temporarily unavailable. Try again.",
-    signIn: "Sign in to WorkBuddy",
+    signedOut: "Not signed in to WorkBuddy",
+    loginRequired: "WorkBuddy sign-in expired",
+    ready: "Signed in to WorkBuddy",
+    connected: "Signed in to WorkBuddy",
+    unavailable: "WorkBuddy credits unavailable",
+    signIn: "Sign in",
     retry: "Retry",
-    refresh: "Refresh credits",
-    disconnect: "Clear the island's WorkBuddy sign-in",
-    disconnectAction: "Disconnect",
+    signOut: "Sign out",
     busy: "Working…",
     actionFailed: "Couldn't finish the action. Try again.",
   },

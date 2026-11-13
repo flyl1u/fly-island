@@ -3,6 +3,7 @@ import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
 import { AgentQuotaSettings } from "../../features/agent-status/AgentQuotaSettings";
+import { WorkbuddySignInRow } from "../../features/agent-status/WorkbuddySignInRow";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
@@ -47,6 +48,13 @@ export function AgentSettingsPage({
           onChange={(agentShowCodex) => onSettingsChange({ ...settings, agentShowCodex })}
         />
         <SettingsToggleRow title={t.settings.agent.sources.dsh} description={t.settings.agent.sources.dshHint} checked={settings.agentShowDsh} onChange={(agentShowDsh) => onSettingsChange({ ...settings, agentShowDsh })} />
+        <SettingsToggleRow
+          title={t.settings.agent.sources.workbuddy}
+          description={t.settings.agent.sources.workbuddyHint}
+          checked={settings.agentShowWorkbuddy}
+          onChange={(agentShowWorkbuddy) => onSettingsChange({ ...settings, agentShowWorkbuddy })}
+        />
+        {settings.agentShowWorkbuddy && <WorkbuddySignInRow polling={settings.agentStatusEnabled && settings.agentQuotaSources.includes("workbuddy")} />}
       </SettingsGroup>
       <AgentQuotaSettings sources={settings.agentQuotaSources} onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>

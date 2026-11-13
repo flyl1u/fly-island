@@ -113,7 +113,7 @@ export function SettingsPanel({
       {category === "clipboard" && <ClipboardSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
-      {category === "agentConnect" && <AgentConnectSettingsPage pollWorkbuddy={settings.agentStatusEnabled && settings.agentQuotaSources.includes("workbuddy")} />}
+      {category === "agentConnect" && <AgentConnectSettingsPage />}
       {category === "plugins" && <PluginsSettingsPage />}
       {category === "about" && <AboutSettingsPage />}
     </LayoutEditor>

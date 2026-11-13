@@ -6,6 +6,7 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { DSH_USAGE, checkDsh, checkWorkbuddyRing } from "./agent-dsh";
+import { checkWorkbuddySessions } from "./agent-workbuddy";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
@@ -38,6 +39,7 @@ try {
     };
     await checkDsh(root, sessions, usages, check, focusCalls);
     await checkWorkbuddyRing(root, sessions, usages, check);
+    await checkWorkbuddySessions(root, sessions, check, focusCalls);
     results.textContent = messages.join("\n");
     results.dataset.result = "passed";
   } else {

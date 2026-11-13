@@ -96,9 +96,10 @@ if (!automated) {
       // gained on 2026-11-13 (Claude Code and Codex). General 10 -> 11: the tucked look the owner asked
       // for on 2026-11-13.
       const rowCount = panel.querySelectorAll(".settings-row").length;
+      // Agents 11 -> 13: the WorkBuddy session source and its sign-in row (2026-11-13 老板要求 WorkBuddy 会话来源).
       // Appearance: 9 -> 12 on 2026-11-13 for island font size (+1) and notch auto-width/height (+2).
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
-      const maxRows = category === "agents" ? 11 : category === "general" ? 11 : category === "appearance" ? 13 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 11 : category === "appearance" ? 13 : 8;
       if (category === "general") {
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
