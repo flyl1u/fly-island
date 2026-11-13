@@ -26,8 +26,21 @@ export async function checkWorkbuddyRing(root: Root, sessions: AgentSessionSumma
   check(rings.length === 4 && rings.every((ring) => Math.abs(ring.getBoundingClientRect().top - rings[0].getBoundingClientRect().top) < 1 &&
     ring.getBoundingClientRect().right <= fixture.getBoundingClientRect().right), "四个来源的额度环在最大字号下同排显示");
   check(workbuddy?.textContent === "125.5 积分" && workbuddy.getAttribute("aria-label")?.includes("剩余 125.5 / 500 积分") &&
-    workbuddy.querySelectorAll(".quota-rings__track").length === 1 && workbuddy.querySelectorAll(".quota-rings__fill").length === 1,
-    "WorkBuddy 单环显示官网剩余积分和比例，详情可被读屏读取");
+    workbuddy.querySelectorAll(".quota-rings__track").length === 2 && workbuddy.querySelectorAll(".quota-rings__fill").length === 2,
+    "WorkBuddy 内外两环随剩余比例一起变，显示官网剩余积分，详情可被读屏读取");
+  // Every source draws the same two rings at Claude's size, whatever it knows.
+  const box = (ring: HTMLElement) => ring.querySelector("svg")!.getBoundingClientRect();
+  const radii = (ring: HTMLElement) => [...ring.querySelectorAll(".quota-rings__track")].map((circle) => circle.getAttribute("r")).join();
+  check(rings.every((ring) => box(ring).width === box(rings[0]).width && box(ring).height === box(rings[0]).height && radii(ring) === radii(rings[0])),
+    `四个来源的额度环一样大（${rings.map((ring) => `${box(ring).width}:${radii(ring)}`).join(" / ")}）`);
+  check(getComputedStyle(workbuddy).getPropertyValue("--quota-base").trim() === "#43b4a5"
+    && getComputedStyle(rings[2]).getPropertyValue("--quota-base").trim() === "#e8609a", "WorkBuddy 用青色，DSH 换成玫红");
+  // A window past its reset (the app closed for a while) is unknown: still a whole, dim outer ring.
+  await render({ ...data, claude: data.claude && { ...data.claude, fiveHour: null, sevenDay: { name: "", used: 40, resetsAt: null } } });
+  const claude = fixture.querySelector<HTMLElement>(".agent-quota__agent--claudeCode");
+  const outerFill = claude?.querySelector(".quota-rings__fill");
+  check(outerFill?.getAttribute("r") === "10" && outerFill.classList.contains("quota-rings__fill--unknown") && box(claude!).width === box(rings[0]).width,
+    "Claude 的 5 小时窗口未知时外环仍是完整的暗环，大小不变");
   const zero = filterQuotaUsages({ ...data, workbuddy: { ...data.workbuddy, remaining: 0 } }, ["workbuddy"]);
   await render(zero);
   check(fixture.querySelectorAll(".agent-quota__agent").length === 1 && fixture.querySelector(".agent-quota")?.textContent === "0 积分" &&
@@ -53,7 +66,7 @@ export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usag
   const dshRing = document.querySelector<HTMLElement>(".agent-quota__agent--dsh");
   check(rings.length === 3 && rings.every((ring) => ring.getBoundingClientRect().top === rings[0].getBoundingClientRect().top), "DSH 与 Claude、Codex 的额度环同排显示");
   check(dshRing?.textContent === "¥12.3456" && !dshRing.textContent.includes("%") && dshRing.getAttribute("aria-label")?.includes("不代表百分比"), "DSH 显示真实余额，并向读屏说明环的可用性语义");
-  check(dshRing?.getAttribute("role") === "img" && dshRing.tabIndex === 0 && dshRing.querySelectorAll(".quota-rings__fill").length === 2, "DSH 的余额环可聚焦，两圈分别表示余额和赠送余额可用");
+  check(dshRing?.getAttribute("role") === "img" && dshRing.tabIndex === 0 && dshRing.querySelectorAll(".quota-rings__fill").length === 2, "DSH 的余额环可聚焦，内外两圈都表示余额可用");
   const row = document.querySelector<HTMLButtonElement>(".agent-session");
   check(row?.querySelectorAll(".agent-provider-icon--dsh").length === 2 && row.querySelector(".agent-session__host")?.getAttribute("title") === "DeepSeek Harness", "DSH 会话和宿主都有独立标识");
   await act(async () => { row?.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });

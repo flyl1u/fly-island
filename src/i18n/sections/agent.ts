@@ -188,7 +188,7 @@ export const zhCN: AgentText = {
     dshWalletParts: (toppedUp, granted) => `充值 ${toppedUp} · 赠送 ${granted}`,
     dshAvailable: "余额可用",
     dshEmpty: "余额不足",
-    dshLegend: ["外圈：余额可用", "内圈：有赠送余额", "实心表示可用，不代表百分比。", "余额不是订阅额度，没有重置窗口。"],
+    dshLegend: ["内外两圈：余额可用", "实心表示可用，不代表百分比。", "余额不是订阅额度，没有重置窗口。"],
     fromDshApi: "DeepSeek API 余额接口",
     fromDshAccount: "DSH 账户余额接口",
     workbuddy: {
@@ -308,7 +308,7 @@ export const en: AgentText = {
     dshWalletParts: (toppedUp, granted) => `Topped up ${toppedUp} · Bonus ${granted}`,
     dshAvailable: "Balance available",
     dshEmpty: "Insufficient balance",
-    dshLegend: ["Outer: usable balance", "Inner: bonus present", "Filled = available; no percentage.", "Prepaid, no subscription window."],
+    dshLegend: ["Both rings: usable balance", "Filled = available; no percentage.", "Prepaid, no subscription window."],
     fromDshApi: "DeepSeek API balance endpoint",
     fromDshAccount: "DSH account balance endpoint",
     workbuddy: {
