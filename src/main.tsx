@@ -9,8 +9,15 @@ import { SettingsWindow } from "./windows/settings/SettingsWindow";
 import { I18nProvider } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
 import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
+import { shouldPreventContextMenu } from "./lib/contextMenu";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+
+window.addEventListener("contextmenu", (event) => {
+  const target = event.target instanceof Element ? event.target
+    : event.target instanceof Node ? event.target.parentElement : null;
+  if (shouldPreventContextMenu(target)) event.preventDefault();
+}, true);
 
 if (windowKind === null) {
   trackIslandTopEdge();
