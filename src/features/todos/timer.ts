@@ -31,6 +31,25 @@ export function normalizeTodoDuration(value: unknown): TodoDuration {
   return isTodoDuration(value) ? value : null;
 }
 
+/** Each todo keeps its own minutes; one todo's choice is never another's default. */
+export type TodoDurations = Readonly<Record<string, number>>;
+
+export function normalizeTodoDurations(value: unknown): TodoDurations {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter(([id, minutes]) => id && isTodoDuration(minutes)));
+}
+
+export function todoMinutes(durations: TodoDurations, id: string): number {
+  const minutes = Object.prototype.hasOwnProperty.call(durations, id) ? durations[id] : undefined;
+  return isTodoDuration(minutes) ? minutes : DEFAULT_TODO_MINUTES;
+}
+
+/** Sets one todo's minutes and drops todos that no longer exist, so the record stays small. */
+export function withTodoMinutes(durations: TodoDurations, id: string, minutes: number, todoIds: readonly string[]): TodoDurations {
+  const kept = Object.entries(durations).filter(([key]) => key !== id && todoIds.includes(key));
+  return Object.fromEntries([...kept, [id, minutes]]);
+}
+
 export function createTodoTimer(todoId: string, minutes: number, now: number): TodoTimer | null {
   if (!todoId || !isTodoDuration(minutes) || !Number.isSafeInteger(now) || now < 0) return null;
   const endsAt = now + minutes * 60_000;

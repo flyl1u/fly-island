@@ -6,7 +6,7 @@ import { ScheduledTodoList } from "./ScheduledTodoList";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
 import type { ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
-import type { TodoDuration, TodoTimer } from "./timer";
+import type { TodoDuration, TodoDurations, TodoTimer } from "./timer";
 import { withoutUpdateTodo } from "./updateTodo";
 import "./TodoNotebook.css";
 
@@ -16,7 +16,7 @@ export function TodoNotebook({
   draft,
   activeTodoId,
   timer,
-  lastDuration,
+  durations,
   onDurationChange,
   todoTimerEnabled = false,
   onListHeightChange,
@@ -48,8 +48,8 @@ export function TodoNotebook({
   draft: string;
   activeTodoId: string | null;
   timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  onDurationChange?: (minutes: number) => void;
+  durations?: TodoDurations;
+  onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
   onListHeightChange?: (height: number) => void;
   currentDate: string;
@@ -106,7 +106,7 @@ export function TodoNotebook({
           currentDate={currentDate}
           activeTodoId={activeTodoId}
           timer={timer}
-          lastDuration={lastDuration}
+          durations={durations}
           onDurationChange={onDurationChange}
           todoTimerEnabled={todoTimerEnabled}
           onListHeightChange={onListHeightChange}

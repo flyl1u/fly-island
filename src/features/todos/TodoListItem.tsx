@@ -8,7 +8,7 @@ import { UpdateTodoAction } from "./UpdateTodoAction";
 import { TodoTitleEditor } from "./TodoTitleEditor";
 import { TodoStartControl } from "./TodoStartControl";
 import { TodoTimerActions } from "./TodoTimerActions";
-import { DEFAULT_TODO_MINUTES, type TodoDuration, type TodoTimer } from "./timer";
+import { todoMinutes, type TodoDuration, type TodoDurations, type TodoTimer } from "./timer";
 import "./TodoListItem.css";
 
 export function TodoListItem({
@@ -16,7 +16,7 @@ export function TodoListItem({
   isTodayMode,
   isActive,
   timer = null,
-  lastDuration = DEFAULT_TODO_MINUTES,
+  durations = {},
   onDurationChange = () => {},
   todoTimerEnabled = false,
   canReorder,
@@ -39,8 +39,8 @@ export function TodoListItem({
   isTodayMode: boolean;
   isActive: boolean;
   timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  onDurationChange?: (minutes: number) => void;
+  durations?: TodoDurations;
+  onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
   canReorder: boolean;
   isDragging: boolean;
@@ -122,10 +122,10 @@ export function TodoListItem({
             isActive={isActive}
             activeTimer={activeTimer}
             timerEnabled={todoTimerEnabled}
-            minutes={lastDuration ?? DEFAULT_TODO_MINUTES}
+            minutes={todoMinutes(durations, todo.id)}
             startRef={startButton}
             onStart={onStart}
-            onDurationChange={onDurationChange}
+            onDurationChange={(minutes) => onDurationChange(todo.id, minutes)}
           />}
           <button
             className="todo-delete"

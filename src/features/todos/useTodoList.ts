@@ -15,7 +15,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
   const [activeTodoId, setActiveTodoId] = useState<string | null>(
     loadActiveTodoId,
   );
-  const { timer, lastDuration, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired, todoTimerEnabled);
+  const { timer, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired, todoTimerEnabled);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -143,7 +143,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     setDraftTodo,
     activeTodoId,
     timer,
-    lastDuration,
+    durations,
     chooseDuration,
     setActiveTodoId,
     addTodo,

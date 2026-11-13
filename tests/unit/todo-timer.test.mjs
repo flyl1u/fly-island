@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   activeTodoTimer, createTodoTimer, formatTodoCountdown, isTodoDuration,
-  isTodoTimerExpired, normalizeTodoDuration, normalizeTodoTimer, parseTodoMinutes, remainingTodoSeconds,
+  isTodoTimerExpired, normalizeTodoDuration, normalizeTodoDurations, normalizeTodoTimer, parseTodoMinutes, remainingTodoSeconds,
+  todoMinutes, withTodoMinutes,
 } from "../../src/features/todos/timer.ts";
 import {
-  ACTIVE_TODO_STORAGE_KEY, TODO_DURATION_STORAGE_KEY, TODO_TIMER_STORAGE_KEY,
-  loadActiveTodoId, loadTodoDuration, loadTodoTimer, loadTodos, saveTodoDuration, saveTodoTimer,
+  ACTIVE_TODO_STORAGE_KEY, TODO_DURATIONS_STORAGE_KEY, TODO_TIMER_STORAGE_KEY,
+  loadActiveTodoId, loadTodoDurations, loadTodoTimer, loadTodos, saveTodoDurations, saveTodoTimer,
 } from "../../src/features/todos/storage.ts";
 
 const NOW = 1_800_000_000_000;
@@ -103,35 +104,45 @@ test("timer storage restores deadlines and one-shot notification without changin
   const todos = [item("t1")];
   withStorage([[ACTIVE_TODO_STORAGE_KEY, "t1"], ["focusd-island-todos", JSON.stringify(todos)]], (values) => {
     assert.equal(loadTodoTimer(), null);
-    assert.equal(loadTodoDuration(), 15, "nothing saved yet starts at 15 minutes");
+    assert.deepEqual(loadTodoDurations(), {}, "nothing saved yet: every todo starts at 15 minutes");
     const timer = createTodoTimer("t1", 7, NOW);
     assert.equal(saveTodoTimer(timer), true);
-    assert.equal(saveTodoDuration(7), true);
+    assert.equal(saveTodoDurations({ t1: 7 }), true);
     assert.deepEqual(loadTodoTimer(), timer);
-    assert.equal(loadTodoDuration(), 7);
+    assert.deepEqual(loadTodoDurations(), { t1: 7 });
     saveTodoTimer({ ...timer, notified: true });
     assert.equal(loadTodoTimer().notified, true);
     assert.deepEqual(loadTodos(), todos);
     assert.equal(loadActiveTodoId(), "t1");
-    saveTodoDuration(null);
-    assert.equal(values.get(TODO_DURATION_STORAGE_KEY), "null");
-    assert.equal(loadTodoDuration(), 15, "an old no-limit choice becomes 15 minutes");
+    assert.equal(values.get(TODO_DURATIONS_STORAGE_KEY), JSON.stringify({ t1: 7 }));
+    values.set("focusd-island-todo-duration", "30");
+    assert.deepEqual(loadTodoDurations(), { t1: 7 }, "the old shared duration is no longer read");
     saveTodoTimer(null);
     assert.equal(values.has(TODO_TIMER_STORAGE_KEY), false);
   });
 });
 
+test("each todo keeps its own minutes, defaulting to 15", () => {
+  assert.deepEqual(normalizeTodoDurations({ t1: 25, t2: 0, t3: "9", t4: 240, "": 5 }), { t1: 25, t4: 240 });
+  for (const junk of [null, 7, "x", [3]]) assert.deepEqual(normalizeTodoDurations(junk), {});
+  const durations = withTodoMinutes({}, "t1", 25, ["t1", "t2"]);
+  assert.equal(todoMinutes(durations, "t1"), 25);
+  assert.equal(todoMinutes(durations, "t2"), 15, "another todo does not inherit t1's minutes");
+  assert.equal(todoMinutes(durations, "toString"), 15);
+  assert.deepEqual(withTodoMinutes({ t1: 25, gone: 9 }, "t2", 40, ["t1", "t2"]), { t1: 25, t2: 40 }, "deleted todos are dropped");
+});
+
 test("broken JSON and blocked storage fall back safely, and failed writes report false", () => {
-  withStorage([[TODO_TIMER_STORAGE_KEY, "{"], [TODO_DURATION_STORAGE_KEY, "241"]], (_values, storage) => {
+  withStorage([[TODO_TIMER_STORAGE_KEY, "{"], [TODO_DURATIONS_STORAGE_KEY, "{"]], (_values, storage) => {
     assert.equal(loadTodoTimer(), null);
-    assert.equal(loadTodoDuration(), 15);
+    assert.deepEqual(loadTodoDurations(), {});
     storage.getItem = () => { throw new Error("blocked"); };
     storage.setItem = () => { throw new Error("full"); };
     storage.removeItem = () => { throw new Error("blocked"); };
     assert.equal(loadTodoTimer(), null);
-    assert.equal(loadTodoDuration(), 15);
+    assert.deepEqual(loadTodoDurations(), {});
     assert.equal(saveTodoTimer(createTodoTimer("t1", 15, NOW)), false);
     assert.equal(saveTodoTimer(null), false);
-    assert.equal(saveTodoDuration(15), false);
+    assert.equal(saveTodoDurations({ t1: 15 }), false);
   });
 });

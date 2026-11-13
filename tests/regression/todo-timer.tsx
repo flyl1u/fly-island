@@ -7,7 +7,7 @@ import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { IslandApp } from "../../src/windows/island/IslandApp";
 import { getLocalDateString } from "../../src/utils/date";
-import { TODO_DURATION_STORAGE_KEY, TODO_TIMER_STORAGE_KEY } from "../../src/features/todos/storage";
+import { TODO_DURATIONS_STORAGE_KEY, TODO_TIMER_STORAGE_KEY } from "../../src/features/todos/storage";
 import type { TodoTimer } from "../../src/features/todos/timer";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 
@@ -171,7 +171,13 @@ try {
   check(!localStorage.getItem("focusd-island-active-todo"), "Disabled timer stops immediately");
   await settings({ todoTimerEnabled: true, enableTodoReorder: true });
   await start("t1");
-  check(stored()?.durationMinutes === 15, "开启番茄钟后点开始直接按默认 15 分钟倒计时");
+  check(!stored() && !document.querySelector(".todo-duration-picker") && localStorage.getItem("focusd-island-active-todo") === "t1",
+    "开启计时器后直接点开始只开始任务，不倒计时");
+  await open();
+  await start("t1");
+  await choose("t1");
+  await go();
+  check(stored()?.durationMinutes === 15, "点怀表里的开始才按默认 15 分钟倒计时");
   await settings({ todoTimerEnabled: false });
   check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t1" && !document.querySelector(".todo-countdown"), "Disabling cancels timer and preserves active todo");
   await advance(900_000);
@@ -180,7 +186,7 @@ try {
   check(!stored(), "Re-enabling never restores cancelled timer");
   await open();
   await start("t1");
-  localStorage.removeItem(TODO_DURATION_STORAGE_KEY);
+  localStorage.removeItem(TODO_DURATIONS_STORAGE_KEY);
   await mount();
   await open();
   check(watchLabel("t1")?.includes("15") && document.querySelector('[data-todo-id="t1"] .todo-timer-button + .todo-start'),
@@ -220,9 +226,9 @@ try {
   await click(".todo-timer-actions button:first-of-type");
   check(stored() === null && localStorage.getItem("focusd-island-active-todo") === null, "完成清除倒计时及进行中状态");
 
-  check(watchLabel("t2")?.includes("15"), "怀表记住上次的 15 分钟");
+  check(watchLabel("t2")?.includes("15"), "另一项待办有自己的默认 15 分钟");
   await choose("t2");
-  check(document.querySelector<HTMLInputElement>(".todo-duration-picker input")?.value === "15", "时间设置显示上次的 15 分钟");
+  check(document.querySelector<HTMLInputElement>(".todo-duration-picker input")?.value === "15", "时间设置显示这一项的 15 分钟");
   check(!document.querySelector("input[type=number]"), "Custom duration has no native spin buttons");
   await click(".number-stepper__button:last-child");
   check(document.querySelector<HTMLInputElement>(".number-stepper input")?.value === "20", "Custom duration steps by five");
@@ -238,7 +244,7 @@ try {
   await start("t2");
   check(stored() === null && watchLabel("t2")?.includes("7 分钟"), "结束立即取消当前倒计时，怀表记住 7 分钟");
   await start("t2");
-  check(stored()?.durationMinutes === 7 && collapsedTime()?.includes("07:00"), "一键开始直接沿用上次的 7 分钟");
+  check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t2", "直接点开始不沿用 7 分钟，只开始任务");
   await open();
   await start("t2");
   await choose("t2");
@@ -247,7 +253,12 @@ try {
   await escape();
   check(!document.querySelector(".todo-duration-picker") && !stored() && watchLabel("t2")?.includes("12 分钟"), "Esc 关闭设置，不开始但记住改后的 12 分钟");
   await start("t2");
-  check(stored()?.durationMinutes === 12, "关闭设置后点开始用改后的 12 分钟");
+  check(!stored(), "关闭设置后直接点开始仍不倒计时");
+  await open();
+  await start("t2");
+  await choose("t2");
+  await go();
+  check(stored()?.durationMinutes === 12, "再点怀表里的开始用改后的 12 分钟");
   await open();
   await start("t2");
   await choose("t2");
@@ -269,6 +280,7 @@ try {
   await open();
   await click('[data-todo-id="t1"] .todo-check');
   await choose("t1");
+  check(document.querySelector<HTMLInputElement>(".todo-duration-picker input")?.value === "15", "每项待办各记各的时长：任务一仍是 15 分钟，不跟任务二的 60 分钟");
   await escape();
   check(stored()?.todoId === "t2" && stored()?.durationMinutes === 60, "关闭另一项的时间设置保留当前倒计时");
   await choose("t1");
@@ -315,7 +327,7 @@ try {
   // English and both scale limits use the real constrained island, not a free-growing fixture.
   localStorage.setItem(LOCALE_STORAGE_KEY, "en");
   localStorage.setItem("focusd-island-todos", JSON.stringify([{ ...todo, completed: false }]));
-  localStorage.setItem(TODO_DURATION_STORAGE_KEY, "240");
+  localStorage.setItem(TODO_DURATIONS_STORAGE_KEY, JSON.stringify({ [todo.id]: 240 }));
   await mount();
   await open();
   await choose(todo.id);
