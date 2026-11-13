@@ -146,6 +146,7 @@ export function installDemoMocks(data: DemoContent) {
       case "get_agent_usage": return usage(38, 54, "Max");
       case "get_codex_usage": return usage(21, 47, "Pro");
       case "get_dsh_usage": return null;
+      case "get_workbuddy_usage": return { status: "signedOut" };
       case "get_agent_hooks_state": return { claudeCode: "installed", codex: "installed" };
       case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
       case "get_media_state": return media();

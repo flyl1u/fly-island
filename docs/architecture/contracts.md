@@ -78,6 +78,7 @@
 ## 其他
 
 - DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`focusd-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
+- WorkBuddy 使用 `open_workbuddy_login()`、`get_workbuddy_usage({ refreshNow?, cachedOnly? })` 和 `disconnect_workbuddy()`。读命令及 `workbuddy-usage-changed` 事件的状态为 `signedOut`、`loginRequired`、`ready`、`unavailable` 或 `connected`。只有 `connected` 带 `usage: { remaining, total, updatedAt }`，金额为数值，时间为 Unix 毫秒。事件发到 `main` 和 `settings`。远程 `workbuddy-sign-in` 窗口在本地 capability 之外。
 
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
@@ -97,6 +98,7 @@
 - 岛屿设置 `focusd-island-settings` 2026-11-11 新增 `autoCollapseSeconds`（整数秒 0–600，0 表示从不；鼠标离开展开的岛多少秒后收起）和 `tuckDelaySeconds`（整数秒 3–600，默认 30；收起的岛闲置多少秒后贴边成细线）。`autoCollapseSeconds` 最初只存 3 / 5 / 10 / 30 / 0，这些值照旧有效；非数字或旧数据没有这个字段时：`autoTuck` 为 true 读成 30，否则读成 0；超出范围按边界读。旧版本存过的 `autoTuckSeconds` 不再读取，`tuckDelaySeconds` 缺失时读成 30。
 - 岛屿设置 `focusd-island-settings` 的 `expandedScale`（展开后的大小）2026-11-10 重新可以设置；2026-11-11 起是 0.85–1.2 之间的任意值（滑块，步长 0.01）。3.0.0 存的 0.9 / 1 / 1.1（小 / 中 / 大）原样保留；更早版本存的任意数（原范围 0.75–1.4）读取时限制到 0.85–1.2 并取到百分位，非数字按 1。字段名和类型不变。
 - `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
+- `focusd-island-settings.agentQuotaSources` 保存可见额度环，候选值依次为 `claudeCode`、`codex`、`dsh`、`workbuddy`。旧数据缺少该字段时用原有会话来源开关迁移三种来源，并选中 WorkBuddy。保存空数组表示隐藏额度行。
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
 - 岛屿设置 `focusd-island-settings` 新增 `positionLocked`（布尔，默认 false）：只在明确保存为 true 时禁止拖动。旧数据缺失或类型无效时保持可拖动。`set_island_interaction` 增加可选参数 `positionLocked`，缺失时按 false；`start_island_drag` 在锁定时不启动拖动。复位和贴边隐藏不受影响。
 - Agent 页显示方式（2026-11-07 起）：设置项 `agentSessionView`（`list` / `cards` / `compact`，默认 `list`）、`agentArchiveMotion`（`slide` / `dissolve`，默认 `slide`）、`agentCardEffects`（`off` / `sparkle` / `gradient`，默认 `off`）；`AgentSessionSummary.contextTokens`（最近一次模型调用的上下文 tokens，Claude Code 取 usage 的输入、缓存读写与输出之和，Codex 取 `token_count` 的 `last_token_usage.total_tokens`；不知道时为 null）。

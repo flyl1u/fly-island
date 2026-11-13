@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { AgentEffortLabels } from "./effortLabels";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
@@ -221,6 +222,29 @@ export type DshUsage = {
 /** Read-only official wallet query using DSH's saved credential, cached in native memory. */
 export function getDshUsage() {
   return invoke<DshUsage | null>("get_dsh_usage");
+}
+
+/** Mirrors WorkbuddyUsage / WorkbuddyState in the native agent-status modules. */
+export type WorkbuddyUsage = { remaining: number; total: number; updatedAt: number };
+export type WorkbuddyState =
+  | { status: "signedOut" | "loginRequired" | "ready" | "unavailable" }
+  | { status: "connected"; usage: WorkbuddyUsage };
+
+export function getWorkbuddyUsage(refreshNow = false, cachedOnly = false) {
+  return invoke<WorkbuddyState>("get_workbuddy_usage", { refreshNow, cachedOnly });
+}
+
+export function openWorkbuddyLogin() {
+  return invoke<void>("open_workbuddy_login");
+}
+
+export function disconnectWorkbuddy() {
+  return invoke<void>("disconnect_workbuddy");
+}
+
+export const WORKBUDDY_USAGE_CHANGED = "workbuddy-usage-changed";
+export function onWorkbuddyUsageChanged(callback: (state: WorkbuddyState) => void) {
+  return listen<WorkbuddyState>(WORKBUDDY_USAGE_CHANGED, ({ payload }) => callback(payload));
 }
 
 export function getAgentHooksState() {

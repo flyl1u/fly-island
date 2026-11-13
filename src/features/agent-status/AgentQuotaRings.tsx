@@ -1,10 +1,11 @@
 import { useTranslation } from "../../i18n";
 import { IslandHoverCard, type HoverCardLine } from "../../components/IslandHoverCard";
 import type { AgentProvider, AgentUsage } from "./api";
-import { isStale, percentLeft, quotaRings, quotaSummaries, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
+import { isStale, percentLeft, quotaRings, quotaSummaries, usageLineCount, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
 import { useAgentUsages } from "./useAgentUsages";
 import { DshQuotaRing } from "./DshQuotaRing";
 import { QuotaRings } from "./QuotaRings";
+import { WorkbuddyQuotaRing } from "./WorkbuddyQuotaRing";
 import "./AgentQuotaRings.css";
 
 /** Each agent's ring colour, for the dot on its card: Claude's clay, Codex's blue. */
@@ -13,21 +14,20 @@ export const QUOTA_COLORS: Record<AgentProvider, string> = { claudeCode: "#e5a38
 /**
  * The Agent page's top row: Claude's, then Codex's quota rings, the 5-hour window outside and the
  * 7-day one inside. Like Codex's own usage page they show what is left: a full ring is a window
- * not touched yet, and the percentages beside them are the share left. Resting on or
- * focusing an agent's rings shows every window with its reset time. An agent without numbers has
- * no rings; with neither, there is no row. `usages` comes from the island, which sizes the page
- * for the row; without it the rings read their own.
+ * not touched yet, and the percentages beside them are the share left. DSH and WorkBuddy
+ * follow with their balances. The island passes the filtered usage and sizes the page for it.
  */
 export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
   const own = useAgentUsages(given === undefined);
   const usages = given ?? own;
   const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex]];
   const shown = agents.filter((entry): entry is [AgentProvider, AgentUsage] => quotaRings(entry[1]) !== null);
-  if (shown.length === 0 && !usages.dsh?.wallets.length) return null;
+  if (usageLineCount(usages) === 0) return null;
   return (
     <div className="agent-quota">
       {shown.map(([provider, usage]) => <AgentQuota key={provider} provider={provider} usage={usage} now={usages.readAt} />)}
       {usages.dsh && <DshQuotaRing usage={usages.dsh} now={usages.readAt} />}
+      {usages.workbuddy && <WorkbuddyQuotaRing usage={usages.workbuddy} now={Math.max(usages.readAt, usages.workbuddy.updatedAt)} />}
     </div>
   );
 }

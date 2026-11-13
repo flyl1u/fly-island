@@ -11,6 +11,7 @@ import { settingsCategoryFor } from "../../src/windows/settings/categories";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcutCalls } from "./settingsMocks";
 import { checkAppearance } from "./settingsAppearance";
+import { checkQuotaSettings } from "./settingsQuota";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -93,7 +94,7 @@ if (!automated) {
       // General has two more for its island timers (2026-11-11); Agents two for the session sources DSH
       // gained on 2026-11-13 (Claude Code and Codex).
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      const maxRows = category === "general" || category === "agents" ? 10 : category === "appearance" ? 12 : 8;
+      const maxRows = category === "agents" ? 11 : category === "general" ? 10 : category === "appearance" ? 12 : 8;
       if (category === "general") {
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
@@ -207,6 +208,7 @@ if (!automated) {
     await act(async () => { markerSwitch!.click(); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(replyMarkerCalls.join() === "true" && markerSwitch!.checked, "Switching the reply status marker on writes it");
+    await checkQuotaSettings(check, openPage);
 
     await openPage("agents"); await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     const hooksLink = [...document.querySelectorAll<HTMLButtonElement>(".editor-panel .settings-link-button")].find((button) => button.textContent === "安装/修复");

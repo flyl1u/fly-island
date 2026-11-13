@@ -1,9 +1,9 @@
 /** Two concentric rings in the current `--quota-color`, drawn on a 24-unit grid. */
-export function QuotaRings({ outer, inner, size = 22 }: { outer: number | null; inner: number | null; size?: number }) {
+export function QuotaRings({ outer, inner, size = 22, single = false }: { outer: number | null; inner?: number | null; size?: number; single?: boolean }) {
   return (
     <svg className="quota-rings" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <Ring radius={10} left={outer} />
-      <Ring radius={5.5} left={inner} />
+      {!single && <Ring radius={5.5} left={inner ?? null} />}
     </svg>
   );
 }

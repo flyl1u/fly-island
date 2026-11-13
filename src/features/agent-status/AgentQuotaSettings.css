@@ -1,0 +1,27 @@
+.agent-quota-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px var(--space-md);
+}
+
+.agent-quota-settings__source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--color-text);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.agent-quota-settings__source input {
+  margin: 0;
+  flex: none;
+  accent-color: var(--color-accent);
+}
+
+.agent-quota-settings__source input:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: 2px;
+}

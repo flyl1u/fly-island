@@ -1,4 +1,5 @@
-import type { AgentUsage, DshUsage, UsageWindow } from "./api";
+import type { AgentUsage, DshUsage, UsageWindow, WorkbuddyUsage } from "./api";
+import type { AgentQuotaSource } from "../appearance/types";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
 import type { Translations } from "../../i18n/types";
 
@@ -60,9 +61,19 @@ export function withoutPastWindows(usage: AgentUsage | null, now: number): Agent
 }
 
 /** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
-export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; dsh?: DshUsage | null; readAt: number };
+export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; dsh?: DshUsage | null; workbuddy?: WorkbuddyUsage | null; readAt: number };
 
 export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, dsh: null, readAt: 0 };
+
+export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQuotaSource[]): AgentUsages {
+  return {
+    claude: sources.includes("claudeCode") ? usages.claude : null,
+    codex: sources.includes("codex") ? usages.codex : null,
+    dsh: sources.includes("dsh") ? usages.dsh : null,
+    workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
+    readAt: usages.readAt,
+  };
+}
 
 /** Has a window to show. */
 export function hasUsageNumbers(usage: AgentUsage | null): boolean {
@@ -81,9 +92,9 @@ export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | nul
   return outer || inner ? { outer, inner } : null;
 }
 
-/** How many usage rows the Agent page shows, for its height: one row holds both agents' rings. */
+/** The Agent page reserves one row when at least one selected source has data. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.workbuddy ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

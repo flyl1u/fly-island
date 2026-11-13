@@ -85,6 +85,17 @@ test("notch dimensions and text size have independent defaults, bounds and reset
   assert.equal(reset.positionLocked, true);
 });
 
+test("quota rings default to all sources and migrate the old session switches once", () => {
+  assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy"]);
+  assert.deepEqual(normalizeSettings({ agentShowDsh: false }).agentQuotaSources, ["claudeCode", "codex", "workbuddy"]);
+  assert.deepEqual(normalizeSettings({ agentShowCodex: false, agentShowClaudeCode: false }).agentQuotaSources, ["dsh", "workbuddy"]);
+  const optedIn = normalizeSettings({ agentShowDsh: false, agentQuotaSources: ["workbuddy", "dsh", "dsh", "unknown"] });
+  assert.deepEqual(optedIn.agentQuotaSources, ["dsh", "workbuddy"]);
+  assert.equal(optedIn.agentShowDsh, false);
+  assert.deepEqual(normalizeSettings({ agentQuotaSources: [] }).agentQuotaSources, []);
+  assert.deepEqual(withAppearanceFrom(optedIn, DEFAULT_SETTINGS).agentQuotaSources, ["dsh", "workbuddy"]);
+});
+
 test("options no longer in Settings load as their defaults, whatever was saved", () => {
   const saved = {
     marginY: 48,

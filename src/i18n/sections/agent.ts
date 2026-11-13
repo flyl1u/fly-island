@@ -70,6 +70,7 @@ export type AgentText = {
     dshLegend: string[];
     fromDshApi: string;
     fromDshAccount: string;
+    workbuddy: { label: string; credits: (value: string) => string; balance: (remaining: string, total: string) => string; percent: (value: number) => string; source: string };
     fiveHour: string;
     sevenDay: string;
     /** Compact time left: "1d10h", "3h20m", "42m". */
@@ -188,6 +189,13 @@ export const zhCN: AgentText = {
     dshLegend: ["外圈：余额可用", "内圈：有赠送余额", "实心表示可用，不代表百分比。", "余额不是订阅额度，没有重置窗口。"],
     fromDshApi: "DeepSeek API 余额接口",
     fromDshAccount: "DSH 账户余额接口",
+    workbuddy: {
+      label: "WorkBuddy 积分",
+      credits: (value) => `${value} 积分`,
+      balance: (remaining, total) => `剩余 ${remaining} / ${total} 积分`,
+      percent: (value) => `剩余 ${value}%`,
+      source: "WorkBuddy 官网",
+    },
     fiveHour: "5 小时",
     sevenDay: "7 天",
     resetsIn: ({ days, hours, minutes }) =>
@@ -299,6 +307,13 @@ export const en: AgentText = {
     dshLegend: ["Outer: usable balance", "Inner: bonus present", "Filled = available; no percentage.", "Prepaid, no subscription window."],
     fromDshApi: "DeepSeek API balance endpoint",
     fromDshAccount: "DSH account balance endpoint",
+    workbuddy: {
+      label: "WorkBuddy credits",
+      credits: (value) => `${value} credits`,
+      balance: (remaining, total) => `${remaining} of ${total} credits left`,
+      percent: (value) => `${value}% left`,
+      source: "WorkBuddy website",
+    },
     fiveHour: "5h",
     sevenDay: "7d",
     resetsIn: ({ days, hours, minutes }) => (days > 0 ? `resets in ${days}d${hours}h` : hours > 0 ? `resets in ${hours}h${minutes}m` : `resets in ${minutes}m`),

@@ -1,10 +1,17 @@
 // The Tauri commands the settings window calls, answered as the island would, for the settings
 // regression pages. Importing this installs the mocks; the arrays record what was called.
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
+import { emit } from "@tauri-apps/api/event";
+import type { WorkbuddyState } from "../../src/features/agent-status/api";
 import type { MailSnapshot } from "../../src/features/messages/mail/api";
 
 let revision = 0;
 export const commands: string[] = [];
+let workbuddy: WorkbuddyState = { status: "signedOut" };
+export async function setMockWorkbuddy(state: WorkbuddyState) {
+  workbuddy = state;
+  await emit("workbuddy-usage-changed", state);
+}
 export const mailCalls: { command: string; args: Record<string, unknown> }[] = [];
 const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot => ({
   revision: ++revision, email, configured: true, enabled: true, syncing: false, status: "connected",
@@ -22,6 +29,12 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "get_workbuddy_usage": {
+      if (args.refreshNow) return setMockWorkbuddy({ status: "connected", usage: { remaining: 50, total: 500, updatedAt: Date.now() } }).then(() => workbuddy);
+      return workbuddy;
+    }
+    case "open_workbuddy_login": return null;
+    case "disconnect_workbuddy": return setMockWorkbuddy({ status: "signedOut" });
     case "netease_plugin_status": return { state: "none", supported: true, tested: true, version: "3.1.41", arch: "x64", installDir: "D:\\CloudMusic", running: false, legacyInfLink: false, pluginDir: "C:\\betterncm\\plugins" };
     case "install_netease_plugin":
     case "uninstall_netease_plugin": return { keptForeignLoader: false, preservedFiles: [] };

@@ -5,7 +5,7 @@ import "../../src/styles/tokens.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
-import { DSH_USAGE, checkDsh } from "./agent-dsh";
+import { DSH_USAGE, checkDsh, checkWorkbuddyRing } from "./agent-dsh";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
@@ -32,10 +32,12 @@ const results = document.getElementById("results")!;
 try {
   if (params.has("test")) {
     const messages: string[] = [];
-    await checkDsh(root, sessions, usages, (condition, message) => {
+    const check = (condition: unknown, message: string) => {
       if (!condition) throw new Error(message);
       messages.push(`PASS ${message}`);
-    }, focusCalls);
+    };
+    await checkDsh(root, sessions, usages, check, focusCalls);
+    await checkWorkbuddyRing(root, sessions, usages, check);
     results.textContent = messages.join("\n");
     results.dataset.result = "passed";
   } else {
