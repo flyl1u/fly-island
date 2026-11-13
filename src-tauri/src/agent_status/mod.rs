@@ -10,6 +10,7 @@ mod hooks_state;
 mod host_icon;
 mod codex_usage;
 mod dsh_credentials;
+mod dsh_desktop;
 mod dsh_sessions;
 pub(crate) mod dsh_usage;
 mod claude_desktop_usage;

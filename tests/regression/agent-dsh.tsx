@@ -36,6 +36,20 @@ export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usag
     await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[dsh]} view={view} hostDisplay="both" showUsage usages={{ claude: null, codex: null, dsh: DSH_USAGE, readAt: Date.now() }} /></I18nProvider>));
     check(document.querySelector(".agent-card .agent-provider-icon--dsh") && document.querySelector(".agent-quota__agent--dsh"), `DSH 在 ${view} 视图中显示卡片与余额`);
   }
+  const community = { ...dsh, host: { name: "DSH Desktop (dataelement)", kind: "app" as const, exe: null } };
+  await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[community]} hostDisplay="both" /></I18nProvider>));
+  check(document.querySelector(".agent-session__host-name")?.textContent === "DSH Desktop (dataelement)" &&
+    document.querySelectorAll(".agent-provider-icon--dsh").length === 2, "社区 DSH 宿主显示具体程序名并保留 DS 图标");
+  const fixture = document.getElementById("fixture");
+  const originalWidth = fixture?.style.width ?? "";
+  if (fixture) fixture.style.width = "280px";
+  for (const view of ["list", "cards", "compact"] as const) {
+    await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[community]} view={view} hostDisplay="both" /></I18nProvider>));
+    const host = document.querySelector<HTMLElement>(".agent-session__host");
+    check(host && fixture && host.getBoundingClientRect().right <= fixture.getBoundingClientRect().right + 1,
+      `社区 DSH 宿主在 280px ${view} 视图中不溢出`);
+  }
+  if (fixture) fixture.style.width = originalWidth;
   await act(async () => root.render(<I18nProvider><QuotaAlertPopup alert={{ kind: "low", agent: "dsh", window: "balance", used: 100, resetsAt: null }} /></I18nProvider>));
   check(document.querySelector("[role=status]")?.textContent === "DSH 余额不足", "DSH 余额预警不用订阅百分比文案");
 }

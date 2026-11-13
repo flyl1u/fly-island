@@ -167,7 +167,7 @@ pub(super) fn focus_session(
     session_id: Option<&str>,
 ) -> bool {
     if provider == "dsh" {
-        return super::dsh_sessions::focus_desktop();
+        return super::dsh_sessions::focus_desktop(session_id);
     }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());

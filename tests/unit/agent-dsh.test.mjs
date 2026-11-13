@@ -43,3 +43,12 @@ test("DSH source preference survives old settings and filters sessions independe
   assert.deepEqual(filterSessions(sessions, { claudeCode: false, codex: false, dsh: true }), sessions.slice(2));
   assert.equal(filterSessions(sessions, { claudeCode: true, codex: true }), sessions, "old callers still show DSH");
 });
+
+
+test("DSH host labels distinguish community apps", async () => {
+  const { dshHostLabel } = await import("../../src/features/agent-status/dshHost.ts");
+  assert.equal(dshHostLabel("DeepSeek Harness"), "DSH");
+  assert.equal(dshHostLabel("DSH Desktop (dataelement)"), "DSH Desktop (dataelement)");
+  assert.equal(dshHostLabel("DSH Desktop (anywhere)"), "DSH Desktop (anywhere)");
+  assert.equal(dshHostLabel("Code"), null);
+});

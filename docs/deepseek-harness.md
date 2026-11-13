@@ -4,7 +4,17 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 
 ## 本地来源
 
-优先读取旧版桌面端的 `%APPDATA%/dsh-desktop/harness/`。没有该目录时，只有存在 `~/.dsh/profiles/desktop/` 才读取新版共享的 `~/.dsh/`，避免把单独安装的 Web/CLI 会话当作桌面端会话，也避免导入前后重复展示。
+2026-11-13 纠正：%APPDATA%/dsh-desktop/harness 是 DataElement 社区端的独立引擎根，不能称为“旧版官方端”。官方仓库有 Electron 桌面源码，但全部 38 个 GitHub Release 均无附件，未确认公开官方 Windows 安装包。本机是 DataElement DSH Desktop 0.12.1。
+
+同时读取 DataElement 独立库、共享 ~/.dsh、anywhere Beta ~/.dsh-beta 和社区端保存的目录选择；按原始会话 ID 去重，保留最新检查点，不再要求 Desktop profile。共享库不能判断最初创建程序，按当前兼容宿主或通用 DSH 展示。
+
+| 支持程序 / GitHub | Stars（2026-11-13） | Windows exe | 引擎数据 |
+|---|---:|---|---|
+| [官方源码 Desktop](https://github.com/deepseek-ai/deepseek-harness) | 279,782 | DeepSeek Harness.exe | ~/.dsh |
+| [DataElement](https://github.com/dataelement/dsh-desktop) | 18,424 | DSH Desktop.exe | %APPDATA%/dsh-desktop/harness |
+| [anywhere-labs Stable/Beta/NEXT](https://github.com/anywhere-labs/dsh-desktop) | 35,860 | DSH Desktop.exe / DSH Desktop Beta.exe / DSH NEXT.exe | ~/.dsh / ~/.dsh-beta；支持已保存绝对目录选择 |
+
+目录选择只用于会话读取，不改变余额凭据来源。仅通过其他进程环境变量配置的任意目录不自动发现。完整源码依据、凭据、窗口和限制见 [调研记录](investigations/deepseek-harness-integration.md)。
 
 | 文件 | 用途 |
 |---|---|
@@ -53,7 +63,9 @@ DSH 官方账户采用充值与赠送钱包；没有查到本地持久化的余�
 
 官方 Host 有 HTTP/RPC、WebSocket 流，桌面宿主通过启动 IPC 获得连接 URL；端口可以由系统分配，连接要认证。`desktop-service/installation.json`、`outbox/` 不是会话或余额发现接口。本次不抓取内存中的私有连接 URL、不扫描端口、不修改 profile 来开放服务；读取本地检查点即可满足离线会话列表，余额沿用明确的官方只读接口。
 
-点击 DSH 会话优先恢复并聚焦 `DeepSeek Harness.exe` 的窗口；找不到已打开的窗口时交给官方 `dsh://open`。当前官方 `open-url` 只接受 `dsh://open`（及末尾 `/`），没有指定会话的公开路由，**因此不能跳到具体对话**。Windows 阻止前台切换时沿用现有闪烁提示行为。
+点击会话根据进程完整路径的 exe 名和只读 Electron 包 repository 优先聚焦所属程序；共享/无法判断归属时取 DSH 主窗口 Z-order 最前者（作为最近使用的近似，没有长期激活历史）。不依赖窗口标题。同名社区包无法识别时保留通用标签。托盘隐藏进程仍判定存活，Windows 阻止前台切换时闪烁提示。
+
+官方 dsh://open 仅打开主窗；DataElement dsh-desktop://、NEXT dsh-app:// 为内部资源协议，未找到选中社区版本可稳定调用的外部指定会话路由。因此本次只聚焦主窗，不能切换具体对话；无可用窗口时返回现有未找到反馈，不调用系统默认协议，避免误开另一安装。
 
 工具审批是 Host 的临时交互状态，不能从本地检查点准确还原；审批等待可能暂时显示运行或可能中断。等待提问可读，但在岛上回答、工具审批、任务/子 Agent 详细进度和准确失败原因不在本次接入范围。DSH 不安装 Claude/Codex 的钩子；这两个来源的钩子状态契约保持原样。
 
@@ -67,10 +79,10 @@ DSH 官方账户采用充值与赠送钱包；没有查到本地持久化的余�
 
 ## 本机只读核对
 
-2026-11-12 本机只读核对：临时 Rust 测试调用生产解析函数，读取到 4 个非空会话，状态分布为已结束 4，已退出 4，最近 2 小时为 0；核对时 DSH 未运行。官方 API 余额为 CNY 2.00（充值 2.00、赠送 0.00），可用。未输出会话标题/正文、token 或 key；临时探测测试已移除。账户 grant 来源仅有虚构样例解析测试，仍需真实登录环境人工确认。
+2026-11-13 注册表、exe 版本和 Electron 包清单交叉确认：本机为 DataElement DSH Desktop 0.12.1。核对时无 DSH 进程；生产解析得到 5 个会话，全部已结束、已退出，宿主 DataElement。不输出标题、正文、用户名或凭据，不再次请求余额。临时核对测试已移除。
 
 ## English
 
 DeepSeek Harness desktop sessions are read offline from its versioned projection checkpoints, with distinct DS text icons, the existing session cards and source settings. DSH uses prepaid wallets rather than subscription windows: its teal rings indicate balance/bonus availability and show currency amounts, never an invented percentage. Balance queries reuse the default saved DSH credential in native memory, use fixed official HTTPS endpoints, and cache only sanitized amounts in memory. Credentials and conversation contents are not copied into diagnostics or fixtures.
 
-The official desktop protocol currently opens only the main window (`dsh://open`), not an individual conversation. Cached state can lag; transient permission prompts and precise failure outcomes are unavailable offline. In-island approval/reply handling remains with Claude/Codex. See the source links and the manual verification items above.
+Official source Desktop and DataElement / anywhere-labs community clients are distinguished by executable paths and Electron package metadata. Shared and isolated stores are merged by session ID. The official repository contains Desktop source, but its 38 inspected releases have no installer assets. Clicking a session focuses its running owner or the frontmost DSH main window; no stable external conversation deep link was found. Environment-only custom directories and real multi-client window behavior require manual verification.

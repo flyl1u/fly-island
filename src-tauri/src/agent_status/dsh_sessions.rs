@@ -13,26 +13,15 @@ const MAX_CHECKPOINT_BYTES: u64 = 512 * 1024;
 const MAX_CHECKPOINTS: usize = 512;
 type CachedJson = ((u64, Option<SystemTime>), Value);
 static CHECKPOINTS: Mutex<Option<HashMap<PathBuf, CachedJson>>> = Mutex::new(None);
-pub(super) const DESKTOP_APPS: &[&str] = &["deepseek harness", "dsh-desktop"];
+pub(super) const DESKTOP_APPS: &[&str] = super::dsh_desktop::APPS;
 
-pub(super) fn desktop_exe() -> Option<String> {
-    DESKTOP_APPS.iter().find_map(|app| window_focus::open_app_exe(app)).or_else(|| {
-        // A tray-hidden desktop can still run tasks; absence of a visible window is not exit.
-        DESKTOP_APPS.iter().find_map(|app| {
-            crate::win32::process_tree::process_ids_named(&format!("{app}.exe"))
-                .into_iter().find_map(crate::win32::process::image_path)
-        })
-    })
-}
-
-/// Older Desktop releases have an isolated home; newer releases share ~/.dsh. Prefer the
-/// isolated store when present, so imported sessions are not duplicated or charged twice.
+/// Preserve the balance credential source priority; extra session locators do not select credentials.
 pub(super) fn data_root(home: &Path) -> Option<PathBuf> {
-    let desktop = env::var_os("APPDATA").map(PathBuf::from)?
-        .join("dsh-desktop").join("harness");
-    if desktop.is_dir() { return Some(desktop); }
-    let shared = home.join(".dsh");
-    shared.join("profiles").join("desktop").is_dir().then_some(shared)
+    let isolated = env::var_os("APPDATA").map(PathBuf::from).map(|p| p.join("dsh-desktop/harness"));
+    isolated.filter(|p| p.is_dir()).or_else(|| {
+        let shared = home.join(".dsh");
+        shared.join("storages/session_projcache/sessions").is_dir().then_some(shared)
+    })
 }
 
 pub(super) fn read_json(path: &Path, maximum: u64) -> Option<Value> {
@@ -135,28 +124,52 @@ pub(super) fn list_from_root(root: &Path, now: i64, window_ms: i64, exe: Option<
     }).collect()
 }
 
-pub(super) fn list_sessions(home: &Path, now: i64, window_ms: i64) -> Vec<AgentSessionSummary> {
-    let Some(root) = data_root(home) else { return Vec::new(); };
-    list_from_root(&root, now, window_ms, desktop_exe().as_deref())
+fn merge_session(sessions: &mut HashMap<String, AgentSessionSummary>, session: AgentSessionSummary) {
+    if sessions.get(&session.session_id).is_none_or(|old| session.updated_at > old.updated_at) {
+        sessions.insert(session.session_id.clone(), session);
+    }
 }
 
-pub(super) fn focus_desktop() -> bool {
-    let focused = desktop_exe().and_then(|exe| {
-        let app = window_focus::app_name(&exe);
-        window_focus::focus_session_window(&SessionHints::default(), &[], Some(&app))
+pub(super) fn list_sessions(home: &Path, now: i64, window_ms: i64) -> Vec<AgentSessionSummary> {
+    let mut sessions: HashMap<String, AgentSessionSummary> = HashMap::new();
+    for (root, owner) in super::dsh_desktop::roots(home, env::var_os("APPDATA").map(PathBuf::from)) {
+        let exe = super::dsh_desktop::exe_for(owner);
+        let name = exe.as_deref().map(super::dsh_desktop::name).unwrap_or(owner);
+        for mut session in list_from_root(&root, now, window_ms, exe.as_deref()) {
+            if let Some(host) = &mut session.host {
+                host.name = name.to_string();
+            }
+            merge_session(&mut sessions, session);
+        }
+    }
+    let mut sessions: Vec<_> = sessions.into_values().collect();
+    sessions.sort_by_key(|session| std::cmp::Reverse(session.updated_at));
+    sessions
+}
+
+pub(super) fn focus_desktop(id: Option<&str>) -> bool {
+    let owner = crate::system::windows_home_dir().ok().and_then(|home| {
+        list_sessions(&home, super::snapshot::current_unix_millis(), i64::MAX)
+            .into_iter().find(|session| Some(session.session_id.as_str()) == id)
+            .and_then(|session| session.host).and_then(|host| host.exe)
     });
-    focused.is_some() || tauri_plugin_opener::open_url("dsh://open", None::<&str>).is_ok()
+    let windows = super::dsh_desktop::windows();
+    let target = super::dsh_desktop::preferred_window(&windows, owner.as_deref()).and_then(|index| windows.get(index));
+    target.is_some_and(|(_, pid)| window_focus::focus_session_window(&SessionHints::default(), &[*pid], None).is_some())
 }
 
 /// Do not mark every desktop conversation as read merely because the app is foreground.
 pub(super) fn session_in_front(home: &Path, id: &str) -> bool {
-    let Some(root) = data_root(home) else { return false; };
-    let current = ["desktop", "web"].iter().find_map(|profile| {
-        read_json(&root.join("profiles").join(profile).join("desktop-storage.json"), MAX_CHECKPOINT_BYTES)
-    });
-    current.as_ref().and_then(|v| v["dsh.sessions.current"].as_str())
-        .and_then(|current| serde_json::from_str::<Value>(current).ok())
-        .is_some_and(|current| current["sessionId"] == id)
+    super::dsh_desktop::roots(home, env::var_os("APPDATA").map(PathBuf::from)).into_iter().any(|(root, owner)| {
+        let front = crate::win32::process::window_process_id(crate::win32::window::foreground_window());
+        let front_exe = crate::win32::process::image_path(front);
+        if !front_exe.as_deref().is_some_and(|exe| super::dsh_desktop::owns(owner, exe)) { return false; }
+        ["desktop", "web"].iter().any(|profile| {
+            read_json(&root.join("profiles").join(profile).join("desktop-storage.json"), MAX_CHECKPOINT_BYTES)
+                .and_then(|v| v["dsh.sessions.current"].as_str().and_then(|s| serde_json::from_str::<Value>(s).ok()))
+                .is_some_and(|current| current["sessionId"] == id)
+        })
+    })
 }
 
 #[cfg(test)]
