@@ -46,8 +46,6 @@ type ExpandedHeightInput = {
   page: IslandPage;
   todoPageMode: TodoPageMode;
   todos: TodoItem[];
-  /** Actual row heights, including the inline duration picker and time-up actions. */
-  todoListHeight?: number | null;
   hasMediaCommandError: boolean;
   messageSource: MessageView;
   isReadingMail: boolean;
@@ -76,7 +74,6 @@ export function getExpandedIslandHeight({
   page,
   todoPageMode,
   todos,
-  todoListHeight = null,
   hasMediaCommandError,
   messageSource,
   isReadingMail,
@@ -112,9 +109,8 @@ export function getExpandedIslandHeight({
       ? TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT
       : todoPageMode === "daily"
         ? DAILY_NOTE_EXPANDED_ISLAND_HEIGHT
-      : Math.min(maxPanelHeight, BASE_EXPANDED_ISLAND_HEIGHT + (todoListHeight === null
-        ? Math.max(0, visibleTodoRows - TODO_GROW_START_ROWS) * TODO_ROW_HEIGHT
-        : Math.max(0, todoListHeight - (TODO_GROW_START_ROWS * TODO_ROW_HEIGHT - 6))))
+      : BASE_EXPANDED_ISLAND_HEIGHT +
+        Math.max(0, visibleTodoRows - TODO_GROW_START_ROWS) * TODO_ROW_HEIGHT
     : page === "music"
       ? MUSIC_EXPANDED_ISLAND_HEIGHT + (hasMediaCommandError ? 24 : 0)
       : page === "shelf"

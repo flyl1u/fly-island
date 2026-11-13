@@ -6,7 +6,6 @@ import { ScheduledTodoList } from "./ScheduledTodoList";
 import { TodoNotebookTasks } from "./TodoNotebookTasks";
 import { TodoNotebookTopline } from "./TodoNotebookTopline";
 import type { ScheduledTodo, TodoArchive, TodoItem, TodoPageMode } from "./types";
-import type { TodoDuration, TodoTimer } from "./timer";
 import { withoutUpdateTodo } from "./updateTodo";
 import "./TodoNotebook.css";
 
@@ -15,10 +14,6 @@ export function TodoNotebook({
   dailyNote,
   draft,
   activeTodoId,
-  timer,
-  lastDuration,
-  todoTimerEnabled = false,
-  onListHeightChange,
   currentDate,
   pageMode,
   archives,
@@ -46,10 +41,6 @@ export function TodoNotebook({
   dailyNote: string;
   draft: string;
   activeTodoId: string | null;
-  timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  todoTimerEnabled?: boolean;
-  onListHeightChange?: (height: number) => void;
   currentDate: string;
   pageMode: TodoPageMode;
   archives: TodoArchive[];
@@ -69,7 +60,7 @@ export function TodoNotebook({
   onDeleteScheduledTodo: (id: string) => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
-  onStartTodo: (id: string, duration?: TodoDuration) => void;
+  onStartTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
   onReorderTodo: (sourceId: string, targetId: string) => void;
   onShowDaily: () => void;
@@ -103,10 +94,6 @@ export function TodoNotebook({
           draftDate={draftDate}
           currentDate={currentDate}
           activeTodoId={activeTodoId}
-          timer={timer}
-          lastDuration={lastDuration}
-          todoTimerEnabled={todoTimerEnabled}
-          onListHeightChange={onListHeightChange}
           enableTodoReorder={enableTodoReorder}
           scrollStartRows={scrollStartRows}
           onDraftChange={onDraftChange}

@@ -20,7 +20,6 @@ import { useIslandPreparing } from "./useIslandPreparing";
 import { useMotionLayer } from "./useMotionLayer";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
-import type { TodoTimer } from "../../features/todos/timer";
 import "./IslandShell.css";
 
 type IslandShellProps = {
@@ -40,7 +39,6 @@ type IslandShellProps = {
   showTitle: boolean;
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
-  todoTimer?: TodoTimer | null;
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
@@ -100,7 +98,6 @@ export function IslandShell({
   showTitle,
   showCollapsedText,
   collapsedTaskTitle,
-  todoTimer = null,
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
@@ -163,9 +160,7 @@ export function IslandShell({
     .filter(Boolean)
     .join(" ");
   const collapsedLabel = showCollapsedText
-    ? todoTimer
-      ? t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "")
-      : agentSession
+    ? agentSession
       ? t.island.agentSession(agentSession.label, agentSession.title)
       : collapsedTaskTitle
       ? t.messages.collapsedTask(collapsedTaskTitle)
@@ -211,7 +206,6 @@ export function IslandShell({
           showCollapsedText={showCollapsedText}
           collapsedLabel={collapsedLabel}
           collapsedTaskTitle={collapsedTaskTitle}
-          todoTimer={todoTimer}
           collapsedTodoCount={collapsedTodoCount}
           collapsedItem={collapsedItem}
           collapsedLayout={collapsedLayout}

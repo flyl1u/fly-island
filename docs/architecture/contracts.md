@@ -11,8 +11,6 @@
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |
-| `focusd-island-todo-timer`（单轮待办倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；`notified` 在首次到时提醒前写为 true，旧记录缺此字段按 false；结束、完成、删除或切换待办时清除） | `features/todos/storage.ts` |
-| `focusd-island-todo-duration`（上次选择的整数分钟数 1–240，JSON `null` 表示不限时；没有或损坏时按不限时） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |
@@ -92,6 +90,6 @@
 - 回复状态标记（2026-11-08 起换位置）：写在 Claude 配置目录（`CLAUDE_CONFIG_DIR`，默认 `~/.claude`）下的 `rules/focusd-island-reply-marker.md`，块标记 `<!-- focusd-island: reply marker v2 -->`；关掉时只删除含这个标记的文件。v1 写在 `CLAUDE.md` 里的块在打开或关掉时移除，`CLAUDE.md` 的其他内容不动；软链文件一律不写。
 - Agent 页排列（2026-11-08 起）：设置项 `agentSessionSort`（`status` / `recent` / `firstSeen`，默认 `status`；旧数据没有这个字段时按 `status`，会改变升级前的顺序）、`agentSessionGroup`（`computer` / `project` / `none`，默认 `computer`）；`agentHostDisplay` 的默认值改为 `icon`（已保存的值不变）。
 
-- 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `focusd-island-todo-timer`，保留进行中 ID 和上次时长。
+- 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式。番茄钟已移除：旧设置里的 `todoTimerEnabled` 和旧版本留下的 `focusd-island-todo-timer` / `focusd-island-todo-duration` 不再读写，留着不动。
 
 总览见 [overview.md](overview.md)。

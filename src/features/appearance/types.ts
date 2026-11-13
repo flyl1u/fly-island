@@ -111,7 +111,6 @@ export type IslandSettings = {
   carryOverIncompleteTodos: boolean;
   enableTodoReorder: boolean;
   todoReorderVersion: 1;
-  todoTimerEnabled: boolean;
   rotateTodos: boolean;
   todoRotationSeconds: number;
   autoTuck: boolean;

@@ -3,19 +3,16 @@ import { createTodoId, loadActiveTodoId, loadTodos, saveActiveTodoId, saveTodos 
 import { dismissUpdatePrompt } from "../updater/updaterController";
 import { UPDATE_TODO_ID } from "./updateTodo";
 import { useUpdateTodo } from "./useUpdateTodo";
-import { useTodoTimer } from "./useTodoTimer";
-import type { TodoDuration } from "./timer";
 import type { TodoItem } from "./types";
 
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
-export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false) {
+export function useTodoList(onStartTodo: () => void) {
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   useUpdateTodo(todos, setTodos);
   const [draftTodo, setDraftTodo] = useState("");
   const [activeTodoId, setActiveTodoId] = useState<string | null>(
     loadActiveTodoId,
   );
-  const { timer, lastDuration, startTimer, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired, todoTimerEnabled);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -43,8 +40,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
       ),
     );
     setActiveTodoId((currentId) => (currentId === id ? null : currentId));
-    clearTimer(id);
-  }, [clearTimer]);
+  }, []);
 
   const updateTodoTitle = useCallback((id: string, title: string) => {
     const nextTitle = title.trim();
@@ -61,24 +57,22 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
   }, []);
 
   const startTodo = useCallback(
-    (id: string, duration?: TodoDuration) => {
+    (id: string) => {
       const todo = todos.find((item) => item.id === id);
 
       if (!todo || todo.completed) {
         return;
       }
 
-      if (activeTodoId === id && duration === undefined) {
+      if (activeTodoId === id) {
         setActiveTodoId(null);
-        clearTimer(id);
         return;
       }
 
-      if (!startTimer(id, duration ?? null)) return;
       setActiveTodoId(id);
       onStartTodo();
     },
-    [activeTodoId, clearTimer, onStartTodo, startTimer, todos],
+    [activeTodoId, onStartTodo, todos],
   );
 
   const deleteTodo = useCallback((id: string) => {
@@ -88,8 +82,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     }
     setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id));
     setActiveTodoId((currentId) => (currentId === id ? null : currentId));
-    clearTimer(id);
-  }, [clearTimer]);
+  }, []);
 
   const reorderTodo = useCallback((sourceId: string, targetId: string) => {
     if (sourceId === targetId) {
@@ -136,8 +129,6 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     draftTodo,
     setDraftTodo,
     activeTodoId,
-    timer,
-    lastDuration,
     setActiveTodoId,
     addTodo,
     toggleTodo,

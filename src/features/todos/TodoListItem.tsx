@@ -1,24 +1,17 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { Check, GripVertical, Trash2 } from "lucide-react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import { Check, GripVertical, Play, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { getTodoTitleLineCount } from "../../utils/text";
 import type { TodoItem } from "./types";
 import { isUpdateTodo } from "./updateTodo";
 import { UpdateTodoAction } from "./UpdateTodoAction";
 import { TodoTitleEditor } from "./TodoTitleEditor";
-import { TodoDurationPicker } from "./TodoDurationPicker";
-import { TodoStartControl } from "./TodoStartControl";
-import { TodoTimerActions } from "./TodoTimerActions";
-import type { TodoDuration, TodoTimer } from "./timer";
 import "./TodoListItem.css";
 
 export function TodoListItem({
   todo,
   isTodayMode,
   isActive,
-  timer = null,
-  lastDuration = null,
-  todoTimerEnabled = false,
   canReorder,
   isDragging,
   isDragOver,
@@ -39,9 +32,6 @@ export function TodoListItem({
   todo: TodoItem;
   isTodayMode: boolean;
   isActive: boolean;
-  timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  todoTimerEnabled?: boolean;
   canReorder: boolean;
   isDragging: boolean;
   isDragOver: boolean;
@@ -52,7 +42,7 @@ export function TodoListItem({
   onCancelEdit: () => void;
   onStartEdit: (todo: TodoItem) => void;
   onToggle: (id: string) => void;
-  onStart: (id: string, duration?: TodoDuration) => void;
+  onStart: (id: string) => void;
   onDelete: (id: string) => void;
   onDragStart: (event: ReactPointerEvent<HTMLButtonElement>, todoId: string) => void;
   onDragMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
@@ -61,12 +51,6 @@ export function TodoListItem({
 }) {
   const t = useTranslation();
   const titleLineCount = getTodoTitleLineCount(todo.title);
-  const [choosingDuration, setChoosingDuration] = useState(false);
-  const startButton = useRef<HTMLButtonElement>(null);
-  const activeTimer = todoTimerEnabled && isActive ? timer : null;
-  useEffect(() => {
-    if (!todoTimerEnabled) setChoosingDuration(false);
-  }, [todoTimerEnabled]);
 
   return (
     <div
@@ -123,17 +107,21 @@ export function TodoListItem({
       )}
       {isTodayMode && (
         <>
-          {isUpdateTodo(todo) ? <UpdateTodoAction /> : <TodoStartControl
-            todo={todo}
-            isActive={isActive}
-            activeTimer={activeTimer}
-            timerEnabled={todoTimerEnabled}
-            lastDuration={lastDuration}
-            choosing={choosingDuration}
-            startRef={startButton}
-            onStart={onStart}
-            onToggleChooser={() => setChoosingDuration((current) => !current)}
-          />}
+          {isUpdateTodo(todo) ? <UpdateTodoAction /> : <button
+            className={["todo-start", isActive ? "todo-start--active" : ""]
+              .filter(Boolean)
+              .join(" ")}
+            type="button"
+            aria-label={t.todo.actionOnTask(
+              isActive ? t.todo.stop : t.todo.start,
+              todo.title,
+            )}
+            disabled={todo.completed}
+            onClick={() => onStart(todo.id)}
+          >
+            <Play size={13} strokeWidth={2.4} />
+            <span>{isActive ? t.todo.stop : t.todo.start}</span>
+          </button>}
           <button
             className="todo-delete"
             type="button"
@@ -155,17 +143,6 @@ export function TodoListItem({
             >
               <GripVertical size={15} strokeWidth={2.4} />
             </button>
-          )}
-          {todoTimerEnabled && choosingDuration && !isActive && !todo.completed && (
-            <TodoDurationPicker lastDuration={lastDuration} onCancel={() => {
-              setChoosingDuration(false);
-              startButton.current?.focus();
-            }}
-              onStart={(duration) => { setChoosingDuration(false); onStart(todo.id, duration); }} />
-          )}
-          {activeTimer?.notified && (
-            <TodoTimerActions onComplete={() => onToggle(todo.id)}
-              onRepeat={() => onStart(todo.id, activeTimer.durationMinutes)} />
           )}
         </>
       )}
