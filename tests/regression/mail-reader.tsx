@@ -91,9 +91,9 @@ try {
     check(!document.querySelector('.wechat-reminder-card, .message-overview') && !document.querySelector('button[aria-label="消息总览"]'), "微信没有被抽成独立卡片或总览");
     check(document.querySelector<HTMLElement>('.message-fixture')?.style.height === "350px", "列表恢复截图中的固定面板高度");
     await click("微信提醒");
-    const launch = document.querySelector<HTMLButtonElement>('.qq-panel__empty button.wechat-launch');
-    check(view! === "wechat" && launch?.classList.contains("wechat-launch--pending") && launch.textContent?.includes("有新提醒") && launch.textContent.includes("点击打开微信"),
-      "微信标签中间是可点击的图标、\"有新提醒\"和\"点击打开微信\"");
+    const launch = document.querySelector<HTMLButtonElement>('.message-card__surface');
+    check(view! === "wechat" && launch?.querySelector('.message-card__name')?.textContent === "微信" && launch.textContent?.includes("有新提醒") && launch.querySelector("time"),
+      "微信普通提醒显示品牌、时间和提醒正文卡片");
     check(!document.querySelector('.qq-panel__header button[aria-label="打开微信"]') && document.querySelectorAll('.qq-panel__header .qq-panel__toolbar button').length === 1,
       "微信标签顶栏只剩接收开关，没有右上角的打开箭头");
     await act(async () => { launch!.click(); });
@@ -111,6 +111,39 @@ try {
     const preview = document.querySelector('[aria-label="微信消息摘要"] [role="listitem"]');
     check(preview?.querySelector("strong")?.textContent === wechatMessage.contact &&
       preview.querySelector("p")?.textContent === wechatMessage.body, "微信面板显示会话名、消息摘要和时间");
+    check(preview?.querySelector('.message-card__body strong')?.textContent === "小林", "摘要可靠识别的发送者加粗");
+    const checkCards = () => {
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('.message-card'));
+      check(cards.length > 0 && cards.every(card => {
+        const style = getComputedStyle(card);
+        const body = card.querySelector<HTMLElement>('.message-card__body');
+        return style.borderBottomWidth === "0px" && style.borderRadius === "14px" &&
+          card.querySelector('.message-card__name')?.textContent && card.querySelector('time')?.textContent &&
+          body && getComputedStyle(body).webkitLineClamp === "3";
+      }), "QQ 与微信列表使用独立圆角卡片，无分割线，包含名字时间及三行截断正文");
+    };
+    checkCards();
+    const cardName = preview!.querySelector<HTMLElement>('.message-card__name')!;
+    const cardBody = preview!.querySelector<HTMLElement>('.message-card__body')!;
+    const savedName = cardName.textContent;
+    const savedBody = cardBody.textContent;
+    const fixture = document.querySelector<HTMLElement>('.message-fixture')!;
+    cardName.textContent = "Long contact name 联系人名字".repeat(12);
+    cardBody.textContent = "LongBodyWithoutSpaces".repeat(80);
+    fixture.style.width = "340px";
+    for (const scale of [0.85, 1, 1.2]) {
+      fixture.style.transform = `scale(${scale})`;
+      const surface = preview!.querySelector<HTMLElement>('.message-card__surface')!;
+      const time = preview!.querySelector<HTMLElement>('time')!;
+      check(surface.scrollWidth <= surface.clientWidth && time.scrollWidth <= time.clientWidth &&
+        cardName.scrollWidth > cardName.clientWidth && getComputedStyle(cardName).textOverflow === "ellipsis" &&
+        cardBody.getBoundingClientRect().height <= 3 * 13 * 1.45 * scale + 1,
+      `窄窗口 ${scale} 缩放时长联系人省略、时间完整、正文三行且无横向溢出`);
+    }
+    fixture.style.width = "";
+    fixture.style.transform = "";
+    cardName.textContent = savedName;
+    cardBody.textContent = savedBody;
     await click("打开微信中的「项目群」会话");
     check(calls.some(call => call.command === "open_wechat_conversation" && call.args.messageId === wechatMessage.id),
       "点击摘要使用对应会话的消息 ID");
@@ -119,6 +152,7 @@ try {
     check(document.querySelector(".qq-panel__error")?.textContent?.includes("未能定位该会话"), "会话无法定位时提示已打开微信");
     await click("QQ 通知");
     check(view! === "qq" && document.querySelector('[aria-label="QQ 最近通知"]'), "切回 QQ 显示自己的通知列表");
+    checkCards();
     await click("邮箱");
     const list = document.querySelector<HTMLDivElement>('.qq-mail-list')!;
     list.scrollTop = 120;

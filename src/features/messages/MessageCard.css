@@ -1,0 +1,103 @@
+.message-card-list {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px;
+}
+
+.message-card {
+  --message-card-background: var(--color-white-a08);
+  --message-card-border: var(--color-white-a06);
+  --message-card-hover: var(--color-white-a12);
+  --message-card-radius: 14px;
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: var(--message-card-radius);
+  animation: messageCardEnter 180ms ease-out backwards;
+}
+
+.message-card__surface {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--message-card-border);
+  border-radius: var(--message-card-radius);
+  background: var(--message-card-background);
+  color: var(--text-1);
+  text-align: left;
+  font-family: inherit;
+  font-weight: 400;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+button.message-card__surface { cursor: pointer; }
+button.message-card__surface:hover:not(:disabled) { background: var(--message-card-hover); }
+button.message-card__surface:active:not(:disabled) {
+  background: var(--color-white-a06);
+  transform: scale(.985);
+}
+.message-card__surface:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.message-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 20px;
+}
+.message-card__heading .message-brand-icon {
+  flex: 0 0 18px;
+  border-radius: 5px;
+}
+.message-card__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+.message-card time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.message-card__body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--text-1) 85%, transparent);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.message-card__body strong { font-weight: 600; }
+.message-card__body--muted { color: var(--text-3); }
+
+@keyframes messageCardEnter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .message-card { animation: none; }
+  .message-card__surface { transition: none; }
+  button.message-card__surface:active:not(:disabled) { transform: none; }
+}
