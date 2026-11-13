@@ -25,7 +25,12 @@ pub(super) fn candidate_urls(url: &str) -> Vec<String> {
     MIRRORS.iter().map(|mirror| format!("{mirror}{url}")).collect()
 }
 
-pub(super) async fn fetch(directory: &Path, asset: &Asset) -> Result<PathBuf, PluginError> {
+/// 安装包自带的文件（`resources/media-plugins`）校验通过就直接用，不联网；
+/// 缺失或被改动时才按镜像顺序下载。
+pub(super) async fn fetch(directory: &Path, bundled: Option<&Path>, asset: &Asset) -> Result<PathBuf, PluginError> {
+    if let Some(path) = bundled.map(|dir| dir.join(asset.name)).filter(|path| verify(path, asset)) {
+        return Ok(path);
+    }
     fs::create_dir_all(directory)?;
     let target = directory.join(asset.name);
     if verify(&target, asset) { return Ok(target); }

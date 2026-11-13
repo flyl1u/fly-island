@@ -64,7 +64,9 @@ pub(super) fn execute(args: &[String]) -> Result<(), PluginError> {
         [mode, target, hash] if mode == "--media-plugin-remove" => (None, Path::new(target), hash),
         _ => return Err(PluginError::new("Io", "Invalid helper arguments")),
     };
-    if !valid_target(target) || !manifest::loader_hash(hash) || super::netease::running() { return Err(PluginError::new("Io", "Invalid helper target, hash or running player")); }
+    if !valid_target(target) || !manifest::loader_hash(hash) { return Err(PluginError::new("Io", "Invalid helper target or hash")); }
+    // 复制新加载器不受运行中的网易云影响（它启动时才载入）；删除时它可能正被占用。
+    if source.is_none() && super::netease::running() { return Err(PluginError::new("NeedsClose", "cloudmusic.exe is running")); }
     if let Some(source) = source {
         if download::hash(source)? != *hash { return Err(PluginError::new("HashMismatch", "Source hash mismatch")); }
         // Never overwrite a loader, even if one appears between discovery and elevation.
