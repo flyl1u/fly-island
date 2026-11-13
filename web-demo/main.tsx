@@ -29,6 +29,8 @@ localStorage.setItem(LOCALE_STORAGE_KEY, language === "en" ? "en" : "zh-CN");
 localStorage.setItem("focusd-island-current-date", `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`);
 localStorage.setItem("focusd-island-detached-settings", "false");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+// The demo has no About page to open, so the community group's red dots would never go away.
+localStorage.setItem("focusd-island-community-invite-seen", "true");
 // A started task shows on the collapsed island ahead of the Agent task, so starting one is visible.
 localStorage.setItem("focusd-island-settings", JSON.stringify({ lyricsOnline: true, collapsedPriority: ["todo", "agent", "lyrics"] }));
 localStorage.setItem("focusd-island-todos", JSON.stringify(data.todos.map((title, index) => ({
