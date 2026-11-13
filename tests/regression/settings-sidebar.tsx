@@ -45,7 +45,7 @@ const element = <T extends Element = HTMLElement>(selector: string) => {
   if (!found) throw new Error(`Missing ${selector}`);
   return found;
 };
-const listed = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__item")].map((item) => item.dataset.category!);
+const listed = () => [...host.querySelectorAll<HTMLElement>(".settings-sidebar__item[data-category]")].map((item) => item.dataset.category!);
 try {
   await mount(settingsCategoryFor(new URLSearchParams(location.search).get("page") ?? "") ?? "general");
   if (new URLSearchParams(location.search).has("page")) throw "manual";
