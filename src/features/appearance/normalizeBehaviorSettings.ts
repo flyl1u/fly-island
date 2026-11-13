@@ -39,7 +39,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     ...normalizeLyricsSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
     collapsedPriority: normalizeOrder(settings?.collapsedPriority, COLLAPSED_ITEMS),
-    collapsedShowCover: settings?.collapsedShowCover === true,
+    collapsedShowCover: settings?.collapsedShowCover !== false,
     collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),
     pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),
   } satisfies Partial<IslandSettings>;
