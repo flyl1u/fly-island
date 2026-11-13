@@ -8,8 +8,9 @@ import type { TodoItem } from "./types";
 import "./TodoStartControl.css";
 
 /**
- * Start, or stop with the countdown. With the focus timer on, a watch sits left of Start: Start
- * always counts down the chosen minutes, and the watch opens a small setter above to change them.
+ * Start, or stop with the countdown. With the focus timer on, a watch sits left of Start. Start
+ * only starts the todo; a countdown runs only from the Start inside the watch's small setter.
+ * The minutes are this todo's own, so changing one todo never changes another's.
  */
 export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, minutes, startRef, onStart,
   onDurationChange }: {
@@ -30,7 +31,7 @@ export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, mi
     if (!timed) setChoosing(false);
   }, [timed]);
 
-  const label = isActive ? t.todo.stop : timed ? t.todo.startFor(minutes) : t.todo.start;
+  const label = isActive ? t.todo.stop : t.todo.start;
   const start = (
     <button
       ref={startRef}
@@ -38,7 +39,7 @@ export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, mi
       type="button"
       aria-label={t.todo.actionOnTask(label, todo.title)}
       disabled={todo.completed}
-      onClick={() => (timed ? onStart(todo.id, minutes) : onStart(todo.id))}
+      onClick={() => onStart(todo.id)}
     >
       {isActive ? <Square size={11} strokeWidth={2.4} /> : <Play size={13} strokeWidth={2.4} />}
       {activeTimer ? <TodoCountdown endsAt={activeTimer.endsAt} /> : <span>{isActive ? t.todo.stop : t.todo.start}</span>}

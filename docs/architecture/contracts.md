@@ -12,7 +12,7 @@
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |
 | `focusd-island-todo-timer`（单轮待办倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；`notified` 在首次到时提醒前写为 true，旧记录缺此字段按 false；结束、完成、删除或切换待办时清除） | `features/todos/storage.ts` |
-| `focusd-island-todo-duration`（上次选择的整数分钟数 1–240；没有、损坏或旧版本的 JSON `null`（原“不限时”）按 15 分钟） | `features/todos/storage.ts` |
+| `focusd-island-todo-durations`（各项待办的时长 `{ [todoId]: 1–240 的整数分钟 }`，没有记录或无效按 15 分钟，写入时去掉已删除待办；2026-11-12 起取代所有待办共用的 `focusd-island-todo-duration`，旧 key 不再读取也不删除） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |
@@ -97,7 +97,8 @@
 - 回复状态标记（2026-11-08 起换位置）：写在 Claude 配置目录（`CLAUDE_CONFIG_DIR`，默认 `~/.claude`）下的 `rules/focusd-island-reply-marker.md`，块标记 `<!-- focusd-island: reply marker v2 -->`；关掉时只删除含这个标记的文件。v1 写在 `CLAUDE.md` 里的块在打开或关掉时移除，`CLAUDE.md` 的其他内容不动；软链文件一律不写。
 - Agent 页排列（2026-11-08 起）：设置项 `agentSessionSort`（`status` / `recent` / `firstSeen`，默认 `status`；旧数据没有这个字段时按 `status`，会改变升级前的顺序）、`agentSessionGroup`（`computer` / `project` / `none`，默认 `computer`）；`agentHostDisplay` 的默认值改为 `icon`（已保存的值不变）。
 
-- 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `focusd-island-todo-timer`，保留进行中 ID 和上次时长。
+- 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `focusd-island-todo-timer`，保留进行中 ID 和各项时长。
+- 待办各项时长（2026-11-12）：新增 `focusd-island-todo-durations`（`{ [todoId]: 分钟 }`），取代所有待办共用的 `focusd-island-todo-duration`。不迁移旧值：用户明确要求每项待办独立，新待办都从 15 分钟起；旧 key 留在原处不读取。直接点“开始”不再启动倒计时，只有怀表设置里的开始才计时。
 
 总览见 [overview.md](overview.md)。
 # 网易云精准进度插件

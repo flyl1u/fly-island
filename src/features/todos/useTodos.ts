@@ -132,7 +132,7 @@ export function useTodos({
       draft: list.draftTodo,
       activeTodoId,
       timer: list.timer,
-      lastDuration: list.lastDuration,
+      durations: list.durations,
       onDurationChange: list.chooseDuration,
       todoTimerEnabled,
       currentDate: currentTodoDate,

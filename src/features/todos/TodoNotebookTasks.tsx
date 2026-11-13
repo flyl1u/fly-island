@@ -5,7 +5,7 @@ import { useTranslation } from "../../i18n";
 import { TodoDatePicker } from "./TodoDatePicker";
 import { TodoListItem } from "./TodoListItem";
 import type { TodoItem } from "./types";
-import type { TodoDuration, TodoTimer } from "./timer";
+import type { TodoDuration, TodoDurations, TodoTimer } from "./timer";
 import { useTodoNotebookEditing } from "./useTodoNotebookEditing";
 import { useTodoListHeight } from "./useTodoListHeight";
 
@@ -16,7 +16,7 @@ export function TodoNotebookTasks({
   currentDate,
   activeTodoId,
   timer,
-  lastDuration,
+  durations,
   onDurationChange,
   todoTimerEnabled = false,
   onListHeightChange,
@@ -37,8 +37,8 @@ export function TodoNotebookTasks({
   currentDate: string;
   activeTodoId: string | null;
   timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  onDurationChange?: (minutes: number) => void;
+  durations?: TodoDurations;
+  onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
   onListHeightChange?: (height: number) => void;
   enableTodoReorder: boolean;
@@ -109,7 +109,7 @@ export function TodoNotebookTasks({
               isTodayMode
               isActive={todo.id === activeTodoId && !todo.completed}
               timer={timer?.todoId === todo.id ? timer : null}
-              lastDuration={lastDuration}
+              durations={durations}
               onDurationChange={onDurationChange}
               todoTimerEnabled={todoTimerEnabled}
               canReorder={canReorderTodos}

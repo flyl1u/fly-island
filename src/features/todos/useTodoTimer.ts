@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadTodoDuration, loadTodoTimer, saveTodoDuration, saveTodoTimer } from "./storage";
-import { activeTodoTimer, createTodoTimer, isTodoDuration, isTodoTimerExpired, type TodoDuration } from "./timer";
+import { loadTodoDurations, loadTodoTimer, saveTodoDurations, saveTodoTimer } from "./storage";
+import { activeTodoTimer, createTodoTimer, isTodoDuration, isTodoTimerExpired, withTodoMinutes, type TodoDuration } from "./timer";
 import type { TodoItem } from "./types";
 
 /** Only expiration updates the notebook; the second-by-second clock lives in TodoCountdown. */
 export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpired?: () => void, enabled = false) {
   const [storedTimer, setTimer] = useState(loadTodoTimer);
-  const [lastDuration, setLastDuration] = useState(loadTodoDuration);
+  const [durations, setDurations] = useState(loadTodoDurations);
   const timer = enabled ? activeTodoTimer(storedTimer, activeId, todos) : null;
   const announced = useRef<string | null>(null);
+
+  /** The minutes this todo's watch shows and its setter starts with, kept per todo. */
+  const chooseDuration = useCallback((id: string, minutes: number) => {
+    if (!isTodoDuration(minutes)) return;
+    const next = withTodoMinutes(durations, id, minutes, todos.map((todo) => todo.id));
+    setDurations(next);
+    saveTodoDurations(next);
+  }, [durations, todos]);
 
   const startTimer = useCallback((id: string, duration: TodoDuration) => {
     if (!enabled) return true;
@@ -16,19 +24,9 @@ export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpir
     const next = duration === null ? null : createTodoTimer(id, duration, Date.now());
     if (duration !== null && !next) return false;
     setTimer(next);
-    if (duration !== null) {
-      setLastDuration(duration);
-      saveTodoDuration(duration);
-    }
+    if (duration !== null) chooseDuration(id, duration);
     return true;
-  }, [enabled]);
-
-  /** The time Start will use, kept even if the round is not started now. */
-  const chooseDuration = useCallback((minutes: number) => {
-    if (!isTodoDuration(minutes)) return;
-    setLastDuration(minutes);
-    saveTodoDuration(minutes);
-  }, []);
+  }, [chooseDuration, enabled]);
 
   const clearTimer = useCallback((id?: string) => {
     setTimer((current) => !id || current?.todoId === id ? null : current);
@@ -61,5 +59,5 @@ export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpir
     };
   }, [onExpired, timer]);
 
-  return { timer, lastDuration, startTimer, chooseDuration, clearTimer };
+  return { timer, durations, startTimer, chooseDuration, clearTimer };
 }

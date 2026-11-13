@@ -4,11 +4,11 @@
 
 ## 使用
 
-先在“设置 → 待办”开启“番茄钟”（`todoTimerEnabled`，默认关闭）。关闭时开始/停止直接生效，不显示时长选择、倒计时或时间到操作，也不播放提示音；折叠岛显示原有任务标题。运行中关闭会清除 `focusd-island-todo-timer`，保留任务进行中状态和上次时长；重新开启不会恢复已取消的轮次。设置通过现有跨窗口 storage 同步立即生效。旧设置缺字段或字段不是 boolean 时按关闭处理。
+先在“设置 → 待办”开启“番茄钟”（`todoTimerEnabled`，默认关闭）。关闭时开始/停止直接生效，不显示时长选择、倒计时或时间到操作，也不播放提示音；折叠岛显示原有任务标题。运行中关闭会清除 `focusd-island-todo-timer`，保留任务进行中状态和各项时长；重新开启不会恢复已取消的轮次。设置通过现有跨窗口 storage 同步立即生效。旧设置缺字段或字段不是 boolean 时按关闭处理。
 
 English: Focus timer is off by default in Settings → Todos. When disabled, Start/Stop works immediately with no picker, countdown, expiry actions or sound. Turning it off cancels the round while keeping the active todo and previous duration; turning it on does not restore the cancelled round.
 
-1. 开启后，待办的“开始”按钮左边多一个怀表图标。直接点“开始”就按当前时长倒计时（首次 15 分钟）。点怀表在它上方弹出一个小的时间设置：−/+ 每次 5 分钟，也可以直接输入 **1–240 的整数分钟**，右边的圆形 ▶ 或回车立即开始。改过的时长马上记住，按 Esc、点别处或滚动列表关闭后，再点“开始”也用新时长。
+1. 开启后，待办的“开始”按钮左边多一个怀表图标。直接点“开始”只开始任务，不倒计时。点怀表在它上方弹出一个小的时间设置：−/+ 每次 5 分钟，也可以直接输入 **1–240 的整数分钟**，右边的圆形 ▶ 或回车才开始倒计时。时长按待办分别记住：每项待办第一次都是 15 分钟，在任务一里改成 25 分钟不会影响任务二。改过的时长马上记住，按 Esc、点别处或滚动列表关闭后，下次打开这一项的怀表仍是新时长。
 2. 开始后岛屿收起；折叠岛显示任务标题，后面跟一个小胶囊里的 `mm:ss` 倒计时，超过一小时仍按分钟显示（如 `240:00`）；列表里的开始按钮变成停止图标加 `mm:ss`。限时期间暂停待办轮播。
 3. 时间到响一次短提示音，任务保持未完成。可见岛屿打开今日待办，显示 **时间到 / 完成 / 再来一轮**。完成勾选任务；再来一轮按本轮时长重新开始。也可以用原有结束按钮取消本轮。
 4. 结束、完成、删除或开始另一项都会取消旧倒计时。用户不操作也不会一直响。到时操作随内容增高，到面板高度上限后在列表内滚动。
@@ -24,7 +24,7 @@ English: Focus timer is off by default in Settings → Todos. When disabled, Sta
 ## 恢复与存储
 
 - `focusd-island-todo-timer`：`{ todoId, endsAt, durationMinutes, notified }`。结束时间是 Unix 毫秒时间，按当前时间计算，睡眠或重启后不从完整时长重来。若关闭期间已过期，恢复为时间到并补一次提醒；已经提醒过的轮次重启不重复响。
-- `focusd-island-todo-duration`：上次时长，1–240 的整数分钟。缺失、无效或旧版本留下的 JSON `null`（以前的“不限时”）都按 15 分钟。
+- `focusd-island-todo-durations`：各项待办的时长，`{ 待办 id: 1–240 的整数分钟 }`。没有记录或数值无效的待办按 15 分钟；写入时顺带丢掉已删除待办的记录。旧版所有待办共用的 `focusd-island-todo-duration` 不再读取。
 - 已有待办、进行中 ID、归档和日期 key 的格式不变。损坏或与当前未完成待办不匹配的倒计时会安全丢弃；存储不可用时本轮仍在内存中运行，无法保证关闭后的恢复。
 - 跨日归档保留正在计时或待处理时间到的任务及其 ID（即使关闭“结转未完成待办”）；其他任务仍遵循原有结转设置。完成或结束后恢复普通归档行为。
 - 声音复用 `src/assets/sounds/thumb-piano/complete.wav` 和现有 HTMLAudio 播放方式，不受 AI Agent 声音开关控制，没有循环播放。折叠文字隐藏设置和消息预览照旧生效。
