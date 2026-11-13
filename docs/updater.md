@@ -1,9 +1,9 @@
 # 应用内更新
 
-小岛在「设置 → 关于」的「版本」组里检查新版本，发现更新后可以在应用内下载、安装并自动重启。
+小岛在启动时检查新版本，发现更新后在应用内下载、安装并自动重启。
 
 - **启动时下载**：岛屿启动后检查一次（主窗口的 `features/updater/updaterController.ts`）；有新版本时在后台下载好，待办列表顶部出现一条「更新到 vX.Y.Z」的待办，点它的按钮重启安装。删掉这条待办只是本次不再提醒。没有角标、没有定期检查、没有发布说明页。
-- 「关于」页也可以手动检查；设置窗口独立时，它通过事件向主窗口要状态、发请求，下载只在主窗口里进行。
+- 2026-11-12 起「关于」页不再有手动检查更新的那一行；下载只在主窗口里进行。
 
 实现基于 Tauri 2 的 `tauri-plugin-updater`，所有更新包都用 minisign 签名，App 内置公钥校验，签名不符的包不会被安装。
 
@@ -32,8 +32,7 @@
 
 - `src-tauri/tauri.conf.json`：`plugins.updater`（端点、安装模式）
 - `src-tauri/capabilities/default.json`：`updater:default` 权限
-- `src/updaterController.ts`：检查 / 下载 / 安装状态机，跨页面存活
-- `src/UpdatePanel.tsx`：设置页里的检查更新面板，只负责渲染
+- `src/features/updater/updaterController.ts`：检查 / 下载 / 安装状态机，跨页面存活；启动时检查一次并静默下载，待办列表里出现「更新」按钮（2026-11-12 起「关于」里不再有手动检查更新那一行）
 - `scripts/release/prepare-release-config.mjs`：构建发布包时写入公钥与签名开关
 - `scripts/release/make-latest-json.mjs`：根据构建产物生成 `latest.json`
 - `scripts/release/release.mjs`：一键构建 + 签名 + 生成清单 + 上传 Release
