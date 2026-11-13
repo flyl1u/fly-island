@@ -3,6 +3,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import type { IslandSettings } from "./types";
+import { HexColorInput } from "./HexColorInput";
 
 type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor";
 
@@ -29,7 +30,12 @@ export function ColorSettingsSection({
           key={key}
           title={label}
           control={
-            <SettingsColor value={settings[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />
+            <SettingsColor
+              value={settings[key]}
+              ariaLabel={label}
+              onChange={(value) => onSettingsChange({ ...settings, [key]: value.toUpperCase() })}
+              valueControl={<HexColorInput value={settings[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />}
+            />
           }
         />
       ))}

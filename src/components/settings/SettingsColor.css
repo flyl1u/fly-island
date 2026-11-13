@@ -13,8 +13,8 @@
 
 /* A round swatch with a thin ring, so black and white both show their edge. */
 .settings-color__swatch {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-pill);

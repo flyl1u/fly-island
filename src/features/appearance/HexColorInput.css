@@ -1,0 +1,32 @@
+.appearance-hex {
+  box-sizing: border-box;
+  width: 9ch;
+  height: 30px;
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--corner-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 22px;
+  text-align: center;
+  cursor: text;
+}
+
+.appearance-hex:hover {
+  color: var(--color-text);
+}
+
+.appearance-hex--editing {
+  border-color: var(--color-white-a10);
+  background: var(--color-white-a04);
+  color: var(--color-text);
+}
+
+.appearance-hex:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

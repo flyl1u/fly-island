@@ -130,7 +130,7 @@ if (!automated) {
     await openPage("plugins");
     const plugins = element(".editor-panel .plugins-settings"), block = plugins.getBoundingClientRect(), content = [...plugins.children].map(child => child.getBoundingClientRect());
     check(plugins.textContent?.trim() === "暂无插件" && plugins.querySelector("svg.lucide-puzzle") && !plugins.querySelector("button, a, input") && Math.abs((Math.min(...content.map(rect => rect.top)) + Math.max(...content.map(rect => rect.bottom)) - block.top - block.bottom) / 2) <= 8, "The plugins page shows only its Puzzle icon and empty state, vertically centered within 8px");
-    await checkAppearance({ check, element, click, type, openPage });
+    await checkAppearance(check);
     check(!document.querySelector(".island-preview__island--glass") && ![...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].some((button) => button.textContent === "液态玻璃"),
       "Liquid glass is paused: the preview stays classic and the choice is not offered");
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
