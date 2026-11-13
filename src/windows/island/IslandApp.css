@@ -174,10 +174,6 @@
     animation: none;
   }
 
-  .island,
-  .island__collapsed,
-  .island__expanded,
-  .island--expanded .island__expanded,
   .dot-button,
   .icon-button,
   .island__quiet-button,

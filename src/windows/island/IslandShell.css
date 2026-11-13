@@ -7,10 +7,18 @@
    * The native stage shrinks 600ms after a resize (STAGE_SHRINK_DELAY in island/geometry.rs),
    * after either has finished.
    */
-  --island-spring-open: linear(0, 0.0335, 0.1145, 0.2201, 0.3345, 0.4474, 0.5522, 0.6455, 0.7259, 0.7931, 0.8479, 0.8917, 0.9257, 0.9516, 0.9708, 0.9846, 0.9941, 1.0005, 1.0044, 1.0066, 1.0076, 1.0077, 1.0073, 1.0066, 1.0055, 1.0043, 1.003, 1.0015, 1);
-  --island-spring-close: linear(0, 0.067, 0.2057, 0.3589, 0.5005, 0.6204, 0.7168, 0.7917, 0.8486, 0.8909, 0.922, 0.9446, 0.9609, 0.9725, 0.9808, 0.9866, 0.9908, 0.9942, 0.9972, 1);
+  --island-spring-open: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --island-spring-close: cubic-bezier(0.16, 1, 0.3, 1);
   --island-motion: var(--island-spring-close);
   --island-motion-duration: 380ms;
+  /* Normal and reduced-motion rules share these values so their timing cannot drift. */
+  --island-panel-fade-duration: 120ms;
+  --island-panel-slide-duration: 280ms;
+  --island-collapsed-fade-delay: 140ms;
+  --island-panel-open-fade-duration: 240ms;
+  --island-panel-open-slide-duration: 420ms;
+  --island-panel-open-fade-delay: 120ms;
+  --island-panel-open-slide-delay: 80ms;
   /*
    * The two sizes (Appearance), from the stage (stageStyle.ts). Nothing animates a scale: the
    * shape below takes its scaled size in px, and the collapsed bar and the page panel each keep
@@ -62,6 +70,14 @@
     width var(--island-motion-duration) var(--island-motion),
     height var(--island-motion-duration) var(--island-motion),
     border-radius var(--island-motion-duration) var(--island-motion);
+}
+
+/* Old WebView2 must never substitute an unsupported linear() into a transition shorthand. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .island {
+    --island-spring-open: linear(0, 0.0335, 0.1145, 0.2201, 0.3345, 0.4474, 0.5522, 0.6455, 0.7259, 0.7931, 0.8479, 0.8917, 0.9257, 0.9516, 0.9708, 0.9846, 0.9941, 1.0005, 1.0044, 1.0066, 1.0076, 1.0077, 1.0073, 1.0066, 1.0055, 1.0043, 1.003, 1.0015, 1);
+    --island-spring-close: linear(0, 0.067, 0.2057, 0.3589, 0.5005, 0.6204, 0.7168, 0.7917, 0.8486, 0.8909, 0.922, 0.9446, 0.9609, 0.9725, 0.9808, 0.9866, 0.9908, 0.9942, 0.9972, 1);
+  }
 }
 
 .island__surface {
@@ -335,8 +351,8 @@
   z-index: 2;
   transform-origin: top center;
   transition:
-    opacity 120ms ease,
-    transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--island-panel-fade-duration) ease,
+    transform var(--island-panel-slide-duration) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .island__collapsed {
@@ -349,7 +365,7 @@
   padding: 0 18px;
   opacity: 1;
   transform: scale(var(--island-collapsed-scale));
-  transition-delay: 140ms, 0s;
+  transition-delay: var(--island-collapsed-fade-delay), 0s;
 }
 
 /* Tucked, only the island's bottom rim is on screen: show it empty, not cut-off contents.
@@ -397,8 +413,8 @@
      6px drop rides the same spring. Between pages the panel takes its new height at once (laid
      out once, not on every frame); the shape's own height transition uncovers or trims it. */
   transition:
-    opacity 240ms ease-out 120ms,
-    transform 420ms var(--island-spring-open) 80ms;
+    opacity var(--island-panel-open-fade-duration) ease-out var(--island-panel-open-fade-delay),
+    transform var(--island-panel-open-slide-duration) var(--island-spring-open) var(--island-panel-open-slide-delay);
 }
 
 /* Translation opens on the same spring as the other pages, but its panel only fades in: on the
@@ -414,6 +430,35 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Product decision (2026-11-13): opening/closing always plays in full. Override base.css
+     only on the shape and its two panels; controls and page contents still reduce motion. */
+  .island {
+    transition-duration: var(--island-motion-duration), var(--island-motion-duration), var(--island-motion-duration) !important;
+  }
+
+  .island__collapsed,
+  .island__expanded {
+    transition-duration: var(--island-panel-fade-duration), var(--island-panel-slide-duration) !important;
+  }
+
+  .island__collapsed {
+    transition-delay: var(--island-collapsed-fade-delay), 0s !important;
+  }
+
+  .island--tucked .island__collapsed,
+  .island--expanded .island__collapsed {
+    transition-delay: 0s !important;
+  }
+
+  .island--preparing.island--collapsed .island__expanded {
+    transition-duration: 0s !important;
+  }
+
+  .island--expanded .island__expanded {
+    transition-duration: var(--island-panel-open-fade-duration), var(--island-panel-open-slide-duration) !important;
+    transition-delay: var(--island-panel-open-fade-delay), var(--island-panel-open-slide-delay) !important;
+  }
+
   .island--appearance-liquidGlass.island--expanded .island__glass::after,
   .island--appearance-liquidGlass.island--collapsed .island__glass::after {
     animation: none;

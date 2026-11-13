@@ -3,6 +3,7 @@
 //
 //   pnpm test:regression                 every page
 //   pnpm test:regression mail-reader     pages whose name contains the word
+//   REGRESSION_REDUCED_MOTION=reduce pnpm test:regression  emulate Windows animations off
 //
 // Pages are driven over the DevTools protocol in a normal tab, not with --dump-dom:
 // that mode stops running page scripts after load, so pages that wait on timers
@@ -226,6 +227,7 @@ async function main() {
   const pages = PAGES.filter((page) => filters.length === 0 || filters.some((word) => page.includes(word)));
   if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
   let failed = 0;
+  console.log(`Regression prefers-reduced-motion: ${process.env.REGRESSION_REDUCED_MOTION ?? "no-preference"}`);
   await withRegressionBrowser(root, pages[0], async ({ session, base }) => {
     for (const page of pages) {
       const started = Date.now();

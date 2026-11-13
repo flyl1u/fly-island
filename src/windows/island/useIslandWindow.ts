@@ -32,9 +32,6 @@ export function useIslandWindow({
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
   const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition(settings.positionLocked);
-  const [reducedMotion, setReducedMotion] = useState(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
   const [nativeGlassState, setNativeGlassState] =
     useState<NativeGlassState>("disabled");
   const didShowInitialWindow = useRef(false);
@@ -58,7 +55,7 @@ export function useIslandWindow({
           customPosition: islandPositionRef.current,
           isTucked: nextIsTucked,
           positionLocked: nextSettings.positionLocked,
-          animatePosition: !reducedMotion,
+          animatePosition: true,
           glassEnabled: getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass",
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
@@ -76,7 +73,7 @@ export function useIslandWindow({
         );
       }
     },
-    [islandPositionRef, reducedMotion],
+    [islandPositionRef],
   );
 
   const showReadyIsland = useCallback(async () => {
@@ -115,13 +112,6 @@ export function useIslandWindow({
     }
   }, [islandPositionRef, setIsPositionDetached, setSettings, settings, syncNativeLayout]);
   useSettingsPositionReset(resetIslandPosition);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateReducedMotion = () => setReducedMotion(query.matches);
-    query.addEventListener("change", updateReducedMotion);
-    return () => query.removeEventListener("change", updateReducedMotion);
-  }, []);
 
   // One native call at a time, and only the latest state once it returns. An Agent page that
   // opens measures its card row several times in a few frames; sending each height as its own
