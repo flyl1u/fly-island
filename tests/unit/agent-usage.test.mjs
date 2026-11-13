@@ -4,6 +4,16 @@ import { isStale, tightestWindow, untilReset, usageLevel } from "../../src/featu
 
 const window = (name, used, resetsAt = null) => ({ name, used, resetsAt });
 
+test("filtered quota rows use exactly the selected data, including zero WorkBuddy credits", async () => {
+  const { EMPTY_USAGES, filterQuotaUsages, usageLineCount } = await import("../../src/features/agent-status/usage.ts");
+  const workbuddy = { updatedAt: 100, total: 300, remaining: 0 };
+  const usages = { ...EMPTY_USAGES, workbuddy, readAt: 100 };
+  assert.equal(usageLineCount(filterQuotaUsages(usages, [])), 0);
+  assert.equal(usageLineCount(filterQuotaUsages(usages, ["dsh"])), 0);
+  assert.equal(usageLineCount(filterQuotaUsages(usages, ["workbuddy"])), 1);
+  assert.equal(filterQuotaUsages(usages, ["workbuddy"]).workbuddy, workbuddy);
+});
+
 test("usage levels and the time until a window resets", () => {
   assert.deepEqual([usageLevel(0), usageLevel(49), usageLevel(50), usageLevel(84), usageLevel(85), usageLevel(100)], ["low", "low", "medium", "medium", "high", "high"]);
   const now = 1_000_000_000;

@@ -1,3 +1,5 @@
+import type { AgentQuotaSource } from "../../../features/appearance/types";
+
 export type SettingsAgentText = {
   title: string;
   install: string;
@@ -11,6 +13,11 @@ export type SettingsAgentText = {
   sessionTitle: string;
   sessionTitleHint: string;
   sources: { title: string; claudeCode: string; claudeCodeHint: string; codex: string; codexHint: string; dsh: string; dshHint: string };
+  quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
+  workbuddy: {
+    signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
+    signIn: string; retry: string; refresh: string; disconnect: string; disconnectAction: string; busy: string; actionFailed: string;
+  };
   alerts: {
     title: string;
     hint: string;
@@ -52,11 +59,26 @@ export const zhCN: SettingsAgentText = {
   sources: {
     title: "会话来源",
     claudeCode: "Claude Code",
-    claudeCodeHint: "关闭后隐藏 Claude Code 的会话、标题、提醒和用量环，并停止读取用量；已安装的钩子保留在连接页。",
+    claudeCodeHint: "关闭后隐藏 Claude Code 的会话、标题和提醒。",
     codex: "Codex",
-    codexHint: "关闭后隐藏 Codex 的会话、标题、提醒和用量环，并停止读取用量；已安装的钩子保留在连接页。",
+    codexHint: "关闭后隐藏 Codex 的会话、标题和提醒。",
     dsh: "DeepSeek Harness（DSH）",
-    dshHint: "读取桌面端本地会话缓存；余额使用 DSH 已保存的凭据查询官方接口，每 5 分钟刷新。关闭后隐藏 DSH 会话、余额并停止查询。点击会话打开 DSH 主窗口；审批仍在 DSH 里处理。" },
+    dshHint: "读取桌面端的会话记录。点击会话可打开 DSH 主窗口。" },
+  quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
+  workbuddy: {
+    signedOut: "登录国内个人账号后可显示积分余额。",
+    loginRequired: "登录已过期，请重新登录。",
+    ready: "已保存登录态。",
+    connected: "已连接。",
+    unavailable: "暂时无法读取积分，请重试。",
+    signIn: "登录 WorkBuddy",
+    retry: "重试",
+    refresh: "刷新积分",
+    disconnect: "清除岛屿中的 WorkBuddy 登录态",
+    disconnectAction: "断开连接",
+    busy: "处理中…",
+    actionFailed: "操作未完成，请重试。",
+  },
   alerts: {
     title: "弹出提醒",
     hint: "收起的岛屿会自动打开 Agent 页。会话所在窗口已在前台、游戏模式勿扰时，或你正在用展开的岛屿时不弹。",
@@ -95,11 +117,26 @@ export const en: SettingsAgentText = {
   sources: {
     title: "Session sources",
     claudeCode: "Claude Code",
-    claudeCodeHint: "Switching off hides Claude Code sessions, titles, alerts and usage rings and stops reading its usage; installed hooks stay on the Connection page.",
+    claudeCodeHint: "Switching off hides Claude Code sessions, titles and alerts.",
     codex: "Codex",
-    codexHint: "Switching off hides Codex sessions, titles, alerts and usage rings and stops reading its usage; installed hooks stay on the Connection page.",
+    codexHint: "Switching off hides Codex sessions, titles and alerts.",
     dsh: "DeepSeek Harness (DSH)",
-    dshHint: "Reads the desktop's local session cache. Uses DSH's saved credential for an official balance query every 5 minutes. Switching off hides DSH sessions and balance and stops queries. A session opens the DSH main window; approvals stay in DSH." },
+    dshHint: "Reads local desktop sessions. Select a session to open the DSH window." },
+  quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy" } },
+  workbuddy: {
+    signedOut: "Sign in with a personal account on the China site to see your credits.",
+    loginRequired: "Your session has expired. Sign in again.",
+    ready: "Sign-in saved.",
+    connected: "Connected.",
+    unavailable: "Credits are temporarily unavailable. Try again.",
+    signIn: "Sign in to WorkBuddy",
+    retry: "Retry",
+    refresh: "Refresh credits",
+    disconnect: "Clear the island's WorkBuddy sign-in",
+    disconnectAction: "Disconnect",
+    busy: "Working…",
+    actionFailed: "Couldn't finish the action. Try again.",
+  },
   alerts: {
     title: "Pop-up alerts",
     hint: "A collapsed island opens the Agent page by itself. Not while the session's window is in front, game mode keeps the island quiet, or you are using the open island.",

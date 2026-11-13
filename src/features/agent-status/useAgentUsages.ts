@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
 import { getAgentUsage, getCodexUsage, getDshUsage } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
@@ -10,7 +10,7 @@ const ALL_SOURCES: SessionFilter = { claudeCode: true, codex: true, dsh: true };
 /**
  * Claude's, Codex's and DSH's usage for the Agent page, re-read every 30 seconds while `enabled`.
  * The island reads them even with the page closed, so it can size the page for the lines shown.
- * A source switched off in Settings is not queried and keeps no numbers, as its sessions hide too.
+ * The caller selects which sources need a read for the rings or alerts.
  */
 export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURCES): AgentUsages {
   const [usages, setUsages] = useState<AgentUsages>(EMPTY_USAGES);
@@ -47,5 +47,10 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     };
   }, [enabled, showClaude, showCodex, showDsh]);
 
-  return usages;
+  return useMemo(() => ({
+    ...usages,
+    claude: enabled && showClaude ? usages.claude : null,
+    codex: enabled && showCodex ? usages.codex : null,
+    dsh: enabled && showDsh ? usages.dsh : null,
+  }), [enabled, usages, showClaude, showCodex, showDsh]);
 }

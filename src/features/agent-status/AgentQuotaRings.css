@@ -1,4 +1,4 @@
-/* One row above the session list with each agent's quota rings. Its height is part of the Agent
+/* One row above the session list with each provider's quota rings. Its height is part of the Agent
    page's chrome in getAgentPageExpandedHeight (windows/island/layout.ts, AGENT_USAGE_HEIGHT:
    22 plus 6 below): keep the two in step. */
 .agent-quota {
@@ -38,16 +38,23 @@
 
 .agent-quota__agent--dsh {
   --quota-base: #43b4a5;
+}
+
+.agent-quota__agent--workbuddy {
+  --quota-base: #a97bf5;
+}
+
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
   min-width: 0;
   flex-shrink: 1;
 }
 
-.agent-quota__agent--dsh .agent-quota__values {
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) .agent-quota__values {
   min-width: 0;
   overflow: hidden;
 }
 
-.agent-quota__agent--dsh b {
+.agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) b {
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -97,4 +104,9 @@
 .island-hover-card__anchor.agent-quota__hover {
   display: inline-flex;
   flex: none;
+}
+
+.agent-quota__hover:has(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
+  min-width: 22px;
+  flex-shrink: 1;
 }

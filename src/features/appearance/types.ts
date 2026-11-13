@@ -28,6 +28,7 @@ export type AgentSessionGroup = "computer" | "project" | "none";
 export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
 export type AgentCardEffects = "off" | "sparkle" | "gradient";
+export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
@@ -90,6 +91,7 @@ export type IslandSettings = {
   agentShowActivity: boolean;
   /** Claude's usage limits at the top of the Agent page, when claude-hud keeps a usage snapshot. */
   agentShowUsage: boolean;
+  agentQuotaSources: AgentQuotaSource[];
   /** Open the Agent page when a session finishes, fails or waits for the user. */
   agentAlertCompleted: boolean;
   agentAlertFailed: boolean;

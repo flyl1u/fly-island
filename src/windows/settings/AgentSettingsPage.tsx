@@ -2,6 +2,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettings";
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
+import { AgentQuotaSettings } from "../../features/agent-status/AgentQuotaSettings";
 import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
@@ -47,6 +48,7 @@ export function AgentSettingsPage({
         />
         <SettingsToggleRow title={t.settings.agent.sources.dsh} description={t.settings.agent.sources.dshHint} checked={settings.agentShowDsh} onChange={(agentShowDsh) => onSettingsChange({ ...settings, agentShowDsh })} />
       </SettingsGroup>
+      <AgentQuotaSettings sources={settings.agentQuotaSources} onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow
           title={t.settings.agent.sessionTitle}

@@ -4,6 +4,8 @@
 |---|---|---|
 | 待办行为设置 | 现有 `focusd-island-settings`：`todoTimerEnabled` 默认 false；`enableTodoReorder` 默认 true，`todoReorderVersion: 1` 表示已迁移；无标记的旧数据开启拖拽，有标记才读取保存的布尔值。关闭番茄钟清除本轮计时，保留进行中 ID | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；沿用跨窗口 storage 同步 |
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 岛屿字号、刘海基准尺寸、额度环筛选 | `focusd-island-settings`，字段见 [对外契约](contracts.md) | `features/appearance/` |
+| WorkBuddy 官网登录与余额 | `%LOCALAPPDATA%/com.focusd.island/workbuddy-web/WebView2` 保存独立浏览器配置。同级 `connected` 文件记录已成功连接。积分汇总缓存在内存，选中额度环时刷新，有效结果缓存 5 分钟。断开时清除该配置的浏览数据和连接标记 | `agent_status/workbuddy_connection.rs`、`agent_status/workbuddy_usage.rs` |
 | 交流群红点 | 同一 `localStorage`：`focusd-island-community-invite-seen`，点开「关于」里的用户交流群后写 `"true"`，各窗口靠 storage 事件同步。群二维码不存本地，每次点开从官网 `island.flyliu.org/community/wechat-group.jpg` 加载（微信每周换码，换官网上的图即可） | `features/updater/storage.ts`、`useCommunityInvite.ts` |
 | 锁定小岛位置、独立设置窗口 | 同一 WebView2 `localStorage`：`focusd-island-settings.positionLocked`（默认 false）、`focusd-island-detached-settings`（缺失时默认 `"true"`，保留已保存的选择） | `features/appearance/storage.ts`、`windows/settings/storage.ts` |
 | 待办、以后的待办、每日笔记、归档、正在进行的待办、待办日期 | WebView2 的 `localStorage`（`focusd-island-todos` 等 key，见 [contracts.md](contracts.md)） | `features/todos/storage.ts` |

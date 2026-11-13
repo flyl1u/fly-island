@@ -41,6 +41,8 @@ mod tool_call;
 mod usage;
 mod wezterm;
 mod window_focus;
+pub(crate) mod workbuddy_connection;
+mod workbuddy_usage;
 
 use serde::Serialize;
 use std::{fs, path::Path};
@@ -479,6 +481,9 @@ macro_rules! tauri_commands {
             crate::agent_status::get_agent_usage,
             crate::agent_status::get_codex_usage,
             crate::agent_status::dsh_usage::get_dsh_usage,
+            crate::agent_status::workbuddy_connection::get_workbuddy_usage,
+            crate::agent_status::workbuddy_connection::open_workbuddy_login,
+            crate::agent_status::workbuddy_connection::disconnect_workbuddy,
             crate::agent_status::reply_marker::get_reply_marker_state,
             crate::agent_status::reply_marker::set_reply_marker,
             crate::agent_status::sound_packs::list_sound_packs,

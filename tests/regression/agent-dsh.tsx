@@ -4,13 +4,40 @@ import { I18nProvider } from "../../src/i18n";
 import { AgentSessionsPanel } from "../../src/features/agent-status/AgentSessionsPanel";
 import { QuotaAlertPopup } from "../../src/features/agent-status/QuotaAlertPopup";
 import type { AgentSessionSummary, DshUsage } from "../../src/features/agent-status/api";
-import type { AgentUsages } from "../../src/features/agent-status/usage";
+import { filterQuotaUsages, usageLineCount, type AgentUsages } from "../../src/features/agent-status/usage";
 
 /** Fictional DSH data, shared by the Agent page's automated visual regression. */
 export const DSH_USAGE: DshUsage = {
   updatedAt: Date.now(), available: true, source: "dshApi",
   wallets: [{ currency: "CNY", total: "12.3456", granted: "2.3456", toppedUp: "10.00" }],
 };
+
+export async function checkWorkbuddyRing(root: Root, sessions: AgentSessionSummary[], usages: AgentUsages,
+  check: (condition: unknown, message: string) => void) {
+  const data = { ...usages, dsh: DSH_USAGE, workbuddy: { remaining: 125.5, total: 500, updatedAt: usages.readAt } };
+  const fixture = document.getElementById("fixture")!;
+  fixture.style.setProperty("--island-font-scale", "1.2");
+  const render = (visible: AgentUsages) => act(async () => {
+    root.render(<I18nProvider><AgentSessionsPanel sessions={sessions} showUsage usages={visible} hostDisplay="icon" /></I18nProvider>);
+  });
+  await render(data);
+  const rings = [...fixture.querySelectorAll<HTMLElement>(".agent-quota__agent")];
+  const workbuddy = rings[3];
+  check(rings.length === 4 && rings.every((ring) => Math.abs(ring.getBoundingClientRect().top - rings[0].getBoundingClientRect().top) < 1 &&
+    ring.getBoundingClientRect().right <= fixture.getBoundingClientRect().right), "四个来源的额度环在最大字号下同排显示");
+  check(workbuddy?.textContent === "125.5 积分" && workbuddy.getAttribute("aria-label")?.includes("剩余 125.5 / 500 积分") &&
+    workbuddy.querySelectorAll(".quota-rings__track").length === 1 && workbuddy.querySelectorAll(".quota-rings__fill").length === 1,
+    "WorkBuddy 单环显示官网剩余积分和比例，详情可被读屏读取");
+  const zero = filterQuotaUsages({ ...data, workbuddy: { ...data.workbuddy, remaining: 0 } }, ["workbuddy"]);
+  await render(zero);
+  check(fixture.querySelectorAll(".agent-quota__agent").length === 1 && fixture.querySelector(".agent-quota")?.textContent === "0 积分" &&
+    !fixture.querySelector(".quota-rings__fill"), "只勾选 WorkBuddy 时，真实零余额显示空环");
+  const none = filterQuotaUsages(data, []);
+  await render(none);
+  check(usageLineCount(none) === 0 && !fixture.querySelector(".agent-quota") && fixture.querySelectorAll(".agent-session").length === sessions.length,
+    "全部取消后收掉额度行，会话列表仍显示");
+  fixture.style.removeProperty("--island-font-scale");
+}
 
 export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usages: AgentUsages,
   check: (condition: unknown, message: string) => void, focusCalls: Record<string, unknown>[]) {
