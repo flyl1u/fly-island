@@ -9,6 +9,14 @@ impl Temp {
 }
 impl Drop for Temp { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); } }
 #[test]
+fn downloads_try_mirrors_before_github() {
+    let urls = download::candidate_urls(manifest::PLUGIN.url);
+    assert_eq!(urls.len(), 3);
+    assert!(urls[0].starts_with("https://ghfast.top/https://github.com/"));
+    assert!(urls[1].starts_with("https://gh-proxy.com/https://github.com/"));
+    assert_eq!(urls[2], manifest::PLUGIN.url);
+}
+#[test]
 fn pe_machine() {
     let mut b = vec![0;100]; b[..2].copy_from_slice(b"MZ"); b[60]=80; b[80..84].copy_from_slice(b"PE\0\0");
     b[84..86].copy_from_slice(&0x8664u16.to_le_bytes()); assert_eq!(netease::arch(&b),Some("x64"));

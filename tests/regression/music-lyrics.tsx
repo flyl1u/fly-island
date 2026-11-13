@@ -33,6 +33,7 @@ const diagnosticPlayers = [
   { sourceAppId: "healthy.exe", label: "Healthy", status: "ok" },
 ].map((player) => ({ ...player, hasSession: player.status !== "smtcOff", hasTimeline: player.status === "ok", hasPluginTrackId: false,
   exePath: null, directory: null, version: null, neteasePluginState: null }));
+const closes: boolean[] = [];
 let finishInstall: ((value: { keptForeignLoader: boolean; preservedFiles: string[] }) => void) | undefined;
 let failInstall: ((error: unknown) => void) | undefined;
 mockIPC((command, payload) => {
@@ -40,6 +41,7 @@ mockIPC((command, payload) => {
   if (command === "install_netease_plugin") return new Promise((resolve, reject) => { finishInstall = resolve; failInstall = reject; });
   if (command === "uninstall_netease_plugin") return { keptForeignLoader: false, preservedFiles: [] };
   if (command === "get_media_diagnostics") return { players: diagnosticPlayers };
+  if (command === "close_netease") { closes.push((payload as { relaunch: boolean }).relaunch); return null; }
   if (command === "plugin:event|listen") return 1;
   if (command === "plugin:event|unlisten") return null;
   if (command !== "get_lyrics") return null;
@@ -225,41 +227,56 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
   await settle(60);
   check(times().join("|") === "1:00|−3:00", "播放器不报告时长时，用歌词来源给的时长显示进度条");
 
+  await render({ ...track("晴天", 6000), sourceApp: "healthy.exe" });
+  await settle(400);
+  const artworkWidth = box(".music-player__artwork").width;
   const untimed = { ...track("晴天", 6000), sourceApp: "cloudmusic.exe", hasTimeline: false, durationMs: 0, canSeek: true };
   await render(untimed);
   await settle(400);
-  check(document.querySelector(".media-diag-card")?.textContent?.includes("网易云需要安装进度插件"), "无时间线的网易云显示插件提示");
-  check(document.querySelector<HTMLAnchorElement>(".media-diag-actions a")?.href === "https://github.com/apoint123/inflink-rs", "插件提示链接到 InfLink-rs");
-  const installButton = () => document.querySelector<HTMLButtonElement>(".media-diag-primary")!;
-  check(installButton().textContent === "\u4e00\u952e\u542f\u7528", "plugin install is an explicit action");
+  const notice = () => document.querySelector<HTMLElement>(".media-notice");
+  check(notice()?.textContent?.includes("网易云需要安装进度插件"), "无时间线的网易云自动弹出一次插件提示");
+  check(document.querySelector<HTMLAnchorElement>(".media-notice__link")?.href === "https://github.com/apoint123/inflink-rs", "插件提示链接到 InfLink-rs");
+  check(getComputedStyle(notice()!).position === "absolute" && box(".music-player__artwork").width === artworkWidth,
+    "提示卡浮在播放器上，封面保持原来的大小");
+  const installButton = () => document.querySelector<HTMLButtonElement>(".media-notice__primary")!;
+  check(installButton().textContent === "一键启用", "plugin install is an explicit action");
+  const primary = box(".media-notice__primary");
+  const link = box(".media-notice__link");
+  check(Math.abs((primary.top + primary.bottom) / 2 - (link.top + link.bottom) / 2) <= 2, "一键启用和了解详情在同一条线上居中对齐");
   await act(async () => installButton().click());
-  check(installButton().disabled && installButton().textContent?.includes("\u4e0b\u8f7d"), "pending installation disables action and shows download phase");
-  await act(async () => failInstall!({ kind: "NeedsClose", detail: "cloudmusic.exe" }));
-  check(document.querySelector(".media-diag-plugin [role=alert]")?.textContent?.includes("\u8bf7\u5148\u9000\u51fa") && !installButton().disabled, "NeedsClose shows exit instruction and retry");
-  await act(async () => installButton().click());
+  check(installButton().disabled && installButton().textContent?.includes("下载"), "pending installation disables action and shows download phase");
+  await act(async () => failInstall!({ kind: "NeedsClose", detail: "cloudmusic.exe is running" }));
+  const alert = () => document.querySelector(".media-notice [role=alert]")?.textContent ?? "";
+  check(alert().includes("需要先关闭网易云音乐") && !alert().includes("cloudmusic.exe") && alert().includes("关闭网易云并继续"),
+    "需要关闭网易云时不显示英文原文，直接给出“关闭网易云并继续”");
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-notice__inline-action")!.click());
+  check(closes.join() === "false", "关闭网易云并继续先关网易云（不重开）再安装");
   await act(async () => finishInstall!({ keptForeignLoader: false, preservedFiles: [] }));
-  check(document.querySelector(".media-diag-plugin [role=status]")?.textContent?.includes("\u91cd\u542f"), "successful install asks to restart NetEase");
+  check(document.querySelector(".media-notice [role=status]")?.textContent?.includes("重启") && !document.querySelector(".media-notice__primary"),
+    "装好后提示重启，不再显示一键启用");
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-notice__inline-action")!.click());
+  check(closes.join() === "false,true" && document.querySelector(".media-notice [role=status]")?.textContent?.includes("已重启"), "立即重启网易云：结束后重新打开");
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("button.lyrics-view__line--clickable")];
   check(buttons.length === 3 && buttons.every((button) => button.getAttribute("aria-label")?.startsWith("校准进度到")), "估算歌词每行可用键盘操作且有校准标签");
   await act(async () => buttons[0].click());
   check(calibrations[calibrations.length - 1] === 1000, "点击歌词按行时间校准本地秒表");
-  check(fixture.scrollWidth <= fixture.clientWidth && box(".media-diag-card").bottom <= box(".lyrics-view").top &&
-    box(".lyrics-view").bottom <= box(".music-progress").top && box(".music-player__controls").bottom <= box(".music-player").bottom + 1,
-    "兼容性提示、歌词和进度条互不重叠，在面板内完整显示");
   fixture.style.width = "300px";
-  check(fixture.scrollWidth <= fixture.clientWidth && box(".lyrics-view").bottom <= box(".music-progress").top, "300px 窄面板中的诊断卡片不撑宽也不遮挡歌词");
+  check(fixture.scrollWidth <= fixture.clientWidth && box(".media-notice").right <= box(".music-player").right + 1, "300px 窄面板中提示卡不撑宽");
   fixture.style.width = "520px";
-  await act(async () => document.querySelector<HTMLButtonElement>(".media-diag-dismiss")!.click());
-  check(!document.querySelector(".media-diag-card"), "不再提示立即关闭诊断卡片");
-  check(JSON.parse(localStorage.getItem("focusd-island-media-diagnostics-dismissed") ?? "[]").includes("cloudmusic.exe\u001fneteaseNeedsPlugin"), "按播放器和状态保存关闭记录");
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-notice__close")!.click());
+  check(!notice() && document.querySelector(".media-notice-button"), "收起提示卡后头部保留提示图标");
+  check(JSON.parse(localStorage.getItem("focusd-island-media-diagnostics-dismissed") ?? "[]").includes("cloudmusic.exeneteaseNeedsPlugin"), "按播放器和状态记住已收起，不再自动弹出");
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-notice-button")!.click());
+  check(notice()?.textContent?.includes("网易云需要安装进度插件"), "点提示图标可以再次打开");
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-notice__close")!.click());
   await render({ ...untimed, sourceApp: "QQMusic.exe" });
-  check(document.querySelector(".media-diag-card")?.textContent?.includes("21.10.2962") && document.querySelector<HTMLAnchorElement>(".media-diag-actions a")?.href === "https://y.qq.com/download/", "旧 QQ 显示最低版本和官网链接，网易云关闭记录不影响它");
+  check(notice()?.textContent?.includes("21.10.2962") && document.querySelector<HTMLAnchorElement>(".media-notice__link")?.href === "https://y.qq.com/download/", "旧 QQ 显示最低版本和官网链接，网易云收起记录不影响它");
   await render({ ...untimed, sourceApp: "KuGou.exe" });
-  check(document.querySelector(".media-diag-card")?.textContent?.includes("设置 → 常规设置 → 播放 → 支持系统播放控制"), "酷狗提示具体设置路径");
+  check(notice()?.textContent?.includes("设置 → 常规设置 → 播放 → 支持系统播放控制"), "酷狗提示具体设置路径");
   await render({ ...untimed, sourceApp: "other.exe" });
-  check(document.querySelector(".media-diag-card")?.textContent?.includes("可点歌词校准"), "其他无时间线播放器提示校准");
+  check(notice()?.textContent?.includes("可点歌词校准"), "其他无时间线播放器提示校准");
   await render({ ...untimed, sourceApp: "healthy.exe", hasTimeline: true });
-  check(!document.querySelector(".media-diag-card"), "兼容状态正常时不显示卡片");
+  check(!notice() && !document.querySelector(".media-notice-button"), "兼容状态正常时没有提示卡也没有提示图标");
   await render({ ...untimed, title: "玻璃", sourceApp: "other.exe", positionMs: 1000 }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
   check(document.querySelector(".music-progress--estimated") && document.querySelector<HTMLElement>(".music-progress")!.title.includes("进度为估算") && hit().getAttribute("role") === "progressbar", "估算进度降低透明度、说明校准方式且始终不可拖动");
 

@@ -1,0 +1,140 @@
+/* 播放器兼容性提示：浮在歌词上方的小卡片，不参与播放器排版，封面和歌词保持原样。 */
+.media-notice {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 0;
+  right: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding: 10px 10px 10px 12px;
+  color: var(--text-2);
+  background: var(--island-background-color, #2f2f37);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  font-size: 12px;
+  line-height: 1.45;
+  transform: translateY(-50%);
+  animation: media-notice-in 160ms ease-out;
+}
+
+@keyframes media-notice-in {
+  from { opacity: 0; transform: translateY(calc(-50% + 4px)); }
+}
+
+.media-notice__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.media-notice__icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--color-accent);
+}
+
+.media-notice__message {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+.media-notice__close {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: -2px -2px 0 0;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.media-notice__close:hover { color: var(--text-1); background: var(--color-white-a10); }
+
+/* 按钮和链接对齐在同一条线上，和图标后的文字左对齐。 */
+.media-notice__plugin,
+.media-notice > .media-notice__actions {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-left: 23px;
+}
+
+.media-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.media-notice__primary {
+  height: 26px;
+  padding: 0 12px;
+  color: #101013;
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.media-notice__primary:hover:not(:disabled) { filter: brightness(1.08); }
+.media-notice__primary:disabled { opacity: 0.55; cursor: default; }
+
+.media-notice__link,
+.media-notice__inline-action {
+  padding: 0;
+  color: var(--text-2);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.media-notice__link:hover,
+.media-notice__inline-action:hover:not(:disabled) { color: var(--text-1); }
+.media-notice__inline-action { color: var(--color-accent); font-weight: 600; text-decoration: none; }
+.media-notice__inline-action:disabled { opacity: 0.55; cursor: default; }
+
+.media-notice__muted,
+.media-notice__hint { color: var(--text-3); font-size: 11px; }
+
+.media-notice__feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.media-notice__feedback--error { color: #ff9aa8; }
+.media-notice__feedback--status { color: var(--text-1); }
+
+.media-notice-button { color: var(--color-accent); }
+.media-notice-button[aria-expanded="true"] { background: var(--color-white-a10); }
+
+.media-notice :focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-notice { animation: none; }
+}

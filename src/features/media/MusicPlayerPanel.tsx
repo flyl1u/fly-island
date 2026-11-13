@@ -15,7 +15,7 @@ import { useSongOffset } from "./lyrics/useSongOffset";
 import "./MusicPlayerPanel.css";
 import { hasTimeline } from "./trackClock";
 import { useMediaDiagnostics } from "./useMediaDiagnostics";
-import { MediaDiagnosticsCard } from "./MediaDiagnosticsCard";
+import { MediaNotice, MediaNoticeButton, useMediaNotice } from "./MediaNotice";
 
 const NO_LYRICS = { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 };
 
@@ -60,6 +60,7 @@ export function MusicPlayerPanel({
   const currentId = mediaState.activeSessionId ?? mediaState.sourceApp;
   const diagnostic = diagnostics.players.find((player) => player.sourceAppId === currentId)
     ?? (!currentId && !mediaState.title ? diagnostics.players.find((player) => !player.hasSession) : undefined);
+  const notice = useMediaNotice(diagnostic);
   const onLyricPosition = !hasTimeline(mediaState) ? onCalibrate : mediaState.canSeek ? onSeek : undefined;
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
@@ -102,6 +103,7 @@ export function MusicPlayerPanel({
             ))}
           </div>
           <div className="music-player__aside">
+            {notice.player && <MediaNoticeButton open={notice.open} onClick={notice.toggle} />}
             <MusicEqualizer playing={isPlaying} />
             {/* A microphone, not a gear: the island's header already has the gear for Settings. */}
             <button className="music-icon-button" type="button" aria-label={t.music.openSettings} onClick={onOpenSettings}>
@@ -113,7 +115,7 @@ export function MusicPlayerPanel({
         <MusicIdle onResume={onPlayPause} />
       )}
 
-      <MediaDiagnosticsCard player={diagnostic} />
+      {notice.open && notice.player && <MediaNotice player={notice.player} onClose={notice.close} />}
 
       {lyrics && (
         <div className="music-player__lyrics">

@@ -106,6 +106,8 @@ export const MEDIA_PLUGIN_PROGRESS_EVENT = "media-plugin-progress";
 export function getNeteasePluginStatus() { return invoke<NeteasePluginStatus>("netease_plugin_status"); }
 export function installNeteasePlugin() { return invoke<MediaPluginResult>("install_netease_plugin"); }
 export function uninstallNeteasePlugin() { return invoke<MediaPluginResult>("uninstall_netease_plugin"); }
+/** 结束网易云，`relaunch` 时随后重新打开。只在用户点击后调用。对应 media_plugins::close_netease。 */
+export function closeNetease(relaunch: boolean) { return invoke<void>("close_netease", { relaunch }); }
 export function listenMediaPluginProgress(handler: (progress: MediaPluginProgress) => void) {
   return listen<MediaPluginProgress>(MEDIA_PLUGIN_PROGRESS_EVENT, (event) => handler(event.payload));
 }
