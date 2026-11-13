@@ -47,6 +47,10 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   islandFontPercent: fontPercent,
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
   pageButtonStyle: "capsule",
+  // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
+  agentAlertWaiting: false,
+  agentAlertCompleted: false,
+  agentAlertFailed: false,
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
@@ -117,6 +121,19 @@ const click = async (selector: string) => {
   await settle(700);
 };
 
+// Product decision (2026-11-13): the island's opening/closing is an exception to reduced motion.
+function checkShapeMotion(expectedSeconds: number) {
+  const style = getComputedStyle(document.querySelector<HTMLElement>(".island")!);
+  const properties = style.transitionProperty.split(",").map((value) => value.trim());
+  const durations = style.transitionDuration.split(",").map(Number.parseFloat);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  check(["width", "height", "border-radius"].every((property) => {
+    const index = properties.indexOf(property);
+    return index >= 0 && durations[index % durations.length] > 0 && durations[index % durations.length] === expectedSeconds;
+  }), `岛屿形状完整过渡（reduce=${reduce}; property=${style.transitionProperty}; duration=${style.transitionDuration}）`);
+  check(interaction.animatePosition === true, `贴边收起与滑出始终请求位置动画（reduce=${reduce}）`);
+}
+
 /** Elements of the open page that reach outside the island's box, or past its rounded bottom corners. */
 function strays() {
   const island = document.querySelector<HTMLElement>(".island")!;
@@ -159,6 +176,7 @@ if (!automated) {
     const collapsed = island().getBoundingClientRect();
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
     const expectedHeight = customNotch ? 32 : 38;
+    checkShapeMotion(0.38);
     check(collapsed.height === expectedHeight && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
       `收起的岛贴着顶边：上边是平的，下面两个角是大圆角（${collapsed.height}px / ${collapsedRadius}px / ${getComputedStyle(island()).borderTopLeftRadius}）`);
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
@@ -173,7 +191,16 @@ if (!automated) {
 
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
+    checkShapeMotion(0.56);
+    const panelMotion = getComputedStyle(panel());
+    check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"
+      && panelMotion.transitionDelay === "0.12s, 0.08s", "展开面板完整淡入，保留原时长与延迟");
     check(Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius) > collapsedRadius, "展开后的圆角比收起时更大");
+    await click('[aria-label="收起到屏幕顶部"]');
+    checkShapeMotion(0.38);
+    check(interaction.isTucked === true, "贴边收起请求保留位置动画");
+    await click(".island__open-button");
+    check(interaction.isTucked === false && interaction.animatePosition === true, "从贴边滑出请求保留位置动画");
     // The page dots can be dragged into another order, which is saved; the drag opens no page.
     const dotOrder = () => [...document.querySelectorAll<HTMLElement>(".editor-dots .dot-button[data-reorder-id]")].map((dot) => dot.dataset.reorderId);
     const pageBefore = island().className;
@@ -202,7 +229,10 @@ if (!automated) {
 
     // The shelf's three files make one row of tiles with an open slot, and the page is only as
     // tall as that row (getShelfExpandedHeight).
-    await click(".dot-button--shelf");
+    await act(async () => { document.querySelector<HTMLElement>(".dot-button--shelf")!.click(); });
+    check(document.querySelector<HTMLElement>(".island__content")!.getAnimations().some((animation) =>
+      animation.effect?.getTiming().duration === 220), "翻页保留 220ms 面板淡入动画");
+    await settle(700);
     // Short capsules have a stable hit area; only the coloured shape rises and grows.
     const dots = [...document.querySelectorAll<HTMLElement>(".dot-button")];
     check(dots.every((dot) => dot.offsetWidth === 24 && dot.offsetHeight === 34 && !dot.textContent && dot.dataset.tip
@@ -296,6 +326,7 @@ if (!automated) {
     await act(async () => { lockSwitch().click(); });
     check(interaction.positionLocked === true, "锁定位置同步到原生窗口");
     await click(".island__collapse-target");
+    checkShapeMotion(0.38);
     const dragIsland = async (ctrlKey = false) => {
       const button = document.querySelector<HTMLElement>(".island__open-button")!;
       // Synthetic pointers do not have OS capture; the real hook still handles the events.

@@ -21,8 +21,7 @@ export function usePageFadeIn<T extends HTMLElement>(page: IslandPage, mode: Isl
       previousPage === page ||
       mode !== "expanded" ||
       !content ||
-      typeof content.animate !== "function" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      typeof content.animate !== "function"
     ) {
       return;
     }
