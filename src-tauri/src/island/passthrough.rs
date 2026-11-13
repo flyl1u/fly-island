@@ -5,8 +5,8 @@ use tauri::{Emitter, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
 use super::{
-    geometry::STAGE_WINDOW_WIDTH,
-    state::{read_window_state, CornerShape},
+    geometry::{tucked_top_offset, STAGE_WINDOW_WIDTH},
+    state::{read_window_state, CornerShape, IslandWindowState},
 };
 use crate::win32;
 
@@ -57,6 +57,21 @@ pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {
     let local_x = (cursor.x - window_rect.left) as f64;
     let local_y = (cursor.y - window_rect.top) as f64;
     let state = read_window_state();
+
+    point_in_island(state, physical_scale, local_x, local_y)
+}
+
+/// Physical stage coordinates, shared by the live cursor loop and the DPI tests.
+pub(super) fn point_in_island(state: IslandWindowState, physical_scale: f64, local_x: f64, local_y: f64) -> bool {
+    let window_width = STAGE_WINDOW_WIDTH * physical_scale;
+    if let Some((width, height)) = state.tuck_style.hot_zone_size().filter(|_| state.is_tucked) {
+        let scale = state.collapsed_scale * physical_scale;
+        let left = (window_width - width * scale) / 2.0;
+        // Use the rounded native offset so the hot zone starts exactly at the screen edge.
+        let top = -f64::from(tucked_top_offset(state, physical_scale));
+        return local_x >= left && local_x < left + width * scale
+            && local_y >= top && local_y < top + height * scale;
+    }
 
     let (logical_width, logical_height) = state.active_size();
     let island_width = logical_width * physical_scale;

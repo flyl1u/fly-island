@@ -190,7 +190,9 @@ pub(super) fn interpolate_stage_position(
 
 pub(super) fn tucked_top_offset(state: IslandWindowState, dpi: f64) -> i32 {
     let height = state.collapsed_height * state.collapsed_scale;
-    -((height - TUCKED_VISIBLE_EDGE_HEIGHT).max(0.0) * dpi).round() as i32
+    let visible_height = state.tuck_style.hot_zone_size()
+        .map_or(TUCKED_VISIBLE_EDGE_HEIGHT, |(_, height)| height * state.collapsed_scale);
+    -((height - visible_height).max(0.0) * dpi).round() as i32
 }
 
 pub(super) fn monitor_for_island_position(

@@ -13,6 +13,17 @@ import {
   loadSettings,
 } from "../../src/features/appearance/storage.ts";
 
+test("tucked style defaults to edge and rejects unknown saved values", () => {
+  assert.equal(DEFAULT_SETTINGS.tuckStyle, "edge");
+  for (const value of [undefined, null, "", "unknown", "LINE", 1, true, {}]) {
+    assert.equal(normalizeSettings({ tuckStyle: value }).tuckStyle, "edge");
+  }
+  assert.equal(normalizeSettings(null).tuckStyle, "edge");
+  for (const tuckStyle of ["edge", "line", "hidden"]) {
+    assert.equal(normalizeSettings({ tuckStyle }).tuckStyle, tuckStyle);
+  }
+});
+
 function withStorage(entries, run) {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
   const values = new Map(entries);

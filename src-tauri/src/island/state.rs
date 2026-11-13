@@ -44,6 +44,33 @@ pub(crate) enum MonitorFollow {
     Foreground,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum TuckStyle {
+    #[default]
+    Edge,
+    Line,
+    Hidden,
+}
+
+impl TuckStyle {
+    /// Missing or unknown IPC values keep the original edge behaviour.
+    pub(super) fn from_value(value: Option<&str>) -> Self {
+        match value {
+            Some("line") => Self::Line,
+            Some("hidden") => Self::Hidden,
+            _ => Self::Edge,
+        }
+    }
+
+    pub(super) fn hot_zone_size(self) -> Option<(f64, f64)> {
+        match self {
+            Self::Edge => None,
+            Self::Line => Some((140.0, 14.0)),
+            Self::Hidden => Some((160.0, 6.0)),
+        }
+    }
+}
+
 impl MonitorFollow {
     /// `primary`, `cursor` or `foreground`; anything else is not a choice the settings offer.
     pub(super) fn from_value(value: &str) -> Option<Self> {
@@ -94,6 +121,7 @@ impl CornerShape {
 pub(crate) struct IslandWindowState {
     pub(super) mode: IslandMode,
     pub(super) is_tucked: bool,
+    pub(super) tuck_style: TuckStyle,
     pub(super) collapsed_scale: f64,
     pub(super) expanded_scale: f64,
     pub(super) margin_y: f64,
@@ -172,6 +200,7 @@ impl Default for IslandWindowState {
         Self {
             mode: IslandMode::Collapsed,
             is_tucked: false,
+            tuck_style: TuckStyle::Edge,
             collapsed_scale: DEFAULT_COLLAPSED_SCALE,
             expanded_scale: DEFAULT_EXPANDED_SCALE,
             margin_y: DEFAULT_MARGIN_Y,
