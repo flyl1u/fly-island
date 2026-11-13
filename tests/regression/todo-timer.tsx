@@ -93,7 +93,14 @@ const click = (selector: string) => act(async () => {
 });
 const open = () => click(".island__open-button");
 const start = (id: string) => click(`[data-todo-id="${id}"] .todo-start`);
-const choose = (id: string) => click(`[data-todo-id="${id}"] .todo-timer-button`);
+// 等岛屿展开动画结束再点怀表：动画中怀表还在移动，迟到的滚动事件会被当成真滚动而关掉设置。
+const settle = async () => {
+  const deadline = performance.now() + 5000;
+  while (performance.now() < deadline && document.querySelector(".island")!.getAnimations().some((a) => a.playState === "running")) {
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
+  }
+};
+const choose = async (id: string) => { await settle(); await click(`[data-todo-id="${id}"] .todo-timer-button`); };
 const watchLabel = (id: string) => document.querySelector(`[data-todo-id="${id}"] .todo-timer-button`)?.getAttribute("aria-label");
 const escape = () => act(async () => {
   document.querySelector(".todo-duration-picker")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -132,10 +139,7 @@ try {
   await mount();
   await open();
   check(document.querySelectorAll(".todo-drag-handle").length === 2, "Default settings expose both reorder handles");
-  const settleDeadline = performance.now() + 5000;
-  while (performance.now() < settleDeadline && document.querySelector(".island")!.getAnimations().some((a) => a.playState === "running")) {
-    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
-  }
+  await settle();
   const pointer = async (type: string, target: HTMLElement, x: number, y: number) => act(async () => {
     target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: x, clientY: y }));
   });
@@ -185,6 +189,9 @@ try {
   const watchRect = document.querySelector('[data-todo-id="t1"] .todo-timer-button')!.getBoundingClientRect();
   check(document.querySelector<HTMLInputElement>(".todo-duration-picker input")?.value === "15" && !stored(), "点怀表打开小时间设置，默认 15 分钟，不直接开始");
   check(document.querySelector(".todo-duration-picker")!.getBoundingClientRect().bottom <= watchRect.top, "时间设置出现在怀表上方");
+  // 布局变化后列表会自己校正滚动位置，迟到的 scroll 事件不能关掉刚打开的设置。
+  await act(async () => { document.querySelector(".todo-list")!.dispatchEvent(new Event("scroll")); });
+  check(document.querySelector(".todo-duration-picker"), "怀表位置没变的滚动事件不关闭时间设置");
   await go();
   const firstEnd = stored()!.endsAt;
   check(stored()?.todoId === "t1" && firstEnd === now + 900_000, "选 15 分钟后保存当前待办和绝对结束时间");
