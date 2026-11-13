@@ -7,6 +7,7 @@ import { mockIPC } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import { ISLAND_HOVER_CHANGED_EVENT } from "../../src/windows/island/api";
 import { useIslandNavigation } from "../../src/windows/island/useIslandNavigation";
+import { useRevealOnMessage } from "../../src/windows/island/useIslandAutomation";
 import { useTuckPeek } from "../../src/windows/island/useTuckPeek";
 import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen";
 
@@ -20,13 +21,18 @@ type Island = ReturnType<typeof useIslandNavigation>;
 let island: Island;
 let enter: () => void;
 let setOpensPanel: (value: boolean) => void;
+let setPreview: (value: boolean) => void;
 
 function Harness() {
   const [opensPanel, changeOpensPanel] = useState(false);
+  const [preview, changePreview] = useState(false);
   const navigation = useIslandNavigation();
   island = navigation;
   setOpensPanel = changeOpensPanel;
-  useTuckPeek(navigation.isPeeking, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
+  setPreview = changePreview;
+  // As useIslandTucking wires them: a message preview reveals the island and holds the peek.
+  useRevealOnMessage(preview, navigation.isTucked, navigation.revealForMessage);
+  useTuckPeek(navigation.isPeeking && !preview, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
   enter = useTuckedHoverOpen({
     opensPanel,
     delayMs: HOVER_DELAY_MS,
@@ -127,6 +133,15 @@ async function runChecks() {
     await hover(false);
     await wait(450);
     check(state() === "expanded/out", "没开「鼠标移开后重新收起」时，展开后不自动收回");
+
+    // A message on a tucked island: it slides out for the preview and back once it has gone.
+    await act(async () => island.tuckIsland());
+    await act(async () => setPreview(true));
+    await wait(450);
+    check(state() === "collapsed/out", "收到消息时岛屿从边缘弹出，预览期间不收回");
+    await act(async () => setPreview(false));
+    await wait(450);
+    check(state() === "collapsed/tucked", "消息预览结束后岛屿收回边缘");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

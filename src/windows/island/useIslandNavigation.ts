@@ -54,6 +54,15 @@ export function useIslandNavigation() {
     setIsPeekTuck(false);
   }, []);
 
+  /**
+   * Slides out for a message preview and back once it has gone (useIslandTucking holds the
+   * peek while the preview shows), so a line pops into the island and returns to a line.
+   */
+  const revealForMessage = useCallback(() => {
+    setIsTucked(false);
+    setIsPeekTuck(true);
+  }, []);
+
   /** Slides out under the cursor; a minimized island slides back when it leaves. */
   const peekIsland = useCallback(() => {
     setIsTucked(false);
@@ -109,6 +118,7 @@ export function useIslandNavigation() {
     collapseIsland,
     tuckIsland,
     revealIsland,
+    revealForMessage,
     minimizeToEdge,
     idleTuck,
     peekIsland,
