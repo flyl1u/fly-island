@@ -42,8 +42,8 @@ export const zhCN: SettingsCategoriesText = {
   clipboard: "剪贴板与文件",
   translation: "翻译",
   shelf: "文件中转",
-  agents: "会话与提醒",
-  agentConnect: "连接",
+  agents: "AI 会话",
+  agentConnect: "接入 AI 工具",
   plugins: "插件",
   about: "关于",
 };
@@ -65,8 +65,8 @@ export const en: SettingsCategoriesText = {
   clipboard: "Clipboard & files",
   translation: "Translation",
   shelf: "File shelf",
-  agents: "Sessions & alerts",
-  agentConnect: "Connection",
+  agents: "AI sessions",
+  agentConnect: "Connect AI tools",
   plugins: "Plugins",
   about: "About",
 };

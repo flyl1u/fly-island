@@ -9,7 +9,7 @@ import { getAgentHooksNotice, type AgentHooksNotice as Notice } from "./status";
 
 /**
  * On the Sessions page, a row saying the hooks are missing or old, with the way to the
- * Connection page where they are installed. Nothing while they are current.
+ * Connect AI tools page where they are installed. Nothing while they are current.
  */
 export function AgentHooksNotice({ onOpenConnect }: { onOpenConnect: () => void }) {
   const text = useTranslation().settings.agent;

@@ -32,7 +32,7 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
 
   await openPage("agentConnect");
   check(!document.querySelector(".workbuddy-sign-in__status") && !document.querySelector(".editor-panel")?.textContent?.includes("WorkBuddy"),
-    "The Connection page no longer has a WorkBuddy section");
+    "The Connect AI tools page has no WorkBuddy section");
 
   await openPage("agents");
   const revisited = [...document.querySelectorAll<HTMLInputElement>(".agent-quota-settings input")];

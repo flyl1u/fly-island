@@ -76,7 +76,7 @@ Expand the island and use the page buttons at the top to switch between tasks, m
 
 - **QQ and WeChat reminders** are enabled by default. QQ needs Windows notification access, and QQ must be signed in with system notifications enabled. WeChat must be running and issue a taskbar-attention request. Pause either source in **Settings → Messages** or from the message panel. See the [QQ notification guide (Chinese)](docs/qq-notification-compatibility.md) and [WeChat reminder guide (Chinese)](docs/wechat-reminder-compatibility.md).
 
-- **AI status light**: install or repair the Codex / Claude Code hooks in **Settings → Connection**, then restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
+- **AI status light**: install or repair the Codex / Claude Code hooks in **Settings → Connect AI tools**, then restart Codex and any terminal running Claude Code; trust the new Codex hooks when prompted. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md).
 
 - **Mail**: enable IMAP in your mailbox's web settings and generate an authorization code, then enter the address and that code (not your login password) in **Settings → Mail**. The code is stored in Windows Credential Manager. You can refresh, pause receiving, or disconnect; initial sync does not replay old mail. See the [mail setup guide (Chinese)](docs/mail.md).
 
