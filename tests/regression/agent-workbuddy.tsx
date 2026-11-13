@@ -19,6 +19,12 @@ export async function checkWorkbuddySessions(root: Root, sessions: AgentSessionS
   check(row?.querySelectorAll(".agent-provider-icon--workbuddy").length === 2 && row.querySelector(".agent-session__host-name")?.textContent === "WorkBuddy",
     "WorkBuddy 会话和宿主都用 WorkBuddy 标识");
   check(row?.textContent?.includes("Fictional WorkBuddy session") && row.textContent.includes("DeepSeek-V4.1-Flash"), "WorkBuddy 会话显示标题和模型");
+  const font = (title: Element | null | undefined) => {
+    const style = title ? getComputedStyle(title) : null;
+    return style ? `${style.fontWeight} ${style.fontSize} ${style.fontFamily}` : "";
+  };
+  const titles = [...document.querySelectorAll(".agent-session__title")];
+  check(titles.length > 1 && titles.every((title) => font(title) === font(titles[0])), `WorkBuddy 的标题与其它来源字重、字号、字体一致（${font(titles[0])}）`);
   await act(async () => { row?.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
   const call = focusCalls[focusCalls.length - 1];
   check(call?.provider === "workbuddy" && call.sessionId === workbuddy.sessionId, "点击 WorkBuddy 会话使用现有聚焦命令");

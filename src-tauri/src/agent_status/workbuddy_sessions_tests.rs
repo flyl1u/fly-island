@@ -105,6 +105,38 @@ fn only_interactive_registry_entries_name_open_conversations() {
     assert_eq!(registry_entry("not json"), None);
 }
 
+#[test]
+fn conversation_links_carry_only_session_ids() {
+    assert_eq!(conversation_link(SESSION).as_deref(), Some("workbuddy://chat/00db0691-77f6-4c92-8c63-908c6318c563"));
+    for bad in ["", "a b", "../x", "id?x=1", "id\" --flag", &"a".repeat(65)] {
+        assert_eq!(conversation_link(bad), None, "{bad}");
+    }
+}
+
+#[test]
+fn links_are_sent_only_when_workbuddy_handles_the_scheme() {
+    assert!(opens_links(Some(r#""D:\workbuddy\WorkBuddy.exe" "%1""#)));
+    assert!(!opens_links(Some(r#""C:\Other\other.exe" "%1""#)));
+    assert!(!opens_links(None));
+}
+
+#[test]
+fn the_newest_log_names_the_conversation_in_front() {
+    let home = std::env::temp_dir().join(format!("focusd-workbuddy-newest-{}", std::process::id()));
+    let project = home.join(".workbuddy").join("projects").join("demo");
+    fs::create_dir_all(&project).expect("create the test folder");
+    assert_eq!(newest_session_id(&home), None);
+    let old = project.join("older.jsonl");
+    fs::write(&old, "{}").expect("write a log");
+    let earlier = std::time::SystemTime::now() - std::time::Duration::from_secs(60);
+    File::options().write(true).open(&old).and_then(|file| file.set_modified(earlier)).expect("age the log");
+    fs::write(project.join(format!("{SESSION}.jsonl")), "{}").expect("write a log");
+    fs::write(project.join("notes.txt"), "").expect("write a file");
+    let newest = newest_session_id(&home);
+    let _ = fs::remove_dir_all(&home);
+    assert_eq!(newest.as_deref(), Some(SESSION));
+}
+
 /// Prints this computer's WorkBuddy sessions without their text: `cargo test -- --ignored local_workbuddy`.
 #[test]
 #[ignore]
