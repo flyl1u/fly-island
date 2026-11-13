@@ -36,7 +36,7 @@
 
 ## What is this?
 
-FocuSD Island is a Windows-first Dynamic Island for your desktop. WeChat, QQ and mail messages pop up right on the island, and you can see at a glance what Claude Code / Codex is doing and whether it needs your approval. Synced lyrics, a file shelf, clipboard history, quick translation and tasks join them in one small island at the top of the screen.
+fly-island (formerly FocuSD Island) is a Windows-first Dynamic Island for your desktop. WeChat, QQ and mail messages pop up right on the island, and you can see at a glance what Claude Code / Codex is doing and whether it needs your approval. Synced lyrics, a file shelf, clipboard history, quick translation and tasks join them in one small island at the top of the screen.
 
 It runs as a lightweight, borderless, always-on-top floating island. Expand it when you need information, then return to the compact state and keep working.
 
@@ -52,7 +52,7 @@ I thought of the iPhone's Dynamic Island, which gathers notifications, timers, m
 
 ## Features
 
-FocuSD brings frequent actions from separate windows into one compact island:
+fly-island brings frequent actions from separate windows into one compact island:
 
 - **WeChat, QQ, and mail**: new WeChat and QQ messages pop up right on the island as one card each, with source, contact, time, and text, so you don't have to switch over. Muted WeChat chats only notify when someone mentions you, and conversation names with message previews can be turned on (experimental). Connect several IMAP mailboxes (QQ, 163, 126 and others) and read mail right on the island.
 - **AI agents**: live sessions from Claude Code / Claude desktop, Codex and DeepSeek Harness (DSH, including DataElement / anywhere-labs community desktops) show on the island. When an agent wants to run a command or edit files, allow or deny it right there; a soft chime tells you when a task is done or needs an answer, and clicking a session jumps to its window. Shows Claude/Codex quota rings and a DSH balance ring. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md) and [DSH integration and limitations](docs/deepseek-harness.md).
