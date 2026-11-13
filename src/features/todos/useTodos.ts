@@ -152,7 +152,7 @@ export function useTodos({
       onUpdateTodo: list.updateTodoTitle,
       onStartTodo: list.startTodo,
       onDeleteTodo: list.deleteTodo,
-      onReorderTodo: list.reorderTodo,
+      onReorderTodo: list.moveTodoToIndex,
       onSaveToday: saveTodayTodos,
       onShowDaily: showDaily,
       onShowToday: showToday,

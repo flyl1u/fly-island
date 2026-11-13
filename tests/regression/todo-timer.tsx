@@ -144,8 +144,10 @@ try {
   handle.setPointerCapture = () => {};
   const target = document.querySelector<HTMLElement>('[data-todo-id="t2"]')!.getBoundingClientRect();
   await pointer("pointerdown", handle, 0, 0);
-  await pointer("pointermove", handle, target.x + 30, target.y + 10);
-  await pointer("pointerup", handle, target.x + 30, target.y + 10);
+  // 拖动越过下一行的中线才换位。
+  const below = target.y + target.height * 0.75;
+  await pointer("pointermove", handle, target.x + 30, below);
+  await pointer("pointerup", handle, target.x + 30, below);
   const order = () => [...document.querySelectorAll<HTMLElement>("[data-todo-id]")].map((node) => node.dataset.todoId).join();
   check(order() === "t2,t1" && JSON.parse(localStorage.getItem("focusd-island-todos")!)[0].id === "t2", "Dragging reorders DOM and persisted todos");
   check(!document.querySelector(".todo-title-input, .todo-duration-picker") && !localStorage.getItem("focusd-island-active-todo"), "Dragging never edits or starts a todo");

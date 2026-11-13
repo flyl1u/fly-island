@@ -30,7 +30,6 @@ function Harness() {
         isActive={false}
         canReorder={false}
         isDragging={false}
-        isDragOver={false}
         isEditing={editing}
         titleDraft={draft}
         onTitleDraftChange={setDraft}
