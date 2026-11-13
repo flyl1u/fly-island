@@ -103,7 +103,7 @@
 总览见 [overview.md](overview.md)。
 # 网易云精准进度插件
 
-- 命令：`netease_plugin_status()` 返回 `NeteasePluginStatus`（state、supported、tested、version、arch、installDir、running、legacyInfLink、pluginDir）；`install_netease_plugin()` / `uninstall_netease_plugin()` 返回 `{ keptForeignLoader, preservedFiles }`。
+- 命令：`netease_plugin_status()` 返回 `NeteasePluginStatus`（state、supported、tested、version、arch、installDir、running、legacyInfLink、pluginDir）；`install_netease_plugin()` / `uninstall_netease_plugin()` 返回 `{ keptForeignLoader, preservedFiles }`；`close_netease({ relaunch })` 结束网易云的全部进程，`relaunch` 为 true 时随后重新打开（只在用户点击“立即重启网易云”或“关闭网易云并继续”后调用）。
 - 错误统一为 `{ kind, detail }`，kind 为 Unsupported / NeedsClose / LegacyConflict / HashMismatch / Network / UserDeclined / Busy / Io。
 - 事件 `media-plugin-progress`：`{ stage: downloading|verifying|copying|done|error, detail?: string|null }`。
 - 应用数据 `media-plugins.json`：`{ version: 1, files: [{ path, sha256 }], installedAt }`，installedAt 为 Unix 秒。仅记录本应用写入的文件；卸载只删除仍与记录哈希一致的文件，替换文件保留并返回路径；记录损坏或未知版本容错为空。

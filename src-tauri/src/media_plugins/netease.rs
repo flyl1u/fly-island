@@ -1,7 +1,7 @@
 use std::{fs, path::{Path, PathBuf}};
 use serde::Serialize;
 use crate::win32;
-use super::{download, manifest};
+use super::{download, manifest, PluginError};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -62,6 +62,28 @@ fn executable() -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 pub(super) fn running() -> bool { !win32::process_tree::process_ids_named("cloudmusic.exe").is_empty() }
+
+/// 用户点了“重启网易云”或“关闭网易云并继续”：结束网易云的全部进程，等它退干净，需要时再打开。
+pub(super) fn close(relaunch: bool) -> Result<(), PluginError> {
+    use std::{os::windows::process::CommandExt, process::Command, time::{Duration, Instant}};
+    let exe = executable();
+    if running() {
+        Command::new("taskkill").args(["/F", "/T", "/IM", "cloudmusic.exe"])
+            .creation_flags(crate::system::CREATE_NO_WINDOW).output()?;
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while running() {
+            if Instant::now() > deadline { return Err(PluginError::new("NeedsClose", "cloudmusic.exe did not exit")); }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+    if relaunch {
+        let exe = exe.ok_or_else(|| PluginError::new("Unsupported", "cloudmusic.exe not found"))?;
+        let mut command = Command::new(&exe);
+        if let Some(dir) = exe.parent() { command.current_dir(dir); }
+        command.spawn()?;
+    }
+    Ok(())
+}
 pub(super) fn status() -> NeteasePluginStatus {
     let exe = executable();
     let version = exe.as_deref().and_then(win32::file_version::read);

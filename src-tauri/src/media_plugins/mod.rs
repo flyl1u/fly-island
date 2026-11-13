@@ -13,7 +13,7 @@ pub(crate) const PROGRESS_EVENT: &str = "media-plugin-progress";
 static BUSY: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PluginError { kind: &'static str, detail: String }
+pub(crate) struct PluginError { pub(super) kind: &'static str, detail: String }
 impl PluginError {
     pub(super) fn new(kind: &'static str, detail: impl Into<String>) -> Self { Self { kind, detail: detail.into() } }
     pub(super) fn network(error: reqwest::Error) -> Self { Self::new("Network", error.to_string()) }
@@ -58,6 +58,13 @@ pub(crate) async fn install_netease_plugin(app: tauri::AppHandle) -> Result<serv
 #[tauri::command]
 pub(crate) async fn uninstall_netease_plugin(app: tauri::AppHandle) -> Result<service::OperationResult, PluginError> { operate(app, true).await }
 
+/// 结束网易云（`relaunch` 时随后重新打开），供安装后重启、或卸载前关闭使用。只在用户点击后调用。
+#[tauri::command]
+pub(crate) async fn close_netease(relaunch: bool) -> Result<(), PluginError> {
+    tauri::async_runtime::spawn_blocking(move || netease::close(relaunch)).await
+        .map_err(|e| PluginError::new("Io", e.to_string()))?
+}
+
 pub(crate) fn handle_startup() { elevated::handle_startup(); }
 pub(crate) fn diagnostic_state(directory: &std::path::Path) -> &'static str { netease::plugin_state(directory).0 }
 macro_rules! tauri_commands {
@@ -66,6 +73,7 @@ macro_rules! tauri_commands {
             crate::media_plugins::netease_plugin_status,
             crate::media_plugins::install_netease_plugin,
             crate::media_plugins::uninstall_netease_plugin,
+            crate::media_plugins::close_netease,
         ] $($rest)*)
     };
 }

@@ -10,9 +10,12 @@ fn ensure_closed() -> Result<(), PluginError> {
 pub(super) async fn install(app: &tauri::AppHandle, data: &Path) -> Result<OperationResult, PluginError> {
     let status = netease::status();
     if !status.supported { return Err(PluginError::new("Unsupported", status.version.unwrap_or_default())); }
-    ensure_closed()?;
     if status.legacy_inf_link { return Err(PluginError::new("LegacyConflict", status.plugin_dir.to_string_lossy())); }
     let dir = status.install_dir.ok_or_else(|| PluginError::new("Unsupported", "Install directory unknown"))?;
+    // 加载器只在网易云启动时载入：目录里还没有 msimg32.dll 时，运行中的网易云不占用任何要写的文件，
+    // 直接装好、重启后生效。已有加载器时它可能正占着插件目录，才需要先退出。
+    let loader_present = dir.join("msimg32.dll").exists();
+    if loader_present { ensure_closed()?; }
     let loader = if status.arch == Some("x86") { &manifest::X86 } else { &manifest::X64 };
     let downloads = data.join("media-plugins/download");
     progress(app, "downloading");
@@ -22,7 +25,7 @@ pub(super) async fn install(app: &tauri::AppHandle, data: &Path) -> Result<Opera
     if !download::verify(&source, loader) || !download::verify(&plugin, &manifest::PLUGIN) {
         return Err(PluginError::new("HashMismatch", "Cached download changed"));
     }
-    ensure_closed()?;
+    if loader_present { ensure_closed()?; }
     if netease::plugin_state(&dir).1 { return Err(PluginError::new("LegacyConflict", status.plugin_dir.to_string_lossy())); }
     progress(app, "copying");
     fs::create_dir_all(data)?;

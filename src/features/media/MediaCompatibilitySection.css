@@ -1,0 +1,36 @@
+/* 设置 → 音乐 → 播放器兼容性：说明逐行写在标题下面，结果和下一步跟在后面。 */
+.media-compat__line,
+.media-compat__feedback {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.media-compat__feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  margin-top: 2px;
+}
+
+.media-compat__feedback--error { color: #ff8a9a; }
+.media-compat__feedback--status { color: var(--color-text); }
+
+.media-compat__action,
+.media-compat__link {
+  padding: 0;
+  color: var(--color-accent);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.media-compat__link + .media-compat__link { margin-left: 10px; }
+.media-compat__action:hover:not(:disabled),
+.media-compat__link:hover { text-decoration: underline; }
+.media-compat__action:disabled { opacity: 0.45; cursor: default; }
+.media-compat__action:focus-visible,
+.media-compat__link:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
