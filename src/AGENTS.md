@@ -90,7 +90,7 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 - 颜色、圆角、间距优先使用 CSS 变量，不新增散落的硬编码值。
 - 保持现有视觉语言：悬浮岛、紧凑面板、透明背景、清晰的控件状态。界面方向以 `DESIGN.md` 为准。
 - 图标使用 lucide-react，不手写图标库已有的 SVG。
-- 无障碍：能用键盘到达的控件要有 `:focus-visible` 样式（鼠标操作时 `base.css` 会隐藏按钮的焦点框）；只有图标的按钮写 `aria-label`。新的 `animation` 要在同一个文件里加 `@media (prefers-reduced-motion: reduce)` 停掉或改成不动的形式（`tests/unit/reduced-motion.test.mjs` 会检查）；`transition` 已由 `base.css` 统一处理。
+- 无障碍：能用键盘到达的控件要有 `:focus-visible` 样式（鼠标操作时 `base.css` 会隐藏按钮的焦点框）；只有图标的按钮写 `aria-label`。新的 `animation` 要在同一个文件里加 `@media (prefers-reduced-motion: reduce)` 停掉或改成不动的形式（`tests/unit/reduced-motion.test.mjs` 会检查）；`transition` 已由 `base.css` 统一处理。岛屿形状的展开、收起及配套的面板进出、翻页淡入和贴边收起、滑出是例外，始终完整播放，只在岛屿局部覆盖（2026-11-13 产品决定，见 `docs/investigations/accessibility.md`）。
 
 ## 多语言
 
