@@ -22,6 +22,7 @@
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
+    <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
   </p>
 </div>
 
@@ -130,7 +131,9 @@ Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture and 
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE). You are free to use, modify, and redistribute it; if you distribute a modified version, it must also be released under GPL-3.0 with its source code.
+
+Copyright (C) 2026 flyl1u and contributors. Versions 3.0.8 and earlier were released under the MIT License and remain available under it.
 
 Third-party dependencies and bundled assets retain their respective licenses. See the [font notices](src/assets/fonts/README.md) for bundled fonts. The NetEase progress plugins shipped with the installer, BetterNCM and InfLink-rs, are GPL-3.0 and included unmodified; see the [plugin notice](src-tauri/resources/media-plugins/README.md) for licenses and source links.
 

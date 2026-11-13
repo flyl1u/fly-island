@@ -22,6 +22,7 @@
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D4">
     <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-24C8DB">
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
+    <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
   </p>
 </div>
 
@@ -134,7 +135,9 @@ pnpm tauri build
 
 ## 开源协议
 
-本项目采用 [MIT 协议](LICENSE)。
+本项目采用 [GNU 通用公共许可证第 3 版（GPL-3.0）](LICENSE)。你可以自由使用、修改和再分发；分发修改后的版本时，需要同样以 GPL-3.0 开源并提供源代码。
+
+Copyright (C) 2026 flyl1u and contributors。3.0.8 及以前的版本以 MIT 协议发布，已发布版本仍可按 MIT 使用。
 
 第三方依赖和内置资源仍遵循各自的许可证。内置字体的许可信息见[字体说明](src/assets/fonts/README.md)。随安装包附带的网易云进度插件 BetterNCM 与 InfLink-rs 采用 GPL-3.0，原样附带，许可证与源码链接见[插件说明](src-tauri/resources/media-plugins/README.md)。
 
