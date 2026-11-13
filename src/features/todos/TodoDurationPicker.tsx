@@ -1,3 +1,4 @@
+import { NumberStepper } from "../../components/NumberStepper";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../../i18n";
 import { MAX_TODO_MINUTES, MIN_TODO_MINUTES, parseTodoMinutes, type TodoDuration } from "./timer";
@@ -42,12 +43,11 @@ export function TodoDurationPicker({ lastDuration, onStart, onCancel }: {
           event.preventDefault();
           if (minutes !== null) onStart(minutes);
         }}>
-          <label>
+          <div className="todo-duration-picker__label">
             {t.todo.customMinutes}
-            <input autoFocus type="number" min={MIN_TODO_MINUTES} max={MAX_TODO_MINUTES} step="1"
-              value={draft} aria-label={t.todo.customMinutes} aria-invalid={minutes === null}
-              onChange={(event) => setDraft(event.currentTarget.value)} />
-          </label>
+            <NumberStepper autoFocus variant="island" min={MIN_TODO_MINUTES} max={MAX_TODO_MINUTES} step={5}
+              value={minutes ?? 25} ariaLabel={t.todo.customMinutes} onChange={(value) => setDraft(String(value))} />
+          </div>
           <button type="submit" disabled={minutes === null}>{t.todo.start}</button>
           {minutes === null && <span role="status">{t.todo.durationRange}</span>}
         </form>

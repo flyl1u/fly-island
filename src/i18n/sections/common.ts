@@ -1,4 +1,6 @@
 export type CommonText = {
+  decrease: string;
+  increase: string;
   close: string;
   retry: string;
   refresh: string;
@@ -9,6 +11,8 @@ export type CommonText = {
 };
 
 export const zhCN: CommonText = {
+  decrease: "减少",
+  increase: "增加",
   close: "关闭",
   retry: "重试",
   refresh: "刷新",
@@ -19,6 +23,8 @@ export const zhCN: CommonText = {
 };
 
 export const en: CommonText = {
+  decrease: "Decrease",
+  increase: "Increase",
   close: "Close",
   retry: "Retry",
   refresh: "Refresh",

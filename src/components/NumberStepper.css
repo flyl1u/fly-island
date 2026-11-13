@@ -1,0 +1,64 @@
+.number-stepper {
+  --number-stepper-height: 28px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--number-stepper-height);
+  color: var(--color-text);
+  background: var(--color-white-a06);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+}
+
+.number-stepper--island {
+  --number-stepper-height: 26px;
+  color: var(--text-1);
+  background: var(--color-white-a08);
+  font-size: 12px;
+}
+
+.number-stepper .number-stepper__button,
+.number-stepper .number-stepper__input {
+  min-height: 0;
+  height: calc(var(--number-stepper-height) - 2px);
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  corner-shape: round;
+  font: inherit;
+  font-weight: 600;
+}
+
+.number-stepper .number-stepper__button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--number-stepper-height);
+  width: var(--number-stepper-height);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.number-stepper .number-stepper__button:hover:not(:disabled) { background: var(--color-white-a08); }
+.number-stepper .number-stepper__button:active:not(:disabled) { background: var(--color-white-a04); }
+.number-stepper .number-stepper__button:disabled { opacity: 0.35; cursor: default; }
+.number-stepper .number-stepper__input {
+  width: var(--number-stepper-width);
+  min-width: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.number-stepper .number-stepper__button:focus-visible,
+.number-stepper .number-stepper__input:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

@@ -16,8 +16,8 @@
   gap: var(--space-sm);
 }
 
-.todo-duration-picker button,
-.todo-duration-picker input {
+.todo-duration-picker__options button,
+.todo-duration-picker__custom > button {
   min-height: 26px;
   padding: 3px 8px;
   color: var(--text-1);
@@ -37,6 +37,5 @@
 .todo-duration-picker button:focus-visible,
 .todo-duration-picker input:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
 .todo-duration-picker__custom { margin-top: var(--space-sm); font-size: 12px; }
-.todo-duration-picker__custom label { display: flex; align-items: center; gap: var(--space-sm); }
-.todo-duration-picker__custom input { width: 64px; }
+.todo-duration-picker__label { display: flex; align-items: center; gap: var(--space-sm); }
 .todo-duration-picker__custom [role="status"] { color: var(--color-warning); }

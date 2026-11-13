@@ -201,11 +201,15 @@ try {
   await start("t2");
   check(document.querySelector('.todo-duration-picker__options button:first-child[aria-pressed="true"]'), "下次开始高亮上次选择的 15 分钟");
   await preset(4);
-  for (const value of ["0", "241", "1.5", ""]) {
-    await typeMinutes(value);
-    check(document.querySelector<HTMLButtonElement>('.todo-duration-picker [type="submit"]')?.disabled, `自定义拒绝无效分钟数 ${value || "空值"}`);
-  }
+  check(!document.querySelector("input[type=number]"), "Custom duration has no native spin buttons");
+  await click(".number-stepper__button:last-child");
+  check(document.querySelector<HTMLInputElement>(".number-stepper input")?.value === "20", "Custom duration steps by five");
+  await typeMinutes("999");
+  await act(async () => { const input = document.querySelector<HTMLInputElement>(".number-stepper input")!; input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
+  check(document.querySelector<HTMLInputElement>(".number-stepper input")?.value === "240"
+    && document.querySelector<HTMLButtonElement>(".number-stepper__button:last-child")?.disabled, "Custom duration clamps and disables Plus at 240");
   await typeMinutes("7");
+  await act(async () => { const input = document.querySelector<HTMLInputElement>(".number-stepper input")!; input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
   await submitCustom();
   check(stored()?.durationMinutes === 7 && collapsedTime()?.includes("07:00"), "自定义 7 分钟开始并显示 07:00");
   await open();

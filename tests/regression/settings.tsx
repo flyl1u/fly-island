@@ -89,17 +89,27 @@ if (!automated) {
       check(element(".settings-page__title").textContent === item.textContent, `${category}: the page title matches the sidebar`);
       check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
+      check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
       // General has two more for the two island timers the owner asked for (2026-11-11): collapsing
       // the open island and tucking the collapsed one.
       const rowCount = panel.querySelectorAll(".settings-row").length;
       const maxRows = category === "general" ? 10 : category === "appearance" ? 9 : 8;
       if (category === "general") {
-        const timers = [...panel.querySelectorAll<HTMLInputElement>("input[type='number']")];
+        const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
         check(timers.length === 2 && timers.every((input) => input.value === "30"),
           `general: the collapse and tuck delays are two number fields at 30 s (${timers.map((input) => input.value).join(", ")})`);
         check(labels.length === 2 && labels.every(Boolean) && labels[0] !== labels[1], `general: the two delays have different labels (${labels.join(" / ")})`);
+        const first = timers[0];
+        const plus = first.parentElement!.querySelector<HTMLButtonElement>("button:last-child")!;
+        await act(async () => plus.click());
+        check(first.value === "31" && JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCollapseSeconds === 31, "Plus increments by 1 and saves");
+        await type(first, "9999");
+        await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
+        check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);
+        await type(first, "30");
+        await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
       }
       if (category === "messages") {
         const notice = panel.querySelector(".messages-settings__wechat-risk");
