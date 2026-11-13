@@ -91,10 +91,10 @@ if (!automated) {
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
-      // General has two more for the two island timers the owner asked for (2026-11-11): collapsing
-      // the open island and tucking the collapsed one.
+      // General has two more for its island timers (2026-11-11); Agents two for the session sources DSH
+      // gained on 2026-11-13 (Claude Code and Codex).
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      const maxRows = category === "general" ? 10 : category === "appearance" ? 9 : 8;
+      const maxRows = category === "general" || category === "agents" ? 10 : category === "appearance" ? 9 : 8;
       if (category === "general") {
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
@@ -262,10 +262,10 @@ if (!automated) {
     check(element(".settings-sidebar__item[data-category='agentConnect']").getAttribute("aria-current") === "page", "The hooks notice on the sessions page opens the connection page");
     await openPage("agents");
     const agentRow = (title: string) => [...document.querySelectorAll<HTMLElement>(".editor-panel .settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === title);
-    const dshSwitch = agentRow("DeepSeek Harness（DSH）")?.querySelector<HTMLInputElement>("[role='switch']");
-    check(dshSwitch?.checked, "DSH source is enabled by default");
-    await act(async () => { dshSwitch!.click(); });
-    check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { agentShowDsh?: boolean }).agentShowDsh === false, "Switching DSH off persists the source preference");
+    for (const [title, stored] of [["Claude Code", "agentShowClaudeCode"], ["Codex", "agentShowCodex"], ["DeepSeek Harness（DSH）", "agentShowDsh"]] as [string, string][]) {
+      const sourceSwitch = agentRow(title)?.querySelector<HTMLInputElement>("[role='switch']"); check(sourceSwitch?.checked, `${title} source is enabled by default`);
+      await act(async () => { sourceSwitch!.click(); }); check((JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as Record<string, boolean>)[stored] === false, `Switching ${title} off persists`);
+    }
     check(!document.querySelector(".session-filter__form"), "Hide-session rules are no longer offered");
     const soundSwitch = agentRow("AI Agent 音效")?.querySelector<HTMLInputElement>("[role='switch']");
     check(soundSwitch?.checked, "Agent sounds are a single switch on the sessions page, on by default");
