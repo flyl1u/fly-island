@@ -45,3 +45,4 @@ main.tsx → windows/ → features/ → components/、lib/、utils/、i18n/、st
 ## 媒体诊断与本地校准
 
 `media_control/diagnostics.rs` 只读枚举 SMTC 会话及已知播放器进程，复用 `timeline.rs` 的可信时间戳判断和 `win32/process*.rs` 的安全进程查询，文件版本读取封装在 `win32/file_version.rs`。前端 `useMediaDiagnostics.ts` 按打开面板、切换播放器与媒体事件触发五秒节流刷新，独立于媒体轮询；`MediaDiagnosticsCard` 和 `MediaCompatibilitySection` 分别显示面板提示及设置行。无时间线的歌词点击通过 `useMediaState.calibrate` 校准 `trackClock`，不改变播放器状态与 `positionAnchor`。
+- `src-tauri/src/media_plugins/`：网易云精准进度插件的只读探测、固定版本下载校验、显式安装 / 卸载与安装记录；受限提权调用封装在 `win32/media_plugin_elevation.rs`，注册表探测封装在 `win32/media_plugin_registry.rs`。

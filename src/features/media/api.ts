@@ -73,7 +73,7 @@ export function listenMediaSessionChanged(handler: () => void) {
 }
 
 // 对应 src-tauri/src/media_control/diagnostics.rs 的 MediaDiagnostics、PlayerDiagnostic。
-export type MediaDiagnosticStatus = "ok" | "noTimeline" | "needsUpdate" | "smtcOff" | "neteaseNeedsPlugin";
+export type MediaDiagnosticStatus = "ok" | "noTimeline" | "needsUpdate" | "smtcOff" | "neteaseNeedsPlugin" | "neteasePluginInactive";
 export type PlayerDiagnostic = {
   sourceAppId: string;
   label: string;
@@ -84,9 +84,28 @@ export type PlayerDiagnostic = {
   directory: string | null;
   version: string | null;
   status: MediaDiagnosticStatus;
-  neteasePluginState: "none" | "loaderOnly" | "installed" | "unknown" | null;
+  neteasePluginState: "none" | "loaderOnly" | "installed" | "foreignLoader" | "unknown" | null;
 };
 export type MediaDiagnostics = { players: PlayerDiagnostic[] };
 export function getMediaDiagnostics() {
   return invoke<MediaDiagnostics>("get_media_diagnostics");
+}
+
+// 对应 src-tauri/src/media_plugins/netease.rs 的 NeteasePluginStatus。
+export type NeteasePluginStatus = {
+  state: "none" | "loaderOnly" | "installed" | "foreignLoader" | "unknown";
+  supported: boolean; tested: boolean; version: string | null; arch: "x64" | "x86" | null;
+  installDir: string | null; running: boolean; legacyInfLink: boolean; pluginDir: string;
+};
+// 对应 src-tauri/src/media_plugins/mod.rs 的 PluginError、Progress，以及 service.rs 的 OperationResult。
+export type MediaPluginErrorKind = "Unsupported" | "NeedsClose" | "LegacyConflict" | "HashMismatch" | "Network" | "UserDeclined" | "Busy" | "Io";
+export type MediaPluginError = { kind: MediaPluginErrorKind; detail: string };
+export type MediaPluginProgress = { stage: "downloading" | "verifying" | "copying" | "done" | "error"; detail?: string | null };
+export type MediaPluginResult = { keptForeignLoader: boolean; preservedFiles: string[] };
+export const MEDIA_PLUGIN_PROGRESS_EVENT = "media-plugin-progress";
+export function getNeteasePluginStatus() { return invoke<NeteasePluginStatus>("netease_plugin_status"); }
+export function installNeteasePlugin() { return invoke<MediaPluginResult>("install_netease_plugin"); }
+export function uninstallNeteasePlugin() { return invoke<MediaPluginResult>("uninstall_netease_plugin"); }
+export function listenMediaPluginProgress(handler: (progress: MediaPluginProgress) => void) {
+  return listen<MediaPluginProgress>(MEDIA_PLUGIN_PROGRESS_EVENT, (event) => handler(event.payload));
 }

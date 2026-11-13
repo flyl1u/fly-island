@@ -1,4 +1,13 @@
 export type MusicText = {
+  plugin: {
+    player: string;
+    install: string; uninstall: string; confirmRemove: string; retry: string; details: string;
+    downloading: string; verifying: string; copying: string; untested: string;
+    disclosure: string; license: string; success: string; removed: string; keptForeignLoader: string; preserved: string;
+    needsClose: string; userDeclined: string; legacyConflict: string; unsupported: string;
+    network: string; hashMismatch: string; busy: string; io: string; openPlugins: string; openFailed: string;
+    states: Record<"none" | "loaderOnly" | "installed" | "foreignLoader" | "unknown", string>;
+  };
   estimatedProgress: string;
   calibrateLine: (line: string) => string;
   seekLine: (line: string) => string;
@@ -8,6 +17,7 @@ export type MusicText = {
     needsUpdate: (player: string) => string;
     smtcOff: (player: string) => string;
     neteaseNeedsPlugin: (player: string) => string;
+    neteasePluginInactive: (player: string) => string;
     noTimeline: (player: string) => string;
   };
   playerLabel: string;
@@ -34,6 +44,20 @@ export type MusicText = {
 };
 
 export const zhCN: MusicText = {
+  plugin: {
+    player: "网易云音乐",
+    install: "一键启用", uninstall: "卸载", confirmRemove: "确认卸载", retry: "重试", details: "了解详情",
+    downloading: "正在下载…", verifying: "正在校验…", copying: "正在安装 / 卸载…", untested: "此版本未经测试",
+    disclosure: "将从 GitHub 下载开源插件 InfLink-rs 与 BetterNCM（GPL-3.0），放入网易云目录，可随时卸载",
+    license: "InfLink-rs 与 BetterNCM 均为 GPL-3.0 开源项目；运行时从 GitHub 下载，不随安装包分发。",
+    success: "已安装，重启网易云音乐后生效", removed: "已卸载；加载器生成的其他数据保留，可手动清理",
+    keptForeignLoader: "检测到已有其他加载器，只安装了插件", preserved: "以下文件已被替换或不属于本次安装，已保留：",
+    needsClose: "请先退出网易云音乐再试", userDeclined: "需要管理员权限才能写入网易云目录",
+    legacyConflict: "检测到旧版 InfLink，请先删除旧插件再试", unsupported: "当前网易云版本暂不支持：",
+    network: "下载失败：", hashMismatch: "文件校验失败：", busy: "另一个安装或卸载正在进行", io: "文件操作失败：",
+    openPlugins: "打开插件目录", openFailed: "无法打开链接或目录",
+    states: { none: "未安装插件", loaderOnly: "仅有加载器", installed: "插件已安装", foreignLoader: "已有其他加载器", unknown: "插件状态未知" },
+  },
   estimatedProgress: "进度为估算；在播放器里拖动进度后，可点一句歌词校准",
   calibrateLine: (line) => `校准进度到：${line}`,
   seekLine: (line) => `播放到：${line}`,
@@ -44,6 +68,7 @@ export const zhCN: MusicText = {
     needsUpdate: () => "QQ 音乐版本过低，进度无法同步，更新到 21.10.2962 或以上即可",
     smtcOff: (player) => `在${player}设置里打开系统媒体控制后即可同步进度`,
     neteaseNeedsPlugin: () => "网易云需要安装进度插件才能同步进度",
+    neteasePluginInactive: () => "插件已安装，请重启网易云；如果重启后仍无进度，可能是当前版本不兼容",
     noTimeline: () => "该播放器不提供进度，歌词按估算显示，可点歌词校准",
   },
   playerLabel: "音乐播放器",
@@ -72,6 +97,20 @@ export const zhCN: MusicText = {
 };
 
 export const en: MusicText = {
+  plugin: {
+    player: "NetEase Cloud Music",
+    install: "Enable precise progress", uninstall: "Uninstall", confirmRemove: "Confirm uninstall", retry: "Retry", details: "Learn more",
+    downloading: "Downloading…", verifying: "Verifying…", copying: "Installing / removing…", untested: "This version is untested",
+    disclosure: "Downloads open-source InfLink-rs and BetterNCM (GPL-3.0) from GitHub into NetEase's directories. You can uninstall at any time.",
+    license: "InfLink-rs and BetterNCM are GPL-3.0 projects, downloaded from GitHub at runtime and not bundled with this app.",
+    success: "Installed. Restart NetEase Cloud Music to enable it.", removed: "Uninstalled. Other loader data is retained and can be removed manually.",
+    keptForeignLoader: "An existing loader was retained; only the plugin was installed.", preserved: "Replaced or unowned files were retained:",
+    needsClose: "Exit NetEase Cloud Music before retrying.", userDeclined: "Administrator permission is needed to write to the NetEase directory.",
+    legacyConflict: "An old InfLink plugin was found. Remove it before retrying.", unsupported: "This NetEase version is unsupported:",
+    network: "Download failed:", hashMismatch: "File verification failed:", busy: "Another install or uninstall is running.", io: "File operation failed:",
+    openPlugins: "Open plugin folder", openFailed: "Could not open the link or folder",
+    states: { none: "Plugin not installed", loaderOnly: "Loader only", installed: "Plugin installed", foreignLoader: "Existing third-party loader", unknown: "Unknown plugin state" },
+  },
   estimatedProgress: "Progress is estimated. After seeking in the player, click a lyric line to recalibrate.",
   calibrateLine: (line) => `Recalibrate progress to: ${line}`,
   seekLine: (line) => `Seek to: ${line}`,
@@ -82,6 +121,7 @@ export const en: MusicText = {
     needsUpdate: () => "QQ Music is too old to sync progress. Update to 21.10.2962 or later.",
     smtcOff: (player) => `Enable system media controls in ${player}'s settings to sync progress.`,
     neteaseNeedsPlugin: () => "NetEase Cloud Music needs a progress plugin to sync progress.",
+    neteasePluginInactive: () => "Plugin installed. Restart NetEase; if progress is still unavailable, this version may be incompatible.",
     noTimeline: () => "This player provides no progress. Lyrics use estimated timing; click a line to recalibrate.",
   },
   playerLabel: "Music player",

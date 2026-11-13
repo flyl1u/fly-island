@@ -51,33 +51,22 @@ fn status(kind: Option<&str>, has_session: bool, timeline: bool, version: Option
 }
 
 fn plugin_state(directory: Option<&Path>) -> &'static str {
-    let Some(directory) = directory else { return "unknown"; };
-    let loader = match directory.join("msimg32.dll").try_exists() { Ok(value) => value, Err(_) => return "unknown" };
-    let plugins = std::fs::read_dir(r"C:\betterncm\plugins");
-    let installed = match plugins {
-        Ok(entries) => {
-            let mut found = false;
-            for entry in entries {
-                let Ok(entry) = entry else { return "unknown"; };
-                let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
-                if name.contains("inflink") && name.ends_with(".plugin") && entry.path().is_file() { found = true; }
-            }
-            found
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
-        Err(_) => return "unknown",
-    };
-    match (loader, installed) { (true, true) => "installed", (true, false) => "loaderOnly", (false, false) => "none", _ => "unknown" }
+    directory.map(crate::media_plugins::diagnostic_state).unwrap_or("unknown")
+}
+
+fn plugin_status(status: &'static str, state: Option<&str>) -> &'static str {
+    if status == "neteaseNeedsPlugin" && state == Some("installed") { "neteasePluginInactive" } else { status }
 }
 
 fn diagnostic(id: String, has_session: bool, has_timeline: bool, has_plugin_track_id: bool, path: Option<String>) -> PlayerDiagnostic {
     let kind = player_kind(&id);
     let directory = path.as_deref().and_then(|path| Path::new(path).parent());
     let version = path.as_deref().and_then(|path| win32::file_version::read(Path::new(path)));
+    let netease_plugin_state = (kind == Some("cloudmusic.exe")).then(|| plugin_state(directory));
     PlayerDiagnostic {
         label: session::friendly_app_label(&id),
-        status: status(kind, has_session, has_timeline, version.as_deref()),
-        netease_plugin_state: (kind == Some("cloudmusic.exe")).then(|| plugin_state(directory)),
+        status: plugin_status(status(kind, has_session, has_timeline, version.as_deref()), netease_plugin_state),
+        netease_plugin_state,
         directory: directory.map(|path| path.to_string_lossy().into_owned()),
         source_app_id: id, has_session, has_timeline, has_plugin_track_id, exe_path: path, version,
     }
@@ -118,6 +107,8 @@ mod tests {
     use super::*;
     #[test]
     fn compares_numeric_versions_and_ignores_unknown_versions() {
+        assert_eq!(plugin_status("neteaseNeedsPlugin", Some("installed")), "neteasePluginInactive");
+        assert_eq!(plugin_status("ok", Some("installed")), "ok");
         for old in ["21.9.9999", "21.10.2961.9", "20.99.9999"] { assert!(needs_update(Some(old))); }
         for current in ["21.10.2962", "21.10.2962.0", "21.11.1", "22.0.0", "invalid", "21.10"] { assert!(!needs_update(Some(current))); }
         assert!(!needs_update(None));

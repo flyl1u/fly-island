@@ -22,6 +22,9 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "netease_plugin_status": return { state: "none", supported: true, tested: true, version: "3.1.41", arch: "x64", installDir: "D:\\CloudMusic", running: false, legacyInfLink: false, pluginDir: "C:\\betterncm\\plugins" };
+    case "install_netease_plugin":
+    case "uninstall_netease_plugin": return { keptForeignLoader: false, preservedFiles: [] };
     case "get_media_diagnostics": return { players: [
       { sourceAppId: "QQMusic", label: "QQ音乐", hasSession: true, hasTimeline: true, hasPluginTrackId: false,
         exePath: null, directory: null, version: "21.10.2962.0", status: "ok", neteasePluginState: null },

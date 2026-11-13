@@ -1,7 +1,7 @@
 import type { MediaDiagnosticStatus, PlayerDiagnostic } from "./api";
 
 export function diagnosticMessageKey(status: MediaDiagnosticStatus) {
-  return { ok: "ok", needsUpdate: "needsUpdate", smtcOff: "smtcOff", neteaseNeedsPlugin: "neteaseNeedsPlugin", noTimeline: "noTimeline" }[status] as MediaDiagnosticStatus;
+  return { ok: "ok", needsUpdate: "needsUpdate", smtcOff: "smtcOff", neteaseNeedsPlugin: "neteaseNeedsPlugin", neteasePluginInactive: "neteasePluginInactive", noTimeline: "noTimeline" }[status] as MediaDiagnosticStatus;
 }
 
 export function diagnosticIdentity(player: Pick<PlayerDiagnostic, "sourceAppId" | "status">) {

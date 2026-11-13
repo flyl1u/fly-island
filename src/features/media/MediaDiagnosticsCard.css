@@ -27,3 +27,13 @@
 .music-player:has(.media-diag-card) .lyrics-view__line--side,
 .music-player:has(.media-diag-card) .lyrics-view__line--translation { font-size: 11px; }
 .music-player:has(.media-diag-card) .music-player__lyrics { min-height: 0; }
+
+.media-diag-plugin { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.media-diag-plugin button { max-width: 100%; white-space: normal; font: inherit; cursor: pointer; border-radius: var(--radius-md); padding: 4px 7px; }
+.media-diag-primary { background: var(--color-white-a08); color: inherit; border: 1px solid var(--color-white-a08); }
+.media-diag-plugin button:disabled { opacity: .5; cursor: default; }
+.media-diag-plugin small { font-size: 10px; line-height: 1.4; }
+.media-diag-plugin :focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.music-player:has(.media-diag-plugin) .music-player__lyrics { min-height: 24px; }
+.music-player:has(.media-diag-plugin) .lyrics-view { grid-template-rows: 0 auto 0; row-gap: 0; overflow: hidden; }
+.music-player:has(.media-diag-plugin) .lyrics-view__line--side { height: 0; min-height: 0; visibility: hidden; }

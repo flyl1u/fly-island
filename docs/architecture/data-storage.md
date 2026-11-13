@@ -30,3 +30,9 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 ## 播放器兼容性提示
 
 `focusd-island-media-diagnostics-dismissed` 保存在前端 localStorage，由 `src/features/media/storage.ts` 安全读写。格式是字符串数组，每项为小写播放器 `sourceAppId`、分隔符 `\u001f` 和状态（`noTimeline` / `needsUpdate` / `smtcOff` / `neteaseNeedsPlugin`）。只关闭同一播放器的同一问题，其他问题仍提示；非法 JSON、旧格式、非字符串或未知状态会忽略。播放器诊断结果、进程路径和版本不持久化；歌词校准只修改当前歌曲的内存秒表，切歌后重置。
+# 网易云精准进度插件
+
+应用数据目录下的 `media-plugins.json` 保存版本 1 的安装记录（文件路径、SHA256、Unix 秒安装时间）。`media-plugins/download/` 缓存固定版本的 BetterNCM 与 InfLink-rs，下载临时文件以 `.download` 结尾，失败时清理；缓存复用前重新校验大小和 SHA256。
+
+用户点击安装后才写入网易云目录的 `msimg32.dll` 和 `BETTERNCM_PROFILE`（默认 `C:\betterncm`）下的 `plugins/InfLink-rs.plugin`。卸载保留加载器生成的其他数据；只删除记录中且哈希未变化的文件。组件从 GitHub 运行时下载，不随安装包分发。
+

@@ -25,3 +25,6 @@ pub(crate) mod taskbar;
 pub(crate) mod uia_list;
 pub(crate) mod uia_tabs;
 pub(crate) mod window;
+
+pub(crate) mod media_plugin_registry;
+pub(crate) mod media_plugin_elevation;
