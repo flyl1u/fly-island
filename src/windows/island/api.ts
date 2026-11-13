@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
-import type { IslandCornerShape, IslandMonitor } from "../../features/appearance/types";
+import type { IslandCornerShape, IslandMonitor, TuckStyle } from "../../features/appearance/types";
 import type { IslandPosition } from "./storage";
 import type { IslandMode, NativeGlassState } from "./types";
 
@@ -46,6 +46,7 @@ export type IslandInteraction = {
   collapsedHeight: number;
   customPosition: IslandPosition | null;
   isTucked: boolean;
+  tuckStyle?: TuckStyle;
   positionLocked: boolean;
   animatePosition: boolean;
   glassEnabled: boolean;

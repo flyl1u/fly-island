@@ -74,6 +74,7 @@ pub fn set_island_interaction(
     collapsed_height: Option<f64>,
     custom_position: Option<IslandPosition>,
     is_tucked: Option<bool>,
+    tuck_style: Option<String>,
     animate_position: Option<bool>,
     glass_enabled: Option<bool>,
     glass_intensity: Option<f64>,
@@ -102,6 +103,7 @@ pub fn set_island_interaction(
     let state = mutate_window_state(|state| {
         state.mode = mode;
         state.is_tucked = is_tucked.unwrap_or(false);
+        state.tuck_style = state::TuckStyle::from_value(tuck_style.as_deref());
         state.position_locked = position_locked.unwrap_or(false);
         state.collapsed_scale = collapsed_scale;
         state.collapsed_height = collapsed_height;

@@ -13,6 +13,7 @@ export type ExpandTrigger = "click" | "hover";
 export type MinimizeAction = "tray" | "tuck";
 /** What resting the pointer on an island tucked to the edge does: slide it out, or open its panel too. */
 export type TuckedHoverAction = "reveal" | "expand";
+export type TuckStyle = "edge" | "line" | "hidden";
 /** How the Agent page shows the program a session runs in. */
 export type AgentHostDisplay = "both" | "icon" | "name" | "off";
 /** How the Agent page shows sessions: flat rows, two-line cards framed in their light, or one-line rows. */
@@ -119,6 +120,7 @@ export type IslandSettings = {
   rotateTodos: boolean;
   todoRotationSeconds: number;
   autoTuck: boolean;
+  tuckStyle: TuckStyle;
   /**
    * (B) Seconds the collapsed island idles before it tucks into a line (TUCK_DELAY_SECONDS).
    * Replaces `autoTuckSeconds`, which older versions saved and is no longer read.

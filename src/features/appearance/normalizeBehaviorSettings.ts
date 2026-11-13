@@ -21,6 +21,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     enableTodoReorder: settings?.todoReorderVersion === 1
       && typeof settings.enableTodoReorder === "boolean" ? settings.enableTodoReorder : true,
     autoTuck,
+    tuckStyle: oneOf(["edge", "line", "hidden"] as const, settings?.tuckStyle, DEFAULT_SETTINGS.tuckStyle),
     // Saved before this was a setting: an open panel closed only when the island tucked after
     // idling, so it keeps closing after that delay, or never with tucking off.
     autoCollapseSeconds: wholeSeconds(settings?.autoCollapseSeconds, AUTO_COLLAPSE_SECONDS, autoTuck ? AUTO_COLLAPSE_SECONDS.default : 0),

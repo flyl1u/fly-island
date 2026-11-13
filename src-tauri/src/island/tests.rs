@@ -2,7 +2,7 @@ use tauri::PhysicalPosition;
 
 use super::geometry::*;
 use super::glass::parse_hex_color;
-use super::passthrough::point_in_notch;
+use super::passthrough::{point_in_island, point_in_notch};
 use super::state::*;
 
 fn state(mode: IslandMode, scale: f64, expanded_height: f64) -> IslandWindowState {
@@ -169,6 +169,48 @@ fn custom_notch_dimensions_apply_to_hit_test_and_tuck_at_each_dpi() {
     }
     island.mode = IslandMode::Expanded;
     assert_eq!(island.active_size(), (560.0 * 1.25, DEFAULT_EXPANDED_ISLAND_HEIGHT * 1.25));
+}
+
+#[test]
+fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
+    assert_eq!(TuckStyle::from_value(None), TuckStyle::Edge);
+    assert_eq!(TuckStyle::from_value(Some("invalid")), TuckStyle::Edge);
+    for (name, style, zone_width, zone_height) in [
+        ("edge", TuckStyle::Edge, 340.0, 10.0),
+        ("line", TuckStyle::Line, 140.0, 14.0),
+        ("hidden", TuckStyle::Hidden, 160.0, 6.0),
+    ] {
+        assert_eq!(TuckStyle::from_value(Some(name)), style);
+        for dpi in [1.0, 1.25, 1.5] {
+            for scale in [0.75, 1.0, 1.4] {
+                for height in [32.0, 38.0, 60.0] {
+                    let island = IslandWindowState {
+                        is_tucked: true, tuck_style: style, collapsed_height: height,
+                        ..state(IslandMode::Collapsed, scale, DEFAULT_EXPANDED_ISLAND_HEIGHT)
+                    };
+                    let offset = tucked_top_offset(island, dpi);
+                    let visible = if style == TuckStyle::Edge { 10.0 } else { zone_height * scale };
+                    assert_eq!(offset, -((height * scale - visible) * dpi).round() as i32);
+                    let center = STAGE_WINDOW_WIDTH * dpi / 2.0;
+                    let top = -f64::from(offset);
+                    let hit = |x, y| point_in_island(island, dpi, x, y);
+                    assert!(hit(center, top + visible * dpi / 2.0));
+                    assert!(!hit(center + zone_width * scale * dpi / 2.0 + 1.0, top + 1.0));
+                    assert!(!hit(center, top + visible * dpi + 1.0));
+                    if style != TuckStyle::Edge {
+                        assert!(hit(center, top));
+                        assert!(!hit(center, top - 1.0));
+                        assert!(!hit(center + 100.0 * scale * dpi, top + 1.0));
+                    }
+                    // Styles never narrow the ordinary collapsed or expanded island.
+                    for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
+                        let out = IslandWindowState { mode, is_tucked: false, ..island };
+                        assert!(point_in_island(out, dpi, center + 100.0 * scale * dpi, 2.0));
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[test]
