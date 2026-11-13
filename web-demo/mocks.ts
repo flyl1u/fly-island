@@ -50,18 +50,20 @@ export function installDemoMocks(data: DemoContent) {
     return clipboard();
   };
 
-  let qqItems = data.qq.map((item, index) => ({ id: `q${index}`, ...item, createdAt: now - [90_000, 600_000, 1_500_000][index] }));
+  // Minutes ago, newest first: a busy afternoon rather than everything at once.
+  const qqDelays = [1.5, 10, 25, 42, 68, 95, 140];
+  let qqItems = data.qq.map((item, index) => ({ id: `q${index}`, ...item, createdAt: now - (qqDelays[index] ?? (index + 1) * 20) * 60_000 }));
   const qq = () => ({ revision: ++revision, enabled: true, status: "listening", error: null, items: qqItems });
   let wechatEnabled = true;
   let wechatPreviewEnabled = true;
   let wechatHideMinimizedTaskbar = false;
   let wechatPending = true;
-  const wechatDelays = [45_000, 300_000, 900_000, 1_800_000, 3_600_000];
+  const wechatDelays = [0.75, 5, 15, 30, 48, 70, 105, 150, 200];
   let wechatMessages = data.wechat.map((item, index) => ({
     id: `wx${index + 1}`,
     contact: item.contact,
     body: item.body,
-    receivedAt: now - (wechatDelays[index] ?? (index + 1) * 600_000),
+    receivedAt: now - (wechatDelays[index] ?? (index + 1) * 20) * 60_000,
   }));
   const wechat = () => ({
     revision: ++revision,
@@ -75,12 +77,17 @@ export function installDemoMocks(data: DemoContent) {
     hideMinimizedTaskbar: wechatHideMinimizedTaskbar,
     messages: wechatMessages,
   });
-  let mailUnread = true;
+  // Minutes ago: today, yesterday and earlier in the week. Reading one marks only that one read.
+  const mailDelays = [5, 40, 180, 26 * 60, 3 * 24 * 60];
+  let mails = data.mail.map((item, index) => ({
+    id: `mail:${index + 1}`, uid: index + 1, sender: item.sender, subject: item.subject,
+    receivedAt: now - (mailDelays[index] ?? (index + 1) * 60) * 60_000, unread: item.unread,
+  }));
   const mail = () => [{
     revision: ++revision, email: "demo@qq.com", configured: true, enabled: true, syncing: false, status: "connected",
-    unreadCount: mailUnread ? 1 : 0, lastSyncedAt: now, error: null,
-    items: [{ id: "mail:1", uid: 1, sender: data.mail.sender, subject: data.mail.subject, receivedAt: now - 300_000, unread: mailUnread }],
+    unreadCount: mails.filter((item) => item.unread).length, lastSyncedAt: now, error: null, items: mails,
   }];
+  const mailBody = (id: unknown) => data.mail[mails.findIndex((item) => item.id === id)]?.body ?? "";
 
   // The player: two songs, a clock that runs while playing, previous / next and pause.
   let song = 0;
@@ -180,8 +187,8 @@ export function installDemoMocks(data: DemoContent) {
         if (typeof args.hidden === "boolean") wechatHideMinimizedTaskbar = args.hidden;
         return wechat();
       case "get_qq_mail_state": return mail();
-      case "read_qq_mail": return { id: String(args.messageId), attachments: [], contentType: "text/plain", content: data.mail.body };
-      case "mark_qq_mail_read": mailUnread = false; return mail()[0];
+      case "read_qq_mail": return { id: String(args.messageId), attachments: [], contentType: "text/plain", content: mailBody(args.messageId) };
+      case "mark_qq_mail_read": mails = mails.map((item) => (item.id === args.messageId ? { ...item, unread: false } : item)); return mail()[0];
       case "set_qq_mail_enabled": return mail()[0];
       case "has_translation_secret": return true;
       case "translate_text": return new Promise((resolve) => {
