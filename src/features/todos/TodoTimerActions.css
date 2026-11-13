@@ -6,7 +6,7 @@
   gap: var(--space-sm);
   min-width: 0;
   color: var(--color-warning);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   animation: todoTimerArrival 600ms ease-out;
 }
 

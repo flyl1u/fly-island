@@ -10,7 +10,7 @@
   border-radius: var(--radius-pill);
   outline: none;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 800;
   white-space: nowrap;
   cursor: pointer;

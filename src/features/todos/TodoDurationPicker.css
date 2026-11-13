@@ -34,7 +34,7 @@
 
 .todo-duration-picker__unit {
   color: var(--text-2);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 500;
   white-space: nowrap;
 }

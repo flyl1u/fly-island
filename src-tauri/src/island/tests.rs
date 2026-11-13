@@ -60,10 +60,7 @@ fn custom_position_survives_tuck_and_reveal() {
 fn notch_has_flat_top_and_rounded_bottom_at_all_scales() {
     for scale in [0.75, DEFAULT_COLLAPSED_SCALE, 1.0, 1.4, 2.1] {
         for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
-            let (width, height) =
-                mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
-            let width = width * scale;
-            let height = height * scale;
+            let (width, height) = state(mode, scale, DEFAULT_EXPANDED_ISLAND_HEIGHT).active_size();
             let radius = mode.corner_radius() * scale;
             let contains = |x, y| point_in_notch(x, y, 80.0, 0.0, width, height, radius, 0.0, CornerShape::Round);
 
@@ -91,28 +88,25 @@ fn default_notch_stays_at_top_when_expanding() {
 fn compact_messages_and_mail_reader_keep_the_correct_cursor_boundary() {
     for height in [MIN_EXPANDED_ISLAND_HEIGHT, 244.0, 438.0, 450.0] {
         for scale in [0.75, 1.0, 1.4] {
-            let (width, panel_height) =
-                IslandMode::Expanded.base_size(COLLAPSED_ISLAND_WIDTH, height);
+            let (width, panel_height) = state(IslandMode::Expanded, scale, height).active_size();
             let contains = |y| {
                 point_in_notch(
-                    width * scale / 2.0,
+                    width / 2.0,
                     y,
                     0.0,
                     0.0,
-                    width * scale,
-                    panel_height * scale,
+                    width,
+                    panel_height,
                     EXPANDED_RADIUS * scale,
                     0.0,
                     CornerShape::Round,
                 )
             };
-            assert!(contains(panel_height * scale));
-            assert!(!contains(panel_height * scale + 1.0));
+            assert!(contains(panel_height));
+            assert!(!contains(panel_height + 1.0));
             assert_eq!(
-                IslandMode::Collapsed
-                    .base_size(COLLAPSED_ISLAND_WIDTH, height)
-                    .1,
-                COLLAPSED_ISLAND_HEIGHT
+                state(IslandMode::Collapsed, scale, height).active_size().1,
+                COLLAPSED_ISLAND_HEIGHT * scale,
             );
         }
         let mut positioned = state(IslandMode::Expanded, 1.0, height);
@@ -130,8 +124,7 @@ fn detached_island_rounds_top_corners() {
         assert_eq!(detached.top_corner_radius(), 0.0);
         detached.top_attached = false;
         assert!(detached.top_corner_radius() > 0.0);
-        let (width, height) =
-            mode.base_size(COLLAPSED_ISLAND_WIDTH, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+        let (width, height) = detached.active_size();
         let contains = |x, y| {
             point_in_notch(
                 x,
@@ -152,6 +145,30 @@ fn detached_island_rounds_top_corners() {
         detached.top_attached = true;
         assert_eq!(detached.top_corner_radius(), 0.0);
     }
+}
+
+#[test]
+fn custom_notch_dimensions_apply_to_hit_test_and_tuck_at_each_dpi() {
+    let mut island = IslandWindowState {
+        collapsed_width: 240.0,
+        collapsed_height: 60.0,
+        ..state(IslandMode::Collapsed, 1.25, DEFAULT_EXPANDED_ISLAND_HEIGHT)
+    };
+    let (width, height) = island.active_size();
+    assert_eq!((width, height), (300.0, 75.0));
+    for dpi in [1.0, 1.25, 1.5, 2.0] {
+        let visible = height * dpi + f64::from(tucked_top_offset(island, dpi));
+        assert!((visible - 10.0 * dpi).abs() <= 0.5);
+        let hit = |x, y| point_in_notch(
+            x, y, 0.0, 0.0, width * dpi, height * dpi,
+            island.bottom_corner_radius() * island.active_scale() * dpi, 0.0, island.corner_shape,
+        );
+        assert!(hit(width * dpi / 2.0, height * dpi - 1.0));
+        assert!(!hit(width * dpi / 2.0, height * dpi + 1.0));
+        assert!(!hit(width * dpi + 1.0, 1.0));
+    }
+    island.mode = IslandMode::Expanded;
+    assert_eq!(island.active_size(), (560.0 * 1.25, DEFAULT_EXPANDED_ISLAND_HEIGHT * 1.25));
 }
 
 #[test]

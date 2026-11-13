@@ -65,14 +65,14 @@ button.message-card__surface:active:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 .message-card time {
   flex: 0 0 auto;
   white-space: nowrap;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
@@ -83,7 +83,7 @@ button.message-card__surface:active:not(:disabled) {
   overflow: hidden;
   margin: 4px 0 0;
   color: color-mix(in srgb, var(--text-1) 85%, transparent);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 400;
   line-height: 1.45;
   white-space: pre-wrap;

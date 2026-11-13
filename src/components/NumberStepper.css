@@ -8,14 +8,14 @@
   background: var(--color-white-a06);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--radius-pill);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 .number-stepper--island {
   --number-stepper-height: 26px;
   color: var(--text-1);
   background: var(--color-white-a08);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .number-stepper .number-stepper__button,

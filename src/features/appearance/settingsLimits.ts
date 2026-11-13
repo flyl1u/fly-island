@@ -36,6 +36,12 @@ export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
 
+export const ISLAND_FONT_PERCENT = { min: 90, max: 120, step: 5, default: 100 } as const;
+export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;
+export const COLLAPSED_HEIGHT = { min: 32, max: 60, default: 38 } as const;
+export const MIN_COLLAPSED_SCALE = 0.75;
+export const MAX_COLLAPSED_SCALE = 1.4;
+
 /**
  * The expanded island's size (Appearance → "Expanded size"): a slider over this range in steps
  * of 0.01, stored as the scale in `expandedScale`. Width and height grow together; the native

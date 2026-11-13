@@ -27,7 +27,7 @@
 
 .settings-row__title {
   color: var(--color-text);
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 400;
   line-height: 1.35;
 }
@@ -38,7 +38,7 @@ label.settings-row__title {
 
 .settings-row__description {
   color: var(--color-text-subtle);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 

@@ -47,14 +47,14 @@
 
 .music-idle__title {
   color: var(--text-1);
-  font-size: 15px;
+  font-size: calc(15px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.3;
 }
 
 .music-idle__hint {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 
@@ -70,7 +70,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
   cursor: pointer;
   transition: color 140ms ease, background 140ms ease, transform 140ms ease;

@@ -43,7 +43,7 @@
   border: 0;
   border-radius: var(--corner-xs);
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;

@@ -1,10 +1,11 @@
 import type { TodoItem } from "../../features/todos/types";
 import type { AgentSessionView } from "../../features/appearance/types";
+import { COLLAPSED_WIDTH } from "../../features/appearance/settingsLimits.ts";
 import { clamp } from "../../utils/number.ts";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "../../utils/text.ts";
 
 export const MIN_COLLAPSED_ISLAND_WIDTH = 280;
-export const MAX_COLLAPSED_ISLAND_WIDTH = 340;
+export const MAX_COLLAPSED_ISLAND_WIDTH = COLLAPSED_WIDTH.default;
 export const MIN_COLLAPSED_TEXT_UNITS = 2;
 export const MAX_COLLAPSED_TEXT_UNITS = 12;
 // The todo page with two rows: the island's padding, header and gap (86), the notebook's padding
@@ -30,8 +31,8 @@ const CLIPBOARD_ROW_GAP = 6;
 export const TODO_ROW_HEIGHT = 38;
 export const TODO_GROW_START_ROWS = 2;
 /** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
-export function getCollapsedIslandWidth(text: string, extraWidth = 0) {
-  const visualUnits = getCollapsedTextUnits(text);
+export function getCollapsedIslandWidth(text: string, extraWidth = 0, fontScale = 1) {
+  const visualUnits = getCollapsedTextUnits(text) * fontScale;
   const widthProgress =
     (clamp(
       visualUnits,
@@ -119,9 +120,11 @@ const AGENT_USAGE_HEIGHT = 28;
  * Expanded height that fits exactly `rows` Agent sessions, shown as `view`, below `usageLines`
  * usage lines (true: one).
  */
-export function getAgentPageExpandedHeight(rows: number, usageLines: number | boolean = 0, view: AgentSessionView = "list") {
+export function getAgentPageExpandedHeight(rows: number, usageLines: number | boolean = 0, view: AgentSessionView = "list", fontScale = 1) {
   const { height, gap } = AGENT_ROWS[view];
-  return AGENT_PAGE_CHROME_HEIGHT + Number(usageLines) * AGENT_USAGE_HEIGHT + rows * (height + gap) - gap;
+  // List rows can have a title and two lines of reply. Reserve the extra leading for larger text.
+  const textGrowth = view === "list" ? Math.ceil(60 * Math.max(0, fontScale - 1)) : 0;
+  return AGENT_PAGE_CHROME_HEIGHT + Number(usageLines) * AGENT_USAGE_HEIGHT + rows * (height + gap + textGrowth) - gap;
 }
 
 /** Expanded height around an alert's one-session card, whose row measured `rowHeight`. */

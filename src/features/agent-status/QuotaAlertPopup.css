@@ -25,7 +25,7 @@
   min-width: 0;
   flex: 1;
   overflow: hidden;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;

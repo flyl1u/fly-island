@@ -28,7 +28,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--text-1);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   text-align: center;
   text-overflow: ellipsis;
@@ -38,7 +38,7 @@
 .todo-calendar__nav .todo-calendar__today {
   padding: 0 var(--space-sm);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   background: var(--color-white-a06);
 }
@@ -65,7 +65,7 @@
 
 .todo-calendar__weekday {
   color: var(--text-3);
-  font-size: 10px;
+  font-size: calc(10px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 18px;
   text-align: center;
@@ -92,7 +92,7 @@
   display: grid;
   place-items: center;
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
   line-height: 1;
   transition: background-color 140ms ease, box-shadow 140ms ease;
@@ -177,7 +177,7 @@
   border: 0;
   outline: none;
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 .todo-calendar__add input::placeholder {

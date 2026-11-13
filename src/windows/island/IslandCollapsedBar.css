@@ -54,7 +54,7 @@
 .island__brand {
   min-width: 0;
   flex: 0 0 auto;
-  font-size: 15px;
+  font-size: calc(15px * var(--island-font-scale, 1));
   font-weight: 700;
   line-height: 1.2;
 }
@@ -64,7 +64,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--task-text-color);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -76,7 +76,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--task-text-color);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -104,7 +104,7 @@
   color: var(--text-1);
   background: var(--color-white-a12);
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 18px;
   font-variant-numeric: tabular-nums;
@@ -118,7 +118,7 @@
   min-width: 0;
   flex: 1;
   color: var(--task-text-color);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   animation: taskFlowIn 260ms ease-out backwards;
@@ -197,7 +197,7 @@
   background: var(--color-white-a10);
   border: 0;
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -217,7 +217,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   box-shadow: 0 0 10px rgba(61, 139, 255, 0.36);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;

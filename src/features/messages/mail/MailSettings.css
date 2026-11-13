@@ -28,7 +28,7 @@ min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .mail-settings__address small {
@@ -36,7 +36,7 @@ min-width: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: rgba(248, 246, 240, 0.58);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
 }
 
 .mail-settings__address small.mail-settings__account-error {
@@ -54,7 +54,7 @@ min-width: 0;
 .mail-settings__empty {
   margin: 0;
   color: rgba(248, 246, 240, 0.58);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .mail-settings__form {
@@ -70,7 +70,7 @@ min-width: 0;
   align-items: center;
   gap: var(--space-xl);
   color: var(--color-text);
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
   font-weight: 400;
 }
 
@@ -85,7 +85,7 @@ width: 100%;
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   outline: none;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 400;
 }
 
@@ -120,7 +120,7 @@ height: 28px;
   corner-shape: var(--corner-shape);
   outline: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 400;
   white-space: nowrap;
 }
@@ -166,14 +166,14 @@ color: #ffb7c2;
 .mail-settings__confirm {
   grid-column: 1 / -1;
   color: #ffb7c2;
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 
 .mail-settings__error {
   margin: 0;
   color: #ff9aa9;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
   overflow-wrap: anywhere;
 }

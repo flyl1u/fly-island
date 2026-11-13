@@ -21,7 +21,9 @@ export function getIslandStageStyle(
     "--island-collapsed-scale-target": settings.collapsedScale,
     "--island-expanded-scale-target": settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
+    "--collapsed-island-height": `${settings.collapsedHeight}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
+    "--island-font-scale": settings.islandFontPercent / 100,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
     "--island-corner-radius-size": settings.islandCornerRadius,
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).

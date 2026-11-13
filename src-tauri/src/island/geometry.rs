@@ -17,9 +17,12 @@ pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
 pub(super) const DEFAULT_MARGIN_Y: f64 = 0.0;
 pub(super) const DEFAULT_COLLAPSED_SCALE: f64 = 0.89;
 pub(super) const DEFAULT_EXPANDED_SCALE: f64 = 0.91;
-pub(super) const MIN_COLLAPSED_ISLAND_WIDTH: f64 = 280.0;
+pub(super) const MIN_COLLAPSED_ISLAND_WIDTH: f64 = 240.0;
+pub(super) const MAX_COLLAPSED_ISLAND_WIDTH: f64 = 480.0;
 pub(super) const COLLAPSED_ISLAND_WIDTH: f64 = 340.0;
 pub(super) const COLLAPSED_ISLAND_HEIGHT: f64 = 38.0;
+pub(super) const MIN_COLLAPSED_ISLAND_HEIGHT: f64 = 32.0;
+pub(super) const MAX_COLLAPSED_ISLAND_HEIGHT: f64 = 60.0;
 pub(super) const COLLAPSED_RADIUS: f64 = 12.0;
 pub(super) const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
@@ -71,7 +74,7 @@ pub(crate) fn apply_stage_geometry(
         .map_err(|error| error.to_string())?;
     let custom_monitor = state
         .custom_position
-        .and_then(|position| monitor_for_island_position(window, position).ok().flatten());
+        .and_then(|position| monitor_for_island_position(window, position, state).ok().flatten());
     let has_custom_monitor = custom_monitor.is_some();
     // The monitor the island followed the pointer or the foreground window to (follow.rs).
     let followed_monitor = match state.monitor_follow {
@@ -88,10 +91,7 @@ pub(crate) fn apply_stage_geometry(
     let monitor_size = monitor.size();
     let physical_width = (STAGE_WINDOW_WIDTH * scale).round() as i32;
     let physical_top_offset = (state.margin_y * scale).round() as i32;
-    let tucked_top_offset =
-        -((COLLAPSED_ISLAND_HEIGHT * state.collapsed_scale - TUCKED_VISIBLE_EDGE_HEIGHT).max(0.0)
-            * scale)
-            .round() as i32;
+    let tucked_top_offset = tucked_top_offset(state, scale);
     let top_inset = work_area_top_inset(monitor_position.y, monitor.work_area().position.y);
     let centered_x = monitor_position.x + (monitor_size.width as i32 - physical_width) / 2;
     let normal_y = monitor_position.y + top_inset + physical_top_offset;
@@ -188,9 +188,15 @@ pub(super) fn interpolate_stage_position(
     )
 }
 
+pub(super) fn tucked_top_offset(state: IslandWindowState, dpi: f64) -> i32 {
+    let height = state.collapsed_height * state.collapsed_scale;
+    -((height - TUCKED_VISIBLE_EDGE_HEIGHT).max(0.0) * dpi).round() as i32
+}
+
 pub(super) fn monitor_for_island_position(
     window: &WebviewWindow,
     position: IslandPosition,
+    state: IslandWindowState,
 ) -> Result<Option<Monitor>, String> {
     let monitors = window
         .available_monitors()
@@ -199,7 +205,7 @@ pub(super) fn monitor_for_island_position(
     Ok(monitors.into_iter().find(|monitor| {
         let scale = monitor.scale_factor();
         let island_center_x = position.x as f64 + STAGE_WINDOW_WIDTH * scale / 2.0;
-        let island_center_y = position.y as f64 + COLLAPSED_ISLAND_HEIGHT * scale / 2.0;
+        let island_center_y = position.y as f64 + state.collapsed_height * state.collapsed_scale * scale / 2.0;
         let monitor_position = monitor.position();
         let monitor_size = monitor.size();
 

@@ -7,7 +7,7 @@
 
 .settings-color__value {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 

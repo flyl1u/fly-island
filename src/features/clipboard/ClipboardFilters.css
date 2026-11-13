@@ -28,7 +28,7 @@
   border-radius: 0;
   outline: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 
@@ -77,7 +77,7 @@
   background: transparent;
   border: 0;
   outline: none;
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
 }
 

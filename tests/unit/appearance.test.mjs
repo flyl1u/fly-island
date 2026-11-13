@@ -69,6 +69,22 @@ test("the expanded size is a scale from 0.85 to 1.2; the three sizes of 3.0.0 ke
   assert.equal(normalizeSettings({ expandedScale: null }).expandedScale, 1);
 });
 
+test("notch dimensions and text size have independent defaults, bounds and reset", () => {
+  const older = normalizeSettings({ collapsedScale: 1.25, expandedScale: 0.95, positionLocked: true });
+  assert.equal(older.collapsedAutoWidth, true);
+  assert.equal(older.collapsedWidth, 340);
+  assert.equal(older.collapsedHeight, 38);
+  assert.equal(older.islandFontPercent, 100);
+  const custom = normalizeSettings({ ...older, collapsedAutoWidth: false, collapsedWidth: 250.5, collapsedHeight: 80, islandFontPercent: 117 });
+  assert.deepEqual([custom.collapsedAutoWidth, custom.collapsedWidth, custom.collapsedHeight, custom.islandFontPercent], [false, 251, 60, 115]);
+  assert.deepEqual([custom.collapsedScale, custom.expandedScale], [1.25, 0.95]);
+  const invalid = normalizeSettings({ collapsedWidth: null, collapsedHeight: "", islandFontPercent: Infinity });
+  assert.deepEqual([invalid.collapsedWidth, invalid.collapsedHeight, invalid.islandFontPercent], [340, 38, 100]);
+  const reset = withAppearanceFrom(custom, DEFAULT_SETTINGS);
+  assert.deepEqual([reset.collapsedAutoWidth, reset.collapsedWidth, reset.collapsedHeight, reset.islandFontPercent], [true, 340, 38, 100]);
+  assert.equal(reset.positionLocked, true);
+});
+
 test("options no longer in Settings load as their defaults, whatever was saved", () => {
   const saved = {
     marginY: 48,

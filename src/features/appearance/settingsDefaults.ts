@@ -4,6 +4,7 @@ import {
   DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
   AUTO_COLLAPSE_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, TUCK_DELAY_SECONDS,
+  COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT,
 } from "./settingsLimits.ts";
 import type { IslandSettings } from "./types";
 
@@ -14,10 +15,14 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeLayoutVersion: 1,
   appearanceMode: "classic",
   fontFamily: "system",
+  islandFontPercent: ISLAND_FONT_PERCENT.default,
   pageButtonStyle: "icon",
   glassIntensity: 72,
   opacity: 100,
   collapsedScale: 1, // Any other scale resamples the island's text and 1px lines.
+  collapsedAutoWidth: true,
+  collapsedWidth: COLLAPSED_WIDTH.default,
+  collapsedHeight: COLLAPSED_HEIGHT.default,
   expandedScale: 1,
   marginY: 0,
   positionLocked: false,

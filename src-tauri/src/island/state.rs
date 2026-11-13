@@ -27,13 +27,6 @@ impl IslandMode {
         }
     }
 
-    pub(super) fn base_size(self, collapsed_width: f64, expanded_height: f64) -> (f64, f64) {
-        match self {
-            Self::Collapsed => (collapsed_width, COLLAPSED_ISLAND_HEIGHT),
-            Self::Expanded => (EXPANDED_ISLAND_WIDTH, expanded_height),
-        }
-    }
-
     pub(super) fn corner_radius(self) -> f64 {
         match self {
             Self::Collapsed => COLLAPSED_RADIUS,
@@ -105,6 +98,7 @@ pub(crate) struct IslandWindowState {
     pub(super) expanded_scale: f64,
     pub(super) margin_y: f64,
     pub(super) collapsed_width: f64,
+    pub(super) collapsed_height: f64,
     pub(super) expanded_height: f64,
     pub(super) custom_position: Option<IslandPosition>,
     pub(super) is_dragging: bool,
@@ -124,6 +118,15 @@ pub(crate) struct IslandWindowState {
 }
 
 impl IslandWindowState {
+    pub(super) fn active_size(self) -> (f64, f64) {
+        let (width, height) = match self.mode {
+            IslandMode::Collapsed => (self.collapsed_width, self.collapsed_height),
+            IslandMode::Expanded => (EXPANDED_ISLAND_WIDTH, self.expanded_height),
+        };
+        let scale = self.active_scale();
+        (width * scale, height * scale)
+    }
+
     pub(super) fn can_start_drag(self) -> bool {
         matches!(self.mode, IslandMode::Collapsed)
             && !self.is_tucked
@@ -173,6 +176,7 @@ impl Default for IslandWindowState {
             expanded_scale: DEFAULT_EXPANDED_SCALE,
             margin_y: DEFAULT_MARGIN_Y,
             collapsed_width: COLLAPSED_ISLAND_WIDTH,
+            collapsed_height: COLLAPSED_ISLAND_HEIGHT,
             expanded_height: DEFAULT_EXPANDED_ISLAND_HEIGHT,
             custom_position: None,
             is_dragging: false,

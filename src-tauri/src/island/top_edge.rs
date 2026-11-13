@@ -26,7 +26,7 @@ pub(crate) fn sync_from_stage(window: &WebviewWindow, state: IslandWindowState, 
 
 /// Pulls a dropped island flush with the top edge when it lands close to it.
 pub(crate) fn snap_to_top(window: &WebviewWindow, position: IslandPosition) -> IslandPosition {
-    let Ok(Some(monitor)) = monitor_for_island_position(window, position) else {
+    let Ok(Some(monitor)) = monitor_for_island_position(window, position, read_window_state()) else {
         set_attached(window, false);
         return position;
     };

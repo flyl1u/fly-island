@@ -12,7 +12,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 .agent-approval__icon {
@@ -39,7 +39,7 @@
 .agent-approval__meta {
   flex: 1 0 auto;
   color: var(--color-agent-waiting);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   white-space: nowrap;
 }
@@ -48,7 +48,7 @@
   margin: 0;
   overflow: hidden;
   color: rgba(var(--agent-ink), 0.62);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -66,8 +66,8 @@
   border: 0;
   border-radius: var(--radius-md);
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 11px;
-  line-height: 16px;
+  font-size: calc(11px * var(--island-font-scale, 1));
+  line-height: calc(16px * var(--island-font-scale, 1));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -98,7 +98,7 @@
   background: rgba(var(--agent-ink), 0.1);
   border: 0;
   border-radius: var(--radius-pill);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;

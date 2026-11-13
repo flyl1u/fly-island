@@ -1,6 +1,8 @@
 export type SettingsAppearanceText = {
   font: string;
   fontLabel: string;
+  fontSize: string;
+  collapsedDimensions: { title: string; autoWidth: string; width: string; height: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
   title: string;
@@ -49,6 +51,8 @@ export type SettingsAppearanceText = {
 export const zhCN: SettingsAppearanceText = {
   font: "字体",
   fontLabel: "岛屿字体",
+  fontSize: "岛屿字号",
+  collapsedDimensions: { title: "刘海尺寸", autoWidth: "自动宽度", width: "刘海宽度", height: "刘海高度", unit: "px", hint: "宽高会随收起时的整体大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
   title: "外观模式",
@@ -94,6 +98,8 @@ export const zhCN: SettingsAppearanceText = {
 export const en: SettingsAppearanceText = {
   font: "Font",
   fontLabel: "Island font",
+  fontSize: "Island font size",
+  collapsedDimensions: { title: "Collapsed dimensions", autoWidth: "Automatic width", width: "Collapsed width", height: "Collapsed height", unit: "px", hint: "Width and height follow the overall collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
   title: "Appearance",

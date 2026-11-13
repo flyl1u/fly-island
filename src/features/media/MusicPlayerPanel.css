@@ -106,7 +106,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   color: var(--text-1);
-  font-size: 20px;
+  font-size: calc(20px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -121,12 +121,12 @@
 
 .music-player__artist {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: calc(14px * var(--island-font-scale, 1));
 }
 
 .music-player__source {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
 }
 
 /* With lyrics the head is one compact line pair; the lyrics are the focus. */
@@ -136,11 +136,11 @@
 
 .music-player--lyrics .music-player__track {
   -webkit-line-clamp: 1;
-  font-size: 15px;
+  font-size: calc(15px * var(--island-font-scale, 1));
 }
 
 .music-player--lyrics .music-player__artist {
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
 }
 
 .music-player__aside {
@@ -187,7 +187,7 @@
   background: none;
   border: 0;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--island-font-scale, 1));
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -225,7 +225,7 @@
 .music-player__error {
   margin: -4px 0;
   color: rgba(255, 170, 170, 0.88);
-  font-size: 11px;
+  font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   text-align: center;
 }

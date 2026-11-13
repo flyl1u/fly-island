@@ -4,7 +4,7 @@
   flex: 1;
   overflow: hidden;
   color: var(--task-text-color);
-  font-size: 13px;
+  font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;

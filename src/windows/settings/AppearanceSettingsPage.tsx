@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CollapsedDimensionsSection } from "../../features/appearance/CollapsedDimensionsSection";
 import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslandSection";
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
@@ -19,15 +20,25 @@ export function AppearanceSettingsPage({
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
   const [expandedScalePreview, setExpandedScalePreview] = useState<number | null>(null);
+  const [fontSizePreview, setFontSizePreview] = useState<number | null>(null);
   return (
     <>
-      <IslandPreview settings={expandedScalePreview === null ? settings : { ...settings, expandedScale: expandedScalePreview }} />
+      <IslandPreview settings={{
+        ...settings,
+        expandedScale: expandedScalePreview ?? settings.expandedScale,
+        islandFontPercent: fontSizePreview ?? settings.islandFontPercent,
+      }} />
       <StyleSettingsSection
         settings={settings}
         onSettingsChange={onSettingsChange}
         onPreviewIsland={requestPanelPreview}
         onExpandedScalePreview={setExpandedScalePreview}
+        onFontSizePreview={setFontSizePreview}
       />
+      <CollapsedDimensionsSection settings={settings} onChange={(next) => {
+        onSettingsChange(next);
+        requestPanelPreview("collapsed");
+      }} />
       <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
       <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />
       <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />

@@ -58,11 +58,9 @@ pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {
     let local_y = (cursor.y - window_rect.top) as f64;
     let state = read_window_state();
 
-    let (base_width, base_height) = state
-        .mode
-        .base_size(state.collapsed_width, state.expanded_height);
-    let island_width = base_width * state.active_scale() * physical_scale;
-    let island_height = base_height * state.active_scale() * physical_scale;
+    let (logical_width, logical_height) = state.active_size();
+    let island_width = logical_width * physical_scale;
+    let island_height = logical_height * physical_scale;
     let island_left = (window_width - island_width) / 2.0;
     let island_top = 0.0;
     let radius = state.bottom_corner_radius() * state.active_scale() * physical_scale;
