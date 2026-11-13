@@ -24,6 +24,14 @@
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB">
     <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
   </p>
+
+  <a href="https://island.flyliu.org/">
+    <img src="docs/assets/promo-preview.webp" alt="fly-island promo: WeChat messages on the island, approving a Claude Code permission request, Claude and Codex usage, the file shelf, tasks, music and translation" width="860">
+  </a>
+
+  <p><sub>Click to open the live preview and try it without installing (video captions are in Chinese)</sub></p>
+
+  <p>If it saves you a few window switches, a ⭐ <b>Star</b> helps more people find it.</p>
 </div>
 
 ## What is this?
@@ -138,6 +146,8 @@ Copyright (C) 2026 flyl1u and contributors. Versions 3.0.8 and earlier were rele
 Third-party dependencies and bundled assets retain their respective licenses. See the [font notices](src/assets/fonts/README.md) for bundled fonts. The NetEase progress plugins shipped with the installer, BetterNCM and InfLink-rs, are GPL-3.0 and included unmodified; see the [plugin notice](src-tauri/resources/media-plugins/README.md) for licenses and source links.
 
 ## Star History
+
+If fly-island is useful to you, [a Star](https://github.com/flyl1u/fly-island/stargazers) is the best way to support it.
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
   <picture>
