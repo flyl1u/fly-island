@@ -8,6 +8,8 @@
 |---|---|
 | `focusd-island-settings` | `features/appearance/storage.ts` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
+| `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
+| `focusd-island-color-backup`（`{ islandBackgroundColor, taskTextColor, pulseColor }`，均为大写 `#RRGGBB`；迁移、恢复默认外观和批量改色前保存；回退时与当前三色互换，手动改一个颜色不写） | `features/appearance/storage.ts`、`colorPalette.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo` | `features/todos/storage.ts` |

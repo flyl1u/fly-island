@@ -10,7 +10,7 @@ import { SettingsWindow } from "../../src/windows/settings/SettingsWindow";
 import { settingsCategoryFor } from "../../src/windows/settings/categories";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcutCalls } from "./settingsMocks";
-import { checkAppearance } from "./settingsAppearance";
+import { checkAppearance, prepareColorRegression } from "./settingsAppearance";
 import { checkQuotaSettings } from "./settingsQuota";
 
 const query = new URLSearchParams(location.search);
@@ -29,6 +29,7 @@ localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "
 // The checks below expect a customized look plus a General page choice that a reset must keep.
 if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
 else localStorage.removeItem("focusd-island-settings");
+if (automated) prepareColorRegression();
 localStorage.setItem("focusd-island-save-directory", "");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.

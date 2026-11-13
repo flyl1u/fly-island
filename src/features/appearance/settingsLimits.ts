@@ -35,7 +35,7 @@ export const AUTO_COLLAPSE_SECONDS = { min: 0, max: 600, default: 30 } as const;
 export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
-export const DEFAULT_TASK_TEXT_COLOR = "#ffffff";
+export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";
 
 export const ISLAND_FONT_PERCENT = { min: 90, max: 120, step: 5, default: 100 } as const;
 export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;

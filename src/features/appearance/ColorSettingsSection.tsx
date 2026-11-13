@@ -4,6 +4,9 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import type { IslandSettings } from "./types";
 import { HexColorInput } from "./HexColorInput";
+import { Undo2 } from "lucide-react";
+import { loadColorBackup, swapColorBackup } from "./storage";
+import "./ColorSettingsSection.css";
 
 type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor";
 
@@ -17,6 +20,7 @@ export function ColorSettingsSection({
 }) {
   const t = useTranslation();
   const text = t.settings.colors;
+  const backup = loadColorBackup();
   const colors: readonly [ColorKey, string][] = [
     ["islandBackgroundColor", text.islandBackground],
     ["taskTextColor", text.taskText],
@@ -24,7 +28,12 @@ export function ColorSettingsSection({
   ];
 
   return (
-    <SettingsGroup title={text.title}>
+    <SettingsGroup title={text.title} action={backup && (
+      <button className="appearance-color-restore" type="button" aria-label={text.restore}
+        onClick={() => onSettingsChange(swapColorBackup(settings))}>
+        <Undo2 size={15} aria-hidden="true" />
+      </button>
+    )}>
       {colors.map(([key, label]) => (
         <SettingsRow
           key={key}

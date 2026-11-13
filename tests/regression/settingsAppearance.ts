@@ -16,8 +16,18 @@ const type = async (input: HTMLInputElement, value: string) => {
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 };
+const storedColors = () => {
+  const { islandBackgroundColor, taskTextColor, pulseColor } = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}");
+  return { islandBackgroundColor, taskTextColor, pulseColor };
+};
+
+export function prepareColorRegression() {
+  localStorage.setItem("focusd-island-color-refresh-v1", "1");
+  localStorage.removeItem("focusd-island-color-backup");
+}
 
 async function checkColorInputs(check: (condition: unknown, message: string) => void) {
+  check(!document.querySelector(".appearance-color-restore"), "Without a backup, the restore icon is absent");
   const group = element(".settings-color").closest(".settings-group")!;
   const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")];
   check(rows.length === 3 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("input[type=color]")),
@@ -65,6 +75,12 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   }
   await edit("not a color", "Enter");
   check(saved() === "#2F2F37" && element(".appearance-hex").textContent === "#2F2F37", "Invalid hex input silently rolls back");
+  await edit("123456", "Enter");
+  const swatches = [...document.querySelectorAll<HTMLInputElement>(".settings-color__swatch")];
+  await type(swatches[1], "#aabbcc");
+  await type(swatches[2], "#abcdef");
+  check(!localStorage.getItem("focusd-island-color-backup") && !document.querySelector(".appearance-color-restore"),
+    "Manual hex and picker edits do not create or overwrite a backup");
 }
 
 export async function checkAppearance(check: (condition: unknown, message: string) => void) {
@@ -72,6 +88,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     check(!document.querySelector(".appearance-reset"), "Reset appearance is not offered outside the appearance page");
     await openPage("appearance");
     await checkColorInputs(check);
+    const colorsBeforeReset = storedColors();
     // Expanded size: a slider from 0.85x to 1.2x, stored as the scale once the thumb is let go,
     // and the island opens to show it.
     const sizeLabel = [...document.querySelectorAll<HTMLLabelElement>("label")].find((label) => label.textContent === "展开后的大小");
@@ -150,6 +167,16 @@ export async function checkAppearance(check: (condition: unknown, message: strin
       "Appearance reset restores the font and notch defaults");
 
     check(storedSettings().carryOverIncompleteTodos === false, "Resetting the appearance keeps todo settings");
+    check(JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup") ?? "null")) === JSON.stringify(colorsBeforeReset),
+      "Reset appearance first backs up all three colors");
+    check(element(".appearance-color-restore").getAttribute("aria-label") === "恢复上一版颜色", "A backup reveals the restore icon with its accessible name");
+    const colorsAfterReset = storedColors();
+    await click(".appearance-color-restore");
+    check(JSON.stringify(storedColors()) === JSON.stringify(colorsBeforeReset)
+      && JSON.stringify(JSON.parse(localStorage.getItem("focusd-island-color-backup")!)) === JSON.stringify(colorsAfterReset),
+      "Restore swaps current and backed-up colors and persists both");
+    await click(".appearance-color-restore");
+    check(JSON.stringify(storedColors()) === JSON.stringify(colorsAfterReset), "A second restore swaps the colors back");
     check(!document.querySelector(".island-preview__island--glass") && ![...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].some((button) => button.textContent === "液态玻璃"),
       "Liquid glass is paused: the preview stays classic and the choice is not offered");
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
