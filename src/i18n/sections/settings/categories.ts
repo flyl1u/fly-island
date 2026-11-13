@@ -21,6 +21,7 @@ export type SettingsCategoriesText = {
   /** The AI Agent group's pages. */
   agents: string;
   agentConnect: string;
+  plugins: string;
   about: string;
 };
 
@@ -43,6 +44,7 @@ export const zhCN: SettingsCategoriesText = {
   shelf: "文件中转",
   agents: "会话与提醒",
   agentConnect: "连接",
+  plugins: "插件",
   about: "关于",
 };
 
@@ -65,5 +67,6 @@ export const en: SettingsCategoriesText = {
   shelf: "File shelf",
   agents: "Sessions & alerts",
   agentConnect: "Connection",
+  plugins: "Plugins",
   about: "About",
 };

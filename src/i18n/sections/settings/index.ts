@@ -3,6 +3,7 @@ import type { SettingsModulesText } from "./modules";
 import type { SettingsMessageSourcesText } from "./messageSources";
 import type { SettingsResetAppearanceText } from "./resetAppearance";
 import type { SettingsCategoriesText } from "./categories";
+import type { SettingsPluginsText } from "./plugins";
 import type { SettingsBehaviorText } from "./behavior";
 import type { SettingsTranslationText } from "./translation";
 import type { SettingsPositionText } from "./position";
@@ -25,6 +26,7 @@ import * as modules from "./modules.ts";
 import * as messageSources from "./messageSources.ts";
 import * as resetAppearance from "./resetAppearance.ts";
 import * as categories from "./categories.ts";
+import * as plugins from "./plugins.ts";
 import * as behavior from "./behavior.ts";
 import * as translation from "./translation.ts";
 import * as position from "./position.ts";
@@ -52,6 +54,7 @@ export type SettingsText = {
   resetAppearance: SettingsResetAppearanceText;
 
   categories: SettingsCategoriesText;
+  plugins: SettingsPluginsText;
 
   behavior: SettingsBehaviorText;
 
@@ -98,6 +101,7 @@ export const zhCN: SettingsText = {
   resetAppearance: resetAppearance.zhCN,
 
   categories: categories.zhCN,
+  plugins: plugins.zhCN,
 
   behavior: behavior.zhCN,
 
@@ -143,6 +147,7 @@ export const en: SettingsText = {
   resetAppearance: resetAppearance.en,
 
   categories: categories.en,
+  plugins: plugins.en,
 
   behavior: behavior.en,
 

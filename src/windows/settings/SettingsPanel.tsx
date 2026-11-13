@@ -8,6 +8,7 @@ import { ClipboardSettingsPage } from "./ClipboardSettingsPage";
 import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
+import { PluginsSettingsPage } from "./PluginsSettingsPage";
 import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
@@ -112,6 +113,7 @@ export function SettingsPanel({
       {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
       {category === "agentConnect" && <AgentConnectSettingsPage />}
+      {category === "plugins" && <PluginsSettingsPage />}
       {category === "about" && <AboutSettingsPage />}
     </LayoutEditor>
   );

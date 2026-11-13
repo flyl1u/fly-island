@@ -9,6 +9,7 @@ export const SETTINGS_CATEGORIES = [
   "messages",
   "agents",
   "agentConnect",
+  "plugins",
   "about",
 ] as const;
 
@@ -19,13 +20,13 @@ export type SettingsGroup = "basics" | "features" | "agents";
 /**
  * Sidebar sections: app-wide settings, one page per module (QQ, WeChat and Mail share Messages,
  * the file shelf shares Clipboard), the two AI Agent pages (sessions and alerts, connection). A
- * null label sets About apart as the last group of the list, right below Connection.
+ * null label sets Plugins and About apart as the last group of the list, below Connection.
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance"] },
   { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages"] },
   { label: "agents", categories: ["agents", "agentConnect"] },
-  { label: null, categories: ["about"] },
+  { label: null, categories: ["plugins", "about"] },
 ];
 
 export const DEFAULT_SETTINGS_CATEGORY: SettingsCategory = "general";
