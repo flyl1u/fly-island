@@ -38,6 +38,9 @@ export const PAGES = [
   "settings-sidebar.html",
   "todo-edit.html",
   "todo-history-calendar.html",
+  "todo-timer.html",
+  "todo-timer.html?scale=0.85",
+  "todo-timer.html?scale=1.2",
   "tucked-hover.html",
 ];
 

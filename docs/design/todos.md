@@ -18,10 +18,18 @@
 
 - 待办页的标签、日期和辅助阅读文案跟随界面语言。（Agent 推断）
 
-## 排序
+## 开始与倒计时（issue #52）
 
+- 设置 → 待办增加“番茄钟”（`todoTimerEnabled`，默认关闭）。下述时长选择、倒计时和到时提醒仅在开启时启用；关闭时点开始直接开始/停止。关闭立即清除本轮倒计时，保留进行中任务，重新开启不恢复旧轮次。
 - “拖动调整顺序”（`enableTodoReorder`）默认开启，右侧手柄拖动后自动保存。无 `todoReorderVersion: 1` 的旧设置一律迁移为开启；带标记才尊重已保存的开关值。
-- 番茄钟（issue #52）已整体移除（2026-11-12，用户要求），开始按钮恢复为原来的开始 / 停止。
+
+- 开启后“开始”左边有一个怀表图标（lucide `Timer`，22px 圆形透明按钮，打开时强调色）。“开始”直接按当前时长倒计时，首次 15 分钟；不再有“不限时”。点怀表在它上方弹出小的时间设置：一颗深色胶囊，里面是岛内版步进器（26px，−/+ 每次 5 分钟，1–240）、“分钟”和强调色圆形 ▶。它画在 stage 上而不是待办行里，滚动列表裁不到；上方放不下时改到下方。改动立即记住，Esc / 点别处 / 滚动关闭。（用户构想 2026-11-12：上一版“分成两半的胶囊 + 大卡片”太丑，已删除）
+- 开始后沿用原有收起岛屿和单个进行中待办的逻辑。折叠岛显示任务标题 + 小胶囊里的 `mm:ss`（18px 高，浅底，12px 600 字重，标题过长时省略号截断标题而不压缩胶囊）；列表里的开始按钮位置显示停止图标和 `mm:ss`（超过一小时仍按分钟，如 `240:00`）。（用户构想）
+- 时间设置和到时操作使用原有深色、强调色与键盘焦点样式；每秒数字只在倒计时叶子组件内刷新。（Agent 推断）
+- 时间到保留任务未完成状态，显示“时间到 / 完成 / 再来一轮”。完成会勾选任务；再来一轮直接按本轮时长重新开始并收起岛屿。结束、完成、删除和开始另一项都会取消旧倒计时；不操作不会重复响。（用户需求）
+- 到时操作区短暂淡入，上线后保持静止；减少动态效果时不播放动画。到时展开、贴边和托盘隐藏的约定见 [island.md](island.md)。（Agent 推断）
+
+English: With the timer on, a watch icon sits left of Start. Start counts down the current duration (15 min the first time); the watch opens a small setter above it with −/+ in steps of 5 (1–240) and a round start button. The collapsed island shows the task title and the countdown in a small pill. Timed rows show a stop icon and `mm:ss`. At expiry, “Time’s up”, “Complete”, and “Another round” remain available. Another round reuses the same duration. Stopping, completing, deleting, or starting another task cancels the old round.
 
 ## 尺寸
 
