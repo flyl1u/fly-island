@@ -84,6 +84,32 @@
   animation: taskFlowIn 260ms ease-out backwards;
 }
 
+/* A timed todo: its title, then the countdown in a small pill that never shrinks. */
+.island__active-task--timed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.island__active-task-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island__timer-pill {
+  flex: 0 0 auto;
+  height: 18px;
+  padding: 0 7px;
+  color: var(--text-1);
+  background: var(--color-white-a12);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Running agent: icon and session title, laid out like the active task. */
 .island__agent-session {
   display: flex;

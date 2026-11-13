@@ -1,0 +1,61 @@
+/* A small pill floating above the watch: minutes stepper, unit, round start. */
+.todo-duration-picker {
+  position: fixed;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 5px 5px 6px;
+  color: var(--text-1);
+  background: var(--island-background-color, #2f2f37);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  animation: todo-duration-picker-in 140ms ease-out;
+  transform-origin: bottom center;
+}
+
+.todo-duration-picker--below { transform-origin: top center; }
+
+@keyframes todo-duration-picker-in {
+  from { opacity: 0; transform: translateY(3px) scale(0.96); }
+}
+
+.todo-duration-picker--below { animation-name: todo-duration-picker-in-below; }
+
+@keyframes todo-duration-picker-in-below {
+  from { opacity: 0; transform: translateY(-3px) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-duration-picker,
+  .todo-duration-picker--below { animation: none; }
+}
+
+.todo-duration-picker__unit {
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.todo-duration-picker__start {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--color-black, #000);
+  background: var(--color-accent);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.todo-duration-picker__start:hover { filter: brightness(1.08); }
+.todo-duration-picker__start:active { transform: scale(0.94); }
+.todo-duration-picker__start:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

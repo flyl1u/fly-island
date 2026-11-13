@@ -1,0 +1,36 @@
+/* The watch sits just left of Start; Start keeps its own pill. */
+.todo-start-group {
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.todo-timer-button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.todo-timer-button:hover {
+  color: var(--text-1);
+  background: var(--color-white-a08);
+}
+
+.todo-timer-button[aria-expanded="true"] {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.todo-timer-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
