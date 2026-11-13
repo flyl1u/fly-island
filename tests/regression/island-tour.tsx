@@ -19,6 +19,8 @@ const empty = query.has("empty");
 const media = (query.get("media") ?? "playing") as TourMedia;
 const customNotch = query.has("notch");
 const fontPercent = Number(query.get("font")) || 100;
+// ?tuck=line|hidden picks the tucked look (default edge).
+const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
 
 // The tour writes the island's own keys; whatever the browser profile had comes back on leaving.
@@ -45,6 +47,7 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
+  ...(query.get("tuck") ? { tuckStyle } : {}),
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
   pageButtonStyle: "capsule",
   // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
@@ -199,6 +202,17 @@ if (!automated) {
     await click('[aria-label="收起到屏幕顶部"]');
     checkShapeMotion(0.38);
     check(interaction.isTucked === true, "贴边收起请求保留位置动画");
+    {
+      // Line and hidden clear the shape (Rust keeps only a small hot zone); line draws a 72 x 5 bar.
+      const style = getComputedStyle(island()), bar = getComputedStyle(island(), "::before");
+      const scale = Number.parseFloat(style.getPropertyValue("--island-collapsed-scale")) || 1;
+      const clear = style.backgroundColor === "rgba(0, 0, 0, 0)" && style.boxShadow === "none"
+        && getComputedStyle(island().querySelector(".island__surface")!).visibility === "hidden";
+      const barOk = tuckStyle === "line" ? Math.abs(Number.parseFloat(bar.width) - 72 * scale) < 0.5 && Math.abs(Number.parseFloat(bar.height) - 5 * scale) < 0.5
+        : bar.content === "none" || bar.content === "normal";
+      check(interaction.tuckStyle === tuckStyle && barOk && (tuckStyle === "edge" ? !clear && !/island--tuck-/.test(island().className) : clear && island().classList.contains(`island--tuck-${tuckStyle}`)),
+        `贴边样式 ${tuckStyle}：传给原生窗口，岛屿${tuckStyle === "edge" ? "保持原样" : "透明"}（${style.backgroundColor} / ${bar.width}×${bar.height}）`);
+    }
     await click(".island__open-button");
     check(interaction.isTucked === false && interaction.animatePosition === true, "从贴边滑出请求保留位置动画");
     // The page dots can be dragged into another order, which is saved; the drag opens no page.

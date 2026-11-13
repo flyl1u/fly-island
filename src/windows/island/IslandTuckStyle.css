@@ -1,0 +1,44 @@
+/*
+ * How the island looks tucked to the top edge (tuckStyle). "edge" keeps the island's own bottom
+ * rim on screen and needs no rule here. "line" and "hidden" clear the whole shape: Rust leaves a
+ * 14px (line) or 6px (hidden) strip on screen and only captures the cursor in a small hot zone
+ * around its centre (island/state.rs TuckStyle), so nothing drawn here may suggest a wider target.
+ *
+ * !important: the attached and liquid-glass shadows (IslandTopEdge.css) use long selectors, and a
+ * tucked island must drop every one of them whatever its appearance.
+ */
+.island.island--tuck-line,
+.island.island--tuck-hidden {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.island--tuck-line::after,
+.island--tuck-hidden::after {
+  box-shadow: none;
+}
+
+.island--tuck-line .island__surface,
+.island--tuck-hidden .island__surface {
+  visibility: hidden;
+}
+
+/*
+ * A short bar like a phone's home indicator, 3px below the screen edge: the visible strip is the
+ * bottom 14px of the island, so the bar sits 14 - 3 - 5 = 6px above the island's bottom. Filled
+ * with the island colour and ringed in light, so it reads on dark and light wallpapers alike.
+ */
+.island--tuck-line::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(6px * var(--island-collapsed-scale));
+  z-index: 4;
+  width: calc(72px * var(--island-collapsed-scale));
+  height: calc(5px * var(--island-collapsed-scale));
+  border-radius: 999px;
+  background: var(--island-background-color);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.32);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
