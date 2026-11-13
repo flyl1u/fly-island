@@ -92,9 +92,10 @@ if (!automated) {
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
       // General has two more for its island timers (2026-11-11); Agents two for the session sources DSH
-      // gained on 2026-11-13 (Claude Code and Codex).
+      // gained on 2026-11-13 (Claude Code and Codex). General 10 -> 11: the tucked look the owner asked
+      // for on 2026-11-13.
       const rowCount = panel.querySelectorAll(".settings-row").length;
-      const maxRows = category === "agents" ? 11 : category === "general" ? 10 : category === "appearance" ? 12 : 8;
+      const maxRows = category === "agents" ? 11 : category === "general" ? 11 : category === "appearance" ? 12 : 8;
       if (category === "general") {
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
@@ -110,6 +111,11 @@ if (!automated) {
         check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);
         await type(first, "30");
         await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
+        const tuckLooks = [...panel.querySelectorAll<HTMLButtonElement>("[role='group'][aria-label='贴边样式'] button")];
+        check(tuckLooks.map((button) => button.textContent).join() === "默认,细线,隐藏" && tuckLooks[0].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, edge by default");
+        await act(async () => tuckLooks[1].click());
+        check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line", "Choosing the line look saves it");
+        await act(async () => tuckLooks[0].click());
       }
       if (category === "messages") {
         const notice = panel.querySelector(".messages-settings__wechat-risk");

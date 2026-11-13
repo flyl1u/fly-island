@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageButtonStyle, PageDot } from "../../features/appearance/types";
+import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -22,6 +22,7 @@ import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import "./IslandShell.css";
+import "./IslandTuckStyle.css";
 
 type IslandShellProps = {
   qqMail: MailController;
@@ -35,6 +36,8 @@ type IslandShellProps = {
   appearanceMode: AppearanceMode;
   nativeGlassState: NativeGlassState;
   isTucked: boolean;
+  /** How the island looks while tucked: its own rim (edge), a short line, or nothing. */
+  tuckStyle: TuckStyle;
   positionLocked: boolean;
   isDetached: boolean;
   showTitle: boolean;
@@ -95,6 +98,7 @@ export function IslandShell({
   appearanceMode,
   nativeGlassState,
   isTucked,
+  tuckStyle,
   positionLocked,
   isDetached,
   showTitle,
@@ -157,6 +161,7 @@ export function IslandShell({
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
     isTucked ? "island--tucked" : "",
+    isTucked && tuckStyle !== "edge" ? `island--tuck-${tuckStyle}` : "",
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]

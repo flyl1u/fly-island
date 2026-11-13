@@ -6,12 +6,12 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
-import type { ExpandTrigger, IslandSettings } from "./types";
+import type { ExpandTrigger, IslandSettings, TuckStyle } from "./types";
 
 /**
  * Settings → General → Island: how the island opens, (A) how long the open island stays after the
- * cursor leaves, whether and (B) how soon the collapsed island tucks into a line at the top edge,
- * game mode, and a way back to its default position. Timings, the monitor, the margin and
+ * cursor leaves, whether and (B) how soon the collapsed island tucks to the top edge, how it looks
+ * there, game mode, and a way back to its default position. Timings, the monitor, the margin and
  * tucking while full screen keep their defaults (settingsDefaults.ts).
  */
 export function ExpandSettingsSection({
@@ -30,6 +30,10 @@ export function ExpandSettingsSection({
     { value: "click", label: expand.click },
     { value: "hover", label: expand.hover },
   ];
+  const tuckStyles: { value: TuckStyle; label: string }[] = (["edge", "line", "hidden"] as const).map((value) => ({
+    value,
+    label: expand.tuckStyles[value],
+  }));
 
   return (
     <SettingsGroup title={expand.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>
@@ -71,6 +75,18 @@ export function ExpandSettingsSection({
           onChange={(tuckDelaySeconds) => update({ tuckDelaySeconds })}
         />
       ) : null}
+      {/* Clicking "tuck to the top" tucks it too, so the look is offered with auto-tuck off. */}
+      <SettingsRow
+        title={expand.tuckStyle}
+        control={
+          <SettingsChoice
+            value={settings.tuckStyle}
+            options={tuckStyles}
+            ariaLabel={expand.tuckStyle}
+            onChange={(tuckStyle) => update({ tuckStyle })}
+          />
+        }
+      />
       <SettingsToggleRow
         title={t.settings.layout.gameQuiet}
         description={t.settings.layout.gameQuietHint}

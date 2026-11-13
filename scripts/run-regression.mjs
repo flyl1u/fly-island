@@ -29,9 +29,10 @@ export const PAGES = [
   "file-shelf.html",
   "i18n.html?test=1",
   "island-tour.html?test=1",
-  // Both ends of the expanded size slider: every page still inside the (scaled) island.
-  "island-tour.html?test=1&scale=0.85",
-  "island-tour.html?test=1&scale=1.2",
+  // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
+  // cover the line and hidden tucked looks.
+  "island-tour.html?test=1&scale=0.85&tuck=line",
+  "island-tour.html?test=1&scale=1.2&tuck=hidden",
   "island-tour.html?test=1&scale=1.2&notch=1&font=120",
   "mail-reader.html?run=1",
   "music-lyrics.html",
