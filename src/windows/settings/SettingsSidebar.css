@@ -70,6 +70,9 @@
   opacity: 0.8;
 }
 
+.settings-sidebar__item--link { text-decoration: none; }
+.settings-sidebar__item > .settings-sidebar__external { opacity: 0.5; }
+
 .settings-sidebar__item:hover {
   color: var(--color-white);
   background: var(--color-white-a06);
