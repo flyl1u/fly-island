@@ -1,3 +1,4 @@
+import { MessageCard } from "../MessageCard";
 import { useTranslation } from "../../../i18n";
 import type { ReactNode } from "react";
 import { Power } from "lucide-react";
@@ -22,7 +23,7 @@ export function WeChatReminderControls({ controller, compact = false }: { contro
   </div>;
 }
 
-/** Chat previews when available, with the centered launcher for basic reminders. */
+/** Previews and content-free reminders share the notification card surface. */
 export function WeChatReminderPanel({ controller, navigation }: { controller: WeChatRemindersController; navigation: ReactNode }) {
   const { snapshot, busy, actionError, openWeChat } = controller;
   const t = useTranslation();
@@ -37,29 +38,15 @@ export function WeChatReminderPanel({ controller, navigation }: { controller: We
         <div className="qq-panel__toolbar"><WeChatReminderControls controller={controller} compact /></div>
       </header>
       {(actionError || snapshot.error) && <p className="qq-panel__error" role="alert">{actionError || snapshot.error}</p>}
-      {messages.length > 0 ? (
-        <div className="qq-panel__list" role="list" aria-label={t.wechat.messageList} aria-busy={busy}>
-          {plain && (
-            <article className="qq-panel__item" role="listitem">
-              <button type="button" aria-label={t.wechat.open} disabled={busy} onClick={() => void openWeChat()}>
-                <div className="qq-panel__item-heading"><strong>{t.messages.newReminder}</strong></div>
-              </button>
-            </article>
-          )}
-          {messages.map(({ id, receivedAt, contact, body }) => {
-            const date = new Date(receivedAt);
-            return (
-              <article className="qq-panel__item" key={id} role="listitem" data-message-id={id}>
-                <button type="button" aria-label={t.wechat.openFrom(contact)} disabled={busy} onClick={() => void openWeChat(id)}>
-                  <div className="qq-panel__item-heading">
-                    <strong>{contact}</strong>
-                    <time dateTime={date.toISOString()}>{date.toLocaleTimeString(t.localeTag, { hour: "2-digit", minute: "2-digit" })}</time>
-                  </div>
-                  <p>{body}</p>
-                </button>
-              </article>
-            );
-          })}
+      {messages.length > 0 || pending ? (
+        <div className="qq-panel__list message-card-list" role="list" aria-label={t.wechat.messageList} aria-busy={busy}>
+          {plain && <MessageCard key={`reminder-${snapshot.lastAttentionAt}`} source="wechat" name={t.messages.wechat}
+            timestamp={snapshot.lastAttentionAt ?? 0} body={t.messages.newReminder} muted disabled={busy}
+            ariaLabel={t.wechat.open} onOpen={() => void openWeChat()} />}
+          {messages.map(({ id, receivedAt, contact, body }) => (
+            <MessageCard key={id} source="wechat" messageId={id} name={contact} timestamp={receivedAt} body={body}
+              disabled={busy} ariaLabel={t.wechat.openFrom(contact)} onOpen={() => void openWeChat(id)} />
+          ))}
         </div>
       ) : <div className="qq-panel__empty">
         <button

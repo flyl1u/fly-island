@@ -1,3 +1,4 @@
+import { MessageCard } from "../MessageCard";
 import { useTranslation } from "../../../i18n";
 import type { ReactNode } from "react";
 import { ArrowUpRight, KeyRound, Power, RefreshCw, Settings2, Trash2 } from "lucide-react";
@@ -46,16 +47,12 @@ export function QQNotificationPanel({ controller, navigation }: { controller: QQ
         </div>
       </header>
       {error && <p className="qq-panel__error" role="alert">{error}</p>}
-      <div className="qq-panel__list" role="list" aria-label={t.qq.list} aria-busy={busy}>
+      <div className="qq-panel__list message-card-list" role="list" aria-label={t.qq.list} aria-busy={busy}>
         {snapshot.items.length === 0 ? (
           <div className="qq-panel__empty" role="status"><span className="message-empty-icon"><MessageSourceIcon source="qq" size={28} /></span><span>{t.common.noMessages}</span></div>
         ) : snapshot.items.map((item) => (
-          <article className="qq-panel__item" key={item.id} role="listitem" data-message-id={item.id}>
-            <button type="button" disabled={busy} onClick={() => void openQQ()} aria-label={t.qq.openNotification(item.title)}>
-              <div className="qq-panel__item-heading"><strong>{item.title}</strong><time dateTime={new Date(item.createdAt).toISOString()}>{new Date(item.createdAt).toLocaleTimeString(t.localeTag, { hour: "2-digit", minute: "2-digit" })}</time></div>
-              {item.body && <p>{item.body}</p>}
-            </button>
-          </article>
+          <MessageCard key={item.id} source="qq" messageId={item.id} name={item.title} timestamp={item.createdAt} body={item.body}
+            disabled={busy} ariaLabel={t.qq.openNotification(item.title)} onOpen={() => void openQQ()} />
         ))}
       </div>
     </section>
