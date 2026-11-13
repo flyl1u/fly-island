@@ -351,25 +351,29 @@ if (!automated) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
     check(recordButtonText() === "Ctrl+Shift+/", `The clipboard page shows the recorded shortcut when opened again (${recordButtonText()})`);
 
+    // About: one group holds the community group (red dots lead to it until it is opened), the star
+    // and the tip; no update row, history or issue links (the changelog and the group took them over).
+    localStorage.removeItem("focusd-island-community-invite-seen");
     await openPage("about");
-    // About: one group holds the latest version (with its update states) and the links; no
-    // separate Version group nests a box in a box.
-    const aboutCards = [...document.querySelectorAll<HTMLElement>(".settings-group__card")];
-    const linkCard = aboutCards.find((card) => card.querySelector(".project-link"));
+    const linkCard = [...document.querySelectorAll<HTMLElement>(".settings-group__card")].find((card) => card.querySelector(".project-link"));
     const linkTitles = [...(linkCard?.querySelectorAll<HTMLElement>(".project-link__copy strong") ?? [])].map((title) => title.textContent);
-    check(linkTitles.join() === "查看最新版本,历史版本,反馈问题,觉得小岛还不错？,打赏作者",
-      `About lists the update row and the links in one group (${linkTitles.join()})`);
-    check(![...document.querySelectorAll(".settings-group__title")].some((title) => title.textContent === "版本"), "About has no separate Version group");
+    check(linkTitles.join() === "用户交流群,觉得小岛还不错？,打赏作者", `About lists the community group, the star and the tip in one group (${linkTitles.join()})`);
     const authorLink = document.querySelector<HTMLAnchorElement>(".settings-sidebar a.settings-sidebar__item--link");
     const sidebarItems = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__item")].map((item) => item.textContent);
-    check(authorLink?.href === "https://flyliu.org/" && sidebarItems.slice(-2).join() === "关于,关于作者",
-      "关于作者是侧栏里关于下面的一项，直接打开 flyliu.org");
-    const historyLink = [...(linkCard?.querySelectorAll<HTMLAnchorElement>("a.project-link") ?? [])].find((link) => link.textContent?.includes("历史版本"));
-    check(historyLink?.href.endsWith("/releases") === true && historyLink.textContent?.includes("点击之后可以查看岛屿的历史版本和更新历史") === true,
-      "History opens every release with its description");
-    const supportToggle = element<HTMLButtonElement>(".support-author__toggle");
-    check(supportToggle.getAttribute("aria-expanded") === "false" && !document.querySelector(".support-author__code"),
-      "Support the author starts closed");
+    check(authorLink?.href === "https://flyliu.org/" && sidebarItems.slice(-2).join() === "关于,关于作者", "关于作者是侧栏里关于下面的一项，直接打开 flyliu.org");
+    const communityToggle = element<HTMLButtonElement>(".community-group .support-author__toggle");
+    check(document.querySelector("[data-category='about'] .settings-sidebar__dot") && communityToggle.querySelector(".community-group__dot")
+      && communityToggle.textContent?.includes("遇到问题、想要新功能，都可以来群里问问、聊聊"), "Until the group is opened, About and its row carry a red dot; the row says questions go there");
+    await act(async () => { communityToggle.click(); });
+    check(communityToggle.getAttribute("aria-expanded") === "true"
+      && document.querySelector(".community-group__code img")?.getAttribute("src")?.startsWith("https://island.flyliu.org/community/wechat-group.jpg?t=") === true,
+      "Opening the group shows its code from the website, asked for afresh");
+    check(!document.querySelector(".settings-sidebar__dot, .community-group__dot") && localStorage.getItem("focusd-island-community-invite-seen") === "true",
+      "Opening the group clears both red dots and remembers it");
+    await act(async () => { communityToggle.click(); });
+    check(!document.querySelector(".community-group__code"), "Clicking the group again closes the code");
+    const supportToggle = element<HTMLButtonElement>(".support-author:not(.community-group) .support-author__toggle");
+    check(supportToggle.getAttribute("aria-expanded") === "false" && !document.querySelector(".support-author__code"), "Support the author starts closed");
     await act(async () => { supportToggle.click(); });
     const codes = [...document.querySelectorAll<HTMLElement>(".support-author__code")];
     check(supportToggle.getAttribute("aria-expanded") === "true"

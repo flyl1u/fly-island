@@ -308,6 +308,19 @@
   position: relative;
 }
 
+/* The community group waits in About: the first of the red dots that lead to it. */
+.island-settings-button__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: var(--color-badge);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
 .icon-button.island-settings-button--active {
   color: #fff;
   background: var(--color-white-a16);

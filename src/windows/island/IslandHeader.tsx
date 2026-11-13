@@ -4,6 +4,7 @@ import { PAGE_ICONS } from "../../features/appearance/pageIcons";
 import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
 import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
+import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
@@ -64,6 +65,8 @@ export function IslandHeader({
   pageActions,
 }: IslandHeaderProps) {
   const t = useTranslation();
+  // A red dot leads to the community group in About until it has been opened.
+  const communityPending = useCommunityInvite().pending;
   const showIcons = pageButtonStyle === "icon";
   const AgentIcon = showIcons ? Bot : CircleDot;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
@@ -189,7 +192,7 @@ export function IslandHeader({
         <button
           className={`icon-button island-settings-button${page === "settings" ? " island-settings-button--active" : ""}`}
           type="button"
-          aria-label={t.settings.title}
+          aria-label={communityPending ? t.island.settingsWithNews : t.settings.title}
           aria-pressed={page === "settings"}
           onClick={(event) => {
             event.stopPropagation();
@@ -197,6 +200,7 @@ export function IslandHeader({
           }}
         >
           <Settings size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+          {communityPending && <span className="island-settings-button__dot" aria-hidden="true" />}
         </button>
         {/* Only once the island has been moved: at its default place the button would do nothing. */}
         {isDetached && (

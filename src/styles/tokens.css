@@ -49,6 +49,8 @@
   --color-light-your-turn: #ffd60a;
   --color-light-working: #34c759;
   --color-light-done: #8e8e93;
+  /* Something new waits to be looked at (the community group's red dots). */
+  --color-badge: #ff453a;
   --color-focus-ring: rgba(143, 216, 255, 0.88);
   --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
 

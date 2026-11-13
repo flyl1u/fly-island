@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from "react";
-import { CircleHelp, History, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import markUrl from "../../../src-tauri/icons/mark.svg";
+import { CommunityGroup } from "./CommunityGroup";
 import { ProjectLink } from "./ProjectLink";
 import { SupportAuthor } from "./SupportAuthor";
-import { PROJECT_HISTORY_URL, PROJECT_ISSUES_URL, PROJECT_REPO_URL } from "./projectLinks";
-import { UpdatePanel } from "./UpdatePanel";
+import { PROJECT_REPO_URL } from "./projectLinks";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
 import "./ProjectSettingsSection.css";
 
@@ -32,22 +32,24 @@ export function ProjectIdentitySection() {
 }
 
 /**
- * Settings → About → one group of six rows: the latest version with its update states,
- * past versions, reporting a problem, starring the project, and tipping the author
- * (the author's site is a link in the sidebar, under About).
+ * Settings → About → one group of three rows: the community group (where questions and problems
+ * go now), starring the project, and tipping the author. Updates come by themselves (checked at
+ * startup, offered in the todo list), past versions are in the changelog below, and the author's
+ * site is a link in the sidebar, under About.
  */
 export function ProjectLinksSection() {
   const text = useTranslation().settings.project;
-  const icon = (Icon: typeof Star) => (
-    <Icon className="project-link__icon" size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-  );
 
   return (
     <SettingsGroup>
-      <UpdatePanel />
-      <ProjectLink href={PROJECT_HISTORY_URL} title={text.releases} hint={text.releasesHint} icon={icon(History)} />
-      <ProjectLink href={PROJECT_ISSUES_URL} title={text.issues} hint={text.issuesHint} icon={icon(CircleHelp)} />
-      <ProjectLink href={PROJECT_REPO_URL} tone="star" title={text.star} hint={text.starHint} icon={icon(Star)} />
+      <CommunityGroup />
+      <ProjectLink
+        href={PROJECT_REPO_URL}
+        tone="star"
+        title={text.star}
+        hint={text.starHint}
+        icon={<Star className="project-link__icon" size={18} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+      />
       <SupportAuthor />
     </SettingsGroup>
   );

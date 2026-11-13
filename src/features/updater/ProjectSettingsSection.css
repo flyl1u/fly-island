@@ -1,4 +1,4 @@
-/* 「关于」页的身份卡与 project-link 行；UpdatePanel 的第一行也用 project-link 的样式。 */
+/* 「关于」页的身份卡与 project-link 行；交流群、打赏两行的文字和图标也用 project-link 的样式。 */
 .about-identity {
   display: flex;
   align-items: flex-start;
@@ -122,8 +122,8 @@
   line-height: 1.5;
 }
 
-/* In a grouped-list card: the identity and the update panel sit inset like rows, and each link is a
-   row of the card rather than a card of its own. */
+/* In a grouped-list card: the identity sits inset like a row, and each link is a row of the card
+   rather than a card of its own. */
 .settings-group__card > .about-identity {
   padding: 16px;
 }
@@ -140,8 +140,7 @@
 }
 
 /* The card does not clip, so the end rows round their own hover. */
-.settings-group__card > .project-link:first-child,
-.settings-group__card > .update-panel:first-child .update-panel__row {
+.settings-group__card > .project-link:first-child {
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
 }

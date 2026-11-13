@@ -1,4 +1,4 @@
-/* 「关于」页的打赏行：和 project-link 一样的一行，点开后在行下方露出两张收款码。 */
+/* 「关于」页的打赏行和交流群行：和 project-link 一样的一行，点开后在行下方露出二维码。 */
 .support-author__toggle {
   width: 100%;
   display: flex;
@@ -36,8 +36,45 @@
   border-bottom-right-radius: inherit;
 }
 
-.support-author__icon {
-  color: #e8b77a;
+/* As the first row (the community group), the toggle rounds its own hover at the top too. */
+.settings-group__card > .support-author:first-child,
+.settings-group__card > .support-author:first-child .support-author__toggle {
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.project-link__icon.support-author__icon {
+  color: #ff8fab;
+}
+
+.project-link__icon.community-group__icon {
+  color: var(--color-light-working);
+}
+
+/* Until the group is first opened: the same dot as on the settings button and About. */
+.community-group__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  vertical-align: 2px;
+  border-radius: var(--radius-circle);
+  background: var(--color-badge);
+}
+
+/* The whole card WeChat shares (group name, code, expiry date) on the same white tile. */
+.support-author__code.community-group__code img {
+  width: 220px;
+  height: auto;
+}
+
+.community-group__error {
+  margin: 0;
+  padding: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .support-author__chevron {

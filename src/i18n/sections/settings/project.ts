@@ -11,14 +11,18 @@ export type SettingsProjectText = {
   changelog: string;
   changelogAll: (count: number) => string;
   changelogLess: string;
-  releases: string;
-  releasesHint: string;
-  issues: string;
-  issuesHint: string;
+  /** The row that opens the WeChat group's code in place; questions and problems go there. */
+  community: string;
+  communityHint: string;
+  /** Read out for the red dot on the row until the group is first opened. */
+  communityNew: string;
+  communityCodeAlt: string;
+  communityScan: string;
+  communityLoadFailed: string;
   star: string;
   starHint: string;
+  /** The sidebar link to the author's site, under About. */
   author: string;
-  authorHint: string;
   /** The row that opens the author's two payment codes in place. */
   support: string;
   supportHint: string;
@@ -26,31 +30,14 @@ export type SettingsProjectText = {
   supportAlipay: string;
   supportCodeAlt: (app: string) => string;
   supportThanks: string;
-  latestRelease: string;
-  latestReleaseHint: string;
   openFailed: string;
+  /** The todo the island adds when a new version is found, and its button. */
   update: {
-    title: string;
-    hint: string;
-    versionLabel: (version: string) => string;
-    check: string;
-    checking: string;
-    upToDate: (version: string) => string;
-    available: (version: string) => string;
-    download: string;
-    downloading: (percent: number) => string;
     downloadingUnknown: string;
-    ready: (version: string) => string;
-    restart: string;
-    /** The todo the island adds when a new version is found. */
     updateTodo: string;
     updateNow: string;
     updateDownloading: (percent: number) => string;
     installing: string;
-    done: string;
-    error: string;
-    errorDetail: (reason: string) => string;
-    unavailable: string;
   };
 };
 
@@ -65,44 +52,28 @@ export const zhCN: SettingsProjectText = {
   changelog: "更新日志",
   changelogAll: (count) => `显示全部 ${count} 个版本`,
   changelogLess: "只看最近几个版本",
-  releases: "历史版本",
-  releasesHint: "点击之后可以查看岛屿的历史版本和更新历史",
-  issues: "反馈问题",
-  issuesHint: "到 GitHub 提一个 Issue",
+  community: "用户交流群",
+  communityHint: "遇到问题、想要新功能，都可以来群里问问、聊聊",
+  communityNew: "新",
+  communityCodeAlt: "fly-island 用户交流群的微信二维码",
+  communityScan: "用微信扫一扫加入。二维码每周更新，过期了重新点开这里就是新的。",
+  communityLoadFailed: "二维码没加载出来，检查一下网络后再点开试试。",
   star: "觉得小岛还不错？",
   starHint: "去 GitHub 给小岛一颗 Star",
   author: "关于作者",
-  authorHint: "去作者的个人网站 flyliu.org 看看",
   support: "打赏作者",
   supportHint: "觉得好用的话，请作者喝杯咖啡",
   supportWechat: "微信",
   supportAlipay: "支付宝",
   supportCodeAlt: (app) => `${app}收款码`,
   supportThanks: "用手机扫一扫，金额随意，谢谢你的支持！",
-  latestRelease: "查看最新版本",
-  latestReleaseHint: "看看小岛又长了什么新本领",
   openFailed: "暂时没能打开浏览器，请再试一次。",
   update: {
-    title: "检查更新",
-    hint: "点一下看看有没有新版本",
-    versionLabel: (version) => `当前版本 v${version}`,
-    check: "检查",
-    checking: "正在检查更新…",
-    upToDate: (version) => `已是最新版本 v${version}`,
-    available: (version) => `发现新版本 v${version}`,
-    download: "下载并安装",
-    downloading: (percent) => `正在下载 ${percent}%`,
     downloadingUnknown: "正在下载…",
-    ready: (version) => `新版本 v${version} 已下载`,
-    restart: "重启更新",
     updateTodo: "检测到新版本",
     updateNow: "更新",
     updateDownloading: (percent) => `下载 ${percent}%`,
     installing: "正在安装，小岛会自动重启",
-    done: "更新完成，小岛正在重启…",
-    error: "检查更新失败，请稍后再试。",
-    errorDetail: (reason) => `原因：${reason}`,
-    unavailable: "这里不能应用内更新，请到 Release 页手动下载。",
   },
 };
 
@@ -117,43 +88,27 @@ export const en: SettingsProjectText = {
   changelog: "Changelog",
   changelogAll: (count) => `Show all ${count} versions`,
   changelogLess: "Show recent versions only",
-  releases: "History",
-  releasesHint: "See the island's past versions and update history",
-  issues: "Report a problem",
-  issuesHint: "Open an issue on GitHub",
+  community: "Community group",
+  communityHint: "Questions, ideas or problems? Come ask and chat in the group",
+  communityNew: "New",
+  communityCodeAlt: "WeChat QR code of the fly-island community group",
+  communityScan: "Scan with WeChat to join. The code changes every week; if it has expired, open this again for the new one.",
+  communityLoadFailed: "Couldn't load the QR code. Check your connection and open this again.",
   star: "Enjoying your little island?",
   starHint: "Give it a Star on GitHub",
   author: "About the author",
-  authorHint: "Visit the author's site, flyliu.org",
   support: "Support the author",
   supportHint: "Buy the author a coffee if you like it",
   supportWechat: "WeChat Pay",
   supportAlipay: "Alipay",
   supportCodeAlt: (app) => `${app} payment code`,
   supportThanks: "Scan with your phone. Any amount helps — thank you!",
-  latestRelease: "View latest release",
-  latestReleaseHint: "See what washed ashore in the latest update",
   openFailed: "Couldn't open your browser. Please try again.",
   update: {
-    title: "Check for updates",
-    hint: "See whether a newer island washed ashore",
-    versionLabel: (version) => `Version v${version}`,
-    check: "Check",
-    checking: "Checking for updates…",
-    upToDate: (version) => `Already on the latest version v${version}`,
-    available: (version) => `Version v${version} is available`,
-    download: "Download & install",
-    downloading: (percent) => `Downloading ${percent}%`,
     downloadingUnknown: "Downloading…",
-    ready: (version) => `Version v${version} is downloaded`,
-    restart: "Restart & update",
     updateTodo: "New version available",
     updateNow: "Update",
     updateDownloading: (percent) => `Downloading ${percent}%`,
     installing: "Installing — the island will restart itself",
-    done: "Update installed, restarting…",
-    error: "Couldn't check for updates. Please try again later.",
-    errorDetail: (reason) => `Reason: ${reason}`,
-    unavailable: "In-app updates aren't available here. Grab new versions from the release page.",
   },
 };

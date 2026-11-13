@@ -71,6 +71,15 @@
 }
 
 .settings-sidebar__item--link { text-decoration: none; }
+
+/* Something new on the page (the community group on About), until it has been opened. */
+.settings-sidebar__item > .settings-sidebar__dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: var(--color-badge);
+}
 .settings-sidebar__item > .settings-sidebar__external { opacity: 0.5; }
 
 .settings-sidebar__item:hover {
