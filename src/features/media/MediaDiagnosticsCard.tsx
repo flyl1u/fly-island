@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NeteasePluginControls } from "./NeteasePluginControls";
 import { Info, X } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { PlayerDiagnostic } from "./api";
@@ -23,7 +24,8 @@ export function MediaDiagnosticsCard({ player }: { player: PlayerDiagnostic | un
       <div className="media-diag-copy">
         <span>{message}</span>
         <div className="media-diag-actions">
-          {href && <a href={href} onClick={(event) => {
+          {player.status === "neteaseNeedsPlugin" && <NeteasePluginControls />}
+          {href && player.status !== "neteaseNeedsPlugin" && <a href={href} onClick={(event) => {
             event.preventDefault();
             void openUrl(href).then(() => setFailed(false)).catch(() => setFailed(true));
           }}>{player.status === "needsUpdate" ? text.update : text.details}</a>}

@@ -33,7 +33,12 @@ const diagnosticPlayers = [
   { sourceAppId: "healthy.exe", label: "Healthy", status: "ok" },
 ].map((player) => ({ ...player, hasSession: player.status !== "smtcOff", hasTimeline: player.status === "ok", hasPluginTrackId: false,
   exePath: null, directory: null, version: null, neteasePluginState: null }));
+let finishInstall: ((value: { keptForeignLoader: boolean; preservedFiles: string[] }) => void) | undefined;
+let failInstall: ((error: unknown) => void) | undefined;
 mockIPC((command, payload) => {
+  if (command === "netease_plugin_status") return { state: "none", supported: true, tested: true, version: "3.1.41", arch: "x64", installDir: "D:\\CloudMusic", running: false, legacyInfLink: false, pluginDir: "C:\\betterncm\\plugins" };
+  if (command === "install_netease_plugin") return new Promise((resolve, reject) => { finishInstall = resolve; failInstall = reject; });
+  if (command === "uninstall_netease_plugin") return { keptForeignLoader: false, preservedFiles: [] };
   if (command === "get_media_diagnostics") return { players: diagnosticPlayers };
   if (command === "plugin:event|listen") return 1;
   if (command === "plugin:event|unlisten") return null;
@@ -91,7 +96,7 @@ const box = (selector: string) => document.querySelector<HTMLElement>(selector)!
 
 // ?view=idle shows the page with nothing playing, for a look by eye.
 if (new URLSearchParams(location.search).get("view") === "diagnostic") {
-  await render({ ...track("晴天", 6000), sourceApp: "QQMusic.exe", durationMs: 0, hasTimeline: false });
+  await render({ ...track("晴天", 6000), sourceApp: new URLSearchParams(location.search).get("player") === "netease" ? "cloudmusic.exe" : "QQMusic.exe", durationMs: 0, hasTimeline: false });
   results.remove();
 } else if (new URLSearchParams(location.search).get("view") === "idle") {
   await render({ ...DEFAULT_MEDIA_STATE, updatedAt: Date.now() });
@@ -225,6 +230,15 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
   await settle(400);
   check(document.querySelector(".media-diag-card")?.textContent?.includes("网易云需要安装进度插件"), "无时间线的网易云显示插件提示");
   check(document.querySelector<HTMLAnchorElement>(".media-diag-actions a")?.href === "https://github.com/apoint123/inflink-rs", "插件提示链接到 InfLink-rs");
+  const installButton = () => document.querySelector<HTMLButtonElement>(".media-diag-primary")!;
+  check(installButton().textContent === "\u4e00\u952e\u542f\u7528", "plugin install is an explicit action");
+  await act(async () => installButton().click());
+  check(installButton().disabled && installButton().textContent?.includes("\u4e0b\u8f7d"), "pending installation disables action and shows download phase");
+  await act(async () => failInstall!({ kind: "NeedsClose", detail: "cloudmusic.exe" }));
+  check(document.querySelector(".media-diag-plugin [role=alert]")?.textContent?.includes("\u8bf7\u5148\u9000\u51fa") && !installButton().disabled, "NeedsClose shows exit instruction and retry");
+  await act(async () => installButton().click());
+  await act(async () => finishInstall!({ keptForeignLoader: false, preservedFiles: [] }));
+  check(document.querySelector(".media-diag-plugin [role=status]")?.textContent?.includes("\u91cd\u542f"), "successful install asks to restart NetEase");
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("button.lyrics-view__line--clickable")];
   check(buttons.length === 3 && buttons.every((button) => button.getAttribute("aria-label")?.startsWith("校准进度到")), "估算歌词每行可用键盘操作且有校准标签");
   await act(async () => buttons[0].click());

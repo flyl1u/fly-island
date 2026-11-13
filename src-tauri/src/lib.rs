@@ -5,6 +5,7 @@ mod file_shelf;
 mod island;
 mod lyrics;
 mod media_control;
+mod media_plugins;
 mod messenger_activation;
 mod notification_diagnostics;
 mod mail;
@@ -30,6 +31,7 @@ macro_rules! collect_commands {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    media_plugins::handle_startup();
     let mut context = tauri::generate_context!();
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
         context.config_mut().identifier = identifier;
@@ -107,6 +109,7 @@ pub fn run() {
             agent_status;
             agent_approval;
             media_control;
+            media_plugins;
             lyrics;
             clipboard_history;
             translation;
