@@ -78,7 +78,7 @@ fly-island 把分散在不同窗口中的高频操作放到一个可折叠、可
 
 - **QQ 和微信提醒**：首次默认开启。QQ 需要 Windows 通知访问权限，且 QQ 已登录并启用系统通知；微信需要电脑版保持登录并发出任务栏提醒。两个来源可分别在「设置 → 消息」或消息页面关闭。参见 [QQ 通知说明](docs/qq-notification-compatibility.md)和[微信提醒说明](docs/wechat-reminder-compatibility.md)。
 
-- **AI 状态灯**：在「设置 → 连接」安装或修复 Codex / Claude Code 钩子，然后重启 Codex 或运行 Claude Code 的终端。Codex 首次使用钩子时按提示信任配置。详见 [AI Agent 状态灯说明](docs/agent-status-hooks.md)。
+- **AI 状态灯**：在「设置 → 接入 AI 工具」安装或修复 Codex / Claude Code 钩子，然后重启 Codex 或运行 Claude Code 的终端。Codex 首次使用钩子时按提示信任配置。详见 [AI Agent 状态灯说明](docs/agent-status-hooks.md)。
 
 - **邮箱**：在邮箱网页设置中开启 IMAP 并生成授权码，然后在「设置 → 邮箱」填写邮箱地址和授权码（不是登录密码）。凭据保存在 Windows 凭据管理器。支持手动刷新、暂停接收和断开连接；首次同步不提醒历史邮件。详见[邮箱接入说明](docs/mail.md)。
 

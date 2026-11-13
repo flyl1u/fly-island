@@ -6,7 +6,7 @@ import { useAgentApprovalSettings } from "./approvals/useAgentApprovalSettings";
 import { useAgentSoundSettings } from "./sounds/useAgentSoundSettings";
 
 /**
- * Settings → AI Agent → Sessions & alerts: when the Agent page pops up, approving on the island,
+ * Settings → AI Agent → AI sessions: when the Agent page pops up, approving on the island,
  * and sounds, one switch each. How long a pop-up stays, reminders, quota alerts, the sound pack,
  * volume, events and quiet hours keep their defaults.
  */
