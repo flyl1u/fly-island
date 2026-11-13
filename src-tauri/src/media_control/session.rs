@@ -30,8 +30,28 @@ pub(super) const MAX_THUMBNAIL_BYTES: u64 = 4_000_000;
 /// 100ns ticks between the Windows epoch (1601-01-01) and the Unix epoch.
 pub(super) const WINDOWS_EPOCH_OFFSET_TICKS: i64 = 116_444_736_000_000_000;
 
-/// Cache key (source app, title and artist) and the data URL decoded for it.
-pub(super) type CachedThumbnail = (String, Option<String>);
+/// Cache key (source app, title and artist), the data URL decoded for it, and when it was
+/// first and last read.
+pub(super) struct CachedThumbnail {
+    pub(super) key: String,
+    pub(super) value: Option<String>,
+    pub(super) first_read_ms: i64,
+    pub(super) last_read_ms: i64,
+}
+
+/// How often a missing or still-settling cover is read again.
+const THUMBNAIL_RETRY_MS: i64 = 1_000;
+/// After a track change, how long the cover keeps being re-read: some players (NetEase with
+/// InfLink-rs) publish the new title first and the new cover a moment later.
+const THUMBNAIL_SETTLE_MS: i64 = 5_000;
+
+/// Whether the cached cover can be used as is. A missing cover used to be cached for the whole
+/// track, so a cover that arrived after the title never showed; it is now retried every second.
+pub(super) fn thumbnail_is_fresh(entry: &CachedThumbnail, key: &str, now_ms: i64) -> bool {
+    if entry.key != key { return false; }
+    if now_ms - entry.last_read_ms < THUMBNAIL_RETRY_MS { return true; }
+    entry.value.is_some() && now_ms - entry.first_read_ms >= THUMBNAIL_SETTLE_MS
+}
 
 /// Caches the last decoded album-art data URL so the 1.5s state poll does not
 /// re-read and re-encode the same artwork on every tick. Keyed by the current
@@ -501,19 +521,27 @@ pub(super) fn cached_thumbnail(
         artist.unwrap_or_default()
     );
     let cache = THUMBNAIL_CACHE.get_or_init(|| Mutex::new(None));
+    let now = current_unix_millis();
+    let mut previous = None;
 
     if let Ok(guard) = cache.lock() {
-        if let Some((cached_key, cached_value)) = guard.as_ref() {
-            if *cached_key == key {
-                return cached_value.clone();
+        if let Some(entry) = guard.as_ref() {
+            if thumbnail_is_fresh(entry, &key, now) {
+                return entry.value.clone();
             }
+            if entry.key == key { previous = Some((entry.value.clone(), entry.first_read_ms)); }
         }
     }
 
-    let value = read_reference().and_then(|reference| read_thumbnail(&reference));
+    let read = read_reference().and_then(|reference| read_thumbnail(&reference));
+    // A re-read that finds nothing keeps the cover already shown for this track.
+    let (value, first_read_ms) = match previous {
+        Some((old, first)) => (read.or(old), first),
+        None => (read, now),
+    };
 
     if let Ok(mut guard) = cache.lock() {
-        *guard = Some((key, value.clone()));
+        *guard = Some(CachedThumbnail { key, value: value.clone(), first_read_ms, last_read_ms: now });
     }
 
     value
@@ -643,7 +671,19 @@ pub(super) fn current_unix_millis() -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::player_track_id;
+    use super::{player_track_id, thumbnail_is_fresh, CachedThumbnail};
+
+    #[test]
+    fn a_missing_or_new_cover_is_read_again() {
+        let entry = |value: Option<&str>, first: i64, last: i64| CachedThumbnail {
+            key: "app|song|artist".into(), value: value.map(str::to_string), first_read_ms: first, last_read_ms: last,
+        };
+        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 0), "app|other|artist", 100), "another track reads its own cover");
+        assert!(thumbnail_is_fresh(&entry(None, 0, 0), "app|song|artist", 999), "at most one read a second");
+        assert!(!thumbnail_is_fresh(&entry(None, 0, 0), "app|song|artist", 60_000), "a missing cover keeps being retried");
+        assert!(!thumbnail_is_fresh(&entry(Some("x"), 0, 2_000), "app|song|artist", 3_000), "a new track's cover settles for a few seconds");
+        assert!(thumbnail_is_fresh(&entry(Some("x"), 0, 5_000), "app|song|artist", 60_000), "a settled cover is reused");
+    }
 
     #[test]
     fn a_player_plugin_names_the_song_among_the_genres() {
