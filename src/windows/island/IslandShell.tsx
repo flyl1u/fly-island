@@ -23,6 +23,7 @@ import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import "./IslandShell.css";
 import "./IslandTuckStyle.css";
+import { useTuckMorph } from "./useTuckMorph";
 
 type IslandShellProps = {
   qqMail: MailController;
@@ -141,6 +142,7 @@ export function IslandShell({
   const isLiquidGlass = effectiveAppearanceMode === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
+  const tuckMorphClass = useTuckMorph(isTucked, tuckStyle);
   const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
   const qqPreview = qqNotifications.preview;
@@ -161,7 +163,7 @@ export function IslandShell({
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
     isTucked ? "island--tucked" : "",
-    isTucked && tuckStyle !== "edge" ? `island--tuck-${tuckStyle}` : "",
+    tuckMorphClass,
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]

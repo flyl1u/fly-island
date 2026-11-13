@@ -11,6 +11,7 @@ import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { IslandApp } from "../../src/windows/island/IslandApp";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
+import { checkTuckMorph } from "./islandTourTuck";
 import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
 
 const query = new URLSearchParams(location.search);
@@ -199,21 +200,7 @@ if (!automated) {
     check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"
       && panelMotion.transitionDelay === "0.12s, 0.08s", "展开面板完整淡入，保留原时长与延迟");
     check(Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius) > collapsedRadius, "展开后的圆角比收起时更大");
-    await click('[aria-label="收起到屏幕顶部"]');
-    checkShapeMotion(0.38);
-    check(interaction.isTucked === true, "贴边收起请求保留位置动画");
-    {
-      // Line and hidden clear the shape (Rust keeps only a small hot zone); line draws a 72 x 5 bar.
-      const style = getComputedStyle(island()), bar = getComputedStyle(island(), "::before");
-      const scale = Number.parseFloat(style.getPropertyValue("--island-collapsed-scale")) || 1;
-      const clear = style.backgroundColor === "rgba(0, 0, 0, 0)" && style.boxShadow === "none"
-        && getComputedStyle(island().querySelector(".island__surface")!).visibility === "hidden";
-      const barOk = tuckStyle === "line" ? Math.abs(Number.parseFloat(bar.width) - 72 * scale) < 0.5 && Math.abs(Number.parseFloat(bar.height) - 5 * scale) < 0.5
-        : bar.content === "none" || bar.content === "normal";
-      check(interaction.tuckStyle === tuckStyle && barOk && (tuckStyle === "edge" ? !clear && !/island--tuck-/.test(island().className) : clear && island().classList.contains(`island--tuck-${tuckStyle}`)),
-        `贴边样式 ${tuckStyle}：传给原生窗口，岛屿${tuckStyle === "edge" ? "保持原样" : "透明"}（${style.backgroundColor} / ${bar.width}×${bar.height}）`);
-    }
-    await click(".island__open-button");
+    await checkTuckMorph({ tuckStyle, island, check, settle, interaction: () => interaction, click, checkShapeMotion });
     check(interaction.isTucked === false && interaction.animatePosition === true, "从贴边滑出请求保留位置动画");
     // The page dots can be dragged into another order, which is saved; the drag opens no page.
     const dotOrder = () => [...document.querySelectorAll<HTMLElement>(".editor-dots .dot-button[data-reorder-id]")].map((dot) => dot.dataset.reorderId);

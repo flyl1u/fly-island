@@ -18,7 +18,7 @@ type IslandTuckingOptions = {
  * collapsed island away when idle (B), sliding it out for what needs to be seen, and ending a peek.
  */
 export function useIslandTucking({ settings, navigation, hasMessagePreview }: IslandTuckingOptions) {
-  const { mode, page, isTucked, isPeeking, peekRetractDelayMs, idleTuck, collapseIsland, revealIsland, endPeek } = navigation;
+  const { mode, page, isTucked, isPeeking, peekRetractDelayMs, idleTuck, collapseIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
   // A showing preview holds the idle timer, which then restarts in full once it ends.
   const tuckWhenIdle = useCallback(
@@ -37,8 +37,9 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview }: Is
     `${mode}:${page}`,
     plan?.action === "collapse" ? collapseWhenIdle : tuckWhenIdle,
   );
-  useRevealOnMessage(hasMessagePreview, isTucked, revealIsland);
-  useTuckPeek(isPeeking, endPeek, peekRetractDelayMs ?? undefined);
+  useRevealOnMessage(hasMessagePreview, isTucked, revealForMessage);
+  // A preview holds the peek; the island slides back once it has gone and the cursor is away.
+  useTuckPeek(isPeeking && !hasMessagePreview, endPeek, peekRetractDelayMs ?? undefined);
 }
 
 /** Whether the cursor is over the island, from the native hover events. */
