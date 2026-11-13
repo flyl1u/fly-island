@@ -74,7 +74,7 @@ export const zhCN: SettingsAppearanceText = {
     },
   },
   collapsedIsland: {
-    title: "收起的岛",
+    title: "岛屿展示优先级",
     priorityFooter: "几样同时有内容时，收起的岛显示排在最前面的那一样。拖动调整顺序。",
     items: {
       agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
@@ -121,7 +121,7 @@ export const en: SettingsAppearanceText = {
     },
   },
   collapsedIsland: {
-    title: "Collapsed island",
+    title: "Island display priority",
     priorityFooter: "When several have something to show, the collapsed island shows the first. Drag to reorder.",
     items: {
       agent: { name: "AI Agent task", hint: "The running session's title" },
