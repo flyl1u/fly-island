@@ -38,6 +38,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 │   ├── src/             # 原生命令、后台服务、窗口管理
 │   ├── examples/        # 手动运行的 QQ / 微信探测程序，不进入发布产物
 │   ├── capabilities/    # Tauri 权限能力配置
+│   ├── nsis/            # NSIS 安装器钩子（installerHooks）：把「已安装的应用」里显示的发布者改写为 flyl1u
 │   ├── resources/       # 随安装包附带的第三方文件：网易云进度插件（GPL-3.0，原样附带，含许可证与源码链接）
 │   └── tauri.conf.json  # 窗口、更新、打包配置
 ├── web-demo/            # 官网的小岛实时演示：真实 IslandApp + 演示数据 mock + 模拟鼠标；`pnpm build:web-demo` 构建，官网仓库的 scripts/sync-island-demo.mjs 同步过去
