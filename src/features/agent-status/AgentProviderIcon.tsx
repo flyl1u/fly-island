@@ -1,15 +1,17 @@
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import codexIcon from "../../assets/brands/codex.webp";
+import deepseekIcon from "../../assets/brands/deepseek.png";
 import type { AgentProvider } from "./api";
 import "./AgentProviderIcon.css";
 
-const PROVIDER_ICONS: Record<Exclude<AgentProvider, "dsh">, string> = {
+/** Each source's own app tile; DSH uses DeepSeek's mark on a light tile, as its desktop app does. */
+const PROVIDER_ICONS: Record<AgentProvider, string> = {
   claudeCode: claudeCodeIcon,
   codex: codexIcon,
+  dsh: deepseekIcon,
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {
-  if (provider === "dsh") return <span className="agent-provider-icon agent-provider-icon--dsh" style={{ width: size, height: size, fontSize: size * 0.45 }} aria-hidden="true">DS</span>;
   return (
     <img
       className={`agent-provider-icon agent-provider-icon--${provider}`}

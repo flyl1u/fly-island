@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
+import type { SessionFilter } from "./sessionList";
 import { getAgentUsage, getCodexUsage, getDshUsage } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 
 /** claude-hud refreshes its snapshot about once a minute; reading local files is cheap. */
 const REFRESH_MS = 30_000;
+const ALL_SOURCES: SessionFilter = { claudeCode: true, codex: true, dsh: true };
 
 /**
- * Claude's and Codex's usage limits for the Agent page, re-read every 30 seconds while `enabled`.
+ * Claude's, Codex's and DSH's usage for the Agent page, re-read every 30 seconds while `enabled`.
  * The island reads them even with the page closed, so it can size the page for the lines shown.
+ * A source switched off in Settings is not queried and keeps no numbers, as its sessions hide too.
  */
-export function useAgentUsages(enabled: boolean, showDsh = true): AgentUsages {
+export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURCES): AgentUsages {
   const [usages, setUsages] = useState<AgentUsages>(EMPTY_USAGES);
+  const showClaude = show.claudeCode !== false;
+  const showCodex = show.codex !== false;
+  const showDsh = show.dsh !== false;
 
   useEffect(() => {
     if (!enabled) {
@@ -23,7 +29,11 @@ export function useAgentUsages(enabled: boolean, showDsh = true): AgentUsages {
         console.error(`Failed to read the ${what} usage`, error);
         return null;
       };
-      void Promise.all([getAgentUsage().catch(log("Claude")), getCodexUsage().catch(log("Codex")), showDsh ? getDshUsage().catch(() => null) : Promise.resolve(null)]).then(([claude, codex, dsh]) => {
+      void Promise.all([
+        showClaude ? getAgentUsage().catch(log("Claude")) : Promise.resolve(null),
+        showCodex ? getCodexUsage().catch(log("Codex")) : Promise.resolve(null),
+        showDsh ? getDshUsage().catch(() => null) : Promise.resolve(null),
+      ]).then(([claude, codex, dsh]) => {
         if (cancelled) return;
         const now = Date.now();
         setUsages({ claude: withoutPastWindows(claude ?? null, now), codex: withoutPastWindows(codex ?? null, now), dsh: dsh ?? null, readAt: now });
@@ -35,7 +45,7 @@ export function useAgentUsages(enabled: boolean, showDsh = true): AgentUsages {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [enabled, showDsh]);
+  }, [enabled, showClaude, showCodex, showDsh]);
 
-  return showDsh ? usages : { ...usages, dsh: null };
+  return usages;
 }

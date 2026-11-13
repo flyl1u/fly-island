@@ -96,9 +96,13 @@ test("the Agent page fits the session rows set in Settings", async () => {
   assert.equal(normalizeSettings({ agentCardEffects: "sparkle" }).agentCardEffects, "off");
   assert.equal(normalizeSettings({ agentVisibleRows: 5 }).agentVisibleRows, DEFAULT_SETTINGS.agentVisibleRows);
   assert.equal(DEFAULT_SETTINGS.agentVisibleRows, 2);
-  // Rows, running time and hiding quit sessions are no longer settings: always the default.
+  // The three session sources are switches that stay off once saved off.
+  assert.equal(normalizeSettings({ agentShowClaudeCode: false }).agentShowClaudeCode, false);
+  assert.equal(normalizeSettings({ agentShowCodex: false }).agentShowCodex, false);
+  assert.equal(normalizeSettings({ agentShowClaudeCode: "no" }).agentShowClaudeCode, true);
+  assert.equal(normalizeSettings(null).agentShowCodex, true);
+  // Rows and running time are no longer settings: always the default.
   assert.equal(normalizeSettings({ agentShowElapsed: true }).agentShowElapsed, false);
-  assert.equal(normalizeSettings({ agentHideClosed: false }).agentHideClosed, true);
   assert.equal(DEFAULT_SETTINGS.agentSessionHours, 2);
 });
 
