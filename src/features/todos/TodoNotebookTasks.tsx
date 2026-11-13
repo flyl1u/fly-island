@@ -15,6 +15,7 @@ export function TodoNotebookTasks({
   activeTodoId,
   timer,
   lastDuration,
+  todoTimerEnabled = false,
   onListHeightChange,
   enableTodoReorder,
   scrollStartRows,
@@ -34,6 +35,7 @@ export function TodoNotebookTasks({
   activeTodoId: string | null;
   timer?: TodoTimer | null;
   lastDuration?: TodoDuration;
+  todoTimerEnabled?: boolean;
   onListHeightChange?: (height: number) => void;
   enableTodoReorder: boolean;
   scrollStartRows: number;
@@ -108,6 +110,7 @@ export function TodoNotebookTasks({
               isActive={todo.id === activeTodoId && !todo.completed}
               timer={timer?.todoId === todo.id ? timer : null}
               lastDuration={lastDuration}
+              todoTimerEnabled={todoTimerEnabled}
               canReorder={canReorderTodos}
               isDragging={draggedTodoId === todo.id}
               isDragOver={dragOverTodoId === todo.id}

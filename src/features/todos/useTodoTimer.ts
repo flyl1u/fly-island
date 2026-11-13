@@ -4,13 +4,14 @@ import { activeTodoTimer, createTodoTimer, isTodoDuration, isTodoTimerExpired, t
 import type { TodoItem } from "./types";
 
 /** Only expiration updates the notebook; the second-by-second clock lives in TodoCountdown. */
-export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpired?: () => void) {
+export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpired?: () => void, enabled = false) {
   const [storedTimer, setTimer] = useState(loadTodoTimer);
   const [lastDuration, setLastDuration] = useState(loadTodoDuration);
-  const timer = activeTodoTimer(storedTimer, activeId, todos);
+  const timer = enabled ? activeTodoTimer(storedTimer, activeId, todos) : null;
   const announced = useRef<string | null>(null);
 
   const startTimer = useCallback((id: string, duration: TodoDuration) => {
+    if (!enabled) return true;
     if (duration !== null && !isTodoDuration(duration)) return false;
     const next = duration === null ? null : createTodoTimer(id, duration, Date.now());
     if (duration !== null && !next) return false;
@@ -18,7 +19,7 @@ export function useTodoTimer(todos: TodoItem[], activeId: string | null, onExpir
     setLastDuration(duration);
     saveTodoDuration(duration);
     return true;
-  }, []);
+  }, [enabled]);
 
   const clearTimer = useCallback((id?: string) => {
     setTimer((current) => !id || current?.todoId === id ? null : current);

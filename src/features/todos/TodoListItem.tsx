@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Check, GripVertical, Play, Square, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { getTodoTitleLineCount } from "../../utils/text";
@@ -18,6 +18,7 @@ export function TodoListItem({
   isActive,
   timer = null,
   lastDuration = null,
+  todoTimerEnabled = false,
   canReorder,
   isDragging,
   isDragOver,
@@ -40,6 +41,7 @@ export function TodoListItem({
   isActive: boolean;
   timer?: TodoTimer | null;
   lastDuration?: TodoDuration;
+  todoTimerEnabled?: boolean;
   canReorder: boolean;
   isDragging: boolean;
   isDragOver: boolean;
@@ -61,7 +63,10 @@ export function TodoListItem({
   const titleLineCount = getTodoTitleLineCount(todo.title);
   const [choosingDuration, setChoosingDuration] = useState(false);
   const startButton = useRef<HTMLButtonElement>(null);
-  const activeTimer = isActive ? timer : null;
+  const activeTimer = todoTimerEnabled && isActive ? timer : null;
+  useEffect(() => {
+    if (!todoTimerEnabled) setChoosingDuration(false);
+  }, [todoTimerEnabled]);
 
   return (
     <div
@@ -131,7 +136,7 @@ export function TodoListItem({
             disabled={todo.completed}
             aria-expanded={!isActive ? choosingDuration : undefined}
             onClick={() => {
-              if (isActive) onStart(todo.id);
+              if (isActive || !todoTimerEnabled) onStart(todo.id);
               else setChoosingDuration((current) => !current);
             }}
           >
@@ -160,7 +165,7 @@ export function TodoListItem({
               <GripVertical size={15} strokeWidth={2.4} />
             </button>
           )}
-          {choosingDuration && !isActive && !todo.completed && (
+          {todoTimerEnabled && choosingDuration && !isActive && !todo.completed && (
             <TodoDurationPicker lastDuration={lastDuration} onCancel={() => {
               setChoosingDuration(false);
               startButton.current?.focus();

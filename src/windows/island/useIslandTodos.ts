@@ -33,6 +33,7 @@ export function useIslandTodos({ settings, navigation, quiet }: IslandTodosOptio
 
   const { todos, activeTodoId, timer, todoPageMode, notebookProps } = useTodos({
     carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
+    todoTimerEnabled: settings.todoTimerEnabled,
     onStartTodo: collapseIsland,
     onTimerExpired,
     onMissingSaveDirectory: openSavePathSettings,
