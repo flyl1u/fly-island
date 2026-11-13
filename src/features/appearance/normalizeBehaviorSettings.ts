@@ -14,8 +14,6 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
       typeof settings?.carryOverIncompleteTodos === "boolean"
         ? settings.carryOverIncompleteTodos
         : DEFAULT_SETTINGS.carryOverIncompleteTodos,
-    todoTimerEnabled: typeof settings?.todoTimerEnabled === "boolean"
-      ? settings.todoTimerEnabled : DEFAULT_SETTINGS.todoTimerEnabled,
     // Unversioned false was written by the removed setting, rather than chosen by users.
     todoReorderVersion: 1,
     enableTodoReorder: settings?.todoReorderVersion === 1

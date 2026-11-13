@@ -18,8 +18,6 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
-import { TodoCountdown } from "../../features/todos/TodoCountdown";
-import type { TodoTimer } from "../../features/todos/timer";
 import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
@@ -38,7 +36,6 @@ type IslandCollapsedBarProps = {
   showCollapsedText: boolean;
   collapsedLabel: string;
   collapsedTaskTitle: string | null;
-  todoTimer?: TodoTimer | null;
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
@@ -82,7 +79,6 @@ export function IslandCollapsedBar({
   showCollapsedText,
   collapsedLabel,
   collapsedTaskTitle,
-  todoTimer = null,
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
@@ -173,7 +169,7 @@ export function IslandCollapsedBar({
             {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
               <span className="island__active-task" key={collapsedTaskTitle}>
                 {showTitle ? "· " : ""}
-                {todoTimer ? (todoTimer.notified ? t.todo.timeUp : <TodoCountdown endsAt={todoTimer.endsAt} />) : collapsedTaskTitle}
+                {collapsedTaskTitle}
               </span>
             )}
             {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (

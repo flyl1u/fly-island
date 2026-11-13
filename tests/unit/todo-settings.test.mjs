@@ -10,11 +10,3 @@ test("todo reorder migrates unversioned settings and respects versioned choices"
   assert.equal(normalizeSettings({ enableTodoReorder: false, todoReorderVersion: 1 }).enableTodoReorder, false);
   assert.equal(normalizeSettings({ enableTodoReorder: true, todoReorderVersion: 1 }).enableTodoReorder, true);
 });
-
-test("focus timer accepts only boolean and defaults off", () => {
-  for (const value of [undefined, null, 1, "true", {}, false]) {
-    assert.equal(normalizeSettings({ todoTimerEnabled: value }).todoTimerEnabled, false);
-  }
-  assert.equal(normalizeSettings({}).todoTimerEnabled, false);
-  assert.equal(normalizeSettings({ todoTimerEnabled: true }).todoTimerEnabled, true);
-});

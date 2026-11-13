@@ -64,7 +64,7 @@ export function IslandApp() {
     quiet: game.quiet,
     canPopUp: !game.quiet && mode === "collapsed" && !isTucked,
   });
-  const { todos, activeTodoId, timer, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
+  const { todos, activeTodoId, todoPageMode, notebookProps } = useIslandTodos({ settings, collapseIsland });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
@@ -75,7 +75,7 @@ export function IslandApp() {
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
-      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null },
+      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover) },
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
@@ -117,7 +117,6 @@ export function IslandApp() {
     page,
     todoPageMode,
     todos,
-    todoListHeight,
     hasMediaCommandError: Boolean(media.mediaCommandError),
     messageSource,
     isReadingMail: qqMail.wantsTallPanel,
@@ -197,7 +196,6 @@ export function IslandApp() {
         showTitle={settings.showTitle}
         showCollapsedText={settings.showCollapsedText}
         collapsedTaskTitle={collapsedTaskTitle}
-        todoTimer={settings.todoEnabled ? timer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
         collapsedLayout={settings.collapsedLayout}

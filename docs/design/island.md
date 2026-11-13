@@ -28,10 +28,6 @@
 
 ## 顶边贴合
 
-- 待办倒计时（issue #52）：限时任务开始后，折叠文字位置优先显示一个 `mm:ss`，暂停待办轮播，消息与额度预览仍可短暂覆盖；“显示折叠文字”关闭时继续尊重该设置。宽度按整轮时长固定，秒数变化不触发原生窗口缩放。到时播放一次内置 `complete.wav`，可见岛屿切到今日待办并展开：折叠态弹出、贴边态先露出并展开，已展开时显示到时操作。沿用现有展开动画，不增加循环抖动或响铃。托盘隐藏时检查原生窗口可见性，只响一次，不调用显示窗口；用户恢复岛屿后仍可处理“时间到”。游戏勿扰期间不自动展开，声音仍作为用户主动设定的计时提醒播放。（用户需求；优先级、固定宽度与勿扰处理为 Agent 推断）
-
-  English: A timed todo takes the collapsed text slot and pauses todo rotation. Its clock has a fixed width for the round; message/quota previews may temporarily cover it. Expiry plays one built-in sound and opens today’s tasks when the island is visible, including revealing a tucked island. A tray-hidden island stays hidden and only sounds once. Game mode suppresses automatic opening. Expired actions remain available until handled.
-
 - 拖放时距离顶边 16 逻辑像素以内会吸附到顶边；顶部任务栏存在时以任务栏下沿为顶边。（Agent 推断）
 - 多显示器（C1）：设置"位置 → 显示在"可选主显示器（默认，和以前一样）、鼠标所在的显示器、前台窗口所在的显示器。跟随时，收起的岛（含贴边收起）在目标换到另一块屏幕并停留约 0.6 秒后，移到那块屏幕的顶部中间；展开或正在拖动时不移，等收起后再移；前台是岛屿自己时不算换屏。移屏会清掉拖动保存的位置。只有一个岛，不做每屏一个。（用户确认：跟着走）
 - 展开方式可选"点击"（默认）或"鼠标悬停"。悬停时光标在岛上停留满"悬停延迟"（0–1000ms，默认 300ms）才展开；延迟内按下鼠标会取消，拖动和点击不受影响；停在小岛上的消息预览、邮件、音乐按钮上不展开。小岛正在显示 QQ / 微信 / 邮件预览时暂停悬停展开，点击预览照常打开对应应用；预览结束时光标仍停在岛上的，需移开再回来才会悬停展开。（用户确认：悬停与点击预览冲突）悬停模式下，面板无论是悬停还是点击打开、在里面点过什么，只要光标进入过面板再移开，就在"移开后收起延迟"（0–2000ms，默认 400ms）后收起；正在文本框里输入、或鼠标仍按住（如拖出面板的拖动）时暂不收起，结束后照常收起。光标从未进入过的面板（快捷键、设置预览打开）不按此规则收起。失焦收起照旧。（用户确认：点过后不收起不符合预期）悬停不抢占输入焦点。收起时光标仍在岛上的，需移开再回来才会再次悬停展开。光标进出岛形状由原生端判断（事件 `island-hover-changed`），不依赖网页的 mouseleave。（用户确认）

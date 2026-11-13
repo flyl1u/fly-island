@@ -3,9 +3,7 @@ import { useTranslation } from "../../i18n";
 import { TodoDatePicker } from "./TodoDatePicker";
 import { TodoListItem } from "./TodoListItem";
 import type { TodoItem } from "./types";
-import type { TodoDuration, TodoTimer } from "./timer";
 import { useTodoNotebookEditing } from "./useTodoNotebookEditing";
-import { useTodoListHeight } from "./useTodoListHeight";
 
 export function TodoNotebookTasks({
   displayedTodos,
@@ -13,10 +11,6 @@ export function TodoNotebookTasks({
   draftDate,
   currentDate,
   activeTodoId,
-  timer,
-  lastDuration,
-  todoTimerEnabled = false,
-  onListHeightChange,
   enableTodoReorder,
   scrollStartRows,
   onDraftChange,
@@ -33,10 +27,6 @@ export function TodoNotebookTasks({
   draftDate: string | null;
   currentDate: string;
   activeTodoId: string | null;
-  timer?: TodoTimer | null;
-  lastDuration?: TodoDuration;
-  todoTimerEnabled?: boolean;
-  onListHeightChange?: (height: number) => void;
   enableTodoReorder: boolean;
   scrollStartRows: number;
   onDraftChange: (value: string) => void;
@@ -44,12 +34,11 @@ export function TodoNotebookTasks({
   onAddTodo: () => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
-  onStartTodo: (id: string, duration?: TodoDuration) => void;
+  onStartTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
   onReorderTodo: (sourceId: string, targetId: string) => void;
 }) {
   const t = useTranslation();
-  const listRef = useTodoListHeight(displayedTodos, onListHeightChange);
   const canReorderTodos = enableTodoReorder;
   const listClassName = [
     "todo-list",
@@ -96,7 +85,7 @@ export function TodoNotebookTasks({
         />
         <TodoDatePicker value={draftDate} today={currentDate} disabled={false} onChange={onDraftDateChange} />
       </form>
-      <div ref={listRef} className={listClassName} role="list">
+      <div className={listClassName} role="list">
         {displayedTodos.length === 0 ? (
           <div className="todo-empty">
             {t.todo.empty}
@@ -108,9 +97,6 @@ export function TodoNotebookTasks({
               todo={todo}
               isTodayMode
               isActive={todo.id === activeTodoId && !todo.completed}
-              timer={timer?.todoId === todo.id ? timer : null}
-              lastDuration={lastDuration}
-              todoTimerEnabled={todoTimerEnabled}
               canReorder={canReorderTodos}
               isDragging={draggedTodoId === todo.id}
               isDragOver={dragOverTodoId === todo.id}
