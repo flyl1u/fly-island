@@ -15,6 +15,8 @@ test("DSH wallets show currency and availability without a fabricated percentage
   assert.deepEqual(dshBalanceRings(usage()), { outer: 100, inner: 100 });
   const empty = { ...usage(false), wallets: [{ currency: "USD", total: "0", granted: "0", toppedUp: "0" }] };
   assert.deepEqual(dshBalanceRings(empty), { outer: 0, inner: 0 });
+  // No bonus balance: the inner ring still follows the outer one.
+  assert.deepEqual(dshBalanceRings({ ...usage(), wallets: [{ currency: "CNY", total: "5", granted: "0", toppedUp: "5" }] }), { outer: 100, inner: 100 });
   assert.equal(dshBalanceLabel(empty), "$0.00");
   assert.equal(usageLineCount(usages(empty)), 1);
   assert.equal(usageLineCount(usages(null)), 0);

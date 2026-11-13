@@ -6,10 +6,10 @@ import { useAgentUsages } from "./useAgentUsages";
 import { DshQuotaRing } from "./DshQuotaRing";
 import { QuotaRings } from "./QuotaRings";
 import { WorkbuddyQuotaRing } from "./WorkbuddyQuotaRing";
+import { QUOTA_COLORS } from "./quotaColors";
 import "./AgentQuotaRings.css";
 
-/** Each agent's ring colour, for the dot on its card: Claude's clay, Codex's blue. */
-export const QUOTA_COLORS: Record<AgentProvider, string> = { claudeCode: "#e5a385", codex: "#6ea8fe", dsh: "#71c8bc", workbuddy: "#c8a7ff" };
+export { QUOTA_COLORS } from "./quotaColors";
 
 /**
  * The Agent page's top row: Claude's, then Codex's quota rings, the 5-hour window outside and the

@@ -2,6 +2,7 @@ import { IslandHoverCard } from "../../components/IslandHoverCard";
 import { useTranslation } from "../../i18n";
 import type { DshUsage } from "./api";
 import { QuotaRings } from "./QuotaRings";
+import { QUOTA_COLORS } from "./quotaColors";
 import { dshBalanceLabel, dshBalanceRings } from "./dshUsage";
 import { isStale } from "./usage";
 
@@ -15,7 +16,7 @@ export function DshQuotaRing({ usage, now }: { usage: DshUsage; now: number }) {
   const availability = usage.available ? text.dshAvailable : text.dshEmpty;
   const source = usage.source === "dshApi" ? text.fromDshApi : text.fromDshAccount;
   const lines = [
-    { text: text.dshLabel, color: "#71c8bc" },
+    { text: text.dshLabel, color: QUOTA_COLORS.dsh },
     ...usage.wallets.flatMap((wallet) => [
       { text: text.dshWalletTotal(wallet.currency, wallet.total) },
       { text: text.dshWalletParts(wallet.toppedUp, wallet.granted), muted: true },

@@ -36,12 +36,13 @@
   --quota-base: #4f8ff7;
 }
 
+/* QUOTA_COLORS (quotaColors.ts) holds these after the mix: keep the two in step. */
 .agent-quota__agent--dsh {
-  --quota-base: #43b4a5;
+  --quota-base: #e8609a;
 }
 
 .agent-quota__agent--workbuddy {
-  --quota-base: #a97bf5;
+  --quota-base: #43b4a5;
 }
 
 .agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
@@ -90,14 +91,20 @@
   stroke-width: 3;
 }
 
+/* Visible enough that an empty ring still shows the ring's full size. */
 .quota-rings__track {
   stroke: var(--quota-color);
-  stroke-opacity: 0.2;
+  stroke-opacity: 0.3;
 }
 
 .quota-rings__fill {
   stroke: var(--quota-color);
   stroke-linecap: round;
+}
+
+/* A window not known: whole, but dim, so it is not read as a full quota. */
+.quota-rings__fill--unknown {
+  stroke-opacity: 0.45;
 }
 
 /* The hover card's wrapper sits in the row like the rings it wraps. */

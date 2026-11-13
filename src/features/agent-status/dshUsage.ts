@@ -13,10 +13,12 @@ export function dshBalanceLabel(usage: DshUsage) {
   return `${symbol}${amount.toLocaleString("en-US", { maximumFractionDigits: 4, minimumFractionDigits: 2 })}`;
 }
 
-/** Filled means usable, empty means exhausted. A prepaid balance has no percent denominator. */
+/**
+ * Filled means usable, empty means exhausted. A prepaid balance has no percent denominator. Both
+ * rings show it (2026-11-13): an inner ring for bonus balance alone was empty for most accounts,
+ * so DSH looked a ring short beside the others; the bonus is in the hover card.
+ */
 export function dshBalanceRings(usage: DshUsage) {
-  return {
-    outer: usage.available ? 100 : 0,
-    inner: usage.wallets.some((wallet) => Number(wallet.granted) > 0) ? 100 : 0,
-  };
+  const left = usage.available ? 100 : 0;
+  return { outer: left, inner: left };
 }
