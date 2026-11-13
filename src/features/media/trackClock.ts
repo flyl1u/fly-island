@@ -17,8 +17,14 @@ export type TrackClock = {
 export const NO_CLOCK: TrackClock = { key: null, elapsedMs: 0, runningSince: null };
 
 /** Whether the player reports a position at all. */
-export function hasTimeline(state: { positionMs: number; durationMs: number }) {
-  return state.durationMs > 0 || state.positionMs > 0;
+export function hasTimeline(state: { positionMs: number; durationMs: number; hasTimeline?: boolean }) {
+  return state.hasTimeline ?? (state.durationMs > 0 || state.positionMs > 0);
+}
+
+/** 校准只改变本地位置，保留当前播放或暂停状态。 */
+export function setClockPosition(clock: TrackClock, positionMs: number, now: number): TrackClock {
+  if (clock.key === null || !Number.isFinite(positionMs)) return clock;
+  return { ...clock, elapsedMs: Math.max(0, positionMs), runningSince: clock.runningSince === null ? null : now };
 }
 
 /** The clock after a reading at `now`: restarted for another track, running or stopped with playback. */

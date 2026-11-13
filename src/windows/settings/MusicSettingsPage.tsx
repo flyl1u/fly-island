@@ -3,6 +3,7 @@ import { LyricsSettingsSection } from "../../features/media/lyrics/LyricsSetting
 import { MusicSourcePrioritySection } from "../../features/media/MusicSourcePrioritySection";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
+import { MediaCompatibilitySection } from "../../features/media/MediaCompatibilitySection";
 
 /** Settings → Music: the module switch, which player the island follows, and where lyrics come from. */
 export function MusicSettingsPage({
@@ -23,6 +24,7 @@ export function MusicSettingsPage({
       />
       {settings.musicEnabled && <MusicSourcePrioritySection />}
       {settings.musicEnabled && <LyricsSettingsSection settings={settings} onSettingsChange={onSettingsChange} />}
+      {settings.musicEnabled && <MediaCompatibilitySection />}
     </>
   );
 }

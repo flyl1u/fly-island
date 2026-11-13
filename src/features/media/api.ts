@@ -25,6 +25,7 @@ export type MediaState = {
   trackId?: string | null;
   positionMs: number;
   durationMs: number;
+  hasTimeline?: boolean;
   canSeek: boolean;
   canNext: boolean;
   canPrevious: boolean;
@@ -69,4 +70,23 @@ export const MEDIA_SESSION_CHANGED_EVENT = "media-session-changed";
 
 export function listenMediaSessionChanged(handler: () => void) {
   return listen(MEDIA_SESSION_CHANGED_EVENT, handler);
+}
+
+// 对应 src-tauri/src/media_control/diagnostics.rs 的 MediaDiagnostics、PlayerDiagnostic。
+export type MediaDiagnosticStatus = "ok" | "noTimeline" | "needsUpdate" | "smtcOff" | "neteaseNeedsPlugin";
+export type PlayerDiagnostic = {
+  sourceAppId: string;
+  label: string;
+  hasSession: boolean;
+  hasTimeline: boolean;
+  hasPluginTrackId: boolean;
+  exePath: string | null;
+  directory: string | null;
+  version: string | null;
+  status: MediaDiagnosticStatus;
+  neteasePluginState: "none" | "loaderOnly" | "installed" | "unknown" | null;
+};
+export type MediaDiagnostics = { players: PlayerDiagnostic[] };
+export function getMediaDiagnostics() {
+  return invoke<MediaDiagnostics>("get_media_diagnostics");
 }

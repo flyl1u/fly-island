@@ -2,6 +2,7 @@
 //! module; callers elsewhere use the safe functions it exposes.
 
 pub(crate) mod audio;
+pub(crate) mod file_version;
 pub(crate) mod caption_close;
 pub(crate) mod chinese;
 pub(crate) mod clipboard;

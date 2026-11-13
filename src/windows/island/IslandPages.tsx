@@ -86,7 +86,7 @@ export function IslandPages({
   isShelfDropping,
   notebookProps,
 }: IslandPagesProps): ReactNode {
-  const { mediaState, isMediaTrackChanging, mediaCommandError, runMediaCommand, seekTo } = media;
+  const { mediaState, isMediaTrackChanging, mediaCommandError, runMediaCommand, seekTo, calibrate } = media;
   const {
     clipboardHistory,
     copyClipboardHistoryItem,
@@ -125,6 +125,7 @@ export function IslandPages({
           onNext={() => void runMediaCommand("media_next")}
           onPrevious={() => void runMediaCommand("media_previous")}
           onSeek={(positionMs) => void seekTo(positionMs)}
+          onCalibrate={calibrate}
           lyricsSettings={settings}
         />
       )}

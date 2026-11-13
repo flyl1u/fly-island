@@ -1,3 +1,17 @@
+import { readJson, writeJson } from "../../lib/storage.ts";
+
+export const MEDIA_DIAGNOSTICS_DISMISSED_KEY = "focusd-island-media-diagnostics-dismissed";
+
+export function loadMediaDiagnosticsDismissed(): string[] {
+  const value = readJson(MEDIA_DIAGNOSTICS_DISMISSED_KEY);
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item): item is string => typeof item === "string" && /^.+\u001f(noTimeline|needsUpdate|smtcOff|neteaseNeedsPlugin)$/.test(item)))];
+}
+
+export function saveMediaDiagnosticsDismissed(value: string[]) {
+  writeJson(MEDIA_DIAGNOSTICS_DISMISSED_KEY, value);
+}
+
 export type KnownMediaSource = {
   id: string;
   label: string;

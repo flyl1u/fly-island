@@ -119,3 +119,18 @@
 .lyrics-offset__value:disabled {
   cursor: default;
 }
+.lyrics-view__line--clickable {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.lyrics-view__line--clickable:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}

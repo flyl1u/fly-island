@@ -1,4 +1,15 @@
 export type MusicText = {
+  estimatedProgress: string;
+  calibrateLine: (line: string) => string;
+  seekLine: (line: string) => string;
+  diagnostics: {
+    title: string; dismiss: string; details: string; update: string; empty: string; openFailed: string; kugou: string;
+    ok: (player: string) => string;
+    needsUpdate: (player: string) => string;
+    smtcOff: (player: string) => string;
+    neteaseNeedsPlugin: (player: string) => string;
+    noTimeline: (player: string) => string;
+  };
   playerLabel: string;
   controlFailed: string;
   /** The music page with nothing playing: a title and what to do. */
@@ -23,6 +34,18 @@ export type MusicText = {
 };
 
 export const zhCN: MusicText = {
+  estimatedProgress: "进度为估算；在播放器里拖动进度后，可点一句歌词校准",
+  calibrateLine: (line) => `校准进度到：${line}`,
+  seekLine: (line) => `播放到：${line}`,
+  diagnostics: {
+    title: "播放器兼容性", dismiss: "不再提示", details: "了解详情", update: "打开官网", empty: "未检测到播放器", openFailed: "无法打开链接",
+    kugou: "在酷狗的设置 → 常规设置 → 播放 → 支持系统播放控制中开启后即可同步进度",
+    ok: () => "进度同步正常",
+    needsUpdate: () => "QQ 音乐版本过低，进度无法同步，更新到 21.10.2962 或以上即可",
+    smtcOff: (player) => `在${player}设置里打开系统媒体控制后即可同步进度`,
+    neteaseNeedsPlugin: () => "网易云需要安装进度插件才能同步进度",
+    noTimeline: () => "该播放器不提供进度，歌词按估算显示，可点歌词校准",
+  },
   playerLabel: "音乐播放器",
   controlFailed: "控制失败",
   nothingPlaying: "没有在播放",
@@ -49,6 +72,18 @@ export const zhCN: MusicText = {
 };
 
 export const en: MusicText = {
+  estimatedProgress: "Progress is estimated. After seeking in the player, click a lyric line to recalibrate.",
+  calibrateLine: (line) => `Recalibrate progress to: ${line}`,
+  seekLine: (line) => `Seek to: ${line}`,
+  diagnostics: {
+    title: "Player compatibility", dismiss: "Don't show again", details: "Learn more", update: "Open website", empty: "No players detected", openFailed: "Could not open link",
+    kugou: "In Kugou, enable Settings → General settings → Playback → Support system media controls to sync progress.",
+    ok: () => "Progress sync is working",
+    needsUpdate: () => "QQ Music is too old to sync progress. Update to 21.10.2962 or later.",
+    smtcOff: (player) => `Enable system media controls in ${player}'s settings to sync progress.`,
+    neteaseNeedsPlugin: () => "NetEase Cloud Music needs a progress plugin to sync progress.",
+    noTimeline: () => "This player provides no progress. Lyrics use estimated timing; click a line to recalibrate.",
+  },
   playerLabel: "Music player",
   controlFailed: "Control failed",
   nothingPlaying: "Nothing playing",

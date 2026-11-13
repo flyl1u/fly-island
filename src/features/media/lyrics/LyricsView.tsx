@@ -1,9 +1,10 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "../../../i18n";
 import type { MediaState } from "../api";
 import { wordFill, type LyricLine, type LyricWord } from "./lrc";
 import { useLyricClock } from "./useLyricClock";
 import "./LyricsView.css";
+import { hasTimeline } from "../trackClock";
 
 /**
  * A line timed word by word: each word fills from dim to bright as it is sung. The timings are
@@ -28,7 +29,9 @@ function SungWords({ words, positionMs, playing }: { words: LyricWord[]; positio
  * the one before and the one after. A line with a translation shows it under itself in place
  * of the next line. `offsetMs` moves the lyrics later (positive) or earlier.
  */
-export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]; mediaState: MediaState; offsetMs: number }) {
+export function LyricsView({ lines, mediaState, offsetMs, onPosition }: {
+  lines: LyricLine[]; mediaState: MediaState; offsetMs: number; onPosition?: (ms: number) => void;
+}) {
   const t = useTranslation();
   const { index, position, playing } = useLyricClock(lines, mediaState, offsetMs);
   const words = index >= 0 ? lines[index].words : undefined;
@@ -36,17 +39,24 @@ export function LyricsView({ lines, mediaState, offsetMs }: { lines: LyricLine[]
   // Before the first line (the intro) and in breaks, a note holds the middle row, so the first
   // line waits below it rather than standing alone.
   const current = (index >= 0 && text(index)) || "♪";
+  const row = (at: number, className: string, content: ReactNode, translation = false) => {
+    const line = lines[at];
+    const clickable = onPosition && line?.text;
+    // 校准落在歌词时刻加偏移的位置，和当前歌词时钟保持同一坐标系。
+    return clickable ? <button type="button" key={`${at}:${translation}`} className={`lyrics-view__line ${className} lyrics-view__line--clickable`}
+      aria-label={(hasTimeline(mediaState) ? t.music.seekLine : t.music.calibrateLine)(line.text)}
+      onClick={() => onPosition(Math.max(0, line.timeMs + offsetMs))}>{content}</button>
+      : <span key={`${at}:${translation}`} className={`lyrics-view__line ${className}`} aria-hidden={className.endsWith("--side") ? true : undefined}>{content}</span>;
+  };
 
   return (
     <div className="lyrics-view" aria-label={t.music.lyricsLabel}>
-      <span className="lyrics-view__line lyrics-view__line--side" aria-hidden="true">{text(index - 1)}</span>
-      <span className="lyrics-view__line lyrics-view__line--current" key={index} aria-live="off">
-        {words ? <SungWords key={`${mediaState.updatedAt}:${offsetMs}`} words={words} positionMs={position} playing={playing} /> : current}
-      </span>
+      {row(index - 1, "lyrics-view__line--side", text(index - 1))}
+      {row(index, "lyrics-view__line--current", words ? <SungWords key={`${mediaState.updatedAt}:${offsetMs}`} words={words} positionMs={position} playing={playing} /> : current)}
       {index >= 0 && lines[index].translation ? (
-        <span className="lyrics-view__line lyrics-view__line--translation">{lines[index].translation}</span>
+        row(index, "lyrics-view__line--translation", lines[index].translation, true)
       ) : (
-        <span className="lyrics-view__line lyrics-view__line--side" aria-hidden="true">{text(index + 1)}</span>
+        row(index + 1, "lyrics-view__line--side", text(index + 1))
       )}
     </div>
   );

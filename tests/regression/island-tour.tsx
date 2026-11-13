@@ -56,6 +56,7 @@ let interaction: Record<string, unknown> = {};
 mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "get_media_diagnostics": return { players: [] };
     case "get_launch_at_startup": return false;
     case "get_default_todo_save_directory": return "D:\\Notes";
     case "get_clipboard_history": return empty ? { ...TOUR_CLIPBOARD, items: [] } : TOUR_CLIPBOARD;

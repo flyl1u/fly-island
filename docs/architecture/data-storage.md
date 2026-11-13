@@ -26,3 +26,7 @@
 总览见 [overview.md](overview.md)。
 
 DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-desktop/harness` 的 `storages/session_projcache/sessions/*.json`、对应 `sessions/*/session-*/session.v{3,4}.jsonl.zstd` 的存在性，以及 `profiles/web/desktop-storage.json` 的当前会话。同时读取共享 ~/.dsh、anywhere Beta ~/.dsh-beta 及社区端保存的绝对目录选择，按会话 ID 去重；不再要求 Desktop profile；DataElement harness 是社区独立根。`dsh_credentials.rs` 只在请求内存中读取该根目录的 `.credentials.yaml`；`dsh_usage.rs` 向固定官方 HTTPS 接口读余额，结果缓存 5 分钟，只在内存保存。不增加持久化余额或会话副本，设置只增加原有 key 下的 `agentShowDsh`。完整来源与限制见 [DSH 接入说明](../deepseek-harness.md)。
+
+## 播放器兼容性提示
+
+`focusd-island-media-diagnostics-dismissed` 保存在前端 localStorage，由 `src/features/media/storage.ts` 安全读写。格式是字符串数组，每项为小写播放器 `sourceAppId`、分隔符 `\u001f` 和状态（`noTimeline` / `needsUpdate` / `smtcOff` / `neteaseNeedsPlugin`）。只关闭同一播放器的同一问题，其他问题仍提示；非法 JSON、旧格式、非字符串或未知状态会忽略。播放器诊断结果、进程路径和版本不持久化；歌词校准只修改当前歌曲的内存秒表，切歌后重置。

@@ -13,6 +13,9 @@ import { trackKey } from "./lyrics/lrc";
 import { suggestsChineseSources } from "./lyrics/chineseHint";
 import { useSongOffset } from "./lyrics/useSongOffset";
 import "./MusicPlayerPanel.css";
+import { hasTimeline } from "./trackClock";
+import { useMediaDiagnostics } from "./useMediaDiagnostics";
+import { MediaDiagnosticsCard } from "./MediaDiagnosticsCard";
 
 const NO_LYRICS = { lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 };
 
@@ -27,6 +30,7 @@ type MusicPlayerPanelProps = {
   onPrevious: () => void;
   /** Moves playback, from the progress bar; without it the bar is read-only. */
   onSeek?: (positionMs: number) => void;
+  onCalibrate?: (positionMs: number) => void;
   /** Where lyrics come from and how far they are moved; without it there are none. */
   lyricsSettings?: LyricsSettings & { lyricsOffsetMs: number };
 };
@@ -48,9 +52,15 @@ export function MusicPlayerPanel({
   onNext,
   onPrevious,
   onSeek,
+  onCalibrate,
   lyricsSettings = NO_LYRICS,
 }: MusicPlayerPanelProps) {
   const t = useTranslation();
+  const { diagnostics } = useMediaDiagnostics(mediaState.activeSessionId ?? mediaState.sourceApp);
+  const currentId = mediaState.activeSessionId ?? mediaState.sourceApp;
+  const diagnostic = diagnostics.players.find((player) => player.sourceAppId === currentId)
+    ?? (!currentId && !mediaState.title ? diagnostics.players.find((player) => !player.hasSession) : undefined);
+  const onLyricPosition = !hasTimeline(mediaState) ? onCalibrate : mediaState.canSeek ? onSeek : undefined;
   const isPlaying = mediaState.playbackStatus === "playing";
   const hasTrack = Boolean(mediaState.title);
   const { lines: lyrics, notFound, durationMs: lyricsDurationMs } = useLyrics(mediaState, lyricsSettings);
@@ -103,9 +113,11 @@ export function MusicPlayerPanel({
         <MusicIdle onResume={onPlayPause} />
       )}
 
+      <MediaDiagnosticsCard player={diagnostic} />
+
       {lyrics && (
         <div className="music-player__lyrics">
-          <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs + songOffsetMs} />
+          <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs + songOffsetMs} onPosition={onLyricPosition} />
           <LyricsOffsetControl offsetMs={songOffsetMs} onChange={setSongOffsetMs} />
         </div>
       )}
