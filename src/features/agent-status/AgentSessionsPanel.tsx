@@ -38,7 +38,7 @@ const AGE_REFRESH_MS = 30_000;
 export function AgentSessionsPanel({
   sessions: listed,
   view = "list",
-  sort = "status",
+  sort = "recent",
   group = "computer",
   archiveMotion = "slide",
   cardEffects = "off",

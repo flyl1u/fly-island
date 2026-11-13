@@ -22,6 +22,17 @@ export async function checkWorkbuddySessions(root: Root, sessions: AgentSessionS
   await act(async () => { row?.click(); await new Promise((resolve) => setTimeout(resolve, 20)); });
   const call = focusCalls[focusCalls.length - 1];
   check(call?.provider === "workbuddy" && call.sessionId === workbuddy.sessionId, "点击 WorkBuddy 会话使用现有聚焦命令");
+  // Most recent first by default: a WorkBuddy conversation that just ended tops sessions still running.
+  const newest = { ...workbuddy, phase: "completed" as const, currentTool: null, updatedAt: Math.max(...sessions.map((one) => one.updatedAt)) + 1000 };
+  const fixture = document.getElementById("fixture")!;
+  fixture.style.width = "240px";
+  await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[...sessions, newest]} hostDisplay="both" /></I18nProvider>));
+  const top = document.querySelector<HTMLElement>(".agent-session")!;
+  const rect = (selector: string) => top.querySelector(selector)!.getBoundingClientRect();
+  check(top.querySelector(".agent-session__heading")?.lastElementChild?.classList.contains("agent-provider-icon--workbuddy")
+    && rect(".agent-session__dot").right <= rect(".agent-session__title").left && rect(".agent-session__heading > :last-child").right <= top.getBoundingClientRect().right,
+  "默认按最后活动时间排序，刚结束的 WorkBuddy 会话在最上面；窄窗口下图标仍在行尾、不溢出");
+  fixture.style.removeProperty("width");
   for (const view of ["cards", "compact"] as const) {
     await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[workbuddy]} view={view} hostDisplay="both" /></I18nProvider>));
     check(document.querySelector(".agent-provider-icon--workbuddy"), `WorkBuddy 在 ${view} 视图中显示`);

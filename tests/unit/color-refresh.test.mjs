@@ -3,7 +3,7 @@ import test from "node:test";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings.ts";
 import { colorsFrom } from "../../src/features/appearance/colorPalette.ts";
 import {
-  COLOR_BACKUP_KEY, COLOR_REFRESH_KEY, COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY,
+  COLOR_BACKUP_KEY, COLOR_REFRESH_KEY, COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, SESSION_SORT_MIGRATION_KEY,
   STORAGE_KEY, loadSettings, loadColorBackup, saveSettings, swapColorBackup, withColorBackup,
 } from "../../src/features/appearance/storage.ts";
 
@@ -56,7 +56,7 @@ test("new users only get the marker; missing old background backs up the former 
 test("old users already using the new defaults only get the marker, including mixed-case colors", () => {
   for (const palette of [defaults, { ...defaults, islandBackgroundColor: "#2f2F37", taskTextColor: "#ffffff", pulseColor: "#3ae489" }]) {
     const archive = JSON.stringify({ ...palette, opacity: 75 });
-    withStorage([[STORAGE_KEY, archive], [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"]], (values, writes) => {
+    withStorage([[STORAGE_KEY, archive], [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"], [SESSION_SORT_MIGRATION_KEY, "1"]], (values, writes) => {
       const next = loadSettings();
       assert.deepEqual(colorsFrom(next), defaults);
       assert.equal(next.opacity, 75);
@@ -123,4 +123,19 @@ test("corrupt archives and backups are empty; storage failures do not throw or d
     assert.equal(values.has(COLOR_REFRESH_KEY), false);
     assert.deepEqual(withColorBackup(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, pulseColor: "#123456" }), DEFAULT_SETTINGS);
   }, (operation) => { if (operation === "set") throw Error("blocked"); });
+});
+
+test("a saved session sort of status (the old default) moves to most recent first once", () => {
+  withStorage([[STORAGE_KEY, JSON.stringify({ agentSessionSort: "status" })]], (values) => {
+    assert.equal(loadSettings().agentSessionSort, "recent");
+    assert.equal(JSON.parse(values.get(STORAGE_KEY)).agentSessionSort, "recent");
+    assert.equal(values.get(SESSION_SORT_MIGRATION_KEY), "1");
+    // Chosen again afterwards, it stays.
+    saveSettings({ ...loadSettings(), agentSessionSort: "status" });
+    assert.equal(loadSettings().agentSessionSort, "status");
+  });
+  withStorage([[STORAGE_KEY, JSON.stringify({ agentSessionSort: "firstSeen" })]], (values) => {
+    assert.equal(loadSettings().agentSessionSort, "firstSeen");
+    assert.equal(values.get(SESSION_SORT_MIGRATION_KEY), "1");
+  });
 });

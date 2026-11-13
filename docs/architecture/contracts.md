@@ -9,6 +9,7 @@
 | `focusd-island-settings` | `features/appearance/storage.ts` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
+| `focusd-island-session-sort-recent-v1`（`"1"`：2026-11-13 会话列表默认改为「最近活动」，已存的 `agentSessionSort: "status"` 迁移一次为 `"recent"`；先保存设置再写标记） | `features/appearance/storage.ts` |
 | `focusd-island-color-backup`（`{ islandBackgroundColor, taskTextColor, pulseColor }`，均为大写 `#RRGGBB`；迁移、恢复默认外观和批量改色前保存；回退时与当前三色互换，手动改一个颜色不写） | `features/appearance/storage.ts`、`colorPalette.ts` |
 | `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor }[]`；id 为字符串，三色均为大写 `#RRGGBB`，最多 8 项、三色组合去重；损坏记录跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
