@@ -30,8 +30,10 @@
 
 ## 减少动效
 
-Windows「设置 → 辅助功能 → 视觉效果 → 动画效果」关掉后，WebView2 报告 `prefers-reduced-motion: reduce`。
+Windows「设置 → 辅助功能 → 视觉效果 → 动画效果」关掉，或性能选项选择「最佳性能」后，WebView2 报告 `prefers-reduced-motion: reduce`。
 
-- `base.css`：这时所有 `transition` 时长归零（过渡只是平滑一次变化，去掉不丢信息）。
+- `base.css`：这时默认把 `transition` 时长归零，岛屿展开、收起相关动效是下述局部例外；待办、消息卡片、设置页等仍遵守减少动效。
+- **岛屿展开、收起例外（老板确认于 2026-11-13）**：很多用户关闭系统动画效果只是为了性能，并不是对动效敏感，因此所有用户的岛屿展开、收起一律完整播放，不随系统减少动画设置取消。包括外形的宽、高、圆角（展开 560ms / 收起 380ms）、折叠条与展开面板进出、翻页淡入，以及贴边收起与滑出的位置动画。`IslandShell.css` 只对外形和两层面板的时长、延迟局部覆盖全局 `!important`；`useIslandWindow.ts` 始终请求位置动画，`usePageFadeIn.ts` 保留面板淡入。内部控件、消息与玻璃光晕等减少动效规则不变。
 - `animation` 在定义它的文件里处理：转圈、弹一下、岛展开的玻璃光晕直接停掉；文件中转的提示（显示 1.2 秒后消失）改成 `step-end`，照样按时消失，只是不渐隐；刚放进来的文件只是颜色淡出，没有移动，保留。
 - `tests/unit/reduced-motion.test.mjs` 检查每个会动的 `animation` 都有对应的减少动效规则，新加动画时漏了会失败。
+- 回归运行器用 `REGRESSION_REDUCED_MOTION=reduce pnpm test:regression` 模拟系统减少动画（PowerShell 先设 `$env:REGRESSION_REDUCED_MOTION='reduce'` 再运行命令）；`island-tour` 在该模式下仍检查外形过渡属性、非零时长、面板淡入与位置动画请求。
