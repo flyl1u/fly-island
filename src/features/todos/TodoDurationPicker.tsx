@@ -28,12 +28,15 @@ export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose
   const root = anchor.current?.closest(".stage") ?? document.body;
   const close = useRef(onClose);
   close.current = onClose;
+  // Where the watch was when the card was placed, to tell a real scroll from a layout one.
+  const placedAt = useRef<{ top: number; left: number } | null>(null);
 
   useLayoutEffect(() => {
     const button = anchor.current;
     const box = card.current;
     if (!button || !box) return;
     const rect = button.getBoundingClientRect();
+    placedAt.current = { top: rect.top, left: rect.left };
     const size = box.getBoundingClientRect();
     const below = rect.top - GAP - size.height < EDGE;
     const left = Math.min(Math.max(rect.left + rect.width / 2 - size.width / 2, EDGE), window.innerWidth - size.width - EDGE);
@@ -43,13 +46,18 @@ export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose
   useEffect(() => startButton.current?.focus(), []);
 
   // Outside clicks and a scrolling list close it; the list would leave it pointing at nothing.
+  // Only a scroll that moved the watch counts: scroll events arrive a frame late, and the list
+  // clamping its position after a layout change would otherwise close a card just opened.
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (!card.current?.contains(target) && !anchor.current?.contains(target)) close.current(false);
     };
     const onScroll = (event: Event) => {
-      if (!card.current?.contains(event.target as Node)) close.current(false);
+      if (card.current?.contains(event.target as Node)) return;
+      const rect = anchor.current?.getBoundingClientRect();
+      const placed = placedAt.current;
+      if (!rect || !placed || Math.abs(rect.top - placed.top) > 1 || Math.abs(rect.left - placed.left) > 1) close.current(false);
     };
     // It lives outside the island, so it has to go when the island collapses or tucks.
     const island = anchor.current?.closest(".island");
