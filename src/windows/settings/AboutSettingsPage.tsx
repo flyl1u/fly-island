@@ -2,10 +2,11 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { ProjectIdentitySection, ProjectLinksSection } from "../../features/updater/ProjectSettingsSection";
+import { ChangelogSection } from "../../features/updater/ChangelogSection";
 import { useTranslation } from "../../i18n";
 import { quitIsland } from "./api";
 
-/** About: the island, one group with updates and the links, and quitting. */
+/** About: the island, one group with updates and the links, the changelog, and quitting. */
 export function AboutSettingsPage() {
   const text = useTranslation().settings.project;
 
@@ -13,6 +14,7 @@ export function AboutSettingsPage() {
     <>
       <ProjectIdentitySection />
       <ProjectLinksSection />
+      <ChangelogSection />
       <SettingsGroup>
         <SettingsRow
           title={text.quit}

@@ -7,6 +7,10 @@ export type SettingsProjectText = {
   quit: string;
   quitHint: string;
   quitAction: string;
+  /** About: the changelog, built from every version's release notes. */
+  changelog: string;
+  changelogAll: (count: number) => string;
+  changelogLess: string;
   releases: string;
   releasesHint: string;
   issues: string;
@@ -58,6 +62,9 @@ export const zhCN: SettingsProjectText = {
   quit: "退出岛屿",
   quitHint: "和托盘菜单里的「退出」一样；要再打开，从开始菜单或桌面快捷方式启动。",
   quitAction: "退出",
+  changelog: "更新日志",
+  changelogAll: (count) => `显示全部 ${count} 个版本`,
+  changelogLess: "只看最近几个版本",
   releases: "历史版本",
   releasesHint: "点击之后可以查看岛屿的历史版本和更新历史",
   issues: "反馈问题",
@@ -107,6 +114,9 @@ export const en: SettingsProjectText = {
   quit: "Quit the island",
   quitHint: "Same as Quit in the tray menu; start it again from the Start menu or a desktop shortcut.",
   quitAction: "Quit",
+  changelog: "Changelog",
+  changelogAll: (count) => `Show all ${count} versions`,
+  changelogLess: "Show recent versions only",
   releases: "History",
   releasesHint: "See the island's past versions and update history",
   issues: "Report a problem",
