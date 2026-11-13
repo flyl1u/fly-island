@@ -74,6 +74,24 @@
   line-height: 1.5;
 }
 
+/* Thin, track-less scrollbars like the notebook's, instead of the white system ones. */
+.translation-panel__source textarea,
+.translation-panel__result {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-white-a18) transparent;
+}
+
+.translation-panel__source textarea::-webkit-scrollbar,
+.translation-panel__result::-webkit-scrollbar {
+  width: 6px;
+}
+
+.translation-panel__source textarea::-webkit-scrollbar-thumb,
+.translation-panel__result::-webkit-scrollbar-thumb {
+  background: var(--color-white-a18);
+  border-radius: var(--radius-pill);
+}
+
 .translation-panel__source textarea:focus {
   border-color: var(--color-white-a18);
 }
@@ -96,7 +114,6 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
-  scrollbar-width: thin;
 }
 
 .translation-panel__result--filled {
