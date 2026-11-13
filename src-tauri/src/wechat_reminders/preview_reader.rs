@@ -11,7 +11,8 @@ use crate::win32::{caption_close::CaptionCloseHook, process::window_process_id, 
 use super::{
     accessibility::{self, AccessibilityFlag},
     conversations::{self, ChatPreview, Conversation, ReadTrigger},
-    existing_wechat_windows, preferred_window, PreviewStatus, ProcessIdentity, MAX_PREVIEWS,
+    source::{executable_for_process, existing_wechat_windows, preferred_window},
+    PreviewStatus, ProcessIdentity, MAX_PREVIEWS,
 };
 
 const FIND_WINDOW: Duration = Duration::from_secs(3);
@@ -216,13 +217,12 @@ impl PreviewReader {
     pub(super) fn tick(
         &mut self,
         now: Instant,
-        executable: &Path,
         marker: Option<&Path>,
         hide_minimized_taskbar: bool,
         still_enabled: impl Fn() -> bool,
     ) -> Option<ReadOutcome> {
         if now >= self.next_lookup {
-            self.update_target(now, executable);
+            self.update_target(now);
         }
         self.update_caption_close(now);
         self.update_taskbar(now, hide_minimized_taskbar);
@@ -255,13 +255,7 @@ impl PreviewReader {
         } else {
             self.status = self.activation_error.unwrap_or(PreviewStatus::Unavailable);
             if matches!(trigger, ReadTrigger::Poll) {
-                self.ensure_accessibility(
-                    target.process,
-                    executable,
-                    marker,
-                    &still_enabled,
-                    sampled_at,
-                );
+                self.ensure_accessibility(target.process, marker, &still_enabled, sampled_at);
             }
         }
         result.map(|previews| {
@@ -273,9 +267,9 @@ impl PreviewReader {
         })
     }
 
-    fn update_target(&mut self, now: Instant, executable: &Path) {
+    fn update_target(&mut self, now: Instant) {
         self.next_lookup = now + FIND_WINDOW;
-        let target = existing_wechat_windows(executable).ok().and_then(|search| {
+        let target = existing_wechat_windows().ok().and_then(|search| {
             let window = preferred_window(&search.found)?;
             Some(Target {
                 window: window.handle,
@@ -385,7 +379,6 @@ impl PreviewReader {
     fn ensure_accessibility(
         &mut self,
         process: ProcessIdentity,
-        executable: &Path,
         marker: Option<&Path>,
         still_enabled: &impl Fn() -> bool,
         now: Instant,
@@ -404,8 +397,11 @@ impl PreviewReader {
             return;
         }
         let Some(marker) = marker else { return };
-        accessibility::recover(executable, marker);
-        match AccessibilityFlag::activate(executable, process.pid, marker, still_enabled) {
+        accessibility::recover(marker);
+        let Some(executable) = executable_for_process(process.pid) else {
+            return;
+        };
+        match AccessibilityFlag::activate(&executable, process.pid, marker, still_enabled) {
             Ok(Some(flag)) => {
                 self.flag = Some(flag);
                 self.activation_error = None;

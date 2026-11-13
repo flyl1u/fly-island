@@ -1,7 +1,6 @@
 //! Process start times, used to tell an older instance from a newer one.
 //!
-//! Kept out of `process.rs` because the WeChat probe example compiles that file
-//! and has no use for this.
+//! Also used by the WeChat probe to prefer an older main instance over a login window.
 
 use windows::Win32::{Foundation::FILETIME, System::Threading::GetProcessTimes};
 

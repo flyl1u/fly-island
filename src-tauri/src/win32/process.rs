@@ -3,7 +3,10 @@
 //! Also compiled into `examples/wechat_reminder_probe.rs` through `#[path]`, so it
 //! must not depend on anything else in the crate.
 
-use std::mem::size_of;
+use std::{
+    mem::size_of,
+    path::{Path, PathBuf},
+};
 use windows::{
     core::PWSTR,
     Win32::{
@@ -22,6 +25,25 @@ use windows::{
 
 /// Longest Win32 path QueryFullProcessImageNameW can return, in UTF-16 units.
 const MAX_IMAGE_PATH_UNITS: usize = 32768;
+
+fn normalized_path(path: &Path) -> String {
+    let path = path.to_string_lossy().replace('/', "\\").to_lowercase();
+    if let Some(network) = path.strip_prefix(r"\\?\unc\") {
+        format!(r"\\{network}")
+    } else {
+        path.trim_start_matches(r"\\?\").to_owned()
+    }
+}
+
+pub(crate) fn same_path(left: &Path, right: &Path) -> bool {
+    paths_match(left, right, |path| path.canonicalize().ok())
+}
+
+fn paths_match(left: &Path, right: &Path, canonicalize: impl Fn(&Path) -> Option<PathBuf>) -> bool {
+    let left = canonicalize(left).unwrap_or_else(|| left.to_owned());
+    let right = canonicalize(right).unwrap_or_else(|| right.to_owned());
+    normalized_path(&left) == normalized_path(&right)
+}
 
 /// Owns a process handle and closes it when dropped.
 pub(super) struct ProcessHandle(pub(super) HANDLE);
@@ -114,6 +136,51 @@ pub(crate) fn running_executable(file_names: &[&str]) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compares_both_canonical_paths_for_junctions_and_short_names() {
+        let installed = Path::new(r"C:\PROGRA~1\Weixin\Weixin.exe");
+        let running = Path::new(r"E:\Junction\Weixin.exe");
+        assert!(paths_match(installed, running, |path| {
+            Some(if path == installed {
+                PathBuf::from(r"\\?\D:\Apps\Weixin\Weixin.exe")
+            } else {
+                PathBuf::from(r"d:\apps\weixin\WEIXIN.EXE")
+            })
+        }));
+        assert!(!paths_match(installed, running, |_| None));
+    }
+
+    #[test]
+    fn missing_paths_fall_back_to_case_slash_and_prefix_normalization() {
+        assert!(paths_match(
+            Path::new(r"\\?\Z:\Missing\WEIXIN.EXE"),
+            Path::new("z:/missing/Weixin.exe"),
+            |_| None,
+        ));
+        assert!(!paths_match(
+            Path::new(r"Z:\Missing\Weixin.exe"),
+            Path::new(r"Z:\Other\Weixin.exe"),
+            |_| None,
+        ));
+        assert!(paths_match(
+            Path::new(r"\\?\UNC\server\share\Weixin.exe"),
+            Path::new(r"\\SERVER\share\WEIXIN.EXE"),
+            |_| None,
+        ));
+    }
+
+    #[test]
+    fn canonicalization_failure_falls_back_for_each_path_independently() {
+        let alias = Path::new(r"C:\Alias\Weixin.exe");
+        let target = Path::new(r"D:\Apps\Weixin.exe");
+        for left in [alias, target] {
+            let right = if left == alias { target } else { alias };
+            assert!(paths_match(left, right, |path| {
+                (path == alias).then(|| target.to_owned())
+            }));
+        }
+    }
 
     #[test]
     fn finds_a_running_process_by_its_file_name() {

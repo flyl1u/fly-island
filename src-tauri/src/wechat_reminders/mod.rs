@@ -13,7 +13,10 @@ use crate::win32;
 use conversations::ChatPreview;
 use preview_reader::{PreviewReader, ReadOutcome};
 use serde::Serialize;
-use source::{installed_executable, normalized_path, ReminderListener, ReminderSignal};
+use source::{
+    existing_wechat_windows, preferred_window, resolve_executable, ProcessIdentity, ReminderListener,
+    ReminderSignal,
+};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -52,12 +55,6 @@ struct MessagePreview {
     chat: ChatPreview,
     #[serde(skip)]
     process: ProcessIdentity,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct ProcessIdentity {
-    pid: u32,
-    started_at: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -413,9 +410,7 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
         .ok()
         .map(|path| path.join("wechat-accessibility.json"));
     if let Some(marker) = marker.as_deref().filter(|path| path.is_file()) {
-        if let Ok(executable) = installed_executable() {
-            accessibility::recover(&executable, marker);
-        }
+        accessibility::recover(marker);
     }
     while !service.stopping.load(Ordering::Acquire) {
         let (enabled, generation, preview_enabled) = match service.state.lock() {
@@ -433,21 +428,18 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
             continue;
         }
         let (send_signal, signals) = mpsc::channel();
-        let listener = installed_executable().and_then(|executable| {
-            let listener = ReminderListener::new(executable.clone(), move |event| {
-                if matches!(
-                    event,
-                    ReminderSignal::Attention
-                        | ReminderSignal::Activated
-                        | ReminderSignal::ActivatedElsewhere
-                ) {
-                    let _ = send_signal.send(event);
-                }
-            })?;
-            Ok((executable, listener))
+        let listener = ReminderListener::new(None, move |event| {
+            if matches!(
+                event,
+                ReminderSignal::Attention
+                    | ReminderSignal::Activated
+                    | ReminderSignal::ActivatedElsewhere
+            ) {
+                let _ = send_signal.send(event);
+            }
         });
         match listener {
-            Ok((executable, listener)) => {
+            Ok(listener) => {
                 connection(&service, generation, None);
                 let still_listening = || {
                     !service.stopping.load(Ordering::Acquire)
@@ -480,7 +472,6 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
                         });
                         let previews = reader.tick(
                             Instant::now(),
-                            &executable,
                             marker.as_deref(),
                             hide_minimized_taskbar,
                             still_listening,
@@ -528,8 +519,8 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
 #[tauri::command]
 pub async fn open_wechat() -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(|| {
-        let executable = installed_executable()?;
-        if restore_wechat(&executable, None)?.is_some() {
+        resolve_executable()?;
+        if restore_wechat(None)?.is_some() {
             return Ok(());
         }
         Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into())
@@ -551,10 +542,10 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
                 .find(|message| message.id == message_id)
                 .map(|message| (state.generation, message.process, message.chat.key.clone()))
         };
-        let executable = installed_executable()?;
+        resolve_executable()?;
         let process = conversation.as_ref().map(|(_, process, _)| *process);
-        let Some(window) = restore_wechat(&executable, process)? else {
-            if process.is_some() && restore_wechat(&executable, None)?.is_some() {
+        let Some(window) = restore_wechat(process)? else {
+            if process.is_some() && restore_wechat(None)?.is_some() {
                 return Ok(false);
             }
             return Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into());
@@ -588,71 +579,8 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
     .map_err(|error| format!("打开微信会话的线程失败：{error}"))?
 }
 
-struct WeChatWindow {
-    handle: HWND,
-    process: ProcessIdentity,
-    main_sized: bool,
-    visible: bool,
-}
-
-struct WindowSearch {
-    executable: String,
-    found: Vec<WeChatWindow>,
-    running: bool,
-}
-
-fn preferred_window(windows: &[WeChatWindow]) -> Option<&WeChatWindow> {
-    // Only full main windows qualify; prefer the visible window, then the older instance.
-    windows
-        .iter()
-        .filter(|window| window.main_sized)
-        .min_by_key(|window| (!window.visible, window.process.started_at))
-}
-
-fn find_wechat_window(search: &mut WindowSearch, window: HWND) {
-    let process_id = win32::process::window_process_id(window);
-    let Some(path) = win32::process::image_path(process_id) else {
-        return;
-    };
-    if normalized_path(&path) != search.executable {
-        return;
-    }
-    let started_at = win32::process_times::start_time(process_id).unwrap_or(u64::MAX);
-    search.running = true;
-    let title = win32::window::window_text(window, 32);
-    if !["微信", "WeChat", "Weixin"].contains(&title.as_str()) {
-        return;
-    }
-    let main_sized = win32::window::normal_position(window).is_some_and(|position| {
-        position.right - position.left >= 500 && position.bottom - position.top >= 300
-    });
-    search.found.push(WeChatWindow {
-        handle: window,
-        process: ProcessIdentity {
-            pid: process_id,
-            started_at,
-        },
-        main_sized,
-        visible: win32::window::is_visible(window),
-    });
-}
-
-fn existing_wechat_windows(executable: &std::path::Path) -> Result<WindowSearch, String> {
-    let mut search = WindowSearch {
-        executable: normalized_path(&executable.to_string_lossy()),
-        found: Vec::new(),
-        running: false,
-    };
-    win32::window::for_each_top_level_window(|window| find_wechat_window(&mut search, window))
-        .map_err(|error| format!("无法查找已运行的微信窗口：{error}"))?;
-    Ok(search)
-}
-
-fn restore_wechat(
-    executable: &std::path::Path,
-    requested: Option<ProcessIdentity>,
-) -> Result<Option<HWND>, String> {
-    let search = existing_wechat_windows(executable)?;
+fn restore_wechat(requested: Option<ProcessIdentity>) -> Result<Option<HWND>, String> {
+    let search = existing_wechat_windows()?;
     if !search.running {
         return Ok(None);
     }
@@ -684,7 +612,7 @@ fn restore_wechat(
     })?;
     for _ in 0..40 {
         thread::sleep(Duration::from_millis(50));
-        let current = existing_wechat_windows(executable)?;
+        let current = existing_wechat_windows()?;
         if let Some(window) = current.found.iter().find(|window| {
             window.main_sized
                 && window.process == expected
