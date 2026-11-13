@@ -32,7 +32,10 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use wechat_reminder_source::{resolve_executable, ReminderListener, ReminderSignal};
+use wechat_reminder_source::{
+    is_wechat_executable, registry_executable, resolve_executable, running_executable,
+    ReminderListener, ReminderSignal,
+};
 
 fn main() -> ExitCode {
     match run() {
@@ -66,20 +69,29 @@ fn run() -> Result<bool, String> {
             }
         }
     }
-    let executable = executable.map_or_else(resolve_executable, Ok)?;
-    if !executable.is_absolute()
-        || !executable.is_file()
-        || !executable.file_name().is_some_and(|name| {
-            ["Weixin.exe", "WeChat.exe"]
-                .iter()
-                .any(|expected| name.to_string_lossy().eq_ignore_ascii_case(expected))
+    let registry = registry_executable();
+    let running = running_executable();
+    let selected = executable.clone().map_or_else(resolve_executable, Ok);
+    println!(
+        "{}",
+        json!({
+            "phase": "executableResolution",
+            "registryExecutable": registry,
+            "runningExecutable": running,
+            "selectedExecutable": selected.as_ref().ok(),
+            "explicitExecutable": executable,
         })
+    );
+    let selected = selected?;
+    if !selected.is_absolute()
+        || !selected.is_file()
+        || !is_wechat_executable(&selected.to_string_lossy())
     {
         return Err("Expected an existing, absolute Weixin.exe or WeChat.exe path".into());
     }
     let counts = Rc::new(RefCell::new([0u64; 4]));
     let callback_counts = counts.clone();
-    let listener = ReminderListener::new(Some(executable), move |signal| {
+    let listener = ReminderListener::new(executable, move |signal| {
         let index = match signal {
             ReminderSignal::Attention => 0,
             ReminderSignal::Activated => 1,

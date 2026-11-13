@@ -47,6 +47,10 @@
 
 新增命令 `get_media_diagnostics()` 返回 `{ players }`：逐会话的 `sourceAppId`、`label`、`hasSession`、`hasTimeline`、`hasPluginTrackId`、`exePath`、`directory`、`version`、`status` 与 `neteasePluginState`（非网易云为 null），并补入正在运行但没有会话的已知播放器。只读检查，不安装插件。`get_media_state` 新增 `hasTimeline` 布尔字段；前端兼容缺少字段的旧状态，估算位置始终保留 false 标记。
 
+## 微信只读探测输出
+
+`examples/wechat_reminder_probe.rs`（2026-11-13 起）在监听或路径解析报错前向标准输出增加一条 `phase: "executableResolution"` JSON：`registryExecutable`、`runningExecutable`、`selectedExecutable` 和 `explicitExecutable` 均为路径字符串或 `null`，分别表示注册表候选、主窗口优先的运行路径、最终采用路径及 `--exe` 参数。原有监听状态、事件计数字段和退出码不变；这条诊断不进入 Tauri 事件或持久化存储。详见 [微信提醒兼容性说明](../wechat-reminder-compatibility.md#只读诊断)。
+
 ## 事件
 
 | 事件名 | 发送方 | 目标 |
