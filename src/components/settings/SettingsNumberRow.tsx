@@ -1,5 +1,6 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
-import { SettingsInput } from "./SettingsInput";
+import { useId, type ReactNode } from "react";
+import { NumberStepper } from "../NumberStepper";
+import "./SettingsInput.css";
 import { SettingsRow } from "./SettingsRow";
 
 /**
@@ -13,6 +14,7 @@ export function SettingsNumberRow({
   min,
   max,
   unit,
+  step,
   indent,
   onChange,
 }: {
@@ -23,44 +25,24 @@ export function SettingsNumberRow({
   max: number;
   /** Shown after the field, such as "秒". */
   unit?: string;
+  step?: number;
   indent?: boolean;
   onChange: (value: number) => void;
 }) {
   const id = useId();
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
-
-  const commit = () => {
-    const number = Math.round(Number(draft));
-    const next = Number.isFinite(number) && draft.trim() !== "" ? Math.min(max, Math.max(min, number)) : value;
-    setDraft(String(next));
-    if (next !== value) onChange(next);
-  };
 
   return (
     <SettingsRow
-      title={title}
+      title={<span id={`${id}-title`}>{title}</span>}
       description={description}
       indent={indent}
       labelFor={id}
       control={
-        <>
-          <SettingsInput
-            id={id}
-            className="settings-input--number"
-            type="number"
-            inputMode="numeric"
-            min={min}
-            max={max}
-            value={draft}
-            onChange={(event) => setDraft(event.currentTarget.value)}
-            onBlur={commit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") commit();
-            }}
-          />
+        <span className="settings-number">
+          <NumberStepper id={id} ariaLabelledBy={`${id}-title`} value={value}
+            min={min} max={max} step={step} onChange={onChange} />
           {unit ? <span className="settings-number__unit">{unit}</span> : null}
-        </>
+        </span>
       }
     />
   );
