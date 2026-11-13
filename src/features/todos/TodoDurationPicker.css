@@ -1,41 +1,151 @@
+/* A card under the todo: minutes in the middle, presets under them, Start at the bottom right. */
 .todo-duration-picker {
+  position: relative;
   grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  padding: var(--space-sm);
-  color: var(--text-2);
-  background: var(--color-white-a04);
-  border-radius: var(--corner-xs);
-  corner-shape: var(--corner-shape);
+  margin: 2px 0 4px;
+  padding: 12px 12px 10px;
+  color: var(--text-1);
+  background: var(--color-white-a06);
+  border: 1px solid var(--color-white-a08);
+  border-radius: 14px;
+  animation: todo-duration-picker-in 160ms ease-out;
 }
 
-.todo-duration-picker__options,
-.todo-duration-picker__custom {
+@keyframes todo-duration-picker-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-duration-picker { animation: none; }
+}
+
+.todo-duration-picker button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.todo-duration-picker button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.todo-duration-picker__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.todo-duration-picker__close:hover {
+  color: var(--text-1);
+  background: var(--color-white-a10);
+}
+
+.todo-duration-picker__dial {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.todo-duration-picker__unit {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.todo-duration-picker__ends {
+  margin: -4px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.todo-duration-picker__presets {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-sm);
+  justify-content: center;
+  gap: 6px;
 }
 
-.todo-duration-picker__options button,
-.todo-duration-picker__custom > button {
-  min-height: 26px;
-  padding: 3px 8px;
+.todo-duration-picker__presets button {
+  min-width: 40px;
+  height: 26px;
+  padding: 0 10px;
+  color: var(--text-2);
+  background: var(--color-white-a06);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.todo-duration-picker__presets button:hover {
+  color: var(--text-1);
+  background: var(--color-white-a12);
+}
+
+.todo-duration-picker__presets button[aria-pressed="true"] {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.todo-duration-picker__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  align-self: stretch;
+  margin-top: 2px;
+}
+
+.todo-duration-picker__unlimited {
+  height: 28px;
+  padding: 0 10px;
+  color: var(--text-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.todo-duration-picker__unlimited:hover {
   color: var(--text-1);
   background: var(--color-white-a08);
-  border: 1px solid transparent;
-  border-radius: var(--corner-xs);
-  corner-shape: var(--corner-shape);
-  font: inherit;
-  font-size: 12px;
 }
 
-.todo-duration-picker button { cursor: pointer; }
-.todo-duration-picker button:hover { background: var(--color-white-a12); }
-.todo-duration-picker button[aria-pressed="true"] { border-color: var(--color-accent); }
-.todo-duration-picker button:disabled { opacity: 0.4; cursor: default; }
-.todo-duration-picker .todo-duration-picker__cancel { margin-left: auto; background: transparent; color: var(--text-3); }
-.todo-duration-picker button:focus-visible,
-.todo-duration-picker input:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 1px; }
-.todo-duration-picker__custom { margin-top: var(--space-sm); font-size: 12px; }
-.todo-duration-picker__label { display: flex; align-items: center; gap: var(--space-sm); }
-.todo-duration-picker__custom [role="status"] { color: var(--color-warning); }
+.todo-duration-picker__start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 16px;
+  color: var(--color-black, #000);
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.todo-duration-picker__start:hover { filter: brightness(1.08); }
+.todo-duration-picker__start:active { transform: scale(0.97); }

@@ -1,57 +1,68 @@
-import { NumberStepper } from "../../components/NumberStepper";
 import { useEffect, useRef, useState } from "react";
+import { Play, X } from "lucide-react";
+import { NumberStepper } from "../../components/NumberStepper";
 import { useTranslation } from "../../i18n";
-import { MAX_TODO_MINUTES, MIN_TODO_MINUTES, parseTodoMinutes, type TodoDuration } from "./timer";
+import { DEFAULT_TODO_MINUTES, MAX_TODO_MINUTES, MIN_TODO_MINUTES, type TodoDuration } from "./timer";
 import "./TodoDurationPicker.css";
 
-const PRESETS = [15, 30, 60] as const;
+const PRESETS = [15, 25, 45, 60, 90] as const;
 
-/** Inline, inside the scrollable row: no popover can be clipped by the island. */
+function clockAfter(minutes: number) {
+  const end = new Date(Date.now() + minutes * 60_000);
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+}
+
+/**
+ * One card: the minutes in the middle, quick presets under them, then start. Presets only set
+ * the time (double-click starts), so nothing begins before the big Start button.
+ * Inline, inside the scrollable row: no popover can be clipped by the island.
+ */
 export function TodoDurationPicker({ lastDuration, onStart, onCancel }: {
   lastDuration: TodoDuration;
   onStart: (minutes: TodoDuration) => void;
   onCancel: () => void;
 }) {
   const t = useTranslation();
-  const [custom, setCustom] = useState(lastDuration !== null && !PRESETS.some((minutes) => minutes === lastDuration));
-  const [draft, setDraft] = useState(String(lastDuration ?? 25));
-  const group = useRef<HTMLDivElement>(null);
-  const minutes = parseTodoMinutes(draft);
-  useEffect(() => {
-    const element = group.current;
-    (element?.querySelector<HTMLElement>("input")
-      ?? element?.querySelector<HTMLElement>('button[aria-pressed="true"]')
-      ?? element?.querySelector<HTMLElement>("button"))?.focus();
-  }, []);
+  const [minutes, setMinutes] = useState(lastDuration ?? DEFAULT_TODO_MINUTES);
+  const startButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => startButton.current?.focus(), []);
 
   return (
-    <div ref={group} className="todo-duration-picker" role="group" aria-label={t.todo.chooseDuration}
+    <form
+      className="todo-duration-picker"
+      aria-label={t.todo.chooseDuration}
+      onSubmit={(event) => { event.preventDefault(); onStart(minutes); }}
       onKeyDown={(event) => {
         if (event.key === "Escape") { event.stopPropagation(); onCancel(); }
-      }}>
-      <div className="todo-duration-picker__options">
-        {PRESETS.map((duration) => (
-          <button key={duration} type="button" aria-pressed={lastDuration === duration && !custom}
-            onClick={() => onStart(duration)}>{duration === 60 ? t.todo.oneHour : t.todo.minutes(duration)}</button>
-        ))}
-        <button type="button" aria-pressed={custom} onClick={() => setCustom(true)}>{t.todo.customDuration}</button>
-        <button type="button" aria-pressed={lastDuration === null && !custom} onClick={() => onStart(null)}>{t.todo.unlimited}</button>
-        <button className="todo-duration-picker__cancel" type="button" onClick={onCancel}>{t.todo.cancelTimer}</button>
+      }}
+    >
+      <button className="todo-duration-picker__close" type="button" aria-label={t.todo.cancelTimer} onClick={onCancel}>
+        <X size={14} strokeWidth={2.2} />
+      </button>
+      <div className="todo-duration-picker__dial">
+        <NumberStepper variant="hero" min={MIN_TODO_MINUTES} max={MAX_TODO_MINUTES} step={5}
+          value={minutes} ariaLabel={t.todo.chooseDuration} onChange={setMinutes} />
+        <span className="todo-duration-picker__unit">{t.todo.minutesUnit}</span>
       </div>
-      {custom && (
-        <form className="todo-duration-picker__custom" onSubmit={(event) => {
-          event.preventDefault();
-          if (minutes !== null) onStart(minutes);
-        }}>
-          <div className="todo-duration-picker__label">
-            {t.todo.customMinutes}
-            <NumberStepper autoFocus variant="island" min={MIN_TODO_MINUTES} max={MAX_TODO_MINUTES} step={5}
-              value={minutes ?? 25} ariaLabel={t.todo.customMinutes} onChange={(value) => setDraft(String(value))} />
-          </div>
-          <button type="submit" disabled={minutes === null}>{t.todo.start}</button>
-          {minutes === null && <span role="status">{t.todo.durationRange}</span>}
-        </form>
-      )}
-    </div>
+      <p className="todo-duration-picker__ends" aria-live="polite">{t.todo.endsAt(clockAfter(minutes))}</p>
+      <div className="todo-duration-picker__presets" role="group" aria-label={t.todo.presets}>
+        {PRESETS.map((preset) => (
+          <button key={preset} type="button" data-minutes={preset} aria-pressed={minutes === preset}
+            aria-label={t.todo.minutes(preset)}
+            onClick={() => setMinutes(preset)} onDoubleClick={() => onStart(preset)}>
+            {preset}
+          </button>
+        ))}
+      </div>
+      <div className="todo-duration-picker__actions">
+        <button className="todo-duration-picker__unlimited" type="button" onClick={() => onStart(null)}>
+          {t.todo.unlimited}
+        </button>
+        <button ref={startButton} className="todo-duration-picker__start" type="submit">
+          <Play size={12} strokeWidth={2.6} />
+          {t.todo.startFor(minutes)}
+        </button>
+      </div>
+    </form>
   );
 }

@@ -18,6 +18,28 @@
   font-size: 12px;
 }
 
+/* The focus timer's big minutes: round buttons on either side, no pill around them. */
+.number-stepper--hero {
+  --number-stepper-height: 30px;
+  gap: 10px;
+  height: 38px;
+  color: var(--text-1);
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+}
+
+/* Two classes: the shared button/input rule below resets font and background. */
+.number-stepper.number-stepper--hero .number-stepper__button {
+  background: var(--color-white-a08);
+}
+
+.number-stepper.number-stepper--hero .number-stepper__input {
+  height: 38px;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+}
+
 .number-stepper .number-stepper__button,
 .number-stepper .number-stepper__input {
   min-height: 0;

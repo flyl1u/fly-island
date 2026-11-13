@@ -93,7 +93,10 @@ const click = (selector: string) => act(async () => {
 });
 const open = () => click(".island__open-button");
 const start = (id: string) => click(`[data-todo-id="${id}"] .todo-start`);
-const preset = (index: number) => click(`.todo-duration-picker__options button:nth-child(${index})`);
+const choose = (id: string) => click(`[data-todo-id="${id}"] .todo-start-duration`);
+const preset = (minutes: number) => click(`.todo-duration-picker__presets [data-minutes="${minutes}"]`);
+const unlimited = () => click(".todo-duration-picker__unlimited");
+const durationPill = (id: string) => document.querySelector(`[data-todo-id="${id}"] .todo-start-duration`)?.textContent;
 const stored = () => JSON.parse(localStorage.getItem(TODO_TIMER_STORAGE_KEY) ?? "null") as TodoTimer | null;
 const collapsedTime = () => document.querySelector(".island__active-task")?.textContent;
 const advance = (milliseconds: number) => act(async () => {
@@ -105,8 +108,8 @@ const typeMinutes = (value: string) => act(async () => {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 });
-const submitCustom = () => act(async () => {
-  document.querySelector<HTMLFormElement>(".todo-duration-picker__custom")!.requestSubmit();
+const go = () => act(async () => {
+  document.querySelector<HTMLFormElement>(".todo-duration-picker")!.requestSubmit();
 });
 const layoutSettled = async () => {
   const deadline = performance.now() + 5000;
@@ -156,8 +159,9 @@ try {
   await start("t1");
   check(!localStorage.getItem("focusd-island-active-todo"), "Disabled timer stops immediately");
   await settings({ todoTimerEnabled: true, enableTodoReorder: true });
-  await start("t1");
-  await preset(1);
+  await choose("t1");
+  await preset(15);
+  await go();
   await settings({ todoTimerEnabled: false });
   check(!stored() && localStorage.getItem("focusd-island-active-todo") === "t1" && !document.querySelector(".todo-countdown"), "Disabling cancels timer and preserves active todo");
   await advance(900_000);
@@ -169,10 +173,14 @@ try {
   localStorage.removeItem(TODO_DURATION_STORAGE_KEY);
   await mount();
   await open();
-  await start("t1");
-  check(document.querySelectorAll(".todo-duration-picker__options button").length === 6, "开始显示 15 / 30 / 60 分钟、自定义、不限时和取消");
-  check(document.querySelector('.todo-duration-picker__options button:nth-child(5)[aria-pressed="true"]'), "首次默认高亮不限时，旧开始行为保留");
-  await preset(1);
+  check(durationPill("t1") === "25分", "首次默认 25 分钟，显示在开始按钮旁");
+  await choose("t1");
+  check(document.querySelectorAll(".todo-duration-picker__presets button").length === 5
+    && document.querySelector('.todo-duration-picker__presets [data-minutes="25"][aria-pressed="true"]'), "时长卡片有 5 个常用时长，默认选中 25");
+  check(document.querySelector(".todo-duration-picker__ends")?.textContent?.includes("结束"), "时长卡片显示预计结束时间");
+  await preset(15);
+  check(!stored() && document.querySelector(".todo-duration-picker__start")?.textContent?.includes("15"), "点常用时长只改时间，不直接开始");
+  await go();
   const firstEnd = stored()!.endsAt;
   check(stored()?.todoId === "t1" && firstEnd === now + 900_000, "选 15 分钟后保存当前待办和绝对结束时间");
   check(document.querySelector(".island--collapsed") && collapsedTime()?.includes("15:00"), "开始后收起，折叠岛显示倒计时并暂停待办轮播");
@@ -198,9 +206,9 @@ try {
   await click(".todo-timer-actions button:first-of-type");
   check(stored() === null && localStorage.getItem("focusd-island-active-todo") === null, "完成清除倒计时及进行中状态");
 
-  await start("t2");
-  check(document.querySelector('.todo-duration-picker__options button:first-child[aria-pressed="true"]'), "下次开始高亮上次选择的 15 分钟");
-  await preset(4);
+  check(durationPill("t2") === "15分", "开始按钮旁显示上次的 15 分钟");
+  await choose("t2");
+  check(document.querySelector('.todo-duration-picker__presets [data-minutes="15"][aria-pressed="true"]'), "时长卡片选中上次的 15 分钟");
   check(!document.querySelector("input[type=number]"), "Custom duration has no native spin buttons");
   await click(".number-stepper__button:last-child");
   check(document.querySelector<HTMLInputElement>(".number-stepper input")?.value === "20", "Custom duration steps by five");
@@ -210,51 +218,59 @@ try {
     && document.querySelector<HTMLButtonElement>(".number-stepper__button:last-child")?.disabled, "Custom duration clamps and disables Plus at 240");
   await typeMinutes("7");
   await act(async () => { const input = document.querySelector<HTMLInputElement>(".number-stepper input")!; input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-  await submitCustom();
+  await go();
   check(stored()?.durationMinutes === 7 && collapsedTime()?.includes("07:00"), "自定义 7 分钟开始并显示 07:00");
   await open();
   await start("t2");
-  check(stored() === null, "结束立即取消当前倒计时");
+  check(stored() === null && durationPill("t2") === "7分", "结束立即取消当前倒计时，开始按钮旁记住 7 分钟");
   await start("t2");
+  check(stored()?.durationMinutes === 7 && collapsedTime()?.includes("07:00"), "一键开始直接沿用上次的 7 分钟");
+  await open();
+  await start("t2");
+  await choose("t2");
   check(document.querySelector<HTMLInputElement>(".todo-duration-picker input")?.value === "7", "记住自定义时长，重新打开仍为 7 分钟");
-  await preset(5);
+  await unlimited();
   check(stored() === null && localStorage.getItem("focusd-island-active-todo") === "t2" && collapsedTime()?.includes("Review"), "不限时恢复原有进行中待办标题，没有倒计时");
   await open();
   await start("t2");
-  await start("t2");
-  await preset(2);
+  await choose("t2");
+  await preset(25);
+  await go();
   await click(".island__quiet-button");
   check(document.querySelector(".island--tucked"), "倒计时期间可贴边收起");
-  await advance(1_800_000);
+  await advance(1_500_000);
   check(document.querySelector(".island--expanded") && !document.querySelector(".island--tucked") && sounds === 3, "贴边收起到时露出并展开，播放一次提示音");
   await click(".todo-timer-actions button:last-child");
   await open();
-  await advance(1_800_000);
+  await advance(1_500_000);
   check(document.querySelector(".island--expanded") && document.querySelector(".todo-timer-actions") && sounds === 4, "已展开时到时显示操作并只响一次");
 
   await start("t2");
-  await start("t2");
-  await preset(3);
+  await choose("t2");
+  await preset(60);
+  await go();
   await open();
   await click('[data-todo-id="t1"] .todo-check');
-  await start("t1");
-  await click(".todo-duration-picker__cancel");
+  await choose("t1");
+  await click(".todo-duration-picker__close");
   check(stored()?.todoId === "t2" && stored()?.durationMinutes === 60, "取消另一项的时长选择保留当前倒计时");
-  await start("t1");
-  await preset(5);
+  await choose("t1");
+  await unlimited();
   await advance(3_600_000);
   check(stored() === null && localStorage.getItem("focusd-island-active-todo") === "t1" && sounds === 4,
     "切换另一项不限时取消旧轮，旧截止时间不再提醒");
   await open();
   await start("t1");
-  await start("t2");
-  await preset(3);
+  await choose("t2");
+  await preset(60);
+  await go();
   await open();
   await click('[data-todo-id="t2"] .todo-delete');
   await advance(3_600_000);
   check(stored() === null && sounds === 4, "删除正在计时的待办取消本轮，不再到时提醒");
-  await start("t1");
-  await preset(1);
+  await choose("t1");
+  await preset(15);
+  await go();
   await open();
   await click('[data-todo-id="t1"] .todo-check');
   await advance(900_000);
@@ -284,7 +300,7 @@ try {
   localStorage.setItem(TODO_DURATION_STORAGE_KEY, "240");
   await mount();
   await open();
-  await start(todo.id);
+  await choose(todo.id);
   await layoutSettled();
   const picker = document.querySelector<HTMLElement>(".todo-duration-picker")!;
   const island = document.querySelector<HTMLElement>(".island")!;
@@ -293,7 +309,7 @@ try {
   check(picker.getBoundingClientRect().bottom <= island.getBoundingClientRect().bottom - 8, "选择器参与岛屿高度计算，没有被底边裁切");
 
   if (query.get("view") === "running" || query.get("view") === "expired") {
-    await submitCustom();
+    await go();
     if (query.get("view") === "expired") await advance(240 * 60_000);
   }
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
