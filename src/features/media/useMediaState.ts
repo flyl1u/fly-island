@@ -4,7 +4,7 @@ import { isIslandMoving } from "../../lib/islandMotion";
 import { AUDIO_ACTIVE_THRESHOLD, DEFAULT_MEDIA_STATE, isSameMediaState } from "./mediaState";
 import { isSameTrack, keptAnchor, steadyAnchor } from "./positionAnchor";
 import { playbackPosition } from "./lyrics/lrc";
-import { advanceClock, clockPosition, hasTimeline, NO_CLOCK, type TrackClock } from "./trackClock";
+import { advanceClock, clockPosition, hasTimeline, setClockPosition, NO_CLOCK, type TrackClock } from "./trackClock";
 import { useAudioLevel } from "./useAudioLevel";
 import { pickMediaSource } from "./pickMediaSource";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
@@ -88,6 +88,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
         const reading: MediaState = {
           ...nextMediaState,
           ...timeline,
+          hasTimeline: hasTimeline(nextMediaState),
           audioActive,
           audioPeak,
           playbackStatus,
@@ -138,6 +139,15 @@ export function useMediaState(enabled = true, showsLevel = true) {
       isSeeking.current = false;
       seekGeneration.current += 1;
     }
+  }, []);
+
+  const calibrate = useCallback((positionMs: number) => {
+    const now = Date.now();
+    const clock = setClockPosition(trackClock.current, positionMs, now);
+    trackClock.current = clock;
+    if (clock.key !== null) setMediaState((current) => hasTimeline(current) ? current : {
+      ...current, positionMs: clockPosition(clock, now), updatedAt: now,
+    });
   }, []);
 
   const runMediaCommand = useCallback(
@@ -289,6 +299,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
     musicSourcePriority,
     runMediaCommand,
     seekTo,
+    calibrate,
     reorderMusicSource,
     removeMusicSource,
   };

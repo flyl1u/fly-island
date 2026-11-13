@@ -26,6 +26,10 @@ pub(super) struct TimelineSample {
 }
 
 impl TimelineSample {
+    pub(super) fn has_timeline(&self, now_ms: i64) -> bool {
+        self.end_ms > 0 || (self.position_ms > 0 && self.updated_ms.is_some_and(|updated| believable(updated, now_ms, self.duration())))
+    }
+
     fn duration(&self) -> i64 {
         (self.end_ms - self.start_ms).max(0)
     }

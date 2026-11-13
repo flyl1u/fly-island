@@ -100,3 +100,4 @@
     transition: none;
   }
 }
+.music-progress--estimated { opacity: 0.6; }

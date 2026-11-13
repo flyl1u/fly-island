@@ -277,6 +277,9 @@ if (!automated) {
     // Settings → Music → Player order: the saved order, new players added after it, each one's
     // state, and moving a row saves the old format.
     await openPage("music"); await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    check(document.querySelector(".editor-panel")?.textContent?.includes("播放器兼容性") &&
+      document.querySelector(".editor-panel")?.textContent?.includes("21.10.2962.0") &&
+      document.querySelector(".editor-panel")?.textContent?.includes("网易云需要安装进度插件"), "Music settings lists detected players and compatibility status using settings rows");
     const players = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((row) => row.querySelector(".reorder-list__name")?.textContent);
     const hints = [...document.querySelectorAll<HTMLElement>(".reorder-list__hint")].map((hint) => hint.textContent);
     check(players().join() === "Spotify,QQ音乐,网易云音乐" && hints.join() === "没有打开,已打开,正在播放",

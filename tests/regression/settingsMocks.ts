@@ -22,6 +22,12 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "get_media_diagnostics": return { players: [
+      { sourceAppId: "QQMusic", label: "QQ音乐", hasSession: true, hasTimeline: true, hasPluginTrackId: false,
+        exePath: null, directory: null, version: "21.10.2962.0", status: "ok", neteasePluginState: null },
+      { sourceAppId: "cloudmusic.exe", label: "网易云音乐", hasSession: true, hasTimeline: false, hasPluginTrackId: false,
+        exePath: null, directory: null, version: null, status: "neteaseNeedsPlugin", neteasePluginState: "none" },
+    ] };
     case "get_reply_marker_state": return replyMarker();
     case "set_reply_marker": replyMarkerCalls.push(replyMarkerOn = Boolean(args.enabled)); return replyMarker();
     // Two players open, NetEase playing; Spotify is in the saved order but not open.

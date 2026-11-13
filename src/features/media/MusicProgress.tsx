@@ -4,6 +4,7 @@ import type { MediaState } from "./api";
 import { playbackPosition } from "./lyrics/lrc";
 import { isPositionJump, positionAtPointer } from "./positionAnchor";
 import { formatTrackTime } from "./trackTime";
+import { hasTimeline } from "./trackClock";
 import "./MusicProgress.css";
 
 /** How often the bar moves while playing; a second is all the times can show. */
@@ -31,7 +32,8 @@ export function MusicProgress({ mediaState, durationMs, onSeek }: Props) {
   const [dragMs, setDragMs] = useState<number | null>(null);
   const [anchor, setAnchor] = useState({ state: mediaState, jumped: false });
   const playing = mediaState.playbackStatus === "playing";
-  const seekable = Boolean(onSeek) && mediaState.canSeek && mediaState.durationMs > 0;
+  const estimated = !hasTimeline(mediaState);
+  const seekable = !estimated && Boolean(onSeek) && mediaState.canSeek && mediaState.durationMs > 0;
 
   // A seek (here or in the player) moves the fill at once instead of sliding it across.
   if (anchor.state.positionMs !== mediaState.positionMs || anchor.state.updatedAt !== mediaState.updatedAt) {
@@ -58,6 +60,7 @@ export function MusicProgress({ mediaState, durationMs, onSeek }: Props) {
   const style = { "--music-progress": `${(ratio * 100).toFixed(2)}%` } as CSSProperties;
   const className = [
     "music-progress",
+    estimated ? "music-progress--estimated" : "",
     seekable ? "music-progress--seekable" : "",
     dragMs !== null ? "music-progress--dragging" : "",
     anchor.jumped || dragMs !== null ? "music-progress--snap" : "",
@@ -100,7 +103,7 @@ export function MusicProgress({ mediaState, durationMs, onSeek }: Props) {
   } : { role: "progressbar" };
 
   return (
-    <div className={className} style={style}>
+    <div className={className} style={style} title={estimated ? t.music.estimatedProgress : undefined}>
       <div
         className="music-progress__hit"
         aria-label={t.music.progress}

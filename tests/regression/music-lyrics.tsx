@@ -12,6 +12,8 @@ import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 import { MusicPlayerPanel } from "../../src/features/media/MusicPlayerPanel";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
+localStorage.setItem("focusd-island-locale", "zh-CN");
+localStorage.removeItem("focusd-island-media-diagnostics-dismissed");
 const LRC = [
   "[ar:周杰伦]",
   "[00:01.00]故事的小黄花",
@@ -23,7 +25,18 @@ const LRC = [
 // A plain gradient cover, so the page shows the artwork and the tint it gives the card.
 const COVER = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f2a65a"/><stop offset="1" stop-color="#6a4c93"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>')}`;
 const queries: Array<Record<string, unknown>> = [];
+const diagnosticPlayers = [
+  { sourceAppId: "cloudmusic.exe", label: "网易云音乐", status: "neteaseNeedsPlugin" },
+  { sourceAppId: "QQMusic.exe", label: "QQ 音乐", status: "needsUpdate" },
+  { sourceAppId: "KuGou.exe", label: "酷狗", status: "smtcOff" },
+  { sourceAppId: "other.exe", label: "Other", status: "noTimeline" },
+  { sourceAppId: "healthy.exe", label: "Healthy", status: "ok" },
+].map((player) => ({ ...player, hasSession: player.status !== "smtcOff", hasTimeline: player.status === "ok", hasPluginTrackId: false,
+  exePath: null, directory: null, version: null, neteasePluginState: null }));
 mockIPC((command, payload) => {
+  if (command === "get_media_diagnostics") return { players: diagnosticPlayers };
+  if (command === "plugin:event|listen") return 1;
+  if (command === "plugin:event|unlisten") return null;
   if (command !== "get_lyrics") return null;
   const query = (payload as { query: Record<string, unknown> }).query;
   queries.push(query);
@@ -31,7 +44,7 @@ mockIPC((command, payload) => {
   // NetEase Cloud Music reports no length; the lyrics source lists one.
   if (query.title === "玻璃") return { source: "netease", lrc: "[00:01.00]把手机放在耳边", durationMs: 240_000 };
   if (query.title === "Believe") return { source: "kugou", lrc: "[00:01.00]<00:01.00>Oh <00:01.30>I <00:01.70>believe<00:03.00>\n[00:04.00]in yesterday" };
-  return query.title === "晴天" ? { source: "lrclib", lrc: LRC } : null;
+  return query.title === "晴天" ? { source: "lrclib", lrc: LRC, durationMs: 269_000 } : null;
 });
 
 const fixture = document.getElementById("fixture")!;
@@ -41,6 +54,7 @@ const root = createRoot(fixture);
 const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0 };
 let settingsOpened = 0;
 const seeks: number[] = [];
+const calibrations: number[] = [];
 
 function track(title: string, positionMs: number, playing = false): MediaState {
   return {
@@ -54,7 +68,8 @@ async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | un
     root.render(
       <StrictMode><I18nProvider>
         <MusicPlayerPanel mediaState={mediaState} isTrackChanging={false} commandError={null} onOpenSettings={() => { settingsOpened += 1; }}
-          onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} onSeek={(positionMs) => seeks.push(positionMs)} lyricsSettings={lyricsSettings} />
+          onPlayPause={() => {}} onNext={() => {}} onPrevious={() => {}} onSeek={(positionMs) => seeks.push(positionMs)}
+          onCalibrate={(positionMs) => calibrations.push(positionMs)} lyricsSettings={lyricsSettings} />
       </I18nProvider></StrictMode>,
     );
     await new Promise((resolve) => setTimeout(resolve, 60));
@@ -75,7 +90,10 @@ const artSize = () => document.querySelector<HTMLElement>(".music-player__artwor
 const box = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
 
 // ?view=idle shows the page with nothing playing, for a look by eye.
-if (new URLSearchParams(location.search).get("view") === "idle") {
+if (new URLSearchParams(location.search).get("view") === "diagnostic") {
+  await render({ ...track("晴天", 6000), sourceApp: "QQMusic.exe", durationMs: 0, hasTimeline: false });
+  results.remove();
+} else if (new URLSearchParams(location.search).get("view") === "idle") {
   await render({ ...DEFAULT_MEDIA_STATE, updatedAt: Date.now() });
   results.remove();
 } else try {
@@ -190,6 +208,8 @@ if (new URLSearchParams(location.search).get("view") === "idle") {
   check(seeks.length === 1 && Math.abs(seeks[0] - 201_750) < 300 && !document.querySelector(".music-progress--dragging"), "松手时跳到指针所在的位置");
   await act(async () => { hit().dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })); });
   check(seeks[1] === 11_000, "键盘方向键前后跳 5 秒");
+  await act(async () => document.querySelector<HTMLButtonElement>("button.lyrics-view__line--current")!.click());
+  check(seeks[2] === 5000, "有时间线且可跳转时点歌词使用现有 seek");
   await render({ ...track("玻璃", 6000), durationMs: 0, canSeek: true }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
   await settle(60);
   check(hit().getAttribute("role") === "progressbar", "时长借自歌词来源时不让跳转（播放器自己的时间线不可信）");
@@ -199,6 +219,35 @@ if (new URLSearchParams(location.search).get("view") === "idle") {
   await render({ ...track("玻璃", 60_000), durationMs: 0 }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
   await settle(60);
   check(times().join("|") === "1:00|−3:00", "播放器不报告时长时，用歌词来源给的时长显示进度条");
+
+  const untimed = { ...track("晴天", 6000), sourceApp: "cloudmusic.exe", hasTimeline: false, durationMs: 0, canSeek: true };
+  await render(untimed);
+  await settle(400);
+  check(document.querySelector(".media-diag-card")?.textContent?.includes("网易云需要安装进度插件"), "无时间线的网易云显示插件提示");
+  check(document.querySelector<HTMLAnchorElement>(".media-diag-actions a")?.href === "https://github.com/apoint123/inflink-rs", "插件提示链接到 InfLink-rs");
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>("button.lyrics-view__line--clickable")];
+  check(buttons.length === 3 && buttons.every((button) => button.getAttribute("aria-label")?.startsWith("校准进度到")), "估算歌词每行可用键盘操作且有校准标签");
+  await act(async () => buttons[0].click());
+  check(calibrations[calibrations.length - 1] === 1000, "点击歌词按行时间校准本地秒表");
+  check(fixture.scrollWidth <= fixture.clientWidth && box(".media-diag-card").bottom <= box(".lyrics-view").top &&
+    box(".lyrics-view").bottom <= box(".music-progress").top && box(".music-player__controls").bottom <= box(".music-player").bottom + 1,
+    "兼容性提示、歌词和进度条互不重叠，在面板内完整显示");
+  fixture.style.width = "300px";
+  check(fixture.scrollWidth <= fixture.clientWidth && box(".lyrics-view").bottom <= box(".music-progress").top, "300px 窄面板中的诊断卡片不撑宽也不遮挡歌词");
+  fixture.style.width = "520px";
+  await act(async () => document.querySelector<HTMLButtonElement>(".media-diag-dismiss")!.click());
+  check(!document.querySelector(".media-diag-card"), "不再提示立即关闭诊断卡片");
+  check(JSON.parse(localStorage.getItem("focusd-island-media-diagnostics-dismissed") ?? "[]").includes("cloudmusic.exe\u001fneteaseNeedsPlugin"), "按播放器和状态保存关闭记录");
+  await render({ ...untimed, sourceApp: "QQMusic.exe" });
+  check(document.querySelector(".media-diag-card")?.textContent?.includes("21.10.2962") && document.querySelector<HTMLAnchorElement>(".media-diag-actions a")?.href === "https://y.qq.com/download/", "旧 QQ 显示最低版本和官网链接，网易云关闭记录不影响它");
+  await render({ ...untimed, sourceApp: "KuGou.exe" });
+  check(document.querySelector(".media-diag-card")?.textContent?.includes("设置 → 常规设置 → 播放 → 支持系统播放控制"), "酷狗提示具体设置路径");
+  await render({ ...untimed, sourceApp: "other.exe" });
+  check(document.querySelector(".media-diag-card")?.textContent?.includes("可点歌词校准"), "其他无时间线播放器提示校准");
+  await render({ ...untimed, sourceApp: "healthy.exe", hasTimeline: true });
+  check(!document.querySelector(".media-diag-card"), "兼容状态正常时不显示卡片");
+  await render({ ...untimed, title: "玻璃", sourceApp: "other.exe", positionMs: 1000 }, { ...ONLINE, lyricsChinese: true } as typeof ONLINE);
+  check(document.querySelector(".music-progress--estimated") && document.querySelector<HTMLElement>(".music-progress")!.title.includes("进度为估算") && hit().getAttribute("role") === "progressbar", "估算进度降低透明度、说明校准方式且始终不可拖动");
 
   // A title too long for the page: two lines at most next to the large cover, one with lyrics.
   const longTitle = "This Is a Very Long Song Title That Keeps Going (Live at the Royal Albert Hall, 2019 Remaster)";

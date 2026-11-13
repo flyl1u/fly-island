@@ -353,6 +353,7 @@ pub(super) fn read_media_state_from_manager(
         track_id,
         position_ms,
         duration_ms,
+        has_timeline: timeline_sample(&session).is_some_and(|sample| sample.has_timeline(now_ms)),
         can_seek,
         can_next,
         can_previous,
@@ -401,6 +402,7 @@ impl MediaState {
             track_id: None,
             position_ms: 0,
             duration_ms: 0,
+            has_timeline: false,
             can_seek: false,
             can_next: false,
             can_previous: false,
@@ -424,21 +426,21 @@ pub(super) fn read_timeline(
     playback_rate: f64,
     now_ms: i64,
 ) -> (i64, i64) {
-    let Ok(timeline) = session.GetTimelineProperties() else {
-        return (0, 0);
-    };
+    let Some(sample) = timeline_sample(session) else { return (0, 0); };
+    if !sample.has_timeline(now_ms) { return (0, 0); }
+    let key = session_id(session).unwrap_or_default();
+    timeline::observe(&key, sample, is_playing, playback_rate, now_ms)
+}
 
-    let sample = TimelineSample {
+pub(super) fn timeline_sample(session: &MediaSession) -> Option<TimelineSample> {
+    let timeline = session.GetTimelineProperties().ok()?;
+    Some(TimelineSample {
         start_ms: timeline.StartTime().map(ticks_to_ms).unwrap_or(0),
         end_ms: timeline.EndTime().map(ticks_to_ms).unwrap_or(0),
         position_ms: timeline.Position().map(ticks_to_ms).unwrap_or(0),
-        updated_ms: timeline
-            .LastUpdatedTime()
-            .ok()
+        updated_ms: timeline.LastUpdatedTime().ok()
             .map(|time| (time.UniversalTime - WINDOWS_EPOCH_OFFSET_TICKS) / 10_000),
-    };
-    let key = session_id(session).unwrap_or_default();
-    timeline::observe(&key, sample, is_playing, playback_rate, now_ms)
+    })
 }
 
 /// What the media session says about the playing track.

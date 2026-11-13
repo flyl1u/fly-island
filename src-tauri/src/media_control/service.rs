@@ -33,6 +33,7 @@ pub(crate) struct MediaState {
     pub(super) track_id: Option<String>,
     pub(super) position_ms: i64,
     pub(super) duration_ms: i64,
+    pub(super) has_timeline: bool,
     pub(super) can_seek: bool,
     pub(super) can_next: bool,
     pub(super) can_previous: bool,

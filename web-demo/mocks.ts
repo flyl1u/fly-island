@@ -142,6 +142,7 @@ export function installDemoMocks(data: DemoContent) {
       case "get_agent_hooks_state": return { claudeCode: "installed", codex: "installed" };
       case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
       case "get_media_state": return media();
+      case "get_media_diagnostics": return { players: [] };
       case "media_play_pause": position = elapsed(); since = Date.now(); playing = !playing; return media();
       case "media_seek": position = Math.max(0, Number(args.positionMs) || 0); since = Date.now(); return media();
       case "media_next": return switchSong(1);
