@@ -413,6 +413,19 @@
   object-fit: contain;
 }
 
+.agent-session__host--dsh {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.agent-session__host--dsh .agent-session__host-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
 .agent-session__host--unknown {
   width: 13px;
   height: 13px;

@@ -1,4 +1,5 @@
 export type AgentText = {
+  dshHosts: { official: string; desktop: string; dataelement: string; anywhere: string };
   running: (provider: string) => string;
   failed: (provider: string) => string;
   stale: (provider: string) => string;
@@ -124,6 +125,7 @@ export type AgentText = {
 };
 
 export const zhCN: AgentText = {
+  dshHosts: { official: "DSH", desktop: "DSH Desktop", dataelement: "DSH Desktop (dataelement)", anywhere: "DSH Desktop (anywhere)" },
   running: (provider) => `${provider} 正在运行`,
   failed: (provider) => `${provider} 运行失败`,
   stale: (provider) => `${provider} 可能已中断`,
@@ -234,6 +236,7 @@ export const zhCN: AgentText = {
 };
 
 export const en: AgentText = {
+  dshHosts: { official: "DSH", desktop: "DSH Desktop", dataelement: "DSH Desktop (dataelement)", anywhere: "DSH Desktop (anywhere)" },
   running: (provider) => `${provider} is running`,
   failed: (provider) => `${provider} failed`,
   stale: (provider) => `${provider} may have stalled`,

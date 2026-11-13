@@ -48,3 +48,16 @@ fn differentiates_waiting_continued_done_stale_and_exited() {
     value["record"]["rows"]["sessionListMetadata"]["val"]["blank"] = json!(true);
     assert!(parse_checkpoint(&value, ID, 1100, 1200, true).is_none());
 }
+
+#[test]
+fn merges_imported_sessions_by_id_and_retains_newest_owner() {
+    let mut sessions = HashMap::new();
+    let old = parse_checkpoint(&fixture(), ID, 1000, 1200, false).unwrap();
+    let mut new = parse_checkpoint(&fixture(), ID, 1100, 1200, true).unwrap();
+    new.host.as_mut().unwrap().name = "DSH Desktop (dataelement)".into();
+    merge_session(&mut sessions, new);
+    merge_session(&mut sessions, old);
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[ID].host.as_ref().unwrap().name, "DSH Desktop (dataelement)");
+    assert!(!sessions[ID].closed);
+}
