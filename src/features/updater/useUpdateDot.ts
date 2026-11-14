@@ -1,9 +1,13 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { getUpdateState, subscribeToUpdate } from "./updaterController";
-import { hasUnseenUpdate } from "./updateDot";
+import { hasUnseenUpdate, updateDotVersion } from "./updateDot";
 import { loadUpdateDotSeen, saveUpdateDotSeen, UPDATE_DOT_SEEN_EVENT, UPDATE_DOT_SEEN_KEY } from "./storage";
 
-/** The header is also mounted while collapsed: only an actually open todo page marks it seen. */
+/**
+ * The red dot on the island's todo button. It stays while an update waits to be installed, even on
+ * the todo page and after it was viewed: the island usually opens on that page, so a dot cleared on
+ * viewing was gone before anyone saw it. Viewing still records the version as seen.
+ */
 export function useUpdateDot(viewingTodo: boolean): boolean {
   const [seen, setSeen] = useState(loadUpdateDotSeen);
   // Download byte progress should not re-render the header.
@@ -11,6 +15,7 @@ export function useUpdateDot(viewingTodo: boolean): boolean {
     const state = getUpdateState();
     return hasUnseenUpdate(state, seen) ? state.nextVersion : "";
   });
+  const pending = useSyncExternalStore(subscribeToUpdate, () => updateDotVersion(getUpdateState()) !== "");
   useEffect(() => {
     const reload = () => setSeen(loadUpdateDotSeen());
     const sync = (event: StorageEvent) => {
@@ -30,5 +35,5 @@ export function useUpdateDot(viewingTodo: boolean): boolean {
     // Still remember the visit for this window if persistent storage is unavailable.
     setSeen(version);
   }, [viewingTodo, version, seen]);
-  return Boolean(version && !viewingTodo);
+  return pending;
 }

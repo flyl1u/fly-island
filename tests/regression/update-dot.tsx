@@ -96,13 +96,13 @@ try {
       `${style}: solid red decorative dot, no ring/glow/pulse, same button size and localized announcement`);
   }
   await act(async () => document.querySelector<HTMLButtonElement>(".dot-button--todo")!.click());
-  check(!dot() && localStorage.getItem(keys[0]) === "3.0.10" && document.querySelector(".todo-update-dot"),
-    "Opening Todo records this version and removes only the page hint");
+  check(dot() && localStorage.getItem(keys[0]) === "3.0.10" && document.querySelector(".todo-update-dot"),
+    "Opening Todo records this version and keeps the todo button's dot");
   const badgeCss = getComputedStyle(document.querySelector(".todo-update-dot")!);
   check(badgeCss.width === "5px" && badgeCss.height === "5px" && badgeCss.boxShadow === "none" && badgeCss.borderWidth === "0px"
     && action().getAttribute("aria-label")?.includes(en ? "Update available" : "有新版本"), "Clickable update action has a 5px dot and announcement");
   await act(async () => setPage("music"));
-  check(!dot(), "Revisiting another page does not bring the same version's dot back");
+  check(dot(), "The todo button keeps its dot on other pages while the update waits");
   await update({ nextVersion: "3.0.11", stage: "downloading" });
   check(dot(), "A later version shows the page hint while downloading");
   await update({ dismissed: true });
@@ -121,7 +121,7 @@ try {
   const nextRoot = createRoot(document.getElementById("fixture")!);
   await act(async () => nextRoot.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>));
   await update({ stage: "available", nextVersion: "3.0.11" });
-  check(!dot(), "Remount preserves the viewed version");
+  check(dot() && localStorage.getItem(keys[0]) === "3.0.11", "Remount keeps the dot for a waiting update and the viewed version");
   results.dataset.result = "passed";
   results.textContent = passed.join("\n");
 } catch (error) {

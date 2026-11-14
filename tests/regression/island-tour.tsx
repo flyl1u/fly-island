@@ -219,8 +219,8 @@ if (!automated) {
     check(island().classList.contains("island--expanded"), "点击后展开");
     if (query.has("update")) {
       await click(".dot-button--todo");
-      check(!document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot")
-        && localStorage.getItem("focusd-island-update-dot-seen") === "3.0.10", "进入待办按版本消除入口红点，更新按钮仍有红点");
+      check(document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot")
+        && localStorage.getItem("focusd-island-update-dot-seen") === "3.0.10", "进入待办后入口和更新按钮都保留红点，版本记为已看");
     }
     checkShapeMotion(0.56);
     if (query.has("theme") || query.has("bg")) checkTone(check, query.get("theme") === "light" || (query.get("bg") ?? "").toUpperCase() === "FFFFFF");
