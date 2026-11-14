@@ -10,12 +10,13 @@ type MessageCardProps = {
   body: string;
   messageId?: string;
   muted?: boolean;
+  leaving?: boolean;
   disabled?: boolean;
   ariaLabel?: string;
   onOpen?: () => void;
 };
 
-export function MessageCard({ source, name, timestamp, body, messageId, muted, disabled, ariaLabel, onOpen }: MessageCardProps) {
+export function MessageCard({ source, name, timestamp, body, messageId, muted, leaving, disabled, ariaLabel, onOpen }: MessageCardProps) {
   const t = useTranslation();
   const sender = muted ? null : splitMessageSender(body);
   const date = new Date(timestamp);
@@ -29,7 +30,7 @@ export function MessageCard({ source, name, timestamp, body, messageId, muted, d
       {sender ? <><strong>{sender.sender}</strong>{sender.separator}{sender.content}</> : body}
     </p>}
   </>;
-  return <article className="message-card" role="listitem" data-message-id={messageId}>
+  return <article className={`message-card${leaving ? " message-card--leaving" : ""}`} role="listitem" data-message-id={messageId}>
     {onOpen ? <button className="message-card__surface" type="button" disabled={disabled} aria-label={ariaLabel} onClick={onOpen}>{content}</button>
       : <div className="message-card__surface">{content}</div>}
   </article>;

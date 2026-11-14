@@ -97,6 +97,12 @@ struct ReminderState {
 }
 
 impl ReminderState {
+    fn clear(&mut self) {
+        self.snapshot.pending = false;
+        self.snapshot.messages.clear();
+        self.snapshot.revision += 1;
+    }
+
     fn set_enabled(&mut self, enabled: bool) -> bool {
         if self.snapshot.enabled == enabled {
             return false;
@@ -312,6 +318,14 @@ pub(crate) fn diagnostic_state() -> Result<serde_json::Value, String> {
         "lastAttentionAt": state.snapshot.last_attention_at,
         "error": state.snapshot.error,
     }))
+}
+
+#[tauri::command]
+pub fn clear_wechat_reminders() -> Result<ReminderSnapshot, String> {
+    configure(|state| {
+        state.clear();
+        true
+    })
 }
 
 #[tauri::command]
@@ -634,6 +648,7 @@ macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
             crate::wechat_reminders::get_wechat_reminder_state,
+            crate::wechat_reminders::clear_wechat_reminders,
             crate::wechat_reminders::set_wechat_reminders_enabled,
             crate::wechat_reminders::set_wechat_message_preview_enabled,
             crate::wechat_reminders::set_wechat_minimized_taskbar_hidden,

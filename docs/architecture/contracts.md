@@ -89,6 +89,7 @@
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
 - `open_wechat_conversation(messageId)` 用内存中的摘要 ID 定位微信会话。返回 `true` 表示已点击对应会话，`false` 表示已打开微信主窗口。微信的会话标识和进程身份保存在原生内存中。
+- `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - 应用数据目录的 `wechat-accessibility.json` 记录 `{ pid, started_at }`，用于重新校验进程并恢复岛屿临时开启的微信辅助功能标志。
 
 - 窗口 label：`main`、`translation`、`settings`；前端分发参数为 `?window=translation`、`?window=settings`。

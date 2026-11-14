@@ -96,8 +96,9 @@ button.message-card__surface:active:not(:disabled) {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.message-card--leaving { animation: messageCardEnter 180ms ease-in reverse both; }
 @media (prefers-reduced-motion: reduce) {
-  .message-card { animation: none; }
+  .message-card, .message-card--leaving { animation: none; }
   .message-card__surface { transition: none; }
   button.message-card__surface:active:not(:disabled) { transform: none; }
 }
