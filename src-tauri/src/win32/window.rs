@@ -7,7 +7,7 @@ use windows::{
         Foundation::{HWND, LPARAM, POINT, RECT, WPARAM},
         Graphics::{
             Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED, DWMWA_USE_IMMERSIVE_DARK_MODE},
-            Gdi::{MonitorFromWindow, SetWindowRgn, MONITOR_DEFAULTTONEAREST},
+            Gdi::{GetMonitorInfoW, MonitorFromWindow, SetWindowRgn, MONITORINFO, MONITOR_DEFAULTTONEAREST},
         },
         System::Threading::{AttachThreadInput, GetCurrentThreadId},
         UI::{
@@ -162,6 +162,21 @@ pub(crate) fn window_rect(window: HWND) -> Option<RECT> {
     // the valid local `rect`.
     unsafe { GetWindowRect(window, &mut rect) }.ok()?;
     Some(rect)
+}
+
+/// Full rectangle of the monitor `window` is mostly on (taskbar included); `None`
+/// when it cannot be read.
+pub(crate) fn monitor_rect(window: HWND) -> Option<RECT> {
+    let mut info = MONITORINFO {
+        cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: MonitorFromWindow with DEFAULTTONEAREST always returns a monitor;
+    // GetMonitorInfoW writes only into the local `info`, whose cbSize is set.
+    unsafe {
+        let monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        GetMonitorInfoW(monitor, &mut info).as_bool().then_some(info.rcMonitor)
+    }
 }
 
 /// Cursor position in screen coordinates; `None` when it cannot be read (for
