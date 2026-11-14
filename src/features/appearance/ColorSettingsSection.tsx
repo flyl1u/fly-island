@@ -8,6 +8,7 @@ import { Undo2 } from "lucide-react";
 import { loadColorBackup, swapColorBackup } from "./storage";
 import "./ColorSettingsSection.css";
 import { ColorPresetRow } from "./ColorPresetRow";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { resolveSchemeColors } from "./theme";
 import { useResolvedScheme } from "./useDocumentTheme";
 
@@ -53,6 +54,19 @@ export function ColorSettingsSection({
           }
         />
       ))}
+      <SettingsRow
+        title={text.pageText}
+        control={
+          <SettingsColor
+            value={settings.pageTextColor || (drawn.tone === "light" ? "#1C1C22" : "#FFFFFF")}
+            ariaLabel={text.pageText}
+            onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
+            valueControl={<HexColorInput value={settings.pageTextColor || (drawn.tone === "light" ? "#1C1C22" : "#FFFFFF")} ariaLabel={text.pageText}
+              onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
+          />
+        }
+        description={settings.pageTextColor ? <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton> : undefined}
+      />
       <ColorPresetRow settings={settings} onSettingsChange={onSettingsChange} />
     </SettingsGroup>
   );

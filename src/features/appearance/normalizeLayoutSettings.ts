@@ -49,6 +49,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     // On the slider's range; the three sizes of 3.0.0 keep their value.
     expandedScale: normalizeExpandedScale(settings?.expandedScale ?? DEFAULT_SETTINGS.expandedScale),
     taskTextColor,
+    pageTextColor: getColorSetting(settings?.pageTextColor, ""),
     pulseColor: getColorSetting(
       settings?.pulseColor,
       DEFAULT_SETTINGS.pulseColor,

@@ -154,6 +154,7 @@
   height: calc(var(--expanded-island-height, 306px) * var(--island-expanded-scale));
   border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
   cursor: default;
+  color: var(--island-page-text, rgb(var(--island-ink-rgb)));
 }
 
 /* A light island over a light window would have no edge: a soft shadow sets it apart. */
