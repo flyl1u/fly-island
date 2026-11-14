@@ -1,4 +1,5 @@
 .clipboard-panel {
+  position: relative;
   height: 100%;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -7,6 +8,8 @@
   padding: 16px 0 18px;
   color: var(--text-1);
 }
+
+.clipboard-panel__content { display: contents; }
 
 .clipboard-list {
   min-height: 0;

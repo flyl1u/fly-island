@@ -134,6 +134,8 @@ export function installDemoMocks(data: DemoContent) {
       case "toggle_clipboard_history_favorite": return updateClip(args.id, (clip) => ({ ...clip, favorite: !clip.favorite }));
       case "set_clipboard_history_item_note": return updateClip(args.id, (clip) => ({ ...clip, note: String(args.note ?? "") || undefined }));
       case "delete_clipboard_history_item": clips = clips.filter((clip) => clip.id !== args.id); return clipboard();
+      case "delete_clipboard_history_items": clips = clips.filter((clip) => !(args.ids as string[]).includes(clip.id)); return clipboard();
+      case "read_clipboard_history_image": throw new Error("No image in this demo.");
       case "clear_clipboard_history": clips = clips.filter((clip) => clip.favorite); return clipboard();
       case "get_file_shelf":
       case "set_file_shelf_options": return { items: shelf };

@@ -1,4 +1,4 @@
-import { Check, ClipboardList, Keyboard, Star, Trash2 } from "lucide-react";
+import { ClipboardList, Keyboard, Star, Trash2, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { normalizeClipboardShortcut } from "./shortcut";
 import "./ClipboardPanelHeader.css";
@@ -8,15 +8,21 @@ export function ClipboardPanelHeader({
   favoriteCount,
   shortcutEnabled,
   shortcut,
-  isConfirmingClear,
-  onClear,
+  selecting, selectedCount, allSelected, deleting, visibleCount,
+  onSelectAll, onDelete, onCancel,
 }: {
   itemCount: number;
   favoriteCount: number;
   shortcutEnabled: boolean;
   shortcut: string;
-  isConfirmingClear: boolean;
-  onClear: () => void;
+  selecting: boolean;
+  selectedCount: number;
+  allSelected: boolean;
+  deleting: boolean;
+  visibleCount: number;
+  onSelectAll: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
 }) {
   const t = useTranslation();
 
@@ -24,9 +30,9 @@ export function ClipboardPanelHeader({
     <header className="clipboard-panel__header">
       <div className="clipboard-panel__title">
         <ClipboardList size={16} strokeWidth={2.2} />
-        <span>{t.clipboard.title}</span>
+        <span>{selecting ? t.clipboard.selectEntries : t.clipboard.title}</span>
         <strong>{itemCount}</strong>
-        {favoriteCount > 0 && (
+        {favoriteCount > 0 && !selecting && (
           <em aria-label={t.clipboard.favoriteCount(favoriteCount)}>
             <Star size={10} strokeWidth={2.4} fill="currentColor" />
             {favoriteCount}
@@ -34,7 +40,10 @@ export function ClipboardPanelHeader({
         )}
       </div>
       <div className="clipboard-panel__tools">
-        {shortcutEnabled ? (
+        {selecting && <button className="clipboard-select-all" type="button" disabled={deleting || visibleCount === 0} onClick={onSelectAll}>
+          {allSelected ? t.clipboard.deselectAll : t.clipboard.selectAll}
+        </button>}
+        {shortcutEnabled && !selecting ? (
           <span
             className="clipboard-shortcut-display"
             aria-label={t.clipboard.expandShortcut}
@@ -46,24 +55,21 @@ export function ClipboardPanelHeader({
         <button
           className={[
             "clipboard-clear-button",
-            isConfirmingClear ? "clipboard-clear-button--confirming" : "",
+            selecting ? "clipboard-clear-button--confirming" : "",
           ]
             .filter(Boolean)
             .join(" ")}
           type="button"
-          disabled={itemCount === 0}
-          aria-label={
-            isConfirmingClear ? t.clipboard.confirmClear : t.clipboard.clearHistory
-          }
-          onClick={onClear}
-          data-clipboard-confirm-control="true"
+          disabled={selecting ? selectedCount === 0 || deleting : itemCount === 0}
+          aria-label={selecting ? t.clipboard.deleteSelected(selectedCount) : t.clipboard.selectEntries}
+          onClick={onDelete}
         >
-          {isConfirmingClear ? (
-            <Check className="save-check-icon" size={14} strokeWidth={2.7} />
-          ) : (
-            <Trash2 size={14} strokeWidth={2.2} />
-          )}
+          <Trash2 size={14} strokeWidth={1.5} absoluteStrokeWidth />
+          {selecting && <span>{selectedCount}</span>}
         </button>
+        {selecting && <button className="clipboard-clear-button" type="button" disabled={deleting} aria-label={t.clipboard.finishSelection} onClick={onCancel}>
+          <X size={14} strokeWidth={1.5} absoluteStrokeWidth />
+        </button>}
       </div>
     </header>
   );
