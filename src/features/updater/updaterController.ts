@@ -12,6 +12,7 @@ import {
   requestUpdateAction,
   type DownloadEvent,
 } from "./api";
+import { nextCheckDelay } from "./updateSchedule";
 
 export type UpdateStage =
   | "idle"
@@ -57,6 +58,8 @@ const listeners = new Set<() => void>();
 let proxy: string | null = null;
 let initialized = false;
 let startupCheckStarted = false;
+let scheduledCheck: ReturnType<typeof setTimeout> | undefined;
+let failedChecks = 0;
 
 // The translation window shares this bundle but stays out of the update flow,
 // otherwise every startup would check and download twice.
@@ -139,6 +142,7 @@ async function findUpdate() {
   setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", dismissed: false, stage: "checking" });
   try {
     const found = await checkUpdate(proxy);
+    failedChecks = 0;
     if (!found) {
       setState({ stage: "latest" });
       return false;
@@ -147,9 +151,20 @@ async function findUpdate() {
     return true;
   } catch (error) {
     console.error("Failed to check for updates", error);
+    failedChecks += 1;
     setState({ stage: "error", detail: errorReason(error) });
     return false;
   }
+}
+
+/** Checks again later while the island keeps running: periodically, and sooner after a failure. */
+function scheduleNextCheck() {
+  clearTimeout(scheduledCheck);
+  const delay = nextCheckDelay(state.stage, failedChecks);
+  if (delay === null) return;
+  scheduledCheck = setTimeout(() => {
+    void checkForUpdate();
+  }, delay);
 }
 
 /** Downloads the found update without installing it; installing waits for the user. */
@@ -160,8 +175,9 @@ async function downloadFound() {
     // A dismissed flag stays: hiding the todo mid-download must not bring it back.
     setState({ stage: "ready" });
   } catch (error) {
+    // Keep offering the update: the todo's button downloads it again when installing.
     console.error("Failed to download the update", error);
-    setState({ stage: "error", detail: errorReason(error) });
+    setState({ stage: "available", downloaded: 0, total: 0, detail: errorReason(error) });
   }
 }
 
@@ -170,12 +186,14 @@ async function runStartupUpdate() {
   if (startupCheckStarted || state.stage !== "idle") return;
   startupCheckStarted = true;
   if (await findUpdate()) await downloadFound();
+  scheduleNextCheck();
 }
 
 export async function checkForUpdate() {
   if (remoteSettings) return requestUpdateAction({ action: "check" });
   if (busy(state.stage) || state.stage === "disabled") return;
   if (await findUpdate()) await downloadFound();
+  scheduleNextCheck();
 }
 
 /** Hiding the todo row installs nothing and keeps the downloaded package. */

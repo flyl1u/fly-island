@@ -10,6 +10,7 @@ const transpile = (path) => ts.transpileModule(
 ).outputText;
 const source = transpile("../../src/features/updater/updaterController.ts");
 const apiSource = transpile("../../src/features/updater/api.ts");
+const scheduleSource = transpile("../../src/features/updater/updateSchedule.ts");
 
 class Channel {
   onmessage = () => {};
@@ -27,6 +28,7 @@ async function controller({
 } = {}) {
   const exports = {};
   const calls = [];
+  const timers = [];
   const emitted = [];
   const mocks = {
     "@tauri-apps/api/app": { getVersion: async () => version },
@@ -53,6 +55,9 @@ async function controller({
   const api = {};
   runInNewContext(apiSource, { exports: api, require: (name) => mocks[name] });
   mocks["./api"] = api;
+  const schedule = {};
+  runInNewContext(scheduleSource, { exports: schedule, require: (name) => mocks[name] });
+  mocks["./updateSchedule"] = schedule;
   runInNewContext(source, {
     exports,
     window: { location: { search: windowKind ? `?window=${windowKind}` : "" } },
@@ -62,9 +67,11 @@ async function controller({
       return mocks[name];
     },
     console: { error() {} },
+    setTimeout: (run, ms) => timers.push({ run, ms }),
+    clearTimeout: () => {},
   });
   for (let i = 0; i < 5; i++) await settle();
-  return Object.assign(exports, { calls, emitted });
+  return Object.assign(exports, { calls, emitted, timers });
 }
 
 test("startup checks the stable channel and downloads without installing", async () => {
@@ -125,4 +132,36 @@ test("the settings window forwards actions to the main window instead of checkin
     JSON.stringify(updater.emitted.filter((event) => event.target === "main").map((event) => event.payload)),
     JSON.stringify([{ action: "snapshot" }, { action: "check" }]),
   );
+});
+
+test("a failed startup check retries, so the update todo still appears", async () => {
+  let online = false;
+  const updater = await controller({
+    check: async () => {
+      if (!online) throw new Error("error sending request");
+      return { version: "0.3.0", body: null };
+    },
+  });
+  assert.equal(updater.getUpdateState().stage, "error");
+  assert.equal(updater.timers.at(-1).ms, 2 * 60 * 1000, "retries within minutes");
+  online = true;
+  updater.timers.at(-1).run();
+  for (let i = 0; i < 5; i++) await settle();
+  assert.equal(updater.getUpdateState().stage, "ready");
+});
+
+test("an island already on the latest version checks again later", async () => {
+  const updater = await controller();
+  assert.equal(updater.getUpdateState().stage, "latest");
+  assert.equal(updater.timers.at(-1).ms, 6 * 60 * 60 * 1000);
+});
+
+test("a failed background download keeps offering the update", async () => {
+  const updater = await controller({
+    check: async () => ({ version: "0.3.0", body: null }),
+    download: async () => { throw new Error("github unreachable"); },
+  });
+  const state = updater.getUpdateState();
+  assert.equal(state.stage, "available", "the todo stays; its button downloads again");
+  assert.match(state.detail, /github unreachable/);
 });
