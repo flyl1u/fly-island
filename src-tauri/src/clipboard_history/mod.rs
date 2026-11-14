@@ -208,6 +208,16 @@ pub async fn read_clipboard_history_image(id: String) -> Result<String, String> 
     service()?.read_image(&id)
 }
 
+/// Keeps the shortcut's focus restoration while routing is decided by the main frontend.
+#[tauri::command]
+pub async fn show_clipboard_history_island(app: AppHandle) -> Result<(), String> {
+    let window = app.get_webview_window(MAIN_WINDOW_LABEL)
+        .ok_or_else(|| "Main island window was not found.".to_string())?;
+    window.show().map_err(|error| error.to_string())?;
+    crate::island::focus::focus_island_for_shortcut(&window);
+    Ok(())
+}
+
 pub fn init(app: &AppHandle) -> Result<(), String> {
     if CLIPBOARD_HISTORY.get().is_some() {
         return Ok(());
@@ -271,6 +281,7 @@ macro_rules! tauri_commands {
             crate::clipboard_history::clear_clipboard_history,
             crate::clipboard_history::delete_clipboard_history_items,
             crate::clipboard_history::read_clipboard_history_image,
+            crate::clipboard_history::show_clipboard_history_island,
         ] $($rest)*)
     };
 }

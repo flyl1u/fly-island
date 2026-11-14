@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import type { IslandMode, IslandPage } from "./types";
 import type { PreviewSnapshot } from "./panelPreviewPlan";
+import { openDetachedClipboardHistory } from "../clipboard/api";
+import { showClipboardHistoryIsland } from "../../features/clipboard/api";
 
 /** Collapsed / expanded / tucked mode and the open page of the island. */
 export function useIslandNavigation() {
@@ -88,6 +90,7 @@ export function useIslandNavigation() {
   }, []);
 
   const openIslandPage = useCallback((nextPage: IslandPage) => {
+    if (nextPage === "clipboard" && openDetachedClipboardHistory()) return;
     setPage(nextPage);
     setMode("expanded");
     setIsTucked(false);
@@ -107,11 +110,14 @@ export function useIslandNavigation() {
 
     clipboardShortcutToggleAt.current = now;
 
+    if (openDetachedClipboardHistory()) return;
+
     if (mode === "expanded" && page === "clipboard") {
       setIslandMode("collapsed");
       return;
     }
 
+    void showClipboardHistoryIsland().catch((error) => console.error("Failed to show clipboard island", error));
     openClipboardHistory();
   }, [mode, openClipboardHistory, page, setIslandMode]);
 

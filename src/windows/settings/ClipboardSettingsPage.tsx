@@ -42,6 +42,8 @@ export function ClipboardSettingsPage({
           onClipboardSettingsChange={updateClipboardSettings}
           visibleRows={settings.clipboardVisibleRows}
           onVisibleRowsChange={(clipboardVisibleRows) => onSettingsChange({ ...settings, clipboardVisibleRows })}
+          detached={settings.clipboardDetached}
+          onDetachedChange={(clipboardDetached) => onSettingsChange({ ...settings, clipboardDetached })}
         />
       )}
       {clipboardSettings.enabled && (

@@ -1,6 +1,7 @@
 mod agent_approval;
 mod agent_status;
 mod clipboard_history;
+mod clipboard_window;
 mod file_shelf;
 mod island;
 mod lyrics;
@@ -114,12 +115,14 @@ pub fn run() {
             clipboard_history;
             translation;
             settings_window
+            ; clipboard_window
         ))
         .build(context)
         .map(|app| {
-            app.run(|_, event| {
+            app.run(|handle, event| {
                 // Hooks still waiting go back to the terminal rather than hit their timeout.
                 if let tauri::RunEvent::Exit = event {
+                    clipboard_window::remember_bounds(handle);
                     agent_approval::shutdown();
                     wechat_reminders::shutdown();
                 }

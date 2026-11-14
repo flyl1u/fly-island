@@ -102,7 +102,7 @@
 - `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - 应用数据目录的 `wechat-accessibility.json` 记录 `{ pid, started_at }`，用于重新校验进程并恢复岛屿临时开启的微信辅助功能标志。
 
-- 窗口 label：`main`、`translation`、`settings`；前端分发参数为 `?window=translation`、`?window=settings`。
+- 窗口 label：`main`、`translation`、`settings`、`clipboard`（3.1.0 新增）；前端分发参数为 `?window=translation`、`?window=settings`、`?window=clipboard`。
 - Tauri 命令：以 `lib.rs` 中 `generate_handler!` 列表为准，命令名即 Rust 函数名。
 - 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`。
 - 注册表值：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `FocuSD Island`。
@@ -138,4 +138,5 @@
 - 播放器诊断新增 `neteasePluginInactive`：已安装插件但仍无时间线，提示重启及可能不兼容。
 
 
+- 剪贴板独立窗口（2026-11-13）：岛屿设置新增 `clipboardDetached`（布尔，默认 false；开启后点剪贴板入口或按剪贴板快捷键打开 `clipboard` 窗口而不是展开岛）。localStorage 新增 `focusd-island-clipboard-window-pinned`（`"false"` 为不置顶，缺失或其他值为置顶，即默认置顶）。新命令 `open_clipboard_window`、`show_clipboard_window`、`close_clipboard_window`（创建窗口的命令为 async，避免 Windows IPC 线程死锁）和 `show_clipboard_history_island`（剪贴板快捷键事件改由主窗口前端按设置分流，岛内打开时由它显示并聚焦主窗口）。窗口位置存应用数据目录 `clipboard-window.json`。权限新增 `core:window:allow-set-always-on-top`。
 - 剪贴板（2026-11-13）：`focusd-island-settings.clipboardVisibleRows` 现可设置为 3–8 的整数，缺失或非法值为 4；`set_clipboard_history_settings` 的 `maxItems` 范围扩为 5–500，默认 30，命令、数据字段和历史文件格式不变。

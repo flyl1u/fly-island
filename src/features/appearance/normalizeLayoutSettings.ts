@@ -58,5 +58,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     topEdgeShoulderSize: normalizeSize(settings?.topEdgeShoulderSize, TOP_EDGE_SHOULDER_SIZE),
     // Clipboard: retain the user's visible row count, including older saved values.
     clipboardVisibleRows: normalizeSize(settings?.clipboardVisibleRows, CLIPBOARD_VISIBLE_ROWS),
+    // Clipboard: only an explicit saved true opens the separate window.
+    clipboardDetached: settings?.clipboardDetached === true,
   } satisfies Partial<IslandSettings>;
 }

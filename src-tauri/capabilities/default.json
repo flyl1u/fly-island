@@ -1,11 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Local island, translation and settings windows",
-  "windows": ["main", "translation", "settings"],
+  "description": "Local island, translation, clipboard and settings windows",
+  "windows": ["main", "translation", "settings", "clipboard"],
   "permissions": [
     "core:default",
     "core:window:allow-set-title",
+    "core:window:allow-set-always-on-top",
     "core:window:allow-start-dragging",
     "core:window:allow-start-resize-dragging",
     "opener:default",

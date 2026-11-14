@@ -3,6 +3,7 @@ export type SettingsClipboardText = {
   captureImages: string;
   maxItems: string;
   visibleRows: string;
+  detached: string;
   shortcut: string;
   shortcutEnabled: string;
   pressKeys: string;
@@ -13,6 +14,7 @@ export const zhCN: SettingsClipboardText = {
   captureImages: "记录图片",
   maxItems: "最多保存几条",
   visibleRows: "一次显示几条",
+  detached: "在单独窗口中打开剪贴板",
   shortcut: "展开快捷键",
   shortcutEnabled: "启用展开快捷键",
   pressKeys: "按下组合键",
@@ -23,6 +25,7 @@ export const en: SettingsClipboardText = {
   captureImages: "Record images",
   maxItems: "Max entries",
   visibleRows: "Visible rows",
+  detached: "Open in a separate window",
   shortcut: "Expand shortcut",
   shortcutEnabled: "Enable expand shortcut",
   pressKeys: "Press keys",

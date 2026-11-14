@@ -1,4 +1,9 @@
 export type ClipboardText = {
+  pinWindow: string;
+  unpinWindow: string;
+  moveWindow: string;
+  closeWindow: string;
+  windowActionFailed: string;
   selectEntries: string;
   selectItem: (preview: string) => string;
   selectAll: string;
@@ -45,6 +50,11 @@ export type ClipboardText = {
 };
 
 export const zhCN: ClipboardText = {
+  pinWindow: "让窗口保持在最上面",
+  unpinWindow: "取消窗口置顶",
+  moveWindow: "拖动窗口",
+  closeWindow: "关闭剪贴板窗口",
+  windowActionFailed: "窗口操作失败，请重试",
   selectEntries: "选择记录",
   selectItem: (preview) => `选择记录：${preview}`,
   selectAll: "全选",
@@ -91,6 +101,11 @@ export const zhCN: ClipboardText = {
 };
 
 export const en: ClipboardText = {
+  pinWindow: "Keep window on top",
+  unpinWindow: "Unpin window",
+  moveWindow: "Move window",
+  closeWindow: "Close clipboard window",
+  windowActionFailed: "Window action failed. Try again.",
   selectEntries: "Select entries",
   selectItem: (preview) => `Select entry: ${preview}`,
   selectAll: "Select all",
