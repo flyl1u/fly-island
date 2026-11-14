@@ -3,12 +3,19 @@ import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { CLIPBOARD_VISIBLE_ROWS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
-import type { IslandSettings, LegacyIslandSettings } from "./types";
+import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
   if (typeof value !== "number" || !Number.isFinite(value)) return limits.default;
   const step = limits.step ?? 1;
   return clamp(Math.round(value / step) * step, limits.min, limits.max);
+}
+
+/** The saved material; older versions saved liquid glass as `appearanceMode: "liquidGlass"`. */
+function normalizeMaterial(settings: LegacyIslandSettings | null | undefined): Material {
+  const material = settings?.material;
+  if (material === "classic" || material === "liquidGlass" || material === "frostedGlass") return material;
+  return settings?.appearanceMode === "liquidGlass" ? "liquidGlass" : DEFAULT_SETTINGS.material;
 }
 
 /** The look that can still be set: style, font, opacity, the two sizes and the three colours. */
@@ -27,11 +34,8 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     fontFamily: settings?.fontFamily === "pixel" ? "pixel" : "system",
     islandFontPercent: normalizeSize(settings?.islandFontPercent, ISLAND_FONT_PERCENT),
     pageButtonStyle: settings?.pageButtonStyle === "capsule" ? "capsule" : DEFAULT_SETTINGS.pageButtonStyle,
-    appearanceMode:
-      settings?.appearanceMode === "classic" ||
-      settings?.appearanceMode === "liquidGlass"
-        ? settings.appearanceMode
-        : "classic",
+    material: normalizeMaterial(settings),
+    colorScheme: settings?.colorScheme === "light" || settings?.colorScheme === "system" ? settings.colorScheme : DEFAULT_SETTINGS.colorScheme,
     glassIntensity: clamp(
       Number(settings?.glassIntensity ?? DEFAULT_SETTINGS.glassIntensity),
       25,

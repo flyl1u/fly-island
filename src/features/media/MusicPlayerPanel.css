@@ -5,6 +5,9 @@
 .music-player {
   /* The cover's accent as `r, g, b` (useArtworkTint); a soft white without a cover. */
   --music-tint: 236, 236, 242;
+  --music-tint-light: 58, 58, 68;
+  /* The accent drawn: the light variant on an island with a light background. */
+  --music-accent: color-mix(in srgb, rgb(var(--music-tint-light)) calc(var(--is-light) * 100%), rgb(var(--music-tint)));
   position: relative;
   height: 100%;
   display: flex;
@@ -60,11 +63,11 @@
   place-items: center;
   overflow: hidden;
   color: var(--text-3);
-  background: linear-gradient(150deg, #2c2c33, #19191d);
+  background: linear-gradient(150deg, color-mix(in srgb, #ececf1 calc(var(--is-light) * 100%), #2c2c33), color-mix(in srgb, #d9d9e0 calc(var(--is-light) * 100%), #19191d));
   border-radius: var(--corner-2xl);
   corner-shape: var(--island-corner-shape, round);
   box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 10px 28px rgba(0, 0, 0, calc(0.45 - var(--is-light) * 0.3)),
     inset 0 0 0 1px var(--color-white-a08);
   /* Paused, the cover settles back a little, as in Apple Music. */
   transform: scale(0.94);
@@ -183,7 +186,7 @@
   max-width: 100%;
   padding: 0;
   overflow: hidden;
-  color: rgb(var(--music-tint));
+  color: var(--music-accent);
   background: none;
   border: 0;
   font: inherit;
@@ -224,7 +227,7 @@
 
 .music-player__error {
   margin: -4px 0;
-  color: rgba(255, 170, 170, 0.88);
+  color: var(--color-error-text);
   font-size: calc(11px * var(--island-font-scale, 1));
   font-weight: 600;
   text-align: center;

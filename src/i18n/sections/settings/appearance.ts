@@ -5,10 +5,17 @@ export type SettingsAppearanceText = {
   collapsedDimensions: { title: string; autoWidth: string; width: string; height: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
-  title: string;
+  /** Material: classic, liquid glass, or frosted glass. */
+  material: string;
   classic: string;
   liquidGlass: string;
+  frostedGlass: string;
   glassStrength: string;
+  /** Colour scheme: dark, light, or following Windows. */
+  colorScheme: string;
+  schemeDark: string;
+  schemeLight: string;
+  schemeSystem: string;
   styleTitle: string;
   pageButtons: string;
   capsules: string;
@@ -58,10 +65,15 @@ export const zhCN: SettingsAppearanceText = {
   collapsedDimensions: { title: "刘海尺寸", autoWidth: "自动宽度", width: "刘海宽度", height: "刘海高度", unit: "px", hint: "宽高会随收起时的整体大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
-  title: "外观模式",
+  material: "质感",
   classic: "经典",
   liquidGlass: "液态玻璃",
+  frostedGlass: "磨砂玻璃",
   glassStrength: "玻璃强度",
+  colorScheme: "配色",
+  schemeDark: "深色",
+  schemeLight: "浅色",
+  schemeSystem: "跟随系统",
   styleTitle: "风格",
   pageButtons: "页面按钮",
   capsules: "胶囊",
@@ -108,10 +120,15 @@ export const en: SettingsAppearanceText = {
   collapsedDimensions: { title: "Collapsed dimensions", autoWidth: "Automatic width", width: "Collapsed width", height: "Collapsed height", unit: "px", hint: "Width and height follow the overall collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
-  title: "Appearance",
+  material: "Material",
   classic: "Classic",
-  liquidGlass: "Liquid glass",
+  liquidGlass: "Liquid",
+  frostedGlass: "Frosted",
   glassStrength: "Glass strength",
+  colorScheme: "Color scheme",
+  schemeDark: "Dark",
+  schemeLight: "Light",
+  schemeSystem: "System",
   styleTitle: "Style",
   pageButtons: "Page buttons",
   capsules: "Capsules",

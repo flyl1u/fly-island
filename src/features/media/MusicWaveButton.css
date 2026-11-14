@@ -33,33 +33,6 @@
     transform 100ms linear;
 }
 
-.island--appearance-liquidGlass .music-wave-button {
-  color: rgba(225, 251, 255, 0.9);
-  filter: drop-shadow(0 0 9px rgba(116, 214, 255, 0.22));
-}
-
-.island--appearance-liquidGlass .music-wave-button span {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.68), rgba(190, 239, 255, 0.2) 34%, rgba(182, 156, 255, 0.2) 72%, rgba(255, 255, 255, 0.54)),
-    rgba(206, 243, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  box-shadow:
-    inset 1px 0 1px rgba(255, 255, 255, 0.7),
-    inset -1px 0 1px rgba(116, 214, 255, 0.2),
-    0 0 8px rgba(116, 214, 255, 0.18);
-  backdrop-filter: blur(5px) saturate(1.35);
-  -webkit-backdrop-filter: blur(5px) saturate(1.35);
-}
-
-.island--appearance-liquidGlass .music-wave-button--idle span {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.42), rgba(190, 239, 255, 0.1), rgba(255, 255, 255, 0.3)),
-    rgba(210, 240, 248, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
 .music-wave-button:hover {
   color: var(--text-1);
 }

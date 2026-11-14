@@ -4,7 +4,7 @@
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   padding: 12px var(--space-md) var(--space-md);
-  background: #111317;
+  background: var(--color-window-sidebar);
   border-right: 1px solid var(--color-white-a08);
 }
 
@@ -41,7 +41,7 @@
   align-items: center;
   gap: 9px;
   padding: 0 10px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--overlay-rgb), 0.72);
   background: transparent;
   border: 0;
   border-radius: var(--corner-md);
@@ -83,14 +83,14 @@
 .settings-sidebar__item > .settings-sidebar__external { opacity: 0.5; }
 
 .settings-sidebar__item:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a06);
 }
 
 /* The open page: tinted with the accent, with a bar on its left edge. */
 .settings-sidebar__item--active,
 .settings-sidebar__item--active:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: rgba(116, 214, 255, 0.14);
   font-weight: 600;
 }

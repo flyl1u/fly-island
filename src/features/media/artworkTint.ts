@@ -31,6 +31,17 @@ export function readableTint(red: number, green: number, blue: number): string {
   return `${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`;
 }
 
+/**
+ * The same accent for an island with a light background (theme.ts toneOn): `tint` (`r, g, b`, from
+ * readableTint) at a lightness that reads on white instead of black.
+ */
+export function tintOnLight(tint: string): string {
+  const [red, green, blue] = tint.split(",").map(Number);
+  const [hue, saturation] = toHsl(red, green, blue);
+  const [r, g, b] = fromHsl(hue, Math.min(saturation, 0.75), 0.38);
+  return `${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`;
+}
+
 function toHsl(red: number, green: number, blue: number): [number, number, number] {
   const r = red / 255;
   const g = green / 255;

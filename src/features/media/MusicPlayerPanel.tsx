@@ -6,6 +6,7 @@ import { MusicEqualizer } from "./MusicEqualizer";
 import { MusicIdle } from "./MusicIdle";
 import { MusicProgress } from "./MusicProgress";
 import { useArtworkTint } from "./useArtworkTint";
+import { tintOnLight } from "./artworkTint";
 import { LyricsView } from "./lyrics/LyricsView";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
 import { LyricsOffsetControl } from "./lyrics/LyricsOffsetControl";
@@ -79,7 +80,7 @@ export function MusicPlayerPanel({
     isPlaying ? "music-player--playing" : "",
     hasTrack ? "" : "music-player--idle",
   ].filter(Boolean).join(" ");
-  const style = (tint ? { "--music-tint": tint } : undefined) as CSSProperties | undefined;
+  const style = (tint ? { "--music-tint": tint, "--music-tint-light": tintOnLight(tint) } : undefined) as CSSProperties | undefined;
 
   return (
     <section className={className} style={style} aria-label={t.music.playerLabel}>

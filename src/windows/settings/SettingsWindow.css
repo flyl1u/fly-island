@@ -1,7 +1,7 @@
 .settings-stage {
   height: 100%;
   color: var(--color-page-text);
-  background: #17191d;
+  background: var(--color-window);
 }
 
 .settings-stage select {

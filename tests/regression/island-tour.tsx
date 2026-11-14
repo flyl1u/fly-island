@@ -11,6 +11,7 @@ import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
+import { checkMaterial, checkTone } from "./islandTourTheme";
 import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
 
 const query = new URLSearchParams(location.search);
@@ -19,6 +20,8 @@ const empty = query.has("empty");
 const media = (query.get("media") ?? "playing") as TourMedia;
 const customNotch = query.has("notch");
 const fontPercent = Number(query.get("font")) || 100;
+// ?theme=dark|light|system picks the colour scheme, ?bg=FFFFFF a background colour of the user's own,
+// ?material=liquidGlass|frostedGlass the material.
 // ?tuck=line|hidden picks the tucked look (default edge).
 const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
@@ -49,6 +52,9 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
+  ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
+  ...(query.get("bg") ? { islandBackgroundColor: `#${query.get("bg")}` } : {}),
+  ...(query.get("material") ? { material: query.get("material") } : {}),
   topEdgeShoulders: query.has("shoulders"),
   topEdgeShoulderSize: 20,
   tuckStyle,
@@ -63,6 +69,8 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
   ...(query.get("layout") ? { collapsedLayout: query.get("layout")!.split(",") } : {}),
 }));
+// A colour of the user's own survives the one-time colour refresh (storage.ts) as it would for a real user.
+if (query.has("bg")) localStorage.setItem("focusd-island-color-refresh-v1", "1");
 if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
@@ -215,6 +223,8 @@ if (!automated) {
         && localStorage.getItem("focusd-island-update-dot-seen") === "3.0.10", "进入待办按版本消除入口红点，更新按钮仍有红点");
     }
     checkShapeMotion(0.56);
+    if (query.has("theme") || query.has("bg")) checkTone(check, query.get("theme") === "light" || (query.get("bg") ?? "").toUpperCase() === "FFFFFF");
+    if (query.get("material")) checkMaterial(check, query.get("material")!);
     const panelMotion = getComputedStyle(panel());
     check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"
       && panelMotion.transitionDelay === "0.12s, 0.08s", "展开面板完整淡入，保留原时长与延迟");

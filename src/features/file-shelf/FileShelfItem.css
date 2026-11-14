@@ -218,10 +218,10 @@
   height: 15px;
   display: grid;
   place-items: center;
-  color: #141418;
+  color: var(--color-inverse-ink);
   background: var(--text-1);
   border-radius: var(--radius-circle);
-  box-shadow: 0 0 0 2px rgba(20, 20, 25, 0.95);
+  box-shadow: 0 0 0 2px rgba(var(--panel-deep-rgb), 0.95);
 }
 
 .shelf-item--row .shelf-item__pin-badge {
@@ -284,7 +284,7 @@
   place-items: center;
   padding: 0;
   color: var(--text-2);
-  background: rgba(30, 30, 35, 0.86);
+  background: rgba(var(--float-rgb), 0.86);
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
@@ -327,7 +327,7 @@
 }
 
 .shelf-item__actions .shelf-copy-button--copied {
-  color: #141418;
+  color: var(--color-inverse-ink);
   background: var(--text-1);
 }
 
@@ -344,7 +344,7 @@
 }
 
 .shelf-item--unreachable .shelf-item__meta {
-  color: #f2c27b;
+  color: color-mix(in srgb, #9a6700 calc(var(--is-light) * 100%), #f2c27b);
 }
 
 .shelf-item--missing .shelf-item__main,
@@ -366,15 +366,15 @@
   0% {
     opacity: 0;
     scale: 0.9;
-    box-shadow: 0 0 0 0 rgba(248, 246, 240, 0);
+    box-shadow: 0 0 0 0 rgba(var(--ink-rgb), 0);
   }
   45% {
     opacity: 1;
     scale: 1;
-    box-shadow: 0 0 0 3px rgba(248, 246, 240, 0.3);
+    box-shadow: 0 0 0 3px rgba(var(--ink-rgb), 0.3);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(248, 246, 240, 0);
+    box-shadow: 0 0 0 0 rgba(var(--ink-rgb), 0);
   }
 }
 

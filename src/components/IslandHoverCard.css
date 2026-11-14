@@ -12,7 +12,7 @@
   gap: 2px;
   max-width: 280px;
   padding: 7px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: var(--corner-xl);
   corner-shape: var(--corner-shape);
   background: var(--island-background-color, #2f2f37);
