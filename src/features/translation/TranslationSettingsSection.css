@@ -1,5 +1,5 @@
 /* A failed key lookup or save takes the place of the group's hint. */
 .translation-settings__error {
-  color: #ff9aa9;
+  color: var(--color-error-text);
   overflow-wrap: anywhere;
 }

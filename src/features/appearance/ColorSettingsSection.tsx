@@ -8,6 +8,8 @@ import { Undo2 } from "lucide-react";
 import { loadColorBackup, swapColorBackup } from "./storage";
 import "./ColorSettingsSection.css";
 import { ColorPresetRow } from "./ColorPresetRow";
+import { resolveSchemeColors } from "./theme";
+import { useResolvedScheme } from "./useDocumentTheme";
 
 type ColorKey = "islandBackgroundColor" | "taskTextColor" | "pulseColor";
 
@@ -22,6 +24,8 @@ export function ColorSettingsSection({
   const t = useTranslation();
   const text = t.settings.colors;
   const backup = loadColorBackup();
+  // A colour never changed shows what the scheme draws; picking one makes it the user's own.
+  const drawn = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
   const colors: readonly [ColorKey, string][] = [
     ["islandBackgroundColor", text.islandBackground],
     ["taskTextColor", text.taskText],
@@ -41,10 +45,10 @@ export function ColorSettingsSection({
           title={label}
           control={
             <SettingsColor
-              value={settings[key]}
+              value={drawn[key]}
               ariaLabel={label}
               onChange={(value) => onSettingsChange({ ...settings, [key]: value.toUpperCase() })}
-              valueControl={<HexColorInput value={settings[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />}
+              valueControl={<HexColorInput value={drawn[key]} ariaLabel={label} onChange={(value) => onSettingsChange({ ...settings, [key]: value })} />}
             />
           }
         />

@@ -102,7 +102,8 @@ if (!automated) {
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
       // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
       // Appearance +1: optional top-edge curves (2026-11-13); the size row is hidden by default.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 14 : 8;
+      // Appearance 14 -> 15: the colour scheme (dark, light, system) the owner asked for on 2026-11-14.
+      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 15 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;

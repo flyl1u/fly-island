@@ -7,6 +7,8 @@ import { useTranslation } from "../../i18n";
 import { useSettingsPresentation } from "../settings/useSettingsPresentation";
 import { useSettingsNavigation } from "./useSettingsNavigation";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
+import { useDocumentTheme } from "../../features/appearance/useDocumentTheme";
+import { resolveSchemeColors } from "../../features/appearance/theme";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
 // Imported after the page panels so its CSS keeps its place in the cascade.
 import { IslandShell } from "./IslandShell";
@@ -134,9 +136,11 @@ export function IslandApp() {
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
   });
+  const scheme = useDocumentTheme(settings.colorScheme);
+  const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(
-    () => getIslandStageStyle(settings, collapsedIslandWidth, expandedIslandHeight),
-    [collapsedIslandWidth, expandedIslandHeight, settings],
+    () => getIslandStageStyle(settings, colors, collapsedIslandWidth, expandedIslandHeight),
+    [collapsedIslandWidth, colors, expandedIslandHeight, settings],
   );
 
 
@@ -182,7 +186,7 @@ export function IslandApp() {
   );
 
   return (
-    <main className={`stage stage--font-${settings.fontFamily}`} style={stageStyle}>
+    <main className={`stage stage--font-${settings.fontFamily}`} data-tone={colors.tone} style={stageStyle}>
       <IslandShell
         qqMail={qqMail}
         qqNotifications={qqNotifications}

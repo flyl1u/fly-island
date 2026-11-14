@@ -1,12 +1,17 @@
 import type { CSSProperties } from "react";
 import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba } from "../../features/appearance/settings";
+import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
 import { inkOn } from "../../utils/color";
 
-/** CSS custom properties for the island stage, derived from the appearance settings and current size. */
+/**
+ * CSS custom properties for the island stage, derived from the appearance settings, the colours
+ * drawn in the current scheme (theme.ts resolveSchemeColors) and the current size.
+ */
 export function getIslandStageStyle(
   settings: IslandSettings,
+  colors: ColorPalette,
   collapsedIslandWidth: number,
   expandedIslandHeight: number,
 ) {
@@ -15,7 +20,7 @@ export function getIslandStageStyle(
 
   return ({
     // Classic opacity fades the fill only, so text and icons on it stay solid.
-    "--island-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
+    "--island-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
     "--island-fill-alpha": settings.opacity / 100,
     // The collapsed bar's and the page panel's scales (IslandShell.css); neither animates.
     "--island-collapsed-scale-target": settings.collapsedScale,
@@ -29,13 +34,13 @@ export function getIslandStageStyle(
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
-    "--task-text-color": settings.taskTextColor,
-    "--island-pulse-color": settings.pulseColor,
-    "--island-pulse-glow-color": hexToRgba(settings.pulseColor, 0.72),
+    "--task-text-color": colors.taskTextColor,
+    "--island-pulse-color": colors.pulseColor,
+    "--island-pulse-glow-color": hexToRgba(colors.pulseColor, 0.72),
     "--island-pulse-brightness": `${settings.pulseBrightness}%`,
-    "--island-background-color": settings.islandBackgroundColor,
+    "--island-background-color": colors.islandBackgroundColor,
     // Text drawn straight on the island (the Agent page) flips to dark on a light background.
-    "--island-ink-rgb": inkOn(settings.islandBackgroundColor),
+    "--island-ink-rgb": inkOn(colors.islandBackgroundColor),
     "--glass-intensity": glassStrength,
     "--glass-mask-opacity": glassMaskOpacity,
     "--glass-soft-alpha": 0.045 + glassStrength * 0.045,
@@ -52,11 +57,11 @@ export function getIslandStageStyle(
     "--glass-panel-accent-alpha": glassStrength * 0.085,
     "--glass-panel-blur": `${10 + glassStrength * 9}px`,
     "--glass-tint-color": hexToRgba(
-      settings.islandBackgroundColor,
+      colors.islandBackgroundColor,
       glassMaskOpacity,
     ),
     "--glass-collapsed-tint-color": hexToRgba(
-      settings.islandBackgroundColor,
+      colors.islandBackgroundColor,
       glassMaskOpacity,
     ),
     "--todo-background-color": settings.todoBackgroundColor,

@@ -37,6 +37,9 @@ export const PAGES = [
   "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",
   "island-tour.html?test=1&scale=1.2&tuck=hidden&shoulders=1",
   "island-tour.html?test=1&scale=1.2&notch=1&font=120",
+  // The light scheme, and a white island picked in the dark scheme (its text turns dark).
+  "island-tour.html?test=1&theme=light",
+  "island-tour.html?test=1&bg=FFFFFF",
   "mail-reader.html?run=1",
   "message-clear.html",
   "message-clear.html?lang=en",
@@ -56,6 +59,8 @@ export const PAGES = [
   "update-dot.html?window=settings",
   "update-dot.html?window=settings&lang=en",
   "tucked-hover.html",
+  "translation-window.html?test=1&theme=dark",
+  "translation-window.html?test=1&theme=light",
 ];
 
 const PAGE_TIMEOUT_MS = 120_000;

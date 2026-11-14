@@ -118,7 +118,7 @@
 }
 
 .clipboard-note:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a06);
 }
 
@@ -136,7 +136,7 @@
   height: 24px;
   padding: 0 7px;
   color: var(--text-1);
-  background: rgba(6, 7, 10, 0.32);
+  background: color-mix(in srgb, rgba(255, 255, 255, 0.8) calc(var(--is-light) * 100%), rgba(6, 7, 10, 0.32));
   border: 1px solid rgba(var(--ink-rgb), 0.28);
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
@@ -194,7 +194,7 @@
 }
 
 .clipboard-item__actions button:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 
@@ -210,7 +210,7 @@
 }
 
 .clipboard-item__actions .clipboard-copy-button--copied {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
   animation: saveButtonPop 760ms ease both;
 }

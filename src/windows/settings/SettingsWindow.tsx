@@ -1,10 +1,11 @@
 import { useCallback, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useIslandSettings } from "../../features/appearance/useIslandSettings";
+import { useDocumentTheme, useSystemIsDark } from "../../features/appearance/useDocumentTheme";
 import { useQQNotifications } from "../../features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
-import { dockSettingsWindow, showSettingsWindow } from "./api";
+import { dockSettingsWindow, setSettingsWindowTheme, showSettingsWindow } from "./api";
 import { saveDetachedSettings } from "./storage";
 import { SettingsPanel } from "./SettingsPanel";
 import { useSettingsPresentation } from "./useSettingsPresentation";
@@ -17,6 +18,16 @@ export function SettingsWindow() {
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false, { restore: false });
   const detached = useSettingsPresentation();
+  const scheme = useDocumentTheme(settings.colorScheme);
+  const systemDark = useSystemIsDark();
+
+  // The native title bar and background follow the page. Windows redraws the title bar in its own
+  // mode when that changes, so a change of the system mode paints it again too.
+  useEffect(() => {
+    void setSettingsWindowTheme(scheme === "dark").catch((error) => {
+      console.error("Failed to set settings window theme", error);
+    });
+  }, [scheme, systemDark]);
 
   // The window opens hidden and is shown once the page has rendered, so it never shows
   // empty. A hidden webview may not run animation frames at all, so then the rendered

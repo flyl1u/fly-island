@@ -105,12 +105,12 @@
 }
 
 .select-control__option--active {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a10);
 }
 
 .select-control__option[aria-selected="true"] {
-  color: #ffd166;
+  color: var(--color-warning);
 }
 
 @keyframes select-control-in {

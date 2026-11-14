@@ -239,7 +239,7 @@
   z-index: 5;
   padding: 3px 7px;
   color: var(--text-1);
-  background: rgba(38, 38, 42, 0.97);
+  background: rgba(var(--float-rgb), 0.97);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);

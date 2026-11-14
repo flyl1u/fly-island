@@ -1,59 +1,11 @@
 /* Shared design tokens. Values are the exact literals they replaced; changing one restyles every user. */
 :root {
-  /*
-   * Colour channels ("r, g, b"). Every neutral below is drawn from them, so a scope that changes
-   * the channels (a colour scheme, an island with a light background) restyles all of them:
-   *   --ink-rgb      text and icons
-   *   --overlay-rgb  translucent lifts, borders and hairlines on a surface
-   */
-  --ink-rgb: 248, 246, 240;
-  --overlay-rgb: 255, 255, 255;
-  /* Opacities of the four text levels (see --text-1..placeholder). */
-  --text-1-alpha: 0.96;
-  --text-2-alpha: 0.68;
-  --text-3-alpha: 0.54;
-  --text-placeholder-alpha: 0.42;
-
-  /* Neutrals */
-  --color-white: #ffffff;
-  --color-black: #000;
-  /* The strongest foreground: a selected tab, a hovered icon. White on dark surfaces. */
-  --color-fg-strong: #ffffff;
-  /* An inverted control (a primary button, a chip on an image): a light fill with dark ink. */
-  --color-inverse: #ffffff;
-  --color-inverse-ink: #101013;
-  --color-surface-dark: #111112;
-  /* Menus and pop-overs that float over a panel. */
-  --color-popover: #26262d;
-  /* The settings window's pages and its sidebar column. */
-  --color-window: #17191d;
-  --color-window-sidebar: #111317;
-
   /* One type family; weights 400 and 600, 700 only at 15px and up. */
   --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
 
   /* Todo notebook paper */
   --color-ink: #1f1b16;
   --color-ink-muted: rgba(31, 27, 22, 0.58);
-
-  /* Accents and states */
-  --color-accent: #74d6ff;
-  --color-sky: #a8d8ea;
-  --color-success: #2f8c61;
-  --color-danger: #c75065;
-  --color-warning: #ffd166;
-  --color-agent-idle: #35e985;
-  --color-agent-running: #3d8bff;
-  --color-agent-waiting: #ff9f43;
-  /* A session's light (agent-status/sessionLight.ts); the session ring draws the same colours. */
-  --color-light-needs: #ff453a;
-  --color-light-your-turn: #ffd60a;
-  --color-light-working: #34c759;
-  --color-light-done: #8e8e93;
-  /* Something new waits to be looked at (the community group's red dots). */
-  --color-badge: #ff453a;
-  --color-focus-ring: rgba(143, 216, 255, 0.88);
-  --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
 
   /* Radii */
   --radius-sm: 6px;
@@ -94,11 +46,128 @@
   --space-2xl: 14px;
 }
 
+:root,
+[data-tone="dark"] {
+  /*
+   * Colour channels ("r, g, b"). Every neutral below is drawn from them, so a scope that changes
+   * the channels (a colour scheme, an island with a light background) restyles all of them:
+   *   --ink-rgb      text and icons
+   *   --overlay-rgb  translucent lifts, borders and hairlines on a surface
+   */
+  --ink-rgb: 248, 246, 240;
+  --overlay-rgb: 255, 255, 255;
+  /* Opacities of the four text levels (see --text-1..placeholder). */
+  --text-1-alpha: 0.96;
+  --text-2-alpha: 0.68;
+  --text-3-alpha: 0.54;
+  --text-placeholder-alpha: 0.42;
+
+  /* Neutrals */
+  --color-white: #ffffff;
+  --color-black: #000;
+  /* The strongest foreground: a selected tab, a hovered icon. White on dark surfaces. */
+  --color-fg-strong: #ffffff;
+  /* An inverted control (a primary button, a chip on an image): a light fill with dark ink. */
+  --color-inverse: #ffffff;
+  --color-inverse-ink: #101013;
+  --color-surface-dark: #111112;
+  /* Menus and pop-overs that float over a panel. */
+  --color-popover: #26262d;
+  /* The settings window's pages and its sidebar column. */
+  --color-window: #17191d;
+  --color-window-sidebar: #111317;
+
+  /* Accents and states */
+  --color-accent: #74d6ff;
+  --color-sky: #a8d8ea;
+  --color-success: #2f8c61;
+  --color-danger: #c75065;
+  --color-warning: #ffd166;
+  --color-agent-idle: #35e985;
+  --color-agent-running: #3d8bff;
+  --color-agent-waiting: #ff9f43;
+  /* A session's light (agent-status/sessionLight.ts); the session ring draws the same colours. */
+  --color-light-needs: #ff453a;
+  --color-light-your-turn: #ffd60a;
+  --color-light-working: #34c759;
+  --color-light-done: #8e8e93;
+  /* Something new waits to be looked at (the community group's red dots). */
+  --color-badge: #ff453a;
+  --color-focus-ring: rgba(143, 216, 255, 0.88);
+  --color-focus-ring-soft: rgba(143, 216, 255, 0.72);
+  /* The collapsed island's shading, top to bottom (faded with its fill). */
+  --island-shade-top: rgba(255, 255, 255, 0.06);
+  --island-shade-bottom: rgba(0, 0, 0, 0.22);
+  /* Deep panels inside the island (translation, the file shelf) and floating tips and menus. */
+  --panel-deep-rgb: 20, 20, 25;
+  --float-rgb: 30, 30, 35;
+  /* Native form controls and scrollbars where a page asks for them. */
+  --color-scheme: dark;
+  /* Error text: soft pink on dark, a deeper red on light. */
+  --color-error-text: #ff9aa9;
+  --color-error-text-strong: #ffb7c2;
+  /*
+   * 0 here, 1 in the light set. A one-off colour picks its light value with
+   *   color-mix(in srgb, LIGHT calc(var(--is-light) * 100%), DARK)
+   * and a shadow fades with calc(a - var(--is-light) * b), so the nearest scope decides,
+   * as it does for the tokens.
+   */
+  --is-light: 0;
+}
+
+/*
+ * The light scheme (<html data-theme="light">), and an island whose background is light in any
+ * scheme (data-tone on the island stage, from theme.ts). Not the dark set inverted: the text levels
+ * take their own alphas to keep their contrast on #F4F4F7 / an inner panel #E7E7EA
+ * (1 = 13.5 / 12.1, 2 = 6.5 / 6.2, 3 = 5.0 / 4.8, placeholder = 3.3 / 3.2), and the accents
+ * are darker so they read on white.
+ */
+:root[data-theme="light"],
+[data-tone="light"] {
+  --ink-rgb: 26, 26, 32;
+  --overlay-rgb: 24, 24, 32;
+  --text-1-alpha: 0.94;
+  --text-2-alpha: 0.72;
+  --text-3-alpha: 0.64;
+  --text-placeholder-alpha: 0.5;
+  --color-fg-strong: #111116;
+  --color-inverse: #1d1d22;
+  --color-inverse-ink: #f7f7f9;
+  --color-surface-dark: #f3f3f6;
+  --color-popover: #ffffff;
+  --color-window: #f3f3f6;
+  --color-window-sidebar: #e8e8ed;
+  --color-accent: #0071b8;
+  --color-sky: #3f86a8;
+  --color-success: #1f8f57;
+  --color-danger: #c7354b;
+  --color-warning: #9a6700;
+  --color-agent-idle: #1fa85b;
+  --color-agent-running: #2f78ea;
+  --color-agent-waiting: #e07d18;
+  --color-light-needs: #f0362b;
+  --color-light-your-turn: #e5b400;
+  --color-light-working: #22a447;
+  --color-light-done: #8e8e93;
+  --color-badge: #f0362b;
+  --color-focus-ring: rgba(0, 113, 184, 0.78);
+  --color-focus-ring-soft: rgba(0, 113, 184, 0.6);
+  --island-shade-top: rgba(255, 255, 255, 0.5);
+  --island-shade-bottom: rgba(0, 0, 0, 0.05);
+  --panel-deep-rgb: 255, 255, 255;
+  --float-rgb: 255, 255, 255;
+  --color-scheme: light;
+  --color-error-text: #c42f45;
+  --color-error-text-strong: #a8243a;
+  --is-light: 1;
+}
+
 /*
  * Neutrals drawn from the channels. Declared again on every scope that sets its own channels
  * ([data-tone]), since a custom property is resolved where it is declared.
  */
-:root {
+:root,
+[data-tone] {
   --color-text: rgb(var(--ink-rgb));
   --color-text-strong: rgba(var(--ink-rgb), 0.88);
   --color-text-muted: rgba(var(--ink-rgb), 0.72);

@@ -10,7 +10,7 @@
   height: 28px;
   padding: 0 4px 0 11px;
   color: var(--text-2);
-  background: rgba(30, 31, 36, 0.86);
+  background: rgba(var(--float-rgb), 0.86);
   border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: var(--radius-pill);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.36);

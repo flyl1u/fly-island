@@ -44,7 +44,7 @@
 }
 
 .project-link__icon.support-author__icon {
-  color: #ff8fab;
+  color: color-mix(in srgb, #d6336c calc(var(--is-light) * 100%), #ff8fab);
 }
 
 .project-link__icon.community-group__icon {

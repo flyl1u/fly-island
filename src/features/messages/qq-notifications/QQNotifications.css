@@ -94,7 +94,7 @@
 }
 
 .qq-panel .message-receiver-toggle[aria-checked="true"] {
-  color: #b3ddc7;
+  color: color-mix(in srgb, #1f7a52 calc(var(--is-light) * 100%), #b3ddc7);
 }
 
 .qq-panel__controls {
@@ -187,7 +187,7 @@
 
 .qq-panel__error {
   margin: 6px 0 8px;
-  color: #ffbcaf;
+  color: color-mix(in srgb, #b8432c calc(var(--is-light) * 100%), #ffbcaf);
   font-size: calc(11px * var(--island-font-scale, 1));
   line-height: 1.5;
   overflow-wrap: anywhere;

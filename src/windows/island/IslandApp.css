@@ -52,7 +52,7 @@
 }
 
 .island--todo .icon-button:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 
@@ -76,12 +76,12 @@
 }
 
 .icon-button.island-reset-button--available {
-  color: #c8efff;
+  color: color-mix(in srgb, #0071b8 calc(var(--is-light) * 100%), #c8efff);
   background: rgba(116, 214, 255, 0.14);
 }
 
 .icon-button:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: rgba(var(--overlay-rgb), 0.15);
 }
 

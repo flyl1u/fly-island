@@ -29,3 +29,10 @@ test("colourful pixels outweigh a white background", () => {
 test("transparent pixels are ignored, and a fully transparent cover gives none", () => {
   assert.equal(tintFromPixels([255, 0, 0, 0, 0, 255, 0, 10]), null);
 });
+
+test("the light variant keeps the hue at a lightness that reads on white", async () => {
+  const { tintOnLight } = await import("../../src/features/media/artworkTint.ts");
+  const [r, g, b] = tintOnLight("240, 120, 120").split(",").map(Number);
+  assert.ok(r > g && r > b, "still red");
+  assert.ok(Math.max(r, g, b) < 200 && (Math.max(r, g, b) + Math.min(r, g, b)) / 2 / 255 < 0.45, "dark enough for white");
+});

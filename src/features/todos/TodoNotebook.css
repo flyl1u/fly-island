@@ -1,5 +1,5 @@
 .todo-notebook {
-  --todo-scheduled-color: #c4b5fd;
+  --todo-scheduled-color: color-mix(in srgb, #6a4fd0 calc(var(--is-light) * 100%), #c4b5fd);
   position: relative;
   height: 100%;
   display: grid;

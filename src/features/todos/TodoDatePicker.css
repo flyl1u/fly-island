@@ -48,7 +48,7 @@
 
 /* Kept under the button so the native calendar opens next to it. */
 .todo-date-picker__input {
-  color-scheme: dark;
+  color-scheme: var(--color-scheme);
   position: absolute;
   inset: 0;
   width: 100%;

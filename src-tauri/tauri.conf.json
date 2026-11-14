@@ -54,8 +54,7 @@
         "resizable": true,
         "alwaysOnTop": true,
         "visible": false,
-        "shadow": false,
-        "theme": "Dark"
+        "shadow": false
       },
       {
         "label": "settings",
@@ -68,7 +67,6 @@
         "minHeight": 420,
         "center": true,
         "resizable": true,
-        "theme": "Dark",
         "backgroundColor": "#17191d"
       }
     ],

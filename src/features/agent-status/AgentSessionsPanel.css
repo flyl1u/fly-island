@@ -252,7 +252,7 @@
 }
 
 .agent-session__mode--bypass {
-  color: rgb(255, 159, 67);
+  color: var(--color-agent-waiting);
   background: rgba(255, 159, 67, 0.16);
 }
 

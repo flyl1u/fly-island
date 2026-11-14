@@ -1,6 +1,8 @@
 export type TranslationTarget = "window" | "island";
 
 export type AppearanceMode = "classic" | "liquidGlass";
+/** Colour scheme of the island and the windows: dark, light, or whichever Windows uses. */
+export type ColorScheme = "dark" | "light" | "system";
 export type IslandFont = "system" | "pixel";
 export type PageButtonStyle = "capsule" | "icon";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
@@ -49,6 +51,7 @@ export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;
   appearanceMode: AppearanceMode;
+  colorScheme: ColorScheme;
   fontFamily: IslandFont;
   islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;

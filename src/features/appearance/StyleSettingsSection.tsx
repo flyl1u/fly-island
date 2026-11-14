@@ -4,7 +4,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
 import { DEFAULT_SETTINGS, ISLAND_FONT_PERCENT, LIQUID_GLASS_ENABLED, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE, MIN_COLLAPSED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
-import type { AppearanceMode, IslandFont, IslandSettings, PageButtonStyle } from "./types";
+import type { AppearanceMode, ColorScheme, IslandFont, IslandSettings, PageButtonStyle } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
 const times = (value: number) => `${value.toFixed(2)}x`;
@@ -30,6 +30,11 @@ export function StyleSettingsSection({
     { value: "classic", label: text.classic },
     { value: "liquidGlass", label: text.liquidGlass },
   ] as const;
+  const schemes = [
+    { value: "dark", label: text.schemeDark },
+    { value: "light", label: text.schemeLight },
+    { value: "system", label: text.schemeSystem },
+  ] as const;
   const fonts = [
     { value: "system", label: text.systemFont },
     { value: "pixel", label: text.pixelFont },
@@ -37,6 +42,17 @@ export function StyleSettingsSection({
 
   return (
     <SettingsGroup title={text.styleTitle}>
+      <SettingsRow
+        title={text.colorScheme}
+        control={
+          <SettingsChoice<ColorScheme>
+            value={settings.colorScheme}
+            options={schemes}
+            ariaLabel={text.colorScheme}
+            onChange={(colorScheme) => onSettingsChange({ ...settings, colorScheme })}
+          />
+        }
+      />
       {LIQUID_GLASS_ENABLED && <SettingsRow
         title={text.title}
         control={

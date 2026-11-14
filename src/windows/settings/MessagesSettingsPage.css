@@ -1,5 +1,5 @@
 .messages-settings__error {
-  color: #ff9aa9;
+  color: var(--color-error-text);
   overflow-wrap: anywhere;
 }
 
