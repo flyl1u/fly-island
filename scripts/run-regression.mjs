@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
+  "api-balance.html?narrow=1",
+  "api-balance.html?lang=en&theme=light",
   "agent-alert-card.html",
   "agent-alerts.html",
   "agent-approvals.html",

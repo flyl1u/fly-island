@@ -1,0 +1,486 @@
+{
+  "format": "focusd-island-api-balance",
+  "version": 1,
+  "accounts": [
+    {
+      "account": {
+        "id": "example-1",
+        "name": "自定义 / Custom",
+        "template": "custom",
+        "provider": "",
+        "baseUrl": "https://api.example.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": "({request:{url:\"{{baseUrl}}/user/balance\",method:\"GET\",headers:{Authorization:\"Bearer {{apiKey}}\"}},extractor:function(response){return {remaining:response.balance,unit:\"USD\"};}})"
+      }
+    },
+    {
+      "account": {
+        "id": "example-2",
+        "name": "通用模板 / General",
+        "template": "general",
+        "provider": "",
+        "baseUrl": "https://api.example.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-3",
+        "name": "NewAPI",
+        "template": "newapi",
+        "provider": "",
+        "baseUrl": "https://api.example.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-4",
+        "name": "Sub2API",
+        "template": "sub2api",
+        "provider": "",
+        "baseUrl": "https://api.example.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-5",
+        "name": "Kimi For Coding",
+        "template": "token_plan",
+        "provider": "kimi",
+        "baseUrl": "https://api.kimi.com/coding/v1",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-6",
+        "name": "Zhipu GLM",
+        "template": "token_plan",
+        "provider": "zhipu",
+        "baseUrl": "https://open.bigmodel.cn/api/anthropic",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-7",
+        "name": "Zhipu GLM Team",
+        "template": "token_plan",
+        "provider": "zhipu_team",
+        "baseUrl": "https://open.bigmodel.cn/api/anthropic",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-8",
+        "name": "MiniMax",
+        "template": "token_plan",
+        "provider": "minimax",
+        "baseUrl": "https://api.minimaxi.com/anthropic",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-9",
+        "name": "ZenMux",
+        "template": "token_plan",
+        "provider": "zenmux",
+        "baseUrl": "https://example.com/replace-with-your-zenmux-quota-url",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-10",
+        "name": "Volcengine",
+        "template": "token_plan",
+        "provider": "volcengine",
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/coding/v3",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-11",
+        "name": "OpenCode Go",
+        "template": "token_plan",
+        "provider": "opencode_go",
+        "baseUrl": "https://opencode.ai/zen/go",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-12",
+        "name": "Command Code",
+        "template": "token_plan",
+        "provider": "command_code",
+        "baseUrl": "https://api.commandcode.ai/provider",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-13",
+        "name": "DeepSeek",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.deepseek.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-14",
+        "name": "StepFun",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.stepfun.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-15",
+        "name": "SiliconFlow CN",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.siliconflow.cn",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-16",
+        "name": "SiliconFlow EN",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.siliconflow.com",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-17",
+        "name": "OpenRouter",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-18",
+        "name": "Novita AI",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.novita.ai",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-19",
+        "name": "Zhipu balance",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://open.bigmodel.cn",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    },
+    {
+      "account": {
+        "id": "example-20",
+        "name": "Z.ai balance",
+        "template": "official",
+        "provider": "",
+        "baseUrl": "https://api.z.ai",
+        "userId": "",
+        "organizationId": "",
+        "projectId": "",
+        "accessKeyId": "",
+        "region": "cn-beijing",
+        "timeoutSeconds": 10,
+        "intervalMinutes": 5,
+        "quotaPerUnit": 500000,
+        "enabled": false
+      },
+      "secrets": {
+        "apiKey": "",
+        "accessToken": "",
+        "secretAccessKey": "",
+        "code": ""
+      }
+    }
+  ]
+}

@@ -92,6 +92,14 @@
 
 ## 其他
 
+### API 余额（2026-11-14）
+
+- localStorage `focusd-island-api-balance`：`{ enabled, accounts: Account[] }`，仅元数据镜像；原生源为应用数据目录 `api-balance.json`，同一配置结构。
+- Windows 凭据服务 `com.focusd.island.api-balance`：`<id>-manifest`（generation/count）及 `<id>-<generation>-<chunk>`，保留独立于其他功能的命名空间。
+- 命令：`get_api_balance_state()`、`set_api_balance_enabled(enabled)`、`save_api_balance_account(account, secrets)`、`remove_api_balance_account(id)`、`read_api_balance_script(id)`、`import_api_balance_accounts(entries)`、`refresh_api_balance(id)`、`test_api_balance(account, secrets)`。定义在 `api_balance/mod.rs`，前端仅由领域 `api.ts` 调用。
+- `api-balance-changed` 与状态命令返回 `{ revision, enabled, accounts: AccountState[] }`，revision 在本次进程内单调递增，前端丢弃旧快照；含结果/状态及凭据存在标记，不含密钥/脚本。`read_api_balance_script` 仅供用户编辑与明确包含脚本的导出。
+- 原生导入文件 `*.flyisland-balance.json` / `*.json`：`{ format: "focusd-island-api-balance", version: 1, accounts: [{ account, secrets }] }`；导入时 ID 重建且 enabled=false。兼容的 cc-switch JSON 与 request/extractor `.js` 由前端转换，不接收 SQL/数据库/ZIP/网易云 `.plugin`。文件至多 1 MiB，脚本至多 64 KiB，总账号至多 50。详见 [API 余额](../api-balance.md)。
+
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
 - `focusd-island-settings` 新增 `topEdgeShoulders`（boolean，默认 false）和 `topEdgeShoulderSize`（整数 4–20px，默认 10）；无效或缺失回退默认，大小超界夹取，只影响贴顶的装饰外形，不增加原生点击区域。属于外观字段，恢复默认外观会一并复位。
 

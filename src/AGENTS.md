@@ -13,6 +13,7 @@ src/
 │   ├── clipboard/           # 剪贴板历史独立窗口：自绘标题栏（拖动、图钉置顶、关闭），内容复用 features/clipboard 的面板
 │   └── translation/         # 快捷翻译窗口
 ├── features/                # 业务领域，每个领域自包含
+│   ├── api-balance/         # API 余额内置插件：6 类模板、8 类套餐、配置导入导出、设置与结果；密钥只交给原生凭据管理
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出
 │   ├── media/               # 媒体控制、波形、播放器诊断卡片与兼容性设置；lyrics/ 为同步歌词（解析 LRC、跟随进度、点击校准、设置项）
 │   ├── clipboard/           # 剪贴板历史、快捷键

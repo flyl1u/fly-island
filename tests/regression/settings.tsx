@@ -159,8 +159,8 @@ if (!automated) {
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
       && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
     await openPage("plugins");
-    const plugins = element(".editor-panel .plugins-settings"), block = plugins.getBoundingClientRect(), content = [...plugins.children].map(child => child.getBoundingClientRect());
-    check(plugins.textContent?.trim() === "暂无插件" && plugins.querySelector("svg.lucide-puzzle") && !plugins.querySelector("button, a, input") && Math.abs((Math.min(...content.map(rect => rect.top)) + Math.max(...content.map(rect => rect.bottom)) - block.top - block.bottom) / 2) <= 8, "The plugins page shows only its Puzzle icon and empty state, vertically centered within 8px");
+    const plugins = element(".editor-panel .api-balance-panel");
+    check(plugins.textContent?.includes("API 余额") && plugins.querySelector("[role=switch]") && plugins.querySelector("input[type=file]"), "The plugins page exposes the API balance toggle and dedicated configuration importer");
     await checkAppearance(check);
     const materialButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === label);
     const strengthRow = () => [...document.querySelectorAll(".settings-row")].some((row) => row.textContent?.includes("玻璃强度"));

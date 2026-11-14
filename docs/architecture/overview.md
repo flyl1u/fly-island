@@ -4,6 +4,8 @@
 
 ## 运行时架构
 
+API 余额是「设置 → 插件」中的内置功能：前端 `features/api-balance` 负责元数据表单、专用 JSON / JS 导入预览及结果展示；Rust `api_balance` 负责凭据、查询和独立于设置窗口的后台调度。通用插件加载器仍未实现。详情见 [API 余额](../api-balance.md)。
+
 ```text
 ┌──────────────────────── WebView2（同一前端包，按 ?window= 分发）────────────────────────┐
 │  main：悬浮岛            translation：快捷翻译            settings：设置（按需创建）       │
