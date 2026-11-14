@@ -18,7 +18,7 @@ export const zhCN: SettingsAppearancePresetsText = {
   delete: "删除",
   nameLabel: "预设名称",
   namePlaceholder: "例如：深色玻璃",
-  save: "保存当前外观",
+  save: "保存",
   full: (max) => `最多保存 ${max} 个外观预设，先删除一个再保存。`,
 };
 
@@ -30,6 +30,6 @@ export const en: SettingsAppearancePresetsText = {
   delete: "Delete",
   nameLabel: "Preset name",
   namePlaceholder: "For example: Dark glass",
-  save: "Save current look",
+  save: "Save",
   full: (max) => `You can save up to ${max} appearance presets. Delete one first.`,
 };

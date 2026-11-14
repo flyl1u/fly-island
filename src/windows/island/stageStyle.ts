@@ -3,7 +3,7 @@ import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
-import { inkOn } from "../../utils/color";
+import { inkOn, rgbChannels } from "../../utils/color";
 import { getGlassStyle } from "./glassStyle";
 
 /**
@@ -37,14 +37,29 @@ export function getIslandStageStyle(
     "--island-panel-shown": settings.expandedScale === 1 ? "none" : `scale(${settings.expandedScale})`,
     "--island-panel-hidden": settings.expandedScale === 1 ? "translateY(-6px)" : `translateY(-6px) scale(${settings.expandedScale})`,
     "--task-text-color": colors.taskTextColor,
-    "--island-page-text": settings.pageTextColor || "rgb(var(--island-ink-rgb))",
     "--island-pulse-color": colors.pulseColor,
     "--island-pulse-glow-color": hexToRgba(colors.pulseColor, 0.72),
     "--island-pulse-brightness": `${settings.pulseBrightness}%`,
     "--island-background-color": colors.islandBackgroundColor,
     // Text drawn straight on the island (the Agent page) flips to dark on a light background.
     "--island-ink-rgb": inkOn(colors.islandBackgroundColor),
+    ...pageInkStyle(settings.pageTextColor),
     ...(isGlass(settings.material) ? getGlassStyle(settings, colors) : {}),
     "--todo-background-color": settings.todoBackgroundColor,
   }) as CSSProperties;
+}
+
+/**
+ * Settings → Appearance → Page text: the colour's channels, together and one by one, for
+ * IslandPageText.css. Nothing while it is unset, so the page keeps the scheme's ink.
+ */
+function pageInkStyle(pageTextColor: string): Record<string, string> {
+  if (!pageTextColor) return {};
+  const [red, green, blue] = rgbChannels(pageTextColor);
+  return {
+    "--island-page-ink-rgb": `${red}, ${green}, ${blue}`,
+    "--page-ink-r": String(red),
+    "--page-ink-g": String(green),
+    "--page-ink-b": String(blue),
+  };
 }

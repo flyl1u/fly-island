@@ -121,16 +121,26 @@
     0 5px 16px rgba(0, 0, 0, 0.12);
 }
 
-
 /*
- * Attached glass: the screen edge replaces the lit top rim, which left the pane's top with no edge
- * of its own, so it looked as if it ran into the screen. A light hairline and a faint shadow line
- * just under it set the top apart again, collapsed and expanded alike. Inset shadows follow the
- * rounded corners, so the line thins out into them.
+ * Attached glass. Its own rim (the bright edge and inner glow of .island__glass-refraction, the
+ * frosted 1px rim) ran up both sides into the screen edge, so the pane read as cut off from it at
+ * the sides; like the classic rim above it now fades out over the top of the island. The mask is
+ * on the whole glass layer, not the refraction alone, which composites differently when masked.
+ * With shoulders the rule above already fades the glass further down.
  */
-:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass,
-:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, calc(0.3 - var(--is-light) * 0.18)),
-    inset 0 2px 0 -1px rgba(0, 0, 0, calc(0.12 + var(--is-light) * 0.06));
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass,
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass {
+  -webkit-mask-image: linear-gradient(transparent 2px, #000 30px);
+  mask-image: linear-gradient(transparent 2px, #000 30px);
+}
+
+/* Its shadow falls below the island only: a halo climbing the sides to the screen edge parted them too. */
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass),
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  box-shadow: 0 22px 40px -18px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+}
+
+:root[data-island-top-edge="attached"] .island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)),
+:root:not([data-island-top-edge]) .island--docked.island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)) {
+  box-shadow: 0 12px 22px -10px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
 }

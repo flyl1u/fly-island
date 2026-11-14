@@ -27,6 +27,8 @@ export function ColorSettingsSection({
   const backup = loadColorBackup();
   // A colour never changed shows what the scheme draws; picking one makes it the user's own.
   const drawn = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
+  // Unset, the page text is the scheme's ink (--ink-rgb in tokens.css).
+  const schemeInk = drawn.tone === "light" ? "#1A1A20" : "#F8F6F0";
   const colors: readonly [ColorKey, string][] = [
     ["islandBackgroundColor", text.islandBackground],
     ["taskTextColor", text.taskText],
@@ -57,15 +59,19 @@ export function ColorSettingsSection({
       <SettingsRow
         title={text.pageText}
         control={
-          <SettingsColor
-            value={settings.pageTextColor || (drawn.tone === "light" ? "#1C1C22" : "#FFFFFF")}
-            ariaLabel={text.pageText}
-            onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
-            valueControl={<HexColorInput value={settings.pageTextColor || (drawn.tone === "light" ? "#1C1C22" : "#FFFFFF")} ariaLabel={text.pageText}
-              onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
-          />
+          <>
+            {settings.pageTextColor && (
+              <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton>
+            )}
+            <SettingsColor
+              value={settings.pageTextColor || schemeInk}
+              ariaLabel={text.pageText}
+              onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
+              valueControl={<HexColorInput value={settings.pageTextColor || schemeInk} ariaLabel={text.pageText}
+                onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
+            />
+          </>
         }
-        description={settings.pageTextColor ? <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton> : undefined}
       />
       <ColorPresetRow settings={settings} onSettingsChange={onSettingsChange} />
     </SettingsGroup>

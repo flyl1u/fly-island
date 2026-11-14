@@ -8,6 +8,7 @@ const COLLAPSED_FIELDS = [
 ] as const satisfies readonly (keyof IslandSettings)[];
 const EXPANDED_FIELDS = [
   "expandedScale", "fontFamily", "islandFontPercent", "pageButtonStyle", "material", "glassIntensity", "colorScheme",
+  "pageTextColor",
 ] as const satisfies readonly (keyof IslandSettings)[];
 
 /** Each appearance control reveals the part it changes; behavior settings do not open the island. */

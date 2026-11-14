@@ -5,7 +5,7 @@ import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { CollapsedItem, CollapsedSlot, PageButtonStyle } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { CollapsedLyric } from "../../features/media/CollapsedLyric";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
@@ -40,8 +40,6 @@ type IslandCollapsedBarProps = {
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
   collapsedTodoCount: number | null;
-  /** Capsule page buttons also make the agent light a capsule, so the two read as one style. */
-  pageButtonStyle?: PageButtonStyle;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
@@ -87,7 +85,6 @@ export function IslandCollapsedBar({
   todoTimer = null,
   collapsedTodoCount,
   collapsedItem,
-  pageButtonStyle = "icon",
   collapsedLayout,
   collapsedCover,
   lyricsSettings,
@@ -153,7 +150,7 @@ export function IslandCollapsedBar({
         >
           {/* The agent light opens the Agent page; the text beside it reopens the last page. */}
           <span
-            className={pageButtonStyle === "capsule" ? "island__agent-light island__agent-light--capsule" : "island__agent-light"}
+            className="island__agent-light"
             onClick={(event) => {
               if (preview || (event.detail !== 0 && didDragRef.current)) return;
               event.stopPropagation();
