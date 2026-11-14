@@ -40,6 +40,8 @@ export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";
 export const ISLAND_FONT_PERCENT = { min: 90, max: 120, step: 5, default: 100 } as const;
 export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;
 export const COLLAPSED_HEIGHT = { min: 32, max: 60, default: 38 } as const;
+// Optional top-edge shoulder strength, before the island scale is applied.
+export const TOP_EDGE_SHOULDER_SIZE = { min: 4, max: 20, default: 10 } as const;
 export const MIN_COLLAPSED_SCALE = 0.75;
 export const MAX_COLLAPSED_SCALE = 1.4;
 

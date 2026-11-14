@@ -28,12 +28,12 @@ export const PAGES = [
   "collapsed-message-animation.html?test=1",
   "file-shelf.html",
   "i18n.html?test=1",
-  "island-tour.html?test=1",
+  "island-tour.html?test=1&shoulders=1",
   "island-tour.html?test=1&update=1",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
   // cover the line and hidden tucked looks.
-  "island-tour.html?test=1&scale=0.85&tuck=line",
-  "island-tour.html?test=1&scale=1.2&tuck=hidden",
+  "island-tour.html?test=1&scale=0.85&tuck=line&shoulders=1",
+  "island-tour.html?test=1&scale=1.2&tuck=hidden&shoulders=1",
   "island-tour.html?test=1&scale=1.2&notch=1&font=120",
   "mail-reader.html?run=1",
   "message-clear.html",

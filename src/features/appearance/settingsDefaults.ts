@@ -29,6 +29,9 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   islandMonitor: "primary",
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   islandCornerShape: "squircle",
+  // Optional top-edge shoulders.
+  topEdgeShoulders: false,
+  topEdgeShoulderSize: 10,
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,

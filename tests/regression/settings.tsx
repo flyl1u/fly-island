@@ -101,7 +101,18 @@ if (!automated) {
       // Appearance: 9 -> 12 on 2026-11-13 for island font size (+1) and notch auto-width/height (+2).
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
       // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 13 : 8;
+      // Appearance +1: optional top-edge curves (2026-11-13); the size row is hidden by default.
+      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 14 : 8;
+      if (category === "appearance") {
+        const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
+        const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
+        const size = () => [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("圆角大小"));
+        check(!toggle.checked && !size(), "Top edge curves default off with size hidden");
+        await act(async () => toggle.click());
+        check(size()?.classList.contains("settings-row--indent") && size()?.querySelector<HTMLInputElement>("input[type=range]")?.value === "10", "Curves reveal an indented size slider at 10px");
+        await act(async () => toggle.click());
+        check(!size(), "Disabling curves hides the slider again");
+      }
       if (category === "general") {
         await checkKeepVisible(panel, check);
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];

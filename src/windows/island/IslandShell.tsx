@@ -39,6 +39,7 @@ type IslandShellProps = {
   isTucked: boolean;
   /** How the island looks while tucked: its own rim (edge), a short line, or nothing. */
   tuckStyle: TuckStyle;
+  topEdgeShoulders: boolean;
   positionLocked: boolean;
   isDetached: boolean;
   showTitle: boolean;
@@ -100,6 +101,7 @@ export function IslandShell({
   nativeGlassState,
   isTucked,
   tuckStyle,
+  topEdgeShoulders,
   positionLocked,
   isDetached,
   showTitle,
@@ -164,6 +166,7 @@ export function IslandShell({
     isDetached ? "island--detached" : "island--docked",
     isTucked ? "island--tucked" : "",
     tuckMorphClass,
+    topEdgeShoulders ? "island--shoulders" : "",
     isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]
@@ -198,6 +201,7 @@ export function IslandShell({
         }
       }}
     >
+      <span className="island__shoulders" aria-hidden="true" />
       <div className="island__surface">
         {isLiquidGlass && (
           <div className="island__glass" aria-hidden="true">

@@ -31,6 +31,8 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
   check(interaction().isTucked === true, "贴边收起请求保留位置动画");
   if (!morphs) {
     check(interaction().tuckStyle === "edge" && !/island--tuck-/.test(island().className), "贴边样式 edge：传给原生窗口，岛屿保持原样");
+    await settle(450);
+    check(getComputedStyle(island().querySelector(".island__shoulders")!).opacity === "0", "默认贴边样式也隐藏肩膀");
     await click(".island__open-button");
     return;
   }
@@ -43,6 +45,8 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
   `贴边样式 ${tuckStyle}：收起过程中途是连续变形，不是瞬间切换（${mid.width} / ${mid.opacity}）`);
   await settle(450);
   const style = getComputedStyle(island());
+  const shoulders = island().querySelector<HTMLElement>(".island__shoulders")!;
+  check(getComputedStyle(shoulders).opacity === "0", "任何贴边样式收回时不留肩膀");
   const endOk = tuckStyle === "line"
     ? Math.abs(Number.parseFloat(style.width) - 72 * scale) < 0.5 && Math.abs(Number.parseFloat(style.height) - 5 * scale) < 0.5
       && style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.transform === "none"
@@ -75,4 +79,18 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
   check(samples.length >= 3 && samples.every((y, i) => i === 0 || y >= samples[i - 1] - 0.01),
     `贴边样式 ${tuckStyle}：逐帧顶边不向上（${samples.length} 帧，y=${Math.min(...samples).toFixed(2)}…${Math.max(...samples).toFixed(2)}）`);
   check(!/island--untuck-/.test(island().className) && getComputedStyle(island()).opacity === "1", `贴边样式 ${tuckStyle}：出来后恢复完整岛屿`);
+  if (island().classList.contains("island--shoulders")) {
+    const shoulderStyle = getComputedStyle(shoulders);
+    const rect = shoulders.getBoundingClientRect();
+    const body = island().getBoundingClientRect();
+    check(shoulderStyle.opacity === "1" && shoulderStyle.pointerEvents === "none"
+      && rect.left < body.left && rect.right > body.right && rect.width <= 820 && rect.left >= 0 && rect.right <= innerWidth,
+    "贴顶圆角随岛身宽度展开，留在舞台内且不拦截点击");
+    document.documentElement.dataset.islandTopEdge = "detached";
+    await settle(650);
+    check(getComputedStyle(shoulders).opacity === "0", "拖离顶边后隐藏肩膀");
+    document.documentElement.dataset.islandTopEdge = "attached";
+    await settle(650);
+    check(getComputedStyle(shoulders).opacity === "1", "重新贴顶后恢复肩膀");
+  }
 }

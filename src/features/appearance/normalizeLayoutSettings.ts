@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, normalizeExpandedScale } from "./settingsLimits.ts";
+import { COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
@@ -53,5 +53,8 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
       settings?.islandBackgroundColor,
       DEFAULT_SETTINGS.islandBackgroundColor,
     ),
+    // Optional top-edge shoulders; invalid archives keep the default silhouette.
+    topEdgeShoulders: typeof settings?.topEdgeShoulders === "boolean" ? settings.topEdgeShoulders : DEFAULT_SETTINGS.topEdgeShoulders,
+    topEdgeShoulderSize: normalizeSize(settings?.topEdgeShoulderSize, TOP_EDGE_SHOULDER_SIZE),
   } satisfies Partial<IslandSettings>;
 }

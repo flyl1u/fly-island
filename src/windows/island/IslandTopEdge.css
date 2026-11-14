@@ -5,6 +5,79 @@
  * below uses the same pair of selectors for that reason.
  */
 
+/* A child, since ::before is the tucked hover target and ::after is the rim. */
+@property --island-shoulder-length {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.island__shoulders {
+  --island-shoulder-length: 0px;
+  --island-shoulder-scale: var(--island-expanded-scale);
+  --island-shoulder-duration: var(--island-motion-duration);
+  --island-shoulder-curve: var(--island-motion);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--island-shoulder-length));
+  right: calc(-1 * var(--island-shoulder-length));
+  pointer-events: none;
+  background: inherit;
+  opacity: 0;
+  /* Full parent height preserves the collapsed fill's vertical shading at the join. */
+  mask:
+    radial-gradient(circle var(--island-shoulder-length) at 0 100%,
+      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
+      left top / var(--island-shoulder-length) var(--island-shoulder-length) no-repeat,
+    radial-gradient(circle var(--island-shoulder-length) at 100% 100%,
+      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
+      right top / var(--island-shoulder-length) var(--island-shoulder-length) no-repeat;
+  transition:
+    --island-shoulder-length var(--island-shoulder-duration) var(--island-shoulder-curve),
+    opacity var(--island-panel-fade-duration) ease;
+}
+
+.island--collapsed > .island__shoulders {
+  --island-shoulder-scale: var(--island-collapsed-scale);
+}
+
+:root[data-island-top-edge="attached"] .island--shoulders:not(.island--tucked) > .island__shoulders,
+:root:not([data-island-top-edge]) .island--docked.island--shoulders:not(.island--tucked) > .island__shoulders {
+  --island-shoulder-length: calc(var(--island-shoulder-size-target, 10px) * var(--island-shoulder-scale));
+  opacity: 1;
+}
+
+.island--untuck-line > .island__shoulders,
+.island--untuck-hidden > .island__shoulders {
+  --island-shoulder-duration: var(--island-tuck-out-duration);
+  --island-shoulder-curve: var(--island-spring-open);
+}
+
+/* Glass is currently disabled in settings. Its dormant renderer uses a shared, flat tint
+   at the join too; decorative refraction starts below it, never as a separate bright seam. */
+:root[data-island-top-edge="attached"] .island--shoulders.island--appearance-liquidGlass:not(.island--tucked),
+:root:not([data-island-top-edge]) .island--docked.island--shoulders.island--appearance-liquidGlass:not(.island--tucked) {
+  background: var(--glass-tint-color);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, var(--glass-shadow-alpha)) !important;
+}
+
+.island--shoulders.island--appearance-liquidGlass > .island__shoulders {
+  backdrop-filter: inherit;
+}
+
+:root[data-island-top-edge="attached"] .island--shoulders .island__glass,
+:root:not([data-island-top-edge]) .island--docked.island--shoulders .island__glass {
+  mask-image: linear-gradient(transparent var(--island-shoulder-size-target), var(--color-black) 30px);
+}
+
+/* Like the shape it follows, this local transition plays fully under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .island__shoulders {
+    transition-duration: var(--island-shoulder-duration), var(--island-panel-fade-duration) !important;
+  }
+}
+
 /* A dragged island dropped flush with the top gets the docked flat top. */
 :root[data-island-top-edge="attached"] .island--detached.island--collapsed {
   border-radius: 0 0 var(--island-shape-radius-collapsed) var(--island-shape-radius-collapsed);

@@ -13,6 +13,9 @@ export type SettingsAppearanceText = {
   pageButtons: string;
   capsules: string;
   icons: string;
+  shapeTitle: string;
+  topEdgeShoulders: string;
+  topEdgeShoulderSize: string;
   /** The island preview at the top of the page: sample content and the two captions. */
   preview: {
     label: string;
@@ -63,6 +66,9 @@ export const zhCN: SettingsAppearanceText = {
   pageButtons: "页面按钮",
   capsules: "胶囊",
   icons: "图标",
+  shapeTitle: "外形",
+  topEdgeShoulders: "贴边圆角",
+  topEdgeShoulderSize: "圆角大小",
   preview: {
     label: "按当前设置画出的岛屿",
     collapsed: "折叠",
@@ -110,6 +116,9 @@ export const en: SettingsAppearanceText = {
   pageButtons: "Page buttons",
   capsules: "Capsules",
   icons: "Icons",
+  shapeTitle: "Shape",
+  topEdgeShoulders: "Top edge curves",
+  topEdgeShoulderSize: "Curve size",
   preview: {
     label: "The island with the current settings",
     collapsed: "Collapsed",
