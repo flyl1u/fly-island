@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { MessageView } from "../../features/messages/Messages";
 import type { MailController } from "../../features/messages/mail/MailPanel";
-import { resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
+import { islandPageFor, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 
 type IslandFeatureOptions = {
@@ -49,9 +49,9 @@ export function useIslandFeatures({
   }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled]);
 
   useEffect(() => {
-    const next = resolveIslandPage(page, features);
+    const next = islandPageFor(page, features, settings.clipboardDetached);
     if (next && next !== page) setPage(next);
-  }, [features, page, setPage]);
+  }, [features, page, setPage, settings.clipboardDetached]);
 
   useEffect(() => {
     const next = resolveMessageSource(messageSource, features);

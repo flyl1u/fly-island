@@ -172,8 +172,9 @@ async function downloadFound() {
     // A dismissed flag stays: hiding the todo mid-download must not bring it back.
     setState({ stage: "ready" });
   } catch (error) {
+    // Keep offering the update: the todo's button downloads it again when installing.
     console.error("Failed to download the update", error);
-    setState({ stage: "error", detail: errorReason(error) });
+    setState({ stage: "available", downloaded: 0, total: 0, detail: errorReason(error) });
   }
 }
 
@@ -208,7 +209,9 @@ async function runAutomaticCheck() {
   const settled = busy(state.stage) || state.stage === "ready" || state.stage === "done";
   if (!settled) {
     await findAndDownload();
-    failures = state.stage === "error" ? failures + 1 : 0;
+    // A failed download stays "available" (with the reason) so the todo still offers it; retry it soon too.
+    const failed = state.stage === "error" || (state.stage === "available" && state.detail !== "");
+    failures = failed ? failures + 1 : 0;
   }
   scheduleCheck(nextCheckDelay(failures));
 }

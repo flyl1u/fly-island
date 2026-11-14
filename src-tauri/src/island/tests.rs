@@ -206,7 +206,8 @@ fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
                     };
                     let offset = tucked_top_offset(island, dpi);
                     let visible = if style == TuckStyle::Edge { 10.0 } else { zone_height * scale };
-                    assert_eq!(offset, if style == TuckStyle::Edge { -((height * scale - visible) * dpi).round() as i32 } else { 0 });
+                    let slid = -((height * scale - visible).max(0.0) * dpi).round() as i32;
+                    assert_eq!(offset, if style == TuckStyle::Line { 0 } else { slid });
                     let center = STAGE_WINDOW_WIDTH * dpi / 2.0;
                     let top = -f64::from(offset);
                     let hit = |x, y| point_in_island(island, dpi, x, y);
@@ -374,7 +375,8 @@ fn the_island_follows_only_when_asked_and_only_while_collapsed() {
 
 #[test]
 fn morphing_tucks_anchor_to_each_work_area_and_restore_floating_positions() {
-    for style in [TuckStyle::Line, TuckStyle::Hidden] {
+    // Hidden slides the window instead (see tucked_styles_keep_their_visible_height_...).
+    for style in [TuckStyle::Line] {
         for top in [-1080, 0, 48] {
             let mut island = IslandWindowState { tuck_style: style, ..IslandWindowState::default() };
             let normal = resolve_stage_position(island, -900, top, top);

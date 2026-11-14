@@ -230,3 +230,14 @@ test("the settings window saves the switch and the main window applies it", asyn
   assert.equal(main.getUpdateState().autoUpdate, false);
   assert.deepEqual(main.pendingDelays(), []);
 });
+
+test("a failed background download keeps offering the update and retries soon", async () => {
+  const updater = await controller({
+    check: async () => ({ version: "0.3.0", body: null }),
+    download: async () => { throw new Error("github unreachable"); },
+  });
+  const state = updater.getUpdateState();
+  assert.equal(state.stage, "available", "the todo stays; its button downloads again");
+  assert.match(state.detail, /github unreachable/);
+  assert.deepEqual(updater.pendingDelays(), [schedule.RETRY_DELAYS_MS[0]]);
+});
