@@ -46,6 +46,7 @@
 | 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，命令 `save_theme_file`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-community-invite-seen`（`"true"`：在「关于」里点开过用户交流群；没有或其他值时，岛屿的设置按钮、侧栏「关于」和交流群那一行显示红点。2026-11-12 起） | `features/updater/storage.ts` |
+| `focusd-island-auto-update`（`"false"`：关闭自动更新，只在「关于」里手动检查；缺失或其他值都算开启。开启时启动检查、每 6 小时再查、失败退避重试，下载好后在小岛收起且 2 分钟无交互时自动安装。2026-11-13 起） | `features/updater/storage.ts` |
 | `focusd-island-update-dot-seen`（版本号字符串，如 `"3.1.0"`：真正展开并进入待办页时记录已看过的更新版本；缺失、损坏或存储不可用回退空字符串，新版本再次显示红点。2026-11-13 起） | `features/updater/storage.ts` |
 | `focusd-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
@@ -85,7 +86,7 @@
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
-| `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss`；3.0.2 及更早还有 `channel`） | `features/updater/updaterController.ts` | 广播 / `main` |
+| `focusd-update-state` / `focusd-update-request`（更新状态由主窗口广播；独立设置窗口用后者请求 `snapshot` / `check` / `install` / `dismiss`，以及 `{ action: "auto", enabled }` 切换自动更新（2026-11-13 起）；3.0.2 及更早还有 `channel`。状态里多了 `autoUpdate` 布尔字段） | `features/updater/updaterController.ts` | 广播 / `main` |
 | `agent-approval-requested`（载荷 `{ id, agent, kind, sessionId, cwd, toolName, toolInput, permissionSuggestions, receivedAt }`：一个会话等你在岛上审批的工具调用（`kind: "permission"`），或要你回答的 AskUserQuestion（`kind: "question"`，`toolInput.questions`），同一会话同时只发一条） | `agent_approval/mod.rs` | 广播 |
 | `agent-approval-closed`（载荷 `{ id, reason }`，`reason` 为 `decided` / `timeout` / `disconnected` / `handedBack` / `shutdown`） | `agent_approval/mod.rs` | 广播 |
 
