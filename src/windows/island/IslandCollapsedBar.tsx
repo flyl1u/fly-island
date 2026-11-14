@@ -5,7 +5,7 @@ import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot, PageButtonStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { CollapsedLyric } from "../../features/media/CollapsedLyric";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
@@ -21,7 +21,6 @@ import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { TodoTimer } from "../../features/todos/timer";
-import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
@@ -41,6 +40,8 @@ type IslandCollapsedBarProps = {
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
   collapsedTodoCount: number | null;
+  /** Capsule page buttons also make the agent light a capsule, so the two read as one style. */
+  pageButtonStyle?: PageButtonStyle;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
   /** Where the text and each status icon sit, left to right (Settings → Appearance). */
@@ -86,6 +87,7 @@ export function IslandCollapsedBar({
   todoTimer = null,
   collapsedTodoCount,
   collapsedItem,
+  pageButtonStyle = "icon",
   collapsedLayout,
   collapsedCover,
   lyricsSettings,
@@ -112,7 +114,6 @@ export function IslandCollapsedBar({
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
-  const openTarget = collapsedOpenPage(collapsedItem, Boolean(shownAgent), page);
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
@@ -145,12 +146,22 @@ export function IslandCollapsedBar({
                   if (opened === false) onOpenMessages(source);
                 });
               } else {
-                onOpenPage(openTarget);
+                onOpenPage(page);
               }
             }
           }}
         >
-          <span className={pulseClassName} />
+          {/* The agent light opens the Agent page; the text beside it reopens the last page. */}
+          <span
+            className={pageButtonStyle === "capsule" ? "island__agent-light island__agent-light--capsule" : "island__agent-light"}
+            onClick={(event) => {
+              if (preview || (event.detail !== 0 && didDragRef.current)) return;
+              event.stopPropagation();
+              onOpenPage("agents");
+            }}
+          >
+            <span className={pulseClassName} />
+          </span>
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
@@ -248,7 +259,7 @@ export function IslandCollapsedBar({
       inert={isExpanded}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onOpenPage(openTarget);
+          onOpenPage(page);
         }
       }}
     >
