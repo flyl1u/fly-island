@@ -64,6 +64,11 @@
   opacity: 0.6;
 }
 
+/* A DSH balance that cannot be read: an empty ring and a muted reason, not an alarm. */
+.agent-quota__agent--problem b {
+  font-weight: 500;
+}
+
 .agent-quota__agent:focus-visible {
   box-shadow: 0 0 0 2px rgba(var(--agent-ink, 241, 240, 246), 0.35);
 }

@@ -258,7 +258,7 @@ pub(crate) fn show_island(app: &AppHandle) -> Result<(), String> {
     let window = main_window(app)?;
     apply_stage_geometry(&window, read_window_state(), false)?;
     window.show().map_err(|error| error.to_string())?;
-    window.set_focus().map_err(|error| error.to_string())?;
+    crate::system::window_focus::focus_window(&window)?;
     if let Ok(hwnd) = window.hwnd() {
         win32::taskbar_edge::raise_topmost(hwnd);
     }

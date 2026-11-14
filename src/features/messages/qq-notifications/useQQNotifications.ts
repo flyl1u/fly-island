@@ -2,7 +2,7 @@ import { useTranslation } from "../../../i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { nextQQPreview, type QQPreviewTiming } from "../qqNotificationTiming";
-import { clearQQNotifications, getQQNotificationState, launchQQ, listenQQNotificationsChanged, openQQNotificationSettings, requestQQNotificationAccess, setQQNotificationsEnabled, type QQNotificationSnapshot } from "./api";
+import { clearQQNotifications, dismissQQContact, getQQNotificationState, launchQQ, listenQQNotificationsChanged, openQQNotificationSettings, requestQQNotificationAccess, setQQNotificationsEnabled, type QQNotificationSnapshot } from "./api";
 import { hasRequestedQQNotificationAccess, isQQNotificationsEnabled, markQQNotificationAccessRequested, saveQQNotificationsEnabled } from "./storage";
 
 const EMPTY_SNAPSHOT: QQNotificationSnapshot = {
@@ -133,10 +133,13 @@ export function useQQNotifications(canPreview: boolean) {
     setPreviewWindow(null);
   }), [acceptSnapshot, run]);
 
-  const openQQ = useCallback(() => run(async () => {
+  /** Opening from one contact's message reads that contact's messages; the others stay. */
+  const openQQ = useCallback((contact?: string) => run(async () => {
     await launchQQ();
     setPreviewWindow(null);
-  }), [run]);
+    // QQ is already open; a list that failed to update is not worth an error.
+    if (contact !== undefined) await dismissQQContact(contact).then(acceptSnapshot).catch(() => undefined);
+  }), [acceptSnapshot, run]);
 
   return {
     snapshot, busy, actionError, setEnabled, requestAccess, openSettings, refresh, clear, openQQ,

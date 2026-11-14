@@ -54,3 +54,12 @@ test("DSH host labels distinguish community apps", async () => {
   assert.equal(dshHostLabel("DSH Desktop (anywhere)"), "DSH Desktop (anywhere)");
   assert.equal(dshHostLabel("Code"), null);
 });
+
+test("DSH balance failures map to a known reason, anything else stays quiet", async () => {
+  const { dshProblem } = await import("../../src/features/agent-status/api.ts");
+  assert.equal(dshProblem("dsh:credential"), "credential");
+  assert.equal(dshProblem("dsh:timeout"), "timeout");
+  assert.equal(dshProblem("dsh:unknown"), null);
+  assert.equal(dshProblem(new Error("ipc")), null);
+  assert.equal(usageLineCount({ claude: null, codex: null, dsh: null, dshProblem: "network", readAt: now }), 1);
+});

@@ -140,7 +140,7 @@ pub fn quit_island(app: AppHandle) {
 
 fn reveal(window: &WebviewWindow) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
-    window.set_focus().map_err(|error| error.to_string())
+    crate::system::window_focus::focus_window(window)
 }
 
 // Async keeps window creation off the IPC thread, which can deadlock on Windows.

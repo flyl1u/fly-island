@@ -30,7 +30,6 @@ import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useIslandTodos } from "./useIslandTodos";
 import { useIslandTucking } from "./useIslandTucking";
-import { keepIslandVisible } from "./keepVisible";
 import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
 import { useIdleUpdateInstall } from "../../features/updater/useIdleUpdateInstall";
@@ -89,7 +88,8 @@ export function IslandApp() {
     settings,
     navigation,
     hasMessagePreview,
-    keepVisible: keepIslandVisible(settings, { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer }, Date.now()),
+    activity: { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer },
+    gameHolds: game.quiet || game.tuck,
   });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);

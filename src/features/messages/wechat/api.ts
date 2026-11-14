@@ -49,6 +49,11 @@ export function setWeChatMinimizedTaskbarHidden(hidden: boolean) {
   return invoke<ReminderSnapshot>("set_wechat_minimized_taskbar_hidden", { hidden });
 }
 
+/** Clears every preview of the conversation `messageId` belongs to. */
+export function dismissWeChatConversation(messageId: string) {
+  return invoke<ReminderSnapshot>("dismiss_wechat_conversation", { messageId });
+}
+
 export function launchWeChat() {
   return invoke("open_wechat");
 }

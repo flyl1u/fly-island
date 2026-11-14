@@ -163,6 +163,32 @@
     inset 0 1px 0 1px rgba(255, 255, 255, calc(var(--glass-inset-alpha) * 0.5));
 }
 
+/*
+ * Panels inside the pane (translation, the file shelf, the settings page's list). On the classic
+ * island they sit on an opaque deep base; on glass that read as a black (or white) box cut into
+ * the pane. Here they are a faint layer of the tone's overlay with a hairline and a lit top edge,
+ * the way the message and clipboard cards already sit on it, so the glass shows through.
+ */
+.island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  /* A light veil of the tone's own base keeps muted text readable over a busy or bright desktop. */
+  --inner-panel-fill:
+    linear-gradient(160deg, rgba(var(--overlay-rgb), 0.07), rgba(var(--overlay-rgb), 0.02)),
+    rgba(var(--panel-deep-rgb), calc(0.22 + var(--is-light) * 0.12));
+  --inner-panel-edge:
+    inset 0 0 0 1px rgba(var(--overlay-rgb), 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.08 + var(--is-light) * 0.32));
+  --inner-panel-sidebar: rgba(var(--overlay-rgb), 0.05);
+  /* The ring that parts a badge from what it sits on takes the pane's own tint. */
+  --inner-panel-cutout: var(--glass-tint-color);
+}
+
+/* Frosted glass is mostly opaque already: a thinner veil is enough. */
+.island.island--material-frostedGlass {
+  --inner-panel-fill:
+    linear-gradient(160deg, rgba(var(--overlay-rgb), 0.06), rgba(var(--overlay-rgb), 0.02)),
+    rgba(var(--panel-deep-rgb), calc(0.1 + var(--is-light) * 0.1));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .island__glass-refraction {
     animation: none !important;

@@ -90,6 +90,12 @@ export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usag
       `社区 DSH 宿主在 280px ${view} 视图中不溢出`);
   }
   if (fixture) fixture.style.width = originalWidth;
+  // DSH set up but unreadable: an empty ring with the reason, not a silently missing ring.
+  const failed: AgentUsages = { claude: null, codex: null, dsh: null, dshProblem: "credential", readAt: Date.now() };
+  await act(async () => root.render(<I18nProvider><AgentSessionsPanel sessions={[dsh]} showUsage usages={failed} hostDisplay="both" /></I18nProvider>));
+  const note = document.querySelector<HTMLElement>(".agent-quota__agent--problem");
+  check(usageLineCount(failed) === 1 && note?.textContent === "未找到凭据" && note.getAttribute("aria-label")?.includes("重新登录") &&
+    note.querySelectorAll(".quota-rings__fill--unknown").length === 2, "DSH 余额读不到时显示暗环（未知）和原因，不再一片空白");
   await act(async () => root.render(<I18nProvider><QuotaAlertPopup alert={{ kind: "low", agent: "dsh", window: "balance", used: 100, resetsAt: null }} /></I18nProvider>));
   check(document.querySelector("[role=status]")?.textContent === "DSH 余额不足", "DSH 余额预警不用订阅百分比文案");
 }

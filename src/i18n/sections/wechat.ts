@@ -9,6 +9,8 @@ export type WechatText = {
   messageList: string;
   openFrom: (contact: string) => string;
   jumpUnavailable: string;
+  /** Codes returned by open_wechat / open_wechat_conversation (wechat_reminders/launch.rs). */
+  openErrors: Record<"not-installed" | "no-main-window" | "restore-failed" | "launch-failed", string>;
   showPreview: string;
   previewHint: string;
   previewRisk: string;
@@ -33,6 +35,12 @@ export const zhCN: WechatText = {
   messageList: "微信消息摘要",
   openFrom: (contact) => `打开微信中的「${contact}」会话`,
   jumpUnavailable: "已打开微信，未能定位该会话。请在微信聊天列表中打开。",
+  openErrors: {
+    "not-installed": "没有找到桌面版微信。请先安装并打开微信。",
+    "no-main-window": "微信已在运行，但没有找到主窗口。请从系统托盘打开微信。",
+    "restore-failed": "未能唤回微信窗口。请双击系统托盘中的微信图标。",
+    "launch-failed": "未能启动微信。请手动打开微信。",
+  },
   showPreview: "显示联系人和消息内容",
   previewHint: "将微信留在「聊天」页。点右上角「×」收起后仍可收到摘要，摘要只保存在本机内存中。",
   previewRisk: "这是非官方功能，会临时修改微信进程中的辅助功能标志，可能导致客户端异常、升级后失效或触发微信账号限制。",
@@ -64,6 +72,12 @@ export const en: WechatText = {
   messageList: "WeChat message previews",
   openFrom: (contact) => `Open the conversation with ${contact} in WeChat`,
   jumpUnavailable: "WeChat opened. Find the conversation in its chat list.",
+  openErrors: {
+    "not-installed": "WeChat for Windows was not found. Install and open WeChat first.",
+    "no-main-window": "WeChat is running, but its main window was not found. Open WeChat from the system tray.",
+    "restore-failed": "Couldn't bring WeChat back. Double-click the WeChat icon in the system tray.",
+    "launch-failed": "Couldn't start WeChat. Open WeChat yourself.",
+  },
   showPreview: "Show contacts and message content",
   previewHint: "Leave WeChat on Chats. Previews remain available after you click Close (×) and are kept in memory on this device.",
   previewRisk: "This unofficial feature temporarily changes an accessibility flag in the WeChat process. It may affect client stability, stop working after an update, or trigger WeChat account restrictions.",

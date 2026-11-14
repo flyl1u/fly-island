@@ -15,6 +15,8 @@ export function useIslandNavigation() {
   const [isPeekTuck, setIsPeekTuck] = useState(false);
   // How long a peeking island waits after the cursor leaves; null keeps the minimize default.
   const [peekRetractDelayMs, setPeekRetractDelayMs] = useState<number | null>(null);
+  // The current tuck came from the idle timer: "stay visible while…" may undo it (tuckRules.ts).
+  const [tuckedAutomatically, setTuckedAutomatically] = useState(false);
   const [page, setPage] = useState<IslandPage>(loadLastPage);
   useEffect(() => saveLastPage(page), [page]);
   const clipboardShortcutToggleAt = useRef(0);
@@ -30,6 +32,7 @@ export function useIslandNavigation() {
     setMode(nextMode);
     setIsTucked(false);
     setIsPeekTuck(false);
+    setTuckedAutomatically(false);
   }, []);
 
   // Keeps a peek: a panel opened from a peeking island closes, and the island slides
@@ -60,11 +63,13 @@ export function useIslandNavigation() {
     setIsTucked(true);
     setIsPeekTuck(retractDelayMs !== null);
     setPeekRetractDelayMs(retractDelayMs);
+    setTuckedAutomatically(true);
   }, [setIslandMode]);
 
   const revealIsland = useCallback(() => {
     setIsTucked(false);
     setIsPeekTuck(false);
+    setTuckedAutomatically(false);
   }, []);
 
   /**
@@ -97,6 +102,7 @@ export function useIslandNavigation() {
     setMode("expanded");
     setIsTucked(false);
     setIsPeekTuck(false);
+    setTuckedAutomatically(false);
   }, []);
 
   const openClipboardHistory = useCallback(() => {
@@ -131,6 +137,7 @@ export function useIslandNavigation() {
     /** Tucked such that hovering only peeks it out (minimized, or idle-tucked with retract). */
     retractsAfterPeek: isPeekTuck,
     peekRetractDelayMs,
+    tuckedAutomatically,
     page,
     setPage,
     collapseIsland,

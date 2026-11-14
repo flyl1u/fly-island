@@ -85,6 +85,14 @@ pub(crate) fn is_any_button_down() -> bool {
     is_key_down(VK_LBUTTON) || is_key_down(VK_RBUTTON)
 }
 
+/// Whether Alt, Ctrl or a Windows key is physically held: a keyboard shortcut such
+/// as Alt+Tab may be in progress.
+pub(crate) fn is_shortcut_modifier_down() -> bool {
+    [VK_MENU, VK_CONTROL, VK_LWIN, VK_RWIN]
+        .into_iter()
+        .any(is_key_down)
+}
+
 /// Synthesizes a key press for `key`, as if typed on the keyboard.
 pub(crate) fn send_key_down(key: VIRTUAL_KEY) {
     send_key_event(key, KEYBD_EVENT_FLAGS(0));

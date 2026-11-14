@@ -3,13 +3,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { isTauri } from "@tauri-apps/api/core";
 import type { MessagePreview } from "../messagePreview";
 import {
-  clearWeChatReminders, getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged,
+  clearWeChatReminders, dismissWeChatConversation, getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged,
   setWeChatMessagePreviewEnabled, setWeChatMinimizedTaskbarHidden, setWeChatRemindersEnabled, type ReminderSnapshot,
 } from "./api";
 import {
   isWeChatMessagePreviewEnabled, isWeChatMinimizedTaskbarHidden, isWeChatRemindersEnabled,
   saveWeChatMessagePreviewEnabled, saveWeChatMinimizedTaskbarHidden, saveWeChatRemindersEnabled,
 } from "./storage";
+import { weChatOpenErrorText } from "./openError";
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
   revision: 0, enabled: false, status: "disabled", pending: false,
@@ -90,7 +91,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
       await action();
       return true;
     } catch (error) {
-      setActionError(String(error));
+      setActionError(weChatOpenErrorText(error, t.wechat.openErrors));
       return false;
     } finally {
       actionPending.current = false;
@@ -120,14 +121,17 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     saveWeChatMinimizedTaskbarHidden(hidden);
   }), [acceptSnapshot, run]);
 
+  /** Opening one conversation reads all of its previews; the other chats stay. */
   const openWeChat = useCallback((messageId?: string) => run(async () => {
     if (messageId) {
       if (!await launchWeChatConversation(messageId)) setActionError(t.wechat.jumpUnavailable);
+      // WeChat is already open; a list that failed to update is not worth an error.
+      await dismissWeChatConversation(messageId).then(acceptSnapshot).catch(() => undefined);
     } else {
       await launchWeChat();
     }
     setPreviewReceivedAt(null);
-  }), [run, t.wechat.jumpUnavailable]);
+  }), [acceptSnapshot, run, t.wechat.jumpUnavailable]);
 
   const latest = snapshot.messages[0];
   const message = latest?.receivedAt === snapshot.lastAttentionAt ? latest : undefined;
