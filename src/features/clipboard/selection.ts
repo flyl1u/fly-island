@@ -1,3 +1,8 @@
+/** The entries Select all takes: favorites are left out, so a bulk delete keeps them. */
+export function selectableIds(items: readonly { id: string; favorite?: boolean }[]): string[] {
+  return items.filter((item) => !item.favorite).map((item) => item.id);
+}
+
 /** Selection survives filtering; only entries removed from the history are pruned. */
 export function pruneSelection(selected: readonly string[], existingIds: readonly string[]): string[] {
   const existing = new Set(existingIds);

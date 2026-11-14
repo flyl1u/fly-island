@@ -8,6 +8,7 @@ import { useClipboardConfirmations } from "./useClipboardConfirmations";
 import { useClipboardHistoryList } from "./useClipboardHistoryList";
 import { useClipboardNoteEditor } from "./useClipboardNoteEditor";
 import { useClipboardSelection } from "./useClipboardSelection";
+import { selectableIds } from "./selection";
 import { ClipboardImagePreview } from "./ClipboardImagePreview";
 import "./ClipboardHistoryPanel.css";
 import "./ClipboardSelection.css";
@@ -46,7 +47,9 @@ export function ClipboardHistoryPanel({
     dismissConfirmations,
     handleDeleteItem,
   } = useClipboardConfirmations(snapshot.items, onDeleteItem);
-  const selection = useClipboardSelection(snapshot.items.map((item) => item.id), filteredItems.map((item) => item.id), onDeleteItems);
+  // Select all leaves favorites out: they are kept unless picked one by one.
+  const selectable = selectableIds(filteredItems);
+  const selection = useClipboardSelection(snapshot.items.map((item) => item.id), selectable, onDeleteItems);
   const [preview, setPreview] = useState<ClipboardHistoryItem | null>(null);
   useEffect(() => {
     if (!preview && !selection.selecting) return;
@@ -90,7 +93,7 @@ export function ClipboardHistoryPanel({
           selectedCount={selection.selectedIds.length}
           allSelected={selection.allSelected}
           deleting={selection.deleting}
-          visibleCount={filteredItems.length}
+          visibleCount={selectable.length}
           onSelectAll={selection.selectAll}
           onCancel={selection.exit}
           onDelete={() => {
