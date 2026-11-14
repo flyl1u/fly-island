@@ -1,14 +1,15 @@
 //! Brings WeChat to the front, or starts it, without ever triggering a Windows
 //! "application not found" dialog.
 //!
-//! Order: activate a visible main window directly; otherwise start the running
-//! instance's own executable again (WeChat is single-instance and restores its
-//! hidden UI itself); only then, and only when it is registered, the `weixin://`
-//! protocol. Weixin 4.x and some installs do not register that protocol, and the
-//! opener plugin's ShellExecute showed the system error box for it.
+//! Order: activate a shown (or minimized) main window directly; otherwise the
+//! `weixin://` protocol, only when it is registered, opened without the system
+//! error box (Weixin 4.x and some installs do not register it). A running WeChat
+//! is never started again: a second Weixin.exe does not restore the hidden window
+//! but opens the "进入微信" sign-in dialog, even for a signed-in user (v3.2.1).
+//! A hidden window with no protocol is left to the user (the tray icon).
 
 use super::source::{
-    executable_for_process, existing_wechat_windows, preferred_window, registry_executable,
+    existing_wechat_windows, preferred_window, registry_executable,
     ProcessIdentity,
 };
 use crate::win32;
@@ -31,19 +32,18 @@ const PROTOCOL_COMMAND_KEY: &str = "weixin\\shell\\open\\command";
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RestoreStep {
     Activate,
-    Relaunch,
     Protocol,
 }
 
 /// Which ways to try, in order, to bring back a running WeChat main window.
-/// Direct activation is only safe for a window that is already shown: forcing a
-/// hidden Qt window visible can leave it blank, so those go through WeChat itself.
-pub(super) fn restore_steps(visible: bool, minimized: bool, protocol_registered: bool) -> Vec<RestoreStep> {
-    let mut steps = Vec::with_capacity(3);
-    if visible && !minimized {
+/// Direct activation is only safe for a window that is shown or minimized (it is
+/// restored first): forcing a hidden Qt window visible can leave it blank, so those
+/// go through WeChat's own protocol handler.
+pub(super) fn restore_steps(visible: bool, protocol_registered: bool) -> Vec<RestoreStep> {
+    let mut steps = Vec::with_capacity(2);
+    if visible {
         steps.push(RestoreStep::Activate);
     }
-    steps.push(RestoreStep::Relaunch);
     if protocol_registered {
         steps.push(RestoreStep::Protocol);
     }
@@ -117,7 +117,7 @@ pub(super) fn restore_wechat(requested: Option<ProcessIdentity>) -> Result<Optio
     }
     let expected = original.process;
     win32::window::allow_set_foreground_window(expected.pid);
-    for step in restore_steps(original.visible, minimized, protocol_registered()) {
+    for step in restore_steps(original.visible, protocol_registered()) {
         let started = match step {
             RestoreStep::Activate => {
                 if win32::window::force_foreground(original.handle) {
@@ -125,7 +125,6 @@ pub(super) fn restore_wechat(requested: Option<ProcessIdentity>) -> Result<Optio
                 }
                 continue;
             }
-            RestoreStep::Relaunch => executable_for_process(expected.pid).is_some_and(|path| start(&path)),
             RestoreStep::Protocol => win32::shell_open::open_url_without_ui("weixin://"),
         };
         if !started {
@@ -162,23 +161,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_shown_window_is_activated_before_anything_is_started() {
-        assert_eq!(
-            restore_steps(true, false, true),
-            [RestoreStep::Activate, RestoreStep::Relaunch, RestoreStep::Protocol]
-        );
+    fn a_shown_or_minimized_window_is_activated_before_the_protocol() {
+        assert_eq!(restore_steps(true, true), [RestoreStep::Activate, RestoreStep::Protocol]);
     }
 
     #[test]
-    fn hidden_or_minimized_windows_are_restored_by_wechat_itself() {
-        assert_eq!(restore_steps(false, false, true), [RestoreStep::Relaunch, RestoreStep::Protocol]);
-        assert_eq!(restore_steps(true, true, true), [RestoreStep::Relaunch, RestoreStep::Protocol]);
+    fn a_hidden_window_goes_through_the_protocol_only() {
+        assert_eq!(restore_steps(false, true), [RestoreStep::Protocol]);
+        // No protocol: nothing is tried (never a second Weixin.exe, which asks to sign in).
+        assert!(restore_steps(false, false).is_empty());
     }
 
     #[test]
     fn an_unregistered_protocol_is_never_opened() {
-        assert!(!restore_steps(true, false, false).contains(&RestoreStep::Protocol));
-        assert!(!restore_steps(false, true, false).contains(&RestoreStep::Protocol));
+        assert_eq!(restore_steps(true, false), [RestoreStep::Activate]);
     }
 
     #[test]
