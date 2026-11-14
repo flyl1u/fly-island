@@ -1,6 +1,7 @@
-import { Check, ClipboardList, Copy, ImageIcon, Pencil, Star, Trash2, X } from "lucide-react";
+import { Check, ClipboardList, Copy, ImageIcon, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { ClipboardHistoryItem } from "./api";
+import { ClipboardItemNote } from "./ClipboardItemNote";
 import "./ClipboardHistoryItemRow.css";
 
 export function ClipboardHistoryItemRow({
@@ -18,6 +19,10 @@ export function ClipboardHistoryItemRow({
   onSaveNote,
   onCancelEditNote,
   onDelete,
+  selecting,
+  selected,
+  onSelect,
+  onPreview,
 }: {
   item: ClipboardHistoryItem;
   elementRef: (node: HTMLElement | null) => void;
@@ -33,88 +38,46 @@ export function ClipboardHistoryItemRow({
   onSaveNote: (id: string) => void;
   onCancelEditNote: () => void;
   onDelete: (id: string) => void;
+  selecting: boolean;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onPreview: (item: ClipboardHistoryItem) => void;
 }) {
   const t = useTranslation();
 
   return (
-    <article className="clipboard-item" role="listitem" ref={elementRef} data-clipboard-id={item.kind === "text" ? item.id : undefined}>
-      <button
-        className="clipboard-item__main"
-        type="button"
-        onClick={() => onCopy(item.id)}
-      >
+    <article className={`clipboard-item${selecting ? " clipboard-item--selecting" : ""}${selected ? " clipboard-item--selected" : ""}`}
+      role="listitem" ref={elementRef} data-clipboard-id={item.id} onClick={() => { if (selecting) onSelect(item.id); }}>
+      <button className="clipboard-item__select" type="button" role="checkbox" aria-checked={selected}
+        aria-label={t.clipboard.selectItem(item.preview)} tabIndex={selecting ? 0 : -1} aria-hidden={!selecting}
+        onClick={(event) => { event.stopPropagation(); onSelect(item.id); }}>
+        {selected && <Check size={14} strokeWidth={1.5} absoluteStrokeWidth />}
+      </button>
+      <div className="clipboard-item__content">
         {item.kind === "image" ? (
-          <span className="clipboard-item__thumb">
+          <button className="clipboard-item__thumb" type="button" aria-label={t.clipboard.imagePreview}
+            onClick={(event) => { event.stopPropagation(); onPreview(item); }}>
             {item.image?.thumbnailDataUrl ? (
               <img src={item.image.thumbnailDataUrl} alt="" />
             ) : (
               <ImageIcon size={15} strokeWidth={2} />
             )}
-          </span>
+          </button>
         ) : (
           <span className="clipboard-item__text-icon">
             <ClipboardList size={14} strokeWidth={2} />
           </span>
         )}
-        <span className="clipboard-item__body">
+        <button className="clipboard-item__main" type="button" onClick={(event) => {
+          event.stopPropagation();
+          if (selecting) onSelect(item.id); else onCopy(item.id);
+        }}>
           <span className="clipboard-item__preview">{item.preview}</span>
-        </span>
-      </button>
-      <div className="clipboard-item__note">
-        {isEditingNote ? (
-          <form
-            className="clipboard-note-editor"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onSaveNote(item.id);
-            }}
-          >
-            <input
-              autoFocus
-              value={noteDraft}
-              maxLength={80}
-              placeholder={t.clipboard.notePlaceholder}
-              aria-label={t.clipboard.noteInputLabel}
-              disabled={isSavingNote}
-              onChange={(event) => onNoteDraftChange(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  onCancelEditNote();
-                }
-              }}
-            />
-            <button
-              type="submit"
-              aria-label={t.clipboard.saveNote}
-              disabled={isSavingNote}
-            >
-              <Check size={13} strokeWidth={2.6} />
-            </button>
-            <button
-              type="button"
-              aria-label={t.clipboard.cancelEditNote}
-              disabled={isSavingNote}
-              onClick={onCancelEditNote}
-            >
-              <X size={13} strokeWidth={2.5} />
-            </button>
-          </form>
-        ) : (
-          <button
-            className={item.note ? "clipboard-note clipboard-note--filled" : "clipboard-note"}
-            type="button"
-            aria-label={
-              item.note ? t.clipboard.editNote(item.note) : t.clipboard.addNoteLabel
-            }
-            onClick={() => onStartEditNote(item)}
-          >
-            <Pencil size={12} strokeWidth={2.3} />
-            <span>{item.note || t.clipboard.noteFallback}</span>
-          </button>
-        )}
+        </button>
       </div>
-      <div className="clipboard-item__actions">
+      {!selecting && <ClipboardItemNote item={item} isEditingNote={isEditingNote} noteDraft={noteDraft} isSavingNote={isSavingNote}
+        onNoteDraftChange={onNoteDraftChange} onSaveNote={onSaveNote} onCancelEditNote={onCancelEditNote} onStartEditNote={onStartEditNote} />}
+      <div className="clipboard-item__actions" hidden={selecting}>
         <button
           className={[
             "clipboard-favorite-button",

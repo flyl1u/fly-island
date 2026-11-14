@@ -71,6 +71,14 @@ export function deleteClipboardItem(id: string) {
   return invoke<ClipboardHistorySnapshot>("delete_clipboard_history_item", { id });
 }
 
+export function deleteClipboardItems(ids: string[]) {
+  return invoke<ClipboardHistorySnapshot>("delete_clipboard_history_items", { ids });
+}
+
+export function readClipboardImage(id: string) {
+  return invoke<string>("read_clipboard_history_image", { id });
+}
+
 export function clearClipboardHistory() {
   return invoke<ClipboardHistorySnapshot>("clear_clipboard_history");
 }

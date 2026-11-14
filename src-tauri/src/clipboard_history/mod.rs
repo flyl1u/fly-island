@@ -1,6 +1,8 @@
 //! Clipboard history: commands, item types and the background capture service.
 
 mod hotkey;
+mod image_access;
+mod selection;
 mod service;
 mod store;
 
@@ -196,6 +198,16 @@ pub fn clear_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
     service()?.clear()
 }
 
+#[tauri::command]
+pub async fn delete_clipboard_history_items(ids: Vec<String>) -> Result<ClipboardHistorySnapshot, String> {
+    service()?.delete_items(&ids)
+}
+
+#[tauri::command]
+pub async fn read_clipboard_history_image(id: String) -> Result<String, String> {
+    service()?.read_image(&id)
+}
+
 pub fn init(app: &AppHandle) -> Result<(), String> {
     if CLIPBOARD_HISTORY.get().is_some() {
         return Ok(());
@@ -257,6 +269,8 @@ macro_rules! tauri_commands {
             crate::clipboard_history::set_clipboard_history_item_note,
             crate::clipboard_history::delete_clipboard_history_item,
             crate::clipboard_history::clear_clipboard_history,
+            crate::clipboard_history::delete_clipboard_history_items,
+            crate::clipboard_history::read_clipboard_history_image,
         ] $($rest)*)
     };
 }

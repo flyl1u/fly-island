@@ -57,6 +57,11 @@
 
 `examples/wechat_reminder_probe.rs`（2026-11-13 起）在监听或路径解析报错前向标准输出增加一条 `phase: "executableResolution"` JSON：`registryExecutable`、`runningExecutable`、`selectedExecutable` 和 `explicitExecutable` 均为路径字符串或 `null`，分别表示注册表候选、主窗口优先的运行路径、最终采用路径及 `--exe` 参数。原有监听状态、事件计数字段和退出码不变；这条诊断不进入 Tauri 事件或持久化存储。详见 [微信提醒兼容性说明](../wechat-reminder-compatibility.md#只读诊断)。
 
+## 剪贴板命令（2026-11-13）
+
+- `delete_clipboard_history_items({ ids: string[] })` 返回完整历史快照；一次操作最多写盘一次、广播一次 `clipboard-history-changed`，显式选中的收藏也删除；未知或重复 ID 忽略。原 `clear_clipboard_history` 保留原语义。
+- `read_clipboard_history_image({ id: string })` 返回 PNG data URL；只允许历史条目引用的 `clipboard-images/` 直接子文件，拒绝目录外路径、父目录跳转、非 PNG 和大于 10 MiB 的内容。路径由原生端按 ID 查找，前端不传路径。
+
 ## 事件
 
 前端同窗口 DOM 事件 `focusd-update-dot-seen`（2026-11-13）：更新红点已看过的版本保存成功后发出，无载荷；跨窗口仍使用浏览器 `storage` 事件。不新增 Tauri 事件。

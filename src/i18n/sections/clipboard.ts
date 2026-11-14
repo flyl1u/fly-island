@@ -1,4 +1,16 @@
 export type ClipboardText = {
+  selectEntries: string;
+  selectItem: (preview: string) => string;
+  selectAll: string;
+  deselectAll: string;
+  finishSelection: string;
+  deleteSelected: (count: number) => string;
+  deleteFailed: string;
+  imagePreview: string;
+  closePreview: string;
+  loadingImage: string;
+  previewFailed: string;
+  imageSize: (width: number, height: number) => string;
   title: string;
   favoriteCount: (count: number) => string;
   expandShortcut: string;
@@ -33,6 +45,18 @@ export type ClipboardText = {
 };
 
 export const zhCN: ClipboardText = {
+  selectEntries: "选择记录",
+  selectItem: (preview) => `选择记录：${preview}`,
+  selectAll: "全选",
+  deselectAll: "取消全选",
+  finishSelection: "完成选择",
+  deleteSelected: (count) => `删除已选的 ${count} 条记录`,
+  deleteFailed: "删除失败，请再试一次",
+  imagePreview: "预览图片",
+  closePreview: "关闭预览",
+  loadingImage: "正在加载原图…",
+  previewFailed: "原图未能加载，暂时显示缩略图",
+  imageSize: (width, height) => `${width} × ${height} 像素`,
   title: "剪贴板历史",
   favoriteCount: (count) => `${count} 条收藏`,
   expandShortcut: "展开快捷键",
@@ -67,6 +91,18 @@ export const zhCN: ClipboardText = {
 };
 
 export const en: ClipboardText = {
+  selectEntries: "Select entries",
+  selectItem: (preview) => `Select entry: ${preview}`,
+  selectAll: "Select all",
+  deselectAll: "Deselect all",
+  finishSelection: "Done selecting",
+  deleteSelected: (count) => `Delete ${count} selected`,
+  deleteFailed: "Couldn't delete. Try again.",
+  imagePreview: "Preview image",
+  closePreview: "Close preview",
+  loadingImage: "Loading full image…",
+  previewFailed: "Full image unavailable. Showing thumbnail.",
+  imageSize: (width, height) => `${width} × ${height} px`,
   title: "Clipboard history",
   favoriteCount: (count) => (count === 1 ? "1 favorite" : `${count} favorites`),
   expandShortcut: "Expand shortcut",

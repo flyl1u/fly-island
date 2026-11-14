@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { clearClipboardHistory, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySnapshot } from "./api";
+import { deleteClipboardItems, copyClipboardItem, deleteClipboardItem, getClipboardHistory, listenClipboardHistoryChanged, listenClipboardHistoryShortcut, setClipboardItemNote, toggleClipboardFavorite, type ClipboardHistorySnapshot } from "./api";
 import { DEFAULT_CLIPBOARD_HISTORY } from "./settings";
 
 /** Clipboard history snapshot, its item actions, and the native change and shortcut listeners. */
@@ -59,12 +59,14 @@ export function useClipboardHistory(onShortcut: () => void) {
     }
   }, []);
 
-  const clearClipboardHistoryItems = useCallback(async () => {
+  const deleteClipboardHistoryItems = useCallback(async (ids: string[]) => {
     try {
-      const snapshot = await clearClipboardHistory();
+      const snapshot = await deleteClipboardItems(ids);
       setClipboardHistory(snapshot);
+      return true;
     } catch (error) {
-      console.error("Failed to clear clipboard history", error);
+      console.error("Failed to delete clipboard history items", error);
+      return false;
     }
   }, []);
 
@@ -122,6 +124,6 @@ export function useClipboardHistory(onShortcut: () => void) {
     toggleClipboardHistoryFavorite,
     updateClipboardHistoryItemNote,
     deleteClipboardHistoryItem,
-    clearClipboardHistoryItems,
+    deleteClipboardHistoryItems,
   };
 }

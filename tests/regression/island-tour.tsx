@@ -77,6 +77,8 @@ mockIPC((command, payload) => {
     case "get_launch_at_startup": return false;
     case "get_default_todo_save_directory": return "D:\\Notes";
     case "get_clipboard_history": return empty ? { ...TOUR_CLIPBOARD, items: [] } : TOUR_CLIPBOARD;
+    case "delete_clipboard_history_items": return { ...TOUR_CLIPBOARD, items: TOUR_CLIPBOARD.items.filter((item) => !(args.ids as string[]).includes(item.id)) };
+    case "read_clipboard_history_image": return TOUR_CLIPBOARD.items.find((item) => item.id === args.id)?.image?.thumbnailDataUrl ?? "";
     case "get_file_shelf": return { items: empty ? [] : TOUR_SHELF };
     case "list_agent_sessions": return empty ? [] : TOUR_SESSIONS;
     case "agent_sessions_in_front": return [];

@@ -196,6 +196,35 @@ impl ClipboardHistoryService {
         Ok(snapshot)
     }
 
+    pub(super) fn delete_items(&self, ids: &[String]) -> Result<ClipboardHistorySnapshot, String> {
+        let mut state = self.state.lock().map_err(|error| error.to_string())?;
+        let original_order: Vec<String> = state.items.iter().map(|item| item.id.clone()).collect();
+        let removed = super::selection::take_selected(&mut state.items, ids);
+        if removed.is_empty() {
+            return Ok(Self::snapshot_locked(&state));
+        }
+        if let Err(error) = self.persist_locked(&state) {
+            state.items.extend(removed);
+            state.items.sort_by_key(|item| original_order.iter().position(|id| id == &item.id));
+            return Err(error);
+        }
+        for item in removed { self.remove_item_files(&item); }
+        let snapshot = Self::snapshot_locked(&state);
+        drop(state);
+        self.emit_changed();
+        Ok(snapshot)
+    }
+
+    pub(super) fn read_image(&self, id: &str) -> Result<String, String> {
+        let path = {
+            let state = self.state.lock().map_err(|error| error.to_string())?;
+            state.items.iter().find(|item| item.id == id).and_then(|item| item.image.as_ref())
+                .map(|image| image.original_path.clone())
+                .ok_or_else(|| "Clipboard image was not found.".to_string())?
+        };
+        super::image_access::read_image(&self.image_dir, &path)
+    }
+
     fn capture_current_clipboard(&self) {
         let settings = match self.state.lock() {
             Ok(state) => state.settings.clone(),
@@ -367,8 +396,11 @@ impl ClipboardHistoryService {
 
     fn remove_item_files(&self, item: &ClipboardHistoryItem) {
         if let Some(image) = &item.image {
-            let _ = fs::remove_file(&image.original_path);
-            let _ = fs::remove_file(&image.thumbnail_path);
+            for path in [&image.original_path, &image.thumbnail_path] {
+                if let Ok(path) = super::image_access::managed_path(&self.image_dir, path) {
+                    let _ = fs::remove_file(path);
+                }
+            }
         }
     }
 

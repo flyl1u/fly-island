@@ -21,7 +21,6 @@
 .clipboard-item__main {
   min-width: 0;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-md);
   padding: 0;
@@ -31,6 +30,14 @@
   border: 0;
   outline: none;
   cursor: pointer;
+}
+
+.clipboard-item__content {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-md);
 }
 
 .clipboard-item__thumb,

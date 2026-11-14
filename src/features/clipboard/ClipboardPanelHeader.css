@@ -21,6 +21,9 @@
   color: var(--text-2);
 }
 
+.clipboard-panel__title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clipboard-panel__tools, .clipboard-panel__title > svg, .clipboard-panel__title strong { flex-shrink: 0; }
+
 .clipboard-panel__title strong {
   min-width: 0;
   height: auto;
@@ -105,7 +108,23 @@
 .clipboard-clear-button--confirming {
   color: var(--color-white);
   background: var(--color-danger);
+  width: auto;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
 }
+
+.clipboard-select-all {
+  padding: var(--space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.clipboard-select-all:disabled { opacity: 0.38; cursor: default; }
+.clipboard-select-all:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 
 .clipboard-clear-button:hover:not(:disabled) {
   transform: translateY(-1px);
