@@ -14,6 +14,7 @@ export type IslandText = {
   settingsWithNews: string;
   editor: string;
   todoList: string;
+  todoListWithUpdate: string;
   music: string;
   clipboardHistory: string;
   shelf: string;
@@ -41,6 +42,7 @@ export const zhCN: IslandText = {
   settingsWithNews: "设置（关于里有新内容）",
   editor: "岛屿编辑",
   todoList: "任务清单",
+  todoListWithUpdate: "任务清单（有新版本）",
   music: "Music",
   clipboardHistory: "剪贴板历史",
   shelf: "文件中转",
@@ -66,6 +68,7 @@ export const en: IslandText = {
   settingsWithNews: "Settings (something new in About)",
   editor: "Island editor",
   todoList: "Tasks",
+  todoListWithUpdate: "Tasks (update available)",
   music: "Music",
   clipboardHistory: "Clipboard history",
   shelf: "File shelf",

@@ -245,6 +245,7 @@ export function IslandShell({
           inert={!isExpanded}
         >
           <IslandHeader
+            isExpanded={isExpanded && !isTucked}
             page={page}
             features={features}
             pageOrder={pageOrder}

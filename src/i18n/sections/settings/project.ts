@@ -36,6 +36,7 @@ export type SettingsProjectText = {
     downloadingUnknown: string;
     updateTodo: string;
     updateNow: string;
+    availableHint: string;
     updateDownloading: (percent: number) => string;
     installing: string;
   };
@@ -72,6 +73,7 @@ export const zhCN: SettingsProjectText = {
     downloadingUnknown: "正在下载…",
     updateTodo: "检测到新版本",
     updateNow: "更新",
+    availableHint: "有新版本",
     updateDownloading: (percent) => `下载 ${percent}%`,
     installing: "正在安装，小岛会自动重启",
   },
@@ -108,6 +110,7 @@ export const en: SettingsProjectText = {
     downloadingUnknown: "Downloading…",
     updateTodo: "New version available",
     updateNow: "Update",
+    availableHint: "Update available",
     updateDownloading: (percent) => `Downloading ${percent}%`,
     installing: "Installing — the island will restart itself",
   },

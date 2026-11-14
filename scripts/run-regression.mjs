@@ -29,6 +29,7 @@ export const PAGES = [
   "file-shelf.html",
   "i18n.html?test=1",
   "island-tour.html?test=1",
+  "island-tour.html?test=1&update=1",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
   // cover the line and hidden tucked looks.
   "island-tour.html?test=1&scale=0.85&tuck=line",
@@ -49,6 +50,8 @@ export const PAGES = [
   "todo-timer.html",
   "todo-timer.html?scale=0.85",
   "todo-timer.html?scale=1.2",
+  "update-dot.html?window=settings",
+  "update-dot.html?window=settings&lang=en",
   "tucked-hover.html",
 ];
 

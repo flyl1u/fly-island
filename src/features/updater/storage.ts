@@ -1,4 +1,5 @@
 import { readString, writeString } from "../../lib/storage.ts";
+import { normalizeSeenUpdateVersion } from "./updateDot.ts";
 
 // Whether the user has opened the community group in About; until then the settings button,
 // About in the sidebar and the group row carry a red dot.
@@ -13,4 +14,18 @@ export function loadCommunityInviteSeen(): boolean {
 
 export function saveCommunityInviteSeen() {
   if (writeString(COMMUNITY_INVITE_SEEN_KEY, "true")) window.dispatchEvent(new Event(COMMUNITY_INVITE_SEEN_EVENT));
+}
+
+export const UPDATE_DOT_SEEN_KEY = "focusd-island-update-dot-seen";
+/** Same-window notification; other windows receive the normal storage event. */
+export const UPDATE_DOT_SEEN_EVENT = "focusd-update-dot-seen";
+
+export function loadUpdateDotSeen(): string {
+  return normalizeSeenUpdateVersion(readString(UPDATE_DOT_SEEN_KEY));
+}
+
+export function saveUpdateDotSeen(version: string): boolean {
+  if (!normalizeSeenUpdateVersion(version) || !writeString(UPDATE_DOT_SEEN_KEY, version)) return false;
+  window.dispatchEvent(new Event(UPDATE_DOT_SEEN_EVENT));
+  return true;
 }
