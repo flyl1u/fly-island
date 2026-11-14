@@ -39,6 +39,8 @@ export const APPEARANCE_SETTING_KEYS = [
   "expandedScale",
   "islandCornerRadius",
   "islandCornerShape",
+  "topEdgeShoulders",
+  "topEdgeShoulderSize",
   "maxPanelHeight",
   "taskTextColor",
   "pulseColor",

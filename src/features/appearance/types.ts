@@ -66,6 +66,9 @@ export type IslandSettings = {
   /** Bottom corner radius (px) of the expanded island; the collapsed, detached and inner panel radii follow it. */
   islandCornerRadius: number;
   islandCornerShape: IslandCornerShape;
+  // Optional concave corners where the island joins the screen top.
+  topEdgeShoulders: boolean;
+  topEdgeShoulderSize: number;
   /** Tallest expanded panel (px) before the todo list, clipboard and messages scroll. */
   maxPanelHeight: number;
   /** Clipboard history rows the expanded clipboard page shows before it scrolls. */

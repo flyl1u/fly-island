@@ -5,6 +5,7 @@ import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayout
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { StyleSettingsSection } from "../../features/appearance/StyleSettingsSection";
+import { TopEdgeShouldersSection } from "../../features/appearance/TopEdgeShouldersSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestPanelPreview } from "./storage";
 
@@ -40,6 +41,7 @@ export function AppearanceSettingsPage({
         requestPanelPreview("collapsed");
       }} />
       <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
+      <TopEdgeShouldersSection settings={settings} onChange={onSettingsChange} />
       <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />
       <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
     </>
