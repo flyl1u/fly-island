@@ -6,6 +6,7 @@ import type { MailEvent, MailMessage, MailSnapshot } from "./api";
 import { mailWebUrl } from "./mailDomain";
 import { useMailAccounts } from "./useMailAccounts";
 import { useMailReader } from "./useMailReader";
+import { useMarkAllRead } from "./useMarkAllRead";
 
 const EMPTY_SNAPSHOT: MailSnapshot = {
   revision: 0, email: null, configured: false, enabled: false, syncing: false,
@@ -69,6 +70,7 @@ export function useMail(canPreview: boolean) {
 
   const snapshot = mailboxes.find((mailbox) => mailbox.email === selectedEmail) ?? mailboxes[0] ?? EMPTY_SNAPSHOT;
   const email = snapshot.email;
+  const { markingAll, markAllRead } = useMarkAllRead(snapshot, accounts);
   const { setEnabled: setMailboxEnabled, refresh: refreshMailbox } = accounts;
 
   const setEnabled = useCallback((enabled: boolean) =>
@@ -98,7 +100,8 @@ export function useMail(canPreview: boolean) {
     ? previewBox.items.find((item) => item.id === previewWindow.id && item.unread) ?? null : null;
 
   return {
-    ...accounts, ...reader, snapshot, setEnabled, refresh, selectMailbox, readMail, openMail,
+    ...accounts, ...reader, snapshot, setEnabled, refresh, selectMailbox, readMail, openMail, markAllRead,
+    busy: accounts.busy || markingAll,
     /** Reading a mail: the island gives the panel more height. */
     wantsTallPanel: Boolean(reader.selectedMail),
     preview, previewAccount: preview ? previewWindow?.email ?? null : null,

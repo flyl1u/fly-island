@@ -33,6 +33,10 @@ export function getWeChatReminderState() {
   return invoke<ReminderSnapshot>("get_wechat_reminder_state");
 }
 
+export function clearWeChatReminders() {
+  return invoke<ReminderSnapshot>("clear_wechat_reminders");
+}
+
 export function setWeChatRemindersEnabled(enabled: boolean, previewEnabled?: boolean, hideMinimizedTaskbar?: boolean) {
   return invoke<ReminderSnapshot>("set_wechat_reminders_enabled", { enabled, previewEnabled, hideMinimizedTaskbar });
 }

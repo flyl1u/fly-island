@@ -94,8 +94,9 @@ try {
     const launch = document.querySelector<HTMLButtonElement>('.message-card__surface');
     check(view! === "wechat" && launch?.querySelector('.message-card__name')?.textContent === "微信" && launch.textContent?.includes("有新提醒") && launch.querySelector("time"),
       "微信普通提醒显示品牌、时间和提醒正文卡片");
-    check(!document.querySelector('.qq-panel__header button[aria-label="打开微信"]') && document.querySelectorAll('.qq-panel__header .qq-panel__toolbar button').length === 1,
-      "微信标签顶栏只剩接收开关，没有右上角的打开箭头");
+    check(!document.querySelector('.qq-panel__header button[aria-label="打开微信"]') && document.querySelectorAll('.qq-panel__header .qq-panel__toolbar button').length === 2
+      && document.querySelector('.qq-panel__toolbar > button[aria-label="全部已读并清空"]'),
+      "微信标签顶栏是全部清空与接收开关，没有右上角的打开箭头");
     await act(async () => { launch!.click(); });
     check(calls.some(call => call.command === "open_wechat"), "点击微信图标调用已有的唤回命令");
     await click("接收微信提醒");

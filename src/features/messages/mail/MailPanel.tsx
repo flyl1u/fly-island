@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../i18n";
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CheckCheck, KeyRound, LoaderCircle, MailCheck, Power, RefreshCw, Settings2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
@@ -84,7 +84,7 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
   onRead?: (message: MailMessage) => void;
   onBack?: () => void;
 }) {
-  const { snapshot, mailboxes, busy, actionError, setEnabled, refresh, openMail, selectMailbox } = controller;
+  const { snapshot, mailboxes, busy, actionError, setEnabled, refresh, openMail, selectMailbox, markAllRead } = controller;
   const t = useTranslation();
   const error = actionError || snapshot.error;
   const listRef = useRef<HTMLDivElement>(null);
@@ -152,6 +152,8 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
       <header className="qq-panel__header">
         {navigation}
         <div className="qq-panel__toolbar">
+          <button className="icon-button" type="button" aria-label={t.messages.markAllRead} title={t.messages.markAllRead}
+            disabled={busy || !snapshot.items.some((item) => item.unread)} onClick={() => void markAllRead()}><CheckCheck size={16} strokeWidth={1.5} absoluteStrokeWidth /></button>
           {snapshot.configured && <button className="icon-button message-receiver-toggle" type="button" role="switch" aria-checked={snapshot.enabled} aria-label={t.mail.receive} disabled={busy || snapshot.status === "authRequired"} onClick={() => void setEnabled(!snapshot.enabled)}><Power size={15} strokeWidth={1.8} /></button>}
           <button className="icon-button" type="button" aria-label={t.mail.openLabel} onClick={() => void openMail()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
           {snapshot.configured && <button className="icon-button" type="button" aria-label={t.mail.refreshLabel} disabled={busy || snapshot.syncing || !snapshot.enabled || snapshot.status === "authRequired"} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} className={snapshot.syncing ? "qq-mail-spinning" : undefined} /></button>}

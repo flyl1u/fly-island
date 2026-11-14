@@ -64,6 +64,26 @@ fn repeated_flashes_create_one_reminder_and_activation_acknowledges_it() {
 }
 
 #[test]
+fn clearing_reminders_keeps_preferences_and_advances_the_revision() {
+    let mut state = ReminderState::default();
+    state.set_enabled(true);
+    state.set_preview_enabled(true);
+    let generation = state.generation;
+    state.receive_previews(generation, test_process(4), vec![preview("message")], 1000);
+    let revision = state.snapshot.revision;
+    state.clear();
+    assert!(!state.snapshot.pending);
+    assert!(state.snapshot.messages.is_empty());
+    assert_eq!(state.snapshot.revision, revision + 1);
+    assert!(state.snapshot.enabled && state.snapshot.preview_enabled);
+    assert_eq!(state.generation, generation);
+    state.clear();
+    assert_eq!(state.snapshot.revision, revision + 2);
+    assert!(state.receive_previews(generation, test_process(4), vec![preview("new")], 2000));
+    assert_eq!(state.snapshot.messages[0].chat.body, "new");
+}
+
+#[test]
 fn a_later_flash_can_refresh_the_pending_reminder_after_a_quiet_period() {
     let mut state = ReminderState::default();
     state.set_enabled(true);

@@ -1,7 +1,8 @@
 import { MessageCard } from "../MessageCard";
 import { useTranslation } from "../../../i18n";
 import type { ReactNode } from "react";
-import { ArrowUpRight, KeyRound, Power, RefreshCw, Settings2, Trash2 } from "lucide-react";
+import { ArrowUpRight, CheckCheck, KeyRound, Power, RefreshCw, Settings2 } from "lucide-react";
+import { useMessageCardExit } from "../useMessageCardExit";
 import { MessageSourceIcon } from "../MessageSourceIcon";
 import "./QQNotifications.css";
 import type { QQNotificationsController } from "./useQQNotifications";
@@ -34,25 +35,26 @@ export function QQNotificationControls({ controller, compact = false }: { contro
 export function QQNotificationPanel({ controller, navigation }: { controller: QQNotificationsController; navigation: ReactNode }) {
   const { snapshot, busy, actionError, refresh, clear, openQQ } = controller;
   const t = useTranslation();
+  const displayed = useMessageCardExit(snapshot.items, snapshot.enabled);
   const error = actionError || snapshot.error || (snapshot.status === "permissionRequired" || snapshot.status === "permissionDenied" ? t.qq.status[snapshot.status] : null);
   return (
     <section className="qq-panel" aria-label={t.qq.recent}>
       <header className="qq-panel__header">
         {navigation}
         <div className="qq-panel__toolbar">
+          <button className="icon-button" type="button" aria-label={t.messages.clearAll} title={t.messages.clearAll} disabled={busy || snapshot.items.length === 0} onClick={() => void clear()}><CheckCheck size={16} strokeWidth={1.5} absoluteStrokeWidth /></button>
           <QQNotificationControls controller={controller} compact />
           <button className="icon-button" type="button" aria-label={t.qq.open} disabled={busy} onClick={() => void openQQ()}><ArrowUpRight size={16} strokeWidth={1.8} /></button>
           <button className="icon-button" type="button" aria-label={t.qq.refresh} disabled={busy} onClick={() => void refresh()}><RefreshCw size={16} strokeWidth={1.8} /></button>
-          <button className="icon-button" type="button" aria-label={t.qq.clear} disabled={busy || snapshot.items.length === 0} onClick={() => void clear()}><Trash2 size={16} strokeWidth={1.8} /></button>
         </div>
       </header>
       {error && <p className="qq-panel__error" role="alert">{error}</p>}
       <div className="qq-panel__list message-card-list" role="list" aria-label={t.qq.list} aria-busy={busy}>
-        {snapshot.items.length === 0 ? (
+        {displayed.items.length === 0 ? (
           <div className="qq-panel__empty" role="status"><span className="message-empty-icon"><MessageSourceIcon source="qq" size={28} /></span><span>{t.common.noMessages}</span></div>
-        ) : snapshot.items.map((item) => (
+        ) : displayed.items.map((item) => (
           <MessageCard key={item.id} source="qq" messageId={item.id} name={item.title} timestamp={item.createdAt} body={item.body}
-            disabled={busy} ariaLabel={t.qq.openNotification(item.title)} onOpen={() => void openQQ()} />
+            leaving={displayed.leaving} disabled={busy || displayed.leaving} ariaLabel={t.qq.openNotification(item.title)} onOpen={() => void openQQ()} />
         ))}
       </div>
     </section>

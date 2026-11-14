@@ -1,0 +1,9 @@
+.qq-panel { container-type: inline-size; }
+.qq-panel__header { flex-wrap: nowrap; }
+
+/* Keep the brand navigation and 28px actions on one line in narrow panels. */
+@container (max-width: 400px) {
+  .message-source-label { display: none; }
+  .message-sources button { padding-inline: var(--space-sm); }
+  .qq-panel__header { gap: var(--space-sm); }
+}

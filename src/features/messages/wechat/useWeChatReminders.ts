@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { isTauri } from "@tauri-apps/api/core";
 import type { MessagePreview } from "../messagePreview";
 import {
-  getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged,
+  clearWeChatReminders, getWeChatReminderState, launchWeChat, launchWeChatConversation, listenWeChatReminderChanged,
   setWeChatMessagePreviewEnabled, setWeChatMinimizedTaskbarHidden, setWeChatRemindersEnabled, type ReminderSnapshot,
 } from "./api";
 import {
@@ -104,6 +104,11 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     if (!enabled) setPreviewReceivedAt(null);
   }), [acceptSnapshot, run]);
 
+  const clear = useCallback(() => run(async () => {
+    acceptSnapshot(await clearWeChatReminders());
+    setPreviewReceivedAt(null);
+  }), [acceptSnapshot, run]);
+
   const setPreviewEnabled = useCallback((enabled: boolean) => run(async () => {
     acceptSnapshot(await setWeChatMessagePreviewEnabled(enabled));
     saveWeChatMessagePreviewEnabled(enabled);
@@ -130,7 +135,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
     source: "wechat", title: message?.contact ?? "", body: message?.body ?? "", receivedAt: previewReceivedAt,
     wechatMessageId: message?.id,
   } : null;
-  return { snapshot, busy, actionError, setEnabled, setPreviewEnabled, setHideMinimizedTaskbar, openWeChat, preview };
+  return { snapshot, busy, actionError, clear, setEnabled, setPreviewEnabled, setHideMinimizedTaskbar, openWeChat, preview };
 }
 
 export type WeChatRemindersController = ReturnType<typeof useWeChatReminders>;

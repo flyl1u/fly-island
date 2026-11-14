@@ -8,6 +8,9 @@ export type MessagesText = {
   wechatReminders: string;
   newReminder: string;
   yesterday: string;
+  clearAll: string;
+  markAllRead: string;
+  markAllReadFailed: string;
   newMessage: string;
   newMail: string;
   wechatPreview: string;
@@ -36,6 +39,9 @@ export const zhCN: MessagesText = {
   wechatReminders: "微信提醒",
   newReminder: "有新提醒",
   yesterday: "昨天",
+  clearAll: "全部已读并清空",
+  markAllRead: "全部标为已读",
+  markAllReadFailed: "部分邮件未能标为已读，请重试。",
   newMessage: "收到一条新消息",
   newMail: "收到一封新邮件",
   wechatPreview: "你收到了一条消息",
@@ -64,6 +70,9 @@ export const en: MessagesText = {
   wechatReminders: "WeChat reminders",
   newReminder: "New reminder",
   yesterday: "Yesterday",
+  clearAll: "Mark all read and clear",
+  markAllRead: "Mark all read",
+  markAllReadFailed: "Some messages could not be marked read. Try again.",
   newMessage: "New message",
   newMail: "New email",
   wechatPreview: "You received a message",
