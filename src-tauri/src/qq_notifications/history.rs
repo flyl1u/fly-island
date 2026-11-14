@@ -34,4 +34,13 @@ impl NotificationBuffer {
         );
         newest
     }
+
+    /// Drops every notification of one contact or group, which share the toast
+    /// title, and keeps the others. The baseline is untouched, so they only come
+    /// back when QQ posts something new for them.
+    pub(super) fn dismiss_contact(&mut self, title: &str) -> bool {
+        let before = self.items.len();
+        self.items.retain(|item| item.title != title);
+        self.items.len() != before
+    }
 }

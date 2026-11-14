@@ -20,3 +20,14 @@ export function keepIslandVisible(settings: KeepVisibleSettings, activity: Activ
     || (settings.keepVisibleWhileTodoRunning && settings.todoEnabled
       && (Boolean(activity.activeTodoId) || Boolean(activity.timer && activity.timer.endsAt > now)));
 }
+
+/**
+ * When `keepIslandVisible` can next change by itself, with nothing else re-rendering: a
+ * todo timer that holds the island stops holding it once it runs out. Null when only
+ * outside changes (agent, song, settings) can change the answer.
+ */
+export function keepVisibleChangesAt(settings: KeepVisibleSettings, activity: Activity, now: number): number | null {
+  const timer = activity.timer;
+  if (!settings.keepVisibleWhileTodoRunning || !settings.todoEnabled || activity.activeTodoId || !timer) return null;
+  return timer.endsAt > now ? timer.endsAt : null;
+}

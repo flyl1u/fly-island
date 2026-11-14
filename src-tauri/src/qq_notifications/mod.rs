@@ -182,6 +182,26 @@ pub fn clear_qq_notifications() -> Result<NotificationSnapshot, String> {
     Ok(snapshot)
 }
 
+/// Opening one contact's messages reads them all: clears that contact's (or group's)
+/// notifications and keeps everyone else's.
+#[tauri::command]
+pub fn dismiss_qq_contact(title: String) -> Result<NotificationSnapshot, String> {
+    let service = service()?;
+    let (snapshot, changed) = {
+        let mut state = service.state.lock().map_err(|_| "QQ 通知状态不可用。")?;
+        let changed = state.buffer.dismiss_contact(&title);
+        if changed {
+            state.snapshot.items = state.buffer.items.clone();
+            state.snapshot.revision += 1;
+        }
+        (state.snapshot.clone(), changed)
+    };
+    if changed {
+        publish(service, snapshot.clone(), None);
+    }
+    Ok(snapshot)
+}
+
 #[tauri::command]
 pub async fn request_qq_notification_access(app: AppHandle) -> Result<String, String> {
     let (sender, receiver) = mpsc::sync_channel(1);
@@ -271,6 +291,7 @@ macro_rules! tauri_commands {
             crate::qq_notifications::request_qq_notification_access,
             crate::qq_notifications::open_qq_notification_settings,
             crate::qq_notifications::clear_qq_notifications,
+            crate::qq_notifications::dismiss_qq_contact,
             crate::qq_notifications::open_qq,
         ] $($rest)*)
     };

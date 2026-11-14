@@ -136,7 +136,7 @@ export function IslandCollapsedBar({
                   return;
                 }
                 const opening = source === "qq"
-                  ? qqNotifications.openQQ()
+                  ? qqNotifications.openQQ(preview.title)
                   : wechatReminders.openWeChat(preview.wechatMessageId);
                 void opening.then((opened) => {
                   if (opened === false) onOpenMessages(source);

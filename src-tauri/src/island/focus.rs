@@ -19,9 +19,12 @@ static PREVIOUS_FOREGROUND: AtomicIsize = AtomicIsize::new(0);
 /// never leaves a window to return to. Returns `false` without acting while the
 /// left button is held: switching the foreground in the middle of a drag (files
 /// dragged onto or off the shelf) can drop it, so the caller asks again later.
+/// The same goes for a held Alt, Ctrl or Win key.
 #[tauri::command]
 pub fn take_island_hover_focus(app: AppHandle) -> Result<bool, String> {
-    if win32::input::is_left_button_down() {
+    // A held Alt / Ctrl / Win is a shortcut in progress (Alt+Tab's switcher among them):
+    // switching the foreground under it can end the gesture, so wait until it is released.
+    if win32::input::is_left_button_down() || win32::input::is_shortcut_modifier_down() {
         return Ok(false);
     }
     let window = main_window(&app)?;
@@ -43,11 +46,13 @@ pub fn take_island_hover_focus(app: AppHandle) -> Result<bool, String> {
 }
 
 /// Focuses the island for a global shortcut and remembers the window it took the
-/// focus from, so collapsing the island hands it back. A hotkey press lets the
-/// process take the foreground, so set_focus does not need its Alt fallback here.
+/// focus from, so collapsing the island hands it back. A hotkey press usually lets
+/// the process take the foreground; when it does not (the frontend asked a moment
+/// later), `focus_window` leaves it rather than faking an Alt press while the
+/// shortcut's own modifiers may still be held.
 pub(crate) fn focus_island_for_shortcut(window: &WebviewWindow) {
     let foreground = win32::window::foreground_window();
-    let _ = window.set_focus();
+    let _ = crate::system::window_focus::focus_window(window);
     let Ok(island) = window.hwnd() else {
         return;
     };
@@ -61,10 +66,11 @@ pub(crate) fn focus_island_for_shortcut(window: &WebviewWindow) {
 
 /// Gives the focus back to the window the island took it from, but only while the
 /// island still holds it: once the user clicked another window, that one keeps it.
-/// Returns `false` without acting while the left button is held, like taking it.
+/// Returns `false` without acting while the left button or a shortcut modifier is
+/// held, like taking it.
 #[tauri::command]
 pub fn release_island_hover_focus(app: AppHandle) -> Result<bool, String> {
-    if win32::input::is_left_button_down() {
+    if win32::input::is_left_button_down() || win32::input::is_shortcut_modifier_down() {
         return Ok(false);
     }
     let previous = PREVIOUS_FOREGROUND.swap(0, Ordering::SeqCst);

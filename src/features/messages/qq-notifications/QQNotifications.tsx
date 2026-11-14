@@ -54,7 +54,7 @@ export function QQNotificationPanel({ controller, navigation }: { controller: QQ
           <div className="qq-panel__empty" role="status"><span className="message-empty-icon"><MessageSourceIcon source="qq" size={28} /></span><span>{t.common.noMessages}</span></div>
         ) : displayed.items.map((item) => (
           <MessageCard key={item.id} source="qq" messageId={item.id} name={item.title} timestamp={item.createdAt} body={item.body}
-            leaving={displayed.leaving} disabled={busy || displayed.leaving} ariaLabel={t.qq.openNotification(item.title)} onOpen={() => void openQQ()} />
+            leaving={displayed.leaving} disabled={busy || displayed.leaving} ariaLabel={t.qq.openNotification(item.title)} onOpen={() => void openQQ(item.title)} />
         ))}
       </div>
     </section>

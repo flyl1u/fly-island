@@ -120,7 +120,7 @@ pub fn toggle_translation_window(app: AppHandle) -> Result<(), String> {
         let _ = win32::window::disable_show_animation(hwnd);
     }
     window.show().map_err(|error| error.to_string())?;
-    window.set_focus().map_err(|error| error.to_string())?;
+    crate::system::window_focus::focus_window(&window)?;
     let _ = app.emit("translation-window-opened", ());
     Ok(())
 }
@@ -258,7 +258,7 @@ pub async fn translate_text(
 #[tauri::command]
 pub fn set_translation_shortcut(shortcut: String) -> Result<String, String> {
     let binding = parse_shortcut_binding(&shortcut)
-        .ok_or_else(|| "快捷键无效，请使用至少一个修饰键。".to_string())?;
+        .ok_or_else(|| "快捷键无效：至少需要一个修饰键，且不能使用 Alt+Tab、Win+L 等系统快捷键。".to_string())?;
     if !ENABLED.load(Ordering::SeqCst) {
         // Remembered by the frontend and registered when translation is switched on.
         return Ok(binding.label);

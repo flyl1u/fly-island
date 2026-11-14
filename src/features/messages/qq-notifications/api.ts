@@ -46,6 +46,11 @@ export function clearQQNotifications() {
   return invoke<QQNotificationSnapshot>("clear_qq_notifications");
 }
 
+/** Clears every notification of one contact or group (they share the toast title). */
+export function dismissQQContact(title: string) {
+  return invoke<QQNotificationSnapshot>("dismiss_qq_contact", { title });
+}
+
 export function launchQQ() {
   return invoke("open_qq");
 }

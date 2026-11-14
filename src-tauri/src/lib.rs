@@ -94,6 +94,11 @@ pub fn run() {
                 ) {
                     eprintln!("failed to size and position island window: {error}");
                 }
+                // A transparent topmost window in Alt+Tab took the user's quick Alt+Tab after
+                // hover focus made it the last active window (docs/investigations).
+                if !window.hwnd().is_ok_and(win32::task_switcher::hide_from_task_switcher) {
+                    eprintln!("failed to keep the island window out of Alt+Tab");
+                }
                 island::start_monitor_follow_loop(window.clone());
                 island::start_cursor_passthrough_loop(window);
             }
