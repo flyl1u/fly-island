@@ -141,6 +141,25 @@ test("installing a downloaded update goes straight to the installer", async () =
   assert.equal(updater.getUpdateState().stage, "done");
 });
 
+test("retrying a failed install checks and downloads again, then installs", async () => {
+  let installs = 0;
+  const updater = await controller({
+    check: async () => ({ version: "0.3.0", body: null }),
+    install: async (send) => {
+      installs += 1;
+      if (installs === 1) throw new Error("installer failed");
+      send({ event: "Finished" });
+    },
+  });
+  await updater.installUpdate();
+  assert.equal(updater.getUpdateState().stage, "error");
+  assert.equal(updater.getUpdateState().nextVersion, "0.3.0", "the failure keeps its version, so the row offers a retry");
+  const checks = updater.calls.filter((call) => call === "updater_check").length;
+  await updater.installUpdate();
+  assert.equal(updater.calls.filter((call) => call === "updater_check").length, checks + 1);
+  assert.equal(updater.getUpdateState().stage, "done");
+});
+
 test("hiding the update todo keeps the download", async () => {
   const updater = await controller({ check: async () => ({ version: "0.3.0", body: null }) });
   updater.dismissUpdatePrompt();
@@ -168,7 +187,7 @@ test("the settings window forwards actions to the main window instead of checkin
   );
 });
 
-test("automatic updates check again every six hours", async () => {
+test("automatic updates check again every three hours", async () => {
   const updater = await controller();
   assert.equal(updater.getUpdateState().stage, "latest");
   assert.deepEqual(updater.pendingDelays(), [schedule.CHECK_INTERVAL_MS]);

@@ -19,6 +19,7 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
+import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { TodoTimer } from "../../features/todos/timer";
 import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
@@ -101,6 +102,8 @@ export function IslandCollapsedBar({
   onTuck,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  // A pending update shows a red dot even collapsed, so it is not missed.
+  const updatePending = useUpdatePending();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
     useWindowDragGesture(isTucked || positionLocked, onWindowDragStart);
   const isMusicPlaying = mediaState.playbackStatus === "playing";
@@ -148,6 +151,7 @@ export function IslandCollapsedBar({
           }}
         >
           <span className={pulseClassName} />
+          {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
             {quotaAlert ? (
