@@ -1,5 +1,7 @@
 export type SettingsExpandText = {
   title: string;
+  /** The group of auto-tuck, its delay and the tucked look. */
+  tuckTitle: string;
   trigger: string;
   click: string;
   hover: string;
@@ -17,7 +19,8 @@ export type SettingsExpandText = {
 };
 
 export const zhCN: SettingsExpandText = {
-  title: "岛屿",
+  title: "展开与收起",
+  tuckTitle: "贴边隐藏",
   trigger: "展开方式",
   click: "点击",
   hover: "鼠标悬停",
@@ -31,7 +34,8 @@ export const zhCN: SettingsExpandText = {
 };
 
 export const en: SettingsExpandText = {
-  title: "Island",
+  title: "Opening & closing",
+  tuckTitle: "Tuck to the edge",
   trigger: "Open the island by",
   click: "Click",
   hover: "Hover",

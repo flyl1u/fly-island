@@ -40,13 +40,16 @@ pub(super) fn parse(text: &str, provider: &str) -> Option<Credential> {
     let mut stack: Vec<(usize, String)> = Vec::new();
     let mut version = false;
     let (mut api, mut token, mut issuer, mut grant_version, mut grant_kind) = (None, None, None, false, false);
-    for line in text.lines() {
+    // Editors on Windows may save a BOM. Lines this reader does not understand (list items,
+    // quoted keys with colons) used to make the whole file unreadable, hiding the balance.
+    for line in text.trim_start_matches('\u{feff}').lines() {
         if line.trim().is_empty() || line.trim_start().starts_with('#') { continue; }
         if line.contains('\t') { return None; }
         let indent = line.len() - line.trim_start().len();
-        let (key, value) = line.trim_start().split_once(':')?;
         while stack.last().is_some_and(|(depth, _)| *depth >= indent) { stack.pop(); }
-        let key = scalar(key)?;
+        let Some((key, value)) = line.trim_start().split_once(':') else { continue; };
+        // An unreadable key still takes its place, so anything nested under it is never read as ours.
+        let Some(key) = scalar(key) else { stack.push((indent, "\0".to_string())); continue; };
         let parents: Vec<&str> = stack.iter().map(|(_, key)| key.as_str()).collect();
         if value.trim().is_empty() { stack.push((indent, key)); continue; }
         // Ignore unrelated records, including their values.
@@ -137,6 +140,15 @@ mod tests {
         assert!(matches!(parse(account, "deepseek-account"), Some(Credential::Account(_))));
         assert!(parse(&account.replace("platform.deepseek.com", "example.invalid"), "deepseek-account").is_none());
         assert!(parse(&account.replace("version: 1", "version: 99"), "deepseek-account").is_none());
+    }
+
+    #[test]
+    fn tolerates_bom_list_items_and_unreadable_neighbours() {
+        let text = "\u{feff}version: 1\nrecords:\n  \"other:record\": x\n  list:\n    - one\n    - two\nrefs:\n  DEEPSEEK_API_KEY: fictional-key\n";
+        assert!(matches!(parse(text, "deepseek-official"), Some(Credential::ApiKey(_))));
+        // A child of an unreadable key is not taken for a known record's field.
+        let nested = "version: 1\nrecords:\n  deepseek-account-platform/default:\n    \"bad:key\":\n      kind: grant\n      payload:\n        version: 1\n        token: fictional-grant\n        issuer: https://platform.deepseek.com\n";
+        assert!(parse(nested, "deepseek-account").is_none());
     }
 
     #[test]

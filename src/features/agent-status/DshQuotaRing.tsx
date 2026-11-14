@@ -1,6 +1,6 @@
 import { IslandHoverCard } from "../../components/IslandHoverCard";
 import { useTranslation } from "../../i18n";
-import type { DshUsage } from "./api";
+import type { DshProblem, DshUsage } from "./api";
 import { QuotaRings } from "./QuotaRings";
 import { QUOTA_COLORS } from "./quotaColors";
 import { dshBalanceLabel, dshBalanceRings } from "./dshUsage";
@@ -32,6 +32,20 @@ export function DshQuotaRing({ usage, now }: { usage: DshUsage; now: number }) {
       <span className={`agent-quota__agent agent-quota__agent--dsh${stale ? " agent-quota__agent--stale" : ""}`} role="img" aria-label={[text.dshLabel, ...summaries, availability, ...text.dshLegend].join(" · ")} tabIndex={0}>
         <QuotaRings {...rings} size={22} />
         <span className="agent-quota__values" aria-hidden="true"><b>{dshBalanceLabel(usage)}</b></span>
+      </span>
+    </IslandHoverCard>
+  );
+}
+
+/** In place of the ring when DSH is set up but its balance cannot be read: say why, briefly. */
+export function DshProblemNote({ problem }: { problem: DshProblem }) {
+  const text = useTranslation().agent.usage;
+  const reason = text.dshProblem[problem];
+  return (
+    <IslandHoverCard lines={[{ text: text.dshLabel, color: QUOTA_COLORS.dsh }, { text: reason.detail }]} alignTo=":scope" anchorClassName="agent-quota__hover">
+      <span className="agent-quota__agent agent-quota__agent--dsh agent-quota__agent--problem" role="img" aria-label={`${text.dshLabel} · ${reason.detail}`} tabIndex={0}>
+        <QuotaRings outer={null} inner={null} size={22} />
+        <span className="agent-quota__values" aria-hidden="true"><b>{reason.short}</b></span>
       </span>
     </IslandHoverCard>
   );

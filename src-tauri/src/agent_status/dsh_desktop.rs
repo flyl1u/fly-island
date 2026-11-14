@@ -108,8 +108,7 @@ pub(super) fn preferred_window(windows: &[(String, u32)], owner: Option<&str>) -
         .or_else(|| (!windows.is_empty()).then_some(0))
 }
 
-pub(super) fn exe_for(owner: &str) -> Option<String> {
-    let windows = windows();
+pub(super) fn exe_for(owner: &str, windows: &[(String, u32)]) -> Option<String> {
     windows.iter().find(|(exe, _)| owns(owner, exe))
         .map(|(exe, _)| exe.clone()).or_else(|| {
             APPS.iter().flat_map(|app| win32::process_tree::process_ids_named(&format!("{app}.exe")))

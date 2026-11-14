@@ -38,6 +38,13 @@ export function checkMaterial(check: (condition: unknown, message: string) => vo
   check(document.querySelector(".island__glass") && style.backdropFilter === "none", "玻璃只用 CSS 画，不模糊桌面");
   const alpha = Number((style.backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1);
   check(material === "liquidGlass" ? alpha < 0.5 : alpha >= 0.6, `玻璃底色的不透明度合适（${alpha.toFixed(2)}）`);
+  // Inner panels (translation, the file shelf) swap their deep base (0.88) for a faint veil.
+  const probe = document.createElement("div");
+  probe.style.background = "var(--inner-panel-fill)";
+  island.append(probe);
+  const veil = Number((getComputedStyle(probe).backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1);
+  probe.remove();
+  check(veil > 0 && veil < 0.4, `玻璃里的内层面板是半透明的淡色层，不是深色盒子（${veil.toFixed(2)}）`);
   if (material === "liquidGlass") {
     const rim = document.querySelector(".island__glass-refraction");
     check(rim && getComputedStyle(rim).boxShadow.includes("inset"), "液态玻璃有折射亮边");

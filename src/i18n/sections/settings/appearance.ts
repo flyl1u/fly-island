@@ -2,7 +2,7 @@ export type SettingsAppearanceText = {
   font: string;
   fontLabel: string;
   fontSize: string;
-  collapsedDimensions: { title: string; autoWidth: string; width: string; height: string; unit: string; hint: string };
+  collapsedDimensions: { autoWidth: string; width: string; height: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
   /** Material: classic, liquid glass, or frosted glass. */
@@ -16,7 +16,9 @@ export type SettingsAppearanceText = {
   schemeDark: string;
   schemeLight: string;
   schemeSystem: string;
-  styleTitle: string;
+  /** Group titles: the scheme and material; the font and sizes; the notch and the top-edge curves. */
+  themeTitle: string;
+  textSizeTitle: string;
   pageButtons: string;
   capsules: string;
   icons: string;
@@ -62,7 +64,7 @@ export const zhCN: SettingsAppearanceText = {
   font: "字体",
   fontLabel: "岛屿字体",
   fontSize: "岛屿字号",
-  collapsedDimensions: { title: "刘海尺寸", autoWidth: "自动宽度", width: "刘海宽度", height: "刘海高度", unit: "px", hint: "宽高会随收起时的整体大小一起缩放。" },
+  collapsedDimensions: { autoWidth: "自动宽度", width: "刘海宽度", height: "刘海高度", unit: "px", hint: "宽高会随收起时的整体大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
   material: "质感",
@@ -74,11 +76,12 @@ export const zhCN: SettingsAppearanceText = {
   schemeDark: "深色",
   schemeLight: "浅色",
   schemeSystem: "跟随系统",
-  styleTitle: "风格",
+  themeTitle: "主题",
+  textSizeTitle: "字体与大小",
   pageButtons: "页面按钮",
   capsules: "胶囊",
   icons: "图标",
-  shapeTitle: "外形",
+  shapeTitle: "刘海与外形",
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
   preview: {
@@ -117,7 +120,7 @@ export const en: SettingsAppearanceText = {
   font: "Font",
   fontLabel: "Island font",
   fontSize: "Island font size",
-  collapsedDimensions: { title: "Collapsed dimensions", autoWidth: "Automatic width", width: "Collapsed width", height: "Collapsed height", unit: "px", hint: "Width and height follow the overall collapsed size." },
+  collapsedDimensions: { autoWidth: "Automatic width", width: "Collapsed width", height: "Collapsed height", unit: "px", hint: "Width and height follow the overall collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
   material: "Material",
@@ -129,11 +132,12 @@ export const en: SettingsAppearanceText = {
   schemeDark: "Dark",
   schemeLight: "Light",
   schemeSystem: "System",
-  styleTitle: "Style",
+  themeTitle: "Theme",
+  textSizeTitle: "Text & size",
   pageButtons: "Page buttons",
   capsules: "Capsules",
   icons: "Icons",
-  shapeTitle: "Shape",
+  shapeTitle: "Notch & shape",
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
   preview: {

@@ -109,7 +109,7 @@
 
 - 窗口 label：`main`、`translation`、`settings`、`clipboard`（3.1.0 新增）；前端分发参数为 `?window=translation`、`?window=settings`、`?window=clipboard`。
 - Tauri 命令：以 `lib.rs` 中 `generate_handler!` 列表为准，命令名即 Rust 函数名。
-- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`。
+- 应用标识 `com.focusd.island`，凭据服务名 `com.focusd.island.qq-mail`、`com.focusd.island.translation`、`com.focusd.island.workbuddy-web`（2026-11-14 新增，WorkBuddy 登录 cookie 副本，用户名 `cookies-<0..7>`）。
 - 注册表值：`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `FocuSD Island`。
 - Hook 受管区块标记：`# BEGIN/END FocuSD Agent Status Hooks`，命令签名前缀 `focusd-agent-`。
 - 更新端点与 `latest.json` 格式：见 `tauri.conf.json` 和 `docs/updater.md`。

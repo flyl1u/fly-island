@@ -18,7 +18,7 @@ fn fixture() -> Value {
 }
 
 #[test]
-fn parses_known_checkpoint_and_does_not_guess_after_version_changes() {
+fn parses_known_and_newer_checkpoints_but_never_reshaped_rows() {
     let mut value = fixture();
     let session = parse_checkpoint(&value, ID, 1100, 1200, true).unwrap();
     assert_eq!(session.provider, "dsh");
@@ -27,12 +27,49 @@ fn parses_known_checkpoint_and_does_not_guess_after_version_changes() {
     assert_eq!(session.model.as_deref(), Some("deepseek-v4"));
     assert_eq!(session.owner_prompt_at, Some(1000));
     assert!(!session.closed);
-    value["version"] = json!(99);
+    // A newer DSH bumps generations without reshaping: still listed.
+    value["version"] = json!(9);
+    value["record"]["identity"]["formatVersion"] = json!(5);
+    value["record"]["rows"]["turnBoundary"]["ver"] = json!(3);
+    assert_eq!(parse_checkpoint(&value, ID, 1100, 1200, true).unwrap().phase, "running");
+    // Reshaped rows are skipped, not guessed.
+    value["record"]["rows"]["turnBoundary"]["val"] = json!({"open": true});
     assert!(parse_checkpoint(&value, ID, 1100, 1200, true).is_none());
     value = fixture();
-    value["record"]["rows"]["turnBoundary"]["ver"] = json!(99);
+    value["record"]["rows"]["sessionListMetadata"]["val"] = json!({"isBlank": false});
+    assert!(parse_checkpoint(&value, ID, 1100, 1200, true).is_none());
+    value = fixture();
+    value["version"] = json!(2);
+    assert!(parse_checkpoint(&value, ID, 1100, 1200, true).is_none());
+    value = fixture();
+    value["record"]["rows"]["turnBoundary"]["ver"] = json!(1);
     assert!(parse_checkpoint(&value, ID, 1100, 1200, true).is_none());
     assert!(parse_checkpoint(&fixture(), "../../example", 1100, 1200, true).is_none());
+}
+
+#[test]
+fn falls_back_to_the_title_input_of_current_dsh() {
+    let mut value = fixture();
+    value["record"]["rows"]["title"] = Value::Null;
+    value["record"]["rows"]["titleInput"] = json!({"ver":3,"seq":1,"val":{"first":{"seq":1,"text":"First prompt"},"count":1,"lastSeq":1}});
+    assert_eq!(parse_checkpoint(&value, ID, 1100, 1200, true).unwrap().title.as_deref(), Some("First prompt"));
+}
+
+#[test]
+fn source_log_of_any_generation_counts() {
+    let root = std::env::temp_dir().join(format!("focusd-dsh-log-{}", std::process::id()));
+    let shard = root.join("--D-fictional--");
+    let _ = fs::remove_dir_all(&root);
+    for (id, file) in [("session-a", "session.v4.jsonl.zstd"), ("session-b", "session.v5.jsonl.zst"), ("session-c", "notes.txt")] {
+        fs::create_dir_all(shard.join(id)).unwrap();
+        fs::write(shard.join(id).join(file), b"").unwrap();
+    }
+    let shards = vec![shard];
+    assert!(has_source_log(&shards, "session-a"));
+    assert!(has_source_log(&shards, "session-b"));
+    assert!(!has_source_log(&shards, "session-c"));
+    assert!(!has_source_log(&shards, "session-missing"));
+    let _ = fs::remove_dir_all(&root);
 }
 
 #[test]
