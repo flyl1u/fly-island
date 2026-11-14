@@ -16,10 +16,19 @@ fn move_file(source: &Path, target: &Path, replace: bool) -> std::io::Result<()>
     unsafe { MoveFileExW(&source, &target, flags) }
         .map_err(|_| std::io::Error::last_os_error())
 }
-pub(crate) fn run(args: &[String]) -> Result<(), String> {
+/// Why the elevated helper did not succeed.
+pub(crate) enum HelperRun {
+    /// The user said no to the UAC prompt.
+    Declined,
+    /// The helper ran and exited with this non-zero code.
+    Exited(u32),
+    /// The helper could not be started or waited for.
+    Failed(String),
+}
+pub(crate) fn run(args: &[String]) -> Result<(), HelperRun> {
     // Paths containing quotes cannot be Win32 file names; reject rather than interpolate them.
-    if args.iter().any(|s| s.contains(['"', '\0', '\r', '\n'])) { return Err("Invalid helper argument".into()); }
-    let exe = HSTRING::from(std::env::current_exe().map_err(|e| e.to_string())?.as_os_str());
+    if args.iter().any(|s| s.contains(['"', '\0', '\r', '\n'])) { return Err(HelperRun::Failed("Invalid helper argument".into())); }
+    let exe = HSTRING::from(std::env::current_exe().map_err(|e| HelperRun::Failed(e.to_string()))?.as_os_str());
     let verb = HSTRING::from("runas");
     let parameters = HSTRING::from(args.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(" "));
     let mut info = SHELLEXECUTEINFOW { cbSize: size_of::<SHELLEXECUTEINFOW>() as u32,
@@ -27,14 +36,14 @@ pub(crate) fn run(args: &[String]) -> Result<(), String> {
         lpFile: PCWSTR(exe.as_ptr()), lpParameters: PCWSTR(parameters.as_ptr()), nShow: SW_HIDE.0, ..Default::default() };
     // SAFETY: info is initialized with valid strings that outlive this synchronous call.
     if let Err(error) = unsafe { ShellExecuteExW(&mut info) } {
-        return Err(if error.code() == windows::core::HRESULT::from_win32(ERROR_CANCELLED.0) { "UserDeclined".into() } else { error.to_string() });
+        return Err(if error.code() == windows::core::HRESULT::from_win32(ERROR_CANCELLED.0) { HelperRun::Declined } else { HelperRun::Failed(error.to_string()) });
     }
-    if info.hProcess.is_invalid() { return Err("Missing helper process handle".into()); }
+    if info.hProcess.is_invalid() { return Err(HelperRun::Failed("Missing helper process handle".into())); }
     let process = ProcessHandle(info.hProcess);
     // SAFETY: process owns a valid live process handle; no borrowed pointers.
-    if unsafe { WaitForSingleObject(process.0, INFINITE) } != WAIT_OBJECT_0 { return Err("Could not wait for helper".into()); }
+    if unsafe { WaitForSingleObject(process.0, INFINITE) } != WAIT_OBJECT_0 { return Err(HelperRun::Failed("Could not wait for helper".into())); }
     let mut code = 1;
     // SAFETY: process handle and writable exit code are valid.
-    unsafe { GetExitCodeProcess(process.0, &mut code) }.map_err(|e| e.to_string())?;
-    if code == 0 { Ok(()) } else { Err(format!("Plugin helper exited with {code}")) }
+    unsafe { GetExitCodeProcess(process.0, &mut code) }.map_err(|e| HelperRun::Failed(e.to_string()))?;
+    if code == 0 { Ok(()) } else { Err(HelperRun::Exited(code)) }
 }

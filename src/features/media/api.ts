@@ -98,7 +98,8 @@ export type NeteasePluginStatus = {
   installDir: string | null; running: boolean; legacyInfLink: boolean; pluginDir: string;
 };
 // 对应 src-tauri/src/media_plugins/mod.rs 的 PluginError、Progress，以及 service.rs 的 OperationResult。
-export type MediaPluginErrorKind = "Unsupported" | "NeedsClose" | "LegacyConflict" | "HashMismatch" | "Network" | "UserDeclined" | "Busy" | "Io";
+export type MediaPluginErrorKind = "Unsupported" | "NeedsClose" | "LegacyConflict" | "HashMismatch" | "Network" | "UserDeclined" | "Busy" | "Io"
+  | "Blocked" | "DriveUnavailable" | "LoaderExists";
 export type MediaPluginError = { kind: MediaPluginErrorKind; detail: string };
 export type MediaPluginProgress = { stage: "downloading" | "verifying" | "copying" | "done" | "error"; detail?: string | null };
 export type MediaPluginResult = { keptForeignLoader: boolean; preservedFiles: string[] };

@@ -132,10 +132,10 @@
 # 网易云精准进度插件
 
 - 命令：`netease_plugin_status()` 返回 `NeteasePluginStatus`（state、supported、tested、version、arch、installDir、running、legacyInfLink、pluginDir）；`install_netease_plugin()` / `uninstall_netease_plugin()` 返回 `{ keptForeignLoader, preservedFiles }`；`close_netease({ relaunch })` 结束网易云的全部进程，`relaunch` 为 true 时随后重新打开（只在用户点击“立即重启网易云”或“关闭网易云并继续”后调用）。
-- 错误统一为 `{ kind, detail }`，kind 为 Unsupported / NeedsClose / LegacyConflict / HashMismatch / Network / UserDeclined / Busy / Io。
+- 错误统一为 `{ kind, detail }`，kind 为 Unsupported / NeedsClose / LegacyConflict / HashMismatch / Network / UserDeclined / Busy / Io / Blocked（被安全软件拦截或文件被占用）/ DriveUnavailable（网易云在提权进程看不到的网络盘、映射盘或 subst 盘上）/ LoaderExists（提权期间目录里出现了别的 msimg32.dll）。
 - 事件 `media-plugin-progress`：`{ stage: downloading|verifying|copying|done|error, detail?: string|null }`。
 - 应用数据 `media-plugins.json`：`{ version: 1, files: [{ path, sha256 }], installedAt }`，installedAt 为 Unix 秒。仅记录本应用写入的文件；卸载只删除仍与记录哈希一致的文件，替换文件保留并返回路径；记录损坏或未知版本容错为空。
-- 启动参数 `--media-plugin-copy <源> <目标> <sha256>`、`--media-plugin-remove <目标> <sha256>` 在 Tauri 和 single-instance 初始化前处理并退出。只接受固定清单的加载器哈希，目标必须为绝对路径 `msimg32.dll`，父目录须有 `cloudmusic.exe`，禁止 `..`、链接与特殊路径。复制前校验源文件，删除前校验目标文件；不启动正常应用窗口。
+- 启动参数 `--media-plugin-copy <源> <目标> <sha256>`、`--media-plugin-remove <目标> <sha256>` 在 Tauri 和 single-instance 初始化前处理并退出。只接受固定清单的加载器哈希，目标必须为绝对路径 `msimg32.dll`，父目录须有 `cloudmusic.exe`，禁止 `..`、链接与特殊路径。复制前校验源文件，删除前校验目标文件；不启动正常应用窗口。可选的最后一个参数 `--report=<绝对路径>`：失败时 helper 把错误原文写进这个新文件（只接受 `focusd-plugin-helper-*.txt` 且不覆盖已有文件），父进程读出后删除；管理员是另一个用户时写不进去，只剩退出码。退出码：0 成功，1 未知（也是旧版唯一的失败码），2 参数无效，3 目标目录在提权进程里不可见，4 目标无效，5 哈希不符，6 加载器已存在，7 拒绝访问，8 文件被占用，9 被杀毒软件拦截，10 网易云正在运行。临时文件名为 `<目标文件名>.<pid>-<纳秒>.focusd-tmp`，复制前会清掉同目录里本应用留下的旧临时文件（含旧版固定名 `msimg32.focusd-tmp`）。
 - 播放器诊断新增 `neteasePluginInactive`：已安装插件但仍无时间线，提示重启及可能不兼容。
 
 
