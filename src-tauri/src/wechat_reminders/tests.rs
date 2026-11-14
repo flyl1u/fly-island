@@ -32,7 +32,7 @@ fn visible_main_is_preferred_and_login_windows_are_not_restored() {
 }
 
 #[test]
-#[ignore = "Activates the registered weixin protocol and verifies the original main process"]
+#[ignore = "Restores the running WeChat window and verifies the original main process"]
 fn window_activation_reuses_the_existing_wechat_process() {
     resolve_executable().unwrap();
     let before = existing_wechat_windows().unwrap();

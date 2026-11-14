@@ -2,6 +2,7 @@
 
 mod accessibility;
 mod conversations;
+mod launch;
 mod preview_reader;
 mod qt_accessibility_pattern;
 mod source;
@@ -13,10 +14,12 @@ use crate::win32;
 use conversations::ChatPreview;
 use preview_reader::{PreviewReader, ReadOutcome};
 use serde::Serialize;
-use source::{
-    existing_wechat_windows, preferred_window, resolve_executable, ProcessIdentity, ReminderListener,
-    ReminderSignal,
-};
+use launch::restore_wechat;
+use source::{ProcessIdentity, ReminderListener, ReminderSignal};
+#[cfg(test)]
+use source::{existing_wechat_windows, preferred_window, resolve_executable};
+#[cfg(test)]
+use windows::Win32::Foundation::HWND;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -26,7 +29,6 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager};
-use windows::Win32::Foundation::HWND;
 
 static SERVICE: OnceLock<Arc<ReminderService>> = OnceLock::new();
 const MAIN_WINDOW_LABEL: &str = "main";
@@ -533,11 +535,10 @@ fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
 #[tauri::command]
 pub async fn open_wechat() -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(|| {
-        resolve_executable()?;
         if restore_wechat(None)?.is_some() {
             return Ok(());
         }
-        Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into())
+        launch::launch_installed()
     })
     .await
     .map_err(|error| format!("打开微信的线程失败：{error}"))?
@@ -556,13 +557,14 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
                 .find(|message| message.id == message_id)
                 .map(|message| (state.generation, message.process, message.chat.key.clone()))
         };
-        resolve_executable()?;
         let process = conversation.as_ref().map(|(_, process, _)| *process);
         let Some(window) = restore_wechat(process)? else {
             if process.is_some() && restore_wechat(None)?.is_some() {
                 return Ok(false);
             }
-            return Err("未找到正在运行的微信窗口，请先打开并登录桌面版微信。".into());
+            // Not running: start it; the conversation cannot be located yet.
+            launch::launch_installed()?;
+            return Ok(false);
         };
         let Some((generation, process, key)) = conversation else {
             return Ok(false);
@@ -591,55 +593,6 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
     })
     .await
     .map_err(|error| format!("打开微信会话的线程失败：{error}"))?
-}
-
-fn restore_wechat(requested: Option<ProcessIdentity>) -> Result<Option<HWND>, String> {
-    let search = existing_wechat_windows()?;
-    if !search.running {
-        return Ok(None);
-    }
-    let original = if let Some(process) = requested {
-        let Some(window) = search
-            .found
-            .iter()
-            .find(|window| window.main_sized && window.process == process)
-        else {
-            return Ok(None);
-        };
-        window
-    } else {
-        preferred_window(&search.found)
-            .ok_or("微信已在运行，但未定位到主窗口，请先从系统托盘打开并登录微信。")?
-    };
-    let foreground = win32::window::foreground_window();
-    if foreground == original.handle
-        && original.visible
-        && !win32::window::is_minimized(original.handle)
-    {
-        return Ok(Some(original.handle));
-    }
-    let expected = original.process;
-    win32::window::allow_set_foreground_window(expected.pid);
-    // The registered handler restores Qt's own UI state. Showing its HWND directly can leave it blank.
-    tauri_plugin_opener::open_url("weixin://", None::<&str>).map_err(|error| {
-        format!("无法通过微信注册入口唤回客户端，请从系统托盘打开微信：{error}")
-    })?;
-    for _ in 0..40 {
-        thread::sleep(Duration::from_millis(50));
-        let current = existing_wechat_windows()?;
-        if let Some(window) = current.found.iter().find(|window| {
-            window.main_sized
-                && window.process == expected
-                && window.visible
-                && !win32::window::is_minimized(window.handle)
-        }) {
-            if requested.is_some() && win32::window::foreground_window() == foreground {
-                let _ = win32::window::bring_to_foreground(window.handle);
-            }
-            return Ok(Some(window.handle));
-        }
-    }
-    Err("微信未能恢复原来的主窗口，请双击系统托盘中的微信图标。".into())
 }
 
 /// This module's Tauri commands. `lib.rs` chains every module's list into one

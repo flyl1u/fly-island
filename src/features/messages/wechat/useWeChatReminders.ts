@@ -10,6 +10,7 @@ import {
   isWeChatMessagePreviewEnabled, isWeChatMinimizedTaskbarHidden, isWeChatRemindersEnabled,
   saveWeChatMessagePreviewEnabled, saveWeChatMinimizedTaskbarHidden, saveWeChatRemindersEnabled,
 } from "./storage";
+import { weChatOpenErrorText } from "./openError";
 
 const EMPTY_SNAPSHOT: ReminderSnapshot = {
   revision: 0, enabled: false, status: "disabled", pending: false,
@@ -90,7 +91,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true } = {})
       await action();
       return true;
     } catch (error) {
-      setActionError(String(error));
+      setActionError(weChatOpenErrorText(error, t.wechat.openErrors));
       return false;
     } finally {
       actionPending.current = false;
