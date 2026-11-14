@@ -4,6 +4,7 @@
 use serde::Serialize;
 use std::{sync::Mutex, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
+use windows::Win32::Foundation::RECT;
 
 use crate::{island, win32};
 
@@ -30,8 +31,44 @@ static STATE: Mutex<ForegroundFullscreen> = Mutex::new(ForegroundFullscreen {
     on_island_monitor: false,
 });
 
+/// Shell windows that can sit in front covering a whole monitor without being an app in
+/// full screen: the desktop (after Win+D or a click on it) and the taskbars.
+const SHELL_CLASSES: [&str; 4] = ["Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"];
+
+/// Whether the foreground counts as a full-screen app. The shell's QUNS_BUSY is only a
+/// guess, and some machines report it for long stretches with no full-screen app in front
+/// (overlays, the desktop, a window that once went full screen), which held back every
+/// message preview through game mode. So it must be confirmed by the foreground window
+/// itself covering its whole monitor. Presentation settings are the user's own choice.
+fn is_fullscreen_foreground(
+    signal: win32::notification_state::FullscreenSignal,
+    window: Option<RECT>,
+    monitor: Option<RECT>,
+    class: &str,
+) -> bool {
+    use win32::notification_state::FullscreenSignal;
+    match signal {
+        FullscreenSignal::None => false,
+        FullscreenSignal::Presentation => true,
+        FullscreenSignal::FullscreenApp => {
+            !SHELL_CLASSES.contains(&class)
+                && matches!((window, monitor), (Some(window), Some(monitor))
+                    if window.left <= monitor.left && window.top <= monitor.top
+                        && window.right >= monitor.right && window.bottom >= monitor.bottom)
+        }
+    }
+}
+
 fn read(app: &AppHandle) -> ForegroundFullscreen {
-    let active = win32::notification_state::fullscreen_app_in_front();
+    let foreground = win32::window::foreground_window();
+    let active = is_fullscreen_foreground(
+        win32::notification_state::fullscreen_signal(),
+        (!foreground.is_invalid() && win32::window::is_visible(foreground))
+            .then(|| win32::window::window_rect(foreground))
+            .flatten(),
+        win32::window::monitor_rect(foreground),
+        &win32::window::class_name(foreground),
+    );
     let on_island_monitor = active
         && island::main_window(app)
             .and_then(|window| window.hwnd().map_err(|error| error.to_string()))
@@ -61,4 +98,35 @@ pub(crate) fn start(app: &AppHandle) {
 #[tauri::command]
 pub fn get_foreground_fullscreen() -> ForegroundFullscreen {
     *STATE.lock().unwrap_or_else(|poison| poison.into_inner())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use win32::notification_state::FullscreenSignal;
+
+    const MONITOR: RECT = RECT { left: 0, top: 0, right: 1920, bottom: 1080 };
+
+    #[test]
+    fn a_window_covering_its_monitor_confirms_the_shell() {
+        let covering = RECT { left: -8, top: -8, right: 1928, bottom: 1088 };
+        assert!(is_fullscreen_foreground(FullscreenSignal::FullscreenApp, Some(covering), Some(MONITOR), "UnityWndClass"));
+        assert!(is_fullscreen_foreground(FullscreenSignal::FullscreenApp, Some(MONITOR), Some(MONITOR), "Chrome_WidgetWin_1"));
+    }
+
+    #[test]
+    fn a_busy_shell_without_a_full_screen_window_is_not_game_mode() {
+        let maximized = RECT { left: 0, top: 0, right: 1920, bottom: 1040 };
+        assert!(!is_fullscreen_foreground(FullscreenSignal::FullscreenApp, Some(maximized), Some(MONITOR), "Notepad"));
+        assert!(!is_fullscreen_foreground(FullscreenSignal::FullscreenApp, None, Some(MONITOR), "Notepad"));
+        for shell in SHELL_CLASSES {
+            assert!(!is_fullscreen_foreground(FullscreenSignal::FullscreenApp, Some(MONITOR), Some(MONITOR), shell));
+        }
+    }
+
+    #[test]
+    fn presentation_settings_count_and_a_quiet_shell_never_does() {
+        assert!(is_fullscreen_foreground(FullscreenSignal::Presentation, None, None, ""));
+        assert!(!is_fullscreen_foreground(FullscreenSignal::None, Some(MONITOR), Some(MONITOR), "UnityWndClass"));
+    }
 }

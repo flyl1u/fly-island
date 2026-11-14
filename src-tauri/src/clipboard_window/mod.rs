@@ -99,7 +99,7 @@ fn island_screen(app: &AppHandle) -> Option<Monitor> {
 
 fn reveal(window: &WebviewWindow) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
-    window.set_focus().map_err(|error| error.to_string())
+    crate::system::window_focus::focus_window(window)
 }
 
 pub(crate) fn remember_bounds(app: &AppHandle) {

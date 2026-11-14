@@ -1,4 +1,4 @@
-import type { AgentUsage, DshUsage, UsageWindow, WorkbuddyUsage } from "./api";
+import type { AgentUsage, DshProblem, DshUsage, UsageWindow, WorkbuddyUsage } from "./api";
 import type { AgentQuotaSource } from "../appearance/types";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
 import type { Translations } from "../../i18n/types";
@@ -61,7 +61,15 @@ export function withoutPastWindows(usage: AgentUsage | null, now: number): Agent
 }
 
 /** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
-export type AgentUsages = { claude: AgentUsage | null; codex: AgentUsage | null; dsh?: DshUsage | null; workbuddy?: WorkbuddyUsage | null; readAt: number };
+export type AgentUsages = {
+  claude: AgentUsage | null;
+  codex: AgentUsage | null;
+  dsh?: DshUsage | null;
+  /** Why DSH shows no balance though it is set up; shown in place of its ring. */
+  dshProblem?: DshProblem | null;
+  workbuddy?: WorkbuddyUsage | null;
+  readAt: number;
+};
 
 export const EMPTY_USAGES: AgentUsages = { claude: null, codex: null, dsh: null, readAt: 0 };
 
@@ -70,6 +78,7 @@ export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQu
     claude: sources.includes("claudeCode") ? usages.claude : null,
     codex: sources.includes("codex") ? usages.codex : null,
     dsh: sources.includes("dsh") ? usages.dsh : null,
+    dshProblem: sources.includes("dsh") ? usages.dshProblem : null,
     workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
     readAt: usages.readAt,
   };
@@ -94,7 +103,7 @@ export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | nul
 
 /** The Agent page reserves one row when at least one selected source has data. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.workbuddy ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

@@ -219,7 +219,17 @@ export type DshUsage = {
   source: "dshApi" | "dshAccount";
 };
 
-/** Read-only official wallet query using DSH's saved credential, cached in native memory. */
+/** Why DSH is set up but shows no balance; the native side rejects with `dsh:<code>`. */
+export type DshProblem = "noSession" | "customProvider" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format";
+const DSH_PROBLEMS: readonly DshProblem[] = ["noSession", "customProvider", "customRoute", "credential", "timeout", "network", "auth", "http", "format"];
+
+/** The reason in a rejected `get_dsh_usage`, or null for anything else (an older build, an IPC error). */
+export function dshProblem(error: unknown): DshProblem | null {
+  const code = typeof error === "string" && error.startsWith("dsh:") ? error.slice(4) : "";
+  return DSH_PROBLEMS.find((problem) => problem === code) ?? null;
+}
+
+/** Read-only official wallet query using DSH's saved credential, cached in native memory. Null: DSH not set up. */
 export function getDshUsage() {
   return invoke<DshUsage | null>("get_dsh_usage");
 }

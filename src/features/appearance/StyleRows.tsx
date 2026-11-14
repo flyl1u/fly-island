@@ -1,5 +1,4 @@
 import { SettingsChoice } from "../../components/settings/SettingsChoice";
-import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
@@ -9,21 +8,36 @@ import type { ColorScheme, IslandFont, IslandSettings, Material, PageButtonStyle
 const percent = (value: number) => `${Math.round(value)}%`;
 const times = (value: number) => `${value.toFixed(2)}x`;
 
-/** Appearance → Style: the colour scheme and material, the font, how see-through, and how big the island is collapsed and opened. */
-export function StyleSettingsSection({
-  settings,
-  onSettingsChange,
-  onPreviewIsland,
-  onExpandedScalePreview,
-  onFontSizePreview,
-}: {
+type RowsProps = {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
-  /** Called while a size changes, so the island shows that size (collapsed or opened). */
-  onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
-  onExpandedScalePreview?: (value: number | null) => void;
-  onFontSizePreview?: (value: number | null) => void;
-}) {
+};
+
+/** The colour scheme: dark, light, or following Windows. */
+export function SchemeRow({ settings, onSettingsChange }: RowsProps) {
+  const text = useTranslation().settings.appearance;
+  const schemes = [
+    { value: "dark", label: text.schemeDark },
+    { value: "light", label: text.schemeLight },
+    { value: "system", label: text.schemeSystem },
+  ] as const;
+  return (
+    <SettingsRow
+      title={text.colorScheme}
+      control={
+        <SettingsChoice<ColorScheme>
+          value={settings.colorScheme}
+          options={schemes}
+          ariaLabel={text.colorScheme}
+          onChange={(colorScheme) => onSettingsChange({ ...settings, colorScheme })}
+        />
+      }
+    />
+  );
+}
+
+/** The material, and the glass strength under it while a glass is chosen. */
+export function MaterialRows({ settings, onSettingsChange }: RowsProps) {
   const t = useTranslation();
   const text = t.settings.appearance;
   const materials = [
@@ -31,29 +45,8 @@ export function StyleSettingsSection({
     { value: "liquidGlass", label: text.liquidGlass },
     { value: "frostedGlass", label: text.frostedGlass },
   ] as const;
-  const schemes = [
-    { value: "dark", label: text.schemeDark },
-    { value: "light", label: text.schemeLight },
-    { value: "system", label: text.schemeSystem },
-  ] as const;
-  const fonts = [
-    { value: "system", label: text.systemFont },
-    { value: "pixel", label: text.pixelFont },
-  ] as const;
-
   return (
-    <SettingsGroup title={text.styleTitle}>
-      <SettingsRow
-        title={text.colorScheme}
-        control={
-          <SettingsChoice<ColorScheme>
-            value={settings.colorScheme}
-            options={schemes}
-            ariaLabel={text.colorScheme}
-            onChange={(colorScheme) => onSettingsChange({ ...settings, colorScheme })}
-          />
-        }
-      />
+    <>
       <SettingsRow
         title={text.material}
         control={
@@ -79,6 +72,22 @@ export function StyleSettingsSection({
           onChange={(glassIntensity) => onSettingsChange({ ...settings, glassIntensity })}
         />
       )}
+    </>
+  );
+}
+
+/** The island's font and its size. */
+export function FontRows({ settings, onSettingsChange, onFontSizePreview }: RowsProps & {
+  onFontSizePreview?: (value: number | null) => void;
+}) {
+  const t = useTranslation();
+  const text = t.settings.appearance;
+  const fonts = [
+    { value: "system", label: text.systemFont },
+    { value: "pixel", label: text.pixelFont },
+  ] as const;
+  return (
+    <>
       <SettingsRow
         title={text.font}
         control={
@@ -103,31 +112,58 @@ export function StyleSettingsSection({
         onPreviewChange={onFontSizePreview}
         onChange={(islandFontPercent) => onSettingsChange({ ...settings, islandFontPercent })}
       />
-      <SettingsRow
-        title={text.pageButtons}
-        control={
-          <SettingsChoice<PageButtonStyle>
-            value={settings.pageButtonStyle}
-            options={[
-              { value: "capsule", label: text.capsules },
-              { value: "icon", label: text.icons },
-            ]}
-            ariaLabel={text.pageButtons}
-            onChange={(pageButtonStyle) => onSettingsChange({ ...settings, pageButtonStyle })}
-          />
-        }
-      />
-      <SettingsSliderRow
-        title={t.settings.layout.opacity}
-        value={settings.opacity}
-        min={50}
-        max={100}
-        step={1}
-        format={percent}
-        defaultValue={DEFAULT_SETTINGS.opacity}
-        resetLabel={t.settings.layout.resetToDefault}
-        onChange={(opacity) => onSettingsChange({ ...settings, opacity })}
-      />
+    </>
+  );
+}
+
+/** Capsules or icons for the page buttons of the open island. */
+export function PageButtonsRow({ settings, onSettingsChange }: RowsProps) {
+  const text = useTranslation().settings.appearance;
+  return (
+    <SettingsRow
+      title={text.pageButtons}
+      control={
+        <SettingsChoice<PageButtonStyle>
+          value={settings.pageButtonStyle}
+          options={[
+            { value: "capsule", label: text.capsules },
+            { value: "icon", label: text.icons },
+          ]}
+          ariaLabel={text.pageButtons}
+          onChange={(pageButtonStyle) => onSettingsChange({ ...settings, pageButtonStyle })}
+        />
+      }
+    />
+  );
+}
+
+/** How see-through the island is. */
+export function OpacityRow({ settings, onSettingsChange }: RowsProps) {
+  const t = useTranslation();
+  return (
+    <SettingsSliderRow
+      title={t.settings.layout.opacity}
+      value={settings.opacity}
+      min={50}
+      max={100}
+      step={1}
+      format={percent}
+      defaultValue={DEFAULT_SETTINGS.opacity}
+      resetLabel={t.settings.layout.resetToDefault}
+      onChange={(opacity) => onSettingsChange({ ...settings, opacity })}
+    />
+  );
+}
+
+/** How big the island is collapsed and opened. */
+export function ScaleRows({ settings, onSettingsChange, onPreviewIsland, onExpandedScalePreview }: RowsProps & {
+  /** Called while a size changes, so the island shows that size (collapsed or opened). */
+  onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
+  onExpandedScalePreview?: (value: number | null) => void;
+}) {
+  const t = useTranslation();
+  return (
+    <>
       <SettingsSliderRow
         title={t.settings.layout.collapsedScale}
         value={settings.collapsedScale}
@@ -160,6 +196,6 @@ export function StyleSettingsSection({
           onPreviewIsland?.("expanded");
         }}
       />
-    </SettingsGroup>
+    </>
   );
 }

@@ -32,7 +32,7 @@ fn visible_main_is_preferred_and_login_windows_are_not_restored() {
 }
 
 #[test]
-#[ignore = "Activates the registered weixin protocol and verifies the original main process"]
+#[ignore = "Restores the running WeChat window and verifies the original main process"]
 fn window_activation_reuses_the_existing_wechat_process() {
     resolve_executable().unwrap();
     let before = existing_wechat_windows().unwrap();
@@ -222,4 +222,45 @@ fn finds_existing_wechat_main_window_without_launching() {
         selected.main_sized,
         "The existing main window must be preferred over a login window"
     );
+}
+
+fn chat(key: &str, body: &str) -> ChatPreview {
+    ChatPreview { key: key.into(), contact: key.into(), body: body.into() }
+}
+
+#[test]
+fn opening_one_conversation_clears_only_that_conversation() {
+    let mut state = ReminderState::default();
+    state.set_enabled(true);
+    state.set_preview_enabled(true);
+    let generation = state.generation;
+    let process = test_process(4);
+    state.receive_previews(generation, process, vec![chat("xiaoming", "1"), chat("xiaohong", "1")], 1000);
+    state.receive_previews(generation, process, vec![chat("xiaoming", "2")], 2000);
+    state.receive_previews(generation, process, vec![chat("xiaohong", "2"), chat("xiaoming", "3")], 3000);
+    let xiaoming = state.snapshot.messages.iter().find(|m| m.chat.key == "xiaoming").map(|m| m.id.clone());
+    let revision = state.snapshot.revision;
+    assert!(state.dismiss_conversation(&xiaoming.unwrap()));
+    assert!(state.snapshot.messages.iter().all(|m| m.chat.key == "xiaohong"));
+    assert_eq!(state.snapshot.messages.len(), 2);
+    assert_eq!(state.snapshot.revision, revision + 1);
+    // The newest reminder included this chat, so no content-free card replaces it.
+    assert!(!state.snapshot.pending);
+    assert_eq!(state.snapshot.last_attention_at, Some(3000), "no new preview is triggered");
+    assert!(!state.dismiss_conversation("unknown"));
+}
+
+#[test]
+fn opening_an_older_conversation_keeps_the_newer_reminder_pending() {
+    let mut state = ReminderState::default();
+    state.set_enabled(true);
+    state.set_preview_enabled(true);
+    let generation = state.generation;
+    let process = test_process(4);
+    state.receive_previews(generation, process, vec![chat("xiaoming", "1")], 1000);
+    state.receive_previews(generation, process, vec![chat("xiaohong", "1")], 2000);
+    let old = state.snapshot.messages.iter().find(|m| m.chat.key == "xiaoming").map(|m| m.id.clone());
+    assert!(state.dismiss_conversation(&old.unwrap()));
+    assert!(state.snapshot.pending);
+    assert_eq!(state.snapshot.messages.len(), 1);
 }

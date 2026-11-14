@@ -70,6 +70,8 @@ export type AgentText = {
     dshLegend: string[];
     fromDshApi: string;
     fromDshAccount: string;
+    /** Why DSH is set up but shows no balance: a word or two beside the empty ring, then the hover detail. */
+    dshProblem: Record<"noSession" | "customProvider" | "customRoute" | "credential" | "timeout" | "network" | "auth" | "http" | "format", { short: string; detail: string }>;
     workbuddy: { label: string; credits: (value: string) => string; balance: (remaining: string, total: string) => string; percent: (value: number) => string; source: string };
     fiveHour: string;
     sevenDay: string;
@@ -191,6 +193,17 @@ export const zhCN: AgentText = {
     dshLegend: ["内外两圈：余额可用", "实心表示可用，不代表百分比。", "余额不是订阅额度，没有重置窗口。"],
     fromDshApi: "DeepSeek API 余额接口",
     fromDshAccount: "DSH 账户余额接口",
+    dshProblem: {
+      noSession: { short: "暂无会话", detail: "DSH 还没有用过官方模型的会话，无法确定计费账户。" },
+      customProvider: { short: "第三方模型", detail: "最近的 DSH 会话使用第三方模型，没有 DeepSeek 官方余额可查。" },
+      customRoute: { short: "自定义接口", detail: "DSH 设置了自定义接口地址，为保护密钥，不向官方查询余额。" },
+      credential: { short: "未找到凭据", detail: "没有读到 DSH 保存的 DeepSeek 凭据，请在 DSH 里重新登录或填写 API key。" },
+      timeout: { short: "查询超时", detail: "查询余额超时，请检查网络或代理，稍后会自动重试。" },
+      network: { short: "无法连接", detail: "连不上 DeepSeek，请检查网络或代理，稍后会自动重试。" },
+      auth: { short: "凭据失效", detail: "DeepSeek 拒绝了 DSH 的凭据，请在 DSH 里重新登录或更换 API key。" },
+      http: { short: "服务出错", detail: "DeepSeek 余额接口返回错误，稍后会自动重试。" },
+      format: { short: "无法识别", detail: "余额接口返回的格式无法识别，可能需要更新 FocuSD Island。" },
+    },
     workbuddy: {
       label: "WorkBuddy 积分",
       credits: (value) => `${value} 积分`,
@@ -311,6 +324,17 @@ export const en: AgentText = {
     dshLegend: ["Both rings: usable balance", "Filled = available; no percentage.", "Prepaid, no subscription window."],
     fromDshApi: "DeepSeek API balance endpoint",
     fromDshAccount: "DSH account balance endpoint",
+    dshProblem: {
+      noSession: { short: "No session", detail: "No DSH session with an official model yet, so the billed account is unknown." },
+      customProvider: { short: "Third-party", detail: "The latest DSH session uses a third-party model; there is no DeepSeek balance to read." },
+      customRoute: { short: "Custom API", detail: "DSH uses a custom endpoint; to protect its key, the official balance is not queried." },
+      credential: { short: "No credential", detail: "DSH's saved DeepSeek credential was not found. Sign in again or add an API key in DSH." },
+      timeout: { short: "Timed out", detail: "The balance request timed out. Check your network or proxy; it retries shortly." },
+      network: { short: "Offline", detail: "Can't reach DeepSeek. Check your network or proxy; it retries shortly." },
+      auth: { short: "Expired", detail: "DeepSeek rejected DSH's credential. Sign in again or replace the API key in DSH." },
+      http: { short: "Server error", detail: "DeepSeek's balance endpoint returned an error; it retries shortly." },
+      format: { short: "Unrecognized", detail: "The balance response was not recognized; FocuSD Island may need an update." },
+    },
     workbuddy: {
       label: "WorkBuddy credits",
       credits: (value) => `${value} credits`,

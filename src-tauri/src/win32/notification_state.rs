@@ -4,18 +4,25 @@ use windows::Win32::UI::Shell::{
     SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
 };
 
-/// Whether a full-screen app (a game, a full-screen video, a presentation) is in the
-/// foreground: the state in which Windows suppresses its own toasts. `false` when the
-/// state cannot be read.
-pub(crate) fn fullscreen_app_in_front() -> bool {
+/// What the shell reports about the foreground, as far as full-screen apps go.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FullscreenSignal {
+    None,
+    /// QUNS_BUSY or QUNS_RUNNING_D3D_FULL_SCREEN: a full-screen app, by the shell's guess.
+    FullscreenApp,
+    /// The user turned on presentation settings.
+    Presentation,
+}
+
+/// The state in which Windows suppresses its own toasts. `None` when it cannot be read.
+pub(crate) fn fullscreen_signal() -> FullscreenSignal {
     // SAFETY: SHQueryUserNotificationState takes no arguments and returns the state
     // by value.
     match unsafe { SHQueryUserNotificationState() } {
-        Ok(state) => {
-            state == QUNS_BUSY
-                || state == QUNS_RUNNING_D3D_FULL_SCREEN
-                || state == QUNS_PRESENTATION_MODE
+        Ok(state) if state == QUNS_BUSY || state == QUNS_RUNNING_D3D_FULL_SCREEN => {
+            FullscreenSignal::FullscreenApp
         }
-        Err(_) => false,
+        Ok(state) if state == QUNS_PRESENTATION_MODE => FullscreenSignal::Presentation,
+        _ => FullscreenSignal::None,
     }
 }
