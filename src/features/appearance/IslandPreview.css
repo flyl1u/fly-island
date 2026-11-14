@@ -146,7 +146,8 @@
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: rgba(0, 0, 0, 0.36);
-  color: rgba(var(--overlay-rgb), 0.86);
+  /* Always on the dark caption chip, whatever the island's tone. */
+  color: rgba(255, 255, 255, 0.86);
   font-size: 11px;
 }
 

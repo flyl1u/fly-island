@@ -52,7 +52,7 @@
 
 .shortcut-record-button:hover,
 .shortcut-record-button:focus-visible {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: rgba(var(--overlay-rgb), 0.15);
   box-shadow: none;
 }
@@ -88,7 +88,7 @@
 
 .shortcut-control__error {
   margin: 0;
-  color: #ff9aa9;
+  color: var(--color-error-text);
   font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
   overflow-wrap: anywhere;

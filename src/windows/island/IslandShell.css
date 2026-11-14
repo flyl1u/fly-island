@@ -228,7 +228,7 @@
 }
 
 .island--expanded.island--todo {
-  color: #f8f4e9;
+  color: color-mix(in srgb, rgb(var(--ink-rgb)) calc(var(--is-light) * 100%), #f8f4e9);
 }
 
 .island--collapsed {
@@ -239,7 +239,7 @@
   cursor: default;
   background:
     /* The shading fades with the fill (classic opacity). */
-    linear-gradient(180deg, rgba(var(--overlay-rgb), calc(0.06 * var(--island-fill-alpha, 1))), rgba(0, 0, 0, calc(0.22 * var(--island-fill-alpha, 1)))),
+    linear-gradient(180deg, color-mix(in srgb, var(--island-shade-top) calc(var(--island-fill-alpha, 1) * 100%), transparent), color-mix(in srgb, var(--island-shade-bottom) calc(var(--island-fill-alpha, 1) * 100%), transparent)),
     var(--island-fill, var(--island-background-color));
   box-shadow: none;
 }
@@ -322,6 +322,15 @@
   height: calc(var(--expanded-island-height, 306px) * var(--island-expanded-scale));
   border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
   cursor: default;
+}
+
+/* A light island over a light window would have no edge: a soft shadow sets it apart. */
+[data-tone="light"] .island--expanded {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-tone="light"] .island--collapsed:not(:has(:focus-visible)) {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
 /* Liquid glass draws its own rim (the refraction border). */

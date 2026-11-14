@@ -218,10 +218,10 @@
   height: 15px;
   display: grid;
   place-items: center;
-  color: #141418;
+  color: var(--color-inverse-ink);
   background: var(--text-1);
   border-radius: var(--radius-circle);
-  box-shadow: 0 0 0 2px rgba(20, 20, 25, 0.95);
+  box-shadow: 0 0 0 2px rgba(var(--panel-deep-rgb), 0.95);
 }
 
 .shelf-item--row .shelf-item__pin-badge {
@@ -284,7 +284,7 @@
   place-items: center;
   padding: 0;
   color: var(--text-2);
-  background: rgba(30, 30, 35, 0.86);
+  background: rgba(var(--float-rgb), 0.86);
   border: 0;
   border-radius: var(--radius-pill);
   outline: none;
@@ -327,7 +327,7 @@
 }
 
 .shelf-item__actions .shelf-copy-button--copied {
-  color: #141418;
+  color: var(--color-inverse-ink);
   background: var(--text-1);
 }
 
@@ -344,7 +344,7 @@
 }
 
 .shelf-item--unreachable .shelf-item__meta {
-  color: #f2c27b;
+  color: color-mix(in srgb, #9a6700 calc(var(--is-light) * 100%), #f2c27b);
 }
 
 .shelf-item--missing .shelf-item__main,

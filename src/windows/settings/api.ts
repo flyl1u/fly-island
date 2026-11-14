@@ -40,6 +40,11 @@ export function listenSettingsOpenRequested(handler: () => void) {
   return listen(SETTINGS_OPEN_REQUESTED_EVENT, handler);
 }
 
+/** Draws this window's title bar and background in the page's colour scheme (settings_window/mod.rs). */
+export function setSettingsWindowTheme(dark: boolean) {
+  return invoke<void>("set_settings_window_theme", { dark });
+}
+
 /** Shows this window, which a fresh open creates hidden until the page has painted. */
 export function showSettingsWindow() {
   return invoke("show_settings_window");

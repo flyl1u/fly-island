@@ -9,11 +9,13 @@ import { useTranslationSettings } from "../../features/translation/useTranslatio
 import { openSettingsWindow } from "../settings/api";
 import { useAutoTranslate } from "../../features/translation/useAutoTranslate";
 import { useTranslationRequest } from "../../features/translation/useTranslationRequest";
+import { useDocumentTheme, useStoredColorScheme } from "../../features/appearance/useDocumentTheme";
 import "./TranslationWindow.css";
 
 export function TranslationWindow() {
   const t = useTranslation();
   const [settings, setSettings] = useTranslationSettings();
+  useDocumentTheme(useStoredColorScheme());
   const [input, setInput] = useState("");
   const [clipboardPreview, setClipboardPreview] = useState("");
   const [output, setOutput] = useState("");

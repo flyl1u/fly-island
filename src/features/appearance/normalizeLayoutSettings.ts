@@ -32,6 +32,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
       settings?.appearanceMode === "liquidGlass"
         ? settings.appearanceMode
         : "classic",
+    colorScheme: settings?.colorScheme === "light" || settings?.colorScheme === "system" ? settings.colorScheme : DEFAULT_SETTINGS.colorScheme,
     glassIntensity: clamp(
       Number(settings?.glassIntensity ?? DEFAULT_SETTINGS.glassIntensity),
       25,

@@ -12,11 +12,11 @@
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  color: var(--color-white);
-  background: #050505;
+  color: var(--color-fg-strong);
+  background: color-mix(in srgb, #f4f4f7 calc(var(--is-light) * 100%), #050505);
   border-radius: 0 0 22px 22px;
   corner-shape: superellipse(1.6);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--color-white-a08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, calc(0.35 - var(--is-light) * 0.25)), inset 0 0 0 1px var(--color-white-a08);
 }
 
 .collapsed-layout__slot {

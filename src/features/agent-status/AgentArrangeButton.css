@@ -4,7 +4,7 @@
 }
 
 .icon-button.agent-arrange__button--open {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 
@@ -17,7 +17,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 6px;
-  background: rgba(24, 26, 30, 0.96);
+  background: rgba(var(--float-rgb), 0.96);
   border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 10px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
@@ -59,6 +59,6 @@
 
 .agent-arrange__option--on,
 .agent-arrange__option--on:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }

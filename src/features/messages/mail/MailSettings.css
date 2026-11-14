@@ -40,7 +40,7 @@ min-width: 0;
 }
 
 .mail-settings__address small.mail-settings__account-error {
-  color: #ff9aa9;
+  color: var(--color-error-text);
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -154,25 +154,25 @@ color: var(--color-inverse-ink);
 }
 
 .mail-settings__button--danger {
-color: #ff9aa9;
+color: var(--color-error-text);
   background: transparent;
 }
 
 .mail-settings__button--danger:hover:not(:disabled) {
-color: #ffb7c2;
+color: var(--color-error-text-strong);
   background: var(--color-white-a08);
 }
 
 .mail-settings__confirm {
   grid-column: 1 / -1;
-  color: #ffb7c2;
+  color: var(--color-error-text-strong);
   font-size: calc(11px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
 
 .mail-settings__error {
   margin: 0;
-  color: #ff9aa9;
+  color: var(--color-error-text);
   font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
   overflow-wrap: anywhere;

@@ -212,7 +212,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0 6px;
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: rgba(61, 139, 255, 0.32);
   border: 0;
   border-radius: var(--radius-pill);
@@ -235,6 +235,6 @@
 }
 
 .island-shelf-count:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a18);
 }

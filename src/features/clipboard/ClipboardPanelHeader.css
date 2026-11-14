@@ -131,7 +131,7 @@
 }
 
 .clipboard-clear-button:hover:not(:disabled) {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: rgba(var(--overlay-rgb), 0.11);
 }
 

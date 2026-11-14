@@ -31,5 +31,5 @@
 }
 
 .agent-hooks-message--error {
-  color: #ff9aa9;
+  color: var(--color-error-text);
 }

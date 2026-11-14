@@ -9,6 +9,11 @@ export type SettingsAppearanceText = {
   classic: string;
   liquidGlass: string;
   glassStrength: string;
+  /** Colour scheme: dark, light, or following Windows. */
+  colorScheme: string;
+  schemeDark: string;
+  schemeLight: string;
+  schemeSystem: string;
   styleTitle: string;
   pageButtons: string;
   capsules: string;
@@ -62,6 +67,10 @@ export const zhCN: SettingsAppearanceText = {
   classic: "经典",
   liquidGlass: "液态玻璃",
   glassStrength: "玻璃强度",
+  colorScheme: "配色",
+  schemeDark: "深色",
+  schemeLight: "浅色",
+  schemeSystem: "跟随系统",
   styleTitle: "风格",
   pageButtons: "页面按钮",
   capsules: "胶囊",
@@ -112,6 +121,10 @@ export const en: SettingsAppearanceText = {
   classic: "Classic",
   liquidGlass: "Liquid glass",
   glassStrength: "Glass strength",
+  colorScheme: "Color scheme",
+  schemeDark: "Dark",
+  schemeLight: "Light",
+  schemeSystem: "System",
   styleTitle: "Style",
   pageButtons: "Page buttons",
   capsules: "Capsules",

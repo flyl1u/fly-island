@@ -6,6 +6,8 @@ import { AgentPagePreview } from "./AgentPagePreview";
 import { cornerShapeCss } from "./cornerShape";
 import { COLLAPSED_WIDTH, getEffectiveAppearanceMode, hexToRgba, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
+import { resolveSchemeColors } from "./theme";
+import { useResolvedScheme } from "./useDocumentTheme";
 import "./IslandPreview.css";
 
 /**
@@ -18,16 +20,17 @@ import "./IslandPreview.css";
 export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const text = useTranslation().settings.appearance.preview;
   const glass = getEffectiveAppearanceMode(settings.appearanceMode) === "liquidGlass";
+  const colors = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
   const style = {
-    "--preview-fill": hexToRgba(settings.islandBackgroundColor, settings.opacity / 100),
+    "--preview-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius-px": settings.islandCornerRadius,
     "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
-    "--preview-pulse": settings.pulseColor,
-    "--preview-pulse-glow": hexToRgba(settings.pulseColor, 0.72),
+    "--preview-pulse": colors.pulseColor,
+    "--preview-pulse-glow": hexToRgba(colors.pulseColor, 0.72),
     "--preview-pulse-brightness": `${settings.pulseBrightness}%`,
-    "--preview-text": settings.taskTextColor,
-    "--preview-ink": inkOn(settings.islandBackgroundColor),
+    "--preview-text": colors.taskTextColor,
+    "--preview-ink": inkOn(colors.islandBackgroundColor),
     "--preview-collapsed-scale": settings.collapsedScale,
     "--preview-collapsed-width": settings.collapsedAutoWidth ? COLLAPSED_WIDTH.default : settings.collapsedWidth,
     "--preview-collapsed-height": settings.collapsedHeight,
@@ -45,6 +48,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
   return (
     <figure
       className={`island-preview island-preview--font-${settings.fontFamily}`}
+      data-tone={colors.tone}
       style={style}
       aria-label={text.label}
     >

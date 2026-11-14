@@ -25,29 +25,29 @@
   display: grid;
   place-items: center;
   color: var(--text-2);
-  background: #2a2a30;
+  background: color-mix(in srgb, #ffffff calc(var(--is-light) * 100%), #2a2a30);
   border: 1px solid var(--color-white-a10);
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, calc(0.3 - var(--is-light) * 0.2));
   transition: rotate 260ms cubic-bezier(0.32, 0.72, 0, 1), translate 260ms cubic-bezier(0.32, 0.72, 0, 1), color 160ms ease, background 160ms ease;
 }
 
 .shelf-empty__file--left {
   rotate: -16deg;
   translate: -22px 5px;
-  color: #ffb37f;
+  color: color-mix(in srgb, #cf651d calc(var(--is-light) * 100%), #ffb37f);
 }
 
 .shelf-empty__file--right {
   rotate: 14deg;
   translate: 22px 5px;
-  color: #7fb2ff;
+  color: color-mix(in srgb, #2f6fd6 calc(var(--is-light) * 100%), #7fb2ff);
 }
 
 .shelf-empty__file--front {
   z-index: 1;
-  background: #33333a;
+  background: color-mix(in srgb, #fbfbfd calc(var(--is-light) * 100%), #33333a);
 }
 
 .shelf-empty__copy {
@@ -82,7 +82,7 @@
 }
 
 .shelf-empty--dropping .shelf-empty__file--front {
-  color: #141418;
+  color: var(--color-inverse-ink);
   background: var(--text-1);
   border-color: transparent;
 }

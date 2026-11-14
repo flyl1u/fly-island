@@ -6,7 +6,7 @@ use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, POINT, RECT, WPARAM},
         Graphics::{
-            Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED},
+            Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED, DWMWA_USE_IMMERSIVE_DARK_MODE},
             Gdi::{MonitorFromWindow, SetWindowRgn, MONITOR_DEFAULTTONEAREST},
         },
         System::Threading::{AttachThreadInput, GetCurrentThreadId},
@@ -314,6 +314,24 @@ pub(crate) fn disable_show_animation(window: HWND) -> bool {
             window,
             DWMWA_TRANSITIONS_FORCEDISABLED,
             (&disabled as *const BOOL).cast(),
+            std::mem::size_of::<BOOL>() as u32,
+        )
+    }
+    .is_ok()
+}
+
+/// Draws `window`'s title bar dark or light, whatever the Windows colour mode. Only DWM is asked,
+/// so the window's theme (and with it the webviews' preferred colour scheme) stays as it is.
+/// Returns whether DWM accepted it.
+pub(crate) fn set_dark_title_bar(window: HWND, dark: bool) -> bool {
+    let value = BOOL::from(dark);
+    // SAFETY: the attribute takes a BOOL; the pointer and size describe `value`,
+    // which lives until the call returns. An invalid HWND only makes it fail.
+    unsafe {
+        DwmSetWindowAttribute(
+            window,
+            DWMWA_USE_IMMERSIVE_DARK_MODE,
+            (&value as *const BOOL).cast(),
             std::mem::size_of::<BOOL>() as u32,
         )
     }

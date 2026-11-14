@@ -117,7 +117,7 @@
 
 .project-link-error {
   margin: 0;
-  color: #ffd8df;
+  color: var(--color-error-text-strong);
   font-size: calc(12px * var(--island-font-scale, 1));
   line-height: 1.5;
 }
