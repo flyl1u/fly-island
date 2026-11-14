@@ -99,3 +99,10 @@ test("withoutUpdateTodo strips only the system todo for persistence", () => {
   assert.equal(isUpdateTodo(todos[1]), true);
   assert.equal(isUpdateTodo(todos[0]), false);
 });
+
+test("a failed install with a known version keeps its row, so the failure stays visible", () => {
+  const first = syncUpdateTodo([], { stage: "ready", dismissed: false }, "title", 1);
+  const failed = syncUpdateTodo(first, { stage: "error", dismissed: false, hasVersion: true }, "title", 2);
+  assert.equal(failed, first);
+  assert.deepEqual(plain(syncUpdateTodo(first, { stage: "error", dismissed: false, hasVersion: false }, "title")), []);
+});

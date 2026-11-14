@@ -212,15 +212,15 @@ if (!automated) {
     check(barItems.every((rect) => rect.left >= collapsed.left + 10 && rect.right <= collapsed.right - 10), "收起的岛上的内容离两侧圆角有距离");
 
     if (query.has("update")) {
-      check(document.querySelector(".dot-button--todo .island-update-dot") && !localStorage.getItem("focusd-island-update-dot-seen"),
-        "新更新在待办入口显示红点，收起期间不会记为已看过");
+      check(document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".island__collapsed .island-update-dot"),
+        "新更新在待办入口和收起的岛上都显示红点");
     }
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
     if (query.has("update")) {
       await click(".dot-button--todo");
-      check(!document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot")
-        && localStorage.getItem("focusd-island-update-dot-seen") === "3.0.10", "进入待办按版本消除入口红点，更新按钮仍有红点");
+      check(document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot"),
+        "进入待办后入口红点和更新按钮红点都保留，直到安装");
     }
     checkShapeMotion(0.56);
     if (query.has("theme") || query.has("bg")) checkTone(check, query.get("theme") === "light" || (query.get("bg") ?? "").toUpperCase() === "FFFFFF");

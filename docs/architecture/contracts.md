@@ -46,8 +46,8 @@
 | 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，命令 `save_theme_file`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-community-invite-seen`（`"true"`：在「关于」里点开过用户交流群；没有或其他值时，岛屿的设置按钮、侧栏「关于」和交流群那一行显示红点。2026-11-12 起） | `features/updater/storage.ts` |
-| `focusd-island-auto-update`（`"false"`：关闭自动更新，只在「关于」里手动检查；缺失或其他值都算开启。开启时启动检查、每 6 小时再查、失败退避重试，下载好后在小岛收起且 2 分钟无交互时自动安装。2026-11-13 起） | `features/updater/storage.ts` |
-| `focusd-island-update-dot-seen`（版本号字符串，如 `"3.1.0"`：真正展开并进入待办页时记录已看过的更新版本；缺失、损坏或存储不可用回退空字符串，新版本再次显示红点。2026-11-13 起） | `features/updater/storage.ts` |
+| `focusd-island-auto-update`（`"false"`：关闭自动更新，只在「关于」里手动检查；缺失或其他值都算开启。开启时启动检查、每 3 小时再查、失败退避重试，下载好后在小岛收起且 1 分钟无交互时自动安装。2026-11-13 起） | `features/updater/storage.ts` |
+| `focusd-island-update-dot-seen`（2026-11-14 已移除：更新红点不再记录已看过，只要有待安装的更新（含安装失败）就显示，直到安装。旧数据不再被读取，可以残留） | 已删除 `features/updater/storage.ts` 中的读写 |
 | `focusd-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
 ## 媒体诊断命令
@@ -66,7 +66,6 @@
 
 ## 事件
 
-前端同窗口 DOM 事件 `focusd-update-dot-seen`（2026-11-13）：更新红点已看过的版本保存成功后发出，无载荷；跨窗口仍使用浏览器 `storage` 事件。不新增 Tauri 事件。
 
 | 事件名 | 发送方 | 目标 |
 |---|---|---|

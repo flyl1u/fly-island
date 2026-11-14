@@ -5,7 +5,7 @@ import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
 import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
-import { useUpdateDot } from "../../features/updater/useUpdateDot";
+import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
@@ -46,7 +46,6 @@ type IslandHeaderProps = {
  * target and window actions.
  */
 export function IslandHeader({
-  isExpanded,
   page,
   features,
   pageOrder,
@@ -71,7 +70,7 @@ export function IslandHeader({
   const t = useTranslation();
   // A red dot leads to the community group in About until it has been opened.
   const communityPending = useCommunityInvite().pending;
-  const updatePending = useUpdateDot(isExpanded && features.todo && page === "todo");
+  const updatePending = useUpdatePending();
   const showIcons = pageButtonStyle === "icon";
   const AgentIcon = showIcons ? Bot : CircleDot;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);

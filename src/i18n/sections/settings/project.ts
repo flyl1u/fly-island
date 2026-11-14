@@ -39,6 +39,8 @@ export type SettingsProjectText = {
     availableHint: string;
     updateDownloading: (percent: number) => string;
     installing: string;
+    /** The row while a failed install waits to be retried. */
+    failedRetry: string;
   };
   /** About → the updates group: the automatic-update switch, the status, and checking by hand. */
   autoUpdate: {
@@ -96,10 +98,11 @@ export const zhCN: SettingsProjectText = {
     availableHint: "有新版本",
     updateDownloading: (percent) => `下载 ${percent}%`,
     installing: "正在安装，小岛会自动重启",
+    failedRetry: "更新失败，点击重试",
   },
   autoUpdate: {
     title: "自动更新",
-    hint: "每 6 小时检查一次，后台下载；小岛收起且 2 分钟没人碰时自动安装并重启。关闭后只在这里手动检查。",
+    hint: "每 3 小时检查一次，后台下载；小岛收起且 1 分钟没人碰时自动安装并重启，有红点提示。关闭后只在这里手动检查。",
     status: "检查更新",
     check: "检查更新",
     installNow: "立即安装",
@@ -152,10 +155,11 @@ export const en: SettingsProjectText = {
     availableHint: "Update available",
     updateDownloading: (percent) => `Downloading ${percent}%`,
     installing: "Installing — the island will restart itself",
+    failedRetry: "Update failed — click to retry",
   },
   autoUpdate: {
     title: "Automatic updates",
-    hint: "Checks every 6 hours and downloads in the background; installs and restarts once the island is collapsed and untouched for 2 minutes. When off, check here by hand.",
+    hint: "Checks every 3 hours and downloads in the background; installs and restarts once the island is collapsed and untouched for 1 minute, with a red dot in the meantime. When off, check here by hand.",
     status: "Check for updates",
     check: "Check now",
     installNow: "Install now",
