@@ -79,6 +79,11 @@ export function readClipboardImage(id: string) {
   return invoke<string>("read_clipboard_history_image", { id });
 }
 
+/** The list thumbnail as a PNG data URL; the history snapshot no longer carries it. */
+export function readClipboardThumbnail(id: string) {
+  return invoke<string>("read_clipboard_history_thumbnail", { id });
+}
+
 /** The main frontend calls this only when a shortcut is routed to the island. */
 export function showClipboardHistoryIsland() {
   return invoke<void>("show_clipboard_history_island");

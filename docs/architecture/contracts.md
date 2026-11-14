@@ -60,6 +60,7 @@
 ## 剪贴板命令（2026-11-13）
 
 - `delete_clipboard_history_items({ ids: string[] })` 返回完整历史快照；一次操作最多写盘一次、广播一次 `clipboard-history-changed`，显式选中的收藏也删除；未知或重复 ID 忽略。原 `clear_clipboard_history` 保留原语义。
+- 剪贴板缩略图按需读取（3.1.0）：`clipboard-history.json` 与 `get_clipboard_history` 快照里的 `image.thumbnailDataUrl` 不再写出（字段可选）；缩略图只存在 `clipboard-images/` 的 `-thumb.png`，由新命令 `read_clipboard_history_thumbnail({ id: string })` 返回 PNG data URL，路径限制同下。旧存档首次加载时把内嵌缩略图搬到文件（文件已在则直接去掉内嵌数据；无法写出的保留内嵌，命令原样返回），然后重写一次存档。旧版本读新存档不报错，只是列表里没有缩略图。
 - `read_clipboard_history_image({ id: string })` 返回 PNG data URL；只允许历史条目引用的 `clipboard-images/` 直接子文件，拒绝目录外路径、父目录跳转、非 PNG 和大于 10 MiB 的内容。路径由原生端按 ID 查找，前端不传路径。
 
 ## 事件
