@@ -9,11 +9,13 @@ import { CLIPBOARD_VISIBLE_ROWS } from "../appearance/settingsLimits";
  * The clipboard history options below the module switch (which is `enabled`, set by the
  * page). Its shortcut is the next group on the page.
  */
-export function ClipboardSettingsSection({ clipboardSettings, onClipboardSettingsChange, visibleRows, onVisibleRowsChange }: {
+export function ClipboardSettingsSection({ clipboardSettings, onClipboardSettingsChange, visibleRows, onVisibleRowsChange, detached, onDetachedChange }: {
   clipboardSettings: ClipboardHistorySettings;
   onClipboardSettingsChange: (settings: ClipboardHistorySettings) => void;
   visibleRows: number;
   onVisibleRowsChange: (rows: number) => void;
+  detached: boolean;
+  onDetachedChange: (detached: boolean) => void;
 }) {
   const t = useTranslation();
 
@@ -38,6 +40,7 @@ export function ClipboardSettingsSection({ clipboardSettings, onClipboardSetting
         max={CLIPBOARD_VISIBLE_ROWS.max}
         onChange={onVisibleRowsChange}
       />
+      <SettingsToggleRow title={t.settings.clipboard.detached} checked={detached} onChange={onDetachedChange} />
     </SettingsGroup>
   );
 }

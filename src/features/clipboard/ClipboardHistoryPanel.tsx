@@ -19,6 +19,7 @@ export function ClipboardHistoryPanel({
   onUpdateNote,
   onDeleteItem,
   onDeleteItems,
+  variant = "island",
 }: {
   snapshot: ClipboardHistorySnapshot;
   onCopyItem: (id: string) => Promise<boolean> | boolean;
@@ -26,6 +27,7 @@ export function ClipboardHistoryPanel({
   onUpdateNote: (id: string, note: string) => Promise<boolean> | boolean;
   onDeleteItem: (id: string) => Promise<void> | void;
   onDeleteItems: (ids: string[]) => Promise<boolean> | boolean;
+  variant?: "island" | "window";
 }) {
   const t = useTranslation();
   const {
@@ -77,7 +79,7 @@ export function ClipboardHistoryPanel({
   );
 
   return (
-    <section className="clipboard-panel" aria-label={t.clipboard.title}>
+    <section className={`clipboard-panel clipboard-panel--${variant}`} aria-label={t.clipboard.title}>
       <div className="clipboard-panel__content" inert={preview !== null}>
         <ClipboardPanelHeader
           itemCount={snapshot.items.length}

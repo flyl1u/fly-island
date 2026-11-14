@@ -196,6 +196,8 @@ export type IslandSettings = {
   gameAutoTuck: boolean;
   /** Clipboard: rows visible in the island before scrolling (3–8). */
   clipboardVisibleRows: number;
+  /** Clipboard: open history in its own window instead of inside the island. */
+  clipboardDetached: boolean;
 };
 
 export type LegacyIslandSettings = Partial<IslandSettings> & {

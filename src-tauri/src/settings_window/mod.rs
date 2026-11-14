@@ -1,5 +1,5 @@
 mod bounds;
-mod sizing;
+pub(crate) mod sizing;
 
 use sizing::Size;
 use std::{thread, time::Duration};

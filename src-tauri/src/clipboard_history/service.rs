@@ -13,7 +13,7 @@ use std::{
     thread,
     time::Duration,
 };
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
     UI::WindowsAndMessaging::{WM_CLIPBOARDUPDATE, WM_HOTKEY},
@@ -30,7 +30,7 @@ use super::store::{
 use super::{
     current_unix_millis, service, ClipboardHistoryImage, ClipboardHistoryItem,
     ClipboardHistoryItemKind, ClipboardHistoryService, ClipboardHistorySettings,
-    ClipboardHistorySnapshot, ClipboardHistoryState, HISTORY_CHANGED_EVENT, MAIN_WINDOW_LABEL,
+    ClipboardHistorySnapshot, ClipboardHistoryState, HISTORY_CHANGED_EVENT,
     MAX_NOTE_CHARACTERS, SHORT_DUPLICATE_WINDOW_MS,
 };
 use crate::win32::{
@@ -417,11 +417,7 @@ impl ClipboardHistoryService {
     }
 
     fn emit_shortcut(&self) {
-        if let Some(window) = self.app.get_webview_window(MAIN_WINDOW_LABEL) {
-            let _ = window.show();
-            crate::island::focus::focus_island_for_shortcut(&window);
-        }
-
+        // Only the main frontend routes this event, using its saved presentation setting.
         let _ = self.app.emit(HOTKEY_EVENT, ());
     }
 }

@@ -3,7 +3,7 @@ import { deleteClipboardItems, copyClipboardItem, deleteClipboardItem, getClipbo
 import { DEFAULT_CLIPBOARD_HISTORY } from "./settings";
 
 /** Clipboard history snapshot, its item actions, and the native change and shortcut listeners. */
-export function useClipboardHistory(onShortcut: () => void) {
+export function useClipboardHistory(onShortcut?: () => void) {
   const [clipboardHistory, setClipboardHistory] =
     useState<ClipboardHistorySnapshot>(DEFAULT_CLIPBOARD_HISTORY);
 
@@ -91,7 +91,7 @@ export function useClipboardHistory(onShortcut: () => void) {
         console.error("Failed to listen for clipboard history changes", error);
       });
 
-    void listenClipboardHistoryShortcut(() => {
+    if (onShortcut) void listenClipboardHistoryShortcut(() => {
       if (clipboardHistory.settings.shortcutEnabled) {
         onShortcut();
       }

@@ -41,6 +41,23 @@
         "shadow": false
       },
       {
+        "label": "clipboard",
+        "create": false,
+        "title": "fly-island",
+        "url": "index.html?window=clipboard",
+        "width": 420,
+        "height": 640,
+        "minWidth": 360,
+        "minHeight": 420,
+        "decorations": false,
+        "transparent": true,
+        "resizable": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "shadow": false,
+        "theme": "Dark"
+      },
+      {
         "label": "settings",
         "create": false,
         "title": "fly-island",
