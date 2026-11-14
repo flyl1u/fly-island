@@ -136,7 +136,7 @@ export function IslandApp() {
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
   });
-  const scheme = useDocumentTheme(settings.colorScheme);
+  const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(
     () => getIslandStageStyle(settings, colors, collapsedIslandWidth, expandedIslandHeight),
@@ -195,7 +195,7 @@ export function IslandApp() {
         mode={mode}
         page={page}
         expandedHeight={expandedIslandHeight}
-        appearanceMode={settings.appearanceMode}
+        material={settings.material}
         nativeGlassState={nativeGlassState}
         isTucked={isTucked}
         tuckStyle={settings.tuckStyle}

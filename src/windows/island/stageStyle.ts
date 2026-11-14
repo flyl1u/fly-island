@@ -1,9 +1,10 @@
 import type { CSSProperties } from "react";
 import { cornerShapeCss } from "../../features/appearance/cornerShape";
-import { hexToRgba } from "../../features/appearance/settings";
+import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
 import { inkOn } from "../../utils/color";
+import { getGlassStyle } from "./glassStyle";
 
 /**
  * CSS custom properties for the island stage, derived from the appearance settings, the colours
@@ -15,9 +16,6 @@ export function getIslandStageStyle(
   collapsedIslandWidth: number,
   expandedIslandHeight: number,
 ) {
-  const glassStrength = settings.glassIntensity / 100;
-  const glassMaskOpacity = settings.opacity / 100;
-
   return ({
     // Classic opacity fades the fill only, so text and icons on it stay solid.
     "--island-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
@@ -41,29 +39,7 @@ export function getIslandStageStyle(
     "--island-background-color": colors.islandBackgroundColor,
     // Text drawn straight on the island (the Agent page) flips to dark on a light background.
     "--island-ink-rgb": inkOn(colors.islandBackgroundColor),
-    "--glass-intensity": glassStrength,
-    "--glass-mask-opacity": glassMaskOpacity,
-    "--glass-soft-alpha": 0.045 + glassStrength * 0.045,
-    "--glass-shadow-alpha": 0.14 + glassStrength * 0.1,
-    "--glass-inset-alpha": 0.2 + glassStrength * 0.2,
-    "--glass-cyan-alpha": glassStrength * 0.16,
-    "--glass-magenta-alpha": glassStrength * 0.1,
-    "--glass-glow-alpha": 0.16 + glassStrength * 0.14,
-    "--glass-accent-alpha": glassStrength * 0.055,
-    "--glass-refraction-opacity": 0.45 + glassStrength * 0.38,
-    "--glass-border-alpha": 0.1 + glassStrength * 0.18,
-    "--glass-inner-accent-alpha": glassStrength * 0.08,
-    "--glass-highlight-opacity": 0.34 + glassStrength * 0.38,
-    "--glass-panel-accent-alpha": glassStrength * 0.085,
-    "--glass-panel-blur": `${10 + glassStrength * 9}px`,
-    "--glass-tint-color": hexToRgba(
-      colors.islandBackgroundColor,
-      glassMaskOpacity,
-    ),
-    "--glass-collapsed-tint-color": hexToRgba(
-      colors.islandBackgroundColor,
-      glassMaskOpacity,
-    ),
+    ...(isGlass(settings.material) ? getGlassStyle(settings, colors) : {}),
     "--todo-background-color": settings.todoBackgroundColor,
   }) as CSSProperties;
 }

@@ -1,9 +1,9 @@
-import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
+import { isGlass } from "../../features/appearance/settings";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
-import type { AppearanceMode, CollapsedItem, CollapsedSlot, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
+import type { CollapsedItem, CollapsedSlot, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
 import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
@@ -22,6 +22,7 @@ import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import "./IslandShell.css";
+import "./IslandGlass.css";
 import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
 
@@ -34,7 +35,7 @@ type IslandShellProps = {
   page: IslandPage;
   /** The open page's height (unscaled); a change resizes the shape around the panel. */
   expandedHeight: number;
-  appearanceMode: AppearanceMode;
+  material: Material;
   nativeGlassState: NativeGlassState;
   isTucked: boolean;
   /** How the island looks while tucked: its own rim (edge), a short line, or nothing. */
@@ -97,7 +98,7 @@ export function IslandShell({
   mode,
   page,
   expandedHeight,
-  appearanceMode,
+  material,
   nativeGlassState,
   isTucked,
   tuckStyle,
@@ -140,8 +141,8 @@ export function IslandShell({
 }: IslandShellProps) {
   const t = useTranslation();
   const isExpanded = mode === "expanded";
-  const effectiveAppearanceMode = getEffectiveAppearanceMode(appearanceMode);
-  const isLiquidGlass = effectiveAppearanceMode === "liquidGlass";
+  const glass = isGlass(material);
+  const isLiquidGlass = material === "liquidGlass";
   const { handleGlassPointerMove, resetGlassPointer } = useGlassPointer(isLiquidGlass);
   const isPreparing = useIslandPreparing(isExpanded);
   const tuckMorphClass = useTuckMorph(isTucked, tuckStyle);
@@ -161,13 +162,13 @@ export function IslandShell({
     "island",
     `island--${mode}`,
     `island--${page}`,
-    `island--appearance-${effectiveAppearanceMode}`,
+    `island--material-${material}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",
     isTucked ? "island--tucked" : "",
     tuckMorphClass,
     topEdgeShoulders ? "island--shoulders" : "",
-    isLiquidGlass ? `island--glass-${nativeGlassState}` : "",
+    glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
   ]
     .filter(Boolean)
@@ -203,10 +204,10 @@ export function IslandShell({
     >
       <span className="island__shoulders" aria-hidden="true" />
       <div className="island__surface">
-        {isLiquidGlass && (
+        {glass && (
           <div className="island__glass" aria-hidden="true">
-            <span className="island__glass-refraction" />
-            <span className="island__glass-highlight" />
+            {isLiquidGlass && <span className="island__glass-refraction" />}
+            {isLiquidGlass && <span className="island__glass-highlight" />}
           </div>
         )}
         <IslandCollapsedBar

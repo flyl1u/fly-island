@@ -228,8 +228,6 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await click(".appearance-color-restore");
     check(JSON.stringify(storedColors()) === JSON.stringify(colorsAfterReset), "A second restore swaps the colors back");
     await checkColorPresets(check);
-    check(!document.querySelector(".island-preview__island--glass") && ![...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].some((button) => button.textContent === "液态玻璃"),
-      "Liquid glass is paused: the preview stays classic and the choice is not offered");
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
 
 }

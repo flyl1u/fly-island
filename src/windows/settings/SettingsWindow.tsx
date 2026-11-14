@@ -18,7 +18,7 @@ export function SettingsWindow() {
   const qqNotifications = useQQNotifications(false);
   const wechatReminders = useWeChatReminders(false, { restore: false });
   const detached = useSettingsPresentation();
-  const scheme = useDocumentTheme(settings.colorScheme);
+  const scheme = useDocumentTheme(settings);
   const systemDark = useSystemIsDark();
 
   // The native title bar and background follow the page. Windows redraws the title bar in its own

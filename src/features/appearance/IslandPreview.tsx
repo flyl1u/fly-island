@@ -4,7 +4,7 @@ import { useTranslation } from "../../i18n";
 import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
 import { cornerShapeCss } from "./cornerShape";
-import { COLLAPSED_WIDTH, getEffectiveAppearanceMode, hexToRgba, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
+import { COLLAPSED_WIDTH, glassTintAlpha, hexToRgba, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import { resolveSchemeColors } from "./theme";
 import { useResolvedScheme } from "./useDocumentTheme";
@@ -19,10 +19,13 @@ import "./IslandPreview.css";
  */
 export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const text = useTranslation().settings.appearance.preview;
-  const glass = getEffectiveAppearanceMode(settings.appearanceMode) === "liquidGlass";
+  const glass = isGlass(settings.material);
   const colors = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
   const style = {
-    "--preview-fill": hexToRgba(colors.islandBackgroundColor, settings.opacity / 100),
+    "--preview-fill": hexToRgba(
+      colors.islandBackgroundColor,
+      settings.opacity / 100 * (glass ? glassTintAlpha(settings.material, settings.glassIntensity) : 1),
+    ),
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius-px": settings.islandCornerRadius,
     "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
@@ -42,6 +45,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const islandClass = [
     "island-preview__island",
     glass && "island-preview__island--glass",
+    `island-preview__island--${settings.material}`,
     settings.marginY > 0 && "island-preview__island--detached",
   ].filter(Boolean).join(" ");
 

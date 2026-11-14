@@ -3,13 +3,13 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
-import { DEFAULT_SETTINGS, ISLAND_FONT_PERCENT, LIQUID_GLASS_ENABLED, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE, MIN_COLLAPSED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
-import type { AppearanceMode, ColorScheme, IslandFont, IslandSettings, PageButtonStyle } from "./types";
+import { DEFAULT_SETTINGS, ISLAND_FONT_PERCENT, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE, MIN_COLLAPSED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
+import type { ColorScheme, IslandFont, IslandSettings, Material, PageButtonStyle } from "./types";
 
 const percent = (value: number) => `${Math.round(value)}%`;
 const times = (value: number) => `${value.toFixed(2)}x`;
 
-/** Appearance → Style: classic or liquid glass, the font, how see-through, and how big the island is collapsed and opened. */
+/** Appearance → Style: the colour scheme and material, the font, how see-through, and how big the island is collapsed and opened. */
 export function StyleSettingsSection({
   settings,
   onSettingsChange,
@@ -26,9 +26,10 @@ export function StyleSettingsSection({
 }) {
   const t = useTranslation();
   const text = t.settings.appearance;
-  const modes = [
+  const materials = [
     { value: "classic", label: text.classic },
     { value: "liquidGlass", label: text.liquidGlass },
+    { value: "frostedGlass", label: text.frostedGlass },
   ] as const;
   const schemes = [
     { value: "dark", label: text.schemeDark },
@@ -53,18 +54,18 @@ export function StyleSettingsSection({
           />
         }
       />
-      {LIQUID_GLASS_ENABLED && <SettingsRow
-        title={text.title}
+      <SettingsRow
+        title={text.material}
         control={
-          <SettingsChoice<AppearanceMode>
-            value={settings.appearanceMode}
-            options={modes}
-            ariaLabel={text.title}
-            onChange={(appearanceMode) => onSettingsChange({ ...settings, appearanceMode })}
+          <SettingsChoice<Material>
+            value={settings.material}
+            options={materials}
+            ariaLabel={text.material}
+            onChange={(material) => onSettingsChange({ ...settings, material })}
           />
         }
-      />}
-      {LIQUID_GLASS_ENABLED && settings.appearanceMode === "liquidGlass" && (
+      />
+      {isGlass(settings.material) && (
         <SettingsSliderRow
           title={text.glassStrength}
           value={settings.glassIntensity}

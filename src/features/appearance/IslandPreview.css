@@ -37,11 +37,41 @@
 
 .island-preview__island--glass {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, calc(0.04 + var(--preview-glass) * 0.1)), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, calc(0.04 + var(--preview-glass) * 0.1)), transparent 46%),
     var(--preview-fill);
-  border: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
-  border-top: 0;
-  backdrop-filter: blur(calc(10px + var(--preview-glass) * 9px)) saturate(1.4);
+}
+
+/* Liquid glass: a bright rim with a darker hairline inside it, as on the island (IslandGlass.css). */
+.island-preview__island--liquidGlass {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, calc(0.22 + var(--preview-glass) * 0.3)),
+    inset 0 1.5px 0.5px rgba(255, 255, 255, calc(0.3 + var(--preview-glass) * 0.4)),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.1),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+[data-tone="light"] .island-preview__island--liquidGlass {
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Frosted glass: a wash of white over the tint and a 1px bright rim (IslandGlass.css). */
+.island-preview__island--frostedGlass {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+    var(--preview-fill);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, calc(0.14 + var(--preview-glass) * 0.08)),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+[data-tone="light"] .island-preview__island--frostedGlass {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)),
+    var(--preview-fill);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 .island-preview__island--collapsed {
@@ -74,10 +104,6 @@
 /* Away from the top edge (Position → distance from the top) the island is rounded all round. */
 .island-preview__island--detached {
   margin-top: 10px;
-}
-
-.island-preview__island--glass.island-preview__island--detached {
-  border-top: 1px solid rgba(255, 255, 255, calc(0.1 + var(--preview-glass) * 0.18));
 }
 
 .island-preview__island--detached.island-preview__island--collapsed {

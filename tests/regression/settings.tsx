@@ -102,8 +102,9 @@ if (!automated) {
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
       // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
       // Appearance +1: optional top-edge curves (2026-11-13); the size row is hidden by default.
-      // Appearance 14 -> 15: the colour scheme (dark, light, system) the owner asked for on 2026-11-14.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 15 : 8;
+      // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
+      // (the glass strength row shows only with a glass).
+      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 16 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
@@ -158,8 +159,13 @@ if (!automated) {
     const plugins = element(".editor-panel .plugins-settings"), block = plugins.getBoundingClientRect(), content = [...plugins.children].map(child => child.getBoundingClientRect());
     check(plugins.textContent?.trim() === "暂无插件" && plugins.querySelector("svg.lucide-puzzle") && !plugins.querySelector("button, a, input") && Math.abs((Math.min(...content.map(rect => rect.top)) + Math.max(...content.map(rect => rect.bottom)) - block.top - block.bottom) / 2) <= 8, "The plugins page shows only its Puzzle icon and empty state, vertically centered within 8px");
     await checkAppearance(check);
-    check(!document.querySelector(".island-preview__island--glass") && ![...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].some((button) => button.textContent === "液态玻璃"),
-      "Liquid glass is paused: the preview stays classic and the choice is not offered");
+    const materialButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === label);
+    const strengthRow = () => [...document.querySelectorAll(".settings-row")].some((row) => row.textContent?.includes("玻璃强度"));
+    check(!document.querySelector(".island-preview__island--glass") && materialButton("经典") && materialButton("磨砂玻璃") && !strengthRow(),
+      "The material defaults to classic with both glasses offered, and no glass strength row");
+    await act(async () => materialButton("液态玻璃")!.click());
+    check(document.querySelector(".island-preview__island--liquidGlass") && strengthRow(), "Liquid glass draws on the preview and shows the glass strength");
+    await act(async () => materialButton("经典")!.click());
     check(document.querySelectorAll("[title]").length === 0, "No hover tooltips anywhere in Settings");
 
     await openPage("general");
