@@ -35,6 +35,7 @@ export const PAGES = [
   "island-tour.html?test=1&scale=1.2&tuck=hidden",
   "island-tour.html?test=1&scale=1.2&notch=1&font=120",
   "mail-reader.html?run=1",
+  "lyric-clock.html",
   "music-lyrics.html",
   "notification-startup.html",
   "settings.html?test=1",

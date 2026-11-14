@@ -108,8 +108,13 @@ export function playbackPosition(
   return state.durationMs > 0 ? Math.min(position, state.durationMs) : position;
 }
 
-/** Identifies a track for looking its lyrics up once. */
+/** Lookup identity stays the same when a player supplies the missing duration later. */
 export function trackKey(state: { title: string | null; artist: string | null; durationMs: number }) {
+  return state.title ? `${state.title}\u001f${state.artist ?? ""}` : null;
+}
+
+/** Preserve the existing on-disk per-song offset keys, including their duration bucket. */
+export function songOffsetKey(state: { title: string | null; artist: string | null; durationMs: number }) {
   return state.title ? `${state.title}\u001f${state.artist ?? ""}\u001f${Math.round(state.durationMs / 2000)}` : null;
 }
 
