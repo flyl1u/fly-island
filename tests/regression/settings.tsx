@@ -13,6 +13,7 @@ import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcu
 import { checkAppearance, prepareColorRegression } from "./settingsAppearance";
 import { checkQuotaSettings } from "./settingsQuota";
 import { checkKeepVisible } from "./settingsKeepVisible";
+import { checkGroups } from "./settingsGroups";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -104,6 +105,7 @@ if (!automated) {
       // Appearance +1: optional top-edge curves (2026-11-13); the size row is hidden by default.
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
+      await checkGroups(category, panel, check);
       const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 16 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;

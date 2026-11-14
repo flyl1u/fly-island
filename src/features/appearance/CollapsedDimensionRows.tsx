@@ -1,4 +1,3 @@
-import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
@@ -21,7 +20,7 @@ export function CollapsedDimensionRows({ settings, onChange }: Props) {
         onChange={(collapsedAutoWidth) => onChange({ ...settings, collapsedAutoWidth })}
       />
       {!settings.collapsedAutoWidth && (
-        <SettingsNumberRow title={text.width} unit={text.unit} value={settings.collapsedWidth}
+        <SettingsNumberRow indent title={text.width} unit={text.unit} value={settings.collapsedWidth}
           min={COLLAPSED_WIDTH.min} max={COLLAPSED_WIDTH.max}
           onChange={(collapsedWidth) => onChange({ ...settings, collapsedWidth })} />
       )}
@@ -29,14 +28,5 @@ export function CollapsedDimensionRows({ settings, onChange }: Props) {
         min={COLLAPSED_HEIGHT.min} max={COLLAPSED_HEIGHT.max}
         onChange={(collapsedHeight) => onChange({ ...settings, collapsedHeight })} />
     </>
-  );
-}
-
-export function CollapsedDimensionsSection({ settings, onChange }: Props) {
-  const text = useTranslation().settings.appearance.collapsedDimensions;
-  return (
-    <SettingsGroup title={text.title} footer={text.hint}>
-      <CollapsedDimensionRows settings={settings} onChange={onChange} />
-    </SettingsGroup>
   );
 }

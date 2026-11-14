@@ -6,13 +6,13 @@ export type SettingsBehaviorText = {
 };
 
 export const zhCN: SettingsBehaviorText = {
-  title: "系统",
+  title: "启动与语言",
   detachedSettings: "独立设置窗口",
   detachedSettingsHint: "关闭时设置作为岛屿的一页打开",
 };
 
 export const en: SettingsBehaviorText = {
-  title: "System",
+  title: "Startup & language",
   detachedSettings: "Separate settings window",
   detachedSettingsHint: "When off, settings open as a page of the island",
 };

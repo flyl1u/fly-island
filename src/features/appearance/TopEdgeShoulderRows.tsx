@@ -1,4 +1,3 @@
-import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
@@ -23,11 +22,4 @@ export function TopEdgeShoulderRows({ settings, onChange }: Props) {
       format={(value) => `${value}px`}
       onChange={(topEdgeShoulderSize) => onChange({ ...settings, topEdgeShoulderSize })} />}
   </>;
-}
-
-export function TopEdgeShouldersSection({ settings, onChange }: Props) {
-  const text = useTranslation().settings.appearance;
-  return <SettingsGroup title={text.shapeTitle}>
-    <TopEdgeShoulderRows settings={settings} onChange={onChange} />
-  </SettingsGroup>;
 }

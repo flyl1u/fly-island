@@ -27,9 +27,12 @@ function slotsOn(settings: IslandSettings): Record<CollapsedSlot, boolean> {
  * Agent switch is off.
  */
 export function CollapsedLayoutEditor({
+  children,
   settings,
   onSettingsChange,
 }: {
+  /** More rows of the same group, after the editor (Appearance puts the page buttons here). */
+  children?: ReactNode;
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
 }) {
@@ -87,6 +90,7 @@ export function CollapsedLayoutEditor({
           ))}
         </div>
       </div>
+      {children}
     </SettingsGroup>
   );
 }
