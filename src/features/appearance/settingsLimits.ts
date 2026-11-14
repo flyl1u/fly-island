@@ -75,3 +75,6 @@ export const PAGE_DOTS: readonly PageDot[] = ["todo", "music", "clipboard", "she
 export function oneOf<T>(allowed: readonly T[], value: unknown, fallback: T): T {
   return (allowed as readonly unknown[]).includes(value) ? (value as T) : fallback;
 }
+
+// Clipboard: rows visible in the island before the list scrolls.
+export const CLIPBOARD_VISIBLE_ROWS = { min: 3, max: 8, default: DEFAULT_CLIPBOARD_VISIBLE_ROWS } as const;

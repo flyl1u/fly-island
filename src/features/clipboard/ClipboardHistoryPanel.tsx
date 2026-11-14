@@ -31,6 +31,8 @@ export function ClipboardHistoryPanel({
     setClipboardView,
     favoriteItems,
     filteredItems,
+    renderedItems,
+    onListScroll,
     itemElementsRef,
   } = useClipboardHistoryList(snapshot.items);
   const {
@@ -77,7 +79,7 @@ export function ClipboardHistoryPanel({
         onQueryChange={setQuery}
       />
 
-      <div className="clipboard-list" role="list">
+      <div className="clipboard-list" role="list" onScroll={(event) => onListScroll(event.currentTarget)}>
         {filteredItems.length === 0 ? (
           <div className="clipboard-empty">
             {snapshot.items.length === 0
@@ -87,7 +89,7 @@ export function ClipboardHistoryPanel({
                 : t.clipboard.emptySearch}
           </div>
         ) : (
-          filteredItems.map((item) => (
+          renderedItems.map((item) => (
             <ClipboardHistoryItemRow
               key={item.id}
               item={item}

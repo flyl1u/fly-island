@@ -33,7 +33,6 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   topEdgeShoulders: false,
   topEdgeShoulderSize: 10,
   maxPanelHeight: DEFAULT_MAX_PANEL_HEIGHT,
-  clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   agentVisibleRows: DEFAULT_AGENT_VISIBLE_ROWS,
   agentHostDisplay: "icon",
   agentSessionView: "list",
@@ -114,4 +113,6 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   mailEnabled: true,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
+  // Clipboard: keep the original four-row island height on first launch.
+  clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
 };

@@ -76,7 +76,8 @@ test("clipboard settings clamp the item limit and normalize the shortcut", () =>
   const base = DEFAULT_CLIPBOARD_HISTORY.settings;
   assert.deepEqual(normalizeClipboardSettings(base), base);
   assert.equal(normalizeClipboardSettings({ ...base, maxItems: 2 }).maxItems, 5);
-  assert.equal(normalizeClipboardSettings({ ...base, maxItems: 999 }).maxItems, 200);
+  assert.equal(normalizeClipboardSettings({ ...base, maxItems: 999 }).maxItems, 500);
+  assert.equal(normalizeClipboardSettings({ ...base, maxItems: NaN }).maxItems, 30);
   assert.equal(normalizeClipboardSettings({ ...base, maxItems: 42.6 }).maxItems, 43);
   assert.equal(normalizeClipboardSettings({ ...base, shortcut: "alt+shift+c" }).shortcut, "Alt+Shift+C");
   assert.equal(normalizeClipboardSettings({ ...base, shortcutEnabled: undefined }).shortcutEnabled, true);

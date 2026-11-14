@@ -40,6 +40,8 @@ export function ClipboardSettingsPage({
         <ClipboardSettingsSection
           clipboardSettings={clipboardSettings}
           onClipboardSettingsChange={updateClipboardSettings}
+          visibleRows={settings.clipboardVisibleRows}
+          onVisibleRowsChange={(clipboardVisibleRows) => onSettingsChange({ ...settings, clipboardVisibleRows })}
         />
       )}
       {clipboardSettings.enabled && (

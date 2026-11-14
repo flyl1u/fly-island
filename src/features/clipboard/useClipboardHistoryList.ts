@@ -4,6 +4,7 @@ import type { ClipboardHistoryItem } from "./api";
 export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
   const [query, setQuery] = useState("");
   const [clipboardView, setClipboardView] = useState<"all" | "favorites">("all");
+  const [renderedCount, setRenderedCount] = useState(20);
   const itemElementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const itemPositionsRef = useRef<Map<string, DOMRect>>(new Map());
   const normalizedQuery = query.trim().toLowerCase();
@@ -71,11 +72,17 @@ export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
 
   return {
     query,
-    setQuery,
+    setQuery: (value: string) => { setQuery(value); setRenderedCount(20); },
     clipboardView,
-    setClipboardView,
+    setClipboardView: (value: "all" | "favorites") => { setClipboardView(value); setRenderedCount(20); },
     favoriteItems,
     filteredItems,
+    renderedItems: filteredItems.slice(0, renderedCount),
+    onListScroll: (element: HTMLElement) => {
+      if (element.scrollHeight - element.scrollTop - element.clientHeight < 200) {
+        setRenderedCount((count) => Math.max(count, Math.min(filteredItems.length, count + 20)));
+      }
+    },
     itemElementsRef,
   };
 }

@@ -132,3 +132,5 @@
 - 启动参数 `--media-plugin-copy <源> <目标> <sha256>`、`--media-plugin-remove <目标> <sha256>` 在 Tauri 和 single-instance 初始化前处理并退出。只接受固定清单的加载器哈希，目标必须为绝对路径 `msimg32.dll`，父目录须有 `cloudmusic.exe`，禁止 `..`、链接与特殊路径。复制前校验源文件，删除前校验目标文件；不启动正常应用窗口。
 - 播放器诊断新增 `neteasePluginInactive`：已安装插件但仍无时间线，提示重启及可能不兼容。
 
+
+- 剪贴板（2026-11-13）：`focusd-island-settings.clipboardVisibleRows` 现可设置为 3–8 的整数，缺失或非法值为 4；`set_clipboard_history_settings` 的 `maxItems` 范围扩为 5–500，默认 30，命令、数据字段和历史文件格式不变。
