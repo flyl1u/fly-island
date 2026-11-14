@@ -311,3 +311,30 @@ fn reads_a_real_qq_system_notification() {
         thread::sleep(Duration::from_secs(1));
     }
 }
+
+#[test]
+fn opening_one_contact_clears_only_that_contacts_notifications() {
+    let item = |id: &str, title: &str, created_at| QQNotification {
+        id: id.into(),
+        title: title.into(),
+        body: "message".into(),
+        created_at,
+    };
+    let mut buffer = NotificationBuffer::default();
+    buffer.sync(Vec::new());
+    buffer.sync(vec![
+        item("1", "Xiaoming", 1),
+        item("2", "Xiaohong", 2),
+        item("3", "Xiaoming", 3),
+        item("4", "Xiaoming", 4),
+        item("5", "Xiaohong", 5),
+    ]);
+    assert!(buffer.dismiss_contact("Xiaoming"));
+    let left: Vec<_> = buffer.items.iter().map(|item| item.id.as_str()).collect();
+    assert_eq!(left, ["5", "2"]);
+    assert!(!buffer.dismiss_contact("Xiaoming"), "nothing left to clear");
+    // The same toasts still in the notification center do not bring them back.
+    let unchanged = vec![item("1", "Xiaoming", 1), item("2", "Xiaohong", 2), item("5", "Xiaohong", 5)];
+    assert_eq!(buffer.sync(unchanged), None);
+    assert_eq!(buffer.items.len(), 2);
+}

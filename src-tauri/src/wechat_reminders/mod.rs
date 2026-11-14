@@ -105,6 +105,34 @@ impl ReminderState {
         self.snapshot.revision += 1;
     }
 
+    /// Removes every preview of the conversation `message_id` belongs to (the same
+    /// chat appears once per reminder) and keeps the other conversations. When the
+    /// newest reminder was that chat's, the reminder counts as seen too, so no
+    /// content-free "new reminder" card takes its place.
+    fn dismiss_conversation(&mut self, message_id: &str) -> bool {
+        let Some(key) = self
+            .snapshot
+            .messages
+            .iter()
+            .find(|message| message.id == message_id)
+            .map(|message| message.chat.key.clone())
+        else {
+            return false;
+        };
+        let newest = self.snapshot.last_attention_at;
+        let mut newest_removed = false;
+        self.snapshot.messages.retain(|message| {
+            let same = message.chat.key == key;
+            newest_removed |= same && Some(message.received_at) == newest;
+            !same
+        });
+        if newest_removed || self.snapshot.messages.is_empty() {
+            self.snapshot.pending = false;
+        }
+        self.snapshot.revision += 1;
+        true
+    }
+
     fn set_enabled(&mut self, enabled: bool) -> bool {
         if self.snapshot.enabled == enabled {
             return false;
@@ -328,6 +356,12 @@ pub fn clear_wechat_reminders() -> Result<ReminderSnapshot, String> {
         state.clear();
         true
     })
+}
+
+/// Opening one conversation reads all of its previews; the other chats stay.
+#[tauri::command]
+pub fn dismiss_wechat_conversation(message_id: String) -> Result<ReminderSnapshot, String> {
+    configure(|state| state.dismiss_conversation(&message_id))
 }
 
 #[tauri::command]
@@ -602,6 +636,7 @@ macro_rules! tauri_commands {
         $next!([$($done)*
             crate::wechat_reminders::get_wechat_reminder_state,
             crate::wechat_reminders::clear_wechat_reminders,
+            crate::wechat_reminders::dismiss_wechat_conversation,
             crate::wechat_reminders::set_wechat_reminders_enabled,
             crate::wechat_reminders::set_wechat_message_preview_enabled,
             crate::wechat_reminders::set_wechat_minimized_taskbar_hidden,

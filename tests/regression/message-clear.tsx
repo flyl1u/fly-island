@@ -44,6 +44,12 @@ mockIPC(async (command, payload) => {
   if (command === "request_qq_notification_access") return "allowed";
   if (command === "set_qq_notifications_enabled" || command === "get_qq_notification_state") return qq;
   if (command === "set_wechat_reminders_enabled" || command === "get_wechat_reminder_state") return wechat;
+  if (command === "open_qq" || command === "open_wechat_conversation") return command === "open_qq" ? null : true;
+  if (command === "dismiss_qq_contact") return (qq = { ...qq, revision: ++revision, items: qq.items.filter((item) => item.title !== args.title) });
+  if (command === "dismiss_wechat_conversation") {
+    const contact = wechat.messages.find((item) => item.id === args.messageId)?.contact;
+    return (wechat = { ...wechat, revision: ++revision, messages: wechat.messages.filter((item) => item.contact !== contact) });
+  }
   if (command === "clear_qq_notifications") return (qq = { ...qq, revision: ++revision, items: [] });
   if (command === "clear_wechat_reminders") return (wechat = { ...wechat, revision: ++revision, pending: false, messages: [] });
   if (command === "get_qq_mail_state") return [mailState];
@@ -105,6 +111,26 @@ try {
       }
     }
     fixture.style.width = "300px";
+    const card = (id: string) => document.querySelector<HTMLButtonElement>(`[data-message-id="${id}"] .message-card__surface`);
+    const shown = () => [...document.querySelectorAll<HTMLElement>("[data-message-id]")].map((item) => item.dataset.messageId).join();
+    await act(async () => setSource("qq"));
+    await act(async () => {
+      const at = Date.now();
+      qq = { ...qq, revision: ++revision, items: [["m3", "小明"], ["h2", "小红"], ["m2", "小明"], ["h1", "小红"], ["m1", "小明"]]
+        .map(([id, title], index) => ({ id, title, body: "消息", createdAt: at - index })) };
+      await emit("qq-notifications-changed", { snapshot: qq, newestId: null, windowVisible: true });
+    });
+    await act(async () => card("m2")!.click());
+    check(shown() === "h2,h1", "Opening one QQ contact clears that contact's three messages and keeps the other's two");
+    await act(async () => setSource("wechat"));
+    await act(async () => {
+      const at = Date.now();
+      wechat = { ...wechat, revision: ++revision, pending: false, messages: [["w3", "小明"], ["w2", "小红"], ["w1", "小明"]]
+        .map(([id, contact], index) => ({ id, contact, body: "消息", receivedAt: at - index })) };
+      await emit("wechat-reminder-changed", { snapshot: wechat, windowVisible: true });
+    });
+    await act(async () => card("w1")!.click());
+    check(shown() === "w2", "Opening one WeChat conversation clears all of its previews and keeps the others");
     await act(async () => setSource("qq"));
     await act(async () => action(clearLabel).click());
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) check(document.querySelector(".message-card--leaving"), "QQ cards play their exit before removal");
