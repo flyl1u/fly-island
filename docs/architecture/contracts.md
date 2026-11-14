@@ -7,6 +7,7 @@
 | key | 当前定义位置 |
 |---|---|
 | `focusd-island-settings` | `features/appearance/storage.ts` |
+| `focusd-island-tuck-line-migration`（`"1"`：细线默认样式迁移完成；已有存档的 edge/hidden 统一改成 line，先保存设置再写标记，无存档只写标记；之后尊重手动选择，失败下次重试） | `features/appearance/storage.ts`、`tuckLineMigration.ts` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
 | `focusd-island-session-sort-recent-v1`（`"1"`：2026-11-13 会话列表默认改为「最近活动」，已存的 `agentSessionSort: "status"` 迁移一次为 `"recent"`；先保存设置再写标记） | `features/appearance/storage.ts` |
@@ -112,7 +113,7 @@
 - WorkBuddy 会话（2026-11-13）：`list_agent_sessions` 的 `provider` 新增 `workbuddy`；`focus_agent_window`、`agent_sessions_in_front` 接受 `workbuddy`，既有参数和返回结构不变。`focusd-island-settings` 兼容新增 `agentShowWorkbuddy`（缺失时为 true），旧数据迁移额度环时 WorkBuddy 跟随此开关。无新增命令、事件或 localStorage key。
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
 - 岛屿设置 `focusd-island-settings` 新增 `positionLocked`（布尔，默认 false）：只在明确保存为 true 时禁止拖动。旧数据缺失或类型无效时保持可拖动。`set_island_interaction` 增加可选参数 `positionLocked`，缺失时按 false；`start_island_drag` 在锁定时不启动拖动。复位和贴边隐藏不受影响。
-- 2026-11-13：同一设置对象新增 `tuckStyle: "edge" | "line" | "hidden"`，缺失或非法值回退 `"edge"`，旧数据无需迁移。`set_island_interaction` 新增可选 `tuckStyle`（Rust `tuck_style: Option<String>`，camelCase 映射），未传或未知值按 `edge`。仅贴边时改变可见高度和命中区域，现有命令名、参数、事件与存储 key 保持兼容。
+- 2026-11-13：同一设置对象新增 `tuckStyle: "edge" | "line" | "hidden"`，前端缺失或非法值回退 `"line"`；旧存档通过上表的完成标记统一迁移一次为 line，随后尊重手动选择。`set_island_interaction` 新增可选 `tuckStyle`（Rust `tuck_style: Option<String>`，camelCase 映射），原生命令未传或未知值仍按 `edge` 兼容旧客户端。仅贴边时改变可见高度和命中区域，现有命令名、参数、事件与存储 key 保持兼容。`autoTuck` 缺失或非布尔时按默认 true，明确保存 false 仍关闭。
 - Agent 页显示方式（2026-11-07 起）：设置项 `agentSessionView`（`list` / `cards` / `compact`，默认 `list`）、`agentArchiveMotion`（`slide` / `dissolve`，默认 `slide`）、`agentCardEffects`（`off` / `sparkle` / `gradient`，默认 `off`）；`AgentSessionSummary.contextTokens`（最近一次模型调用的上下文 tokens，Claude Code 取 usage 的输入、缓存读写与输出之和，Codex 取 `token_count` 的 `last_token_usage.total_tokens`；不知道时为 null）。
 - 回复状态标记（2026-11-08 起换位置）：写在 Claude 配置目录（`CLAUDE_CONFIG_DIR`，默认 `~/.claude`）下的 `rules/focusd-island-reply-marker.md`，块标记 `<!-- focusd-island: reply marker v2 -->`；关掉时只删除含这个标记的文件。v1 写在 `CLAUDE.md` 里的块在打开或关掉时移除，`CLAUDE.md` 的其他内容不动；软链文件一律不写。
 - Agent 页排列（2026-11-08 起）：设置项 `agentSessionSort`（`status` / `recent` / `firstSeen`，默认 `status`；旧数据没有这个字段时按 `status`，会改变升级前的顺序）、`agentSessionGroup`（`computer` / `project` / `none`，默认 `computer`）；`agentHostDisplay` 的默认值改为 `icon`（已保存的值不变）。

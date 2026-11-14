@@ -7,7 +7,7 @@ import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
 export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null | undefined) {
-  const autoTuck = settings?.autoTuck === true;
+  const autoTuck = typeof settings?.autoTuck === "boolean" ? settings.autoTuck : DEFAULT_SETTINGS.autoTuck;
   return {
     positionLocked: settings?.positionLocked === true,
     carryOverIncompleteTodos:

@@ -119,7 +119,7 @@ if (!automated) {
         await type(first, "30");
         await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
         const tuckLooks = [...panel.querySelectorAll<HTMLButtonElement>("[role='group'][aria-label='贴边样式'] button")];
-        check(tuckLooks.map((button) => button.textContent).join() === "默认,细线,隐藏" && tuckLooks[0].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, edge by default");
+        check(tuckLooks.map((button) => button.textContent).join() === "默认,细线,隐藏" && tuckLooks[1].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, line by default");
         await act(async () => tuckLooks[1].click());
         check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line", "Choosing the line look saves it");
         await act(async () => tuckLooks[0].click());

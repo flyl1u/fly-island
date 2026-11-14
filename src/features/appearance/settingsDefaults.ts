@@ -74,7 +74,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   rotateTodos: false,
   todoRotationSeconds: 5,
   autoTuck: true,
-  tuckStyle: "edge",
+  tuckStyle: "line",
   tuckDelaySeconds: TUCK_DELAY_SECONDS.default,
   autoCollapseSeconds: AUTO_COLLAPSE_SECONDS.default,
   autoTuckRetract: true,

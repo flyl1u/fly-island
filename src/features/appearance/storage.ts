@@ -5,6 +5,7 @@ import { getColorSetting } from "../../utils/color.ts";
 import { colorsFrom, normalizeColorPalette, type ColorPalette } from "./colorPalette.ts";
 import { refreshColors } from "./colorRefresh.ts";
 import { normalizeColorPresets, type ColorPreset } from "./colorPresets.ts";
+import { migrateTuckLine } from "./tuckLineMigration.ts";
 
 export const STORAGE_KEY = "focusd-island-settings";
 export const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
@@ -13,11 +14,13 @@ export const COLOR_REFRESH_KEY = "focusd-island-color-refresh-v1";
 export const COLOR_BACKUP_KEY = "focusd-island-color-backup";
 export const COLOR_PRESETS_KEY = "focusd-island-color-presets";
 export const SESSION_SORT_MIGRATION_KEY = "focusd-island-session-sort-recent-v1";
+export const TUCK_LINE_MIGRATION_KEY = "focusd-island-tuck-line-migration";
 
 export function loadSettings(): IslandSettings {
   // Read the marker before the snapshot: a concurrent refresh cannot make an old snapshot
   // look already migrated and then write those old colors back from the second window.
   const completed = readString(COLOR_REFRESH_KEY) === "1";
+  const tuckLineCompleted = readString(TUCK_LINE_MIGRATION_KEY) === "1";
   const parsed = readJson(STORAGE_KEY);
   const hasArchive = !!parsed && typeof parsed === "object" && !Array.isArray(parsed);
   const saved = hasArchive ? parsed as Partial<IslandSettings> & { margin?: number } : null;
@@ -42,7 +45,11 @@ export function loadSettings(): IslandSettings {
   if (migrateCollapsedText && (!saved || saveSettings(next))) {
     writeString(COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1");
   }
-  return migrateSessionSort(next, saved !== null);
+  return migrateTuckLine(migrateSessionSort(next, saved !== null), saved !== null, {
+    completed: tuckLineCompleted,
+    saveSettings,
+    markComplete: () => writeString(TUCK_LINE_MIGRATION_KEY, "1"),
+  });
 }
 
 /**

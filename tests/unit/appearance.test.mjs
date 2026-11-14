@@ -13,12 +13,12 @@ import {
   loadSettings,
 } from "../../src/features/appearance/storage.ts";
 
-test("tucked style defaults to edge and rejects unknown saved values", () => {
-  assert.equal(DEFAULT_SETTINGS.tuckStyle, "edge");
+test("tucked style defaults to line and rejects unknown saved values", () => {
+  assert.equal(DEFAULT_SETTINGS.tuckStyle, "line");
   for (const value of [undefined, null, "", "unknown", "LINE", 1, true, {}]) {
-    assert.equal(normalizeSettings({ tuckStyle: value }).tuckStyle, "edge");
+    assert.equal(normalizeSettings({ tuckStyle: value }).tuckStyle, "line");
   }
-  assert.equal(normalizeSettings(null).tuckStyle, "edge");
+  assert.equal(normalizeSettings(null).tuckStyle, "line");
   for (const tuckStyle of ["edge", "line", "hidden"]) {
     assert.equal(normalizeSettings({ tuckStyle }).tuckStyle, tuckStyle);
   }
@@ -157,7 +157,7 @@ test("options no longer in Settings load as their defaults, whatever was saved",
 test("the options still in Settings are read back and fall back for older settings", () => {
   const older = normalizeSettings({});
   assert.equal(older.expandTrigger, "click");
-  assert.equal(older.autoTuck, false);
+  assert.equal(older.autoTuck, true);
   assert.equal(normalizeSettings({ expandTrigger: "hover" }).expandTrigger, "hover");
   assert.equal(normalizeSettings({ expandTrigger: "doubleClick" }).expandTrigger, "click");
   assert.equal(normalizeSettings({ autoTuck: true }).autoTuck, true);
