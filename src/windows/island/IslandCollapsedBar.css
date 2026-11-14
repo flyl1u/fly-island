@@ -238,3 +238,19 @@
   color: var(--color-fg-strong);
   background: var(--color-white-a18);
 }
+
+/* The agent light is a plain click target; in capsule page style it sits in a capsule like the counts. */
+.island__agent-light {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.island__agent-light--capsule {
+  height: 20px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white-a10);
+}
