@@ -50,6 +50,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "topEdgeShoulderSize",
   "maxPanelHeight",
   "taskTextColor",
+  "pageTextColor",
   "pulseColor",
   "pulseBrightness",
   "islandBackgroundColor",

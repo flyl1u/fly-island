@@ -116,6 +116,8 @@ export type IslandSettings = {
   /** Claude's or Codex's usage reaching this percent pops up once, and again when it resets; 0: never. */
   agentQuotaAlertPercent: number;
   taskTextColor: string;
+  /** Text on the expanded pages; "" follows the background's ink (stageStyle.ts). */
+  pageTextColor: string;
   pulseColor: string;
   pulseBrightness: number;
   islandBackgroundColor: string;

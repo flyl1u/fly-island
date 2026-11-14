@@ -3,6 +3,7 @@ import { CollapsedDimensionsSection } from "../../features/appearance/CollapsedD
 import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslandSection";
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
+import { AppearancePresetSection } from "../../features/appearance/AppearancePresetSection";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { StyleSettingsSection } from "../../features/appearance/StyleSettingsSection";
 import { TopEdgeShouldersSection } from "../../features/appearance/TopEdgeShouldersSection";
@@ -46,6 +47,7 @@ export function AppearanceSettingsPage({
       <TopEdgeShouldersSection settings={settings} onChange={updateAppearance} />
       <CollapsedIslandSection settings={settings} onSettingsChange={updateAppearance} />
       <ColorSettingsSection settings={settings} onSettingsChange={updateAppearance} />
+      <AppearancePresetSection settings={settings} onSettingsChange={updateAppearance} />
     </>
   );
 }

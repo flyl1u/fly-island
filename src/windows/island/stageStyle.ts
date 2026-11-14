@@ -33,6 +33,7 @@ export function getIslandStageStyle(
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
     "--task-text-color": colors.taskTextColor,
+    "--island-page-text": settings.pageTextColor || "rgb(var(--island-ink-rgb))",
     "--island-pulse-color": colors.pulseColor,
     "--island-pulse-glow-color": hexToRgba(colors.pulseColor, 0.72),
     "--island-pulse-brightness": `${settings.pulseBrightness}%`,

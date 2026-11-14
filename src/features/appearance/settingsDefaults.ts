@@ -63,6 +63,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentRemindSeconds: 0,
   agentQuotaAlertPercent: 80,
   taskTextColor: DEFAULT_TASK_TEXT_COLOR,
+  pageTextColor: "",
   pulseColor: "#3AE489",
   pulseBrightness: 100,
   islandBackgroundColor: "#2F2F37",
