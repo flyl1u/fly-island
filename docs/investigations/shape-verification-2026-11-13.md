@@ -31,3 +31,122 @@ Error: task space not found: 3
 ```
 
 没有创建替代空间绕过。真实桌面的多屏切换、顶部任务栏、托盘隐藏、游戏全屏仍需实机截图验收；已验证对应计算与回归路径，不能等同于已完成实机验收。
+
+## 2. 默认细线与迁移
+
+- `tuckLineMigration.ts` 为无 DOM/React 的迁移决策，存储回调由 `storage.ts` 提供；先写设置，再写完成标记。没有存档只标记；失败不标记，下次加载重试；已完成后保留用户新选择。
+- 修复 `autoTuck` 缺字段时被当作 false；连带的旧版 `autoCollapseSeconds` 回退因此由 0 恢复到默认 30 秒。明确保存的 false 仍保留。
+- 迁移单测覆盖三种样式、新用户、两步写入的失败重试、完整存储加载及后续手动选择。颜色测试补上贴边迁移完成标记，隔离其“只写颜色标记”的断言；idle 测试同步缺字段的新预期，没有改 idlePlan。
+- 回归 mock 明确保存所选的 tuckStyle 和完成标记；设置回归改为断言默认选中细线。
+
+初次 `pnpm check` 有两项旧预期失败（颜色测试未隔离新迁移、idle 缺字段旧预期），修正后 335 个单测通过。初次 `pnpm test:regression` 的设置页仍断言默认 edge，修正后重跑全量。`pnpm build` 通过。
+
+设置页初次失败原样：
+
+```text
+✗ settings.html?test=1  failed, 10 checks, 0.5s
+    FAIL Error: general: the tucked look offers edge, line and hidden, edge by default
+1 of 25 regression pages did not pass.
+```
+
+First check failure output:
+
+```text
+✖ failing tests:
+
+
+
+test at tests\unit\color-refresh.test.mjs:56:1
+
+✖ old users already using the new defaults only get the marker, including mixed-case colors (1.5937ms)
+
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  + actual - expected
+
+
+
+  + '{"topEdgeLayoutVersion":1,"appearanceMode":"classic","fontFamily":"system","islandFontPercent":100,"pageButtonStyle":"icon","glassIntensity":72,"opacity":75,"collapsedScale":1,"collapsedAutoWidth":true,"collapsedWidth":340,"collapsedHeight":38,"expandedScale":1,"marginY":0,"positionLocked":false,"islandMonitor":"primary","islandCornerRadius":42,"islandCornerShape":"squircle","maxPanelHeight":490,"clipboardVisibleRows":4,"agentVisibleRows":2,"agentHostDisplay":"icon","agentSessionView":"list","agentSessionSort":"recent","agentSessionGroup":"computer","agentArchiveMotion":"slide","agentCardEffects":"off","agentSessionHours":2,"agentShowClaudeCode":true,"agentShowCodex":true,"agentShowDsh":true,"agentShowWorkbuddy":true,"agentHideFinished":false,"agentShowElapsed":false,"agentShowModel":true,"agentShowActivity":true,"agentShowUsage":true,"agentQuotaSources":["claudeCode","codex","dsh","workbuddy"],"agentAlertCompleted":true,"agentAlertFailed":true,"agentAlertWaiting":true,"agentAlertStarted":"off","agentAlertSeconds":5,"agentRemindSeconds":0,"agentQuotaAlertPercent":80,"taskTextColor":"#FFFFFF","pulseColor":"#3AE489","pulseBrightness":100,"islandBackgroundColor":"#2F2F37","todoBackgroundColor":"#ffffff","showTitle":false,"showCollapsedText":true,"showIdleTodoCount":true,"carryOverIncompleteTodos":true,"enableTodoReorder":true,"todoReorderVersion":1,"todoTimerEnabled":false,"rotateTodos":false,"todoRotationSeconds":5,"autoTuck":true,"tuckStyle":"line","tuckDelaySeconds":30,"autoCollapseSeconds":30,"autoTuckRetract":true,"autoTuckRetractDelayMs":500,"revealOnMessage":true,"expandTrigger":"click","hoverExpandDelayMs":0,"hoverCollapseDelayMs":0,"minimizeAction":"tuck","tuckedHoverAction":"reveal","todoEnabled":true,"musicEnabled":true,"agentStatusEnabled":true,"agentTitleEnabled":true,"collapsedPriority":["agent","lyrics","todo"],"collapsedShowCover":true,"collapsedLayout":["text","mail","shelf","music","agents"],"pageOrder":["todo","music","clipboard","shelf","translation"],"shelfEnabled":true,"translationEnabled":true,"translationTarget":"island","shelfExpandOnDrop":true,"shelfAutoCleanupDays":0,"shelfRemoveMissing":true,"shelfRemoveAfterDragOut":false,"shelfMaxItems":100,"shelfDoubleClick":"open","shelfShowCount":true,"lyricsFolder":"","lyricsOnline":true,"lyricsChinese":true,"lyricsOffsetMs":0,"mailEnabled":true,"gameDoNotDisturb":true,"gameAutoTuck":false}'
+
+  - '{"islandBackgroundColor":"#2F2F37","taskTextColor":"#FFFFFF","pulseColor":"#3AE489","opacity":75}'
+
+
+
+      at file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:63:14
+
+      at withStorage (file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:21:9)
+
+      at TestContext.<anonymous> (file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:59:5)
+
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+
+      at Test.run (node:internal/test_runner/test:1402:25)
+
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+
+    generatedMessage: true,
+
+    code: 'ERR_ASSERTION',
+
+    actual: '{"topEdgeLayoutVersion":1,"appearanceMode":"classic","fontFamily":"system","islandFontPercent":100,"pageButtonStyle":"icon","glassIntensity":72,"opacity":75,"collapsedScale":1,"collapsedAutoWidth":true,"collapsedWidth":340,"collapsedHeight":38,"expandedScale":1,"marginY":0,"positionLocked":false,"islandMonitor":"primary","islandCornerRadius":42,"islandCornerShape":"squircle","maxPanelHeight":490,"clipboardVisibleRows":4,"agentVisibleRows":2,"agentHostDisplay":"icon","agentSessionView":"list","agentSessionSort":"recent","agentSessionGroup":"computer","agentArchiveMotion":"slide","agentCardEffects":"off","agentSessionHours":2,"agentShowClaudeCode":true,"agentShowCodex":true,"agentShowDsh":true,"agentShowWorkbuddy":true,"agentHideFinished":false,"agentShowElapsed":false,"agentShowModel":true,"agentShowActivity":true,"agentShowUsage":true,"agentQuotaSources":["claudeCode","codex","dsh","workbuddy"],"agentAlertCompleted":true,"agentAlertFailed":true,"agentAlertWaiting":true,"agentAlertStarted":"off","agentAlertSeconds":5,"agentRemindSeconds":0,"agentQuotaAlertPercent":80,"taskTextColor":"#FFFFFF","pulseColor":"#3AE489","pulseBrightness":100,"islandBackgroundColor":"#2F2F37","todoBackgroundColor":"#ffffff","showTitle":false,"showCollapsedText":true,"showIdleTodoCount":true,"carryOverIncompleteTodos":true,"enableTodoReorder":true,"todoReorderVersion":1,"todoTimerEnabled":false,"rotateTodos":false,"todoRotationSeconds":5,"autoTuck":true,"tuckStyle":"line","tuckDelaySeconds":30,"autoCollapseSeconds":30,"autoTuckRetract":true,"autoTuckRetractDelayMs":500,"revealOnMessage":true,"expandTrigger":"click","hoverExpandDelayMs":0,"hoverCollapseDelayMs":0,"minimizeAction":"tuck","tuckedHoverAction":"reveal","todoEnabled":true,"musicEnabled":true,"agentStatusEnabled":true,"agentTitleEnabled":true,"collapsedPriority":["agent","lyrics","todo"],"collapsedShowCover":true,"collapsedLayout":["text","mail","shelf","music","agents"],"pageOrder":["todo","music","clipboard","shelf","translation"],"shelfEnabled":true,"translationEnabled":true,"translationTarget":"island","shelfExpandOnDrop":true,"shelfAutoCleanupDays":0,"shelfRemoveMissing":true,"shelfRemoveAfterDragOut":false,"shelfMaxItems":100,"shelfDoubleClick":"open","shelfShowCount":true,"lyricsFolder":"","lyricsOnline":true,"lyricsChinese":true,"lyricsOffsetMs":0,"mailEnabled":true,"gameDoNotDisturb":true,"gameAutoTuck":false}',
+
+    expected: '{"islandBackgroundColor":"#2F2F37","taskTextColor":"#FFFFFF","pulseColor":"#3AE489","opacity":75}',
+
+    operator: 'strictEqual',
+
+    diff: 'simple'
+
+  }
+
+
+
+test at tests\unit\idle-collapse.test.mjs:36:1
+
+✖ typed-in delays are rounded and kept in range, and older settings keep what they did (3.7409ms)
+
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+
+
+  30 !== 0
+
+
+
+      at TestContext.<anonymous> (file:///D:/FocuSD/.worktrees/shape/tests/unit/idle-collapse.test.mjs:46:10)
+
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+
+      at Test.run (node:internal/test_runner/test:1402:25)
+
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+
+    generatedMessage: true,
+
+    code: 'ERR_ASSERTION',
+
+    actual: 30,
+
+    expected: 0,
+
+    operator: 'strictEqual',
+
+    diff: 'simple'
+
+  }
+
+ ELIFECYCLE  Test failed. See above for more details.
+
+ ELIFECYCLE  Command failed with exit code 1.
+```

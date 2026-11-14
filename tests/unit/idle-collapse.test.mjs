@@ -43,7 +43,7 @@ test("typed-in delays are rounded and kept in range, and older settings keep wha
   // Before (A) was a setting, a panel closed only when the island tucked after idling.
   assert.equal(normalizeSettings({ autoTuck: true }).autoCollapseSeconds, 30);
   assert.equal(normalizeSettings({ autoTuck: false }).autoCollapseSeconds, 0);
-  assert.equal(normalizeSettings({}).autoCollapseSeconds, 0);
+  assert.equal(normalizeSettings({}).autoCollapseSeconds, 30);
   assert.equal(normalizeSettings({ tuckDelaySeconds: 45 }).tuckDelaySeconds, 45);
   assert.equal(normalizeSettings({ tuckDelaySeconds: 1 }).tuckDelaySeconds, 3);
   // autoTuckSeconds was saved by older versions that hid the setting; it is not read back.

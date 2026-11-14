@@ -3,7 +3,7 @@ import test from "node:test";
 import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings.ts";
 import { colorsFrom } from "../../src/features/appearance/colorPalette.ts";
 import {
-  COLOR_BACKUP_KEY, COLOR_REFRESH_KEY, COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, SESSION_SORT_MIGRATION_KEY,
+  COLOR_BACKUP_KEY, COLOR_REFRESH_KEY, COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, SESSION_SORT_MIGRATION_KEY, TUCK_LINE_MIGRATION_KEY,
   STORAGE_KEY, loadSettings, loadColorBackup, saveSettings, swapColorBackup, withColorBackup,
 } from "../../src/features/appearance/storage.ts";
 
@@ -56,7 +56,7 @@ test("new users only get the marker; missing old background backs up the former 
 test("old users already using the new defaults only get the marker, including mixed-case colors", () => {
   for (const palette of [defaults, { ...defaults, islandBackgroundColor: "#2f2F37", taskTextColor: "#ffffff", pulseColor: "#3ae489" }]) {
     const archive = JSON.stringify({ ...palette, opacity: 75 });
-    withStorage([[STORAGE_KEY, archive], [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"], [SESSION_SORT_MIGRATION_KEY, "1"]], (values, writes) => {
+    withStorage([[STORAGE_KEY, archive], [COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY, "1"], [SESSION_SORT_MIGRATION_KEY, "1"], [TUCK_LINE_MIGRATION_KEY, "1"]], (values, writes) => {
       const next = loadSettings();
       assert.deepEqual(colorsFrom(next), defaults);
       assert.equal(next.opacity, 75);

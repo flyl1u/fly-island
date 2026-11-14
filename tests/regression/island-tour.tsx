@@ -38,6 +38,8 @@ localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh
 localStorage.setItem("focusd-island-current-date", date);
 // This tour exercises the embedded settings page even though new users get a separate window.
 localStorage.setItem("focusd-island-detached-settings", "false");
+// Exercise the explicitly selected style after the one-time default migration.
+localStorage.setItem("focusd-island-tuck-line-migration", "1");
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
@@ -47,7 +49,7 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
-  ...(query.get("tuck") ? { tuckStyle } : {}),
+  tuckStyle,
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
   pageButtonStyle: "capsule",
   // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
