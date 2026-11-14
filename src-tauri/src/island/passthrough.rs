@@ -5,7 +5,7 @@ use tauri::{Emitter, WebviewWindow};
 use windows::Win32::Foundation::HWND;
 
 use super::{
-    geometry::{tucked_top_offset, STAGE_WINDOW_WIDTH},
+    geometry::STAGE_WINDOW_WIDTH,
     state::{read_window_state, CornerShape, IslandWindowState},
 };
 use crate::win32;
@@ -67,8 +67,8 @@ pub(super) fn point_in_island(state: IslandWindowState, physical_scale: f64, loc
     if let Some((width, height)) = state.tuck_style.hot_zone_size().filter(|_| state.is_tucked) {
         let scale = state.collapsed_scale * physical_scale;
         let left = (window_width - width * scale) / 2.0;
-        // Use the rounded native offset so the hot zone starts exactly at the screen edge.
-        let top = -f64::from(tucked_top_offset(state, physical_scale));
+        // Line/hidden keep the stage at the work-area top, matching the CSS hot zone.
+        let top = 0.0;
         return local_x >= left && local_x < left + width * scale
             && local_y >= top && local_y < top + height * scale;
     }

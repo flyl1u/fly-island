@@ -190,7 +190,7 @@ fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
                     };
                     let offset = tucked_top_offset(island, dpi);
                     let visible = if style == TuckStyle::Edge { 10.0 } else { zone_height * scale };
-                    assert_eq!(offset, -((height * scale - visible) * dpi).round() as i32);
+                    assert_eq!(offset, if style == TuckStyle::Edge { -((height * scale - visible) * dpi).round() as i32 } else { 0 });
                     let center = STAGE_WINDOW_WIDTH * dpi / 2.0;
                     let top = -f64::from(offset);
                     let hit = |x, y| point_in_island(island, dpi, x, y);
@@ -354,4 +354,24 @@ fn the_island_follows_only_when_asked_and_only_while_collapsed() {
     collapsed.is_dragging = true;
     assert!(!may_move(collapsed));
     assert!(!may_move(state(IslandMode::Expanded, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT)), "an open panel stays under the pointer");
+}
+
+#[test]
+fn morphing_tucks_anchor_to_each_work_area_and_restore_floating_positions() {
+    for style in [TuckStyle::Line, TuckStyle::Hidden] {
+        for top in [-1080, 0, 48] {
+            let mut island = IslandWindowState { tuck_style: style, ..IslandWindowState::default() };
+            let normal = resolve_stage_position(island, -900, top, top);
+            island.is_tucked = true;
+            assert_eq!(tucked_top_offset(island, 1.5), 0);
+            assert_eq!(resolve_stage_position(island, -900, top, top), normal);
+            island.custom_position = Some(IslandPosition { x: -500, y: top + 180 });
+            assert_eq!(resolve_stage_position(island, -900, top, top), (-500, top));
+            island.is_tucked = false;
+            for mode in [IslandMode::Collapsed, IslandMode::Expanded] {
+                island.mode = mode;
+                assert_eq!(resolve_stage_position(island, -900, top, top), (-500, top + 180));
+            }
+        }
+    }
 }
