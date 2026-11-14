@@ -21,6 +21,7 @@ import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import "./IslandShell.css";
+import "./IslandPageText.css";
 import "./IslandGlass.css";
 import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
@@ -225,7 +226,6 @@ export function IslandShell({
           todoTimer={todoTimer}
           collapsedTodoCount={collapsedTodoCount}
           collapsedItem={collapsedItem}
-          pageButtonStyle={pageButtonStyle}
           collapsedLayout={collapsedLayout}
           collapsedCover={collapsedCover}
           lyricsSettings={lyricsSettings}

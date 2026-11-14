@@ -55,6 +55,10 @@
    *   --overlay-rgb  translucent lifts, borders and hairlines on a surface
    */
   --ink-rgb: 248, 246, 240;
+  /* The same channels one by one, for relative colours (windows/island/IslandPageText.css). */
+  --ink-r: 248;
+  --ink-g: 246;
+  --ink-b: 240;
   --overlay-rgb: 255, 255, 255;
   /* Opacities of the four text levels (see --text-1..placeholder). */
   --text-1-alpha: 0.96;
@@ -125,6 +129,9 @@
 :root[data-theme="light"],
 [data-tone="light"] {
   --ink-rgb: 26, 26, 32;
+  --ink-r: 26;
+  --ink-g: 26;
+  --ink-b: 32;
   --overlay-rgb: 24, 24, 32;
   --text-1-alpha: 0.94;
   --text-2-alpha: 0.72;

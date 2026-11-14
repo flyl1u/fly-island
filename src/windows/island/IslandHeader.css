@@ -326,6 +326,26 @@
   background: var(--color-white-a16);
 }
 
+/* Capsule page buttons: the Agent entry is a capsule in its status colour, sized like the page
+   capsules beside it, so the row reads as one style. It rises on hover like them. */
+.island__agent-capsule {
+  display: block;
+  width: 18px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  box-shadow: 0 0 12px color-mix(in srgb, currentColor 46%, transparent);
+}
+
+.island__agent-button--capsule:hover,
+.island__agent-button--capsule.island__agent-button--active {
+  background: transparent;
+}
+
+.island__agent-button--capsule.island__agent-button--active .island__agent-capsule {
+  box-shadow: 0 0 0 2px var(--color-white-a18), 0 0 14px color-mix(in srgb, currentColor 46%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dot-button::before,
   .island__agent-button .island__agent-status-icon {

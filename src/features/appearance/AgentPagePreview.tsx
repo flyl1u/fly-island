@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Archive, Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
+import { Archive, Bell, Bot, Minus, RotateCcw, Settings } from "lucide-react";
 import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import { useTranslation } from "../../i18n";
 import { QuotaRings } from "../agent-status/AgentQuotaRings";
@@ -56,14 +56,15 @@ function Row({ light, project, title, status, model, below }: {
 export function AgentPagePreview({ pageOrder, pageButtonStyle }: { pageOrder: PageDot[]; pageButtonStyle: PageButtonStyle }) {
   const t = useTranslation();
   const showIcons = pageButtonStyle === "icon";
-  const AgentIcon = showIcons ? Bot : CircleDot;
   const { sessions } = t.settings.appearance.preview;
   const { phase } = t.agent;
   const { justNow, minutesAgo, yourTurn } = t.agent.sessions;
   return (
     <div className="agent-page-preview" aria-hidden="true">
       <span className="agent-page-preview__header">
-        <AgentIcon className="agent-page-preview__light" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+        {showIcons
+          ? <Bot className="agent-page-preview__light" size={16} strokeWidth={1.5} absoluteStrokeWidth />
+          : <span className="agent-page-preview__light agent-page-preview__light--capsule" />}
         <span className="agent-page-preview__dots">
           {pageOrder.map((page) => {
             const Icon = PAGE_ICONS[page];

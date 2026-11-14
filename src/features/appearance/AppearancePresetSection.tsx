@@ -51,7 +51,7 @@ export function AppearancePresetSection({
       title={text.title}
       footer={<p>{full ? text.full(MAX_APPEARANCE_PRESETS) : text.hint}</p>}
     >
-      {presets.length === 0 && <p className="appearance-preset__empty">{text.empty}</p>}
+      {presets.length === 0 && <SettingsRow title={text.empty} />}
       {presets.map((preset) => (
         <SettingsRow
           key={preset.id}
@@ -69,22 +69,21 @@ export function AppearancePresetSection({
       <SettingsRow
         title={text.nameLabel}
         control={
-          <SettingsInput
-            value={name}
-            maxLength={APPEARANCE_PRESET_NAME_LIMIT}
-            placeholder={text.namePlaceholder}
-            aria-label={text.nameLabel}
-            disabled={full}
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") save();
-            }}
-          />
+          <>
+            <SettingsInput
+              value={name}
+              maxLength={APPEARANCE_PRESET_NAME_LIMIT}
+              placeholder={text.namePlaceholder}
+              aria-label={text.nameLabel}
+              disabled={full}
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") save();
+              }}
+            />
+            <SettingsLinkButton disabled={full || !name.trim()} onClick={save}>{text.save}</SettingsLinkButton>
+          </>
         }
-      />
-      <SettingsRow
-        title={text.save}
-        control={<SettingsLinkButton disabled={full || !name.trim()} onClick={save}>{text.save}</SettingsLinkButton>}
       />
     </SettingsGroup>
   );
