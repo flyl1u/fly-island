@@ -30,6 +30,10 @@ use crate::win32;
 const MEDIA_CHANGED_EVENT: &str = "media-session-changed";
 /// Events this close together are told once (a track change raises several).
 const COALESCE: Duration = Duration::from_millis(80);
+/// Timeline-only changes (a player pushes its position every second or so) are told at most this
+/// often. Each one makes the island read the whole state, so they are not worth more than that;
+/// the 1.5 s poll covers whatever is skipped.
+const TIMELINE_INTERVAL: Duration = Duration::from_secs(1);
 /// The watcher stops once no state has been read for this long.
 const IDLE_STOP_MS: i64 = 10_000;
 const IDLE_CHECK: Duration = Duration::from_secs(2);
@@ -37,8 +41,11 @@ const IDLE_CHECK: Duration = Duration::from_secs(2);
 static RUNNING: AtomicBool = AtomicBool::new(false);
 static LAST_READ_MS: AtomicI64 = AtomicI64::new(0);
 
-#[derive(Clone, Copy, PartialEq)]
+/// Ordered: a burst is told as the strongest signal in it.
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 enum Signal {
+    /// The position moved on (timeline only).
+    Timeline,
     /// Something about a session changed.
     Changed,
     /// Sessions came or went: listen to the new set.
@@ -70,13 +77,21 @@ fn watch(app: &AppHandle) -> Result<(), String> {
     let (sender, receiver) = mpsc::sync_channel::<Signal>(64);
     let _manager_events = ManagerEvents::subscribe(&manager, &sender);
     let mut sessions = subscribe_sessions(&manager, &sender);
+    let mut last_timeline_emit = Instant::now() - TIMELINE_INTERVAL;
 
     loop {
         match receiver.recv_timeout(IDLE_CHECK) {
             Ok(signal) => {
-                if drain(&receiver, signal) == Signal::Sessions {
+                let signal = drain(&receiver, signal);
+                if signal == Signal::Sessions {
                     sessions.clear();
                     sessions = subscribe_sessions(&manager, &sender);
+                }
+                if signal == Signal::Timeline {
+                    if last_timeline_emit.elapsed() < TIMELINE_INTERVAL {
+                        continue;
+                    }
+                    last_timeline_emit = Instant::now();
                 }
                 let _ = app.emit(MEDIA_CHANGED_EVENT, ());
             }
@@ -89,14 +104,14 @@ fn watch(app: &AppHandle) -> Result<(), String> {
     }
 }
 
-/// Waits out a burst of signals; `Sessions` if any of them was.
+/// Waits out a burst of signals; the strongest of them.
 fn drain(receiver: &Receiver<Signal>, first: Signal) -> Signal {
     let deadline = Instant::now() + COALESCE;
     let mut signal = first;
     while let Some(left) = deadline.checked_duration_since(Instant::now()) {
         match receiver.recv_timeout(left) {
-            Ok(Signal::Sessions) => signal = Signal::Sessions,
-            Ok(Signal::Changed) => {}
+            Ok(next) if next > signal => signal = next,
+            Ok(_) => {}
             Err(_) => break,
         }
     }
@@ -133,7 +148,7 @@ struct SessionEvents {
 
 impl SessionEvents {
     fn subscribe(session: MediaSession, sender: &SyncSender<Signal>) -> Option<Self> {
-        let timeline = session.TimelinePropertiesChanged(&notify(sender, Signal::Changed)).ok()?;
+        let timeline = session.TimelinePropertiesChanged(&notify(sender, Signal::Timeline)).ok()?;
         let playback = session.PlaybackInfoChanged(&notify(sender, Signal::Changed)).unwrap_or(0);
         let media = session.MediaPropertiesChanged(&notify(sender, Signal::Changed)).unwrap_or(0);
         Some(Self { session, timeline, playback, media })
