@@ -81,6 +81,8 @@
 
 ## 其他
 
+- `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
+
 - DSH（issue #51）：新增只读命令 `get_dsh_usage()`，返回 `null` 或 `{ updatedAt, available, wallets: [{ currency, total, granted, toppedUp }], source: "dshApi" | "dshAccount" }`，金额为十进制字符串。`list_agent_sessions` 的 `provider` 新增 `dsh`；`focus_agent_window`、`agent_sessions_in_front` 接受 `dsh`，既有参数和返回结构不变。无新增事件，无新增 localStorage key；`focusd-island-settings` 兼容新增 `agentShowDsh`（缺失时为 true）。`agent-status.json`、钩子安装状态仍只含 Claude/Codex。该命令是自有 Rust 命令，不增加 Tauri 插件/核心权限；现有 capabilities 足够。
 - WorkBuddy 使用 `open_workbuddy_login()`、`get_workbuddy_usage({ refreshNow?, cachedOnly? })` 和 `disconnect_workbuddy()`。读命令及 `workbuddy-usage-changed` 事件的状态为 `signedOut`、`loginRequired`、`ready`、`unavailable` 或 `connected`。只有 `connected` 带 `usage: { remaining, total, updatedAt }`，金额为数值，时间为 Unix 毫秒。事件发到 `main` 和 `settings`。远程 `workbuddy-sign-in` 窗口在本地 capability 之外。
 

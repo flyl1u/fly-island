@@ -11,13 +11,14 @@ type IslandTuckingOptions = {
   settings: IslandSettings;
   navigation: ReturnType<typeof useIslandNavigation>;
   hasMessagePreview: boolean;
+  keepVisible: boolean;
 };
 
 /**
  * Collapsing the open island once the cursor has been away long enough (A), tucking the
  * collapsed island away when idle (B), sliding it out for what needs to be seen, and ending a peek.
  */
-export function useIslandTucking({ settings, navigation, hasMessagePreview }: IslandTuckingOptions) {
+export function useIslandTucking({ settings, navigation, hasMessagePreview, keepVisible }: IslandTuckingOptions) {
   const { mode, page, isTucked, isPeeking, peekRetractDelayMs, idleTuck, collapseIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
   // A showing preview holds the idle timer, which then restarts in full once it ends.
@@ -29,7 +30,7 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview }: Is
   const collapseWhenIdle = useCallback(() => {
     if (!isEditingText()) collapseIsland();
   }, [collapseIsland]);
-  const plan = idlePlan(mode, settings, hasMessagePreview, isHovering);
+  const plan = idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
   useIdleTuck(
     plan !== null,
     plan?.seconds ?? 0,

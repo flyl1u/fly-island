@@ -5,6 +5,7 @@ import type { SettingsResetAppearanceText } from "./resetAppearance";
 import type { SettingsCategoriesText } from "./categories";
 import type { SettingsPluginsText } from "./plugins";
 import type { SettingsBehaviorText } from "./behavior";
+import type { SettingsKeepVisibleText } from "./keepVisible";
 import type { SettingsTranslationText } from "./translation";
 import type { SettingsPositionText } from "./position";
 import type { SettingsExpandText } from "./expand";
@@ -28,6 +29,7 @@ import * as resetAppearance from "./resetAppearance.ts";
 import * as categories from "./categories.ts";
 import * as plugins from "./plugins.ts";
 import * as behavior from "./behavior.ts";
+import * as keepVisible from "./keepVisible.ts";
 import * as translation from "./translation.ts";
 import * as position from "./position.ts";
 import * as expand from "./expand.ts";
@@ -57,6 +59,7 @@ export type SettingsText = {
   plugins: SettingsPluginsText;
 
   behavior: SettingsBehaviorText;
+  keepVisible: SettingsKeepVisibleText;
 
   translation: SettingsTranslationText;
 
@@ -104,6 +107,7 @@ export const zhCN: SettingsText = {
   plugins: plugins.zhCN,
 
   behavior: behavior.zhCN,
+  keepVisible: keepVisible.zhCN,
 
   translation: translation.zhCN,
 
@@ -150,6 +154,7 @@ export const en: SettingsText = {
   plugins: plugins.en,
 
   behavior: behavior.en,
+  keepVisible: keepVisible.en,
 
   translation: translation.en,
 

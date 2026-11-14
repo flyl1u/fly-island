@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
 
 const source = ts.transpileModule(
   readFileSync(new URL("../../src/windows/island/useIslandAutomation.ts", import.meta.url), "utf8"),
@@ -184,4 +185,29 @@ test("idle tucking waits for drag and IME completion and cleans up when disabled
   app.tick(20_000);
   assert.equal(tucks, 1);
   assert.equal(app.timerCount, 0);
+});
+
+test("ending a keep-visible activity restarts the full idle wait and never reveals a tucked island", () => {
+  let tucks = 0;
+  const tuck = () => { tucks++; };
+  const settings = { autoTuck: true, tuckDelaySeconds: 30, autoCollapseSeconds: 5 };
+  const args = (keepVisible, isTucked = false) => {
+    const plan = idlePlan("collapsed", settings, false, false, keepVisible);
+    return [plan !== null, plan?.seconds ?? 0, isTucked, "collapsed:todo", tuck];
+  };
+  const app = mount("useIdleTuck", args(false));
+  app.tick(29_000);
+  app.render(args(true));
+  app.tick(60_000);
+  assert.equal(tucks, 0);
+  app.render(args(false));
+  app.tick(29_999);
+  assert.equal(tucks, 0);
+  app.tick(1);
+  assert.equal(tucks, 1);
+  app.render(args(true, true));
+  assert.equal(app.timerCount, 0);
+  app.tick(60_000);
+  assert.equal(tucks, 1);
+  app.unmount();
 });

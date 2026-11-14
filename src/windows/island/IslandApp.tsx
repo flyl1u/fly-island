@@ -28,6 +28,7 @@ import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useIslandTodos } from "./useIslandTodos";
 import { useIslandTucking } from "./useIslandTucking";
+import { keepIslandVisible } from "./keepVisible";
 import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
 import { useIslandTranslation } from "./useIslandTranslation";
@@ -79,10 +80,12 @@ export function IslandApp() {
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
+  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
   useIslandTucking({
     settings,
     navigation,
     hasMessagePreview,
+    keepVisible: keepIslandVisible(settings, { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer }, Date.now()),
   });
 
   const { messageSource, setMessageSource, openMessages } = useMessageView(qqMail.closeReader, openIslandPage);
@@ -168,8 +171,6 @@ export function IslandApp() {
     toggleClipboardHistory,
     collapseIsland,
   );
-
-  const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
 
   const { openTranslator } = useIslandTranslation(
     settings.translationEnabled,

@@ -12,6 +12,7 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcutCalls } from "./settingsMocks";
 import { checkAppearance, prepareColorRegression } from "./settingsAppearance";
 import { checkQuotaSettings } from "./settingsQuota";
+import { checkKeepVisible } from "./settingsKeepVisible";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -99,8 +100,10 @@ if (!automated) {
       // Agents 11 -> 13: the WorkBuddy session source and its sign-in row (2026-11-13 老板要求 WorkBuddy 会话来源).
       // Appearance: 9 -> 12 on 2026-11-13 for island font size (+1) and notch auto-width/height (+2).
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 11 : category === "appearance" ? 13 : 8;
+      // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
+      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 13 : 8;
       if (category === "general") {
+        await checkKeepVisible(panel, check);
         const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
         const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
         check(timers.length === 2 && timers.every((input) => input.value === "30"),
