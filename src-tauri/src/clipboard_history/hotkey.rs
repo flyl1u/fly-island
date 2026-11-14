@@ -178,12 +178,38 @@ pub(crate) fn parse_shortcut_binding(shortcut: &str) -> Option<ShortcutBinding> 
     }
 
     label_parts.push(key_label?);
+    let key_code = key_code?;
+    if is_system_shortcut(modifiers, key_code) {
+        return None;
+    }
 
     Some(ShortcutBinding {
         label: label_parts.join("+"),
         modifiers,
-        key_code: key_code?,
+        key_code,
     })
+}
+
+/// Combinations Windows itself uses to switch, close or lock windows. RegisterHotKey
+/// accepts some of them (Alt+Tab, Alt+Esc, Ctrl+Esc) and the island would then
+/// swallow the system's own action, so they are never registered.
+fn is_system_shortcut(modifiers: u32, key_code: u32) -> bool {
+    const TAB: u32 = 0x09;
+    const ESC: u32 = 0x1B;
+    const F4: u32 = 0x73;
+    const L: u32 = b'L' as u32;
+    const DELETE: u32 = 0x2E;
+    let alt = modifiers & MOD_ALT.0 != 0;
+    let ctrl = modifiers & MOD_CONTROL.0 != 0;
+    let win = modifiers & MOD_WIN.0 != 0;
+    match key_code {
+        TAB => alt || win,
+        ESC => alt || ctrl || win,
+        F4 => alt,
+        L => win,
+        DELETE => ctrl && alt,
+        _ => false,
+    }
 }
 
 fn shortcut_key_code(key: &str) -> Option<(String, u32)> {
@@ -262,6 +288,16 @@ mod tests {
         }
         // Shifted symbols are what the recorder produced before it read the physical key.
         assert!(parse_shortcut_binding("Ctrl+Shift+!").is_none());
+    }
+
+    #[test]
+    fn system_switching_shortcuts_are_never_registered() {
+        for shortcut in ["Alt+Tab", "Alt+Shift+Tab", "Win+Tab", "Alt+Esc", "Ctrl+Esc", "Ctrl+Shift+Esc", "Alt+F4", "Win+L", "Ctrl+Alt+Delete"] {
+            assert!(parse_shortcut_binding(shortcut).is_none(), "{shortcut} belongs to Windows");
+        }
+        for shortcut in ["Ctrl+Tab", "Ctrl+Shift+Tab", "Alt+F5", "Ctrl+L", "Alt+L"] {
+            assert!(parse_shortcut_binding(shortcut).is_some(), "{shortcut} is an ordinary shortcut");
+        }
     }
 
     #[test]

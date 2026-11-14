@@ -7,6 +7,7 @@ pub(crate) mod startup;
 pub(crate) mod todo_export;
 pub(crate) mod update_channel;
 pub(crate) mod updater;
+pub(crate) mod window_focus;
 
 use std::{env, path::PathBuf};
 
