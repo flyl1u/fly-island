@@ -71,8 +71,6 @@ export type IslandSettings = {
   topEdgeShoulderSize: number;
   /** Tallest expanded panel (px) before the todo list, clipboard and messages scroll. */
   maxPanelHeight: number;
-  /** Clipboard history rows the expanded clipboard page shows before it scrolls. */
-  clipboardVisibleRows: number;
   /** Agent sessions the expanded Agent page shows before it scrolls. */
   agentVisibleRows: number;
   agentHostDisplay: AgentHostDisplay;
@@ -196,6 +194,8 @@ export type IslandSettings = {
   gameDoNotDisturb: boolean;
   /** While a full-screen app is in front, the island tucks to the top edge and comes back after. */
   gameAutoTuck: boolean;
+  /** Clipboard: rows visible in the island before scrolling (3–8). */
+  clipboardVisibleRows: number;
 };
 
 export type LegacyIslandSettings = Partial<IslandSettings> & {

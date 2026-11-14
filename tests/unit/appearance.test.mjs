@@ -114,7 +114,6 @@ test("options no longer in Settings load as their defaults, whatever was saved",
     islandCornerRadius: 30,
     islandCornerShape: "round",
     maxPanelHeight: 320,
-    clipboardVisibleRows: 3,
     pulseBrightness: 140,
     todoBackgroundColor: "#ffeeaa",
     showTitle: true,
@@ -221,4 +220,15 @@ test("liquid glass is paused: a saved glass preference draws classic but is kept
   assert.equal(getEffectiveAppearanceMode("liquidGlass"), "classic");
   assert.equal(getEffectiveAppearanceMode("classic"), "classic");
   assert.equal(normalizeSettings({ appearanceMode: "liquidGlass" }).appearanceMode, "liquidGlass");
+});
+
+test("clipboard rows are saved, clamped and independent of appearance presets", () => {
+  for (const clipboardVisibleRows of [undefined, null, NaN, Infinity, "8"]) {
+    assert.equal(normalizeSettings({ clipboardVisibleRows }).clipboardVisibleRows, 4);
+  }
+  assert.equal(normalizeSettings({ clipboardVisibleRows: 2 }).clipboardVisibleRows, 3);
+  assert.equal(normalizeSettings({ clipboardVisibleRows: 99 }).clipboardVisibleRows, 8);
+  const chosen = normalizeSettings({ clipboardVisibleRows: 5.6 });
+  assert.equal(chosen.clipboardVisibleRows, 6);
+  assert.equal(withAppearanceFrom(chosen, DEFAULT_SETTINGS).clipboardVisibleRows, 6);
 });

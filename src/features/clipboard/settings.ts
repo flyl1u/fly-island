@@ -18,7 +18,7 @@ export function normalizeClipboardSettings(
 ): ClipboardHistorySettings {
   return {
     ...settings,
-    maxItems: clamp(Math.round(settings.maxItems), 5, 200),
+    maxItems: clamp(Number.isFinite(settings.maxItems) ? Math.round(settings.maxItems) : 30, 5, 500),
     shortcut: normalizeClipboardShortcut(settings.shortcut),
     shortcutEnabled: settings.shortcutEnabled !== false,
   };

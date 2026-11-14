@@ -31,7 +31,7 @@ const LEGACY_DEFAULT_SHORTCUT: &str = "Ctrl+X";
 
 const MIN_MAX_ITEMS: usize = 5;
 
-const MAX_MAX_ITEMS: usize = 200;
+const MAX_MAX_ITEMS: usize = 500;
 
 const SHORT_DUPLICATE_WINDOW_MS: i64 = 2_000;
 
@@ -261,3 +261,17 @@ macro_rules! tauri_commands {
     };
 }
 pub(crate) use tauri_commands;
+
+#[cfg(test)]
+mod tests {
+    use super::ClipboardHistorySettings;
+
+    #[test]
+    fn history_limit_keeps_default_and_accepts_five_hundred() {
+        assert_eq!(ClipboardHistorySettings::default().max_items, 30);
+        for (input, expected) in [(0, 5), (200, 200), (500, 500), (999, 500)] {
+            let settings = ClipboardHistorySettings { max_items: input, ..Default::default() };
+            assert_eq!(settings.normalized().max_items, expected);
+        }
+    }
+}
