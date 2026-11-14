@@ -1,10 +1,12 @@
 /*
  * How the island looks tucked to the top edge (tuckStyle). "edge" keeps the island's own bottom
- * rim on screen and needs no rule here. For "line" and "hidden" the attached window stays at
- * the work-area top; only CSS morphs, with a small native hot zone (island/state.rs TuckStyle).
+ * rim on screen and needs no rule here. For "line" the attached window stays at the work-area
+ * top and only CSS morphs; for "hidden" Rust slides the window up until a 6px strip stays on
+ * screen, as before 3.1.0. Both capture the cursor only in a small native hot zone
+ * (island/state.rs TuckStyle).
  *
  * Both morph the island itself, never swap it for another drawing: line shrinks the shape into a
- * short bar, hidden fades it out. Tucking plays the closing spring (380ms); leaving
+ * short bar, hidden fades it out while the window rises. Tucking plays the closing spring (380ms); leaving
  * the tuck plays the opening one (560ms, with its small overshoot) under `island--untuck-<style>`,
  * which useTuckMorph.ts keeps on for that long, because a transition plays with the rule of the
  * state it ends in and the plain collapsed island does not animate opacity.
@@ -51,7 +53,7 @@
   transition: opacity var(--island-panel-fade-duration) ease;
 }
 
-/* Hidden fades at the same fixed top anchor. */
+/* Hidden fades out while the window slides up, and fades back in as it slides down. */
 .island.island--tuck-hidden {
   opacity: 0;
   transition:
@@ -88,8 +90,9 @@
   height: calc(14px * var(--island-collapsed-scale));
 }
 
+/* The strip left on screen is the island's bottom 6px. */
 .island--tuck-hidden::before {
-  top: 0;
+  bottom: 0;
   width: calc(160px * var(--island-collapsed-scale));
   height: calc(6px * var(--island-collapsed-scale));
 }

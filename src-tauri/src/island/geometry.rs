@@ -10,7 +10,7 @@ use std::{
 };
 use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindow};
 
-use super::state::{IslandPosition, IslandWindowState, MonitorFollow};
+use super::state::{IslandPosition, IslandWindowState, MonitorFollow, TuckStyle};
 
 pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
 pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
@@ -189,13 +189,16 @@ pub(super) fn interpolate_stage_position(
 }
 
 pub(super) fn tucked_top_offset(state: IslandWindowState, dpi: f64) -> i32 {
-    // Line/hidden morph at the stage's top. An attached stage therefore never moves;
-    // only a detached island travels to/from the work-area edge.
-    if state.tuck_style.hot_zone_size().is_some() {
+    // Line morphs at the stage's top, so an attached stage never moves for it. Edge and hidden
+    // slide the window up until their strip is left on screen (hidden: its 6px hot zone; the
+    // user preferred that slide to a fade in place, 2026-11-13).
+    if state.tuck_style == TuckStyle::Line {
         return 0;
     }
     let height = state.collapsed_height * state.collapsed_scale;
-    -((height - TUCKED_VISIBLE_EDGE_HEIGHT).max(0.0) * dpi).round() as i32
+    let visible_height = state.tuck_style.hot_zone_size()
+        .map_or(TUCKED_VISIBLE_EDGE_HEIGHT, |(_, height)| height * state.collapsed_scale);
+    -((height - visible_height).max(0.0) * dpi).round() as i32
 }
 
 pub(super) fn monitor_for_island_position(
