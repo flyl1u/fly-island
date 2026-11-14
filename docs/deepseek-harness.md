@@ -18,7 +18,7 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 
 | 文件 | 用途 |
 |---|---|
-| `sessions/<项目分片>/session-<UUID>/session.v3.jsonl.zstd`、`session.v4.jsonl.zstd` | 官方追加式、Zstandard 压缩 JSONL 会话日志。本接入只检查对应文件存在，不解压正文 |
+| `sessions/<项目分片>/session-<UUID>/session.v3.jsonl.zstd`、`session.v4.jsonl.zstd` | 官方追加式、Zstandard 压缩 JSONL 会话日志（每次写入追加一个 zstd 帧）。只为未退出的会话读取工具审批：首次整读、之后只解码新追加的完整帧，只解析 `approval/asked`、`approval/decided`、`turn/start`、`turn/end` 四种事件，其余行不解析；超过 64 MiB 的日志跳过 |
 | `storages/session_projcache/sessions/session-<UUID>.json` | 会话投影检查点，形如 `{version, record: {identity, rows: {<投影>: {ver, seq, val}}}}`；读取标题、初始目录、模型、最近一轮摘要、状态和上下文 token 数 |
 | `profiles/web/desktop-storage.json` | 仅判断 `dsh.sessions.current` 中的 `sessionId`，避免 DSH 在前台时把所有会话都标记为已看过 |
 | `.credentials.yaml` | 仅余额查询在进程内读取，详见下节 |
@@ -28,6 +28,7 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 状态判定：
 
 - 桌面进程存在（包括隐藏到托盘），且 `userQuestions` 的 `questions.active` 有 `state: open`：等待用户；`continued` 的限时提问不再阻塞。
+- 桌面进程存在，且会话日志里有 `approval/asked` 还没有对应 id 的 `approval/decided`（其后也没有 `turn/end` / `turn/start`）：等待用户审批，当前工具显示审批的 `toolName`，更新时间取提问时间。2026-11-14 起；此前审批等待会一直显示“运行中”。
 - `turnBoundary.openTurnStartSeq` 非空：运行；检查点长期没有更新则沿用现有的“可能已中断”阈值。
 - `openTurnStartSeq` 为空：本轮结束。
 - 找不到 DSH 桌面进程：标记已退出、本轮结束；默认的“隐藏已退出”会隐藏它。
@@ -67,7 +68,7 @@ DSH 官方账户采用充值与赠送钱包；没有查到本地持久化的余�
 
 官方 dsh://open 仅打开主窗；DataElement dsh-desktop://、NEXT dsh-app:// 为内部资源协议，未找到选中社区版本可稳定调用的外部指定会话路由。因此本次只聚焦主窗，不能切换具体对话；无可用窗口时返回现有未找到反馈，不调用系统默认协议，避免误开另一安装。
 
-工具审批是 Host 的临时交互状态，不能从本地检查点准确还原；审批等待可能暂时显示运行或可能中断。等待提问可读，但在岛上回答、工具审批、任务/子 Agent 详细进度和准确失败原因不在本次接入范围。DSH 不安装 Claude/Codex 的钩子；这两个来源的钩子状态契约保持原样。
+工具审批不在检查点里，改从会话日志的审批事件读取（见上文状态判定），只用于显示“等待审批”；在岛上回答提问、在岛上批准或拒绝工具、任务/子 Agent 详细进度和准确失败原因不在本次接入范围。DSH 不安装 Claude/Codex 的钩子；这两个来源的钩子状态契约保持原样。
 
 官方依据：[本地 Web 服务](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/src/index.ts)、[桌面 Host 启动 IPC](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/src/host-process.ts)、[桌面打开协议](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/src/main.ts)、[协议注册](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/scripts/electron-builder-config.mjs)。
 

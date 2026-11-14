@@ -115,13 +115,22 @@ pub(super) fn list_from_root(root: &Path, now: i64, window_ms: i64, exe: Option<
         let mut summary = parse_checkpoint(&read_json(&path, MAX_CHECKPOINT_BYTES)?, id, modified, now, exe.is_some())?;
         // Deleted logs may leave a checkpoint. Only sessions with a corresponding source file
         // are listed. Checking existence does not read or decompress the conversation body.
-        let exists = fs::read_dir(root.join("sessions")).into_iter().flatten().flatten().any(|shard| {
-            [3, 4].iter().any(|version| shard.path().join(id).join(format!("session.v{version}.jsonl.zstd")).is_file())
-        });
-        if !exists { return None; }
+        let log = fs::read_dir(root.join("sessions")).into_iter().flatten().flatten().find_map(|shard| {
+            [4, 3].iter().map(|version| shard.path().join(id).join(format!("session.v{version}.jsonl.zstd"))).find(|path| path.is_file())
+        })?;
         if let Some(host) = &mut summary.host { host.exe = exe.map(str::to_string); }
+        if !summary.closed { apply_approval(&mut summary, super::dsh_approvals::pending(&log)); }
         Some(summary)
     }).collect()
+}
+
+/// A tool approval the host is waiting on: the checkpoint cannot show it, and without it the
+/// session looked like it was still running (and later "may have stopped").
+pub(super) fn apply_approval(summary: &mut AgentSessionSummary, approval: Option<super::dsh_approvals::PendingApproval>) {
+    let Some(approval) = approval else { return };
+    summary.phase = "waiting";
+    summary.updated_at = summary.updated_at.max(approval.asked_at);
+    summary.current_tool = super::dsh_approvals::tool_call(&approval);
 }
 
 fn merge_session(sessions: &mut HashMap<String, AgentSessionSummary>, session: AgentSessionSummary) {

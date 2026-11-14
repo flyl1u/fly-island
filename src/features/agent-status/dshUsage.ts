@@ -10,7 +10,7 @@ export function dshBalanceLabel(usage: DshUsage) {
   if (!wallet) return "";
   const amount = Number(wallet.total);
   const symbol = wallet.currency === "CNY" ? "¥" : "$";
-  return `${symbol}${amount.toLocaleString("en-US", { maximumFractionDigits: 4, minimumFractionDigits: 2 })}`;
+  return `${symbol}${amount.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 }
 
 /**
