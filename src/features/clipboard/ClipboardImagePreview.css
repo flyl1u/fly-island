@@ -22,7 +22,7 @@
   animation: clipboardPreviewScale 180ms ease both;
 }
 .clipboard-preview__close { justify-self: end; pointer-events: auto; }
-.clipboard-preview__image { min-height: 0; display: grid; place-items: center; }
+.clipboard-preview__image { min-height: 0; display: grid; place-items: center; container-type: size; }
 .clipboard-preview__image img {
   max-width: 100%;
   max-height: 100%;
@@ -32,6 +32,13 @@
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);
   pointer-events: auto;
+}
+/* Known size: fit the original's box (never upscaling it), so the thumbnail shown while loading
+   is already as large as the original that replaces it. */
+.clipboard-preview__image[style] img {
+  width: min(100cqw, var(--preview-width), 100cqh * var(--preview-ratio));
+  max-height: none;
+  aspect-ratio: var(--preview-ratio);
 }
 .clipboard-preview__caption {
   display: flex;
