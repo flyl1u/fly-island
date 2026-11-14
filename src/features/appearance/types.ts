@@ -142,6 +142,10 @@ export type IslandSettings = {
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;
   tuckedHoverAction: TuckedHoverAction;
+  // Keep the collapsed island visible during selected activities (idle timer B only).
+  keepVisibleWhileAgentRunning: boolean;
+  keepVisibleWhileLyrics: boolean;
+  keepVisibleWhileTodoRunning: boolean;
   /**
    * Module switches. Off hides the module on the island and stops its background work;
    * its data is kept. QQ, WeChat and clipboard history use their existing switches.

@@ -1,6 +1,7 @@
 import type { LocaleCode } from "../../i18n";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
+import { KeepVisibleSettingsSection } from "../../features/appearance/KeepVisibleSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
@@ -34,6 +35,7 @@ export function GeneralSettingsPage({
         onLocaleChange={onLocaleChange}
       />
       <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} onResetPosition={requestIslandPositionReset} />
+      <KeepVisibleSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );
 }

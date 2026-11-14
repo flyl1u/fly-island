@@ -43,6 +43,13 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     collapsedShowCover: settings?.collapsedShowCover !== false,
     collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),
     pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),
+    // Selected activities pause automatic tucking only with an explicit boolean setting.
+    keepVisibleWhileAgentRunning: typeof settings?.keepVisibleWhileAgentRunning === "boolean"
+      ? settings.keepVisibleWhileAgentRunning : DEFAULT_SETTINGS.keepVisibleWhileAgentRunning,
+    keepVisibleWhileLyrics: typeof settings?.keepVisibleWhileLyrics === "boolean"
+      ? settings.keepVisibleWhileLyrics : DEFAULT_SETTINGS.keepVisibleWhileLyrics,
+    keepVisibleWhileTodoRunning: typeof settings?.keepVisibleWhileTodoRunning === "boolean"
+      ? settings.keepVisibleWhileTodoRunning : DEFAULT_SETTINGS.keepVisibleWhileTodoRunning,
   } satisfies Partial<IslandSettings>;
 }
 

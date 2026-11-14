@@ -18,12 +18,13 @@ export function idlePlan(
   settings: IdleSettings,
   hasMessagePreview: boolean,
   isHovering = false,
+  keepVisible = false,
 ): IdlePlan | null {
   if (mode === "expanded") {
     const seconds = settings.autoCollapseSeconds;
     if (seconds <= 0 || isHovering) return null;
     return { seconds, action: "collapse" };
   }
-  if (!settings.autoTuck || hasMessagePreview) return null;
+  if (!settings.autoTuck || hasMessagePreview || keepVisible) return null;
   return { seconds: settings.tuckDelaySeconds, action: "tuck" };
 }

@@ -85,6 +85,10 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   minimizeAction: "tuck",
   tuckedHoverAction: "reveal",
+  // Selected activities can pause automatic tucking; each is opt-in.
+  keepVisibleWhileAgentRunning: false,
+  keepVisibleWhileLyrics: false,
+  keepVisibleWhileTodoRunning: false,
   todoEnabled: true,
   musicEnabled: true,
   agentStatusEnabled: true,
