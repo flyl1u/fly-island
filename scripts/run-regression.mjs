@@ -40,6 +40,10 @@ export const PAGES = [
   // The light scheme, and a white island picked in the dark scheme (its text turns dark).
   "island-tour.html?test=1&theme=light",
   "island-tour.html?test=1&bg=FFFFFF",
+  "island-tour.html?test=1&material=liquidGlass",
+  "island-tour.html?test=1&theme=light&material=liquidGlass",
+  "island-tour.html?test=1&material=frostedGlass",
+  "island-tour.html?test=1&theme=light&material=frostedGlass",
   "mail-reader.html?run=1",
   "message-clear.html",
   "message-clear.html?lang=en",

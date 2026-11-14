@@ -1,4 +1,4 @@
-import { getEffectiveAppearanceMode } from "../../features/appearance/settings";
+import { isGlass } from "../../features/appearance/settings";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { DEFAULT_SETTINGS } from "../../features/appearance/settings";
@@ -57,7 +57,7 @@ export function useIslandWindow({
           tuckStyle: nextSettings.tuckStyle,
           positionLocked: nextSettings.positionLocked,
           animatePosition: true,
-          glassEnabled: getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass",
+          glassEnabled: isGlass(nextSettings.material),
           glassIntensity: nextSettings.glassIntensity,
           glassTint: nextSettings.islandBackgroundColor,
           cornerRadius: nextSettings.islandCornerRadius,
@@ -68,7 +68,7 @@ export function useIslandWindow({
       } catch (error) {
         console.error("Failed to sync island interaction", error);
         setNativeGlassState(
-          getEffectiveAppearanceMode(nextSettings.appearanceMode) === "liquidGlass"
+          isGlass(nextSettings.material)
             ? "css-fallback"
             : "disabled",
         );
@@ -148,7 +148,7 @@ export function useIslandWindow({
     mode,
     settings.tuckStyle,
     settings.marginY,
-    settings.appearanceMode,
+    settings.material,
     settings.glassIntensity,
     settings.islandBackgroundColor,
     settings.collapsedScale,

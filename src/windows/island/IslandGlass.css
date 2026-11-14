@@ -1,0 +1,170 @@
+/*
+ * The glass materials (Appearance → Style → Material). Their variables come from glassStyle.ts.
+ * Both are drawn in CSS only and nothing here blurs: backdrop-filter has nothing to blur over the
+ * transparent island window, and a blur filter on layers that resize on every frame of the island's
+ * spring would cost the motion. Each glass works in both tones ([data-tone], from the island colour):
+ * the lit edges stay white, the shadows and the text halo follow the tone.
+ */
+
+.island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  /* One small noise tile, rasterized once and repeated: the pane reads as glass, not a flat colour. */
+  --glass-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* The glass draws its own rim. */
+  --island-rim: transparent;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%),
+    var(--glass-tint-color);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+}
+
+:is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 70%),
+    var(--glass-collapsed-tint-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+}
+
+:is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed:has(:focus-visible) {
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 18px var(--color-white-a10),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/*
+ * The pane is nearly clear, so text on it gets a halo of the opposite tone to stay readable over
+ * whatever is behind the island.
+ */
+.island--material-liquidGlass {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+[data-tone="light"] .island--material-liquidGlass {
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
+  pointer-events: none;
+}
+
+.island__glass::before,
+.island__glass::after,
+.island__glass-refraction,
+.island__glass-highlight {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.island__glass::after {
+  inset: 0;
+  background-image: var(--glass-grain);
+  background-size: 128px;
+  opacity: var(--glass-grain-opacity);
+}
+
+/* Light where the pointer is, as if the pane caught it: a gradient, not a blurred circle. */
+.island--material-liquidGlass .island__glass::before {
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--glass-pointer-x) var(--glass-pointer-y),
+    rgba(255, 255, 255, var(--glass-glow-alpha)),
+    rgba(var(--glass-page-accent), var(--glass-accent-alpha)) 24%,
+    transparent 52%
+  );
+}
+
+/*
+ * The thick edge of the pane: a bright rim, the top edge lit and the bottom edge catching the light
+ * through the glass, a darker hairline just inside, and a soft glow where the glass thickens.
+ */
+.island__glass-refraction {
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, var(--glass-border-alpha)),
+    inset 0 1.5px 0.5px rgba(255, 255, 255, var(--glass-inset-alpha)),
+    inset 0 -1px 0.5px rgba(255, 255, 255, calc(var(--glass-border-alpha) * 0.7)),
+    inset 0 0 0 2px rgba(0, 0, 0, calc(0.12 - var(--is-light) * 0.05)),
+    inset 0 0 16px 2px rgba(255, 255, 255, var(--glass-inner-glow-alpha));
+}
+
+/* A short specular streak along the top edge, following the pointer. */
+.island__glass-highlight {
+  top: 1px;
+  left: var(--glass-pointer-x);
+  width: 46%;
+  height: 1.5px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+  opacity: var(--glass-highlight-opacity);
+  transform: translateX(-50%);
+}
+
+/* Opening lights the rim up from dim: opacity only, which the compositor plays. */
+.island--material-liquidGlass.island--expanded .island__glass-refraction {
+  animation: glassRimBloom 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes glassRimBloom {
+  from {
+    opacity: 0.35;
+  }
+}
+
+/* Attached to the screen edge: the shoulders take the flat tint, liquid glass's streak moves to the bottom edge. */
+:root[data-island-top-edge="attached"] .island--shoulders:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--tucked),
+:root:not([data-island-top-edge]) .island--docked.island--shoulders:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--tucked) {
+  background: var(--glass-tint-color);
+}
+
+:root[data-island-top-edge="attached"] .island__glass-highlight,
+:root:not([data-island-top-edge]) .island--docked .island__glass-highlight {
+  top: auto;
+  bottom: 1px;
+}
+
+/*
+ * Frosted glass (after the Windows control centre the user showed): a milky pane on a light island,
+ * a smoky one on a dark island, mostly opaque so what is behind only shows as colour. A wash of white
+ * over the tint stands in for the frosting a blur would give; a 1px bright rim just inside the edge
+ * and the top edge a little brighter. No pointer light or streak: frosted glass does not shine.
+ */
+.island.island--material-frostedGlass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%),
+    linear-gradient(rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14)), rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14))),
+    var(--glass-tint-color);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.1));
+}
+
+.island--material-frostedGlass.island--collapsed {
+  background:
+    linear-gradient(rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14)), rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14))),
+    var(--glass-collapsed-tint-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+}
+
+.island--material-frostedGlass .island__glass::before {
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: var(--island-corner-shape, round);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, calc(var(--glass-border-alpha) + var(--is-light) * 0.3)),
+    inset 0 1px 0 1px rgba(255, 255, 255, calc(var(--glass-inset-alpha) * 0.5));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island__glass-refraction {
+    animation: none !important;
+  }
+}

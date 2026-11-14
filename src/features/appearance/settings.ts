@@ -3,19 +3,25 @@ import { normalizeAgentSettings } from "./normalizeAgentSettings.ts";
 import { normalizeBehaviorSettings } from "./normalizeBehaviorSettings.ts";
 import { normalizeLayoutSettings } from "./normalizeLayoutSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import type { AppearanceMode, IslandSettings, LegacyIslandSettings } from "./types";
+import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 // Island settings (focusd-island-settings): limits in settingsLimits.ts, first-launch values in
 // settingsDefaults.ts, and reading saved ones in normalize*Settings.ts by area. New settings go in
 // those files; this one keeps the entry points other code imports.
 export * from "./settingsLimits.ts";
 
-/** Liquid glass is paused for now: the island draws classic and the option is hidden. */
-export const LIQUID_GLASS_ENABLED = false;
+/** Whether a material is one of the glasses (the glass strength applies, the native side is told). */
+export function isGlass(material: Material) {
+  return material !== "classic";
+}
 
-/** The look actually drawn. A saved liquid glass preference is kept for when glass returns. */
-export function getEffectiveAppearanceMode(mode: AppearanceMode): AppearanceMode {
-  return mode === "liquidGlass" && !LIQUID_GLASS_ENABLED ? "classic" : mode;
+/**
+ * How opaque a glass's tint is at full island opacity: liquid glass is nearly clear (clearer as the
+ * strength rises), frosted glass mostly hides what is behind it. Drawn by the island and its preview.
+ */
+export function glassTintAlpha(material: Material, glassIntensity: number) {
+  const strength = glassIntensity / 100;
+  return material === "liquidGlass" ? 0.58 - strength * 0.3 : 0.9 - strength * 0.16;
 }
 export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 
@@ -26,7 +32,7 @@ export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
  * so presets saved with those values no longer move the island or change the count.
  */
 export const APPEARANCE_SETTING_KEYS = [
-  "appearanceMode",
+  "material",
   "colorScheme",
   "fontFamily",
   "islandFontPercent",

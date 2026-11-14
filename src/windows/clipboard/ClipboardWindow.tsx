@@ -2,7 +2,7 @@ import { Pin, PinOff, X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { ClipboardHistoryPanel } from "../../features/clipboard/ClipboardHistoryPanel";
 import { useClipboardHistory } from "../../features/clipboard/useClipboardHistory";
-import { useDocumentTheme, useStoredColorScheme } from "../../features/appearance/useDocumentTheme";
+import { useDocumentTheme, useStoredTheme } from "../../features/appearance/useDocumentTheme";
 import { closeClipboardWindow, dragClipboardWindow, resizeClipboardWindow, type ClipboardResizeDirection } from "./api";
 import { useClipboardWindow } from "./useClipboardWindow";
 import "./ClipboardWindow.css";
@@ -13,7 +13,7 @@ export function ClipboardWindow() {
   const t = useTranslation();
   const frame = useClipboardWindow(t.clipboard.title);
   const clipboard = useClipboardHistory();
-  useDocumentTheme(useStoredColorScheme());
+  useDocumentTheme(useStoredTheme());
   const PinIcon = frame.pinned ? Pin : PinOff;
   return (
     <main className="clipboard-window">
