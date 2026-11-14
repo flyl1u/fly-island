@@ -143,3 +143,42 @@ fn only_our_own_temp_files_are_cleaned_up() {
     left.sort();
     assert_eq!(left, ["InfLink.dll", "keep.focusd-tmp", "source"]);
 }
+fn netease_status(state: &'static str, version: &str, tested: bool) -> netease::NeteasePluginStatus {
+    netease::NeteasePluginStatus { state, supported: true, tested, version: Some(version.into()), arch: Some("x64"),
+        install_dir: Some(PathBuf::from(r"D:\CloudMusic")), running: true, legacy_inf_link: false, plugin_dir: PathBuf::from(r"C:\betterncm\plugins") }
+}
+#[test]
+fn auto_install_runs_once_per_version_and_only_when_safe() {
+    let mut state = auto::AutoState::default();
+    let key = auto::attempt_key(&netease_status("none", "3.1.23.8206", true), &state).unwrap();
+    assert_eq!(key, r"D:\CloudMusic|3.1.23.8206");
+    assert!(auto::attempt_key(&netease_status("loaderOnly", "3.1.23.8206", true), &state).is_some());
+    for blocked in ["installed", "foreignLoader", "unknown"] {
+        assert!(auto::attempt_key(&netease_status(blocked, "3.1.23.8206", true), &state).is_none(), "{blocked}");
+    }
+    assert!(auto::attempt_key(&netease_status("none", "3.1.50.1", false), &state).is_some(), "newer releases than the tested range are included");
+    assert!(auto::attempt_key(&netease_status("none", "3.1.19.1", false), &state).is_none(), "older 3.x stays manual");
+    assert!(auto::attempt_key(&netease_status("none", "3.0.6.1", false), &state).is_none());
+    let mut x86 = netease_status("none", "2.10.13.1", true);
+    x86.arch = Some("x86");
+    assert!(auto::attempt_key(&x86, &state).is_none(), "2.x stays manual");
+    let mut legacy = netease_status("none", "3.1.23.8206", true);
+    legacy.legacy_inf_link = true;
+    assert!(auto::attempt_key(&legacy, &state).is_none());
+    state.attempted.push(key);
+    assert!(auto::attempt_key(&netease_status("none", "3.1.23.8206", true), &state).is_none());
+    assert!(auto::attempt_key(&netease_status("none", "3.1.24.1", true), &state).is_some(), "an updated NetEase is tried again");
+    state.opted_out = true;
+    assert!(auto::attempt_key(&netease_status("none", "3.1.24.1", true), &state).is_none());
+    assert!(auto::retry_later("NeedsClose") && auto::retry_later("Network") && !auto::retry_later("Blocked") && !auto::retry_later("UserDeclined"));
+}
+#[test]
+fn transient_locks_are_retried_but_other_errors_are_not() {
+    let mut calls = 0;
+    let result = elevated::retry_transient(|| { calls += 1; if calls < 3 { Err(std::io::Error::from_raw_os_error(32)) } else { Ok(calls) } });
+    assert_eq!(result.unwrap(), 3);
+    calls = 0;
+    let result: std::io::Result<()> = elevated::retry_transient(|| { calls += 1; Err(std::io::Error::from_raw_os_error(2)) });
+    assert!(result.is_err());
+    assert_eq!(calls, 1);
+}

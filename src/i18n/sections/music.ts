@@ -6,7 +6,7 @@ export type MusicText = {
     disclosure: string; license: string; success: string; removed: string; keptForeignLoader: string; preserved: string;
     needsClose: string; userDeclined: string; legacyConflict: string; unsupported: string;
     network: string; hashMismatch: string; busy: string; io: string; openPlugins: string; openFailed: string;
-    blocked: string; driveUnavailable: string; loaderExists: string;
+    blocked: string; driveUnavailable: string; loaderExists: string; manual: string; manualReady: string;
     closeAndRetry: string; restart: string; restarting: string; restarted: string; notice: string;
     states: Record<"none" | "loaderOnly" | "installed" | "foreignLoader" | "unknown", string>;
   };
@@ -57,7 +57,9 @@ export const zhCN: MusicText = {
     needsClose: "需要先关闭网易云音乐", userDeclined: "需要管理员权限才能写入网易云目录",
     legacyConflict: "检测到旧版 InfLink，请先删除旧插件再试", unsupported: "当前网易云版本暂不支持：",
     network: "下载失败，请检查网络后重试", hashMismatch: "下载的文件校验未通过，已丢弃，请重试", busy: "另一个安装或卸载正在进行", io: "文件操作失败：",
-    blocked: "写入网易云目录被拦截，可能是安全软件所致；请把 FocuSD Island 加入信任后重试",
+    blocked: "写入网易云目录被安全软件拦截。点“手动放入”，在资源管理器里拖一个文件就能装好",
+    manual: "手动放入",
+    manualReady: "已打开两个文件夹：把选中的 msimg32.dll 拖进网易云目录（资源管理器里复制一般不会被拦截），回到这里即可",
     driveUnavailable: "网易云装在网络盘或映射盘上，管理员权限下看不到这个盘；请把网易云装到本地磁盘后重试",
     loaderExists: "网易云目录里刚出现了另一个 msimg32.dll，已停止安装；请重试",
     openPlugins: "打开插件目录", openFailed: "无法打开链接或目录",
@@ -114,7 +116,9 @@ export const en: MusicText = {
     needsClose: "NetEase Cloud Music needs to be closed first.", userDeclined: "Administrator permission is needed to write to the NetEase directory.",
     legacyConflict: "An old InfLink plugin was found. Remove it before retrying.", unsupported: "This NetEase version is unsupported:",
     network: "Download failed. Check your connection and retry.", hashMismatch: "The download failed verification and was discarded. Retry.", busy: "Another install or uninstall is running.", io: "File operation failed:",
-    blocked: "Writing to the NetEase folder was blocked, possibly by security software. Add FocuSD Island to its trusted list and retry.",
+    blocked: "Security software blocked writing to the NetEase folder. Choose \"Place manually\" to finish with one drag in File Explorer.",
+    manual: "Place manually",
+    manualReady: "Two folders are open: drag the selected msimg32.dll into the NetEase folder (copying in File Explorer is usually allowed), then come back here.",
     driveUnavailable: "NetEase is installed on a network or mapped drive, which administrator mode cannot see. Install NetEase on a local disk and retry.",
     loaderExists: "Another msimg32.dll just appeared in the NetEase folder, so installation stopped. Retry.",
     openPlugins: "Open plugin folder", openFailed: "Could not open the link or folder",

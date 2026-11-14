@@ -98,6 +98,7 @@ pub fn run() {
                 island::start_cursor_passthrough_loop(window);
             }
             system::fullscreen::start(app.handle());
+            media_plugins::init(app.handle());
             Ok(())
         })
         .invoke_handler(collect_commands!([]

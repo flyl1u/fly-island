@@ -60,13 +60,28 @@ fn atomic_copy_io(source: &Path, target: &Path, sha256: &str) -> std::io::Result
             Error::new(ErrorKind::PermissionDenied, "The file vanished right after it was written, most likely removed by security software")
         } else { e })?;
         if written != sha256 { return Err(Error::new(ErrorKind::InvalidData, "SHA256 changed before copy")); }
-        if target.file_name().is_some_and(|n| n.eq_ignore_ascii_case("msimg32.dll")) {
-            // A loader that appeared after discovery must never be overwritten.
-            crate::win32::media_plugin_elevation::move_new(&temp, target)
-        } else { replace(&temp, target) }
+        let loader = target.file_name().is_some_and(|n| n.eq_ignore_ascii_case("msimg32.dll"));
+        // A loader that appeared after discovery must never be overwritten.
+        retry_transient(|| if loader { crate::win32::media_plugin_elevation::move_new(&temp, target) } else { replace(&temp, target) })
     })();
     if result.is_err() { let _ = fs::remove_file(&temp); }
     result
+}
+/// Real-time scanners open a freshly written dll for a moment, so moving it can fail with a
+/// sharing or access error that clears on its own; that is retried for about four seconds
+/// before it counts as blocked.
+pub(super) fn retry_transient<T>(mut action: impl FnMut() -> std::io::Result<T>) -> std::io::Result<T> {
+    let mut delay = std::time::Duration::from_millis(150);
+    for _ in 0..6 {
+        match action() {
+            Err(error) if matches!(HelperFailure::of_io(&error), HelperFailure::FileLocked | HelperFailure::AccessDenied) => {
+                std::thread::sleep(delay);
+                delay = (delay * 2).min(std::time::Duration::from_millis(1200));
+            }
+            result => return result,
+        }
+    }
+    action()
 }
 /// A file error outside the helper: security software gets its own message too.
 fn plugin_io_error(error: std::io::Error) -> PluginError {
