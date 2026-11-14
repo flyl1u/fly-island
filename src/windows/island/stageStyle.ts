@@ -32,6 +32,10 @@ export function getIslandStageStyle(
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
+    // The expanded page's resting transform. At scale 1 it is none: a transform, even scale(1), keeps
+    // the page on its own compositing layer, and the text there is drawn again once the layer goes.
+    "--island-panel-shown": settings.expandedScale === 1 ? "none" : `scale(${settings.expandedScale})`,
+    "--island-panel-hidden": settings.expandedScale === 1 ? "translateY(-6px)" : `translateY(-6px) scale(${settings.expandedScale})`,
     "--task-text-color": colors.taskTextColor,
     "--island-page-text": settings.pageTextColor || "rgb(var(--island-ink-rgb))",
     "--island-pulse-color": colors.pulseColor,
