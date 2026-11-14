@@ -78,6 +78,8 @@ pub(crate) fn open(app: &AppHandle) -> Result<(), String> {
     window.on_window_event(move |event| {
         if matches!(event, WindowEvent::CloseRequested { .. }) {
             bounds::save(&closing);
+            // Tearing down the webview takes a moment; hide first so closing feels instant.
+            let _ = closing.hide();
         }
     });
     thread::spawn(move || {
