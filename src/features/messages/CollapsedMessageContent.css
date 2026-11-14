@@ -47,7 +47,7 @@
 .island-message-preview {
   --summary-travel: 3px;
   gap: 7px;
-  color: #f5f5f7;
+  color: color-mix(in srgb, #1c1c22 calc(var(--is-light) * 100%), #f5f5f7);
   font-family: var(--font-ui);
   font-size: calc(13px * var(--island-font-scale, 1));
   font-weight: 600;
@@ -86,7 +86,7 @@
 .island-message-preview__sender {
   flex: 0 1 auto;
   max-width: 42%;
-  color: #fff;
+  color: var(--color-fg-strong);
   font-weight: 600;
 }
 

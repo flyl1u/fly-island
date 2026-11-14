@@ -34,7 +34,6 @@
   --island-background-color: #2F2F37;
   --todo-background-color: #f8f4e9;
   --glass-intensity: 0.72;
-  --glass-mask-opacity: 0.53;
   --glass-tint-color: rgba(47, 47, 55, 0.53);
   --glass-collapsed-tint-color: rgba(47, 47, 55, 0.8);
   width: 100vw;
@@ -52,7 +51,7 @@
 }
 
 .island--todo .icon-button:hover {
-  color: var(--color-white);
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 
@@ -76,13 +75,13 @@
 }
 
 .icon-button.island-reset-button--available {
-  color: #c8efff;
+  color: color-mix(in srgb, #0071b8 calc(var(--is-light) * 100%), #c8efff);
   background: rgba(116, 214, 255, 0.14);
 }
 
 .icon-button:hover {
-  color: var(--color-white);
-  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-fg-strong);
+  background: rgba(var(--overlay-rgb), 0.15);
 }
 
 .icon-button:active {
@@ -99,31 +98,6 @@
   border-radius: var(--island-panel-radius, 10px);
   corner-shape: var(--island-corner-shape, round);
   border: 0;
-}
-
-.island--appearance-liquidGlass .editor-panel {
-  background:
-    radial-gradient(
-      circle at var(--glass-pointer-x) var(--glass-pointer-y),
-      rgba(var(--glass-page-accent), var(--glass-panel-accent-alpha)),
-      transparent 36%
-    ),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.025)),
-    rgba(7, 9, 12, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.105);
-  box-shadow:
-    0 14px 32px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
-  -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.12);
-}
-
-.island--appearance-liquidGlass.island--glass-css-fallback .editor-panel {
-  background:
-    radial-gradient(circle at 82% 12%, rgba(var(--glass-page-accent), 0.13), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.03)),
-    rgba(9, 11, 15, 0.78);
 }
 
 .save-check-icon {
@@ -203,12 +177,5 @@
 
   .music-control-button__track-change {
     animation: none;
-  }
-
-  .island__glass::before,
-  .island__glass::after,
-  .island__glass-highlight {
-    animation: none;
-    transition: none;
   }
 }

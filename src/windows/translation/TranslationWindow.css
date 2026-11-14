@@ -6,13 +6,13 @@
 }
 
 .translation-window {
-  --translation-surface: #24252b;
-  --translation-control: #303138;
-  --translation-text: #f0f0f3;
-  --translation-muted: #b0afb9;
-  --translation-border: rgba(255, 255, 255, 0.1);
-  --translation-accent: #f0f0f3;
-  --translation-focus: rgba(255, 255, 255, 0.5);
+  --translation-surface: color-mix(in srgb, #f6f6f9 calc(var(--is-light) * 100%), #24252b);
+  --translation-control: color-mix(in srgb, #e7e7ec calc(var(--is-light) * 100%), #303138);
+  --translation-text: color-mix(in srgb, #1c1c22 calc(var(--is-light) * 100%), #f0f0f3);
+  --translation-muted: color-mix(in srgb, #5d5c66 calc(var(--is-light) * 100%), #b0afb9);
+  --translation-border: rgba(var(--overlay-rgb), 0.1);
+  --translation-accent: color-mix(in srgb, #1d1d22 calc(var(--is-light) * 100%), #f0f0f3);
+  --translation-focus: rgba(var(--overlay-rgb), 0.5);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -24,9 +24,9 @@
   background: var(--translation-surface);
   border: 1px solid var(--color-white-a16);
   border-radius: 18px;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
   font-size: 13px;
-  color-scheme: dark;
+  color-scheme: var(--color-scheme);
 }
 
 .translation-window button,
@@ -223,7 +223,7 @@
   padding: 6px 8px;
   color: var(--translation-muted);
   text-align: left;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   border: 1px solid var(--translation-border);
   border-radius: 7px;
   font-size: 12px;
@@ -273,7 +273,7 @@
   gap: var(--space-md);
   min-height: 34px;
   padding: 7px 14px;
-  color: #18181c;
+  color: var(--color-inverse-ink);
   background: var(--translation-accent);
   border: 0;
   border-radius: var(--radius-md);
@@ -281,7 +281,7 @@
   font-weight: 600;
   transition: background 160ms ease;
 }
-.translation-window__primary:not(:disabled):hover { background: #ffffff; }
+.translation-window__primary:not(:disabled):hover { background: var(--color-inverse); }
 .translation-window__translate { min-width: 82px; }
 
 .translation-window__content,

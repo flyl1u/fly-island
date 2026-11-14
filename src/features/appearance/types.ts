@@ -1,6 +1,13 @@
 export type TranslationTarget = "window" | "island";
 
-export type AppearanceMode = "classic" | "liquidGlass";
+/**
+ * The island's material: classic (a flat fill), liquid glass (a nearly clear pane with lit edges)
+ * or frosted glass (a milky pane). Both glasses are drawn in CSS over a clear window: nothing
+ * blurs the desktop behind them (island/glass.rs).
+ */
+export type Material = "classic" | "liquidGlass" | "frostedGlass";
+/** Colour scheme of the island and the windows: dark, light, or whichever Windows uses. */
+export type ColorScheme = "dark" | "light" | "system";
 export type IslandFont = "system" | "pixel";
 export type PageButtonStyle = "capsule" | "icon";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
@@ -48,7 +55,8 @@ export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
 
 export type IslandSettings = {
   topEdgeLayoutVersion: 1;
-  appearanceMode: AppearanceMode;
+  material: Material;
+  colorScheme: ColorScheme;
   fontFamily: IslandFont;
   islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;
@@ -201,6 +209,8 @@ export type IslandSettings = {
 };
 
 export type LegacyIslandSettings = Partial<IslandSettings> & {
+  /** Before 2026-11-14: "classic" or "liquidGlass", now `material`. */
+  appearanceMode?: unknown;
   margin?: number;
   sizeScale?: number;
   taskTitleColor?: string;

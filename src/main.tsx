@@ -11,8 +11,12 @@ import { I18nProvider } from "./i18n";
 import { trackIslandTopEdge } from "./windows/island/topEdge";
 import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
 import { shouldPreventContextMenu } from "./lib/contextMenu";
+import { applyDocumentTheme } from "./features/appearance/useDocumentTheme";
+import { loadSettings } from "./features/appearance/storage";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+// Before the first paint, so no window shows a frame in the wrong colour scheme.
+applyDocumentTheme(loadSettings());
 
 window.addEventListener("contextmenu", (event) => {
   const target = event.target instanceof Element ? event.target

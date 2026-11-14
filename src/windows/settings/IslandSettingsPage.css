@@ -7,7 +7,7 @@
   min-height: 0;
   overflow: hidden;
   color: var(--color-page-text);
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(var(--overlay-rgb), 0.035);
   border-radius: var(--island-panel-radius, 12px);
   corner-shape: var(--island-corner-shape, round);
 }
@@ -23,7 +23,7 @@
 /* A slim list: smaller rows and type; a long English name wraps rather than being cut off. */
 .island-settings .settings-sidebar {
   padding: 8px 6px;
-  background: rgba(0, 0, 0, 0.24);
+  background: rgba(0, 0, 0, calc(0.24 - var(--is-light) * 0.2));
 }
 
 .island-settings .settings-sidebar__group + .settings-sidebar__group {

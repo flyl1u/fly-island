@@ -121,114 +121,8 @@
   display: none;
 }
 
-.island--appearance-liquidGlass {
-  isolation: isolate;
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.36), transparent 96px),
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, var(--glass-soft-alpha)),
-      transparent 42%
-    ),
-    linear-gradient(
-      165deg,
-      transparent 42%,
-      rgba(2, 8, 14, 0.08)
-    ),
-    var(--glass-tint-color);
-  box-shadow:
-    0 18px 46px rgba(0, 0, 0, var(--glass-shadow-alpha)),
-    inset 0 1px 0 rgba(255, 255, 255, var(--glass-inset-alpha)),
-    inset 0 -1px 0 rgba(8, 18, 28, 0.16),
-    inset 1px 0 0 rgba(130, 224, 255, var(--glass-cyan-alpha)),
-    inset -1px 0 0 rgba(255, 158, 230, var(--glass-magenta-alpha));
-  backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.18);
-  -webkit-backdrop-filter: blur(var(--glass-panel-blur)) saturate(1.18);
-}
-
-.island--appearance-liquidGlass.island--glass-css-fallback {
-  background:
-    linear-gradient(145deg, var(--color-white-a12), transparent 42%),
-    linear-gradient(165deg, transparent 40%, rgba(4, 12, 20, 0.2)),
-    var(--glass-tint-color);
-}
-
-.island--appearance-liquidGlass .island__glass {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: block;
-  overflow: hidden;
-  border-radius: inherit;
-  corner-shape: var(--island-corner-shape, round);
-  pointer-events: none;
-}
-
-.island__glass::before,
-.island__glass::after,
-.island__glass-refraction,
-.island__glass-highlight {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-}
-
-.island__glass::before {
-  width: 48%;
-  aspect-ratio: 1;
-  left: var(--glass-pointer-x);
-  top: var(--glass-pointer-y);
-  border-radius: var(--radius-circle);
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, var(--glass-glow-alpha)),
-    rgba(var(--glass-page-accent), var(--glass-accent-alpha)) 38%,
-    transparent 70%
-  );
-  filter: blur(20px);
-  opacity: 0.9;
-  transform: translate(-50%, -50%);
-  transition:
-    left 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    top 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.island__glass::after {
-  inset: 0;
-  border-radius: inherit;
-  corner-shape: var(--island-corner-shape, round);
-  background:
-    linear-gradient(112deg, rgba(116, 214, 255, 0.1), transparent 16% 82%, rgba(255, 156, 224, 0.08)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 22% 82%, rgba(20, 40, 52, 0.08));
-  mix-blend-mode: screen;
-  opacity: var(--glass-refraction-opacity);
-}
-
-.island__glass-refraction {
-  inset: 1px;
-  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
-  border-radius: inherit;
-  corner-shape: var(--island-corner-shape, round);
-  box-shadow:
-    inset 0 0 14px rgba(var(--glass-page-accent), var(--glass-inner-accent-alpha)),
-    inset 0 0 2px rgba(255, 255, 255, 0.24);
-}
-
-.island__glass-highlight {
-  top: 2px;
-  left: var(--glass-pointer-x);
-  width: 42%;
-  height: 2px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
-  filter: blur(0.4px);
-  opacity: var(--glass-highlight-opacity);
-  transform: translateX(-50%);
-  transition: left 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 .island--expanded.island--todo {
-  color: #f8f4e9;
+  color: color-mix(in srgb, rgb(var(--ink-rgb)) calc(var(--is-light) * 100%), #f8f4e9);
 }
 
 .island--collapsed {
@@ -239,7 +133,7 @@
   cursor: default;
   background:
     /* The shading fades with the fill (classic opacity). */
-    linear-gradient(180deg, rgba(255, 255, 255, calc(0.06 * var(--island-fill-alpha, 1))), rgba(0, 0, 0, calc(0.22 * var(--island-fill-alpha, 1)))),
+    linear-gradient(180deg, color-mix(in srgb, var(--island-shade-top) calc(var(--island-fill-alpha, 1) * 100%), transparent), color-mix(in srgb, var(--island-shade-bottom) calc(var(--island-fill-alpha, 1) * 100%), transparent)),
     var(--island-fill, var(--island-background-color));
   box-shadow: none;
 }
@@ -247,71 +141,9 @@
 /* Lit only for keyboard focus: a mouse click on one of its buttons should not leave a white line. */
 .island--collapsed:has(:focus-visible) {
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26),
     inset 0 0 18px var(--color-white-a08),
     0 5px 16px rgba(0, 0, 0, 0.12);
-}
-
-.island--appearance-liquidGlass.island--collapsed {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.11), transparent 42%),
-    linear-gradient(180deg, transparent 48%, rgba(6, 16, 24, 0.1)),
-    var(--glass-collapsed-tint-color);
-  box-shadow:
-    0 12px 34px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    inset 0 -1px 0 rgba(8, 22, 32, 0.18),
-    inset 1px 0 0 rgba(116, 214, 255, 0.14),
-    inset -1px 0 0 rgba(255, 156, 224, 0.08);
-}
-
-.island--appearance-liquidGlass.island--collapsed:has(:focus-visible) {
-  box-shadow:
-    0 8px 26px rgba(0, 0, 0, 0.2),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 0 18px var(--color-white-a10),
-    inset 1px 0 0 rgba(116, 214, 255, 0.24),
-    inset -1px 0 0 rgba(255, 156, 224, 0.16);
-}
-
-.island--appearance-liquidGlass.island--expanded .island__glass::after {
-  animation: glassBloomExpand 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-.island--appearance-liquidGlass.island--collapsed .island__glass::after {
-  animation: glassBloomCollapse 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-@keyframes glassBloomExpand {
-  0% {
-    opacity: 0.28;
-    transform: scale(0.7, 0.28);
-    transform-origin: top center;
-  }
-  48% {
-    opacity: 1;
-    transform: scale(1.015, 1.02);
-  }
-  100% {
-    opacity: var(--glass-refraction-opacity);
-    transform: none;
-  }
-}
-
-@keyframes glassBloomCollapse {
-  0% {
-    opacity: var(--glass-refraction-opacity);
-    transform: none;
-  }
-  52% {
-    opacity: 0.9;
-    transform: scale(1.02, 0.76);
-    transform-origin: top center;
-  }
-  100% {
-    opacity: var(--glass-refraction-opacity);
-    transform: none;
-  }
 }
 
 .island--expanded {
@@ -324,9 +156,13 @@
   cursor: default;
 }
 
-/* Liquid glass draws its own rim (the refraction border). */
-.island--appearance-liquidGlass.island--expanded {
-  --island-rim: transparent;
+/* A light island over a light window would have no edge: a soft shadow sets it apart. */
+[data-tone="light"] .island--expanded {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-tone="light"] .island--collapsed:not(:has(:focus-visible)) {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
 /* Away from the top edge the island floats: a full pill collapsed, evenly rounded expanded. */
@@ -457,11 +293,6 @@
   .island--expanded .island__expanded {
     transition-duration: var(--island-panel-open-fade-duration), var(--island-panel-open-slide-duration) !important;
     transition-delay: var(--island-panel-open-fade-delay), var(--island-panel-open-slide-delay) !important;
-  }
-
-  .island--appearance-liquidGlass.island--expanded .island__glass::after,
-  .island--appearance-liquidGlass.island--collapsed .island__glass::after {
-    animation: none;
   }
 }
 

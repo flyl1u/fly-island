@@ -56,7 +56,7 @@ test("settings are clamped and legacy fields are migrated", () => {
   assert.equal(normalized.glassIntensity, 100);
   assert.equal(normalized.collapsedScale, 1.2);
   assert.equal(normalized.taskTextColor, "#123456");
-  assert.equal(normalized.appearanceMode, "classic");
+  assert.equal(normalized.material, "classic");
   assert.equal(normalized.fontFamily, "pixel");
   assert.equal(normalized.topEdgeLayoutVersion, 1);
   // The old default scale pair moves to the default it moved to back then.
@@ -214,12 +214,15 @@ test("taking the appearance from other settings keeps todo and tuck behavior", (
   assert.deepEqual(withAppearanceFrom(DEFAULT_SETTINGS, DEFAULT_SETTINGS), DEFAULT_SETTINGS);
 });
 
-test("liquid glass is paused: a saved glass preference draws classic but is kept", async () => {
-  const { getEffectiveAppearanceMode, LIQUID_GLASS_ENABLED } = await import("../../src/features/appearance/settings.ts");
-  assert.equal(LIQUID_GLASS_ENABLED, false);
-  assert.equal(getEffectiveAppearanceMode("liquidGlass"), "classic");
-  assert.equal(getEffectiveAppearanceMode("classic"), "classic");
-  assert.equal(normalizeSettings({ appearanceMode: "liquidGlass" }).appearanceMode, "liquidGlass");
+test("the material defaults to classic; the old liquid glass mode carries over", () => {
+  assert.equal(DEFAULT_SETTINGS.material, "classic");
+  assert.equal(normalizeSettings({ appearanceMode: "liquidGlass" }).material, "liquidGlass");
+  assert.equal(normalizeSettings({ appearanceMode: "classic" }).material, "classic");
+  assert.equal(normalizeSettings({ material: "frostedGlass" }).material, "frostedGlass");
+  // A saved material wins over the old field; unknown values fall back to classic.
+  assert.equal(normalizeSettings({ material: "classic", appearanceMode: "liquidGlass" }).material, "classic");
+  assert.equal(normalizeSettings({ material: "chrome", appearanceMode: "neon" }).material, "classic");
+  assert.equal("appearanceMode" in normalizeSettings({ appearanceMode: "liquidGlass" }), false);
 });
 
 test("clipboard rows are saved, clamped and independent of appearance presets", () => {
