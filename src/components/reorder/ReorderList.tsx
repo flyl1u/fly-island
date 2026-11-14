@@ -20,11 +20,14 @@ export function ReorderList<T extends string>({
   rows,
   onReorder,
   moveLabel,
+  rowAction,
 }: {
   rows: ReorderRow<T>[];
   onReorder: (order: T[]) => void;
   /** The handle's label for a row, saying it can be dragged or moved with the arrow keys. */
   moveLabel: (name: string) => string;
+  /** An optional control at the end of a row, before the handle (such as Archive). */
+  rowAction?: (row: ReorderRow<T>) => ReactNode;
 }) {
   const order = rows.map((row) => row.id);
   const { containerRef, itemProps, draggingId } = usePointerReorder(order, onReorder, "y");
@@ -51,6 +54,7 @@ export function ReorderList<T extends string>({
             <span className="reorder-list__name">{row.name}</span>
             {row.hint && <span className="reorder-list__hint">{row.hint}</span>}
           </span>
+          {rowAction?.(row)}
           <button
             className="reorder-list__handle"
             type="button"
