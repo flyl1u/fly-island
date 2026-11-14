@@ -100,7 +100,8 @@ function busy(stage: UpdateStage) {
 }
 
 function trackProgress(event: DownloadEvent) {
-  if (event.event === "Started") setState({ total: event.data.contentLength ?? 0 });
+  // Started again when the download falls back to a mirror: the byte count starts over.
+  if (event.event === "Started") setState({ total: event.data.contentLength ?? 0, downloaded: 0 });
   else if (event.event === "Progress") setState({ downloaded: state.downloaded + event.data.chunkLength });
 }
 
