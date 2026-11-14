@@ -9,6 +9,7 @@ import { ISLAND_HOVER_CHANGED_EVENT } from "../../src/windows/island/api";
 import { useIslandNavigation } from "../../src/windows/island/useIslandNavigation";
 import { useRevealOnMessage } from "../../src/windows/island/useIslandAutomation";
 import { useTuckPeek } from "../../src/windows/island/useTuckPeek";
+import { useTuckMorph } from "../../src/windows/island/useTuckMorph";
 import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
@@ -28,6 +29,7 @@ function Harness() {
   const [preview, changePreview] = useState(false);
   const navigation = useIslandNavigation();
   island = navigation;
+  const tuckClass = useTuckMorph(navigation.isTucked, "line");
   setOpensPanel = changeOpensPanel;
   setPreview = changePreview;
   // As useIslandTucking wires them: a message preview reveals the island and holds the peek.
@@ -43,7 +45,7 @@ function Harness() {
     resumePeek: navigation.resumePeek,
   });
   return (
-    <p>
+    <p className={tuckClass}>
       mode {navigation.mode} · tucked {String(navigation.isTucked)} · peeking {String(navigation.isPeeking)}{" "}
       <input id="draft" aria-label="draft" />
     </p>
@@ -142,6 +144,7 @@ async function runChecks() {
     await act(async () => setPreview(false));
     await wait(450);
     check(state() === "collapsed/tucked", "消息预览结束后岛屿收回边缘");
+    check(document.querySelector(".island--tuck-line"), "消息、悬停和手动贴边共用细线形变状态");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

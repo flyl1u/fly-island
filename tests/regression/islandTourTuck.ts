@@ -45,7 +45,7 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
   const style = getComputedStyle(island());
   const endOk = tuckStyle === "line"
     ? Math.abs(Number.parseFloat(style.width) - 72 * scale) < 0.5 && Math.abs(Number.parseFloat(style.height) - 5 * scale) < 0.5
-      && style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.transform !== "none"
+      && style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.transform === "none"
     : style.opacity === "0";
   const zone = getComputedStyle(island(), "::before");
   const zoneOk = Math.abs(Number.parseFloat(zone.width) - (tuckStyle === "line" ? 140 : 160) * scale) < 0.5
@@ -53,13 +53,26 @@ export async function checkTuckMorph({ tuckStyle, island, check, settle, interac
   check(interaction().tuckStyle === tuckStyle && endOk && zoneOk && island().classList.contains(`island--tuck-${tuckStyle}`),
     `贴边样式 ${tuckStyle}：传给原生窗口，${tuckStyle === "line" ? "岛屿缩成短横线" : "岛屿完全透明"}，命中区与原生热区一致（${style.width}×${style.height} / ${style.opacity} / ${zone.width}×${zone.height}）`);
 
+  const samples: number[] = [island().getBoundingClientRect().top];
+  const started = performance.now();
+  const measured = new Promise<void>((resolve) => {
+    const frame = () => {
+      samples.push(island().getBoundingClientRect().top);
+      if (performance.now() - started < 620) requestAnimationFrame(frame);
+      else resolve();
+    };
+    requestAnimationFrame(frame);
+  });
   await clickLive(".island__open-button");
   await settle(120);
   mid = getComputedStyle(island());
   check(tuckStyle === "line"
-    ? Number.parseFloat(mid.height) > 5 * scale + 2 && island().classList.contains("island--untuck-line") && mid.transform !== "none"
+    ? Number.parseFloat(mid.height) > 5 * scale + 2 && island().classList.contains("island--untuck-line") && mid.transform === "none"
     : Number.parseFloat(mid.opacity) > 0.02 && Number.parseFloat(mid.opacity) < 0.98 && island().classList.contains("island--untuck-hidden"),
   `贴边样式 ${tuckStyle}：从边缘出来的中途在变形，不是闪现（${mid.height} / ${mid.opacity} / ${mid.transform}）`);
   await settle(600);
+  await measured;
+  check(samples.length >= 3 && samples.every((y, i) => i === 0 || y >= samples[i - 1] - 0.01),
+    `贴边样式 ${tuckStyle}：逐帧顶边不向上（${samples.length} 帧，y=${Math.min(...samples).toFixed(2)}…${Math.max(...samples).toFixed(2)}）`);
   check(!/island--untuck-/.test(island().className) && getComputedStyle(island()).opacity === "1", `贴边样式 ${tuckStyle}：出来后恢复完整岛屿`);
 }

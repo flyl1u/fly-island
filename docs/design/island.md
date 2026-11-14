@@ -34,6 +34,8 @@
 
 ## 顶边贴合
 
+- **细线贴顶与形变锚点**（用户要求 2026-11-13）：取代下文最初的 3px 间隙及双重滑动实现。细线本体的顶边紧贴工作区上沿（有顶部任务栏时贴任务栏下沿），仍为 72 × 5px；原生热区 140 × 14px、隐藏热区 160 × 6px，都从窗口顶部开始。细线/隐藏样式的贴顶窗口不再上滑，CSS 也不再做纵向位移；露出时只向下和两侧长成岛屿，收回时反向变形。默认样式继续上滑露出 10px。浮起的岛仍须移到工作区顶边才能贴边，露出时恢复保存的位置，CSS 不叠加位移；多屏跟随和顶部任务栏沿用原生定位。
+
 - 待办倒计时（issue #52）：限时任务开始后，折叠文字位置优先显示任务标题 + 小胶囊里的 `mm:ss`，暂停待办轮播，消息与额度预览仍可短暂覆盖；“显示折叠文字”关闭时继续尊重该设置。宽度按标题和整轮时长的胶囊固定，秒数变化不触发原生窗口缩放。到时播放一次内置 `complete.wav`，可见岛屿切到今日待办并展开：折叠态弹出、贴边态先露出并展开，已展开时显示到时操作。沿用现有展开动画，不增加循环抖动或响铃。托盘隐藏时检查原生窗口可见性，只响一次，不调用显示窗口；用户恢复岛屿后仍可处理“时间到”。游戏勿扰期间不自动展开，声音仍作为用户主动设定的计时提醒播放。（用户需求；优先级、固定宽度与勿扰处理为 Agent 推断）
 
   English: A timed todo takes the collapsed text slot with its title and a countdown pill, and pauses todo rotation. Its clock has a fixed width for the round; message/quota previews may temporarily cover it. Expiry plays one built-in sound and opens today’s tasks when the island is visible, including revealing a tucked island. A tray-hidden island stays hidden and only sounds once. Game mode suppresses automatic opening. Expired actions remain available until handled.

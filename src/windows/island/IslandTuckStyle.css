@@ -1,16 +1,13 @@
 /*
  * How the island looks tucked to the top edge (tuckStyle). "edge" keeps the island's own bottom
- * rim on screen and needs no rule here. For "line" and "hidden" Rust slides the window up until a
- * 14px (line) or 6px (hidden) strip stays on screen and only captures the cursor in a small hot
- * zone around its centre (island/state.rs TuckStyle), so nothing drawn here may suggest a wider
- * target.
+ * rim on screen and needs no rule here. For "line" and "hidden" the attached window stays at
+ * the work-area top; only CSS morphs, with a small native hot zone (island/state.rs TuckStyle).
  *
  * Both morph the island itself, never swap it for another drawing: line shrinks the shape into a
- * short bar, hidden fades it out while the window rises. Tucking plays the closing spring (380ms); leaving
+ * short bar, hidden fades it out. Tucking plays the closing spring (380ms); leaving
  * the tuck plays the opening one (560ms, with its small overshoot) under `island--untuck-<style>`,
  * which useTuckMorph.ts keeps on for that long, because a transition plays with the rule of the
- * state it ends in and the plain collapsed island animates neither offset nor opacity. The
- * window's own slide (POSITION_ANIMATION_DURATION, 320ms in island/geometry.rs) runs alongside.
+ * state it ends in and the plain collapsed island does not animate opacity.
  *
  * !important: the attached and liquid-glass shadows and corners (IslandTopEdge.css) use long
  * selectors, and a tucked island must drop every one of them whatever its appearance.
@@ -22,23 +19,19 @@
 }
 
 /*
- * A short bar like a phone's home indicator, 3px below the screen edge: the visible strip is the
- * bottom 14px of the collapsed island, so the bar's top sits (height - 3 - 5 - 6) = height - 11px
- * below the island's top. Filled with the island colour and ringed in light, so it reads on dark
- * and light wallpapers alike.
+ * The shape's top never moves: it grows down from the work-area edge. The rim is inset so
+ * no shadow spills above that edge or gets clipped by the window.
  */
 .island.island--tuck-line {
   width: calc(72px * var(--island-collapsed-scale));
   height: calc(5px * var(--island-collapsed-scale));
   border-radius: calc(2.5px * var(--island-collapsed-scale)) !important;
   background-color: var(--island-background-color) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.32) !important;
-  transform: translateY(calc((var(--collapsed-island-height, 38px) - 11px) * var(--island-collapsed-scale)));
+  box-shadow: inset 0 0 0 1px var(--color-white-a18) !important;
   transition:
     width var(--island-tuck-in-duration) var(--island-spring-close),
     height var(--island-tuck-in-duration) var(--island-spring-close),
     border-radius var(--island-tuck-in-duration) var(--island-spring-close),
-    transform var(--island-tuck-in-duration) var(--island-spring-close),
     background-color var(--island-tuck-in-duration) ease,
     box-shadow var(--island-tuck-in-duration) ease;
 }
@@ -48,7 +41,6 @@
     width var(--island-tuck-out-duration) var(--island-spring-open),
     height var(--island-tuck-out-duration) var(--island-spring-open),
     border-radius var(--island-tuck-out-duration) var(--island-spring-open),
-    transform var(--island-tuck-out-duration) var(--island-spring-open),
     background-color var(--island-tuck-in-duration) ease,
     box-shadow var(--island-tuck-in-duration) ease;
 }
@@ -59,7 +51,7 @@
   transition: opacity var(--island-panel-fade-duration) ease;
 }
 
-/* Hidden fades out while the window slides up, and fades back in as it slides down. */
+/* Hidden fades at the same fixed top anchor. */
 .island.island--tuck-hidden {
   opacity: 0;
   transition:
@@ -90,15 +82,14 @@
   transform: translateX(-50%);
 }
 
-/* The bar sits 3px below the strip's top edge (see above). */
 .island--tuck-line::before {
-  top: calc(-3px * var(--island-collapsed-scale));
+  top: 0;
   width: calc(140px * var(--island-collapsed-scale));
   height: calc(14px * var(--island-collapsed-scale));
 }
 
 .island--tuck-hidden::before {
-  bottom: 0;
+  top: 0;
   width: calc(160px * var(--island-collapsed-scale));
   height: calc(6px * var(--island-collapsed-scale));
 }
@@ -117,7 +108,7 @@
   .island.island--untuck-line {
     transition-duration:
       var(--island-tuck-out-duration), var(--island-tuck-out-duration), var(--island-tuck-out-duration),
-      var(--island-tuck-out-duration), var(--island-tuck-in-duration), var(--island-tuck-in-duration) !important;
+      var(--island-tuck-in-duration), var(--island-tuck-in-duration) !important;
   }
 
   .island--tuck-line .island__glass {
