@@ -37,6 +37,10 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             if is_inside != was_inside {
                 was_inside = is_inside;
                 let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, is_inside);
+                // Once per hover: a dock that raised itself over the island gives way.
+                if let Some(hwnd) = hwnd.filter(|_| is_inside) {
+                    win32::taskbar_edge::raise_topmost(hwnd);
+                }
             }
 
             thread::sleep(Duration::from_millis(12));

@@ -3,7 +3,7 @@
 
 use tauri::{Emitter, PhysicalPosition, Position, WebviewWindow};
 
-use super::geometry::{monitor_for_island_position, work_area_top_inset};
+use super::geometry::{monitor_for_island_position, monitor_top_inset};
 use super::state::{mutate_window_state, read_window_state, IslandPosition, IslandWindowState};
 
 // Mirrored by TOP_ATTACHMENT_CHANGED_EVENT in src/windows/island/api.ts.
@@ -16,7 +16,7 @@ pub(crate) fn is_attached() -> bool {
 }
 
 /// Recomputes the attachment once the stage geometry has resolved the window position.
-/// `top` is the physical y of the monitor top, below a top-docked taskbar.
+/// `top` is the physical y of the monitor top, below a top-docked Windows taskbar.
 pub(crate) fn sync_from_stage(window: &WebviewWindow, state: IslandWindowState, top: i32) {
     set_attached(
         window,
@@ -30,8 +30,7 @@ pub(crate) fn snap_to_top(window: &WebviewWindow, position: IslandPosition) -> I
         set_attached(window, false);
         return position;
     };
-    let monitor_top = monitor.position().y;
-    let top = monitor_top + work_area_top_inset(monitor_top, monitor.work_area().position.y);
+    let top = monitor.position().y + monitor_top_inset(&monitor);
     let snap_distance = (SNAP_DISTANCE * monitor.scale_factor()).round() as i32;
     let snapped = IslandPosition {
         x: position.x,

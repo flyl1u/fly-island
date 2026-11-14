@@ -11,6 +11,7 @@ use std::{
 use tauri::{LogicalSize, Monitor, PhysicalPosition, Position, Size, WebviewWindow};
 
 use super::state::{IslandPosition, IslandWindowState, MonitorFollow};
+use crate::win32::{self, taskbar_edge::TaskbarRect};
 
 pub(super) const STAGE_WINDOW_WIDTH: f64 = 820.0;
 pub(super) const STAGE_WINDOW_HEIGHT: f64 = 460.0;
@@ -92,7 +93,7 @@ pub(crate) fn apply_stage_geometry(
     let physical_width = (STAGE_WINDOW_WIDTH * scale).round() as i32;
     let physical_top_offset = (state.margin_y * scale).round() as i32;
     let tucked_top_offset = tucked_top_offset(state, scale);
-    let top_inset = work_area_top_inset(monitor_position.y, monitor.work_area().position.y);
+    let top_inset = monitor_top_inset(&monitor);
     let centered_x = monitor_position.x + (monitor_size.width as i32 - physical_width) / 2;
     let normal_y = monitor_position.y + top_inset + physical_top_offset;
     let tucked_y = monitor_position.y + top_inset + tucked_top_offset;
@@ -102,6 +103,11 @@ pub(crate) fn apply_stage_geometry(
     }
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
     super::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
+    // At the very top the island overlaps app bars such as docks, which may have raised
+    // themselves into the topmost band after it; take the front again.
+    if let Ok(hwnd) = window.hwnd() {
+        win32::taskbar_edge::raise_topmost(hwnd);
+    }
 
     let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
     if continues_slide(running, POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst), (x, y), animate_position) {
@@ -235,10 +241,41 @@ pub(super) fn contains((left, top, width, height): (i32, i32, i32, i32), (x, y):
     x >= left && x < left + width && y >= top && y < top + height
 }
 
-// A top-docked taskbar shrinks the monitor work area instead of the monitor itself,
-// so the island has to be anchored below it or the taskbar covers the island.
-pub(super) fn work_area_top_inset(monitor_top: i32, work_area_top: i32) -> i32 {
-    (work_area_top - monitor_top).max(0)
+/// Physical distance from the monitor top to where the island anchors: below a
+/// top-docked Windows taskbar, and flush with the top otherwise. Third-party app bars
+/// (MyDockFinder and other docks or menu bars) shrink the work area just the same, but
+/// the island stays at the top and sits above them instead.
+pub(super) fn monitor_top_inset(monitor: &Monitor) -> i32 {
+    let (position, size) = (monitor.position(), monitor.size());
+    let bounds = (position.x, position.y, size.width as i32, size.height as i32);
+    let taskbars = win32::taskbar_edge::top_taskbar_candidates();
+    anchor_top_inset(position.y, top_taskbar_bottom(bounds, &taskbars))
+}
+
+/// Bottom edge of the taskbar docked to the top of the monitor `(left, top, width, height)`,
+/// out of `taskbars` given as `(left, top, right, bottom)`: a horizontal bar that starts
+/// at or above the monitor top, ends in its upper half and is centred on it.
+pub(super) fn top_taskbar_bottom(
+    (left, top, width, height): (i32, i32, i32, i32),
+    taskbars: &[TaskbarRect],
+) -> Option<i32> {
+    taskbars
+        .iter()
+        .filter(|&&(bar_left, bar_top, bar_right, bar_bottom)| {
+            let center_x = bar_left + (bar_right - bar_left) / 2;
+            bar_right - bar_left > bar_bottom - bar_top
+                && bar_top <= top
+                && bar_bottom > top
+                && bar_bottom < top + height / 2
+                && center_x >= left
+                && center_x < left + width
+        })
+        .map(|&(_, _, _, bar_bottom)| bar_bottom)
+        .max()
+}
+
+pub(super) fn anchor_top_inset(monitor_top: i32, taskbar_bottom: Option<i32>) -> i32 {
+    taskbar_bottom.map_or(0, |bottom| (bottom - monitor_top).max(0))
 }
 
 pub(super) fn resolve_stage_position(
