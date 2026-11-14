@@ -28,6 +28,9 @@ export const DEFAULT_MEDIA_STATE: MediaState = {
 export function isSameMediaState(a: MediaState, b: MediaState): boolean {
   if (
     a.available !== b.available ||
+    a.controlMode !== b.controlMode ||
+    a.audioMuted !== b.audioMuted ||
+    a.resumeBlocked !== b.resumeBlocked ||
     a.audioActive !== b.audioActive ||
     a.audioPeak !== b.audioPeak ||
     a.playbackStatus !== b.playbackStatus ||
@@ -59,7 +62,9 @@ export function isSameMediaState(a: MediaState, b: MediaState): boolean {
     return (
       session.id === other.id &&
       session.label === other.label &&
-      session.playing === other.playing
+      session.playing === other.playing &&
+      session.kind === other.kind &&
+      JSON.stringify(session.aliases ?? []) === JSON.stringify(other.aliases ?? [])
     );
   });
 }

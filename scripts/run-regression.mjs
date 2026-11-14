@@ -52,6 +52,8 @@ export const PAGES = [
   "message-clear.html?lang=en",
   "lyric-clock.html",
   "music-lyrics.html",
+  "music-sources.html",
+  "music-sources.html?lang=en",
   "notification-startup.html",
   "panel-preview.html",
   "settings.html?test=1",

@@ -10,6 +10,7 @@ export function useAudioLevel(
   setMediaState: Dispatch<SetStateAction<MediaState>>,
   mediaPlaybackIntent: RefObject<MediaPlaybackIntent | null>,
   enabled = true,
+  target?: RefObject<string | null>,
 ) {
   const isRefreshingAudioLevel = useRef(false);
 
@@ -28,13 +29,15 @@ export function useAudioLevel(
       isRefreshingAudioLevel.current = true;
 
       try {
-        const audioLevel = await getAudioLevel();
+        const requestedTarget = target?.current ?? undefined;
+        const audioLevel = await getAudioLevel(requestedTarget);
 
         if (didCancel) {
           return;
         }
 
         setMediaState((currentState) => {
+          if (currentState.controlMode === "none" || (currentState.activeSessionId ?? undefined) !== requestedTarget) return currentState;
           const intent = mediaPlaybackIntent.current;
           const isPauseIntent =
             intent &&
@@ -97,5 +100,5 @@ export function useAudioLevel(
       didCancel = true;
       window.clearInterval(interval);
     };
-  }, [enabled, mediaPlaybackIntent, setMediaState]);
+  }, [enabled, mediaPlaybackIntent, setMediaState, target]);
 }

@@ -4,11 +4,14 @@
  * (a new one is listed a moment after it is first seen).
  */
 export function pickMediaSource(
-  sessions: readonly { id: string; playing: boolean }[],
-  order: readonly { id: string }[],
+  sessions: readonly { id: string; playing: boolean; aliases?: string[] }[],
+  order: readonly { id: string; enabled?: boolean; aliases?: string[] }[],
 ): string | null {
-  const present = new Map(sessions.map((session) => [session.id, session]));
-  return order.find((source) => present.get(source.id)?.playing)?.id
-    ?? order.find((source) => present.has(source.id))?.id
+  const excluded = new Set(order.filter((source) => source.enabled === false).flatMap((source) => [source.id, ...(source.aliases ?? [])]));
+  const present = new Map(sessions.filter((session) => ![session.id, ...(session.aliases ?? [])].some((id) => excluded.has(id)))
+    .flatMap((session) => [session.id, ...(session.aliases ?? [])].map((id) => [id, session] as const)));
+  const eligible = order.filter((source) => source.enabled !== false);
+  return eligible.map((source) => present.get(source.id)).find((session) => session?.playing)?.id
+    ?? eligible.map((source) => present.get(source.id)).find(Boolean)?.id
     ?? null;
 }

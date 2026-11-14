@@ -15,6 +15,9 @@ export function saveMediaDiagnosticsDismissed(value: string[]) {
 export type KnownMediaSource = {
   id: string;
   label: string;
+  /** Missing in existing data means adopted, preserving the old player order. */
+  enabled?: boolean;
+  aliases?: string[];
 };
 
 export const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
@@ -55,7 +58,11 @@ export function loadMusicSourcePriority(): KnownMediaSource[] {
         seen.add(source.id);
         return true;
       })
-      .map((source) => ({ id: source.id, label: source.label }));
+      .map((source) => ({
+        id: source.id, label: source.label,
+        ...(source.enabled === false ? { enabled: false } : {}),
+        ...(Array.isArray(source.aliases) ? { aliases: [...new Set(source.aliases.filter((id): id is string => typeof id === "string" && id.length > 0 && id !== source.id))] } : {}),
+      }));
   } catch {
     return [];
   }

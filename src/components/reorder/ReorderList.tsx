@@ -10,6 +10,8 @@ export type ReorderRow<T extends string> = {
   hint?: string;
   /** Shown before the name, such as the item's icon. */
   icon?: ReactNode;
+  /** Optional row control; pointer presses here must not start reordering. */
+  control?: ReactNode;
 };
 
 /**
@@ -51,6 +53,7 @@ export function ReorderList<T extends string>({
             <span className="reorder-list__name">{row.name}</span>
             {row.hint && <span className="reorder-list__hint">{row.hint}</span>}
           </span>
+          {row.control && <span onPointerDown={(event) => event.stopPropagation()}>{row.control}</span>}
           <button
             className="reorder-list__handle"
             type="button"

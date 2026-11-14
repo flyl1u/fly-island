@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { loadMusicSourcePriority } from "./storage";
+import { adoptedMediaState, excludedMusicSources } from "./musicSources";
 
 // 与 src-tauri/src/media_control/service.rs 中的 MediaState、MediaSessionInfo、AudioLevel 对应。
 export type MediaPlaybackStatus = "unavailable" | "playing" | "paused";
@@ -10,10 +12,15 @@ export type MediaSessionInfo = {
   id: string;
   label: string;
   playing: boolean;
+  kind?: "media" | "audio";
+  aliases?: string[];
 };
 
 export type MediaState = {
   available: boolean;
+  controlMode?: "media" | "audio" | "none";
+  audioMuted?: boolean | null;
+  resumeBlocked?: boolean;
   audioActive: boolean;
   audioPeak: number;
   playbackStatus: MediaPlaybackStatus;
@@ -49,20 +56,23 @@ export type AudioLevel = {
 export type MediaCommand = "media_play_pause" | "media_next" | "media_previous";
 
 export function getMediaState(target: string | undefined) {
-  return invoke<MediaState>("get_media_state", { target });
+  return invoke<MediaState>("get_media_state", { target, excludedSources: excludedMusicSources(loadMusicSourcePriority()) })
+    .then((state) => adoptedMediaState(state, loadMusicSourcePriority()));
 }
 
 export function sendMediaCommand(command: MediaCommand, target: string | undefined) {
-  return invoke<MediaState>(command, { target });
+  return invoke<MediaState>(command, { target, excludedSources: excludedMusicSources(loadMusicSourcePriority()) })
+    .then((state) => adoptedMediaState(state, loadMusicSourcePriority()));
 }
 
-export function getAudioLevel() {
-  return invoke<AudioLevel>("get_audio_level");
+export function getAudioLevel(target?: string) {
+  return invoke<AudioLevel>("get_audio_level", { target, excludedSources: excludedMusicSources(loadMusicSourcePriority()) });
 }
 
 /** Moves playback to `positionMs` from the track's start; fails when the player does not allow it (`canSeek`). */
 export function seekMedia(positionMs: number, target: string | undefined) {
-  return invoke<MediaState>("media_seek", { positionMs: Math.max(0, Math.round(positionMs)), target });
+  return invoke<MediaState>("media_seek", { positionMs: Math.max(0, Math.round(positionMs)), target, excludedSources: excludedMusicSources(loadMusicSourcePriority()) })
+    .then((state) => adoptedMediaState(state, loadMusicSourcePriority()));
 }
 
 // 与 media_control/watcher.rs 中的 MEDIA_CHANGED_EVENT 一致；无载荷，收到后重新读取状态。
@@ -86,7 +96,7 @@ export type PlayerDiagnostic = {
   status: MediaDiagnosticStatus;
   neteasePluginState: "none" | "loaderOnly" | "installed" | "foreignLoader" | "unknown" | null;
 };
-export type MediaDiagnostics = { players: PlayerDiagnostic[] };
+export type MediaDiagnostics = { players: PlayerDiagnostic[]; sessionServiceUnavailable?: boolean };
 export function getMediaDiagnostics() {
   return invoke<MediaDiagnostics>("get_media_diagnostics");
 }

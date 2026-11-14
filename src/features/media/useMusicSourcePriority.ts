@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MediaState } from "./api";
 import { MUSIC_SOURCE_PRIORITY_SAVED_EVENT, MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
+import { mergeMusicSources } from "./musicSources";
 
 /** The user's preferred media source order; newly seen sessions are appended and the order is persisted. */
 export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
@@ -54,18 +55,17 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     );
   }, []);
 
+  const setMusicSourceEnabled = useCallback((sourceId: string, enabled: boolean) => {
+    setMusicSourcePriority((current) => current.map((source) => source.id === sourceId ? { ...source, enabled } : source));
+  }, []);
+
   useEffect(() => {
     if (sessions.length === 0) {
       return;
     }
 
     setMusicSourcePriority((current) => {
-      const known = new Set(current.map((source) => source.id));
-      const additions = sessions
-        .filter((session) => !known.has(session.id))
-        .map((session) => ({ id: session.id, label: session.label }));
-
-      return additions.length > 0 ? [...current, ...additions] : current;
+      return mergeMusicSources(current, sessions);
     });
   }, [sessions]);
 
@@ -92,5 +92,5 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     };
   }, []);
 
-  return { musicSourcePriority, reorderMusicSource, removeMusicSource, setMusicSourceOrder };
+  return { musicSourcePriority, reorderMusicSource, removeMusicSource, setMusicSourceOrder, setMusicSourceEnabled };
 }

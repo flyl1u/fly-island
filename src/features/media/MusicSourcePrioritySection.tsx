@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Info } from "lucide-react";
 import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
 import { useTranslation } from "../../i18n";
 import { getMediaState, type MediaState } from "./api";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
@@ -43,14 +44,15 @@ function useLiveMediaSessions() {
 export function MusicSourcePrioritySection() {
   const text = useTranslation().settings.musicSources;
   const live = useLiveMediaSessions();
-  const { musicSourcePriority, setMusicSourceOrder } = useMusicSourcePriority(live);
+  const switchId = useId();
+  const { musicSourcePriority, setMusicSourceOrder, setMusicSourceEnabled } = useMusicSourcePriority(live);
 
   return (
     <SettingsGroup
       title={text.title}
       footer={(
         <>
-          {musicSourcePriority.length > 1 && <p>{text.footer}</p>}
+          <p>{text.footer}</p>
           <p className="music-sources__cover-hint">
             <Info size={14} strokeWidth={1.8} aria-hidden="true" />
             <span>{text.coverHint}</span>
@@ -62,14 +64,21 @@ export function MusicSourcePrioritySection() {
         <p className="music-sources__empty">{text.empty}</p>
       ) : (
         <ReorderList
-          rows={musicSourcePriority.map((source) => {
+          rows={musicSourcePriority.map((source, index) => {
             const session = live.find((candidate) => candidate.id === source.id);
             const state = session?.playing ? "playing" : session ? "open" : "notOpen";
             return {
               id: source.id,
               name: source.label,
-              hint: text[state],
+              hint: [text[state], session?.kind === "audio" ? text.audioSource : null, source.enabled === false ? text.ignored : null].filter(Boolean).join(" · "),
               icon: <span className={`music-sources__dot music-sources__dot--${state}`} aria-hidden="true" />,
+              control: (
+                <label className="music-sources__adoption" htmlFor={`${switchId}-${index}`}>
+                  <span>{text.adopt}</span>
+                  <span className="music-sources__a11y">{source.label}</span>
+                  <SettingsSwitch id={`${switchId}-${index}`} checked={source.enabled !== false} onChange={(enabled) => setMusicSourceEnabled(source.id, enabled)} />
+                </label>
+              ),
             };
           })}
           onReorder={setMusicSourceOrder}

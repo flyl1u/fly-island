@@ -25,7 +25,7 @@
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
-| `focusd-island-music-sources` | `features/media/storage.ts` |
+| `focusd-island-music-sources`（来源数组 `{ id, label, enabled?, aliases? }`；旧数据缺少 enabled 表示采纳，只有 false 排除；aliases 为来源切换 SMTC / Core Audio 时的标识别名） | `features/media/storage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
 | `focusd-island-detached-settings`（`"true"` / `"false"`：设置在独立窗口打开；2026-11-10 起没有或无效时默认独立窗口，已保存的 `"false"` 仍为岛上内嵌，不进外观预设） | `windows/settings/storage.ts` |
@@ -53,6 +53,12 @@
 ## 媒体诊断命令
 
 新增命令 `get_media_diagnostics()` 返回 `{ players }`：逐会话的 `sourceAppId`、`label`、`hasSession`、`hasTimeline`、`hasPluginTrackId`、`exePath`、`directory`、`version`、`status` 与 `neteasePluginState`（非网易云为 null），并补入正在运行但没有会话的已知播放器。只读检查，不安装插件。`get_media_state` 新增 `hasTimeline` 布尔字段；前端兼容缺少字段的旧状态，估算位置始终保留 false 标记。
+
+## 音频来源采纳与控制
+
+`get_media_state`、`get_audio_level`、`media_play_pause`、`media_next`、`media_previous`、`media_toggle_shuffle`、`media_cycle_repeat`、`media_seek` 兼容新增可选参数 `excludedSources: string[]`；`get_audio_level` 另接受可选 `target`。省略参数兼容旧调用。
+
+媒体会话列表新增 `kind: "media" | "audio"` 和 `aliases: string[]`。普通音频来源 ID 为 `audio:<小写可执行文件完整路径>`，不使用瞬时 PID。媒体状态新增 `controlMode: "media" | "audio" | "none"`、`audioMuted: boolean | null`、`resumeBlocked: boolean`；音频模式的 `media_play_pause` 仅切换应用静音，前端显示对应声音控件。排除全部来源后阻止全局媒体键。诊断新增 `sessionServiceUnavailable` 布尔值，SMTC 不可用时仍返回可用的进程诊断和 Core Audio 来源。详见 [音乐来源](../music-sources.md)。
 
 ## 微信只读探测输出
 

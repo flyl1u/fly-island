@@ -69,7 +69,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
       }
 
       // A player that reports no position (NetEase Cloud Music) is timed by the island.
-      const untimed = nextMediaState.title && !hasTimeline(nextMediaState)
+      const untimed = nextMediaState.title && nextMediaState.controlMode !== "audio" && !hasTimeline(nextMediaState)
         ? `${nextMediaState.sourceApp ?? ""}\u001f${nextMediaState.title}\u001f${nextMediaState.artist ?? ""}`
         : null;
       trackClock.current = untimed ? advanceClock(trackClock.current, untimed, playbackStatus === "playing", now) : NO_CLOCK;
@@ -77,7 +77,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
 
       setMediaState((currentState) => {
         const nextPeak = Math.max(
-          currentState.audioPeak * 0.82,
+          currentState.activeSessionId === nextMediaState.activeSessionId ? currentState.audioPeak * 0.82 : 0,
           nextMediaState.audioPeak,
         );
         const audioActive = playbackStatus !== "paused" &&
@@ -157,7 +157,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
       }
 
       const target = mediaTargetRef.current ?? undefined;
-      const isPlayPause = command === "media_play_pause";
+      const isPlayPause = command === "media_play_pause" && mediaState.controlMode !== "audio";
       const isTrackChange =
         command === "media_next" || command === "media_previous";
       const isTransport = isPlayPause || isTrackChange;
@@ -195,6 +195,11 @@ export function useMediaState(enabled = true, showsLevel = true) {
       setMediaCommandError(null);
       try {
         const nextMediaState = await sendMediaCommand(command, target);
+        if (nextMediaState.resumeBlocked) {
+          mediaPlaybackIntent.current = null;
+          setMediaState(nextMediaState);
+          return;
+        }
 
         if (!isTransport) {
           setMediaState((currentState) =>
@@ -240,7 +245,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
         setIsMediaTrackChanging(false);
       }
     },
-    [mediaState.playbackStatus, refreshMediaState],
+    [mediaState.playbackStatus, mediaState.controlMode, refreshMediaState],
   );
 
   // The fast meter only runs while something plays: each read starts a COM thread natively. The
@@ -250,6 +255,7 @@ export function useMediaState(enabled = true, showsLevel = true) {
     setMediaState,
     mediaPlaybackIntent,
     enabled && showsLevel && (mediaState.playbackStatus === "playing" || mediaState.audioActive),
+    mediaTargetRef,
   );
 
   useEffect(() => {
@@ -291,6 +297,10 @@ export function useMediaState(enabled = true, showsLevel = true) {
     mediaPlaybackIntent.current = null;
     void refreshMediaState();
   }, [effectiveMediaTarget, enabled, refreshMediaState]);
+
+  useEffect(() => {
+    if (enabled) void refreshMediaState();
+  }, [musicSourcePriority, enabled, refreshMediaState]);
 
   return {
     mediaState,

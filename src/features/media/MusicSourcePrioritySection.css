@@ -8,6 +8,24 @@
   background: var(--color-white-a16);
 }
 
+.music-sources__adoption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.music-sources__a11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 .music-sources__dot--open {
   background: var(--color-text-muted);
 }
