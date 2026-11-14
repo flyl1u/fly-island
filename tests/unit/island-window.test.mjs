@@ -101,3 +101,13 @@ test("the clipboard page fits whole rows and stays short by default", () => {
   assert.equal(getClipboardExpandedHeight(3) - getClipboardExpandedHeight(2), 50);
   assert.equal(getClipboardExpandedHeight(4), 396);
 });
+
+test("a clipboard opened in its own window is not kept as the island's page", async () => {
+  const { islandPageFor } = await import("../../src/windows/island/features.ts");
+  const all = { todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true };
+  assert.equal(islandPageFor("clipboard", all, false), "clipboard");
+  // Remembered clipboard page + separate window: the next click on the island opens a real page.
+  assert.equal(islandPageFor("clipboard", all, true), "todo");
+  assert.equal(islandPageFor("clipboard", { ...all, todo: false, music: false }, true), "shelf");
+  assert.equal(islandPageFor("music", all, true), "music");
+});
