@@ -30,6 +30,15 @@ export function resolveIslandPage(page: IslandPage, features: IslandFeatures): I
   return PAGE_ORDER.find((candidate) => isPageEnabled(candidate, features)) ?? null;
 }
 
+/**
+ * The page the island keeps open. A clipboard opened in its own window is no island page, so a
+ * remembered clipboard page moves on: otherwise every click on the island would only open that
+ * window again and the island could never reach another page.
+ */
+export function islandPageFor(page: IslandPage, features: IslandFeatures, clipboardDetached: boolean): IslandPage | null {
+  return resolveIslandPage(page, clipboardDetached ? { ...features, clipboard: false } : features);
+}
+
 /** `source` when it is on, otherwise the first message source that is (or `source` if none). */
 export function resolveMessageSource(source: MessageSource, features: IslandFeatures): MessageSource {
   if (features[source]) return source;

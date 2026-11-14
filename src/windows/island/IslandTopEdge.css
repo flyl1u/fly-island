@@ -25,14 +25,16 @@
   pointer-events: none;
   background: inherit;
   opacity: 0;
-  /* Full parent height preserves the collapsed fill's vertical shading at the join. */
+  /* Full parent height preserves the collapsed fill's vertical shading at the join. Each curve's
+     tile reaches 1px into the island: two edges meeting on a fractional pixel would each cover it
+     only partly and leave a light seam beside the curve, longer the larger the curve. */
   mask:
     radial-gradient(circle var(--island-shoulder-length) at 0 100%,
       transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
-      left top / var(--island-shoulder-length) var(--island-shoulder-length) no-repeat,
+      left top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat,
     radial-gradient(circle var(--island-shoulder-length) at 100% 100%,
       transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
-      right top / var(--island-shoulder-length) var(--island-shoulder-length) no-repeat;
+      right top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat;
   transition:
     --island-shoulder-length var(--island-shoulder-duration) var(--island-shoulder-curve),
     opacity var(--island-panel-fade-duration) ease;
