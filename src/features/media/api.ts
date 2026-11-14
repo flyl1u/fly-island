@@ -103,10 +103,14 @@ export type MediaPluginErrorKind = "Unsupported" | "NeedsClose" | "LegacyConflic
 export type MediaPluginError = { kind: MediaPluginErrorKind; detail: string };
 export type MediaPluginProgress = { stage: "downloading" | "verifying" | "copying" | "done" | "error"; detail?: string | null };
 export type MediaPluginResult = { keptForeignLoader: boolean; preservedFiles: string[] };
+// 对应 service.rs 的 ManualInstall：放好的 msimg32.dll，以及要把它拖进去的网易云目录。
+export type MediaPluginManualInstall = { staged: string; targetDir: string };
 export const MEDIA_PLUGIN_PROGRESS_EVENT = "media-plugin-progress";
 export function getNeteasePluginStatus() { return invoke<NeteasePluginStatus>("netease_plugin_status"); }
 export function installNeteasePlugin() { return invoke<MediaPluginResult>("install_netease_plugin"); }
 export function uninstallNeteasePlugin() { return invoke<MediaPluginResult>("uninstall_netease_plugin"); }
+/** 安全软件拦截时的兜底：放好插件、准备好 msimg32.dll 并打开两个文件夹。只在用户点击后调用。 */
+export function prepareNeteaseManualInstall() { return invoke<MediaPluginManualInstall>("prepare_netease_manual_install"); }
 /** 结束网易云，`relaunch` 时随后重新打开。只在用户点击后调用。对应 media_plugins::close_netease。 */
 export function closeNetease(relaunch: boolean) { return invoke<void>("close_netease", { relaunch }); }
 export function listenMediaPluginProgress(handler: (progress: MediaPluginProgress) => void) {

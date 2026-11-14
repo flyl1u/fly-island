@@ -34,6 +34,12 @@ pub(super) fn support(version: Option<&str>, arch: Option<&str>) -> (bool, bool)
     let supported = (v[0] == 3 && arch == Some("x64")) || (v == [2,10,13] && arch == Some("x86"));
     (supported, supported && (v == [2,10,13] || ([3,1,20]..=[3,1,41]).contains(&v)))
 }
+/// Versions the plugin is installed on without the user asking: 64-bit 3.1.20 and later, newer
+/// releases included. InfLink-rs is tested from 3.1.20 up; older 3.x builds stay a manual choice.
+pub(super) fn auto_install_supported(version: Option<&str>, arch: Option<&str>) -> bool {
+    let Some(parts) = version.and_then(|v| v.split('.').map(str::parse::<u32>).collect::<Result<Vec<_>, _>>().ok()) else { return false; };
+    (3..=4).contains(&parts.len()) && arch == Some("x64") && parts[0] == 3 && [parts[0], parts[1], parts[2]] >= [3, 1, 20]
+}
 pub(super) fn plugin_state(directory: &Path) -> (&'static str, bool) {
     state_at(directory, &profile().join("plugins"))
 }
@@ -82,6 +88,14 @@ pub(super) fn close(relaunch: bool) -> Result<(), PluginError> {
         if let Some(dir) = exe.parent() { command.current_dir(dir); }
         command.spawn()?;
     }
+    Ok(())
+}
+/// Opens File Explorer on the staged loader (selected) and on the NetEase folder.
+pub(super) fn show_manual_folders(staged: &Path, target_dir: &Path) -> Result<(), PluginError> {
+    use std::{os::windows::process::CommandExt, process::Command};
+    // Windows paths cannot contain quotes, so quoting them in the raw argument is safe.
+    Command::new("explorer").raw_arg(format!("/select,\"{}\"", staged.display())).spawn()?;
+    Command::new("explorer").raw_arg(format!("\"{}\"", target_dir.display())).spawn()?;
     Ok(())
 }
 pub(super) fn status() -> NeteasePluginStatus {
