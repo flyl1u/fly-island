@@ -41,6 +41,7 @@ export const PAGES = [
   "lyric-clock.html",
   "music-lyrics.html",
   "notification-startup.html",
+  "panel-preview.html",
   "settings.html?test=1",
   "settings-sidebar.html",
   "settings-sync.html",

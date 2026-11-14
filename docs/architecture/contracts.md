@@ -30,7 +30,7 @@
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
 | `focusd-island-detached-settings`（`"true"` / `"false"`：设置在独立窗口打开；2026-11-10 起没有或无效时默认独立窗口，已保存的 `"false"` 仍为岛上内嵌，不进外观预设） | `windows/settings/storage.ts` |
 | `focusd-island-position-reset`（设置窗口 → 主窗口：让岛回到主屏顶部居中，`{ requestedAt }`，超过 5 秒的请求忽略） | `windows/settings/storage.ts` |
-| `focusd-island-panel-preview`（设置窗口 → 主窗口：拖动尺寸滑块时让岛展开或收起预览，`{ mode, requestedAt }`，超过 2 秒的请求忽略） | `windows/settings/storage.ts` |
+| `focusd-island-panel-preview`（设置窗口 → 主窗口：调外观或贴边样式时让岛实时预览，`{ mode, requestedAt }`，`mode` 为 `expanded` / `collapsed` / `tucked`（`tucked` 为 3.1.0 新增，旧格式照常可读），超过 2 秒的请求忽略） | `windows/settings/storage.ts` |
 | `focusd-island-qq-mail-settings` | `features/messages/mail/storage.ts`（`{ accounts: [{ email, host, enabled }] }`，兼容读取旧的单账户 `{ email, enabled }`，解析在 `mailAccounts.ts`） |
 | `focusd-island-qq-mail-remote-images`（2026-11-11 起不再读写：邮件里的远程图片总是加载，已存的值留在原处不删） | 无 |
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |

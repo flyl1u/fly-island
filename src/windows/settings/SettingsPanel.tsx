@@ -9,7 +9,7 @@ import { LayoutEditor } from "./LayoutEditor";
 import { MusicSettingsPage } from "./MusicSettingsPage";
 import { MessagesSettingsPage } from "./MessagesSettingsPage";
 import { PluginsSettingsPage } from "./PluginsSettingsPage";
-import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest } from "./storage";
+import { SETTINGS_FOCUS_STORAGE_KEY, takeFocusRequest, requestPanelPreview } from "./storage";
 import { TodosSettingsPage } from "./TodosSettingsPage";
 import { TranslationSettingsPage } from "./TranslationSettingsPage";
 import { AboutSettingsPage } from "./AboutSettingsPage";
@@ -76,7 +76,9 @@ export function SettingsPanel({
   }, [focusRequestedSection]);
 
   const resetAppearance = useCallback(() => {
-    setSettings(withColorBackup(settings, withAppearanceFrom(settings, DEFAULT_SETTINGS)));
+    const next = withColorBackup(settings, withAppearanceFrom(settings, DEFAULT_SETTINGS));
+    setSettings(next);
+    if (next !== settings) requestPanelPreview("collapsed");
   }, [settings, setSettings]);
 
   return (

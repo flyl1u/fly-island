@@ -3,7 +3,7 @@ import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSetti
 import { ExpandSettingsSection } from "../../features/appearance/ExpandSettingsSection";
 import { KeepVisibleSettingsSection } from "../../features/appearance/KeepVisibleSettingsSection";
 import type { IslandSettings } from "../../features/appearance/types";
-import { requestIslandPositionReset } from "./storage";
+import { requestIslandPositionReset, requestPanelPreview } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 /** Settings → General: system (startup, language, settings window), then the island's opening and tucking. */
@@ -34,7 +34,8 @@ export function GeneralSettingsPage({
         onLaunchAtStartupChange={updateLaunchAtStartup}
         onLocaleChange={onLocaleChange}
       />
-      <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} onResetPosition={requestIslandPositionReset} />
+      <ExpandSettingsSection settings={settings} onSettingsChange={onSettingsChange} onResetPosition={requestIslandPositionReset}
+        onPreviewTuck={() => requestPanelPreview("tucked")} />
       <KeepVisibleSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );

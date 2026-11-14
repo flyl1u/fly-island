@@ -1,4 +1,7 @@
 import { readString, writeJson, writeString } from "../../lib/storage.ts";
+import type { PanelPreviewMode } from "./panelPreview";
+export { parsePanelPreview } from "./panelPreview.ts";
+export type { PanelPreviewMode } from "./panelPreview";
 
 // Whether settings open in their own window instead of as a page of the island.
 export const DETACHED_SETTINGS_STORAGE_KEY = "focusd-island-detached-settings";
@@ -86,30 +89,6 @@ export function isFreshPositionReset(stored: string | null, now = Date.now()) {
 // every write a change that fires a storage event in the island window.
 export const PANEL_PREVIEW_STORAGE_KEY = "focusd-island-panel-preview";
 
-export type PanelPreviewMode = "expanded" | "collapsed";
-
-// Requests older than this are leftovers from an earlier session, not a slider moving now.
-const PANEL_PREVIEW_MAX_AGE_MS = 2_000;
-
 export function requestPanelPreview(mode: PanelPreviewMode) {
   writeJson(PANEL_PREVIEW_STORAGE_KEY, { mode, requestedAt: Date.now() });
-}
-
-/** The mode a stored preview request asks for, or null if it is malformed or stale. */
-export function parsePanelPreview(stored: string | null, now = Date.now()): PanelPreviewMode | null {
-  if (stored === null) {
-    return null;
-  }
-
-  try {
-    const request = JSON.parse(stored) as { mode?: unknown; requestedAt?: unknown };
-
-    return (request.mode === "expanded" || request.mode === "collapsed") &&
-      typeof request.requestedAt === "number" &&
-      now - request.requestedAt < PANEL_PREVIEW_MAX_AGE_MS
-      ? request.mode
-      : null;
-  } catch {
-    return null;
-  }
 }

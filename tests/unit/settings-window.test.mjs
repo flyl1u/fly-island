@@ -30,7 +30,7 @@ test("panel preview requests are read only while fresh and well formed", () => {
   assert.equal(parsePanelPreview(request("collapsed"), now), "collapsed");
   // A request left over from an earlier session must not open the island.
   assert.equal(parsePanelPreview(request("expanded", now - 5_000), now), null);
-  assert.equal(parsePanelPreview(request("tucked"), now), null);
+  assert.equal(parsePanelPreview(request("tucked"), now), "tucked");
   assert.equal(parsePanelPreview(JSON.stringify({ mode: "expanded" }), now), null);
   assert.equal(parsePanelPreview("{broken", now), null);
   assert.equal(parsePanelPreview(null, now), null);
