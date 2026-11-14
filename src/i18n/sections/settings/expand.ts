@@ -26,7 +26,7 @@ export const zhCN: SettingsExpandText = {
   tuckDelay: "收起后贴边",
   tuckDelayHint: "收起的小岛闲置多少秒后贴到屏幕顶部。",
   tuckStyle: "贴边样式",
-  tuckStyles: { edge: "默认", line: "细线", hidden: "隐藏" },
+  tuckStyles: { edge: "露边", line: "细线", hidden: "隐藏" },
   secondsUnit: "秒",
 };
 
