@@ -221,7 +221,7 @@
   color: var(--color-inverse-ink);
   background: var(--text-1);
   border-radius: var(--radius-circle);
-  box-shadow: 0 0 0 2px rgba(var(--panel-deep-rgb), 0.95);
+  box-shadow: 0 0 0 2px var(--inner-panel-cutout, rgba(var(--panel-deep-rgb), 0.95));
 }
 
 .shelf-item--row .shelf-item__pin-badge {

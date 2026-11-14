@@ -15,12 +15,11 @@
   overflow: hidden;
   padding: 12px 12px 10px;
   color: var(--text-1);
-  background:
-    linear-gradient(145deg, var(--color-white-a09), rgba(var(--overlay-rgb), 0.018)),
-    rgba(var(--panel-deep-rgb), 0.88);
+  /* --inner-panel-fill / -edge: a glass material swaps the deep base for a faint layer (IslandGlass.css). */
+  background: var(--inner-panel-fill, linear-gradient(145deg, var(--color-white-a09), rgba(var(--overlay-rgb), 0.018)), rgba(var(--panel-deep-rgb), 0.88));
   border-radius: var(--island-panel-radius, 10px);
   corner-shape: var(--island-corner-shape, round);
-  box-shadow: inset 0 0 0 1px var(--color-white-a09);
+  box-shadow: var(--inner-panel-edge, inset 0 0 0 1px var(--color-white-a09));
   transition: box-shadow 160ms ease;
 }
 
