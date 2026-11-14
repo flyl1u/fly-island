@@ -80,3 +80,66 @@ fn tolerant_record() {
     for s in ["invalid","{}",r#"{"version":2,"files":[],"installedAt":0}"#] { fs::write(&p,s).unwrap(); assert!(record::read(&p).files.is_empty()); }
     record::write(&p,&record::Record { version:1,installed_at:123,files:vec![] }).unwrap(); assert_eq!(record::read(&p).installed_at,123);
 }
+#[test]
+fn helper_exit_codes_round_trip_and_name_the_cause() {
+    use helper_exit::HelperFailure as F;
+    for failure in [F::Unknown, F::InvalidArgs, F::TargetUnavailable, F::InvalidTarget, F::HashMismatch,
+        F::LoaderExists, F::AccessDenied, F::FileLocked, F::VirusBlocked, F::NeedsClose] {
+        assert_eq!(F::from_code(failure.code() as u32), failure);
+    }
+    // Unknown codes, and the plain 1 every older helper returned, stay generic.
+    assert_eq!(F::from_code(1), F::Unknown);
+    assert_eq!(F::from_code(0xC000_0005), F::Unknown);
+    let kind = |code: u32| F::from_code(code).to_error(code, None).kind;
+    assert_eq!(kind(F::TargetUnavailable.code() as u32), "DriveUnavailable");
+    for blocked in [F::AccessDenied, F::FileLocked, F::VirusBlocked] { assert_eq!(kind(blocked.code() as u32), "Blocked"); }
+    assert_eq!(kind(F::LoaderExists.code() as u32), "LoaderExists");
+    assert_eq!(kind(F::NeedsClose.code() as u32), "NeedsClose");
+    assert_eq!(kind(1), "Io");
+    // The helper's own message wins over the bare exit code when it could write one.
+    assert_eq!(F::Unknown.to_error(1, None).detail, "Plugin helper exited with 1");
+    assert_eq!(F::Unknown.to_error(1, Some("disk full".into())).detail, "disk full");
+    assert_eq!(F::Unknown.to_error(1, Some("  ".into())).detail, "Plugin helper exited with 1");
+}
+#[test]
+fn io_errors_from_security_software_are_recognised() {
+    use helper_exit::HelperFailure as F;
+    use std::io::{Error, ErrorKind};
+    assert_eq!(F::of_io(&Error::from_raw_os_error(5)), F::AccessDenied);
+    assert_eq!(F::of_io(&Error::from_raw_os_error(32)), F::FileLocked);
+    assert_eq!(F::of_io(&Error::from_raw_os_error(225)), F::VirusBlocked);
+    assert_eq!(F::of_io(&Error::from_raw_os_error(226)), F::VirusBlocked);
+    assert_eq!(F::of_io(&Error::new(ErrorKind::PermissionDenied, "x")), F::AccessDenied);
+    assert_eq!(F::of_io(&Error::from_raw_os_error(2)), F::Unknown);
+}
+#[test]
+fn helper_report_argument_is_optional_and_absolute() {
+    let args = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    let plain = args(&["--media-plugin-remove", r"C:\x\msimg32.dll", "h"]);
+    assert_eq!(helper_exit::split_report(&plain), (&plain[..], None));
+    let with = args(&["--media-plugin-remove", r"C:\x\msimg32.dll", "h", r"--report=C:\t\focusd-plugin-helper-1.txt"]);
+    let (rest, report) = helper_exit::split_report(&with);
+    assert_eq!(rest, &with[..3]);
+    assert_eq!(report, Some(PathBuf::from(r"C:\t\focusd-plugin-helper-1.txt")));
+    let relative = args(&["--media-plugin-remove", "h", "--report=report.txt"]);
+    assert_eq!(helper_exit::split_report(&relative).1, None);
+}
+#[test]
+fn only_our_own_temp_files_are_cleaned_up() {
+    assert!(elevated::is_own_temp("msimg32.focusd-tmp", "msimg32.dll"));
+    assert!(elevated::is_own_temp("MSIMG32.FOCUSD-TMP", "msimg32.dll"));
+    assert!(elevated::is_own_temp("msimg32.dll.123-456.focusd-tmp", "msimg32.dll"));
+    for other in ["msimg32.dll", "msimg32.dll.focusd-tmp", "msimg32.tmp", "cloudmusic.focusd-tmp", "other.dll.1-2.focusd-tmp", "msimg32.dll.1-2.tmp"] {
+        assert!(!elevated::is_own_temp(other, "msimg32.dll"), "{other}");
+    }
+    let t = Temp::new(); let source = t.0.join("source"); let target = t.0.join("InfLink.dll");
+    fs::write(&source, b"abc").unwrap();
+    fs::write(t.0.join("InfLink.focusd-tmp"), b"stale").unwrap();
+    fs::write(t.0.join("InfLink.dll.1-2.focusd-tmp"), b"stale").unwrap();
+    fs::write(t.0.join("keep.focusd-tmp"), b"other").unwrap();
+    elevated::atomic_copy(&source, &target, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").unwrap();
+    assert_eq!(fs::read(&target).unwrap(), b"abc");
+    let mut left: Vec<_> = fs::read_dir(&t.0).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+    left.sort();
+    assert_eq!(left, ["InfLink.dll", "keep.focusd-tmp", "source"]);
+}

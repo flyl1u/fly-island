@@ -26,22 +26,32 @@ pub(super) fn registry_value(key: &str, value: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-pub(super) fn normalize_proxy(raw: &str) -> String {
+/// The HTTP proxy in a Windows proxy setting, or `None` when it names none the
+/// updater can use. The setting is either one `host:port` for every protocol or
+/// per-protocol entries such as `http=a:1;https=a:1;socks=b:2`; a `socks=` (or `ftp=`)
+/// entry is not an HTTP proxy, so it is skipped rather than turned into `http://socks=b:2`.
+pub(super) fn normalize_proxy(raw: &str) -> Option<String> {
     let entries: Vec<&str> = raw
         .split(';')
         .map(str::trim)
         .filter(|entry| !entry.is_empty())
         .collect();
-    let server = ["https=", "http="]
-        .iter()
-        .find_map(|prefix| entries.iter().find_map(|entry| entry.strip_prefix(prefix)))
-        .unwrap_or_else(|| entries.first().copied().unwrap_or(""));
+    let named = |protocol: &str| {
+        entries.iter().find_map(|entry| {
+            let (name, server) = entry.split_once('=')?;
+            name.trim().eq_ignore_ascii_case(protocol).then_some(server.trim())
+        })
+    };
+    let server = named("https")
+        .or_else(|| named("http"))
+        .or_else(|| entries.iter().copied().find(|entry| !entry.contains('=')))
+        .filter(|server| !server.is_empty())?;
 
-    if server.contains("://") {
+    Some(if server.contains("://") {
         server.to_string()
     } else {
         format!("http://{server}")
-    }
+    })
 }
 
 /// Proxy for the updater: explicit env vars win, else the Windows system proxy.
@@ -50,8 +60,8 @@ pub fn get_updater_proxy() -> Option<String> {
     for key in ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"] {
         if let Ok(value) = std::env::var(key) {
             let value = value.trim();
-            if !value.is_empty() {
-                return Some(normalize_proxy(value));
+            if let Some(proxy) = normalize_proxy(value) {
+                return Some(proxy);
             }
         }
     }
@@ -60,12 +70,7 @@ pub fn get_updater_proxy() -> Option<String> {
         return None;
     }
 
-    let server = registry_value(INTERNET_SETTINGS_KEY, "ProxyServer")?;
-    if server.trim().is_empty() {
-        return None;
-    }
-
-    Some(normalize_proxy(&server))
+    normalize_proxy(&registry_value(INTERNET_SETTINGS_KEY, "ProxyServer")?)
 }
 
 /// Whether this build carries an updater public key. tauri.conf.json ships the
@@ -85,6 +90,23 @@ pub fn updater_configured(app: AppHandle) -> bool {
 #[cfg(test)]
 mod tests {
     use serde_json::{json, Value};
+
+    use super::normalize_proxy;
+
+    #[test]
+    fn proxy_settings_yield_the_http_proxy_and_skip_socks() {
+        let proxy = |raw: &str| normalize_proxy(raw);
+        assert_eq!(proxy("127.0.0.1:7890").as_deref(), Some("http://127.0.0.1:7890"));
+        assert_eq!(proxy("http://127.0.0.1:7890").as_deref(), Some("http://127.0.0.1:7890"));
+        assert_eq!(proxy("http=a:1;https=b:2;socks=c:3").as_deref(), Some("http://b:2"));
+        assert_eq!(proxy("socks=c:3;http=a:1").as_deref(), Some("http://a:1"));
+        assert_eq!(proxy("HTTPS=b:2").as_deref(), Some("http://b:2"));
+        // Only a SOCKS (or FTP) proxy: nothing the updater can use, so it connects directly.
+        assert_eq!(proxy("socks=127.0.0.1:1080"), None);
+        assert_eq!(proxy("ftp=a:21;socks=c:3"), None);
+        assert_eq!(proxy("https=;socks=c:3"), None);
+        assert_eq!(proxy("  ;  "), None);
+    }
 
     // tauri-plugin-updater declares `pubkey` as a mandatory config field with no
     // serde default, so dropping the key aborts startup with "missing field

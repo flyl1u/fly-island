@@ -40,6 +40,26 @@ export type SettingsProjectText = {
     updateDownloading: (percent: number) => string;
     installing: string;
   };
+  /** About → the updates group: the automatic-update switch, the status, and checking by hand. */
+  autoUpdate: {
+    title: string;
+    hint: string;
+    status: string;
+    check: string;
+    installNow: string;
+    readyTitle: (version: string) => string;
+    readyHint: string;
+    idle: string;
+    checking: string;
+    latest: string;
+    available: (version: string) => string;
+    downloading: (version: string, percent: number | null) => string;
+    ready: (version: string) => string;
+    installing: string;
+    done: string;
+    error: (reason: string) => string;
+    disabled: string;
+  };
 };
 
 export const zhCN: SettingsProjectText = {
@@ -77,6 +97,25 @@ export const zhCN: SettingsProjectText = {
     updateDownloading: (percent) => `下载 ${percent}%`,
     installing: "正在安装，小岛会自动重启",
   },
+  autoUpdate: {
+    title: "自动更新",
+    hint: "每 6 小时检查一次，后台下载；小岛收起且 2 分钟没人碰时自动安装并重启。关闭后只在这里手动检查。",
+    status: "检查更新",
+    check: "检查更新",
+    installNow: "立即安装",
+    readyTitle: (version) => `v${version} 已下载`,
+    readyHint: "安装时小岛会关闭，装完自动重新打开。",
+    idle: "还没有检查过",
+    checking: "正在检查…",
+    latest: "已是最新版本",
+    available: (version) => `发现新版本 v${version}`,
+    downloading: (version, percent) => percent === null ? `正在下载 v${version}…` : `正在下载 v${version}… ${percent}%`,
+    ready: (version) => `v${version} 已下载，可以安装`,
+    installing: "正在安装，小岛会自动重启",
+    done: "安装程序已启动",
+    error: (reason) => `出错了：${reason}`,
+    disabled: "这个版本不能应用内更新",
+  },
 };
 
 export const en: SettingsProjectText = {
@@ -113,5 +152,24 @@ export const en: SettingsProjectText = {
     availableHint: "Update available",
     updateDownloading: (percent) => `Downloading ${percent}%`,
     installing: "Installing — the island will restart itself",
+  },
+  autoUpdate: {
+    title: "Automatic updates",
+    hint: "Checks every 6 hours and downloads in the background; installs and restarts once the island is collapsed and untouched for 2 minutes. When off, check here by hand.",
+    status: "Check for updates",
+    check: "Check now",
+    installNow: "Install now",
+    readyTitle: (version) => `v${version} downloaded`,
+    readyHint: "The island closes while installing and reopens afterwards.",
+    idle: "Not checked yet",
+    checking: "Checking…",
+    latest: "You're up to date",
+    available: (version) => `New version v${version} found`,
+    downloading: (version, percent) => percent === null ? `Downloading v${version}…` : `Downloading v${version}… ${percent}%`,
+    ready: (version) => `v${version} is downloaded and ready to install`,
+    installing: "Installing — the island will restart itself",
+    done: "The installer has started",
+    error: (reason) => `Something went wrong: ${reason}`,
+    disabled: "This build can't update itself",
   },
 };

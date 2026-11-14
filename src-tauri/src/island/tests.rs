@@ -36,10 +36,26 @@ fn window_drag_requires_an_unlocked_collapsed_island() {
 
 #[test]
 fn top_docked_taskbar_pushes_island_below_the_work_area() {
-    assert_eq!(work_area_top_inset(0, 48), 48);
-    assert_eq!(work_area_top_inset(0, 0), 0);
-    assert_eq!(work_area_top_inset(-1080, -1080), 0);
-    assert_eq!(work_area_top_inset(0, -10), 0);
+    let monitor = (0, 0, 1920, 1080);
+    assert_eq!(anchor_top_inset(0, top_taskbar_bottom(monitor, &[(0, 0, 1920, 48)])), 48);
+    assert_eq!(anchor_top_inset(0, None), 0);
+    assert_eq!(anchor_top_inset(-1080, Some(-1080)), 0);
+    assert_eq!(anchor_top_inset(0, Some(-10)), 0);
+    // A second monitor above the primary one, with its own top taskbar.
+    let upper = (0, -1080, 1920, 1080);
+    assert_eq!(anchor_top_inset(-1080, top_taskbar_bottom(upper, &[(0, -1080, 1920, -1032)])), 48);
+}
+
+#[test]
+fn only_windows_taskbars_push_the_island_down() {
+    let monitor = (0, 0, 1920, 1080);
+    // A third-party app bar (MyDockFinder) never shows up among the taskbars, however
+    // much of the work area it takes, so the island stays at the top.
+    assert_eq!(anchor_top_inset(0, top_taskbar_bottom(monitor, &[])), 0);
+    // Taskbars on the bottom or a side, or on another monitor, do not count.
+    let others = [(0, 1032, 1920, 1080), (0, 0, 48, 1080), (1920, 0, 3840, 48), (-1920, 0, 0, 48)];
+    assert_eq!(top_taskbar_bottom(monitor, &others), None);
+    assert_eq!(top_taskbar_bottom((1920, 0, 1920, 1080), &others), Some(48));
 }
 
 #[test]

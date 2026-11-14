@@ -2,7 +2,9 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { emit, emitTo, listen } from "@tauri-apps/api/event";
 import type { UpdateState } from "./updaterController";
 
-export type UpdateRequest = { action: "snapshot" | "check" | "install" | "dismiss" };
+export type UpdateRequest =
+  | { action: "snapshot" | "check" | "install" | "dismiss" }
+  | { action: "auto"; enabled: boolean };
 const UPDATE_STATE_EVENT = "focusd-update-state";
 const UPDATE_REQUEST_EVENT = "focusd-update-request";
 

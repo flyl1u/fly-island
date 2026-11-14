@@ -2,8 +2,10 @@ import type { MediaPluginError, MediaPluginErrorKind } from "./api";
 
 export function pluginErrorKey(kind: MediaPluginErrorKind) {
   return { NeedsClose: "needsClose", UserDeclined: "userDeclined", LegacyConflict: "legacyConflict",
-    Unsupported: "unsupported", Network: "network", HashMismatch: "hashMismatch", Busy: "busy", Io: "io" }[kind] as
-    "needsClose" | "userDeclined" | "legacyConflict" | "unsupported" | "network" | "hashMismatch" | "busy" | "io";
+    Unsupported: "unsupported", Network: "network", HashMismatch: "hashMismatch", Busy: "busy", Io: "io",
+    Blocked: "blocked", DriveUnavailable: "driveUnavailable", LoaderExists: "loaderExists" }[kind] as
+    "needsClose" | "userDeclined" | "legacyConflict" | "unsupported" | "network" | "hashMismatch" | "busy" | "io"
+    | "blocked" | "driveUnavailable" | "loaderExists";
 }
 
 export type PluginNoticeAction = "closeAndRetry" | "restart" | "openPlugins";

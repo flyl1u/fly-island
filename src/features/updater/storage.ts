@@ -16,6 +16,17 @@ export function saveCommunityInviteSeen() {
   if (writeString(COMMUNITY_INVITE_SEEN_KEY, "true")) window.dispatchEvent(new Event(COMMUNITY_INVITE_SEEN_EVENT));
 }
 
+// Whether the island checks, downloads and installs updates by itself; on unless turned off.
+export const AUTO_UPDATE_KEY = "focusd-island-auto-update";
+
+export function loadAutoUpdate(): boolean {
+  return readString(AUTO_UPDATE_KEY) !== "false";
+}
+
+export function saveAutoUpdate(enabled: boolean) {
+  return writeString(AUTO_UPDATE_KEY, enabled ? "true" : "false");
+}
+
 export const UPDATE_DOT_SEEN_KEY = "focusd-island-update-dot-seen";
 /** Same-window notification; other windows receive the normal storage event. */
 export const UPDATE_DOT_SEEN_EVENT = "focusd-update-dot-seen";
