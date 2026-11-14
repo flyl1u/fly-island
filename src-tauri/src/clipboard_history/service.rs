@@ -1,7 +1,6 @@
 //! History service, clipboard reads and writes, and the clipboard listener window.
 
 use arboard::{Clipboard, ImageData};
-use base64::{engine::general_purpose, Engine as _};
 use image::RgbaImage;
 use std::{
     borrow::Cow,
@@ -216,13 +215,29 @@ impl ClipboardHistoryService {
     }
 
     pub(super) fn read_image(&self, id: &str) -> Result<String, String> {
-        let path = {
-            let state = self.state.lock().map_err(|error| error.to_string())?;
-            state.items.iter().find(|item| item.id == id).and_then(|item| item.image.as_ref())
-                .map(|image| image.original_path.clone())
-                .ok_or_else(|| "Clipboard image was not found.".to_string())?
-        };
+        let path = self.image_field(id, |image| image.original_path.clone())?;
         super::image_access::read_image(&self.image_dir, &path)
+    }
+
+    /// The list's thumbnail, read on demand; one older history kept inline is returned as is.
+    pub(super) fn read_thumbnail(&self, id: &str) -> Result<String, String> {
+        let (path, inline) = self.image_field(id, |image| (image.thumbnail_path.clone(), image.thumbnail_data_url.clone()))?;
+        match inline {
+            Some(data_url) => Ok(data_url),
+            None => super::image_access::read_image(&self.image_dir, &path),
+        }
+    }
+
+    fn image_field<T>(&self, id: &str, field: impl FnOnce(&ClipboardHistoryImage) -> T) -> Result<T, String> {
+        let state = self.state.lock().map_err(|error| error.to_string())?;
+        state.items.iter().find(|item| item.id == id).and_then(|item| item.image.as_ref())
+            .map(field)
+            .ok_or_else(|| "Clipboard image was not found.".to_string())
+    }
+
+    pub(super) fn persist(&self) -> Result<(), String> {
+        let state = self.state.lock().map_err(|error| error.to_string())?;
+        self.persist_locked(&state)
     }
 
     fn capture_current_clipboard(&self) {
@@ -360,10 +375,7 @@ impl ClipboardHistoryService {
             byte_size: original_bytes.len() as u64,
             original_path: original_path.to_string_lossy().to_string(),
             thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
-            thumbnail_data_url: Some(format!(
-                "data:image/png;base64,{}",
-                general_purpose::STANDARD.encode(thumbnail_bytes)
-            )),
+            thumbnail_data_url: None,
         })
     }
 

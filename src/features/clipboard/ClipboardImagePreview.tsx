@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { readClipboardImage, type ClipboardHistoryItem } from "./api";
+import { useClipboardThumbnail } from "./useClipboardThumbnail";
 import "./ClipboardImagePreview.css";
 
 export function ClipboardImagePreview({ item, onClose }: { item: ClipboardHistoryItem; onClose: () => void }) {
@@ -9,6 +10,7 @@ export function ClipboardImagePreview({ item, onClose }: { item: ClipboardHistor
   const [original, setOriginal] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const thumbnail = useClipboardThumbnail(item).url;
   useEffect(() => {
     let cancelled = false;
     void readClipboardImage(item.id).then((url) => {
@@ -37,7 +39,7 @@ export function ClipboardImagePreview({ item, onClose }: { item: ClipboardHistor
           <X size={16} strokeWidth={1.5} absoluteStrokeWidth />
         </button>
         <div className="clipboard-preview__image" aria-busy={!original && !failed}>
-          <img src={original ?? item.image?.thumbnailDataUrl} width={item.image?.width} height={item.image?.height} alt={t.clipboard.imagePreview} />
+          <img src={original ?? thumbnail ?? undefined} width={item.image?.width} height={item.image?.height} alt={t.clipboard.imagePreview} />
         </div>
         <div className="clipboard-preview__caption" role="status">
           <span>{t.clipboard.imageSize(item.image?.width ?? 0, item.image?.height ?? 0)}</span>

@@ -5,6 +5,7 @@ mod image_access;
 mod selection;
 mod service;
 mod store;
+mod thumbnails;
 
 use serde::{Deserialize, Serialize};
 use std::{
@@ -136,6 +137,8 @@ pub struct ClipboardHistoryImage {
     byte_size: u64,
     original_path: String,
     thumbnail_path: String,
+    /// Only in history files from before 3.1.0, until the first load moves it to its file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     thumbnail_data_url: Option<String>,
 }
 
@@ -208,6 +211,11 @@ pub async fn read_clipboard_history_image(id: String) -> Result<String, String> 
     service()?.read_image(&id)
 }
 
+#[tauri::command]
+pub async fn read_clipboard_history_thumbnail(id: String) -> Result<String, String> {
+    service()?.read_thumbnail(&id)
+}
+
 /// Keeps the shortcut's focus restoration while routing is decided by the main frontend.
 #[tauri::command]
 pub async fn show_clipboard_history_island(app: AppHandle) -> Result<(), String> {
@@ -233,7 +241,8 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
     fs::create_dir_all(&image_dir)
         .map_err(|error| format!("Failed to create clipboard history directory: {error}"))?;
 
-    let persisted = load_history(&history_path);
+    let mut persisted = load_history(&history_path);
+    let moved_thumbnails = thumbnails::externalize_inline_thumbnails(&mut persisted.items, &image_dir);
     let service = ClipboardHistoryService {
         app: app.clone(),
         history_path,
@@ -245,6 +254,11 @@ pub fn init(app: &AppHandle) -> Result<(), String> {
         }),
     };
 
+    if moved_thumbnails {
+        if let Err(error) = service.persist() {
+            eprintln!("failed to save clipboard history without inline thumbnails: {error}");
+        }
+    }
     let _ = CLIPBOARD_HISTORY.set(service);
     start_workers();
     notify_clipboard_changed();
@@ -281,6 +295,7 @@ macro_rules! tauri_commands {
             crate::clipboard_history::clear_clipboard_history,
             crate::clipboard_history::delete_clipboard_history_items,
             crate::clipboard_history::read_clipboard_history_image,
+            crate::clipboard_history::read_clipboard_history_thumbnail,
             crate::clipboard_history::show_clipboard_history_island,
         ] $($rest)*)
     };

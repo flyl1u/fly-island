@@ -2,6 +2,7 @@ import { Check, ClipboardList, Copy, ImageIcon, Star, Trash2 } from "lucide-reac
 import { useTranslation } from "../../i18n";
 import type { ClipboardHistoryItem } from "./api";
 import { ClipboardItemNote } from "./ClipboardItemNote";
+import { useClipboardThumbnail } from "./useClipboardThumbnail";
 import "./ClipboardHistoryItemRow.css";
 
 export function ClipboardHistoryItemRow({
@@ -44,6 +45,7 @@ export function ClipboardHistoryItemRow({
   onPreview: (item: ClipboardHistoryItem) => void;
 }) {
   const t = useTranslation();
+  const thumbnail = useClipboardThumbnail(item);
 
   return (
     <article className={`clipboard-item${selecting ? " clipboard-item--selecting" : ""}${selected ? " clipboard-item--selected" : ""}`}
@@ -57,11 +59,11 @@ export function ClipboardHistoryItemRow({
         {item.kind === "image" ? (
           <button className="clipboard-item__thumb" type="button" aria-label={t.clipboard.imagePreview}
             onClick={(event) => { event.stopPropagation(); onPreview(item); }}>
-            {item.image?.thumbnailDataUrl ? (
-              <img src={item.image.thumbnailDataUrl} alt="" />
-            ) : (
+            {thumbnail.url ? (
+              <img src={thumbnail.url} alt="" />
+            ) : thumbnail.failed ? (
               <ImageIcon size={15} strokeWidth={2} />
-            )}
+            ) : null}
           </button>
         ) : (
           <span className="clipboard-item__text-icon">

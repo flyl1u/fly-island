@@ -23,7 +23,8 @@ const thumbnailDataUrl = canvas.toDataURL();
 export const clipboardItems: ClipboardHistoryItem[] = Array.from({ length: 500 }, (_, i) => ({
   id: `item-${i}`, hash: `hash-${i}`, kind: "image", preview: `Image ${i}`, createdAt: 0, copiedAt: 0,
   favorite: i % 2 === 0,
-  image: { width: 1920, height: 1080, byteSize: 10000, originalPath: "", thumbnailPath: "", thumbnailDataUrl },
+  // Thumbnails come from read_clipboard_history_thumbnail, not the snapshot.
+  image: { width: 1920, height: 1080, byteSize: 10000, originalPath: "", thumbnailPath: "" },
 }));
 const root = createRoot(document.getElementById("fixture")!);
 const messages: string[] = [];
@@ -33,7 +34,12 @@ let copyCount = 0;
 let failDelete = false;
 const deleted: string[][] = [];
 let resolveImage: ((value: string) => void) | undefined;
-mockIPC((command) => command === "read_clipboard_history_image" ? new Promise<string>((resolve) => { resolveImage = resolve; }) : null);
+let thumbnailReads = 0;
+mockIPC((command) => {
+  if (command === "read_clipboard_history_image") return new Promise<string>((resolve) => { resolveImage = resolve; });
+  if (command === "read_clipboard_history_thumbnail") { thumbnailReads++; return thumbnailDataUrl; }
+  return null;
+});
 function Harness() {
   const [items, setItems] = useState(clipboardItems);
   return <ClipboardHistoryPanel snapshot={{ ...DEFAULT_CLIPBOARD_HISTORY, items }}
@@ -59,7 +65,10 @@ async function run() {
   const started = performance.now();
   await act(async () => root.render(<I18nProvider><Harness /></I18nProvider>));
   check(document.querySelectorAll(".clipboard-item").length === 20, "500 images mount only the first 20 rows");
-  messages.push(`Mount: ${(performance.now() - started).toFixed(1)}ms; thumbnail JSON payload: ${JSON.stringify(clipboardItems).length} bytes`);
+  await act(async () => { await wait(); await wait(); });
+  check(thumbnailReads === 20 && document.querySelectorAll(".clipboard-item__thumb img").length === 20,
+    "Only the mounted rows read their thumbnails");
+  messages.push(`Mount: ${(performance.now() - started).toFixed(1)}ms; snapshot JSON: ${JSON.stringify(clipboardItems).length} bytes`);
   const list = document.querySelector<HTMLElement>(".clipboard-list")!;
   await act(async () => {
     list.scrollTop = list.scrollHeight;
