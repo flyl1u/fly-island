@@ -79,6 +79,9 @@ pub fn open(app: &AppHandle) -> Result<(), String> {
     window.on_window_event(move |event| {
         if matches!(event, WindowEvent::CloseRequested { .. }) {
             bounds::save(&closing);
+            // Tearing down the webview takes a moment, during which the window would stay
+            // on screen; hide it first so the close button takes effect at once.
+            let _ = closing.hide();
         }
     });
 
