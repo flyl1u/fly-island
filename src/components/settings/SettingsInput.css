@@ -4,7 +4,7 @@
   height: 34px;
   padding: 0 12px;
   color: var(--color-text);
-  background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+  background: var(--color-white-a06, rgba(var(--overlay-rgb), 0.06));
   border: 1px solid transparent;
   border-radius: var(--corner-md);
   corner-shape: var(--corner-shape);

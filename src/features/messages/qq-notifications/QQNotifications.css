@@ -15,12 +15,12 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  background: rgba(255, 255, 255, .055);
+  background: rgba(var(--overlay-rgb), .055);
 }
 
 .island-message-button:hover,
 .icon-button.island-message-button--active {
-  color: #fff;
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 
@@ -69,7 +69,7 @@
   min-height: 46px;
   margin-bottom: 4px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, .075);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), .075);
 }
 
 .qq-panel__toolbar {
@@ -89,8 +89,8 @@
 
 .qq-panel .icon-button:hover,
 .qq-panel__actions .icon-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .07);
+  color: var(--color-fg-strong);
+  background: rgba(var(--overlay-rgb), .07);
 }
 
 .qq-panel .message-receiver-toggle[aria-checked="true"] {
@@ -112,7 +112,7 @@
   min-width: 0;
   min-height: 36px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, .045);
+  background: rgba(var(--overlay-rgb), .045);
   border-radius: var(--corner-xl);
   corner-shape: var(--corner-shape);
   font-size: calc(12px * var(--island-font-scale, 1));
@@ -145,7 +145,7 @@
   width: 10px;
   height: 10px;
   border-radius: var(--radius-circle);
-  background: rgba(255, 255, 255, .7);
+  background: rgba(var(--overlay-rgb), .7);
   transition: transform 160ms ease;
 }
 
@@ -165,7 +165,7 @@
   height: 5px;
   flex: 0 0 auto;
   border-radius: var(--radius-circle);
-  background: rgba(255, 255, 255, .25);
+  background: rgba(var(--overlay-rgb), .25);
 }
 
 .message-status[data-state="connected"],
@@ -211,8 +211,8 @@
 }
 
 .message-action:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .14);
+  color: var(--color-fg-strong);
+  background: rgba(var(--overlay-rgb), .14);
 }
 
 .qq-panel__list {
@@ -250,7 +250,7 @@
 
 .qq-panel__item {
   margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, .055);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), .055);
 }
 
 .qq-panel__item:last-child {
@@ -272,7 +272,7 @@
 }
 
 .qq-panel__item > button:hover {
-  background: rgba(255, 255, 255, .035);
+  background: rgba(var(--overlay-rgb), .035);
 }
 
 .qq-panel__item-heading {

@@ -59,7 +59,7 @@
   min-width: 0;
   padding: 10px 12px;
   color: var(--color-text-strong);
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(var(--overlay-rgb), 0.055);
   border: 1px solid var(--color-white-a08);
   border-radius: var(--corner-lg);
   corner-shape: var(--corner-shape);
@@ -80,7 +80,7 @@
 .project-link__icon,
 .project-link__arrow {
   flex: 0 0 auto;
-  color: rgba(248, 246, 240, 0.52);
+  color: rgba(var(--ink-rgb), 0.52);
 }
 
 .project-link--star .project-link__icon {
@@ -136,7 +136,7 @@
 }
 
 .settings-group__card > .project-link:hover {
-  background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+  background: var(--color-white-a06, rgba(var(--overlay-rgb), 0.06));
 }
 
 /* The card does not clip, so the end rows round their own hover. */

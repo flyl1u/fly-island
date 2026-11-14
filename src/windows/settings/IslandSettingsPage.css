@@ -7,7 +7,7 @@
   min-height: 0;
   overflow: hidden;
   color: var(--color-page-text);
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(var(--overlay-rgb), 0.035);
   border-radius: var(--island-panel-radius, 12px);
   corner-shape: var(--island-corner-shape, round);
 }

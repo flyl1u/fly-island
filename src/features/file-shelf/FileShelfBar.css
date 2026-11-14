@@ -70,7 +70,7 @@
 }
 
 .shelf-search:focus-within {
-  border-color: rgba(248, 246, 240, 0.28);
+  border-color: rgba(var(--ink-rgb), 0.28);
 }
 
 .shelf-search input {

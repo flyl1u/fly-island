@@ -82,7 +82,7 @@
 
 .icon-button:hover {
   color: var(--color-white);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.15);
 }
 
 .icon-button:active {

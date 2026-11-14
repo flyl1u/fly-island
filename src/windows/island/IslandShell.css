@@ -181,7 +181,7 @@
   border-radius: var(--radius-circle);
   background: radial-gradient(
     circle,
-    rgba(255, 255, 255, var(--glass-glow-alpha)),
+    rgba(var(--overlay-rgb), var(--glass-glow-alpha)),
     rgba(var(--glass-page-accent), var(--glass-accent-alpha)) 38%,
     transparent 70%
   );
@@ -199,19 +199,19 @@
   corner-shape: var(--island-corner-shape, round);
   background:
     linear-gradient(112deg, rgba(116, 214, 255, 0.1), transparent 16% 82%, rgba(255, 156, 224, 0.08)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 22% 82%, rgba(20, 40, 52, 0.08));
+    linear-gradient(180deg, rgba(var(--overlay-rgb), 0.13), transparent 22% 82%, rgba(20, 40, 52, 0.08));
   mix-blend-mode: screen;
   opacity: var(--glass-refraction-opacity);
 }
 
 .island__glass-refraction {
   inset: 1px;
-  border: 1px solid rgba(255, 255, 255, var(--glass-border-alpha));
+  border: 1px solid rgba(var(--overlay-rgb), var(--glass-border-alpha));
   border-radius: inherit;
   corner-shape: var(--island-corner-shape, round);
   box-shadow:
     inset 0 0 14px rgba(var(--glass-page-accent), var(--glass-inner-accent-alpha)),
-    inset 0 0 2px rgba(255, 255, 255, 0.24);
+    inset 0 0 2px rgba(var(--overlay-rgb), 0.24);
 }
 
 .island__glass-highlight {
@@ -220,7 +220,7 @@
   width: 42%;
   height: 2px;
   border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
+  background: linear-gradient(90deg, transparent, rgba(var(--overlay-rgb), 0.82), transparent);
   filter: blur(0.4px);
   opacity: var(--glass-highlight-opacity);
   transform: translateX(-50%);
@@ -239,7 +239,7 @@
   cursor: default;
   background:
     /* The shading fades with the fill (classic opacity). */
-    linear-gradient(180deg, rgba(255, 255, 255, calc(0.06 * var(--island-fill-alpha, 1))), rgba(0, 0, 0, calc(0.22 * var(--island-fill-alpha, 1)))),
+    linear-gradient(180deg, rgba(var(--overlay-rgb), calc(0.06 * var(--island-fill-alpha, 1))), rgba(0, 0, 0, calc(0.22 * var(--island-fill-alpha, 1)))),
     var(--island-fill, var(--island-background-color));
   box-shadow: none;
 }
@@ -247,7 +247,7 @@
 /* Lit only for keyboard focus: a mouse click on one of its buttons should not leave a white line. */
 .island--collapsed:has(:focus-visible) {
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26),
     inset 0 0 18px var(--color-white-a08),
     0 5px 16px rgba(0, 0, 0, 0.12);
 }

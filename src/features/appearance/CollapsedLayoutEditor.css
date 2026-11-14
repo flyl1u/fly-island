@@ -55,7 +55,7 @@
 .collapsed-layout__slot--dragging {
   z-index: 1;
   cursor: grabbing;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(var(--overlay-rgb), 0.16);
   transform: scale(1.08);
 }
 
@@ -71,7 +71,7 @@
   justify-content: flex-start;
   gap: 10px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--overlay-rgb), 0.72);
   font-size: calc(13px * var(--island-font-scale, 1));
   white-space: nowrap;
 }
@@ -86,11 +86,11 @@
 }
 
 .collapsed-layout__slot--shelf {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--overlay-rgb), 0.82);
 }
 
 .collapsed-layout__slot--music {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--overlay-rgb), 0.82);
 }
 
 /* The running-session count: a blue pill, as on the island. */
@@ -111,5 +111,5 @@
   height: 12px;
   border-radius: var(--radius-pill);
   background: rgba(186, 186, 186, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
 }

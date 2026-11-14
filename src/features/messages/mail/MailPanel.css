@@ -29,7 +29,7 @@
 .qq-mail-reader__meta time { flex: 0 0 auto; }
 .qq-mail-reader__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xl); padding: 14px 0; color: var(--text-2); font-size: 13px; }
 .qq-mail-reader__state .qq-panel__error { flex-basis: 100%; margin: 0; }
-.qq-mail-attachments { flex: 0 0 auto; margin: 8px 8px 0; padding: 8px 10px; border-radius: var(--corner-md); corner-shape: var(--corner-shape); background: rgba(255, 255, 255, .04); }
+.qq-mail-attachments { flex: 0 0 auto; margin: 8px 8px 0; padding: 8px 10px; border-radius: var(--corner-md); corner-shape: var(--corner-shape); background: rgba(var(--overlay-rgb), .04); }
 .qq-mail-attachments__title { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: var(--text-2); font-size: 11px; font-weight: 600; }
 .qq-mail-attachments ul { display: flex; flex-direction: column; gap: 4px; max-height: 120px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .qq-mail-attachment { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; font-size: 12px; }
@@ -45,8 +45,8 @@
 .qq-mail-body a { color: #a9dfff; text-decoration: underline; text-underline-offset: 3px; }
 .qq-mail-body a:hover { color: #d6f0ff; }
 .qq-mail-body a:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 3px; }
-.qq-mail-body blockquote { margin: 12px 0; padding: 4px 12px; color: var(--text-3); border-left: 2px solid rgba(255, 255, 255, .15); }
-.qq-mail-body pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: rgba(255, 255, 255, .04); border-radius: var(--corner-md); corner-shape: var(--corner-shape); }
+.qq-mail-body blockquote { margin: 12px 0; padding: 4px 12px; color: var(--text-3); border-left: 2px solid rgba(var(--overlay-rgb), .15); }
+.qq-mail-body pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: rgba(var(--overlay-rgb), .04); border-radius: var(--corner-md); corner-shape: var(--corner-shape); }
 /* 和网页邮箱一样：宽高属性（含从内联样式抄来的）照用，按比例缩到正文宽度内；小图标、占位图保持原来的小尺寸 */
 .qq-mail-body img { max-width: 100%; vertical-align: middle; }
 /* 只写了高度的图片按它的高度画；其余按比例跟宽度走（有宽高属性时比例来自属性，缩小也不变形） */

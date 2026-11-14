@@ -86,7 +86,7 @@
 .island-message-preview__sender {
   flex: 0 1 auto;
   max-width: 42%;
-  color: #fff;
+  color: var(--color-fg-strong);
   font-weight: 600;
 }
 

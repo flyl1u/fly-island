@@ -141,7 +141,7 @@
 .dot-button--shelf {
   /* Warm light grey, not mint: the shelf page itself is neutral. */
   --dot-color: #d8d6cf;
-  --dot-glow: rgba(248, 246, 240, 0.34);
+  --dot-glow: rgba(var(--ink-rgb), 0.34);
 }
 
 .dot-button--translation {
@@ -322,7 +322,7 @@
 }
 
 .icon-button.island-settings-button--active {
-  color: #fff;
+  color: var(--color-fg-strong);
   background: var(--color-white-a16);
 }
 

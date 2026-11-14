@@ -147,7 +147,7 @@
 :root[data-island-top-edge="attached"] .island--collapsed:has(:focus-visible),
 :root:not([data-island-top-edge]) .island--docked.island--collapsed:has(:focus-visible) {
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(var(--overlay-rgb), 0.26),
     inset 0 -14px 14px -10px var(--color-white-a08),
     0 5px 16px rgba(0, 0, 0, 0.12);
 }

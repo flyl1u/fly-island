@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: rgba(248, 246, 240, 0.72);
+  color: rgba(var(--ink-rgb), 0.72);
   background: var(--color-white-a08);
   border: 0;
   border-radius: var(--radius-pill);
@@ -15,7 +15,7 @@
 
 .shortcut-reset-button:hover:not(:disabled) {
   color: var(--color-white);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.15);
 }
 
 .shortcut-reset-button:focus-visible {

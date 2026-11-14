@@ -82,7 +82,7 @@
 .media-notice__primary {
   height: 26px;
   padding: 0 12px;
-  color: #101013;
+  color: var(--color-inverse-ink);
   background: var(--color-accent);
   border: 0;
   border-radius: var(--radius-pill);

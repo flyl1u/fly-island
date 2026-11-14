@@ -137,7 +137,7 @@
   padding: 0 7px;
   color: var(--text-1);
   background: rgba(6, 7, 10, 0.32);
-  border: 1px solid rgba(248, 246, 240, 0.28);
+  border: 1px solid rgba(var(--ink-rgb), 0.28);
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
   outline: none;
@@ -163,7 +163,7 @@
 
 .clipboard-note-editor button[type="submit"] {
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(var(--overlay-rgb), 0.18);
 }
 
 .clipboard-note-editor button:disabled,
