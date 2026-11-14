@@ -3,6 +3,7 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { useTranslation } from "../../i18n";
 import { CollapsedDimensionRows } from "../../features/appearance/CollapsedDimensionRows";
 import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslandSection";
+import { IdleClockSettingsSection } from "../../features/appearance/IdleClockSettingsSection";
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
@@ -53,6 +54,7 @@ export function AppearanceSettingsPage({
         <PageButtonsRow {...rows} />
       </CollapsedLayoutEditor>
       <CollapsedIslandSection {...rows} />
+      <IdleClockSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
       <SettingsGroup title={text.shapeTitle} footer={text.collapsedDimensions.hint}>
         <CollapsedDimensionRows settings={settings} onChange={updateAppearance} />
         <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />

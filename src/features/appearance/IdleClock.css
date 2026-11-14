@@ -1,0 +1,12 @@
+.island-idle-clock {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+  flex: 1;
+}

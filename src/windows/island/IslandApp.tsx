@@ -29,6 +29,7 @@ import { useAgentIndicator } from "./useAgentIndicator";
 import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useIslandTodos } from "./useIslandTodos";
+import { useCollapsedNotice } from "./useCollapsedNotice";
 import { useIslandTucking } from "./useIslandTucking";
 import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
@@ -59,7 +60,9 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
-  const { qqNotifications, wechatReminders, qqMail, hasMessagePreview } = notices;
+  const { qqNotifications, wechatReminders, qqMail } = notices;
+  const { notice, showNotice } = useCollapsedNotice(settings, navigation, game.quiet);
+  const hasMessagePreview = notices.hasMessagePreview || notice !== null;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages, alertUsages } =
@@ -68,11 +71,11 @@ export function IslandApp() {
     quiet: game.quiet,
     canPopUp: !game.quiet && mode === "collapsed" && !isTucked,
   });
-  const { todos, activeTodoId, timer, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
+  const { todos, activeTodoId, timer, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet, onNotice: showNotice });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
-  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth } =
+  const { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, showIdleClock } =
     useCollapsedTodo(
       settings.todoEnabled ? todos : NO_TODOS,
       settings.todoEnabled ? activeTodoId : null,
@@ -118,6 +121,7 @@ export function IslandApp() {
     page,
     openIslandPage,
     collapseIsland,
+    onNotice: showNotice,
   });
   const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
   const expandedIslandHeight = getExpandedIslandHeight({
@@ -213,6 +217,9 @@ export function IslandApp() {
         collapsedLayout={settings.collapsedLayout}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
+        idleClockSettings={settings}
+        showIdleClock={showIdleClock}
+        notice={notice}
         pageOrder={settings.pageOrder}
         pageButtonStyle={settings.pageButtonStyle}
         onPageOrderChange={(pageOrder) => setSettings({ ...settings, pageOrder })}

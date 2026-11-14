@@ -23,9 +23,15 @@ import type { TodoTimer } from "../../features/todos/timer";
 import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
+import { IdleClock } from "../../features/appearance/IdleClock";
+import type { IdleClockSettings } from "../../features/appearance/idleClockSettings";
+import type { CollapsedNotice } from "./useCollapsedNotice";
 import "./IslandCollapsedBar.css";
 
 type IslandCollapsedBarProps = {
+  idleClockSettings?: IdleClockSettings;
+  showIdleClock?: boolean;
+  notice?: CollapsedNotice | null;
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
@@ -70,6 +76,9 @@ type IslandCollapsedBarProps = {
 
 /** The collapsed island: agent pulse, todo or message summary, mail badge, music button and tuck handle. */
 export function IslandCollapsedBar({
+  idleClockSettings,
+  showIdleClock = false,
+  notice = null,
   qqMail,
   qqNotifications,
   wechatReminders,
@@ -109,7 +118,7 @@ export function IslandCollapsedBar({
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
-  const openTarget = collapsedOpenPage(collapsedItem, Boolean(shownAgent), page);
+  const openTarget = notice?.page ?? collapsedOpenPage(collapsedItem, Boolean(shownAgent), page);
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
@@ -119,7 +128,7 @@ export function IslandCollapsedBar({
           type="button"
           aria-label={preview
             ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
-            : t.messages.expand(collapsedLabel)}
+            : t.messages.expand(notice?.text ?? collapsedLabel)}
           aria-expanded={preview ? undefined : isExpanded}
           aria-controls={preview ? undefined : "island-panel"}
           onPointerDown={prepareWindowDrag}
@@ -150,8 +159,10 @@ export function IslandCollapsedBar({
           <span className={pulseClassName} />
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-            {quotaAlert ? (
+            {notice ? <span className="island__todo-count">{notice.text}</span> : quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
+            ) : showIdleClock && idleClockSettings ? (
+              <IdleClock settings={idleClockSettings} active={!isExpanded && !isTucked && !preview} />
             ) : <>
             {showCollapsedText && showTitle && (
               <span className="island__brand">fly-island</span>

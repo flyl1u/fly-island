@@ -14,7 +14,7 @@ export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
 // collapsed bar's corners come out at 31px of its 38px height.
 export const DEFAULT_ISLAND_CORNER_RADIUS = 42;
 export const DEFAULT_HOVER_EXPAND_DELAY_MS = 0;
-export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 0;
+export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 250;
 export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;
 // Tallest panel before the todo list and other long pages scroll. The default is the
 // height the todo page reached before this was a setting (six rows).

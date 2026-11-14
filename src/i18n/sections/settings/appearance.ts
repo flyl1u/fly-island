@@ -1,4 +1,12 @@
 export type SettingsAppearanceText = {
+  idleClock: {
+    title: string; enabled: string; hint: string; display: string; hour12: string; seconds: string;
+    dateFormat: string; custom: string; customHint: string; weekday: string; order: string;
+    displays: Record<"timeDate" | "time" | "date", string>;
+    formats: Record<"monthDay" | "iso" | "slash" | "dayFirst" | "monthFirst" | "long" | "custom", string>;
+    weekdays: Record<"off" | "short" | "long", string>;
+    orders: Record<"timeFirst" | "dateFirst", string>;
+  };
   font: string;
   fontLabel: string;
   fontSize: string;
@@ -61,6 +69,17 @@ export type SettingsAppearanceText = {
 };
 
 export const zhCN: SettingsAppearanceText = {
+  idleClock: {
+    title: "空闲时间与日期", enabled: "空闲时显示时间日期",
+    hint: "仅在折叠且空闲时显示；消息、Agent、进行中的待办和歌词优先。预览：",
+    display: "显示内容", hour12: "12 小时制", seconds: "显示秒", dateFormat: "日期格式",
+    custom: "自定义日期格式", customHint: "YYYY 年、YY 两位年、MM/M 月、DD/D 日、ddd/dddd 星期。其他文字原样显示，最多 80 字符。",
+    weekday: "星期", order: "排列顺序",
+    displays: { timeDate: "时间和日期", time: "仅时间", date: "仅日期" },
+    formats: { monthDay: "月日（本地格式）", iso: "YYYY-MM-DD", slash: "YYYY/MM/DD", dayFirst: "DD/MM/YYYY", monthFirst: "MM/DD/YYYY", long: "完整日期（本地格式）", custom: "自定义" },
+    weekdays: { off: "不显示", short: "简短（周六）", long: "完整（星期六）" },
+    orders: { timeFirst: "时间在前", dateFirst: "日期在前" },
+  },
   font: "字体",
   fontLabel: "岛屿字体",
   fontSize: "岛屿字号",
@@ -117,6 +136,17 @@ export const zhCN: SettingsAppearanceText = {
 };
 
 export const en: SettingsAppearanceText = {
+  idleClock: {
+    title: "Idle time & date", enabled: "Show time and date while idle",
+    hint: "On the idle collapsed island. Messages, agents, active todos and lyrics take priority. Preview: ",
+    display: "Show", hour12: "12-hour clock", seconds: "Show seconds", dateFormat: "Date format",
+    custom: "Custom date format", customHint: "YYYY year, YY short year, MM/M month, DD/D day, ddd/dddd weekday. Other text is literal; up to 80 characters.",
+    weekday: "Weekday", order: "Order",
+    displays: { timeDate: "Time and date", time: "Time only", date: "Date only" },
+    formats: { monthDay: "Month and day (local)", iso: "YYYY-MM-DD", slash: "YYYY/MM/DD", dayFirst: "DD/MM/YYYY", monthFirst: "MM/DD/YYYY", long: "Full date (local)", custom: "Custom" },
+    weekdays: { off: "Off", short: "Short (Sat)", long: "Full (Saturday)" },
+    orders: { timeFirst: "Time first", dateFirst: "Date first" },
+  },
   font: "Font",
   fontLabel: "Island font",
   fontSize: "Island font size",

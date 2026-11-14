@@ -30,6 +30,7 @@ export const PAGES = [
   "clipboard-window.html?test=1",
   "file-shelf.html",
   "i18n.html?test=1",
+  "idle-clock.html",
   "island-tour.html?test=1&shoulders=1",
   "island-tour.html?test=1&update=1",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also

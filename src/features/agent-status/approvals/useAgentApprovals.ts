@@ -33,6 +33,8 @@ type AgentApprovalOptions = {
   whenInFront?: boolean;
   isOpenOnAgents: boolean;
   onOpen: () => void;
+  /** Show a summary without taking ownership of a panel the user may open later. */
+  onPreview?: () => void;
   onClose: () => void;
 };
 
@@ -55,13 +57,13 @@ function report(error: unknown) {
  * whenInFront, set in Settings).
  * The first request opens the Agent page; once the last one is gone a page it opened closes again.
  */
-export function useAgentApprovals({ enabled, whenInFront = false, isOpenOnAgents, onOpen, onClose }: AgentApprovalOptions): AgentApprovals {
+export function useAgentApprovals({ enabled, whenInFront = false, isOpenOnAgents, onOpen, onPreview, onClose }: AgentApprovalOptions): AgentApprovals {
   const [queue, setQueue] = useState<AgentApprovalRequest[]>([]);
   const [cardHeight, setCardHeight] = useState(DEFAULT_CARD_HEIGHT);
   const openedRef = useRef(false);
-  const latest = useRef({ enabled, whenInFront, isOpenOnAgents, onOpen, onClose });
+  const latest = useRef({ enabled, whenInFront, isOpenOnAgents, onOpen, onPreview, onClose });
   useLayoutEffect(() => {
-    latest.current = { enabled, whenInFront, isOpenOnAgents, onOpen, onClose };
+    latest.current = { enabled, whenInFront, isOpenOnAgents, onOpen, onPreview, onClose };
   });
 
   const drop = useCallback((id: number) => setQueue((items) => items.filter((item) => item.id !== id)), []);
@@ -124,6 +126,10 @@ export function useAgentApprovals({ enabled, whenInFront = false, isOpenOnAgents
     let timer: number | undefined;
     const open = () => {
       if (latest.current.isOpenOnAgents) return;
+      if (latest.current.onPreview) {
+        latest.current.onPreview();
+        return;
+      }
       if (isTyping()) {
         timer = window.setTimeout(open, TYPING_RETRY_MS);
         return;

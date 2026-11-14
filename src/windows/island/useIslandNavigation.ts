@@ -33,11 +33,13 @@ export function useIslandNavigation() {
     setTuckedAutomatically(false);
   }, []);
 
-  // Keeps a peek: a panel opened from a peeking island closes, and the island slides
-  // back once the cursor leaves (useTuckPeek).
+  // Closing a panel always returns to the full collapsed bar. Only its idle timer
+  // may tuck it again; a previous hover peek must not skip that intermediate state.
   const collapseIsland = useCallback(() => {
     setMode("collapsed");
     setIsTucked(false);
+    setIsPeekTuck(false);
+    setPeekRetractDelayMs(null);
   }, []);
 
   const tuckIsland = useCallback(() => {
@@ -71,12 +73,13 @@ export function useIslandNavigation() {
   }, []);
 
   /**
-   * Slides out for a message preview and back once it has gone (useIslandTucking holds the
-   * peek while the preview shows), so a line pops into the island and returns to a line.
+   * Reveals a complete collapsed bar for a notification. Its preview holds the idle
+   * timer, which starts afresh afterwards instead of immediately ending an old peek.
    */
   const revealForMessage = useCallback(() => {
     setIsTucked(false);
-    setIsPeekTuck(true);
+    setIsPeekTuck(false);
+    setPeekRetractDelayMs(null);
   }, []);
 
   /** Slides out under the cursor; a minimized island slides back when it leaves. */

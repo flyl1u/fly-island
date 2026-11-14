@@ -1,5 +1,6 @@
 // Reading saved settings, part 3 (normalizeSettings in settings.ts): behaviour and modules.
 import { normalizeLyricsSettings } from "../media/lyrics/lyricsSettings.ts";
+import { normalizeIdleClockSettings } from "./idleClockSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
 import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
@@ -9,6 +10,7 @@ import type { IslandSettings, LegacyIslandSettings } from "./types";
 export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null | undefined) {
   const autoTuck = typeof settings?.autoTuck === "boolean" ? settings.autoTuck : DEFAULT_SETTINGS.autoTuck;
   return {
+    ...normalizeIdleClockSettings(settings),
     positionLocked: settings?.positionLocked === true,
     carryOverIncompleteTodos:
       typeof settings?.carryOverIncompleteTodos === "boolean"

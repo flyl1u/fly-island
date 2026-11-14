@@ -1,5 +1,6 @@
 // First-launch settings, and what older versions showed for fields they did not have yet.
 import { DEFAULT_LYRICS_SETTINGS } from "../media/lyrics/lyricsSettings.ts";
+import { DEFAULT_IDLE_CLOCK_SETTINGS } from "./idleClockSettings.ts";
 import {
   DEFAULT_AGENT_VISIBLE_ROWS, DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS, DEFAULT_CLIPBOARD_VISIBLE_ROWS, DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
@@ -12,6 +13,7 @@ import type { IslandSettings } from "./types";
 // fallback in normalizeSettings, which for behavior switches is what older
 // versions did, so upgrading never flips them.
 export const DEFAULT_SETTINGS: IslandSettings = {
+  ...DEFAULT_IDLE_CLOCK_SETTINGS,
   topEdgeLayoutVersion: 1,
   material: "classic",
   colorScheme: "dark",
