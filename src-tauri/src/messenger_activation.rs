@@ -37,7 +37,7 @@ mod tests {
             let window = CreateWindowExW(
                 WINDOW_EX_STYLE::default(),
                 w!("STATIC"),
-                w!("FocuSD activation test"),
+                w!("Fly Island activation test"),
                 WS_POPUP,
                 0,
                 0,

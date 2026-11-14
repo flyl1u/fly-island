@@ -157,7 +157,7 @@ impl Decision {
 /// A question's answers by question text: an option's label, several joined by ", ", or free text.
 pub type Answers = std::collections::BTreeMap<String, String>;
 
-const DEFAULT_DENY_MESSAGE: &str = "Denied in FocuSD Island";
+const DEFAULT_DENY_MESSAGE: &str = "Denied in Fly Island";
 
 /// The hook's answer. `{}` gives the decision back to the agent, which then asks in the terminal.
 pub(super) fn hook_response(decision: Option<Decision>, message: Option<&str>, suggestions: Option<&Value>) -> String {
