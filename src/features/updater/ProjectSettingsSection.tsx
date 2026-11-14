@@ -33,9 +33,9 @@ export function ProjectIdentitySection() {
 
 /**
  * Settings → About → one group of three rows: the community group (where questions and problems
- * go now), starring the project, and tipping the author. Updates come by themselves (checked at
- * startup, offered in the todo list), past versions are in the changelog below, and the author's
- * site is a link in the sidebar, under About.
+ * go now), starring the project, and tipping the author. Updates have their own group above
+ * (UpdateSettingsSection), past versions are in the changelog below, and the author's site is a
+ * link in the sidebar, under About.
  */
 export function ProjectLinksSection() {
   const text = useTranslation().settings.project;

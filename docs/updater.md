@@ -1,9 +1,11 @@
 # 应用内更新
 
-小岛在启动时检查新版本，发现更新后在应用内下载、安装并自动重启。
+小岛自己检查新版本，在应用内下载、安装并自动重启。
 
-- **启动时下载**：岛屿启动后检查一次（主窗口的 `features/updater/updaterController.ts`）；有新版本时在后台下载好，待办列表顶部出现一条「更新到 vX.Y.Z」的待办，点它的按钮重启安装。删掉这条待办只是本次不再提醒。没有角标、没有定期检查、没有发布说明页。
-- 2026-11-12 起「关于」页不再有手动检查更新的那一行；下载只在主窗口里进行。
+- **自动更新（默认开启，2026-11-13 起）**：设置 →「关于」→「自动更新」，存在 `focusd-island-auto-update`。开启时，主窗口（`features/updater/updaterController.ts`）启动后检查一次，之后每 6 小时检查一次（单个 `setTimeout`，不轮询）；检查或下载失败按 1、5、30 分钟退避重试，三次后回到 6 小时；每次检查前重新读一遍代理。下载好后，待办列表顶部出现「更新到 vX.Y.Z」的待办；小岛处于收起态（含贴边收起、托盘隐藏）且 2 分钟内没有指针或键盘操作时，`useIdleUpdateInstall` 直接调用安装（NSIS passive），装完由安装器重新打开小岛。展开面板、悬停或打字都会重新计时，游戏勿扰期间不自动安装。
+- **关闭自动更新**：不再自动检查，也不自动安装。
+- **「关于」页的更新组**：无论开关如何都显示当前状态（还没检查、正在检查、已是最新、发现新版本、下载进度、可安装、出错及原因）和「检查更新」按钮；有可安装的版本时多一行「立即安装」。关掉待办页的用户也能从这里更新。（2026-11-12 曾去掉手动检查那一行，2026-11-13 恢复。）
+- 删掉更新待办只是不再在待办里提醒，下载好的包保留。下载只在主窗口里进行，独立设置窗口只镜像状态并把操作转给主窗口。
 
 实现基于 Tauri 2 的 `tauri-plugin-updater`，所有更新包都用 minisign 签名，App 内置公钥校验，签名不符的包不会被安装。
 
@@ -21,18 +23,20 @@
 
 ## 检查与安装流程
 
-1. 设置页调用 `updater_check`（按通道选端点，`src-tauri/src/system/update_channel.rs`），依次尝试各端点：GitHub 直连、`ghfast.top`、`gh-proxy.com`，第一个能取到清单的胜出。
-2. 清单里的 `version` 高于当前版本时，界面显示「发现新版本 vX.Y.Z」。
-3. 点「下载并安装」后，安装包下载到本地临时目录，边下边用清单里的 `signature` 校验。
+1. 主窗口调用 `updater_check`（按通道选端点，`src-tauri/src/system/update_channel.rs`），依次尝试各端点：GitHub 直连、`ghfast.top`、`gh-proxy.com`，第一个能取到清单的胜出。
+2. 清单里的 `version` 高于当前版本时，「关于」页显示「发现新版本 vX.Y.Z」，随即在后台下载（`updater_download`），边下边用清单里的 `signature` 校验。
+3. 下载好后，点待办或「关于」里的按钮，或自动更新等到小岛空闲，调用 `updater_install` 安装。
 4. Windows 走 NSIS 安装模式 `passive`：显示安装进度条，装完由安装器拉起新版本，旧进程自动退出。
 
-检查与下载的进度存在 `src/updaterController.ts` 的模块级状态里，设置页关掉或切到别的页面都不会中断，回来还能看到实时百分比。
+检查与下载的进度存在 `src/features/updater/updaterController.ts` 的模块级状态里，设置页关掉或切到别的页面都不会中断，回来还能看到实时百分比。
 
 相关代码：
 
 - `src-tauri/tauri.conf.json`：`plugins.updater`（端点、安装模式）
 - `src-tauri/capabilities/default.json`：`updater:default` 权限
-- `src/features/updater/updaterController.ts`：检查 / 下载 / 安装状态机，跨页面存活；启动时检查一次并静默下载，待办列表里出现「更新」按钮（2026-11-12 起「关于」里不再有手动检查更新那一行）
+- `src/features/updater/updaterController.ts`：检查 / 下载 / 安装状态机，跨页面存活；自动更新的定时检查与退避重试（间隔在 `autoUpdateSchedule.ts`）
+- `src/features/updater/useIdleUpdateInstall.ts`：小岛收起且空闲 2 分钟后安装已下载的更新
+- `src/features/updater/UpdateSettingsSection.tsx`：「关于」页的自动更新开关、状态、检查更新与立即安装
 - `scripts/release/prepare-release-config.mjs`：构建发布包时写入公钥与签名开关
 - `scripts/release/make-latest-json.mjs`：根据构建产物生成 `latest.json`
 - `scripts/release/release.mjs`：一键构建 + 签名 + 生成清单 + 上传 Release
@@ -43,7 +47,7 @@
 GitHub 的 `github.com` 在国内经常连不上（`api.github.com` 往往还能通），所以检查更新做了两层兜底：
 
 - **多端点**：`tauri.conf.json` 里配了 GitHub 直连和两个公共加速前缀，插件会按顺序尝试，任一成功即返回。面板失败时会显示「原因：…」方便判断是网络问题还是清单缺失。
-- **系统代理**：前端启动时调用 `get_updater_proxy`（`src-tauri/src/system/updater.rs`），依次读 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量和 Windows 系统代理（`Internet Settings\ProxyServer`），把结果传给 `check()` / `downloadAndInstall()`。开了 Clash 之类的系统代理时，更新自动走代理。
+- **系统代理**：前端每次检查前调用 `get_updater_proxy`（`src-tauri/src/system/updater.rs`），依次读 `HTTPS_PROXY` / `HTTP_PROXY` 环境变量和 Windows 系统代理（`Internet Settings\ProxyServer`），把结果传给 `check()` / `downloadAndInstall()`。开了 Clash 之类的系统代理时，更新自动走代理；启动后才开关代理，下一次检查也会跟上。按协议分写的代理（`http=a:1;https=a:1;socks=b:2`）取 https、其次 http 那一项；只有 `socks=`（或 `ftp=`）时不用代理直连，而不是拼成 `http://socks=…` 这种无效地址。
 
 清单同时提供 `windows-x86_64-nsis` 与 `windows-x86_64-msi`，客户端按当前安装格式选择对应包；通用 `windows-x86_64` 入口保留为 NSIS 回退。
 
@@ -183,4 +187,5 @@ gh release edit v0.3.2 --repo flyl1u/fly-island --prerelease --latest=false   # 
 - **一直显示已是最新版本**：确认 release 里的 `latest.json` 的 `version` 高于客户端版本；同一版本号重发不会触发更新。
 - **提示签名校验失败**：`latest.json` 里的 `signature` 必须来自本次安装包的 `.sig` 文件，且签名私钥与构建时注入的公钥配对。
 - **发布后短时间内检查不到**：`releases/latest/download/` 走 CDN，通常几分钟内生效。
-- **只想手动下载安装包**：直接访问 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest)；设置中的「查看最新版本」用于应用内检查、下载和安装。
+- **只想手动下载安装包**：直接访问 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest)；设置 →「关于」里的「检查更新」用于应用内检查、下载和安装。
+- **不想自动安装**：在「关于」里关掉「自动更新」，之后只在点「检查更新」时检查，下载好后点「立即安装」或待办里的按钮安装。

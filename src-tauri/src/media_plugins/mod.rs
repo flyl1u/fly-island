@@ -1,5 +1,6 @@
 mod download;
 mod elevated;
+mod helper_exit;
 mod manifest;
 mod netease;
 mod record;

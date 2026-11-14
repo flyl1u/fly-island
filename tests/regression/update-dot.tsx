@@ -44,7 +44,7 @@ let setPage: (page: IslandPage) => void;
 let setExpanded: (expanded: boolean) => void;
 let setStyle: (style: PageButtonStyle) => void;
 let snapshot: UpdateState = { stage: "available", version: "3.0.9", nextVersion: "3.0.10", downloaded: 0,
-  total: 100, detail: "", dismissed: false };
+  total: 100, detail: "", dismissed: false, autoUpdate: true };
 async function update(patch: Partial<UpdateState>) {
   snapshot = { ...snapshot, ...patch };
   await act(async () => { await emit("focusd-update-state", snapshot); });

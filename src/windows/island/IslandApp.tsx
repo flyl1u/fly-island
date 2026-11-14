@@ -31,6 +31,7 @@ import { useIslandTucking } from "./useIslandTucking";
 import { keepIslandVisible } from "./keepVisible";
 import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
+import { useIdleUpdateInstall } from "../../features/updater/useIdleUpdateInstall";
 import { useIslandTranslation } from "./useIslandTranslation";
 import { useMessageView } from "./useMessageView";
 import { useSettingsPageHeight } from "./useSettingsPageHeight";
@@ -56,6 +57,7 @@ export function IslandApp() {
   // Quiet while a full-screen app (usually a game) is in front, if game mode asks for it.
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
+  useIdleUpdateInstall(mode === "collapsed", game.quiet);
   const { qqNotifications, wechatReminders, qqMail, hasMessagePreview } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
