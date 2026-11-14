@@ -462,10 +462,8 @@ pub async fn open_workbuddy_login(app: AppHandle) -> Result<(), String> {
             return Err(error.to_string());
         }
     }
-    window
-        .show()
-        .and_then(|()| window.set_focus())
-        .map_err(|e| e.to_string())
+    window.show().map_err(|e| e.to_string())?;
+    crate::system::window_focus::focus_window(&window)
 }
 
 #[tauri::command]
