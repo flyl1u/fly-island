@@ -4,7 +4,7 @@
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   padding: 12px var(--space-md) var(--space-md);
-  background: #111317;
+  background: var(--color-window-sidebar);
   border-right: 1px solid var(--color-white-a08);
 }
 
@@ -41,7 +41,7 @@
   align-items: center;
   gap: 9px;
   padding: 0 10px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(var(--overlay-rgb), 0.72);
   background: transparent;
   border: 0;
   border-radius: var(--corner-md);

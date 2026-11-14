@@ -10,9 +10,9 @@
   --translation-control: #303138;
   --translation-text: #f0f0f3;
   --translation-muted: #b0afb9;
-  --translation-border: rgba(255, 255, 255, 0.1);
+  --translation-border: rgba(var(--overlay-rgb), 0.1);
   --translation-accent: #f0f0f3;
-  --translation-focus: rgba(255, 255, 255, 0.5);
+  --translation-focus: rgba(var(--overlay-rgb), 0.5);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -223,7 +223,7 @@
   padding: 6px 8px;
   color: var(--translation-muted);
   text-align: left;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   border: 1px solid var(--translation-border);
   border-radius: 7px;
   font-size: 12px;

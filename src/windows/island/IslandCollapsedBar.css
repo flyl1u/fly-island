@@ -155,7 +155,7 @@
   margin-left: 0;
   padding: 0;
   background: rgba(186, 186, 186, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(var(--overlay-rgb), 0.14);
   border-radius: var(--radius-pill);
   outline: none;
   cursor: pointer;
@@ -176,7 +176,7 @@
 
 .island__quiet-button:hover {
   background: rgba(210, 210, 210, 0.58);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(var(--overlay-rgb), 0.28);
   transform: scale(1.08);
 }
 

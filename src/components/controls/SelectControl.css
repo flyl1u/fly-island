@@ -72,13 +72,13 @@
   padding: 4px;
   overflow-y: auto;
   list-style: none;
-  background: #26262d;
+  background: var(--color-popover);
   border: 1px solid var(--color-white-a12);
   border-radius: var(--corner-lg);
   corner-shape: var(--corner-shape);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(var(--overlay-rgb), 0.2) transparent;
   animation: select-control-in 120ms ease-out;
 }
 
@@ -89,7 +89,7 @@
   justify-content: space-between;
   gap: var(--space-md);
   padding: 0 9px;
-  color: rgba(248, 246, 240, 0.82);
+  color: rgba(var(--ink-rgb), 0.82);
   border-radius: var(--corner-sm);
   corner-shape: var(--corner-shape);
   font-size: calc(12px * var(--island-font-scale, 1));

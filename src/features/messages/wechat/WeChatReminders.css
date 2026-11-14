@@ -37,8 +37,8 @@
 }
 
 .message-sources button[aria-pressed="true"] {
-  color: #fff;
-  background: rgba(255, 255, 255, .07);
+  color: var(--color-fg-strong);
+  background: rgba(var(--overlay-rgb), .07);
 }
 
 .message-sources button:focus-visible {

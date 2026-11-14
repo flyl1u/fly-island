@@ -132,7 +132,7 @@
 
 .clipboard-clear-button:hover:not(:disabled) {
   color: var(--color-white);
-  background: rgba(255, 255, 255, 0.11);
+  background: rgba(var(--overlay-rgb), 0.11);
 }
 
 .clipboard-clear-button--confirming:hover:not(:disabled) {

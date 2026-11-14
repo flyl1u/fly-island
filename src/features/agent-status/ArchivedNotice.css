@@ -11,7 +11,7 @@
   padding: 0 4px 0 11px;
   color: var(--text-2);
   background: rgba(30, 31, 36, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: var(--radius-pill);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.36);
   backdrop-filter: blur(12px);
@@ -33,7 +33,7 @@
   height: 20px;
   padding: 0 9px;
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--overlay-rgb), 0.12);
   border: 0;
   border-radius: var(--radius-pill);
   font: inherit;
@@ -42,7 +42,7 @@
 }
 
 .agent-archived button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--overlay-rgb), 0.2);
 }
 
 .agent-archived button:focus-visible {

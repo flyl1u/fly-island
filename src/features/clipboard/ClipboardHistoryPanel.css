@@ -18,7 +18,7 @@
   gap: var(--space-sm);
   overflow-y: auto;
   padding-right: 4px;
-  scrollbar-color: rgba(248, 246, 240, 0.28) transparent;
+  scrollbar-color: rgba(var(--ink-rgb), 0.28) transparent;
   scrollbar-width: thin;
 }
 
@@ -32,7 +32,7 @@
 }
 
 .clipboard-list::-webkit-scrollbar-thumb {
-  background: rgba(248, 246, 240, 0.28);
+  background: rgba(var(--ink-rgb), 0.28);
   border-radius: var(--radius-pill);
 }
 
