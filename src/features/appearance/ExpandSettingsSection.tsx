@@ -18,10 +18,12 @@ export function ExpandSettingsSection({
   settings,
   onSettingsChange,
   onResetPosition,
+  onPreviewTuck,
 }: {
   settings: IslandSettings;
   onSettingsChange: (settings: IslandSettings) => void;
   onResetPosition: () => void;
+  onPreviewTuck?: () => void;
 }) {
   const t = useTranslation();
   const expand = t.settings.expand;
@@ -83,7 +85,7 @@ export function ExpandSettingsSection({
             value={settings.tuckStyle}
             options={tuckStyles}
             ariaLabel={expand.tuckStyle}
-            onChange={(tuckStyle) => update({ tuckStyle })}
+            onChange={(tuckStyle) => { update({ tuckStyle }); onPreviewTuck?.(); }}
           />
         }
       />

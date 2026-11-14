@@ -1,10 +1,12 @@
 import { useCallback, useRef, useState } from "react";
 import type { IslandMode, IslandPage } from "./types";
+import type { PreviewSnapshot } from "./panelPreviewPlan";
 
 /** Collapsed / expanded / tucked mode and the open page of the island. */
 export function useIslandNavigation() {
   const [mode, setMode] = useState<IslandMode>("collapsed");
   const [isTucked, setIsTucked] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   // Tucked by the minimize button: hovering only peeks the island out, and it slides
   // back once the cursor leaves. A click (or anything else that reveals it) ends this.
   const [isPeekTuck, setIsPeekTuck] = useState(false);
@@ -12,6 +14,13 @@ export function useIslandNavigation() {
   const [peekRetractDelayMs, setPeekRetractDelayMs] = useState<number | null>(null);
   const [page, setPage] = useState<IslandPage>("todo");
   const clipboardShortcutToggleAt = useRef(0);
+  const applyPreviewState = useCallback((snapshot: PreviewSnapshot) => {
+    setMode(snapshot.mode);
+    setPage(snapshot.page);
+    setIsTucked(snapshot.isTucked);
+    setIsPeekTuck(snapshot.retractsAfterPeek);
+    setPeekRetractDelayMs(snapshot.peekRetractDelayMs);
+  }, []);
 
   const setIslandMode = useCallback((nextMode: IslandMode) => {
     setMode(nextMode);
@@ -107,6 +116,7 @@ export function useIslandNavigation() {
   }, [mode, openClipboardHistory, page, setIslandMode]);
 
   return {
+    isPreviewing, setIsPreviewing, applyPreviewState,
     mode,
     isTucked,
     isPeeking: isPeekTuck && !isTucked,

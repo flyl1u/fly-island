@@ -110,6 +110,13 @@ if (!automated) {
         check(!toggle.checked && !size(), "Top edge curves default off with size hidden");
         await act(async () => toggle.click());
         check(size()?.classList.contains("settings-row--indent") && size()?.querySelector<HTMLInputElement>("input[type=range]")?.value === "10", "Curves reveal an indented size slider at 10px");
+        const slider = size()!.querySelector<HTMLInputElement>("input[type=range]")!;
+        await act(async () => {
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(slider, "16");
+          slider.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        check(JSON.parse(localStorage.getItem("focusd-island-settings")!).topEdgeShoulderSize === 16
+          && JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "collapsed", "Dragging curves saves each step and previews the attached collapsed shape");
         await act(async () => toggle.click());
         check(!size(), "Disabling curves hides the slider again");
       }
@@ -133,6 +140,7 @@ if (!automated) {
         check(tuckLooks.map((button) => button.textContent).join() === "默认,细线,隐藏" && tuckLooks[1].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, line by default");
         await act(async () => tuckLooks[1].click());
         check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line", "Choosing the line look saves it");
+        check(JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "tucked", "Choosing even the current tuck style requests an immediate tucked preview");
         await act(async () => tuckLooks[0].click());
       }
       if (category === "messages") {

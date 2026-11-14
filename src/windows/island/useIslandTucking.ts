@@ -30,7 +30,7 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, keep
   const collapseWhenIdle = useCallback(() => {
     if (!isEditingText()) collapseIsland();
   }, [collapseIsland]);
-  const plan = idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
+  const plan = navigation.isPreviewing ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
   useIdleTuck(
     plan !== null,
     plan?.seconds ?? 0,
@@ -40,7 +40,7 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, keep
   );
   useRevealOnMessage(hasMessagePreview, isTucked, revealForMessage);
   // A preview holds the peek; the island slides back once it has gone and the cursor is away.
-  useTuckPeek(isPeeking && !hasMessagePreview, endPeek, peekRetractDelayMs ?? undefined);
+  useTuckPeek(isPeeking && !hasMessagePreview && !navigation.isPreviewing, endPeek, peekRetractDelayMs ?? undefined);
 }
 
 /** Whether the cursor is over the island, from the native hover events. */

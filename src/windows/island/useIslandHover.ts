@@ -20,7 +20,7 @@ type IslandHoverOptions = {
 
 /** Opening the island by hovering it, tucked or not, and the panel preview; returns the tucked island's hover handler. */
 export function useIslandHover({ settings, navigation, quiet, hasMessagePreview, namesAgent, openEnabledPage }: IslandHoverOptions) {
-  const { mode, page, isTucked, isPeeking, collapseIsland, revealIsland, peekIsland, retractsAfterPeek, resumePeek } = navigation;
+  const { mode, page, isTucked, isPeeking, collapseIsland, peekIsland, retractsAfterPeek, resumePeek } = navigation;
   // While the island names a running agent, opening it shows the Agent page.
   const openCurrentPage = useCallback(
     () => openEnabledPage(namesAgent ? "agents" : page),
@@ -47,6 +47,6 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     resumePeek,
   });
   useHoverFocus(mode, quiet);
-  usePanelPreview({ mode, onExpand: openCurrentPage, onCollapse: collapseIsland, onReveal: revealIsland });
+  usePanelPreview({ navigation, quiet, hasMessagePreview });
   return hoverTucked;
 }

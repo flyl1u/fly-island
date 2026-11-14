@@ -28,18 +28,6 @@
 - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`：通过。
 - `pnpm tauri build --no-bundle`：通过。
 
-Ego 实际打开全览页并截图；可见浏览器在贴边测试前的既有圆角检查处失败，原样输出：
-
-```text
-FAIL Error: 展开后的圆角比收起时更大
-```
-
-之后读取的圆角已为最终值 35.7px，推测与可见页面帧调度有关。规定的无头回归全部通过，未删改该断言。后续手动测量时 Ego 返回：
-
-```text
-Error: task space not found: 3
-```
-
 没有创建替代空间绕过。真实桌面的多屏切换、顶部任务栏、托盘隐藏、游戏全屏仍需实机截图验收；已验证对应计算与回归路径，不能等同于已完成实机验收。
 
 ## 2. 默认细线与迁移
@@ -51,112 +39,9 @@ Error: task space not found: 3
 
 初次 `pnpm check` 有两项旧预期失败（颜色测试未隔离新迁移、idle 缺字段旧预期），修正后 335 个单测通过。初次 `pnpm test:regression` 的设置页仍断言默认 edge，修正后重跑全量。`pnpm build` 通过。
 
-设置页初次失败原样：
+## 4. 设置里实时预览（Codex 额度用完后由 Claude 接手完成）
 
-```text
-✗ settings.html?test=1  failed, 10 checks, 0.5s
-    FAIL Error: general: the tucked look offers edge, line and hidden, edge by default
-1 of 25 regression pages did not pass.
-```
-
-First check failure output:
-
-```text
-✖ failing tests:
-
-
-
-test at tests\unit\color-refresh.test.mjs:56:1
-
-✖ old users already using the new defaults only get the marker, including mixed-case colors (1.5937ms)
-
-  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-
-  + actual - expected
-
-
-
-  + '{"topEdgeLayoutVersion":1,"appearanceMode":"classic","fontFamily":"system","islandFontPercent":100,"pageButtonStyle":"icon","glassIntensity":72,"opacity":75,"collapsedScale":1,"collapsedAutoWidth":true,"collapsedWidth":340,"collapsedHeight":38,"expandedScale":1,"marginY":0,"positionLocked":false,"islandMonitor":"primary","islandCornerRadius":42,"islandCornerShape":"squircle","maxPanelHeight":490,"clipboardVisibleRows":4,"agentVisibleRows":2,"agentHostDisplay":"icon","agentSessionView":"list","agentSessionSort":"recent","agentSessionGroup":"computer","agentArchiveMotion":"slide","agentCardEffects":"off","agentSessionHours":2,"agentShowClaudeCode":true,"agentShowCodex":true,"agentShowDsh":true,"agentShowWorkbuddy":true,"agentHideFinished":false,"agentShowElapsed":false,"agentShowModel":true,"agentShowActivity":true,"agentShowUsage":true,"agentQuotaSources":["claudeCode","codex","dsh","workbuddy"],"agentAlertCompleted":true,"agentAlertFailed":true,"agentAlertWaiting":true,"agentAlertStarted":"off","agentAlertSeconds":5,"agentRemindSeconds":0,"agentQuotaAlertPercent":80,"taskTextColor":"#FFFFFF","pulseColor":"#3AE489","pulseBrightness":100,"islandBackgroundColor":"#2F2F37","todoBackgroundColor":"#ffffff","showTitle":false,"showCollapsedText":true,"showIdleTodoCount":true,"carryOverIncompleteTodos":true,"enableTodoReorder":true,"todoReorderVersion":1,"todoTimerEnabled":false,"rotateTodos":false,"todoRotationSeconds":5,"autoTuck":true,"tuckStyle":"line","tuckDelaySeconds":30,"autoCollapseSeconds":30,"autoTuckRetract":true,"autoTuckRetractDelayMs":500,"revealOnMessage":true,"expandTrigger":"click","hoverExpandDelayMs":0,"hoverCollapseDelayMs":0,"minimizeAction":"tuck","tuckedHoverAction":"reveal","todoEnabled":true,"musicEnabled":true,"agentStatusEnabled":true,"agentTitleEnabled":true,"collapsedPriority":["agent","lyrics","todo"],"collapsedShowCover":true,"collapsedLayout":["text","mail","shelf","music","agents"],"pageOrder":["todo","music","clipboard","shelf","translation"],"shelfEnabled":true,"translationEnabled":true,"translationTarget":"island","shelfExpandOnDrop":true,"shelfAutoCleanupDays":0,"shelfRemoveMissing":true,"shelfRemoveAfterDragOut":false,"shelfMaxItems":100,"shelfDoubleClick":"open","shelfShowCount":true,"lyricsFolder":"","lyricsOnline":true,"lyricsChinese":true,"lyricsOffsetMs":0,"mailEnabled":true,"gameDoNotDisturb":true,"gameAutoTuck":false}'
-
-  - '{"islandBackgroundColor":"#2F2F37","taskTextColor":"#FFFFFF","pulseColor":"#3AE489","opacity":75}'
-
-
-
-      at file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:63:14
-
-      at withStorage (file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:21:9)
-
-      at TestContext.<anonymous> (file:///D:/FocuSD/.worktrees/shape/tests/unit/color-refresh.test.mjs:59:5)
-
-      at Test.runInAsyncScope (node:async_hooks:227:14)
-
-      at Test.run (node:internal/test_runner/test:1402:25)
-
-      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
-
-      at Test.postRun (node:internal/test_runner/test:1542:19)
-
-      at Test.run (node:internal/test_runner/test:1467:12)
-
-      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
-
-    generatedMessage: true,
-
-    code: 'ERR_ASSERTION',
-
-    actual: '{"topEdgeLayoutVersion":1,"appearanceMode":"classic","fontFamily":"system","islandFontPercent":100,"pageButtonStyle":"icon","glassIntensity":72,"opacity":75,"collapsedScale":1,"collapsedAutoWidth":true,"collapsedWidth":340,"collapsedHeight":38,"expandedScale":1,"marginY":0,"positionLocked":false,"islandMonitor":"primary","islandCornerRadius":42,"islandCornerShape":"squircle","maxPanelHeight":490,"clipboardVisibleRows":4,"agentVisibleRows":2,"agentHostDisplay":"icon","agentSessionView":"list","agentSessionSort":"recent","agentSessionGroup":"computer","agentArchiveMotion":"slide","agentCardEffects":"off","agentSessionHours":2,"agentShowClaudeCode":true,"agentShowCodex":true,"agentShowDsh":true,"agentShowWorkbuddy":true,"agentHideFinished":false,"agentShowElapsed":false,"agentShowModel":true,"agentShowActivity":true,"agentShowUsage":true,"agentQuotaSources":["claudeCode","codex","dsh","workbuddy"],"agentAlertCompleted":true,"agentAlertFailed":true,"agentAlertWaiting":true,"agentAlertStarted":"off","agentAlertSeconds":5,"agentRemindSeconds":0,"agentQuotaAlertPercent":80,"taskTextColor":"#FFFFFF","pulseColor":"#3AE489","pulseBrightness":100,"islandBackgroundColor":"#2F2F37","todoBackgroundColor":"#ffffff","showTitle":false,"showCollapsedText":true,"showIdleTodoCount":true,"carryOverIncompleteTodos":true,"enableTodoReorder":true,"todoReorderVersion":1,"todoTimerEnabled":false,"rotateTodos":false,"todoRotationSeconds":5,"autoTuck":true,"tuckStyle":"line","tuckDelaySeconds":30,"autoCollapseSeconds":30,"autoTuckRetract":true,"autoTuckRetractDelayMs":500,"revealOnMessage":true,"expandTrigger":"click","hoverExpandDelayMs":0,"hoverCollapseDelayMs":0,"minimizeAction":"tuck","tuckedHoverAction":"reveal","todoEnabled":true,"musicEnabled":true,"agentStatusEnabled":true,"agentTitleEnabled":true,"collapsedPriority":["agent","lyrics","todo"],"collapsedShowCover":true,"collapsedLayout":["text","mail","shelf","music","agents"],"pageOrder":["todo","music","clipboard","shelf","translation"],"shelfEnabled":true,"translationEnabled":true,"translationTarget":"island","shelfExpandOnDrop":true,"shelfAutoCleanupDays":0,"shelfRemoveMissing":true,"shelfRemoveAfterDragOut":false,"shelfMaxItems":100,"shelfDoubleClick":"open","shelfShowCount":true,"lyricsFolder":"","lyricsOnline":true,"lyricsChinese":true,"lyricsOffsetMs":0,"mailEnabled":true,"gameDoNotDisturb":true,"gameAutoTuck":false}',
-
-    expected: '{"islandBackgroundColor":"#2F2F37","taskTextColor":"#FFFFFF","pulseColor":"#3AE489","opacity":75}',
-
-    operator: 'strictEqual',
-
-    diff: 'simple'
-
-  }
-
-
-
-test at tests\unit\idle-collapse.test.mjs:36:1
-
-✖ typed-in delays are rounded and kept in range, and older settings keep what they did (3.7409ms)
-
-  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-
-
-
-  30 !== 0
-
-
-
-      at TestContext.<anonymous> (file:///D:/FocuSD/.worktrees/shape/tests/unit/idle-collapse.test.mjs:46:10)
-
-      at Test.runInAsyncScope (node:async_hooks:227:14)
-
-      at Test.run (node:internal/test_runner/test:1402:25)
-
-      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
-
-      at Test.postRun (node:internal/test_runner/test:1542:19)
-
-      at Test.run (node:internal/test_runner/test:1467:12)
-
-      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
-
-    generatedMessage: true,
-
-    code: 'ERR_ASSERTION',
-
-    actual: 30,
-
-    expected: 0,
-
-    operator: 'strictEqual',
-
-    diff: 'simple'
-
-  }
-
- ELIFECYCLE  Test failed. See above for more details.
-
- ELIFECYCLE  Command failed with exit code 1.
-```
+- 预览请求 `focusd-island-panel-preview` 新增 `tucked`；旧的 `{ mode, requestedAt }` 格式照常可读，2 秒前的请求忽略（`windows/settings/panelPreview.ts`）。
+- 岛内（`usePanelPreview.ts` + `panelPreviewPlan.ts`）记住预览前的状态，2.5 秒内没有新请求就恢复；预览期间暂停空闲计时和贴边 peek 收回，结束后从头计时。鼠标进入岛、点击或按键、游戏勿扰、消息预览出现时，交给正常逻辑，不再恢复。
+- 接上预览的设置：贴边样式（选哪个都立刻按该样式贴边）；外观页的收起态相关项（缩放、尺寸、布局、贴边圆角、颜色、透明度等）预览收起态，展开态相关项（展开缩放、字体、字号、页面按钮、外观风格）预览展开态（`appearancePreview.ts`）；恢复默认外观预览收起态。
+- `tests/regression/panel-preview` 覆盖：三种预览、恢复、悬停接管、点击接管、游戏勿扰阻止与中途取消、消息接管后正常收回。

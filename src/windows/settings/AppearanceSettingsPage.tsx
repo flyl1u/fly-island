@@ -8,6 +8,7 @@ import { StyleSettingsSection } from "../../features/appearance/StyleSettingsSec
 import { TopEdgeShouldersSection } from "../../features/appearance/TopEdgeShouldersSection";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestPanelPreview } from "./storage";
+import { appearancePreviewMode } from "./appearancePreview";
 
 /**
  * Settings → Appearance: a preview, then style (font, opacity, size), what the collapsed island
@@ -22,6 +23,11 @@ export function AppearanceSettingsPage({
 }) {
   const [expandedScalePreview, setExpandedScalePreview] = useState<number | null>(null);
   const [fontSizePreview, setFontSizePreview] = useState<number | null>(null);
+  const updateAppearance = (next: IslandSettings) => {
+    onSettingsChange(next);
+    const mode = appearancePreviewMode(settings, next);
+    if (mode) requestPanelPreview(mode);
+  };
   return (
     <>
       <IslandPreview settings={{
@@ -31,19 +37,15 @@ export function AppearanceSettingsPage({
       }} />
       <StyleSettingsSection
         settings={settings}
-        onSettingsChange={onSettingsChange}
-        onPreviewIsland={requestPanelPreview}
+        onSettingsChange={updateAppearance}
         onExpandedScalePreview={setExpandedScalePreview}
         onFontSizePreview={setFontSizePreview}
       />
-      <CollapsedDimensionsSection settings={settings} onChange={(next) => {
-        onSettingsChange(next);
-        requestPanelPreview("collapsed");
-      }} />
-      <CollapsedLayoutEditor settings={settings} onSettingsChange={onSettingsChange} />
-      <TopEdgeShouldersSection settings={settings} onChange={onSettingsChange} />
-      <CollapsedIslandSection settings={settings} onSettingsChange={onSettingsChange} />
-      <ColorSettingsSection settings={settings} onSettingsChange={onSettingsChange} />
+      <CollapsedDimensionsSection settings={settings} onChange={updateAppearance} />
+      <CollapsedLayoutEditor settings={settings} onSettingsChange={updateAppearance} />
+      <TopEdgeShouldersSection settings={settings} onChange={updateAppearance} />
+      <CollapsedIslandSection settings={settings} onSettingsChange={updateAppearance} />
+      <ColorSettingsSection settings={settings} onSettingsChange={updateAppearance} />
     </>
   );
 }
