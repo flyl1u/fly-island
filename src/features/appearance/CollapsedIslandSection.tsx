@@ -1,12 +1,12 @@
 import { useCallback } from "react";
-import { Bot, ListTodo, MicVocal } from "lucide-react";
+import { Bot, ListTodo, MicVocal, Wallet } from "lucide-react";
 import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import type { CollapsedItem, IslandSettings } from "./types";
 
-const ICONS = { agent: Bot, lyrics: MicVocal, todo: ListTodo } as const;
+const ICONS = { agent: Bot, lyrics: MicVocal, todo: ListTodo, balance: Wallet } as const;
 
 /**
  * Appearance → Collapsed island: the order in which a running agent, the lyric line and a todo

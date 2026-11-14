@@ -9,6 +9,7 @@ const string = (...values: unknown[]): string => values.find((v): v is string =>
 const number = (value: unknown, fallback: number): number => typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
 export function validateAccount(account: BalanceAccount): void {
+  if (account.alertThreshold != null && (!Number.isFinite(account.alertThreshold) || account.alertThreshold < 0 || !account.alertUnit?.trim()) || account.alertUnit?.length > 32) throw new Error("invalidAlert");
   if (!account.name.trim() || account.name.length > 100 || account.baseUrl.length > 2048) throw new Error("invalidAccount");
   if (!TEMPLATES.includes(account.template)) throw new Error("unsupportedTemplate");
   if (!Number.isInteger(account.timeoutSeconds) || account.timeoutSeconds < 1 || account.timeoutSeconds > 120 || !Number.isInteger(account.intervalMinutes) || account.intervalMinutes < 0 || account.intervalMinutes > 1440 || !Number.isFinite(account.quotaPerUnit) || account.quotaPerUnit <= 0) throw new Error("invalidAccount");
@@ -59,6 +60,8 @@ function parseEntry(value: unknown, index: number, makeId: () => string): Import
     timeoutSeconds: number(data.timeoutSeconds ?? usage.timeout ?? usage.timeoutSeconds, 10),
     intervalMinutes: number(data.intervalMinutes ?? usage.autoQueryInterval ?? usage.auto_query_interval, 5),
     quotaPerUnit: number(data.quotaPerUnit, 500000), enabled: false,
+    alertThreshold: data.alertThreshold == null ? null : number(data.alertThreshold, NaN),
+    alertUnit: string(data.alertUnit) || "USD",
   };
   validateAccount(account);
   if (secrets.code.length > 65536 || [secrets.apiKey, secrets.accessToken, secrets.secretAccessKey].some(v => v.length > 8192)) throw new Error("fileTooLarge");

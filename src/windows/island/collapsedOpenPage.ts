@@ -11,5 +11,5 @@ export function collapsedOpenPage(
   namesAgent: boolean,
   lastPage: IslandPage,
 ): IslandPage {
-  return item === "agent" && namesAgent ? "agents" : lastPage;
+  return item === "balance" || item === "agent" && namesAgent ? "agents" : lastPage;
 }

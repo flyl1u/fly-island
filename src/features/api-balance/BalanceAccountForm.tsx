@@ -1,12 +1,14 @@
 import { useId } from "react";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsInput } from "../../components/settings/SettingsInput";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { CUSTOM_SCRIPT, PROVIDER_NAMES, PROVIDER_URLS } from "./presets";
+import { builtinBalanceScript } from "./scriptPresets";
 import { PLAN_PROVIDERS, TEMPLATES } from "./types";
 import type { BalanceAccount, BalanceSecrets, BalanceTemplate, PlanProvider } from "./types";
 
@@ -28,9 +30,10 @@ export function BalanceAccountForm({ draft, stored, onChange }: {
   </SettingsRow>;
   const changeTemplate = (template: BalanceTemplate) => {
     const provider = a.provider && PLAN_PROVIDERS.includes(a.provider as PlanProvider) ? a.provider as PlanProvider : "kimi";
-    onChange({ account: { ...a, template, ...(template === "token_plan" ? { provider, baseUrl: PROVIDER_URLS[provider] } : {}), ...(template === "official" ? { baseUrl: "https://api.deepseek.com" } : {}) }, secrets: { ...s, code: template === "custom" ? s.code || CUSTOM_SCRIPT : "", clearCode: true } });
+    onChange({ account: { ...a, template, ...(template === "token_plan" ? { provider, baseUrl: PROVIDER_URLS[provider] } : {}), ...(template === "official" ? { baseUrl: "https://api.deepseek.com" } : {}) }, secrets: { ...s, code: template === "custom" ? s.code || CUSTOM_SCRIPT : s.code } });
   };
   const scripted = ["custom", "general", "newapi", "sub2api"].includes(a.template);
+  const builtin = a.template !== "custom" && !s.code.trim();
   return <>
     <SettingsGroup title={t.name} footer={a.template === "token_plan" && a.provider === "zenmux" ? t.zenmuxHint : undefined}>
       {input("name", t.name)}
@@ -55,8 +58,22 @@ export function BalanceAccountForm({ draft, stored, onChange }: {
       <SettingsNumberRow title={t.interval} value={a.intervalMinutes} min={0} max={1440} unit={t.minutes} onChange={intervalMinutes => patch({ intervalMinutes })} />
       {a.template === "newapi" && <SettingsNumberRow title={t.conversion} value={a.quotaPerUnit} min={1} max={1000000000} onChange={quotaPerUnit => patch({ quotaPerUnit })} />}
     </SettingsGroup>
-    {scripted && <SettingsGroup title={t.code} footer={t.codeHint}>
-      <textarea className="api-balance-code" aria-label={t.code} value={s.code} onChange={e => secret({ code: e.currentTarget.value, clearCode: true })} spellCheck={false} maxLength={65536} rows={10} />
+    <SettingsGroup title={t.alertTitle} footer={t.alertHint}>
+      <SettingsToggleRow title={t.alertEnabled} checked={a.alertThreshold != null} onChange={enabled => patch({ alertThreshold: enabled ? 5 : null })} />
+      {a.alertThreshold != null && <>
+        <SettingsRow title={t.alertThreshold} labelFor={`${prefix}-threshold`}>
+          <SettingsInput id={`${prefix}-threshold`} type="number" min={0} step="any" value={a.alertThreshold} onChange={e => { const n = e.currentTarget.valueAsNumber; if (Number.isFinite(n) && n >= 0) patch({ alertThreshold: n }); }} />
+        </SettingsRow>
+        <SettingsRow title={t.alertUnit} labelFor={`${prefix}-unit`}>
+          <SettingsInput id={`${prefix}-unit`} value={a.alertUnit} maxLength={32} placeholder="USD / CNY" onChange={e => patch({ alertUnit: e.currentTarget.value })} />
+        </SettingsRow>
+      </>}
+    </SettingsGroup>
+    {scripted && <SettingsGroup title={t.code} footer={builtin ? t.builtinHint : t.codeHint}>
+      <div className="api-balance-actions api-balance-card-content">
+        <SettingsLinkButton onClick={() => secret({ code: builtin ? builtinBalanceScript(a) : "", clearCode: true })} disabled={a.template === "custom"}>{builtin ? t.customizeScript : t.resetScript}</SettingsLinkButton>
+      </div>
+      <textarea className="api-balance-code" aria-label={t.code} value={builtin ? builtinBalanceScript(a) : s.code} readOnly={builtin} onChange={e => secret({ code: e.currentTarget.value, clearCode: true })} spellCheck={false} maxLength={65536} rows={10} />
     </SettingsGroup>}
   </>;
 }

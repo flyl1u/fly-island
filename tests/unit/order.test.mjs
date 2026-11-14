@@ -22,12 +22,12 @@ test("moving an item puts it at the new index and leaves the rest in order", () 
 
 test("the collapsed island's order, cover and the page dots load with defaults", () => {
   const settings = normalizeSettings({});
-  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo"]);
+  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo", "balance"]);
   assert.equal(settings.collapsedShowCover, true);
   assert.equal(normalizeSettings({ collapsedShowCover: false }).collapsedShowCover, false);
   assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation"]);
   const saved = normalizeSettings({ collapsedPriority: ["todo"], collapsedShowCover: true, pageOrder: ["shelf", "todo"] });
-  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics"]);
+  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics", "balance"]);
   assert.equal(saved.collapsedShowCover, true);
   // Orders saved before translation had a capsule get it at the end.
   assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);

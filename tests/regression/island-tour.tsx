@@ -189,7 +189,7 @@ function strays() {
 if (!automated) {
   mount();
   results.remove();
-} else {
+} else void (async () => {
   try {
     await act(async () => { mount(); });
     await settle(300);
@@ -323,7 +323,7 @@ if (!automated) {
     const tall = panel().offsetHeight;
     check(short >= 340 && short <= tall && tall <= 560 && (short < tall || short === 560),
       `设置页按内容定高，到 560px 上限后滚动（待办 ${short}px，消息 ${tall}px）`);
-    // Appearance → Collapsed island: three items in order, moved with the arrow keys on a handle.
+    // Appearance → Collapsed island: four items in order, moved with the arrow keys on a handle.
     await click(".settings-sidebar__item[data-category='appearance']");
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
     check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 6, "已保存为胶囊的页面按钮保持胶囊（含消息）");
@@ -333,12 +333,12 @@ if (!automated) {
       document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
     await click('[aria-label="页面按钮"] button:first-child');
     const priority = () => [...document.querySelectorAll<HTMLElement>(".reorder-list__item")].map((item) => item.dataset.reorderId);
-    check(priority().join() === "agent,lyrics,todo", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办");
+    check(priority().join() === "agent,lyrics,todo,balance", "外观页列出收起时的显示顺序：Agent 任务、歌词、待办、API 余额");
     await act(async () => {
       document.querySelector<HTMLElement>(".reorder-list__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     });
     const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
-    check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
+    check(priority().join() === "lyrics,agent,todo,balance" && savedPriority?.join() === "lyrics,agent,todo,balance", "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the text sits on the
     // collapsed island's left.
     const barOrder = () => [...document.querySelectorAll<HTMLElement>(".island__collapsed > *")].map((element) => element.classList[0]).join();
@@ -388,4 +388,4 @@ if (!automated) {
   } finally {
     restore();
   }
-}
+})();

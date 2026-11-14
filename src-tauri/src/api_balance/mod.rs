@@ -1,3 +1,4 @@
+mod alerts;
 mod credentials;
 mod http;
 mod model;

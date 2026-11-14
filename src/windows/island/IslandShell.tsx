@@ -29,6 +29,8 @@ import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
 
 type IslandShellProps = {
+  balanceText?: string | null;
+  balanceLow?: boolean;
   idleClockSettings?: IdleClockSettings;
   showIdleClock?: boolean;
   notice?: CollapsedNotice | null;
@@ -96,6 +98,8 @@ type IslandShellProps = {
 };
 
 export function IslandShell({
+  balanceText,
+  balanceLow,
   idleClockSettings,
   showIdleClock = false,
   notice = null,
@@ -219,6 +223,8 @@ export function IslandShell({
           </div>
         )}
         <IslandCollapsedBar
+          balanceText={balanceText}
+          balanceLow={balanceLow}
           idleClockSettings={idleClockSettings}
           showIdleClock={showIdleClock}
           notice={notice}

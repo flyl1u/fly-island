@@ -29,6 +29,8 @@ import type { CollapsedNotice } from "./useCollapsedNotice";
 import "./IslandCollapsedBar.css";
 
 type IslandCollapsedBarProps = {
+  balanceText?: string | null;
+  balanceLow?: boolean;
   idleClockSettings?: IdleClockSettings;
   showIdleClock?: boolean;
   notice?: CollapsedNotice | null;
@@ -76,6 +78,8 @@ type IslandCollapsedBarProps = {
 
 /** The collapsed island: agent pulse, todo or message summary, mail badge, music button and tuck handle. */
 export function IslandCollapsedBar({
+  balanceText,
+  balanceLow = false,
   idleClockSettings,
   showIdleClock = false,
   notice = null,
@@ -180,6 +184,11 @@ export function IslandCollapsedBar({
             )}
             {showCollapsedText && collapsedItem === "lyrics" && (
               <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
+            )}
+            {showCollapsedText && collapsedItem === "balance" && balanceText && (
+              <span className={`island__balance${balanceLow ? " island__balance--low" : ""}`} title={balanceText}>
+                {showTitle ? "· " : ""}{balanceText}
+              </span>
             )}
             {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
               <span className={todoTimer ? "island__active-task island__active-task--timed" : "island__active-task"} key={collapsedTaskTitle}>

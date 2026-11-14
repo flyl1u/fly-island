@@ -22,6 +22,7 @@ export function BalanceAccountCard({ row, enabled, busy, onEdit, onRefresh, onRe
       <SettingsLinkButton disabled={busy} onClick={onEdit}>{t.edit}</SettingsLinkButton>
     </div>} />
     <div className="api-balance-card-content">
+      {enabled && a.enabled && row.warning && <p className="api-balance-error" role="alert">{t.lowBalance(a.name, String(row.warning.remaining), row.warning.unit, String(row.warning.threshold))}</p>}
       {row.result ? <BalanceResultView result={row.result} /> : <p className="api-balance-muted">{t.noData}</p>}
       {row.error && <p className="api-balance-error" role="alert">{row.error}</p>}
       <div className="api-balance-actions">

@@ -1,0 +1,37 @@
+.island-hover-card__anchor.balance-summary-anchor {
+  margin-left: auto;
+  min-width: 0;
+  flex: 0 1 55%;
+  justify-content: flex-end;
+}
+.balance-summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-2);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.balance-summary svg, .balance-summary small { flex: none; }
+.balance-summary__name, .balance-summary__amount {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.balance-summary__name { flex: 0 1 auto; }
+.balance-summary__amount { flex: 0 0 auto; max-width: 65%; font-weight: 600; }
+.balance-summary--low { color: var(--danger, #e66676); }
+.balance-summary--stale { opacity: 0.6; }
+.island__balance {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-2);
+  font-size: calc(12px * var(--island-font-scale, 1));
+}
+.island__balance--low { color: var(--danger, #e66676); }

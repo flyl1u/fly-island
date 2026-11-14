@@ -19,6 +19,8 @@ export interface BalanceAccount {
   intervalMinutes: number;
   quotaPerUnit: number;
   enabled: boolean;
+  alertThreshold: number | null;
+  alertUnit: string;
 }
 export interface BalanceSecrets { apiKey: string; accessToken: string; secretAccessKey: string; code: string; clearCode?: boolean }
 export interface UsageData {
@@ -35,6 +37,7 @@ export interface BalanceAccountState {
   account: BalanceAccount; hasCredentials: boolean; codeConfigured: boolean;
   result: BalanceResult | null; updatedAt: number | null; attemptedAt: number | null;
   refreshing: boolean; error: string | null;
+  warning?: { remaining: number; unit: string; threshold: number; triggeredAt: number } | null;
 }
 export interface BalanceSnapshot { revision: number; enabled: boolean; accounts: BalanceAccountState[] }
 export interface ImportEntry { account: BalanceAccount; secrets: BalanceSecrets }
@@ -42,5 +45,5 @@ export const emptySecrets = (): BalanceSecrets => ({ apiKey: "", accessToken: ""
 export const newAccount = (id: string): BalanceAccount => ({
   id, name: "", template: "general", provider: "", baseUrl: "", userId: "", organizationId: "",
   projectId: "", accessKeyId: "", region: "cn-beijing", timeoutSeconds: 10, intervalMinutes: 5,
-  quotaPerUnit: 500000, enabled: false,
+  quotaPerUnit: 500000, enabled: false, alertThreshold: null, alertUnit: "USD",
 });

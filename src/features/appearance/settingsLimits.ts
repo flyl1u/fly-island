@@ -65,7 +65,7 @@ export function normalizeExpandedScale(value: unknown) {
 }
 
 /** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
-export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
+export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo", "balance"];
 /** The collapsed island's layout as it always was: the text, then the icons on its right. */
 export const COLLAPSED_SLOTS: readonly CollapsedSlot[] = ["text", "mail", "shelf", "music", "agents"];
 /** The header's page dots in their default order; translation joined last (2026-11-11). */

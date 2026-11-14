@@ -31,6 +31,7 @@ type MessageView = ReturnType<typeof useMessageView>;
 type AgentAlerts = ReturnType<typeof useIslandAgentAlerts>;
 
 type IslandPagesProps = {
+  balanceSummary?: ReactNode;
   page: ReturnType<typeof useIslandNavigation>["page"];
   mode: ReturnType<typeof useIslandNavigation>["mode"];
   settings: IslandSettings;
@@ -61,6 +62,7 @@ type IslandPagesProps = {
 
 /** The expanded island's page panels; the one for `page` shows. */
 export function IslandPages({
+  balanceSummary,
   page,
   mode,
   settings,
@@ -139,7 +141,7 @@ export function IslandPages({
           onDeleteItems={deleteClipboardHistoryItems}
         />
       )}
-      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} view={settings.agentSessionView} sort={settings.agentSessionSort} group={settings.agentSessionGroup} archiveMotion={settings.agentArchiveMotion} cardEffects={settings.agentCardEffects} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} usages={agentUsages} approvals={agentApprovals} />}
+      {page === "agents" && <AgentSessionsPanel sessions={agentSessions} view={settings.agentSessionView} sort={settings.agentSessionSort} group={settings.agentSessionGroup} archiveMotion={settings.agentArchiveMotion} cardEffects={settings.agentCardEffects} hostDisplay={settings.agentHostDisplay} showElapsed={settings.agentShowElapsed} showModel={settings.agentShowModel} showActivity={settings.agentShowActivity} unseen={unseenAgentSessions} removal={agentRemoval} reveal={alertedSession} showUsage={settings.agentShowUsage} usages={agentUsages} approvals={agentApprovals} balanceSummary={balanceSummary} />}
       {page === "translation" && <TranslationPanel isOpen={mode === "expanded"} onOpenSettings={() => openSettingsWindow("translation")} />}
       {page === "shelf" && <FileShelfPanel shelf={fileShelf} isDropTarget={isShelfDropping} revealOnDoubleClick={settings.shelfDoubleClick === "reveal"} />}
       {page === "todo" && (

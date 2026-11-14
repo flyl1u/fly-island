@@ -65,6 +65,7 @@ fn row(account: Account, secrets: &Secrets) -> AccountState {
         attempted_at: None,
         refreshing: false,
         error: None,
+        warning: None,
     }
 }
 
@@ -345,6 +346,12 @@ impl Service {
             if current {
                 match result {
                     Ok(result) => {
+                        row.warning = super::alerts::evaluate(
+                            &row.account,
+                            &result,
+                            row.warning.as_ref(),
+                            chrono::Utc::now().timestamp_millis(),
+                        );
                         row.result = Some(result);
                         row.updated_at = Some(chrono::Utc::now().timestamp_millis());
                         row.error = None;

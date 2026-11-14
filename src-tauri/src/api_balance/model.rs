@@ -24,6 +24,14 @@ pub struct Account {
     pub interval_minutes: u64,
     pub quota_per_unit: f64,
     pub enabled: bool,
+    #[serde(default)]
+    pub alert_threshold: Option<f64>,
+    #[serde(default = "default_alert_unit")]
+    pub alert_unit: String,
+}
+
+fn default_alert_unit() -> String {
+    "USD".into()
 }
 
 fn default_region() -> String {
@@ -90,6 +98,7 @@ pub struct AccountState {
     pub attempted_at: Option<i64>,
     pub refreshing: bool,
     pub error: Option<String>,
+    pub warning: Option<super::alerts::BalanceWarning>,
 }
 
 #[derive(Clone, Default, Deserialize, Serialize)]
@@ -130,6 +139,14 @@ pub const TIER_WEEKLY_LIMIT: &str = "weekly_limit";
 pub const TIER_MONTHLY: &str = "monthly";
 
 pub fn validate_account(a: &Account) -> Result<(), String> {
+    if a.alert_threshold.is_some_and(|n| !n.is_finite() || n < 0.0)
+        || a.alert_unit.chars().count() > 32
+        || (a.alert_threshold.is_some() && a.alert_unit.trim().is_empty())
+    {
+        return Err(
+            "Alert threshold must be non-negative and have a unit (max 32 characters)".into(),
+        );
+    }
     if a.id.is_empty()
         || a.id.len() > 80
         || !a.id.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-')

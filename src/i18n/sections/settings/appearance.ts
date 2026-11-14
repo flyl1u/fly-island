@@ -52,7 +52,7 @@ export type SettingsAppearanceText = {
   collapsedIsland: {
     title: string;
     priorityFooter: string;
-    items: Record<"agent" | "lyrics" | "todo", { name: string; hint: string }>;
+    items: Record<"agent" | "lyrics" | "todo" | "balance", { name: string; hint: string }>;
     /** The drag handle of one item; arrow keys on it move the item too. */
     moveLabel: (name: string) => string;
     showCover: string;
@@ -118,6 +118,7 @@ export const zhCN: SettingsAppearanceText = {
     priorityFooter: "几样同时有内容时，收起的岛显示排在最前面的那一样。拖动调整顺序。",
     items: {
       agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
+      balance: { name: "API 余额", hint: "已启用账号的名称与余额；低余额账号优先显示" },
       lyrics: { name: "歌词", hint: "播放时的当前一句，没有歌词时显示歌名" },
       todo: { name: "待办", hint: "开始做的待办；没开始时，剩余数量排在最后" },
     },
@@ -185,6 +186,7 @@ export const en: SettingsAppearanceText = {
     priorityFooter: "When several have something to show, the collapsed island shows the first. Drag to reorder.",
     items: {
       agent: { name: "AI Agent task", hint: "The running session's title" },
+      balance: { name: "API balance", hint: "Enabled account name and balance; low balances come first" },
       lyrics: { name: "Lyrics", hint: "The current line while a song plays, or its title" },
       todo: { name: "Todos", hint: "The todo you started; until then, the count left comes last" },
     },

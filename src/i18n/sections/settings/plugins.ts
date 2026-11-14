@@ -1,6 +1,9 @@
 export type SettingsPluginsText = {
   empty: string;
   balance: {
+    alertTitle: string; alertEnabled: string; alertThreshold: string; alertUnit: string; alertHint: string;
+    builtinHint: string; customizeScript: string; resetScript: string; stale: string;
+    lowBalance: (name: string, remaining: string, unit: string, threshold: string) => string;
     title: string; description: string; enabled: string; add: string; edit: string; remove: string;
     confirmRemove: string; cancel: string; save: string; test: string; refresh: string; refreshing: string;
     import: string; export: string; confirmImport: string; importPreview: string; importHint: string;
@@ -19,6 +22,11 @@ export type SettingsPluginsText = {
 export const zhCN: SettingsPluginsText = {
   empty: "暂无插件",
   balance: {
+    alertTitle: "余额预警", alertEnabled: "启用低余额预警", alertThreshold: "低于此数额时提醒", alertUnit: "预警单位",
+    alertHint: "保存并启用账号后生效。仅比较相同单位的有效剩余额度，支持小数；等于阈值不提醒。持续低余额只提醒一次，恢复后再跌破会重新提醒。声音跟随 Agent 提示音总开关及游戏免打扰。",
+    builtinHint: "正在显示内置查询模板，实际查询仍由内置协议执行。点击“编辑为自定义脚本”后可修改；NewAPI 模板中的换算值取自上方设置。",
+    customizeScript: "编辑为自定义脚本", resetScript: "恢复内置模板", stale: "上次查询值",
+    lowBalance: (name, remaining, unit, threshold) => `${name} 余额不足：${remaining} ${unit}（低于 ${threshold}）`,
     title: "API 余额", description: "查看 API 账户余额和编程套餐额度。", enabled: "启用余额查询",
     add: "添加账号", edit: "编辑", remove: "删除", confirmRemove: "确认删除账号与密钥", cancel: "取消",
     save: "保存", test: "测试查询", refresh: "立即刷新", refreshing: "查询中…", import: "导入配置",
@@ -34,13 +42,18 @@ export const zhCN: SettingsPluginsText = {
     paused: "自动查询已停用", invalid: "密钥或套餐不可用", loading: "正在加载…", zenmuxHint: "ZenMux 按原样 GET 你填写的完整额度查询地址，请从现有可用配置复制；不自动推断推理地址的余额路径。",
     templates: { custom: "自定义", general: "通用模板", newapi: "NewAPI", sub2api: "Sub2API", token_plan: "Token Plan", official: "官方余额" },
     windows: { five_hour: "5 小时", weekly_limit: "每周", monthly: "每月" },
-    errors: { invalidAccount: "请检查名称、HTTPS 地址、超时和刷新间隔。", unsupportedTemplate: "文件包含不支持的模板。", unsupportedProvider: "文件包含不支持的套餐供应商。", unsupportedFormat: "文件格式不受支持，请导入余额 JSON 配置或 .js 脚本。", invalidJson: "JSON 格式不正确。", fileTooLarge: "文件或脚本过大（文件最多 1 MiB，脚本最多 64 KiB）。", accountLimit: "每次导入 1–50 个账号，总计最多 50 个。", scriptMustBeText: "请将 request/extractor 脚本保存为 .js，或放在 JSON 的 code 字符串中。" },
+    errors: { invalidAlert: "请填写非负的预警数额与单位（最多 32 个字符）。", invalidAccount: "请检查名称、HTTPS 地址、超时和刷新间隔。", unsupportedTemplate: "文件包含不支持的模板。", unsupportedProvider: "文件包含不支持的套餐供应商。", unsupportedFormat: "文件格式不受支持，请导入余额 JSON 配置或 .js 脚本。", invalidJson: "JSON 格式不正确。", fileTooLarge: "文件或脚本过大（文件最多 1 MiB，脚本最多 64 KiB）。", accountLimit: "每次导入 1–50 个账号，总计最多 50 个。", scriptMustBeText: "请将 request/extractor 脚本保存为 .js，或放在 JSON 的 code 字符串中。" },
   },
 };
 
 export const en: SettingsPluginsText = {
   empty: "No plugins yet",
   balance: {
+    alertTitle: "Low balance", alertEnabled: "Enable low balance alerts", alertThreshold: "Alert below this amount", alertUnit: "Alert unit",
+    alertHint: "Save and enable the account to apply. Compares valid remaining amounts in the same unit; decimals are supported. Equality does not alert. Alerts once until recovery, then alerts on the next drop. Sound follows the Agent sound master switch and game do-not-disturb.",
+    builtinHint: "Built-in query preview; queries still use the native protocol. Choose Customize script to edit it. NewAPI conversion uses the setting above.",
+    customizeScript: "Customize script", resetScript: "Restore built-in preset", stale: "Last known value",
+    lowBalance: (name, remaining, unit, threshold) => `${name}: low balance ${remaining} ${unit} (below ${threshold})`,
     title: "API Balance", description: "Check API account balances and coding plan quotas.", enabled: "Enable balance queries",
     add: "Add account", edit: "Edit", remove: "Delete", confirmRemove: "Confirm account and key deletion", cancel: "Cancel",
     save: "Save", test: "Test query", refresh: "Refresh", refreshing: "Querying…", import: "Import configuration",
@@ -56,6 +69,6 @@ export const en: SettingsPluginsText = {
     paused: "Auto refresh disabled", invalid: "Invalid key or plan", loading: "Loading…", zenmuxHint: "ZenMux sends GET to the exact quota URL entered here. Copy a working quota endpoint from your configuration; no balance path is inferred from inference URLs.",
     templates: { custom: "Custom", general: "General", newapi: "NewAPI", sub2api: "Sub2API", token_plan: "Token Plan", official: "Official balance" },
     windows: { five_hour: "5 hours", weekly_limit: "Weekly", monthly: "Monthly" },
-    errors: { invalidAccount: "Check the name, HTTPS URL, timeout and refresh interval.", unsupportedTemplate: "The file contains an unsupported template.", unsupportedProvider: "The file contains an unsupported plan provider.", unsupportedFormat: "Unsupported file format. Import a balance JSON configuration or .js script.", invalidJson: "Invalid JSON file.", fileTooLarge: "File or script is too large (file: 1 MiB, script: 64 KiB).", accountLimit: "Import 1–50 accounts, with at most 50 accounts in total.", scriptMustBeText: "Save request/extractor code as .js, or put it in a JSON code string." },
+    errors: { invalidAlert: "Enter a non-negative alert amount and a unit (up to 32 characters).", invalidAccount: "Check the name, HTTPS URL, timeout and refresh interval.", unsupportedTemplate: "The file contains an unsupported template.", unsupportedProvider: "The file contains an unsupported plan provider.", unsupportedFormat: "Unsupported file format. Import a balance JSON configuration or .js script.", invalidJson: "Invalid JSON file.", fileTooLarge: "File or script is too large (file: 1 MiB, script: 64 KiB).", accountLimit: "Import 1–50 accounts, with at most 50 accounts in total.", scriptMustBeText: "Save request/extractor code as .js, or put it in a JSON code string." },
   },
 };

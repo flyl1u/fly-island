@@ -36,7 +36,7 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null, balanceText = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; balanceText?: string | null } = {},
 ) {
   const t = useTranslation();
   const { locale } = useLocale();
@@ -65,11 +65,12 @@ export function useCollapsedTodo(
     ? pendingTodoCount
     : null;
   const hasActiveTodo = activeTodoId !== null && pendingTodoIds.includes(activeTodoId);
-  const showIdleClock = settings.idleClockEnabled && !timer && !hasActiveTodo && !agentTitle && !lyricsPlaying;
+  const showIdleClock = settings.idleClockEnabled && !timer && !hasActiveTodo && !agentTitle && !lyricsPlaying && !balanceText;
   const collapsedItem = showIdleClock ? null : timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
+    balance: Boolean(balanceText),
   }, hasActiveTodo);
   const collapsedIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
@@ -84,7 +85,7 @@ export function useCollapsedTodo(
     const todoText = collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
-      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
+      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : collapsedItem === "balance" ? balanceText : null;
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
@@ -92,7 +93,7 @@ export function useCollapsedTodo(
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings, showIdleClock, locale, t, timer]);
+  }, [agentTitle, balanceText, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings, showIdleClock, locale, t, timer]);
 
   return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, showIdleClock };
 }

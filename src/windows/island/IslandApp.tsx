@@ -30,6 +30,8 @@ import { usageLineCount } from "../../features/agent-status/usage";
 import { useIslandNavigation } from "./useIslandNavigation";
 import { useIslandTodos } from "./useIslandTodos";
 import { useCollapsedNotice } from "./useCollapsedNotice";
+import { useIslandBalances } from "./useIslandBalances";
+import { BalanceSummary } from "../../features/api-balance";
 import { useIslandTucking } from "./useIslandTucking";
 import { useIslandShelf } from "./useIslandShelf";
 import { useIslandHover } from "./useIslandHover";
@@ -62,6 +64,7 @@ export function IslandApp() {
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
   const { qqNotifications, wechatReminders, qqMail } = notices;
   const { notice, showNotice } = useCollapsedNotice(settings, navigation, game.quiet);
+  const balances = useIslandBalances(game.quiet, showNotice, settings.agentStatusEnabled);
   const hasMessagePreview = notices.hasMessagePreview || notice !== null;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
@@ -82,7 +85,7 @@ export function IslandApp() {
       settings.todoEnabled ? settings : { ...settings, showIdleTodoCount: false },
       mode !== "collapsed" || isTucked || !settings.showCollapsedText || hasMessagePreview,
       agentSession?.title ?? null,
-      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null },
+      { lyricsPlaying: songPlaying, coverWanted: Boolean(cover), timer: settings.todoEnabled ? timer : null, balanceText: balances.collapsedText },
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
@@ -137,7 +140,7 @@ export function IslandApp() {
     agentVisibleRows: settings.agentVisibleRows,
     agentSessionView: settings.agentSessionView,
     fontScale: settings.islandFontPercent / 100,
-    agentUsageLines: settings.agentShowUsage ? usageLineCount(agentUsages) : 0,
+    agentUsageLines: Math.max(settings.agentShowUsage ? usageLineCount(agentUsages) : 0, balances.accounts.length ? 1 : 0),
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
@@ -214,6 +217,8 @@ export function IslandApp() {
         todoTimer={settings.todoEnabled ? timer : null}
         collapsedTodoCount={collapsedTodoCount}
         collapsedItem={collapsedItem}
+        balanceText={balances.collapsedText}
+        balanceLow={balances.low}
         collapsedLayout={settings.collapsedLayout}
         collapsedCover={collapsedCover}
         lyricsSettings={settings}
@@ -268,6 +273,7 @@ export function IslandApp() {
           alertedSession={alertedSession}
           agentApprovals={agentApprovals}
           agentUsages={agentUsages}
+          balanceSummary={balances.accounts.length ? <BalanceSummary accounts={balances.accounts} /> : null}
           fileShelf={fileShelf}
           isShelfDropping={isShelfDropping}
           notebookProps={notebookProps}
