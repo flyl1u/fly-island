@@ -41,9 +41,9 @@ pub fn save_todo_markdown(
 #[tauri::command]
 pub fn get_default_todo_save_directory() -> Result<String, String> {
     let home_dir = windows_home_dir()?;
-    Ok(home_dir
-        .join("Documents")
-        .join("FocuSD")
-        .to_string_lossy()
-        .to_string())
+    let documents = home_dir.join("Documents");
+    // Exports from before the rename went to Documents\FocuSD: keep using it when it is there.
+    let former = documents.join("FocuSD");
+    let folder = if former.is_dir() { former } else { documents.join("Fly Island") };
+    Ok(folder.to_string_lossy().to_string())
 }

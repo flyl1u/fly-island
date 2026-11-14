@@ -258,9 +258,10 @@ fn read_qq_notification(
     {
         return Ok(None);
     }
+    // The island's own channel test, under its current name or the former one.
     if parts
         .first()
-        .is_some_and(|title| title == "FocuSD QQ notification diagnostic")
+        .is_some_and(|title| title == "Fly Island QQ notification diagnostic" || title == "FocuSD QQ notification diagnostic")
         && parts
             .iter()
             .any(|body| body == "Local channel test; this is not a chat message.")

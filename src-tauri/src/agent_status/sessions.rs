@@ -1,5 +1,5 @@
 //! Agent sessions for the island's Agent page, read straight from the Claude Code and Codex
-//! session files, so every recent session shows up whether or not it ran with FocuSD's hooks.
+//! session files, so every recent session shows up whether or not it ran with the island's hooks.
 //! Pure parsing only; reading and caching the files is in session_scan.rs. Both formats are
 //! undocumented, so anything unexpected is skipped rather than reported.
 

@@ -59,7 +59,7 @@ type = "command"
 command = {submit_command}
 command_windows = {submit_command}
 timeout = 1
-statusMessage = "Updating FocuSD agent status"
+statusMessage = "Updating Fly Island agent status"
 
 [[hooks.Stop]]
 [[hooks.Stop.hooks]]
@@ -67,7 +67,7 @@ type = "command"
 command = {stop_command}
 command_windows = {stop_command}
 timeout = 5
-statusMessage = "Updating FocuSD agent status"
+statusMessage = "Updating Fly Island agent status"
 
 [[hooks.SessionStart]]
 [[hooks.SessionStart.hooks]]

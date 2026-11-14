@@ -17,7 +17,7 @@ type Candidate = { session: AgentSession; phase: AgentTaskStatus["phase"]; updat
 
 /**
  * Claude Code and Codex come from the session files (the Agent page's list), so the island
- * names them with or without FocuSD's hooks; plugin and local API sources report their own
+ * names them with or without the island's hooks; plugin and local API sources report their own
  * title in the status snapshot.
  */
 function candidates(sessions: AgentSessionSummary[], others: ExternalAgentStatus[] | undefined): Candidate[] {

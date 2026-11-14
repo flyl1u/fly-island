@@ -61,24 +61,31 @@ pub(super) fn split_reply(text: &str) -> (Option<ReplyMarker>, &str) {
 }
 
 /// Opens the block; the version lets a newer island replace an older wording.
-const BLOCK_START: &str = "<!-- focusd-island: reply marker v2 -->";
+const BLOCK_START: &str = "<!-- focusd-island: reply marker v3 -->";
 pub(super) const BLOCK_START_PREFIX: &str = "<!-- focusd-island: reply marker";
 const BLOCK_END: &str = "<!-- /focusd-island: reply marker -->";
 
 /// The instruction, in the island's own words.
 const BLOCK_BODY: &str = "\
-## Reply status marker (added by FocuSD Island)
+## Reply status marker (added by Fly Island)
 
-End every reply with one extra line that holds only one of these characters, so FocuSD Island can show what this session is waiting for:
+End every reply with one extra line that holds only one of these characters, so Fly Island can show what this session is waiting for:
 
 - `↩` you asked the user a question, or need their decision or input, before you can go on
 - `⋯` you are waiting for a background task you started yourself (a background command, a subagent) and will continue on your own
 - `✓` the work is finished and nothing is needed from the user
 
-Write the character alone on the last line, without backticks, and nothing after it. To stop, switch off \"Reply status marker\" in FocuSD Island's Settings → AI Agent, which deletes this file.";
+Write the character alone on the last line, without backticks, and nothing after it. To stop, switch off \"Reply status marker\" in Fly Island's Settings → AI Agent, which deletes this file.";
 
 pub(super) fn block() -> String {
     format!("{BLOCK_START}\n{BLOCK_BODY}\n{BLOCK_END}")
+}
+
+/// The v2 rules file: the same words under the island's former name. Only the name changed, so
+/// a file still holding exactly this is rewritten on the next read without asking.
+fn v2_rules_file() -> String {
+    let body = BLOCK_BODY.replace("Fly Island", "FocuSD Island");
+    format!("<!-- focusd-island: reply marker v2 -->\n{body}\n{BLOCK_END}\n")
 }
 
 /// Where the island's block is in `text`: from its start line to the end of its end line.
@@ -162,12 +169,29 @@ fn read_text(path: &Path) -> Result<String, String> {
     }
 }
 
+/// Rewrites a v2 rules file, which differs only in naming the island by its former name.
+fn upgrade_former_name(path: &Path) -> Result<(), String> {
+    if read_text(path)?.replace("\r\n", "\n") == v2_rules_file() {
+        super::write_text_file(path, &rules_file())?;
+    }
+    Ok(())
+}
+
+/// Called from `setup`: the rules file is read by Claude Code in every session, so the former
+/// name is replaced at startup rather than only when the settings page is opened.
+pub(crate) fn init() {
+    std::thread::spawn(|| {
+        if let Ok(dir) = claude_dir() { let _ = upgrade_former_name(&dir.join(RULES_FILE)); }
+    });
+}
+
 /// Whether the rules file is there.
 #[tauri::command]
 pub async fn get_reply_marker_state() -> Result<ReplyMarkerState, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let dir = claude_dir()?;
         let path = dir.join(RULES_FILE);
+        upgrade_former_name(&path)?;
         Ok(state_of(&read_text(&path)?, &read_text(&dir.join("CLAUDE.md"))?, &path))
     })
     .await
@@ -233,5 +257,15 @@ mod tests {
         assert_eq!(without_block(&legacy), format!("{user}\r\n## After\r\n"));
         assert_eq!(without_block(user), user);
         assert!(state_of("<!-- focusd-island: reply marker v1 -->\nx\n<!-- /focusd-island: reply marker -->\n", "", path).outdated);
+    }
+
+    #[test]
+    fn the_former_name_is_replaced_and_its_file_recognised() {
+        assert!(!rules_file().contains("FocuSD"));
+        let former = v2_rules_file();
+        assert!(former.starts_with("<!-- focusd-island: reply marker v2 -->
+## Reply status marker (added by FocuSD Island)"));
+        assert!(is_rules_file(&former));
+        assert!(state_of(&former, "", Path::new("rules.md")).outdated);
     }
 }
