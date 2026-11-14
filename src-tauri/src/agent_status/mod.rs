@@ -43,6 +43,7 @@ mod wezterm;
 mod window_focus;
 pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
+mod workbuddy_cookie_vault;
 mod workbuddy_usage;
 
 use serde::Serialize;

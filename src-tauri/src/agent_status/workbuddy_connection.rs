@@ -7,15 +7,16 @@ use std::{
     fs,
     os::windows::fs::MetadataExt,
     path::PathBuf,
-    sync::OnceLock,
+    sync::{Mutex as StdMutex, OnceLock, PoisonError},
     time::{Duration, Instant},
 };
 use tauri::{
-    async_runtime::{channel, Mutex},
+    async_runtime::{channel, Mutex, Sender},
     webview::{NewWindowResponse, PageLoadEvent},
     AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent,
 };
 
+use super::workbuddy_cookie_vault as vault;
 use super::workbuddy_usage::{self, ReadError, WorkbuddyUsage, SUMMARY_URL, USAGE_PAGE};
 
 const WINDOW_LABEL: &str = "workbuddy-sign-in";
@@ -24,6 +25,11 @@ const REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 const FAILURE_RETRY: Duration = Duration::from_secs(30);
 const WORKBUDDY_HOST: &str = "www.workbuddy.cn";
 const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+/// How long a silent visit to the site may take to load and let its own script renew the sign-in.
+const SITE_LOAD_TIMEOUT: Duration = Duration::from_secs(12);
+const SITE_SETTLE: Duration = Duration::from_secs(2);
+/// Told when the hidden sign-in window finishes loading a WorkBuddy page.
+static SITE_LOADED: StdMutex<Option<Sender<bool>>> = StdMutex::new(None);
 
 #[derive(Clone, Copy, PartialEq, Serialize)]
 #[serde(tag = "status", rename_all = "camelCase")]
@@ -47,6 +53,10 @@ struct Connection {
     user_agent: Option<String>,
     signing_in: bool,
     finish_login: bool,
+    /// The saved copy and a silent site visit were already tried since the last good read.
+    recovery_tried: bool,
+    /// The cookie set last written to the Credential Manager, so an unchanged one is not rewritten.
+    saved_fingerprint: Option<[u8; 32]>,
 }
 
 fn connection() -> &'static Mutex<Connection> {
@@ -130,6 +140,11 @@ fn login_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         NewWindowResponse::Deny
     })
     .on_page_load(|window, event| {
+        if event.event() == PageLoadEvent::Finished && workbuddy_url(event.url()) {
+            if let Some(loaded) = SITE_LOADED.lock().unwrap_or_else(PoisonError::into_inner).take() {
+                let _ = loaded.try_send(true);
+            }
+        }
         if event.event() != PageLoadEvent::Finished || !on_usage_page(event.url()) {
             return;
         }
@@ -226,9 +241,78 @@ async fn refresh(
     window: &WebviewWindow,
     force: bool,
 ) -> WorkbuddyState {
-    let state = read_usage(connection, window, force).await;
+    let mut state = read_usage(connection, window, force).await;
+    // A remembered sign-in that comes back without cookies: put back the saved copy, then let
+    // the site's own script renew an expired token, before asking the user to sign in again.
+    // Not while signing in, where the usage page can load before the login redirect.
+    if state == WorkbuddyState::LoginRequired && !connection.signing_in && !connection.recovery_tried {
+        connection.recovery_tried = true;
+        if restore_saved(window) {
+            state = read_usage(connection, window, true).await;
+        }
+        if state == WorkbuddyState::LoginRequired && visit_site(window).await {
+            state = read_usage(connection, window, true).await;
+        }
+        if state == WorkbuddyState::LoginRequired {
+            vault::clear();
+            connection.saved_fingerprint = None;
+        }
+    }
+    if let WorkbuddyState::Connected { .. } = state {
+        connection.recovery_tried = false;
+        save_cookies(connection, window);
+    }
     connection.last_state = Some(state);
     state
+}
+
+fn restore_saved(window: &WebviewWindow) -> bool {
+    let Some(saved) = vault::load() else { return false; };
+    let now = super::snapshot::current_unix_millis() / 1_000;
+    let mut restored = false;
+    for cookie in saved.iter().filter_map(|saved| vault::to_cookie(saved, now)) {
+        restored |= window.set_cookie(cookie).is_ok();
+    }
+    restored
+}
+
+fn save_cookies(connection: &mut Connection, window: &WebviewWindow) {
+    let Ok(url) = Url::parse(SUMMARY_URL) else { return; };
+    let Ok(cookies) = window.cookies_for_url(url) else { return; };
+    let snapshot = vault::snapshot(&cookies, super::snapshot::current_unix_millis() / 1_000);
+    let Ok(bytes) = serde_json::to_vec(&snapshot) else { return; };
+    let fingerprint: [u8; 32] = Sha256::digest(&bytes).into();
+    if connection.saved_fingerprint == Some(fingerprint) { return; }
+    if vault::save(&snapshot) { connection.saved_fingerprint = Some(fingerprint); }
+}
+
+async fn sleep(duration: Duration) {
+    let _ = tauri::async_runtime::spawn_blocking(move || std::thread::sleep(duration)).await;
+}
+
+/// Loads the usage page in the hidden window, as a browser would on reopening, so the site can
+/// renew its own short-lived token; then returns the window to a blank page.
+async fn visit_site(window: &WebviewWindow) -> bool {
+    let Ok(url) = Url::parse(USAGE_PAGE) else { return false; };
+    let (loaded, mut wait) = channel(2);
+    *SITE_LOADED.lock().unwrap_or_else(PoisonError::into_inner) = Some(loaded.clone());
+    if window.navigate(url).is_err() {
+        SITE_LOADED.lock().unwrap_or_else(PoisonError::into_inner).take();
+        return false;
+    }
+    tauri::async_runtime::spawn(async move {
+        sleep(SITE_LOAD_TIMEOUT).await;
+        let _ = loaded.try_send(false);
+    });
+    let finished = wait.recv().await.unwrap_or(false);
+    SITE_LOADED.lock().unwrap_or_else(PoisonError::into_inner).take();
+    if finished {
+        sleep(SITE_SETTLE).await;
+    }
+    if let Ok(blank) = Url::parse("about:blank") {
+        let _ = window.navigate(blank);
+    }
+    finished
 }
 
 async fn read_usage(
@@ -413,6 +497,7 @@ pub async fn disconnect_workbuddy(app: AppHandle) -> Result<(), String> {
             .clear_all_browsing_data()
             .map_err(|e| e.to_string())?;
     }
+    vault::clear();
     if let Err(error) = fs::remove_file(marker) {
         if error.kind() != std::io::ErrorKind::NotFound {
             return Err(error.to_string());
