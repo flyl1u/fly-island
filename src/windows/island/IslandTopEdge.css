@@ -121,3 +121,16 @@
     0 5px 16px rgba(0, 0, 0, 0.12);
 }
 
+
+/*
+ * Attached glass: the screen edge replaces the lit top rim, which left the pane's top with no edge
+ * of its own, so it looked as if it ran into the screen. A light hairline and a faint shadow line
+ * just under it set the top apart again, collapsed and expanded alike. Inset shadows follow the
+ * rounded corners, so the line thins out into them.
+ */
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass,
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.3 - var(--is-light) * 0.18)),
+    inset 0 2px 0 -1px rgba(0, 0, 0, calc(0.12 + var(--is-light) * 0.06));
+}
