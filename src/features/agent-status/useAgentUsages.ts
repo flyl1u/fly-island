@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
-import { getAgentUsage, getCodexUsage, getDshUsage } from "./api";
+import { dshProblem, getAgentUsage, getCodexUsage, getDshUsage } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
 
 /** claude-hud refreshes its snapshot about once a minute; reading local files is cheap. */
@@ -32,11 +32,17 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
       void Promise.all([
         showClaude ? getAgentUsage().catch(log("Claude")) : Promise.resolve(null),
         showCodex ? getCodexUsage().catch(log("Codex")) : Promise.resolve(null),
-        showDsh ? getDshUsage().catch(() => null) : Promise.resolve(null),
+        showDsh ? getDshUsage().then((usage) => ({ usage, problem: null }), (error: unknown) => ({ usage: null, problem: dshProblem(error) })) : Promise.resolve(null),
       ]).then(([claude, codex, dsh]) => {
         if (cancelled) return;
         const now = Date.now();
-        setUsages({ claude: withoutPastWindows(claude ?? null, now), codex: withoutPastWindows(codex ?? null, now), dsh: dsh ?? null, readAt: now });
+        setUsages({
+          claude: withoutPastWindows(claude ?? null, now),
+          codex: withoutPastWindows(codex ?? null, now),
+          dsh: dsh?.usage ?? null,
+          dshProblem: dsh?.problem ?? null,
+          readAt: now,
+        });
       });
     };
     refresh();
@@ -52,5 +58,6 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     claude: enabled && showClaude ? usages.claude : null,
     codex: enabled && showCodex ? usages.codex : null,
     dsh: enabled && showDsh ? usages.dsh : null,
+    dshProblem: enabled && showDsh ? usages.dshProblem : null,
   }), [enabled, usages, showClaude, showCodex, showDsh]);
 }

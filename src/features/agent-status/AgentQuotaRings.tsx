@@ -3,7 +3,7 @@ import { IslandHoverCard, type HoverCardLine } from "../../components/IslandHove
 import type { AgentProvider, AgentUsage } from "./api";
 import { isStale, percentLeft, quotaRings, quotaSummaries, usageLineCount, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
 import { useAgentUsages } from "./useAgentUsages";
-import { DshQuotaRing } from "./DshQuotaRing";
+import { DshProblemNote, DshQuotaRing } from "./DshQuotaRing";
 import { QuotaRings } from "./QuotaRings";
 import { WorkbuddyQuotaRing } from "./WorkbuddyQuotaRing";
 import { QUOTA_COLORS } from "./quotaColors";
@@ -26,7 +26,7 @@ export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
   return (
     <div className="agent-quota">
       {shown.map(([provider, usage]) => <AgentQuota key={provider} provider={provider} usage={usage} now={usages.readAt} />)}
-      {usages.dsh && <DshQuotaRing usage={usages.dsh} now={usages.readAt} />}
+      {usages.dsh ? <DshQuotaRing usage={usages.dsh} now={usages.readAt} /> : usages.dshProblem && <DshProblemNote problem={usages.dshProblem} />}
       {usages.workbuddy && <WorkbuddyQuotaRing usage={usages.workbuddy} now={Math.max(usages.readAt, usages.workbuddy.updatedAt)} />}
     </div>
   );

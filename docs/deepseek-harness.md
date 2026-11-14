@@ -14,16 +14,16 @@ DSH 会话、宿主标识、余额环和来源开关接入 Agent 页。会话完
 | [DataElement](https://github.com/dataelement/dsh-desktop) | 18,424 | DSH Desktop.exe | %APPDATA%/dsh-desktop/harness |
 | [anywhere-labs Stable/Beta/NEXT](https://github.com/anywhere-labs/dsh-desktop) | 35,860 | DSH Desktop.exe / DSH Desktop Beta.exe / DSH NEXT.exe | ~/.dsh / ~/.dsh-beta；支持已保存绝对目录选择 |
 
-目录选择只用于会话读取，不改变余额凭据来源。仅通过其他进程环境变量配置的任意目录不自动发现。完整源码依据、凭据、窗口和限制见 [调研记录](investigations/deepseek-harness-integration.md)。
+余额从所有有会话的目录里，选最新带计费来源的检查点所在的目录（正在用的那个 DSH）读取路由和凭据（2026-11-14 起，见[排查记录](investigations/dsh-balance-sessions-2026-11.md)）。仅通过其他进程环境变量配置的任意目录不自动发现。完整源码依据、凭据、窗口和限制见 [调研记录](investigations/deepseek-harness-integration.md)。
 
 | 文件 | 用途 |
 |---|---|
-| `sessions/<项目分片>/session-<UUID>/session.v3.jsonl.zstd`、`session.v4.jsonl.zstd` | 官方追加式、Zstandard 压缩 JSONL 会话日志。本接入只检查对应文件存在，不解压正文 |
+| `sessions/<项目分片>/session-<UUID>/session.v<N>.jsonl.zstd`（目前 v3、v4） | 官方追加式、Zstandard 压缩 JSONL 会话日志。本接入只检查对应文件存在，不解压正文 |
 | `storages/session_projcache/sessions/session-<UUID>.json` | 会话投影检查点，形如 `{version, record: {identity, rows: {<投影>: {ver, seq, val}}}}`；读取标题、初始目录、模型、最近一轮摘要、状态和上下文 token 数 |
 | `profiles/web/desktop-storage.json` | 仅判断 `dsh.sessions.current` 中的 `sessionId`，避免 DSH 在前台时把所有会话都标记为已看过 |
 | `.credentials.yaml` | 仅余额查询在进程内读取，详见下节 |
 
-接受投影域版本 3–7、会话格式 3/4，按各投影的 `ver` 校验字段；未知版本、空白会话、已删除的源日志、超大或损坏文件安静跳过。每个检查点限 512 KiB，每次最多处理最新 512 个；按文件长度和修改时间缓存解析结果，缓存有容量上限。沿用 Agent 页的时间范围、排序、最多 12 条、隐藏已退出会话、归档和三种显示方式。
+接受投影域版本 ≥3、会话格式 ≥3；各投影接受已知 `ver` 及更新版本，并逐个校验需要的字段类型，字段形状变了的跳过；空白会话、已删除的源日志、超大或损坏文件安静跳过。每个检查点限 512 KiB，每次最多处理最新 512 个；按文件长度和修改时间缓存解析结果，缓存有容量上限。沿用 Agent 页的时间范围、排序、最多 12 条、隐藏已退出会话、归档和三种显示方式。
 
 状态判定：
 
@@ -49,9 +49,9 @@ DSH 官方账户采用充值与赠送钱包；没有查到本地持久化的余�
 | `deepseek-official` | `GET https://api.deepseek.com/user/balance` | DSH `refs.DEEPSEEK_API_KEY`，只作为 Authorization 请求头 |
 | `deepseek-account` | `GET https://platform.deepseek.com/api/v0/users/get_user_summary` | DSH `records[deepseek-account-platform/default]` 的 grant，只接受官方 issuer，只作为 `x-dsh-auth-token` 请求头 |
 
-只读取 DSH 默认凭据布局中所需的标量，不解析任意 YAML、执行引用或跟随自定义 endpoint。已知本地设置/patch 出现自定义地址或 credential reference 时禁用自动余额查询；复杂 YAML、环境变量凭据、自定义提供商、其他 profile 的自定义凭据不会自动接管。没有可识别的计费来源或凭据时不显示余额。
+只读取 DSH 默认凭据布局中所需的标量，不解析任意 YAML、执行引用或跟随自定义 endpoint。已知本地设置/patch 出现自定义地址或 credential reference 时禁用自动余额查询；复杂 YAML、环境变量凭据、自定义提供商、其他 profile 的自定义凭据不会自动接管。没有可识别的计费来源或凭据时，余额环位置显示空环和原因（未找到凭据、第三方模型、自定义接口等），不显示金额。
 
-凭据只在请求期间保存在 Rust 进程内，不发送到前端，不复制到岛屿数据目录，不写入日志、测试或报告。网络只访问以上固定 HTTPS 地址，不跟随重定向；超时 5 秒、响应最多 64 KiB。成功结果只在内存缓存 5 分钟；失败至少隔 1 分钟再试，暂保留同一凭据的旧结果并按现有规则标记过期；更换或删除凭据会清除上一身份的缓存。离线或接口失败不会当作余额为零，也不会刷错误日志。
+凭据只在请求期间保存在 Rust 进程内，不发送到前端，不复制到岛屿数据目录，不写入日志、测试或报告。网络只访问以上固定 HTTPS 地址，不跟随重定向；连接超时 4 秒、总超时 8 秒，连接失败或超时重试一次，响应最多 64 KiB。成功结果只在内存缓存 5 分钟；失败至少隔 1 分钟再试，暂保留同一凭据的旧结果并按现有规则标记过期；更换或删除凭据会清除上一身份的缓存。离线或接口失败不会当作余额为零，也不会刷错误日志。
 
 余额环沿用现有 22px 同心环，DSH 用青绿色：外圈实心表示余额可用，空圈表示不足；内圈实心表示存在赠送余额。环旁显示币种和余额；悬停与读屏给出各币种的充值/赠送余额、来源、更新时间及环的含义，**不显示虚构的已用百分比**，不同货币不相加。API key 来源优先使用服务器的 `is_available`；账户钱包来源以余额是否大于零判断可用。
 
