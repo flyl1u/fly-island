@@ -14,15 +14,16 @@ export function UpdateTodoAction() {
 
   return (
     <button
-      className={`todo-start${busy ? " todo-start--busy" : ""}`}
+      className={`todo-start todo-start--update${busy ? " todo-start--busy" : ""}`}
       type="button"
       title={action}
-      aria-label={action}
+      aria-label={busy ? action : `${action} · ${t.availableHint}`}
       disabled={busy}
       onClick={() => void installUpdate()}
     >
       <RefreshCcw size={13} strokeWidth={2.4} />
       <span>{action}</span>
+      {!busy && <span className="todo-update-dot" aria-hidden="true" />}
     </button>
   );
 }

@@ -45,6 +45,7 @@
 | 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，命令 `save_theme_file`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-community-invite-seen`（`"true"`：在「关于」里点开过用户交流群；没有或其他值时，岛屿的设置按钮、侧栏「关于」和交流群那一行显示红点。2026-11-12 起） | `features/updater/storage.ts` |
+| `focusd-island-update-dot-seen`（版本号字符串，如 `"3.1.0"`：真正展开并进入待办页时记录已看过的更新版本；缺失、损坏或存储不可用回退空字符串，新版本再次显示红点。2026-11-13 起） | `features/updater/storage.ts` |
 | `focusd-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
 ## 媒体诊断命令
@@ -56,6 +57,8 @@
 `examples/wechat_reminder_probe.rs`（2026-11-13 起）在监听或路径解析报错前向标准输出增加一条 `phase: "executableResolution"` JSON：`registryExecutable`、`runningExecutable`、`selectedExecutable` 和 `explicitExecutable` 均为路径字符串或 `null`，分别表示注册表候选、主窗口优先的运行路径、最终采用路径及 `--exe` 参数。原有监听状态、事件计数字段和退出码不变；这条诊断不进入 Tauri 事件或持久化存储。详见 [微信提醒兼容性说明](../wechat-reminder-compatibility.md#只读诊断)。
 
 ## 事件
+
+前端同窗口 DOM 事件 `focusd-update-dot-seen`（2026-11-13）：更新红点已看过的版本保存成功后发出，无载荷；跨窗口仍使用浏览器 `storage` 事件。不新增 Tauri 事件。
 
 | 事件名 | 发送方 | 目标 |
 |---|---|---|

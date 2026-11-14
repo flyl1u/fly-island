@@ -1,3 +1,16 @@
+.todo-start--update { position: relative; }
+
+.todo-update-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-circle);
+  background: var(--color-badge);
+  pointer-events: none;
+}
+
 .todo-start--busy svg {
   animation: todo-start-spin 900ms linear infinite;
 }

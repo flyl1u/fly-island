@@ -9,7 +9,6 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
-import { IslandApp } from "../../src/windows/island/IslandApp";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
 import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
@@ -69,6 +68,7 @@ mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
     case "get_workbuddy_usage": return { status: "signedOut" };
+    case "plugin:app|version": return "3.0.9";
     case "get_media_diagnostics": return { players: [] };
     case "get_launch_at_startup": return false;
     case "get_default_todo_save_directory": return "D:\\Notes";
@@ -96,7 +96,9 @@ mockIPC((command, payload) => {
     case "has_translation_secret": return false;
     case "set_translation_shortcut": return args.shortcut;
     case "read_translation_clipboard": return "";
-    case "updater_configured": return false;
+    case "updater_configured": return query.has("update") && !empty;
+    case "updater_check": return { version: "3.0.10", body: null };
+    case "updater_download": return null;
     case "get_agent_hooks_state": return { claudeCode: "installed", codex: "installed" };
     case "get_reply_marker_state": return { installed: false, outdated: false, path: "", content: "" };
     case "plugin:window|is_visible": return true;
@@ -104,6 +106,8 @@ mockIPC((command, payload) => {
   }
 }, { shouldMockEvents: true });
 mockWindows("main");
+// Initialize the updater after IPC mocks exist, so ?update=1 exercises its real startup path.
+const { IslandApp } = await import("../../src/windows/island/IslandApp");
 // As main.tsx does: the attached / detached look follows the (mocked) native answer.
 trackIslandTopEdge();
 
@@ -193,8 +197,17 @@ if (!automated) {
     const barItems = [...bar.querySelectorAll<HTMLElement>("button, .island__pulse")].map((item) => item.getBoundingClientRect()).filter((rect) => rect.width > 0);
     check(barItems.every((rect) => rect.left >= collapsed.left + 10 && rect.right <= collapsed.right - 10), "收起的岛上的内容离两侧圆角有距离");
 
+    if (query.has("update")) {
+      check(document.querySelector(".dot-button--todo .island-update-dot") && !localStorage.getItem("focusd-island-update-dot-seen"),
+        "新更新在待办入口显示红点，收起期间不会记为已看过");
+    }
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "点击后展开");
+    if (query.has("update")) {
+      await click(".dot-button--todo");
+      check(!document.querySelector(".dot-button--todo .island-update-dot") && document.querySelector(".todo-update-dot")
+        && localStorage.getItem("focusd-island-update-dot-seen") === "3.0.10", "进入待办按版本消除入口红点，更新按钮仍有红点");
+    }
     checkShapeMotion(0.56);
     const panelMotion = getComputedStyle(panel());
     check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"

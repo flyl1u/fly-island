@@ -5,13 +5,16 @@ import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
 import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
+import { useUpdateDot } from "../../features/updater/useUpdateDot";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 import "./IslandHeader.css";
+import "./IslandUpdateDot.css";
 
 type IslandHeaderProps = {
+  isExpanded: boolean;
   page: IslandPage;
   features: IslandFeatures;
   /** Order of the page dots; a drag saves a new one. */
@@ -43,6 +46,7 @@ type IslandHeaderProps = {
  * target and window actions.
  */
 export function IslandHeader({
+  isExpanded,
   page,
   features,
   pageOrder,
@@ -67,6 +71,7 @@ export function IslandHeader({
   const t = useTranslation();
   // A red dot leads to the community group in About until it has been opened.
   const communityPending = useCommunityInvite().pending;
+  const updatePending = useUpdateDot(isExpanded && features.todo && page === "todo");
   const showIcons = pageButtonStyle === "icon";
   const AgentIcon = showIcons ? Bot : CircleDot;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
@@ -139,7 +144,7 @@ export function IslandHeader({
                 draggingDot === dot ? "dot-button--dragging" : "",
               ].filter(Boolean).join(" ")}
               type="button"
-              aria-label={dotLabels[dot]}
+              aria-label={dot === "todo" && updatePending ? t.island.todoListWithUpdate : dotLabels[dot]}
               aria-current={page === dot ? "page" : undefined}
               data-tip={t.island.pageNames[dot]}
               {...dotProps(dot)}
@@ -152,6 +157,7 @@ export function IslandHeader({
               }}
             >
               {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+              {dot === "todo" && updatePending && <span className="island-update-dot" aria-hidden="true" />}
             </button>
           );
         })}

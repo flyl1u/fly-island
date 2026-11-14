@@ -1,0 +1,14 @@
+/* A decoration on the fixed hit area; no ring, glow or pulse. */
+.island-update-dot {
+  position: absolute;
+  z-index: 1;
+  top: var(--space-sm);
+  right: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: var(--color-badge);
+  pointer-events: none;
+}
+
+.dot-button--capsule .island-update-dot { top: var(--space-md); }
