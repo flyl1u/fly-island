@@ -9,7 +9,7 @@ import { useArtworkTint } from "./useArtworkTint";
 import { LyricsView } from "./lyrics/LyricsView";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
 import { LyricsOffsetControl } from "./lyrics/LyricsOffsetControl";
-import { trackKey } from "./lyrics/lrc";
+import { songOffsetKey } from "./lyrics/lrc";
 import { suggestsChineseSources } from "./lyrics/chineseHint";
 import { useSongOffset } from "./lyrics/useSongOffset";
 import "./MusicPlayerPanel.css";
@@ -66,7 +66,7 @@ export function MusicPlayerPanel({
   const hasTrack = Boolean(mediaState.title);
   const { lines: lyrics, notFound, durationMs: lyricsDurationMs } = useLyrics(mediaState, lyricsSettings);
   const chineseHint = suggestsChineseSources(mediaState, lyricsSettings, notFound);
-  const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? trackKey(mediaState) : null);
+  const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? songOffsetKey(mediaState) : null);
   const tint = useArtworkTint(mediaState.thumbnail);
   const source = mediaState.sessions.find((session) => session.id === mediaState.activeSessionId)?.label ?? mediaState.sourceApp;
   const artist = mediaState.artist || t.music.unknownArtist;

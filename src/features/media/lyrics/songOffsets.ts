@@ -7,7 +7,7 @@ export const MAX_SONG_OFFSETS = 500;
 export const SONG_OFFSET_STEP_MS = 500;
 const LIMIT_MS = 10_000;
 
-/** Per-song lyrics offsets in ms, on top of the one in Settings: track key (lrc.ts trackKey) → ms. */
+/** Per-song lyrics offsets in ms, on top of Settings: lrc.ts songOffsetKey → ms. */
 export type SongOffsets = Record<string, number>;
 
 export function clampSongOffset(ms: number) {
