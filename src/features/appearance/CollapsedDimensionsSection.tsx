@@ -5,13 +5,16 @@ import { useTranslation } from "../../i18n";
 import { COLLAPSED_HEIGHT, COLLAPSED_WIDTH } from "./settingsLimits";
 import type { IslandSettings } from "./types";
 
-export function CollapsedDimensionsSection({ settings, onChange }: {
+type Props = {
   settings: IslandSettings;
   onChange: (settings: IslandSettings) => void;
-}) {
+};
+
+/** The collapsed island's width (automatic, or a set width) and height. */
+export function CollapsedDimensionRows({ settings, onChange }: Props) {
   const text = useTranslation().settings.appearance.collapsedDimensions;
   return (
-    <SettingsGroup title={text.title} footer={text.hint}>
+    <>
       <SettingsToggleRow
         title={text.autoWidth}
         checked={settings.collapsedAutoWidth}
@@ -25,6 +28,15 @@ export function CollapsedDimensionsSection({ settings, onChange }: {
       <SettingsNumberRow title={text.height} unit={text.unit} value={settings.collapsedHeight}
         min={COLLAPSED_HEIGHT.min} max={COLLAPSED_HEIGHT.max}
         onChange={(collapsedHeight) => onChange({ ...settings, collapsedHeight })} />
+    </>
+  );
+}
+
+export function CollapsedDimensionsSection({ settings, onChange }: Props) {
+  const text = useTranslation().settings.appearance.collapsedDimensions;
+  return (
+    <SettingsGroup title={text.title} footer={text.hint}>
+      <CollapsedDimensionRows settings={settings} onChange={onChange} />
     </SettingsGroup>
   );
 }

@@ -5,14 +5,16 @@ import { useTranslation } from "../../i18n";
 import { TOP_EDGE_SHOULDER_SIZE } from "./settingsLimits";
 import type { IslandSettings } from "./types";
 
-/** The screen-top silhouette; the strength is useful only while the option is on. */
-export function TopEdgeShouldersSection({ settings, onChange }: {
+type Props = {
   settings: IslandSettings;
   onChange: (settings: IslandSettings) => void;
-}) {
+};
+
+/** The screen-top silhouette; the strength is useful only while the option is on. */
+export function TopEdgeShoulderRows({ settings, onChange }: Props) {
   const t = useTranslation();
   const text = t.settings.appearance;
-  return <SettingsGroup title={text.shapeTitle}>
+  return <>
     <SettingsToggleRow title={text.topEdgeShoulders} checked={settings.topEdgeShoulders}
       onChange={(topEdgeShoulders) => onChange({ ...settings, topEdgeShoulders })} />
     {settings.topEdgeShoulders && <SettingsSliderRow indent title={text.topEdgeShoulderSize}
@@ -20,5 +22,12 @@ export function TopEdgeShouldersSection({ settings, onChange }: {
       defaultValue={TOP_EDGE_SHOULDER_SIZE.default} resetLabel={t.settings.layout.resetToDefault}
       format={(value) => `${value}px`}
       onChange={(topEdgeShoulderSize) => onChange({ ...settings, topEdgeShoulderSize })} />}
+  </>;
+}
+
+export function TopEdgeShouldersSection({ settings, onChange }: Props) {
+  const text = useTranslation().settings.appearance;
+  return <SettingsGroup title={text.shapeTitle}>
+    <TopEdgeShoulderRows settings={settings} onChange={onChange} />
   </SettingsGroup>;
 }
