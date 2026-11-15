@@ -22,6 +22,8 @@
 
 各项数据存在哪里见 [data-storage.md](data-storage.md)。
 
+Codex 的会话展示仍由 `agent_status/session_scan.rs` 读取 rollout 尾部；`codex_activity.rs` 在内存中增量保存完整文件的 turn 边界、用户提示时间和最后完成时间，避免长上下文把开始记录挤出尾部。按文件修改时间扫描所有日期目录，兼容旧目录中恢复的会话。前端 `features/agent-status/completion.ts` 统一判定显式完成时间变化，供弹出与声音使用。无新增持久化文件。实测与限制见 [Codex 会话排查记录](../investigations/codex-thinking-sessions-2026-11-15.md)。
+
 Agent 的 DSH 桌面端来源由 `agent_status/dsh_sessions.rs`（只读本地检查点、合并去重、宿主聚焦）、dsh_desktop.rs（官方与社区宿主识别、目录发现）、`dsh_credentials.rs`（受限凭据读取）和 `dsh_usage.rs`（官方余额只读查询与内存缓存）承担；从现有会话命令和聚焦命令接入，余额有独立的 `get_dsh_usage` 命令。前端仍在 `features/agent-status/`，余额展示在 `DshQuotaRing.tsx`，纯逻辑在 `dshUsage.ts`。详见 [DSH 接入说明](../deepseek-harness.md)。
 
 WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析（本地会话记录与打开中的会话登记，聚焦主窗口），从现有会话命令和聚焦命令接入。WorkBuddy 的 `agent_status/workbuddy_connection.rs` 管理专用 WebView2 官网登录和刷新，`workbuddy_usage.rs` 读取积分汇总。远程登录窗口 `workbuddy-sign-in` 使用独立浏览器配置，由本地设置页启动。岛屿和设置页共享原生余额缓存，额度环按 `agentQuotaSources` 选择。

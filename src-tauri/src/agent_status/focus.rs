@@ -207,6 +207,11 @@ pub(super) fn focus_session(
         log.note("wezterm-tab=selected");
     }
     let Some(focused) = focused else {
+        let opened = open_codex_fallback(is_codex, session_id, &mut log);
+        if opened {
+            log.finish(app_dir, "conversation fallback sent");
+            return true;
+        }
         log.finish(app_dir, "not found");
         return false;
     };
@@ -230,10 +235,17 @@ pub(super) fn focus_session(
         .zip(windows_home_dir().ok())
         .and_then(|(id, home_dir)| conversation_link::conversation_link(&home_dir, &focused.app, provider, id));
     let mut in_extension = false;
+    let mut conversation_sent = false;
     if let Some(link) = link {
         let opened = tauri_plugin_opener::open_url(&link, None::<&str>).is_ok();
+        conversation_sent = opened;
         in_extension = opened && conversation_link::is_extension_link(&link);
         log.note(if opened { "conversation=sent" } else { "conversation=failed" });
+    }
+    if !conversation_sent {
+        // A desktop app-server can share the folder of a CLI, and an extension can have no
+        // matching editor title. Keep every old path first, then let its own URI select it.
+        in_extension = open_codex_fallback(is_codex, session_id, &mut log);
     }
     // The link goes to the editor window used last, so only once the session's window is in front.
     // A session in an editor extension has no terminal to show.
@@ -248,6 +260,21 @@ pub(super) fn focus_session(
     }
     log.finish(app_dir, if focused.in_front { "focused" } else { "found, flashed (Windows kept it behind)" });
     true
+}
+
+fn open_codex_fallback(is_codex: bool, session_id: Option<&str>, log: &mut Attempt) -> bool {
+    if !is_codex { return false; }
+    let link = session_id.zip(windows_home_dir().ok())
+        .and_then(|(id, home)| conversation_link::codex_fallback_link(&home, id));
+    let Some(link) = link else { return false };
+    // No handler is a normal compatibility case; do not show Windows' app-chooser/error UI.
+    let mut opened = win32::shell_open::open_url_without_ui(&link);
+    log.note(if opened { "conversation-fallback=sent" } else { "conversation-fallback=no-handler" });
+    if !opened && link.starts_with("codex://") {
+        opened = codex_process::open_desktop_link(&link);
+        log.note(if opened { "conversation-executable=sent" } else { "conversation-executable=unavailable" });
+    }
+    opened
 }
 
 /// A session asked about by `sessions_in_front`.

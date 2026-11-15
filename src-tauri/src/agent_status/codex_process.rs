@@ -8,6 +8,8 @@ use std::{
     fs::{self, File},
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
+    os::windows::process::CommandExt,
+    process::{Command, Stdio},
 };
 
 use super::session_records::is_session_id;
@@ -23,9 +25,6 @@ const DESKTOP_ORIGINATOR: &str = "Codex Desktop";
 
 /// The Codex CLI's own process (the npm package starts this native binary under node).
 const CODEX_CLI_EXE: &str = "codex.exe";
-
-/// Day folders searched for a rollout, newest first; the Agent page lists a day at most.
-const MAX_DAY_DIRS: usize = 14;
 
 fn sorted_dirs_newest_first(dir: &Path) -> Vec<PathBuf> {
     let mut dirs: Vec<PathBuf> = fs::read_dir(dir)
@@ -48,7 +47,6 @@ pub(super) fn rollout_path(home_dir: &Path, session_id: &str) -> Option<PathBuf>
         .iter()
         .flat_map(|year| sorted_dirs_newest_first(year))
         .flat_map(|month| sorted_dirs_newest_first(&month))
-        .take(MAX_DAY_DIRS)
         .find_map(|day| {
             fs::read_dir(day).ok()?.flatten().map(|entry| entry.path()).find(|path| {
                 path.file_name().is_some_and(|name| {
@@ -61,12 +59,14 @@ pub(super) fn rollout_path(home_dir: &Path, session_id: &str) -> Option<PathBuf>
 
 /// Whether the session was started in the Codex desktop app, from the first line of its rollout.
 pub(super) fn started_in_desktop_app(home_dir: &Path, session_id: &str) -> bool {
-    let Some(path) = rollout_path(home_dir, session_id) else {
-        return false;
-    };
+    originator(home_dir, session_id).as_deref() == Some(DESKTOP_ORIGINATOR)
+}
+
+pub(super) fn originator(home_dir: &Path, session_id: &str) -> Option<String> {
+    let path = rollout_path(home_dir, session_id)?;
     let mut first_line = String::new();
     let read = File::open(path).ok().map(BufReader::new).and_then(|mut reader| reader.read_line(&mut first_line).ok());
-    read.is_some() && codex_originator(&first_line).as_deref() == Some(DESKTOP_ORIGINATOR)
+    read.and_then(|_| codex_originator(&first_line))
 }
 
 /// Whether two Windows folder paths name the same folder: case and a trailing separator aside.
@@ -91,4 +91,15 @@ pub(super) fn cli_process_in(cwd: &str) -> Option<u32> {
         .filter_map(|pid| win32::process_env::current_directory(pid).map(|folder| (pid, folder)))
         .collect();
     only_process_in(&candidates, cwd)
+}
+
+/// An installed Store build can have a broken protocol association. Only after URI dispatch
+/// failed, reuse the executable of an already-open desktop window with its protocol argument.
+/// Never pick a headless codex.exe CLI or write the client's registration/configuration.
+pub(super) fn open_desktop_link(link: &str) -> bool {
+    if !link.starts_with("codex://threads/") { return false; }
+    let exe = CODEX_DESKTOP_APPS.iter().find_map(|app| super::window_focus::open_app_exe(app));
+    exe.is_some_and(|exe| Command::new(exe).args(["--single-argument", link])
+        .creation_flags(crate::system::CREATE_NO_WINDOW)
+        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn().is_ok())
 }

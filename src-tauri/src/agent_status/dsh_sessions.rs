@@ -88,6 +88,7 @@ pub(super) fn parse_checkpoint(value: &Value, id: &str, updated_at: i64, now: i6
         .or_else(|| cwd.as_deref().and_then(folder_title));
     let selection = row(rows, "modelSelection", 2).map(|v| &v["lastUsed"]);
     Some(AgentSessionSummary {
+        last_completed_at: None,
         provider: "dsh", session_id: id.to_string(), cwd, title,
         model: selection.and_then(|v| text(&v["model"], 80)),
         effort: selection.and_then(|v| text(&v["reasoningEffort"], 40)),
