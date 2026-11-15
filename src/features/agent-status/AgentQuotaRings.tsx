@@ -1,4 +1,5 @@
 import { useTranslation } from "../../i18n";
+import type { ReactNode } from "react";
 import { IslandHoverCard, type HoverCardLine } from "../../components/IslandHoverCard";
 import type { AgentProvider, AgentUsage } from "./api";
 import { isStale, percentLeft, quotaRings, quotaSummaries, usageLineCount, usageSourceLines, windowLabel, windowSummary, type AgentUsages } from "./usage";
@@ -17,17 +18,18 @@ export { QUOTA_COLORS } from "./quotaColors";
  * not touched yet, and the percentages beside them are the share left. DSH and WorkBuddy
  * follow with their balances. The island passes the filtered usage and sizes the page for it.
  */
-export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
+export function AgentQuotaRings({ usages: given, balanceSummary }: { usages?: AgentUsages; balanceSummary?: ReactNode }) {
   const own = useAgentUsages(given === undefined);
   const usages = given ?? own;
   const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex]];
   const shown = agents.filter((entry): entry is [AgentProvider, AgentUsage] => quotaRings(entry[1]) !== null);
-  if (usageLineCount(usages) === 0) return null;
+  if (usageLineCount(usages) === 0 && !balanceSummary) return null;
   return (
     <div className="agent-quota">
       {shown.map(([provider, usage]) => <AgentQuota key={provider} provider={provider} usage={usage} now={usages.readAt} />)}
       {usages.dsh ? <DshQuotaRing usage={usages.dsh} now={usages.readAt} /> : usages.dshProblem && <DshProblemNote problem={usages.dshProblem} />}
       {usages.workbuddy && <WorkbuddyQuotaRing usage={usages.workbuddy} now={Math.max(usages.readAt, usages.workbuddy.updatedAt)} />}
+      {balanceSummary}
     </div>
   );
 }

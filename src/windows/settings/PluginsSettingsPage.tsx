@@ -1,13 +1,10 @@
-import { Puzzle } from "lucide-react";
-import { useTranslation } from "../../i18n";
-import "./PluginsSettingsPage.css";
+import { ApiBalancePanel } from "../../features/api-balance/ApiBalancePanel";
+import type { IslandSettings } from "../../features/appearance/types";
 
-export function PluginsSettingsPage() {
-  const t = useTranslation();
-  return (
-    <section className="settings-section settings-section--list plugins-settings">
-      <Puzzle size={32} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
-      <p className="plugins-settings__empty">{t.settings.plugins.empty}</p>
-    </section>
-  );
+export function PluginsSettingsPage({ settings, onSettingsChange }: {
+  settings: IslandSettings;
+  onSettingsChange: (settings: IslandSettings) => void;
+}) {
+  return <ApiBalancePanel showCollapsed={settings.balanceShowCollapsed}
+    onShowCollapsedChange={balanceShowCollapsed => onSettingsChange({ ...settings, balanceShowCollapsed })} />;
 }

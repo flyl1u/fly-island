@@ -11,6 +11,8 @@ import { useAgentSoundSettings } from "../../features/agent-status/sounds/useAge
 import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode, IslandPage } from "./types";
 import { useOutsideClick } from "./useOutsideClick";
+import { useTranslation } from "../../i18n";
+import type { ShowCollapsedNotice } from "./useCollapsedNotice";
 
 type IslandAgentAlertsOptions = {
   sessions: AgentSessionSummary[];
@@ -23,6 +25,7 @@ type IslandAgentAlertsOptions = {
   page: IslandPage;
   openIslandPage: (page: IslandPage) => void;
   collapseIsland: () => void;
+  onNotice?: ShowCollapsedNotice;
 };
 
 /**
@@ -30,7 +33,8 @@ type IslandAgentAlertsOptions = {
  * and permission requests waiting on the user. A request's card outranks an alert, so the island
  * fits the card and an alert's timer does not close it under a request still waiting.
  */
-export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode, page, openIslandPage, collapseIsland }: IslandAgentAlertsOptions) {
+export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode, page, openIslandPage, collapseIsland, onNotice }: IslandAgentAlertsOptions) {
+  const t = useTranslation();
   const isOpenOnAgents = mode === "expanded" && page === "agents";
   // Whether an alert or a card opened the Agent page and the user has not taken it over since.
   // The alert and the card each track their own opening and miss the other's: an alert opens the
@@ -42,7 +46,8 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
     openIslandPage("agents");
   };
   const [approvalSettings] = useAgentApprovalSettings();
-  const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, whenInFront: approvalSettings.whenInFront, isOpenOnAgents, onOpen, onClose: collapseIsland });
+  const approvals = useAgentApprovals({ enabled: enabled && approvalSettings.onIsland, whenInFront: approvalSettings.whenInFront, isOpenOnAgents, onOpen, onClose: collapseIsland,
+    onPreview: onNotice ? () => onNotice(t.agent.phase.waiting, "agents", settings.agentAlertSeconds * 1000) : undefined });
   const waiting = approvals.current !== null;
   const waitingRef = useRef(waiting);
   useLayoutEffect(() => {
@@ -93,6 +98,9 @@ export function useIslandAgentAlerts({ sessions, unseen, settings, enabled, mode
     isOpenOnAgents,
     isCollapsed: mode === "collapsed",
     onOpen,
+    onPreview: onNotice ? ({ session }) => onNotice(
+      `${t.agent.phase[session.phase]} · ${session.title || t.agent.sessions.title}`, "agents", settings.agentAlertSeconds * 1000,
+    ) : undefined,
     onClose: () => {
       if (!waitingRef.current) collapseIsland();
     },

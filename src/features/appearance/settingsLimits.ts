@@ -14,7 +14,7 @@ export const AGENT_ALERT_SECONDS = [3, 5, 8, 15, 30] as const;
 // collapsed bar's corners come out at 31px of its 38px height.
 export const DEFAULT_ISLAND_CORNER_RADIUS = 42;
 export const DEFAULT_HOVER_EXPAND_DELAY_MS = 0;
-export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 0;
+export const DEFAULT_HOVER_COLLAPSE_DELAY_MS = 250;
 export const DEFAULT_AUTO_TUCK_RETRACT_DELAY_MS = 500;
 // Tallest panel before the todo list and other long pages scroll. The default is the
 // height the todo page reached before this was a setting (six rows).
@@ -64,8 +64,8 @@ export function normalizeExpandedScale(value: unknown) {
   return Math.round(Math.min(MAX_EXPANDED_SCALE, Math.max(MIN_EXPANDED_SCALE, scale)) * 100) / 100;
 }
 
-/** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
-export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo"];
+/** New items append to saved orders so upgrades preserve the existing priority. */
+export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo", "balance", "clock"];
 /** The collapsed island's layout as it always was: the text, then the icons on its right. */
 export const COLLAPSED_SLOTS: readonly CollapsedSlot[] = ["text", "mail", "shelf", "music", "agents"];
 /** The header's page dots in their default order; translation joined last (2026-11-11). */

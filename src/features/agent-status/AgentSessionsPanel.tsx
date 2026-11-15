@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
@@ -8,6 +8,7 @@ import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
 import { AgentQuotaRings } from "./AgentQuotaRings";
 import type { AgentUsages } from "./usage";
+import { EMPTY_USAGES } from "./usage";
 import { focusAgentWindow, type AgentSessionSummary } from "./api";
 import { arrangeSessions, isActivePhase, minutesAgo, modelLabel, sessionProject } from "./sessionList";
 import { shownEffort } from "./effortLabels";
@@ -52,6 +53,7 @@ export function AgentSessionsPanel({
   showUsage: usageOn = false,
   usages,
   approvals,
+  balanceSummary,
 }: {
   sessions: AgentSessionSummary[];
   /** Flat rows (the default), cards framed in their light, or one-line rows (AgentSessionCard). */
@@ -81,6 +83,7 @@ export function AgentSessionsPanel({
   usages?: AgentUsages;
   /** Permission requests agents wait on; the page shows the first one alone. */
   approvals?: AgentApprovals;
+  balanceSummary?: ReactNode;
 }) {
   const t = useTranslation();
   // An alert's session alone, kept current from the list; the list may leave it out (only
@@ -153,7 +156,7 @@ export function AgentSessionsPanel({
   if (sessions.length === 0) {
     return (
       <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-        {showUsage && <AgentQuotaRings usages={usages} />}
+        {(showUsage || balanceSummary && !reveal) && <AgentQuotaRings usages={showUsage ? usages : EMPTY_USAGES} balanceSummary={balanceSummary} />}
         <div className="agent-sessions__empty">
           <strong>{t.agent.sessions.empty}</strong>
           <span>{t.agent.sessions.emptyHint}</span>
@@ -165,7 +168,7 @@ export function AgentSessionsPanel({
 
   return (
     <section className="agent-sessions" aria-label={t.agent.sessions.title}>
-      {showUsage && <AgentQuotaRings usages={usages} />}
+      {(showUsage || balanceSummary && !reveal) && <AgentQuotaRings usages={showUsage ? usages : EMPTY_USAGES} balanceSummary={balanceSummary} />}
       <ul
         ref={list.ref}
         className={`agent-sessions__list${view === "list" ? "" : ` agent-sessions__list--${view}`}${removal && !reveal ? " agent-sessions__list--archivable" : ""}`}

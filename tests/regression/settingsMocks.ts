@@ -29,6 +29,7 @@ mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
+    case "get_api_balance_state": return { revision: 0, enabled: false, accounts: [] };
     case "get_workbuddy_usage": {
       if (args.refreshNow) return setMockWorkbuddy({ status: "connected", usage: { remaining: 50, total: 500, updatedAt: Date.now() } }).then(() => workbuddy);
       return workbuddy;

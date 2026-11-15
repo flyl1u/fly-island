@@ -4,6 +4,7 @@
 |---|---|---|
 | 待办行为设置 | 现有 `focusd-island-settings`：`todoTimerEnabled` 默认 false；`enableTodoReorder` 默认 true，`todoReorderVersion: 1` 表示已迁移；无标记的旧数据开启拖拽，有标记才读取保存的布尔值。关闭番茄钟清除本轮计时，保留进行中 ID | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；沿用跨窗口 storage 同步 |
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 鼠标移出后快速收起 | 现有 `focusd-island-settings.hoverCollapseEnabled` 布尔字段，默认 true；旧数据缺失或非法时补默认值，显式 false 保留，沿用跨窗口 storage 同步 | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts` |
 | 岛屿字号、刘海基准尺寸、额度环筛选 | `focusd-island-settings`，字段见 [对外契约](contracts.md) | `features/appearance/` |
 | WorkBuddy 官网登录与余额 | `%LOCALAPPDATA%/com.focusd.island/workbuddy-web/WebView2` 保存独立浏览器配置。同级 `connected` 文件记录已成功连接。积分汇总缓存在内存，选中额度环时刷新，有效结果缓存 5 分钟。每次读到积分后，发往积分接口的 workbuddy.cn cookie 另存一份到 Windows 凭据管理器（`com.focusd.island.workbuddy-web`，`cookies-0`…`cookies-7` 分段），重启后浏览器配置里缺 cookie 时放回去。断开时清除该配置的浏览数据、凭据管理器副本和连接标记 | `agent_status/workbuddy_connection.rs`、`agent_status/workbuddy_cookie_vault.rs`、`agent_status/workbuddy_usage.rs` |
 | 贴边收起样式 | 原有 `focusd-island-settings` 对象的 `tuckStyle` 字段：`edge` / `line` / `hidden`，缺失或非法值按 `edge`；沿用跨窗口 storage 同步，不新增文件或 key | `features/appearance/storage.ts`、`settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；通过 `windows/island/useIslandWindow.ts` 同步至原生内存状态 |
@@ -34,6 +35,14 @@
 | 微信辅助功能恢复记录 | 应用数据目录（`wechat-accessibility.json`），记录进程 ID 和启动时间 | `wechat_reminders/accessibility.rs` |
 
 总览见 [overview.md](overview.md)。
+
+## API 余额
+
+`api_balance/service.rs` 将 `{ enabled, accounts }` 普通配置写入应用数据目录 `api-balance.json`，临时文件为 `api-balance.json.tmp`，启动时恢复后台调度。前端 `features/api-balance/storage.ts` 的 `focusd-island-api-balance` 是无密钥元数据镜像，不是原生配置源。查询结果、错误、调度时间仅在内存中。
+
+`api_balance/credentials.rs` 使用 Windows 凭据服务 `com.focusd.island.api-balance`，用户名按 `<account-id>-manifest` 与 `<account-id>-<generation>-<chunk>` 组织。API Key / Access Token / SecretAccessKey / 脚本按 2400 字节分块，最多 48 块；新 generation 写完后提交 manifest，再清理旧块。普通配置、默认导出与结果事件都不含这些内容。删除账号清理独立条目，不影响其他功能的凭据。
+
+外部交换文件为版本 1 的 `.flyisland-balance.json`；默认导出不含密钥和脚本，脚本需显式勾选。导入先预览、重建 ID 并停用，支持范围与示例见 [API 余额](../api-balance.md)。
 
 DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-desktop/harness` 的 `storages/session_projcache/sessions/*.json`、对应 `sessions/*/session-*/session.v{3,4}.jsonl.zstd` 的存在性，以及 `profiles/web/desktop-storage.json` 的当前会话。同时读取共享 ~/.dsh、anywhere Beta ~/.dsh-beta 及社区端保存的绝对目录选择，按会话 ID 去重；不再要求 Desktop profile；DataElement harness 是社区独立根。`dsh_credentials.rs` 只在请求内存中读取该根目录的 `.credentials.yaml`；`dsh_usage.rs` 向固定官方 HTTPS 接口读余额，结果缓存 5 分钟，只在内存保存。不增加持久化余额或会话副本，设置只增加原有 key 下的 `agentShowDsh`。完整来源与限制见 [DSH 接入说明](../deepseek-harness.md)。
 

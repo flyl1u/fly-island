@@ -14,6 +14,7 @@ type HoverExpandOptions = {
    * opens QQ or WeChat, so hovering must not open the panel over it.
    */
   paused: boolean;
+  collapseEnabled: boolean;
   /** How long the panel stays open after the cursor leaves it. */
   collapseDelayMs: number;
   mode: IslandMode;
@@ -22,13 +23,14 @@ type HoverExpandOptions = {
   onCollapse: () => void;
 };
 
-// Typing goes into a focused text field; closing the panel under it would lose the draft.
+// A focused but empty (or read-only) field is not a draft and must not pin the panel open.
 export function isEditingText() {
   const element = document.activeElement;
   return (
-    element instanceof HTMLTextAreaElement ||
-    (element instanceof HTMLInputElement && !["button", "checkbox", "radio", "range", "submit"].includes(element.type)) ||
-    (element instanceof HTMLElement && element.isContentEditable)
+    ((element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement)
+      && !element.readOnly && !element.disabled && element.value.length > 0
+      && (element instanceof HTMLTextAreaElement || !["button", "checkbox", "radio", "range", "submit"].includes(element.type))) ||
+    (element instanceof HTMLElement && element.isContentEditable && Boolean(element.textContent?.trim()))
   );
 }
 
@@ -42,7 +44,7 @@ export function isEditingText() {
  * and hovering the collapsed island never takes focus from the app the user is typing
  * in (the expanded panel takes it while under the cursor, see useHoverFocus).
  */
-export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
+export function useHoverExpand({ enabled, delayMs, paused, collapseEnabled, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
   const [isHovering, setIsHovering] = useState(false);
   const isHoveringRef = useRef(false);
   const modeRef = useRef(mode);
@@ -52,6 +54,7 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
   // The cursor has been over the expanded panel since it opened.
   const enteredRef = useRef(false);
   const pressingRef = useRef(false);
+  const composingRef = useRef(false);
   const expandTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -87,16 +90,23 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
     const release = () => {
       pressingRef.current = false;
     };
+    const compose = () => { composingRef.current = true; };
+    const endComposition = () => { composingRef.current = false; };
+    const blur = () => { release(); endComposition(); };
 
     window.addEventListener("pointerdown", press, true);
     window.addEventListener("pointerup", release, true);
     window.addEventListener("pointercancel", release, true);
-    window.addEventListener("blur", release);
+    window.addEventListener("blur", blur);
+    window.addEventListener("compositionstart", compose, true);
+    window.addEventListener("compositionend", endComposition, true);
     return () => {
       window.removeEventListener("pointerdown", press, true);
       window.removeEventListener("pointerup", release, true);
       window.removeEventListener("pointercancel", release, true);
-      window.removeEventListener("blur", release);
+      window.removeEventListener("blur", blur);
+      window.removeEventListener("compositionstart", compose, true);
+      window.removeEventListener("compositionend", endComposition, true);
     };
   }, []);
 
@@ -146,14 +156,14 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
   }, [delayMs, enabled, isHovering, isTucked, mode, onExpand, paused]);
 
   useEffect(() => {
-    if (!enabled || isHovering || mode !== "expanded" || !enteredRef.current) {
+    if (!enabled || !collapseEnabled || isHovering || mode !== "expanded" || !enteredRef.current) {
       return;
     }
 
     let timer: number | undefined;
     const close = () => {
       // Check again later rather than closing under a draft or a held drag.
-      if (pressingRef.current || isEditingText()) {
+      if (pressingRef.current || composingRef.current || isEditingText()) {
         timer = window.setTimeout(close, Math.max(collapseDelayMs, 200));
         return;
       }
@@ -162,5 +172,5 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
 
     timer = window.setTimeout(close, collapseDelayMs);
     return () => window.clearTimeout(timer);
-  }, [collapseDelayMs, enabled, isHovering, mode, onCollapse]);
+  }, [collapseDelayMs, collapseEnabled, enabled, isHovering, mode, onCollapse]);
 }

@@ -86,9 +86,7 @@ pub(super) fn resolve_session(
     target: Option<&str>,
 ) -> Result<Option<MediaSession>, String> {
     if let Some(id) = target.filter(|id| !id.is_empty()) {
-        if let Some(session) = session_by_id(manager, id)? {
-            return Ok(Some(session));
-        }
+        return session_by_id(manager, id);
     }
     target_session(manager)
 }
@@ -176,6 +174,8 @@ pub(super) fn list_sessions(manager: &MediaSessionManager) -> Vec<MediaSessionIn
             label: friendly_app_label(&id),
             id,
             playing: is_playing(&session),
+            kind: "media",
+            aliases: Vec::new(),
         });
     }
 
@@ -364,6 +364,9 @@ pub(super) fn read_media_state_from_manager(
 
     Ok(MediaState {
         available: true,
+        control_mode: "media",
+        audio_muted: None,
+        resume_blocked: false,
         // With a session the level comes from get_audio_level, which the island polls while music
         // plays; reading the device here as well cost a full audio-endpoint open on every poll.
         audio_active: false,
@@ -415,6 +418,9 @@ impl MediaState {
     pub(super) fn empty() -> Self {
         MediaState {
             available: false,
+            control_mode: "none",
+            audio_muted: None,
+            resume_blocked: false,
             audio_active: false,
             audio_peak: 0.0,
             playback_status: "unavailable",

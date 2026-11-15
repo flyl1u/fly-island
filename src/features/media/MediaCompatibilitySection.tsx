@@ -45,6 +45,7 @@ export function MediaCompatibilitySection() {
   const { diagnostics, error } = useMediaDiagnostics();
   const text = t.music.diagnostics;
   const footer = <>
+    {diagnostics.sessionServiceUnavailable && <p>{text.serviceUnavailable}</p>}
     {error ? <p>{error}</p> : diagnostics.players.length === 0 ? <p>{text.empty}</p> : null}
     <p>
       {t.music.plugin.license}{" "}
@@ -56,7 +57,8 @@ export function MediaCompatibilitySection() {
   return <SettingsGroup title={text.title} footer={footer}>
     {diagnostics.players.map((player) => {
       const title = [player.label, player.version].filter(Boolean).join(" · ");
-      const message = player.status === "smtcOff" && /kugou/i.test(player.sourceAppId) ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
+      const message = diagnostics.sessionServiceUnavailable ? text.serviceUnavailable
+        : player.status === "smtcOff" && /kugou/i.test(player.sourceAppId) ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
       return isNetease(player.sourceAppId)
         ? <NeteasePluginRow key={player.sourceAppId} title={title} message={message} />
         : <SettingsRow key={player.sourceAppId} title={title} description={message} />;

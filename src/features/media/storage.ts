@@ -15,6 +15,9 @@ export function saveMediaDiagnosticsDismissed(value: string[]) {
 export type KnownMediaSource = {
   id: string;
   label: string;
+  /** Missing in existing data means adopted, preserving the old player order. */
+  enabled?: boolean;
+  aliases?: string[];
   /** Archived players stay out of the order and of what the island follows; absent means not archived. */
   archived?: boolean;
 };
@@ -57,9 +60,12 @@ export function loadMusicSourcePriority(): KnownMediaSource[] {
         seen.add(source.id);
         return true;
       })
-      .map((source) => (source.archived === true
-        ? { id: source.id, label: source.label, archived: true }
-        : { id: source.id, label: source.label }));
+      .map((source) => ({
+        id: source.id, label: source.label,
+        ...(source.archived === true ? { archived: true } : {}),
+        ...(source.enabled === false ? { enabled: false } : {}),
+        ...(Array.isArray(source.aliases) ? { aliases: [...new Set(source.aliases.filter((id): id is string => typeof id === "string" && id.length > 0 && id !== source.id))] } : {}),
+      }));
   } catch {
     return [];
   }

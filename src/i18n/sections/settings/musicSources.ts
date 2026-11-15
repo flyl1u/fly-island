@@ -7,6 +7,9 @@ export type SettingsMusicSourcesText = {
   playing: string;
   open: string;
   notOpen: string;
+  adopt: string;
+  ignored: string;
+  audioSource: string;
   moveLabel: (name: string) => string;
   /** The row button that takes a player out of the order, for players the user never uses. */
   archive: string;
@@ -17,13 +20,16 @@ export type SettingsMusicSourcesText = {
 };
 
 export const zhCN: SettingsMusicSourcesText = {
-  title: "播放器顺序",
-  footer: "几个播放器同时在放时，岛显示排在前面的那个；都没在放时，显示排在前面的已打开的播放器。拖动调整顺序。",
-  coverHint: "不显示封面？请在播放器的设置里打开 SMTC（系统媒体控制）。",
-  empty: "还没发现播放器。放一首歌，它就会出现在这里。",
+  title: "播放器采纳与顺序",
+  footer: "自动发现系统媒体播放器和已建立音频会话的软件。关闭“采纳”后，岛不会显示或控制该来源。多个来源播放时按此顺序选择，拖动可调整；选择会自动保存。",
+  coverHint: "支持 SMTC（系统媒体控制）的播放器可提供曲目信息和播放控制；普通音频来源仅支持应用静音 / 恢复声音，不会暂停播放进度。尚未建立音频会话的软件会在首次播放后出现。",
+  empty: "还没发现音频来源。在任意软件里播放声音，它就会出现在这里。",
   playing: "正在播放",
   open: "已打开",
   notOpen: "没有打开",
+  adopt: "采纳",
+  ignored: "不采纳",
+  audioSource: "仅音频 · 静音 / 恢复",
   moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
   archive: "归档",
   restore: "恢复",
@@ -32,13 +38,16 @@ export const zhCN: SettingsMusicSourcesText = {
 };
 
 export const en: SettingsMusicSourcesText = {
-  title: "Player order",
-  footer: "When several players are playing, the island shows the first; when none is, the first one that is open. Drag to reorder.",
-  coverHint: "No cover art? Turn on SMTC (System Media Transport Controls) in the player's own settings.",
-  empty: "No players found yet. Play a song and it shows up here.",
+  title: "Adopted players and order",
+  footer: "Discovers system media players and applications with audio sessions. Turn off Adopt to exclude a source from display and control. Playing sources follow this order; drag to reorder. Choices are saved automatically.",
+  coverHint: "SMTC players provide track information and playback controls. Audio-only sources support application mute / restore, which does not pause playback. Applications appear after first opening an audio stream.",
+  empty: "No audio sources found yet. Play sound in an application to discover it.",
   playing: "Playing",
   open: "Open",
   notOpen: "Not open",
+  adopt: "Adopt",
+  ignored: "Excluded",
+  audioSource: "Audio only · mute / restore",
   moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
   archive: "Archive",
   restore: "Restore",

@@ -18,9 +18,9 @@ test("(A) only ever collapses the open island, whatever (B) is", () => {
   assert.deepEqual(idlePlan("expanded", settings({ autoTuck: false, autoCollapseSeconds: 30 }), false), { seconds: 30, action: "collapse" });
 });
 
-test("(A) waits while the cursor is on the open island", () => {
+test("both idle timers wait while the cursor is on the island", () => {
   assert.equal(idlePlan("expanded", settings({}), false, true), null);
-  assert.deepEqual(idlePlan("collapsed", settings({}), false, true), { seconds: 30, action: "tuck" });
+  assert.equal(idlePlan("collapsed", settings({}), false, true), null);
 });
 
 test("(B) follows its own delay, and only with tucking on", () => {

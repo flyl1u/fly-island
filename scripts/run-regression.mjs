@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
+  "api-balance.html?narrow=1",
+  "api-balance.html?lang=en&theme=light",
   "agent-alert-card.html",
   "agent-alerts.html",
   "agent-approvals.html",
@@ -30,6 +32,7 @@ export const PAGES = [
   "clipboard-window.html?test=1",
   "file-shelf.html",
   "i18n.html?test=1",
+  "idle-clock.html",
   "island-tour.html?test=1&shoulders=1",
   "island-tour.html?test=1&update=1",
   // Both ends of the expanded size slider: every page still inside the (scaled) island. They also
@@ -49,6 +52,8 @@ export const PAGES = [
   "message-clear.html?lang=en",
   "lyric-clock.html",
   "music-lyrics.html",
+  "music-sources.html",
+  "music-sources.html?lang=en",
   "notification-startup.html",
   "panel-preview.html",
   "settings.html?test=1",

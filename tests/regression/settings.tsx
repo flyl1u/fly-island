@@ -107,8 +107,8 @@ if (!automated) {
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
-      // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 19 : 8;
+      // Upstream appearance presets add three rows, and the idle clock adds seven.
+      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 26 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
@@ -160,8 +160,8 @@ if (!automated) {
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
       && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
     await openPage("plugins");
-    const plugins = element(".editor-panel .plugins-settings"), block = plugins.getBoundingClientRect(), content = [...plugins.children].map(child => child.getBoundingClientRect());
-    check(plugins.textContent?.trim() === "暂无插件" && plugins.querySelector("svg.lucide-puzzle") && !plugins.querySelector("button, a, input") && Math.abs((Math.min(...content.map(rect => rect.top)) + Math.max(...content.map(rect => rect.bottom)) - block.top - block.bottom) / 2) <= 8, "The plugins page shows only its Puzzle icon and empty state, vertically centered within 8px");
+    const plugins = element(".editor-panel .api-balance-panel");
+    check(plugins.textContent?.includes("API 余额") && plugins.querySelector("[role=switch]") && plugins.querySelector("input[type=file]"), "The plugins page exposes the API balance toggle and dedicated configuration importer");
     await checkAppearance(check);
     const materialButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === label);
     const strengthRow = () => [...document.querySelectorAll(".settings-row")].some((row) => row.textContent?.includes("玻璃强度"));

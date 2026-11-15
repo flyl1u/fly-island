@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" />
+  <title>音乐来源采纳与音频兼容检查</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #18191b; color: #eee; font: 14px "Segoe UI", sans-serif; }
+    #settings { max-width: 620px; margin: auto; }
+    #player { width: 520px; height: 234px; padding: 20px; display: grid; margin: 24px auto; background: #000; border-radius: 24px; }
+    #results { white-space: pre-wrap; max-width: 680px; margin: 24px auto; }
+  </style>
+  <div id="settings"></div>
+  <div id="player"></div>
+  <pre id="results" role="status">正在检查…</pre>
+  <script type="module" src="./music-sources.tsx"></script>
+</html>

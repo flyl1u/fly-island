@@ -40,6 +40,8 @@ type AgentAlertOptions = {
   isOpenOnAgents: boolean;
   isCollapsed: boolean;
   onOpen: () => void;
+  /** A collapsed summary instead of an automatically opened panel. */
+  onPreview?: (alert: AgentAlert) => void;
   onClose: () => void;
   /** A session still waiting on the user this long pops up once more; 0: never. */
   remindAfterMs?: number;
@@ -59,16 +61,16 @@ type AgentAlertOptions = {
  * Agent button, say), which brings back the whole list. With `remindAfterMs`, a session still
  * waiting on the user that long after it started waiting pops up once more.
  */
-export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, remindAfterMs = 0, onRemind, looked }: AgentAlertOptions) {
+export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onPreview, onClose, remindAfterMs = 0, onRemind, looked }: AgentAlertOptions) {
   const [alerted, setAlerted] = useState<Pick<AlertedSession, "key" | "kind" | "session"> | null>(null);
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
   const phasesRef = useRef<SessionPhases | null>(null);
   const openedByAlertRef = useRef(false);
   const closeTimerRef = useRef<number | undefined>(undefined);
   // Read inside timers and the in-front check, which outlive a render.
-  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind, looked });
+  const latest = useRef({ durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onPreview, onClose, onRemind, looked });
   useLayoutEffect(() => {
-    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onClose, onRemind, looked };
+    latest.current = { durationMs, canAlert, isOpenOnAgents, isCollapsed, onOpen, onPreview, onClose, onRemind, looked };
   });
 
   useEffect(() => {
@@ -129,6 +131,10 @@ export function useAgentAlerts({ sessions, kinds, durationMs, canAlert, isOpenOn
         // Leave a panel the user opened alone; an alert's own panel just stays open longer.
         if (!(current.isCollapsed || openedByAlertRef.current)) return;
         const newest = shown[shown.length - 1];
+        if (current.onPreview) {
+          current.onPreview(newest);
+          return;
+        }
         setAlerted({ key: sessionKey(newest.session), kind: newest.kind, session: newest.session });
         openedByAlertRef.current = true;
         current.onOpen();

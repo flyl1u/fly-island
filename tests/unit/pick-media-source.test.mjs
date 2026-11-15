@@ -20,3 +20,10 @@ test("with none playing the first open one is followed; none listed gives null",
   assert.equal(pickMediaSource([{ id: "spotify", playing: true }], order), null);
   assert.equal(pickMediaSource([], order), null);
 });
+
+test("excluded players never win, including a newly published SMTC alias", () => {
+  const sessions = [{ id: "qq", playing: true }, { id: "netease", playing: true, aliases: ["audio:netease"] }];
+  assert.equal(pickMediaSource(sessions, [{ id: "qq", enabled: false }, { id: "netease" }]), "netease");
+  assert.equal(pickMediaSource(sessions, [{ id: "qq", enabled: false }, { id: "audio:netease", enabled: false }]), null);
+  assert.equal(pickMediaSource(sessions, [{ id: "audio:netease" }]), "netease");
+});

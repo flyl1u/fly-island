@@ -3,7 +3,7 @@ import { act } from "react";
 
 const GROUPS: Record<string, string[]> = {
   general: ["启动与语言", "展开与收起", "贴边隐藏", "这些时候不贴边", "位置"],
-  appearance: ["主题", "颜色", "字体与大小", "岛上的排列", "岛屿展示优先级", "刘海与外形", "外观预设"],
+  appearance: ["主题", "颜色", "字体与大小", "岛上的排列", "岛屿展示优先级", "空闲时间与日期", "刘海与外形", "外观预设"],
 };
 
 /** Row titles of the group with this title. */
@@ -19,7 +19,16 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
   const shown = [...panel.querySelectorAll<HTMLElement>(".settings-group__title")].map((title) => title.textContent);
   check(shown.join("|") === expected.join("|"), `${category}: groups in order (${shown.join(" / ")})`);
   if (category === "general") {
-    check(titles(rowsOf(panel, "展开与收起")).join() === "展开方式,展开后自动收起,游戏模式", "General: opening, auto-collapse and game mode share a group");
+    check(titles(rowsOf(panel, "展开与收起")).join() === "展开方式,鼠标移出后快速收起,展开后自动收起,游戏模式", "General: opening, quick hover collapse, auto-collapse and game mode share a group");
+    const quick = rowsOf(panel, "展开与收起")[1].querySelector<HTMLInputElement>("input[role=switch]")!;
+    check(quick.checked, "General: quick hover collapse defaults on");
+    await act(async () => quick.click());
+    check(JSON.parse(localStorage.getItem("focusd-island-settings")!).hoverCollapseEnabled === false,
+      "General: disabling quick hover collapse persists");
+    await act(async () => quick.click());
+    const saved = JSON.parse(localStorage.getItem("focusd-island-settings")!);
+    check(saved.hoverCollapseEnabled === true && saved.autoCollapseSeconds === 30,
+      "General: re-enabling quick collapse preserves the separate seconds timer");
     check(titles(rowsOf(panel, "贴边隐藏")).join() === "闲置时贴边隐藏,收起后贴边,贴边样式", "General: auto-tuck, its delay and the tucked look share a group");
     check(titles(rowsOf(panel, "位置")).join() === "回到默认位置,锁定小岛位置", "General: the position rows come last");
   } else {

@@ -40,9 +40,8 @@ export function useTuckedHoverOpen(options: TuckedHoverOptions) {
     timerRef.current = window.setTimeout(() => {
       // The page sees the cursor before the native hover event arrives.
       if (!hoveringRef.current && !document.querySelector(".island:hover")) return;
-      const { onOpen, retractsAfterPeek, resumePeek } = optionsRef.current;
+      const { onOpen } = optionsRef.current;
       onOpen();
-      if (retractsAfterPeek) resumePeek();
     }, Math.max(optionsRef.current.delayMs, MIN_OPEN_DELAY_MS));
   }, []);
 

@@ -10,6 +10,8 @@ export type HoverFocusState = {
   editing: boolean;
   /** Game mode: a full-screen app is in front and must keep the focus. */
   blocked: boolean;
+  /** Keep normal window focus while the panel stays open after the pointer leaves. */
+  releaseOnLeave?: boolean;
 };
 
 export type HoverFocusAction = "take" | "release" | "none";
@@ -21,8 +23,9 @@ export type HoverFocusAction = "take" | "release" | "none";
  * for at any time: the native side only acts when it took the focus from a window
  * (on hover or for a global shortcut) and still holds it.
  */
-export function hoverFocusAction({ expanded, hovering, editing, blocked }: HoverFocusState): HoverFocusAction {
+export function hoverFocusAction({ expanded, hovering, editing, blocked, releaseOnLeave = true }: HoverFocusState): HoverFocusAction {
   if (expanded && hovering) return blocked ? "none" : "take";
   if (expanded && editing) return "none";
+  if (expanded && !blocked && !releaseOnLeave) return "none";
   return "release";
 }

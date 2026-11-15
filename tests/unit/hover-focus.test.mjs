@@ -22,6 +22,13 @@ test("a draft keeps the focus while the panel stays open", () => {
   assert.equal(hoverFocusAction(state({ hovering: false, editing: true })), "none");
 });
 
+test("disabling leave-collapse keeps native focus until an explicit collapse or game mode", () => {
+  assert.equal(hoverFocusAction(state({ hovering: false, releaseOnLeave: false })), "none");
+  assert.equal(hoverFocusAction(state({ expanded: false, releaseOnLeave: false })), "release");
+  assert.equal(hoverFocusAction(state({ hovering: false, releaseOnLeave: false, blocked: true })), "release");
+  assert.equal(hoverFocusAction(state({ releaseOnLeave: false })), "take");
+});
+
 test("game mode stops the island taking the focus but still lets it go", () => {
   assert.equal(hoverFocusAction(state({ blocked: true })), "none");
   assert.equal(hoverFocusAction(state({ blocked: true, hovering: false })), "release");

@@ -3,6 +3,7 @@ import { normalizeAgentSettings } from "./normalizeAgentSettings.ts";
 import { normalizeBehaviorSettings } from "./normalizeBehaviorSettings.ts";
 import { normalizeLayoutSettings } from "./normalizeLayoutSettings.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
+import { IDLE_CLOCK_SETTING_KEYS } from "./idleClockSettings.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 // Island settings (focusd-island-settings): limits in settingsLimits.ts, first-launch values in
@@ -32,6 +33,7 @@ export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
  * so presets saved with those values no longer move the island or change the count.
  */
 export const APPEARANCE_SETTING_KEYS = [
+  ...IDLE_CLOCK_SETTING_KEYS,
   "material",
   "colorScheme",
   "fontFamily",

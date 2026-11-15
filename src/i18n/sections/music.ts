@@ -14,6 +14,7 @@ export type MusicText = {
   calibrateLine: (line: string) => string;
   seekLine: (line: string) => string;
   diagnostics: {
+    serviceUnavailable: string;
     title: string; dismiss: string; details: string; update: string; empty: string; openFailed: string; kugou: string;
     ok: (player: string) => string;
     needsUpdate: (player: string) => string;
@@ -24,6 +25,11 @@ export type MusicText = {
   };
   playerLabel: string;
   controlFailed: string;
+  audioOnly: string;
+  audioOnlyHint: string;
+  muteSound: string;
+  restoreSound: string;
+  noAdoptedSource: string;
   /** The music page with nothing playing: a title and what to do. */
   nothingPlaying: string;
   nothingPlayingHint: string;
@@ -70,6 +76,7 @@ export const zhCN: MusicText = {
   calibrateLine: (line) => `校准进度到：${line}`,
   seekLine: (line) => `播放到：${line}`,
   diagnostics: {
+    serviceUnavailable: "Windows 系统媒体服务不可用，仍会通过音频兼容模式发现应用；恢复系统媒体服务后可读取曲目和播放控制。",
     title: "播放器兼容性", dismiss: "收起，不再自动弹出", details: "了解详情", update: "打开官网", empty: "未检测到播放器", openFailed: "无法打开链接",
     kugou: "在酷狗的设置 → 常规设置 → 播放 → 支持系统播放控制中开启后即可同步进度",
     ok: () => "进度同步正常",
@@ -81,6 +88,11 @@ export const zhCN: MusicText = {
   },
   playerLabel: "音乐播放器",
   controlFailed: "控制失败",
+  audioOnly: "应用音频",
+  audioOnlyHint: "仅支持静音 / 恢复声音，不会暂停播放",
+  muteSound: "将此应用静音",
+  restoreSound: "恢复此应用的声音",
+  noAdoptedSource: "当前没有可用的已采纳来源，可在音乐设置中选择",
   nothingPlaying: "没有在播放",
   nothingPlayingHint: "在任意播放器里放一首歌，就会出现在这里",
   resume: "继续播放",
@@ -129,6 +141,7 @@ export const en: MusicText = {
   calibrateLine: (line) => `Recalibrate progress to: ${line}`,
   seekLine: (line) => `Seek to: ${line}`,
   diagnostics: {
+    serviceUnavailable: "Windows media sessions are unavailable. Audio compatibility discovery still works; restore the Windows media service for track metadata and playback controls.",
     title: "Player compatibility", dismiss: "Hide; don't pop up again", details: "Learn more", update: "Open website", empty: "No players detected", openFailed: "Could not open link",
     kugou: "In Kugou, enable Settings → General settings → Playback → Support system media controls to sync progress.",
     ok: () => "Progress sync is working",
@@ -140,6 +153,11 @@ export const en: MusicText = {
   },
   playerLabel: "Music player",
   controlFailed: "Control failed",
+  audioOnly: "Application audio",
+  audioOnlyHint: "Mute / restore only; playback keeps running",
+  muteSound: "Mute this application",
+  restoreSound: "Restore this application's sound",
+  noAdoptedSource: "No adopted source is available. Choose one in Music settings.",
   nothingPlaying: "Nothing playing",
   nothingPlayingHint: "Play a song in any player and it shows up here",
   resume: "Resume",

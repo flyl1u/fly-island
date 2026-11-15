@@ -209,8 +209,11 @@ try {
   await mount();
   check(stored()?.endsAt === firstEnd && collapsedTime()?.includes("00:50"), "重启恢复同一轮剩余 50 秒");
   await advance(50_000);
-  check(document.querySelector(".island--expanded") && document.querySelector(".todo-timer-actions"), "折叠态到时弹出待办，显示时间到和完成 / 再来一轮");
+  check(document.querySelector(".island--collapsed") && document.querySelector(".island__collapsed")?.textContent?.includes("时间到"), "折叠态到时显示折叠提醒，不自动展开");
   check(sounds === 1 && stored()?.notified, "一轮只响一次，通知标记持久化");
+  await click(".island__quiet-button");
+  check(document.querySelector(".island--tucked"), "主动贴边会取消当前内部提醒，不被提醒立即唤回");
+  await open();
   await advance(10_000);
   await mount();
   check(sounds === 1 && collapsedTime()?.includes("时间到"), "不操作、StrictMode 重挂载和重启都不会重复响");
@@ -267,7 +270,8 @@ try {
   await click(".island__quiet-button");
   check(document.querySelector(".island--tucked"), "倒计时期间可贴边收起");
   await advance(1_500_000);
-  check(document.querySelector(".island--expanded") && !document.querySelector(".island--tucked") && sounds === 3, "贴边收起到时露出并展开，播放一次提示音");
+  check(document.querySelector(".island--collapsed") && !document.querySelector(".island--tucked") && sounds === 3, "贴边到时回到完整折叠态，播放一次提示音");
+  await open();
   await click(".todo-timer-actions button:last-child");
   await open();
   await advance(1_500_000);

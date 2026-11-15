@@ -16,7 +16,7 @@ function logFocusError(error: unknown) {
  * field being edited keeps it until the island collapses or the field loses focus.
  * `blocked` (game mode) stops it taking the focus. Rules in hoverFocus.ts.
  */
-export function useHoverFocus(mode: IslandMode, blocked: boolean) {
+export function useHoverFocus(mode: IslandMode, blocked: boolean, releaseOnLeave = true) {
   const [isHovering, setIsHovering] = useState(false);
   const stateRef = useRef({ mode, isHovering });
   useEffect(() => {
@@ -44,6 +44,7 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean) {
       hovering: isHovering,
       editing: isEditingText(),
       blocked,
+      releaseOnLeave,
     });
     if (action === "none") return;
 
@@ -64,7 +65,7 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [blocked, isHovering, mode]);
+  }, [blocked, isHovering, mode, releaseOnLeave]);
 
   // A draft kept the focus when the cursor left; once its field loses focus while the
   // cursor is still away, hand the focus back without waiting for the island to close.
@@ -72,12 +73,12 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean) {
     const handleFocusOut = () => {
       window.setTimeout(() => {
         const { mode: currentMode, isHovering: hovering } = stateRef.current;
-        if (currentMode === "expanded" && !hovering && !isEditingText()) {
+        if (releaseOnLeave && currentMode === "expanded" && !hovering && !isEditingText()) {
           void releaseIslandHoverFocus().catch(logFocusError);
         }
       }, 0);
     };
     window.addEventListener("focusout", handleFocusOut);
     return () => window.removeEventListener("focusout", handleFocusOut);
-  }, []);
+  }, [releaseOnLeave]);
 }

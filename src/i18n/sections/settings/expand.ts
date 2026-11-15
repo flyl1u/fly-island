@@ -5,6 +5,8 @@ export type SettingsExpandText = {
   trigger: string;
   click: string;
   hover: string;
+  hoverCollapse: string;
+  hoverCollapseHint: string;
   /** (A) Seconds after the cursor leaves the open island before it collapses. */
   autoCollapse: string;
   autoCollapseHint: string;
@@ -24,6 +26,8 @@ export const zhCN: SettingsExpandText = {
   trigger: "展开方式",
   click: "点击",
   hover: "鼠标悬停",
+  hoverCollapse: "鼠标移出后快速收起",
+  hoverCollapseHint: "悬停展开时，鼠标移出约 0.25 秒后折叠；关闭后仍按下方的自动收起时间执行。",
   autoCollapse: "展开后自动收起",
   autoCollapseHint: "鼠标离开展开的岛屿多少秒后收回成小岛；填 0 不自动收起。",
   tuckDelay: "收起后贴边",
@@ -39,6 +43,8 @@ export const en: SettingsExpandText = {
   trigger: "Open the island by",
   click: "Click",
   hover: "Hover",
+  hoverCollapse: "Collapse quickly when the pointer leaves",
+  hoverCollapseHint: "In hover mode, collapse about 0.25 seconds after the pointer leaves. When off, the auto-collapse timer below still applies.",
   autoCollapse: "Collapse the open island",
   autoCollapseHint: "Seconds after the cursor leaves the open island before it collapses; 0 keeps it open.",
   tuckDelay: "Tuck the collapsed island",

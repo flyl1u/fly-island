@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MediaState } from "./api";
 import { MUSIC_SOURCE_PRIORITY_SAVED_EVENT, MUSIC_SOURCE_PRIORITY_STORAGE_KEY, loadMusicSourcePriority, saveMusicSourcePriority, type KnownMediaSource } from "./storage";
+import { mergeMusicSources } from "./musicSources";
 
 /**
  * The user's preferred media source order, with archived players kept apart: they leave the order
@@ -53,6 +54,10 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     );
   }, []);
 
+  const setMusicSourceEnabled = useCallback((sourceId: string, enabled: boolean) => {
+    setSources((current) => current.map((source) => source.id === sourceId ? { ...source, enabled } : source));
+  }, []);
+
   /** Takes a player out of the order; it is not added back when seen. */
   const archiveMusicSource = useCallback((sourceId: string) => {
     setSources((current) =>
@@ -67,7 +72,7 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
       if (!target?.archived) return current;
       const active = current.filter((source) => !source.archived);
       const archived = current.filter((source) => source.archived && source.id !== sourceId);
-      return [...active, { id: target.id, label: target.label }, ...archived];
+      return [...active, { ...target, archived: false }, ...archived];
     });
   }, []);
 
@@ -77,12 +82,7 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     }
 
     setSources((current) => {
-      const known = new Set(current.map((source) => source.id));
-      const additions = sessions
-        .filter((session) => !known.has(session.id))
-        .map((session) => ({ id: session.id, label: session.label }));
-
-      return additions.length > 0 ? [...current, ...additions] : current;
+      return mergeMusicSources(current, sessions);
     });
   }, [sessions]);
 
@@ -115,6 +115,7 @@ export function useMusicSourcePriority(sessions: MediaState["sessions"]) {
     reorderMusicSource,
     removeMusicSource,
     setMusicSourceOrder,
+    setMusicSourceEnabled,
     archiveMusicSource,
     restoreMusicSource,
   };

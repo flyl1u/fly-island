@@ -53,7 +53,7 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
   );
   useRevealOnMessage(hasMessagePreview, isTucked, revealForMessage);
   // A preview holds the peek; the island slides back once it has gone and the cursor is away.
-  useTuckPeek(retractsPeek(tuckState), endPeek, peekRetractDelayMs ?? undefined);
+  useTuckPeek(mode === "collapsed" && retractsPeek(tuckState), endPeek, peekRetractDelayMs ?? undefined);
 }
 
 /**

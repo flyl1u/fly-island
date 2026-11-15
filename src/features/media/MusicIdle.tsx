@@ -7,7 +7,7 @@ import "./MusicIdle.css";
  * button that sends the play key so the last player can carry on. No empty cover, progress or
  * transport waiting for a song.
  */
-export function MusicIdle({ onResume }: { onResume: () => void }) {
+export function MusicIdle({ onResume, excluded = false }: { onResume: () => void; excluded?: boolean }) {
   const t = useTranslation();
 
   return (
@@ -15,8 +15,8 @@ export function MusicIdle({ onResume }: { onResume: () => void }) {
       <span className="music-idle__record" aria-hidden="true" />
       <div className="music-idle__copy">
         <span className="music-idle__title">{t.music.nothingPlaying}</span>
-        <span className="music-idle__hint">{t.music.nothingPlayingHint}</span>
-        <button className="music-idle__resume" type="button" title={t.music.resumeHint} onClick={onResume}>
+        <span className="music-idle__hint">{excluded ? t.music.noAdoptedSource : t.music.nothingPlayingHint}</span>
+        <button className="music-idle__resume" type="button" title={t.music.resumeHint} disabled={excluded} onClick={onResume}>
           <Play size={12} strokeWidth={1.5} fill="currentColor" aria-hidden="true" />
           {t.music.resume}
         </button>

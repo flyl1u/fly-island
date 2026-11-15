@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { MicVocal, Music2, Pause, Play, RefreshCcw, SkipBack, SkipForward } from "lucide-react";
+import { MicVocal, Music2, Pause, Play, RefreshCcw, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { MediaState } from "./api";
 import { MusicEqualizer } from "./MusicEqualizer";
@@ -64,13 +64,15 @@ export function MusicPlayerPanel({
   const notice = useMediaNotice(diagnostic);
   const onLyricPosition = !hasTimeline(mediaState) ? onCalibrate : mediaState.canSeek ? onSeek : undefined;
   const isPlaying = mediaState.playbackStatus === "playing";
+  const audioOnly = mediaState.controlMode === "audio";
   const hasTrack = Boolean(mediaState.title);
+  const hasSource = hasTrack || audioOnly;
   const { lines: lyrics, notFound, durationMs: lyricsDurationMs } = useLyrics(mediaState, lyricsSettings);
   const chineseHint = suggestsChineseSources(mediaState, lyricsSettings, notFound);
   const [songOffsetMs, setSongOffsetMs] = useSongOffset(lyrics ? songOffsetKey(mediaState) : null);
   const tint = useArtworkTint(mediaState.thumbnail);
   const source = mediaState.sessions.find((session) => session.id === mediaState.activeSessionId)?.label ?? mediaState.sourceApp;
-  const artist = mediaState.artist || t.music.unknownArtist;
+  const artist = audioOnly ? t.music.audioOnly : mediaState.artist || t.music.unknownArtist;
 
   const prevDisabled = mediaState.available && !mediaState.canPrevious;
   const nextDisabled = mediaState.available && !mediaState.canNext;
@@ -78,13 +80,13 @@ export function MusicPlayerPanel({
     "music-player",
     lyrics ? "music-player--lyrics" : "",
     isPlaying ? "music-player--playing" : "",
-    hasTrack ? "" : "music-player--idle",
+    hasSource ? "" : "music-player--idle",
   ].filter(Boolean).join(" ");
   const style = (tint ? { "--music-tint": tint, "--music-tint-light": tintOnLight(tint) } : undefined) as CSSProperties | undefined;
 
   return (
     <section className={className} style={style} aria-label={t.music.playerLabel}>
-      {hasTrack ? (
+      {hasSource ? (
         <header className="music-player__head">
           <div className="music-player__cover" aria-hidden="true">
             {mediaState.thumbnail && <img className="music-player__glow" src={mediaState.thumbnail} alt="" draggable={false} />}
@@ -93,14 +95,14 @@ export function MusicPlayerPanel({
             </div>
           </div>
           <div className="music-player__meta">
-            <span className="music-player__track">{mediaState.title}</span>
+            <span className="music-player__track">{audioOnly ? source : mediaState.title}</span>
             <span className="music-player__artist">{artist}</span>
             {!lyrics && (chineseHint ? (
               <button className="music-player__lyrics-hint" type="button" aria-label={t.music.lyricsChineseHint.label} onClick={onOpenSettings}>
                 {t.music.lyricsChineseHint.text}
               </button>
             ) : (
-              <span className="music-player__source">{[mediaState.album, source].filter(Boolean).join(" · ")}</span>
+              <span className="music-player__source">{audioOnly ? t.music.audioOnlyHint : [mediaState.album, source].filter(Boolean).join(" · ")}</span>
             ))}
           </div>
           <div className="music-player__aside">
@@ -113,7 +115,7 @@ export function MusicPlayerPanel({
           </div>
         </header>
       ) : (
-        <MusicIdle onResume={onPlayPause} />
+        <MusicIdle onResume={onPlayPause} excluded={mediaState.resumeBlocked || (mediaState.controlMode === "none" && mediaState.sessions.length > 0)} />
       )}
 
       {notice.open && notice.player && <MediaNotice player={notice.player} onClose={notice.close} />}
@@ -130,7 +132,7 @@ export function MusicPlayerPanel({
       {/* A player that reports no length (NetEase Cloud Music) borrows the lyrics source's. */}
       {hasTrack && <MusicProgress mediaState={mediaState} durationMs={mediaState.durationMs > 0 ? mediaState.durationMs : lyricsDurationMs} onSeek={onSeek} />}
 
-      {hasTrack && (
+      {hasSource && (
         <div className="music-player__controls">
           <button className="music-control-button" type="button" aria-label={t.music.previousTrack} disabled={prevDisabled} onClick={onPrevious}>
             <SkipBack size={22} strokeWidth={1.5} fill="currentColor" />
@@ -138,12 +140,14 @@ export function MusicPlayerPanel({
           <button
             className="music-control-button music-control-button--primary"
             type="button"
-            aria-label={isPlaying ? t.music.pause : t.music.play}
+            aria-label={audioOnly ? (mediaState.audioMuted ? t.music.restoreSound : t.music.muteSound) : isPlaying ? t.music.pause : t.music.play}
             aria-busy={isTrackChanging}
             onClick={onPlayPause}
           >
             {isTrackChanging ? (
               <RefreshCcw className="music-control-button__track-change" size={22} strokeWidth={2} />
+            ) : audioOnly ? (
+              mediaState.audioMuted ? <VolumeX size={26} strokeWidth={1.5} /> : <Volume2 size={26} strokeWidth={1.5} />
             ) : isPlaying ? (
               <Pause size={26} strokeWidth={1.5} fill="currentColor" />
             ) : (

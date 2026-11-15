@@ -5,7 +5,7 @@ use crate::win32;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct MediaDiagnostics { players: Vec<PlayerDiagnostic> }
+pub(crate) struct MediaDiagnostics { players: Vec<PlayerDiagnostic>, session_service_unavailable: bool }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,11 +80,11 @@ pub(super) fn get() -> Result<MediaDiagnostics, String> {
             let ids = win32::process_tree::process_ids_named(name);
             (!ids.is_empty()).then(|| (*name, ids.into_iter().find_map(win32::process::image_path)))
         }).collect();
-        let manager = session::request_manager()?;
-        let sessions = manager.GetSessions().map_err(|error| error.to_string())?;
+        let manager = session::request_manager().ok();
+        let sessions = manager.as_ref().and_then(|manager| manager.GetSessions().ok());
         let mut players = Vec::new();
-        for index in 0..sessions.Size().map_err(|error| error.to_string())? {
-            let item = sessions.GetAt(index).map_err(|error| error.to_string())?;
+        for index in 0..sessions.as_ref().and_then(|sessions| sessions.Size().ok()).unwrap_or(0) {
+            let Some(item) = sessions.as_ref().and_then(|sessions| sessions.GetAt(index).ok()) else { continue; };
             let Some(id) = session::session_id(&item) else { continue; };
             let path = running.iter().find(|(name, _)| Some(*name) == player_kind(&id)).and_then(|(_, path)| path.clone());
             let timeline = session::timeline_sample(&item).is_some_and(|sample| sample.has_timeline(session::current_unix_millis()));
@@ -98,7 +98,7 @@ pub(super) fn get() -> Result<MediaDiagnostics, String> {
                 players.push(diagnostic(name.to_string(), false, false, false, path));
             }
         }
-        Ok(MediaDiagnostics { players })
+        Ok(MediaDiagnostics { players, session_service_unavailable: manager.is_none() })
     })
 }
 

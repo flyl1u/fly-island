@@ -33,6 +33,12 @@ export function ExpandRows({ settings, onSettingsChange }: RowsProps) {
           />
         }
       />
+      <SettingsToggleRow
+        title={expand.hoverCollapse}
+        description={expand.hoverCollapseHint}
+        checked={settings.hoverCollapseEnabled}
+        onChange={(hoverCollapseEnabled) => update({ hoverCollapseEnabled })}
+      />
       <SettingsNumberRow
         title={expand.autoCollapse}
         description={expand.autoCollapseHint}

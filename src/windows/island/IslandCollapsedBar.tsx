@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
@@ -23,9 +23,17 @@ import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { TodoTimer } from "../../features/todos/timer";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
+import { IdleClock } from "../../features/appearance/IdleClock";
+import type { IdleClockSettings } from "../../features/appearance/idleClockSettings";
+import type { CollapsedNotice } from "./useCollapsedNotice";
 import "./IslandCollapsedBar.css";
 
 type IslandCollapsedBarProps = {
+  balanceText?: string | null;
+  balanceLow?: boolean;
+  idleClockSettings?: IdleClockSettings;
+  showIdleClock?: boolean;
+  notice?: CollapsedNotice | null;
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
@@ -70,6 +78,11 @@ type IslandCollapsedBarProps = {
 
 /** The collapsed island: agent pulse, todo or message summary, mail badge, music button and tuck handle. */
 export function IslandCollapsedBar({
+  balanceText,
+  balanceLow = false,
+  idleClockSettings,
+  showIdleClock = false,
+  notice = null,
   qqMail,
   qqNotifications,
   wechatReminders,
@@ -101,6 +114,34 @@ export function IslandCollapsedBar({
   onTuck,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  const barRef = useRef<HTMLDivElement>(null);
+  const centersIdleClock = showIdleClock && Boolean(idleClockSettings) && !preview && !notice && !quotaAlert;
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const summary = bar?.querySelector<HTMLElement>(".island__summary");
+    if (!centersIdleClock || !bar || !summary) return;
+    // Reserve equal room for the two sides, including custom icon arrangements.
+    const align = () => {
+      const bounds = bar.getBoundingClientRect();
+      if (!bounds.width) return;
+      const content = summary.getBoundingClientRect();
+      const inset = (bounds.left + bounds.width / 2 - content.left - content.width / 2) * 2 * bar.offsetWidth / bounds.width;
+      summary.style.setProperty("--idle-clock-inset-left", `${Math.max(0, inset)}px`);
+      summary.style.setProperty("--idle-clock-inset-right", `${Math.max(0, -inset)}px`);
+    };
+    const resize = new ResizeObserver(align);
+    resize.observe(bar);
+    resize.observe(summary);
+    const children = new MutationObserver(align);
+    children.observe(bar, { childList: true });
+    align();
+    return () => {
+      resize.disconnect();
+      children.disconnect();
+      summary.style.removeProperty("--idle-clock-inset-left");
+      summary.style.removeProperty("--idle-clock-inset-right");
+    };
+  }, [centersIdleClock, collapsedLayout]);
   // A pending update shows a red dot even collapsed, so it is not missed.
   const updatePending = useUpdatePending();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
@@ -120,7 +161,7 @@ export function IslandCollapsedBar({
           type="button"
           aria-label={preview
             ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source])
-            : t.messages.expand(collapsedLabel)}
+            : t.messages.expand(notice?.text ?? collapsedLabel)}
           aria-expanded={preview ? undefined : isExpanded}
           aria-controls={preview ? undefined : "island-panel"}
           onPointerDown={prepareWindowDrag}
@@ -143,7 +184,7 @@ export function IslandCollapsedBar({
                   if (opened === false) onOpenMessages(source);
                 });
               } else {
-                onOpenPage(page);
+                onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
               }
             }
           }}
@@ -162,8 +203,10 @@ export function IslandCollapsedBar({
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-            {quotaAlert ? (
+            {notice ? <span className="island__todo-count">{notice.text}</span> : quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
+            ) : showIdleClock && idleClockSettings ? (
+              <IdleClock settings={idleClockSettings} active={!isExpanded && !isTucked && !preview} />
             ) : <>
             {showCollapsedText && showTitle && (
               <span className="island__brand">fly-island</span>
@@ -181,6 +224,11 @@ export function IslandCollapsedBar({
             )}
             {showCollapsedText && collapsedItem === "lyrics" && (
               <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
+            )}
+            {showCollapsedText && collapsedItem === "balance" && balanceText && (
+              <span className={`island__balance${balanceLow ? " island__balance--low" : ""}`} title={balanceText}>
+                {showTitle ? "· " : ""}{balanceText}
+              </span>
             )}
             {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
               <span className={todoTimer ? "island__active-task island__active-task--timed" : "island__active-task"} key={collapsedTaskTitle}>
@@ -251,12 +299,13 @@ export function IslandCollapsedBar({
 
   return (
     <div
-      className="island__collapsed"
+      ref={barRef}
+      className={`island__collapsed${centersIdleClock ? " island__collapsed--idle-clock" : ""}`}
       aria-hidden={isExpanded}
       inert={isExpanded}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onOpenPage(page);
+          onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
         }
       }}
     >

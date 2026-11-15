@@ -11,9 +11,13 @@ import { useRevealOnMessage } from "../../src/windows/island/useIslandAutomation
 import { useTuckPeek } from "../../src/windows/island/useTuckPeek";
 import { useTuckMorph } from "../../src/windows/island/useTuckMorph";
 import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen";
+import { useHoverExpand } from "../../src/windows/island/useHoverExpand";
+import { useIdleTuck } from "../../src/windows/island/useIslandAutomation";
+import { useHoverFocus } from "../../src/windows/island/useHoverFocus";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-mockIPC(() => null, { shouldMockEvents: true });
+const focusCommands: string[] = [];
+mockIPC((command) => { focusCommands.push(command); return true; }, { shouldMockEvents: true });
 
 const RETRACT_MS = 120;
 const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320 ms slide-out.
@@ -23,10 +27,13 @@ let island: Island;
 let enter: () => void;
 let setOpensPanel: (value: boolean) => void;
 let setPreview: (value: boolean) => void;
+let setCollapseEnabled: (value: boolean) => void;
 
 function Harness() {
   const [opensPanel, changeOpensPanel] = useState(false);
   const [preview, changePreview] = useState(false);
+  const [collapseEnabled, changeCollapseEnabled] = useState(true);
+  setCollapseEnabled = changeCollapseEnabled;
   const navigation = useIslandNavigation();
   island = navigation;
   const tuckClass = useTuckMorph(navigation.isTucked, "line");
@@ -35,6 +42,12 @@ function Harness() {
   // As useIslandTucking wires them: a message preview reveals the island and holds the peek.
   useRevealOnMessage(preview, navigation.isTucked, navigation.revealForMessage);
   useTuckPeek(navigation.isPeeking && !preview, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
+  useHoverExpand({ enabled: true, delayMs: 0, paused: preview, collapseEnabled, collapseDelayMs: 250,
+    mode: navigation.mode, isTucked: navigation.isTucked || navigation.isPeeking,
+    onExpand: () => navigation.openIslandPage("todo"), onCollapse: navigation.collapseIsland });
+  useHoverFocus(navigation.mode, false, collapseEnabled);
+  useIdleTuck(navigation.mode === "collapsed" && !preview && !navigation.isPeeking,
+    1, navigation.isTucked, navigation.mode, () => navigation.idleTuck(RETRACT_MS));
   enter = useTuckedHoverOpen({
     opensPanel,
     delayMs: HOVER_DELAY_MS,
@@ -91,10 +104,12 @@ async function runChecks() {
     await wait(200);
     check(state() === "collapsed/out", "展开面板：露出的动画结束前不展开面板");
     await wait(400);
-    check(state() === "expanded/out" && island.isPeeking, "展开面板：停留后展开面板，仍记得要收回");
+    check(state() === "expanded/out" && !island.isPeeking, "展开面板：停留后展开，清除旧贴边回收状态");
     await hover(false);
     await wait(450);
-    check(state() === "collapsed/tucked", "展开面板：鼠标移开后面板关闭，岛屿收回边缘");
+    check(state() === "collapsed/out", "展开面板：鼠标移开后先回完整折叠态");
+    await wait(1100);
+    check(state() === "collapsed/tucked", "折叠后重新等待闲置延时再贴边");
 
     // Passing over the edge on the way to a browser tab does not open the panel.
     await arrive();
@@ -115,18 +130,65 @@ async function runChecks() {
     check(state() === "expanded/out", "快速移出再移入，鼠标停在岛屿上时面板照样展开");
     await hover(false);
     await wait(450);
-    check(state() === "collapsed/tucked", "之后移开，面板关闭、岛屿收回");
+    check(state() === "collapsed/out", "之后移开，先折叠不立即贴边");
+    await wait(1100);
 
     // A draft in the panel keeps it open after the cursor leaves.
     await arrive();
     await wait(400);
-    await act(async () => document.querySelector<HTMLInputElement>("#draft")!.focus());
+    await act(async () => {
+      const draft = document.querySelector<HTMLInputElement>("#draft")!;
+      draft.value = "未保存草稿";
+      draft.focus();
+    });
     await hover(false);
     await wait(500);
     check(state() === "expanded/out", "面板里正在输入时，鼠标移开也不收回");
     await act(async () => document.querySelector<HTMLInputElement>("#draft")!.blur());
     await wait(600);
-    check(state() === "collapsed/tucked", "输入框失去焦点后再收回");
+    check(state() === "collapsed/out", "输入框失去焦点后先折叠");
+
+    await act(async () => island.idleTuck(null));
+    await arrive();
+    await wait(400);
+    await act(async () => {
+      const draft = document.querySelector<HTMLInputElement>("#draft")!;
+      draft.value = "";
+      draft.focus();
+    });
+    await hover(false);
+    await wait(450);
+    check(state() === "collapsed/out", "空输入框即使有焦点也不会阻止移出折叠");
+
+    await act(async () => island.idleTuck(null));
+    await arrive();
+    await wait(400);
+    await act(async () => window.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true })));
+    await hover(false);
+    await wait(450);
+    check(state() === "expanded/out", "中文输入法组合期间不折叠");
+    await act(async () => {
+      window.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+      document.querySelector<HTMLInputElement>("#draft")!.blur();
+    });
+    await wait(450);
+    check(state() === "collapsed/out", "组合结束后恢复移出折叠");
+
+    await act(async () => island.idleTuck(null));
+    await arrive();
+    await wait(400);
+    await hover(false);
+    await wait(70);
+    await hover(true);
+    await wait(350);
+    check(state() === "expanded/out", "250ms 内返回展开面板取消折叠");
+    await act(async () => window.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+    await hover(false);
+    await wait(450);
+    check(state() === "expanded/out", "拖动按住鼠标期间不折叠");
+    await act(async () => window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true })));
+    await wait(450);
+    check(state() === "collapsed/out", "拖动释放后恢复移出折叠");
 
     // Idle-tucked without "鼠标移开后重新收起": the panel opens and the island stays out.
     await act(async () => island.idleTuck(null));
@@ -134,7 +196,32 @@ async function runChecks() {
     await wait(400);
     await hover(false);
     await wait(450);
-    check(state() === "expanded/out", "没开「鼠标移开后重新收起」时，展开后不自动收回");
+    check(state() === "collapsed/out", "悬停展开后移出总是先折叠，与贴边回收开关独立");
+
+    await act(async () => { setCollapseEnabled(false); island.idleTuck(null); });
+    await arrive();
+    await wait(400);
+    check(state() === "expanded/out", "关闭移出收起不影响悬停展开");
+    check(focusCommands.includes("take_island_hover_focus"), "悬停展开仍能取得原生焦点");
+    const releases = focusCommands.filter(command => command === "release_island_hover_focus").length;
+    await hover(false);
+    await wait(450);
+    check(state() === "expanded/out", "开关关闭时鼠标移出不会快速折叠");
+    check(focusCommands.filter(command => command === "release_island_hover_focus").length === releases,
+      "开关关闭后移出不交还原生焦点，避免失焦收起绕过开关");
+    await act(async () => setCollapseEnabled(true));
+    await wait(450);
+    check(state() === "collapsed/out", "重新开启后恢复移出收起");
+    await hover(true);
+    await wait(100);
+    check(state() === "expanded/out", "开启后仍可再次悬停展开");
+    await hover(false);
+    await wait(70);
+    await act(async () => setCollapseEnabled(false));
+    await wait(450);
+    check(state() === "expanded/out", "等待收起时关闭开关会取消旧计时器");
+    await act(async () => setCollapseEnabled(true));
+    await wait(450);
 
     // A message on a tucked island: it slides out for the preview and back once it has gone.
     await act(async () => island.tuckIsland());
@@ -143,7 +230,9 @@ async function runChecks() {
     check(state() === "collapsed/out", "收到消息时岛屿从边缘弹出，预览期间不收回");
     await act(async () => setPreview(false));
     await wait(450);
-    check(state() === "collapsed/tucked", "消息预览结束后岛屿收回边缘");
+    check(state() === "collapsed/out", "消息预览结束后保持折叠并重新等待闲置延时");
+    await wait(1100);
+    check(state() === "collapsed/tucked", "完整闲置延时后再贴边");
     check(document.querySelector(".island--tuck-line"), "消息、悬停和手动贴边共用细线形变状态");
 
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;

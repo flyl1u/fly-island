@@ -15,6 +15,8 @@ import type { MailSnapshot } from "../../src/features/messages/mail/api";
 import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
+import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import type { IslandSettings } from "../../src/features/appearance/types";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -75,6 +77,7 @@ let changeAgent: (session: AgentSession | null) => void;
 let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
 let openedPage: string | null = null;
+let changeClock: (patch: Partial<IslandSettings>) => void;
 
 function Fixture() {
   const [mode, setMode] = useState<IslandMode>("collapsed");
@@ -88,6 +91,8 @@ function Fixture() {
   const [agentCount, setAgentCount] = useState(0);
   const [agentsEnabled, setAgentsEnabled] = useState(true);
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
+  const [clockSettings, setClockSettings] = useState({ ...DEFAULT_SETTINGS, idleClockEnabled: false });
+  changeClock = (patch) => setClockSettings((settings) => ({ ...settings, ...patch }));
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
@@ -98,7 +103,8 @@ function Fixture() {
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
       mode={mode} page="todo" expandedHeight={306} isTucked={tucked} tuckStyle="edge" topEdgeShoulders={false} positionLocked={false} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
-      collapsedItem={agent ? "agent" : "todo"} collapsedLayout={["text", "mail", "shelf", "music", "agents"]} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
+      collapsedItem={agent ? "agent" : "todo"} collapsedLayout={clockSettings.collapsedLayout} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
+      idleClockSettings={clockSettings} showIdleClock={clockSettings.idleClockEnabled}
       pageOrder={["todo", "music", "clipboard", "shelf"]} onPageOrderChange={() => {}}
       pageButtonStyle="capsule"
       material="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
@@ -267,6 +273,32 @@ async function runChecks() {
     check(cursorOf(".island--collapsed") === "default" && cursorOf(".island__open-button") === "default",
       `收起的岛屿用普通鼠标样式（${cursorOf(".island--collapsed")} / ${cursorOf(".island__open-button")}）`);
     check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
+    await act(async () => { changeWidth(360); changeClock({ idleClockEnabled: true }); });
+    await settle();
+    const clockCentered = () => {
+      const bar = document.querySelector<HTMLElement>(".island__collapsed")!.getBoundingClientRect();
+      const clock = document.querySelector<HTMLElement>(".island__collapsed time")!;
+      const bounds = clock.getBoundingClientRect();
+      return bounds.width > 0 && Math.abs(bounds.left + bounds.width / 2 - bar.left - bar.width / 2) < 1
+        && getComputedStyle(clock).textAlign === "center";
+    };
+    await waitFor(clockCentered, "默认排列的时钟居中");
+    check(clockCentered(), "时间日期相对完整折叠岛居中，左右图标不对称时也不偏移");
+    await act(async () => changeClock({ collapsedLayout: ["music", "agents", "mail", "shelf", "text"] }));
+    await waitFor(clockCentered, "自定义排列的时钟居中");
+    check(clockCentered(), "自定义图标排列后时钟仍居中");
+    await act(async () => {
+      changeWidth(220);
+      changeClock({ idleClockDateFormat: "custom", idleClockCustomFormat: "YYYY年MM月DD日 dddd 这是很长的日期显示格式" });
+    });
+    await waitFor(clockCentered, "窄岛的时钟居中");
+    const clock = document.querySelector<HTMLElement>(".island__collapsed time")!;
+    const pulse = document.querySelector<HTMLElement>(".island__pulse")!;
+    check(clockCentered() && clock.getBoundingClientRect().left >= pulse.getBoundingClientRect().right - 1
+      && getComputedStyle(clock).textOverflow === "ellipsis", "窄岛长日期仍居中、省略且不覆盖状态灯");
+    await act(async () => changeClock({ idleClockEnabled: false }));
+    await settle();
+    check(!document.querySelector(".island__collapsed--idle-clock"), "关闭时钟恢复普通摘要布局");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";

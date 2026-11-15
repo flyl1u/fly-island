@@ -195,16 +195,21 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await act(async () => autoWidth.click());
     const widthInput = inputNamed("刘海宽度")!;
     const heightInput = inputNamed("刘海高度")!;
-    const notchBefore = collapsedSample.getBoundingClientRect();
+    // Layout dimensions avoid viewport-coordinate rounding when the new clock rows move the preview.
+    const notchSize = () => ({ width: collapsedSample.offsetWidth, height: collapsedSample.offsetHeight });
+    const notchBefore = notchSize();
     await type(widthInput, "480");
     await act(async () => widthInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
-    const notchWider = collapsedSample.getBoundingClientRect();
+    const notchWider = notchSize();
     await type(heightInput, "60");
     await act(async () => heightInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
-    const notchTaller = collapsedSample.getBoundingClientRect();
+    const notchTaller = notchSize();
     check(storedSettings().collapsedWidth === 480 && storedSettings().collapsedHeight === 60 &&
       notchWider.width > notchBefore.width && notchWider.height === notchBefore.height && notchTaller.height > notchWider.height && notchTaller.width === notchWider.width,
-      "Notch width and height change separately in the preview and persist");
+      `Notch width and height change separately in the preview and persist (${JSON.stringify({
+        saved: [storedSettings().collapsedWidth, storedSettings().collapsedHeight],
+        before: [notchBefore.width, notchBefore.height], wider: [notchWider.width, notchWider.height], taller: [notchTaller.width, notchTaller.height],
+      })})`);
 
     await click(".appearance-reset");
     check(storedSettings().opacity === 60, "The first reset click only asks for confirmation");

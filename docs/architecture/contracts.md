@@ -25,7 +25,7 @@
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
-| `focusd-island-music-sources`（`{ id, label, archived? }[]`，按顺序；`archived: true` 表示已归档，不出现在顺序里、再次出现时不追加；旧数据无该字段即未归档。2026-11-14 起） | `features/media/storage.ts` |
+| `focusd-island-music-sources`（来源数组 `{ id, label, enabled?, aliases?, archived? }`；旧数据缺少 enabled 表示采纳，只有 false 排除；archived: true 表示归档并排除，旧数据无该字段即未归档；aliases 为来源切换 SMTC / Core Audio 时的标识别名） | `features/media/storage.ts` |
 | `focusd-island-last-page`（`todo` / `music` / `shelf` / `qq` / `agents` / `translation` 之一，岛上最后打开的页面；收起的岛点文字时回到它。`clipboard` 与 `settings` 不记录；缺失或非法回退 `todo`。2026-11-14 起） | `windows/island/lastPage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
@@ -54,6 +54,12 @@
 ## 媒体诊断命令
 
 新增命令 `get_media_diagnostics()` 返回 `{ players }`：逐会话的 `sourceAppId`、`label`、`hasSession`、`hasTimeline`、`hasPluginTrackId`、`exePath`、`directory`、`version`、`status` 与 `neteasePluginState`（非网易云为 null），并补入正在运行但没有会话的已知播放器。只读检查，不安装插件。`get_media_state` 新增 `hasTimeline` 布尔字段；前端兼容缺少字段的旧状态，估算位置始终保留 false 标记。
+
+## 音频来源采纳与控制
+
+`get_media_state`、`get_audio_level`、`media_play_pause`、`media_next`、`media_previous`、`media_toggle_shuffle`、`media_cycle_repeat`、`media_seek` 兼容新增可选参数 `excludedSources: string[]`；`get_audio_level` 另接受可选 `target`。省略参数兼容旧调用。
+
+媒体会话列表新增 `kind: "media" | "audio"` 和 `aliases: string[]`。普通音频来源 ID 为 `audio:<小写可执行文件完整路径>`，不使用瞬时 PID。媒体状态新增 `controlMode: "media" | "audio" | "none"`、`audioMuted: boolean | null`、`resumeBlocked: boolean`；音频模式的 `media_play_pause` 仅切换应用静音，前端显示对应声音控件。排除全部来源后阻止全局媒体键。诊断新增 `sessionServiceUnavailable` 布尔值，SMTC 不可用时仍返回可用的进程诊断和 Core Audio 来源。详见 [音乐来源](../music-sources.md)。
 
 ## 微信只读探测输出
 
@@ -91,6 +97,14 @@
 | `agent-approval-closed`（载荷 `{ id, reason }`，`reason` 为 `decided` / `timeout` / `disconnected` / `handedBack` / `shutdown`） | `agent_approval/mod.rs` | 广播 |
 
 ## 其他
+
+### API 余额（2026-11-14）
+
+- localStorage `focusd-island-api-balance`：`{ enabled, accounts: Account[] }`，仅元数据镜像；原生源为应用数据目录 `api-balance.json`，同一配置结构。
+- Windows 凭据服务 `com.focusd.island.api-balance`：`<id>-manifest`（generation/count）及 `<id>-<generation>-<chunk>`，保留独立于其他功能的命名空间。
+- 命令：`get_api_balance_state()`、`set_api_balance_enabled(enabled)`、`save_api_balance_account(account, secrets)`、`remove_api_balance_account(id)`、`read_api_balance_script(id)`、`import_api_balance_accounts(entries)`、`refresh_api_balance(id)`、`test_api_balance(account, secrets)`。定义在 `api_balance/mod.rs`，前端仅由领域 `api.ts` 调用。
+- `api-balance-changed` 与状态命令返回 `{ revision, enabled, accounts: AccountState[] }`，revision 在本次进程内单调递增，前端丢弃旧快照；含结果/状态及凭据存在标记，不含密钥/脚本。`read_api_balance_script` 仅供用户编辑与明确包含脚本的导出。
+- 原生导入文件 `*.flyisland-balance.json` / `*.json`：`{ format: "focusd-island-api-balance", version: 1, accounts: [{ account, secrets }] }`；导入时 ID 重建且 enabled=false。兼容的 cc-switch JSON 与 request/extractor `.js` 由前端转换，不接收 SQL/数据库/ZIP/网易云 `.plugin`。文件至多 1 MiB，脚本至多 64 KiB，总账号至多 50。详见 [API 余额](../api-balance.md)。
 
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
 - `focusd-island-settings` 新增 `topEdgeShoulders`（boolean，默认 false）和 `topEdgeShoulderSize`（整数 4–20px，默认 10）；无效或缺失回退默认，大小超界夹取，只影响贴顶的装饰外形，不增加原生点击区域。属于外观字段，恢复默认外观会一并复位。

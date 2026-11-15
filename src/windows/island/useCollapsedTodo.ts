@@ -3,7 +3,9 @@ import { useMemo } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { TodoItem } from "../../features/todos/types";
 import { formatTodoCountdown, type TodoTimer } from "../../features/todos/timer";
-import { useTranslation } from "../../i18n";
+import { useLocale, useTranslation } from "../../i18n";
+import { idleClockWidthText } from "../../features/appearance/idleClockSettings";
+import { getCollapsedTextUnits } from "../../utils/text";
 import { useTodoRotation } from "./useIslandAutomation";
 import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
 import { pickCollapsedItem } from "./collapsedItem";
@@ -34,9 +36,10 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null, balanceText = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; balanceText?: string | null } = {},
 ) {
   const t = useTranslation();
+  const { locale } = useLocale();
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
@@ -61,20 +64,29 @@ export function useCollapsedTodo(
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
     ? pendingTodoCount
     : null;
+  const hasActiveTodo = activeTodoId !== null && pendingTodoIds.includes(activeTodoId);
   const collapsedItem = timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
-  }, activeTodoId !== null && pendingTodoIds.includes(activeTodoId));
+    balance: settings.balanceShowCollapsed && Boolean(balanceText),
+    clock: settings.idleClockEnabled,
+  }, hasActiveTodo);
+  const showIdleClock = collapsedItem === "clock";
   const collapsedIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
+    if (showIdleClock) {
+      const clockText = idleClockWidthText(settings, locale);
+      // Includes the pulse, padding and optional status buttons; long custom formats ellipsize.
+      return Math.min(480, Math.max(280, Math.ceil(getCollapsedTextUnits(clockText) * 14 * fontScale + 130)));
+    }
     // A fixed width for the whole round; ticking digits never resize the native window.
     const timerText = timer ? (timer.notified ? t.todo.timeUp : formatTodoCountdown(timer.durationMinutes * 60)) : null;
     const todoText = collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
-      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
+      : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : collapsedItem === "balance" ? balanceText : null;
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
@@ -82,8 +94,7 @@ export function useCollapsedTodo(
       window.innerWidth,
       window.devicePixelRatio,
     );
-  }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer]);
+  }, [agentTitle, balanceText, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings, showIdleClock, locale, t, timer]);
 
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth };
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, showIdleClock };
 }

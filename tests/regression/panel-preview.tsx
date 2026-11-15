@@ -111,7 +111,7 @@ try {
   check(state() === "collapsed/out" && !navigation.isPreviewing, "A real message takes over without preview restoration");
   await act(async () => setMessage(false));
   await wait(650);
-  check(state() === "collapsed/tucked", "After the message ends normal retraction still works");
+  check(state() === "collapsed/out" && !navigation.isPeeking, "After a message the full collapsed bar stays visible when idle tuck is off");
 
   await act(async () => { navigation.revealIsland(); setIdle(true); });
   await wait(1500);

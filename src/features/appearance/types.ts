@@ -1,3 +1,5 @@
+import type { IdleClockSettings } from "./idleClockSettings";
+
 export type TranslationTarget = "window" | "island";
 
 /**
@@ -41,8 +43,8 @@ export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy";
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
 export type ShelfDoubleClick = "open" | "reveal";
-/** What the collapsed island can show in its text: a running agent, the lyric line, a todo. */
-export type CollapsedItem = "agent" | "lyrics" | "todo";
+/** Content ranked for display on the collapsed island. */
+export type CollapsedItem = "agent" | "lyrics" | "todo" | "balance" | "clock";
 /**
  * What sits on the collapsed island, in the order the user arranged it (Appearance → Collapsed
  * island): the text (pulse, cover and the agent, lyric or todo line) and the status icons —
@@ -53,7 +55,7 @@ export type CollapsedSlot = "text" | "mail" | "shelf" | "music" | "agents";
 /** The page dots in the expanded island's header, which the user can drag into any order. */
 export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
 
-export type IslandSettings = {
+export type IslandSettings = IdleClockSettings & {
   topEdgeLayoutVersion: 1;
   material: Material;
   colorScheme: ColorScheme;
@@ -149,6 +151,8 @@ export type IslandSettings = {
   expandTrigger: ExpandTrigger;
   /** Pointer rest time (ms) before a hover opens the island. */
   hoverExpandDelayMs: number;
+  /** Whether hover mode quickly collapses the panel after the pointer leaves. */
+  hoverCollapseEnabled: boolean;
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;
@@ -192,8 +196,10 @@ export type IslandSettings = {
   mailEnabled: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;
-  /** Which of the agent, the lyric line and a todo the collapsed island shows first when several could. */
+  /** Which available content the collapsed island shows first. */
   collapsedPriority: CollapsedItem[];
+  /** Hide only the collapsed balance text; queries, the balance page and alerts stay enabled. */
+  balanceShowCollapsed: boolean;
   /** The playing song's cover on the collapsed island. */
   collapsedShowCover: boolean;
   /** Where the text and each status icon sit on the collapsed island, left to right. */

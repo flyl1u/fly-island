@@ -73,7 +73,7 @@ const render = async (hostDisplay: AgentHostDisplay, cards: { showElapsed?: bool
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
-await render((params.get("host") as AgentHostDisplay | null) ?? "both");
+const initialRender = render((params.get("host") as AgentHostDisplay | null) ?? "both");
 
 const messages: string[] = [];
 function check(condition: unknown, label: string) {
@@ -393,8 +393,8 @@ async function runChecks() {
   }
 }
 
-if (params.has("test")) await runChecks();
-else {
+if (params.has("test")) void initialRender.then(runChecks);
+else void initialRender.then(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });
   results.textContent = "点击会话查看跳转结果：只有 fly-island 会话能找到窗口。";
-}
+});

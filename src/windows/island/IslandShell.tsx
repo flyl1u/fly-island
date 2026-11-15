@@ -20,6 +20,8 @@ import { useMotionLayer } from "./useMotionLayer";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
+import type { IdleClockSettings } from "../../features/appearance/idleClockSettings";
+import type { CollapsedNotice } from "./useCollapsedNotice";
 import "./IslandShell.css";
 import "./IslandPageText.css";
 import "./IslandGlass.css";
@@ -27,6 +29,11 @@ import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
 
 type IslandShellProps = {
+  balanceText?: string | null;
+  balanceLow?: boolean;
+  idleClockSettings?: IdleClockSettings;
+  showIdleClock?: boolean;
+  notice?: CollapsedNotice | null;
   qqMail: MailController;
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
@@ -91,6 +98,11 @@ type IslandShellProps = {
 };
 
 export function IslandShell({
+  balanceText,
+  balanceLow,
+  idleClockSettings,
+  showIdleClock = false,
+  notice = null,
   qqMail,
   qqNotifications,
   wechatReminders,
@@ -173,7 +185,7 @@ export function IslandShell({
   ]
     .filter(Boolean)
     .join(" ");
-  const collapsedLabel = showCollapsedText
+  const collapsedLabel = notice?.text ?? (showIdleClock ? t.settings.appearance.idleClock.title : showCollapsedText
     ? todoTimer
       ? t.todo.actionOnTask(todoTimer.notified ? t.todo.timeUp : t.todo.countdown, collapsedTaskTitle ?? "")
       : agentSession
@@ -183,7 +195,7 @@ export function IslandShell({
       : collapsedTodoCount !== null
         ? t.island.pendingTodos(collapsedTodoCount)
         : "fly-island"
-    : "fly-island";
+    : "fly-island");
 
   return (
     <section
@@ -191,7 +203,7 @@ export function IslandShell({
       aria-label={collapsedLabel}
       onClick={(event) => {
         if (!isExpanded && event.target === event.currentTarget) {
-          onOpenPage(page);
+          onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
         }
       }}
       onPointerMove={handleGlassPointerMove}
@@ -211,6 +223,11 @@ export function IslandShell({
           </div>
         )}
         <IslandCollapsedBar
+          balanceText={balanceText}
+          balanceLow={balanceLow}
+          idleClockSettings={idleClockSettings}
+          showIdleClock={showIdleClock}
+          notice={notice}
           qqMail={qqMail}
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}

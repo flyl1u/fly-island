@@ -1,4 +1,5 @@
 mod agent_approval;
+mod api_balance;
 mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
@@ -63,6 +64,9 @@ pub fn run() {
             // changes. Liquid glass is rendered inside the island element.
         })
         .setup(|app| {
+            if let Err(error) = api_balance::init(app.handle()) {
+                eprintln!("failed to initialize API balance: {error}");
+            }
             tray::build_tray(app)?;
             if let Err(error) = clipboard_history::init(app.handle()) {
                 eprintln!("failed to initialize clipboard history: {error}");
@@ -108,6 +112,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(collect_commands!([]
+            api_balance;
             file_shelf;
             mail;
             wechat_reminders;
@@ -129,6 +134,7 @@ pub fn run() {
             app.run(|handle, event| {
                 // Hooks still waiting go back to the terminal rather than hit their timeout.
                 if let tauri::RunEvent::Exit = event {
+                    api_balance::shutdown();
                     clipboard_window::remember_bounds(handle);
                     agent_approval::shutdown();
                     wechat_reminders::shutdown();
