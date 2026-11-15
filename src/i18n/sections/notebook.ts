@@ -13,6 +13,7 @@ export type NotebookText = {
   dailyPlaceholder: string;
   dailyNoteLabel: string;
   pickDate: string;
+  clearDate: string;
   dateToday: string;
   dateTomorrow: string;
   upcomingTab: string;
@@ -56,6 +57,7 @@ export const zhCN: NotebookText = {
   dailyPlaceholder: "写下今天的笔记…",
   dailyNoteLabel: "今日笔记",
   pickDate: "选择日期",
+  clearDate: "清除日期",
   dateToday: "今天",
   dateTomorrow: "明天",
   upcomingTab: "已安排",
@@ -95,6 +97,7 @@ export const en: NotebookText = {
   dailyPlaceholder: "Write today's notes...",
   dailyNoteLabel: "Daily note",
   pickDate: "Pick a date",
+  clearDate: "Clear date",
   dateToday: "Today",
   dateTomorrow: "Tomorrow",
   upcomingTab: "Upcoming",

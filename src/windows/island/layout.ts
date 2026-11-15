@@ -20,6 +20,8 @@ export const TODO_ARCHIVE_EXPANDED_ISLAND_HEIGHT = 352;
  * notebook padding and view switch above the calendar grid and its month controls.
  */
 export const TODO_CALENDAR_EXPANDED_ISLAND_HEIGHT = 384;
+// Room below the new-task field for a six-week date picker, plus the panel's bottom inset.
+export const TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT = 440;
 export const MUSIC_EXPANDED_ISLAND_HEIGHT = 320;
 // Expanded island around an empty clipboard list: island padding, header and gap (86),
 // then the panel's padding (34), title (30), tabs with search (32), and two gaps (20).

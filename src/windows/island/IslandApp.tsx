@@ -36,6 +36,8 @@ import { useIdleUpdateInstall } from "../../features/updater/useIdleUpdateInstal
 import { useIslandTranslation } from "./useIslandTranslation";
 import { useMessageView } from "./useMessageView";
 import { useSettingsPageHeight } from "./useSettingsPageHeight";
+import { useIslandPickerOpen } from "../../lib/islandPicker";
+import { TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT } from "./layout";
 // Must stay the last import: IslandApp.css overrides the feature styles above.
 import "./IslandApp.css";
 
@@ -120,7 +122,8 @@ export function IslandApp() {
     collapseIsland,
   });
   const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
-  const expandedIslandHeight = getExpandedIslandHeight({
+  const pickerOpen = useIslandPickerOpen();
+  const expandedIslandHeight = Math.max(pickerOpen && page === "todo" ? TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT : 0, getExpandedIslandHeight({
     page,
     todoPageMode,
     todos,
@@ -137,7 +140,7 @@ export function IslandApp() {
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
-  });
+  }));
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(

@@ -8,6 +8,7 @@ import { useIdleTuck, useRevealOnMessage } from "./useIslandAutomation";
 import { isEditingText } from "./useHoverExpand";
 import type { useIslandNavigation } from "./useIslandNavigation";
 import { useTuckPeek } from "./useTuckPeek";
+import { isIslandPickerOpen, useIslandPickerOpen } from "../../lib/islandPicker";
 
 type IslandTuckingOptions = {
   settings: IslandSettings;
@@ -26,6 +27,7 @@ type IslandTuckingOptions = {
 export function useIslandTucking({ settings, navigation, hasMessagePreview, activity, gameHolds }: IslandTuckingOptions) {
   const { mode, page, isTucked, isPeeking, peekRetractDelayMs, tuckedAutomatically, idleTuck, collapseIsland, revealIsland, revealForMessage, endPeek } = navigation;
   const isHovering = useIslandHovering();
+  const pickerOpen = useIslandPickerOpen();
   const keepVisible = useKeepVisible(settings, activity);
   const tuckState = {
     isTucked, isPeeking, tuckedAutomatically, keepVisible, hasMessagePreview, isPreviewing: navigation.isPreviewing, gameHolds,
@@ -41,9 +43,9 @@ export function useIslandTucking({ settings, navigation, hasMessagePreview, acti
   );
   // Closing under a draft would lose it; the next keystroke or move starts the wait again.
   const collapseWhenIdle = useCallback(() => {
-    if (!isEditingText()) collapseIsland();
+    if (!isEditingText() && !isIslandPickerOpen()) collapseIsland();
   }, [collapseIsland]);
-  const plan = navigation.isPreviewing ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
+  const plan = navigation.isPreviewing || pickerOpen ? null : idlePlan(mode, settings, hasMessagePreview, isHovering, keepVisible);
   useIdleTuck(
     plan !== null,
     plan?.seconds ?? 0,

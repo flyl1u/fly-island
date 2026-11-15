@@ -56,6 +56,8 @@ export const PAGES = [
   "settings-sidebar.html",
   "settings-sync.html",
   "todo-edit.html",
+  "todo-date-picker.html",
+  "todo-date-picker.html?lang=en&scale=1.2&theme=light",
   "todo-rotation.html",
   "todo-reorder.html",
   "todo-history-calendar.html",
