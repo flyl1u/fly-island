@@ -294,6 +294,7 @@ fn header_message(message: &Fetch, validity: u32) -> Option<MailMessage> {
         subject,
         received_at: message.internal_date().map(|date| date.timestamp_millis()),
         unread: !message.flags().contains(&Flag::Seen),
+        otp_code: None,
     })
 }
 
@@ -432,6 +433,7 @@ pub(super) fn fetch_inbox_cached<T: Read + Write>(
     // UIDNEXT can advance while this snapshot is being fetched. Acknowledge
     // only headers actually received, or the next arrival's preview can be lost.
     let high_water = items.iter().map(|item| item.uid).max().unwrap_or(0);
+    super::otp_arrivals::enrich(session, &mut items, validity, cached.map(|inbox| inbox.cursor))?;
     drain_mail_updates(
         session,
         mailbox.exists,

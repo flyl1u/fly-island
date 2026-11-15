@@ -22,6 +22,7 @@ keys.forEach(key => localStorage.removeItem(key));
 const calls: { command: string; args: Record<string, unknown> }[] = [];
 let revision = 0;
 let canOpenChat = true;
+let copyFails = false;
 let mail: MailController;
 let view: MessageView;
 let setView: (source: MessageView) => void;
@@ -32,6 +33,7 @@ let snapshot: MailSnapshot = {
   unreadCount: state === "disconnected" ? null : state === "empty" ? 0 : 3, items: state === "empty" || state === "disconnected" ? [] : Array.from({ length: 12 }, (_, index) => ({
     id: `7:${20 - index}`, uid: 20 - index, sender: index === 0 ? "产品团队 <team@example.com>" : `协作团队 ${index}`,
     subject: index === 0 ? "项目周报与下周安排" : `工作进展 ${index}`, receivedAt: now - index * 60_000, unread: index < 3,
+    otpCode: index === 1 ? "834921" : undefined,
   })), lastSyncedAt: now, error: state === "auth" ? "授权码已失效，请重新连接。" : null,
 };
 
@@ -39,6 +41,7 @@ mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   calls.push({ command, args });
   switch (command) {
+    case "copy_mail_otp": if (copyFails) throw new Error("Clipboard is busy"); return;
     case "get_qq_mail_state": return snapshot.configured || snapshot.status !== "disconnected" ? [snapshot] : [];
     case "read_qq_mail": return readBehavior(String(args.messageId));
     case "disconnect_qq_mail": snapshot = { ...snapshot, revision: ++revision, configured: false, enabled: false, status: "disconnected", items: [], unreadCount: null }; return snapshot;
@@ -155,6 +158,18 @@ try {
     check(view! === "qq" && document.querySelector('[aria-label="QQ 最近通知"]'), "切回 QQ 显示自己的通知列表");
     checkCards();
     await click("邮箱");
+    check(!calls.some(call => call.command === "copy_mail_otp"), "初次加载带验证码的旧列表不会自动复制");
+    const otp = document.querySelector<HTMLButtonElement>(".qq-mail-item__otp .mail-otp-code")!;
+    await act(async () => otp.click());
+    check(calls.some(call => call.command === "copy_mail_otp" && call.args.code === "834921") && otp.dataset.copied === "true"
+      && !mail!.selectedMail, "列表验证码点击即复制并显示对勾，不打开正文");
+    copyFails = true;
+    await act(async () => otp.click());
+    check(document.querySelector(".qq-panel__error")?.textContent?.includes("验证码复制失败") && !otp.dataset.copied,
+      "复制失败时就地反馈，不残留成功对勾");
+    copyFails = false;
+    await act(async () => otp.click());
+    check(!document.querySelector(".qq-panel__error"), "手动重试成功后清除复制错误");
     const list = document.querySelector<HTMLDivElement>('.qq-mail-list')!;
     list.scrollTop = 120;
     list.dispatchEvent(new Event("scroll", { bubbles: true }));

@@ -9,6 +9,7 @@ export type MailMessage = {
   subject: string;
   receivedAt: number | null;
   unread: boolean;
+  otpCode?: string | null;
 };
 
 /** Mirrors AttachmentInfo in src-tauri/src/mail/attachments.rs. */
@@ -35,7 +36,12 @@ export type MailSnapshot = {
 };
 
 // 每个邮箱各自推送；断开或首次连接失败的邮箱推送 configured: false、status: "disconnected"。
-export type MailEvent = { snapshot: MailSnapshot; newestId: string | null; windowVisible: boolean };
+export type MailEvent = { snapshot: MailSnapshot; newestId: string | null; windowVisible: boolean; otpMessageId?: string | null };
+
+/** Copies a short-lived code through the clipboard history's suppressed-write path. */
+export function copyMailOtp(code: string) {
+  return invoke<void>("copy_mail_otp", { code });
+}
 
 // 与 mail/mod.rs 中的 EVENT 一致。
 export const MAIL_CHANGED_EVENT = "qq-mail-changed";

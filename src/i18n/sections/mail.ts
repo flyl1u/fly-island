@@ -1,4 +1,7 @@
 export type MailText = {
+  copyOtp: (code: string) => string;
+  otpCopied: string;
+  copyOtpFailed: string;
   savePreferencesFailed: string;
   desktopConnect: string;
   desktopRead: string;
@@ -69,6 +72,9 @@ export type MailText = {
 };
 
 export const zhCN: MailText = {
+  copyOtp: (code) => `复制验证码 ${code}`,
+  otpCopied: "验证码已复制",
+  copyOtpFailed: "验证码复制失败，请重试。",
   savePreferencesFailed: "无法保存邮箱连接偏好，下次启动可能需要重新连接。",
   desktopConnect: "请在 Windows 桌面版中连接邮箱。",
   desktopRead: "请在 Windows 桌面版中阅读邮件。",
@@ -139,6 +145,9 @@ export const zhCN: MailText = {
 };
 
 export const en: MailText = {
+  copyOtp: (code) => `Copy verification code ${code}`,
+  otpCopied: "Verification code copied",
+  copyOtpFailed: "Couldn't copy the verification code. Try again.",
   savePreferencesFailed: "Could not save mail preferences. You may need to reconnect next time.",
   desktopConnect: "Use the Windows desktop app to connect your mailbox.",
   desktopRead: "Use the Windows desktop app to read mail.",

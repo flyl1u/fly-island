@@ -27,6 +27,7 @@ struct MailEvent {
     snapshot: MailSnapshot,
     newest_id: Option<String>,
     window_visible: bool,
+    otp_message_id: Option<String>,
 }
 
 #[derive(Default)]
@@ -190,6 +191,10 @@ impl MailService {
     }
 
     pub(super) fn publish(&self, snapshot: MailSnapshot, newest_id: Option<String>) {
+        self.publish_arrival(snapshot, newest_id, None);
+    }
+
+    fn publish_arrival(&self, snapshot: MailSnapshot, newest_id: Option<String>, otp_message_id: Option<String>) {
         let window_visible = self
             .app
             .get_webview_window("main")
@@ -200,6 +205,7 @@ impl MailService {
                 snapshot,
                 newest_id,
                 window_visible,
+                otp_message_id,
             },
         );
     }
@@ -263,6 +269,7 @@ impl MailService {
         match result {
             Ok(inbox) => {
                 let needs_refresh = inbox.needs_refresh;
+                let otp_message_id = super::otp_arrivals::newest_code(&inbox.items, inbox.cursor.validity, state.cursor);
                 let (snapshot, newest_id) = state
                     .accept(generation, inbox)
                     .ok_or_else(|| "邮箱连接已取消。".to_string())?;
@@ -272,7 +279,7 @@ impl MailService {
                     state.next_check = Some(Instant::now() + PUSH_REFRESH_INTERVAL);
                 }
                 drop(state);
-                self.publish(snapshot.clone(), newest_id);
+                self.publish_arrival(snapshot.clone(), newest_id, otp_message_id);
                 Ok(snapshot)
             }
             Err(failure) => {

@@ -195,6 +195,8 @@ export type IslandSettings = {
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;
+  /** Copy a newly arrived mail verification code without adding it to clipboard history. */
+  autoCopyOtp: boolean;
   /** Show the running agent's icon and session title on the collapsed island. */
   agentTitleEnabled: boolean;
   /** Which of the agent, the lyric line and a todo the collapsed island shows first when several could. */

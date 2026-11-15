@@ -10,7 +10,7 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   const canPreviewMessages = !quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
   const qqNotifications = useQQNotifications(canPreviewMessages, settings.messagePreviewSeconds);
   const wechatReminders = useWeChatReminders(canPreviewMessages, { previewSeconds: settings.messagePreviewSeconds });
-  const qqMail = useMail(canPreviewMessages, settings.messagePreviewSeconds);
+  const qqMail = useMail(canPreviewMessages, { previewSeconds: settings.messagePreviewSeconds, autoCopyOtp: settings.autoCopyOtp });
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.preview || qqMail.preview,
   );

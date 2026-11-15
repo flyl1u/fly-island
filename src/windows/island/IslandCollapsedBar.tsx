@@ -15,6 +15,7 @@ import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
+import { MailOtpCode } from "../../features/messages/mail/MailOtpCode";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
@@ -118,6 +119,7 @@ export function IslandCollapsedBar({
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
     text: (
+      <div className="island__text-slot">
         <button
           className="island__open-button"
           type="button"
@@ -205,6 +207,9 @@ export function IslandCollapsedBar({
             </>}
           </CollapsedMessageContent>
         </button>
+        {!isExpanded && !isTucked && preview?.source === "qqMail" && preview.otpCode && <MailOtpCode
+          key={preview.otpCode} code={preview.otpCode} copied={qqMail.copiedOtp === preview.otpCode} onCopy={qqMail.copyOtp} />}
+      </div>
     ),
     mail: qqMail.preview !== null && (
       <button className="island-message-button island-message-button--compact qq-mail-badge" type="button" aria-label={t.messages.newMailLabel} onClick={() => onOpenMessages("qqMail")}>

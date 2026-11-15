@@ -43,6 +43,20 @@ const CLIPBOARD_WRITE_RETRY_ATTEMPTS: usize = 8;
 
 const CLIPBOARD_WRITE_RETRY_DELAY: Duration = Duration::from_millis(35);
 
+/// Short-lived codes should be pasteable without becoming persistent history items.
+pub(crate) fn copy_transient_text(text: &str) -> Result<(), String> {
+    if let Ok(service) = service() {
+        // The capture worker uses the same hash and lock; it cannot insert the write
+        // before we mark it as already captured. Preserve the previous hash on failure.
+        let mut state = service.state.lock().map_err(|error| error.to_string())?;
+        write_clipboard_text(text)?;
+        state.last_capture_hash = Some(hash_bytes([b"text:", text.as_bytes()].concat().as_slice()));
+        Ok(())
+    } else {
+        write_clipboard_text(text)
+    }
+}
+
 static CLIPBOARD_NOTIFY_TX: OnceLock<Mutex<Option<SyncSender<()>>>> = OnceLock::new();
 
 enum ClipboardCapture {

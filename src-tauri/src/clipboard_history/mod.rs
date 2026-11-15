@@ -16,6 +16,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 
 use service::{notify_clipboard_changed, start_workers};
+pub(crate) use service::copy_transient_text;
 use store::{load_history, HISTORY_FILE_NAME, IMAGE_DIRECTORY_NAME};
 
 pub(crate) use hotkey::parse_shortcut_binding;
