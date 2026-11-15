@@ -3,6 +3,8 @@ import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
+import { MESSAGE_PREVIEW_SECONDS } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import { MailAccountList } from "../../features/messages/mail/MailAccountList";
 import { MailConnectForm } from "../../features/messages/mail/MailConnectForm";
@@ -38,6 +40,13 @@ export function MessagesSettingsPage({
 
   return (
     <>
+      <SettingsGroup title={labels.previewTitle}>
+        <SettingsSliderRow title={labels.previewSeconds} value={settings.messagePreviewSeconds}
+          min={MESSAGE_PREVIEW_SECONDS.min} max={MESSAGE_PREVIEW_SECONDS.max} step={MESSAGE_PREVIEW_SECONDS.step}
+          format={(value) => `${value} ${t.settings.expand.secondsUnit}`}
+          defaultValue={MESSAGE_PREVIEW_SECONDS.default} resetLabel={t.settings.layout.resetToDefault}
+          onChange={(messagePreviewSeconds) => onSettingsChange({ ...settings, messagePreviewSeconds })} />
+      </SettingsGroup>
       <QQGroup controller={qqNotifications} title={labels.qqTitle} hint={labels.qqHint} />
       <SettingsGroup title={labels.wechatTitle} footer={<Problem error={actionError || wechat.error} hint={wechatHint} />}>
         <SettingsToggleRow
