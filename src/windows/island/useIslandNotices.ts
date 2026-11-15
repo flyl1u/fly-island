@@ -8,9 +8,9 @@ import type { IslandMode } from "./types";
 export function useIslandNotices(settings: IslandSettings, { mode, isTucked, quiet }: { mode: IslandMode; isTucked: boolean; quiet: boolean }) {
   // A tucked island still takes message previews when it will slide out to show them.
   const canPreviewMessages = !quiet && mode === "collapsed" && (!isTucked || settings.revealOnMessage);
-  const qqNotifications = useQQNotifications(canPreviewMessages);
-  const wechatReminders = useWeChatReminders(canPreviewMessages);
-  const qqMail = useMail(canPreviewMessages);
+  const qqNotifications = useQQNotifications(canPreviewMessages, settings.messagePreviewSeconds);
+  const wechatReminders = useWeChatReminders(canPreviewMessages, { previewSeconds: settings.messagePreviewSeconds });
+  const qqMail = useMail(canPreviewMessages, settings.messagePreviewSeconds);
   const hasMessagePreview = Boolean(
     qqNotifications.preview || wechatReminders.preview || qqMail.preview,
   );

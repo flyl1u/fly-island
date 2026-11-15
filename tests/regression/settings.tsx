@@ -15,6 +15,7 @@ import { checkQuotaSettings } from "./settingsQuota";
 import { checkKeepVisible } from "./settingsKeepVisible";
 import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
+import { checkMessagePreview } from "./settingsMessagePreview";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -95,10 +96,6 @@ if (!automated) {
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
-      // Appearance 16 -> 19: the page text color row and the whole-look preset section (2026-11-14); 19 -> 20: the empty-preset row.
-      // General has two more for its island timers (2026-11-11); Agents two for the session sources DSH
-      // gained on 2026-11-13 (Claude Code and Codex). General 10 -> 11: the tucked look the owner asked
-      // for on 2026-11-13.
       const rowCount = panel.querySelectorAll(".settings-row").length;
       // Agents 11 -> 13: the WorkBuddy session source and its sign-in row (2026-11-13 老板要求 WorkBuddy 会话来源).
       // Appearance: 9 -> 12 on 2026-11-13 for island font size (+1) and notch auto-width/height (+2).
@@ -152,6 +149,7 @@ if (!automated) {
         await act(async () => tuckLooks[0].click());
       }
       if (category === "messages") {
+        await checkMessagePreview(panel, check);
         const notice = panel.querySelector(".messages-settings__wechat-risk");
         const toggle = notice?.closest(".settings-row")?.querySelector<HTMLInputElement>("input[role=switch]");
         check(notice?.textContent?.includes("账号限制") && toggle?.checked === false,

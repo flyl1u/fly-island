@@ -135,6 +135,7 @@ export type IslandSettings = {
   todoRotationMode: "switch" | "scroll";
   /** Vertical travel in logical pixels per second. */
   todoScrollSpeed: number;
+  messagePreviewSeconds: number;
   autoTuck: boolean;
   tuckStyle: TuckStyle;
   /**

@@ -36,6 +36,7 @@ export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
 export const TODO_ROTATION_COUNT = { min: 1, max: 10, default: 3 } as const;
 export const TODO_ROTATION_SECONDS = { min: 1, max: 60, default: 5 } as const;
 export const TODO_SCROLL_SPEED = { min: 10, max: 40, step: 5, default: 20 } as const;
+export const MESSAGE_PREVIEW_SECONDS = { min: 3, max: 30, step: 1, default: 5 } as const;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";

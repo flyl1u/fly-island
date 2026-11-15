@@ -13,16 +13,22 @@ const EMPTY_SNAPSHOT: QQNotificationSnapshot = {
   error: null,
 };
 
-export function useQQNotifications(canPreview: boolean) {
+export function useQQNotifications(canPreview: boolean, previewSeconds = 5) {
   const t = useTranslation();
   const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(isTauri);
   const [previewWindow, setPreviewWindow] = useState<{ id: string; expiresAt: number; receivedAt: number } | null>(null);
   const canPreviewRef = useRef(canPreview);
+  const previewSecondsRef = useRef(previewSeconds);
   const revisionRef = useRef(-1);
   const timingRef = useRef<QQPreviewTiming | null>(null);
   const actionPending = useRef(false);
+
+  useLayoutEffect(() => {
+    previewSecondsRef.current = previewSeconds;
+    timingRef.current = null;
+  }, [previewSeconds]);
 
   useLayoutEffect(() => {
     canPreviewRef.current = canPreview;
@@ -53,7 +59,7 @@ export function useQQNotifications(canPreview: boolean) {
         }
         if (payload.newestId) {
           const receivedAt = Date.now();
-          const { timing, expiresAt } = nextQQPreview(timingRef.current, receivedAt);
+          const { timing, expiresAt } = nextQQPreview(timingRef.current, receivedAt, previewSecondsRef.current);
           timingRef.current = timing;
           setPreviewWindow(expiresAt === null ? null : { id: payload.newestId, expiresAt, receivedAt });
         }

@@ -16,14 +16,20 @@ const EMPTY_SNAPSHOT: MailSnapshot = {
 type PreviewWindow = { email: string; id: string; receivedAt: number; expiresAt: number };
 
 /** The island's mail: which mailbox tab is shown, new-mail previews and the reader. */
-export function useMail(canPreview: boolean) {
+export function useMail(canPreview: boolean, previewSeconds = 5) {
   const t = useTranslation();
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [previewWindow, setPreviewWindow] = useState<PreviewWindow | null>(null);
   const previewRef = useRef<PreviewWindow | null>(null);
   const canPreviewRef = useRef(canPreview);
+  const previewSecondsRef = useRef(previewSeconds);
   const timingRef = useRef<QQPreviewTiming | null>(null);
   const reportErrorRef = useRef<(message: string) => void>(() => {});
+
+  useLayoutEffect(() => {
+    previewSecondsRef.current = previewSeconds;
+    timingRef.current = null;
+  }, [previewSeconds]);
 
   const showPreview = useCallback((next: PreviewWindow | null) => {
     previewRef.current = next;
@@ -48,7 +54,7 @@ export function useMail(canPreview: boolean) {
     const { email, enabled, status } = event.snapshot;
     if (event.newestId && email && enabled && status === "connected") {
       const receivedAt = Date.now();
-      const { timing, expiresAt } = nextQQPreview(timingRef.current, receivedAt);
+      const { timing, expiresAt } = nextQQPreview(timingRef.current, receivedAt, previewSecondsRef.current);
       timingRef.current = timing;
       showPreview(expiresAt === null ? null : { email, id: event.newestId, receivedAt, expiresAt });
     }
