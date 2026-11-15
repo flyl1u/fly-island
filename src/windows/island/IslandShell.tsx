@@ -1,4 +1,5 @@
 import { isGlass } from "../../features/appearance/settings";
+import { usePluginPreview } from "../../features/messages/pluginNotifications";
 import { useState, type ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
@@ -155,9 +156,11 @@ export function IslandShell({
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
   const [latestPreviewAt, setLatestPreviewAt] = useState(0);
+  const pluginPreview = usePluginPreview(mode === "collapsed");
   const preview = latestMessagePreview([
     qqPreview ? { ...qqPreview, source: "qq", receivedAt: qqNotifications.previewReceivedAt ?? 0 } : null,
     wechatReminders.preview,
+    pluginPreview,
     qqMail.preview ? { source: "qqMail", title: qqMail.preview.sender, body: qqMail.preview.subject, otpCode: qqMail.preview.otpCode, receivedAt: qqMail.previewReceivedAt ?? 0 } : null,
   ], latestPreviewAt);
   if (preview && preview.receivedAt > latestPreviewAt) setLatestPreviewAt(preview.receivedAt);

@@ -123,6 +123,7 @@ run("pnpm", ["tauri", "build", "--ci", ...configs, "--bundles", "nsis,msi"]);
 const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
 run("node", latestArgs);
+run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/release/build-plugins.ps1", "-BaseUrl", baseUrl || `https://github.com/${REPO}/releases/download/${tag}`]);
 
 const installer = readdirSync(BUNDLE_DIR).find((name) => name.endsWith(`_${version}_x64-setup.exe`));
 if (!installer) fail(`Missing installer in ${BUNDLE_DIR}.`);
@@ -139,7 +140,8 @@ if (!upload) {
   process.exit(0);
 }
 
-const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath];
+const pluginAssets = readdirSync("artifacts/plugins").filter((name) => name.endsWith(".zip") || name === "plugins-index.json").map((name) => `artifacts/plugins/${name}`);
+const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath, ...pluginAssets];
 const revision = run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim();
 const prerelease = isPrerelease(version);
 run("gh", [

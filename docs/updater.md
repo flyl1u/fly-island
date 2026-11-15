@@ -190,3 +190,7 @@ gh release edit v0.3.2 --repo flyl1u/fly-island --prerelease --latest=false   # 
 - **发布后短时间内检查不到**：`releases/latest/download/` 走 CDN，通常几分钟内生效。
 - **只想手动下载安装包**：直接访问 [GitHub Releases](https://github.com/flyl1u/fly-island/releases/latest)；设置 →「关于」里的「检查更新」用于应用内检查、下载和安装。
 - **不想自动安装**：在「关于」里关掉「自动更新」，之后只在点「检查更新」时检查，下载好后点「立即安装」或待办里的按钮安装。
+
+## 可下载功能插件
+
+`pnpm release` 额外运行 scripts/release/build-plugins.ps1，为 plugins/<id>/ 各独立 crate 构建 zip 和 plugins-index.json，与应用安装包及 latest.json 一并上传同一个 Release。插件不编入主程序；latest.json 的格式与端点不变。单独本地构建见 docs/plugins/quickstart.md；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。

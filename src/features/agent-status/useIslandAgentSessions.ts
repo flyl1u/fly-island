@@ -4,6 +4,8 @@ import { countActiveSessions, filterSessions, isActivePhase } from "./sessionLis
 import { useAgentSessions } from "./useAgentSessions";
 import { useHiddenSessions } from "./useHiddenSessions";
 import { useUnseenSessions } from "./useUnseenSessions";
+import { usePlugins } from "../plugins";
+import { pluginSessions } from "./pluginSessions";
 
 type AgentSessionSettings = Pick<
   IslandSettings,
@@ -17,7 +19,9 @@ type AgentSessionSettings = Pick<
 export function useIslandAgentSessions(settings: AgentSessionSettings) {
   // Read every second: the collapsed island names sessions from it and holds a finished one's
   // title for three seconds after its file last changed. Answered from a cache in about 1 ms.
-  const allAgentSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
+  const builtInSessions = useAgentSessions(settings.agentStatusEnabled, 1000, settings.agentSessionHours);
+  const plugins = usePlugins();
+  const allAgentSessions = useMemo(() => settings.agentStatusEnabled ? [...builtInSessions, ...pluginSessions(plugins, settings.agentSessionHours, Date.now())] : builtInSessions, [builtInSessions, plugins, settings.agentSessionHours, settings.agentStatusEnabled]);
   // Hidden agents are left out of the page, the count, the collapsed title, alerts and sounds.
   const shownAgentSessions = useMemo(
     () => filterSessions(allAgentSessions, { claudeCode: settings.agentShowClaudeCode, codex: settings.agentShowCodex, dsh: settings.agentShowDsh, workbuddy: settings.agentShowWorkbuddy }),

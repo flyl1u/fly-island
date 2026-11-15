@@ -4,7 +4,8 @@ import { formatMessageCardTime, splitMessageSender } from "./messageCardText";
 import "./MessageCard.css";
 
 type MessageCardProps = {
-  source: "qq" | "wechat";
+  source: "qq" | "wechat" | "plugin";
+  icon?: string;
   name: string;
   timestamp: number;
   body: string;
@@ -16,13 +17,13 @@ type MessageCardProps = {
   onOpen?: () => void;
 };
 
-export function MessageCard({ source, name, timestamp, body, messageId, muted, leaving, disabled, ariaLabel, onOpen }: MessageCardProps) {
+export function MessageCard({ source, icon, name, timestamp, body, messageId, muted, leaving, disabled, ariaLabel, onOpen }: MessageCardProps) {
   const t = useTranslation();
   const sender = muted ? null : splitMessageSender(body);
   const date = new Date(timestamp);
   const content = <>
     <div className="message-card__heading">
-      <MessageSourceIcon source={source} size={18} />
+      <MessageSourceIcon source={source} icon={icon} size={18} />
       <strong className="message-card__name">{name}</strong>
       <time dateTime={Number.isFinite(date.getTime()) ? date.toISOString() : undefined}>{formatMessageCardTime(timestamp, Date.now(), t.messages.yesterday)}</time>
     </div>

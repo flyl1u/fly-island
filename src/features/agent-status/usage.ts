@@ -1,6 +1,7 @@
 import type { AgentUsage, DshProblem, DshUsage, UsageWindow, WorkbuddyUsage } from "./api";
 import type { AgentQuotaSource } from "../appearance/types";
 import type { HoverCardLine } from "../../components/IslandHoverCard";
+import type { PluginQuota } from "../plugins";
 import type { Translations } from "../../i18n/types";
 
 /**
@@ -62,6 +63,7 @@ export function withoutPastWindows(usage: AgentUsage | null, now: number): Agent
 
 /** Claude's and Codex's usage as last read, and when (for staleness and countdowns). */
 export type AgentUsages = {
+  plugins?: PluginQuota[];
   claude: AgentUsage | null;
   codex: AgentUsage | null;
   dsh?: DshUsage | null;
@@ -81,6 +83,7 @@ export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQu
     dshProblem: sources.includes("dsh") ? usages.dshProblem : null,
     workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
     readAt: usages.readAt,
+    plugins: usages.plugins,
   };
 }
 
@@ -103,7 +106,7 @@ export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | nul
 
 /** The Agent page reserves one row when at least one selected source has data. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy || usages.plugins?.length ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

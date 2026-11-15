@@ -3,10 +3,11 @@ import codexIcon from "../../assets/brands/codex.webp";
 import deepseekIcon from "../../assets/brands/deepseek.png";
 import workbuddyIcon from "../../assets/brands/workbuddy.png";
 import type { AgentProvider } from "./api";
+import { Puzzle } from "lucide-react";
 import "./AgentProviderIcon.css";
 
 /** Each source's own app tile; DSH uses DeepSeek's mark on a light tile, as its desktop app does. */
-const PROVIDER_ICONS: Record<AgentProvider, string> = {
+const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin">, string> = {
   claudeCode: claudeCodeIcon,
   codex: codexIcon,
   dsh: deepseekIcon,
@@ -14,6 +15,7 @@ const PROVIDER_ICONS: Record<AgentProvider, string> = {
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {
+  if (provider === "plugin") return <Puzzle size={size} aria-hidden="true" />;
   return (
     <img
       className={`agent-provider-icon agent-provider-icon--${provider}`}

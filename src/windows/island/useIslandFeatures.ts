@@ -36,7 +36,10 @@ export function useIslandFeatures({
   setMessageSource,
   openIslandPage,
 }: IslandFeatureOptions) {
+  const plugins = usePlugins();
+  const hasPluginMessages = Object.values(plugins.registry.installed).some((p) => p.enabled && p.manifest.contributes.includes("notifications"));
   const features = useMemo<IslandFeatures>(() => ({
+    plugin: hasPluginMessages,
     todo: settings.todoEnabled,
     music: settings.musicEnabled,
     clipboard: clipboardEnabled,
@@ -46,7 +49,7 @@ export function useIslandFeatures({
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled]);
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);
@@ -82,3 +85,4 @@ export function useIslandFeatures({
 
   return { features, openEnabledPage };
 }
+import { usePlugins } from "../../features/plugins";
