@@ -14,6 +14,14 @@ const rowsOf = (panel: HTMLElement, title: string) => {
 const titles = (rows: HTMLElement[]) => rows.map((row) => row.querySelector(".settings-row__title")?.textContent ?? "");
 
 export async function checkGroups(category: string, panel: HTMLElement, check: (condition: unknown, message: string) => void) {
+  if (category === "messages") {
+    const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find(row => row.querySelector(".settings-row__title")?.textContent === "自动复制验证码");
+    const toggle = row?.querySelector<HTMLInputElement>("input[role='switch']");
+    check(toggle?.checked, "Mail: verification codes are copied by default");
+    await act(async () => toggle!.click());
+    check(JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCopyOtp === false, "Mail: turning automatic code copying off is saved");
+    await act(async () => toggle!.click());
+  }
   const expected = GROUPS[category];
   if (!expected) return;
   const shown = [...panel.querySelectorAll<HTMLElement>(".settings-group__title")].map((title) => title.textContent);

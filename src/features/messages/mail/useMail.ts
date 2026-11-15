@@ -7,6 +7,7 @@ import { mailWebUrl } from "./mailDomain";
 import { useMailAccounts } from "./useMailAccounts";
 import { useMailReader } from "./useMailReader";
 import { useMarkAllRead } from "./useMarkAllRead";
+import { useMailOtp } from "./useMailOtp";
 
 const EMPTY_SNAPSHOT: MailSnapshot = {
   revision: 0, email: null, configured: false, enabled: false, syncing: false,
@@ -16,7 +17,7 @@ const EMPTY_SNAPSHOT: MailSnapshot = {
 type PreviewWindow = { email: string; id: string; receivedAt: number; expiresAt: number };
 
 /** The island's mail: which mailbox tab is shown, new-mail previews and the reader. */
-export function useMail(canPreview: boolean, previewSeconds = 5) {
+export function useMail(canPreview: boolean, { previewSeconds = 5, autoCopyOtp = true } = {}) {
   const t = useTranslation();
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [previewWindow, setPreviewWindow] = useState<PreviewWindow | null>(null);
@@ -40,6 +41,7 @@ export function useMail(canPreview: boolean, previewSeconds = 5) {
     showPreview(null);
   }, [showPreview]);
   const reportError = useCallback((message: string) => reportErrorRef.current(message), []);
+  const { copyOtp, copiedOtp, copyArrival } = useMailOtp(autoCopyOtp, reportError);
   const reader = useMailReader(t, clearPreview, reportError);
   const { closeReader, readerAccount, readMail: openInReader } = reader;
   const readerAccountRef = useRef(readerAccount);
@@ -50,6 +52,7 @@ export function useMail(canPreview: boolean, previewSeconds = 5) {
     if (readerAccountRef.current === next.email && (!next.configured || next.status === "authRequired")) closeReader();
   }, [clearPreview, closeReader]);
   const onEvent = useCallback((event: MailEvent) => {
+    copyArrival(event);
     if (!canPreviewRef.current || !event.windowVisible) { clearPreview(); return; }
     const { email, enabled, status } = event.snapshot;
     if (event.newestId && email && enabled && status === "connected") {
@@ -58,7 +61,7 @@ export function useMail(canPreview: boolean, previewSeconds = 5) {
       timingRef.current = timing;
       showPreview(expiresAt === null ? null : { email, id: event.newestId, receivedAt, expiresAt });
     }
-  }, [clearPreview, showPreview]);
+  }, [clearPreview, showPreview, copyArrival]);
   const accounts = useMailAccounts({ restore: true, onSnapshot, onEvent });
   const { mailboxes, setActionError } = accounts;
   reportErrorRef.current = setActionError;
@@ -107,6 +110,7 @@ export function useMail(canPreview: boolean, previewSeconds = 5) {
 
   return {
     ...accounts, ...reader, snapshot, setEnabled, refresh, selectMailbox, readMail, openMail, markAllRead,
+    copyOtp, copiedOtp,
     busy: accounts.busy || markingAll,
     /** Reading a mail: the island gives the panel more height. */
     wantsTallPanel: Boolean(reader.selectedMail),

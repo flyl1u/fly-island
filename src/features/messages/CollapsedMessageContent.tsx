@@ -17,7 +17,9 @@ function MessageContent({ preview }: { preview: MessagePreview }) {
   const t = useTranslation();
   return <>
     <MessageSourceIcon source={preview.source} size={16} />
-    {preview.source === "qq" || (preview.source === "wechat" && preview.title) ? (
+    {preview.source === "qqMail" && preview.otpCode ? (
+      <span className="island-message-preview__body">{preview.title.trim() || preview.body}</span>
+    ) : preview.source === "qq" || (preview.source === "wechat" && preview.title) ? (
       <span className="island-message-preview__text">
         <strong className="island-message-preview__sender">{preview.title.trim() || "QQ"}</strong>
         <span className="island-message-preview__separator" aria-hidden="true">·</span>
@@ -40,7 +42,7 @@ export function CollapsedMessageContent({
 }) {
   const t = useTranslation();
   const current = enabled ? preview : null;
-  const key = current ? JSON.stringify([current.source, current.receivedAt, current.title, current.body]) : "idle";
+  const key = current ? JSON.stringify([current.source, current.receivedAt, current.title, current.body, current.otpCode]) : "idle";
   const [transition, setTransition] = useState<ContentTransition>({ key, current, previous: undefined, version: 0, animated: false, previousAnimated: false });
 
   // Retain just the departing row; identical snapshots must not restart the entrance.

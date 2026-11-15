@@ -47,6 +47,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     shelfAutoCleanupDays: oneOf(SHELF_CLEANUP_DAYS, settings?.shelfAutoCleanupDays, DEFAULT_SETTINGS.shelfAutoCleanupDays),
     ...normalizeLyricsSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
+    autoCopyOtp: typeof settings?.autoCopyOtp === "boolean" ? settings.autoCopyOtp : DEFAULT_SETTINGS.autoCopyOtp,
     collapsedPriority: normalizeOrder(settings?.collapsedPriority, COLLAPSED_ITEMS),
     collapsedShowCover: settings?.collapsedShowCover !== false,
     collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),

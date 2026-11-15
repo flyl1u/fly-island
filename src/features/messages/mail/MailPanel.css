@@ -11,6 +11,7 @@
 .qq-mail-account--add:disabled { opacity: .5; cursor: default; }
 .qq-mail-account__email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 11px; color: var(--text-3); }
 .qq-mail-list { padding: 0; }
+.qq-mail-item__otp { padding: 0 var(--space-md) var(--space-lg); margin-top: calc(-1 * var(--space-xs)); }
 .qq-mail-item .qq-panel__item-heading strong { display: flex; align-items: center; gap: 7px; color: var(--text-2); }
 .qq-mail-item .qq-panel__item-heading strong > span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .qq-mail-item--unread .qq-panel__item-heading strong { color: var(--color-page-text); }

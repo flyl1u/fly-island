@@ -42,6 +42,7 @@ let revision = 0;
 const commands: string[] = [];
 let openedChatId: unknown;
 let canOpenChat = true;
+const copiedCodes: string[] = [];
 let mail: MailSnapshot = {
   revision: 0, email: "island-test@qq.com", configured: true, enabled: true, syncing: false,
   status: "connected", unreadCount: 0, items: [], lastSyncedAt: null, error: null,
@@ -49,6 +50,7 @@ let mail: MailSnapshot = {
 mockIPC((command, payload) => {
   commands.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
+  if (command === "copy_mail_otp") { copiedCodes.push(String(args.code)); return; }
   if (command === "request_qq_notification_access") return "allowed";
   if (command === "set_qq_notifications_enabled") return {
     revision: ++revision, enabled: args.enabled, status: "listening", items: [], error: null,
@@ -75,6 +77,7 @@ let changeFont: (pixel: boolean) => void;
 let changeAgent: (session: AgentSession | null) => void;
 let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
+let changeAutoCopy: (enabled: boolean) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -88,11 +91,13 @@ function Fixture() {
   const [agent, setAgent] = useState<AgentSession | null>(null);
   const [agentCount, setAgentCount] = useState(0);
   const [agentsEnabled, setAgentsEnabled] = useState(true);
+  const [autoCopyOtp, setAutoCopyOtp] = useState(true);
+  changeAutoCopy = setAutoCopyOtp;
   changeAgentCount = setAgentCount; changeAgentsEnabled = setAgentsEnabled;
   const canPreview = mode === "collapsed" && !tucked;
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
-  const qqMail = useMail(canPreview);
+  const qqMail = useMail(canPreview, { autoCopyOtp });
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
   return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
@@ -114,7 +119,7 @@ function Fixture() {
   </div>;
 }
 
-async function notify(source: MessageSource, long = false, visible = true) {
+async function notify(source: MessageSource, long = false, visible = true, otpCode?: string) {
   const receivedAt = Date.now();
   await update(async () => {
     if (source === "wechat") await emit("wechat-reminder-changed", {
@@ -128,7 +133,7 @@ async function notify(source: MessageSource, long = false, visible = true) {
       snapshot: { revision: ++revision, enabled: true, status: "listening", items: [{ id: `qq-${revision}`, title: long ? "这是一位名字特别特别长的好友" : "小林", body: long ? "明天下午三点一起讨论新项目的设计方案，记得带上之前整理的资料。" : "下午一起开会吗？", createdAt: receivedAt }], error: null }, newestId: `qq-${revision}`, windowVisible: visible,
     });
     if (source === "qqMail") {
-      mail = { ...mail, revision: ++revision, unreadCount: 1, items: [{ id: `mail-${revision}`, uid: revision, sender: "项目组", subject: long ? "本周项目进度和下阶段设计评审安排，请查收附件中的完整说明" : "本周项目进度已更新", unread: true, receivedAt }] };
+      mail = { ...mail, revision: ++revision, unreadCount: 1, items: [{ id: `mail-${revision}`, uid: revision, sender: "项目组", subject: long ? "本周项目进度和下阶段设计评审安排，请查收附件中的完整说明" : "本周项目进度已更新", unread: true, receivedAt, otpCode }] };
       await emit("qq-mail-changed", { snapshot: mail, newestId: `mail-${revision}`, windowVisible: visible });
     }
   });
@@ -274,6 +279,28 @@ async function runChecks() {
       `收起的岛屿用普通鼠标样式（${cursorOf(".island--collapsed")} / ${cursorOf(".island__open-button")}）`);
     check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
+    check(copiedCodes.length === 0, "普通邮件和初始化不写剪贴板");
+    await act(async () => changeMode("expanded"));
+    await notify("qqMail", false, false, "834921");
+    check(copiedCodes.join() === "834921", "展开和托盘隐藏时仍自动复制新验证码");
+    await act(async () => { changeMode("collapsed"); changeAutoCopy(false); });
+    await notify("qqMail", true, true, "K7Q2-9XMP");
+    const otp = () => document.querySelector<HTMLButtonElement>(".island__text-slot .mail-otp-code")!;
+    check(otp()?.textContent === "K7Q2-9XMP" && copiedCodes.length === 1, "关闭自动复制后仍展示验证码胶囊");
+    check(!otp().closest(".island__open-button"), "复制胶囊独立于打开邮件的按钮");
+    openedPage = null;
+    const readsBefore = commands.filter(command => command === "read_qq_mail").length;
+    await act(async () => otp().click());
+    check(copiedCodes.join() === "834921,K7Q2-9XMP" && otp().dataset.copied === "true", "点击胶囊复制并显示对勾");
+    check(openedPage === null && commands.filter(command => command === "read_qq_mail").length === readsBefore, "复制不打开邮件或展开消息页");
+    await act(async () => changeAutoCopy(true));
+    await act(async () => { await emit("qq-mail-changed", { snapshot: mail, newestId: mail.items[0].id, windowVisible: true }); });
+    check(copiedCodes.length === 2, "同一验证码到达事件不会因重发或重新启用而重复复制");
+    await notify("qqMail", false, true, "552310");
+    check(copiedCodes[copiedCodes.length - 1] === "552310", "重新开启自动复制对后续邮件生效");
+    await act(async () => changeWidth(240));
+    check(otp().getBoundingClientRect().right <= document.querySelector(".island")!.getBoundingClientRect().right, "窄岛屿内验证码保持完整且不溢出");
+    await act(async () => changeWidth(280));
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {
@@ -290,6 +317,7 @@ await act(async () => { createRoot(document.getElementById("fixture")!).render(<
 if (!automated) Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });
 for (const [label, action] of [
   ["微信消息", () => notify("wechat")], ["QQ 消息", () => notify("qq")], ["邮箱消息", () => notify("qqMail")],
+  ["验证码", () => notify("qqMail", true, true, "834921")],
   ["长 QQ 消息", () => notify("qq", true)], ["340px", () => update(async () => changeWidth(340))],
   ["像素主题", () => update(async () => changeFont(true))], ["系统主题", () => update(async () => changeFont(false))],
   ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["2 个会话", () => update(async () => changeAgentCount(2))], ["自动检查", () => { location.search = "?test=1"; }],

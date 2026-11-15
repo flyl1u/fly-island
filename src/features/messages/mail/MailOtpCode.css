@@ -1,0 +1,22 @@
+/* Same compact pill geometry and tabular digits as the island's timer capsule. */
+.message-action.mail-otp-code {
+  --mail-otp-ink: color-mix(in srgb, var(--color-success), var(--text-1) 40%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  flex: 0 0 auto;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--mail-otp-ink);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  font: 600 calc(12px * var(--island-font-scale, 1)) / 1.5 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.message-action.mail-otp-code:hover { color: var(--mail-otp-ink); background: color-mix(in srgb, var(--color-success) 20%, transparent); }
+.mail-otp-code:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }

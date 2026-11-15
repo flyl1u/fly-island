@@ -6,6 +6,7 @@ import { MessageSourceIcon } from "../MessageSourceIcon";
 import type { MailMessage } from "./api";
 import { MailAccountTabs } from "./MailAccountTabs";
 import { MailAttachments } from "./MailAttachments";
+import { MailOtpCode } from "./MailOtpCode";
 import "./MailPanel.css";
 import type { MailController } from "./useMail";
 
@@ -183,6 +184,8 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
               <div className="qq-panel__item-heading"><strong>{item.unread && <span className="qq-mail-unread-dot" aria-hidden="true" />}<span>{item.sender}</span></strong>{item.receivedAt !== null && <time dateTime={new Date(item.receivedAt).toISOString()}>{formatMailTime(item.receivedAt, t.localeTag)}</time>}</div>
               <p>{item.subject}</p>
             </button>
+            {item.otpCode && <div className="qq-mail-item__otp"><MailOtpCode code={item.otpCode}
+              copied={controller.copiedOtp === item.otpCode} onCopy={controller.copyOtp} /></div>}
           </article>
         ))}
       </div>

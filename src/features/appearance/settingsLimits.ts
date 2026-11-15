@@ -27,6 +27,7 @@ export const MIN_AGENT_VISIBLE_ROWS = 2;
 export const MAX_AGENT_VISIBLE_ROWS = 5;
 // File shelf cap; matches MAX_ITEMS in src-tauri/src/file_shelf/store.rs.
 export const DEFAULT_SHELF_ITEMS = 100;
+export const DEFAULT_AUTO_COPY_OTP = true;
 /**
  * Seconds the open island waits after the cursor leaves before it collapses (0 never), and the
  * seconds the collapsed island idles before it tucks into a line at the top edge. Both typed in.

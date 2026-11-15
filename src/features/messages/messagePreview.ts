@@ -8,13 +8,15 @@ export type MessagePreview = {
   body: string;
   receivedAt: number;
   wechatMessageId?: string;
+  otpCode?: string | null;
 };
 
 export const MESSAGE_SOURCE_LABELS: Record<MessageSource, string> = zhCN.messages.sourceLabels;
 
 export function messagePreviewText(preview: MessagePreview, copy: Translations["messages"] = zhCN.messages): string {
   if (preview.source === "wechat" && !preview.title.trim()) return copy.wechatPreview;
-  if (preview.source === "qqMail") return preview.body.trim() || copy.newMail;
+  if (preview.source === "qqMail") return preview.otpCode
+    ? `${preview.body.trim() || copy.newMail} · ${preview.otpCode}` : preview.body.trim() || copy.newMail;
   return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
 }
 

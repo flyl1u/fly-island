@@ -39,6 +39,7 @@ fn inbox(validity: u32, uids: &[u32]) -> Inbox {
                 subject: "主题".into(),
                 received_at: None,
                 unread: true,
+                otp_code: None,
             })
             .collect(),
     }

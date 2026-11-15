@@ -7,6 +7,9 @@ mod attachments;
 mod client_id;
 mod content;
 mod credentials;
+mod otp;
+mod otp_html;
+mod otp_arrivals;
 mod service;
 mod session;
 mod supervisor;
@@ -34,6 +37,8 @@ pub struct MailMessage {
     subject: String,
     received_at: Option<i64>,
     unread: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    otp_code: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -100,6 +105,17 @@ pub fn get_qq_mail_state() -> Result<Vec<MailSnapshot>, String> {
         .iter()
         .map(|service| Ok(service.lock()?.snapshot.clone()))
         .collect()
+}
+
+#[tauri::command]
+pub async fn copy_mail_otp(code: String) -> Result<(), String> {
+    let core: String = code.chars().filter(|ch| ch.is_ascii_alphanumeric()).collect();
+    if !(4..=12).contains(&core.len()) || code.len() > 16
+        || !code.bytes().all(|ch| ch.is_ascii_alphanumeric() || ch == b'-' || ch == b' ') {
+        return Err("验证码格式无效。".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || crate::clipboard_history::copy_transient_text(&code))
+        .await.map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -349,6 +365,7 @@ macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
             crate::mail::get_qq_mail_state,
+            crate::mail::copy_mail_otp,
             crate::mail::connect_qq_mail,
             crate::mail::set_qq_mail_enabled,
             crate::mail::refresh_qq_mail,
