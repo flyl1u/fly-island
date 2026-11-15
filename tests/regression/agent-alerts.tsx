@@ -198,6 +198,26 @@ try {
   await act(async () => setRemindAfter(0));
   await settle(DURATION_MS + 100);
 
+  const codexDone = (ended: number): AgentSessionSummary => ({
+    ...session("codex-fast", "completed"), provider: "codex", lastCompletedAt: ended,
+    turnStartedAt: ended - 1000, ownerPromptAt: ended - 1000,
+  });
+  await act(async () => setStarted("off"));
+  const fast = codexDone(Date.now() - 1000);
+  await waitFor([fast]);
+  await wait(50);
+  check(latestAlert()?.key === "codex:codex-fast", "首次发现最近结束的 Codex 纯思考任务也弹出");
+  await settle(DURATION_MS + 100);
+  const nextFast = codexDone(Date.now());
+  await waitFor([nextFast]);
+  await wait(50);
+  check(latestAlert()?.key === "codex:codex-fast", "两次轮询都为 completed 时按新完成时间提醒");
+  await settle(DURATION_MS + 100);
+  const previousOpens = opens;
+  await waitFor([{ ...nextFast, updatedAt: Date.now() }]);
+  await wait(50);
+  check(opens === previousOpens, "只更新会话元数据不重复弹出完成提醒");
+
   // The panel: an alert shows its session alone and leaves the usage line out.
   const panel = createRoot(document.getElementById("panel")!);
   const listed = [session("a", "completed"), session("b", "running"), { ...session("c", "completed"), lastMessage: SUMMARY }];

@@ -2,6 +2,7 @@ import type { AgentSessionSummary, ReplyMarker } from "./api";
 import type { AgentAlertStarted, IslandSettings } from "../appearance/types";
 import { sessionKey } from "./unseen.ts";
 import { announcedEnding } from "./sessionLight.ts";
+import { hasNewCompletion } from "./completion.ts";
 
 /** What a session just did that the island pops up for. */
 export type AgentAlertKind = "started" | "completed" | "failed" | "waiting";
@@ -18,16 +19,18 @@ type Phase = AgentSessionSummary["phase"];
  * working since the island started watching (all of them at the first look), which tells a new
  * session's first turn from a later one.
  */
-export type SessionPhases = { phases: ReadonlyMap<string, Phase>; worked: ReadonlySet<string> };
+export type SessionPhases = { phases: ReadonlyMap<string, Phase>; worked: ReadonlySet<string>; completions: ReadonlyMap<string, number> };
 
 const isWorking = (phase: Phase) => phase === "running" || phase === "waiting" || phase === "stale";
 
 export function phasesOf(sessions: AgentSessionSummary[], previous: SessionPhases | null = null): SessionPhases {
   const worked = new Set(previous?.worked);
+  const completions = new Map(previous?.completions);
   for (const session of sessions) {
     if (!previous || isWorking(session.phase)) worked.add(sessionKey(session));
+    if (session.lastCompletedAt != null) completions.set(sessionKey(session), session.lastCompletedAt);
   }
-  return { phases: new Map(sessions.map((session) => [sessionKey(session), session.phase])), worked };
+  return { phases: new Map(sessions.map((session) => [sessionKey(session), session.phase])), worked, completions };
 }
 
 export function alertKindsOf(settings: Pick<IslandSettings, "agentAlertStarted" | "agentAlertCompleted" | "agentAlertFailed" | "agentAlertWaiting">): AgentAlertKinds {
@@ -65,14 +68,16 @@ export function detectAlerts(
   previous: SessionPhases | null,
   sessions: AgentSessionSummary[],
   kinds: AgentAlertKinds,
+  now = Date.now(),
 ): AgentAlert[] {
-  if (!previous) return [];
   return sessions.flatMap((session) => {
     const key = sessionKey(session);
-    const kind = alertKind(previous.phases.get(key), session.phase, announcedEnding(session));
+    const ended = hasNewCompletion(previous?.completions.get(key), session, now);
+    const before = ended ? "running" : previous?.phases.get(key);
+    const kind = !previous && !ended ? null : alertKind(before, session.phase, announcedEnding(session));
     if (!kind) return [];
     const on = kind === "started"
-      ? kinds.started === "everyTurn" || (kinds.started === "newSession" && !previous.worked.has(key))
+      ? kinds.started === "everyTurn" || (kinds.started === "newSession" && !previous?.worked.has(key))
       : kinds[kind];
     return on ? [{ kind, session }] : [];
   });

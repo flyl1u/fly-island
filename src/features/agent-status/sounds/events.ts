@@ -1,6 +1,7 @@
 import type { AgentSessionSummary } from "../api";
 import { QUESTION_TOOL } from "../announce.ts";
 import { announcedEnding } from "../sessionLight.ts";
+import { hasNewCompletion } from "../completion.ts";
 
 /** The agent moments that can make a sound, in the order the Sounds page lists them. */
 export const AGENT_SOUND_EVENTS = ["start", "complete", "error", "approval", "question", "ack", "compact", "idle", "quotaLow", "quotaReset"] as const;
@@ -25,10 +26,16 @@ type Phase = AgentSessionSummary["phase"];
 export function soundFor(
   before: Phase | undefined,
   after: Phase,
-  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "backgroundTasks">,
+  session: Pick<AgentSessionSummary, "currentTool" | "replyMarker" | "backgroundTasks" | "lastCompletedAt">,
+  beforeCompletedAt?: number | null,
+  now = Date.now(),
 ): AgentSoundEvent | null {
   if (after === "waiting" && before !== "waiting") {
     return session.currentTool?.name === QUESTION_TOOL ? "question" : "approval";
+  }
+  if (hasNewCompletion(beforeCompletedAt, { ...session, phase: after }, now)) {
+    const ending = announcedEnding(session);
+    return ending === "yourTurn" ? "question" : ending === "background" ? null : "complete";
   }
   if (before === undefined) return after === "running" ? "start" : null;
   if (after === "failed" && before !== "failed") return "error";
