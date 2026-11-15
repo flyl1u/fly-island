@@ -43,6 +43,9 @@ pub struct AgentSessionSummary {
     pub(super) reply_asks: bool,
     /// Last change of the session file, Unix milliseconds.
     pub(super) updated_at: i64,
+    /// Latest explicit Codex task completion, independent of later metadata writes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) last_completed_at: Option<i64>,
     /// The program the session runs in, when known (session_host.rs).
     pub(super) host: Option<SessionHost>,
     /// When the newest prompt was sent, Unix milliseconds; how long the current (or last) turn
@@ -99,6 +102,7 @@ const USER_BLOCKING_TOOLS: [&str; 2] = ["AskUserQuestion", "ExitPlanMode"];
 /// What the end of a session file says. `None` fields were not found in the excerpt.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct SessionTail {
+    pub(super) last_completed_at: Option<i64>,
     pub(super) session_id: Option<String>,
     pub(super) cwd: Option<String>,
     pub(super) title: Option<String>,
@@ -360,7 +364,12 @@ pub(super) fn claude_model_label(model: &str) -> String {
 
 /// Reads a Codex rollout excerpt from its end. The session id and folder come from the
 /// `session_meta` record on the first line (see `parse_codex_meta`).
+#[cfg(test)]
 pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
+    parse_codex_tail_with_state(tail, TurnState::Unknown)
+}
+
+pub(super) fn parse_codex_tail_with_state(tail: &str, fallback: TurnState) -> SessionTail {
     let mut result = SessionTail::default();
     for record in tail
         .lines()
@@ -370,6 +379,15 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
         let payload = &record["payload"];
         let kind = record["type"].as_str().unwrap_or_default();
         let payload_kind = payload["type"].as_str().unwrap_or_default();
+        if kind == "response_item" && payload_kind == "message" && payload["role"] == "user" {
+            if result.last_prompt.is_none() {
+                result.last_prompt = codex_user_prompt(&record.to_string());
+            }
+            let time = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+            result.turn_started_at = result.turn_started_at.or(time);
+            result.owner_prompt_at = result.owner_prompt_at.or(time);
+            if result.state == TurnState::Unknown { result.state = TurnState::Working; }
+        }
         if kind == "turn_context" {
             if result.model.is_none() {
                 result.model = string_field(payload, "model");
@@ -400,6 +418,9 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
         if result.context_tokens.is_none() && payload_kind == "token_count" {
             result.context_tokens = payload["info"]["last_token_usage"]["total_tokens"].as_u64();
         }
+        if result.last_completed_at.is_none() && payload_kind == "task_complete" {
+            result.last_completed_at = record["timestamp"].as_str().and_then(parse_timestamp_ms);
+        }
         if result.last_prompt.is_none() && payload_kind == "user_message" {
             result.last_prompt = payload["message"].as_str().and_then(prompt_title);
         }
@@ -429,6 +450,7 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
             };
         }
     }
+    if result.state == TurnState::Unknown { result.state = fallback; }
     result.settle()
 }
 
@@ -437,13 +459,14 @@ pub(super) fn parse_codex_tail(tail: &str) -> SessionTail {
 /// the hooks report), so listing them would add sessions no hook ever updates. A user's session
 /// has a plain `source` ("cli", "vscode", "exec", ...) or `{"custom": ...}`.
 pub(super) fn parse_codex_meta(first_line: &str) -> Option<(String, Option<String>)> {
-    let record = serde_json::from_str::<Value>(first_line).ok()?;
+    let record = serde_json::from_str::<Value>(first_line.trim_start_matches('\u{feff}')).ok()?;
     if record["type"] != "session_meta" {
         return None;
     }
     let payload = &record["payload"];
     let source = &payload["source"];
-    if source.get("subagent").is_some() || source.get("internal").is_some() {
+    if source.get("subagent").is_some() || source.get("internal").is_some()
+        || matches!(source.as_str(), Some("subagent" | "internal")) {
         return None;
     }
     let id = string_field(payload, "id").or_else(|| string_field(payload, "session_id"))?;
@@ -453,7 +476,7 @@ pub(super) fn parse_codex_meta(first_line: &str) -> Option<(String, Option<Strin
 /// Where a Codex session started ("Codex Desktop", "codex_cli_rs", ...), from the
 /// `session_meta` record on the first line of its rollout.
 pub(super) fn codex_originator(first_line: &str) -> Option<String> {
-    let record = serde_json::from_str::<Value>(first_line).ok()?;
+    let record = serde_json::from_str::<Value>(first_line.trim_start_matches('\u{feff}')).ok()?;
     (record["type"] == "session_meta")
         .then(|| string_field(&record["payload"], "originator"))
         .flatten()
@@ -461,15 +484,21 @@ pub(super) fn codex_originator(first_line: &str) -> Option<String> {
 
 /// The first prompt the user typed in a Codex rollout line, if this line is one.
 pub(super) fn codex_user_prompt(line: &str) -> Option<String> {
-    if !line.contains("\"user_message\"") {
+    if !line.contains("\"user_message\"") && !line.contains("\"user\"") {
         return None;
     }
     let record = serde_json::from_str::<Value>(line).ok()?;
     let payload = &record["payload"];
-    (record["type"] == "event_msg" && payload["type"] == "user_message")
-        .then(|| payload["message"].as_str())
-        .flatten()
-        .and_then(super::title::prompt_title)
+    if record["type"] == "event_msg" && payload["type"] == "user_message" {
+        return payload["message"].as_str().and_then(prompt_title);
+    }
+    if record["type"] == "response_item" && payload["type"] == "message" && payload["role"] == "user" {
+        let text = payload["content"].as_array()?.iter()
+            .filter(|block| block["type"] == "input_text")
+            .filter_map(|block| block["text"].as_str()).collect::<Vec<_>>().join("\n");
+        return prompt_title(&text);
+    }
+    None
 }
 
 /// The `cwd` a Claude Code transcript line records, if it has one.

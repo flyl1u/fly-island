@@ -11,12 +11,15 @@ use std::{
 };
 
 use super::markers::AGENT_RUNNING_STALE_AFTER_MS;
+
+const CODEX_SILENT_STALE_AFTER_MS: i64 = 30 * 60 * 1000;
+use super::codex_activity::CodexActivity;
 use super::notifications::{compacting_sessions, is_waiting, WaitingNotifications};
 use super::session_host::codex_host;
 use super::session_process::running_sessions;
 use super::session_records;
 use super::sessions::{
-    codex_originator, codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail, record_cwd,
+    codex_originator, codex_user_prompt, parse_claude_tail, parse_codex_meta, parse_codex_tail_with_state, record_cwd,
     session_phase, AgentSessionSummary, SessionTail, TurnState,
 };
 use super::snapshot::{current_unix_millis, system_time_to_unix_millis};
@@ -87,6 +90,11 @@ fn scan(
             } else if state == TurnState::Working && asked_user {
                 // Waiting on the user is not a stall, however long it takes.
                 "waiting"
+            } else if summary.provider == "codex" && state == TurnState::Working {
+                // Codex does not promise a heartbeat while the model thinks (real turns went
+                // 148 s without a write), so it gets a much longer silence before stale; a
+                // crashed session must still let the island light go out eventually.
+                session_phase(state, now - summary.updated_at, CODEX_SILENT_STALE_AFTER_MS)
             } else {
                 session_phase(
                     state,
@@ -174,7 +182,8 @@ fn recent_session_files(home_dir: &Path, now: i64, window_ms: i64) -> Vec<Sessio
         }
     }
 
-    // ~/.codex/sessions/<year>/<month>/<day>/rollout-*.jsonl; the newest two days cover up to a day.
+    // Rollouts stay in the date directory where the thread started, even when resumed days
+    // later. Filter by each file's mtime, never the directory's date.
     let mut days = Vec::new();
     for year in read_dir_paths(&home_dir.join(".codex").join("sessions")) {
         for month in read_dir_paths(&year) {
@@ -182,7 +191,7 @@ fn recent_session_files(home_dir: &Path, now: i64, window_ms: i64) -> Vec<Sessio
         }
     }
     days.sort();
-    for day in days.iter().rev().take(2) {
+    for day in days.iter().rev() {
         for path in read_dir_paths(day) {
             if path
                 .extension()
@@ -202,6 +211,7 @@ fn read_dir_paths(dir: &Path) -> Vec<PathBuf> {
 }
 
 struct CachedSession {
+    codex_activity: Option<CodexActivity>,
     stamp: (u64, Option<SystemTime>),
     summary: AgentSessionSummary,
     state: TurnState,
@@ -261,11 +271,17 @@ impl SessionCache {
             .filter(|head| head.first_prompt.is_some());
         let tail = read_tail(path)?;
         let mut host = None;
+        let mut codex_activity = None;
         let (mut parsed, session_id, cwd) = if provider == "codex" {
             let first_line = read_first_line(path)?;
             let (id, cwd) = parse_codex_meta(&first_line)?;
             host = codex_originator(&first_line).map(|origin| codex_host(&origin));
-            (parse_codex_tail(&tail), id, cwd)
+            let mut activity = sessions.get(path).and_then(|cached| cached.codex_activity.clone()).unwrap_or_default();
+            activity.refresh(path).ok()?;
+            let mut parsed = parse_codex_tail_with_state(&tail, activity.state);
+            activity.apply(&mut parsed);
+            codex_activity = Some(activity);
+            (parsed, id, cwd)
         } else {
             let parsed = parse_claude_tail(&tail);
             let id = parsed.session_id.clone().or_else(|| {
@@ -274,7 +290,10 @@ impl SessionCache {
             })?;
             (parsed, id, None)
         };
-        let head = known_head.unwrap_or_else(|| scan_head(path, provider));
+        let head = known_head.unwrap_or_else(|| match &codex_activity {
+            Some(activity) => SessionHead { first_prompt: activity.first_prompt.clone(), first_cwd: cwd.clone() },
+            None => scan_head(path, provider),
+        });
         let cwd = cwd
             .or_else(|| head.first_cwd.clone())
             .or_else(|| parsed.cwd.take());
@@ -298,6 +317,7 @@ impl SessionCache {
         sessions.insert(
             path.to_path_buf(),
             CachedSession {
+                codex_activity,
                 stamp,
                 summary: summary.clone(),
                 state,
@@ -342,6 +362,7 @@ fn summary_from(
         reply_marker: parsed.reply_marker,
         reply_asks: parsed.reply_asks,
         updated_at,
+        last_completed_at: parsed.last_completed_at,
         host: None,
         turn_started_at: None,
         owner_prompt_at: None,

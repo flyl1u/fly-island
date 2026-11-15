@@ -204,6 +204,7 @@ pub(super) fn summary(parsed: Parsed, file_id: &str, updated_at: i64, now: i64, 
     };
     let title = parsed.title.or(parsed.first_prompt).or_else(|| parsed.cwd.as_deref().and_then(folder_title));
     AgentSessionSummary {
+        last_completed_at: None,
         provider: "workbuddy",
         session_id: parsed.session_id.unwrap_or_else(|| file_id.to_string()),
         cwd: parsed.cwd,

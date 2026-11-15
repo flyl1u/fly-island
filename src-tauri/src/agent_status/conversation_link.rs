@@ -73,6 +73,23 @@ pub(super) fn is_extension_link(link: &str) -> bool {
     link.contains(&format!("://{CLAUDE_EXTENSION_ID}/")) || link.contains(&format!("://{CODEX_EXTENSION_ID}/"))
 }
 
+/// Only after the existing window/tab lookup failed to deliver a conversation. Desktop and
+/// extension threads have no dedicated CLI process/window; the registered URI can restore it.
+/// Never guess an editor when several installed hosts could own the extension session.
+pub(super) fn codex_fallback_link(home_dir: &Path, session_id: &str) -> Option<String> {
+    if !is_session_id(session_id) { return None; }
+    match codex_process::originator(home_dir, session_id).as_deref()? {
+        "Codex Desktop" => Some(format!("codex://threads/{session_id}")),
+        CODEX_EXTENSION_ORIGINATOR => {
+            let apps = ["code", "code - insiders", "cursor", "windsurf", "vscodium", "trae", "kiro"];
+            let mut links = apps.iter().filter_map(|app| conversation_link(home_dir, app, "codex", session_id));
+            let link = links.next()?;
+            links.next().is_none().then_some(link)
+        }
+        _ => None,
+    }
+}
+
 /// Folders Claude desktop may keep its data in: `%APPDATA%\Claude` for the installer build;
 /// the Store build's `%LOCALAPPDATA%\Claude-Data\<package>` or its virtualized `%APPDATA%`.
 pub(super) fn claude_desktop_roots() -> Vec<PathBuf> {
