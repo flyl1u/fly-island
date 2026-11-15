@@ -8,7 +8,7 @@ import type { CollapsedItem } from "../../features/appearance/types";
  */
 export function pickCollapsedItem(
   order: readonly CollapsedItem[],
-  has: Record<Exclude<CollapsedItem, "balance">, boolean> & { balance?: boolean },
+  has: Record<"agent" | "lyrics" | "todo", boolean> & Partial<Record<"balance" | "clock", boolean>>,
   todoStarted = true,
 ): CollapsedItem | null {
   const ranked = order.find((item) => has[item] && (item !== "todo" || todoStarted));

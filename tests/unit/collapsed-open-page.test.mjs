@@ -17,6 +17,7 @@ test("a running agent the island names opens the Agent page", () => {
 });
 
 test("a todo line or nothing shown reopens the last page", () => {
+  assert.equal(collapsedOpenPage("clock", true, "music"), "music");
   assert.equal(collapsedOpenPage("todo", false, "translation"), "translation");
   assert.equal(collapsedOpenPage(null, false, "qq"), "qq");
 });

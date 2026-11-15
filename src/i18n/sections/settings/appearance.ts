@@ -52,7 +52,7 @@ export type SettingsAppearanceText = {
   collapsedIsland: {
     title: string;
     priorityFooter: string;
-    items: Record<"agent" | "lyrics" | "todo" | "balance", { name: string; hint: string }>;
+    items: Record<"agent" | "lyrics" | "todo" | "balance" | "clock", { name: string; hint: string }>;
     /** The drag handle of one item; arrow keys on it move the item too. */
     moveLabel: (name: string) => string;
     showCover: string;
@@ -71,7 +71,7 @@ export type SettingsAppearanceText = {
 export const zhCN: SettingsAppearanceText = {
   idleClock: {
     title: "空闲时间与日期", enabled: "空闲时显示时间日期",
-    hint: "仅在折叠且空闲时显示；消息、Agent、进行中的待办和歌词优先。预览：",
+    hint: "在折叠岛上显示，顺序由“岛屿展示优先级”决定；消息提醒与倒计时优先。预览：",
     display: "显示内容", hour12: "12 小时制", seconds: "显示秒", dateFormat: "日期格式",
     custom: "自定义日期格式", customHint: "YYYY 年、YY 两位年、MM/M 月、DD/D 日、ddd/dddd 星期。其他文字原样显示，最多 80 字符。",
     weekday: "星期", order: "排列顺序",
@@ -119,6 +119,7 @@ export const zhCN: SettingsAppearanceText = {
     items: {
       agent: { name: "AI Agent 任务", hint: "正在运行的会话标题" },
       balance: { name: "API 余额", hint: "已启用账号的名称与余额；低余额账号优先显示" },
+      clock: { name: "时间与日期", hint: "开启“空闲时间与日期”后，按此顺序显示设置的时间和日期格式" },
       lyrics: { name: "歌词", hint: "播放时的当前一句，没有歌词时显示歌名" },
       todo: { name: "待办", hint: "开始做的待办；没开始时，剩余数量排在最后" },
     },
@@ -139,7 +140,7 @@ export const zhCN: SettingsAppearanceText = {
 export const en: SettingsAppearanceText = {
   idleClock: {
     title: "Idle time & date", enabled: "Show time and date while idle",
-    hint: "On the idle collapsed island. Messages, agents, active todos and lyrics take priority. Preview: ",
+    hint: "On the collapsed island, following Island display priority. Message alerts and countdowns take priority. Preview: ",
     display: "Show", hour12: "12-hour clock", seconds: "Show seconds", dateFormat: "Date format",
     custom: "Custom date format", customHint: "YYYY year, YY short year, MM/M month, DD/D day, ddd/dddd weekday. Other text is literal; up to 80 characters.",
     weekday: "Weekday", order: "Order",
@@ -187,6 +188,7 @@ export const en: SettingsAppearanceText = {
     items: {
       agent: { name: "AI Agent task", hint: "The running session's title" },
       balance: { name: "API balance", hint: "Enabled account name and balance; low balances come first" },
+      clock: { name: "Time and date", hint: "Enable Idle time & date to show your chosen format at this priority" },
       lyrics: { name: "Lyrics", hint: "The current line while a song plays, or its title" },
       todo: { name: "Todos", hint: "The todo you started; until then, the count left comes last" },
     },

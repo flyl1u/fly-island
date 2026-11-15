@@ -22,15 +22,27 @@ test("moving an item puts it at the new index and leaves the rest in order", () 
 
 test("the collapsed island's order, cover and the page dots load with defaults", () => {
   const settings = normalizeSettings({});
-  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo", "balance"]);
+  assert.deepEqual(settings.collapsedPriority, ["agent", "lyrics", "todo", "balance", "clock"]);
   assert.equal(settings.collapsedShowCover, true);
   assert.equal(normalizeSettings({ collapsedShowCover: false }).collapsedShowCover, false);
   assert.deepEqual(settings.pageOrder, ["todo", "music", "clipboard", "shelf", "translation"]);
   const saved = normalizeSettings({ collapsedPriority: ["todo"], collapsedShowCover: true, pageOrder: ["shelf", "todo"] });
-  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics", "balance"]);
+  assert.deepEqual(saved.collapsedPriority, ["todo", "agent", "lyrics", "balance", "clock"]);
   assert.equal(saved.collapsedShowCover, true);
   // Orders saved before translation had a capsule get it at the end.
   assert.deepEqual(saved.pageOrder, ["shelf", "todo", "music", "clipboard", "translation"]);
+});
+
+test("clock order and the collapsed balance preference survive settings normalization", () => {
+  const collapsedPriority = ["clock", "balance", "todo", "lyrics", "agent"];
+  const saved = normalizeSettings({ collapsedPriority, balanceShowCollapsed: false });
+  assert.deepEqual(normalizeSettings(JSON.parse(JSON.stringify(saved))).collapsedPriority, collapsedPriority);
+  assert.equal(normalizeSettings(JSON.parse(JSON.stringify(saved))).balanceShowCollapsed, false);
+  assert.equal(normalizeSettings({}).balanceShowCollapsed, true);
+  assert.equal(normalizeSettings({ balanceShowCollapsed: true }).balanceShowCollapsed, true);
+  for (const value of [null, 0, "false"]) assert.equal(normalizeSettings({ balanceShowCollapsed: value }).balanceShowCollapsed, true);
+  assert.deepEqual(normalizeSettings({ collapsedPriority: ["clock", "clock", "unknown", "balance"] }).collapsedPriority,
+    ["clock", "balance", "agent", "lyrics", "todo"]);
 });
 
 test("page buttons default to icons; a saved capsule choice is kept", () => {

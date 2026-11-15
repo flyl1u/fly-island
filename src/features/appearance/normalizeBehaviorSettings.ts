@@ -44,6 +44,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     ...normalizeLyricsSettings(settings),
     mailEnabled: settings?.mailEnabled !== false,
     collapsedPriority: normalizeOrder(settings?.collapsedPriority, COLLAPSED_ITEMS),
+    balanceShowCollapsed: settings?.balanceShowCollapsed !== false,
     collapsedShowCover: settings?.collapsedShowCover !== false,
     collapsedLayout: normalizeOrder(settings?.collapsedLayout, COLLAPSED_SLOTS),
     pageOrder: normalizeOrder(settings?.pageOrder, PAGE_DOTS),

@@ -57,6 +57,17 @@ try {
   await act(async () => { probe.update({ ...probe.settings!, pulseColor: "#333333" }); });
   check(stored().pulseColor === "#333333", "A change made in this window is saved");
 
+  const priority = ["clock", "balance", "todo", "agent", "lyrics"] as IslandSettings["collapsedPriority"];
+  await act(async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadSettings(), collapsedPriority: priority, balanceShowCollapsed: false }));
+    storageEvent();
+  });
+  check(probe.settings?.collapsedPriority.join() === priority.join() && !probe.settings.balanceShowCollapsed,
+    "Clock priority and collapsed balance preference follow changes from the other window");
+  await act(async () => { probe.update({ ...probe.settings!, balanceShowCollapsed: true }); });
+  check(loadSettings().balanceShowCollapsed && loadSettings().collapsedPriority.join() === priority.join(),
+    "Restoring collapsed balance keeps the saved clock priority");
+
   await act(async () => { root.unmount(); });
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {

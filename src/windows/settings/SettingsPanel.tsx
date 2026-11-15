@@ -116,7 +116,7 @@ export function SettingsPanel({
       {category === "music" && <MusicSettingsPage settings={settings} onSettingsChange={setSettings} />}
       {category === "agents" && <AgentSettingsPage settings={settings} onSettingsChange={setSettings} onOpenConnect={() => setCategory("agentConnect")} />}
       {category === "agentConnect" && <AgentConnectSettingsPage />}
-      {category === "plugins" && <PluginsSettingsPage />}
+      {category === "plugins" && <PluginsSettingsPage settings={settings} onSettingsChange={onSettingsChange} />}
       {category === "about" && <AboutSettingsPage />}
     </LayoutEditor>
   );

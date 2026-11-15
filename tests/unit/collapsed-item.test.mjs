@@ -5,6 +5,17 @@ import { pickCollapsedItem } from "../../src/windows/island/collapsedItem.ts";
 const TODO_FIRST = ["todo", "agent", "lyrics"];
 const DEFAULT_ORDER = ["agent", "lyrics", "todo"];
 
+test("clock participates in ranking and skips disabled or unavailable content", () => {
+  const has = { agent: true, lyrics: true, todo: true, balance: true, clock: true };
+  const order = ["clock", "balance", "todo", "agent", "lyrics"];
+  assert.equal(pickCollapsedItem(order, has), "clock");
+  assert.equal(pickCollapsedItem(order, { ...has, clock: false }), "balance");
+  assert.equal(pickCollapsedItem(order, { ...has, clock: false, balance: false }), "todo");
+  assert.equal(pickCollapsedItem(["todo", "clock", "agent"], has, false), "clock");
+  assert.equal(pickCollapsedItem(["agent", "clock", "balance"], has), "agent");
+  assert.equal(pickCollapsedItem(["lyrics", "clock", "balance"], has), "lyrics");
+});
+
 test("a started todo ranked above the agent is what the collapsed island shows", () => {
   assert.equal(pickCollapsedItem(TODO_FIRST, { todo: true, agent: true, lyrics: true }, true), "todo");
   // Ranked below, it still waits its turn.

@@ -1,6 +1,7 @@
 export type SettingsPluginsText = {
   empty: string;
   balance: {
+    showCollapsed: string; showCollapsedHint: string;
     alertTitle: string; alertEnabled: string; alertThreshold: string; alertUnit: string; alertHint: string;
     builtinHint: string; customizeScript: string; resetScript: string; stale: string;
     lowBalance: (name: string, remaining: string, unit: string, threshold: string) => string;
@@ -22,6 +23,7 @@ export type SettingsPluginsText = {
 export const zhCN: SettingsPluginsText = {
   empty: "暂无插件",
   balance: {
+    showCollapsed: "折叠时显示余额", showCollapsedHint: "按“岛屿展示优先级”显示余额。关闭后仍会查询余额、显示余额页并发送已启用的低余额提醒。",
     alertTitle: "余额预警", alertEnabled: "启用低余额预警", alertThreshold: "低于此数额时提醒", alertUnit: "预警单位",
     alertHint: "保存并启用账号后生效。仅比较相同单位的有效剩余额度，支持小数；等于阈值不提醒。持续低余额只提醒一次，恢复后再跌破会重新提醒。声音跟随 Agent 提示音总开关及游戏免打扰。",
     builtinHint: "正在显示内置查询模板，实际查询仍由内置协议执行。点击“编辑为自定义脚本”后可修改；NewAPI 模板中的换算值取自上方设置。",
@@ -49,6 +51,7 @@ export const zhCN: SettingsPluginsText = {
 export const en: SettingsPluginsText = {
   empty: "No plugins yet",
   balance: {
+    showCollapsed: "Show balance when collapsed", showCollapsedHint: "Show balances according to Island display priority. Turning this off keeps queries, the balance page and enabled low balance alerts active.",
     alertTitle: "Low balance", alertEnabled: "Enable low balance alerts", alertThreshold: "Alert below this amount", alertUnit: "Alert unit",
     alertHint: "Save and enable the account to apply. Compares valid remaining amounts in the same unit; decimals are supported. Equality does not alert. Alerts once until recovery, then alerts on the next drop. Sound follows the Agent sound master switch and game do-not-disturb.",
     builtinHint: "Built-in query preview; queries still use the native protocol. Choose Customize script to edit it. NewAPI conversion uses the setting above.",

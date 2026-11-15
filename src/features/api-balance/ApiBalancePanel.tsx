@@ -14,7 +14,10 @@ import type { BalanceAccountState, BalanceResult, ImportEntry } from "./types";
 import { useApiBalance } from "./useApiBalance";
 import "./ApiBalancePanel.css";
 
-export function ApiBalancePanel() {
+export function ApiBalancePanel({ showCollapsed, onShowCollapsedChange }: {
+  showCollapsed: boolean;
+  onShowCollapsedChange: (show: boolean) => void;
+}) {
   const t = useTranslation().settings.plugins.balance;
   const model = useApiBalance();
   const { snapshot, busy, perform, change } = model;
@@ -53,6 +56,7 @@ export function ApiBalancePanel() {
   return <section className="settings-section settings-section--list api-balance-panel">
     <SettingsGroup title={t.title} footer={t.description}>
       <SettingsToggleRow title={t.enabled} checked={snapshot.enabled} onChange={enabled => { if (!busy) void change(() => api.enableBalance(enabled)); }} />
+      <SettingsToggleRow title={t.showCollapsed} description={t.showCollapsedHint} checked={showCollapsed} onChange={onShowCollapsedChange} />
       <SettingsRow title={t.title} control={<div className="api-balance-actions">
         <SettingsLinkButton disabled={busy || snapshot.accounts.length >= 50} onClick={() => { updateDraft({ account: newAccount(crypto.randomUUID()), secrets: emptySecrets() }); setPreview([]); }}>{t.add}</SettingsLinkButton>
         <SettingsLinkButton disabled={busy} onClick={() => fileInput.current?.click()}>{t.import}</SettingsLinkButton>

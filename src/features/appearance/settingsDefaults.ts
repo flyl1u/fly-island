@@ -100,6 +100,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentStatusEnabled: true,
   agentTitleEnabled: true,
   collapsedPriority: [...COLLAPSED_ITEMS],
+  balanceShowCollapsed: true,
   collapsedShowCover: true,
   collapsedLayout: [...COLLAPSED_SLOTS],
   pageOrder: [...PAGE_DOTS],

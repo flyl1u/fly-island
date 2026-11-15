@@ -35,7 +35,7 @@ test("native alert consumption handles duplicates, recovery, failures and disabl
 });
 
 test("old priority orders append balance, and the new rank participates in content selection", () => {
-  assert.deepEqual(normalizeSettings({ collapsedPriority: ["todo", "agent", "lyrics"] }).collapsedPriority, ["todo", "agent", "lyrics", "balance"]);
+  assert.deepEqual(normalizeSettings({ collapsedPriority: ["todo", "agent", "lyrics"] }).collapsedPriority, ["todo", "agent", "lyrics", "balance", "clock"]);
   const has = { agent: true, lyrics: true, todo: true, balance: true };
   assert.equal(pickCollapsedItem(["balance", "agent", "lyrics", "todo"], has), "balance");
   assert.equal(pickCollapsedItem(["balance", "agent", "lyrics", "todo"], { ...has, balance: false }), "agent");

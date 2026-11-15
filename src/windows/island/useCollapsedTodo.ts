@@ -65,13 +65,14 @@ export function useCollapsedTodo(
     ? pendingTodoCount
     : null;
   const hasActiveTodo = activeTodoId !== null && pendingTodoIds.includes(activeTodoId);
-  const showIdleClock = settings.idleClockEnabled && !timer && !hasActiveTodo && !agentTitle && !lyricsPlaying && !balanceText;
-  const collapsedItem = showIdleClock ? null : timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
+  const collapsedItem = timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
-    balance: Boolean(balanceText),
+    balance: settings.balanceShowCollapsed && Boolean(balanceText),
+    clock: settings.idleClockEnabled,
   }, hasActiveTodo);
+  const showIdleClock = collapsedItem === "clock";
   const collapsedIslandWidth = useMemo(() => {
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;

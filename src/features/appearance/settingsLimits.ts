@@ -64,8 +64,8 @@ export function normalizeExpandedScale(value: unknown) {
   return Math.round(Math.min(MAX_EXPANDED_SCALE, Math.max(MIN_EXPANDED_SCALE, scale)) * 100) / 100;
 }
 
-/** The collapsed island's items, in their default order: a running agent, then lyrics, then todos. */
-export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo", "balance"];
+/** New items append to saved orders so upgrades preserve the existing priority. */
+export const COLLAPSED_ITEMS: readonly CollapsedItem[] = ["agent", "lyrics", "todo", "balance", "clock"];
 /** The collapsed island's layout as it always was: the text, then the icons on its right. */
 export const COLLAPSED_SLOTS: readonly CollapsedSlot[] = ["text", "mail", "shelf", "music", "agents"];
 /** The header's page dots in their default order; translation joined last (2026-11-11). */
