@@ -3,6 +3,9 @@ export type SettingsColorsText = {
   taskText: string;
   pulse: string;
   islandBackground: string;
+  /** The text on the expanded pages, and its reset to following the background. */
+  pageText: string;
+  pageTextAuto: string;
   restore: string;
   presets: string;
   savePreset: string;
@@ -16,6 +19,8 @@ export const zhCN: SettingsColorsText = {
   taskText: "任务/待办字样",
   pulse: "亮点颜色",
   islandBackground: "岛屿背景",
+  pageText: "页面文字",
+  pageTextAuto: "跟随背景",
   restore: "恢复上一版颜色",
   presets: "预设",
   savePreset: "保存当前颜色为预设",
@@ -29,6 +34,8 @@ export const en: SettingsColorsText = {
   taskText: "Task text",
   pulse: "Accent",
   islandBackground: "Island background",
+  pageText: "Page text",
+  pageTextAuto: "Follow background",
   restore: "Restore previous colors",
   presets: "Presets",
   savePreset: "Save current colors as a preset",

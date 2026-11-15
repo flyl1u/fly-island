@@ -34,13 +34,18 @@ export function useMediaState(enabled = true, showsLevel = true) {
   const seekGeneration = useRef(0);
   const isSeeking = useRef(false);
   const isRunningMediaCommand = useRef(false);
+  // Read by the poll: paused music is read less often, since nothing on screen moves.
+  const isMusicPlayingRef = useRef(false);
   const trackClock = useRef<TrackClock>(NO_CLOCK);
   const mediaPlaybackIntent = useRef<{
     status: MediaPlaybackStatus;
     expiresAt: number;
   } | null>(null);
-  const { musicSourcePriority, reorderMusicSource, removeMusicSource } =
+  const { musicSourcePriority, archivedMusicSources, reorderMusicSource, removeMusicSource } =
     useMusicSourcePriority(mediaState.sessions);
+  // Archived players (Settings → Music) are not followed, even when Windows offers nothing else.
+  const archivedIdsRef = useRef<ReadonlySet<string>>(new Set());
+  const archivedKey = JSON.stringify(archivedMusicSources.map((source) => source.id));
 
   const refreshMediaState = useCallback(async () => {
     if (isRefreshingMediaState.current) {
@@ -52,9 +57,14 @@ export function useMediaState(enabled = true, showsLevel = true) {
     const generation = seekGeneration.current;
 
     try {
-      const nextMediaState = await getMediaState(
+      const read = await getMediaState(
         mediaTargetRef.current ?? undefined,
       );
+      // With no other player in the order to pick, Windows answers with its current session; when
+      // that is an archived player the island shows no music, keeping only the session list.
+      const nextMediaState: MediaState = read.activeSessionId && archivedIdsRef.current.has(read.activeSessionId)
+        ? { ...DEFAULT_MEDIA_STATE, sessions: read.sessions, updatedAt: read.updatedAt }
+        : read;
 
       const now = Date.now();
       const intent = mediaPlaybackIntent.current;
@@ -266,7 +276,10 @@ export function useMediaState(enabled = true, showsLevel = true) {
 
     void refreshMediaState();
 
+    let ticks = 0;
     const interval = window.setInterval(() => {
+      ticks += 1;
+      if (!isMusicPlayingRef.current && ticks % 4 !== 0) return;
       if (!isIslandMoving()) void refreshMediaState();
     }, 1500);
 
@@ -283,6 +296,15 @@ export function useMediaState(enabled = true, showsLevel = true) {
       window.clearInterval(interval);
     };
   }, [enabled, refreshMediaState]);
+
+  useEffect(() => {
+    isMusicPlayingRef.current = mediaState.playbackStatus === "playing" || mediaState.audioActive;
+  }, [mediaState.playbackStatus, mediaState.audioActive]);
+
+  useEffect(() => {
+    archivedIdsRef.current = new Set(JSON.parse(archivedKey) as string[]);
+    if (enabled) void refreshMediaState();
+  }, [archivedKey, enabled, refreshMediaState]);
 
   const effectiveMediaTarget = useMemo(
     () => pickMediaSource(mediaState.sessions, musicSourcePriority),

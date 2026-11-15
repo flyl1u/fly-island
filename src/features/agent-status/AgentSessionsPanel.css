@@ -17,12 +17,21 @@
   /* With no panel of its own, the text follows the island background: light on dark, dark on
      light (stageStyle.ts sets --island-ink-rgb). */
   --agent-ink: var(--island-ink-rgb, 241, 240, 246);
-  /* The island's four text levels (tokens.css), in that ink. */
+  /* The island's four text levels (tokens.css), in that ink, or in the page text colour once one
+     is chosen (Settings → Appearance; IslandPageText.css). */
+  --text-1: rgba(var(--island-page-ink-rgb, var(--agent-ink)), 0.96);
+  --text-2: rgba(var(--island-page-ink-rgb, var(--agent-ink)), 0.68);
+  --text-3: rgba(var(--island-page-ink-rgb, var(--agent-ink)), 0.54);
+  --text-placeholder: rgba(var(--island-page-ink-rgb, var(--agent-ink)), 0.42);
+  color: var(--text-1);
+}
+
+/* Icons that take their colour from a text level keep the island ink (IslandPageText.css). */
+.agent-sessions :where(svg) {
   --text-1: rgba(var(--agent-ink), 0.96);
   --text-2: rgba(var(--agent-ink), 0.68);
   --text-3: rgba(var(--agent-ink), 0.54);
   --text-placeholder: rgba(var(--agent-ink), 0.42);
-  color: var(--text-1);
 }
 
 .agent-sessions__empty {

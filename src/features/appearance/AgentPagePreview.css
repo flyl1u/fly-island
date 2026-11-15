@@ -35,6 +35,14 @@
   color: var(--color-agent-running);
 }
 
+/* Capsule page buttons: the Agent entry is a capsule like the page capsules (IslandHeader.css). */
+.agent-page-preview__light--capsule {
+  width: calc(18 * var(--u));
+  height: calc(12 * var(--u));
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
 .agent-page-preview__dots {
   display: flex;
   align-items: center;

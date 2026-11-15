@@ -11,7 +11,7 @@ const usage = (available = true) => ({ updatedAt: now, available, source: "dshAp
 const usages = (dsh) => ({ claude: null, codex: null, dsh, readAt: now });
 
 test("DSH wallets show currency and availability without a fabricated percentage", () => {
-  assert.equal(dshBalanceLabel(usage()), "¥12.3456");
+  assert.equal(dshBalanceLabel(usage()), "¥12.35");
   assert.deepEqual(dshBalanceRings(usage()), { outer: 100, inner: 100 });
   const empty = { ...usage(false), wallets: [{ currency: "USD", total: "0", granted: "0", toppedUp: "0" }] };
   assert.deepEqual(dshBalanceRings(empty), { outer: 0, inner: 0 });

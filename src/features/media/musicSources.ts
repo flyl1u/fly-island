@@ -17,10 +17,12 @@ export function mergeMusicSources(current: KnownMediaSource[], sessions: readonl
     const duplicate = result.find((entry) => entry.id === next.id);
     if (duplicate) {
       if ("enabled" in next && next.enabled === false) duplicate.enabled = false;
+      if ("archived" in next && next.archived === true) duplicate.archived = true;
     } else {
       result.push({
         id: next.id, label: next.label,
         ...("enabled" in next && next.enabled === false ? { enabled: false } : {}),
+        ...("archived" in next && next.archived === true ? { archived: true } : {}),
         ...(next.aliases?.length ? { aliases: next.aliases } : {}),
       });
     }
@@ -29,7 +31,7 @@ export function mergeMusicSources(current: KnownMediaSource[], sessions: readonl
 }
 
 export function excludedMusicSources(sources: readonly KnownMediaSource[]): string[] {
-  return [...new Set(sources.filter((source) => source.enabled === false).flatMap(ids))];
+  return [...new Set(sources.filter((source) => source.enabled === false || source.archived === true).flatMap(ids))];
 }
 
 /** A native response may arrive after the user has excluded its selected source. */

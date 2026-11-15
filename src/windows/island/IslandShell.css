@@ -229,7 +229,7 @@
   padding: 18px 20px 20px;
   pointer-events: none;
   opacity: 0;
-  transform: translateY(-6px) scale(var(--island-expanded-scale));
+  transform: var(--island-panel-hidden);
 }
 
 .island--preparing.island--collapsed .island__surface {
@@ -244,7 +244,7 @@
 .island--expanded .island__expanded {
   pointer-events: auto;
   opacity: 1;
-  transform: scale(var(--island-expanded-scale));
+  transform: var(--island-panel-shown);
   /* The page fades in once the island has some size (120ms in, a fifth of the way), and the
      6px drop rides the same spring. Between pages the panel takes its new height at once (laid
      out once, not on every frame); the shape's own height transition uncovers or trims it. */
@@ -257,7 +257,7 @@
    tallest page the 6px drop on top of the growing shape read as a rush downwards (2026-11-11,
    owner). */
 .island--translation .island__expanded {
-  transform: scale(var(--island-expanded-scale));
+  transform: var(--island-panel-shown);
 }
 
 .island__content {

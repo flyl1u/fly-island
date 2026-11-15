@@ -30,10 +30,10 @@ export function prepareColorRegression() {
 async function checkColorInputs(check: (condition: unknown, message: string) => void) {
   check(!document.querySelector(".appearance-color-restore"), "Without a backup, the restore icon is absent");
   const group = element(".settings-color").closest(".settings-group")!;
-  // The 2026-11-13 requested presets row follows the three color input rows.
+  // The page text color row (2026-11-14) follows the three color input rows; the presets row follows them all.
   const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")].filter((row) => row.querySelector(".settings-color"));
-  check(rows.length === 3 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("input[type=color]")),
-    "The Colors card has three rows, each with a hex value and a swatch");
+  check(rows.length === 4 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("input[type=color]")),
+    "The Colors card has four rows (page text added 2026-11-14), each with a hex value and a swatch");
   const swatch = element<HTMLInputElement>(".settings-color__swatch");
   // At 150% Windows scaling Chromium quantizes a 1px border to 0.666667 CSS px.
   check(swatch.getBoundingClientRect().width === 36 && parseFloat(getComputedStyle(swatch).borderTopWidth) > 0, "The round 36px swatch has a visible border");

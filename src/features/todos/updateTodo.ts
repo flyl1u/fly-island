@@ -6,6 +6,8 @@ export const UPDATE_TODO_ID = "focusd-island-update-todo";
 export type UpdateTodoState = {
   stage: string;
   dismissed: boolean;
+  /** A version is known to be waiting: a failed install keeps its row, so the failure stays visible. */
+  hasVersion?: boolean;
 };
 
 export function isUpdateTodo(todo: { kind?: "update" }): boolean {
@@ -31,7 +33,8 @@ export function syncUpdateTodo(
     !state.dismissed &&
     (state.stage === "available" ||
       state.stage === "downloading" ||
-      state.stage === "ready");
+      state.stage === "ready" ||
+      (state.stage === "error" && state.hasVersion === true));
 
   if (!shouldShow) {
     return rest.length === todos.length ? todos : rest;

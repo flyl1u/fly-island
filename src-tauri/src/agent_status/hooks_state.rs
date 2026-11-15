@@ -14,9 +14,9 @@ use super::{normalize_windows_line_endings, FOCUSD_AGENT_HOOK_SIGNATURE};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) enum HookInstallState {
-    /// No FocuSD hook in this agent's config.
+    /// No hook of the island's in this agent's config.
     NotInstalled,
-    /// FocuSD hooks from an older version: Install/Repair would change them.
+    /// The island's hooks from an older version: Install/Repair would change them.
     Outdated,
     Current,
 }
@@ -73,7 +73,10 @@ pub(super) fn codex_hooks_state(
     let Some(config) = config_toml else {
         return HookInstallState::NotInstalled;
     };
-    let config = normalize_windows_line_endings(config);
+    // Hooks written before the rename say "FocuSD" in their status line and are otherwise the
+    // same; they still count as current rather than asking every user to repair them.
+    let config = normalize_windows_line_endings(config)
+        .replace("Updating FocuSD agent status", "Updating Fly Island agent status");
     let holds = |async_start: bool| {
         let expected = build_codex_hook_block(running_script_path, status_script_path, async_start);
         config.contains(&normalize_windows_line_endings(&expected))

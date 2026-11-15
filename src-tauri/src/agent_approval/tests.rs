@@ -168,7 +168,7 @@ fn each_choice_becomes_the_hooks_answer() {
     assert_eq!(hook_response(Some(Decision::Terminal), None, None), "{}");
     let allow: Value = serde_json::from_str(&hook_response(Some(Decision::Allow), None, None)).unwrap();
     assert_eq!(allow, json!({ "hookSpecificOutput": { "hookEventName": "PermissionRequest", "decision": { "behavior": "allow" } } }));
-    assert_eq!(decision_of(&hook_response(Some(Decision::Deny), None, None)), json!({ "behavior": "deny", "message": "Denied in FocuSD Island" }));
+    assert_eq!(decision_of(&hook_response(Some(Decision::Deny), None, None)), json!({ "behavior": "deny", "message": "Denied in Fly Island" }));
     assert_eq!(decision_of(&hook_response(Some(Decision::Deny), Some(" 换个目录 "), None))["message"], "换个目录");
     // "Always" keeps the suggested rules for this session only, not in a settings file.
     let always = decision_of(&hook_response(Some(Decision::AllowAlways), None, Some(&suggestions)));

@@ -20,6 +20,7 @@ import type { SettingsTodoText } from "./todo";
 import type { SettingsAgentText } from "./agent";
 import type { SettingsClipboardText } from "./clipboard";
 import type { SettingsColorsText } from "./colors";
+import type { SettingsAppearancePresetsText } from "./appearancePresets";
 import type { SettingsSaveText } from "./save";
 import type { SettingsSoundsText } from "./sounds";
 import * as fileShelf from "./fileShelf.ts";
@@ -44,6 +45,7 @@ import * as todo from "./todo.ts";
 import * as agent from "./agent.ts";
 import * as clipboard from "./clipboard.ts";
 import * as colors from "./colors.ts";
+import * as appearancePresets from "./appearancePresets.ts";
 import * as save from "./save.ts";
 import * as sounds from "./sounds.ts";
 
@@ -89,6 +91,7 @@ export type SettingsText = {
   clipboard: SettingsClipboardText;
 
   colors: SettingsColorsText;
+  appearancePresets: SettingsAppearancePresetsText;
 
 
   save: SettingsSaveText;
@@ -136,6 +139,7 @@ export const zhCN: SettingsText = {
   clipboard: clipboard.zhCN,
 
   colors: colors.zhCN,
+  appearancePresets: appearancePresets.zhCN,
 
 
   save: save.zhCN,
@@ -183,6 +187,7 @@ export const en: SettingsText = {
   clipboard: clipboard.en,
 
   colors: colors.en,
+  appearancePresets: appearancePresets.en,
 
 
   save: save.en,

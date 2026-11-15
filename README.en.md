@@ -3,8 +3,6 @@
 
   <h1>Fly Island</h1>
 
-  <p>English · <a href="README.md">中文</a></p>
-
   <p>An ultra-lightweight Dynamic Island for Windows: WeChat, QQ, and email message display, Agent multi-session, quota ring display, music player, to-dos, clipboard, file transfer, and various other common features. Expand when needed, collapse when done.</p>
 
   <p>
@@ -15,6 +13,8 @@
     <a href="https://github.com/flyl1u/fly-island/issues">Report an Issue</a>
     ·
     <a href="#community">Community</a>
+    ·
+    English · <a href="README.md">中文</a>
   </p>
 
   <p>
@@ -56,21 +56,21 @@ fly-island brings frequent actions from separate windows into one compact island
 
 - **WeChat, QQ, and mail**: new WeChat and QQ messages pop up right on the island as one card each, with source, contact, time, and text, so you don't have to switch over. Muted WeChat chats only notify when someone mentions you, and conversation names with message previews can be turned on (experimental). Connect several IMAP mailboxes (QQ, 163, 126 and others) and read mail right on the island.
 - **AI agents**: live sessions from Claude Code / Claude desktop, Codex and DeepSeek Harness (DSH, including DataElement / anywhere-labs community desktops) show on the island. When an agent wants to run a command or edit files, allow or deny it right there; a soft chime tells you when a task is done or needs an answer, and clicking a session jumps to its window. Shows Claude/Codex quota rings and a DSH balance ring. See the [AI Agent status guide (Chinese)](docs/agent-status-hooks.md) and [DSH integration and limitations](docs/deepseek-harness.md).
-- **Music and lyrics**: control playback through the Windows media session, with cover art, a waveform, a progress bar, and synced lyrics, including the current line on the collapsed island. Reorder player priority. When a player reports no progress, the bar is marked as estimated and clicking a lyric line recalibrates it.
+- **Music and lyrics**: control playback through the Windows media session, with cover art, a waveform, a progress bar, and synced lyrics, including the current line on the collapsed island. Reorder player priority, and archive players you don't use so they stop following or playing; restore them from Settings → Music. When a player reports no progress, the bar is marked as estimated and clicking a lyric line recalibrates it.
   Enable precise NetEase progress from the tip card on the island or Settings → Music → Player compatibility, with one-click installation and removal of InfLink-rs and BetterNCM. The GPL-3.0 components ship with the app and are verified against pinned fingerprints, so nothing is downloaded. You can install while NetEase is running and restart it with one click. Supports 3.x x64 and 2.10.13 x86; some 3.x versions are untested.
 - **File shelf**: drop files on the island, switch windows, then drag them out, copy, or open them; only paths are stored, files are never copied. See the [file shelf guide (Chinese)](docs/file-shelf.md).
-- **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut.
+- **Text and image clipboard history**: search copied content and notes, favorite common items, add notes, and copy an item back to the clipboard. Configure image capture, history size, and the global shortcut. Select all leaves favorites out, and the button says so.
 - **Quick translation**: open it with a global shortcut, on the island or in its own window. Works with DeepSeek, Volcano Ark, Qwen (DashScope), Kimi, SiliconFlow, OpenAI, or a custom OpenAI-compatible endpoint; detects Chinese/English automatically or uses a chosen direction.
 - **Tasks, notes, and calendar**: manage today's tasks, set the active task, and drag to reorder, with a progress bar at the top; schedule tasks for a later day. Switch between Tasks, Daily note, History, and Calendar from the top-left; the calendar marks days that have tasks. Optionally carry unfinished tasks forward and save tasks and notes as Markdown.
 - **Task countdown (off by default)**: turn it on in Settings → Todos to give each task its own countdown; the island opens and rings when time is up. See the [task countdown guide (Chinese)](docs/todo-timer.md).
-- **Appearance and behavior**: classic or liquid-glass styling, default or pixel font, size, opacity, colors, and position; page buttons as icons or capsules, and drag to choose what the collapsed island shows and in which order. Lock the position, tuck to the screen edge when idle, game mode, launch at startup, and a Chinese or English interface.
-- **Automatic updates**: on by default; checks at startup and every 6 hours, downloads in the background and installs once the island sits collapsed and idle. Update right away from the task list or Settings → About, where you can also turn automatic updates off, check by hand, and read the changelog for every version.
+- **Appearance and behavior**: classic or liquid-glass styling, default or pixel font, size, opacity, colors (including the page text color), and position, and save a whole look as a preset to switch back in one click; page buttons as icons or capsules, and drag to choose what the collapsed island shows and in which order. Lock the position, tuck to the screen edge when idle, game mode, launch at startup, and a Chinese or English interface.
+- **Automatic updates**: on by default; checks at startup and every 3 hours, downloads in the background and installs about a minute after the island sits collapsed and idle, then restarts. Red dots on the task tab, the collapsed island, and the task list's update button stay until the update is installed; failed attempts retry automatically, and downloads fall back to mirrors when GitHub is unreachable. Update right away from the task list or Settings → About, where you can also turn automatic updates off, check by hand, and read the changelog for every version.
 
 Tasks, clipboard history, and app preferences stay on the device. WeChat can show conversation names and recent message previews (experimental) when enabled in Settings; previews and QQ notifications stay in memory for the current run. Mail syncs only headers in the background and reads bodies on demand into memory, without changing read status.
 
 ## Getting started
 
-Expand the island and use the page buttons at the top to switch between tasks, music, clipboard, file shelf, translation, messages, and AI agents. Settings opens as a page of the island with category navigation; switch it to a separate window in Settings → General → Separate settings window.
+Expand the island and use the page buttons at the top to switch between tasks, music, clipboard, file shelf, translation, messages, and AI agents. On the collapsed island, click the agent light or session count for AI agents, the waveform for music, the file count for the file shelf, and the middle text to return to the page you left last; the island remembers it. Settings opens as a page of the island with category navigation; switch it to a separate window in Settings → General → Separate settings window.
 
 ### Feature setup
 

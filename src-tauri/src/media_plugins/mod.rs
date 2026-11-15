@@ -1,3 +1,4 @@
+mod auto;
 mod download;
 mod elevated;
 mod helper_exit;
@@ -42,15 +43,20 @@ pub(crate) async fn netease_plugin_status() -> Result<netease::NeteasePluginStat
     tauri::async_runtime::spawn_blocking(netease::status).await
         .map_err(|e| PluginError::new("Io", e.to_string()))
 }
+/// Runs on the calling thread; the commands move it off the IPC thread first.
+fn operate_blocking(app: &tauri::AppHandle, data: &std::path::Path, remove: bool) -> Result<service::OperationResult, PluginError> {
+    let _guard = Operation::acquire()?;
+    let result = if remove { service::uninstall(app, data) }
+        else { tauri::async_runtime::block_on(service::install(app, data)) };
+    progress(app, if result.is_ok() { "done" } else { "error" });
+    result
+}
 async fn operate(app: tauri::AppHandle, remove: bool) -> Result<service::OperationResult, PluginError> {
-    let guard = Operation::acquire()?;
     let data = app.path().app_data_dir().map_err(|e| PluginError::new("Io", e.to_string()))?;
     // The whole operation (including file IO and UAC waiting) runs off the IPC thread.
     tauri::async_runtime::spawn_blocking(move || {
-        let _guard = guard;
-        let result = if remove { service::uninstall(&app, &data) }
-            else { tauri::async_runtime::block_on(service::install(&app, &data)) };
-        progress(&app, if result.is_ok() { "done" } else { "error" });
+        let result = operate_blocking(&app, &data, remove);
+        if result.is_ok() { auto::remember_choice(&data, !remove); }
         result
     }).await.map_err(|e| PluginError::new("Io", e.to_string()))?
 }
@@ -58,6 +64,23 @@ async fn operate(app: tauri::AppHandle, remove: bool) -> Result<service::Operati
 pub(crate) async fn install_netease_plugin(app: tauri::AppHandle) -> Result<service::OperationResult, PluginError> { operate(app, false).await }
 #[tauri::command]
 pub(crate) async fn uninstall_netease_plugin(app: tauri::AppHandle) -> Result<service::OperationResult, PluginError> { operate(app, true).await }
+
+/// 安全软件拦下了我们写网易云目录：放好插件，把加载器以 msimg32.dll 放到数据目录，
+/// 再打开两个文件夹让用户在资源管理器里拖过去。只在用户点击后调用。
+#[tauri::command]
+pub(crate) async fn prepare_netease_manual_install(app: tauri::AppHandle) -> Result<service::ManualInstall, PluginError> {
+    let guard = Operation::acquire()?;
+    let data = app.path().app_data_dir().map_err(|e| PluginError::new("Io", e.to_string()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = guard;
+        let result = tauri::async_runtime::block_on(service::prepare_manual(&app, &data));
+        progress(&app, if result.is_ok() { "done" } else { "error" });
+        let manual = result?;
+        netease::show_manual_folders(&manual.staged, &manual.target_dir)?;
+        auto::remember_choice(&data, true);
+        Ok(manual)
+    }).await.map_err(|e| PluginError::new("Io", e.to_string()))?
+}
 
 /// 结束网易云（`relaunch` 时随后重新打开），供安装后重启、或卸载前关闭使用。只在用户点击后调用。
 #[tauri::command]
@@ -67,6 +90,8 @@ pub(crate) async fn close_netease(relaunch: bool) -> Result<(), PluginError> {
 }
 
 pub(crate) fn handle_startup() { elevated::handle_startup(); }
+/// Called from `setup`: enables the NetEase plugin in the background when that is safe.
+pub(crate) fn init(app: &tauri::AppHandle) { auto::start(app.clone()); }
 pub(crate) fn diagnostic_state(directory: &std::path::Path) -> &'static str { netease::plugin_state(directory).0 }
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
@@ -75,6 +100,7 @@ macro_rules! tauri_commands {
             crate::media_plugins::install_netease_plugin,
             crate::media_plugins::uninstall_netease_plugin,
             crate::media_plugins::close_netease,
+            crate::media_plugins::prepare_netease_manual_install,
         ] $($rest)*)
     };
 }

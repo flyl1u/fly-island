@@ -34,7 +34,7 @@ pub(super) async fn fetch(directory: &Path, bundled: Option<&Path>, asset: &Asse
     fs::create_dir_all(directory)?;
     let target = directory.join(asset.name);
     if verify(&target, asset) { return Ok(target); }
-    let client = reqwest::Client::builder().user_agent("FocuSD-Island-MediaPlugins/1.0")
+    let client = reqwest::Client::builder().user_agent("Fly-Island-MediaPlugins/1.0")
         .connect_timeout(Duration::from_secs(8)).read_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(90))
         .build().map_err(PluginError::network)?;

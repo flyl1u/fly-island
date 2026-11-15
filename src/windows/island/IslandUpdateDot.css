@@ -12,3 +12,12 @@
 }
 
 .dot-button--capsule .island-update-dot { top: var(--space-md); }
+
+/* The collapsed island: the dot sits in the flow after the status light, not on the hit area. */
+.island-update-dot--inline {
+  position: static;
+  flex: 0 0 auto;
+  margin-left: -4px;
+  width: 6px;
+  height: 6px;
+}

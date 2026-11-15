@@ -3,7 +3,7 @@ import { cornerShapeCss } from "../../features/appearance/cornerShape";
 import { hexToRgba, isGlass } from "../../features/appearance/settings";
 import type { ColorPalette } from "../../features/appearance/colorPalette";
 import type { IslandSettings } from "../../features/appearance/types";
-import { inkOn } from "../../utils/color";
+import { inkOn, rgbChannels } from "../../utils/color";
 import { getGlassStyle } from "./glassStyle";
 
 /**
@@ -32,6 +32,10 @@ export function getIslandStageStyle(
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,
+    // The expanded page's resting transform. At scale 1 it is none: a transform, even scale(1), keeps
+    // the page on its own compositing layer, and the text there is drawn again once the layer goes.
+    "--island-panel-shown": settings.expandedScale === 1 ? "none" : `scale(${settings.expandedScale})`,
+    "--island-panel-hidden": settings.expandedScale === 1 ? "translateY(-6px)" : `translateY(-6px) scale(${settings.expandedScale})`,
     "--task-text-color": colors.taskTextColor,
     "--island-pulse-color": colors.pulseColor,
     "--island-pulse-glow-color": hexToRgba(colors.pulseColor, 0.72),
@@ -39,7 +43,23 @@ export function getIslandStageStyle(
     "--island-background-color": colors.islandBackgroundColor,
     // Text drawn straight on the island (the Agent page) flips to dark on a light background.
     "--island-ink-rgb": inkOn(colors.islandBackgroundColor),
+    ...pageInkStyle(settings.pageTextColor),
     ...(isGlass(settings.material) ? getGlassStyle(settings, colors) : {}),
     "--todo-background-color": settings.todoBackgroundColor,
   }) as CSSProperties;
+}
+
+/**
+ * Settings → Appearance → Page text: the colour's channels, together and one by one, for
+ * IslandPageText.css. Nothing while it is unset, so the page keeps the scheme's ink.
+ */
+function pageInkStyle(pageTextColor: string): Record<string, string> {
+  if (!pageTextColor) return {};
+  const [red, green, blue] = rgbChannels(pageTextColor);
+  return {
+    "--island-page-ink-rgb": `${red}, ${green}, ${blue}`,
+    "--page-ink-r": String(red),
+    "--page-ink-g": String(green),
+    "--page-ink-b": String(blue),
+  };
 }

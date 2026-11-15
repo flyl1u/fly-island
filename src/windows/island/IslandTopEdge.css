@@ -121,3 +121,26 @@
     0 5px 16px rgba(0, 0, 0, 0.12);
 }
 
+/*
+ * Attached glass. Its own rim (the bright edge and inner glow of .island__glass-refraction, the
+ * frosted 1px rim) ran up both sides into the screen edge, so the pane read as cut off from it at
+ * the sides; like the classic rim above it now fades out over the top of the island. The mask is
+ * on the whole glass layer, not the refraction alone, which composites differently when masked.
+ * With shoulders the rule above already fades the glass further down.
+ */
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass,
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass):not(.island--shoulders) .island__glass {
+  -webkit-mask-image: linear-gradient(transparent 2px, #000 30px);
+  mask-image: linear-gradient(transparent 2px, #000 30px);
+}
+
+/* Its shadow falls below the island only: a halo climbing the sides to the screen edge parted them too. */
+:root[data-island-top-edge="attached"] .island:is(.island--material-liquidGlass, .island--material-frostedGlass),
+:root:not([data-island-top-edge]) .island--docked:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  box-shadow: 0 22px 40px -18px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+}
+
+:root[data-island-top-edge="attached"] .island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)),
+:root:not([data-island-top-edge]) .island--docked.island--collapsed:is(.island--material-liquidGlass, .island--material-frostedGlass):not(:has(:focus-visible)) {
+  box-shadow: 0 12px 22px -10px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+}

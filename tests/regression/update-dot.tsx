@@ -15,10 +15,9 @@ import { syncUpdateTodo } from "../../src/features/todos/updateTodo";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
 const en = query.get("lang") === "en";
-const keys = ["focusd-island-update-dot-seen", "focusd-island-locale"];
+const keys = ["focusd-island-locale"];
 const original = keys.map((key) => localStorage.getItem(key));
-localStorage.removeItem(keys[0]);
-localStorage.setItem(keys[1], en ? "en" : "zh-CN");
+localStorage.setItem(keys[0], en ? "en" : "zh-CN");
 window.addEventListener("beforeunload", () => keys.forEach((key, index) => {
   if (original[index] === null) localStorage.removeItem(key); else localStorage.setItem(key, original[index]!);
 }));
@@ -57,7 +56,7 @@ function Fixture() {
   setExpanded = changeExpanded;
   setStyle = changeStyle;
   const state = useSyncExternalStore(subscribeToUpdate, getUpdateState);
-  const visibleTodo = syncUpdateTodo([], state, "Update").length > 0;
+  const visibleTodo = syncUpdateTodo([], { ...state, hasVersion: state.nextVersion !== "" }, "Update").length > 0;
   return <>
     <IslandHeader isExpanded={expanded} page={page} features={{ todo: true, music: true, clipboard: true, shelf: true,
       agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
@@ -80,7 +79,7 @@ const action = () => document.querySelector<HTMLButtonElement>(".todo-start--upd
 try {
   await act(async () => root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>));
   await update({});
-  check(dot() && !localStorage.getItem(keys[0]), "A collapsed header whose remembered page is Todo does not mark the update seen");
+  check(dot(), "A pending update shows the header red dot");
   await act(async () => { setPage("music"); setExpanded(true); });
   for (const style of ["icon", "capsule"] as const) {
     await act(async () => setStyle(style));
@@ -96,17 +95,17 @@ try {
       `${style}: solid red decorative dot, no ring/glow/pulse, same button size and localized announcement`);
   }
   await act(async () => document.querySelector<HTMLButtonElement>(".dot-button--todo")!.click());
-  check(!dot() && localStorage.getItem(keys[0]) === "3.0.10" && document.querySelector(".todo-update-dot"),
-    "Opening Todo records this version and removes only the page hint");
+  check(dot() && document.querySelector(".todo-update-dot"),
+    "Opening Todo keeps the header dot and the row dot until the update is installed");
   const badgeCss = getComputedStyle(document.querySelector(".todo-update-dot")!);
   check(badgeCss.width === "5px" && badgeCss.height === "5px" && badgeCss.boxShadow === "none" && badgeCss.borderWidth === "0px"
     && action().getAttribute("aria-label")?.includes(en ? "Update available" : "有新版本"), "Clickable update action has a 5px dot and announcement");
   await act(async () => setPage("music"));
-  check(!dot(), "Revisiting another page does not bring the same version's dot back");
+  check(dot(), "The header dot stays on other pages while the update is pending");
   await update({ nextVersion: "3.0.11", stage: "downloading" });
   check(dot(), "A later version shows the page hint while downloading");
   await update({ dismissed: true });
-  check(!dot(), "Dismissed update has no page hint");
+  check(dot(), "Dismissed update keeps the header dot: automatic install still comes");
   await update({ dismissed: false });
   await act(async () => setPage("todo"));
   check(action().disabled && !document.querySelector(".todo-update-dot"), "Downloading update action has no dot");
@@ -121,7 +120,11 @@ try {
   const nextRoot = createRoot(document.getElementById("fixture")!);
   await act(async () => nextRoot.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>));
   await update({ stage: "available", nextVersion: "3.0.11" });
-  check(!dot(), "Remount preserves the viewed version");
+  check(dot(), "Remount still shows the pending update dot");
+  await act(async () => setPage("todo"));
+  await update({ stage: "error", nextVersion: "3.0.11", detail: "network" });
+  check(dot() && action().textContent?.includes(en ? "failed" : "失败"),
+    "A failed install keeps both dots and says it failed");
   results.dataset.result = "passed";
   results.textContent = passed.join("\n");
 } catch (error) {

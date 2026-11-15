@@ -3,7 +3,7 @@ import { act } from "react";
 
 const GROUPS: Record<string, string[]> = {
   general: ["启动与语言", "展开与收起", "贴边隐藏", "这些时候不贴边", "位置"],
-  appearance: ["主题", "颜色", "字体与大小", "岛上的排列", "岛屿展示优先级", "空闲时间与日期", "刘海与外形"],
+  appearance: ["主题", "颜色", "字体与大小", "岛上的排列", "岛屿展示优先级", "空闲时间与日期", "刘海与外形", "外观预设"],
 };
 
 /** Row titles of the group with this title. */

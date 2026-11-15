@@ -3,6 +3,8 @@ import { Info } from "lucide-react";
 import { ReorderList } from "../../components/reorder/ReorderList";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsSwitch } from "../../components/settings/SettingsSwitch";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
+import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import { getMediaState, type MediaState } from "./api";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
@@ -45,9 +47,10 @@ export function MusicSourcePrioritySection() {
   const text = useTranslation().settings.musicSources;
   const live = useLiveMediaSessions();
   const switchId = useId();
-  const { musicSourcePriority, setMusicSourceOrder, setMusicSourceEnabled } = useMusicSourcePriority(live);
+  const { musicSourcePriority, archivedMusicSources, setMusicSourceOrder, setMusicSourceEnabled, archiveMusicSource, restoreMusicSource } = useMusicSourcePriority(live);
 
   return (
+    <>
     <SettingsGroup
       title={text.title}
       footer={(
@@ -83,8 +86,23 @@ export function MusicSourcePrioritySection() {
           })}
           onReorder={setMusicSourceOrder}
           moveLabel={text.moveLabel}
+          rowAction={(row) => (
+            <SettingsLinkButton onClick={() => archiveMusicSource(row.id)}>{text.archive}</SettingsLinkButton>
+          )}
         />
       )}
     </SettingsGroup>
+    {archivedMusicSources.length > 0 && (
+      <SettingsGroup title={text.archivedTitle} footer={<p>{text.archivedHint}</p>}>
+        {archivedMusicSources.map((source) => (
+          <SettingsRow
+            key={source.id}
+            title={source.label}
+            control={<SettingsLinkButton onClick={() => restoreMusicSource(source.id)}>{text.restore}</SettingsLinkButton>}
+          />
+        ))}
+      </SettingsGroup>
+    )}
+    </>
   );
 }

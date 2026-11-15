@@ -288,12 +288,13 @@ pub(super) fn read_media_state_from_manager(
     manager: &MediaSessionManager,
     target: Option<&str>,
 ) -> Result<MediaState, String> {
-    let audio_peak = read_system_audio_peak().unwrap_or(0.0);
-    let audio_active = audio_peak > AUDIO_ACTIVE_THRESHOLD;
     let volume = read_master_volume().unwrap_or(-1.0);
     let sessions = list_sessions(manager);
 
     let Some(session) = resolve_session(manager, target)? else {
+        // Without a session the output level is the only sign of sound, so it is read here.
+        let audio_peak = read_system_audio_peak().unwrap_or(0.0);
+        let audio_active = audio_peak > AUDIO_ACTIVE_THRESHOLD;
         return Ok(MediaState {
             available: false,
             audio_active,
@@ -366,8 +367,10 @@ pub(super) fn read_media_state_from_manager(
         control_mode: "media",
         audio_muted: None,
         resume_blocked: false,
-        audio_active,
-        audio_peak,
+        // With a session the level comes from get_audio_level, which the island polls while music
+        // plays; reading the device here as well cost a full audio-endpoint open on every poll.
+        audio_active: false,
+        audio_peak: 0.0,
         playback_status: if is_playing { "playing" } else { "paused" },
         title,
         artist,

@@ -22,6 +22,17 @@ test("duplicate aliases retain an exclusion and disconnected sources keep their 
   assert.equal(mergeMusicSources(merged, []), merged);
 });
 
+test("archived audio sources keep their archive state and aliases when SMTC appears", () => {
+  const current = [{ id: "audio:player", label: "Player", archived: true, enabled: false }];
+  const live = [{ id: "player.exe", label: "Player", playing: true, aliases: ["audio:player"] }];
+  const merged = mergeMusicSources(current, live);
+  assert.deepEqual(merged, [{ id: "player.exe", label: "Player", archived: true, enabled: false, aliases: ["audio:player"] }]);
+  assert.deepEqual(excludedMusicSources(merged), ["player.exe", "audio:player"]);
+  assert.equal(mergeMusicSources(merged, live), merged);
+  const duplicate = mergeMusicSources([{ id: "player.exe", label: "Player" }, ...current], live);
+  assert.equal(duplicate[0].archived, true, "an existing SMTC alias cannot reactivate an archived source");
+});
+
 test("old data stays adopted and malformed optional fields cannot disable a source", () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
   const stored = [{ id: "old", label: "Old" }, { id: "new", label: "New", enabled: false, aliases: ["alias", null, "", "alias"] },

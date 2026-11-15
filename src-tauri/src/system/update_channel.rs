@@ -14,6 +14,9 @@ const STABLE_MANIFEST: &str = "releases/latest/download/latest.json";
 const BETA_MANIFEST: &str = "releases/download/beta-channel/latest.json";
 const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(600);
+/// The same two GitHub mirrors the media plugins download through (media_plugins/download.rs). GitHub
+/// itself is often unreachable from mainland China while these answer.
+const DOWNLOAD_MIRRORS: [&str; 2] = ["https://ghfast.top/", "https://gh-proxy.com/"];
 
 /// The update found by the last check, kept for `updater_download` and `updater_install`.
 static PENDING: Mutex<Option<Update>> = Mutex::new(None);
@@ -133,17 +136,45 @@ pub async fn updater_check(
     Ok(info)
 }
 
+/// Where the update package can come from, in the order to try: the address the manifest names,
+/// then the same file through each mirror. The bytes are still checked against the manifest's
+/// signature when installed, so a mirror cannot substitute a different package.
+pub(crate) fn package_urls(download_url: &Url) -> Vec<Url> {
+    let mut urls = vec![download_url.clone()];
+    for mirror in DOWNLOAD_MIRRORS {
+        if let Ok(url) = Url::parse(&format!("{mirror}{download_url}")) {
+            urls.push(url);
+        }
+    }
+    urls
+}
+
+/// Downloads the package from the first source that answers; the error is the last one tried.
+async fn download_package(update: &Update, on_event: &Channel<DownloadEvent>) -> Result<Vec<u8>, String> {
+    let mut last_error = String::from("No download source");
+    for url in package_urls(&update.download_url) {
+        let mut candidate = update.clone();
+        candidate.download_url = url;
+        candidate.timeout = Some(DOWNLOAD_TIMEOUT);
+        // Each attempt reports its own Started, so the progress restarts from zero.
+        match candidate
+            .download(progress(on_event), || {
+                let _ = on_event.send(DownloadEvent::Finished);
+            })
+            .await
+        {
+            Ok(bytes) => return Ok(bytes),
+            Err(error) => last_error = error.to_string(),
+        }
+    }
+    Err(last_error)
+}
+
 /// Downloads the pending update without installing it.
 #[tauri::command]
 pub async fn updater_download(on_event: Channel<DownloadEvent>) -> Result<(), String> {
-    let mut update = pending()?.clone().ok_or("No update to download")?;
-    update.timeout = Some(DOWNLOAD_TIMEOUT);
-    let bytes = update
-        .download(progress(&on_event), || {
-            let _ = on_event.send(DownloadEvent::Finished);
-        })
-        .await
-        .map_err(|error| error.to_string())?;
+    let update = pending()?.clone().ok_or("No update to download")?;
+    let bytes = download_package(&update, &on_event).await?;
     *downloaded()? = Some(bytes);
     Ok(())
 }
@@ -152,18 +183,13 @@ pub async fn updater_download(on_event: Channel<DownloadEvent>) -> Result<(), St
 /// already did. On Windows the installer exits the app and relaunches it.
 #[tauri::command]
 pub async fn updater_install(on_event: Channel<DownloadEvent>) -> Result<(), String> {
-    let mut update = pending()?.take().ok_or("No update to install")?;
+    let update = pending()?.take().ok_or("No update to install")?;
     if let Some(bytes) = downloaded()?.take() {
         let _ = on_event.send(DownloadEvent::Finished);
         return update.install(bytes).map_err(|error| error.to_string());
     }
-    update.timeout = Some(DOWNLOAD_TIMEOUT);
-    update
-        .download_and_install(progress(&on_event), || {
-            let _ = on_event.send(DownloadEvent::Finished);
-        })
-        .await
-        .map_err(|error| error.to_string())
+    let bytes = download_package(&update, &on_event).await?;
+    update.install(bytes).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
@@ -200,6 +226,20 @@ mod tests {
         let configured = urls(&["https://example.com/update.json"]);
         assert!(channel_endpoints(&configured, "beta").is_err());
         assert!(channel_endpoints(&configured, "nightly").is_err());
+    }
+
+    #[test]
+    fn packages_try_the_manifest_address_first_then_each_mirror() {
+        let url = Url::parse("https://github.com/o/r/releases/download/v1/app-setup.exe").expect("url");
+        let candidates: Vec<String> = package_urls(&url).iter().map(ToString::to_string).collect();
+        assert_eq!(
+            candidates,
+            [
+                "https://github.com/o/r/releases/download/v1/app-setup.exe",
+                "https://ghfast.top/https://github.com/o/r/releases/download/v1/app-setup.exe",
+                "https://gh-proxy.com/https://github.com/o/r/releases/download/v1/app-setup.exe",
+            ]
+        );
     }
 
     #[test]

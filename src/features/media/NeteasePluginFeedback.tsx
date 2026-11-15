@@ -10,15 +10,17 @@ export function NeteasePluginFeedback({ plugin, className, actionClassName }: {
 }) {
   const text = useTranslation().music.plugin;
   const [openFailed, setOpenFailed] = useState(false);
-  const notice = pluginNotice({ error: plugin.error, done: Boolean(plugin.result), removed: plugin.removed, restarted: plugin.restarted });
+  const notice = pluginNotice({ error: plugin.error, done: Boolean(plugin.result), removed: plugin.removed, restarted: plugin.restarted,
+    manualReady: plugin.manualReady, installed: plugin.status?.state === "installed" });
   const run = () => {
     if (notice?.action === "closeAndRetry") void plugin.closeAndRetry();
     else if (notice?.action === "restart") void plugin.restart();
+    else if (notice?.action === "manual") void plugin.manual();
     else if (notice?.action === "openPlugins") {
       void openPath(plugin.status?.pluginDir ?? plugin.error?.detail ?? "").catch(() => setOpenFailed(true));
     }
   };
-  const actionLabel = notice?.action === "closeAndRetry" ? text.closeAndRetry
+  const actionLabel = notice?.action === "closeAndRetry" ? text.closeAndRetry : notice?.action === "manual" ? text.manual
     : notice?.action === "restart" ? plugin.restarting ? text.restarting : text.restart : text.openPlugins;
   const preserved = plugin.result?.preservedFiles ?? [];
   return <>

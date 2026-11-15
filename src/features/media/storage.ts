@@ -18,6 +18,8 @@ export type KnownMediaSource = {
   /** Missing in existing data means adopted, preserving the old player order. */
   enabled?: boolean;
   aliases?: string[];
+  /** Archived players stay out of the order and of what the island follows; absent means not archived. */
+  archived?: boolean;
 };
 
 export const MUSIC_SOURCE_PRIORITY_STORAGE_KEY = "focusd-island-music-sources";
@@ -60,6 +62,7 @@ export function loadMusicSourcePriority(): KnownMediaSource[] {
       })
       .map((source) => ({
         id: source.id, label: source.label,
+        ...(source.archived === true ? { archived: true } : {}),
         ...(source.enabled === false ? { enabled: false } : {}),
         ...(Array.isArray(source.aliases) ? { aliases: [...new Set(source.aliases.filter((id): id is string => typeof id === "string" && id.length > 0 && id !== source.id))] } : {}),
       }));

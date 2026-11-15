@@ -61,7 +61,7 @@ if (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Noti
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $backup 'repair.json') -Encoding UTF8
 
 $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-$xml.LoadXml('<toast><visual><binding template="ToastGeneric"><text>FocuSD QQ notification diagnostic</text><text>Local channel test; this is not a chat message.</text></binding></visual><audio silent="true" /></toast>')
+$xml.LoadXml('<toast><visual><binding template="ToastGeneric"><text>Fly Island QQ notification diagnostic</text><text>Local channel test; this is not a chat message.</text></binding></visual><audio silent="true" /></toast>')
 $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
 $tag = 'FocusdDiag'
 $toast.Tag = $tag

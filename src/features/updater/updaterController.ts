@@ -100,7 +100,8 @@ function busy(stage: UpdateStage) {
 }
 
 function trackProgress(event: DownloadEvent) {
-  if (event.event === "Started") setState({ total: event.data.contentLength ?? 0 });
+  // Started again when the download falls back to a mirror: the byte count starts over.
+  if (event.event === "Started") setState({ total: event.data.contentLength ?? 0, downloaded: 0 });
   else if (event.event === "Progress") setState({ downloaded: state.downloaded + event.data.chunkLength });
 }
 
@@ -252,7 +253,11 @@ export function dismissUpdatePrompt() {
 
 export async function installUpdate() {
   if (remoteSettings) return requestUpdateAction({ action: "install" });
-  if (busy(state.stage) || (state.stage !== "available" && state.stage !== "ready")) return;
+  if (busy(state.stage)) return;
+  // Retrying a failed install: the native side let go of the update when it tried, so look it up
+  // and fetch it again first.
+  if (state.stage === "error" && state.nextVersion !== "") await findAndDownload();
+  if (state.stage !== "available" && state.stage !== "ready") return;
 
   const downloadedAlready = state.stage === "ready";
   setState(downloadedAlready ? { stage: "installing" } : { downloaded: 0, total: 0, detail: "", stage: "downloading" });
@@ -265,6 +270,11 @@ export async function installUpdate() {
   } catch (error) {
     console.error("Failed to install the update", error);
     setState({ stage: "error", detail: errorReason(error) });
+    // Automatic updates keep trying on their own; the todo row and the red dots say it failed meanwhile.
+    if (state.autoUpdate) {
+      failures += 1;
+      scheduleCheck(nextCheckDelay(failures));
+    }
   }
 }
 

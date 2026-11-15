@@ -27,7 +27,7 @@ pub(super) const ACTIVITY_EVENTS: [&str; 6] = ["PostToolUse", "PostToolUseFailur
 /// longer, so the island hands the request back before Claude Code gives up on it.
 pub(super) const APPROVAL_HOOK_TIMEOUT_SECONDS: i64 = 150;
 
-/// Marks the approval hook as FocuSD's: an HTTP hook has no script path to carry the signature.
+/// Marks the approval hook as the island's: an HTTP hook has no script path to carry the signature.
 pub(super) const APPROVAL_HOOK_MARKER_HEADER: &str = "X-FocuSD-Hook";
 
 pub(super) fn install_claude_code_status_hooks(
@@ -71,7 +71,7 @@ pub(super) fn install_claude_code_status_hooks(
 pub(super) const CLAUDE_CODE_WAITING_NOTIFICATIONS: &str =
     "permission_prompt|elicitation_dialog|agent_needs_input";
 
-/// Every FocuSD hook for Claude Code, by event name.
+/// Every hook of the island's for Claude Code, by event name.
 pub(super) fn claude_code_hook_entries(
     running_script_path: &Path,
     status_script_path: &Path,
@@ -210,7 +210,7 @@ fn claude_code_http_hook_entry(url: &str, token: &str, marker: &str) -> Value {
     })
 }
 
-/// Adds `entries` under their events, after dropping the FocuSD hooks already there. Each event
+/// Adds `entries` under their events, after dropping the island's hooks already there. Each event
 /// is cleared once, so an event with two entries (PermissionRequest) keeps both.
 pub(super) fn install_claude_code_hook_events(
     hooks: &mut Map<String, Value>,
@@ -227,7 +227,7 @@ pub(super) fn install_claude_code_hook_events(
             list.push(entry);
         }
     }
-    // FocuSD hooks under events this install no longer writes (the approval and activity hooks
+    // The island's hooks under events this install no longer writes (the approval and activity hooks
     // when the endpoint is not running): dropped, and the event too when nothing is left.
     let others: Vec<String> = hooks.keys().filter(|name| !cleared.contains(&name.as_str())).cloned().collect();
     for event_name in others {

@@ -19,8 +19,8 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
+import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { TodoTimer } from "../../features/todos/timer";
-import { collapsedOpenPage } from "./collapsedOpenPage";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import { IdleClock } from "../../features/appearance/IdleClock";
@@ -142,6 +142,8 @@ export function IslandCollapsedBar({
       summary.style.removeProperty("--idle-clock-inset-right");
     };
   }, [centersIdleClock, collapsedLayout]);
+  // A pending update shows a red dot even collapsed, so it is not missed.
+  const updatePending = useUpdatePending();
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
     useWindowDragGesture(isTucked || positionLocked, onWindowDragStart);
   const isMusicPlaying = mediaState.playbackStatus === "playing";
@@ -150,7 +152,6 @@ export function IslandCollapsedBar({
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
-  const openTarget = notice?.page ?? collapsedOpenPage(collapsedItem, Boolean(shownAgent), page);
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
@@ -183,12 +184,23 @@ export function IslandCollapsedBar({
                   if (opened === false) onOpenMessages(source);
                 });
               } else {
-                onOpenPage(openTarget);
+                onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
               }
             }
           }}
         >
-          <span className={pulseClassName} />
+          {/* The agent light opens the Agent page; the text beside it reopens the last page. */}
+          <span
+            className="island__agent-light"
+            onClick={(event) => {
+              if (preview || (event.detail !== 0 && didDragRef.current)) return;
+              event.stopPropagation();
+              onOpenPage("agents");
+            }}
+          >
+            <span className={pulseClassName} />
+          </span>
+          {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
             {notice ? <span className="island__todo-count">{notice.text}</span> : quotaAlert ? (
@@ -293,7 +305,7 @@ export function IslandCollapsedBar({
       inert={isExpanded}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onOpenPage(openTarget);
+          onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
         }
       }}
     >

@@ -8,21 +8,25 @@ export function pluginErrorKey(kind: MediaPluginErrorKind) {
     | "blocked" | "driveUnavailable" | "loaderExists";
 }
 
-export type PluginNoticeAction = "closeAndRetry" | "restart" | "openPlugins";
+export type PluginNoticeAction = "closeAndRetry" | "restart" | "openPlugins" | "manual";
 export type PluginNotice = {
   tone: "error" | "status";
-  key: ReturnType<typeof pluginErrorKey> | "success" | "removed" | "restarted";
+  key: ReturnType<typeof pluginErrorKey> | "success" | "removed" | "restarted" | "manualReady";
   /** 只有版本号和文件错误的原文对用户有用；其余原文是给开发看的英文，不显示。 */
   detail?: string;
   action?: PluginNoticeAction;
 };
 
 /** 安装 / 卸载之后在按钮下方显示的一句话，以及它旁边可以直接点的下一步。 */
-export function pluginNotice({ error, done, removed, restarted }: {
+export function pluginNotice({ error, done, removed, restarted, manualReady = false, installed = false }: {
   error: MediaPluginError | null; done: boolean; removed: boolean; restarted: boolean;
+  /** 手动放入：文件夹已打开、等用户拖文件；`installed` 表示已经拖好。 */
+  manualReady?: boolean; installed?: boolean;
 }): PluginNotice | null {
+  if (manualReady && !error) return installed ? { tone: "status", key: "success", action: "restart" } : { tone: "status", key: "manualReady" };
   if (error) {
-    const action = error.kind === "NeedsClose" ? "closeAndRetry" : error.kind === "LegacyConflict" ? "openPlugins" : undefined;
+    const action = error.kind === "NeedsClose" ? "closeAndRetry" : error.kind === "LegacyConflict" ? "openPlugins"
+      : error.kind === "Blocked" ? "manual" : undefined;
     const detail = error.kind === "Io" || error.kind === "Unsupported" ? error.detail : undefined;
     return { tone: "error", key: pluginErrorKey(error.kind), detail, action };
   }

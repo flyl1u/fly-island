@@ -94,6 +94,7 @@ if (!automated) {
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
+      // Appearance 16 -> 19: the page text color row and the whole-look preset section (2026-11-14); 19 -> 20: the empty-preset row.
       // General has two more for its island timers (2026-11-11); Agents two for the session sources DSH
       // gained on 2026-11-13 (Claude Code and Codex). General 10 -> 11: the tucked look the owner asked
       // for on 2026-11-13.
@@ -106,8 +107,8 @@ if (!automated) {
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
-      // The idle clock adds seven default rows; its custom-format input is conditional.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : 8;
+      // Upstream appearance presets add three rows, and the idle clock adds seven.
+      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 26 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;

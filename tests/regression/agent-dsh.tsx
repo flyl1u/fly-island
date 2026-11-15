@@ -65,7 +65,7 @@ export async function checkDsh(root: Root, sessions: AgentSessionSummary[], usag
   const rings = [...document.querySelectorAll<HTMLElement>(".agent-quota__agent")];
   const dshRing = document.querySelector<HTMLElement>(".agent-quota__agent--dsh");
   check(rings.length === 3 && rings.every((ring) => ring.getBoundingClientRect().top === rings[0].getBoundingClientRect().top), "DSH 与 Claude、Codex 的额度环同排显示");
-  check(dshRing?.textContent === "¥12.3456" && !dshRing.textContent.includes("%") && dshRing.getAttribute("aria-label")?.includes("不代表百分比"), "DSH 显示真实余额，并向读屏说明环的可用性语义");
+  check(dshRing?.textContent === "¥12.35" && !dshRing.textContent.includes("%") && dshRing.getAttribute("aria-label")?.includes("不代表百分比"), "DSH 显示真实余额，并向读屏说明环的可用性语义");
   check(dshRing?.getAttribute("role") === "img" && dshRing.tabIndex === 0 && dshRing.querySelectorAll(".quota-rings__fill").length === 2, "DSH 的余额环可聚焦，内外两圈都表示余额可用");
   const row = document.querySelector<HTMLButtonElement>(".agent-session");
   check(row?.querySelectorAll(".agent-provider-icon--dsh").length === 2 && row.querySelector(".agent-session__host")?.getAttribute("title") === "DeepSeek Harness", "DSH 会话和宿主都有独立标识");

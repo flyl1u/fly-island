@@ -11,7 +11,6 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
-import { collapsedOpenPage } from "./collapsedOpenPage";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -24,6 +23,7 @@ import type { TodoTimer } from "../../features/todos/timer";
 import type { IdleClockSettings } from "../../features/appearance/idleClockSettings";
 import type { CollapsedNotice } from "./useCollapsedNotice";
 import "./IslandShell.css";
+import "./IslandPageText.css";
 import "./IslandGlass.css";
 import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
@@ -203,7 +203,7 @@ export function IslandShell({
       aria-label={collapsedLabel}
       onClick={(event) => {
         if (!isExpanded && event.target === event.currentTarget) {
-          onOpenPage(notice?.page ?? collapsedOpenPage(collapsedItem, Boolean(agentSession), page));
+          onOpenPage(notice?.page ?? (collapsedItem === "balance" ? "agents" : page));
         }
       }}
       onPointerMove={handleGlassPointerMove}

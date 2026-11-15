@@ -107,6 +107,8 @@ pub fn run() {
                 island::start_cursor_passthrough_loop(window);
             }
             system::fullscreen::start(app.handle());
+            media_plugins::init(app.handle());
+            agent_status::reply_marker::init();
             Ok(())
         })
         .invoke_handler(collect_commands!([]
@@ -140,7 +142,7 @@ pub fn run() {
             })
         });
     if let Err(error) = result {
-        eprintln!("error while running FocuSD Island: {error}");
+        eprintln!("error while running Fly Island: {error}");
         std::process::exit(1);
     }
 }

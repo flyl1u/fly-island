@@ -86,6 +86,17 @@ try {
   await act(async () => { switches()[0].click(); await settle(); });
   await act(settle);
   check(document.querySelector(".music-player__track")?.textContent === "Desktop Player", "a previously excluded application can be adopted again");
+  const archive = [...document.querySelectorAll<HTMLButtonElement>("#settings button")].find((button) => /^(归档|Archive)$/.test(button.textContent ?? ""))!;
+  check(Boolean(archive), "adoption switches coexist with upstream archive controls");
+  await act(async () => { archive.click(); await settle(); });
+  await act(settle);
+  check(loadMusicSourcePriority().some((source) => source.label === "Desktop Player" && source.archived), "archiving persists independently of adoption");
+  check(switches().length === 1 && document.querySelector<HTMLButtonElement>(".music-idle__resume")?.disabled, "an archived player stays excluded when every remaining player is disabled");
+  const restore = [...document.querySelectorAll<HTMLButtonElement>("#settings button")].find((button) => /^(恢复|Restore)$/.test(button.textContent ?? ""))!;
+  check(Boolean(restore), "the upstream restore action remains available");
+  await act(async () => { restore.click(); await settle(); });
+  await act(settle);
+  check(switches().length === 2 && document.querySelector(".music-player__track")?.textContent === "Desktop Player", "restoring an adopted player makes it available again");
   check(document.getElementById("settings")!.scrollWidth <= document.getElementById("settings")!.clientWidth, "source controls fit the settings width");
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {

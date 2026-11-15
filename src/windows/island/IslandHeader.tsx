@@ -5,7 +5,7 @@ import type { PageButtonStyle, PageDot } from "../../features/appearance/types";
 import { Bell, Bot, CircleDot, Minus, RotateCcw, Settings } from "lucide-react";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
-import { useUpdateDot } from "../../features/updater/useUpdateDot";
+import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { MessageSource } from "../../features/messages/messagePreview";
 import { useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
@@ -46,7 +46,6 @@ type IslandHeaderProps = {
  * target and window actions.
  */
 export function IslandHeader({
-  isExpanded,
   page,
   features,
   pageOrder,
@@ -71,9 +70,8 @@ export function IslandHeader({
   const t = useTranslation();
   // A red dot leads to the community group in About until it has been opened.
   const communityPending = useCommunityInvite().pending;
-  const updatePending = useUpdateDot(isExpanded && features.todo && page === "todo");
+  const updatePending = useUpdatePending();
   const showIcons = pageButtonStyle === "icon";
-  const AgentIcon = showIcons ? Bot : CircleDot;
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
   // The page dots, in the order the user dragged them into; a dot can be dragged sideways.
   // Translation has one while it is on, also when it opens in its own window.
@@ -102,7 +100,7 @@ export function IslandHeader({
         {features.agents ? (
           // The status light doubles as the way into the Agent page.
           <button
-            className={`island__agent-button${page === "agents" ? " island__agent-button--active" : ""}`}
+            className={`island__agent-button${showIcons ? "" : " island__agent-button--capsule"}${page === "agents" ? " island__agent-button--active" : ""}`}
             type="button"
             data-tip={t.island.agentPage}
             aria-label={`${agentStatusLabel} · ${t.agent.sessions.open}`}
@@ -112,9 +110,14 @@ export function IslandHeader({
               onPageChange("agents");
             }}
           >
-            <AgentIcon className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+            {showIcons ? (
+              <Bot className={agentStatusIconClassName} size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />
+            ) : (
+              // Capsule page buttons: the Agent entry is a capsule too, in its status colour.
+              <span className={`island__agent-capsule ${agentStatusIconClassName}`} aria-hidden="true" />
+            )}
           </button>
-        ) : (
+        ) : showIcons ? (
           <CircleDot
             className={agentStatusIconClassName}
             size={16}
@@ -122,6 +125,8 @@ export function IslandHeader({
             absoluteStrokeWidth
             aria-label={agentStatusLabel}
           />
+        ) : (
+          <span className={`island__agent-capsule ${agentStatusIconClassName}`} role="img" aria-label={agentStatusLabel} />
         )}
         {showTitle && <span>fly-island</span>}
       </div>

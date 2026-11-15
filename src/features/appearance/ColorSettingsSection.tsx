@@ -8,6 +8,7 @@ import { Undo2 } from "lucide-react";
 import { loadColorBackup, swapColorBackup } from "./storage";
 import "./ColorSettingsSection.css";
 import { ColorPresetRow } from "./ColorPresetRow";
+import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { resolveSchemeColors } from "./theme";
 import { useResolvedScheme } from "./useDocumentTheme";
 
@@ -26,6 +27,8 @@ export function ColorSettingsSection({
   const backup = loadColorBackup();
   // A colour never changed shows what the scheme draws; picking one makes it the user's own.
   const drawn = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
+  // Unset, the page text is the scheme's ink (--ink-rgb in tokens.css).
+  const schemeInk = drawn.tone === "light" ? "#1A1A20" : "#F8F6F0";
   const colors: readonly [ColorKey, string][] = [
     ["islandBackgroundColor", text.islandBackground],
     ["taskTextColor", text.taskText],
@@ -53,6 +56,23 @@ export function ColorSettingsSection({
           }
         />
       ))}
+      <SettingsRow
+        title={text.pageText}
+        control={
+          <>
+            {settings.pageTextColor && (
+              <SettingsLinkButton onClick={() => onSettingsChange({ ...settings, pageTextColor: "" })}>{text.pageTextAuto}</SettingsLinkButton>
+            )}
+            <SettingsColor
+              value={settings.pageTextColor || schemeInk}
+              ariaLabel={text.pageText}
+              onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value.toUpperCase() })}
+              valueControl={<HexColorInput value={settings.pageTextColor || schemeInk} ariaLabel={text.pageText}
+                onChange={(value) => onSettingsChange({ ...settings, pageTextColor: value })} />}
+            />
+          </>
+        }
+      />
       <ColorPresetRow settings={settings} onSettingsChange={onSettingsChange} />
     </SettingsGroup>
   );

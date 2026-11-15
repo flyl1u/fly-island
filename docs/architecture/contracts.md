@@ -25,7 +25,8 @@
 | `focusd-island-save-directory` | `features/todos/storage.ts` |
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
-| `focusd-island-music-sources`（来源数组 `{ id, label, enabled?, aliases? }`；旧数据缺少 enabled 表示采纳，只有 false 排除；aliases 为来源切换 SMTC / Core Audio 时的标识别名） | `features/media/storage.ts` |
+| `focusd-island-music-sources`（来源数组 `{ id, label, enabled?, aliases?, archived? }`；旧数据缺少 enabled 表示采纳，只有 false 排除；archived: true 表示归档并排除，旧数据无该字段即未归档；aliases 为来源切换 SMTC / Core Audio 时的标识别名） | `features/media/storage.ts` |
+| `focusd-island-last-page`（`todo` / `music` / `shelf` / `qq` / `agents` / `translation` 之一，岛上最后打开的页面；收起的岛点文字时回到它。`clipboard` 与 `settings` 不记录；缺失或非法回退 `todo`。2026-11-14 起） | `windows/island/lastPage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
 | `focusd-island-detached-settings`（`"true"` / `"false"`：设置在独立窗口打开；2026-11-10 起没有或无效时默认独立窗口，已保存的 `"false"` 仍为岛上内嵌，不进外观预设） | `windows/settings/storage.ts` |
@@ -46,8 +47,8 @@
 | 外观主题文件（2026-11-08 起；`fly-island-theme-<日期时间>.json`，写到「下载」文件夹，命令 `save_theme_file`，Rust 端按文件名前缀和内容放行；`{ app: "fly-island", kind: "theme", version: 1, name, exportedAt, appearance }`，`appearance` 只含 `features/appearance/settings.ts` 的 `APPEARANCE_SETTING_KEYS`；导入时只读这些字段，叠在当前设置上经 `normalizeSettings` 校验后存成一个新的样式预设，不自动应用） | `features/appearance/theme.ts` |
 | `focusd-island-locale` | `i18n/index.ts` |
 | `focusd-island-community-invite-seen`（`"true"`：在「关于」里点开过用户交流群；没有或其他值时，岛屿的设置按钮、侧栏「关于」和交流群那一行显示红点。2026-11-12 起） | `features/updater/storage.ts` |
-| `focusd-island-auto-update`（`"false"`：关闭自动更新，只在「关于」里手动检查；缺失或其他值都算开启。开启时启动检查、每 6 小时再查、失败退避重试，下载好后在小岛收起且 2 分钟无交互时自动安装。2026-11-13 起） | `features/updater/storage.ts` |
-| `focusd-island-update-dot-seen`（版本号字符串，如 `"3.1.0"`：真正展开并进入待办页时记录已看过的更新版本；缺失、损坏或存储不可用回退空字符串，新版本再次显示红点。2026-11-13 起） | `features/updater/storage.ts` |
+| `focusd-island-auto-update`（`"false"`：关闭自动更新，只在「关于」里手动检查；缺失或其他值都算开启。开启时启动检查、每 3 小时再查、失败退避重试，下载好后在小岛收起且 1 分钟无交互时自动安装。2026-11-13 起） | `features/updater/storage.ts` |
+| `focusd-island-update-dot-seen`（2026-11-14 已移除：更新红点不再记录已看过，只要有待安装的更新（含安装失败）就显示，直到安装。旧数据不再被读取，可以残留） | 已删除 `features/updater/storage.ts` 中的读写 |
 | `focusd-island-update-channel`（`"stable"` / `"beta"`；3.0.2 及更早的设置写入，现已不读，一律按稳定版检查） | — |
 
 ## 媒体诊断命令
@@ -72,7 +73,6 @@
 
 ## 事件
 
-前端同窗口 DOM 事件 `focusd-update-dot-seen`（2026-11-13）：更新红点已看过的版本保存成功后发出，无载荷；跨窗口仍使用浏览器 `storage` 事件。不新增 Tauri 事件。
 
 | 事件名 | 发送方 | 目标 |
 |---|---|---|
@@ -153,6 +153,7 @@
 - 错误统一为 `{ kind, detail }`，kind 为 Unsupported / NeedsClose / LegacyConflict / HashMismatch / Network / UserDeclined / Busy / Io / Blocked（被安全软件拦截或文件被占用）/ DriveUnavailable（网易云在提权进程看不到的网络盘、映射盘或 subst 盘上）/ LoaderExists（提权期间目录里出现了别的 msimg32.dll）。
 - 事件 `media-plugin-progress`：`{ stage: downloading|verifying|copying|done|error, detail?: string|null }`。
 - 应用数据 `media-plugins.json`：`{ version: 1, files: [{ path, sha256 }], installedAt }`，installedAt 为 Unix 秒。仅记录本应用写入的文件；卸载只删除仍与记录哈希一致的文件，替换文件保留并返回路径；记录损坏或未知版本容错为空。
+- 应用数据 `media-plugins-auto.json`：`{ version: 1, optedOut, attempted: ["<网易云安装目录>|<版本>"] }`，最多保留 8 条；损坏或未知版本按空记录处理（会再自动尝试一次）。命令 `prepare_netease_manual_install` 返回 `{ staged, targetDir }`。
 - 启动参数 `--media-plugin-copy <源> <目标> <sha256>`、`--media-plugin-remove <目标> <sha256>` 在 Tauri 和 single-instance 初始化前处理并退出。只接受固定清单的加载器哈希，目标必须为绝对路径 `msimg32.dll`，父目录须有 `cloudmusic.exe`，禁止 `..`、链接与特殊路径。复制前校验源文件，删除前校验目标文件；不启动正常应用窗口。可选的最后一个参数 `--report=<绝对路径>`：失败时 helper 把错误原文写进这个新文件（只接受 `focusd-plugin-helper-*.txt` 且不覆盖已有文件），父进程读出后删除；管理员是另一个用户时写不进去，只剩退出码。退出码：0 成功，1 未知（也是旧版唯一的失败码），2 参数无效，3 目标目录在提权进程里不可见，4 目标无效，5 哈希不符，6 加载器已存在，7 拒绝访问，8 文件被占用，9 被杀毒软件拦截，10 网易云正在运行。临时文件名为 `<目标文件名>.<pid>-<纳秒>.focusd-tmp`，复制前会清掉同目录里本应用留下的旧临时文件（含旧版固定名 `msimg32.focusd-tmp`）。
 - 播放器诊断新增 `neteasePluginInactive`：已安装插件但仍无时间线，提示重启及可能不兼容。
 

@@ -23,3 +23,10 @@ export function relativeLuminance(hex: string) {
 export function inkOn(background: string) {
   return relativeLuminance(background) > 0.18 ? "24, 24, 30" : "241, 240, 246";
 }
+
+/** The red, green and blue channels (0–255) of a `#rrggbb` colour; black when malformed. */
+export function rgbChannels(hex: string): [number, number, number] {
+  const normalized = HEX_COLOR_PATTERN.test(hex) ? hex : "#000000";
+  const [red, green, blue] = [1, 3, 5].map((start) => parseInt(normalized.slice(start, start + 2), 16));
+  return [red, green, blue];
+}

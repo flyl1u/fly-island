@@ -1,0 +1,58 @@
+/*
+ * Settings → Appearance → Page text colour. stageStyle.ts sets --island-page-ink-rgb (and the
+ * same channels one by one) only while a colour is chosen.
+ *
+ * The page area under the header declares the text levels of tokens.css again in that colour,
+ * their alphas unchanged, so every text drawn with them follows; the header and the collapsed
+ * island keep theirs. Unset, each value falls back to the scheme's ink and equals what tokens.css
+ * already gives, so nothing changes.
+ */
+.island__content {
+  --page-ink-rgb: var(--island-page-ink-rgb, var(--ink-rgb));
+  --text-1: rgba(var(--page-ink-rgb), var(--text-1-alpha));
+  --text-2: rgba(var(--page-ink-rgb), var(--text-2-alpha));
+  --text-3: rgba(var(--page-ink-rgb), var(--text-3-alpha));
+  --text-placeholder: rgba(var(--page-ink-rgb), var(--text-placeholder-alpha));
+  --color-text: rgb(var(--page-ink-rgb));
+  --color-text-strong: rgba(var(--page-ink-rgb), 0.88);
+  --color-text-muted: rgba(var(--page-ink-rgb), 0.72);
+  --color-text-subtle: rgba(var(--page-ink-rgb), 0.52);
+  --color-page-text: rgb(var(--page-ink-rgb));
+  /* Invalid while no colour is chosen, so the page inherits its colour as before. */
+  color: rgb(var(--island-page-ink-rgb));
+}
+
+/*
+ * Icons keep their colour, and so do the controls and marks drawn in a text level: checkboxes,
+ * the pin badge, the music progress. Those, and an icon with a colour rule of its own, read the
+ * text levels in the scheme's ink again. An icon that inherits the page colour from its button
+ * or row gets the scheme's ink back, at the same alpha: the factor below is 1 when the inherited
+ * channels equal the page colour's and 0 otherwise, so an accent, warning or status icon is left
+ * as it is. Zero specificity, so any colour rule an icon has wins; without a page colour the
+ * declaration is invalid and the icon inherits as before.
+ */
+:where(.island__content) :where(
+  svg,
+  .todo-check,
+  .clipboard-item__select,
+  .shelf-item__pin-badge,
+  .music-progress__fill
+) {
+  --text-1: rgba(var(--ink-rgb), var(--text-1-alpha));
+  --text-2: rgba(var(--ink-rgb), var(--text-2-alpha));
+  --text-3: rgba(var(--ink-rgb), var(--text-3-alpha));
+  --text-placeholder: rgba(var(--ink-rgb), var(--text-placeholder-alpha));
+  --color-text: rgb(var(--ink-rgb));
+  --color-text-strong: rgba(var(--ink-rgb), 0.88);
+  --color-text-muted: rgba(var(--ink-rgb), 0.72);
+  --color-text-subtle: rgba(var(--ink-rgb), 0.52);
+  --color-page-text: rgb(var(--ink-rgb));
+}
+
+:where(.island__content svg) {
+  color: rgb(from currentColor
+    calc(r + (var(--ink-r) - var(--page-ink-r)) * (1 - sign(abs(r - var(--page-ink-r)) + abs(g - var(--page-ink-g)) + abs(b - var(--page-ink-b)))))
+    calc(g + (var(--ink-g) - var(--page-ink-g)) * (1 - sign(abs(r - var(--page-ink-r)) + abs(g - var(--page-ink-g)) + abs(b - var(--page-ink-b)))))
+    calc(b + (var(--ink-b) - var(--page-ink-b)) * (1 - sign(abs(r - var(--page-ink-r)) + abs(g - var(--page-ink-g)) + abs(b - var(--page-ink-b)))))
+    / alpha);
+}

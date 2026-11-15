@@ -11,6 +11,12 @@ export type SettingsMusicSourcesText = {
   ignored: string;
   audioSource: string;
   moveLabel: (name: string) => string;
+  /** The row button that takes a player out of the order, for players the user never uses. */
+  archive: string;
+  /** The row button in the archive that puts a player back at the end of the order. */
+  restore: string;
+  archivedTitle: string;
+  archivedHint: string;
 };
 
 export const zhCN: SettingsMusicSourcesText = {
@@ -25,6 +31,10 @@ export const zhCN: SettingsMusicSourcesText = {
   ignored: "不采纳",
   audioSource: "仅音频 · 静音 / 恢复",
   moveLabel: (name) => `调整"${name}"的顺序，可以拖动或按上下方向键`,
+  archive: "归档",
+  restore: "恢复",
+  archivedTitle: "已归档",
+  archivedHint: "归档的播放器不再出现在顺序里，岛也不再跟随它；点「恢复」放回顺序末尾。",
 };
 
 export const en: SettingsMusicSourcesText = {
@@ -39,4 +49,8 @@ export const en: SettingsMusicSourcesText = {
   ignored: "Excluded",
   audioSource: "Audio only · mute / restore",
   moveLabel: (name) => `Reorder "${name}": drag, or press the up and down arrow keys`,
+  archive: "Archive",
+  restore: "Restore",
+  archivedTitle: "Archived",
+  archivedHint: "Archived players leave the order above and the island no longer follows them. Restore one to put it back at the end.",
 };

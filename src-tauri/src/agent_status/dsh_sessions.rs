@@ -104,13 +104,18 @@ pub(super) fn parse_checkpoint(value: &Value, id: &str, updated_at: i64, now: i6
 }
 
 /// The conversation log's generation (v3, v4 today) changes with DSH; any `session.v<N>.jsonl*` counts.
-fn has_source_log(shards: &[PathBuf], id: &str) -> bool {
-    shards.iter().any(|shard| fs::read_dir(shard.join(id)).into_iter().flatten().flatten().any(|file| {
+fn source_log(shards: &[PathBuf], id: &str) -> Option<PathBuf> {
+    shards.iter().find_map(|shard| fs::read_dir(shard.join(id)).into_iter().flatten().flatten().find(|file| {
         file.file_name().to_str().is_some_and(|name| {
             name.strip_prefix("session.v").and_then(|rest| rest.split_once('.'))
                 .is_some_and(|(version, ext)| !version.is_empty() && version.bytes().all(|c| c.is_ascii_digit()) && ext.starts_with("jsonl"))
         })
-    }))
+    }).map(|file| file.path()))
+}
+
+#[cfg(test)]
+fn has_source_log(shards: &[PathBuf], id: &str) -> bool {
+    source_log(shards, id).is_some()
 }
 
 pub(super) fn has_checkpoints(root: &Path) -> bool {
@@ -131,10 +136,20 @@ pub(super) fn list_from_root(root: &Path, now: i64, window_ms: i64, exe: Option<
         let mut summary = parse_checkpoint(&read_json(&path, MAX_CHECKPOINT_BYTES)?, id, modified, now, exe.is_some())?;
         // Deleted logs may leave a checkpoint. Only sessions with a corresponding source file
         // are listed. Checking existence does not read or decompress the conversation body.
-        if !has_source_log(&shards, id) { return None; }
+        let log = source_log(&shards, id)?;
         if let Some(host) = &mut summary.host { host.exe = exe.map(str::to_string); }
+        if !summary.closed { apply_approval(&mut summary, super::dsh_approvals::pending(&log)); }
         Some(summary)
     }).collect()
+}
+
+/// A tool approval the host is waiting on: the checkpoint cannot show it, and without it the
+/// session looked like it was still running (and later "may have stopped").
+pub(super) fn apply_approval(summary: &mut AgentSessionSummary, approval: Option<super::dsh_approvals::PendingApproval>) {
+    let Some(approval) = approval else { return };
+    summary.phase = "waiting";
+    summary.updated_at = summary.updated_at.max(approval.asked_at);
+    summary.current_tool = super::dsh_approvals::tool_call(&approval);
 }
 
 fn merge_session(sessions: &mut HashMap<String, AgentSessionSummary>, session: AgentSessionSummary) {

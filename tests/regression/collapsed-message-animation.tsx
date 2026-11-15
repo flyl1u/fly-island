@@ -252,7 +252,10 @@ async function runChecks() {
     await act(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "插件市场功能" }));
     await settle();
     await act(async () => button().click());
-    check(openedPage === "agents", "显示 Agent 标题时点击小岛打开 Agent 页");
+    check(openedPage === "todo", "显示 Agent 标题时点击中间文字打开上一次页面");
+    openedPage = null;
+    await act(async () => document.querySelector<HTMLElement>(".island__agent-light")!.click());
+    check(openedPage === "agents", "点击 Agent 指示灯打开 Agent 页");
     const agentCount = () => document.querySelector<HTMLButtonElement>(".island-agent-count");
     const tuckDot = () => document.querySelector(".island__quiet-button");
     check(!agentCount() && !tuckDot(), "AI Agent 开启且没有运行中的会话时不显示灰点和数量");

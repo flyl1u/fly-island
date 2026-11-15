@@ -98,3 +98,15 @@ fn merges_imported_sessions_by_id_and_retains_newest_owner() {
     assert_eq!(sessions[ID].host.as_ref().unwrap().name, "DSH Desktop (dataelement)");
     assert!(!sessions[ID].closed);
 }
+
+#[test]
+fn a_pending_tool_approval_waits_instead_of_running() {
+    let mut session = parse_checkpoint(&fixture(), ID, 1100, 1200, true).unwrap();
+    apply_approval(&mut session, None);
+    assert_eq!(session.phase, "running");
+    let approval = super::super::dsh_approvals::PendingApproval { tool: Some("pwsh".into()), asked_at: 5000 };
+    apply_approval(&mut session, Some(approval));
+    assert_eq!(session.phase, "waiting");
+    assert_eq!(session.updated_at, 5000);
+    assert_eq!(session.current_tool.as_ref().map(|tool| tool.name.as_str()), Some("pwsh"));
+}

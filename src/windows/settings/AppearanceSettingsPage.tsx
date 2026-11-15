@@ -6,6 +6,7 @@ import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslan
 import { IdleClockSettingsSection } from "../../features/appearance/IdleClockSettingsSection";
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
+import { AppearancePresetSection } from "../../features/appearance/AppearancePresetSection";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { FontRows, MaterialRows, OpacityRow, PageButtonsRow, ScaleRows, SchemeRow } from "../../features/appearance/StyleRows";
 import { TopEdgeShoulderRows } from "../../features/appearance/TopEdgeShoulderRows";
@@ -15,7 +16,8 @@ import { appearancePreviewMode } from "./appearancePreview";
 
 /**
  * Settings → Appearance (docs/design/settings.md): a preview, then the theme and its colours, the
- * text and sizes, what sits where on the island, and last the notch and the top-edge curves.
+ * text and sizes, what sits where on the island, the notch and the top-edge curves, and last the
+ * whole-look presets.
  */
 export function AppearanceSettingsPage({
   settings,
@@ -59,6 +61,7 @@ export function AppearanceSettingsPage({
         <CollapsedDimensionRows settings={settings} onChange={updateAppearance} />
         <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />
       </SettingsGroup>
+      <AppearancePresetSection {...rows} />
     </>
   );
 }

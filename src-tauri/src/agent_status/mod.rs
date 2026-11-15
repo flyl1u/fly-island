@@ -9,6 +9,7 @@ mod editor_terminal;
 mod hooks_state;
 mod host_icon;
 mod codex_usage;
+mod dsh_approvals;
 mod dsh_credentials;
 mod dsh_desktop;
 mod dsh_sessions;

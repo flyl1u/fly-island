@@ -10,7 +10,7 @@ export function UpdateTodoAction() {
   const busy = stage === "downloading" || stage === "installing";
   const action = stage === "installing" ? t.installing : stage === "downloading"
     ? total > 0 ? t.updateDownloading(Math.min(100, Math.round(downloaded / total * 100))) : t.downloadingUnknown
-    : t.updateNow;
+    : stage === "error" ? t.failedRetry : t.updateNow;
 
   return (
     <button

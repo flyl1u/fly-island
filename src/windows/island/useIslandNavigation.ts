@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { IslandMode, IslandPage } from "./types";
 import type { PreviewSnapshot } from "./panelPreviewPlan";
 import { openDetachedClipboardHistory } from "../clipboard/api";
 import { showClipboardHistoryIsland } from "../../features/clipboard/api";
+import { loadLastPage, saveLastPage } from "./lastPage";
 
 /** Collapsed / expanded / tucked mode and the open page of the island. */
 export function useIslandNavigation() {
@@ -16,7 +17,8 @@ export function useIslandNavigation() {
   const [peekRetractDelayMs, setPeekRetractDelayMs] = useState<number | null>(null);
   // The current tuck came from the idle timer: "stay visible while…" may undo it (tuckRules.ts).
   const [tuckedAutomatically, setTuckedAutomatically] = useState(false);
-  const [page, setPage] = useState<IslandPage>("todo");
+  const [page, setPage] = useState<IslandPage>(loadLastPage);
+  useEffect(() => saveLastPage(page), [page]);
   const clipboardShortcutToggleAt = useRef(0);
   const applyPreviewState = useCallback((snapshot: PreviewSnapshot) => {
     setMode(snapshot.mode);
