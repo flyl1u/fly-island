@@ -14,6 +14,7 @@ import { checkAppearance, prepareColorRegression } from "./settingsAppearance";
 import { checkQuotaSettings } from "./settingsQuota";
 import { checkKeepVisible } from "./settingsKeepVisible";
 import { checkGroups } from "./settingsGroups";
+import { checkTodoRotation } from "./settingsTodoRotation";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -107,6 +108,7 @@ if (!automated) {
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
+      if (category === "todos") await checkTodoRotation(panel, check);
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
       const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 19 : 8;
       if (category === "appearance") {

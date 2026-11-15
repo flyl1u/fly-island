@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { nextTodoRotationIndex } from "../../features/todos/todoRotation";
 
 export function useTodoRotation(
   todoIds: string[],
@@ -21,8 +22,7 @@ export function useTodoRotation(
   useEffect(() => {
     if (!enabled || paused || todoIds.length < 2) return;
     const timer = window.setTimeout(() => {
-      const index = displayedId ? todoIds.indexOf(displayedId) : -1;
-      setRotatingId(todoIds[(index + 1) % todoIds.length]);
+      setRotatingId(todoIds[nextTodoRotationIndex(todoIds, displayedId)]);
     }, seconds * 1_000);
     return () => window.clearTimeout(timer);
   }, [displayedId, enabled, paused, seconds, todoIds]);

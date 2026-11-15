@@ -131,6 +131,10 @@ export type IslandSettings = {
   todoTimerEnabled: boolean;
   rotateTodos: boolean;
   todoRotationSeconds: number;
+  todoRotationCount: number;
+  todoRotationMode: "switch" | "scroll";
+  /** Vertical travel in logical pixels per second. */
+  todoScrollSpeed: number;
   autoTuck: boolean;
   tuckStyle: TuckStyle;
   /**

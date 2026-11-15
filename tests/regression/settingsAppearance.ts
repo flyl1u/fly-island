@@ -195,13 +195,19 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     await act(async () => autoWidth.click());
     const widthInput = inputNamed("刘海宽度")!;
     const heightInput = inputNamed("刘海高度")!;
-    const notchBefore = collapsedSample.getBoundingClientRect();
+    // DOMRect subtracts translated coordinates; compare at Chromium's layout precision
+    // so a 0.000004px subtraction error does not look like an independent size change.
+    const notchSize = () => {
+      const rect = collapsedSample.getBoundingClientRect();
+      return { width: Math.round(rect.width * 64) / 64, height: Math.round(rect.height * 64) / 64 };
+    };
+    const notchBefore = notchSize();
     await type(widthInput, "480");
     await act(async () => widthInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
-    const notchWider = collapsedSample.getBoundingClientRect();
+    const notchWider = notchSize();
     await type(heightInput, "60");
     await act(async () => heightInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
-    const notchTaller = collapsedSample.getBoundingClientRect();
+    const notchTaller = notchSize();
     check(storedSettings().collapsedWidth === 480 && storedSettings().collapsedHeight === 60 &&
       notchWider.width > notchBefore.width && notchWider.height === notchBefore.height && notchTaller.height > notchWider.height && notchTaller.width === notchWider.width,
       "Notch width and height change separately in the preview and persist");

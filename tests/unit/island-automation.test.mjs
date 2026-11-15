@@ -4,6 +4,7 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { idlePlan } from "../../src/windows/island/idleCollapse.ts";
+import * as todoRotation from "../../src/features/todos/todoRotation.ts";
 
 const source = ts.transpileModule(
   readFileSync(new URL("../../src/windows/island/useIslandAutomation.ts", import.meta.url), "utf8"),
@@ -54,7 +55,7 @@ function mount(name, initialArgs) {
       }
     },
   };
-  runInNewContext(source, { exports, require: () => react, window: browserWindow, document });
+  runInNewContext(source, { exports, require: (path) => path === "react" ? react : todoRotation, window: browserWindow, document });
   function render(nextArgs = args) {
     args = nextArgs;
     do {

@@ -6,9 +6,12 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## localStorage key
 
+`focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）；新增 `todoRotationCount` 默认 3（1–10）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。缺失或非法字段由 normalize 回退，原 key 与其他字段不变。
+
 | key | 当前定义位置 |
 |---|---|
 | `focusd-island-settings` | `features/appearance/storage.ts` |
+
 | `focusd-island-tuck-line-migration`（`"1"`：细线默认样式迁移完成；已有存档的 edge/hidden 统一改成 line，先保存设置再写标记，无存档只写标记；之后尊重手动选择，失败下次重试） | `features/appearance/storage.ts`、`tuckLineMigration.ts` |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |

@@ -1,5 +1,10 @@
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
+import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
+import { SettingsRow } from "../../components/settings/SettingsRow";
+import { SettingsChoice } from "../../components/settings/SettingsChoice";
+import { TODO_ROTATION_COUNT, TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
@@ -43,6 +48,32 @@ export function TodosSettingsPage({
           checked={settings.enableTodoReorder}
           onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
         />
+      </SettingsGroup>
+      <SettingsGroup title={t.settings.todo.collapsedTitle}>
+        <SettingsToggleRow title={t.settings.todo.rotateTodos} checked={settings.rotateTodos}
+          onChange={(rotateTodos) => onSettingsChange({ ...settings, rotateTodos })} />
+        {settings.rotateTodos && <>
+          <SettingsNumberRow title={t.settings.todo.rotationCount} value={settings.todoRotationCount}
+            min={TODO_ROTATION_COUNT.min} max={TODO_ROTATION_COUNT.max} indent
+            onChange={(todoRotationCount) => onSettingsChange({ ...settings, todoRotationCount })} />
+          <SettingsRow title={t.settings.todo.rotationMode} indent control={
+            <SettingsChoice value={settings.todoRotationMode} ariaLabel={t.settings.todo.rotationMode}
+              options={[
+                { value: "switch", label: t.settings.todo.switchMode },
+                { value: "scroll", label: t.settings.todo.scrollMode },
+              ]} onChange={(todoRotationMode) => onSettingsChange({ ...settings, todoRotationMode })} />
+          } />
+          {settings.todoRotationMode === "switch" ? (
+            <SettingsNumberRow title={t.settings.todo.rotationSeconds} value={settings.todoRotationSeconds}
+              min={TODO_ROTATION_SECONDS.min} max={TODO_ROTATION_SECONDS.max} unit={t.settings.expand.secondsUnit} indent
+              onChange={(todoRotationSeconds) => onSettingsChange({ ...settings, todoRotationSeconds })} />
+          ) : (
+            <SettingsSliderRow title={t.settings.todo.scrollSpeed} value={settings.todoScrollSpeed}
+              min={TODO_SCROLL_SPEED.min} max={TODO_SCROLL_SPEED.max} step={TODO_SCROLL_SPEED.step} indent
+              format={t.settings.todo.scrollSpeedValue}
+              onChange={(todoScrollSpeed) => onSettingsChange({ ...settings, todoScrollSpeed })} />
+          )}
+        </>}
       </SettingsGroup>
       <SavePathSettingsSection
         saveDirectoryDraft={saveDirectory.saveDirectoryDraft}
