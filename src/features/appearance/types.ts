@@ -192,6 +192,8 @@ export type IslandSettings = {
   lyricsOnline: boolean;
   /** With online lyrics, also ask Kugou and NetEase (unofficial sources). */
   lyricsChinese: boolean;
+  /** Fill word-timed lyrics as they are sung, in both island states. */
+  lyricWordFill: boolean;
   /** Lyrics shown this many ms later (positive) or earlier than the position Windows reports. */
   lyricsOffsetMs: number;
   mailEnabled: boolean;

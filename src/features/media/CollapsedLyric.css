@@ -11,6 +11,22 @@
   white-space: nowrap;
 }
 
+.collapsed-lyric__word {
+  color: transparent;
+  background: linear-gradient(90deg, var(--text-1) 50%, var(--text-3) 50%) 100% 0 / 200% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: collapsed-lyric-word-fill linear both;
+}
+
+@keyframes collapsed-lyric-word-fill {
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsed-lyric__word { animation-timing-function: step-start; }
+}
+
 /* The song's cover beside it, when Appearance → Collapsed island asks for it. */
 .collapsed-cover {
   width: 22px;
