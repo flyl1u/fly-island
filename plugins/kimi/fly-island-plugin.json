@@ -1,0 +1,30 @@
+{
+  "id": "kimi",
+  "name": { "zh-CN": "Kimi Code", "en": "Kimi Code" },
+  "description": { "zh-CN": "Kimi 编码助手额度与会话", "en": "Kimi Code assistant quota and sessions" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "kimi.exe" },
+  "permissions": ["quota", "sessions", "network", "read-home-files"],
+  "contributes": ["quota", "sessions"],
+  "settings": [
+    {
+      "key": "token",
+      "label": { "zh-CN": "API Token（可选，默认读取本地登录）", "en": "API Token (optional, reads local by default)" },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "30", "label": { "zh-CN": "30 秒", "en": "30 seconds" } },
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": []
+}

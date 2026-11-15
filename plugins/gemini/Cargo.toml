@@ -1,0 +1,10 @@
+[package]
+name = "gemini"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+fly-island-plugin-sdk = { path = "../sdk" }
+serde_json = "1"
+ureq = { version = "2.10", default-features = false, features = ["tls", "json"] }

@@ -1,0 +1,36 @@
+{
+  "id": "gemini",
+  "name": { "zh-CN": "Gemini Code Assist", "en": "Gemini Code Assist" },
+  "description": { "zh-CN": "Gemini Code Assist 额度与会话", "en": "Gemini Code Assist quota and CLI sessions" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "gemini.exe" },
+  "permissions": ["quota", "sessions", "network", "read-home-files"],
+  "contributes": ["quota", "sessions"],
+  "settings": [
+    {
+      "key": "token",
+      "label": { "zh-CN": "OAuth Access Token（可选覆盖）", "en": "OAuth Access Token (optional override)" },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "refresh_token",
+      "label": { "zh-CN": "OAuth Refresh Token（可选）", "en": "OAuth Refresh Token (optional)" },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "180", "label": { "zh-CN": "3 分钟", "en": "3 minutes" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": []
+}

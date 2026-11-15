@@ -1,0 +1,30 @@
+{
+  "id": "grok-bot",
+  "name": { "zh-CN": "Grok Bot", "en": "Grok Bot" },
+  "description": { "zh-CN": "Grok Bot 额度与周期", "en": "Grok Bot quota and weekly cycle" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "grok-bot.exe" },
+  "permissions": ["quota", "network", "read-home-files"],
+  "contributes": ["quota"],
+  "settings": [
+    {
+      "key": "token",
+      "label": { "zh-CN": "Access Token（可选覆盖）", "en": "Access Token (optional override)" },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "180", "label": { "zh-CN": "3 分钟", "en": "3 minutes" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": []
+}
