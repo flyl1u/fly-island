@@ -107,7 +107,7 @@ if (!automated) {
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
       // The idle clock adds seven default rows; its custom-format input is conditional.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 23 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;

@@ -4,6 +4,7 @@
 |---|---|---|
 | 待办行为设置 | 现有 `focusd-island-settings`：`todoTimerEnabled` 默认 false；`enableTodoReorder` 默认 true，`todoReorderVersion: 1` 表示已迁移；无标记的旧数据开启拖拽，有标记才读取保存的布尔值。关闭番茄钟清除本轮计时，保留进行中 ID | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；沿用跨窗口 storage 同步 |
 | 设置、预设、各功能开关、语言 | WebView2 的 `localStorage` | 前端各 feature 的 `storage.ts` |
+| 鼠标移出后快速收起 | 现有 `focusd-island-settings.hoverCollapseEnabled` 布尔字段，默认 true；旧数据缺失或非法时补默认值，显式 false 保留，沿用跨窗口 storage 同步 | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts` |
 | 岛屿字号、刘海基准尺寸、额度环筛选 | `focusd-island-settings`，字段见 [对外契约](contracts.md) | `features/appearance/` |
 | WorkBuddy 官网登录与余额 | `%LOCALAPPDATA%/com.focusd.island/workbuddy-web/WebView2` 保存独立浏览器配置。同级 `connected` 文件记录已成功连接。积分汇总缓存在内存，选中额度环时刷新，有效结果缓存 5 分钟。每次读到积分后，发往积分接口的 workbuddy.cn cookie 另存一份到 Windows 凭据管理器（`com.focusd.island.workbuddy-web`，`cookies-0`…`cookies-7` 分段），重启后浏览器配置里缺 cookie 时放回去。断开时清除该配置的浏览数据、凭据管理器副本和连接标记 | `agent_status/workbuddy_connection.rs`、`agent_status/workbuddy_cookie_vault.rs`、`agent_status/workbuddy_usage.rs` |
 | 贴边收起样式 | 原有 `focusd-island-settings` 对象的 `tuckStyle` 字段：`edge` / `line` / `hidden`，缺失或非法值按 `edge`；沿用跨窗口 storage 同步，不新增文件或 key | `features/appearance/storage.ts`、`settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；通过 `windows/island/useIslandWindow.ts` 同步至原生内存状态 |

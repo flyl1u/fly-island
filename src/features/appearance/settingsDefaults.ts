@@ -87,6 +87,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   revealOnMessage: true,
   expandTrigger: "hover",
   hoverExpandDelayMs: DEFAULT_HOVER_EXPAND_DELAY_MS,
+  hoverCollapseEnabled: true,
   hoverCollapseDelayMs: DEFAULT_HOVER_COLLAPSE_DELAY_MS,
   minimizeAction: "tuck",
   tuckedHoverAction: "reveal",

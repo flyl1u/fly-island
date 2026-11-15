@@ -22,6 +22,11 @@
   corner-shape: var(--island-corner-shape, round);
 }
 
+.island__collapsed--idle-clock .island__summary-row:not(.island-message-preview) {
+  left: var(--idle-clock-inset-left, 0px);
+  right: var(--idle-clock-inset-right, 0px);
+}
+
 .island__pulse {
   width: 9px;
   height: 9px;

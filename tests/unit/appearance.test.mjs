@@ -178,6 +178,16 @@ test("the options still in Settings are read back and fall back for older settin
   }
 });
 
+test("quick hover collapse defaults on and reads an explicit off setting back", () => {
+  assert.equal(DEFAULT_SETTINGS.hoverCollapseEnabled, true);
+  assert.equal(normalizeSettings({}).hoverCollapseEnabled, true);
+  assert.equal(normalizeSettings({ hoverCollapseEnabled: false }).hoverCollapseEnabled, false);
+  for (const value of [null, "false", 0, {}]) {
+    assert.equal(normalizeSettings({ hoverCollapseEnabled: value }).hoverCollapseEnabled, true);
+  }
+  assert.equal(withAppearanceFrom({ ...DEFAULT_SETTINGS, hoverCollapseEnabled: false }, DEFAULT_SETTINGS).hoverCollapseEnabled, false);
+});
+
 test("dragging files out keeps shelf entries, including settings saved by older versions", () => {
   assert.equal(DEFAULT_SETTINGS.shelfRemoveAfterDragOut, false);
   for (const saved of [undefined, {}, { shelfRemoveAfterDragOut: true }, { shelfRemoveAfterDragOut: false }]) {

@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
@@ -114,6 +114,34 @@ export function IslandCollapsedBar({
   onTuck,
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
+  const barRef = useRef<HTMLDivElement>(null);
+  const centersIdleClock = showIdleClock && Boolean(idleClockSettings) && !preview && !notice && !quotaAlert;
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const summary = bar?.querySelector<HTMLElement>(".island__summary");
+    if (!centersIdleClock || !bar || !summary) return;
+    // Reserve equal room for the two sides, including custom icon arrangements.
+    const align = () => {
+      const bounds = bar.getBoundingClientRect();
+      if (!bounds.width) return;
+      const content = summary.getBoundingClientRect();
+      const inset = (bounds.left + bounds.width / 2 - content.left - content.width / 2) * 2 * bar.offsetWidth / bounds.width;
+      summary.style.setProperty("--idle-clock-inset-left", `${Math.max(0, inset)}px`);
+      summary.style.setProperty("--idle-clock-inset-right", `${Math.max(0, -inset)}px`);
+    };
+    const resize = new ResizeObserver(align);
+    resize.observe(bar);
+    resize.observe(summary);
+    const children = new MutationObserver(align);
+    children.observe(bar, { childList: true });
+    align();
+    return () => {
+      resize.disconnect();
+      children.disconnect();
+      summary.style.removeProperty("--idle-clock-inset-left");
+      summary.style.removeProperty("--idle-clock-inset-right");
+    };
+  }, [centersIdleClock, collapsedLayout]);
   const { didDragRef, prepareWindowDrag, handleWindowDragMove, cancelWindowDrag } =
     useWindowDragGesture(isTucked || positionLocked, onWindowDragStart);
   const isMusicPlaying = mediaState.playbackStatus === "playing";
@@ -259,7 +287,8 @@ export function IslandCollapsedBar({
 
   return (
     <div
-      className="island__collapsed"
+      ref={barRef}
+      className={`island__collapsed${centersIdleClock ? " island__collapsed--idle-clock" : ""}`}
       aria-hidden={isExpanded}
       inert={isExpanded}
       onClick={(event) => {

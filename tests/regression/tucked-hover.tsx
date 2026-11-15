@@ -13,9 +13,11 @@ import { useTuckMorph } from "../../src/windows/island/useTuckMorph";
 import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen";
 import { useHoverExpand } from "../../src/windows/island/useHoverExpand";
 import { useIdleTuck } from "../../src/windows/island/useIslandAutomation";
+import { useHoverFocus } from "../../src/windows/island/useHoverFocus";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-mockIPC(() => null, { shouldMockEvents: true });
+const focusCommands: string[] = [];
+mockIPC((command) => { focusCommands.push(command); return true; }, { shouldMockEvents: true });
 
 const RETRACT_MS = 120;
 const HOVER_DELAY_MS = 0; // The user's setting; opening still waits for the 320 ms slide-out.
@@ -25,10 +27,13 @@ let island: Island;
 let enter: () => void;
 let setOpensPanel: (value: boolean) => void;
 let setPreview: (value: boolean) => void;
+let setCollapseEnabled: (value: boolean) => void;
 
 function Harness() {
   const [opensPanel, changeOpensPanel] = useState(false);
   const [preview, changePreview] = useState(false);
+  const [collapseEnabled, changeCollapseEnabled] = useState(true);
+  setCollapseEnabled = changeCollapseEnabled;
   const navigation = useIslandNavigation();
   island = navigation;
   const tuckClass = useTuckMorph(navigation.isTucked, "line");
@@ -37,9 +42,10 @@ function Harness() {
   // As useIslandTucking wires them: a message preview reveals the island and holds the peek.
   useRevealOnMessage(preview, navigation.isTucked, navigation.revealForMessage);
   useTuckPeek(navigation.isPeeking && !preview, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
-  useHoverExpand({ enabled: true, delayMs: 0, paused: preview, collapseDelayMs: 250,
+  useHoverExpand({ enabled: true, delayMs: 0, paused: preview, collapseEnabled, collapseDelayMs: 250,
     mode: navigation.mode, isTucked: navigation.isTucked || navigation.isPeeking,
     onExpand: () => navigation.openIslandPage("todo"), onCollapse: navigation.collapseIsland });
+  useHoverFocus(navigation.mode, false, collapseEnabled);
   useIdleTuck(navigation.mode === "collapsed" && !preview && !navigation.isPeeking,
     1, navigation.isTucked, navigation.mode, () => navigation.idleTuck(RETRACT_MS));
   enter = useTuckedHoverOpen({
@@ -191,6 +197,31 @@ async function runChecks() {
     await hover(false);
     await wait(450);
     check(state() === "collapsed/out", "悬停展开后移出总是先折叠，与贴边回收开关独立");
+
+    await act(async () => { setCollapseEnabled(false); island.idleTuck(null); });
+    await arrive();
+    await wait(400);
+    check(state() === "expanded/out", "关闭移出收起不影响悬停展开");
+    check(focusCommands.includes("take_island_hover_focus"), "悬停展开仍能取得原生焦点");
+    const releases = focusCommands.filter(command => command === "release_island_hover_focus").length;
+    await hover(false);
+    await wait(450);
+    check(state() === "expanded/out", "开关关闭时鼠标移出不会快速折叠");
+    check(focusCommands.filter(command => command === "release_island_hover_focus").length === releases,
+      "开关关闭后移出不交还原生焦点，避免失焦收起绕过开关");
+    await act(async () => setCollapseEnabled(true));
+    await wait(450);
+    check(state() === "collapsed/out", "重新开启后恢复移出收起");
+    await hover(true);
+    await wait(100);
+    check(state() === "expanded/out", "开启后仍可再次悬停展开");
+    await hover(false);
+    await wait(70);
+    await act(async () => setCollapseEnabled(false));
+    await wait(450);
+    check(state() === "expanded/out", "等待收起时关闭开关会取消旧计时器");
+    await act(async () => setCollapseEnabled(true));
+    await wait(450);
 
     // A message on a tucked island: it slides out for the preview and back once it has gone.
     await act(async () => island.tuckIsland());

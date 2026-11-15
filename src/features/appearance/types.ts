@@ -149,6 +149,8 @@ export type IslandSettings = IdleClockSettings & {
   expandTrigger: ExpandTrigger;
   /** Pointer rest time (ms) before a hover opens the island. */
   hoverExpandDelayMs: number;
+  /** Whether hover mode quickly collapses the panel after the pointer leaves. */
+  hoverCollapseEnabled: boolean;
   /** Time (ms) a hover-opened panel stays open after the pointer leaves it. */
   hoverCollapseDelayMs: number;
   minimizeAction: MinimizeAction;

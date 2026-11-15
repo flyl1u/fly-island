@@ -30,6 +30,7 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     enabled: settings.expandTrigger === "hover" && !quiet,
     delayMs: settings.hoverExpandDelayMs,
     paused: hasMessagePreview,
+    collapseEnabled: settings.hoverCollapseEnabled,
     collapseDelayMs: settings.hoverCollapseDelayMs,
     mode,
     // A peeking island opens on a click only; hovering it just keeps it out.
@@ -46,7 +47,8 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     retractsAfterPeek,
     resumePeek,
   });
-  useHoverFocus(mode, quiet);
+  // Releasing native focus on leave would trigger blur-collapse despite the switch.
+  useHoverFocus(mode, quiet, settings.expandTrigger !== "hover" || settings.hoverCollapseEnabled);
   usePanelPreview({ navigation, quiet, hasMessagePreview });
   return hoverTucked;
 }

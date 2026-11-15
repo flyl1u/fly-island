@@ -31,6 +31,8 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     // Game mode: on unless turned off. Tucking while full screen stays at its default (off).
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
+    hoverCollapseEnabled: typeof settings?.hoverCollapseEnabled === "boolean"
+      ? settings.hoverCollapseEnabled : DEFAULT_SETTINGS.hoverCollapseEnabled,
     // Module switches: anything but an explicit false keeps the module on.
     todoEnabled: settings?.todoEnabled !== false,
     musicEnabled: settings?.musicEnabled !== false,
