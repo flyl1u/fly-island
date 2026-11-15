@@ -1,0 +1,46 @@
+.todo-rotation {
+  position: relative;
+  display: block;
+  height: 28px;
+  animation: none;
+}
+
+.todo-rotation__layer {
+  position: absolute;
+  inset: 0;
+}
+
+.todo-rotation__row {
+  display: block;
+  height: 28px;
+  line-height: 28px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-rotation__layer--incoming {
+  --summary-travel: 3px;
+  animation: islandSummaryEnter var(--summary-enter-duration) var(--summary-spring) backwards;
+}
+
+.todo-rotation__layer--outgoing {
+  --summary-travel: 3px;
+  animation: islandSummaryExit var(--summary-exit-duration) cubic-bezier(.4, 0, .6, 1) both;
+}
+
+.todo-rotation__track {
+  display: block;
+  animation: todoContinuousScroll var(--todo-scroll-duration) linear infinite;
+}
+
+@keyframes todoContinuousScroll {
+  to { transform: translateY(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-rotation__track,
+  .todo-rotation__layer--incoming,
+  .todo-rotation__layer--outgoing { animation: none; }
+  .todo-rotation__layer--outgoing { visibility: hidden; }
+}

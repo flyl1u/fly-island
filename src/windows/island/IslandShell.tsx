@@ -20,6 +20,7 @@ import { useMotionLayer } from "./useMotionLayer";
 import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
+import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 import "./IslandShell.css";
 import "./IslandPageText.css";
 import "./IslandGlass.css";
@@ -47,6 +48,7 @@ type IslandShellProps = {
   showCollapsedText: boolean;
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
+  todoRotation?: TodoRotationDisplay | null;
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the collapsed island's text shows, if any. */
   collapsedItem: CollapsedItem | null;
@@ -109,6 +111,7 @@ export function IslandShell({
   showCollapsedText,
   collapsedTaskTitle,
   todoTimer = null,
+  todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
@@ -224,6 +227,7 @@ export function IslandShell({
           collapsedLabel={collapsedLabel}
           collapsedTaskTitle={collapsedTaskTitle}
           todoTimer={todoTimer}
+          todoRotation={todoRotation}
           collapsedTodoCount={collapsedTodoCount}
           collapsedItem={collapsedItem}
           collapsedLayout={collapsedLayout}

@@ -21,6 +21,7 @@ import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { TodoTimer } from "../../features/todos/timer";
+import { CollapsedTodoContent, type TodoRotationDisplay } from "./CollapsedTodoContent";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
 import "./IslandCollapsedBar.css";
@@ -39,6 +40,7 @@ type IslandCollapsedBarProps = {
   collapsedLabel: string;
   collapsedTaskTitle: string | null;
   todoTimer?: TodoTimer | null;
+  todoRotation?: TodoRotationDisplay | null;
   collapsedTodoCount: number | null;
   /** Which of the agent, the lyric line and a todo the text shows (Settings → Appearance), if any. */
   collapsedItem: CollapsedItem | null;
@@ -83,6 +85,7 @@ export function IslandCollapsedBar({
   collapsedLabel,
   collapsedTaskTitle,
   todoTimer = null,
+  todoRotation = null,
   collapsedTodoCount,
   collapsedItem,
   collapsedLayout,
@@ -182,17 +185,17 @@ export function IslandCollapsedBar({
             {showCollapsedText && collapsedItem === "lyrics" && (
               <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
             )}
-            {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (
-              <span className={todoTimer ? "island__active-task island__active-task--timed" : "island__active-task"} key={collapsedTaskTitle}>
+            {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (todoTimer ? (
+              <span className="island__active-task island__active-task--timed" key={collapsedTaskTitle}>
                 {showTitle ? "· " : ""}
-                {todoTimer ? <>
+                <>
                   <span className="island__active-task-title">{collapsedTaskTitle}</span>
                   <span className="island__timer-pill">
                     {todoTimer.notified ? t.todo.timeUp : <TodoCountdown endsAt={todoTimer.endsAt} />}
                   </span>
-                </> : collapsedTaskTitle}
+                </>
               </span>
-            )}
+            ) : <CollapsedTodoContent title={collapsedTaskTitle} prefix={showTitle ? "· " : ""} rotation={todoRotation} />)}
             {showCollapsedText && collapsedItem === "todo" && !collapsedTaskTitle && collapsedTodoCount !== null && (
               <span className="island__todo-count">
                 {showTitle ? "· " : ""}

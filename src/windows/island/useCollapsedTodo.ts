@@ -7,6 +7,8 @@ import { useTranslation } from "../../i18n";
 import { useTodoRotation } from "./useIslandAutomation";
 import { alignCollapsedIslandWidth, getCollapsedIslandWidth } from "./layout";
 import { pickCollapsedItem } from "./collapsedItem";
+import { selectRotatingTodos } from "../../features/todos/todoRotation";
+import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 
 // Stands in for the agent icon (16px plus gap) when sizing the island for a session title.
 const AGENT_ICON_TEXT = "MM";
@@ -41,14 +43,21 @@ export function useCollapsedTodo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
   );
+  const rotationTodos = useMemo(() => selectRotatingTodos(todos, settings.todoRotationCount), [todos, settings.todoRotationCount]);
+  const rotationIds = useMemo(() => rotationTodos.map((todo) => todo.id), [rotationTodos]);
+  const rotating = settings.rotateTodos && !timer;
   const rotatingTodoId = useTodoRotation(
-    pendingTodoIds,
+    rotationIds,
     activeTodoId,
-    settings.rotateTodos && !timer,
+    rotating,
     settings.todoRotationSeconds,
-    isRotationPaused,
+    isRotationPaused || settings.todoRotationMode === "scroll",
   );
-  const displayedTodoId = timer ? activeTodoId : rotatingTodoId;
+  const displayedTodoId = timer ? activeTodoId : rotating && settings.todoRotationMode === "scroll" ? rotationIds[0] : rotatingTodoId;
+  const todoRotation: TodoRotationDisplay | null = rotating ? {
+    titles: rotationTodos.map((todo) => todo.title), mode: settings.todoRotationMode,
+    speed: settings.todoScrollSpeed, paused: isRotationPaused,
+  } : null;
   const collapsedTaskTitle = useMemo(() => {
     const activeTodo = todos.find(
       (todo) => todo.id === displayedTodoId && !todo.completed,
@@ -71,7 +80,9 @@ export function useCollapsedTodo(
     const fontScale = settings.islandFontPercent / 100;
     // A fixed width for the whole round; ticking digits never resize the native window.
     const timerText = timer ? (timer.notified ? t.todo.timeUp : formatTodoCountdown(timer.durationMinutes * 60)) : null;
-    const todoText = collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
+    const todoText = rotating && rotationTodos.length
+      ? rotationTodos.reduce((widest, todo) => getCollapsedIslandWidth(todo.title, 0, fontScale) > getCollapsedIslandWidth(widest, 0, fontScale) ? todo.title : widest, "")
+      : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
     const itemText = collapsedItem === "agent"
       ? AGENT_ICON_TEXT + agentTitle
       : collapsedItem === "lyrics" ? LYRICS_WIDTH_TEXT : collapsedItem === "todo" ? todoText : null;
@@ -83,7 +94,7 @@ export function useCollapsedTodo(
       window.devicePixelRatio,
     );
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer]);
+    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, rotating, rotationTodos]);
 
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth };
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation };
 }

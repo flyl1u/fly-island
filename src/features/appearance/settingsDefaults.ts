@@ -5,6 +5,7 @@ import {
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
   AUTO_COLLAPSE_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, TUCK_DELAY_SECONDS,
   AGENT_QUOTA_SOURCES, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT,
+  TODO_ROTATION_COUNT, TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED,
 } from "./settingsLimits.ts";
 import type { IslandSettings } from "./types";
 
@@ -76,7 +77,10 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoReorderVersion: 1,
   todoTimerEnabled: false,
   rotateTodos: false,
-  todoRotationSeconds: 5,
+  todoRotationSeconds: TODO_ROTATION_SECONDS.default,
+  todoRotationCount: TODO_ROTATION_COUNT.default,
+  todoRotationMode: "switch",
+  todoScrollSpeed: TODO_SCROLL_SPEED.default,
   autoTuck: true,
   tuckStyle: "line",
   tuckDelaySeconds: TUCK_DELAY_SECONDS.default,
