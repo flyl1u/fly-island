@@ -6,6 +6,7 @@ import type { useIslandNavigation } from "./useIslandNavigation";
 import { usePanelPreview } from "./usePanelPreview";
 import { useTuckedHoverOpen } from "./useTuckedHoverOpen";
 import type { IslandPage } from "./types";
+import { useIslandPickerOpen } from "../../lib/islandPicker";
 
 type IslandHoverOptions = {
   settings: IslandSettings;
@@ -20,6 +21,7 @@ type IslandHoverOptions = {
 
 /** Opening the island by hovering it, tucked or not, and the panel preview; returns the tucked island's hover handler. */
 export function useIslandHover({ settings, navigation, quiet, hasMessagePreview, namesAgent, openEnabledPage }: IslandHoverOptions) {
+  const pickerOpen = useIslandPickerOpen();
   const { mode, page, isTucked, isPeeking, collapseIsland, peekIsland, retractsAfterPeek, resumePeek } = navigation;
   // While the island names a running agent, opening it shows the Agent page.
   const openCurrentPage = useCallback(
@@ -30,6 +32,7 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     enabled: settings.expandTrigger === "hover" && !quiet,
     delayMs: settings.hoverExpandDelayMs,
     paused: hasMessagePreview,
+    pickerOpen,
     collapseDelayMs: settings.hoverCollapseDelayMs,
     mode,
     // A peeking island opens on a click only; hovering it just keeps it out.
@@ -46,7 +49,7 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     retractsAfterPeek,
     resumePeek,
   });
-  useHoverFocus(mode, quiet);
+  useHoverFocus(mode, quiet, pickerOpen);
   usePanelPreview({ navigation, quiet, hasMessagePreview });
   return hoverTucked;
 }

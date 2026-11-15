@@ -9,6 +9,7 @@ import { useIslandPosition } from "./useIslandPosition";
 import { useNativeLayout } from "./useNativeLayout";
 import { useSettingsPositionReset } from "./useSettingsPositionReset";
 import type { IslandMode, NativeGlassState } from "./types";
+import { isIslandPickerOpen } from "../../lib/islandPicker";
 
 type IslandWindowOptions = {
   mode: IslandMode;
@@ -168,7 +169,7 @@ export function useIslandWindow({
 
     void getCurrentWindow()
       .onFocusChanged(({ payload: focused }) => {
-        if (!focused && mode === "expanded") {
+        if (!focused && mode === "expanded" && !isIslandPickerOpen()) {
           onCollapse();
         }
       })

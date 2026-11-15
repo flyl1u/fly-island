@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { listenIslandHover } from "./api";
 import type { IslandMode } from "./types";
+import { isIslandPickerOpen } from "../../lib/islandPicker";
 
 // Controls on the collapsed island that act on their own (message preview, mail,
 // music). Resting on them must not open the panel over them.
@@ -14,6 +15,7 @@ type HoverExpandOptions = {
    * opens QQ or WeChat, so hovering must not open the panel over it.
    */
   paused: boolean;
+  pickerOpen?: boolean;
   /** How long the panel stays open after the cursor leaves it. */
   collapseDelayMs: number;
   mode: IslandMode;
@@ -42,7 +44,7 @@ export function isEditingText() {
  * and hovering the collapsed island never takes focus from the app the user is typing
  * in (the expanded panel takes it while under the cursor, see useHoverFocus).
  */
-export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
+export function useHoverExpand({ enabled, delayMs, paused, pickerOpen = false, collapseDelayMs, mode, isTucked, onExpand, onCollapse }: HoverExpandOptions) {
   const [isHovering, setIsHovering] = useState(false);
   const isHoveringRef = useRef(false);
   const modeRef = useRef(mode);
@@ -146,14 +148,14 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
   }, [delayMs, enabled, isHovering, isTucked, mode, onExpand, paused]);
 
   useEffect(() => {
-    if (!enabled || isHovering || mode !== "expanded" || !enteredRef.current) {
+    if (!enabled || pickerOpen || isHovering || mode !== "expanded" || !enteredRef.current) {
       return;
     }
 
     let timer: number | undefined;
     const close = () => {
       // Check again later rather than closing under a draft or a held drag.
-      if (pressingRef.current || isEditingText()) {
+      if (pressingRef.current || isEditingText() || isIslandPickerOpen()) {
         timer = window.setTimeout(close, Math.max(collapseDelayMs, 200));
         return;
       }
@@ -162,5 +164,5 @@ export function useHoverExpand({ enabled, delayMs, paused, collapseDelayMs, mode
 
     timer = window.setTimeout(close, collapseDelayMs);
     return () => window.clearTimeout(timer);
-  }, [collapseDelayMs, enabled, isHovering, mode, onCollapse]);
+  }, [collapseDelayMs, enabled, isHovering, mode, onCollapse, pickerOpen]);
 }

@@ -41,10 +41,10 @@ export function shiftMonth(month: string, delta: number) {
   return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/** The whole weeks, Monday first, that cover `month`: four to six rows of dates. */
-export function getMonthGrid(month: string): string[] {
+/** The whole weeks that cover `month`: four to six rows, Monday first unless specified. */
+export function getMonthGrid(month: string, weekStart: 0 | 1 = 1): string[] {
   const first = `${month}-01`;
-  const offset = (new Date(`${first}T00:00:00`).getDay() + 6) % 7;
+  const offset = (new Date(`${first}T00:00:00`).getDay() - weekStart + 7) % 7;
   const [year, monthIndex] = month.split("-").map(Number);
   const daysInMonth = new Date(year, monthIndex, 0).getDate();
   const start = addDays(first, -offset);
