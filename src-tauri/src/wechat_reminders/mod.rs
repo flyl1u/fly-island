@@ -594,13 +594,16 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
         let process = conversation.as_ref().map(|(_, process, _)| *process);
         let Some(window) = restore_wechat(process)? else {
             if process.is_some() && restore_wechat(None)?.is_some() {
+                eprintln!("wechat conversation: requested instance is unavailable");
                 return Ok(false);
             }
             // Not running: start it; the conversation cannot be located yet.
             launch::launch_installed()?;
+            eprintln!("wechat conversation: client was started; no live conversation yet");
             return Ok(false);
         };
         let Some((generation, process, key)) = conversation else {
+            eprintln!("wechat conversation: preview no longer exists");
             return Ok(false);
         };
         let still_allowed = || {
@@ -611,22 +614,38 @@ pub async fn open_wechat_conversation(message_id: String) -> Result<bool, String
             })
         };
         let id = format!("{}{key}", conversations::SESSION_PREFIX);
-        for _ in 0..5 {
+        let started = Instant::now();
+        loop {
             if !still_allowed()
                 || win32::process::window_process_id(window) != process.pid
                 || win32::process_times::start_time(process.pid) != Some(process.started_at)
             {
-                break;
+                eprintln!("wechat conversation: preview permission or process identity changed");
+                return Ok(false);
             }
-            if win32::uia_list::click_list_row(window, &id, still_allowed) {
-                return Ok(true);
+            match win32::uia_list::click_list_row(window, &id, still_allowed) {
+                Ok(()) => return Ok(true),
+                Err(reason) => eprintln!("wechat conversation: {reason}"),
             }
-            thread::sleep(Duration::from_millis(180));
+            let Some(delay) = conversation_retry_delay(started.elapsed()) else {
+                eprintln!("wechat conversation: timed out waiting for the row after 3 seconds");
+                return Ok(false);
+            };
+            thread::sleep(delay);
+            if conversation_retry_delay(started.elapsed()).is_none() {
+                eprintln!("wechat conversation: timed out waiting for the row after 3 seconds");
+                return Ok(false);
+            }
         }
-        Ok(false)
     })
     .await
     .map_err(|error| format!("打开微信会话的线程失败：{error}"))?
+}
+
+fn conversation_retry_delay(elapsed: Duration) -> Option<Duration> {
+    Duration::from_secs(3).checked_sub(elapsed)
+        .filter(|remaining| !remaining.is_zero())
+        .map(|remaining| remaining.min(Duration::from_millis(120)))
 }
 
 /// This module's Tauri commands. `lib.rs` chains every module's list into one

@@ -264,3 +264,11 @@ fn opening_an_older_conversation_keeps_the_newer_reminder_pending() {
     assert!(state.snapshot.pending);
     assert_eq!(state.snapshot.messages.len(), 1);
 }
+
+#[test]
+fn conversation_retry_stops_at_deadline_and_caps_the_last_wait() {
+    assert_eq!(conversation_retry_delay(Duration::ZERO), Some(Duration::from_millis(120)));
+    assert_eq!(conversation_retry_delay(Duration::from_millis(2_999)), Some(Duration::from_millis(1)));
+    assert_eq!(conversation_retry_delay(Duration::from_secs(3)), None);
+    assert_eq!(conversation_retry_delay(Duration::from_secs(4)), None);
+}

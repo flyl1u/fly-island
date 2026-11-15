@@ -18,19 +18,7 @@ use super::window;
 
 /// Clicks only the requested foreground window, leaving active mouse or keyboard gestures alone.
 pub(crate) fn click_in_foreground(target: HWND, point: POINT) -> bool {
-    let can_click = || {
-        if target.is_invalid()
-            || window::foreground_window() != target
-            || is_any_button_down()
-            || [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
-                .into_iter()
-                .any(is_key_down)
-        {
-            return false;
-        }
-        // SAFETY: both window queries take values, and can return a null HWND.
-        unsafe { GetAncestor(WindowFromPoint(point), GA_ROOT) == target }
-    };
+    let can_click = || click_block_reason(target, point).is_none();
     if !can_click() {
         return false;
     }
@@ -73,6 +61,23 @@ pub(crate) fn click_in_foreground(target: HWND, point: POINT) -> bool {
         let _ = unsafe { SetCursorPos(previous.x, previous.y) };
     }
     sent == 2
+}
+
+pub(crate) fn click_block_reason(target: HWND, point: POINT) -> Option<&'static str> {
+    if target.is_invalid() || window::foreground_window() != target {
+        return Some("target is not foreground");
+    }
+    if is_any_button_down() {
+        return Some("mouse button is held");
+    }
+    if [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN].into_iter().any(is_key_down) {
+        return Some("modifier key is held");
+    }
+    // SAFETY: both queries accept values and can return a null HWND.
+    if unsafe { GetAncestor(WindowFromPoint(point), GA_ROOT) != target } {
+        return Some("point is covered by another window");
+    }
+    None
 }
 
 /// Whether the left mouse button is physically held right now.

@@ -41,6 +41,7 @@ window.addEventListener("beforeunload", restoreStorage);
 let revision = 0;
 const commands: string[] = [];
 let openedChatId: unknown;
+let canOpenChat = true;
 let mail: MailSnapshot = {
   revision: 0, email: "island-test@qq.com", configured: true, enabled: true, syncing: false,
   status: "connected", unreadCount: 0, items: [], lastSyncedAt: null, error: null,
@@ -58,7 +59,7 @@ mockIPC((command, payload) => {
   };
   if (command === "open_wechat_conversation") {
     openedChatId = args.messageId;
-    return true;
+    return canOpenChat;
   }
   if (command === "get_qq_mail_state") return [mail];
   if (command === "read_qq_mail") return { id: args.messageId, content: "本周项目进度已更新", contentType: "text/plain" };
@@ -219,6 +220,11 @@ async function runChecks() {
     await act(async () => button().click());
     check(commands.includes("open_wechat_conversation") && openedChatId === `wx-${revision}` &&
       !summary().querySelector(".island-message-preview"), "点击折叠岛微信摘要跳到对应会话并结束预览");
+    canOpenChat = false;
+    await notify("wechat", true);
+    await act(async () => button().click());
+    check(openedPage === "wechat", "会话定位失败会打开岛内消息页");
+    canOpenChat = true;
     await notify("wechat");
     await act(async () => button().click());
     check(commands.includes("open_wechat"), "点击普通提醒打开微信主窗口");

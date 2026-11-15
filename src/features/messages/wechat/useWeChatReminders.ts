@@ -84,7 +84,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true, previe
     return () => window.clearTimeout(timer);
   }, [previewWindow]);
 
-  const run = useCallback(async (action: () => Promise<void>) => {
+  const run = useCallback(async (action: () => Promise<void | boolean>) => {
     if (actionPending.current) return;
     if (!isTauri()) {
       setActionError(t.wechat.desktopOnly);
@@ -94,8 +94,7 @@ export function useWeChatReminders(canPreview: boolean, { restore = true, previe
     setBusy(true);
     setActionError(null);
     try {
-      await action();
-      return true;
+      return (await action()) !== false;
     } catch (error) {
       setActionError(weChatOpenErrorText(error, t.wechat.openErrors));
       return false;
@@ -129,14 +128,17 @@ export function useWeChatReminders(canPreview: boolean, { restore = true, previe
 
   /** Opening one conversation reads all of its previews; the other chats stay. */
   const openWeChat = useCallback((messageId?: string) => run(async () => {
+    let opened = true;
     if (messageId) {
-      if (!await launchWeChatConversation(messageId)) setActionError(t.wechat.jumpUnavailable);
+      opened = await launchWeChatConversation(messageId);
+      if (!opened) setActionError(t.wechat.jumpUnavailable);
       // WeChat is already open; a list that failed to update is not worth an error.
       await dismissWeChatConversation(messageId).then(acceptSnapshot).catch(() => undefined);
     } else {
       await launchWeChat();
     }
     setPreviewWindow(null);
+    return opened;
   }), [acceptSnapshot, run, t.wechat.jumpUnavailable]);
 
   const latest = snapshot.messages[0];
