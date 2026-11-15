@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { SessionFilter } from "./sessionList";
 import { dshProblem, getAgentUsage, getCodexUsage, getDshUsage } from "./api";
 import { EMPTY_USAGES, withoutPastWindows, type AgentUsages } from "./usage";
+import { usePlugins } from "../plugins";
 
 /** claude-hud refreshes its snapshot about once a minute; reading local files is cheap. */
 const REFRESH_MS = 30_000;
@@ -13,6 +14,7 @@ const ALL_SOURCES: SessionFilter = { claudeCode: true, codex: true, dsh: true };
  * The caller selects which sources need a read for the rings or alerts.
  */
 export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURCES): AgentUsages {
+  const plugins = usePlugins();
   const [usages, setUsages] = useState<AgentUsages>(EMPTY_USAGES);
   const showClaude = show.claudeCode !== false;
   const showCodex = show.codex !== false;
@@ -59,5 +61,6 @@ export function useAgentUsages(enabled: boolean, show: SessionFilter = ALL_SOURC
     codex: enabled && showCodex ? usages.codex : null,
     dsh: enabled && showDsh ? usages.dsh : null,
     dshProblem: enabled && showDsh ? usages.dshProblem : null,
-  }), [enabled, usages, showClaude, showCodex, showDsh]);
+    plugins: enabled ? Object.entries(plugins.live).flatMap(([id, live]) => plugins.registry.installed[id]?.enabled && live.status === "running" ? live.quota.map((q) => ({ ...q, id: `${id}/${q.id}` })) : []) : [],
+  }), [enabled, usages, showClaude, showCodex, showDsh, plugins]);
 }

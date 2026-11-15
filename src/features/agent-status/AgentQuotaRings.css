@@ -8,7 +8,9 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
 
 .agent-quota__agent {
@@ -122,3 +124,4 @@
   min-width: 22px;
   flex-shrink: 1;
 }
+.agent-quota__agent--plugin { --quota-base: #43b4a5; }

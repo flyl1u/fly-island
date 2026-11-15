@@ -48,3 +48,11 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 
 用户点击安装后才写入网易云目录的 `msimg32.dll` 和 `BETTERNCM_PROFILE`（默认 `C:\betterncm`）下的 `plugins/InfLink-rs.plugin`。卸载保留加载器生成的其他数据；只删除记录中且哈希未变化的文件。组件从 GitHub 运行时下载，不随安装包分发。
 
+
+## 插件 API v1
+
+原生应用数据目录下 `plugins-state.json` 保存安装清单、启用状态、非秘密插件 settings、开发模式与索引 URL；临时原子写文件 `plugins-state.json.tmp`。这是需要在前端启动前恢复进程的安装注册表，不扩展或迁移现有 focusd-island-settings。秘密存 Windows 凭据管理器 service `com.focusd.island.plugins`，account `<id>/<setting-key>`，只经 stdin 发给对应插件，不返回前端。
+
+`plugins/<id>/` 存经索引校验的包；`.staging-<id>` / `.backup-<id>` 只用于安装事务。`plugin-logs/<id>.log` 保存有限 stderr。额度、会话和通知仅在内存，停用清空，不落盘。开发目录路径记录在注册表，卸载不会删除开发目录。
+
+仓库内 `artifacts/plugins/` 为忽略的 zip 与 plugins-index.json 构建产物；本地测试数据在 node_modules/.cache/plugin-tests/。插件 crate 的 target 不入库。

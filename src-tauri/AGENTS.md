@@ -101,3 +101,5 @@ src-tauri/src/
 - clippy lint 在 `Cargo.toml` 的 `[lints.clippy]` 中声明（`undocumented_unsafe_blocks`、`unwrap_used`、`expect_used` 为 deny），测试代码的放行写在 `clippy.toml`；不要在源文件中用 `#![warn]` / `#[allow]` 重复声明这些 lint。`cargo clippy --all-targets` 保持 0 告警；个别确实无法消除的默认 lint（例如参数即 IPC 契约的命令触发 `too_many_arguments`）在该项上用带 `reason` 的 `#[expect(...)]`。
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。
+
+插件 API v1：`plugin_host/` 为 manifest / protocol / packages / storage / process / service 分层，插件源码在仓库 `plugins/<id>/` 独立 crate；这些 crate 不加入主程序 workspace。新增插件不能把网络、数据库或客户端依赖引入主程序。

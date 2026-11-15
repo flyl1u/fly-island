@@ -3,6 +3,7 @@ import { Archive } from "lucide-react";
 import { ArchivedNotice } from "./ArchivedNotice";
 import { useArchiveMotion } from "./useArchiveMotion";
 import { useTranslation } from "../../i18n";
+import { runPluginAction } from "../plugins";
 import type { AgentArchiveMotion, AgentCardEffects, AgentHostDisplay, AgentSessionGroup, AgentSessionSort, AgentSessionView } from "../appearance/types";
 import { AgentSessionCard } from "./AgentSessionCard";
 import { AgentProviderIcon } from "./AgentProviderIcon";
@@ -125,7 +126,8 @@ export function AgentSessionsPanel({
     // A session on another computer runs in a terminal tab or editor window connected to it
     // (a WezTerm SSH tab, VS Code Remote): found by title and folder only, as its process and
     // session id mean nothing here.
-    void focusAgentWindow(session.provider, session.cwd, session.title, session.remoteHost ? "" : session.sessionId)
+    const opening = session.pluginId ? (session.pluginAction ? runPluginAction(session.pluginId, session.pluginAction).then(() => true) : Promise.resolve(false)) : focusAgentWindow(session.provider, session.cwd, session.title, session.remoteHost ? "" : session.sessionId);
+    void opening
       .then((found) => {
         if (!found) setNotFoundId(session.sessionId);
       })

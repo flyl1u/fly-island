@@ -8,6 +8,7 @@ import { QuotaRings } from "./QuotaRings";
 import { WorkbuddyQuotaRing } from "./WorkbuddyQuotaRing";
 import { QUOTA_COLORS } from "./quotaColors";
 import "./AgentQuotaRings.css";
+import { PluginQuotaRings } from "./PluginQuotaRings";
 
 export { QUOTA_COLORS } from "./quotaColors";
 
@@ -28,6 +29,7 @@ export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
       {shown.map(([provider, usage]) => <AgentQuota key={provider} provider={provider} usage={usage} now={usages.readAt} />)}
       {usages.dsh ? <DshQuotaRing usage={usages.dsh} now={usages.readAt} /> : usages.dshProblem && <DshProblemNote problem={usages.dshProblem} />}
       {usages.workbuddy && <WorkbuddyQuotaRing usage={usages.workbuddy} now={Math.max(usages.readAt, usages.workbuddy.updatedAt)} />}
+      <PluginQuotaRings items={usages.plugins ?? []} />
     </div>
   );
 }

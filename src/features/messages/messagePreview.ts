@@ -1,7 +1,7 @@
 import zhCN from "../../i18n/locales/zh-CN.ts";
 import type { Translations } from "../../i18n/types";
 
-export type MessageSource = "qq" | "wechat" | "qqMail";
+export type MessageSource = "qq" | "wechat" | "qqMail" | "plugin";
 export type MessagePreview = {
   source: MessageSource;
   title: string;

@@ -22,6 +22,7 @@ export const AGENT_PROVIDER_LABELS: Record<AgentProvider, string> = {
   claudeCode: "Claude Code",
   dsh: "DeepSeek Harness",
   workbuddy: "WorkBuddy",
+  plugin: "Plugin",
 };
 /** One row of agent status: a built-in provider or a source reported by a plugin or the local API. */
 export type AgentStatusEntry = {

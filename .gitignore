@@ -41,3 +41,5 @@ src-tauri/tauri.release.conf.json
 *.sw?
 /demo.mp4
 *.vsix
+/artifacts/plugins/
+/plugins/**/target/

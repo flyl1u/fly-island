@@ -1,0 +1,12 @@
+{
+  "id": "example-hello",
+  "name": { "zh-CN": "Hello 示例", "en": "Hello example" },
+  "description": { "zh-CN": "额度、会话与消息", "en": "Quota, sessions and messages" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "example-hello.exe" },
+  "permissions": ["quota", "sessions", "notifications"],
+  "contributes": ["quota", "sessions", "notifications"],
+  "settings": [{ "key": "interval", "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" }, "type": "select", "default": "30", "options": [{ "value": "5", "label": { "zh-CN": "5 秒", "en": "5 seconds" } }, { "value": "30", "label": { "zh-CN": "30 秒", "en": "30 seconds" } }] }],
+  "actions": []
+}

@@ -83,6 +83,8 @@ mockIPC((command, payload) => {
     case "plugin:app|version": return "0.0.0-test";
     case "get_agent_hooks_state": return { codex: "notInstalled", claudeCode: "notInstalled", scriptsOutdated: false };
     case "list_sound_packs": return [{ id: "chimes-1", name: "Chimes", author: "Ann", license: "CC0-1.0", sounds: { complete: "complete.wav", error: "error.wav" } }];
+    case "get_plugins": return { registry: { installed: {}, developerMode: false, indexUrl: "" }, live: {} };
+    case "get_plugins_index": return [];
     default: return null;
   }
 }, { shouldMockEvents: true });

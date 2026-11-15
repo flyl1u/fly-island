@@ -50,7 +50,20 @@ jobs:
         run: pnpm test:regression
 
       - name: Rust tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
+        run: |
+          cargo build --manifest-path plugins/example-hello/Cargo.toml
+          cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Example plugin clippy
+        run: cargo clippy --manifest-path plugins/example-hello/Cargo.toml --all-targets -- -D warnings
+
+      - name: Plugin SDK tests
+        run: cargo test --manifest-path plugins/sdk/Cargo.toml
+
+      - name: Plugin SDK clippy
+        run: cargo clippy --manifest-path plugins/sdk/Cargo.toml --all-targets -- -D warnings
 
       # 结构重构后 clippy 为 0 告警（AGENTS.md），新告警直接让检查失败。
       - name: Clippy

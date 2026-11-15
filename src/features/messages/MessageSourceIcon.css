@@ -8,3 +8,6 @@
   border-radius: var(--corner-xs);
   corner-shape: var(--corner-shape);
 }
+.message-plugin-badge { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 4px; font: 600 11px/1 system-ui; color: white; background: #1685ef; }
+.message-plugin-badge--feishu { background: #3370ff; }
+.message-plugin-badge--wework { background: #3275f5; }
