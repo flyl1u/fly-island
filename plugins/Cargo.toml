@@ -8,5 +8,6 @@ members = [
     "zcode",
     "doubao",
     "hermes",
+    "office-im",
 ]
 resolver = "2"

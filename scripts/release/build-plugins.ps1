@@ -12,9 +12,16 @@ Get-ChildItem -LiteralPath (Join-Path $workspace 'plugins') -Directory | ForEach
     $manifest = Get-Content -Raw -Encoding UTF8 $manifestPath | ConvertFrom-Json
     if ($manifest.id -notmatch '^[a-z][a-z0-9.-]{0,99}$' -or $manifest.id.Contains('..')) { throw 'Invalid plugin ID' }
     if ($Ids.Count -gt 0 -and $manifest.id -notin $Ids) { return }
-    & cargo build --release --manifest-path (Join-Path $_.FullName 'Cargo.toml')
+    $target = if ($env:CARGO_TARGET_DIR) {
+        $env:CARGO_TARGET_DIR
+    } elseif (Test-Path ~/.cargo/config.toml) {
+        $cfg = Get-Content ~/.cargo/config.toml -Raw
+        if ($cfg -match 'target-dir\s*=\s*["'']([^"'']+)["'']') { $matches[1] } else { Join-Path $_.FullName 'target' }
+    } else {
+        Join-Path $_.FullName 'target'
+    }
+    & cargo build --release --manifest-path (Join-Path $_.FullName 'Cargo.toml') --target-dir $target
     if ($LASTEXITCODE -ne 0) { throw "Plugin build failed: $($manifest.id)" }
-    $target = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $_.FullName 'target' }
     $stage = Join-Path $output ".stage-$($manifest.id)"
     $stage = [IO.Path]::GetFullPath($stage)
     if (-not $stage.StartsWith($output + [IO.Path]::DirectorySeparatorChar)) { throw 'Unsafe plugin staging path' }

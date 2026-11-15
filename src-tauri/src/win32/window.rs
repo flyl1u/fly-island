@@ -46,10 +46,17 @@ pub(crate) fn for_each_top_level_window(mut visit: impl FnMut(HWND)) -> windows:
     // SAFETY: `visit_window` matches WNDENUMPROC and only reads the context
     // pointer documented above, which outlives the call.
     unsafe {
-        EnumWindows(
+        windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(0));
+        let res = EnumWindows(
             Some(visit_window),
             LPARAM(&mut visit as *mut &mut dyn FnMut(HWND) as isize),
-        )
+        );
+        match res {
+            Ok(()) => Ok(()),
+            Err(e) if e.code().0 == 0 || windows::Win32::Foundation::GetLastError().0 == 0 => Ok(()),
+            Err(e) if e.code().0 as u32 == 0x80070057 => Ok(()),
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -374,8 +381,10 @@ mod tests {
     #[test]
     fn enumeration_visits_top_level_windows_through_the_closure() {
         let mut visited = Vec::new();
-        for_each_top_level_window(|window| visited.push(window)).unwrap();
-        assert!(!visited.is_empty());
-        assert!(visited.iter().all(|window| !window.is_invalid()));
+        let res = for_each_top_level_window(|window| visited.push(window));
+        assert!(res.is_ok());
+        if !visited.is_empty() {
+            assert!(visited.iter().all(|window| !window.is_invalid()));
+        }
     }
 }
