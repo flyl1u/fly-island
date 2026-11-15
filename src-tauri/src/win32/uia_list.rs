@@ -155,18 +155,17 @@ pub(crate) fn click_list_row(
     window: HWND,
     automation_id: &str,
     still_allowed: impl Fn() -> bool,
-) -> bool {
+) -> Result<(), String> {
     if window::foreground_window() != window || !still_allowed() {
-        return false;
+        return Err("foreground or preview permission changed".into());
     }
-    let Some(automation) = Automation::new() else {
-        return false;
-    };
+    let automation = Automation::new().ok_or("UI Automation initialization failed")?;
     enum Target {
         Selected,
         Click(POINT),
+        Wait(&'static str),
     }
-    let find = || -> windows::core::Result<Option<Target>> {
+    let find = || -> windows::core::Result<Target> {
         let client = &automation.client;
         // SAFETY: COM is initialized by Automation and all UIA references remain on this thread.
         // The only raw output pointer is the address of a writable POINT.
@@ -177,54 +176,80 @@ pub(crate) fn click_list_row(
                 &VARIANT::from(automation_id),
             )?;
             let matches = root.FindAll(TreeScope_Descendants, &exact)?;
-            if matches.Length()? != 1 {
-                return Ok(None);
+            match matches.Length()? {
+                0 => return Ok(Target::Wait("row not found")),
+                1 => {},
+                _ => return Ok(Target::Wait("more than one matching row")),
             }
             let row = matches.GetElement(0)?;
             if row.CurrentIsOffscreen()?.as_bool() {
                 if window::foreground_window() != window || !still_allowed() {
-                    return Ok(None);
+                    return Ok(Target::Wait("foreground or preview permission changed before scrolling"));
                 }
                 let scroll: IUIAutomationScrollItemPattern =
                     row.GetCurrentPatternAs(UIA_ScrollItemPatternId)?;
                 scroll.ScrollIntoView()?;
-            }
-            // A selected row inside a hidden page (another tab) stays offscreen; that page is not open.
-            if !row.CurrentIsOffscreen()?.as_bool()
-                && row
-                    .GetCurrentPropertyValue(UIA_SelectionItemIsSelectedPropertyId)
-                    .ok()
-                    .and_then(|value| bool::try_from(&value).ok())
-                    .unwrap_or(false)
-            {
-                return Ok(Some(Target::Selected));
-            }
-            let mut point = POINT::default();
-            if !row
-                .GetClickablePoint(&mut point)
-                .is_ok_and(|has_point| has_point.as_bool())
-            {
-                let bounds = row.CurrentBoundingRectangle()?;
-                if bounds.left >= bounds.right
-                    || bounds.top >= bounds.bottom
-                    || row.CurrentIsOffscreen()?.as_bool()
-                {
-                    return Ok(None);
+                // Qt lays out the scrolled list asynchronously. Require two stable samples;
+                // the caller retries the lookup if this element moves or becomes stale.
+                std::thread::sleep(std::time::Duration::from_millis(60));
+                let before = row.CurrentBoundingRectangle()?;
+                std::thread::sleep(std::time::Duration::from_millis(60));
+                if before != row.CurrentBoundingRectangle()? {
+                    return Ok(Target::Wait("row layout is still moving after scrolling"));
                 }
-                point.x = bounds.left.midpoint(bounds.right);
-                point.y = bounds.top.midpoint(bounds.bottom);
             }
-            if point_hits_row(client, point, &row) {
-                return Ok(Some(Target::Click(point)));
+            if row.CurrentIsOffscreen()?.as_bool() {
+                return Ok(Target::Wait("row remains offscreen"));
             }
-            Ok(None)
+            // Clicking a selected row toggles the conversation closed in WeChat.
+            if row.GetCurrentPropertyValue(UIA_SelectionItemIsSelectedPropertyId)
+                .ok().and_then(|value| bool::try_from(&value).ok()).unwrap_or(false)
+            {
+                return Ok(Target::Selected);
+            }
+            let bounds = row.CurrentBoundingRectangle()?;
+            if bounds.left >= bounds.right || bounds.top >= bounds.bottom {
+                return Ok(Target::Wait("row has empty bounds"));
+            }
+            let mut points = row_click_points(bounds);
+            let mut clickable = POINT::default();
+            if row.GetClickablePoint(&mut clickable).is_ok_and(|found| found.as_bool())
+                && clickable.x >= bounds.left && clickable.x < bounds.right
+                && clickable.y >= bounds.top && clickable.y < bounds.bottom
+            {
+                points.insert(0, clickable);
+            }
+            let mut reason = "point does not hit the target UIA row";
+            for point in points {
+                // A topmost island can cover the preferred point. Try other points inside
+                // this exact row, retaining both the native window and UIA ancestry checks.
+                if let Some(blocked) = input::click_block_reason(window, point) {
+                    reason = blocked;
+                } else if point_hits_row(client, point, &row) {
+                    return Ok(Target::Click(point));
+                }
+            }
+            Ok(Target::Wait(reason))
         }
     };
-    match find().ok().flatten() {
-        Some(Target::Selected) => still_allowed(),
-        Some(Target::Click(point)) => still_allowed() && input::click_in_foreground(window, point),
-        None => false,
+    match find().map_err(|error| format!("UI Automation lookup failed: {error}"))? {
+        Target::Selected if still_allowed() => Ok(()),
+        Target::Click(point) if still_allowed() => {
+            if input::click_in_foreground(window, point) { Ok(()) }
+            else { Err(input::click_block_reason(window, point).unwrap_or("mouse input failed or cursor moved").into()) }
+        },
+        Target::Wait(reason) => Err(reason.into()),
+        _ => Err("preview permission changed before activation".into()),
     }
+}
+
+fn row_click_points(bounds: RECT) -> Vec<POINT> {
+    [50, 15, 85].into_iter().flat_map(|y| {
+        [50, 15, 85].into_iter().map(move |x| POINT {
+            x: bounds.left + (bounds.right - bounds.left - 1) * x / 100,
+            y: bounds.top + (bounds.bottom - bounds.top - 1) * y / 100,
+        })
+    }).collect()
 }
 
 /// Locate a unique, named button in the upper-right corner of a window's caption.
@@ -296,6 +321,17 @@ fn point_hits_row(client: &IUIAutomation, point: POINT, row: &IUIAutomationEleme
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn alternate_click_points_stay_inside_even_a_single_pixel_row() {
+        for bounds in [RECT { left: 10, top: 20, right: 110, bottom: 80 },
+            RECT { left: -5, top: -2, right: -4, bottom: -1 }] {
+            let points = row_click_points(bounds);
+            assert_eq!(points.len(), 9);
+            assert!(points.iter().all(|point| point.x >= bounds.left && point.x < bounds.right
+                && point.y >= bounds.top && point.y < bounds.bottom));
+        }
+    }
 
     #[test]
     fn caption_bounds_allow_fractional_dpi_rounding() {
