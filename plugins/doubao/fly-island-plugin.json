@@ -1,0 +1,35 @@
+{
+  "id": "doubao",
+  "name": { "zh-CN": "字节豆包", "en": "Doubao" },
+  "description": { "zh-CN": "豆包网页会员额度与周期", "en": "Doubao membership quota and weekly cycle" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "doubao.exe" },
+  "permissions": ["quota", "network", "read-home-files"],
+  "contributes": ["quota"],
+  "settings": [
+    {
+      "key": "cookie",
+      "label": { "zh-CN": "Cookie（可选覆盖）", "en": "Cookie (optional override)" },
+      "type": "secret",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "180", "label": { "zh-CN": "3 分钟", "en": "3 minutes" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "login",
+      "label": { "zh-CN": "浏览器登录", "en": "Browser Login" }
+    }
+  ]
+}

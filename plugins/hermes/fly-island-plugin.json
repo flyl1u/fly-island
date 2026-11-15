@@ -1,0 +1,30 @@
+{
+  "id": "hermes",
+  "name": { "zh-CN": "Hermes Agent", "en": "Hermes Agent" },
+  "description": { "zh-CN": "Nous Research Hermes Agent 本地会话列表", "en": "Nous Research Hermes Agent local sessions" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "hermes.exe" },
+  "permissions": ["sessions", "read-home-files"],
+  "contributes": ["sessions"],
+  "settings": [
+    {
+      "key": "sessions_dir",
+      "label": { "zh-CN": "会话存储目录（可选覆盖）", "en": "Sessions directory (optional override)" },
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "interval",
+      "label": { "zh-CN": "刷新间隔", "en": "Refresh interval" },
+      "type": "select",
+      "default": "60",
+      "options": [
+        { "value": "30", "label": { "zh-CN": "30 秒", "en": "30 seconds" } },
+        { "value": "60", "label": { "zh-CN": "1 分钟", "en": "1 minute" } },
+        { "value": "300", "label": { "zh-CN": "5 分钟", "en": "5 minutes" } }
+      ]
+    }
+  ],
+  "actions": []
+}

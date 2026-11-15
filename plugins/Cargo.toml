@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "sdk",
+    "example-hello",
+    "kimi",
+    "grok-bot",
+    "gemini",
+    "zcode",
+    "doubao",
+    "hermes",
+]
+resolver = "2"
