@@ -1,9 +1,24 @@
+import { useState, type CSSProperties } from "react";
 import type { MediaState } from "./api";
-import { songOffsetKey } from "./lyrics/lrc";
+import { songOffsetKey, wordFill, type LyricWord } from "./lyrics/lrc";
+import { lyricClockAt } from "./lyrics/lyricClock";
 import { useLyricClock } from "./lyrics/useLyricClock";
 import { useLyrics, type LyricsSettings } from "./lyrics/useLyrics";
 import { useSongOffset } from "./lyrics/useSongOffset";
 import "./CollapsedLyric.css";
+
+/** Snapshot the lyric clock on mount; CSS fills every frame without re-rendering the island. */
+function CollapsedSungWords({ words, mediaState, offsetMs, playing }: {
+  words: LyricWord[]; mediaState: MediaState; offsetMs: number; playing: boolean;
+}) {
+  const [start] = useState(() => lyricClockAt(null, mediaState, Date.now(), offsetMs).position);
+  return words.map((word, index) => {
+    const { delayMs, durationMs } = wordFill(word, start);
+    const style = { animationDelay: `${delayMs}ms`, animationDuration: `${durationMs}ms`,
+      animationPlayState: playing ? "running" : "paused" } as CSSProperties;
+    return <span className="collapsed-lyric__word" key={index} style={style}>{word.text}</span>;
+  });
+}
 
 /**
  * The line being sung, for the collapsed island; the song's title and artist when it has no
@@ -22,11 +37,16 @@ export function CollapsedLyric({
 }) {
   const { lines } = useLyrics(mediaState, lyricsSettings);
   const [songOffsetMs] = useSongOffset(lines ? songOffsetKey(mediaState) : null);
-  const { index } = useLyricClock(lines, mediaState, lyricsSettings.lyricsOffsetMs + songOffsetMs, active);
+  const offsetMs = lyricsSettings.lyricsOffsetMs + songOffsetMs;
+  const { index, playing } = useLyricClock(lines, mediaState, offsetMs, active);
   const song = [mediaState.title, mediaState.artist].filter(Boolean).join(" · ");
-  const line = lines && index >= 0 ? lines[index].text : "";
+  const line = lines && index >= 0 ? lines[index] : null;
+  const words = lyricsSettings.lyricWordFill !== false && line?.text ? line.words : undefined;
 
   return (
-    <span className="collapsed-lyric">{line || song}</span>
+    <span className="collapsed-lyric">{words ? <CollapsedSungWords
+      key={`${index}:${mediaState.updatedAt}:${offsetMs}:${active}:${playing}`}
+      words={words} mediaState={mediaState} offsetMs={offsetMs} playing={playing && active}
+    /> : line?.text || song}</span>
   );
 }

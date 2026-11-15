@@ -29,12 +29,12 @@ function SungWords({ words, positionMs, playing }: { words: LyricWord[]; positio
  * the one before and the one after. A line with a translation shows it under itself in place
  * of the next line. `offsetMs` moves the lyrics later (positive) or earlier.
  */
-export function LyricsView({ lines, mediaState, offsetMs, onPosition }: {
-  lines: LyricLine[]; mediaState: MediaState; offsetMs: number; onPosition?: (ms: number) => void;
+export function LyricsView({ lines, mediaState, offsetMs, onPosition, wordFillEnabled = true }: {
+  lines: LyricLine[]; mediaState: MediaState; offsetMs: number; onPosition?: (ms: number) => void; wordFillEnabled?: boolean;
 }) {
   const t = useTranslation();
   const { index, position, playing } = useLyricClock(lines, mediaState, offsetMs);
-  const words = index >= 0 ? lines[index].words : undefined;
+  const words = wordFillEnabled && index >= 0 ? lines[index].words : undefined;
   const text = (at: number) => (at >= 0 && at < lines.length ? lines[at].text : "");
   // Before the first line (the intro) and in breaks, a note holds the middle row, so the first
   // line waits below it rather than standing alone.

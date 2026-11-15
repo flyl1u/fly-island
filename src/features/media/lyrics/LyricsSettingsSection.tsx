@@ -33,6 +33,11 @@ export function LyricsSettingsSection({
           onChange={(lyricsChinese) => onSettingsChange({ ...settings, lyricsChinese })}
         />
       )}
+      <SettingsToggleRow
+        title={text.wordFill}
+        checked={settings.lyricWordFill}
+        onChange={(lyricWordFill) => onSettingsChange({ ...settings, lyricWordFill })}
+      />
     </SettingsGroup>
   );
 }

@@ -120,7 +120,8 @@ export function MusicPlayerPanel({
 
       {lyrics && (
         <div className="music-player__lyrics">
-          <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs + songOffsetMs} onPosition={onLyricPosition} />
+          <LyricsView lines={lyrics} mediaState={mediaState} offsetMs={lyricsSettings.lyricsOffsetMs + songOffsetMs}
+            wordFillEnabled={lyricsSettings.lyricWordFill !== false} onPosition={onLyricPosition} />
           <LyricsOffsetControl offsetMs={songOffsetMs} onChange={setSongOffsetMs} />
         </div>
       )}
