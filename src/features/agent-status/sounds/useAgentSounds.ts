@@ -3,6 +3,7 @@ import { agentSessionsInFront, type AgentSessionSummary } from "../api";
 import { sessionKey } from "../unseen";
 import { announceTiming, emptyAnnounced, isUsersTurn, settledFinishes, settledWaits } from "../announce";
 import { soundFor, type AgentSoundEvent } from "./events";
+import { hasNewCompletion } from "../completion";
 import { compactStarted, emptyIdleSessions, takeIdleSessions } from "./idle";
 import { playAgentSound } from "./player";
 import type { AgentSoundSettings } from "./storage";
@@ -14,7 +15,7 @@ const PRIORITY: AgentSoundEvent[] = ["error", "approval", "question", "complete"
 /** How often finished, unread sessions are checked for the idle sound. */
 const IDLE_CHECK_MS = 30_000;
 
-type Seen = { phase: AgentSessionSummary["phase"]; compacting: boolean };
+type Seen = { phase: AgentSessionSummary["phase"]; compacting: boolean; completedAt?: number | null };
 type Change = { event: AgentSoundEvent; session: AgentSessionSummary };
 
 /**
@@ -38,12 +39,12 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
 
   useEffect(() => {
     const previous = seenRef.current;
-    seenRef.current = new Map(sessions.map((session) => [sessionKey(session), { phase: session.phase, compacting: session.compacting === true }]));
-    // The first look only takes note of where every session stands.
-    if (!previous) return;
+    seenRef.current = new Map(previous);
+    for (const session of sessions) seenRef.current.set(sessionKey(session), { phase: session.phase, compacting: session.compacting === true, completedAt: session.lastCompletedAt });
     const changes = sessions.flatMap((session): Change[] => {
-      const before = previous.get(sessionKey(session));
-      const event = soundFor(before?.phase, session.phase, session);
+      const before = previous?.get(sessionKey(session));
+      if (!previous && !hasNewCompletion(undefined, session)) return [];
+      const event = soundFor(before?.phase, session.phase, session, before?.completedAt);
       if (event) return [{ event, session }];
       return compactStarted(before?.compacting, session) ? [{ event: "compact", session }] : [];
     });

@@ -67,6 +67,8 @@ export type AgentSessionSummary = {
   host: SessionHost | null;
   /** When the newest prompt was sent (Unix ms): the current or last turn runs from here. */
   turnStartedAt: number | null;
+  /** Latest explicit Codex task_complete timestamp; absent in older builds and other providers. */
+  lastCompletedAt?: number | null;
   /**
    * When the user last typed a prompt (Unix ms), not one Claude Code wrote by itself (a background
    * task's note, another session's message); null when none is known. Missing from older builds.
