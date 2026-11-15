@@ -7,10 +7,11 @@
 use serde_json::Value;
 
 use super::found::{browser_client, from_lines, lrc_lines, FoundLyrics};
-use super::matching::same_track;
+use super::{matching::same_track, word_formats};
 
 const SEARCH: &str = "http://music.163.com/api/search/get/web";
 const LYRIC: &str = "https://music.163.com/api/song/lyric";
+const WORD_LYRIC: &str = "https://music.163.com/api/song/lyric/v1";
 const REFERER: &str = "https://music.163.com/";
 
 /// The id and length of the search result that is the playing track; the closest length wins,
@@ -52,8 +53,11 @@ async fn get_json(client: &reqwest::Client, url: &str, query: &[(&str, String)])
 
 /// The lyrics of a song id: its LRC with the translation lines matched by time.
 pub(super) fn lyrics_of(answer: &Value, title: &str) -> Option<FoundLyrics> {
-    let lines = lrc_lines(answer["lrc"]["lyric"].as_str()?);
-    let translated = lrc_lines(answer["tlyric"]["lyric"].as_str().unwrap_or_default());
+    let words = word_formats::yrc(answer["yrc"]["lyric"].as_str().unwrap_or_default());
+    let has_words = !words.is_empty();
+    let lines = if has_words { words } else { lrc_lines(answer["lrc"]["lyric"].as_str()?) };
+    let translated = lrc_lines(if has_words { answer["ytlrc"]["lyric"].as_str() } else { None }
+        .or_else(|| answer["tlyric"]["lyric"].as_str()).unwrap_or_default());
     let translations: Vec<String> = lines
         .iter()
         .map(|(ms, _)| translated.iter().find(|(at, _)| at.abs_diff(*ms) < 50).map(|(_, text)| text.clone()).unwrap_or_default())
@@ -77,7 +81,13 @@ pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64, player_id
             found
         }
     };
-    let query = [("id", id.to_string()), ("lv", "-1".into()), ("kv", "-1".into()), ("tv", "-1".into())];
+    let query = [("id", id.to_string()), ("lv", "-1".into()), ("kv", "-1".into()), ("tv", "-1".into()),
+        ("yv", "-1".into()), ("ytv", "-1".into()), ("yrv", "-1".into()), ("cp", "false".into())];
+    if track_id(player_id).is_some() {
+        if let Ok(answer) = get_json(&client, WORD_LYRIC, &query).await {
+            if let Some(found) = lyrics_of(&answer, title) { return Ok(Some(found.with_duration(length))); }
+        }
+    }
     let answer = get_json(&client, LYRIC, &query).await?;
     Ok(lyrics_of(&answer, title).map(|found| found.with_duration(length)))
 }
@@ -112,5 +122,24 @@ mod tests {
         assert_eq!(found.lrc, "[00:17.51]Oh I believe\n[00:22.00]in yesterday\n");
         assert_eq!(found.translation.as_deref(), Some("[00:17.51]哦 我相信\n"));
         assert_eq!(lyrics_of(&json!({ "lrc": { "lyric": "[00:00.00] 作词 : x\n" } }), "A"), None);
+    }
+
+    #[test]
+    fn yrc_absolute_times_and_translation_precede_line_lyrics() {
+        let answer = json!({"yrc":{"lyric":"[1000,500](1000,200,0)你(1300,200,0)好"},
+            "ytlrc":{"lyric":"[00:01.00]Hello"},"lrc":{"lyric":"[00:02.00]old"}});
+        let found = lyrics_of(&answer,"Song").unwrap();
+        assert!(found.lrc.contains("[00:01.00]<00:01.00>你<00:01.20><00:01.30>好<00:01.50>"));
+        assert_eq!(found.translation.as_deref(),Some("[00:01.00]Hello\n"));
+        let fallback = json!({"yrc":{"lyric":"broken"},"lrc":{"lyric":"[00:02.00]旧歌词"}});
+        assert!(lyrics_of(&fallback,"Song").unwrap().lrc.contains("旧歌词"));
+    }
+
+    #[test]
+    #[ignore = "Requires anonymous NetEase endpoint; no installed player needed"]
+    fn live_netease_yrc() {
+        let found = tauri::async_runtime::block_on(fetch("测试", "", 0, Some("NCM-1878313261"))).unwrap().unwrap();
+        assert!(found.lrc.contains('<'));
+        println!("NetEase YRC: {} timed lines", found.lrc.lines().count());
     }
 }

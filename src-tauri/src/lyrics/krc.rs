@@ -18,12 +18,38 @@ const MAX_TEXT_BYTES: u64 = 1024 * 1024;
 
 /// The KRC text of a download's base64 `content`; `None` when it is not KRC.
 pub(super) fn decrypt(content: &str) -> Option<String> {
+    if content.len() > 2 * 1024 * 1024 { return None; }
     let raw = STANDARD.decode(content.trim()).ok()?;
+    decrypt_bytes(&raw)
+}
+
+pub(super) fn decrypt_bytes(raw: &[u8]) -> Option<String> {
+    if raw.len() > 2 * 1024 * 1024 { return None; }
     let body = raw.strip_prefix(b"krc1")?;
     let unmasked: Vec<u8> = body.iter().enumerate().map(|(index, byte)| byte ^ KEY[index % KEY.len()]).collect();
     let mut text = String::new();
-    ZlibDecoder::new(unmasked.as_slice()).take(MAX_TEXT_BYTES).read_to_string(&mut text).ok()?;
-    Some(text.trim_start_matches('\u{feff}').to_string())
+    ZlibDecoder::new(unmasked.as_slice()).take(MAX_TEXT_BYTES + 1).read_to_string(&mut text).ok()?;
+    (text.len() as u64 <= MAX_TEXT_BYTES).then(|| text.trim_start_matches('\u{feff}').to_string())
+}
+
+pub(super) fn header<'a>(raw: &'a str, key: &str) -> Option<&'a str> {
+    let prefix = format!("[{key}:");
+    raw.lines().find_map(|line| line.trim_start_matches('\u{feff}').strip_prefix(&prefix)?.strip_suffix(']')).map(str::trim)
+}
+
+pub(super) fn lyrics(raw: &str, title: &str) -> Option<super::found::FoundLyrics> {
+    let offset = header(raw, "offset").and_then(|n| n.parse::<i64>().ok()).unwrap_or(0);
+    let parsed = lines(raw);
+    let shifted = parsed.iter().map(|line| {
+        let at = (line.start_ms as i64).saturating_add(offset).max(0) as u64;
+        let words = line.words.iter().map(|word| {
+            let start = line.start_ms.saturating_add(word.offset_ms).min(i64::MAX as u64) as i64;
+            ((start.saturating_add(offset)).max(0) as u64, word.duration_ms, word.text.clone())
+        }).collect::<Vec<_>>();
+        (at, super::word_formats::timed_text(&words).unwrap_or_else(|| line.text.clone()))
+    }).collect::<Vec<_>>();
+    let duration = header(raw, "total").and_then(|n| n.parse().ok()).unwrap_or(0);
+    super::found::from_lines(&shifted, translations(raw).as_deref(), title).map(|found| found.with_duration(duration))
 }
 
 /// One line of KRC: when it starts (ms), its words joined, and each word's timing.
@@ -52,10 +78,10 @@ impl KrcLine {
         let mut timed = String::new();
         let mut end = self.start_ms;
         for word in &self.words {
-            let start = self.start_ms + word.offset_ms;
+            let start = self.start_ms.saturating_add(word.offset_ms);
             timed.push_str(&word_tag(start));
             timed.push_str(&word.text);
-            end = end.max(start + word.duration_ms);
+            end = end.max(start.saturating_add(word.duration_ms));
         }
         timed.push_str(&word_tag(end));
         timed.trim().to_string()
@@ -68,7 +94,10 @@ pub(super) fn lines(krc: &str) -> Vec<KrcLine> {
         .filter_map(|line| {
             let rest = line.trim().strip_prefix('[')?;
             let (timing, words) = rest.split_once(']')?;
-            let start_ms = timing.split_once(',')?.0.parse().ok()?;
+            let (start, duration) = timing.split_once(',')?;
+            let start_ms = start.parse::<u64>().ok()?;
+            let duration = duration.parse::<u64>().ok()?;
+            if start_ms > 86_400_000 || duration > 86_400_000 { return None; }
             Some(KrcLine { start_ms, text: words_of(words), words: timed_words(words) })
         })
         .collect()
@@ -103,6 +132,7 @@ fn timed_words(words: &str) -> Vec<KrcWord> {
             let (Some(Ok(offset_ms)), Some(Ok(duration_ms))) = (numbers.next(), numbers.next()) else {
                 return None;
             };
+            if offset_ms > 86_400_000 || duration_ms > 86_400_000 { return None; }
             Some(KrcWord { offset_ms, duration_ms, text: text.to_string() })
         })
         .collect()

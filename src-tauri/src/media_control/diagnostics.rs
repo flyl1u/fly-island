@@ -27,6 +27,7 @@ fn player_kind(id: &str) -> Option<&'static str> {
     if id.contains("cloudmusic") || id.contains("netease") { Some("cloudmusic.exe") }
     else if id.contains("qqmusic") { Some("QQMusic.exe") }
     else if id.contains("kugou") { Some("KuGou.exe") }
+    else if id.contains("sodamusic") || id.contains("汽水") { Some("SodaMusic.exe") }
     else { None }
 }
 
@@ -74,7 +75,7 @@ fn diagnostic(id: String, has_session: bool, has_timeline: bool, has_plugin_trac
 
 pub(super) fn get() -> Result<MediaDiagnostics, String> {
     session::on_media_thread(|| {
-        let known = ["cloudmusic.exe", "QQMusic.exe", "KuGou.exe"];
+        let known = ["cloudmusic.exe", "QQMusic.exe", "KuGou.exe", "SodaMusic.exe"];
         // 即使进程路径不可读，也保留进程存在这一事实。
         let running: Vec<_> = known.iter().filter_map(|name| {
             let ids = win32::process_tree::process_ids_named(name);
@@ -115,6 +116,9 @@ mod tests {
     }
     #[test]
     fn classifies_players_by_observed_capabilities_first() {
+        assert_eq!(player_kind("com.sodamusic.desktop"), Some("SodaMusic.exe"));
+        assert_eq!(status(Some("SodaMusic.exe"), true, false, None), "noTimeline");
+        assert_eq!(status(Some("SodaMusic.exe"), true, true, None), "ok");
         assert_eq!(status(Some("QQMusic.exe"), true, false, Some("21.9.1")), "needsUpdate");
         assert_eq!(status(Some("QQMusic.exe"), true, true, Some("21.9.1")), "ok");
         assert_eq!(status(Some("QQMusic.exe"), true, false, None), "noTimeline");

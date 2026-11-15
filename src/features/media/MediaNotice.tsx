@@ -40,8 +40,8 @@ export function MediaNotice({ player, onClose }: { player: PlayerDiagnostic; onC
   const text = useTranslation().music.diagnostics;
   const [failed, setFailed] = useState(false);
   const href = player.status === "needsUpdate" ? "https://y.qq.com/download/" : null;
-  const message = player.status === "smtcOff" && /kugou/i.test(player.sourceAppId)
-    ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
+  const message = player.status === "smtcOff" && /sodamusic|汽水/i.test(player.sourceAppId) ? text.soda
+    : player.status === "smtcOff" && /kugou/i.test(player.sourceAppId) ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
   return (
     <aside className="media-notice" aria-label={text.title}>
       <div className="media-notice__head">

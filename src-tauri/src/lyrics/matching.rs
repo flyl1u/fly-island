@@ -72,6 +72,19 @@ pub(super) fn same_track(playing: (&str, &str, i64), found: (&str, &str, i64)) -
         && close_duration(playing.2, found.2)
 }
 
+/// Native cache/search matches keep version labels and require the complete artist set.
+pub(super) fn same_native_track(playing: (&str, &str, i64), found: (&str, &str, i64)) -> bool {
+    let artists = |s: &str| { let mut names = artist_names(s); names.sort(); names.dedup(); names };
+    !playing.1.trim().is_empty() && fold(playing.0) == fold(found.0)
+        && artists(playing.1) == artists(found.1) && close_duration(playing.2, found.2)
+}
+
+/// A native KRC header may list only the primary singer after its full filename was matched.
+pub(super) fn native_artist_subset(expected: &str, header: &str) -> bool {
+    let (expected, header) = (artist_names(expected), artist_names(header));
+    !header.is_empty() && header.iter().all(|name| expected.contains(name))
+}
+
 /// Whether a found track lasting `found_ms` can be the playing one lasting `playing_ms`. A
 /// duration that is not known (0) does not rule anything out.
 pub(super) fn close_duration(playing_ms: i64, found_ms: i64) -> bool {

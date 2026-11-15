@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 /** Mirrors Lyrics in src-tauri/src/lyrics/mod.rs. */
 export type Lyrics = {
-  source: "local" | "lrclib" | "kugou" | "netease";
+  source: "local" | "lrclib" | "kugou" | "netease" | "qqmusic" | "soda";
   lrc: string;
   /** The translation of the same lines, in LRC, when the source has one. */
   translation?: string | null;
@@ -23,6 +23,8 @@ export type LyricsQuery = {
   chinese: boolean;
   /** The song id a player plugin gives (`NCM-<id>`), which skips the search. */
   trackId: string | null;
+  /** SMTC AUMID/process name; selects the native client cache and preferred source. */
+  sourceAppId?: string | null;
 };
 
 export function getLyrics(query: LyricsQuery) {
