@@ -55,9 +55,24 @@ fn rejects_hash_and_zip_traversal() {
     std::fs::remove_dir_all(root).unwrap();
 }
 fn fixture() -> std::path::PathBuf {
-    let target = std::env::var_os("CARGO_TARGET_DIR").map(std::path::PathBuf::from).unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target"));
-    let exe = target.join("debug/example-hello.exe");
-    assert!(exe.exists(), "Build plugins/example-hello first with the same CARGO_TARGET_DIR"); exe
+    let mut candidates = Vec::new();
+    if let Ok(cur) = std::env::current_exe() {
+        if let Some(debug_dir) = cur.parent().and_then(|p| p.parent()) {
+            candidates.push(debug_dir.join("example-hello.exe"));
+        }
+    }
+    if let Some(target) = std::env::var_os("CARGO_TARGET_DIR") {
+        candidates.push(std::path::PathBuf::from(target).join("debug/example-hello.exe"));
+    }
+    candidates.push(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/example-hello.exe"));
+    candidates.push(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../target/debug/example-hello.exe"));
+    candidates.push(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../plugins/target/debug/example-hello.exe"));
+    for c in candidates {
+        if c.exists() {
+            return c;
+        }
+    }
+    panic!("Build plugins/example-hello first with the same CARGO_TARGET_DIR");
 }
 #[test]
 fn example_worker_handshake_actions_and_stop() {
@@ -92,4 +107,40 @@ fn local_index_install_enable_publish_disable_uninstall() {
     host.enable("example-hello", false).unwrap(); assert!(host.snapshot().live.is_empty());
     host.uninstall("example-hello").unwrap(); assert!(host.snapshot().registry.installed.is_empty());
     assert!(!host.root.join("plugins/example-hello").exists()); drop(host); std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn built_artifacts_index_installs_and_runs() {
+    let index_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../artifacts/plugins/plugins-index.json");
+    if !index_file.exists() {
+        return;
+    }
+    let root = temporary("built-index-test");
+    let host = Host::new(root.join("data"), None).unwrap();
+    let mut registry = host.snapshot().registry;
+    registry.developer_mode = true;
+    registry.index_url = reqwest::Url::from_file_path(&index_file).unwrap().to_string();
+    host.persist(registry).unwrap();
+
+    tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
+    assert!(host.snapshot().registry.installed.contains_key("example-hello"));
+    assert!(!host.snapshot().registry.installed["example-hello"].enabled);
+
+    host.enable("example-hello", true).unwrap();
+    let until = Instant::now() + Duration::from_secs(8);
+    while !host.snapshot().live.get("example-hello").is_some_and(|l| !l.data.quota.is_empty()) && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let live = host.snapshot().live;
+    assert!(live.contains_key("example-hello"));
+    assert_eq!(live["example-hello"].data.quota.len(), 1);
+    assert_eq!(live["example-hello"].data.notifications.len(), 1);
+
+    host.enable("example-hello", false).unwrap();
+    assert!(host.snapshot().live.is_empty());
+    host.uninstall("example-hello").unwrap();
+    assert!(host.snapshot().registry.installed.is_empty());
+
+    drop(host);
+    let _ = std::fs::remove_dir_all(root);
 }

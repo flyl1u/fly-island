@@ -1,0 +1,35 @@
+{
+  "id": "office-im",
+  "name": { "zh-CN": "办公通讯提醒", "en": "Office IM Reminders" },
+  "description": { "zh-CN": "企业微信、飞书、钉钉后台闪动提醒与前台唤起", "en": "WeWork, Feishu, and DingTalk background reminders and foreground activation" },
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "runtime": { "command": "office-im.exe" },
+  "permissions": ["notifications"],
+  "contributes": ["notifications"],
+  "settings": [
+    {
+      "key": "wework",
+      "label": { "zh-CN": "企业微信提醒", "en": "WeWork reminders" },
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "feishu",
+      "label": { "zh-CN": "飞书提醒", "en": "Feishu reminders" },
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "dingtalk",
+      "label": { "zh-CN": "钉钉提醒", "en": "DingTalk reminders" },
+      "type": "toggle",
+      "default": true
+    }
+  ],
+  "actions": [
+    { "id": "open_wework", "label": { "zh-CN": "打开企业微信", "en": "Open WeWork" } },
+    { "id": "open_feishu", "label": { "zh-CN": "打开飞书", "en": "Open Feishu" } },
+    { "id": "open_dingtalk", "label": { "zh-CN": "打开钉钉", "en": "Open DingTalk" } }
+  ]
+}
