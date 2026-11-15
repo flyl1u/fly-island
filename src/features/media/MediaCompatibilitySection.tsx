@@ -56,7 +56,8 @@ export function MediaCompatibilitySection() {
   return <SettingsGroup title={text.title} footer={footer}>
     {diagnostics.players.map((player) => {
       const title = [player.label, player.version].filter(Boolean).join(" · ");
-      const message = player.status === "smtcOff" && /kugou/i.test(player.sourceAppId) ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
+      const message = player.status === "smtcOff" && /sodamusic|汽水/i.test(player.sourceAppId) ? text.soda
+        : player.status === "smtcOff" && /kugou/i.test(player.sourceAppId) ? text.kugou : text[diagnosticMessageKey(player.status)](player.label);
       return isNetease(player.sourceAppId)
         ? <NeteasePluginRow key={player.sourceAppId} title={title} message={message} />
         : <SettingsRow key={player.sourceAppId} title={title} description={message} />;

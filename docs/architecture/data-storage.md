@@ -35,6 +35,8 @@
 
 总览见 [overview.md](overview.md)。
 
+歌词缓存仍在应用数据目录 `lyrics-cache/*.json`，增加可缺省的 `schemaVersion`。旧缓存可作为在线升级查询失败的后备，新的行级缓存与未找到结果一周后重试逐字来源；新键附加原始歌名、播放器 AUMID 和歌曲 ID，防止不同版本混用。酷狗客户端 INI / KRC、汽水 `SodaMusic/LunaCacheV2/entries.db` 只读，不创建数据库锁或写入第三方文件；限制见 [歌词源说明](../lyrics-sources.md)。
+
 DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-desktop/harness` 的 `storages/session_projcache/sessions/*.json`、对应 `sessions/*/session-*/session.v{3,4}.jsonl.zstd` 的存在性，以及 `profiles/web/desktop-storage.json` 的当前会话。同时读取共享 ~/.dsh、anywhere Beta ~/.dsh-beta 及社区端保存的绝对目录选择，按会话 ID 去重；不再要求 Desktop profile；DataElement harness 是社区独立根。`dsh_credentials.rs` 只在请求内存中读取该根目录的 `.credentials.yaml`；`dsh_usage.rs` 向固定官方 HTTPS 接口读余额，结果缓存 5 分钟，只在内存保存。不增加持久化余额或会话副本，设置只增加原有 key 下的 `agentShowDsh`。完整来源与限制见 [DSH 接入说明](../deepseek-harness.md)。
 
 ## 播放器兼容性提示

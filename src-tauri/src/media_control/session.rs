@@ -624,6 +624,8 @@ pub(super) fn friendly_app_label(id: &str) -> String {
         ("cloudmusic", "NetEase Music"),
         ("qqmusic", "QQ Music"),
         ("kugou", "KuGou"),
+        ("sodamusic", "Soda Music"),
+        ("汽水", "Soda Music"),
         ("kuwo", "Kuwo"),
         ("potplayer", "PotPlayer"),
         ("winamp", "Winamp"),

@@ -9,10 +9,17 @@
 mod found;
 mod krc;
 mod kugou;
+mod kugou_cache;
 mod local;
 mod lrclib;
 mod matching;
 mod netease;
+mod qqmusic;
+mod qrc_cipher;
+mod soda_cache;
+mod soda_lmdb;
+mod soda_msgpack;
+mod word_formats;
 
 use std::{
     fs,
@@ -55,6 +62,9 @@ pub struct LyricsQuery {
     /// The song id a player plugin gives, such as `NCM-487885426` (MediaState::track_id).
     #[serde(default)]
     track_id: Option<String>,
+    /// SMTC AUMID/process name; absent in older frontends.
+    #[serde(default)]
+    source_app_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -91,6 +101,8 @@ struct CacheEntry {
     #[serde(default)]
     durations: bool,
     fetched_at: u64,
+    #[serde(default)]
+    schema_version: u32,
 }
 
 /// An online answer: the source and its lyrics.
@@ -100,6 +112,8 @@ fn source_name(name: &str) -> &'static str {
     match name {
         "kugou" => "kugou",
         "netease" => "netease",
+        "qqmusic" => "qqmusic",
+        "soda" => "soda",
         _ => "lrclib",
     }
 }
@@ -144,6 +158,7 @@ fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
         duration_ms: answer.and_then(|(_, found)| found.duration_ms),
         durations: true,
         fetched_at: now,
+        schema_version: 2,
     };
     if let Ok(text) = serde_json::to_string(&entry) {
         let _ = fs::write(cache_path(dir, key), text);
@@ -188,11 +203,15 @@ fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
     if !query.chinese {
         return vec!["lrclib"];
     }
+    let player = query.source_app_id.as_deref().unwrap_or_default().to_ascii_lowercase();
+    if qqmusic::track_id(query.track_id.as_deref()).is_some() || player.contains("qqmusic") {
+        return vec!["qqmusic", "kugou", "netease", "lrclib"];
+    }
     let chinese_named = format!("{}{}", query.title, query.artist).chars().any(|c| ('\u{4E00}'..='\u{9FFF}').contains(&c));
     match (netease::track_id(query.track_id.as_deref()).is_some(), chinese_named) {
-        (true, _) => vec!["netease", "kugou", "lrclib"],
-        (false, true) => vec!["kugou", "netease", "lrclib"],
-        (false, false) => vec!["lrclib", "kugou", "netease"],
+        (true, _) => vec!["netease", "kugou", "qqmusic", "lrclib"],
+        (false, true) => vec!["kugou", "netease", "qqmusic", "lrclib"],
+        (false, false) => vec!["lrclib", "kugou", "netease", "qqmusic"],
     }
 }
 
@@ -205,6 +224,7 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
         let result = match source {
             "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
             "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
+            "qqmusic" => qqmusic::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
             _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
         };
         match result {
@@ -237,6 +257,17 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
             return Ok(Some(for_display("local", FoundLyrics { lrc, translation: None, duration_ms: None }, &query.title, &query.artist)));
         }
     }
+    // Native client caches precede online caches, so a newly downloaded word-timed lyric wins.
+    if query.chinese {
+        let (title, artist, duration) = (query.title.clone(), query.artist.clone(), query.duration_ms);
+        let player = query.source_app_id.as_deref().unwrap_or_default().to_ascii_lowercase();
+        let native = tauri::async_runtime::spawn_blocking(move || {
+            if player.contains("kugou") { kugou_cache::read(&title, &artist, duration).map(|found| ("kugou", found)) }
+            else if player.contains("sodamusic") || player.contains("汽水") { soda_cache::read(&title, &artist, duration).map(|found| ("soda", found)) }
+            else { None }
+        }).await.map_err(|error| format!("Failed to join native lyrics lookup: {error}"))?;
+        if let Some((source, found)) = native { return Ok(Some(for_display(source, found, &query.title, &query.artist))); }
+    }
     if !query.online {
         return Ok(None);
     }
@@ -246,12 +277,24 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     if query.chinese {
         key.push_str("\u{1f}cn");
     }
-    let answer = match read_cache(&cache_dir, &key, now_secs()) {
-        Some(cached) => cached,
-        None => {
-            let fetched = fetch_online(&query).await?;
-            write_cache(&cache_dir, &key, fetched.as_ref(), now_secs());
-            fetched
+    let legacy_key = key.clone();
+    // Preserve the old key for fallback; scope new entries to the actual recording and player id.
+    key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
+    let now = now_secs();
+    let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now));
+    let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
+        .and_then(|text| serde_json::from_str::<CacheEntry>(&text).ok())
+        .is_some_and(|entry| entry.key == key && entry.schema_version >= 2
+            && (entry.lrc.as_ref().is_some_and(|text| text.contains('<')) || now.saturating_sub(entry.fetched_at) < MISSING_TTL.as_secs()));
+    let answer = if fresh && cached.is_some() { cached.flatten() } else {
+        match fetch_online(&query).await {
+            Ok(Some(fetched)) => { write_cache(&cache_dir, &key, Some(&fetched), now); Some(fetched) },
+            Ok(None) => {
+                let fallback = cached.flatten();
+                if fallback.is_none() { write_cache(&cache_dir, &key, None, now); }
+                fallback
+            },
+            Err(error) => match cached.flatten() { Some(fallback) => Some(fallback), None => return Err(error) },
         }
     };
     Ok(answer.map(|(source, found)| for_display(source, found, &query.title, &query.artist)))
@@ -321,11 +364,13 @@ mod tests {
             online: true,
             chinese,
             track_id: track_id.map(Into::into),
+            source_app_id: None,
         };
         assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
-        assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "lrclib"]);
-        assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease"]);
-        assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "lrclib"]);
+        assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "qqmusic", "lrclib"]);
+        assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease", "qqmusic"]);
+        assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "qqmusic", "lrclib"]);
+        assert_eq!(source_order(&query("Yesterday", true, Some("QQ-123")))[0], "qqmusic");
     }
 
     #[test]
