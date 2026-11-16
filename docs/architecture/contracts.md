@@ -2,7 +2,7 @@
 
 Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCompletedAt`（最近显式 `task_complete` 的 Unix 毫秒时间；未知时省略）。前端兼容字段缺失，原有字段、命令名、参数、事件及持久化格式不变。用于识别两次轮询之间完成的一轮，首次看到的完成仅在 15 秒内提醒；不以文件修改时间代替完成时间。
 
-歌词接口兼容扩展（2026-11-15）：`get_lyrics` 的 `query.sourceAppId` 为可缺省字符串，旧前端不传仍可查询在线歌词；返回 `source` 新增 `qqmusic` / `soda`，`lrc` 仍为增强 LRC 字符串。缓存可缺省的 `schemaVersion` 新值为 2，旧字段保持可读，详见 [歌词源说明](../lyrics-sources.md)。
+歌词接口兼容扩展（2026-11-15）：`get_lyrics` 的 `query.sourceAppId` 为可缺省字符串，`query.wordFill` 为可缺省布尔值（默认 false）；旧前端不传仍可查询在线歌词。开启逐字填充时优先查找逐字结果，保留第一个行级结果兜底。返回 `source` 新增 `qqmusic` / `soda`，`lrc` 仍为增强 LRC 字符串。缓存可缺省的 `schemaVersion` 新值为 3，旧字段保持可读，详见 [歌词源说明](../lyrics-sources.md)。
 
 纯重构中下列标识不得改变，规则见根目录 [AGENTS.md](../../AGENTS.md#对外契约不得随意变更)。新增契约时同步更新本节。
 

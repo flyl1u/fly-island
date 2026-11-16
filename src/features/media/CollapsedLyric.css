@@ -13,7 +13,7 @@
 
 .collapsed-lyric__word {
   color: transparent;
-  background: linear-gradient(90deg, var(--text-1) 50%, var(--text-3) 50%) 100% 0 / 200% 100% no-repeat;
+  background: linear-gradient(90deg, var(--text-1) 50%, color-mix(in srgb, var(--text-1) 38%, transparent) 50%) 100% 0 / 200% 100% no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   animation: collapsed-lyric-word-fill linear both;

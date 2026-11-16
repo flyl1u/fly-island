@@ -83,10 +83,8 @@ pub(super) async fn fetch(title: &str, artist: &str, duration_ms: i64, player_id
     };
     let query = [("id", id.to_string()), ("lv", "-1".into()), ("kv", "-1".into()), ("tv", "-1".into()),
         ("yv", "-1".into()), ("ytv", "-1".into()), ("yrv", "-1".into()), ("cp", "false".into())];
-    if track_id(player_id).is_some() {
-        if let Ok(answer) = get_json(&client, WORD_LYRIC, &query).await {
-            if let Some(found) = lyrics_of(&answer, title) { return Ok(Some(found.with_duration(length))); }
-        }
+    if let Ok(answer) = get_json(&client, WORD_LYRIC, &query).await {
+        if let Some(found) = lyrics_of(&answer, title) { return Ok(Some(found.with_duration(length))); }
     }
     let answer = get_json(&client, LYRIC, &query).await?;
     Ok(lyrics_of(&answer, title).map(|found| found.with_duration(length)))

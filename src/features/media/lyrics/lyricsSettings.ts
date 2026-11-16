@@ -15,7 +15,7 @@ export const DEFAULT_LYRICS_SETTINGS: LyricsSettingValues = {
   lyricsFolder: "",
   lyricsOnline: true,
   lyricsChinese: true,
-  lyricWordFill: true,
+  lyricWordFill: false,
   lyricsOffsetMs: 0,
 };
 
@@ -29,6 +29,6 @@ export function normalizeLyricsSettings(saved: Partial<Record<keyof LyricsSettin
     ...DEFAULT_LYRICS_SETTINGS,
     lyricsOnline: saved?.lyricsOnline !== false,
     lyricsChinese: saved?.lyricsChinese !== false,
-    lyricWordFill: saved?.lyricWordFill !== false,
+    lyricWordFill: saved?.lyricWordFill === true,
   };
 }

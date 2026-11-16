@@ -41,7 +41,7 @@ export function CollapsedLyric({
   const { index, playing } = useLyricClock(lines, mediaState, offsetMs, active);
   const song = [mediaState.title, mediaState.artist].filter(Boolean).join(" · ");
   const line = lines && index >= 0 ? lines[index] : null;
-  const words = lyricsSettings.lyricWordFill !== false && line?.text ? line.words : undefined;
+  const words = lyricsSettings.lyricWordFill === true && line?.text ? line.words : undefined;
 
   return (
     <span className="collapsed-lyric">{words ? <CollapsedSungWords

@@ -65,6 +65,8 @@ pub struct LyricsQuery {
     /// SMTC AUMID/process name; absent in older frontends.
     #[serde(default)]
     source_app_id: Option<String>,
+    #[serde(default)]
+    word_fill: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -158,7 +160,7 @@ fn write_cache(dir: &Path, key: &str, answer: Option<&Answer>, now: u64) {
         duration_ms: answer.and_then(|(_, found)| found.duration_ms),
         durations: true,
         fetched_at: now,
-        schema_version: 2,
+        schema_version: 3,
     };
     if let Ok(text) = serde_json::to_string(&entry) {
         let _ = fs::write(cache_path(dir, key), text);
@@ -220,6 +222,7 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
     let (title, artist) = (query.title.as_str(), query.artist.as_str());
     let mut errors = Vec::new();
     let mut answered = false;
+    let mut fallback = None;
     for source in source_order(query) {
         let result = match source {
             "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
@@ -228,12 +231,15 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
             _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
         };
         match result {
-            Ok(Some(found)) => return Ok(Some((source, found))),
+            Ok(Some(found)) => {
+                if !query.word_fill || found.lrc.contains('<') { return Ok(Some((source, found))); }
+                if fallback.is_none() { fallback = Some((source, found)); }
+            },
             Ok(None) => answered = true,
             Err(error) => errors.push(error),
         }
     }
-    if answered {
+    if fallback.is_some() { Ok(fallback) } else if answered {
         Ok(None)
     } else {
         Err(errors.join("; "))
@@ -280,11 +286,12 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     let legacy_key = key.clone();
     // Preserve the old key for fallback; scope new entries to the actual recording and player id.
     key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
+    if query.word_fill { key.push_str("\u{1f}words"); }
     let now = now_secs();
     let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now));
     let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
         .and_then(|text| serde_json::from_str::<CacheEntry>(&text).ok())
-        .is_some_and(|entry| entry.key == key && entry.schema_version >= 2
+        .is_some_and(|entry| entry.key == key && entry.schema_version >= 3
             && (entry.lrc.as_ref().is_some_and(|text| text.contains('<')) || now.saturating_sub(entry.fetched_at) < MISSING_TTL.as_secs()));
     let answer = if fresh && cached.is_some() { cached.flatten() } else {
         match fetch_online(&query).await {
@@ -365,6 +372,7 @@ mod tests {
             chinese,
             track_id: track_id.map(Into::into),
             source_app_id: None,
+            word_fill: false,
         };
         assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
         assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "qqmusic", "lrclib"]);
