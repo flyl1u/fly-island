@@ -374,7 +374,7 @@ fn a_new_arrival_downloads_only_its_header_and_preserves_cached_titles() {
     let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
     assert!(commands.contains("UID FETCH 3 (UID FLAGS INTERNALDATE BODY.PEEK[HEADER]"));
     assert_eq!(commands.matches("BODY.PEEK[HEADER]").count(), 1);
-    assert_eq!(commands.matches("BODY.PEEK[]").count(), 1);
+    assert_eq!(commands.matches("BODY.PEEK[]").count(), usize::from(crate::release_flags::MAIL_OTP_ENABLED));
 }
 
 #[test]

@@ -8,11 +8,16 @@ import { SettingsInput } from "../../components/settings/SettingsInput";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { PluginSettingRow } from "../../features/plugins/PluginSettingRow";
 import { usePlugins, refreshPlugins } from "../../features/plugins/usePlugins";
+import { PLUGINS_ENABLED } from "../../features/plugins";
 import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, PLUGIN_INDEX_UNAVAILABLE, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
 import { useLocale, useTranslation } from "../../i18n";
 import "./PluginsSettingsPage.css";
 
 export function PluginsSettingsPage() {
+  return PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : null;
+}
+
+function EnabledPluginsSettingsPage() {
   const t = useTranslation().settings.plugins;
   const { locale } = useLocale();
   const { registry, live } = usePlugins();

@@ -1,5 +1,6 @@
 // settings.html: the General and Appearance pages' groups (docs/design/settings.md, 2026-11-14 regrouping).
 import { act } from "react";
+import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const GROUPS: Record<string, string[]> = {
   general: ["启动与语言", "展开与收起", "贴边隐藏", "这些时候不贴边", "位置"],
@@ -17,10 +18,14 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
   if (category === "messages") {
     const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find(row => row.querySelector(".settings-row__title")?.textContent === "自动复制验证码");
     const toggle = row?.querySelector<HTMLInputElement>("input[role='switch']");
-    check(toggle?.checked, "Mail: verification codes are copied by default");
-    await act(async () => toggle!.click());
-    check(JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCopyOtp === false, "Mail: turning automatic code copying off is saved");
-    await act(async () => toggle!.click());
+    if (MAIL_OTP_ENABLED) {
+      check(toggle?.checked, "Mail: verification codes are copied by default");
+      await act(async () => toggle!.click());
+      check(JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCopyOtp === false, "Mail: turning automatic code copying off is saved");
+      await act(async () => toggle!.click());
+    } else {
+      check(!row, "Mail: verification-code settings are hidden without changing saved preferences");
+    }
   }
   const expected = GROUPS[category];
   if (!expected) return;

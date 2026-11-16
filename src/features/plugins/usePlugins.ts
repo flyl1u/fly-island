@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { getPlugins, onPluginsChanged, type PluginsSnapshot } from "./api";
+import { PLUGINS_ENABLED } from "../releaseFlags.ts";
 
 const EMPTY: PluginsSnapshot = { registry: { developerMode: false, indexUrl: "", installed: {} }, live: {} };
 let current = EMPTY;
@@ -7,6 +8,7 @@ const listeners = new Set<() => void>();
 let reading = false;
 let dirty = false;
 export async function refreshPlugins() {
+  if (!PLUGINS_ENABLED) return;
   if (reading) { dirty = true; return; }
   reading = true;
   try {
@@ -26,6 +28,7 @@ function subscribe(listener: () => void) { listeners.add(listener); return () =>
 export function usePlugins() {
   const snapshot = useSyncExternalStore(subscribe, () => current);
   useEffect(() => {
+    if (!PLUGINS_ENABLED) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
     void onPluginsChanged(() => { void refreshPlugins(); }).then((stop) => {
@@ -34,5 +37,5 @@ export function usePlugins() {
     }).catch(() => { void refreshPlugins(); });
     return () => { disposed = true; unlisten?.(); };
   }, []);
-  return snapshot;
+  return PLUGINS_ENABLED ? snapshot : EMPTY;
 }

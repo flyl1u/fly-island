@@ -1,5 +1,6 @@
 import type { MessageSource } from "../../features/messages/messagePreview";
 import type { IslandPage } from "./types";
+import { PLUGINS_ENABLED } from "../../features/releaseFlags.ts";
 
 /** Which modules are switched on; an off module is hidden on the island. */
 export type IslandFeatures = {
@@ -22,7 +23,7 @@ const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "plugin"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
   if (page === "settings") return true;
-  return page === "qq" ? features.qq || features.wechat || features.qqMail || features.plugin === true : features[page] === true;
+  return page === "qq" ? features.qq || features.wechat || features.qqMail || (PLUGINS_ENABLED && features.plugin === true) : features[page] === true;
 }
 
 /** `page` when it is on, otherwise the first page that is, or null when every page is off. */
@@ -42,6 +43,7 @@ export function islandPageFor(page: IslandPage, features: IslandFeatures, clipbo
 
 /** `source` when it is on, otherwise the first message source that is (or `source` if none). */
 export function resolveMessageSource(source: MessageSource, features: IslandFeatures): MessageSource {
-  if (features[source]) return source;
-  return SOURCE_ORDER.find((candidate) => features[candidate]) ?? source;
+  const enabled = (candidate: MessageSource) => (PLUGINS_ENABLED || candidate !== "plugin") && features[candidate];
+  if (enabled(source)) return source;
+  return SOURCE_ORDER.find(enabled) ?? (source === "plugin" && !PLUGINS_ENABLED ? "qqMail" : source);
 }

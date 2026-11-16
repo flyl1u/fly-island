@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MAIL_OTP_ENABLED } from "../../features/releaseFlags.ts";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
@@ -127,7 +128,7 @@ function MailGroups({ settings, onSettingsChange }: { settings: IslandSettings; 
           checked={settings.mailEnabled}
           onChange={(mailEnabled) => onSettingsChange({ ...settings, mailEnabled })}
         />
-        {settings.mailEnabled && <SettingsToggleRow
+        {MAIL_OTP_ENABLED && settings.mailEnabled && <SettingsToggleRow
           title={t.settings.messageSources.autoCopyOtp}
           checked={settings.autoCopyOtp}
           onChange={(autoCopyOtp) => onSettingsChange({ ...settings, autoCopyOtp })}

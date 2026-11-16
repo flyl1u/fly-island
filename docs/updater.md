@@ -138,6 +138,8 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
    只出包不上传用 `pnpm release --no-upload`；安装包走镜像分发用 `pnpm release --base-url "https://..."`。
 
+   设置 `CARGO_TARGET_DIR` 时，构建、清单生成与上传都从该目录的 `release/` 读取产物；未设置时仍使用 `src-tauri/target/release/`。
+
 5. 发布后已装「带更新功能」版本的用户点「检查更新」就能收到。更早的版本（v0.2.11 及以前）没有这段逻辑，需要手动下载安装一次。
 6. 发布后检查：
 
@@ -193,4 +195,4 @@ gh release edit v0.3.2 --repo flyl1u/fly-island --prerelease --latest=false   # 
 
 ## 可下载功能插件
 
-`pnpm release` 额外运行 scripts/release/build-plugins.ps1，为 plugins/<id>/ 各独立 crate 构建 zip 和 plugins-index.json，与应用安装包及 latest.json 一并上传同一个 Release。客户端从 `releases/latest/download/plugins-index.json` 获取索引，索引内的包地址固定到对应版本的 Release。插件不编入主程序；latest.json 的格式与端点不变。单独本地构建见 docs/plugins/quickstart.md；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。
+根目录 `release-features.json` 的 `plugins` 开启时，`pnpm release` 才额外运行 scripts/release/build-plugins.ps1，为 plugins/<id>/ 各独立 crate 构建 zip 和 plugins-index.json，与应用安装包及 latest.json 一并上传同一个 Release。关闭时不构建、上传插件包或索引，也不读取以前留下的插件产物。客户端从 `releases/latest/download/plugins-index.json` 获取索引，索引内的包地址固定到对应版本的 Release。插件不编入主程序；latest.json 的格式与端点不变。单独本地构建见 docs/plugins/quickstart.md；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。

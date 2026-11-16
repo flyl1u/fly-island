@@ -10,6 +10,7 @@ import { useQQNotifications } from "../../src/features/messages/qq-notifications
 import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatReminders";
 import { MessagesPanel, messagePanelHeight, type MessageView } from "../../src/features/messages/Messages";
 import "../../src/windows/island/IslandApp.css";
+import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const params = new URLSearchParams(location.search);
@@ -159,17 +160,21 @@ try {
     checkCards();
     await click("邮箱");
     check(!calls.some(call => call.command === "copy_mail_otp"), "初次加载带验证码的旧列表不会自动复制");
-    const otp = document.querySelector<HTMLButtonElement>(".qq-mail-item__otp .mail-otp-code")!;
-    await act(async () => otp.click());
-    check(calls.some(call => call.command === "copy_mail_otp" && call.args.code === "834921") && otp.dataset.copied === "true"
-      && !mail!.selectedMail, "列表验证码点击即复制并显示对勾，不打开正文");
-    copyFails = true;
-    await act(async () => otp.click());
-    check(document.querySelector(".qq-panel__error")?.textContent?.includes("验证码复制失败") && !otp.dataset.copied,
-      "复制失败时就地反馈，不残留成功对勾");
-    copyFails = false;
-    await act(async () => otp.click());
-    check(!document.querySelector(".qq-panel__error"), "手动重试成功后清除复制错误");
+    if (MAIL_OTP_ENABLED) {
+      const otp = document.querySelector<HTMLButtonElement>(".qq-mail-item__otp .mail-otp-code")!;
+      await act(async () => otp.click());
+      check(calls.some(call => call.command === "copy_mail_otp" && call.args.code === "834921") && otp.dataset.copied === "true"
+        && !mail!.selectedMail, "列表验证码点击即复制并显示对勾，不打开正文");
+      copyFails = true;
+      await act(async () => otp.click());
+      check(document.querySelector(".qq-panel__error")?.textContent?.includes("验证码复制失败") && !otp.dataset.copied,
+        "复制失败时就地反馈，不残留成功对勾");
+      copyFails = false;
+      await act(async () => otp.click());
+      check(!document.querySelector(".qq-panel__error"), "手动重试成功后清除复制错误");
+    } else {
+      check(!document.querySelector(".mail-otp-code, .qq-mail-item__otp"), "旧快照含验证码时也不显示胶囊或额外空白");
+    }
     const list = document.querySelector<HTMLDivElement>('.qq-mail-list')!;
     list.scrollTop = 120;
     list.dispatchEvent(new Event("scroll", { bubbles: true }));
@@ -218,9 +223,13 @@ try {
     await click("返回列表");
     readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: "第二封正文" });
     await click("阅读邮件：工作进展 1，未读");
-    const readerOtp = document.querySelector<HTMLButtonElement>(".qq-mail-reader .mail-otp-code")!;
-    await act(async () => readerOtp.click());
-    check(readerOtp.textContent?.includes("834921") && readerOtp.dataset.copied === "true", "阅读页顶部可复制验证码并显示对勾");
+    if (MAIL_OTP_ENABLED) {
+      const readerOtp = document.querySelector<HTMLButtonElement>(".qq-mail-reader .mail-otp-code")!;
+      await act(async () => readerOtp.click());
+      check(readerOtp.textContent?.includes("834921") && readerOtp.dataset.copied === "true", "阅读页顶部可复制验证码并显示对勾");
+    } else {
+      check(!document.querySelector(".qq-mail-reader .mail-otp-code"), "关闭时阅读页不显示验证码");
+    }
     await act(async () => { stale.resolve({ id: "7:20", attachments: [], contentType: "text/plain", content: "过期的第一封正文" }); await stale.promise; });
     check(mail!.selectedMail?.id === "7:19" && mail!.content?.content === "第二封正文", "快速返回和切换后，旧请求不会覆盖当前邮件");
 

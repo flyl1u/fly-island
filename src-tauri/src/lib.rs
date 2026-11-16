@@ -8,6 +8,7 @@ mod lyrics;
 mod media_control;
 mod media_plugins;
 mod plugin_host;
+mod release_flags;
 mod messenger_activation;
 mod notification_diagnostics;
 mod mail;

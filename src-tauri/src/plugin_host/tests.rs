@@ -186,7 +186,7 @@ fn local_index_install_enable_publish_disable_uninstall() {
     let archive = root.join("example.zip"); std::fs::write(&archive, &bytes).unwrap();
     let e = entry(&bytes, reqwest::Url::from_file_path(&archive).unwrap().to_string());
     let index = root.join("plugins-index.json"); std::fs::write(&index, serde_json::to_vec(&vec![e]).unwrap()).unwrap();
-    let host = Host::new(root.join("data"), None).unwrap(); let mut registry = host.snapshot().registry;
+    let host = Host::new(root.join("data"), None, true).unwrap(); let mut registry = host.snapshot().registry;
     registry.developer_mode = true; registry.index_url = index.to_string_lossy().into_owned(); host.persist(registry).unwrap();
     assert!(tauri::async_runtime::block_on(host.install("not-in-index")).is_err());
     tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
@@ -214,7 +214,7 @@ fn built_artifacts_index_installs_and_runs() {
         return;
     }
     let root = temporary("built-index-test");
-    let host = Host::new(root.join("data"), None).unwrap();
+    let host = Host::new(root.join("data"), None, true).unwrap();
     let mut registry = host.snapshot().registry;
     registry.developer_mode = true;
     registry.index_url = reqwest::Url::from_file_path(&index_file).unwrap().to_string();
@@ -241,4 +241,34 @@ fn built_artifacts_index_installs_and_runs() {
 
     drop(host);
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn disabled_host_does_not_start_fetch_or_change_saved_plugins() {
+    let root = temporary("disabled-host");
+    let plugin = super::storage::Installed {
+        manifest: manifest(), enabled: true, directory: root.join("plugins/example-hello"),
+        development: false, settings: Default::default(),
+    };
+    let registry = super::storage::Registry {
+        installed: [(plugin.manifest.id.clone(), plugin)].into(),
+        developer_mode: true, index_url: "http://127.0.0.1:1/must-not-fetch".into(),
+    };
+    super::storage::save(&root, &registry).unwrap();
+    let saved = std::fs::read(root.join("plugins-state.json")).unwrap();
+    let host = Host::new(root.clone(), None, false).unwrap();
+    assert!(host.snapshot().registry.installed.is_empty());
+    host.start("example-hello").unwrap();
+    assert!(tauri::async_runtime::block_on(host.catalog()).unwrap().is_empty());
+    tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
+    host.enable("example-hello", false).unwrap();
+    host.setting("example-hello", "enabled", json!(false)).unwrap();
+    host.uninstall("example-hello").unwrap();
+    assert_eq!(host.action("example-hello", "hello").unwrap(), serde_json::Value::Null);
+    host.persist(Default::default()).unwrap();
+    assert!(host.workers.lock().unwrap().is_empty() && host.snapshot().live.is_empty());
+    assert!(!root.join("plugins").exists() && !root.join("plugin-logs").exists());
+    assert_eq!(std::fs::read(root.join("plugins-state.json")).unwrap(), saved);
+    drop(host);
+    std::fs::remove_dir_all(root).unwrap();
 }

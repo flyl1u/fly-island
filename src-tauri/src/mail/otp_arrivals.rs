@@ -34,7 +34,12 @@ pub(super) fn enrich<T: Read + Write>(
     items: &mut [MailMessage],
     validity: u32,
     previous: Option<Cursor>,
+    enabled: bool,
 ) -> Result<(), MailFailure> {
+    if !enabled {
+        for item in items { item.otp_code = None; }
+        return Ok(());
+    }
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default().as_millis() as i64;
     let initial = previous.is_none_or(|old| old.validity != validity);

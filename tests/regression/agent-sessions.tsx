@@ -10,7 +10,7 @@ import type { AgentCardEffects, AgentHostDisplay, AgentSessionView } from "../..
 import type { AgentSessionSummary } from "../../src/features/agent-status/api";
 import { getAgentPageExpandedHeight } from "../../src/windows/island/layout";
 import { usageLineCount } from "../../src/features/agent-status/usage";
-
+import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 // Island padding, header and gap above the page content; see AGENT_PAGE_CHROME_HEIGHT in layout.ts.
 const ISLAND_CHROME_HEIGHT = 86;
 const fixture = document.getElementById("fixture")!;
@@ -88,7 +88,7 @@ async function runChecks() {
     check(rows().length === 3, "列出全部会话");
     const [first, second, third] = rows();
     check(first.textContent?.includes("fly-island · 设置界面完善思路") && first.querySelector(".agent-provider-icon--claudeCode"), "每行显示图标、项目名和标题");
-    check(first.querySelector(".agent-session__model")?.textContent === "Opus 5.5 · Xhigh", "显示模型和推理强度，插件改写的强度照改写后的显示");
+    check(first.querySelector(".agent-session__model")?.textContent === `Opus 5.5 · ${PLUGINS_ENABLED ? "Xhigh" : "Medium"}`, "显示模型和推理强度，插件改写只在开关开启时生效");
     check(second.querySelector(".agent-session__model")?.textContent === "gpt-6-astra · High", "插件只改了 Claude Code 的强度时，Codex 照原样显示");
     check(first.classList.contains("agent-session--running") && second.classList.contains("agent-session--waiting") && third.classList.contains("agent-session--completed"), "状态灯按会话状态着色");
     const meta = (row: HTMLElement) => row.querySelector(".agent-session__meta")?.textContent;
