@@ -99,7 +99,7 @@ Join the **fly-island user group on WeChat** to discuss the app, report problems
   <img src="docs/assets/wechat-community.jpg" alt="QR code for the fly-island WeChat user group" width="360">
 </p>
 
-The QR code expires; the current image says it is **valid before November 18**. If it has expired, please [open an issue](https://github.com/flyl1u/fly-island/issues) to request an update.
+The QR code expires; the current image says it is **valid before November 23**. If it has expired, please [open an issue](https://github.com/flyl1u/fly-island/issues) to request an update.
 
 ## Development and build
 
