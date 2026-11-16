@@ -8,7 +8,8 @@ use super::{
 use imap::Session;
 use std::io::{Read, Write};
 
-const MAX_OTP_MAILS: usize = 3;
+const MAX_OTP_MAILS: usize = 5;
+const MAX_INITIAL_AGE_MS: i64 = 24 * 60 * 60 * 1000;
 const MAX_PEEK_BYTES: usize = 256 * 1024;
 const PEEK_QUERY: &str = "(UID BODY.PEEK[]<0.262144>)";
 
@@ -34,30 +35,42 @@ pub(super) fn enrich<T: Read + Write>(
     validity: u32,
     previous: Option<Cursor>,
 ) -> Result<(), MailFailure> {
-    // Initial login and UIDVALIDITY changes establish a baseline; never scan old unread mail.
-    for item in items
-        .iter_mut()
-        .filter(|item| is_arrival(item, validity, previous))
-        .take(MAX_OTP_MAILS)
-    {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default().as_millis() as i64;
+    let initial = previous.is_none_or(|old| old.validity != validity);
+    let mut attempted = 0;
+    for item in items.iter_mut() {
+        if !item.unread && previous.is_some_and(|old| old.validity == validity && item.uid > old.high_water) {
+            eprintln!("mail OTP: skipped new message, already read");
+        }
+        let arrival = is_arrival(item, validity, previous);
+        let recent = initial && item.unread && item.received_at.is_some_and(|at| at <= now && now.saturating_sub(at) <= MAX_INITIAL_AGE_MS);
+        if !arrival && !recent { continue; }
+        if attempted >= MAX_OTP_MAILS {
+            if arrival { eprintln!("mail OTP: skipped new message, per-sync limit reached"); }
+            continue;
+        }
+        attempted += 1;
+        eprintln!("mail OTP: checking unread message (initial={initial}, likely={})", otp::likely_verification(&item.subject, &item.sender));
         item.otp_code = otp::extract(&item.subject, "", &[]).map(|code| code.text);
-        if item.otp_code.is_some() || !otp::likely_verification(&item.subject, &item.sender) {
+        if item.otp_code.is_some() {
+            eprintln!("mail OTP: matched subject");
             continue;
         }
         // EXAMINE was issued by the inbox sync. PEEK also keeps this safe if the session's
         // selection mode ever changes. Partial fetch bounds large MIME/attachment messages.
         let messages = match session.uid_fetch(item.uid.to_string(), PEEK_QUERY) {
             Ok(messages) => messages,
-            Err(imap::Error::No(reason)) => {
-                eprintln!("mail OTP: server rejected optional body peek: {reason}");
+            Err(imap::Error::No(_)) => {
+                eprintln!("mail OTP: server rejected optional body peek (NO)");
                 continue;
             }
-            Err(imap::Error::Bad(reason)) => {
-                eprintln!("mail OTP: server rejected optional body peek: {reason}");
+            Err(imap::Error::Bad(_)) => {
+                eprintln!("mail OTP: server rejected optional body peek (BAD)");
                 continue;
             }
-            Err(error) => {
-                eprintln!("mail OTP: body peek failed: {error}");
+            Err(_) => {
+                eprintln!("mail OTP: body peek failed due to connection error");
                 return Err(MailFailure::network());
             }
         };
@@ -68,6 +81,9 @@ pub(super) fn enrich<T: Read + Write>(
             .filter(|raw| raw.len() <= MAX_PEEK_BYTES)
         {
             item.otp_code = code_from_mime(&item.subject, raw);
+            eprintln!("mail OTP: body checked, match={}", item.otp_code.is_some());
+        } else {
+            eprintln!("mail OTP: body unavailable or too large");
         }
     }
     Ok(())

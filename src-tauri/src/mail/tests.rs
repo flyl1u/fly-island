@@ -359,7 +359,8 @@ fn cached_sync_updates_flags_without_downloading_headers_again() {
 #[test]
 fn a_new_arrival_downloads_only_its_header_and_preserves_cached_titles() {
     let header = "From: new@example.com\r\nSubject: New arrival\r\n\r\n";
-    let script = format!("* OK ready\r\na1 OK login\r\n* 3 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 4] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 2)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS (\\Seen))\r\n* 2 FETCH (UID 2 FLAGS ())\r\n* 3 FETCH (UID 3 FLAGS ())\r\na4 OK flags\r\n* 3 FETCH (UID 3 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na5 OK header\r\n", header.len());
+    let body = "Content-Type: text/plain\r\n\r\nNews";
+    let script = format!("* OK ready\r\na1 OK login\r\n* 3 EXISTS\r\n* OK [UIDVALIDITY 7] valid\r\n* OK [UIDNEXT 4] next\r\na2 OK examined\r\n* STATUS INBOX (UNSEEN 2)\r\na3 OK status\r\n* 1 FETCH (UID 1 FLAGS (\\Seen))\r\n* 2 FETCH (UID 2 FLAGS ())\r\n* 3 FETCH (UID 3 FLAGS ())\r\na4 OK flags\r\n* 3 FETCH (UID 3 FLAGS () BODY[HEADER]<0> {{{}}}\r\n{header})\r\na5 OK header\r\n* 3 FETCH (UID 3 BODY[]<0> {{{}}}\r\n{body})\r\na6 OK peek\r\n", header.len(), body.len());
     let (client, output) = client(script);
     let mut session = client.login("user@qq.com", "test-secret").unwrap();
     let cached = inbox(7, &[1, 2]);
@@ -372,7 +373,8 @@ fn a_new_arrival_downloads_only_its_header_and_preserves_cached_titles() {
     assert_eq!(state.accept(0, next).unwrap().1.as_deref(), Some("7:3"));
     let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
     assert!(commands.contains("UID FETCH 3 (UID FLAGS INTERNALDATE BODY.PEEK[HEADER]"));
-    assert_eq!(commands.matches("BODY.PEEK").count(), 1);
+    assert_eq!(commands.matches("BODY.PEEK[HEADER]").count(), 1);
+    assert_eq!(commands.matches("BODY.PEEK[]").count(), 1);
 }
 
 #[test]
