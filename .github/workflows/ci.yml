@@ -56,14 +56,11 @@ jobs:
           cargo build --manifest-path plugins/example-hello/Cargo.toml
           cargo test --manifest-path src-tauri/Cargo.toml
 
-      - name: Example plugin clippy
-        run: cargo clippy --manifest-path plugins/example-hello/Cargo.toml --all-targets -- -D warnings
+      - name: Plugin workspace tests
+        run: cargo test --manifest-path plugins/Cargo.toml --workspace
 
-      - name: Plugin SDK tests
-        run: cargo test --manifest-path plugins/sdk/Cargo.toml
-
-      - name: Plugin SDK clippy
-        run: cargo clippy --manifest-path plugins/sdk/Cargo.toml --all-targets -- -D warnings
+      - name: Plugin workspace clippy
+        run: cargo clippy --manifest-path plugins/Cargo.toml --workspace --all-targets -- -D warnings
 
       # 结构重构后 clippy 为 0 告警（AGENTS.md），新告警直接让检查失败。
       - name: Clippy

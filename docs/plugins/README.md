@@ -21,4 +21,15 @@
 
 权限标签是审核声明，不是操作系统沙箱。安装源限维护者发布索引；本地索引和目录加载只用于显式开发模式。插件以当前用户权限运行。第三方源码必须经作者 review 后才能随 Release 分发。
 
+| 插件 / Plugin | 固定联网域名 / Fixed network domains |
+| --- | --- |
+| kimi | `api.kimi.com` |
+| grok-bot | `api2.cursor.sh`（Grok Bot 客户端使用的额度接口 / quota endpoint used by the Grok Bot client） |
+| gemini | `oauth2.googleapis.com`, `cloudcode-pa.googleapis.com` |
+| zcode | `api.z.ai`, `bigmodel.cn`, `zcode.z.ai` |
+| doubao | `www.doubao.com`；独立浏览器登录可能按用户操作跳转认证方 / private browser sign-in may navigate to identity providers |
+| hermes / office-im | 不联网 / offline |
+
+Cookie 登录只收集 `doubao.com` 及其子域的 Cookie，不收集认证方 Cookie。保存到 Windows 凭据管理器，不创建明文凭据文件。Browser login collects only cookies for `doubao.com` and its subdomains, never identity-provider cookies, and stores the result in Windows Credential Manager.
+
 Plugins are optional native processes, rendered exclusively by host components. Permissions describe reviewed behavior; they are not an OS sandbox. Credentials remain on this machine. See the protocol and quickstart for integration and review requirements.

@@ -1,8 +1,10 @@
+//! Algorithms adapted from Renly1994/xiaotang-daozai src/zcode_quota.rs (MIT).
+//! Copyright (c) 2026 小唐的Token and Daozai contributors.
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use fly_island_plugin_sdk::{
-    aes_256_gcm_decrypt, empty, json, quota, run, sha256, Value,
+    aes_256_gcm_decrypt, empty, json, quota, read_json, run, sha256, Value,
 };
-use std::{fs, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 fn decrypt_value(root: &Value, name: &str) -> Option<String> {
     let raw = root[name].as_str()?;
@@ -95,8 +97,7 @@ fn fetch_quota(settings: &Value) -> Option<Value> {
 
     let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME"))?;
     let path = PathBuf::from(home).join(".zcode/v2/credentials.json");
-    let raw = fs::read(&path).ok()?;
-    let root: Value = serde_json::from_slice(&raw).ok()?;
+    let root = read_json(&path, 1024 * 1024).ok()?;
     let family = decrypt_value(&root, "oauth:active_provider").unwrap_or_else(|| "zai".into());
     let jwt = decrypt_value(&root, "zcodejwttoken");
 
@@ -127,8 +128,7 @@ fn fetch_quota(settings: &Value) -> Option<Value> {
 
     // Fallback: Start plan billing balance
     let telemetry_path = path.with_file_name("telemetry-state.json");
-    let mid = fs::read(&telemetry_path).ok().and_then(|raw| {
-        let val: Value = serde_json::from_slice(&raw).ok()?;
+    let mid = read_json(&telemetry_path, 1024 * 1024).ok().and_then(|val| {
         val["deviceMid"].as_str().map(str::to_owned)
     });
     if let Some(t) = jwt {

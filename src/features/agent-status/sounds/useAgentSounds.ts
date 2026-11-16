@@ -33,6 +33,11 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
   const announcedRef = useRef(emptyAnnounced());
   const timersRef = useRef(new Set<number>());
   const latest = useRef({ settings, canPlay, sessions, unseen });
+  const active = useRef(false);
+  useLayoutEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
   useLayoutEffect(() => {
     latest.current = { settings, canPlay, sessions, unseen };
   });
@@ -40,7 +45,16 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
   useEffect(() => {
     const previous = seenRef.current;
     seenRef.current = new Map(previous);
-    for (const session of sessions) seenRef.current.set(sessionKey(session), { phase: session.phase, compacting: session.compacting === true, completedAt: session.lastCompletedAt });
+    for (const session of sessions) {
+      const key = sessionKey(session);
+      seenRef.current.delete(key);
+      seenRef.current.set(key, { phase: session.phase, compacting: session.compacting === true, completedAt: session.lastCompletedAt });
+    }
+    while (seenRef.current.size > 2048) {
+      const key = seenRef.current.keys().next().value;
+      if (key === undefined) break;
+      seenRef.current.delete(key);
+    }
     const changes = sessions.flatMap((session): Change[] => {
       const before = previous?.get(sessionKey(session));
       if (!previous && !hasNewCompletion(undefined, session)) return [];
@@ -60,31 +74,31 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
     const waits = changes.filter((change) => (change.event === "approval" || change.event === "question") && change.session.phase === "waiting");
     const now = changes.filter((change) => !finished.includes(change) && !waits.includes(change));
     // A failed turn sounds at once, but only when it was the user's own task.
-    playOne(now.filter((change) => change.event !== "error" || isUsersTurn(change.session)), latest.current);
+    playOne(now.filter((change) => change.event !== "error" || isUsersTurn(change.session)), () => active.current ? latest.current : null);
     if (finished.length > 0) {
       later(announceTiming.completeMs, () => {
         const settled = settledFinishes(finished.map((change) => change.session), latest.current.sessions, announcedRef.current);
-        playOne(finished.filter((change) => settled.includes(change.session)), latest.current);
+        playOne(finished.filter((change) => settled.includes(change.session)), () => active.current ? latest.current : null);
       });
     }
     if (waits.length > 0) {
       later(announceTiming.waitMs, () => {
         const settled = settledWaits(waits.map((change) => change.session), latest.current.sessions, announcedRef.current, Date.now());
-        playOne(waits.filter((change) => settled.includes(change.session)), latest.current);
+        playOne(waits.filter((change) => settled.includes(change.session)), () => active.current ? latest.current : null);
       });
     }
   }, [sessions]);
 
   useEffect(() => {
     const timers = timersRef.current;
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    return () => { timers.forEach((timer) => window.clearTimeout(timer)); timers.clear(); };
   }, []);
 
   useEffect(() => {
     const check = () => {
       const { sessions: current, unseen: unread } = latest.current;
       const due = takeIdleSessions(idleRef.current, current, unread, Date.now());
-      playOne(due.map((session) => ({ event: "idle", session })), latest.current);
+      playOne(due.map((session) => ({ event: "idle", session })), () => active.current ? latest.current : null);
     };
     const timer = window.setInterval(check, IDLE_CHECK_MS);
     return () => window.clearInterval(timer);
@@ -92,16 +106,27 @@ export function useAgentSounds(sessions: AgentSessionSummary[], canPlay: boolean
 }
 
 /** Plays the most important of `changes` that the settings allow, leaving out sessions in front. */
-function playOne(candidates: Change[], { settings, canPlay }: { settings: AgentSoundSettings; canPlay: boolean }) {
+function playOne(candidates: Change[], current: () => { settings: AgentSoundSettings; canPlay: boolean } | null) {
+  const state = current();
+  if (!state) return;
+  const { settings, canPlay } = state;
   if (!canPlay || !settings.enabled) return;
   const changes = candidates.filter((change) => settings.events[change.event]);
   if (changes.length === 0) return;
   const pick = (from: Change[]) => PRIORITY.map((event) => from.find((change) => change.event === event)).find(Boolean);
+  const play = (chosen: Change | undefined) => {
+    const state = current();
+    if (!chosen || !state?.canPlay) return;
+    playAgentSound(chosen.event, state.settings, new Date(), () => {
+      const live = current();
+      return live?.canPlay === true && live.settings === state.settings;
+    });
+  };
   // Sounds about the user's own typing (start, a new prompt) are wanted while the terminal is in front.
   const needsCheck = changes.filter((change) => change.event !== "start" && change.event !== "ack");
   if (!settings.quietWhenInFront || needsCheck.length === 0) {
     const chosen = pick(changes);
-    if (chosen) playAgentSound(chosen.event, settings);
+    play(chosen);
     return;
   }
   void agentSessionsInFront(needsCheck.map((change) => change.session))
@@ -111,6 +136,6 @@ function playOne(candidates: Change[], { settings, canPlay }: { settings: AgentS
     })
     .then((inFront) => {
       const chosen = pick(changes.filter((change) => !inFront.includes(change.session.sessionId)));
-      if (chosen) playAgentSound(chosen.event, settings);
+      play(chosen);
     });
 }

@@ -40,7 +40,7 @@ impl Host {
 
     pub fn start(&self, id: &str) -> Result<(), String> {
         let p = self.registry.lock().map_err(|e| e.to_string())?.installed.get(id).cloned().ok_or("Plugin not installed")?;
-        let actual = Manifest::parse(&std::fs::read(p.directory.join("fly-island-plugin.json")).map_err(|e| e.to_string())?)?;
+        let actual = Manifest::read(&p.directory.join("fly-island-plugin.json"))?;
         if !p.development && p.directory != self.root.join("plugins").join(id) { return Err("Unsafe plugin directory".into()); }
         if actual.id != id || serde_json::to_value(&actual).map_err(|e| e.to_string())? != serde_json::to_value(&p.manifest).map_err(|e| e.to_string())? {
             return Err("Plugin manifest changed; reload or reinstall it".into());
@@ -67,6 +67,8 @@ impl Host {
 
     pub fn shutdown(&self) {
         let workers = std::mem::take(&mut *self.workers.lock().unwrap_or_else(PoisonError::into_inner));
+        // Begin every grace period together; slow plugins must not add 3 seconds each on exit.
+        for worker in workers.values() { worker.stop(); }
         drop(workers);
         self.live.lock().unwrap_or_else(PoisonError::into_inner).clear();
     }

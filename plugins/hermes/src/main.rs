@@ -1,11 +1,13 @@
 //! Nous Research Hermes Agent 会话插件。
 //! Hermes 采用 BYOK (Bring-Your-Own-Key) 模式，无集中式官方额度计费接口；本插件提供本地会话列表。
 
-use fly_island_plugin_sdk::{empty, json, now, run, session, Value};
-use std::{fs, path::PathBuf, time::Duration};
+use fly_island_plugin_sdk::{empty, json, run, session, timestamp_or_file, Value};
+use std::{fs, io::Read, path::PathBuf, time::Duration};
 
 pub fn parse_session_file(path: &std::path::Path) -> Option<Value> {
-    let raw = fs::read(path).ok()?;
+    let mut raw = Vec::new();
+    fs::File::open(path).ok()?.take(16 * 1024 * 1024 + 1).read_to_end(&mut raw).ok()?;
+    if raw.len() > 16 * 1024 * 1024 { return None; }
     let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("hermes-session");
     let ext = path.extension().and_then(|s| s.to_str()).unwrap_or_default();
 
@@ -19,11 +21,10 @@ pub fn parse_session_file(path: &std::path::Path) -> Option<Value> {
                 Some("waiting") | Some("paused") => "waiting",
                 _ => "completed",
             };
-            let updated = v["updated_at"]
+            let updated = timestamp_or_file(v["updated_at"]
                 .as_i64()
                 .or_else(|| v["updatedAt"].as_i64())
-                .unwrap_or_else(now);
-            let updated = if updated < 10_000_000_000 { updated * 1000 } else { updated };
+                , path);
             return Some(session(id, title, cwd, status, updated, None));
         }
     } else if ext == "jsonl" {
@@ -33,7 +34,7 @@ pub fn parse_session_file(path: &std::path::Path) -> Option<Value> {
                 let id = v["id"].as_str().or_else(|| v["session_id"].as_str()).unwrap_or(stem);
                 let title = v["title"].as_str().or_else(|| v["name"].as_str()).unwrap_or(stem);
                 let cwd = v["cwd"].as_str().or_else(|| v["workdir"].as_str());
-                let updated = v["timestamp"].as_i64().unwrap_or_else(now);
+                let updated = timestamp_or_file(v["timestamp"].as_i64(), path);
                 return Some(session(id, title, cwd, "completed", updated, None));
             }
         }

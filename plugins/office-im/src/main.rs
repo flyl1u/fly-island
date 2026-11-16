@@ -1,11 +1,12 @@
 //! 企业微信 / 钉钉 / 飞书 办公通讯提醒插件。
 //! Portions derived from Renly1994/xiaotang-daozai (MIT License).
+//! Copyright (c) 2026 小唐的Token and Daozai contributors.
 
 use fly_island_plugin_sdk::{empty, json, notification, now, publish, run, Value};
 use std::{
     collections::HashMap,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{atomic::{AtomicU32, Ordering}, Arc, Mutex, PoisonError},
     time::{Duration, Instant},
 };
 use windows::{
@@ -24,6 +25,8 @@ use windows::{
 };
 
 const FLASH: usize = 0x8006;
+static SHELL_MESSAGE: AtomicU32 = AtomicU32::new(0);
+static TASKBAR_MESSAGE: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Client {
@@ -70,7 +73,7 @@ impl Client {
 
 pub fn identify_client(class: &str, exe_name: &str) -> Option<Client> {
     let lower_exe = exe_name.to_ascii_lowercase();
-    if class == "WeWorkWindow" || lower_exe == "wxwork.exe" || lower_exe == "wework.exe" {
+    if (class == "WeWorkWindow" && lower_exe.is_empty()) || lower_exe == "wxwork.exe" || lower_exe == "wework.exe" {
         Some(Client::WeWork)
     } else if class == "Chrome_WidgetWin_1" && lower_exe == "feishu.exe" {
         Some(Client::Feishu)
@@ -141,12 +144,17 @@ unsafe extern "system" fn window_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     let state_arc = get_state();
+    if msg == WM_CLOSE { let _ = DestroyWindow(hwnd); return LRESULT(0); }
+    if msg == WM_DESTROY { PostQuitMessage(0); return LRESULT(0); }
+    if msg != 0 && msg == TASKBAR_MESSAGE.load(Ordering::Acquire) {
+        let _ = RegisterShellHookWindow(hwnd); return LRESULT(0);
+    }
     if msg == WM_NCDESTROY {
         let _ = DeregisterShellHookWindow(hwnd);
         return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
 
-    if matches!(wparam.0, FLASH | 4 | 0x8004) {
+    if msg != 0 && msg == SHELL_MESSAGE.load(Ordering::Acquire) && matches!(wparam.0, FLASH | 4 | 0x8004) {
         let target = HWND(lparam.0 as *mut _);
         if IsWindow(Some(target)).as_bool() {
             let class = window_class(target);
@@ -158,7 +166,7 @@ unsafe extern "system" fn window_proc(
                 let is_fg = fg == target || GetAncestor(target, GA_ROOTOWNER) == fg;
                 let now_inst = Instant::now();
 
-                let mut st = state_arc.lock().unwrap();
+                let mut st = state_arc.lock().unwrap_or_else(PoisonError::into_inner);
                 if !client.enabled(&st.settings) {
                     return DefWindowProcW(hwnd, msg, wparam, lparam);
                 }
@@ -216,6 +224,8 @@ unsafe extern "system" fn window_proc(
 }
 
 fn start_listener() -> Result<HWND, String> {
+    // SAFETY: this thread owns the hidden window and its message pump; string and buffer
+    // arguments remain live for each Win32 call, and the callback never unwinds on poison.
     unsafe {
         let class_name = w!("FlyIslandOfficeIMListener");
         let hinstance = GetModuleHandleW(None).map(|m| HINSTANCE(m.0)).unwrap_or_default();
@@ -244,14 +254,17 @@ fn start_listener() -> Result<HWND, String> {
 
         let shellhook_msg = RegisterWindowMessageW(w!("SHELLHOOK"));
         let taskbar_created_msg = RegisterWindowMessageW(w!("TaskbarCreated"));
+        SHELL_MESSAGE.store(shellhook_msg, Ordering::Release);
+        TASKBAR_MESSAGE.store(taskbar_created_msg, Ordering::Release);
         for msg in [shellhook_msg, taskbar_created_msg] {
             if msg != 0 {
                 let _ = ChangeWindowMessageFilterEx(hwnd, msg, MSGFLT_ALLOW, None);
             }
         }
-        RegisterShellHookWindow(hwnd)
-            .ok()
-            .map_err(|e| format!("RegisterShellHookWindow 失败：{e}"))?;
+        if let Err(error) = RegisterShellHookWindow(hwnd).ok() {
+            let _ = DestroyWindow(hwnd);
+            return Err(format!("RegisterShellHookWindow failed: {error}"));
+        }
         Ok(hwnd)
     }
 }
@@ -259,14 +272,18 @@ fn start_listener() -> Result<HWND, String> {
 fn activate_window(client: Client) -> Result<(), String> {
     let state_arc = get_state();
     let hwnd_opt = {
-        let mut st = state_arc.lock().unwrap();
+        let mut st = state_arc.lock().unwrap_or_else(PoisonError::into_inner);
         st.notifications.remove(&client);
         st.windows.get(&client).copied()
     };
     if let Some(h_val) = hwnd_opt {
         let hwnd = HWND(h_val as *mut _);
+        // SAFETY: a cached HWND can be recycled, so validate both liveness and client identity.
         unsafe {
-            if IsWindow(Some(hwnd)).as_bool() {
+            let mut pid = 0;
+            GetWindowThreadProcessId(hwnd, Some(&mut pid));
+            if IsWindow(Some(hwnd)).as_bool()
+                && identify_client(&window_class(hwnd), &process_exe(pid).unwrap_or_default()) == Some(client) {
                 if IsIconic(hwnd).as_bool() {
                     let _ = ShowWindowAsync(hwnd, SW_RESTORE);
                 } else if !IsWindowVisible(hwnd).as_bool() {
@@ -278,6 +295,7 @@ fn activate_window(client: Client) -> Result<(), String> {
         }
     }
     // Fallback: search for top level window of this client
+    // SAFETY: EnumWindows invokes visit synchronously with a live Search pointer.
     unsafe {
         struct Search {
             client: Client,
@@ -316,7 +334,8 @@ fn main() {
     let state_arc = get_state();
 
     // Start background Windows message pump thread
-    std::thread::spawn(|| {
+    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+    let listener = std::thread::spawn(move || {
         let hwnd = match start_listener() {
             Ok(h) => h,
             Err(e) => {
@@ -324,9 +343,11 @@ fn main() {
                 return;
             }
         };
+        let _ = sender.send(hwnd.0 as isize);
+        // SAFETY: this thread created the window, owns msg, and destroys it after the pump.
         unsafe {
             let mut msg = MSG::default();
-            while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+            while GetMessageW(&mut msg, None, 0, 0).0 > 0 {
                 let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
@@ -334,11 +355,13 @@ fn main() {
         }
     });
 
-    if run(
+    let hwnd = receiver.recv().ok();
+    let result = run(
         Duration::from_secs(30),
         move |settings| {
-            let mut st = state_arc.lock().unwrap();
+            let mut st = state_arc.lock().unwrap_or_else(PoisonError::into_inner);
             st.settings = settings.clone();
+            st.notifications.retain(|client, _| client.enabled(settings));
             let notifications: Vec<Value> = st.notifications.values().cloned().collect();
             if notifications.is_empty() {
                 Ok(empty())
@@ -353,7 +376,7 @@ fn main() {
         move |action_id, _| {
             if let Some(client) = Client::from_action(action_id) {
                 activate_window(client)?;
-                let st = get_state().lock().unwrap();
+                let st = get_state().lock().unwrap_or_else(PoisonError::into_inner);
                 let active: Vec<Value> = st.notifications.values().cloned().collect();
                 drop(st);
                 let _ = publish(json!({
@@ -366,11 +389,13 @@ fn main() {
                 Err(format!("未知操作：{action_id}"))
             }
         },
-    )
-    .is_err()
-    {
-        std::process::exit(1);
+    );
+    if let Some(hwnd) = hwnd {
+        // SAFETY: only requests that the listener thread close its own hidden window.
+        let _ = unsafe { PostMessageW(Some(HWND(hwnd as *mut _)), WM_CLOSE, WPARAM(0), LPARAM(0)) };
     }
+    let _ = listener.join();
+    if result.is_err() { std::process::exit(1); }
 }
 
 #[cfg(test)]
@@ -379,6 +404,8 @@ mod tests {
 
     #[test]
     fn test_identify_clients() {
+        assert_eq!(identify_client("WeWorkWindow", "unrelated.exe"), None);
+        assert_eq!(identify_client("WeWorkWindow", ""), Some(Client::WeWork));
         assert_eq!(
             identify_client("WeWorkWindow", "WXWork.exe"),
             Some(Client::WeWork)

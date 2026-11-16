@@ -1,8 +1,10 @@
+//! Algorithms adapted from Renly1994/xiaotang-daozai src/grok_quota.rs (MIT).
+//! Copyright (c) 2026 小唐的Token and Daozai contributors.
 use base64::{engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD}, Engine};
 use fly_island_plugin_sdk::{
-    chromium_local_state_key, decrypt_chromium_v10, empty, json, now, quota, run, sha256, Value,
+    chromium_local_state_key, decrypt_chromium_v10, empty, json, now, quota, read_json, run, sha256, Value,
 };
-use std::{fs, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 fn uuid() -> String {
     let input = format!("{}:{}", std::process::id(), now());
@@ -41,8 +43,7 @@ fn find_token(settings: &Value) -> Option<String> {
     let base = PathBuf::from(&appdata).join("Grok Bot");
     let secrets_path = base.join("sand-secrets.json");
     let local_state_path = base.join("Local State");
-    let raw = fs::read(&secrets_path).ok()?;
-    let root: Value = serde_json::from_slice(&raw).ok()?;
+    let root = read_json(&secrets_path, 1024 * 1024).ok()?;
     let accounts_val = match &root["cursor-accounts"] {
         Value::String(s) => serde_json::from_str::<Value>(s).ok()?,
         other => other.clone(),

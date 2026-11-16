@@ -13,6 +13,8 @@ pub struct Worker {
 }
 
 impl Worker {
+    pub fn stop(&self) { self.stop.store(true, Ordering::Release); }
+
     pub fn start(directory: PathBuf, manifest: Manifest, settings: Value, log: PathBuf, publish: Publish) -> Self {
         let stop = Arc::new(AtomicBool::new(false));
         let (sender, receiver) = mpsc::sync_channel(16);
@@ -30,23 +32,30 @@ impl Worker {
 
 impl Drop for Worker {
     fn drop(&mut self) {
-        self.stop.store(true, Ordering::Release);
+        self.stop();
         if let Some(join) = self.join.take() { let _ = join.join(); }
     }
 }
 
-pub fn restart_delay(attempt: u32) -> Duration {
-    Duration::from_secs(1 << attempt.min(5))
+pub fn restart_delay(attempt: u32) -> Option<Duration> {
+    (attempt < 6).then(|| Duration::from_secs(1 << attempt))
 }
 
 fn supervise(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop: Arc<AtomicBool>, receiver: mpsc::Receiver<Request>, publish: Publish) {
     let mut attempt = 0;
     while !stop.load(Ordering::Acquire) {
         publish(Contributions::default(), "starting");
-        let _ = run(directory, manifest, settings, log, &stop, &receiver, &publish);
+        if let Err(error) = run(directory, manifest, settings, log, &stop, &receiver, &publish) {
+            let secrets: Vec<String> = manifest.settings.iter().filter(|s| s.kind == "secret")
+                .filter_map(|s| settings[&s.key].as_str().map(str::to_owned)).collect();
+            log_stderr(format!("plugin worker: {error}\n").as_bytes(), log, &secrets);
+        }
         if stop.load(Ordering::Acquire) { break; }
+        let Some(delay) = restart_delay(attempt) else {
+            publish(Contributions::default(), "failed");
+            return;
+        };
         publish(Contributions::default(), "restarting");
-        let delay = restart_delay(attempt);
         attempt = attempt.saturating_add(1);
         let until = Instant::now() + delay;
         while Instant::now() < until && !stop.load(Ordering::Acquire) { thread::sleep(Duration::from_millis(50)); }
@@ -65,6 +74,15 @@ fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop
         command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     let mut child = command.spawn().map_err(|e| e.to_string())?;
+    #[cfg(windows)]
+    let _job = match crate::win32::process_job::ProcessJob::attach(&child) {
+        Ok(job) => job,
+        Err(error) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(format!("Cannot isolate plugin process tree: {error}"));
+        }
+    };
     let result = (|| {
         let mut input = child.stdin.take().ok_or("Plugin stdin unavailable")?;
         let (writer, messages) = mpsc::sync_channel::<String>(16);
@@ -129,6 +147,13 @@ fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop
                 if started.elapsed() < Duration::from_secs(15) { true } else { let _ = reply.send(Err("Plugin action timeout".into())); false }
             });
         }
+        // SDK plugins can release their own resources before the job terminates stragglers.
+        let _ = writer.try_send(json!({"jsonrpc":"2.0","method":"shutdown","params":{}}).to_string());
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while Instant::now() < deadline {
+            if child.try_wait().map_err(|e| e.to_string())?.is_some() { break; }
+            thread::sleep(Duration::from_millis(10));
+        }
         Ok(())
     })();
     let _ = child.kill();
@@ -138,11 +163,20 @@ fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop
 
 pub(super) fn log_stderr(output: impl Read, path: &Path, secrets: &[String]) {
     let mut reader = BufReader::new(output);
+    let mut oversized = false;
     loop {
         let mut bytes = Vec::new();
         if !matches!(reader.by_ref().take(8192).read_until(b'\n', &mut bytes), Ok(n) if n > 0) { break; }
+        // Never persist fragments: a credential may straddle the chunk boundary.
+        let complete = bytes.last() == Some(&b'\n');
+        if oversized || !complete {
+            oversized = !complete;
+            continue;
+        }
         let mut line = String::from_utf8_lossy(&bytes).into_owned();
-        for secret in secrets { line = line.replace(secret, "[redacted]"); }
+        for secret in secrets {
+            for part in secret.lines().filter(|part| !part.is_empty()) { line = line.replace(part, "[redacted]"); }
+        }
         if std::fs::metadata(path).is_ok_and(|m| m.len() > 1024 * 1024) { let _ = std::fs::remove_file(path); }
         if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) { let _ = file.write_all(line.as_bytes()); }
     }

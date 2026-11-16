@@ -32,7 +32,7 @@ src-tauri/src/
 ├── notification_diagnostics.rs
 └── win32/                   # Win32 / COM 的安全封装，crate 中唯一允许 unsafe 的地方：window（窗口查询、枚举、前台切换）、
                              # message_window（隐藏消息窗口与安全的窗口过程）、hotkey、clipboard、shell_hook、input、
-                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、registry、
+                             # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
                              # notification_state（前台是否有全屏程序）、shell_open（不弹系统错误框地打开协议）、
                              # task_switcher（让主窗口不进 Alt+Tab）、known_folder（下载文件夹等已知文件夹）、
                              # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、uia_tabs / uia_list、caption_close、taskbar

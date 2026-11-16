@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 export const PAGES = [
   "agent-alert-card.html",
   "agent-alerts.html",
+  "agent-sounds.html",
   "agent-approvals.html",
   "agent-dsh.html?test=1",
   "agent-sessions.html?test=1",

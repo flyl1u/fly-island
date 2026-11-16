@@ -16,6 +16,15 @@ const session = (lastCompletedAt = NOW - 1000, overrides = {}) => ({
   ...overrides,
 });
 
+test("completion histories stay bounded while retaining the most recently seen sessions", () => {
+  let seen = null;
+  for (let i = 0; i < 2100; i++) seen = phasesOf([session(NOW - 1000, { sessionId: String(i) })], seen);
+  assert.equal(seen.completions.size, 2048);
+  assert.ok(seen.worked.size <= 2048);
+  const latest = session(NOW - 1000, { sessionId: "2099" });
+  assert.equal(detectAlerts(seen, [latest], ALL, NOW).length, 0);
+});
+
 test("a complete turn between polls is announced once even with the same phase and answer", () => {
   const before = session(NOW - 5000, { turnStartedAt: NOW - 8000, ownerPromptAt: NOW - 8000 });
   const after = session();

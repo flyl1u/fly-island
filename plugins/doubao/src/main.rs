@@ -1,7 +1,8 @@
 //! 豆包网页会员额度插件。
 //! Portions derived from Renly1994/xiaotang-daozai (MIT License).
+//! Copyright (c) 2026 小唐的Token and Daozai contributors.
 
-use fly_island_plugin_sdk::{empty, json, publish, quota, run, Value};
+use fly_island_plugin_sdk::{credentials, empty, json, publish, quota, run, Value};
 use serde_json::Value as JsonValue;
 use std::{
     fs,
@@ -39,10 +40,10 @@ pub fn parse_doubao_quota(value: &Value) -> Option<Value> {
                     if tot > 0.0 {
                         used / tot * 100.0
                     } else {
-                        0.0
+                        continue;
                     }
                 } else {
-                    0.0
+                    continue;
                 };
                 let remaining = (100.0 - used_percent).clamp(0.0, 100.0);
                 let reset = limit["end_time"]
@@ -97,17 +98,22 @@ fn cookie_file_path() -> Option<PathBuf> {
 }
 
 fn load_saved_cookie() -> Option<String> {
+    if let Some(cookie) = credentials::load("doubao", "cookie").ok().flatten() { return Some(cookie); }
+    // Migrate only this plugin's former file, after the vault write succeeds.
     let path = cookie_file_path()?;
-    fs::read_to_string(path).ok().map(|s| s.trim().to_owned()).filter(|s| !s.is_empty())
+    let file = fs::File::open(&path).ok()?;
+    use std::io::Read;
+    let mut raw = String::new();
+    file.take(8193).read_to_string(&mut raw).ok()?;
+    let cookie = raw.trim();
+    if cookie.is_empty() || cookie.len() > 8192 { return None; }
+    credentials::save("doubao", "cookie", cookie).ok()?;
+    let _ = fs::remove_file(path);
+    Some(cookie.to_owned())
 }
 
-fn save_cookie(cookie: &str) {
-    if let Some(path) = cookie_file_path() {
-        if let Some(parent) = path.parent() {
-            let _ = fs::create_dir_all(parent);
-        }
-        let _ = fs::write(path, cookie.trim());
-    }
+fn save_cookie(cookie: &str) -> Result<(), String> {
+    credentials::save("doubao", "cookie", cookie.trim())
 }
 
 fn find_browser() -> Option<PathBuf> {
@@ -117,6 +123,7 @@ fn find_browser() -> Option<PathBuf> {
     };
     let mut buffer = [0u16; 4096];
     let mut length = buffer.len() as u32;
+    // SAFETY: the output buffer and length remain live; all inputs are fixed UTF-16 strings.
     if unsafe {
         AssocQueryStringW(
             ASSOCF_IS_PROTOCOL,
@@ -186,13 +193,13 @@ fn endpoint(raw: &str) -> Result<(u16, String), String> {
     Ok((port, format!("ws://127.0.0.1:{port}{path}")))
 }
 
-fn cdp(port: u16, url: &str, method: &str) -> Result<JsonValue, String> {
+fn cdp(port: u16, url: &str, method: &str, cancel: &AtomicBool) -> Result<JsonValue, String> {
     let stream = TcpStream::connect_timeout(
         &SocketAddr::from((Ipv4Addr::LOCALHOST, port)),
         Duration::from_secs(2),
     )
     .map_err(|e| e.to_string())?;
-    stream.set_read_timeout(Some(Duration::from_secs(2))).map_err(|e| e.to_string())?;
+    stream.set_read_timeout(Some(Duration::from_millis(500))).map_err(|e| e.to_string())?;
     stream.set_write_timeout(Some(Duration::from_secs(2))).map_err(|e| e.to_string())?;
     let config = WebSocketConfig::default();
     let (mut socket, _) =
@@ -204,15 +211,18 @@ fn cdp(port: u16, url: &str, method: &str) -> Result<JsonValue, String> {
         .map_err(|e| e.to_string())?;
     let deadline = Instant::now() + Duration::from_secs(3);
     while Instant::now() < deadline {
-        match socket.read().map_err(|e| e.to_string())? {
-            Message::Text(raw) => {
+        if cancel.load(Ordering::Relaxed) { return Err("Login cancelled".into()); }
+        match socket.read() {
+            Ok(Message::Text(raw)) => {
                 let val: JsonValue = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
                 if val["id"] == 1 {
                     let _ = socket.close(None);
                     return val.get("result").cloned().ok_or_else(|| "No result".into());
                 }
             }
-            Message::Close(_) => break,
+            Ok(Message::Close(_)) => break,
+            Err(tungstenite::Error::Io(error)) if matches!(error.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock) => continue,
+            Err(_) => return Err("Browser communication failed".into()),
             _ => {}
         }
     }
@@ -221,9 +231,10 @@ fn cdp(port: u16, url: &str, method: &str) -> Result<JsonValue, String> {
 
 fn login_via_browser(cancel: &AtomicBool) -> Result<String, String> {
     let exe = find_browser().ok_or("未找到 Chrome 或 Edge 浏览器")?;
-    let temp_dir = std::env::temp_dir().join(format!("fly-island-doubao-{}", std::process::id()));
-    let _ = fs::create_dir_all(&temp_dir);
-    let child = Command::new(exe)
+    let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos();
+    let temp_dir = std::env::temp_dir().join(format!("fly-island-doubao-{}-{stamp}", std::process::id()));
+    fs::create_dir(&temp_dir).map_err(|e| e.to_string())?;
+    let spawned = Command::new(exe)
         .arg(format!("--user-data-dir={}", temp_dir.display()))
         .args([
             "--remote-debugging-port=0",
@@ -236,8 +247,11 @@ fn login_via_browser(cancel: &AtomicBool) -> Result<String, String> {
         ])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| format!("无法启动浏览器：{e}"))?;
+        .spawn();
+    let child = match spawned {
+        Ok(child) => child,
+        Err(error) => { let _ = fs::remove_dir(&temp_dir); return Err(format!("Cannot launch browser: {error}")); }
+    };
 
     let mut browser = BrowserInstance {
         child,
@@ -259,31 +273,32 @@ fn login_via_browser(cancel: &AtomicBool) -> Result<String, String> {
                 .and_then(|raw| endpoint(&raw).ok());
         }
         if let Some((port, url)) = &address {
-            if let Ok(res) = cdp(*port, url, "Storage.getCookies") {
-                if let Some(cookies) = res["cookies"].as_array() {
-                    let mut cookie_parts = Vec::new();
-                    let mut has_session = false;
-                    for c in cookies {
-                        let name = c["name"].as_str().unwrap_or_default();
-                        let val = c["value"].as_str().unwrap_or_default();
-                        if name == "sessionid" || name == "sessionid_ss" {
-                            has_session = true;
-                        }
-                        if !name.is_empty() && !val.is_empty() {
-                            cookie_parts.push(format!("{name}={val}"));
-                        }
-                    }
-                    if has_session {
-                        let full_cookie = cookie_parts.join("; ");
-                        save_cookie(&full_cookie);
-                        return Ok(full_cookie);
-                    }
+            if let Ok(res) = cdp(*port, url, "Storage.getCookies", cancel) {
+                if let Some(cookie) = doubao_cookie(&res["cookies"]) {
+                    save_cookie(&cookie)?;
+                    return Ok(cookie);
                 }
             }
         }
         std::thread::sleep(Duration::from_millis(500));
     }
     Err("登录等待超时".into())
+}
+
+fn doubao_cookie(value: &Value) -> Option<String> {
+    let mut parts = Vec::new();
+    let mut has_session = false;
+    for c in value.as_array()? {
+        let domain = c["domain"].as_str().unwrap_or_default().trim_start_matches('.').to_ascii_lowercase();
+        if domain != "doubao.com" && !domain.ends_with(".doubao.com") { continue; }
+        let name = c["name"].as_str().unwrap_or_default();
+        let value = c["value"].as_str().unwrap_or_default();
+        if name.is_empty() || value.is_empty() || name.contains([';', '\r', '\n', '=']) || value.contains([';', '\r', '\n']) { continue; }
+        has_session |= matches!(name, "sessionid" | "sessionid_ss");
+        parts.push(format!("{name}={value}"));
+    }
+    let cookie = parts.join("; ");
+    (has_session && cookie.len() <= 8192).then_some(cookie)
 }
 
 fn try_find_cookie(settings: &Value) -> Option<String> {
@@ -296,12 +311,13 @@ fn try_find_cookie(settings: &Value) -> Option<String> {
 fn main() {
     let cancel = Arc::new(AtomicBool::new(false));
     let cancel_for_action = cancel.clone();
+    let mut login: Option<std::thread::JoinHandle<()>> = None;
 
     let last_cookie = Arc::new(Mutex::new(None::<String>));
     let last_cookie_poll = last_cookie.clone();
     let last_cookie_action = last_cookie.clone();
 
-    if run(
+    let result = run(
         Duration::from_secs(60),
         move |settings| {
             let cookie_opt = try_find_cookie(settings).or_else(|| {
@@ -319,30 +335,34 @@ fn main() {
                 }))
             }
         },
-        move |action_id, _| {
+        |action_id, _| {
             if action_id == "login" {
+                if login.as_ref().is_some_and(|job| !job.is_finished()) { return Ok(json!({"pending":true})); }
+                if let Some(job) = login.take() { let _ = job.join(); }
                 cancel_for_action.store(false, Ordering::Relaxed);
-                let cookie = login_via_browser(&cancel_for_action)?;
-                if let Ok(mut lock) = last_cookie_action.lock() {
-                    *lock = Some(cookie.clone());
-                }
-                if let Some(q) = fetch_quota_with_cookie(&cookie) {
-                    let _ = publish(json!({
-                        "quota": [q],
-                        "sessions": [],
-                        "notifications": []
-                    }));
-                }
-                Ok(json!({"success": true}))
+                let signal = cancel_for_action.clone();
+                let saved = last_cookie_action.clone();
+                login = Some(std::thread::spawn(move || {
+                    match login_via_browser(&signal) {
+                        Ok(cookie) => { if let Ok(mut lock) = saved.lock() { *lock = Some(cookie); } }
+                        Err(_) => eprintln!("Doubao login unavailable or cancelled"),
+                    }
+                    if !signal.load(Ordering::Relaxed) {
+                        let cookie = saved.lock().ok().and_then(|v| v.clone());
+                        if let Some(q) = cookie.as_deref().and_then(fetch_quota_with_cookie) {
+                            let _ = publish(json!({"quota":[q],"sessions":[],"notifications":[]}));
+                        }
+                    }
+                }));
+                Ok(json!({"pending": true}))
             } else {
                 Err(format!("未知操作：{action_id}"))
             }
         },
-    )
-    .is_err()
-    {
-        std::process::exit(1);
-    }
+    );
+    cancel.store(true, Ordering::Relaxed);
+    if let Some(job) = login { let _ = job.join(); }
+    if result.is_err() { std::process::exit(1); }
 }
 
 #[cfg(test)]
@@ -350,7 +370,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn browser_login_only_collects_doubao_cookies() {
+        let cookies = json!([
+            {"domain":".doubao.com","name":"sessionid","value":"own"},
+            {"domain":"www.doubao.com","name":"pref","value":"light"},
+            {"domain":"accounts.google.com","name":"sessionid","value":"private-oauth"},
+            {"domain":"evil-doubao.com","name":"other","value":"unrelated"}
+        ]);
+        assert_eq!(doubao_cookie(&cookies).as_deref(), Some("sessionid=own; pref=light"));
+        assert_eq!(doubao_cookie(&json!([{"domain":"other.com","name":"sessionid","value":"wrong"}])), None);
+        assert_eq!(doubao_cookie(&json!([{"domain":"doubao.com","name":"sessionid","value":"x\r\ny"}])), None);
+    }
+
+    #[test]
     fn test_parse_doubao_quota() {
+        for limit in [json!({}), json!({"used_amount":0,"total_amount":0})] {
+            assert!(parse_doubao_quota(&json!({"data":{"window_limit_section":{"window_limit_groups":[{"window_limits":[limit]}]}}})).is_none());
+        }
         let val = json!({
             "code": 0,
             "data": {

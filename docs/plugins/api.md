@@ -18,6 +18,8 @@
 
 `label` 和 select 的 option label 均为中英文对象。toggle 默认值是布尔；text / secret / select 是字符串；secret 默认必须为空。select options 为 `{value,label}[]`。文本最长 8192 字节。秘密存 Windows 凭据管理器，不返回前端，不写注册文件。
 
+设置 key 与动作 id 允许小写字母开头，后续字母、数字、`.`、`-`、`_`，最多 100 字节；插件 id 仍禁止下划线并校验 Windows 文件名。可执行路径和解压路径的每个分量均拒绝设备名（包括带扩展名）、尾随空格/点、ADS 和非法字符。
+
 ## 传输与生命周期
 
 stdin / stdout：UTF-8、每行一个 JSON-RPC 2.0 对象，无 BOM，输出后 flush。stdout 只能写协议；诊断写 stderr（禁止凭据、Cookie、token、请求头或响应正文）。宿主每行最大 256 KiB，manifest 最大 64 KiB。宿主不接受插件发起的宿主方法调用。
@@ -33,6 +35,8 @@ stdin / stdout：UTF-8、每行一个 JSON-RPC 2.0 对象，无 BOM，输出后 
 宿主点击动作：`{"jsonrpc":"2.0","id":1,"method":"action","params":{"id":"open-session-123"}}`。动作只允许 manifest 声明的 id 或最近 publish 的 session / notification action。插件返回同 id 的 result，失败返回 error；宿主等待 15 秒。点击动作由插件自行执行，其参数由插件记录映射，宿主不解释 shell 命令或执行任意 URL。没有 action 的会话仍可显示，但不能跳转。
 
 启用拉起进程，Windows 使用 CREATE_NO_WINDOW。初始化超时、协议错误、进程退出触发重启；最多重试 6 次，等待 1、2、4、8、16、32 秒；耗尽显示失败，重新开关可重试。停用、卸载和应用退出结束进程。进程 stdin 关闭时插件必须自行退出；宿主也会 kill / wait。stderr 单文件约 1 MiB，已知 secret 替换为 `[redacted]`，插件仍须自行保证日志不含本地读取的秘密。
+
+停止时可发送 `{"jsonrpc":"2.0","method":"shutdown","params":{}}` 通知；无需响应。SDK 返回后插件应取消后台任务、关闭自己的资源。宿主最多等待 3 秒，再由 Job Object 结束整个插件进程树。长时间登录必须异步开始并立即响应 action，不能阻塞主 RPC 循环。超长或未终止的 stderr 行不保存，避免秘密跨块泄露。
 
 ## 扩展点
 
@@ -61,3 +65,5 @@ notifications：icon 为 `plugin`、`wework`、`dingtalk`、`feishu`（其他值
 索引是 JSON 数组，每条包含 `id,version,name,description,apiVersion,url,sha256,size,minAppVersion`；名字和描述为中英文对象。只允许按索引 id 安装，不接受前端提供下载 URL。HTTPS 默认；开发模式或 `FOCUSD_PLUGINS_INDEX` 允许 file URL 和本机 HTTP。zip 最大 100 MiB，展开最大 200 MiB、256 文件，拒绝穿越、符号链接、重复文件、ADS，清单 id / version 必须匹配索引。下载校验后暂存解压、停旧进程、替换目录，失败回滚。
 
 索引和 zip 作为 GitHub Release 资产，与 latest.json 并列；不改变应用更新协议。SHA-256 验证完整性，信任根是维护者发布索引及 GitHub HTTPS，不应把哈希称为数字签名。
+
+每次重定向仍须满足 HTTPS / 开发模式本机 HTTP 限制（最多 5 跳），不接受 URL 用户名密码。合法但 minAppVersion 高于当前应用的条目会隐藏，其他兼容条目照常显示。

@@ -68,10 +68,18 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
         return Err("Undeclared or excessive contributions".into());
     }
     let text = |s: &str| s.len() <= 4096 && !s.contains('\0');
+    let action = |value: &Option<String>| value.as_deref().is_none_or(text);
+    let unique = |ids: Vec<&str>| {
+        let mut seen = std::collections::HashSet::new();
+        ids.into_iter().all(|id| !id.is_empty() && seen.insert(id))
+    };
     let percent = |p: Option<f64>| p.is_none_or(|v| v.is_finite() && (0.0..=100.0).contains(&v));
     if c.quota.iter().any(|q| !text(&q.id) || !text(&q.label) || !percent(q.remaining_percent) || !percent(q.secondary_percent) || q.balance.as_deref().is_some_and(|b| !text(b)))
-        || c.sessions.iter().any(|s| !text(&s.id) || !text(&s.title) || !["running", "waiting", "completed"].contains(&s.status.as_str()) || s.cwd.as_deref().is_some_and(|v| !text(v)))
-        || c.notifications.iter().any(|n| [&n.id, &n.source_id, &n.app_name, &n.icon, &n.title, &n.body].iter().any(|s| !text(s))) {
+        || c.sessions.iter().any(|s| !text(&s.id) || !text(&s.title) || !action(&s.action) || !["running", "waiting", "completed"].contains(&s.status.as_str()) || s.cwd.as_deref().is_some_and(|v| !text(v)))
+        || c.notifications.iter().any(|n| !action(&n.action) || [&n.id, &n.source_id, &n.app_name, &n.icon, &n.title, &n.body].iter().any(|s| !text(s)))
+        || !unique(c.quota.iter().map(|q| q.id.as_str()).collect())
+        || !unique(c.sessions.iter().map(|s| s.id.as_str()).collect())
+        || !unique(c.notifications.iter().map(|n| n.id.as_str()).collect()) {
         return Err("Invalid contribution fields".into());
     }
     Ok(Some(c))

@@ -19,44 +19,63 @@ pub struct IndexEntry {
 }
 
 pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
-    let entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let mut entries: Vec<IndexEntry> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     let mut ids = std::collections::HashSet::new();
     let app = semver::Version::parse(env!("CARGO_PKG_VERSION")).map_err(|e| e.to_string())?;
     if entries.len() > 200 { return Err("Plugin index too large".into()); }
     for e in &entries {
         if !valid_id(&e.id) || !ids.insert(&e.id) || e.api_version != 1
             || semver::Version::parse(&e.version).is_err()
-            || semver::Version::parse(&e.min_app_version).map_err(|e| e.to_string())? > app
+            || semver::Version::parse(&e.min_app_version).is_err()
             || e.sha256.len() != 64 || !e.sha256.bytes().all(|b| b.is_ascii_hexdigit())
             || e.size > MAX_PACKAGE || e.size == 0 {
             return Err("Invalid or incompatible plugin index entry".into());
         }
     }
+    entries.retain(|entry| semver::Version::parse(&entry.min_app_version).is_ok_and(|minimum| minimum <= app));
     Ok(entries)
 }
 
 pub async fn download(url: &str, local: bool, limit: u64) -> Result<Vec<u8>, String> {
     if local && Path::new(url).is_absolute() {
-        let path = Path::new(url);
-        if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > limit { return Err("Plugin file too large".into()); }
-        return std::fs::read(path).map_err(|e| e.to_string());
+        return read_local(Path::new(url), limit);
     }
     let parsed = reqwest::Url::parse(url).map_err(|e| e.to_string())?;
     if parsed.scheme() == "file" && local {
         let path = parsed.to_file_path().map_err(|_| "Invalid local plugin URL")?;
-        if std::fs::metadata(&path).map_err(|e| e.to_string())?.len() > limit { return Err("Plugin file too large".into()); }
-        return std::fs::read(path).map_err(|e| e.to_string());
+        return read_local(&path, limit);
     }
-    if parsed.scheme() != "https" && !(local && parsed.scheme() == "http" && matches!(parsed.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"))) {
+    if !network_source_allowed(&parsed, local) {
         return Err("Plugin downloads require HTTPS (local sources need developer mode)".into());
     }
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).redirect(reqwest::redirect::Policy::limited(5)).build().map_err(|e| e.to_string())?;
+    let redirects = reqwest::redirect::Policy::custom(move |attempt| {
+        if attempt.previous().len() >= 5 { attempt.error("Too many plugin redirects") }
+        else if !network_source_allowed(attempt.url(), local) { attempt.error("Unsupported plugin redirect") }
+        else { attempt.follow() }
+    });
+    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).redirect(redirects).build().map_err(|e| e.to_string())?;
     let mut response = client.get(parsed).send().await.map_err(|e| e.without_url().to_string())?.error_for_status().map_err(|e| e.without_url().to_string())?;
     let mut bytes = Vec::new();
     while let Some(chunk) = response.chunk().await.map_err(|e| e.without_url().to_string())? {
         if bytes.len() as u64 + chunk.len() as u64 > limit { return Err("Plugin download too large".into()); }
         bytes.extend_from_slice(&chunk);
     }
+    Ok(bytes)
+}
+
+pub(super) fn network_source_allowed(url: &reqwest::Url, local: bool) -> bool {
+    url.username().is_empty() && url.password().is_none() && url.host_str().is_some()
+        && (url.scheme() == "https" || (local && url.scheme() == "http"
+            && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"))))
+}
+
+fn read_local(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
+    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let metadata = file.metadata().map_err(|e| e.to_string())?;
+    if !metadata.is_file() || metadata.len() > limit { return Err("Invalid or oversized plugin file".into()); }
+    let mut bytes = Vec::new();
+    file.take(limit.saturating_add(1)).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+    if bytes.len() as u64 > limit { return Err("Plugin file too large".into()); }
     Ok(bytes)
 }
 
@@ -90,7 +109,7 @@ pub fn extract(bytes: &[u8], destination: &Path, entry: &IndexEntry) -> Result<M
         let copied = std::io::copy(&mut file.by_ref().take(size + 1), &mut output).map_err(|e| e.to_string())?;
         if copied != file.size() { return Err("Plugin file size mismatch".into()); }
     }
-    let manifest = Manifest::parse(&std::fs::read(destination.join("fly-island-plugin.json")).map_err(|e| e.to_string())?)?;
+    let manifest = Manifest::read(&destination.join("fly-island-plugin.json"))?;
     if manifest.id != entry.id || manifest.version != entry.version || manifest.api_version != entry.api_version {
         return Err("Plugin archive does not match index".into());
     }
