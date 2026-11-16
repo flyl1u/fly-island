@@ -36,7 +36,8 @@ export function useLyrics(
   // Read when the track changes, not on every poll that moves the position.
   const { title, artist, album, durationMs, trackId, sourceApp: sourceAppId } = mediaState;
   const chinese = settings.lyricsChinese === true;
-  const lookup = [key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId].join("\u001f");
+  const wordFill = settings.lyricWordFill === true;
+  const lookup = [key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId, wordFill].join("\u001f");
 
   useEffect(() => {
     if (!active || !key || !title) return;
@@ -45,7 +46,7 @@ export function useLyrics(
     let cancelled = false;
     let request = pending.get(lookup);
     if (!request) {
-      request = getLyrics({ title, artist: artist ?? "", album: album ?? "", durationMs, folder, online: settings.lyricsOnline, chinese, trackId: trackId ?? null, sourceAppId })
+      request = getLyrics({ title, artist: artist ?? "", album: album ?? "", durationMs, folder, online: settings.lyricsOnline, chinese, trackId: trackId ?? null, sourceAppId, wordFill })
       .then((lyrics) => {
         const parsed = lyrics ? parseLrc(lyrics.lrc).filter((line, index, all) => line.text || index < all.length - 1) : [];
         const lines = withTranslations(parsed, lyrics?.translation ? parseLrc(lyrics.translation) : []);
@@ -69,7 +70,7 @@ export function useLyrics(
     };
     // Duration/album refine the request, but late metadata must not restart the same lookup.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId]);
+  }, [active, key, folder, settings.lyricsOnline, chinese, trackId, sourceAppId, wordFill]);
 
   const current = recent.get(lookup) ?? (found?.lookup === lookup ? found : null);
   if (!active || !current) return { lines: null, notFound: false, durationMs: 0 };

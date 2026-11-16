@@ -25,6 +25,7 @@ export type LyricsQuery = {
   trackId: string | null;
   /** SMTC AUMID/process name; selects the native client cache and preferred source. */
   sourceAppId?: string | null;
+  wordFill?: boolean;
 };
 
 export function getLyrics(query: LyricsQuery) {

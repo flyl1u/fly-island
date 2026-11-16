@@ -58,7 +58,7 @@ const fixture = document.getElementById("fixture")!;
 const results = document.getElementById("results")!;
 const messages: string[] = [];
 const root = createRoot(fixture);
-const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0 };
+const ONLINE = { lyricsFolder: "", lyricsOnline: true, lyricsOffsetMs: 0, lyricWordFill: true };
 let settingsOpened = 0;
 const seeks: number[] = [];
 const calibrations: number[] = [];
@@ -70,7 +70,7 @@ function track(title: string, positionMs: number, playing = false): MediaState {
   };
 }
 
-async function render(mediaState: MediaState, lyricsSettings: typeof ONLINE | undefined = ONLINE) {
+async function render(mediaState: MediaState, lyricsSettings: Omit<typeof ONLINE, "lyricWordFill"> & { lyricWordFill?: boolean } = ONLINE) {
   await act(async () => {
     root.render(
       <StrictMode><I18nProvider>

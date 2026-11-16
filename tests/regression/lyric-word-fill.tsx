@@ -7,6 +7,8 @@ import type { MediaState } from "../../src/features/media/api";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 import { I18nProvider } from "../../src/i18n";
 import { LyricsSettingsSection } from "../../src/features/media/lyrics/LyricsSettingsSection";
+import { LyricsView } from "../../src/features/media/lyrics/LyricsView";
+import { parseLrc } from "../../src/features/media/lyrics/lrc";
 import { DEFAULT_SETTINGS, normalizeSettings } from "../../src/features/appearance/settings";
 
 const preview = new URLSearchParams(location.search).has("preview");
@@ -41,7 +43,7 @@ function check(ok: unknown, label: string) {
 
 if (preview) {
   root.render(<CollapsedLyric active mediaState={{ ...base, playbackStatus: "playing", positionMs: 1000, updatedAt: Date.now() }}
-    lyricsSettings={{ lyricsFolder: "", lyricsOnline: true, lyricsChinese: true, lyricsOffsetMs: 0 }} />);
+    lyricsSettings={{ lyricsFolder: "", lyricsOnline: true, lyricsChinese: true, lyricWordFill: true, lyricsOffsetMs: 0 }} />);
   results.remove();
 } else try {
   await render(); await tick();
@@ -74,16 +76,21 @@ if (preview) {
   await render({ positionMs: 9500, updatedAt: Date.now() });
   check(words().length === 0 && text().textContent === "普通歌词", "没有逐字数据时仍显示普通歌词");
   await render({ trackId: "QQ-new", positionMs: 2000 });
-  check(queries.length === 2 && queries[1].trackId === "QQ-new", "同名歌曲晚到的歌曲 ID 会触发精确查询");
-  check(normalizeSettings({ lyricWordFill: false }).lyricWordFill === false && normalizeSettings({}).lyricWordFill,
-    "新设置兼容旧存档且明确关闭后保持关闭");
+  check(queries.some((query) => query.trackId === "QQ-new" && query.wordFill === true)
+    && queries.some((query) => query.trackId === "QQ-97773" && query.wordFill === false), "歌曲 ID 和逐字开关变化会触发对应查询");
+  await act(async () => root.render(<I18nProvider><LyricsView lines={parseLrc(lrc)} mediaState={{ ...base, updatedAt: Date.now() }} offsetMs={0} wordFillEnabled /></I18nProvider>));
+  const expanded = document.querySelector<HTMLElement>(".lyrics-view__word");
+  check(Boolean(expanded) && Math.abs(Number.parseFloat(getComputedStyle(expanded!).backgroundPositionX) - (reduced ? 0 : 50)) < 1,
+    "展开态逐字歌词在当前词中间显示填充");
+  check(!normalizeSettings({ lyricWordFill: false }).lyricWordFill && !normalizeSettings({}).lyricWordFill && normalizeSettings({ lyricWordFill: true }).lyricWordFill,
+    "旧存档默认关闭，明确开启后保持开启");
   let saved = DEFAULT_SETTINGS;
   await act(async () => root.render(<I18nProvider><LyricsSettingsSection settings={saved} onSettingsChange={(value) => { saved = value; }} /></I18nProvider>));
   const row = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((r) => r.textContent?.includes("逐字歌词填充"));
   const toggle = row?.querySelector<HTMLInputElement>("[role='switch']");
-  check(toggle?.checked === true, "音乐设置复用现有开关行，默认开启");
+  check(toggle?.checked === false, "音乐设置复用现有开关行，默认关闭");
   await act(async () => toggle?.click());
-  check(saved.lyricWordFill === false, "设置开关传回明确关闭值");
+  check(saved.lyricWordFill === true, "设置开关传回明确开启值");
   results.dataset.result = "passed"; results.textContent = passed.join("\n");
 } catch (error) {
   results.dataset.result = "failed"; results.textContent = `${passed.join("\n")}\nFAIL ${String(error)}`;
