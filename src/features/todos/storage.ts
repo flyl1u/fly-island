@@ -18,6 +18,8 @@ export const SCHEDULED_TODOS_STORAGE_KEY = "focusd-island-scheduled-todos";
 export const TODOS_STORAGE_KEY = "focusd-island-todos";
 export const ACTIVE_TODO_STORAGE_KEY = "focusd-island-active-todo";
 export const TODO_TIMER_STORAGE_KEY = "focusd-island-todo-timer";
+export const ACTIVE_TODOS_STORAGE_KEY = "focusd-island-active-todos";
+export const TODO_TIMERS_STORAGE_KEY = "focusd-island-todo-timers";
 // 旧的 "focusd-island-todo-duration"（所有待办共用一个时长）已不再读取：每项待办各自记时长。
 export const TODO_DURATIONS_STORAGE_KEY = "focusd-island-todo-durations";
 export const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
@@ -42,6 +44,31 @@ export function loadTodos(): TodoItem[] {
 
 export function loadActiveTodoId() {
   return readString(ACTIVE_TODO_STORAGE_KEY);
+}
+
+export function loadActiveTodoIds(): string[] {
+  const saved = readJson(ACTIVE_TODOS_STORAGE_KEY);
+  if (Array.isArray(saved)) return [...new Set(saved.filter((id): id is string => typeof id === "string" && id.trim().length > 0))];
+  const legacy = loadActiveTodoId();
+  return legacy ? [legacy] : [];
+}
+
+export function saveActiveTodoIds(ids: string[]) {
+  writeJson(ACTIVE_TODOS_STORAGE_KEY, ids);
+  saveActiveTodoId(ids[0] ?? null);
+}
+
+export function loadTodoTimers(): TodoTimer[] {
+  const saved = readJson(TODO_TIMERS_STORAGE_KEY);
+  if (Array.isArray(saved)) return saved.map(normalizeTodoTimer).filter((timer): timer is TodoTimer => timer !== null)
+    .filter((timer, index, timers) => timers.findIndex((other) => other.todoId === timer.todoId) === index);
+  const legacy = loadTodoTimer();
+  return legacy ? [legacy] : [];
+}
+
+export function saveTodoTimers(timers: TodoTimer[], primaryId: string | null) {
+  writeJson(TODO_TIMERS_STORAGE_KEY, timers);
+  saveTodoTimer(timers.find((timer) => timer.todoId === primaryId) ?? null);
 }
 
 export function loadTodoTimer() {

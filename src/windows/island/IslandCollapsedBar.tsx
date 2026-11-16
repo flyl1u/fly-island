@@ -187,7 +187,7 @@ export function IslandCollapsedBar({
             {showCollapsedText && collapsedItem === "lyrics" && (
               <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
             )}
-            {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (todoTimer ? (
+            {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (todoTimer && !todoRotation ? (
               <span className="island__active-task island__active-task--timed" key={collapsedTaskTitle}>
                 {showTitle ? "· " : ""}
                 <>

@@ -5,13 +5,17 @@
   animation: none;
 }
 
+.todo-rotation__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .todo-rotation__layer {
   position: absolute;
   inset: 0;
 }
 
 .todo-rotation__row {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
   height: 28px;
   line-height: 28px;
   overflow: hidden;
@@ -31,6 +35,7 @@
 
 .todo-rotation__track {
   display: block;
+  width: 100%;
   animation: todoContinuousScroll var(--todo-scroll-duration) linear infinite;
 }
 

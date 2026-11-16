@@ -15,7 +15,9 @@ export function TodoNotebook({
   dailyNote,
   draft,
   activeTodoId,
+  activeTodoIds,
   timer,
+  timers,
   durations,
   onDurationChange,
   todoTimerEnabled = false,
@@ -47,7 +49,9 @@ export function TodoNotebook({
   dailyNote: string;
   draft: string;
   activeTodoId: string | null;
+  activeTodoIds?: string[];
   timer?: TodoTimer | null;
+  timers?: TodoTimer[];
   durations?: TodoDurations;
   onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
@@ -105,7 +109,9 @@ export function TodoNotebook({
           draftDate={draftDate}
           currentDate={currentDate}
           activeTodoId={activeTodoId}
+          activeTodoIds={activeTodoIds}
           timer={timer}
+          timers={timers}
           durations={durations}
           onDurationChange={onDurationChange}
           todoTimerEnabled={todoTimerEnabled}

@@ -1,6 +1,6 @@
 import { moveItem } from "../../utils/order.ts";
-import { useCallback, useEffect, useState } from "react";
-import { createTodoId, loadActiveTodoId, loadTodos, saveActiveTodoId, saveTodos } from "./storage";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createTodoId, loadActiveTodoId, loadActiveTodoIds, loadTodos, saveActiveTodoIds, saveTodos } from "./storage";
 import { dismissUpdatePrompt } from "../updater/updaterController";
 import { UPDATE_TODO_ID } from "./updateTodo";
 import { useUpdateTodo } from "./useUpdateTodo";
@@ -8,14 +8,17 @@ import { useTodoTimer } from "./useTodoTimer";
 import type { TodoDuration } from "./timer";
 import type { TodoItem } from "./types";
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
-export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false) {
+export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false, rotateTodos = false) {
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   useUpdateTodo(todos, setTodos);
   const [draftTodo, setDraftTodo] = useState("");
-  const [activeTodoId, setActiveTodoId] = useState<string | null>(
-    loadActiveTodoId,
-  );
-  const { timer, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoId, onTimerExpired, todoTimerEnabled);
+  const [storedActiveIds, setActiveTodoIds] = useState<string[]>(() => rotateTodos ? loadActiveTodoIds() : [loadActiveTodoId()].filter((id): id is string => id !== null));
+  const activeTodoIds = useMemo(() => {
+    const valid = storedActiveIds.filter((id) => todos.some((todo) => todo.id === id && !todo.completed && todo.kind !== "update"));
+    return rotateTodos ? valid : valid.slice(0, 1);
+  }, [rotateTodos, storedActiveIds, todos]);
+  const activeTodoId = activeTodoIds[0] ?? null;
+  const { timer, timers, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoIds, onTimerExpired, todoTimerEnabled);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -41,7 +44,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
         todo.id === id ? { ...todo, completed: !todo.completed } : todo,
       ),
     );
-    setActiveTodoId((currentId) => (currentId === id ? null : currentId));
+    setActiveTodoIds((ids) => ids.filter((currentId) => currentId !== id));
     clearTimer(id);
   }, [clearTimer]);
 
@@ -63,21 +66,21 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     (id: string, duration?: TodoDuration) => {
       const todo = todos.find((item) => item.id === id);
 
-      if (!todo || todo.completed) {
+      if (!todo || todo.completed || todo.kind === "update") {
         return;
       }
 
-      if (activeTodoId === id && duration === undefined) {
-        setActiveTodoId(null);
+      if (activeTodoIds.includes(id) && duration === undefined) {
+        setActiveTodoIds((ids) => ids.filter((currentId) => currentId !== id));
         clearTimer(id);
         return;
       }
 
-      if (!startTimer(id, duration ?? null)) return;
-      setActiveTodoId(id);
-      onStartTodo();
+      if (!startTimer(id, duration ?? null, rotateTodos)) return;
+      setActiveTodoIds((ids) => rotateTodos ? ids.includes(id) ? ids : [...ids, id] : [id]);
+      if (!rotateTodos) onStartTodo();
     },
-    [activeTodoId, clearTimer, onStartTodo, startTimer, todos],
+    [activeTodoIds, clearTimer, onStartTodo, rotateTodos, startTimer, todos],
   );
 
   const deleteTodo = useCallback((id: string) => {
@@ -86,7 +89,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
       return;
     }
     setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id));
-    setActiveTodoId((currentId) => (currentId === id ? null : currentId));
+    setActiveTodoIds((ids) => ids.filter((currentId) => currentId !== id));
     clearTimer(id);
   }, [clearTimer]);
 
@@ -124,17 +127,12 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
   }, [todos]);
 
   useEffect(() => {
-    saveActiveTodoId(activeTodoId);
-  }, [activeTodoId]);
+    saveActiveTodoIds(activeTodoIds);
+  }, [activeTodoIds]);
 
   useEffect(() => {
-    if (
-      activeTodoId &&
-      !todos.some((todo) => todo.id === activeTodoId && !todo.completed)
-    ) {
-      setActiveTodoId(null);
-    }
-  }, [activeTodoId, todos]);
+    if (activeTodoIds.length !== storedActiveIds.length) setActiveTodoIds(activeTodoIds);
+  }, [activeTodoIds, storedActiveIds]);
 
   return {
     todos,
@@ -142,10 +140,12 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     draftTodo,
     setDraftTodo,
     activeTodoId,
+    activeTodoIds,
     timer,
+    timers,
     durations,
     chooseDuration,
-    setActiveTodoId,
+    setActiveTodoIds,
     addTodo,
     toggleTodo,
     updateTodoTitle,

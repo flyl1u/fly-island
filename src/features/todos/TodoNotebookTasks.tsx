@@ -15,7 +15,9 @@ export function TodoNotebookTasks({
   draftDate,
   currentDate,
   activeTodoId,
+  activeTodoIds,
   timer,
+  timers,
   durations,
   onDurationChange,
   todoTimerEnabled = false,
@@ -36,7 +38,9 @@ export function TodoNotebookTasks({
   draftDate: string | null;
   currentDate: string;
   activeTodoId: string | null;
+  activeTodoIds?: string[];
   timer?: TodoTimer | null;
+  timers?: TodoTimer[];
   durations?: TodoDurations;
   onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
@@ -106,8 +110,8 @@ export function TodoNotebookTasks({
               key={todo.id}
               todo={todo}
               isTodayMode
-              isActive={todo.id === activeTodoId && !todo.completed}
-              timer={timer?.todoId === todo.id ? timer : null}
+              isActive={(activeTodoIds ? activeTodoIds.includes(todo.id) : todo.id === activeTodoId) && !todo.completed}
+              timer={timers?.find((round) => round.todoId === todo.id) ?? (timer?.todoId === todo.id ? timer : null)}
               durations={durations}
               onDurationChange={onDurationChange}
               todoTimerEnabled={todoTimerEnabled}

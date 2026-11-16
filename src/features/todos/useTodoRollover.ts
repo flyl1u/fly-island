@@ -10,7 +10,7 @@ type TodoRolloverOptions = {
   dailyNote: string;
   carryOverIncompleteTodos: boolean;
   /** An explicitly running or expired round stays available across midnight until handled. */
-  timerTodoId?: string | null;
+  timerTodoIds?: string[];
   saveDirectory: string;
   saveTodosToDisk: (date: string, todoList: TodoItem[], nextDailyNote: string) => Promise<unknown>;
   upsertArchive: (date: string, todoList: TodoItem[], nextDailyNote: string, savedToDisk: boolean) => void;
@@ -27,7 +27,7 @@ export function useTodoRollover({
   todos,
   dailyNote,
   carryOverIncompleteTodos,
-  timerTodoId = null,
+  timerTodoIds = [],
   saveDirectory,
   saveTodosToDisk,
   upsertArchive,
@@ -41,10 +41,10 @@ export function useTodoRollover({
       const lastSavedSignature = loadLastSavedSignature();
       const carryOverCreatedAt = Date.now();
       const carriedTodos = todos
-        .filter((todo) => !todo.completed && (carryOverIncompleteTodos || todo.id === timerTodoId))
+        .filter((todo) => !todo.completed && (carryOverIncompleteTodos || timerTodoIds.includes(todo.id)))
         .map((todo, index) => ({
           ...todo,
-          id: todo.id === timerTodoId ? todo.id : createTodoId(),
+          id: timerTodoIds.includes(todo.id) ? todo.id : createTodoId(),
           completed: false,
           createdAt: carryOverCreatedAt + index,
         }));
@@ -75,7 +75,7 @@ export function useTodoRollover({
     },
     [
       carryOverIncompleteTodos,
-      timerTodoId,
+      timerTodoIds,
       currentTodoDate,
       dailyNote,
       onStartDay,

@@ -1,7 +1,6 @@
 export type SettingsTodoText = {
   collapsedTitle: string;
   rotateTodos: string;
-  rotationCount: string;
   rotationMode: string;
   switchMode: string;
   scrollMode: string;
@@ -19,7 +18,6 @@ export type SettingsTodoText = {
 export const zhCN: SettingsTodoText = {
   collapsedTitle: "折叠岛屿",
   rotateTodos: "轮换显示",
-  rotationCount: "待办条数",
   rotationMode: "轮换方式",
   switchMode: "切换",
   scrollMode: "滚动",
@@ -37,7 +35,6 @@ export const zhCN: SettingsTodoText = {
 export const en: SettingsTodoText = {
   collapsedTitle: "Collapsed island",
   rotateTodos: "Rotate todos",
-  rotationCount: "Todo count",
   rotationMode: "Rotation mode",
   switchMode: "Switch",
   scrollMode: "Scroll",
