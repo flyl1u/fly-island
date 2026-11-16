@@ -12,10 +12,11 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { commands, mailCalls, REPLY_MARKER, replyMarkerCalls, translationShortcutCalls } from "./settingsMocks";
 import { checkAppearance, prepareColorRegression } from "./settingsAppearance";
 import { checkQuotaSettings } from "./settingsQuota";
-import { checkKeepVisible } from "./settingsKeepVisible";
+import { checkGeneralControls } from "./settingsGeneral";
 import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
 import { checkMessagePreview } from "./settingsMessagePreview";
+import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -125,29 +126,7 @@ if (!automated) {
         await act(async () => toggle.click());
         check(!size(), "Disabling curves hides the slider again");
       }
-      if (category === "general") {
-        await checkKeepVisible(panel, check);
-        const timers = [...panel.querySelectorAll<HTMLInputElement>("input[role='spinbutton']")];
-        const labels = timers.map((input) => panel.querySelector(`label[for='${CSS.escape(input.id)}']`)?.textContent ?? "");
-        check(timers.length === 2 && timers.every((input) => input.value === "30"),
-          `general: the collapse and tuck delays are two number fields at 30 s (${timers.map((input) => input.value).join(", ")})`);
-        check(labels.length === 2 && labels.every(Boolean) && labels[0] !== labels[1], `general: the two delays have different labels (${labels.join(" / ")})`);
-        const first = timers[0];
-        const plus = first.parentElement!.querySelector<HTMLButtonElement>("button:last-child")!;
-        await act(async () => plus.click());
-        check(first.value === "31" && JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCollapseSeconds === 31, "Plus increments by 1 and saves");
-        await type(first, "9999");
-        await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-        check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);
-        await type(first, "30");
-        await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-        const tuckLooks = [...panel.querySelectorAll<HTMLButtonElement>("[role='group'][aria-label='贴边样式'] button")];
-        check(tuckLooks.map((button) => button.textContent).join() === "露边,细线,隐藏" && tuckLooks[1].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, line by default");
-        await act(async () => tuckLooks[1].click());
-        check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line", "Choosing the line look saves it");
-        check(JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "tucked", "Choosing even the current tuck style requests an immediate tucked preview");
-        await act(async () => tuckLooks[0].click());
-      }
+      if (category === "general") await checkGeneralControls(panel, check, type);
       if (category === "messages") {
         await checkMessagePreview(panel, check);
         const notice = panel.querySelector(".messages-settings__wechat-risk");
@@ -159,10 +138,14 @@ if (!automated) {
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
       && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
-    await openPage("plugins");
-    const plugins = element(".editor-panel .plugins-settings");
-    check(plugins.textContent?.includes("暂无插件") && Boolean(plugins.querySelector("svg.lucide-puzzle")),
-      "The plugins page renders its installed section and puzzle empty state");
+    if (PLUGINS_ENABLED) {
+      await openPage("plugins");
+      const plugins = element(".editor-panel .plugins-settings");
+      check(plugins.textContent?.includes("暂无插件") && Boolean(plugins.querySelector("svg.lucide-puzzle")),
+        "The plugins page renders its installed section and puzzle empty state");
+    } else {
+      check(!document.querySelector("[data-category='plugins'], .plugins-settings"), "The release has no plugin category or panel");
+    }
     await checkAppearance(check);
     const materialButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === label);
     const strengthRow = () => [...document.querySelectorAll(".settings-row")].some((row) => row.textContent?.includes("玻璃强度"));

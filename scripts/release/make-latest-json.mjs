@@ -3,13 +3,14 @@
 //
 // Usage: node scripts/release/make-latest-json.mjs [--notes-file docs/releases/vX.Y.Z.md]
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { msiNames } from "./msi-version.mjs";
 
 const REPO = "flyl1u/fly-island";
 const CONFIG = "src-tauri/tauri.conf.json";
-const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
-const MSI_DIR = "src-tauri/target/release/bundle/msi";
+const RELEASE_DIR = resolve(process.env.CARGO_TARGET_DIR || "src-tauri/target", "release");
+const BUNDLE_DIR = join(RELEASE_DIR, "bundle/nsis");
+const MSI_DIR = join(RELEASE_DIR, "bundle/msi");
 
 const args = process.argv.slice(2);
 const notesFlag = args.indexOf("--notes-file");

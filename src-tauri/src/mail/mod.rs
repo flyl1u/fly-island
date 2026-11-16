@@ -109,6 +109,7 @@ pub fn get_qq_mail_state() -> Result<Vec<MailSnapshot>, String> {
 
 #[tauri::command]
 pub async fn copy_mail_otp(code: String) -> Result<(), String> {
+    if !crate::release_flags::MAIL_OTP_ENABLED { return Ok(()); }
     let core: String = code.chars().filter(|ch| ch.is_ascii_alphanumeric()).collect();
     if !(4..=12).contains(&core.len()) || code.len() > 16
         || !code.bytes().all(|ch| ch.is_ascii_alphanumeric() || ch == b'-' || ch == b' ') {

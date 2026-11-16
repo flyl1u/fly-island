@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listAgentEffortLabels } from "./api";
 import type { AgentEffortLabels } from "./effortLabels";
+import { PLUGINS_ENABLED } from "../plugins";
 
 /** Turning a plugin on or off happens in the settings window, so the labels are read again this often. */
 const REFRESH_MS = 5000;
@@ -10,6 +11,7 @@ export function useEffortLabels(): AgentEffortLabels {
   const [labels, setLabels] = useState<AgentEffortLabels>({});
 
   useEffect(() => {
+    if (!PLUGINS_ENABLED) return;
     let cancelled = false;
     let lastText = "";
     const refresh = () => {

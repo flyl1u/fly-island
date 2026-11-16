@@ -433,7 +433,7 @@ pub(super) fn fetch_inbox_cached<T: Read + Write>(
     // UIDNEXT can advance while this snapshot is being fetched. Acknowledge
     // only headers actually received, or the next arrival's preview can be lost.
     let high_water = items.iter().map(|item| item.uid).max().unwrap_or(0);
-    super::otp_arrivals::enrich(session, &mut items, validity, cached.map(|inbox| inbox.cursor))?;
+    super::otp_arrivals::enrich(session, &mut items, validity, cached.map(|inbox| inbox.cursor), crate::release_flags::MAIL_OTP_ENABLED)?;
     drain_mail_updates(
         session,
         mailbox.exists,

@@ -26,7 +26,9 @@ export const PAGES = [
   "agent-approvals.html",
   "agent-dsh.html?test=1",
   "agent-sessions.html?test=1",
+  "agent-sessions.html?test=1&features=enabled",
   "collapsed-message-animation.html?test=1",
+  "collapsed-message-animation.html?test=1&features=enabled",
   "clipboard-history.html",
   "clipboard-window.html?test=1",
   "file-shelf.html",
@@ -46,6 +48,7 @@ export const PAGES = [
   "island-tour.html?test=1&material=frostedGlass",
   "island-tour.html?test=1&theme=light&material=frostedGlass",
   "mail-reader.html?run=1",
+  "mail-reader.html?run=1&features=enabled",
   "message-clear.html",
   "message-clear.html?lang=en",
   "message-preview-duration.html",
@@ -54,10 +57,15 @@ export const PAGES = [
   "music-lyrics.html",
   "notification-startup.html",
   "panel-preview.html",
+  "release-features.html",
   "plugins-settings.html",
   "plugins-settings.html?lang=en",
+  "plugins-settings.html?features=enabled",
+  "plugins-settings.html?lang=en&features=enabled",
   "settings.html?test=1",
+  "settings.html?test=1&features=enabled",
   "settings-sidebar.html",
+  "settings-sidebar.html?features=enabled",
   "settings-sync.html",
   "todo-edit.html",
   "todo-date-picker.html",
@@ -212,12 +220,14 @@ export async function runPage(session, url) {
  * DevTools session and the regression pages' base URL; stops both afterwards. `firstPage` is
  * fetched first, to know Vite answers.
  */
-export async function withRegressionBrowser(root, firstPage, use) {
+export async function withRegressionBrowser(root, firstPage, use, { featuresEnabled = false } = {}) {
   const vitePort = Number(process.env.REGRESSION_PORT ?? await freePort());
   const debugPort = await freePort();
   const base = `http://localhost:${vitePort}/tests/regression/`;
   const profile = mkdtempSync(path.join(tmpdir(), "fly-regression-"));
-  const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], { cwd: root, stdio: "ignore" });
+  const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], {
+    cwd: root, stdio: "ignore", env: { ...process.env, FOCUSD_REGRESSION_FEATURES: featuresEnabled ? "enabled" : "" },
+  });
   let browser;
   try {
     await waitForHttp(`${base}${firstPage.split("?")[0]}`, 30_000);
@@ -255,20 +265,24 @@ async function main() {
   if (pages.length === 0) throw new Error(`No regression page matches ${filters.join(", ")}.`);
   let failed = 0;
   console.log(`Regression prefers-reduced-motion: ${process.env.REGRESSION_REDUCED_MOTION ?? "no-preference"}`);
-  await withRegressionBrowser(root, pages[0], async ({ session, base }) => {
-    for (const page of pages) {
-      const started = Date.now();
-      const { outcome, state, errors } = await runPage(session, base + page);
-      const seconds = ((Date.now() - started) / 1000).toFixed(1);
-      console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
-      if (outcome !== "passed") {
-        failed += 1;
-        const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
-        for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
-        for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
+  for (const featuresEnabled of [false, true]) {
+    const fixtures = pages.filter((page) => page.includes("features=enabled") === featuresEnabled);
+    if (fixtures.length === 0) continue;
+    await withRegressionBrowser(root, fixtures[0], async ({ session, base }) => {
+      for (const page of fixtures) {
+        const started = Date.now();
+        const { outcome, state, errors } = await runPage(session, base + page);
+        const seconds = ((Date.now() - started) / 1000).toFixed(1);
+        console.log(`${outcome === "passed" ? "✓" : "✗"} ${page}  ${outcome}, ${passedChecks(state.text ?? "")} checks, ${seconds}s`);
+        if (outcome !== "passed") {
+          failed += 1;
+          const lines = (state.text ?? "").split("\n").filter((line) => line.trim());
+          for (const line of lines.filter((line) => !line.startsWith("PASS ")).slice(-5)) console.log(`    ${line}`);
+          for (const error of errors.slice(0, 3)) console.log(`    ${error.split("\n")[0]}`);
+        }
       }
-    }
-  });
+    }, { featuresEnabled });
+  }
   console.log(failed === 0 ? `All ${pages.length} regression pages passed.` : `${failed} of ${pages.length} regression pages did not pass.`);
   return failed === 0 ? 0 : 1;
 }

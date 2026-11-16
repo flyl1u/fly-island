@@ -16,6 +16,7 @@ pub struct Live { pub status: String, #[serde(flatten)] pub data: Contributions 
 pub struct Snapshot { pub registry: Registry, pub live: BTreeMap<String, Live> }
 
 pub struct Host {
+    enabled: bool,
     pub root: PathBuf,
     pub registry: Mutex<Registry>,
     pub workers: Mutex<BTreeMap<String, Worker>>,
@@ -25,12 +26,16 @@ pub struct Host {
 }
 
 impl Host {
-    pub fn new(root: PathBuf, app: Option<tauri::AppHandle>) -> Result<Self, String> {
-        std::fs::create_dir_all(root.join("plugins")).map_err(|e| e.to_string())?;
-        std::fs::create_dir_all(root.join("plugin-logs")).map_err(|e| e.to_string())?;
-        let registry = storage::load(&root);
-        Ok(Self { root, registry: Mutex::new(registry), workers: Mutex::new(Default::default()), live: Arc::new(Mutex::new(Default::default())), operation: tokio::sync::Mutex::new(()), app })
+    pub fn new(root: PathBuf, app: Option<tauri::AppHandle>, enabled: bool) -> Result<Self, String> {
+        let registry = if enabled {
+            std::fs::create_dir_all(root.join("plugins")).map_err(|e| e.to_string())?;
+            std::fs::create_dir_all(root.join("plugin-logs")).map_err(|e| e.to_string())?;
+            storage::load(&root)
+        } else { Registry::default() };
+        Ok(Self { enabled, root, registry: Mutex::new(registry), workers: Mutex::new(Default::default()), live: Arc::new(Mutex::new(Default::default())), operation: tokio::sync::Mutex::new(()), app })
     }
+
+    pub fn enabled(&self) -> bool { self.enabled }
 
     pub fn snapshot(&self) -> Snapshot {
         Snapshot { registry: self.registry.lock().unwrap_or_else(PoisonError::into_inner).clone(), live: self.live.lock().unwrap_or_else(PoisonError::into_inner).clone() }
@@ -39,6 +44,7 @@ impl Host {
     pub fn notify(&self) { if let Some(app) = &self.app { let _ = app.emit(EVENT, ()); } }
 
     pub fn start(&self, id: &str) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         let p = self.registry.lock().map_err(|e| e.to_string())?.installed.get(id).cloned().ok_or("Plugin not installed")?;
         let actual = Manifest::read(&p.directory.join("fly-island-plugin.json"))?;
         if !p.development && p.directory != self.root.join("plugins").join(id) { return Err("Unsafe plugin directory".into()); }
@@ -74,6 +80,7 @@ impl Host {
     }
 
     pub fn persist(&self, next: Registry) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         storage::save(&self.root, &next)?;
         *self.registry.lock().map_err(|e| e.to_string())? = next;
         self.notify();
@@ -87,6 +94,7 @@ impl Host {
     }
 
     pub async fn catalog(&self) -> Result<Vec<IndexEntry>, String> {
+        if !self.enabled { return Ok(Vec::new()); }
         let (url, local) = self.source();
         let result = async { super::packages::parse_index(&super::packages::download(&url, local, super::packages::INDEX_LIMIT).await?) }.await;
         if let Err(error) = &result {
@@ -98,6 +106,7 @@ impl Host {
     }
 
     pub async fn install(&self, id: &str) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         let entry = self.catalog().await?.into_iter().find(|e| e.id == id).ok_or("Plugin is not in the index")?;
         let bytes = super::packages::download(&entry.url, self.source().1, super::packages::PACKAGE_LIMIT).await?;
         let staging = self.root.join("plugins").join(format!(".staging-{id}"));
@@ -134,6 +143,7 @@ impl Host {
     }
 
     pub fn enable(&self, id: &str, enabled: bool) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         let mut next = self.snapshot().registry;
         let p = next.installed.get_mut(id).ok_or("Plugin not installed")?;
         if p.development && !next.developer_mode { return Err("Developer mode is disabled".into()); }
@@ -152,6 +162,7 @@ impl Host {
     }
 
     pub fn uninstall(&self, id: &str) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         let mut next = self.snapshot().registry;
         let p = next.installed.remove(id).ok_or("Plugin not installed")?;
         self.stop(id);
@@ -165,6 +176,7 @@ impl Host {
     }
 
     pub fn setting(&self, id: &str, key: &str, value: Value) -> Result<(), String> {
+        if !self.enabled { return Ok(()); }
         let mut next = self.snapshot().registry;
         let p = next.installed.get_mut(id).ok_or("Plugin not installed")?;
         let s = p.manifest.settings.iter().find(|s| s.key == key).ok_or("Unknown plugin setting")?;
@@ -179,6 +191,7 @@ impl Host {
     }
 
     pub fn action(&self, id: &str, action: &str) -> Result<Value, String> {
+        if !self.enabled { return Ok(Value::Null); }
         let live = self.snapshot();
         let p = live.registry.installed.get(id).ok_or("Plugin not installed")?;
         let declared = p.manifest.actions.iter().any(|a| a.id == action)

@@ -18,7 +18,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { BETA_CHANNEL_TAG, isPrerelease, shouldUpdateBetaManifest } from "./channel.mjs";
 import { msiNames, msiVersion } from "./msi-version.mjs";
 import { loadSigningEnvironment } from "./release-signing.mjs";
@@ -26,11 +26,13 @@ import { loadSigningEnvironment } from "./release-signing.mjs";
 const CONFIG = "src-tauri/tauri.conf.json";
 const OVERLAY = "src-tauri/tauri.release.conf.json";
 const CARGO = "src-tauri/Cargo.toml";
-const BUNDLE_DIR = "src-tauri/target/release/bundle/nsis";
-const MSI_DIR = "src-tauri/target/release/bundle/msi";
-const MSI_OVERLAY = "src-tauri/target/release/msi-version.conf.json";
-const BETA_CHANNEL_DIR = "src-tauri/target/release/beta-channel";
+const RELEASE_DIR = resolve(process.env.CARGO_TARGET_DIR || "src-tauri/target", "release").replaceAll("\\", "/");
+const BUNDLE_DIR = `${RELEASE_DIR}/bundle/nsis`;
+const MSI_DIR = `${RELEASE_DIR}/bundle/msi`;
+const MSI_OVERLAY = `${RELEASE_DIR}/msi-version.conf.json`;
+const BETA_CHANNEL_DIR = `${RELEASE_DIR}/beta-channel`;
 const REPO = "flyl1u/fly-island";
+const releaseFeatures = JSON.parse(readFileSync("release-features.json", "utf8"));
 
 const args = process.argv.slice(2);
 const baseFlag = args.indexOf("--base-url");
@@ -124,7 +126,9 @@ const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", note
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
 run("node", latestArgs);
 // The client fetches the index from releases/latest; package URLs remain pinned to this release.
-run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/release/build-plugins.ps1", "-BaseUrl", baseUrl || `https://github.com/${REPO}/releases/download/${tag}`]);
+if (releaseFeatures.plugins) {
+  run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/release/build-plugins.ps1", "-BaseUrl", baseUrl || `https://github.com/${REPO}/releases/download/${tag}`]);
+}
 
 const installer = readdirSync(BUNDLE_DIR).find((name) => name.endsWith(`_${version}_x64-setup.exe`));
 if (!installer) fail(`Missing installer in ${BUNDLE_DIR}.`);
@@ -141,7 +145,7 @@ if (!upload) {
   process.exit(0);
 }
 
-const pluginAssets = readdirSync("artifacts/plugins").filter((name) => name.endsWith(".zip") || name === "plugins-index.json").map((name) => `artifacts/plugins/${name}`);
+const pluginAssets = releaseFeatures.plugins ? readdirSync("artifacts/plugins").filter((name) => name.endsWith(".zip") || name === "plugins-index.json").map((name) => `artifacts/plugins/${name}`) : [];
 const assets = [...installers, ...installers.map((path) => `${path}.sig`), `${BUNDLE_DIR}/latest.json`, checksumPath, ...pluginAssets];
 const revision = run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim();
 const prerelease = isPrerelease(version);

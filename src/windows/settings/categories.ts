@@ -1,5 +1,7 @@
-/** Pages of the settings window, in sidebar order. */
-export const SETTINGS_CATEGORIES = [
+import { PLUGINS_ENABLED } from "../../features/releaseFlags.ts";
+
+/** Includes unavailable pages in the type so saved category names remain compatible. */
+const ALL_SETTINGS_CATEGORIES = [
   "general",
   "appearance",
   "todos",
@@ -13,7 +15,8 @@ export const SETTINGS_CATEGORIES = [
   "about",
 ] as const;
 
-export type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number];
+export type SettingsCategory = (typeof ALL_SETTINGS_CATEGORIES)[number];
+export const SETTINGS_CATEGORIES = ALL_SETTINGS_CATEGORIES.filter((category) => PLUGINS_ENABLED || category !== "plugins");
 
 export type SettingsGroup = "basics" | "features" | "agents";
 
@@ -26,7 +29,7 @@ export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories
   { label: "basics", categories: ["general", "appearance"] },
   { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages"] },
   { label: "agents", categories: ["agents", "agentConnect"] },
-  { label: null, categories: ["plugins", "about"] },
+  { label: null, categories: PLUGINS_ENABLED ? ["plugins", "about"] : ["about"] },
 ];
 
 export const DEFAULT_SETTINGS_CATEGORY: SettingsCategory = "general";

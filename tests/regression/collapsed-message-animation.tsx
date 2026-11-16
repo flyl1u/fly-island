@@ -15,6 +15,7 @@ import type { MailSnapshot } from "../../src/features/messages/mail/api";
 import type { MessageSource } from "../../src/features/messages/messagePreview";
 import type { MediaState } from "../../src/features/media/api";
 import type { AgentSession } from "../../src/features/agent-status/session";
+import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const automated = new URLSearchParams(location.search).has("test");
@@ -280,27 +281,37 @@ async function runChecks() {
     check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     check(copiedCodes.length === 0, "普通邮件和初始化不写剪贴板");
-    await act(async () => changeMode("expanded"));
-    await notify("qqMail", false, false, "834921");
-    check(copiedCodes.join() === "834921", "展开和托盘隐藏时仍自动复制新验证码");
-    await act(async () => { changeMode("collapsed"); changeAutoCopy(false); });
-    await notify("qqMail", true, true, "K7Q2-9XMP");
-    const otp = () => document.querySelector<HTMLButtonElement>(".island__text-slot .mail-otp-code")!;
-    check(otp()?.textContent === "K7Q2-9XMP" && copiedCodes.length === 1, "关闭自动复制后仍展示验证码胶囊");
-    check(!otp().closest(".island__open-button"), "复制胶囊独立于打开邮件的按钮");
-    openedPage = null;
-    const readsBefore = commands.filter(command => command === "read_qq_mail").length;
-    await act(async () => otp().click());
-    check(copiedCodes.join() === "834921,K7Q2-9XMP" && otp().dataset.copied === "true", "点击胶囊复制并显示对勾");
-    check(openedPage === null && commands.filter(command => command === "read_qq_mail").length === readsBefore, "复制不打开邮件或展开消息页");
-    await act(async () => changeAutoCopy(true));
-    await act(async () => { await emit("qq-mail-changed", { snapshot: mail, newestId: mail.items[0].id, windowVisible: true }); });
-    check(copiedCodes.length === 2, "同一验证码到达事件不会因重发或重新启用而重复复制");
-    await notify("qqMail", false, true, "552310");
-    check(copiedCodes[copiedCodes.length - 1] === "552310", "重新开启自动复制对后续邮件生效");
-    await act(async () => changeWidth(240));
-    check(otp().getBoundingClientRect().right <= document.querySelector(".island")!.getBoundingClientRect().right, "窄岛屿内验证码保持完整且不溢出");
-    await act(async () => changeWidth(280));
+    if (MAIL_OTP_ENABLED) {
+      await act(async () => changeMode("expanded"));
+      await notify("qqMail", false, false, "834921");
+      check(copiedCodes.join() === "834921", "展开和托盘隐藏时仍自动复制新验证码");
+      await act(async () => { changeMode("collapsed"); changeAutoCopy(false); });
+      await notify("qqMail", true, true, "K7Q2-9XMP");
+      const otp = () => document.querySelector<HTMLButtonElement>(".island__text-slot .mail-otp-code")!;
+      check(otp()?.textContent === "K7Q2-9XMP" && copiedCodes.length === 1, "关闭自动复制后仍展示验证码胶囊");
+      check(!otp().closest(".island__open-button"), "复制胶囊独立于打开邮件的按钮");
+      openedPage = null;
+      const readsBefore = commands.filter(command => command === "read_qq_mail").length;
+      await act(async () => otp().click());
+      check(copiedCodes.join() === "834921,K7Q2-9XMP" && otp().dataset.copied === "true", "点击胶囊复制并显示对勾");
+      check(openedPage === null && commands.filter(command => command === "read_qq_mail").length === readsBefore, "复制不打开邮件或展开消息页");
+      await act(async () => changeAutoCopy(true));
+      await act(async () => { await emit("qq-mail-changed", { snapshot: mail, newestId: mail.items[0].id, windowVisible: true }); });
+      check(copiedCodes.length === 2, "同一验证码到达事件不会因重发或重新启用而重复复制");
+      await notify("qqMail", false, true, "552310");
+      check(copiedCodes[copiedCodes.length - 1] === "552310", "重新开启自动复制对后续邮件生效");
+      await act(async () => changeWidth(240));
+      check(otp().getBoundingClientRect().right <= document.querySelector(".island")!.getBoundingClientRect().right, "窄岛屿内验证码保持完整且不溢出");
+      await act(async () => changeWidth(280));
+    } else {
+      await act(async () => changeMode("expanded"));
+      await notify("qqMail", false, false, "834921");
+      check(copiedCodes.length === 0, "关闭时展开和托盘隐藏也不会自动复制");
+      await act(async () => changeMode("collapsed"));
+      await notify("qqMail", true, true, "K7Q2-9XMP");
+      check(!document.querySelector(".mail-otp-code") && copiedCodes.length === 0,
+        "关闭时含旧验证码的到达事件正常预览邮件，不显示胶囊或写剪贴板");
+    }
     results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
     results.dataset.result = "passed";
   } catch (error) {

@@ -40,6 +40,24 @@ fn previous() -> Option<Cursor> {
 }
 
 #[test]
+fn disabled_enrichment_does_not_recognize_subjects_or_peek_bodies() {
+    let output = Arc::new(Mutex::new(Vec::new()));
+    let mut client = imap::Client::new(Stream {
+        input: IoCursor::new(b"* OK ready\r\na1 OK login\r\n".to_vec()),
+        output: output.clone(),
+    });
+    client.read_greeting().unwrap();
+    let mut session = client.login("test@example.com", "secret").unwrap();
+    let mut items = vec![message(3), message(2)];
+    items[0].subject = "Verification code: 834921".into();
+    items[1].otp_code = Some("old-code".into());
+    enrich(&mut session, &mut items, 7, previous(), false).unwrap();
+    assert!(items.iter().all(|item| item.otp_code.is_none()));
+    assert_eq!(newest_code(&items, 7, previous()), None);
+    assert!(!String::from_utf8(output.lock().unwrap().clone()).unwrap().contains("FETCH"));
+}
+
+#[test]
 fn initial_sync_old_mail_read_mail_and_rebuilt_mailboxes_are_not_arrivals() {
     let mut item = message(2);
     assert!(!is_arrival(&item, 7, None));
@@ -65,7 +83,7 @@ fn subject_codes_need_no_body_request_and_newest_code_can_precede_an_ordinary_ma
     });
     client.read_greeting().unwrap();
     let mut session = client.login("test@example.com", "secret").unwrap();
-    enrich(&mut session, &mut items, 7, previous()).unwrap();
+    enrich(&mut session, &mut items, 7, previous(), true).unwrap();
     assert_eq!(items[1].otp_code.as_deref(), Some("834921"));
     assert!(items[0].otp_code.is_none());
     assert_eq!(newest_code(&items, 7, previous()).as_deref(), Some("7:3"));
@@ -90,7 +108,7 @@ fn body_peeks_are_bounded_to_five_new_unread_messages_and_never_set_seen() {
     client.read_greeting().unwrap();
     let mut session = client.login("test@example.com", "secret").unwrap();
     let mut items = vec![message(7), message(6), message(5), message(4), message(3), message(2)];
-    enrich(&mut session, &mut items, 7, previous()).unwrap();
+    enrich(&mut session, &mut items, 7, previous(), true).unwrap();
     assert!(items[..5]
         .iter()
         .all(|item| item.otp_code.as_deref() == Some("834921") && item.unread));
@@ -118,7 +136,7 @@ fn initial_sync_peeks_only_recent_unread_mail() {
     items[1].received_at = Some(now - MAX_INITIAL_AGE_MS - 1);
     items[2].received_at = Some(now);
     items[2].unread = false;
-    enrich(&mut session, &mut items, 7, None).unwrap();
+    enrich(&mut session, &mut items, 7, None, true).unwrap();
     assert_eq!(items[0].otp_code.as_deref(), Some("834921"));
     assert!(items[1..].iter().all(|item| item.otp_code.is_none()));
     assert_eq!(String::from_utf8(output.lock().unwrap().clone()).unwrap().matches(PEEK_QUERY).count(), 1);

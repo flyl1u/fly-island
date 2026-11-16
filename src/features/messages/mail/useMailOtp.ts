@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../../../i18n";
 import { copyMailOtp, type MailEvent } from "./api";
+import { MAIL_OTP_ENABLED } from "../../releaseFlags.ts";
 
 /** Shared feedback for the preview and list; only the island subscribes to arrival copying. */
 export function useMailOtp(autoCopy: boolean, reportError: (message: string) => void) {
@@ -18,6 +19,7 @@ export function useMailOtp(autoCopy: boolean, reportError: (message: string) => 
   }, []);
 
   const copyOtp = useCallback(async (code: string) => {
+    if (!MAIL_OTP_ENABLED) return false;
     window.clearTimeout(feedbackTimer.current);
     setCopiedOtp(null);
     try {
@@ -35,6 +37,7 @@ export function useMailOtp(autoCopy: boolean, reportError: (message: string) => 
   }, [reportError, t.mail.copyOtpFailed]);
 
   const copyArrival = useCallback((event: MailEvent) => {
+    if (!MAIL_OTP_ENABLED) return;
     const { snapshot } = event;
     const id = event.otpMessageId ?? event.newestId;
     if (!id || !snapshot.email || !snapshot.enabled || snapshot.status !== "connected") return;

@@ -7,12 +7,13 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const script = fileURLToPath(new URL("../../scripts/release/make-latest-json.mjs", import.meta.url));
-function fixture({ msiSignature = true } = {}) {
+function fixture({ msiSignature = true, targetDirectory = "src-tauri/target" } = {}) {
   const root = mkdtempSync(join(tmpdir(), "focusd-manifest-test-"));
-  const nsis = join(root, "src-tauri/target/release/bundle/nsis");
-  const msi = join(root, "src-tauri/target/release/bundle/msi");
+  const nsis = join(root, targetDirectory, "release/bundle/nsis");
+  const msi = join(root, targetDirectory, "release/bundle/msi");
   mkdirSync(nsis, { recursive: true });
   mkdirSync(msi, { recursive: true });
+  mkdirSync(join(root, "src-tauri"), { recursive: true });
   mkdirSync(join(root, "docs/releases"), { recursive: true });
   writeFileSync(join(root, "src-tauri/tauri.conf.json"), JSON.stringify({ version: "0.2.12" }));
   writeFileSync(join(root, "docs/releases/v0.2.12.md"), "Fixture release notes");
@@ -43,6 +44,19 @@ test("an unsigned MSI stops manifest generation instead of redirecting MSI users
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Missing signed MSI/);
   assert.equal(existsSync(manifest), false);
+});
+
+test("a shared Cargo target directory supplies both signed installer formats", () => {
+  const { root, manifest } = fixture({ targetDirectory: "shared-target" });
+  for (const target of ["shared-target", join(root, "shared-target")]) {
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root, encoding: "utf8", env: { ...process.env, CARGO_TARGET_DIR: target },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const output = JSON.parse(readFileSync(manifest, "utf8"));
+    assert.equal(output.platforms["windows-x86_64-nsis"].signature, "fixture NSIS signature");
+    assert.equal(output.platforms["windows-x86_64-msi"].signature, "fixture MSI signature");
+  }
 });
 
 test("public download URLs must use HTTPS", () => {

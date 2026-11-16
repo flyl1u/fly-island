@@ -14,7 +14,7 @@ use serde_json::Value;
 type PluginHost = Arc<Host>;
 
 pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
-    let host = Arc::new(Host::new(app.path().app_data_dir().map_err(|e| e.to_string())?, Some(app.clone()))?);
+    let host = Arc::new(Host::new(app.path().app_data_dir().map_err(|e| e.to_string())?, Some(app.clone()), crate::release_flags::PLUGINS_ENABLED)?);
     let registry = host.snapshot().registry;
     for (id, p) in registry.installed {
         if p.enabled && (!p.development || registry.developer_mode) {
@@ -70,6 +70,7 @@ pub async fn configure_plugins(developer_mode: bool, index_url: String, host: ta
 #[tauri::command]
 pub async fn load_development_plugin(directory: String, host: tauri::State<'_, PluginHost>) -> Result<(), String> {
     let _guard = host.operation.lock().await;
+    if !host.enabled() { return Ok(()); }
     let mut registry = host.snapshot().registry;
     if !registry.developer_mode { return Err("Developer mode is disabled".into()); }
     let directory = std::path::PathBuf::from(directory).canonicalize().map_err(|e| e.to_string())?;
