@@ -36,6 +36,11 @@ pub fn parse_index(bytes: &[u8]) -> Result<Vec<IndexEntry>, String> {
 }
 
 pub async fn download(url: &str, local: bool, limit: u64) -> Result<Vec<u8>, String> {
+    if local && Path::new(url).is_absolute() {
+        let path = Path::new(url);
+        if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > limit { return Err("Plugin file too large".into()); }
+        return std::fs::read(path).map_err(|e| e.to_string());
+    }
     let parsed = reqwest::Url::parse(url).map_err(|e| e.to_string())?;
     if parsed.scheme() == "file" && local {
         let path = parsed.to_file_path().map_err(|_| "Invalid local plugin URL")?;
@@ -46,9 +51,9 @@ pub async fn download(url: &str, local: bool, limit: u64) -> Result<Vec<u8>, Str
         return Err("Plugin downloads require HTTPS (local sources need developer mode)".into());
     }
     let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).redirect(reqwest::redirect::Policy::limited(5)).build().map_err(|e| e.to_string())?;
-    let mut response = client.get(parsed).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?;
+    let mut response = client.get(parsed).send().await.map_err(|e| e.without_url().to_string())?.error_for_status().map_err(|e| e.without_url().to_string())?;
     let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+    while let Some(chunk) = response.chunk().await.map_err(|e| e.without_url().to_string())? {
         if bytes.len() as u64 + chunk.len() as u64 > limit { return Err("Plugin download too large".into()); }
         bytes.extend_from_slice(&chunk);
     }

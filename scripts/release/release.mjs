@@ -123,6 +123,7 @@ run("pnpm", ["tauri", "build", "--ci", ...configs, "--bundles", "nsis,msi"]);
 const latestArgs = ["scripts/release/make-latest-json.mjs", "--notes-file", notesFile];
 if (baseUrl) latestArgs.push("--base-url", baseUrl);
 run("node", latestArgs);
+// The client fetches the index from releases/latest; package URLs remain pinned to this release.
 run("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/release/build-plugins.ps1", "-BaseUrl", baseUrl || `https://github.com/${REPO}/releases/download/${tag}`]);
 
 const installer = readdirSync(BUNDLE_DIR).find((name) => name.endsWith(`_${version}_x64-setup.exe`));

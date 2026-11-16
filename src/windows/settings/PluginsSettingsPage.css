@@ -1,15 +1,22 @@
 ﻿.plugins-settings__actions, .plugins-settings__permissions {
   display: flex;
   align-items: center;
-  gap: var(--space-2, 8px);
+  gap: var(--space-md);
   flex-wrap: wrap;
 }
 .plugins-settings__permission {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs, 11px);
+  color: var(--color-text-subtle);
+  font-size: calc(11px * var(--island-font-scale, 1));
 }
 .plugins-settings__error {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-subtle);
+  font-size: calc(12px * var(--island-font-scale, 1));
   overflow-wrap: anywhere;
+}
+
+.plugins-settings__developer > summary {
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  font-size: calc(12px * var(--island-font-scale, 1));
+  padding: var(--space-md) 0;
 }

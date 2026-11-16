@@ -12,6 +12,7 @@ export type InstalledPlugin = { manifest: PluginManifest; enabled: boolean; dire
 export type PluginsSnapshot = { registry: { developerMode: boolean; indexUrl: string; installed: Record<string, InstalledPlugin> }; live: Record<string, { status: string; quota: PluginQuota[]; sessions: PluginSession[]; notifications: PluginNotification[] }> };
 export type PluginIndexEntry = { id: string; version: string; name: Localized; description: Localized; apiVersion: number; url: string; sha256: string; size: number; minAppVersion: string };
 export const PLUGINS_EVENT = "plugins-changed";
+export const PLUGIN_INDEX_UNAVAILABLE = "plugin_index_unavailable";
 export const getPlugins = () => invoke<PluginsSnapshot>("get_plugins");
 export const getPluginsIndex = () => invoke<PluginIndexEntry[]>("get_plugins_index");
 export const installPlugin = (id: string) => invoke<void>("install_plugin", { id });

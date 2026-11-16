@@ -96,7 +96,7 @@ fn local_index_install_enable_publish_disable_uninstall() {
     let e = entry(&bytes, reqwest::Url::from_file_path(&archive).unwrap().to_string());
     let index = root.join("plugins-index.json"); std::fs::write(&index, serde_json::to_vec(&vec![e]).unwrap()).unwrap();
     let host = Host::new(root.join("data"), None).unwrap(); let mut registry = host.snapshot().registry;
-    registry.developer_mode = true; registry.index_url = reqwest::Url::from_file_path(index).unwrap().to_string(); host.persist(registry).unwrap();
+    registry.developer_mode = true; registry.index_url = index.to_string_lossy().into_owned(); host.persist(registry).unwrap();
     tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
     assert!(!host.snapshot().registry.installed["example-hello"].enabled);
     host.enable("example-hello", true).unwrap();

@@ -160,3 +160,7 @@ Copyright (C) 2026 flyl1u and contributors。3.0.8 及以前的版本以 MIT 协
     <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
   </picture>
 </a>
+
+### 插件开发
+
+欢迎贡献插件：从示例开始、本地调试并提交 PR，详见[插件开发指引](docs/plugins/quickstart.md)。

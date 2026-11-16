@@ -156,3 +156,7 @@ If fly-island is useful to you, [a Star](https://github.com/flyl1u/fly-island/st
     <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=flyl1u/fly-island&type=date&theme=light&legend=top-left" />
   </picture>
 </a>
+
+### Plugin development
+
+Contributions are welcome. Start from the example, test locally and submit a PR using the [plugin quickstart](docs/plugins/quickstart.md).
