@@ -53,6 +53,8 @@ export const PAGES = [
   "music-lyrics.html",
   "notification-startup.html",
   "panel-preview.html",
+  "plugins-settings.html",
+  "plugins-settings.html?lang=en",
   "settings.html?test=1",
   "settings-sidebar.html",
   "settings-sync.html",

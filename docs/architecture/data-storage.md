@@ -56,3 +56,5 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 `plugins/<id>/` 存经索引校验的包；`.staging-<id>` / `.backup-<id>` 只用于安装事务。`plugin-logs/<id>.log` 保存有限 stderr。额度、会话和通知仅在内存，停用清空，不落盘。开发目录路径记录在注册表，卸载不会删除开发目录。
 
 仓库内 `artifacts/plugins/` 为忽略的 zip 与 plugins-index.json 构建产物；本地测试数据在 node_modules/.cache/plugin-tests/。插件 crate 的 target 不入库。
+
+索引下载/解析诊断写入同样约 1 MiB 上限的 `plugin-logs/catalog.log`；不记录 URL 认证信息。索引失败统一返回 `plugin_index_unavailable`，设置页按当前语言显示简短状态和重试，不回显底层错误。

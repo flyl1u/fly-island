@@ -1,0 +1,70 @@
+import { act, StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { mockIPC } from "@tauri-apps/api/mocks";
+import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
+import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
+import type { PluginIndexEntry } from "../../src/features/plugins/api";
+import "../../src/styles/tokens.css";
+import "../../src/styles/base.css";
+import "../../src/windows/settings/LayoutEditor.css";
+
+Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
+const locale = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "zh-CN";
+localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+const t = TRANSLATIONS[locale].settings.plugins;
+const stored = "D:\\CodexBuild\\plugins\\plugins-index.json";
+const registry = { installed: {}, developerMode: true, indexUrl: stored };
+const snapshot = () => ({ registry: { ...registry }, live: {} });
+const requests: { resolve: (items: PluginIndexEntry[]) => void; reject: (reason: string) => void }[] = [];
+let resolveRegistry: (() => void) | undefined;
+let opened = "";
+mockIPC((command, payload) => {
+  const args = (payload ?? {}) as Record<string, unknown>;
+  if (command === "get_plugins") return resolveRegistry
+    ? snapshot()
+    : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
+  if (command === "get_plugins_index") return new Promise<PluginIndexEntry[]>((resolve, reject) => requests.push({ resolve, reject }));
+  if (command === "configure_plugins") { registry.developerMode = Boolean(args.developerMode); registry.indexUrl = String(args.indexUrl); return null; }
+  if (command === "plugin:opener|open_url") { opened = String(args.url); return null; }
+  return null;
+}, { shouldMockEvents: true });
+const messages: string[] = [];
+function check(condition: unknown, label: string) {
+  if (!condition) throw new Error(label);
+  messages.push(`PASS ${label}`);
+}
+const wait = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
+const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent === text)!;
+const app = createRoot(document.getElementById("fixture")!);
+try {
+  await act(async () => app.render(<StrictMode><I18nProvider><PluginsSettingsPage /></I18nProvider></StrictMode>)); await wait();
+  check(requests.length >= 1, "索引请求已开始");
+  await act(async () => resolveRegistry?.()); await wait();
+  const developer = document.querySelector<HTMLDetailsElement>("details")!;
+  check(!developer.open, "开发者分组默认折叠");
+  await act(async () => developer.querySelector("summary")!.click());
+  const input = document.querySelector<HTMLInputElement>(`input[aria-label='${t.index}']`)!;
+  check(input.value === stored, "异步恢复后显示已保存的 Windows 索引路径");
+  check(!button(t.save).disabled, "网络请求未完成时仍可设置本地索引");
+  await act(async () => requests[requests.length - 1].reject("HTTP 404 https://github.com/releases/missing")); await wait();
+  check(document.body.textContent?.includes(t.unavailable) && !document.body.textContent?.includes("HTTP 404"), "索引失败只显示翻译后的简短状态");
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  const next = "D:\\FocuSD\\artifacts\\plugins\\plugins-index.json";
+  await act(async () => { setter.call(input, next); input.dispatchEvent(new Event("input", { bubbles: true })); });
+  const beforeSave = requests.length;
+  await act(async () => button(t.save).click()); await wait();
+  check(registry.indexUrl === next && requests.length > beforeSave, "保存路径会自动读取新索引");
+  const newest = requests[requests.length - 1];
+  await act(async () => newest.resolve([])); await wait();
+  await act(async () => requests[0].reject("old request failed")); await wait();
+  check(!document.body.textContent?.includes(t.unavailable), "已失效的旧请求不能覆盖新索引结果");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.develop}']`)!.click());
+  check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/quickstart.md", "开发指引使用既有外链 opener");
+  check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");
+  await act(async () => app.unmount());
+  document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");
+  document.documentElement.dataset.testResult = "passed";
+} catch (error) {
+  document.getElementById("results")!.textContent = [...messages, `FAIL ${String(error)}`].join("\n");
+  document.documentElement.dataset.testResult = "failed";
+}

@@ -86,7 +86,13 @@ impl Host {
 
     pub async fn catalog(&self) -> Result<Vec<IndexEntry>, String> {
         let (url, local) = self.source();
-        super::packages::parse_index(&super::packages::download(&url, local, super::packages::INDEX_LIMIT).await?)
+        let result = async { super::packages::parse_index(&super::packages::download(&url, local, super::packages::INDEX_LIMIT).await?) }.await;
+        if let Err(error) = &result {
+            let detail = format!("plugin index: {error}\n");
+            eprint!("{detail}");
+            super::process::log_stderr(detail.as_bytes(), &self.root.join("plugin-logs/catalog.log"), &[]);
+        }
+        result.map_err(|_| "plugin_index_unavailable".into())
     }
 
     pub async fn install(&self, id: &str) -> Result<(), String> {

@@ -7,11 +7,13 @@ export function SettingsLinkButton({
   tone = "accent",
   disabled = false,
   onClick,
+  ariaLabel,
 }: {
   children: ReactNode;
   tone?: "accent" | "danger";
   disabled?: boolean;
   onClick: () => void;
+  ariaLabel?: string;
 }) {
   return (
     <button
@@ -19,6 +21,7 @@ export function SettingsLinkButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
+      aria-label={ariaLabel}
     >
       {children}
     </button>

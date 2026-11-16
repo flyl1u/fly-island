@@ -136,7 +136,7 @@ fn run(directory: &Path, manifest: &Manifest, settings: &Value, log: &Path, stop
     result
 }
 
-fn log_stderr(output: impl Read, path: &Path, secrets: &[String]) {
+pub(super) fn log_stderr(output: impl Read, path: &Path, secrets: &[String]) {
     let mut reader = BufReader::new(output);
     loop {
         let mut bytes = Vec::new();

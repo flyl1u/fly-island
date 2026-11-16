@@ -193,4 +193,4 @@ gh release edit v0.3.2 --repo flyl1u/fly-island --prerelease --latest=false   # 
 
 ## 可下载功能插件
 
-`pnpm release` 额外运行 scripts/release/build-plugins.ps1，为 plugins/<id>/ 各独立 crate 构建 zip 和 plugins-index.json，与应用安装包及 latest.json 一并上传同一个 Release。插件不编入主程序；latest.json 的格式与端点不变。单独本地构建见 docs/plugins/quickstart.md；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。
+`pnpm release` 额外运行 scripts/release/build-plugins.ps1，为 plugins/<id>/ 各独立 crate 构建 zip 和 plugins-index.json，与应用安装包及 latest.json 一并上传同一个 Release。客户端从 `releases/latest/download/plugins-index.json` 获取索引，索引内的包地址固定到对应版本的 Release。插件不编入主程序；latest.json 的格式与端点不变。单独本地构建见 docs/plugins/quickstart.md；不传 BaseUrl 时索引指向本地 file URL，发布流程传 GitHub Release HTTPS URL。
