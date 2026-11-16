@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn common_verification_messages() {
+    for (subject, body) in [
+        ("QQ登录验证", "您的验证码是 834921，请勿泄露。"),
+        ("微信安全中心", "本次操作验证码：834921，五分钟内有效。"),
+        ("支付宝身份验证", "校验码 834921，请勿告知他人。"),
+        ("GitHub verification code", "Your verification code is 834921."),
+        ("Apple ID", "Your Apple Account verification code is 834921."),
+        ("Google verification code", "Your Google verification code is 834921."),
+        ("Microsoft account security code", "Security code: 834921"),
+        ("Steam Guard", "Your Steam account access code is 834921."),
+        ("Your code", "Use 834921 to sign in."),
+    ] {
+        assert_eq!(extract(subject, body, &[]).map(|code| code.text).as_deref(), Some("834921"), "{subject}");
+    }
+}
+
+#[test]
 fn subject_prefilter_and_year_amount_promotion_negatives() {
     assert!(likely_verification("Sign-in request", "sender@example.com"));
     assert!(likely_verification("Notice", "security@example.com"));

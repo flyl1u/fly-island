@@ -218,6 +218,9 @@ try {
     await click("返回列表");
     readBehavior = async id => ({ id, attachments: [], contentType: "text/plain", content: "第二封正文" });
     await click("阅读邮件：工作进展 1，未读");
+    const readerOtp = document.querySelector<HTMLButtonElement>(".qq-mail-reader .mail-otp-code")!;
+    await act(async () => readerOtp.click());
+    check(readerOtp.textContent?.includes("834921") && readerOtp.dataset.copied === "true", "阅读页顶部可复制验证码并显示对勾");
     await act(async () => { stale.resolve({ id: "7:20", attachments: [], contentType: "text/plain", content: "过期的第一封正文" }); await stale.promise; });
     check(mail!.selectedMail?.id === "7:19" && mail!.content?.content === "第二封正文", "快速返回和切换后，旧请求不会覆盖当前邮件");
 

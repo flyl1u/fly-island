@@ -57,8 +57,10 @@ fn subject_codes_need_no_body_request_and_newest_code_can_precede_an_ordinary_ma
     items[0].sender = "news@example.com".into();
     items[1].subject = "Verification code: 834921".into();
     items[2].unread = false;
+    let raw = "Content-Type: text/plain\r\n\r\nWeekly news";
+    let script = format!("* OK ready\r\na1 OK login\r\n* 4 FETCH (UID 4 BODY[]<0> {{{}}}\r\n{raw})\r\na2 OK peek\r\n", raw.len());
     let mut client = imap::Client::new(Stream {
-        input: IoCursor::new(b"* OK ready\r\na1 OK login\r\n".to_vec()),
+        input: IoCursor::new(script.into_bytes()),
         ..Stream::default()
     });
     client.read_greeting().unwrap();
@@ -70,10 +72,10 @@ fn subject_codes_need_no_body_request_and_newest_code_can_precede_an_ordinary_ma
 }
 
 #[test]
-fn body_peeks_are_bounded_to_three_new_unread_messages_and_never_set_seen() {
+fn body_peeks_are_bounded_to_five_new_unread_messages_and_never_set_seen() {
     let mut script = "* OK ready\r\na1 OK login\r\n".to_string();
     let raw = "Content-Type: text/plain; charset=utf-8\r\n\r\nYour verification code: 834921";
-    for (tag, uid) in [(2, 5), (3, 4), (4, 3)] {
+    for (tag, uid) in [(2, 7), (3, 6), (4, 5), (5, 4), (6, 3)] {
         script.push_str(&format!(
             "* {uid} FETCH (UID {uid} BODY[]<0> {{{}}}\r\n{raw})\r\na{tag} OK peek\r\n",
             raw.len()
@@ -87,17 +89,40 @@ fn body_peeks_are_bounded_to_three_new_unread_messages_and_never_set_seen() {
     let mut client = imap::Client::new(stream);
     client.read_greeting().unwrap();
     let mut session = client.login("test@example.com", "secret").unwrap();
-    let mut items = vec![message(5), message(4), message(3), message(2)];
+    let mut items = vec![message(7), message(6), message(5), message(4), message(3), message(2)];
     enrich(&mut session, &mut items, 7, previous()).unwrap();
-    assert!(items[..3]
+    assert!(items[..5]
         .iter()
         .all(|item| item.otp_code.as_deref() == Some("834921") && item.unread));
-    assert!(items[3].otp_code.is_none());
+    assert!(items[5].otp_code.is_none());
     let commands = String::from_utf8(output.lock().unwrap().clone()).unwrap();
-    assert_eq!(commands.matches(PEEK_QUERY).count(), 3);
+    assert_eq!(commands.matches(PEEK_QUERY).count(), 5);
     for forbidden in [" SELECT ", " STORE ", "\\Seen", " BODY[]"] {
         assert!(!commands.contains(forbidden), "{commands}");
     }
+}
+
+#[test]
+fn initial_sync_peeks_only_recent_unread_mail() {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
+    let raw = "Content-Type: text/plain\r\n\r\nYour code is 834921";
+    let script = format!("* OK ready\r\na1 OK login\r\n* 3 FETCH (UID 3 BODY[]<0> {{{}}}\r\n{raw})\r\na2 OK peek\r\n", raw.len());
+    let output = Arc::new(Mutex::new(Vec::new()));
+    let mut client = imap::Client::new(Stream { input: IoCursor::new(script.into_bytes()), output: output.clone() });
+    client.read_greeting().unwrap();
+    let mut session = client.login("test@example.com", "secret").unwrap();
+    let mut items = vec![message(3), message(2), message(1)];
+    items[0].subject = "Notice".into();
+    items[0].sender = "hello@example.com".into();
+    items[0].received_at = Some(now);
+    items[1].received_at = Some(now - MAX_INITIAL_AGE_MS - 1);
+    items[2].received_at = Some(now);
+    items[2].unread = false;
+    enrich(&mut session, &mut items, 7, None).unwrap();
+    assert_eq!(items[0].otp_code.as_deref(), Some("834921"));
+    assert!(items[1..].iter().all(|item| item.otp_code.is_none()));
+    assert_eq!(String::from_utf8(output.lock().unwrap().clone()).unwrap().matches(PEEK_QUERY).count(), 1);
+    assert_eq!(newest_code(&items, 7, None), None);
 }
 
 #[test]
