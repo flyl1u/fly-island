@@ -1,4 +1,6 @@
-use fly_island_plugin_sdk::{empty, json, now, quota, run, session, Value};
+//! Protocol reference: Renly1994/xiaotang-daozai src/gemini_quota.rs (MIT).
+//! Copyright (c) 2026 小唐的Token and Daozai contributors.
+use fly_island_plugin_sdk::{empty, json, now, quota, read_json, run, session, timestamp_or_file, Value};
 use std::{fs, path::PathBuf, time::Duration};
 
 struct Creds {
@@ -27,8 +29,7 @@ fn load_creds(settings: &Value) -> Option<Creds> {
         PathBuf::from(&home).join(".gemini/credentials.json"),
     ];
     for path in candidates {
-        if let Ok(raw) = fs::read(&path) {
-            if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
+        if let Ok(v) = read_json(&path, 1024 * 1024) {
                 let access = v["access_token"].as_str().or_else(|| v["token"].as_str()).map(str::trim).filter(|s| !s.is_empty());
                 if let Some(acc) = access {
                     return Some(Creds {
@@ -39,7 +40,6 @@ fn load_creds(settings: &Value) -> Option<Creds> {
                         client_secret: v["client_secret"].as_str().map(str::to_owned),
                     });
                 }
-            }
         }
     }
     None
@@ -57,14 +57,14 @@ fn refresh_token_if_needed(creds: &mut Creds) {
     let Some(refresh) = &creds.refresh_token else { return };
     let client_id = creds.client_id.as_deref().unwrap_or("681255809395-oo8ft2oprreus9msvdrvm02mepq9rhkn.apps.googleusercontent.com");
     let client_secret = creds.client_secret.as_deref().unwrap_or("");
-    let mut body = format!("grant_type=refresh_token&client_id={client_id}&refresh_token={refresh}");
+    let mut form = vec![("grant_type", "refresh_token"), ("client_id", client_id), ("refresh_token", refresh)];
     if !client_secret.is_empty() {
-        body.push_str(&format!("&client_secret={client_secret}"));
+        form.push(("client_secret", client_secret));
     }
     let Ok(resp) = ureq::post("https://oauth2.googleapis.com/token")
         .set("Content-Type", "application/x-www-form-urlencoded")
         .timeout(Duration::from_secs(10))
-        .send_string(&body) else { return };
+        .send_form(&form) else { return };
     if let Ok(json) = resp.into_json::<Value>() {
         if let Some(new_tok) = json["access_token"].as_str() {
             creds.access_token = new_tok.to_owned();
@@ -92,7 +92,7 @@ pub fn parse_gemini_quota(v: &Value) -> Option<Value> {
     }
     // 2. LoadCodeAssist response with tier / quota limits
     if let Some(tier) = v["tier"].as_str().or_else(|| v["plan"].as_str()) {
-        let remaining = v["remaining_percent"].as_f64().or(Some(100.0));
+        let remaining = v["remaining_percent"].as_f64();
         let reset = v["resets_at"].as_i64().map(|t| if t < 10_000_000_000 { t * 1000 } else { t });
         return Some(quota("gemini-quota", &format!("Gemini ({tier})"), remaining, None, reset));
     }
@@ -150,32 +150,28 @@ fn list_sessions() -> Vec<Value> {
                         for chat in chats.flatten() {
                             let cp = chat.path();
                             if cp.extension().and_then(|e| e.to_str()) == Some("json") {
-                                if let Ok(raw) = fs::read(&cp) {
-                                    if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
+                                if let Ok(v) = read_json(&cp, 16 * 1024 * 1024) {
                                         let id = v["id"].as_str().or_else(|| v["sessionId"].as_str()).unwrap_or_default();
                                         if !id.is_empty() {
                                             let title = v["title"].as_str().unwrap_or("Gemini Chat");
                                             let cwd = v["cwd"].as_str().or_else(|| v["workdir"].as_str());
-                                            let updated = v["updatedAt"].as_i64().unwrap_or_else(now);
+                                            let updated = timestamp_or_file(v["updatedAt"].as_i64(), &cp);
                                             sessions.push(session(id, title, cwd, "completed", updated, None));
                                         }
-                                    }
                                 }
                             }
                         }
                     }
                 }
             } else if path.extension().and_then(|e| e.to_str()) == Some("json") {
-                if let Ok(raw) = fs::read(&path) {
-                    if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
+                if let Ok(v) = read_json(&path, 16 * 1024 * 1024) {
                         let id = v["id"].as_str().or_else(|| v["sessionId"].as_str()).unwrap_or_default();
                         if !id.is_empty() {
                             let title = v["title"].as_str().unwrap_or("Gemini Chat");
                             let cwd = v["cwd"].as_str().or_else(|| v["workdir"].as_str());
-                            let updated = v["updatedAt"].as_i64().unwrap_or_else(now);
+                            let updated = timestamp_or_file(v["updatedAt"].as_i64(), &path);
                             sessions.push(session(id, title, cwd, "completed", updated, None));
                         }
-                    }
                 }
             }
         }
@@ -224,6 +220,7 @@ mod tests {
 
     #[test]
     fn test_parse_gemini_quota_tier() {
+        assert!(parse_gemini_quota(&json!({"tier":"STANDARD"})).unwrap()["remainingPercent"].is_null());
         let val = json!({
             "tier": "STANDARD",
             "remaining_percent": 88.0,

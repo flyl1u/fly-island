@@ -20,18 +20,27 @@ Get-ChildItem -LiteralPath (Join-Path $workspace 'plugins') -Directory | ForEach
     } else {
         Join-Path $_.FullName 'target'
     }
+    $compiledRoot = [IO.Path]::GetFullPath((Join-Path $target 'release'))
+    $command = [string]$manifest.runtime.command
+    $binary = [IO.Path]::GetFullPath((Join-Path $compiledRoot $command))
+    if (-not $command.EndsWith('.exe') -or -not $binary.StartsWith($compiledRoot + [IO.Path]::DirectorySeparatorChar)) { throw 'Unsafe plugin executable path' }
+    $name = "$($manifest.id)-$($manifest.version)-windows-x86_64.zip"
+    $zip = [IO.Path]::GetFullPath((Join-Path $output $name))
+    if ([IO.Path]::GetFileName($zip) -cne $name) { throw 'Unsafe plugin package name' }
     & cargo build --release --manifest-path (Join-Path $_.FullName 'Cargo.toml') --target-dir $target
     if ($LASTEXITCODE -ne 0) { throw "Plugin build failed: $($manifest.id)" }
     $stage = Join-Path $output ".stage-$($manifest.id)"
     $stage = [IO.Path]::GetFullPath($stage)
     if (-not $stage.StartsWith($output + [IO.Path]::DirectorySeparatorChar)) { throw 'Unsafe plugin staging path' }
+    $stagedBinary = [IO.Path]::GetFullPath((Join-Path $stage $command))
+    if (-not $stagedBinary.StartsWith($stage + [IO.Path]::DirectorySeparatorChar)) { throw 'Unsafe plugin executable destination' }
     if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
     New-Item -ItemType Directory -Path $stage | Out-Null
     Copy-Item -LiteralPath $manifestPath -Destination $stage
-    Copy-Item -LiteralPath (Join-Path $target "release/$($manifest.runtime.command)") -Destination (Join-Path $stage $manifest.runtime.command)
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $stagedBinary) | Out-Null
+    Copy-Item -LiteralPath $binary -Destination $stagedBinary
     Copy-Item -LiteralPath (Join-Path $workspace 'LICENSE') -Destination $stage
-    $name = "$($manifest.id)-$($manifest.version)-windows-x86_64.zip"
-    $zip = Join-Path $output $name
+    Copy-Item -LiteralPath (Join-Path $workspace 'docs/third-party-licenses.md') -Destination (Join-Path $stage 'THIRD_PARTY_NOTICES.md')
     Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Force
     Remove-Item -LiteralPath $stage -Recurse -Force
     $url = if ($BaseUrl) { "$($BaseUrl.TrimEnd('/'))/$name" } else { ([uri]$zip).AbsoluteUri }

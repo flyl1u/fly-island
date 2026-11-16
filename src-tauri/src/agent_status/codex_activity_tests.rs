@@ -109,6 +109,46 @@ fn partial_records_abort_and_truncation_do_not_inherit_a_finish() {
 }
 
 #[test]
+fn equal_length_replacement_resets_lifecycle() {
+    let home = Home::new(); let path = home.rollout();
+    let event = |kind| format!("{}\n", json!({"type":"event_msg","payload":{"type":kind}}));
+    fs::write(&path, event("task_complete")).unwrap();
+    let mut activity = CodexActivity::default(); activity.refresh(&path).unwrap();
+    assert_eq!(activity.state, TurnState::Done);
+    let replacement = event("task_started");
+    fs::write(&path, replacement.trim_end().to_owned() + " \n").unwrap();
+    activity.refresh(&path).unwrap();
+    assert_eq!(activity.state, TurnState::Working);
+    assert_eq!(activity.completed_at, None);
+}
+
+#[test]
+fn oversized_records_are_bounded_and_do_not_hide_later_completion() {
+    let home = Home::new(); let path = home.rollout();
+    fs::write(&path, THINKING.lines().take(4).collect::<Vec<_>>().join("\n") + "\n").unwrap();
+    let mut activity = CodexActivity::default(); activity.refresh(&path).unwrap();
+    append(&path, &"x".repeat(5 * 1024 * 1024));
+    let offset = activity.offset; activity.refresh(&path).unwrap();
+    assert_eq!(activity.offset, offset, "partial huge records remain uncommitted");
+    append(&path, "\n");
+    let completion = THINKING.lines().find(|s| s.contains("\"task_complete\"")).unwrap();
+    append(&path, &format!("{completion}\n")); activity.refresh(&path).unwrap();
+    assert_eq!(activity.state, TurnState::Done);
+    assert_eq!(activity.offset, fs::metadata(&path).unwrap().len());
+    assert!(activity.checkpoint.len() <= 256);
+}
+
+#[test]
+fn codex_working_turn_becomes_stale_after_thirty_minutes() {
+    let home = Home::new(); let path = home.rollout();
+    fs::write(&path, THINKING.lines().take(4).collect::<Vec<_>>().join("\n") + "\n").unwrap();
+    assert_eq!(listed(&home).phase, "running");
+    let quiet = SystemTime::now() - Duration::from_secs(31 * 60);
+    fs::File::options().write(true).open(&path).unwrap().set_modified(quiet).unwrap();
+    assert_eq!(listed(&home).phase, "stale");
+}
+
+#[test]
 fn desktop_source_is_kept_and_background_sources_are_filtered() {
     for source in [json!("vscode"), json!("app"), json!({"custom":"desktop"})] {
         let meta = json!({"type":"session_meta","payload":{"id":ID,"originator":"Codex Desktop","source":source}});

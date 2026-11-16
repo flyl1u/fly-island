@@ -45,6 +45,16 @@ export function emptyAnnounced(): Announced {
   return { finished: new Map(), approvals: new Map() };
 }
 
+function boundAnnouncements(announced: Announced) {
+  for (const history of [announced.finished, announced.approvals]) {
+    while (history.size > 2048) {
+      const key = history.keys().next().value;
+      if (key === undefined) break;
+      history.delete(key);
+    }
+  }
+}
+
 /**
  * Whether the session's current turn answers a prompt the user typed. Turns Claude Code started by
  * itself (a background task ended, another session reported, a side session it started) are not,
@@ -72,7 +82,8 @@ export function settledFinishes<T extends Turn>(pending: T[], current: Turn[], a
     if (session.lastCompletedAt !== latest.lastCompletedAt || session.turnStartedAt !== latest.turnStartedAt || session.ownerPromptAt !== latest.ownerPromptAt) return false;
     const prompt = latest.ownerPromptAt ?? latest.turnStartedAt ?? null;
     if (prompt !== null && announced.finished.get(key) === prompt) return false;
-    if (prompt !== null) announced.finished.set(key, prompt);
+    if (prompt !== null) { announced.finished.delete(key); announced.finished.set(key, prompt); }
+    boundAnnouncements(announced);
     return true;
   });
 }
@@ -91,7 +102,9 @@ export function settledWaits<T extends Wait>(pending: T[], current: Wait[], anno
     if (still.currentTool?.name === QUESTION_TOOL) return true;
     const last = announced.approvals.get(key);
     if (last !== undefined && now - last < repeatMs) return false;
+    announced.approvals.delete(key);
     announced.approvals.set(key, now);
+    boundAnnouncements(announced);
     return true;
   });
 }

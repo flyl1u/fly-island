@@ -1,4 +1,4 @@
-use fly_island_plugin_sdk::{empty, json, now, quota, run, session, Value};
+use fly_island_plugin_sdk::{empty, json, quota, read_json, run, session, timestamp_or_file, Value};
 use std::{fs, path::PathBuf, time::Duration};
 
 fn find_token(settings: &Value) -> Option<String> {
@@ -12,14 +12,12 @@ fn find_token(settings: &Value) -> Option<String> {
         PathBuf::from(&home).join(".kimi-code/credentials.json"),
     ];
     for path in candidates {
-        if let Ok(raw) = fs::read(&path) {
-            if let Ok(val) = serde_json::from_slice::<Value>(&raw) {
+        if let Ok(val) = read_json(&path, 1024 * 1024) {
                 for key in ["token", "access_token", "apiKey", "api_key"] {
                     if let Some(t) = val[key].as_str().map(str::trim).filter(|s| !s.is_empty()) {
                         return Some(t.to_owned());
                     }
                 }
-            }
         }
     }
     None
@@ -76,8 +74,7 @@ fn list_sessions() -> Vec<Value> {
             if path.extension().and_then(|e| e.to_str()) != Some("json") {
                 continue;
             }
-            if let Ok(raw) = fs::read(&path) {
-                if let Ok(v) = serde_json::from_slice::<Value>(&raw) {
+            if let Ok(v) = read_json(&path, 16 * 1024 * 1024) {
                     let id = v["id"].as_str().unwrap_or_default();
                     if id.is_empty() { continue; }
                     let title = v["title"].as_str().or_else(|| v["name"].as_str()).unwrap_or("Untitled session");
@@ -87,10 +84,8 @@ fn list_sessions() -> Vec<Value> {
                         Some("waiting") | Some("paused") => "waiting",
                         _ => "completed",
                     };
-                    let updated = v["updatedAt"].as_i64().or_else(|| v["updated_at"].as_i64()).unwrap_or_else(now);
-                    let updated = if updated < 10_000_000_000 { updated * 1000 } else { updated };
+                    let updated = timestamp_or_file(v["updatedAt"].as_i64().or_else(|| v["updated_at"].as_i64()), &path);
                     sessions.push(session(id, title, cwd, status, updated, None));
-                }
             }
         }
     }

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::{Component, Path}};
+use std::{collections::HashSet, io::Read, path::{Component, Path}};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -55,15 +55,36 @@ pub fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 100 && id.as_bytes()[0].is_ascii_lowercase()
         && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
         && !id.ends_with(['.', '-']) && !id.contains("..")
-        && !["con", "prn", "aux", "nul", "com1", "lpt1"].contains(&id.split('.').next().unwrap_or_default())
+        && safe_component(id)
+}
+
+fn safe_component(name: &str) -> bool {
+    let stem = name.split('.').next().unwrap_or_default().trim_end_matches(' ').to_ascii_uppercase();
+    let device = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
+        || ["COM", "LPT"].iter().any(|prefix| stem.strip_prefix(*prefix).is_some_and(|suffix|
+            matches!(suffix, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³")));
+    !name.is_empty() && !name.ends_with(['.', ' ']) && !device
+        && !name.chars().any(|c| c.is_control() || "<>:\"/\\|?*".contains(c))
 }
 
 pub fn relative_path(text: &str) -> bool {
-    !text.is_empty() && !text.contains([':', '\\'])
+    !text.is_empty() && text.split('/').all(safe_component)
         && Path::new(text).components().all(|c| matches!(c, Component::Normal(_)))
 }
 
+fn field_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 100 && id.as_bytes()[0].is_ascii_lowercase()
+        && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'-' | b'.' | b'_'))
+}
+
 impl Manifest {
+    pub fn read(path: &Path) -> Result<Self, String> {
+        let mut bytes = Vec::new();
+        std::fs::File::open(path).map_err(|e| e.to_string())?.take(65537)
+            .read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+        Self::parse(&bytes)
+    }
+
     pub fn parse(bytes: &[u8]) -> Result<Self, String> {
         if bytes.len() > 65536 { return Err("Manifest too large".into()); }
         let manifest: Self = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
@@ -84,13 +105,13 @@ impl Manifest {
         }
         let mut keys = HashSet::new();
         for s in &self.settings {
-            if !valid_id(&s.key) || !keys.insert(&s.key) || !s.accepts(&s.default)
+            if !field_id(&s.key) || !keys.insert(&s.key) || !s.accepts(&s.default)
                 || (s.kind == "secret" && s.default != "") {
                 return Err("Invalid or duplicate plugin setting".into());
             }
         }
         keys.clear();
-        if self.actions.iter().any(|a| !valid_id(&a.id) || !keys.insert(&a.id)) { return Err("Invalid plugin action".into()); }
+        if self.actions.iter().any(|a| !field_id(&a.id) || !keys.insert(&a.id)) { return Err("Invalid plugin action".into()); }
         Ok(())
     }
 }

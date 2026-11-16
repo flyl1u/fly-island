@@ -73,7 +73,7 @@ pub async fn load_development_plugin(directory: String, host: tauri::State<'_, P
     let mut registry = host.snapshot().registry;
     if !registry.developer_mode { return Err("Developer mode is disabled".into()); }
     let directory = std::path::PathBuf::from(directory).canonicalize().map_err(|e| e.to_string())?;
-    let manifest = manifest::Manifest::parse(&std::fs::read(directory.join("fly-island-plugin.json")).map_err(|e| e.to_string())?)?;
+    let manifest = manifest::Manifest::read(&directory.join("fly-island-plugin.json"))?;
     if registry.installed.contains_key(&manifest.id) { return Err("Uninstall the existing plugin first".into()); }
     registry.installed.insert(manifest.id.clone(), storage::Installed { manifest, enabled: false, directory, development: true, settings: Default::default() });
     host.persist(registry)

@@ -1,7 +1,7 @@
 //! Incremental lifecycle reads: a long context/reasoning item can push the turn's start out of
 //! the display tail. Keep its boundaries independently of tools and of the hooks being trusted.
 
-use std::{fs::File, io::{self, BufRead, BufReader, Seek, SeekFrom}, path::Path};
+use std::{fs::File, io::{self, BufRead, BufReader, Read, Seek, SeekFrom}, path::Path};
 
 use serde_json::Value;
 
@@ -10,6 +10,7 @@ use super::sessions::{codex_user_prompt, parse_timestamp_ms, SessionTail, TurnSt
 #[derive(Clone, Default)]
 pub(super) struct CodexActivity {
     offset: u64,
+    checkpoint: Vec<u8>,
     pub(super) state: TurnState,
     started_at: Option<i64>,
     owner_at: Option<i64>,
@@ -28,23 +29,42 @@ impl CodexActivity {
     pub(super) fn refresh(&mut self, path: &Path) -> io::Result<()> {
         let mut file = File::open(path)?;
         let len = file.metadata()?.len();
-        if len < self.offset {
+        let mut checkpoint = vec![0; self.checkpoint.len()];
+        if len >= self.offset && !checkpoint.is_empty() {
+            file.seek(SeekFrom::Start(self.offset - checkpoint.len() as u64))?;
+            file.read_exact(&mut checkpoint)?;
+        }
+        if len < self.offset || checkpoint != self.checkpoint {
             *self = Self::default();
         } else if len == self.offset {
             return Ok(());
         }
         file.seek(SeekFrom::Start(self.offset))?;
         let mut reader = BufReader::new(file);
-        let mut bytes = Vec::new();
-        loop {
-            bytes.clear();
-            if reader.read_until(b'\n', &mut bytes)? == 0 || bytes.last() != Some(&b'\n') {
-                break;
+        const MAX_RECORD: usize = 4 * 1024 * 1024;
+        'records: loop {
+            let mut total = 0;
+            let mut oversized = false;
+            loop {
+                let mut bytes = Vec::new();
+                let count = reader.by_ref().take((MAX_RECORD + 1) as u64).read_until(b'\n', &mut bytes)?;
+                if count == 0 { break 'records; }
+                total += count as u64;
+                oversized |= total > MAX_RECORD as u64;
+                if bytes.last() == Some(&b'\n') {
+                    self.offset += total;
+                    if !oversized { self.record(&String::from_utf8_lossy(&bytes)); }
+                    break;
+                }
+                // Oversized context/images are discarded through newline without allocating
+                // their full size. A partial record never advances the committed offset.
+                oversized = true;
             }
-            self.offset += bytes.len() as u64;
-            let line = String::from_utf8_lossy(&bytes);
-            self.record(&line);
         }
+        let mut file = reader.into_inner();
+        self.checkpoint.resize(self.offset.min(256) as usize, 0);
+        file.seek(SeekFrom::Start(self.offset - self.checkpoint.len() as u64))?;
+        file.read_exact(&mut self.checkpoint)?;
         Ok(())
     }
 

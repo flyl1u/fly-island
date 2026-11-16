@@ -27,8 +27,17 @@ export function phasesOf(sessions: AgentSessionSummary[], previous: SessionPhase
   const worked = new Set(previous?.worked);
   const completions = new Map(previous?.completions);
   for (const session of sessions) {
-    if (!previous || isWorking(session.phase)) worked.add(sessionKey(session));
-    if (session.lastCompletedAt != null) completions.set(sessionKey(session), session.lastCompletedAt);
+    const key = sessionKey(session);
+    if (!previous || isWorking(session.phase)) { worked.delete(key); worked.add(key); }
+    if (session.lastCompletedAt != null) { completions.delete(key); completions.set(key, session.lastCompletedAt); }
+  }
+  // Retain absent rows for deduplication without growing for the lifetime of a desktop session.
+  for (const history of [worked, completions]) {
+    while (history.size > 2048) {
+      const key = history.keys().next().value;
+      if (key === undefined) break;
+      history.delete(key);
+    }
   }
   return { phases: new Map(sessions.map((session) => [sessionKey(session), session.phase])), worked, completions };
 }

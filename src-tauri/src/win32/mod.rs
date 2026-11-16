@@ -15,6 +15,7 @@ pub(crate) mod message_window;
 pub(crate) mod notification_state;
 pub(crate) mod ole;
 pub(crate) mod process;
+pub(crate) mod process_job;
 pub(crate) mod process_env;
 pub(crate) mod process_memory;
 pub(crate) mod process_times;

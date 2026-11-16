@@ -29,6 +29,10 @@ pub struct Installed {
 pub fn load(root: &Path) -> Registry {
     let mut registry: Registry = std::fs::read(root.join("plugins-state.json")).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
     registry.installed.retain(|id, p| *id == p.manifest.id && p.manifest.validate().is_ok());
+    for plugin in registry.installed.values_mut() {
+        plugin.settings.retain(|key, value| plugin.manifest.settings.iter()
+            .any(|s| s.key == *key && s.kind != "secret" && s.accepts(value)));
+    }
     registry
 }
 

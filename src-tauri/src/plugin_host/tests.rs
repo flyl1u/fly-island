@@ -23,10 +23,101 @@ fn validates_manifest_and_protocol() {
     let mut restricted = m.clone(); restricted.contributes.clear();
     let n = json!({"notifications":[{"id":"n","sourceId":"test","appName":"test","icon":"plugin","title":"test","body":"test","receivedAt":1,"action":null}]});
     assert!(protocol::parse_publish(&publish(n), &restricted).is_err());
-    assert_eq!(process::restart_delay(0), Duration::from_secs(1));
-    assert_eq!(process::restart_delay(5), Duration::from_secs(32));
-    assert_eq!(process::restart_delay(6), Duration::from_secs(32));
-    assert_eq!(process::restart_delay(u32::MAX), Duration::from_secs(32));
+    for (attempt, seconds) in [1, 2, 4, 8, 16, 32].into_iter().enumerate() {
+        assert_eq!(process::restart_delay(attempt as u32), Some(Duration::from_secs(seconds)));
+    }
+    assert_eq!(process::restart_delay(6), None);
+    assert_eq!(process::restart_delay(u32::MAX), None);
+}
+
+#[test]
+fn all_bundled_manifests_are_accepted() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../plugins");
+    let mut count = 0;
+    for entry in std::fs::read_dir(root).unwrap().flatten() {
+        let path = entry.path().join("fly-island-plugin.json");
+        if path.is_file() {
+            assert!(Manifest::parse(&std::fs::read(&path).unwrap()).is_ok(), "{}", path.display());
+            count += 1;
+        }
+    }
+    assert_eq!(count, 8);
+}
+
+#[test]
+fn windows_device_names_and_archive_aliases_are_rejected() {
+    for path in ["CON.txt", "aux.exe", "dir/COM1.log", "LPT9.exe", "LPT¹.log", "a./file", "a /file", "x:stream", "dir//x", "dir/../x"] {
+        assert!(!super::manifest::relative_path(path), "{path}");
+        let root = temporary(&format!("path-{}", path.bytes().map(u32::from).sum::<u32>()));
+        let bytes = zip(&[(path, b"bad")]);
+        assert!(packages::extract(&bytes, &root, &entry(&bytes, String::new())).is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn stderr_does_not_leak_split_or_multiline_credentials() {
+    let root = temporary("redaction");
+    let secret = "sensitive-token".to_owned();
+    let mut input = format!("{}{}\n", "x".repeat(8188), secret);
+    input.push_str("before sensitive-token after\nfirst-secret\nsecond-secret\nunterminated-sensitive");
+    let path = root.join("log");
+    process::log_stderr(Cursor::new(input), &path, &[secret, "first-secret\nsecond-secret".into()]);
+    let raw = std::fs::read_to_string(path).unwrap();
+    assert!(!raw.contains("sensitive") && !raw.contains("first-secret") && !raw.contains("second-secret"));
+    assert!(raw.contains("before [redacted] after"));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn download_policy_and_file_limits_are_enforced() {
+    for (url, dev, allowed) in [
+        ("https://github.com/a", false, true), ("http://github.com/a", true, false),
+        ("http://127.0.0.1/a", true, true), ("http://127.0.0.1/a", false, false),
+        ("https://user:password@example.com/a", false, false), ("file:///C:/a", false, false),
+    ] { assert_eq!(packages::network_source_allowed(&reqwest::Url::parse(url).unwrap(), dev), allowed, "{url}"); }
+    let root = temporary("local-bound");
+    let path = root.join("file"); std::fs::write(&path, [1; 32]).unwrap();
+    assert!(tauri::async_runtime::block_on(packages::download(path.to_str().unwrap(), true, 16)).is_err());
+    assert!(tauri::async_runtime::block_on(packages::download(path.to_str().unwrap(), false, 64)).is_err());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn redirects_cannot_escape_the_local_http_policy() {
+    use std::{io::Read, net::TcpListener};
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}/index", listener.local_addr().unwrap());
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+        let mut request = [0; 2048]; let _ = stream.read(&mut request).unwrap();
+        stream.write_all(b"HTTP/1.1 302 Found\r\nLocation: http://example.com/not-local\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
+    });
+    let error = tauri::async_runtime::block_on(packages::download(&url, true, 1024)).unwrap_err();
+    server.join().unwrap();
+    assert!(!error.contains("example.com"), "URL omitted from diagnostics: {error}");
+}
+
+#[test]
+fn incompatible_plugin_does_not_hide_compatible_index_entries() {
+    let good = entry(b"zip", "https://example.com/a.zip".into());
+    let mut future = good.clone(); future.id = "future-plugin".into(); future.min_app_version = "999.0.0".into();
+    let entries = packages::parse_index(&serde_json::to_vec(&vec![good, future]).unwrap()).unwrap();
+    assert_eq!(entries.len(), 1); assert_eq!(entries[0].id, "example-hello");
+}
+
+#[test]
+fn registry_drops_secret_and_unknown_plaintext_settings() {
+    let root = temporary("registry-settings");
+    let mut m = manifest();
+    m.settings.push(serde_json::from_value(json!({"key":"api_key","label":{"zh-CN":"密钥","en":"Key"},"type":"secret","default":""})).unwrap());
+    let p = super::storage::Installed { manifest:m, enabled:false, directory:root.clone(), development:false,
+        settings: [("api_key".into(), json!("never-persist")), ("unknown".into(), json!(true))].into() };
+    let registry = super::storage::Registry { installed:[(p.manifest.id.clone(), p)].into(), ..Default::default() };
+    super::storage::save(&root, &registry).unwrap();
+    assert!(super::storage::load(&root).installed["example-hello"].settings.is_empty());
+    std::fs::remove_dir_all(root).unwrap();
 }
 fn zip(files: &[(&str, &[u8])]) -> Vec<u8> {
     let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
@@ -97,12 +188,19 @@ fn local_index_install_enable_publish_disable_uninstall() {
     let index = root.join("plugins-index.json"); std::fs::write(&index, serde_json::to_vec(&vec![e]).unwrap()).unwrap();
     let host = Host::new(root.join("data"), None).unwrap(); let mut registry = host.snapshot().registry;
     registry.developer_mode = true; registry.index_url = index.to_string_lossy().into_owned(); host.persist(registry).unwrap();
+    assert!(tauri::async_runtime::block_on(host.install("not-in-index")).is_err());
     tauri::async_runtime::block_on(host.install("example-hello")).unwrap();
     assert!(!host.snapshot().registry.installed["example-hello"].enabled);
     host.enable("example-hello", true).unwrap();
     let until = Instant::now() + Duration::from_secs(8);
     while !host.snapshot().live.get("example-hello").is_some_and(|l| !l.data.quota.is_empty()) && Instant::now() < until { std::thread::sleep(Duration::from_millis(20)); }
     assert_eq!(host.snapshot().live["example-hello"].data.notifications.len(), 1);
+    assert_eq!(host.action("example-hello", "hello").unwrap(), json!(true));
+    host.shutdown();
+    assert!(host.workers.lock().unwrap().is_empty() && host.snapshot().live.is_empty());
+    host.enable("example-hello", true).unwrap();
+    let until = Instant::now() + Duration::from_secs(8);
+    while !host.snapshot().live.get("example-hello").is_some_and(|l| !l.data.quota.is_empty()) && Instant::now() < until { std::thread::sleep(Duration::from_millis(20)); }
     assert_eq!(host.action("example-hello", "hello").unwrap(), json!(true));
     host.enable("example-hello", false).unwrap(); assert!(host.snapshot().live.is_empty());
     host.uninstall("example-hello").unwrap(); assert!(host.snapshot().registry.installed.is_empty());
