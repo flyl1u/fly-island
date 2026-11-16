@@ -3,11 +3,11 @@
 use std::marker::PhantomData;
 
 use windows::Win32::System::{
-    Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED},
+    Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED, COINIT_APARTMENTTHREADED},
     WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED},
 };
 
-/// Keeps COM initialized in the multithreaded apartment on the current thread and
+/// Keeps COM initialized in the requested apartment on the current thread and
 /// uninitializes it when dropped. Not `Send`: the uninitialize must run on the
 /// thread that initialized.
 pub(crate) struct ComApartment {
@@ -15,6 +15,13 @@ pub(crate) struct ComApartment {
 }
 
 impl ComApartment {
+    pub(crate) fn single_threaded() -> windows::core::Result<Self> {
+        // SAFETY: no reserved pointer is passed; each successful initialization
+        // is paired with CoUninitialize by this thread-bound guard.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) }.ok()?;
+        Ok(Self { _thread_bound: PhantomData })
+    }
+
     pub(crate) fn multithreaded() -> windows::core::Result<Self> {
         // SAFETY: CoInitializeEx takes no pointers here (the reserved argument is
         // None). Any success, including S_FALSE when COM is already initialized
@@ -29,7 +36,7 @@ impl ComApartment {
 
 impl Drop for ComApartment {
     fn drop(&mut self) {
-        // SAFETY: pairs the successful CoInitializeEx in `multithreaded`, on the
+        // SAFETY: pairs the successful CoInitializeEx in either constructor, on the
         // same thread because the guard is not Send.
         unsafe { CoUninitialize() };
     }
@@ -72,6 +79,18 @@ mod tests {
             for _ in 0..2 {
                 let _com = ComApartment::multithreaded().unwrap();
                 let _winrt = WinRtApartment::multithreaded().unwrap();
+            }
+        })
+        .join()
+        .unwrap();
+    }
+
+    #[test]
+    fn single_threaded_apartments_can_be_entered_repeatedly_and_nested() {
+        std::thread::spawn(|| {
+            for _ in 0..2 {
+                let _outer = ComApartment::single_threaded().unwrap();
+                let _inner = ComApartment::single_threaded().unwrap();
             }
         })
         .join()

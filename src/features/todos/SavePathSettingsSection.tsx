@@ -1,11 +1,12 @@
-import { useEffect, useRef } from "react";
-import { Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, FolderOpen } from "lucide-react";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsInput } from "../../components/settings/SettingsInput";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
 import type { SavePathState } from "./types";
+import { selectTodoSaveDirectory } from "./api";
 import "./SavePathSettingsSection.css";
 
 /** Todos → Saving: the folder daily Markdown files go to; Save keeps a typed path. */
@@ -19,6 +20,25 @@ export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, hig
   const t = useTranslation();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const pickingRef = useRef(false);
+  const [picking, setPicking] = useState(false);
+  const [pickerError, setPickerError] = useState("");
+
+  const selectFolder = async () => {
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    setPicking(true);
+    setPickerError("");
+    try {
+      const directory = await selectTodoSaveDirectory(saveDirectoryDraft, t.settings.save.chooseFolder);
+      if (directory !== null) onSaveDirectoryDraftChange(directory);
+    } catch (error) {
+      setPickerError(String(error));
+    } finally {
+      pickingRef.current = false;
+      setPicking(false);
+    }
+  };
 
   // Opened from the island to set a folder: bring the field into view and focus it.
   useEffect(() => {
@@ -47,17 +67,31 @@ export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, hig
             )
           }
         >
-          <SettingsInput
-            ref={inputRef}
-            monospace
-            value={saveDirectoryDraft}
-            placeholder={t.settings.save.folderPlaceholder}
-            aria-label={t.settings.save.folderLabel}
-            onChange={(event) => onSaveDirectoryDraftChange(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") onSaveDirectory();
-            }}
-          />
+          <div className="save-path-field">
+            <SettingsInput
+              ref={inputRef}
+              monospace
+              value={saveDirectoryDraft}
+              placeholder={t.settings.save.folderPlaceholder}
+              aria-label={t.settings.save.folderLabel}
+              disabled={picking}
+              onChange={(event) => onSaveDirectoryDraftChange(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onSaveDirectory();
+              }}
+            />
+            <button
+              type="button"
+              className="save-path-field__browse"
+              aria-label={t.settings.save.chooseFolder}
+              title={t.settings.save.chooseFolder}
+              disabled={picking}
+              onClick={() => { void selectFolder(); }}
+            >
+              <FolderOpen size={17} aria-hidden="true" />
+            </button>
+          </div>
+          {pickerError && <p className="save-path-error" role="alert">{pickerError}</p>}
         </SettingsRow>
       </SettingsGroup>
     </div>

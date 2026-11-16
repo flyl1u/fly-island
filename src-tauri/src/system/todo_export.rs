@@ -47,3 +47,23 @@ pub fn get_default_todo_save_directory() -> Result<String, String> {
     let folder = if former.is_dir() { former } else { documents.join("Fly Island") };
     Ok(folder.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub async fn select_todo_save_directory(
+    window: tauri::WebviewWindow,
+    directory: String,
+    title: String,
+) -> Result<Option<String>, String> {
+    let owner = window.hwnd().map_err(|error| error.to_string())?.0 as isize;
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    // The modal dialog needs a dedicated STA; blocking-pool threads may already
+    // belong to an MTA. Keep the invoking window alive until selection finishes.
+    std::thread::Builder::new()
+        .name("todo-folder-picker".into())
+        .spawn(move || {
+            let _window = window;
+            let _ = sender.send(crate::win32::folder_picker::pick(owner, &directory, &title));
+        })
+        .map_err(|error| error.to_string())?;
+    receiver.await.map_err(|error| error.to_string())?
+}

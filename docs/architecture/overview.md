@@ -34,6 +34,8 @@ WorkBuddy 桌面端会话由 `agent_status/workbuddy_sessions.rs` 只读解析�
 
 ## 目标结构
 
+待办导出目录的选择由 `system/todo_export.rs` 的异步命令衔接 `win32/folder_picker.rs`：独立 STA 线程展示属于调用窗口的原生目录对话框，前端仅回填草稿，保存继续使用现有存储逻辑。
+
 前端和 Rust 的目标目录树，以及各目录的职责，分别见 [src/AGENTS.md](../../src/AGENTS.md#目标结构) 和 [src-tauri/AGENTS.md](../../src-tauri/AGENTS.md#目标结构)。本文只记录迁移映射。
 
 外观颜色逻辑位于 `features/appearance/`：`HexColorInput` / `hexColor.ts` 处理输入，`colorPalette.ts` 校验三色，`colorRefresh.ts` 编排一次性刷新，`colorPresets.ts` 处理预设去重与上限，`ColorPresetRow` 呈现芯片；所有备份、迁移标记和预设读写仍收口在同目录 `storage.ts`，复用 `lib/storage.ts` 的安全读写。

@@ -23,6 +23,10 @@ export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-isl
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
+export const folderPickerMock = {
+  calls: [] as Record<string, unknown>[],
+  select: async (): Promise<string | null> => "C:\\资料\\Task Notes",
+};
 // Kept like the native store, so a page opened again reads back what was saved.
 let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
 mockIPC((command, payload) => {
@@ -51,6 +55,9 @@ mockIPC((command, payload) => {
     case "get_launch_at_startup": return false;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
+    case "select_todo_save_directory":
+      folderPickerMock.calls.push(args);
+      return folderPickerMock.select();
     case "get_clipboard_history": return { settings: clipboardSettings, items: [] };
     case "set_clipboard_history_settings":
       clipboardSettings = { ...clipboardSettings, ...(args.settings as object | undefined) };

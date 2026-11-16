@@ -35,7 +35,7 @@ src-tauri/src/
                              # com（COM / WinRT 初始化守卫）、audio、ole（文件拖出）、process / process_times、process_job（插件进程树退出清理）、registry、
                              # notification_state（前台是否有全屏程序）、shell_open（不弹系统错误框地打开协议）、
                              # task_switcher（让主窗口不进 Alt+Tab）、known_folder（下载文件夹等已知文件夹）、
-                             # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、uia_tabs / uia_list、caption_close、taskbar
+                             # icon、chinese、process_env / process_tree / process_memory、file_version（exe 文件版本）、uia_tabs / uia_list、caption_close、taskbar、folder_picker（原生目录选择）
 ```
 
 ## lib.rs 与模块组织

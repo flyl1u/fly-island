@@ -39,13 +39,18 @@ export function useSaveDirectorySetting() {
   }, [saveDirectoryDraft]);
 
   const highlight = useCallback(() => setHighlightSavePath(true), []);
+  const changeDraft = useCallback((value: string) => {
+    window.clearTimeout(savedTimer.current);
+    setSavePathState("idle");
+    setSaveDirectoryDraft(value);
+  }, []);
 
   return {
     saveDirectoryDraft,
     savePathState,
     highlightSavePath,
     highlight,
-    onSaveDirectoryDraftChange: setSaveDirectoryDraft,
+    onSaveDirectoryDraftChange: changeDraft,
     onSaveDirectory: saveDirectory,
   };
 }

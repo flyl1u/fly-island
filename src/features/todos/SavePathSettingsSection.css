@@ -11,3 +11,56 @@
   color: var(--color-agent-idle);
   font-size: calc(13px * var(--island-font-scale, 1));
 }
+
+.save-path-field {
+  position: relative;
+  min-width: 0;
+}
+
+.save-path-field .settings-input {
+  padding-right: 48px;
+}
+
+.save-path-field__browse {
+  position: absolute;
+  inset: 1px 1px 1px auto;
+  width: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--corner-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.save-path-field__browse::before {
+  content: "";
+  position: absolute;
+  inset: 5px auto 5px 0;
+  width: 1px;
+  background: linear-gradient(transparent, var(--color-white-a18), transparent);
+}
+
+.save-path-field__browse:hover {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+}
+
+.save-path-field__browse:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.save-path-field__browse:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.save-path-error {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-error-text);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  overflow-wrap: anywhere;
+}

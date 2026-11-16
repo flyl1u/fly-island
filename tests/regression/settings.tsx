@@ -15,6 +15,7 @@ import { checkQuotaSettings } from "./settingsQuota";
 import { checkGeneralControls } from "./settingsGeneral";
 import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
+import { checkSavePath } from "./settingsSavePath";
 import { checkMessagePreview } from "./settingsMessagePreview";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
@@ -194,6 +195,7 @@ if (!automated) {
     await click(".save-path-panel .settings-link-button");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 1_500)); });
     check(document.querySelector(".save-path-panel .save-path-saved"), "The saved confirmation stays long enough to notice");
+    await checkSavePath(check, type);
 
     await openPage("messages");
     const rows = () => [...document.querySelectorAll<HTMLElement>(".mail-settings__account")];

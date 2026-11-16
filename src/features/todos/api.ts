@@ -12,3 +12,7 @@ export function saveTodoMarkdown(directory: string, date: string, content: strin
 export function getDefaultTodoSaveDirectory() {
   return invoke<string>("get_default_todo_save_directory");
 }
+
+export function selectTodoSaveDirectory(directory: string, title: string) {
+  return invoke<string | null>("select_todo_save_directory", { directory, title });
+}
