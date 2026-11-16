@@ -36,16 +36,16 @@ export function useCollapsedTodo(
   settings: IslandSettings,
   isRotationPaused: boolean,
   agentTitle: string | null = null,
-  { lyricsPlaying = false, coverWanted = false, timer = null }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null } = {},
+  { lyricsPlaying = false, coverWanted = false, timer = null, activeIds, timers }: { lyricsPlaying?: boolean; coverWanted?: boolean; timer?: TodoTimer | null; activeIds?: string[]; timers?: TodoTimer[] } = {},
 ) {
   const t = useTranslation();
   const pendingTodoIds = useMemo(
     () => todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).map((todo) => todo.id),
     [todos],
   );
-  const rotationTodos = useMemo(() => selectRotatingTodos(todos, settings.todoRotationCount), [todos, settings.todoRotationCount]);
+  const rotationTodos = useMemo(() => selectRotatingTodos(todos, activeIds ?? (activeTodoId ? [activeTodoId] : [])), [todos, activeIds, activeTodoId]);
   const rotationIds = useMemo(() => rotationTodos.map((todo) => todo.id), [rotationTodos]);
-  const rotating = settings.rotateTodos && !timer;
+  const rotating = settings.rotateTodos && rotationTodos.length > 0;
   const rotatingTodoId = useTodoRotation(
     rotationIds,
     activeTodoId,
@@ -53,9 +53,15 @@ export function useCollapsedTodo(
     settings.todoRotationSeconds,
     isRotationPaused || settings.todoRotationMode === "scroll",
   );
-  const displayedTodoId = timer ? activeTodoId : rotating && settings.todoRotationMode === "scroll" ? rotationIds[0] : rotatingTodoId;
+  const displayedTodoId = rotating && settings.todoRotationMode === "scroll" ? rotationIds[0] : rotatingTodoId;
+  const collapsedTimer = timers?.find((round) => round.todoId === displayedTodoId)
+    ?? (timer?.todoId === displayedTodoId ? timer : null);
   const todoRotation: TodoRotationDisplay | null = rotating ? {
+    ids: rotationIds,
     titles: rotationTodos.map((todo) => todo.title), mode: settings.todoRotationMode,
+    timers: rotationTodos.map((todo) => timers?.find((round) => round.todoId === todo.id)
+      ?? (timer?.todoId === todo.id ? timer : null)),
+    selectedIndex: Math.max(0, rotationIds.indexOf(displayedTodoId ?? "")),
     speed: settings.todoScrollSpeed, paused: isRotationPaused,
   } : null;
   const collapsedTaskTitle = useMemo(() => {
@@ -70,7 +76,7 @@ export function useCollapsedTodo(
   const collapsedTodoCount = settings.showIdleTodoCount && !collapsedTaskTitle && pendingTodoCount > 0
     ? pendingTodoCount
     : null;
-  const collapsedItem = timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
+  const collapsedItem = timers?.length || timer ? "todo" : pickCollapsedItem(settings.collapsedPriority, {
     agent: agentTitle !== null,
     lyrics: lyricsPlaying,
     todo: collapsedTaskTitle !== null || collapsedTodoCount !== null,
@@ -79,7 +85,10 @@ export function useCollapsedTodo(
     if (!settings.collapsedAutoWidth) return settings.collapsedWidth;
     const fontScale = settings.islandFontPercent / 100;
     // A fixed width for the whole round; ticking digits never resize the native window.
-    const timerText = timer ? (timer.notified ? t.todo.timeUp : formatTodoCountdown(timer.durationMinutes * 60)) : null;
+    const widestTimer = (timers ?? (timer ? [timer] : [])).reduce<string | null>((widest, round) => {
+      const text = round.notified ? t.todo.timeUp : formatTodoCountdown(round.durationMinutes * 60);
+      return !widest || text.length > widest.length ? text : widest;
+    }, null);
     const todoText = rotating && rotationTodos.length
       ? rotationTodos.reduce((widest, todo) => getCollapsedIslandWidth(todo.title, 0, fontScale) > getCollapsedIslandWidth(widest, 0, fontScale) ? todo.title : widest, "")
       : collapsedTaskTitle ?? (collapsedTodoCount !== null ? t.island.pendingTodos(collapsedTodoCount) : null);
@@ -89,12 +98,12 @@ export function useCollapsedTodo(
     const text = settings.showCollapsedText ? itemText ?? (settings.showTitle ? "fly-island" : "") : "";
     return alignCollapsedIslandWidth(
       getCollapsedIslandWidth(text, coverWanted && collapsedItem === "lyrics" ? COVER_WIDTH
-        : timerText && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(timerText, fontScale) : 0, fontScale),
+        : widestTimer && collapsedItem === "todo" && settings.showCollapsedText ? timerPillWidth(widestTimer, fontScale) : 0, fontScale),
       window.innerWidth,
       window.devicePixelRatio,
     );
   }, [agentTitle, collapsedItem, collapsedTaskTitle, collapsedTodoCount, coverWanted, settings.collapsedAutoWidth,
-    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, rotating, rotationTodos]);
+    settings.collapsedWidth, settings.islandFontPercent, settings.showCollapsedText, settings.showTitle, t, timer, timers, rotating, rotationTodos]);
 
-  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation };
+  return { collapsedTaskTitle, collapsedTodoCount, collapsedItem, collapsedIslandWidth, todoRotation, collapsedTimer };
 }

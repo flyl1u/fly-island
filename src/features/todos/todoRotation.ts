@@ -1,10 +1,9 @@
 import type { TodoItem } from "./types";
 import { isUpdateTodo } from "./updateTodo.ts";
 
-/** Keep the user's order, ignoring completed tasks and the derived update reminder. */
-export function selectRotatingTodos(todos: readonly TodoItem[], count: number): TodoItem[] {
-  const limit = Number.isFinite(count) ? Math.max(1, Math.min(10, Math.round(count))) : 3;
-  return todos.filter((todo) => !todo.completed && !isUpdateTodo(todo)).slice(0, limit);
+/** Keep the user's order among started, unfinished tasks. */
+export function selectRotatingTodos(todos: readonly TodoItem[], activeIds: readonly string[]): TodoItem[] {
+  return todos.filter((todo) => activeIds.includes(todo.id) && !todo.completed && !isUpdateTodo(todo));
 }
 
 /** A missing/removed selection starts at the first task; the last wraps to the first. */

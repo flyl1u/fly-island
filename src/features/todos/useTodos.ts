@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createTodoId, loadCurrentTodoDate, loadDailyNote, saveCurrentTodoDate, saveDailyNote } from "./storage";
 import type { TodoItem, TodoPageMode } from "./types";
 import { useTodoArchives } from "./useTodoArchives";
@@ -10,6 +10,7 @@ import { useTodoSaving } from "./useTodoSaving";
 type TodosOptions = {
   carryOverIncompleteTodos: boolean;
   todoTimerEnabled?: boolean;
+  rotateTodos?: boolean;
   /** Called after a todo becomes the active one shown on the collapsed island. */
   onStartTodo: () => void;
   onTimerExpired?: () => void;
@@ -21,6 +22,7 @@ type TodosOptions = {
 export function useTodos({
   carryOverIncompleteTodos,
   todoTimerEnabled = false,
+  rotateTodos = false,
   onStartTodo,
   onTimerExpired,
   onMissingSaveDirectory,
@@ -30,8 +32,9 @@ export function useTodos({
     setTodoPageMode("today");
     onTimerExpired?.();
   }, [onTimerExpired]);
-  const list = useTodoList(onStartTodo, handleTimerExpired, todoTimerEnabled);
-  const { todos, setTodos, setDraftTodo, activeTodoId, setActiveTodoId } = list;
+  const list = useTodoList(onStartTodo, handleTimerExpired, todoTimerEnabled, rotateTodos);
+  const timerTodoIds = useMemo(() => list.timers.map((timer) => timer.todoId), [list.timers]);
+  const { todos, setTodos, setDraftTodo, activeTodoId, setActiveTodoIds } = list;
   const [dailyNote, setDailyNote] = useState(loadDailyNote);
   const [currentTodoDate, setCurrentTodoDate] =
     useState<string>(loadCurrentTodoDate);
@@ -94,11 +97,11 @@ export function useTodos({
     (nextDate: string, carriedTodos: TodoItem[]) => {
       setTodos(carriedTodos);
       setDailyNote("");
-      setActiveTodoId((id) => list.timer && carriedTodos.some((todo) => todo.id === id) ? id : null);
+      setActiveTodoIds((ids) => ids.filter((id) => list.timers.some((timer) => timer.todoId === id) && carriedTodos.some((todo) => todo.id === id)));
       setCurrentTodoDate(nextDate);
       setTodoPageMode("today");
     },
-    [list.timer, setActiveTodoId, setTodos],
+    [list.timers, setActiveTodoIds, setTodos],
   );
 
   useTodoRollover({
@@ -106,7 +109,7 @@ export function useTodos({
     todos,
     dailyNote,
     carryOverIncompleteTodos,
-    timerTodoId: list.timer?.todoId,
+    timerTodoIds,
     saveDirectory,
     saveTodosToDisk,
     upsertArchive,
@@ -124,14 +127,18 @@ export function useTodos({
   return {
     todos,
     activeTodoId,
+    activeTodoIds: list.activeTodoIds,
     timer: list.timer,
+    timers: list.timers,
     todoPageMode,
     notebookProps: {
       todos,
       dailyNote,
       draft: list.draftTodo,
       activeTodoId,
+      activeTodoIds: list.activeTodoIds,
       timer: list.timer,
+      timers: list.timers,
       durations: list.durations,
       onDurationChange: list.chooseDuration,
       todoTimerEnabled,

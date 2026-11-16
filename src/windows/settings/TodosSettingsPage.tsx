@@ -4,7 +4,7 @@ import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsChoice } from "../../components/settings/SettingsChoice";
-import { TODO_ROTATION_COUNT, TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED } from "../../features/appearance/settingsLimits";
+import { TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
@@ -53,9 +53,6 @@ export function TodosSettingsPage({
         <SettingsToggleRow title={t.settings.todo.rotateTodos} checked={settings.rotateTodos}
           onChange={(rotateTodos) => onSettingsChange({ ...settings, rotateTodos })} />
         {settings.rotateTodos && <>
-          <SettingsNumberRow title={t.settings.todo.rotationCount} value={settings.todoRotationCount}
-            min={TODO_ROTATION_COUNT.min} max={TODO_ROTATION_COUNT.max} indent
-            onChange={(todoRotationCount) => onSettingsChange({ ...settings, todoRotationCount })} />
           <SettingsRow title={t.settings.todo.rotationMode} indent control={
             <SettingsChoice value={settings.todoRotationMode} ariaLabel={t.settings.todo.rotationMode}
               options={[

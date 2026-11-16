@@ -7,7 +7,7 @@ import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { IslandApp } from "../../src/windows/island/IslandApp";
 import { getLocalDateString } from "../../src/utils/date";
-import { TODO_DURATIONS_STORAGE_KEY, TODO_TIMER_STORAGE_KEY } from "../../src/features/todos/storage";
+import { ACTIVE_TODOS_STORAGE_KEY, TODO_DURATIONS_STORAGE_KEY, TODO_TIMER_STORAGE_KEY, TODO_TIMERS_STORAGE_KEY } from "../../src/features/todos/storage";
 import type { TodoTimer } from "../../src/features/todos/timer";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 
@@ -42,7 +42,7 @@ localStorage.setItem("focusd-island-todos", JSON.stringify([
 ]));
 localStorage.setItem("focusd-island-settings", JSON.stringify({
   agentStatusEnabled: false, musicEnabled: false, shelfEnabled: false,
-  rotateTodos: true, todoRotationSeconds: 3, autoCollapseSeconds: 0,
+  rotateTodos: false, todoRotationSeconds: 3, autoCollapseSeconds: 0,
   autoTuck: false, expandedScale: Number(query.get("scale") ?? 1),
   carryOverIncompleteTodos: false, todoTimerEnabled: true,
 }));
@@ -201,7 +201,7 @@ try {
   await go();
   const firstEnd = stored()!.endsAt;
   check(stored()?.todoId === "t1" && firstEnd === now + 900_000, "选 15 分钟后保存当前待办和绝对结束时间");
-  check(document.querySelector(".island--collapsed") && collapsedTime()?.includes("15:00"), "开始后收起，折叠岛显示倒计时并暂停待办轮播");
+  check(document.querySelector(".island--collapsed") && collapsedTime()?.includes("15:00"), "单任务模式开始后收起，折叠岛显示该任务倒计时");
   check(document.querySelector(".island__active-task-title")?.textContent === "核对录屏素材和脚本中的演示步骤"
     && document.querySelector(".island__timer-pill")?.textContent === "15:00", "折叠岛显示任务标题，倒计时在小胶囊里");
   await advance(850_000);
@@ -315,6 +315,9 @@ try {
   previousDay.setDate(previousDay.getDate() - 1);
   localStorage.setItem("focusd-island-current-date", getLocalDateString(previousDay));
   localStorage.setItem(TODO_TIMER_STORAGE_KEY, JSON.stringify({ todoId: todo.id, endsAt: now - 1, durationMinutes: 1, notified: false }));
+  // Model an old installation with only the original single-task keys.
+  localStorage.removeItem(ACTIVE_TODOS_STORAGE_KEY);
+  localStorage.removeItem(TODO_TIMERS_STORAGE_KEY);
   await mount();
   check(document.querySelector(".todo-timer-actions") && stored()?.notified && sounds === 5, "关闭期间已过期的倒计时恢复为时间到，补一次提醒");
   check(localStorage.getItem("focusd-island-current-date") === getLocalDateString() && stored()?.todoId === todo.id,

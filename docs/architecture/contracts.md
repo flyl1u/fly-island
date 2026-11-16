@@ -10,7 +10,11 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 `focusd-island-settings.messagePreviewSeconds` 为岛上通知停留时长，3–30 的整数秒，默认 5；旧记录缺失或非法值回退到 5。
 
-`focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）；新增 `todoRotationCount` 默认 3（1–10）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。缺失或非法字段由 normalize 回退，原 key 与其他字段不变。
+`focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
+
+待办并行状态兼容扩展（2026-11-15）：开启轮换后，开始任务追加到 `focusd-island-active-todos`（去重的字符串 ID 数组，顺序为开始顺序），倒计时独立保存到 `focusd-island-todo-timers`（`{ todoId, endsAt, durationMinutes, notified }[]`，每项 ID 唯一）。首次读取若新键缺失、JSON 损坏或根类型错误，则从旧 `focusd-island-active-todo` 字符串和 `focusd-island-todo-timer` 单对象兼容读取；新键中的空数组表示已停止，不恢复旧值。非法数组项忽略，通知标记缺失按 false。原待办列表数据格式不变。
+
+新旧键同步写入：第一个开始的活动 ID 作为主任务，旧 `focusd-island-active-todo` 仍写字符串；旧 `focusd-island-todo-timer` 仅保存主任务的计时对象，主任务无计时或没有活动任务时删除。关闭轮换保留主任务，停止其他任务并清除其倒计时；之后开始另一项按原单任务规则替换、清除旧计时并收起岛屿。轮换开启时开始/再来一轮保持展开，再次点击停止仅清除该任务。完成、删除或无效 ID 均会从活动状态及计时中移除；关闭番茄钟清空全部计时但保留活动任务。每轮首次到时前写入 `notified: true`；同一次检查中多项到时一起标记、提醒一次。跨天保留所有计时中或已到时待处理任务的 ID 与结束时间。
 
 | key | 当前定义位置 |
 |---|---|
@@ -24,8 +28,10 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor }[]`；id 为字符串，三色均为大写 `#RRGGBB`，最多 8 项、三色组合去重；损坏记录跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
-| `focusd-island-active-todo` | `features/todos/storage.ts` |
-| `focusd-island-todo-timer`（单轮待办倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；`notified` 在首次到时提醒前写为 true，旧记录缺此字段按 false；结束、完成、删除或切换待办时清除） | `features/todos/storage.ts` |
+| `focusd-island-active-todo`（主任务 ID 字符串，兼容原单任务格式） | `features/todos/storage.ts` |
+| `focusd-island-active-todos`（全部活动 ID 数组，按开始顺序；无新数据时兼容读取旧单 ID） | `features/todos/storage.ts` |
+| `focusd-island-todo-timer`（主任务倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；保留原单对象格式） | `features/todos/storage.ts` |
+| `focusd-island-todo-timers`（各任务独立倒计时对象数组；无新数据时兼容读取旧单对象） | `features/todos/storage.ts` |
 | `focusd-island-todo-durations`（各项待办的时长 `{ [todoId]: 1–240 的整数分钟 }`，没有记录或无效按 15 分钟，写入时去掉已删除待办；2026-11-12 起取代所有待办共用的 `focusd-island-todo-duration`，旧 key 不再读取也不删除） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |

@@ -1,8 +1,14 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { TodoCountdown } from "../../features/todos/TodoCountdown";
+import type { TodoTimer } from "../../features/todos/timer";
+import { useTranslation } from "../../i18n";
 import "./CollapsedTodoContent.css";
 
 export type TodoRotationDisplay = {
+  ids: string[];
   titles: string[];
+  timers: (TodoTimer | null)[];
+  selectedIndex: number;
   mode: "switch" | "scroll";
   speed: number;
   paused: boolean;
@@ -14,9 +20,19 @@ export function CollapsedTodoContent({ title, prefix, rotation }: {
   prefix: string;
   rotation?: TodoRotationDisplay | null;
 }) {
-  const [transition, setTransition] = useState({ current: title, previous: null as string | null, version: 0 });
-  if (title !== transition.current) {
-    setTransition({ current: title, previous: rotation?.paused ? null : transition.current, version: transition.version + 1 });
+  const t = useTranslation();
+  const row = (text: string, timer: TodoTimer | null, key?: number, todoId?: string) => <span className="todo-rotation__row" key={key} data-rotating-todo-id={todoId}>
+    <span className="todo-rotation__title">{prefix}{text}</span>
+    {timer && <span className="island__timer-pill">{timer.notified ? t.todo.timeUp : <TodoCountdown endsAt={timer.endsAt} />}</span>}
+  </span>;
+  const currentTimer = rotation?.timers[rotation.selectedIndex] ?? null;
+  const id = rotation?.ids[rotation.selectedIndex] ?? title;
+  const current = { id, title, timer: currentTimer };
+  const [transition, setTransition] = useState({ current, previous: null as typeof current | null, version: 0 });
+  if (id !== transition.current.id || title !== transition.current.title) {
+    setTransition({ current, previous: rotation?.paused ? null : transition.current, version: transition.version + 1 });
+  } else if (currentTimer !== transition.current.timer) {
+    setTransition({ ...transition, current });
   }
   const { previous, version } = transition;
   useEffect(() => {
@@ -32,20 +48,20 @@ export function CollapsedTodoContent({ title, prefix, rotation }: {
       <span className="island__active-task todo-rotation todo-rotation--scroll" aria-label={titles.join(" · ")}>
         <span className="todo-rotation__track" key={JSON.stringify([titles, speed])} aria-hidden="true"
           style={{ "--todo-scroll-duration": `${titles.length * 28 / speed}s`, animationPlayState: paused ? "paused" : "running" } as CSSProperties}>
-          {[...titles, ...titles].map((text, index) => <span className="todo-rotation__row" key={index}>{prefix}{text}</span>)}
+          {[...titles, ...titles].map((text, index) => row(text, rotation.timers[index % titles.length] ?? null, index, rotation.ids[index % titles.length]))}
         </span>
       </span>
     );
   }
   return (
-    <span className="island__active-task todo-rotation" aria-label={title}>
+    <span className="island__active-task todo-rotation" aria-label={title} data-rotating-todo-id={id}>
       {rotation && previous !== null && !rotation.paused && (
         <span key={version - 1} className="todo-rotation__layer todo-rotation__layer--outgoing" aria-hidden="true">
-          <span className="todo-rotation__row">{prefix}{previous}</span>
+          {row(previous.title, previous.timer)}
         </span>
       )}
       <span key={version} className={`todo-rotation__layer${rotation && previous !== null && !rotation.paused ? " todo-rotation__layer--incoming" : ""}`}>
-        <span className="todo-rotation__row">{prefix}{title}</span>
+        {row(title, currentTimer)}
       </span>
     </span>
   );

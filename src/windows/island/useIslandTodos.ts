@@ -31,13 +31,14 @@ export function useIslandTodos({ settings, navigation, quiet }: IslandTodosOptio
     }).catch((error: unknown) => console.error("Failed to check island visibility for a todo timer", error));
   }, [openIslandPage, quiet, settings.todoEnabled]);
 
-  const { todos, activeTodoId, timer, todoPageMode, notebookProps } = useTodos({
+  const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, notebookProps } = useTodos({
     carryOverIncompleteTodos: settings.carryOverIncompleteTodos,
     todoTimerEnabled: settings.todoTimerEnabled,
+    rotateTodos: settings.rotateTodos,
     onStartTodo: collapseIsland,
     onTimerExpired,
     onMissingSaveDirectory: openSavePathSettings,
   });
-  return { todos, activeTodoId, timer, todoPageMode, todoListHeight,
+  return { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight,
     notebookProps: { ...notebookProps, onListHeightChange: setTodoListHeight } };
 }

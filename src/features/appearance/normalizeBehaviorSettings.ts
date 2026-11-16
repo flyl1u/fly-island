@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { normalizeOrder } from "../../utils/order.ts";
 import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, SHELF_CLEANUP_DAYS, oneOf } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings } from "./types";
-import { TODO_ROTATION_COUNT, TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS } from "./settingsLimits.ts";
+import { TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS } from "./settingsLimits.ts";
 
 /** Todos, tucking and opening, module switches, the file shelf and lyrics. */
 export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null | undefined) {
@@ -13,7 +13,6 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     positionLocked: settings?.positionLocked === true,
     rotateTodos: settings?.rotateTodos === true,
     showIdleTodoCount: settings?.showIdleTodoCount !== false,
-    todoRotationCount: wholeSeconds(settings?.todoRotationCount, TODO_ROTATION_COUNT, TODO_ROTATION_COUNT.default),
     todoRotationSeconds: wholeSeconds(settings?.todoRotationSeconds, TODO_ROTATION_SECONDS, TODO_ROTATION_SECONDS.default),
     todoRotationMode: oneOf(["switch", "scroll"] as const, settings?.todoRotationMode, "switch"),
     todoScrollSpeed: wholeSeconds(settings?.todoScrollSpeed, TODO_SCROLL_SPEED, TODO_SCROLL_SPEED.default),
