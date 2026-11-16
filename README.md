@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src-tauri/icons/mark.svg" alt="Fly Island logo" width="96" height="96">
+  <img src="src-tauri/icons/mark.svg" alt="fly-island logo" width="96" height="96">
 
   <h1>Fly Island</h1>
 
