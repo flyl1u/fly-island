@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="src-tauri/icons/mark.svg" alt="fly-island logo" width="96" height="96">
+  <img src="src-tauri/icons/mark.svg" alt="Fly Island logo" width="96" height="96">
 
-  <h1>Fly Island</h1>
+  <h1>fly-island</h1>
 
   <p>Windows 超轻量的灵动岛，微信、QQ、邮箱消息展示、Agent多session、额度环显示、音乐播放器、待办、剪贴板。文件中转等各种常见功能，需要时展开，用完收起。</p>
 
