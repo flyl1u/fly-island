@@ -97,4 +97,6 @@ export function oneOf<T>(allowed: readonly T[], value: unknown, fallback: T): T 
 }
 
 // Clipboard: rows visible in the island before the list scrolls.
+// 8 is what the default panel height limit (490) already fitted, so nothing changes until it is set.
+export const TODO_VISIBLE_ROWS = { min: 3, max: 12, default: 8 } as const;
 export const CLIPBOARD_VISIBLE_ROWS = { min: 3, max: 8, default: DEFAULT_CLIPBOARD_VISIBLE_ROWS } as const;

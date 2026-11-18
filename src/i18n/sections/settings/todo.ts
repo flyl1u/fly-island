@@ -17,6 +17,7 @@ export type SettingsTodoText = {
   dragToReorderDescription: string;
   title: string;
   carryOverIncomplete: string;
+  visibleRows: string;
 };
 
 export const zhCN: SettingsTodoText = {
@@ -38,6 +39,7 @@ export const zhCN: SettingsTodoText = {
   dragToReorderDescription: "按住待办右侧的手柄上下拖动",
   title: "任务",
   carryOverIncomplete: "自动将未完成任务写入下一天",
+  visibleRows: "一次显示几条",
 };
 
 export const en: SettingsTodoText = {
@@ -59,4 +61,5 @@ export const en: SettingsTodoText = {
   dragToReorderDescription: "Hold the handle on the right of a todo and drag it up or down",
   title: "Tasks",
   carryOverIncomplete: "Carry unfinished tasks to next day",
+  visibleRows: "Visible rows",
 };

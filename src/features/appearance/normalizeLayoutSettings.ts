@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
+import { TODO_VISIBLE_ROWS, CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
@@ -73,6 +73,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     topEdgeShoulderSize: normalizeSize(settings?.topEdgeShoulderSize, TOP_EDGE_SHOULDER_SIZE),
     // Clipboard: retain the user's visible row count, including older saved values.
     clipboardVisibleRows: normalizeSize(settings?.clipboardVisibleRows, CLIPBOARD_VISIBLE_ROWS),
+    todoVisibleRows: normalizeSize(settings?.todoVisibleRows, TODO_VISIBLE_ROWS),
     // Clipboard: only an explicit saved true opens the separate window.
     clipboardDetached: settings?.clipboardDetached === true,
     clipboardCloseOnBlur: settings?.clipboardCloseOnBlur === true,
