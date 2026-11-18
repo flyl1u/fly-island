@@ -63,14 +63,7 @@ where
     T: Send + 'static,
     F: FnOnce() -> Result<T, String> + Send + 'static,
 {
-    thread::spawn(move || {
-        let _apartment = win32::com::ComApartment::multithreaded()
-            .map_err(|error| media_error("Failed to initialize the media COM thread", error))?;
-
-        operation()
-    })
-    .join()
-    .map_err(|_| "The Windows media control thread panicked.".to_string())?
+    super::worker::run(operation)
 }
 
 pub(super) fn request_manager() -> Result<MediaSessionManager, String> {

@@ -7,7 +7,7 @@ use windows::{
     core::Result,
     Win32::{
         Media::Audio::{
-            eCommunications, eConsole, eMultimedia, eRender, ERole,
+            eMultimedia, eRender, ERole,
             Endpoints::{IAudioEndpointVolume, IAudioMeterInformation},
             IMMDevice, IMMDeviceEnumerator, MMDeviceEnumerator,
         },
@@ -16,20 +16,16 @@ use windows::{
 };
 
 /// Which default output device to open; Windows can assign a different device to
-/// each role.
+/// each role. Only the multimedia one is read: music plays there.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum OutputRole {
     Multimedia,
-    Console,
-    Communications,
 }
 
 impl OutputRole {
     fn erole(self) -> ERole {
         match self {
             Self::Multimedia => eMultimedia,
-            Self::Console => eConsole,
-            Self::Communications => eCommunications,
         }
     }
 }
