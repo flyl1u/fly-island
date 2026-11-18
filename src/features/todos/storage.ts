@@ -1,6 +1,8 @@
 import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 import { readJson, readString, removeItem, writeJson, writeString } from "../../lib/storage.ts";
+import { loadLocale, TRANSLATIONS } from "../../i18n/index.ts";
+import { isFirstLaunch } from "../onboarding/firstLaunch.ts";
 import { DEFAULT_REMIND_MINUTES, MAX_REMIND_MINUTES, normalizeTodoDurations, normalizeTodoTimer, type TodoDurations, type TodoTimer } from "./timer.ts";
 import {
   createTodoId,
@@ -41,7 +43,13 @@ export function saveScheduledTodos(todos: ScheduledTodo[]) {
 }
 
 export function loadTodos(): TodoItem[] {
-  return parseTodos(readString(TODOS_STORAGE_KEY));
+  const saved = readString(TODOS_STORAGE_KEY);
+  // A first launch starts with one friendly todo, so the island does not look empty. Anyone who
+  // has run the app before keeps what they had.
+  if (saved === null && isFirstLaunch()) {
+    return [normalizeTodo({ title: TRANSLATIONS[loadLocale()].todo.welcome })];
+  }
+  return parseTodos(saved);
 }
 
 export function loadActiveTodoId() {

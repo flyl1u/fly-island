@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getErrorMessage } from "../../utils/error.ts";
+import { loadLocale, TRANSLATIONS } from "../../i18n/index.ts";
+import { isFirstLaunch } from "../onboarding/firstLaunch.ts";
 import {
   addFileShelfPaths,
+  addFileShelfWelcome,
   clearFileShelf,
   copyFileShelfItems,
   getFileShelf,
@@ -17,6 +20,9 @@ import {
   type FileShelfSnapshot,
 } from "./api";
 import { getDropResult } from "./fileShelf";
+
+// The first launch's welcome note goes on the shelf once, even if the options change meanwhile.
+let welcomeShelved = false;
 
 // How long the entries a drop added (or moved to the top) stay highlighted.
 const RECENT_DROP_MS = 1_200;
@@ -60,9 +66,16 @@ export function useFileShelf(
 
   const refresh = useCallback(() => run(getFileShelf), [run]);
 
-  // Sending the options also loads the list, cleaned up by them.
+  // Sending the options also loads the list, cleaned up by them. On a first launch the welcome
+  // note goes on the shelf right after (once per run of the app).
   useEffect(() => {
-    if (enabled) void run(() => setFileShelfOptions({ maxItems, maxAgeDays, removeMissing }));
+    if (!enabled) return;
+    void run(() => setFileShelfOptions({ maxItems, maxAgeDays, removeMissing })).then(() => {
+      if (!isFirstLaunch() || welcomeShelved) return;
+      welcomeShelved = true;
+      const text = TRANSLATIONS[loadLocale()].fileShelf;
+      void run(() => addFileShelfWelcome(text.welcomeFileName, text.welcomeContent));
+    });
   }, [enabled, maxAgeDays, maxItems, removeMissing, run]);
 
   // Plugins (shelf.add / shelf.remove) change the list behind this window's back.

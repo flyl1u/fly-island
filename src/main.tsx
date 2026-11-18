@@ -13,8 +13,11 @@ import { installSameWindowStorageEvents } from "./lib/sameWindowStorageEvents";
 import { shouldPreventContextMenu } from "./lib/contextMenu";
 import { applyDocumentTheme } from "./features/appearance/useDocumentTheme";
 import { loadSettings } from "./features/appearance/storage";
+import { captureFirstLaunch } from "./features/onboarding/firstLaunch";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+// Before loading the settings, which may save them on a first launch.
+captureFirstLaunch();
 // Before the first paint, so no window shows a frame in the wrong colour scheme.
 applyDocumentTheme(loadSettings());
 

@@ -1,5 +1,7 @@
 export type TodoText = {
   empty: string;
+  /** The one todo a new user finds on the island, so it does not look empty on first launch. */
+  welcome: string;
   complete: string;
   markIncomplete: string;
   /** Screen-reader label pairing an action with the task it targets. */
@@ -27,6 +29,7 @@ export type TodoText = {
 
 export const zhCN: TodoText = {
   empty: "今天还很轻",
+  welcome: "你好，在这里写下点什么吧",
   complete: "完成",
   markIncomplete: "标记未完成",
   actionOnTask: (action, taskTitle) => `${action}：${taskTitle}`,
@@ -53,6 +56,7 @@ export const zhCN: TodoText = {
 
 export const en: TodoText = {
   empty: "A light day so far",
+  welcome: "Hi there, write something down here",
   complete: "Complete",
   markIncomplete: "Mark incomplete",
   actionOnTask: (action, taskTitle) => `${action}: ${taskTitle}`,
