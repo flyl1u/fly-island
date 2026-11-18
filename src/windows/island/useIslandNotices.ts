@@ -10,6 +10,7 @@ import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { IslandMode } from "./types";
 import { canPreviewNotice, previewSecondsFor } from "./noticeRules";
+import { useHeldPreview } from "./useHeldPreview";
 
 /** What can pop up on the collapsed island: message previews (QQ, WeChat, mail). */
 export function useIslandNotices(settings: IslandSettings, { mode, isTucked, quiet }: { mode: IslandMode; isTucked: boolean; quiet: boolean }) {
@@ -22,9 +23,11 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   const qqMail = useMail(canPreviewMessages, { previewSeconds, autoCopyOtp: settings.autoCopyOtp, previewBody: settings.messageAutoExpand });
   // Plugin previews keep their own 8 s unless an adaptive or game-mode duration applies.
   const pluginPreview = usePluginPreview(canPreviewMessages, settings.messageAutoExpand || quiet ? previewSeconds : undefined);
-  const preview = useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail);
+  // Kept while the cursor is on it, and counted as showing, so the island neither opens under the
+  // cursor nor slides back mid-read; not in game mode, where clicks pass through it.
+  const preview = useHeldPreview(useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail), !quiet);
   const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview,
+    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || preview,
   );
   return { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview };
 }

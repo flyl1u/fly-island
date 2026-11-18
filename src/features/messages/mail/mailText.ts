@@ -1,4 +1,4 @@
-import type { MailContent, MailMessage } from "./api";
+import type { MailContent } from "./api";
 import DOMPurify from "dompurify";
 
 /** Inert parsing keeps notification text readable without loading a mail's images or links. */
@@ -15,6 +15,3 @@ export function mailContentText(content: MailContent): string {
   return (doc.body.textContent ?? "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export function mailPlainText(mail: Pick<MailMessage, "subject" | "sender">, body: string) {
-  return [mail.subject, mail.sender, body.trim()].filter(Boolean).join("\n\n");
-}

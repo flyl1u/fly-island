@@ -299,7 +299,7 @@ async function runChecks() {
     const readsBeforeBody = commands.filter((command) => command === "read_qq_mail").length;
     await act(async () => readerBody()!.click());
     check(openedPage === null && commands.filter((command) => command === "read_qq_mail").length === readsBeforeBody, "点击正文（选择文字）不会打开邮件");
-    check(document.querySelector(".message-notice .copy-text-button"), "阅读卡带复制全文按钮");
+    check(!document.querySelector(".message-notice .copy-text-button") && document.querySelector(".message-notice__open"), "阅读卡只有打开按钮，不放复制按钮");
     await act(async () => document.querySelector<HTMLButtonElement>(".message-notice__open")!.click());
     check(openedPage === "qqMail", "阅读卡的打开按钮进入邮件");
     await act(async () => changeNotice(null));
