@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src-tauri/icons/mark.svg" alt="Fly Island logo" width="96" height="96">
 
-  <h1>Fly Island</h1>
+  <h1>fly-island</h1>
 
   <p>An ultra-lightweight Dynamic Island for Windows: WeChat, QQ, and email message display, Agent multi-session, quota ring display, music player, to-dos, clipboard, file transfer, and various other common features. Expand when needed, collapse when done.</p>
 
