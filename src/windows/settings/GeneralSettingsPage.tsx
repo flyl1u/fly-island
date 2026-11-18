@@ -47,7 +47,7 @@ export function GeneralSettingsPage({
         <TuckRows {...rows} onPreviewTuck={() => requestPanelPreview("tucked")} />
       </SettingsGroup>
       <KeepVisibleSettingsSection {...rows} />
-      <SettingsGroup title={t.settings.layout.gameQuiet}>
+      <SettingsGroup title={t.settings.layout.gameTitle}>
         <GameModeRow {...rows} />
       </SettingsGroup>
       <SettingsGroup title={t.settings.position.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>

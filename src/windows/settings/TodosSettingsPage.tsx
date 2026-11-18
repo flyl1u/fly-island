@@ -43,7 +43,7 @@ export function TodosSettingsPage({
           onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
         />
       </SettingsGroup>
-      <SettingsGroup title={t.settings.todo.focusTimer}>
+      <SettingsGroup title={t.settings.todo.timerTitle}>
         <SettingsToggleRow
           title={t.settings.todo.focusTimer}
           description={t.settings.todo.focusTimerDescription}

@@ -19,7 +19,7 @@ export type SettingsAppearanceText = {
   schemeDark: string;
   schemeLight: string;
   schemeSystem: string;
-  /** Group titles: the scheme and material; the font and sizes; the notch and the top-edge curves. */
+  /** Group titles: the scheme and material; the font and sizes; the notch size; the corners and top-edge curves. */
   themeTitle: string;
   textSizeTitle: string;
   pageButtons: string;
@@ -94,7 +94,7 @@ export const zhCN: SettingsAppearanceText = {
   capsules: "胶囊",
   icons: "图标",
   notchTitle: "刘海尺寸",
-  shapeTitle: "刘海与外形",
+  shapeTitle: "圆角",
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
   cornerRadius: "展开圆角",
@@ -158,7 +158,7 @@ export const en: SettingsAppearanceText = {
   capsules: "Capsules",
   icons: "Icons",
   notchTitle: "Notch size",
-  shapeTitle: "Notch & shape",
+  shapeTitle: "Corners",
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
   cornerRadius: "Open corners",
