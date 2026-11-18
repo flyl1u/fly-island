@@ -256,6 +256,11 @@ if (!automated) {
       && document.querySelector(".dot-button--translation")?.getAttribute("aria-current") === "page"
       && document.querySelector(".island__expanded .translation-panel") !== null,
       "翻译是左侧的页面胶囊，点它打开岛内翻译页，顶栏右边不再有翻译按钮");
+    // Focusing the source box while the shape is still short must not scroll the clipped panel:
+    // that scroll ran back to 0 as the island grew and read as the page rushing downwards.
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))); });
+    check([".island__surface", ".island__expanded", ".island__content"].every((selector) => document.querySelector(selector)!.scrollTop === 0),
+      "打开翻译页聚焦输入框时不滚动岛屿，不会往下冲");
 
     // The shelf's three files make one row of tiles with an open slot, and the page is only as
     // tall as that row (getShelfExpandedHeight).
