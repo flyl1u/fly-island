@@ -6,7 +6,7 @@ use windows::Win32::Foundation::HWND;
 
 use super::{
     geometry::{tucked_top_offset, STAGE_WINDOW_WIDTH},
-    state::{read_window_state, CornerShape, IslandWindowState},
+    state::{game_quiet, read_window_state, CornerShape, IslandWindowState},
 };
 use crate::win32;
 
@@ -37,8 +37,9 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
             if is_inside != was_inside {
                 was_inside = is_inside;
                 let _ = window.emit(ISLAND_HOVER_CHANGED_EVENT, is_inside);
-                // Once per hover: a dock that raised itself over the island gives way.
-                if let Some(hwnd) = hwnd.filter(|_| is_inside) {
+                // Once per hover: a dock that raised itself over the island gives way. Not over
+                // a game: reordering topmost windows there can knock it out of full screen.
+                if let Some(hwnd) = hwnd.filter(|_| is_inside && !game_quiet()) {
                     win32::taskbar_edge::raise_topmost(hwnd);
                 }
             }
@@ -61,6 +62,11 @@ pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {
     let local_x = (cursor.x - window_rect.left) as f64;
     let local_y = (cursor.y - window_rect.top) as f64;
     let state = read_window_state();
+    // Tucked over a game: the edge strip lets everything through, so the cursor reaching the
+    // top of the screen never brings the island out or activates it (#73).
+    if state.is_tucked && game_quiet() {
+        return false;
+    }
 
     point_in_island(state, physical_scale, local_x, local_y)
 }

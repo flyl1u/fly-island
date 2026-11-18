@@ -20,6 +20,8 @@ type TuckedHoverOptions = {
   onPeek: () => void;
   /** Opens the current page. */
   onOpen: () => void;
+  /** Game mode: the cursor on a tucked island does nothing at all. */
+  blocked: boolean;
   /** The island was tucked so that it slides back once the cursor leaves. */
   retractsAfterPeek: boolean;
   /** Keeps that after opening, so the panel closes and the island slides back with it. */
@@ -68,6 +70,7 @@ export function useTuckedHoverOpen(options: TuckedHoverOptions) {
   }, [scheduleOpen]);
 
   return useCallback(() => {
+    if (optionsRef.current.blocked) return;
     optionsRef.current.onPeek();
     scheduleOpen();
   }, [scheduleOpen]);

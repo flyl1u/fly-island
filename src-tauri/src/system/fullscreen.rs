@@ -61,6 +61,13 @@ fn is_fullscreen_foreground(
 
 fn read(app: &AppHandle) -> ForegroundFullscreen {
     let foreground = win32::window::foreground_window();
+    // One of our own windows in front (the island took the focus, a click on it, the settings
+    // window) says nothing about the game behind it. Reading it as "no full screen" ended game
+    // mode at the very moment the island got in the game's way, which let hover open the
+    // island and take the focus for good (#73). Keep the last answer until another app is in front.
+    if !foreground.is_invalid() && win32::process::window_process_id(foreground) == std::process::id() {
+        return get_foreground_fullscreen();
+    }
     let active = is_fullscreen_foreground(
         win32::notification_state::fullscreen_signal(),
         (!foreground.is_invalid() && win32::window::is_visible(foreground))

@@ -107,6 +107,11 @@ export type ForegroundFullscreen = {
 };
 
 /** The full-screen state at the last native check (every 800 ms). */
+/** Tells the native side game mode's quiet, so a tucked island lets the cursor through over a game. */
+export function setIslandGameQuiet(quiet: boolean) {
+  return invoke("set_island_game_quiet", { quiet });
+}
+
 export function getForegroundFullscreen() {
   return invoke<ForegroundFullscreen>("get_foreground_fullscreen");
 }

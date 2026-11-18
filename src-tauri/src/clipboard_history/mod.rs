@@ -174,32 +174,44 @@ pub fn set_clipboard_history_settings(
     service()?.set_settings(settings)
 }
 
-#[tauri::command]
-pub fn copy_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.copy_item(&id)
+/// Runs a history change off the main thread. These open the system clipboard (retrying
+/// while another app holds it), decode images and write the history file; as plain commands
+/// they ran on the main thread, and a clipboard or disk slow to answer (just after waking from
+/// sleep) froze every island window with them (#76).
+async fn off_main_thread(
+    work: impl FnOnce(&ClipboardHistoryService) -> Result<ClipboardHistorySnapshot, String> + Send + 'static,
+) -> Result<ClipboardHistorySnapshot, String> {
+    tauri::async_runtime::spawn_blocking(move || work(service()?))
+        .await
+        .map_err(|error| format!("Failed to join the clipboard history task: {error}"))?
 }
 
 #[tauri::command]
-pub fn toggle_clipboard_history_favorite(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.toggle_favorite(&id)
+pub async fn copy_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
+    off_main_thread(move |service| service.copy_item(&id)).await
 }
 
 #[tauri::command]
-pub fn set_clipboard_history_item_note(
+pub async fn toggle_clipboard_history_favorite(id: String) -> Result<ClipboardHistorySnapshot, String> {
+    off_main_thread(move |service| service.toggle_favorite(&id)).await
+}
+
+#[tauri::command]
+pub async fn set_clipboard_history_item_note(
     id: String,
     note: String,
 ) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.set_note(&id, &note)
+    off_main_thread(move |service| service.set_note(&id, &note)).await
 }
 
 #[tauri::command]
-pub fn delete_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
-    service()?.delete_item(&id)
+pub async fn delete_clipboard_history_item(id: String) -> Result<ClipboardHistorySnapshot, String> {
+    off_main_thread(move |service| service.delete_item(&id)).await
 }
 
 #[tauri::command]
-pub fn clear_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
-    service()?.clear()
+pub async fn clear_clipboard_history() -> Result<ClipboardHistorySnapshot, String> {
+    off_main_thread(|service| service.clear()).await
 }
 
 #[tauri::command]

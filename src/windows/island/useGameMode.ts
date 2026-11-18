@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getForegroundFullscreen, listenForegroundFullscreen } from "./api";
+import { getForegroundFullscreen, listenForegroundFullscreen, setIslandGameQuiet } from "./api";
 import { gameModeEffects, type FullscreenState, type GameModeEffects, type GameModeSettings } from "./gameMode";
 import type { IslandMode } from "./types";
 
@@ -60,6 +60,11 @@ export function useGameMode(
   useEffect(() => {
     if (effects.quiet && stateRef.current.mode === "expanded") collapseIsland();
   }, [collapseIsland, effects.quiet]);
+
+  // The native cursor loop reads this: a tucked island over a game is not hit at all.
+  useEffect(() => {
+    void setIslandGameQuiet(effects.quiet).catch(logError);
+  }, [effects.quiet]);
 
   useEffect(() => {
     if (effects.tuck) {

@@ -28,9 +28,11 @@ pub(super) const COLLAPSED_RADIUS: f64 = 12.0;
 pub(super) const EXPANDED_ISLAND_WIDTH: f64 = 560.0;
 pub(super) const DEFAULT_EXPANDED_ISLAND_HEIGHT: f64 = 306.0;
 pub(super) const MIN_EXPANDED_ISLAND_HEIGHT: f64 = 220.0;
-// Up to 656px, the tallest page the native window takes (five Agent sessions);
-// the panel height setting stops at 546.
-pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 350.0;
+// Up to 800px. Five Agent sessions at 120% text with several usage lines pass 656px, the old
+// limit; the native hit test then ended above the panel's real bottom, so its lowest rows let
+// clicks through and the cursor reaching them counted as leaving the island. The panel height
+// setting stops at 546.
+pub(super) const EXPANDED_ISLAND_HEIGHT_RANGE: f64 = 494.0;
 pub(super) const EXPANDED_RADIUS: f64 = 30.0;
 // Range accepted for the expanded bottom radius; the island sends DEFAULT_ISLAND_CORNER_RADIUS
 // (src/features/appearance/settingsLimits.ts).
@@ -104,8 +106,10 @@ pub(crate) fn apply_stage_geometry(
     let (x, y) = resolve_stage_position(positioned_state, centered_x, normal_y, tucked_y);
     super::top_edge::sync_from_stage(window, positioned_state, monitor_position.y + top_inset);
     // At the very top the island overlaps app bars such as docks, which may have raised
-    // themselves into the topmost band after it; take the front again.
-    if let Ok(hwnd) = window.hwnd() {
+    // themselves into the topmost band after it; take the front again. Not over a full-screen
+    // game (game mode tucking the island resizes it): reordering the topmost band there is
+    // what the game must not see (#73).
+    if let Some(hwnd) = window.hwnd().ok().filter(|_| !super::state::game_quiet()) {
         win32::taskbar_edge::raise_topmost(hwnd);
     }
 
