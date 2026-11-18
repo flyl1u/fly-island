@@ -1,4 +1,4 @@
-// The real island: adaptive layout, native IPC size, mail bodies/copy and quiet previews.
+// The real island: adaptive layout, native IPC size, selectable mail bodies and quiet previews.
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
@@ -28,8 +28,6 @@ let settings = { messageAutoExpand: true, messageExpandMaxWidth: 520, messageExp
 localStorage.setItem("focusd-island-settings", JSON.stringify(settings));
 let revision = 0;
 const calls: { command: string; args: Record<string, unknown> }[] = [];
-const copied: string[] = [];
-Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (text: string) => { copied.push(text); } } });
 let latestNative: IslandInteraction | null = null;
 let mail: MailSnapshot = { revision: 0, email: "test@qq.com", configured: true, enabled: true, syncing: false,
   status: "connected", unreadCount: 0, items: [], lastSyncedAt: null, error: null };
@@ -88,6 +86,20 @@ try {
   await act(async () => root.render(<StrictMode><I18nProvider><IslandApp /></I18nProvider></StrictMode>));
   await qq("好的");
   check(!document.querySelector(".message-notice") && native().noticeWidth === null, "短消息沿用单行预览");
+  // As in the app: status icons beside the text take room the estimate leaves out. A message a bit
+  // longer than the island must still grow it until nothing is cut off (v3.4.0 user report).
+  await configure({ musicEnabled: true, shelfEnabled: true, agentStatusEnabled: true });
+  await qq("好的");
+  await settle();
+  const baseWidth = document.querySelector<HTMLElement>(".island")!.getBoundingClientRect().width;
+  await qq("明天下午三点在三楼会议室开项目评审会，请准备材料");
+  await settle();
+  // Either it fits one wider line, or past the width limit it turns into the reader.
+  const slot = document.querySelector<HTMLElement>(".island__text-slot");
+  const clipped = slot ? [slot, ...slot.querySelectorAll<HTMLElement>("*")].some((element) => element.scrollWidth - element.clientWidth > 4) : !body();
+  check(document.querySelector<HTMLElement>(".island")!.getBoundingClientRect().width > baseWidth && !clipped
+    && native().noticeWidth !== null, "比岛长的消息撑大岛屿，文字不再被截断");
+  await configure({ musicEnabled: false, shelfEnabled: false, agentStatusEnabled: false });
   await qq(fullText);
   await settle();
   check(body() && native().noticeWidth! <= 520 && native().noticeHeight === 160, "长消息长到设定上限，并同步原生宽高");
@@ -111,19 +123,18 @@ try {
     && calls.filter((call) => call.command === "read_qq_mail").length === reads
     && calls.filter((call) => call.command === "start_island_drag").length === drags && native().mode === "collapsed", "选择通知文字不拖窗口、不打开邮件");
   window.getSelection()!.removeAllRanges();
-  await click(".message-notice .copy-text-button");
-  check(copied[copied.length - 1]?.includes("订单团队\n订单确认 one") && copied[copied.length - 1]?.includes("https://example.com/order") && !copied[copied.length - 1]?.includes("<p>"), "一键复制发件人、主题和纯文本全文");
+  check(!document.querySelector(".message-notice .copy-text-button") && !body().innerHTML.includes("<p>订单")
+    && body().textContent?.includes("https://example.com/order"), "通知不放复制按钮，正文为可选中的纯文本");
   read = async () => { throw new Error("读取失败"); };
   await arrive("failed");
-  check(document.querySelector<HTMLButtonElement>(".message-notice .copy-text-button")?.disabled && body().querySelector("[role=alert]"), "正文加载失败时不把主题误当全文复制");
+  check(body().querySelector("[role=alert]"), "正文加载失败时原地提示");
   read = async (id) => ({ id, content: "重试后的完整正文", contentType: "text/plain", attachments: [] });
   await click(".message-notice__status button");
-  check(body().textContent?.includes("重试后的完整正文") && !document.querySelector<HTMLButtonElement>(".message-notice .copy-text-button")?.disabled, "正文加载失败可原地重试");
+  check(body().textContent?.includes("重试后的完整正文"), "正文加载失败可原地重试");
   await click(".message-notice__open");
   check(native().mode === "expanded" && document.querySelector(".qq-mail-reader__subject"), "独立打开按钮进入邮件阅读页");
   check(getComputedStyle(document.querySelector(".qq-mail-reader__subject")!).userSelect === "text", "邮件阅读页主题可选择");
-  await click(".qq-mail-reader__actions .copy-text-button");
-  check(copied[copied.length - 1]?.includes("重试后的完整正文"), "邮件面板也能一键复制全文");
+  check(!document.querySelector(".qq-mail-reader__actions .copy-text-button"), "邮件页不加复制按钮，靠选中文字复制");
   await click(".island__quiet-button");
   await act(async () => emit("foreground-fullscreen-changed", { active: true, onIslandMonitor: true }));
   await qq(fullText);

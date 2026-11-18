@@ -1,6 +1,5 @@
 import type { PointerEventHandler } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { CopyTextButton } from "../../components/CopyTextButton";
 import { useTranslation } from "../../i18n";
 import { MessageSourceIcon } from "./MessageSourceIcon";
 import { noticeText, type MessagePreview } from "./messagePreview";
@@ -14,10 +13,10 @@ type DragHandlers = {
 };
 
 /**
- * The adaptive message preview on the collapsed island: the sender with copy and open buttons,
- * then the whole text, wrapped and scrolling past the island's limit. The header moves the window
- * like the collapsed bar; the text is for reading, selecting and copying (#83), so pressing in it
- * neither drags nor opens. `scrolls` adds the fade that says there is more below.
+ * The adaptive message preview on the collapsed island: the sender with an open button, then the
+ * whole text, wrapped and scrolling past the island's limit. Only the source icon moves the window;
+ * the sender and the text are for reading, selecting and Ctrl+C (#83), so pressing in them neither
+ * drags nor opens. `scrolls` adds the fade that says there is more below.
  */
 export function MessageNoticeReader({ preview, scrolls, drag, onOpen, onRetry }: {
   preview: MessagePreview;
@@ -34,7 +33,6 @@ export function MessageNoticeReader({ preview, scrolls, drag, onOpen, onRetry }:
       <div className="message-notice__header">
         <span className="message-notice__drag" {...drag}><MessageSourceIcon source={preview.source} size={16} /></span>
         <strong className="message-notice__sender">{sender}</strong>
-        <CopyTextButton compact disabled={preview.detailLoading || Boolean(preview.detailError)} text={() => `${sender}\n${body}`} />
         <button className="message-notice__open" type="button" aria-label={t.messages.noticeOpen(source)} title={t.messages.noticeOpen(source)}
           onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpen(); }}>
           <ArrowUpRight size={14} strokeWidth={1.8} aria-hidden="true" />

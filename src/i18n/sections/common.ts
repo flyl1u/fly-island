@@ -8,9 +8,6 @@ export type CommonText = {
   saved: string;
   connecting: string;
   noMessages: string;
-  copyText: string;
-  textCopied: string;
-  copyFailed: string;
 };
 
 export const zhCN: CommonText = {
@@ -23,9 +20,6 @@ export const zhCN: CommonText = {
   saved: "已保存",
   connecting: "连接中",
   noMessages: "暂无消息",
-  copyText: "复制全文",
-  textCopied: "已复制",
-  copyFailed: "复制失败",
 };
 
 export const en: CommonText = {
@@ -38,7 +32,4 @@ export const en: CommonText = {
   saved: "Saved",
   connecting: "Connecting",
   noMessages: "No messages",
-  copyText: "Copy all",
-  textCopied: "Copied",
-  copyFailed: "Copy failed",
 };

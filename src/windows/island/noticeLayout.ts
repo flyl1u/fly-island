@@ -8,13 +8,13 @@ const STAGE_PADDING_Y = 24;
 const STAGE_SIDE_ROOM = 40;
 
 // The reader's box (MessageNoticeReader.css): side padding, the rows above and below the text,
-// the header row (source icon, sender, copy and open buttons) and the gap under it.
+// the header row (source icon, sender, open button) and the gap under it.
 const SIDE_PADDING = 18;
 const VERTICAL_PADDING = 10;
 const HEADER_HEIGHT = 24;
 const HEADER_GAP = 4;
-// Icon, gaps and the two 24px buttons beside the sender.
-const HEADER_CHROME = 16 + 7 + 8 + 24 + 4 + 24;
+// Icon, gaps and the 24px open button beside the sender.
+const HEADER_CHROME = 16 + 7 + 8 + 24;
 // The one-line preview's chrome: the agent light, the source icon and gaps (CollapsedMessageContent).
 const ONE_LINE_CHROME = 70;
 // A 13px glyph: a wide one is about 13px; text units count narrow ones as 0.55 of that.
@@ -32,6 +32,12 @@ export type NoticeLimits = {
   collapsedScale: number;
   /** Mail always gets selectable text and a copy action, even with a short subject. */
   forceReader?: boolean;
+  /**
+   * How much the one-line preview overflowed when laid out (useMessageNotice measures it): the
+   * estimate leaves out the status icons beside the text and real glyph widths, so the island
+   * had stayed short of the text in the app.
+   */
+  measuredOverflow?: number;
 };
 /** `reader`: the two-part reader (sender, then the wrapped text); false keeps the one-line preview, only wider. */
 export type NoticeSize = { width: number; height: number; scrolls: boolean; reader: boolean };
@@ -47,14 +53,15 @@ export function getNoticeSize({ sender, body }: NoticeText, limits: NoticeLimits
   const unit = UNIT_WIDTH * limits.fontScale;
   const textWidth = (text: string) => Math.ceil(getCollapsedTextUnits(text) * unit);
   const paragraphs = body.split(/\r?\n/);
-  const oneLine = textWidth(`${sender} · ${body}`) + ONE_LINE_CHROME;
-  if (!limits.forceReader && paragraphs.length <= 1 && oneLine <= limits.baseWidth) return null;
+  const overflow = Math.max(0, limits.measuredOverflow ?? 0);
+  const oneLine = textWidth(`${sender} · ${body}`) + ONE_LINE_CHROME + overflow;
+  if (!limits.forceReader && paragraphs.length <= 1 && oneLine <= limits.baseWidth && overflow === 0) return null;
 
   const scale = limits.collapsedScale > 0 ? limits.collapsedScale : 1;
   const widest = Math.min(limits.maxWidth, Math.floor((STAGE_WIDTH - STAGE_SIDE_ROOM) / scale));
   // Wider first: a message that fits one line within the limit stays one line.
   if (!limits.forceReader && paragraphs.length <= 1 && oneLine <= widest) {
-    return { width: Math.max(limits.baseWidth, alignNoticeWidth(oneLine + 8, widest)), height: limits.baseHeight, scrolls: false, reader: false };
+    return { width: Math.max(limits.baseWidth + overflow, alignNoticeWidth(oneLine + 8, widest)), height: limits.baseHeight, scrolls: false, reader: false };
   }
   const tallest = Math.min(limits.maxHeight, Math.floor((STAGE_MIN_HEIGHT - STAGE_PADDING_Y) / scale));
   const natural = Math.max(

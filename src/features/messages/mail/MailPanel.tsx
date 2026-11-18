@@ -7,8 +7,6 @@ import type { MailMessage } from "./api";
 import { MailAccountTabs } from "./MailAccountTabs";
 import { MailAttachments } from "./MailAttachments";
 import { MailOtpCode } from "./MailOtpCode";
-import { CopyTextButton } from "../../../components/CopyTextButton";
-import { mailContentText, mailPlainText } from "./mailText";
 import { MAIL_OTP_ENABLED } from "../../releaseFlags.ts";
 import "./MailPanel.css";
 import type { MailController } from "./useMail";
@@ -129,7 +127,6 @@ export function MailPanel({ controller, navigation, onRead, onBack, onOpenSettin
         <button className="message-action qq-mail-back" type="button" onClick={onBack ?? closeReader}><ArrowLeft size={15} strokeWidth={1.8} />{t.mail.back}</button>
         <div className="qq-panel__toolbar qq-mail-reader__actions">
         {readerStillUnread ? <button className="message-action" type="button" disabled={busy} onClick={() => { if (readerAccount && selectedMail) void markRead(readerAccount, selectedMail.id); }}><MailCheck size={14} strokeWidth={1.8} />{t.mail.markRead}</button> : null}
-        <CopyTextButton compact disabled={reading || !content} text={() => mailPlainText(selectedMail, content ? mailContentText(content) : "")} />
         <button className="message-action" type="button" onClick={() => void openMail()}>{t.mail.openWeb}<ArrowUpRight size={14} strokeWidth={1.8} /></button>
         </div>
       </header>

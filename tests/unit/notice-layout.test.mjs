@@ -82,10 +82,20 @@ test("game mode previews only when asked to; otherwise a tucked island needs rev
   assert.equal(canPreviewNotice(on, true, "expanded", false), false);
 });
 
-test("a mail notice adds the loaded body under the subject; copy text keeps subject, sender, body", async () => {
+test("a mail notice adds the loaded body, as plain text, under the subject", async () => {
   const body = noticeText({ source: "qqMail", title: "GitHub", body: "PR merged", detail: "  Details here  ", receivedAt: 1 }).body;
   assert.equal(body, "PR merged\n\nDetails here");
-  const { mailContentText, mailPlainText } = await import("../../src/features/messages/mail/mailText.ts");
+  const { mailContentText } = await import("../../src/features/messages/mail/mailText.ts");
   assert.equal(mailContentText({ id: "1", content: "  hi\n", contentType: "text/plain", attachments: [] }), "hi");
-  assert.equal(mailPlainText({ subject: "S", sender: "A" }, " B "), "S\n\nA\n\nB");
+});
+
+test("what the laid-out preview still overflowed by grows the island past the estimate", () => {
+  // The estimate says it fits; status icons beside the text cut it off, as measured.
+  const short = { sender: "张三", body: "好的" };
+  assert.equal(getNoticeSize(short, limits), null);
+  const widened = getNoticeSize(short, { ...limits, measuredOverflow: 60 });
+  assert.ok(widened && widened.width >= limits.baseWidth + 60 && widened.reader === false);
+  // Past the width limit it turns into the reader instead of staying cut off.
+  const medium = { sender: "张三", body: "明天下午三点在三楼会议室开会，记得带电脑" };
+  assert.equal(getNoticeSize(medium, { ...limits, measuredOverflow: 300 }).reader, true);
 });
