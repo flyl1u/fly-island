@@ -23,7 +23,7 @@ export type SettingsClipboardText = {
 };
 
 export const zhCN: SettingsClipboardText = {
-  title: "剪贴板历史",
+  title: "记录内容",
   displayTitle: "显示与窗口",
   captureImages: "记录图片",
   maxItems: "最多保存几条",
@@ -45,7 +45,7 @@ export const zhCN: SettingsClipboardText = {
 };
 
 export const en: SettingsClipboardText = {
-  title: "Clipboard history",
+  title: "What's saved",
   displayTitle: "Display & window",
   captureImages: "Record images",
   maxItems: "Max entries",

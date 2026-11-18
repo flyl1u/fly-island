@@ -11,7 +11,7 @@ export type SettingsSaveText = {
 };
 
 export const zhCN: SettingsSaveText = {
-  title: "待办清单保存路径",
+  title: "保存路径",
   folder: "文件夹",
   folderLabel: "待办清单 Markdown 保存文件夹",
   folderPlaceholder: "D:/Todos",
@@ -23,7 +23,7 @@ export const zhCN: SettingsSaveText = {
 };
 
 export const en: SettingsSaveText = {
-  title: "Task list save path",
+  title: "Save location",
   folder: "Folder",
   folderLabel: "Markdown folder for task list",
   folderPlaceholder: "D:/Todos",

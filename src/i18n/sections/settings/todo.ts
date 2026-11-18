@@ -7,6 +7,7 @@ export type SettingsTodoText = {
   rotationSeconds: string;
   scrollSpeed: string;
   scrollSpeedValue: (value: number) => string;
+  timerTitle: string;
   focusTimer: string;
   focusTimerDescription: string;
   timerReminder: string;
@@ -27,7 +28,8 @@ export const zhCN: SettingsTodoText = {
   rotationSeconds: "每条停留",
   scrollSpeed: "滚动速度",
   scrollSpeedValue: (value) => `${value} 像素/秒`,
-  focusTimer: "番茄钟",
+  timerTitle: "番茄钟",
+  focusTimer: "启用番茄钟",
   focusTimerDescription: "点「开始」后倒计时，到点提醒；左侧怀表可改时长",
   timerReminder: "结束前提醒",
   timerReminderDescription: "开始计时时可以选择剩余多少分钟时提醒：岛屿收起时弹出提示，待办文字闪烁、时间变红。",
@@ -47,7 +49,8 @@ export const en: SettingsTodoText = {
   rotationSeconds: "Time per todo",
   scrollSpeed: "Scroll speed",
   scrollSpeedValue: (value) => `${value} px/s`,
-  focusTimer: "Focus timer",
+  timerTitle: "Focus timer",
+  focusTimer: "Use the focus timer",
   focusTimerDescription: "Start counts down and reminds you when time is up; the watch beside it changes the time",
   timerReminder: "Remind before the end",
   timerReminderDescription: "When starting a timer, choose how many minutes before the end to be reminded: the collapsed island shows a notice, the todo flashes and its time turns red.",
