@@ -42,6 +42,17 @@ export function TodosSettingsPage({
           checked={settings.todoTimerEnabled}
           onChange={(todoTimerEnabled) => onSettingsChange({ ...settings, todoTimerEnabled })}
         />
+        {settings.todoTimerEnabled && <SettingsToggleRow indent
+          title={t.settings.todo.timerReminder}
+          description={t.settings.todo.timerReminderDescription}
+          checked={settings.todoTimerReminder}
+          onChange={(todoTimerReminder) => onSettingsChange({ ...settings, todoTimerReminder })}
+        />}
+        {settings.todoTimerEnabled && settings.todoTimerReminder && <SettingsToggleRow indent
+          title={t.settings.todo.timerReminderSound}
+          checked={settings.todoTimerReminderSound}
+          onChange={(todoTimerReminderSound) => onSettingsChange({ ...settings, todoTimerReminderSound })}
+        />}
         <SettingsToggleRow
           title={t.settings.todo.dragToReorder}
           description={t.settings.todo.dragToReorderDescription}

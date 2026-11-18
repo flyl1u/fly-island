@@ -7,6 +7,11 @@
   height: 100%;
 }
 
+/* The adaptive message preview fills the grown island top to bottom (MessageNoticeReader). */
+.island__collapsed--notice {
+  align-items: stretch;
+}
+
 .island__open-button {
   display: flex;
   align-items: center;
@@ -117,6 +122,28 @@
   font-weight: 600;
   line-height: 18px;
   font-variant-numeric: tabular-nums;
+}
+
+/* Past the round's reminder before the end: the pill turns red and the title flashes. */
+.island__active-task--ending .island__timer-pill {
+  color: var(--color-error-text-strong);
+  background: color-mix(in srgb, var(--color-danger) 34%, transparent);
+}
+
+.island__active-task--ending .island__active-task-title,
+.island__active-task--ending .todo-rotation__title {
+  animation: islandTaskEndingFlash 1.2s ease-in-out infinite;
+}
+
+@keyframes islandTaskEndingFlash {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island__active-task--ending .island__active-task-title,
+  .island__active-task--ending .todo-rotation__title {
+    animation: none;
+  }
 }
 
 /* Running agent: icon and session title, laid out like the active task. */

@@ -72,6 +72,13 @@
     border-radius var(--island-motion-duration) var(--island-motion);
 }
 
+/* An adaptive message preview grows the collapsed island on the opening spring, and shrinks back
+   on the closing one when it ends (useMessageNotice, noticeLayout.ts). */
+.island--notice {
+  --island-motion: var(--island-spring-open);
+  --island-motion-duration: 480ms;
+}
+
 /* Old WebView2 must never substitute an unsupported linear() into a transition shorthand. */
 @supports (transition-timing-function: linear(0, 1)) {
   .island {

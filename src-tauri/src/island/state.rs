@@ -10,7 +10,8 @@ use tauri::PhysicalPosition;
 use super::geometry::{
     COLLAPSED_ISLAND_HEIGHT, COLLAPSED_ISLAND_WIDTH, COLLAPSED_RADIUS, DEFAULT_COLLAPSED_SCALE,
     DEFAULT_EXPANDED_ISLAND_HEIGHT, DEFAULT_EXPANDED_SCALE, DEFAULT_MARGIN_Y,
-    EXPANDED_ISLAND_WIDTH, EXPANDED_RADIUS, TUCKED_VISIBLE_EDGE_HEIGHT,
+    EXPANDED_ISLAND_WIDTH, EXPANDED_RADIUS, MIN_COLLAPSED_ISLAND_HEIGHT, MIN_COLLAPSED_ISLAND_WIDTH,
+    STAGE_WINDOW_HEIGHT, STAGE_WINDOW_PADDING_Y, STAGE_WINDOW_WIDTH, TUCKED_VISIBLE_EDGE_HEIGHT,
 };
 
 pub(super) static WINDOW_STATE: OnceLock<Mutex<IslandWindowState>> = OnceLock::new();
@@ -161,12 +162,30 @@ pub(crate) struct IslandWindowState {
     /// A physical point on the monitor the island followed the pointer or the foreground window
     /// to; `None` on the primary monitor. A dragged position (`custom_position`) comes first.
     pub(super) followed_monitor: Option<(i32, i32)>,
+    /// A message preview grown with its text (Settings → Messages → adaptive previews), before
+    /// scale; it stands in for the collapsed size while shown. `None` keeps the collapsed size.
+    pub(super) notice_size: Option<(f64, f64)>,
+    /// Game mode shows a preview without taking clicks: the cursor passes through the island.
+    pub(super) click_through: bool,
 }
+
+/// A grown message preview's size kept inside the stage window at `scale`, never below the
+/// smallest collapsed island; `None` when either side is missing or not a number.
+pub(super) fn notice_size_within_stage(width: Option<f64>, height: Option<f64>, scale: f64) -> Option<(f64, f64)> {
+    let (width, height) = (width.filter(|value| value.is_finite())?, height.filter(|value| value.is_finite())?);
+    let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
+    let widest = ((STAGE_WINDOW_WIDTH - NOTICE_STAGE_SIDE_ROOM) / scale).max(MIN_COLLAPSED_ISLAND_WIDTH);
+    let tallest = ((STAGE_WINDOW_HEIGHT - STAGE_WINDOW_PADDING_Y) / scale).max(MIN_COLLAPSED_ISLAND_HEIGHT);
+    Some((width.clamp(MIN_COLLAPSED_ISLAND_WIDTH, widest), height.clamp(MIN_COLLAPSED_ISLAND_HEIGHT, tallest)))
+}
+
+/// Room left at the stage's sides beside the widest message preview (noticeLayout.ts keeps 40).
+const NOTICE_STAGE_SIDE_ROOM: f64 = 40.0;
 
 impl IslandWindowState {
     pub(super) fn active_size(self) -> (f64, f64) {
         let (width, height) = match self.mode {
-            IslandMode::Collapsed => (self.collapsed_width, self.collapsed_height),
+            IslandMode::Collapsed => self.notice_size.unwrap_or((self.collapsed_width, self.collapsed_height)),
             IslandMode::Expanded => (EXPANDED_ISLAND_WIDTH, self.expanded_height),
         };
         let scale = self.active_scale();
@@ -238,6 +257,8 @@ impl Default for IslandWindowState {
             corner_shape: CornerShape::Squircle,
             monitor_follow: MonitorFollow::Primary,
             followed_monitor: None,
+            notice_size: None,
+            click_through: false,
         }
     }
 }

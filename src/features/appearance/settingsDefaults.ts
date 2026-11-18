@@ -5,7 +5,8 @@ import {
   DEFAULT_HOVER_EXPAND_DELAY_MS, DEFAULT_ISLAND_CORNER_RADIUS, DEFAULT_MAX_PANEL_HEIGHT, DEFAULT_SHELF_ITEMS, DEFAULT_TASK_TEXT_COLOR,
   AUTO_COLLAPSE_SECONDS, COLLAPSED_ITEMS, COLLAPSED_SLOTS, PAGE_DOTS, TUCK_DELAY_SECONDS, DEFAULT_AUTO_COPY_OTP, GLASS_BLUR, TUCK_EDGE_HEIGHT,
   AGENT_QUOTA_SOURCES, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, ISLAND_FONT_PERCENT,
-  TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS,
+  TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, MESSAGE_PREVIEW_SECONDS, MESSAGE_EXPAND_MAX_WIDTH, MESSAGE_EXPAND_MAX_HEIGHT,
+  MESSAGE_EXPAND_SECONDS, GAME_NOTICE_SECONDS,
 } from "./settingsLimits.ts";
 import type { IslandSettings } from "./types";
 
@@ -82,6 +83,14 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   todoRotationMode: "switch",
   todoScrollSpeed: TODO_SCROLL_SPEED.default,
   messagePreviewSeconds: MESSAGE_PREVIEW_SECONDS.default,
+  messageAutoExpand: false,
+  messageExpandMaxWidth: MESSAGE_EXPAND_MAX_WIDTH.default,
+  messageExpandMaxHeight: MESSAGE_EXPAND_MAX_HEIGHT.default,
+  messageExpandSeconds: MESSAGE_EXPAND_SECONDS.default,
+  gameShowNotices: false,
+  gameNoticeSeconds: GAME_NOTICE_SECONDS.default,
+  todoTimerReminder: false,
+  todoTimerReminderSound: false,
   autoTuck: true,
   tuckStyle: "line",
   tuckEdgeHeight: TUCK_EDGE_HEIGHT.default,

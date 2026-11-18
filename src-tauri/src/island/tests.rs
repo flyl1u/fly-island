@@ -402,3 +402,23 @@ fn edge_tuck_leaves_the_chosen_strip_on_screen() {
     island.tuck_edge_height = 4.0;
     assert_eq!(tucked_top_offset(island, 2.0), -(((height - 4.0) * 2.0).round() as i32));
 }
+
+#[test]
+fn a_grown_message_preview_sets_the_hit_area_within_the_stage_and_game_previews_pass_clicks() {
+    let mut island = state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT);
+    island.notice_size = notice_size_within_stage(Some(520.0), Some(180.0), 1.0);
+    assert_eq!(island.active_size(), (520.0, 180.0));
+    // Inside the grown box, below where the plain collapsed bar ends.
+    assert!(point_in_island(island, 1.0, 410.0, 120.0));
+    island.click_through = true;
+    assert!(!point_in_island(island, 1.0, 410.0, 120.0));
+    // Expanded, the page's size again.
+    island.mode = IslandMode::Expanded;
+    assert_eq!(island.active_size().0, EXPANDED_ISLAND_WIDTH);
+    // Limits: the stage at the scale, never below the smallest bar, and both sides or none.
+    let (width, height) = notice_size_within_stage(Some(2000.0), Some(2000.0), 1.4).unwrap_or_default();
+    assert!(width * 1.4 <= STAGE_WINDOW_WIDTH && height * 1.4 <= STAGE_WINDOW_HEIGHT);
+    assert_eq!(notice_size_within_stage(Some(10.0), Some(10.0), 1.0), Some((MIN_COLLAPSED_ISLAND_WIDTH, MIN_COLLAPSED_ISLAND_HEIGHT)));
+    assert_eq!(notice_size_within_stage(Some(400.0), None, 1.0), None);
+    assert_eq!(notice_size_within_stage(Some(f64::NAN), Some(80.0), 1.0), None);
+}

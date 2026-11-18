@@ -1,12 +1,11 @@
 import { isGlass } from "../../features/appearance/settings";
-import { usePluginPreview } from "../../features/messages/pluginNotifications";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { CollapsedItem, CollapsedSlot, Material, PageButtonStyle, PageDot, TuckStyle } from "../../features/appearance/types";
 import type { MediaState } from "../../features/media/api";
-import { latestMessagePreview, type MessageSource } from "../../features/messages/messagePreview";
+import type { MessagePreview, MessageSource } from "../../features/messages/messagePreview";
 import type { MailController } from "../../features/messages/mail/MailPanel";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
@@ -22,6 +21,8 @@ import { usePageFadeIn } from "./usePageFadeIn";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import type { TodoRotationDisplay } from "./CollapsedTodoContent";
+import type { NoticeSize } from "./noticeLayout";
+import type { TodoReminder } from "../../features/todos/TodoReminderPopup";
 import "./IslandShell.css";
 import "./IslandPageText.css";
 import "./IslandGlass.css";
@@ -33,6 +34,10 @@ type IslandShellProps = {
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   onOpenMessages: (source: MessageSource) => void;
+  /** The newest message preview to show on the collapsed island (useIslandNotices), or null. */
+  preview: MessagePreview | null;
+  /** The size the adaptive preview grew the island to (useMessageNotice), or null. */
+  notice: NoticeSize | null;
   mode: IslandMode;
   page: IslandPage;
   /** The open page's height (unscaled); a change resizes the shape around the panel. */
@@ -75,6 +80,8 @@ type IslandShellProps = {
   shelfCount: number | null;
   /** Claude's or Codex's usage reaching the alert level, or resetting. */
   quotaAlert?: QuotaAlert | null;
+  /** A todo round reaching its reminder before the end, shown in place of the text for a while. */
+  todoReminder?: TodoReminder | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -98,6 +105,8 @@ export function IslandShell({
   qqNotifications,
   wechatReminders,
   onOpenMessages,
+  preview,
+  notice,
   mode,
   page,
   expandedHeight,
@@ -129,6 +138,7 @@ export function IslandShell({
   features,
   shelfCount,
   quotaAlert = null,
+  todoReminder = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -152,18 +162,8 @@ export function IslandShell({
   const tuckMorphClass = useTuckMorph(isTucked, tuckStyle);
   const contentRef = usePageFadeIn<HTMLDivElement>(page, mode);
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
-  const qqPreview = qqNotifications.preview;
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
-  const [latestPreviewAt, setLatestPreviewAt] = useState(0);
-  const pluginPreview = usePluginPreview(mode === "collapsed");
-  const preview = latestMessagePreview([
-    qqPreview ? { ...qqPreview, source: "qq", receivedAt: qqNotifications.previewReceivedAt ?? 0 } : null,
-    wechatReminders.preview,
-    pluginPreview,
-    qqMail.preview ? { source: "qqMail", title: qqMail.preview.sender, body: qqMail.preview.subject, otpCode: qqMail.preview.otpCode, receivedAt: qqMail.previewReceivedAt ?? 0 } : null,
-  ], latestPreviewAt);
-  if (preview && preview.receivedAt > latestPreviewAt) setLatestPreviewAt(preview.receivedAt);
   const className = [
     "island",
     `island--${mode}`,
@@ -176,6 +176,7 @@ export function IslandShell({
     topEdgeShoulders ? "island--shoulders" : "",
     glass ? `island--glass-${nativeGlassState}` : "",
     showTitle ? "" : "island--title-hidden",
+    notice && !isExpanded ? "island--notice" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -223,6 +224,7 @@ export function IslandShell({
           qqNotifications={qqNotifications}
           wechatReminders={wechatReminders}
           preview={preview}
+          noticeReader={notice?.reader ? { scrolls: notice.scrolls } : null}
           page={page}
           isExpanded={isExpanded}
           isTucked={isTucked}
@@ -244,6 +246,7 @@ export function IslandShell({
           showMusic={features.music}
           shelfCount={shelfCount}
           quotaAlert={quotaAlert}
+          todoReminder={todoReminder}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}

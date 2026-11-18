@@ -10,6 +10,7 @@ import { getLocalDateString } from "../../src/utils/date";
 import { ACTIVE_TODOS_STORAGE_KEY, TODO_DURATIONS_STORAGE_KEY, TODO_TIMER_STORAGE_KEY, TODO_TIMERS_STORAGE_KEY } from "../../src/features/todos/storage";
 import type { TodoTimer } from "../../src/features/todos/timer";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
+import { checkTodoReminders } from "./todoTimerReminder";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 const query = new URLSearchParams(location.search);
@@ -342,6 +343,9 @@ try {
   check(picker.textContent?.includes("min") && picker.querySelector("input")?.value === "240", "英文时长文案与记住的 240 分钟完整显示");
   check(picker.scrollWidth <= picker.clientWidth + 1 && pickerRect.left >= islandRect.left && pickerRect.right <= islandRect.right, "小时间设置在岛内，没有横向溢出");
   check(pickerRect.top >= islandRect.top && pickerRect.bottom <= islandRect.bottom, "只有一行待办时时间设置也在岛内，没有被裁切");
+
+  await escape();
+  await checkTodoReminders({ mount, open, choose, pick, go, advance, click, sounds: () => sounds }, check);
 
   if (query.get("view") === "running" || query.get("view") === "expired") {
     await go();

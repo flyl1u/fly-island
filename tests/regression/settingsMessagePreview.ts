@@ -13,4 +13,11 @@ export async function checkMessagePreview(panel: Element, check: (value: unknown
   await act(async () => group.querySelector<HTMLButtonElement>(".settings-slider__reset")!.click());
   check(slider.value === "5" && JSON.parse(localStorage.getItem("focusd-island-settings")!).messagePreviewSeconds === 5,
     "messages: resetting restores five seconds");
+  const toggle = group.querySelector<HTMLInputElement>("input[role=switch]")!;
+  check(!toggle.checked && group.querySelectorAll("input[type=range]").length === 1, "adaptive notices default off with limits hidden");
+  await act(async () => toggle.click());
+  const limits = [...group.querySelectorAll<HTMLInputElement>("input[type=range]")].slice(1);
+  check(limits.map((input) => input.value).join() === "520,180,12", "adaptive notice controls expose default maximum width, height and duration");
+  check(JSON.parse(localStorage.getItem("focusd-island-settings")!).messageAutoExpand, "adaptive notice switch persists");
+  await act(async () => toggle.click());
 }

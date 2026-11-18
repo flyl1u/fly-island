@@ -7,6 +7,8 @@ import { emit } from "@tauri-apps/api/event";
 // Loads the island stylesheets in the same order as the app.
 import "../../src/windows/island/IslandApp";
 import { IslandShell } from "../../src/windows/island/IslandShell";
+import { useLatestPreview } from "../../src/windows/island/useIslandNotices";
+import type { NoticeSize } from "../../src/windows/island/noticeLayout";
 import type { IslandMode } from "../../src/windows/island/types";
 import { useQQNotifications } from "../../src/features/messages/qq-notifications/QQNotifications";
 import { useWeChatReminders } from "../../src/features/messages/wechat/WeChatReminders";
@@ -79,6 +81,7 @@ let changeAgent: (session: AgentSession | null) => void;
 let changeAgentCount: (count: number) => void;
 let changeAgentsEnabled: (enabled: boolean) => void;
 let changeAutoCopy: (enabled: boolean) => void;
+let changeNotice: (notice: NoticeSize | null) => void;
 let openedPage: string | null = null;
 
 function Fixture() {
@@ -99,10 +102,13 @@ function Fixture() {
   const qq = useQQNotifications(canPreview);
   const wechat = useWeChatReminders(canPreview);
   const qqMail = useMail(canPreview, { autoCopyOtp });
+  const preview = useLatestPreview(qq, wechat, null, qqMail);
+  const [notice, setNotice] = useState<NoticeSize | null>(null);
+  changeNotice = setNotice;
   changeMode = setMode; changeTucked = setTucked; changeCount = setCount; changeTask = setTask;
   changeWidth = setWidth; changeTitle = setTitle; changeFont = setPixel; changeAgent = setAgent;
-  return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${width}px` } as CSSProperties}>
-    <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail}
+  return <div className={`stage${pixel ? " stage--font-pixel" : ""}`} style={{ "--collapsed-island-width": `${notice?.width ?? width}px`, ...(notice ? { "--collapsed-island-height": `${notice.height}px` } : {}) } as CSSProperties}>
+    <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} preview={preview} notice={notice}
       mode={mode} page="todo" expandedHeight={306} isTucked={tucked} tuckStyle="edge" topEdgeShoulders={false} positionLocked={false} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
       collapsedItem={agent ? "agent" : "todo"} collapsedLayout={["text", "mail", "shelf", "music", "agents"]} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
@@ -281,6 +287,23 @@ async function runChecks() {
     check(cursorOf(".island__quiet-button") === "pointer", "岛屿上的小按钮仍是可点击的手形");
     await act(async () => { changeAgentsEnabled(true); changeAgentCount(0); changeWidth(280); });
     check(copiedCodes.length === 0, "普通邮件和初始化不写剪贴板");
+    // The adaptive preview's reader (Settings → Messages → Expand long messages, #83).
+    await act(async () => changeNotice({ width: 520, height: 180, scrolls: true, reader: true }));
+    await notify("qqMail", true);
+    const reader = () => document.querySelector<HTMLElement>(".message-notice");
+    const readerBody = () => document.querySelector<HTMLElement>(".message-notice__body");
+    check(reader() && document.querySelector(".island--notice") && !document.querySelector(".island__open-button"), "长消息展开时整块换成阅读卡");
+    check(readerBody()?.textContent?.includes("下阶段设计评审安排") && getComputedStyle(readerBody()!).userSelect === "text", "阅读卡显示完整邮件主题且文字可选中");
+    check(readerBody()?.dataset.windowDrag === "false" && document.querySelector(".message-notice__body--scrolls"), "正文不拖动窗口，超出上限时可滚动");
+    openedPage = null;
+    const readsBeforeBody = commands.filter((command) => command === "read_qq_mail").length;
+    await act(async () => readerBody()!.click());
+    check(openedPage === null && commands.filter((command) => command === "read_qq_mail").length === readsBeforeBody, "点击正文（选择文字）不会打开邮件");
+    check(document.querySelector(".message-notice .copy-text-button"), "阅读卡带复制全文按钮");
+    await act(async () => document.querySelector<HTMLButtonElement>(".message-notice__open")!.click());
+    check(openedPage === "qqMail", "阅读卡的打开按钮进入邮件");
+    await act(async () => changeNotice(null));
+    await settle();
     if (MAIL_OTP_ENABLED) {
       await act(async () => changeMode("expanded"));
       await notify("qqMail", false, false, "834921");
@@ -331,7 +354,8 @@ for (const [label, action] of [
   ["验证码", () => notify("qqMail", true, true, "834921")],
   ["长 QQ 消息", () => notify("qq", true)], ["340px", () => update(async () => changeWidth(340))],
   ["像素主题", () => update(async () => changeFont(true))], ["系统主题", () => update(async () => changeFont(false))],
-  ["280px", () => update(async () => changeWidth(280))], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["2 个会话", () => update(async () => changeAgentCount(2))], ["自动检查", () => { location.search = "?test=1"; }],
+  ["280px", () => update(async () => changeWidth(280))],
+  ["长消息阅读卡", async () => { await update(async () => changeNotice({ width: 516, height: 150, scrolls: true, reader: true })); await notify("qqMail", true); }], ["Agent 标题", () => update(async () => changeAgent({ provider: "claudeCode", label: "Claude Code", title: "设置界面完善思路" }))], ["清除 Agent", () => update(async () => changeAgent(null))], ["2 个会话", () => update(async () => changeAgentCount(2))], ["自动检查", () => { location.search = "?test=1"; }],
 ] as const) {
   const control = document.createElement("button");
   control.textContent = label;

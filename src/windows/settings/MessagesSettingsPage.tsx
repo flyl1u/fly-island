@@ -5,7 +5,7 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
-import { MESSAGE_PREVIEW_SECONDS } from "../../features/appearance/settingsLimits";
+import { MESSAGE_EXPAND_MAX_HEIGHT, MESSAGE_EXPAND_MAX_WIDTH, MESSAGE_EXPAND_SECONDS, MESSAGE_PREVIEW_SECONDS } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import { MailAccountList } from "../../features/messages/mail/MailAccountList";
 import { MailConnectForm } from "../../features/messages/mail/MailConnectForm";
@@ -47,6 +47,7 @@ export function MessagesSettingsPage({
           format={(value) => `${value} ${t.settings.expand.secondsUnit}`}
           defaultValue={MESSAGE_PREVIEW_SECONDS.default} resetLabel={t.settings.layout.resetToDefault}
           onChange={(messagePreviewSeconds) => onSettingsChange({ ...settings, messagePreviewSeconds })} />
+        <NoticeRows settings={settings} onSettingsChange={onSettingsChange} />
       </SettingsGroup>
       <QQGroup controller={qqNotifications} title={labels.qqTitle} hint={labels.qqHint} />
       <SettingsGroup title={labels.wechatTitle} footer={<Problem error={actionError || wechat.error} hint={wechatHint} />}>
@@ -75,6 +76,32 @@ export function MessagesSettingsPage({
         )}
       </SettingsGroup>
       <MailGroups settings={settings} onSettingsChange={onSettingsChange} />
+    </>
+  );
+}
+
+/** Adaptive previews (v3.4.0): their size limits and seconds. Game-mode previews sit beside game mode. */
+function NoticeRows({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
+  const t = useTranslation();
+  const labels = t.settings.messageSources;
+  const reset = t.settings.layout.resetToDefault;
+  const seconds = (value: number) => `${value} ${t.settings.expand.secondsUnit}`;
+  const pixels = (value: number) => `${value} px`;
+  return (
+    <>
+      <SettingsToggleRow title={labels.autoExpand} description={labels.autoExpandHint} checked={settings.messageAutoExpand}
+        onChange={(messageAutoExpand) => onSettingsChange({ ...settings, messageAutoExpand })} />
+      {settings.messageAutoExpand && <>
+        <SettingsSliderRow indent title={labels.expandMaxWidth} value={settings.messageExpandMaxWidth} min={MESSAGE_EXPAND_MAX_WIDTH.min}
+          max={MESSAGE_EXPAND_MAX_WIDTH.max} step={MESSAGE_EXPAND_MAX_WIDTH.step} format={pixels} defaultValue={MESSAGE_EXPAND_MAX_WIDTH.default}
+          resetLabel={reset} onChange={(messageExpandMaxWidth) => onSettingsChange({ ...settings, messageExpandMaxWidth })} />
+        <SettingsSliderRow indent title={labels.expandMaxHeight} value={settings.messageExpandMaxHeight} min={MESSAGE_EXPAND_MAX_HEIGHT.min}
+          max={MESSAGE_EXPAND_MAX_HEIGHT.max} step={MESSAGE_EXPAND_MAX_HEIGHT.step} format={pixels} defaultValue={MESSAGE_EXPAND_MAX_HEIGHT.default}
+          resetLabel={reset} onChange={(messageExpandMaxHeight) => onSettingsChange({ ...settings, messageExpandMaxHeight })} />
+        <SettingsSliderRow indent title={labels.expandSeconds} value={settings.messageExpandSeconds} min={MESSAGE_EXPAND_SECONDS.min}
+          max={MESSAGE_EXPAND_SECONDS.max} step={MESSAGE_EXPAND_SECONDS.step} format={seconds} defaultValue={MESSAGE_EXPAND_SECONDS.default}
+          resetLabel={reset} onChange={(messageExpandSeconds) => onSettingsChange({ ...settings, messageExpandSeconds })} />
+      </>}
     </>
   );
 }

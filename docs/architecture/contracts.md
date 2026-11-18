@@ -34,7 +34,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-active-todos`（全部活动 ID 数组，按开始顺序；无新数据时兼容读取旧单 ID） | `features/todos/storage.ts` |
 | `focusd-island-todo-timer`（主任务倒计时：`{ todoId, endsAt, durationMinutes, notified }`，`endsAt` 为 Unix 毫秒时间；保留原单对象格式） | `features/todos/storage.ts` |
 | `focusd-island-todo-timers`（各任务独立倒计时对象数组；无新数据时兼容读取旧单对象） | `features/todos/storage.ts` |
+| `focusd-island-todo-remind-minutes`（上次实际选择的提前提醒分钟数，0–60 的整数；缺失或非法按 5；0 表示不提醒） | `features/todos/storage.ts` |
 | `focusd-island-todo-durations`（各项待办的时长 `{ [todoId]: 1–240 的整数分钟 }`，没有记录或无效按 15 分钟，写入时去掉已删除待办；2026-11-12 起取代所有待办共用的 `focusd-island-todo-duration`，旧 key 不再读取也不删除） | `features/todos/storage.ts` |
+| `focusd-island-todo-remind-minutes`（v3.4.0：上一次开始倒计时时选的“结束前提醒”分钟数，0–60 的整数，0 为不提醒；作为下一轮的默认值，缺失或无效按 5） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |
@@ -152,6 +154,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `focusd-island-todo-timer`，保留进行中 ID 和各项时长。
 - 待办各项时长（2026-11-12）：新增 `focusd-island-todo-durations`（`{ [todoId]: 分钟 }`），取代所有待办共用的 `focusd-island-todo-duration`。不迁移旧值：用户明确要求每项待办独立，新待办都从 15 分钟起；旧 key 留在原处不读取。直接点“开始”不再启动倒计时，只有怀表设置里的开始才计时。
+- v3.4.0 通知与待办提醒（2026-11-18，均默认关闭）：`focusd-island-settings` 兼容新增 `messageAutoExpand`（boolean，默认 false）、`messageExpandMaxWidth`（320–720，步长 20，默认 520）、`messageExpandMaxHeight`（80–360，步长 10，默认 180）、`messageExpandSeconds`（3–60 秒，默认 12）、`gameShowNotices`（boolean，默认 false）、`gameNoticeSeconds`（2–30 秒，默认 4）、`todoTimerReminder`、`todoTimerReminderSound`（boolean，默认 false）。缺失或非法值按默认。`focusd-island-todo-timers` 的每项兼容新增可选 `remindMinutes`（1–60）与 `reminded`（boolean）；旧数据缺失时视为不提醒，关闭提醒设置时读取会去掉这两个字段。`set_island_interaction` 新增可选参数 `noticeWidth`、`noticeHeight`（自适应通知把收起岛撑大后的逻辑尺寸，缺失时按原收起尺寸，超出舞台窗口时忽略）和 `clickThrough`（游戏模式通知期间整窗鼠标穿透，缺失按 false）；命令名与原有参数不变。新增 key 见上表 `focusd-island-todo-remind-minutes`。
 
 总览见 [overview.md](overview.md)。
 # 网易云精准进度插件

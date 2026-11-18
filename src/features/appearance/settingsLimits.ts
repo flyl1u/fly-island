@@ -37,6 +37,12 @@ export const TUCK_DELAY_SECONDS = { min: 3, max: 600, default: 30 } as const;
 export const TODO_ROTATION_SECONDS = { min: 1, max: 60, default: 5 } as const;
 export const TODO_SCROLL_SPEED = { min: 10, max: 40, step: 5, default: 20 } as const;
 export const MESSAGE_PREVIEW_SECONDS = { min: 3, max: 30, step: 1, default: 5 } as const;
+/** Adaptive message previews (messageAutoExpand): the largest size, before scale, and how long one stays. */
+export const MESSAGE_EXPAND_MAX_WIDTH = { min: 320, max: 720, step: 20, default: 520 } as const;
+export const MESSAGE_EXPAND_MAX_HEIGHT = { min: 80, max: 360, step: 10, default: 180 } as const;
+export const MESSAGE_EXPAND_SECONDS = { min: 3, max: 60, step: 1, default: 12 } as const;
+/** How long a message preview stays while game mode is quiet (gameShowNotices). */
+export const GAME_NOTICE_SECONDS = { min: 2, max: 30, step: 1, default: 4 } as const;
 /** Auto-cleanup choices for the file shelf, in days; 0 never cleans up. */
 export const SHELF_CLEANUP_DAYS = [0, 1, 7, 30] as const;
 export const DEFAULT_TASK_TEXT_COLOR = "#FFFFFF";

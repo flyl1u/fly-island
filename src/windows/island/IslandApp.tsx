@@ -18,6 +18,7 @@ import { useIslandWindow } from "./useIslandWindow";
 import { getExpandedIslandHeight } from "./expandedHeight";
 import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
+import { useMessageNotice } from "./useMessageNotice";
 import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
 import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
@@ -62,7 +63,7 @@ export function IslandApp() {
   const game = useGameMode(settings, { mode, isTucked, collapseIsland, tuckIsland, revealIsland });
   const notices = useIslandNotices(settings, { mode, isTucked, quiet: game.quiet });
   useIdleUpdateInstall(mode === "collapsed", game.quiet);
-  const { qqNotifications, wechatReminders, qqMail, hasMessagePreview } = notices;
+  const { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview } = notices;
   // The output level shows only on the collapsed island (its waveform).
   const media = useMediaState(settings.musicEnabled, mode === "collapsed");
   const { agentStatus, agentSessions, listedAgentSessions, activeAgentSessionCount, unseenAgentSessions, agentRemoval, agentSession, agentUsages, alertUsages } =
@@ -71,7 +72,7 @@ export function IslandApp() {
     quiet: game.quiet,
     canPopUp: !game.quiet && mode === "collapsed" && !isTucked,
   });
-  const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
+  const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, todoReminder, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
@@ -87,11 +88,13 @@ export function IslandApp() {
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
+  const shownPreview = todoReminder ? null : preview;
+  const notice = useMessageNotice(shownPreview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
   const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
   useIslandTucking({
     settings,
     navigation,
-    hasMessagePreview,
+    hasMessagePreview: hasMessagePreview || Boolean(todoReminder),
     activity: { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
   });
@@ -146,8 +149,8 @@ export function IslandApp() {
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);
   const stageStyle = useMemo(
-    () => getIslandStageStyle(settings, colors, collapsedIslandWidth, expandedIslandHeight),
-    [collapsedIslandWidth, colors, expandedIslandHeight, settings],
+    () => getIslandStageStyle(settings, colors, notice.size?.width ?? collapsedIslandWidth, expandedIslandHeight, notice.size?.height),
+    [collapsedIslandWidth, colors, expandedIslandHeight, settings, notice.size],
   );
 
 
@@ -164,6 +167,7 @@ export function IslandApp() {
     setSettings,
     expandedIslandHeight,
     collapsedIslandWidth,
+    notice: notice.nativeNotice,
     onCollapse: collapseIsland,
   });
 
@@ -207,6 +211,8 @@ export function IslandApp() {
         qqNotifications={qqNotifications}
         wechatReminders={wechatReminders}
         onOpenMessages={openMessages}
+        preview={shownPreview}
+        notice={notice.size}
         mode={mode}
         page={page}
         expandedHeight={expandedIslandHeight}
@@ -238,6 +244,7 @@ export function IslandApp() {
         features={features}
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
         quotaAlert={quotaAlert}
+        todoReminder={mode === "collapsed" && !isTucked ? todoReminder : null}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}

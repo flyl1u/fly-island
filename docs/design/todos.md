@@ -46,6 +46,17 @@ English: With the timer on, a watch icon sits left of Start. Start only starts t
 
 ## 尺寸
 
+## 结束前提醒（2026-11-18）
+
+- 设置 → 待办 → 番茄钟下增加“结束前提醒”，默认关闭；开启后再显示独立的“提醒时播放声音”，默认关闭。关闭提醒会取消当前轮次的提前提醒和警示，保留倒计时。（用户需求；取消当前提醒为 Agent 实现决定）
+- 怀表的小时间设置保留现有计时步进器与开始按钮，开启提醒后在其中增加铃铛和“提前几分钟”的独立步进器。0 表示不提醒，可选 1–60 分钟且必须小于本轮总时长；首次选择默认 5 分钟，下一次沿用上次实际选择。控件保持在岛屿可点击范围内，中文与英文均不横向溢出。（用户需求；范围和记忆方式为 Agent 实现决定）
+- 到达阈值后该轮只提醒一次，先保存 `reminded` 再提示。收起时短暂显示铃铛与任务名、剩余分钟数；贴边时短暂露出，托盘隐藏时不唤出。提醒持续 6 秒，点击进入待办页；同时有消息时优先显示待办提醒。展开列表中的对应标题闪烁、倒计时变红，轮换与滚动待办也显示自己的红色计时胶囊。开启减少动态效果时保留静态警示色、停止闪烁。（用户需求；优先级与秒数为 Agent 实现决定）
+- 游戏 quiet 状态下不弹出、不播放提前提醒音，退出游戏不补弹；已经到达阈值的轮次仍记为已提醒。结束、停止、完成或删除后清除警示；再次计时重新计算阈值。重启恢复截止时间和已提醒标记，避免重复提示。原有计时结束提醒保持既有行为。（用户需求；恢复行为为 Agent 实现决定）
+
+English: Before-end reminders and their optional sound are off by default. The timer picker can choose 0–60 minutes before the end, always shorter than the round. A reminder is persisted once, highlights that todo and countdown, and briefly shows on the collapsed island. Quiet game mode suppresses its popup and sound without replaying them later.
+
+## 尺寸
+
 - 待办页更紧凑（2026-11-11，用户要求"todo页面可以缩小一点"）：一行待办 32px（原 38px），行距 6px；勾选框 20px，开始 / 删除 / 拖动按钮 22px 高；输入框 32px（原 36px）；本子上下内边距 12px（原 18 / 16），页签行 22px，块间距 8px。两行时展开岛高 258px（原 306px），每多一行加 38px（原 46px），所以默认 490px 的最大面板高度下能放 8 行才开始滚动（原 6 行）。笔记页给一行的余量，296px；归档、复盘、已安排的固定高度不变。高度常量在 `windows/island/layout.ts`，和 `TodoNotebook.css`、`TodoListItem.css` 保持一致。（Agent 推断：具体数值）
 
 - 待办里的圆角比岛内其他卡片小一级（用户要求 2026-11-11：原来太圆）：深色列表不再绘制独立的面板背景；待办行、输入框和每日笔记用 `--corner-xs`，行内的勾选框、拖动柄和标题输入用 `--corner-xs`，日期按钮用 `--corner-sm`。
@@ -67,3 +78,8 @@ English: With the timer on, a watch icon sits left of Start. Start only starts t
 - 今天和未来日期的标题下方有“添加待办”输入框。回车后，今天的待办进入今日列表，未来的进入“已安排”。已安排的待办用紫色虚线框，悬停时显示删除按钮。过去的日期从归档读取完成情况，未完成项可以「移到今天」。当天已有同名未完成项时，按钮提示已经添加。
 - 日历展开高度为 384px，受面板高度上限约束。六周月历在默认高度完整显示，右侧列表能显示约五行单行待办。（Agent 推断：尺寸）
 - 选中状态有短过渡，切换日期时清单轻微淡入，开启减少动态效果时直接切换。回归页是 `tests/regression/todo-history-calendar.html`。
+
+## 倒计时结束前提醒（v3.4.0，2026-11-18，默认关闭）
+
+- 设置 → 待办里的「结束前提醒」和「提醒时播放声音」（都默认关）。打开后，怀表里开始倒计时的面板多一个铃铛步进器，选结束前几分钟提醒（0 为不提醒，1–60 且小于本轮时长），上次的选择作为下一轮默认（`focusd-island-todo-remind-minutes`，首次为 5）。
+- 到点时收起的岛弹出约 6 秒的提醒条（待办标题和剩余时间）；进入最后几分钟后，列表里这条待办的标题轻轻闪烁、倒计时数字变红，收起岛上轮播到它时也用同样的提示。开了声音才播放提示音；游戏模式勿扰期间不弹出。系统要求减少动画时不闪烁，只变色。

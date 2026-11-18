@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { Play } from "lucide-react";
+import { Bell, Play } from "lucide-react";
 import { NumberStepper } from "../../components/NumberStepper";
 import { useTranslation } from "../../i18n";
-import { MAX_TODO_MINUTES, MIN_TODO_MINUTES } from "./timer";
+import { MAX_REMIND_MINUTES, MAX_TODO_MINUTES, MIN_TODO_MINUTES } from "./timer";
+import { loadTodoRemindMinutes, saveTodoRemindMinutes } from "./storage";
 import "./TodoDurationPicker.css";
 
 const GAP = 6;
@@ -14,17 +15,27 @@ const EDGE = 6;
  * row, so the scrolling list cannot clip it; it drops below the button only when there is no
  * room above. Each change is kept at once, so Start uses it even if this closes first.
  */
-export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose }: {
+export function TodoDurationPicker({ anchor, minutes, reminder = false, onChange, onStart, onClose }: {
   anchor: RefObject<HTMLButtonElement | null>;
   minutes: number;
+  /** Also ask how many minutes before the end to remind (0: no reminder); the last choice is kept. */
+  reminder?: boolean;
   onChange: (minutes: number) => void;
-  onStart: (minutes: number) => void;
+  onStart: (minutes: number, remindMinutes: number) => void;
   onClose: (refocus: boolean) => void;
 }) {
   const t = useTranslation();
   const card = useRef<HTMLFormElement>(null);
   const startButton = useRef<HTMLButtonElement>(null);
   const [place, setPlace] = useState<{ top: number; left: number; below: boolean } | null>(null);
+  const [remindChoice, setRemindChoice] = useState(loadTodoRemindMinutes);
+  // Always shorter than the round: a 5-minute round can be reminded at most 4 minutes before.
+  const remindLimit = Math.max(0, Math.min(MAX_REMIND_MINUTES, minutes - 1));
+  const remindMinutes = reminder ? Math.min(remindChoice, remindLimit) : 0;
+  const start = () => {
+    if (reminder) saveTodoRemindMinutes(remindMinutes);
+    onStart(minutes, remindMinutes);
+  };
   const root = anchor.current?.closest(".stage") ?? document.body;
   const close = useRef(onClose);
   close.current = onClose;
@@ -39,9 +50,12 @@ export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose
     placedAt.current = { top: rect.top, left: rect.left };
     const size = box.getBoundingClientRect();
     const below = rect.top - GAP - size.height < EDGE;
-    const left = Math.min(Math.max(rect.left + rect.width / 2 - size.width / 2, EDGE), window.innerWidth - size.width - EDGE);
+    const island = button.closest(".island")?.getBoundingClientRect();
+    const minLeft = Math.max(EDGE, (island?.left ?? 0) + EDGE);
+    const maxLeft = Math.min(window.innerWidth, island?.right ?? window.innerWidth) - size.width - EDGE;
+    const left = Math.max(minLeft, Math.min(rect.left + rect.width / 2 - size.width / 2, maxLeft));
     setPlace({ top: below ? rect.bottom + GAP : rect.top - GAP - size.height, left, below });
-  }, [anchor]);
+  }, [anchor, reminder, remindMinutes]);
 
   useEffect(() => startButton.current?.focus(), []);
 
@@ -81,7 +95,7 @@ export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose
       role="dialog"
       aria-label={t.todo.chooseDuration}
       style={{ top: place?.top ?? 0, left: place?.left ?? 0, visibility: place ? undefined : "hidden" }}
-      onSubmit={(event) => { event.preventDefault(); onStart(minutes); }}
+      onSubmit={(event) => { event.preventDefault(); start(); }}
       onKeyDown={(event) => {
         if (event.key === "Escape") { event.stopPropagation(); onClose(true); }
       }}
@@ -89,6 +103,12 @@ export function TodoDurationPicker({ anchor, minutes, onChange, onStart, onClose
       <NumberStepper variant="island" min={MIN_TODO_MINUTES} max={MAX_TODO_MINUTES} step={5}
         value={minutes} ariaLabel={t.todo.chooseDuration} onChange={onChange} />
       <span className="todo-duration-picker__unit">{t.todo.minutesUnit}</span>
+      {reminder && remindLimit > 0 && <span className="todo-duration-picker__remind" title={t.todo.remindHint}>
+        <Bell size={12} strokeWidth={2.2} aria-hidden="true" />
+        <NumberStepper variant="island" min={0} max={remindLimit} step={1}
+          value={remindMinutes} ariaLabel={t.todo.remindBefore} onChange={setRemindChoice} />
+        <span className="todo-duration-picker__unit">{remindMinutes > 0 ? t.todo.remindUnit : t.todo.remindOff}</span>
+      </span>}
       <button ref={startButton} className="todo-duration-picker__start" type="submit" aria-label={t.todo.startFor(minutes)}>
         <Play size={12} strokeWidth={2.6} />
       </button>

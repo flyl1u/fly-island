@@ -11,6 +11,11 @@ export type TodoText = {
   countdown: string;
   minutes: (count: number) => string;
   minutesUnit: string;
+  remindBefore: string;
+  remindHint: string;
+  remindUnit: string;
+  remindOff: string;
+  endingSoon: (title: string, minutes: number) => string;
   changeDuration: (minutes: number) => string;
   startFor: (minutes: number) => string;
   remainingTime: (time: string) => string;
@@ -33,6 +38,11 @@ export const zhCN: TodoText = {
   countdown: "待办倒计时",
   minutes: (count) => `${count} 分钟`,
   minutesUnit: "分钟",
+  remindBefore: "结束前几分钟提醒，0 为不提醒",
+  remindHint: "结束前提醒：剩余这么多分钟时提醒你",
+  remindUnit: "分钟前提醒",
+  remindOff: "不提醒",
+  endingSoon: (title, minutes) => `「${title}」还剩 ${minutes} 分钟`,
   changeDuration: (minutes) => `倒计时 ${minutes} 分钟：点击设置并开始`,
   startFor: (minutes) => `开始 ${minutes} 分钟`,
   remainingTime: (time) => `剩余 ${time}`,
@@ -55,6 +65,11 @@ export const en: TodoText = {
   countdown: "Task countdown",
   minutes: (count) => `${count} min`,
   minutesUnit: "min",
+  remindBefore: "Minutes before the end to remind, 0 for none",
+  remindHint: "Reminder before the end: when this many minutes are left",
+  remindUnit: "min before",
+  remindOff: "No reminder",
+  endingSoon: (title, minutes) => `"${title}": ${minutes} min left`,
   changeDuration: (minutes) => `Countdown ${minutes} min: click to set and start`,
   startFor: (minutes) => `Start ${minutes} min`,
   remainingTime: (time) => `${time} remaining`,

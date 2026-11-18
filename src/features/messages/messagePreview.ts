@@ -6,6 +6,10 @@ export type MessagePreview = {
   source: MessageSource;
   title: string;
   body: string;
+  /** Loaded on demand for adaptive mail notices; the ordinary one-line preview keeps its subject. */
+  detail?: string | null;
+  detailLoading?: boolean;
+  detailError?: string | null;
   receivedAt: number;
   wechatMessageId?: string;
   otpCode?: string | null;
@@ -18,6 +22,17 @@ export function messagePreviewText(preview: MessagePreview, copy: Translations["
   if (preview.source === "qqMail") return preview.otpCode
     ? `${preview.body.trim() || copy.newMail} · ${preview.otpCode}` : preview.body.trim() || copy.newMail;
   return copy.qqPreview(preview.title.trim() || "QQ", preview.body.trim() || copy.newMessage);
+}
+
+/**
+ * The preview split for the adaptive reader (MessageNoticeReader): who sent it, and the whole
+ * text. Mail shows the sender and the subject; a WeChat reminder without a sender its generic line.
+ */
+export function noticeText(preview: MessagePreview, copy: Translations["messages"] = zhCN.messages): { sender: string; body: string } {
+  if (preview.source === "wechat" && !preview.title.trim()) return { sender: copy.sourceLabels.wechat, body: copy.wechatPreview };
+  if (preview.source === "qqMail") return { sender: preview.title.trim() || copy.sourceLabels.qqMail,
+    body: [preview.body.trim() || copy.newMail, preview.detail?.trim()].filter(Boolean).join("\n\n") };
+  return { sender: preview.title.trim() || copy.sourceLabels[preview.source], body: preview.body.trim() || copy.newMessage };
 }
 
 export function latestMessagePreview(candidates: (MessagePreview | null)[], latestReceivedAt = -Infinity): MessagePreview | null {

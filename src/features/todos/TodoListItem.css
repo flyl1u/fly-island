@@ -255,3 +255,19 @@
   cursor: default;
   opacity: 0.35;
 }
+
+/* A round past its reminder before the end (todoTimerReminder): the title flashes until it ends. */
+.todo-item--ending .todo-title {
+  animation: todoEndingFlash 1.2s ease-in-out infinite;
+}
+
+@keyframes todoEndingFlash {
+  50% { color: var(--color-error-text); opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-item--ending .todo-title {
+    animation: none;
+    color: var(--color-error-text);
+  }
+}

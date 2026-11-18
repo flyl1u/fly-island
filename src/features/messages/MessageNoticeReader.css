@@ -1,0 +1,99 @@
+/* The adaptive message preview (MessageNoticeReader): fills the grown collapsed island. Sizes match
+   the estimate in windows/island/noticeLayout.ts (10px rows above and below, a 24px header, 4px gap). */
+.message-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 10px 0;
+  color: var(--color-fg-strong);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  animation: messageNoticeEnter 320ms cubic-bezier(.2, .75, .25, 1) 120ms backwards;
+}
+
+.message-notice__header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 24px;
+  min-width: 0;
+}
+
+.message-notice__drag { display: inline-flex; flex: none; touch-action: none; cursor: grab; }
+
+.message-notice__sender {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-fg-strong);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+  cursor: text;
+}
+
+.message-notice__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--text-2);
+  background: rgba(var(--overlay-rgb), 0.06);
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.message-notice__open:hover {
+  color: var(--color-fg-strong);
+  background: rgba(var(--overlay-rgb), 0.12);
+}
+
+.message-notice__open:focus-visible,
+.message-notice__body:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.message-notice__body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  cursor: text;
+  user-select: text;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-white-a16) transparent;
+}
+
+.message-notice__body--scrolls {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 14px), transparent);
+}
+
+.message-notice__status { margin: 4px 0 0; color: var(--text-2); font-size: 12px; white-space: normal; }
+
+@keyframes messageNoticeEnter {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-notice {
+    animation: none;
+  }
+}

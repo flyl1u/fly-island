@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
-import type { TodoTimer } from "../../features/todos/timer";
+import { isTodoTimerEndingSoon, type TodoTimer } from "../../features/todos/timer";
 import { useTranslation } from "../../i18n";
 import "./CollapsedTodoContent.css";
 
@@ -21,9 +21,9 @@ export function CollapsedTodoContent({ title, prefix, rotation }: {
   rotation?: TodoRotationDisplay | null;
 }) {
   const t = useTranslation();
-  const row = (text: string, timer: TodoTimer | null, key?: number, todoId?: string) => <span className="todo-rotation__row" key={key} data-rotating-todo-id={todoId}>
+  const row = (text: string, timer: TodoTimer | null, key?: number, todoId?: string) => <span className={`todo-rotation__row${timer && isTodoTimerEndingSoon(timer) ? " island__active-task--ending" : ""}`} key={key} data-rotating-todo-id={todoId}>
     <span className="todo-rotation__title">{prefix}{text}</span>
-    {timer && <span className="island__timer-pill">{timer.notified ? t.todo.timeUp : <TodoCountdown endsAt={timer.endsAt} />}</span>}
+    {timer && <span className="island__timer-pill">{timer.notified ? t.todo.timeUp : <TodoCountdown endsAt={timer.endsAt} warning={isTodoTimerEndingSoon(timer)} />}</span>}
   </span>;
   const currentTimer = rotation?.timers[rotation.selectedIndex] ?? null;
   const id = rotation?.ids[rotation.selectedIndex] ?? title;

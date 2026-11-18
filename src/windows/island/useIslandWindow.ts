@@ -19,8 +19,12 @@ type IslandWindowOptions = {
   setSettings: (settings: IslandSettings) => void;
   expandedIslandHeight: number;
   collapsedIslandWidth: number;
+  /** A grown message preview's size, and whether clicks pass through it (useMessageNotice). */
+  notice: IslandNotice;
   onCollapse: () => void;
 };
+
+export type IslandNotice = { width: number | null; height: number | null; clickThrough: boolean };
 
 /** Keeps the native island window (size, position, glass, focus) in sync with the island's state. */
 export function useIslandWindow({
@@ -30,6 +34,7 @@ export function useIslandWindow({
   setSettings,
   expandedIslandHeight,
   collapsedIslandWidth,
+  notice,
   onCollapse,
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
@@ -46,6 +51,7 @@ export function useIslandWindow({
       nextExpandedHeight: number,
       nextCollapsedWidth: number,
       nextIsTucked: boolean,
+      nextNotice: IslandNotice,
     ) => {
       try {
         const glassState = await islandApi.setIslandInteraction({
@@ -68,6 +74,9 @@ export function useIslandWindow({
           cornerRadius: nextSettings.islandCornerRadius,
           cornerShape: nextSettings.islandCornerShape,
           monitorFollow: nextSettings.islandMonitor,
+          noticeWidth: nextNotice.width,
+          noticeHeight: nextNotice.height,
+          clickThrough: nextNotice.clickThrough,
         });
         setNativeGlassState(glassState);
       } catch (error) {
@@ -131,6 +140,7 @@ export function useIslandWindow({
       expandedIslandHeight,
       collapsedIslandWidth,
       isTucked,
+      notice,
     );
     if (queue.running) return;
     queue.running = true;
@@ -149,6 +159,9 @@ export function useIslandWindow({
   }, [
     expandedIslandHeight,
     collapsedIslandWidth,
+    notice.width,
+    notice.height,
+    notice.clickThrough,
     isTucked,
     mode,
     settings.tuckStyle,

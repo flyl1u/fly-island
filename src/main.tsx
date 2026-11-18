@@ -21,7 +21,7 @@ applyDocumentTheme(loadSettings());
 window.addEventListener("contextmenu", (event) => {
   const target = event.target instanceof Element ? event.target
     : event.target instanceof Node ? event.target.parentElement : null;
-  if (shouldPreventContextMenu(target)) event.preventDefault();
+  if (shouldPreventContextMenu(target, Boolean(window.getSelection()?.toString()))) event.preventDefault();
 }, true);
 
 if (windowKind === null) {

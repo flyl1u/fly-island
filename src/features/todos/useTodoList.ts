@@ -5,10 +5,10 @@ import { dismissUpdatePrompt } from "../updater/updaterController";
 import { UPDATE_TODO_ID } from "./updateTodo";
 import { useUpdateTodo } from "./useUpdateTodo";
 import { useTodoTimer } from "./useTodoTimer";
-import type { TodoDuration } from "./timer";
+import type { TodoDuration, TodoTimer } from "./timer";
 import type { TodoItem } from "./types";
 /** Today's todo items, the input draft and the todo shown on the collapsed island. */
-export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false, rotateTodos = false) {
+export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void, todoTimerEnabled = false, rotateTodos = false, onTimerReminder?: (round: TodoTimer) => void, timerReminder = false) {
   const [todos, setTodos] = useState<TodoItem[]>(loadTodos);
   useUpdateTodo(todos, setTodos);
   const [draftTodo, setDraftTodo] = useState("");
@@ -18,7 +18,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
     return rotateTodos ? valid : valid.slice(0, 1);
   }, [rotateTodos, storedActiveIds, todos]);
   const activeTodoId = activeTodoIds[0] ?? null;
-  const { timer, timers, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoIds, onTimerExpired, todoTimerEnabled);
+  const { timer, timers, durations, startTimer, chooseDuration, clearTimer } = useTodoTimer(todos, activeTodoIds, onTimerExpired, todoTimerEnabled, onTimerReminder, timerReminder);
 
   const addTodo = useCallback(() => {
     const title = draftTodo.trim();
@@ -63,7 +63,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
   }, []);
 
   const startTodo = useCallback(
-    (id: string, duration?: TodoDuration) => {
+    (id: string, duration?: TodoDuration, remindMinutes = 0) => {
       const todo = todos.find((item) => item.id === id);
 
       if (!todo || todo.completed || todo.kind === "update") {
@@ -76,7 +76,7 @@ export function useTodoList(onStartTodo: () => void, onTimerExpired?: () => void
         return;
       }
 
-      if (!startTimer(id, duration ?? null, rotateTodos)) return;
+      if (!startTimer(id, duration ?? null, rotateTodos, remindMinutes)) return;
       setActiveTodoIds((ids) => rotateTodos ? ids.includes(id) ? ids : [...ids, id] : [id]);
       if (!rotateTodos) onStartTodo();
     },

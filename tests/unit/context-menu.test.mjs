@@ -27,3 +27,8 @@ test("contenteditable elements and nested descendants keep their context menu", 
   assert.equal(shouldPreventContextMenu(element("SPAN", element("STRONG", editor))), false);
   assert.equal(shouldPreventContextMenu(element("svg", editor)), false);
 });
+
+test("a text selection keeps the native menu, so selected text can be copied", () => {
+  assert.equal(shouldPreventContextMenu({ tagName: "P", parentElement: null }, true), false);
+  assert.equal(shouldPreventContextMenu({ tagName: "P", parentElement: null }, false), true);
+});

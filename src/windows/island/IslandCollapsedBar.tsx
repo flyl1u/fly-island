@@ -3,6 +3,7 @@ import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
+import { TodoReminderPopup, type TodoReminder } from "../../features/todos/TodoReminderPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
@@ -11,6 +12,7 @@ import { CollapsedLyric } from "../../features/media/CollapsedLyric";
 import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import { CollapsedMessageContent } from "../../features/messages/CollapsedMessageContent";
 import { MessageSourceIcon } from "../../features/messages/MessageSourceIcon";
+import { MessageNoticeReader } from "../../features/messages/MessageNoticeReader";
 // After CollapsedMessageContent, matching the original stylesheet order.
 import { MusicWaveButton } from "../../features/media/MusicWaveButton";
 import { messagePreviewText, type MessagePreview, type MessageSource } from "../../features/messages/messagePreview";
@@ -21,7 +23,7 @@ import type { WeChatRemindersController } from "../../features/messages/wechat/W
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "../../features/todos/TodoCountdown";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
-import type { TodoTimer } from "../../features/todos/timer";
+import { isTodoTimerEndingSoon, type TodoTimer } from "../../features/todos/timer";
 import { CollapsedTodoContent, type TodoRotationDisplay } from "./CollapsedTodoContent";
 import type { IslandPage } from "./types";
 import { useWindowDragGesture } from "./useWindowDragGesture";
@@ -32,6 +34,8 @@ type IslandCollapsedBarProps = {
   qqNotifications: QQNotificationsController;
   wechatReminders: WeChatRemindersController;
   preview: MessagePreview | null;
+  /** The adaptive preview's reader (sender, then the whole text) in place of the bar, or null. */
+  noticeReader?: { scrolls: boolean } | null;
   page: IslandPage;
   isExpanded: boolean;
   isTucked: boolean;
@@ -63,6 +67,8 @@ type IslandCollapsedBarProps = {
   shelfCount: number | null;
   /** Claude's or Codex's usage reaching the alert level, or resetting; it takes the place of the text while shown. */
   quotaAlert?: QuotaAlert | null;
+  /** A todo round reaching its reminder before the end; it takes the place of the text while shown. */
+  todoReminder?: TodoReminder | null;
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
@@ -77,6 +83,7 @@ export function IslandCollapsedBar({
   qqNotifications,
   wechatReminders,
   preview,
+  noticeReader = null,
   page,
   isExpanded,
   isTucked,
@@ -98,6 +105,7 @@ export function IslandCollapsedBar({
   showMusic,
   shelfCount,
   quotaAlert = null,
+  todoReminder = null,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -115,6 +123,30 @@ export function IslandCollapsedBar({
     `island__pulse--agent-${agentVisualState}`,
   ].join(" ");
   const shownAgent = collapsedItem === "agent" ? agentSession : null;
+  // Opens where the previewed message lives: the mail reader, or QQ / WeChat (else their page).
+  const openPreview = (shown: MessagePreview) => {
+    const source = shown.source;
+    if (source === "plugin") { onOpenMessages(source); return; }
+    if (source === "qqMail" && qqMail.preview) {
+      onOpenMessages("qqMail");
+      void qqMail.readMail(qqMail.preview, qqMail.previewAccount);
+      return;
+    }
+    const opening = source === "qq"
+      ? qqNotifications.openQQ(shown.title)
+      : wechatReminders.openWeChat(shown.wechatMessageId);
+    void opening.then((opened) => {
+      if (opened === false) onOpenMessages(source);
+    });
+  };
+
+  if (noticeReader && preview && !isExpanded && !isTucked) return (
+    <div className="island__collapsed island__collapsed--notice">
+      <MessageNoticeReader preview={preview} scrolls={noticeReader.scrolls} onOpen={() => openPreview(preview)}
+        onRetry={qqMail.retryPreviewContent}
+        drag={{ onPointerDown: prepareWindowDrag, onPointerMove: handleWindowDragMove, onPointerUp: cancelWindowDrag, onPointerCancel: cancelWindowDrag }} />
+    </div>
+  );
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
@@ -135,20 +167,9 @@ export function IslandCollapsedBar({
           onClick={(event) => {
             if (event.detail === 0 || !didDragRef.current) {
               if (preview) {
-                const source = preview.source;
-                if (source === "qqMail" && qqMail.preview) {
-                  onOpenMessages("qqMail");
-                  void qqMail.readMail(qqMail.preview, qqMail.previewAccount);
-                  return;
-                }
-                const opening = source === "qq"
-                  ? qqNotifications.openQQ(preview.title)
-                  : wechatReminders.openWeChat(preview.wechatMessageId);
-                void opening.then((opened) => {
-                  if (opened === false) onOpenMessages(source);
-                });
+                openPreview(preview);
               } else {
-                onOpenPage(page);
+                onOpenPage(todoReminder ? "todo" : page);
               }
             }
           }}
@@ -167,7 +188,9 @@ export function IslandCollapsedBar({
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-            {quotaAlert ? (
+            {todoReminder ? (
+              <TodoReminderPopup key={todoReminder.at} reminder={todoReminder} />
+            ) : quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : <>
             {showCollapsedText && showTitle && (
@@ -188,12 +211,12 @@ export function IslandCollapsedBar({
               <CollapsedLyric mediaState={mediaState} lyricsSettings={lyricsSettings} active={!isExpanded} />
             )}
             {showCollapsedText && collapsedItem === "todo" && collapsedTaskTitle && (todoTimer && !todoRotation ? (
-              <span className="island__active-task island__active-task--timed" key={collapsedTaskTitle}>
+              <span className={`island__active-task island__active-task--timed${isTodoTimerEndingSoon(todoTimer) ? " island__active-task--ending" : ""}`} key={collapsedTaskTitle}>
                 {showTitle ? "· " : ""}
                 <>
                   <span className="island__active-task-title">{collapsedTaskTitle}</span>
                   <span className="island__timer-pill">
-                    {todoTimer.notified ? t.todo.timeUp : <TodoCountdown endsAt={todoTimer.endsAt} />}
+                    {todoTimer.notified ? t.todo.timeUp : <TodoCountdown endsAt={todoTimer.endsAt} warning={isTodoTimerEndingSoon(todoTimer)} />}
                   </span>
                 </>
               </span>

@@ -15,6 +15,8 @@ export function getIslandStageStyle(
   colors: ColorPalette,
   collapsedIslandWidth: number,
   expandedIslandHeight: number,
+  /** A message preview's grown height (useMessageNotice) in place of the collapsed height. */
+  noticeHeight: number | null = null,
 ) {
   return ({
     // Classic opacity fades the fill only, so text and icons on it stay solid.
@@ -24,7 +26,7 @@ export function getIslandStageStyle(
     "--island-collapsed-scale-target": settings.collapsedScale,
     "--island-expanded-scale-target": settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
-    "--collapsed-island-height": `${settings.collapsedHeight}px`,
+    "--collapsed-island-height": `${noticeHeight ?? settings.collapsedHeight}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
     "--island-font-scale": settings.islandFontPercent / 100,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
