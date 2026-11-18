@@ -16,8 +16,8 @@ import { appearancePreviewMode } from "./appearancePreview";
 
 /**
  * Settings → Appearance (docs/design/settings.md): a preview, then the theme and its colours, the
- * text and sizes, what sits where on the island, the notch and the top-edge curves, and last the
- * whole-look presets.
+ * text and sizes, what sits where on the island, the notch size, the corners and top-edge curves,
+ * and last the whole-look presets.
  */
 export function AppearanceSettingsPage({
   settings,
@@ -56,10 +56,12 @@ export function AppearanceSettingsPage({
         <PageButtonsRow {...rows} />
       </CollapsedLayoutEditor>
       <CollapsedIslandSection {...rows} />
-      <SettingsGroup title={text.shapeTitle} footer={text.collapsedDimensions.hint}>
+      <SettingsGroup title={text.notchTitle} footer={text.collapsedDimensions.hint}>
         <CollapsedDimensionRows settings={settings} onChange={updateAppearance} />
-        <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />
+      </SettingsGroup>
+      <SettingsGroup title={text.shapeTitle}>
         <IslandCornerRows settings={settings} onChange={updateAppearance} />
+        <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />
       </SettingsGroup>
       <AppearancePresetSection {...rows} />
     </>

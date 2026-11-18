@@ -25,6 +25,7 @@ export type SettingsAppearanceText = {
   pageButtons: string;
   capsules: string;
   icons: string;
+  notchTitle: string;
   shapeTitle: string;
   topEdgeShoulders: string;
   topEdgeShoulderSize: string;
@@ -92,6 +93,7 @@ export const zhCN: SettingsAppearanceText = {
   pageButtons: "页面按钮",
   capsules: "胶囊",
   icons: "图标",
+  notchTitle: "刘海尺寸",
   shapeTitle: "刘海与外形",
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
@@ -155,6 +157,7 @@ export const en: SettingsAppearanceText = {
   pageButtons: "Page buttons",
   capsules: "Capsules",
   icons: "Icons",
+  notchTitle: "Notch size",
   shapeTitle: "Notch & shape",
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
