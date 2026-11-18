@@ -4,7 +4,7 @@ import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsChoice } from "../../components/settings/SettingsChoice";
-import { TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED } from "../../features/appearance/settingsLimits";
+import { TODO_ROTATION_SECONDS, TODO_SCROLL_SPEED, TODO_VISIBLE_ROWS } from "../../features/appearance/settingsLimits";
 import type { IslandSettings } from "../../features/appearance/types";
 import { SavePathSettingsSection } from "../../features/todos/SavePathSettingsSection";
 import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirectorySetting";
@@ -41,6 +41,13 @@ export function TodosSettingsPage({
           description={t.settings.todo.dragToReorderDescription}
           checked={settings.enableTodoReorder}
           onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
+        />
+        <SettingsNumberRow
+          title={t.settings.todo.visibleRows}
+          value={settings.todoVisibleRows}
+          min={TODO_VISIBLE_ROWS.min}
+          max={TODO_VISIBLE_ROWS.max}
+          onChange={(todoVisibleRows) => onSettingsChange({ ...settings, todoVisibleRows })}
         />
       </SettingsGroup>
       <SettingsGroup title={t.settings.todo.timerTitle}>

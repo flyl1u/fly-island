@@ -137,6 +137,7 @@ export function IslandApp() {
     isReadingMail: qqMail.wantsTallPanel,
     maxPanelHeight: settings.maxPanelHeight,
     clipboardVisibleRows: settings.clipboardVisibleRows,
+    todoVisibleRows: settings.todoVisibleRows,
     agentVisibleRows: settings.agentVisibleRows,
     agentSessionView: settings.agentSessionView,
     fontScale: settings.islandFontPercent / 100,
