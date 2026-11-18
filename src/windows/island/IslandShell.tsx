@@ -22,7 +22,6 @@ import type { LyricsSettings } from "../../features/media/lyrics/useLyrics";
 import type { TodoTimer } from "../../features/todos/timer";
 import type { TodoRotationDisplay } from "./CollapsedTodoContent";
 import type { NoticeSize } from "./noticeLayout";
-import type { TodoReminder } from "../../features/todos/TodoReminderPopup";
 import "./IslandShell.css";
 import "./IslandPageText.css";
 import "./IslandGlass.css";
@@ -80,8 +79,6 @@ type IslandShellProps = {
   shelfCount: number | null;
   /** Claude's or Codex's usage reaching the alert level, or resetting. */
   quotaAlert?: QuotaAlert | null;
-  /** A todo round reaching its reminder before the end, shown in place of the text for a while. */
-  todoReminder?: TodoReminder | null;
   onOpenPage: (page: IslandPage) => void;
   onWindowDragStart: () => void;
   onCollapse: () => void;
@@ -138,7 +135,6 @@ export function IslandShell({
   features,
   shelfCount,
   quotaAlert = null,
-  todoReminder = null,
   onOpenPage,
   onWindowDragStart,
   onCollapse,
@@ -246,7 +242,6 @@ export function IslandShell({
           showMusic={features.music}
           shelfCount={shelfCount}
           quotaAlert={quotaAlert}
-          todoReminder={todoReminder}
           agentVisualState={agentVisualState}
           onOpenPage={onOpenPage}
           onOpenMessages={onOpenMessages}
