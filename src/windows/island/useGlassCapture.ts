@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { Channel, isTauri } from "@tauri-apps/api/core";
 import { setGlassCaptureRegion, startGlassCapture, stopGlassCapture } from "./api";
-import { glassFramePlacement, parseGlassFrame } from "./glassFrame";
+import { backdropLuma, glassFramePlacement, parseGlassFrame } from "./glassFrame";
 
-const PLACEMENT = ["--glass-frame-x", "--glass-frame-y", "--glass-frame-width", "--glass-frame-height"];
+const PLACEMENT = ["--glass-frame-x", "--glass-frame-y", "--glass-frame-width", "--glass-frame-height", "--glass-backdrop-luma"];
 
 function hideBackdrop(root: HTMLElement) {
   delete root.dataset.glassBackdrop;
@@ -16,11 +16,13 @@ function hideBackdrop(root: HTMLElement) {
  * canvas and its place written to the root as CSS variables, with no React render. Without a
  * frame (paused, unsupported, failed) `data-glass-backdrop` is absent and the glass is a tint.
  *
- * `regionHeight` is the open island's height in CSS px: the capture covers the window's width
- * down to there, so the collapsed bar and the open island both lie inside it as the shape moves.
+ * The capture covers the whole window, so the island lies inside it whatever its size: a region cut
+ * to the open page's height left a bright untinted band under a taller page or a grown message, and
+ * its bottom edge jumped as the height changed. `--glass-backdrop-luma` (0–1) tells IslandGlass.css
+ * how bright the backdrop is, so the tint can deepen until the text reads over it.
  * `paused` (tucked) stops the capture without giving up the channel.
  */
-export function useGlassCapture(enabled: boolean, paused: boolean, regionHeight: number, blur: number) {
+export function useGlassCapture(enabled: boolean, paused: boolean, blur: number) {
   useEffect(() => {
     const root = document.documentElement;
     if (!enabled || !isTauri()) {
@@ -44,6 +46,8 @@ export function useGlassCapture(enabled: boolean, paused: boolean, regionHeight:
       if (canvas.height !== frame.height) canvas.height = frame.height;
       context.putImageData(new ImageData(frame.pixels, frame.width, frame.height), 0, 0);
       for (const [name, value] of Object.entries(glassFramePlacement(frame, window.devicePixelRatio))) root.style.setProperty(name, value);
+      const luma = String(backdropLuma(frame));
+      if (root.style.getPropertyValue("--glass-backdrop-luma") !== luma) root.style.setProperty("--glass-backdrop-luma", luma);
       root.dataset.glassBackdrop = "live";
     };
     void startGlassCapture(channel)
@@ -67,8 +71,8 @@ export function useGlassCapture(enabled: boolean, paused: boolean, regionHeight:
       left: 0,
       top: 0,
       width: Math.round(window.innerWidth * ratio),
-      height: Math.round(Math.min(window.innerHeight, regionHeight) * ratio),
+      height: Math.round(window.innerHeight * ratio),
     };
     void setGlassCaptureRegion(region, blur).catch(() => {});
-  }, [enabled, paused, regionHeight, blur]);
+  }, [enabled, paused, blur]);
 }

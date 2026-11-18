@@ -43,3 +43,34 @@ export function glassFramePlacement(frame: GlassFrame, scale: number) {
     "--glass-frame-height": px(frame.bottom - frame.top),
   };
 }
+
+/**
+ * How bright the backdrop is behind the island's middle (0 dark – 1 white), weighted towards its
+ * bright parts: text has to stay readable over the brightest thing behind it, not the average.
+ * Every 4th pixel of the middle 70% across is enough; the frame is a quarter of screen size.
+ */
+export function backdropLuma(frame: GlassFrame) {
+  const { width, height, pixels } = frame;
+  const from = Math.floor(width * 0.15);
+  const to = Math.ceil(width * 0.85);
+  const buckets = new Array<number>(17).fill(0);
+  let count = 0;
+  for (let y = 0; y < height; y += 4) {
+    for (let x = from; x < to; x += 4) {
+      const at = (y * width + x) * 4;
+      const luma = (0.2126 * pixels[at] + 0.7152 * pixels[at + 1] + 0.0722 * pixels[at + 2]) / 255;
+      buckets[Math.round(luma * 16)] += 1;
+      count += 1;
+    }
+  }
+  if (count === 0) return 0;
+  let mean = 0;
+  let seen = 0;
+  let p90 = -1;
+  for (let index = 0; index < buckets.length; index += 1) {
+    mean += (index / 16) * buckets[index];
+    seen += buckets[index];
+    if (p90 < 0 && seen >= count * 0.9) p90 = index / 16;
+  }
+  return Math.round(((mean / count + p90) / 2) * 20) / 20;
+}
