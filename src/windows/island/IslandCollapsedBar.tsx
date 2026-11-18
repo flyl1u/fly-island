@@ -3,7 +3,6 @@ import { Bot, Inbox } from "lucide-react";
 import { AgentProviderIcon } from "../../features/agent-status/AgentProviderIcon";
 import type { QuotaAlert } from "../../features/agent-status/quotaAlerts";
 import { QuotaAlertPopup } from "../../features/agent-status/QuotaAlertPopup";
-import { TodoReminderPopup, type TodoReminder } from "../../features/todos/TodoReminderPopup";
 import type { AgentSession } from "../../features/agent-status/session";
 import type { AgentVisualState } from "../../features/agent-status/status";
 import type { CollapsedItem, CollapsedSlot } from "../../features/appearance/types";
@@ -68,7 +67,6 @@ type IslandCollapsedBarProps = {
   /** Claude's or Codex's usage reaching the alert level, or resetting; it takes the place of the text while shown. */
   quotaAlert?: QuotaAlert | null;
   /** A todo round reaching its reminder before the end; it takes the place of the text while shown. */
-  todoReminder?: TodoReminder | null;
   agentVisualState: AgentVisualState;
   onOpenPage: (page: IslandPage) => void;
   onOpenMessages: (source: MessageSource) => void;
@@ -105,7 +103,6 @@ export function IslandCollapsedBar({
   showMusic,
   shelfCount,
   quotaAlert = null,
-  todoReminder = null,
   agentVisualState,
   onOpenPage,
   onOpenMessages,
@@ -169,7 +166,7 @@ export function IslandCollapsedBar({
               if (preview) {
                 openPreview(preview);
               } else {
-                onOpenPage(todoReminder ? "todo" : page);
+                onOpenPage(page);
               }
             }
           }}
@@ -188,9 +185,7 @@ export function IslandCollapsedBar({
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>
-            {todoReminder ? (
-              <TodoReminderPopup key={todoReminder.at} reminder={todoReminder} />
-            ) : quotaAlert ? (
+            {quotaAlert ? (
               <QuotaAlertPopup alert={quotaAlert} />
             ) : <>
             {showCollapsedText && showTitle && (

@@ -72,7 +72,7 @@ export function IslandApp() {
     quiet: game.quiet,
     canPopUp: !game.quiet && mode === "collapsed" && !isTucked,
   });
-  const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, todoReminder, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
+  const { todos, activeTodoId, activeTodoIds, timer, timers, todoPageMode, todoListHeight, notebookProps } = useIslandTodos({ settings, navigation, quiet: game.quiet });
 
   const songPlaying = settings.musicEnabled && media.mediaState.playbackStatus === "playing" && Boolean(media.mediaState.title);
   const cover = settings.collapsedShowCover && songPlaying ? media.mediaState.thumbnail : null;
@@ -88,13 +88,12 @@ export function IslandApp() {
     );
   // The cover goes with the lyric line: when something ranked above lyrics is shown, it goes too.
   const collapsedCover = collapsedItem === "lyrics" ? cover : null;
-  const shownPreview = todoReminder ? null : preview;
-  const notice = useMessageNotice(shownPreview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
+  const notice = useMessageNotice(preview, settings, { mode, isTucked, quiet: game.quiet, collapsedIslandWidth });
   const { agentVisualState, agentStatusLabel } = useAgentIndicator(agentStatus, settings, activeAgentSessionCount, t);
   useIslandTucking({
     settings,
     navigation,
-    hasMessagePreview: hasMessagePreview || Boolean(todoReminder),
+    hasMessagePreview,
     activity: { agentVisualState, collapsedItem, songPlaying, activeTodoId, timer },
     gameHolds: game.quiet || game.tuck,
   });
@@ -211,7 +210,7 @@ export function IslandApp() {
         qqNotifications={qqNotifications}
         wechatReminders={wechatReminders}
         onOpenMessages={openMessages}
-        preview={shownPreview}
+        preview={preview}
         notice={notice.size}
         mode={mode}
         page={page}
@@ -244,7 +243,6 @@ export function IslandApp() {
         features={features}
         shelfCount={settings.shelfEnabled && settings.shelfShowCount ? fileShelf.items.length : null}
         quotaAlert={quotaAlert}
-        todoReminder={mode === "collapsed" && !isTucked ? todoReminder : null}
         onOpenPage={openEnabledPage}
         onWindowDragStart={startIslandDrag}
         onCollapse={collapseIsland}
