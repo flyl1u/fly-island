@@ -45,6 +45,11 @@ export function addFileShelfPaths(paths: string[]) {
   return invoke<FileShelfSnapshot>("add_file_shelf_paths", { paths });
 }
 
+/** Writes the new user's welcome note (a .txt file) and puts it on the shelf. */
+export function addFileShelfWelcome(fileName: string, content: string) {
+  return invoke<FileShelfSnapshot>("add_file_shelf_welcome", { fileName, content });
+}
+
 export function removeFileShelfItems(ids: string[]) {
   return invoke<FileShelfSnapshot>("remove_file_shelf_items", { ids });
 }

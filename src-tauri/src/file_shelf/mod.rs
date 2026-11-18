@@ -247,6 +247,32 @@ pub async fn add_file_shelf_paths(paths: Vec<String>) -> Result<FileShelfSnapsho
     service.update(|items| insert_items(items, added, max_items))
 }
 
+/// The short note a new user finds on the shelf, so the page is not empty on first launch:
+/// written once by the page, in the user's language, under the app data folder, then shelved
+/// like any dropped file. Only the file name's last part is used, always as a .txt file.
+#[tauri::command]
+pub async fn add_file_shelf_welcome(
+    app: AppHandle,
+    file_name: String,
+    content: String,
+) -> Result<FileShelfSnapshot, String> {
+    let stem = Path::new(file_name.trim())
+        .file_stem()
+        .map(|stem| stem.to_string_lossy().into_owned())
+        .filter(|stem| !stem.trim().is_empty())
+        .unwrap_or_else(|| "welcome".to_string());
+    let folder = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Failed to resolve app data directory: {error}"))?
+        .join("welcome");
+    fs::create_dir_all(&folder).map_err(|error| format!("Failed to create the welcome folder: {error}"))?;
+    let path = folder.join(format!("{stem}.txt"));
+    // A BOM so Notepad on older Windows opens the Chinese text as UTF-8.
+    fs::write(&path, format!("\u{feff}{content}")).map_err(|error| format!("Failed to write the welcome note: {error}"))?;
+    add_file_shelf_paths(vec![path.to_string_lossy().into_owned()]).await
+}
+
 #[tauri::command]
 pub async fn remove_file_shelf_items(ids: Vec<String>) -> Result<FileShelfSnapshot, String> {
     service()?.update(|mut items| {
@@ -364,6 +390,7 @@ macro_rules! tauri_commands {
             crate::file_shelf::get_file_shelf,
             crate::file_shelf::set_file_shelf_options,
             crate::file_shelf::add_file_shelf_paths,
+            crate::file_shelf::add_file_shelf_welcome,
             crate::file_shelf::remove_file_shelf_items,
             crate::file_shelf::toggle_file_shelf_pin,
             crate::file_shelf::get_file_shelf_thumbnail,
