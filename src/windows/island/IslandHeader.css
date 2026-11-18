@@ -210,6 +210,25 @@
   transition: background 140ms ease;
 }
 
+/* Clipboard history: its icon with its name beside it. */
+.dot-button--labelled {
+  flex: 0 0 auto;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 6px;
+}
+
+.dot-button__label {
+  position: relative;
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .dot-button--icon svg {
   position: relative;
   pointer-events: none;

@@ -145,6 +145,7 @@ export function IslandHeader({
                 "dot-button",
                 `dot-button--${dot}`,
                 showIcons ? "dot-button--icon" : "dot-button--capsule",
+                showIcons && dot === "clipboard" ? "dot-button--labelled" : "",
                 page === dot ? "dot-button--active" : "",
                 draggingDot === dot ? "dot-button--dragging" : "",
               ].filter(Boolean).join(" ")}
@@ -162,6 +163,8 @@ export function IslandHeader({
               }}
             >
               {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+              {/* Clipboard history reads as icon + name: the bare icon was not recognised (2026-11-18, owner). */}
+              {showIcons && dot === "clipboard" && <span className="dot-button__label" aria-hidden="true">{t.island.pageNames.clipboard}</span>}
               {dot === "todo" && updatePending && <span className="island-update-dot" aria-hidden="true" />}
             </button>
           );
