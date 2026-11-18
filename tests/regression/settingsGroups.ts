@@ -40,7 +40,7 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     check(titles(rowsOf(panel, "字体与大小")).join() === "字体,岛屿字号,收起时的大小,展开后的大小", "Appearance: text and sizes share a group");
     check(titles(rowsOf(panel, "岛上的排列")).includes("页面按钮"), "Appearance: page buttons sit with the island's arrangement");
     const shape = () => rowsOf(panel, "刘海与外形");
-    check(titles(shape()).join() === "自动宽度,刘海高度,贴边圆角", "Appearance: the notch and curves come last, manual width hidden while automatic");
+    check(titles(shape()).join() === "自动宽度,刘海高度,贴边圆角,展开圆角,圆角形状", "Appearance: the notch and curves come last, then the open corners; manual width hidden while automatic");
     const auto = shape()[0].querySelector<HTMLInputElement>("[role='switch']")!;
     await act(async () => auto.click());
     const width = shape().find((row) => row.textContent?.includes("刘海宽度"));

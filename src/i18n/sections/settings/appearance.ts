@@ -11,6 +11,9 @@ export type SettingsAppearanceText = {
   liquidGlass: string;
   frostedGlass: string;
   glassStrength: string;
+  /** How much the glass blurs the wallpaper behind it, and what it blurs. */
+  glassBlur: string;
+  glassBlurHint: string;
   /** Colour scheme: dark, light, or following Windows. */
   colorScheme: string;
   schemeDark: string;
@@ -25,6 +28,11 @@ export type SettingsAppearanceText = {
   shapeTitle: string;
   topEdgeShoulders: string;
   topEdgeShoulderSize: string;
+  /** The open island's corner radius and shape; the collapsed bar's corners follow. */
+  cornerRadius: string;
+  cornerRadiusHint: string;
+  cornerShape: string;
+  cornerShapes: { squircle: string; round: string };
   /** The island preview at the top of the page: sample content and the two captions. */
   preview: {
     label: string;
@@ -72,6 +80,8 @@ export const zhCN: SettingsAppearanceText = {
   liquidGlass: "液态玻璃",
   frostedGlass: "磨砂玻璃",
   glassStrength: "玻璃强度",
+  glassBlur: "背景模糊",
+  glassBlurHint: "模糊的是岛屿后面的桌面壁纸（不含其他窗口）",
   colorScheme: "配色",
   schemeDark: "深色",
   schemeLight: "浅色",
@@ -84,6 +94,10 @@ export const zhCN: SettingsAppearanceText = {
   shapeTitle: "刘海与外形",
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
+  cornerRadius: "展开圆角",
+  cornerRadiusHint: "收起的岛屿与贴边时的圆角按同一比例跟随",
+  cornerShape: "圆角形状",
+  cornerShapes: { squircle: "平滑", round: "圆弧" },
   preview: {
     label: "按当前设置画出的岛屿",
     collapsed: "折叠",
@@ -128,6 +142,8 @@ export const en: SettingsAppearanceText = {
   liquidGlass: "Liquid",
   frostedGlass: "Frosted",
   glassStrength: "Glass strength",
+  glassBlur: "Background blur",
+  glassBlurHint: "Blurs the desktop wallpaper behind the island (not other windows)",
   colorScheme: "Color scheme",
   schemeDark: "Dark",
   schemeLight: "Light",
@@ -140,6 +156,10 @@ export const en: SettingsAppearanceText = {
   shapeTitle: "Notch & shape",
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
+  cornerRadius: "Open corners",
+  cornerRadiusHint: "The collapsed and tucked island's corners follow in proportion",
+  cornerShape: "Corner shape",
+  cornerShapes: { squircle: "Smooth", round: "Round" },
   preview: {
     label: "The island with the current settings",
     collapsed: "Collapsed",

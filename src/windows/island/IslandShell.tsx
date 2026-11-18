@@ -209,9 +209,11 @@ export function IslandShell({
       }}
     >
       <span className="island__shoulders" aria-hidden="true" />
+      {glass && <span className="island__glass-shadow" aria-hidden="true" />}
       <div className="island__surface">
         {glass && (
           <div className="island__glass" aria-hidden="true">
+            <span className="island__glass-backdrop" />
             {isLiquidGlass && <span className="island__glass-refraction" />}
             {isLiquidGlass && <span className="island__glass-highlight" />}
           </div>

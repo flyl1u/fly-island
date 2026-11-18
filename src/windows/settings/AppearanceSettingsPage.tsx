@@ -6,6 +6,7 @@ import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslan
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { AppearancePresetSection } from "../../features/appearance/AppearancePresetSection";
+import { IslandCornerRows } from "../../features/appearance/IslandCornerRows";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
 import { FontRows, MaterialRows, OpacityRow, PageButtonsRow, ScaleRows, SchemeRow } from "../../features/appearance/StyleRows";
 import { TopEdgeShoulderRows } from "../../features/appearance/TopEdgeShoulderRows";
@@ -58,6 +59,7 @@ export function AppearanceSettingsPage({
       <SettingsGroup title={text.shapeTitle} footer={text.collapsedDimensions.hint}>
         <CollapsedDimensionRows settings={settings} onChange={updateAppearance} />
         <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />
+        <IslandCornerRows settings={settings} onChange={updateAppearance} />
       </SettingsGroup>
       <AppearancePresetSection {...rows} />
     </>

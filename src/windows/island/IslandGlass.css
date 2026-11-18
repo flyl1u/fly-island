@@ -1,9 +1,16 @@
 /*
  * The glass materials (Appearance → Style → Material). Their variables come from glassStyle.ts.
- * Both are drawn in CSS only and nothing here blurs: backdrop-filter has nothing to blur over the
- * transparent island window, and a blur filter on layers that resize on every frame of the island's
- * spring would cost the motion. Each glass works in both tones ([data-tone], from the island colour):
- * the lit edges stay white, the shadows and the text halo follow the tone.
+ * backdrop-filter has nothing to blur over the transparent island window, so the blur is the
+ * desktop wallpaper's, done once in Rust (island/backdrop.rs) and laid on a still layer under the
+ * pane (.island__glass-backdrop, useGlassBackdrop.ts) that the island only clips as it resizes.
+ * Until that picture is ready, or where it fails, the pane is a tint over a clear window as before.
+ *
+ * Nothing that costs to paint resizes with the island's spring (2026-11, docs/investigations/
+ * glass-material-backdrop.md): the drop shadow is a fixed-size layer scaled with a transform in
+ * step with the shape (.island__glass-shadow), the wallpaper and its grain sit on the still layer,
+ * and the rim uses unblurred inset lines and a gradient instead of a blurred inset glow.
+ * Each glass works in both tones ([data-tone], from the island colour): the lit edges stay white,
+ * the shadows and the text halo follow the tone.
  */
 
 .island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
@@ -15,14 +22,99 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%),
     var(--glass-tint-color);
-  box-shadow: 0 18px 46px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+  /* The shadow is .island__glass-shadow, which does not repaint as the shape moves. */
+  box-shadow: none;
 }
 
+/* Collapsed and open share one fill, so closing never swaps the background mid-spring. */
 :is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 70%),
-    var(--glass-collapsed-tint-color);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+  box-shadow: none;
+}
+
+/*
+ * The drop shadow: a box the size of the open island, scaled down to the collapsed bar with a
+ * transform. The transform runs on the shape's own curve and duration, so it keeps step with the
+ * width and height (both are linear in the same eased progress), and the compositor plays it
+ * without painting the 46px blur again on every frame. A box shadow draws only outside its box,
+ * so it never dims what shows through the pane.
+ */
+.island__glass-shadow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: calc(560px * var(--island-expanded-scale));
+  height: calc(var(--expanded-island-height, 306px) * var(--island-expanded-scale));
+  border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
+  corner-shape: var(--island-corner-shape, round);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+  pointer-events: none;
+  opacity: 0.85;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(var(--glass-shadow-collapsed-scale, 0.6, 0.12));
+  transition:
+    transform var(--island-motion-duration) var(--island-motion),
+    opacity var(--island-motion-duration) ease;
+  will-change: transform;
+}
+
+.island--expanded > .island__glass-shadow {
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+.island--detached > .island__glass-shadow {
+  border-radius: var(--island-shape-radius);
+}
+
+.island--tucked > .island__glass-shadow {
+  opacity: 0;
+}
+
+/*
+ * The blurred wallpaper (useGlassBackdrop.ts): stationary on the window, whatever the island's
+ * size. "left: 50% - 50vw" holds it to the window's left edge while the island, centred, grows
+ * and shrinks (50% is the island's current half width); the window's top is the island's. The
+ * tint, and the frosted wash, are layered into the same still picture.
+ */
+.island__glass-backdrop {
+  display: none;
+}
+
+:root[data-glass-backdrop] .island__glass-backdrop {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 50vw);
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background-image:
+    linear-gradient(var(--glass-backdrop-wash, transparent), var(--glass-backdrop-wash, transparent)),
+    linear-gradient(var(--glass-backdrop-tint-color), var(--glass-backdrop-tint-color)),
+    var(--glass-backdrop-image);
+  background-position: 0 0, 0 0, var(--glass-backdrop-x, 0) var(--glass-backdrop-y, 0);
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%, var(--glass-backdrop-size, 100% 100%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* The grain, on the still layer too. */
+:root[data-glass-backdrop] .island__glass-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--glass-grain);
+  background-size: 128px;
+  opacity: var(--glass-grain-opacity);
+}
+
+:root[data-glass-backdrop] .island__glass::after {
+  display: none;
+}
+
+/* The tint now lies in the backdrop; the pane itself keeps only the light from the top. */
+:root[data-glass-backdrop] .island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%);
 }
 
 :is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed:has(:focus-visible) {
@@ -94,8 +186,12 @@
     inset 0 0 0 1px rgba(255, 255, 255, var(--glass-border-alpha)),
     inset 0 1.5px 0.5px rgba(255, 255, 255, var(--glass-inset-alpha)),
     inset 0 -1px 0.5px rgba(255, 255, 255, calc(var(--glass-border-alpha) * 0.7)),
-    inset 0 0 0 2px rgba(0, 0, 0, calc(0.12 - var(--is-light) * 0.05)),
-    inset 0 0 16px 2px rgba(255, 255, 255, var(--glass-inner-glow-alpha));
+    inset 0 0 0 2px rgba(0, 0, 0, calc(0.12 - var(--is-light) * 0.05));
+  /* The lens edge: light gathering where the glass thickens, as gradients rather than a blurred
+     inset shadow, which repainted a 16px blur around the whole shape on every frame. */
+  background:
+    radial-gradient(130% 120% at 50% 0%, transparent 58%, rgba(255, 255, 255, var(--glass-inner-glow-alpha)) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-inner-glow-alpha) * 1.4)), transparent 18%);
 }
 
 /* A short specular streak along the top edge, following the pointer. */
@@ -140,18 +236,15 @@
  * and the top edge a little brighter. No pointer light or streak: frosted glass does not shine.
  */
 .island.island--material-frostedGlass {
+  --glass-backdrop-wash: rgba(255, 255, 255, calc(0.06 + var(--is-light) * 0.16));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%),
-    linear-gradient(rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14)), rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14))),
+    linear-gradient(var(--glass-backdrop-wash), var(--glass-backdrop-wash)),
     var(--glass-tint-color);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.1));
 }
 
-.island--material-frostedGlass.island--collapsed {
-  background:
-    linear-gradient(rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14)), rgba(255, 255, 255, calc(0.05 + var(--is-light) * 0.14))),
-    var(--glass-collapsed-tint-color);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, calc(0.16 - var(--is-light) * 0.06));
+:root[data-glass-backdrop] .island.island--material-frostedGlass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%);
 }
 
 .island--material-frostedGlass .island__glass::before {

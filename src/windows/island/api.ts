@@ -47,6 +47,8 @@ export type IslandInteraction = {
   customPosition: IslandPosition | null;
   isTucked: boolean;
   tuckStyle?: TuckStyle;
+  /** Px of the island the "edge" tuck leaves on screen (island/geometry.rs). */
+  tuckEdgeHeight: number;
   positionLocked: boolean;
   animatePosition: boolean;
   glassEnabled: boolean;
@@ -59,6 +61,22 @@ export type IslandInteraction = {
   /** Which monitor the island sits on; Rust moves it there (src-tauri/src/island/follow.rs). */
   monitorFollow: IslandMonitor;
 };
+
+/** 对应 src-tauri/src/island/backdrop.rs 的 IslandBackdrop：岛屿所在显示器的模糊壁纸。 */
+export type IslandBackdrop = {
+  key: string;
+  /** null when `knownKey` already names this picture. */
+  dataUrl: string | null;
+  /** The monitor, in physical screen px. */
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+export function getIslandBackdrop(blur: number, knownKey: string | null) {
+  return invoke<IslandBackdrop>("get_island_backdrop", { blur, knownKey });
+}
 
 export function setIslandLayout(layout: IslandLayout) {
   return invoke("set_island_layout", { layout });

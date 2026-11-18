@@ -10,7 +10,7 @@ use tauri::PhysicalPosition;
 use super::geometry::{
     COLLAPSED_ISLAND_HEIGHT, COLLAPSED_ISLAND_WIDTH, COLLAPSED_RADIUS, DEFAULT_COLLAPSED_SCALE,
     DEFAULT_EXPANDED_ISLAND_HEIGHT, DEFAULT_EXPANDED_SCALE, DEFAULT_MARGIN_Y,
-    EXPANDED_ISLAND_WIDTH, EXPANDED_RADIUS,
+    EXPANDED_ISLAND_WIDTH, EXPANDED_RADIUS, TUCKED_VISIBLE_EDGE_HEIGHT,
 };
 
 pub(super) static WINDOW_STATE: OnceLock<Mutex<IslandWindowState>> = OnceLock::new();
@@ -138,6 +138,8 @@ pub(crate) struct IslandWindowState {
     pub(super) mode: IslandMode,
     pub(super) is_tucked: bool,
     pub(super) tuck_style: TuckStyle,
+    /// Logical px of the island left on screen by the "edge" tuck.
+    pub(super) tuck_edge_height: f64,
     pub(super) collapsed_scale: f64,
     pub(super) expanded_scale: f64,
     pub(super) margin_y: f64,
@@ -217,6 +219,7 @@ impl Default for IslandWindowState {
             mode: IslandMode::Collapsed,
             is_tucked: false,
             tuck_style: TuckStyle::Edge,
+            tuck_edge_height: TUCKED_VISIBLE_EDGE_HEIGHT,
             collapsed_scale: DEFAULT_COLLAPSED_SCALE,
             expanded_scale: DEFAULT_EXPANDED_SCALE,
             margin_y: DEFAULT_MARGIN_Y,

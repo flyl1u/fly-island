@@ -23,6 +23,14 @@ export function glassTintAlpha(material: Material, glassIntensity: number) {
   const strength = glassIntensity / 100;
   return material === "liquidGlass" ? 0.58 - strength * 0.3 : 0.9 - strength * 0.16;
 }
+/**
+ * The tint over the blurred wallpaper (island/backdrop.rs). Lighter than glassTintAlpha, which
+ * has to hide a sharp desktop: what is behind now shows only as soft colour. Frosted stays milkier.
+ */
+export function glassBackdropTintAlpha(material: Material, glassIntensity: number) {
+  const strength = glassIntensity / 100;
+  return material === "liquidGlass" ? 0.34 - strength * 0.2 : 0.62 - strength * 0.16;
+}
 export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 
 /**
@@ -38,6 +46,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "islandFontPercent",
   "pageButtonStyle",
   "glassIntensity",
+  "glassBlur",
   "opacity",
   "collapsedScale",
   "collapsedAutoWidth",

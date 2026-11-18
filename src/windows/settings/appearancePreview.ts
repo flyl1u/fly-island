@@ -7,7 +7,8 @@ const COLLAPSED_FIELDS = [
   "islandBackgroundColor", "taskTextColor", "pulseColor", "opacity",
 ] as const satisfies readonly (keyof IslandSettings)[];
 const EXPANDED_FIELDS = [
-  "expandedScale", "fontFamily", "islandFontPercent", "pageButtonStyle", "material", "glassIntensity", "colorScheme",
+  "expandedScale", "fontFamily", "islandFontPercent", "pageButtonStyle", "material", "glassIntensity", "glassBlur", "colorScheme",
+  "islandCornerRadius", "islandCornerShape",
   "pageTextColor",
 ] as const satisfies readonly (keyof IslandSettings)[];
 
