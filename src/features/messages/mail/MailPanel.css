@@ -28,6 +28,8 @@
 .qq-mail-reader__meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 12px; margin-bottom: 22px; color: var(--text-3); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 .qq-mail-reader__meta > span { flex: 1; min-width: 0; }
 .qq-mail-reader__meta time { flex: 0 0 auto; }
+/* #83：主题和发件人也能选中复制，和正文一样 */
+.qq-mail-reader__subject, .qq-mail-reader__meta { user-select: text; }
 .qq-mail-reader > .mail-otp-code { margin-bottom: var(--space-lg); }
 .qq-mail-reader__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xl); padding: 14px 0; color: var(--text-2); font-size: 13px; }
 .qq-mail-reader__state .qq-panel__error { flex-basis: 100%; margin: 0; }

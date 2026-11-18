@@ -1,7 +1,7 @@
 import { withoutUpdateTodo } from "./updateTodo.ts";
 import type { ScheduledTodo, TodoArchive, TodoItem } from "./types";
 import { readJson, readString, removeItem, writeJson, writeString } from "../../lib/storage.ts";
-import { normalizeTodoDurations, normalizeTodoTimer, type TodoDurations, type TodoTimer } from "./timer.ts";
+import { DEFAULT_REMIND_MINUTES, MAX_REMIND_MINUTES, normalizeTodoDurations, normalizeTodoTimer, type TodoDurations, type TodoTimer } from "./timer.ts";
 import {
   createTodoId,
   normalizeTodo,
@@ -22,6 +22,8 @@ export const ACTIVE_TODOS_STORAGE_KEY = "focusd-island-active-todos";
 export const TODO_TIMERS_STORAGE_KEY = "focusd-island-todo-timers";
 // 旧的 "focusd-island-todo-duration"（所有待办共用一个时长）已不再读取：每项待办各自记时长。
 export const TODO_DURATIONS_STORAGE_KEY = "focusd-island-todo-durations";
+// v3.4.0: minutes before the end the last reminder was asked for (0: none), the next round's default.
+export const TODO_REMIND_MINUTES_STORAGE_KEY = "focusd-island-todo-remind-minutes";
 export const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
 export const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";
 export const DAILY_NOTE_STORAGE_KEY = "focusd-island-daily-note";
@@ -85,6 +87,16 @@ export function loadTodoDurations(): TodoDurations {
 
 export function saveTodoDurations(durations: TodoDurations) {
   return writeJson(TODO_DURATIONS_STORAGE_KEY, durations);
+}
+
+/** The reminder the last round asked for, 0 to 60 minutes; the default before any choice. */
+export function loadTodoRemindMinutes(): number {
+  const saved = readJson(TODO_REMIND_MINUTES_STORAGE_KEY);
+  return typeof saved === "number" && Number.isInteger(saved) && saved >= 0 && saved <= MAX_REMIND_MINUTES ? saved : DEFAULT_REMIND_MINUTES;
+}
+
+export function saveTodoRemindMinutes(minutes: number) {
+  return writeJson(TODO_REMIND_MINUTES_STORAGE_KEY, minutes);
 }
 
 export function loadCurrentTodoDate() {

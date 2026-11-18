@@ -21,6 +21,7 @@ export function TodoNotebook({
   durations,
   onDurationChange,
   todoTimerEnabled = false,
+  timerReminder = false,
   onListHeightChange,
   currentDate,
   pageMode,
@@ -55,6 +56,8 @@ export function TodoNotebook({
   durations?: TodoDurations;
   onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
+  /** The setter also asks how long before the end to remind (todoTimerReminder). */
+  timerReminder?: boolean;
   onListHeightChange?: (height: number) => void;
   currentDate: string;
   pageMode: TodoPageMode;
@@ -75,7 +78,7 @@ export function TodoNotebook({
   onDeleteScheduledTodo: (id: string) => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
-  onStartTodo: (id: string, duration?: TodoDuration) => void;
+  onStartTodo: (id: string, duration?: TodoDuration, remindMinutes?: number) => void;
   onDeleteTodo: (id: string) => void;
   onReorderTodo: (sourceId: string, index: number) => void;
   onShowDaily: () => void;
@@ -115,6 +118,7 @@ export function TodoNotebook({
           durations={durations}
           onDurationChange={onDurationChange}
           todoTimerEnabled={todoTimerEnabled}
+          timerReminder={timerReminder}
           onListHeightChange={onListHeightChange}
           enableTodoReorder={enableTodoReorder}
           scrollStartRows={scrollStartRows}

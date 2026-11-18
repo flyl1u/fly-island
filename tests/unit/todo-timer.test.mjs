@@ -146,3 +146,51 @@ test("broken JSON and blocked storage fall back safely, and failed writes report
     assert.equal(saveTodoDurations({ t1: 15 }), false);
   });
 });
+
+test("a round can carry a reminder before its end, kept only when it fits the round", async () => {
+  const timer = await import("../../src/features/todos/timer.ts");
+  const round = timer.createTodoTimer("a", 25, 1_000, 5);
+  assert.equal(round.remindMinutes, 5);
+  assert.equal(round.reminded, false);
+  assert.equal(timer.createTodoTimer("a", 5, 1_000, 5).remindMinutes, undefined, "not as long as the round");
+  assert.equal(timer.createTodoTimer("a", 25, 1_000, 0).remindMinutes, undefined, "0 is no reminder");
+  const dueAt = round.endsAt - 5 * 60_000;
+  assert.equal(timer.isTodoReminderDue(round, dueAt - 1), false);
+  assert.equal(timer.isTodoReminderDue(round, dueAt), true);
+  assert.equal(timer.isTodoReminderDue(round, round.endsAt), false, "at the end the round ends instead");
+  assert.equal(timer.isTodoReminderDue({ ...round, reminded: true }, dueAt), false);
+  assert.equal(timer.isTodoTimerEndingSoon({ ...round, reminded: true }), true);
+  assert.equal(timer.isTodoTimerEndingSoon({ ...round, reminded: true, notified: true }), false);
+});
+
+test("saved rounds keep a valid reminder and drop a broken one; old rounds read as before", async () => {
+  const { normalizeTodoTimer } = await import("../../src/features/todos/timer.ts");
+  const saved = { todoId: "a", endsAt: 9_000, durationMinutes: 25, notified: false };
+  assert.deepEqual(normalizeTodoTimer(saved), saved);
+  assert.deepEqual(normalizeTodoTimer({ ...saved, remindMinutes: 5, reminded: true }), { ...saved, remindMinutes: 5, reminded: true });
+  assert.deepEqual(normalizeTodoTimer({ ...saved, remindMinutes: 30 }), saved);
+  assert.deepEqual(normalizeTodoTimer({ ...saved, remindMinutes: "5" }), saved);
+});
+
+test("turning reminders off cancels the reminder and warning without changing the deadline", async () => {
+  const { createTodoTimer, withoutTodoReminder, isTodoReminderDue, isTodoTimerEndingSoon } = await import("../../src/features/todos/timer.ts");
+  const round = createTodoTimer("a", 15, 1_000, 5);
+  const plain = withoutTodoReminder({ ...round, reminded: true });
+  assert.equal(plain.endsAt, round.endsAt);
+  assert.equal(plain.durationMinutes, 15);
+  assert.equal(isTodoReminderDue(plain, round.endsAt - 1), false);
+  assert.equal(isTodoTimerEndingSoon(plain), false);
+  assert.equal(withoutTodoReminder(plain), plain);
+  for (const remindMinutes of [0, -1, 15, Infinity, NaN, "5"]) {
+    assert.equal(isTodoReminderDue({ ...round, remindMinutes }, round.endsAt - 1), false);
+  }
+});
+
+test("turning reminders off drops a round's reminder, and keeps a round without one as it is", async () => {
+  const { createTodoTimer, withoutTodoReminder } = await import("../../src/features/todos/timer.ts");
+  const plain = createTodoTimer("a", 25, 1_000);
+  assert.equal(withoutTodoReminder(plain), plain);
+  const stripped = withoutTodoReminder(createTodoTimer("a", 25, 1_000, 5));
+  assert.equal(stripped.remindMinutes, undefined);
+  assert.equal("reminded" in stripped, false);
+});

@@ -74,6 +74,10 @@ pub(super) fn cursor_is_inside_island(hwnd: HWND) -> bool {
 /// Physical stage coordinates, shared by the live cursor loop and the DPI tests.
 pub(super) fn point_in_island(state: IslandWindowState, physical_scale: f64, local_x: f64, local_y: f64) -> bool {
     let window_width = STAGE_WINDOW_WIDTH * physical_scale;
+    // A game-mode message preview is only shown: the cursor goes on to the game.
+    if state.click_through {
+        return false;
+    }
     if let Some((width, height)) = state.tuck_style.hot_zone_size().filter(|_| state.is_tucked) {
         let scale = state.collapsed_scale * physical_scale;
         let left = (window_width - width * scale) / 2.0;

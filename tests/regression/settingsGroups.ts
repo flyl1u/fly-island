@@ -32,7 +32,7 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
   const shown = [...panel.querySelectorAll<HTMLElement>(".settings-group__title")].map((title) => title.textContent);
   check(shown.join("|") === expected.join("|"), `${category}: groups in order (${shown.join(" / ")})`);
   if (category === "general") {
-    check(titles(rowsOf(panel, "展开与收起")).join() === "展开方式,展开后自动收起,Ctrl + 滚轮切换页面,游戏模式", "General: opening, auto-collapse, Ctrl + wheel and game mode share a group");
+    check(titles(rowsOf(panel, "展开与收起")).join() === "展开方式,展开后自动收起,Ctrl + 滚轮切换页面,游戏模式,游戏模式下仍弹出通知", "General: opening, auto-collapse, Ctrl + wheel and game mode (with its notifications) share a group");
     check(titles(rowsOf(panel, "贴边隐藏")).join() === "闲置时贴边隐藏,收起后贴边,贴边样式", "General: auto-tuck, its delay and the tucked look share a group");
     check(titles(rowsOf(panel, "位置")).join() === "回到默认位置,锁定小岛位置", "General: the position rows come last");
   } else {

@@ -137,6 +137,19 @@ export type IslandSettings = {
   /** Vertical travel in logical pixels per second. */
   todoScrollSpeed: number;
   messagePreviewSeconds: number;
+  /** A message preview grows with its text, up to the two sizes below, and scrolls past them. */
+  messageAutoExpand: boolean;
+  /** Largest width and height (before the collapsed scale) of an adaptive preview. */
+  messageExpandMaxWidth: number;
+  messageExpandMaxHeight: number;
+  /** Seconds an adaptive preview stays (instead of `messagePreviewSeconds`). */
+  messageExpandSeconds: number;
+  /** Game mode still shows message previews, for `gameNoticeSeconds`, without taking clicks. */
+  gameShowNotices: boolean;
+  gameNoticeSeconds: number;
+  /** Starting a todo timer can also ask for a reminder before it ends; optionally with a sound. */
+  todoTimerReminder: boolean;
+  todoTimerReminderSound: boolean;
   autoTuck: boolean;
   tuckStyle: TuckStyle;
   /** Px of the island left on screen by the "edge" tuck (TUCK_EDGE_HEIGHT). */

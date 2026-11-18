@@ -8,6 +8,7 @@ import { useMailAccounts } from "./useMailAccounts";
 import { useMailReader } from "./useMailReader";
 import { useMarkAllRead } from "./useMarkAllRead";
 import { useMailOtp } from "./useMailOtp";
+import { useMailPreviewContent } from "./useMailPreviewContent";
 
 const EMPTY_SNAPSHOT: MailSnapshot = {
   revision: 0, email: null, configured: false, enabled: false, syncing: false,
@@ -17,7 +18,7 @@ const EMPTY_SNAPSHOT: MailSnapshot = {
 type PreviewWindow = { email: string; id: string; receivedAt: number; expiresAt: number };
 
 /** The island's mail: which mailbox tab is shown, new-mail previews and the reader. */
-export function useMail(canPreview: boolean, { previewSeconds = 5, autoCopyOtp = true } = {}) {
+export function useMail(canPreview: boolean, { previewSeconds = 5, autoCopyOtp = true, previewBody = false } = {}) {
   const t = useTranslation();
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [previewWindow, setPreviewWindow] = useState<PreviewWindow | null>(null);
@@ -107,6 +108,8 @@ export function useMail(canPreview: boolean, { previewSeconds = 5, autoCopyOtp =
   const previewBox = previewWindow ? mailboxes.find((mailbox) => mailbox.email === previewWindow.email) : undefined;
   const preview = canPreview && previewWindow && previewBox?.enabled && previewBox.status === "connected"
     ? previewBox.items.find((item) => item.id === previewWindow.id && item.unread) ?? null : null;
+  const previewAccount = preview ? previewWindow?.email ?? null : null;
+  const previewContent = useMailPreviewContent(preview, previewAccount, previewBody);
 
   return {
     ...accounts, ...reader, snapshot, setEnabled, refresh, selectMailbox, readMail, openMail, markAllRead,
@@ -114,7 +117,8 @@ export function useMail(canPreview: boolean, { previewSeconds = 5, autoCopyOtp =
     busy: accounts.busy || markingAll,
     /** Reading a mail: the island gives the panel more height. */
     wantsTallPanel: Boolean(reader.selectedMail),
-    preview, previewAccount: preview ? previewWindow?.email ?? null : null,
+    preview, previewAccount, previewContent: previewContent.text, previewContentError: previewContent.error,
+    previewContentLoading: previewContent.loading, retryPreviewContent: previewContent.retry,
     previewReceivedAt: preview ? previewWindow?.receivedAt ?? null : null,
   };
 }

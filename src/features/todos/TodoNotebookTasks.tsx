@@ -21,6 +21,7 @@ export function TodoNotebookTasks({
   durations,
   onDurationChange,
   todoTimerEnabled = false,
+  timerReminder = false,
   onListHeightChange,
   enableTodoReorder,
   scrollStartRows,
@@ -44,6 +45,8 @@ export function TodoNotebookTasks({
   durations?: TodoDurations;
   onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
+  /** The setter also asks how long before the end to remind (todoTimerReminder). */
+  timerReminder?: boolean;
   onListHeightChange?: (height: number) => void;
   enableTodoReorder: boolean;
   scrollStartRows: number;
@@ -52,7 +55,7 @@ export function TodoNotebookTasks({
   onAddTodo: () => void;
   onToggleTodo: (id: string) => void;
   onUpdateTodo: (id: string, title: string) => void;
-  onStartTodo: (id: string, duration?: TodoDuration) => void;
+  onStartTodo: (id: string, duration?: TodoDuration, remindMinutes?: number) => void;
   onDeleteTodo: (id: string) => void;
   onReorderTodo: (sourceId: string, index: number) => void;
 }) {
@@ -115,6 +118,7 @@ export function TodoNotebookTasks({
               durations={durations}
               onDurationChange={onDurationChange}
               todoTimerEnabled={todoTimerEnabled}
+              timerReminder={timerReminder}
               canReorder={canReorderTodos}
               isDragging={draggedTodoId === todo.id}
               isEditing={editingTodoId === todo.id}

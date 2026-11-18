@@ -60,6 +60,11 @@ export type IslandInteraction = {
   cornerShape: IslandCornerShape;
   /** Which monitor the island sits on; Rust moves it there (src-tauri/src/island/follow.rs). */
   monitorFollow: IslandMonitor;
+  /** A message preview grown with its text (noticeLayout.ts), before scale; null keeps the collapsed size. */
+  noticeWidth: number | null;
+  noticeHeight: number | null;
+  /** Game mode shows a preview without taking clicks (Rust lets the cursor through the island). */
+  clickThrough: boolean;
 };
 
 /** 对应 src-tauri/src/island/backdrop.rs 的 IslandBackdrop：岛屿所在显示器的模糊壁纸。 */

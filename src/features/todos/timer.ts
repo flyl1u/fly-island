@@ -9,6 +9,13 @@ export type TodoTimer = {
   durationMinutes: number;
   /** Persisted before notifying, so reopening an expired round does not ring again. */
   notified: boolean;
+  /**
+   * Minutes before the end to remind (Settings → Todos → remind before the end); absent in rounds
+   * saved by older versions and in rounds started without a reminder.
+   */
+  remindMinutes?: number;
+  /** Persisted once the reminder fired, like `notified`; the round then shows as ending soon. */
+  reminded?: boolean;
 };
 
 export const MIN_TODO_MINUTES = 1;
@@ -50,10 +57,39 @@ export function withTodoMinutes(durations: TodoDurations, id: string, minutes: n
   return Object.fromEntries([...kept, [id, minutes]]);
 }
 
-export function createTodoTimer(todoId: string, minutes: number, now: number): TodoTimer | null {
+export function createTodoTimer(todoId: string, minutes: number, now: number, remindMinutes = 0): TodoTimer | null {
   if (!todoId || !isTodoDuration(minutes) || !Number.isSafeInteger(now) || now < 0) return null;
   const endsAt = now + minutes * 60_000;
-  return Number.isSafeInteger(endsAt) ? { todoId, endsAt, durationMinutes: minutes, notified: false } : null;
+  if (!Number.isSafeInteger(endsAt)) return null;
+  const timer: TodoTimer = { todoId, endsAt, durationMinutes: minutes, notified: false };
+  return isRemindMinutes(remindMinutes, minutes) ? { ...timer, remindMinutes, reminded: false } : timer;
+}
+
+/** The reminder choices: 1 to 60 minutes, and less than the round itself; 0 is no reminder. */
+export const MAX_REMIND_MINUTES = 60;
+export const DEFAULT_REMIND_MINUTES = 5;
+
+export function isRemindMinutes(value: unknown, durationMinutes: number): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1
+    && value <= MAX_REMIND_MINUTES && value < durationMinutes;
+}
+
+/** Whether the round is past its reminder and not yet over: its title flashes, its time turns red. */
+export function isTodoTimerEndingSoon(timer: TodoTimer): boolean {
+  return timer.reminded === true && !timer.notified;
+}
+
+/** Whether the reminder is due now: in the last `remindMinutes`, before the end, not yet fired. */
+export function isTodoReminderDue(timer: TodoTimer, now: number): boolean {
+  return isRemindMinutes(timer.remindMinutes, timer.durationMinutes) && !timer.reminded && !timer.notified
+    && now >= timer.endsAt - timer.remindMinutes * 60_000 && now < timer.endsAt;
+}
+
+/** Turning reminders off cancels this round's reminder without stopping its countdown. */
+export function withoutTodoReminder(timer: TodoTimer): TodoTimer {
+  if (timer.remindMinutes === undefined && timer.reminded === undefined) return timer;
+  const { todoId, endsAt, durationMinutes, notified } = timer;
+  return { todoId, endsAt, durationMinutes, notified };
 }
 
 export function normalizeTodoTimer(value: unknown): TodoTimer | null {
@@ -63,12 +99,14 @@ export function normalizeTodoTimer(value: unknown): TodoTimer | null {
     || typeof timer.endsAt !== "number" || !Number.isSafeInteger(timer.endsAt) || timer.endsAt <= 0
     || !isTodoDuration(timer.durationMinutes)
     || (timer.notified !== undefined && typeof timer.notified !== "boolean")) return null;
-  return {
+  const normalized: TodoTimer = {
     todoId: timer.todoId,
     endsAt: timer.endsAt,
     durationMinutes: timer.durationMinutes,
     notified: timer.notified === true,
   };
+  return isRemindMinutes(timer.remindMinutes, timer.durationMinutes)
+    ? { ...normalized, remindMinutes: timer.remindMinutes, reminded: timer.reminded === true } : normalized;
 }
 
 export function activeTodoTimer(timer: TodoTimer | null, activeId: string | null, todos: TodoItem[]): TodoTimer | null {

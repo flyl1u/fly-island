@@ -3,7 +3,7 @@ import { Play, Square, Timer } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { TodoCountdown } from "./TodoCountdown";
 import { TodoDurationPicker } from "./TodoDurationPicker";
-import type { TodoDuration, TodoTimer } from "./timer";
+import { isTodoTimerEndingSoon, type TodoDuration, type TodoTimer } from "./timer";
 import type { TodoItem } from "./types";
 import "./TodoStartControl.css";
 
@@ -12,15 +12,17 @@ import "./TodoStartControl.css";
  * only starts the todo; a countdown runs only from the Start inside the watch's small setter.
  * The minutes are this todo's own, so changing one todo never changes another's.
  */
-export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, minutes, startRef, onStart,
+export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, timerReminder = false, minutes, startRef, onStart,
   onDurationChange }: {
   todo: TodoItem;
   isActive: boolean;
   activeTimer: TodoTimer | null;
   timerEnabled: boolean;
+  /** The setter also asks how long before the end to remind. */
+  timerReminder?: boolean;
   minutes: number;
   startRef: Ref<HTMLButtonElement>;
-  onStart: (id: string, duration?: TodoDuration) => void;
+  onStart: (id: string, duration?: TodoDuration, remindMinutes?: number) => void;
   onDurationChange: (minutes: number) => void;
 }) {
   const t = useTranslation();
@@ -42,7 +44,7 @@ export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, mi
       onClick={() => onStart(todo.id)}
     >
       {isActive ? <Square size={11} strokeWidth={2.4} /> : <Play size={13} strokeWidth={2.4} />}
-      {activeTimer ? <TodoCountdown endsAt={activeTimer.endsAt} /> : <span>{isActive ? t.todo.stop : t.todo.start}</span>}
+      {activeTimer ? <TodoCountdown endsAt={activeTimer.endsAt} warning={isTodoTimerEndingSoon(activeTimer)} /> : <span>{isActive ? t.todo.stop : t.todo.start}</span>}
     </button>
   );
   if (!timed) return start;
@@ -64,8 +66,9 @@ export function TodoStartControl({ todo, isActive, activeTimer, timerEnabled, mi
         <TodoDurationPicker
           anchor={watch}
           minutes={minutes}
+          reminder={timerReminder}
           onChange={onDurationChange}
-          onStart={(chosen) => { setChoosing(false); onStart(todo.id, chosen); }}
+          onStart={(chosen, remindMinutes) => { setChoosing(false); onStart(todo.id, chosen, remindMinutes); }}
           onClose={(refocus) => { setChoosing(false); if (refocus) watch.current?.focus(); }}
         />
       )}

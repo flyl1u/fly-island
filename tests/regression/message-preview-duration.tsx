@@ -11,6 +11,10 @@ let seconds = 10;
 let now = 1000;
 let revision = 0;
 let notice!: ReturnType<typeof useIslandNotices>;
+let quiet = false;
+let tucked = false;
+let autoExpand = false;
+let gameShowNotices = false;
 const calls: string[] = [];
 const realNow = Date.now;
 const realTimeout = window.setTimeout;
@@ -38,7 +42,8 @@ mockIPC((command) => {
   return null;
 }, { shouldMockEvents: true });
 function Fixture() {
-  notice = useIslandNotices({ ...DEFAULT_SETTINGS, messagePreviewSeconds: seconds }, { mode: "collapsed", isTucked: false, quiet: false });
+  notice = useIslandNotices({ ...DEFAULT_SETTINGS, messagePreviewSeconds: seconds, messageAutoExpand: autoExpand,
+    messageExpandSeconds: 12, gameShowNotices, gameNoticeSeconds: 2, revealOnMessage: false }, { mode: "collapsed", isTucked: tucked, quiet });
   return <div>{notice.qqNotifications.preview?.title}{notice.wechatReminders.preview?.source}{notice.qqMail.preview?.subject}</div>;
 }
 const root = createRoot(document.getElementById("root")!);
@@ -85,6 +90,20 @@ try {
   await notify();
   await advance(3000);
   check(shown().every(value => !value), "all sources use the new duration on their next notification");
+  autoExpand = true;
+  await render(); await notify(); await advance(11_999);
+  check(shown().every(Boolean), "adaptive notices use their own longer duration");
+  await advance(1);
+  check(shown().every(value => !value), "adaptive notices end at their own deadline");
+  quiet = true; tucked = true;
+  await render(); await notify();
+  check(shown().every(value => !value), "quiet mode blocks notices by default");
+  gameShowNotices = true;
+  // A new reminder carries a new time; the blocked one above had the same lastAttentionAt.
+  await advance(1); await render(); await notify(); await advance(1_999);
+  check(shown().every(Boolean), "game notices work while tucked even with normal reveal disabled ");
+  await advance(1);
+  check(shown().every(value => !value), "game notices use their independent two-second duration");
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {
   checks.push(`FAIL ${String(error)}`);

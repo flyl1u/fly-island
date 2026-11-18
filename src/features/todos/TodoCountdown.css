@@ -4,3 +4,8 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+/* Past the reminder before the end: red until the round is over. */
+.todo-countdown--warning {
+  color: var(--color-error-text);
+}

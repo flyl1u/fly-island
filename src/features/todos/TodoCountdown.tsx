@@ -3,7 +3,8 @@ import { useTranslation } from "../../i18n";
 import { formatTodoCountdown, remainingTodoSeconds } from "./timer";
 import "./TodoCountdown.css";
 
-export function TodoCountdown({ endsAt }: { endsAt: number }) {
+/** `warning`: the round is past its reminder, so the time shows red until it ends. */
+export function TodoCountdown({ endsAt, warning = false }: { endsAt: number; warning?: boolean }) {
   const t = useTranslation();
   const [seconds, setSeconds] = useState(() => remainingTodoSeconds(endsAt, Date.now()));
   useEffect(() => {
@@ -19,5 +20,5 @@ export function TodoCountdown({ endsAt }: { endsAt: number }) {
     };
   }, [endsAt]);
   const text = formatTodoCountdown(seconds);
-  return <span className="todo-countdown" role="timer" aria-live="off" aria-label={t.todo.remainingTime(text)}>{text}</span>;
+  return <span className={warning ? "todo-countdown todo-countdown--warning" : "todo-countdown"} role="timer" aria-live="off" aria-label={t.todo.remainingTime(text)}>{text}</span>;
 }

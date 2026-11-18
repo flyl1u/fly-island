@@ -8,7 +8,7 @@ import { UpdateTodoAction } from "./UpdateTodoAction";
 import { TodoTitleEditor } from "./TodoTitleEditor";
 import { TodoStartControl } from "./TodoStartControl";
 import { TodoTimerActions } from "./TodoTimerActions";
-import { todoMinutes, type TodoDuration, type TodoDurations, type TodoTimer } from "./timer";
+import { isTodoTimerEndingSoon, todoMinutes, type TodoDuration, type TodoDurations, type TodoTimer } from "./timer";
 import "./TodoListItem.css";
 
 export function TodoListItem({
@@ -19,6 +19,7 @@ export function TodoListItem({
   durations = {},
   onDurationChange = () => {},
   todoTimerEnabled = false,
+  timerReminder = false,
   canReorder,
   isDragging,
   isEditing,
@@ -39,6 +40,8 @@ export function TodoListItem({
   durations?: TodoDurations;
   onDurationChange?: (id: string, minutes: number) => void;
   todoTimerEnabled?: boolean;
+  /** The setter also asks how long before the end to remind (todoTimerReminder). */
+  timerReminder?: boolean;
   canReorder: boolean;
   isDragging: boolean;
   isEditing: boolean;
@@ -48,7 +51,7 @@ export function TodoListItem({
   onCancelEdit: () => void;
   onStartEdit: (todo: TodoItem) => void;
   onToggle: (id: string) => void;
-  onStart: (id: string, duration?: TodoDuration) => void;
+  onStart: (id: string, duration?: TodoDuration, remindMinutes?: number) => void;
   onDelete: (id: string) => void;
   onDragStart: (event: ReactPointerEvent<HTMLButtonElement>, todoId: string) => void;
 }) {
@@ -63,6 +66,7 @@ export function TodoListItem({
         "todo-item",
         todo.completed ? "todo-item--done" : "",
         isActive ? "todo-item--active" : "",
+        activeTimer && isTodoTimerEndingSoon(activeTimer) ? "todo-item--ending" : "",
         canReorder ? "todo-item--reorderable" : "",
         isDragging ? "todo-item--dragging" : "",
         !isTodayMode ? "todo-item--readonly" : "",
@@ -116,6 +120,7 @@ export function TodoListItem({
             isActive={isActive}
             activeTimer={activeTimer}
             timerEnabled={todoTimerEnabled}
+            timerReminder={timerReminder}
             minutes={todoMinutes(durations, todo.id)}
             startRef={startButton}
             onStart={onStart}
@@ -142,7 +147,7 @@ export function TodoListItem({
           )}
           {activeTimer?.notified && (
             <TodoTimerActions onComplete={() => onToggle(todo.id)}
-              onRepeat={() => onStart(todo.id, activeTimer.durationMinutes)} />
+              onRepeat={() => onStart(todo.id, activeTimer.durationMinutes, activeTimer.remindMinutes ?? 0)} />
           )}
         </>
       )}

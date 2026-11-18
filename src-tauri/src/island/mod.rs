@@ -86,6 +86,9 @@ pub fn set_island_interaction(
     corner_shape: Option<String>,
     monitor_follow: Option<String>,
     position_locked: Option<bool>,
+    notice_width: Option<f64>,
+    notice_height: Option<f64>,
+    click_through: Option<bool>,
 ) -> Result<String, String> {
     let window = main_window(&app)?;
     let mode = IslandMode::from_value(&mode)?;
@@ -146,6 +149,9 @@ pub fn set_island_interaction(
         if let Some(monitor_follow) = monitor_follow.as_deref().and_then(MonitorFollow::from_value) {
             state.monitor_follow = monitor_follow;
         }
+        // Older front ends send neither: the collapsed size, and clicks as before.
+        state.notice_size = state::notice_size_within_stage(notice_width, notice_height, collapsed_scale);
+        state.click_through = click_through.unwrap_or(false);
         *state
     });
     apply_stage_geometry(
