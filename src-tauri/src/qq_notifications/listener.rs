@@ -32,6 +32,9 @@ const DIAGNOSTIC_TITLE: &str = "FocuSD QQ 通知诊断";
 const DIAGNOSTIC_BODY: &str = "这是本机通道测试，不是聊天消息。";
 
 pub(super) fn monitor(service: Arc<NotificationService>, receiver: mpsc::Receiver<()>) {
+    // Started at sign-in: wait for the desktop to settle first (the listener may repair QQ's
+    // registration through PowerShell).
+    crate::system::startup::hold_after_autostart(std::time::Duration::from_secs(30));
     let mut repair_generation = None;
     let mut repair_error = None;
     loop {

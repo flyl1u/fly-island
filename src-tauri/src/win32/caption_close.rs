@@ -68,6 +68,15 @@ struct CaptionButton {
 }
 
 impl CaptionButton {
+    /// Arithmetic only, no system call: whether `point` lies on the button where it was last
+    /// sampled. The low-level hook runs for every click on the desktop and holds up all mouse
+    /// input while it does, so nearly every click must be turned away here; a window that
+    /// moved since is sampled again within a moment by `refresh_button`.
+    fn near(self, point: POINT) -> bool {
+        (self.rect.left..self.rect.right).contains(&point.x)
+            && (self.rect.top..self.rect.bottom).contains(&point.y)
+    }
+
     fn hit(self, point: POINT) -> bool {
         let window = self.window.handle();
         if window_process_id(window) != self.window.process
@@ -112,7 +121,7 @@ impl Context {
         let button = self.button.try_lock().ok().and_then(|button| *button);
         if message == WM_LBUTTONDOWN {
             self.pressed = button
-                .filter(|button| button.hit(point))
+                .filter(|button| button.near(point) && button.hit(point))
                 .map(|button| button.window);
             return self.pressed.is_some();
         }

@@ -1,7 +1,10 @@
 //! Native-side island window state shared by the commands, geometry and cursor passthrough.
 
 use serde::{Deserialize, Serialize};
-use std::sync::{Mutex, OnceLock, PoisonError};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Mutex, OnceLock, PoisonError,
+};
 use tauri::PhysicalPosition;
 
 use super::geometry::{
@@ -11,6 +14,19 @@ use super::geometry::{
 };
 
 pub(super) static WINDOW_STATE: OnceLock<Mutex<IslandWindowState>> = OnceLock::new();
+
+/// Game mode's quiet (a full-screen app in front with "game do not disturb" on), told by the
+/// front end. While it holds, the tucked island is not hit-tested at all, is not raised and
+/// never takes the focus: touching the top edge in a game must not reach the island (#73).
+static GAME_QUIET: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn set_game_quiet(quiet: bool) {
+    GAME_QUIET.store(quiet, Ordering::Release);
+}
+
+pub(crate) fn game_quiet() -> bool {
+    GAME_QUIET.load(Ordering::Acquire)
+}
 
 #[derive(Clone, Copy)]
 pub(crate) enum IslandMode {

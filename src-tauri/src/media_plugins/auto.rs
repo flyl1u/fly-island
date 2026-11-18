@@ -14,6 +14,8 @@ use super::netease::{self, NeteasePluginStatus};
 const FILE: &str = "media-plugins-auto.json";
 /// 启动后等一会儿再装，不和窗口、托盘、各后台服务的初始化抢时间。
 const START_DELAY: Duration = Duration::from_secs(15);
+/// 开机自启时更晚：可能下载、可能弹 UAC，不和登录时的桌面抢。
+const AUTOSTART_DELAY: Duration = Duration::from_secs(120);
 const MAX_ATTEMPTS_KEPT: usize = 8;
 
 #[derive(Default, Deserialize, Serialize)]
@@ -64,6 +66,7 @@ pub(super) fn retry_later(kind: &str) -> bool {
 pub(super) fn start(app: tauri::AppHandle) {
     std::thread::spawn(move || {
         std::thread::sleep(START_DELAY);
+        crate::system::startup::hold_after_autostart(AUTOSTART_DELAY);
         let Ok(data) = app.path().app_data_dir() else { return };
         let mut state = read(&data);
         let Some(key) = attempt_key(&netease::status(), &state) else { return };

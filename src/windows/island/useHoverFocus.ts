@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { listenIslandHover, releaseIslandHoverFocus, takeIslandHoverFocus } from "./api";
-import { HOVER_FOCUS_DWELL_MS, HOVER_FOCUS_RETRY_MS, hoverFocusAction } from "./hoverFocus";
+import { HOVER_FOCUS_DWELL_MS, HOVER_FOCUS_RELEASE_MIN_MS, HOVER_FOCUS_RETRY_MS, hoverFocusAction } from "./hoverFocus";
 import { isEditingText } from "./useHoverExpand";
 import type { IslandMode } from "./types";
 import { isIslandPickerOpen } from "../../lib/islandPicker";
@@ -16,12 +16,21 @@ function logFocusError(error: unknown) {
  * focus goes back to that app when the cursor leaves or the island collapses; a text
  * field being edited keeps it until the island collapses or the field loses focus.
  * `blocked` (game mode) stops it taking the focus. Rules in hoverFocus.ts.
+ *
+ * Leaving the panel hands the focus back only after `releaseDelayMs` (the hover close delay):
+ * the island closes as soon as it loses the focus, so handing it back at once turned every
+ * brush past the panel's edge into an instant close, ahead of the close delay.
  */
-export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = false) {
+export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = false, releaseDelayMs = 0) {
   const [isHovering, setIsHovering] = useState(false);
-  const stateRef = useRef({ mode, isHovering });
+  const [entered, setEntered] = useState(false);
+  const stateRef = useRef({ mode, isHovering, entered });
   useEffect(() => {
-    stateRef.current = { mode, isHovering };
+    stateRef.current = { mode, isHovering, entered };
+  }, [entered, isHovering, mode]);
+  useEffect(() => {
+    if (mode !== "expanded") setEntered(false);
+    else if (isHovering) setEntered(true);
   }, [isHovering, mode]);
 
   useEffect(() => {
@@ -44,6 +53,7 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = f
     const action = hoverFocusAction({
       expanded: mode === "expanded",
       hovering: isHovering,
+      entered: entered || isHovering,
       editing: isEditingText(),
       blocked,
     });
@@ -62,20 +72,22 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = f
         });
       }, delayMs);
     };
-    run(action === "take" ? HOVER_FOCUS_DWELL_MS : 0);
+    run(action === "take"
+      ? HOVER_FOCUS_DWELL_MS
+      : mode === "expanded" ? Math.max(releaseDelayMs, HOVER_FOCUS_RELEASE_MIN_MS) : 0);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [blocked, isHovering, mode, pickerOpen]);
+  }, [blocked, entered, isHovering, mode, pickerOpen, releaseDelayMs]);
 
   // A draft kept the focus when the cursor left; once its field loses focus while the
   // cursor is still away, hand the focus back without waiting for the island to close.
   useEffect(() => {
     const handleFocusOut = () => {
       window.setTimeout(() => {
-        const { mode: currentMode, isHovering: hovering } = stateRef.current;
-        if (currentMode === "expanded" && !hovering && !isEditingText() && !isIslandPickerOpen()) {
+        const { mode: currentMode, isHovering: hovering, entered: wasEntered } = stateRef.current;
+        if (currentMode === "expanded" && wasEntered && !hovering && !isEditingText() && !isIslandPickerOpen()) {
           void releaseIslandHoverFocus().catch(logFocusError);
         }
       }, 0);

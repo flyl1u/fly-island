@@ -34,6 +34,7 @@ macro_rules! collect_commands {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    system::startup::note_launch();
     media_plugins::handle_startup();
     let mut context = tauri::generate_context!();
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
@@ -110,6 +111,7 @@ pub fn run() {
                 eprintln!("failed to initialize plugins: {error}");
             }
             agent_status::reply_marker::init();
+            system::startup::upgrade_legacy_value();
             Ok(())
         })
         .invoke_handler(collect_commands!([]

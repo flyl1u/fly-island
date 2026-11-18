@@ -41,6 +41,7 @@ function Harness() {
     isPeeking: navigation.isPeeking && navigation.mode === "collapsed",
     onPeek: navigation.peekIsland,
     onOpen: () => navigation.openIslandPage("todo"),
+    blocked: false,
     retractsAfterPeek: navigation.retractsAfterPeek,
     resumePeek: navigation.resumePeek,
   });

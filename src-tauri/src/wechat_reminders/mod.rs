@@ -453,6 +453,9 @@ fn connection(service: &ReminderService, generation: u64, error: Option<String>)
 }
 
 fn monitor(service: Arc<ReminderService>, receiver: mpsc::Receiver<()>) {
+    // At sign-in WeChat itself is still starting; reading its window and memory then only
+    // adds to the load (docs/investigations/startup-load-and-hangs.md).
+    crate::system::startup::hold_after_autostart(Duration::from_secs(45));
     let marker = service
         .app
         .path()

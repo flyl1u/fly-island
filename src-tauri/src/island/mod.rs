@@ -246,7 +246,9 @@ pub fn minimize_island(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn show_ready_island(app: AppHandle) -> Result<(), String> {
-    show_island(&app)
+    // At sign-in the island appears without taking the focus: forcing the foreground there
+    // (AttachThreadInput into whatever is starting up) only fights the desktop and other apps.
+    show_island_window(&app, !crate::system::startup::launched_at_startup())
 }
 
 pub(crate) fn main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
@@ -255,10 +257,16 @@ pub(crate) fn main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
 }
 
 pub(crate) fn show_island(app: &AppHandle) -> Result<(), String> {
+    show_island_window(app, true)
+}
+
+fn show_island_window(app: &AppHandle, focus: bool) -> Result<(), String> {
     let window = main_window(app)?;
     apply_stage_geometry(&window, read_window_state(), false)?;
     window.show().map_err(|error| error.to_string())?;
-    crate::system::window_focus::focus_window(&window)?;
+    if focus {
+        crate::system::window_focus::focus_window(&window)?;
+    }
     if let Ok(hwnd) = window.hwnd() {
         win32::taskbar_edge::raise_topmost(hwnd);
     }
@@ -270,6 +278,12 @@ pub(crate) fn hide_island(app: &AppHandle) {
     if let Ok(window) = main_window(app) {
         let _ = window.hide();
     }
+}
+
+/// Game mode's quiet changed (see `state::set_game_quiet`).
+#[tauri::command]
+pub fn set_island_game_quiet(quiet: bool) {
+    state::set_game_quiet(quiet);
 }
 
 #[tauri::command]
@@ -287,6 +301,7 @@ macro_rules! tauri_commands {
             crate::island::start_island_drag,
             crate::island::reset_island_position,
             crate::island::get_island_top_attachment,
+            crate::island::set_island_game_quiet,
             crate::island::show_ready_island,
             crate::island::minimize_island,
             crate::island::focus::take_island_hover_focus,

@@ -35,8 +35,10 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     pickerOpen,
     collapseDelayMs: settings.hoverCollapseDelayMs,
     mode,
-    // A peeking island opens on a click only; hovering it just keeps it out.
-    isTucked: isTucked || isPeeking,
+    // Sliding out under the cursor only reveals the island (useHoverExpand disarms it); a
+    // cursor that leaves and comes back opens it as on an island that never tucked. Treating
+    // a peeking island as still tucked left hover-open dead after the first tuck until a click.
+    isTucked,
     onExpand: openCurrentPage,
     onCollapse: collapseIsland,
   });
@@ -46,10 +48,11 @@ export function useIslandHover({ settings, navigation, quiet, hasMessagePreview,
     isPeeking: isPeeking && mode === "collapsed",
     onPeek: peekIsland,
     onOpen: openCurrentPage,
+    blocked: quiet,
     retractsAfterPeek,
     resumePeek,
   });
-  useHoverFocus(mode, quiet, pickerOpen);
+  useHoverFocus(mode, quiet, pickerOpen, settings.hoverCollapseDelayMs);
   usePanelPreview({ navigation, quiet, hasMessagePreview });
   return hoverTucked;
 }

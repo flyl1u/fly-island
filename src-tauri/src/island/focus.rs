@@ -27,6 +27,11 @@ pub fn take_island_hover_focus(app: AppHandle) -> Result<bool, String> {
     if win32::input::is_left_button_down() || win32::input::is_shortcut_modifier_down() {
         return Ok(false);
     }
+    // The front end already holds back in game mode; this covers a request still in flight
+    // when it started. Taking the foreground would minimize the game.
+    if super::state::game_quiet() {
+        return Ok(true);
+    }
     let window = main_window(&app)?;
     let island = window.hwnd().map_err(|error| error.to_string())?;
     let foreground = win32::window::foreground_window();
