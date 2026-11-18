@@ -17,7 +17,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     todoRotationMode: oneOf(["switch", "scroll"] as const, settings?.todoRotationMode, "switch"),
     todoScrollSpeed: wholeSeconds(settings?.todoScrollSpeed, TODO_SCROLL_SPEED, TODO_SCROLL_SPEED.default),
     messagePreviewSeconds: wholeSeconds(settings?.messagePreviewSeconds, MESSAGE_PREVIEW_SECONDS, MESSAGE_PREVIEW_SECONDS.default),
-    // v3.4.0 opt-ins, all off until chosen: adaptive previews, previews in game mode, timer reminders.
+    // v3.2.6 opt-ins, all off until chosen: adaptive previews, previews in game mode, timer reminders.
     messageAutoExpand: settings?.messageAutoExpand === true,
     messageExpandMaxWidth: wholeSeconds(settings?.messageExpandMaxWidth, MESSAGE_EXPAND_MAX_WIDTH, MESSAGE_EXPAND_MAX_WIDTH.default),
     messageExpandMaxHeight: wholeSeconds(settings?.messageExpandMaxHeight, MESSAGE_EXPAND_MAX_HEIGHT, MESSAGE_EXPAND_MAX_HEIGHT.default),
@@ -45,7 +45,7 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     tuckDelaySeconds: wholeSeconds(settings?.tuckDelaySeconds, TUCK_DELAY_SECONDS, TUCK_DELAY_SECONDS.default),
     // Game mode: on unless turned off. Tucking while full screen stays at its default (off).
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
-    // New in 3.4.0 and off unless switched on.
+    // New in 3.2.6 and off unless switched on.
     ctrlWheelPages: settings?.ctrlWheelPages === true,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     // Module switches: anything but an explicit false keeps the module on.

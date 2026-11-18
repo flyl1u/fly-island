@@ -22,7 +22,7 @@ export const ACTIVE_TODOS_STORAGE_KEY = "focusd-island-active-todos";
 export const TODO_TIMERS_STORAGE_KEY = "focusd-island-todo-timers";
 // 旧的 "focusd-island-todo-duration"（所有待办共用一个时长）已不再读取：每项待办各自记时长。
 export const TODO_DURATIONS_STORAGE_KEY = "focusd-island-todo-durations";
-// v3.4.0: minutes before the end the last reminder was asked for (0: none), the next round's default.
+// v3.2.6: minutes before the end the last reminder was asked for (0: none), the next round's default.
 export const TODO_REMIND_MINUTES_STORAGE_KEY = "focusd-island-todo-remind-minutes";
 export const TODO_DATE_STORAGE_KEY = "focusd-island-current-date";
 export const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";

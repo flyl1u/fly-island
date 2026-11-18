@@ -1,4 +1,4 @@
-# 玻璃材质的实时背景模糊（v3.4.0 手测后，2026-11-18）
+# 玻璃材质的实时背景模糊（v3.2.6 手测后，2026-11-18）
 
 取代 [glass-material-backdrop.md](glass-material-backdrop.md) 里的壁纸方案。用户手测后否决了壁纸：「把桌面直接做过来，那岂不是在每一个界面里背景都是桌面？丑飞了，这样宁愿不做」。要的是岛屿身后**实时**内容的模糊。壁纸方案的代码（`island/backdrop.rs`、`win32/wallpaper.rs`、`get_island_backdrop`）已全部删除，没有留作回退。
 

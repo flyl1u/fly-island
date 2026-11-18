@@ -6,7 +6,7 @@ import { hasIslandSelection } from "./useHoverFocus";
 /**
  * The message preview to show, kept while the cursor is on the island: reading a long one and
  * selecting its text takes longer than its seconds, and it used to go mid-selection, the island
- * then opening under the cursor as hover-expand came back (v3.4.0 user report). Released once the
+ * then opening under the cursor as hover-expand came back (v3.2.6 user report). Released once the
  * cursor leaves; `enabled` false (game mode, which passes clicks through) never keeps one.
  */
 export function useHeldPreview(preview: MessagePreview | null, enabled: boolean) {

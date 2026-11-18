@@ -36,7 +36,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-todo-timers`（各任务独立倒计时对象数组；无新数据时兼容读取旧单对象） | `features/todos/storage.ts` |
 | `focusd-island-todo-remind-minutes`（上次实际选择的提前提醒分钟数，0–60 的整数；缺失或非法按 5；0 表示不提醒） | `features/todos/storage.ts` |
 | `focusd-island-todo-durations`（各项待办的时长 `{ [todoId]: 1–240 的整数分钟 }`，没有记录或无效按 15 分钟，写入时去掉已删除待办；2026-11-12 起取代所有待办共用的 `focusd-island-todo-duration`，旧 key 不再读取也不删除） | `features/todos/storage.ts` |
-| `focusd-island-todo-remind-minutes`（v3.4.0：上一次开始倒计时时选的“结束前提醒”分钟数，0–60 的整数，0 为不提醒；作为下一轮的默认值，缺失或无效按 5） | `features/todos/storage.ts` |
+| `focusd-island-todo-remind-minutes`（v3.2.6：上一次开始倒计时时选的“结束前提醒”分钟数，0–60 的整数，0 为不提醒；作为下一轮的默认值，缺失或无效按 5） | `features/todos/storage.ts` |
 | `focusd-island-current-date` | `features/todos/storage.ts` |
 | `focusd-island-archives` | `features/todos/storage.ts` |
 | `focusd-island-scheduled-todos`（安排在以后日期的待办，`{ id, title, date, createdAt }[]`） | `features/todos/storage.ts` |
@@ -142,9 +142,9 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - `focusd-island-settings.agentQuotaSources` 保存可见额度环，候选值依次为 `claudeCode`、`codex`、`dsh`、`workbuddy`。旧数据缺少该字段时用原有会话来源开关迁移三种来源，并选中 WorkBuddy。保存空数组表示隐藏额度行。
 - WorkBuddy 会话（2026-11-13）：`list_agent_sessions` 的 `provider` 新增 `workbuddy`；`focus_agent_window`、`agent_sessions_in_front` 接受 `workbuddy`，既有参数和返回结构不变。`focusd-island-settings` 兼容新增 `agentShowWorkbuddy`（缺失时为 true），旧数据迁移额度环时 WorkBuddy 跟随此开关。无新增命令、事件或 localStorage key。
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
-- 岛屿设置 `focusd-island-settings` 2026-11-17（3.4.0）新增 `ctrlWheelPages`（布尔，默认 false）：只有明确存为 true 才开，展开时按住 Ctrl 滚动滚轮按顶栏顺序切页。旧数据缺失或类型无效时为关。没有新 key。
-- 开机自启（2026-11-17，3.4.0）：注册表值名仍是 `FocuSD Island`，命令行改为 `"<exe>" --autostart`，用来区分开机启动（岛屿显示时不抢焦点，QQ / 微信监听与网易云插件自动安装错峰延后）。旧版本写的无参数值照常生效，启动一分钟后在后台改写成新格式一次。命令 `get_launch_at_startup` / `set_launch_at_startup` 不变。
-- 卸载清理（2026-11-17，3.4.0）：可执行文件新增命令行参数 `--remove-agent-hooks`，由卸载程序在勾选「Delete the application data」且不是更新卸载时调用（`src-tauri/nsis/installer-hooks.nsh` 的 `NSIS_HOOK_PREUNINSTALL`），只删 Codex 受管区块、Claude Code 里带 `focusd-agent-` 签名的条目和回复标记规则文件，随后退出，不启动岛屿。
+- 岛屿设置 `focusd-island-settings` 2026-11-17（3.2.6）新增 `ctrlWheelPages`（布尔，默认 false）：只有明确存为 true 才开，展开时按住 Ctrl 滚动滚轮按顶栏顺序切页。旧数据缺失或类型无效时为关。没有新 key。
+- 开机自启（2026-11-17，3.2.6）：注册表值名仍是 `FocuSD Island`，命令行改为 `"<exe>" --autostart`，用来区分开机启动（岛屿显示时不抢焦点，QQ / 微信监听与网易云插件自动安装错峰延后）。旧版本写的无参数值照常生效，启动一分钟后在后台改写成新格式一次。命令 `get_launch_at_startup` / `set_launch_at_startup` 不变。
+- 卸载清理（2026-11-17，3.2.6）：可执行文件新增命令行参数 `--remove-agent-hooks`，由卸载程序在勾选「Delete the application data」且不是更新卸载时调用（`src-tauri/nsis/installer-hooks.nsh` 的 `NSIS_HOOK_PREUNINSTALL`），只删 Codex 受管区块、Claude Code 里带 `focusd-agent-` 签名的条目和回复标记规则文件，随后退出，不启动岛屿。
 - 新增 Tauri 命令 `set_island_game_quiet`（`quiet: boolean`，2026-11-17）：前端把游戏模式的 quiet 告诉原生侧，贴边的岛在游戏全屏时不再命中、不置顶、不抢焦点。
 - 岛屿设置 `focusd-island-settings` 新增 `positionLocked`（布尔，默认 false）：只在明确保存为 true 时禁止拖动。旧数据缺失或类型无效时保持可拖动。`set_island_interaction` 增加可选参数 `positionLocked`，缺失时按 false；`start_island_drag` 在锁定时不启动拖动。复位和贴边隐藏不受影响。
 - 2026-11-13：同一设置对象新增 `tuckStyle: "edge" | "line" | "hidden"`，前端缺失或非法值回退 `"line"`；旧存档通过上表的完成标记统一迁移一次为 line，随后尊重手动选择。`set_island_interaction` 新增可选 `tuckStyle`（Rust `tuck_style: Option<String>`，camelCase 映射），原生命令未传或未知值仍按 `edge` 兼容旧客户端。仅贴边时改变可见高度和命中区域，现有命令名、参数、事件与存储 key 保持兼容。`autoTuck` 缺失或非布尔时按默认 true，明确保存 false 仍关闭。
@@ -154,7 +154,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 - 待办设置（2026-11-12）：现有 `focusd-island-settings` 对象增加 `todoTimerEnabled`（boolean，默认 false，仅接受 boolean）、`todoReorderVersion`（固定 1）；`enableTodoReorder` 默认 true。缺少版本标记的旧数据一律开启拖拽，有 `todoReorderVersion: 1` 时才尊重布尔值。没有新增 key 或修改待办数据格式；关闭计时器删除本轮 `focusd-island-todo-timer`，保留进行中 ID 和各项时长。
 - 待办各项时长（2026-11-12）：新增 `focusd-island-todo-durations`（`{ [todoId]: 分钟 }`），取代所有待办共用的 `focusd-island-todo-duration`。不迁移旧值：用户明确要求每项待办独立，新待办都从 15 分钟起；旧 key 留在原处不读取。直接点“开始”不再启动倒计时，只有怀表设置里的开始才计时。
-- v3.4.0 通知与待办提醒（2026-11-18，均默认关闭）：`focusd-island-settings` 兼容新增 `messageAutoExpand`（boolean，默认 false）、`messageExpandMaxWidth`（320–720，步长 20，默认 520）、`messageExpandMaxHeight`（80–360，步长 10，默认 180）、`messageExpandSeconds`（3–60 秒，默认 12）、`gameShowNotices`（boolean，默认 false）、`gameNoticeSeconds`（2–30 秒，默认 4）、`todoTimerReminder`、`todoTimerReminderSound`（boolean，默认 false）。缺失或非法值按默认。`focusd-island-todo-timers` 的每项兼容新增可选 `remindMinutes`（1–60）与 `reminded`（boolean）；旧数据缺失时视为不提醒，关闭提醒设置时读取会去掉这两个字段。`set_island_interaction` 新增可选参数 `noticeWidth`、`noticeHeight`（自适应通知把收起岛撑大后的逻辑尺寸，缺失时按原收起尺寸，超出舞台窗口时忽略）和 `clickThrough`（游戏模式通知期间整窗鼠标穿透，缺失按 false）；命令名与原有参数不变。新增 key 见上表 `focusd-island-todo-remind-minutes`。
+- v3.2.6 通知与待办提醒（2026-11-18，均默认关闭）：`focusd-island-settings` 兼容新增 `messageAutoExpand`（boolean，默认 false）、`messageExpandMaxWidth`（320–720，步长 20，默认 520）、`messageExpandMaxHeight`（80–360，步长 10，默认 180）、`messageExpandSeconds`（3–60 秒，默认 12）、`gameShowNotices`（boolean，默认 false）、`gameNoticeSeconds`（2–30 秒，默认 4）、`todoTimerReminder`、`todoTimerReminderSound`（boolean，默认 false）。缺失或非法值按默认。`focusd-island-todo-timers` 的每项兼容新增可选 `remindMinutes`（1–60）与 `reminded`（boolean）；旧数据缺失时视为不提醒，关闭提醒设置时读取会去掉这两个字段。`set_island_interaction` 新增可选参数 `noticeWidth`、`noticeHeight`（自适应通知把收起岛撑大后的逻辑尺寸，缺失时按原收起尺寸，超出舞台窗口时忽略）和 `clickThrough`（游戏模式通知期间整窗鼠标穿透，缺失按 false）；命令名与原有参数不变。新增 key 见上表 `focusd-island-todo-remind-minutes`。
 
 总览见 [overview.md](overview.md)。
 # 网易云精准进度插件
@@ -172,7 +172,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 剪贴板（2026-11-13）：`focusd-island-settings.clipboardVisibleRows` 现可设置为 3–8 的整数，缺失或非法值为 4；`set_clipboard_history_settings` 的 `maxItems` 范围扩为 5–500，默认 30，命令、数据字段和历史文件格式不变。
 - 配色（2026-11-14）：`focusd-island-settings` 新增 `colorScheme`（`"dark"` / `"light"` / `"system"`，缺失或未知值为 `"dark"`），属于外观字段，进外观预设，恢复默认外观会复位。三种自定义颜色字段格式不变；值等于任一配色的默认值时视为跟随配色（`features/appearance/theme.ts`）。新命令 `set_settings_window_theme(dark: boolean)`：只在设置窗口调用，设置它的 DWM 标题栏深浅和窗口底色，无返回值；自有 Rust 命令，不需要新权限。`tauri.conf.json` 去掉 settings、clipboard 窗口固定的 `"theme": "Dark"`。
 - 质感（2026-11-14）：`focusd-island-settings` 新增 `material`（`"classic"` / `"liquidGlass"` / `"frostedGlass"`），取代旧字段 `appearanceMode`（`"classic"` / `"liquidGlass"`）。读取时 `material` 合法就用它；否则旧的 `appearanceMode: "liquidGlass"` 迁移为 `"liquidGlass"`，其余为 `"classic"`；保存时不再写 `appearanceMode`（`normalizeLayoutSettings.ts`）。属于外观字段，进外观预设。`set_island_interaction` 的 `glassEnabled` 在两种玻璃下都为 `true`，原生侧照旧只回 `"css-fallback"`。
-- v3.4.0（2026-11-18）：
+- v3.2.6（2026-11-18）：
   - `focusd-island-settings` 新增 `glassBlur`（整数 0–100，默认 60，外观字段、进外观预设）、`tuckEdgeHeight`（整数 3–20，默认 10，露边贴边时留在屏幕上的高度）、`clipboardCloseOnBlur`（布尔，默认 false，只有明确 true 才开）。`islandCornerRadius`（8–96，默认 42）与 `islandCornerShape`（`squircle` / `round`）重新可以设置：读取时夹到范围内，不再一律回到默认。缺失或非法值回退默认。
   - `focusd-island-translation-settings` 新增 `shortcutEnabled`（布尔，缺失视为 true）；`provider` 新增 `google`、`mymemory`（免密钥，旧版本读到会回退 DeepSeek）。
   - 新命令 `start_glass_capture({ onFrame: Channel })` → `boolean`（false 表示系统不支持把岛屿排除出 Desktop Duplication，不采集）、`set_glass_capture_region({ region: { left, top, width, height } | null, blur: 0–100 })`（相对窗口左上角的物理像素，null 暂停）、`stop_glass_capture()`。帧是原始字节：24 字节头（相对窗口左上角的矩形 4×i32 小端，像素宽高 2×u32），后接 RGBA；空消息表示暂停。玻璃采集期间主窗口带 `WCA_EXCLUDED_FROM_DDA`，停止时撤销。

@@ -90,7 +90,7 @@ try {
   check(body() && !body().closest("button") && getComputedStyle(body()).userSelect === "text" && native().noticeWidth !== null,
     "短消息（微信 / QQ）也用可选中的阅读器，不再是一点就跳转的按钮");
   // As in the app: status icons beside the text take room the estimate leaves out. A message a bit
-  // longer than the island must still grow it until nothing is cut off (v3.4.0 user report).
+  // longer than the island must still grow it until nothing is cut off (v3.2.6 user report).
   await configure({ musicEnabled: true, shelfEnabled: true, agentStatusEnabled: true });
   await qq("好的");
   await settle();

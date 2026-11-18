@@ -80,7 +80,7 @@ export function MessagesSettingsPage({
   );
 }
 
-/** Adaptive previews (v3.4.0): their size limits and seconds. Game-mode previews sit beside game mode. */
+/** Adaptive previews (v3.2.6): their size limits and seconds. Game-mode previews sit beside game mode. */
 function NoticeRows({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
   const t = useTranslation();
   const labels = t.settings.messageSources;
