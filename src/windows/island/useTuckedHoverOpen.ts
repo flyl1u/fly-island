@@ -8,7 +8,7 @@ import { listenIslandHover } from "./api";
 const MIN_OPEN_DELAY_MS = 320;
 
 type TuckedHoverOptions = {
-  /** Hovering a tucked island opens its panel (setting "展开面板"); otherwise it only slides out. */
+  /** Hovering a tucked island opens its panel (expand trigger "hover", see tuckedHover.ts); otherwise it only slides out. */
   opensPanel: boolean;
   delayMs: number;
   /**

@@ -1,6 +1,6 @@
 // pnpm dev, then open /tests/regression/tucked-hover.html?test=1.
 // Drives the island's real navigation hooks with the native hover event mocked:
-// what resting the cursor on a tucked island does, per the "收起时鼠标移上去" setting.
+// what resting the cursor on a tucked island does, per the expand trigger (tuckedHover.ts).
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -11,6 +11,7 @@ import { useRevealOnMessage } from "../../src/windows/island/useIslandAutomation
 import { useTuckPeek } from "../../src/windows/island/useTuckPeek";
 import { useTuckMorph } from "../../src/windows/island/useTuckMorph";
 import { useTuckedHoverOpen } from "../../src/windows/island/useTuckedHoverOpen";
+import { tuckedHoverOpensPanel } from "../../src/windows/island/tuckedHover";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 mockIPC(() => null, { shouldMockEvents: true });
@@ -36,7 +37,7 @@ function Harness() {
   useRevealOnMessage(preview, navigation.isTucked, navigation.revealForMessage);
   useTuckPeek(navigation.isPeeking && !preview, navigation.endPeek, navigation.peekRetractDelayMs ?? RETRACT_MS);
   enter = useTuckedHoverOpen({
-    opensPanel,
+    opensPanel: tuckedHoverOpensPanel(opensPanel ? "hover" : "click", false),
     delayMs: HOVER_DELAY_MS,
     isPeeking: navigation.isPeeking && navigation.mode === "collapsed",
     onPeek: navigation.peekIsland,
@@ -76,26 +77,26 @@ async function runChecks() {
   try {
     await wait(50);
 
-    // "只露出岛屿": a minimized island only slides out, and back once the cursor leaves.
+    // Click mode: a minimized island only slides out, and back once the cursor leaves.
     await act(async () => island.minimizeToEdge());
     await arrive();
     await wait(400);
-    check(state() === "collapsed/out" && island.isPeeking, "只露出岛屿：鼠标移上去只露出岛屿，不展开面板");
+    check(state() === "collapsed/out" && island.isPeeking, "点击展开：鼠标移上去只露出岛屿，不展开面板");
     await hover(false);
     await wait(450);
-    check(state() === "collapsed/tucked", "只露出岛屿：鼠标移开后岛屿收回边缘");
+    check(state() === "collapsed/tucked", "点击展开：鼠标移开后岛屿收回边缘");
 
-    // "展开面板": slides out at once, opens once the cursor stays.
+    // Hover mode: slides out at once and opens the panel once the cursor stays, one step.
     await act(async () => setOpensPanel(true));
     await arrive();
-    check(state() === "collapsed/out", "展开面板：先立即露出岛屿");
+    check(state() === "collapsed/out", "悬停展开：先立即露出岛屿");
     await wait(200);
-    check(state() === "collapsed/out", "展开面板：露出的动画结束前不展开面板");
+    check(state() === "collapsed/out", "悬停展开：露出的动画结束前不展开面板");
     await wait(400);
-    check(state() === "expanded/out" && island.isPeeking, "展开面板：停留后展开面板，仍记得要收回");
+    check(state() === "expanded/out" && island.isPeeking, "悬停展开：停留后直接展开面板，不用再点，仍记得要收回");
     await hover(false);
     await wait(450);
-    check(state() === "collapsed/tucked", "展开面板：鼠标移开后面板关闭，岛屿收回边缘");
+    check(state() === "collapsed/tucked", "悬停展开：鼠标移开后面板关闭，岛屿收回边缘");
 
     // Passing over the edge on the way to a browser tab does not open the panel.
     await arrive();
