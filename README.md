@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src-tauri/icons/mark.svg" alt="Fly Island logo" width="96" height="96">
 
-  <h1>Fly Island</h1>
+  <h1>fly-island</h1>
 
   <p>Windows 超轻量的灵动岛，微信、QQ、邮箱消息展示、Agent多session、额度环显示、音乐播放器、待办、剪贴板。文件中转等各种常见功能，需要时展开，用完收起。</p>
 
@@ -36,11 +36,11 @@
 
 ## 这是什么
 
-fly-island（原名 FocuSD Island）是一款 Windows 优先的灵动岛：微信、QQ 和邮箱消息直接弹到岛上，Claude Code / Codex / DSH / Workbuddy 等主流Agent跑到哪、要不要你审批一眼就知道，再加上同步歌词、文件中转、剪贴板历史、快捷翻译和待办，都收在屏幕顶部的一座小岛里。
+fly-island 是一款 Windows 优先的灵动岛：微信、QQ 和邮箱消息直接弹到岛上，Claude Code / Codex / DSH / Workbuddy 等主流Agent跑到哪、要不要你审批一眼就知道，再加上同步歌词、文件中转、剪贴板历史、快捷翻译和待办，都收在屏幕顶部的一座小岛里。
 
-fly-island 以轻量、无边框、始终置顶的悬浮岛形式运行，它会在需要时展开，用完后回到紧凑状态，减少为了获取一条信息而切换窗口的次数。
+fly-island 以极轻量、无边框、始终置顶的悬浮岛形式运行，内存占用约为0.2~0.5%，它会在需要时展开，用完后回到紧凑状态
 
-想先看看效果，可以打开[在线预览](https://island.flyliu.org/)，里面是真实的岛屿界面配上演示数据。
+网格[在线预览](https://island.flyliu.org/)，里面是真实的岛屿界面配上演示数据，可以手动操作点击
 
 ## 为什么做它
 
