@@ -53,3 +53,11 @@ test("hovering a tucked island opens it in one step only in hover mode, never in
   assert.equal(tuckedHoverOpensPanel("hover", true), false);
   assert.equal(tuckedHoverOpensPanel("click", true), false);
 });
+
+test("reading a message on the collapsed island takes the focus and a selection keeps it", () => {
+  const reading = { expanded: false, hovering: true, entered: false, editing: false, blocked: false, reading: true };
+  assert.equal(hoverFocusAction(reading), "take");
+  assert.equal(hoverFocusAction({ ...reading, blocked: true }), "none");
+  assert.equal(hoverFocusAction({ ...reading, hovering: false }), "release");
+  assert.equal(hoverFocusAction({ ...reading, hovering: false, selecting: true }), "none");
+});

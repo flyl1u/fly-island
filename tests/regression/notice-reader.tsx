@@ -84,8 +84,11 @@ const settle = async () => {
 };
 try {
   await act(async () => root.render(<StrictMode><I18nProvider><IslandApp /></I18nProvider></StrictMode>));
+  await configure({ pulseColor: "#FF3366" } as Partial<typeof settings>);
+  check(getComputedStyle(document.querySelector(".island__pulse")!).backgroundColor === "rgb(255, 51, 102)", "亮点颜色跟随设置并实时生效");
   await qq("好的");
-  check(!document.querySelector(".message-notice") && native().noticeWidth === null, "短消息沿用单行预览");
+  check(body() && !body().closest("button") && getComputedStyle(body()).userSelect === "text" && native().noticeWidth !== null,
+    "短消息（微信 / QQ）也用可选中的阅读器，不再是一点就跳转的按钮");
   // As in the app: status icons beside the text take room the estimate leaves out. A message a bit
   // longer than the island must still grow it until nothing is cut off (v3.4.0 user report).
   await configure({ musicEnabled: true, shelfEnabled: true, agentStatusEnabled: true });

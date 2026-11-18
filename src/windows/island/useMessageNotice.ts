@@ -27,7 +27,9 @@ export function useMessageNotice(preview: MessagePreview | null, settings: Islan
     baseHeight: settings.collapsedHeight,
     fontScale: settings.islandFontPercent / 100,
     collapsedScale: settings.collapsedScale,
-    forceReader: preview.source === "qqMail",
+    // Every source gets the selectable reader: the one-line bar is a button, whose text cannot be
+    // selected and which opens the app on click (QQ / WeChat users wanted to copy too).
+    forceReader: true,
     measuredOverflow,
   }) : null, [collapsedIslandWidth, grows, measuredOverflow, preview, settings.collapsedHeight, settings.collapsedScale, settings.islandFontPercent,
     settings.messageExpandMaxHeight, settings.messageExpandMaxWidth, t.messages]);

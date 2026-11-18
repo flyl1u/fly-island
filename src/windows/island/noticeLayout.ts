@@ -20,17 +20,18 @@ const ONE_LINE_CHROME = 70;
 // A 13px glyph: a wide one is about 13px; text units count narrow ones as 0.55 of that.
 const UNIT_WIDTH = 13;
 const LINE_HEIGHT = 13 * 1.5;
+const MIN_WIDTH = 244;
 
 export type NoticeText = { sender: string; body: string };
 export type NoticeLimits = {
   maxWidth: number;
   maxHeight: number;
-  /** The collapsed island's own size, which a notice never goes below. */
+  /** The collapsed island's own size: the one-line preview never goes below it, nor does the reader's height. */
   baseWidth: number;
   baseHeight: number;
   fontScale: number;
   collapsedScale: number;
-  /** Mail always gets selectable text and a copy action, even with a short subject. */
+  /** Use the selectable reader even for a message that fits one line (the adaptive preview always does). */
   forceReader?: boolean;
   /**
    * How much the one-line preview overflowed when laid out (useMessageNotice measures it): the
@@ -68,7 +69,10 @@ export function getNoticeSize({ sender, body }: NoticeText, limits: NoticeLimits
     textWidth(sender) + HEADER_CHROME,
     ...paragraphs.map(textWidth),
   ) + SIDE_PADDING * 2;
-  const width = Math.max(240, alignNoticeWidth(Math.min(widest, Math.max(limits.baseWidth, natural)), widest));
+  // As wide as the message needs, even narrower than the collapsed bar: a short WeChat line in a
+  // wide island left most of it empty (2026-11-18, owner). MIN_WIDTH is the narrowest island (240,
+  // COLLAPSED_WIDTH.min and MIN_COLLAPSED_ISLAND_WIDTH in geometry.rs) on alignNoticeWidth's grid.
+  const width = Math.max(MIN_WIDTH, alignNoticeWidth(Math.min(widest, natural), widest));
   const textRoom = Math.max(1, width - SIDE_PADDING * 2);
   const lines = Math.max(1, paragraphs.reduce((total, line) => total + Math.max(1, Math.ceil(textWidth(line) / textRoom)), 0));
   const wanted = Math.ceil(VERTICAL_PADDING * 2 + HEADER_HEIGHT + HEADER_GAP + lines * LINE_HEIGHT * limits.fontScale);

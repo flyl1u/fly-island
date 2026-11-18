@@ -99,3 +99,10 @@ test("what the laid-out preview still overflowed by grows the island past the es
   const medium = { sender: "张三", body: "明天下午三点在三楼会议室开会，记得带电脑" };
   assert.equal(getNoticeSize(medium, { ...limits, measuredOverflow: 300 }).reader, true);
 });
+
+test("a short message's reader is only as wide as the message, even narrower than a wide island", () => {
+  const short = getNoticeSize({ sender: "安好", body: "换手机呢" }, { ...limits, baseWidth: 480, forceReader: true });
+  assert.ok(short.reader && short.width < 480 && short.width >= 240);
+  const long = getNoticeSize({ sender: "安好", body: "明天下午三点在三楼会议室开项目评审会，请准备材料".repeat(2) }, { ...limits, baseWidth: 480, forceReader: true });
+  assert.ok(long.width > short.width);
+});
