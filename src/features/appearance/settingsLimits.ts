@@ -52,12 +52,12 @@ export const COLLAPSED_WIDTH = { min: 240, max: 480, default: 340 } as const;
 export const COLLAPSED_HEIGHT = { min: 32, max: 60, default: 38 } as const;
 // Optional top-edge shoulder strength, before the island scale is applied.
 export const TOP_EDGE_SHOULDER_SIZE = { min: 4, max: 20, default: 10 } as const;
-// Bottom corner radius of the expanded island (Appearance → Notch & shape); Rust accepts 16–48
+// Bottom corner radius of the expanded island (Appearance → Notch & shape); Rust accepts 8–96
 // (MIN_CORNER_RADIUS / MAX_CORNER_RADIUS in src-tauri/src/island/geometry.rs).
-export const ISLAND_CORNER_RADIUS = { min: 16, max: 48, default: DEFAULT_ISLAND_CORNER_RADIUS } as const;
+export const ISLAND_CORNER_RADIUS = { min: 8, max: 96, default: DEFAULT_ISLAND_CORNER_RADIUS } as const;
 // The collapsed bar's corners (2026-11-18, set apart from the open island's). The default is what
 // the old 12 / 30 ratio drew from the default open radius, so the island looks as it did.
-export const COLLAPSED_CORNER_RADIUS = { min: 4, max: 24, default: (DEFAULT_ISLAND_CORNER_RADIUS * 12) / 30, step: 0.1 } as const;
+export const COLLAPSED_CORNER_RADIUS = { min: 0, max: 40, default: (DEFAULT_ISLAND_CORNER_RADIUS * 12) / 30, step: 0.1 } as const;
 // The glass's blur of what is behind it, 0 (least) to 100.
 export const GLASS_BLUR = { min: 0, max: 100, default: 60 } as const;
 // Px of the island the "edge" tuck leaves on screen; Rust accepts 3–20 (geometry.rs). 10 was fixed before.

@@ -151,7 +151,7 @@ test("options no longer in Settings load as their defaults, whatever was saved",
 test("the open corner radius and shape are settings again, kept within Rust's range", () => {
   assert.equal(normalizeSettings({}).islandCornerRadius, 42);
   assert.equal(normalizeSettings({ islandCornerRadius: 30 }).islandCornerRadius, 30);
-  assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 48);
+  assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 96);
   assert.equal(normalizeSettings({ islandCornerRadius: "x" }).islandCornerRadius, 42);
   assert.equal(normalizeSettings({ islandCornerShape: "round" }).islandCornerShape, "round");
   assert.equal(normalizeSettings({ islandCornerShape: "oval" }).islandCornerShape, "squircle");
@@ -162,7 +162,7 @@ test("the collapsed corners are a setting of their own; older settings keep the 
   assert.equal(DEFAULT_SETTINGS.collapsedCornerRadius, 16.8);
   assert.equal(normalizeSettings({ islandCornerRadius: 30 }).collapsedCornerRadius, 12);
   assert.equal(normalizeSettings({ islandCornerRadius: 30, collapsedCornerRadius: 9 }).collapsedCornerRadius, 9);
-  assert.equal(normalizeSettings({ collapsedCornerRadius: 99 }).collapsedCornerRadius, 24);
+  assert.equal(normalizeSettings({ collapsedCornerRadius: 99 }).collapsedCornerRadius, 40);
   assert.equal(normalizeSettings({ islandCornerRadius: 48, collapsedCornerRadius: 6 }).islandCornerRadius, 48);
 });
 

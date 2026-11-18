@@ -40,3 +40,13 @@ test("clipboard rows are text, image or files, and the type filter matches them"
   assert.equal(matchesKind({ kind: "image" }, "any"), true);
   assert.equal(matchesKind({ kind: "image" }, "text"), false);
 });
+
+test("the backdrop brightness follows what is behind the island, weighted to its bright parts", async () => {
+  const { backdropLuma } = await import("../../src/windows/island/glassFrame.ts");
+  const frame = (fill) => ({ left: 0, top: 0, right: 40, bottom: 40, width: 40, height: 40,
+    pixels: Uint8ClampedArray.from({ length: 40 * 40 * 4 }, (_, index) => fill(Math.floor(index / 4) % 40, index % 4)) });
+  assert.equal(backdropLuma(frame(() => 0)), 0);
+  assert.equal(backdropLuma(frame(() => 255)), 1);
+  // Half white, half black: brighter than the plain average, since text must read over the white.
+  assert.ok(backdropLuma(frame((x) => (x < 20 ? 255 : 0))) > 0.5);
+});

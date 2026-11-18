@@ -38,13 +38,17 @@ export function checkMaterial(check: (condition: unknown, message: string) => vo
   check(document.querySelector(".island__glass") && style.backdropFilter === "none", "玻璃只用 CSS 画，不模糊桌面");
   const alpha = Number((style.backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1);
   check(material === "liquidGlass" ? alpha < 0.5 : alpha >= 0.6, `玻璃底色的不透明度合适（${alpha.toFixed(2)}）`);
-  // Inner panels (translation, the file shelf) swap their deep base (0.88) for a faint veil.
+  // Inner panels (translation, the file shelf) swap their deep base (0.88) for a faint white mist.
   const probe = document.createElement("div");
   probe.style.background = "var(--inner-panel-fill)";
   island.append(probe);
-  const veil = Number((getComputedStyle(probe).backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1);
+  const probeStyle = getComputedStyle(probe);
+  const layers = [...`${probeStyle.backgroundColor} ${probeStyle.backgroundImage}`.matchAll(/rgba?\(([^)]+)\)/g)]
+    .map(([, channels]) => channels.split(",").map(Number)).filter((channels) => (channels[3] ?? 1) > 0);
   probe.remove();
-  check(veil > 0 && veil < 0.4, `玻璃里的内层面板是半透明的淡色层，不是深色盒子（${veil.toFixed(2)}）`);
+  const veil = Math.max(0, ...layers.map((channels) => channels[3] ?? 1));
+  check(layers.length > 0 && veil < 0.4 && layers.every(([red, green, blue]) => Math.min(red, green, blue) >= 200),
+    `玻璃里的内层面板是半透明的白雾，不是深色盒子（${veil.toFixed(2)}）`);
   if (material === "liquidGlass") {
     const rim = document.querySelector(".island__glass-refraction");
     check(rim && getComputedStyle(rim).boxShadow.includes("inset"), "液态玻璃有折射亮边");

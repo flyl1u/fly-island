@@ -21,7 +21,7 @@ export function isGlass(material: Material) {
  */
 export function glassTintAlpha(material: Material, glassIntensity: number) {
   const strength = glassIntensity / 100;
-  return material === "liquidGlass" ? 0.58 - strength * 0.3 : 0.9 - strength * 0.16;
+  return material === "liquidGlass" ? 0.75 - strength * 0.55 : 0.97 - strength * 0.25;
 }
 /**
  * The tint over the live blurred backdrop (island/glass_capture.rs). Lighter than glassTintAlpha, which
@@ -29,7 +29,7 @@ export function glassTintAlpha(material: Material, glassIntensity: number) {
  */
 export function glassBackdropTintAlpha(material: Material, glassIntensity: number) {
   const strength = glassIntensity / 100;
-  return material === "liquidGlass" ? 0.34 - strength * 0.2 : 0.62 - strength * 0.16;
+  return material === "liquidGlass" ? 0.6 - strength * 0.55 : 0.85 - strength * 0.5;
 }
 export { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 

@@ -46,7 +46,9 @@
   height: calc(var(--expanded-island-height, 306px) * var(--island-expanded-scale));
   border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
   corner-shape: var(--island-corner-shape, round);
-  box-shadow: 0 18px 46px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+  /* Short: a 46px blur ran past the bottom of the window under a tall page and was cut off there in
+     a hard line (2026-11-18, owner). */
+  box-shadow: 0 8px 22px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
   pointer-events: none;
   opacity: 0.85;
   transform-origin: top center;
@@ -65,7 +67,10 @@
   border-radius: var(--island-shape-radius);
 }
 
-.island--tucked > .island__glass-shadow {
+/* A message grown past the collapsed bar: the shadow is scaled to the bar, so it would sit inside
+   the larger shape and show only as a dark smudge at its bottom. */
+.island--tucked > .island__glass-shadow,
+.island--notice > .island__glass-shadow {
   opacity: 0;
 }
 
@@ -103,9 +108,26 @@
   inset: 0;
 }
 
+/*
+ * The contrast veil: the island's own colour, deeper the more the backdrop works against the text
+ * (useGlassCapture.ts measures it). White text in the dark tone over a white web page, or dark text
+ * in the light tone over a dark wallpaper, had too little contrast to read (2026-11-18, owner).
+ * Nothing is added while the backdrop already contrasts with the text.
+ */
+.island__glass-backdrop {
+  --glass-contrast: calc(
+    (1 - var(--is-light)) * clamp(0, (var(--glass-backdrop-luma, 0) - 0.22) * 0.9, 0.62)
+    + var(--is-light) * clamp(0, (0.78 - var(--glass-backdrop-luma, 1)) * 0.9, 0.58)
+  );
+}
+
 .island__glass-backdrop::before {
   background-image:
     linear-gradient(var(--glass-backdrop-wash, transparent), var(--glass-backdrop-wash, transparent)),
+    linear-gradient(
+      color-mix(in srgb, var(--island-background-color) calc(var(--glass-contrast) * 100%), transparent),
+      color-mix(in srgb, var(--island-background-color) calc(var(--glass-contrast) * 100%), transparent)
+    ),
     linear-gradient(var(--glass-backdrop-tint-color), var(--glass-backdrop-tint-color));
 }
 
@@ -133,8 +155,24 @@
 
 /*
  * No text halo: a 2px shadow under every glyph read as blurred text on both glasses (2026-11-18,
- * owner). Readability over a busy desktop comes from the tint and the inner panel veil instead.
+ * owner). Readability over a busy desktop comes from the tint, the contrast veil above and text a
+ * step stronger than on the opaque island: the muted levels faded into the backdrop.
  */
+.island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
+  --text-1-alpha: 1;
+  --text-2-alpha: 0.86;
+  --text-3-alpha: 0.74;
+  --text-placeholder-alpha: 0.62;
+  --text-1: rgba(var(--ink-rgb), var(--text-1-alpha));
+  --text-2: rgba(var(--ink-rgb), var(--text-2-alpha));
+  --text-3: rgba(var(--ink-rgb), var(--text-3-alpha));
+  --text-placeholder: rgba(var(--ink-rgb), var(--text-placeholder-alpha));
+}
+
+.island:is(.island--material-liquidGlass, .island--material-frostedGlass) .island__content {
+  --color-text-muted: rgba(var(--page-ink-rgb), 0.86);
+  --color-text-subtle: rgba(var(--page-ink-rgb), 0.72);
+}
 
 :is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass {
   position: absolute;
@@ -263,10 +301,10 @@
  * the way the message and clipboard cards already sit on it, so the glass shows through.
  */
 .island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
-  /* A light veil of the tone's own base keeps muted text readable over a busy or bright desktop. */
+  /* A faint white mist, the glass's own colour: a dark grey veil read as a black box cut into the
+     pane (file shelf, translation; 2026-11-18, owner). The contrast veil keeps text readable. */
   --inner-panel-fill:
-    linear-gradient(160deg, rgba(var(--overlay-rgb), 0.07), rgba(var(--overlay-rgb), 0.02)),
-    rgba(var(--panel-deep-rgb), calc(0.22 + var(--is-light) * 0.12));
+    linear-gradient(160deg, rgba(255, 255, 255, calc(0.09 + var(--is-light) * 0.22)), rgba(255, 255, 255, calc(0.04 + var(--is-light) * 0.14)));
   --inner-panel-edge:
     inset 0 0 0 1px rgba(var(--overlay-rgb), 0.1),
     inset 0 1px 0 rgba(255, 255, 255, calc(0.08 + var(--is-light) * 0.32));
@@ -275,11 +313,10 @@
   --inner-panel-cutout: var(--glass-tint-color);
 }
 
-/* Frosted glass is mostly opaque already: a thinner veil is enough. */
+/* Frosted glass is milky already: a thinner mist is enough. */
 .island.island--material-frostedGlass {
   --inner-panel-fill:
-    linear-gradient(160deg, rgba(var(--overlay-rgb), 0.06), rgba(var(--overlay-rgb), 0.02)),
-    rgba(var(--panel-deep-rgb), calc(0.1 + var(--is-light) * 0.1));
+    linear-gradient(160deg, rgba(255, 255, 255, calc(0.07 + var(--is-light) * 0.16)), rgba(255, 255, 255, calc(0.03 + var(--is-light) * 0.1)));
 }
 
 @media (prefers-reduced-motion: reduce) {

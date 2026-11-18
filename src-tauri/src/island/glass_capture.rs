@@ -29,8 +29,9 @@ const FRAME_INTERVAL: Duration = Duration::from_millis(33);
 const FRAME_WAIT_MS: u32 = 50;
 /// Before trying a failed duplication again, and between checks while paused for a full-screen app.
 const RETRY: Duration = Duration::from_millis(1000);
-/// Blur radius at full strength, in backdrop pixels (a quarter of screen pixels).
-const MAX_RADIUS: f32 = 7.0;
+/// Blur radius at full strength, in backdrop pixels (a quarter of screen pixels): about 80 screen
+/// pixels per pass, so the strongest setting leaves only soft colour behind the text.
+const MAX_RADIUS: f32 = 20.0;
 /// Bytes before the pixels: the rectangle from the window's corner (4 × i32) and the pixel size (2 × u32).
 const HEADER: usize = 24;
 
@@ -232,7 +233,10 @@ fn run() {
 /// the window is; while the window is dragged the picture moves with it until the next frame.
 pub(crate) fn encode(readback: Readback, blur: u8, origin: (i32, i32)) -> Vec<u8> {
     let Readback { rect, width, height, mut bgra } = readback;
-    let radius = (blur as f32 / 100.0 * MAX_RADIUS).round() as usize;
+    // Squared, so the low end stays nearly sharp and the top end is clearly stronger (a linear
+    // 0–7 range felt the same at both ends).
+    let strength = f32::from(blur.min(100)) / 100.0;
+    let radius = (strength * strength * MAX_RADIUS).round() as usize;
     box_blur(&mut bgra, width as usize, height as usize, radius);
     let mut message = Vec::with_capacity(HEADER + bgra.len());
     for value in [rect.0 - origin.0, rect.1 - origin.1, rect.2 - origin.0, rect.3 - origin.1] {

@@ -39,9 +39,7 @@ export function useIslandWindow({
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
   // The glass's live backdrop: what is behind the island, blurred (glass_capture.rs).
-  useGlassCapture(isGlass(settings.material), isTucked,
-    Math.max(expandedIslandHeight * settings.expandedScale, notice.height ?? 0, settings.collapsedHeight * settings.collapsedScale),
-    settings.glassBlur);
+  useGlassCapture(isGlass(settings.material), isTucked, settings.glassBlur);
   const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition(settings.positionLocked);
   const [nativeGlassState, setNativeGlassState] =
     useState<NativeGlassState>("disabled");
