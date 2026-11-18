@@ -38,6 +38,9 @@ pub(super) const EXPANDED_RADIUS: f64 = 30.0;
 // (src/features/appearance/settingsLimits.ts).
 pub(super) const MIN_CORNER_RADIUS: f64 = 16.0;
 pub(super) const MAX_CORNER_RADIUS: f64 = 48.0;
+// Range accepted for the collapsed bar's own radius (COLLAPSED_CORNER_RADIUS in settingsLimits.ts).
+pub(super) const MIN_COLLAPSED_CORNER_RADIUS: f64 = 4.0;
+pub(super) const MAX_COLLAPSED_CORNER_RADIUS: f64 = 24.0;
 pub(super) const STAGE_WINDOW_PADDING_Y: f64 = 24.0;
 /// The strip of the island left on screen by the "edge" tuck: 10px by default, set in
 /// Settings → General (tuckEdgeHeight, src/features/appearance/settingsLimits.ts TUCK_EDGE_HEIGHT).

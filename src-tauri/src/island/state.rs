@@ -154,9 +154,11 @@ pub(crate) struct IslandWindowState {
     pub(super) glass_enabled: bool,
     pub(super) glass_intensity: f64,
     pub(super) glass_tint: (u8, u8, u8),
-    /// Expanded bottom corner radius from the appearance settings. The other corner
-    /// radii keep their default ratios to it, matching IslandShell.css.
+    /// Expanded bottom corner radius from the appearance settings.
     pub(super) corner_radius: f64,
+    /// The collapsed bar's own radius (2026-11-18). `None` until a front end sends it, when the
+    /// collapsed corners keep their old ratio to `corner_radius`.
+    pub(super) collapsed_corner_radius: Option<f64>,
     pub(super) corner_shape: CornerShape,
     pub(super) monitor_follow: MonitorFollow,
     /// A physical point on the monitor the island followed the pointer or the foreground window
@@ -205,7 +207,10 @@ impl IslandWindowState {
     }
 
     pub(super) fn bottom_corner_radius(self) -> f64 {
-        self.mode.corner_radius() * self.corner_radius_factor()
+        match (self.mode, self.collapsed_corner_radius) {
+            (IslandMode::Collapsed, Some(radius)) => radius,
+            _ => self.mode.corner_radius() * self.corner_radius_factor(),
+        }
     }
 
     /// Flat at the top edge; away from it the island floats, rounded evenly all round
@@ -253,6 +258,7 @@ impl Default for IslandWindowState {
             glass_intensity: 72.0,
             glass_tint: (47, 47, 55),
             corner_radius: EXPANDED_RADIUS,
+            collapsed_corner_radius: None,
             // The front end's default; it reports the setting with the first interaction sync.
             corner_shape: CornerShape::Squircle,
             monitor_follow: MonitorFollow::Primary,

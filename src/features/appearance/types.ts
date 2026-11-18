@@ -73,8 +73,10 @@ export type IslandSettings = {
   /** Prevent moving the island by dragging; explicit position reset still works. */
   positionLocked: boolean;
   islandMonitor: IslandMonitor;
-  /** Bottom corner radius (px) of the expanded island; the collapsed, detached and inner panel radii follow it. */
+  /** Bottom corner radius (px) of the expanded island; its detached and inner panel radii follow it. */
   islandCornerRadius: number;
+  /** Corner radius (px) of the collapsed bar; tucked and detached collapsed corners follow it. */
+  collapsedCornerRadius: number;
   islandCornerShape: IslandCornerShape;
   // Optional concave corners where the island joins the screen top.
   topEdgeShoulders: boolean;

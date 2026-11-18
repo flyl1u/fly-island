@@ -56,6 +56,8 @@ export type IslandInteraction = {
   glassTint: string;
   /** Expanded bottom corner radius; the native hit test scales its other corners from it. */
   cornerRadius: number;
+  /** The collapsed bar's corner radius; Rust hit-tests it (island/state.rs). */
+  collapsedCornerRadius: number;
   /** The native hit test follows the island's corner shape. */
   cornerShape: IslandCornerShape;
   /** Which monitor the island sits on; Rust moves it there (src-tauri/src/island/follow.rs). */

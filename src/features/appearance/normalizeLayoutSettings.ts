@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { CLIPBOARD_VISIBLE_ROWS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
+import { CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
@@ -44,6 +44,12 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     glassBlur: normalizeSize(settings?.glassBlur, GLASS_BLUR),
     // Saved by older versions without a settings row; out-of-range values come back inside it.
     islandCornerRadius: normalizeSize(settings?.islandCornerRadius, ISLAND_CORNER_RADIUS),
+    // Saved before 2026-11-18 it did not exist: the collapsed corners then followed the open ones
+    // at 12 / 30, so derive it from the saved open radius and the island keeps its look.
+    collapsedCornerRadius: normalizeSize(
+      settings?.collapsedCornerRadius ?? (normalizeSize(settings?.islandCornerRadius, ISLAND_CORNER_RADIUS) * 12) / 30,
+      COLLAPSED_CORNER_RADIUS,
+    ),
     islandCornerShape: settings?.islandCornerShape === "round" ? "round" : DEFAULT_SETTINGS.islandCornerShape,
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
     collapsedScale: clamp(Number(collapsedScale), MIN_COLLAPSED_SCALE, MAX_COLLAPSED_SCALE),

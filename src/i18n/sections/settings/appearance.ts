@@ -31,6 +31,7 @@ export type SettingsAppearanceText = {
   /** The open island's corner radius and shape; the collapsed bar's corners follow. */
   cornerRadius: string;
   cornerRadiusHint: string;
+  collapsedCornerRadius: string;
   cornerShape: string;
   cornerShapes: { squircle: string; round: string };
   /** The island preview at the top of the page: sample content and the two captions. */
@@ -95,7 +96,8 @@ export const zhCN: SettingsAppearanceText = {
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
   cornerRadius: "展开圆角",
-  cornerRadiusHint: "收起的岛屿与贴边时的圆角按同一比例跟随",
+  cornerRadiusHint: "展开后岛屿与内层面板的圆角",
+  collapsedCornerRadius: "收起圆角",
   cornerShape: "圆角形状",
   cornerShapes: { squircle: "平滑", round: "圆弧" },
   preview: {
@@ -157,7 +159,8 @@ export const en: SettingsAppearanceText = {
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
   cornerRadius: "Open corners",
-  cornerRadiusHint: "The collapsed and tucked island's corners follow in proportion",
+  cornerRadiusHint: "The open island and the panels inside it",
+  collapsedCornerRadius: "Collapsed corners",
   cornerShape: "Corner shape",
   cornerShapes: { squircle: "Smooth", round: "Round" },
   preview: {

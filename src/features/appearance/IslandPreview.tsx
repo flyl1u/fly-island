@@ -28,6 +28,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     ),
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius-px": settings.islandCornerRadius,
+    "--preview-radius-collapsed-px": settings.collapsedCornerRadius,
     "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--preview-pulse": colors.pulseColor,
     "--preview-pulse-glow": hexToRgba(colors.pulseColor, 0.72),
