@@ -159,4 +159,4 @@ If fly-island is useful to you, [a Star](https://github.com/flyl1u/fly-island/st
 
 ### Plugin development
 
-Contributions are welcome. Start from the example, test locally and submit a PR using the [plugin quickstart](docs/plugins/quickstart.md).
+Plugins are coming soon. Build with the [plugin development guide](docs/plugins/README.md) and submit a PR for flyl1u to review, merge and publish.

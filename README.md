@@ -149,4 +149,4 @@ Copyright (C) 2026 flyl1u and contributors。3.0.8 及以前的版本以 MIT 协
 
 ### 插件开发
 
-欢迎贡献插件：从示例开始、本地调试并提交 PR，详见[插件开发指引](docs/plugins/quickstart.md)。
+插件功能即将上线，欢迎先按[插件开发规范](docs/plugins/README.md)开发并提交 PR，由 flyl1u 审核合并后统一发布。
