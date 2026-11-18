@@ -12,3 +12,8 @@ export function saveTodoMarkdown(directory: string, date: string, content: strin
 export function getDefaultTodoSaveDirectory() {
   return invoke<string>("get_default_todo_save_directory");
 }
+
+/** Native folder picker over the calling window; resolves to `null` when cancelled. */
+export function pickFolder(initialDirectory: string, title: string) {
+  return invoke<string | null>("pick_folder", { initialDirectory, title });
+}

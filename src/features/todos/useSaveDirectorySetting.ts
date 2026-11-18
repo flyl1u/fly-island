@@ -25,8 +25,8 @@ export function useSaveDirectorySetting() {
     return () => window.removeEventListener("storage", syncFromIsland);
   }, []);
 
-  const saveDirectory = useCallback(() => {
-    const nextDirectory = saveDirectoryDraft.trim();
+  const commitDirectory = useCallback((directory: string) => {
+    const nextDirectory = directory.trim();
 
     // Storage unavailable: keep the draft and do not report "saved".
     if (!saveSaveDirectory(nextDirectory)) return;
@@ -36,7 +36,14 @@ export function useSaveDirectorySetting() {
     // Restart the timer on every save so a second save keeps the confirmation up for the full time.
     window.clearTimeout(savedTimer.current);
     savedTimer.current = window.setTimeout(() => setSavePathState("idle"), SAVED_CONFIRMATION_MS);
-  }, [saveDirectoryDraft]);
+  }, []);
+
+  const saveDirectory = useCallback(() => commitDirectory(saveDirectoryDraft), [commitDirectory, saveDirectoryDraft]);
+
+  const changeDraft = useCallback((value: string) => {
+    setSaveDirectoryDraft(value);
+    setSavePathState("idle");
+  }, []);
 
   const highlight = useCallback(() => setHighlightSavePath(true), []);
 
@@ -45,7 +52,9 @@ export function useSaveDirectorySetting() {
     savePathState,
     highlightSavePath,
     highlight,
-    onSaveDirectoryDraftChange: setSaveDirectoryDraft,
+    onSaveDirectoryDraftChange: changeDraft,
     onSaveDirectory: saveDirectory,
+    // A folder chosen in the picker is a deliberate choice: save it straight away.
+    onPickDirectory: commitDirectory,
   };
 }

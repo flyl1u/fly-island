@@ -78,6 +78,7 @@ export function TodosSettingsPage({
         highlightSavePath={saveDirectory.highlightSavePath}
         onSaveDirectoryDraftChange={saveDirectory.onSaveDirectoryDraftChange}
         onSaveDirectory={saveDirectory.onSaveDirectory}
+        onPickDirectory={saveDirectory.onPickDirectory}
       />
     </>
   );

@@ -11,3 +11,51 @@
   color: var(--color-agent-idle);
   font-size: calc(13px * var(--island-font-scale, 1));
 }
+
+/* The path field with the folder button beside it, both on the row's quiet fill. */
+.save-path-field {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-xs, 6px);
+  min-width: 0;
+}
+
+.save-path-field .settings-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.save-path-browse {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--corner-md, 10px);
+  color: var(--color-text-muted);
+  background: var(--color-white-a06, rgba(255, 255, 255, 0.06));
+  cursor: pointer;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.save-path-browse:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-white-a10, rgba(255, 255, 255, 0.1));
+}
+
+.save-path-browse:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.save-path-browse:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.save-path-error {
+  margin: 6px 0 0;
+  color: var(--color-error-text);
+  font-size: calc(12px * var(--island-font-scale, 1));
+}

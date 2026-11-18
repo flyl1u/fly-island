@@ -7,6 +7,7 @@ pub(crate) mod caption_close;
 pub(crate) mod chinese;
 pub(crate) mod clipboard;
 pub(crate) mod com;
+pub(crate) mod folder_dialog;
 pub(crate) mod hotkey;
 pub(crate) mod icon;
 pub(crate) mod input;

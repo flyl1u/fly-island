@@ -1,6 +1,7 @@
 //! Windows integration: launch at startup, updater proxy and config, todo Markdown
-//! export, full-screen app detection, settings backups.
+//! export, folder picker, full-screen app detection, settings backups.
 
+pub(crate) mod folder_dialog;
 pub(crate) mod fullscreen;
 pub(crate) mod theme_file;
 pub(crate) mod startup;
@@ -36,6 +37,7 @@ macro_rules! tauri_commands {
         $next!([$($done)*
             crate::system::todo_export::save_todo_markdown,
             crate::system::todo_export::get_default_todo_save_directory,
+            crate::system::folder_dialog::pick_folder,
             crate::system::fullscreen::get_foreground_fullscreen,
             crate::system::startup::get_launch_at_startup,
             crate::system::startup::set_launch_at_startup,
