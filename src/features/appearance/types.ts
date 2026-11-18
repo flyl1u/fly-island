@@ -212,6 +212,8 @@ export type IslandSettings = {
   gameDoNotDisturb: boolean;
   /** While a full-screen app is in front, the island tucks to the top edge and comes back after. */
   gameAutoTuck: boolean;
+  /** Ctrl + mouse wheel over the expanded island switches its page. */
+  ctrlWheelPages: boolean;
   /** Clipboard: rows visible in the island before scrolling (3–8). */
   clipboardVisibleRows: number;
   /** Clipboard: open history in its own window instead of inside the island. */

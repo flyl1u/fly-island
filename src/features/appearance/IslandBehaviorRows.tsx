@@ -42,6 +42,12 @@ export function ExpandRows({ settings, onSettingsChange }: RowsProps) {
         unit={expand.secondsUnit}
         onChange={(autoCollapseSeconds) => update({ autoCollapseSeconds })}
       />
+      <SettingsToggleRow
+        title={expand.ctrlWheel}
+        description={expand.ctrlWheelHint}
+        checked={settings.ctrlWheelPages}
+        onChange={(ctrlWheelPages) => update({ ctrlWheelPages })}
+      />
     </>
   );
 }

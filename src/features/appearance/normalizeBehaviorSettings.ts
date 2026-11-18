@@ -35,6 +35,8 @@ export function normalizeBehaviorSettings(settings: LegacyIslandSettings | null 
     tuckDelaySeconds: wholeSeconds(settings?.tuckDelaySeconds, TUCK_DELAY_SECONDS, TUCK_DELAY_SECONDS.default),
     // Game mode: on unless turned off. Tucking while full screen stays at its default (off).
     gameDoNotDisturb: settings?.gameDoNotDisturb !== false,
+    // New in 3.4.0 and off unless switched on.
+    ctrlWheelPages: settings?.ctrlWheelPages === true,
     expandTrigger: settings?.expandTrigger === "hover" ? "hover" : "click",
     // Module switches: anything but an explicit false keeps the module on.
     todoEnabled: settings?.todoEnabled !== false,

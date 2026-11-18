@@ -108,7 +108,7 @@ if (!automated) {
       await checkGroups(category, panel, check);
       if (category === "todos") await checkTodoRotation(panel, check);
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 14 : category === "appearance" ? 19 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 19 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
