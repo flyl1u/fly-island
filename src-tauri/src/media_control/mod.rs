@@ -6,6 +6,7 @@ mod service;
 mod session;
 mod timeline;
 mod watcher;
+mod worker;
 
 #[tauri::command]
 pub async fn get_media_diagnostics() -> Result<diagnostics::MediaDiagnostics, String> {
