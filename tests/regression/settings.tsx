@@ -108,7 +108,7 @@ if (!automated) {
       await checkGroups(category, panel, check);
       if (category === "todos") await checkTodoRotation(panel, check);
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
-      // General: v3.4.0 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
+      // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       const maxRows = category === "agents" ? 13 : category === "general" ? 16 : category === "appearance" ? 22 : category === "clipboard" ? 9 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
