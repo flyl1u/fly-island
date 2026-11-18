@@ -8,6 +8,8 @@ export const TRANSLATION_PROVIDERS = [
   "siliconflow",
   "openai",
   "custom",
+  "google",
+  "mymemory",
 ] as const;
 
 export type TranslationProvider = (typeof TRANSLATION_PROVIDERS)[number];
@@ -22,6 +24,13 @@ export const LEGACY_TRANSLATION_PROVIDER: TranslationProvider = "deepseek";
 export const DEFAULT_PROVIDER_MODELS: Partial<Record<TranslationProvider, string>> = {
   deepseek: "deepseek-flash",
 };
+
+/** Keyless services (Google Translate, MyMemory): no key, model or base URL to set. */
+const KEYLESS_TRANSLATION_PROVIDERS: ReadonlySet<TranslationProvider> = new Set(["google", "mymemory"]);
+
+export function isKeylessTranslationProvider(provider: TranslationProvider) {
+  return KEYLESS_TRANSLATION_PROVIDERS.has(provider);
+}
 
 export function isTranslationProvider(value: unknown): value is TranslationProvider {
   return TRANSLATION_PROVIDERS.includes(value as TranslationProvider);

@@ -1,13 +1,24 @@
-//! Translation services. Every provider speaks the OpenAI-compatible chat completions
-//! API, so they differ only in base URL, model and stored key.
+//! Translation services. Most speak the OpenAI-compatible chat completions API, so they
+//! differ only in base URL, model and stored key; the keyless ones live in `free.rs`.
 
 use reqwest::Url;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(super) enum ProviderKind {
+    /// OpenAI-compatible chat completions with a stored key and a model.
+    Chat,
+    /// Google Translate's public web endpoint, no key.
+    Google,
+    /// The MyMemory API, no key, with a daily free allowance.
+    MyMemory,
+}
 
 pub(super) struct Provider {
     /// Stable id shared with the frontend; also the Windows credential user name.
     pub(super) id: &'static str,
     /// Name used in error messages, which the translation window shows as they are.
     pub(super) name: &'static str,
+    pub(super) kind: ProviderKind,
     /// `None` for the custom provider, whose base URL comes from the user.
     base_url: Option<&'static str>,
     /// `None` where the user has to name a model from the provider's catalogue.
@@ -19,42 +30,63 @@ const PROVIDERS: &[Provider] = &[
     Provider {
         id: "deepseek",
         name: "DeepSeek",
+        kind: ProviderKind::Chat,
         base_url: Some("https://api.deepseek.com"),
         default_model: Some("deepseek-flash"),
     },
     Provider {
         id: "volcengine",
         name: "火山方舟",
+        kind: ProviderKind::Chat,
         base_url: Some("https://ark.cn-beijing.volces.com/api/v3"),
         default_model: None,
     },
     Provider {
         id: "dashscope",
         name: "通义千问",
+        kind: ProviderKind::Chat,
         base_url: Some("https://dashscope.aliyuncs.com/compatible-mode/v1"),
         default_model: None,
     },
     Provider {
         id: "moonshot",
         name: "Kimi",
+        kind: ProviderKind::Chat,
         base_url: Some("https://api.moonshot.cn/v1"),
         default_model: None,
     },
     Provider {
         id: "siliconflow",
         name: "硅基流动",
+        kind: ProviderKind::Chat,
         base_url: Some("https://api.siliconflow.cn/v1"),
         default_model: None,
     },
     Provider {
         id: "openai",
         name: "OpenAI",
+        kind: ProviderKind::Chat,
         base_url: Some("https://api.openai.com/v1"),
         default_model: None,
     },
     Provider {
         id: "custom",
         name: "自定义接口",
+        kind: ProviderKind::Chat,
+        base_url: None,
+        default_model: None,
+    },
+    Provider {
+        id: "google",
+        name: "Google 翻译",
+        kind: ProviderKind::Google,
+        base_url: None,
+        default_model: None,
+    },
+    Provider {
+        id: "mymemory",
+        name: "MyMemory",
+        kind: ProviderKind::MyMemory,
         base_url: None,
         default_model: None,
     },
@@ -179,6 +211,13 @@ mod tests {
             "deepseek-flash"
         );
         assert!(find_provider(Some("baidu")).is_err());
+    }
+
+    #[test]
+    fn keyless_providers_are_found_by_id() {
+        assert_eq!(provider("google").kind, ProviderKind::Google);
+        assert_eq!(provider("mymemory").kind, ProviderKind::MyMemory);
+        assert_eq!(provider("openai").kind, ProviderKind::Chat);
     }
 
     #[test]

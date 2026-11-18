@@ -14,7 +14,10 @@ export type TranslatorText = {
     siliconflow: string;
     openai: string;
     custom: string;
+    google: string;
+    mymemory: string;
   };
+  keylessHint: string;
   baseUrl: string;
   baseUrlHint: string;
   model: string;
@@ -70,7 +73,10 @@ export const zhCN: TranslatorText = {
     siliconflow: "硅基流动",
     openai: "OpenAI",
     custom: "自定义（OpenAI 兼容）",
+    google: "Google 翻译（免密钥）",
+    mymemory: "MyMemory（免密钥）",
   },
+  keylessHint: "无需密钥，适合查单词和短句；Google 翻译在部分网络下无法访问，MyMemory 每天有免费额度，长文请用大模型服务",
   baseUrl: "接口地址",
   baseUrlHint: "OpenAI 兼容接口的地址，例如 https://example.com/v1；本机服务可用 http://localhost",
   model: "模型",
@@ -126,7 +132,10 @@ export const en: TranslatorText = {
     siliconflow: "SiliconFlow",
     openai: "OpenAI",
     custom: "Custom (OpenAI-compatible)",
+    google: "Google Translate (no key)",
+    mymemory: "MyMemory (no key)",
   },
+  keylessHint: "No key needed; good for words and short sentences. Google Translate is blocked on some networks and MyMemory has a daily free allowance; use a language model for long text",
   baseUrl: "Base URL",
   baseUrlHint: "Address of an OpenAI-compatible API, such as https://example.com/v1; local services may use http://localhost",
   model: "Model",

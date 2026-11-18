@@ -1,6 +1,7 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { ShortcutResetButton } from "../../components/controls/ShortcutResetButton";
 import { ShortcutRecordButton } from "../../components/controls/ShortcutRecordButton";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
 import { buildShortcutFromEvent } from "../clipboard/shortcut";
 import { setTranslationShortcut } from "./api";
@@ -22,6 +23,7 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!settings.shortcutEnabled) return;
     let didCancel = false;
     void setTranslationShortcut(settings.shortcut)
       .then(() => { if (!didCancel) setError(""); })
@@ -53,25 +55,37 @@ export function TranslationShortcutRows({ settings, onSettingsChange, takenBy }:
   };
 
   const fallback = DEFAULT_SETTINGS.shortcut;
+  const on = settings.shortcutEnabled;
   return (
+    <>
+    <SettingsToggleRow
+      title={t.settings.shortcuts.translationShortcutEnabled}
+      checked={on}
+      onChange={(shortcutEnabled) => {
+        setError("");
+        onSettingsChange((current) => ({ ...current, shortcutEnabled }));
+      }}
+    />
     <div className="shortcut-row">
-      <div className="shortcut-control">
+      <div className={`shortcut-control${on ? "" : " shortcut-control--disabled"}`}>
         <div className="shortcut-control__meta">
           <span>{t.settings.shortcuts.openTranslation}</span>
           <strong>{settings.shortcut}</strong>
         </div>
         <div className="shortcut-control__actions">
-          <ShortcutResetButton label={t.settings.shortcuts.reset(fallback)} isDefault={settings.shortcut === fallback} onReset={() => apply(fallback)} />
+          <ShortcutResetButton label={t.settings.shortcuts.reset(fallback)} isDefault={settings.shortcut === fallback} disabled={!on} onReset={() => apply(fallback)} />
           <ShortcutRecordButton
             shortcut={settings.shortcut}
             pressKeysLabel={t.translator.pressShortcut}
+            disabled={!on}
             toShortcut={buildShortcutFromEvent}
             onRecord={apply}
             onInterrupted={() => setError(t.settings.shortcuts.takenElsewhere)}
           />
         </div>
       </div>
-      {error && <p className="shortcut-control__error" role="alert">{error}</p>}
+      {on && error && <p className="shortcut-control__error" role="alert">{error}</p>}
     </div>
+    </>
   );
 }

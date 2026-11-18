@@ -2,6 +2,8 @@
 .settings-sidebar {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
+  /* minmax(0, …) columns: a long English label must shrink to an ellipsis, not widen the column. */
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   padding: 12px var(--space-md) var(--space-md);
   background: var(--color-window-sidebar);
@@ -12,8 +14,10 @@
   /* Positioned so the island can measure its content (useSettingsContentHeight). */
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-color: rgba(116, 214, 255, 0.38) transparent;
   scrollbar-width: thin;
@@ -26,16 +30,23 @@
 
 .settings-sidebar ul {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.settings-sidebar__group,
+.settings-sidebar li {
+  min-width: 0;
+}
+
 
 .settings-sidebar__item {
   position: relative;
   width: 100%;
+  min-width: 0;
   min-height: 30px;
   display: flex;
   align-items: center;

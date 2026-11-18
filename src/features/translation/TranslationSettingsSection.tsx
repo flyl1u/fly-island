@@ -6,7 +6,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSelect } from "../../components/settings/SettingsSelect";
 import { useTranslation } from "../../i18n";
 import { deleteTranslationSecret, hasTranslationSecret, saveTranslationSecret } from "./api";
-import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS } from "./providers";
+import { DEFAULT_PROVIDER_MODELS, TRANSLATION_PROVIDERS, isKeylessTranslationProvider } from "./providers";
 import { useTranslationSettings } from "./useTranslationSettings";
 import "./TranslationSettingsSection.css";
 
@@ -20,6 +20,7 @@ export function TranslationSettingsSection() {
   const [serviceError, setServiceError] = useState("");
   const provider = settings.provider;
   const defaultModel = DEFAULT_PROVIDER_MODELS[provider];
+  const keyless = isKeylessTranslationProvider(provider);
 
   // Keys are stored per service, so the saved state follows the selected one.
   useEffect(() => {
@@ -50,7 +51,9 @@ export function TranslationSettingsSection() {
     } catch (failure) { setServiceError(String(failure)); }
   };
 
-  const footer = serviceError ? <span className="translation-settings__error" role="alert">{serviceError}</span> : t.translator.credentialHint;
+  const footer = serviceError
+    ? <span className="translation-settings__error" role="alert">{serviceError}</span>
+    : keyless ? t.translator.keylessHint : t.translator.credentialHint;
 
   return (
     <>
@@ -75,6 +78,7 @@ export function TranslationSettingsSection() {
             <SettingsInput type="url" monospace autoComplete="off" aria-label={t.translator.baseUrl} value={settings.customBaseUrl} placeholder="https://example.com/v1" onChange={(event) => { const customBaseUrl = event.currentTarget.value; setSettings((current) => ({ ...current, customBaseUrl })); }} />
           </SettingsRow>
         )}
+        {!keyless && <>
         <SettingsRow title={t.translator.model}>
           <SettingsInput monospace autoComplete="off" aria-label={t.translator.model} value={settings.models[provider] ?? ""} placeholder={defaultModel ? t.translator.modelDefault(defaultModel) : t.translator.modelRequired} onChange={(event) => { const model = event.currentTarget.value; setSettings((current) => ({ ...current, models: { ...current.models, [provider]: model } })); }} />
         </SettingsRow>
@@ -90,6 +94,7 @@ export function TranslationSettingsSection() {
         >
           <SettingsInput type="password" autoComplete="off" aria-label={t.translator.secret} value={secretDraft} onChange={(event) => setSecretDraft(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") void saveSecret(); }} placeholder={hasSecret ? t.translator.replaceSecret : t.translator.enterSecret} />
         </SettingsRow>
+        </>}
       </SettingsGroup>
     </>
   );
