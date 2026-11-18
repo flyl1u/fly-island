@@ -70,3 +70,29 @@ pub fn runtime_settings(plugin: &Installed) -> Result<Value, String> {
     }
     Ok(Value::Object(map))
 }
+
+/// Migrate legacy eye-care seconds and round existing fractional numeric settings up.
+pub fn upgrade_settings(previous: Option<&Installed>, manifest: &Manifest) -> BTreeMap<String, Value> {
+    let mut settings = previous.map(|p| p.settings.clone()).unwrap_or_default();
+    if manifest.id == "eye-care" && manifest.settings.iter().any(|s| s.key == "rest-minutes")
+        && !settings.contains_key("rest-minutes") {
+        if let Some(old) = previous.and_then(|p| p.manifest.settings.iter().find(|s| s.key == "rest")) {
+            let seconds = settings.get("rest").unwrap_or(&old.default).as_str()
+                .and_then(|value| value.trim().parse::<u64>().ok())
+                .filter(|seconds| (1..=3600).contains(seconds)).unwrap_or(20);
+            settings.insert("rest-minutes".into(), Value::String((seconds as f64 / 60.0).to_string()));
+        }
+    }
+    for setting in manifest.settings.iter().filter(|s| s.kind == "number") {
+        if let (Some(value), Some(min), Some(max)) = (settings.get(&setting.key), setting.min, setting.max) {
+            if let Some(number) = value.as_str().and_then(|s| s.trim().parse::<f64>().ok())
+                .filter(|n| n.is_finite() && *n >= 0.0 && *n <= f64::from(max)) {
+                let whole = (number.ceil() as u32).clamp(min, max);
+                settings.insert(setting.key.clone(), Value::String(whole.to_string()));
+            }
+        }
+    }
+    settings.retain(|key, value| manifest.settings.iter()
+        .any(|s| &s.key == key && s.kind != "secret" && s.accepts(value)));
+    settings
+}

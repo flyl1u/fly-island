@@ -116,7 +116,7 @@ function Fixture() {
       pageButtonStyle="capsule"
       material="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"
       mediaState={UNAVAILABLE_MEDIA}
-      features={{ todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true, agents: agentsEnabled, translation: false }}
+      features={{ todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true, agents: agentsEnabled, translation: false, pluginPages: [] }}
       shelfCount={null}
       onOpenPage={(page) => { openedPage = page; }} onOpenMessages={(source) => { openedPage = source; }}
       onPageChange={() => {}} onWindowDragStart={() => {}} onCollapse={() => setMode("collapsed")}

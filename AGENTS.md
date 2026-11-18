@@ -12,7 +12,7 @@
 
 FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具，以透明、无边框、始终置顶的 Tauri 悬浮岛形式运行。主要功能：待办、每日笔记与归档，外观设置与预设，媒体控制，剪贴板历史，快捷翻译，QQ 通知、QQ 邮箱和微信提醒，AI 代理状态，以及自动更新。
 
-应用有四个窗口，前端通过同一入口的 `?window=` 参数分发：
+应用有四个基础窗口；可选护眼插件休息时按需创建额外窗口。前端通过同一入口的 `?window=` 参数分发：
 
 | 窗口 label | 前端入口 | 说明 |
 |---|---|---|
@@ -20,6 +20,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | `translation` | `?window=translation` | 快捷翻译窗口，常驻、隐藏显示 |
 | `clipboard` | `?window=clipboard` | 剪贴板历史独立窗口，`create: false`，设置里开启后按需创建，默认置顶 |
 | `settings` | `?window=settings` | 设置窗口，`create: false`，按需创建 |
+| `eye-care-rest-*` | `?window=eye-care` | 可选护眼插件休息期间按需创建，每屏一个，结束销毁 |
 
 **结构重构已完成（Phase 0–6，收尾与待人工验收项见 [refactor-plan.md](docs/architecture/refactor-plan.md)）。** 代码已按 [overview.md](docs/architecture/overview.md) 的目标结构组织：Rust 侧的 `unsafe` 只在 `src-tauri/src/win32/` 中，生产代码不用 `unwrap` / `expect`，clippy 与 ESLint 均为 0 告警。新代码沿用这套结构与子目录规则。
 
@@ -35,6 +36,7 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 ```text
 .
 ├── src/                 # React 前端（规则见 src/AGENTS.md）
+├── plugins/             # 独立进程插件工作区；eye-care/ 为护眼计时与休息动作，win32/ 只读系统状态；休息窗口由 src-tauri/src/eye_care/ 与 src/windows/eye-care/ 按需创建
 ├── src-tauri/           # Tauri / Rust 桌面端（规则见 src-tauri/AGENTS.md）
 │   ├── src/             # 原生命令、后台服务、窗口管理
 │   ├── examples/        # 手动运行的 QQ / 微信探测程序，不进入发布产物

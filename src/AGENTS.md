@@ -9,11 +9,13 @@ src/
 ├── main.tsx                 # 唯一入口：按 ?window= 分发到 windows/ 下的根组件
 ├── windows/                 # 每个 Tauri 窗口一个目录，只负责组合与窗口级行为
 │   ├── island/              # 主窗口：IslandApp（只做组装）、IslandShell、展开后的页面面板（IslandPages）、按职责的接线 hook（useIslandNotices / Todos / Tucking / Shelf / Hover、useAgentIndicator；新功能的接线加在这里，不加进 IslandApp）、窗口尺寸/拖拽/贴边 hook、自动化 hook
+│   ├── eye-care/            # 可选护眼休息窗口：首帧显示、状态订阅与动作接线，复用 features/eye-care 和宿主主题
 │   ├── settings/            # 设置窗口
 │   ├── clipboard/           # 剪贴板历史独立窗口：自绘标题栏（拖动、图钉置顶、关闭），内容复用 features/clipboard 的面板
 │   └── translation/         # 快捷翻译窗口
 ├── features/                # 业务领域，每个领域自包含
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出
+│   ├── eye-care/            # 护眼休息面板、倒计时和类型；窗口使用宿主控件、颜色与双语字典
 │   ├── media/               # 媒体控制、波形、播放器诊断卡片与兼容性设置；lyrics/ 为同步歌词（解析 LRC、跟随进度、点击校准、设置项）
 │   ├── clipboard/           # 剪贴板历史、快捷键
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开

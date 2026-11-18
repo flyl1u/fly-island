@@ -1,6 +1,21 @@
+import type { InstalledPlugin, Localized, PluginsSnapshot } from "../../features/plugins/api";
+import { isPluginPanelIcon, type PluginPanelIcon } from "../../features/plugins/panelTypes.ts";
 import type { MessageSource } from "../../features/messages/messagePreview";
-import type { IslandPage } from "./types";
+import type { BuiltinPage, IslandPage, PluginPage } from "./types";
 import { PLUGINS_ENABLED } from "../../features/releaseFlags.ts";
+
+/** A plugin's own page: its button in the header and the panel the page shows. */
+export type PluginPageInfo = {
+  page: PluginPage;
+  id: string;
+  name: Localized;
+  icon: PluginPanelIcon;
+  /** Rows and buttons the plugin reports now, so the island can size the page around them. */
+  rows: number;
+  actions: number;
+  /** Something worth a look (a break due, a low battery): a dot on the page's button. */
+  attention: boolean;
+};
 
 /** Which modules are switched on; an off module is hidden on the island. */
 export type IslandFeatures = {
@@ -12,17 +27,53 @@ export type IslandFeatures = {
   wechat: boolean;
   qqMail: boolean;
   plugin?: boolean;
-  /** The AI Agent switch; off hides the Agent page. */
+  /** AI Agent */
   agents: boolean;
   /** Translation is on and set to open as an island page rather than its own window. */
   translation: boolean;
+  /** Installed, enabled plugins that bring a page of their own. */
+  pluginPages: readonly PluginPageInfo[];
 };
 
-const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
+const PAGE_ORDER: BuiltinPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
 const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "plugin"];
+
+/** The page id of a plugin's page; the plugin id is namespaced so it can never meet a built-in. */
+export function pluginPageId(id: string): PluginPage {
+  return `plugin:${id}`;
+}
+
+export function isPluginPage(page: IslandPage): page is PluginPage {
+  return page.startsWith("plugin:");
+}
+
+export function pluginIdOfPage(page: PluginPage): string {
+  return page.slice("plugin:".length);
+}
+
+/** The pages of the plugins installed, enabled and declaring a panel, in id order. */
+export function pluginPagesFrom(installed: Record<string, InstalledPlugin>, live: PluginsSnapshot["live"]): PluginPageInfo[] {
+  return Object.values(installed)
+    .sort((left, right) => left.manifest.id.localeCompare(right.manifest.id))
+    .filter((plugin) => plugin.enabled && plugin.manifest.contributes.includes("panel") && plugin.manifest.panel)
+    .map((plugin) => {
+      const panel = live[plugin.manifest.id]?.panel;
+      const icon = plugin.manifest.panel?.icon ?? "";
+      return {
+        page: pluginPageId(plugin.manifest.id),
+        id: plugin.manifest.id,
+        name: plugin.manifest.name,
+        icon: isPluginPanelIcon(icon) ? icon : "puzzle",
+        rows: panel?.rows.length ?? 0,
+        actions: panel?.actions.length ?? 0,
+        attention: panel?.attention === true,
+      };
+    });
+}
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
   if (page === "settings") return true;
+  if (isPluginPage(page)) return features.pluginPages.some((info) => info.page === page);
   return page === "qq" ? features.qq || features.wechat || features.qqMail || (PLUGINS_ENABLED && features.plugin === true) : features[page] === true;
 }
 

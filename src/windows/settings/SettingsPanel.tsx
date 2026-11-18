@@ -64,6 +64,7 @@ export function SettingsPanel({
     if (section === "music") setCategory("music");
     if (section === "mail") setCategory("messages");
     if (section === "updates") setCategory("about");
+    if (section === "plugins") setCategory("plugins");
   }, [focusSavePath]);
 
   useEffect(() => {

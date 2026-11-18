@@ -36,14 +36,15 @@ function EnabledPluginsSettingsPage() {
   const [directory, setDirectory] = useState("");
   const [index, setIndex] = useState<string | null>(null);
   const disabled = busy || catalogLoading;
-  const perform = async (action: () => Promise<unknown>) => {
-    setBusy(true); setError("");
+  const perform = async (action: () => Promise<unknown>, block = true) => {
+    if (block) setBusy(true);
+    setError("");
     try { await action(); await refreshPlugins(); }
     catch (e) {
       if (String(e) === PLUGIN_INDEX_UNAVAILABLE) { setCatalog([]); setCatalogUnavailable(true); }
       else setError(String(e));
     }
-    finally { setBusy(false); }
+    finally { if (block) setBusy(false); }
   };
   const refreshCatalog = () => setCatalogRevision((revision) => revision + 1);
   useEffect(() => {
@@ -70,8 +71,8 @@ function EnabledPluginsSettingsPage() {
         <SettingsRow title={<span className="plugins-settings__permissions"><ShieldCheck size={14} aria-hidden="true" />{t.permissions}</span>}>
           <div className="plugins-settings__permissions">{p.manifest.permissions.map((permission) => <span key={permission} className="plugins-settings__permission">{t.permission[permission] ?? permission}</span>)}</div>
         </SettingsRow>
-        {p.manifest.settings.map((s) => <PluginSettingRow key={`${p.manifest.id}/${s.key}/${JSON.stringify(p.settings[s.key])}`} setting={s} value={p.settings[s.key] ?? s.default} disabled={disabled} onSave={(value) => { void perform(() => setPluginSetting(p.manifest.id, s.key, value)); }} />)}
-        {p.manifest.actions.map((action) => <SettingsRow key={action.id} title={action.label[locale]} control={<SettingsLinkButton disabled={disabled || !p.enabled} onClick={() => { void perform(() => runPluginAction(p.manifest.id, action.id)); }}>{action.label[locale]}</SettingsLinkButton>} />)}
+        {p.manifest.settings.map((s) => <PluginSettingRow key={`${p.manifest.id}/${s.key}/${s.type === "number" ? "number" : JSON.stringify(p.settings[s.key])}`} setting={s} value={p.settings[s.key] ?? s.default} disabled={disabled} onSave={(value) => { void perform(() => setPluginSetting(p.manifest.id, s.key, value), s.type !== "number"); }} />)}
+        {!p.manifest.contributes.includes("panel") && p.manifest.actions.map((action) => <SettingsRow key={action.id} title={action.label[locale]} control={<SettingsLinkButton disabled={disabled || !p.enabled} onClick={() => { void perform(() => runPluginAction(p.manifest.id, action.id)); }}>{action.label[locale]}</SettingsLinkButton>} />)}
       </div>)}
     </SettingsGroup>
     {catalog.some((e) => !registry.installed[e.id]) && <SettingsGroup title={t.available}>

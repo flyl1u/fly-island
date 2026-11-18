@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { IslandSettings } from "../../features/appearance/types";
 import type { MessageView } from "../../features/messages/Messages";
 import type { MailController } from "../../features/messages/mail/MailPanel";
-import { islandPageFor, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
+import { usePlugins } from "../../features/plugins";
+import { PLUGINS_ENABLED } from "../../features/releaseFlags.ts";
+import { islandPageFor, pluginPagesFrom, resolveIslandPage, resolveMessageSource, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 
 type IslandFeatureOptions = {
@@ -38,6 +40,10 @@ export function useIslandFeatures({
 }: IslandFeatureOptions) {
   const plugins = usePlugins();
   const hasPluginMessages = Object.values(plugins.registry.installed).some((p) => p.enabled && p.manifest.contributes.includes("notifications"));
+  const pluginPages = useMemo(
+    () => (PLUGINS_ENABLED ? pluginPagesFrom(plugins.registry.installed, plugins.live) : []),
+    [plugins],
+  );
   const features = useMemo<IslandFeatures>(() => ({
     plugin: hasPluginMessages,
     todo: settings.todoEnabled,
@@ -49,7 +55,8 @@ export function useIslandFeatures({
     qqMail: settings.mailEnabled,
     agents: settings.agentStatusEnabled,
     translation: settings.translationEnabled && settings.translationTarget === "island",
-  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages]);
+    pluginPages,
+  }), [clipboardEnabled, qqEnabled, settings.agentStatusEnabled, settings.mailEnabled, settings.musicEnabled, settings.shelfEnabled, settings.todoEnabled, settings.translationEnabled, settings.translationTarget, wechatEnabled, hasPluginMessages, pluginPages]);
 
   useEffect(() => {
     const next = islandPageFor(page, features, settings.clipboardDetached);
@@ -85,4 +92,3 @@ export function useIslandFeatures({
 
   return { features, openEnabledPage };
 }
-import { usePlugins } from "../../features/plugins";

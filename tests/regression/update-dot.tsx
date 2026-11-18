@@ -59,7 +59,7 @@ function Fixture() {
   const visibleTodo = syncUpdateTodo([], { ...state, hasVersion: state.nextVersion !== "" }, "Update").length > 0;
   return <>
     <IslandHeader isExpanded={expanded} page={page} features={{ todo: true, music: true, clipboard: true, shelf: true,
-      agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
+      agents: true, translation: true, qq: true, wechat: true, qqMail: true, pluginPages: [] }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
       pageButtonStyle={style} onPageOrderChange={() => {}} showTitle={false} isDetached={false} agentVisualState="idle"
       agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
       onOpenSettings={() => {}} onOpenMessages={() => {}} onOpenTranslator={() => {}} onResetPosition={() => {}}

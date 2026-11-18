@@ -7,7 +7,7 @@ use super::{manifest::Manifest, packages::IndexEntry, process::Worker, protocol:
 pub const EVENT: &str = "plugins-changed";
 const DEFAULT_INDEX: &str = "https://github.com/flyl1u/fly-island/releases/latest/download/plugins-index.json";
 
-#[derive(Clone, Default, Serialize)]
+#[derive(Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Live { pub status: String, #[serde(flatten)] pub data: Contributions }
 
@@ -38,7 +38,15 @@ impl Host {
     pub fn enabled(&self) -> bool { self.enabled }
 
     pub fn snapshot(&self) -> Snapshot {
-        Snapshot { registry: self.registry.lock().unwrap_or_else(PoisonError::into_inner).clone(), live: self.live.lock().unwrap_or_else(PoisonError::into_inner).clone() }
+        let registry = self.registry.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        let mut live = self.live.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        if let Some((headline, note)) = self.app.as_ref().and_then(crate::eye_care::failure_notice) {
+            if let Some(panel) = live.get_mut("eye-care").and_then(|value| value.data.panel.as_mut()) {
+                panel.headline = headline.into();
+                panel.note = Some(note.into());
+            }
+        }
+        Snapshot { registry, live }
     }
 
     pub fn notify(&self) { if let Some(app) = &self.app { let _ = app.emit(EVENT, ()); } }
@@ -51,13 +59,31 @@ impl Host {
         if actual.id != id || serde_json::to_value(&actual).map_err(|e| e.to_string())? != serde_json::to_value(&p.manifest).map_err(|e| e.to_string())? {
             return Err("Plugin manifest changed; reload or reinstall it".into());
         }
-        let settings = storage::runtime_settings(&p)?;
+        let mut settings = storage::runtime_settings(&p)?;
+        let hosted_breaks = crate::eye_care::supports_host_windows(&p.manifest);
+        if hosted_breaks { settings["_host-eye-care-windows"] = json!(true); }
+        let break_language_english = settings["language"] == "en";
+        let break_session = if hosted_breaks { self.app.as_ref().and_then(crate::eye_care::begin_session) } else { None };
         let live = self.live.clone();
         let app = self.app.clone();
         let key = id.to_owned();
         let publish = Arc::new(move |data, status: &str| {
-            live.lock().unwrap_or_else(PoisonError::into_inner).insert(key.clone(), Live { status: status.into(), data });
-            if let Some(app) = &app { let _ = app.emit(EVENT, ()); }
+            let rest = if hosted_breaks { crate::eye_care::from_publish(&data, status, break_language_english) } else { None };
+            // A plugin that publishes the same snapshot again (a countdown that the host
+            // ticks itself, an unchanged reading) is not news: no event, no re-render.
+            let changed = {
+                let mut current = live.lock().unwrap_or_else(PoisonError::into_inner);
+                let next = Live { status: status.into(), data };
+                let changed = current.get(&key).is_none_or(|live| *live != next);
+                current.insert(key.clone(), next);
+                changed
+            };
+            if changed {
+                if let Some(app) = &app {
+                    if let Some(session) = break_session { crate::eye_care::publish(app, session, rest); }
+                    let _ = app.emit(EVENT, ());
+                }
+            }
         });
         let worker = Worker::start(p.directory, p.manifest, settings, self.root.join("plugin-logs").join(format!("{id}.log")), publish);
         self.workers.lock().map_err(|e| e.to_string())?.insert(id.into(), worker);
@@ -65,6 +91,7 @@ impl Host {
     }
 
     pub fn stop(&self, id: &str) {
+        if id == "eye-care" { if let Some(app) = &self.app { crate::eye_care::end_session(app); } }
         let worker = self.workers.lock().unwrap_or_else(PoisonError::into_inner).remove(id);
         drop(worker);
         self.live.lock().unwrap_or_else(PoisonError::into_inner).remove(id);
@@ -126,8 +153,7 @@ impl Host {
         if directory.exists() { std::fs::rename(&directory, &backup).map_err(|e| e.to_string())?; }
         let apply = (|| {
             std::fs::rename(&staging, &directory).map_err(|e| e.to_string())?;
-            let mut settings = old.as_ref().map(|p| p.settings.clone()).unwrap_or_default();
-            settings.retain(|key, value| manifest.settings.iter().any(|s| &s.key == key && s.kind != "secret" && s.accepts(value)));
+            let settings = storage::upgrade_settings(old.as_ref(), &manifest);
             next.installed.insert(id.into(), Installed { manifest, enabled, directory: directory.clone(), development: false, settings });
             self.persist(next)
         })();

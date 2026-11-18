@@ -25,6 +25,9 @@ pub struct Manifest {
     pub settings: Vec<Setting>,
     #[serde(default)]
     pub actions: Vec<Action>,
+    /// Present when the plugin has a page of its own in the island.
+    #[serde(default)]
+    pub panel: Option<PanelMeta>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -41,6 +44,10 @@ pub struct Setting {
     pub default: Value,
     #[serde(default)]
     pub options: Vec<SettingOption>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<u32>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -50,6 +57,14 @@ pub struct SettingOption { pub value: String, pub label: Localized }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Action { pub id: String, pub label: Localized }
+
+/// A plugin page's button in the island header. Icons are a closed set the host draws, not
+/// image files: a plugin cannot bring its own artwork.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct PanelMeta { pub icon: String }
+
+pub const PANEL_ICONS: &[&str] = &["battery", "heart-pulse", "activity", "timer", "gauge", "puzzle"];
 
 pub fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 100 && id.as_bytes()[0].is_ascii_lowercase()
@@ -98,14 +113,21 @@ impl Manifest {
             || self.name.zh.is_empty() || self.name.en.is_empty() {
             return Err("Invalid plugin identity, API version or executable path".into());
         }
-        let allowed = ["network", "read-home-files", "notifications", "quota", "sessions", "desktop-windows", "private-browser"];
+        let allowed = ["network", "read-home-files", "notifications", "quota", "sessions", "panel", "desktop-windows", "private-browser"];
         if self.permissions.iter().any(|p| !allowed.contains(&p.as_str()))
-            || self.contributes.iter().any(|p| !["quota", "sessions", "notifications"].contains(&p.as_str()) || !self.permissions.contains(p)) {
+            || self.contributes.iter().any(|p| !["quota", "sessions", "notifications", "panel"].contains(&p.as_str()) || !self.permissions.contains(p)) {
             return Err("Unsupported plugin permission or contribution".into());
+        }
+        let has_panel = self.contributes.iter().any(|p| p == "panel");
+        match &self.panel {
+            Some(panel) if has_panel && PANEL_ICONS.contains(&panel.icon.as_str()) => {}
+            None if !has_panel => {}
+            _ => return Err("A plugin page needs the panel contribution and a known icon".into()),
         }
         let mut keys = HashSet::new();
         for s in &self.settings {
             if !field_id(&s.key) || !keys.insert(&s.key) || !s.accepts(&s.default)
+                || (s.kind == "number" && !matches!((s.min, s.max), (Some(min), Some(max)) if min <= max))
                 || (s.kind == "secret" && s.default != "") {
                 return Err("Invalid or duplicate plugin setting".into());
             }
@@ -121,6 +143,12 @@ impl Setting {
         match self.kind.as_str() {
             "toggle" => value.is_boolean(),
             "text" | "secret" => value.as_str().is_some_and(|s| s.len() <= 8192),
+            "number" => value.as_str().is_some_and(|s| {
+                !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+                    && s.parse::<u32>().ok().is_some_and(|n| {
+                        matches!((self.min, self.max), (Some(min), Some(max)) if min <= n && n <= max)
+                    })
+            }),
             "select" => value.as_str().is_some_and(|s| self.options.iter().any(|o| o.value == s)),
             _ => false,
         }

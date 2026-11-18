@@ -11,9 +11,14 @@ use tauri::Manager;
 use service::{Host, Snapshot};
 use serde_json::Value;
 
+pub(crate) use manifest::Manifest as PluginManifest;
+pub(crate) use protocol::Contributions as PluginContributions;
+pub(crate) use service::EVENT;
+
 type PluginHost = Arc<Host>;
 
 pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
+    crate::eye_care::init(app);
     let host = Arc::new(Host::new(app.path().app_data_dir().map_err(|e| e.to_string())?, Some(app.clone()), crate::release_flags::PLUGINS_ENABLED)?);
     let registry = host.snapshot().registry;
     for (id, p) in registry.installed {
@@ -25,7 +30,7 @@ pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-pub fn shutdown(app: &tauri::AppHandle) { if let Some(host) = app.try_state::<PluginHost>() { host.shutdown(); } }
+pub fn shutdown(app: &tauri::AppHandle) { crate::eye_care::shutdown(app); if let Some(host) = app.try_state::<PluginHost>() { host.shutdown(); } }
 
 #[tauri::command]
 pub async fn get_plugins(host: tauri::State<'_, PluginHost>) -> Result<Snapshot, String> { Ok(host.snapshot()) }

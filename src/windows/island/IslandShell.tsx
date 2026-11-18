@@ -11,6 +11,7 @@ import type { QQNotificationsController } from "../../features/messages/qq-notif
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
 import { useTranslation } from "../../i18n";
 import type { IslandFeatures } from "./features";
+import { isPluginPage } from "./features";
 import { IslandCollapsedBar } from "./IslandCollapsedBar";
 import { IslandHeader } from "./IslandHeader";
 import type { IslandMode, IslandPage, NativeGlassState } from "./types";
@@ -163,7 +164,7 @@ export function IslandShell({
   const className = [
     "island",
     `island--${mode}`,
-    `island--${page}`,
+    `island--${isPluginPage(page) ? "plugin" : page}`,
     `island--material-${material}`,
     isPreparing && !isExpanded ? "island--preparing" : "",
     isDetached ? "island--detached" : "island--docked",

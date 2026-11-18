@@ -154,6 +154,32 @@
   --dot-glow: rgba(229, 142, 226, 0.44);
 }
 
+/* Every plugin page shares one colour: its icon says which feature it is, and an installed
+   plugin cannot pick a colour of its own. */
+.dot-button--plugin {
+  --dot-color: #9bb7ff;
+  --dot-glow: rgba(155, 183, 255, 0.46);
+}
+
+/* Something the page wants the user to see (a break due, a low battery): no notification,
+   just a dot on its button. */
+.island-plugin-button__dot {
+  position: absolute;
+  top: 6px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background: var(--color-warning);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.dot-button--capsule .island-plugin-button__dot {
+  top: 8px;
+  right: 0;
+}
+
 .dot-button--messages .island-message-button__dot {
   top: 6px;
   right: 2px;

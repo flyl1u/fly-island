@@ -9,6 +9,7 @@ src-tauri/src/
 ├── main.rs                  # 只调用 focusd_island_lib::run()
 ├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、collect_commands!（汇总各模块的 tauri_commands!）
 ├── tray.rs                  # 托盘菜单与事件：文字跟随岛屿语言（命令 set_tray_language），显示 / 隐藏合成一项，按岛屿当前是否可见显示
+├── eye_care/                # 可选护眼休息窗口：插件状态转换、按显示器创建 WebView、首帧握手与退出；win32/eye_care.rs 约束自身窗口层级
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
 ├── agent_approval/          # 在岛上审批（B6 第 2 期）：127.0.0.1 上的审批端点（标准库 TcpListener，挂起时能发现 Agent 断开）、按会话排队、等待上限、agent-approval.json
 ├── agent_status/            # AI 代理状态：快照、运行标记、Codex / Claude Code hook 安装；hooks/ 为编入二进制的 hook 脚本；sound_packs.rs 为导入的音效包（应用数据目录的 sound-packs/）
@@ -102,4 +103,4 @@ src-tauri/src/
 - 验证：`cargo test --manifest-path src-tauri/Cargo.toml` + `pnpm tauri build --no-bundle`。涉及窗口、托盘、注册表行为的改动，在风险需要时用 `pnpm tauri dev` 手动检查折叠态、展开态、贴边收起和托盘隐藏。
 - 成功生成 release 可执行文件后，按根目录规则同步桌面快捷方式。
 
-插件 API v1：`plugin_host/` 为 manifest / protocol / packages / storage / process / service 分层，插件源码在仓库 `plugins/<id>/` 独立 crate；这些 crate 不加入主程序 workspace。新增插件不能把网络、数据库或客户端依赖引入主程序。
+插件 API v1：`plugin_host/` 为 manifest / protocol / packages / storage / process / service 分层，插件源码在仓库 `plugins/<id>/` 独立 crate；这些 crate 不加入主程序 workspace。扩展点是 quota / sessions / notifications / panel 四类；panel 由插件给出 `headline`、行、动作 id 与 `attention`，画面全部由前端 `features/plugins/PluginPanel.tsx` 绘制。新增插件不能把网络、数据库或客户端依赖引入主程序。
