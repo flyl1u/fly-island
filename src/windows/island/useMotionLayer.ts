@@ -7,7 +7,7 @@ const MOTION_LAYER_MS = 640;
 
 /**
  * Gives the page panel a layer of its own (will-change) while the island changes shape: when it
- * opens or closes, and when the open page or its height changes. On its own layer the panel is
+ * opens or closes (not between pages, see below). On its own layer the panel is
  * drawn once and then only moved, faded and clipped as the shape animates; drawn into the
  * island's layer it was drawn again on every frame, the page's text, rings and covers included.
  * The layer goes once the shape has settled, so the text is drawn straight onto the island again.
@@ -16,6 +16,7 @@ const MOTION_LAYER_MS = 640;
 export function useMotionLayer<T extends HTMLElement>(mode: IslandMode, page: IslandPage, height: number) {
   const ref = useRef<T>(null);
   const isFirst = useRef(true);
+  const lastMode = useRef(mode);
 
   useLayoutEffect(() => {
     if (isFirst.current) {
@@ -23,6 +24,13 @@ export function useMotionLayer<T extends HTMLElement>(mode: IslandMode, page: Is
       return;
     }
     noteIslandMotion(MOTION_LAYER_MS);
+    const modeChanged = lastMode.current !== mode;
+    lastMode.current = mode;
+    // Between pages the new page is meant to be read at once. On a layer of its own its text is
+    // drawn without subpixel antialiasing (the layer has no opaque background) and turns sharp
+    // only when the layer goes, 640ms later: the page read as blurred, then clear (2026-11-18,
+    // owner). So only opening and closing, where the panel fades anyway, get the layer.
+    if (!modeChanged) return;
     const element = ref.current;
     if (!element) return;
     element.style.willChange = "transform, opacity";

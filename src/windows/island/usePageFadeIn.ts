@@ -26,11 +26,10 @@ export function usePageFadeIn<T extends HTMLElement>(page: IslandPage, mode: Isl
       return;
     }
 
-    const animation = content.animate(
-      [
-        { opacity: 0, transform: "translateY(6px)" },
-        { opacity: 1, transform: "none" },
-      ],
+    // Opacity only. A 6px drop put the text on a layer at fractional offsets, which drew it soft
+    // until the layer went and it was drawn again sharp: the page read as blurred, then clear
+    // (2026-11-18). A fade alone keeps the glyphs on whole pixels.
+    const animation = content.animate([{ opacity: 0 }, { opacity: 1 }],
       { duration: FADE_IN_DURATION_MS, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
     );
     return () => animation.cancel();

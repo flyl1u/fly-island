@@ -36,3 +36,62 @@
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
+
+.settings-color {
+  position: relative;
+}
+
+/* The in-page picker: a saturation / brightness square over a hue strip. */
+.settings-color__picker {
+  position: absolute;
+  top: calc(100% + var(--space-sm));
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: var(--space-md);
+  width: 208px;
+  padding: var(--space-md);
+  background: var(--color-surface-dark);
+  border: 1px solid var(--color-white-a10);
+  border-radius: var(--corner-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  cursor: default;
+}
+
+.settings-color__area,
+.settings-color__hue {
+  position: relative;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.settings-color__area {
+  height: 132px;
+  border-radius: var(--corner-sm);
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--picker-hue));
+}
+
+.settings-color__hue {
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+
+.settings-color__thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.settings-color__area:focus-visible,
+.settings-color__hue:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
