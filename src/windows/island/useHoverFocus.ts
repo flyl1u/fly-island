@@ -5,6 +5,18 @@ import { isEditingText } from "./useHoverExpand";
 import type { IslandMode } from "./types";
 import { isIslandPickerOpen } from "../../lib/islandPicker";
 
+/**
+ * Text selected in the message reader while the island has the focus (a message being copied).
+ * Once another app is clicked the island loses the focus and the selection stops counting.
+ */
+export function hasIslandSelection() {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !document.hasFocus()) return false;
+  const node = selection.anchorNode;
+  const element = node instanceof Element ? node : node?.parentElement;
+  return Boolean(element?.closest(".message-notice") && selection.toString().trim());
+}
+
 function logFocusError(error: unknown) {
   console.error("Failed to move focus for the island", error);
   return true;
@@ -56,6 +68,8 @@ export function useHoverFocus(mode: IslandMode, blocked: boolean, pickerOpen = f
       entered: entered || isHovering,
       editing: isEditingText(),
       blocked,
+      reading: document.querySelector(".message-notice") !== null,
+      selecting: hasIslandSelection(),
     });
     if (action === "none") return;
 

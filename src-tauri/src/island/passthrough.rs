@@ -25,7 +25,11 @@ pub(crate) fn start_cursor_passthrough_loop(window: WebviewWindow) {
         let hwnd = window.hwnd().ok();
 
         loop {
-            let is_inside = hwnd.is_none_or(cursor_is_inside_island);
+            // A press that started on the island (selecting text, dragging a slider or a
+            // scrollbar) keeps the window taking the mouse until it is released: passing clicks
+            // through mid-drag ended the gesture and dropped the selection being made.
+            let is_inside = hwnd.is_none_or(cursor_is_inside_island)
+                || (!ignoring_cursor && win32::input::is_left_button_down());
             let should_ignore = !is_inside;
 
             if should_ignore != ignoring_cursor

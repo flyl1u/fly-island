@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { MessagePreview } from "../../features/messages/messagePreview";
 import { listenIslandHover } from "./api";
+import { hasIslandSelection } from "./useHoverFocus";
 
 /**
  * The message preview to show, kept while the cursor is on the island: reading a long one and
@@ -21,6 +22,8 @@ export function useHeldPreview(preview: MessagePreview | null, enabled: boolean)
   }, []);
   // Preview objects are rebuilt every render; one message is one receivedAt.
   if (preview && kept?.receivedAt !== preview.receivedAt) setKept(preview);
-  if (!preview && kept && (!hovering || !enabled)) setKept(null);
-  return preview ?? (hovering && enabled ? kept : null);
+  // A selection made in the reader keeps it too, even after the cursor slips off while dragging.
+  const holding = enabled && (hovering || hasIslandSelection());
+  if (!preview && kept && !holding) setKept(null);
+  return preview ?? (holding ? kept : null);
 }
