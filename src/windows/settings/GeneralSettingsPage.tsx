@@ -2,14 +2,14 @@ import { useTranslation, type LocaleCode } from "../../i18n";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { BehaviorSettingsSection } from "../../features/appearance/BehaviorSettingsSection";
 import { ExpandRows, GameModeRow, PositionRows, TuckRows } from "../../features/appearance/IslandBehaviorRows";
-import { KeepVisibleSettingsSection } from "../../features/appearance/KeepVisibleSettingsSection";
+import { KeepVisibleRows } from "../../features/appearance/KeepVisibleRows";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset, requestPanelPreview } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 /**
  * Settings → General, most used first (docs/design/settings.md): startup and language; opening and
- * closing; tucking to the edge, then when not to; game mode; the position last.
+ * closing; the position; tucking to the edge, with when not to under auto-tuck; game mode last.
  */
 export function GeneralSettingsPage({
   locale,
@@ -43,15 +43,15 @@ export function GeneralSettingsPage({
       <SettingsGroup title={t.settings.expand.title}>
         <ExpandRows {...rows} />
       </SettingsGroup>
-      <SettingsGroup title={t.settings.expand.tuckTitle}>
-        <TuckRows {...rows} onPreviewTuck={() => requestPanelPreview("tucked")} />
-      </SettingsGroup>
-      <KeepVisibleSettingsSection {...rows} />
-      <SettingsGroup title={t.settings.layout.gameTitle}>
-        <GameModeRow {...rows} />
-      </SettingsGroup>
       <SettingsGroup title={t.settings.position.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>
         <PositionRows {...rows} onResetPosition={requestIslandPositionReset} />
+      </SettingsGroup>
+      <SettingsGroup title={t.settings.expand.tuckTitle} footer={settings.autoTuck ? t.settings.keepVisible.hint : undefined}>
+        <TuckRows {...rows} onPreviewTuck={() => requestPanelPreview("tucked")} />
+        <KeepVisibleRows {...rows} />
+      </SettingsGroup>
+      <SettingsGroup title={t.settings.layout.gameTitle}>
+        <GameModeRow {...rows} />
       </SettingsGroup>
     </>
   );

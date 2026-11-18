@@ -3,7 +3,7 @@ import { act } from "react";
 import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const GROUPS: Record<string, string[]> = {
-  general: ["启动与语言", "展开与收起", "贴边隐藏", "这些时候不贴边", "游戏模式", "位置"],
+  general: ["启动与语言", "展开与收起", "位置", "贴边隐藏", "游戏模式"],
   appearance: ["主题", "颜色", "字体与大小", "岛上的排列", "岛屿展示优先级", "刘海尺寸", "圆角", "外观预设"],
   todos: ["任务", "番茄钟", "折叠岛屿", "保存路径"],
   clipboard: ["记录内容", "显示与窗口", "快捷键", "存储位置", "文件中转"],
@@ -42,10 +42,10 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     await act(async () => quiet.click());
     check(game().length === 1, "General: game-mode notifications hide while game mode is off");
     await act(async () => quiet.click());
-    check(titles(rowsOf(panel, "贴边隐藏")).join() === "闲置时贴边隐藏,收起后贴边,贴边样式", "General: auto-tuck, its delay and the tucked look share a group");
+    check(titles(rowsOf(panel, "贴边隐藏")).join() === "闲置时贴边隐藏,收起后贴边,贴边样式,Agent 运行时不贴边,显示歌词时不贴边,待办计时时不贴边", "General: auto-tuck, its delay, the tucked look and when not to tuck share a group");
     check(titles(rowsOf(panel, "位置")).join() === "回到默认位置,锁定小岛位置", "General: the position rows come last");
   } else if (category === "todos") {
-    check(titles(rowsOf(panel, "任务")).join() === "自动将未完成任务写入下一天,拖动调整顺序", "Todos: the list options share a group");
+    check(titles(rowsOf(panel, "任务")).join() === "自动将未完成任务写入下一天,拖动调整顺序,一次显示几条", "Todos: the list options share a group");
     check(titles(rowsOf(panel, "番茄钟")).join() === "启用番茄钟", "Todos: the focus timer has its own group (reminders hidden while it is off)");
   } else if (category === "clipboard") {
     check(titles(rowsOf(panel, "记录内容")).join() === "记录图片,最多保存几条", "Clipboard: what is recorded comes first");
