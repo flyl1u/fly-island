@@ -59,7 +59,10 @@ export function TranslationPanel({ isOpen, onOpenSettings }: { isOpen: boolean; 
         .then((text) => { if (!didCancel && text && !latest.current.input.trim()) fillSource(text, ""); })
         .catch(() => {});
     }
-    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    // preventScroll: the island is still only the collapsed bar's height here, so a plain focus
+    // scrolled the clipped panel to reach the box, and as the island grew that scroll ran back to
+    // 0 and the whole page slid down: the "rush downwards" on opening (2026-11-11, 2026-11-18).
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
     return () => { didCancel = true; window.cancelAnimationFrame(frame); };
   }, [fillSource, isOpen]);
 
