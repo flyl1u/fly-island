@@ -142,6 +142,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
 - 岛屿设置 `focusd-island-settings` 2026-11-17（3.4.0）新增 `ctrlWheelPages`（布尔，默认 false）：只有明确存为 true 才开，展开时按住 Ctrl 滚动滚轮按顶栏顺序切页。旧数据缺失或类型无效时为关。没有新 key。
 - 开机自启（2026-11-17，3.4.0）：注册表值名仍是 `FocuSD Island`，命令行改为 `"<exe>" --autostart`，用来区分开机启动（岛屿显示时不抢焦点，QQ / 微信监听与网易云插件自动安装错峰延后）。旧版本写的无参数值照常生效，启动一分钟后在后台改写成新格式一次。命令 `get_launch_at_startup` / `set_launch_at_startup` 不变。
+- 卸载清理（2026-11-17，3.4.0）：可执行文件新增命令行参数 `--remove-agent-hooks`，由卸载程序在勾选「Delete the application data」且不是更新卸载时调用（`src-tauri/nsis/installer-hooks.nsh` 的 `NSIS_HOOK_PREUNINSTALL`），只删 Codex 受管区块、Claude Code 里带 `focusd-agent-` 签名的条目和回复标记规则文件，随后退出，不启动岛屿。
 - 新增 Tauri 命令 `set_island_game_quiet`（`quiet: boolean`，2026-11-17）：前端把游戏模式的 quiet 告诉原生侧，贴边的岛在游戏全屏时不再命中、不置顶、不抢焦点。
 - 岛屿设置 `focusd-island-settings` 新增 `positionLocked`（布尔，默认 false）：只在明确保存为 true 时禁止拖动。旧数据缺失或类型无效时保持可拖动。`set_island_interaction` 增加可选参数 `positionLocked`，缺失时按 false；`start_island_drag` 在锁定时不启动拖动。复位和贴边隐藏不受影响。
 - 2026-11-13：同一设置对象新增 `tuckStyle: "edge" | "line" | "hidden"`，前端缺失或非法值回退 `"line"`；旧存档通过上表的完成标记统一迁移一次为 line，随后尊重手动选择。`set_island_interaction` 新增可选 `tuckStyle`（Rust `tuck_style: Option<String>`，camelCase 映射），原生命令未传或未知值仍按 `edge` 兼容旧客户端。仅贴边时改变可见高度和命中区域，现有命令名、参数、事件与存储 key 保持兼容。`autoTuck` 缺失或非布尔时按默认 true，明确保存 false 仍关闭。

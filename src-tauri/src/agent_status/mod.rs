@@ -40,6 +40,7 @@ mod sessions;
 mod title;
 mod todo_list;
 mod tool_call;
+pub(crate) mod uninstall;
 mod usage;
 mod wezterm;
 mod window_focus;
