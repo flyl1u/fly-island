@@ -19,14 +19,20 @@ const snapshot = () => ({ registry: { ...registry }, live: {} });
 const requests: { resolve: (items: PluginIndexEntry[]) => void; reject: (reason: string) => void }[] = [];
 let resolveRegistry: (() => void) | undefined;
 let opened = "";
+let failOpen = false;
+const hostCalls: string[] = [];
 mockIPC((command, payload) => {
+  hostCalls.push(command);
   const args = (payload ?? {}) as Record<string, unknown>;
   if (command === "get_plugins") return resolveRegistry
     ? snapshot()
     : new Promise((resolve) => { resolveRegistry = () => resolve(snapshot()); });
   if (command === "get_plugins_index") return new Promise<PluginIndexEntry[]>((resolve, reject) => requests.push({ resolve, reject }));
   if (command === "configure_plugins") { registry.developerMode = Boolean(args.developerMode); registry.indexUrl = String(args.indexUrl); return null; }
-  if (command === "plugin:opener|open_url") { opened = String(args.url); return null; }
+  if (command === "plugin:opener|open_url") {
+    if (failOpen) throw new Error("open failed");
+    opened = String(args.url); return null;
+  }
   return null;
 }, { shouldMockEvents: true });
 const messages: string[] = [];
@@ -40,8 +46,18 @@ const app = createRoot(document.getElementById("fixture")!);
 try {
   await act(async () => app.render(<StrictMode><I18nProvider><PluginsSettingsPage /></I18nProvider></StrictMode>)); await wait();
   if (!PLUGINS_ENABLED) {
-    check(!document.querySelector(".plugins-settings") && requests.length === 0 && !resolveRegistry,
-      "关闭时没有插件界面、宿主订阅或索引请求");
+    const guide = document.querySelector<HTMLElement>(".plugin-development")!;
+    check(guide?.textContent?.includes(t.comingSoon) && guide.textContent.includes(t.invitation), "关闭时显示本地化的插件计划与贡献说明");
+    check(!document.querySelector(".plugins-settings, details, input, select") && hostCalls.length === 0,
+      "关闭时没有安装、启用或开发者功能，也不请求宿主、事件或索引");
+    const link = button(t.readGuide);
+    await act(async () => { failOpen = true; link.click(); });
+    check(guide.querySelector("[role='alert']")?.textContent === t.openGuideFailed, "外链失败在原地提供本地化提示");
+    await act(async () => { failOpen = false; link.click(); });
+    check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md" && !guide.querySelector("[role='alert']"), "重试用 opener 打开规范总览并清除错误");
+    const fixture = document.getElementById("fixture")!;
+    check(guide.scrollWidth <= fixture.clientWidth && link.getBoundingClientRect().right <= fixture.getBoundingClientRect().right + 1,
+      "中英文规范入口在窄布局中不溢出");
   } else {
     check(requests.length >= 1, "索引请求已开始");
     await act(async () => resolveRegistry?.()); await wait();

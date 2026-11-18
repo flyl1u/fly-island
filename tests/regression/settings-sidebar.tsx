@@ -6,7 +6,6 @@ import "../../src/styles/tokens.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { SettingsSidebar } from "../../src/windows/settings/SettingsSidebar";
 import { settingsCategoryFor, type SettingsCategory } from "../../src/windows/settings/categories";
-import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
 localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
@@ -55,16 +54,16 @@ try {
   check(groups().join("|") === "基础|功能|AI Agent" && !host.querySelector(".settings-sidebar__heading"),
     "Pages sit in three named groups (Plugins and About after them), set apart by space rather than visible headings");
   check(!host.querySelector("input, button[aria-expanded]"), "No search box and nothing to fold");
-  check(listed().join() === `general,appearance,todos,music,translation,clipboard,messages,agents,agentConnect,${PLUGINS_ENABLED ? "plugins," : ""}about`,
+  check(listed().join() === "general,appearance,todos,music,translation,clipboard,messages,agents,agentConnect,plugins,about",
     "Every page is listed once, in sidebar order");
   const listGroups = [...host.querySelectorAll<HTMLElement>(".settings-sidebar__list .settings-sidebar__group")];
   const lastGroup = listGroups[listGroups.length - 1];
   // Plugins now shares the final untitled group with About; the author link still follows.
   check(!host.querySelector(".settings-sidebar__footer") && !lastGroup?.getAttribute("aria-label")
-    && [...lastGroup.querySelectorAll<HTMLElement>("[data-category]")].map(item => item.dataset.category).join() === (PLUGINS_ENABLED ? "plugins,about" : "about")
+    && [...lastGroup.querySelectorAll<HTMLElement>("[data-category]")].map(item => item.dataset.category).join() === "plugins,about"
     && lastGroup.previousElementSibling?.querySelector("li:last-child [data-category='agentConnect']"),
     "Plugins then About share the final untitled group below Connection, not pinned to a footer");
-  check(PLUGINS_ENABLED || settingsCategoryFor("plugins") === null, "Unavailable plugin routes cannot be opened");
+  check(settingsCategoryFor("plugins") === "plugins", "The plugin guide route is always available");
   check(element(".settings-sidebar__item--active").dataset.category === "general", "The open page is marked");
   await act(async () => { element<HTMLButtonElement>("[data-category='clipboard']").click(); });
   check(opened[opened.length - 1] === "clipboard" && element(".settings-sidebar__item--active").dataset.category === "clipboard"

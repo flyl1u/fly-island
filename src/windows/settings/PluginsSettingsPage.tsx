@@ -11,10 +11,11 @@ import { usePlugins, refreshPlugins } from "../../features/plugins/usePlugins";
 import { PLUGINS_ENABLED } from "../../features/plugins";
 import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, PLUGIN_INDEX_UNAVAILABLE, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
 import { useLocale, useTranslation } from "../../i18n";
+import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
 import "./PluginsSettingsPage.css";
 
 export function PluginsSettingsPage() {
-  return PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : null;
+  return PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />;
 }
 
 function EnabledPluginsSettingsPage() {
