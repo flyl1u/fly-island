@@ -3,8 +3,9 @@ import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
+import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
+import { AUTO_COLLAPSE_SECONDS, TUCK_DELAY_SECONDS, TUCK_EDGE_HEIGHT } from "./settingsLimits";
 import type { ExpandTrigger, IslandSettings, TuckStyle } from "./types";
 
 type RowsProps = {
@@ -93,6 +94,13 @@ export function TuckRows({ settings, onSettingsChange, onPreviewTuck }: RowsProp
           />
         }
       />
+      {settings.tuckStyle === "edge" && (
+        <SettingsSliderRow indent title={expand.tuckEdgeHeight} value={settings.tuckEdgeHeight}
+          min={TUCK_EDGE_HEIGHT.min} max={TUCK_EDGE_HEIGHT.max} step={1}
+          defaultValue={TUCK_EDGE_HEIGHT.default} resetLabel={t.settings.layout.resetToDefault}
+          format={(value) => `${value}px`} commitOnRelease
+          onChange={(tuckEdgeHeight) => { update({ tuckEdgeHeight }); onPreviewTuck?.(); }} />
+      )}
     </>
   );
 }

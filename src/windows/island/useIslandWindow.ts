@@ -6,6 +6,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
 import { useIslandPosition } from "./useIslandPosition";
+import { useGlassBackdrop } from "./useGlassBackdrop";
 import { useNativeLayout } from "./useNativeLayout";
 import { useSettingsPositionReset } from "./useSettingsPositionReset";
 import type { IslandMode, NativeGlassState } from "./types";
@@ -32,6 +33,8 @@ export function useIslandWindow({
   onCollapse,
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
+  // The glass's blurred wallpaper follows the window to whichever monitor it is on.
+  useGlassBackdrop(isGlass(settings.material), settings.glassBlur);
   const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition(settings.positionLocked);
   const [nativeGlassState, setNativeGlassState] =
     useState<NativeGlassState>("disabled");
@@ -56,6 +59,7 @@ export function useIslandWindow({
           customPosition: islandPositionRef.current,
           isTucked: nextIsTucked,
           tuckStyle: nextSettings.tuckStyle,
+          tuckEdgeHeight: nextSettings.tuckEdgeHeight,
           positionLocked: nextSettings.positionLocked,
           animatePosition: true,
           glassEnabled: isGlass(nextSettings.material),
@@ -148,6 +152,7 @@ export function useIslandWindow({
     isTucked,
     mode,
     settings.tuckStyle,
+    settings.tuckEdgeHeight,
     settings.marginY,
     settings.material,
     settings.glassIntensity,

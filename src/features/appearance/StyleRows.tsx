@@ -2,6 +2,7 @@ import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
+import { GLASS_BLUR } from "./settingsLimits";
 import { DEFAULT_SETTINGS, ISLAND_FONT_PERCENT, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE, MIN_COLLAPSED_SCALE, MIN_EXPANDED_SCALE } from "./settings";
 import type { ColorScheme, IslandFont, IslandSettings, Material, PageButtonStyle } from "./types";
 
@@ -70,6 +71,22 @@ export function MaterialRows({ settings, onSettingsChange }: RowsProps) {
           resetLabel={t.settings.layout.resetToDefault}
           indent
           onChange={(glassIntensity) => onSettingsChange({ ...settings, glassIntensity })}
+        />
+      )}
+      {isGlass(settings.material) && (
+        <SettingsSliderRow
+          title={text.glassBlur}
+          description={text.glassBlurHint}
+          value={settings.glassBlur}
+          min={GLASS_BLUR.min}
+          max={GLASS_BLUR.max}
+          step={1}
+          format={percent}
+          defaultValue={GLASS_BLUR.default}
+          resetLabel={t.settings.layout.resetToDefault}
+          indent
+          commitOnRelease
+          onChange={(glassBlur) => onSettingsChange({ ...settings, glassBlur })}
         />
       )}
     </>

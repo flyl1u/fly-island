@@ -61,6 +61,8 @@ export type IslandSettings = {
   islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;
   glassIntensity: number;
+  /** 0–100: how much the glass blurs the desktop wallpaper behind it (island/backdrop.rs). */
+  glassBlur: number;
   opacity: number;
   collapsedScale: number;
   collapsedAutoWidth: boolean;
@@ -137,6 +139,8 @@ export type IslandSettings = {
   messagePreviewSeconds: number;
   autoTuck: boolean;
   tuckStyle: TuckStyle;
+  /** Px of the island left on screen by the "edge" tuck (TUCK_EDGE_HEIGHT). */
+  tuckEdgeHeight: number;
   /**
    * (B) Seconds the collapsed island idles before it tucks into a line (TUCK_DELAY_SECONDS).
    * Replaces `autoTuckSeconds`, which older versions saved and is no longer read.
@@ -218,6 +222,8 @@ export type IslandSettings = {
   clipboardVisibleRows: number;
   /** Clipboard: open history in its own window instead of inside the island. */
   clipboardDetached: boolean;
+  /** The unpinned clipboard window closes when it loses focus (off by default). */
+  clipboardCloseOnBlur: boolean;
 };
 
 export type LegacyIslandSettings = Partial<IslandSettings> & {

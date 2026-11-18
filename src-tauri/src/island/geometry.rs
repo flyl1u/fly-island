@@ -39,7 +39,11 @@ pub(super) const EXPANDED_RADIUS: f64 = 30.0;
 pub(super) const MIN_CORNER_RADIUS: f64 = 16.0;
 pub(super) const MAX_CORNER_RADIUS: f64 = 48.0;
 pub(super) const STAGE_WINDOW_PADDING_Y: f64 = 24.0;
+/// The strip of the island left on screen by the "edge" tuck: 10px by default, set in
+/// Settings → General (tuckEdgeHeight, src/features/appearance/settingsLimits.ts TUCK_EDGE_HEIGHT).
 pub(super) const TUCKED_VISIBLE_EDGE_HEIGHT: f64 = 10.0;
+pub(super) const MIN_TUCKED_EDGE_HEIGHT: f64 = 3.0;
+pub(super) const MAX_TUCKED_EDGE_HEIGHT: f64 = 20.0;
 pub(super) const POSITION_ANIMATION_DURATION: Duration = Duration::from_millis(320);
 
 pub(super) static POSITION_ANIMATION_GENERATION: AtomicU64 = AtomicU64::new(0);
@@ -207,7 +211,7 @@ pub(super) fn tucked_top_offset(state: IslandWindowState, dpi: f64) -> i32 {
     }
     let height = state.collapsed_height * state.collapsed_scale;
     let visible_height = state.tuck_style.hot_zone_size()
-        .map_or(TUCKED_VISIBLE_EDGE_HEIGHT, |(_, height)| height * state.collapsed_scale);
+        .map_or(state.tuck_edge_height, |(_, height)| height * state.collapsed_scale);
     -((height - visible_height).max(0.0) * dpi).round() as i32
 }
 

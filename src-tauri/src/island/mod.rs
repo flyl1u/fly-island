@@ -1,6 +1,7 @@
 //! Main island window: Tauri commands, window access, and the submodules for state,
 //! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
 
+pub(crate) mod backdrop;
 pub(crate) mod focus;
 mod follow;
 mod geometry;
@@ -25,7 +26,8 @@ use geometry::{
     monitor_for_island_position, DEFAULT_EXPANDED_ISLAND_HEIGHT, EXPANDED_ISLAND_HEIGHT_RANGE,
     MAX_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_WIDTH, MAX_CORNER_RADIUS,
     MIN_COLLAPSED_ISLAND_HEIGHT, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
-    MIN_EXPANDED_ISLAND_HEIGHT, POSITION_ANIMATION_GENERATION,
+    MIN_EXPANDED_ISLAND_HEIGHT, MAX_TUCKED_EDGE_HEIGHT, MIN_TUCKED_EDGE_HEIGHT,
+    POSITION_ANIMATION_GENERATION,
 };
 use glass::{apply_glass_material, parse_hex_color};
 use crate::win32;
@@ -75,6 +77,7 @@ pub fn set_island_interaction(
     custom_position: Option<IslandPosition>,
     is_tucked: Option<bool>,
     tuck_style: Option<String>,
+    tuck_edge_height: Option<f64>,
     animate_position: Option<bool>,
     glass_enabled: Option<bool>,
     glass_intensity: Option<f64>,
@@ -104,6 +107,9 @@ pub fn set_island_interaction(
         state.mode = mode;
         state.is_tucked = is_tucked.unwrap_or(false);
         state.tuck_style = state::TuckStyle::from_value(tuck_style.as_deref());
+        if let Some(height) = tuck_edge_height.filter(|height| height.is_finite()) {
+            state.tuck_edge_height = height.clamp(MIN_TUCKED_EDGE_HEIGHT, MAX_TUCKED_EDGE_HEIGHT);
+        }
         state.position_locked = position_locked.unwrap_or(false);
         state.collapsed_scale = collapsed_scale;
         state.collapsed_height = collapsed_height;
@@ -307,6 +313,7 @@ macro_rules! tauri_commands {
             crate::island::focus::take_island_hover_focus,
             crate::island::focus::release_island_hover_focus,
             crate::island::outside_click::set_island_outside_click_watch,
+            crate::island::backdrop::get_island_backdrop,
         ] $($rest)*)
     };
 }

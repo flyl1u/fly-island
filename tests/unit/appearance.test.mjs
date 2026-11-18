@@ -111,8 +111,6 @@ test("options no longer in Settings load as their defaults, whatever was saved",
   const saved = {
     marginY: 48,
     islandMonitor: "cursor",
-    islandCornerRadius: 30,
-    islandCornerShape: "round",
     maxPanelHeight: 320,
     pulseBrightness: 140,
     todoBackgroundColor: "#ffeeaa",
@@ -148,6 +146,26 @@ test("options no longer in Settings load as their defaults, whatever was saved",
   };
   const normalized = normalizeSettings(saved);
   for (const key of Object.keys(saved)) assert.deepEqual(normalized[key], DEFAULT_SETTINGS[key], key);
+});
+
+test("the open corner radius and shape are settings again, kept within Rust's range", () => {
+  assert.equal(normalizeSettings({}).islandCornerRadius, 42);
+  assert.equal(normalizeSettings({ islandCornerRadius: 30 }).islandCornerRadius, 30);
+  assert.equal(normalizeSettings({ islandCornerRadius: 99 }).islandCornerRadius, 48);
+  assert.equal(normalizeSettings({ islandCornerRadius: "x" }).islandCornerRadius, 42);
+  assert.equal(normalizeSettings({ islandCornerShape: "round" }).islandCornerShape, "round");
+  assert.equal(normalizeSettings({ islandCornerShape: "oval" }).islandCornerShape, "squircle");
+});
+
+test("glass blur, the edge tuck strip and closing the clipboard on blur keep their defaults for older settings", () => {
+  const older = normalizeSettings({});
+  assert.equal(older.glassBlur, 60);
+  assert.equal(older.tuckEdgeHeight, 10);
+  assert.equal(older.clipboardCloseOnBlur, false);
+  assert.equal(normalizeSettings({ glassBlur: 150 }).glassBlur, 100);
+  assert.equal(normalizeSettings({ tuckEdgeHeight: 1 }).tuckEdgeHeight, 3);
+  assert.equal(normalizeSettings({ clipboardCloseOnBlur: "yes" }).clipboardCloseOnBlur, false);
+  assert.equal(normalizeSettings({ clipboardCloseOnBlur: true }).clipboardCloseOnBlur, true);
 });
 
 test("the options still in Settings are read back and fall back for older settings", () => {

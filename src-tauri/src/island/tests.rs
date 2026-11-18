@@ -393,3 +393,12 @@ fn morphing_tucks_anchor_to_each_work_area_and_restore_floating_positions() {
         }
     }
 }
+
+#[test]
+fn edge_tuck_leaves_the_chosen_strip_on_screen() {
+    let mut island = IslandWindowState { tuck_style: TuckStyle::Edge, collapsed_scale: 1.0, ..IslandWindowState::default() };
+    let height = island.collapsed_height;
+    assert_eq!(tucked_top_offset(island, 1.0), -((height - 10.0).round() as i32), "10px by default, as before");
+    island.tuck_edge_height = 4.0;
+    assert_eq!(tucked_top_offset(island, 2.0), -(((height - 4.0) * 2.0).round() as i32));
+}

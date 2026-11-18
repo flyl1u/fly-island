@@ -45,8 +45,17 @@ export function getIslandStageStyle(
     "--island-ink-rgb": inkOn(colors.islandBackgroundColor),
     ...pageInkStyle(settings.pageTextColor),
     ...(isGlass(settings.material) ? getGlassStyle(settings, colors) : {}),
+    // The glass shadow's scale from the open size down to the collapsed bar (IslandGlass.css).
+    "--glass-shadow-collapsed-scale": glassShadowScale(settings, collapsedIslandWidth, expandedIslandHeight),
     "--todo-background-color": settings.todoBackgroundColor,
   }) as CSSProperties;
+}
+
+function glassShadowScale(settings: IslandSettings, collapsedWidth: number, expandedHeight: number) {
+  const open = (size: number) => Math.max(1, size * settings.expandedScale);
+  const x = (collapsedWidth * settings.collapsedScale) / open(560);
+  const y = (settings.collapsedHeight * settings.collapsedScale) / open(expandedHeight);
+  return `${x.toFixed(4)}, ${y.toFixed(4)}`;
 }
 
 /**
