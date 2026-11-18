@@ -25,6 +25,11 @@ export type ClipboardText = {
   segments: string;
   all: string;
   favorites: string;
+  /** The type filter next to the tabs; pressing the active type again shows every type. */
+  kinds: string;
+  kindText: string;
+  kindImage: string;
+  kindFile: string;
   searchPlaceholder: string;
   searchLabel: string;
   clearSearch: string;
@@ -76,6 +81,10 @@ export const zhCN: ClipboardText = {
   segments: "剪贴板栏目",
   all: "全部",
   favorites: "收藏",
+  kinds: "按类型筛选",
+  kindText: "只看文本",
+  kindImage: "只看图片",
+  kindFile: "只看文件",
   searchPlaceholder: "搜索内容或备注",
   searchLabel: "搜索剪贴板内容或备注",
   clearSearch: "清除搜索",
@@ -127,6 +136,10 @@ export const en: ClipboardText = {
   segments: "Clipboard tabs",
   all: "All",
   favorites: "Starred",
+  kinds: "Filter by type",
+  kindText: "Text only",
+  kindImage: "Images only",
+  kindFile: "Files only",
   searchPlaceholder: "Search content or note",
   searchLabel: "Search clipboard content or note",
   clearSearch: "Clear search",

@@ -4,6 +4,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 import { ClipboardShortcutRows } from "../../features/clipboard/ClipboardShortcutRows";
+import { ClipboardStorageRows } from "../../features/clipboard/ClipboardStorageRows";
 import { useTranslationSettings } from "../../features/translation/useTranslationSettings";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { findShortcutOwner } from "./shortcutConflicts";
@@ -44,6 +45,8 @@ export function ClipboardSettingsPage({
           onVisibleRowsChange={(clipboardVisibleRows) => onSettingsChange({ ...settings, clipboardVisibleRows })}
           detached={settings.clipboardDetached}
           onDetachedChange={(clipboardDetached) => onSettingsChange({ ...settings, clipboardDetached })}
+          closeOnBlur={settings.clipboardCloseOnBlur}
+          onCloseOnBlurChange={(clipboardCloseOnBlur) => onSettingsChange({ ...settings, clipboardCloseOnBlur })}
         />
       )}
       {clipboardSettings.enabled && (
@@ -55,6 +58,7 @@ export function ClipboardSettingsPage({
           />
         </SettingsGroup>
       )}
+      {clipboardSettings.enabled && <ClipboardStorageRows />}
       <ShelfSettingsGroup settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );

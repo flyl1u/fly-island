@@ -1,19 +1,27 @@
-import { Search, X } from "lucide-react";
+import { FileText, ImageIcon, Search, Type, X, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
+import type { ClipboardItemKind, ClipboardKindFilter } from "./kind";
 import "./ClipboardFilters.css";
+
+const KIND_ICONS: Record<ClipboardItemKind, LucideIcon> = { text: Type, image: ImageIcon, file: FileText };
 
 export function ClipboardFilters({
   view,
   query,
+  kind,
   onViewChange,
   onQueryChange,
+  onKindChange,
 }: {
   view: "all" | "favorites";
   query: string;
+  kind: ClipboardKindFilter;
   onViewChange: (view: "all" | "favorites") => void;
   onQueryChange: (query: string) => void;
+  onKindChange: (kind: ClipboardKindFilter) => void;
 }) {
   const t = useTranslation();
+  const kindLabels: Record<ClipboardItemKind, string> = { text: t.clipboard.kindText, image: t.clipboard.kindImage, file: t.clipboard.kindFile };
 
   return (
     <div className="clipboard-filters">
@@ -34,6 +42,19 @@ export function ClipboardFilters({
         >
           {t.clipboard.favorites}
         </button>
+      </div>
+
+      <div className="clipboard-kinds" role="group" aria-label={t.clipboard.kinds}>
+        {(["text", "image", "file"] as const).map((value) => {
+          const Icon = KIND_ICONS[value];
+          const active = kind === value;
+          return (
+            <button key={value} type="button" className={active ? "clipboard-kind--active" : ""} aria-pressed={active}
+              aria-label={kindLabels[value]} title={kindLabels[value]} onClick={() => onKindChange(active ? "any" : value)}>
+              <Icon size={14} strokeWidth={2} aria-hidden="true" />
+            </button>
+          );
+        })}
       </div>
 
       <label className="clipboard-search">

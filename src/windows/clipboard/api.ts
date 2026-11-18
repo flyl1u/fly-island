@@ -9,6 +9,13 @@ export function setClipboardWindowPinned(pinned: boolean) { return getCurrentWin
 export function setClipboardWindowTitle(title: string) { return getCurrentWindow().setTitle(title); }
 export function dragClipboardWindow() { return getCurrentWindow().startDragging(); }
 export type ClipboardResizeDirection = Parameters<ReturnType<typeof getCurrentWindow>["startResizeDragging"]>[0];
+/** Focus changes of the clipboard window; resolves to the unlisten function. */
+export function listenClipboardWindowFocus(handler: (focused: boolean) => void) {
+  return getCurrentWindow().onFocusChanged(({ payload }) => handler(payload));
+}
+export function isClipboardWindowFocused() { return getCurrentWindow().isFocused(); }
+/** The saved choice, read when focus leaves so a change in the settings window applies at once. */
+export function closesClipboardWindowOnBlur() { return loadSettings().clipboardCloseOnBlur; }
 export function resizeClipboardWindow(direction: ClipboardResizeDirection) { return getCurrentWindow().startResizeDragging(direction); }
 
 /** Read the stored choice at activation time, including changes from the settings window. */
