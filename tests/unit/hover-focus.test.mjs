@@ -45,3 +45,11 @@ test("game mode only acts while a full-screen app is in front", () => {
 test("a game on another monitor keeps the island quiet but not tucked", () => {
   assert.deepEqual(gameModeEffects(elsewhere, both), { quiet: true, tuck: false });
 });
+
+test("hovering a tucked island opens it in one step only in hover mode, never in game mode", async () => {
+  const { tuckedHoverOpensPanel } = await import("../../src/windows/island/tuckedHover.ts");
+  assert.equal(tuckedHoverOpensPanel("hover", false), true);
+  assert.equal(tuckedHoverOpensPanel("click", false), false);
+  assert.equal(tuckedHoverOpensPanel("hover", true), false);
+  assert.equal(tuckedHoverOpensPanel("click", true), false);
+});

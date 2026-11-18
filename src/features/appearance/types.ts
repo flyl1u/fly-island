@@ -18,7 +18,7 @@ export type IslandMonitor = "primary" | "cursor" | "foreground";
 export type ExpandTrigger = "click" | "hover";
 /** What the expanded island's minimize button does: hide to the tray, or tuck to the top edge. */
 export type MinimizeAction = "tray" | "tuck";
-/** What resting the pointer on an island tucked to the edge does: slide it out, or open its panel too. */
+/** Retired: no longer in Settings, always loads as "reveal"; tucked hover now follows ExpandTrigger (tuckedHover.ts). */
 export type TuckedHoverAction = "reveal" | "expand";
 export type TuckStyle = "edge" | "line" | "hidden";
 /** How the Agent page shows the program a session runs in. */
