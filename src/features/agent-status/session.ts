@@ -1,5 +1,5 @@
 import type { AgentProvider, AgentSessionSummary, AgentTaskStatus, ExternalAgentStatus } from "./api";
-import { sessionProject } from "./sessionList.ts";
+import { hasBackgroundWork, sessionProject } from "./sessionList.ts";
 import { AGENT_PROVIDER_LABELS } from "./status.ts";
 
 /** How long a finished session's title stays on the island before the todo comes back. */
@@ -13,7 +13,7 @@ export type AgentSession = {
   title: string;
 };
 
-type Candidate = { session: AgentSession; phase: AgentTaskStatus["phase"]; updatedAt: number };
+type Candidate = { session: AgentSession; phase: AgentTaskStatus["phase"]; updatedAt: number; backgroundTasks?: number };
 
 /**
  * Claude Code and Codex come from the session files (the Agent page's list), so the island
@@ -29,6 +29,7 @@ function candidates(sessions: AgentSessionSummary[], others: ExternalAgentStatus
     },
     phase: summary.phase,
     updatedAt: summary.updatedAt,
+    backgroundTasks: summary.backgroundTasks,
   }));
   const fromOthers = (others ?? []).map((other) => ({
     session: { provider: null, label: other.name, title: (other.title ?? "").trim() },
@@ -38,8 +39,10 @@ function candidates(sessions: AgentSessionSummary[], others: ExternalAgentStatus
   return [...fromSessions, ...fromOthers].filter((candidate) => candidate.session.title);
 }
 
-function isVisible({ phase, updatedAt }: Candidate, now: number) {
+function isVisible(candidate: Candidate, now: number) {
+  const { phase, updatedAt } = candidate;
   return (
+    hasBackgroundWork(candidate) ||
     phase === "running" ||
     phase === "waiting" ||
     phase === "failed" ||
@@ -49,8 +52,8 @@ function isVisible({ phase, updatedAt }: Candidate, now: number) {
 }
 
 /**
- * The session the collapsed island should name: a running, waiting, failed or stale one, or one
- * that completed less than `COMPLETED_TITLE_HOLD_MS` ago. With several, the most recently
+ * The session the collapsed island should name: a running, waiting, failed or stale one, one whose
+ * background tasks still run (`hasBackgroundWork`), or one that completed less than `COMPLETED_TITLE_HOLD_MS` ago. With several, the most recently
  * updated wins.
  */
 export function pickAgentSession(
@@ -74,7 +77,7 @@ export function agentSessionExpiresAt(
   now: number,
 ): number | null {
   const expiries = candidates(sessions, others)
-    .filter((candidate) => candidate.phase === "completed")
+    .filter((candidate) => candidate.phase === "completed" && !hasBackgroundWork(candidate))
     .map((candidate) => candidate.updatedAt + COMPLETED_TITLE_HOLD_MS)
     .filter((expiresAt) => expiresAt > now);
   return expiries.length > 0 ? Math.min(...expiries) : null;

@@ -77,3 +77,11 @@ test("sources reported by plugins or the local API are named by their own name",
   // A newer list session wins over an older report.
   assert.equal(pickAgentSession([session({ updatedAt: NOW })], others, NOW)?.provider, "claudeCode");
 });
+
+test("a finished turn whose background tasks still run keeps its title until they end", () => {
+  const background = session({ phase: "completed", backgroundTasks: 2, updatedAt: NOW - 600_000 });
+  assert.equal(pickAgentSession([background], undefined, NOW)?.title, "设置界面完善思路");
+  assert.equal(agentSessionExpiresAt([background], undefined, NOW), null);
+  const ended = session({ phase: "completed", backgroundTasks: 0, updatedAt: NOW - 600_000 });
+  assert.equal(pickAgentSession([ended], undefined, NOW), null);
+});

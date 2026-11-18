@@ -110,6 +110,12 @@ pub(super) fn claude_code_hook_entries(
         hook.insert("async".to_string(), Value::Bool(true));
     }
 
+    // In the background: it only clears the marker, and a foreground subagent need not wait for it.
+    let mut subagent_stop = claude_code_status_hook_entry(status_script_path, "completed");
+    if let Some(hook) = subagent_stop["hooks"][0].as_object_mut() {
+        hook.insert("async".to_string(), Value::Bool(true));
+    }
+
     vec![
         ("SessionStart", session_start),
         ("SessionEnd", claude_code_session_hook_entry(&session_script_path, "end")),
@@ -133,6 +139,10 @@ pub(super) fn claude_code_hook_entries(
             "StopFailure",
             claude_code_status_hook_entry(status_script_path, "failed"),
         ),
+        // A background subagent's tool calls rewrite the running marker after the turn's Stop;
+        // without this the marker outlived the subagent by ten minutes and held the island open.
+        // A foreground subagent ending mid-turn clears it too, and the next tool call sets it again.
+        ("SubagentStop", subagent_stop),
     ]
 }
 
@@ -397,6 +407,8 @@ mod tests {
             json!("permission_prompt|elicitation_dialog|agent_needs_input")
         );
         assert_eq!(last_arg("Stop"), Some(json!("completed")));
+        assert_eq!(last_arg("SubagentStop"), Some(json!("completed")));
+        assert_eq!(hooks["SubagentStop"][0]["hooks"][0]["async"], json!(true));
         // Session start and end record the session's process and terminal, the start in the background.
         assert_eq!(last_arg("SessionStart"), Some(json!("start")));
         assert_eq!(hooks["SessionStart"][0]["hooks"][0]["async"], json!(true));

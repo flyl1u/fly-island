@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { IslandSettings } from "../appearance/types";
-import { countActiveSessions, filterSessions, isActivePhase } from "./sessionList";
+import { countActiveSessions, filterSessions, isSessionActive } from "./sessionList";
 import { useAgentSessions } from "./useAgentSessions";
 import { useHiddenSessions } from "./useHiddenSessions";
 import { useUnseenSessions } from "./useUnseenSessions";
@@ -33,7 +33,7 @@ export function useIslandAgentSessions(settings: AgentSessionSettings) {
   // once that their app quit, while Codex only says so after half an hour, and one list is better
   // than three different rules. Archiving still removes a row by hand.
   const listedAgentSessions = useMemo(
-    () => agentSessions.filter((session) => !settings.agentHideFinished || isActivePhase(session.phase)),
+    () => agentSessions.filter((session) => !settings.agentHideFinished || isSessionActive(session)),
     [agentSessions, settings.agentHideFinished],
   );
   const activeAgentSessionCount = countActiveSessions(agentSessions);
