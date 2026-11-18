@@ -31,6 +31,7 @@ export function getIslandStageStyle(
     "--island-font-scale": settings.islandFontPercent / 100,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
     "--island-corner-radius-size": settings.islandCornerRadius,
+    "--island-collapsed-corner-radius-size": settings.collapsedCornerRadius,
     // The corner-shape of the island and every layer that inherits its radius (IslandShell.css).
     "--island-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--island-shoulder-size-target": `${settings.topEdgeShoulderSize}px`,

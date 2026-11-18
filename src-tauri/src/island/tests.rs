@@ -422,3 +422,14 @@ fn a_grown_message_preview_sets_the_hit_area_within_the_stage_and_game_previews_
     assert_eq!(notice_size_within_stage(Some(400.0), None, 1.0), None);
     assert_eq!(notice_size_within_stage(Some(f64::NAN), Some(80.0), 1.0), None);
 }
+
+#[test]
+fn collapsed_corners_follow_their_own_setting_once_sent() {
+    let mut state = IslandWindowState { mode: IslandMode::Collapsed, corner_radius: 42.0, ..IslandWindowState::default() };
+    // An older front end sends no collapsed radius: the old 12 / 30 ratio stays.
+    assert!((state.bottom_corner_radius() - 16.8).abs() < 1e-9);
+    state.collapsed_corner_radius = Some(8.0);
+    assert_eq!(state.bottom_corner_radius(), 8.0);
+    state.mode = IslandMode::Expanded;
+    assert_eq!(state.bottom_corner_radius(), 42.0, "the open island keeps the open radius");
+}

@@ -24,8 +24,8 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 use geometry::{
     monitor_for_island_position, DEFAULT_EXPANDED_ISLAND_HEIGHT, EXPANDED_ISLAND_HEIGHT_RANGE,
-    MAX_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_WIDTH, MAX_CORNER_RADIUS,
-    MIN_COLLAPSED_ISLAND_HEIGHT, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
+    MAX_COLLAPSED_CORNER_RADIUS, MAX_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_WIDTH, MAX_CORNER_RADIUS,
+    MIN_COLLAPSED_CORNER_RADIUS, MIN_COLLAPSED_ISLAND_HEIGHT, MIN_COLLAPSED_ISLAND_WIDTH, MIN_CORNER_RADIUS,
     MIN_EXPANDED_ISLAND_HEIGHT, MAX_TUCKED_EDGE_HEIGHT, MIN_TUCKED_EDGE_HEIGHT,
     POSITION_ANIMATION_GENERATION,
 };
@@ -83,6 +83,7 @@ pub fn set_island_interaction(
     glass_intensity: Option<f64>,
     glass_tint: Option<String>,
     corner_radius: Option<f64>,
+    collapsed_corner_radius: Option<f64>,
     corner_shape: Option<String>,
     monitor_follow: Option<String>,
     position_locked: Option<bool>,
@@ -142,6 +143,9 @@ pub fn set_island_interaction(
         }
         if let Some(corner_radius) = corner_radius {
             state.corner_radius = corner_radius.clamp(MIN_CORNER_RADIUS, MAX_CORNER_RADIUS);
+        }
+        if let Some(radius) = collapsed_corner_radius.filter(|radius| radius.is_finite()) {
+            state.collapsed_corner_radius = Some(radius.clamp(MIN_COLLAPSED_CORNER_RADIUS, MAX_COLLAPSED_CORNER_RADIUS));
         }
         if let Some(corner_shape) = corner_shape.as_deref().and_then(CornerShape::from_value) {
             state.corner_shape = corner_shape;

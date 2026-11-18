@@ -157,6 +157,15 @@ test("the open corner radius and shape are settings again, kept within Rust's ra
   assert.equal(normalizeSettings({ islandCornerShape: "oval" }).islandCornerShape, "squircle");
 });
 
+test("the collapsed corners are a setting of their own; older settings keep the 12 / 30 ratio", () => {
+  assert.equal(normalizeSettings({}).collapsedCornerRadius, 16.8);
+  assert.equal(DEFAULT_SETTINGS.collapsedCornerRadius, 16.8);
+  assert.equal(normalizeSettings({ islandCornerRadius: 30 }).collapsedCornerRadius, 12);
+  assert.equal(normalizeSettings({ islandCornerRadius: 30, collapsedCornerRadius: 9 }).collapsedCornerRadius, 9);
+  assert.equal(normalizeSettings({ collapsedCornerRadius: 99 }).collapsedCornerRadius, 24);
+  assert.equal(normalizeSettings({ islandCornerRadius: 48, collapsedCornerRadius: 6 }).islandCornerRadius, 48);
+});
+
 test("glass blur, the edge tuck strip and closing the clipboard on blur keep their defaults for older settings", () => {
   const older = normalizeSettings({});
   assert.equal(older.glassBlur, 60);

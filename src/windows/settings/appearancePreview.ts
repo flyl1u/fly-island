@@ -3,7 +3,7 @@ import type { PanelPreviewMode } from "./panelPreview";
 
 const COLLAPSED_FIELDS = [
   "topEdgeShoulders", "topEdgeShoulderSize", "collapsedScale", "collapsedAutoWidth", "collapsedWidth", "collapsedHeight",
-  "collapsedLayout", "collapsedPriority", "collapsedShowCover", "showCollapsedText",
+  "collapsedCornerRadius", "collapsedLayout", "collapsedPriority", "collapsedShowCover", "showCollapsedText",
   "islandBackgroundColor", "taskTextColor", "pulseColor", "opacity",
 ] as const satisfies readonly (keyof IslandSettings)[];
 const EXPANDED_FIELDS = [
