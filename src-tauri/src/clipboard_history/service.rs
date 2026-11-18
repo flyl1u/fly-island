@@ -71,6 +71,10 @@ enum ClipboardCapture {
         height: usize,
         rgba: Vec<u8>,
     },
+    Files {
+        hash: String,
+        paths: Vec<String>,
+    },
 }
 
 impl ClipboardHistoryService {
@@ -107,6 +111,12 @@ impl ClipboardHistoryService {
         };
 
         match item.kind {
+            // Files still on disk go back as files; any that moved fall back to their paths.
+            ClipboardHistoryItemKind::Text if item.files.as_ref().is_some_and(|files| {
+                !files.is_empty() && files.iter().all(|path| std::path::Path::new(path).exists())
+            }) => {
+                write_clipboard_files(item.files.as_deref().unwrap_or_default())?;
+            }
             ClipboardHistoryItemKind::Text => {
                 let text = item
                     .text
@@ -230,7 +240,7 @@ impl ClipboardHistoryService {
 
     pub(super) fn read_image(&self, id: &str) -> Result<String, String> {
         let path = self.image_field(id, |image| image.original_path.clone())?;
-        super::image_access::read_image(&self.image_dir, &path)
+        super::image_access::read_image(&self.image_dir(), &path)
     }
 
     /// The list's thumbnail, read on demand; one older history kept inline is returned as is.
@@ -238,7 +248,7 @@ impl ClipboardHistoryService {
         let (path, inline) = self.image_field(id, |image| (image.thumbnail_path.clone(), image.thumbnail_data_url.clone()))?;
         match inline {
             Some(data_url) => Ok(data_url),
-            None => super::image_access::read_image(&self.image_dir, &path),
+            None => super::image_access::read_image(&self.image_dir(), &path),
         }
     }
 
@@ -325,6 +335,21 @@ impl ClipboardHistoryService {
                 preview,
                 text: Some(text),
                 image: None,
+                files: None,
+            },
+            ClipboardCapture::Files { hash, paths } => ClipboardHistoryItem {
+                id: create_item_id(now, &hash),
+                kind: ClipboardHistoryItemKind::Text,
+                hash,
+                created_at: now,
+                copied_at: now,
+                favorite: false,
+                note: String::new(),
+                preview: files_preview(&paths),
+                text: Some(paths.join("
+")),
+                image: None,
+                files: Some(paths),
             },
             ClipboardCapture::Image {
                 hash,
@@ -344,6 +369,7 @@ impl ClipboardHistoryService {
                     preview: format!("{width} x {height} image"),
                     text: None,
                     image: Some(image),
+                    files: None,
                 }
             }
         };
@@ -375,8 +401,9 @@ impl ClipboardHistoryService {
         let thumbnail = make_thumbnail(&rgba_image);
         let thumbnail_bytes = encode_png(&thumbnail)?;
         let safe_hash = hash.chars().take(24).collect::<String>();
-        let original_path = self.image_dir.join(format!("{safe_hash}.png"));
-        let thumbnail_path = self.image_dir.join(format!("{safe_hash}-thumb.png"));
+        let image_dir = self.image_dir();
+        let original_path = image_dir.join(format!("{safe_hash}.png"));
+        let thumbnail_path = image_dir.join(format!("{safe_hash}-thumb.png"));
 
         fs::write(&original_path, &original_bytes)
             .map_err(|error| format!("Failed to write clipboard image: {error}"))?;
@@ -416,14 +443,15 @@ impl ClipboardHistoryService {
         };
         let content = serde_json::to_string_pretty(&history)
             .map_err(|error| format!("Failed to serialize clipboard history: {error}"))?;
-        fs::write(&self.history_path, content)
+        fs::write(self.history_path(), content)
             .map_err(|error| format!("Failed to write clipboard history: {error}"))
     }
 
     fn remove_item_files(&self, item: &ClipboardHistoryItem) {
         if let Some(image) = &item.image {
+            let image_dir = self.image_dir();
             for path in [&image.original_path, &image.thumbnail_path] {
-                if let Ok(path) = super::image_access::managed_path(&self.image_dir, path) {
+                if let Ok(path) = super::image_access::managed_path(&image_dir, path) {
                     let _ = fs::remove_file(path);
                 }
             }
@@ -451,13 +479,23 @@ impl ClipboardHistoryService {
 impl ClipboardCapture {
     fn hash(&self) -> &str {
         match self {
-            Self::Text { hash, .. } | Self::Image { hash, .. } => hash,
+            Self::Text { hash, .. } | Self::Image { hash, .. } | Self::Files { hash, .. } => hash,
         }
     }
 }
 
 fn read_clipboard_capture(capture_images: bool) -> Result<Option<ClipboardCapture>, String> {
     let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
+
+    // Files first: Explorer puts only CF_HDROP, but some programs add the names as text too.
+    if let Ok(files) = clipboard.get().file_list() {
+        let paths: Vec<String> = files.iter().map(|path| path.to_string_lossy().to_string()).filter(|path| !path.is_empty()).collect();
+        if !paths.is_empty() {
+            let hash = hash_bytes([b"files:", paths.join("
+").as_bytes()].concat().as_slice());
+            return Ok(Some(ClipboardCapture::Files { hash, paths }));
+        }
+    }
 
     if let Ok(text) = clipboard.get_text() {
         if !text.trim().is_empty() {
@@ -497,6 +535,27 @@ fn write_clipboard_text(text: &str) -> Result<(), String> {
             .set_text(text.to_owned())
             .map_err(|error| format!("Failed to set clipboard text: {error}"))
     })
+}
+
+fn write_clipboard_files(paths: &[String]) -> Result<(), String> {
+    let paths: Vec<std::path::PathBuf> = paths.iter().map(std::path::PathBuf::from).collect();
+    retry_clipboard_write("set clipboard files", || {
+        Clipboard::new()
+            .map_err(|error| format!("Failed to open clipboard: {error}"))?
+            .set()
+            .file_list(&paths)
+            .map_err(|error| format!("Failed to set clipboard files: {error}"))
+    })
+}
+
+/// "report.docx", or "report.docx and 2 more" in the language-neutral form the row shows
+/// next to its file icon: names only, as the full paths stay searchable in `text`.
+fn files_preview(paths: &[String]) -> String {
+    let names: Vec<String> = paths
+        .iter()
+        .map(|path| std::path::Path::new(path).file_name().map_or_else(|| path.clone(), |name| name.to_string_lossy().to_string()))
+        .collect();
+    preview_text(&names.join(", "))
 }
 
 fn write_clipboard_image(width: usize, height: usize, image: &RgbaImage) -> Result<(), String> {

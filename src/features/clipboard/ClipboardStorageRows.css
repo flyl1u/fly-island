@@ -1,0 +1,50 @@
+/* The folder field with its browse button inside, as on the todo save folder. */
+.clipboard-storage__field {
+  position: relative;
+  min-width: 0;
+}
+
+.clipboard-storage__field .settings-input {
+  padding-right: 48px;
+}
+
+.clipboard-storage__browse {
+  position: absolute;
+  inset: 1px 1px 1px auto;
+  width: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--corner-md);
+  cursor: pointer;
+}
+
+.clipboard-storage__browse:hover {
+  color: var(--color-text);
+  background: var(--color-white-a08);
+}
+
+.clipboard-storage__browse:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.clipboard-storage__browse:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.clipboard-storage__done {
+  color: var(--color-agent-idle);
+  font-size: calc(13px * var(--island-font-scale, 1));
+}
+
+.clipboard-storage__error {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-error-text);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  overflow-wrap: anywhere;
+}

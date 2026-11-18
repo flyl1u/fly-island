@@ -71,6 +71,7 @@ mod tests {
                 thumbnail_path: thumbnail_path.to_string_lossy().to_string(),
                 thumbnail_data_url: data_url,
             }),
+            files: None,
         }
     }
 

@@ -1,9 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClipboardHistoryItem } from "./api";
+import { matchesKind, type ClipboardKindFilter } from "./kind.ts";
 
 export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
   const [query, setQuery] = useState("");
   const [clipboardView, setClipboardView] = useState<"all" | "favorites">("all");
+  const [kindFilter, setKindFilter] = useState<ClipboardKindFilter>("any");
   const [renderedCount, setRenderedCount] = useState(20);
   const itemElementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const itemPositionsRef = useRef<Map<string, DOMRect>>(new Map());
@@ -12,7 +14,10 @@ export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
     () => items.filter((item) => item.favorite),
     [items],
   );
-  const viewedItems = clipboardView === "favorites" ? favoriteItems : items;
+  const viewedItems = useMemo(
+    () => (clipboardView === "favorites" ? favoriteItems : items).filter((item) => matchesKind(item, kindFilter)),
+    [clipboardView, favoriteItems, items, kindFilter],
+  );
   const filteredItems = useMemo(() => {
     if (!normalizedQuery) {
       return viewedItems;
@@ -75,6 +80,8 @@ export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
     setQuery: (value: string) => { setQuery(value); setRenderedCount(20); },
     clipboardView,
     setClipboardView: (value: "all" | "favorites") => { setClipboardView(value); setRenderedCount(20); },
+    kindFilter,
+    setKindFilter: (value: ClipboardKindFilter) => { setKindFilter(value); setRenderedCount(20); },
     favoriteItems,
     filteredItems,
     renderedItems: filteredItems.slice(0, renderedCount),

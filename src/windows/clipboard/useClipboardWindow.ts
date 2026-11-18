@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { setClipboardWindowPinned, setClipboardWindowTitle, showClipboardWindow } from "./api";
+import { closeClipboardWindow, closesClipboardWindowOnBlur, isClipboardWindowFocused, listenClipboardWindowFocus, setClipboardWindowPinned, setClipboardWindowTitle, showClipboardWindow } from "./api";
 import { loadClipboardWindowPinned, saveClipboardWindowPinned } from "./storage";
 
 /** Restore pinning before the first reveal, so an unpinned window never flashes on top. */
@@ -31,6 +31,24 @@ export function useClipboardWindow(title: string) {
       cancelAnimationFrame(secondFrame);
     };
   }, []);
+  // Unpinned and set to close on blur: clicking another window closes it. A short wait lets a
+  // focus that comes straight back (the system menu, a title-bar drag) keep it open.
+  useEffect(() => {
+    if (pinned) return;
+    let didCancel = false;
+    let timer = 0;
+    let unlisten: (() => void) | null = null;
+    void listenClipboardWindowFocus((focused) => {
+      window.clearTimeout(timer);
+      if (focused || !closesClipboardWindowOnBlur()) return;
+      timer = window.setTimeout(() => {
+        void isClipboardWindowFocused().then((back) => {
+          if (!back && !didCancel) void closeClipboardWindow().catch(() => setFailed(true));
+        });
+      }, 150);
+    }).then((next) => { if (didCancel) next(); else unlisten = next; });
+    return () => { didCancel = true; window.clearTimeout(timer); unlisten?.(); };
+  }, [pinned]);
   const togglePinned = async () => {
     if (busy) return;
     setBusy(true);

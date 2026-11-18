@@ -38,7 +38,8 @@
 .clipboard-window__button:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 .clipboard-window__content { min-height: 0; padding: 0 var(--space-xl) var(--space-xs); }
 .clipboard-window .clipboard-panel { padding: var(--space-lg) 0 var(--space-md); }
-.clipboard-window .clipboard-item { grid-template-columns: minmax(0, 1fr) minmax(0, 64px) auto; }
+/* The note column grows with the window (a fixed 64px cut notes to about five characters). */
+.clipboard-window .clipboard-item { grid-template-columns: minmax(0, 1fr) minmax(64px, min(32%, 280px)) auto; }
 .clipboard-window .clipboard-item--selecting { grid-template-columns: minmax(0, 1fr); }
 .clipboard-window .clipboard-item:has(.clipboard-note-editor) { grid-template-columns: minmax(0, 1fr) minmax(130px, 1fr); }
 .clipboard-window .clipboard-item:has(.clipboard-note-editor) .clipboard-item__actions { display: none; }

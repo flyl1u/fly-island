@@ -36,6 +36,8 @@ export function ClipboardHistoryPanel({
     setQuery,
     clipboardView,
     setClipboardView,
+    kindFilter,
+    setKindFilter,
     favoriteItems,
     filteredItems,
     renderedItems,
@@ -105,8 +107,10 @@ export function ClipboardHistoryPanel({
         <ClipboardFilters
           view={clipboardView}
           query={query}
+          kind={kindFilter}
           onViewChange={setClipboardView}
           onQueryChange={setQuery}
+          onKindChange={setKindFilter}
         />
 
         <div className="clipboard-list" role="list" onScroll={(event) => onListScroll(event.currentTarget)}>

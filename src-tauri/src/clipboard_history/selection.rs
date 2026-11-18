@@ -37,6 +37,7 @@ mod tests {
             preview: id.into(),
             text: Some(id.into()),
             image: None,
+            files: None,
         }
     }
 

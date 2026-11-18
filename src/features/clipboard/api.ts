@@ -30,6 +30,15 @@ export type ClipboardHistoryItem = {
   preview: string;
   text?: string;
   image?: ClipboardHistoryImage;
+  /** Files copied in Explorer; such an item is a text item whose text is the paths. */
+  files?: string[];
+};
+
+/** 对应 src-tauri/src/clipboard_history/location.rs 的 ClipboardStorageInfo。 */
+export type ClipboardStorageInfo = {
+  directory: string;
+  defaultDirectory: string;
+  isDefault: boolean;
 };
 
 export type ClipboardHistorySnapshot = {
@@ -73,6 +82,20 @@ export function deleteClipboardItem(id: string) {
 
 export function deleteClipboardItems(ids: string[]) {
   return invoke<ClipboardHistorySnapshot>("delete_clipboard_history_items", { ids });
+}
+
+export function getClipboardStorageDirectory() {
+  return invoke<ClipboardStorageInfo>("get_clipboard_storage_directory");
+}
+
+/** Moves the history and its images; an empty directory moves them back to the default. */
+export function setClipboardStorageDirectory(directory: string) {
+  return invoke<ClipboardStorageInfo>("set_clipboard_storage_directory", { directory });
+}
+
+/** The shared native folder picker (system/folder_dialog.rs), starting at `initialDirectory`. */
+export function pickClipboardStorageDirectory(initialDirectory: string, title: string) {
+  return invoke<string | null>("pick_folder", { initialDirectory, title });
 }
 
 export function readClipboardImage(id: string) {
