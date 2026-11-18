@@ -175,7 +175,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - v3.4.0（2026-11-18）：
   - `focusd-island-settings` 新增 `glassBlur`（整数 0–100，默认 60，外观字段、进外观预设）、`tuckEdgeHeight`（整数 3–20，默认 10，露边贴边时留在屏幕上的高度）、`clipboardCloseOnBlur`（布尔，默认 false，只有明确 true 才开）。`islandCornerRadius`（16–48，默认 42）与 `islandCornerShape`（`squircle` / `round`）重新可以设置：读取时夹到范围内，不再一律回到默认。缺失或非法值回退默认。
   - `focusd-island-translation-settings` 新增 `shortcutEnabled`（布尔，缺失视为 true）；`provider` 新增 `google`、`mymemory`（免密钥，旧版本读到会回退 DeepSeek）。
-  - 新命令 `get_island_backdrop({ blur: number, knownKey: string | null })` → `{ key, dataUrl: string | null, left, top, width, height }`（显示器物理像素），只读壁纸，不读屏幕。
+  - 新命令 `start_glass_capture({ onFrame: Channel })` → `boolean`（false 表示系统不支持把岛屿排除出 Desktop Duplication，不采集）、`set_glass_capture_region({ region: { left, top, width, height } | null, blur: 0–100 })`（相对窗口左上角的物理像素，null 暂停）、`stop_glass_capture()`。帧是原始字节：24 字节头（相对窗口左上角的矩形 4×i32 小端，像素宽高 2×u32），后接 RGBA；空消息表示暂停。玻璃采集期间主窗口带 `WCA_EXCLUDED_FROM_DDA`，停止时撤销。
   - `set_island_interaction` 增加可选参数 `tuckEdgeHeight`（缺失时保持当前值，初始 10，Rust 夹 3–20）。
   - 新命令 `get_clipboard_storage_directory()`、`set_clipboard_storage_directory({ directory })`，都返回 `{ directory, defaultDirectory, isDefault }`；空字符串表示移回应用数据目录。剪贴板存储目录选择复用 `pick_folder`。
   - 应用数据目录新增 `clipboard-location.json`（`{ "directory": "<绝对路径>" }`）：存在且可用时剪贴板历史（`clipboard-history.json` 与 `clipboard-images/`）放在该目录；文件缺失、损坏或目录不可用时回到应用数据目录（不删除该文件）。迁移先复制、写指针，全部成功后才删除旧文件。

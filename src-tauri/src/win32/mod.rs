@@ -7,6 +7,7 @@ pub(crate) mod caption_close;
 pub(crate) mod chinese;
 pub(crate) mod clipboard;
 pub(crate) mod com;
+pub(crate) mod desktop_duplication;
 pub(crate) mod folder_dialog;
 pub(crate) mod hotkey;
 pub(crate) mod icon;
@@ -29,7 +30,6 @@ pub(crate) mod taskbar;
 pub(crate) mod taskbar_edge;
 pub(crate) mod uia_list;
 pub(crate) mod uia_tabs;
-pub(crate) mod wallpaper;
 pub(crate) mod window;
 
 pub(crate) mod media_plugin_registry;

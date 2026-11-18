@@ -1,16 +1,35 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { backdropPlacement } from "../../src/windows/island/glassBackdrop.ts";
+import { glassFramePlacement, parseGlassFrame } from "../../src/windows/island/glassFrame.ts";
 import { clipboardItemKind, matchesKind } from "../../src/features/clipboard/kind.ts";
 
-test("the wallpaper is shifted by the window's place on its monitor, in CSS px", () => {
-  const monitor = { left: -1920, top: 0, width: 3840, height: 2160 };
-  assert.deepEqual(backdropPlacement(monitor, { x: -1200, y: -30 }, 2), {
-    "--glass-backdrop-x": "-360px",
-    "--glass-backdrop-y": "15px",
-    "--glass-backdrop-size": "1920px 1080px",
+test("a live backdrop frame carries its place on the window and its RGBA pixels", () => {
+  const bytes = new Uint8Array(24 + 2 * 1 * 4);
+  const view = new DataView(bytes.buffer);
+  [-20, 0, 1180, 460].forEach((value, index) => view.setInt32(index * 4, value, true));
+  view.setUint32(16, 2, true);
+  view.setUint32(20, 1, true);
+  bytes.set([1, 2, 3, 255, 4, 5, 6, 255], 24);
+  const frame = parseGlassFrame(bytes.buffer);
+  assert.equal(frame.width, 2);
+  assert.deepEqual([...frame.pixels], [1, 2, 3, 255, 4, 5, 6, 255]);
+  assert.deepEqual(glassFramePlacement(frame, 1.5), {
+    "--glass-frame-x": "-13.33px",
+    "--glass-frame-y": "0px",
+    "--glass-frame-width": "800px",
+    "--glass-frame-height": "306.67px",
   });
-  assert.equal(backdropPlacement(monitor, { x: -1920, y: 0 }, 0)["--glass-backdrop-size"], "3840px 2160px");
+  // A small message comes as a plain array of bytes.
+  assert.equal(parseGlassFrame([...bytes]).height, 1);
+});
+
+test("an empty or short message means no frame: the capture paused", () => {
+  assert.equal(parseGlassFrame(new ArrayBuffer(0)), null);
+  assert.equal(parseGlassFrame([]), null);
+  const header = new Uint8Array(24);
+  new DataView(header.buffer).setUint32(16, 4, true);
+  new DataView(header.buffer).setUint32(20, 4, true);
+  assert.equal(parseGlassFrame(header.buffer), null);
 });
 
 test("clipboard rows are text, image or files, and the type filter matches them", () => {

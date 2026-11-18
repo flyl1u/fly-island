@@ -1,7 +1,7 @@
 //! Main island window: Tauri commands, window access, and the submodules for state,
 //! stage geometry, liquid glass, cursor passthrough and top-edge attachment.
 
-pub(crate) mod backdrop;
+pub(crate) mod glass_capture;
 pub(crate) mod focus;
 mod follow;
 mod geometry;
@@ -319,7 +319,9 @@ macro_rules! tauri_commands {
             crate::island::focus::take_island_hover_focus,
             crate::island::focus::release_island_hover_focus,
             crate::island::outside_click::set_island_outside_click_watch,
-            crate::island::backdrop::get_island_backdrop,
+            crate::island::glass_capture::start_glass_capture,
+            crate::island::glass_capture::set_glass_capture_region,
+            crate::island::glass_capture::stop_glass_capture,
         ] $($rest)*)
     };
 }

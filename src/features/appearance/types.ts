@@ -61,7 +61,7 @@ export type IslandSettings = {
   islandFontPercent: number;
   pageButtonStyle: PageButtonStyle;
   glassIntensity: number;
-  /** 0–100: how much the glass blurs the desktop wallpaper behind it (island/backdrop.rs). */
+  /** 0–100: how much the glass blurs what is behind it (island/glass_capture.rs). */
   glassBlur: number;
   opacity: number;
   collapsedScale: number;

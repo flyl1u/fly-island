@@ -208,9 +208,10 @@ export function IslandShell({
       <span className="island__shoulders" aria-hidden="true" />
       {glass && <span className="island__glass-shadow" aria-hidden="true" />}
       <div className="island__surface">
+        {/* Outside .island__glass, whose top fades out when attached (IslandTopEdge.css). */}
+        {glass && <div className="island__glass-backdrop" aria-hidden="true"><canvas /></div>}
         {glass && (
           <div className="island__glass" aria-hidden="true">
-            <span className="island__glass-backdrop" />
             {isLiquidGlass && <span className="island__glass-refraction" />}
             {isLiquidGlass && <span className="island__glass-highlight" />}
           </div>

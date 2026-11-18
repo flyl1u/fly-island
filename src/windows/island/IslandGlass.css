@@ -1,13 +1,13 @@
 /*
  * The glass materials (Appearance → Style → Material). Their variables come from glassStyle.ts.
- * backdrop-filter has nothing to blur over the transparent island window, so the blur is the
- * desktop wallpaper's, done once in Rust (island/backdrop.rs) and laid on a still layer under the
- * pane (.island__glass-backdrop, useGlassBackdrop.ts) that the island only clips as it resizes.
- * Until that picture is ready, or where it fails, the pane is a tint over a clear window as before.
+ * backdrop-filter has nothing to blur over the transparent island window, so the blur is done in
+ * Rust from Desktop Duplication (island/glass_capture.rs) and drawn on a still canvas under the
+ * pane (.island__glass-backdrop, useGlassCapture.ts) that the island only clips as it resizes.
+ * Without frames (paused, unsupported) the pane is a tint over a clear window.
  *
  * Nothing that costs to paint resizes with the island's spring (2026-11, docs/investigations/
  * glass-material-backdrop.md): the drop shadow is a fixed-size layer scaled with a transform in
- * step with the shape (.island__glass-shadow), the wallpaper and its grain sit on the still layer,
+ * step with the shape (.island__glass-shadow), the backdrop and its grain sit on the still layer,
  * and the rim uses unblurred inset lines and a gradient instead of a blurred inset glow.
  * Each glass works in both tones ([data-tone], from the island colour): the lit edges stay white,
  * the shadows and the text halo follow the tone.
@@ -54,7 +54,6 @@
   transition:
     transform var(--island-motion-duration) var(--island-motion),
     opacity var(--island-motion-duration) ease;
-  will-change: transform;
 }
 
 .island--expanded > .island__glass-shadow {
@@ -71,10 +70,11 @@
 }
 
 /*
- * The blurred wallpaper (useGlassBackdrop.ts): stationary on the window, whatever the island's
- * size. "left: 50% - 50vw" holds it to the window's left edge while the island, centred, grows
- * and shrinks (50% is the island's current half width); the window's top is the island's. The
- * tint, and the frosted wash, are layered into the same still picture.
+ * The live backdrop (useGlassCapture.ts, island/glass_capture.rs): what is behind the island,
+ * blurred, on a canvas fixed to the window rather than to the island. "50% - 50vw" is the window's
+ * left edge seen from the centred island (50% is the island's current half width), so as the
+ * shape grows and shrinks the picture stays put and is only clipped. The tint, the frosted wash
+ * and the grain lie over it in the same still box.
  */
 .island__glass-backdrop {
   display: none;
@@ -82,27 +82,34 @@
 
 :root[data-glass-backdrop] .island__glass-backdrop {
   position: absolute;
-  top: 0;
-  left: calc(50% - 50vw);
+  top: var(--glass-frame-y, 0px);
+  left: calc(50% - 50vw + var(--glass-frame-x, 0px));
   display: block;
-  width: 100vw;
-  height: 100vh;
-  background-image:
-    linear-gradient(var(--glass-backdrop-wash, transparent), var(--glass-backdrop-wash, transparent)),
-    linear-gradient(var(--glass-backdrop-tint-color), var(--glass-backdrop-tint-color)),
-    var(--glass-backdrop-image);
-  background-position: 0 0, 0 0, var(--glass-backdrop-x, 0) var(--glass-backdrop-y, 0);
-  background-repeat: no-repeat;
-  background-size: 100% 100%, 100% 100%, var(--glass-backdrop-size, 100% 100%);
+  width: var(--glass-frame-width, 100vw);
+  height: var(--glass-frame-height, 100vh);
   pointer-events: none;
-  will-change: transform;
 }
 
-/* The grain, on the still layer too. */
-:root[data-glass-backdrop] .island__glass-backdrop::after {
+.island__glass-backdrop canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.island__glass-backdrop::before,
+.island__glass-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
+}
+
+.island__glass-backdrop::before {
+  background-image:
+    linear-gradient(var(--glass-backdrop-wash, transparent), var(--glass-backdrop-wash, transparent)),
+    linear-gradient(var(--glass-backdrop-tint-color), var(--glass-backdrop-tint-color));
+}
+
+.island__glass-backdrop::after {
   background-image: var(--glass-grain);
   background-size: 128px;
   opacity: var(--glass-grain-opacity);
@@ -125,16 +132,9 @@
 }
 
 /*
- * The pane is nearly clear, so text on it gets a halo of the opposite tone to stay readable over
- * whatever is behind the island.
+ * No text halo: a 2px shadow under every glyph read as blurred text on both glasses (2026-11-18,
+ * owner). Readability over a busy desktop comes from the tint and the inner panel veil instead.
  */
-.island--material-liquidGlass {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
-}
-
-[data-tone="light"] .island--material-liquidGlass {
-  text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
-}
 
 :is(.island--material-liquidGlass, .island--material-frostedGlass) .island__glass {
   position: absolute;

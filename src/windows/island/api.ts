@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, type Channel } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
 import type { IslandCornerShape, IslandMonitor, TuckStyle } from "../../features/appearance/types";
@@ -67,20 +67,24 @@ export type IslandInteraction = {
   clickThrough: boolean;
 };
 
-/** 对应 src-tauri/src/island/backdrop.rs 的 IslandBackdrop：岛屿所在显示器的模糊壁纸。 */
-export type IslandBackdrop = {
-  key: string;
-  /** null when `knownKey` already names this picture. */
-  dataUrl: string | null;
-  /** The monitor, in physical screen px. */
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
+/** 对应 src-tauri/src/island/glass_capture.rs 的 GlassCaptureRegion：岛屿在窗口里的区域，物理像素。 */
+export type GlassCaptureRegion = { left: number; top: number; width: number; height: number };
 
-export function getIslandBackdrop(blur: number, knownKey: string | null) {
-  return invoke<IslandBackdrop>("get_island_backdrop", { blur, knownKey });
+/**
+ * Starts the glass's live backdrop: frames come to `onFrame` as raw bytes (glassFrame.ts).
+ * False where the island cannot be left out of the capture; the glass stays a tint then.
+ */
+export function startGlassCapture(onFrame: Channel<ArrayBuffer | number[]>) {
+  return invoke<boolean>("start_glass_capture", { onFrame });
+}
+
+/** null pauses the capture (the island tucked away). */
+export function setGlassCaptureRegion(region: GlassCaptureRegion | null, blur: number) {
+  return invoke("set_glass_capture_region", { region, blur });
+}
+
+export function stopGlassCapture() {
+  return invoke("stop_glass_capture");
 }
 
 export function setIslandLayout(layout: IslandLayout) {

@@ -24,7 +24,7 @@ export function glassTintAlpha(material: Material, glassIntensity: number) {
   return material === "liquidGlass" ? 0.58 - strength * 0.3 : 0.9 - strength * 0.16;
 }
 /**
- * The tint over the blurred wallpaper (island/backdrop.rs). Lighter than glassTintAlpha, which
+ * The tint over the live blurred backdrop (island/glass_capture.rs). Lighter than glassTintAlpha, which
  * has to hide a sharp desktop: what is behind now shows only as soft colour. Frosted stays milkier.
  */
 export function glassBackdropTintAlpha(material: Material, glassIntensity: number) {

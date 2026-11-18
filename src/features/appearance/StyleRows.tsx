@@ -85,7 +85,6 @@ export function MaterialRows({ settings, onSettingsChange }: RowsProps) {
           defaultValue={GLASS_BLUR.default}
           resetLabel={t.settings.layout.resetToDefault}
           indent
-          commitOnRelease
           onChange={(glassBlur) => onSettingsChange({ ...settings, glassBlur })}
         />
       )}
