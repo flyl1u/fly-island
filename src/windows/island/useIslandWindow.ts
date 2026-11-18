@@ -6,7 +6,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import * as islandApi from "./api";
 import { clearIslandPosition } from "./storage";
 import { useIslandPosition } from "./useIslandPosition";
-import { useGlassBackdrop } from "./useGlassBackdrop";
+import { useGlassCapture } from "./useGlassCapture";
 import { useNativeLayout } from "./useNativeLayout";
 import { useSettingsPositionReset } from "./useSettingsPositionReset";
 import type { IslandMode, NativeGlassState } from "./types";
@@ -38,8 +38,10 @@ export function useIslandWindow({
   onCollapse,
 }: IslandWindowOptions) {
   const syncNativeLayout = useNativeLayout(settings);
-  // The glass's blurred wallpaper follows the window to whichever monitor it is on.
-  useGlassBackdrop(isGlass(settings.material), settings.glassBlur);
+  // The glass's live backdrop: what is behind the island, blurred (glass_capture.rs).
+  useGlassCapture(isGlass(settings.material), isTucked,
+    Math.max(expandedIslandHeight * settings.expandedScale, notice.height ?? 0, settings.collapsedHeight * settings.collapsedScale),
+    settings.glassBlur);
   const { isPositionDetached, setIsPositionDetached, islandPositionRef, startIslandDrag } = useIslandPosition(settings.positionLocked);
   const [nativeGlassState, setNativeGlassState] =
     useState<NativeGlassState>("disabled");

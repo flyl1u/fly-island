@@ -5,7 +5,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 /**
  * The glass materials' variables (IslandGlass.css). Both are CSS only: the island window is a
  * transparent stage much larger than the island, so a native blur would blur the whole stage.
- * With the blurred wallpaper under it (useGlassBackdrop.ts) the pane takes the lighter
+ * With the live blurred backdrop under it (useGlassCapture.ts) the pane takes the lighter
  * `--glass-backdrop-tint-color` instead of the tint.
  * Liquid glass is a nearly clear pane, so most of its look is the lit rim; frosted glass is a
  * milky or smoky pane that hides most of what is behind it. The strength setting makes liquid

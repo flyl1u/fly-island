@@ -55,7 +55,7 @@ export const TOP_EDGE_SHOULDER_SIZE = { min: 4, max: 20, default: 10 } as const;
 // Bottom corner radius of the expanded island (Appearance → Notch & shape); Rust accepts 16–48
 // (MIN_CORNER_RADIUS / MAX_CORNER_RADIUS in src-tauri/src/island/geometry.rs).
 export const ISLAND_CORNER_RADIUS = { min: 16, max: 48, default: DEFAULT_ISLAND_CORNER_RADIUS } as const;
-// The glass's blur of the wallpaper behind it, 0 (sharp) to 100.
+// The glass's blur of what is behind it, 0 (least) to 100.
 export const GLASS_BLUR = { min: 0, max: 100, default: 60 } as const;
 // Px of the island the "edge" tuck leaves on screen; Rust accepts 3–20 (geometry.rs). 10 was fixed before.
 export const TUCK_EDGE_HEIGHT = { min: 3, max: 20, default: 10 } as const;
