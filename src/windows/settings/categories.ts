@@ -1,6 +1,4 @@
-import { PLUGINS_ENABLED } from "../../features/releaseFlags.ts";
-
-/** Includes unavailable pages in the type so saved category names remain compatible. */
+/** Plugins always has an entry; its page follows the release flag. */
 const ALL_SETTINGS_CATEGORIES = [
   "general",
   "appearance",
@@ -16,7 +14,7 @@ const ALL_SETTINGS_CATEGORIES = [
 ] as const;
 
 export type SettingsCategory = (typeof ALL_SETTINGS_CATEGORIES)[number];
-export const SETTINGS_CATEGORIES = ALL_SETTINGS_CATEGORIES.filter((category) => PLUGINS_ENABLED || category !== "plugins");
+export const SETTINGS_CATEGORIES = ALL_SETTINGS_CATEGORIES;
 
 export type SettingsGroup = "basics" | "features" | "agents";
 
@@ -29,7 +27,7 @@ export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories
   { label: "basics", categories: ["general", "appearance"] },
   { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages"] },
   { label: "agents", categories: ["agents", "agentConnect"] },
-  { label: null, categories: PLUGINS_ENABLED ? ["plugins", "about"] : ["about"] },
+  { label: null, categories: ["plugins", "about"] },
 ];
 
 export const DEFAULT_SETTINGS_CATEGORY: SettingsCategory = "general";

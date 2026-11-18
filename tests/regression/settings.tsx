@@ -144,7 +144,8 @@ if (!automated) {
       check(plugins.textContent?.includes("暂无插件") && Boolean(plugins.querySelector("svg.lucide-puzzle")),
         "The plugins page renders its installed section and puzzle empty state");
     } else {
-      check(!document.querySelector("[data-category='plugins'], .plugins-settings"), "The release has no plugin category or panel");
+      await openPage("plugins");
+      check(document.querySelector(".plugin-development") && !document.querySelector(".plugins-settings"), "The release shows the plugin guide without runtime controls");
     }
     await checkAppearance(check);
     const materialButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((button) => button.textContent === label);

@@ -5,12 +5,12 @@ import { SETTINGS_CATEGORIES, SETTINGS_GROUPS, settingsCategoryFor } from "../..
 import { isPageEnabled, resolveMessageSource } from "../../src/windows/island/features.ts";
 import { normalizeSettings } from "../../src/features/appearance/settings.ts";
 
-test("unavailable features have no routes and preserve saved choices", () => {
+test("unavailable runtime features preserve choices and expose the plugin guide route", () => {
   assert.equal(MAIL_OTP_ENABLED, false);
   assert.equal(PLUGINS_ENABLED, false);
-  assert.equal(SETTINGS_CATEGORIES.includes("plugins"), false);
-  assert.equal(SETTINGS_GROUPS.some((group) => group.categories.includes("plugins")), false);
-  assert.equal(settingsCategoryFor("plugins"), null);
+  assert.equal(SETTINGS_CATEGORIES.includes("plugins"), true);
+  assert.equal(SETTINGS_GROUPS.some((group) => group.categories.includes("plugins")), true);
+  assert.equal(settingsCategoryFor("plugins"), "plugins");
   const features = { todo: false, music: false, clipboard: false, shelf: false,
     agents: false, translation: false, qq: false, wechat: false, qqMail: false, plugin: true };
   assert.equal(isPageEnabled("qq", features), false);
