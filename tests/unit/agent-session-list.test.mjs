@@ -155,3 +155,12 @@ test("a session listed twice (a Codex thread over several rollout pages) keeps o
   const distinct = [newer, other];
   assert.equal(uniqueSessions(distinct), distinct);
 });
+
+test("a finished session with background tasks running counts as active", async () => {
+  const { isSessionActive } = await import("../../src/features/agent-status/sessionList.ts");
+  const done = session({ phase: "completed" });
+  assert.equal(countActiveSessions([done]), 0);
+  assert.equal(countActiveSessions([{ ...done, backgroundTasks: 1 }]), 1);
+  assert.equal(isSessionActive({ phase: "completed", backgroundTasks: 1 }), true);
+  assert.equal(isSessionActive({ phase: "failed", backgroundTasks: 1 }), false);
+});

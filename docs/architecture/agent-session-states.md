@@ -41,6 +41,7 @@
 | 6 | 回归页、`DESIGN.md`、中英文文案 | 已完成 | fly-island-c6 · lane 6 | 同上。文案沿用已有的「等你回复」，不需要新文案 |
 | 7 | 回合结束后仍有后台任务时保持绿色（没有标记时） | 已完成 | fly-island-c6 · lane 6 | 提交 `feat(agent-status): a turn waiting on its own background task stays green`。`background_tasks.rs`：工具结果里的 `running in background with ID` / `moved to the background (ID:` 记为启动，带 `<task-id>` 的任务通知或 TaskStop 的 `stopped task` 记为结束；只数最近一轮启动的。回复在问你时仍是黄色。开发服务器这类一直跑的任务也会让那一轮显示绿色，直到你发下一条指令；子 Agent 只在回合进行中计数，回合结束后不再算 |
 | 8 | 实测：问句判断的准确率（拿本机最近的会话记录统计） | 已完成 | fly-island-c6 · lane 6 | 见下方实测记录；补了「同意的话」「要的话」两种征询句 |
+| 9 | 后台任务运行中，收起条标题、活跃计数、「仅 Agent 任务运行时不收起岛屿」用同一个判定 | 已完成 | v3.4.0 | `sessionList.ts::isSessionActive` / `hasBackgroundWork`：回合已完成但 `backgroundTasks > 0` 算仍在工作，`pickAgentSession`、`countActiveSessions`（由它得出状态灯与不收起）、「隐藏已完成」都用它；全部结束后照常收起。Claude Code 新增 `SubagentStop` 钩子（后台运行，走 `focusd-agent-status.ps1 completed`），后台子 Agent 结束时清掉运行标记，不再拖 10 分钟。已安装用户的设置页会提示「更新」，点一次「安装/修复」生效 |
 
 ## 实测记录
 
