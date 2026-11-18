@@ -22,7 +22,7 @@ export function IslandCornerRows({ settings, onChange }: Props) {
     <SettingsSliderRow title={text.cornerRadius} description={text.cornerRadiusHint}
       value={settings.islandCornerRadius} min={ISLAND_CORNER_RADIUS.min} max={ISLAND_CORNER_RADIUS.max} step={1}
       defaultValue={ISLAND_CORNER_RADIUS.default} resetLabel={t.settings.layout.resetToDefault}
-      format={(value) => `${value}px`} commitOnRelease
+      format={(value) => `${value}px`}
       onChange={(islandCornerRadius) => onChange({ ...settings, islandCornerRadius })} />
     <SettingsRow
       title={text.cornerShape}

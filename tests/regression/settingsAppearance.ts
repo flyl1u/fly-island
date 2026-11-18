@@ -32,9 +32,9 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   const group = element(".settings-color").closest(".settings-group")!;
   // The page text color row (2026-11-14) follows the three color input rows; the presets row follows them all.
   const rows = [...group.querySelectorAll<HTMLElement>(".settings-row")].filter((row) => row.querySelector(".settings-color"));
-  check(rows.length === 4 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("input[type=color]")),
+  check(rows.length === 4 && rows.every((row) => row.querySelector(".appearance-hex") && row.querySelector("button.settings-color__swatch")),
     "The Colors card has four rows (page text added 2026-11-14), each with a hex value and a swatch");
-  const swatch = element<HTMLInputElement>(".settings-color__swatch");
+  const swatch = element<HTMLButtonElement>(".settings-color__swatch");
   // At 150% Windows scaling Chromium quantizes a 1px border to 0.666667 CSS px.
   check(swatch.getBoundingClientRect().width === 36 && parseFloat(getComputedStyle(swatch).borderTopWidth) > 0, "The round 36px swatch has a visible border");
   const saved = () => JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").islandBackgroundColor;
@@ -78,9 +78,21 @@ async function checkColorInputs(check: (condition: unknown, message: string) => 
   await edit("not a color", "Enter");
   check(saved() === "#2F2F37" && element(".appearance-hex").textContent === "#2F2F37", "Invalid hex input silently rolls back");
   await edit("123456", "Enter");
-  const swatches = [...document.querySelectorAll<HTMLInputElement>(".settings-color__swatch")];
-  await type(swatches[1], "#aabbcc");
-  await type(swatches[2], "#abcdef");
+  // The in-page picker (2026-11-18): dragging on the square reports colours as it goes, before the pointer is let go.
+  const swatches = [...document.querySelectorAll<HTMLButtonElement>(".settings-color__swatch")];
+  await act(async () => { swatches[1].click(); });
+  const area = element<HTMLElement>(".settings-color__area");
+  const box = area.getBoundingClientRect();
+  const before = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").taskTextColor;
+  await act(async () => {
+    area.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, clientX: box.left + box.width * 0.8, clientY: box.top + box.height * 0.2 }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+  const during = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").taskTextColor;
+  check(during && during !== before, "The colour picker saves while the pointer is still down");
+  await act(async () => { area.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 })); });
+  await act(async () => { document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
+  check(!document.querySelector(".settings-color__picker"), "A click outside closes the picker");
   check(!localStorage.getItem("focusd-island-color-backup") && !document.querySelector(".appearance-color-restore"),
     "Manual hex and picker edits do not create or overwrite a backup");
 }
