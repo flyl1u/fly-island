@@ -120,6 +120,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   autoCopyOtp: DEFAULT_AUTO_COPY_OTP,
   gameDoNotDisturb: true,
   gameAutoTuck: false,
+  ctrlWheelPages: false,
   // Clipboard: keep the original four-row island height on first launch.
   clipboardVisibleRows: DEFAULT_CLIPBOARD_VISIBLE_ROWS,
   // Clipboard: a separate window is opt-in; pinning that window defaults to on.

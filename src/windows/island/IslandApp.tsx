@@ -20,6 +20,7 @@ import { getIslandStageStyle } from "./stageStyle";
 import { useCollapsedTodo } from "./useCollapsedTodo";
 import { useGameMode } from "./useGameMode";
 import { useIslandKeyboard } from "./useIslandKeyboard";
+import { useCtrlWheelPages, wheelPageOrder } from "./useCtrlWheelPages";
 import { useIslandFeatures } from "./useIslandFeatures";
 import { useIslandAgentAlerts } from "./useIslandAgentAlerts";
 import { useIslandAgents } from "./useIslandAgents";
@@ -181,6 +182,14 @@ export function IslandApp() {
     toggleClipboardHistory,
     collapseIsland,
   );
+
+  useCtrlWheelPages({
+    enabled: settings.ctrlWheelPages,
+    mode,
+    page,
+    pages: wheelPageOrder(settings.pageOrder, features, settings.clipboardDetached),
+    onPageChange: setPage,
+  });
 
   const { openTranslator } = useIslandTranslation(
     settings.translationEnabled,
