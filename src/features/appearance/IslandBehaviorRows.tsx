@@ -118,9 +118,10 @@ export function GameModeRow({ settings, onSettingsChange }: RowsProps) {
       checked={settings.gameDoNotDisturb}
       onChange={(gameDoNotDisturb) => onSettingsChange({ ...settings, gameDoNotDisturb })}
     />
-    <SettingsToggleRow indent title={labels.gameNotices} description={labels.gameNoticesHint} checked={settings.gameShowNotices}
-      onChange={(gameShowNotices) => onSettingsChange({ ...settings, gameShowNotices })} />
-    {settings.gameShowNotices && <SettingsSliderRow indent title={labels.gameNoticeSeconds} value={settings.gameNoticeSeconds}
+    {/* Notices in game mode only matter while it is on (noticeRules.ts), so they hang under it. */}
+    {settings.gameDoNotDisturb && <SettingsToggleRow indent title={labels.gameNotices} description={labels.gameNoticesHint} checked={settings.gameShowNotices}
+      onChange={(gameShowNotices) => onSettingsChange({ ...settings, gameShowNotices })} />}
+    {settings.gameDoNotDisturb && settings.gameShowNotices && <SettingsSliderRow indent title={labels.gameNoticeSeconds} value={settings.gameNoticeSeconds}
       min={GAME_NOTICE_SECONDS.min} max={GAME_NOTICE_SECONDS.max} step={GAME_NOTICE_SECONDS.step}
       format={(value) => `${value} ${t.settings.expand.secondsUnit}`} defaultValue={GAME_NOTICE_SECONDS.default}
       resetLabel={layout.resetToDefault} onChange={(gameNoticeSeconds) => onSettingsChange({ ...settings, gameNoticeSeconds })} />}

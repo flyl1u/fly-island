@@ -1,5 +1,6 @@
 export type SettingsClipboardText = {
   title: string;
+  displayTitle: string;
   captureImages: string;
   maxItems: string;
   visibleRows: string;
@@ -23,6 +24,7 @@ export type SettingsClipboardText = {
 
 export const zhCN: SettingsClipboardText = {
   title: "剪贴板历史",
+  displayTitle: "显示与窗口",
   captureImages: "记录图片",
   maxItems: "最多保存几条",
   visibleRows: "一次显示几条",
@@ -44,6 +46,7 @@ export const zhCN: SettingsClipboardText = {
 
 export const en: SettingsClipboardText = {
   title: "Clipboard history",
+  displayTitle: "Display & window",
   captureImages: "Record images",
   maxItems: "Max entries",
   visibleRows: "Visible rows",

@@ -11,7 +11,7 @@ import type { useSaveDirectorySetting } from "../../features/todos/useSaveDirect
 import { useTranslation } from "../../i18n";
 import { ModuleSwitchSection } from "./ModuleSwitchSection";
 
-/** Settings → Todos: the module switch, carrying unfinished todos over, and where they are saved. */
+/** Settings → Todos: the module switch, the list, the focus timer, the collapsed island, and where todos are saved. */
 export function TodosSettingsPage({
   settings,
   saveDirectory,
@@ -37,6 +37,14 @@ export function TodosSettingsPage({
           onChange={(carryOverIncompleteTodos) => onSettingsChange({ ...settings, carryOverIncompleteTodos })}
         />
         <SettingsToggleRow
+          title={t.settings.todo.dragToReorder}
+          description={t.settings.todo.dragToReorderDescription}
+          checked={settings.enableTodoReorder}
+          onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
+        />
+      </SettingsGroup>
+      <SettingsGroup title={t.settings.todo.focusTimer}>
+        <SettingsToggleRow
           title={t.settings.todo.focusTimer}
           description={t.settings.todo.focusTimerDescription}
           checked={settings.todoTimerEnabled}
@@ -53,12 +61,6 @@ export function TodosSettingsPage({
           checked={settings.todoTimerReminderSound}
           onChange={(todoTimerReminderSound) => onSettingsChange({ ...settings, todoTimerReminderSound })}
         />}
-        <SettingsToggleRow
-          title={t.settings.todo.dragToReorder}
-          description={t.settings.todo.dragToReorderDescription}
-          checked={settings.enableTodoReorder}
-          onChange={(enableTodoReorder) => onSettingsChange({ ...settings, enableTodoReorder, todoReorderVersion: 1 })}
-        />
       </SettingsGroup>
       <SettingsGroup title={t.settings.todo.collapsedTitle}>
         <SettingsToggleRow title={t.settings.todo.rotateTodos} checked={settings.rotateTodos}

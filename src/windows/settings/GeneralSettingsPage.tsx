@@ -9,7 +9,7 @@ import { useLaunchAtStartup } from "./useLaunchAtStartup";
 
 /**
  * Settings → General, most used first (docs/design/settings.md): startup and language; opening and
- * closing; tucking to the edge, then when not to; the position last.
+ * closing; tucking to the edge, then when not to; game mode; the position last.
  */
 export function GeneralSettingsPage({
   locale,
@@ -42,12 +42,14 @@ export function GeneralSettingsPage({
       />
       <SettingsGroup title={t.settings.expand.title}>
         <ExpandRows {...rows} />
-        <GameModeRow {...rows} />
       </SettingsGroup>
       <SettingsGroup title={t.settings.expand.tuckTitle}>
         <TuckRows {...rows} onPreviewTuck={() => requestPanelPreview("tucked")} />
       </SettingsGroup>
       <KeepVisibleSettingsSection {...rows} />
+      <SettingsGroup title={t.settings.layout.gameQuiet}>
+        <GameModeRow {...rows} />
+      </SettingsGroup>
       <SettingsGroup title={t.settings.position.title} footer={settings.positionLocked ? undefined : t.settings.position.moveHint}>
         <PositionRows {...rows} onResetPosition={requestIslandPositionReset} />
       </SettingsGroup>
