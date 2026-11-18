@@ -202,26 +202,29 @@ pub async fn get_reply_marker_state() -> Result<ReplyMarkerState, String> {
 /// island's block comes out of `CLAUDE.md`, and nothing else there changes.
 #[tauri::command]
 pub async fn set_reply_marker(enabled: bool) -> Result<ReplyMarkerState, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let dir = claude_dir()?;
-        let path = dir.join(RULES_FILE);
-        let rules = read_text(&path)?;
-        if enabled && rules != rules_file() {
-            super::write_text_file(&path, &rules_file())?;
-        }
-        if !enabled && is_rules_file(&rules) {
-            fs::remove_file(&path).map_err(|error| format!("Failed to delete {}: {error}", path.display()))?;
-        }
-        let claude_md_path = dir.join("CLAUDE.md");
-        let claude_md = read_text(&claude_md_path)?;
-        let cleaned = without_block(&claude_md);
-        if cleaned != claude_md {
-            super::write_text_file(&claude_md_path, &cleaned)?;
-        }
-        Ok(state_of(&read_text(&path)?, &cleaned, &path))
-    })
-    .await
-    .map_err(|error| format!("Failed to join the CLAUDE.md task: {error}"))?
+    tauri::async_runtime::spawn_blocking(move || apply(enabled))
+        .await
+        .map_err(|error| format!("Failed to join the CLAUDE.md task: {error}"))?
+}
+
+/// `set_reply_marker`'s work; the uninstaller's cleanup calls it too (uninstall.rs).
+pub(super) fn apply(enabled: bool) -> Result<ReplyMarkerState, String> {
+    let dir = claude_dir()?;
+    let path = dir.join(RULES_FILE);
+    let rules = read_text(&path)?;
+    if enabled && rules != rules_file() {
+        super::write_text_file(&path, &rules_file())?;
+    }
+    if !enabled && is_rules_file(&rules) {
+        fs::remove_file(&path).map_err(|error| format!("Failed to delete {}: {error}", path.display()))?;
+    }
+    let claude_md_path = dir.join("CLAUDE.md");
+    let claude_md = read_text(&claude_md_path)?;
+    let cleaned = without_block(&claude_md);
+    if cleaned != claude_md {
+        super::write_text_file(&claude_md_path, &cleaned)?;
+    }
+    Ok(state_of(&read_text(&path)?, &cleaned, &path))
 }
 
 #[cfg(test)]

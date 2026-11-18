@@ -11,3 +11,15 @@
 !macro NSIS_HOOK_POSTINSTALL
   WriteRegStr SHCTX "${UNINSTKEY}" "Publisher" "flyl1u"
 !macroend
+
+; "Delete the application data" also takes the island's AI hooks out of the Codex and
+; Claude Code configs, which would otherwise call scripts that no longer exist (#80).
+; Before the template deletes the executable, and never for an update's uninstall.
+; The executable removes only entries it wrote itself (agent_status/uninstall.rs).
+!macro NSIS_HOOK_PREUNINSTALL
+  ${If} $DeleteAppDataCheckboxState = 1
+  ${AndIf} $UpdateMode <> 1
+  ${AndIf} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
+    ExecWait '"$INSTDIR\${MAINBINARYNAME}.exe" --remove-agent-hooks'
+  ${EndIf}
+!macroend

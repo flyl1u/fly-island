@@ -36,6 +36,7 @@ macro_rules! collect_commands {
 pub fn run() {
     system::startup::note_launch();
     media_plugins::handle_startup();
+    agent_status::uninstall::handle_startup();
     let mut context = tauri::generate_context!();
     if let Some(identifier) = notification_diagnostics::verification_identifier() {
         context.config_mut().identifier = identifier;
