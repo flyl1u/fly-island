@@ -8,6 +8,7 @@ import {
 test("settings saved before providers existed keep DeepSeek and their shortcut and direction", () => {
   assert.deepEqual(normalizeTranslationSettings({ shortcut: "Ctrl+Q", direction: "en-zh" }), {
     shortcut: "Ctrl+Q",
+    shortcutEnabled: true,
     direction: "en-zh",
     provider: "deepseek",
     customBaseUrl: "",
@@ -19,6 +20,16 @@ test("settings saved before providers existed keep DeepSeek and their shortcut a
   assert.equal(DEFAULT_SETTINGS.provider, "siliconflow");
   assert.equal(normalizeTranslationSettings({ shortcut: "Alt+Space" }).shortcut, "Ctrl+Shift+F");
   assert.equal(normalizeTranslationSettings({ shortcut: "Alt+C" }).shortcut, "Ctrl+Shift+F");
+});
+
+test("the shortcut switch stays on unless turned off, and keyless services are known", async () => {
+  assert.equal(normalizeTranslationSettings({ shortcutEnabled: false }).shortcutEnabled, false);
+  assert.equal(normalizeTranslationSettings({ shortcutEnabled: "no" }).shortcutEnabled, true);
+  const { isKeylessTranslationProvider, isTranslationProvider } = await import("../../src/features/translation/providers.ts");
+  assert.equal(isTranslationProvider("google"), true);
+  assert.equal(isKeylessTranslationProvider("mymemory"), true);
+  assert.equal(isKeylessTranslationProvider("deepseek"), false);
+  assert.equal(normalizeTranslationSettings({ provider: "google" }).provider, "google");
 });
 
 test("provider, custom base URL and per-provider models are kept when valid", () => {

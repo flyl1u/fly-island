@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type EventCallback } from "@tauri-apps/api/event";
-import type { TranslationProvider } from "./providers";
+import { isKeylessTranslationProvider, type TranslationProvider } from "./providers";
 import type { Direction } from "./storage";
 
 // 与 translation/mod.rs 中推送的事件名一致。
@@ -14,7 +14,9 @@ export type TranslationService = {
   model: string | null;
 };
 
+/** Keyless services count as set up, so the windows do not ask for a key they never need. */
 export function hasTranslationSecret(provider: TranslationProvider) {
+  if (isKeylessTranslationProvider(provider)) return Promise.resolve(true);
   return invoke<boolean>("has_translation_secret", { provider });
 }
 

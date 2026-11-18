@@ -8,6 +8,8 @@ import {
 export type Direction = "auto" | "zh-en" | "en-zh";
 export type TranslationSettings = {
   shortcut: string;
+  /** Off releases the global shortcut while translation itself stays on. */
+  shortcutEnabled: boolean;
   direction: Direction;
   provider: TranslationProvider;
   /** Base URL of the OpenAI-compatible service used by the "custom" provider. */
@@ -24,6 +26,7 @@ const LEGACY_DEFAULT_SHORTCUTS = new Set(["Alt+Space", "Alt+C"]);
 
 export const DEFAULT_SETTINGS: TranslationSettings = {
   shortcut: "Ctrl+Shift+F",
+  shortcutEnabled: true,
   direction: "auto",
   provider: DEFAULT_TRANSLATION_PROVIDER,
   customBaseUrl: "",
@@ -49,6 +52,8 @@ export function normalizeTranslationSettings(stored: unknown): TranslationSettin
   return {
     // Earlier defaults move to the current one; a shortcut the user picked is kept.
     shortcut: LEGACY_DEFAULT_SHORTCUTS.has(shortcut) ? DEFAULT_SETTINGS.shortcut : shortcut,
+    // Saved before the switch existed: the shortcut was always on.
+    shortcutEnabled: value.shortcutEnabled !== false,
     direction: value.direction === "zh-en" || value.direction === "en-zh" ? value.direction : "auto",
     provider: isTranslationProvider(value.provider) ? value.provider : LEGACY_TRANSLATION_PROVIDER,
     customBaseUrl: typeof value.customBaseUrl === "string" ? value.customBaseUrl : "",

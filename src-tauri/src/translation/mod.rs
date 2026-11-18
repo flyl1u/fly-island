@@ -1,10 +1,13 @@
 mod direction;
+mod free;
 mod provider;
 
 use crate::clipboard_history::{parse_shortcut_binding, ShortcutBinding};
 use arboard::Clipboard;
 use keyring::{Entry, Error as KeyringError};
-use provider::{completions_url, find_provider, parse_completion, resolve_model, Provider};
+use provider::{
+    completions_url, find_provider, parse_completion, resolve_model, Provider, ProviderKind,
+};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -213,6 +216,9 @@ pub async fn translate_text(
         _ => return Err("不支持的翻译方向。".to_string()),
     };
     let provider = find_provider(provider.as_deref())?;
+    if provider.kind != ProviderKind::Chat {
+        return free::translate(provider, text, target).await;
+    }
     let endpoint = completions_url(provider, base_url.as_deref())?;
     let model = resolve_model(provider, model.as_deref())?;
     let name = provider.name;
