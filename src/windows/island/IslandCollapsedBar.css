@@ -46,9 +46,10 @@
   filter: brightness(var(--island-pulse-brightness));
 }
 
+/* Idle is the resting light: it takes the colour picked in Settings → Appearance (pulseColor). */
 .island__pulse--agent-idle {
-  background: var(--color-agent-idle);
-  box-shadow: 0 0 14px rgba(53, 233, 133, 0.72);
+  background: var(--island-pulse-color);
+  box-shadow: 0 0 14px var(--island-pulse-glow-color);
 }
 
 .island__pulse--agent-running {
