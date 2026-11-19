@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CAPSULE_TOP_GAP, shapedSettings } from "../../src/features/appearance/islandShape.ts";
+import { CAPSULE_SHAPE_ENABLED, CAPSULE_TOP_GAP, shapedSettings } from "../../src/features/appearance/islandShape.ts";
 import { normalizeSettings, withAppearanceFrom } from "../../src/features/appearance/settings.ts";
 
-test("saved settings without a shape keep the notch", () => {
+const capsule = (fields = {}) => ({ ...normalizeSettings(null), islandShape: "capsule", ...fields });
+
+test("saved settings without a shape keep the notch; a saved capsule only while it is offered", () => {
   assert.equal(normalizeSettings(null).islandShape, "notch");
   assert.equal(normalizeSettings({ islandShape: "pill" }).islandShape, "notch");
-  assert.equal(normalizeSettings({ islandShape: "capsule" }).islandShape, "capsule");
+  assert.equal(normalizeSettings({ islandShape: "capsule" }).islandShape, CAPSULE_SHAPE_ENABLED ? "capsule" : "notch");
 });
 
 test("the notch draws the user's own settings", () => {
@@ -15,13 +17,12 @@ test("the notch draws the user's own settings", () => {
 });
 
 test("the capsule floats below the top edge as a full pill", () => {
-  const shaped = shapedSettings(normalizeSettings({ islandShape: "capsule", collapsedHeight: 44, collapsedCornerRadius: 12 }));
+  const shaped = shapedSettings(capsule({ collapsedHeight: 44, collapsedCornerRadius: 12 }));
   assert.equal(shaped.marginY, CAPSULE_TOP_GAP);
   assert.equal(shaped.collapsedCornerRadius, 22);
-  assert.equal(shapedSettings({ ...normalizeSettings({ islandShape: "capsule" }), marginY: 30 }).marginY, 30, "a larger saved margin is kept");
+  assert.equal(shapedSettings(capsule({ marginY: 30 })).marginY, 30, "a larger saved margin is kept");
 });
 
 test("the shape travels with appearance presets", () => {
-  const target = normalizeSettings(null);
-  assert.equal(withAppearanceFrom(target, normalizeSettings({ islandShape: "capsule" })).islandShape, "capsule");
+  assert.equal(withAppearanceFrom(normalizeSettings(null), capsule()).islandShape, "capsule");
 });

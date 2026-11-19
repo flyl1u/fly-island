@@ -3,6 +3,7 @@ import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
 import { TODO_VISIBLE_ROWS, CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
+import { CAPSULE_SHAPE_ENABLED } from "./islandShape.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
 function normalizeSize(value: unknown, limits: { min: number; max: number; default: number; step?: number }) {
@@ -51,7 +52,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
       COLLAPSED_CORNER_RADIUS,
     ),
     islandCornerShape: settings?.islandCornerShape === "round" ? "round" : DEFAULT_SETTINGS.islandCornerShape,
-    islandShape: settings?.islandShape === "capsule" ? "capsule" : DEFAULT_SETTINGS.islandShape,
+    islandShape: CAPSULE_SHAPE_ENABLED && settings?.islandShape === "capsule" ? "capsule" : DEFAULT_SETTINGS.islandShape,
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
     collapsedScale: clamp(Number(collapsedScale), MIN_COLLAPSED_SCALE, MAX_COLLAPSED_SCALE),
     collapsedAutoWidth: settings?.collapsedAutoWidth !== false,

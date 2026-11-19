@@ -55,11 +55,8 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     check(titles(rowsOf(panel, "字体与大小")).join() === "字体,岛屿字号,收起时的大小,展开后的大小", "Appearance: text and sizes share a group");
     check(titles(rowsOf(panel, "岛上的排列")).includes("页面按钮"), "Appearance: page buttons sit with the island's arrangement");
     const outline = () => rowsOf(panel, "外形");
-    check(titles(outline()).join() === "岛屿外形,展开圆角,收起圆角,圆角形状,贴边圆角", "Appearance: the island shape, its corners and the top-edge curves share a group");
-    const pick = (label: string) => [...outline()[0].querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === label)!;
-    await act(async () => pick("胶囊").click());
-    check(titles(outline()).join() === "岛屿外形,展开圆角,圆角形状", "Appearance: the capsule hides the collapsed radius (half its height) and the top-edge curves");
-    await act(async () => pick("刘海").click());
+    // The island shape row joins the front of this group once the capsule ships (islandShape.ts).
+    check(titles(outline()).join() === "展开圆角,收起圆角,圆角形状,贴边圆角", "Appearance: the corners and the top-edge curves share the shape group");
     const shape = () => rowsOf(panel, "刘海尺寸");
     check(titles(shape()).join() === "自动宽度,刘海高度", "Appearance: the notch size has its own group; manual width hidden while automatic");
     const auto = shape()[0].querySelector<HTMLInputElement>("[role='switch']")!;

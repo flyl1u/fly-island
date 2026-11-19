@@ -2,6 +2,7 @@ import { SettingsChoice } from "../../components/settings/SettingsChoice";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { useTranslation } from "../../i18n";
+import { CAPSULE_SHAPE_ENABLED } from "./islandShape";
 import { COLLAPSED_CORNER_RADIUS, ISLAND_CORNER_RADIUS } from "./settingsLimits";
 import type { IslandCornerShape, IslandSettings, IslandShape } from "./types";
 
@@ -21,7 +22,7 @@ export function IslandCornerRows({ settings, onChange }: Props) {
   const shapes = (["squircle", "round"] as const).map((value) => ({ value, label: text.cornerShapes[value] }));
   const islandShapes = (["notch", "capsule"] as const).map((value) => ({ value, label: text.islandShapes[value] }));
   return <>
-    <SettingsRow
+    {CAPSULE_SHAPE_ENABLED && <SettingsRow
       title={text.islandShape}
       description={text.islandShapeHint}
       control={
@@ -32,7 +33,7 @@ export function IslandCornerRows({ settings, onChange }: Props) {
           onChange={(islandShape) => onChange({ ...settings, islandShape })}
         />
       }
-    />
+    />}
     <SettingsSliderRow title={text.cornerRadius} description={text.cornerRadiusHint}
       value={settings.islandCornerRadius} min={ISLAND_CORNER_RADIUS.min} max={ISLAND_CORNER_RADIUS.max} step={1}
       defaultValue={ISLAND_CORNER_RADIUS.default} resetLabel={t.settings.layout.resetToDefault}
