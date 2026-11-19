@@ -9,7 +9,7 @@ use std::{
 
 pub(super) const FILE_NAME: &str = "focusd-island.log";
 const BACKUP_NAME: &str = "focusd-island.1.log";
-const MAX_BYTES: u64 = 2 * 1024 * 1024;
+const MAX_BYTES: u64 = 5 * 1024 * 1024;
 
 pub(super) struct LogFile {
     file: File,
@@ -68,7 +68,7 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         let mut log = LogFile::open(&dir).unwrap();
         let line = "x".repeat(1024 * 1024) + "\n";
-        for _ in 0..5 {
+        for _ in 0..12 {
             log.write(&line).unwrap();
         }
         assert!(dir.join(BACKUP_NAME).is_file());
