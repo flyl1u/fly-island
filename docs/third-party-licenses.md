@@ -4,6 +4,10 @@
 
 The DingTalk / Feishu / WeCom main-window rules and wake routes in `src-tauri/src/office_im/client.rs` (including the Feishu tray relaunch) are adapted from [Renly1994/xiaotang-daozai](https://github.com/Renly1994/xiaotang-daozai), `src/messenger/desktop.rs` and `src/messenger/windows.rs`, under the MIT License below. The DingTalk, Feishu and WeCom tile icons are taken from the same project's `assets/calendar/`.
 
+## xiaotang-daozai quota adapters
+
+The Kimi Code usage parsing in `src-tauri/src/agent_status/kimi_usage.rs` and the Z Code credential decryption and plan / trial usage reading in `src-tauri/src/agent_status/zcode_credentials.rs` and `zcode_usage.rs` are adapted from [Renly1994/xiaotang-daozai](https://github.com/Renly1994/xiaotang-daozai), `src/quota.rs` and `src/zcode_quota.rs`, under the MIT License below.
+
 ## xiaotang-daozai OTP detection
 
 The weighted verification-code detector in `src-tauri/src/mail/otp.rs` and its regression tests are adapted from [Renly1994/xiaotang-daozai](https://github.com/Renly1994/xiaotang-daozai), `src/otp.rs`. The reference credits pulse-mail (MIT) for keyword and shape scoring rules. Only the algorithm is reused.

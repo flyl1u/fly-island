@@ -13,7 +13,7 @@ import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkMaterial, checkTone } from "./islandTourTheme";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
-import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
+import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
 
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
@@ -91,7 +91,8 @@ mockIPC((command, payload) => {
     case "delete_clipboard_history_items": return { ...TOUR_CLIPBOARD, items: TOUR_CLIPBOARD.items.filter((item) => !(args.ids as string[]).includes(item.id)) };
     case "read_clipboard_history_image": return TOUR_CLIPBOARD.items.find((item) => item.id === args.id)?.image?.thumbnailDataUrl ?? "";
     case "get_file_shelf": return { items: empty ? [] : TOUR_SHELF };
-    case "list_agent_sessions": return empty ? [] : TOUR_SESSIONS;
+    case "list_agent_sessions": return empty ? [] : tourSessions(args.native);
+    case "get_kimi_usage": return empty ? null : TOUR_KIMI_USAGE; case "get_zcode_usage": return null;
     case "agent_sessions_in_front": return [];
     case "agent_approval_pending": return [];
     case "list_plugin_views": return { views: [], status: [] };

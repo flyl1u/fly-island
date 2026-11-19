@@ -1,5 +1,5 @@
 import type { AgentSessionGroup, AgentSessionSort } from "../appearance/types";
-import type { AgentSessionSummary } from "./api";
+import type { AgentSessionSummary, NativeAgentProvider } from "./api";
 import { sessionLight, type SessionLight } from "./sessionLight.ts";
 import { sessionKey } from "./unseen.ts";
 
@@ -58,7 +58,7 @@ export function isSessionActive(session: Pick<AgentSessionSummary, "phase" | "ba
   return isActivePhase(session.phase) || hasBackgroundWork(session);
 }
 
-export type SessionFilter = { claudeCode: boolean; codex: boolean; dsh?: boolean; workbuddy?: boolean; plugin?: boolean };
+export type SessionFilter = { claudeCode: boolean; codex: boolean; dsh?: boolean; workbuddy?: boolean; plugin?: boolean } & Partial<Record<NativeAgentProvider, boolean>>;
 
 /** Sessions of the agents the user wants to see. */
 export function filterSessions(sessions: AgentSessionSummary[], filter: SessionFilter) {

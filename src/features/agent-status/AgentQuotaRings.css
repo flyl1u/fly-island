@@ -47,6 +47,14 @@
   --quota-base: #43b4a5;
 }
 
+.agent-quota__agent--kimiCode {
+  --quota-base: #8b7cf6;
+}
+
+.agent-quota__agent--zcode {
+  --quota-base: #e0a43a;
+}
+
 .agent-quota__agent:is(.agent-quota__agent--dsh, .agent-quota__agent--workbuddy) {
   min-width: 0;
   flex-shrink: 1;

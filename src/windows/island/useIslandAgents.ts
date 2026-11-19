@@ -6,6 +6,7 @@ import { useIslandAgentSessions } from "../../features/agent-status/useIslandAge
 import { useAgentUsages } from "../../features/agent-status/useAgentUsages";
 import { filterQuotaUsages } from "../../features/agent-status/usage";
 import { useWorkbuddyUsage } from "../../features/agent-status/useWorkbuddyUsage";
+import { useNativeAgents } from "../../features/agent-status/nativeAgents";
 
 const NO_QUOTA_RINGS: readonly AgentQuotaSource[] = [];
 
@@ -24,6 +25,8 @@ export function useIslandAgents(settings: IslandSettings) {
   );
 
   const shown = settings.agentShowUsage ? settings.agentQuotaSources : NO_QUOTA_RINGS;
+  // Plugin-market agents show their rings with their sessions, by their own switch.
+  const native = useNativeAgents(settings);
   const watchesQuota = settings.agentQuotaAlertPercent > 0;
   const alertSources = {
     claudeCode: watchesQuota && settings.agentShowClaudeCode,
@@ -36,6 +39,8 @@ export function useIslandAgents(settings: IslandSettings) {
     claudeCode: shown.includes("claudeCode") || alertSources.claudeCode,
     codex: shown.includes("codex") || alertSources.codex,
     dsh: shown.includes("dsh") || alertSources.dsh,
+    kimiCode: settings.agentShowUsage && native.kimiCode,
+    zcode: settings.agentShowUsage && native.zcode,
   });
   const { state: workbuddy } = useWorkbuddyUsage(settings.agentStatusEnabled && (shown.includes("workbuddy") || alertSources.workbuddy));
   const workbuddyUsage = workbuddy.status === "connected" ? workbuddy.usage : null;
