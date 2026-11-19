@@ -44,7 +44,6 @@ localStorage.setItem("focusd-island-current-date", date);
 // This tour exercises the embedded settings page even though new users get a separate window.
 localStorage.setItem("focusd-island-detached-settings", "false");
 // Exercise the explicitly selected style after the one-time default migration.
-localStorage.setItem("focusd-island-tuck-line-migration", "1");
 installTourPlugins();
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
