@@ -18,6 +18,9 @@
 
 .clipboard-segments button {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
   width: auto;
   height: 32px;
@@ -104,7 +107,7 @@
   background: var(--color-white-a10);
 }
 
-/* The type filter: three small icon toggles beside the tabs, quiet until one is on. */
+/* The type filter: three small toggles (icon and name) beside the tabs, quiet until one is on. */
 .clipboard-kinds {
   display: flex;
   flex: 0 0 auto;
@@ -113,11 +116,14 @@
 }
 
 .clipboard-kinds button {
-  width: 26px;
   height: 26px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  white-space: nowrap;
   color: var(--text-3);
   background: transparent;
   border: 0;
