@@ -52,9 +52,9 @@ The iPhone's Dynamic Island gathers notifications, timers and media controls int
 
 ## Most of the time, it's tiny
 
-When you're not using it, it's just a small pill at the top of the screen showing the current lyric, unread messages and how many AI agents are working.
+When you're not using it, it's just a small pill at the top of the screen showing the song that's playing, unread messages and how many AI agents are working.
 
-<p align="center"><img src="docs/assets/screenshots/collapsed.webp" alt="The collapsed island showing a lyric, unread count and agent count" width="560"><br><sub>Liquid Glass · collapsed</sub></p>
+<p align="center"><img src="docs/assets/screenshots/collapsed.webp" alt="The collapsed island showing the current song, unread count and agent count" width="560"></p>
 
 Hover over it and it expands into the views below.
 
@@ -62,53 +62,53 @@ Hover over it and it expands into the views below.
 
 New messages pop up on the island: who sent it and what they said, at a glance. Long messages make the island grow so you can read them in place. Muted group chats only alert you when someone @mentions you.
 
-<p align="center"><img src="docs/assets/screenshots/messages.webp" alt="WeChat messages on the island" width="620"><br><sub>Liquid Glass · dark</sub></p>
+<p align="center"><img src="docs/assets/screenshots/messages.webp" alt="WeChat messages on the island" width="620"></p>
 
 ## Stop babysitting your AI coding tools
 
 Every Claude Code and Codex session shows up on the island: which one is running, which one is done, which one is waiting for you. Your remaining Claude / Codex quota is there too.
 
-<p align="center"><img src="docs/assets/screenshots/agents.webp" alt="AI agent sessions and quota rings on the island" width="620"><br><sub>Classic · dark</sub></p>
+<p align="center"><img src="docs/assets/screenshots/agents.webp" alt="AI agent sessions and quota rings on the island" width="620"></p>
 
 When an agent wants to run a command or edit a file, click Allow or Deny right on the island.
 
-<p align="center"><img src="docs/assets/screenshots/approval.webp" alt="Approving a Claude Code command on the island" width="620"><br><sub>Frosted Glass · dark</sub></p>
+<p align="center"><img src="docs/assets/screenshots/approval.webp" alt="Approving a Claude Code command on the island" width="620"></p>
 
 ## Music and lyrics
 
 Control whatever player you're using: artwork, progress, skip, plus synced lyrics. The current line stays visible even when the island is collapsed.
 
-<p align="center"><img src="docs/assets/screenshots/music.webp" alt="Music player and lyrics on the island" width="620"><br><sub>Frosted Glass · dark</sub></p>
+<p align="center"><img src="docs/assets/screenshots/music.webp" alt="Music player and lyrics on the island" width="620"></p>
 
 ## Today's to-dos
 
 Jot down a task, tick it off when done. There's also a daily note, a calendar and a task timer.
 
-<p align="center"><img src="docs/assets/screenshots/todo.webp" alt="To-do list on the island" width="620"><br><sub>Classic · light</sub></p>
+<p align="center"><img src="docs/assets/screenshots/todo.webp" alt="To-do list on the island" width="620"></p>
 
 ## Everything you copied, still there
 
 Text, images and files you copy are kept in a history you can search and star. Click one to copy it again. Shortcut: `Ctrl+Shift+V`.
 
-<p align="center"><img src="docs/assets/screenshots/clipboard.webp" alt="Clipboard history on the island" width="620"><br><sub>Liquid Glass · light</sub></p>
+<p align="center"><img src="docs/assets/screenshots/clipboard.webp" alt="Clipboard history on the island" width="620"></p>
 
 ## A shelf for dragging files
 
 Drop files on the island, switch windows, then drag them out where you need them. Handy for moving files between two apps.
 
-<p align="center"><img src="docs/assets/screenshots/shelf.webp" alt="File shelf on the island" width="620"><br><sub>Liquid Glass · dark</sub></p>
+<p align="center"><img src="docs/assets/screenshots/shelf.webp" alt="File shelf on the island" width="620"></p>
 
 ## Quick translation
 
 Press `Ctrl+Shift+F` to translate between Chinese and English automatically. Works out of the box, no sign-up or API key needed.
 
-<p align="center"><img src="docs/assets/screenshots/translation.webp" alt="Quick translation on the island" width="620"><br><sub>Frosted Glass · light</sub></p>
+<p align="center"><img src="docs/assets/screenshots/translation.webp" alt="Quick translation on the island" width="620"></p>
 
 ## Make it yours
 
-Three looks: Classic, Liquid Glass and Frosted Glass (the glass shows what's behind it). Size, color, corners and font are all adjustable, in dark or light mode.
+Three looks: Classic, Liquid Glass and Frosted Glass (the glass shows what's behind it), each in dark and light. Size, color, corners and font are adjustable too.
 
-<p align="center"><img src="docs/assets/screenshots/materials-en.webp" alt="Classic, Liquid Glass and Frosted Glass looks" width="820"></p>
+<p align="center"><img src="docs/assets/screenshots/styles-en.webp" alt="Classic, Liquid Glass and Frosted Glass, each in dark and light" width="860"></p>
 
 ## Barely there
 
