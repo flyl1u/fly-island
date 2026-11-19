@@ -36,6 +36,9 @@ static OUTPUT: Mutex<Option<LogFile>> = Mutex::new(None);
 /// The write end standard error points at, kept open for the life of the process.
 static STDERR_PIPE: OnceLock<std::io::PipeWriter> = OnceLock::new();
 static VERSION: OnceLock<String> = OnceLock::new();
+/// The version line goes in once per run: written on every switch, turning the log on and off
+/// over and over grew the file each time (2026-11-19, owner).
+static HEADER_WRITTEN: AtomicBool = AtomicBool::new(false);
 
 #[derive(Serialize, Deserialize, Default)]
 struct LogSettings {
@@ -103,6 +106,14 @@ fn capture_stderr() {
 fn turn_on(reason: &str) {
     ENABLED.store(true, Ordering::Relaxed);
     capture_stderr();
+    write_header(reason);
+}
+
+/// The version line, unless this run already wrote one into the current log.
+fn write_header(reason: &str) {
+    if HEADER_WRITTEN.swap(true, Ordering::Relaxed) {
+        return;
+    }
     let version = VERSION.get().map_or("?", String::as_str);
     let webview = tauri::webview_version().unwrap_or_else(|_| "?".into());
     write_line("app", &format!("{reason}: Fly Island v{version}, WebView2 {webview}, {}", windows_version()));
@@ -113,7 +124,6 @@ fn turn_on(reason: &str) {
 }
 
 fn turn_off() {
-    write_line("app", "日志已关闭");
     ENABLED.store(false, Ordering::Relaxed);
     *OUTPUT.lock().unwrap_or_else(PoisonError::into_inner) = None;
 }
@@ -195,6 +205,10 @@ pub fn clear_app_log() -> Result<AppLogState, String> {
     let dir = log_dir().ok_or("找不到应用数据目录")?;
     *OUTPUT.lock().unwrap_or_else(PoisonError::into_inner) = None;
     file::remove_all(&dir).map_err(|error| format!("无法清空日志：{error}"))?;
+    HEADER_WRITTEN.store(false, Ordering::Relaxed);
+    if ENABLED.load(Ordering::Relaxed) {
+        write_header("日志已清空");
+    }
     Ok(state())
 }
 
