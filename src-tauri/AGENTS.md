@@ -6,7 +6,7 @@
 
 ```text
 src-tauri/src/
-├── main.rs                  # 只调用 focusd_island_lib::run()
+├── main.rs                  # 只调用 fly_island_lib::run()
 ├── lib.rs                   # 只有 mod 声明和 run()：插件、setup、托盘、collect_commands!（汇总各模块的 tauri_commands!）
 ├── tray.rs                  # 托盘菜单与事件：文字跟随岛屿语言（命令 set_tray_language），显示 / 隐藏合成一项，按岛屿当前是否可见显示
 ├── island/                  # 主窗口：命令、窗口状态、几何计算、毛玻璃、鼠标穿透、贴边动画
