@@ -51,6 +51,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
       COLLAPSED_CORNER_RADIUS,
     ),
     islandCornerShape: settings?.islandCornerShape === "round" ? "round" : DEFAULT_SETTINGS.islandCornerShape,
+    islandShape: settings?.islandShape === "capsule" ? "capsule" : DEFAULT_SETTINGS.islandShape,
     opacity: clamp(Number(settings?.opacity ?? DEFAULT_SETTINGS.opacity), 50, 100),
     collapsedScale: clamp(Number(collapsedScale), MIN_COLLAPSED_SCALE, MAX_COLLAPSED_SCALE),
     collapsedAutoWidth: settings?.collapsedAutoWidth !== false,

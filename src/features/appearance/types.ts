@@ -12,6 +12,8 @@ export type IslandFont = "system" | "pixel";
 export type PageButtonStyle = "capsule" | "icon";
 /** Shape of the island's corners: CSS `corner-shape: squircle`, or a circular arc. */
 export type IslandCornerShape = "squircle" | "round";
+/** Notch: flush with the top edge (the original look). Capsule: a floating pill below it (islandShape.ts). */
+export type IslandShape = "notch" | "capsule";
 /** Which monitor the island sits on: the primary one, or it follows the pointer or the foreground window there. */
 export type IslandMonitor = "primary" | "cursor" | "foreground";
 /** How the collapsed island opens: a click, or resting the pointer on it. */
@@ -78,6 +80,7 @@ export type IslandSettings = {
   /** Corner radius (px) of the collapsed bar; tucked and detached collapsed corners follow it. */
   collapsedCornerRadius: number;
   islandCornerShape: IslandCornerShape;
+  islandShape: IslandShape;
   // Optional concave corners where the island joins the screen top.
   topEdgeShoulders: boolean;
   topEdgeShoulderSize: number;

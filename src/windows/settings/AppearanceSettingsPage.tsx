@@ -16,7 +16,7 @@ import { appearancePreviewMode } from "./appearancePreview";
 
 /**
  * Settings → Appearance (docs/design/settings.md): a preview, then the theme and its colours, the
- * text and sizes, what sits where on the island, the notch size, the corners and top-edge curves,
+ * text and sizes, what sits where on the island, the notch size, the shape (notch or capsule), corners and top-edge curves,
  * and last the whole-look presets.
  */
 export function AppearanceSettingsPage({
@@ -61,7 +61,7 @@ export function AppearanceSettingsPage({
       </SettingsGroup>
       <SettingsGroup title={text.shapeTitle}>
         <IslandCornerRows settings={settings} onChange={updateAppearance} />
-        <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />
+        {settings.islandShape !== "capsule" && <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />}
       </SettingsGroup>
       <AppearancePresetSection {...rows} />
     </>

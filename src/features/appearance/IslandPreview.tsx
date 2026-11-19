@@ -4,6 +4,7 @@ import { useTranslation } from "../../i18n";
 import { inkOn } from "../../utils/color";
 import { AgentPagePreview } from "./AgentPagePreview";
 import { cornerShapeCss } from "./cornerShape";
+import { shapedSettings } from "./islandShape";
 import { COLLAPSED_WIDTH, glassTintAlpha, hexToRgba, isGlass, MAX_COLLAPSED_SCALE, MAX_EXPANDED_SCALE } from "./settings";
 import type { IslandSettings } from "./types";
 import { resolveSchemeColors } from "./theme";
@@ -20,6 +21,7 @@ import "./IslandPreview.css";
 export function IslandPreview({ settings }: { settings: IslandSettings }) {
   const text = useTranslation().settings.appearance.preview;
   const glass = isGlass(settings.material);
+  const shaped = shapedSettings(settings);
   const colors = resolveSchemeColors(settings, useResolvedScheme(settings.colorScheme));
   const style = {
     "--preview-fill": hexToRgba(
@@ -28,7 +30,7 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     ),
     "--preview-glass": settings.glassIntensity / 100,
     "--preview-radius-px": settings.islandCornerRadius,
-    "--preview-radius-collapsed-px": settings.collapsedCornerRadius,
+    "--preview-radius-collapsed-px": shaped.collapsedCornerRadius,
     "--preview-corner-shape": cornerShapeCss(settings.islandCornerShape),
     "--preview-pulse": colors.pulseColor,
     "--preview-pulse-glow": hexToRgba(colors.pulseColor, 0.72),
@@ -47,7 +49,8 @@ export function IslandPreview({ settings }: { settings: IslandSettings }) {
     "island-preview__island",
     glass && "island-preview__island--glass",
     `island-preview__island--${settings.material}`,
-    settings.marginY > 0 && "island-preview__island--detached",
+    shaped.marginY > 0 && "island-preview__island--detached",
+    settings.islandShape === "capsule" && "island-preview__island--capsule",
   ].filter(Boolean).join(" ");
 
   return (

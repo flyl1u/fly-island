@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   collapsedCornerRadius: COLLAPSED_CORNER_RADIUS.default,
   islandCornerShape: "squircle",
+  islandShape: "notch",
   // Optional top-edge shoulders.
   topEdgeShoulders: false,
   topEdgeShoulderSize: 10,

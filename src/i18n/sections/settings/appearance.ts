@@ -27,6 +27,10 @@ export type SettingsAppearanceText = {
   icons: string;
   notchTitle: string;
   shapeTitle: string;
+  /** Notch (flush with the top edge) or capsule (a floating pill, islandShape.ts). */
+  islandShape: string;
+  islandShapeHint: string;
+  islandShapes: { notch: string; capsule: string };
   topEdgeShoulders: string;
   topEdgeShoulderSize: string;
   /** The open island's corner radius and shape; the collapsed bar's corners follow. */
@@ -94,7 +98,10 @@ export const zhCN: SettingsAppearanceText = {
   capsules: "胶囊",
   icons: "图标",
   notchTitle: "刘海尺寸",
-  shapeTitle: "圆角",
+  shapeTitle: "外形",
+  islandShape: "岛屿外形",
+  islandShapeHint: "胶囊悬在屏幕顶端下方，收起时是一颗完整的药丸",
+  islandShapes: { notch: "刘海", capsule: "胶囊" },
   topEdgeShoulders: "贴边圆角",
   topEdgeShoulderSize: "圆角大小",
   cornerRadius: "展开圆角",
@@ -158,7 +165,10 @@ export const en: SettingsAppearanceText = {
   capsules: "Capsules",
   icons: "Icons",
   notchTitle: "Notch size",
-  shapeTitle: "Corners",
+  shapeTitle: "Shape",
+  islandShape: "Island shape",
+  islandShapeHint: "The capsule floats just below the top of the screen and collapses to a full pill",
+  islandShapes: { notch: "Notch", capsule: "Capsule" },
   topEdgeShoulders: "Top edge curves",
   topEdgeShoulderSize: "Curve size",
   cornerRadius: "Open corners",
