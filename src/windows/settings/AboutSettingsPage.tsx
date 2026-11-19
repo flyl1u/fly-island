@@ -4,6 +4,7 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { ProjectIdentitySection, ProjectLinksSection } from "../../features/updater/ProjectSettingsSection";
 import { ChangelogSection } from "../../features/updater/ChangelogSection";
 import { UpdateSettingsSection } from "../../features/updater/UpdateSettingsSection";
+import { AppLogSettingsSection } from "../../features/diagnostics/AppLogSettingsSection";
 import { useTranslation } from "../../i18n";
 import { quitIsland } from "./api";
 
@@ -16,6 +17,7 @@ export function AboutSettingsPage() {
       <ProjectIdentitySection />
       <UpdateSettingsSection />
       <ProjectLinksSection />
+      <AppLogSettingsSection />
       <ChangelogSection />
       <SettingsGroup>
         <SettingsRow
