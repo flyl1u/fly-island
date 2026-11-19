@@ -1,6 +1,6 @@
 import { readString, writeString } from "../../lib/storage.ts";
-// Whether the user has opened the community group in About; until then the settings button,
-// About in the sidebar and the group row carry a red dot.
+// Whether the community invite was seen: until the user first clicks the island's settings button,
+// About in the sidebar or the group row, those carry a red dot. Never reset, upgrades included.
 export const COMMUNITY_INVITE_SEEN_KEY = "focusd-island-community-invite-seen";
 
 /** Told within the window that opened the group; other windows get a storage event. */
