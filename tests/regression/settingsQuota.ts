@@ -9,7 +9,9 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
     [...quota.querySelectorAll("label")].map((label) => label.textContent).join() === "Claude,Codex,DSH,WorkBuddy", "Quota rings offers four sources, all selected by default");
   for (const input of inputs) await act(async () => input.click());
   const settings = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}");
-  check(settings.agentQuotaSources.length === 0 && settings.agentShowDsh === true, "Clearing all rings persists independently of DSH sessions");
+  // Kimi Code and Z Code have no box until installed; their saved choice is left as it was.
+  check(settings.agentQuotaSources.every((source: string) => source === "kimiCode" || source === "zcode") && settings.agentShowDsh === true,
+    "Clearing all rings persists independently of DSH sessions");
 
   // WorkBuddy's sign-in sits under its session source, and only while that source is on.
   const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel button")].find((item) => item.textContent === label);

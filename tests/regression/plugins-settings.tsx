@@ -40,7 +40,7 @@ mockIPC((command, payload) => {
   return null;
 }, { shouldMockEvents: true });
 const messages: string[] = [];
-let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false };
+let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false, agentShowZcode: false, agentQuotaSources: ["claudeCode"] };
 function Page() {
   const [settings, setSettings] = useState(latestSettings);
   return <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />;
@@ -67,6 +67,9 @@ try {
   check(localStorage.getItem(NATIVE_PLUGINS_KEY) === "[]" && !cards[0].classList.contains("plugin-card--installed"), "卸载后恢复为未安装");
   await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.cursor.name)}']`)!.click());
   check(latestSettings.agentShowCursor, "安装 Cursor 同时打开它在 Agent 设置里的开关");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.zcode.name)}']`)!.click());
+  check(latestSettings.agentShowZcode && latestSettings.agentQuotaSources.includes("zcode"), "安装 Z Code 同时打开它的开关并勾上额度环");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.zcode.name)}']`)!.click());
   await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.cursor.name)}']`)!.click());
   const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
   check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");

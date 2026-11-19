@@ -97,9 +97,9 @@ test("notch dimensions and text size have independent defaults, bounds and reset
 });
 
 test("quota rings default to all sources and migrate the old session switches once", () => {
-  assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy"]);
-  assert.deepEqual(normalizeSettings({ agentShowDsh: false }).agentQuotaSources, ["claudeCode", "codex", "workbuddy"]);
-  assert.deepEqual(normalizeSettings({ agentShowCodex: false, agentShowClaudeCode: false }).agentQuotaSources, ["dsh", "workbuddy"]);
+  assert.deepEqual(normalizeSettings({}).agentQuotaSources, ["claudeCode", "codex", "dsh", "workbuddy", "kimiCode", "zcode"]);
+  assert.deepEqual(normalizeSettings({ agentShowDsh: false }).agentQuotaSources, ["claudeCode", "codex", "workbuddy", "kimiCode", "zcode"]);
+  assert.deepEqual(normalizeSettings({ agentShowCodex: false, agentShowClaudeCode: false }).agentQuotaSources, ["dsh", "workbuddy", "kimiCode", "zcode"]);
   const optedIn = normalizeSettings({ agentShowDsh: false, agentQuotaSources: ["workbuddy", "dsh", "dsh", "unknown"] });
   assert.deepEqual(optedIn.agentQuotaSources, ["dsh", "workbuddy"]);
   assert.equal(optedIn.agentShowDsh, false);

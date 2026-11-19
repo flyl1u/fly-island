@@ -38,7 +38,8 @@ export type AgentSessionGroup = "computer" | "project" | "none";
 export type AgentArchiveMotion = "slide" | "dissolve";
 /** Light effects on the Agent page's cards and compact rows: none, the sparkle band, or a gradient wash. */
 export type AgentCardEffects = "off" | "sparkle" | "gradient";
-export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy";
+/** Kimi Code and Z Code come from the plugin market and are offered only once installed. */
+export type AgentQuotaSource = "claudeCode" | "codex" | "dsh" | "workbuddy" | "kimiCode" | "zcode";
 /** Which session starts open the Agent page: every turn, a new session's first turn only, or none. */
 export type AgentAlertStarted = "everyTurn" | "newSession" | "off";
 /** What double-clicking a file shelf entry does. */
