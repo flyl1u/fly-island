@@ -69,7 +69,8 @@ export function IslandHeader({
 }: IslandHeaderProps) {
   const t = useTranslation();
   // A red dot leads to the community group in About until it has been opened.
-  const communityPending = useCommunityInvite().pending;
+  const community = useCommunityInvite();
+  const communityPending = community.pending;
   const updatePending = useUpdatePending();
   const showIcons = pageButtonStyle === "icon";
   const messageBadgeLabel = t.messages.badge(qqNotificationCount, wechatPending);
@@ -207,6 +208,8 @@ export function IslandHeader({
           aria-pressed={page === "settings"}
           onClick={(event) => {
             event.stopPropagation();
+            // The community dot is a one-time hint: the first click on it clears it for good.
+            if (communityPending) community.markSeen();
             onOpenSettings();
           }}
         >

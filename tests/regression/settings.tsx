@@ -338,7 +338,11 @@ if (!automated) {
     // About: one group holds the community group (red dots lead to it until it is opened), the star
     // and the tip; no update row, history or issue links (the changelog and the group took them over).
     localStorage.removeItem("focusd-island-community-invite-seen");
+    await act(async () => { window.dispatchEvent(new StorageEvent("storage", { key: "focusd-island-community-invite-seen" })); });
+    check(document.querySelector("[data-category='about'] .settings-sidebar__dot"), "Until the invite is seen, About carries a red dot");
     await openPage("about");
+    check(!document.querySelector(".settings-sidebar__dot, .community-group__dot") && localStorage.getItem("focusd-island-community-invite-seen") === "true",
+      "One click on About clears the red dots for good");
     const linkCard = [...document.querySelectorAll<HTMLElement>(".settings-group__card")].find((card) => card.querySelector(".project-link"));
     const linkTitles = [...(linkCard?.querySelectorAll<HTMLElement>(".project-link__copy strong") ?? [])].map((title) => title.textContent);
     check(linkTitles.join() === "用户交流群,觉得小岛还不错？,打赏作者", `About lists the community group, the star and the tip in one group (${linkTitles.join()})`);
@@ -346,14 +350,11 @@ if (!automated) {
     const sidebarItems = [...document.querySelectorAll<HTMLElement>(".settings-sidebar__item")].map((item) => item.textContent);
     check(authorLink?.href === "https://flyliu.org/" && sidebarItems.slice(-2).join() === "关于,关于作者", "关于作者是侧栏里关于下面的一项，直接打开 flyliu.org");
     const communityToggle = element<HTMLButtonElement>(".community-group .support-author__toggle");
-    check(document.querySelector("[data-category='about'] .settings-sidebar__dot") && communityToggle.querySelector(".community-group__dot")
-      && communityToggle.textContent?.includes("遇到问题、想要新功能，都可以来群里问问、聊聊"), "Until the group is opened, About and its row carry a red dot; the row says questions go there");
+    check(communityToggle.textContent?.includes("遇到问题、想要新功能，都可以来群里问问、聊聊"), "The group row says questions go there");
     await act(async () => { communityToggle.click(); });
     check(communityToggle.getAttribute("aria-expanded") === "true"
       && document.querySelector(".community-group__code img")?.getAttribute("src")?.startsWith("https://island.flyliu.org/community/wechat-group.jpg?t=") === true,
       "Opening the group shows its code from the website, asked for afresh");
-    check(!document.querySelector(".settings-sidebar__dot, .community-group__dot") && localStorage.getItem("focusd-island-community-invite-seen") === "true",
-      "Opening the group clears both red dots and remembers it");
     await act(async () => { communityToggle.click(); });
     check(!document.querySelector(".community-group__code"), "Clicking the group again closes the code");
     const supportToggle = element<HTMLButtonElement>(".support-author:not(.community-group) .support-author__toggle");
