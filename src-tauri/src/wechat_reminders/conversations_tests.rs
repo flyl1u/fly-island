@@ -124,3 +124,47 @@ fn a_poll_notices_a_new_top_chat_without_replaying_other_old_unread_rows() {
     assert_eq!(previews.len(), 1);
     assert_eq!(previews[0].key, "new");
 }
+
+#[test]
+fn the_folded_chats_row_stays_quiet_like_a_muted_chat() {
+    for (key, contact) in [
+        ("session_item_折叠的聊天", "折叠的聊天"),
+        ("session_item_@placeholder_foldgroup", "Folded Chats"),
+    ] {
+        let rows = |unread: &str, body: &str| {
+            [
+                row("dm", "小林\n上午好\n8:15"),
+                row(key, &format!("{contact}\n{unread}\n{body}\n8:16")),
+            ]
+        };
+        let before = rows("[1条]", "大群: 张三: 早");
+        let after = rows("[3条]", "大群: 李四: 好");
+        assert!(after[1].muted);
+        assert!(new_previews(&before, &after, ReadTrigger::Poll, 20).is_empty());
+        let flash = ReadTrigger::Flash {
+            allow_selected: true,
+        };
+        assert!(new_previews(&before, &after, flash, 20).is_empty());
+        assert!(only_muted_changed(&before, &after));
+        let me = rows("[4条]", "[有人@我] 大群: 王五: 看下");
+        assert_eq!(new_previews(&after, &me, ReadTrigger::Poll, 20).len(), 1);
+    }
+    assert!(row("f", "大群\n折叠的聊天\n张三: 早\n8:16").muted);
+}
+
+#[test]
+fn a_count_in_front_of_the_summary_is_read_as_unread() {
+    // WeChat 4.1.9.35, 2026-11-19: muted rows carry their count on the summary line.
+    let group = row(
+        "g",
+        "🎵vibe-motion 1群\n[28条] GG: [视频号] 激光小野牛的动态\n06:08\n消息免打扰\n",
+    );
+    assert_eq!(
+        (group.unread, group.preview.body.as_str(), group.muted),
+        (28, "GG: [视频号] 激光小野牛的动态", true)
+    );
+    let mention = row("g", "大群\n[29条] [有人@我] 李四: 看下\n06:09\n消息免打扰");
+    assert!(mention.mentions_me);
+    assert_eq!(mention.preview.body, "[有人@我] 李四: 看下");
+    assert_eq!(row("e", "小林\n[动画表情] \n03:17").preview.body, "[动画表情]");
+}

@@ -39,9 +39,13 @@ impl Conversation {
 }
 
 const MUTED: &[&str] = &["消息免打扰", "免打扰", "静音", "Muted", "Do Not Disturb"];
+/// Only muted chats can be folded. The folder's own row carries no muted label, so it counts as
+/// muted here, whether its name heads the row or appears as one of its labels.
+const FOLDED: &[&str] = &["折叠的聊天", "折叠的群聊", "Folded Chats", "Folded chats"];
+/// WeChat's internal name for the folder, which may appear in its row's automation id.
+const FOLDED_KEY: &str = "foldgroup";
 const PINNED: &[&str] = &["已置顶", "置顶聊天", "Pinned"];
 const LABELS: &[&str] = &[
-    "折叠的聊天",
     "有新消息",
     "以下为新消息",
     "服务号",
@@ -65,6 +69,7 @@ pub(super) fn parse_row(
 ) -> Option<Conversation> {
     let mut lines = name.lines().map(str::trim).filter(|line| !line.is_empty());
     let contact = lines.next()?;
+    let folded = FOLDED.contains(&contact) || key.contains(FOLDED_KEY);
     let mut row = Conversation {
         preview: ChatPreview {
             key,
@@ -72,7 +77,7 @@ pub(super) fn parse_row(
             body: String::new(),
         },
         unread: 0,
-        muted: false,
+        muted: folded,
         mentioned: false,
         mentions_me: false,
         selected,
@@ -83,13 +88,21 @@ pub(super) fn parse_row(
     let last_time = labels.iter().rposition(|line| is_time_label(line));
     let mut summary = None;
     for (index, line) in labels.into_iter().enumerate() {
-        if MUTED.contains(&line) {
+        if MUTED.contains(&line) || FOLDED.contains(&line) {
             row.muted = true;
         } else if PINNED.contains(&line) {
             row.pinned = true;
         } else if Some(index) == last_time {
             row.time = line.to_owned();
         } else if last_time.is_none_or(|time| index < time) {
+            // Muted chats put their count in front of the summary: "[28条] 张三: 好".
+            let line = match leading_unread(line) {
+                Some((count, rest)) => {
+                    row.unread = count;
+                    rest
+                }
+                None => line,
+            };
             if let Some(count) = unread_count(line) {
                 row.unread = count;
             } else if LABELS.contains(&line) {
@@ -116,6 +129,14 @@ pub(super) fn parse_row(
         row.preview.body = text.chars().take(512).collect();
     }
     Some(row)
+}
+
+/// A bracketed count followed by the summary on the same line.
+fn leading_unread(line: &str) -> Option<(u32, &str)> {
+    let end = line.strip_prefix('[')?.find(']')? + 2;
+    let rest = line[end..].trim_start();
+    let count = unread_count(&line[..end])?;
+    (!rest.is_empty()).then_some((count, rest))
 }
 
 fn unread_count(line: &str) -> Option<u32> {
