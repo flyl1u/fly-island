@@ -433,3 +433,22 @@ fn collapsed_corners_follow_their_own_setting_once_sent() {
     state.mode = IslandMode::Expanded;
     assert_eq!(state.bottom_corner_radius(), 42.0, "the open island keeps the open radius");
 }
+
+#[test]
+fn collapsed_bar_takes_clicks_in_its_corners_and_just_beside_it() {
+    for dpi in [1.0, 1.25, 1.5, 2.0] {
+        let island = IslandWindowState { collapsed_height: 38.0, ..state(IslandMode::Collapsed, 1.0, DEFAULT_EXPANDED_ISLAND_HEIGHT) };
+        let (width, height) = island.active_size();
+        let left = (STAGE_WINDOW_WIDTH - width) / 2.0 * dpi;
+        let right = left + width * dpi;
+        let bottom = height * dpi;
+        // The bottom corners, where the first and last buttons sit.
+        assert!(point_in_island(island, dpi, left + 1.0, bottom - 1.0));
+        assert!(point_in_island(island, dpi, right - 1.0, bottom - 1.0));
+        // A few px outside the sides still counts; further out passes through.
+        assert!(point_in_island(island, dpi, left - 3.0 * dpi, bottom / 2.0));
+        assert!(!point_in_island(island, dpi, left - 6.0 * dpi, bottom / 2.0));
+        assert!(!point_in_island(island, dpi, right + 6.0 * dpi, bottom / 2.0));
+        assert!(!point_in_island(island, dpi, left + width * dpi / 2.0, bottom + 1.0));
+    }
+}
