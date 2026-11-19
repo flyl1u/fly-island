@@ -12,10 +12,15 @@ import { PLUGINS_ENABLED } from "../../features/plugins";
 import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, PLUGIN_INDEX_UNAVAILABLE, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
 import { useLocale, useTranslation } from "../../i18n";
 import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
+import { PluginMarket } from "./PluginMarket";
 import "./PluginsSettingsPage.css";
 
+/** The built-in plugin market comes first; the external data host below follows the release flag. */
 export function PluginsSettingsPage() {
-  return PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />;
+  return <div className="plugins-page">
+    <PluginMarket />
+    {PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />}
+  </div>;
 }
 
 function EnabledPluginsSettingsPage() {

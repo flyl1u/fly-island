@@ -18,3 +18,17 @@
 | `workbuddy.png` | [WorkBuddy](https://www.workbuddy.cn/) | 2026-11-13 取自本机安装的 WorkBuddy 5.9.3 的应用磁贴图标（`Assets/Square44x44Logo.targetsize-256_altform-unplated.png`，256×256 缩小到 64×64） |
 
 QQ、微信、QQ 邮箱的品牌标识及相关权利归腾讯及对应权利人所有；Claude 标识归 Anthropic 所有，OpenAI 标识归 OpenAI 所有，DeepSeek 标识归杭州深度求索所有，WorkBuddy 标识归腾讯所有。图标随应用打包，不在运行时请求远程图片。
+
+以下插件市场图标于 2026-11-18 取得，统一做成方形磁贴（SVG），用于插件卡片、消息标签与 Agent 会话：
+
+| 文件 | 来源 |
+| --- | --- |
+| `dingtalk.svg` | 钉钉开放平台官网矢量标记（白色标记，界面底色为钉钉蓝 `#0089FF`），经 [xiaotang-daozai](https://github.com/Renly1994/xiaotang-daozai)（MIT）`assets/calendar/dingtalk.svg` 取得 |
+| `feishu.svg` | 飞书官网 favicon 矢量图（`lf-package-cn.feishucdn.com/.../favicon-logo.svg`），经 xiaotang-daozai 取得 |
+| `wecom.svg` | 企业微信官网 LogoSingle 矢量图标，经 xiaotang-daozai 取得 |
+| `kimi-code.svg` | [LobeHub Icons](https://github.com/lobehub/lobe-icons)（MIT）`kimi.svg`，白色标记配黑底 |
+| `zcode.svg` | xiaotang-daozai `assets/ai-icons/zcode.svg`，改为方形深色底 |
+| `cursor.svg` | LobeHub Icons `cursor.svg`，浅色标记配深色底 |
+| `hermes.svg` | LobeHub Icons `nousresearch.svg`（Hermes Agent 由 Nous Research 出品），白色标记配黑底 |
+
+钉钉、飞书、企业微信、Kimi、Z Code（智谱）、Cursor（Anysphere）、Nous Research 的标识及相关权利归各自权利人所有，仅用于标识对应产品，不在运行时请求远程图片。
