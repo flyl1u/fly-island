@@ -14,3 +14,9 @@
 .messages-settings__connect {
   padding: 8px 16px 12px;
 }
+
+.messages-settings__office-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+}

@@ -20,7 +20,19 @@ export type MessagesText = {
     wechat: string;
     qqMail: string;
     plugin: string;
+    dingtalk: string;
+    feishu: string;
+    wecom: string;
   };
+  office: {
+    receive: (name: string) => string;
+    reminders: (name: string) => string;
+    open: (name: string) => string;
+    noReminders: string;
+    clickToOpen: string;
+    status: { disabled: string; listening: string; error: string };
+  };
+  reorderHint: string;
   collapsedTask: (title: string) => string;
   expand: (label: string) => string;
   openPreview: (text: string, source: string) => string;
@@ -53,7 +65,19 @@ export const zhCN: MessagesText = {
     wechat: "微信",
     qqMail: "邮箱",
     plugin: "插件",
+    dingtalk: "钉钉",
+    feishu: "飞书",
+    wecom: "企业微信",
   },
+  office: {
+    receive: (name) => `接收${name}提醒`,
+    reminders: (name) => `${name}提醒`,
+    open: (name) => `打开${name}`,
+    noReminders: "暂无新提醒",
+    clickToOpen: "点击打开",
+    status: { disabled: "已关闭", listening: "暂无新提醒", error: "无法监听" },
+  },
+  reorderHint: "长按拖动可调整顺序",
   collapsedTask: (title) => `待办：${title}`,
   expand: (label) => `${label}，点击展开`,
   openPreview: (text, source) => `${text}，点击打开${source}`,
@@ -86,7 +110,19 @@ export const en: MessagesText = {
     wechat: "WeChat",
     qqMail: "Mail",
     plugin: "Plugin",
+    dingtalk: "DingTalk",
+    feishu: "Feishu",
+    wecom: "WeCom",
   },
+  office: {
+    receive: (name) => `Receive ${name} reminders`,
+    reminders: (name) => `${name} reminders`,
+    open: (name) => `Open ${name}`,
+    noReminders: "No new reminders",
+    clickToOpen: "Click to open",
+    status: { disabled: "Off", listening: "No new reminders", error: "Can't listen" },
+  },
+  reorderHint: "Press and hold to drag into a new order",
   collapsedTask: (title) => `Task: ${title}`,
   expand: (label) => `${label}, click to expand`,
   openPreview: (text, source) => `${text}, click to open ${source}`,

@@ -1,10 +1,11 @@
 import { useTranslation } from "../../i18n";
 import { MessageSourceIcon } from "./MessageSourceIcon";
+import type { MessageSource } from "./messagePreview";
 import { formatMessageCardTime, splitMessageSender } from "./messageCardText";
 import "./MessageCard.css";
 
 type MessageCardProps = {
-  source: "qq" | "wechat" | "plugin";
+  source: Exclude<MessageSource, "qqMail">;
   icon?: string;
   name: string;
   timestamp: number;

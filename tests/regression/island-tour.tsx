@@ -12,6 +12,7 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkMaterial, checkTone } from "./islandTourTheme";
+import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SESSIONS, TOUR_SHELF, TOUR_TODOS, tourMediaState, type TourMedia } from "./islandTourMocks";
 
 const query = new URLSearchParams(location.search);
@@ -43,6 +44,7 @@ localStorage.setItem("focusd-island-current-date", date);
 localStorage.setItem("focusd-island-detached-settings", "false");
 // Exercise the explicitly selected style after the one-time default migration.
 localStorage.setItem("focusd-island-tuck-line-migration", "1");
+installTourPlugins();
 localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
@@ -80,6 +82,7 @@ mockIPC((command, payload) => {
   const args = (payload ?? {}) as Record<string, unknown>;
   switch (command) {
     case "get_workbuddy_usage": return { status: "signedOut" };
+    case "get_office_im_state": case "set_office_im_enabled": case "clear_office_im": return tourOffice(empty);
     case "plugin:app|version": return "3.0.9";
     case "get_media_diagnostics": return { players: [] };
     case "get_launch_at_startup": return false;
