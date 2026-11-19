@@ -1,5 +1,9 @@
 # 开发规范 / Development specification
 
+> **先看[插件开发规范](README.md)。** 本文是小岛内部已有的「外部数据接入」机制（把其他 AI 工具的额度、会话、消息接进 Agent 页，外部进程 + JSON-RPC）的技术说明，**不是插件的定义**。插件是对小岛源码的改造，只有当你的插件需要接入外部数据源时才需要参考本文。
+>
+> **Read the [plugin guide](README.md) first.** This page documents the island's existing external data adapter mechanism (an external process over JSON-RPC that feeds quota, sessions and messages into the Agent page). It is **not the definition of a plugin**: plugins change the island's source. Refer to it only if your plugin needs an external data source.
+
 [总览 / Overview](README.md) · [快速开始 / Quickstart](quickstart.md) · [协议 / Protocol](api.md) · [设计 / Design](design.md) · [提交 / Contributing](contributing.md)
 
 ## 目录与构建 / Layout and build

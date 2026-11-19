@@ -1,57 +1,54 @@
 ---
 name: 插件贡献 / Plugin contribution
-about: 按插件规范贡献源码与嵌入演示 / Contribute source and an in-island demo
+about: 基于小岛源码改造功能，附使用演示 / Upgrade an island feature from its source, with a demo
 ---
 
-请先阅读[插件开发规范](../../docs/plugins/README.md)。以下项目均须填写；不适用请说明。不要提交凭据或私人数据。
-Read the [plugin guide](../../docs/plugins/README.md). Complete every field; explain inapplicable items. Do not include secrets or private data.
+请先阅读[插件开发规范](../../docs/plugins/README.md)。**带「必填」的项目缺一项就不会审核。** 不要提交账号、密钥或私人数据。
+Read the [plugin guide](../../docs/plugins/README.md). **PRs missing a required field are not reviewed.** Never include accounts, secrets or private data.
 
-## 录屏演示链接（必填）/ Demo recording URL (required)
+## 使用演示录屏链接（必填）/ Demo recording URL (required)
 
-<!-- 必须展示插件实际嵌入小岛后的运行效果：启用、功能/动作、停用。截图或独立程序演示不能替代。遮住私人消息与凭据。
-Show the plugin actually running inside the island: enable, functionality/actions, disable. Screenshots or a standalone app demo are insufficient. Redact private messages and credentials. -->
+<!-- 公开链接（B 站、YouTube、网盘均可）。在真实小岛里录：改造前的样子 → 改造后怎么用 → 主要功能逐一演示。截图或单独程序的演示不能代替。遮住私人消息和账号。
+A public link. Record inside the real island: before → how to use it after → each main feature. Screenshots or a standalone demo are not enough. Redact private messages and accounts. -->
 
 ## 作者（必填）/ Author (required)
 
-<!-- 署名与 GitHub 用户名；多作者逐一列出 / Credit name and GitHub handle; list all authors -->
+<!-- 署名与 GitHub 用户名，多人逐一列出 / Credit name and GitHub handle for every author -->
 
 ## 联系方式（必填）/ Contact (required)
 
-<!-- 可公开的邮箱或其他联系渠道，不填密码/密钥 / Public email or another reachable channel, never passwords/keys -->
+<!-- 一个公开、能联系到你的渠道 / A public channel where you can be reached -->
 
-## GitHub 链接（必填）/ GitHub URL (required)
+## GitHub 链接（必填）/ GitHub links (required)
 
-<!-- 作者主页与插件源码仓库/路径；注明上游、fork 与许可证 / Author profile and plugin source repository/path; identify upstream/fork and license -->
+<!-- 你的 GitHub 主页 + 插件代码所在仓库或分支 / Your GitHub profile + the repository or branch with the plugin -->
 
-## 功能 / Functionality
+## 插件简介（必填）/ Plugin description (required)
 
-<!-- 用途、使用的扩展点、支持客户端/版本、限制与动态文案语言策略 / Purpose, extension points, supported clients/versions, limitations and runtime language strategy -->
+<!-- 名字；一句话介绍；改造了小岛的哪个功能；装上后用户能感受到什么变化。会显示在插件列表里，请写得通俗。
+Name; one-line pitch; which island feature it upgrades; what users notice once it is installed. Shown in the plugin list, so keep it plain. -->
 
-## 权限 / Permissions
+## 改动说明（必填）/ What changed (required)
 
-<!-- 逐项解释 manifest 权限、读写路径、数据流、凭据来源/保存/清理 / Explain each permission, read/write paths, data flow and credential source/storage/cleanup -->
+<!-- 改了哪些文件；哪几处是接入原功能的地方（适配成可选安装时要用）；是否新增存储 key、Tauri 命令、联网（列出域名）、读写文件（列出路径）。
+Files changed; the hook points into the original feature (needed for the optional-install adaptation); any new storage keys, Tauri commands, network domains or file paths. -->
 
-## 联网域名 / Network domains
+## 自测结果（必填）/ Self-test results (required)
 
-<!-- 无联网也明确写无；列全 API/登录/重定向域名、接口来源、所发数据、超时/刷新/退避 / State none if offline; list API/auth/redirect domains, endpoint sources, sent data, timeout/refresh/backoff -->
+<!-- pnpm check / pnpm build / pnpm test:regression（改了 Rust 再加 cargo test）的结果；手动测过的场景。
+Results of pnpm check / pnpm build / pnpm test:regression (plus cargo test for Rust changes) and the scenarios you tried by hand. -->
 
-## 截图（可选，不能替代录屏）/ Screenshots (optional, not a recording substitute)
+## 截图与已知问题（可选）/ Screenshots and known issues (optional)
 
-## 自测步骤 / Self-test steps
+## 自检 / Checklist
 
-<!-- 可复现准备、build/test/clippy 与宿主检查结果；未登录/过期凭据/离线/坏数据/大历史/启停/退出/卸载；CPU/内存/轮询实测，注明未验证范围
-Reproducible setup, build/test/clippy and host-check results; unsigned-in/expired/offline/malformed/large-history/enable-disable/exit/uninstall cases; measured CPU/memory/polling and unverified scope -->
+- [ ] 改造的是小岛原有功能（或像原生功能一样融入的新能力），不是另开窗口或外挂界面。/ Upgrades an island feature (or adds one that fits in natively); no separate windows or bolted-on UI.
+- [ ] 新逻辑尽量收拢在独立文件里，接入点已在上面列出；没装插件时原功能不受影响。/ New logic kept in its own files with hook points listed; the island is unchanged without the plugin.
+- [ ] 没有改已保存数据的 key / 格式、Tauri 命令名、窗口名。/ No changes to saved data keys/formats, Tauri command names or window labels.
+- [ ] 界面用小岛自己的组件和样式；深色 / 浅色、液态 / 磨砂玻璃、窄窗口都看过。/ Island components and styles only; checked dark/light, both glasses and narrow widths.
+- [ ] 所有用户可见文字中英双语。/ Every visible string is in Chinese and English.
+- [ ] 联网和读写文件都已声明；没有隐藏的采集、遥测或自动更新。/ Network and file access declared; no hidden collection, telemetry or self-updating.
+- [ ] 没有提交可执行文件、构建产物、账号数据；没有改应用版本号。/ No binaries, build output or account data; app version unchanged.
 
-## 规范自检 / Specification checklist
-
-- [ ] 已附真实嵌入小岛录屏、作者、联系方式与 GitHub 链接。/ Included an actual in-island recording, author, contact and GitHub links.
-- [ ] 已阅读 manifest/API/设计/审核规范；只用宿主组件，无 HTML/CSS/Webview 或独立通知 UI。/ Followed manifest/API/design/review rules; host components only, no HTML/CSS/Webview or separate notification UI.
-- [ ] 文案中英完整，动态文案语言策略明确，窄窗口和明暗主题正常。/ Complete bilingual metadata, explicit runtime language strategy, narrow-layout and light/dark checks.
-- [ ] 权限与全部联网域名准确；第三方文件只读；无未声明采集、遥测、自更新或注入。/ Accurate permissions/domains; read-only third-party files; no undeclared collection, telemetry, self-updates or injection.
-- [ ] secret 使用 Windows 凭据管理器及本插件已声明 key，可卸载清理；日志/快照/fixture/录屏无秘密。/ Secrets use Windows Credential Manager and this plugin's declared keys, removable on uninstall; no secrets in logs/snapshots/fixtures/video.
-- [ ] 快照完整且有界，id/事件时间稳定，不把失败当 0，不制造重复提醒，尊重免打扰。/ Complete bounded snapshots, stable IDs/event times, no false zero values or alert spam; respects DND.
-- [ ] 已测资源、超时退避、stdin EOF/shutdown、取消任务与子进程退出，无遗留浏览器。/ Tested resources, timeouts/backoff, EOF/shutdown, cancellation and child cleanup; no orphan browsers.
-- [ ] 必要检查已运行并如实列结果；无 exe/ZIP/target/账号数据；未改应用版本或打开发布开关。/ Ran required checks and reported results; no binaries/ZIP/target/account data, app-version changes or enabled release flags.
-
-由 flyl1u 审核合并后统一发布；提交不保证合并或立即上线。
-flyl1u reviews, merges and publishes approved plugins; submission does not guarantee merge or immediate availability.
+由 flyl1u 审核并适配成可选安装后随版本上线；提交不保证合并或立即上线。
+flyl1u reviews it and adapts it into an optional install before it ships; submission does not guarantee a merge or immediate release.

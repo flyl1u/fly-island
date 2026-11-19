@@ -9,8 +9,8 @@ export type SettingsPluginsText = {
 
 export const zhCN: SettingsPluginsText = {
   plan: "插件开发计划", comingSoon: "插件功能即将上线",
-  invitation: "欢迎先按规范开发插件并提交 PR。flyl1u 审核合并后统一发布。",
-  guide: "插件开发规范", guideHint: "从示例与 API 开始，了解如何融入小岛，以及提交与审核要求。",
+  invitation: "插件是对小岛原有功能的改造，装上后就是小岛的一部分，默认不安装、按需下载。欢迎基于小岛源码开发并提交 PR，flyl1u 审核适配后上线。",
+  guide: "插件开发规范", guideHint: "插件是什么、怎么改造小岛源码、提交 PR 要附的演示和信息，以及审核上线流程。",
   readGuide: "查看规范", openGuideFailed: "没能打开开发规范，请再试一次。",
   empty: "暂无插件", installed: "已安装", available: "可安装", install: "安装", update: "更新",
   uninstall: "卸载", enabled: "启用", permissions: "权限", retry: "刷新", save: "保存",
@@ -21,8 +21,8 @@ export const zhCN: SettingsPluginsText = {
 
 export const en: SettingsPluginsText = {
   plan: "Plugin development", comingSoon: "Plugins are coming soon",
-  invitation: "Start building with the guide and submit a PR. flyl1u will review, merge and publish approved plugins.",
-  guide: "Plugin development guide", guideHint: "Explore the example, API, island design guidelines and contribution requirements.",
+  invitation: "A plugin upgrades an island feature and becomes part of the island once installed; plugins are optional and downloaded on demand. Build one from the island's source and open a PR; flyl1u reviews, adapts and ships it.",
+  guide: "Plugin development guide", guideHint: "What a plugin is, how to change the island's source, the demo and details a PR needs, and how review and release work.",
   readGuide: "Read guide", openGuideFailed: "Could not open the guide. Please try again.",
   empty: "No plugins yet", installed: "Installed", available: "Available", install: "Install", update: "Update",
   uninstall: "Uninstall", enabled: "Enable", permissions: "Permissions", retry: "Refresh", save: "Save",

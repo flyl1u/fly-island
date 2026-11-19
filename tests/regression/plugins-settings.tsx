@@ -80,7 +80,7 @@ try {
     await act(async () => requests[0].reject("old request failed")); await wait();
     check(!document.body.textContent?.includes(t.unavailable), "已失效的旧请求不能覆盖新索引结果");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.develop}']`)!.click());
-    check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/quickstart.md", "开发指引使用既有外链 opener");
+    check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md", "开发指引使用既有外链 opener");
     check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");
   }
   await act(async () => app.unmount());

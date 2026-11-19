@@ -1,5 +1,9 @@
 # 快速开始 / Quickstart
 
+> **先看[插件开发规范](README.md)。** 本文是小岛内部已有的「外部数据接入」机制（把其他 AI 工具的额度、会话、消息接进 Agent 页，外部进程 + JSON-RPC）的技术说明，**不是插件的定义**。插件是对小岛源码的改造，只有当你的插件需要接入外部数据源时才需要参考本文。
+>
+> **Read the [plugin guide](README.md) first.** This page documents the island's existing external data adapter mechanism (an external process over JSON-RPC that feeds quota, sessions and messages into the Agent page). It is **not the definition of a plugin**: plugins change the island's source. Refer to it only if your plugin needs an external data source.
+
 [总览 / Overview](README.md) · [开发规范 / Specification](specification.md) · [API](api.md) · [设计 / Design](design.md) · [提交 / Contributing](contributing.md)
 
 以下命令在 Windows PowerShell、仓库根目录执行。先 Fork/克隆自己的仓库、创建分支，安装 pnpm、Rust（按根目录 rust-toolchain.toml 固定版本）、MSVC C++ 构建工具与 Tauri 开发环境，再运行 `pnpm install --frozen-lockfile`。插件与主程序是独立 Cargo workspace。当前正式版只开放规范入口，以下安装/加载步骤**仅适用于本地启用插件的开发构建**。
