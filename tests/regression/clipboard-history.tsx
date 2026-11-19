@@ -112,6 +112,11 @@ async function run() {
   await click(".clipboard-clear-button--confirming");
   check(deleted[0]?.length === 249 && deleted[0].every((id) => Number(id.split("-")[1]) % 2 === 1) && !deleted[0].includes("item-499") && !deleted[0].includes("item-498"), "One batch deletes the selected non-favorites only");
   check(!document.querySelector(".clipboard-item--selecting"), "Successful deletion leaves selection mode");
+  const activeTab = () => document.querySelector(".clipboard-segments .clipboard-segment--active")?.textContent;
+  await click(".clipboard-segments button:nth-child(4)");
+  check(document.querySelectorAll(".clipboard-segment--active").length === 1 && activeTab() === "图片", "A type tab takes the underline");
+  await click(".clipboard-segments button:nth-child(1)");
+  check(activeTab() === "全部", "全部 takes the underline back");
   await click(".clipboard-clear-button");
   await click(".clipboard-item__main");
   failDelete = true;

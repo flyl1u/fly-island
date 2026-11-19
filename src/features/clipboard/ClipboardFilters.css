@@ -9,7 +9,7 @@
   min-height: 32px;
   display: flex;
   flex: 0 0 auto;
-  gap: 18px;
+  gap: 14px;
   padding: 0;
   background: transparent;
   border: 0;
@@ -33,6 +33,7 @@
   cursor: pointer;
   font-size: calc(12px * var(--island-font-scale, 1));
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .clipboard-segments button:hover,
@@ -105,45 +106,4 @@
 .clipboard-search button:hover {
   color: var(--color-fg-strong);
   background: var(--color-white-a10);
-}
-
-/* The type filter: three small toggles (icon and name) beside the tabs, quiet until one is on. */
-.clipboard-kinds {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 2px;
-  margin-left: calc(var(--space-2xl) * -0.5);
-}
-
-.clipboard-kinds button {
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 7px;
-  font-size: calc(12px * var(--island-font-scale, 1));
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--text-3);
-  background: transparent;
-  border: 0;
-  border-radius: var(--corner-xs);
-  corner-shape: var(--corner-shape);
-  outline: none;
-  cursor: pointer;
-}
-
-.clipboard-kinds button:hover {
-  color: var(--text-1);
-  background: var(--color-white-a06);
-}
-
-.clipboard-kinds .clipboard-kind--active {
-  color: var(--text-1);
-  background: var(--color-white-a10);
-}
-
-.clipboard-kinds button:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: -2px;
 }

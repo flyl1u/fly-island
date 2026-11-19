@@ -25,35 +25,26 @@ export function ClipboardFilters({
 
   return (
     <div className="clipboard-filters">
-      <div className="clipboard-segments" aria-label={t.clipboard.segments}>
-        <button
-          className={view === "all" ? "clipboard-segment--active" : ""}
-          type="button"
-          aria-pressed={view === "all"}
-          onClick={() => onViewChange("all")}
-        >
-          {t.clipboard.all}
-        </button>
-        <button
-          className={view === "favorites" ? "clipboard-segment--active" : ""}
-          type="button"
-          aria-pressed={view === "favorites"}
-          onClick={() => onViewChange("favorites")}
-        >
-          <Star size={13} strokeWidth={2} aria-hidden="true" />
-          {t.clipboard.favorites}
-        </button>
-      </div>
-
-      <div className="clipboard-kinds" role="group" aria-label={t.clipboard.kinds}>
+      {/* One tab row: 全部 / 收藏 / 文字 / 图片 / 文件. A type tab shows every item of that type. */}
+      <div className="clipboard-segments" role="group" aria-label={t.clipboard.segments}>
+        {(["all", "favorites"] as const).map((value) => {
+          const active = view === value && kind === "any";
+          return (
+            <button key={value} type="button" className={active ? "clipboard-segment--active" : ""} aria-pressed={active}
+              onClick={() => { onViewChange(value); onKindChange("any"); }}>
+              {value === "favorites" && <Star size={13} strokeWidth={2} aria-hidden="true" />}
+              {value === "all" ? t.clipboard.all : t.clipboard.favorites}
+            </button>
+          );
+        })}
         {(["text", "image", "file"] as const).map((value) => {
           const Icon = KIND_ICONS[value];
           const active = kind === value;
           return (
-            <button key={value} type="button" className={active ? "clipboard-kind--active" : ""} aria-pressed={active}
-              onClick={() => onKindChange(active ? "any" : value)}>
-              <Icon size={14} strokeWidth={2} aria-hidden="true" />
-              <span>{kindLabels[value]}</span>
+            <button key={value} type="button" className={active ? "clipboard-segment--active" : ""} aria-pressed={active}
+              onClick={() => { onViewChange("all"); onKindChange(value); }}>
+              <Icon size={13} strokeWidth={2} aria-hidden="true" />
+              {kindLabels[value]}
             </button>
           );
         })}
