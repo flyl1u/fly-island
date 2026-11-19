@@ -114,6 +114,11 @@
   border-radius: var(--preview-radius-expanded);
 }
 
+/* The capsule's collapsed bar is a true pill, as on the island (IslandShell.css). */
+.island-preview__island--capsule.island-preview__island--collapsed {
+  corner-shape: round;
+}
+
 .island-preview__pulse {
   width: calc(9 * var(--c));
   height: calc(9 * var(--c));

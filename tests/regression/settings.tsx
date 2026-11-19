@@ -103,13 +103,14 @@ if (!automated) {
       // 12 -> 13: 2026-11-13 老板要求的颜色预设行 (+1); auto-width initially hides the manual width row.
       // General 11 -> 14: the three independent keep-visible switches requested 2026-11-13.
       // Appearance +1: optional top-edge curves (2026-11-13); the size row is hidden by default.
+      // Appearance 22 -> 23: the notch / capsule shape (用户要求 2026-11-18).
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
       if (category === "todos") await checkTodoRotation(panel, check);
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
-      const maxRows = category === "agents" ? 13 : category === "general" ? 16 : category === "appearance" ? 22 : category === "clipboard" ? 9 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 16 : category === "appearance" ? 23 : category === "clipboard" ? 9 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;

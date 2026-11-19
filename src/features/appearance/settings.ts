@@ -53,6 +53,7 @@ export const APPEARANCE_SETTING_KEYS = [
   "collapsedWidth",
   "collapsedHeight",
   "expandedScale",
+  "islandShape",
   "islandCornerRadius",
   "collapsedCornerRadius",
   "islandCornerShape",

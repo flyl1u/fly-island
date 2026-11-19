@@ -1,7 +1,7 @@
 // pnpm dev, then open /tests/regression/island-tour.html. The whole island with believable data
 // behind a fake desktop, for looking at every page by eye: ?media=playing|paused|nocover|long|
 // nolyrics|none picks what the player reports (?lyrics=0 turns online lyrics off), ?empty=1 empties every list, ?lang=en switches the
-// interface, ?detached=1 floats the island below the top edge. With ?test=1 it opens each page and
+// interface, ?detached=1 floats the island below the top edge, ?capsule=1 picks the capsule shape. With ?test=1 it opens each page and
 // checks that nothing sticks out of the island's rounded shape.
 import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,6 +11,7 @@ import "../../src/styles/base.css";
 import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
+import { checkCollapsedShape } from "./islandTourShape";
 import { checkMaterial, checkTone } from "./islandTourTheme";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
@@ -57,15 +58,13 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
   ...(query.get("bg") ? { islandBackgroundColor: `#${query.get("bg")}` } : {}),
   ...(query.get("material") ? { material: query.get("material") } : {}),
-  topEdgeShoulders: query.has("shoulders"),
-  topEdgeShoulderSize: 20,
+  topEdgeShoulders: query.has("shoulders"), topEdgeShoulderSize: 20,
+  ...(query.has("capsule") ? { islandShape: "capsule" } : {}),
   tuckStyle,
   // Capsules are what this tour's geometry checks look at; the default (icons) is covered below.
   pageButtonStyle: "capsule",
   // The waiting session would pop the Agent page open at a random moment and race the geometry checks.
-  agentAlertWaiting: false,
-  agentAlertCompleted: false,
-  agentAlertFailed: false,
+  agentAlertWaiting: false, agentAlertCompleted: false, agentAlertFailed: false,
   lyricsOnline: query.get("lyrics") !== "0",
   collapsedShowCover: query.get("cover") === "1",
   ...(query.get("priority") ? { collapsedPriority: query.get("priority")!.split(",") } : {}),
@@ -203,8 +202,7 @@ if (!automated) {
     const collapsedRadius = Number.parseFloat(getComputedStyle(island()).borderBottomLeftRadius);
     const expectedHeight = customNotch ? 32 : 38;
     checkShapeMotion(0.38);
-    check(collapsed.height === expectedHeight && collapsedRadius >= 16 && getComputedStyle(island()).borderTopLeftRadius === "0px",
-      `收起的岛贴着顶边：上边是平的，下面两个角是大圆角（${collapsed.height}px / ${collapsedRadius}px / ${getComputedStyle(island()).borderTopLeftRadius}）`);
+    checkCollapsedShape(query.has("capsule"), { island: island(), expectedHeight, interaction, check });
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
     if (customNotch) {
       const title = bar.querySelector<HTMLElement>(".island__agent-session, .island__active-task, .island__todo-count, .collapsed-lyric")!;
@@ -379,7 +377,7 @@ if (!automated) {
     };
     await dragIsland();
     await dragIsland(true);
-    check(windowDrags === 0 && !island().classList.contains("island--detached"), "锁定后普通拖动和 Ctrl 拖动都不会移动或改变小岛的贴顶状态");
+    check(windowDrags === 0 && (query.has("capsule") || !island().classList.contains("island--detached")), "锁定后普通拖动和 Ctrl 拖动都不会移动或改变小岛的贴顶状态");
     await click(".island__open-button");
     check(island().classList.contains("island--expanded"), "锁定位置仍可点击展开小岛");
     await click(".island-settings-button");
