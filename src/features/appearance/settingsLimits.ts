@@ -58,8 +58,9 @@ export const ISLAND_CORNER_RADIUS = { min: 8, max: 96, default: DEFAULT_ISLAND_C
 // The collapsed bar's corners (2026-11-18, set apart from the open island's). The default is what
 // the old 12 / 30 ratio drew from the default open radius, so the island looks as it did.
 export const COLLAPSED_CORNER_RADIUS = { min: 0, max: 40, default: (DEFAULT_ISLAND_CORNER_RADIUS * 12) / 30, step: 0.1 } as const;
-// The glass's blur of what is behind it, 0 (least) to 100.
-export const GLASS_BLUR = { min: 0, max: 100, default: 60 } as const;
+// The glass's blur of what is behind it, 30 to 100: below 30 the backdrop was nearly sharp and the
+// text hard to read (2026-11-18, owner). Older settings under 30 read back as 30.
+export const GLASS_BLUR = { min: 30, max: 100, default: 60 } as const;
 // Px of the island the "edge" tuck leaves on screen; Rust accepts 3–20 (geometry.rs). 10 was fixed before.
 export const TUCK_EDGE_HEIGHT = { min: 3, max: 20, default: 10 } as const;
 export const MIN_COLLAPSED_SCALE = 0.75;
