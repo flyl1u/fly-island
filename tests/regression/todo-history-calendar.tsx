@@ -136,7 +136,12 @@ try {
   check(weekdays[0] === "一" && weekdays[6] === "日", `一周从周一开始（${weekdays.join("")}）`);
   const day = (date: string) => $<HTMLButtonElement>(`.todo-calendar__day[data-date="${date}"]`);
   const todayNumber = day(today)!.querySelector(".todo-calendar__number")!;
-  check(getComputedStyle(todayNumber).backgroundColor === "rgb(116, 214, 255)" && day(today)!.getAttribute("aria-current") === "date", "今天是实心的强调色圆");
+  const todayBadge = day(today)!.querySelector(".todo-calendar__badge");
+  check(getComputedStyle(todayNumber).boxShadow === "none" && todayBadge?.textContent === "今"
+    && getComputedStyle(todayBadge).color === "rgb(116, 214, 255)"
+    && getComputedStyle(day(today)!).boxShadow.includes("inset")
+    && day(today)!.getAttribute("aria-current") === "date",
+    "今天数字不描边，选中时整格描边，右上角是蓝色的「今」");
   check(sideBySide() && detail().dataset.date === today && $(".todo-day-detail__title")?.textContent === "今天" && dayList().textContent!.includes("核对这周的录屏素材"),
     "日历在左侧，今天的待办默认显示在右侧");
   if (!day(yesterday)) await click(button("上个月"));
@@ -195,12 +200,27 @@ try {
   const monthTitle = () => $(".todo-calendar__title")!.textContent ?? "";
   for (let step = 0; step < 24 && !monthTitle().includes("2027"); step += 1) await click(button("下个月"));
   if (monthTitle().includes("2027")) {
+    const badge = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__badge")?.textContent ?? "";
+    const caption = (node: Element | null | undefined) => node?.querySelector(".todo-calendar__holiday")?.textContent ?? "";
+
     const firstDay = day("2027-01-01");
-    check(firstDay?.textContent?.includes("元旦") === true && firstDay.classList.contains("todo-calendar__day--off"),
-      "元旦当天显示节日名");
+    check(caption(firstDay).includes("元旦") && firstDay?.classList.contains("todo-calendar__day--rest") && badge(firstDay) === "休",
+      "元旦用红底红字，右上角标「休」，数字下方是节日名");
+
+    const plainSaturday = day("2027-01-09");
+    check(plainSaturday?.classList.contains("todo-calendar__day--rest") && badge(plainSaturday) === "休"
+      && /^(初|十|廿|三)/.test(caption(plainSaturday)),
+      "普通周六也标「休」，下方显示农历");
+
+    const plainWeekday = day("2027-01-06");
+    check(!plainWeekday?.classList.contains("todo-calendar__day--rest") && badge(plainWeekday) === ""
+      && /^(初|十|廿|三)/.test(caption(plainWeekday)),
+      "工作日不标「休」，下方仍显示农历");
+
     const makeUpDay = day("2027-01-31");
-    check(makeUpDay?.textContent?.includes("班") === true && makeUpDay.classList.contains("todo-calendar__day--work"),
-      "调休上班的周日显示「班」");
+    check(badge(makeUpDay) === "班" && makeUpDay?.classList.contains("todo-calendar__day--work")
+      && !makeUpDay.classList.contains("todo-calendar__day--rest"),
+      "调休上班的周日标「班」，不按休息日标红");
     await click(goToday);
   }
 

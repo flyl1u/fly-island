@@ -42,6 +42,10 @@ export type NotebookText = {
   /** The other days of a break, and a weekend worked to pay for it. */
   holidayOff: string;
   holidayWork: string;
+  /** One-character corner badges: a day off, a make-up workday, today. */
+  holidayOffBadge: string;
+  holidayWorkBadge: string;
+  todayBadge: string;
   holidayDay: (date: string, holiday: string) => string;
 };
 
@@ -97,6 +101,9 @@ export const zhCN: NotebookText = {
   },
   holidayOff: "休",
   holidayWork: "班",
+  holidayOffBadge: "休",
+  holidayWorkBadge: "班",
+  todayBadge: "今",
   holidayDay: (date, holiday) => `${date}，${holiday}`,
 };
 
@@ -149,5 +156,8 @@ export const en: NotebookText = {
   },
   holidayOff: "Off",
   holidayWork: "Work",
+  holidayOffBadge: "O",
+  holidayWorkBadge: "W",
+  todayBadge: "T",
   holidayDay: (date, holiday) => `${date}, ${holiday}`,
 };

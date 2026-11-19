@@ -3,6 +3,7 @@ import { Check, ChevronLeft, ChevronRight, CornerUpLeft, Plus, Trash2 } from "lu
 import { useTranslation } from "../../i18n";
 import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
 import { holidayOn } from "./holidays";
+import { lunarDay } from "./lunar";
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
@@ -74,19 +75,27 @@ export function TodoCalendar({
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
             const mark = holidayOn(date);
-            const holiday = mark
-              ? (mark.kind === "work"
-                ? t.notebook.holidayWork
-                : (mark.name && t.notebook.holidayNames[mark.name]) || t.notebook.holidayOff)
-              : null;
+            const isToday = date === today;
+            const isWork = mark?.kind === "work";
+            const weekday = new Date(`${date}T00:00:00`).getDay();
+            const isRest = !isWork && (mark?.kind === "off" || weekday === 0 || weekday === 6);
+            // A holiday names the cell; every other day reads its lunar date.
+            const holidayName = mark?.kind === "off" && mark.name ? (t.notebook.holidayNames[mark.name] ?? mark.name) : null;
+            const caption = holidayName ?? lunarDay(date);
+            // Today takes the corner badge itself, so it never reads as a plain day off.
+            const badge = isToday
+              ? t.notebook.todayBadge
+              : isRest ? t.notebook.holidayOffBadge : isWork ? t.notebook.holidayWorkBadge : null;
             const heading = dayHeading(date, today, t.notebook);
             const dayLabel = t.notebook.dayTodos(heading, items.length);
+            const spoken = holidayName ?? (badge ? (isWork ? t.notebook.holidayWork : t.notebook.holidayOff) : null);
             const dots = dayDots(items);
             const className = [
               "todo-calendar__day",
               monthOf(date) !== month ? "todo-calendar__day--outside" : "",
               date === today ? "todo-calendar__day--today" : "",
-              mark ? `todo-calendar__day--${mark.kind}` : "",
+              isRest ? "todo-calendar__day--rest" : "",
+              isWork ? "todo-calendar__day--work" : "",
             ].filter(Boolean).join(" ");
             return (
               <button
@@ -95,22 +104,26 @@ export function TodoCalendar({
                 type="button"
                 aria-pressed={date === selected}
                 aria-current={date === today ? "date" : undefined}
-                aria-label={holiday ? t.notebook.holidayDay(dayLabel, holiday) : dayLabel}
+                aria-label={spoken ? t.notebook.holidayDay(dayLabel, spoken) : dayLabel}
                 data-date={date}
                 onClick={() => select(date)}
               >
                 <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-                <span className="todo-calendar__meta" aria-hidden="true">
-                  {holiday ? <span className="todo-calendar__holiday">{holiday}</span> : null}
+                <span className="todo-calendar__caption" aria-hidden="true">
+                  {caption ? <span className="todo-calendar__holiday">{caption}</span> : null}
                   {dots.length > 0 ? (
                     <span className="todo-calendar__dots">
-                      {/* A two-character holiday and three dots do not fit one cell; one dot still says "has todos". */}
-                      {(holiday ? dots.slice(0, 1) : dots).map((dot, index) => (
+                      {dots.map((dot, index) => (
                         <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />
                       ))}
                     </span>
                   ) : null}
                 </span>
+                {badge ? (
+                  <span className={`todo-calendar__badge${isToday ? " todo-calendar__badge--today" : ""}`} aria-hidden="true">
+                    {badge}
+                  </span>
+                ) : null}
               </button>
             );
           })}
