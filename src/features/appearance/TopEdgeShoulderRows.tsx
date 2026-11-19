@@ -14,7 +14,7 @@ export function TopEdgeShoulderRows({ settings, onChange }: Props) {
   const t = useTranslation();
   const text = t.settings.appearance;
   return <>
-    <SettingsToggleRow title={text.topEdgeShoulders} checked={settings.topEdgeShoulders}
+    <SettingsToggleRow title={text.topEdgeShoulders} description={text.topEdgeShouldersHint} checked={settings.topEdgeShoulders}
       onChange={(topEdgeShoulders) => onChange({ ...settings, topEdgeShoulders })} />
     {settings.topEdgeShoulders && <SettingsSliderRow indent title={text.topEdgeShoulderSize}
       value={settings.topEdgeShoulderSize} {...TOP_EDGE_SHOULDER_SIZE} step={1}

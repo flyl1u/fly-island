@@ -1,4 +1,4 @@
-// General page: numeric delays, keep-visible choices and tucked-look controls.
+// General page: numeric delays and keep-visible choices (the tucked look is under appearance).
 import { act } from "react";
 import { checkKeepVisible } from "./settingsKeepVisible";
 
@@ -22,10 +22,5 @@ export async function checkGeneralControls(
   check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);
   await type(first, "30");
   await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-  const tuckLooks = [...panel.querySelectorAll<HTMLButtonElement>("[role='group'][aria-label='贴边样式'] button")];
-  check(tuckLooks.map((button) => button.textContent).join() === "露边,细线,隐藏" && tuckLooks[1].getAttribute("aria-pressed") === "true", "general: the tucked look offers edge, line and hidden, line by default");
-  await act(async () => tuckLooks[1].click());
-  check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line", "Choosing the line look saves it");
-  check(JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "tucked", "Choosing even the current tuck style requests an immediate tucked preview");
-  await act(async () => tuckLooks[0].click());
+  check(!panel.querySelector("[role='group'][aria-label='贴边隐藏后']"), "general: the tucked look is on the appearance page, not here");
 }

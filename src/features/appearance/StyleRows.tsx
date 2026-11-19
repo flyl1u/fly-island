@@ -171,47 +171,44 @@ export function OpacityRow({ settings, onSettingsChange }: RowsProps) {
   );
 }
 
-/** How big the island is collapsed and opened. */
-export function ScaleRows({ settings, onSettingsChange, onPreviewIsland, onExpandedScalePreview }: RowsProps & {
-  /** Called while a size changes, so the island shows that size (collapsed or opened). */
-  onPreviewIsland?: (mode: "collapsed" | "expanded") => void;
+/** Appearance → Collapsed: the collapsed island's overall size. */
+export function CollapsedScaleRow({ settings, onSettingsChange }: RowsProps) {
+  const t = useTranslation();
+  return (
+    <SettingsSliderRow
+      title={t.settings.appearance.size}
+      value={settings.collapsedScale}
+      min={MIN_COLLAPSED_SCALE}
+      max={MAX_COLLAPSED_SCALE}
+      step={0.01}
+      format={times}
+      defaultValue={DEFAULT_SETTINGS.collapsedScale}
+      resetLabel={t.settings.layout.resetToDefault}
+      onChange={(collapsedScale) => onSettingsChange({ ...settings, collapsedScale })}
+    />
+  );
+}
+
+/** Appearance → Open: the open island's overall size. */
+export function ExpandedScaleRow({ settings, onSettingsChange, onExpandedScalePreview }: RowsProps & {
   onExpandedScalePreview?: (value: number | null) => void;
 }) {
   const t = useTranslation();
+  // Applied when the thumb is let go: the island (which may hold this very slider) resizes
+  // once, with its spring, rather than on every step of the drag.
   return (
-    <>
-      <SettingsSliderRow
-        title={t.settings.layout.collapsedScale}
-        value={settings.collapsedScale}
-        min={MIN_COLLAPSED_SCALE}
-        max={MAX_COLLAPSED_SCALE}
-        step={0.01}
-        format={times}
-        defaultValue={DEFAULT_SETTINGS.collapsedScale}
-        resetLabel={t.settings.layout.resetToDefault}
-        onChange={(collapsedScale) => {
-          onSettingsChange({ ...settings, collapsedScale });
-          onPreviewIsland?.("collapsed");
-        }}
-      />
-      {/* Applied when the thumb is let go: the island (which may hold this very slider) resizes
-          once, with its spring, rather than on every step of the drag. */}
-      <SettingsSliderRow
-        title={t.settings.layout.expandedScale}
-        value={settings.expandedScale}
-        min={MIN_EXPANDED_SCALE}
-        max={MAX_EXPANDED_SCALE}
-        step={0.01}
-        format={times}
-        defaultValue={DEFAULT_SETTINGS.expandedScale}
-        resetLabel={t.settings.layout.resetToDefault}
-        commitOnRelease
-        onPreviewChange={onExpandedScalePreview}
-        onChange={(expandedScale) => {
-          onSettingsChange({ ...settings, expandedScale });
-          onPreviewIsland?.("expanded");
-        }}
-      />
-    </>
+    <SettingsSliderRow
+      title={t.settings.appearance.size}
+      value={settings.expandedScale}
+      min={MIN_EXPANDED_SCALE}
+      max={MAX_EXPANDED_SCALE}
+      step={0.01}
+      format={times}
+      defaultValue={DEFAULT_SETTINGS.expandedScale}
+      resetLabel={t.settings.layout.resetToDefault}
+      commitOnRelease
+      onPreviewChange={onExpandedScalePreview}
+      onChange={(expandedScale) => onSettingsChange({ ...settings, expandedScale })}
+    />
   );
 }
