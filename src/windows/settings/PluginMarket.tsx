@@ -1,13 +1,30 @@
 import type { CSSProperties } from "react";
 import { Check } from "lucide-react";
-import { NATIVE_PLUGINS, NativePluginIcon, setNativePluginInstalled, useNativePlugins } from "../../features/plugins";
+import { NATIVE_PLUGINS, NativePluginIcon, setNativePluginInstalled, useNativePlugins, type NativePluginId } from "../../features/plugins";
+import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
+import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
+import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
+import type { IslandSettings } from "../../features/appearance/types";
 import { useTranslation } from "../../i18n";
 import "./PluginMarket.css";
 
+type PluginMarketProps = { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void };
+
 /** The built-in plugins as square cards: icon, name, a two-line pitch and one action. */
-export function PluginMarket() {
+export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) {
   const t = useTranslation().settings.plugins.market;
   const installed = useNativePlugins();
+  const [, setOfficeEnabled] = useOfficeImEnabled();
+  // Installing is asking for it: its own switch (Messages / Agent settings) goes on with it. A switch
+  // left off from before, or turned off and forgotten, kept an installed plugin off the island
+  // with nothing there to say why (2026-11-19, owner: 钉钉装好后岛上没有).
+  const install = (id: NativePluginId) => {
+    const office = OFFICE_SOURCES.find((source) => source === id);
+    if (office) setOfficeEnabled(office, true);
+    const agent = NATIVE_AGENTS.find((item) => item.id === id);
+    if (agent && !settings[agent.setting]) onSettingsChange({ ...settings, [agent.setting]: true });
+    setNativePluginInstalled(id, true);
+  };
   return <section className="plugin-market" aria-labelledby="plugin-market-title">
     <header className="plugin-market__header">
       <h2 id="plugin-market-title" className="plugin-market__title">{t.title}</h2>
@@ -33,7 +50,7 @@ export function PluginMarket() {
             type="button"
             className={`plugin-card__action${on ? " plugin-card__action--remove" : ""}`}
             aria-label={on ? t.uninstallNamed(item.name) : t.installNamed(item.name)}
-            onClick={() => setNativePluginInstalled(id, !on)}
+            onClick={() => on ? setNativePluginInstalled(id, false) : install(id)}
           >
             {on ? <><span className="plugin-card__state">{t.installed}</span><span className="plugin-card__remove">{t.uninstall}</span></> : t.install}
           </button>

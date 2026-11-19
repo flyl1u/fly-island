@@ -1,4 +1,4 @@
-import { act, StrictMode } from "react";
+import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
@@ -6,6 +6,9 @@ import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import type { PluginIndexEntry } from "../../src/features/plugins/api";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
+import { DEFAULT_SETTINGS } from "../../src/features/appearance/settings";
+import type { IslandSettings } from "../../src/features/appearance/types";
+import { OFFICE_IM_ENABLED_KEY } from "../../src/features/messages/office-im/storage";
 import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import "../../src/windows/settings/LayoutEditor.css";
@@ -37,6 +40,11 @@ mockIPC((command, payload) => {
   return null;
 }, { shouldMockEvents: true });
 const messages: string[] = [];
+let latestSettings: IslandSettings = { ...DEFAULT_SETTINGS, agentShowCursor: false };
+function Page() {
+  const [settings, setSettings] = useState(latestSettings);
+  return <PluginsSettingsPage settings={settings} onSettingsChange={(next) => { latestSettings = next; setSettings(next); }} />;
+}
 function check(condition: unknown, label: string) {
   if (!condition) throw new Error(label);
   messages.push(`PASS ${label}`);
@@ -46,15 +54,20 @@ const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement
 const app = createRoot(document.getElementById("fixture")!);
 try {
   localStorage.removeItem(NATIVE_PLUGINS_KEY);
-  await act(async () => app.render(<StrictMode><I18nProvider><PluginsSettingsPage /></I18nProvider></StrictMode>)); await wait();
+  localStorage.setItem(OFFICE_IM_ENABLED_KEY, JSON.stringify({ dingtalk: false, feishu: true, wecom: true }));
+  await act(async () => app.render(<StrictMode><I18nProvider><Page /></I18nProvider></StrictMode>)); await wait();
   const market = TRANSLATIONS[locale].settings.plugins.market;
   const cards = [...document.querySelectorAll<HTMLElement>(".plugin-card")];
   check(cards.length === NATIVE_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
   const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
   await act(async () => get.click());
   check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
+  check(JSON.parse(localStorage.getItem(OFFICE_IM_ENABLED_KEY) ?? "{}").dingtalk === true, "安装钉钉同时打开它在消息设置里的开关");
   await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.dingtalk.name)}']`)!.click());
   check(localStorage.getItem(NATIVE_PLUGINS_KEY) === "[]" && !cards[0].classList.contains("plugin-card--installed"), "卸载后恢复为未安装");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.cursor.name)}']`)!.click());
+  check(latestSettings.agentShowCursor, "安装 Cursor 同时打开它在 Agent 设置里的开关");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.cursor.name)}']`)!.click());
   const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
   check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");
   if (!PLUGINS_ENABLED) {
