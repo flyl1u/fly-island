@@ -11,7 +11,7 @@ export type SettingsPluginsText = {
 };
 
 export type SettingsPluginMarketText = {
-  title: string; hint: string; install: string; uninstall: string; installed: string;
+  title: string; hint: string; officeTitle: string; officeHint: string; install: string; uninstall: string; installed: string;
   installNamed: (name: string) => string; uninstallNamed: (name: string) => string;
   kinds: Record<NativePluginKind, string>;
   items: Record<NativePluginId, { name: string; description: string }>;
@@ -28,7 +28,8 @@ export const zhCN: SettingsPluginsText = {
   status: { starting: "启动中", running: "运行中", restarting: "正在重启", stopped: "已停用", failed: "启动失败" },
   permission: { network: "联网", "read-home-files": "本地文件", notifications: "消息", quota: "额度", sessions: "会话", "desktop-windows": "桌面窗口", "private-browser": "独立登录" },
   market: {
-    title: "插件市场", hint: "装上后成为小岛自己的一部分：消息类出现在消息页的标签里，Agent 类出现在 AI 会话里，可在对应设置页单独开关。",
+    title: "插件市场", officeTitle: "办公消息", officeHint: "钉钉、飞书、企业微信的任务栏图标闪动时在岛上提醒，看不到消息内容；点提醒回到对应软件。",
+    hint: "装上后成为小岛自己的一部分：消息类出现在消息页的标签里，Agent 类出现在 AI 会话里，可在对应设置页单独开关。",
     install: "安装", uninstall: "卸载", installed: "已安装",
     installNamed: (name) => `安装 ${name}`, uninstallNamed: (name) => `卸载 ${name}`,
     kinds: { messages: "消息", agent: "Agent" },
@@ -55,7 +56,8 @@ export const en: SettingsPluginsText = {
   status: { starting: "Starting", running: "Running", restarting: "Restarting", stopped: "Disabled", failed: "Failed to start" },
   permission: { network: "Network", "read-home-files": "Local files", notifications: "Messages", quota: "Quota", sessions: "Sessions", "desktop-windows": "Desktop windows", "private-browser": "Private sign-in" },
   market: {
-    title: "Plugin market", hint: "Installed plugins become part of the island: message plugins add a tab to Messages, Agent plugins join AI sessions, each with its own switch in settings.",
+    title: "Plugin market", officeTitle: "Work messages", officeHint: "Get a heads-up when DingTalk, Feishu or WeCom flashes in the taskbar; message text is not read. Click the reminder to switch to the app.",
+    hint: "Installed plugins become part of the island: message plugins add a tab to Messages, Agent plugins join AI sessions, each with its own switch in settings.",
     install: "Get", uninstall: "Remove", installed: "Installed",
     installNamed: (name) => `Install ${name}`, uninstallNamed: (name) => `Remove ${name}`,
     kinds: { messages: "Messages", agent: "Agent" },

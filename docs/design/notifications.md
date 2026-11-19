@@ -8,4 +8,7 @@
 - 通知外形进入使用现有展开弹簧，结束沿用收起过渡；阅读正文短暂淡入。减少动态效果时关闭正文入场，保留岛屿外形过渡的既有约定。（Agent 实现决定）
 - 设置 → 通用 → 展开与收起，在游戏模式旁放置“游戏模式下仍弹出通知”，默认关闭；开启后显示 2–30 秒的独立时长，默认 4 秒。quiet 状态下的通知可以从贴边短暂露出，覆盖普通通知的贴边露出偏好。只展示，不获取焦点，整块命中区保持原生点击穿透；到期撤去并沿用贴边回收。游戏模式本身的 quiet、焦点和顶沿策略由游戏模式模块负责。（用户要求；默认秒数为 Agent 实现决定）
 
+- **钉钉 / 飞书 / 企业微信（插件市场）**（用户要求 2026-11-18）：在设置 → 插件安装后，消息页多出对应标签（品牌磁贴图标 + 名称），页面与微信无预览时一致：有提醒时一张「钉钉 · 有新提醒」卡片，否则是大图标与「暂无新提醒 / 点击打开」；工具栏同样是「全部已读并清空」和接收开关。收起的岛上预览为「钉钉 · 收到一条新消息」，点一下回到钉钉。只根据任务栏闪动判断，不读消息内容；连续闪动 4 秒内算一条。设置 → 消息新增「办公消息」组，每个已安装的客户端一行开关。参照 xiaotang-daozai（MIT）的窗口识别与唤起方式：飞书关到托盘时再启动一次飞书由它自己显示，其余客户端照参考实现显示主窗口。（页面与文案为 Agent 设计）
+- **长按拖动标签排序**（用户要求 2026-11-18）：消息页的来源标签按住约 0.45 秒后左右拖动即可换位置，松手保存（`focusd-island-message-source-order`）；拖动期间标签样式不变，只有顺序跟着变，松手那一下不切换标签。按住期间移动超过 6px 视为普通点击或滑动。关掉的来源保留原位置。有 6 个及以上标签时，面板窄于 470px 只显示图标。
+
 English: Adaptive notices are opt-in. They widen before wrapping, then scroll within user limits and the scaled native stage. Mail notices fetch the visible message body on demand, offer selectable text (Ctrl+C) and a separate open action, stay while the cursor is on them, and never mark the message read. Whether a message fits one line is measured on the laid-out bar, not only estimated. Game notices have their own opt-in and duration, display without taking focus, and keep native click-through enabled.

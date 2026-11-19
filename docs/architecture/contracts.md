@@ -56,6 +56,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
+| `focusd-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
+| `focusd-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
 | `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
@@ -103,6 +105,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `qq-mail-changed` | `mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
+| `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
@@ -121,6 +124,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
 - `open_wechat_conversation(messageId)` 用内存中的摘要 ID 定位微信会话。返回 `true` 表示已点击对应会话，`false` 表示已打开微信主窗口。微信的会话标识和进程身份保存在原生内存中。
+- 办公消息（2026-11-18，插件市场的钉钉 / 飞书 / 企业微信）：`get_office_im_state()`、`set_office_im_enabled(client, enabled)`、`clear_office_im(client)`、`open_office_im(client)`，`client` 为 `dingtalk` / `feishu` / `wecom`。监听任务栏闪动（shell hook），只在至少一个客户端开启时运行；`open_office_im` 只恢复已在运行的客户端主窗口（飞书关到托盘时再启动一次飞书自己的程序，由飞书显示窗口），不执行协议、不模拟输入，并清除该客户端的提醒。
 - `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - `dismiss_wechat_conversation(messageId)`（2026-11-14）清掉 `messageId` 所在会话（按会话 key）的全部摘要，保留其他会话；最新一次提醒属于该会话时同时 `pending=false`，`lastAttentionAt` 不变。返回 `ReminderSnapshot`，沿用 `wechat-reminder-changed` 推送；找不到 ID 时原样返回。前端在打开会话成功后调用。
 - `dismiss_qq_contact(title)`（2026-11-14）清掉通知标题等于 `title`（联系人或群名）的全部 QQ 通知，保留其他人，返回 `QQNotificationSnapshot` 并沿用 `qq-notifications-changed` 推送。两条命令都只改内存中的镜像，不新增 localStorage key 或事件，不需要额外权限。

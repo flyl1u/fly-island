@@ -17,6 +17,7 @@ mod settings_window;
 mod system;
 mod translation;
 mod tray;
+mod office_im;
 mod wechat_reminders;
 mod win32;
 
@@ -87,6 +88,9 @@ pub fn run() {
             if let Err(error) = wechat_reminders::init(app.handle()) {
                 eprintln!("failed to initialize WeChat reminders: {error}");
             }
+            if let Err(error) = office_im::init(app.handle()) {
+                eprintln!("failed to initialize office reminders: {error}");
+            }
             if let Err(error) = notification_diagnostics::start(app.handle()) {
                 eprintln!("failed to initialize notification diagnostics: {error}");
             }
@@ -119,6 +123,7 @@ pub fn run() {
             file_shelf;
             mail;
             wechat_reminders;
+            office_im;
             qq_notifications;
             island;
             system;

@@ -3,6 +3,7 @@ import { useQQNotifications } from "../../features/messages/qq-notifications/QQN
 import { useWeChatReminders } from "../../features/messages/wechat/WeChatReminders";
 import { useMail } from "../../features/messages/mail/MailPanel";
 import { usePluginPreview } from "../../features/messages/pluginNotifications";
+import { useOfficeIm } from "../../features/messages/office-im/useOfficeIm";
 import { latestMessagePreview, type MessagePreview } from "../../features/messages/messagePreview";
 import type { QQNotificationsController } from "../../features/messages/qq-notifications/QQNotifications";
 import type { WeChatRemindersController } from "../../features/messages/wechat/WeChatReminders";
@@ -23,11 +24,12 @@ export function useIslandNotices(settings: IslandSettings, { mode, isTucked, qui
   const qqMail = useMail(canPreviewMessages, { previewSeconds, autoCopyOtp: settings.autoCopyOtp, previewBody: settings.messageAutoExpand });
   // Plugin previews keep their own 8 s unless an adaptive or game-mode duration applies.
   const pluginPreview = usePluginPreview(canPreviewMessages, settings.messageAutoExpand || quiet ? previewSeconds : undefined);
+  const office = useOfficeIm(canPreviewMessages, previewSeconds);
   // Kept while the cursor is on it, and counted as showing, so the island neither opens under the
   // cursor nor slides back mid-read; not in game mode, where clicks pass through it.
-  const preview = useHeldPreview(useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail), !quiet);
+  const preview = useHeldPreview(useLatestPreview(qqNotifications, wechatReminders, pluginPreview, qqMail, office.preview), !quiet);
   const hasMessagePreview = Boolean(
-    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || preview,
+    qqNotifications.preview || wechatReminders.preview || qqMail.preview || pluginPreview || office.preview || preview,
   );
   return { qqNotifications, wechatReminders, qqMail, preview, hasMessagePreview };
 }
@@ -41,6 +43,7 @@ export function useLatestPreview(
   wechatReminders: WeChatRemindersController,
   pluginPreview: MessagePreview | null,
   qqMail: MailController,
+  officePreview: MessagePreview | null = null,
 ): MessagePreview | null {
   const [latestPreviewAt, setLatestPreviewAt] = useState(0);
   const qqPreview = qqNotifications.preview;
@@ -48,6 +51,7 @@ export function useLatestPreview(
     qqPreview ? { ...qqPreview, source: "qq", receivedAt: qqNotifications.previewReceivedAt ?? 0 } : null,
     wechatReminders.preview,
     pluginPreview,
+    officePreview,
     qqMail.preview ? { source: "qqMail", title: qqMail.preview.sender, body: qqMail.preview.subject, detail: qqMail.previewContent,
       detailLoading: qqMail.previewContentLoading, detailError: qqMail.previewContentError,
       otpCode: qqMail.preview.otpCode, receivedAt: qqMail.previewReceivedAt ?? 0 } : null,
