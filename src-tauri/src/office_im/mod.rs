@@ -22,6 +22,9 @@ const MAIN_WINDOW_LABEL: &str = "main";
 const CHANGED_EVENT: &str = "office-im-changed";
 /// Clients keep flashing until read; a new reminder needs this much quiet first.
 const FLASH_QUIET_MS: u64 = 4_000;
+/// How often the shell hook's queued messages are handled. A taskbar flash is not urgent; waking
+/// 12 times a second for it, as before, kept the thread busy for nothing.
+const SHELL_POLL: Duration = Duration::from_millis(250);
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -240,7 +243,7 @@ fn monitor(service: Arc<Service>, receiver: mpsc::Receiver<()>) {
                     for signal in signals.try_iter() {
                         let _ = update(&service, |state| state.apply(signal, now_ms()));
                     }
-                    if receiver.recv_timeout(Duration::from_millis(80)) == Err(mpsc::RecvTimeoutError::Disconnected) {
+                    if receiver.recv_timeout(SHELL_POLL) == Err(mpsc::RecvTimeoutError::Disconnected) {
                         return;
                     }
                 }
