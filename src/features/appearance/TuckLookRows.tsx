@@ -6,7 +6,7 @@ import { TUCK_EDGE_HEIGHT } from "./settingsLimits";
 import type { IslandSettings, TuckStyle } from "./types";
 
 /**
- * Appearance → Top of the screen: how the tucked island looks (its rim, a short line, or nothing)
+ * Appearance → Tuck to the edge: how the tucked island looks (its rim, a short line, or nothing)
  * and how much of it the rim leaves showing. On the appearance page since 2026-11-19: it changes
  * how the island looks, not when it tucks. Clicking "tuck to the top" tucks it too, so it is
  * offered with auto-tuck off. Each change shows the island tucked.

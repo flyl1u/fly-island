@@ -171,12 +171,12 @@ export function OpacityRow({ settings, onSettingsChange }: RowsProps) {
   );
 }
 
-/** Appearance → Collapsed: the collapsed island's overall size. */
+/** Appearance → Size: the collapsed island's overall size. */
 export function CollapsedScaleRow({ settings, onSettingsChange }: RowsProps) {
   const t = useTranslation();
   return (
     <SettingsSliderRow
-      title={t.settings.appearance.size}
+      title={t.settings.appearance.collapsedScale}
       value={settings.collapsedScale}
       min={MIN_COLLAPSED_SCALE}
       max={MAX_COLLAPSED_SCALE}
@@ -189,7 +189,7 @@ export function CollapsedScaleRow({ settings, onSettingsChange }: RowsProps) {
   );
 }
 
-/** Appearance → Open: the open island's overall size. */
+/** Appearance → Size: the open island's overall size. */
 export function ExpandedScaleRow({ settings, onSettingsChange, onExpandedScalePreview }: RowsProps & {
   onExpandedScalePreview?: (value: number | null) => void;
 }) {
@@ -198,7 +198,7 @@ export function ExpandedScaleRow({ settings, onSettingsChange, onExpandedScalePr
   // once, with its spring, rather than on every step of the drag.
   return (
     <SettingsSliderRow
-      title={t.settings.appearance.size}
+      title={t.settings.appearance.expandedScale}
       value={settings.expandedScale}
       min={MIN_EXPANDED_SCALE}
       max={MAX_EXPANDED_SCALE}

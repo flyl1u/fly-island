@@ -153,9 +153,7 @@ export async function checkAppearance(check: (condition: unknown, message: strin
     const colorsBeforeReset = storedColors();
     // Expanded size: a slider from 0.85x to 1.2x, stored as the scale once the thumb is let go,
     // and the island opens to show it.
-    // "Overall size" is in both the collapsed and the open group (2026-11-19); this is the open one.
-    const openGroup = [...document.querySelectorAll<HTMLElement>(".settings-group")].find((group) => group.querySelector(".settings-group__title")?.textContent === "展开后");
-    const sizeLabel = [...openGroup?.querySelectorAll<HTMLLabelElement>("label") ?? []].find((label) => label.textContent === "整体大小");
+    const sizeLabel = [...document.querySelectorAll<HTMLLabelElement>("label")].find((label) => label.textContent === "展开后的大小");
     const sizeSlider = element<HTMLInputElement>(`#${CSS.escape(sizeLabel?.htmlFor ?? "missing")}`);
     const storedScale = () => (JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}") as { expandedScale?: number }).expandedScale;
     const previewIsland = element<HTMLElement>(".island-preview__island--expanded");
