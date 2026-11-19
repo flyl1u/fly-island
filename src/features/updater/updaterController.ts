@@ -13,6 +13,7 @@ import {
   type DownloadEvent,
 } from "./api";
 import { nextCheckDelay } from "./autoUpdateSchedule.ts";
+import { automaticTarget, type UpdateTarget } from "./updateChannel.ts";
 import { loadAutoUpdate, saveAutoUpdate } from "./storage.ts";
 
 export type UpdateStage =
@@ -38,6 +39,8 @@ export type UpdateState = {
   dismissed: boolean;
   /** Checks every few hours and installs once the island sits idle; otherwise only on request. */
   autoUpdate: boolean;
+  /** What the last check looked for: the running version's channel, a beta, or the stable release. */
+  target: UpdateTarget;
 };
 
 // Only the main window owns the update: the standalone settings window can be
@@ -54,6 +57,7 @@ const initialState: UpdateState = {
   detail: "",
   dismissed: false,
   autoUpdate: loadAutoUpdate(),
+  target: "stable",
 };
 
 let state: UpdateState = initialState;
@@ -127,6 +131,7 @@ async function initialize() {
     else if (request.action === "install") void installUpdate();
     else if (request.action === "dismiss") dismissUpdatePrompt();
     else if (request.action === "auto") applyAutoUpdate(request.enabled);
+    else if (request.action === "beta" || request.action === "restore") void switchChannel(request.action);
     else void publishUpdateState(state).catch((error) => console.error("Failed to share update state", error));
   });
 
@@ -148,10 +153,10 @@ async function refreshProxy() {
   proxy = await getUpdaterProxy().catch(() => proxy);
 }
 
-async function findUpdate() {
-  setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", dismissed: false, stage: "checking" });
+async function findUpdate(target: UpdateTarget) {
+  setState({ nextVersion: "", downloaded: 0, total: 0, detail: "", dismissed: false, stage: "checking", target });
   try {
-    const found = await checkUpdate(proxy);
+    const found = await checkUpdate(proxy, target);
     if (!found) {
       setState({ stage: "latest" });
       return false;
@@ -179,9 +184,9 @@ async function downloadFound() {
   }
 }
 
-async function findAndDownload() {
+async function findAndDownload(target: UpdateTarget = automaticTarget(state.version)) {
   await refreshProxy();
-  if (await findUpdate()) await downloadFound();
+  if (await findUpdate(target)) await downloadFound();
 }
 
 function clearScheduledCheck() {
@@ -207,7 +212,9 @@ function scheduleCheck(delay: number) {
  */
 async function runAutomaticCheck() {
   if (!state.autoUpdate || state.stage === "disabled") return;
-  const settled = busy(state.stage) || state.stage === "ready" || state.stage === "done";
+  // A beta or the stable release the user asked for is not replaced by the regular check.
+  const asked = state.stage === "available" && state.target !== automaticTarget(state.version);
+  const settled = busy(state.stage) || state.stage === "ready" || state.stage === "done" || asked;
   if (!settled) {
     await findAndDownload();
     // A failed download stays "available" (with the reason) so the todo still offers it; retry it soon too.
@@ -242,6 +249,16 @@ export async function checkForUpdate() {
   await findAndDownload();
 }
 
+/**
+ * About → the beta row: look for a beta, or go back to the latest stable release. What is found
+ * downloads as any update does and installs from the same "install now" row.
+ */
+export async function switchChannel(target: "beta" | "restore") {
+  if (remoteSettings) return requestUpdateAction({ action: target });
+  if (busy(state.stage) || state.stage === "disabled") return;
+  await findAndDownload(target);
+}
+
 /** Hiding the todo row installs nothing and keeps the downloaded package. */
 export function dismissUpdatePrompt() {
   if (remoteSettings) {
@@ -256,7 +273,7 @@ export async function installUpdate() {
   if (busy(state.stage)) return;
   // Retrying a failed install: the native side let go of the update when it tried, so look it up
   // and fetch it again first.
-  if (state.stage === "error" && state.nextVersion !== "") await findAndDownload();
+  if (state.stage === "error" && state.nextVersion !== "") await findAndDownload(state.target);
   if (state.stage !== "available" && state.stage !== "ready") return;
 
   const downloadedAlready = state.stage === "ready";
