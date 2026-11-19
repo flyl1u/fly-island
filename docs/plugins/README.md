@@ -15,10 +15,10 @@
 1. **改造原有功能。** 例如小岛的每日笔记现在只能写纯文字，有人做了「Markdown 笔记」插件，装上后**原来的那个笔记**就能加粗、斜体、设多级标题。小岛里不会多出第二个笔记，用户还在原来的地方写，只是笔记本身变强了。
 2. **做一个全新的功能。** 例如给小岛加一个「番茄钟统计」页面、一个新的消息来源，或者一组新的快捷操作。它是小岛原来没有的，但做出来要像小岛原生的功能一样：放在合适的位置（岛上的一页、收起时的一个状态、设置里的一组选项），用小岛的样式和操作习惯。
 
-两种都可以，关键在于**融入**，而不是**外挂**。插件**不是**：
+两种都可以。功能放在哪里也由你决定：可以放在岛上（一个新页面、收起时的一个状态），也可以**单独开一个窗口**，就像小岛的剪贴板和翻译窗口那样。关键在于看起来、用起来都是小岛的一部分。插件**不是**：
 
-- ❌ 一个挂在小岛旁边的独立小程序，自己弹窗口、自己画一套界面；
-- ❌ 一段和小岛各走各的代码：功能虽然塞进来了，但样式、交互、位置都和小岛格格不入。
+- ❌ 一个和小岛毫无关系的小程序，只是借小岛启动一下，界面风格、操作习惯全是另一套；
+- ❌ 一段和小岛各走各的代码：功能虽然塞进来了，但样式、交互都和小岛格格不入。
 
 插件**是**：
 
@@ -63,6 +63,7 @@ Fork 仓库 → 本地改造小岛源码 → 在真实小岛里自测、录制�
 
 - **改造已有功能时，就在原功能上改。** 要增强笔记，就改 `src/features/todos/` 里的笔记；要增强剪贴板，就改 `src/features/clipboard/`，不要另做一个平行的版本。
 - **做新功能时，按小岛的结构来放。** 新的领域放在 `src/features/<新功能>/`，岛上的新页面、设置里的新分组都接到现有的页面和设置结构里（参考已有功能怎么接）。无论哪种，都复用现有组件和样式，不要再造一套。
+- **需要独立窗口时，照着现有窗口做。** 参考剪贴板窗口（`?window=clipboard`）：用新的窗口名和 `?window=` 参数，按需创建，用小岛的样式；不要改动已有的四个窗口名。
 - **把改动收拢、做成能关掉的。** 尽量把新增逻辑放在独立的文件或目录里，在原功能里只留少量接入点，并且在 PR 里写清楚「哪几处是接入点」。这样 flyl1u 才能把它改成可选安装，没装时一行都不生效。
 - **不破坏没装插件的用户。** 已保存的数据（`localStorage` 里的 `focusd-island-*`、应用数据目录里的文件）、Tauri 命令名、窗口名都不能改；需要新存数据就用新的 key，并能兼容读旧数据。完整清单见 [contracts.md](../architecture/contracts.md)。
 - **看起来就是小岛的一部分。** 用小岛已有的颜色变量和组件，深色 / 浅色、液态玻璃 / 磨砂玻璃都要看一遍；窄窗口下文字和按钮不能溢出。
@@ -116,8 +117,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 **Q：我想做一个全新的功能，不是改已有的，可以吗？**
 当然可以，这也是插件的一种。只要它像小岛原生的功能一样放在合适的位置（岛上的一个新页面、收起时的一个状态、设置里的一组选项），并遵守同样的设计规范。较大的新功能，建议动手前先开一个 Issue 聊聊方向，免得白做。
 
-**Q：插件能不能自己弹窗口、用自己的界面风格？**
-不能。插件就是小岛的一部分，界面必须用小岛自己的组件和样式。
+**Q：插件能不能单独开一个窗口？**
+可以。像剪贴板、翻译那样的独立窗口都行，照着现有窗口的做法来（新的窗口名、按需创建）。但窗口里的界面要用小岛自己的组件和样式，不要另搞一套风格。
 
 **Q：需要我自己实现「下载 / 安装插件」吗？**
 不需要。你只管把功能做好，可选安装的适配由 flyl1u 完成。
@@ -129,14 +130,14 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## English summary
 
-**A plugin is a feature built from the island's source that becomes part of the island once installed.** It can either **upgrade an existing feature**, for example a "Markdown notes" plugin that adds bold, italics and headings to the island's own daily note (no second notes window), or **add a brand-new feature**, such as a new page, a new message source or new quick actions. A new feature must fit in like a native one: right place, island styles, island interactions.
+**A plugin is a feature built from the island's source that becomes part of the island once installed.** It can either **upgrade an existing feature**, for example a "Markdown notes" plugin that adds bold, italics and headings to the island's own daily note (no second notes window), or **add a brand-new feature**, such as a new page, a new message source or new quick actions. It can live on the island or **open its own window**, like the island's clipboard and translation windows. Either way it must feel native: island styles, island interactions.
 
-- Not a separate app with its own windows or UI, and not code bolted on beside the original feature.
+- Not an unrelated app that merely launches from the island with its own look, and not code bolted on beside the original feature.
 - **Not installed by default.** Users download it on demand in Settings → Plugins; everyone else gets the island unchanged.
 
 **Flow:** fork → modify the island's source → test and record a demo inside the real island → open a PR with the [plugin template](../../.github/PULL_REQUEST_TEMPLATE/plugin.md) → flyl1u reviews and adapts it into an optional install → it ships with a release.
 
-**Rules:** follow [AGENTS.md](../../AGENTS.md), [src/AGENTS.md](../../src/AGENTS.md) and [DESIGN.md](../../DESIGN.md). When upgrading a feature, change it in place rather than building a parallel copy; when adding one, put it in `src/features/<name>/` and wire it into the existing pages and settings. Either way, keep new logic in its own files with a few clearly listed hook points. Never change saved data keys, Tauri command names or window labels ([contracts.md](../architecture/contracts.md)). Use the island's own components and styles, and provide every visible string in Chinese and English. Declare any network domains or file access, and add no heavy polling. Run `pnpm check`, `pnpm build`, `pnpm test:regression` (and `cargo test` for Rust changes) before submitting.
+**Rules:** follow [AGENTS.md](../../AGENTS.md), [src/AGENTS.md](../../src/AGENTS.md) and [DESIGN.md](../../DESIGN.md). When upgrading a feature, change it in place rather than building a parallel copy; when adding one, put it in `src/features/<name>/` and wire it into the existing pages and settings. A plugin window follows the clipboard window's pattern: a new window label and `?window=` value, created on demand. Either way, keep new logic in its own files with a few clearly listed hook points. Never change saved data keys, Tauri command names or window labels ([contracts.md](../architecture/contracts.md)). Use the island's own components and styles, and provide every visible string in Chinese and English. Declare any network domains or file access, and add no heavy polling. Run `pnpm check`, `pnpm build`, `pnpm test:regression` (and `cargo test` for Rust changes) before submitting.
 
 **Required in the PR:** a public link to a demo recording of the plugin in use inside the real island, the author(s), a public contact, your GitHub profile and the source repository/branch, a plain-language description for the plugin list, a list of changed files and hook points, and your self-test results. flyl1u handles the optional-install packaging; submission does not guarantee a merge or immediate release.
 
