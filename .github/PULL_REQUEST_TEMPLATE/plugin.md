@@ -25,8 +25,8 @@ A public link. Record inside the real island: before → how to use it after →
 
 ## 插件简介（必填）/ Plugin description (required)
 
-<!-- 名字；一句话介绍；是改造原有功能（哪一个）还是新功能（放在哪里）；装上后用户能感受到什么变化。会显示在插件列表里，请写得通俗。
-Name; one-line pitch; whether it upgrades an existing feature (which) or adds a new one (where it lives); what users notice once installed. Shown in the plugin list, so keep it plain. -->
+<!-- 名字；一句话介绍；是改造原有功能（哪一个）还是新功能（放在岛上哪里，或是独立窗口）；装上后用户能感受到什么变化。会显示在插件列表里，请写得通俗。
+Name; one-line pitch; whether it upgrades an existing feature (which) or adds a new one (where on the island, or its own window); what users notice once installed. Shown in the plugin list, so keep it plain. -->
 
 ## 改动说明（必填）/ What changed (required)
 
@@ -42,7 +42,7 @@ Results of pnpm check / pnpm build / pnpm test:regression (plus cargo test for R
 
 ## 自检 / Checklist
 
-- [ ] 无论是改原功能还是做新功能，都像小岛原生的一样融入，不另开窗口、不外挂界面。/ Whether upgrading or adding a feature, it fits in natively; no separate windows or bolted-on UI.
+- [ ] 无论是改原功能、做新功能还是单独开窗口，都像小岛原生的一样，界面风格和操作习惯一致。/ Whether upgrading a feature, adding one or opening its own window, it feels native, with the island's look and interactions.
 - [ ] 新逻辑尽量收拢在独立文件里，接入点已在上面列出；没装插件时原功能不受影响。/ New logic kept in its own files with hook points listed; the island is unchanged without the plugin.
 - [ ] 没有改已保存数据的 key / 格式、Tauri 命令名、窗口名。/ No changes to saved data keys/formats, Tauri command names or window labels.
 - [ ] 界面用小岛自己的组件和样式；深色 / 浅色、液态 / 磨砂玻璃、窄窗口都看过。/ Island components and styles only; checked dark/light, both glasses and narrow widths.
