@@ -172,6 +172,7 @@ test("glass blur, the edge tuck strip and closing the clipboard on blur keep the
   assert.equal(older.tuckEdgeHeight, 10);
   assert.equal(older.clipboardCloseOnBlur, false);
   assert.equal(normalizeSettings({ glassBlur: 150 }).glassBlur, 100);
+  assert.equal(normalizeSettings({ glassBlur: 0 }).glassBlur, 30);
   assert.equal(normalizeSettings({ tuckEdgeHeight: 1 }).tuckEdgeHeight, 3);
   assert.equal(normalizeSettings({ clipboardCloseOnBlur: "yes" }).clipboardCloseOnBlur, false);
   assert.equal(normalizeSettings({ clipboardCloseOnBlur: true }).clipboardCloseOnBlur, true);
