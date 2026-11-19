@@ -53,6 +53,9 @@ struct Control {
     window: isize,
     region: Option<GlassCaptureRegion>,
     blur: u8,
+    /// Set by a pause: the page drops its picture then, so the next region gets a frame even
+    /// when nothing behind the island changed.
+    resend: bool,
 }
 
 impl Control {
@@ -61,7 +64,7 @@ impl Control {
     }
 }
 
-static CONTROL: Mutex<Control> = Mutex::new(Control { channel: None, window: 0, region: None, blur: 0 });
+static CONTROL: Mutex<Control> = Mutex::new(Control { channel: None, window: 0, region: None, blur: 0, resend: false });
 static WAKE: Condvar = Condvar::new();
 static THREAD: OnceLock<()> = OnceLock::new();
 
@@ -96,6 +99,7 @@ pub fn start_glass_capture(app: AppHandle, on_frame: Channel<InvokeResponseBody>
 pub fn set_glass_capture_region(region: Option<GlassCaptureRegion>, blur: u8) {
     let mut control = control();
     control.region = region.filter(|region| region.width > 0 && region.height > 0);
+    control.resend |= control.region.is_none();
     control.blur = blur.min(100);
     drop(control);
     WAKE.notify_all();
@@ -122,6 +126,7 @@ struct Job {
     window: HWND,
     region: GlassCaptureRegion,
     blur: u8,
+    resend: bool,
 }
 
 /// Blocks until there is something to capture for.
@@ -130,7 +135,8 @@ fn wait_for_job() -> Job {
     loop {
         if control.active() {
             if let (Some(channel), Some(region)) = (control.channel.clone(), control.region) {
-                return Job { channel, window: HWND(control.window as *mut _), region, blur: control.blur };
+                let resend = std::mem::take(&mut control.resend);
+                return Job { channel, window: HWND(control.window as *mut _), region, blur: control.blur, resend };
             }
         }
         control = WAKE.wait(control).unwrap_or_else(PoisonError::into_inner);
@@ -151,6 +157,9 @@ fn run() {
     let mut last_send = Instant::now() - FRAME_INTERVAL;
     loop {
         let job = wait_for_job();
+        if job.resend {
+            sent = None;
+        }
         let paused = !crate::win32::window::is_visible(job.window)
             || crate::system::fullscreen::get_foreground_fullscreen().covers_island();
         let Some(window) = crate::win32::window::window_rect(job.window).filter(|_| !paused) else {

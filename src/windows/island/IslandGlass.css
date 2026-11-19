@@ -100,6 +100,14 @@
   pointer-events: none;
 }
 
+/* Its own layer while the island opens or closes (data-moving, useMotionLayer.ts): inside the
+   moving clip, the window-sized tint, veil and grain were painted again on every frame, which
+   halved the frame rate while opening (2026-11-19, owner: 展开收起卡卡的; measure-island-motion.mjs,
+   median frame 33 → 16.7ms). Not kept: text over a layer of its own loses subpixel antialiasing. */
+.island[data-moving] .island__glass-backdrop {
+  will-change: transform;
+}
+
 .island__glass-backdrop canvas {
   display: block;
   width: 100%;
@@ -146,10 +154,9 @@
   display: none;
 }
 
-/* The tint now lies in the backdrop; the pane itself keeps only the light from the top. */
-:root[data-glass-backdrop] .island:is(.island--material-liquidGlass, .island--material-frostedGlass) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 46%);
-}
+/* With a backdrop the pane keeps its own tint underneath it: the opaque canvas hides it, but
+   wherever the frame does not reach yet (the window just grew) the pane still reads as glass
+   instead of a bare rim round the desktop (2026-11-19, owner). */
 
 :is(.island--material-liquidGlass, .island--material-frostedGlass).island--collapsed:has(:focus-visible) {
   box-shadow:
@@ -259,15 +266,25 @@
 }
 
 /*
- * Opening: the rim, its lens glow and the pointer light fade in with the page, on the page's own
- * delay and duration. Drawn from the start, a bright outline ran round the empty pane while it
- * grew, before anything was in it (2026-11-18, owner). Opacity only, which the compositor plays.
+ * The rim, its lens glow and the pointer light wait while the island opens or closes
+ * (data-moving, useMotionLayer.ts) and fade in once the shape has settled. Drawn from the start, a
+ * bright outline ran round the empty pane while it grew (2026-11-18, owner); drawn during the
+ * spring at all, its inset lines round the smooth corners were painted again on every frame, the
+ * largest cost left in the glass's motion (2026-11-19, owner: 展开收起卡卡的; dropped frames while
+ * opening 5.8 → 1.9 per run with --gpu). Hidden is not painted; the fade is opacity only.
  */
-.island--material-liquidGlass.island--expanded .island__glass-refraction,
-.island--material-liquidGlass.island--expanded .island__glass-highlight,
-.island--material-liquidGlass.island--expanded .island__glass::before,
-.island--material-frostedGlass.island--expanded .island__glass::before {
-  animation: glassRimIn var(--island-panel-open-fade-duration) ease-out var(--island-panel-open-fade-delay) backwards;
+.island--material-liquidGlass .island__glass-refraction,
+.island--material-liquidGlass .island__glass-highlight,
+.island--material-liquidGlass .island__glass::before,
+.island--material-frostedGlass .island__glass::before {
+  animation: glassRimIn 200ms ease-out backwards;
+}
+
+.island[data-moving] .island__glass-refraction,
+.island[data-moving] .island__glass-highlight,
+.island[data-moving] .island__glass::before {
+  visibility: hidden;
+  animation: none;
 }
 
 @keyframes glassRimIn {
@@ -300,10 +317,6 @@
     linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%),
     linear-gradient(var(--glass-backdrop-wash), var(--glass-backdrop-wash)),
     var(--glass-tint-color);
-}
-
-:root[data-glass-backdrop] .island.island--material-frostedGlass {
-  background: linear-gradient(180deg, rgba(255, 255, 255, var(--glass-sheen-alpha)), transparent 60%);
 }
 
 .island--material-frostedGlass .island__glass::before {
