@@ -47,8 +47,9 @@
   border-radius: 0 0 var(--island-shape-radius) var(--island-shape-radius);
   corner-shape: var(--island-corner-shape, round);
   /* Short: a 46px blur ran past the bottom of the window under a tall page and was cut off there in
-     a hard line (2026-11-18, owner). */
-  box-shadow: 0 8px 22px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) - var(--is-light) * 0.08));
+     a hard line (2026-11-18, owner). Pulled in at the sides (the negative spread) so it falls only
+     below the pane: around the sides it read as a faint second border (2026-11-18, owner). */
+  box-shadow: 0 12px 20px -10px rgba(0, 0, 0, calc(var(--glass-shadow-alpha) + 0.06 - var(--is-light) * 0.08));
   pointer-events: none;
   opacity: 0.85;
   transform-origin: top center;
@@ -61,6 +62,10 @@
 .island--expanded > .island__glass-shadow {
   opacity: 1;
   transform: translateX(-50%);
+  /* Darkens with the page fading in, not under the empty pane. */
+  transition:
+    transform var(--island-motion-duration) var(--island-motion),
+    opacity var(--island-panel-open-fade-duration) ease-out var(--island-panel-open-fade-delay);
 }
 
 .island--detached > .island__glass-shadow {
@@ -179,7 +184,8 @@
   inset: 0;
   z-index: 1;
   display: block;
-  overflow: hidden;
+  /* No clip of its own: .island__surface already clips to the shape, and a second clip to the
+     smooth (superellipse) corner is a path clip, redrawn on every frame of the spring. */
   border-radius: inherit;
   corner-shape: var(--island-corner-shape, round);
   pointer-events: none;
@@ -220,13 +226,21 @@
   inset: 0;
   border-radius: inherit;
   corner-shape: var(--island-corner-shape, round);
+  /* Unblurred: blurring an inset shadow round a smooth corner is a blurred path, the costliest thing
+     the spring had to repaint, and half a pixel of blur did not show. */
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, var(--glass-border-alpha)),
-    inset 0 1.5px 0.5px rgba(255, 255, 255, var(--glass-inset-alpha)),
-    inset 0 -1px 0.5px rgba(255, 255, 255, calc(var(--glass-border-alpha) * 0.7)),
+    inset 0 1.5px 0 rgba(255, 255, 255, var(--glass-inset-alpha)),
+    inset 0 -1px 0 rgba(255, 255, 255, calc(var(--glass-border-alpha) * 0.7)),
     inset 0 0 0 2px rgba(0, 0, 0, calc(0.12 - var(--is-light) * 0.05));
-  /* The lens edge: light gathering where the glass thickens, as gradients rather than a blurred
-     inset shadow, which repainted a 16px blur around the whole shape on every frame. */
+}
+
+/* The lens edge: light gathering where the glass thickens, as gradients rather than a blurred
+   inset shadow, which repainted a 16px blur around the whole shape on every frame. */
+.island__glass-refraction::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
     radial-gradient(130% 120% at 50% 0%, transparent 58%, rgba(255, 255, 255, var(--glass-inner-glow-alpha)) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-inner-glow-alpha) * 1.4)), transparent 18%);
@@ -244,14 +258,21 @@
   transform: translateX(-50%);
 }
 
-/* Opening lights the rim up from dim: opacity only, which the compositor plays. */
-.island--material-liquidGlass.island--expanded .island__glass-refraction {
-  animation: glassRimBloom 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+/*
+ * Opening: the rim, its lens glow and the pointer light fade in with the page, on the page's own
+ * delay and duration. Drawn from the start, a bright outline ran round the empty pane while it
+ * grew, before anything was in it (2026-11-18, owner). Opacity only, which the compositor plays.
+ */
+.island--material-liquidGlass.island--expanded .island__glass-refraction,
+.island--material-liquidGlass.island--expanded .island__glass-highlight,
+.island--material-liquidGlass.island--expanded .island__glass::before,
+.island--material-frostedGlass.island--expanded .island__glass::before {
+  animation: glassRimIn var(--island-panel-open-fade-duration) ease-out var(--island-panel-open-fade-delay) backwards;
 }
 
-@keyframes glassRimBloom {
+@keyframes glassRimIn {
   from {
-    opacity: 0.35;
+    opacity: 0;
   }
 }
 
@@ -320,7 +341,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .island__glass-refraction {
+  .island__glass-refraction,
+  .island__glass-highlight,
+  .island__glass::before {
     animation: none !important;
   }
 }
