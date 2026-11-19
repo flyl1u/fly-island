@@ -22,7 +22,14 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     const office = OFFICE_SOURCES.find((source) => source === id);
     if (office) setOfficeEnabled(office, true);
     const agent = NATIVE_AGENTS.find((item) => item.id === id);
-    if (agent && !settings[agent.setting]) onSettingsChange({ ...settings, [agent.setting]: true });
+    if (agent) {
+      // Its quota ring too, like the built-in agents' rings that start ticked.
+      const ring = agent.id === "kimiCode" || agent.id === "zcode" ? agent.id : null;
+      const quota = ring !== null && !settings.agentQuotaSources.includes(ring);
+      if (!settings[agent.setting] || quota) {
+        onSettingsChange({ ...settings, [agent.setting]: true, ...(quota ? { agentQuotaSources: [...settings.agentQuotaSources, ring] } : {}) });
+      }
+    }
     setNativePluginInstalled(id, true);
   };
   return <section className="plugin-market" aria-labelledby="plugin-market-title">

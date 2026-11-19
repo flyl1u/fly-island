@@ -85,8 +85,8 @@ export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQu
     dsh: sources.includes("dsh") ? usages.dsh : null,
     dshProblem: sources.includes("dsh") ? usages.dshProblem : null,
     workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
-    kimi: usages.kimi,
-    zcode: usages.zcode,
+    kimi: sources.includes("kimiCode") ? usages.kimi : null,
+    zcode: sources.includes("zcode") ? usages.zcode : null,
     readAt: usages.readAt,
     plugins: usages.plugins,
   };

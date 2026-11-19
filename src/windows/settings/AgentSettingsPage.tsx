@@ -4,7 +4,7 @@ import { AgentAlertSettings } from "../../features/agent-status/AgentAlertSettin
 import { AgentHooksNotice } from "../../features/agent-status/AgentHooksNotice";
 import { AgentQuotaSettings } from "../../features/agent-status/AgentQuotaSettings";
 import { WorkbuddySignInRow } from "../../features/agent-status/WorkbuddySignInRow";
-import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
+import { NATIVE_AGENTS, useNativeAgents } from "../../features/agent-status/nativeAgents";
 import { AGENT_PROVIDER_LABELS } from "../../features/agent-status/status";
 import { useNativePlugins } from "../../features/plugins";
 import type { IslandSettings } from "../../features/appearance/types";
@@ -28,6 +28,7 @@ export function AgentSettingsPage({
 }) {
   const t = useTranslation();
   const installed = useNativePlugins();
+  const native = useNativeAgents(settings);
 
   return (
     <>
@@ -64,7 +65,8 @@ export function AgentSettingsPage({
             checked={settings[setting]} onChange={(checked) => onSettingsChange({ ...settings, [setting]: checked })} />
         ))}
       </SettingsGroup>
-      <AgentQuotaSettings sources={settings.agentQuotaSources} onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
+      <AgentQuotaSettings sources={settings.agentQuotaSources} offered={(source) => source === "kimiCode" || source === "zcode" ? native[source] : true}
+        onChange={(agentQuotaSources) => onSettingsChange({ ...settings, agentQuotaSources })} />
       <SettingsGroup title={t.settings.agent.sessionTitleSection}>
         <SettingsToggleRow
           title={t.settings.agent.sessionTitle}
