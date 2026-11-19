@@ -1,4 +1,4 @@
-use std::{fs, path::{Path, PathBuf}};
+use std::{fs, io::Read, path::{Path, PathBuf}, sync::{Mutex, PoisonError}, time::SystemTime};
 use serde::Serialize;
 use crate::win32;
 use super::{download, manifest, PluginError};
@@ -52,13 +52,39 @@ pub(super) fn state_at(directory: &Path, plugins: &Path) -> (&'static str, bool)
         }
     }
     let loader = directory.join("msimg32.dll");
-    match download::hash(&loader) {
+    match loader_hash(&loader) {
         Ok(hash) if !manifest::loader_hash(&hash) => ("foreignLoader", legacy),
         Ok(_) if plugins.join("InfLink-rs.plugin").is_file() => ("installed", legacy),
         Ok(_) => ("loaderOnly", legacy),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => ("none", legacy),
         Err(_) => ("unknown", legacy),
     }
+}
+/// The loader's last hash, with the size and time it was taken at.
+type HashedFile = (PathBuf, u64, Option<SystemTime>, String);
+static LOADER_HASH: Mutex<Option<HashedFile>> = Mutex::new(None);
+
+/// The loader's SHA-256, hashed again only when its size or modified time changed: the music
+/// page's diagnostics ask every few seconds while music plays.
+fn loader_hash(path: &Path) -> std::io::Result<String> {
+    let metadata = fs::metadata(path)?;
+    let (len, modified) = (metadata.len(), metadata.modified().ok());
+    let mut cached = LOADER_HASH.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some((known, known_len, known_modified, hash)) = cached.as_ref() {
+        if known == path && *known_len == len && *known_modified == modified && modified.is_some() {
+            return Ok(hash.clone());
+        }
+    }
+    let hash = download::hash(path)?;
+    *cached = Some((path.to_path_buf(), len, modified, hash.clone()));
+    Ok(hash)
+}
+/// The start of the executable, enough for [`arch`]: reading the whole file (hundreds of MB on
+/// some installs) every time the status was asked for was a real cost on slower PCs.
+fn pe_header(path: &Path) -> Option<Vec<u8>> {
+    let mut header = Vec::with_capacity(4096);
+    fs::File::open(path).ok()?.take(4096).read_to_end(&mut header).ok()?;
+    Some(header)
 }
 fn executable() -> Option<PathBuf> {
     win32::media_plugin_registry::app_path().into_iter()
@@ -101,7 +127,7 @@ pub(super) fn show_manual_folders(staged: &Path, target_dir: &Path) -> Result<()
 pub(super) fn status() -> NeteasePluginStatus {
     let exe = executable();
     let version = exe.as_deref().and_then(win32::file_version::read);
-    let arch = exe.as_deref().and_then(|p| fs::read(p).ok()).as_deref().and_then(arch);
+    let arch = exe.as_deref().and_then(pe_header).as_deref().and_then(arch);
     let (supported, tested) = support(version.as_deref(), arch);
     let install_dir = exe.and_then(|p| p.parent().map(Path::to_path_buf));
     let (state, legacy_inf_link) = install_dir.as_deref().map(plugin_state).unwrap_or(("unknown", false));
