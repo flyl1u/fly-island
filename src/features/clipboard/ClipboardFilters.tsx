@@ -1,4 +1,4 @@
-import { FileText, ImageIcon, Search, Type, X, type LucideIcon } from "lucide-react";
+import { FileText, ImageIcon, Search, Star, Type, X, type LucideIcon } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import type { ClipboardItemKind, ClipboardKindFilter } from "./kind";
 import "./ClipboardFilters.css";
@@ -40,6 +40,7 @@ export function ClipboardFilters({
           aria-pressed={view === "favorites"}
           onClick={() => onViewChange("favorites")}
         >
+          <Star size={13} strokeWidth={2} aria-hidden="true" />
           {t.clipboard.favorites}
         </button>
       </div>
@@ -50,8 +51,9 @@ export function ClipboardFilters({
           const active = kind === value;
           return (
             <button key={value} type="button" className={active ? "clipboard-kind--active" : ""} aria-pressed={active}
-              aria-label={kindLabels[value]} title={kindLabels[value]} onClick={() => onKindChange(active ? "any" : value)}>
+              onClick={() => onKindChange(active ? "any" : value)}>
               <Icon size={14} strokeWidth={2} aria-hidden="true" />
+              <span>{kindLabels[value]}</span>
             </button>
           );
         })}
