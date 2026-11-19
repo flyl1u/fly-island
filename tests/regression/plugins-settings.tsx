@@ -5,6 +5,7 @@ import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsP
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
 import type { PluginIndexEntry } from "../../src/features/plugins/api";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
+import { NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import "../../src/styles/tokens.css";
 import "../../src/styles/base.css";
 import "../../src/windows/settings/LayoutEditor.css";
@@ -44,7 +45,18 @@ const wait = () => act(async () => { await new Promise((resolve) => setTimeout(r
 const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent === text)!;
 const app = createRoot(document.getElementById("fixture")!);
 try {
+  localStorage.removeItem(NATIVE_PLUGINS_KEY);
   await act(async () => app.render(<StrictMode><I18nProvider><PluginsSettingsPage /></I18nProvider></StrictMode>)); await wait();
+  const market = TRANSLATIONS[locale].settings.plugins.market;
+  const cards = [...document.querySelectorAll<HTMLElement>(".plugin-card")];
+  check(cards.length === NATIVE_PLUGINS.length && cards.every((card) => Math.abs(card.offsetWidth - card.offsetHeight) <= 1), "插件市场是一组方形卡片");
+  const get = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.dingtalk.name)}']`)!;
+  await act(async () => get.click());
+  check(JSON.stringify(JSON.parse(localStorage.getItem(NATIVE_PLUGINS_KEY) ?? "[]")) === JSON.stringify(["dingtalk"]) && cards[0].classList.contains("plugin-card--installed"), "安装后写入已安装列表并显示已安装");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.dingtalk.name)}']`)!.click());
+  check(localStorage.getItem(NATIVE_PLUGINS_KEY) === "[]" && !cards[0].classList.contains("plugin-card--installed"), "卸载后恢复为未安装");
+  const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
+  check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");
   if (!PLUGINS_ENABLED) {
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
     check(guide?.textContent?.includes(t.comingSoon) && guide.textContent.includes(t.invitation), "关闭时显示本地化的插件计划与贡献说明");

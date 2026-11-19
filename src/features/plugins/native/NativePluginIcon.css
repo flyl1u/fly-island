@@ -1,0 +1,7 @@
+.native-plugin-icon {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: var(--corner-xs);
+  corner-shape: var(--corner-shape);
+}
