@@ -74,6 +74,13 @@ export function useOfficeSources(): Record<OfficeSource, boolean> {
   return { dingtalk: installed.dingtalk && enabled.dingtalk, feishu: installed.feishu && enabled.feishu, wecom: installed.wecom && enabled.wecom };
 }
 
+/** The first office client shown on the island with a reminder not yet read, for the header bell. */
+export function usePendingOfficeSource(): OfficeSource | null {
+  const snapshot = useOfficeImSnapshot();
+  const wanted = useOfficeSources();
+  return OFFICE_SOURCES.find((source) => wanted[source] && snapshot[source].pending) ?? null;
+}
+
 /** Brings the client forward; its reminder counts as read either way. */
 export async function openOfficeClient(source: OfficeSource) {
   await openOfficeIm(source);

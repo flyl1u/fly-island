@@ -38,7 +38,8 @@ export type MessagesText = {
   openPreview: (text: string, source: string) => string;
   noticeOpen: (source: string) => string;
   noticeReader: (sender: string) => string;
-  badge: (count: number, wechat: boolean) => string;
+  /** `office`: the name of an office client (DingTalk…) with a new reminder, if any. */
+  badge: (count: number, wechat: boolean, office?: string | null) => string;
   label: (text: string) => string;
   qqPreview: (title: string, body: string) => string;
 };
@@ -83,7 +84,7 @@ export const zhCN: MessagesText = {
   openPreview: (text, source) => `${text}，点击打开${source}`,
   noticeOpen: (source) => `打开${source}`,
   noticeReader: (sender) => `${sender} 的消息全文`,
-  badge: (count, wechat) => `QQ ${count} 条通知${wechat ? "，微信有新提醒" : ""}`,
+  badge: (count, wechat, office) => `QQ ${count} 条通知${wechat ? "，微信有新提醒" : ""}${office ? `，${office}有新提醒` : ""}`,
   label: (text) => `消息：${text}`,
   qqPreview: (title, body) => `${title}：${body}`,
 };
@@ -128,7 +129,7 @@ export const en: MessagesText = {
   openPreview: (text, source) => `${text}, click to open ${source}`,
   noticeOpen: (source) => `Open ${source}`,
   noticeReader: (sender) => `Full message from ${sender}`,
-  badge: (count, wechat) => `${count} QQ notification${count === 1 ? "" : "s"}${wechat ? ", new WeChat reminder" : ""}`,
+  badge: (count, wechat, office) => `${count} QQ notification${count === 1 ? "" : "s"}${wechat ? ", new WeChat reminder" : ""}${office ? `, new ${office} reminder` : ""}`,
   label: (text) => `Messages: ${text}`,
   qqPreview: (title, body) => `${title}: ${body}`,
 };

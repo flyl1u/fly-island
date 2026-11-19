@@ -27,6 +27,7 @@ import "./IslandPageText.css";
 import "./IslandGlass.css";
 import "./IslandTuckStyle.css";
 import { useTuckMorph } from "./useTuckMorph";
+import { usePendingOfficeSource } from "../../features/messages/office-im/useOfficeIm";
 
 type IslandShellProps = {
   qqMail: MailController;
@@ -163,6 +164,7 @@ export function IslandShell({
   const panelRef = useMotionLayer<HTMLDivElement>(mode, page, expandedHeight);
   const qqNotificationCount = qqNotifications.snapshot.items.length;
   const wechatPending = wechatReminders.snapshot.pending;
+  const officePending = usePendingOfficeSource();
   const className = [
     "island",
     `island--${mode}`,
@@ -274,6 +276,7 @@ export function IslandShell({
             agentStatusLabel={agentStatusLabel}
             qqNotificationCount={qqNotificationCount}
             wechatPending={wechatPending}
+            officePending={officePending}
             onPageChange={onPageChange}
             onCollapse={onCollapse}
             onOpenSettings={onOpenSettings}

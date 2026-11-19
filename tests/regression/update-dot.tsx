@@ -61,7 +61,7 @@ function Fixture() {
     <IslandHeader isExpanded={expanded} page={page} features={{ todo: true, music: true, clipboard: true, shelf: true,
       agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
       pageButtonStyle={style} onPageOrderChange={() => {}} showTitle={false} isDetached={false} agentVisualState="idle"
-      agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
+      agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} officePending={null} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
       onOpenSettings={() => {}} onOpenMessages={() => {}} onOpenTranslator={() => {}} onResetPosition={() => {}}
       minimizesToTray={false} onMinimize={() => {}} />
     {page === "todo" && visibleTodo && <div className="todo-item"><span /><span>检测到新版本</span><UpdateTodoAction /></div>}
