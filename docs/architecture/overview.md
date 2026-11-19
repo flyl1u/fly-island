@@ -22,7 +22,7 @@
 
 各项数据存在哪里见 [data-storage.md](data-storage.md)。
 
-根目录 `release-features.json` 是前端与 Rust 的发布功能开关单一来源：`plugins`、`mailOtp` 当前均关闭。前端通过 `features/releaseFlags.ts` 读取，`src-tauri/build.rs` 将同一配置转为编译期 cfg，由 `release_flags.rs` 导出常量。关闭时保留旧数据与 IPC 契约，插件宿主不启动进程、请求索引或修改配置，邮箱同步不提取验证码或为此请求正文，复制入口也不运行。每项仅改 JSON 中对应的一个值并重新构建即可恢复。回归运行器分别启动正式配置和开启保留功能的 Vite 测试实例；测试覆盖不通过生产运行时开关实现。
+根目录 `release-features.json` 是前端与 Rust 的发布功能开关单一来源：`plugins`、`mailOtp`、`pluginMarket` 当前均关闭。`pluginMarket` 只在前端生效：关闭时插件页不显示内置插件市场（钉钉 / 飞书 / 企业微信、Cursor / Kimi Code / Hermes / Z Code），`useNativePlugins` 一律报告未安装，测试版存下的安装记录保留不读；正式版关、测试版开（2026-11-19 起）。前端通过 `features/releaseFlags.ts` 读取，`src-tauri/build.rs` 将同一配置转为编译期 cfg，由 `release_flags.rs` 导出常量。关闭时保留旧数据与 IPC 契约，插件宿主不启动进程、请求索引或修改配置，邮箱同步不提取验证码或为此请求正文，复制入口也不运行。每项仅改 JSON 中对应的一个值并重新构建即可恢复。回归运行器分别启动正式配置和开启保留功能的 Vite 测试实例；测试覆盖不通过生产运行时开关实现。
 
 Codex 的会话展示仍由 `agent_status/session_scan.rs` 读取 rollout 尾部；`codex_activity.rs` 在内存中增量保存完整文件的 turn 边界、用户提示时间和最后完成时间，避免长上下文把开始记录挤出尾部。按文件修改时间扫描所有日期目录，兼容旧目录中恢复的会话。前端 `features/agent-status/completion.ts` 统一判定显式完成时间变化，供弹出与声音使用。无新增持久化文件。实测与限制见 [Codex 会话排查记录](../investigations/codex-thinking-sessions-2026-11-15.md)。
 

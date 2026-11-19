@@ -14,7 +14,7 @@ export default defineConfig(async ({ command }) => ({
     load(id) {
       // Test fixtures can exercise retained features; production builds always use the file.
       if (command === "serve" && enabledRegressionFeatures && id.split("?")[0].endsWith("/release-features.json")) {
-        return JSON.stringify({ plugins: true, mailOtp: true });
+        return JSON.stringify({ plugins: true, mailOtp: true, pluginMarket: true });
       }
     },
   }],
