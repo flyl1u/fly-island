@@ -1,6 +1,7 @@
 //! Windows media sessions (SMTC) and the system audio endpoint behind the music page.
 
 mod audio;
+mod cover;
 mod diagnostics;
 mod service;
 mod session;
