@@ -97,6 +97,11 @@ export type IslandSettings = {
   agentShowCodex: boolean;
   agentShowDsh: boolean;
   agentShowWorkbuddy: boolean;
+  /** Agents from the plugin market: shown only once installed there, and while switched on here. */
+  agentShowCursor: boolean;
+  agentShowKimiCode: boolean;
+  agentShowHermes: boolean;
+  agentShowZcode: boolean;
   /** List only running, waiting or stalled sessions on the Agent page. */
   agentHideFinished: boolean;
   /** Show how long a session's current (or last) turn has run. */

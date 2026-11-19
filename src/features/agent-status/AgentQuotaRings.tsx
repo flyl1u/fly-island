@@ -7,6 +7,7 @@ import { DshProblemNote, DshQuotaRing } from "./DshQuotaRing";
 import { QuotaRings } from "./QuotaRings";
 import { WorkbuddyQuotaRing } from "./WorkbuddyQuotaRing";
 import { QUOTA_COLORS } from "./quotaColors";
+import { AGENT_PROVIDER_LABELS } from "./status";
 import "./AgentQuotaRings.css";
 import { PluginQuotaRings } from "./PluginQuotaRings";
 
@@ -21,7 +22,7 @@ export { QUOTA_COLORS } from "./quotaColors";
 export function AgentQuotaRings({ usages: given }: { usages?: AgentUsages }) {
   const own = useAgentUsages(given === undefined);
   const usages = given ?? own;
-  const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex]];
+  const agents: [AgentProvider, AgentUsage | null][] = [["claudeCode", usages.claude], ["codex", usages.codex], ["kimiCode", usages.kimi ?? null], ["zcode", usages.zcode ?? null]];
   const shown = agents.filter((entry): entry is [AgentProvider, AgentUsage] => quotaRings(entry[1]) !== null);
   if (usageLineCount(usages) === 0) return null;
   return (
@@ -38,7 +39,7 @@ function AgentQuota({ provider, usage, now }: { provider: AgentProvider; usage: 
   const text = useTranslation().agent.usage;
   const rings = quotaRings(usage);
   if (!rings) return null;
-  const label = provider === "codex" ? text.codexLabel : text.label;
+  const label = provider === "claudeCode" ? text.label : provider === "codex" ? text.codexLabel : AGENT_PROVIDER_LABELS[provider];
   const stale = isStale(usage, now);
   const ringWindows = [rings.outer, rings.inner].flatMap((window) => (window ? [windowSummary(windowLabel(usage, window, text), window, now, text)] : []));
   const lines: HoverCardLine[] = [

@@ -3,9 +3,11 @@ import { listen } from "@tauri-apps/api/event";
 import type { AgentEffortLabels } from "./effortLabels";
 
 // 与 src-tauri/src/agent_status/snapshot.rs 中的 AgentTaskStatus、AgentStatusSnapshot，以及 agent_status/mod.rs 中的 AgentHooksInstallResult 对应。
-export type AgentProvider = "codex" | "claudeCode" | "dsh" | "workbuddy" | "plugin";
+export type AgentProvider = "codex" | "claudeCode" | "dsh" | "workbuddy" | "plugin" | NativeAgentProvider;
+/** Agents installed from the plugin market; Z Code has quota rings but no sessions yet. */
+export type NativeAgentProvider = "cursor" | "kimiCode" | "hermes" | "zcode";
 /** Only these providers install lifecycle hooks and write agent-status.json. */
-export type HookAgentProvider = Exclude<AgentProvider, "dsh" | "workbuddy" | "plugin">;
+export type HookAgentProvider = Exclude<AgentProvider, "dsh" | "workbuddy" | "plugin" | NativeAgentProvider>;
 /** `waiting` (asked the user mid-turn) only comes from the session list, for Claude Code. */
 export type AgentTaskPhase = "idle" | "running" | "waiting" | "completed" | "failed" | "stale";
 
@@ -164,9 +166,12 @@ export function getAgentHostIcon(path: string) {
   return invoke<string | null>("get_agent_host_icon", { path });
 }
 
-/** Claude Code and Codex sessions active in the last two hours, running ones first. */
-export function listAgentSessions(windowHours?: number) {
-  return invoke<AgentSessionSummary[]>("list_agent_sessions", { windowHours });
+/**
+ * Recent agent sessions, running ones first. `native` names the plugin-market agents to read too
+ * ("cursor", "kimiCode", "hermes"); the native side reads none of them without it.
+ */
+export function listAgentSessions(windowHours?: number, native: readonly NativeAgentProvider[] = []) {
+  return invoke<AgentSessionSummary[]>("list_agent_sessions", { windowHours, native });
 }
 
 /**
@@ -202,7 +207,7 @@ export type AgentUsage = {
   models: UsageWindow[];
   plan: string | null;
   /** Where the windows come from. */
-  source?: "hud" | "magpie" | "codex" | "claudeDesktop";
+  source?: "hud" | "magpie" | "codex" | "claudeDesktop" | "kimi" | "zcode";
 };
 
 /** Claude usage limits from a local magpie gateway, claude-hud's usage snapshot or the Claude desktop app's usage history; null when there is none. */
@@ -213,6 +218,16 @@ export function getAgentUsage() {
 /** Codex's usage limits from its rollout files; null when none reports them. */
 export function getCodexUsage() {
   return invoke<AgentUsage | null>("get_codex_usage");
+}
+
+/** Kimi Code's plan windows, asked with Kimi Code CLI's own sign-in; null when not signed in. */
+export function getKimiUsage() {
+  return invoke<AgentUsage | null>("get_kimi_usage");
+}
+
+/** Z Code's plan windows or trial balances, asked with the app's own sign-in; null when absent. */
+export function getZcodeUsage() {
+  return invoke<AgentUsage | null>("get_zcode_usage");
 }
 
 /** Mirrors DshUsage / DshWallet in src-tauri/src/agent_status/dsh_usage.rs. Wallets have no percentage denominator. */

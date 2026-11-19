@@ -87,6 +87,8 @@ export type AgentText = {
     updated: (ago: string, source: string) => string;
     /** Claude desktop's usage history as the source of the numbers. */
     fromClaudeDesktop: string;
+    fromKimi: string;
+    fromZcode: string;
     /** One window on the quota rings' card: "5 小时 剩余 96%（已用 4%）". */
     left: (window: string, left: number, used: number) => string;
     /** Which ring is which, first on the card. */
@@ -222,6 +224,8 @@ export const zhCN: AgentText = {
     fromCodex: "来自 Codex 会话记录",
     updated: (ago, source) => `${ago} · ${source}`,
     fromClaudeDesktop: "来自 Claude 桌面版",
+    fromKimi: "来自 Kimi Code 官网用量",
+    fromZcode: "来自 Z Code 官网用量",
     left: (window, left, used) => `${window} 剩余 ${left}%（已用 ${used}%）`,
     ringsLegend: "外圈 5 小时 · 内圈 7 天 · 显示剩余额度",
     rings: (label, windows) => [label, ...windows].join("；"),
@@ -352,6 +356,8 @@ export const en: AgentText = {
     fromCodex: "from Codex's session logs",
     updated: (ago, source) => `${ago} · ${source}`,
     fromClaudeDesktop: "from the Claude desktop app",
+    fromKimi: "from Kimi Code's usage service",
+    fromZcode: "from Z Code's usage service",
     left: (window, left, used) => `${window} ${left}% left (${used}% used)`,
     ringsLegend: "Outer ring 5h · inner ring 7d · showing what is left",
     rings: (label, windows) => [label, ...windows].join("; "),

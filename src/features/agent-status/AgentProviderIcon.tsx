@@ -2,6 +2,10 @@ import claudeCodeIcon from "../../assets/brands/claude-code.png";
 import codexIcon from "../../assets/brands/codex.webp";
 import deepseekIcon from "../../assets/brands/deepseek.png";
 import workbuddyIcon from "../../assets/brands/workbuddy.png";
+import cursorIcon from "../../assets/brands/cursor.svg";
+import kimiCodeIcon from "../../assets/brands/kimi-code.svg";
+import hermesIcon from "../../assets/brands/hermes.svg";
+import zcodeIcon from "../../assets/brands/zcode.svg";
 import type { AgentProvider } from "./api";
 import { Puzzle } from "lucide-react";
 import "./AgentProviderIcon.css";
@@ -12,6 +16,10 @@ const PROVIDER_ICONS: Record<Exclude<AgentProvider, "plugin">, string> = {
   codex: codexIcon,
   dsh: deepseekIcon,
   workbuddy: workbuddyIcon,
+  cursor: cursorIcon,
+  kimiCode: kimiCodeIcon,
+  hermes: hermesIcon,
+  zcode: zcodeIcon,
 };
 
 export function AgentProviderIcon({ provider, size = 16 }: { provider: AgentProvider; size?: number }) {
