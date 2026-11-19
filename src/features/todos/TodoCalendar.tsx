@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, CornerUpLeft, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "../../i18n";
 import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
+import { holidayOn } from "./holidays";
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
@@ -72,10 +73,20 @@ export function TodoCalendar({
           ))}
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
+            const mark = holidayOn(date);
+            const holiday = mark
+              ? (mark.kind === "work"
+                ? t.notebook.holidayWork
+                : (mark.name && t.notebook.holidayNames[mark.name]) || t.notebook.holidayOff)
+              : null;
+            const heading = dayHeading(date, today, t.notebook);
+            const dayLabel = t.notebook.dayTodos(heading, items.length);
+            const dots = dayDots(items);
             const className = [
               "todo-calendar__day",
               monthOf(date) !== month ? "todo-calendar__day--outside" : "",
               date === today ? "todo-calendar__day--today" : "",
+              mark ? `todo-calendar__day--${mark.kind}` : "",
             ].filter(Boolean).join(" ");
             return (
               <button
@@ -84,13 +95,21 @@ export function TodoCalendar({
                 type="button"
                 aria-pressed={date === selected}
                 aria-current={date === today ? "date" : undefined}
-                aria-label={t.notebook.dayTodos(dayHeading(date, today, t.notebook), items.length)}
+                aria-label={holiday ? t.notebook.holidayDay(dayLabel, holiday) : dayLabel}
                 data-date={date}
                 onClick={() => select(date)}
               >
                 <span className="todo-calendar__number">{Number(date.slice(8))}</span>
-                <span className="todo-calendar__dots" aria-hidden="true">
-                  {dayDots(items).map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
+                <span className="todo-calendar__meta" aria-hidden="true">
+                  {holiday ? <span className="todo-calendar__holiday">{holiday}</span> : null}
+                  {dots.length > 0 ? (
+                    <span className="todo-calendar__dots">
+                      {/* A two-character holiday and three dots do not fit one cell; one dot still says "has todos". */}
+                      {(holiday ? dots.slice(0, 1) : dots).map((dot, index) => (
+                        <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             );

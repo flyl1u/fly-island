@@ -71,12 +71,17 @@
   text-align: center;
 }
 
+/*
+ * A 28px row has to hold the number, a holiday label and the todo dots, and the month
+ * grid may never scroll (a six-week month stays fully visible). The number circle gives
+ * up two pixels, which is where the label fits.
+ */
 .todo-calendar__day {
   display: grid;
-  grid-template-rows: 21px 3px;
+  grid-template-rows: 20px 8px;
   justify-items: center;
   align-content: center;
-  gap: 3px;
+  gap: 0;
   padding: 0;
   color: var(--text-1);
   background: transparent;
@@ -87,12 +92,12 @@
 }
 
 .todo-calendar__number {
-  width: 21px;
-  height: 21px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-pill);
-  font-size: calc(12px * var(--island-font-scale, 1));
+  font-size: calc(11.5px * var(--island-font-scale, 1));
   font-variant-numeric: tabular-nums;
   line-height: 1;
   transition: background-color 140ms ease, box-shadow 140ms ease;
@@ -135,7 +140,41 @@
   outline-offset: -2px;
 }
 
+/* The row under the number: a holiday label, the todo dots, or both. */
+.todo-calendar__meta {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.todo-calendar__holiday {
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(8px * var(--island-font-scale, 1));
+  font-weight: 600;
+  line-height: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A day off reads red, the way Chinese calendars mark it; a make-up workday goes grey. */
+.todo-calendar__day--off .todo-calendar__holiday {
+  color: var(--color-danger);
+}
+
+.todo-calendar__day--work .todo-calendar__holiday {
+  color: var(--text-3);
+}
+
+.todo-calendar__day--outside .todo-calendar__holiday {
+  opacity: 0.45;
+}
+
 .todo-calendar__dots {
+  flex: 0 0 auto;
   display: flex;
   gap: 2px;
 }

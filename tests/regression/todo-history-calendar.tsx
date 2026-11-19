@@ -191,6 +191,19 @@ try {
   check(dayList().scrollTop === 0, "切回长清单时从开头阅读");
   await click(goToday);
 
+  // Statutory holidays: 1 January 2027 opens a three-day break, 4 January is a make-up workday.
+  const monthTitle = () => $(".todo-calendar__title")!.textContent ?? "";
+  for (let step = 0; step < 24 && !monthTitle().includes("2027"); step += 1) await click(button("下个月"));
+  if (monthTitle().includes("2027")) {
+    const firstDay = day("2027-01-01");
+    check(firstDay?.textContent?.includes("元旦") === true && firstDay.classList.contains("todo-calendar__day--off"),
+      "元旦当天显示节日名");
+    const makeUpDay = day("2027-01-31");
+    check(makeUpDay?.textContent?.includes("班") === true && makeUpDay.classList.contains("todo-calendar__day--work"),
+      "调休上班的周日显示「班」");
+    await click(goToday);
+  }
+
   // A six-week month stays fully visible without taking height from the day list.
   for (let step = 0; step < 12 && $$(".todo-calendar__day").length !== 42; step += 1) await click(button("下个月"));
   const grid = $(".todo-calendar__grid")!;

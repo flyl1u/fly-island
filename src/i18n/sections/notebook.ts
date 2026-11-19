@@ -37,6 +37,12 @@ export type NotebookText = {
   calendarGoToToday: string;
   dayTodos: (date: string, count: number) => string;
   noTodosOnDay: string;
+  /** Holiday names by the keys in features/todos/holidays.ts. */
+  holidayNames: Record<string, string>;
+  /** The other days of a break, and a weekend worked to pay for it. */
+  holidayOff: string;
+  holidayWork: string;
+  holidayDay: (date: string, holiday: string) => string;
 };
 
 const zhTaskCount = (count: number) => `${count} 项待办`;
@@ -80,6 +86,18 @@ export const zhCN: NotebookText = {
   calendarGoToToday: "回到今天",
   dayTodos: (date, count) => (count > 0 ? `${date}，${zhTaskCount(count)}` : date),
   noTodosOnDay: "这天没有待办",
+  holidayNames: {
+    newYear: "元旦",
+    springFestival: "春节",
+    qingming: "清明",
+    labour: "劳动",
+    dragonBoat: "端午",
+    midAutumn: "中秋",
+    nationalDay: "国庆",
+  },
+  holidayOff: "休",
+  holidayWork: "班",
+  holidayDay: (date, holiday) => `${date}，${holiday}`,
 };
 
 export const en: NotebookText = {
@@ -120,4 +138,16 @@ export const en: NotebookText = {
   calendarGoToToday: "Back to today",
   dayTodos: (date, count) => (count > 0 ? `${date}, ${enTaskCount(count)}` : date),
   noTodosOnDay: "No tasks on this day",
+  holidayNames: {
+    newYear: "New Year",
+    springFestival: "Spring Festival",
+    qingming: "Qingming",
+    labour: "Labour Day",
+    dragonBoat: "Dragon Boat",
+    midAutumn: "Mid-Autumn",
+    nationalDay: "National Day",
+  },
+  holidayOff: "Off",
+  holidayWork: "Work",
+  holidayDay: (date, holiday) => `${date}, ${holiday}`,
 };
