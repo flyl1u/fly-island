@@ -62,9 +62,13 @@
 .island--expanded > .island__glass-shadow {
   opacity: 1;
   transform: translateX(-50%);
-  /* Darkens with the page fading in, not under the empty pane. */
+  /* Darkens with the page fading in, not under the empty pane. The height follows a page switch on
+     the shape's own spring: jumping to the new height at once left the shadow hanging below a
+     shape still growing, or across one still shrinking, for the 560ms in between (2026-11-19,
+     owner: 展开下方断层的阴影). Only while open: opening and closing keep the height as it is. */
   transition:
     transform var(--island-motion-duration) var(--island-motion),
+    height var(--island-motion-duration) var(--island-motion),
     opacity var(--island-panel-open-fade-duration) ease-out var(--island-panel-open-fade-delay);
 }
 
