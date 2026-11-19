@@ -110,6 +110,7 @@ pub async fn updater_check(
     app: AppHandle,
     channel: String,
     proxy: Option<String>,
+    allow_downgrade: Option<bool>,
 ) -> Result<Option<UpdateInfo>, String> {
     let endpoints = channel_endpoints(&configured_endpoints(&app)?, &channel)?;
     let mut builder = app
@@ -117,6 +118,10 @@ pub async fn updater_check(
         .endpoints(endpoints)
         .map_err(|error| error.to_string())?
         .timeout(CHECK_TIMEOUT);
+    // Going back from a beta to the latest stable release: any other version is the update.
+    if allow_downgrade == Some(true) {
+        builder = builder.version_comparator(|current, update| update.version != current);
+    }
     if let Some(proxy) = proxy {
         builder = builder.proxy(Url::parse(&proxy).map_err(|error| error.to_string())?);
     }
