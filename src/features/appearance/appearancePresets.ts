@@ -47,7 +47,9 @@ export function removeAppearancePreset(presets: AppearancePreset[], id: string):
 
 /** `current` with the preset's appearance applied; every other setting (todo, tuck, agent) is kept. */
 export function applyAppearancePreset(current: IslandSettings, preset: AppearancePreset): IslandSettings {
-  return withAppearanceFrom(current, normalizeSettings(preset.settings as LegacyIslandSettings));
+  // On top of the current settings: what a preset saved before a setting joined the appearance
+  // (the tucked look, 2026-11-19) keeps its current value instead of falling back to the default.
+  return withAppearanceFrom(current, normalizeSettings({ ...current, ...preset.settings } as LegacyIslandSettings));
 }
 
 export function loadAppearancePresets(): AppearancePreset[] {

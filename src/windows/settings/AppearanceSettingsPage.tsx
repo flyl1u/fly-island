@@ -6,18 +6,23 @@ import { CollapsedIslandSection } from "../../features/appearance/CollapsedIslan
 import { CollapsedLayoutEditor } from "../../features/appearance/CollapsedLayoutEditor";
 import { ColorSettingsSection } from "../../features/appearance/ColorSettingsSection";
 import { AppearancePresetSection } from "../../features/appearance/AppearancePresetSection";
-import { IslandCornerRows } from "../../features/appearance/IslandCornerRows";
+import { CollapsedCornerRow, ExpandedCornerRow, IslandShapeRows } from "../../features/appearance/IslandCornerRows";
 import { IslandPreview } from "../../features/appearance/IslandPreview";
-import { FontRows, MaterialRows, OpacityRow, PageButtonsRow, ScaleRows, SchemeRow } from "../../features/appearance/StyleRows";
+import {
+  CollapsedScaleRow, ExpandedScaleRow, FontRows, MaterialRows, OpacityRow, PageButtonsRow, SchemeRow,
+} from "../../features/appearance/StyleRows";
 import { TopEdgeShoulderRows } from "../../features/appearance/TopEdgeShoulderRows";
+import { TuckLookRows } from "../../features/appearance/TuckLookRows";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestPanelPreview } from "./storage";
 import { appearancePreviewMode } from "./appearancePreview";
 
 /**
- * Settings → Appearance (docs/design/settings.md): a preview, then the theme and its colours, the
- * text and sizes, what sits where on the island, the notch size, the shape (notch or capsule), corners and top-edge curves,
- * and last the whole-look presets.
+ * Settings → Appearance (docs/design/settings.md, 2026-11-19), grouped by the part of the island a
+ * setting changes: a preview; the theme (scheme, material, opacity, corner shape) and colours; the
+ * font; the collapsed bar (its size and corners, what sits where, what it shows first); the open
+ * island (its size, corners and page buttons); the top of the screen (the curves into the edge and
+ * the tucked look); and last the whole-look presets.
  */
 export function AppearanceSettingsPage({
   settings,
@@ -35,6 +40,7 @@ export function AppearanceSettingsPage({
     if (mode) requestPanelPreview(mode);
   };
   const rows = { settings, onSettingsChange: updateAppearance };
+  const shapeRows = { settings, onChange: updateAppearance };
   return (
     <>
       <IslandPreview settings={{
@@ -46,22 +52,27 @@ export function AppearanceSettingsPage({
         <SchemeRow {...rows} />
         <MaterialRows {...rows} />
         <OpacityRow {...rows} />
+        <IslandShapeRows {...shapeRows} />
       </SettingsGroup>
       <ColorSettingsSection {...rows} />
       <SettingsGroup title={text.textSizeTitle}>
         <FontRows {...rows} onFontSizePreview={setFontSizePreview} />
-        <ScaleRows {...rows} onExpandedScalePreview={setExpandedScalePreview} />
       </SettingsGroup>
-      <CollapsedLayoutEditor {...rows}>
-        <PageButtonsRow {...rows} />
-      </CollapsedLayoutEditor>
-      <CollapsedIslandSection {...rows} />
-      <SettingsGroup title={text.notchTitle} footer={text.collapsedDimensions.hint}>
+      <SettingsGroup title={text.collapsedTitle} footer={text.collapsedDimensions.hint}>
+        <CollapsedScaleRow {...rows} />
         <CollapsedDimensionRows settings={settings} onChange={updateAppearance} />
+        <CollapsedCornerRow {...shapeRows} />
       </SettingsGroup>
-      <SettingsGroup title={text.shapeTitle}>
-        <IslandCornerRows settings={settings} onChange={updateAppearance} />
-        {settings.islandShape !== "capsule" && <TopEdgeShoulderRows settings={settings} onChange={updateAppearance} />}
+      <CollapsedLayoutEditor {...rows} />
+      <CollapsedIslandSection {...rows} />
+      <SettingsGroup title={text.expandedTitle}>
+        <ExpandedScaleRow {...rows} onExpandedScalePreview={setExpandedScalePreview} />
+        <ExpandedCornerRow {...shapeRows} />
+        <PageButtonsRow {...rows} />
+      </SettingsGroup>
+      <SettingsGroup title={text.topEdgeTitle}>
+        {settings.islandShape !== "capsule" && <TopEdgeShoulderRows {...shapeRows} />}
+        <TuckLookRows {...rows} onPreviewTuck={() => requestPanelPreview("tucked")} />
       </SettingsGroup>
       <AppearancePresetSection {...rows} />
     </>
