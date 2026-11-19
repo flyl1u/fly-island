@@ -94,6 +94,7 @@ export function useLocale() {
   return useContext(LocaleContext);
 }
 
-export function useTranslation() {
-  return useContext(TranslationContext);
+export function useTranslation(locale?: LocaleCode) {
+  const current = useContext(TranslationContext);
+  return locale ? TRANSLATIONS[locale] : current;
 }

@@ -127,6 +127,8 @@ export function IslandApp() {
   });
   const { fileShelf, isShelfDropping } = useIslandShelf(settings, navigation);
   const pickerOpen = useIslandPickerOpen();
+  // The plugin page open, if any: its page fits the entries and buttons the plugin reports.
+  const pluginPage = features.pluginPages.find((info) => info.page === page);
   const expandedIslandHeight = Math.max(pickerOpen && page === "todo" ? TODO_DATE_PICKER_EXPANDED_ISLAND_HEIGHT : 0, getExpandedIslandHeight({
     page,
     todoPageMode,
@@ -145,6 +147,7 @@ export function IslandApp() {
     agentAlertRowHeight: agentCardHeight,
     settingsContentHeight,
     shelfItems: fileShelf.items.length,
+    pluginPanel: pluginPage ? { rows: pluginPage.rows, actions: pluginPage.actions } : undefined,
   }));
   const scheme = useDocumentTheme(settings);
   const colors = useMemo(() => resolveSchemeColors(settings, scheme), [settings, scheme]);

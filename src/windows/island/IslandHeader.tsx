@@ -7,7 +7,8 @@ import type { AgentVisualState } from "../../features/agent-status/status";
 import { useCommunityInvite } from "../../features/updater/useCommunityInvite";
 import { useUpdatePending } from "../../features/updater/useUpdatePending";
 import type { MessageSource } from "../../features/messages/messagePreview";
-import { useTranslation } from "../../i18n";
+import { PLUGIN_PANEL_ICONS } from "../../features/plugins/panel";
+import { useLocale, useTranslation } from "../../i18n";
 import { isPageEnabled, type IslandFeatures } from "./features";
 import type { IslandPage } from "./types";
 import "./IslandHeader.css";
@@ -68,6 +69,7 @@ export function IslandHeader({
   pageActions,
 }: IslandHeaderProps) {
   const t = useTranslation();
+  const { locale } = useLocale();
   // A red dot leads to the community group in About until it has been opened.
   const communityPending = useCommunityInvite().pending;
   const updatePending = useUpdatePending();
@@ -163,6 +165,34 @@ export function IslandHeader({
             >
               {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
               {dot === "todo" && updatePending && <span className="island-update-dot" aria-hidden="true" />}
+            </button>
+          );
+        })}
+        {/* A plugin's page sits after the built-in ones: it is not reordered by dragging,
+            since the plugin list itself is the order. */}
+        {features.pluginPages.map((info) => {
+          const Icon = PLUGIN_PANEL_ICONS[info.icon];
+          const label = info.name[locale];
+          return (
+            <button
+              key={info.page}
+              className={[
+                "dot-button",
+                "dot-button--plugin",
+                showIcons ? "dot-button--icon" : "dot-button--capsule",
+                page === info.page ? "dot-button--active" : "",
+              ].filter(Boolean).join(" ")}
+              type="button"
+              aria-label={label}
+              aria-current={page === info.page ? "page" : undefined}
+              data-tip={label}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPageChange(info.page);
+              }}
+            >
+              {showIcons && <Icon size={16} strokeWidth={1.5} absoluteStrokeWidth aria-hidden="true" />}
+              {info.attention && <span className="island-plugin-button__dot" aria-hidden="true" />}
             </button>
           );
         })}

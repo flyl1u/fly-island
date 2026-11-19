@@ -3,7 +3,8 @@ import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { PluginsSettingsPage } from "../../src/windows/settings/PluginsSettingsPage";
 import { I18nProvider, LOCALE_STORAGE_KEY, TRANSLATIONS } from "../../src/i18n";
-import type { PluginIndexEntry } from "../../src/features/plugins/api";
+import type { InstalledPlugin, PluginIndexEntry, PluginManifest } from "../../src/features/plugins/api";
+import eyeCareManifest from "../../plugins/eye-care/fly-island-plugin.json";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 import { NATIVE_PLUGINS, NATIVE_PLUGINS_KEY } from "../../src/features/plugins/native";
 import "../../src/styles/tokens.css";
@@ -15,7 +16,11 @@ const locale = new URLSearchParams(location.search).get("lang") === "en" ? "en" 
 localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 const t = TRANSLATIONS[locale].settings.plugins;
 const stored = "D:\\CodexBuild\\plugins\\plugins-index.json";
-const registry = { installed: {}, developerMode: true, indexUrl: stored };
+const manifest: PluginManifest = { ...eyeCareManifest, settings: eyeCareManifest.settings.map((s) => ({ ...s, options: s.options ?? [] })) } as PluginManifest;
+const eyeCare: InstalledPlugin = { manifest, enabled: true, directory: "D:\\plugins\\eye-care", development: false, settings: {} };
+const registry = { installed: { "eye-care": eyeCare }, developerMode: true, indexUrl: stored };
+const saves: { key: string; value: string }[] = [];
+let saveDelay = 0;
 const snapshot = () => ({ registry: { ...registry }, live: {} });
 const requests: { resolve: (items: PluginIndexEntry[]) => void; reject: (reason: string) => void }[] = [];
 let resolveRegistry: (() => void) | undefined;
@@ -33,6 +38,11 @@ mockIPC((command, payload) => {
   if (command === "plugin:opener|open_url") {
     if (failOpen) throw new Error("open failed");
     opened = String(args.url); return null;
+  }
+  if (command === "set_plugin_setting") {
+    const key = String(args.key), value = String(args.value);
+    saves.push({ key, value });
+    return new Promise((resolve) => setTimeout(() => { eyeCare.settings[key] = value; resolve(null); }, saveDelay));
   }
   return null;
 }, { shouldMockEvents: true });
@@ -94,8 +104,41 @@ try {
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.develop}']`)!.click());
     check(opened === "https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md", "开发指引使用既有外链 opener");
     check(input.getBoundingClientRect().right <= document.getElementById("fixture")!.getBoundingClientRect().right + 1, "中英文窄布局的路径输入框不溢出");
+    const field = (key: string) => document.querySelector<HTMLInputElement>(`input[aria-label='${manifest.settings.find((s) => s.key === key)!.label[locale]}']`)!;
+    const edit = async (input: HTMLInputElement, value: string) => act(async () => {
+      setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const pause = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
+    for (const [key, value] of [["period", "25"], ["rest-minutes", "2"], ["idle", "8"]]) {
+      const number = field(key);
+      check(number.inputMode === "numeric" && !number.closest(".settings-row")?.querySelector("button"), `${key} 使用整数输入且不显示保存按钮`);
+      await act(async () => number.focus());
+      const count = saves.length;
+      await edit(number, value.slice(0, 1)); await edit(number, value);
+      await pause(600); await wait();
+      check(eyeCare.settings[key] === value && saves.length === count + 1, `${key} 连续输入自动合并为一次保存`);
+      check(field(key) === number && document.activeElement === number && !number.disabled, `${key} 保存后保留输入焦点`);
+    }
+    const period = field("period");
+    await act(async () => period.focus());
+    const count = saves.length;
+    for (const invalid of ["", "0", "721", "1.5"]) { await edit(period, invalid); await pause(550); }
+    check(saves.length === count && eyeCare.settings.period === "25", "空值、越界值和小数不会覆盖有效设置");
+    await edit(period, "30");
+    await act(async () => period.blur()); await wait();
+    check(eyeCare.settings.period === "30", "离开输入框立即保存最后的有效值");
+    saveDelay = 300;
+    await act(async () => period.focus());
+    await edit(period, "31"); await pause(550);
+    await edit(period, "32"); await pause(900); await wait();
+    check(eyeCare.settings.period === "32" && field("period").value === "32" && document.activeElement === period,
+      "保存进行中继续输入不会丢字或被旧值覆盖");
+    saveDelay = 0;
+    await edit(field("idle"), "9");
   }
   await act(async () => app.unmount());
+  await wait();
+  if (PLUGINS_ENABLED) check(eyeCare.settings.idle === "9", "离开设置页仍会保存尚未到期的有效输入");
   document.getElementById("results")!.textContent = [...messages, "ALL PASS"].join("\n");
   document.documentElement.dataset.testResult = "passed";
 } catch (error) {

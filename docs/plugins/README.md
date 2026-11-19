@@ -142,3 +142,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 **Required in the PR:** a public link to a demo recording of the plugin in use inside the real island, the author(s), a public contact, your GitHub profile and the source repository/branch, a plain-language description for the plugin list, a list of changed files and hook points, and your self-test results. flyl1u handles the optional-install packaging; submission does not guarantee a merge or immediate release.
 
 The `plugins/` directory and the `api.md` / `specification.md` documents describe the island's existing external data adapter mechanism (quota, sessions and messages from other AI tools). They are a reference for plugins that need external data sources, not the definition of a plugin.
+
+## 本分支插件 / Plugins in this branch
+
+[护眼提醒 / Eye Care](eye-care.md) integrates a native island page and settings, with optional installation. 本分支新增的 panel / number schema 见 [API](api.md) 与 [specification](specification.md)。正式发布门禁保持主分支默认值；本地测试按 [quickstart](quickstart.md) 临时启用。

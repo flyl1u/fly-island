@@ -34,3 +34,5 @@ pub(crate) mod window;
 
 pub(crate) mod media_plugin_registry;
 pub(crate) mod media_plugin_elevation;
+
+pub(crate) mod eye_care;

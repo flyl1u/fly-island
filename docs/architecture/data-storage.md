@@ -60,3 +60,7 @@ DSH（issue #51）：`agent_status/dsh_sessions.rs` 只读 `%APPDATA%/dsh-deskto
 仓库内 `artifacts/plugins/` 为忽略的 zip 与 plugins-index.json 构建产物；本地测试数据在 node_modules/.cache/plugin-tests/。插件 crate 的 target 不入库。
 
 索引下载/解析诊断写入同样约 1 MiB 上限的 `plugin-logs/catalog.log`；不记录 URL 认证信息。索引失败统一返回 `plugin_index_unavailable`，设置页按当前语言显示简短状态和重试，不回显底层错误。
+
+护眼插件 `eye-care` 的非秘密配置复用 `plugins-state.json` 中对应插件的 settings（`period`、`rest-minutes`、`idle`、`allow-skip`、`language`）。周期、剩余时间和本轮推迟标记仅在插件内存；重启 / 保存设置后从完整用眼周期开始。不保存输入记录，不新增文件或 localStorage key。
+
+护眼宿主休息窗口的显示器列表、首帧状态、重试和会话令牌只在内存；不新增持久化文件或 localStorage key。`_host-eye-care-windows` 是初始化时临时注入的能力标记，不持久化。

@@ -164,3 +164,23 @@ fn main() {
 SDK 还提供 SHA-256、AES-GCM、DPAPI、Chromium v10 辅助函数，签名见源码；不授予额外权限。poll Err 会输出通用诊断并 publish 空快照，action 后立即再 poll；需要仍有效缓存时由插件显式返回。不要依赖自动截断满足资源审核或伪称完整历史。
 
 The SDK also has SHA-256, AES-GCM, DPAPI and Chromium v10 helpers; see source for signatures. They grant no additional permissions. A poll error produces a generic diagnostic and empty snapshot; an action schedules an immediate poll. Return still-valid cache explicitly when needed. Automatic truncation does not replace bounded collection or justify claims of complete history.
+
+## 本分支原生页面 / Native pages in this branch
+
+manifest 声明 `panel` 权限、贡献与 `panel.icon` 后，publish 可带一个可空 `panel` 对象。旧 quota / sessions / notifications 契约保持兼容；未声明的 panel 被拒绝。宿主新增的是融入原有导航和设置的 React 页面，panel 数据不提供 HTML/CSS；护眼 0.2.0 的休息 WebView 由宿主按新版规范按需创建，见 [Eye Care](eye-care.md)。
+
+| 字段 / Field | 约束 / Constraint |
+| --- | --- |
+| headline / note | 纯文本状态与可空说明 / Plain status and nullable note |
+| rows | 最多 16 行 / At most 16 rows |
+| row | id、title；detail 可空；percent 为 null 或 0–100；countdownTo 为 null 或正 Unix 毫秒；tone 为 normal / warning / danger |
+| actions | 最多 4 个唯一的 manifest 已声明 id，只显示当前有效的阶段性动作 / At most 4 unique declared IDs for currently available actions |
+| attention | bool；点亮页按钮提示点，不弹通知 / Page-button indicator, no notification |
+
+每次 publish 替换整个 panel；省略或 null 清空。文本最多 4096 UTF-8 字节且无 NUL，行 id 非空唯一。倒计时由宿主本地按秒更新，插件只提供期限与状态。主进程只在快照变化时发送 plugins-changed；panel 的错误字段或动作使该 publish 被拒绝。无 panel 的旧适配器不受影响。
+
+Every publish replaces the complete panel; omission/null clears it. Text is bounded to 4096 UTF-8 bytes without NUL and row IDs are unique/nonempty. The host ticks countdowns locally, publishes changes only when snapshots differ, and rejects undeclared/invalid fields or actions. Legacy adapters without panels are unchanged.
+
+Eye Care 0.2.0 的窗口是固定宿主源码接入，不是插件可指定的通用 URL/HTML 窗口。仅支持带完整休息动作与 desktop-windows 权限的 eye-care 清单；由 attention、timer 行截止时间和当前动作得到有界状态，snooze_10 表示本轮可推迟，skip 表示可跳过。宿主初始化时临时提供 `_host-eye-care-windows` 能力标记。其他适配器不受影响。
+
+Eye Care windows are a fixed host-source integration, not a general plugin-provided URL/HTML window. Supported manifests supply the timer deadline and current action availability; the host derives snooze/skip state, injects the transient capability marker and owns all presentation. Legacy adapters remain compatible.

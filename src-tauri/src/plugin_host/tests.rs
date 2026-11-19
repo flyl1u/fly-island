@@ -23,6 +23,32 @@ fn validates_manifest_and_protocol() {
     let mut restricted = m.clone(); restricted.contributes.clear();
     let n = json!({"notifications":[{"id":"n","sourceId":"test","appName":"test","icon":"plugin","title":"test","body":"test","receivedAt":1,"action":null}]});
     assert!(protocol::parse_publish(&publish(n), &restricted).is_err());
+    // A plugin page: the manifest names one of the host's icons, and the panel may only use
+    // declared actions.
+    let mut with_panel = serde_json::to_value(&m).unwrap();
+    with_panel["permissions"] = json!(["panel"]);
+    with_panel["contributes"] = json!(["panel"]);
+    with_panel["panel"] = json!({"icon": "battery"});
+    with_panel["actions"] = json!([{"id": "refresh", "label": {"zh-CN": "重新扫描", "en": "Scan again"}}]);
+    let page = Manifest::parse(&serde_json::to_vec(&with_panel).unwrap()).unwrap();
+    let good = json!({"panel": {"headline": "2 个设备", "note": null, "rows": [{"id": "a", "title": "A", "detail": null, "percent": 59, "countdownTo": null, "tone": "warning"}], "actions": ["refresh"], "attention": true}});
+    let parsed = protocol::parse_publish(&publish(good.clone()), &page).unwrap().unwrap();
+    assert!(parsed.panel.is_some_and(|panel| panel.rows.len() == 1 && panel.attention));
+    assert!(protocol::parse_publish(&publish(good.clone()), &m).is_err(), "a panel needs its contribution");
+    for (field, value) in [("percent", json!(101)), ("tone", json!("loud")), ("countdownTo", json!(-1))] {
+        let mut bad = good.clone();
+        bad["panel"]["rows"][0][field] = value;
+        assert!(protocol::parse_publish(&publish(bad), &page).is_err(), "{field}");
+    }
+    let mut undeclared_action = good.clone();
+    undeclared_action["panel"]["actions"] = json!(["rest_now"]);
+    assert!(protocol::parse_publish(&publish(undeclared_action), &page).is_err());
+    let mut bad_manifest = with_panel.clone();
+    bad_manifest["panel"] = json!({"icon": "usb"});
+    assert!(Manifest::parse(&serde_json::to_vec(&bad_manifest).unwrap()).is_err(), "an icon the host cannot draw");
+    let mut no_meta = with_panel.clone();
+    no_meta.as_object_mut().unwrap().remove("panel");
+    assert!(Manifest::parse(&serde_json::to_vec(&no_meta).unwrap()).is_err(), "contribution without a page");
     for (attempt, seconds) in [1, 2, 4, 8, 16, 32].into_iter().enumerate() {
         assert_eq!(process::restart_delay(attempt as u32), Some(Duration::from_secs(seconds)));
     }
@@ -41,7 +67,55 @@ fn all_bundled_manifests_are_accepted() {
             count += 1;
         }
     }
-    assert_eq!(count, 8);
+    assert_eq!(count, 10);
+}
+
+#[test]
+fn eye_care_upgrade_rounds_legacy_durations_up_to_whole_minutes() {
+    use super::storage::{upgrade_settings, Installed};
+    let new = Manifest::parse(include_bytes!("../../../plugins/eye-care/fly-island-plugin.json")).unwrap();
+    let mut old = new.clone();
+    let rest = old.settings.iter_mut().find(|s| s.key == "rest-minutes").unwrap();
+    rest.key = "rest".into();
+    rest.kind = "text".into();
+    rest.min = None;
+    rest.max = None;
+    rest.default = json!("20");
+    let mut previous = Installed { manifest: old, enabled: true, directory: Default::default(),
+        development: false, settings: Default::default() };
+    assert_eq!(upgrade_settings(Some(&previous), &new)["rest-minutes"], "1");
+    previous.settings.insert("rest".into(), json!("150"));
+    let migrated = upgrade_settings(Some(&previous), &new);
+    assert_eq!(migrated["rest-minutes"], "3");
+    assert!(!migrated.contains_key("rest"));
+    previous.settings.insert("rest-minutes".into(), json!("3"));
+    assert_eq!(upgrade_settings(Some(&previous), &new)["rest-minutes"], "3");
+    for (old, expected) in [("2.5", "3"), ("0.3333333333333333", "1"), ("60", "60")] {
+        previous.settings.insert("rest-minutes".into(), json!(old));
+        assert_eq!(upgrade_settings(Some(&previous), &new)["rest-minutes"], expected);
+    }
+    assert!(!upgrade_settings(None, &new).contains_key("rest-minutes"));
+}
+
+#[test]
+fn integer_settings_reject_fractions_and_enforce_manifest_bounds() {
+    let manifest = Manifest::parse(include_bytes!("../../../plugins/eye-care/fly-island-plugin.json")).unwrap();
+    for (key, max) in [("period", 720), ("rest-minutes", 60), ("idle", 120)] {
+        let setting = manifest.settings.iter().find(|s| s.key == key).unwrap();
+        assert!(setting.accepts(&json!("1")));
+        assert!(setting.accepts(&json!(max.to_string())));
+        for invalid in ["", "0", "1.5", "-1", "1e1", "NaN", " 2 ", "4294967296"] {
+            assert!(!setting.accepts(&json!(invalid)), "{key}: {invalid}");
+        }
+        assert!(!setting.accepts(&json!((max + 1).to_string())));
+        assert!(!setting.accepts(&json!(1)));
+    }
+    for (min, max) in [(Some(3), Some(2)), (None, Some(2)), (Some(1), None)] {
+        let mut invalid = manifest.clone();
+        invalid.settings[0].min = min;
+        invalid.settings[0].max = max;
+        assert!(invalid.validate().is_err());
+    }
 }
 
 #[test]

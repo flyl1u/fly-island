@@ -12,6 +12,8 @@ import type { MusicText } from "./sections/music";
 import type { TodoText } from "./sections/todo";
 import type { ClipboardText } from "./sections/clipboard";
 import type { FileShelfText } from "./sections/fileShelf";
+import type { EyeCareText } from "./sections/eyeCare";
+import type { PluginPanelText } from "./sections/pluginPanel";
 import type { SettingsText } from "./sections/settings/index";
 
 export type LocaleCode = "zh-CN" | "en";
@@ -44,6 +46,11 @@ export type Translations = {
   clipboard: ClipboardText;
 
   fileShelf: FileShelfText;
+
+  /** A plugin's own page in the island. */
+  pluginPanel: PluginPanelText;
+
+  eyeCare: EyeCareText;
 
   settings: SettingsText;
 };

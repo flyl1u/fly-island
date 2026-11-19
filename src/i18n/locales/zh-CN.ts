@@ -13,6 +13,8 @@ import * as music from "../sections/music.ts";
 import * as todo from "../sections/todo.ts";
 import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
+import * as eyeCare from "../sections/eyeCare.ts";
+import * as pluginPanel from "../sections/pluginPanel.ts";
 import * as settings from "../sections/settings/index.ts";
 
 const zhCN: Translations = {
@@ -44,6 +46,9 @@ const zhCN: Translations = {
   clipboard: clipboard.zhCN,
 
   fileShelf: fileShelf.zhCN,
+
+  pluginPanel: pluginPanel.zhCN,
+  eyeCare: eyeCare.zhCN,
 
   settings: settings.zhCN,
 };

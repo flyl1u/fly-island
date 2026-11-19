@@ -13,6 +13,8 @@ import * as music from "../sections/music.ts";
 import * as todo from "../sections/todo.ts";
 import * as clipboard from "../sections/clipboard.ts";
 import * as fileShelf from "../sections/fileShelf.ts";
+import * as eyeCare from "../sections/eyeCare.ts";
+import * as pluginPanel from "../sections/pluginPanel.ts";
 import * as settings from "../sections/settings/index.ts";
 
 const en: Translations = {
@@ -41,6 +43,9 @@ const en: Translations = {
   clipboard: clipboard.en,
 
   fileShelf: fileShelf.en,
+
+  pluginPanel: pluginPanel.en,
+  eyeCare: eyeCare.en,
 
   settings: settings.en,
 };

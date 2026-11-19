@@ -26,7 +26,7 @@ export const zhCN: SettingsPluginsText = {
   uninstall: "卸载", enabled: "启用", permissions: "权限", retry: "刷新", save: "保存",
   developer: "开发者", developerMode: "开发者模式", develop: "开发插件", unavailable: "暂无可安装插件", index: "插件索引", directory: "本地插件目录", load: "加载", secret: "输入以替换凭据",
   status: { starting: "启动中", running: "运行中", restarting: "正在重启", stopped: "已停用", failed: "启动失败" },
-  permission: { network: "联网", "read-home-files": "本地文件", notifications: "消息", quota: "额度", sessions: "会话", "desktop-windows": "桌面窗口", "private-browser": "独立登录" },
+  permission: { network: "联网", "read-home-files": "本地文件", notifications: "消息", quota: "额度", sessions: "会话", panel: "岛上面板", "desktop-windows": "桌面窗口", "private-browser": "独立登录" },
   market: {
     title: "插件市场", hint: "装上后成为小岛自己的一部分：消息类出现在消息页的标签里，Agent 类出现在 AI 会话里，可在对应设置页单独开关。",
     install: "安装", uninstall: "卸载", installed: "已安装",
@@ -53,7 +53,7 @@ export const en: SettingsPluginsText = {
   uninstall: "Uninstall", enabled: "Enable", permissions: "Permissions", retry: "Refresh", save: "Save",
   developer: "Developer", developerMode: "Developer mode", develop: "Develop plugins", unavailable: "No plugins available", index: "Plugin index", directory: "Local plugin folder", load: "Load", secret: "Enter to replace credential",
   status: { starting: "Starting", running: "Running", restarting: "Restarting", stopped: "Disabled", failed: "Failed to start" },
-  permission: { network: "Network", "read-home-files": "Local files", notifications: "Messages", quota: "Quota", sessions: "Sessions", "desktop-windows": "Desktop windows", "private-browser": "Private sign-in" },
+  permission: { network: "Network", "read-home-files": "Local files", notifications: "Messages", quota: "Quota", sessions: "Sessions", panel: "Island panel", "desktop-windows": "Desktop windows", "private-browser": "Private sign-in" },
   market: {
     title: "Plugin market", hint: "Installed plugins become part of the island: message plugins add a tab to Messages, Agent plugins join AI sessions, each with its own switch in settings.",
     install: "Get", uninstall: "Remove", installed: "Installed",

@@ -43,10 +43,11 @@ Use UTF-8 JSON in `fly-island-plugin.json`, at most **65,536 bytes**. Every mani
 | `description` | 是 / Yes | `Localized`；审核要求两种语言均有准确的简短功能说明。/ `Localized`; review requires accurate short descriptions in both languages. |
 | `version` | 是 / Yes | SemVer 字符串，如 `0.1.0`。/ SemVer string such as `0.1.0`. |
 | `apiVersion` | 是 / Yes | 整数 `1`；其他版本拒绝加载。/ Integer `1`; other versions are rejected. |
+| `panel` | 否 / No | 声明 panel 贡献时必需：`{icon: string}`，仅接受宿主预置图标 / Required when contributing panel: host icon selection only |
 | `runtime` | 是 / Yes | 仅含 `command: string`。/ Object containing only `command: string`. |
 | `runtime.command` | 是 / Yes | 包内相对路径，以小写 `.exe` 结尾，子目录用 `/`；无参数、不经 shell。规范化后必须在插件目录内。/ Relative packaged path ending in lowercase `.exe`; use `/` for subdirectories. No arguments or shell; resolved executable must remain inside the plugin directory. |
 | `permissions` | 是 / Yes | 下表允许值的字符串数组；不需要权限时也写 `[]`。/ String array of allowed values below; use `[]` if none. |
-| `contributes` | 是 / Yes | `quota`、`sessions`、`notifications` 的数组；每项必须同时存在于 permissions。/ Array of `quota`, `sessions`, `notifications`; each requires the matching permission. |
+| `contributes` | 是 / Yes | `quota`、`sessions`、`notifications`、`panel` 的数组；每项必须同时存在于 permissions。/ Array of `quota`, `sessions`, `notifications`, `panel`; each requires the matching permission. |
 | `settings` | 否 / No | `Setting[]`，缺省 `[]`。/ `Setting[]`, default `[]`. |
 | `actions` | 否 / No | `Action[]`，缺省 `[]`。/ `Action[]`, default `[]`. |
 
@@ -71,6 +72,7 @@ Setting keys and manifest action IDs are 1–100 bytes, start with a lowercase A
 | `toggle` | 布尔 / Boolean | 开关行 / Toggle row |
 | `text` | 字符串，≤8192 UTF-8 字节 / String, ≤8192 UTF-8 bytes | 输入框和保存按钮 / Input and save button |
 | `secret` | 默认必须 `""`；保存值同上 / Default must be `""`; same saved-string limit | 密码输入框，保存后清空草稿；不回显旧值 / Password input clears after saving; old value is never returned |
+| `number` | 范围内整数字符串，必填整数 min / max / Integer string within required integer min/max bounds | 整数输入，自动保存 / Integer input, auto-save |
 | `select` | 字符串，必须匹配 options 中的一个 value / String matching an option value | 原生选择控件 / Host select control |
 
 `options` 的 value 应唯一、文案非空是审核要求；目前不是额外的自动校验。只有 text/secret 强制 8192 字节上限。设置保存成功后，正在启用的插件会停止并重新 initialize，收到所有设置的完整有效值；没有逐字段 change 通知。
@@ -113,6 +115,7 @@ This illustrates the schema. A real implementation must make every setting, acti
 | `quota` | 发布额度 / Publishing quota |
 | `sessions` | 发布会话 / Publishing sessions |
 | `notifications` | 发布消息 / Publishing notifications |
+| `panel` | 发布小岛原生面板数据 / Publishing native island-panel data |
 | `desktop-windows` | 探测窗口或用户点击后前台唤起 / Inspecting windows or activating them after a click |
 | `private-browser` | 明确用户操作启动的独立登录浏览器 / Starting an isolated sign-in browser on an explicit user action |
 
@@ -183,3 +186,9 @@ Put the manifest and executable directly at the ZIP root. Limits are 100 MiB com
 维护者合并后用 `scripts/release/build-plugins.ps1` 构建并发布 ZIP 与索引，不改变主程序 latest.json 协议。普通用户只按索引 id 安装；插件不能自行扩展安装源、下载新版本或修改主程序。
 
 After merge, the maintainer builds and publishes ZIPs/index with `scripts/release/build-plugins.ps1`, without changing the application's latest.json protocol. Users install by indexed ID. Plugins must not extend installation sources, self-update or modify the host.
+
+## 本分支新增 schema / Additional schema in this branch
+
+`panel` adds a host-rendered island page. The optional manifest `panel.icon` selects battery / heart-pulse / activity / timer / gauge / puzzle from host lucide icons. A `number` setting requires integer `min` / `max`; defaults and saved values remain bounded integer strings.
+
+`panel` 提供小岛原生页面；清单可用 `panel.icon` 选择上述宿主图标，不传图片或样式。`number` 设置必须声明整数 min / max，默认与保存值为范围内整数字符串；宿主自动保存有效输入，兼容既有存储。

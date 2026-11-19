@@ -9,5 +9,6 @@ members = [
     "doubao",
     "hermes",
     "office-im",
+    "eye-care",
 ]
 resolver = "2"

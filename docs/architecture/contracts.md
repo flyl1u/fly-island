@@ -188,5 +188,15 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 新目录：`src-tauri/src/plugin_host/`、`src/features/plugins/`、`plugins/<id>/`（独立 crate）、`plugins/sdk/`、`docs/plugins/`。
 - 命令：`get_plugins()`、`get_plugins_index()`、`install_plugin(id)`、`set_plugin_enabled(id, enabled)`、`uninstall_plugin(id)`、`set_plugin_setting(id, key, value)`、`run_plugin_action(id, action)`、`configure_plugins(developerMode, indexUrl)`、`load_development_plugin(directory)`。
 - 事件：`plugins-changed`（无敏感数据；前端重新 get_plugins）。stdio RPC：`initialize`、`action`、`publish`，停止时可发送无 id 的可选 `shutdown` 通知；旧 v1 插件仍由宿主限时结束，完整 schema 见 `docs/plugins/api.md`。
+- 面板页（2026-11-16 新增，向后兼容）：manifest 可声明 `permissions/contributes` 的 `panel` 与 `panel.icon`（`battery`、`heart-pulse`、`activity`、`timer`、`gauge`、`puzzle`）；`publish` 多一个可缺省的 `panel`（`headline`、`note`、最多 16 行 `rows`、最多 4 个 manifest 已声明动作 id、`attention`），行含 `percent`（0–100）与 `countdownTo`（Unix 毫秒，宿主本地倒数）。`get_plugins()` 的 `live.<id>` 相应多 `panel`（可为 null）。没有声明的旧插件不受影响；不认识的 `panel` 字段或动作会让该次 publish 被拒。宿主只在快照确实变化时发 `plugins-changed`，重复 publish 不再触发前端重读。
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
 - v3.2.6（2026-11-18，第三轮手测后）：`focusd-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `focusd-island-todos`。
+
+- 护眼插件（2026-11-17）：id `eye-care`，runtime `eye-care.exe`，permissions `panel` / `desktop-windows`，panel icon `heart-pulse`；设置 key `period`（分钟字符串）、`rest-minutes`（整数分钟字符串，1–60）、`idle`（分钟字符串）、`allow-skip`（布尔）、`language`（`zh-CN` / `en`）；动作 `rest_now`。升级时将旧 `rest` 秒数（包括旧清单默认值）换算为分钟后向上取整，旧小数分钟同样向上取整为至少 1 分钟；插件兼容读取旧 key，新 key 优先。三个时长以 manifest 的 `number` 类型（必填 min / max，保存值仍是字符串）声明并自动保存，其他设置类型不变。复用 API v1；既有宿主命令、事件和 Tauri 窗口 label 保持兼容，0.2.0 的新增窗口契约见下文。
+
+## 护眼宿主窗口（0.2.0，2026-11-19）
+
+- 新增按需窗口标签 `eye-care-rest-<serial>-<screen>` 与页面入口 `?window=eye-care`；不改旧的四个窗口。
+- 新增命令 `get_eye_care_break()`、`show_eye_care_break_window()`，仅操作已登记的休息窗口；事件 `eye-care-break-changed` 为可空的 `{deadline, canSnooze, canSkip, language}`。独立 capability 只允许休息窗口监听/取消监听事件，不授予 opener/updater。
+- 插件 id、既有设置 key 与计时迁移不变，manifest 新增 `snooze_10/15/20/25/30` 和 `skip` 动作；状态机仍校验阶段、一次推迟和跳过权限。`rest_now` 保留。
+- 新宿主仅为该受支持清单的初始化 settings 注入保留键 `_host-eye-care-windows: true`；该键不写入注册文件，也不是用户设置。旧宿主缺少标记时，0.2.0 显示升级说明，不假装已覆盖显示器；旧插件清单不会触发宿主窗口，避免双重遮罩。

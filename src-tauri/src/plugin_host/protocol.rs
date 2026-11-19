@@ -4,7 +4,7 @@ use super::manifest::Manifest;
 
 pub const MAX_LINE: usize = 256 * 1024;
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Contributions {
     #[serde(default)]
@@ -13,9 +13,48 @@ pub struct Contributions {
     pub sessions: Vec<Session>,
     #[serde(default)]
     pub notifications: Vec<Notification>,
+    /// The plugin's own island page; null when it has nothing to show.
+    #[serde(default)]
+    pub panel: Option<Panel>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+/// What a plugin's island page shows. The host draws it with its own components: no HTML,
+/// no styles and no images come from the plugin.
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct Panel {
+    /// One line at the top, such as "专注中" or "2 个设备".
+    pub headline: String,
+    /// A quieter second line; null when there is nothing to add.
+    pub note: Option<String>,
+    /// The entries, each a title and at most a percentage or a deadline.
+    #[serde(default)]
+    pub rows: Vec<PanelRow>,
+    /// Ids of the plugin's declared actions to offer as buttons.
+    #[serde(default)]
+    pub actions: Vec<String>,
+    /// A dot on the page's button, for something the user should look at (a break is due,
+    /// a battery is low) without a notification.
+    #[serde(default)]
+    pub attention: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct PanelRow {
+    pub id: String,
+    pub title: String,
+    /// A short line under the title.
+    pub detail: Option<String>,
+    /// A 0–100 bar under the title, when the entry measures something.
+    pub percent: Option<f64>,
+    /// Unix milliseconds the host counts down to, when the entry is a deadline.
+    pub countdown_to: Option<i64>,
+    /// "normal", "warning" or "danger"; anything else reads as normal.
+    pub tone: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Quota {
     pub id: String,
@@ -27,7 +66,7 @@ pub struct Quota {
     pub updated_at: i64,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Session {
     pub id: String,
@@ -38,7 +77,7 @@ pub struct Session {
     pub action: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Notification {
     pub id: String,
@@ -62,9 +101,11 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
     if v["method"] != "publish" { return Err("Unsupported plugin method".into()); }
     let c: Contributions = serde_json::from_value(v["params"].clone()).map_err(|_| "Invalid contribution".to_owned())?;
     if c.quota.len() > 32 || c.sessions.len() > 200 || c.notifications.len() > 100
+        || c.panel.as_ref().is_some_and(|p| p.rows.len() > 16 || p.actions.len() > 4)
         || (!c.quota.is_empty() && !manifest.contributes.iter().any(|p| p == "quota"))
         || (!c.sessions.is_empty() && !manifest.contributes.iter().any(|p| p == "sessions"))
-        || (!c.notifications.is_empty() && !manifest.contributes.iter().any(|p| p == "notifications")) {
+        || (!c.notifications.is_empty() && !manifest.contributes.iter().any(|p| p == "notifications"))
+        || (c.panel.is_some() && !manifest.contributes.iter().any(|p| p == "panel")) {
         return Err("Undeclared or excessive contributions".into());
     }
     let text = |s: &str| s.len() <= 4096 && !s.contains('\0');
@@ -81,6 +122,21 @@ pub fn parse_publish(line: &str, manifest: &Manifest) -> Result<Option<Contribut
         || !unique(c.sessions.iter().map(|s| s.id.as_str()).collect())
         || !unique(c.notifications.iter().map(|n| n.id.as_str()).collect()) {
         return Err("Invalid contribution fields".into());
+    }
+    if let Some(panel) = &c.panel {
+        let declared = |id: &str| manifest.actions.iter().any(|a| a.id == id);
+        if !text(&panel.headline) || panel.note.as_deref().is_some_and(|note| !text(note))
+            || panel.rows.iter().any(|r| {
+                !text(&r.id) || !text(&r.title) || r.detail.as_deref().is_some_and(|detail| !text(detail))
+                    || !percent(r.percent)
+                    || r.countdown_to.is_some_and(|deadline| deadline <= 0)
+                    || r.tone.as_deref().is_some_and(|tone| !["normal", "warning", "danger"].contains(&tone))
+            })
+            || !unique(panel.rows.iter().map(|r| r.id.as_str()).collect())
+            || !unique(panel.actions.iter().map(String::as_str).collect())
+            || panel.actions.iter().any(|id| !declared(id)) {
+            return Err("Invalid plugin panel".into());
+        }
     }
     Ok(Some(c))
 }

@@ -102,6 +102,51 @@ test("the clipboard page fits whole rows and stays short by default", () => {
   assert.equal(getClipboardExpandedHeight(4), 396);
 });
 
+test("a plugin's page is a page of its own, and disappears with the plugin", async () => {
+  const { isPageEnabled, isPluginPage, pluginPageId, pluginPagesFrom, resolveIslandPage } = await import("../../src/windows/island/features.ts");
+  const page = { page: "plugin:activity-progress", id: "activity-progress", name: { "zh-CN": "任务进度", en: "Task progress" }, icon: "gauge", rows: 2, actions: 1, attention: true };
+  const features = { todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true, pluginPages: [page] };
+  assert.equal(pluginPageId("activity-progress"), "plugin:activity-progress");
+  assert.equal(isPluginPage("plugin:activity-progress"), true);
+  assert.equal(isPluginPage("music"), false);
+  assert.equal(isPageEnabled(page.page, features), true);
+  assert.equal(resolveIslandPage(page.page, features), page.page);
+  // Switching the plugin off must land on a built-in page, not on a blank island.
+  assert.equal(resolveIslandPage(page.page, { ...features, pluginPages: [] }), "todo");
+  assert.equal(isPageEnabled(page.page, { ...features, pluginPages: [] }), false);
+});
+
+test("only enabled plugins that declare a page get one", async () => {
+  const { pluginPagesFrom } = await import("../../src/windows/island/features.ts");
+  const manifest = (id, panel, contributes = ["panel"]) => ({
+    id, name: { "zh-CN": id, en: id }, description: { "zh-CN": id, en: id }, version: "0.1.0", apiVersion: 1,
+    runtime: { command: `${id}.exe` }, permissions: contributes, contributes, settings: [], actions: [],
+    ...(panel ? { panel } : {}),
+  });
+  const installed = {
+    "activity-progress": { manifest: manifest("activity-progress", { icon: "gauge" }), enabled: true, directory: "", development: false, settings: {} },
+    "drink-water": { manifest: manifest("drink-water", { icon: "heart-pulse" }), enabled: true, directory: "", development: false, settings: {} },
+    off: { manifest: manifest("off", { icon: "timer" }), enabled: false, directory: "", development: false, settings: {} },
+    plain: { manifest: manifest("plain", undefined, ["notifications"]), enabled: true, directory: "", development: false, settings: {} },
+    "odd-icon": { manifest: manifest("odd-icon", { icon: "usb" }), enabled: true, directory: "", development: false, settings: {} },
+  };
+  const live = {
+    "activity-progress": {
+      status: "running", quota: [], sessions: [], notifications: [],
+      panel: { headline: "2 项任务", note: null, rows: [{ id: "a" }, { id: "b" }], actions: ["refresh"], attention: true },
+    },
+  };
+  const pages = pluginPagesFrom(installed, live);
+  assert.deepEqual(pages.map((info) => info.id), ["activity-progress", "drink-water", "odd-icon"]);
+  const progress = pages[0];
+  assert.equal(progress.page, "plugin:activity-progress");
+  assert.equal(progress.rows, 2, "the page fits the rows the plugin reports");
+  assert.equal(progress.actions, 1);
+  assert.equal(progress.attention, true, "a task needing attention puts a dot on the page's button");
+  assert.equal(pages[1].rows, 0, "a plugin that has not published yet still has a page");
+  assert.equal(pages[2].icon, "puzzle", "an unknown icon falls back to the host's");
+});
+
 test("a clipboard opened in its own window is not kept as the island's page", async () => {
   const { islandPageFor } = await import("../../src/windows/island/features.ts");
   const all = { todo: true, music: true, clipboard: true, shelf: true, qq: true, wechat: true, qqMail: true };

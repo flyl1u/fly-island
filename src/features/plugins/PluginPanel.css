@@ -1,0 +1,214 @@
+.plugin-panel {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-height: 0;
+  padding: 16px 0 18px;
+  color: var(--text-1);
+}
+
+/* The headline states the phase ("专注中", "2 个设备"); the note explains what the page is
+   watching. Settings sit in the corner: the panel's own actions are at the bottom. */
+.plugin-panel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.plugin-panel__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.plugin-panel__headline {
+  margin: 0;
+  color: var(--text-1);
+  font-size: calc(15px * var(--island-font-scale, 1));
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.plugin-panel__note {
+  margin: 3px 0 0;
+  color: var(--text-3);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.plugin-panel__settings {
+  flex: 0 0 auto;
+  margin-top: -2px;
+  color: var(--text-3);
+}
+
+.plugin-panel__settings:hover {
+  color: var(--text-1);
+}
+
+.plugin-panel__rows {
+  flex: 1 0 auto;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-color: rgba(var(--ink-rgb), 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.plugin-panel__row {
+  min-height: 58px;
+  padding: 8px 11px;
+  background: var(--color-white-a6, rgba(255, 255, 255, 0.06));
+  border-radius: var(--corner-lg);
+  corner-shape: var(--corner-shape);
+}
+
+.plugin-panel__line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.plugin-panel__title {
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugin-panel__value {
+  flex: 0 0 auto;
+  color: var(--text-2);
+  font-size: calc(13px * var(--island-font-scale, 1));
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.plugin-panel__value--countdown {
+  color: var(--color-accent);
+}
+
+.plugin-panel__detail {
+  margin-top: 1px;
+  color: var(--text-3);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.plugin-panel__meter {
+  height: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+  background: rgba(var(--ink-rgb), 0.16);
+  border-radius: var(--radius-pill);
+}
+
+.plugin-panel__meter span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+
+.plugin-panel__row--warning .plugin-panel__value {
+  color: var(--color-warning);
+}
+
+.plugin-panel__row--warning .plugin-panel__meter span {
+  background: var(--color-warning);
+}
+
+.plugin-panel__row--danger .plugin-panel__value {
+  color: var(--color-light-needs);
+}
+
+.plugin-panel__row--danger .plugin-panel__meter span {
+  background: var(--color-light-needs);
+}
+
+.plugin-panel__empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-3);
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  text-align: center;
+}
+
+.plugin-panel__actions {
+  flex-wrap: wrap;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+.plugin-panel__action {
+  height: 28px;
+  padding: 0 14px;
+  color: var(--text-2);
+  background: var(--color-white-a10, rgba(255, 255, 255, 0.1));
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: calc(12px * var(--island-font-scale, 1));
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.plugin-panel__action:hover:not(:disabled) {
+  color: var(--text-1);
+  filter: brightness(1.12);
+}
+
+.plugin-panel__action--primary {
+  color: var(--color-inverse-ink);
+  background: var(--color-accent);
+}
+
+.plugin-panel__action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.plugin-panel__action:focus-visible,
+.plugin-panel__settings:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.plugin-panel__error {
+  margin: 0;
+  color: var(--color-error-text);
+  font-size: calc(11px * var(--island-font-scale, 1));
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plugin-panel__meter span {
+    transition: none;
+  }
+}
