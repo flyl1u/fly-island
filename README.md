@@ -3,7 +3,7 @@
 
   <h1>fly-island</h1>
 
-  <p>Windows 上超轻量的灵动岛：微信、QQ、邮箱消息，多会话 AI Agent 与额度环，音乐播放器、待办、剪贴板、文件中转等常用功能，需要时展开，用完收起。</p>
+  <p>Windows灵动岛：微信、QQ、邮箱消息，多会话 AI Agent 与额度环，音乐播放器、待办、剪贴板、文件中转等常用功能，需要时展开，用完收起。</p>
 
   <p>
     <a href="https://island.flyliu.org/">在线预览</a>
@@ -29,10 +29,9 @@
     <img src="docs/assets/promo-preview.webp" alt="fly-island 宣传片：微信消息弹到岛上、在岛上批准 Claude Code 权限、查看 Claude 与 Codex 额度、文件中转、待办、音乐与翻译" width="860">
   </a>
 
-  <p><sub>点击画面打开在线预览，不用安装就能试</sub></p>
-
   <p>如果它帮你少切了几次窗口，欢迎点个 ⭐ <b>Star</b>，让更多人看到它。</p>
-</div>
+</div>  
+
 
 ## 这是什么
 
