@@ -204,7 +204,7 @@ export const zhCN: AgentText = {
       network: { short: "无法连接", detail: "连不上 DeepSeek，请检查网络或代理，稍后会自动重试。" },
       auth: { short: "凭据失效", detail: "DeepSeek 拒绝了 DSH 的凭据，请在 DSH 里重新登录或更换 API key。" },
       http: { short: "服务出错", detail: "DeepSeek 余额接口返回错误，稍后会自动重试。" },
-      format: { short: "无法识别", detail: "余额接口返回的格式无法识别，可能需要更新 FocuSD Island。" },
+      format: { short: "无法识别", detail: "余额接口返回的格式无法识别，可能需要更新 Fly Island。" },
     },
     workbuddy: {
       label: "WorkBuddy 积分",
@@ -337,7 +337,7 @@ export const en: AgentText = {
       network: { short: "Offline", detail: "Can't reach DeepSeek. Check your network or proxy; it retries shortly." },
       auth: { short: "Expired", detail: "DeepSeek rejected DSH's credential. Sign in again or replace the API key in DSH." },
       http: { short: "Server error", detail: "DeepSeek's balance endpoint returned an error; it retries shortly." },
-      format: { short: "Unrecognized", detail: "The balance response was not recognized; FocuSD Island may need an update." },
+      format: { short: "Unrecognized", detail: "The balance response was not recognized; Fly Island may need an update." },
     },
     workbuddy: {
       label: "WorkBuddy credits",

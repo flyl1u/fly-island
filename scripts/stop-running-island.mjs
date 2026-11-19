@@ -3,7 +3,7 @@
 // silently, and a running debug build locks the exe that cargo has to relink.
 import { execFileSync } from "node:child_process";
 
-// Repository builds are focusd-island.exe; the installed app is named after productName.
+// Builds are fly-island.exe; builds made before the crate was renamed are focusd-island.exe.
 const IMAGE_NAMES = ["focusd-island.exe", "fly-island.exe"];
 const EXIT_TIMEOUT_MS = 5_000;
 const POLL_INTERVAL_MS = 100;
