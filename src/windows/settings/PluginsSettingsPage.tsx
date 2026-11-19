@@ -9,6 +9,7 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { PluginSettingRow } from "../../features/plugins/PluginSettingRow";
 import { usePlugins, refreshPlugins } from "../../features/plugins/usePlugins";
 import { PLUGINS_ENABLED } from "../../features/plugins";
+import { PLUGIN_MARKET_ENABLED } from "../../features/releaseFlags.ts";
 import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin, PLUGIN_INDEX_UNAVAILABLE, runPluginAction, setPluginEnabled, setPluginSetting, uninstallPlugin, type PluginIndexEntry } from "../../features/plugins/api";
 import { useLocale, useTranslation } from "../../i18n";
 import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
@@ -19,7 +20,7 @@ import "./PluginsSettingsPage.css";
 /** The built-in plugin market comes first; the external data host below follows the release flag. */
 export function PluginsSettingsPage({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
   return <div className="plugins-page">
-    <PluginMarket settings={settings} onSettingsChange={onSettingsChange} />
+    {PLUGIN_MARKET_ENABLED && <PluginMarket settings={settings} onSettingsChange={onSettingsChange} />}
     {PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />}
   </div>;
 }

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { PLUGIN_MARKET_ENABLED } from "../../releaseFlags.ts";
 import type { NativePluginId } from "./catalog.ts";
-import { loadInstalledNativePlugins, NATIVE_PLUGINS_KEY, saveNativePluginInstalled, type InstalledNativePlugins } from "./storage.ts";
+import { loadInstalledNativePlugins, NATIVE_PLUGINS_KEY, normalizeInstalledNativePlugins, saveNativePluginInstalled, type InstalledNativePlugins } from "./storage.ts";
 
 // One snapshot per window, refreshed by `storage` events: the settings window installs, the
 // island (another window) picks it up; same-window writes announce themselves too.
@@ -45,9 +46,14 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** With the market off (releaseFlags.ts) none, whatever an earlier beta saved. */
+const NONE = normalizeInstalledNativePlugins([]);
+const noSubscription = () => () => {};
+const none = () => NONE;
+
 /** Which built-in plugins are installed, kept in step across windows. */
 export function useNativePlugins(): InstalledNativePlugins {
-  return useSyncExternalStore(subscribe, snapshot, snapshot);
+  return useSyncExternalStore(PLUGIN_MARKET_ENABLED ? subscribe : noSubscription, PLUGIN_MARKET_ENABLED ? snapshot : none, PLUGIN_MARKET_ENABLED ? snapshot : none);
 }
 
 export function setNativePluginInstalled(id: NativePluginId, installed: boolean) {
