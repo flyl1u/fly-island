@@ -13,12 +13,13 @@ import { configurePlugins, getPluginsIndex, installPlugin, loadDevelopmentPlugin
 import { useLocale, useTranslation } from "../../i18n";
 import { PluginDevelopmentPage } from "./PluginDevelopmentPage";
 import { PluginMarket } from "./PluginMarket";
+import type { IslandSettings } from "../../features/appearance/types";
 import "./PluginsSettingsPage.css";
 
 /** The built-in plugin market comes first; the external data host below follows the release flag. */
-export function PluginsSettingsPage() {
+export function PluginsSettingsPage({ settings, onSettingsChange }: { settings: IslandSettings; onSettingsChange: (settings: IslandSettings) => void }) {
   return <div className="plugins-page">
-    <PluginMarket />
+    <PluginMarket settings={settings} onSettingsChange={onSettingsChange} />
     {PLUGINS_ENABLED ? <EnabledPluginsSettingsPage /> : <PluginDevelopmentPage />}
   </div>;
 }

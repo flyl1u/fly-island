@@ -20,12 +20,28 @@ function onStorage(event: StorageEvent) {
   listeners.forEach((listener) => listener());
 }
 
+/** Reads the list again: a `storage` event from the settings window is the usual way, this the fallback. */
+function reread() {
+  onStorage(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
+}
+
 function subscribe(listener: () => void) {
-  if (listeners.size === 0) window.addEventListener("storage", onStorage);
+  if (listeners.size === 0) {
+    window.addEventListener("storage", onStorage);
+    // Also on reaching the window (the island takes the pointer only over its shape) or focusing it:
+    // a plugin installed in the settings window is then on the island by the time anyone looks,
+    // even if the storage event never arrived (2026-11-19, owner: installed plugins not on the island).
+    window.addEventListener("focus", reread);
+    document.documentElement.addEventListener("pointerenter", reread);
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+    if (listeners.size === 0) {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", reread);
+      document.documentElement.removeEventListener("pointerenter", reread);
+    }
   };
 }
 
@@ -36,5 +52,5 @@ export function useNativePlugins(): InstalledNativePlugins {
 
 export function setNativePluginInstalled(id: NativePluginId, installed: boolean) {
   saveNativePluginInstalled(id, installed);
-  onStorage(new StorageEvent("storage", { key: NATIVE_PLUGINS_KEY }));
+  reread();
 }
