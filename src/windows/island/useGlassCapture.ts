@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Channel, isTauri } from "@tauri-apps/api/core";
 import { setGlassCaptureRegion, startGlassCapture, stopGlassCapture } from "./api";
 import { backdropLuma, glassFramePlacement, parseGlassFrame } from "./glassFrame";
@@ -31,6 +31,9 @@ function writeVariable(element: HTMLElement, name: string, value: string) {
  * `paused` (tucked) stops the capture without giving up the channel.
  */
 export function useGlassCapture(enabled: boolean, paused: boolean, blur: number) {
+  // A frame already on its way when the island tucks is dropped, not shown misplaced.
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   useEffect(() => {
     const root = document.documentElement;
     if (!enabled || !isTauri()) {
@@ -42,7 +45,7 @@ export function useGlassCapture(enabled: boolean, paused: boolean, blur: number)
     let canvas: HTMLCanvasElement | null = null;
     let host: HTMLElement | null = null;
     channel.onmessage = (data) => {
-      if (didCancel) return;
+      if (didCancel || pausedRef.current) return;
       const frame = parseGlassFrame(data);
       if (!frame) {
         hideBackdrop(root);
@@ -75,15 +78,33 @@ export function useGlassCapture(enabled: boolean, paused: boolean, blur: number)
     };
   }, [enabled]);
 
+  // Sent again whenever the window changes size: the window grows for a taller page and when it
+  // opens from tucked, and a region kept from the smaller window left the rest of the pane with
+  // no backdrop, only its rim (2026-11-19, owner).
   useEffect(() => {
     if (!enabled || !isTauri()) return;
-    const ratio = window.devicePixelRatio || 1;
-    const region = paused ? null : {
-      left: 0,
-      top: 0,
-      width: Math.round(window.innerWidth * ratio),
-      height: Math.round(window.innerHeight * ratio),
+    let sent = "";
+    const send = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const region = paused ? null : {
+        left: 0,
+        top: 0,
+        width: Math.round(window.innerWidth * ratio),
+        height: Math.round(window.innerHeight * ratio),
+      };
+      const key = JSON.stringify(region);
+      if (key === sent) return;
+      sent = key;
+      void setGlassCaptureRegion(region, blur).catch(() => {});
     };
-    void setGlassCaptureRegion(region, blur).catch(() => {});
+    send();
+    // Tucked, the window moves off its place, so the last picture no longer lines up with what is
+    // behind it: the pane shows its tint until the first new frame (glass_capture.rs resends one).
+    if (paused) {
+      hideBackdrop(document.documentElement);
+      return;
+    }
+    window.addEventListener("resize", send);
+    return () => window.removeEventListener("resize", send);
   }, [enabled, paused, blur]);
 }
