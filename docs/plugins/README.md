@@ -1,61 +1,139 @@
 # 插件开发规范 / Plugin development guide
 
-**插件功能即将上线，欢迎先按本规范开发并提交 PR。** 当前正式版本保持 `release-features.json` 的 `plugins: false`：设置 → 插件仅提供开发计划和本规范链接，不提供安装、启用、本地加载等功能。本地源码调试须按[快速开始](quickstart.md)临时启用开发构建，不能仅打开开发者模式。
+> **插件功能即将上线。** 现在就可以按这份规范开发插件并提交 PR，flyl1u 审核、适配后统一上线。
+>
+> **Plugins are coming soon.** You can build one now and open a PR; flyl1u reviews, adapts and ships it. An English summary is at the end.
 
-**Plugins are coming soon. Start building with this guide and submit a PR.** Production keeps `plugins: false` in `release-features.json`. Settings → Plugins offers the development plan and this guide; installation, enabling and directory loading remain unavailable. Follow the [quickstart](quickstart.md) to enable a local development build; developer mode alone cannot override the release flag.
+---
 
-## 从这里开始 / Start here
+## 一、插件是什么
 
-| 文档 / Document | 内容 / Contents |
+**一句话：插件是对小岛原有功能的改造，装上之后就成了小岛自己的一部分。**
+
+举个例子：小岛的每日笔记现在只能写纯文字。有人做了一个「Markdown 笔记」插件，装上它之后，**原来的那个笔记**就能加粗、斜体、设置多级标题、写列表。小岛里不会多出一个新的笔记窗口，也不会多一个「插件笔记」入口；用户还是在原来的地方写笔记，只是笔记本身变强了。
+
+所以插件**不是**：
+
+- ❌ 一个外挂在小岛旁边的小程序，自己弹窗口、自己画界面；
+- ❌ 一段「追加」进来的代码，在小岛里另开一块区域，和原有功能各走各的。
+
+插件**是**：
+
+- ✅ 基于小岛的**完整源代码**，直接修改、增强某个已有功能（或在合适的位置加一个和小岛浑然一体的新能力）；
+- ✅ 装上后和原生功能没有区别：同样的位置、同样的样式、同样的操作习惯；
+- ✅ **默认不安装**，用户在「设置 → 插件」里按需下载。没装的用户，小岛和原来一模一样。
+
+## 二、整个流程
+
+```text
+Fork 仓库 → 本地改造小岛源码 → 在真实小岛里自测、录制演示 → 按模板提 PR
+        → flyl1u 审核 → flyl1u 做适配（改成可按需安装）→ 随版本上线，用户按需下载
+```
+
+因为插件改的是小岛本身，**不能直接合并上线**：flyl1u 会在合并时把你的改动适配成「可选安装」的形式，保证没装插件的用户不受影响。所以你只需要专心把功能做好、把演示和信息交代清楚。
+
+## 三、怎么开发
+
+### 1. 准备环境
+
+1. Fork [flyl1u/fly-island](https://github.com/flyl1u/fly-island)，克隆到本地。
+2. 安装 Node.js、pnpm、Rust（版本见仓库里的 `rust-toolchain.toml`）和 Tauri 2 的 Windows 依赖（WebView2、MSVC 生成工具）。
+3. 在仓库根目录运行：
+
+   ```powershell
+   pnpm install
+   pnpm tauri dev
+   ```
+
+   能看到小岛跑起来，就可以开始改了。
+
+### 2. 先读这几份文件
+
+| 文件 | 为什么要读 |
 | --- | --- |
-| [快速开始 / Quickstart](quickstart.md) | 构建示例、协议探测、目录加载、本地索引、调试 / Build the example, probe RPC, load a directory, test a local index and debug |
-| [开发规范 / Specification](specification.md) | 目录、manifest 全字段、兼容性、权限、安全、资源与分发 / Layout, every manifest field, compatibility, permissions, security, resources and distribution |
-| [API v1](api.md) | JSON-RPC、全部扩展点与数据结构、SDK / JSON-RPC, all extension points and data structures, SDK |
-| [设计融入指南 / Design integration](design.md) | 原生组件、文案、图标、额度、会话、消息与免打扰 / Host components, copy, icons, quota, sessions, messages and quiet behavior |
-| [提交与审核 / Contribution and review](contributing.md) | 必填材料、自测、录屏、审核标准与发布 / Required evidence, tests, recordings, review criteria and publishing |
-| [宿主架构 / Host architecture](../architecture/plugins.md) | 宿主内部模块与职责 / Host internals and responsibilities |
+| [AGENTS.md](../../AGENTS.md) | 仓库总规则：目录结构、文件行数上限、不能改的对外契约、验证命令 |
+| [src/AGENTS.md](../../src/AGENTS.md) | 前端规则：分层、文案必须中英双语、样式和组件怎么写 |
+| [src-tauri/AGENTS.md](../../src-tauri/AGENTS.md) | 如果要改 Rust / Windows 原生部分 |
+| [DESIGN.md](../../DESIGN.md) 和 `docs/design/` | 小岛的界面约定：配色、圆角、间距、动效，插件必须遵守 |
 
-开发 → 在真实小岛中调试和录屏 → [按模板提 PR](../../.github/PULL_REQUEST_TEMPLATE/plugin.md) → **flyl1u 审核、合并并统一发布**。PR 必须提供嵌入小岛后实际运行的录屏演示链接、作者、联系方式、GitHub 链接、功能、权限、联网域名与自测步骤。
+### 3. 改造时的要求
 
-Develop → test and record the plugin inside the real island → [submit a PR using the template](../../.github/PULL_REQUEST_TEMPLATE/plugin.md) → **flyl1u reviews, merges and publishes**. The PR must include a recording link showing the plugin running inside the island, author, contact information, GitHub link, functionality, permissions, network domains and self-test steps.
+- **改原有功能，不另起炉灶。** 要增强笔记，就改 `src/features/todos/` 里的笔记；要增强剪贴板，就改 `src/features/clipboard/`。复用现有组件和样式，不要再造一套。
+- **把改动收拢、做成能关掉的。** 尽量把新增逻辑放在独立的文件或目录里，在原功能里只留少量接入点，并且在 PR 里写清楚「哪几处是接入点」。这样 flyl1u 才能把它改成可选安装，没装时一行都不生效。
+- **不破坏没装插件的用户。** 已保存的数据（`localStorage` 里的 `focusd-island-*`、应用数据目录里的文件）、Tauri 命令名、窗口名都不能改；需要新存数据就用新的 key，并能兼容读旧数据。完整清单见 [contracts.md](../architecture/contracts.md)。
+- **看起来就是小岛的一部分。** 用小岛已有的颜色变量和组件，深色 / 浅色、液态玻璃 / 磨砂玻璃都要看一遍；窄窗口下文字和按钮不能溢出。
+- **中英双语。** 所有用户能看到的字（包括按钮的悬停提示、读屏标签）都要有中文和英文。
+- **安全与隐私。** 不偷偷联网、不收集数据、不读和功能无关的文件；如果需要联网或读文件，在 PR 里写清楚连哪些域名、读写哪些路径、为什么。不提交任何账号、密钥或私人数据。
+- **性能。** 小岛常驻后台，不要加高频轮询或常驻的重计算；展开、收起不能变卡。
 
-## 插件的边界 / What a plugin is
+### 4. 提交前自测
 
-插件是按需安装的 Windows 独立可执行进程，通过 stdin/stdout JSON-RPC 提供额度、会话、消息和用户动作。主程序不编译链接插件 crate，也不在安装包中捆绑这些插件。显示界面由小岛的 React 原生组件统一呈现；这里的「原生」指宿主现有组件，不是插件创建的系统窗口。
+在仓库根目录运行，全部通过再提交：
 
-A plugin is an optional Windows executable communicating over stdin/stdout JSON-RPC. It supplies quota, sessions, messages and user actions. Plugin crates are neither linked into the host nor bundled with its installer. “Native” presentation means the island's existing React components, not plugin-owned system windows.
+```powershell
+pnpm check
+pnpm build
+pnpm test:regression
+```
 
-- 可以 / Supported: 显示剩余额度或余额、接入本地 Agent 会话、提供消息摘要、在用户点击时打开对应会话或启动已声明的登录动作。/ Show remaining quota or balance, local agent sessions and message summaries; open a session or start a declared sign-in action on a user click.
-- 不可以 / Unsupported: HTML、CSS、JS 注入、Webview、自定义面板、任意宿主方法调用、在岛上审批工具执行或读取所有内置数据；v1 仅有文档列出的三个扩展点。/ No HTML, CSS, JS injection, Webview, custom panels, arbitrary host calls, tool-approval integration or access to all built-in data; v1 has only the three documented contribution types.
-- 插件以当前用户权限运行，权限是审核声明，**不是操作系统沙箱或网络防火墙**。新增能力先讨论 API，不在插件里绕过宿主。/ Plugins run as the current user. Permissions are review declarations, **not an OS sandbox or network firewall**. Propose an API change for new capabilities instead of bypassing the host.
+改了 Rust 部分还要运行：
 
-启用插件的开发构建中：新安装默认停用；额度进入 Agent 顶部，会话进入原会话列表，消息进入插件分页与折叠预览。停用结束进程并清空内存快照；卸载清除注册、设置及 manifest 声明的 secret 凭据。开发目录卸载只解除注册，不删源码。正式功能关闭时不启动插件，不读取或覆盖此前保存的插件配置。
+```powershell
+cargo test --manifest-path src-tauri/Cargo.toml
+```
 
-In a plugin-enabled development build, new installs start disabled. Quota appears above agent sessions, sessions join the existing list, and messages use the plugin tab and collapsed preview. Disabling stops the process and clears its live snapshot. Uninstalling removes registration, settings and manifest-declared secret credentials. Unregistering a development directory preserves its source. A production build with plugins disabled does not start plugins or read/overwrite their saved configuration.
+然后在真实小岛里（`pnpm tauri dev`）把功能完整用一遍，**边用边录屏**。
 
-## 仓库内参考实现 / Reference implementations
+## 四、提交 PR 需要什么
 
-这些源码位于 `plugins/<id>/`，供开发与审核参考；下表不表示当前正式版已开放下载。
+用[插件 PR 模板](../../.github/PULL_REQUEST_TEMPLATE/plugin.md)提交，下面几项**必须填**，缺了不会审核：
 
-Sources live in `plugins/<id>/` for development and review. This table does not imply downloads are enabled in the current production release.
+| 必填项 | 说明 |
+| --- | --- |
+| **使用演示录屏链接** | 在真实小岛里实际使用插件的录屏（B 站、YouTube、网盘等公开链接都行）。要能看到：改造前是什么样、改造后怎么用、主要功能逐一演示。截图或单独的程序演示不能代替。录屏里遮住私人消息和账号信息。 |
+| **作者** | 署名和 GitHub 用户名，多人合作逐一列出。 |
+| **联系方式** | 一个能联系到你的公开渠道（邮箱、微信、QQ 群等），审核有问题时用。 |
+| **GitHub 链接** | 你的 GitHub 主页，以及插件代码所在的仓库或分支。 |
+| **插件简介** | 名字、一句话介绍、改造了小岛的哪个功能、用户装上后有什么变化。会用在插件列表里，写得让普通用户看得懂。 |
+| **改动说明** | 改了哪些文件；哪几处是接入原功能的地方；有没有新增存储、命令、联网、读写文件。 |
+| **自测结果** | 上面几条命令的结果，以及你手动测过哪些场景（深浅色、两种玻璃、窄窗口、中英文、长内容、空内容）。 |
 
-| 插件 / Plugin | 用途 / Purpose | 固定联网域名 / Fixed network domains |
-| --- | --- | --- |
-| `example-hello` | 三个扩展点的协议演示，含模拟数据 / Protocol demo with synthetic data for all three extensions | 无 / None |
-| `kimi` | Kimi Code 额度与本地会话 / Quota and local sessions | `api.kimi.com` |
-| `grok-bot` | Grok Bot 周额度 / Weekly quota | `api2.cursor.sh`（该客户端使用的额度接口 / endpoint used by this client） |
-| `gemini` | Code Assist 额度、CLI 会话、OAuth / Quota, CLI sessions and OAuth | `oauth2.googleapis.com`, `cloudcode-pa.googleapis.com` |
-| `zcode` | 编程套餐与体验额度 / Coding-plan and trial quota | `api.z.ai`, `bigmodel.cn`, `zcode.z.ai` |
-| `doubao` | 会员额度、本地凭据或独立登录 / Membership quota, local credentials or private sign-in | `www.doubao.com`；用户登录可能跳转认证方 / user sign-in may navigate to identity providers |
-| `hermes` | BYOK Agent 本地会话 / Local sessions for a BYOK agent | 无 / None |
-| `office-im` | 企业微信、飞书、钉钉闪动提醒与前台唤起 / Enterprise IM attention and window activation | 无 / None |
+可选：截图、已知问题、后续计划。
 
-豆包登录只保存 `doubao.com` 及其子域 Cookie 到 Windows 凭据管理器，不收集认证方 Cookie。Gemini 使用 OAuth 凭据，不接管 Chrome 调试端口。这些适配不是要求每个插件都读取凭据；只申请实际需要的权限。
+## 五、审核和上线
 
-Doubao sign-in stores only `doubao.com` and subdomain cookies in Windows Credential Manager, never identity-provider cookies. Gemini uses OAuth credentials without taking over Chrome debugging ports. These adapters do not require every plugin to read credentials; declare only what yours needs.
+1. **flyl1u 审核**：看功能是否值得做、是否和小岛浑然一体、有没有安全和性能问题。可能会请你修改。
+2. **flyl1u 适配**：把改动整理成「可选安装」的插件形式。这一步由 flyl1u 完成，你不需要关心安装机制怎么实现。
+3. **随版本上线**：插件默认不安装，出现在「设置 → 插件」的列表里，带上你的名字、简介和演示，用户按需下载。
+4. 提交不保证一定合并或立刻上线；flyl1u 会在 PR 里说明原因。
 
-## 规范依据 / Source of truth
+## 六、常见问题
 
-本文对应仓库当前 API v1；代码强制限制与贡献审核要求分别标明。核对依据：[manifest](../../src-tauri/src/plugin_host/manifest.rs)、[protocol](../../src-tauri/src/plugin_host/protocol.rs)、[进程 / process](../../src-tauri/src/plugin_host/process.rs)、[服务 / service](../../src-tauri/src/plugin_host/service.rs)、[SDK](../../plugins/sdk/src/lib.rs) 与[前端适配 / frontend adapters](../../src/features/plugins/)。发现不一致请附最小复现，更新规范时同时核对实现。
+**Q：我想做一个全新的功能，不是改已有的，可以吗？**
+可以，但它要像小岛原生的功能一样放在合适的位置（比如岛上的一个新页面、设置里的一组选项），并遵守同样的设计规范。动手前建议先开一个 Issue 聊聊方向，免得白做。
 
-This guide describes the repository's current API v1 and distinguishes enforced limits from review requirements. The linked implementation is the source of truth. Report discrepancies with a minimal reproduction, and check implementation whenever updating the specification.
+**Q：插件能不能自己弹窗口、用自己的界面风格？**
+不能。插件就是小岛的一部分，界面必须用小岛自己的组件和样式。
+
+**Q：需要我自己实现「下载 / 安装插件」吗？**
+不需要。你只管把功能做好，可选安装的适配由 flyl1u 完成。
+
+**Q：仓库里 `plugins/` 目录和 `api.md`、`specification.md` 是什么？**
+那是小岛内部已有的一套「外部数据接入」机制（把其他 AI 工具的额度、会话、消息接进 Agent 页）的技术说明和示例。它不是「插件」的定义。如果你的插件正好需要接入外部数据源，可以参考；否则不用看。
+
+---
+
+## English summary
+
+**A plugin is a change to the island itself.** It builds on the island's full source code and upgrades an existing feature, so that once installed it simply *is* part of the island. Example: a "Markdown notes" plugin makes the island's existing daily note support bold, italics and headings. It does not add a second notes window or a separate panel.
+
+- Not a separate app with its own windows or UI, and not code bolted on beside the original feature.
+- **Not installed by default.** Users download it on demand in Settings → Plugins; everyone else gets the island unchanged.
+
+**Flow:** fork → modify the island's source → test and record a demo inside the real island → open a PR with the [plugin template](../../.github/PULL_REQUEST_TEMPLATE/plugin.md) → flyl1u reviews and adapts it into an optional install → it ships with a release.
+
+**Rules:** follow [AGENTS.md](../../AGENTS.md), [src/AGENTS.md](../../src/AGENTS.md) and [DESIGN.md](../../DESIGN.md). Change the existing feature rather than building a parallel one, and keep new logic in its own files with a few clearly listed hook points. Never change saved data keys, Tauri command names or window labels ([contracts.md](../architecture/contracts.md)). Use the island's own components and styles, and provide every visible string in Chinese and English. Declare any network domains or file access, and add no heavy polling. Run `pnpm check`, `pnpm build`, `pnpm test:regression` (and `cargo test` for Rust changes) before submitting.
+
+**Required in the PR:** a public link to a demo recording of the plugin in use inside the real island, the author(s), a public contact, your GitHub profile and the source repository/branch, a plain-language description for the plugin list, a list of changed files and hook points, and your self-test results. flyl1u handles the optional-install packaging; submission does not guarantee a merge or immediate release.
+
+The `plugins/` directory and the `api.md` / `specification.md` documents describe the island's existing external data adapter mechanism (quota, sessions and messages from other AI tools). They are a reference for plugins that need external data sources, not the definition of a plugin.

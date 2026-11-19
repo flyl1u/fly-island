@@ -1,5 +1,9 @@
 # 融入小岛的设计规范 / Island design integration
 
+> **先看[插件开发规范](README.md)。** 本文是小岛内部已有的「外部数据接入」机制（把其他 AI 工具的额度、会话、消息接进 Agent 页，外部进程 + JSON-RPC）的技术说明，**不是插件的定义**。插件是对小岛源码的改造，只有当你的插件需要接入外部数据源时才需要参考本文。
+>
+> **Read the [plugin guide](README.md) first.** This page documents the island's existing external data adapter mechanism (an external process over JSON-RPC that feeds quota, sessions and messages into the Agent page). It is **not the definition of a plugin**: plugins change the island's source. Refer to it only if your plugin needs an external data source.
+
 [总览 / Overview](README.md) · [API](api.md) · [提交 / Contributing](contributing.md)
 
 插件是小岛的一部分，用户不应学习另一套界面。数据与用户动作由插件提供，布局、颜色、状态、控件、焦点和动效由宿主组件负责。以下是贡献审核标准；不能用独立网页、弹窗、置顶窗口或自绘通知绕过现有扩展点。用户点击的必要登录浏览器是已声明流程，不是常驻插件 UI。

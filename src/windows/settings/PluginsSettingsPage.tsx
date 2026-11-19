@@ -80,7 +80,7 @@ function EnabledPluginsSettingsPage() {
         <SettingsRow title={t.index} control={<SettingsLinkButton disabled={busy} onClick={() => { void perform(async () => { await configurePlugins(true, index ?? registry.indexUrl); setIndex(null); }); }}>{t.save}</SettingsLinkButton>}><SettingsInput aria-label={t.index} value={index ?? registry.indexUrl} onChange={(e) => setIndex(e.target.value)} /></SettingsRow>
         <SettingsRow title={t.directory} control={<SettingsLinkButton disabled={busy || !directory} onClick={() => { void perform(() => loadDevelopmentPlugin(directory)); }}>{t.load}</SettingsLinkButton>}><SettingsInput aria-label={t.directory} value={directory} onChange={(e) => setDirectory(e.target.value)} /></SettingsRow>
       </>}
-      <SettingsRow title={t.develop} control={<SettingsLinkButton ariaLabel={t.develop} onClick={() => { void openUrl("https://github.com/flyl1u/fly-island/blob/main/docs/plugins/quickstart.md").catch(console.error); }}><ArrowUpRight size={16} aria-hidden="true" /></SettingsLinkButton>} />
+      <SettingsRow title={t.develop} control={<SettingsLinkButton ariaLabel={t.develop} onClick={() => { void openUrl("https://github.com/flyl1u/fly-island/blob/main/docs/plugins/README.md").catch(console.error); }}><ArrowUpRight size={16} aria-hidden="true" /></SettingsLinkButton>} />
     </SettingsGroup></details>
   </section>;
 }
