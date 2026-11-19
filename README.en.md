@@ -48,65 +48,114 @@ While working or studying I keep a to-do list in one app, music in another to bl
 
 The iPhone's Dynamic Island gathers notifications, timers and media controls into one small place. I wanted the same for these high-frequency tasks on Windows, in something light enough to keep open all day. That became fly-island.
 
-## Features
+> The screenshots below show the Chinese interface. The app also has a full English interface.
 
-### 💬 Messages
-- **WeChat and QQ**: new messages pop up on the island with source, contact, time and content. With adaptive previews on, long messages grow the island so you can read them in place, and the text can be selected and copied. Muted WeChat chats only alert you when someone @mentions you.
-- **Mail**: multiple IMAP accounts (QQ, 163, 126 and more). Read mail right on the island and select or copy its text.
+## Most of the time, it's tiny
 
-### 🤖 AI agents
-- Claude Code / Claude desktop, Codex and DeepSeek Harness sessions show on the island live, including background tasks.
-- Allow or deny an agent's command or file edit right on the island. A soft chime plays when it finishes or needs an answer, and clicking a session jumps to its window.
-- Claude / Codex quota rings and the DSH balance ring. See [AI agent status](docs/agent-status-hooks.md) and [DSH integration](docs/deepseek-harness.md).
+When you're not using it, it's just a small pill at the top of the screen showing the current lyric, unread messages and how many AI agents are working.
 
-### 🎵 Music and lyrics
-- Control playback through Windows media sessions, with cover art, waveform, progress and synced lyrics. The current line also shows on the collapsed island.
-- Rank or archive players. NetEase Cloud Music can get precise progress with a one-click plugin bundled in the installer.
+<p align="center"><img src="docs/assets/screenshots/collapsed.webp" alt="The collapsed island showing a lyric, unread count and agent count" width="560"><br><sub>Liquid Glass · collapsed</sub></p>
 
-### 📋 Productivity
-- **To-dos, notes and calendar**: today's tasks, drag to reorder and schedule tasks for later days. Daily notes, history and calendar views, optional timers with end-of-timer reminders, and saving as Markdown.
-- **Clipboard history**: text, images and files. Filter by type, search, favourite, add notes and copy back in one click. Open it on the island or in its own window.
-- **File shelf**: drop files on the island, switch windows, then drag them out, copy or open them. Only paths are kept, never copies. See [file shelf](docs/file-shelf.md).
-- **Quick translation**: a global shortcut with automatic Chinese / English direction. Key-free Google Translate and MyMemory work out of the box, and DeepSeek, Qwen, Kimi, OpenAI and other LLM APIs are supported.
+Hover over it and it expands into the views below.
 
-### 🎨 Look and behaviour
-- Classic, Liquid glass and Frosted glass materials; the glass blurs whatever is behind the island, live. Dark, light or follow the system.
-- Size, corners, colours, font and what the collapsed island shows are all adjustable, and a whole look can be saved as a preset.
-- Tuck to the edge when idle, game mode (stays out of full-screen games), position lock, launch at startup, and a Chinese or English interface.
-- **Auto-update**: checks and downloads in the background and installs while the island is idle. You can also check manually in Settings → About.
+## WeChat, QQ and mail without switching windows
 
-## Getting started
+New messages pop up on the island: who sent it and what they said, at a glance. Long messages make the island grow so you can read them in place. Muted group chats only alert you when someone @mentions you.
 
-1. Download the installer (`fly-island_<version>_x64-setup.exe`) from [Releases](https://github.com/flyl1u/fly-island/releases/latest). The island appears at the top of the screen; hover to expand it.
-2. Turn on what you need, all in Settings:
+<p align="center"><img src="docs/assets/screenshots/messages.webp" alt="WeChat messages on the island" width="620"><br><sub>Liquid Glass · dark</sub></p>
+
+## Stop babysitting your AI coding tools
+
+Every Claude Code and Codex session shows up on the island: which one is running, which one is done, which one is waiting for you. Your remaining Claude / Codex quota is there too.
+
+<p align="center"><img src="docs/assets/screenshots/agents.webp" alt="AI agent sessions and quota rings on the island" width="620"><br><sub>Classic · dark</sub></p>
+
+When an agent wants to run a command or edit a file, click Allow or Deny right on the island.
+
+<p align="center"><img src="docs/assets/screenshots/approval.webp" alt="Approving a Claude Code command on the island" width="620"><br><sub>Frosted Glass · dark</sub></p>
+
+## Music and lyrics
+
+Control whatever player you're using: artwork, progress, skip, plus synced lyrics. The current line stays visible even when the island is collapsed.
+
+<p align="center"><img src="docs/assets/screenshots/music.webp" alt="Music player and lyrics on the island" width="620"><br><sub>Frosted Glass · dark</sub></p>
+
+## Today's to-dos
+
+Jot down a task, tick it off when done. There's also a daily note, a calendar and a task timer.
+
+<p align="center"><img src="docs/assets/screenshots/todo.webp" alt="To-do list on the island" width="620"><br><sub>Classic · light</sub></p>
+
+## Everything you copied, still there
+
+Text, images and files you copy are kept in a history you can search and star. Click one to copy it again. Shortcut: `Ctrl+Shift+V`.
+
+<p align="center"><img src="docs/assets/screenshots/clipboard.webp" alt="Clipboard history on the island" width="620"><br><sub>Liquid Glass · light</sub></p>
+
+## A shelf for dragging files
+
+Drop files on the island, switch windows, then drag them out where you need them. Handy for moving files between two apps.
+
+<p align="center"><img src="docs/assets/screenshots/shelf.webp" alt="File shelf on the island" width="620"><br><sub>Liquid Glass · dark</sub></p>
+
+## Quick translation
+
+Press `Ctrl+Shift+F` to translate between Chinese and English automatically. Works out of the box, no sign-up or API key needed.
+
+<p align="center"><img src="docs/assets/screenshots/translation.webp" alt="Quick translation on the island" width="620"><br><sub>Frosted Glass · light</sub></p>
+
+## Make it yours
+
+Three looks: Classic, Liquid Glass and Frosted Glass (the glass shows what's behind it). Size, color, corners and font are all adjustable, in dark or light mode.
+
+<p align="center"><img src="docs/assets/screenshots/materials-en.webp" alt="Classic, Liquid Glass and Frosted Glass looks" width="820"></p>
+
+## Barely there
+
+Leave it running all day: in Task Manager, fly-island uses only about 0.3% of memory.
+
+<p align="center"><img src="docs/assets/screenshots/memory.webp" alt="fly-island using about 0.3% memory in Task Manager" width="620"></p>
+
+## Install
+
+1. Download `fly-island_<version>_x64-setup.exe` from [Releases](https://github.com/flyl1u/fly-island/releases/latest) and run it.
+2. The island appears at the top of your screen. Hover over it to start.
+3. Turn on the features you want in Settings. New versions install automatically.
+
+<details>
+<summary><b>How do I turn on each feature?</b></summary>
 
 | Feature | How |
 | --- | --- |
-| QQ alerts | Needs Windows notification access, with QQ signed in and system notifications on. See [QQ notifications](docs/qq-notification-compatibility.md) |
-| WeChat alerts | Keep desktop WeChat signed in so it can flash the taskbar. See [WeChat reminders](docs/wechat-reminder-compatibility.md) |
-| Mail | Enable IMAP in your mail web settings, create an app password and enter it in Settings → Mail (not your sign-in password). See [mail](docs/mail.md) |
-| AI status light | Install / repair hooks in Settings → Agents, then restart Codex or the terminal running Claude Code |
-| Quick translation | `Ctrl+Shift+F` by default. Key-free services work out of the box; LLM services need an API key in Settings → Translation |
+| WeChat alerts | Just stay signed in to WeChat for PC. [Details](docs/wechat-reminder-compatibility.md) |
+| QQ alerts | Stay signed in to QQ and enable system notifications in QQ. [Details](docs/qq-notification-compatibility.md) |
+| Mail | Enable IMAP in your mailbox's web settings, get an app password, and enter it in Settings → Mail. [Details](docs/mail.md) |
+| AI agents | Click Install in Settings → Agent, then restart your terminal. [Details](docs/agent-status-hooks.md) |
+| Translation | Works by default. To use DeepSeek, Qwen, OpenAI and other models, add an API key in Settings → Translation |
 
-### Privacy
+</details>
 
-To-dos, clipboard history and settings stay on your computer. QQ notifications and WeChat summaries live only in memory for the current run. Mail syncs headers in the background and reads bodies into memory on demand, without changing read status. Keys and app passwords are stored in Windows Credential Manager.
+<details>
+<summary><b>Is my data safe?</b></summary>
+
+To-dos, clipboard history and settings stay on your own computer. WeChat and QQ messages are only kept in memory and are gone when you quit. Mail bodies are only fetched when you open them, and never marked as read. Passwords and keys are stored in Windows Credential Manager.
+
+</details>
 
 ## Community
 
-Join the **fly-island user group** to share feedback and ideas. Scan the QR code below with WeChat, or open it from Settings → About in the app.
+Scan the QR code with WeChat to join the user group (mostly Chinese-speaking). You can also find it in the app under Settings → About. English feedback is welcome in [Issues](https://github.com/flyl1u/fly-island/issues).
 
-<p align="center">
-  <img src="docs/assets/wechat-community.jpg" alt="fly-island WeChat user group QR code" width="360">
-</p>
+<p align="center"><img src="docs/assets/wechat-community.jpg" alt="fly-island WeChat community QR code" width="280"></p>
 
-The QR code expires (currently marked **valid until 23 November**). If it has expired, please let us know in an [issue](https://github.com/flyl1u/fly-island/issues).
+<p align="center"><sub>The QR code is valid until November 23. If it has expired, please let us know in an <a href="https://github.com/flyl1u/fly-island/issues">Issue</a>.</sub></p>
 
 ## Contributing
 
-### Run from source
+<details>
+<summary>Run from source, build plugins</summary>
 
-Requires Windows 10/11, Node.js, pnpm, Rust, Visual Studio C++ Build Tools and the WebView2 Runtime.
+You need Windows 10/11, Node.js, pnpm, Rust, Visual Studio C++ Build Tools and the WebView2 Runtime.
 
 ```powershell
 git clone https://github.com/flyl1u/fly-island.git
@@ -115,25 +164,21 @@ pnpm install
 pnpm tauri dev
 ```
 
-Run `pnpm check` before submitting, and build installers with `pnpm tauri build` (output in `src-tauri/target/release/bundle/`). Repository rules are in [AGENTS.md](AGENTS.md); in-app updates and releasing are in [docs/updater.md](docs/updater.md).
+Run `pnpm check` before committing. Repository rules are in [AGENTS.md](AGENTS.md), and the release process is in [docs/updater.md](docs/updater.md).
 
-### Build a plugin
+To build a plugin for the island, follow the [plugin guide](docs/plugins/README.md) and open a PR (with a demo recording, author and contact info). It goes live after review.
 
-A plugin is a feature built from the island's source. It can upgrade an existing feature (for example, Markdown in the daily note) or add a brand-new one, and it becomes part of the island once installed. Plugins are optional and downloaded on demand. They are coming soon: start now with the [plugin guide](docs/plugins/README.md) and open a PR with a demo recording, author, contact and GitHub link. flyl1u reviews it, adapts it and ships it.
+Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture proposed in [PR #36](https://github.com/flyl1u/fly-island/pull/36). See the [refactor notes](docs/architecture/refactor-plan.md).
 
-## Acknowledgements
-
-Thanks to [@TixXin](https://github.com/TixXin) for the modular architecture proposed and implemented in [PR #36](https://github.com/flyl1u/fly-island/pull/36). The local refactor adapted and reused parts of it, as recorded in the [refactor notes](docs/architecture/refactor-plan.md).
+</details>
 
 ## License
 
-Licensed under [GPL-3.0](LICENSE): you may use, modify and redistribute it, and distributed modified versions must also be GPL-3.0 with source code. Versions 3.0.8 and earlier were released under MIT and remain available under MIT.
+[GPL-3.0](LICENSE): free to use, modify and share; if you distribute a modified version, it must be open source too. Versions 3.0.8 and earlier were released under MIT. Third-party assets follow their own licenses, see the [font notes](src/assets/fonts/README.md) and [NetEase Cloud Music plugin notes](src-tauri/resources/media-plugins/README.md).
 
-Copyright (C) 2026 flyl1u and contributors. Third-party dependencies and bundled assets keep their own licenses. See the [font notes](src/assets/fonts/README.md). The bundled NetEase progress plugins BetterNCM and InfLink-rs are GPL-3.0; see the [plugin notes](src-tauri/resources/media-plugins/README.md).
+Copyright (C) 2026 flyl1u and contributors
 
 ## Star History
-
-If fly-island is useful to you, a [Star](https://github.com/flyl1u/fly-island/stargazers) is the best encouragement.
 
 <a href="https://www.star-history.com/?repos=flyl1u%2Ffly-island&type=date&legend=top-left">
   <picture>
