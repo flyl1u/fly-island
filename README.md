@@ -3,7 +3,7 @@
 
   <h1>fly-island</h1>
 
-  <p>Windows 上超轻量的灵动岛：微信、QQ、邮箱消息，多会话 AI Agent 与额度环，音乐播放器、待办、剪贴板、文件中转等常用功能，需要时展开，用完收起。</p>
+  <p>Windows灵动岛：微信、QQ、邮箱消息，多会话 AI Agent 与额度环，音乐播放器、待办、剪贴板、文件中转等常用功能，需要时展开，用完收起。</p>
 
   <p>
     <a href="https://island.flyliu.org/">在线预览</a>
