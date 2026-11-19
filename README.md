@@ -49,9 +49,9 @@ iPhone 的灵动岛把通知、计时、媒体控制收在一个小岛上，缩�
 
 ## 平时它就这么小
 
-不用的时候，它只是屏幕顶部一条小胶囊：显示正在播的歌词、未读消息数、正在干活的 AI Agent。
+不用的时候，它只是屏幕顶部一条小胶囊：显示正在播的歌、未读消息数、正在干活的 AI Agent。
 
-<p align="center"><img src="docs/assets/screenshots/collapsed.webp" alt="收起时的小岛：显示歌词、未读数和 Agent 数量" width="560"><br><sub>液态玻璃 · 收起</sub></p>
+<p align="center"><img src="docs/assets/screenshots/collapsed.webp" alt="收起时的小岛：显示正在播的歌、未读数和 Agent 数量" width="560"></p>
 
 鼠标移上去，它就展开成下面这些样子。
 
@@ -59,53 +59,53 @@ iPhone 的灵动岛把通知、计时、媒体控制收在一个小岛上，缩�
 
 新消息直接弹到岛上，谁发的、说了什么，一眼看完。长消息会把岛撑大，在岛上就能读完。设了免打扰的群，只在有人 @你 时才提醒。
 
-<p align="center"><img src="docs/assets/screenshots/messages.webp" alt="岛上的微信消息列表" width="620"><br><sub>液态玻璃 · 深色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/messages.webp" alt="岛上的微信消息列表" width="620"></p>
 
 ## AI 写代码时，不用一直盯着终端
 
 Claude Code、Codex 等 AI 工具的每个会话都会显示在岛上：哪个在跑、哪个做完了、哪个在等你回话。还能看到 Claude / Codex 的剩余额度。
 
-<p align="center"><img src="docs/assets/screenshots/agents.webp" alt="岛上的 AI Agent 会话列表和额度环" width="620"><br><sub>经典 · 深色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/agents.webp" alt="岛上的 AI Agent 会话列表和额度环" width="620"></p>
 
 AI 要执行命令、改文件时，直接在岛上点「允许」或「拒绝」。
 
-<p align="center"><img src="docs/assets/screenshots/approval.webp" alt="在岛上批准 Claude Code 的命令" width="620"><br><sub>磨砂玻璃 · 深色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/approval.webp" alt="在岛上批准 Claude Code 的命令" width="620"></p>
 
 ## 听歌看歌词
 
 正在用的播放器都能在岛上控制：封面、进度、切歌，还有同步歌词。收起时也会显示当前那一句。
 
-<p align="center"><img src="docs/assets/screenshots/music.webp" alt="岛上的音乐播放和歌词" width="620"><br><sub>磨砂玻璃 · 深色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/music.webp" alt="岛上的音乐播放和歌词" width="620"></p>
 
 ## 今天要做的事
 
 随手记一条待办，做完打个勾。也能写每日笔记、看日历、给任务计时。
 
-<p align="center"><img src="docs/assets/screenshots/todo.webp" alt="岛上的待办列表" width="620"><br><sub>经典 · 浅色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/todo.webp" alt="岛上的待办列表" width="620"></p>
 
 ## 复制过的东西都找得回来
 
 复制过的文字、图片、文件都会记下来，可以搜索、收藏，点一下就能再复制。快捷键 `Ctrl+Shift+V`。
 
-<p align="center"><img src="docs/assets/screenshots/clipboard.webp" alt="岛上的剪贴板历史" width="620"><br><sub>液态玻璃 · 浅色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/clipboard.webp" alt="岛上的剪贴板历史" width="620"></p>
 
 ## 拖文件的中转站
 
 把文件拖到岛上先放着，切到别的窗口再拖出去。在两个窗口之间搬文件时特别顺手。
 
-<p align="center"><img src="docs/assets/screenshots/shelf.webp" alt="岛上的文件中转站" width="620"><br><sub>液态玻璃 · 深色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/shelf.webp" alt="岛上的文件中转站" width="620"></p>
 
 ## 随手翻译
 
 按 `Ctrl+Shift+F` 呼出，中英文自动互译。不用注册、不用填密钥就能用。
 
-<p align="center"><img src="docs/assets/screenshots/translation.webp" alt="岛上的快捷翻译" width="620"><br><sub>磨砂玻璃 · 浅色</sub></p>
+<p align="center"><img src="docs/assets/screenshots/translation.webp" alt="岛上的快捷翻译" width="620"></p>
 
 ## 换个样子
 
-三种质感：经典、液态玻璃、磨砂玻璃（玻璃会透出身后的画面）。大小、颜色、圆角、字体都能调，深色浅色都有。
+三种质感：经典、液态玻璃、磨砂玻璃（玻璃会透出身后的画面），每种都有深色和浅色。大小、颜色、圆角、字体也都能调。
 
-<p align="center"><img src="docs/assets/screenshots/materials-zh.webp" alt="经典、液态玻璃、磨砂玻璃三种外观" width="820"></p>
+<p align="center"><img src="docs/assets/screenshots/styles-zh.webp" alt="经典、液态玻璃、磨砂玻璃三种质感，各有深色和浅色" width="860"></p>
 
 ## 几乎不占资源
 
