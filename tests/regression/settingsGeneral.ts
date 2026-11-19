@@ -22,5 +22,5 @@ export async function checkGeneralControls(
   check(first.value === "600" && plus.disabled, `Blur clamps to max and disables Plus (${first.value}, ${plus.disabled}, connected=${first.isConnected})`);
   await type(first, "30");
   await act(async () => { first.dispatchEvent(new FocusEvent("focusout", { bubbles: true })); });
-  check(!panel.querySelector("[role='group'][aria-label='贴边隐藏后']"), "general: the tucked look is on the appearance page, not here");
+  check(!panel.querySelector("[role='group'][aria-label='贴边样式']"), "general: the tucked look is on the appearance page, not here");
 }

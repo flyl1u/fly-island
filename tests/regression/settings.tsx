@@ -112,7 +112,7 @@ if (!automated) {
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
       const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : category === "clipboard" ? 9 : 8;
       if (category === "appearance") {
-        const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴顶圆角"))!;
+        const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
         const size = () => [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("圆角大小"));
         check(!toggle.checked && !size(), "Top edge curves default off with size hidden");
