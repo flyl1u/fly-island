@@ -14,3 +14,25 @@ export const ISLAND_SQUIRCLE = "superellipse(1.6)";
 export function cornerShapeCss(shape: IslandCornerShape) {
   return shape === "squircle" ? ISLAND_SQUIRCLE : "round";
 }
+
+/**
+ * A bottom corner of the island as a mask image, for the attached shoulders (IslandGlass.css).
+ * There the island and its shoulders are one masked layer, so the corner cannot come from
+ * border-radius; this traces the same curve as `corner-shape` over a 1x1 box stretched to the radius.
+ */
+export function cornerMaskCss(shape: IslandCornerShape, side: "left" | "right") {
+  const exponent = shape === "squircle" ? 2 ** 1.6 : 2;
+  const steps = 32;
+  const points: string[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const angle = (step / steps) * (Math.PI / 2);
+    const across = Math.cos(angle) ** (2 / exponent);
+    const down = Math.sin(angle) ** (2 / exponent);
+    const x = side === "left" ? 100 * (1 - across) : 100 * across;
+    points.push(`${x.toFixed(2)} ${(100 * down).toFixed(2)}`);
+  }
+  const inner = side === "left" ? 100 : 0;
+  const path = `M${inner} 0L${points.join("L")}L${inner} 100Z`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='${path}'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
