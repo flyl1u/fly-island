@@ -7,8 +7,11 @@ const MODIFIER_ALIASES: Record<string, string> = {
   alt: "alt",
   shift: "shift",
   win: "win",
+  windows: "win",
   meta: "win",
+  cmd: "win",
   super: "win",
+  option: "alt",
 };
 
 /** Same keys whatever the case, spacing or modifier order ("ctrl + alt+t" is "Alt+Ctrl+T"). */
@@ -22,5 +25,17 @@ export function shortcutKey(shortcut: string) {
 /** The label of another row already using `shortcut`, or null when it is free. */
 export function findShortcutOwner(shortcut: string, owners: readonly ShortcutOwner[], selfId: string) {
   const wanted = shortcutKey(shortcut);
+  if (!wanted) return null;
   return owners.find((owner) => owner.id !== selfId && shortcutKey(owner.shortcut) === wanted)?.label ?? null;
+}
+
+/** Active optional shortcuts plus approval keys, reserved even while no card is showing. */
+export function collectShortcutOwners({ clipboard, translation, music, approvals }: {
+  clipboard: ShortcutOwner & { enabled: boolean };
+  translation: ShortcutOwner & { enabled: boolean };
+  music: readonly ShortcutOwner[];
+  approvals: readonly ShortcutOwner[];
+}): ShortcutOwner[] {
+  return [...[clipboard, translation].filter((owner) => owner.enabled), ...music, ...approvals]
+    .filter((owner) => Boolean(shortcutKey(owner.shortcut)));
 }

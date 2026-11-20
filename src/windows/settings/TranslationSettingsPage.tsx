@@ -7,6 +7,8 @@ import { useTranslationSettings } from "../../features/translation/useTranslatio
 import { useClipboardSettings } from "../../features/clipboard/useClipboardSettings";
 import { findShortcutOwner } from "./shortcutConflicts";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
+import { useMusicShortcuts } from "../../features/media/useMusicShortcuts";
+import { useSettingsShortcutOwners } from "./useSettingsShortcutOwners";
 
 export function TranslationSettingsPage({
   settings,
@@ -18,14 +20,9 @@ export function TranslationSettingsPage({
   const t = useTranslation();
   const [translationSettings, setTranslationSettings] = useTranslationSettings();
   const [clipboardSettings] = useClipboardSettings();
-  // A global hotkey swallows its keys everywhere, so it may not reuse the clipboard's.
-  const takenBy = (shortcut: string) => findShortcutOwner(
-    shortcut,
-    clipboardSettings.enabled && clipboardSettings.shortcutEnabled
-      ? [{ id: "clipboard", label: t.settings.clipboard.shortcut, shortcut: clipboardSettings.shortcut }]
-      : [],
-    "translation",
-  );
+  const [musicShortcuts] = useMusicShortcuts();
+  const owners = useSettingsShortcutOwners(settings, clipboardSettings, translationSettings, musicShortcuts);
+  const takenBy = (shortcut: string) => findShortcutOwner(shortcut, owners, "translation");
 
   return (
     <>

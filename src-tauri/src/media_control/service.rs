@@ -118,6 +118,22 @@ pub(crate) fn run_command(
     })
 }
 
+/// A global shortcut only addresses an existing media session. In particular it must not
+/// send a system media key when no session exists, which could launch a dormant player.
+pub(super) fn run_shortcut(command: MediaCommand, target: Option<String>) -> Result<(), String> {
+    on_media_thread(move || {
+        let manager = request_manager()?;
+        let session = match target.as_deref() {
+            Some(id) => session_by_id(&manager, id)?,
+            None => target_session(&manager)?,
+        };
+        if let Some(session) = session {
+            let _ = run_session_command(&session, command)?;
+        }
+        Ok(())
+    })
+}
+
 pub(crate) fn seek(position_ms: i64, target: Option<String>) -> Result<MediaState, String> {
     on_media_thread(move || {
         let manager = request_manager()?;

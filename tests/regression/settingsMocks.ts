@@ -4,6 +4,7 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { emit } from "@tauri-apps/api/event";
 import type { WorkbuddyState } from "../../src/features/agent-status/api";
 import type { MailSnapshot } from "../../src/features/messages/mail/api";
+import type { MusicShortcuts } from "../../src/features/media/shortcuts";
 
 let revision = 0;
 export const commands: string[] = [];
@@ -23,6 +24,7 @@ export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-isl
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
 export const translationShortcutCalls: string[] = [];
+export const mediaShortcutCalls: { enabled: boolean; shortcuts: MusicShortcuts }[] = [];
 // Kept like the native store, so a page opened again reads back what was saved.
 let clipboardSettings = { enabled: true, captureImages: true, maxItems: 100, shortcut: "Ctrl+Shift+V", shortcutEnabled: true };
 mockIPC((command, payload) => {
@@ -53,6 +55,9 @@ mockIPC((command, payload) => {
     case "dismiss_config_import_report": return null;
     case "export_config": return true;
     case "read_config_import": return null;
+
+    case "get_media_shortcut_errors": return {};
+    case "set_media_shortcuts": mediaShortcutCalls.push({ enabled: Boolean(args.enabled), shortcuts: args.shortcuts as MusicShortcuts }); return null;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
     case "get_clipboard_history": return { settings: clipboardSettings, items: [] };

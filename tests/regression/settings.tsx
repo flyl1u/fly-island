@@ -17,6 +17,7 @@ import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
 import { checkTodoFileSync } from "./settingsTodoFileSync";
 import { checkMessagePreview } from "./settingsMessagePreview";
+import { checkMusicShortcuts } from "./settingsMusicShortcuts";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const query = new URLSearchParams(location.search);
@@ -43,6 +44,7 @@ localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 localStorage.removeItem("focusd-island-agent-approval");
 localStorage.removeItem("focusd-island-agent-sounds");
 localStorage.removeItem("focusd-island-detached-settings");
+localStorage.removeItem("focusd-island-music-shortcuts");
 // The player order as the old Music page saved it.
 localStorage.setItem("focusd-island-music-sources", JSON.stringify([{ id: "Spotify.exe", label: "Spotify" }, { id: "QQMusic", label: "QQ音乐" }]));
 
@@ -282,6 +284,7 @@ if (!automated) {
       && savedPlayers[1].label === "网易云音乐", "Moving a player saves the order in the same key and format");
 
     // Shortcuts: the recorder reads the physical key (Shift+1 gives "!" and Chinese input
+    await checkMusicShortcuts(check, openPage);
     // gives "Process"), and another part of the page saving later keeps the new keys.
     // In the app, clicking into a window that was not active makes WebView2 put the focus
     // back where it was before (wry's WM_SETFOCUS handler), so the keys arrive somewhere
