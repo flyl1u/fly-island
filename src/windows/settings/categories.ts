@@ -7,6 +7,7 @@ const ALL_SETTINGS_CATEGORIES = [
   "translation",
   "clipboard",
   "messages",
+  "clockWeather",
   "agents",
   "agentConnect",
   "plugins",
@@ -25,7 +26,7 @@ export type SettingsGroup = "basics" | "features" | "agents";
  */
 export const SETTINGS_GROUPS: readonly { label: SettingsGroup | null; categories: readonly SettingsCategory[] }[] = [
   { label: "basics", categories: ["general", "appearance"] },
-  { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages"] },
+  { label: "features", categories: ["todos", "music", "translation", "clipboard", "messages", "clockWeather"] },
   { label: "agents", categories: ["agents", "agentConnect"] },
   { label: null, categories: ["plugins", "about"] },
 ];
@@ -42,6 +43,7 @@ const MERGED_CATEGORIES: Readonly<Record<string, SettingsCategory>> = {
   agentAlerts: "agents",
   sounds: "agents",
   agentApprovals: "agents",
+  weather: "clockWeather",
 };
 
 /** The page a category name opens, old names included; null when there is no such page. */

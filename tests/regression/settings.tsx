@@ -18,8 +18,8 @@ import { checkTodoRotation } from "./settingsTodoRotation";
 import { checkTodoFileSync } from "./settingsTodoFileSync";
 import { checkMessagePreview } from "./settingsMessagePreview";
 import { checkMusicShortcuts } from "./settingsMusicShortcuts";
+import { checkClockWeatherSettingsPage } from "./clockWeatherSettings";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
-
 const query = new URLSearchParams(location.search);
 const automated = query.has("test");
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
@@ -32,7 +32,8 @@ const restore = () => {
 };
 window.addEventListener("beforeunload", restore);
 
-localStorage.setItem(LOCALE_STORAGE_KEY, query.get("locale") === "en" ? "en" : "zh-CN");
+const locale = query.get("locale") === "en" ? "en" : "zh-CN";
+localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 // The checks below expect a customized look plus a General page choice that a reset must keep.
 if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ opacity: 60, carryOverIncompleteTodos: false, autoTuck: true }));
 else localStorage.removeItem("focusd-island-settings");
@@ -150,6 +151,8 @@ if (!automated) {
       check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
+      && settingsCategoryFor("shelf") === "clipboard" && settingsCategoryFor("weather") === "clockWeather", "Old names of merged pages open the page they became");
+    if (query.has("clockWeather")) await checkClockWeatherSettingsPage(locale, openPage, click, check);
     if (PLUGINS_ENABLED) {
       await openPage("plugins");
       const plugins = element(".editor-panel .plugins-settings");

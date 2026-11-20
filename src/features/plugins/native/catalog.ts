@@ -11,6 +11,8 @@ export type NativePlugin = {
   kind: NativePluginKind;
   /** Accent used behind the card's icon glow; a brand colour or a neutral feature colour. */
   accent: string;
+  /** Settings destination declared by an island plugin; standalone pages appear only while installed. */
+  settings?: { category: string; standalone?: boolean };
 };
 
 export const NATIVE_PLUGINS: readonly NativePlugin[] = [
@@ -21,7 +23,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "kimiCode", kind: "agent", accent: "#8a8a8a" },
   { id: "zcode", kind: "agent", accent: "#7c8592" },
   { id: "hermes", kind: "agent", accent: "#b9a6ff" },
-  { id: "clockWeather", kind: "island", accent: "#63b9b6" },
+  { id: "clockWeather", kind: "island", accent: "#63b9b6", settings: { category: "clockWeather", standalone: true } },
 ];
 
 export const NATIVE_PLUGIN_IDS: readonly NativePluginId[] = NATIVE_PLUGINS.map((plugin) => plugin.id);

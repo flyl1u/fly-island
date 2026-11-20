@@ -1,4 +1,3 @@
-import { checkClockWeatherSettings } from "./clockWeatherSettings";
 import { act, StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { mockIPC } from "@tauri-apps/api/mocks";
@@ -80,7 +79,10 @@ try {
     check(latestSettings.agentShowZcode && latestSettings.agentQuotaSources.includes("zcode"), "安装 Z Code 同时打开它的开关并勾上额度环");
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.zcode.name)}']`)!.click());
     await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.cursor.name)}']`)!.click());
-    await checkClockWeatherSettings(locale, check);
+    const weatherInstall = document.querySelector<HTMLButtonElement>(`button[aria-label='${market.installNamed(market.items.clockWeather.name)}']`)!;
+    await act(async () => weatherInstall.click());
+    check(!document.querySelector(".clock-weather-settings__cities, input[aria-label='天气位置'], input[aria-label='Weather location']"), "插件页安装时间与天气后不再内嵌天气设置");
+    await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${market.uninstallNamed(market.items.clockWeather.name)}']`)!.click());
     const fixtureBox = document.getElementById("fixture")!.getBoundingClientRect();
     check(cards.every((card) => card.getBoundingClientRect().right <= fixtureBox.right + 1 && card.scrollWidth <= card.clientWidth), "窄布局下卡片不溢出");
   }
