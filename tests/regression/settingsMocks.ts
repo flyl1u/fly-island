@@ -49,6 +49,10 @@ mockIPC((command, payload) => {
     // Two players open, NetEase playing; Spotify is in the saved order but not open.
     case "get_media_state": return { sessions: [{ id: "QQMusic", label: "QQ音乐", playing: false }, { id: "cloudmusic.exe", label: "网易云音乐", playing: true }] };
     case "get_launch_at_startup": return false;
+    case "get_config_import_report": return null;
+    case "dismiss_config_import_report": return null;
+    case "export_config": return true;
+    case "read_config_import": return null;
     case "set_launch_at_startup": return null;
     case "get_default_todo_save_directory": return "";
     case "get_clipboard_history": return { settings: clipboardSettings, items: [] };

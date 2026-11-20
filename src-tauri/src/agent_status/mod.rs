@@ -46,6 +46,7 @@ mod title;
 mod todo_list;
 mod tool_call;
 pub(crate) mod uninstall;
+pub(crate) mod transfer;
 mod usage;
 mod wezterm;
 mod window_focus;

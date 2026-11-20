@@ -7,6 +7,7 @@ mod selection;
 mod service;
 mod store;
 mod thumbnails;
+pub(crate) mod transfer;
 
 use serde::{Deserialize, Serialize};
 use std::{

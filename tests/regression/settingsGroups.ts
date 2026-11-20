@@ -4,7 +4,7 @@ import { act } from "react";
 import { MAIL_OTP_ENABLED } from "../../src/features/releaseFlags.ts";
 
 const GROUPS: Record<string, string[]> = {
-  general: ["启动与语言", "展开与收起", "位置", "贴边隐藏", "游戏模式"],
+  general: ["启动与语言", "展开与收起", "位置", "贴边隐藏", "游戏模式", "备份与迁移"],
   appearance: ["主题", "颜色", "文字", "大小", "圆角", "岛上的排列", "岛屿展示优先级", "贴边隐藏", "外观预设"],
   todos: ["任务", "番茄钟", "折叠岛屿", "保存路径"],
   clipboard: ["记录内容", "显示与窗口", "快捷键", "存储位置", "文件中转"],

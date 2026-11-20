@@ -16,6 +16,7 @@ src/
 │   ├── todos/               # 待办、每日笔记、归档、Markdown 导出及可选反向同步
 │   ├── media/               # 媒体控制、波形、播放器诊断卡片与兼容性设置；lyrics/ 为同步歌词（解析 LRC、跟随进度、点击校准、设置项）
 │   ├── clipboard/           # 剪贴板历史、快捷键
+│   ├── config-transfer/     # 配置备份 / 迁移：格式校验、前缀过滤、批量存储恢复、原生对话框与启动恢复
 │   ├── file-shelf/          # 文件中转：拖到岛上的文件（只存路径）、拖出、复制、打开
 │   ├── messages/            # 消息导航与预览；mail/、qq-notifications/、wechat/ 子目录
 │   ├── agent-status/        # AI 代理状态；sounds/ 为 Agent 音效：内置音效播放、设置 → 声音页、导入音效包

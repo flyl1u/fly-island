@@ -3,6 +3,7 @@ mod app_log;
 mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
+mod config_transfer;
 mod file_shelf;
 mod island;
 mod lyrics;
@@ -69,6 +70,7 @@ pub fn run() {
             // changes. Liquid glass is rendered inside the island element.
         })
         .setup(|app| {
+            config_transfer::prepare(app.handle());
             // First, so whatever goes wrong while the rest starts is in the log.
             app_log::init(app.handle());
             tray::build_tray(app)?;
@@ -141,6 +143,7 @@ pub fn run() {
             settings_window
             ; clipboard_window
             ; app_log
+            ; config_transfer
         ))
         .build(context)
         .map(|app| {
