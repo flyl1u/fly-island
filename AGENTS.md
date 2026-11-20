@@ -64,9 +64,10 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 | 前端单元测试 | `pnpm test`（即 `node --test "tests/**/*.test.mjs"`） |
 | 前端静态检查 | `pnpm lint`（ESLint，配置见 `eslint.config.js`） |
 | 文件行数检查 | `pnpm check:size` |
+| 节假日数据覆盖检查 | `pnpm check:holidays`（缺少当年或次年数据时失败，维护步骤见 `docs/holidays.md`） |
 | 回归页类型检查 | `pnpm check:tests-types`（`tsconfig.tests.json`，检查 `tests/regression/*.tsx`） |
 | 浏览器回归页 | `pnpm test:regression [页面名中的词]`（自带 Vite，用无头 Chrome / Edge 跑 `tests/regression/` 下全部回归页并汇总结果，约 20 秒） |
-| 提交前总检查 | `pnpm check`（类型检查 + 回归页类型检查 + lint + 行数检查 + 单元测试） |
+| 提交前总检查 | `pnpm check`（类型检查 + 回归页类型检查 + lint + 行数检查 + 节假日数据检查 + 单元测试） |
 | Rust 单元测试 | `cargo test --manifest-path src-tauri/Cargo.toml` |
 | 仅生成 release 可执行文件 | `pnpm tauri build --no-bundle`（写到 `src-tauri/target/release`） |
 | 完整打包 | `pnpm tauri build` |
@@ -123,6 +124,15 @@ FocuSD Island（仓库名 fly-island）是 Windows 优先的桌面效率工具�
 - 注释只写在能降低理解成本的地方，用于解释"为什么"，不复述代码。
 - 用户可见文案必须支持中英文，并注意窄窗口下按钮、标签和标题不溢出。
 - 避免与任务无关的改动和对生成产物的改动。
+
+## 定期维护的数据
+
+`src/features/todos/holidays.ts` 只登记已经公布的年份，国务院办公厅每年 11 月发布次年安排。
+
+- 11 月之后接到涉及待办或日历的任务，先跑 `pnpm check:holidays`。它在缺少当年或次年数据时直接失败，不需要靠人记。
+- 缺数据就按 [docs/holidays.md](docs/holidays.md) 补：在 `PLANS` 里加一个年份块、照通知抄 `breaks` 与 `workdays`、再跑 `pnpm test`。
+- 日期一律以 gov.cn 的通知原文为准，不凭记忆填写，也不自己推算节日对应的公历日期。
+- 节气（`solarTerms.ts`）、农历（`lunar.ts`）、纪念日（`memorials.ts`）由公式和固定表得出，不需要逐年维护。
 
 ## 验证
 

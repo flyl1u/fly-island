@@ -35,7 +35,7 @@
 
 1. 在 `PLANS` 对象末尾加一个 `年份: { breaks, workdays }`；
 2. 把通知里每个「放假」段落写成一条 `breaks`，每个「××日上班」写进 `workdays`；
-3. 跑 `node --test tests/unit/todo-holidays.test.mjs`（或 `pnpm test`），全部通过即可。
+3. 跑 `pnpm check`：其中的 `check:holidays` 确认数据已覆盖到需要的年份，单元测试确认格式没有抄错。
 
 ## 字段说明
 
@@ -72,6 +72,12 @@
 ## 范围之外
 
 数据没覆盖的年份，月历照常显示数字和农历，只是没有节假日标记——不会报错，也不会串到相邻年份。这是刻意的：宁可少标，也不标错。
+
+为此 `pnpm check:holidays`（已并入 `pnpm check`）会在每年 11 月之后要求数据覆盖到次年，缺了就直接失败，把「悄悄没标记」变成一条明确的报错。它也可以手动指定年月来验证边界：
+
+```bash
+node scripts/check-holidays.mjs 2027 12   # 模拟 2027 年 12 月：会要求 2028 年数据
+```
 
 ## English
 
