@@ -311,7 +311,7 @@ export async function withRegressionBrowser(root, firstPage, use, { featuresEnab
   const base = `http://localhost:${vitePort}/tests/regression/`;
   const profile = mkdtempSync(path.join(tmpdir(), "fly-regression-"));
   const vite = spawn(process.execPath, [path.join(root, "node_modules/vite/bin/vite.js"), "--port", String(vitePort), "--strictPort"], {
-    cwd: root, stdio: "ignore", env: { ...process.env, FOCUSD_REGRESSION_FEATURES: featuresEnabled ? "enabled" : "" },
+    cwd: root, stdio: "ignore", env: { ...process.env, FLY_ISLAND_REGRESSION_FEATURES: featuresEnabled ? "enabled" : "" },
   });
   let browser;
   try {

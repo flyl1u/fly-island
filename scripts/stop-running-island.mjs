@@ -1,9 +1,9 @@
-// Runs before `pnpm tauri dev` starts the dev server. Another island instance blocks
+﻿// Runs before `pnpm tauri dev` starts the dev server. Another island instance blocks
 // the dev build in two ways: the single-instance plugin makes the new process exit
 // silently, and a running debug build locks the exe that cargo has to relink.
 import { execFileSync } from "node:child_process";
 
-// Builds are fly-island.exe; builds made before the crate was renamed are focusd-island.exe.
+// Keep terminating the executable from the previous installed build during development.
 const IMAGE_NAMES = ["focusd-island.exe", "fly-island.exe"];
 const EXIT_TIMEOUT_MS = 5_000;
 const POLL_INTERVAL_MS = 100;
