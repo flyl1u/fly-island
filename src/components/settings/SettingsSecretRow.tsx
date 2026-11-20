@@ -7,6 +7,9 @@ import { SettingsLinkButton } from "./SettingsLinkButton";
  * A row that takes a secret (a token, a credential). The field only ever holds what the user
  * is typing right now: a saved value is never written back into it, and the draft is cleared
  * once it has been handed over.
+ *
+ * The save button stays clickable even when the field is empty: saving an empty secret is how
+ * a stored credential gets removed (see docs/plugins/specification.md).
  */
 export function SettingsSecretRow({
   title,
@@ -30,7 +33,7 @@ export function SettingsSecretRow({
       description={description}
       control={
         <SettingsLinkButton
-          disabled={disabled || draft === ""}
+          disabled={disabled}
           onClick={() => {
             onSave(draft);
             setDraft("");

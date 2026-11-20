@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { SettingsGroup } from "../../../components/settings/SettingsGroup";
+import { SettingsRow } from "../../../components/settings/SettingsRow";
 import { SettingsToggleRow } from "../../../components/settings/SettingsToggleRow";
 import { SettingsSecretRow } from "../../../components/settings/SettingsSecretRow";
+import { SettingsLinkButton } from "../../../components/settings/SettingsLinkButton";
 import type { IslandSettings } from "../../appearance/types";
 import { useTranslation } from "../../../i18n";
-import { hasAppleMusicToken, setAppleMusicToken } from "./api";
+import { clearAppleMusicToken, hasAppleMusicToken, setAppleMusicToken } from "./api";
 
 /**
  * Settings → Music → Lyrics: looking lyrics up online, and the Chinese sources with them. Timing
@@ -71,12 +73,31 @@ export function LyricsSettingsSection({
           saveLabel={text.appleMusicSave}
           placeholder={text.appleMusicTokenPlaceholder}
           onSave={(token) => {
-            setAppleMusicToken(token)
-              .then(() => setTokenSaved(true))
+            // An empty field means "forget the token", the same way the plugin settings do.
+            const saving = token.trim() === "" ? clearAppleMusicToken() : setAppleMusicToken(token);
+            saving
+              .then(() => setTokenSaved(token.trim() !== ""))
               .catch((error: unknown) => {
                 console.error("Failed to save the Apple Music token", error);
               });
           }}
+        />
+        <SettingsRow
+          title={text.appleMusicClearTitle}
+          control={
+            <SettingsLinkButton
+              disabled={!tokenSaved}
+              onClick={() => {
+                clearAppleMusicToken()
+                  .then(() => setTokenSaved(false))
+                  .catch((error: unknown) => {
+                    console.error("Failed to clear the Apple Music token", error);
+                  });
+              }}
+            >
+              {text.appleMusicClear}
+            </SettingsLinkButton>
+          }
         />
       </SettingsGroup>
     </>

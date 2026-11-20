@@ -13,6 +13,8 @@ export type SettingsLyricsText = {
   appleMusicTokenHint: string;
   appleMusicTokenPlaceholder: string;
   appleMusicSave: string;
+  appleMusicClearTitle: string;
+  appleMusicClear: string;
   appleMusicTokenSaved: string;
   appleMusicTokenMissing: string;
 };
@@ -32,6 +34,8 @@ export const zhCN: SettingsLyricsText = {
   appleMusicTokenHint: "令牌来自 Apple Music 网页版：在浏览器登录 music.apple.com，打开开发者工具的控制台，输入 document.cookie，在结果里找到 media-user-token= 后面的一段（到分号为止），粘贴到上面的框里保存。令牌由 Windows 凭据管理器保管，不会写进小岛的设置。",
   appleMusicTokenPlaceholder: "media-user-token",
   appleMusicSave: "保存",
+  appleMusicClearTitle: "已保存的令牌",
+  appleMusicClear: "清除令牌",
   appleMusicTokenSaved: "令牌已保存在本机的凭据管理器里。",
   appleMusicTokenMissing: "还没有保存令牌。",
 };
@@ -51,6 +55,8 @@ export const en: SettingsLyricsText = {
   appleMusicTokenHint: "The token comes from the Apple Music web player: sign in to music.apple.com in a browser, open the developer tools' console, type document.cookie and copy the part after media-user-token= (up to the next semicolon) into the box above. The token is kept by the Windows credential manager, never in the island's settings.",
   appleMusicTokenPlaceholder: "media-user-token",
   appleMusicSave: "Save",
+  appleMusicClearTitle: "The saved token",
+  appleMusicClear: "Clear token",
   appleMusicTokenSaved: "The token is saved in this computer's credential manager.",
   appleMusicTokenMissing: "No token saved yet.",
 };

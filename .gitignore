@@ -29,6 +29,8 @@ src-tauri/tauri.release.conf.json
 # Local Claude Code skills. This machine only; not part of the repo.
 .claude/
 
+# omm team state of local agent runs. This machine only; not part of the repo.
+.omm/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
