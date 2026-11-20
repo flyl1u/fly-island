@@ -113,7 +113,7 @@ export function IslandCollapsedBar({
 }: IslandCollapsedBarProps) {
   const t = useTranslation();
   const clockWeather = useClockWeather();
-  const weatherOn = clockWeather.installed && clockWeather.settings.showWeather;
+  const weatherOn = clockWeather.installed && clockWeather.settings.showWeather && collapsedLayout.includes("weather");
   const weather = useCurrentWeather(weatherOn, clockWeather.settings.location);
   // A pending update shows a red dot even collapsed, so it is not missed.
   const updatePending = useUpdatePending();
@@ -156,6 +156,25 @@ export function IslandCollapsedBar({
 
   // The text and the status icons, placed in the order Settings → Appearance arranged.
   const slots: Record<CollapsedSlot, ReactNode> = {
+    // The agent light opens the Agent page (or the message being previewed); the text reopens the last page.
+    pulse: (
+      <button
+        className="island__agent-light"
+        type="button"
+        aria-label={preview ? t.messages.openPreview(messagePreviewText(preview, t.messages), t.messages.sourceLabels[preview.source]) : t.island.agentPage}
+        onPointerDown={prepareWindowDrag}
+        onPointerMove={handleWindowDragMove}
+        onPointerUp={cancelWindowDrag}
+        onPointerCancel={cancelWindowDrag}
+        onClick={(event) => {
+          if (event.detail !== 0 && didDragRef.current) return;
+          event.stopPropagation();
+          if (preview) openPreview(preview); else onOpenPage("agents");
+        }}
+      >
+        <span className={pulseClassName} />
+      </button>
+    ),
     clock: clockWeather.installed && clockWeather.settings.showClock && <CollapsedClock active={!isExpanded && !isTucked} />,
     weather: weatherOn && weather && clockWeather.settings.location
       ? <CollapsedWeather location={clockWeather.settings.location} reading={weather} /> : null,
@@ -183,17 +202,6 @@ export function IslandCollapsedBar({
             }
           }}
         >
-          {/* The agent light opens the Agent page; the text beside it reopens the last page. */}
-          <span
-            className="island__agent-light"
-            onClick={(event) => {
-              if (preview || (event.detail !== 0 && didDragRef.current)) return;
-              event.stopPropagation();
-              onOpenPage("agents");
-            }}
-          >
-            <span className={pulseClassName} />
-          </span>
           {updatePending && <span className="island-update-dot island-update-dot--inline" aria-hidden="true" />}
           {collapsedCover && <img className="collapsed-cover" src={collapsedCover} alt="" draggable={false} />}
           <CollapsedMessageContent preview={preview} enabled={!isExpanded && !isTucked}>

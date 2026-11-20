@@ -62,10 +62,6 @@
   box-shadow: 0 0 14px rgba(255, 209, 102, 0.72);
 }
 
-.island--title-hidden .island__open-button {
-  padding-left: 8px;
-}
-
 .island__brand {
   min-width: 0;
   flex: 0 0 auto;
@@ -276,10 +272,26 @@
   background: var(--color-white-a18);
 }
 
-/* The agent light is its own click target: it opens the Agent page, the text beside it the last page. */
+/* The agent light is its own slot (Settings → Appearance → On the island): it opens the Agent page,
+   the text the last page. A few pixels round the 9px light keep it easy to hit. */
 .island__agent-light {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 17px;
+  height: 100%;
+  margin: 0 -4px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: default;
+  touch-action: none;
+}
+
+.island__agent-light:focus-visible {
+  outline: 2px solid var(--color-focus-ring-soft);
+  outline-offset: -2px;
+  border-radius: var(--radius-pill);
 }

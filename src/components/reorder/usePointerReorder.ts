@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { usePointerReorderMotion } from "./usePointerReorderMotion";
 import { moveItem } from "../../utils/order.ts";
 
 /** How far (px) the pointer moves before a press becomes a drag rather than a click. */
@@ -19,10 +18,8 @@ export function usePointerReorder<T extends string>(
   items: readonly T[],
   onReorder: (next: T[]) => void,
   axis: "x" | "y",
-  animate = false,
 ) {
   const containerRef = useRef<HTMLElement | null>(null);
-  const motion = usePointerReorderMotion(items, axis, animate, containerRef);
   const press = useRef<Press | null>(null);
   const dragged = useRef(false);
   const [draggingId, setDraggingId] = useState<T | null>(null);
@@ -46,43 +43,34 @@ export function usePointerReorder<T extends string>(
         } catch {
           // A pointer that is no longer down cannot be captured; the drag still works without.
         }
-        motion.start(event.currentTarget, axis === "x" ? current.x : current.y);
         setDraggingId(id);
       }
       const container = containerRef.current;
       if (!container) return;
       const others = [...container.querySelectorAll<HTMLElement>("[data-reorder-id]")];
       const at = axis === "x" ? event.clientX : event.clientY;
-      motion.move(at);
       // The item whose half the pointer is over takes the dragged one's place.
       const target = others.find((element) => {
         const rect = element.getBoundingClientRect();
         return axis === "x" ? at >= rect.left && at <= rect.right : at >= rect.top && at <= rect.bottom;
       });
-      const targetId = (animate ? motion.target(at) : target?.dataset.reorderId) as T | undefined;
+      const targetId = target?.dataset.reorderId as T | undefined;
       if (!targetId || targetId === id) return;
       const next = moveItem(items, id, items.indexOf(targetId));
-      if (next !== items) { motion.capture(); onReorder(next); }
+      if (next !== items) onReorder(next);
     },
     onPointerUp(event: ReactPointerEvent<HTMLElement>) {
       if (press.current?.pointerId !== event.pointerId) return;
-      motion.finish();
       press.current = null;
       setDraggingId(null);
       // The click that ends a drag comes in the same task as this; a click after that is a click.
       if (dragged.current) window.setTimeout(() => { dragged.current = false; }, 0);
     },
     onPointerCancel() {
-      motion.finish();
       press.current = null;
       setDraggingId(null);
     },
-    onLostPointerCapture() {
-      motion.finish();
-      press.current = null;
-      setDraggingId(null);
-    },
-  }), [animate, axis, items, motion, onReorder]);
+  }), [axis, items, onReorder]);
 
   const wasDragged = useCallback(() => dragged.current, []);
 

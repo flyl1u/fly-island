@@ -26,6 +26,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 时间与天气（2026-11-19）：`focusd-island-settings.collapsedLayout` 的 slot 新增 `clock` / `weather`，完整默认顺序为 `text,mail,shelf,music,agents,clock,weather`。读取旧数组时保留原有合法顺序，将缺少的位追加到末尾；未知和重复项丢弃。插件未安装时隐藏这两个位，重排其余位不丢失隐藏位置。
 
+岛上的排列（2026-11-19 第二版）：`collapsedLayout` 再增 slot `pulse`（状态灯，原先是文字的一部分），默认顺序 `pulse,text,mail,shelf,music,agents,clock,weather`；读取没有 `pulse` 的旧数组时把它插在 `text` 前面（与旧版显示位置相同），有就保留原位置。新增 `collapsedHidden`（slot 数组，默认 `[]`）：拖进编辑器下方盒子、不在岛上显示的位；只认已知 slot，去重，`text` 不能隐藏。新增 `collapsedPadding`（整数 px，4–32，默认 18）：收起岛左右两侧的留白，属于外观字段，随外观预设保存。`collapsedHeight` 的下限从 32 改为 26（前端和 Rust `MIN_COLLAPSED_ISLAND_HEIGHT` 同步）。旧版本读到 `pulse` 会当未知项丢掉，显示不受影响。
+
 `focusd-island-settings.messagePreviewSeconds` 为岛上通知停留时长，3–30 的整数秒，默认 5；旧记录缺失或非法值回退到 5。
 
 `focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
@@ -171,7 +173,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 岛屿设置 `focusd-island-settings` 的 `pageOrder` 2026-11-11 起多一个可选项 `"translation"`（翻译的页面胶囊），默认顺序 `["todo","music","clipboard","shelf","translation"]`；旧数据缺它时按上面的规则补在末尾，旧版本读到它会当未知项丢掉。
 - 岛屿设置 `focusd-island-settings` 2026-11-11 新增 `autoCollapseSeconds`（整数秒 0–600，0 表示从不；鼠标离开展开的岛多少秒后收起）和 `tuckDelaySeconds`（整数秒 3–600，默认 30；收起的岛闲置多少秒后贴边成细线）。`autoCollapseSeconds` 最初只存 3 / 5 / 10 / 30 / 0，这些值照旧有效；非数字或旧数据没有这个字段时：`autoTuck` 为 true 读成 30，否则读成 0；超出范围按边界读。旧版本存过的 `autoTuckSeconds` 不再读取，`tuckDelaySeconds` 缺失时读成 30。
 - 岛屿设置 `focusd-island-settings` 的 `expandedScale`（展开后的大小）2026-11-10 重新可以设置；2026-11-11 起是 0.85–1.2 之间的任意值（滑块，步长 0.01）。3.0.0 存的 0.9 / 1 / 1.1（小 / 中 / 大）原样保留；更早版本存的任意数（原范围 0.75–1.4）读取时限制到 0.85–1.2 并取到百分位，非数字按 1。字段名和类型不变。
-- `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
+- `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38；2026-11-19 起下限 26）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
 - `focusd-island-settings.agentQuotaSources` 保存可见额度环，候选值依次为 `claudeCode`、`codex`、`dsh`、`workbuddy`。旧数据缺少该字段时用原有会话来源开关迁移三种来源，并选中 WorkBuddy。保存空数组表示隐藏额度行。
 - 胶囊外形（2026-11-18）：`focusd-island-settings` 兼容新增 `islandShape`（`"notch"` / `"capsule"`，缺失或其他值时为 `"notch"`，与旧版外形相同；胶囊暂未开放期间 `"capsule"` 也读成 `"notch"`），属于外观字段，随外观预设保存和应用。胶囊只改变前端发给 `set_island_interaction` / `set_island_layout` 的 `marginY`（至少 8）与 `collapsedCornerRadius`（条高的一半），命令和参数不变，不新增事件或 localStorage key。
 - 插件市场 Agent（2026-11-18）：`list_agent_sessions` 新增可选参数 `native: string[]`（`"cursor"`、`"kimiCode"`、`"hermes"`），缺省时与旧版一样不读这几个来源；返回的 `provider` 新增 `cursor`、`kimiCode`、`hermes`。`focus_agent_window`、`agent_sessions_in_front` 接受 `cursor`（另两个走通用的终端匹配）。新增只读命令 `get_kimi_usage()`、`get_zcode_usage()`，返回 `null` 或与 `get_agent_usage` 相同的 `AgentUsage`，`source` 新增 `"kimi"` / `"zcode"`。`focusd-island-settings` 兼容新增 `agentShowCursor`、`agentShowKimiCode`、`agentShowHermes`、`agentShowZcode`（缺失时为 true，仅在 `focusd-island-native-plugins` 装了对应插件时生效）；`agentQuotaSources` 的取值不变。无新增事件或 localStorage key。

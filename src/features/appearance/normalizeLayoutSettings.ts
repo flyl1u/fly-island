@@ -2,7 +2,7 @@
 import { clamp } from "../../utils/number.ts";
 import { getColorSetting } from "../../utils/color.ts";
 import { DEFAULT_SETTINGS } from "./settingsDefaults.ts";
-import { TODO_VISIBLE_ROWS, CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
+import { TODO_VISIBLE_ROWS, CLIPBOARD_VISIBLE_ROWS, COLLAPSED_CORNER_RADIUS, COLLAPSED_HEIGHT, COLLAPSED_PADDING, COLLAPSED_WIDTH, GLASS_BLUR, ISLAND_CORNER_RADIUS, ISLAND_FONT_PERCENT, MAX_COLLAPSED_SCALE, MIN_COLLAPSED_SCALE, TOP_EDGE_SHOULDER_SIZE, normalizeExpandedScale } from "./settingsLimits.ts";
 import { CAPSULE_SHAPE_ENABLED } from "./islandShape.ts";
 import type { IslandSettings, LegacyIslandSettings, Material } from "./types";
 
@@ -58,6 +58,7 @@ export function normalizeLayoutSettings(settings: LegacyIslandSettings | null | 
     collapsedAutoWidth: settings?.collapsedAutoWidth !== false,
     collapsedWidth: normalizeSize(settings?.collapsedWidth, COLLAPSED_WIDTH),
     collapsedHeight: normalizeSize(settings?.collapsedHeight, COLLAPSED_HEIGHT),
+    collapsedPadding: normalizeSize(settings?.collapsedPadding, COLLAPSED_PADDING),
     // On the slider's range; the three sizes of 3.0.0 keep their value.
     expandedScale: normalizeExpandedScale(settings?.expandedScale ?? DEFAULT_SETTINGS.expandedScale),
     taskTextColor,

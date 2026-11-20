@@ -27,6 +27,7 @@ export function getIslandStageStyle(
     "--island-expanded-scale-target": settings.expandedScale,
     "--collapsed-island-width": `${collapsedIslandWidth}px`,
     "--collapsed-island-height": `${noticeHeight ?? settings.collapsedHeight}px`,
+    "--collapsed-island-padding": `${settings.collapsedPadding}px`,
     "--expanded-island-height": `${expandedIslandHeight}px`,
     "--island-font-scale": settings.islandFontPercent / 100,
     // Unitless; IslandShell.css derives the collapsed, detached and inner panel radii from it.
