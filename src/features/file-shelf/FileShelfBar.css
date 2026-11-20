@@ -24,14 +24,6 @@
   white-space: nowrap;
 }
 
-.shelf-bar__hint {
-  color: var(--text-3);
-}
-
-.shelf-bar__hint--yielding {
-  animation: shelf-hint-yield 2.4s ease forwards;
-}
-
 .shelf-bar__notice {
   color: var(--text-1);
   font-style: normal;
@@ -45,12 +37,6 @@
   12%,
   78% { opacity: 1; }
   100% { opacity: 0; }
-}
-
-@keyframes shelf-hint-yield {
-  0%,
-  88% { opacity: 0; }
-  100% { opacity: 1; }
 }
 
 .shelf-search {
@@ -163,10 +149,38 @@
   height: 26px;
 }
 
-/* Less motion: the notice and the hint swap without fading, at the same moments. */
+/* One row of tiles: no line under them. Clear sits in the panel's bottom-right corner, clear of the
+   last tile's centred name and actions; the notice and the selection float as pills beside it. */
+.shelf-bar--floating {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1;
+  height: 28px;
+  gap: var(--space-xs);
+}
+
+.shelf-bar--floating .shelf-bar__notice {
+  padding: 4px 10px;
+  background: rgba(var(--panel-deep-rgb), 0.96);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-white-a09), 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.shelf-selection-bar--floating {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 1;
+  min-width: 168px;
+  transform: translateX(-50%);
+  background: linear-gradient(var(--color-white-a08), var(--color-white-a08)), rgba(var(--panel-deep-rgb), 0.98);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+}
+
+/* Less motion: the notice shows and goes without fading, at the same moments. */
 @media (prefers-reduced-motion: reduce) {
-  .shelf-bar__notice,
-  .shelf-bar__hint--yielding {
+  .shelf-bar__notice {
     animation-timing-function: steps(1, end);
   }
 }
