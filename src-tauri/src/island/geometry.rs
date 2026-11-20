@@ -53,6 +53,35 @@ pub(super) static POSITION_ANIMATION_GENERATION: AtomicU64 = AtomicU64::new(0);
 /// The slide in progress: its generation and where it ends.
 static RUNNING_SLIDE: Mutex<Option<(u64, (i32, i32))>> = Mutex::new(None);
 
+/// Remember the actual resting position, rather than an old drag coordinate: Windows can
+/// reposition the stage on a DPI/work-area change without an island drag being in progress.
+pub(super) fn remember_position_before_tuck(
+    window: &WebviewWindow,
+    state: IslandWindowState,
+    next_is_tucked: bool,
+) -> Result<Option<IslandPosition>, String> {
+    if state.custom_position.is_none() || state.is_tucked || !next_is_tucked || state.is_dragging {
+        return Ok(state.custom_position);
+    }
+    let running = *RUNNING_SLIDE.lock().unwrap_or_else(PoisonError::into_inner);
+    let generation = POSITION_ANIMATION_GENERATION.load(Ordering::SeqCst);
+    let observed = window.outer_position().map_err(|error| error.to_string())?;
+    Ok(position_before_tuck(state, observed, running, generation))
+}
+
+pub(super) fn position_before_tuck(
+    state: IslandWindowState,
+    observed: PhysicalPosition<i32>,
+    running: Option<(u64, (i32, i32))>,
+    generation: u64,
+) -> Option<IslandPosition> {
+    state.custom_position?;
+    // Re-tucking during a reveal must keep its normal destination, not an intermediate frame.
+    let (x, y) = running.filter(|(owner, _)| *owner == generation)
+        .map_or((observed.x, observed.y), |(_, target)| target);
+    Some(IslandPosition { x, y })
+}
+
 /// Whether an update that does not animate should leave the running slide alone:
 /// it ends where the update would put the window anyway. Jumping there instead cut
 /// the slide-out short when the panel opened from a tucked island mid-slide.
@@ -100,12 +129,9 @@ pub(crate) fn apply_stage_geometry(
     let monitor_position = monitor.position();
     let monitor_size = monitor.size();
     let physical_width = (STAGE_WINDOW_WIDTH * scale).round() as i32;
-    let physical_top_offset = (state.margin_y * scale).round() as i32;
-    let tucked_top_offset = tucked_top_offset(state, scale);
     let top_inset = monitor_top_inset(&monitor);
     let centered_x = monitor_position.x + (monitor_size.width as i32 - physical_width) / 2;
-    let normal_y = monitor_position.y + top_inset + physical_top_offset;
-    let tucked_y = monitor_position.y + top_inset + tucked_top_offset;
+    let (normal_y, tucked_y) = stage_top_positions(state, monitor_position.y, top_inset, scale);
     let mut positioned_state = state;
     if !has_custom_monitor {
         positioned_state.custom_position = None;
@@ -290,6 +316,12 @@ pub(super) fn top_taskbar_bottom(
 
 pub(super) fn anchor_top_inset(monitor_top: i32, taskbar_bottom: Option<i32>) -> i32 {
     taskbar_bottom.map_or(0, |bottom| (bottom - monitor_top).max(0))
+}
+
+/// Monitor/taskbar coordinates are physical; only the logical margin and tuck offset need DPI.
+pub(super) fn stage_top_positions(state: IslandWindowState, monitor_top: i32, top_inset: i32, dpi: f64) -> (i32, i32) {
+    let top = monitor_top + top_inset;
+    (top + (state.margin_y * dpi).round() as i32, top + tucked_top_offset(state, dpi))
 }
 
 pub(super) fn resolve_stage_position(

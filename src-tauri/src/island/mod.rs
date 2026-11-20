@@ -99,6 +99,8 @@ pub fn set_island_interaction(
         .map(|height| height.clamp(MIN_COLLAPSED_ISLAND_HEIGHT, MAX_COLLAPSED_ISLAND_HEIGHT))
         .unwrap_or(previous_state.collapsed_height);
     let position_state = IslandWindowState { collapsed_scale, collapsed_height, ..previous_state };
+    let next_is_tucked = is_tucked.unwrap_or(false);
+    let remembered_position = geometry::remember_position_before_tuck(&window, previous_state, next_is_tucked)?;
     let restored_custom_position = previous_state.custom_position.or_else(|| {
         custom_position.filter(|position| {
             monitor_for_island_position(&window, *position, position_state)
@@ -109,7 +111,7 @@ pub fn set_island_interaction(
     });
     let state = mutate_window_state(|state| {
         state.mode = mode;
-        state.is_tucked = is_tucked.unwrap_or(false);
+        state.is_tucked = next_is_tucked;
         state.tuck_style = state::TuckStyle::from_value(tuck_style.as_deref());
         if let Some(height) = tuck_edge_height.filter(|height| height.is_finite()) {
             state.tuck_edge_height = height.clamp(MIN_TUCKED_EDGE_HEIGHT, MAX_TUCKED_EDGE_HEIGHT);
@@ -131,7 +133,9 @@ pub fn set_island_interaction(
             state.collapsed_width =
                 collapsed_width.clamp(MIN_COLLAPSED_ISLAND_WIDTH, MAX_COLLAPSED_ISLAND_WIDTH);
         }
-        if state.custom_position.is_none() {
+        if state.custom_position == previous_state.custom_position && !state.is_dragging {
+            state.custom_position = remembered_position.or(restored_custom_position);
+        } else if state.custom_position.is_none() {
             state.custom_position = restored_custom_position;
         }
         state.glass_enabled = glass_enabled.unwrap_or(false);
@@ -158,6 +162,11 @@ pub fn set_island_interaction(
         state.click_through = click_through.unwrap_or(false);
         *state
     });
+    if previous_state.custom_position.is_some() && state.custom_position != previous_state.custom_position {
+        if let Some(position) = state.custom_position {
+            let _ = window.emit("island-position-changed", position);
+        }
+    }
     apply_stage_geometry(
         &window,
         state,
