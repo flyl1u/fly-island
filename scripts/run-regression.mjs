@@ -17,6 +17,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { capturePixelProbe, READ_PIXEL_PROBE } from "./regression-pixels.mjs";
 
 /** Each page with the query that starts its automated checks. */
 export const PAGES = [
@@ -49,6 +50,13 @@ export const PAGES = [
   "island-tour.html?test=1&clockWeather=1&theme=light&features=enabled",
   "island-tour.html?test=1&bg=FFFFFF",
   "island-tour.html?test=1&material=liquidGlass",
+  "island-tour.html?test=1&material=liquidGlass&shoulders=1&glassBackdrop=1",
+  "island-tour.html?test=1&theme=light&material=liquidGlass&shoulders=1&glassBackdrop=1",
+  "island-tour.html?test=1&material=frostedGlass&shoulders=1&glassBackdrop=1",
+  "island-tour.html?test=1&theme=light&material=frostedGlass&shoulders=1&glassBackdrop=1",
+  "island-tour.html?test=1&material=classic&opacity=80&shoulders=1&classicShoulders=1",
+  "island-tour.html?test=1&theme=light&material=classic&opacity=80&shoulders=1&classicShoulders=1",
+  "island-tour.html?test=1&theme=light&material=classic&opacity=80&shoulders=1&classicShoulders=1&capsule=1",
   "island-tour.html?test=1&theme=light&material=liquidGlass",
   "island-tour.html?test=1&material=frostedGlass",
   "island-tour.html?test=1&theme=light&material=frostedGlass",
@@ -216,12 +224,26 @@ export async function runPage(session, url) {
   await session.send("Page.navigate", { url });
   const deadline = Date.now() + PAGE_TIMEOUT_MS;
   let state = {};
+  let pixelProbe = null;
   while (Date.now() < deadline) {
-    await sleep(500);
+    await sleep(url.includes("classicShoulders") ? 25 : 500);
+    if (!pixelProbe && url.includes("classicShoulders")) {
+      const probeResult = await session.send("Runtime.evaluate", { expression: READ_PIXEL_PROBE, returnByValue: true });
+      if (probeResult.result?.value) {
+        pixelProbe = await capturePixelProbe(session, probeResult.result.value);
+        await session.send("Runtime.evaluate", { expression: "document.documentElement.setAttribute('data-island-pixel-probe-captured', 'true')" });
+      }
+    }
     const { result } = await session.send("Runtime.evaluate", { expression: READ_STATE, returnByValue: true });
     try { state = JSON.parse(result?.value ?? "{}"); } catch { state = {}; }
     const outcome = pageOutcome(state);
-    if (outcome) return { outcome, state, errors: [...session.errors] };
+    if (outcome) {
+      if (pixelProbe) {
+        state.text = `${state.text ?? ""}\n${pixelProbe.passed ? "PASS" : "FAIL"} ${pixelProbe.label}`;
+        if (!pixelProbe.passed) return { outcome: "failed", state, errors: [...session.errors] };
+      }
+      return { outcome, state, errors: [...session.errors] };
+    }
   }
   return { outcome: "timed out", state, errors: [...session.errors] };
 }

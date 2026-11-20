@@ -30,10 +30,10 @@
      only partly and leave a light seam beside the curve, longer the larger the curve. */
   mask:
     radial-gradient(circle var(--island-shoulder-length) at 0 100%,
-      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
+      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) calc(var(--island-shoulder-length) + 0.5px))
       left top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat,
     radial-gradient(circle var(--island-shoulder-length) at 100% 100%,
-      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) var(--island-shoulder-length))
+      transparent calc(var(--island-shoulder-length) - 0.5px), var(--color-black) calc(var(--island-shoulder-length) + 0.5px))
       right top / calc(var(--island-shoulder-length) + 1px) var(--island-shoulder-length) no-repeat;
   transition:
     --island-shoulder-length var(--island-shoulder-duration) var(--island-shoulder-curve),

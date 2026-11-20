@@ -91,6 +91,7 @@
 .island__surface {
   position: absolute;
   inset: 0;
+  z-index: 1;
   overflow: hidden;
   border-radius: inherit;
   corner-shape: var(--island-corner-shape, round);

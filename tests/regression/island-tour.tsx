@@ -13,7 +13,7 @@ import { I18nProvider, LOCALE_STORAGE_KEY } from "../../src/i18n";
 import { trackIslandTopEdge } from "../../src/windows/island/topEdge";
 import { checkTuckMorph } from "./islandTourTuck";
 import { checkCollapsedShape } from "./islandTourShape";
-import { checkMaterial, checkTone } from "./islandTourTheme";
+import { checkClassicShoulders, checkGlassShoulders, checkMaterial, checkTone, prepareClassicLegacy, waitForClassicShoulderScreenshot } from "./islandTourTheme";
 import { installTourPlugins, tourOffice } from "./islandTourOffice";
 import { TOUR_CLIPBOARD, TOUR_KIMI_USAGE, TOUR_LRC, TOUR_MAIL, TOUR_QQ_ITEMS, TOUR_SHELF, TOUR_TODOS, tourMediaState, tourSessions, type TourMedia } from "./islandTourMocks";
 
@@ -23,8 +23,7 @@ const empty = query.has("empty");
 const media = (query.get("media") ?? "playing") as TourMedia;
 const customNotch = query.has("notch");
 const fontPercent = Number(query.get("font")) || 100;
-// ?theme=dark|light|system picks the colour scheme, ?bg=FFFFFF a background colour of the user's own,
-// ?material=liquidGlass|frostedGlass the material.
+// ?theme=dark|light|system picks the colour scheme; ?bg=FFFFFF sets the background and ?material=classic|liquidGlass|frostedGlass the material.
 // ?tuck=line|hidden picks the tucked look (default edge).
 const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
@@ -57,7 +56,7 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   islandFontPercent: fontPercent,
   ...(query.get("theme") ? { colorScheme: query.get("theme") } : {}),
   ...(query.get("bg") ? { islandBackgroundColor: `#${query.get("bg")}` } : {}),
-  ...(query.get("material") ? { material: query.get("material") } : {}),
+  ...(query.get("material") ? { material: query.get("material") } : {}), ...(query.get("opacity") ? { opacity: Number(query.get("opacity")) } : {}), ...(query.has("classicShoulders") ? { autoTuck: false } : {}),
   topEdgeShoulders: query.has("shoulders"), topEdgeShoulderSize: 20,
   ...(query.has("capsule") ? { islandShape: "capsule" } : {}),
   tuckStyle,
@@ -191,12 +190,12 @@ function strays() {
 }
 
 if (!automated) {
-  mount();
+  if (query.has("classicLegacy")) prepareClassicLegacy(); mount();
   results.remove();
 } else {
   try {
     await act(async () => { mount(); });
-    await settle(300);
+    await settle(300); if (query.has("glassBackdrop")) document.documentElement.dataset.glassBackdrop = "live"; if (query.has("classicLegacy")) prepareClassicLegacy();
     const island = () => document.querySelector<HTMLElement>(".island")!;
     const panel = () => document.querySelector<HTMLElement>(".island__expanded")!;
     if (query.has("clockWeather")) await checkClockWeatherIsland(check, settle);
@@ -205,6 +204,7 @@ if (!automated) {
     const expectedHeight = customNotch ? 32 : 38;
     checkShapeMotion(0.38);
     checkCollapsedShape(query.has("capsule"), { island: island(), expectedHeight, interaction, check });
+    if (query.has("classicShoulders")) { checkClassicShoulders(check); await waitForClassicShoulderScreenshot(); }
     const bar = document.querySelector<HTMLElement>(".island__collapsed")!;
     if (customNotch) {
       const title = bar.querySelector<HTMLElement>(".island__agent-session, .island__active-task, .island__todo-count, .collapsed-lyric")!;
@@ -228,7 +228,7 @@ if (!automated) {
     }
     checkShapeMotion(0.56);
     if (query.has("theme") || query.has("bg")) checkTone(check, query.get("theme") === "light" || (query.get("bg") ?? "").toUpperCase() === "FFFFFF");
-    if (query.get("material")) checkMaterial(check, query.get("material")!);
+    if (query.get("material") && query.get("material") !== "classic") checkMaterial(check, query.get("material")!); if (query.has("glassBackdrop")) checkGlassShoulders(check);
     const panelMotion = getComputedStyle(panel());
     check(panelMotion.transitionProperty === "opacity, transform" && panelMotion.transitionDuration === "0.24s, 0.42s"
       && panelMotion.transitionDelay === "0.12s, 0.08s", "展开面板完整淡入，保留原时长与延迟");
