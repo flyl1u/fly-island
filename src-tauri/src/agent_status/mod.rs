@@ -54,6 +54,7 @@ pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
 mod workbuddy_cookie_vault;
 mod workbuddy_usage;
+pub(crate) mod zcode_api_key;
 mod zcode_credentials;
 pub(crate) mod zcode_usage;
 
@@ -532,6 +533,9 @@ macro_rules! tauri_commands {
             crate::agent_status::dsh_usage::get_dsh_usage,
             crate::agent_status::kimi_usage::get_kimi_usage,
             crate::agent_status::zcode_usage::get_zcode_usage,
+            crate::agent_status::zcode_api_key::get_zcode_api_key_settings,
+            crate::agent_status::zcode_api_key::save_zcode_api_key_settings,
+            crate::agent_status::zcode_api_key::clear_zcode_api_key,
             crate::agent_status::workbuddy_connection::get_workbuddy_usage,
             crate::agent_status::workbuddy_connection::open_workbuddy_login,
             crate::agent_status::workbuddy_connection::disconnect_workbuddy,

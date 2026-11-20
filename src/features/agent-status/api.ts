@@ -225,9 +225,26 @@ export function getKimiUsage() {
   return invoke<AgentUsage | null>("get_kimi_usage");
 }
 
-/** Z Code's plan windows or trial balances, asked with the app's own sign-in; null when absent. */
+/** Z Code's plan windows or trial balances, preferring the saved Coding Plan key; null when no source exists. */
 export function getZcodeUsage() {
   return invoke<AgentUsage | null>("get_zcode_usage");
+}
+
+export type ZcodeApiPlatform = "bigmodel" | "zai";
+
+/** Safe view of Z Code's Coding Plan key settings; the key itself never leaves Credential Manager. */
+export type ZcodeApiKeySettings = { platform: ZcodeApiPlatform; hasKey: boolean; maskedKey: string | null };
+
+export function getZcodeApiKeySettings() {
+  return invoke<ZcodeApiKeySettings>("get_zcode_api_key_settings");
+}
+
+export function saveZcodeApiKeySettings(platform: ZcodeApiPlatform, apiKey: string | null) {
+  return invoke<ZcodeApiKeySettings>("save_zcode_api_key_settings", { platform, apiKey });
+}
+
+export function clearZcodeApiKey() {
+  return invoke<ZcodeApiKeySettings>("clear_zcode_api_key");
 }
 
 /** Mirrors DshUsage / DshWallet in src-tauri/src/agent_status/dsh_usage.rs. Wallets have no percentage denominator. */

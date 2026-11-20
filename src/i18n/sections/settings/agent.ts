@@ -18,6 +18,15 @@ export type SettingsAgentText = {
     native: Record<"cursor" | "kimiCode" | "hermes" | "zcode", string>;
   };
   quotaRings: { title: string; hint: string; sources: Record<AgentQuotaSource, string> };
+  zcodeApiKey: {
+    title: string; description: string; platform: string; platformOptions: { bigmodel: string; zai: string };
+    apiKey: string; apiKeyHint: string; placeholder: string; save: string; check: string; clear: string; show: string; hide: string;
+    status: {
+      checking: string; saved: string; noQuota: string; invalidKey: string; network: string; http: (status: string) => string;
+      response: string; storage: string; required: string; invalidInput: string; cleared: string; desktopReady: string;
+      platformSaved: string; desktopError: string;
+    };
+  };
   workbuddy: {
     signedOut: string; loginRequired: string; ready: string; connected: string; unavailable: string;
     signIn: string; retry: string; signOut: string; busy: string; actionFailed: string;
@@ -74,9 +83,39 @@ export const zhCN: SettingsAgentText = {
       cursor: "只读取 Cursor 本机的 Agent 对话。点击会话可切到对应的 Cursor 窗口。",
       kimiCode: "读取 Kimi Code CLI 的会话记录，并在 Agent 页显示套餐额度环。",
       hermes: "只读取 Hermes Agent 的会话记录。",
-      zcode: "用 Z Code 客户端的登录，在 Agent 页显示套餐额度环。",
+      zcode: "用 Z Code 客户端登录或 Coding Plan API Key，在 Agent 页显示套餐额度环。",
     } },
   quotaRings: { title: "额度环", hint: "勾选要在 Agent 页显示的额度来源。", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  zcodeApiKey: {
+    title: "Coding Plan API Key",
+    description: "填写后优先使用 Key 查询额度；留空时使用 Z Code 桌面版登录。",
+    platform: "平台",
+    platformOptions: { bigmodel: "智谱国内 (open.bigmodel.cn)", zai: "Z.ai 国际 (api.z.ai)" },
+    apiKey: "API Key",
+    apiKeyHint: "从 bigmodel.cn 控制台「API Keys」获取，或复制配置 Claude Code 时的 ANTHROPIC_AUTH_TOKEN。",
+    placeholder: "粘贴 Coding Plan API Key",
+    save: "保存并检查",
+    check: "重新检查",
+    clear: "清除",
+    show: "显示 API Key",
+    hide: "隐藏 API Key",
+    status: {
+      checking: "正在检查额度…",
+      saved: "Key 已保存，额度读取成功。",
+      noQuota: "请求成功，但没有识别到 Coding Plan 额度；请检查平台和 Key。",
+      invalidKey: "API Key 无效或平台不匹配，请核对平台和 Key。",
+      network: "无法连接额度服务，请检查网络或代理。",
+      http: (status) => `额度服务返回 HTTP ${status}，请检查平台或稍后重试。`,
+      response: "额度服务返回的数据无法读取。",
+      storage: "无法访问 Windows 凭据管理器。",
+      required: "请输入 API Key。",
+      invalidInput: "API Key 需为可打印字符，且不超过 2048 个字符。",
+      cleared: "Key 已清除；之后会尝试使用 Z Code 桌面版登录。",
+      desktopReady: "Key 已清除，当前使用 Z Code 桌面版登录读取额度。",
+      platformSaved: "平台已保存。",
+      desktopError: "Z Code 桌面版登录暂不可用，请重新登录或填写 API Key。",
+    },
+  },
   workbuddy: {
     signedOut: "未登录 WorkBuddy",
     loginRequired: "WorkBuddy 登录已过期",
@@ -138,9 +177,39 @@ export const en: SettingsAgentText = {
       cursor: "Reads Cursor's local agent chats, read-only. Select a session to bring its Cursor window forward.",
       kimiCode: "Reads Kimi Code CLI sessions and shows its plan's quota rings on the Agent page.",
       hermes: "Reads Hermes Agent sessions, read-only.",
-      zcode: "Shows Z Code's plan quota rings on the Agent page, using the Z Code app's sign-in.",
+      zcode: "Shows Z Code's plan quota rings on the Agent page using its desktop sign-in or a Coding Plan API key.",
     } },
   quotaRings: { title: "Quota rings", hint: "Choose the quota sources to display on the Agent page.", sources: { claudeCode: "Claude", codex: "Codex", dsh: "DSH", workbuddy: "WorkBuddy", kimiCode: "Kimi Code", zcode: "Z Code" } },
+  zcodeApiKey: {
+    title: "Coding Plan API key",
+    description: "A saved key takes priority for quota checks. Leave it empty to use the Z Code desktop sign-in.",
+    platform: "Platform",
+    platformOptions: { bigmodel: "China (open.bigmodel.cn)", zai: "International (api.z.ai)" },
+    apiKey: "API key",
+    apiKeyHint: "Get a key from API Keys in the bigmodel.cn console, or copy ANTHROPIC_AUTH_TOKEN from your Claude Code configuration.",
+    placeholder: "Paste a Coding Plan API key",
+    save: "Save and check",
+    check: "Check again",
+    clear: "Clear",
+    show: "Show API key",
+    hide: "Hide API key",
+    status: {
+      checking: "Checking quota…",
+      saved: "Key saved. Quota loaded.",
+      noQuota: "The request succeeded but no Coding Plan quota was found. Check the platform and key.",
+      invalidKey: "The API key is invalid or the platform does not match. Check both values.",
+      network: "Couldn't reach the quota service. Check your network or proxy.",
+      http: (status) => `The quota service returned HTTP ${status}. Check the platform or try again later.`,
+      response: "The quota service returned data that couldn't be read.",
+      storage: "Couldn't access Windows Credential Manager.",
+      required: "Enter an API key.",
+      invalidInput: "The API key must use printable characters and be no longer than 2048 characters.",
+      cleared: "Key cleared. The Z Code desktop sign-in will be tried when available.",
+      desktopReady: "Key cleared. Quota is using the Z Code desktop sign-in.",
+      platformSaved: "Platform saved.",
+      desktopError: "The Z Code desktop sign-in is unavailable. Sign in again or enter an API key.",
+    },
+  },
   workbuddy: {
     signedOut: "Not signed in to WorkBuddy",
     loginRequired: "WorkBuddy sign-in expired",

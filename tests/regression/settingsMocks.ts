@@ -20,6 +20,7 @@ const mailbox = (email: string, extra: Partial<MailSnapshot> = {}): MailSnapshot
 });
 let mailboxes: MailSnapshot[] = [mailbox("demo@qq.com"), mailbox("louis@163.com", { status: "authRequired", enabled: false, unreadCount: null })];
 let replyMarkerOn = false;
+let zcodeApiKeySettings = { platform: "bigmodel", hasKey: false, maskedKey: null as string | null };
 export const REPLY_MARKER = { path: "C:\\Users\\demo\\.claude\\rules\\focusd-island-reply-marker.md", content: "<!-- focusd-island: reply marker v2 -->\n## Reply status marker" };
 const replyMarker = () => ({ installed: replyMarkerOn, outdated: false, ...REPLY_MARKER });
 export const replyMarkerCalls: boolean[] = [];
@@ -67,6 +68,18 @@ mockIPC((command, payload) => {
       clipboardSettings = { ...clipboardSettings, ...(args.settings as object | undefined) };
       return { settings: clipboardSettings, items: [] };
     case "get_agent_status": return { codex: { phase: "idle", updatedAt: 0 }, claudeCode: { phase: "idle", updatedAt: 0 }, updatedAt: 0, statusPath: "C:\\Users\\demo\\AppData\\Roaming\\com.focusd.island\\agent-status.json" };
+    case "get_zcode_api_key_settings": return zcodeApiKeySettings;
+    case "save_zcode_api_key_settings":
+      zcodeApiKeySettings = {
+        platform: String(args.platform),
+        hasKey: args.apiKey === null ? zcodeApiKeySettings.hasKey : Boolean(args.apiKey),
+        maskedKey: args.apiKey === null ? zcodeApiKeySettings.maskedKey : args.apiKey ? "********" : null,
+      };
+      return zcodeApiKeySettings;
+    case "clear_zcode_api_key": zcodeApiKeySettings = { ...zcodeApiKeySettings, hasKey: false, maskedKey: null }; return zcodeApiKeySettings;
+    case "get_zcode_usage": return zcodeApiKeySettings.hasKey ? {
+      updatedAt: Date.now(), fiveHour: { name: "", used: 10, resetsAt: null }, sevenDay: { name: "", used: 20, resetsAt: null }, models: [], plan: "Coding Plan", source: "zcode",
+    } : null;
     case "get_qq_mail_state": return mailboxes;
     case "connect_qq_mail":
     case "disconnect_qq_mail":
