@@ -10,6 +10,7 @@ import { I18nProvider } from "../../src/i18n";
 import type { MediaState } from "../../src/features/media/api";
 import { DEFAULT_MEDIA_STATE } from "../../src/features/media/mediaState";
 import { MusicPlayerPanel } from "../../src/features/media/MusicPlayerPanel";
+import { forgetLyrics } from "../../src/features/media/lyrics/useLyrics";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
 localStorage.setItem("focusd-island-locale", "zh-CN");
@@ -295,8 +296,13 @@ if (new URLSearchParams(location.search).get("view") === "diagnostic") {
     "没有在播放时是一张静止的唱片和一句说明，没有空的封面、进度条和播放键");
   check(document.querySelector<HTMLButtonElement>(".music-idle__resume")?.textContent === "继续播放" && fixture.scrollWidth <= fixture.clientWidth,
     "空状态只留一个“继续播放”，不撑宽页面");
-  // Leave the page on a playing song with lyrics, for a look by eye.
+  // The Apple Music token was saved or cleared: the answer held in memory is dropped and the
+  // song is asked about again (the native side drops the cached Apple lyrics with it).
   await render(track("晴天", 6000, true));
+  const beforeForget = queries.length;
+  await act(async () => { forgetLyrics(); });
+  await settle(80);
+  check(queries.length === beforeForget + 1, "换了 Apple Music 令牌后，内存里的歌词丢掉并重新查一次");
 
   results.textContent = `${messages.join("\n")}\n\n全部 ${messages.length} 项检查通过。`;
   results.dataset.result = "passed";

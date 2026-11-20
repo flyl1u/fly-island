@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 /** Mirrors Lyrics in src-tauri/src/lyrics/mod.rs. */
 export type Lyrics = {
@@ -45,4 +46,11 @@ export function clearAppleMusicToken() {
 
 export function hasAppleMusicToken() {
   return invoke<boolean>("has_apple_music_token");
+}
+
+/** Told by the native side when the token is replaced or cleared: the held answers came with the old one. */
+const APPLE_MUSIC_TOKEN_CHANGED_EVENT = "apple-music-token-changed";
+
+export function listenAppleMusicTokenChanged(handler: () => void) {
+  return listen(APPLE_MUSIC_TOKEN_CHANGED_EVENT, () => handler());
 }
