@@ -185,7 +185,7 @@ fn encode_query(text: &str) -> String {
 fn best_song(answer: &Value, title: &str, artist: &str, duration_ms: i64) -> Option<(String, i64)> {
     // Apple nests the songs in an object of their own: `results.songs.data`.
     let songs = answer["results"]["songs"]["data"].as_array()?;
-    songs
+    let candidates: Vec<(String, i64, bool)> = songs
         .iter()
         .filter_map(|song| {
             let attributes = &song["attributes"];
@@ -193,11 +193,21 @@ fn best_song(answer: &Value, title: &str, artist: &str, duration_ms: i64) -> Opt
             let artist_name = attributes["artistName"].as_str()?;
             let length = attributes["durationInMillis"].as_i64().unwrap_or(0);
             let id = song["id"].as_str()?.to_string();
-            same_track((title, artist, duration_ms), (name, artist_name, length)).then_some((id, length))
+            // A missing flag is read as "has lyrics": only an explicit false rules a song out.
+            let has_lyrics = attributes["hasLyrics"].as_bool().unwrap_or(true);
+            same_track((title, artist, duration_ms), (name, artist_name, length)).then_some((id, length, has_lyrics))
         })
-        .enumerate()
-        .min_by_key(|(index, (_, length))| if duration_ms > 0 { (duration_ms - length).abs() } else { *index as i64 })
-        .map(|(_, found)| found)
+        .collect();
+    // Every song of the album comes with an instrumental version, and the two are named the same
+    // once the version note is cleaned away. The instrumental one has no lyrics at all, so the
+    // songs that have lyrics come first; only when none of them does the rest is used.
+    let with_lyrics: Vec<&(String, i64, bool)> =
+        candidates.iter().filter(|(_, _, has_lyrics)| *has_lyrics).collect();
+    let pool: Vec<&(String, i64, bool)> =
+        if with_lyrics.is_empty() { candidates.iter().collect() } else { with_lyrics };
+    pool.iter()
+        .min_by_key(|(_, length, _)| if duration_ms > 0 { (duration_ms - *length).abs() } else { 0 })
+        .map(|(id, length, _)| (id.clone(), *length))
 }
 
 /// The TTML of the song's lyrics: the word-by-word one, or the plain one. Apple's answers
@@ -312,7 +322,9 @@ async fn get_json(
         .header("Accept", "application/json")
         .bearer_auth(developer);
     if let Some(token) = user {
-        request = request.header("media-user-token", token);
+        // Apple takes the media token either as a header or as a cookie; both are sent, so it
+        // does not matter which of the two the lyrics endpoint accepts.
+        request = request.header("media-user-token", token).header("Cookie", format!("media-user-token={token}"));
     }
     let response = request.send().await.map_err(|error| format!("Could not reach Apple Music: {error}"))?;
     if response.status() == reqwest::StatusCode::NOT_FOUND {

@@ -37,6 +37,36 @@ fn the_right_song_is_picked_out_of_the_same_name() {
 }
 
 #[test]
+fn a_song_with_lyrics_is_picked_over_the_instrumental_one() {
+    // The instrumental version is named the same once its note is cleaned away, and it lasts
+    // about as long, so only the lyrics flag tells the two apart.
+    let answer = json!({ "results": { "songs": { "data": [
+        { "id": "1", "attributes": { "name": "余香", "artistName": "小匆匆", "durationInMillis": 246_022, "hasLyrics": true } },
+        { "id": "2", "attributes": { "name": "余香 (伴奏)", "artistName": "小匆匆", "durationInMillis": 245_880, "hasLyrics": false } },
+    ] } } });
+    // The instrumental one is the closer match, but it has no lyrics at all.
+    assert_eq!(best_song(&answer, "余香", "小匆匆", 245_900), Some(("1".to_string(), 246_022)));
+    assert_eq!(best_song(&answer, "余香", "小匆匆", 244_000), Some(("1".to_string(), 246_022)));
+}
+
+#[test]
+fn a_song_without_lyrics_is_still_picked_when_it_is_the_only_one() {
+    let answer = json!({ "results": { "songs": { "data": [
+        { "id": "2", "attributes": { "name": "余香 (伴奏)", "artistName": "小匆匆", "durationInMillis": 245_880, "hasLyrics": false } },
+    ] } } });
+    assert_eq!(best_song(&answer, "余香", "小匆匆", 245_900), Some(("2".to_string(), 245_880)));
+}
+
+#[test]
+fn a_song_without_the_lyrics_flag_is_picked() {
+    // Apple leaves the flag out on some songs; they are not ruled out for that.
+    let answer = json!({ "results": { "songs": { "data": [
+        { "id": "1", "attributes": { "name": "余香", "artistName": "小匆匆", "durationInMillis": 246_022 } },
+    ] } } });
+    assert_eq!(best_song(&answer, "余香", "小匆匆", 246_000), Some(("1".to_string(), 246_022)));
+}
+
+#[test]
 fn the_addresses_carry_the_storefront_the_language_and_the_term() {
     assert_eq!(
         search_url("cn", "zh-Hans-CN", "余香 张小九"),
