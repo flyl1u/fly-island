@@ -5,7 +5,7 @@ import { NATIVE_AGENTS } from "../../features/agent-status/nativeAgents";
 import { OFFICE_SOURCES } from "../../features/messages/messagePreview";
 import { useOfficeImEnabled } from "../../features/messages/office-im/useOfficeIm";
 import type { IslandSettings } from "../../features/appearance/types";
-import { ClockWeatherSettingsGroup, setClockWeatherSettings, useClockWeather } from "../../features/weather";
+import { setClockWeatherSettings, useClockWeather } from "../../features/weather";
 import { useTranslation } from "../../i18n";
 import "./PluginMarket.css";
 
@@ -35,7 +35,7 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
     }
     setNativePluginInstalled(id, true);
   };
-  return <><section className="plugin-market" aria-label={t.title}>
+  return <section className="plugin-market" aria-label={t.title}>
     <header className="plugin-market__header">
       <p className="plugin-market__hint">{t.hint}</p>
     </header>
@@ -66,7 +66,5 @@ export function PluginMarket({ settings, onSettingsChange }: PluginMarketProps) 
         </li>;
       })}
     </ul>
-  </section>
-    {installed.clockWeather && <ClockWeatherSettingsGroup />}
-  </>;
+  </section>;
 }

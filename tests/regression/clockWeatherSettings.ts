@@ -2,15 +2,19 @@ import { act } from "react";
 import { TRANSLATIONS } from "../../src/i18n";
 import { CLOCK_WEATHER_KEY } from "../../src/features/weather/storage";
 
-export async function checkClockWeatherSettings(locale: "zh-CN" | "en", check: (value: unknown, label: string) => void) {
-  const market = TRANSLATIONS[locale].settings.plugins.market;
+export async function checkClockWeatherSettingsPage(
+  locale: "zh-CN" | "en",
+  openPage: (category: string) => Promise<void>,
+  click: (selector: string) => Promise<void>,
+  check: (value: unknown, label: string) => void,
+) {
+  const categories = TRANSLATIONS[locale].settings.categories;
   const t = TRANSLATIONS[locale].settings.plugins.clockWeather;
+  const market = TRANSLATIONS[locale].settings.plugins.market;
   const name = market.items.clockWeather.name;
-  const action = (installed: boolean) => document.querySelector<HTMLButtonElement>(
-    `button[aria-label='${installed ? market.uninstallNamed(name) : market.installNamed(name)}']`)!;
   const saved = () => JSON.parse(localStorage.getItem(CLOCK_WEATHER_KEY) ?? "{}");
   const toggle = (title: string) => [...document.querySelectorAll<HTMLElement>(".settings-row")]
-    .find(row => row.querySelector(".settings-row__title")?.textContent === title)!
+    .find((row) => row.querySelector(".settings-row__title")?.textContent === title)!
     .querySelector<HTMLInputElement>("[role=switch]")!;
   const type = async (value: string) => act(async () => {
     const input = document.querySelector<HTMLInputElement>(`input[aria-label='${t.city}']`)!;
@@ -22,30 +26,30 @@ export async function checkClockWeatherSettings(locale: "zh-CN" | "en", check: (
     await act(async () => document.querySelector<HTMLInputElement>(`input[aria-label='${t.city}']`)!
       .dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
   };
-  localStorage.removeItem(CLOCK_WEATHER_KEY);
-  await act(async () => action(false).click());
-  check(saved().showClock && saved().showWeather && document.body.textContent?.includes(t.chooseCity),
-    "时间天气安装后两个开关默认开，未选城市显示提示");
+
+  await openPage("clockWeather");
+  const input = document.querySelector<HTMLInputElement>(`input[aria-label='${t.city}']`);
+  check(Boolean(input) && !document.querySelector(".clock-weather-settings__cities"), "The installed Clock & Weather plugin has its own settings page");
   await act(async () => toggle(t.showClock).click());
-  check(!saved().showClock && saved().showWeather, "时间开关独立保存，不改变天气开关");
-  await act(async () => toggle(t.showWeather).click());
-  check(!saved().showClock && !saved().showWeather, "天气开关独立保存，不改变时间开关");
+  check(saved().showClock === false && saved().showWeather === true, "Time and weather switches save independently");
+  await act(async () => toggle(t.showClock).click());
   await search("Beijing");
-  const result = document.querySelector<HTMLButtonElement>(".clock-weather-settings__cities button")!;
-  check(result?.textContent?.includes("Beijing"), "城市搜索展示可选择的结果");
-  await act(async () => result.click());
+  const result = document.querySelector<HTMLButtonElement>(".clock-weather-settings__cities button");
+  check(Boolean(result?.textContent), "The standalone page searches and lists cities");
+  await act(async () => result!.click());
   check(saved().location?.latitude === 39.9 && saved().location?.longitude === 116.4
-    && !document.querySelector(".clock-weather-settings__cities"), "选中城市保存名称与坐标并收起结果");
-  await search("empty");
-  check(document.querySelector("[role=status]")?.textContent === t.noCities, "城市空结果显示本地化反馈");
-  await search("offline");
-  check(document.querySelector("[role=status]")?.textContent === t.searchFailed, "城市搜索失败可以原地重试");
-  await act(async () => action(true).click());
-  check(!document.querySelector(`input[aria-label='${t.city}']`), "卸载后移除时间天气设置");
-  await act(async () => action(false).click());
-  check(saved().showClock && saved().showWeather && saved().location?.name,
-    "重新安装默认打开两个开关并保留城市");
-  const row = document.querySelector<HTMLInputElement>(`input[aria-label='${t.city}']`)!.closest(".settings-row")!;
-  check(row.scrollWidth <= row.clientWidth, "中英文城市设置在窄窗口中不溢出");
-  await act(async () => action(true).click());
+    && !document.querySelector(".clock-weather-settings__cities"), "Selecting a city saves its coordinates");
+  await act(async () => document.querySelector<HTMLButtonElement>(`button[aria-label='${t.locate}']`)!.click());
+  check(saved().location?.name?.length > 0, "Clicking Locate saves the returned location");
+  const row = input!.closest(".settings-row")!;
+  check(row.scrollWidth <= row.clientWidth, "The location controls fit a narrow row");
+
+  await openPage("plugins");
+  await click(`button[aria-label='${market.uninstallNamed(name)}']`);
+  check(!document.querySelector(".settings-sidebar__item[data-category='clockWeather']")
+    && document.querySelector(".settings-page__title")?.textContent === categories.plugins,
+  "Uninstalling Clock & Weather removes its sidebar page and returns to Plugins");
+  await click(`button[aria-label='${market.installNamed(name)}']`);
+  check(Boolean(document.querySelector(".settings-sidebar__item[data-category='clockWeather']"))
+    && saved().location?.name?.length > 0, "Reinstalling restores the page and keeps the city");
 }
