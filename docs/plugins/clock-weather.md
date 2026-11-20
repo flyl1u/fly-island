@@ -4,7 +4,7 @@
 
 时间显示本机时区的 24 小时制 `HH:mm`，由叶子组件在整分钟更新；展开或贴边隐藏时暂停，重新显示时校准。数字预留固定宽度，不随分钟变化改变岛的大小。
 
-天气需要先搜索并选择城市。没有城市时显示「选择城市后显示天气」，不请求天气、不占用岛上位置。搜索只在按搜索按钮或回车时提交，不使用 IP 定位或系统位置权限。城市名称和坐标保存在本机。
+天气需要先搜索并选择城市。没有城市时显示「选择城市后显示天气」，不请求天气、不占用岛上位置。搜索只在按搜索按钮或回车时提交。城市名称和坐标保存在本机。
 
 天气在岛上显示 lucide 图标和取整摄氏温度（例如 `23°`），悬停和读屏标签包含城市、天气描述及 ℃。每 30 分钟刷新，失败不弹通知，继续显示有效缓存；观测或获取时间中更早的一项超过三小时即隐藏。切换城市不会混用旧城市的数据。所有文案支持简体中文和英文。
 
@@ -12,7 +12,7 @@
 
 ## 网络、存储与接入
 
-- Rust `src-tauri/src/weather/mod.rs` 仅请求 Open-Meteo 固定 HTTPS 域名：`geocoding-api.open-meteo.com`（城市搜索）、`api.open-meteo.com`（当前温度和 WMO weather_code）。无需 API key，不跟随重定向，超时 12 秒，响应上限 256 KiB。
+- Rust `src-tauri/src/weather/mod.rs` 请求 Open-Meteo 固定 HTTPS 域名：`geocoding-api.open-meteo.com`（城市搜索）、`api.open-meteo.com`（当前温度和 WMO weather_code）。当 Open-Meteo 的结果缺少高质量城市时，会用 Nominatim 搜索补充一项。无需 API key，不跟随重定向，超时 12 秒，响应上限 256 KiB。
 - 前端 `src/features/weather/api.ts` 封装 `search_weather_cities` / `get_current_weather`。插件安装态沿用 `features/plugins/native` 的跨窗口同步。
 - 设置与一条城市天气缓存写入 WebView2 localStorage：`focusd-island-clock-weather` / `focusd-island-weather-cache`。无新增 Rust 数据文件、凭据或后台线程。格式见 [对外契约](../architecture/contracts.md)，位置见 [数据存储](../architecture/data-storage.md)。
 - 岛屿接入点为 `IslandCollapsedBar.tsx` 与 `useCollapsedTodo.ts`；预览与排列位在 `features/appearance/`。时间定时器不向窗口提升状态，天气由同一窗口的订阅共享请求和低频定时器。

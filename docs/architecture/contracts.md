@@ -228,7 +228,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - manifest：`fly-island-plugin.json`；发布索引：`plugins-index.json`。现有命令、事件、窗口、localStorage key、latest.json 格式和更新端点保持兼容。
 - v3.2.6（2026-11-18，第三轮手测后）：`focusd-island-settings` 兼容新增 `todoVisibleRows`（整数 3–12，默认 8，即默认面板高度上限原本就放得下的行数，老用户观感不变）。新增命令 `add_file_shelf_welcome(fileName, content)`：首次启动时把欢迎说明写到应用数据目录 `welcome/<fileName>.txt` 并放进文件中转。首次启动（从未保存过设置和待办）时待办列表带一条欢迎待办，按普通待办保存在 `focusd-island-todos`。
 
-## 时间与天气命令（2026-11-19）
+## 时间与天气命令（2026-11-20）
 
-- `search_weather_cities({ name, language }) → { name, latitude, longitude }[]`：name 为去空白后 2–100 字符的城市名，language 为 `zh` 或 `en`（其它值按 en）；最多八项，显示名合并城市、行政区、国家并去重。
+- `search_weather_cities({ name, language }) → { name, latitude, longitude }[]`：name 为去空白后 2–100 字符的城市名，language 为 `zh` 或 `en`（其它值按 en）；最多八项，按行政级别与人口排序，过滤低质量同名点，显示名合并城市、行政区、国家并去重；Open-Meteo 结果质量不足时用 Nominatim 补充一项。
 - `get_current_weather({ latitude, longitude }) → { temperature, code, observedAt, fetchedAt }`：校验地理坐标；temperature 为摄氏数值，code 为 WMO weather_code，两个时间均为 Unix 毫秒。命令异步请求 Open-Meteo，不新增事件、权限或原生持久化文件。
