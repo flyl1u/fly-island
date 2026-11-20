@@ -27,7 +27,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
 | `focusd-island-session-sort-recent-v1`（旧版写的 `"1"`：会话排序 `status` → `recent` 的一次性迁移完成。2026-11-19 起不再读写，迁移已撤掉，理由同上；已有的值留在原处不删） | 无（曾在 `features/appearance/storage.ts`） |
 | `focusd-island-color-backup`（`{ islandBackgroundColor, taskTextColor, pulseColor }`，均为大写 `#RRGGBB`；迁移、恢复默认外观和批量改色前保存；回退时与当前三色互换，手动改一个颜色不写） | `features/appearance/storage.ts`、`colorPalette.ts` |
-| `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor }[]`；id 为字符串，三色均为大写 `#RRGGBB`，最多 8 项、三色组合去重；损坏记录跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
+| `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor, pageTextColor? }[]`；id 为字符串，前三色为大写 `#RRGGBB`。2026-11-19 起新预设包含 `pageTextColor`：大写 `#RRGGBB` 或 `""`（跟随背景）；旧项缺失或此可选字段损坏时保留缺失，应用不改变当前展开文字。最多 8 项，包含展开文字 / 跟随背景状态去重，缺失与显式 `""` 不合并；损坏必需字段跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
 | `focusd-island-todos` | `features/todos/storage.ts` |
 | `focusd-island-active-todo`（主任务 ID 字符串，兼容原单任务格式） | `features/todos/storage.ts` |
