@@ -15,6 +15,7 @@ import { checkQuotaSettings } from "./settingsQuota";
 import { checkGeneralControls } from "./settingsGeneral";
 import { checkGroups } from "./settingsGroups";
 import { checkTodoRotation } from "./settingsTodoRotation";
+import { checkTodoFileSync } from "./settingsTodoFileSync";
 import { checkMessagePreview } from "./settingsMessagePreview";
 import { PLUGINS_ENABLED } from "../../src/features/releaseFlags.ts";
 
@@ -36,6 +37,7 @@ if (automated) localStorage.setItem("focusd-island-settings", JSON.stringify({ o
 else localStorage.removeItem("focusd-island-settings");
 if (automated) prepareColorRegression();
 localStorage.setItem("focusd-island-save-directory", "");
+localStorage.removeItem("focusd-island-todo-file-sync");
 localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
 // Other pages in the same run leave their own agent settings behind; start from the defaults.
 localStorage.removeItem("focusd-island-agent-approval");
@@ -106,11 +108,14 @@ if (!automated) {
       // Appearance 14 -> 16: the colour scheme and the material the owner asked for on 2026-11-14
       // (the glass strength row shows only with a glass).
       await checkGroups(category, panel, check);
-      if (category === "todos") await checkTodoRotation(panel, check);
+      if (category === "todos") {
+        await checkTodoRotation(panel, check);
+        await checkTodoFileSync(panel, check);
+      }
       // Appearance 16 -> 19: the page text colour row and the whole-look presets (empty state + name row).
       // General: v3.2.6 adds Ctrl + wheel and game mode's "still show notifications"; appearance +3 open and collapsed corners; clipboard +1 storage folder.
       // 2026-11-19: the tucked look (+1) moves from general (16 -> 15) to appearance (22 -> 23).
-      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : category === "clipboard" ? 9 : 8;
+      const maxRows = category === "agents" ? 13 : category === "general" ? 15 : category === "appearance" ? 23 : category === "clipboard" || category === "todos" ? 9 : 8;
       if (category === "appearance") {
         const row = [...panel.querySelectorAll<HTMLElement>(".settings-row")].find((item) => item.textContent?.includes("贴边圆角"))!;
         const toggle = row.querySelector<HTMLInputElement>("[role='switch']")!;
