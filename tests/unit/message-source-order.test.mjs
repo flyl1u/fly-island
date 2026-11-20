@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_SOURCE_ORDER, moveSource, normalizeSourceOrder } from "../../src/features/messages/sourceOrder.ts";
 import { normalizeInstalledNativePlugins } from "../../src/features/plugins/native/storage.ts";
+import { NATIVE_PLUGIN_IDS } from "../../src/features/plugins/native/catalog.ts";
 
 test("saved tab orders drop unknown sources and gain new ones at the end", () => {
   assert.deepEqual(normalizeSourceOrder(undefined), DEFAULT_SOURCE_ORDER);
@@ -21,6 +22,6 @@ test("installed plugins keep only known ids", () => {
   const installed = normalizeInstalledNativePlugins(["feishu", "nope", 3]);
   assert.equal(installed.feishu, true);
   assert.equal(installed.dingtalk, false);
-  assert.equal(Object.keys(installed).length, 7);
+  assert.equal(Object.keys(installed).length, NATIVE_PLUGIN_IDS.length);
   assert.equal(normalizeInstalledNativePlugins("bad").cursor, false);
 });

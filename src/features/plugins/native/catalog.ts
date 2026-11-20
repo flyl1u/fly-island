@@ -1,7 +1,7 @@
 // Plugins built into the island's own source. Installing one switches on a feature that lives
 // beside the original ones (a message source, an Agent provider); nothing else changes until then.
 
-export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes";
+export type NativePluginId = "dingtalk" | "feishu" | "wecom" | "cursor" | "kimiCode" | "zcode" | "hermes" | "minimaxCode";
 
 /** Where an installed plugin shows up: the Messages page's tabs or the Agent page. */
 export type NativePluginKind = "messages" | "agent";
@@ -21,6 +21,7 @@ export const NATIVE_PLUGINS: readonly NativePlugin[] = [
   { id: "kimiCode", kind: "agent", accent: "#8a8a8a" },
   { id: "zcode", kind: "agent", accent: "#7c8592" },
   { id: "hermes", kind: "agent", accent: "#b9a6ff" },
+  { id: "minimaxCode", kind: "agent", accent: "#0f9ef0" },
 ];
 
 export const NATIVE_PLUGIN_IDS: readonly NativePluginId[] = NATIVE_PLUGINS.map((plugin) => plugin.id);

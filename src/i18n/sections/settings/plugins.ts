@@ -41,6 +41,7 @@ export const zhCN: SettingsPluginsText = {
       kimiCode: { name: "Kimi Code", description: "显示 Kimi Code 的会话状态和套餐剩余额度。" },
       zcode: { name: "Z Code", description: "显示 Z Code 的套餐剩余额度和重置时间。" },
       hermes: { name: "Hermes", description: "显示 Nous Research Hermes Agent 的本地会话。" },
+      minimaxCode: { name: "MiniMax Code", description: "显示 MiniMax Code 的会话状态和 Token Plan 剩余额度。" },
     },
   },
 };
@@ -69,6 +70,7 @@ export const en: SettingsPluginsText = {
       kimiCode: { name: "Kimi Code", description: "Show Kimi Code sessions and how much of your plan is left." },
       zcode: { name: "Z Code", description: "Show how much of your Z Code plan is left and when it resets." },
       hermes: { name: "Hermes", description: "Show local sessions of Nous Research's Hermes Agent." },
+      minimaxCode: { name: "MiniMax Code", description: "Show MiniMax Code sessions and how much of your Token Plan is left." },
     },
   },
 };
