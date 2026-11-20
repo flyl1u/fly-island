@@ -2,7 +2,7 @@
 
 小岛自己检查新版本，在应用内下载、安装并自动重启。
 
-- **自动更新（默认开启，2026-11-13 起）**：设置 →「关于」→「自动更新」，存在 `focusd-island-auto-update`。开启时，主窗口（`features/updater/updaterController.ts`）启动后检查一次，之后每 6 小时检查一次（单个 `setTimeout`，不轮询）；检查或下载失败按 1、5、30 分钟退避重试，三次后回到 6 小时；后台下载失败时不进入 error，仍停在「有新版本」（带失败原因），待办照常出现，点「更新」时重新下载；每次检查前重新读一遍代理。下载好后，待办列表顶部出现「更新到 vX.Y.Z」的待办；小岛处于收起态（含贴边收起、托盘隐藏）且 2 分钟内没有指针或键盘操作时，`useIdleUpdateInstall` 直接调用安装（NSIS passive），装完由安装器重新打开小岛。展开面板、悬停或打字都会重新计时，游戏勿扰期间不自动安装。
+- **自动更新（默认开启，2026-11-13 起）**：设置 →「关于」→「自动更新」，存在 `fly-island-auto-update`。开启时，主窗口（`features/updater/updaterController.ts`）启动后检查一次，之后每 6 小时检查一次（单个 `setTimeout`，不轮询）；检查或下载失败按 1、5、30 分钟退避重试，三次后回到 6 小时；后台下载失败时不进入 error，仍停在「有新版本」（带失败原因），待办照常出现，点「更新」时重新下载；每次检查前重新读一遍代理。下载好后，待办列表顶部出现「更新到 vX.Y.Z」的待办；小岛处于收起态（含贴边收起、托盘隐藏）且 2 分钟内没有指针或键盘操作时，`useIdleUpdateInstall` 直接调用安装（NSIS passive），装完由安装器重新打开小岛。展开面板、悬停或打字都会重新计时，游戏勿扰期间不自动安装。
 - **关闭自动更新**：不再自动检查，也不自动安装。
 - **「关于」页的更新组**：无论开关如何都显示当前状态（还没检查、正在检查、已是最新、发现新版本、下载进度、可安装、出错及原因）和「检查更新」按钮；有可安装的版本时多一行「立即安装」。关掉待办页的用户也能从这里更新。（2026-11-12 曾去掉手动检查那一行，2026-11-13 恢复。）
 - 删掉更新待办只是不再在待办里提醒，下载好的包保留。下载只在主窗口里进行，独立设置窗口只镜像状态并把操作转给主窗口。
@@ -17,7 +17,7 @@
 - 正式版用户点「下载测试版」，查一次 beta 通道；有比当前新的测试版就照常下载，在同一组的「立即安装」安装（自动更新开着时，小岛空闲也会装上）；没有就显示「暂时没有比当前更新的测试版」。
 - 正在用测试版（版本号带 `-`）时，这一行变成「正在使用测试版 vX」和「还原到正式版」：查稳定版清单并允许降级（`updater_check` 的 `allowDowngrade`，任何不同的版本都算更新），下载后安装正式版的最新版本。NSIS 的 `allowDowngrades` 保持默认开启，所以能装回旧版本。
 - 测试版用户的自动检查和「检查更新」走 beta 通道（清单取不到时退回稳定版），所以会继续收到新的测试版，也会收到更高的正式版。正式版用户的自动检查只看稳定版；他们主动找来的测试版下载好之前，不会被定时检查覆盖。
-- 前端逻辑在 `src/features/updater/updateChannel.ts`（目标 `stable` / `beta` / `restore`）和 `updaterController.ts` 的 `switchChannel`。3.0.2 及更早版本存在 `focusd-island-update-channel` 里的旧选择仍然不读。
+- 前端逻辑在 `src/features/updater/updateChannel.ts`（目标 `stable` / `beta` / `restore`）和 `updaterController.ts` 的 `switchChannel`。3.0.2 及更早版本存在 `fly-island-update-channel` 里的旧选择仍然不读。
 
 下面是两个通道本身，旧客户端仍在使用：
 
@@ -96,6 +96,8 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 
 已配置的发布机器运行 `pnpm release` 即可，无需每次复制密钥内容或设置环境变量。本机配置路径为 `%USERPROFILE%\.tauri\fly-island\release.json`，格式如下（路径应为实际绝对路径）：
 
+??????? `FLY_ISLAND_SIGNING_CONFIG` ???????????CI ???????? `TAURI_UPDATER_PUBKEY`?`TAURI_SIGNING_PRIVATE_KEY` ? `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`?????????? Fly Island ???
+
 ```json
 {
   "schemaVersion": 1,
@@ -105,7 +107,7 @@ pnpm tauri signer generate -w $env:USERPROFILE\.tauri\fly-island.key
 }
 ```
 
-私钥本身带密码；`password.dpapi` 是通过 `ConvertFrom-SecureString` 生成的 Windows 当前用户加密密码。密钥目录应只授予维护者账号访问。文件均位于仓库外，不能提交到 Git。可用 `FOCUSD_SIGNING_CONFIG` 指定其他本机配置路径。
+私钥本身带密码；`password.dpapi` 是通过 `ConvertFrom-SecureString` 生成的 Windows 当前用户加密密码。密钥目录应只授予维护者账号访问。文件均位于仓库外，不能提交到 Git。可用 `FLY_ISLAND_SIGNING_CONFIG` 指定其他本机配置路径。
 
 更换 Windows 用户或重装系统后，原 DPAPI 密码文件无法解密。恢复时使用受保护备份中的私钥及恢复密码重新创建 DPAPI 密码文件；同一条发布线继续使用原密钥，不重新生成。恢复密码与私钥都属于敏感文件。
 

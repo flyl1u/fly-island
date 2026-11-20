@@ -1,6 +1,6 @@
 # DSH 社区桌面端接入核查
 
-调研日期：2026-11-13。工作区 D:/FocuSD-wt-dsh，分支 feat/dsh-community。不创建提交，不修改 DSH 自身数据，不升级依赖。
+调研日期：2026-11-13。工作区 D:/Fly Island-wt-dsh，分支 feat/dsh-community。不创建提交，不修改 DSH 自身数据，不升级依赖。
 
 ## 结论与上一版纠正
 
@@ -54,11 +54,11 @@ Stars 是本次 API 快照。均基于 Electron，Chrome_WidgetWin_1 是框架�
 | pnpm build | 通过 |
 | pnpm test:regression | 22 页全部通过，DSH 12 项含社区宿主和 280px 三种视图不溢出 |
 | pnpm build:web-demo | 通过 |
-| pnpm tauri build --no-bundle | 通过；最终产物 src-tauri/target/release/focusd-island.exe |
+| pnpm tauri build --no-bundle | 通过；最终产物 src-tauri/target/release/fly-island.exe |
 | pnpm check:tests-types | 最终新增窄窗口断言类型检查通过 |
 | git diff --check | 通过 |
 
-所有 Cargo 调用显式设置 CARGO_TARGET_DIR 为 D:/FocuSD-wt-dsh/src-tauri/target；最终桌面构建 TEMP/TMP 位于本 worktree 的 node_modules/.cache/dsh-validation。构建保留 Vite 原有大 chunk 提示，不影响成功。未启动岛屿或 DSH，无需停止占用程序。临时调研资料移入本 worktree 的 node_modules 缓存，不进入改动清单。
+所有 Cargo 调用显式设置 CARGO_TARGET_DIR 为 D:/Fly Island-wt-dsh/src-tauri/target；最终桌面构建 TEMP/TMP 位于本 worktree 的 node_modules/.cache/dsh-validation。构建保留 Vite 原有大 chunk 提示，不影响成功。未启动岛屿或 DSH，无需停止占用程序。临时调研资料移入本 worktree 的 node_modules 缓存，不进入改动清单。
 
 本机只读临时命令：cargo test --manifest-path src-tauri/Cargo.toml dsh_community_local_probe -- --ignored --nocapture；测试通过，仅输出数量、宿主名和状态分布，随后删除临时测试并重新执行全量 Rust 验证。
 

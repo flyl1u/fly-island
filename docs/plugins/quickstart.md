@@ -38,9 +38,9 @@ $rpc | & (Join-Path $env:CARGO_TARGET_DIR 'debug/example-hello.exe')
 
 ## 2. 仅本地启用宿主 / Enable the host locally
 
-`release-features.json` 的 `plugins` 同时控制前端与 Rust。开发者模式、环境变量、浏览器回归用的 `FOCUSD_REGRESSION_FEATURES` 都不能单独开启 Rust 宿主。**不要在插件 PR 或发行包中提交打开的发布开关**，也不要修改版本号。
+`release-features.json` 的 `plugins` 同时控制前端与 Rust。开发者模式、环境变量、浏览器回归用的 `FLY_ISLAND_REGRESSION_FEATURES` 都不能单独开启 Rust 宿主。**不要在插件 PR 或发行包中提交打开的发布开关**，也不要修改版本号。
 
-The `plugins` flag controls both frontend and Rust. Developer mode, index environment overrides and browser-only `FOCUSD_REGRESSION_FEATURES` cannot independently enable the Rust host. **Do not commit an enabled release flag or ship it in your plugin PR**, and do not change app versions.
+The `plugins` flag controls both frontend and Rust. Developer mode, index environment overrides and browser-only `FLY_ISLAND_REGRESSION_FEATURES` cannot independently enable the Rust host. **Do not commit an enabled release flag or ship it in your plugin PR**, and do not change app versions.
 
 先备份当前文件，再只改本地 plugins 值（不改其他发布开关）。以下在同一个 PowerShell 会话中运行，避免覆盖自己的备份：
 
@@ -109,7 +109,7 @@ Output includes ZIP and index JSON with absolute file URLs, computed size/sha256
 1. 如果之前已目录加载同 id，先卸载注册。/ Unregister a previously loaded directory with the same ID.
 2. 保持开发构建的发布开关开启，设置 → 插件 → 开发者模式，将上面绝对索引路径填入「插件索引」并保存（也接受 file URL）。保存会重新读取索引，也可点「刷新」。/ Keep plugins enabled in the development build. Under Developer mode, enter/save the absolute index path (or file URL); saving reloads the index, and Refresh retries it.
 3. 安装 example-hello，再启用；首次安装默认关闭。重复检查岛上显示、停用、卸载，确认安装目录删除。/ Install example-hello, then enable it; first installs are disabled. Repeat display/disable/uninstall checks and confirm installed files are removed.
-4. 也可在启动宿主前设置 `$env:FOCUSD_PLUGINS_INDEX = (Join-Path $PWD 'artifacts/plugins/plugins-index.json')`；它优先于 UI，调试完成后 `Remove-Item Env:FOCUSD_PLUGINS_INDEX`。不要带着遗留变量排查 UI 索引不生效。/ Alternatively set this environment override before host startup. It takes precedence over the UI; remove it after debugging so it cannot mask UI index changes.
+4. 也可在启动宿主前设置 `$env:FLY_ISLAND_PLUGINS_INDEX = (Join-Path $PWD 'artifacts/plugins/plugins-index.json')`；它优先于 UI，调试完成后 `Remove-Item Env:FLY_ISLAND_PLUGINS_INDEX`。不要带着遗留变量排查 UI 索引不生效。/ Alternatively set this environment override before host startup. It takes precedence over the UI; remove it after debugging so it cannot mask UI index changes.
 
 ## 5. 创建自己的插件 / Create your plugin
 

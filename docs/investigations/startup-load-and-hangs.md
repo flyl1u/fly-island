@@ -8,7 +8,7 @@
 
 ### 现状
 
-- Run 值 `FocuSD Island` 只写 `"<exe>"`，无法区分开机启动和手动启动，所有初始化在登录那一刻同时跑。
+- Run 值 `Fly Island` 只写 `"<exe>"`，无法区分开机启动和手动启动，所有初始化在登录那一刻同时跑。
 - 首次显示 `show_ready_island → show_island → focus_window → force_foreground`：登录时对正在启动的前台程序做 `AttachThreadInput` + `SetForegroundWindow`。
 - QQ 通知监听、微信提醒监听（读微信窗口、UIA、按需写微信进程内存）、网易云插件自动安装（启动 15 秒后，可能下载、可能弹 UAC）都在启动后立刻或很快开始。
 - 每次岛屿改尺寸（`set_island_interaction` 是同步命令，跑在主线程）都调 `SHAppBarMessage` 查任务栏，它要等 Explorer 回应；登录 / 唤醒时 Explorer 正忙，主线程跟着卡。
@@ -101,7 +101,7 @@
 
 **改动**：上述五个命令改为 `async` + `spawn_blocking`，在后台线程执行；命令名、参数、返回值不变。
 
-仍需用户反馈：如果再次出现，请提供 `%LOCALAPPDATA%\com.focusd.island` 下 WebView2 的崩溃转储和 Windows 事件查看器「应用程序」里的错误。
+仍需用户反馈：如果再次出现，请提供 `%LOCALAPPDATA%\com.flyisland.app` 下 WebView2 的崩溃转储和 Windows 事件查看器「应用程序」里的错误。
 
 ## 8. #80 卸载勾选删除应用数据后 AI hook 残留
 

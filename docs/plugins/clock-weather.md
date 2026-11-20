@@ -15,7 +15,7 @@
 - Rust `src-tauri/src/weather/mod.rs` 请求 Open-Meteo 固定 HTTPS 域名：`geocoding-api.open-meteo.com`（城市搜索）、`api.open-meteo.com`（当前温度和 WMO weather_code）。当 Open-Meteo 的结果缺少高质量城市时，会用 Nominatim 搜索补充一项。无需 API key，不跟随重定向，超时 12 秒，响应上限 256 KiB。
 - 定位只在用户点击时发生：同时请求 Windows `Geolocator` 和 `ipwho.is` 的网络位置（精确到城市），Windows 拿到坐标就用它，系统定位关闭、被拒绝或 8 秒内没结果时用已经回来的网络结果，所以不需要用户去开系统定位。网络结果直接用 `ipwho.is` 返回的本地化城市名，开了代理时可能定位到代理所在城市，提示里引导用户直接搜索。Windows 坐标只发送给反向地理编码服务 `nominatim.openstreetmap.org` 和天气服务，不写入 Rust 文件或后台记录。
 - 前端 `src/features/weather/api.ts` 封装 `search_weather_cities` / `locate_weather` / `get_current_weather`。插件安装态沿用 `features/plugins/native` 的跨窗口同步。
-- 设置与一条城市天气缓存写入 WebView2 localStorage：`focusd-island-clock-weather` / `focusd-island-weather-cache`。无新增 Rust 数据文件、凭据或后台线程。格式见 [对外契约](../architecture/contracts.md)，位置见 [数据存储](../architecture/data-storage.md)。
+- 设置与一条城市天气缓存写入 WebView2 localStorage：`fly-island-clock-weather` / `fly-island-weather-cache`。无新增 Rust 数据文件、凭据或后台线程。格式见 [对外契约](../architecture/contracts.md)，位置见 [数据存储](../architecture/data-storage.md)。
 - 岛屿接入点为 `IslandCollapsedBar.tsx` 与 `useCollapsedTodo.ts`；预览与排列位在 `features/appearance/`。时间定时器不向窗口提升状态，天气由同一窗口的订阅共享请求和低频定时器。
 
 ## 回归与人工查看

@@ -4,7 +4,7 @@
 
 ## 使用
 
-先在“设置 → 待办”开启“番茄钟”（`todoTimerEnabled`，默认关闭）。关闭时开始/停止直接生效，不显示时长选择、倒计时或时间到操作，也不播放提示音；折叠岛显示原有任务标题。运行中关闭会清除 `focusd-island-todo-timer`，保留任务进行中状态和各项时长；重新开启不会恢复已取消的轮次。设置通过现有跨窗口 storage 同步立即生效。旧设置缺字段或字段不是 boolean 时按关闭处理。
+先在“设置 → 待办”开启“番茄钟”（`todoTimerEnabled`，默认关闭）。关闭时开始/停止直接生效，不显示时长选择、倒计时或时间到操作，也不播放提示音；折叠岛显示原有任务标题。运行中关闭会清除 `fly-island-todo-timer`，保留任务进行中状态和各项时长；重新开启不会恢复已取消的轮次。设置通过现有跨窗口 storage 同步立即生效。旧设置缺字段或字段不是 boolean 时按关闭处理。
 
 English: Focus timer is off by default in Settings → Todos. When disabled, Start/Stop works immediately with no picker, countdown, expiry actions or sound. Turning it off cancels the round while keeping the active todo and previous duration; turning it on does not restore the cancelled round.
 
@@ -23,8 +23,8 @@ English: Focus timer is off by default in Settings → Todos. When disabled, Sta
 
 ## 恢复与存储
 
-- `focusd-island-todo-timer`：`{ todoId, endsAt, durationMinutes, notified }`。结束时间是 Unix 毫秒时间，按当前时间计算，睡眠或重启后不从完整时长重来。若关闭期间已过期，恢复为时间到并补一次提醒；已经提醒过的轮次重启不重复响。
-- `focusd-island-todo-durations`：各项待办的时长，`{ 待办 id: 1–240 的整数分钟 }`。没有记录或数值无效的待办按 15 分钟；写入时顺带丢掉已删除待办的记录。旧版所有待办共用的 `focusd-island-todo-duration` 不再读取。
+- `fly-island-todo-timer`：`{ todoId, endsAt, durationMinutes, notified }`。结束时间是 Unix 毫秒时间，按当前时间计算，睡眠或重启后不从完整时长重来。若关闭期间已过期，恢复为时间到并补一次提醒；已经提醒过的轮次重启不重复响。
+- `fly-island-todo-durations`：各项待办的时长，`{ 待办 id: 1–240 的整数分钟 }`。没有记录或数值无效的待办按 15 分钟；写入时顺带丢掉已删除待办的记录。旧版所有待办共用的 `fly-island-todo-duration` 不再读取。
 - 已有待办、进行中 ID、归档和日期 key 的格式不变。损坏或与当前未完成待办不匹配的倒计时会安全丢弃；存储不可用时本轮仍在内存中运行，无法保证关闭后的恢复。
 - 跨日归档保留正在计时或待处理时间到的任务及其 ID（即使关闭“结转未完成待办”）；其他任务仍遵循原有结转设置。完成或结束后恢复普通归档行为。
 - 声音复用 `src/assets/sounds/thumb-piano/complete.wav` 和现有 HTMLAudio 播放方式，不受 AI Agent 声音开关控制，没有循环播放。折叠文字隐藏设置和消息预览照旧生效。
@@ -39,7 +39,7 @@ Starting keeps the existing single active todo and collapses the island. The col
 
 At expiry the task remains incomplete, a short built-in sound plays once, and the visible island opens today’s tasks with **Time’s up / Complete / Another round**. Another round starts the same duration again. A tucked island reveals and opens; a tray-hidden island stays hidden and only sounds once. Game mode suppresses automatic opening. Expired actions remain available when the user returns. Stopping, completing, deleting, or starting another todo cancels the previous round.
 
-`focusd-island-todo-timer` stores `{ todoId, endsAt, durationMinutes, notified }`; `endsAt` is an absolute Unix timestamp in milliseconds. Restart and wake restore the remaining time. An unannounced round missed while closed triggers one reminder; an announced round stays expired without ringing again. `focusd-island-todo-duration` stores the last whole-minute choice; missing, invalid or an old JSON `null` (the former No limit) reads as 15. Existing todo and active-ID formats are unchanged. Invalid records are ignored; unavailable storage falls back to the current session in memory.
+`fly-island-todo-timer` stores `{ todoId, endsAt, durationMinutes, notified }`; `endsAt` is an absolute Unix timestamp in milliseconds. Restart and wake restore the remaining time. An unannounced round missed while closed triggers one reminder; an announced round stays expired without ringing again. `fly-island-todo-duration` stores the last whole-minute choice; missing, invalid or an old JSON `null` (the former No limit) reads as 15. Existing todo and active-ID formats are unchanged. Invalid records are ignored; unavailable storage falls back to the current session in memory.
 
 A pending timed task keeps its ID across the daily archive rollover, including when ordinary incomplete-task carry-over is disabled. Other tasks follow the existing preference. Audio reuses the bundled `complete.wav` and HTMLAudio playback, independent of the AI Agent sound switch.
 

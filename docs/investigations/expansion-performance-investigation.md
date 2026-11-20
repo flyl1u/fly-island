@@ -12,7 +12,7 @@
 
 ## 测量条件与边界
 
-- 使用仓库现有 `src-tauri/target/release/focusd-island.exe`，版本 `0.2.8`；没有重新构建应用。
+- 使用仓库现有 `src-tauri/target/release/fly-island.exe`，版本 `0.2.8`；没有重新构建应用。
 - 可执行文件 SHA-256：`17CBD87B884A244243EC7FB16A0422930CD25BCBA0EE161659A06F453E741042`。
 - 诊断副本使用独立应用标识和 WebView2 数据目录；默认液态玻璃、待办页、空任务列表，窗口 `820 × 460`，设备像素比 `1.5`。
 - 通过本机 DevTools 协议记录点击后约 800 毫秒的 `requestAnimationFrame` 间隔、Long Task、Long Animation Frame 和 Chromium tracing；样式及 IPC 对照只作用于诊断副本。

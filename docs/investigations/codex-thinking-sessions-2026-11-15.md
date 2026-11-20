@@ -75,7 +75,7 @@ Codex 没有可以依赖的固定 heartbeat，因此未结束 turn 改为静默 
 
 ## 验证
 
-所有 Rust 命令使用 `$env:CARGO_TARGET_DIR='D:/FocuSD/.worktrees/.cargo-target'`。精确结果待最终检查结束后补在此处。
+所有 Rust 命令使用 `$env:CARGO_TARGET_DIR='D:/Fly Island/.worktrees/.cargo-target'`。精确结果待最终检查结束后补在此处。
 
 ## 需要作者实机验收
 

@@ -33,14 +33,14 @@
 
 | 本地构建产物 | SHA-256 |
 | --- | --- |
-| `target/release/focusd-island.exe` | `345DC1C929D70D7619348B9F5E6EBF33C18864C11ADA8F85A5BBD4C873B2C0E7` |
+| `target/release/fly-island.exe` | `345DC1C929D70D7619348B9F5E6EBF33C18864C11ADA8F85A5BBD4C873B2C0E7` |
 | `target/release/bundle/nsis/fly-island_0.2.4_x64-setup.exe` | `88EB8D1CF2DCA000F4941567AB97F04E61285F5C65B65EBAC962FD3B92CED199` |
-| NSIS 中的 `focusd-island.exe` | `CE99F7358D84BCED7C092A9318F94DA4021B7156001348A59BA910FC8EDFA2F5` |
+| NSIS 中的 `fly-island.exe` | `CE99F7358D84BCED7C092A9318F94DA4021B7156001348A59BA910FC8EDFA2F5` |
 | `target/release/bundle/msi/fly-island_0.2.4_x64_en-US.msi` | `E84B82CB6874A037C74AA2751A367F8AE9E75B2F1FEBA9748D81B1D31DE8B516` |
 
 以上路径相对于 `src-tauri/`。打包后的程序与直接构建程序哈希不同，因此单独验收了 NSIS 内的程序，不能将两者视为相同字节。
 
-检查时 [GitHub 最新公开版本仍为 v0.2.4](https://github.com/flyl1u/fly-island/releases/tag/v0.2.4)，发布于 2026-09-26，对应 `def8de9`。仓库提交记录确认 QQ、微信及默认开启逻辑均在该标签之后加入。公开 NSIS 文件 `FocuSD.Island_0.2.4_x64-setup.exe` 的 SHA-256 为 `B3E5638986856723A435D911407C7FDE83A5BE5890D7B34A83A51AADD6F145E0`，不是本次验收构建。
+检查时 [GitHub 最新公开版本仍为 v0.2.4](https://github.com/flyl1u/fly-island/releases/tag/v0.2.4)，发布于 2026-09-26，对应 `def8de9`。仓库提交记录确认 QQ、微信及默认开启逻辑均在该标签之后加入。公开 NSIS 文件 `Fly Island.Island_0.2.4_x64-setup.exe` 的 SHA-256 为 `B3E5638986856723A435D911407C7FDE83A5BE5890D7B34A83A51AADD6F145E0`，不是本次验收构建。
 
 本地验收构建暂沿用 `0.2.4` 版本号，**未发布，也未替换公开资源**。需要发布包含当前功能的新版本，首次从公开渠道下载的用户才会拿到这些改动。
 
@@ -63,10 +63,10 @@ powershell -NoProfile -File scripts/verify-first-run-notifications.ps1 -Observat
 
 启动后保持 QQ、微信后台登录，不操作岛屿设置，从另一设备分别发送一条新消息，并人工确认岛上显示。脚本同时要求默认开启、连接成功、两类真实事件和数据隔离都通过，否则保存报告并返回失败。仅有监听状态正常不能判定接收验收通过。
 
-验收安装包中的程序时，可先提取 `focusd-island.exe`，再传入该文件路径：
+验收安装包中的程序时，可先提取 `fly-island.exe`，再传入该文件路径：
 
 ```powershell
-powershell -NoProfile -File scripts/verify-first-run-notifications.ps1 -ObservationSeconds 180 -ExecutablePath 'D:\path\to\extracted\focusd-island.exe'
+powershell -NoProfile -File scripts/verify-first-run-notifications.ps1 -ObservationSeconds 180 -ExecutablePath 'D:\path\to\extracted\fly-island.exe'
 ```
 
 脚本开启的诊断模式仅用于验收，不增加正式功能的授权。临时应用标识必须带有效的独立运行标识，诊断才会记录；单轮最长五分钟。

@@ -6,7 +6,7 @@
 
 | 位置 | 内容 | 重启后 |
 |---|---|---|
-| `%LOCALAPPDATA%/com.focusd.island/workbuddy-web/WebView2` | 独立 WebView2 用户数据目录，官网登录的 cookie 在这里 | 目录固定，不会每次变。**只有带 `Expires` 的持久 cookie 会写进磁盘** |
+| `%LOCALAPPDATA%/com.flyisland.app/workbuddy-web/WebView2` | 独立 WebView2 用户数据目录，官网登录的 cookie 在这里 | 目录固定，不会每次变。**只有带 `Expires` 的持久 cookie 会写进磁盘** |
 | 同级 `connected` 文件 | 「曾经连接成功」的标记，只决定启动后要不要去读积分 | 保留 |
 | 进程内 `Connection` | 上次状态、积分缓存、User-Agent | 丢失（只是缓存） |
 | 凭据管理器 | 修复前**没有使用** | — |
@@ -27,7 +27,7 @@
 
 ## 修复
 
-1. **cookie 副本存进凭据管理器**（`workbuddy_cookie_vault.rs`）：每次读到积分后，把发往积分接口的 `workbuddy.cn` cookie（名称、值、域、路径、Secure、HttpOnly、过期时间）序列化后存进 Windows 凭据管理器 `com.focusd.island.workbuddy-web`。单个凭据最多 2560 字节，所以分成最多 8 段（`cookies-0`…`cookies-7`）；放不下就整份不存，不会存半份。凭据管理器由 Windows 按用户用 DPAPI 加密，不写明文文件。内容没变时不重复写入。
+1. **cookie 副本存进凭据管理器**（`workbuddy_cookie_vault.rs`）：每次读到积分后，把发往积分接口的 `workbuddy.cn` cookie（名称、值、域、路径、Secure、HttpOnly、过期时间）序列化后存进 Windows 凭据管理器 `com.flyisland.app.workbuddy-web`。单个凭据最多 2560 字节，所以分成最多 8 段（`cookies-0`…`cookies-7`）；放不下就整份不存，不会存半份。凭据管理器由 Windows 按用户用 DPAPI 加密，不写明文文件。内容没变时不重复写入。
 2. **启动后缺 cookie 时放回去**：已记住登录、读积分却得到「需要登录」时，先把副本里未过期的 cookie 用 `set_cookie` 放回独立配置，再读一次。只放回 `workbuddy.cn` 及其子域的 cookie。
 3. **仍不行就让官网自己续期**：在隐藏窗口里加载一次积分页面（等页面加载完成，最多 12 秒，再留 2 秒给页面脚本），然后回到空白页，再读一次。
 4. **都不行才要求登录**，同时清掉凭据管理器副本，避免反复用失效的 cookie。每次读到积分后重新允许这套恢复流程；连续失败期间只试一次，不会每次刷新都偷偷加载网页。
@@ -45,5 +45,5 @@
 
 1. 登录 WorkBuddy → 等积分出现 → 退出岛屿 → 重新打开：额度环直接显示积分，不要求登录。
 2. 登录后立刻（10 秒内）退出再打开：仍保持登录。
-3. 在「凭据管理器 → Windows 凭据」里能看到 `com.focusd.island.workbuddy-web` 条目；点「断开」后条目消失。
+3. 在「凭据管理器 → Windows 凭据」里能看到 `com.flyisland.app.workbuddy-web` 条目；点「断开」后条目消失。
 4. 在官网退出登录（或等服务端过期）后：额度环显示「需要登录」，凭据条目被清掉。
