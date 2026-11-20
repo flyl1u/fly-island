@@ -239,6 +239,28 @@ fn source_order_by_song(query: &LyricsQuery) -> Vec<&'static str> {
     }
 }
 
+/// The cache key as it was before the recording and player were part of it.
+fn cache_base_key(query: &LyricsQuery) -> String {
+    let mut key = cache_key(&query.title, &query.artist, query.duration_ms);
+    if query.chinese {
+        key.push_str("\u{1f}cn");
+    }
+    key
+}
+
+/// The cache key of this request: the old key plus the recording and the player it came from.
+fn cache_scoped_key(query: &LyricsQuery) -> String {
+    let mut key = cache_base_key(query);
+    key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
+    if query.word_fill { key.push_str("\u{1f}words"); }
+    // Apple's own lyrics get their own key, or a cached lyric from another source would
+    // keep being served and the setting would look like it had no effect.
+    if query.apple_music && is_apple_music(query.source_app_id.as_deref()) {
+        key.push_str("\u{1f}apple");
+    }
+    key
+}
+
 /// The first source that has lyrics. `Err` only when every source asked failed to answer.
 async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
     let (title, artist) = (query.title.as_str(), query.artist.as_str());
@@ -306,14 +328,8 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     }
     let cache_dir = app.path().app_data_dir().map_err(|error| error.to_string())?.join(CACHE_DIR_NAME);
     // A miss with LRCLIB alone says nothing about the Chinese sources.
-    let mut key = cache_key(&query.title, &query.artist, query.duration_ms);
-    if query.chinese {
-        key.push_str("\u{1f}cn");
-    }
-    let legacy_key = key.clone();
-    // Preserve the old key for fallback; scope new entries to the actual recording and player id.
-    key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
-    if query.word_fill { key.push_str("\u{1f}words"); }
+    let legacy_key = cache_base_key(&query);
+    let key = cache_scoped_key(&query);
     let now = now_secs();
     let cached = read_cache(&cache_dir, &key, now).or_else(|| read_cache(&cache_dir, &legacy_key, now));
     let fresh = fs::read_to_string(cache_path(&cache_dir, &key)).ok()
@@ -452,6 +468,38 @@ mod tests {
         assert_eq!(source_order(&query(false, Some("Spotify.exe"), true)), ["lrclib"]);
         assert_eq!(source_order(&query(false, Some("AppleMusic.exe"), false)), ["lrclib"]);
         assert_eq!(source_order(&query(false, None, true)), ["lrclib"]);
+    }
+
+    #[test]
+    fn apple_music_lyrics_get_their_own_cache_key() {
+        let query = |apple_music: bool| LyricsQuery {
+            title: "Yesterday".into(),
+            artist: "The Beatles".into(),
+            album: String::new(),
+            duration_ms: 200_000,
+            folder: String::new(),
+            online: true,
+            chinese: false,
+            track_id: None,
+            source_app_id: Some("AppleMusic.exe".into()),
+            word_fill: false,
+            apple_music,
+        };
+        let off = query(false);
+        let on = query(true);
+        // Turning the setting on must not read the lyric another source cached before.
+        assert_ne!(cache_scoped_key(&on), cache_scoped_key(&off));
+        // With it off the key is the one used before, so the old cache still works.
+        assert_eq!(cache_scoped_key(&off), format!(
+            "{}\u{1f}{}\u{1f}{}\u{1f}{}",
+            cache_key("Yesterday", "The Beatles", 200_000),
+            "Yesterday",
+            "AppleMusic.exe",
+            ""
+        ));
+        // The fallback key stays the old one for both, so upgrading users keep their lyrics.
+        assert_eq!(cache_base_key(&off), cache_key("Yesterday", "The Beatles", 200_000));
+        assert_eq!(cache_base_key(&on), cache_base_key(&off));
     }
 
     #[test]
