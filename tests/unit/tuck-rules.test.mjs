@@ -19,12 +19,13 @@ test("tucks by the user or game mode are never undone", () => {
   assert.equal(revealsForKeepVisible({ ...base, isPreviewing: true }), false, "settings preview");
 });
 
-test("a peek slides back unless a preview or a keep-visible activity holds an auto-tucked island", () => {
+test("a peek slides back unless a preview or a keep-visible activity holds the island out", () => {
   const peeking = { ...base, isTucked: false, isPeeking: true, keepVisible: false };
   assert.equal(retractsPeek(peeking), true);
   assert.equal(retractsPeek({ ...peeking, hasMessagePreview: true }), false, "message still showing");
   assert.equal(retractsPeek({ ...peeking, keepVisible: true }), false, "lyrics after a message peek");
-  assert.equal(retractsPeek({ ...peeking, keepVisible: true, tuckedAutomatically: false }), true, "minimized: peeks only");
+  assert.equal(retractsPeek({ ...peeking, keepVisible: true, tuckedAutomatically: false }), false,
+    "minimized, then hovered: the lyrics setting keeps it out");
   assert.equal(retractsPeek({ ...peeking, isPeeking: false }), false);
 });
 

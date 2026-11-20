@@ -2,8 +2,9 @@
  * When the island comes out of, or goes back to, the top edge by itself. Pure, so the
  * rules can be tested apart from the hooks that apply them (useIslandTucking).
  *
- * "Stay visible while…" (keepVisible) is about automatic tucking only: it never undoes a
- * tuck the user asked for (minimize, drag to the edge) or one game mode made.
+ * "Stay visible while…" (keepVisible) never undoes a tuck the user asked for (minimize, drag
+ * to the edge) or one game mode made, but a tuck the cursor just peeked out does not come back
+ * while something should stay visible.
  */
 export type TuckState = {
   isTucked: boolean;
@@ -30,10 +31,11 @@ export function revealsForKeepVisible(state: TuckState): boolean {
 }
 
 /**
- * Whether a peeking island slides back now that the peek is over. A message preview holds
- * it; and an island that tucked itself does not tuck again while it should stay visible.
+ * Whether a peeking island slides back now that the peek is over. A message preview holds it,
+ * and so does anything that should stay visible: hovering a minimized island while lyrics show
+ * used to tuck it straight back, against the "stay out while lyrics show" setting.
  */
 export function retractsPeek(state: TuckState): boolean {
   if (!state.isPeeking || state.hasMessagePreview || state.isPreviewing) return false;
-  return !(state.keepVisible && state.tuckedAutomatically);
+  return !state.keepVisible;
 }
