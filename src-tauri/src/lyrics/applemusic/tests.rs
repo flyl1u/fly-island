@@ -60,10 +60,14 @@ fn a_song_without_lyrics_is_still_picked_when_it_is_the_only_one() {
 #[test]
 fn a_song_without_the_lyrics_flag_is_picked() {
     // Apple leaves the flag out on some songs; they are not ruled out for that.
+    // The second candidate has the flag set and lasts longer, so only the no-flag one can be
+    // the closer match: if a missing flag were read as "no lyrics", it would be ruled out and
+    // the flagged one would win instead.
     let answer = json!({ "results": { "songs": { "data": [
-        { "id": "1", "attributes": { "name": "余香", "artistName": "小匆匆", "durationInMillis": 246_022 } },
+        { "id": "no-flag", "attributes": { "name": "余香", "artistName": "小匆匆", "durationInMillis": 245_880 } },
+        { "id": "flagged-true", "attributes": { "name": "余香", "artistName": "小匆匆", "durationInMillis": 246_022, "hasLyrics": true } },
     ] } } });
-    assert_eq!(best_song(&answer, "余香", "小匆匆", 246_000), Some(("1".to_string(), 246_022)));
+    assert_eq!(best_song(&answer, "余香", "小匆匆", 245_900), Some(("no-flag".to_string(), 245_880)));
 }
 
 #[test]
