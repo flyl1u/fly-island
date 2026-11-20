@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getDefaultTodoSaveDirectory } from "./api";
-import { TODO_SAVE_DIRECTORY_STORAGE_KEY, hasStoredSaveDirectory, loadSaveDirectory, saveSaveDirectory } from "./storage";
+import { TODO_SAVE_DIRECTORY_CHANGED_EVENT, TODO_SAVE_DIRECTORY_STORAGE_KEY, hasStoredSaveDirectory, loadSaveDirectory, saveSaveDirectory } from "./storage";
 
 /**
  * The markdown save directory. A first run fills in the native default; later
@@ -57,15 +57,20 @@ export function useTodoSaveDirectory(onExternalChange: () => void) {
 
   // The settings window edits this key; storage events deliver its changes here.
   useEffect(() => {
+    const reload = () => {
+      setSaveDirectory(loadSaveDirectory());
+      onExternalChange();
+    };
     const syncFromSettingsWindow = (event: StorageEvent) => {
-      if (event.key === TODO_SAVE_DIRECTORY_STORAGE_KEY) {
-        setSaveDirectory(loadSaveDirectory());
-        onExternalChange();
-      }
+      if (event.key === TODO_SAVE_DIRECTORY_STORAGE_KEY || event.key === null) reload();
     };
 
     window.addEventListener("storage", syncFromSettingsWindow);
-    return () => window.removeEventListener("storage", syncFromSettingsWindow);
+    window.addEventListener(TODO_SAVE_DIRECTORY_CHANGED_EVENT, reload);
+    return () => {
+      window.removeEventListener("storage", syncFromSettingsWindow);
+      window.removeEventListener(TODO_SAVE_DIRECTORY_CHANGED_EVENT, reload);
+    };
   }, [onExternalChange]);
 
   useEffect(() => {

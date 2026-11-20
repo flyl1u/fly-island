@@ -31,6 +31,9 @@ export const TODO_ARCHIVE_STORAGE_KEY = "focusd-island-archives";
 export const DAILY_NOTE_STORAGE_KEY = "focusd-island-daily-note";
 // Settings for exporting archives; they stay in localStorage.
 export const TODO_SAVE_DIRECTORY_STORAGE_KEY = "focusd-island-save-directory";
+export const TODO_SAVE_DIRECTORY_CHANGED_EVENT = "fly-island-todo-save-directory-changed";
+export const TODO_FILE_SYNC_STORAGE_KEY = "focusd-island-todo-file-sync";
+export const TODO_FILE_SYNC_CHANGED_EVENT = "fly-island-todo-file-sync-changed";
 export const TODO_LAST_SAVED_SIGNATURE_STORAGE_KEY =
   "focusd-island-last-saved-signature";
 
@@ -119,13 +122,26 @@ export function loadSaveDirectory() {
   return readString(TODO_SAVE_DIRECTORY_STORAGE_KEY) ?? "";
 }
 
+export function loadTodoFileSync() {
+  return readString(TODO_FILE_SYNC_STORAGE_KEY) === "true";
+}
+
+export function saveTodoFileSync(enabled: boolean) {
+  if (!writeString(TODO_FILE_SYNC_STORAGE_KEY, String(enabled))) return false;
+  window.dispatchEvent(new Event(TODO_FILE_SYNC_CHANGED_EVENT));
+  return true;
+}
+
 export function loadDailyNote() {
   return readString(DAILY_NOTE_STORAGE_KEY) ?? "";
 }
 
 /** Returns false when the value could not be stored. */
 export function saveSaveDirectory(directory: string) {
-  return writeString(TODO_SAVE_DIRECTORY_STORAGE_KEY, directory);
+  if (directory === loadSaveDirectory() && hasStoredSaveDirectory()) return true;
+  if (!writeString(TODO_SAVE_DIRECTORY_STORAGE_KEY, directory)) return false;
+  window.dispatchEvent(new Event(TODO_SAVE_DIRECTORY_CHANGED_EVENT));
+  return true;
 }
 
 export function hasStoredSaveDirectory() {

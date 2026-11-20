@@ -5,6 +5,8 @@ import { saveLastSavedSignature } from "./storage";
 import type { SaveState, TodoItem } from "./types";
 import { useTodoAutoSave } from "./useTodoAutoSave";
 import { useTodoSaveDirectory } from "./useTodoSaveDirectory";
+import { useTodoFileSync } from "./useTodoFileSync";
+import type { DailyTodoDocument } from "./mergeDailyMarkdown";
 
 type UpsertArchive = (
   date: string,
@@ -21,6 +23,7 @@ type TodoSavingOptions = {
   upsertArchive: UpsertArchive;
   /** Called when a manual save has no directory to write to. */
   onMissingSaveDirectory: () => void;
+  onImport: (document: DailyTodoDocument) => void;
 };
 
 /** Saving the day as markdown: the save directory, manual save with its status, and auto-save. */
@@ -30,6 +33,7 @@ export function useTodoSaving({
   dailyNote,
   upsertArchive,
   onMissingSaveDirectory,
+  onImport,
 }: TodoSavingOptions) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const saveStateResetTimer = useRef<number | null>(null);
@@ -37,6 +41,11 @@ export function useTodoSaving({
     setSaveState((current) => (current === "needs-path" ? "idle" : current));
   }, []);
   const saveDirectory = useTodoSaveDirectory(clearNeedsPath);
+  const onFileSaved = useCallback((document: DailyTodoDocument, path: string) => {
+    upsertArchive(currentTodoDate, document.todos, document.dailyNote, true, path);
+  }, [currentTodoDate, upsertArchive]);
+  const fileSync = useTodoFileSync({ date: currentTodoDate, directory: saveDirectory, todos, dailyNote, onImport, onSaved: onFileSaved });
+  const { enabled: fileSyncEnabled, save: saveSyncedFile } = fileSync;
 
   const saveTodosToDisk = useCallback(
     async (date: string, todoList: TodoItem[], nextDailyNote: string) => {
@@ -45,6 +54,8 @@ export function useTodoSaving({
       if (!directory) {
         throw new Error("Missing todo save path.");
       }
+
+      if (fileSyncEnabled) return saveSyncedFile();
 
       const result = await saveTodoMarkdown(
         directory,
@@ -57,7 +68,7 @@ export function useTodoSaving({
 
       return result;
     },
-    [saveDirectory, upsertArchive],
+    [fileSyncEnabled, saveSyncedFile, saveDirectory, upsertArchive],
   );
 
   const showTodoSavedState = useCallback(() => {
@@ -82,7 +93,8 @@ export function useTodoSaving({
     setSaveState("saving");
 
     try {
-      await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+      const result = await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+      if ("deferred" in result && result.deferred) { setSaveState("idle"); return; }
       showTodoSavedState();
     } catch (error) {
       console.error("Failed to save todo markdown", error);
@@ -116,5 +128,5 @@ export function useTodoSaving({
     [],
   );
 
-  return { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos };
+  return { saveDirectory, saveState, saveTodosToDisk, saveTodayTodos, fileSyncEnabled };
 }

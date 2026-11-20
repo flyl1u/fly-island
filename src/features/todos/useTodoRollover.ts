@@ -12,6 +12,7 @@ type TodoRolloverOptions = {
   /** An explicitly running or expired round stays available across midnight until handled. */
   timerTodoIds?: string[];
   saveDirectory: string;
+  fileSyncEnabled?: boolean;
   saveTodosToDisk: (date: string, todoList: TodoItem[], nextDailyNote: string) => Promise<unknown>;
   upsertArchive: (date: string, todoList: TodoItem[], nextDailyNote: string, savedToDisk: boolean) => void;
   /** Resets the day's state to the new date with the carried-over todos. */
@@ -29,6 +30,7 @@ export function useTodoRollover({
   carryOverIncompleteTodos,
   timerTodoIds = [],
   saveDirectory,
+  fileSyncEnabled = false,
   saveTodosToDisk,
   upsertArchive,
   onStartDay,
@@ -50,12 +52,15 @@ export function useTodoRollover({
         }));
 
       if (
-        (todos.length > 0 || dailyNote.trim()) &&
-        signature !== lastSavedSignature
+        fileSyncEnabled || ((todos.length > 0 || dailyNote.trim()) && signature !== lastSavedSignature)
       ) {
         if (saveDirectory.trim()) {
           try {
-            await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+            const result = await saveTodosToDisk(currentTodoDate, todos, dailyNote);
+            // Finish a pending stable-file sample/title edit before archiving this day.
+            if (result && typeof result === "object" && "blocked" in result && result.blocked) {
+              upsertArchive(currentTodoDate, todos, dailyNote, false);
+            } else if (result && typeof result === "object" && "deferred" in result && result.deferred) return;
           } catch (error) {
             console.error("Failed to auto-save todo markdown", error);
             upsertArchive(currentTodoDate, todos, dailyNote, false);
@@ -80,6 +85,7 @@ export function useTodoRollover({
       dailyNote,
       onStartDay,
       saveDirectory,
+      fileSyncEnabled,
       saveTodosToDisk,
       todos,
       upsertArchive,

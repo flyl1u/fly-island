@@ -27,6 +27,9 @@
 | Codex / Claude Code hook 配置 | `~/.codex/config.toml`、`~/.claude/settings.json` 中带标记的受管区块 | `agent_status` |
 | QQ 邮箱授权码、翻译 API 密钥 | Windows 凭据管理器（`com.focusd.island.qq-mail`、`com.focusd.island.translation`；翻译密钥按服务分条目，用户名为服务 id，DeepSeek 沿用 `deepseek`） | `qq_mail`、`translation` |
 | 待办 Markdown 导出 | 用户选择的目录（经过校验） | `system` |
+| 每日 Markdown 反向同步偏好 | 同一 WebView2 `localStorage`：`focusd-island-todo-file-sync`，仅字符串 `"true"` 开启，默认关闭 | `features/todos/storage.ts`、`useTodoFileSyncSetting.ts` |
+| 反向同步共同基线、文件版本、待稳定采样、串行保存队列 | 仅在主窗口内存，每日期和目录一个协调器；重启用既有 `focusd-island-last-saved-signature` 重建共同内容，不增加待办副本 key。每 1.5 秒读取一次，稳定变化才修改列表和笔记；导入继续写既有待办/笔记/归档 key。跨天归档前先处理文件，临时不稳定/编辑中延后，损坏文件保留后将本地数据归档并进入新一天 | `features/todos/todoMarkdownSync.ts`、`useTodoFileSync.ts`、`useTodoSaving.ts`、`useTodoRollover.ts` |
+| 同步冲突恢复副本 | 用户保存目录：`YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` 与 `-file.md`，分别保留冲突前的岛屿与文件内容；只在有冲突时创建，不自动清理。写失败时尽力保存 `-write-error.md` 原文件副本 | `system/todo_sync.rs`；读取/写入 IPC 类型收口在 `features/todos/api.ts` |
 | 开机自启 | `HKCU\...\Run` 下的值 `FocuSD Island` | `system` |
 | 剪贴板历史（条目、收藏、备注与剪贴板设置）；图片原图和 128px 缩略图 | 应用数据目录（`clipboard-history.json`；图片在 `clipboard-images/`），可在设置里移到自选文件夹，位置记在应用数据目录的 `clipboard-location.json` | `clipboard_history/store.rs`、`clipboard_history/location.rs` |
 | 剪贴板独立窗口上次关闭时的位置 | 应用数据目录（`clipboard-window.json`） | `clipboard_window/bounds.rs` |

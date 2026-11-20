@@ -115,6 +115,10 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## 其他
 
+- 每日 Markdown 反向同步（2026-11-19，issue #88）：新增 localStorage key `focusd-island-todo-file-sync`，字符串 `"true"` 才开启，缺失、损坏或其他值均关闭。现有待办、笔记、归档、最后保存签名和保存目录 key/格式不变。设置修改同页通过 DOM 事件 `fly-island-todo-file-sync-changed` / `fly-island-todo-save-directory-changed` 同步，跨原生窗口继续使用 `storage` 事件；不是 Tauri 事件。
+- 新增原生命令 `read_todo_markdown({ directory, date })`，返回 `{ filePath, version, modifiedAt, content }`：缺失文件后三项为 null；时间为 Unix 毫秒，version 为内容 SHA-256 与文件修改时间组成的不透明字符串。只允许绝对目录与真实 `YYYY-MM-DD`，只读取 UTF-8 且不超过 4 MiB 的每日文件。
+- 新增 `save_todo_markdown_if_unchanged({ directory, date, content, expectedVersion, recoveryContent })`，返回 `{ saved, snapshot }`，snapshot 与读取命令同型。版本不符（包括文件不存在/被新建）时 `saved: false` 并返回新快照，不写入；在 Windows 写入/删除排他锁内比较和写入。`recoveryContent` 为 null 时普通写入，否则先在同一目录创建两侧冲突副本。恢复副本是 `YYYY-MM-DD.conflict-<Unix 纳秒>-island.md` / `-file.md`，不被当作每日文件读取。既有 `save_todo_markdown` 契约和关闭开关时的行为不变；本应用命令不需要额外插件权限。
+
 - 测试版通道（2026-11-18）：`updater_check` 新增可选参数 `allowDowngrade`（缺省 false，与旧版相同）；为 true 时清单里任何不同的版本都算更新，用于从测试版还原到正式版。`channel` 仍为 `"stable"` / `"beta"`。主窗口与设置窗口之间的 `focusd-update-request` 新增 action `beta`、`restore`，`focusd-update-state` 新增字段 `target`。无新增 localStorage key。
 - 问题排查日志（2026-11-18）：新增命令 `get_app_log_state()`、`set_app_log_enabled({ enabled })`（都返回 `{ enabled, path, bytes }`）、`append_app_log({ entries: [{ level: "error" | "warn", message }] })`、`open_app_log_folder()`、`clear_app_log()`，事件 `app-log-changed`（payload 为是否开启）。应用数据目录新增 `app-log.json` 与 `logs/focusd-island.log`、`logs/focusd-island.1.log`。无新增 localStorage key。
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。

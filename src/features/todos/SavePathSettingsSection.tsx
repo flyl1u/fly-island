@@ -5,6 +5,9 @@ import { SettingsInput } from "../../components/settings/SettingsInput";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { useTranslation } from "../../i18n";
+import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
+import { loadSaveDirectory } from "./storage";
+import { useTodoFileSyncSetting } from "./useTodoFileSyncSetting";
 import { pickFolder } from "./api";
 import type { SavePathState } from "./types";
 import "./SavePathSettingsSection.css";
@@ -22,6 +25,8 @@ export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, hig
   onPickDirectory: (directory: string) => void;
 }) {
   const t = useTranslation();
+  const fileSync = useTodoFileSyncSetting();
+  const hasSaveDirectory = Boolean(loadSaveDirectory().trim());
   const panelRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -97,6 +102,13 @@ export function SavePathSettingsSection({ saveDirectoryDraft, savePathState, hig
           </div>
           {pickFailed && <p className="save-path-error" role="alert">{t.settings.save.browseFailed}</p>}
         </SettingsRow>
+        <SettingsToggleRow
+          title={t.settings.save.fileSync}
+          description={hasSaveDirectory ? t.settings.save.fileSyncDescription : t.settings.save.fileSyncNeedsPath}
+          checked={fileSync.enabled}
+          disabled={!hasSaveDirectory}
+          onChange={fileSync.onChange}
+        />
       </SettingsGroup>
     </div>
   );

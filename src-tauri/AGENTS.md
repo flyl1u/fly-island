@@ -17,7 +17,7 @@ src-tauri/src/
 │                            #   dsh_desktop.rs / dsh_sessions.rs / dsh_credentials.rs / dsh_usage.rs：DSH 桌面端本地会话检查点、只读凭据与官方余额查询
 │                            #   workbuddy_sessions.rs：WorkBuddy 桌面端本地会话记录；workbuddy_connection.rs / workbuddy_usage.rs：WorkBuddy 官网独立登录窗口、积分汇总与内存缓存
 ├── app_log/                 # 问题排查日志（默认关闭）：开启后把标准错误接到管道写入 logs/，前端的报错经 append_app_log 写入；file.rs 负责一份备份的轮转
-├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出、不合成 Alt 键地聚焦自己的窗口（window_focus）
+├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、不合成 Alt 键地聚焦自己的窗口（window_focus）
 ├── clipboard_history/
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
 ├── media_control/           # diagnostics.rs：SMTC、进程、版本与网易云插件只读诊断
