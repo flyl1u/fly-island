@@ -8,6 +8,7 @@ import { advanceClock, clockPosition, hasTimeline, setClockPosition, NO_CLOCK, t
 import { useAudioLevel } from "./useAudioLevel";
 import { pickMediaSource } from "./pickMediaSource";
 import { useMusicSourcePriority } from "./useMusicSourcePriority";
+import { useMusicShortcutRegistration } from "./useMusicShortcuts";
 
 /**
  * Media session state, playback commands and the source the island currently controls.
@@ -18,6 +19,7 @@ import { useMusicSourcePriority } from "./useMusicSourcePriority";
 export function useMediaState(enabled = true, showsLevel = true) {
   const [mediaState, setMediaState] =
     useState<MediaState>(DEFAULT_MEDIA_STATE);
+  useMusicShortcutRegistration(enabled, mediaState.activeSessionId ?? undefined);
   const [isMediaTrackChanging, setIsMediaTrackChanging] = useState(false);
   const [mediaCommandError, setMediaCommandError] = useState<string | null>(
     null,

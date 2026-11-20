@@ -21,7 +21,7 @@ src-tauri/src/
 ├── clipboard_history/
 ├── config_transfer/         # 配置备份 / 迁移：原生文件对话框、受限数据与音效收集、启动恢复与撤销日志
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
-├── media_control/           # diagnostics.rs：SMTC、进程、版本与网易云插件只读诊断
+├── media_control/           # diagnostics.rs：SMTC、进程、版本与网易云插件只读诊断；hotkeys.rs：可选音乐全局快捷键、注册状态与已有媒体会话控制
 ├── media_plugins/           # 网易云插件探测、固定清单下载校验、安装记录与受限提权安装 / 卸载
 ├── lyrics/                  # 本地 LRC、LRCLIB、QQ QRC、网易 YRC、酷狗 KRC 缓存、汽水只读 LMDB/msgpackr；word_formats.rs 统一逐字格式，在线结果缓存在 lyrics-cache/
 ├── mail/                    # 邮箱（命令名仍为 *_qq_mail）：附件（attachments.rs）、命令、每个邮箱一个后台服务（accounts.rs）及其崩溃后重启（supervisor.rs）、IMAP 会话、正文与内嵌图片解析、凭据

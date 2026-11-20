@@ -22,6 +22,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## localStorage key
 
+音乐全局快捷键（2026-11-19）：新增 `focusd-island-music-shortcuts`，JSON 对象 `{ playPause: string, previous: string, next: string }`，三项缺失、非法或空值按空字符串读取（不注册），不进外观预设。主窗口启动及跨窗口修改后调用 `set_media_shortcuts({ enabled, shortcuts, target? })`，可选 target 与音乐面板当前会话一致；音乐关闭时释放全部，保存的键保留。`get_media_shortcut_errors()` 返回各动作最近的错误字符串对象（成功项省略），`media-shortcut-status` 广播同一对象。复用现有组合键格式与 Windows 注册冲突判定，另预留审批键 `Ctrl+Alt+Y` / `N` / `T`；设置页互查音乐、翻译和剪贴板快捷键。热键只控制已有 SMTC 会话，没有会话时静默跳过。
+
 `focusd-island-settings.messagePreviewSeconds` 为岛上通知停留时长，3–30 的整数秒，默认 5；旧记录缺失或非法值回退到 5。
 
 `focusd-island-settings` 的待办轮换字段兼容旧记录：`rotateTodos` 默认 false、`showIdleTodoCount` 默认 true、`todoRotationSeconds` 默认 5（1–60）、`todoRotationMode` 默认 `switch`（`switch` / `scroll`）、`todoScrollSpeed` 默认 20（10–40 逻辑像素/秒）。`todoRotationCount` 已移除，旧记录中的该字段忽略且不再写回。轮换候选为全部已开始且未完成的普通待办，按列表顺序显示；缺失或非法设置由 normalize 回退。
@@ -57,6 +59,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-last-saved-signature` | `features/todos/storage.ts` |
 | `focusd-island-position` | `windows/island/storage.ts` |
 | `focusd-island-music-sources`（`{ id, label, archived? }[]`，按顺序；`archived: true` 表示已归档，不出现在顺序里、再次出现时不追加；旧数据无该字段即未归档。2026-11-14 起） | `features/media/storage.ts` |
+| `focusd-island-music-shortcuts`（`{ playPause, previous, next }`，均为空字符串或组合键） | `features/media/storage.ts` |
 | `focusd-island-last-page`（`todo` / `music` / `shelf` / `qq` / `agents` / `translation` 之一，岛上最后打开的页面；收起的岛点文字时回到它。`clipboard` 与 `settings` 不记录；缺失或非法回退 `todo`。2026-11-14 起） | `windows/island/lastPage.ts` |
 | `focusd-island-media-diagnostics-dismissed`（字符串数组，每项为小写 sourceAppId + `\u001f` + 非 ok 的 status；损坏或旧格式回退空数组） | `features/media/storage.ts` |
 | `focusd-island-settings-focus`（主窗口 → 设置窗口的跳转请求） | `windows/settings/storage.ts` |
