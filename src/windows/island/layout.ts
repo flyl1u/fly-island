@@ -5,9 +5,15 @@ import { clamp } from "../../utils/number.ts";
 import { getCollapsedTextUnits, getTodoTitleLineCount } from "../../utils/text.ts";
 
 export const MIN_COLLAPSED_ISLAND_WIDTH = 280;
-export const MAX_COLLAPSED_ISLAND_WIDTH = COLLAPSED_WIDTH.default;
+/** The widest the collapsed island may be; the native window accepts up to 480 (island/geometry.rs). */
+export const MAX_COLLAPSED_ISLAND_WIDTH = COLLAPSED_WIDTH.max;
+/** The auto width stops at the default width for ordinary text (a todo title, an agent session). */
+export const MAX_AUTO_COLLAPSED_ISLAND_WIDTH = COLLAPSED_WIDTH.default;
 export const MIN_COLLAPSED_TEXT_UNITS = 2;
 export const MAX_COLLAPSED_TEXT_UNITS = 12;
+// The island width one text unit buys: the default width's range (340 - 280) over its units (12 - 2).
+const PX_PER_TEXT_UNIT =
+  (COLLAPSED_WIDTH.default - MIN_COLLAPSED_ISLAND_WIDTH) / (MAX_COLLAPSED_TEXT_UNITS - MIN_COLLAPSED_TEXT_UNITS);
 // The todo page with two rows: the island's padding, header and gap (86), the notebook's padding
 // (24), its tab row (22), the add field (32), two gaps (16) and two rows (70), and 8 to spare
 // (TodoNotebook.css, TodoListItem.css). Keep in step.
@@ -32,23 +38,29 @@ const CLIPBOARD_ROW_GAP = 6;
 // One single-line row (32) and the gap below it (6).
 export const TODO_ROW_HEIGHT = 38;
 export const TODO_GROW_START_ROWS = 2;
-/** Collapsed width for the summary `text`, plus `extraWidth` px, up to the widest. */
-export function getCollapsedIslandWidth(text: string, extraWidth = 0, fontScale = 1) {
+/**
+ * Collapsed width for the summary `text`, plus `extraWidth` px, up to `maxWidth`.
+ * The text buys the same room per unit as before; a higher ceiling (the lyric may use the
+ * width the settings allow) only lets a long line keep growing.
+ */
+export function getCollapsedIslandWidth(text: string, extraWidth = 0, fontScale = 1,
+  maxWidth: number = MAX_AUTO_COLLAPSED_ISLAND_WIDTH) {
   const visualUnits = getCollapsedTextUnits(text) * fontScale;
+  const unitCeiling = MIN_COLLAPSED_TEXT_UNITS + (maxWidth - MIN_COLLAPSED_ISLAND_WIDTH) / PX_PER_TEXT_UNIT;
   const widthProgress =
     (clamp(
       visualUnits,
       MIN_COLLAPSED_TEXT_UNITS,
-      MAX_COLLAPSED_TEXT_UNITS,
+      unitCeiling,
     ) -
       MIN_COLLAPSED_TEXT_UNITS) /
-    (MAX_COLLAPSED_TEXT_UNITS - MIN_COLLAPSED_TEXT_UNITS);
+    (unitCeiling - MIN_COLLAPSED_TEXT_UNITS);
 
   return Math.min(
-    MAX_COLLAPSED_ISLAND_WIDTH,
+    maxWidth,
     Math.round(
       MIN_COLLAPSED_ISLAND_WIDTH +
-        widthProgress * (MAX_COLLAPSED_ISLAND_WIDTH - MIN_COLLAPSED_ISLAND_WIDTH) +
+        widthProgress * (maxWidth - MIN_COLLAPSED_ISLAND_WIDTH) +
         Math.max(0, extraWidth),
     ),
   );
