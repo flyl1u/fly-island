@@ -20,6 +20,23 @@ export function saveDetachedSettings(detached: boolean): boolean {
   return true;
 }
 
+export const TRAY_VISIBLE_STORAGE_KEY = "focusd-island-tray-visible";
+export const TRAY_VISIBLE_CHANGED_EVENT = "focusd-tray-visible-changed";
+
+/** Only an explicit false hides the icon, including when storage is unavailable. */
+export function loadTrayVisible(): boolean {
+  return readString(TRAY_VISIBLE_STORAGE_KEY) !== "false";
+}
+
+/** Native visibility events may reach several windows; unchanged writes must not echo. */
+export function saveTrayVisible(visible: boolean): boolean {
+  const value = String(visible);
+  if (readString(TRAY_VISIBLE_STORAGE_KEY) === value) return true;
+  if (!writeString(TRAY_VISIBLE_STORAGE_KEY, value)) return false;
+  window.dispatchEvent(new Event(TRAY_VISIBLE_CHANGED_EVENT));
+  return true;
+}
+
 // Main island -> settings window request to reveal a section; survives the window being created.
 export const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 

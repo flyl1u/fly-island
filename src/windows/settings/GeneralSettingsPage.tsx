@@ -7,6 +7,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
 import { ConfigTransferSection } from "../../features/config-transfer/ConfigTransferSection";
+import { TrayIconRow } from "./TrayIconRow";
 
 /**
  * Settings → General: how the island behaves, most used first (docs/design/settings.md): startup
@@ -41,7 +42,9 @@ export function GeneralSettingsPage({
         onDetachedSettingsChange={onDetachedSettingsChange}
         onLaunchAtStartupChange={updateLaunchAtStartup}
         onLocaleChange={onLocaleChange}
-      />
+      >
+        <TrayIconRow />
+      </BehaviorSettingsSection>
       <SettingsGroup title={t.settings.expand.title}>
         <ExpandRows {...rows} />
       </SettingsGroup>
