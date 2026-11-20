@@ -20,6 +20,7 @@ pub(super) struct Conversation {
     preview: ChatPreview,
     unread: u32,
     muted: bool,
+    official_account: bool,
     mentioned: bool,
     /// A mention of the user, not one of everyone: only this lets a muted chat through.
     mentions_me: bool,
@@ -30,7 +31,9 @@ pub(super) struct Conversation {
 
 impl Conversation {
     fn can_preview(&self) -> bool {
-        !self.preview.body.is_empty() && (!self.muted || self.mentions_me)
+        !self.official_account
+            && !self.preview.body.is_empty()
+            && (!self.muted || self.mentions_me)
     }
 
     pub(super) fn matches_selected_preview(&self, preview: &ChatPreview) -> bool {
@@ -45,6 +48,50 @@ const FOLDED: &[&str] = &["折叠的聊天", "折叠的群聊", "Folded Chats", 
 /// WeChat's internal name for the folder, which may appear in its row's automation id.
 const FOLDED_KEY: &str = "foldgroup";
 const PINNED: &[&str] = &["已置顶", "置顶聊天", "Pinned"];
+/// Stable automation ids used by WeChat's official-account and notification rows.
+const OFFICIAL_KEYS: &[&str] = &[
+    "brandsessionholder",
+    "brandservicesessionholder",
+    "notifymessage",
+    "officialaccounts",
+];
+/// Names are a fallback for clients that do not expose the internal username in the id.
+const OFFICIAL_NAMES: &[&str] = &[
+    "公众号",
+    "公众号消息",
+    "订阅号",
+    "订阅号消息",
+    "服务号",
+    "服务号消息",
+    "服务通知",
+    "微信支付",
+    "微信运动",
+    "微信团队",
+    "腾讯新闻",
+    "officialaccount",
+    "officialaccounts",
+    "publicaccount",
+    "publicaccounts",
+    "publicaccountmessage",
+    "publicaccountmessages",
+    "publicmessages",
+    "subscriptionaccount",
+    "subscriptionaccounts",
+    "subscriptionaccountmessage",
+    "subscriptionaccountmessages",
+    "subscriptionmessages",
+    "serviceaccount",
+    "serviceaccounts",
+    "serviceaccountmessage",
+    "serviceaccountmessages",
+    "servicenotice",
+    "servicenotification",
+    "servicenotifications",
+    "wechatpay",
+    "wechatsports",
+    "wechatteam",
+    "tencentnews",
+];
 const LABELS: &[&str] = &[
     "有新消息",
     "以下为新消息",
@@ -70,6 +117,7 @@ pub(super) fn parse_row(
     let mut lines = name.lines().map(str::trim).filter(|line| !line.is_empty());
     let contact = lines.next()?;
     let folded = FOLDED.contains(&contact) || key.contains(FOLDED_KEY);
+    let official_account = is_official_account(&key, contact);
     let mut row = Conversation {
         preview: ChatPreview {
             key,
@@ -78,6 +126,7 @@ pub(super) fn parse_row(
         },
         unread: 0,
         muted: folded,
+        official_account,
         mentioned: false,
         mentions_me: false,
         selected,
@@ -129,6 +178,19 @@ pub(super) fn parse_row(
         row.preview.body = text.chars().take(512).collect();
     }
     Some(row)
+}
+
+fn is_official_account(key: &str, contact: &str) -> bool {
+    let key = key.trim().to_ascii_lowercase();
+    if key.starts_with("gh_") || OFFICIAL_KEYS.contains(&key.as_str()) {
+        return true;
+    }
+    let contact = contact
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>()
+        .to_lowercase();
+    OFFICIAL_NAMES.contains(&contact.as_str())
 }
 
 /// A bracketed count followed by the summary on the same line.
@@ -279,8 +341,8 @@ pub(super) fn new_previews(
         .collect()
 }
 
-/// True when only muted chats that did not mention the user changed. A flash that only they
-/// explain is not worth a plain "new reminder".
+/// True when only muted chats that did not mention the user or official-account rows changed. A
+/// flash that only these suppressed rows explain is not worth a plain "new reminder".
 pub(super) fn only_muted_changed(before: &[Conversation], after: &[Conversation]) -> bool {
     let previous: HashMap<_, _> = before
         .iter()
@@ -296,7 +358,7 @@ pub(super) fn only_muted_changed(before: &[Conversation], after: &[Conversation]
         if !changed {
             continue;
         }
-        if row.muted && !row.mentions_me {
+        if row.official_account || (row.muted && !row.mentions_me) {
             muted_changed = true;
         } else {
             return false;

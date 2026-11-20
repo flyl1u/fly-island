@@ -43,6 +43,10 @@
 
 「折叠的聊天」只收纳免打扰会话，但它在会话列表里自成一行、不带「消息免打扰」，以前被当成普通会话：其中的群有新消息时，这一行未读数增加会显示摘要，任务栏闪烁也会显示「微信有新提醒」。这一行只在列表可见范围内才读得到，所以时有时无。现在会话名或标签为「折叠的聊天」（或自动化 ID 含 `foldgroup`）的行按免打扰处理，只在有人 @我 时提醒。
 
+公众号、订阅号和服务号不属于提醒范围。会话行自动化 ID 以 `gh_` 开头的公众号，以及已核实的聚合行 ID `brandsessionholder`、`brandservicesessionholder`、`notifymessage`、`officialaccounts` 都会保留在对照快照中但不生成摘要；这样这些行单独变化时，任务栏闪烁也不会合成「微信有新提醒」。当客户端不暴露内部用户名时，名称兜底过滤「公众号」「订阅号消息」「服务号」「服务通知」「微信支付」「微信运动」「微信团队」「腾讯新闻」及对应英文名称。普通联系人、非免打扰群和文件传输助手继续提醒；折叠/免打扰群仍只在有人 @我 时放行。
+
+这套按会话行比较的过滤在开启消息摘要时运行；关闭摘要后仍保留原来的纯任务栏提醒，因为单独的闪动事件不包含会话账号信息，也不会为分类而强制开启微信辅助功能读取。
+
 实现方式参考 [Fuyu 的微信提醒](https://github.com/TixXin/Fuyu/blob/9074a6e2ea5ab6cdddc87338a2481ae454996211/docs/features/wechat-reminders.md)和 [wechatauto-replica 的 Qt 辅助功能指令特征](https://github.com/fanyuantaier/wechatauto-replica/blob/main/tools/wake_uia.py)。
 
 ## 为什么不使用 QQ 的通知来源

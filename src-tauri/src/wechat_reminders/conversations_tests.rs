@@ -30,6 +30,60 @@ fn parses_a_private_chat_and_retains_a_group_sender() {
 }
 
 #[test]
+fn filters_official_accounts_by_internal_id_and_name() {
+    for (key, contact) in [
+        ("gh_example", "品牌账号"),
+        ("brandsessionholder", "订阅号消息"),
+        ("brandservicesessionholder", "服务号"),
+        ("notifymessage", "服务通知"),
+        ("officialaccounts", "公众号"),
+        ("wechat-pay", "微信支付"),
+        ("wechat-sports", "微信运动"),
+        ("wechat-team", "微信团队"),
+        ("tencent-news", "腾讯新闻"),
+        ("ordinary-key", "Official Accounts"),
+        ("ordinary-public", "Public Account"),
+        ("ordinary-public-message", "Public Account Message"),
+        ("ordinary-subscription-message", "Subscription Account Message"),
+        ("ordinary-service", "Service Notice"),
+        ("ordinary-service-message", "Service Account Message"),
+    ] {
+        let conversation = row(key, &format!("{contact}\n[1条]\n公告\n12:00"));
+        assert!(conversation.official_account, "{key}: {contact}");
+        assert!(!conversation.can_preview(), "{key}: {contact}");
+    }
+}
+
+#[test]
+fn keeps_contacts_groups_and_file_helper_eligible() {
+    for (key, name) in [
+        ("wxid_contact", "小林\n[1条]\n下午开会吗？\n12:41"),
+        ("room_project", "项目群\n[1条]\n李四: 请看附件\n12:42"),
+        ("filehelper", "文件传输助手\n[1条]\n报告.pdf\n12:43"),
+    ] {
+        let conversation = row(key, name);
+        assert!(!conversation.official_account, "{key}");
+        assert!(conversation.can_preview(), "{key}");
+    }
+}
+
+#[test]
+fn an_official_only_change_is_explained_like_a_muted_change() {
+    for (key, contact) in [("gh_example", "公众号"), ("notifymessage", "服务通知")] {
+        let before = [row(
+            key,
+            &format!("{contact}\n[1条]\n旧通知\n12:00"),
+        )];
+        let after = [row(
+            key,
+            &format!("{contact}\n[2条]\n新通知\n12:01"),
+        )];
+        assert!(new_previews(&before, &after, ReadTrigger::Poll, 20).is_empty());
+        assert!(only_muted_changed(&before, &after));
+    }
+}
+
+#[test]
 fn ignores_own_replies_muted_chats_and_repeated_flashes() {
     let before = [
         row("1", "小林\n[2条]\n上午好\n8:15"),
