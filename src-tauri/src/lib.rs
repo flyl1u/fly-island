@@ -9,6 +9,7 @@ mod island;
 mod lyrics;
 mod media_control;
 mod media_plugins;
+mod legacy_migration;
 mod plugin_host;
 mod release_flags;
 mod messenger_activation;
@@ -38,6 +39,11 @@ macro_rules! collect_commands {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Migrate the old app-data roots before Tauri creates its first WebView; if that fails, stop
+    // here rather than let Tauri create empty new ones (the next launch retries).
+    if !legacy_migration::run() {
+        return;
+    }
     system::startup::note_launch();
     media_plugins::handle_startup();
     agent_status::uninstall::handle_startup();
@@ -123,6 +129,7 @@ pub fn run() {
             }
             agent_status::reply_marker::init();
             agent_status::workbuddy_connection::init(app.handle());
+            agent_status::hook_migration::repair_legacy_hooks(app.handle());
             system::startup::upgrade_legacy_value();
             Ok(())
         })

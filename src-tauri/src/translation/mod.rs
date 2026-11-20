@@ -3,6 +3,7 @@ mod free;
 mod provider;
 
 use crate::clipboard_history::{parse_shortcut_binding, ShortcutBinding};
+use crate::legacy_migration;
 use arboard::Clipboard;
 use keyring::{Entry, Error as KeyringError};
 use provider::{
@@ -155,13 +156,12 @@ pub fn copy_translation_result(text: String) -> Result<(), String> {
 
 // One key per provider. DeepSeek keeps the "deepseek" entry older versions created.
 fn credential(provider: &Provider) -> Result<Entry, String> {
-    Entry::new("com.focusd.island.translation", provider.id).map_err(|error| error.to_string())
+    Entry::new("com.flyisland.app.translation", provider.id).map_err(|error| error.to_string())
 }
 
 fn read_secret(provider: &Provider) -> Result<Option<String>, String> {
-    match credential(provider)?.get_password() {
-        Ok(secret) => Ok(Some(secret)),
-        Err(KeyringError::NoEntry) => Ok(None),
+    match legacy_migration::read_credential_with_fallback("com.flyisland.app.translation", provider.id) {
+        Ok(secret) => Ok(secret),
         Err(error) => Err(format!("无法读取 Windows 凭据：{error}")),
     }
 }
@@ -185,7 +185,7 @@ pub fn save_translation_secret(secret: String, provider: Option<String>) -> Resu
 
 #[tauri::command]
 pub fn delete_translation_secret(provider: Option<String>) -> Result<(), String> {
-    match credential(find_provider(provider.as_deref())?)?.delete_credential() {
+    match legacy_migration::delete_credential_with_fallback("com.flyisland.app.translation", find_provider(provider.as_deref())?.id) {
         Ok(()) | Err(KeyringError::NoEntry) => Ok(()),
         Err(error) => Err(format!("无法删除 Windows 凭据：{error}")),
     }
@@ -327,7 +327,7 @@ fn post_binding(
 }
 
 fn run_hotkey_loop() -> Result<(), String> {
-    let class_name = "FocuSDTranslationHotkey";
+    let class_name = "Fly IslandTranslationHotkey";
     let instance = message_window::module_instance().map_err(|error| error.to_string())?;
     if message_window::register_class::<TranslationHotkeyWindow>(instance, class_name).is_err() {
         return Err("无法注册翻译快捷键窗口。".to_string());
@@ -335,7 +335,7 @@ fn run_hotkey_loop() -> Result<(), String> {
     let hwnd = message_window::create_message_only_window(
         instance,
         class_name,
-        "FocuSD Translation Hotkey",
+        "Fly Island Translation Hotkey",
     )
     .map_err(|error| error.to_string())?;
     register_default(hwnd, DEFAULT_SHORTCUT, HOTKEY_ID, &ACTIVE_BINDING)?;

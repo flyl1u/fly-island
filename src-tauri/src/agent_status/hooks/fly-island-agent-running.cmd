@@ -12,13 +12,13 @@ if /I "%PROVIDER%"=="codex" (
   exit /b 2
 )
 
-if defined FOCUSD_AGENT_STATUS_DIR (
-  set "STATUS_DIR=%FOCUSD_AGENT_STATUS_DIR%"
+if defined FLY_ISLAND_AGENT_STATUS_DIR (
+  set "STATUS_DIR=%FLY_ISLAND_AGENT_STATUS_DIR%"
 ) else (
   if defined APPDATA (
-    set "STATUS_DIR=%APPDATA%\com.focusd.island"
+    set "STATUS_DIR=%APPDATA%\com.flyisland.app"
   ) else (
-    set "STATUS_DIR=%LOCALAPPDATA%\com.focusd.island"
+    set "STATUS_DIR=%LOCALAPPDATA%\com.flyisland.app"
   )
 )
 

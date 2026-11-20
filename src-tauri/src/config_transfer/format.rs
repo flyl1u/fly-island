@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use super::data::TransferFiles;
+use crate::legacy_migration;
 
 pub(super) const MAX_BACKUP_BYTES: usize = 256 * 1024 * 1024;
 
@@ -16,19 +17,26 @@ pub(crate) struct Backup {
 }
 
 pub(super) fn storage_key(key: &str) -> bool {
-    key.starts_with("focusd-island-") && !matches!(key,
-        "focusd-island-position" | "focusd-island-settings-focus" | "focusd-island-position-reset" | "focusd-island-panel-preview")
+    key.starts_with("fly-island-") && !matches!(key,
+        "fly-island-position" | "fly-island-settings-focus" | "fly-island-position-reset" | "fly-island-panel-preview")
 }
 
 impl Backup {
     pub(super) fn parse(bytes: &[u8]) -> Result<Self, String> {
         if bytes.len() > MAX_BACKUP_BYTES { return Err("configTransfer:tooLarge".into()); }
-        let value: serde_json::Value = serde_json::from_slice(bytes).map_err(|_| "configTransfer:invalidJson")?;
+        let mut value: serde_json::Value = serde_json::from_slice(bytes).map_err(|_| "configTransfer:invalidJson")?;
+        legacy_migration::normalize_legacy_backup_value(&mut value);
         if value.get("app").and_then(|v| v.as_str()) != Some("fly-island") { return Err("configTransfer:wrongApp".into()); }
         if value.get("formatVersion").and_then(|v| v.as_u64()) != Some(1) { return Err("configTransfer:unsupportedVersion".into()); }
         let backup: Self = serde_json::from_value(value).map_err(|e| format!("configTransfer:invalidStructure: {e}"))?;
         backup.validate()?;
         Ok(backup)
+    }
+
+    pub(super) fn normalize_legacy(self) -> Result<Self, String> {
+        let mut value = serde_json::to_value(self).map_err(|e| format!("configTransfer:invalidStructure: {e}"))?;
+        legacy_migration::normalize_legacy_backup_value(&mut value);
+        serde_json::from_value(value).map_err(|e| format!("configTransfer:invalidStructure: {e}"))
     }
 
     pub(super) fn validate(&self) -> Result<(), String> {

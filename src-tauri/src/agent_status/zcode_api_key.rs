@@ -1,9 +1,9 @@
 //! Z Code Coding Plan API key settings. The secret and platform stay in Windows Credential Manager.
 
-use keyring::{Entry, Error as KeyringError};
+use keyring::Entry;
 use serde::{Deserialize, Serialize};
 
-const SERVICE: &str = "com.focusd.island.zcode-coding-plan";
+const SERVICE: &str = "com.flyisland.app.zcode-coding-plan";
 const USER: &str = "usage";
 const SETTINGS_ERROR: &str = "zcode_api_key:storage";
 
@@ -54,9 +54,9 @@ fn credential() -> Result<Entry, String> {
 }
 
 pub(crate) fn read_config() -> Result<ApiKeyConfig, String> {
-    match credential()?.get_password() {
-        Ok(value) => serde_json::from_str(&value).map_err(|_| SETTINGS_ERROR.to_string()),
-        Err(KeyringError::NoEntry) => Ok(ApiKeyConfig::default()),
+    match crate::legacy_migration::read_credential_with_fallback(SERVICE, USER) {
+        Ok(Some(value)) => serde_json::from_str(&value).map_err(|_| SETTINGS_ERROR.to_string()),
+        Ok(None) => Ok(ApiKeyConfig::default()),
         Err(_) => Err(SETTINGS_ERROR.to_string()),
     }
 }

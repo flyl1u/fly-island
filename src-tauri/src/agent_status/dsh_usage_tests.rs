@@ -52,7 +52,7 @@ fn account_wallet_addition_keeps_decimal_precision() {
 }
 
 fn store(name: &str, provider: &str, modified_offset: u64, credentials: Option<&str>) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("focusd-dsh-store-{}-{name}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("fly-island-dsh-store-{}-{name}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     let dir = root.join("storages/session_projcache/sessions");
     fs::create_dir_all(&dir).unwrap();
@@ -83,7 +83,7 @@ refs:
 ").unwrap();
     assert_eq!(locate_in(vec![new.clone()]).err(), Some(CUSTOM_ROUTE));
     assert!(matches!(locate_in(Vec::new()), Ok(None)));
-    let empty = std::env::temp_dir().join(format!("focusd-dsh-store-{}-empty", std::process::id()));
+    let empty = std::env::temp_dir().join(format!("fly-island-dsh-store-{}-empty", std::process::id()));
     fs::create_dir_all(empty.join("storages/session_projcache/sessions")).unwrap();
     assert_eq!(locate_in(vec![empty.clone()]).err(), Some(NO_SESSION));
     for root in [old, new, custom, empty] { let _ = fs::remove_dir_all(root); }

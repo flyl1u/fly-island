@@ -2,22 +2,23 @@
 
 use keyring::{Entry, Error as KeyringError};
 
-const CREDENTIAL_SERVICE: &str = "com.focusd.island.qq-mail";
+use crate::legacy_migration;
+
+const CREDENTIAL_SERVICE: &str = "com.flyisland.app.qq-mail";
 
 pub(super) fn credential(email: &str) -> Result<Entry, String> {
     Entry::new(CREDENTIAL_SERVICE, email).map_err(|_| "无法访问 Windows 邮箱凭据。".into())
 }
 
 pub(super) fn read_secret(email: &str) -> Result<Option<String>, String> {
-    match credential(email)?.get_password() {
-        Ok(secret) => Ok(Some(secret)),
-        Err(KeyringError::NoEntry) => Ok(None),
+    match legacy_migration::read_credential_with_fallback(CREDENTIAL_SERVICE, email) {
+        Ok(secret) => Ok(secret),
         Err(_) => Err("无法读取 Windows 邮箱凭据。".into()),
     }
 }
 
 pub(super) fn delete_secret(email: &str) -> Result<(), String> {
-    match credential(email)?.delete_credential() {
+    match legacy_migration::delete_credential_with_fallback(CREDENTIAL_SERVICE, email) {
         Ok(()) | Err(KeyringError::NoEntry) => Ok(()),
         Err(_) => Err("无法删除 Windows 邮箱凭据。".into()),
     }

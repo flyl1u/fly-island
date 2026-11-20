@@ -1,6 +1,6 @@
 //! The diagnostic log (用户要求 2026-11-18：很多报错没法复现). Off by default. While on, standard
 //! error (every `eprintln!` and panic message in the app) and the windows' console errors and
-//! warnings (`append_app_log`) are written with the local time to `logs/focusd-island.log` in
+//! warnings (`append_app_log`) are written with the local time to `logs/fly-island.log` in
 //! the app data directory, which users send along with a problem. Nothing leaves the machine.
 
 mod file;

@@ -188,7 +188,7 @@ mod tests {
     #[test]
     #[ignore = "Requires the path of a locally installed Weixin.dll, only reads the file"]
     fn locates_the_flag_in_the_installed_dll() {
-        let path = std::env::var_os("FOCUSD_TEST_WEIXIN_DLL").expect("path to the installed DLL");
+        let path = std::env::var_os("FLY_ISLAND_TEST_WEIXIN_DLL").expect("path to the installed DLL");
         let dll = std::fs::read(path).unwrap();
         assert!(locate(&dll).is_some());
     }

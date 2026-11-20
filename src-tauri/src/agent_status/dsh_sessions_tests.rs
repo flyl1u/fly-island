@@ -57,7 +57,7 @@ fn falls_back_to_the_title_input_of_current_dsh() {
 
 #[test]
 fn source_log_of_any_generation_counts() {
-    let root = std::env::temp_dir().join(format!("focusd-dsh-log-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("fly-island-dsh-log-{}", std::process::id()));
     let shard = root.join("--D-fictional--");
     let _ = fs::remove_dir_all(&root);
     for (id, file) in [("session-a", "session.v4.jsonl.zstd"), ("session-b", "session.v5.jsonl.zst"), ("session-c", "notes.txt")] {

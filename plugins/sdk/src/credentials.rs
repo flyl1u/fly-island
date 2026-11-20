@@ -1,6 +1,6 @@
 //! Shares the host's Windows Credential Manager namespace; never writes plaintext credentials.
 fn entry(plugin: &str, key: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new("com.focusd.island.plugins", &format!("{plugin}/{key}"))
+    keyring::Entry::new("com.flyisland.app.plugins", &format!("{plugin}/{key}"))
         .map_err(|_| "Cannot open plugin credential".into())
 }
 

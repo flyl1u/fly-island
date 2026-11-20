@@ -730,7 +730,7 @@ pub(super) fn notify_clipboard_changed() {
 }
 
 fn run_windows_clipboard_listener() -> Result<(), String> {
-    let class_name = "FocuSDClipboardHistoryListener";
+    let class_name = "Fly IslandClipboardHistoryListener";
     let instance = message_window::module_instance().map_err(|error| error.to_string())?;
 
     if message_window::register_class::<ClipboardWindow>(instance, class_name).is_err() {
@@ -740,7 +740,7 @@ fn run_windows_clipboard_listener() -> Result<(), String> {
     let hwnd = message_window::create_message_only_window(
         instance,
         class_name,
-        "FocuSD Clipboard History Listener",
+        "Fly Island Clipboard History Listener",
     )
     .map_err(|error| error.to_string())?;
 

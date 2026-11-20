@@ -4,7 +4,7 @@ use std::{fs, path::Path};
 
 fn sample() -> Value {
     json!({ "app": "fly-island", "formatVersion": 1, "exportedAt": "2026-11-19T00:00:00Z", "appVersion": "3.2.8",
-        "localStorage": { "focusd-island-future": "raw" },
+        "localStorage": { "fly-island-future": "raw" },
         "files": { "launchAtStartup": false, "agents": { "codex": false, "claudeCode": false, "replyMarker": false },
             "plugins": { "developerMode": false, "indexUrl": "", "installed": [] },
             "clipboard": { "settings": { "enabled": true, "captureImages": true, "maxItems": 30 }, "history": null },
@@ -21,8 +21,8 @@ fn identity_and_structure_are_validated_before_writing() {
         sample[field] = value;
         assert!(Backup::parse(&serde_json::to_vec(&sample).unwrap()).err().unwrap().contains(error));
     }
-    for key in ["focusd-island-position", "focusd-island-position-reset", "focusd-island-panel-preview", "foreign"] { assert!(!format::storage_key(key)); }
-    assert!(format::storage_key("focusd-island-future"));
+    for key in ["fly-island-position", "fly-island-position-reset", "fly-island-panel-preview", "foreign"] { assert!(!format::storage_key(key)); }
+    assert!(format::storage_key("fly-island-future"));
 }
 
 #[test]

@@ -62,7 +62,7 @@ fn native_krc_checks_headers_offset_and_corruption() {
         assert!(krc::decrypt_bytes(bad).is_none());
     }
     assert!(krc::decrypt_bytes(&fixture(&"x".repeat(1024 * 1024 + 1))).is_none());
-    let dir = std::env::temp_dir().join(format!("focusd-native-krc-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("fly-island-native-krc-{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     let path = dir.join("歌手 - 测试歌-0123456789abcdef0123456789abcdef.krc");
     fs::write(&path, bytes).unwrap();

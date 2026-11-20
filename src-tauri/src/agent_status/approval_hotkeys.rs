@@ -28,7 +28,7 @@ use crate::{
 const HOTKEY_EVENT: &str = "agent-approval-hotkey";
 const REFRESH_MESSAGE: u32 = WM_APP + 0x63;
 const FIRST_HOTKEY_ID: i32 = 0x5300;
-const CLASS_NAME: &str = "FocuSDAgentApprovalHotkeys";
+const CLASS_NAME: &str = "Fly IslandAgentApprovalHotkeys";
 
 /// One card action and the shortcut that answers it, e.g. `allow` / `Ctrl+Alt+Y`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -81,7 +81,7 @@ fn run_window() {
     if message_window::register_class::<ApprovalHotkeyWindow>(instance, CLASS_NAME).is_err() {
         return;
     }
-    let Ok(window) = message_window::create_message_only_window(instance, CLASS_NAME, "FocuSD Agent Approval Hotkeys") else {
+    let Ok(window) = message_window::create_message_only_window(instance, CLASS_NAME, "Fly Island Agent Approval Hotkeys") else {
         return;
     };
     state().window = Some(window.0 as isize);

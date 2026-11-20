@@ -20,15 +20,15 @@ pub(super) fn replace(source: &Path, target: &Path) -> std::io::Result<()> {
     crate::win32::media_plugin_elevation::replace(source, target)
 }
 /// Temp files this module leaves next to `target_name`: the fixed name older versions
-/// used (`msimg32.focusd-tmp`) and this version's per-run names
-/// (`msimg32.dll.<pid>-<nanos>.focusd-tmp`). Nothing else in the folder matches.
+/// used (`msimg32.fly-island-tmp`) and this version's per-run names
+/// (`msimg32.dll.<pid>-<nanos>.fly-island-tmp`). Nothing else in the folder matches.
 pub(super) fn is_own_temp(name: &str, target_name: &str) -> bool {
     let (name, target) = (name.to_ascii_lowercase(), target_name.to_ascii_lowercase());
     let stem = target.rsplit_once('.').map_or(target.as_str(), |(stem, _)| stem);
-    name == format!("{stem}.focusd-tmp")
-        || (name.len() > target.len() + ".focusd-tmp".len()
+    name == format!("{stem}.fly-island-tmp")
+        || (name.len() > target.len() + ".fly-island-tmp".len()
             && name.starts_with(&format!("{target}."))
-            && name.ends_with(".focusd-tmp"))
+            && name.ends_with(".fly-island-tmp"))
 }
 /// Removes temp files a failed or interrupted earlier run left, which made the next
 /// `create_new` fail. Best effort: a folder we may not write is handled by the caller.
@@ -44,7 +44,7 @@ fn remove_stale_temps(target: &Path) {
 }
 fn temp_path(target: &Path) -> PathBuf {
     let name = target.file_name().map_or_else(|| "file".into(), |n| n.to_string_lossy().into_owned());
-    target.with_file_name(format!("{name}.{}.focusd-tmp", unique_suffix()))
+    target.with_file_name(format!("{name}.{}.fly-island-tmp", unique_suffix()))
 }
 fn atomic_copy_io(source: &Path, target: &Path, sha256: &str) -> std::io::Result<()> {
     use std::io::{Error, ErrorKind, Write};
@@ -159,7 +159,7 @@ pub(super) fn execute(args: &[String]) -> Result<(), HelperError> {
 fn write_report(path: &Path, detail: &str) {
     use std::io::Write;
     let expected = path.file_name().and_then(|n| n.to_str())
-        .is_some_and(|n| n.starts_with("focusd-plugin-helper-") && n.ends_with(".txt"));
+        .is_some_and(|n| n.starts_with("fly-island-plugin-helper-") && n.ends_with(".txt"));
     if expected {
         if let Ok(mut file) = fs::OpenOptions::new().write(true).create_new(true).open(path) {
             let _ = file.write_all(detail.as_bytes());

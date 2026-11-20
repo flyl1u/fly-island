@@ -122,7 +122,7 @@ fn links_are_sent_only_when_workbuddy_handles_the_scheme() {
 
 #[test]
 fn the_newest_log_names_the_conversation_in_front() {
-    let home = std::env::temp_dir().join(format!("focusd-workbuddy-newest-{}", std::process::id()));
+    let home = std::env::temp_dir().join(format!("fly-island-workbuddy-newest-{}", std::process::id()));
     let project = home.join(".workbuddy").join("projects").join("demo");
     fs::create_dir_all(&project).expect("create the test folder");
     assert_eq!(newest_session_id(&home), None);

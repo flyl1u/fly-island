@@ -12,7 +12,7 @@ use crate::win32::{
     shell_hook, window,
 };
 
-const CLASS_NAME: &str = "FocuSDOfficeImSource";
+const CLASS_NAME: &str = "Fly IslandOfficeImSource";
 const HSHELL_WINDOWACTIVATED: usize = 4;
 const HSHELL_RUDEAPPACTIVATED: usize = 0x8004;
 const HSHELL_FLASH: usize = 0x8006;

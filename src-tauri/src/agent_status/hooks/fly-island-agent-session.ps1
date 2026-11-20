@@ -16,9 +16,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Get-StatusDirectory {
-  if ($env:FOCUSD_AGENT_STATUS_DIR) { return $env:FOCUSD_AGENT_STATUS_DIR }
-  if ($env:APPDATA) { return Join-Path $env:APPDATA "com.focusd.island" }
-  return Join-Path $env:LOCALAPPDATA "com.focusd.island"
+  if ($env:FLY_ISLAND_AGENT_STATUS_DIR) { return $env:FLY_ISLAND_AGENT_STATUS_DIR }
+  if ($env:APPDATA) { return Join-Path $env:APPDATA "com.flyisland.app" }
+  return Join-Path $env:LOCALAPPDATA "com.flyisland.app"
 }
 
 # The agent's own process: the nearest ancestor of this hook named like the agent.

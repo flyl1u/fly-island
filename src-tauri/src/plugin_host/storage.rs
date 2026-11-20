@@ -2,6 +2,7 @@ use std::{collections::BTreeMap, path::{Path, PathBuf}};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use super::manifest::Manifest;
+use crate::legacy_migration;
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,12 +45,12 @@ pub fn save(root: &Path, registry: &Registry) -> Result<(), String> {
 }
 
 fn entry(id: &str, key: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new("com.focusd.island.plugins", &format!("{id}/{key}")).map_err(|e| e.to_string())
+    keyring::Entry::new("com.flyisland.app.plugins", &format!("{id}/{key}")).map_err(|e| e.to_string())
 }
 
 pub fn set_secret(id: &str, key: &str, value: &str) -> Result<(), String> {
     if value.is_empty() {
-        match entry(id, key)?.delete_credential() {
+        match legacy_migration::delete_credential_with_fallback("com.flyisland.app.plugins", &format!("{id}/{key}")) {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(_) => Err("Cannot remove plugin credential".into()),
         }
@@ -60,9 +61,9 @@ pub fn runtime_settings(plugin: &Installed) -> Result<Value, String> {
     let mut map = serde_json::Map::new();
     for s in &plugin.manifest.settings {
         let value = if s.kind == "secret" {
-            match entry(&plugin.manifest.id, &s.key)?.get_password() {
-                Ok(v) => Value::String(v),
-                Err(keyring::Error::NoEntry) => s.default.clone(),
+            match legacy_migration::read_credential_with_fallback("com.flyisland.app.plugins", &format!("{}/{}", plugin.manifest.id, s.key)) {
+                Ok(Some(v)) => Value::String(v),
+                Ok(None) | Err(keyring::Error::NoEntry) => s.default.clone(),
                 Err(_) => return Err("Cannot read plugin credential".into()),
             }
         } else { plugin.settings.get(&s.key).filter(|v| s.accepts(v)).unwrap_or(&s.default).clone() };

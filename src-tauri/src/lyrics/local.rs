@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn the_folder_gives_the_named_file_and_never_guesses_between_two() {
-        let folder = std::env::temp_dir().join(format!("focusd-lyrics-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("fly-island-lyrics-{}", std::process::id()));
         fs::create_dir_all(folder.join("sub")).unwrap();
         fs::write(folder.join("周杰伦 - 晴天.lrc"), "\u{feff}[00:01.00]故事的小黄花").unwrap();
         fs::write(folder.join("七里香.lrc"), "[00:01.00]窗外的麻雀").unwrap();
