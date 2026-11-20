@@ -159,7 +159,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .todo-calendar__holiday {
@@ -180,7 +180,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 22%, transparent);
   border-radius: calc(2px * var(--corner-scale));
   pointer-events: none;
 }
@@ -244,12 +244,12 @@
 .todo-calendar__dots {
   flex: 0 0 auto;
   display: flex;
-  gap: 2px;
+  gap: 1px;
 }
 
 .todo-calendar__dot {
-  width: 3px;
-  height: 3px;
+  width: 2.5px;
+  height: 2.5px;
   border-radius: var(--radius-pill);
 }
 
