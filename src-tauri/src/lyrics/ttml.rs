@@ -10,6 +10,13 @@ use super::word_formats::timed_text;
 /// The default namespace of the TTML root.
 const TTML_NS: &str = "http://www.w3.org/ns/ttml";
 
+/// Apple's lyrics are shown a beat ahead of what the island hears: the playing position
+/// comes from Windows, which reports it only every poll, so it can be a second old, while
+/// Apple's own times line up with the audio. Every time is moved forward by this much so
+/// the lyrics land with the music.
+// shortcut: 1000 ms; a player that reports its position faster wants its own value.
+pub(super) const LEAD_MS: u64 = 1000;
+
 /// The content of an element: text and child elements, in the order they come.
 enum Content<'a> {
     Text(&'a str),
@@ -62,7 +69,7 @@ pub(super) fn parse_ttml(ttml: &str) -> Option<(Vec<(u64, String)>, Vec<String>)
         if paragraph.attr("ttm:role") == Some("x-bg") {
             continue;
         }
-        let Some(start) = paragraph.attr("begin").and_then(parse_time_ms) else {
+        let Some(start) = paragraph.attr("begin").and_then(parse_time_ms).map(|ms| ms.saturating_sub(LEAD_MS)) else {
             continue;
         };
         let mut words = Words::new();
@@ -125,12 +132,12 @@ fn collect_words(content: &[Content<'_>], words: &mut Words, pending: &mut Strin
             }
             Content::Child(_) => continue,
         };
-        let Some(begin) = element.attr("begin").and_then(parse_time_ms) else {
+        let Some(begin) = element.attr("begin").and_then(parse_time_ms).map(|ms| ms.saturating_sub(LEAD_MS)) else {
             // A span without a time of its own holds the words.
             collect_words(&element.content, words, pending);
             continue;
         };
-        let end = element.attr("end").and_then(parse_time_ms).unwrap_or(begin);
+        let end = element.attr("end").and_then(parse_time_ms).map(|ms| ms.saturating_sub(LEAD_MS)).unwrap_or(begin);
         let mut text = format!("{pending}{}", text_of(&element.content));
         pending.clear();
         text.retain(|character| character != '\r' && character != '\n');

@@ -96,8 +96,8 @@ fn the_official_lyrics_come_as_ttml() {
     let ttml = "<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><div><p begin=\"00:00:01.000\" itunes:key=\"k1\">Hello world</p></div></body>                <translation type=\"subtitle\"><text for=\"k1\">你好世界</text></translation></tt>";
     let answer = json!({ "data": [{ "relationships": { "syllable-lyrics": { "data": [{ "attributes": { "ttml": ttml } }] } } }] });
     let found = lyrics_of(&answer, "Song").unwrap();
-    assert_eq!(found.lrc, "[00:01.00]Hello world\n");
-    assert_eq!(found.translation.as_deref(), Some("[00:01.00]你好世界\n"));
+    assert_eq!(found.lrc, "[00:00.00]Hello world\n");
+    assert_eq!(found.translation.as_deref(), Some("[00:00.00]你好世界\n"));
     // The per-language copy is used when there is no whole-file one.
     let localized = json!({ "data": [{ "relationships": { "lyrics": { "data": [{ "attributes": {
         "ttmlLocalizations": { "en-US": { "ttml": ttml } } } }] } } }] });
@@ -111,8 +111,8 @@ fn the_lyrics_of_a_sub_resource_are_read_from_its_own_attributes() {
     let ttml = "<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><div><p begin=\"00:00:01.000\" itunes:key=\"k1\">Hello world</p></div></body>                <translation type=\"subtitle\"><text for=\"k1\">你好世界</text></translation></tt>";
     let answer = json!({ "data": [{ "id": "1", "type": "syllable-lyrics", "attributes": { "ttml": ttml } }] });
     let found = lyrics_of(&answer, "Song").unwrap();
-    assert_eq!(found.lrc, "[00:01.00]Hello world\n");
-    assert_eq!(found.translation.as_deref(), Some("[00:01.00]你好世界\n"));
+    assert_eq!(found.lrc, "[00:00.00]Hello world\n");
+    assert_eq!(found.translation.as_deref(), Some("[00:00.00]你好世界\n"));
     // The same file may come as the string of the whole localization.
     let plain = json!({ "data": [{ "id": "1", "type": "syllable-lyrics", "attributes": { "ttmlLocalizations": ttml } }] });
     assert!(lyrics_of(&plain, "Song").is_some());

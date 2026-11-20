@@ -254,9 +254,10 @@ fn cache_scoped_key(query: &LyricsQuery) -> String {
     key.push_str(&format!("\u{1f}{}\u{1f}{}\u{1f}{}", query.title, query.source_app_id.as_deref().unwrap_or_default(), query.track_id.as_deref().unwrap_or_default()));
     if query.word_fill { key.push_str("\u{1f}words"); }
     // Apple's own lyrics get their own key, or a cached lyric from another source would
-    // keep being served and the setting would look like it had no effect.
+    // keep being served and the setting would look like it had no effect. The lead is part
+    // of the key: lyrics cached before it changed keep the old times.
     if query.apple_music && is_apple_music(query.source_app_id.as_deref()) {
-        key.push_str("\u{1f}apple");
+        key.push_str(&format!("\u{1f}apple\u{1f}lead{}", ttml::LEAD_MS));
     }
     key
 }
