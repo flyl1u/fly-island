@@ -30,7 +30,7 @@ export function GeneralSettingsPage({
   onDetachedSettingsChange: (detached: boolean) => void;
 }) {
   const t = useTranslation();
-  const [launchAtStartup, updateLaunchAtStartup] = useLaunchAtStartup();
+  const [launchAtStartup, updateLaunchAtStartup, launchAtStartupDisabled] = useLaunchAtStartup();
   const rows = { settings, onSettingsChange };
 
   return (
@@ -41,6 +41,7 @@ export function GeneralSettingsPage({
         detachedSettings={detachedSettings}
         onDetachedSettingsChange={onDetachedSettingsChange}
         onLaunchAtStartupChange={updateLaunchAtStartup}
+        launchAtStartupDisabled={launchAtStartupDisabled}
         onLocaleChange={onLocaleChange}
       >
         <TrayIconRow />
