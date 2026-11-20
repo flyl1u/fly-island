@@ -39,6 +39,8 @@ export type NotebookText = {
   noTodosOnDay: string;
   /** Holiday names by the keys in features/todos/holidays.ts. */
   holidayNames: Record<string, string>;
+  /** Observances that do not close offices, by the keys in features/todos/memorials.ts. */
+  memorialNames: Record<string, string>;
   /** The other days of a break, and a weekend worked to pay for it. */
   holidayOff: string;
   holidayWork: string;
@@ -101,6 +103,24 @@ export const zhCN: NotebookText = {
   },
   holidayOff: "休",
   holidayWork: "班",
+  memorialNames: {
+    policeDay: "警察节",
+    leiFengDay: "学雷锋日",
+    womensDay: "妇女节",
+    arborDay: "植树节",
+    consumerDay: "消费者日",
+    earthDay: "地球日",
+    youthDay: "青年节",
+    disasterDay: "防灾减灾日",
+    childrensDay: "儿童节",
+    environmentDay: "环境日",
+    partyDay: "建党节",
+    armyDay: "建军节",
+    victoryDay: "抗战胜利日",
+    teachersDay: "教师节",
+    constitutionDay: "宪法日",
+    memorialDay: "公祭日",
+  },
   holidayOffBadge: "休",
   holidayWorkBadge: "班",
   todayBadge: "今",
@@ -156,6 +176,24 @@ export const en: NotebookText = {
   },
   holidayOff: "Off",
   holidayWork: "Work",
+  memorialNames: {
+    policeDay: "Police Day",
+    leiFengDay: "Lei Feng Day",
+    womensDay: "Women's Day",
+    arborDay: "Arbor Day",
+    consumerDay: "Consumer Day",
+    earthDay: "Earth Day",
+    youthDay: "Youth Day",
+    disasterDay: "Disaster Prevention",
+    childrensDay: "Children's Day",
+    environmentDay: "Environment Day",
+    partyDay: "Party Day",
+    armyDay: "Army Day",
+    victoryDay: "Victory Day",
+    teachersDay: "Teachers' Day",
+    constitutionDay: "Constitution Day",
+    memorialDay: "Memorial Day",
+  },
   holidayOffBadge: "O",
   holidayWorkBadge: "W",
   todayBadge: "T",

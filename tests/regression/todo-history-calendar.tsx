@@ -221,6 +221,12 @@ try {
     check(badge(makeUpDay) === "班" && makeUpDay?.classList.contains("todo-calendar__day--work")
       && !makeUpDay.classList.contains("todo-calendar__day--rest"),
       "调休上班的周日标「班」，不按休息日标红");
+
+    check($$(".todo-calendar__weekday--rest").length === 2
+      && $$(".todo-calendar__weekday--rest").map((element) => element.textContent).join("") === "六日",
+      "星期行的周六周日标红");
+
+    check(caption(day("2027-01-20")) === "大寒", "节气当天显示节气名");
     await click(goToday);
   }
 

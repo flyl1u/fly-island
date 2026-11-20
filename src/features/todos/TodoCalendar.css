@@ -72,6 +72,11 @@
   text-align: center;
 }
 
+/* Saturday and Sunday read red, the way the days themselves do. */
+.todo-calendar__weekday--rest {
+  color: var(--color-danger);
+}
+
 /*
  * A cell holds the number over a caption (a holiday name or the lunar day), with the
  * day-off badge pinned to its top-right corner. The month grid may never scroll, so the

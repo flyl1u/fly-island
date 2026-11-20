@@ -4,6 +4,8 @@ import { useTranslation } from "../../i18n";
 import { dayDots, dayHeading, getMonthGrid, monthOf, shiftMonth, type CalendarTodo } from "./calendar";
 import { holidayOn } from "./holidays";
 import { lunarDay } from "./lunar";
+import { memorialOn } from "./memorials";
+import { solarTermOn } from "./solarTerms";
 import { TodoDayDetail } from "./TodoDayDetail";
 import { TodoDayRow } from "./TodoDayRow";
 import "./TodoCalendar.css";
@@ -69,9 +71,19 @@ export function TodoCalendar({
           </button>
         </div>
         <div className="todo-calendar__grid">
-          {grid.slice(0, 7).map((date) => (
-            <span key={`w${date}`} className="todo-calendar__weekday" aria-hidden="true">{formats.weekday.format(toDate(date))}</span>
-          ))}
+          {grid.slice(0, 7).map((date) => {
+            const weekday = toDate(date).getDay();
+            const rest = weekday === 0 || weekday === 6;
+            return (
+              <span
+                key={`w${date}`}
+                className={`todo-calendar__weekday${rest ? " todo-calendar__weekday--rest" : ""}`}
+                aria-hidden="true"
+              >
+                {formats.weekday.format(toDate(date))}
+              </span>
+            );
+          })}
           {grid.map((date) => {
             const items = dayTodos.get(date) ?? [];
             const mark = holidayOn(date);
@@ -79,9 +91,13 @@ export function TodoCalendar({
             const isWork = mark?.kind === "work";
             const weekday = new Date(`${date}T00:00:00`).getDay();
             const isRest = !isWork && (mark?.kind === "off" || weekday === 0 || weekday === 6);
-            // A holiday names the cell; every other day reads its lunar date.
+            // A holiday names the cell, then a solar term, then an observance, then the lunar day.
             const holidayName = mark?.kind === "off" && mark.name ? (t.notebook.holidayNames[mark.name] ?? mark.name) : null;
-            const caption = holidayName ?? lunarDay(date);
+            const memorialKey = memorialOn(date);
+            const caption = holidayName
+              ?? solarTermOn(date)
+              ?? (memorialKey ? t.notebook.memorialNames[memorialKey] ?? memorialKey : null)
+              ?? lunarDay(date);
             // Today takes the corner badge itself, so it never reads as a plain day off.
             const badge = isToday
               ? t.notebook.todayBadge
