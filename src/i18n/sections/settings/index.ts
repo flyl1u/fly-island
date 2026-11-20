@@ -24,6 +24,7 @@ import type { SettingsAppearancePresetsText } from "./appearancePresets";
 import type { SettingsSaveText } from "./save";
 import type { SettingsSoundsText } from "./sounds";
 import type { SettingsDiagnosticsText } from "./diagnostics";
+import type { SettingsConfigTransferText } from "./configTransfer";
 import * as fileShelf from "./fileShelf.ts";
 import * as modules from "./modules.ts";
 import * as messageSources from "./messageSources.ts";
@@ -50,8 +51,10 @@ import * as appearancePresets from "./appearancePresets.ts";
 import * as save from "./save.ts";
 import * as sounds from "./sounds.ts";
 import * as diagnostics from "./diagnostics.ts";
+import * as configTransfer from "./configTransfer.ts";
 
 export type SettingsText = {
+  configTransfer: SettingsConfigTransferText;
   fileShelf: SettingsFileShelfText;
   messageSources: SettingsMessageSourcesText;
 
@@ -102,6 +105,7 @@ export type SettingsText = {
 };
 
 export const zhCN: SettingsText = {
+  configTransfer: configTransfer.zhCN,
   fileShelf: fileShelf.zhCN,
   messageSources: messageSources.zhCN,
 
@@ -151,6 +155,7 @@ export const zhCN: SettingsText = {
 };
 
 export const en: SettingsText = {
+  configTransfer: configTransfer.en,
   fileShelf: fileShelf.en,
   messageSources: messageSources.en,
 

@@ -19,6 +19,7 @@ src-tauri/src/
 ├── app_log/                 # 问题排查日志（默认关闭）：开启后把标准错误接到管道写入 logs/，前端的报错经 append_app_log 写入；file.rs 负责一份备份的轮转
 ├── system/                  # 开机自启（注册表）、更新代理与配置、待办 Markdown 导出与受限同步读写（todo_sync）、不合成 Alt 键地聚焦自己的窗口（window_focus）
 ├── clipboard_history/
+├── config_transfer/         # 配置备份 / 迁移：原生文件对话框、受限数据与音效收集、启动恢复与撤销日志
 ├── file_shelf/              # 文件中转：路径列表（file-shelf.json）与命令；拖出调用 win32/ole.rs
 ├── media_control/           # diagnostics.rs：SMTC、进程、版本与网易云插件只读诊断
 ├── media_plugins/           # 网易云插件探测、固定清单下载校验、安装记录与受限提权安装 / 卸载

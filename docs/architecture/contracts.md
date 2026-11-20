@@ -1,5 +1,17 @@
 # 对外契约清单
 
+## 配置备份 / Configuration backup（2026-11-19，issue #87）
+
+备份文件默认名 `fly-island-config-YYYY-MM-DD.json`，UTF-8 JSON：`{ app: "fly-island", formatVersion: 1, exportedAt: "<ISO 8601>", appVersion: "<版本>", localStorage: { "<key>": "<原始字符串>" }, files: { launchAtStartup, agents, plugins, clipboard, data, assets } }`。不同 app、未知版本、缺字段 / 错类型或未知文件均拒绝，不将旧外观主题当备份。总文件上限 256 MiB。
+
+`localStorage` 按 `focusd-island-` 前缀枚举（当前所有契约键，包括语言，都在此命名空间），不逐项写死。设备白名单 `focusd-island-position` 不导出、不覆盖、不清除；运行态 `focusd-island-settings-focus`、`focusd-island-position-reset`、`focusd-island-panel-preview` 同样排除。恢复清除未出现在备份里的其他本应用键，原样写入字符串；其他来源键不动。无新增 localStorage key。
+
+`files.agents` 为 `{ codex, claudeCode, replyMarker }` 布尔集；`plugins` 为 `{ developerMode, indexUrl, installed: [{ id, version, enabled, settings }] }`（settings 仅 manifest 声明的非秘密值，不携带 manifest / 可执行包 / 目录）。缺包或版本不同写 `plugins-restore.json`，提示重装；以后装入相同版本时恢复非秘密设置与启用状态，卸载删除待恢复记录。`clipboard` 为 `{ settings, history: null | { items, images: { "<受限 PNG 文件名>": "<base64>" } } }`；图片路径在备份里改成文件名，恢复时定位到本机原有剪贴板目录；history=null 保留本机历史。`data` 仅允许 `file-shelf.json`、`agent-remote-hosts.json`、`app-log.json`、`media-plugins-auto.json` 的 JSON 对象；后者只保留 optedOut，attempted 为空。`assets` 为受限 `sound-packs/<id>/pack.json` 与其声明音频的 base64 映射。凭据、登录 Cookie、令牌和运行快照不在格式中。
+
+命令（前端类型化封装 `features/config-transfer/api.ts`）：`export_config({ localStorage, includeClipboardHistory, exportedAt, title })` 返回是否保存；`read_config_import({ title })` 返回已校验备份或取消的 null；`stage_config_import({ backup })` 暂存校验后的数据；`restart_after_config_import()` 重启；`config_transfer_startup()` 返回 `{ ready, localStorage }`（只有 main 收到待恢复键）；`finish_config_import({ success })` 完成或回滚；`get_config_import_report()` / `dismiss_config_import_report()` 读取 / 关闭迁移报告。文件对话框在独立 STA 线程使用调用窗口为父窗口。
+
+English: v1 backups use the envelope above and raw app-owned storage strings. Device coordinates and transient requests are excluded; missing app keys are removed on restore. Clipboard preferences always transfer, history/images require explicit opt-in. Secrets, login profiles, executables, caches and runtime state never transfer. Native files are restored before services start, storage before React mounts; all windows wait for completion. Missing plugin packages require reinstalling the recorded version. New versions must preserve this contract or provide explicit migration.
+
 文件夹选择（2026-11-18）：新增命令 `pick_folder({ initialDirectory?, title? })`，两个参数都可缺省。以调用窗口为父窗口打开 Windows 原生文件夹选择框，返回所选目录字符串，取消返回 `null`，失败返回错误。命令本身不写任何设置；待办保存路径在选中后沿用原 `focusd-island-save-directory` 键与格式保存。
 
 Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCompletedAt`（最近显式 `task_complete` 的 Unix 毫秒时间；未知时省略）。前端兼容字段缺失，原有字段、命令名、参数、事件及持久化格式不变。用于识别两次轮询之间完成的一轮，首次看到的完成仅在 15 秒内提醒；不以文件修改时间代替完成时间。

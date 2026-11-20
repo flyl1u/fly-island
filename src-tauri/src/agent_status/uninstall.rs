@@ -54,7 +54,7 @@ fn remove_all() -> Result<(), String> {
     }
 }
 
-fn remove_codex_hooks(path: &Path) -> Result<(), String> {
+pub(super) fn remove_codex_hooks(path: &Path) -> Result<(), String> {
     let Ok(content) = fs::read_to_string(path) else {
         return Ok(());
     };
@@ -69,7 +69,7 @@ fn remove_codex_hooks(path: &Path) -> Result<(), String> {
     write_text_file(path, &next)
 }
 
-fn remove_claude_code_hooks(path: &Path) -> Result<(), String> {
+pub(super) fn remove_claude_code_hooks(path: &Path) -> Result<(), String> {
     let Ok(content) = fs::read_to_string(path) else {
         return Ok(());
     };

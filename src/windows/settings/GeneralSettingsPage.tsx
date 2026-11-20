@@ -6,11 +6,12 @@ import { KeepVisibleRows } from "../../features/appearance/KeepVisibleRows";
 import type { IslandSettings } from "../../features/appearance/types";
 import { requestIslandPositionReset } from "./storage";
 import { useLaunchAtStartup } from "./useLaunchAtStartup";
+import { ConfigTransferSection } from "../../features/config-transfer/ConfigTransferSection";
 
 /**
  * Settings → General: how the island behaves, most used first (docs/design/settings.md): startup
  * and language; opening and closing; the position; tucking to the edge, with when not to under
- * auto-tuck; game mode last. How it looks, tucked included, is on the appearance page.
+ * auto-tuck; game mode; backup and transfer. How it looks, tucked included, is on appearance.
  */
 export function GeneralSettingsPage({
   locale,
@@ -59,6 +60,7 @@ export function GeneralSettingsPage({
       <SettingsGroup title={t.settings.layout.gameTitle}>
         <GameModeRow {...rows} />
       </SettingsGroup>
+      <ConfigTransferSection />
     </>
   );
 }

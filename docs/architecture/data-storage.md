@@ -1,5 +1,15 @@
 # 数据存放位置
 
+## 配置迁移 / Configuration transfer（2026-11-19）
+
+`features/config-transfer/storage.ts` 仅为配置迁移枚举应用 localStorage；Rust `config_transfer/` 收集明确允许的文件数据。备份包含待办 / 归档 / 笔记、外观与所有预设、语言、快捷键、功能开关等前缀键；另包含剪贴板设置、文件中转路径列表、日志开关、网易云自动安装退出偏好、Agent hooks / 回复标记开关、远程主机 JSON（当前基线只有文档记录、无活跃模块）、插件 id / 版本 / 启用状态 / 非秘密设置、导入的音效包。插件自己的登录 / 数据库不作通用目录备份；目前宿主唯一插件设置存储为 plugins-state.json，没有通用插件 KV 数据目录。
+
+历史与图片仅在勾选后包含；剪贴板位置指针保留本机，图片在恢复时重写为本机目录下的路径。文件中转只迁移引用，不复制对应文件。网易云安装文件和安装目录不迁移，在新机器重新探测。窗口坐标、设置窗口大小、剪贴板窗口位置 / 自选存储目录、agent-approval.json 令牌、agent-status.json / 会话 / running 标记、日志正文、歌词缓存、WorkBuddy 浏览器登录配置、Windows 凭据及第三方 Agent 配置原文均排除。
+
+应用数据目录新增：`config-transfer-pending.json` 为导入后等待重启的 v1 数据；`config-transfer-rollback.json` 为恢复过程的文件与自启撤销日志（启动时若残留，先回滚再重试）；`config-transfer-result.json` 为待用户关闭的完成 / 异常报告；`plugins-restore.json` 为缺少插件包时保留的版本、启用状态与非秘密设置。前两项恢复成功即删除；全部都不进入下一份备份。没有新的 localStorage key。
+
+English: backups cover app storage and explicitly selected user-data files, imported sound packs, integration switches, and plugin preferences. Clipboard history is opt-in. Device paths/coordinates, credentials, tokens, login profiles, caches and runtime snapshots are excluded. The pending backup and undo journal live in app data only during restore; results remain until dismissed. Missing plugin preferences remain in plugins-restore.json until their recorded version is installed or uninstalled. See [config-transfer.md](../config-transfer.md).
+
 | 数据 | 位置 | 负责方 |
 |---|---|---|
 | 待办行为设置 | 现有 `focusd-island-settings`：`todoTimerEnabled` 默认 false；`enableTodoReorder` 默认 true，`todoReorderVersion: 1` 表示已迁移；无标记的旧数据开启拖拽，有标记才读取保存的布尔值。关闭番茄钟清除本轮计时，保留进行中 ID | `features/appearance/settingsDefaults.ts`、`normalizeBehaviorSettings.ts`；沿用跨窗口 storage 同步 |

@@ -128,7 +128,9 @@ impl Host {
             std::fs::rename(&staging, &directory).map_err(|e| e.to_string())?;
             let mut settings = old.as_ref().map(|p| p.settings.clone()).unwrap_or_default();
             settings.retain(|key, value| manifest.settings.iter().any(|s| &s.key == key && s.kind != "secret" && s.accepts(value)));
-            next.installed.insert(id.into(), Installed { manifest, enabled, directory: directory.clone(), development: false, settings });
+            let mut installed = Installed { manifest, enabled, directory: directory.clone(), development: false, settings };
+            super::transfer::restore_install(&self.root, &mut installed);
+            next.installed.insert(id.into(), installed);
             self.persist(next)
         })();
         if let Err(error) = apply {
@@ -138,7 +140,7 @@ impl Host {
             return Err(error);
         }
         if backup.exists() { let _ = std::fs::remove_dir_all(backup); }
-        if enabled { self.start(id)?; }
+        if self.snapshot().registry.installed.get(id).is_some_and(|p| p.enabled) { self.start(id)?; }
         Ok(())
     }
 
@@ -172,7 +174,8 @@ impl Host {
             if p.directory != expected { return Err("Unsafe plugin installation path".into()); }
             std::fs::remove_dir_all(expected).map_err(|e| e.to_string())?;
         }
-        self.persist(next)
+        self.persist(next)?;
+        super::transfer::forget(&self.root, id)
     }
 
     pub fn setting(&self, id: &str, key: &str, value: Value) -> Result<(), String> {
