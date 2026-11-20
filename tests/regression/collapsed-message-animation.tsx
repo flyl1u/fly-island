@@ -111,7 +111,7 @@ function Fixture() {
     <IslandShell qqNotifications={qq} wechatReminders={wechat} qqMail={qqMail} preview={preview} notice={notice}
       mode={mode} page="todo" expandedHeight={306} isTucked={tucked} tuckStyle="edge" topEdgeShoulders={false} positionLocked={false} isDetached={true} showTitle={title}
       showCollapsedText={true} collapsedTaskTitle={task ?? `剩余${count}个待办`} collapsedTodoCount={null} agentSession={agent} activeAgentSessionCount={agentCount}
-      collapsedItem={agent ? "agent" : "todo"} collapsedLayout={["text", "mail", "shelf", "music", "agents"]} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
+      collapsedItem={agent ? "agent" : "todo"} collapsedLayout={["pulse", "text", "mail", "shelf", "music", "agents"]} collapsedCover={null} lyricsSettings={{ lyricsFolder: "", lyricsOnline: false, lyricsOffsetMs: 0 }}
       pageOrder={["todo", "music", "clipboard", "shelf"]} onPageOrderChange={() => {}}
       pageButtonStyle="capsule"
       material="classic" nativeGlassState="disabled" agentVisualState="idle" agentStatusLabel="AI Agent 空闲或已完成"

@@ -214,7 +214,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: 0 18px;
+  /* Settings → Appearance → Collapsed island → Side space (18px by default). */
+  padding: 0 var(--collapsed-island-padding, 18px);
   opacity: 1;
   transform: scale(var(--island-collapsed-scale));
   transition-delay: var(--island-collapsed-fade-delay), 0s;

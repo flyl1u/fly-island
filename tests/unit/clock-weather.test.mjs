@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeClockWeatherSettings, normalizeWeatherCache, normalizeWeatherLocation, weatherForLocation, weatherCondition,
   WEATHER_MAX_AGE_MS, clockWeatherWidth, formatClock, nextMinuteDelay, formatTemperature } from "../../src/features/weather/model.ts";
-import { mergeVisibleCollapsedLayout } from "../../src/features/appearance/collapsedLayout.ts";
+import { normalizeCollapsedHidden, placeCollapsedLayout, visibleCollapsedSlots } from "../../src/features/appearance/collapsedLayout.ts";
 import { normalizeBehaviorSettings } from "../../src/features/appearance/normalizeBehaviorSettings.ts";
 
 const location = { name: "Beijing", latitude: 39.9, longitude: 116.4 };
@@ -45,11 +45,21 @@ test("the local clock uses padded 24-hour time and realigns to every whole minut
   assert.equal(formatTemperature(-0.1), "0°");
   assert.equal(formatTemperature(-2.6), "-3°");
 });
-test("old collapsed layouts retain their order and gain clock/weather only at the end", () => {
+test("old collapsed layouts retain their order, gain the light before the text and clock/weather at the end", () => {
   const old = ["music", "text", "agents", "shelf", "mail"];
-  assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: old }).collapsedLayout, [...old, "clock", "weather"]);
+  assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: old }).collapsedLayout, ["music", "pulse", "text", "agents", "shelf", "mail", "clock", "weather"]);
   assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: ["clock", "text", "clock", "unknown"] }).collapsedLayout,
-    ["clock", "text", "mail", "shelf", "music", "agents", "weather"]);
+    ["clock", "pulse", "text", "mail", "shelf", "music", "agents", "weather"]);
+  assert.deepEqual(normalizeBehaviorSettings({ collapsedLayout: ["text", "agents", "pulse"] }).collapsedLayout,
+    ["text", "agents", "pulse", "mail", "shelf", "music", "clock", "weather"], "a moved light keeps its place");
+  assert.deepEqual(normalizeBehaviorSettings({}).collapsedLayout[0], "pulse");
+});
+
+test("hidden slots are known ones, once each, never the text", () => {
+  assert.deepEqual(normalizeCollapsedHidden(["mail", "text", "mail", "nope", "pulse"]), ["mail", "pulse"]);
+  assert.deepEqual(normalizeCollapsedHidden("mail"), []);
+  assert.deepEqual(normalizeBehaviorSettings({}).collapsedHidden, []);
+  assert.deepEqual(visibleCollapsedSlots(["pulse", "text", "mail", "music"], ["mail"]), ["pulse", "text", "music"]);
 });
 
 test("status sizing reserves fixed clock/weather space and respects actual content at manual widths", () => {
@@ -60,8 +70,9 @@ test("status sizing reserves fixed clock/weather space and respects actual conte
   assert.equal(clockWeatherWidth(240, true, true, 1, 432), 432);
 });
 
-test("reordering visible slots retains the saved indices of uninstalled plugin slots", () => {
-  const saved = ["clock", "text", "music", "weather", "agents", "mail", "shelf"];
-  assert.deepEqual(mergeVisibleCollapsedLayout(saved, ["music", "text", "agents", "mail", "shelf"]),
-    ["clock", "music", "text", "weather", "agents", "mail", "shelf"]);
+test("arranging the editor keeps uninstalled plugin slots in their saved places", () => {
+  const saved = ["clock", "pulse", "text", "music", "weather", "agents", "mail", "shelf"];
+  assert.deepEqual(placeCollapsedLayout(saved, ["music", "pulse", "text", "agents", "mail"], ["clock", "weather"]),
+    ["clock", "music", "pulse", "text", "weather", "agents", "mail", "shelf"]);
+  assert.deepEqual(placeCollapsedLayout(saved, ["shelf", "text"], []), ["shelf", "text", "clock", "pulse", "music", "weather", "agents", "mail"]);
 });

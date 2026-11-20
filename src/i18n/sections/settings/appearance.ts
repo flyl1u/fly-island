@@ -2,7 +2,7 @@ export type SettingsAppearanceText = {
   font: string;
   fontLabel: string;
   fontSize: string;
-  collapsedDimensions: { autoWidth: string; width: string; height: string; unit: string; hint: string };
+  collapsedDimensions: { autoWidth: string; width: string; height: string; padding: string; unit: string; hint: string };
   systemFont: string;
   pixelFont: string;
   /** Material: classic, liquid glass, or frosted glass. */
@@ -72,9 +72,13 @@ export type SettingsAppearanceText = {
       title: string;
       footer: string;
       reset: string;
-      slots: Record<"text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather", string>;
+      slots: Record<"pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather", string>;
       textSample: string;
       moveLabel: (name: string) => string;
+      /** The box under the island for what is dragged off it. */
+      hidden: string;
+      hiddenEmpty: string;
+      hiddenLabel: (name: string) => string;
     };
   };
 };
@@ -83,7 +87,7 @@ export const zhCN: SettingsAppearanceText = {
   font: "字体",
   fontLabel: "岛屿字体",
   fontSize: "字号",
-  collapsedDimensions: { autoWidth: "自动宽度", width: "宽度", height: "高度", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
+  collapsedDimensions: { autoWidth: "自动宽度", width: "宽度", height: "高度", padding: "两侧留白", unit: "px", hint: "宽度和高度指收起时的岛，会随收起时的大小一起缩放。" },
   systemFont: "默认字体",
   pixelFont: "像素字体",
   material: "质感",
@@ -140,11 +144,14 @@ export const zhCN: SettingsAppearanceText = {
     showCoverHint: "显示歌词时，在歌词前面放这首歌的封面",
     layout: {
       title: "岛上的排列",
-      footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧。灰色的是还没打开的功能，位置会保留。",
+      footer: "按住图标左右拖动，放在文字左边的会显示在岛的左侧；拖进下面的盒子就不在岛上显示。灰色的是还没打开的功能，位置会保留。",
       reset: "恢复默认",
-      slots: { text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数", clock: "时间", weather: "天气" },
+      slots: { pulse: "状态灯", text: "文字", mail: "新邮件", shelf: "置物架文件数", music: "音乐波形", agents: "Agent 会话数", clock: "时间", weather: "天气" },
       textSample: "收起时的文字",
-      moveLabel: (name) => `移动"${name}"，可以拖动或按左右方向键`,
+      moveLabel: (name) => `移动"${name}"，可以拖动或按左右方向键；按下方向键放进下面的盒子，不在岛上显示`,
+      hidden: "不在岛上显示",
+      hiddenEmpty: "把图标拖到这里，就不在岛上显示",
+      hiddenLabel: (name) => `"${name}"不在岛上显示，拖回岛上或按上方向键放回`,
     },
   },
 };
@@ -153,7 +160,7 @@ export const en: SettingsAppearanceText = {
   font: "Font",
   fontLabel: "Island font",
   fontSize: "Font size",
-  collapsedDimensions: { autoWidth: "Automatic width", width: "Width", height: "Height", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
+  collapsedDimensions: { autoWidth: "Automatic width", width: "Width", height: "Height", padding: "Side space", unit: "px", hint: "Width and height are the collapsed island's, and follow the collapsed size." },
   systemFont: "System",
   pixelFont: "Pixel",
   material: "Material",
@@ -210,11 +217,14 @@ export const en: SettingsAppearanceText = {
     showCoverHint: "The song's cover in front of the lyric line",
     layout: {
       title: "On the island",
-      footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Grey ones are switched off and keep their place.",
+      footer: "Hold an icon and drag it left or right; icons left of the text sit on the island's left. Drop one in the box below to take it off the island. Grey ones are switched off and keep their place.",
       reset: "Reset",
-      slots: { text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions", clock: "Time", weather: "Weather" },
+      slots: { pulse: "Status light", text: "Text", mail: "New mail", shelf: "Shelf files", music: "Music waveform", agents: "Agent sessions", clock: "Time", weather: "Weather" },
       textSample: "Collapsed text",
-      moveLabel: (name) => `Move "${name}": drag, or press the left and right arrow keys`,
+      moveLabel: (name) => `Move "${name}": drag, or press the left and right arrow keys; the down arrow takes it off the island`,
+      hidden: "Not on the island",
+      hiddenEmpty: "Drag an icon here to take it off the island",
+      hiddenLabel: (name) => `"${name}" is off the island: drag it back, or press the up arrow`,
     },
   },
 };

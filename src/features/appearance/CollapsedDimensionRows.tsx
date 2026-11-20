@@ -1,7 +1,7 @@
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
-import { COLLAPSED_HEIGHT, COLLAPSED_WIDTH } from "./settingsLimits";
+import { COLLAPSED_HEIGHT, COLLAPSED_PADDING, COLLAPSED_WIDTH } from "./settingsLimits";
 import type { IslandSettings } from "./types";
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
   onChange: (settings: IslandSettings) => void;
 };
 
-/** The collapsed island's width (automatic, or a set width) and height. */
+/** The collapsed island's width (automatic, or a set width), height and the space at its sides. */
 export function CollapsedDimensionRows({ settings, onChange }: Props) {
   const text = useTranslation().settings.appearance.collapsedDimensions;
   return (
@@ -27,6 +27,9 @@ export function CollapsedDimensionRows({ settings, onChange }: Props) {
       <SettingsNumberRow title={text.height} unit={text.unit} value={settings.collapsedHeight}
         min={COLLAPSED_HEIGHT.min} max={COLLAPSED_HEIGHT.max}
         onChange={(collapsedHeight) => onChange({ ...settings, collapsedHeight })} />
+      <SettingsNumberRow title={text.padding} unit={text.unit} value={settings.collapsedPadding}
+        min={COLLAPSED_PADDING.min} max={COLLAPSED_PADDING.max}
+        onChange={(collapsedPadding) => onChange({ ...settings, collapsedPadding })} />
     </>
   );
 }

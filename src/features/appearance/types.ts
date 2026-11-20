@@ -52,7 +52,7 @@ export type CollapsedItem = "agent" | "lyrics" | "todo";
  * the new-mail badge, files on the shelf, the music waveform, running Agent sessions (or the tuck
  * dot). Icons before the text sit on its left.
  */
-export type CollapsedSlot = "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather";
+export type CollapsedSlot = "pulse" | "text" | "mail" | "shelf" | "music" | "agents" | "clock" | "weather";
 /** The page dots in the expanded island's header, which the user can drag into any order. */
 export type PageDot = "todo" | "music" | "clipboard" | "shelf" | "translation";
 
@@ -71,6 +71,8 @@ export type IslandSettings = {
   collapsedAutoWidth: boolean;
   collapsedWidth: number;
   collapsedHeight: number;
+  /** Space (px) between the collapsed island's sides and its first and last items. */
+  collapsedPadding: number;
   expandedScale: number;
   marginY: number;
   /** Prevent moving the island by dragging; explicit position reset still works. */
@@ -234,6 +236,8 @@ export type IslandSettings = {
   collapsedShowCover: boolean;
   /** Where the text and each status icon sit on the collapsed island, left to right. */
   collapsedLayout: CollapsedSlot[];
+  /** Slots dragged off the island in Appearance → On the island; never the text. */
+  collapsedHidden: CollapsedSlot[];
   /** Order of the page dots in the expanded island's header. */
   pageOrder: PageDot[];
   /** While a full-screen app (game, video, slides) is in front: no hover opening or focus, no message pop-ups. */

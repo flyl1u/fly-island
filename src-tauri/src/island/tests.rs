@@ -261,7 +261,7 @@ fn tucked_styles_keep_their_visible_height_and_only_capture_their_hot_zone() {
         assert_eq!(TuckStyle::from_value(Some(name)), style);
         for dpi in [1.0, 1.25, 1.5] {
             for scale in [0.75, 1.0, 1.4] {
-                for height in [32.0, 38.0, 60.0] {
+                for height in [26.0, 32.0, 38.0, 60.0] {
                     let island = IslandWindowState {
                         is_tucked: true, tuck_style: style, collapsed_height: height,
                         ..state(IslandMode::Collapsed, scale, DEFAULT_EXPANDED_ISLAND_HEIGHT)
