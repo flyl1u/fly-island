@@ -56,10 +56,15 @@
   background: transparent;
 }
 
-/* 选中：描整个格子，号码和说明一起。 */
+/* 选中：描整个格子，号码和说明一起；号码本身不再单独画圈，也不变色。 */
 .todo-calendar__day[aria-pressed="true"] {
   border-radius: var(--corner-xs);
   box-shadow: inset 0 0 0 1.5px var(--color-accent);
+}
+
+.todo-calendar__day[aria-pressed="true"] .todo-calendar__number {
+  color: var(--text-1);
+  box-shadow: none;
 }
 
 /* 休息日：淡红底填满格子，号码标红。取 22% 是为了在深色主题上也看得出来。 */

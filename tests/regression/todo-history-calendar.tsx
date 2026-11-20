@@ -188,6 +188,9 @@ try {
 
   for (let step = 0; step < 5 && !day(old); step += 1) await click(button("上个月"));
   await click(day(old));
+  const selectedNumber = day(old)!.querySelector(".todo-calendar__number")!;
+  check(getComputedStyle(selectedNumber).boxShadow === "none" && getComputedStyle(day(old)!).boxShadow.includes("inset"),
+    "选中的日期只描整格，号码不再单独画圈");
   const longList = dayList();
   longList.scrollTop = longList.scrollHeight;
   check(longList.scrollTop > 0 && fits(), "跨月归档的长清单在日历右侧独立滚动");
