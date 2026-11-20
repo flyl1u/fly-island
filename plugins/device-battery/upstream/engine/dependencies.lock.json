@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "python": {
+    "version": "3.14.8",
+    "url": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-embed-amd64.zip",
+    "sha256": "a93abe456ab01bd96d7a085b3cdb6566b3063f4241360d114142fbdb07f0a310"
+  },
+  "hidapi": {
+    "version": "0.15.0",
+    "url": "https://files.pythonhosted.org/packages/cb/14/3b27516b2867e53545164ebd8ef45d0c36857d2a062036e788e56e2e34ce/hidapi-0.15.0-cp314-cp314-win_amd64.whl",
+    "sha256": "df0dd435562654e27ad0c7d045074eb1e1e016b09167dd48a258dec1ce4b9127"
+  },
+  "providers": {
+    "repository": "https://github.com/HeyOkay/HaloBattery",
+    "commit": "2251f0534a8e886c9692ead42056059b4f69d8c0",
+    "license": "MIT",
+    "scope": "Battery queries for mice, headsets and keyboards. Controller-mode switches, upstream GUI, updater and settings are excluded."
+  }
+}

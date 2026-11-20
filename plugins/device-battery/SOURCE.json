@@ -1,0 +1,611 @@
+{
+  "repository": "https://github.com/wushuai0802/myfinder-device-battery",
+  "commit": "73d99e2087dd70ae8eef4199854e0c495a66f0bc",
+  "license": "AGPL-3.0-only with retained third-party licenses",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "e0eedba615d5cd1b986afb6c5b3a4b1ae33713e7e9dc74d19daec5e3221f9d2e"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "bf31021b2722de07b8f6f73804b47fe171f4ca444db6dea31ffefd8656b0657b"
+    },
+    {
+      "path": "engine/battery_hid.py",
+      "sha256": "43756e7e60ee7be7dab49d5f23ba5c4ba8fc19ab72321fd37178c5711383c5f7"
+    },
+    {
+      "path": "engine/by_keyboard.py",
+      "sha256": "5a354292402634ab8d188f6d7d8b29077149991317c2eeef86bc16f1733a79d4"
+    },
+    {
+      "path": "engine/catalog.py",
+      "sha256": "eca94616bbb32d11579dc5ae354edad2edd5638f0da26811a17dac15488e1bd6"
+    },
+    {
+      "path": "engine/compatibility.json",
+      "sha256": "55af24aab5d6e52c0368c9f25971fb0ff7918845e87ef68310e0e304ecd56988"
+    },
+    {
+      "path": "engine/dependencies.lock.json",
+      "sha256": "a1a10fb6d95de59eda817d4dcaf114d3090c27c99cebdad820b8861dfe94b168"
+    },
+    {
+      "path": "engine/device_pack_schema.json",
+      "sha256": "94128e3e4a245a97d5f3f0521bb95973cbe196080e5157a5b858ff78c8c9b2e5"
+    },
+    {
+      "path": "engine/device_pack.py",
+      "sha256": "40b2e04e3e6aee8a84c6cf92ca46c3a745c24c28d746368376886defa29d5a88"
+    },
+    {
+      "path": "engine/isolation.py",
+      "sha256": "7ca397c92c4a01eb348ad7956d29ad382c075d6d98c291670fabb209ffb9e073"
+    },
+    {
+      "path": "engine/known_ids.py",
+      "sha256": "8c75b3d02af2df1d2f43025e7a91f7a093d9f0d8e90974bb8fb097764af54304"
+    },
+    {
+      "path": "engine/mchose_keyboard_hid.py",
+      "sha256": "a32b4b98e6ba3f2a2959f986bbe9254914c0a7e25cccaf9ab333e95b28674b9e"
+    },
+    {
+      "path": "engine/python314._pth.in",
+      "sha256": "10d93ad1f810bd377d879c439462e352c78b973960bdefd35c6dbe3a47360e9b"
+    },
+    {
+      "path": "engine/server.py",
+      "sha256": "02d17fbbab90d825798d495a34647e08e8c658a354d9de09bae5070465d4c896"
+    },
+    {
+      "path": "engine/standardhid.py",
+      "sha256": "c2e61b11bb66fd722b59529e040eaf35f0455e2cae9057eead21d0f11c6d7216"
+    },
+    {
+      "path": "engine/topology.py",
+      "sha256": "5a0b6324da9c362bacb24aeccd8914b0c4b93f9c3923a0c583c9796ef3631fdb"
+    },
+    {
+      "path": "engine/upstream-credits.md",
+      "sha256": "d77b52aab67ffe8bc79ff2521f58aac3595a70ceddce0c55b353180af5e37c15"
+    },
+    {
+      "path": "engine/upstream-devices.md",
+      "sha256": "8913eea6d1a6434008564a8d0966c68608bcdcf3b972f804802bbf7585eefae9"
+    },
+    {
+      "path": "engine/upstream-protocols.md",
+      "sha256": "e09bac42b4f6c249224f73cac5d08d602bc07a135379668b64a79426d6898897"
+    },
+    {
+      "path": "engine/licenses/HaloBattery-MIT.txt",
+      "sha256": "52705d98979fc1e7ef212a6db50c53739f15efa3b6ae53e584dc54686c4dc56b"
+    },
+    {
+      "path": "engine/providers/__init__.py",
+      "sha256": "a60a002836c4d0bcb5cbbdb30cbf364deca9e9bae55881b162bb2a3a206dd9c2"
+    },
+    {
+      "path": "engine/providers/am_infinity.py",
+      "sha256": "c53eaaed8429419f81e413d3519f9fce0f4c32b425501b3980579d734be6abfd"
+    },
+    {
+      "path": "engine/providers/astro.py",
+      "sha256": "e01a6a84732496a7125bd19502aeddc2e5dd1a094bd8df3f07146a1c9c2725ab"
+    },
+    {
+      "path": "engine/providers/asus_omni.py",
+      "sha256": "7114bfa118e2977903b84bf8cc09b3b0d941023c1ef663ae04b21bc8d1b5ed81"
+    },
+    {
+      "path": "engine/providers/asus.py",
+      "sha256": "e89bbf5dcb85081b510c3d1384026761d9b57dbf23d317d556ba4a0090db350e"
+    },
+    {
+      "path": "engine/providers/atk_headset.py",
+      "sha256": "242e074a22f3d259e94dbeda636877f9d3fbf3377f3be9e33a01d708409a8eca"
+    },
+    {
+      "path": "engine/providers/audeze.py",
+      "sha256": "8336d83b8e308244d66b144deb008b22d2d5673ed2e2b1f0cef1c8bd1d252989"
+    },
+    {
+      "path": "engine/providers/barracuda.py",
+      "sha256": "3e7797e6716afc8e72bd8e15d088b4e3812b00e860327431ec0a0f6ac60a6891"
+    },
+    {
+      "path": "engine/providers/base.py",
+      "sha256": "d02524db3579ab4697c0a203eb7aef2cd8875ff065b420eae9972c3fb7ca40fc"
+    },
+    {
+      "path": "engine/providers/blackshark.py",
+      "sha256": "a202ef5fabd56b032471528922cb643761df357c7b58e306be33c82ac850e84f"
+    },
+    {
+      "path": "engine/providers/blackshark2020.py",
+      "sha256": "1ffa116c91f31dcecaeda39cde61df5de0345ba9e242c87d43aac27ef85edf9f"
+    },
+    {
+      "path": "engine/providers/bluetooth.py",
+      "sha256": "9b809290ca56a5c6c381ba72990192082ddba22922fef771a9e5ffa2b6d17596"
+    },
+    {
+      "path": "engine/providers/cherry.py",
+      "sha256": "301951d33533899b0c05b2576ff670edbaea3e66c58e241204edc174fc965b93"
+    },
+    {
+      "path": "engine/providers/corsair.py",
+      "sha256": "e33a882d3a44b1b45b8716009e76963dc779fe3a72f14aaaebc1d7ddae8525a8"
+    },
+    {
+      "path": "engine/providers/dareu.py",
+      "sha256": "2c956df334e16f7b3f331d9533abe308063573947c89d01083ba6fc25964fca9"
+    },
+    {
+      "path": "engine/providers/eweadn_s9pro.py",
+      "sha256": "2388f3450dbcfb35e52d4f69b2856edad50cc9cacab303ddf89aa17b22f44e37"
+    },
+    {
+      "path": "engine/providers/eweadn.py",
+      "sha256": "f373876a637618a06332f74c618b167dec161d9ce0e299926785879637bd3518"
+    },
+    {
+      "path": "engine/providers/fa6x_passive.py",
+      "sha256": "1838aaa72430b8b6d19ad0da377d70d7d7bd22fc6e2e31003100452d440b9028"
+    },
+    {
+      "path": "engine/providers/flydigi.py",
+      "sha256": "4be1cb798a81c6565d0390e197b99916433313ed1af3fe7bd631f81b7fb7e234"
+    },
+    {
+      "path": "engine/providers/g3m.py",
+      "sha256": "520c397ec971eba8d8d49eb2720721c3b9bcf15bcf1e5f6426c3991ca848349b"
+    },
+    {
+      "path": "engine/providers/gwolves.py",
+      "sha256": "41920d73e62844f3258929be3e3609d1bad09e74c3ba17b1275d27f6015e9ebc"
+    },
+    {
+      "path": "engine/providers/hidlist.py",
+      "sha256": "b7285467aab65742dd33689cb8a6d8e9fe9abadc6a6c022f1c2919a02650bd5d"
+    },
+    {
+      "path": "engine/providers/hyperx_alpha2.py",
+      "sha256": "a8ef57c3073e31ee2a7d45cbf9040f6de843cfca9c665bb6c6909f3cc6dc0b19"
+    },
+    {
+      "path": "engine/providers/hyperx_cloud3.py",
+      "sha256": "3ab1cb269d6fb5cc2642aa560e15cf83786710860dd39a6fe280414567199801"
+    },
+    {
+      "path": "engine/providers/hyperx_cloud3s.py",
+      "sha256": "7891e9d0bf26bf94152a828f97c74905f97792c461883cc94904b6641754b3b7"
+    },
+    {
+      "path": "engine/providers/hyperx.py",
+      "sha256": "78ee72aa1bda87884493f957e8a0e0caac83378f7dd8d4a4aac353ca2160d281"
+    },
+    {
+      "path": "engine/providers/jbl.py",
+      "sha256": "ae41c91cca0a963a13ba1aafaf57e08410e61e1fb925a321620cfc022ef91138"
+    },
+    {
+      "path": "engine/providers/keychron.py",
+      "sha256": "075d3ddb56184d64d86029f3009285f77a171f03f9b1ba2cde42e7d512b036a4"
+    },
+    {
+      "path": "engine/providers/lamzu.py",
+      "sha256": "b2e3f22977db1443b64ae77f86dd53150ff4d372b62a9731dfa851e38c0c1ca6"
+    },
+    {
+      "path": "engine/providers/lingbao.py",
+      "sha256": "964beb0ba56f2701f442b37c203dc11a516e46baf8cc4c3ab5a16ba4311a541b"
+    },
+    {
+      "path": "engine/providers/lofree.py",
+      "sha256": "876d63f65f24e3ce58b07456d0b65f9d68f48773ea9419817001ee3aa8e55e09"
+    },
+    {
+      "path": "engine/providers/logitech_centurion.py",
+      "sha256": "0cb8bb33deef201d20eb978101a315be2c7d4dcb6d7a5374501340c5e1299609"
+    },
+    {
+      "path": "engine/providers/logitech.py",
+      "sha256": "79329f2a3a5c9c96dd0a3cfcba9534899d857898d3ad907c7b1007ee0fceadc4"
+    },
+    {
+      "path": "engine/providers/mchose_by_keyboard.py",
+      "sha256": "c7ab361c76e445dba96a9039c0377aa3c7b327e89e647262f223a1ec9936320c"
+    },
+    {
+      "path": "engine/providers/mchose_glw_keyboard.py",
+      "sha256": "cd65955d4d8b3066e60f923faab3a63fbf37a76003a44f72f847ff2c9465d3e1"
+    },
+    {
+      "path": "engine/providers/mchose_headset.py",
+      "sha256": "437fe343a5ee3c8ca8e990bb9b8d21cf3988edda1967f7961721eb53c8f3e11b"
+    },
+    {
+      "path": "engine/providers/mchose_qhw_keyboard.py",
+      "sha256": "54ae469252caa97adb03f90f5669b4b2af591a5919b80e1805c5e789b09a4ea5"
+    },
+    {
+      "path": "engine/providers/mchose.py",
+      "sha256": "de26b6c3cdc4483f25e9ccb1005668dd0d521417f1c19935a37e1d5796920eba"
+    },
+    {
+      "path": "engine/providers/moondrop.py",
+      "sha256": "9b6ba6e968a858318956805788e2be8c12661355ce158554858b0b9daec5e408"
+    },
+    {
+      "path": "engine/providers/ninjutso_legacy.py",
+      "sha256": "5c586b3e8907538bb094eb2a6723db1ce0a9c97a2ace7b2d458abfbc754e711b"
+    },
+    {
+      "path": "engine/providers/nzxt.py",
+      "sha256": "44962f218e4bd30bd6d842529b2c46959b209598d690133e413613be1174e2d9"
+    },
+    {
+      "path": "engine/providers/profiles.py",
+      "sha256": "875b9e54c9338be1777d26c26e88bc158cb1b34640815df76ca02586e69e8d84"
+    },
+    {
+      "path": "engine/providers/pulsar.py",
+      "sha256": "b51103cf3003c082758dede249b49d704d4796427e84511ccf9c48d12e7c77e3"
+    },
+    {
+      "path": "engine/providers/rapoo.py",
+      "sha256": "eced3a48e2b66f8e55d479d80187d1debb081dc20a1edf85f843990505f4e396"
+    },
+    {
+      "path": "engine/providers/razer_profiles.py",
+      "sha256": "2e83b506275c47629d43cd345d83dc0d9c0ebe88fc1842b7a34a3caf923161a5"
+    },
+    {
+      "path": "engine/providers/razer.py",
+      "sha256": "3b533c50929193c528e4b32b872e657b02fe723a8da61164d611aab2f32b71e9"
+    },
+    {
+      "path": "engine/providers/steelseries_elite.py",
+      "sha256": "75ac60ace223f35463ad1bfdab122510741feb727f8b54d7a66bef50936daf70"
+    },
+    {
+      "path": "engine/providers/steelseries.py",
+      "sha256": "cefc85018ad64a6cea31a4480c5730724f2e24cf827ab242d68e6bb36e695111"
+    },
+    {
+      "path": "engine/providers/vgn_beiying.py",
+      "sha256": "550edced1f48faec613b2b25e73310e39938e77fda94b928c19b095312e5efd4"
+    },
+    {
+      "path": "engine/providers/vgn_dragonfly3.py",
+      "sha256": "e91a2f755b2d6b84de3d088cfd7900d62300b3fb67a3762b88ccea9106c2e4bc"
+    },
+    {
+      "path": "engine/providers/vgn_keyboard.py",
+      "sha256": "c9870852215af961219f5e5317bf0cbcba03439e0866585669c007dd4ef833bb"
+    },
+    {
+      "path": "engine/providers/wlmouse.py",
+      "sha256": "0463a9ba8a4270ce9ac8c2251386c529f80cdcb98cf89848b22971056e17009e"
+    },
+    {
+      "path": "engine/providers/xinput.py",
+      "sha256": "d86ef7e086a303f93854bda4b082fe68ecc0ebbaee279a6c6d7205a3f0013a79"
+    },
+    {
+      "path": "engine/providers/zhuaudio.py",
+      "sha256": "008b00de994c07ca28cd840dc8b567e72c73e063fd26579add3c15be0db10fbd"
+    },
+    {
+      "path": "engine/research/batch2-protocols.md",
+      "sha256": "81c036b280936e576af823a04b491384845d3005b60129cf132d54bd2c29a2b0"
+    },
+    {
+      "path": "engine/research/batch3-protocols.md",
+      "sha256": "f40282d0a808529403ccd3265441362801f18f924400e5fb53ca259321771ef4"
+    },
+    {
+      "path": "engine/research/batch4-protocols.md",
+      "sha256": "876be7d0354fe598d79f2c5eab8a7052264a1696d0a7c14de61fa0e8bfac128d"
+    },
+    {
+      "path": "engine/research/p2-protocols.md",
+      "sha256": "d6d9556879237bea2225f3a2911c4b420c784ab9de3fadf94db06aeffda6b439"
+    },
+    {
+      "path": "engine/tests/_feedback.py",
+      "sha256": "ba6b8696e328ef925379cf17cde290d8f30f8e72a8dd5af5b4c899420b5eb38c"
+    },
+    {
+      "path": "engine/tests/_hidstub.py",
+      "sha256": "c3a4c3e29d43a774fb0d61e4ca610ddb7df16bc383d315454a4df6b3925f38a1"
+    },
+    {
+      "path": "engine/tests/test_am_infinity.py",
+      "sha256": "29afb93f7ed64ea12b43f77300bce9cc874165bc84c2a7a1b34991754daa107b"
+    },
+    {
+      "path": "engine/tests/test_asus_omni.py",
+      "sha256": "7f805f90e4cf82f295bfa7b673f7a4ef016cac94b05ac18d7acaf9072468f22c"
+    },
+    {
+      "path": "engine/tests/test_asus.py",
+      "sha256": "1a618086aa28d34cc037a441b4d802823f090def9d97bb89c7972008f32f2ca6"
+    },
+    {
+      "path": "engine/tests/test_atk_headset.py",
+      "sha256": "e363ea546716a497f905e0715cf39ff4b84663b0d7d9b3411a7e63c439d2e45c"
+    },
+    {
+      "path": "engine/tests/test_atk_nano.py",
+      "sha256": "717f077f6efffcd81131f73504093fdc7515c9900392daefa764d5fc079b1da5"
+    },
+    {
+      "path": "engine/tests/test_audeze_stuck.py",
+      "sha256": "5eb5b01ca72eb9873544a5e9b56fb603f5a69fe6b4107b738027dbab9f064984"
+    },
+    {
+      "path": "engine/tests/test_aula_fa09.py",
+      "sha256": "a424872c8be06d77e0d76bcea23e0337fc5ff5ec6358da513ebf5685bf28a4f7"
+    },
+    {
+      "path": "engine/tests/test_barracuda.py",
+      "sha256": "01ddbac8f8da07be91e722582a2150cb94990bc9b2d737c1c0879f0a489737d8"
+    },
+    {
+      "path": "engine/tests/test_battery_caps.py",
+      "sha256": "556037e6082df24f38d88807bfc2cd6a9fc66ff76bd31ad7107082cd41453f53"
+    },
+    {
+      "path": "engine/tests/test_blackshark_pa.py",
+      "sha256": "1719e4cb16e979fd27acfce7415c85a5b0055229a2bfa792a149a7b0afbf4193"
+    },
+    {
+      "path": "engine/tests/test_blackshark2020.py",
+      "sha256": "5bacdb26a69030ba730aae666a0a62d6828fe36d7ff86c18884503e772e436ba"
+    },
+    {
+      "path": "engine/tests/test_cherry.py",
+      "sha256": "1d4082ad5f15766e5c58a045222bdcc251c7257a05cabefe7ab75f7d98876f45"
+    },
+    {
+      "path": "engine/tests/test_compx_batch.py",
+      "sha256": "4baca9b7e107780f6072056f9d0ffd8f358501fb87e61c43e9e7906ef5c3b2e2"
+    },
+    {
+      "path": "engine/tests/test_compx_dpi.py",
+      "sha256": "f7b2d6ca89e1af71e75eee0a82fe607bfb4f19ce2a8c77091100dc8efc31fab6"
+    },
+    {
+      "path": "engine/tests/test_corsair.py",
+      "sha256": "689867c090292f7156d767f006e8e8ee7c4ac8228b9f9d75002ed17f2aafb042"
+    },
+    {
+      "path": "engine/tests/test_dareu.py",
+      "sha256": "135f7174b59052cf2b1420605d1b03c9528f17b3d81fc614617bb42dc8de3602"
+    },
+    {
+      "path": "engine/tests/test_device_pack.py",
+      "sha256": "940d651f806a68a9080192d513229678c34eb96143c7a06b339fe282a873221b"
+    },
+    {
+      "path": "engine/tests/test_eweadn_s9pro.py",
+      "sha256": "0089f9fe21fe3114cb1421f6d09513aa3957d72e7f189fb7bae484780c23bad1"
+    },
+    {
+      "path": "engine/tests/test_fa6x_passive.py",
+      "sha256": "14e25fa29d24088e08d2bd549d82a16745e222791e1c4950fcf477fc9f9bbbe1"
+    },
+    {
+      "path": "engine/tests/test_feedback_batch1.py",
+      "sha256": "7296188a5c8d87d7111033de54f1bca2ac95e9eef688bcee75dc29e75f48050c"
+    },
+    {
+      "path": "engine/tests/test_gwolves.py",
+      "sha256": "d53b2c0dd2c612481cb34b0aea5b79afeafae4d287e03fcbc565a200b6d74f1f"
+    },
+    {
+      "path": "engine/tests/test_hidlist.py",
+      "sha256": "1f1a7afc0209db49d2ea78cd76c4806daedc3d2d2989c7ff856e862f9c6545a2"
+    },
+    {
+      "path": "engine/tests/test_hidstub.py",
+      "sha256": "14b03194760ce4e6f077d650b66c6e0b7252897c80ac62df3b5ceac19ad976cc"
+    },
+    {
+      "path": "engine/tests/test_hyperx_alpha2.py",
+      "sha256": "34922d5189760a6e8b2f4bfee5c3b8a67da58ab2a653b6606d7275124a27f156"
+    },
+    {
+      "path": "engine/tests/test_hyperx_cloud3.py",
+      "sha256": "6e1fdda2d37a3fe48708ecb697d7776eea4a9405be363cd1e91edbf638b5ceef"
+    },
+    {
+      "path": "engine/tests/test_hyperx_cloud3s.py",
+      "sha256": "31b399544347380bdb6d762c27cd4c53a491cbb474efdedace8e74fffc3db526"
+    },
+    {
+      "path": "engine/tests/test_jbl.py",
+      "sha256": "c7847ec18c1e13fa1215ff8608b53b02764c08a863c9b309052390383b6bae3b"
+    },
+    {
+      "path": "engine/tests/test_lamzu.py",
+      "sha256": "1c4cba1bab18fe65e1a4c447f558dca301a004e0885aa5524920decca8716af2"
+    },
+    {
+      "path": "engine/tests/test_lingbao.py",
+      "sha256": "560b82fde2683e7a3f188d9c7a18b6e83b8ef2ef0e47e995ceeb5a2df7a12082"
+    },
+    {
+      "path": "engine/tests/test_lofree.py",
+      "sha256": "db2116c82ee1fd73ff59712a65757a7970a32bbd56f3f461b95aa6876ff2f85f"
+    },
+    {
+      "path": "engine/tests/test_logitech_centurion.py",
+      "sha256": "df0f2cac51516cde6c4eb9b538d844951f6ec1f28a9a897f6d2b433c5eff6b9f"
+    },
+    {
+      "path": "engine/tests/test_logitech_dpi.py",
+      "sha256": "bc6dbcf2e92098f5732e793e6b35535d82b45d88b8e5232832fc0c0fe16c5256"
+    },
+    {
+      "path": "engine/tests/test_logitech.py",
+      "sha256": "c9bd07cc7c461ab36cb5c2ffd4081556c54b081cf4600042028f183d93ca1464"
+    },
+    {
+      "path": "engine/tests/test_mchose_a5v2.py",
+      "sha256": "c3500b4de4cc254cf481b2b454bd459b25c11249fc5ebd6f47fcccab767a4f7c"
+    },
+    {
+      "path": "engine/tests/test_mchose_by_keyboard.py",
+      "sha256": "9849243ce5a28271ced8077181e171f86bf46f31d826d801900ad43afa281b95"
+    },
+    {
+      "path": "engine/tests/test_mchose_headset.py",
+      "sha256": "490f78e01bca4c8de593440df6e16ede2268a901208e6be3e0d73dea3d0bb408"
+    },
+    {
+      "path": "engine/tests/test_mchose_keyboards.py",
+      "sha256": "4d66001c020008b4e36bba2ea90fb33bc0f691f2f2a02ffd06fb6c5a8de193f6"
+    },
+    {
+      "path": "engine/tests/test_mchose_v3.py",
+      "sha256": "6f7e8381b715055e494b1a25e44ae13dbc613ac095100b3f0cef2a9dfac09908"
+    },
+    {
+      "path": "engine/tests/test_mchose.py",
+      "sha256": "6249e5eae725678942cc3acb43101ccd6cbd02b1812ad2fc447d05fcfaa7a766"
+    },
+    {
+      "path": "engine/tests/test_moondrop.py",
+      "sha256": "0a470f13d39b12c41433675d718bf0fac9f53331b2a579362e5b763834253b4f"
+    },
+    {
+      "path": "engine/tests/test_new_brands.py",
+      "sha256": "deae90003a525e39aaa8688aab6c10665378907c71392346fd6015c1340b35d1"
+    },
+    {
+      "path": "engine/tests/test_ninjutso_legacy.py",
+      "sha256": "7b0bb6f3b4beae5d48557132b05a9a7dce0dde4363b52d997b31e10985ee1689"
+    },
+    {
+      "path": "engine/tests/test_nzxt.py",
+      "sha256": "2e46f7e2bc8db0738952e2983df13a9989a2df82aea756bd01fa7e7f11bf6d43"
+    },
+    {
+      "path": "engine/tests/test_pulsar.py",
+      "sha256": "58140ae91493511ca78ecb3ecfdac024c046a6e2ff7fd820517f251eb1cc5f20"
+    },
+    {
+      "path": "engine/tests/test_pulsarhub_evidence.py",
+      "sha256": "eaba96cc6e284b6845b89180b2bb37770bdbf0d9d273225713950a7e0facca29"
+    },
+    {
+      "path": "engine/tests/test_rapoo.py",
+      "sha256": "39497290d020b759d304ab566f9836af9bdcff3a96261b39714a1f4b8dce47a3"
+    },
+    {
+      "path": "engine/tests/test_razer_keyboards.py",
+      "sha256": "2779af139a585ad305436f4a6e25339b45596c6e4d56c729dbe1427b15a34eda"
+    },
+    {
+      "path": "engine/tests/test_razer.py",
+      "sha256": "8389773f50a00d373e7e1975876c1fea66851dc3a282de4614927965236b3d20"
+    },
+    {
+      "path": "engine/tests/test_report_descriptor.py",
+      "sha256": "93122c60f8431720750182cbbe98582907343bbf91ca8f1e3700a0e5eb35f626"
+    },
+    {
+      "path": "engine/tests/test_steelseries_elite.py",
+      "sha256": "b1463131baf75d1d219251fc87552e3a6bf0c8ada69b5efa27840b624c6cb291"
+    },
+    {
+      "path": "engine/tests/test_steelseries.py",
+      "sha256": "d4874ac90189ca4bfa79b994b12725c7857108ccd36856b9a2fa47f9f74d88bd"
+    },
+    {
+      "path": "engine/tests/test_vgn_beiying.py",
+      "sha256": "8391a0d1dfed691d86631befc86356bf5452d322bdcf3aa3869ad2cb160de35e"
+    },
+    {
+      "path": "engine/tests/test_vgn_dragonfly3.py",
+      "sha256": "79d1f6f76f009185c59987f3b96b4744b3a264bb9571bc3ea381baf7843ef755"
+    },
+    {
+      "path": "engine/tests/test_vgn_keyboard.py",
+      "sha256": "4fbdcdf475806ec85626592b86f9d45c4706b816310d0c76d0b2486b39388c22"
+    },
+    {
+      "path": "engine/tests/test_wlmouse.py",
+      "sha256": "4cf411554b592d0063225b617fb5b51e55d08208c4c807acaed6fabd63b12410"
+    },
+    {
+      "path": "engine/tests/test_xinput.py",
+      "sha256": "4cce9b64ae523512180d466a9d91b3a85a97843b33daf35ae597c1647a759b7b"
+    },
+    {
+      "path": "engine/tests/test_zhuaudio.py",
+      "sha256": "4f7e6e0f581755f8b82502c2d6dc73206b92e364a86425a381d008a4ff310f26"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue19-body.txt",
+      "sha256": "8dc3b057a273908b6cb61ffb9bce19a2120b3d0b8b5a6d99be104d1fd404085e"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue22-body.txt",
+      "sha256": "b4e059021c94639ff99696ff79cc24fd3749f4023bb2fddf53ff0f7fe3ac96b3"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue24-body.txt",
+      "sha256": "30e7a6412ce1024cbd8f4bca98298081d8799ca0f6bcd526c735f244f31a64b8"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue25-body.txt",
+      "sha256": "bbef64cc95f3c3aa81ec44afdeb0252da4d9410974f0bbf32337b218d804d315"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue43-body.txt",
+      "sha256": "7e87a78720e34986a550435a6f209cb61234d9be657fd37075ac929df3909bf4"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue47-body.txt",
+      "sha256": "3985a61481baf248b224c4fd8cd54c125800ea31da63c24d6304f407b2b08396"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue49-body.txt",
+      "sha256": "e50b8e9b56e97f67f05171a30eecc5ba1042b8aef948d11b2c0da6a3f5d9c9cc"
+    },
+    {
+      "path": "engine/tests/fixtures/feedback/issue55-body.txt",
+      "sha256": "b2257b985151209c0807e4a17a97b7bae9424b8129c194ef13ede43730226d5e"
+    },
+    {
+      "path": "scripts/AudioControl.cs",
+      "sha256": "6b7debbb17757d6ae8d43af183669338653a2c35b2acf73d2a236365cc9d4120"
+    },
+    {
+      "path": "scripts/Build-Backend.ps1",
+      "sha256": "5404d721342f78eed9b32a87be0e8e87e2a42f1151f8d52396a7d2361442473c"
+    },
+    {
+      "path": "scripts/HeadsetBattery.cs",
+      "sha256": "a2ee7c073121cb8d9ab04bbb21d44d124dd66b1d044ea1228b877c9278b2b2b5"
+    },
+    {
+      "path": "scripts/HidBattery.cs",
+      "sha256": "040ebfce936751c2ae085b897310ba7a0b80754627f81d96ac1313fcdba0040f"
+    },
+    {
+      "path": "scripts/Manifest.Common.ps1",
+      "sha256": "5a94d93f44b03dd9fae1e4e2357fed60577a2dfbed26a316033f567d6fa70fa9"
+    },
+    {
+      "path": "tests/test_engine_reliability.py",
+      "sha256": "a808e106ac0481878aa57910e006a0fa23e5b50d4f0d271b829be846ad01b942"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowUpRight, ClipboardList, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ClipboardList, Headphones, Info, Languages, ListTodo, MessageCircle, MessagesSquare, Music, Palette, Plug, Puzzle, SlidersHorizontal, UserRound, type LucideIcon } from "lucide-react";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { PROJECT_AUTHOR_URL } from "../../features/updater/projectLinks";
@@ -14,6 +14,7 @@ const CATEGORY_ICONS: Record<SettingsCategory, LucideIcon> = {
   messages: MessageCircle,
   todos: ListTodo,
   music: Music,
+  devices: Headphones,
   clipboard: ClipboardList,
   translation: Languages,
   agents: MessagesSquare,

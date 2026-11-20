@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Fly Island 设备电量插件</title>
+  <desc id="desc">白色圆角底上的悬浮小岛，岛上是一枚粉色渐变的电池，电量充盈，旁有蓝紫色信号弧，象征无线设备的电量读数。</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDFBFF"/>
+      <stop offset="1" stop-color="#F2F6FF"/>
+    </linearGradient>
+    <linearGradient id="shell" x1="150" y1="150" x2="362" y2="362" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8E7BFF"/>
+      <stop offset="0.55" stop-color="#A98CFF"/>
+      <stop offset="1" stop-color="#FF9BC6"/>
+    </linearGradient>
+    <linearGradient id="battery" x1="196" y1="214" x2="316" y2="278" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7FB0"/>
+      <stop offset="1" stop-color="#FFB3CE"/>
+    </linearGradient>
+    <linearGradient id="wave1" x1="330" y1="176" x2="410" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6EC8FF"/>
+      <stop offset="1" stop-color="#8E7BFF"/>
+    </linearGradient>
+    <filter id="shadow" x="80" y="80" width="352" height="380" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#6E5AC9" flood-opacity="0.22"/>
+    </filter>
+    <filter id="soft" x="150" y="180" width="240" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#C24C86" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- 浅色底与柔和光晕 -->
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="244" r="150" fill="#8E7BFF" opacity="0.07"/>
+  <circle cx="330" cy="330" r="96" fill="#FF9BC6" opacity="0.09"/>
+
+  <!-- 悬浮小岛外壳 -->
+  <g filter="url(#shadow)">
+    <rect x="116" y="150" width="280" height="150" rx="75" fill="url(#shell)"/>
+    <rect x="128" y="162" width="256" height="126" rx="63" fill="#FFFFFF" fill-opacity="0.16"/>
+  </g>
+
+  <!-- 岛上电池：电量充盈 -->
+  <g filter="url(#soft)">
+    <rect x="192" y="214" width="120" height="62" rx="18" fill="#FFFFFF" fill-opacity="0.95"/>
+    <rect x="198" y="220" width="108" height="50" rx="13" fill="#F3EEFF"/>
+    <rect x="202" y="224" width="94" height="42" rx="10" fill="url(#battery)"/>
+    <rect x="316" y="234" width="9" height="22" rx="4.5" fill="#FFFFFF" fill-opacity="0.95"/>
+    <rect x="212" y="233" width="66" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.75"/>
+  </g>
+
+  <!-- 设备/无线的信号弧，向右上方发散 -->
+  <g stroke="url(#wave1)" stroke-width="11" stroke-linecap="round" fill="none">
+    <path d="M348 150C372 138 392 122 404 100"/>
+    <path d="M366 168C396 158 420 140 434 116"/>
+  </g>
+  <circle cx="356" cy="226" r="9" fill="#6EC8FF"/>
+  <circle cx="356" cy="226" r="17" stroke="#6EC8FF" stroke-opacity="0.35" stroke-width="3"/>
+
+  <!-- 岛下投影短线 -->
+  <rect x="196" y="326" width="120" height="10" rx="5" fill="#6E5AC9" opacity="0.18"/>
+</svg>

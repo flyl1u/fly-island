@@ -1,4 +1,5 @@
 import type { CommonText } from "./sections/common";
+import type { DeviceBatteryText } from "./sections/deviceBattery";
 import type { MessagesText } from "./sections/messages";
 import type { QqText } from "./sections/qq";
 import type { WechatText } from "./sections/wechat";
@@ -17,6 +18,7 @@ import type { SettingsText } from "./sections/settings/index";
 export type LocaleCode = "zh-CN" | "en";
 
 export type Translations = {
+  deviceBattery: DeviceBatteryText;
   /** Native language name shown in the locale picker. */
   localeLabel: string;
   /** BCP-47 tag handed to Intl for dates and numbers. */

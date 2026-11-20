@@ -1,4 +1,5 @@
 import type { Translations } from "../types";
+import * as deviceBattery from "../sections/deviceBattery.ts";
 import * as common from "../sections/common.ts";
 import * as messages from "../sections/messages.ts";
 import * as qq from "../sections/qq.ts";
@@ -16,6 +17,7 @@ import * as fileShelf from "../sections/fileShelf.ts";
 import * as settings from "../sections/settings/index.ts";
 
 const zhCN: Translations = {
+  deviceBattery: deviceBattery.zhCN,
   localeLabel: "简体中文",
   localeTag: "zh-CN",
 

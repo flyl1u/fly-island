@@ -40,7 +40,7 @@ export function saveTrayVisible(visible: boolean): boolean {
 // Main island -> settings window request to reveal a section; survives the window being created.
 export const SETTINGS_FOCUS_STORAGE_KEY = "focusd-island-settings-focus";
 
-export type SettingsFocusSection = "savePath" | "translation" | "music" | "mail" | "updates";
+export type SettingsFocusSection = "savePath" | "translation" | "music" | "devices" | "mail" | "updates";
 
 export const FOCUS_REQUEST_MAX_AGE_MS = 10_000;
 
@@ -59,7 +59,7 @@ export function takeFocusRequest(): SettingsFocusSection | null {
       requestedAt?: unknown;
     };
 
-    return (request.section === "savePath" || request.section === "translation" || request.section === "music" || request.section === "mail" || request.section === "updates") &&
+    return (request.section === "savePath" || request.section === "translation" || request.section === "music" || request.section === "devices" || request.section === "mail" || request.section === "updates") &&
       typeof request.requestedAt === "number" &&
       Date.now() - request.requestedAt < FOCUS_REQUEST_MAX_AGE_MS
       ? request.section
