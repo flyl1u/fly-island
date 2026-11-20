@@ -4,22 +4,24 @@ import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton
 import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
 import { useTranslation } from "../../i18n";
+import { isPrereleaseVersion } from "./updateChannel.ts";
 import {
   checkForUpdate,
   getUpdateState,
   installUpdate,
   setAutoUpdate,
   subscribeToUpdate,
+  switchChannel,
   type UpdateState,
 } from "./updaterController";
 
 type AutoUpdateText = ReturnType<typeof useTranslation>["settings"]["project"]["autoUpdate"];
 
 function statusText(state: UpdateState, text: AutoUpdateText) {
-  const { stage, nextVersion, downloaded, total, detail } = state;
+  const { stage, nextVersion, downloaded, total, detail, target } = state;
   switch (stage) {
     case "checking": return text.checking;
-    case "latest": return text.latest;
+    case "latest": return target === "beta" && !isPrereleaseVersion(state.version) ? text.noBeta : target === "restore" ? text.restoreLatest : text.latest;
     case "available": return text.available(nextVersion);
     case "downloading": return text.downloading(nextVersion, total > 0 ? Math.min(100, Math.round(downloaded / total * 100)) : null);
     case "ready": return text.ready(nextVersion);
@@ -40,7 +42,8 @@ function statusText(state: UpdateState, text: AutoUpdateText) {
 export function UpdateSettingsSection() {
   const text = useTranslation().settings.project.autoUpdate;
   const state = useSyncExternalStore(subscribeToUpdate, getUpdateState);
-  const { stage, autoUpdate, nextVersion } = state;
+  const { stage, autoUpdate, nextVersion, version } = state;
+  const onBeta = isPrereleaseVersion(version);
   const working = stage === "checking" || stage === "downloading" || stage === "installing";
   const installable = stage === "ready" || stage === "available";
   const report = (error: unknown) => console.error("Failed to reach the updater", error);
@@ -59,6 +62,16 @@ export function UpdateSettingsSection() {
         control={
           <SettingsLinkButton disabled={working || stage === "disabled" || stage === "done"} onClick={() => void checkForUpdate().catch(report)}>
             {text.check}
+          </SettingsLinkButton>
+        }
+      />
+      <SettingsRow
+        title={onBeta ? text.betaRunning(version) : text.beta}
+        description={onBeta ? text.restoreHint : text.betaHint}
+        control={
+          <SettingsLinkButton disabled={working || stage === "disabled" || stage === "done"}
+            onClick={() => void switchChannel(onBeta ? "restore" : "beta").catch(report)}>
+            {onBeta ? text.restore : text.betaTry}
           </SettingsLinkButton>
         }
       />

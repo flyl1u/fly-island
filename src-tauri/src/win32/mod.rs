@@ -25,6 +25,7 @@ pub(crate) mod process_tree;
 pub(crate) mod registry;
 pub(crate) mod shell_hook;
 pub(crate) mod shell_open;
+pub(crate) mod std_handle;
 pub(crate) mod task_switcher;
 pub(crate) mod taskbar;
 pub(crate) mod taskbar_edge;

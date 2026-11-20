@@ -14,8 +14,11 @@ import { shouldPreventContextMenu } from "./lib/contextMenu";
 import { applyDocumentTheme } from "./features/appearance/useDocumentTheme";
 import { loadSettings } from "./features/appearance/storage";
 import { captureFirstLaunch } from "./features/onboarding/firstLaunch";
+import { installAppLogCapture } from "./features/diagnostics/appLogCapture";
 
 const windowKind = new URLSearchParams(window.location.search).get("window");
+// First, so errors while the window starts are in the diagnostic log when it is on.
+installAppLogCapture();
 // Before loading the settings, which may save them on a first launch.
 captureFirstLaunch();
 // Before the first paint, so no window shows a frame in the wrong colour scheme.

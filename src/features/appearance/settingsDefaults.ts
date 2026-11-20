@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   islandCornerRadius: DEFAULT_ISLAND_CORNER_RADIUS,
   collapsedCornerRadius: COLLAPSED_CORNER_RADIUS.default,
   islandCornerShape: "squircle",
+  islandShape: "notch",
   // Optional top-edge shoulders.
   topEdgeShoulders: false,
   topEdgeShoulderSize: 10,
@@ -50,6 +51,10 @@ export const DEFAULT_SETTINGS: IslandSettings = {
   agentShowCodex: true,
   agentShowDsh: true,
   agentShowWorkbuddy: true,
+  agentShowCursor: true,
+  agentShowKimiCode: true,
+  agentShowHermes: true,
+  agentShowZcode: true,
   agentHideFinished: false,
   // Off unless asked for: the age alone keeps finished rows short.
   agentShowElapsed: false,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { OfficeImSettingsGroup } from "./OfficeImSettingsGroup";
 import { MAIL_OTP_ENABLED } from "../../features/releaseFlags.ts";
 import { SettingsGroup } from "../../components/settings/SettingsGroup";
 import { SettingsLinkButton } from "../../components/settings/SettingsLinkButton";
@@ -75,6 +76,7 @@ export function MessagesSettingsPage({
           />
         )}
       </SettingsGroup>
+      <OfficeImSettingsGroup />
       <MailGroups settings={settings} onSettingsChange={onSettingsChange} />
     </>
   );

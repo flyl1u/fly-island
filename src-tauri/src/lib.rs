@@ -1,4 +1,5 @@
 mod agent_approval;
+mod app_log;
 mod agent_status;
 mod clipboard_history;
 mod clipboard_window;
@@ -17,6 +18,7 @@ mod settings_window;
 mod system;
 mod translation;
 mod tray;
+mod office_im;
 mod wechat_reminders;
 mod win32;
 
@@ -67,6 +69,8 @@ pub fn run() {
             // changes. Liquid glass is rendered inside the island element.
         })
         .setup(|app| {
+            // First, so whatever goes wrong while the rest starts is in the log.
+            app_log::init(app.handle());
             tray::build_tray(app)?;
             if let Err(error) = clipboard_history::init(app.handle()) {
                 eprintln!("failed to initialize clipboard history: {error}");
@@ -86,6 +90,9 @@ pub fn run() {
             }
             if let Err(error) = wechat_reminders::init(app.handle()) {
                 eprintln!("failed to initialize WeChat reminders: {error}");
+            }
+            if let Err(error) = office_im::init(app.handle()) {
+                eprintln!("failed to initialize office reminders: {error}");
             }
             if let Err(error) = notification_diagnostics::start(app.handle()) {
                 eprintln!("failed to initialize notification diagnostics: {error}");
@@ -119,6 +126,7 @@ pub fn run() {
             file_shelf;
             mail;
             wechat_reminders;
+            office_im;
             qq_notifications;
             island;
             system;
@@ -132,6 +140,7 @@ pub fn run() {
             translation;
             settings_window
             ; clipboard_window
+            ; app_log
         ))
         .build(context)
         .map(|app| {

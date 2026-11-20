@@ -22,10 +22,10 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 |---|---|
 | `focusd-island-settings` | `features/appearance/storage.ts` |
 
-| `focusd-island-tuck-line-migration`（`"1"`：细线默认样式迁移完成；已有存档的 edge/hidden 统一改成 line，先保存设置再写标记，无存档只写标记；之后尊重手动选择，失败下次重试） | `features/appearance/storage.ts`、`tuckLineMigration.ts` |
+| `focusd-island-tuck-line-migration`（旧版写的 `"1"`：细线默认样式迁移完成。2026-11-19 起不再读写，迁移已撤掉：标记丢失时它会把用户重新选好的露边 / 隐藏又改回细线；已有的值留在原处不删） | 无（曾在 `features/appearance/storage.ts`） |
 | `focusd-island-collapsed-text-default-v1`（迁移标记） | `features/appearance/storage.ts` |
 | `focusd-island-color-refresh-v1`（`"1"`：2026-11-13 默认配色刷新完成；无存档或三色已等于新默认值时只写标记、不新建备份，其余旧存档覆盖三色，备份 → 设置 → 标记，重试保留已有备份） | `features/appearance/storage.ts`、`colorRefresh.ts` |
-| `focusd-island-session-sort-recent-v1`（`"1"`：2026-11-13 会话列表默认改为「最近活动」，已存的 `agentSessionSort: "status"` 迁移一次为 `"recent"`；先保存设置再写标记） | `features/appearance/storage.ts` |
+| `focusd-island-session-sort-recent-v1`（旧版写的 `"1"`：会话排序 `status` → `recent` 的一次性迁移完成。2026-11-19 起不再读写，迁移已撤掉，理由同上；已有的值留在原处不删） | 无（曾在 `features/appearance/storage.ts`） |
 | `focusd-island-color-backup`（`{ islandBackgroundColor, taskTextColor, pulseColor }`，均为大写 `#RRGGBB`；迁移、恢复默认外观和批量改色前保存；回退时与当前三色互换，手动改一个颜色不写） | `features/appearance/storage.ts`、`colorPalette.ts` |
 | `focusd-island-color-presets`（`{ id, islandBackgroundColor, taskTextColor, pulseColor }[]`；id 为字符串，三色均为大写 `#RRGGBB`，最多 8 项、三色组合去重；损坏记录跳过，非法根数据视为空；不复用已退役的 `focusd-island-setting-presets`） | `features/appearance/storage.ts`、`colorPresets.ts` |
 | `focusd-island-setting-presets`（2026-11-09 起不再读写：样式预设已去掉，旧数据留着不动） | — |
@@ -56,6 +56,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `focusd-island-qq-notifications-enabled` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-qq-notification-access-requested` | `features/messages/qq-notifications/storage.ts` |
 | `focusd-island-wechat-reminders-enabled` | `features/messages/wechat/storage.ts` |
+| `focusd-island-office-im-enabled`（`{ dingtalk, feishu, wecom }`：已安装的钉钉 / 飞书 / 企业微信是否接收提醒，缺省为开） | `features/messages/office-im/storage.ts` |
+| `focusd-island-message-source-order`（`MessageSource[]`：消息页标签的顺序，长按拖动调整；未知来源丢弃，缺少的来源补在末尾） | `features/messages/sourceOrder.ts` |
 | `focusd-island-native-plugins`（`string[]`：插件市场里已安装的内置插件 id，按安装顺序；取值 `dingtalk` / `feishu` / `wecom` / `cursor` / `kimiCode` / `zcode` / `hermes`，未知 id 读取时丢弃） | `features/plugins/native/storage.ts` |
 | `focusd-island-wechat-message-preview-enabled`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
 | `focusd-island-wechat-hide-minimized-taskbar`（字符串 `"true"` 开启，缺失或其他值关闭） | `features/messages/wechat/storage.ts` |
@@ -103,6 +105,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 | `qq-mail-changed` | `mail/service.rs`（常量在 `mod.rs`） | 广播 |
 | `qq-notifications-changed` | `qq_notifications/mod.rs` | `main`、`settings` |
 | `wechat-reminder-changed` | `wechat_reminders/mod.rs` | `main`、`settings` |
+| `office-im-changed`（载荷 `OfficeImSnapshot`：`revision` 与 `dingtalk` / `feishu` / `wecom` 各自的 `enabled`、`status`、`pending`、`lastAttentionAt`、`error`） | `office_im/mod.rs` | `main`、`settings` |
 | `translation-window-opened` | `translation/mod.rs` | 广播 |
 | `translation-island-shortcut`（翻译设为「岛内页面」时按下翻译快捷键：先唤出主窗口，再让它切换翻译页） | `translation/mod.rs` | 广播 |
 | `settings-open-requested`（无载荷：托盘、翻译窗口或独立设置窗口要打开设置，主窗口按 `focusd-island-detached-settings` 决定打开岛上的设置页还是独立窗口） | `settings_window/mod.rs`、前端 `windows/settings/api.ts` | `main` |
@@ -112,6 +115,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 
 ## 其他
 
+- 测试版通道（2026-11-18）：`updater_check` 新增可选参数 `allowDowngrade`（缺省 false，与旧版相同）；为 true 时清单里任何不同的版本都算更新，用于从测试版还原到正式版。`channel` 仍为 `"stable"` / `"beta"`。主窗口与设置窗口之间的 `focusd-update-request` 新增 action `beta`、`restore`，`focusd-update-state` 新增字段 `target`。无新增 localStorage key。
+- 问题排查日志（2026-11-18）：新增命令 `get_app_log_state()`、`set_app_log_enabled({ enabled })`（都返回 `{ enabled, path, bytes }`）、`append_app_log({ entries: [{ level: "error" | "warn", message }] })`、`open_app_log_folder()`、`clear_app_log()`，事件 `app-log-changed`（payload 为是否开启）。应用数据目录新增 `app-log.json` 与 `logs/focusd-island.log`、`logs/focusd-island.1.log`。无新增 localStorage key。
 - `focusd-island-settings` 的 behavior 块增加 `keepVisibleWhileAgentRunning`、`keepVisibleWhileLyrics`、`keepVisibleWhileTodoRunning`（2026-11-13）：三项独立布尔值，默认 false；缺失或非 boolean 回退 false。仅暂停收起态闲置贴边计时，不新增 key、命令或事件。
 - `focusd-island-settings` 新增 `topEdgeShoulders`（boolean，默认 false）和 `topEdgeShoulderSize`（整数 4–20px，默认 10）；无效或缺失回退默认，大小超界夹取，只影响贴顶的装饰外形，不增加原生点击区域。属于外观字段，恢复默认外观会一并复位。
 
@@ -121,6 +126,7 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 展开岛屿的按钮样式保存在 `focusd-island-settings.pageButtonStyle`，支持 `capsule` 和 `icon`，缺失或未知值使用 `capsule`。
 - 微信摘要通过 `set_wechat_message_preview_enabled(enabled)` 开关。`set_wechat_minimized_taskbar_hidden(hidden)` 设置最小化时隐藏微信任务栏图标。`set_wechat_reminders_enabled` 可接收 `previewEnabled` 和 `hideMinimizedTaskbar`，省略时保留对应偏好。事件快照包含 `previewEnabled`、`previewStatus`、`hideMinimizedTaskbar`、`messages`，消息行是 `{ id, receivedAt, contact, body }`。
 - `open_wechat_conversation(messageId)` 用内存中的摘要 ID 定位微信会话。返回 `true` 表示已点击对应会话，`false` 表示已打开微信主窗口。微信的会话标识和进程身份保存在原生内存中。
+- 办公消息（2026-11-18，插件市场的钉钉 / 飞书 / 企业微信）：`get_office_im_state()`、`set_office_im_enabled(client, enabled)`、`clear_office_im(client)`、`open_office_im(client)`，`client` 为 `dingtalk` / `feishu` / `wecom`。监听任务栏闪动（shell hook），只在至少一个客户端开启时运行；`open_office_im` 只恢复已在运行的客户端主窗口（飞书关到托盘时再启动一次飞书自己的程序，由飞书显示窗口），不执行协议、不模拟输入，并清除该客户端的提醒。
 - `clear_wechat_reminders()`（2026-11-13）清除岛内微信镜像：`pending=false`、清空 `messages`、`revision+1`，返回 `ReminderSnapshot` 并沿用 `wechat-reminder-changed` 推送；发给 settings 的快照仍剥除消息。不会操作微信客户端的已读状态或偏好。为本应用命令，不使用额外插件/核心权限；现有 `capabilities/default.json` 的本地窗口范围足够。
 - `dismiss_wechat_conversation(messageId)`（2026-11-14）清掉 `messageId` 所在会话（按会话 key）的全部摘要，保留其他会话；最新一次提醒属于该会话时同时 `pending=false`，`lastAttentionAt` 不变。返回 `ReminderSnapshot`，沿用 `wechat-reminder-changed` 推送；找不到 ID 时原样返回。前端在打开会话成功后调用。
 - `dismiss_qq_contact(title)`（2026-11-14）清掉通知标题等于 `title`（联系人或群名）的全部 QQ 通知，保留其他人，返回 `QQNotificationSnapshot` 并沿用 `qq-notifications-changed` 推送。两条命令都只改内存中的镜像，不新增 localStorage key 或事件，不需要额外权限。
@@ -141,6 +147,8 @@ Codex 会话摘要（2026-11-15）：`list_agent_sessions` 可选返回 `lastCom
 - 岛屿设置 `focusd-island-settings` 的 `expandedScale`（展开后的大小）2026-11-10 重新可以设置；2026-11-11 起是 0.85–1.2 之间的任意值（滑块，步长 0.01）。3.0.0 存的 0.9 / 1 / 1.1（小 / 中 / 大）原样保留；更早版本存的任意数（原范围 0.75–1.4）读取时限制到 0.85–1.2 并取到百分位，非数字按 1。字段名和类型不变。
 - `focusd-island-settings` 新增 `islandFontPercent`（90–120，默认 100，步长 5）、`collapsedAutoWidth`（默认 true）、`collapsedWidth`（240–480，默认 340）和 `collapsedHeight`（32–60，默认 38）。宽高以缩放前的逻辑像素存储。`set_island_interaction` 接收实际使用的 `collapsedWidth` 及可选的 `collapsedHeight`，缺少高度时使用当前状态的高度，初始值为 38。
 - `focusd-island-settings.agentQuotaSources` 保存可见额度环，候选值依次为 `claudeCode`、`codex`、`dsh`、`workbuddy`。旧数据缺少该字段时用原有会话来源开关迁移三种来源，并选中 WorkBuddy。保存空数组表示隐藏额度行。
+- 胶囊外形（2026-11-18）：`focusd-island-settings` 兼容新增 `islandShape`（`"notch"` / `"capsule"`，缺失或其他值时为 `"notch"`，与旧版外形相同；胶囊暂未开放期间 `"capsule"` 也读成 `"notch"`），属于外观字段，随外观预设保存和应用。胶囊只改变前端发给 `set_island_interaction` / `set_island_layout` 的 `marginY`（至少 8）与 `collapsedCornerRadius`（条高的一半），命令和参数不变，不新增事件或 localStorage key。
+- 插件市场 Agent（2026-11-18）：`list_agent_sessions` 新增可选参数 `native: string[]`（`"cursor"`、`"kimiCode"`、`"hermes"`），缺省时与旧版一样不读这几个来源；返回的 `provider` 新增 `cursor`、`kimiCode`、`hermes`。`focus_agent_window`、`agent_sessions_in_front` 接受 `cursor`（另两个走通用的终端匹配）。新增只读命令 `get_kimi_usage()`、`get_zcode_usage()`，返回 `null` 或与 `get_agent_usage` 相同的 `AgentUsage`，`source` 新增 `"kimi"` / `"zcode"`。`focusd-island-settings` 兼容新增 `agentShowCursor`、`agentShowKimiCode`、`agentShowHermes`、`agentShowZcode`（缺失时为 true，仅在 `focusd-island-native-plugins` 装了对应插件时生效）；`agentQuotaSources` 的取值不变。无新增事件或 localStorage key。
 - WorkBuddy 会话（2026-11-13）：`list_agent_sessions` 的 `provider` 新增 `workbuddy`；`focus_agent_window`、`agent_sessions_in_front` 接受 `workbuddy`，既有参数和返回结构不变。`focusd-island-settings` 兼容新增 `agentShowWorkbuddy`（缺失时为 true），旧数据迁移额度环时 WorkBuddy 跟随此开关。无新增命令、事件或 localStorage key。
 - 岛屿设置 `focusd-island-settings` 的 `gameDoNotDisturb`（布尔，默认 true）2026-11-11 重新可以设置（通用 → 岛屿 → 游戏模式）：只有明确存为 false 才关；`gameAutoTuck` 仍按默认 false 读取。字段名和类型不变，没有新 key。
 - 岛屿设置 `focusd-island-settings` 2026-11-17（3.2.6）新增 `ctrlWheelPages`（布尔，默认 false）：只有明确存为 true 才开，展开时按住 Ctrl 滚动滚轮按顶栏顺序切页。旧数据缺失或类型无效时为关。没有新 key。

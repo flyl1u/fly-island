@@ -54,6 +54,10 @@ pub enum UsageSource {
     Codex,
     /// The usage history the Claude desktop app keeps (claude_desktop_usage.rs).
     ClaudeDesktop,
+    /// Kimi Code's usage service (kimi_usage.rs).
+    Kimi,
+    /// Z Code's plan service (zcode_usage.rs).
+    Zcode,
 }
 
 /// The snapshot claude-hud reads or writes, from its config in `claude_dir`

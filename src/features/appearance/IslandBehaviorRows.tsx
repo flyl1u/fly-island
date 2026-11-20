@@ -5,8 +5,8 @@ import { SettingsRow } from "../../components/settings/SettingsRow";
 import { SettingsNumberRow } from "../../components/settings/SettingsNumberRow";
 import { SettingsSliderRow } from "../../components/settings/SettingsSliderRow";
 import { SettingsToggleRow } from "../../components/settings/SettingsToggleRow";
-import { AUTO_COLLAPSE_SECONDS, GAME_NOTICE_SECONDS, TUCK_DELAY_SECONDS, TUCK_EDGE_HEIGHT } from "./settingsLimits";
-import type { ExpandTrigger, IslandSettings, TuckStyle } from "./types";
+import { AUTO_COLLAPSE_SECONDS, GAME_NOTICE_SECONDS, TUCK_DELAY_SECONDS } from "./settingsLimits";
+import type { ExpandTrigger, IslandSettings } from "./types";
 
 type RowsProps = {
   settings: IslandSettings;
@@ -53,15 +53,14 @@ export function ExpandRows({ settings, onSettingsChange }: RowsProps) {
   );
 }
 
-/** Whether and (B) how soon the collapsed island tucks to the top edge, and how it looks there. */
-export function TuckRows({ settings, onSettingsChange, onPreviewTuck }: RowsProps & { onPreviewTuck?: () => void }) {
+/**
+ * Whether and (B) how soon the collapsed island tucks to the top edge. How it looks tucked is on
+ * the appearance page (TuckLookRows.tsx, 2026-11-19).
+ */
+export function TuckRows({ settings, onSettingsChange }: RowsProps) {
   const t = useTranslation();
   const expand = t.settings.expand;
   const update = (patch: Partial<IslandSettings>) => onSettingsChange({ ...settings, ...patch });
-  const tuckStyles: { value: TuckStyle; label: string }[] = (["edge", "line", "hidden"] as const).map((value) => ({
-    value,
-    label: expand.tuckStyles[value],
-  }));
   return (
     <>
       <SettingsToggleRow
@@ -82,25 +81,6 @@ export function TuckRows({ settings, onSettingsChange, onPreviewTuck }: RowsProp
           onChange={(tuckDelaySeconds) => update({ tuckDelaySeconds })}
         />
       ) : null}
-      {/* Clicking "tuck to the top" tucks it too, so the look is offered with auto-tuck off. */}
-      <SettingsRow
-        title={expand.tuckStyle}
-        control={
-          <SettingsChoice
-            value={settings.tuckStyle}
-            options={tuckStyles}
-            ariaLabel={expand.tuckStyle}
-            onChange={(tuckStyle) => { update({ tuckStyle }); onPreviewTuck?.(); }}
-          />
-        }
-      />
-      {settings.tuckStyle === "edge" && (
-        <SettingsSliderRow indent title={expand.tuckEdgeHeight} value={settings.tuckEdgeHeight}
-          min={TUCK_EDGE_HEIGHT.min} max={TUCK_EDGE_HEIGHT.max} step={1}
-          defaultValue={TUCK_EDGE_HEIGHT.default} resetLabel={t.settings.layout.resetToDefault}
-          format={(value) => `${value}px`} commitOnRelease
-          onChange={(tuckEdgeHeight) => { update({ tuckEdgeHeight }); onPreviewTuck?.(); }} />
-      )}
     </>
   );
 }

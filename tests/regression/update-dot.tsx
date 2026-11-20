@@ -43,7 +43,7 @@ let setPage: (page: IslandPage) => void;
 let setExpanded: (expanded: boolean) => void;
 let setStyle: (style: PageButtonStyle) => void;
 let snapshot: UpdateState = { stage: "available", version: "3.0.9", nextVersion: "3.0.10", downloaded: 0,
-  total: 100, detail: "", dismissed: false, autoUpdate: true };
+  total: 100, detail: "", dismissed: false, autoUpdate: true, target: "stable" };
 async function update(patch: Partial<UpdateState>) {
   snapshot = { ...snapshot, ...patch };
   await act(async () => { await emit("focusd-update-state", snapshot); });
@@ -61,7 +61,7 @@ function Fixture() {
     <IslandHeader isExpanded={expanded} page={page} features={{ todo: true, music: true, clipboard: true, shelf: true,
       agents: true, translation: true, qq: true, wechat: true, qqMail: true }} pageOrder={["todo", "music", "clipboard", "shelf", "translation"]}
       pageButtonStyle={style} onPageOrderChange={() => {}} showTitle={false} isDetached={false} agentVisualState="idle"
-      agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
+      agentStatusLabel="Agent" qqNotificationCount={0} wechatPending={false} officePending={null} onPageChange={changePage} onCollapse={() => changeExpanded(false)}
       onOpenSettings={() => {}} onOpenMessages={() => {}} onOpenTranslator={() => {}} onResetPosition={() => {}}
       minimizesToTray={false} onMinimize={() => {}} />
     {page === "todo" && visibleTodo && <div className="todo-item"><span /><span>检测到新版本</span><UpdateTodoAction /></div>}

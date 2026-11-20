@@ -6,18 +6,23 @@
 //! focus and its background services that watch other apps (QQ, WeChat, the NetEase plugin)
 //! wait a little and start one after another ([`hold_after_autostart`]). Values written by
 //! older versions, without the argument, are rewritten once in the background.
+//!
+//! The value is read and written through the registry API (win32/registry.rs). Each read used to
+//! start `reg.exe`, and `get_launch_at_startup` is a synchronous command, so opening the settings
+//! window waited on a child process on the main thread (2026-11-19).
 
 use std::{
-    os::windows::process::CommandExt,
-    process::Command,
     sync::OnceLock,
     thread,
     time::{Duration, Instant},
 };
 
-use super::CREATE_NO_WINDOW;
+use windows::Win32::System::Registry::HKEY_CURRENT_USER;
 
-pub(super) const STARTUP_REGISTRY_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+use crate::win32::registry;
+
+/// The Run key under `HKEY_CURRENT_USER`.
+pub(super) const STARTUP_REGISTRY_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
 pub(super) const STARTUP_REGISTRY_VALUE: &str = "FocuSD Island";
 /// Passed by the Run value; any other launch has no arguments.
 const AUTOSTART_ARG: &str = "--autostart";
@@ -53,19 +58,17 @@ fn startup_value() -> Result<String, String> {
     Ok(format!("\"{}\" {AUTOSTART_ARG}", current_exe.display()))
 }
 
+/// The Run value as it is now, `None` when launch at startup is off.
+fn read_value() -> Option<String> {
+    registry::read_string(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE)
+}
+
 /// A value written before the argument existed is rewritten to the current form (same name,
 /// same executable), a minute after start so it costs nothing at sign-in.
 pub(crate) fn upgrade_legacy_value() {
     thread::spawn(|| {
         thread::sleep(Duration::from_secs(60));
-        let Ok(output) = Command::new("reg")
-            .creation_flags(CREATE_NO_WINDOW)
-            .args(["query", STARTUP_REGISTRY_KEY, "/v", STARTUP_REGISTRY_VALUE])
-            .output()
-        else {
-            return;
-        };
-        if output.status.success() && !String::from_utf8_lossy(&output.stdout).contains(AUTOSTART_ARG) {
+        if read_value().is_some_and(|value| !value.contains(AUTOSTART_ARG)) {
             if let Err(error) = set_launch_at_startup(true) {
                 eprintln!("failed to update the startup entry: {error}");
             }
@@ -75,54 +78,15 @@ pub(crate) fn upgrade_legacy_value() {
 
 #[tauri::command]
 pub fn get_launch_at_startup() -> Result<bool, String> {
-    let mut command = Command::new("reg");
-    let status = command
-        .creation_flags(CREATE_NO_WINDOW)
-        .args(["query", STARTUP_REGISTRY_KEY, "/v", STARTUP_REGISTRY_VALUE])
-        .status()
-        .map_err(|error| format!("Failed to query startup registry: {error}"))?;
-
-    Ok(status.success())
+    Ok(read_value().is_some())
 }
 
 #[tauri::command]
 pub fn set_launch_at_startup(enabled: bool) -> Result<(), String> {
-    let status = if enabled {
-        let startup_value = startup_value()?;
-
-        let mut command = Command::new("reg");
-        command
-            .creation_flags(CREATE_NO_WINDOW)
-            .args([
-                "add",
-                STARTUP_REGISTRY_KEY,
-                "/v",
-                STARTUP_REGISTRY_VALUE,
-                "/t",
-                "REG_SZ",
-                "/d",
-            ])
-            .arg(startup_value)
-            .arg("/f")
-            .status()
+    let result = if enabled {
+        registry::write_string(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE, &startup_value()?)
     } else {
-        let mut command = Command::new("reg");
-        command
-            .creation_flags(CREATE_NO_WINDOW)
-            .args([
-                "delete",
-                STARTUP_REGISTRY_KEY,
-                "/v",
-                STARTUP_REGISTRY_VALUE,
-                "/f",
-            ])
-            .status()
-    }
-    .map_err(|error| format!("Failed to update startup registry: {error}"))?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err("Startup registry command failed.".to_string())
-    }
+        registry::delete_value(HKEY_CURRENT_USER, STARTUP_REGISTRY_KEY, STARTUP_REGISTRY_VALUE)
+    };
+    result.map_err(|error| format!("Failed to update startup registry: {error}"))
 }

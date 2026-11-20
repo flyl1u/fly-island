@@ -39,7 +39,7 @@ export function usageSourceLines(usage: AgentUsage, now: number, text: Translati
   const lines: HoverCardLine[] = [];
   if (usage.updatedAt !== null) {
     const minutes = Math.max(0, Math.floor((now - usage.updatedAt) / 60_000));
-    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud, claudeDesktop: text.fromClaudeDesktop }[usage.source ?? "hud"];
+    const source = { magpie: text.fromMagpie, codex: text.fromCodex, hud: text.fromHud, claudeDesktop: text.fromClaudeDesktop, kimi: text.fromKimi, zcode: text.fromZcode }[usage.source ?? "hud"];
     lines.push({ text: text.updated(text.updatedAgo(minutes), source), muted: true });
   }
   return lines;
@@ -70,6 +70,9 @@ export type AgentUsages = {
   /** Why DSH shows no balance though it is set up; shown in place of its ring. */
   dshProblem?: DshProblem | null;
   workbuddy?: WorkbuddyUsage | null;
+  /** Plugin-market agents: read only while installed and switched on (nativeAgents.ts). */
+  kimi?: AgentUsage | null;
+  zcode?: AgentUsage | null;
   readAt: number;
 };
 
@@ -82,6 +85,8 @@ export function filterQuotaUsages(usages: AgentUsages, sources: readonly AgentQu
     dsh: sources.includes("dsh") ? usages.dsh : null,
     dshProblem: sources.includes("dsh") ? usages.dshProblem : null,
     workbuddy: sources.includes("workbuddy") ? usages.workbuddy : null,
+    kimi: sources.includes("kimiCode") ? usages.kimi : null,
+    zcode: sources.includes("zcode") ? usages.zcode : null,
     readAt: usages.readAt,
     plugins: usages.plugins,
   };
@@ -100,13 +105,15 @@ export function hasUsageNumbers(usage: AgentUsage | null): boolean {
 export function quotaRings(usage: AgentUsage | null): { outer: UsageWindow | null; inner: UsageWindow | null } | null {
   if (!usage) return null;
   const outer = usage.fiveHour;
-  const inner = usage.sevenDay ?? (outer ? null : usage.models.find((window) => /^\d+d$/.test(window.name)) ?? null);
+  // Z Code's trial plan has only named balances: the first stands in for the inner ring.
+  const fallback = usage.source === "zcode" ? usage.models[0] : undefined;
+  const inner = usage.sevenDay ?? (outer ? null : usage.models.find((window) => /^\d+d$/.test(window.name)) ?? fallback ?? null);
   return outer || inner ? { outer, inner } : null;
 }
 
 /** The Agent page reserves one row when at least one selected source has data. */
 export function usageLineCount(usages: AgentUsages): number {
-  return quotaRings(usages.claude) || quotaRings(usages.codex) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy || usages.plugins?.length ? 1 : 0;
+  return quotaRings(usages.claude) || quotaRings(usages.codex) || quotaRings(usages.kimi ?? null) || quotaRings(usages.zcode ?? null) || usages.dsh?.wallets.length || usages.dshProblem || usages.workbuddy || usages.plugins?.length ? 1 : 0;
 }
 
 type UsageText = Translations["agent"]["usage"];

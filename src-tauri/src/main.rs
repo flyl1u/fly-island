@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    focusd_island_lib::run()
+    fly_island_lib::run()
 }

@@ -17,7 +17,7 @@ Run these commands in Windows PowerShell from the repository root. Fork/clone yo
 Start with the unmodified example. Set one absolute target directory consistently. An ordinary clone can use `node_modules/.cache/cargo-target` inside its worktree; this project's task environment uses the shared path below:
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FocuSD/.worktrees/.cargo-target'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.worktrees/.cargo-target')
 cargo build --manifest-path plugins/example-hello/Cargo.toml
 cargo test --manifest-path plugins/example-hello/Cargo.toml
 cargo clippy --manifest-path plugins/example-hello/Cargo.toml --all-targets -- -D warnings

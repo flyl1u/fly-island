@@ -17,9 +17,9 @@ use windows::{
                 AllowSetForegroundWindow, BringWindowToTop, EnumWindows, FlashWindowEx, IsGUIThread,
                 FLASHWINFO, FLASHW_ALL, FLASHW_TIMERNOFG, GetClassNameW, GetCursorPos,
                 GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowPlacement,
-                GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SendMessageTimeoutW,
-                SetForegroundWindow, ShowWindow, GWL_EXSTYLE, GW_OWNER, SMTO_ABORTIFHUNG,
-                SMTO_BLOCK, SMTO_ERRORONEXIT, SW_RESTORE, WINDOWPLACEMENT, WM_NULL,
+                GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, GetAncestor, IsIconic, IsWindowVisible, SendMessageTimeoutW,
+                SetForegroundWindow, ShowWindow, ShowWindowAsync, GA_ROOTOWNER, GWL_EXSTYLE, GWL_STYLE, GW_OWNER, SMTO_ABORTIFHUNG,
+                SMTO_BLOCK, SMTO_ERRORONEXIT, SW_RESTORE, SW_SHOW, WINDOWPLACEMENT, WM_NULL,
                 WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
             },
         },
@@ -76,6 +76,32 @@ pub(crate) fn class_name(window: HWND) -> String {
 pub(crate) fn has_owner(window: HWND) -> bool {
     // SAFETY: GetWindow takes the HWND by value and fails for invalid windows.
     unsafe { GetWindow(window, GW_OWNER) }.is_ok_and(|owner| !owner.is_invalid())
+}
+
+/// The window's style and extended style bits; zero for invalid windows.
+pub(crate) fn styles(window: HWND) -> (u32, u32) {
+    // SAFETY: GetWindowLongPtrW takes the HWND by value and returns 0 for invalid windows.
+    unsafe {
+        (
+            GetWindowLongPtrW(window, GWL_STYLE) as u32,
+            GetWindowLongPtrW(window, GWL_EXSTYLE) as u32,
+        )
+    }
+}
+
+/// The top-level window that owns `window` (itself when it has no owner).
+pub(crate) fn root_owner(window: HWND) -> HWND {
+    // SAFETY: GetAncestor takes the HWND by value and returns null for invalid windows.
+    unsafe { GetAncestor(window, GA_ROOTOWNER) }
+}
+
+/// Asks a hidden or minimized window of another app to show itself (`SW_RESTORE` when minimized,
+/// else `SW_SHOW`) without waiting for its thread. Only for clients known to cope with it.
+pub(crate) fn show_async(window: HWND) {
+    let command = if is_minimized(window) { SW_RESTORE } else { SW_SHOW };
+    // SAFETY: ShowWindowAsync takes the HWND by value, posts the request and fails for invalid
+    // windows; the return value only reports the previous visibility.
+    let _ = unsafe { ShowWindowAsync(window, command) };
 }
 
 /// Restored (non-minimized, non-maximized) rectangle of `window`; `None` when it

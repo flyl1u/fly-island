@@ -20,13 +20,26 @@ export type MessagesText = {
     wechat: string;
     qqMail: string;
     plugin: string;
+    dingtalk: string;
+    feishu: string;
+    wecom: string;
   };
+  office: {
+    receive: (name: string) => string;
+    reminders: (name: string) => string;
+    open: (name: string) => string;
+    noReminders: string;
+    clickToOpen: string;
+    status: { disabled: string; listening: string; error: string };
+  };
+  reorderHint: string;
   collapsedTask: (title: string) => string;
   expand: (label: string) => string;
   openPreview: (text: string, source: string) => string;
   noticeOpen: (source: string) => string;
   noticeReader: (sender: string) => string;
-  badge: (count: number, wechat: boolean) => string;
+  /** `office`: the name of an office client (DingTalk…) with a new reminder, if any. */
+  badge: (count: number, wechat: boolean, office?: string | null) => string;
   label: (text: string) => string;
   qqPreview: (title: string, body: string) => string;
 };
@@ -53,13 +66,25 @@ export const zhCN: MessagesText = {
     wechat: "微信",
     qqMail: "邮箱",
     plugin: "插件",
+    dingtalk: "钉钉",
+    feishu: "飞书",
+    wecom: "企业微信",
   },
+  office: {
+    receive: (name) => `接收${name}提醒`,
+    reminders: (name) => `${name}提醒`,
+    open: (name) => `打开${name}`,
+    noReminders: "暂无新提醒",
+    clickToOpen: "点击打开",
+    status: { disabled: "已关闭", listening: "暂无新提醒", error: "无法监听" },
+  },
+  reorderHint: "长按拖动可调整顺序",
   collapsedTask: (title) => `待办：${title}`,
   expand: (label) => `${label}，点击展开`,
   openPreview: (text, source) => `${text}，点击打开${source}`,
   noticeOpen: (source) => `打开${source}`,
   noticeReader: (sender) => `${sender} 的消息全文`,
-  badge: (count, wechat) => `QQ ${count} 条通知${wechat ? "，微信有新提醒" : ""}`,
+  badge: (count, wechat, office) => `QQ ${count} 条通知${wechat ? "，微信有新提醒" : ""}${office ? `，${office}有新提醒` : ""}`,
   label: (text) => `消息：${text}`,
   qqPreview: (title, body) => `${title}：${body}`,
 };
@@ -86,13 +111,25 @@ export const en: MessagesText = {
     wechat: "WeChat",
     qqMail: "Mail",
     plugin: "Plugin",
+    dingtalk: "DingTalk",
+    feishu: "Feishu",
+    wecom: "WeCom",
   },
+  office: {
+    receive: (name) => `Receive ${name} reminders`,
+    reminders: (name) => `${name} reminders`,
+    open: (name) => `Open ${name}`,
+    noReminders: "No new reminders",
+    clickToOpen: "Click to open",
+    status: { disabled: "Off", listening: "No new reminders", error: "Can't listen" },
+  },
+  reorderHint: "Press and hold to drag into a new order",
   collapsedTask: (title) => `Task: ${title}`,
   expand: (label) => `${label}, click to expand`,
   openPreview: (text, source) => `${text}, click to open ${source}`,
   noticeOpen: (source) => `Open ${source}`,
   noticeReader: (sender) => `Full message from ${sender}`,
-  badge: (count, wechat) => `${count} QQ notification${count === 1 ? "" : "s"}${wechat ? ", new WeChat reminder" : ""}`,
+  badge: (count, wechat, office) => `${count} QQ notification${count === 1 ? "" : "s"}${wechat ? ", new WeChat reminder" : ""}${office ? `, new ${office} reminder` : ""}`,
   label: (text) => `Messages: ${text}`,
   qqPreview: (title, body) => `${title}: ${body}`,
 };

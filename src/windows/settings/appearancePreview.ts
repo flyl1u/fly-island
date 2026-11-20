@@ -2,7 +2,7 @@ import type { IslandSettings } from "../../features/appearance/types";
 import type { PanelPreviewMode } from "./panelPreview";
 
 const COLLAPSED_FIELDS = [
-  "topEdgeShoulders", "topEdgeShoulderSize", "collapsedScale", "collapsedAutoWidth", "collapsedWidth", "collapsedHeight",
+  "islandShape", "topEdgeShoulders", "topEdgeShoulderSize", "collapsedScale", "collapsedAutoWidth", "collapsedWidth", "collapsedHeight",
   "collapsedCornerRadius", "collapsedLayout", "collapsedPriority", "collapsedShowCover", "showCollapsedText",
   "islandBackgroundColor", "taskTextColor", "pulseColor", "opacity",
 ] as const satisfies readonly (keyof IslandSettings)[];

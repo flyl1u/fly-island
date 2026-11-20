@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { noteIslandMotion } from "../../lib/islandMotion";
 import type { IslandMode, IslandPage } from "./types";
 
@@ -17,6 +17,9 @@ export function useMotionLayer<T extends HTMLElement>(mode: IslandMode, page: Is
   const ref = useRef<T>(null);
   const isFirst = useRef(true);
   const lastMode = useRef(mode);
+  // Kept across re-runs: a height change mid-motion re-runs the effect without a mode change, and
+  // clearing the timer there left the layer (and data-moving) on for good.
+  const timer = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     if (isFirst.current) {
@@ -33,12 +36,21 @@ export function useMotionLayer<T extends HTMLElement>(mode: IslandMode, page: Is
     if (!modeChanged) return;
     const element = ref.current;
     if (!element) return;
+    // data-moving: the glass rim waits for the shape to settle (IslandGlass.css).
+    const island = element.closest<HTMLElement>(".island");
     element.style.willChange = "transform, opacity";
-    const timer = window.setTimeout(() => {
+    island?.setAttribute("data-moving", "");
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
       element.style.willChange = "";
+      island?.removeAttribute("data-moving");
     }, MOTION_LAYER_MS);
-    return () => window.clearTimeout(timer);
   }, [mode, page, height]);
+
+  useEffect(() => () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+  }, []);
 
   return ref;
 }

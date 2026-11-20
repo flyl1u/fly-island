@@ -12,6 +12,10 @@ export type IslandFeatures = {
   wechat: boolean;
   qqMail: boolean;
   plugin?: boolean;
+  /** Office clients installed from the plugin market and switched on. */
+  dingtalk?: boolean;
+  feishu?: boolean;
+  wecom?: boolean;
   /** The AI Agent switch; off hides the Agent page. */
   agents: boolean;
   /** Translation is on and set to open as an island page rather than its own window. */
@@ -19,11 +23,14 @@ export type IslandFeatures = {
 };
 
 const PAGE_ORDER: IslandPage[] = ["todo", "music", "clipboard", "shelf", "qq", "agents", "translation"];
-const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "plugin"];
+const SOURCE_ORDER: MessageSource[] = ["wechat", "qq", "qqMail", "dingtalk", "feishu", "wecom", "plugin"];
 
 export function isPageEnabled(page: IslandPage, features: IslandFeatures): boolean {
   if (page === "settings") return true;
-  return page === "qq" ? features.qq || features.wechat || features.qqMail || (PLUGINS_ENABLED && features.plugin === true) : features[page] === true;
+  return page === "qq"
+    ? features.qq || features.wechat || features.qqMail || features.dingtalk === true || features.feishu === true || features.wecom === true
+      || (PLUGINS_ENABLED && features.plugin === true)
+    : features[page] === true;
 }
 
 /** `page` when it is on, otherwise the first page that is, or null when every page is off. */
@@ -43,7 +50,7 @@ export function islandPageFor(page: IslandPage, features: IslandFeatures, clipbo
 
 /** `source` when it is on, otherwise the first message source that is (or `source` if none). */
 export function resolveMessageSource(source: MessageSource, features: IslandFeatures): MessageSource {
-  const enabled = (candidate: MessageSource) => (PLUGINS_ENABLED || candidate !== "plugin") && features[candidate];
+  const enabled = (candidate: MessageSource) => (PLUGINS_ENABLED || candidate !== "plugin") && features[candidate] === true;
   if (enabled(source)) return source;
   return SOURCE_ORDER.find(enabled) ?? (source === "plugin" && !PLUGINS_ENABLED ? "qqMail" : source);
 }

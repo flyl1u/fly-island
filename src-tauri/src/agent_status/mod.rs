@@ -18,6 +18,10 @@ pub(crate) mod dsh_usage;
 mod claude_desktop_usage;
 mod codex_version;
 mod conversation_link;
+mod cursor_sessions;
+mod hermes_sessions;
+mod kimi_sessions;
+pub(crate) mod kimi_usage;
 mod magpie;
 mod markers;
 mod notifications;
@@ -32,6 +36,7 @@ mod session_mode;
 mod session_process;
 mod session_records;
 mod snapshot;
+mod sqlite_read;
 pub(crate) mod sound_packs;
 #[cfg(test)]
 mod tests;
@@ -48,6 +53,8 @@ pub(crate) mod workbuddy_connection;
 mod workbuddy_sessions;
 mod workbuddy_cookie_vault;
 mod workbuddy_usage;
+mod zcode_credentials;
+pub(crate) mod zcode_usage;
 
 use serde::Serialize;
 use std::{fs, path::Path};
@@ -257,10 +264,15 @@ fn install_agent_status_hooks_now(app: &AppHandle) -> Result<AgentHooksInstallRe
 /// Claude Code, Codex, DSH and WorkBuddy sessions active in the last two hours, running and waiting ones first.
 #[tauri::command]
 /// `window_hours` (1-24, default 2): how long ago a listed session may have last changed.
+/// `native`: the agents installed from the plugin market to read as well ("cursor", "kimiCode",
+/// "hermes"); left out by older callers, which read none of them.
 pub async fn list_agent_sessions(
     app: AppHandle,
     window_hours: Option<u32>,
+    native: Option<Vec<String>>,
 ) -> Result<Vec<sessions::AgentSessionSummary>, String> {
+    let native = native.unwrap_or_default();
+    let wants = move |agent: &str| native.iter().any(|name| name == agent);
     let window_ms = window_hours
         .map(|hours| i64::from(hours.clamp(1, 24)) * 60 * 60 * 1000)
         .unwrap_or(session_scan::ACTIVE_WINDOW_MS);
@@ -275,6 +287,15 @@ pub async fn list_agent_sessions(
             session_host::attach_hosts(&home_dir, Some(&app_dir), &mut sessions);
             sessions.extend(dsh_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
             sessions.extend(workbuddy_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms));
+            if wants("cursor") {
+                sessions.extend(throttled(&CURSOR, window_ms, || cursor_sessions::list_sessions(current_unix_millis(), window_ms)));
+            }
+            if wants("kimiCode") {
+                sessions.extend(throttled(&KIMI, window_ms, || kimi_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)));
+            }
+            if wants("hermes") {
+                sessions.extend(throttled(&HERMES, window_ms, || hermes_sessions::list_sessions(&home_dir, current_unix_millis(), window_ms)));
+            }
             let is_active = |phase: &str| matches!(phase, "running" | "waiting");
             sessions.sort_by_key(|session| (!is_active(session.phase), -session.updated_at));
             sessions.truncate(12);
@@ -283,6 +304,27 @@ pub async fn list_agent_sessions(
     })
     .await
     .map_err(|error| format!("Failed to join the agent sessions task: {error}"))?
+}
+
+type NativeSessions = std::sync::Mutex<Option<(std::time::Instant, i64, Vec<sessions::AgentSessionSummary>)>>;
+static CURSOR: NativeSessions = std::sync::Mutex::new(None);
+static KIMI: NativeSessions = std::sync::Mutex::new(None);
+static HERMES: NativeSessions = std::sync::Mutex::new(None);
+
+/// The plugin-market agents are read at most every two seconds: the island asks every second,
+/// and Cursor's store is a database rather than a file whose change time says enough.
+fn throttled(
+    slot: &NativeSessions,
+    window_ms: i64,
+    read: impl FnOnce() -> Vec<sessions::AgentSessionSummary>,
+) -> Vec<sessions::AgentSessionSummary> {
+    let mut last = slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some((_, _, sessions)) = last.as_ref().filter(|(at, window, _)| *window == window_ms && at.elapsed().as_millis() < 2_000) {
+        return sessions.clone();
+    }
+    let sessions = read();
+    *last = Some((std::time::Instant::now(), window_ms, sessions.clone()));
+    sessions
 }
 
 /// Brings the editor or terminal window of an agent session to the front: the window of the
@@ -487,6 +529,8 @@ macro_rules! tauri_commands {
             crate::agent_status::get_agent_usage,
             crate::agent_status::get_codex_usage,
             crate::agent_status::dsh_usage::get_dsh_usage,
+            crate::agent_status::kimi_usage::get_kimi_usage,
+            crate::agent_status::zcode_usage::get_zcode_usage,
             crate::agent_status::workbuddy_connection::get_workbuddy_usage,
             crate::agent_status::workbuddy_connection::open_workbuddy_login,
             crate::agent_status::workbuddy_connection::disconnect_workbuddy,

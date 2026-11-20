@@ -7,8 +7,19 @@ import "./IslandTopEdge.css";
 // `inputModality`, so IslandTopEdge.css can shape the island without threading a
 // prop through App. Without Tauri the attribute stays unset and the class-based
 // docked / detached look applies.
+let nativeAttached = false;
+let capsule = false;
+
 function applyTopEdge(attached: boolean) {
-  document.documentElement.dataset.islandTopEdge = attached ? "attached" : "detached";
+  nativeAttached = attached;
+  // A capsule stays a floating pill even when dragged flush with the top edge.
+  document.documentElement.dataset.islandTopEdge = attached && !capsule ? "attached" : "detached";
+}
+
+/** The capsule shape (islandShape.ts) opts out of the flat, attached top. */
+export function setIslandTopEdgeCapsule(isCapsule: boolean) {
+  capsule = isCapsule;
+  if (document.documentElement.dataset.islandTopEdge !== undefined) applyTopEdge(nativeAttached);
 }
 
 /** Starts mirroring the native top-edge attachment for the main window's lifetime. */

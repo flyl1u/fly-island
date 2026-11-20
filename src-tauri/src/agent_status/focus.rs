@@ -172,6 +172,9 @@ pub(super) fn focus_session(
     if provider == "workbuddy" {
         return super::workbuddy_sessions::focus_desktop(session_id);
     }
+    if provider == "cursor" {
+        return super::cursor_sessions::focus(cwd);
+    }
     let is_codex = provider == "codex";
     let session_id = session_id.filter(|id| !id.is_empty());
     let mut log = Attempt::new(provider, session_id);
@@ -297,6 +300,8 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
     }
     let workbuddy_in_front = front_app.as_deref() == Some(super::workbuddy_sessions::DESKTOP_APP);
     let newest_workbuddy = std::cell::OnceCell::new();
+    let cursor_in_front = front_app.as_deref() == Some(super::cursor_sessions::DESKTOP_APP);
+    let newest_cursor = std::cell::OnceCell::new();
     sessions
         .iter()
         .filter(|session| {
@@ -309,6 +314,9 @@ pub(super) fn sessions_in_front(app_dir: Option<&Path>, sessions: &[SessionRef])
                         .get_or_init(|| windows_home_dir().ok().and_then(|home| super::workbuddy_sessions::newest_session_id(&home)))
                         .as_deref()
                         == Some(id);
+            }
+            if session.provider == "cursor" {
+                return cursor_in_front && newest_cursor.get_or_init(super::cursor_sessions::newest_session_id).as_deref() == Some(id);
             }
             if session.provider == "dsh" {
                 let is_desktop = win32::process::image_path(front)
