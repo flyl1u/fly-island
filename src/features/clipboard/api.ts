@@ -30,7 +30,7 @@ export type ClipboardHistoryItem = {
   preview: string;
   text?: string;
   image?: ClipboardHistoryImage;
-  /** Files copied in Explorer; such an item is a text item whose text is the paths. */
+  /** Files copied in Explorer; image captures may retain paths for file-compatible copy-back. */
   files?: string[];
 };
 

@@ -24,7 +24,12 @@ export function useClipboardHistoryList(items: ClipboardHistoryItem[]) {
     }
 
     return viewedItems.filter((item) => {
-      const haystack = [item.preview, item.text ?? "", item.note ?? ""]
+      const haystack = [
+        item.preview,
+        item.text ?? "",
+        item.files?.join(" ") ?? "",
+        item.note ?? "",
+      ]
         .join(" ")
         .toLowerCase();
 
