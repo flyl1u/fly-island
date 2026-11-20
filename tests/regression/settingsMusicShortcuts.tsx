@@ -12,7 +12,7 @@ export async function checkMusicShortcuts(check: (value: unknown, message: strin
   document.body.append(host);
   const root = createRoot(host);
   const render = (enabled: boolean) => act(async () => root.render(<Registration enabled={enabled} />));
-  const stored = () => JSON.parse(localStorage.getItem("focusd-island-music-shortcuts") ?? "{}") as Record<string, string>;
+  const stored = () => JSON.parse(localStorage.getItem("fly-island-music-shortcuts") ?? "{}") as Record<string, string>;
   const lastCall = () => mediaShortcutCalls[mediaShortcutCalls.length - 1];
   const buttons = () => [...document.querySelectorAll<HTMLButtonElement>(".editor-panel .shortcut-record-button")];
   const record = async (index: number, key: string, mods: KeyboardEventInit = { ctrlKey: true, altKey: true }) => {

@@ -3,9 +3,9 @@ import { APPEARANCE_SETTING_KEYS, normalizeSettings, withAppearanceFrom } from "
 import type { IslandSettings, LegacyIslandSettings } from "./types";
 
 // Whole-look presets: every appearance setting (APPEARANCE_SETTING_KEYS) saved under a name.
-// Stored as focusd-island-appearance-presets; applying one reads it back through normalizeSettings,
+// Stored as fly-island-appearance-presets; applying one reads it back through normalizeSettings,
 // so a damaged or older record falls back to defaults for what it lacks.
-export const APPEARANCE_PRESETS_KEY = "focusd-island-appearance-presets";
+export const APPEARANCE_PRESETS_KEY = "fly-island-appearance-presets";
 export const MAX_APPEARANCE_PRESETS = 8;
 export const APPEARANCE_PRESET_NAME_LIMIT = 20;
 

@@ -8,7 +8,7 @@ import { STORAGE_KEY, loadSettings, saveTranslationSettings, type TranslationSet
  * an edit would write the old value back: changing the model used to undo a new shortcut.
  * `storage` events only reach other windows.
  */
-const SAVED_IN_THIS_WINDOW = "focusd-island-translation-settings-saved";
+const SAVED_IN_THIS_WINDOW = "fly-island-translation-settings-saved";
 
 /**
  * Translation settings, saved on every change and kept in sync between the settings

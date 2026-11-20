@@ -14,22 +14,22 @@ import { isIslandPickerOpen } from "../../src/lib/islandPicker";
 const query = new URLSearchParams(location.search);
 const manual = query.has("manual");
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: !manual });
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const restore = () => {
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 };
 window.addEventListener("beforeunload", restore);
 for (const key of original.keys()) localStorage.removeItem(key);
 const today = getLocalDateString();
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
-localStorage.setItem("focusd-island-current-date", today);
-localStorage.setItem("focusd-island-last-page", "todo");
-localStorage.setItem("focusd-island-todos", JSON.stringify([{ id: "t1", title: "整理录屏素材", completed: false, createdAt: Date.now() }]));
+localStorage.setItem("fly-island-current-date", today);
+localStorage.setItem("fly-island-last-page", "todo");
+localStorage.setItem("fly-island-todos", JSON.stringify([{ id: "t1", title: "整理录屏素材", completed: false, createdAt: Date.now() }]));
 const settings = { agentStatusEnabled: false, musicEnabled: false, shelfEnabled: false, autoTuck: false,
   autoCollapseSeconds: 1, expandTrigger: "hover", carryOverIncompleteTodos: false,
   colorScheme: query.get("theme") === "light" ? "light" : "dark", expandedScale: Number(query.get("scale") ?? 1), islandFontPercent: 120 };
-localStorage.setItem("focusd-island-settings", JSON.stringify(settings));
+localStorage.setItem("fly-island-settings", JSON.stringify(settings));
 const calls: string[] = [];
 let revision = 0;
 mockIPC((command, payload) => {

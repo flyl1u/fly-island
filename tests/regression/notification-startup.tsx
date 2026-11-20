@@ -7,7 +7,7 @@ import { QQNotificationControls, useQQNotifications, type QQNotificationsControl
 import { WeChatReminderControls, useWeChatReminders, type WeChatRemindersController } from "../../src/features/messages/wechat/WeChatReminders";
 
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: true });
-const keys = ["focusd-island-qq-notifications-enabled", "focusd-island-wechat-reminders-enabled", "focusd-island-qq-notification-access-requested", "focusd-island-wechat-message-preview-enabled", "focusd-island-wechat-hide-minimized-taskbar"];
+const keys = ["fly-island-qq-notifications-enabled", "fly-island-wechat-reminders-enabled", "fly-island-qq-notification-access-requested", "fly-island-wechat-message-preview-enabled", "fly-island-wechat-hide-minimized-taskbar"];
 const original = keys.map((key) => localStorage.getItem(key));
 const messages: string[] = [];
 const calls: { command: string; args: Record<string, unknown> }[] = [];

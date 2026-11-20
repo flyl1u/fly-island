@@ -102,7 +102,7 @@ function withStorage(entries, run) {
 
 test("timer storage restores deadlines and one-shot notification without changing legacy todos", () => {
   const todos = [item("t1")];
-  withStorage([[ACTIVE_TODO_STORAGE_KEY, "t1"], ["focusd-island-todos", JSON.stringify(todos)]], (values) => {
+  withStorage([[ACTIVE_TODO_STORAGE_KEY, "t1"], ["fly-island-todos", JSON.stringify(todos)]], (values) => {
     assert.equal(loadTodoTimer(), null);
     assert.deepEqual(loadTodoDurations(), {}, "nothing saved yet: every todo starts at 15 minutes");
     const timer = createTodoTimer("t1", 7, NOW);
@@ -115,7 +115,7 @@ test("timer storage restores deadlines and one-shot notification without changin
     assert.deepEqual(loadTodos(), todos);
     assert.equal(loadActiveTodoId(), "t1");
     assert.equal(values.get(TODO_DURATIONS_STORAGE_KEY), JSON.stringify({ t1: 7 }));
-    values.set("focusd-island-todo-duration", "30");
+    values.set("fly-island-todo-duration", "30");
     assert.deepEqual(loadTodoDurations(), { t1: 7 }, "the old shared duration is no longer read");
     saveTodoTimer(null);
     assert.equal(values.has(TODO_TIMER_STORAGE_KEY), false);

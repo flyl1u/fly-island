@@ -9,7 +9,7 @@ export async function checkKeepVisible(panel: Element, check: (condition: unknow
   const toggles = keepRows;
   check(toggles().length === 3 && toggles().every((toggle) => !toggle.checked), "general: three independent keep-visible switches default off");
   await act(async () => toggles()[1].click());
-  const saved = JSON.parse(localStorage.getItem("focusd-island-settings")!);
+  const saved = JSON.parse(localStorage.getItem("fly-island-settings")!);
   check(saved.keepVisibleWhileLyrics && !saved.keepVisibleWhileAgentRunning && !saved.keepVisibleWhileTodoRunning,
     "general: lyrics switch saves without enabling the other activities");
   const autoTuck = [...panel.querySelectorAll<HTMLInputElement>("input[role=switch]")]

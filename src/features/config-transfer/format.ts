@@ -1,3 +1,5 @@
+import { isLegacyBackupApp, isLegacyStorageKey, toCurrentStorageKey } from "../../shared/storage/legacyMigration.ts";
+
 export type ConfigBackup = {
   app: "fly-island";
   formatVersion: 1;
@@ -9,25 +11,28 @@ export type ConfigBackup = {
 
 // The locale key in contracts.md also uses this prefix. Add other app namespaces here,
 // never enumerate individual feature keys: future settings must migrate automatically.
-export const APP_STORAGE_PREFIXES = ["focusd-island-"] as const;
-export const DEVICE_STORAGE_KEYS = ["focusd-island-position"] as const;
+export const APP_STORAGE_PREFIXES = ["fly-island-"] as const;
+export const DEVICE_STORAGE_KEYS = ["fly-island-position"] as const;
 export const TRANSIENT_STORAGE_KEYS = [
-  "focusd-island-settings-focus", "focusd-island-position-reset", "focusd-island-panel-preview",
+  "fly-island-settings-focus", "fly-island-position-reset", "fly-island-panel-preview",
 ] as const;
 
 export function isAppStorageKey(key: string): boolean {
-  return APP_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix));
+  return APP_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix)) || isLegacyStorageKey(key);
 }
 
 export function isTransferableKey(key: string, includeClipboardHistory = true): boolean {
+  const currentKey = toCurrentStorageKey(key);
   return isAppStorageKey(key)
-    && !DEVICE_STORAGE_KEYS.some((device) => device === key)
-    && !TRANSIENT_STORAGE_KEYS.some((transient) => transient === key)
-    && (includeClipboardHistory || !key.startsWith("focusd-island-clipboard-history"));
+    && !DEVICE_STORAGE_KEYS.some((device) => device === currentKey)
+    && !TRANSIENT_STORAGE_KEYS.some((transient) => transient === currentKey)
+    && (includeClipboardHistory || !currentKey.startsWith("fly-island-clipboard-history"));
 }
 
 export function filterStorage(entries: Record<string, string>, includeClipboardHistory: boolean): Record<string, string> {
-  return Object.fromEntries(Object.entries(entries).filter(([key]) => isTransferableKey(key, includeClipboardHistory)));
+  return Object.fromEntries(Object.entries(entries)
+    .filter(([key]) => isTransferableKey(key, includeClipboardHistory))
+    .map(([key, value]) => [toCurrentStorageKey(key), value]));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -42,13 +47,13 @@ export class BackupError extends Error {
 
 export function validateBackup(value: unknown): ConfigBackup {
   if (!isRecord(value)) throw new BackupError("invalidStructure");
-  if (value.app !== "fly-island") throw new BackupError("wrongApp");
+  if (value.app !== "fly-island" && !isLegacyBackupApp(value.app)) throw new BackupError("wrongApp");
   if (value.formatVersion !== 1) throw new BackupError("unsupportedVersion");
   if (typeof value.exportedAt !== "string" || !Number.isFinite(Date.parse(value.exportedAt))
     || typeof value.appVersion !== "string" || !value.appVersion
     || !isRecord(value.localStorage) || !Object.values(value.localStorage).every((item) => typeof item === "string")
     || !isRecord(value.files)) throw new BackupError("invalidStructure");
-  return value as ConfigBackup;
+  return { ...value, app: "fly-island" } as ConfigBackup;
 }
 
 export function parseBackup(content: string): ConfigBackup {

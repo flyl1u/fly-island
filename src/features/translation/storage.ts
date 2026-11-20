@@ -21,7 +21,7 @@ export type TranslationSettings = {
   /** Translate after the source has stopped changing, while the window is open. */
   autoTranslate: boolean;
 };
-export const STORAGE_KEY = "focusd-island-translation-settings";
+export const STORAGE_KEY = "fly-island-translation-settings";
 const LEGACY_DEFAULT_SHORTCUTS = new Set(["Alt+Space", "Alt+C"]);
 
 export const DEFAULT_SETTINGS: TranslationSettings = {

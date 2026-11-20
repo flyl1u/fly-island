@@ -64,7 +64,7 @@ async function controller({
     },
     "@tauri-apps/api/event": {
       listen: async (name, callback) => {
-        if (name === "focusd-update-request") requestListeners.push(callback);
+        if (name === "fly-island-update-request") requestListeners.push(callback);
         return () => {};
       },
       emit: async (name, payload) => emitted.push({ name, payload }),

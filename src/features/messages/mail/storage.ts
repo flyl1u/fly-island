@@ -1,6 +1,6 @@
 import { normalizeMailAccounts, type MailAccountSettings } from "./mailAccounts.ts";
 
-export const SETTINGS_KEY = "focusd-island-qq-mail-settings";
+export const SETTINGS_KEY = "fly-island-qq-mail-settings";
 
 /** Saved mailboxes; the single-account format of older versions is read too. */
 export function loadMailAccounts(): MailAccountSettings[] {

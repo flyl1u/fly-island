@@ -8,7 +8,7 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
   check(inputs.length === 4 && inputs.every((input) => input.checked) &&
     [...quota.querySelectorAll("label")].map((label) => label.textContent).join() === "Claude,Codex,DSH,WorkBuddy", "Quota rings offers four sources, all selected by default");
   for (const input of inputs) await act(async () => input.click());
-  const settings = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}");
+  const settings = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}");
   // Kimi Code and Z Code have no box until installed; their saved choice is left as it was.
   check(settings.agentQuotaSources.every((source: string) => source === "kimiCode" || source === "zcode") && settings.agentShowDsh === true,
     "Clearing all rings persists independently of DSH sessions");
@@ -35,7 +35,7 @@ export async function checkQuotaSettings(check: (condition: unknown, message: st
   check(button("去登录") && !button("退出登录"), "Signing out returns WorkBuddy to signed out");
   const source = [...document.querySelectorAll(".settings-row")].find((row) => row.querySelector(".settings-row__title")?.textContent === "WorkBuddy");
   await act(async () => source?.querySelector<HTMLInputElement>("input[role=switch]")?.click());
-  check(!document.querySelector(".workbuddy-sign-in__status") && JSON.parse(localStorage.getItem("focusd-island-settings")!).agentShowWorkbuddy === false,
+  check(!document.querySelector(".workbuddy-sign-in__status") && JSON.parse(localStorage.getItem("fly-island-settings")!).agentShowWorkbuddy === false,
     "Switching the WorkBuddy source off hides its sign-in and saves the choice");
   await act(async () => source?.querySelector<HTMLInputElement>("input[role=switch]")?.click());
 

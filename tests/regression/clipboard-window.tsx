@@ -10,7 +10,7 @@ import type { ClipboardHistoryItem } from "../../src/features/clipboard/api";
 
 // The standalone clipboard window: own title bar with the pin (on by default), the shared panel filling it.
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const PINNED_KEY = "focusd-island-clipboard-window-pinned";
+const PINNED_KEY = "fly-island-clipboard-window-pinned";
 const automated = new URLSearchParams(location.search).has("test");
 localStorage.removeItem(PINNED_KEY);
 const items: ClipboardHistoryItem[] = Array.from({ length: 50 }, (_, i) => ({

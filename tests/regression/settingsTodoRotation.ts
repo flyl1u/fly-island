@@ -3,7 +3,7 @@ import { act } from "react";
 export async function checkTodoRotation(panel: Element, check: (value: unknown, message: string) => void) {
   const group = () => [...panel.querySelectorAll(".settings-group")].find(node => node.querySelector("h2")?.textContent === "折叠岛屿")!;
   const toggle = () => group().querySelector<HTMLInputElement>("input[role=switch]")!;
-  const saved = () => JSON.parse(localStorage.getItem("focusd-island-settings")!);
+  const saved = () => JSON.parse(localStorage.getItem("fly-island-settings")!);
   check(!toggle().checked && !group().querySelector("input[role=spinbutton]"), "todo: rotation options start hidden");
   await act(async () => toggle().click());
   const fields = [...group().querySelectorAll<HTMLInputElement>("input[role=spinbutton]")];

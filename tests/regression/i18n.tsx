@@ -13,9 +13,9 @@ const query = new URLSearchParams(location.search);
 const automated = query.has("test");
 const translation = query.has("translation");
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const restore = () => {
-  for (const key of Object.keys(localStorage).filter(key => key.startsWith("focusd-island-"))) {
+  for (const key of Object.keys(localStorage).filter(key => key.startsWith("fly-island-"))) {
     if (!original.has(key)) localStorage.removeItem(key);
   }
   for (const [key, value] of original) localStorage.setItem(key, value);
@@ -26,12 +26,12 @@ const now = new Date();
 const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 if (!translation) {
   if (automated || localStorage.getItem(LOCALE_STORAGE_KEY) === null) localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
-  localStorage.setItem("focusd-island-current-date", date);
-  localStorage.setItem("focusd-island-todos", JSON.stringify([{ id: "i18n-task", title: "保留用户任务 Привет", completed: false, createdAt: now.getTime() }]));
-  localStorage.setItem("focusd-island-daily-note", "用户的中文笔记");
-  localStorage.setItem("focusd-island-archives", JSON.stringify([{ date: "2026-10-21", todos: [], dailyNote: "历史笔记", savedAt: now.getTime(), savedToDisk: false }]));
-  localStorage.setItem("focusd-island-save-directory", "");
-  localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+  localStorage.setItem("fly-island-current-date", date);
+  localStorage.setItem("fly-island-todos", JSON.stringify([{ id: "i18n-task", title: "保留用户任务 Привет", completed: false, createdAt: now.getTime() }]));
+  localStorage.setItem("fly-island-daily-note", "用户的中文笔记");
+  localStorage.setItem("fly-island-archives", JSON.stringify([{ date: "2026-10-21", todos: [], dailyNote: "历史笔记", savedAt: now.getTime(), savedToDisk: false }]));
+  localStorage.setItem("fly-island-save-directory", "");
+  localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 }
 let revision = 0;
 let reads = 0;
@@ -104,7 +104,7 @@ else {
     await act(async () => { mount(); });
     await click(".island__open-button");
     check(document.querySelector(LANGUAGE_TRIGGER)?.getAttribute("aria-label") === "界面语言", "Chinese language control is reachable");
-    const dataKeys = ["focusd-island-todos", "focusd-island-daily-note", "focusd-island-archives", "focusd-island-settings", "focusd-island-setting-presets"];
+    const dataKeys = ["fly-island-todos", "fly-island-daily-note", "fly-island-archives", "fly-island-settings", "fly-island-setting-presets"];
     const dataBefore = dataKeys.map(key => localStorage.getItem(key));
     const subscriptionsBefore = commands.filter(command => command.startsWith("set_qq_") || command === "set_wechat_reminders_enabled").length;
     await switchTo("en");

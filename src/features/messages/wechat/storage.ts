@@ -1,8 +1,8 @@
 import { readString, writeString } from "../../../lib/storage";
 
-export const ENABLED_KEY = "focusd-island-wechat-reminders-enabled";
-const PREVIEW_KEY = "focusd-island-wechat-message-preview-enabled";
-const HIDE_MINIMIZED_TASKBAR_KEY = "focusd-island-wechat-hide-minimized-taskbar";
+export const ENABLED_KEY = "fly-island-wechat-reminders-enabled";
+const PREVIEW_KEY = "fly-island-wechat-message-preview-enabled";
+const HIDE_MINIMIZED_TASKBAR_KEY = "fly-island-wechat-hide-minimized-taskbar";
 
 export function isWeChatRemindersEnabled() {
   return readString(ENABLED_KEY) !== "false";

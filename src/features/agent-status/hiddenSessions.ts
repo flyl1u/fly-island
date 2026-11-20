@@ -2,7 +2,7 @@ import { readJson, writeJson } from "../../lib/storage.ts";
 import type { AgentSessionSummary } from "./api";
 import { sessionKey } from "./unseen.ts";
 
-export const HIDDEN_SESSIONS_STORAGE_KEY = "focusd-island-agent-hidden-sessions";
+export const HIDDEN_SESSIONS_STORAGE_KEY = "fly-island-agent-hidden-sessions";
 /** Older entries are dropped past this many. */
 export const MAX_HIDDEN = 200;
 

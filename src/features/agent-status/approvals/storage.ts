@@ -1,6 +1,6 @@
 import { readJson, writeJson } from "../../../lib/storage.ts";
 
-export const AGENT_APPROVAL_STORAGE_KEY = "focusd-island-agent-approval";
+export const AGENT_APPROVAL_STORAGE_KEY = "fly-island-agent-approval";
 
 export type AgentApprovalSettings = {
   /** Agents' permission requests wait for a card on the island instead of the terminal prompt. */

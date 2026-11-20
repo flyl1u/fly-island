@@ -27,9 +27,9 @@ const tuckStyle = query.get("tuck") ?? "edge";
 Object.assign(globalThis, { isTauri: true, IS_REACT_ACT_ENVIRONMENT: automated });
 
 // The tour writes the island's own keys; whatever the browser profile had comes back on leaving.
-const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("focusd-island-")));
+const original = new Map(Object.entries(localStorage).filter(([key]) => key.startsWith("fly-island-")));
 const restore = () => {
-  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("focusd-island-"))) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage).filter((key) => key.startsWith("fly-island-"))) localStorage.removeItem(key);
   for (const [key, value] of original) localStorage.setItem(key, value);
 };
 window.addEventListener("beforeunload", restore);
@@ -38,17 +38,17 @@ for (const key of original.keys()) localStorage.removeItem(key);
 const today = new Date();
 const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 localStorage.setItem(LOCALE_STORAGE_KEY, query.get("lang") === "en" ? "en" : "zh-CN");
-localStorage.setItem("focusd-island-current-date", date);
+localStorage.setItem("fly-island-current-date", date);
 // This tour exercises the embedded settings page even though new users get a separate window.
-localStorage.setItem("focusd-island-detached-settings", "false");
+localStorage.setItem("fly-island-detached-settings", "false");
 // Exercise the explicitly selected style after the one-time default migration.
 installTourPlugins();
-localStorage.setItem("focusd-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
-localStorage.setItem("focusd-island-qq-notification-access-requested", "true");
+localStorage.setItem("fly-island-todos", JSON.stringify(empty ? [] : TOUR_TODOS));
+localStorage.setItem("fly-island-qq-notification-access-requested", "true");
 // Lyrics are looked up online unless ?lyrics=0; the mock answers for 晴天 only.
 // ?cover=1 shows the song's cover on the collapsed island; ?priority=lyrics,agent,todo reorders it,
 // ?layout=music,text,mail,shelf,agents arranges it; ?scale=0.85…1.2 sets the expanded size.
-localStorage.setItem("focusd-island-settings", JSON.stringify({
+localStorage.setItem("fly-island-settings", JSON.stringify({
   ...(query.get("scale") ? { expandedScale: Number(query.get("scale")) } : {}),
   ...(customNotch ? { collapsedAutoWidth: false, collapsedWidth: 240, collapsedHeight: 32 } : {}),
   islandFontPercent: fontPercent,
@@ -67,8 +67,8 @@ localStorage.setItem("focusd-island-settings", JSON.stringify({
   ...(query.get("layout") ? { collapsedLayout: query.get("layout")!.split(",") } : {}),
 }));
 // A colour of the user's own survives the one-time colour refresh (storage.ts) as it would for a real user.
-if (query.has("bg")) localStorage.setItem("focusd-island-color-refresh-v1", "1");
-if (query.has("detached")) localStorage.setItem("focusd-island-position", JSON.stringify({ x: 300, y: 60 }));
+if (query.has("bg")) localStorage.setItem("fly-island-color-refresh-v1", "1");
+if (query.has("detached")) localStorage.setItem("fly-island-position", JSON.stringify({ x: 300, y: 60 }));
 
 let revision = 0;
 let windowDrags = 0;
@@ -249,7 +249,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
       await act(async () => { fire("pointerup", target.left + target.width / 2); source.click(); });
     };
     await drag(".dot-button--todo", ".dot-button--clipboard");
-    const savedOrder = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageOrder as string[] | undefined;
+    const savedOrder = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageOrder as string[] | undefined;
     check(dotOrder().join() === "music,clipboard,todo,shelf,translation" && savedOrder?.join() === "music,clipboard,todo,shelf,translation" && island().className === pageBefore,
       `拖动页面圆点可以调整顺序并保存，拖完不切页（${dotOrder().join()}）`);
     await drag(".dot-button--todo", ".dot-button--music");
@@ -337,7 +337,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     const capsule = document.querySelector<HTMLButtonElement>('[aria-label="页面按钮"] button:first-child')!;
     check(capsule.getAttribute("aria-pressed") === "true" && document.querySelectorAll(".dot-button--capsule").length === 6, "已保存为胶囊的页面按钮保持胶囊（含消息）");
     await click('[aria-label="页面按钮"] button:nth-child(2)');
-    const savedStyle = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").pageButtonStyle;
+    const savedStyle = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").pageButtonStyle;
     check(document.querySelectorAll(".dot-button--icon svg, .island__agent-button svg.lucide-bot").length === 7 &&
       document.querySelectorAll(".agent-page-preview__dots svg").length === 5 && savedStyle === "icon", "七个入口切换为图标，外观预览和保存同步");
     await click('[aria-label="页面按钮"] button:first-child');
@@ -346,7 +346,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
     await act(async () => {
       document.querySelector<HTMLElement>(".reorder-list__handle")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
     });
-    const savedPriority = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
+    const savedPriority = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedPriority as string[] | undefined;
     check(priority().join() === "lyrics,agent,todo" && savedPriority?.join() === "lyrics,agent,todo", "按方向键调整顺序并保存");
     // Appearance → On the island: the music waveform moved left of the light and the text sits on
     // the collapsed island's left.
@@ -356,7 +356,7 @@ if (query.has("shoulderSweep") || query.has("shapePerf")) {
         document.querySelector<HTMLElement>(".collapsed-layout__slot--music")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       });
     }
-    const savedLayout = JSON.parse(localStorage.getItem("focusd-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
+    const savedLayout = JSON.parse(localStorage.getItem("fly-island-settings") ?? "{}").collapsedLayout as string[] | undefined;
     check(savedLayout?.join() === "music,pulse,text,mail,shelf,agents,clock,weather" && barOrder().startsWith("music-wave-button,island__agent-light,island__text-slot"),
       `岛上的排列：音乐波形移到文字左边，收起的岛也跟着变（${barOrder()}）`);
     await click(".settings-sidebar__item[data-category='general']");

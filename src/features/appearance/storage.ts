@@ -6,12 +6,12 @@ import { colorsFrom, normalizeColorPalette, type ColorPalette } from "./colorPal
 import { refreshColors } from "./colorRefresh.ts";
 import { normalizeColorPresets, type ColorPreset } from "./colorPresets.ts";
 
-export const STORAGE_KEY = "focusd-island-settings";
+export const STORAGE_KEY = "fly-island-settings";
 export const COLLAPSED_TEXT_DEFAULT_MIGRATION_KEY =
-  "focusd-island-collapsed-text-default-v1";
-export const COLOR_REFRESH_KEY = "focusd-island-color-refresh-v1";
-export const COLOR_BACKUP_KEY = "focusd-island-color-backup";
-export const COLOR_PRESETS_KEY = "focusd-island-color-presets";
+  "fly-island-collapsed-text-default-v1";
+export const COLOR_REFRESH_KEY = "fly-island-color-refresh-v1";
+export const COLOR_BACKUP_KEY = "fly-island-color-backup";
+export const COLOR_PRESETS_KEY = "fly-island-color-presets";
 
 export function loadSettings(): IslandSettings {
   // Read the marker before the snapshot: a concurrent refresh cannot make an old snapshot

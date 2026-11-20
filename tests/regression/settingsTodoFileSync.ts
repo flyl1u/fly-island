@@ -11,7 +11,7 @@ export async function checkTodoFileSync(panel: Element, check: (value: unknown, 
   });
   check(!toggle().disabled && row().textContent?.includes("在外部编辑当天"), "todo: a saved path enables sync and explains daily Markdown edits");
   await act(async () => toggle().click());
-  check(toggle().checked && localStorage.getItem("focusd-island-todo-file-sync") === "true", "todo: enabling file sync persists the opt-in");
+  check(toggle().checked && localStorage.getItem("fly-island-todo-file-sync") === "true", "todo: enabling file sync persists the opt-in");
   await act(async () => toggle().click());
   await act(async () => {
     saveSaveDirectory("");

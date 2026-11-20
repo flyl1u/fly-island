@@ -24,7 +24,7 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     if (MAIL_OTP_ENABLED) {
       check(toggle?.checked, "Mail: verification codes are copied by default");
       await act(async () => toggle!.click());
-      check(JSON.parse(localStorage.getItem("focusd-island-settings")!).autoCopyOtp === false, "Mail: turning automatic code copying off is saved");
+      check(JSON.parse(localStorage.getItem("fly-island-settings")!).autoCopyOtp === false, "Mail: turning automatic code copying off is saved");
       await act(async () => toggle!.click());
     } else {
       check(!row, "Mail: verification-code settings are hidden without changing saved preferences");
@@ -70,10 +70,10 @@ export async function checkGroups(category: string, panel: HTMLElement, check: (
     const looks = () => [...panel.querySelectorAll<HTMLButtonElement>("[role='group'][aria-label='贴边样式'] button")];
     check(titles(tuck()).join() === "贴边样式" && looks().map((button) => button.textContent).join() === "露边,细线,隐藏" && looks()[1].getAttribute("aria-pressed") === "true",
       "Appearance: the tucked look has its own group, edge, line and hidden, line by default");
-    localStorage.removeItem("focusd-island-panel-preview");
+    localStorage.removeItem("fly-island-panel-preview");
     await act(async () => looks()[1].click());
-    check(JSON.parse(localStorage.getItem("focusd-island-settings")!).tuckStyle === "line"
-      && JSON.parse(localStorage.getItem("focusd-island-panel-preview")!).mode === "tucked", "Choosing even the current tucked look saves it and shows the island tucked");
+    check(JSON.parse(localStorage.getItem("fly-island-settings")!).tuckStyle === "line"
+      && JSON.parse(localStorage.getItem("fly-island-panel-preview")!).mode === "tucked", "Choosing even the current tucked look saves it and shows the island tucked");
     await act(async () => looks()[0].click());
     check(titles(tuck()).join() === "贴边样式,露出高度" && tuck()[1].classList.contains("settings-row--indent"), "Appearance: the edge look reveals its height, indented");
     await act(async () => looks()[1].click());

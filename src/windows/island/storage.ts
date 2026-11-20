@@ -3,7 +3,7 @@ export type IslandPosition = {
   y: number;
 };
 
-export const ISLAND_POSITION_STORAGE_KEY = "focusd-island-position";
+export const ISLAND_POSITION_STORAGE_KEY = "fly-island-position";
 
 export function loadIslandPosition(): IslandPosition | null {
   const stored = window.localStorage.getItem(ISLAND_POSITION_STORAGE_KEY);

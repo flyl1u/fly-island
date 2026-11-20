@@ -14,7 +14,7 @@ function account(value: unknown): MailAccountSettings | null {
 }
 
 /**
- * Reads `focusd-island-qq-mail-settings`: `{ accounts: [...] }`, or the single
+ * Reads `fly-island-qq-mail-settings`: `{ accounts: [...] }`, or the single
  * `{ email, enabled }` that versions before multi-account saved.
  */
 export function normalizeMailAccounts(stored: unknown): MailAccountSettings[] {

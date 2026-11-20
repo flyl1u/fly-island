@@ -11,7 +11,7 @@ export function tourOffice(empty: boolean): OfficeImSnapshot {
 
 /** Every market plugin installed, office clients on, tabs in the default order. */
 export function installTourPlugins() {
-  localStorage.setItem("focusd-island-native-plugins", JSON.stringify(["dingtalk", "feishu", "wecom", "cursor", "kimiCode", "zcode", "hermes"]));
-  localStorage.removeItem("focusd-island-office-im-enabled");
-  localStorage.removeItem("focusd-island-message-source-order");
+  localStorage.setItem("fly-island-native-plugins", JSON.stringify(["dingtalk", "feishu", "wecom", "cursor", "kimiCode", "zcode", "hermes"]));
+  localStorage.removeItem("fly-island-office-im-enabled");
+  localStorage.removeItem("fly-island-message-source-order");
 }
