@@ -84,7 +84,7 @@ function ShelfDragHarness() {
   return <FileShelfPanel shelf={shelf} isDropTarget={false} revealOnDoubleClick={false} />;
 }
 // The page's height in the island (getShelfExpandedHeight) less the island's own chrome.
-const fixtureHeight = (count: number) => (count === 0 ? 158 : (count <= 4 ? 118 : Math.min(5, Math.ceil(count / 2)) * 50 - 6) + 58);
+const fixtureHeight = (count: number) => (count === 0 ? 158 : count <= 4 ? 140 : Math.min(5, Math.ceil(count / 2)) * 50 - 6 + 58);
 
 async function render(items: FileShelfItem[], isDropTarget = false) {
   fixture.style.height = `${fixtureHeight(items.length)}px`;
@@ -130,8 +130,12 @@ if (viewCount !== null) {
     // No title row and nothing framed inside the panel: files, the slot and the line sit on it.
     const framed = [...document.querySelectorAll<HTMLElement>(".shelf-item, .shelf-slot")]
       .filter((element) => getComputedStyle(element).borderStyle !== "none" || getComputedStyle(element).backgroundColor !== "rgba(0, 0, 0, 0)");
-    check(!document.querySelector(".shelf-panel__header, .shelf-panel__title") && framed.length === 0 && document.querySelector(".shelf-bar .shelf-clear-button"),
-      "没有标题行，面板里没有套框，清空按钮在底下那一行");
+    const clear = document.querySelector<HTMLElement>(".shelf-bar--floating .shelf-clear-button");
+    const panelBox = document.querySelector<HTMLElement>(".shelf-panel")!.getBoundingClientRect();
+    const tileBottom = Math.max(...tiles.map((tile) => tile.getBoundingClientRect().bottom));
+    check(!document.querySelector(".shelf-panel__header, .shelf-panel__title") && framed.length === 0 && clear
+      && Math.abs(panelBox.bottom - tileBottom - 10) < 1.5 && clear.getBoundingClientRect().bottom <= panelBox.bottom,
+      "没有标题行，面板里没有套框；一排图块下面不空出一行，清空按钮浮在右下角");
 
     // Twelve files: two columns of rows; long names keep the extension and stay in their row.
     await render(ALL);
