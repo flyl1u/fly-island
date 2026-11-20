@@ -43,3 +43,6 @@ src-tauri/tauri.release.conf.json
 *.vsix
 /artifacts/plugins/
 /plugins/**/target/
+
+# omm 团队模式的本地状态，只在机器上，不进仓库。
+/.omm/
