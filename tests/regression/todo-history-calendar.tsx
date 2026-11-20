@@ -138,7 +138,7 @@ try {
   const todayNumber = day(today)!.querySelector(".todo-calendar__number")!;
   const todayBadge = day(today)!.querySelector(".todo-calendar__badge");
   check(getComputedStyle(todayNumber).boxShadow === "none" && todayBadge?.textContent === "今"
-    && getComputedStyle(todayBadge).color === "rgb(116, 214, 255)"
+    && getComputedStyle(todayBadge).backgroundColor === "rgb(116, 214, 255)"
     && getComputedStyle(day(today)!).boxShadow.includes("inset")
     && day(today)!.getAttribute("aria-current") === "date",
     "今天数字不描边，选中时整格描边，右上角是蓝色的「今」");

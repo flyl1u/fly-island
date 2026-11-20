@@ -113,7 +113,10 @@ export function TodoCalendar({
                     {mark.caption ? <span className="todo-calendar__caption-text">{mark.caption}</span> : null}
                     {dots.length > 0 ? (
                       <span className="todo-calendar__dots">
-                        {dots.map((dot, index) => <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />)}
+                        {/* 说明行放不下三个点：有说明时只留两个，窄面板才不会把说明挤掉。 */}
+                        {(mark.caption ? dots.slice(0, 2) : dots).map((dot, index) => (
+                          <span key={index} className={`todo-calendar__dot todo-calendar__dot--${dot}`} />
+                        ))}
                       </span>
                     ) : null}
                   </span>

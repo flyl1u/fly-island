@@ -161,8 +161,9 @@
 }
 
 .todo-calendar__day--today .todo-calendar__badge {
-  color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  /* 实色底配反色字，深色主题亮蓝底压深字、浅色主题深蓝底配浅字，两边都清楚。 */
+  color: var(--color-surface-dark);
+  background: var(--color-accent);
 }
 
 /* 周末的表头跟日期一起标红。 */
