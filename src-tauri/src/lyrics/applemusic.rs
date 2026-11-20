@@ -3,8 +3,6 @@
 //! developer token that Apple's web app carries), and the lyrics are then fetched with the
 //! user's media token, as Apple gives them only to a signed-in listener.
 
-#![allow(dead_code, reason = "the plugin command layer calls these once the source is wired in")]
-
 use std::sync::{Mutex, OnceLock};
 
 use keyring::{Entry, Error as KeyringError};

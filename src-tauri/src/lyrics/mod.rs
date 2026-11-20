@@ -6,6 +6,7 @@
 //! `lyrics-cache/` in the app data folder, so a track is asked for once. The text is returned as
 //! LRC, with the translation as a second LRC when the source has one; the island parses both.
 
+mod applemusic;
 mod found;
 mod krc;
 mod kugou;
@@ -19,6 +20,7 @@ mod qrc_cipher;
 mod soda_cache;
 mod soda_lmdb;
 mod soda_msgpack;
+mod ttml;
 mod word_formats;
 
 use std::{
@@ -67,12 +69,15 @@ pub struct LyricsQuery {
     source_app_id: Option<String>,
     #[serde(default)]
     word_fill: bool,
+    /// Whether the user turned the official Apple Music lyrics on.
+    #[serde(default)]
+    apple_music: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
-    /// "local", "lrclib", "kugou" or "netease".
+    /// "local", "lrclib", "kugou", "netease" or "applemusic".
     source: &'static str,
     /// Synced lyrics in LRC format.
     lrc: String,
@@ -116,6 +121,7 @@ fn source_name(name: &str) -> &'static str {
         "netease" => "netease",
         "qqmusic" => "qqmusic",
         "soda" => "soda",
+        "applemusic" => "applemusic",
         _ => "lrclib",
     }
 }
@@ -199,9 +205,25 @@ fn for_display(source: &'static str, found: FoundLyrics, title: &str, artist: &s
     Lyrics { source, lrc: simplify(found.lrc), translation: found.translation.map(simplify), duration_ms: found.duration_ms }
 }
 
+/// Whether the player is Apple Music, by the signs the media session gives.
+fn is_apple_music(source_app_id: Option<&str>) -> bool {
+    let player = source_app_id.unwrap_or_default().to_ascii_lowercase();
+    ["applemusic", "apple.music", "music.ui"].iter().any(|sign| player.contains(sign))
+}
+
+/// The online sources to ask, in order. Apple's own lyrics come first when the player is
+/// Apple Music and the user turned them on; the rest is by the song.
+fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+    let mut order = source_order_by_song(query);
+    if query.apple_music && is_apple_music(query.source_app_id.as_deref()) {
+        order.insert(0, "applemusic");
+    }
+    order
+}
+
 /// The online sources to ask, in order. A song named in Chinese asks Kugou and NetEase first,
 /// as LRCLIB has few Chinese songs; a NetEase song the player named asks NetEase first.
-fn source_order(query: &LyricsQuery) -> Vec<&'static str> {
+fn source_order_by_song(query: &LyricsQuery) -> Vec<&'static str> {
     if !query.chinese {
         return vec!["lrclib"];
     }
@@ -228,6 +250,11 @@ async fn fetch_online(query: &LyricsQuery) -> Result<Option<Answer>, String> {
             "kugou" => kugou::fetch(title, artist, query.duration_ms).await,
             "netease" => netease::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
             "qqmusic" => qqmusic::fetch(title, artist, query.duration_ms, query.track_id.as_deref()).await,
+            // Without a token the source is simply not turned on.
+            "applemusic" => match applemusic::read_token() {
+                Some(token) => applemusic::fetch(title, artist, query.album.as_str(), query.duration_ms, &token).await,
+                None => Ok(None),
+            },
             _ => lrclib::fetch(title, artist, &query.album, query.duration_ms).await,
         };
         match result {
@@ -307,11 +334,32 @@ pub async fn get_lyrics(app: AppHandle, query: LyricsQuery) -> Result<Option<Lyr
     Ok(answer.map(|(source, found)| for_display(source, found, &query.title, &query.artist)))
 }
 
+/// Keeps the user's Apple Music media token, so the official lyrics can be asked for.
+#[tauri::command]
+pub async fn set_apple_music_token(token: String) -> Result<(), String> {
+    applemusic::write_token(&token)
+}
+
+/// Forgets the user's Apple Music media token.
+#[tauri::command]
+pub async fn clear_apple_music_token() -> Result<(), String> {
+    applemusic::clear_token()
+}
+
+/// Whether an Apple Music media token is stored.
+#[tauri::command]
+pub async fn has_apple_music_token() -> bool {
+    applemusic::read_token().is_some()
+}
+
 /// This module's Tauri commands, chained into `lib.rs`'s `generate_handler!`.
 macro_rules! tauri_commands {
     ($next:ident [$($done:tt)*] $($rest:tt)*) => {
         $next!([$($done)*
             crate::lyrics::get_lyrics,
+            crate::lyrics::set_apple_music_token,
+            crate::lyrics::clear_apple_music_token,
+            crate::lyrics::has_apple_music_token,
         ] $($rest)*)
     };
 }
@@ -373,12 +421,37 @@ mod tests {
             track_id: track_id.map(Into::into),
             source_app_id: None,
             word_fill: false,
+            apple_music: false,
         };
         assert_eq!(source_order(&query("余香", false, None)), ["lrclib"]);
         assert_eq!(source_order(&query("余香", true, None)), ["kugou", "netease", "qqmusic", "lrclib"]);
         assert_eq!(source_order(&query("Yesterday", true, None)), ["lrclib", "kugou", "netease", "qqmusic"]);
         assert_eq!(source_order(&query("Yesterday", true, Some("NCM-1"))), ["netease", "kugou", "qqmusic", "lrclib"]);
         assert_eq!(source_order(&query("Yesterday", true, Some("QQ-123")))[0], "qqmusic");
+    }
+
+    #[test]
+    fn apple_music_is_asked_first_only_when_the_player_is_it() {
+        let query = |chinese: bool, player: Option<&str>, apple_music: bool| LyricsQuery {
+            title: "Yesterday".into(),
+            artist: String::new(),
+            album: String::new(),
+            duration_ms: 0,
+            folder: String::new(),
+            online: true,
+            chinese,
+            track_id: None,
+            source_app_id: player.map(Into::into),
+            word_fill: false,
+            apple_music,
+        };
+        // The official lyrics come first, for English songs as well.
+        assert_eq!(source_order(&query(false, Some("AppleMusic.exe"), true)), ["applemusic", "lrclib"]);
+        assert_eq!(source_order(&query(true, Some("AppleMusic.exe"), true))[0], "applemusic");
+        // Another player, or the source turned off, keeps the old order.
+        assert_eq!(source_order(&query(false, Some("Spotify.exe"), true)), ["lrclib"]);
+        assert_eq!(source_order(&query(false, Some("AppleMusic.exe"), false)), ["lrclib"]);
+        assert_eq!(source_order(&query(false, None, true)), ["lrclib"]);
     }
 
     #[test]
