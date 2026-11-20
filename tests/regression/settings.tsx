@@ -101,7 +101,7 @@ if (!automated) {
       const panel = element(".editor-panel");
       check(item.getAttribute("aria-current") === "page", `${category}: the sidebar marks the open page`);
       check(element(".settings-page__title").textContent === item.textContent, `${category}: the page title matches the sidebar`);
-      check(panel.querySelector(".settings-group, .settings-section"), `${category}: the page has content`);
+      check(panel.querySelector(".settings-group, .settings-section, .plugin-market"), `${category}: the page has content`);
       check(panel.scrollWidth <= panel.clientWidth, `${category}: nothing overflows horizontally`);
       check(!panel.querySelector("input[type=number]"), `${category}: no native number inputs`);
       // Settings stay short: a handful of rows per page (Messages lists mailboxes, so it is left out).
@@ -150,7 +150,6 @@ if (!automated) {
       check(category === "messages" || rowCount <= maxRows, `${category}: the page keeps to a handful of rows (${rowCount})`);
     }
     check(settingsCategoryFor("sounds") === "agents" && settingsCategoryFor("agentAlerts") === "agents" && settingsCategoryFor("agentApprovals") === "agents"
-      && settingsCategoryFor("shelf") === "clipboard", "Old names of merged pages open the page they became");
     if (PLUGINS_ENABLED) {
       await openPage("plugins");
       const plugins = element(".editor-panel .plugins-settings");

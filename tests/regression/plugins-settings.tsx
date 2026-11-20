@@ -86,7 +86,7 @@ try {
   }
   if (!PLUGINS_ENABLED) {
     const guide = document.querySelector<HTMLElement>(".plugin-development")!;
-    check(guide?.textContent?.includes(t.comingSoon) && guide.textContent.includes(t.invitation), "关闭时显示本地化的插件计划与贡献说明");
+    check(guide?.textContent?.includes(t.guide) && guide.textContent.includes(t.guideHint) && !guide.querySelector("h2, h3, .settings-group__title"), "市场下方只保留本地化的开发规范入口，没有开发计划标题");
     // With the market open, its time-and-weather settings may have searched for a city; nothing else asks the host.
     const pluginCalls = hostCalls.filter((command) => !PLUGIN_MARKET_ENABLED || command !== "search_weather_cities");
     check(!document.querySelector(PLUGIN_MARKET_ENABLED ? ".plugins-settings, details" : ".plugins-settings, details, input, select") && pluginCalls.length === 0,
